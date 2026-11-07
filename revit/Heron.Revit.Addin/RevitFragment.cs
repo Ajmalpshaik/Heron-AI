@@ -6105,6 +6105,17 @@ namespace Heron.Revit.Addin
         /// first, so FILTER_ELEMENTS_BY_CATEGORY and SELECT_IN_REGION answered
         /// 0 for two railings SELECT_BY_CATEGORY_NAME found.
         /// </summary>
+        /// <summary>
+        /// OneBuiltInCategory for the add-in's own operations - the select tool
+        /// asks it for a word its duct-and-pipe table does not hold
+        /// (FRAGMENT-ISSUES 5b-1470 (b)), so "walls" reaches what the fragments'
+        /// binder already reaches. One resolver, not a second copy of it.
+        /// </summary>
+        internal static bool CategoryByShownName(Document doc, string text, out BuiltInCategory found)
+        {
+            return OneBuiltInCategory(doc, text, out found);
+        }
+
         private static bool OneBuiltInCategory(Document doc, string text, out BuiltInCategory found)
         {
             found = BuiltInCategory.INVALID;

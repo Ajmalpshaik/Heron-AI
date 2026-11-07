@@ -566,7 +566,27 @@ namespace Heron.Revit.Addin
 
                 BuiltInCategory one;
                 var refusal = ResolveCategory(name, out one);
-                if (refusal != null) return refusal;
+                if (refusal != null)
+                {
+                    // ANY CATEGORY BY THE NAME REVIT SHOWS (FRAGMENT-ISSUES
+                    // 5b-1470 (b), issue #799). The table above holds the MEP
+                    // words a modeller says - "ductwork", "dampers" - and stays
+                    // first; a word it does not hold now goes to the resolver
+                    // every fragment's category uses, so "walls" or "Mechanical
+                    // Equipment" selects instead of being refused. Only the
+                    // SELECT path: the move tool keeps the table alone, because
+                    // a looser word there would move the wrong things. A word
+                    // neither knows still refuses the whole request.
+                    var docForNames = app == null || app.ActiveUIDocument == null
+                        ? null : app.ActiveUIDocument.Document;
+                    BuiltInCategory shown;
+                    if (docForNames != null
+                        && RevitFragment.CategoryByShownName(docForNames, name, out shown)
+                        && shown != BuiltInCategory.INVALID)
+                        one = shown;
+                    else
+                        return refusal;
+                }
 
                 // A NAME REPEATED, OR TWO WORDS FOR ONE CATEGORY ("pipe" and
                 // "pipes"), MUST NOT SELECT IT TWICE. The ids would be

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,13 @@ semantic-identity: "put the Level 2 ceiling plan on screen"
 kind: action
 domain: revit.views
 capability: OPEN_VIEW
-version: 3
+# Version 4 (2026-11-07, FRAGMENT-ISSUES 5b-1470 (a), issue #799): "Kind:
+# name" takes the kind as the Project Browser writes it - "Floor Plan: Level
+# 1", "Ceiling Plans: Level 1", "Structural Plan: Level 1" - as the add-in's
+# binder does for every other card's view since row 5b-1468. Version 3 took
+# only the enum's spelling. The input keeps its name, `viewName`, so no caller
+# breaks.
+version: 4
 source: OFFICIAL
 risk: EXECUTE
 
@@ -91,6 +97,8 @@ contract:
     - name: viewName
       # The view's name as the Project Browser shows it, or "Kind: name" when
       # two views share it - "FloorPlan: Level 1", "DrawingSheet: Level 1".
+      # Version 4: the kind as the Project Browser writes it works too -
+      # "Floor Plan: Level 1", "Ceiling Plan: Level 1", "Sheet: Level 1".
       type: string
       source: request
   provides:

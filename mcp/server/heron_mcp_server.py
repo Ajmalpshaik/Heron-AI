@@ -747,9 +747,9 @@ def revit_select_by_category(category: str = "ducts") -> str:
     across three of them hides the one that returned nothing - usually the
     interesting one.
 
-    Heron currently understands ducts and pipes. Other categories arrive as
-    each one is tried against a real model - pipes were added on 2026-09-16
-    after being counted in one.
+    Any category, by the name Revit shows - "walls", "doors", "Mechanical
+    Equipment" - and the MEP words a modeller says for ducts and pipes:
+    "ductwork", "dampers", "valves", "flex ducts".
     """
     try:
         session = binding.resolve()
