@@ -175,6 +175,10 @@ ask the owner and add it to the table first.
 
 - **Windows take their colours from `HeronWindowStyle`,** and `HeronWindowStyle` takes them from the
   table. A window that builds its own `Color.FromRgb` is the drift D-149 was written to stop.
+- **The ribbon holds three things ([D-150](../../../docs/decisions/D-150.md)):** the Heron button, whose
+  menu has Bridge Status and Free this model as text rows; Settings, the window that holds Changes,
+  Admin, Publish and Ask to Keep with each state as its own button; and Companion. A new switch goes in
+  Settings, not on the ribbon. Hover texts are one short sentence.
 - **Accent (orange) is the highlight, never the danger.** A padlock that is open - Heron may change the
   model - is Error. Closed and safe is Ink, Mist or a quiet shade. A state icon keeps its meaning when it
   is redrawn: only its colours move to the palette.

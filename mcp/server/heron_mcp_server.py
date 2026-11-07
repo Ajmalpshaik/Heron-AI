@@ -1847,7 +1847,7 @@ def revit_change(capability: str = "", values: str = "",
     result this acts on, and Heron refuses if something else left it; empty,
     the call starts clean.
 
-    It runs only while the owner has Changes ON in Revit's ribbon, and a
+    It runs only while the owner has Changes ON in Heron's Settings, and a
     Publish or Admin capability needs the Publish or Admin switch on as
     well. Only a PROVEN capability runs (Article 11, D-117): a DRAFT one,
     or one whose proof is older than its code, is refused before anything is
@@ -4449,7 +4449,7 @@ def _cannot_run():
         "A fragment that WRITES reaches Revit through revit_change, and Revit "
         "shows the modeller what it did and asks Keep or Discard before "
         "anything is kept while Ask to Keep is on (D-126), only while the owner has "
-        "Changes switched ON in Revit's ribbon. With that switch off "
+        "Changes switched ON in Heron's Settings in Revit. With that switch off "
         "HeronPermissions refuses it by name and nothing is sent. One declared "
         "ADMIN - a project or global parameter, a workset, a new family file - "
         "also needs the owner's Admin switch on, and one declared PUBLISH - "

@@ -1305,10 +1305,10 @@ def risk_refusal(root, name, switched=False):
 
     return ("%s is declared risk: %s, so it runs only through Heron's %s switch, "
             "and this path does not send it. Nothing was sent to Revit. To run "
-            "it, turn on %s in Revit's Heron ribbon (Heron > AI Bridge > %s), "
+            "it, turn on %s in Heron's Settings (Heron > AI Bridge > Settings), "
             "with Changes on as well, then ask for it in a chat - or send it "
             "yourself with `fragment %s --write`." % (name, risk, switch, switch,
-                                                      switch, name))
+                                                      name))
 
 
 def write_operation(root, name):
@@ -2488,7 +2488,7 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
             print("")
             print("If you mean to prove it, say so: add --allow-publish --write.")
             print("It then goes as its own operation, and Revit refuses it unless")
-            print("%s is on in the Heron ribbon, with Changes. Both phases are" % switch)
+            print("%s is on in Heron's Settings, with Changes. Both phases are" % switch)
             print("rolled back, as every --write proof is - but a file an export")
             print("writes stays written.")
         return 2

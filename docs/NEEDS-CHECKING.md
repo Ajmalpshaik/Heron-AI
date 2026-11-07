@@ -14,6 +14,12 @@
 > **Read [FOR-THE-OWNER.md](FOR-THE-OWNER.md) first if you are the owner.** It is the one page that
 > says what is waiting on you, across every register, without holding a list of its own.
 
+> **Since 2026-11-07 the four switches are in Heron's Settings window ([D-150](decisions/D-150.md)).**
+> A row below that says to press **Changes**, **Admin**, **Publish** or **Ask to Keep** on the ribbon
+> means: open **Heron > AI Bridge > Settings** and press that switch's state there. What each switch
+> asks and does is unchanged; its padlock picture is beside it in the window, no longer on the ribbon.
+> **Free this model** is in the **Heron** button's menu.
+
 > ## 📌 This is a RECORD now, not a gate — 2026-08-28
 >
 > **The owner's instruction:** *"checking in Revit is not possible within 1 week, so keep the checking

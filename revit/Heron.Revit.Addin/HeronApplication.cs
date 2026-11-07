@@ -63,15 +63,16 @@ namespace Heron.Revit.Addin
         // The Admin and Publish switches (D-106). The Changes padlock with a
         // mark where its keyhole was - a gear for Admin, an arrow leaving a
         // tray for Publish - in the same two colours, so all three read as
-        // one family: blue and closed is off, red and open is on.
+        // one family: Mist and closed is off, Error red and open is on (the
+        // brand's colours, D-149; blue and red until 2026-11-07).
         internal const string AdminLockedIcon = "AdminLocked.png";
         internal const string AdminUnlockedIcon = "AdminUnlocked.png";
         internal const string PublishLockedIcon = "PublishLocked.png";
         internal const string PublishUnlockedIcon = "PublishUnlocked.png";
 
         // The Ask to Keep switch (D-138): the same padlock family, with a
-        // question mark where the keyhole was. Blue and closed is the safe
-        // side - Revit asks before a change is kept - and red and open is
+        // question mark where the keyhole was. Mist and closed is the safe
+        // side - Revit asks before a change is kept - and Error red and open is
         // kept without asking, whether by the switch or by one job's grant.
         internal const string KeepAskingIcon = "KeepAsking.png";
         internal const string KeepNotAskingIcon = "KeepNotAsking.png";
@@ -81,7 +82,12 @@ namespace Heron.Revit.Addin
         // request, and the log says what each press freed.
         internal const string FreeModelIcon = "FreeModel.png";
 
-        // The Companion button (D-109): lit while the Companion is on.
+        // The Settings button (D-150): a gear in the brand's colours. One
+        // picture - the button opens a window and is not itself a state.
+        internal const string SettingsIcon = "Settings.png";
+
+        // The Companion button (D-109): lit in the brand's orange while the
+        // Companion is on, grey while it is off.
         internal const string CompanionOnIcon = "CompanionOn.png";
         internal const string CompanionOffIcon = "CompanionOff.png";
 
@@ -404,12 +410,9 @@ namespace Heron.Revit.Addin
                 "Heron",
                 assemblyPath,
                 typeof(ConnectCommand).FullName);
-            toggle.ToolTip = "Connect or disconnect this Revit session. Click again to reverse it.";
-            toggle.LongDescription =
-                "Opens a local named pipe so Heron can reach this Revit session, and announces " +
-                "it so a chat can find it. Click again to close it.\n\n" +
-                "The picture shows the state: lit when connected, dark when not. A Revit that " +
-                "was never connected is invisible to every chat, by design.";
+            // Hover texts are one short sentence each - the owner's word of
+            // 2026-11-07 (D-150): simple, understandable, no detail.
+            toggle.ToolTip = "Connect Heron to this Revit. Orange heron: connected. Click again to disconnect.";
 
             // No "\n" in this label, unlike the others: it is a row in a list
             // now, not a ribbon button, and the wrap it used to force there
@@ -419,7 +422,7 @@ namespace Heron.Revit.Addin
                 "Bridge Status",
                 assemblyPath,
                 typeof(StatusCommand).FullName);
-            status.ToolTip = "Show whether the bridge is running, and on which pipe.";
+            status.ToolTip = "See whether Heron is connected to this Revit.";
 
             // Connecting and asking about the connection are the same subject
             // at two depths, so they are one control rather than two buttons.
@@ -434,6 +437,22 @@ namespace Heron.Revit.Addin
             BridgeButton = bridgeGroup.AddPushButton(toggle);
             bridgeGroup.AddPushButton(status);
 
+            // FREE THIS MODEL - D-141, and since D-150 a row in this menu with
+            // no picture, like Bridge Status, rather than a button of its own.
+            // One model is used by one chat at a time; this frees the model in
+            // front at once, whichever chat holds it, without closing that
+            // chat. It changes no element, so it asks nothing and announces
+            // nothing - the add-in log says what it freed. No availability
+            // class: Revit greys it on the start screen, where there is no
+            // model to free.
+            var freeModel = new PushButtonData(
+                "HeronFreeModel",
+                "Free this model",
+                assemblyPath,
+                typeof(FreeModelCommand).FullName);
+            freeModel.ToolTip = "Let another chat use the model in front now.";
+            bridgeGroup.AddPushButton(freeModel);
+
             // A split button normally promotes whatever was last picked from
             // the list to the top. Here the top button's picture IS the
             // connected / disconnected state, so one look at Bridge Status
@@ -446,175 +465,29 @@ namespace Heron.Revit.Addin
             // this afterwards when it does.
             SetBridgeIcon(false);
 
-            // WHETHER HERON MAY CHANGE THE MODEL, shown on the ribbon.
-            //
-            // The setting existed from D-19 and was reachable only by editing
-            // heron.config in a text editor. Two things were wrong with that,
-            // and the second is the one that matters:
-            //
-            //   * a BIM modeller should not need a text editor to work, and
-            //   * NOTHING IN REVIT SAID WHICH STATE IT WAS IN. A session left
-            //     writable last week looked exactly like one that was not, so
-            //     the only way to answer "can Heron change this model right
-            //     now" was to go and read a file.
-            //
-            // A picture on the ribbon answers it without being asked, which is
-            // the same argument the bridge button already makes for connected
-            // and disconnected. Asked for by Ajmal on 2026-09-12.
-            //
-            // It does NOT weaken D-19: the default is still false, the gate
-            // still reads the file fresh on every call, and turning it on is
-            // still a deliberate act by a person - it is the same act with a
-            // shorter path. The confirmation lives on the ON direction only,
-            // in WriteToggleCommand.
-            var write = new PushButtonData(
-                "HeronWriteToggle",
-                "Changes",
+            // SETTINGS - D-150, the owner's word of 2026-11-07. The four
+            // switches - Changes, Admin, Publish, Ask to Keep - left the ribbon
+            // for one window, where each switch's state is its own button and
+            // its padlock picture sits beside it. Each still runs its own
+            // command (WriteToggleCommand and the rest), so the question on the
+            // way to the risky side, the fallback and the file are unchanged.
+            // The ribbon no longer shows at a glance whether Changes is on:
+            // the owner chose that, knowing it (D-150 says so).
+            var settings = new PushButtonData(
+                "HeronSettings",
+                "Settings",
                 assemblyPath,
-                typeof(WriteToggleCommand).FullName);
-            write.ToolTip = "Whether Heron may change this model. Click to turn it on or off.";
-            write.LongDescription =
-                "Closed padlock: Heron can read the model and nothing else. Open padlock: " +
-                "Heron may change it.\n\n" +
-                "The picture is the state, so a session left writable does not look like a " +
-                "safe one. Turning it on asks first; turning it off never does.\n\n" +
-                "This is the same setting as write.enabled in heron.config, and either way of " +
-                "changing it takes effect immediately.";
+                typeof(SettingsCommand).FullName);
+            settings.ToolTip = "Turn Heron's switches on or off: Changes, Admin, Publish, Ask to Keep.";
 
-            WriteButton = panel.AddItem(write) as PushButton;
-
-            // The switch's real value, not an assumption about it. It survives
-            // a Revit restart because it lives in the config, so starting this
-            // at 'locked' would be a picture that disagrees with the gate.
-            SetWriteIcon(HeronPermissions.WriteEnabled());
-
-            // ADMIN AND PUBLISH, BESIDE CHANGES - D-106, 2026-09-28.
-            //
-            // Until then HeronPermissions refused both levels outright, and on
-            // 2026-09-28 that refused ADD_PROJECT_PARAMETER when the owner
-            // asked for two project parameters. He decided both become
-            // reachable ONLY through a switch he turns on himself, exactly as
-            // Changes is - so each gets what Changes has: its own button, its
-            // picture as the state, a question on the way on and none on the
-            // way off, and the setting in heron.config where the gate reads it
-            // fresh on every call.
-            //
-            // NEITHER DOES ANYTHING WITHOUT CHANGES, and each says so in its
-            // tooltip rather than being greyed out. They are independent
-            // switches, and a greyed button would hide what the setting
-            // actually holds - the one thing the picture exists to show.
-            var admin = new PushButtonData(
-                "HeronAdminToggle",
-                "Admin",
-                assemblyPath,
-                typeof(AdminToggleCommand).FullName);
-            admin.ToolTip =
-                "Whether Heron may change how this project is set up - project parameters, " +
-                "worksets, global parameters. Click to turn it on or off.";
-            admin.LongDescription =
-                "Closed padlock: Heron cannot change the project's setup. Open padlock: it may, " +
-                "when you ask it to - add a project or global parameter, create a workset, " +
-                "start a new family file.\n\n" +
-                "Admin only works while Changes is on as well. Turning it on asks first; " +
-                "turning it off never does.\n\n" +
-                "The chat is still told to ask you before it deletes, purges, changes a " +
-                "workset or touches a link - Admin does not change that.\n\n" +
-                "This is the same setting as admin.enabled in heron.config, and either way of " +
-                "changing it takes effect immediately.";
-
-            AdminButton = panel.AddItem(admin) as PushButton;
-            SetAdminIcon(HeronPermissions.AdminEnabled());
-
-            var publish = new PushButtonData(
-                "HeronPublishToggle",
-                "Publish",
-                assemblyPath,
-                typeof(PublishToggleCommand).FullName);
-            publish.ToolTip =
-                "Whether Heron may send things out of the model - export, print, save, sync " +
-                "with central. Click to turn it on or off.";
-            publish.LongDescription =
-                "Closed padlock: Heron cannot export, print, save or sync. Open padlock: it " +
-                "may, when you ask it to - sheets to PDF, a schedule to CSV, a save, a sync " +
-                "with central.\n\n" +
-                "Publish only works while Changes is on as well. Turning it on asks first; " +
-                "turning it off never does.\n\n" +
-                "The chat is told never to save, sync or export on its own - only when you " +
-                "ask, for that one request.\n\n" +
-                "This is the same setting as publish.enabled in heron.config, and either way " +
-                "of changing it takes effect immediately.";
-
-            PublishButton = panel.AddItem(publish) as PushButton;
-            SetPublishIcon(HeronPermissions.PublishEnabled());
-
-            // ASK TO KEEP, BESIDE THE THREE PADLOCKS - D-138, 2026-10-18.
-            //
-            // D-126's Keep or Discard question had a switch only in
-            // heron.config, write.askBeforeKeeping, and the owner asked for it
-            // on the ribbon "same like this admin on off": he runs jobs of six
-            // to ten changes and walks away, and the box stopped each one.
-            //
-            // THE OTHER WAY ROUND FROM THE PADLOCKS BESIDE IT. Their safe side
-            // is OFF; this one's is ON - Revit asks. So it asks on the way OFF
-            // and never on the way on. It STARTS OFF all the same, the owner's
-            // second word the same day: "make the box off by default". Off
-            // lets nothing through that Changes did not: it only stops the
-            // question.
-            //
-            // AND THE BOX ITSELF CAN SKIP THE REST OF ONE JOB - its third
-            // link, while this is on. The label says so while that grant holds.
-            var askToKeep = new PushButtonData(
-                "HeronAskToKeepToggle",
-                "Ask to Keep",
-                assemblyPath,
-                typeof(AskToKeepToggleCommand).FullName);
-            askToKeep.ToolTip =
-                "Whether Revit shows you each change from a chat and asks Keep or Discard " +
-                "before it is kept. Click to turn it on or off.";
-            askToKeep.LongDescription =
-                "Closed padlock: Revit shows each change and asks Keep or Discard. Open padlock: " +
-                "changes are kept without asking.\n\n" +
-                "Either way every change to the model is one Ctrl+Z, named \"Heron: ...\". " +
-                "It starts off. Turning it on never asks; turning it off asks first.\n\n" +
-                "\"Keep: rest of job\" means you chose \"" + HeronKeepGrant.KeepRestLink + "\" " +
-                "in the box: that chat's changes to that model are kept without asking until 10 " +
-                "minutes pass with none. An export, a save or a sync, and a tool that has never " +
-                "been proved, are still asked.\n\n" +
-                "This is the same setting as write.askBeforeKeeping in heron.config, and either " +
-                "way of changing it takes effect immediately.";
-
-            AskToKeepButton = panel.AddItem(askToKeep) as PushButton;
-            SetAskToKeepIcon(HeronPermissions.AsksBeforeKeeping());
-
-            // FREE THIS MODEL - D-141, the owner's ask of 2026-10-18. One model
-            // is used by one chat at a time; this frees the model in front at
-            // once, whichever chat holds it, without closing that chat. It
-            // changes no element, so it asks nothing and announces nothing -
-            // the add-in log says what it freed. No availability class: Revit
-            // greys it on the start screen, where there is no model to free.
-            var freeModel = new PushButtonData(
-                "HeronFreeModel",
-                "Free this\nmodel",
-                assemblyPath,
-                typeof(FreeModelCommand).FullName);
-            freeModel.ToolTip =
-                "Free the model in front from the chat using it, so another chat can use it now.";
-            freeModel.LongDescription =
-                "A model is used by one chat at a time. Another chat asking for it is told it is " +
-                "in use, and nothing is sent to the model. It is freed when that chat says it is " +
-                "done, after a few quiet minutes (bridge.modelHoldMinutes, 3 by default), when " +
-                "the model closes - or at once with this button, whichever chat holds it.\n\n" +
-                "It changes nothing in the model, and the other chat is not closed: it can come " +
-                "back to the model later. Nothing pops up; the add-in log says what was freed.";
-
-            var freeButton = panel.AddItem(freeModel) as PushButton;
-            if (freeButton != null)
+            var settingsButton = panel.AddItem(settings) as PushButton;
+            if (settingsButton != null)
             {
-                var freeLoader = new IconLoader(assemblyPath);
-                var freeLarge = freeLoader.LoadLarge(FreeModelIcon);
-                if (freeLarge != null) freeButton.LargeImage = freeLarge;
-                var freeSmall = freeLoader.LoadSmall(FreeModelIcon);
-                if (freeSmall != null) freeButton.Image = freeSmall;
+                var settingsLoader = new IconLoader(assemblyPath);
+                var settingsLarge = settingsLoader.LoadLarge(SettingsIcon);
+                if (settingsLarge != null) settingsButton.LargeImage = settingsLarge;
+                var settingsSmall = settingsLoader.LoadSmall(SettingsIcon);
+                if (settingsSmall != null) settingsButton.Image = settingsSmall;
             }
 
             // THE COMPANION (D-108, D-109). The top opens the chat's page in
@@ -626,22 +499,14 @@ namespace Heron.Revit.Addin
                 "Companion",
                 assemblyPath,
                 typeof(CompanionOpenCommand).FullName);
-            companionOpen.ToolTip =
-                "Open the Heron Companion - a page beside Revit that shows the model, the view " +
-                "and what is selected.";
-            companionOpen.LongDescription =
-                "Opens the page in your web browser. It needs a Claude chat with Heron running, " +
-                "and the Heron button connected.\n\n" +
-                "The page only shows. It never sends anything to Claude or any AI.\n\n" +
-                "Turn it off from this button's arrow; Heron itself keeps working.";
+            companionOpen.ToolTip = "Open the Companion page in your browser. It only shows, never changes.";
 
             var companionToggle = new PushButtonData(
                 "HeronCompanionToggle",
                 "Turn Companion off",
                 assemblyPath,
                 typeof(CompanionToggleCommand).FullName);
-            companionToggle.ToolTip =
-                "Switch the Companion page off or on. Heron and the chat keep working either way.";
+            companionToggle.ToolTip = "Turn the Companion page on or off.";
 
             var companionGroup = panel.AddItem(
                 new SplitButtonData("HeronCompanion", "Companion")) as SplitButton;

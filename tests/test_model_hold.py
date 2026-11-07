@@ -353,17 +353,16 @@ def wiring():
     check(before(toggle, "bridge.Stop()", "HeronModelHold.Session.Clear()"),
           "disconnecting the bridge from the ribbon clears every hold")
 
-    print("\n8. Free this model on the Heron ribbon")
+    print("\n8. Free this model in the Heron button's menu (D-150)")
     raw_app = read(APPLICATION)
     check('typeof(FreeModelCommand).FullName' in raw_app
-          and '"Free this\\nmodel"' in raw_app,
-          "the ribbon has the button, labelled Free this model, bound by typeof")
-    check(re.search(r'freeModel\.ToolTip\s*=\s*"[^"]+\."', raw_app) is not None
-          and "freeModel.LongDescription" in raw_app,
-          "with a one-sentence tooltip and a longer description")
+          and '"Free this model"' in raw_app
+          and "bridgeGroup.AddPushButton(freeModel);" in raw_app,
+          "the Heron button's menu has it, labelled Free this model, bound by typeof")
+    check(re.search(r'freeModel\.ToolTip\s*=\s*"[^"]+\."', raw_app) is not None,
+          "with a one-sentence tooltip - the owner asked for short ones (D-150)")
     check("AvailabilityClassName" not in raw_app,
           "no availability class: Revit greys it on the start screen, where there is no model")
-    check(os.path.isfile(ICON), "its picture is in Resources - FreeModel.png")
     free = NOTE_SUITE.body_of(commands, "public sealed class FreeModelCommand")
     check("HeronModelHold.Session.Free(" in free and "DocumentKey(doc)" in free,
           "it frees the ACTIVE model's hold, whoever holds it")

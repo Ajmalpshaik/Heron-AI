@@ -274,8 +274,8 @@ namespace Heron.Core
             {
                 return name + " is on, but Changes is off, and " + name + " only works " +
                        "while Changes is on as well - so nothing was sent to Revit. To " +
-                       "allow it, turn on Changes in Revit's Heron ribbon (Heron > AI " +
-                       "Bridge > Changes), or set " + WriteEnabledKey + " = true in " +
+                       "allow it, turn on Changes in Heron's Settings (Heron > AI Bridge > " +
+                       "Settings), or set " + WriteEnabledKey + " = true in " +
                        configPath + ". It takes effect straight away.";
             }
 
@@ -283,12 +283,12 @@ namespace Heron.Core
             // refusal is enough to get both switches right.
             var changesOff = !IsOn(config, WriteEnabledKey);
             var way = changesOff
-                ? "turn on both Changes and " + name + " in Revit's Heron ribbon " +
-                  "(Heron > AI Bridge), or set " + WriteEnabledKey + " = true and " + key +
+                ? "turn on both Changes and " + name + " in Heron's Settings " +
+                  "(Heron > AI Bridge > Settings), or set " + WriteEnabledKey + " = true and " + key +
                   " = true in " + configPath + ". " + name + " only works while Changes " +
                   "is on as well."
-                : "turn on " + name + " in Revit's Heron ribbon (Heron > AI Bridge > " +
-                  name + "), or set " + key + " = true in " + configPath + ".";
+                : "turn on " + name + " in Heron's Settings (Heron > AI Bridge > " +
+                  "Settings), or set " + key + " = true in " + configPath + ".";
 
             return "That would " + what + ". Heron's " + name + " switch is off, so " +
                    "nothing was sent to Revit. " + name + " is off by default and stays off " +
@@ -324,10 +324,10 @@ namespace Heron.Core
                    // modeller reads every time a write is refused, so it was sending
                    // them to a tab that does not exist. FRAGMENT-ISSUES 5b-4.
                    //
-                   // The button's own label is `Changes`; whether this sentence should
-                   // call it that or keep describing the padlock is the owner's call
-                   // and 5b-4 stays open for it. The PATH is not a judgement.
-                   "use the padlock button under  Heron > AI Bridge  on the ribbon, or set " +
+                   // Since D-150 (2026-11-07) the switches live in Heron's Settings
+                   // window, and the sentence names Changes there - which also settles
+                   // 5b-4's "padlock or Changes": the padlock left the ribbon.
+                   "turn on Changes in Heron's Settings (Heron > AI Bridge > Settings), or set " +
                    WriteEnabledKey + " = true in " + configPath +
                    ". It takes effect straight away - Allows() reads that file fresh every " +
                    "time, so there is nothing to restart. Setting it back to false stops " +

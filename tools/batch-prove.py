@@ -552,7 +552,7 @@ def risk_refusal(job, frag, release=None):
     argv.insert(1, "--allow-publish")
     return NOT_IN_A_BATCH, (
         "risk %s; prove it by name with `heron_bridge_client.py %s`, with %s "
-        "and Changes on in Revit's Heron ribbon"
+        "and Changes on in Heron's Settings in Revit"
         % (risk, readable_command(argv), BRIDGE.SWITCH_NAMES[risk]))
 
 
