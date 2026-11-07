@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -109,6 +109,31 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-07'
+  by: Ajmal PS
+  model: Test for Issue (6,120 elements), Revit 2024, session 16836
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned alreadyThat 0 item(s), changes
+    Project Name: Project Name -> Villa 1  ||  Client Name: Client Name -> Heron Test, findings
+    1 item(s) [Project Information of ''Test for Issue'': 2 value(s) written ...], notAProject
+    false, parameterNames , refused (null), written 2. inputs came values as given. on Test
+    for Issue'
+  negative_case: 'run with values=Project Name=Villa 1|Client Nme=Ashghal instead - chosen
+    because it should not contain what this fragment reports - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned alreadyThat 0 item(s),
+    changes , findings 1 item(s) [Names Project Information carries, matched exactly: Author,
+    ...], notAProject false, parameterNames Author, Building Name, Category (read-only), Client
+    Name, Design Option (read-only), Family Name (read-only), IfcBuilding GUID, IfcProject
+    GUID, IfcSite GUID, Organization Description, Organization Name, Project Address, Project
+    Issue Date, Project Name, Project Number, Project Status, Type Name (read-only), refused
+    NOTHING WAS WRITTEN to Project Information: Project Information has no parameter named
+    exactly ''Client Nme''., written 0. inputs came values as given. on Test for Issue'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 7f622c1ff3dfc1cb
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
