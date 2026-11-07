@@ -48,3 +48,12 @@ revision be moved through the API - MP5 shows it.
 | **MP5** | *EDIT_REVISION_CLOUDS - D-30 pair, rolled back.* The job file's fourth job | Positive: S1 and S2's Seq. A clouds on Seq. B; `sheetEffect` S2 "no longer prints Seq. A"; **S4's Seq. A cloud untouched**. Negative (fromRevision Seq. B): both skipped, nothing changed. Then once with Seq. A **issued**: whatever Revit says, named, and the whole call rolled back |
 | **MP6** | *EDIT_REVISION_CLOUDS delete, rolled back.* action=delete on S2's cloud, first with `confirm=2`, then `confirm=1` | `confirm=2`: nothing deleted, `refused` naming 1. `confirm=1`: the cloud gone, its tag in `alsoDeleted`, `sheetEffect` S2 no longer prints Seq. A |
 | **MP7** | *The owner's whole job, through `try-once`, on the copy.* LIST_REVISIONS expectedLast, SET_SHEET_REVISIONS replaceWith on `lastDiffers`, LIST_REVISION_CLOUDS + EDIT_REVISION_CLOUDS on its `cloudDriven`, LIST_REVISIONS again | Every chosen sheet ends on Seq. B, the sheet kept on Seq. A still does; each change one entry in the undo list. Keep or Discard is the owner's |
+
+**Run on 2026-11-07, every proof rolled back**, on the scrap test copy `Test for Issue` (Revit 2024, session 30316; not the
+job model), arranged as MP1 by proven capabilities and four steps by the owner's hand (the ticks on S1 and S3, the two sheet
+clouds), and read back with `LIST_REVISIONS` and `LIST_REVISION_CLOUDS` before any proof. MP2 and MP3 held at once. MP4, MP5
+and MP6 found [row 5b-1471](../fragment-issues/section-5b-rows-401-425.md) - both change tools read the sheet back before
+Revit had rebuilt it - and held after the fix. MP5's issued case: Revit refused both clouds, nothing kept. `LIST_REVISIONS`'
+signable negative ran in a blank family, as version 1's did. **All four signed by Ajmal PS and PROVEN the same day.** On Revit
+2024 only; Revit 2020, the owner's release for this job, is not run (MP0) - a `--release 2020` run, D-131. **MP7 is not run** -
+the owner's.

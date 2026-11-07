@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -133,46 +133,59 @@ contract:
       type: string
 
 proof:
-  date: '2026-10-17'
+  date: '2026-11-07'
   by: Ajmal PS
-  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Project1, TRG_GEN_CutOut_Rectangular_HVAC
-    - active was Project1, Revit 2020, session 51568'
-  positive_case: 'run as it would normally be run. returned arcLength 20 mm on paper (0.065617
-    ft, Revit''s internal value), elements 6 item(s) [Seq. 1 - HERON PROOF several, Seq. 2
-    - HERON PROOF several, Seq. 3 - HERON PROOF several, ...], findings 6 item(s) [Date 1  HERON
-    PROOF several  - ON NO SHEETS. Either not clou..., Date 2  HERON PROOF several  - ON NO
-    SHEETS. Either not clou..., Date 3  HERON PROOF several  - ON NO SHEETS. Either not clou...,
-    ...], numbering Per Project - every sheet prints a revision''s project-wide number, numberingSequences
-    Numeric (the project''s one numeric scheme): numeric, starting number 1, prefix (blank),
-    suffix (blank) - used by Seq. 1, Seq. 2, Seq. 3, Seq. 4, Seq. 5, Seq. 6 || Alphanumeric
-    (the project''s one alphanumeric scheme): alphanumeric, custom sequence A, B, C, D, E,
-    F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z (26 values), prefix (blank),
-    suffix (blank) - used by no revision, onNoSheets 6 item(s) [49030, 926243, 926244, ...],
-    revisionTable Seq. 1: numbering Numeric, date ''Date 1'', description ''HERON PROOF several'',
-    not issued, issued to (blank), issued by (blank), show Cloud and Tag; would print ''1'',
-    but it is on no sheet (id 49030) || Seq. 2: numbering Numeric, date ''Date 2'', description
-    ''HERON PROOF several'', not issued, issued to (blank), issued by (blank), show Cloud
-    and Tag; would print ''2'', but it is on no sheet (id 926243) || Seq. 3: numbering Numeric,
-    date ''Date 3'', description ''HERON PROOF several'', not issued, issued to (blank), issued
-    by (blank), show Cloud and Tag; would print ''3'', but it is on no sheet (id 926244) ||
-    Seq. 4: numbering Numeric, date ''Date 4'', description ''HERON PROOF several issued'',
-    ISSUED, issued to (blank), issued by (blank), show Cloud and Tag; would print ''4'', but
-    it is on no sheet (id 926245) || Seq. 5: numbering Numeric, date ''Date 5'', description
-    ''HERON PROOF several issued'', ISSUED, issued to (blank), issued by (blank), show Cloud
-    and Tag; would print ''5'', but it is on no sheet (id 926246) || Seq. 6: numbering Numeric,
-    date ''Date 6'', description ''HERON PROOF several issued'', ISSUED, issued to (blank),
-    issued by (blank), show Cloud and Tag; would print ''6'', but it is on no sheet (id 926247).
-    on Project1'
-  negative_case: run against 'TRG_GEN_CutOut_Rectangular_HVAC' instead - chosen because it
-    should not contain what this fragment reports. returned arcLength , elements 0 item(s),
-    findings 1 item(s) ['TRG_GEN_CutOut_Rectangular_HVAC' is a family, and a family ...],
-    numbering , numberingSequences , onNoSheets 0 item(s), revisionTable . on TRG_GEN_CutOut_Rectangular_HVAC
-  second_route: The six rows are the ones Ajmal PS typed by hand that day in Manage - Sheet
-    Issues/Revisions (three HERON PROOF several, three HERON PROOF several issued ticked Issued),
-    and EDIT_REVISION (FRG-SHT-016, a different fragment) read the same rows back in its own
-    findings in three runs the same day - descriptions, dates, Issued ticks and Numeric numbering
-    agreeing row for row.
-  fingerprint: bb5283ef92b73801
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Test for Issue, mp-negative-blank - active
+    was mp-negative-blank, Revit 2024, session 30316'
+  positive_case: 'run as it would normally be run. returned arcLength 19.1 mm on paper (0.062664
+    ft, Revit''s internal value), cloudOnly S2: Seq. 1 ''Revision 1'' ''Date 1'' - held by
+    clouds only, so unticking cannot take it off || S4: Seq. 1 ''Revision 1'' ''Date 1'' -
+    held by clouds only, so unticking cannot take it off, elements 2 item(s) [Seq. 1 (Issued)
+    - Revision 1, Seq. 2 - Revision 2], findings 3 item(s) [Date 1  Revision 1  - 4 sheets:
+    S1, S2, S3, S4, Date 2  Revision 2  - ON NO SHEETS. Either not clouded yet, ..., 27 sheet(s)
+    do not end on Seq. 2 ''Revision 2'' ''Date 2'' - the...], lastDiffers 27 item(s) [359502,
+    600169, 600220, ...], numbering Per Project - every sheet prints a revision''s project-wide
+    number, numberingSequences ''Alphanumeric'': alphanumeric, custom sequence A, B, C, D,
+    E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z (26 values), prefix (blank),
+    suffix (blank) - used by no revision || ''Numeric'': numeric, minimum digits 1, starting
+    number 1, prefix (blank), suffix (blank) - used by Seq. 1, Seq. 2, onNoSheets 1 item(s)
+    [1593963], revisionTable Seq. 1: numbering Numeric, date ''Date 1'', description ''Revision
+    1'', ISSUED, issued to (blank), issued by (blank), show Cloud and Tag; S1 prints ''1'',
+    S2 prints ''1'', S3 prints ''1'', S4 prints ''1'' (id 75715) || Seq. 2: numbering Numeric,
+    date ''Date 2'', description ''Revision 2'', not issued, issued to (blank), issued by
+    (blank), show Cloud and Tag; would print ''2'', but it is on no sheet (id 1593963), sheetTable
+    A101 ''Architectural Floor Plans'': no revisions - CURRENT none || A102 ''Architectural
+    Floor Plans'': no revisions - CURRENT none || A201 ''Architectural Building Elevations'':
+    no revisions - CURRENT none || A202 ''Architectural Building Elevations'': no revisions
+    - CURRENT none || A203 ''Architectural Building Elevations'': no revisions - CURRENT none
+    || A204 ''Architectural Building Elevations'': no revisions - CURRENT none || A301 ''Architectural
+    Building Sections'': no revisions - CURRENT none || A401 ''Architectural Enlarged Views'':
+    no revisions - CURRENT none || A501 ''Architectural Details'': no revisions - CURRENT
+    none || A601 ''Architectural Schedules'': no revisions - CURRENT none || C101 ''Site Plan'':
+    no revisions - CURRENT none || E101 ''Power Plans'': no revisions - CURRENT none || E102
+    ''Power Plans'': no revisions - CURRENT none || E103 ''Lighting Plans'': no revisions
+    - CURRENT none || E104 ''Lighting Plans'': no revisions - CURRENT none || G100 ''Cover'':
+    no revisions - CURRENT none || M101 ''Mechanical Plans'': no revisions - CURRENT none
+    || M102 ''Mechanical Plans'': no revisions - CURRENT none || P101 ''Plumbing Plans'':
+    no revisions - CURRENT none || P102 ''Plumbing Plans'': no revisions - CURRENT none ||
+    S1 ''MP Sheet 1'': Seq. 1 ''Revision 1'' ''Date 1'' prints ''1'', ticked and clouded -
+    CURRENT Seq. 1 ''Revision 1'' ''Date 1'' || S101 ''Structural Plans'': no revisions -
+    CURRENT none || S102 ''Structural Plans'': no revisions - CURRENT none || S2 ''MP Sheet
+    2'': Seq. 1 ''Revision 1'' ''Date 1'' prints ''1'', clouded only - CURRENT Seq. 1 ''Revision
+    1'' ''Date 1'' || S3 ''MP Sheet 3'': Seq. 1 ''Revision 1'' ''Date 1'' prints ''1'', ticked
+    - CURRENT Seq. 1 ''Revision 1'' ''Date 1'' || S4 ''MP Sheet 4'': Seq. 1 ''Revision 1''
+    ''Date 1'' prints ''1'', clouded only - CURRENT Seq. 1 ''Revision 1'' ''Date 1'' || S5
+    ''MP Sheet 5'': no revisions - CURRENT none. inputs came expectedLast as given. on Test
+    for Issue'
+  negative_case: run against 'mp-negative-blank' with expectedLast=Seq. 2 instead - chosen
+    because it should not contain what this fragment reports. returned arcLength , cloudOnly
+    , elements 0 item(s), findings 1 item(s) ['mp-negative-blank' is a family, and a family
+    holds no revis...], lastDiffers 0 item(s), numbering , numberingSequences , onNoSheets
+    0 item(s), revisionTable , sheetTable . inputs came expectedLast as given. on mp-negative-blank
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 693cf95734847d59
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -97,6 +97,30 @@ contract:
       # revisions, the count. Never a cloud (D-52).
       role: accounting
       type: IList<string>
+
+proof:
+  date: '2026-11-07'
+  by: Ajmal PS
+  model: Test for Issue (6,120 elements), Revit 2024, session 30316
+  positive_case: 'run as it would normally be run. returned cloudTable cloud 1594056: Seq.
+    1 ''Revision 1'' ''Date 1''; drawn in FloorPlan: ''MP Plan S1''; prints on sheet S1; Comments
+    ''MP S1 cloud comment''; Mark ''MP-C1''; tag 1594068 || cloud 1594071: Seq. 1 ''Revision
+    1'' ''Date 1''; drawn in sheet S2 ''MP Sheet 2''; prints on sheet S2; Comments (blank);
+    Mark (blank); tag none, elements 2 item(s) [1 - Revision 1, 1 - Revision 1], findings
+    1 item(s) [2 revision cloud(s). Each line: its revision, the view it is...], handed 0
+    item(s), label Func`2, quoted Func`2, viewLabel Func`2, words Func`2. inputs came elements
+    not given - none (optional); sheets as given; views not given - "all", the card''s own
+    default (optional); revision as given. on Test for Issue'
+  negative_case: run with revision=Seq. 2, sheets=S3 instead - chosen because it should not
+    contain what this fragment reports. returned cloudTable , elements 0 item(s), findings
+    1 item(s) [No revision cloud matches - the filters are in the lines abo...], handed 0
+    item(s), label Func`2, quoted Func`2, viewLabel Func`2, words Func`2. inputs came elements
+    not given - none (optional); sheets as given; views not given - "all", the card's own
+    default (optional); revision as given. on Test for Issue
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 3d5a0aae306e9b9e
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
