@@ -1386,6 +1386,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-mp.md`](needs-checking/group-mp.md)
 
+## Group MQ - the visualiser's answer no longer says a 3D view is not one: `APPLY_VISUAL_PRESET` v4, `REPORT_VISUAL_PRESET` v4 (2026-11-07)
+
+**Its own file:** [`needs-checking/group-mq.md`](needs-checking/group-mq.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

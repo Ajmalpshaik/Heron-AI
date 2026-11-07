@@ -232,9 +232,15 @@ Func<View, string> noCueingWhy = cueView =>
             + ", and Revit 2020 offered depth cueing in an elevation only once that was Architectural (Properties, View Discipline)";
     return "'" + cueView.Name + "' cannot use depth cueing - Revit offers it in elevations and sections only";
 };
-var noDisplay = inputProblem == null ? "'" + view.Name + "' has no Graphic Display Options - Revit gives them to views with "
+// BUILT ONLY WHEN THEY ARE TRUE (version 4, row 5b-1464). These two were
+// strings, filled on every run, and every local is handed back with the
+// answer - so a 3D view's answer printed "is not a 3D view" and "has no
+// Graphic Display Options" beside readings that showed both (issue #799
+// item 7, Villa 1, Revit 2024). As a Func the answer names them as code and
+// prints no sentence; the sentence is made only where a setting is skipped.
+Func<string> noDisplay = () => inputProblem == null ? "'" + view.Name + "' has no Graphic Display Options - Revit gives them to views with "
     + "a visual style" : "";
-var noRender = inputProblem == null ? "'" + view.Name + "' is not a 3D view, and only a 3D view has Rendering Settings" : "";
+Func<string> noRender = () => inputProblem == null ? "'" + view.Name + "' is not a 3D view, and only a 3D view has Rendering Settings" : "";
 
 // ---- the words each setting is read in ----
 // Visual styles by NAME at run time, as SET_VIEW_PROPERTIES finds them: value 9
@@ -301,7 +307,7 @@ Func<string, string[]> settingNow = key =>
         }
         if (key.StartsWith("Render") || key == "Exposure")
         {
-            if (view3D == null) return new[] { "", noRender };
+            if (view3D == null) return new[] { "", noRender() };
             var s = view3D.GetRenderingSettings();
             if (key == "Render Quality") return new[] { qualityWord(s.GetRenderingQualitySettings().RenderingQuality), null };
             if (key == "Render Output")
@@ -316,7 +322,7 @@ Func<string, string[]> settingNow = key =>
             var e = s.GetRenderingImageExposureSettings();
             return new[] { "value=" + show(e.ExposureValue) + "; white point=" + show(e.WhitePoint), null };
         }
-        if (!hasDisplay) return new[] { "", noDisplay };
+        if (!hasDisplay) return new[] { "", noDisplay() };
         if (key == "Visual Style") return new[] { barWord(view.DisplayStyle), null };
         if (key == "Sun Intensity") return new[] { view.SunlightIntensity.ToString(culture), null };
         if (key == "Shadow Intensity") return new[] { view.ShadowIntensity.ToString(culture), null };

@@ -35,6 +35,20 @@ positive:
       each saying only a 3D view has Rendering Settings, and Display
       Background skipped - a plan takes none
 
+  - given: >
+      version 4, row 5b-1464 - a 3D view such as "Exterior - Day", preset
+      Exterior Day, renderFor issue
+    expect: >
+      the answer lists noRender and noDisplay among the values that are code,
+      by name only, and prints neither sentence - no "is not a 3D view" and no
+      "has no Graphic Display Options" anywhere in it. Render Quality and
+      Render Output read back as set. Version 3 printed both sentences here
+  - given: >
+      version 4, row 5b-1464 - the floor plan "Level 1", preset Exterior Day
+    expect: >
+      each render setting skipped still says "is not a 3D view, and only a 3D
+      view has Rendering Settings" - the sentence is made where it is true
+
 negative:
   - given: the schedule "Heron Render Schedule", preset Exterior Day
     expect: >
