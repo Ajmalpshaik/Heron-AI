@@ -1,5 +1,5 @@
-// NOT STANDALONE. Assumes `doc`, `categories`, `maxTriangles`, `wholeModel`
-// and `timeLimitSeconds` are in scope, and leaves `geometryJson`, `triangles`
+// NOT STANDALONE. Assumes `doc`, `categories`, `maxTriangles`, `wholeModel`,
+// `timeLimitSeconds` and `rooms` are in scope, and leaves `geometryJson`, `triangles`
 // and `findings` behind.
 //
 // READS ONLY. No transaction is opened and nothing is set.
@@ -88,6 +88,27 @@
 //
 // THE WORK IS INSIDE ONE BLOCK ON PURPOSE. The add-in hands back every name
 // left at the top of a fragment, so only the three outputs are left there.
+//
+// VERSION 3 (2026-11-07) - ROOMS AS VOLUMES, AND EACH FACE'S MATERIAL. Asked
+// for by the owner: "add rooms as volumes and material colours".
+//   * rooms true draws every placed Room and MEP Space in scope as its volume -
+//     Room.ClosedShell and Space.ClosedShell, the closed shell Revit computes
+//     from the room's boundaries and height. They are collected from the whole
+//     model, not the view's collector, because a 3D view normally shows no
+//     rooms at all; with a section box, one wholly outside it is left out. An
+//     unplaced or unenclosed room has no shell and is counted in noGeometry.
+//     Their categories are named in the JSON's `volumes`, so the page can draw
+//     them see-through. Left out (false), rooms are counted in notRead as before.
+//   * every triangle carries its face's material: Face.MaterialElementId, a
+//     Mesh's MaterialElementId, and where a face has none the element's
+//     category material - Revit's own "By Category". The JSON's `materials`
+//     lists each once with its SHADING colour (Material.Color - what a Shaded
+//     view shows) and Transparency, 0 to 100. An element's `m` is one index
+//     when every face shares a material, else one index per triangle; -1 is
+//     none known (a room's volume is always -1). A material with no valid
+//     colour is -1 too.
+// No new limit: the triangle budget and the clock count room shells as they
+// count everything else, and largest first takes a room in its turn.
 //
 // THE BACKSLASH AND THE QUOTE ARE BUILT FROM THEIR CHARACTER CODES, as in
 // report-model-dashboard: the tools that write these files have eaten typed
@@ -278,6 +299,7 @@ var findings = "";
     if (wanted.Count > 0) collector.WherePasses(new ElementMulticategoryFilter(wanted));
 
     var candidates = new List<Element>();
+    var isVolume = new List<bool>();
     var sizes = new List<double>();
     var inScope = new Dictionary<string, int>();      // category id -> elements in scope
     var cad = 0;
@@ -294,7 +316,13 @@ var findings = "";
             if (element is ImportInstance) { cad++; continue; }
             var category = element.Category;
             if (category == null || category.CategoryType != CategoryType.Model) continue;
-            if (element is SpatialElement) { spatial++; continue; }
+            // A room or space drawn as a volume is collected below from the
+            // whole model; here it is only passed over, never counted twice.
+            if (element is SpatialElement)
+            {
+                if (!(rooms && (element is Room || element is Space))) spatial++;
+                continue;
+            }
             if (element is Group || element is AssemblyInstance) continue;
             var extent = element.get_BoundingBox(null);
             if (extent == null || extent.Min == null || extent.Max == null) continue;
@@ -311,6 +339,7 @@ var findings = "";
             var dz = extent.Max.Z - extent.Min.Z;
             var key = category.Id.ToString();
             candidates.Add(element);
+            isVolume.Add(false);
             sizes.Add(Math.Sqrt(dx * dx + dy * dy + dz * dz));
             inScope[key] = (inScope.ContainsKey(key) ? inScope[key] : 0) + 1;
         }
@@ -318,6 +347,56 @@ var findings = "";
         {
             unsorted++;
             if (firstUnsorted == null) firstUnsorted = element.Id.ToString() + " - " + why(ex);
+        }
+    }
+
+    // VERSION 3: rooms and spaces as volumes, from the whole model - a 3D view
+    // shows none - left out by the section box as everything else is.
+    var roomsInScope = 0;
+    var volumeKeys = new HashSet<string>();
+    if (rooms)
+    {
+        var spaces = new List<Element>();
+        try
+        {
+            foreach (var r in new FilteredElementCollector(doc).OfClass(typeof(SpatialElement)).WhereElementIsNotElementType())
+                if (r is Room || r is Space) spaces.Add(r);
+        }
+        catch (Exception ex) { notRead.Add("rooms and spaces: they could not be collected (" + why(ex) + "), so none is drawn"); }
+        foreach (var r in spaces)
+        {
+            try
+            {
+                var category = r.Category;
+                if (category == null) continue;
+                var extent = r.get_BoundingBox(null);
+                if (extent == null || extent.Min == null || extent.Max == null)
+                {
+                    // Unplaced or unenclosed: no extent, no shell. Still in scope, so counted.
+                    candidates.Add(r); isVolume.Add(true); sizes.Add(0.0); roomsInScope++;
+                    continue;
+                }
+                if (box != null
+                    && (mmOf(extent.Max.X) < box[0] || mmOf(extent.Min.X) > box[3]
+                     || mmOf(extent.Max.Y) < box[1] || mmOf(extent.Min.Y) > box[4]
+                     || mmOf(extent.Max.Z) < box[2] || mmOf(extent.Min.Z) > box[5]))
+                {
+                    outsideBox++;
+                    continue;
+                }
+                var dx = extent.Max.X - extent.Min.X;
+                var dy = extent.Max.Y - extent.Min.Y;
+                var dz = extent.Max.Z - extent.Min.Z;
+                candidates.Add(r);
+                isVolume.Add(true);
+                sizes.Add(Math.Sqrt(dx * dx + dy * dy + dz * dz));
+                roomsInScope++;
+            }
+            catch (Exception ex)
+            {
+                unsorted++;
+                if (firstUnsorted == null) firstUnsorted = r.Id.ToString() + " - " + why(ex);
+            }
         }
     }
     if (unsorted > 0)
@@ -363,6 +442,45 @@ var findings = "";
     fineOptions.DetailLevel = ViewDetailLevel.Fine;
     fineOptions.ComputeReferences = false;
 
+    // VERSION 3: each material once, by its id. -1 is none known.
+    var materialIndex = new Dictionary<string, int>();
+    var materialRows = new List<string>();
+    Func<ElementId, int> materialOf = id =>
+    {
+        if (id == null || id == ElementId.InvalidElementId) return -1;
+        var key = id.ToString();
+        int at;
+        if (materialIndex.TryGetValue(key, out at)) return at;
+        at = -1;
+        try
+        {
+            var material = doc.GetElement(id) as Material;
+            if (material != null)
+            {
+                var colour = material.Color;
+                if (colour != null && colour.IsValid)
+                {
+                    var transparency = material.Transparency;
+                    if (transparency < 0) transparency = 0;
+                    if (transparency > 100) transparency = 100;
+                    at = materialRows.Count;
+                    materialRows.Add("{" + esc("name") + ":" + esc(material.Name)
+                        + "," + esc("colour") + ":" + esc("#" + colour.Red.ToString("x2") + colour.Green.ToString("x2")
+                            + colour.Blue.ToString("x2"))
+                        + "," + esc("transparency") + ":" + whole(transparency) + "}");
+                }
+            }
+        }
+        catch (Exception) { at = -1; }
+        materialIndex[key] = at;
+        return at;
+    };
+    // The material a face with none of its own takes - the element's category
+    // material, Revit's "By Category" - set for each element before its walk.
+    var fallbackMaterial = -1;
+    var faceMaterial = -1;
+    List<int> triangleMaterials = null;
+
     // One element's points (whole millimetres, three a point), its triangles
     // (three point indexes each), and the point each millimetre position is.
     List<long> points = null;
@@ -403,6 +521,7 @@ var findings = "";
             corners.Add(a);
             corners.Add(b);
             corners.Add(c);
+            triangleMaterials.Add(faceMaterial);
         }
     };
 
@@ -421,6 +540,13 @@ var findings = "";
                 {
                     if (face == null) continue;
                     Mesh mesh = null;
+                    faceMaterial = fallbackMaterial;
+                    try
+                    {
+                        var own = materialOf(face.MaterialElementId);
+                        if (own >= 0) faceMaterial = own;
+                    }
+                    catch (Exception) { faceMaterial = fallbackMaterial; }
                     try { mesh = face.Triangulate(); }
                     catch (Exception ex)
                     {
@@ -433,7 +559,18 @@ var findings = "";
                 continue;
             }
             var asMesh = item as Mesh;
-            if (asMesh != null) { addMesh(asMesh); continue; }
+            if (asMesh != null)
+            {
+                faceMaterial = fallbackMaterial;
+                try
+                {
+                    var own = materialOf(asMesh.MaterialElementId);
+                    if (own >= 0) faceMaterial = own;
+                }
+                catch (Exception) { faceMaterial = fallbackMaterial; }
+                addMesh(asMesh);
+                continue;
+            }
             var instance = item as GeometryInstance;
             if (instance != null) { walk(instance.GetInstanceGeometry()); continue; }
             var nested = item as GeometryElement;
@@ -446,6 +583,8 @@ var findings = "";
     var drawnCategory = new List<string>();
     var drawnPoints = new List<long[]>();
     var drawnCorners = new List<int[]>();
+    var drawnMaterials = new List<int[]>();
+    var roomsDrawn = 0;
     var categoryName = new Dictionary<string, string>();
     var noGeometry = 0;
     var leftOut = 0;
@@ -462,22 +601,43 @@ var findings = "";
         if (stoppedBy != null) { leftOut++; continue; }
         if (elapsedMs() >= limitMs) { stoppedBy = "time"; leftOut++; continue; }
         var element = candidates[at];
+        var volume = isVolume[at];
         points = new List<long>();
         corners = new List<int>();
         pointAt = new Dictionary<string, int>();
+        triangleMaterials = new List<int>();
         sawLine = false;
         var readAgain = false;
         string failure = null;
         try
         {
-            walk(element.get_Geometry(firstOptions));
-            if (corners.Count == 0 && sawLine)
+            fallbackMaterial = -1;
+            if (volume)
             {
-                points = new List<long>();
-                corners = new List<int>();
-                pointAt = new Dictionary<string, int>();
-                walk(element.get_Geometry(fineOptions));
-                readAgain = corners.Count > 0;
+                // A room's volume carries no material: the page draws it see-through.
+                var room = element as Room;
+                var space = element as Space;
+                walk(room != null ? room.ClosedShell : space != null ? space.ClosedShell : null);
+                for (var i = 0; i < triangleMaterials.Count; i++) triangleMaterials[i] = -1;
+            }
+            else
+            {
+                try
+                {
+                    var byCategory = element.Category != null ? element.Category.Material : null;
+                    if (byCategory != null) fallbackMaterial = materialOf(byCategory.Id);
+                }
+                catch (Exception) { fallbackMaterial = -1; }
+                walk(element.get_Geometry(firstOptions));
+                if (corners.Count == 0 && sawLine)
+                {
+                    points = new List<long>();
+                    corners = new List<int>();
+                    pointAt = new Dictionary<string, int>();
+                    triangleMaterials = new List<int>();
+                    walk(element.get_Geometry(fineOptions));
+                    readAgain = corners.Count > 0;
+                }
             }
         }
         catch (Exception ex)
@@ -516,6 +676,8 @@ var findings = "";
         drawnCategory.Add(key);
         drawnPoints.Add(points.ToArray());
         drawnCorners.Add(corners.ToArray());
+        drawnMaterials.Add(triangleMaterials.ToArray());
+        if (volume) { roomsDrawn++; volumeKeys.Add(key); }
     }
     if (failed > 0)
         notRead.Add("geometry: " + whole(failed) + " element(s) would not give their geometry and are counted in "
@@ -564,6 +726,14 @@ var findings = "";
     json.Append(",").Append(esc("offset")).Append(":[")
         .Append(metres(offset[0])).Append(",").Append(metres(offset[1])).Append(",").Append(metres(offset[2])).Append("]");
     json.Append(",").Append(esc("categories")).Append(":").Append(textList(names));
+    // Version 3: the categories drawn as volumes (rooms, spaces), by index.
+    var volumeIndexes = new List<int>();
+    foreach (var key in volumeKeys) if (indexOf.ContainsKey(key) && !volumeIndexes.Contains(indexOf[key])) volumeIndexes.Add(indexOf[key]);
+    volumeIndexes.Sort();
+    json.Append(",").Append(esc("volumes")).Append(":[")
+        .Append(string.Join(",", volumeIndexes.Select(i => whole(i)).ToArray())).Append("]");
+    // Version 3: each material once - its shading colour and transparency.
+    json.Append(",").Append(esc("materials")).Append(":[").Append(string.Join(",", materialRows.ToArray())).Append("]");
     json.Append(",").Append(esc("elements")).Append(":[");
     for (var e = 0; e < drawnIds.Count; e++)
     {
@@ -584,7 +754,15 @@ var findings = "";
             if (i > 0) json.Append(",");
             json.Append(whole(tri[i]));
         }
-        json.Append("]}");
+        json.Append("]");
+        // Version 3: one material for the element, or one a triangle.
+        var mats = drawnMaterials[e];
+        var same = true;
+        for (var i = 1; i < mats.Length; i++) if (mats[i] != mats[0]) { same = false; break; }
+        json.Append(",").Append(esc("m")).Append(":");
+        if (same) json.Append(whole(mats.Length > 0 ? mats[0] : -1));
+        else json.Append("[").Append(string.Join(",", mats.Select(i => whole(i)).ToArray())).Append("]");
+        json.Append("}");
     }
     json.Append("]");
     json.Append(",").Append(esc("triangles")).Append(":").Append(whole(triangles));
@@ -613,6 +791,10 @@ var findings = "";
     if (readAtFine > 0)
         lines.Add(whole(readAtFine) + " element(s) were only lines at " + (useView ? "the view's detail level" : "Coarse")
             + " - pipes, ducts and their fittings draw that way - and were read again at Fine and drawn as solids.");
+    if (rooms)
+        lines.Add(whole(roomsInScope) + " room(s) and space(s) in scope: " + whole(roomsDrawn)
+            + " drawn as volumes; one that is not placed or not enclosed has no volume and is counted with nothing to draw.");
+    lines.Add(whole(materialRows.Count) + " material(s) with a shading colour on the faces drawn.");
     if (outsideBox > 0)
         lines.Add(whole(outsideBox) + " element(s) Revit passed for the view lie wholly outside its section box and "
             + "were not drawn.");

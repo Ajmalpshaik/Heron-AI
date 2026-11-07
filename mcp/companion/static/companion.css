@@ -911,8 +911,15 @@ body.closed .paint { opacity: .55; filter: grayscale(1); }
 #dashboard .d-bar-track { height: 10px; background: var(--head); border-radius: 5px; overflow: hidden; }
 #dashboard .d-bar-fill { display: block; height: 100%; border-radius: 5px; }
 #dashboard .d-bar-value { font-variant-numeric: tabular-nums; color: var(--muted); min-width: 3ch; text-align: right; }
-#dashboard .d-sub { font-size: 13px; font-weight: 650; margin: 0 0 8px; color: var(--ink); }
-#dashboard .d-look-list { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 8px; }
+/* Each part of the dashboard is a section with a clear heading (s21.18). */
+#dashboard .d-sub { font-size: 15px; font-weight: 650; margin: 0 0 10px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--ink); }
+#dashboard .d-chart .d-sub { border-top: none; padding-top: 0; }
+#dashboard .d-look-list { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(440px, 1fr)); align-items: start; }
+#dashboard .d-look-sum { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; }
+#dashboard .d-chip { display: inline-flex; align-items: baseline; gap: 2px; padding: 4px 10px; border: 1px solid var(--line); border-left: 4px solid var(--faint); border-radius: 7px; background: var(--surface); font-size: 12.5px; color: var(--muted); }
+#dashboard .d-chip b { color: var(--ink); font-variant-numeric: tabular-nums; }
+#dashboard .d-look-quiet { margin: 0 0 14px; }
+#dashboard .d-look-quiet > summary { cursor: pointer; font-size: 13px; color: var(--muted); margin: 0 0 8px; }
 #dashboard .d-look-row {
   padding: 9px 12px; border: 1px solid var(--line); border-left: 4px solid var(--faint); border-radius: 8px; background: var(--surface-2);
 }
@@ -965,4 +972,33 @@ body.closed .paint { opacity: .55; filter: grayscale(1); }
 #dashboard .m3d-stage canvas:active { cursor: grabbing; }
 #dashboard .d-3d-tools { margin: 0 0 14px; }
 #dashboard .d-picked { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; font-size: 13px; }
+/* The 3D view's own tools (docs/40 s21.17): a toolbar over the canvas, and the
+   legend as a category switch. */
+#dashboard .m3d-tools { position: absolute; top: 8px; left: 8px; right: 8px; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; pointer-events: none; }
+#dashboard .m3d-tools > * { pointer-events: auto; }
+#dashboard .m3d-btn { font: inherit; font-size: 12px; padding: 4px 9px; border-radius: 6px; border: 1px solid var(--line); background: color-mix(in srgb, var(--surface) 88%, transparent); color: var(--ink); cursor: pointer; }
+#dashboard .m3d-btn:hover { border-color: var(--primary); color: var(--primary); }
+#dashboard .m3d-cut { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 3px 9px; border-radius: 6px; border: 1px solid var(--line); background: color-mix(in srgb, var(--surface) 88%, transparent); color: var(--ink); }
+#dashboard .m3d-cut input { width: 120px; accent-color: var(--primary); }
+#dashboard .m3d-cut-value { min-width: 52px; font-family: Consolas, monospace; color: var(--faint); }
+#dashboard .m3d-stage:fullscreen { border-radius: 0; border: none; }
+#dashboard .m3d-stage:fullscreen canvas { height: 100vh; }
+#dashboard .d-legend-switch { margin: 6px 0; }
+#dashboard .d-legend-switch li { gap: 2px; }
+#dashboard .d-cat { display: inline-flex; gap: 6px; align-items: center; font: inherit; font-size: 12px; padding: 2px 6px; border-radius: 6px; border: 1px solid transparent; background: none; color: var(--ink); cursor: pointer; }
+#dashboard .d-cat:hover { border-color: var(--line); }
+#dashboard .d-cat-off { opacity: .45; text-decoration: line-through; }
+#dashboard .d-cat-only { font: inherit; font-size: 11px; padding: 1px 5px; border-radius: 5px; border: 1px solid var(--line); background: none; color: var(--faint); cursor: pointer; }
+#dashboard .d-cat-only:hover { color: var(--primary); border-color: var(--primary); }
+/* Colour by category or material, and rooms as volumes (s21.18). */
+#dashboard .d-seg { display: inline-flex; align-items: center; gap: 0; margin: 8px 0 4px; }
+#dashboard .d-seg-label { font-size: 12.5px; color: var(--muted); margin-right: 8px; }
+#dashboard .d-seg-btn { font: inherit; font-size: 12.5px; padding: 4px 12px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); cursor: pointer; }
+#dashboard .d-seg-btn:first-of-type { border-radius: 7px 0 0 7px; }
+#dashboard .d-seg-btn:last-of-type { border-radius: 0 7px 7px 0; border-left: none; }
+#dashboard .d-seg-btn[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+#dashboard .d-seg-btn:disabled { opacity: .5; cursor: not-allowed; }
+#dashboard .d-check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink); cursor: pointer; }
+#dashboard .d-matlegend { margin: 4px 0 6px; }
+#dashboard .d-3d-tools .m3d { margin: 8px 0 8px; }
 @media print { #dashboard .m3d, #dashboard .d-3d-tools .d-tools { display: none !important; } }

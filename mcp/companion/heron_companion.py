@@ -1303,7 +1303,7 @@ class DashboardPanel(object):
         #: colour_hook(parameter, clear, identity) -> {"ok", "said"} - a change
         #: to the active view's graphics through revit_change (docs/40 s21.14).
         self.colour_hook = None
-        #: load3d_hook(whole) -> {"ok", "said"}; it calls set_view() itself
+        #: load3d_hook(whole, rooms) -> {"ok", "said"}; it calls set_view() itself
         #: when the read is good (docs/40 s21.13). The geometry is held apart
         #: from the rest: it can be megabytes, and the page fetches it only
         #: when it changes.
@@ -1340,7 +1340,10 @@ class DashboardPanel(object):
             if view:
                 held["view3d"] = {k: view.get(k) for k in (
                     "key", "scope", "legend", "drawn", "triangles", "leftOut", "noGeometry", "stopped",
-                    "notRead", "capped", "said")}
+                    "notRead", "capped", "said",
+                    # s21.18: the material legend and the rooms count - small;
+                    # the per-element materials stay with the shapes.
+                    "materialLegend", "materialsMore", "unknownTriangles", "hasMaterials", "rooms")}
         return json.loads(json.dumps(held))
 
     def set_view(self, answer, identity=None):
@@ -1361,11 +1364,13 @@ class DashboardPanel(object):
 
     def load3d(self, body=None):
         """Read the model's shapes for the 3D view - the active 3D view, or the
-        whole model with {"whole": true}. The modeller's own press, one read at a time."""
+        whole model with {"whole": true}; rooms and spaces as volumes too with
+        {"rooms": true} (docs/40 s21.18). The modeller's own press, one read at a time."""
         hook = self.load3d_hook
         if hook is None:
             return {"ok": False, "said": "Not read: %s." % self.GONE}
         whole = bool(isinstance(body, dict) and body.get("whole") is True)
+        rooms = bool(isinstance(body, dict) and body.get("rooms") is True)
         with self._lock:
             if self._busy:
                 return {"ok": False, "said": "Not read: %s." % self.BUSY}
@@ -1374,7 +1379,7 @@ class DashboardPanel(object):
                                              "for a model dashboard first."}
             self._busy = True
         try:
-            got = hook(whole) or {}
+            got = hook(whole, rooms) or {}
         finally:
             with self._lock:
                 self._busy = False
