@@ -79,11 +79,29 @@ else
     {
         var kind = asked.Substring(0, mark).Trim();
         var rest = asked.Substring(mark + 1).Trim();
+        // VERSION 4 (2026-11-07, row 5b-1474) - THE KIND AS THE PROJECT
+        // BROWSER SAYS IT. Version 3 compared it with the enum's own spelling,
+        // so "Floor Plan: Level 1" matched nothing while "FloorPlan: Level 1"
+        // worked. Spaces, hyphens and capitals are ignored now, and the
+        // browser's words map to the enum: "3D View" ThreeD, "Sheet"
+        // DrawingSheet, "Reflected Ceiling Plan" CeilingPlan, "Structural Plan"
+        // EngineeringPlan, "Drafting View" DraftingView.
+        var kindKey = new string(kind.Where(char.IsLetterOrDigit).ToArray()).ToLowerInvariant();
+        var browserKinds = new Dictionary<string, string>
+        {
+            { "3d", "ThreeD" }, { "3dview", "ThreeD" }, { "threedview", "ThreeD" },
+            { "sheet", "DrawingSheet" },
+            { "reflectedceilingplan", "CeilingPlan" }, { "rcp", "CeilingPlan" },
+            { "structuralplan", "EngineeringPlan" },
+            { "drafting", "DraftingView" },
+            { "sectionview", "Section" }, { "elevationview", "Elevation" }, { "detailview", "Detail" },
+        };
+        if (browserKinds.ContainsKey(kindKey)) kindKey = browserKinds[kindKey].ToLowerInvariant();
         if (rest.Length > 0)
         {
             var sameName = viewsCalled(rest);
             var ofKind = sameName.Where(v => canOpen(v)
-                && string.Equals(v.ViewType.ToString(), kind, StringComparison.OrdinalIgnoreCase))
+                && string.Equals(v.ViewType.ToString().ToLowerInvariant(), kindKey, StringComparison.Ordinal))
                 .ToList();
             if (ofKind.Count > 0)
             {

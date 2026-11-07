@@ -66,6 +66,27 @@ negative:
     expect: >
       "no view called" - neither is a name this reads. Measured 2026-10-13
 
+  # VERSION 4 (2026-11-07, row 5b-1474). Each FAILS on version 3, which
+  # compared the kind with the enum's spelling alone.
+  - given: >
+      VERSION 4. A floor plan and a ceiling plan both called "Level 1";
+      viewName "Floor Plan: Level 1", then "Reflected Ceiling Plan: Level 1"
+    expect: >
+      the floor plan opens, then the ceiling plan - the same as "FloorPlan:
+      Level 1" and "CeilingPlan: Level 1". Version 3 said "no view called"
+      for both browser spellings
+
+  - given: >
+      VERSION 4. viewName "3D View: {3D}", then "floor-plan: Level 1"
+    expect: the default 3D view, then the floor plan
+
+  - given: >
+      VERSION 4 - NEGATIVE. viewName "Section: Level 1" where only the two
+      plans are called Level 1
+    expect: >
+      nothing opened, nothing sent to Revit, and the finding naming the two
+      that are there - "FloorPlan: Level 1" or "CeilingPlan: Level 1"
+
 second_route:
   - >
     The view tab bar in Revit after the operation completes. The requested view

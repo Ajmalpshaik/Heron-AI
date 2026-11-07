@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,15 @@ semantic-identity: "put the Level 2 ceiling plan on screen"
 kind: action
 domain: revit.views
 capability: OPEN_VIEW
-version: 3
+# VERSION 4, BACK TO DRAFT ON 2026-11-07 (FRAGMENT-ISSUES row 5b-1474), on the
+# owner's word ("fix OPEN_VIEW too"), AND THE PROOF BLOCK BELOW IS KEPT ON
+# PURPOSE - version 3's record and the arrangement to re-prove from; its
+# fingerprint no longer matches. Version 3 compared the kind in "kind: name"
+# with the enum's spelling alone, so "Floor Plan: Level 1" was "no view
+# called" while "FloorPlan: Level 1" opened - the same raw compare that made
+# FIND_VIEWS find 0 on the owner's as-built model. Version 4 reads the kind the
+# Project Browser's way; nothing else changed. NEEDS-CHECKING Group MR owes it.
+version: 4
 source: OFFICIAL
 risk: EXECUTE
 
@@ -117,6 +125,7 @@ contract:
     - name: findings
       type: IList<string>
 
+# VERSION 3's PROOF (version 4 changed impl/ - see the note at `version:`).
 # VERSION 2'S PROOF, signed 2026-10-13. Its positive was a sheet asked for with
 # ANOTHER view in front, so RequestViewChange ran. Version 1's proof (2026-09-08,
 # Snowdon-scratch, Revit 2024, fingerprint cc31a7cd4123b951) had as its positive
