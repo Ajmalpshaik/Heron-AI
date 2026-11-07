@@ -257,6 +257,7 @@ with what each covers.
 | [`fragment-issues-archive/`](fragment-issues-archive/README.md) | Finished FRAGMENT-ISSUES rows, written by `tools/archive-fragment-issues.py`. Not a live obligation |
 | [`needs-checking-archive/`](needs-checking-archive/README.md) | Finished NEEDS-CHECKING rows, written by `tools/archive-needs-checking.py`. Not a live obligation |
 | [`handover-archive/`](handover-archive/README.md) | One note per finished session, moved out of [HANDOVER.md](HANDOVER.md). Narrative, never a register |
+| [`brand/`](brand/README.md) | Heron's logo, app icons, colours and font name - the one place a logo or icon is taken from |
 | `proof/` | Screenshots that NEEDS-CHECKING rows cite as evidence. Which groups cite them: `grep -l 'proof/' docs/needs-checking/*.md` |
 | [`work-notes/`](work-notes/README.md) | Temporary operational work - see the row above |
 

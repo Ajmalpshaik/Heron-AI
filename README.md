@@ -1,5 +1,29 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/brand/heron-logo-white.svg">
+    <img src="docs/brand/heron-logo-ink.svg" alt="Heron AI - Design Automate Deliver" width="440">
+  </picture>
+</p>
+
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/licence-Apache%202.0-0F0F10?style=flat-square" alt="Licence: Apache 2.0"></a>
+  <a href="https://github.com/Ajmalpshaik/Heron-AI/actions/workflows/gates.yml"><img src="https://github.com/Ajmalpshaik/Heron-AI/actions/workflows/gates.yml/badge.svg?branch=main" alt="Gates on main"></a>
+  <a href="#status"><img src="https://img.shields.io/badge/compiles%20for%20Revit-2020%20to%202027-FD641A?style=flat-square" alt="Compiles for Revit 2020 to 2027"></a>
+  <a href="#status"><img src="https://img.shields.io/badge/status-in%20development-FD641A?style=flat-square" alt="Status: in development"></a>
+</p>
+
+<p align="center">
+  <a href="#what-it-is">What it is</a> ·
+  <a href="#what-you-can-ask-it-today">What you can ask</a> ·
+  <a href="#what-keeps-the-model-safe">Safety</a> ·
+  <a href="#status">Status</a> ·
+  <a href="#documentation">Docs</a> ·
+  <a href="CONTRIBUTING.md">Contributing</a>
+</p>
+
 # Heron AI
 
+> [!IMPORTANT]
 > **Dear Modelers — please do not install this yet.**
 >
 > This repo is public only so the work is open. It is still not finished.
