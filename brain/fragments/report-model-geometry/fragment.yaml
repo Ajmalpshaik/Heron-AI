@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,13 +9,22 @@ semantic-identity: "the model's 3D geometry as triangles in metres, for drawing 
 kind: action
 domain: revit.geometry
 capability: REPORT_MODEL_GEOMETRY
+# Version 3 (2026-11-07, the owner's "add rooms as volumes and material
+# colours also"): an optional `rooms` - false left out - draws placed Rooms and
+# MEP Spaces as their volumes (Room/Space.ClosedShell), named in the JSON's
+# `volumes`; and every triangle now carries its face's material, listed once
+# in `materials` with its shading colour and transparency. The C# moved, so
+# version 2's proof below is stale and the card is DRAFT again until it is
+# proved on a named model (NEEDS-CHECKING group JU). "format" stays 1: every
+# new key is one a version-2 reader ignores.
+#
 # Version 2 (2026-11-01, the owner's answer "Yes, stop at ~40 s"): it watches
 # its own time. An optional `timeLimitSeconds` - 40 left out, 5 to 55 - stops
 # the reading as the triangle budget does, and geometryJson gains `stopped`:
 # "triangles", "time" or null. Still DRAFT and never proved, so no proof went
 # stale. Left out, the answer is version 1's plus that key and a "Read in"
 # line in findings, so "format" stays 1.
-version: 2
+version: 3
 source: OFFICIAL
 risk: READ
 
@@ -125,8 +134,13 @@ purpose: >
   and a time limit keeps it inside Revit's wait; the largest elements are
   drawn first and what either limit left out is counted.
 
-  **It changes nothing.** Linked models, CAD files, rooms and spaces are not
-  drawn, and the answer says how many were left out and why.
+  Each face carries its material, with the shading colour Revit's Shaded view
+  uses, so the drawing can be coloured by material too. Asked for, placed rooms
+  and spaces are drawn as their volumes.
+
+  **It changes nothing.** Linked models and CAD files are not drawn, nor rooms
+  and spaces unless asked for, and the answer says how many were left out and
+  why.
 
 # THE SHAPE OF geometryJson, FORMAT 1 - read by brain/heron_model_view.py,
 # which is the other half of this contract. Element ids are digit strings.
@@ -139,6 +153,11 @@ purpose: >
 #                 box round every vertex drawn, already SUBTRACTED from every
 #                 vertex so the numbers stay small. [0, 0, 0] when nothing is
 #                 drawn. Add it back for project coordinates (internal origin)
+#   volumes       VERSION 3. [index] - the categories drawn as volumes (Rooms,
+#                 Spaces), indexes into categories. [] when rooms is false
+#   materials     VERSION 3. [{name, colour "#rrggbb", transparency 0-100}] -
+#                 each material on a face drawn, once, with its shading colour
+#                 (Material.Color) - one with no valid colour is not listed
 #   categories    [name] - each category with an element drawn, as Revit
 #                 shows its name (localised), sorted by name
 #   elements      [{id, c, v, t}] - one per element drawn. id: the element id,
@@ -147,7 +166,9 @@ purpose: >
 #                 (shared at the millimetre). t: i,j,k, ... indexes into v's
 #                 POINTS (point n is v[3n..3n+2]); a triangle collapsed to a
 #                 line at the millimetre is dropped. [] when nothing is drawn
-#                 - never null
+#                 - never null. VERSION 3: each also has m - one material
+#                 index for the whole element, or one per triangle (t length
+#                 / 3 of them); -1 is none known. A volume's m is -1
 #   triangles     the sum of t's lengths / 3 - the `triangles` result too
 #   elementsRead  the model elements in scope. Each is drawn, or counted in
 #                 noGeometry, or counted in leftOut:
@@ -206,6 +227,14 @@ contract:
       source: request
       optional: true
       absent: 40
+    # VERSION 3. true draws placed Rooms and MEP Spaces as their volumes -
+    # collected from the whole model, as a 3D view shows none - left out by the
+    # section box as everything else is. Left out it is false
+    # (HeronBindingNote.AbsentValue): rooms are counted in notRead, as before.
+    - name: rooms
+      type: bool
+      source: request
+      optional: true
   provides:
     # The scene, format 1. ACCOUNTING, not a result, for the reason
     # REPORT_MODEL_DASHBOARD's dashboardJson is: it is written whatever was
@@ -329,7 +358,13 @@ compatibility-note: >
 #     the box is not known here (the NEEDS-CHECKING group asks).
 #   * Temporary hide and isolate: whether the view collector honours them is
 #     not known here either (the same group asks).
-#   * Colour, material and transparency - categories only.
+#   * Render appearances and textures - only a material's shading colour and
+#     transparency (version 3). A face painted with the Paint tool reports its
+#     paint through Face.MaterialElementId, so it is drawn painted - expected,
+#     not measured (row JU).
+#   * A room's volume is what Revit computes for it (ClosedShell): at the
+#     room's computation height rules and upper limit, not the finish of the
+#     ceiling above. In the whole model every phase's rooms are drawn.
 #   * A pipe or duct drawn as a line at the view's detail is drawn as its
 #     solid, so the Companion shows tubes where a Coarse view shows lines.
 

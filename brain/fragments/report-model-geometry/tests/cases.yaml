@@ -102,6 +102,32 @@ positive:
       the answer is version 1's plus "stopped": null and findings' "Read in N
       s of the 40 s limit" line; format still 1
 
+  # VERSION 3 - ROOMS AS VOLUMES AND MATERIALS. Run on an architectural model
+  # with rooms placed (the Snowdon host has none - its building is linked).
+  - given: >
+      version 3, an architectural model with placed rooms, its {3D} view
+      active, rooms true
+    expect: >
+      categories holds Rooms and volumes names its index; every placed,
+      enclosed room in the view's phase is an element whose id is that
+      room's, with triangles; its m is -1; a room not placed or not enclosed
+      is counted in noGeometry, never drawn; findings has the line "N room(s)
+      and space(s) in scope: M drawn as volumes"; a room's v plus offset
+      spans its level to its upper limit
+
+  - given: the same model and view, rooms left out
+    expect: >
+      no Rooms in categories, volumes [], and notRead's "rooms and spaces:"
+      line counts them, as version 2 did
+
+  - given: the same run, a wall and a door beside Revit's Material Browser
+    expect: >
+      materials lists each material on their faces once, its colour the
+      Graphics > Shading colour in the Material Browser and its transparency
+      the same number; a wall of one material has a single m; the door - frame,
+      panel, glass - has one m per triangle with more than one index; a face
+      painted with the Paint tool is drawn in its paint
+
 negative:
   # THE CASE THAT MATTERS - the batch-prove leg (tools/jobs).
   - given: >
@@ -135,6 +161,14 @@ negative:
     expect: >
       triangles 0, elements []; findings says Walls (OST_Walls) has nothing in
       the whole model - the link's walls are never drawn
+
+  - given: >
+      version 3, rooms true, the "Heron empty box" view - its section box
+      clear of the building - active
+    expect: >
+      triangles 0; elements [], volumes [], materials []; no room of the
+      model drawn - the section box leaves rooms out as it leaves out
+      everything else
 
 second_route: >
   Revit's own view, and the readers of one part. FILTER_ELEMENTS_BY_CATEGORY

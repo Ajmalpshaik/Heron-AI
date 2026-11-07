@@ -57,9 +57,14 @@ a model without bringing it forward.
 | **JU15** | *Version 2: the clock stops it - the case that matters for it.* A floor plan or `{3D}` in front: `--set wholeModel=true --set maxTriangles=500000 --set timeLimitSeconds=5` - the budget too high to stop it first | `stopped` `"time"`; `leftOut` above 0; one `capped` line *"time: stopped at 5 s; N element(s) left out - the largest were drawn first"*, N being `leftOut`, and no `triangles:` line; `len(elements) + noGeometry + leftOut = elementsRead`; the reply carries `geometryJson` - **never "stopped, rolled back"**. Record the reply's time beside `findings`' *"Read in"* seconds. If the extent pass alone took 5 s, `elements` is `[]` and `leftOut` = `elementsRead`, still `stopped` `"time"` - record it. **If it comes back `stopped` `null`**, the whole model read in under 5 s: record the time, and repeat on a larger model |
 | **JU16** | *Version 2's refusals.* `--set timeLimitSeconds=4`, then `--set timeLimitSeconds=56` | Both **refused** before anything is read, each naming the limits 5 and 55; no `geometryJson` either time |
 | **JU17** | *Above what the default timeout allows - recorded, not a pass or fail.* With `revit.operationTimeoutSeconds` at its default 60: `--set wholeModel=true --set maxTriangles=500000 --set timeLimitSeconds=55` on the largest model to hand | Which stop came first: the fragment's own (`stopped` `"time"`, an answer) or the add-in's at 50 s - a sixth of 60 kept for the rollback (`HeronRunClock.BudgetFor`) - which hands back nothing. The card says the add-in's comes first above about 45 s; this row is what shows it, and why 40 is the default |
+| **JU18** | *Version 3: rooms as volumes - the case that matters for it.* An architectural copy with placed rooms (the Snowdon host has none - its building is linked; `rac_basic_sample_project` or the owner's own), `{3D}` active: `--set rooms=true` | `categories` holds Rooms and `volumes` names its index; each placed, enclosed room in the view's phase is an element with its room's id and triangles, `m` `-1`; a room not placed or not enclosed is in `noGeometry`, never drawn; `findings` has *"N room(s) and space(s) in scope: M drawn as volumes"*; a room's `v` plus `offset` spans its level to its upper limit. On the Companion: *Rooms and spaces as volumes* ticked, Load 3D - the rooms drawn see-through, what stands inside them still seen |
+| **JU19** | *Version 3: rooms left out.* The same view, nothing set | No Rooms in `categories`, `volumes` `[]`, and `notRead`'s *"rooms and spaces:"* line counts them - version 2's answer |
+| **JU20** | *Version 3: materials.* JU18's run, a wall, a door and a window beside Revit's Material Browser | `materials` lists each material on their faces once, `colour` the Graphics > Shading colour and `transparency` the same number; a wall of one material has a single `m`; the door has one `m` per triangle with more than one index; glass has its transparency; a face painted with the Paint tool is drawn in its paint (expected, not known). On the Companion: *Colour by Material* matches a Shaded view of the same model |
+| **JU21** | *Version 3's negative.* `--set rooms=true` with `Heron empty box` active, its section box clear of the building | `triangles` 0; `elements`, `volumes` and `materials` all `[]` - no room drawn |
+| **JU22** | *Version 3's cost.* JU4's whole-model run again with `--set rooms=true` | `triangles`, `elementsRead` and the *"Read in"* seconds beside JU4's - what reading every face's material and the room shells added |
 
 **Then sign**, on the owner's word only: `python brain/heron_validate.py accept report-model-geometry --by
-"Ajmal PS"` once JU1, JU2, JU3 and JU15 pass, and `heron-status` set to PROVEN in the same change. A row that
+"Ajmal PS"` once JU1, JU2, JU3 and JU15 pass - and, for version 3, JU18, JU20 and JU21 - and `heron-status` set to PROVEN in the same change. A row that
 fails is recorded here and the card corrected; nothing in a row changes to make it pass.
 
 **Routing, measured 2026-11-01 in a cloud container on its `model` backend, re-ranker absent** - the owner's
@@ -107,3 +112,16 @@ with the same code fingerprint `8bb18c685e11efdc` as the run above ([#795](https
 the card's `proof:` block holds that run. So the *not to be signed* line above is about the 2026-11-01 draft only,
 and is kept as that day's record. The section-box half of JU2 - whether the *"outside its section box"* line is
 written when the box is clear of the building - was not read by that proof and is still unmeasured.
+
+### Version 3 - 2026-11-07: rooms as volumes, and each face's material
+
+On the owner's *"add rooms as volumes and material colours also"* ([docs/40 §21.18](../40-heron-companion.md)).
+An optional `rooms` (false left out) draws placed Rooms and MEP Spaces as their volumes - `Room.ClosedShell`
+and `Space.ClosedShell`, collected from the whole model because a 3D view shows no rooms, left out by the
+section box like everything else - and names their categories in a new `volumes`. Every triangle now carries
+its face's material (`Face.MaterialElementId`, a Mesh's `MaterialElementId`, else the category material),
+listed once in a new `materials` with its shading colour (`Material.Color`) and `Transparency`; an element's
+`m` is one index or one per triangle. **The C# moved, so the 2026-11-02 proof is stale and the card is DRAFT
+again**; `format` stays 1. It compiles on all eight releases, 2020 to 2027 (`tools/check-fragments-compile.py`,
+2026-11-07). **Nothing of version 3 has run in Revit** - rows JU18 to JU22 above are owed, with JU1 to JU3 and
+JU15 run again on the new code.

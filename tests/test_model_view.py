@@ -92,7 +92,52 @@ def test_counts_and_what_was_left_out():
     view = got["view"]
     assert view["drawn"] == 4 and view["triangles"] == 48
     assert "1 element(s) were left out" in got["said"] and "Nothing was changed." in got["said"]
-    assert view["legend"][0] == {"name": "Ducts", "colour": V.KNOWN["Ducts"], "count": 2}
+    assert view["legend"][0] == {"name": "Ducts", "colour": V.KNOWN["Ducts"], "count": 2,
+                                 "volume": False}
+    # A version-2 read has no materials: it still draws, by category only.
+    assert view["hasMaterials"] is False and view["volumes"] == [] and view["rooms"] == 0
+    assert all(e["m"] == -1 for e in view["elements"])
+
+
+def _with_materials():
+    data = copy.deepcopy(SAMPLE)
+    data["categories"] = ["Rooms", "Walls", "Doors"]
+    data["volumes"] = [0]
+    data["materials"] = [{"name": "Concrete", "colour": "#808080", "transparency": 0},
+                         {"name": "Glass", "colour": "#AACCEE", "transparency": 70},
+                         {"name": "Broken", "colour": "red", "transparency": 400}]
+    data["elements"] = [dict(box(201, 0, 0, 0, 0, 5, 4, 3), m=-1),
+                        dict(box(202, 1, 0, 0, 0, 5, 0.2, 3), m=0),
+                        dict(box(203, 2, 1, 0, 0, 1, 0.1, 2), m=[0] * 6 + [1] * 6)]
+    data["triangles"] = 36
+    return data
+
+
+def test_materials_and_room_volumes_v3():
+    # docs/40 s21.18: each face's material, and rooms drawn see-through.
+    view = V.view(json.dumps(_with_materials()))["view"]
+    assert view["volumes"] == [0] and view["rooms"] == 1
+    assert [r["name"] for r in view["legend"] if r["volume"]] == ["Rooms"]
+    assert view["materials"][1] == {"name": "Glass", "colour": "#aaccee", "alpha": 0.3}
+    # A damaged colour keeps its place - indexes must not move - with the stand-in colour.
+    assert view["materials"][2]["colour"] == V.NO_MATERIAL and view["materials"][2]["alpha"] == 0.0
+    legend = {r["name"]: r["triangles"] for r in view["materialLegend"]}
+    assert legend == {"Concrete": 18, "Glass": 6}, legend   # the room's volume is not counted
+    assert view["hasMaterials"] is True
+    assert "1 room(s) or space(s) drawn as see-through volumes" in V.view(
+        json.dumps(_with_materials()))["said"]
+
+
+def test_a_material_the_read_did_not_list_refuses_the_read():
+    bad = _with_materials()
+    bad["elements"][1]["m"] = 7
+    assert "did not list" in V.view(json.dumps(bad))["said"]
+    bad = _with_materials()
+    bad["elements"][2]["m"] = [0, 1]          # not one a triangle
+    assert "do not match its triangles" in V.view(json.dumps(bad))["said"]
+    bad = _with_materials()
+    bad["elements"][1]["m"] = True            # a boolean is not an index
+    assert V.view(json.dumps(bad))["view"] is None
 
 
 def test_an_empty_read_draws_nothing_and_is_not_refused():
