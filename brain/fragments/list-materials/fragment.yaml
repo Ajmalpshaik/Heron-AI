@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -271,130 +271,116 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-11-02'
+  date: '2026-11-07'
   by: Ajmal PS
-  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
-  positive_case: 'run as it would normally be run. returned findings 2 item(s) [190 material(s)
-    match ''*'' in this project - ''P1102 MEP'', Listed used or not - unused ones: FIND_PURGEABLE_ELEMENTS
-    wi...], libraryAppearances , materialClasses Asphalt 3, Carpet 2, Ceramic 4, Concrete
-    8, Drywall 1, Fabric 1, Generic 1, Glass 6, Liquid 2, Masonry 1, Metal 17, Miscellaneous
-    36, Paint 5, Paper 1, Plant 2, Plastic 4, Soil 2, Stone 3, Stucco 2, System 8, Tile 1,
-    Unassigned 60, Vinyl 3, Wood 17, materialCount 190, materialIds 190 item(s) [419, 1016958,
-    1016948, ...], materialList Air Barrier - Air Infiltration Barrier (Miscellaneous, id
-    419)  ||  Air Openings (Unassigned, id 1016958)  ||  Air Surfaces (Unassigned, id 1016948)  ||  Analytical
-    Floor Surface (Unassigned, id 821019)  ||  Analytical Slab Surface (Unassigned, id 821020)  ||  Analytical
-    Spaces (Unassigned, id 1016934)  ||  Analytical Wall Surface (Unassigned, id 821021)  ||  Asphalt
-    (system) (Asphalt, id 293362)  ||  Bodenbelag Fliesen 50 x 50 (Unassigned, id 563499)  ||  Bodenbelag
-    Holzdielen (Unassigned, id 563504)  ||  Bodenbelag Teppich (Unassigned, id 563506)  ||  Carbon
-    Steel (Unassigned, id 803962)  ||  Carpet (Carpet, id 29105)  ||  Carpet (system) (Carpet,
-    id 293363)  ||  Ceiling Tile 600 x 1200 (Miscellaneous, id 7246)  ||  Ceiling Tile 600
-    x 600 (Miscellaneous, id 7247)  ||  Ceilings (Unassigned, id 1016946)  ||  Ceramic Tile
-    (Ceramic, id 812)  ||  Concrete (system) (Concrete, id 293364)  ||  Concrete - Cast In
-    Situ (Concrete, id 523)  ||  Concrete - Cast in Situ Lightweight (Concrete, id 793)  ||  Concrete
-    - Sand/Cement Screed (Concrete, id 813)  ||  Copper (Unassigned, id 803963)  ||  Dach
-    - Titanzink (Unassigned, id 563495)  ||  Dach - Untersicht (Unassigned, id 563496)  ||  Decke
-    - Deckenraster (Unassigned, id 563498)  ||  Decke - Estrich (Unassigned, id 563500)  ||  Decke
-    - Fliesen 15 x 15 (Unassigned, id 563501)  ||  Decke - Gipskarton (Unassigned, id 563497)  ||  Default
-    (Miscellaneous, id 23)  ||  Default Floor (Miscellaneous, id 758)  ||  Default Floor Area
-    Face (System, id 52139)  ||  Default Light Source (System, id 294514)  ||  Default Mass
-    (Miscellaneous, id 50298)  ||  Default Roof (Miscellaneous, id 25)  ||  Default Wall (Miscellaneous,
-    id 24)  ||  Default Zoning Envelope (System, id 50300)  ||  Door - Frame (Miscellaneous,
-    id 30200)  ||  Door - Frame/Mullion (Wood, id 21116)  ||  Door - Frame/Mullion (1) (Wood,
-    id 30821)  ||  Door - Handle (Miscellaneous, id 21208)  ||  Door - Moulding (Miscellaneous,
-    id 10430)  ||  Door - Panel (Wood, id 10429)  ||  Ductile Iron (Unassigned, id 803964)  ||  EIFS
-    - Exterior Insulation and Finish System (Miscellaneous, id 546)  ||  Erdschicht (Unassigned,
-    id 563317)  ||  Exterior Walls (Unassigned, id 1016936)  ||  Fabric (system) (Fabric,
-    id 293365)  ||  Fassade - Glas (Unassigned, id 563493)  ||  Fassade - Metallpanel (Unassigned,
-    id 563494)  ||  Fenster - Fensterbank aussen (Unassigned, id 553869)  ||  Fenster - Holz
-    (Unassigned, id 553868)  ||  Geländer - Holz (Unassigned, id 563490)  ||  Geländer - Stahl
-    (Unassigned, id 563491)  ||  Generic (system) (Generic, id 293366)  ||  Gitterrost (Unassigned,
-    id 563505)  ||  Glass (Glass, id 26)  ||  Glass (system) (Glass, id 293367)  ||  Glass
-    - Clear, Grey (Glass, id 433659)  ||  Glass - Frosted (Glass, id 434430)  ||  Glass -
-    White, High Luminance (Glass, id 435796)  ||  Glazing - Curtain Wall Glazing (Miscellaneous,
-    id 11302)  ||  GRC -  Glass Reinforced Concrete (Concrete, id 545)  ||  Insulation / Thermal
-    Barriers - Batt insulation (Miscellaneous, id 552)  ||  Insulation / Thermal Barriers
-    - Cavity Fill (Miscellaneous, id 424)  ||  Insulation / Thermal Barriers - External Wall
-    Insulation (Miscellaneous, id 554)  ||  Insulation / Thermal Barriers - Radient Heat Barrier
-    (Miscellaneous, id 555)  ||  Insulation / Thermal Barriers - Rigid insulation (Miscellaneous,
-    id 420)  ||  Insulation / Thermal Barriers - Semi-rigid insulation (Miscellaneous, id
-    553)  ||  Interior Floors (Unassigned, id 1016944)  ||  Interior Walls (Unassigned, id
-    1016942)  ||  Laminate - Ivory, Matte (Miscellaneous, id 10862)  ||  Liquid (system) (Liquid,
-    id 293369)  ||  Masonry (system) (Masonry, id 293370)  ||  Masonry - Brick (Ceramic, id
-    414)  ||  Masonry - Brick Soldier Course (Ceramic, id 21436)  ||  Masonry - Concrete Block
-    (Concrete, id 415)  ||  Masonry - Glass Block (Glass, id 524)  ||  Masonry - Stone (Stone,
-    id 525)  ||  Masonry - Tile (Ceramic, id 526)  ||  Mauerwerk - Lamellen (Unassigned, id
-    563503)  ||  Mauerwerk - Ziegel (Unassigned, id 563488)  ||  Metal (system) (Metal, id
-    293371)  ||  Metal - Aluminium (Metal, id 533)  ||  Metal - Chrome (Metal, id 10868)  ||  Metal
-    - Copper (Metal, id 557)  ||  Metal - Decking (Metal, id 529)  ||  Metal - Firring (Metal,
-    id 534)  ||  Metal - Lead (Metal, id 558)  ||  Metal - Paint Finish - Dark Gray, Matte
-    (Paint, id 18744)  ||  Metal - Paint Finish - Ivory, Glossy (Paint, id 127667)  ||  Metal
-    - Paint Finish - Ivory, Matte (Paint, id 11671)  ||  Metal - Panel (Metal, id 527)  ||  Metal
-    - Sheet / Flashing (Metal, id 530)  ||  Metal - Steel (Metal, id 532)  ||  Metal - Steel
-    - 345 MPa (Metal, id 85087)  ||  Metal - Stud Layer (Metal, id 416)  ||  Metal - Trim
-    (Metal, id 528)  ||  Metal Panel (Metal, id 548)  ||  Metall - Lack - Grau (Unassigned,
-    id 563487)  ||  Misc. Air Layers - Air Film - Inside Surface (Miscellaneous, id 551)  ||  Misc.
-    Air Layers - Air Film - Outside Surface (Miscellaneous, id 550)  ||  Misc. Air Layers
-    - Air Space (Miscellaneous, id 418)  ||  Operable Skylights (Unassigned, id 1016954)  ||  Operable
-    Windows (Unassigned, id 1016952)  ||  Paint (system) (Paint, id 293372)  ||  Paper (system)
-    (Paper, id 293373)  ||  Parking Stripe (Paint, id 12859)  ||  Phase - Demo (System, id
-    27)  ||  Phase - Exist (System, id 28)  ||  Phase - New (System, id 8798)  ||  Phase -
-    Temporary (System, id 29)  ||  Phase-Demo (Unassigned, id 365619)  ||  Phase-Exist (Unassigned,
-    id 365620)  ||  Phase-Temp (Unassigned, id 365621)  ||  Plant (system) (Plant, id 293368)  ||  Plasterboard
-    (Drywall, id 423)  ||  Plastic (Unassigned, id 803965)  ||  Plastic (system) (Plastic,
-    id 293374)  ||  Plastic - Blue (Plastic, id 433658)  ||  Plastic - Formed Plastic (Plastic,
-    id 543)  ||  Plastic - GRP - Glass Reinforced Plastic (Plastic, id 542)  ||  Plastic -
-    Vinyl Cove Base (Vinyl, id 544)  ||  Poche (System, id 51455)  ||  Precast Concrete Panels
-    (Concrete, id 547)  ||  Render - Beige, Smooth (Stucco, id 22893)  ||  Render - Tan, Textured
-    (Stucco, id 22892)  ||  Render Material 0-191-255 (Miscellaneous, id 314255)  ||  Render
-    Material 0-255-255 (Unassigned, id 618744)  ||  Render Material 165-0-82 (Miscellaneous,
-    id 314288)  ||  Render Material 165-124-82 (Miscellaneous, id 314282)  ||  Render Material
-    255-127-191 (Miscellaneous, id 314285)  ||  Render Material 255-255-255 (Miscellaneous,
-    id 314252)  ||  Roofing (Miscellaneous, id 549)  ||  Roofing - Asphalt (Asphalt, id 865)  ||  Roofing
-    - EPDM Membrane (Miscellaneous, id 792)  ||  Roofing - Felt (Miscellaneous, id 5181)  ||  Roofing
-    - Metal (Metal, id 531)  ||  Roofing - Slate (Stone, id 864)  ||  Roofing - Tile (Miscellaneous,
-    id 863)  ||  Roofs (Unassigned, id 1016938)  ||  Sash (Wood, id 10988)  ||  Shades (Unassigned,
-    id 1016960)  ||  Site - Earth (Soil, id 519)  ||  Site - Grass (Plant, id 520)  ||  Site
-    - Hardcore (Miscellaneous, id 5121)  ||  Site - Sand (Soil, id 522)  ||  Site - Tarmacadam
-    (Asphalt, id 521)  ||  Site - Water (Liquid, id 10115)  ||  Slabs on Grade (Unassigned,
-    id 1016940)  ||  Sliding Doors (Unassigned, id 1016956)  ||  Stahlbeton - Fertigbeton
-    (Unassigned, id 563314)  ||  Stahlbeton - Ortbeton (Unassigned, id 563485)  ||  Stahlbeton
-    - Ortbeton - Rot (Unassigned, id 563502)  ||  Stainless Steel (Unassigned, id 803966)  ||  Stone
-    (system) (Stone, id 293375)  ||  Structure - Light Gauge Steel Joist Layer (Metal, id
-    791)  ||  Structure - Precast Concrete Beams (Concrete, id 5091)  ||  Structure - Steel
-    Bar Joist Layer (Metal, id 790)  ||  Structure - Timber Joist/Rafter Layer (Wood, id 788)  ||  Structure
-    - Timber Truss Joist/Rafter Layer (Wood, id 789)  ||  System-Zones (Unassigned, id 1005629)  ||  Tile
-    (system) (Tile, id 293376)  ||  Treppe - Holz (Unassigned, id 563489)  ||  Treppe - Naturstein
-    (Unassigned, id 563492)  ||  Tür - Aufzug Metall (Unassigned, id 563339)  ||  Tür - Glas
-    (Unassigned, id 563316)  ||  Tür - Stahl Griff (Unassigned, id 563315)  ||  Tür - Stahl
-    Zarge (Unassigned, id 553845)  ||  Umgebung - Asphalt (Unassigned, id 563484)  ||  Umgebung
-    - Grau (Unassigned, id 553846)  ||  Underground Walls (Unassigned, id 1016950)  ||  Vapour
-    / Moisture Barriers - Damp-proofing (Miscellaneous, id 422)  ||  Vapour / Moisture Barriers
-    - Vapour Retarder (Miscellaneous, id 421)  ||  VCT - Vinyl Composition Tile (Vinyl, id
-    794)  ||  Vinyl (system) (Vinyl, id 293377)  ||  Wall Material (1) (Miscellaneous, id
-    5658)  ||  WC Trennwand (Unassigned, id 563507)  ||  Wood (system) (Wood, id 293378)  ||  Wood
-    - Cherry (Wood, id 10863)  ||  Wood - Firring (Wood, id 541)  ||  Wood - Flooring (Wood,
-    id 538)  ||  Wood - Laminated (Wood, id 540)  ||  Wood - MDF, Medium Density Fibreboard
-    (Wood, id 556)  ||  Wood - Sheathing - Chipboard (Wood, id 536)  ||  Wood - Sheathing
-    - plywood (Wood, id 417)  ||  Wood - Stud Layer (Wood, id 535)  ||  Wood - Timber (Wood,
-    id 539)  ||  Wood - Veneers (Wood, id 537)  ||  Wärmedämmung - hart (Unassigned, id 563486),
-    missing 0 item(s), onlyMissing false, textures , withAllTabs false, withAssets false,
-    withLibraryAppearances false, withTextures false. inputs came withAssets not given - false
-    (optional); withAllTabs as given; withLibraryAppearances not given - false (optional);
-    namePattern as given; withTextures not given - false (optional); onlyMissing not given
-    - false (optional). on P1102 MEP'
-  negative_case: 'run with namePattern=ZZZ*, withAllTabs=False instead - chosen because it
-    should not contain what this fragment reports. returned findings 2 item(s) [No material
-    matches ''ZZZ*'' in this project - ''P1102 MEP'', Listed used or not - unused ones: FIND_PURGEABLE_ELEMENTS
-    wi...], libraryAppearances , materialClasses , materialCount 0, materialIds 0 item(s),
-    materialList , missing 0 item(s), onlyMissing false, textures , withAllTabs false, withAssets
-    false, withLibraryAppearances false, withTextures false. inputs came withAssets not given
-    - false (optional); withAllTabs as given; withLibraryAppearances not given - false (optional);
-    namePattern as given; withTextures not given - false (optional); onlyMissing not given
-    - false (optional). on P1102 MEP'
+  model: Test for Issue (6,120 elements), Revit 2024, session 28560
+  positive_case: 'run as it would normally be run. returned findings 4 item(s) [158 material(s)
+    in this project - ''Test for Issue'', Listed used or not - unused ones: FIND_PURGEABLE_ELEMENTS
+    wi..., 3 appearance asset(s) in Revit''s appearance library on this ..., ...], libraryAppearances
+    Grass - Field - Large patch [Prism-1115] (PrismOpaqueSchema)  ||  Grass - Generic - Medium
+    patch [Prism-840] (PrismOpaqueSchema)  ||  Grass - High Quality - Medium patch [Prism-1116]
+    (PrismOpaqueSchema), materialClasses Carpet 1, Concrete 4, Fabric 1, Gas 1, Generic 23,
+    Glass 5, Insulation 4, Lining 2, Liquid 1, Masonry 4, Metal 26, Miscellaneous 16, Paint
+    7, Plastic 4, System 15, Unassigned 28, Wood 16, materialCount 158, materialIds 158 item(s)
+    [27489, 27492, 18974, ...], materialList Acoustic Ceiling Tile 600 x 1200 (Generic, id
+    27489)  ||  Acoustic Ceiling Tile 600 x 600 (Generic, id 27492)  ||  Air (Gas, id 18974)  ||  Aluminum
+    (Metal, id 18953)  ||  Analytical Floor Surface (Unassigned, id 1289792)  ||  Analytical
+    Panels (Unassigned, id 521493)  ||  Analytical Slab Surface (Unassigned, id 1289793)  ||  Analytical
+    Spaces (Unassigned, id 353673)  ||  Analytical Surface - Air Openings (Unassigned, id
+    353697)  ||  Analytical Surface - Air Surfaces (Unassigned, id 353687)  ||  Analytical
+    Surface - Ceilings (Unassigned, id 353685)  ||  Analytical Surface - Exterior Walls (Unassigned,
+    id 353675)  ||  Analytical Surface - Interior Floors (Unassigned, id 353683)  ||  Analytical
+    Surface - Interior Walls (Unassigned, id 353681)  ||  Analytical Surface - Operable Skylights
+    (Unassigned, id 353693)  ||  Analytical Surface - Operable Windows (Unassigned, id 353691)  ||  Analytical
+    Surface - Roofs (Unassigned, id 353677)  ||  Analytical Surface - Shades (Unassigned,
+    id 353699)  ||  Analytical Surface - Slabs on Grade (Unassigned, id 353679)  ||  Analytical
+    Surface - Sliding Doors (Unassigned, id 353695)  ||  Analytical Surface - Underground
+    Walls (Unassigned, id 353689)  ||  Analytical Wall Surface (Unassigned, id 1289794)  ||  Appliance
+    - Gasket (Miscellaneous, id 470604)  ||  Appliance - Stainless Steel (Metal, id 470591)  ||  Appliance
+    - Steel - Black (Unassigned, id 470611)  ||  Area Loads (Unassigned, id 1268598)  ||  Asphalt
+    Shingle (Generic, id 24245)  ||  Asphalt, Pavement, Light Grey (Generic, id 1182148)  ||  Boundary
+    Condition – Fixed (Miscellaneous, id 945010)  ||  Boundary Condition – Pinned (Miscellaneous,
+    id 945011)  ||  Boundary Condition – Roller (Miscellaneous, id 945012)  ||  Boundary Condition
+    – X-Axis (System, id 945046)  ||  Boundary Condition – Y-Axis (System, id 945044)  ||  Boundary
+    Condition – Z-Axis (System, id 945045)  ||  Boundary Roller (Miscellaneous, id 1432924)  ||  Brick,
+    Common (Masonry, id 18941)  ||  Brick, Soldier Course (Masonry, id 46500)  ||  Cabinets
+    (Miscellaneous, id 449947)  ||  Cabinets - Handles (Metal, id 449951)  ||  Carpet (1)
+    (Carpet, id 24145)  ||  Cementitious Backer Board (Miscellaneous, id 435591)  ||  Cherry
+    (Wood, id 35336)  ||  Clad - White (Wood, id 336821)  ||  CMU, Split Face (Masonry, id
+    435571)  ||  Concrete Masonry Units (Masonry, id 18942)  ||  Concrete, Cast-in-Place gray
+    (Concrete, id 18939)  ||  Concrete, Cast-in-Place, Gray (Concrete, id 1570142)  ||  Concrete,
+    Lightweight (Concrete, id 24202)  ||  Concrete, Precast (Concrete, id 18940)  ||  Copper
+    (Metal, id 164754)  ||  Counter Top (Wood, id 450621)  ||  Damp-proofing (Generic, id
+    18983)  ||  Default (Miscellaneous, id 18435)  ||  Default Floor (Miscellaneous, id 18436)  ||  Default
+    Floor Area Face (System, id 1289786)  ||  Default Form (Generic, id 145691)  ||  Default
+    Light Source (Generic, id 135528)  ||  Default Light Source (System, id 1099173)  ||  Default
+    Mass Exterior Wall (Generic, id 147650)  ||  Default Mass Floor (Miscellaneous, id 79117)  ||  Default
+    Mass Interior Wall (Generic, id 147651)  ||  Default Mass Opening (Generic, id 147653)  ||  Default
+    Mass Roof (Generic, id 147652)  ||  Default Mass Shade (Miscellaneous, id 147655)  ||  Default
+    Mass Skylight (System, id 147656)  ||  Default Mass Zone (Generic, id 147649)  ||  Default
+    Roof (Miscellaneous, id 18437)  ||  Default Wall (Miscellaneous, id 18438)  ||  Door -
+    Frame (Miscellaneous, id 467807)  ||  Earth (Generic, id 18935)  ||  EIFS, Exterior Insulation
+    (Generic, id 18967)  ||  Electrical Analytical Loads (Unassigned, id 521576)  ||  FixedBC
+    (Miscellaneous, id 1431221)  ||  Glass (Glass, id 18439)  ||  Glass (Glass, id 1289797)  ||  Glass
+    - White, High Luminance (Glass, id 465404)  ||  Glass, Clear Glazing (Glass, id 18984)  ||  Glass,
+    White, High Luminance (Glass, id 979709)  ||  Grade 250 (Unassigned, id 1559558)  ||  Grade
+    65 (Unassigned, id 945071)  ||  Grass (Generic, id 1182144)  ||  Gravel (Generic, id 1182145)  ||  Gypsum
+    Wall Board (Generic, id 18986)  ||  Insulation - Duct Wrap (Insulation, id 785344)  ||  Insulation
+    - Fiberglass (Insulation, id 785345)  ||  Insulation - PVC Jacketed Fiberglass (Insulation,
+    id 785346)  ||  Insulation - Rigid Fiber Board (Insulation, id 785347)  ||  Iron, Ductile
+    (Metal, id 164755)  ||  Laminate, Ivory, Matte (Plastic, id 35335)  ||  Lining - Fiberglass
+    Board (Lining, id 785348)  ||  Lining - Textile (Lining, id 785349)  ||  Metal - Aluminium
+    (Metal, id 1443249)  ||  Metal - Paint Finish - Grey (Paint, id 385173)  ||  Metal - Paint
+    Finish - Indian Red, Matte (Paint, id 473423)  ||  Metal - Paint Finish - Ivory, Glossy
+    (Paint, id 465406)  ||  Metal - Painted - Grey (Paint, id 1443244)  ||  Metal - Stainless
+    Steel (Metal, id 459572)  ||  Metal - Stainless Steel,Polished (Metal, id 1494223)  ||  Metal
+    - Steel (Unassigned, id 472710)  ||  Metal Deck (Metal, id 18949)  ||  Metal Door - Brindle
+    (Paint, id 453621)  ||  Metal Door - Red (Paint, id 1448366)  ||  Metal Furring (Metal,
+    id 18954)  ||  Metal Panel (Metal, id 435580)  ||  Metal Stud Layer (Metal, id 18946)  ||  Oak
+    Flooring (Wood, id 18959)  ||  Parking Stripe (Paint, id 36879)  ||  Phase - Demo (System,
+    id 22806)  ||  Phase - Exist (System, id 22807)  ||  Phase - New (System, id 29224)  ||  Phase
+    - Temporary (System, id 22808)  ||  Phase-Demo (Unassigned, id 1289789)  ||  Phase-Exist
+    (Unassigned, id 1289790)  ||  Phase-Temp (Unassigned, id 1289791)  ||  Pine (Wood, id
+    435538)  ||  Pinned (Miscellaneous, id 1432131)  ||  Plastic, Opaque Black (Plastic, id
+    464672)  ||  Plywood, Sheathing (Wood, id 18957)  ||  Poche (System, id 1099171)  ||  Poche
+    (System, id 78544)  ||  Polyvinyl Chloride - Rigid (Plastic, id 785405)  ||  Polyvinyl
+    Chloride, Rigid (Plastic, id 134488)  ||  Rebar - ASTM A615M - Grade 420 - Billet Steel
+    (Metal, id 1551215)  ||  Rebar, ASTM A615, Grade 60 (Metal, id 945070)  ||  Rigid insulation
+    (Generic, id 18977)  ||  Roofing, EPDM Membrane (Generic, id 24244)  ||  Sand (Generic,
+    id 1570138)  ||  Siding, Clapboard (Wood, id 435560)  ||  Softwood, Lumber (Wood, id 18960)  ||  Stainless
+    Steel (Metal, id 164756)  ||  Steel (Metal, id 1099148)  ||  Steel ASTM A36 (Metal, id
+    1106079)  ||  Steel ASTM A992 (Metal, id 128891)  ||  Steel, 45-345 (Metal, id 1537425)  ||  Steel,
+    Carbon (Metal, id 164753)  ||  Steel, Chrome Plated (Metal, id 35341)  ||  Steel, Paint
+    Finish, Dark Gray (Metal, id 593446)  ||  Steel, Paint Finish, Dark Gray, Matte (Metal,
+    id 466339)  ||  Steel, Paint Finish, Ivory, Glossy (Metal, id 1086926)  ||  Steel, Polished
+    (Metal, id 450622)  ||  Structure, Steel Bar Joist Layer (Metal, id 24217)  ||  Structure,
+    Wood Joist/Rafter Layer (Wood, id 24146)  ||  Structure, Wood Joist/Rafter Layer, Batt
+    Insulation (Wood, id 24243)  ||  System-Zones (Unassigned, id 352677)  ||  Textile - Slate
+    Blue (Fabric, id 464671)  ||  Tile, Mosaic, Gray (Generic, id 18989)  ||  Trim (Wood,
+    id 467259)  ||  Vapor Retarder (Generic, id 18982)  ||  Vinyl Composition Tile (Generic,
+    id 24184)  ||  Water (Liquid, id 785510)  ||  Wood - Birch (Wood, id 385171)  ||  Wood
+    - Stained (Wood, id 336822)  ||  Wood Door Panel - Birch (Wood, id 1443250)  ||  Wood
+    Planks (Wood, id 1182147)  ||  Wood Shake (Wood, id 435539)  ||  XDirection (System, id
+    1433728)  ||  YDirection (System, id 1433726)  ||  ZDirection (System, id 1433727), missing
+    0 item(s), onlyMissing false, textures , withAllTabs false, withAssets false, withLibraryAppearances
+    false, withTextures false. inputs came withAssets not given - false (optional); withAllTabs
+    not given - false (optional); withLibraryAppearances not given - false (optional); namePattern
+    not given - "all", the card''s own default (optional); libraryPattern as given; withTextures
+    not given - false (optional); onlyMissing not given - false (optional). on Test for Issue'
+  negative_case: 'run with libraryPattern=zzqx-no-such-asset, namePattern=ZZZ* instead - chosen
+    because it should not contain what this fragment reports. returned findings 4 item(s)
+    [No material matches ''ZZZ*'' in this project - ''Test for Issue..., Listed used or not
+    - unused ones: FIND_PURGEABLE_ELEMENTS wi..., 0 appearance asset(s) in Revit''s appearance
+    library on this ..., ...], libraryAppearances , materialClasses , materialCount 0, materialIds
+    0 item(s), materialList , missing 0 item(s), onlyMissing false, textures , withAllTabs
+    false, withAssets false, withLibraryAppearances false, withTextures false. inputs came
+    withAssets not given - false (optional); withAllTabs not given - false (optional); withLibraryAppearances
+    not given - false (optional); namePattern as given; libraryPattern as given; withTextures
+    not given - false (optional); onlyMissing not given - false (optional). on Test for Issue'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 98cede845ef5b401
+  fingerprint: 4f1d27fed036bafc
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

@@ -44,3 +44,5 @@ stayed Screen, not 300 DPI ([row 5b-1472](../fragment-issues/section-5b-rows-401
 `APPLY_VISUAL_PRESET` stays DRAFT.
 
 **MQ5 re-run on 2026-11-07, after [row 5b-1467](../fragment-issues/section-5b-rows-401-425.md)'s fix was deployed** (Revit 2024, session 41844, `Test for Issue`, rolled back): `SET_GRAPHIC_DISPLAY_OPTIONS` sunIntensity 60 on `{3D}` as the setup, then Exterior Day renderFor issue - *"Replaced what '{3D}' had: Sun Intensity 60 -> 80"*. **MQ5 held**; the negative refused. The same run quoted Revit for the DPI: *"Render Output (reads Screen) - Revit: The resolution target is not printer."* ([row 5b-1472](../fragment-issues/section-5b-rows-401-425.md)). `APPLY_VISUAL_PRESET` stays DRAFT on that row alone.
+
+**Signed 2026-11-07:** `REPORT_VISUAL_PRESET` v4 by Ajmal PS on his own terminal, from the MQ1 run (`Test for Issue`, Revit 2024, session 30316) - PROVEN. `APPLY_VISUAL_PRESET` v4 stays DRAFT until [row 5b-1472](../fragment-issues/section-5b-rows-401-425.md) is fixed and re-run.
