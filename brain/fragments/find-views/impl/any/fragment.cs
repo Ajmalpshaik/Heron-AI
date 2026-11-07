@@ -75,7 +75,7 @@
 //   Twenty unplaced 3D views and eight sections are different conversations.
 //   `onSheets` - the answer's views that are on a sheet.
 //
-// VERSION 3 (2026-11-07, row 5b-1472) - `viewType` IS READ THE WAY A MODELLER
+// VERSION 3 (2026-11-07, row 5b-1474) - `viewType` IS READ THE WAY A MODELLER
 // TYPES IT, AND EVERY VIEW PASSED OVER IS ACCOUNTED FOR BY REASON.
 //
 //   Version 2 compared `viewType` with the enum's own spelling and nothing

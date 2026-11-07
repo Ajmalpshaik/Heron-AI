@@ -108,7 +108,7 @@ negative:
   - given: VERSION 2. withoutTemplate true, the result handed to APPLY_VIEW_TEMPLATE
     expect: the fix applied to exactly the views that needed it
 
-  # VERSION 3 (2026-11-07, row 5b-1472). Each FAILS on version 2, which
+  # VERSION 3 (2026-11-07, row 5b-1474). Each FAILS on version 2, which
   # compared viewType with the enum's spelling alone, took "any" as a type
   # name, and had no skippedOtherType and no passed-over line.
   - given: >

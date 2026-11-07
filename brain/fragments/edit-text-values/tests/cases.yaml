@@ -265,7 +265,7 @@ negative:
   - given: VERSION 8. The family renamed, then reloaded from its .rfa
     expect: the OLD name back - nothing here touches the file on disk
 
-  # VERSION 9 (2026-11-07, row 5b-1473). Each FAILS on version 8, which
+  # VERSION 9 (2026-11-07, row 5b-1475). Each FAILS on version 8, which
   # compared a name read back with the transform's output exactly, so a name
   # Revit saved without its leading space went in `unverified`.
   - given: >

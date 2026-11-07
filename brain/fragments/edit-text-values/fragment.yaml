@@ -16,7 +16,7 @@ semantic-identity: "change the text that is already there rather than replacing 
 kind: action
 domain: revit.parameters
 capability: EDIT_TEXT_VALUES
-# VERSION 9, BACK TO DRAFT ON 2026-11-07 (FRAGMENT-ISSUES row 5b-1473), AND
+# VERSION 9, BACK TO DRAFT ON 2026-11-07 (FRAGMENT-ISSUES row 5b-1475), AND
 # THE PROOF BLOCK BELOW IS KEPT ON PURPOSE - it is version 8's record and the
 # arrangement to re-prove from; its fingerprint no longer matches. On the
 # owner's model 4355-BHVD-3D-60A10-BL007A (Revit 2020) version 8 renamed four
@@ -319,7 +319,7 @@ contract:
       role: accounting
       type: string
     - name: nameNote
-      # Version 9 (row 5b-1473). For field Name, one sentence when any new
+      # Version 9 (row 5b-1475). For field Name, one sentence when any new
       # name would have started or ended with a space Revit does not keep: how
       # many, and that each was written and read back without it. Null
       # otherwise. A sentence about the edit, never a thing it found (D-52).
