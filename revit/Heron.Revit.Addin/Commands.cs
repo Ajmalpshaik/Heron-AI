@@ -327,8 +327,7 @@ namespace Heron.Revit.Addin
         {
             return HeronPermissions.WriteEnabled()
                 ? null
-                : "Changes is off right now, so " + name + " will not let anything through " +
-                  "until you turn Changes on as well.";
+                : "Changes is off - " + name + " needs it on too.";
         }
 
         /// <summary>
@@ -396,23 +395,14 @@ namespace Heron.Revit.Addin
             return new HeronSwitchQuestion
             {
                 Name = "Admin",
-                Headline = "Let Heron change how this project is set up?",
-                What = "Heron will be able to add project and global parameters, create " +
-                       "worksets and start new family files when you ask it to. Until you " +
-                       "turn this on it cannot.",
-                Promises = new[]
-                {
-                    "It only works while Changes is on as well.",
-                    "It stays on until you turn it off, including after Revit restarts.",
-                    "Turning it off takes effect at once, with nothing to restart.",
-                },
-                Caution = "Ctrl+Z undoes what it does inside this model, not what it writes " +
-                          "outside it - a parameter added to your shared parameter file " +
-                          "stays in that file.",
+                Icon = HeronApplication.AdminUnlockedIcon,
+                Headline = "Turn Admin on?",
+                What = "Heron can add parameters, worksets and new families.",
+                Caution = "Ctrl+Z won't undo the shared parameter file.",
                 ChangesOff = HeronSwitchToggle.ChangesOffLine("Admin"),
                 Note = "The chat is still told to ask you before it deletes, purges, changes " +
                        "a workset or touches a link - Admin does not change that.",
-                TurnOn = "Turn Admin on",
+                TurnOn = "Turn on",
             };
         }
     }
@@ -443,22 +433,14 @@ namespace Heron.Revit.Addin
             return new HeronSwitchQuestion
             {
                 Name = "Publish",
-                Headline = "Let Heron publish from this model?",
-                What = "Heron will be able to export, print, save and sync with central when " +
-                       "you ask it to. Until you turn this on it cannot.",
-                Promises = new[]
-                {
-                    "It only works while Changes is on as well.",
-                    "It stays on until you turn it off, including after Revit restarts.",
-                    "Turning it off takes effect at once, with nothing to restart.",
-                },
-                Caution = "What leaves the model cannot be taken back with Ctrl+Z - an " +
-                          "exported file stays written, a save is kept, and a sync reaches " +
-                          "everybody on the project.",
+                Icon = HeronApplication.PublishUnlockedIcon,
+                Headline = "Turn Publish on?",
+                What = "Heron can export, print, save and sync with central.",
+                Caution = "Ctrl+Z can't undo an export, a save or a sync.",
                 ChangesOff = HeronSwitchToggle.ChangesOffLine("Publish"),
                 Note = "The chat is told never to save, sync or export on its own - only when " +
                        "you ask, for that one request.",
-                TurnOn = "Turn Publish on",
+                TurnOn = "Turn on",
             };
         }
     }
@@ -544,19 +526,14 @@ namespace Heron.Revit.Addin
             return new HeronSwitchQuestion
             {
                 Name = "Ask to Keep",
-                Headline = "Keep changes from a chat without asking?",
-                What = "Revit will stop showing you each change and asking Keep or Discard. A " +
-                       "change you ask for in a chat will be kept as soon as it is done.",
+                Icon = HeronApplication.KeepNotAskingIcon,
+                Headline = "Stop asking Keep or Discard?",
+                What = "Changes from a chat are kept at once.",
                 Promises = new[]
                 {
-                    "Ctrl+Z still takes each change to the model back as one step, named " +
-                    "\"Heron: ...\".",
-                    "A tool that has never been proved is still shown to you, and asked, " +
-                    "before it is kept.",
-                    "Turning it back on asks nothing, and counts from the next change.",
+                    "Ctrl+Z still undoes each change.",
                 },
-                Caution = "You will not see a change before it is kept, and an export, a save " +
-                          "or a sync is done without asking - Ctrl+Z cannot take those back.",
+                Caution = "Exports and saves happen without asking too.",
                 Note = "To stop the box for one job only, leave this on and choose \"" +
                        HeronKeepGrant.KeepRestLink + "\" in the box.",
                 TurnOn = "Stop asking",

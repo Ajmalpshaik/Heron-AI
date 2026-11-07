@@ -58,6 +58,15 @@ namespace Heron.Revit.Addin
             return Load(fileName, SmallIconSize);
         }
 
+        /// <summary>
+        /// The image decoded at a size of the caller's choosing - for a window
+        /// that shows a ribbon picture larger than a ribbon does.
+        /// </summary>
+        public BitmapSource LoadSized(string fileName, int pixels)
+        {
+            return Load(fileName, pixels);
+        }
+
         private BitmapSource Load(string fileName, int decodePixels)
         {
             if (string.IsNullOrEmpty(_resourcesFolder) || string.IsNullOrEmpty(fileName))

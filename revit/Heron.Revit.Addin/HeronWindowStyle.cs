@@ -258,7 +258,28 @@ namespace Heron.Revit.Addin
                 Orientation = Orientation.Horizontal,
                 VerticalAlignment = VerticalAlignment.Center,
             };
-            left.Children.Add(mark);
+            // THE HERON ITSELF, where it can be drawn (D-149: logos come from
+            // the brand) - the orange 3D heron the Heron button wears when
+            // connected. The lettered tile stays as the fallback.
+            UIElement badge = mark;
+            try
+            {
+                var heron = new IconLoader(System.Reflection.Assembly.GetExecutingAssembly().Location)
+                    .LoadSized("BridgeConnected.png", 64);
+                if (heron != null)
+                {
+                    badge = new Image
+                    {
+                        Source = heron,
+                        Width = 30,
+                        Height = 30,
+                        VerticalAlignment = VerticalAlignment.Center,
+                    };
+                }
+            }
+            catch (Exception) { /* the lettered tile is the fallback */ }
+
+            left.Children.Add(badge);
             left.Children.Add(title);
 
             var close = new Button

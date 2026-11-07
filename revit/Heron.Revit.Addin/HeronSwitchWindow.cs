@@ -6,69 +6,81 @@
 // See docs/29-metadata-standard.md
 
 using System;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using System.Windows.Shapes;
 
 namespace Heron.Revit.Addin
 {
     /// <summary>
-    /// What one switch above Changes asks before it goes on - D-106 - or,
-    /// for Ask to Keep, before it goes off (D-138). The words and nothing
-    /// else; HeronSwitchWindow decides how they are drawn, and the toggle
-    /// commands decide what they say.
+    /// What one switch asks before it goes to its risky side - Changes, Admin
+    /// and Publish on the way on (D-19, D-106), Ask to Keep on the way off
+    /// (D-138). The words and nothing else; HeronSwitchWindow decides how they
+    /// are drawn, and the toggle commands decide what they say.
+    ///
+    /// SHORT, by the owner's word of 2026-11-07: "no one will read this much,
+    /// make it simple and powerful". One question, one line, and only the ticks
+    /// and warnings a person deciding needs.
     /// </summary>
     internal sealed class HeronSwitchQuestion
     {
         /// <summary>The switch's own word - "Admin", "Publish". Also the window's subtitle.</summary>
         internal string Name { get; set; }
 
-        /// <summary>The one large line: what the person is being asked for.</summary>
+        /// <summary>The picture beside the question - the switch's own padlock, file name in Resources.</summary>
+        internal string Icon { get; set; }
+
+        /// <summary>The one large line: the question, short - "Turn Admin on?".</summary>
         internal string Headline { get; set; }
 
-        /// <summary>The paragraph under it: what Heron will be able to do.</summary>
+        /// <summary>One line under it: what Heron will be able to do.</summary>
         internal string What { get; set; }
 
         /// <summary>
-        /// The ticked rows. EACH MUST BE TRUE IN THE CODE, for the reason
-        /// HeronChangesWindow gives about its own three: a promise put where
-        /// the decision is made is a rail, and if one stops being true this
-        /// list is the first thing that has to change.
+        /// The ticked lines - few and short. EACH MUST BE TRUE IN THE CODE: a
+        /// promise put where the decision is made is a rail, and if one stops
+        /// being true this list is the first thing that has to change.
         /// </summary>
         internal string[] Promises { get; set; }
 
         /// <summary>
-        /// What this switch does that Ctrl+Z cannot take back, in amber
-        /// beside the lamp. Said on the way in because it is the one thing
-        /// the Changes window's "every change is one Ctrl+Z" does not cover.
+        /// What this switch does that Ctrl+Z cannot take back, with a warning
+        /// sign. Said on the way in because "every change is one Ctrl+Z" does
+        /// not cover it.
         /// </summary>
         internal string Caution { get; set; }
 
-        /// <summary>Null, or one amber line when Changes is off right now.</summary>
+        /// <summary>Null, or one warning line when Changes is off right now.</summary>
         internal string ChangesOff { get; set; }
 
-        /// <summary>The muted line under the card.</summary>
+        /// <summary>
+        /// A muted line under the rest. Kept for the plain fallback's sake;
+        /// the short window does not draw it.
+        /// </summary>
         internal string Note { get; set; }
 
-        /// <summary>The amber button - "Turn Admin on".</summary>
+        /// <summary>The amber button - "Turn on".</summary>
         internal string TurnOn { get; set; }
 
         /// <summary>
-        /// The quiet button, the safe answer. Null says "Leave it off", which
-        /// is what Admin and Publish want; Ask to Keep (D-138) asks on the way
-        /// OFF, and its safe answer is "Keep asking".
+        /// The quiet button, the safe answer. Null says "Leave off", which is
+        /// what Changes, Admin and Publish want; Ask to Keep (D-138) asks on the
+        /// way OFF, and its safe answer is "Keep asking".
         /// </summary>
         internal string Decline { get; set; }
     }
 
     /// <summary>
-    /// The question the Admin and Publish buttons ask on the way on - D-106.
+    /// The question a switch asks - HeronChangesWindow, and Admin, Publish and
+    /// Ask to Keep through their commands.
     ///
-    /// HeronChangesWindow's shape, and deliberately NOT HeronChangesWindow.
-    /// That window has been seen in Revit (NEEDS-CHECKING Z10) and this one
-    /// has not, so it is left exactly as it was rather than bent to serve
-    /// three switches. Whatever made it right is kept here on purpose:
+    /// THE SHORT FORM, 2026-11-07: the switch's padlock large on the left, the
+    /// question beside it, one line, then a tick for each promise and a warning
+    /// sign for what Ctrl+Z cannot take back. Symbols carry what paragraphs
+    /// used to.
+    ///
+    /// Whatever made the long form right is kept:
     ///
     ///   * AMBER, not red and not green - turning on a switch the owner
     ///     reached for deliberately is neither danger nor good news.
@@ -76,21 +88,16 @@ namespace Heron.Revit.Addin
     ///     confirmation that leaning on Enter can clear is not one.
     ///   * Esc and the X both mean no, so every reflex that dismisses a
     ///     window lands on the safe answer.
-    ///   * It asks on the way on and never on the way off - for a switch
-    ///     whose safe side is OFF. Ask to Keep's safe side is ON (D-138), so
-    ///     it asks on the way off, and its quiet button says so (Decline).
-    ///
-    /// ONE THING IS ADDED: a line saying what Ctrl+Z cannot take back. An
-    /// export is a file already written and a sync has already reached
-    /// everybody on the project, so "every change is one Ctrl+Z" - true of
-    /// Changes - is not a promise this window may make.
+    ///   * It asks only on the way to the risky side - on for a padlock, off
+    ///     for Ask to Keep - and its quiet button says so (Decline).
     ///
     /// IT TOUCHES NO REVIT API and decides nothing. It returns what the person
     /// said, and the command does the rest.
     /// </summary>
     internal sealed class HeronSwitchWindow
     {
-        private const double CardWidth = 470;
+        private const double CardWidth = 440;
+        private const int IconSize = 56;
 
         private readonly HeronSwitchQuestion _question;
         private readonly Action<string> _log;
@@ -104,9 +111,9 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
-        /// Asks. TRUE to turn the switch on, FALSE to leave it off, and NULL
-        /// when the window could not be shown at all - which is not "no", and
-        /// the caller asks again some other way (AskPlainly).
+        /// Asks. TRUE to go ahead, FALSE to leave it, and NULL when the window
+        /// could not be shown at all - which is not "no", and the caller asks
+        /// again some other way (AskPlainly).
         /// </summary>
         internal static bool? Ask(HeronSwitchQuestion question, Action<string> log)
         {
@@ -120,8 +127,7 @@ namespace Heron.Revit.Addin
             {
                 Build();
 
-                // WHICH THING ASKED, at the moment it asks - the fact the
-                // Changes window's log line was added to record.
+                // WHICH THING ASKED, at the moment it asks.
                 _log(_question.Name + " window asked.");
 
                 _shell.Window.ShowDialog();
@@ -138,7 +144,7 @@ namespace Heron.Revit.Addin
         {
             var body = new StackPanel();
             body.Children.Add(Question());
-            body.Children.Add(Promises());
+            body.Children.Add(Lines());
             body.Children.Add(Footer());
 
             _shell = HeronWindowStyle.Build(
@@ -149,126 +155,98 @@ namespace Heron.Revit.Addin
 
         private UIElement Question()
         {
-            var lamp = new Ellipse
+            var picture = new Image
             {
-                Width = 11,
-                Height = 11,
-                Fill = new SolidColorBrush(HeronWindowStyle.WarnColour),
+                Width = IconSize,
+                Height = IconSize,
+                Margin = new Thickness(0, 0, 16, 0),
                 VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(0, 0, 11, 0),
             };
+            try
+            {
+                var icon = new IconLoader(Assembly.GetExecutingAssembly().Location)
+                    .LoadSized(_question.Icon, IconSize * 2);
+                if (icon != null) picture.Source = icon;
+                else picture.Visibility = Visibility.Collapsed;
+            }
+            catch (Exception) { picture.Visibility = Visibility.Collapsed; }
 
             var headline = new TextBlock
             {
                 Text = _question.Headline,
                 FontFamily = new FontFamily(HeronWindowStyle.BodyFont),
-                FontSize = 19,
+                FontSize = 20,
                 FontWeight = FontWeights.SemiBold,
                 Foreground = new SolidColorBrush(HeronWindowStyle.TextPrimary),
-                VerticalAlignment = VerticalAlignment.Center,
                 TextWrapping = TextWrapping.Wrap,
             };
+            var what = HeronWindowStyle.Body(_question.What, HeronWindowStyle.TextSecondary, 13);
+            what.Margin = new Thickness(0, 5, 0, 0);
 
-            // A Grid, for the reason Promise() gives: in a horizontal
-            // StackPanel a long headline is measured against infinite width
-            // and leaves the card instead of wrapping.
-            var line = new Grid();
-            line.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            line.ColumnDefinitions.Add(new ColumnDefinition
+            var words = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+            words.Children.Add(headline);
+            words.Children.Add(what);
+
+            // A Grid, not a horizontal StackPanel: in a StackPanel a long line
+            // is measured against infinite width and leaves the card instead
+            // of wrapping.
+            var row = new Grid
             {
-                Width = new GridLength(1, GridUnitType.Star),
-            });
-            Grid.SetColumn(lamp, 0);
-            Grid.SetColumn(headline, 1);
-            line.Children.Add(lamp);
-            line.Children.Add(headline);
-
-            var what = HeronWindowStyle.Body(
-                _question.What, HeronWindowStyle.TextSecondary, 13);
-            what.Margin = new Thickness(0, 9, 0, 0);
-
-            var stack = new StackPanel
-            {
-                Margin = new Thickness(HeronWindowStyle.Gutter, 20, HeronWindowStyle.Gutter, 0),
+                Margin = new Thickness(HeronWindowStyle.Gutter, 22, HeronWindowStyle.Gutter, 0),
             };
-            stack.Children.Add(line);
-            stack.Children.Add(what);
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            Grid.SetColumn(picture, 0);
+            Grid.SetColumn(words, 1);
+            row.Children.Add(picture);
+            row.Children.Add(words);
+            return row;
+        }
 
-            // THE TWO AMBER LINES. What cannot be undone, and - only when it
-            // is true right now - that Changes is off, so turning this on
-            // alone will not let anything through yet.
+        /// <summary>A tick for each promise, a warning sign for each caution.</summary>
+        private UIElement Lines()
+        {
+            var list = new StackPanel
+            {
+                Margin = new Thickness(HeronWindowStyle.Gutter, 16, HeronWindowStyle.Gutter, 0),
+            };
+            foreach (var promise in _question.Promises ?? new string[0])
+                list.Children.Add(Line("✓", promise, HeronWindowStyle.SafeColour, HeronWindowStyle.TextSecondary));
             foreach (var warning in new[] { _question.Caution, _question.ChangesOff })
             {
                 if (string.IsNullOrEmpty(warning)) continue;
-                var said = HeronWindowStyle.Body(warning, HeronWindowStyle.WarnColour, 12.5);
-                said.Margin = new Thickness(0, 9, 0, 0);
-                stack.Children.Add(said);
+                list.Children.Add(Line("⚠", warning, HeronWindowStyle.WarnColour, HeronWindowStyle.WarnColour));
             }
-            return stack;
+            return list;
         }
 
-        private UIElement Promises()
+        private static UIElement Line(string symbol, string text, Color symbolColour, Color textColour)
         {
-            var list = new StackPanel();
-            foreach (var promise in _question.Promises ?? new string[0])
-                list.Children.Add(Promise(promise));
-
-            var card = new Border
+            var mark = new TextBlock
             {
-                Margin = new Thickness(HeronWindowStyle.Gutter, 17, HeronWindowStyle.Gutter, 0),
-                Padding = new Thickness(14, 12, 14, 12),
-                CornerRadius = new CornerRadius(10),
-                Background = new SolidColorBrush(HeronWindowStyle.InsetColour),
-                BorderThickness = new Thickness(1),
-                BorderBrush = new SolidColorBrush(Color.FromArgb(0x1E, 0xFF, 0xFF, 0xFF)),
-                Child = list,
-            };
-
-            var stack = new StackPanel();
-            stack.Children.Add(card);
-
-            if (!string.IsNullOrEmpty(_question.Note))
-            {
-                var note = HeronWindowStyle.Body(
-                    _question.Note, HeronWindowStyle.TextMuted, 12);
-                note.Margin = new Thickness(HeronWindowStyle.Gutter + 2, 13, HeronWindowStyle.Gutter, 0);
-                stack.Children.Add(note);
-            }
-            return stack;
-        }
-
-        private static UIElement Promise(string text)
-        {
-            var tick = new TextBlock
-            {
-                Text = "✓",
+                Text = symbol,
                 FontFamily = new FontFamily(HeronWindowStyle.BodyFont),
-                FontSize = 13,
+                FontSize = 14,
                 FontWeight = FontWeights.Bold,
-                Foreground = new SolidColorBrush(HeronWindowStyle.SafeColour),
-                Width = 22,
+                Foreground = new SolidColorBrush(symbolColour),
+                Width = 24,
                 VerticalAlignment = VerticalAlignment.Top,
             };
+            var words = HeronWindowStyle.Body(text, textColour, 13);
 
-            var words = HeronWindowStyle.Body(text, HeronWindowStyle.TextSecondary, 12.5);
-
-            var row = new Grid { Margin = new Thickness(0, 4, 0, 4) };
+            var row = new Grid { Margin = new Thickness(0, 3, 0, 3) };
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            row.ColumnDefinitions.Add(new ColumnDefinition
-            {
-                Width = new GridLength(1, GridUnitType.Star),
-            });
-
-            Grid.SetColumn(tick, 0);
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            Grid.SetColumn(mark, 0);
             Grid.SetColumn(words, 1);
-            row.Children.Add(tick);
+            row.Children.Add(mark);
             row.Children.Add(words);
             return row;
         }
 
         private UIElement Footer()
         {
-            var leave = HeronWindowStyle.GhostButton(_question.Decline ?? "Leave it off");
+            var leave = HeronWindowStyle.GhostButton(_question.Decline ?? "Leave off");
             leave.Click += delegate { Decide(false); };
 
             var turnOn = HeronWindowStyle.PrimaryButton(
