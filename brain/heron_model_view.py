@@ -62,9 +62,11 @@ KNOWN = {
     "Cable Trays": "#9b7fc8", "Cable Tray Fittings": "#8d70bb", "Conduits": "#b39ddb",
     "Generic Models": "#9e9e9e", "Furniture": "#c8a27a", "Casework": "#b08b65",
     "Specialty Equipment": "#d08a50", "Topography": "#9fb38a", "Toposolid": "#9fb38a",
-    # Drawn see-through as volumes (s21.18): a soft green for rooms, as a
-    # colour-filled room plan often is, and a soft blue for MEP spaces.
-    "Rooms": "#3fae7a", "Spaces": "#4a90d9",
+    # Drawn see-through as volumes (s21.18), in the brand's Accent (D-149,
+    # docs/brand/README.md) on the owner's word, "use brand colours for rooms
+    # and spaces": a see-through Accent is in the palette, a new hex is not.
+    # Rooms and Spaces share it; the legend keeps them apart, each hideable.
+    "Rooms": "#fd641a", "Spaces": "#fd641a",
 }
 #: The highlight the page paints a picked or looked-at element in.
 HIGHLIGHT = "#ff7a00"

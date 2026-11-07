@@ -1387,7 +1387,7 @@ refused whole - keeps a damaged colour in its place with a grey stand-in, and ma
 
 **The page:**
 - **Rooms and spaces as volumes** - a tick box beside *Load 3D*, on by default; the rooms are drawn
-  see-through in a soft green (spaces blue), so what stands inside them still shows. They appear in the
+  see-through in the brand's Accent orange (D-149 - spaces too, kept apart in the legend), so what stands inside them still shows. They appear in the
   category legend marked *see-through* and can be hidden or shown alone like any category.
 - **Colour by Category | Material** - Material colours every face in its material's shading colour, glass
   and other transparent materials see-through, with a material legend. Greyed out for a read with no
@@ -1410,3 +1410,10 @@ glass see-through with no stripes, a cut into the ground floor, picks of a windo
 the reordered page, with no page error. **A fault found that way and fixed:** the page's 3D summary did not
 carry the material fields, so *Material* stayed greyed out. **Not run in Revit**, and not seen on a real
 model's read.
+
+**Later the same day - brand colours for rooms and spaces.** On the owner's *"use brand colours for rooms
+and spaces"* (D-149): the soft green and blue were not in the brand palette, so rooms and spaces are now
+drawn in **Accent** (`#FD641A`), see-through - a see-through brand colour is in the palette, a new hex is
+not. Success, Warning and Error mean a state and Accent Light is only a gradient's end, so none of them;
+Ink and Mist each vanish on one of the page's two themes. Rooms and spaces share the colour and stay apart
+in the legend, each hidden or shown alone. `tools/check-brand.py` no longer names either colour.
