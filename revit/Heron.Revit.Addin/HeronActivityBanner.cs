@@ -8,6 +8,8 @@
 using System;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows;
@@ -16,6 +18,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
+using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using System.Windows.Documents;
@@ -110,6 +113,24 @@ namespace Heron.Revit.Addin
     /// cannot steal a click or the focus from the person using Revit -
     /// Golden Rule 8, background work must not interfere with user work.
     /// </summary>
+    ///
+    /// THE LOOK SINCE 2026-11-07 is the designer's status notification - the
+    /// "Heron status bar" design in the owner's brand kit (D-149) - drawn as
+    /// it is drawn there, information only by the owner's choice: a smoked
+    /// glass card with rounded corners and a hairline rim of white and the
+    /// state's colour; the colour washed across it with two soft blooms; a
+    /// skewed sheen travelling over it, a slowly turning aura on the rim and
+    /// a breathing glow while a job runs; the slide down from above and a
+    /// small settle. Two lines: "Heron AI  ·  Changing" in the state's colour
+    /// with three dots and the time, then the message - the model first, then
+    /// the job. Reading and changing are both the brand's orange, as the
+    /// design draws thinking and working; the WORD says which, so whether the
+    /// model is being touched is still answered. Done is Success, a stop is
+    /// Error. Two things differ from the design on purpose: the time counts in
+    /// tenths of a second, because it is there to be seen moving while Revit
+    /// is frozen (the freeze test samples it); and there are NO BUTTONS -
+    /// Revit is frozen while a job runs, so a button could do nothing, and the
+    /// card stays click-through (Golden Rule 8).
     internal sealed class HeronActivityBanner
     {
         // BACK TO 460, where this started. It went to 560 while the name
@@ -119,13 +140,14 @@ namespace Heron.Revit.Addin
         // would have paid twice for one problem.
         private const double BannerWidth = 460;
 
-        // 98 rather than 78, for the third line. That is 20 px more over a
-        // ribbon the card is click-through above anyway, and it buys each
-        // of the three a full width of its own: the model no longer
-        // competes with the job for room, so neither has to trim.
-        private const double BannerHeight = 98;
-        private const double TopMargin = 12;
-        private const double SweepWidth = 130;
+        // 66: the status design's two lines - the small top line and the
+        // message - at its 14 px padding.
+        private const double BannerHeight = 66;
+
+        // Room around the card for its glow to fall, inside the window.
+        private const double GlowPad = 18;
+        private const double TopMargin = 16;
+        private const double SweepWidth = 115;
 
         /// <summary>
         /// How long the finished/failed line is held before the banner hides.
@@ -138,7 +160,7 @@ namespace Heron.Revit.Addin
         /// </summary>
         private static readonly TimeSpan OutcomeHold = TimeSpan.FromMilliseconds(1400);
 
-        private static readonly TimeSpan SweepDuration = TimeSpan.FromSeconds(1.1);
+        private static readonly TimeSpan SweepDuration = TimeSpan.FromSeconds(3.2);
 
         /// <summary>
         /// How often the elapsed time is redrawn while a job runs.
@@ -151,13 +173,18 @@ namespace Heron.Revit.Addin
         /// </summary>
         private static readonly TimeSpan ElapsedTick = TimeSpan.FromMilliseconds(100);
 
-        private static readonly Color CardColour = Color.FromRgb(0x23, 0x26, 0x29);
-        private static readonly Color TextPrimary = Color.FromRgb(0xF2, 0xF5, 0xF7);
-        private static readonly Color TextSecondary = Color.FromRgb(0x9A, 0xA5, 0xAD);
-        private static readonly Color ReadingColour = Color.FromRgb(0x2F, 0x9B, 0xE3);
-        private static readonly Color ChangingColour = Color.FromRgb(0xF0, 0xA3, 0x2C);
-        private static readonly Color DoneColour = Color.FromRgb(0x4C, 0xC3, 0x8A);
-        private static readonly Color FailedColour = Color.FromRgb(0xE5, 0x53, 0x4B);
+        // THE BRAND'S COLOURS (D-149, docs/brand/README.md), here rather than
+        // taken from HeronWindowStyle because this file is compiled ALONE into
+        // Heron.Banner.TestHost, and that is what lets the banner be driven
+        // and photographed with no Revit. Every value is in the palette table;
+        // shades are these at an opacity.
+        private static readonly Color Ink = Color.FromRgb(0x0F, 0x0F, 0x10);
+        private static readonly Color Mist = Color.FromRgb(0xF7, 0xF5, 0xF2);
+        private static readonly Color AccentColour = Color.FromRgb(0xFD, 0x64, 0x1A);
+        private static readonly Color DoneColour = Color.FromRgb(0x3E, 0xCF, 0x8E);
+        private static readonly Color FailedColour = Color.FromRgb(0xFF, 0x5A, 0x4E);
+        private static readonly Color White = Color.FromRgb(0xFF, 0xFF, 0xFF);
+        private static readonly Color AccentLight = Color.FromRgb(0xFF, 0x9A, 0x5C);
 
         /// <summary>
         /// The banner's OWN dispatcher, on a thread of its own - not Revit's.
@@ -169,27 +196,42 @@ namespace Heron.Revit.Addin
         private readonly bool _enabled;
 
         private Window _window;
+
+        /// <summary>The message: the model, then the job - or how it ended.</summary>
         private TextBlock _title;
-        private TextBlock _model;
+
+        /// <summary>The time so far, beside the dots on the top line. Heron.Banner.TestHost samples it.</summary>
         private TextBlock _detail;
+
+        /// <summary>
+        /// The small top line - "Heron AI  ·  Changing". Named for the chip it
+        /// replaced, which Heron.Banner.TestHost reads by name.
+        /// </summary>
         private TextBlock _chipText;
-        private Border _chip;
-        private Ellipse _lamp;
+
+        private StackPanel _dots;
+        private StackPanel _eyebrow;
         private Border _sweep;
-        private Border _track;
+        private Canvas _lane;
         private DoubleAnimation _travel;
         private DispatcherTimer _hideTimer;
         private DispatcherTimer _elapsedTimer;
         private TranslateTransform _cardTransform;
-        private Border _card;
-        private SolidColorBrush _titleBrush;
+        private ScaleTransform _cardScale;
+        private Grid _card;
+        private Grid _aura;
+        private RotateTransform _auraTurn;
+        private LinearGradientBrush _auraBrush;
         private SolidColorBrush _chipBrush;
-        private SolidColorBrush _lampBrush;
-        private LinearGradientBrush _sweepBrush;
-        private SolidColorBrush _trackBrush;
-        private DoubleAnimation _lampPulse;
+        private LinearGradientBrush _rimBrush;
+        private LinearGradientBrush _washBrush;
+        private RadialGradientBrush _bloomLeft;
+        private RadialGradientBrush _bloomRight;
+        private Ellipse _bloomL;
+        private Ellipse _bloomR;
+        private DropShadowEffect _glow;
 
-        /// <summary>Is the lamp already breathing? See StartLampPulse.</summary>
+        /// <summary>Are the dots, the rim and the glow already moving? See StartLampPulse.</summary>
         private bool _lampPulsing;
 
 
@@ -522,98 +564,260 @@ namespace Heron.Revit.Addin
 
         // ----- what it says ------------------------------------------------
 
-        private void AnimateColor(SolidColorBrush brush, Color to)
+        private static void AnimateColor(SolidColorBrush brush, Color to)
         {
-            if (brush.Color == to) return;
-            
-            // Safety signal (Rule 12): do not let an animation blur Reading and Changing together.
-            if (to == ReadingColour || to == ChangingColour)
-            {
-                brush.BeginAnimation(SolidColorBrush.ColorProperty, null);
-                brush.Color = to;
-            }
-            else
-            {
-                var anim = new ColorAnimation(to, new Duration(TimeSpan.FromMilliseconds(250)));
-                brush.BeginAnimation(SolidColorBrush.ColorProperty, anim);
-            }
+            if (brush == null || brush.Color == to) return;
+            var anim = new ColorAnimation(to, new Duration(TimeSpan.FromMilliseconds(250)));
+            brush.BeginAnimation(SolidColorBrush.ColorProperty, anim);
         }
 
-        private void AnimateSweepColor(Color to)
+        private static Color At(Color colour, byte alpha)
         {
-            var transparentTo = Color.FromArgb(0, to.R, to.G, to.B);
-            
-            _sweepBrush.GradientStops[0].BeginAnimation(GradientStop.ColorProperty, null);
-            _sweepBrush.GradientStops[0].Color = transparentTo;
-            
-            _sweepBrush.GradientStops[1].BeginAnimation(GradientStop.ColorProperty, null);
-            _sweepBrush.GradientStops[1].Color = to;
-            
-            _sweepBrush.GradientStops[2].BeginAnimation(GradientStop.ColorProperty, null);
-            _sweepBrush.GradientStops[2].Color = to;
-            
-            _sweepBrush.GradientStops[3].BeginAnimation(GradientStop.ColorProperty, null);
-            _sweepBrush.GradientStops[3].Color = transparentTo;
-            
-            AnimateColor(_trackBrush, Shade(to));
+            return Color.FromArgb(alpha, colour.R, colour.G, colour.B);
+        }
+
+        /// <summary>
+        /// The state's colour in each place the design puts it: the top line
+        /// and its dots, the rim, the wash, the blooms, the aura and the glow.
+        /// </summary>
+        private void SetAccent(Color accent)
+        {
+            AnimateColor(_chipBrush, accent);
+
+            // The rim - 120 degrees, white 55, the colour at 70, white 8, the colour at 45.
+            _rimBrush.GradientStops[0].Color = At(White, 0x8C);
+            _rimBrush.GradientStops[1].Color = At(accent, 0xB3);
+            _rimBrush.GradientStops[2].Color = At(White, 0x14);
+            _rimBrush.GradientStops[3].Color = At(accent, 0x73);
+
+            // The wash - 16, 4 and 8 per cent, left to right.
+            _washBrush.GradientStops[0].Color = At(accent, 0x29);
+            _washBrush.GradientStops[1].Color = At(accent, 0x0A);
+            _washBrush.GradientStops[2].Color = At(accent, 0x14);
+
+            // The blooms. For orange, the design's own two pictures - 12 per
+            // cent on the left; 10 per cent fading through Mist at 4 on the
+            // right. For any other state, the state's colour at 18 and 14.
+            var orange = accent == AccentColour;
+            _bloomLeft.GradientStops[0].Color = At(accent, orange ? (byte)0x1F : (byte)0x2E);
+            _bloomLeft.GradientStops[1].Color = At(accent, 0x00);
+            _bloomRight.GradientStops[0].Color = At(accent, orange ? (byte)0x1A : (byte)0x24);
+            _bloomRight.GradientStops[1].Color = orange ? At(Mist, 0x0A) : At(accent, 0x12);
+            _bloomRight.GradientStops[2].Color = At(orange ? Mist : accent, 0x00);
+
+            // The aura - the colour and its light end, with gaps, turning.
+            _auraBrush.GradientStops[0].Color = At(accent, 0xFF);
+            _auraBrush.GradientStops[1].Color = orange ? AccentLight : At(accent, 0xB3);
+            _auraBrush.GradientStops[2].Color = At(accent, 0x00);
+            _auraBrush.GradientStops[3].Color = At(accent, 0xFF);
+            _auraBrush.GradientStops[4].Color = At(accent, 0x00);
+
+            _glow.Color = accent;
+        }
+
+        /// <summary>
+        /// The design's text-in when what the card says changes: up 4 px and
+        /// in, over 350 ms.
+        /// </summary>
+        private static void TextIn(UIElement element)
+        {
+            if (element == null) return;
+            var shift = element.RenderTransform as TranslateTransform;
+            if (shift == null)
+            {
+                shift = new TranslateTransform();
+                element.RenderTransform = shift;
+            }
+            var duration = new Duration(TimeSpan.FromMilliseconds(350));
+            shift.BeginAnimation(TranslateTransform.YProperty,
+                new DoubleAnimation(4, 0, duration) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
+            element.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0, 1, duration));
+        }
+
+        /// <summary>The design's island bump when the state changes: 420 ms, a breath.</summary>
+        private void Bump()
+        {
+            if (_cardScale == null) return;
+            var x = new DoubleAnimationUsingKeyFrames { Duration = new Duration(TimeSpan.FromMilliseconds(420)) };
+            x.KeyFrames.Add(new LinearDoubleKeyFrame(1.01, KeyTime.FromPercent(0.4)));
+            x.KeyFrames.Add(new LinearDoubleKeyFrame(1.0, KeyTime.FromPercent(1.0)));
+            var y = new DoubleAnimationUsingKeyFrames { Duration = new Duration(TimeSpan.FromMilliseconds(420)) };
+            y.KeyFrames.Add(new LinearDoubleKeyFrame(0.97, KeyTime.FromPercent(0.4)));
+            y.KeyFrames.Add(new LinearDoubleKeyFrame(1.005, KeyTime.FromPercent(0.7)));
+            y.KeyFrames.Add(new LinearDoubleKeyFrame(1.0, KeyTime.FromPercent(1.0)));
+            _cardScale.BeginAnimation(ScaleTransform.ScaleXProperty, x);
+            _cardScale.BeginAnimation(ScaleTransform.ScaleYProperty, y);
+        }
+
+        /// <summary>The message: the model first, so it is never the part trimmed away.</summary>
+        private static string Message(string model, string words)
+        {
+            return string.IsNullOrEmpty(model) ? words : model + "  ·  " + words;
         }
 
         private void Paint(bool changesModel, string job, string model)
         {
-            var accent = changesModel ? ChangingColour : ReadingColour;
-
-            _title.Text = changesModel
-                ? "Heron AI is changing your model"
-                : "Heron AI is reading your model";
-            AnimateColor(_titleBrush, TextPrimary);
+            // Both orange, as the design draws thinking and working. The WORD
+            // is what says whether the model is being touched - the half of
+            // the answer this banner exists for - and it comes from the
+            // registry by name, never from the wire (Golden Rule 19).
+            var eyebrow = changesModel ? "Heron AI  ·  Changing" : "Heron AI  ·  Reading";
+            var changed = _chipText.Text != eyebrow;
+            _chipText.Text = eyebrow;
+            SetAccent(AccentColour);
 
             _liveModel = model;
             _liveJob = string.IsNullOrEmpty(job) ? "Working" : job;
+            var message = Message(model, _liveJob);
+            if (_title.Text != message)
+            {
+                _title.Text = message;
+                _title.ToolTip = message;
+                TextIn(_title);
+            }
+            if (changed)
+            {
+                TextIn(_eyebrow);
+                Bump();
+            }
+
+            _dots.Visibility = Visibility.Visible;
+            _detail.Visibility = Visibility.Visible;
             ShowLive();
             StartElapsed();
 
-            _chipText.Text = changesModel ? "CHANGING" : "READING";
-            AnimateColor(_chipBrush, accent);
-            AnimateColor(_lampBrush, accent);
-            AnimateSweepColor(accent);
-            
-            _track.Visibility = Visibility.Visible;
+            _lane.Visibility = Visibility.Visible;
 
             StartAnimation();
             StartLampPulse();
         }
 
         /// <summary>
-        /// Starts the lamp breathing, and only ONCE.
+        /// Starts the dots, the aura, the glow and the blooms - ONCE.
         ///
         /// Paint runs on every render and a render happens at every Begin, so
         /// a run of fragments reached this once per job. Restarting a
-        /// repeating animation returns it to its first frame, so the lamp was
-        /// dragged back to 0.4 at every job instead of breathing. Measured
-        /// across eight jobs back to back it never once got past 0.62, where
-        /// a single job left alone sweeps the full 0.40 to 1.00.
+        /// repeating animation returns it to its first frame: the lamp this
+        /// replaced was dragged back to its dimmest at every job instead of
+        /// breathing, measured across eight jobs back to back.
         ///
         /// The flag is cleared by StopLampPulse, which is the only thing that
-        /// genuinely stops the animation - so the next job after an outcome
-        /// starts a fresh pulse, and nothing else does.
+        /// genuinely stops them - so the next job after an outcome starts them
+        /// fresh, and nothing else does.
         /// </summary>
         private void StartLampPulse()
         {
-            if (_lampPulsing || _lamp == null || _lampPulse == null) return;
+            if (_lampPulsing || _dots == null) return;
 
-            _lamp.BeginAnimation(UIElement.OpacityProperty, _lampPulse);
+            // The dots: 1.2 s each, a fifth of a second apart - faint, lit and
+            // lifted 2 px at 40 per cent, faint again.
+            for (var i = 0; i < _dots.Children.Count; i++)
+            {
+                var dot = _dots.Children[i] as FrameworkElement;
+                if (dot == null) continue;
+                var begin = TimeSpan.FromMilliseconds(150 * i);
+                var fade = new DoubleAnimationUsingKeyFrames
+                {
+                    Duration = new Duration(TimeSpan.FromMilliseconds(1200)),
+                    RepeatBehavior = RepeatBehavior.Forever,
+                    BeginTime = begin,
+                };
+                fade.KeyFrames.Add(new LinearDoubleKeyFrame(0.25, KeyTime.FromPercent(0)));
+                fade.KeyFrames.Add(new LinearDoubleKeyFrame(1.0, KeyTime.FromPercent(0.4)));
+                fade.KeyFrames.Add(new LinearDoubleKeyFrame(0.25, KeyTime.FromPercent(0.8)));
+                fade.KeyFrames.Add(new LinearDoubleKeyFrame(0.25, KeyTime.FromPercent(1.0)));
+                dot.BeginAnimation(UIElement.OpacityProperty, fade);
+
+                var lift = new DoubleAnimationUsingKeyFrames
+                {
+                    Duration = new Duration(TimeSpan.FromMilliseconds(1200)),
+                    RepeatBehavior = RepeatBehavior.Forever,
+                    BeginTime = begin,
+                };
+                lift.KeyFrames.Add(new LinearDoubleKeyFrame(0, KeyTime.FromPercent(0)));
+                lift.KeyFrames.Add(new LinearDoubleKeyFrame(-2, KeyTime.FromPercent(0.4)));
+                lift.KeyFrames.Add(new LinearDoubleKeyFrame(0, KeyTime.FromPercent(0.8)));
+                lift.KeyFrames.Add(new LinearDoubleKeyFrame(0, KeyTime.FromPercent(1.0)));
+                var shift = dot.RenderTransform as TranslateTransform;
+                if (shift == null) { shift = new TranslateTransform(); dot.RenderTransform = shift; }
+                shift.BeginAnimation(TranslateTransform.YProperty, lift);
+            }
+
+            // The aura on the rim: shown, and turning once every 6 seconds.
+            _aura.BeginAnimation(UIElement.OpacityProperty,
+                new DoubleAnimation(1, new Duration(TimeSpan.FromMilliseconds(500))));
+            _auraTurn.BeginAnimation(RotateTransform.AngleProperty, new DoubleAnimation(0, 360,
+                new Duration(TimeSpan.FromSeconds(6))) { RepeatBehavior = RepeatBehavior.Forever });
+
+            // The glow breathing - 2.4 s, the design's heron-glow.
+            _glow.BeginAnimation(DropShadowEffect.OpacityProperty, new DoubleAnimation(0.22, 0.34,
+                new Duration(TimeSpan.FromMilliseconds(1200)))
+            {
+                AutoReverse = true,
+                RepeatBehavior = RepeatBehavior.Forever,
+                EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut },
+            });
+
+            // The blooms drifting - 5 s on the left, 6 s on the right, the other way.
+            Drift(_bloomL, 5, false);
+            Drift(_bloomR, 6, true);
+
             _lampPulsing = true;
         }
 
+        /// <summary>The design's heron-bloom: fades to 60 per cent and drifts 14 px, and back.</summary>
+        private static void Drift(Ellipse bloom, double seconds, bool reverse)
+        {
+            if (bloom == null) return;
+            var half = new Duration(TimeSpan.FromSeconds(seconds / 2));
+            var ease = new SineEase { EasingMode = EasingMode.EaseInOut };
+            bloom.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(reverse ? 0.6 : 1.0, reverse ? 1.0 : 0.6, half)
+            {
+                AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever, EasingFunction = ease,
+            });
+            var shift = bloom.RenderTransform as TranslateTransform;
+            if (shift == null) { shift = new TranslateTransform(); bloom.RenderTransform = shift; }
+            shift.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation(reverse ? 14 : 0, reverse ? 0 : 14, half)
+            {
+                AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever, EasingFunction = ease,
+            });
+        }
+
         /// <summary>
-        /// Stops it and leaves the lamp solid - an outcome is not breathing.
+        /// Stops them and leaves the card still - an outcome is not moving -
+        /// with the design's one flash of the outcome's colour, then a soft glow.
         /// </summary>
         private void StopLampPulse()
         {
-            if (_lamp != null)
+            if (_dots != null)
             {
-                _lamp.BeginAnimation(UIElement.OpacityProperty, null);
-                _lamp.Opacity = 1.0;
+                foreach (FrameworkElement dot in _dots.Children)
+                {
+                    dot.BeginAnimation(UIElement.OpacityProperty, null);
+                    dot.Opacity = 1.0;
+                    var shift = dot.RenderTransform as TranslateTransform;
+                    if (shift != null) shift.BeginAnimation(TranslateTransform.YProperty, null);
+                }
+            }
+            if (_aura != null)
+            {
+                _aura.BeginAnimation(UIElement.OpacityProperty,
+                    new DoubleAnimation(0, new Duration(TimeSpan.FromMilliseconds(500))));
+            }
+            if (_auraTurn != null) _auraTurn.BeginAnimation(RotateTransform.AngleProperty, null);
+            if (_glow != null)
+            {
+                // heron-flash: the colour bright, then settling - 0.9 s.
+                _glow.BeginAnimation(DropShadowEffect.OpacityProperty, new DoubleAnimation(0.65, 0.28,
+                    new Duration(TimeSpan.FromMilliseconds(900))) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
+            }
+            foreach (var bloom in new[] { _bloomL, _bloomR })
+            {
+                if (bloom == null) continue;
+                bloom.BeginAnimation(UIElement.OpacityProperty, null);
+                bloom.Opacity = 1.0;
+                var shift = bloom.RenderTransform as TranslateTransform;
+                if (shift != null) shift.BeginAnimation(TranslateTransform.XProperty, null);
             }
 
             _lampPulsing = false;
@@ -623,59 +827,34 @@ namespace Heron.Revit.Addin
         {
             StopElapsed();
 
-            var accent = ok ? DoneColour : FailedColour;
-
-            _title.Text = ok ? "Heron AI has finished" : "Heron AI stopped";
-
-            var rest = string.IsNullOrEmpty(outcome)
+            _chipText.Text = ok ? "Heron AI  ·  Done" : "Heron AI  ·  Needs attention";
+            var message = Message(model, string.IsNullOrEmpty(outcome)
                 ? (ok ? "Done" : "Did not finish")
-                : outcome;
+                : outcome);
+            _title.Text = message;
+            _title.ToolTip = message;
 
-            if (milliseconds >= 0)
-            {
-                rest += "  -  " + Elapsed(ElapsedMilliseconds());
-            }
+            // The time it took stays beside the word, so the number does not
+            // appear to vanish when the job ends.
+            _detail.Text = milliseconds >= 0 ? Elapsed(ElapsedMilliseconds()) : string.Empty;
+            _detail.Visibility = milliseconds >= 0 ? Visibility.Visible : Visibility.Collapsed;
+            _dots.Visibility = Visibility.Collapsed;
 
-            SetDetail(model, rest);
-
-            _chipText.Text = ok ? "DONE" : "STOPPED";
-            AnimateColor(_chipBrush, accent);
-            AnimateColor(_lampBrush, accent);
+            SetAccent(ok ? DoneColour : FailedColour);
+            TextIn(_eyebrow);
+            TextIn(_title);
+            Bump();
 
             StopLampPulse();
-
             StopAnimation();
-            _track.Visibility = Visibility.Collapsed;
+            _lane.Visibility = Visibility.Collapsed;
         }
 
         /// <summary>
-        /// The lower two lines: WHICH MODEL, then what is being done to it.
-        ///
-        /// A line each, because they answer different questions and a reader
-        /// scanning a frozen Revit should not have to parse one line to find
-        /// the model in it. Sharing a line also made them compete: the
-        /// longer the project name, the less of the outcome survived, and
-        /// "Writing is switched off" trimming to "Writing is switched..."
-        /// is the one word that mattered going missing.
-        ///
-        /// WHEN THERE IS NO NAME THE LINE GOES, rather than sitting blank.
-        /// An empty row in the middle of a card reads as something that
-        /// failed to load. The words are centred as a stack, so what is
-        /// left re-centres itself and the card never jumps.
-        /// </summary>
-        private void SetDetail(string model, string rest)
-        {
-            var named = !string.IsNullOrEmpty(model);
-            _model.Text = named ? model : string.Empty;
-            _model.Visibility = named ? Visibility.Visible : Visibility.Collapsed;
-
-            _detail.Text = string.IsNullOrEmpty(rest) ? string.Empty : rest;
-            _detail.Foreground = new SolidColorBrush(TextSecondary);
-        }
-
-        /// <summary>
-        /// Seconds once past a second, because "1400 ms" is a developer's unit
-        /// and the person reading this is looking at a frozen Revit.
+        /// Seconds in tenths once past a second, because the number is there to
+        /// be seen MOVING while Revit is frozen; "1400 ms" is a developer's
+        /// unit, and the design's 0:01 moves too seldom to answer "has this
+        /// died?".
         /// </summary>
         private static string Elapsed(long milliseconds)
         {
@@ -683,12 +862,6 @@ namespace Heron.Revit.Addin
                 return milliseconds.ToString(CultureInfo.InvariantCulture) + " ms";
 
             return (milliseconds / 1000.0).ToString("0.0", CultureInfo.InvariantCulture) + " s";
-        }
-
-        /// <summary>The accent at track strength - the same hue, much darker.</summary>
-        private static Color Shade(Color colour)
-        {
-            return Color.FromRgb((byte)(colour.R / 4), (byte)(colour.G / 4), (byte)(colour.B / 4));
         }
 
         // ----- the window ---------------------------------------------------
@@ -706,16 +879,18 @@ namespace Heron.Revit.Addin
             if (!_window.IsVisible)
             {
                 PositionOver(_host);
-                _cardTransform.Y = -15;
+                _cardTransform.Y = -(BannerHeight + 40);
                 _card.Opacity = 0;
                 _window.Show();
             }
 
-            var slide = new DoubleAnimation(0, new Duration(TimeSpan.FromMilliseconds(200))) 
-            { 
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } 
+            // The design's DynamicIsland: down from above the edge in 560 ms,
+            // a small overshoot and settle; in fully by 240 ms.
+            var slide = new DoubleAnimation(0, new Duration(TimeSpan.FromMilliseconds(560)))
+            {
+                EasingFunction = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.3 }
             };
-            var fade = new DoubleAnimation(1, new Duration(TimeSpan.FromMilliseconds(150)));
+            var fade = new DoubleAnimation(1, new Duration(TimeSpan.FromMilliseconds(240)));
             _cardTransform.BeginAnimation(TranslateTransform.YProperty, slide);
             _card.BeginAnimation(UIElement.OpacityProperty, fade);
 
@@ -724,118 +899,213 @@ namespace Heron.Revit.Addin
 
         private void Build()
         {
-            _titleBrush = new SolidColorBrush(TextPrimary);
-            _chipBrush = new SolidColorBrush(ReadingColour);
-            _lampBrush = new SolidColorBrush(ReadingColour);
-            _sweepBrush = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 0) };
-            _sweepBrush.GradientStops.Add(new GradientStop(Color.FromArgb(0, ReadingColour.R, ReadingColour.G, ReadingColour.B), 0.0));
-            _sweepBrush.GradientStops.Add(new GradientStop(ReadingColour, 0.2));
-            _sweepBrush.GradientStops.Add(new GradientStop(ReadingColour, 0.8));
-            _sweepBrush.GradientStops.Add(new GradientStop(Color.FromArgb(0, ReadingColour.R, ReadingColour.G, ReadingColour.B), 1.0));
-            _trackBrush = new SolidColorBrush(Shade(ReadingColour));
+            _chipBrush = new SolidColorBrush(AccentColour);
 
-            _title = Line(15, FontWeights.SemiBold, TextPrimary);
-            _title.Foreground = _titleBrush;
+            // THE TOP LINE: "Heron AI  ·  Changing" in the state's colour,
+            // 11 px semibold, then three 3 px dots and the time.
+            _chipText = Line(11, FontWeights.SemiBold, AccentColour);
+            _chipText.Foreground = _chipBrush;
+            _chipText.TextTrimming = TextTrimming.CharacterEllipsis;
 
-            // Between the two in size as well as in position: louder than
-            // the job because it answers the more urgent question, quieter
-            // than the title because the title is what the eye lands on.
-            _model = Line(12.5, FontWeights.SemiBold, TextPrimary);
-            _model.Margin = new Thickness(0, 4, 0, 0);
-            _model.TextTrimming = TextTrimming.CharacterEllipsis;
+            _dots = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                VerticalAlignment = VerticalAlignment.Bottom,
+                Margin = new Thickness(6, 0, 0, 3),
+            };
+            for (var i = 0; i < 3; i++)
+            {
+                _dots.Children.Add(new Ellipse
+                {
+                    Width = 3,
+                    Height = 3,
+                    Margin = new Thickness(0, 0, 2, 0),
+                    Fill = _chipBrush,
+                });
+            }
 
-            _detail = Line(11, FontWeights.Normal, TextSecondary);
-            _detail.Margin = new Thickness(0, 3, 0, 0);
-            _detail.TextTrimming = TextTrimming.CharacterEllipsis;
+            _detail = Line(11, FontWeights.SemiBold, At(White, 0x66));
+            _detail.Margin = new Thickness(6, 0, 0, 0);
             Typography.SetNumeralAlignment(_detail, FontNumeralAlignment.Tabular);
 
-            _lamp = new Ellipse
-            {
-                Width = 10,
-                Height = 10,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center,
-                Fill = _lampBrush,
-            };
-            _lampPulse = new DoubleAnimation(0.4, 1.0, new Duration(TimeSpan.FromMilliseconds(600)))
-            {
-                AutoReverse = true,
-                RepeatBehavior = RepeatBehavior.Forever,
-                EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }
-            };
-            _lampPulse.Freeze();
+            _eyebrow = new StackPanel { Orientation = Orientation.Horizontal, Height = 15 };
+            _eyebrow.Children.Add(_chipText);
+            _eyebrow.Children.Add(_dots);
+            _eyebrow.Children.Add(_detail);
 
-            var mark = new Border
-            {
-                Width = 40,
-                Height = 40,
-                CornerRadius = new CornerRadius(20),
-                Background = new SolidColorBrush(Color.FromRgb(0x14, 0x17, 0x1A)),
-                BorderBrush = new SolidColorBrush(Color.FromArgb(0x40, 0xFF, 0xFF, 0xFF)),
-                BorderThickness = new Thickness(1),
-                VerticalAlignment = VerticalAlignment.Center,
-                Child = _lamp,
-            };
+            // THE MESSAGE: 14 px semibold, Mist.
+            _title = Line(14, FontWeights.SemiBold, Mist);
+            _title.Margin = new Thickness(0, 2, 0, 0);
+            _title.TextTrimming = TextTrimming.CharacterEllipsis;
 
             var words = new StackPanel
             {
                 VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(13, 0, 12, 0),
+                Margin = new Thickness(18, 0, 14, 0),
             };
+            words.Children.Add(_eyebrow);
             words.Children.Add(_title);
-            words.Children.Add(_model);
-            words.Children.Add(_detail);
 
-            _chipText = Line(10, FontWeights.Bold, ReadingColour);
-            _chipText.Foreground = _chipBrush;
-            _chip = new Border
+            // THE GLASS: smoke, Ink at 92 to 86 per cent across at 135 degrees.
+            var glass = new Border
             {
-                CornerRadius = new CornerRadius(3),
-                BorderThickness = new Thickness(1),
-                BorderBrush = _chipBrush,
-                Padding = new Thickness(7, 3, 7, 3),
-                VerticalAlignment = VerticalAlignment.Center,
-                Child = _chipText,
+                CornerRadius = new CornerRadius(20),
+                Background = new LinearGradientBrush(At(Ink, 0xEB), At(Ink, 0xDB), 45),
             };
 
-            var row = new Grid { Margin = new Thickness(16, 0, 16, 0) };
-            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            row.Children.Add(mark);
-            Grid.SetColumn(words, 1);
-            row.Children.Add(words);
-            Grid.SetColumn(_chip, 2);
-            row.Children.Add(_chip);
+            // THE WASH: the state's colour, left to right.
+            _washBrush = new LinearGradientBrush { StartPoint = new Point(0, 0.5), EndPoint = new Point(1, 0.5) };
+            _washBrush.GradientStops.Add(new GradientStop(At(AccentColour, 0x29), 0.0));
+            _washBrush.GradientStops.Add(new GradientStop(At(AccentColour, 0x0A), 0.5));
+            _washBrush.GradientStops.Add(new GradientStop(At(AccentColour, 0x14), 1.0));
+            var wash = new Border { Background = _washBrush };
 
-            // An indeterminate sweep, not a percentage. A request carries no
-            // progress data - Revit does not report how far through a script
-            // it is - and a bar that fills at a made-up rate is a lie the user
-            // will time their own work against.
+            // THE BLOOMS: the design's two, where it places them.
+            _bloomLeft = new RadialGradientBrush();
+            _bloomLeft.GradientStops.Add(new GradientStop(At(AccentColour, 0x1F), 0.0));
+            _bloomLeft.GradientStops.Add(new GradientStop(At(AccentColour, 0x00), 1.0));
+            _bloomRight = new RadialGradientBrush();
+            _bloomRight.GradientStops.Add(new GradientStop(At(AccentColour, 0x1A), 0.0));
+            _bloomRight.GradientStops.Add(new GradientStop(At(Mist, 0x0A), 0.6));
+            _bloomRight.GradientStops.Add(new GradientStop(At(Mist, 0x00), 1.0));
+            var blooms = new Canvas();
+            _bloomL = new Ellipse { Width = 200, Height = 120, Fill = _bloomLeft };
+            Canvas.SetLeft(_bloomL, -61.2);
+            Canvas.SetTop(_bloomL, -41.2);
+            _bloomR = new Ellipse { Width = 220, Height = 120, Fill = _bloomRight };
+            Canvas.SetLeft(_bloomR, BannerWidth - 220 + 38.8);
+            Canvas.SetTop(_bloomR, 18.8);
+            blooms.Children.Add(_bloomL);
+            blooms.Children.Add(_bloomR);
+
+            // THE SHEEN while a job runs: a quarter of the card wide, skewed
+            // 20 degrees, white at 12 per cent - travelling across in 3.2 s. An
+            // indeterminate sweep, not a percentage: a request carries no
+            // progress data, and a bar that fills at a made-up rate is a lie
+            // the user will time their own work against.
+            var sheen = new LinearGradientBrush { StartPoint = new Point(0, 0.5), EndPoint = new Point(1, 0.5) };
+            sheen.GradientStops.Add(new GradientStop(At(White, 0x00), 0.0));
+            sheen.GradientStops.Add(new GradientStop(At(White, 0x1F), 0.5));
+            sheen.GradientStops.Add(new GradientStop(At(White, 0x00), 1.0));
             _sweep = new Border
             {
                 Width = SweepWidth,
-                Height = 3,
-                Background = _sweepBrush,
-                HorizontalAlignment = HorizontalAlignment.Left,
-                VerticalAlignment = VerticalAlignment.Top,
+                Height = BannerHeight,
+                Background = sheen,
+                RenderTransform = new SkewTransform(-20, 0, SweepWidth / 2, BannerHeight / 2),
             };
-            var lane = new Canvas { Height = 3 };
-            lane.Children.Add(_sweep);
-            _track = new Border
+            _lane = new Canvas();
+            _lane.Children.Add(_sweep);
+            Canvas.SetLeft(_sweep, -1.2 * SweepWidth);
+
+            // THE LINE OF LIGHT along the top edge, white at 70 per cent in the middle.
+            var highlight = new Border
             {
-                Background = _trackBrush,
-                CornerRadius = new CornerRadius(0, 0, 10, 10),
-                ClipToBounds = true,
-                Child = lane,
+                Height = 1,
+                Margin = new Thickness(20, 0, 20, 0),
+                VerticalAlignment = VerticalAlignment.Top,
+                Background = new LinearGradientBrush
+                {
+                    StartPoint = new Point(0, 0.5),
+                    EndPoint = new Point(1, 0.5),
+                    GradientStops =
+                    {
+                        new GradientStop(At(White, 0x00), 0.0),
+                        new GradientStop(At(White, 0xB3), 0.5),
+                        new GradientStop(At(White, 0x00), 1.0),
+                    },
+                },
             };
 
-            var stack = new Grid();
-            stack.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-            stack.RowDefinitions.Add(new RowDefinition { Height = new GridLength(3) });
-            stack.Children.Add(row);
-            Grid.SetRow(_track, 1);
-            stack.Children.Add(_track);
+            var layers = new Grid
+            {
+                Clip = new RectangleGeometry(new Rect(0, 0, BannerWidth, BannerHeight), 20, 20),
+            };
+            layers.Children.Add(glass);
+            layers.Children.Add(wash);
+            layers.Children.Add(blooms);
+            layers.Children.Add(_lane);
+            layers.Children.Add(highlight);
+            layers.Children.Add(words);
+
+            // THE RIM: a 1.2 px hairline at 120 degrees.
+            _rimBrush = new LinearGradientBrush { StartPoint = new Point(0, 0.21), EndPoint = new Point(1, 0.79) };
+            _rimBrush.GradientStops.Add(new GradientStop(At(White, 0x8C), 0.0));
+            _rimBrush.GradientStops.Add(new GradientStop(At(AccentColour, 0xB3), 0.35));
+            _rimBrush.GradientStops.Add(new GradientStop(At(White, 0x14), 0.6));
+            _rimBrush.GradientStops.Add(new GradientStop(At(AccentColour, 0x73), 1.0));
+            var rim = new Border
+            {
+                CornerRadius = new CornerRadius(20),
+                BorderThickness = new Thickness(1.2),
+                BorderBrush = _rimBrush,
+            };
+
+            // THE AURA while a job runs: the colour travelling round the rim,
+            // a crisp line over a soft halo. WPF has no conic gradient, so a
+            // turning linear one stands in for the design's - the same colours
+            // and gaps, the same 6 s turn.
+            _auraTurn = new RotateTransform(0, 0.5, 0.5);
+            _auraBrush = new LinearGradientBrush
+            {
+                StartPoint = new Point(0, 0),
+                EndPoint = new Point(1, 1),
+                RelativeTransform = _auraTurn,
+            };
+            _auraBrush.GradientStops.Add(new GradientStop(AccentColour, 0.0));
+            _auraBrush.GradientStops.Add(new GradientStop(AccentLight, 0.12));
+            _auraBrush.GradientStops.Add(new GradientStop(At(AccentColour, 0x00), 0.34));
+            _auraBrush.GradientStops.Add(new GradientStop(AccentColour, 0.62));
+            _auraBrush.GradientStops.Add(new GradientStop(At(AccentColour, 0x00), 0.9));
+            var halo = new Border
+            {
+                Margin = new Thickness(-1),
+                CornerRadius = new CornerRadius(21),
+                BorderThickness = new Thickness(3),
+                BorderBrush = _auraBrush,
+                Opacity = 0.3,
+                Effect = new BlurEffect { Radius = 8 },
+            };
+            var line = new Border
+            {
+                CornerRadius = new CornerRadius(20),
+                BorderThickness = new Thickness(1),
+                BorderBrush = _auraBrush,
+            };
+            _aura = new Grid { Opacity = 0, IsHitTestVisible = false };
+            _aura.Children.Add(halo);
+            _aura.Children.Add(line);
+
+            // THE GLOW: the state's colour beneath the card, breathing while a
+            // job runs - the ONLY effect on the card itself.
+            _glow = new DropShadowEffect
+            {
+                Color = AccentColour,
+                ShadowDepth = 6,
+                Direction = 270,
+                BlurRadius = 26,
+                Opacity = 0.28,
+            };
+
+            _cardTransform = new TranslateTransform();
+            _cardScale = new ScaleTransform(1, 1);
+            var transforms = new TransformGroup();
+            transforms.Children.Add(_cardScale);
+            transforms.Children.Add(_cardTransform);
+
+            var body = new Grid { Effect = _glow };
+            body.Children.Add(layers);
+            body.Children.Add(rim);
+
+            _card = new Grid
+            {
+                Width = BannerWidth,
+                Height = BannerHeight,
+                RenderTransform = transforms,
+                RenderTransformOrigin = new Point(0.5, 0.5),
+            };
+            _card.Children.Add(body);
+            _card.Children.Add(_aura);
 
             // Driven straight onto the property rather than through a
             // Storyboard. A Storyboard is only controllable - stoppable - when
@@ -846,38 +1116,22 @@ namespace Heron.Revit.Addin
             // reused for every job.
             _travel = new DoubleAnimation
             {
-                From = -SweepWidth,
-                To = BannerWidth,
+                From = -1.2 * SweepWidth,
+                To = 3.2 * SweepWidth,
                 Duration = new Duration(SweepDuration),
                 RepeatBehavior = RepeatBehavior.Forever,
                 EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut },
             };
             _travel.Freeze();
 
-            _cardTransform = new TranslateTransform();
-            _card = new Border
-            {
-                RenderTransform = _cardTransform,
-                Background = new SolidColorBrush(CardColour),
-                BorderBrush = new SolidColorBrush(Color.FromArgb(0x38, 0xFF, 0xFF, 0xFF)),
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(10),
-                Child = stack,
-                Effect = new DropShadowEffect
-                {
-                    BlurRadius = 18,
-                    ShadowDepth = 4,
-                    Direction = 270,
-                    Opacity = 0.45,
-                    Color = Colors.Black,
-                },
-            };
-
             _window = new Window
             {
-                Width = BannerWidth,
-                Height = BannerHeight,
-                Content = _card,
+                Width = BannerWidth + 2 * GlowPad,
+                Height = BannerHeight + 2 * GlowPad,
+                // The glow's room is a frame around the card, not a margin on
+                // it, so whatever photographs the window's content - the test
+                // host does - gets the whole card and its glow.
+                Content = new Border { Padding = new Thickness(GlowPad), Child = _card },
                 WindowStyle = WindowStyle.None,
                 ResizeMode = ResizeMode.NoResize,
                 ShowInTaskbar = false,
@@ -885,7 +1139,7 @@ namespace Heron.Revit.Addin
                 Topmost = true,
                 // Without this WPF cannot render an alpha background, and the
                 // rounded card arrives inside a solid black rectangle with no
-                // shadow. It is required by - not merely compatible with -
+                // glow. It is required by - not merely compatible with -
                 // WindowStyle.None plus a transparent background.
                 AllowsTransparency = true,
                 Background = Brushes.Transparent,
@@ -961,8 +1215,8 @@ namespace Heron.Revit.Addin
                 width = work.Width;
             }
 
-            _window.Left = left + Math.Max(0, (width - BannerWidth) / 2.0);
-            _window.Top = top + TopMargin;
+            _window.Left = left + Math.Max(0, (width - _window.Width) / 2.0);
+            _window.Top = top + TopMargin - GlowPad;
         }
 
         /// <summary>
@@ -1033,12 +1287,15 @@ namespace Heron.Revit.Addin
 
             if (_window != null && _window.IsVisible)
             {
-                var slide = new DoubleAnimation(-15, new Duration(TimeSpan.FromMilliseconds(150))) 
+                var slide = new DoubleAnimation(-(BannerHeight + 40), new Duration(TimeSpan.FromMilliseconds(380)))
                 { 
                     EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn } 
                 };
-                var fade = new DoubleAnimation(0, new Duration(TimeSpan.FromMilliseconds(150)));
-                
+                var fade = new DoubleAnimation(0, new Duration(TimeSpan.FromMilliseconds(300)))
+                {
+                    BeginTime = TimeSpan.FromMilliseconds(80),
+                };
+
                 fade.Completed += (s, e) => 
                 {
                     if (Volatile.Read(ref _active) > 0) return;
@@ -1072,7 +1329,7 @@ namespace Heron.Revit.Addin
         /// </summary>
         private void ShowLive()
         {
-            SetDetail(_liveModel, _liveJob + "  -  " + Elapsed(ElapsedMilliseconds()));
+            if (_detail != null) _detail.Text = Elapsed(ElapsedMilliseconds());
         }
 
         /// <summary>
@@ -1158,14 +1415,20 @@ namespace Heron.Revit.Addin
 
             _window = null;
             _title = null;
-            _model = null;
             _detail = null;
-            _chip = null;
             _chipText = null;
-            _lamp = null;
+            _dots = null;
+            _eyebrow = null;
             _sweep = null;
-            _track = null;
+            _lane = null;
             _travel = null;
+            _card = null;
+            _cardScale = null;
+            _aura = null;
+            _auraTurn = null;
+            _glow = null;
+            _bloomL = null;
+            _bloomR = null;
             _lampPulsing = false;
             _liveJob = null;
             _liveModel = null;
