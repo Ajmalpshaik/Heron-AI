@@ -1448,3 +1448,46 @@ page): every colour the page itself draws is now one of the brand kit's, or one 
 **Proved without Revit:** every Companion and brain test passes; `tools/check-brand.py` names nothing in the
 Companion's page files but the colours listed as outside the palette; and the page was looked at in
 headless Chromium, light and dark. **Not seen** in Revit's browser or on the owner's PC.
+
+### 21.20 Tabs instead of one long page - the page made easy to use (2026-11-07)
+
+On the owner's word - *"it is not user friendly ... make it a powerful, user friendly thing ... everything you
+can rearrange"*. **What the page does is unchanged: every route, hook, number and rule is as before.** What
+changed is how it is laid out, after looking at every workspace full of sample data:
+
+| Workspace | Before | After |
+|---|---|---|
+| Model Dashboard | one scroll of about 3,000 px | **Overview · Issues · 3D view · Parameters** - the Overview fits a screen |
+| HVAC Loads | about 2,000 px | **Results · 3D take-off · Inputs · Checks** |
+| Sprinkler Hydraulics | about 5,000 px, a two-line *Jump to* row, tables cut off at the right | **Design inputs · Remote area & spacing · Fire water · 3D · Checks** |
+
+- **A workspace's header stays** - its title, which model and when, the steps (Calculate, Check, Report...),
+  the key figures and the main buttons - and the rest is in tabs, one job each. The tab bar sticks under the
+  top bar while a long tab scrolls. A tab says when something needs a look: *Issues 11*, *Checks 1* (a
+  failed check). The tab you were on is remembered per workspace, in this browser only. *Jump to* is gone
+  from these three; Sprinkler Layout and the Element Table are short and keep it.
+- **The tabs only show and hide what each panel already drew** (`TABS` and `tabsSync` in `companion.js`):
+  nothing is read from Heron or Revit, they run on no timer of their own, and they hide with a class so a
+  panel's own `hidden` is never touched. A panel that redraws gets its tabs back before the next paint.
+- **The Model Dashboard, rearranged:** the header row keeps Refresh, Reset isolate, Print / PDF and Download
+  CSV. *Extra charts* (the board) moved under the charts it adds and reads the model at once when chosen - the
+  modeller's own press, never a timer. The parameters to check moved into **Parameters**, with their own
+  *Check these* button, beside *Colour Revit's active view*. The search moved into **Issues** and searches the
+  rows there; the *11 worth a look · 3 counts only · 3 found nothing* chips are buttons that filter the list.
+  **Show in 3D** opens the 3D tab.
+- **The 3D tab is laid out as a viewer:** the drawing takes the room - the height of the window - and its
+  controls sit in a panel beside it: *Colour by*, the categories as a list (hide, show, Only), what was
+  picked, and the read's figures.
+- **Input tables wrap like a form:** in Sprinkler Hydraulics and Sprinkler Layout a long *Why* or *A standard
+  offers* wraps in its column; only a box to type in keeps its width. Before, the last column was squeezed
+  to a few letters and every row stood a dozen lines tall.
+- **HVAC Loads:** clicking a Space's name opens the 3D take-off tab with that Space alone.
+
+**Proved without Revit:** `tests/test_companion.py` passes with a new group for the tabs (each workspace's
+tabs, nothing read and no timer, the bar never counted as a part, Show in 3D opens the 3D tab, no *Jump to*
+where there are tabs). The page was driven in headless Chromium with sample data in the dashboard, loads and
+sprinkler workspaces - every tab of each opened and measured, the tab bar seen sticking, a chip filtering the
+rows, light and dark, 1440 and 1000 px wide - with no page error. **Faults found that way and fixed:** the tab
+bar counted itself as part of the Overview and hid with it; and drawn inside a panel's box it stopped
+sticking at that box's end, so the boxes now take no part in the layout. **Not seen** in Revit's browser or on
+the owner's PC.

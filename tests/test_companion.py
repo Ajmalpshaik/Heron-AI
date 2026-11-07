@@ -1811,6 +1811,32 @@ def test_page_is_in_the_brand():
     print()
 
 
+def test_workspace_tabs():
+    """A workspace full of data is split into tabs (docs/40 s21.20): its header stays,
+    one job per tab, and the tabs only show and hide what the panel drew - they read
+    nothing from Heron or Revit and run on no timer of their own."""
+    print()
+    print("Workspace tabs instead of one long page")
+    js = io.open(PAGE_JS, encoding="utf-8").read()
+    css = io.open(os.path.join(ROOT, "mcp", "companion", "static", "companion.css"), encoding="utf-8").read()
+    tabs = js[js.index("const TABS = {"):js.index("function tabGo(")]
+    for ws, labels in (("dashboard", ["Overview", "Issues", "3D view", "Parameters"]),
+                       ("loads", ["Results", "3D take-off", "Inputs", "Checks"]),
+                       ("sprinkler", ["Design inputs", "Remote area & spacing", "Fire water", "3D", "Checks"])):
+        check(("  %s: [" % ws) in tabs and all(('label: "%s"' % l) in tabs for l in labels),
+              "%s has its tabs: %s" % (ws, ", ".join(labels)))
+    engine = js[js.index("function tabsSync()"):js.index("// A long workspace gets a row of links")]
+    check("fetch(" not in tabs + engine and "setInterval" not in engine and "setTimeout" not in engine,
+          "the tabs read nothing and run on no timer of their own")
+    check(".tab-off { display: none !important; }" in css and "classList.toggle(\"tab-off\"" in engine,
+          "a tab hides with a class, never with the panel's own `hidden`")
+    check('n.classList.contains("ws-tabs")' in engine, "the tab bar is never counted as a part it switches")
+    check("tabGo(\"dashboard\", \"3d\")" in js and "tabGo(\"loads\", \"3d\")" in js,
+          "Show in 3D and a Space's name open the 3D tab")
+    check("TABS[wsNow]" in js, "a workspace with tabs has no Jump to row")
+    print()
+
+
 def test_page_frame():
     """The page's frame (docs/40 s21.16): a sidebar of five workspaces, one shown at a
     time, desktop only. Read from the page's own files - how it LOOKS is a person's eye."""
@@ -1886,6 +1912,7 @@ def main():
         check(False, "the Sprinkler Layout panel checks ran to the end (they raised %r)" % (why,))
     test_page_frame()
     test_page_is_in_the_brand()
+    test_workspace_tabs()
     test_no_way_to_an_ai()
     test_addin_side()
 
