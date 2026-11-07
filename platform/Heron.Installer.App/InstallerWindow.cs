@@ -9,7 +9,9 @@ using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace Heron.Installer.App
 {
@@ -25,8 +27,28 @@ namespace Heron.Installer.App
     /// one pixel of it has been drawn. Stage 4's screen recording is owed on
     /// the owner's machine - rows AB1 to AB7 in docs/NEEDS-CHECKING.md.
     /// </summary>
+    ///
+    /// THE BRAND'S LOOK SINCE 2026-11-07 (D-149): the Heron logo at the top
+    /// over a line of the brand's orange, Mist for the page, Ink for the
+    /// words, the orange Install button and a quiet Close, the heron as the
+    /// window's and the program's icon. The colours are the palette's own
+    /// values, kept here because this project may reference neither the
+    /// add-in nor Heron.Core; docs/brand/README.md holds the table. What it
+    /// draws, and every rule behind it, is unchanged.
     public sealed class InstallerWindow : Window
     {
+        // THE BRAND'S COLOURS - docs/brand/README.md, D-149.
+        private static readonly Color Ink = Color.FromRgb(0x0F, 0x0F, 0x10);
+        private static readonly Color Mist = Color.FromRgb(0xF7, 0xF5, 0xF2);
+        private static readonly Color Accent = Color.FromRgb(0xFD, 0x64, 0x1A);
+        private static readonly Color AccentLight = Color.FromRgb(0xFF, 0x9A, 0x5C);
+        private static readonly Color White = Color.FromRgb(0xFF, 0xFF, 0xFF);
+
+        private static Color At(Color colour, byte alpha)
+        {
+            return Color.FromArgb(alpha, colour.R, colour.G, colour.B);
+        }
+
         private readonly InstallerScreen _screen;
         private readonly Dictionary<string, CheckBox> _productTicks =
             new Dictionary<string, CheckBox>(StringComparer.Ordinal);
@@ -60,8 +82,13 @@ namespace Heron.Installer.App
             SizeToContent = SizeToContent.Height;
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
             ResizeMode = ResizeMode.CanMinimize;
+            Background = new SolidColorBrush(Mist);
+            Foreground = new SolidColorBrush(Ink);
+            FontFamily = new FontFamily("Segoe UI");
+            Icon = Picture("Heron.ico");
 
-            var page = new StackPanel { Margin = new Thickness(18) };
+            var page = new StackPanel { Margin = new Thickness(22, 16, 22, 20) };
+            page.Children.Add(Masthead(version));
 
             page.Children.Add(Heading("Revit versions found on this PC"));
             page.Children.Add(ReleaseList());
@@ -69,15 +96,25 @@ namespace Heron.Installer.App
             page.Children.Add(Heading("Products"));
             page.Children.Add(ProductList());
 
+            // ONE LINE, with the folder on hover - the owner's word of
+            // 2026-11-07, "make it simple".
             page.Children.Add(Heading("Install location"));
-            page.Children.Add(Quiet(InstallerScreen.InstallLocation));
-            page.Children.Add(Quiet(InstallerScreen.InstallLocationNote));
+            var where = Quiet("For your Windows user only - no administrator needed.");
+            where.ToolTip = InstallerScreen.InstallLocation + "  " + InstallerScreen.InstallLocationNote;
+            page.Children.Add(where);
 
             // WHAT INSTALL ALSO DOES, BEFORE IT IS PRESSED - Q-39. Pressing
             // Install after reading this is the asking; the sentence is
             // PythonSetup's, so it says what PythonSetup really does.
-            page.Children.Add(Heading("Heron's Python side"));
-            page.Children.Add(Quiet(PythonSetup.WhatInstallAlsoDoes));
+            // SHORT, with the whole sentence on hover - the owner's word of
+            // 2026-11-07, "make it simple". The short line still says what
+            // Install also does and what it needs, so pressing Install after
+            // reading it is still the asking (Q-39).
+            page.Children.Add(Heading("Heron's AI side"));
+            var aiSide = Quiet("Also sets up Heron's AI. Needs Python 3." + PythonSetup.OldestMinor +
+                               " to 3." + PythonSetup.NewestMinor + " and the internet once.");
+            aiSide.ToolTip = PythonSetup.WhatInstallAlsoDoes;
+            page.Children.Add(aiSide);
 
             // BEFORE Install, never after it fails - Stage 4 item 6. Kept, so
             // it can be drawn again once what is open has changed - 5b-1068.
@@ -97,14 +134,26 @@ namespace Heron.Installer.App
             _install = new Button
             {
                 Content = "Install",
-                Width = 110,
-                Height = 28,
+                Width = 120,
+                Height = 34,
                 Margin = new Thickness(0, 0, 10, 0),
                 IsEnabled = screen.AnythingToOffer,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = new SolidColorBrush(Ink),
+                Cursor = Cursors.Hand,
+                Template = ButtonTemplate(Accent, AccentLight, null),
             };
             _install.Click += OnInstall;
 
-            var close = new Button { Content = "Close", Width = 110, Height = 28 };
+            var close = new Button
+            {
+                Content = "Close",
+                Width = 120,
+                Height = 34,
+                Foreground = new SolidColorBrush(Ink),
+                Cursor = Cursors.Hand,
+                Template = ButtonTemplate(Colors.Transparent, At(Ink, 0x0F), At(Ink, 0x40)),
+            };
             close.Click += delegate { Close(); };
 
             var buttons = new StackPanel
@@ -244,6 +293,14 @@ namespace Heron.Installer.App
 
             foreach (var row in _screen.Products)
             {
+                // ONLY WHAT CAN BE INSTALLED - the owner's word of 2026-11-07:
+                // "what we have in Heron, only that we need for the installation".
+                // A product not offered yet (ComingSoon) is left out of the list,
+                // UNLESS it is already on this PC: unticking is how it comes off
+                // (R-21), so a row that is installed is never hidden.
+                if (row.ComingSoon && (string.IsNullOrEmpty(row.State) || row.State == "--"))
+                    continue;
+
                 var line = new Grid { Margin = new Thickness(row.IsPiece ? 26 : 0, 3, 0, 3) };
                 line.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                 line.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -267,13 +324,7 @@ namespace Heron.Installer.App
                     // R-3 says adding a product is a line in a file, never a
                     // change in here. Every other block in this file already
                     // wraps; this was the one that could not.
-                    Content = new TextBlock
-                    {
-                        Text = row.Description == null
-                            ? row.Name
-                            : row.Name + "    " + row.Description,
-                        TextWrapping = TextWrapping.Wrap,
-                    },
+                    Content = new TextBlock { TextWrapping = TextWrapping.Wrap },
                     IsEnabled = row.CanBeTicked,
 
                     // WHAT IS ALREADY INSTALLED STARTS TICKED - R-21, and it
@@ -287,13 +338,20 @@ namespace Heron.Installer.App
                     // no explanation is the same silence as leaving it out.
                     ToolTip = row.WhyNot ?? row.IfYouInstallAgain,
                 };
+                RowWords((TextBlock)tick.Content, row);
                 _productTicks[row.Id] = tick;
 
                 Grid.SetColumn(tick, 0);
                 line.Children.Add(tick);
 
-                var state = Quiet(row.State);
+                // A LABEL, NOT A PARAGRAPH - the owner's word of 2026-11-07. The
+                // state, or "Coming soon" for a product not offered yet; the
+                // whole sentence stays on hover, on the row and on the label.
+                var state = Quiet(row.ComingSoon ? "Coming soon"
+                                  : row.State == "--" ? "" : row.State);
                 state.HorizontalAlignment = HorizontalAlignment.Right;
+                state.ToolTip = row.WhyNot ?? row.IfYouInstallAgain;
+                ToolTipService.SetShowOnDisabled(state, true);
                 Grid.SetColumn(state, 1);
                 line.Children.Add(state);
 
@@ -302,10 +360,11 @@ namespace Heron.Installer.App
 
                 // A TOOLTIP IS NOT ENOUGH ON ITS OWN. Somebody who does not
                 // hover never sees it, so the sentence is printed as well.
-                if (row.WhyNot != null)
+                // PRINTED only when it is not already said by the label: a
+                // reason other than "coming soon" - a Revit release it does
+                // not support - is still a sentence under the row (R-10).
+                if (row.WhyNot != null && !row.ComingSoon)
                     panel.Children.Add(Small(row.WhyNot, row.IsPiece ? 46 : 20));
-                else if (row.IfYouInstallAgain != null)
-                    panel.Children.Add(Small(row.IfYouInstallAgain, row.IsPiece ? 46 : 20));
             }
 
             // AFTER THE WHOLE LIST, not while it is being built. A heading is
@@ -436,14 +495,120 @@ namespace Heron.Installer.App
             if (handler != null) handler(products, releases, removals);
         }
 
+        // ------------------------------------------------------------ brand
+
+        /// <summary>The product's name, then its line in a quieter colour.</summary>
+        private static TextBlock RowWords(TextBlock words, ProductRow row)
+        {
+            words.Inlines.Add(new System.Windows.Documents.Run(row.Name) { FontWeight = FontWeights.SemiBold });
+            if (!string.IsNullOrEmpty(row.Description))
+            {
+                words.Inlines.Add(new System.Windows.Documents.Run("    " + row.Description)
+                {
+                    Foreground = new SolidColorBrush(At(Ink, 0xAB)),
+                });
+            }
+            return words;
+        }
+
+        /// <summary>
+        /// The logo, the version beside it, and a line of the brand's orange
+        /// under both - the first thing the window says is whose it is.
+        /// </summary>
+        private static UIElement Masthead(string version)
+        {
+            var bar = new Grid { Margin = new Thickness(0, 0, 0, 6) };
+            bar.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            bar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            var logo = Picture("heron-logo.png");
+            if (logo != null)
+            {
+                bar.Children.Add(new Image
+                {
+                    Source = logo,
+                    Height = 40,
+                    HorizontalAlignment = HorizontalAlignment.Left,
+                    SnapsToDevicePixels = true,
+                });
+            }
+            else
+            {
+                bar.Children.Add(new TextBlock { Text = "Heron AI", FontSize = 22, FontWeight = FontWeights.Bold });
+            }
+
+            var installer = new TextBlock
+            {
+                Text = "Installer" + (string.IsNullOrEmpty(version) ? "" : "   " + version),
+                Foreground = new SolidColorBrush(At(Ink, 0x8C)),
+                VerticalAlignment = VerticalAlignment.Bottom,
+                Margin = new Thickness(0, 0, 0, 4),
+            };
+            Grid.SetColumn(installer, 1);
+            bar.Children.Add(installer);
+
+            var stack = new StackPanel { Margin = new Thickness(0, 0, 0, 8) };
+            stack.Children.Add(bar);
+            stack.Children.Add(new Border { Height = 2, Background = new SolidColorBrush(Accent), CornerRadius = new CornerRadius(1) });
+            return stack;
+        }
+
+        /// <summary>A picture packed inside the .exe, or null - a window with no logo still installs.</summary>
+        private static BitmapSource Picture(string name)
+        {
+            try
+            {
+                var uri = new Uri("pack://application:,,,/HeronInstaller;component/Resources/" + name, UriKind.Absolute);
+                var frame = BitmapFrame.Create(uri);
+                frame.Freeze();
+                return frame;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// A flat button with rounded corners: its fill, a fill under the
+        /// mouse, and a border for the quiet one. Greyed when it cannot be
+        /// pressed, so Install still says when there is nothing to offer.
+        /// </summary>
+        private static ControlTemplate ButtonTemplate(Color fill, Color hover, Color? border)
+        {
+            var template = new ControlTemplate(typeof(Button));
+            var box = new FrameworkElementFactory(typeof(Border), "box");
+            box.SetValue(Border.CornerRadiusProperty, new CornerRadius(8));
+            box.SetValue(Border.BackgroundProperty, new SolidColorBrush(fill));
+            box.SetValue(Border.BorderThicknessProperty, new Thickness(border.HasValue ? 1 : 0));
+            if (border.HasValue) box.SetValue(Border.BorderBrushProperty, new SolidColorBrush(border.Value));
+
+            var content = new FrameworkElementFactory(typeof(ContentPresenter));
+            content.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+            content.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
+            box.AppendChild(content);
+            template.VisualTree = box;
+
+            var over = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
+            over.Setters.Add(new Setter(Border.BackgroundProperty, new SolidColorBrush(hover), "box"));
+            template.Triggers.Add(over);
+
+            var off = new Trigger { Property = UIElement.IsEnabledProperty, Value = false };
+            off.Setters.Add(new Setter(UIElement.OpacityProperty, 0.45, "box"));
+            template.Triggers.Add(off);
+            return template;
+        }
+
         // ------------------------------------------------------------ small
         private static TextBlock Heading(string text)
         {
             return new TextBlock
             {
                 Text = text,
+                FontSize = 13.5,
                 FontWeight = FontWeights.SemiBold,
-                Margin = new Thickness(0, 10, 0, 2),
+                Foreground = new SolidColorBrush(Ink),
+                Margin = new Thickness(0, 12, 0, 3),
             };
         }
 
@@ -452,7 +617,8 @@ namespace Heron.Installer.App
             return new TextBlock
             {
                 Text = text ?? "",
-                Foreground = new SolidColorBrush(Color.FromRgb(0x55, 0x55, 0x55)),
+                // Ink at 67 per cent - the brand's quiet text on Mist.
+                Foreground = new SolidColorBrush(At(Ink, 0xAB)),
                 Margin = new Thickness(12, 1, 0, 1),
                 TextWrapping = TextWrapping.Wrap,
             };
@@ -473,6 +639,7 @@ namespace Heron.Installer.App
                 Text = text ?? "",
                 TextWrapping = TextWrapping.Wrap,
                 FontWeight = FontWeights.SemiBold,
+                Foreground = new SolidColorBrush(Ink),
                 Margin = new Thickness(0, 14, 0, 0),
             };
         }

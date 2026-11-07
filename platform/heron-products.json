@@ -74,7 +74,7 @@
     {
       "id": "heron",
       "name": "Heron",
-      "description": "The Heron tab. Take the AI connector, the tools, or both.",
+      "description": "The Heron tab in Revit.",
       "tab": "Heron",
       "addin": null,
       "assembly": null,
@@ -90,7 +90,7 @@
     {
       "id": "heron-bridge",
       "name": "AI Bridge connector",
-      "description": "Lets a chat reach this Revit session. The three buttons that exist today.",
+      "description": "Connects a chat to your Revit.",
       "tab": "Heron",
       "addin": "Heron.addin",
       "assembly": "Heron.Revit.Addin.dll",
@@ -106,7 +106,7 @@
     {
       "id": "heron-tools",
       "name": "All tools",
-      "description": "Heron's own Revit tools, on the Heron tab. No AI needed.",
+      "description": "Heron's own tools. No AI needed.",
       "tab": "Heron",
       "addin": "Heron.Tools.addin",
       "assembly": "Heron.Tools.dll",
@@ -122,7 +122,7 @@
     {
       "id": "heron-doc",
       "name": "Heron Doc",
-      "description": "Annotation, dimensions, sheets and revisions.",
+      "description": "Annotation, sheets and revisions.",
       "tab": "Heron Doc",
       "addin": "Heron.Doc.addin",
       "assembly": "Heron.Doc.dll",

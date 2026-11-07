@@ -544,6 +544,10 @@ namespace Heron.Installer.TestHost
                   "and it is told apart from the one being tested: " + planned.WhyNot);
             Check(!Names(provingRow.WhyNot, "PROVING") && !Names(planned.WhyNot, "PLANNED"),
                   "neither sentence uses this repository's own vocabulary");
+            Check(provingRow.ComingSoon && planned.ComingSoon,
+                  "both are flagged ComingSoon, the window's short label for them");
+            Check(!RowFor(screen, "piece-one").ComingSoon,
+                  "and a product that is offered is not");
             Check(screen.ToInstall(new[] { "tab-b", "tab-c" }).Count == 0,
                   "and a greyed row installs nothing even if its tick arrives set");
 
