@@ -1491,3 +1491,31 @@ rows, light and dark, 1440 and 1000 px wide - with no page error. **Faults found
 bar counted itself as part of the Overview and hid with it; and drawn inside a panel's box it stopped
 sticking at that box's end, so the boxes now take no part in the layout. **Not seen** in Revit's browser or on
 the owner's PC.
+
+### 21.21 Sprinkler Layout, the Element Table and the frame made easy to use (2026-11-07)
+
+On the owner's word - *"make sprinkler layout and element table user friendly too ... all whatever inside the
+companion app"*. The rest of §21.20's work: the two workspaces it left as they were, and the page's frame.
+**Every route, hook, number and rule is as before.**
+
+- **Sprinkler Layout - one card a room.** The rooms were a table, with their plans in a separate row of
+  drawings underneath, matched up by name. Now each room is a card: its name, level and heads already there,
+  its result (*asked*, *skipped*, a pass or a fail, and how many new heads) with an edge in Success, Warning
+  or Error; its plan beside its three answers - hazard class, ceiling height, branch angle - each with what
+  the model holds under it; why it was skipped; and *Each head, as NFPA 13 measures it*. The fields and what
+  they are bound to are unchanged.
+- **Element Table - an action bar.** Pinned under the top bar: **Find** (an element id or any value - it hides
+  the rows that do not hold the words, reading nothing), how many rows show, **Discard edits** (puts every
+  cell back; nothing is sent) and **Apply N change(s)** - no longer a long scroll down. The bar's edge turns
+  Accent while there are edits. The header row sticks inside the table, which is now the height of the
+  window. A *Category*, *Family* or *Type* column no row fills is left out; the element id always shows.
+  **Fill-down never fills a row the search hides** - what is changed is what is seen; an edit made before a
+  search is kept and still applied.
+- **The frame:** with no Revit connected the top bar says *No Revit connected* in one line, not four dashes;
+  and the *Jump to* row is gone from every workspace - the big ones have tabs (§21.20), the rest are short.
+
+**Proved without Revit:** `tests/test_companion.py` passes with a new group (the bar, Find and Discard read
+and send nothing - only Apply reaches Revit; fill-down skips hidden rows; empty fixed columns left out; one
+card a room with its bindings kept; the one-line top bar). Driven in headless Chromium with sample data: a
+cell edited, *access* found - 5 of 14 rows, *Apply 1 change(s)*; three room cards with their plans; no page
+error. **Not seen** in Revit's browser or on the owner's PC.

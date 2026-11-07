@@ -47,6 +47,8 @@ function ago(seconds) {
 
 function clearRevit() {
   ["f-version", "f-model", "f-view", "f-updated"].forEach(id => set(id, null));
+  // No Revit: one plain line in the bar, not four dashes (docs/40 s21.21).
+  $("revit").classList.add("off");
   if (!SHOW_SELECTION) return;
   set("s-count", null);
   $("s-categories").replaceChildren();
@@ -73,6 +75,7 @@ function show(state) {
   notice(state.choice === "only" && state.others === 0
     ? "" : (state.others > 0 ? "Other Revits are connected too; this page shows the one this chat uses." : ""));
   pill("Connected", "ok");
+  $("revit").classList.remove("off");
 
   set("f-version", "Revit " + r.revitVersion);
   set("f-model", r.document ? r.document.title : "No model open");
@@ -780,6 +783,8 @@ function fillDown(tbody) {
     if (!td || td.parentElement.parentElement !== tbody || td.cellIndex !== from.cellIndex) return;
     const a = from.parentElement.sectionRowIndex, b = td.parentElement.sectionRowIndex;
     for (let i = Math.min(a, b); i <= Math.max(a, b); i++) {
+      // A row the search hides is never filled: what is changed is what is seen.
+      if (tbody.rows[i].hidden) continue;
       const c = tbody.rows[i].cells[from.cellIndex];
       c.classList.add("fill-range");
       range.push(c);
@@ -835,6 +840,22 @@ function renderTable(t) {
       head.append(span);
     });
   box.append(head);
+  // THE ACTION BAR (docs/40 s21.21): find a row, see how many cells you changed,
+  // Apply or Discard - pinned under the top bar, so Apply is never a long scroll away.
+  const bar = document.createElement("div");
+  bar.className = "t-bar";
+  const find = document.createElement("input");
+  find.type = "search";
+  find.className = "t-find";
+  find.placeholder = "Find rows - an element id or any value";
+  find.setAttribute("aria-label", "Find rows in the table");
+  const shownCount = document.createElement("span");
+  shownCount.className = "t-count";
+  const discard = document.createElement("button");
+  discard.type = "button";
+  discard.className = "btn-lite";
+  discard.textContent = "Discard edits";
+  discard.title = "Put every cell back to what Revit holds - nothing is sent to Revit";
 
   const stale = new Map((t.last && t.last.stale || []).map(s => [s.id + "/" + s.name, s.why]));
   const edits = keptEdits && keptEdits.id === t.id ? new Map(keptEdits.map) : new Map();
@@ -844,6 +865,8 @@ function renderTable(t) {
   const count = () => {
     button.textContent = edits.size ? "Apply " + edits.size + " change(s)" : "Apply";
     button.disabled = edits.size === 0;
+    discard.disabled = edits.size === 0;
+    bar.classList.toggle("t-bar-dirty", edits.size > 0);
   };
 
   const wrap = document.createElement("div");
@@ -860,16 +883,20 @@ function renderTable(t) {
     editable[name] = cells.some(c => c.editable);
   }
 
+  // A fixed column no row fills (no category, family or type read) is left out:
+  // an empty column is only something to scroll past. The element id always shows.
+  const FIXED = [["Element", "id"], ["Category", "category"], ["Family", "family"], ["Type", "type"]]
+    .filter(([, key], i) => i === 0 || t.rows.some(r => r[key] != null && r[key] !== ""));
   const table = document.createElement("table");
   const thead = document.createElement("thead");
   const hr = document.createElement("tr");
-  ["Element", "Category", "Family", "Type"].concat(t.columns).forEach((c, i) => {
+  FIXED.map(f => f[0]).concat(t.columns).forEach((c, i) => {
     const th = document.createElement("th");
     th.scope = "col";
     th.textContent = c;
     if (i === 0) th.className = "num";
-    if (i >= 4) {
-      const name = t.columns[i - 4];
+    if (i >= FIXED.length) {
+      const name = t.columns[i - FIXED.length];
       if (numeric[name]) th.classList.add("num");
       if (editable[name]) { th.classList.add("edit"); th.title = "You can edit this column"; }
     }
@@ -879,7 +906,7 @@ function renderTable(t) {
   const tbody = document.createElement("tbody");
   for (const row of t.rows) {
     const tr = document.createElement("tr");
-    [row.id, row.category, row.family, row.type].forEach((v, i) => {
+    FIXED.map(f => row[f[1]]).forEach((v, i) => {
       const td = document.createElement("td");
       td.className = i === 0 ? "fixed id num" : "fixed";
       td.textContent = v == null ? "" : v;
@@ -898,7 +925,28 @@ function renderTable(t) {
   fillDown(tbody);
   table.append(thead, tbody);
   wrap.append(table);
-  box.append(wrap);
+  // FIND: hides the rows whose id and values do not hold the words. Nothing is
+  // read or changed; an edit in a hidden row is kept and still applied.
+  const rowsOf = Array.from(tbody.rows);
+  const filter = () => {
+    const words = find.value.trim().toLowerCase();
+    let shown = 0;
+    rowsOf.forEach(tr => {
+      const text = (tr.textContent + " " + Array.from(tr.querySelectorAll("input")).map(i => i.value).join(" ")).toLowerCase();
+      tr.hidden = !!words && !text.includes(words);
+      if (!tr.hidden) shown++;
+    });
+    shownCount.textContent = words ? shown + " of " + rowsOf.length + " row(s)" : rowsOf.length + " row(s)";
+  };
+  find.addEventListener("input", filter);
+  filter();
+  discard.addEventListener("click", () => {
+    if (!edits.size || !confirm("Put back the " + edits.size + " cell(s) you changed? Nothing is sent to Revit.")) return;
+    keptEdits = null;
+    tableShown = null;
+    renderTable(t);
+  });
+  box.append(bar, wrap);
 
   const legend = document.createElement("p");
   legend.className = "legend";
@@ -949,7 +997,14 @@ function renderTable(t) {
       count();
     }
   });
-  foot.append(button, result);
+  // The bar: find on the left, the changes and the two buttons on the right; the
+  // answer from Revit under the table, where it was.
+  const right = document.createElement("div");
+  right.className = "t-bar-right";
+  right.append(discard, button);
+  bar.append(find, shownCount, right);
+  count();
+  foot.append(result);
   box.append(foot);
 }
 
@@ -3014,11 +3069,34 @@ function layoutLimits(Y, state) {
 function layoutRooms(Y, state) {
   const sec = el("section", "l-sec");
   sec.append(el("h3", null, "The rooms"));
+  // ONE CARD A ROOM (docs/40 s21.21): its plan beside its own answers and its
+  // result, so nothing has to be matched up by name between a table and a row of
+  // drawings. Every field, and what it is bound to, is as it was.
   const classes = (Y.fields && Y.fields.hazard_classes) || [];
   const views = {};
   (Y.view || []).forEach(v => { views[v.key] = v; });
-  const rows = (Y.rooms || []).map(r => {
+  const grid = el("div", "y-cards");
+  (Y.rooms || []).forEach(r => {
     const mine = state.rooms[r.key] = state.rooms[r.key] || {};
+    const card = el("article", "y-card");
+    card.dataset.status = r.status || "";
+    const head = el("header", "y-card-head");
+    const title = el("div", "y-card-title");
+    title.append(el("strong", null, r.label),
+                 el("span", "small muted", (r.level || "no level") + " · " + (r.heads || []).length + " head(s) there"));
+    const result = el("div", "y-card-result");
+    result.append(statusBadge(r.status));
+    if (r.status === "ok" || r.status === "fail") result.append(el("span", "small", r.count + " new head(s)"));
+    head.append(title, result);
+    card.append(head);
+    const body = el("div", "y-card-body");
+    const v = views[r.key];
+    const fig = el("figure", "y-fig");
+    if (v && v.outline) {
+      fig.append(layoutPlan(v));
+      if (r.z_from) fig.title = "height: " + r.z_from;
+    } else fig.append(el("p", "small muted", "No outline read for this room."));
+    const fields = el("div", "y-fields");
     const haz = el("select");
     haz.setAttribute("aria-label", "hazard class of " + r.label);
     haz.className = "y-mid";
@@ -3027,32 +3105,21 @@ function layoutRooms(Y, state) {
     haz.append(blank);
     classes.forEach(c => { const o = el("option", null, c); o.value = c; if (c === mine.hazard) o.selected = true; haz.append(o); });
     haz.addEventListener("change", () => { mine.hazard = haz.value; });
-    const ceil = sprinklerField(mine.ceiling_mm, "ceiling height of " + r.label, v => { mine.ceiling_mm = v; });
+    const ceil = sprinklerField(mine.ceiling_mm, "ceiling height of " + r.label, v2 => { mine.ceiling_mm = v2; });
     const ceilings = (r.ceilings || []).map(c => (c.type || "ceiling") + " at " + num(c.height_mm, 0) + " mm").join("; ");
-    const ceilCell = el("div");
-    ceilCell.append(ceil, el("div", "small muted", ceilings ? "model: " + ceilings : "no ceiling read - a ceiling in a link is not read"));
-    const ang = sprinklerField(mine.angle_deg, "branch angle of " + r.label, v => { mine.angle_deg = v; });
-    const angCell = el("div");
-    angCell.append(ang, el("div", "small muted", r.angle_offer_deg == null ? "" : "longest wall: " + num(r.angle_offer_deg, 1) + "°"));
-    const status = statusBadge(r.status);
-    const why = el("div");
-    why.append(status);
-    if (r.why) why.append(el("div", "small", r.why));
-    return [r.label, r.level || "—", (r.heads || []).length, haz, ceilCell, angCell,
-            r.status === "ok" || r.status === "fail" ? r.count : "—", why];
-  });
-  sec.append(sprinklerTable(["Room", "Level", "Heads there", "Hazard class", "Ceiling (mm)", "Branch angle (°)", "New heads", "Result"], rows));
-  const plans = el("div", "y-plans");
-  (Y.rooms || []).forEach(r => {
-    const v = views[r.key];
-    if (!v || !v.outline) return;
-    const fig = el("figure", "y-fig");
-    fig.append(layoutPlan(v));
-    const cap = el("figcaption", "small");
-    cap.textContent = r.label + " - " + (r.status === "ok" ? r.count + " head(s), all pass"
-      : r.status === "fail" ? "fails - not placed" : (r.why || r.status || ""));
-    if (r.z_from) cap.title = "height: " + r.z_from;
-    fig.append(cap);
+    const ang = sprinklerField(mine.angle_deg, "branch angle of " + r.label, v2 => { mine.angle_deg = v2; });
+    const field = (label, input, hint) => {
+      const f = el("label", "y-field");
+      f.append(el("span", "y-field-label", label), input);
+      if (hint) f.append(el("span", "small muted", hint));
+      fields.append(f);
+    };
+    field("Hazard class", haz, "");
+    field("Ceiling (mm)", ceil, ceilings ? "model: " + ceilings : "no ceiling read - a ceiling in a link is not read");
+    field("Branch angle (°)", ang, r.angle_offer_deg == null ? "" : "longest wall: " + num(r.angle_offer_deg, 1) + "°");
+    body.append(fig, fields);
+    card.append(body);
+    if (r.why) card.append(el("p", "small y-card-why", r.why));
     // Every head's S, L, area and walls, and the engine's own checks - what the
     // modeller reads before Apply (docs/47 s7), made in brain/.
     if (r.measured || (r.checks || []).length) {
@@ -3064,11 +3131,11 @@ function layoutRooms(Y, state) {
         more.append(p);
       });
       if (r.measured) more.append(sprinklerTable(r.measured.columns, r.measured.rows));
-      fig.append(more);
+      card.append(more);
     }
-    plans.append(fig);
+    grid.append(card);
   });
-  sec.append(plans);
+  sec.append(grid);
   return sec;
 }
 
@@ -3192,7 +3259,6 @@ const wsHad = {};
 const wsNew = {};
 let wsLooked = false;
 const wsBorn = Date.now();       // data that arrives in the first moments is not "new" - it was just not fetched yet
-let jumpKey = "";
 
 function wsHas(id) {
   const pair = WORKSPACES.find(w => w[0] === id);
@@ -3208,7 +3274,6 @@ function wsShow(id) {
     const on = b.dataset.ws === id;
     if (on) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
   });
-  jumpKey = "";
   // A 3D view drawn while its workspace was hidden had no size to draw into; once the workspace
   // shows, tell it to draw again (the three views redraw on a window resize).
   requestAnimationFrame(() => window.dispatchEvent(new Event("resize")));
@@ -3237,7 +3302,6 @@ function wsSync() {
   });
   wsLooked = true;
   tabsSync();
-  jumpSync();
 }
 
 // ---------------------------------------------------------------- tabs
@@ -3342,39 +3406,6 @@ function tabsSync() {
       btn.addEventListener("click", () => tabGo(ws, t.key));
       bar.append(btn);
     });
-  });
-}
-
-// A long workspace gets a row of links to its own headings.
-function jumpSync() {
-  const bar = $("jump");
-  const sec = $(wsNow);
-  // A heading may carry a badge ("Checks on the model  1 INFO"): the link uses only its own words.
-  const words = h => Array.from(h.childNodes).filter(n => n.nodeType === 3).map(n => n.textContent).join("").trim();
-  const heads = Array.from(sec.querySelectorAll("h3"))
-    .filter(h => !h.closest("details") && !h.closest(".welcome") && words(h));
-  heads.forEach((h, i) => { h.id = "j-" + wsNow + "-" + i; });
-  const key = wsNow + "|" + heads.map(words).join("|");
-  if (key === jumpKey) return;
-  jumpKey = key;
-  bar.replaceChildren();
-  if (heads.length < 3 || TABS[wsNow]) { bar.hidden = true; return; }
-  bar.hidden = false;
-  const label = document.createElement("span");
-  label.className = "jump-label";
-  label.textContent = "Jump to";
-  bar.append(label);
-  heads.forEach(h => {
-    const a = document.createElement("button");
-    a.type = "button";
-    a.className = "jump-link";
-    a.textContent = words(h).replace(/\s+-\s+.*$/, "");
-    a.title = words(h);
-    a.addEventListener("click", () => {
-      const slow = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      h.scrollIntoView({ behavior: slow ? "smooth" : "auto", block: "start" });
-    });
-    bar.append(a);
   });
 }
 

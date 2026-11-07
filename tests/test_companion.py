@@ -1825,7 +1825,7 @@ def test_workspace_tabs():
                        ("sprinkler", ["Design inputs", "Remote area & spacing", "Fire water", "3D", "Checks"])):
         check(("  %s: [" % ws) in tabs and all(('label: "%s"' % l) in tabs for l in labels),
               "%s has its tabs: %s" % (ws, ", ".join(labels)))
-    engine = js[js.index("function tabsSync()"):js.index("// A long workspace gets a row of links")]
+    engine = js[js.index("function tabsSync()"):js.index("function workspaces()")]
     check("fetch(" not in tabs + engine and "setInterval" not in engine and "setTimeout" not in engine,
           "the tabs read nothing and run on no timer of their own")
     check(".tab-off { display: none !important; }" in css and "classList.toggle(\"tab-off\"" in engine,
@@ -1833,7 +1833,34 @@ def test_workspace_tabs():
     check('n.classList.contains("ws-tabs")' in engine, "the tab bar is never counted as a part it switches")
     check("tabGo(\"dashboard\", \"3d\")" in js and "tabGo(\"loads\", \"3d\")" in js,
           "Show in 3D and a Space's name open the 3D tab")
-    check("TABS[wsNow]" in js, "a workspace with tabs has no Jump to row")
+    index = io.open(os.path.join(ROOT, "mcp", "companion", "static", "index.html"), encoding="utf-8").read()
+    check("jumpSync" not in js and 'id="jump"' not in index and ".jump" not in css,
+          "the old Jump to row is gone from every workspace (s21.21)")
+    print()
+
+
+def test_table_and_layout_friendly():
+    """The Element Table and Sprinkler Layout made easy to use (docs/40 s21.21): the
+    table's action bar, find and Discard; the layout's one card a room. Read from the
+    page's own files - how it looks is a person's eye."""
+    print()
+    print("The Element Table's action bar, and the Sprinkler Layout's room cards")
+    js = io.open(PAGE_JS, encoding="utf-8").read()
+    table = js[js.index("function renderTable(t)"):js.index("async function table_()")]
+    check('"t-bar"' in table and '"t-find"' in table and "Discard edits" in table,
+          "the table has a bar with Find, the row count, Discard edits and Apply")
+    check("/api/table/apply" in table and table.count("fetch(") == 1,
+          "Find and Discard read nothing and send nothing - only Apply reaches Revit")
+    fill = js[js.index("function fillDown(tbody)"):js.index("function fillDown(tbody)") + 900]
+    check("tbody.rows[i].hidden) continue" in fill, "fill-down never fills a row the search hides")
+    check("FIXED" in table and 'i === 0 ||' in table, "an empty Category, Family or Type column is left out; the id always shows")
+    rooms = js[js.index("function layoutRooms(Y, state)"):js.index("function renderLayout(Y)")]
+    check('"y-cards"' in rooms and '"y-card"' in rooms and "layoutPlan(v)" in rooms,
+          "each room is one card holding its plan, its fields and its result")
+    check("mine.hazard = haz.value" in rooms and "mine.ceiling_mm" in rooms and "mine.angle_deg" in rooms,
+          "the room's fields keep their bindings")
+    check('classList.add("off")' in js and 'classList.remove("off")' in js,
+          "with no Revit the top bar says so in one line")
     print()
 
 
@@ -1913,6 +1940,7 @@ def main():
     test_page_frame()
     test_page_is_in_the_brand()
     test_workspace_tabs()
+    test_table_and_layout_friendly()
     test_no_way_to_an_ai()
     test_addin_side()
 
