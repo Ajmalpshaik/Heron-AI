@@ -1,7 +1,7 @@
 // NOT STANDALONE. Assumes `doc`, `views`, `rules`, `minGapMm` and `skipTagged`
 // are in scope, and leaves `tagged`, `newTags`, `alreadyTagged`, `crowded`,
 // `leadersDrawn`, `typeCorrections`, `notTagged`, `notTaggedWhy`,
-// `verticalSkipped`, `tooShort`, `tagTypesUsed`, `rulesRead`, `perView`,
+// `verticalSkipped`, `tooShort`, `outsideCrop`, `tagTypesUsed`, `rulesRead`, `perView`,
 // `refused` and `findings` behind.
 //
 // TAG_VIEWS_BY_RULES, version 1 (2026-11-08). One pass over one view or many:
@@ -47,6 +47,7 @@ var alreadyTagged = new List<ElementId>();
 var crowded = new List<ElementId>();
 var notTagged = new List<ElementId>();
 var verticalSkipped = new List<ElementId>();
+var outsideCrop = new List<ElementId>();
 var tooShort = new List<ElementId>();
 var tagTypesUsed = new List<string>();
 var rulesRead = new List<string>();
@@ -173,8 +174,14 @@ var multiTagsId = new ElementId(BuiltInCategory.OST_MultiCategoryTags);
 
 // ---- 1. THE RULES, read in full before anything is placed -------------------
 //
-// One per line - a new line or a semicolon ends one - each
+// Separated by SEMICOLONS, and by nothing else - each
 //     category | tag family: type | leader | shortest run in mm
+// A LINE BREAK IS NOT A SEPARATOR, ON PURPOSE. revit_change hands a value
+// over line by line and drops every line after the first that has no "=" in
+// it, so "rules=Ducts\nPipes" arrived as the Ducts rule ALONE, with nothing
+// said (row 5b-1477). Text that still holds a line break - from a command
+// line - is refused rather than split, so a rule is never read one way here
+// and lost the other way there. `rulesRead` opens with how many were read.
 // with everything after the category optional. A blank tag type is the
 // PROJECT'S DEFAULT for that tag category, never the first one loaded. The
 // leader is `none` (left out) or `straight`: straight is drawn only when no
@@ -191,9 +198,10 @@ var ruleMinFeet = new List<double>();
 var ruleOnMepMap = new List<bool>();
 var ruleProblems = new List<string>();
 
-var ruleText = (rules ?? "").Replace("\r", "\n");
+var ruleText = rules ?? "";
 int ruleNumber = 0;
-foreach (var raw in ruleText.Split(new[] { '\n', ';' }, StringSplitOptions.RemoveEmptyEntries))
+bool brokenLines = ruleText.IndexOf('\n') >= 0 || ruleText.IndexOf('\r') >= 0;
+foreach (var raw in (brokenLines ? new string[0] : ruleText.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)))
 {
     var line = raw.Trim();
     if (line.Length == 0 || line.StartsWith("#", StringComparison.Ordinal)) continue;
@@ -362,20 +370,33 @@ foreach (var raw in ruleText.Split(new[] { '\n', ';' }, StringSplitOptions.Remov
     tagTypesUsed.Add(category.Name + ": " + typeLabel(chosen) + " (" + how + ")");
 }
 
-if (ruleNumber == 0)
-    refused = "No rules were given. One per line, \"category | tag type | leader | shortest run in mm\" - e.g. "
-            + "\"Ducts | M_Duct Size Tag: Size | straight | 500\". Everything after the category may be left "
-            + "out: a blank tag type is the project's default tag for that category.";
+if (brokenLines)
+    refused = "The rules arrive on more than one line, and a line break is not a separator here - a rule after "
+            + "one can be lost on the way to Revit. Put every rule on ONE line, separated by semicolons: "
+            + "\"Ducts | | straight; Pipes | | none | 500\".";
+else if (ruleNumber == 0)
+    refused = "No rules were given. Separate them with semicolons, each \"category | tag type | leader | "
+            + "shortest run in mm\" - e.g. \"Ducts | M_Duct Size Tag: Size | straight | 500; Pipes\". Everything "
+            + "after the category may be left out: a blank tag type is the project's default tag for that category.";
 else if (ruleProblems.Count > 0)
     refused = ruleProblems.Count + " of the " + ruleNumber + " rule(s) could not be read: "
             + string.Join("; ", ruleProblems.ToArray()) + ".";
 
+// HOW MANY WERE READ, FIRST - so a rule that never arrived shows as a count
+// short of what was typed.
+rulesRead.Insert(0, ruleCategory.Count + " rule(s) read, of " + ruleNumber + " separated by semicolons"
+    + (ruleCategory.Count > 0 ? ": " + string.Join(", ", ruleCategory.Select(c => c.Name).ToArray()) : "") + ".");
+
 // ---- 2. THE VIEWS ------------------------------------------------------------
 //
-// None named is the ACTIVE view. A template, a kind of view that takes no
-// tags, or one that SHARES ITS ANNOTATION with a view already in the list (a
-// dependent view and its primary) is left out by name - tagging both would
-// put two tags on one element in one drawing.
+// None named is the ACTIVE view. A template, or a kind of view that takes no
+// tags, is left out by name. A DEPENDENT VIEW IS TAGGED LIKE ANY OTHER, each
+// of several dependents of one plan and the plan itself included: Revit
+// shares annotation between a primary view and its dependents, so "already
+// tagged" below reads the tags OWNED by any view of that family, and a view
+// later in the list finds the tags an earlier one placed and adds none to the
+// same element (row 5b-1477 - version 1's first draft tagged only the first
+// of several dependents).
 var given = new List<View>();
 bool fromActive = false;
 if (views != null) foreach (var v in views) if (v != null && !given.Any(g => g.Id == v.Id)) given.Add(v);
@@ -407,18 +428,13 @@ Func<View, HashSet<ElementId>> sharing = v =>
 };
 
 var working = new List<View>();
-var coveredBy = new Dictionary<ElementId, string>();
 var viewsLeft = new List<string>();
 foreach (var v in given)
 {
     string leftWhy = null;
-    string earlier;
     if (v.IsTemplate) leftWhy = "is a view template, which holds no tags";
     else if (!tagKinds.Contains(v.ViewType))
         leftWhy = "is a " + v.ViewType + " view - tags go in a plan, a ceiling plan, a section, an elevation or a detail";
-    else if (coveredBy.TryGetValue(v.Id, out earlier))
-        leftWhy = "shares its tags with \"" + earlier + "\", already in the list - a tag placed there shows here, so "
-                + "it is not tagged twice";
     if (leftWhy != null)
     {
         viewsLeft.Add("\"" + v.Name + "\" " + leftWhy);
@@ -426,7 +442,6 @@ foreach (var v in given)
         continue;
     }
     working.Add(v);
-    foreach (var id in sharing(v)) if (!coveredBy.ContainsKey(id)) coveredBy[id] = v.Name;
 }
 
 if (refused.Length == 0 && given.Count == 0)
@@ -529,13 +544,16 @@ Func<double[], double[], double, bool> clash = (a, b, gap) =>
 int sizesGuessed = 0;
 int leaderedJudged = 0;
 int headsNotTaken = 0;
+int headsUnread = 0;
+int movedNoLeader = 0;
+int otherPhaseTotal = 0;
 var hiddenWords = new List<string>();
 
 // ---- 3. EVERY VIEW -----------------------------------------------------------
 foreach (var view in (refused.Length == 0 ? working : new List<View>()))
 {
     int placedHere = 0, leadersHere = 0, alreadyHere = 0, risersHere = 0, shortHere = 0, notHere = 0;
-    int outsideCrop = 0;
+    int roomsOutside = 0, otherPhaseHere = 0, outsideHere = 0;
     var crowdedHere = new HashSet<ElementId>();
     var spatialNotes = new List<string>();
 
@@ -549,6 +567,17 @@ foreach (var view in (refused.Length == 0 ? working : new List<View>()))
     try { planLevel = view.GenLevel; } catch { }
     bool isPlan = view.ViewType == ViewType.FloorPlan || view.ViewType == ViewType.CeilingPlan
                || view.ViewType == ViewType.EngineeringPlan || view.ViewType == ViewType.AreaPlan;
+
+    ElementId viewPhase = ElementId.InvalidElementId;
+    string viewPhaseName = "its phase";
+    try
+    {
+        var phaseParameter = view.get_Parameter(BuiltInParameter.VIEW_PHASE);
+        if (phaseParameter != null) viewPhase = phaseParameter.AsElementId();
+        var phase = viewPhase == null ? null : doc.GetElement(viewPhase);
+        if (phase != null) viewPhaseName = "\"" + phase.Name + "\"";
+    }
+    catch { viewPhase = ElementId.InvalidElementId; }
 
     Func<XYZ, bool> insideCrop = p =>
     {
@@ -564,9 +593,60 @@ foreach (var view in (refused.Length == 0 ? working : new List<View>()))
         catch { return true; }
     };
 
+    // THE POINT TO TAG AT, ON THE PART OF THE ELEMENT THE VIEW SHOWS. With the
+    // crop on, the middle of a run's whole line can lie outside it - a duct
+    // crossing a dependent view's crop - and a tag there is cut off the
+    // drawing (row 5b-1477). So the line is sampled in the crop's own
+    // coordinates and the tag goes at the middle of the longest stretch inside
+    // it; a point-based element, or one tagged at the centre of its extent,
+    // must have that point inside. Nothing inside: null, and the element is
+    // named in `outsideCrop`. Read as the crop's RECTANGLE - a crop drawn to
+    // another shape is not followed.
+    Func<Element, XYZ, XYZ> pointShown = (element, own) =>
+    {
+        BoundingBoxXYZ crop = null;
+        Transform toCrop = null;
+        try
+        {
+            if (view.CropBoxActive) { crop = view.CropBox; toCrop = crop == null ? null : crop.Transform.Inverse; }
+        }
+        catch { crop = null; toCrop = null; }
+        if (crop == null || toCrop == null) return own;
+        Func<XYZ, bool> within = q =>
+        {
+            var local = toCrop.OfPoint(q);
+            return local.X >= crop.Min.X - 1e-6 && local.X <= crop.Max.X + 1e-6
+                && local.Y >= crop.Min.Y - 1e-6 && local.Y <= crop.Max.Y + 1e-6;
+        };
+        var line = element.Location as LocationCurve;
+        if (line == null || line.Curve == null) return within(own) ? own : null;
+        const int steps = 64;
+        int bestStart = -1, bestLength = -1, runStart = -1;
+        for (int i = 0; i <= steps; i++)
+        {
+            bool inside = false;
+            try { inside = within(line.Curve.Evaluate((double)i / steps, true)); } catch { }
+            if (!inside) { runStart = -1; continue; }
+            if (runStart < 0) runStart = i;
+            if (i - runStart > bestLength) { bestStart = runStart; bestLength = i - runStart; }
+        }
+        if (bestStart < 0) return null;
+        if (bestStart == 0 && bestLength == steps) return own;
+        try { return line.Curve.Evaluate((bestStart + bestLength / 2.0) / steps, true); } catch { return null; }
+    };
+
     // THE TAGS ALREADY IN THIS VIEW, read once before anything is made: what
     // each points at and of which type (the "already tagged" rule), and which
     // of them are heads to keep clear of.
+    //
+    // ALREADY TAGGED DOES NOT DEPEND ON WHAT THE VIEW SHOWS. A view-scoped
+    // collect leaves out a tag its template, Visibility/Graphics or a
+    // temporary hide turns off, and a rerun then put a second tag on every
+    // element whose first one was hidden (row 5b-1477). So the tags are read
+    // from the WHOLE MODEL by the view that OWNS them - this view, its
+    // primary, and the primary's other dependents, which share its
+    // annotation - as the room path below reads room tags. Only the tags the
+    // view SHOWS are heads to keep clear of: a hidden one does not print.
     var alreadyHasTag = new HashSet<ElementId>();
     var tagTypesOn = new Dictionary<ElementId, HashSet<ElementId>>();
     Action<ElementId, ElementId> heldTag = (hostId, typeId) =>
@@ -578,10 +658,14 @@ foreach (var view in (refused.Length == 0 ? working : new List<View>()))
         if (typeId != null) types.Add(typeId);
     };
     var existingHeads = new List<Element>();
-    foreach (var existing in new FilteredElementCollector(doc, view.Id).OfClass(typeof(IndependentTag))
+    var owners = sharing(view);
+    var shownHere = new HashSet<ElementId>(new FilteredElementCollector(doc, view.Id).OfClass(typeof(IndependentTag))
+                                               .ToElementIds());
+    foreach (var existing in new FilteredElementCollector(doc).OfClass(typeof(IndependentTag))
                                  .Cast<IndependentTag>())
     {
-        existingHeads.Add(existing);
+        if (!owners.Contains(existing.OwnerViewId)) continue;
+        if (shownHere.Contains(existing.Id)) existingHeads.Add(existing);
         var existingType = existing.GetTypeId();
 #if REVIT2020 || REVIT2021
         heldTag(existing.TaggedLocalElementId, existingType);
@@ -602,7 +686,6 @@ foreach (var view in (refused.Length == 0 ? working : new List<View>()))
     Func<HashSet<ElementId>> readSpatialHeld = () =>
     {
         var held = new HashSet<ElementId>();
-        var owners = sharing(view);
         foreach (var tagCategory in new[] { roomTagsId, spaceTagsId, zoneTagsId })
             foreach (var existing in new FilteredElementCollector(doc).OfCategoryId(tagCategory)
                                          .WhereElementIsNotElementType())
@@ -643,6 +726,25 @@ foreach (var view in (refused.Length == 0 ? working : new List<View>()))
             }
             if (spatialHeld == null) spatialHeld = readSpatialHeld();
 
+            // THE VIEW'S PHASE. A room of another phase is not drawn in this
+            // plan - a room demolished, or not yet built, in the phase the
+            // plan shows - so it is left alone and COUNTED, never tagged and
+            // never refused into notTagged (row 5b-1477). A zone by its own
+            // phase; the spaces a zone's tag may sit in, by theirs.
+            Func<Element, bool> inViewPhase = spatial =>
+            {
+                if (viewPhase == null || viewPhase == ElementId.InvalidElementId) return true;
+                try
+                {
+                    var asZone = spatial as Zone;
+                    if (asZone != null) return asZone.Phase == null || asZone.Phase.Id == viewPhase;
+                    var phaseParameter = spatial.get_Parameter(BuiltInParameter.ROOM_PHASE_ID);
+                    var phaseId = phaseParameter == null ? null : phaseParameter.AsElementId();
+                    return phaseId == null || phaseId == ElementId.InvalidElementId || phaseId == viewPhase;
+                }
+                catch { return true; }
+            };
+
             var candidates = new List<Element>();
             foreach (var e in new FilteredElementCollector(doc).OfCategoryId(ruleCategory[r].Id)
                                   .WhereElementIsNotElementType())
@@ -655,6 +757,7 @@ foreach (var view in (refused.Length == 0 ? working : new List<View>()))
                 {
                     var zone = element as Zone;
                     if (zone == null || zone.LevelId != planLevel.Id) continue;
+                    if (!inViewPhase(zone)) { otherPhaseHere++; continue; }
                     bool isDefault = false;
                     try
                     {
@@ -669,6 +772,7 @@ foreach (var view in (refused.Length == 0 ? working : new List<View>()))
                         foreach (Space member in zone.Spaces)
                         {
                             if (member == null || member.LevelId != planLevel.Id || !(member.Location is LocationPoint)) continue;
+                            if (!inViewPhase(member)) continue;
                             if (member.Area <= 0) continue;
                             if (largest == null || member.Area > largest.Area) largest = member;
                         }
@@ -685,6 +789,7 @@ foreach (var view in (refused.Length == 0 ? working : new List<View>()))
                 else
                 {
                     if (element.LevelId != planLevel.Id) continue;
+                    if (!inViewPhase(element)) { otherPhaseHere++; continue; }
                     var placedAt = element.Location as LocationPoint;
                     if (placedAt == null || placedAt.Point == null)
                     {
@@ -703,7 +808,7 @@ foreach (var view in (refused.Length == 0 ? working : new List<View>()))
                     }
                     point = placedAt.Point;
                 }
-                if (!insideCrop(point)) { outsideCrop++; continue; }
+                if (!insideCrop(point)) { roomsOutside++; continue; }
                 if (spatialHeld.Contains(element.Id))
                 {
                     alreadyTagged.Add(element.Id);
@@ -730,7 +835,11 @@ foreach (var view in (refused.Length == 0 ? working : new List<View>()))
                     notHere++;
                     continue;
                 }
-                try { if (made.GetTypeId() != symbol.Id) made.ChangeTypeId(symbol.Id); }
+                // NewRoomTag and NewSpaceTag make the project's default kind of
+                // tag, so a rule naming another type always changes it here -
+                // counted in typeCorrections with the independent tags'.
+                bool typeChanged = false;
+                try { if (made.GetTypeId() != symbol.Id) { made.ChangeTypeId(symbol.Id); typeChanged = true; } }
                 catch (Exception failure) { if (firstRefusal == null) firstRefusal = failure.Message; }
                 bool pointsRight = false;
                 try
@@ -751,6 +860,7 @@ foreach (var view in (refused.Length == 0 ? working : new List<View>()))
                     notHere++;
                     continue;
                 }
+                if (typeChanged) typeCorrections++;
                 spatialHeld.Add(element.Id);
                 madeSpatialTags.Add(made);
                 newTags.Add(made.Id);
@@ -814,6 +924,13 @@ foreach (var view in (refused.Length == 0 ? working : new List<View>()))
             {
                 because(element.Id, element.Category.Name + ": Revit gives no point or extent to put a tag at");
                 notHere++;
+                continue;
+            }
+            own = pointShown(element, own);
+            if (own == null)
+            {
+                outsideCrop.Add(element.Id);
+                outsideHere++;
                 continue;
             }
 
@@ -912,7 +1029,15 @@ foreach (var view in (refused.Length == 0 ? working : new List<View>()))
         foreach (var made in madeElementTags)
         {
             var head = headOf(made);
-            if (head == null) continue;
+            if (head == null)
+            {
+                // PLACED, AND ITS HEAD COULD NOT BE READ - so it cannot be kept
+                // clear of anything. Named, never passed over.
+                headsUnread++;
+                crowded.Add(made.Id);
+                crowdedHere.Add(made.Id);
+                continue;
+            }
             baseHead[made.Id] = head;
             var box = paperBox(made, view);
             if (box == null) { unmeasured.Add(made.Id); continue; }
@@ -990,6 +1115,7 @@ foreach (var view in (refused.Length == 0 ? working : new List<View>()))
                     made.TagHeadPosition = target;
                     wanted[made.Id] = target;
                     if (withLeader) { leadersDrawn++; leadersHere++; }
+                    else movedNoLeader++;
                 }
                 catch (Exception failure)
                 {
@@ -1028,9 +1154,19 @@ foreach (var view in (refused.Length == 0 ? working : new List<View>()))
         {
             if (!shape.ContainsKey(made.Id)) continue;
             var head = headOf(made);
-            if (head == null) continue;
+            if (head == null)
+            {
+                headsUnread++;
+                if (!crowdedHere.Contains(made.Id)) { crowded.Add(made.Id); crowdedHere.Add(made.Id); }
+                continue;
+            }
             XYZ asked;
-            if (wanted.TryGetValue(made.Id, out asked) && !head.IsAlmostEqualTo(asked)) headsNotTaken++;
+            if (wanted.TryGetValue(made.Id, out asked) && !head.IsAlmostEqualTo(asked))
+            {
+                // NOT WHERE IT WAS SENT, so not where it was judged clear: named.
+                headsNotTaken++;
+                if (!crowdedHere.Contains(made.Id)) { crowded.Add(made.Id); crowdedHere.Add(made.Id); }
+            }
             var s = shape[made.Id];
             finalBox[made.Id] = leaderOf(made)
                 ? new[] { head.DotProduct(right) + s[0], head.DotProduct(up) + s[1], s[2], s[3] }
@@ -1058,10 +1194,14 @@ foreach (var view in (refused.Length == 0 ? working : new List<View>()))
         }
     }
 
+    otherPhaseTotal += otherPhaseHere;
     perView.Add("\"" + view.Name + "\": " + placedHere + " tag(s) placed (" + leadersHere + " with a straight leader, "
         + crowdedHere.Count + " crowded - no clear spot, named in crowded), " + alreadyHere + " already tagged, "
         + risersHere + " riser(s) skipped, " + shortHere + " too short, " + notHere + " not tagged"
-        + (outsideCrop > 0 ? ", " + outsideCrop + " room(s), space(s) or zone(s) outside its crop left alone" : "")
+        + (outsideHere > 0 ? ", " + outsideHere + " element(s) with no part inside its crop (named in outsideCrop)" : "")
+        + (roomsOutside > 0 ? ", " + roomsOutside + " room(s), space(s) or zone(s) outside its crop left alone" : "")
+        + (otherPhaseHere > 0 ? ", " + otherPhaseHere + " room(s), space(s) or zone(s) of another phase than the view's "
+            + viewPhaseName + " left alone" : "")
         + (spatialNotes.Count > 0 ? "; " + string.Join("; ", spatialNotes.ToArray()) : "") + ".");
 }
 
@@ -1076,21 +1216,33 @@ if (refused.Length == 0)
         + leadersDrawn + " drawn out on a straight leader, " + crowded.Count + " crowded (left on their element "
         + "with no clear spot, or touching another head when read back - named in crowded). Not tagged: "
         + alreadyTagged.Count + " already tagged, " + verticalSkipped.Count + " riser(s), " + tooShort.Count
-        + " too short, " + notTagged.Count + " for the reasons in notTaggedWhy.");
+        + " too short, " + outsideCrop.Count + " with no part inside the view's crop, " + notTagged.Count
+        + " for the reasons in notTaggedWhy.");
+    if (otherPhaseTotal > 0)
+        findings.Add(otherPhaseTotal + " room(s), space(s) or zone(s) on the plan's level belong to another phase than "
+            + "the view shows, and were left alone - perView names the view's phase.");
     if (fromActive)
         findings.Add("No view was named, so the active view \"" + working[0].Name + "\" was tagged.");
     if (viewsLeft.Count > 0)
         findings.Add("Left out: " + string.Join("; ", viewsLeft.ToArray()) + ".");
     if (typeCorrections > 0)
         findings.Add(typeCorrections + " tag(s) came out of Revit as another type and were changed to the rule's "
-            + "type - IndependentTag.Create does not always honour the type it is given.");
+            + "type - IndependentTag.Create does not always honour the type it is given, and a room or space tag "
+            + "always comes out as the project's default.");
     if (sizesGuessed > 0)
         findings.Add(sizesGuessed + " tag head(s) could not be measured and were judged at 20 x 5 mm on the paper.");
     if (leaderedJudged > 0)
         findings.Add(leaderedJudged + " tag head(s) already in the views have a leader, and were kept clear of at the "
             + "median size of the leaderless heads - a leadered tag's box wraps its leader, so it cannot be measured.");
     if (headsNotTaken > 0)
-        findings.Add(headsNotTaken + " tag head(s) did not go where they were sent - look for them in crowded.");
+        findings.Add(headsNotTaken + " tag head(s) did not go where they were sent, so each is named in crowded.");
+    if (headsUnread > 0)
+        findings.Add(headsUnread + " tag(s) were placed but Revit gave no head position to read, so they could not be "
+            + "kept clear of anything - each is named in crowded.");
+    if (movedNoLeader > 0)
+        findings.Add(movedNoLeader + " tag head(s) were moved one head's size off their element with NO leader, clear "
+            + "of the other tags - but this does not look at the model, so one may now sit over a NEIGHBOURING "
+            + "element and read as its tag. Look at them before the drawing goes out.");
     if (hiddenWords.Count > 0)
         findings.Add("Turned off in the view, so the tags placed are in the model and NOT SHOWN: "
             + string.Join(", ", hiddenWords.ToArray()) + ".");

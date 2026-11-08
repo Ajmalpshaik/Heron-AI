@@ -36,7 +36,10 @@ positive:
       (non-zero is the finding, not a fault); leadersDrawn above 0 where the
       near spots were taken, each such head two or three head-sizes off its
       duct on a straight leader; crowded naming any head still touching
-      another. Select a crowded id - it is a TAG, and it is on its duct
+      another. Select a crowded id - it is a TAG, and it is on its duct. And
+      LOOK at every head moved WITHOUT a leader (findings counts them): one
+      may now sit over a NEIGHBOURING duct and read as its tag - this card
+      keeps clear of other tags only, never of the model
 
   - given: >
       views "FloorPlan: M1, <MT1's second plan>", rules "Ducts; Air
@@ -62,6 +65,16 @@ positive:
     expect: >
       M1 tagged, and findings saying no view was named so the active view
       "M1" was tagged
+
+  - given: >
+      rules "Spaces" in a Snowdon HVAC floor plan of one level with placed,
+      enclosed MEP spaces and no space tags; then the same call again after it
+      was kept
+    expect: >
+      first: one SPACE tag on each space of that level and phase, each read
+      back pointing at its own space, the project's default Space Tags in
+      tagTypesUsed; not moved off the space's point. Second: tagged 0, every
+      space in alreadyTagged - nothing new placed
 
 negative:
   - given: >
@@ -104,11 +117,48 @@ negative:
       refused "None of the views can take tags: ... is a ThreeD view ...; ...
       is a DrawingSheet view ...", nothing placed
 
-  - given: views "<a plan>, <one of its dependent views>", rules "Ducts"
+  - given: >
+      views "<a plan>, <two of its dependent views>", rules "Ducts" (fixed
+      2026-11-08: the first draft tagged only the first dependent)
     expect: >
-      the plan tagged; perView saying the dependent view "shares its tags with
-      <the plan>, already in the list" and was not tagged - so no duct gets
-      two tags on one drawing
+      the plan tagged; each dependent's perView line counting as already
+      tagged every duct the plan's tags cover, and tagging only what the plan
+      did not - NO duct carries two duct tags on any of the three drawings.
+      Then the two dependents ALONE, untagged: the first tags its ducts, the
+      second only those outside the first's crop
+
+  - given: >
+      "FloorPlan: M1" tagged and KEPT; then a view template (or
+      Visibility/Graphics) turns Duct Tags off in M1; rules "Ducts" again
+    expect: >
+      tagged 0, every duct in alreadyTagged - a tag the view hides still
+      counts (fixed 2026-11-08: the first draft read only the tags the view
+      showed and tagged every duct a second time)
+
+  - given: >
+      rules typed on TWO lines, "Ducts | | straight" then "Pipes | | none |
+      500", through the chat (revit_change)
+    expect: >
+      the second line never reaches Revit (row 5b-1477), so rulesRead's first
+      line says "1 rule(s) read, of 1 ... : Ducts" - the count shows the loss.
+      Through a command line, where the line break does arrive: refused,
+      "Put every rule on ONE line, separated by semicolons", nothing placed
+
+  - given: >
+      a dependent view whose crop cuts a duct so its middle lies OUTSIDE the
+      crop, rules "Ducts"
+    expect: >
+      the duct's tag READ BACK inside the crop, on the part of the duct the
+      view shows; a duct whose bounding box touches the crop but whose line
+      does not, in outsideCrop - never a tag cut off the drawing
+
+  - given: >
+      rules "Rooms" in a plan whose phase is "New Construction", on a level
+      holding rooms of "Existing" as well
+    expect: >
+      only the New Construction rooms tagged; perView counting the others as
+      "of another phase than the view's "New Construction" left alone"; none
+      of them in notTagged
 
   - given: rules "Rooms", in a section view
     expect: >
