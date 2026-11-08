@@ -758,10 +758,44 @@ namespace Heron.Installer
         /// <summary>
         /// The script's own last complaint, which is the sentence written for
         /// a person. Handing back the whole transcript would bury it.
+        ///
+        /// IN PLAIN WORDS SINCE 2026-11-08 - the owner's word ("do it what
+        /// ever balance") after the window answered his Install with three
+        /// lines that were each only a `dotnet build` command. The script's
+        /// refusals END with the command to run, so the last line was the
+        /// command and never the reason. Now: the refusals a person meets
+        /// from this window are said in a sentence of their own (PlainReason),
+        /// and any other refusal gives its explaining line, never the command
+        /// under it. The script itself is unchanged - a developer running it
+        /// still sees the whole message and the command.
         /// </summary>
         private static string LastMeaningfulLine(string output)
         {
-            if (string.IsNullOrEmpty(output)) return "It stopped without saying why.";
+            return PlainReason(output);
+        }
+
+        /// <summary>
+        /// Why the deploy script refused, in a sentence for a modeller. Public
+        /// so tests/Heron.Installer.TestHost can ask it without a PowerShell.
+        /// </summary>
+        public static string PlainReason(string output)
+        {
+            const string NoReason = "It stopped without saying why.";
+            if (string.IsNullOrEmpty(output)) return NoReason;
+
+            // THE ONES THIS WINDOW MEETS, matched on the script's own words
+            // (tools/deploy-addin.ps1), so a reworded refusal falls through
+            // to its own explaining line below rather than to a wrong one.
+            if (output.Contains("is older than the code beside it"))
+                return "The copy of Heron built on this PC is older than Heron's code, " +
+                       "so it was not used. Build it again, then press Install.";
+            if (output.Contains("so there is nothing to install for that release") ||
+                output.Contains("has been built, but not in") ||
+                output.Contains("Build for this release first"))
+                return "Heron has not been built for this Revit on this PC yet. " +
+                       "Build it, then press Install.";
+            if (output.Contains("Close it and run this again"))
+                return "That Revit is open. Close it, then press Install again.";
 
             var lines = output.Replace("\r", "").Split('\n');
             for (var i = lines.Length - 1; i >= 0; i--)
@@ -770,10 +804,16 @@ namespace Heron.Installer
                 if (line.Length == 0) continue;
                 if (line.StartsWith("at ", StringComparison.Ordinal)) continue;
                 if (line.StartsWith("+", StringComparison.Ordinal)) continue;
+                // PowerShell's own "At C:\...\deploy-addin.ps1:513 char:9".
+                if (line.StartsWith("At ", StringComparison.Ordinal) &&
+                    line.Contains(" char:")) continue;
+                // A COMMAND TO RUN IS NOT A REASON - the line above it is.
+                if (line.StartsWith("dotnet ", StringComparison.Ordinal)) continue;
+                if (line.StartsWith(".\\tools\\", StringComparison.Ordinal)) continue;
                 return line;
             }
 
-            return "It stopped without saying why.";
+            return NoReason;
         }
     }
 

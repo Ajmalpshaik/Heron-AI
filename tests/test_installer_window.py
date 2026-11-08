@@ -138,8 +138,18 @@ def main():
     check(not offered,
           "and nothing says Update or Repair: %s"
           % (", ".join(offered) if offered else "nothing does"))
-    check("new Button" in window and window.count("new Button") == 2,
-          "there are exactly two buttons, not three")
+    # THREE SINCE 2026-11-08 - R-21 as the owner amended it: Install, Close,
+    # and Remove Heron, which is drawn ONLY with no product tick boxes and
+    # only when something is installed. R-23a still holds: none of the three
+    # is Update or Repair (checked just above).
+    check("new Button" in window and window.count("new Button") == 3,
+          "there are exactly three buttons: Install, Close, Remove Heron")
+    remove_at = window.find('Content = "Remove Heron"')
+    gate = window.rfind("if (screen.OneChoice && screen.AnythingInstalled)", 0,
+                        remove_at if remove_at != -1 else 0)
+    check(remove_at != -1 and gate != -1 and remove_at - gate < 400,
+          "and Remove Heron is drawn only when there are no product ticks "
+          "and something is installed (R-21, amended 2026-11-08)")
     check("IfYouInstallAgain" in window,
           "and an installed product is told what Install will do instead")
 
@@ -312,10 +322,18 @@ def main():
     check("Chosen" in screen_code and "InstalledFor" in screen_code,
           "and whether it starts ticked is decided by the screen, where it can "
           "be tested")
-    # The button still says Install and there are still two of them - R-23a
-    # is not loosened by adding an uninstall path.
-    check(window.count("new Button") == 2,
-          "there are still exactly two buttons, not a third for Remove")
+    # The button still says Install - R-23a is not loosened by an uninstall
+    # path. Since 2026-11-08 (R-21 amended by the owner) the one product's
+    # uninstall is a Remove Heron button, and it goes through the SAME
+    # safety: the screen's ToRemove, the Yes/No naming what goes, No first.
+    remove_handler = window_code[window_code.find("private void OnRemove("):]
+    check("_screen.ToRemove(new string[0])" in remove_handler
+          and "InstallerScreen.WhatWillBeRemoved(removals)" in remove_handler
+          and "MessageBoxResult.No" in remove_handler,
+          "Remove Heron asks first, No by default, and the screen decides what goes")
+    check("_screen.EverythingOffered()" in window_code
+          and "OneChoice" in screen_code,
+          "and with no ticks Install sends everything offered, so it never removes")
 
     print()
     print("A tab's tick moves its pieces, and it is wired AFTER the list exists")
