@@ -219,6 +219,7 @@ an edit.
 | [D-148](#d-148--revit_read-looks-up-the-users-words-as-a-question-so-a-write-is-never-ranked-ahead-of-the-read) | revit_read looks up the user's words as a question, so a write is never ranked ahead of the read | ✅ Accepted · 2026-11-07 |
 | [D-149](#d-149--every-colour-font-and-icon-heron-shows-comes-from-the-brand-kit-in-docsbrand) | Every colour, font and icon Heron shows comes from the brand kit in docs/brand | ✅ Accepted · 2026-11-07 |
 | [D-150](#d-150--herons-four-switches-move-from-the-ribbon-into-a-settings-window-and-the-ribbon-keeps-heron-settings-and-companion) | Heron's four switches move from the ribbon into a Settings window, and the ribbon keeps Heron, Settings and Companion | ✅ Accepted · 2026-11-07 |
+| [D-151](#d-151--a-job-the-modeller-kept-can-be-saved-as-a-named-command-and-the-heron-panel-in-revit-runs-it-through-the-same-door-a-chat-uses) | A job the modeller kept can be saved as a named command, and the Heron panel in Revit runs it through the same door a chat uses | ⏳ Proposed · 2026-11-08 |
 
 ## Format
 
@@ -1309,3 +1310,11 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`HeronApplication.cs`](../revit/Heron.Revit.Addin/HeronApplication.cs) (`BuildRibbon`) · [`HeronSettingsWindow.cs`](../revit/Heron.Revit.Addin/HeronSettingsWindow.cs) · [`Commands.cs`](../revit/Heron.Revit.Addin/Commands.cs) (`SettingsCommand`) · the refusal sentences, which now name Settings
 
 **Full record:** [`decisions/D-150.md`](decisions/D-150.md)
+
+## D-151 — A job the modeller kept can be saved as a named command, and the Heron panel in Revit runs it through the same door a chat uses
+
+**Status:** Proposed · **Date:** 2026-11-08 · **Asked:** Ajmal PS, 2026-11-08, in conversation: *"same like a companian app a docoble panel ... if i save that and if i clock it will run"*, then *"yes you can do"* - the limits (one capability per command, no PUBLISH or ADMIN) are the owner's to accept
+**Keeps:** Article 8 · [D-117](decisions/D-117.md) · [D-126](decisions/D-126.md) · [D-150](decisions/D-150.md)
+**Affects:** [`heron_commands.py`](../brain/heron_commands.py) · [`heron_command_run.py`](../mcp/server/heron_command_run.py) · [`HeronCommandsPane.cs`](../revit/Heron.Revit.Addin/HeronCommandsPane.cs) · [`HeronCommandStore.cs`](../revit/Heron.Revit.Addin/HeronCommandStore.cs)
+
+**Full record:** [`decisions/D-151.md`](decisions/D-151.md)

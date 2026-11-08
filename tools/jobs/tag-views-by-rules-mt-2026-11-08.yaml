@@ -1,0 +1,41 @@
+# NEEDS-CHECKING Group MT - TAG_VIEWS_BY_RULES, built 2026-11-08 in a cloud
+# session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/tag-views-by-rules-mt-2026-11-08.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/tag-views-by-rules-mt-2026-11-08.yaml
+#
+# THE MODEL is a SAVED scratch copy of Revit's "Snowdon Towers Sample HVAC",
+# Revit 2024 - never a working model. "FloorPlan: M1" holds 22 ducts (the
+# small view of the fragment-proving skill's rule 1) and, for MT1 to record,
+# no duct tags. If it carries duct tags already, MT1 removes them in the copy
+# and saves - the positive must have something to tag.
+#
+# NO SETUP CHAIN. This card collects what its rules name in each view itself;
+# nothing is selected and nothing is handed on.
+#
+# THE NEGATIVE IS A VALUE, NOT A SELECTION (fragment-proving rules 3 and 5): the
+# same view and the same category, with a shortest run longer than any duct -
+# so every duct must be left alone, in tooShort, and nothing placed. A card
+# that tagged whatever it found tags here. Every run is ROLLED BACK.
+
+model: saved scratch copy of Snowdon Towers Sample HVAC (MT1), Revit 2024
+
+defaults:
+  write: true
+
+jobs:
+  - fragment: tag-views-by-rules
+    expect: newTags
+    set:
+      views: "FloorPlan: M1"
+      rules: "Ducts"
+    negative-set:
+      views: "FloorPlan: M1"
+      rules: "Ducts | | none | 100000"
+    note: >
+      MT3. Negative - THE FIRST CASE TO RUN: tagged 0, newTags empty, every
+      duct of M1 in tooShort or verticalSkipped, crowded empty. Positive:
+      tagged equal to M1's ducts less verticalSkipped, newTags that many,
+      tagTypesUsed "Ducts: <family: type> (the project's default Duct Tags)",
+      leadersDrawn 0, perView one line for M1, refused empty. Then look at the
+      plan: one tag per duct, heads apart or named in crowded.

@@ -429,6 +429,7 @@ own (§8.9).
 | **Show on screen** | select, zoom, open a view, isolate for now | `EXECUTE` | a connected Revit; Changes may be off | `revit_show` (door), `revit_select_by_category`, `revit_isolate_temporary`, `revit_reset_temporary` |
 | **Change the model** | keep a change | `MODIFY`; `PUBLISH` and `ADMIN` through `revit_change` only | Changes; Publish or Admin as well for those levels | `revit_change` (door); `revit_preview_move` (`ANALYZE`) then `revit_apply_move` |
 | **Connect and check** | which Revit, which model, is Heron working | `READ` | nothing | `revit_health`, `revit_use_session`, `revit_use_this_model`, `heron_version`, `heron_diagnose`, `heron_companion` |
+| **Saved commands** | keep a job as a named command; list, show, delete ([docs/49](49-saved-commands-and-the-heron-panel.md)) | `READ` - writes only the modeller's own command files | nothing. Running one is `revit_change` or `revit_read`, from the chat or from Revit's Heron panel | `heron_commands` |
 
 `heron_tools.ALWAYS_LOADED` names the few a chat is given before it asks (§8.6); every other tool is one
 search away.

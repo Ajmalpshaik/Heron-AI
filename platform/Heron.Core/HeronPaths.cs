@@ -201,6 +201,54 @@ namespace Heron.Core
         public static string Audit { get { return Ensure(Path.Combine(Data, "audit")); } }
 
         /// <summary>
+        /// THE PYTHON SIDE'S DATA HOME - HERON_DATA when set, otherwise
+        /// %USERPROFILE%\.heron - read, never written, by the add-in. The same
+        /// rule as brain/heron_paths.py data_home(), which owns it (D-135): a
+        /// Microsoft Store Claude keeps a private copy of %APPDATA%, so what a
+        /// chat writes FOR Revit to read lives outside it. Null when there is
+        /// no profile to put it in.
+        /// </summary>
+        public static string PythonData
+        {
+            get
+            {
+                var chosen = (Environment.GetEnvironmentVariable("HERON_DATA") ?? "").Trim();
+                if (chosen.Length > 0) return chosen;
+                var profile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                return string.IsNullOrEmpty(profile) || !Path.IsPathRooted(profile)
+                    ? null
+                    : Path.Combine(profile, ".heron");
+            }
+        }
+
+        /// <summary>
+        /// The modeller's saved commands (docs/49) - one .json per command,
+        /// written by the chat (brain/heron_commands.py), listed by the Heron
+        /// panel. Not created here: no folder simply means none is saved yet.
+        /// </summary>
+        public static string CommandsPersonal
+        {
+            get
+            {
+                var home = PythonData;
+                return home == null ? null : Path.Combine(home, "commands", "personal");
+            }
+        }
+
+        /// <summary>
+        /// The note each chat leaves naming the Python and Heron folder it runs
+        /// from, so the panel can start the saved-command runner (docs/49).
+        /// </summary>
+        public static string CommandRunnerNote
+        {
+            get
+            {
+                var home = PythonData;
+                return home == null ? null : Path.Combine(home, "commands", "runner.json");
+            }
+        }
+
+        /// <summary>
         /// True when the path is safe for an update or a cleanup to delete.
         /// Anything under DATA is the user's and is never touched.
         ///

@@ -342,6 +342,13 @@ TOOLS = {
     # run_fragment_write, and this row stays READ.
     "heron_companion":          (READ,    None),
 
+    # Saved commands (docs/49). READ, no operation: it saves, lists, shows and
+    # deletes the modeller's own command files under the data home and
+    # reaches no Revit. Running one is revit_change or revit_read, at their
+    # own levels - from the chat, or from Revit's panel through the runner
+    # (PANEL_ACTIONS below).
+    "heron_commands":           (READ,    None),
+
     # The Companion's editable table (docs/40 section 8). ANALYZE through
     # run_fragment_read, exactly revit_read's level: it reads the elements
     # into a table and changes nothing. Writing the edited cells is the
@@ -412,6 +419,17 @@ COMPANION_ACTIONS = {
     # exactly revit_change's level and operation; both PROVEN (D-117).
     "companion_dashboard_colour":        (MODIFY, "run_fragment_write"),
     "companion_dashboard_clear_colours": (MODIFY, "run_fragment_write"),
+}
+
+
+# WHAT REVIT'S HERON PANEL CAN RUN (docs/49). Not MCP tools - a click in
+# Revit starts mcp/server/heron_command_run.py, which runs ONE saved command
+# through revit_change's or revit_read's own body - so each is exactly that
+# tool's level and operation, and PUBLISH and ADMIN are never saved as a
+# command at all (heron_commands refuses them).
+PANEL_ACTIONS = {
+    "panel_command_change":     (MODIFY,  "run_fragment_write"),
+    "panel_command_read":       (ANALYZE, "run_fragment_read"),
 }
 
 

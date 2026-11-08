@@ -587,6 +587,37 @@ namespace Heron.Revit.Addin
     /// start screen by Revit's own rule for a command with no availability
     /// class - with no model open there is nothing to free.
     /// </summary>
+    /// <summary>
+    /// COMMANDS - opens the Heron panel of saved commands (docs/49), a row in
+    /// the Heron button's menu like Free this model, never a ribbon button of
+    /// its own (D-150: the ribbon holds three things). It only shows the
+    /// pane; nothing in the pane touches the Revit API. No availability
+    /// class, like Free this model: Revit greys it on the start screen, where
+    /// there is no model to run a command on.
+    /// </summary>
+    [Transaction(TransactionMode.Manual)]
+    [Regeneration(RegenerationOption.Manual)]
+    public sealed class CommandsPaneCommand : IExternalCommand
+    {
+        public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
+        {
+            try
+            {
+                var pane = commandData.Application.GetDockablePane(HeronCommandsPane.Id);
+                if (pane.IsShown()) pane.Hide();
+                else pane.Show();
+                return Result.Succeeded;
+            }
+            catch (Exception ex)
+            {
+                HeronApplication.Log("The Heron Commands panel could not be shown: " + ex);
+                message = "Heron could not open its Commands panel. Your model is untouched. " +
+                          "Revit said: " + ex.Message;
+                return Result.Failed;
+            }
+        }
+    }
+
     [Transaction(TransactionMode.Manual)]
     [Regeneration(RegenerationOption.Manual)]
     public sealed class FreeModelCommand : IExternalCommand

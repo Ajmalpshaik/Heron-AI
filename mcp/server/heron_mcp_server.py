@@ -5765,6 +5765,111 @@ def _companion_module():
     return companion_page
 
 
+def _input_lines(inputs):
+    """"name|Label|default" lines into the store's input dicts."""
+    found = []
+    for line in (inputs or "").splitlines():
+        if not line.strip():
+            continue
+        parts = [p.strip() for p in line.split("|")]
+        found.append({"name": parts[0],
+                      "label": parts[1] if len(parts) > 1 and parts[1] else parts[0],
+                      "default": "|".join(parts[2:]) if len(parts) > 2 else ""})
+    return found
+
+
+@server.tool()
+def heron_commands(action: str = "list", name: str = "", capability: str = "",
+                   values: str = "", inputs: str = "", description: str = "",
+                   words: str = "", replace: bool = False) -> str:
+    """
+    The modeller's SAVED COMMANDS: one job, kept as a named button that runs
+    again from this chat or from the Heron panel in Revit. Never touches the
+    model.
+
+    action="save" after a job the modeller kept, when they ask to save it:
+    `name` as they call it, the `capability` that ran, `values` as it ran
+    ("name=value" per line) with the parts they want asked each time written
+    as {input}, and `inputs` one "input|Label|default" per line. `words` is
+    their original request; `description` one line on what it does. Ask them which values should be inputs; never
+    guess. replace=true only when they said to replace one.
+
+    action="list" names every saved command; "show" gives one with its inputs;
+    "delete" removes one, only when they ask.
+
+    To RUN one from chat: "show" it, put their inputs in, and call
+    revit_change (or revit_read for a read) with that capability and values -
+    the same checks as any change. One saved command is one capability.
+    """
+    try:
+        store = brain.commands()
+    except brain.BrainUnavailable as why:
+        return str(why)
+    act = (action or "list").strip().lower()
+    try:
+        if act == "list":
+            found, broken = store.all_commands()
+            if store.folder() is None:
+                return "This PC has no folder for Heron's data, so no command can be saved here."
+            if not found and not broken:
+                return "No commands are saved yet."
+            lines = ["Saved commands (%d):" % len(found)]
+            lines += ["- " + store.describe(c) for c in found]
+            lines += ["- could not read %s" % b for b in broken]
+            return "\n".join(lines)
+        if act == "show":
+            command = store.find(name)
+            lines = [store.describe(command)]
+            lines.append("capability: %s" % command["capability"])
+            lines.append("values:\n%s" % ("\n".join("  %s=%s" % (v["name"], v["value"])
+                                                   for v in command["values"]) or "  none"))
+            lines.append("runs through: %s" % ("revit_change" if command["tool"] == "change"
+                                               else "revit_read"))
+            return "\n".join(lines)
+        if act == "delete":
+            return "Deleted the saved command '%s'." % store.delete(name)
+        if act != "save":
+            return "action must be list, show, save or delete - not '%s'." % action
+    except store.CommandError as why:
+        return str(why)
+
+    folder, _status = _fragment_for(capability)
+    if folder is None:
+        return ("Heron has nothing that does '%s', so nothing was saved. Use the capability "
+                "the job ran with." % capability)
+    root = _repo_root()
+    card = os.path.join(root, "brain", "fragments", folder, "fragment.yaml")
+    # PUBLISH AND ADMIN ARE NOT SAVED: one click must never sync, export or
+    # make a workset (Article 10). The client's own rule says which risks this
+    # path may send at all - unswitched, so those two and an unreadable risk
+    # are refused - called rather than copied (test_change_risk_refusal.py).
+    # The chat can still do them, asked each time.
+    refusal = bridge.risk_refusal(root, folder)
+    if refusal:
+        return ("'%s' is not saved as a button: %s\nNothing was saved." % (capability, refusal))
+    needs = bridge.fragment_needs(card)
+    # READ OR CHANGE IS THE READ DOOR'S OWN CEILING (heron_tools.door_refusal):
+    # what revit_read would take goes through it, everything else through
+    # revit_change.
+    reads = tools.door_refusal("revit_read", bridge.fragment_risk(card), capability) is None
+    command = {
+        "name": name, "description": description, "words": words,
+        "tool": "read" if reads else "change",
+        "capability": capability,
+        "values": [{"name": v["name"], "value": v["value"]} for v in _values_array(values)],
+        "inputs": _input_lines(inputs),
+    }
+    try:
+        path = store.save(command, needs, replace=bool(replace))
+    except store.CommandError as why:
+        return str(why)
+    except OSError as why:
+        return "The command could not be written: %s. Nothing was saved." % why
+    return ("Saved '%s'. It runs again from this chat by name, or from the Heron panel in "
+            "Revit.\n%s\nKept in %s" % (command["name"].strip(), store.describe(store.find(name)),
+                                        path))
+
+
 @server.tool()
 def heron_companion() -> str:
     """
@@ -7624,6 +7729,16 @@ if __name__ == "__main__":
             companion_page.keep(bound_pid=_companion_revit)
         except Exception as why:                         # noqa: BLE001 - never cost the chat
             sys.stderr.write("Heron Companion keeper did not start: %s\n" % why)
+
+    # THE RUNNER NOTE (docs/49): the Python and Heron folder this chat runs
+    # from, for Revit's Heron panel, which starts the saved-command runner
+    # with exactly these. Not off Windows - there is no panel there. Never
+    # fatal: write_runner_note swallows its own faults.
+    if not LIBRARY_ONLY:
+        try:
+            brain.commands().write_runner_note(sys.executable, _repo_root())
+        except brain.BrainUnavailable as why:
+            sys.stderr.write("Heron saved commands are unavailable: %s\n" % why)
 
     # One more look, so what start-up imported is fingerprinted before the
     # first call rather than at it.

@@ -144,6 +144,10 @@ PROJECTS = [
     # What a fragment write changed, counted from Revit's DocumentChanged -
     # linked by source the same way; tests/test_change_report.py runs it.
     "tests/Heron.ChangeReport.TestHost/Heron.ChangeReport.TestHost.csproj",
+    # How the Heron panel reads a saved command and quotes the runner's
+    # command line (docs/49) - linked by source; tests/test_command_store.py
+    # builds and runs it.
+    "tests/Heron.CommandStore.TestHost/Heron.CommandStore.TestHost.csproj",
     "tests/Heron.Installer.TestHost/Heron.Installer.TestHost.csproj",
     # Revit's Keep or Discard question (D-126) - its words, the rule that only
     # the Keep link keeps, and D-60's cap - linked by source like FailureNote.
