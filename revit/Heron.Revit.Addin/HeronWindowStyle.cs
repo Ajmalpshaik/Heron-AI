@@ -501,6 +501,32 @@ namespace Heron.Revit.Addin
             return template;
         }
 
+        /// <summary>
+        /// A whole-width row that is a button - a list entry the modeller
+        /// clicks. FlatButtonTemplate centres its content; a row must stretch,
+        /// or its text floats in the middle and a long name is cut short.
+        /// </summary>
+        internal static ControlTemplate RowButtonTemplate(Color hoverColour, double radius)
+        {
+            var border = TemplateBorder(Brushes.Transparent, radius);
+            var template = new ControlTemplate(typeof(Button)) { VisualTree = border };
+            var content = border.FirstChild;
+            content.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Stretch);
+            content.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Stretch);
+
+            var hover = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
+            hover.Setters.Add(new Setter(Border.BackgroundProperty,
+                new SolidColorBrush(hoverColour), TemplateRoot));
+            template.Triggers.Add(hover);
+
+            var focused = new Trigger { Property = UIElement.IsKeyboardFocusedProperty, Value = true };
+            focused.Setters.Add(new Setter(Border.BackgroundProperty,
+                new SolidColorBrush(hoverColour), TemplateRoot));
+            template.Triggers.Add(focused);
+
+            return template;
+        }
+
         private static FrameworkElementFactory TemplateBorder(Brush background, double radius)
         {
             var border = new FrameworkElementFactory(typeof(Border), TemplateRoot);
