@@ -2729,3 +2729,18 @@ def model_view(geometry_json):
                     numbers={"drawn": got["view"]["drawn"], "left_out": got["view"]["leftOut"]}
                     if got.get("view") else {})
     return got
+
+
+def commands():
+    """
+    The saved-command store (docs/49) - brain/heron_commands.py, through this
+    seam like every other brain module. Stdlib only, so a missing PyYAML
+    never takes it away.
+    """
+    try:
+        import heron_commands as COMMANDS
+    except ImportError as exc:
+        raise BrainUnavailable("Heron's saved commands could not be imported: %s. They need "
+                               "nothing beyond Python itself, so this is a broken install."
+                               % exc)
+    return COMMANDS

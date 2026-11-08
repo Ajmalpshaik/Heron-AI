@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Proves how the Heron panel READS a saved command and QUOTES the runner's
+    command line (docs/49), WITHOUT Revit.
+
+    HeronCommandStore.cs touches no Autodesk type, so it is linked here BY
+    SOURCE, with the two files it reads through - Json.cs and HeronPaths.cs -
+    the pattern Heron.BindingNote.TestHost uses and for its reason: one copy
+    of the rule, and no RevitAPI.dll on a machine without Revit.
+
+    tests/test_command_store.py builds and runs it, and feeds it a command the
+    PYTHON side saved, so the two halves are held to one file format.
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>$(HeronTfm)</TargetFramework>
+    <RootNamespace>Heron.CommandStore.TestHost</RootNamespace>
+    <AssemblyName>Heron.CommandStore.TestHost</AssemblyName>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\revit\Heron.Revit.Addin\HeronCommandStore.cs" Link="HeronCommandStore.cs" />
+    <Compile Include="..\..\revit\Heron.Bridge\Json.cs" Link="Json.cs" />
+    <Compile Include="..\..\platform\Heron.Core\HeronPaths.cs" Link="HeronPaths.cs" />
+  </ItemGroup>
+
+</Project>

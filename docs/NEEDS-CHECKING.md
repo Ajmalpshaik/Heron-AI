@@ -1402,6 +1402,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-mr.md`](needs-checking/group-mr.md)
 
+## Group MS - saved commands and the Heron panel: a kept job saved from the chat and run again from a panel docked in Revit (2026-11-08)
+
+**Its own file:** [`needs-checking/group-ms.md`](needs-checking/group-ms.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

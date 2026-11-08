@@ -267,6 +267,19 @@ namespace Heron.Revit.Addin
 
                 BuildRibbon(application);
 
+                // THE HERON PANEL (docs/49). Revit takes a dockable pane only
+                // during OnStartup. Its own fault costs the panel, never the
+                // add-in: the bridge and the ribbon above are already up.
+                try
+                {
+                    application.RegisterDockablePane(HeronCommandsPane.Id, HeronCommandsPane.Title,
+                        new HeronCommandsPane(Log));
+                }
+                catch (Exception paneFailure)
+                {
+                    Log("The Heron Commands panel could not be registered: " + paneFailure);
+                }
+
                 // ROSLYN'S FIRST-USE COST, PAID NOW rather than on the
                 // modeller's first request (D-56 measured ~4.5 s of it). A
                 // background thread that touches no Revit API - see WarmUp.
@@ -451,6 +464,18 @@ namespace Heron.Revit.Addin
                 typeof(FreeModelCommand).FullName);
             freeModel.ToolTip = "Let another chat use the model in front now.";
             bridgeGroup.AddPushButton(freeModel);
+
+            // COMMANDS (docs/49) - the panel of saved commands, a text row in
+            // this menu like Free this model, so the ribbon keeps its three
+            // things (D-150). Shows or hides the docked pane registered below.
+            var commandsRow = new PushButtonData(
+                "HeronCommandsPane",
+                "Commands",
+                assemblyPath,
+                typeof(CommandsPaneCommand).FullName);
+            commandsRow.ToolTip = "Show or hide your saved Heron commands.";
+            commandsRow.AvailabilityClassName = typeof(AlwaysAvailable).FullName;
+            bridgeGroup.AddPushButton(commandsRow);
 
             // A split button normally promotes whatever was last picked from
             // the list to the top. Here the top button's picture IS the
