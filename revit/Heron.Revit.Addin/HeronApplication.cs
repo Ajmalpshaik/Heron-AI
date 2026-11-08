@@ -474,7 +474,6 @@ namespace Heron.Revit.Addin
                 assemblyPath,
                 typeof(CommandsPaneCommand).FullName);
             commandsRow.ToolTip = "Show or hide your saved Heron commands.";
-            commandsRow.AvailabilityClassName = typeof(AlwaysAvailable).FullName;
             bridgeGroup.AddPushButton(commandsRow);
 
             // A split button normally promotes whatever was last picked from

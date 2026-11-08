@@ -25,8 +25,8 @@ WHAT IT PROVES
      ONE capability through revit_change's or revit_read's own body, hands
      back what it held, and sends nothing when the Revit is gone or the
      command cannot be filled.
-  6. THE MCP TOOL saves through the real fragment contract, refuses a
-     PUBLISH job, and is declared READ in the registry. Needs the MCP SDK.
+  The MCP tool itself is tests/test_commands_tool.py - it needs the MCP SDK,
+  and this suite runs everywhere.
 """
 
 from __future__ import print_function
@@ -282,60 +282,22 @@ def _expected_client_id():
         return None
 
 
-def tool(home):
-    print("6. the MCP tool")
-    try:
-        import mcp  # noqa: F401
-    except ImportError:
-        print("  NOT RUN - the MCP SDK is not installed")
-        return "not run"
-    os.environ["HERON_DATA"] = home
-    import heron_mcp_server as S
-    import heron_tools as T
-    check(T.TOOLS.get("heron_commands") == (T.READ, None), "declared READ, no operation")
-    check(T.PANEL_ACTIONS["panel_command_change"] == (T.MODIFY, "run_fragment_write")
-          and T.PANEL_ACTIONS["panel_command_read"] == (T.ANALYZE, "run_fragment_read"),
-          "the panel's runs are revit_change's and revit_read's own levels")
-    body = getattr(S.heron_commands, "__wrapped__", S.heron_commands)
-    said = body("save", name="Sheets A", capability="CREATE_SHEETS",
-                values="numbers={first}\nnamePrefix=A-", inputs="first|First number|A101")
-    check(said.startswith("Saved 'Sheets A'"), "a command is saved through the real contract")
-    said = body("save", name="Typo", capability="CREATE_SHEETS", values="numbrs=A1")
-    check("'numbrs' is not a value CREATE_SHEETS takes" in said, "a typo is refused by name")
-    said = body("save", name="Sync", capability="SYNC_WITH_CENTRAL")
-    check("not saved as a button" in said, "a PUBLISH job is never saved as a button")
-    said = body("save", name="Nothing", capability="NO_SUCH_THING")
-    check("nothing was saved" in said, "an unknown capability saves nothing")
-    check("Sheets A" in body("list"), "it is listed")
-    shown = body("show", name="sheets a")
-    check("numbers={first}" in shown and "revit_change" in shown, "show gives values and the door")
-    check(body("delete", name="Sheets A").startswith("Deleted"), "it is deleted when asked")
-    check("not 'run'" in body("run"), "an unknown action is named")
-    return "run"
-
-
 def main():
     home = tempfile.mkdtemp(prefix="heron-commands-")
-    tool_home = tempfile.mkdtemp(prefix="heron-commands-tool-")
     try:
         shape(home)
         keep(home)
         filling(home)
         note(home)
         runner(home)
-        ran = tool(tool_home)
     finally:
         shutil.rmtree(home, ignore_errors=True)
-        shutil.rmtree(tool_home, ignore_errors=True)
     print()
     if FAILURES:
         print("FAILED  %d check(s)" % len(FAILURES))
         for line in FAILURES:
             print("  - %s" % line)
         return 1
-    if ran == "not run":
-        print("NOT RUN part 6 - the MCP SDK is missing; parts 1-5 passed")
-        return 3
     print("PASS    saved commands are checked when kept and run through the one door")
     return 0
 

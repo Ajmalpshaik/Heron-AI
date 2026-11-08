@@ -5838,16 +5838,23 @@ def heron_commands(action: str = "list", name: str = "", capability: str = "",
         return ("Heron has nothing that does '%s', so nothing was saved. Use the capability "
                 "the job ran with." % capability)
     root = _repo_root()
-    risk = bridge.fragment_risk(os.path.join(root, "brain", "fragments", folder, "fragment.yaml"))
+    card = os.path.join(root, "brain", "fragments", folder, "fragment.yaml")
     # PUBLISH AND ADMIN ARE NOT SAVED: one click must never sync, export or
-    # make a workset (Article 10). The chat can still do them, asked each time.
-    if risk not in bridge.RUNNABLE_RISKS:
-        return ("'%s' is a %s job, and those are not saved as a button - Heron asks for them "
-                "each time. Nothing was saved." % (capability, risk or "unreadable"))
-    needs = bridge.fragment_needs(os.path.join(root, "brain", "fragments", folder, "fragment.yaml"))
+    # make a workset (Article 10). The client's own rule says which risks this
+    # path may send at all - unswitched, so those two and an unreadable risk
+    # are refused - called rather than copied (test_change_risk_refusal.py).
+    # The chat can still do them, asked each time.
+    refusal = bridge.risk_refusal(root, folder)
+    if refusal:
+        return ("'%s' is not saved as a button: %s\nNothing was saved." % (capability, refusal))
+    needs = bridge.fragment_needs(card)
+    # READ OR CHANGE IS THE READ DOOR'S OWN CEILING (heron_tools.door_refusal):
+    # what revit_read would take goes through it, everything else through
+    # revit_change.
+    reads = tools.door_refusal("revit_read", bridge.fragment_risk(card), capability) is None
     command = {
         "name": name, "description": description, "words": words,
-        "tool": "read" if risk in ("READ", "ANALYZE") else "change",
+        "tool": "read" if reads else "change",
         "capability": capability,
         "values": [{"name": v["name"], "value": v["value"]} for v in _values_array(values)],
         "inputs": _input_lines(inputs),

@@ -483,6 +483,10 @@ jobs:
           # THE SUITES THAT CANNOT RUN ON A PLAIN LINUX RUNNER, AND WHY.
           #
           #   test_bridge_roundtrip.py needs a built .NET test host
+          #   test_commands_tool.py    needs the MCP SDK - the chat's
+          #                            heron_commands tool (docs/49); the store
+          #                            and runner it serves run here, in
+          #                            test_commands.py
           #   test_loads_finalize.py   needs the MCP SDK - it runs the server's
           #                            own Finalize against a stand-in Revit
           #   test_mcp_serves.py       needs the MCP SDK
@@ -526,6 +530,7 @@ jobs:
           # and both still fail if the thing they assert stops being true.
           printf '%s\n' \
             test_bridge_roundtrip.py \
+            test_commands_tool.py \
             test_loads_finalize.py \
             test_mcp_serves.py \
             test_mcp_stdio.py \

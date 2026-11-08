@@ -591,9 +591,9 @@ namespace Heron.Revit.Addin
     /// COMMANDS - opens the Heron panel of saved commands (docs/49), a row in
     /// the Heron button's menu like Free this model, never a ribbon button of
     /// its own (D-150: the ribbon holds three things). It only shows the
-    /// pane; nothing in the pane touches the Revit API. Available with no
-    /// model open, so the list can be looked at from the start screen - a
-    /// Run there is answered by the runner, which finds no model.
+    /// pane; nothing in the pane touches the Revit API. No availability
+    /// class, like Free this model: Revit greys it on the start screen, where
+    /// there is no model to run a command on.
     /// </summary>
     [Transaction(TransactionMode.Manual)]
     [Regeneration(RegenerationOption.Manual)]
@@ -615,15 +615,6 @@ namespace Heron.Revit.Addin
                           "Revit said: " + ex.Message;
                 return Result.Failed;
             }
-        }
-    }
-
-    /// <summary>Lets the Commands row work on the start screen, where no model is open.</summary>
-    public sealed class AlwaysAvailable : IExternalCommandAvailability
-    {
-        public bool IsCommandAvailable(UIApplication applicationData, CategorySet selectedCategories)
-        {
-            return true;
         }
     }
 
