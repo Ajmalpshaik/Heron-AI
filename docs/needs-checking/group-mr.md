@@ -38,3 +38,13 @@ edge spaces. The field run says Revit 2020 does - the four names read back witho
 **The wire strip (row 5b-215) is fixed in the same pull request**: a value in double quotes keeps its spaces through `revit_change` and `revit_read`. MR4's quoted run is its first check through a live chat.
 
 **`OPEN_VIEW` and the add-in's view lookup are not this group's.** Both were fixed here first, then by PR #804 the same day ([row 5b-1468](../fragment-issues/section-5b-rows-401-425.md)'s `TypeWordNames`, and `OPEN_VIEW` version 4 for row 5b-1470 (a)) with the same reading plus plurals. At the merge this branch took #804's code for both, so their proof is #804's, and "Floor Plan: name" for any tool is checked there.
+
+## 2026-11-08 - `EDIT_TEXT_VALUES` v9 PROVEN, by a different case than MR4
+
+Run on `RenameProof-rme` - a copy of `rme_advanced_sample_project.rvt` in Revit 2020, never the job model - with `tools/batch-prove.py`, both legs rolled back. Positive: section view "Section 18" (found by `FIND_VIEWS`), field Name, mode replace, text "Section", replacement "HVAC Air Duct Section" - `changed` 1, `unverified` 0. Negative: the same view, text "ZZZNOTHINGHERE" - `changed` 0, `notMatched` 1. Signed by Ajmal PS and PROVEN the same day. It was run for the owner's rename of seven sections on `4355-BHVD-3D-22S10-BL001A`.
+
+**Still open: MR4's own case** - the edge-space trim and `nameNote` were not exercised (no new name here had a space to lose), and MR5's clash. **Learned:** a viewport's "View Name" answered `ambiguous` 3 on sheet E301 - two parameters of that name on a viewport - so a rename goes to the views, never their viewports. `FIND_VIEWS` (MR2, MR3) and `RENUMBER_SEQUENTIAL` (MR8) are untouched by this.
+
+## 2026-11-08 - `FIND_VIEWS` v3 PROVEN, by MR2's shape on a sample
+
+Run on `RenameProof-rme` (a copy of `rme_advanced_sample_project.rvt`, Revit 2020) with `tools/batch-prove.py`. Positive: viewType "Section", nameContains "Section 18" - `elements` 1, on a sheet (`onSheets` 1). Negative: the same name asked as viewType "Floor Plan" - `elements` 0, the section named as passed over. Signed by Ajmal PS and PROVEN the same day, so the owner's seven section renames on `4355-BHVD-3D-22S10-BL001A` could run on proven tools only. **Still open:** MR2's dependent-copy case (row 5b-1474's own) and MR3's spellings.
