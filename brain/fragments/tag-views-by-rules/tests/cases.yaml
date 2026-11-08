@@ -1,0 +1,133 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write that places tags, "tagged something nobody asked for": a tag on a
+# category no rule names, a second tag on an element already tagged, a tag of
+# a type nobody named and the project does not default to, or a head left on
+# top of another with nothing said.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING Group MT). A SAVED
+# scratch copy of Revit's "Snowdon Towers Sample HVAC", Revit 2024 - never a
+# working model. Two small plans with ducts and no duct tags: "FloorPlan: M1"
+# (22 ducts, the small view of the fragment-proving skill's rule 1) and a
+# second plan the owner names in MT1, recorded there. Nothing is selected:
+# this card collects what its rules name in each view itself, so no setup chain
+# is needed, and the negative leg is the SAME views with a VALUE that must
+# leave every duct alone - a different value, not an empty selection
+# (fragment-proving, rules 3 and 5). Where the model differs, the job file
+# changes - never the card. EVERY RUN ROLLED BACK but MT5's one run.
+
+positive:
+  - given: >
+      views "FloorPlan: M1", rules "Ducts" - nothing else typed: the project's
+      default duct tag, no leader, every run, a 2 mm gap, already-tagged ducts
+      skipped
+    expect: >
+      tagged equal to the ducts in M1 less verticalSkipped; newTags that many
+      ids; tagTypesUsed one line, "Ducts: <family: type> (the project's
+      default Duct Tags)"; leadersDrawn 0; perView one line for M1; refused
+      empty. Then LOOK AT THE PLAN: every duct carries one tag, and the heads
+      sit apart or are named in crowded. A count cannot see an overlap
+
+  - given: >
+      the same, with rules "Ducts | <a duct tag type the model has, as
+      Family: Type> | straight | 0" and minGapMm 4, on a plan where the ducts
+      run close together
+    expect: >
+      every tag READ BACK carrying that type, typeCorrections whatever it is
+      (non-zero is the finding, not a fault); leadersDrawn above 0 where the
+      near spots were taken, each such head two or three head-sizes off its
+      duct on a straight leader; crowded naming any head still touching
+      another. Select a crowded id - it is a TAG, and it is on its duct
+
+  - given: >
+      views "FloorPlan: M1, <MT1's second plan>", rules "Ducts; Air
+      Terminals" - two views and two rules in one call
+    expect: >
+      perView two lines, one per plan, each with its own counts; tagged the
+      sum; ONE entry in Revit's undo list for the whole call - one Ctrl+Z
+      takes every tag in both plans away (Golden Rule 16)
+
+  - given: the first case run a SECOND time on the same plan, after it was kept
+    expect: >
+      tagged 0, newTags empty, alreadyTagged every duct id tagged the first
+      time - nothing is stacked
+
+  - given: >
+      the first case after it was kept, with rules "Ducts | <a DIFFERENT duct
+      tag type> | none" and skipTagged left out
+    expect: >
+      every duct gains ONE tag of the new type - with a type named, only a tag
+      OF THAT TYPE counts as already tagged (TAG_ELEMENTS_IN_VIEW's rule)
+
+  - given: views left out, with M1 the active view
+    expect: >
+      M1 tagged, and findings saying no view was named so the active view
+      "M1" was tagged
+
+negative:
+  - given: >
+      THE D-30 NEGATIVE - THE FIRST CASE TO RUN. The positive's views with
+      rules "Ducts | | none | 100000" - a shortest run longer than any duct
+    expect: >
+      tagged 0, newTags empty, every duct of M1 in tooShort (or
+      verticalSkipped), crowded empty, nothing placed. A card that tagged
+      whatever it found would tag here; the value alone empties the result
+
+  - given: rules "Ductz" - a category the model has no name for
+    expect: >
+      refused "1 of the 1 rule(s) could not be read: rule 1 ("Ductz"): no
+      category is called "Ductz" in this model ... Nothing was placed." -
+      tagged 0, nothing placed in any view
+
+  - given: >
+      rules "Ducts | M_Pipe Size Tag: Standard" (or any PIPE tag type the model
+      has), on the positive's view
+    expect: >
+      refused naming it as a Pipe Tags type, not a Duct Tags or Multi-Category
+      type, "would print blank on Ducts", with the loaded duct tag types
+      listed. Nothing placed - a wrong tag is never placed
+
+  - given: rules "Ducts; Doors | ZZZ No Such Tag"
+    expect: >
+      refused for rule 2 ALONE, and nothing placed - not even the ducts' tags.
+      One rule that cannot be read stops the whole call
+
+  - given: rules "Ducts | | L" (a leader word this does not know)
+    expect: refused "\"l\" is not a leader rule - say none or straight", nothing placed
+
+  - given: rules "Ducts | | | 500mm"
+    expect: >
+      it runs: "500mm" reads as 500 model millimetres inside a rule; rulesRead
+      says "runs shorter than 500 mm left untagged"
+
+  - given: views a 3D view and a sheet, rules "Ducts"
+    expect: >
+      refused "None of the views can take tags: ... is a ThreeD view ...; ...
+      is a DrawingSheet view ...", nothing placed
+
+  - given: views "<a plan>, <one of its dependent views>", rules "Ducts"
+    expect: >
+      the plan tagged; perView saying the dependent view "shares its tags with
+      <the plan>, already in the list" and was not tagged - so no duct gets
+      two tags on one drawing
+
+  - given: rules "Rooms", in a section view
+    expect: >
+      perView for the section saying Rooms are not tagged there - a room tag
+      goes in a plan of its own level; tagged 0 for it
+
+  - given: rules "Areas"
+    expect: refused naming area tags and the area plan, nothing placed
+
+  - given: rules "Ducts" on a plan whose view template turns Duct Tags off
+    expect: >
+      the tags placed, and findings saying Duct Tags are turned off there, so
+      they are in the model and NOT SHOWN
+
+second_route:
+  - >
+    run FIND_OVERLAPPING_TAGS on each tagged plan afterwards - a separate
+    mechanism asking the same question - and compare its answer with crowded
+  - >
+    FIND_UNTAGGED_ELEMENTS on the same ducts afterwards: none left untagged but
+    the ones in verticalSkipped, tooShort and notTagged
+  - one Ctrl+Z removes every tag from every view in a single step (Golden Rule 16)

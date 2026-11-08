@@ -1,0 +1,295 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-176
+semantic-identity: "tag many views at once from a rule per category - which tag type, leader or none, shortest run - each new tag placed clear of the other tags"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-08: the owner's ask, docs/48-studying-bimlogiq.md section 5 item 2 -
+# "Annotation template + Tag in one pass, no overlaps, batch over many views" -
+# and his word on how: "upgrade the tag tool or combine the tool or if you
+# need to make as new also you can do it". Measured that day with
+# brain/heron_retrieve.py and tools/score-routing.py on a scratch store,
+# Revit 2024: "tag the ducts and pipes in all these views without overlapping
+# tags" reached FIND_OVERLAPPING_TAGS (a read) on the words route and
+# TAG_ELEMENTS_IN_VIEW on the model route; "tag these views using the
+# annotation template, keep the tags clear of each other" reached REMOVE_TAGS -
+# a write that DELETES tags - on both. Nothing in the library tagged more than
+# one view in a call, took a rule per category, or placed a tag clear of the
+# others when it placed it.
+#
+# WHY A CARD OF ITS OWN, AND NOT TAG_ELEMENTS_IN_VIEW OR ARRANGE_TAGS WIDENED -
+# THE OWNER'S DECISION OF 2026-11-08. Both are PROVEN; any change under either's
+# impl/ makes its proof stale, the card goes back to DRAFT, and D-117 then
+# refuses it in revit_change - so the modeller would lose working chat
+# tagging until it was proved again. The plan is this card proved FIRST, then
+# heron-fragment-merger folds TAG_ELEMENTS_IN_VIEW and ARRANGE_TAGS into it.
+# Until then THE JOB IS SPLIT ACROSS THREE CARDS, knowingly, and named in
+# FRAGMENT-ISSUES row 5b-1477 rather than hidden: TAG_ELEMENTS_IN_VIEW tags a
+# set handed in, in ONE view; ARRANGE_TAGS spreads tags ALREADY THERE; this
+# tags the categories its rules name, in every view in the list, and places
+# each tag clear of the others as it places it.
+#
+# RE-AUTHORED, NOT COPIED, FROM THOSE TWO CARDS' LESSONS - each kept, each
+# reason in impl/any/fragment.cs beside the code:
+#   from TAG_ELEMENTS_IN_VIEW - the MEP tag-category map is a fixed fact and
+#     every other category's tag category comes from Revit's own enum names;
+#     IndependentTag.Create does not reliably honour the type it is given, so
+#     every tag's type is read back, corrected and the corrections COUNTED;
+#     "already tagged" is read from the view's own tags, and with a type named
+#     only a tag of THAT type counts; a riser is a dot on the paper and is
+#     skipped; a minimum length is MODEL millimetres; a room, a space and a
+#     zone take their own kind of tag, only in a plan of their own level, and
+#     are found in the whole model by level - never by a view-scoped collect,
+#     which returned 0 of 7 rooms on 2026-09-19.
+#   from ARRANGE_TAGS - a tag's bounding box includes its leader, so a head is
+#     measured only from a LEADERLESS tag and a leadered one is judged at the
+#     median size; every position is worked along the view's own right and
+#     up, so nothing moves in a direction the reader cannot see.
+#
+# SAFER THAN EITHER, ON PURPOSE:
+#   - A tag type is NAMED in the rule or is the PROJECT'S DEFAULT for that tag
+#     category - never the first one loaded (TAG_ELEMENTS_IN_VIEW falls back to
+#     that; this refuses the rule and lists what is loaded).
+#   - A tag that will not take its type is taken out again inside the same
+#     undo, never left on the drawing in the wrong family.
+#   - One rule that cannot be read stops the whole call, before anything is
+#     placed: a template applied in part tags one drawing set two ways.
+#   - Never a second tag of the SAME type on one element in one view, whatever
+#     `skipTagged` says.
+#   - A dependent view and its primary share their tags, so the second of
+#     them in the list is left out by name rather than tagged twice.
+#
+# HOW A HEAD IS PLACED. Every tag is made with no leader ON its element, the
+# view is regenerated once, and every head - new and already there - is
+# measured. Then, top of the drawing first, each new head takes the first spot
+# whose box keeps `minGapMm` (paper millimetres, times the view scale) from
+# every head already placed or already there: on the element; one head's own
+# size away above, below, right, left, then on the four diagonals, with no
+# leader; then, only when the rule says `straight`, two and three sizes out
+# with a straight leader. With nothing clear it stays on its element and is
+# named in `crowded`. The view is regenerated again, every head read back, and
+# any that touches another head is named in `crowded` too - never a silent
+# overlap. Room, space and zone tags stay at their own point (they belong in
+# their room - CENTER_ROOM_TAGS' rule); they are kept clear of, and named in
+# `crowded` when they touch another head.
+#
+# NOT DONE, AND SAID: linked elements are not tagged; a crop that is not a
+# rectangle is read as its rectangle; text notes, dimensions and the model
+# itself are not avoided - only other tag heads; a leader is straight, never
+# bent (FORCE_TAG_LEADER_LSHAPE bends one afterwards); an area is refused
+# (TAG_AREAS places area tags).
+#
+# EVERY VALUE IS THE MODELLER'S (D-33):
+#   views       the views, as the Project Browser names them, separated by
+#               commas. Left out, the active view. A template, a 3D view, a
+#               sheet, a schedule or a drafting view is left out by name
+#   rules       one per line (or separated by ";"):
+#                   category | tag family: type | leader | shortest run in mm
+#               e.g. "Ducts | M_Duct Size Tag: Size | straight | 500". Only
+#               the category is required. Blank tag type = the project's
+#               default tag for it; blank leader = none; blank run = every run
+#   minGapMm    the clear gap between two tag heads, in PAPER millimetres.
+#               Left out, 2
+#   skipTagged  true (left out): an element already tagged in that view is
+#               left alone - with a type named, only one already carrying a
+#               tag OF THAT TYPE. false: an element carrying another tag is
+#               tagged too, but never given a second tag of the same type
+#               A room, a space or a zone: one tag per view, whatever this says
+#
+# RISK MODIFY. It adds tags, moves only the tags it has just made, and deletes
+# only a tag it has just made that read back wrong.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). The
+# executor makes the whole call one TransactionGroup, so every view in the
+# list is ONE undo.
+kind: action
+domain: revit.annotation
+capability: TAG_VIEWS_BY_RULES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Tags one view or many in a single pass from a set of tagging rules, one per
+  category - which tag type, whether a straight leader may be drawn, the
+  shortest run worth a tag - and places each tag where its head does not sit on
+  another tag head, trying spots around the element before drawing it out on a
+  leader. Elements already tagged in a view are left alone, and every view is
+  one undo. Says per view what it tagged, what was crowded, and why anything
+  was left.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The views, by their Project Browser names, separated by commas. Left out
+    # - an empty list - the active view.
+    - name: views
+      type: IList<View>
+      source: request
+      optional: true
+    # The rules, one per line or separated by ";":
+    # category | tag family: type | leader | shortest run in mm.
+    - name: rules
+      type: string
+      source: request
+    # The clear gap between two tag heads, in PAPER millimetres, times the view
+    # scale. Left out, 2.
+    - name: minGapMm
+      type: double
+      source: request
+      optional: true
+      absent: 2
+    # Leave an element already tagged in that view alone. Left out, true.
+    - name: skipTagged
+      type: bool
+      source: request
+      optional: true
+      absent: "true"
+  provides:
+    - name: tagged
+      # Tags placed and kept, every view together - room, space and zone tags
+      # included.
+      role: result
+      type: int
+    - name: newTags
+      # Every tag this placed, each read back carrying the rule's type.
+      role: result
+      type: IList<ElementId>
+    - name: leadersDrawn
+      # New tags drawn out on a straight leader because no clear spot was found
+      # beside their element - only where the rule said `straight`.
+      role: result
+      type: int
+    - name: crowded
+      # New TAGS (not elements) left on their element with no clear spot, or
+      # touching another head when read back. Placed, and named so they can be
+      # selected and moved - never a silent overlap (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: typeCorrections
+      # Tags Revit made as another type and this changed to the rule's type -
+      # IndependentTag.Create does not always honour the type it is given.
+      role: result
+      type: int
+    - name: alreadyTagged
+      # Elements left alone because they already carry a tag in that view (of
+      # the rule's type, when one was named). One id per view it was found in.
+      # What it passed over, never a tag it placed (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: verticalSkipped
+      # Risers - an MEP run with almost no length on the paper. Not tagged,
+      # deliberately, and counted (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: tooShort
+      # Runs shorter than their rule's shortest run, in model millimetres -
+      # left untagged on purpose and counted (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: notTagged
+      # Elements this could not tag - why is in notTaggedWhy (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: notTaggedWhy
+      # One line per reason with a count - "2 x Rooms: not enclosed - ...",
+      # "1 x Doors: Revit refused the tag - ..." (D-52).
+      role: accounting
+      type: IList<string>
+    - name: tagTypesUsed
+      # One line per rule: the category, the tag type as "Family: Type", and
+      # whether the rule named it or it is the project's default (D-52).
+      role: accounting
+      type: IList<string>
+    - name: rulesRead
+      # Each rule as it was understood - category, tag type and how it was
+      # chosen, leader, shortest run - so a misread rule shows (D-52).
+      role: accounting
+      type: IList<string>
+    - name: perView
+      # One line per view: placed, with a leader, crowded, already tagged,
+      # risers, too short, not tagged - or why the view was left out (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why nothing was placed at all, in plain words - every rule that could
+      # not be read, or no view that can take tags. Empty when it ran (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release but one line. IndependentTag.Create
+  (Document, ElementId symId, ElementId ownerDBViewId, Reference, bool,
+  TagOrientation, XYZ), IndependentTag.HasLeader and TagHeadPosition (get and
+  set), SpatialElementTag.HasLeader and TagHeadPosition, Document.ActiveView,
+  Document.Regenerate, Document.GetDefaultFamilyTypeId(ElementId),
+  View.Scale, RightDirection, UpDirection, IsTemplate, ViewType, GenLevel,
+  CropBoxActive, CropBox, GetCategoryHidden, GetPrimaryViewId and
+  GetDependentViewIds, Element.ChangeTypeId, NewRoomTag(LinkElementId, UV,
+  ElementId), NewSpaceTag(Space, UV, View) and FamilySymbol.FamilyName are
+  present with these signatures 2020 through 2027 - tools/api-surface
+  --members on 2026-11-08, or read off TAG_ELEMENTS_IN_VIEW's compatibility
+  note for the room and space calls. THE ONE SPLIT: what an existing tag
+  points at is IndependentTag.TaggedLocalElementId on 2020 and 2021 and
+  GetTaggedLocalElementIds from 2022, written with #if as TAG_ELEMENTS_IN_VIEW
+  writes it; a zone tag's target and Zone.IsDefaultZone (gone at 2027) are
+  read by name at run time, as that card reads them. Categories are matched
+  by comparing ElementIds, never by reading one as a number. Millimetres
+  become feet by dividing by 304.8 (D-20), a paper length then times the
+  view scale.
+
+# ROUTING (2026-11-08) - which card wins which sentence until the merge in row
+# 5b-1477. The two PROVEN cards are not edited (the owner's instruction), so
+# these rows are written here and in that row.
+#
+#   "batch tag over many views"                  -> here
+#   "annotation template and tag in one pass,    -> here
+#    no overlaps"
+#   "tag these ducts" / "tag these"              -> TAG_ELEMENTS_IN_VIEW - a set
+#                                                   handed in, one view
+#   "tag the rooms"                              -> TAG_ELEMENTS_IN_VIEW
+#   "spread the tags out"                        -> ARRANGE_TAGS - moves tags
+#                                                   already there; this moves
+#                                                   only the tags it has just
+#                                                   made
+#   "the tags are on top of each other"          -> FIND_OVERLAPPING_TAGS - a
+#                                                   READ, which must not be
+#                                                   answered by placing more
+#   "stack the tags"                             -> STACK_TAGS
+#   "which ducts have no tag"                    -> FIND_UNTAGGED_ELEMENTS - a
+#                                                   read
+#   "check the tagging on this drawing"          -> FIND_UNTAGGED_ELEMENTS - a
+#                                                   read. A first identity here
+#                                                   ("... by a tagging rule per
+#                                                   category ...") ranked this
+#                                                   card first for it on the
+#                                                   nearness route; reworded
+#   "tag the spaces"                             -> TAG_ELEMENTS_IN_VIEW. A first
+#                                                   purpose naming rooms, spaces
+#                                                   and zones ranked this card
+#                                                   first on nearness; the words
+#                                                   moved to the comment above
+#   "is anything tagging this"                   -> REPORT_ELEMENT_DEPENDENCIES -
+#                                                   a read. On the nearness route
+#                                                   alone this card now ranks
+#                                                   above it, where REMOVE_TAGS
+#                                                   (a write) did before; the
+#                                                   declared sentence is answered
+#                                                   by identity (row 5b-1477)
+#   "tag all the areas in this area plan"        -> TAG_AREAS
+#   "fix the leader shape on these tags"         -> FORCE_TAG_LEADER_LSHAPE
+utterances:
+  # The owner's own words, docs/48-studying-bimlogiq.md section 5 item 2.
+  - annotation template and tag in one pass, no overlaps
+  - batch tag over many views

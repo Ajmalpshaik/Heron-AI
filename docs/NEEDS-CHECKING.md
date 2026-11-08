@@ -1406,6 +1406,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ms.md`](needs-checking/group-ms.md)
 
+## Group MT - tagging many views in one pass by a rule per category, each tag placed clear of the other tags: `TAG_VIEWS_BY_RULES` (2026-11-08)
+
+**Its own file:** [`needs-checking/group-mt.md`](needs-checking/group-mt.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
