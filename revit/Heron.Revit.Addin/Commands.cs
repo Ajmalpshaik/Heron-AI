@@ -737,10 +737,12 @@ namespace Heron.Revit.Addin
 
     /// <summary>
     /// Heron's Settings - D-150. Opens the window that holds the four switches
-    /// the ribbon used to carry: Changes, Admin, Publish and Ask to Keep.
+    /// the ribbon used to carry: Changes, Admin, Publish and Ask to Keep - and,
+    /// since D-150's amendment of 2026-11-08, the Companion's.
     ///
     /// EACH ROW RUNS ITS SWITCH'S OWN COMMAND, unchanged: WriteToggleCommand,
-    /// AdminToggleCommand, PublishToggleCommand, AskToKeepToggleCommand. They
+    /// AdminToggleCommand, PublishToggleCommand, AskToKeepToggleCommand,
+    /// CompanionToggleCommand. They
     /// read nothing from commandData, so they are called here as they were
     /// called from the ribbon - the same question on the way to the risky
     /// side, the same plain fallback when a window cannot draw, the same file.
@@ -763,7 +765,10 @@ namespace Heron.Revit.Addin
             return Result.Succeeded;
         }
 
-        /// <summary>The four switches, in the order the ribbon carried them.</summary>
+        /// <summary>
+        /// The five switches: the four in the order the ribbon carried them,
+        /// then the Companion's (D-150 and its amendment of 2026-11-08).
+        /// </summary>
         internal static HeronSetting[] Settings()
         {
             return new[]
@@ -810,7 +815,29 @@ namespace Heron.Revit.Addin
                         ? HeronApplication.KeepAskingIcon : HeronApplication.KeepNotAskingIcon,
                     Toggle = () => Run(new AskToKeepToggleCommand()),
                 },
+                // THE FIFTH ROW - D-150's amendment of 2026-11-08: the
+                // Companion's switch left the arrow under its ribbon button and
+                // sits here with the others. Read from the SHARED setting, not
+                // this Revit's cached copy, because another Revit may have
+                // switched it since this one started - the same reason
+                // CompanionToggleCommand reads it fresh.
+                new HeronSetting
+                {
+                    Name = "Companion",
+                    Line = () => "A page in your browser shows what Heron is doing. It never changes your model.",
+                    IsOn = CompanionOn,
+                    OnIsRisky = false,
+                    Icon = () => CompanionOn()
+                        ? HeronApplication.CompanionOnIcon : HeronApplication.CompanionOffIcon,
+                    Toggle = () => Run(new CompanionToggleCommand()),
+                },
             };
+        }
+
+        /// <summary>The Companion switch as the settings file holds it now (D-109).</summary>
+        private static bool CompanionOn()
+        {
+            return HeronConfig.Load().GetBool(HeronLiveState.EnabledKey, true);
         }
 
         /// <summary>A job's grant is held: Ask to Keep is on, and this job is kept unasked (D-138).</summary>

@@ -3608,8 +3608,8 @@ def revit_offer_settings(capability: str, values: str) -> str:
                 "offered. Change the setting through the chat instead.")
     if not companion_page.enabled():
         return ("The Heron Companion is switched off in Revit, so nothing was offered. "
-                "To turn it on, click the arrow under the Companion button on the "
-                "Heron tab.")
+                "To turn it on, open Settings on the Heron tab and turn Companion "
+                "on.")
     folder, _status = _fragment_for(capability)
     if folder is None:
         return ("Heron has nothing that does '%s', so nothing was offered." % (capability or ""))
@@ -3679,8 +3679,8 @@ def revit_edit_table(parameters: str, expect_from: str = "", max_rows: int = 200
     if not companion_page.enabled():
         _ended("refused")
         return ("The Heron Companion is switched off in Revit, so no table was opened. "
-                "To turn it on, click the arrow under the Companion button on the "
-                "Heron tab.")
+                "To turn it on, open Settings on the Heron tab and turn Companion "
+                "on.")
     values = NEWLINE.join(["parameterNames=%s" % (parameters or "").replace(NEWLINE, " "),
                            "maxRows=%d" % max(1, int(max_rows or 2000))])
     out = {}
@@ -3780,8 +3780,8 @@ def revit_building_loads(inputs: str = "", expect_from: str = "",
     if not companion_page.enabled():
         _ended("refused")
         return ("The Heron Companion is switched off in Revit, so no loads were calculated. "
-                "To turn it on, click the arrow under the Companion button on the "
-                "Heron tab.")
+                "To turn it on, open Settings on the Heron tab and turn Companion "
+                "on.")
     out = {}
     said = _through(revit_read, reply_out=out)(
         "REPORT_SPACE_ENVELOPE", "includeLinks=true" if include_links else "", expect_from,
@@ -3871,8 +3871,8 @@ def revit_sprinkler_hydraulics(system: str = "", inputs: str = "",
     if not companion_page.enabled():
         _ended("refused")
         return ("The Heron Companion is switched off in Revit, so the sprinkler system was not "
-                "read. To turn it on, click the arrow under the Companion button on the "
-                "Heron tab.")
+                "read. To turn it on, open Settings on the Heron tab and turn Companion "
+                "on.")
     out = {}
     said = _through(revit_read, reply_out=out)(
         "REPORT_SPRINKLER_NETWORK", "systemName=" + ((system or "").strip() or "*"),
@@ -3952,7 +3952,7 @@ def revit_sprinkler_layout(spaces: str = "", inputs: str = "", ctx: _Context = N
     if not companion_page.enabled():
         _ended("refused")
         return ("The Heron Companion is switched off in Revit, so the rooms were not read. "
-                "To turn it on, click the arrow under the Companion button on the Heron tab.")
+                "To turn it on, open Settings on the Heron tab and turn Companion on.")
     # WHICH ROOMS, checked before Revit is asked (row 5b-1316): commas taken as
     # the read's own ";", and element ids refused by name - the read matches
     # UniqueIds only, and "918810, 918812" went whole, as one id it could not find.
@@ -4062,8 +4062,8 @@ def revit_model_dashboard(parameters: str = "", board: str = "", view3d: bool = 
     if not companion_page.enabled():
         _ended("refused")
         return ("The Heron Companion is switched off in Revit, so the model was not read. "
-                "To turn it on, click the arrow under the Companion button on the "
-                "Heron tab.")
+                "To turn it on, open Settings on the Heron tab and turn Companion "
+                "on.")
     ended, said = _read_dashboard(companion_page, ctx=ctx, parameters=parameters, board=board)
     if ended != "ok":
         return _ended(ended, said)

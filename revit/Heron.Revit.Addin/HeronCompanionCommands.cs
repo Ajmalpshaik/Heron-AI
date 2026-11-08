@@ -51,10 +51,11 @@ namespace Heron.Revit.Addin
             {
                 if (!HeronLiveState.Enabled)
                 {
+                    // POINTS AT SETTINGS - D-150's amendment of 2026-11-08: the
+                    // switch left this button's arrow and sits with the others.
                     TaskDialog.Show("Heron Companion",
-                        "The Companion is switched off, so there is no page to open. Heron itself is " +
-                        "working as normal.\n\nTo turn it on, click the arrow under the Companion " +
-                        "button and choose Turn Companion on.");
+                        "The Companion is off, so there is no page to open. Heron itself is " +
+                        "working as normal.\n\nTo turn it on: Heron tab > Settings > Companion.");
                     return Result.Succeeded;
                 }
 
@@ -145,10 +146,15 @@ namespace Heron.Revit.Addin
     }
 
     /// <summary>
-    /// THE COMPANION SWITCH (D-109), under the Companion button's arrow. Off
-    /// stops this Revit's live file and, within two seconds, every chat's
-    /// page; Heron itself - the bridge, the chat, Changes - is untouched. No
-    /// confirmation either way: the Companion only shows.
+    /// THE COMPANION SWITCH (D-109). Off stops this Revit's live file and,
+    /// within two seconds, every chat's page; Heron itself - the bridge, the
+    /// chat, Changes - is untouched. No confirmation either way: the Companion
+    /// only shows.
+    ///
+    /// RUN FROM THE SETTINGS WINDOW since 2026-11-08 (D-150's amendment) - the
+    /// arrow under the Companion button that used to hold it is gone. The
+    /// window calls this command as it calls the four padlocks' own, so the
+    /// switch, the file and the button's picture are one code path.
     /// </summary>
     [Transaction(TransactionMode.Manual)]
     [Regeneration(RegenerationOption.Manual)]
@@ -164,7 +170,7 @@ namespace Heron.Revit.Addin
                 var on = !HeronConfig.Load().GetBool(HeronLiveState.EnabledKey, true);
                 HeronLiveState.SetEnabled(on);
                 HeronApplication.SetCompanionIcon(on);
-                HeronApplication.Log("Companion switched " + (on ? "on" : "off") + " from the ribbon.");
+                HeronApplication.Log("Companion switched " + (on ? "on" : "off") + " from Settings.");
                 return Result.Succeeded;
             }
             catch (Exception ex)

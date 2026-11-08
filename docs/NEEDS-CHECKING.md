@@ -18,6 +18,8 @@
 > A row below that says to press **Changes**, **Admin**, **Publish** or **Ask to Keep** on the ribbon
 > means: open **Heron > AI Bridge > Settings** and press that switch's state there. What each switch
 > asks and does is unchanged; its padlock picture is beside it in the window, no longer on the ribbon.
+> **Since 2026-11-08 the Companion's switch is there too** (D-150's amendment): a row that says to use
+> the arrow under **Companion** means the **Companion** row in Settings; the Companion button has no arrow.
 > **Free this model** is in the **Heron** button's menu.
 
 > ## 📌 This is a RECORD now, not a gate — 2026-08-28

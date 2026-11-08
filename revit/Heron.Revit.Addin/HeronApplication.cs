@@ -135,7 +135,6 @@ namespace Heron.Revit.Addin
         private static readonly Stopwatch SinceGrantLook = Stopwatch.StartNew();
 
         internal static PushButton CompanionButton { get; private set; }
-        internal static PushButton CompanionToggleButton { get; private set; }
 
         /// <summary>
         /// The one way into the Revit API. Created on Revit's own thread
@@ -478,7 +477,7 @@ namespace Heron.Revit.Addin
                 "Settings",
                 assemblyPath,
                 typeof(SettingsCommand).FullName);
-            settings.ToolTip = "Turn Heron's switches on or off: Changes, Admin, Publish, Ask to Keep.";
+            settings.ToolTip = "Turn Heron's switches on or off: Changes, Admin, Publish, Ask to Keep, Companion.";
 
             var settingsButton = panel.AddItem(settings) as PushButton;
             if (settingsButton != null)
@@ -490,10 +489,12 @@ namespace Heron.Revit.Addin
                 if (settingsSmall != null) settingsButton.Image = settingsSmall;
             }
 
-            // THE COMPANION (D-108, D-109). The top opens the chat's page in
-            // the browser; the arrow holds the switch. Its picture is the
-            // switch's state. It shows and never changes the model, so neither
-            // half asks for confirmation - unlike the three padlocks.
+            // THE COMPANION (D-108, D-109) - ONE PUSH BUTTON since 2026-11-08
+            // (D-150's amendment). It opens the chat's page in the browser; its
+            // picture is the switch's state, orange on and grey off. The switch
+            // itself lives in Settings with the other four - the arrow that
+            // held it is gone. It shows and never changes the model, so it
+            // asks for no confirmation - unlike the three padlocks.
             var companionOpen = new PushButtonData(
                 "HeronCompanionOpen",
                 "Companion",
@@ -501,19 +502,7 @@ namespace Heron.Revit.Addin
                 typeof(CompanionOpenCommand).FullName);
             companionOpen.ToolTip = "Open the Companion page in your browser. It only shows, never changes.";
 
-            var companionToggle = new PushButtonData(
-                "HeronCompanionToggle",
-                "Turn Companion off",
-                assemblyPath,
-                typeof(CompanionToggleCommand).FullName);
-            companionToggle.ToolTip = "Turn the Companion page on or off.";
-
-            var companionGroup = panel.AddItem(
-                new SplitButtonData("HeronCompanion", "Companion")) as SplitButton;
-            CompanionButton = companionGroup.AddPushButton(companionOpen);
-            CompanionToggleButton = companionGroup.AddPushButton(companionToggle);
-            // As for the bridge button: the top stays Open, whatever was picked last.
-            companionGroup.IsSynchronizedWithCurrentItem = false;
+            CompanionButton = panel.AddItem(companionOpen) as PushButton;
             SetCompanionIcon(HeronLiveState.Enabled);
 
             // NO EMERGENCY STOP BUTTON - removed on Ajmal's instruction,
@@ -624,13 +613,11 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>Puts the Publish button in step with publish.enabled. See SetAdminIcon.</summary>
-        /// <summary>The Companion button's picture and both halves' words (D-109).</summary>
+        /// <summary>The Companion button's picture and words (D-109): orange on, grey off.</summary>
         internal static void SetCompanionIcon(bool on)
         {
             PaintSwitch(CompanionButton, on, CompanionOnIcon, CompanionOffIcon,
                         on ? "Companion" : "Companion off");
-            var toggle = CompanionToggleButton;
-            if (toggle != null) toggle.ItemText = on ? "Turn Companion off" : "Turn Companion on";
         }
 
         internal static void SetPublishIcon(bool enabled)
