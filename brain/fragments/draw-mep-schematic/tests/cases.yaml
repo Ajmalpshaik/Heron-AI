@@ -68,6 +68,27 @@ positive:
       terminal in skipped with skippedWhy "not joined to the drawn part by its
       connectors"
 
+  - given: >
+      systemName "<MW1's chilled water system>" - a pipe system whose base
+      equipment is a chiller (or pump) and whose far ends are fan coil units or
+      air handlers (Mechanical Equipment)
+    expect: >
+      the chiller drawn as the root's rectangle; EVERY fan coil or air handler
+      on the loop drawn with the terminal's CIRCLE and its Mark, and counted in
+      terminals - terminals = the number of fan coils and air handlers on the
+      system (the owner's decision: mechanical equipment the system serves is
+      a terminal); the legend's symbol line saying so
+
+  - given: >
+      systemName "<MW1's supply air system>" with its BASE EQUIPMENT
+      disconnected in the copy (MW15 arranges it: the air handler stays on the
+      system in Revit, its duct connector not joined)
+    expect: >
+      the schematic drawn from equipment with joints, else a duct with one
+      joint - findings saying "the base equipment ... is joined to nothing by
+      its connectors, so the system is drawn from ... instead"; the air handler
+      in skipped. Never a view with one rectangle on it
+
 negative:
   - given: >
       THE D-30 NEGATIVE - THE FIRST CASE TO RUN. systemName "ZZZ No Such
@@ -110,6 +131,48 @@ negative:
 
   - given: viewScale 0, then spacingMm 0, then maxElements 0
     expect: each refused in its own words, nothing drawn
+
+  - given: viewScale 600 - above the 1:500 this draws at
+    expect: refused, a whole number from 1 to 500, nothing drawn
+
+  - given: >
+      MW7's largest system with viewScale 500 and spacingMm 200 - a drawing
+      reaching further than 1500 m from the view's origin (if it does not,
+      record the reach findings would give and call this NOT COVERED)
+    expect: >
+      refused "at 1:500 this schematic would reach ... m from the view's
+      origin ... beyond the 1500 m this draws to. Nothing was drawn" - no view
+      made
+
+  - given: >
+      a system on which NOTHING is joined to anything (MW15 arranges one: a
+      new duct system of two air terminals and an air handler, assigned in
+      Revit, never connected) - systemName that system; then start "selected"
+      on one of its terminals
+    expect: >
+      each refused "in system ... nothing is joined to anything else by its
+      connectors ... There is no network to draw. Nothing was drawn" - no view
+      made
+
+# NOT COVERED - refusals the Revit UI cannot arrange, or a sample model does
+# not hold; each is in the code and in Group MW's MW16 row, run if a model is
+# ever found that has it:
+#   - two duct or pipe systems whose names differ only in case ("SA-01" and
+#     "sa-01"): whether Revit allows two such names is NOT KNOWN - MW16 tries
+#     it in the copy; allowed, the case is "refused, 2 systems are called ...,
+#     nothing drawn"; refused by Revit, NOT COVERED
+#   - a system holding 0 elements Revit will name: believed not to survive in
+#     Revit once its last element leaves it - MW16 tries it; if one survives,
+#     the case is "refused, holds no elements, nothing drawn"
+#   - no default text type: the Revit UI always keeps one (the same as group
+#     MU's "no default linear type") - NOT COVERED
+#   - no Drafting view type: believed not arrangeable - Revit is believed to
+#     refuse deleting the last type of a view family; MW16 tries it on a copy;
+#     if it can be done, the case is "refused, no Drafting view type, nothing
+#     drawn"
+#   - a view name Revit refuses after the characters it bars are replaced: no
+#     such name is known - NOT COVERED; a SCALE Revit refuses is MW17's row (a
+#     Drafting type whose default template fixes the scale)
 
 second_route:
   - >

@@ -68,10 +68,20 @@
 //    return side of an air handler) is not followed, and is counted. An END
 //    connector of a run, fitting or accessory joined to nothing is an OPEN END:
 //    listed, and marked on the drawing. The walk is breadth-first from the
-//    root - `start`, else the base equipment, else (said) an element with one
-//    joint - so the drawing is a TREE. A joint that would close a LOOP is CUT:
-//    both its ends are marked L1, L2 ... and loopsCut names the two elements.
-//    Elements of the system the walk never reaches are skipped and counted.
+//    root - `start`, else the base equipment, else (said) equipment with
+//    joints or an element with one joint - so the drawing is a TREE. A start
+//    or base equipment joined to NOTHING (on the system in Revit, never
+//    connected) gives way to that chooser, said in findings; when no element
+//    of the system has any joint, it refuses before the view is made. A joint
+//    that would close a LOOP is CUT: both its ends are marked L1, L2 ... and
+//    loopsCut names the two elements. Elements of the system the walk never
+//    reaches are skipped and counted.
+//
+//    A TERMINAL is an air terminal, a plumbing fixture, a sprinkler - or any
+//    mechanical equipment that is neither the root nor the base equipment
+//    (the owner's decision, 2026-11-08): on a chilled or hot water system the
+//    fan coils and air handlers are where it ends. They get the terminal's
+//    circle and are counted in `terminals`.
 //
 // 3. COLLAPSING. A schematic node is the root, equipment, a terminal, a
 //    junction (a tee, a cross, a run with a tap - three or more joints), an end,
@@ -88,8 +98,11 @@
 //    one: one value is shown as Revit shows it; several are ADDED and the sum
 //    is formatted in the project's units by Revit's own UnitFormatUtils - the
 //    one piece of arithmetic here, and the legend says so. Tees and crosses
-//    are nodes, so their loss is in no segment. A system with no sections has
-//    every Δp label say "not calculated".
+//    are nodes, so their loss is in no segment. A fitting or accessory
+//    holding 0 (usually no loss method set) is left out, counted and said; a
+//    stretch of fittings only gets no label and is named in
+//    labelsWithoutValue. A system with no sections has every Δp label say
+//    "not calculated".
 //
 // 5. THE LAYOUT - NOT TO SCALE, and the view says so. A tree laid out from the
 //    root: the main run goes right; at each node the child carrying the most
@@ -101,7 +114,11 @@
 //    the text type's height and width factor. After drawing, every label's real
 //    box is read back from Revit and any two that touch are counted in
 //    findings - the estimate is checked, not trusted. Paper millimetres become
-//    model feet by the view scale / 304.8 (D-20).
+//    model feet by the view scale / 304.8 (D-20). The scale is 1 to 500, and a
+//    drawing that would reach more than 1500 m from the view's origin is
+//    refused before the view is made. The view comes from a Drafting type with
+//    no default template where there is one; its name and its scale are set
+//    apart, and a scale Revit will not take is read back and drawn at.
 //
 // 6. THE DRAWING. Detail lines for the runs; a small rectangle for equipment,
 //    a circle (two half arcs) for a terminal, an X for an open end, a tick for
@@ -153,9 +170,10 @@ var nameWanted = leftOut(systemName) ? "" : systemName.Trim();
 var viewWanted = leftOut(newViewName) ? "" : newViewName.Trim();
 var textWanted = leftOut(textType) ? "" : textType.Trim();
 
-if (viewScale < 1 || viewScale > 24000)
-    refused = string.Format("a view scale of {0} is not one Revit takes - give a whole number from 1 "
-        + "to 24000 (100 for 1:100). Nothing was drawn", viewScale);
+if (viewScale < 1 || viewScale > 500)
+    refused = string.Format("a view scale of {0} is not one this draws at - give a whole number from 1 "
+        + "to 500 (100 for 1:100). Above 1:500 a schematic of a large system reaches kilometres from the "
+        + "view's origin. Nothing was drawn", viewScale);
 else if (spacingMm <= 0 || spacingMm > 200 || double.IsNaN(spacingMm))
     refused = string.Format("a spacing of {0} paper mm cannot be drawn - give a number above 0 and "
         + "up to 200 (10 is usual). Nothing was drawn", spacingMm);
@@ -342,10 +360,25 @@ if (refused.Length == 0)
 }
 if (refused.Length == 0)
 {
+    // A DRAFTING TYPE WITH NO DEFAULT TEMPLATE FIRST. A template a type hands
+    // its new views can fix their scale, and then the scale asked for is not
+    // the one the drawing is sized at. One with a template is used only when
+    // there is no other, and the scale is read back after (below).
+    ViewFamilyType withTemplate = null;
     foreach (var candidate in new FilteredElementCollector(doc).OfClass(typeof(ViewFamilyType))
         .Cast<ViewFamilyType>())
     {
-        if (candidate.ViewFamily == ViewFamily.Drafting) { draftingType = candidate; break; }
+        if (candidate.ViewFamily != ViewFamily.Drafting) continue;
+        ElementId template = null;
+        try { template = candidate.DefaultTemplateId; } catch (Exception) { template = null; }
+        if (template == null || template == ElementId.InvalidElementId) { draftingType = candidate; break; }
+        if (withTemplate == null) withTemplate = candidate;
+    }
+    if (draftingType == null && withTemplate != null)
+    {
+        draftingType = withTemplate;
+        findings.Add(string.Format("every Drafting view type of this project hands its views a template; "
+            + "\"{0}\" was used, and the scale the view ends up at is read back", withTemplate.Name));
     }
     if (draftingType == null)
         refused = "this project's template carries no Drafting view type, so there is nothing to make "
@@ -364,10 +397,21 @@ var categoryIs = new Func<Element, BuiltInCategory, bool>((element, category) =>
 BuiltInCategory plumbingEquipment;
 var hasPlumbingEquipment = Enum.TryParse("OST_PlumbingEquipment", out plumbingEquipment);
 
+// THE ROOT, declared here because what a terminal is depends on it.
+Element root = null;
+// A TERMINAL is an air terminal, a plumbing fixture or a sprinkler - OR a piece
+// of MECHANICAL EQUIPMENT the system serves: any that is neither the root nor
+// the system's base equipment (the owner's decision, 2026-11-08). On a chilled
+// or hot water system the fan coils and air handlers are where it ends, and
+// are drawn and counted as terminals; the chiller or boiler feeding it is
+// equipment.
 Func<Element, bool> isTerminal = element =>
     categoryIs(element, BuiltInCategory.OST_DuctTerminal)
     || categoryIs(element, BuiltInCategory.OST_PlumbingFixtures)
-    || categoryIs(element, BuiltInCategory.OST_Sprinklers);
+    || categoryIs(element, BuiltInCategory.OST_Sprinklers)
+    || (categoryIs(element, BuiltInCategory.OST_MechanicalEquipment)
+        && !(root != null && element.Id == root.Id)
+        && !(baseEquipment != null && element.Id == baseEquipment.Id));
 Func<Element, bool> isEquipment = element =>
     (baseEquipment != null && element != null && element.Id == baseEquipment.Id)
     || categoryIs(element, BuiltInCategory.OST_MechanicalEquipment)
@@ -457,20 +501,28 @@ if (refused.Length == 0)
 }
 
 // The root: the start, else the base equipment, else - said - an element with
-// one joint (equipment first), else the first element.
-Element root = null;
+// joints (equipment first, then one with one joint). A start or base equipment
+// JOINED TO NOTHING (assigned to the system in Revit, but not connected) would
+// draw a view with one symbol on it, so it gives way to the same chooser, said.
+Func<Element> chooseRoot = () =>
+    ordered.FirstOrDefault(e => isEquipment(e) && adjacent[e.Id].Count >= 1)
+    ?? ordered.FirstOrDefault(e => !isTerminal(e) && adjacent[e.Id].Count == 1)
+    ?? ordered.FirstOrDefault(e => adjacent[e.Id].Count >= 1);
 if (refused.Length == 0)
 {
-    if (start != null) root = start;
-    else if (baseEquipment != null) root = baseEquipment;
+    Element wanted = start ?? (Element)baseEquipment;
+    if (wanted != null && adjacent[wanted.Id].Count > 0) root = wanted;
     else
     {
-        root = ordered.FirstOrDefault(e => isEquipment(e) && adjacent[e.Id].Count >= 1)
-            ?? ordered.FirstOrDefault(e => !isTerminal(e) && adjacent[e.Id].Count == 1)
-            ?? ordered.FirstOrDefault(e => adjacent[e.Id].Count >= 1)
-            ?? ordered.First();
-        findings.Add(string.Format("system \"{0}\" names no base equipment in Revit, so it is drawn from {1}",
-            nameOf(system), describe(root)));
+        var chosen = chooseRoot();
+        root = chosen ?? wanted ?? ordered.First();
+        if (chosen != null && wanted != null)
+            findings.Add(string.Format("{0} {1} is joined to nothing by its connectors, so the system is "
+                + "drawn from {2} instead", start != null ? "the selected element" : "the base equipment",
+                describe(wanted), describe(chosen)));
+        else if (chosen != null)
+            findings.Add(string.Format("system \"{0}\" names no base equipment in Revit, so it is drawn "
+                + "from {1}", nameOf(system), describe(chosen)));
     }
 }
 
@@ -519,6 +571,16 @@ if (refused.Length == 0)
         }
     }
 
+    // A WALK THAT REACHES NOTHING DRAWS NOTHING WORTH A VIEW - refused here,
+    // before the view is made.
+    if (reached.Count < 2)
+        refused = string.Format("in system \"{0}\" nothing is joined to anything else by its connectors - "
+            + "{1} element(s) on it in Revit, and the walk from {2} reaches no other. There is no network to "
+            + "draw. Nothing was drawn. TRACE_CONNECTIVITY shows the separate pieces; CONNECT_OPEN_ENDS joins "
+            + "ends that touch", nameOf(system), members.Count, describe(root));
+}
+if (refused.Length == 0)
+{
     var notReached = ordered.Where(e => !reached.Contains(e.Id)).ToList();
     foreach (var element in notReached) skipped.Add(element.Id);
     if (notReached.Count > 0)
@@ -623,6 +685,7 @@ Func<double, string> formatPressure = value =>
     catch (Exception) { return value.ToString("0.###") + " (Revit internal units)"; }
 };
 
+var zeroLossFittings = 0;
 // One labelled segment's three lines, and what was missing.
 Func<List<Element>, string> labelOf = group =>
 {
@@ -645,6 +708,7 @@ Func<List<Element>, string> labelOf = group =>
     {
         var sum = 0.0;
         var count = 0;
+        var zeroFittings = 0;
         string single = null;
         foreach (var member in group)
         {
@@ -652,11 +716,21 @@ Func<List<Element>, string> labelOf = group =>
             try
             {
                 if (p == null || !p.HasValue || p.StorageType != StorageType.Double) continue;
+                // A FITTING OR ACCESSORY HOLDING 0 is usually one with no loss
+                // method set in Revit, not one with no loss - counted and said,
+                // never added in as if it were a value.
+                if (!(member is MEPCurve) && p.AsDouble() == 0) { zeroFittings++; continue; }
                 sum += p.AsDouble();
                 count++;
                 single = p.AsValueString();
             }
             catch (Exception) { }
+        }
+        if (zeroFittings > 0)
+        {
+            zeroLossFittings += zeroFittings;
+            missing.Add(string.Format("{0} fitting(s) or accessory(ies) hold a Pressure Drop of 0 - usually no "
+                + "loss method set in Revit - and are not in its \u0394p", zeroFittings));
         }
         if (count == 0) { dropText = "-"; missing.Add("no pressure drop - Revit holds none on its runs"); }
         else dropText = count == 1 ? (single ?? formatPressure(sum)).Trim() : formatPressure(sum);
@@ -672,6 +746,7 @@ Func<List<Element>, string> labelOf = group =>
 // the node itself when it is a run (a run with a tap). Split where the size
 // changes; fittings go with the segment they follow.
 var rootCurveTaken = false;
+var fittingOnly = 0;
 Func<Element, Element, List<List<Element>>> segmentsTo = (parent, node) =>
 {
     var line = new List<Element>();
@@ -802,7 +877,8 @@ Func<List<double[]>, double[]> extentOf = items =>
 Action<List<double[]>, Element, double, double, int, bool> symbolAt = (items, node, x, y, dir, leaf) =>
 {
     var across = (dir + 1) % 4;
-    if (isEquipment(node))
+    if (isTerminal(node)) items.Add(circleItem(x, y, 2.0));
+    else if (isEquipment(node))
     {
         double hx = 4.0, hy = 2.5;
         items.Add(lineItem(x - hx, y - hy, x + hx, y - hy));
@@ -810,7 +886,6 @@ Action<List<double[]>, Element, double, double, int, bool> symbolAt = (items, no
         items.Add(lineItem(x + hx, y + hy, x - hx, y + hy));
         items.Add(lineItem(x - hx, y + hy, x - hx, y - hy));
     }
-    else if (isTerminal(node)) items.Add(circleItem(x, y, 2.0));
     else if (leaf && !openAt.Contains(node.Id))
         items.Add(lineItem(x - 2.0 * DX[across], y - 2.0 * DY[across], x + 2.0 * DX[across], y + 2.0 * DY[across]));
     if (openAt.Contains(node.Id))
@@ -969,7 +1044,17 @@ layoutRun = (from, first, dir, isRoot) =>
         {
             var hasRun = group.Any(e => e is MEPCurve);
             var segmentStart = pos;
-            if (!hasRun) { pos = pos + gap; continue; }
+            if (!hasRun)
+            {
+                // FITTINGS ONLY, no run between them: no label is drawn, so
+                // their pressure drop is in no label - said.
+                fittingOnly++;
+                labelsWithoutValue.Add(string.Format("the stretch from {0} to {1} is fittings or accessories "
+                    + "only ({2}) - no label is drawn for it, so its \u0394p is in no label", describe(previous),
+                    describe(node), string.Join(", ", group.Select(describe))));
+                pos = pos + gap;
+                continue;
+            }
             var label = labelOf(group);
             segments++;
             var wh = measure(label);
@@ -1048,6 +1133,29 @@ var tooShort = 0;
 var failedCurves = 0;
 var failedNotes = 0;
 var createdNotes = new List<TextNote>();
+var usedScale = viewScale;
+
+// HOW FAR THE DRAWING REACHES FROM THE VIEW'S ORIGIN, in model metres at a
+// scale: the laid-out paper extent (plus a margin for the legend above it)
+// times the scale. Revit's graphics and geometry lose precision kilometres
+// from the origin, so a drawing reaching beyond the limit is refused before
+// any view is made.
+const double FarthestMetres = 1500.0;
+Func<int, double> reachMetres = scale =>
+{
+    var box = extentOf(drawing);
+    var farthestMm = Math.Max(Math.Max(Math.Abs(box[0]), Math.Abs(box[1])),
+        Math.Max(Math.Abs(box[2]), Math.Abs(box[3]) + 60.0));
+    return farthestMm * scale / 1000.0;
+};
+if (refused.Length == 0 && reachMetres(viewScale) > FarthestMetres)
+{
+    var box = extentOf(drawing);
+    refused = string.Format("at 1:{0} this schematic would reach {1:0} m from the view's origin - about {2:0.0} x "
+        + "{3:0.0} m of paper times the scale - beyond the {4:0} m this draws to. Nothing was drawn. Give a "
+        + "smaller viewScale, or a smaller spacingMm", viewScale, reachMetres(viewScale),
+        (box[1] - box[0]) / 1000.0, (box[3] - box[2]) / 1000.0, FarthestMetres);
+}
 if (refused.Length == 0)
 {
     // The name: the one asked for, else "Schematic - <system>"; characters
@@ -1073,23 +1181,51 @@ if (refused.Length == 0)
     if (view == null) refused = "Revit declined to make the drafting view. Nothing was drawn";
     else
     {
+        // THE NAME AND THE SCALE, EACH IN ITS OWN TRY. A name refused takes the
+        // view out again; a scale refused (a template the type hands the view
+        // can fix it) is read back and the drawing is sized at what Revit kept.
         string nameProblem = null;
-        try { view.Scale = viewScale; view.Name = chosen; }
+        try { view.Name = chosen; }
         catch (Exception ex) { nameProblem = ex.Message; }
+        string scaleProblem = null;
+        if (nameProblem == null)
+        {
+            try { view.Scale = viewScale; }
+            catch (Exception ex) { scaleProblem = ex.Message; }
+            try { usedScale = view.Scale; } catch (Exception) { usedScale = viewScale; }
+            if (usedScale < 1) usedScale = viewScale;
+        }
         if (nameProblem != null)
         {
             try { doc.Delete(view.Id); } catch (Exception) { }
             view = null;
-            refused = string.Format("Revit would not give the new view the name \"{0}\" or the scale 1:{1} "
-                + "({2}), so it was taken out again. Nothing was drawn", chosen, viewScale, nameProblem);
+            refused = string.Format("Revit would not give the new view the name \"{0}\" ({1}), so it was taken "
+                + "out again. Nothing was drawn", chosen, nameProblem);
         }
-        else { viewId = view.Id; viewName = chosen; }
+        else if (usedScale != viewScale && reachMetres(usedScale) > FarthestMetres)
+        {
+            try { doc.Delete(view.Id); } catch (Exception) { }
+            view = null;
+            refused = string.Format("Revit kept the new view at 1:{0}, not 1:{1}{2}, and at 1:{0} the schematic "
+                + "would reach {3:0} m from the view's origin, beyond the {4:0} m this draws to - so the view was "
+                + "taken out again. Nothing was drawn", usedScale, viewScale,
+                scaleProblem != null ? " (" + scaleProblem + ")" : "", reachMetres(usedScale), FarthestMetres);
+        }
+        else
+        {
+            viewId = view.Id;
+            viewName = chosen;
+            if (usedScale != viewScale)
+                findings.Add(string.Format("Revit kept the new view at 1:{0}, not the 1:{1} asked for ({2}) - the "
+                    + "drawing is sized for 1:{0}", usedScale, viewScale,
+                    scaleProblem ?? "a view template sets its scale"));
+        }
     }
 }
 
 if (view != null)
 {
-    var toFeet = viewScale / MillimetresPerFoot;
+    var toFeet = usedScale / MillimetresPerFoot;
     var shortest = doc.Application.ShortCurveTolerance;
     // The curve is BUILT inside the try as well: Revit refusing to make a curve
     // is counted, never let out to roll the whole call back.
@@ -1116,9 +1252,11 @@ if (view != null)
         "NOT TO SCALE - positions and lengths are not the model's. Drawn by Heron from the model on "
             + DateTime.Now.ToString("yyyy-MM-dd") + "; it does not change when the model does.",
         "Each run: size / Q flow / Δp pressure drop - Revit's own values, read from the model, not calculated by Heron.",
-        "Δp of a run: the Pressure Drop Revit holds on its " + (isDuct ? "ducts" : "pipes")
-            + ", elbows, transitions and accessories, added. Tees and crosses are not included.",
-        "O terminal   [ ] equipment   X open end   L1 loop cut (the joint is real; drawn as two ends)",
+        "\u0394p of a run: the Pressure Drop Revit holds on its " + (isDuct ? "ducts" : "pipes")
+            + ", elbows, transitions and accessories, added; one holding 0 (no loss method set) is left out. "
+            + "Tees and crosses are not included.",
+        "O terminal (air terminal, fixture, sprinkler, or equipment the system serves)   [ ] equipment   "
+            + "X open end   L1 loop cut (the joint is real; drawn as two ends)",
     };
     if (sectioned == 0)
         legend.Add("Δp not calculated: Revit has no calculation for this system.");
@@ -1204,20 +1342,32 @@ if (refused.Length == 0 && view != null)
 {
     findings.Insert(0, string.Format("system \"{0}\" drawn on the new drafting view \"{1}\" at 1:{2}, NOT TO "
         + "SCALE: {3} node(s), {4} labelled segment(s), {5} terminal(s), from {6}. {7} detail line(s) and {8} "
-        + "text note(s); nothing in the model was changed", nameOf(system), viewName, viewScale, nodes, segments,
+        + "text note(s); nothing in the model was changed", nameOf(system), viewName, usedScale, nodes, segments,
         terminals, describe(root), linesMade, notesMade));
     if (outsideJoints.Count > 0)
         findings.Add(string.Format("{0} element(s) of another system joined to this one were not followed - "
             + "the drawing stops at the system's edge", outsideJoints.Count));
     if (openEnds.Count > 0)
-        findings.Add(string.Format("{0} open end(s) on {1} element(s), each marked X on the drawing", openConnectors,
-            openEnds.Count));
+    {
+        var onDrawing = openEnds.Count(id => reached.Contains(id));
+        findings.Add(string.Format("{0} open end(s) on {1} element(s); {2} of those elements are on the drawing, "
+            + "each marked X{3}", openConnectors, openEnds.Count, onDrawing,
+            onDrawing < openEnds.Count ? string.Format(" - the other {0} are on pieces the walk does not reach "
+                + "(skipped)", openEnds.Count - onDrawing) : ""));
+    }
+    if (zeroLossFittings > 0)
+        findings.Add(string.Format("{0} fitting(s) or accessory(ies) hold a Pressure Drop of 0 - usually no loss "
+            + "method set in Revit - and were left out of every \u0394p (labelsWithoutValue names the runs)",
+            zeroLossFittings));
+    if (fittingOnly > 0)
+        findings.Add(string.Format("{0} stretch(es) of fittings only have no label, so their pressure drop is in "
+            + "no label (labelsWithoutValue)", fittingOnly));
     if (loopsCut.Count > 0)
         findings.Add(string.Format("{0} loop(s) cut to draw the system as a tree - each joint is real in the "
             + "model and marked at both ends (loopsCut)", loopsCut.Count));
     if (tooShort > 0)
         findings.Add(string.Format("{0} line(s) shorter than Revit draws were left out - at 1:{1} a symbol of a "
-            + "few paper mm is too small; a larger scale number draws them", tooShort, viewScale));
+            + "few paper mm is too small; a larger scale number draws them", tooShort, usedScale));
     if (failedCurves > 0)
         findings.Add(string.Format("{0} line(s) Revit would not draw", failedCurves));
     if (failedNotes > 0)

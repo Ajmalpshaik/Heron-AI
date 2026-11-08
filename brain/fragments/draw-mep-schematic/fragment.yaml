@@ -56,9 +56,13 @@ semantic-identity: "make a new drafting view and draw one duct or pipe system on
 #   newViewName  the new drafting view's name. Left out, "Schematic - <system>".
 #                A name already taken gets " (2)", " (3)" ... - an existing view
 #                is never touched
-#   viewScale    the new view's scale, 100 for 1:100. Left out, 100. It decides
-#                how big a paper millimetre is in the view, nothing else - the
-#                drawing is NOT to scale
+#   viewScale    the new view's scale, 100 for 1:100, from 1 to 500 - above, it
+#                is refused. Left out, 100. It decides how big a paper
+#                millimetre is in the view, nothing else - the drawing is NOT to
+#                scale. A drawing that would reach more than 1500 m from the
+#                view's origin at this scale is refused before the view is made.
+#                A scale Revit will not take (a template on the view type can
+#                fix it) is read back, drawn at, and said
 #   spacingMm    PAPER millimetres between things on one side of a run, and the
 #                shortest segment drawn. Left out, 10
 #   textType     a text type by name, for every label. Left out, the project's
@@ -66,6 +70,22 @@ semantic-identity: "make a new drafting view and draw one duct or pipe system on
 #                width factor size the gaps
 #   maxElements  the most elements the system may hold. Left out, 2000. Above
 #                it the call is refused, in words, before anything is made
+#
+# WHAT A TERMINAL IS - THE OWNER'S DECISION (2026-11-08): an air terminal, a
+# plumbing fixture, a sprinkler - OR any mechanical equipment that is neither
+# the root nor the system's base equipment. On a chilled or hot water system
+# the fan coils and air handlers are where it ends: they are drawn with the
+# terminal's circle, carry their Mark, and are counted in `terminals`. The
+# chiller, boiler or air handler feeding the system is equipment.
+#
+# THE ROOT: `start`, else the base equipment. Either one JOINED TO NOTHING by
+# its connectors (assigned to the system in Revit, never connected) gives way
+# to equipment with joints, then an element with one joint - said in findings.
+# When no element of the system has any joint, it refuses, before the view is
+# made: there is no network to draw.
+#
+# THE VIEW TYPE: a Drafting view type with no default template where there is
+# one, so the scale asked for is the scale drawn at.
 #
 # RISK MODIFY. It makes one drafting view and the detail lines and text notes
 # in it. NOTHING IN THE 3D MODEL IS CHANGED - the system is only read. It
@@ -160,7 +180,9 @@ contract:
       role: accounting
       type: int
     - name: terminals
-      # Air terminals, plumbing fixtures and sprinklers drawn (D-52).
+      # Air terminals, plumbing fixtures and sprinklers drawn, and mechanical
+      # equipment the system serves - neither the root nor the base equipment,
+      # such as the fan coils on a chilled water loop (D-52).
       role: accounting
       type: int
     - name: openEnds
@@ -183,7 +205,9 @@ contract:
       type: IList<string>
     - name: labelsWithoutValue
       # One line per segment Revit holds no flow or no pressure drop for - "not
-      # calculated" where Revit has not calculated the system (D-52).
+      # calculated" where Revit has not calculated the system; per segment with
+      # a fitting or accessory holding 0 (left out of its Δp); and per stretch
+      # of fittings only, which gets no label at all (D-52).
       role: accounting
       type: IList<string>
     - name: refused
@@ -209,7 +233,8 @@ compatibility-note: >
   BaseEquipment, MechanicalSystem.DuctNetwork, PipingSystem.PipingNetwork,
   MEPCurve.MEPSystem and ConnectorManager, MEPModel.ConnectorManager,
   Connector.AllRefs, Owner, ConnectorType, Domain and MEPSystem, the
-  ConnectorType and Domain enums, ViewDrafting.Create, TextNote.Create(
+  ConnectorType and Domain enums, ViewFamilyType.DefaultTemplateId,
+  ViewDrafting.Create, TextNote.Create(
   Document, ElementId, XYZ, string, TextNoteOptions), TextNoteOptions with
   HorizontalAlignment and VerticalAlignment, ElementTypeGroup.TextNoteType,
   Document.GetDefaultElementTypeId, ItemFactoryBase.NewDetailCurve,
@@ -231,6 +256,14 @@ compatibility-note: >
 #   "draw a schematic of the system of the selected   -> here
 #    element"
 #   "3D to 2D schematic" / "3D to 2D MEP schematic"   -> here
+#   "show me the schematic for SA-01"                 -> a READ that finds the
+#   "is there already a schematic of this system"        view - NOT here. OPEN:
+#                                                        both reach this card on
+#                                                        the model backend
+#                                                        (lexical:
+#                                                        SET_VIEW_UNDERLAY and
+#                                                        EDIT_MEP_SYSTEM, both
+#                                                        writes) - see below
 #   "trace this system" / "what connects to what" /   -> TRACE_CONNECTIVITY - a
 #    "where does this run go"                            READ: what it reaches,
 #                                                        drawn nowhere
@@ -252,13 +285,18 @@ compatibility-note: >
 #                                                        THE MODEL, not a drawing
 # Questions about a system's flows, sizes, terminals or open ends are reads,
 # and none was claimed for this card. Measured before and after it was written
-# (row 5b-1479, lexical and model): none of them reaches it - ONE EXCEPTION,
-# OPEN: "is there already a schematic of this system" reaches this card on the
-# model backend (lexical: EDIT_MEP_SYSTEM). It reached EDIT_MEP_SYSTEM, a write,
-# before this card existed; it carries this card's defining word, and no read
-# card declares it. Two rewordings of identity and purpose did not move it; the
-# owner's own utterances were not weakened to. The fix is a read that lists
-# views declaring the owner's own words for that question (row 5b-1479).
+# (row 5b-1479, lexical and model): none of them reaches it - TWO EXCEPTIONS,
+# OPEN: "is there already a schematic of this system" and "show me the
+# schematic for SA-01" reach this card on the model backend (lexical:
+# EDIT_MEP_SYSTEM and SET_VIEW_UNDERLAY - writes, as before this card
+# existed). Both carry this card's defining word, and no read card declares
+# them. Two rewordings of identity and purpose did not move the first; the
+# owner's own utterances were not weakened.
+# A CONDITION FOR PROMOTION TO PROVEN, NOT A LATER NOTE: a READ card that
+# finds views (FIND_VIEWS, or one like it) owns the "is there already a
+# schematic" and "show me the schematic" questions, in the owner's own words,
+# before this card is signed - so that asking to see a schematic never draws
+# a new one (row 5b-1479, NEEDS-CHECKING Group MW).
 #
 # WORDINGS CHANGED BEFORE THIS WAS WRITTEN: a purpose saying "the system is
 # traced" sent TRACE_CONNECTIVITY's "trace this system" here on check-routing's

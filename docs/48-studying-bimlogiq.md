@@ -194,6 +194,9 @@ is not changed.
 - **The overlap** with `TRACE_CONNECTIVITY`, `REPORT_MEP_PRESSURE_DROP`, `CREATE_DRAFTING_VIEW`,
   `CREATE_TEXT_NOTE` and `DRAW_FAMILY_DETAIL_LINES` - none edited - and the merge planned once it is proved:
   [FRAGMENT-ISSUES row 5b-1479](fragment-issues/section-5b-rows-401-425.md).
+- **Before it can be PROVEN:** a read card that finds views must own *"is there already a schematic"* and
+  *"show me the schematic"* - today both reach this card on one search backend, and asking to see a
+  schematic must never draw a new one ([row 5b-1479](fragment-issues/section-5b-rows-401-425.md)).
 - **What a real Revit must show:** [NEEDS-CHECKING Group MW](needs-checking/group-mw.md) - a duct system, a
   pipe loop, open ends, a system with no flow calculated, a large system and its time, Revit 2020 and 2025/2026.
 
