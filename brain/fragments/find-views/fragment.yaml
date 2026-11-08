@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,8 @@ semantic-identity: "the real views or schedules in this model, narrowed by type,
 kind: filter
 domain: revit.views
 capability: FIND_VIEWS
-# VERSION 3, BACK TO DRAFT ON 2026-11-07 (FRAGMENT-ISSUES row 5b-1474), AND
-# THE PROOF BLOCK BELOW IS KEPT ON PURPOSE - it is version 2's record and the
-# arrangement to re-prove from; its fingerprint no longer matches. On the
+# VERSION 3, BACK TO DRAFT ON 2026-11-07 (FRAGMENT-ISSUES row 5b-1474), and
+# PROVEN AGAIN ON 2026-11-08 - the proof block below is version 3's. On the
 # owner's model 4355-BHVD-3D-60A10-BL007A (Revit 2020) version 2 found 0 for
 # viewType "Floor Plan" and 0 for viewType "any", while the floor plan asked
 # for was on a sheet and in this card's own placedOn. viewType was compared
@@ -154,37 +153,44 @@ contract:
       role: accounting
       type: IList<string>
 
-# VERSION 2's PROOF (signed 2026-11-02), KEPT AS THE RECORD. Version 3
-# changed impl/, so its fingerprint no longer describes the code and the card
-# is DRAFT until version 3 is proved on a real model (D-30) - NEEDS-CHECKING
-# Group MR owes it.
+# VERSION 3's PROOF, signed by Ajmal PS 2026-11-08 (version 2's, signed
+# 2026-11-02, is in git history). Run on a copy of the rme_advanced sample in
+# Revit 2020: "Section 18" found as a Section, and the same name asked as a
+# Floor Plan found nothing with the section passed over - Group MR2's shape.
+# NOT exercised: MR2's dependent-copy case and MR3's spellings.
 proof:
-  date: '2026-11-02'
+  date: '2026-11-08'
   by: Ajmal PS
-  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
-  positive_case: run as it would normally be run. returned byType 1 entry(ies), elements 20
-    item(s) [Callout of Level 1 HVAC WSHP TYP, Level 1 HVAC Duct Plan, Level 1 HVAC Duct Plan_A,
-    ...], findings 0 item(s), found 20 item(s) [Level 1 HVAC Plan, Level 2 HVAC Plan, Level
-    3 HVAC Plan, ...], matchedButExcluded 9, notDrawings HashSet`1, onSheets 1 item(s) [606890],
-    ordered 20 item(s) [Callout of Level 1 HVAC WSHP TYP, Level 1 HVAC Duct Plan, Level 1
-    HVAC Duct Plan_A, ...], placedCount 23, placedOn 23 entry(ies), schedulesAsked false,
-    skippedInternal 0, skippedNonDrawing 23, skippedTemplates 46, wantedName HVAC, wantedPlacement
-    any, wantedType FloorPlan, withoutTemplate false, working 19. inputs came viewType as
-    given; nameContains as given; placement not given - "any", the card's own default (optional);
-    withoutTemplate not given - false (optional). on P1102 MEP
-  negative_case: run with category=Sheets, nameContains=ZZZNOTHINGHERE, viewType=FloorPlan
-    instead - chosen because it should not contain what this fragment reports. returned byType
-    0 entry(ies), elements 0 item(s), findings 0 item(s), found 0 item(s), matchedButExcluded
-    0, notDrawings HashSet`1, onSheets 0 item(s), ordered 0 item(s), placedCount 23, placedOn
-    23 entry(ies), schedulesAsked false, skippedInternal 0, skippedNonDrawing 23, skippedTemplates
-    46, wantedName ZZZNOTHINGHERE, wantedPlacement any, wantedType FloorPlan, withoutTemplate
-    false, working 0. inputs came viewType as given; nameContains as given; placement not
-    given - "any", the card's own default (optional); withoutTemplate not given - false (optional).
-    on P1102 MEP
+  model: RenameProof-rme (21,446 elements), Revit 2020, session 2672
+  positive_case: run as it would normally be run. returned browserWords 12 entry(ies), byType
+    1 entry(ies), elements 1 item(s) [Section 18], findings 1 item(s) [Read viewType as Section,
+    name containing 'Section 18'; retu...], found 1 item(s) [Section 18], matchedButExcluded
+    0, nonDrawingByType 4 entry(ies), notDrawings HashSet`1, onSheets 1 item(s) [581310],
+    ordered 1 item(s) [Section 18], placedCount 23, placedOn 23 entry(ies), refusedByName
+    0 item(s), refusedOne Action`2, resolvedType Section, schedulesAsked false, skippedByPlacement
+    0, skippedHasTemplate 0, skippedInternal 0, skippedNonDrawing 23, skippedOtherType 107,
+    skippedTakesNoTemplate 0, skippedTemplates 46, squash Func`2, typeKey section, typeUnknown
+    false, typeWords 37 entry(ies), wantedName Section 18, wantedPlacement any, wantedType
+    Section, withoutTemplate false, working 0. inputs came viewType as given; nameContains
+    as given; placement as given; withoutTemplate as given. on RenameProof-rme
+  negative_case: 'run against ''RenameProof-rme'' with nameContains=Section 18, placement=any,
+    viewType=Floor Plan, withoutTemplate=false instead - chosen because it should not contain
+    what this fragment reports. returned browserWords 12 entry(ies), byType 0 entry(ies),
+    elements 0 item(s), findings 2 item(s) [Read viewType as FloorPlan, name containing ''Section
+    18''; re..., The name matched, but each was passed over: ''Section 18'' (id...], found
+    0 item(s), matchedButExcluded 0, nonDrawingByType 4 entry(ies), notDrawings HashSet`1,
+    onSheets 0 item(s), ordered 0 item(s), placedCount 23, placedOn 23 entry(ies), refusedByName
+    1 item(s) [''Section 18'' (id 581310) - a Section, and FloorPlan was aske...], refusedOne
+    Action`2, resolvedType FloorPlan, schedulesAsked false, skippedByPlacement 0, skippedHasTemplate
+    0, skippedInternal 0, skippedNonDrawing 23, skippedOtherType 70, skippedTakesNoTemplate
+    0, skippedTemplates 46, squash Func`2, typeKey floorplan, typeUnknown false, typeWords
+    37 entry(ies), wantedName Section 18, wantedPlacement any, wantedType Floor Plan, withoutTemplate
+    false, working 0. inputs came viewType as given; nameContains as given; placement as given;
+    withoutTemplate as given. on RenameProof-rme'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 36569e9e277b0352
+  fingerprint: 3a0f75c752a00204
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
