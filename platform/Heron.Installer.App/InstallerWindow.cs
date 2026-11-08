@@ -56,6 +56,7 @@ namespace Heron.Installer.App
             new Dictionary<string, CheckBox>(StringComparer.Ordinal);
 
         private readonly Button _install;
+        private readonly Button _remove;      // null unless drawn - see OnRemove
         private readonly TextBlock _report;
         private readonly TextBlock _closeRevitFirst;
 
@@ -162,6 +163,26 @@ namespace Heron.Installer.App
                 HorizontalAlignment = HorizontalAlignment.Right,
                 Margin = new Thickness(0, 18, 0, 0),
             };
+
+            // REMOVE HERON, quiet like Close - only with no tick boxes, and
+            // only when there is something here to take off. OnRemove.
+            if (screen.OneChoice && screen.AnythingInstalled)
+            {
+                _remove = new Button
+                {
+                    Content = "Remove Heron",
+                    Width = 120,
+                    Height = 34,
+                    Margin = new Thickness(0, 0, 10, 0),
+                    Foreground = new SolidColorBrush(Ink),
+                    Cursor = Cursors.Hand,
+                    ToolTip = "Takes Heron out of every Revit on this PC. It asks first.",
+                    Template = ButtonTemplate(Colors.Transparent, At(Ink, 0x0F), At(Ink, 0x40)),
+                };
+                _remove.Click += OnRemove;
+                buttons.Children.Add(_remove);
+            }
+
             buttons.Children.Add(_install);
             buttons.Children.Add(close);
             page.Children.Add(buttons);
@@ -223,6 +244,7 @@ namespace Heron.Installer.App
             // forces them to close the window and start over, and looks like
             // Heron has decided they are finished.
             _install.IsEnabled = _screen.AnythingToOffer;
+            if (_remove != null) _remove.IsEnabled = true;
         }
 
         // ------------------------------------------------------------ parts
@@ -339,10 +361,27 @@ namespace Heron.Installer.App
                     ToolTip = row.WhyNot ?? row.IfYouInstallAgain,
                 };
                 RowWords((TextBlock)tick.Content, row);
-                _productTicks[row.Id] = tick;
 
-                Grid.SetColumn(tick, 0);
-                line.Children.Add(tick);
+                if (_screen.OneChoice)
+                {
+                    // ONE CHOICE, NO TICK BOX - InstallerScreen.OneChoice, the
+                    // owner's word of 2026-11-08. The same words are drawn on
+                    // their own; Install installs the one product and the
+                    // Remove button takes it off, so no box can be cleared by
+                    // mistake and turn Install into an uninstall (R-21).
+                    var words = (TextBlock)tick.Content;
+                    tick.Content = null;
+                    words.Margin = new Thickness(0, 1, 0, 1);
+                    words.ToolTip = tick.ToolTip;
+                    Grid.SetColumn(words, 0);
+                    line.Children.Add(words);
+                }
+                else
+                {
+                    _productTicks[row.Id] = tick;
+                    Grid.SetColumn(tick, 0);
+                    line.Children.Add(tick);
+                }
 
                 // A LABEL, NOT A PARAGRAPH - the owner's word of 2026-11-07. The
                 // state, or "Coming soon" for a product not offered yet; the
@@ -356,7 +395,7 @@ namespace Heron.Installer.App
                 line.Children.Add(state);
 
                 panel.Children.Add(line);
-                if (row.IsHeading) headings.Add(row);
+                if (row.IsHeading && _productTicks.ContainsKey(row.Id)) headings.Add(row);
 
                 // A TOOLTIP IS NOT ENOUGH ON ITS OWN. Somebody who does not
                 // hover never sees it, so the sentence is printed as well.
@@ -436,16 +475,15 @@ namespace Heron.Installer.App
 
         private void OnInstall(object sender, RoutedEventArgs e)
         {
-            var ticked = new List<string>();
+            // NO TICK BOXES, EVERYTHING OFFERED - InstallerScreen.OneChoice.
+            // ToRemove then finds nothing to take off: Install never removes.
+            var ticked = _screen.OneChoice
+                ? new List<string>(_screen.EverythingOffered())
+                : new List<string>();
             foreach (var pair in _productTicks)
                 if (pair.Value.IsChecked == true) ticked.Add(pair.Key);
 
-            foreach (var release in _screen.Releases)
-            {
-                CheckBox tick;
-                if (_releaseTicks.TryGetValue(release.Release, out tick))
-                    release.Chosen = tick.IsChecked == true;
-            }
+            ReadReleaseTicks();
 
             // RESOLVED BY THE SCREEN MODEL, not here: a heading's tick becomes
             // its pieces, a greyed row installs nothing, and what comes OFF is
@@ -491,8 +529,58 @@ namespace Heron.Installer.App
             }
 
             _install.IsEnabled = false;
+            if (_remove != null) _remove.IsEnabled = false;
             var handler = InstallPressed;
             if (handler != null) handler(products, releases, removals);
+        }
+
+        /// <summary>The Revit ticks, copied onto the screen model before a run.</summary>
+        private void ReadReleaseTicks()
+        {
+            foreach (var release in _screen.Releases)
+            {
+                CheckBox tick;
+                if (_releaseTicks.TryGetValue(release.Release, out tick))
+                    release.Chosen = tick.IsChecked == true;
+            }
+        }
+
+        /// <summary>
+        /// Remove Heron - drawn only when there are no product tick boxes
+        /// (InstallerScreen.OneChoice) and something is on this PC.
+        ///
+        /// EXACTLY WHAT UNTICKING EVERYTHING DID BEFORE 2026-11-08, as its own
+        /// button: what comes off is InstallerScreen.ToRemove's decision with
+        /// nothing ticked, worked out from what is on the disk, and it goes
+        /// through the same Yes/No question naming what will go, No first.
+        /// Nothing is installed by it.
+        /// </summary>
+        private void OnRemove(object sender, RoutedEventArgs e)
+        {
+            ReadReleaseTicks();
+            var removals = _screen.ToRemove(new string[0]);
+
+            var confirm = InstallerScreen.WhatWillBeRemoved(removals);
+            if (confirm == null)
+            {
+                _report.Text = "Heron is not on this PC, so there is nothing to remove.";
+                return;
+            }
+
+            var answer = MessageBox.Show(confirm, "Heron Installer",
+                                         MessageBoxButton.YesNo,
+                                         MessageBoxImage.Warning,
+                                         MessageBoxResult.No);
+            if (answer != MessageBoxResult.Yes)
+            {
+                _report.Text = "Nothing was changed.";
+                return;
+            }
+
+            _install.IsEnabled = false;
+            _remove.IsEnabled = false;
+            var handler = InstallPressed;
+            if (handler != null) handler(new string[0], _screen.ChosenReleases(), removals);
         }
 
         // ------------------------------------------------------------ brand

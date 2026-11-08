@@ -1054,6 +1054,48 @@ namespace Heron.Installer.TestHost
                   "and unticking the other takes only that one off");
 
             Console.WriteLine();
+            Console.WriteLine("ONE PRODUCT, NO TICK BOXES, AND REMOVE IS ITS OWN BUTTON - 2026-11-08");
+            Check(!both.OneChoice,
+                  "two pieces that can be chosen apart keep their tick boxes (R-34)");
+            var oneManifest = ProductManifest.Parse(@"{
+              ""products"": [
+                { ""id"": ""piece-one"", ""name"": ""Piece One"", ""description"": ""d"",
+                  ""tab"": ""Tab A"", ""addin"": ""One.addin"", ""assembly"": ""One.dll"",
+                  ""folder"": ""One"", ""addInId"": ""11111111-1111-1111-1111-111111111111"",
+                  ""revit"": [""2024""], ""requires"": [], ""version"": ""0.1.0"",
+                  ""partOf"": null, ""state"": ""SHIPPED"" }
+              ]
+            }");
+            var oneOnPc = InstallerScreen.Build(oneManifest, new[] { "2024" }, null,
+                                                new FakeInstalled("piece-one@2024"), null);
+            Check(oneOnPc.OneChoice, "one product is one choice, so no tick box is drawn");
+            Check(oneOnPc.AnythingInstalled, "and it is on the PC, so Remove is drawn");
+            Check(oneOnPc.ToRemove(oneOnPc.EverythingOffered()).Count == 0,
+                  "pressing Install with no tick boxes removes nothing");
+            Check(oneOnPc.ToInstall(oneOnPc.EverythingOffered()).Count == 1,
+                  "and installs the one product");
+            Check(oneOnPc.ToRemove(new string[0]).Count == 1,
+                  "Remove takes off what is on the PC - what unticking it used to do");
+            var oneNotOnPc = InstallerScreen.Build(oneManifest, new[] { "2024" }, null, null, null);
+            Check(oneNotOnPc.OneChoice && !oneNotOnPc.AnythingInstalled,
+                  "not on the PC yet: still no tick box, and no Remove button");
+
+            Console.WriteLine();
+            Console.WriteLine("A REFUSAL IN PLAIN WORDS, NEVER ONLY A COMMAND - 2026-11-08");
+            var stale = "The build in C:\\x\\bin is older than the code beside it - 3 file(s) changed.\n" +
+                        "Build this release and run this again:\n" +
+                        "  dotnet build revit\\Heron.Revit.Addin\\Heron.Revit.Addin.csproj -c Release -p:RevitVersion=2020\n";
+            var said = DeployScriptDeployer.PlainReason(stale);
+            Check(said.StartsWith("The copy of Heron built on this PC is older"),
+                  "a build older than its code is said in a sentence: " + said);
+            Check(!said.Contains("dotnet"), "and the command is not the answer");
+            var unknownRefusal = "Something new went wrong here.\n  dotnet build x\n";
+            Check(DeployScriptDeployer.PlainReason(unknownRefusal) == "Something new went wrong here.",
+                  "an unknown refusal gives its own line, not the command under it");
+            Check(DeployScriptDeployer.PlainReason("") == "It stopped without saying why.",
+                  "and an empty one says so");
+
+            Console.WriteLine();
             Console.WriteLine("A PRODUCT THAT WAS NEVER THERE HAS NOTHING TO REMOVE");
             var never = InstallerScreen.Build(screenManifest, new[] { "2024" }, null, null, null);
             Check(never.ToRemove(new string[0]).Count == 0,

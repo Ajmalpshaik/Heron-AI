@@ -185,7 +185,7 @@ logic, not re-implement it** — two copies of a deploy rule is two rules that d
 
 | # | Requirement | Source | Status |
 |---|---|---|---|
-| R-21 | **Uninstall** is the same window — untick a product and apply | Owner, 2026-09-20 (one main window) | MUST |
+| R-21 | **Uninstall** is the same window — untick a product and apply. **Amended 2026-11-08 by the owner:** while only ONE product can be chosen (`InstallerScreen.OneChoice`), the window draws no product tick box - a box with no choice behind it was only a way to remove Heron by mistake - and uninstall is a **Remove Heron** button in the same window, asking first exactly as unticking did. Two products that can be chosen apart bring the ticks, and untick-to-remove, back | Owner, 2026-09-20 (one main window); Owner, 2026-11-08 (*"do it what ever balance"*, on the 2026-11-07 proposal: no product ticks, a Remove Heron button) | MUST |
 | R-22 | Uninstall removes the product's files **and nothing else**. The user's data survives | [`HeronPaths.IsSafeToDelete`](../../../../platform/Heron.Core/HeronPaths.cs) | MUST |
 | R-23 | **Update** replaces a product in place and keeps the user's settings | [`docs/07 §7`](../../../07-installation-and-update.md) | MUST |
 | R-23a | There is **no separate Update or Repair button**. Install detects an existing version and replaces it | Owner, 2026-09-21; [S8](00-structure.md) | MUST |

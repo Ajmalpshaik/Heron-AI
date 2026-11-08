@@ -323,6 +323,66 @@ namespace Heron.Installer
         }
 
         /// <summary>
+        /// True when there is only ONE thing a modeller could choose here -
+        /// one product that can be installed, or that is already on the PC -
+        /// so the window draws no product tick boxes at all.
+        ///
+        /// THE OWNER'S WORD OF 2026-11-08 ("do it what ever balance"), on the
+        /// proposal of 2026-11-07: with Heron the only product, a tick box
+        /// beside it offers no choice and one trap - since R-21, unticking an
+        /// installed product REMOVES it, so a box cleared by mistake turned
+        /// "press Install" into "take Heron off". Install then installs the
+        /// one product, and taking it off is its own button
+        /// (EverythingOffered, AnythingInstalled).
+        ///
+        /// A HEADING DOES NOT COUNT, its pieces do: Heron the tab and its AI
+        /// Bridge piece are one choice, because the piece is all the heading
+        /// installs. Two products that can be chosen apart - R-34's pieces,
+        /// or a second product in the list - bring the tick boxes back
+        /// unchanged, so this never takes a real choice away.
+        /// </summary>
+        public bool OneChoice
+        {
+            get
+            {
+                var count = 0;
+                foreach (var row in Products)
+                {
+                    if (row.IsHeading) continue;
+                    var installed = row.InstalledFor != null && row.InstalledFor.Count > 0;
+                    if (row.CanBeTicked || installed) count++;
+                }
+                return count <= 1;
+            }
+        }
+
+        /// <summary>
+        /// Every row that can be installed - what Install sends when there are
+        /// no tick boxes (OneChoice). Passed to ToInstall like a set of ticks,
+        /// so a greyed row is still dropped there, and to ToRemove, which then
+        /// finds nothing to take off: pressing Install never removes.
+        /// </summary>
+        public IReadOnlyList<string> EverythingOffered()
+        {
+            var ids = new List<string>();
+            foreach (var row in Products)
+                if (row.CanBeTicked) ids.Add(row.Id);
+            return ids;
+        }
+
+        /// <summary>Whether any product is on this PC now - the Remove button is drawn only then.</summary>
+        public bool AnythingInstalled
+        {
+            get
+            {
+                foreach (var row in Products)
+                    if (!row.IsHeading && row.InstalledFor != null && row.InstalledFor.Count > 0)
+                        return true;
+                return false;
+            }
+        }
+
+        /// <summary>
         /// The product ids to hand the engine, for a set of ticked rows.
         ///
         /// A HEADING'S TICK BECOMES ITS PIECES. The engine installs products
