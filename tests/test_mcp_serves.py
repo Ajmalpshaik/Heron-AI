@@ -592,7 +592,7 @@ async def exercise(server):
 # the show door: it sends a fragment, and a fragment can be slow.
 WAITS_ON_REVIT = ("revit_change", "revit_read", "revit_show", "revit_building_loads",
                   "revit_sprinkler_hydraulics", "revit_sprinkler_layout",
-                  "revit_model_dashboard")
+                  "revit_model_dashboard", "heron_checklist")
 
 
 def exercise_waiting(module):

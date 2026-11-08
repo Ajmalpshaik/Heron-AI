@@ -1414,6 +1414,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-mu.md`](needs-checking/group-mu.md)
 
+## Group MV - QA checklists: checks in the modeller's words saved from the chat, run in one go from the chat and from the Companion's QA Checklist page (2026-11-08)
+
+**Its own file:** [`needs-checking/group-mv.md`](needs-checking/group-mv.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

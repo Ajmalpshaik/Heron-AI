@@ -2744,3 +2744,49 @@ def commands():
                                "nothing beyond Python itself, so this is a broken install."
                                % exc)
     return COMMANDS
+
+
+def checklists():
+    """
+    The QA checklist store and its run (docs/50) - brain/heron_checklists.py,
+    through this seam like every other brain module. Stdlib only.
+    """
+    try:
+        import heron_checklists as CHECKLISTS
+    except ImportError as exc:
+        raise BrainUnavailable("Heron's QA checklists could not be imported: %s. They need "
+                               "nothing beyond Python itself, so this is a broken install."
+                               % exc)
+    return CHECKLISTS
+
+
+def fragment_contract(folder):
+    """
+    What a QA checklist checks one capability against (docs/50), read from the
+    fragment's OWN card - proof_status' reason - or None when it cannot be read:
+
+        {"risk": "READ", "needs": [...], "provides": [...],
+         "selection": ["elements"]}
+
+    `selection` is every need the request does not fill and the add-in does
+    not supply - heron_fragment.need_source's "fragment" - which a read with
+    the chain reset takes from what is selected in Revit. Optional ones bind
+    empty, so they are left out.
+    """
+    try:
+        import heron_fragment as FRAGMENT
+    except ImportError:
+        return None
+    try:
+        frag = FRAGMENT.load(os.path.join(ROOT, "brain", "fragments", folder))
+    except (ValueError, OSError):
+        return None
+    needs = frag.needs()
+    return {
+        "risk": str(frag.data.get("risk") or "").upper(),
+        "needs": needs,
+        "provides": frag.provides(),
+        "selection": [n.get("name") for n in needs
+                      if FRAGMENT.need_source(n) == "fragment"
+                      and str(n.get("optional")).strip().lower() != "true"],
+    }

@@ -259,7 +259,7 @@ button, input, select { font: inherit; color: inherit; }
 main { width: 100%; max-width: 1560px; padding: 26px 32px 56px; display: grid; gap: 16px; align-content: start; }
 .ws { display: none; min-width: 0; }
 body[data-ws="dashboard"] #dashboard, body[data-ws="loads"] #loads, body[data-ws="sprinkler"] #sprinkler,
-body[data-ws="layout"] #layout, body[data-ws="table"] #table { display: block; }
+body[data-ws="layout"] #layout, body[data-ws="table"] #table, body[data-ws="qa"] #qa { display: block; }
 
 .card {
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
@@ -1095,3 +1095,45 @@ body.closed .paint { opacity: .55; filter: grayscale(1); }
 #layout .y-field select, #layout .y-field input { max-width: 220px; }
 #layout .y-card-why { margin: 10px 0 0; color: var(--muted); }
 #layout .y-more { margin-top: 8px; }
+
+/* ------------------------------------------------------------ QA Checklist (docs/50) */
+/* Every word and colour on it was made in brain/heron_checklists; a result is a
+   badge in words beside its colour - never colour alone. */
+#qa [hidden] { display: none !important; }
+#qa .q-tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 0 0 14px; }
+#qa .q-pick { padding: 6px 8px; border: 1px solid var(--line-strong); border-radius: 7px; background: var(--field); color: var(--ink); font: inherit; font-size: 13px; min-width: 220px; }
+#qa .q-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 20px; margin: 0 0 10px; font-size: 12.5px; }
+#qa .q-meta-item { display: inline-flex; gap: 6px; align-items: baseline; min-width: 0; }
+#qa .q-meta-label { color: var(--faint); }
+#qa .q-meta-value { color: var(--ink); font-weight: 600; overflow-wrap: anywhere; }
+#qa .q-sum { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 6px; }
+#qa .q-chip { display: inline-flex; align-items: baseline; gap: 2px; padding: 4px 10px; border: 1px solid var(--line); border-left: 4px solid var(--faint); border-radius: 7px; background: var(--surface); font-size: 12.5px; color: var(--muted); }
+#qa .q-chip b { color: var(--ink); font-variant-numeric: tabular-nums; }
+#qa .q-running { color: var(--warn); font-size: 12.5px; }
+#qa .q-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 8px 0 12px; }
+#qa .q-table th { text-align: left; font-size: 11.5px; font-weight: 650; color: var(--faint); padding: 6px 8px; border-bottom: 1px solid var(--line-strong); }
+#qa .q-table td { padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+#qa .q-table td:first-child { border-left: 4px solid var(--faint); }
+#qa .q-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+#qa .q-check span { display: block; }
+#qa .q-cap { color: var(--faint); font-size: 11.5px; font-family: var(--mono); }
+#qa .q-rule { font-family: var(--mono); font-size: 12px; white-space: nowrap; }
+#qa .q-why { color: var(--muted); max-width: 420px; }
+#qa .q-tools-cell { white-space: nowrap; }
+#qa .q-tools-cell .btn-lite + .btn-lite { margin-left: 6px; }
+#qa .q-legend { list-style: none; display: flex; flex-wrap: wrap; gap: 6px 18px; padding: 0; margin: 0 0 16px; font-size: 12px; color: var(--muted); }
+#qa .q-sub { font-size: 15px; font-weight: 650; margin: 0 0 10px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--ink); }
+#qa .q-broken { margin: 0 0 12px; padding: 8px 12px; border: 1px solid var(--line); border-left: 4px solid var(--warn); border-radius: 8px; font-size: 12.5px; color: var(--muted); }
+#qa .q-list { list-style: none; padding: 0; margin: 0; }
+#qa .q-list li { margin: 0 0 6px; }
+#qa .q-list summary { cursor: pointer; font-weight: 600; }
+#qa .q-list ol { margin: 6px 0 0; color: var(--muted); font-size: 12.5px; }
+/* Print / PDF: the QA Checklist alone, without its buttons. */
+@media print {
+  body.printing-qa .side, body.printing-qa .bar, body.printing-qa main > *:not(#qa) { display: none !important; }
+  body.printing-qa .app { display: block; }
+  body.printing-qa { min-width: 0; background: #ffffff; }
+  #qa button, #qa select, #qa .q-lists, #qa .q-tools-cell { display: none !important; }
+  #qa { box-shadow: none; border: none; }
+  #qa .q-table tr { break-inside: avoid; }
+}

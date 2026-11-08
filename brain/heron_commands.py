@@ -98,15 +98,33 @@ def _home(home=None):
     return heron_paths.home()
 
 
-def folder(home=None, make=False):
-    """`<home>/commands/personal`, or None on a machine with no data home."""
+def store_folder(kind, home=None, make=False):
+    """`<home>/<kind>/personal`, or None on a machine with no data home. One
+    data home for every store a modeller saves into from a chat - commands
+    here, QA checklists (heron_checklists, docs/50) - so Revit and the chat
+    read one folder."""
     base = _home(home)
     if not base:
         return None
-    path = os.path.join(base, COMMANDS_FOLDER, PERSONAL)
+    path = os.path.join(base, kind, PERSONAL)
     if make and not os.path.isdir(path):
         os.makedirs(path)
     return path
+
+
+def folder(home=None, make=False):
+    """`<home>/commands/personal`, or None on a machine with no data home."""
+    return store_folder(COMMANDS_FOLDER, home, make)
+
+
+def write_whole(path, data):
+    """Write `data` as JSON to `path` WHOLE OR NOT AT ALL: a reader - Revit's
+    panel, the Companion - may be reading the folder while the chat writes,
+    and half a file would show as a broken one."""
+    part = path + ".part"
+    with io.open(part, "w", encoding="utf-8") as fh:
+        fh.write(json.dumps(data, indent=2, ensure_ascii=False))
+    os.replace(part, path)
 
 
 def slug(name):
@@ -219,10 +237,7 @@ def save(command, needs, home=None, replace=False, now=None):
     }
     # WRITTEN WHOLE OR NOT AT ALL: the panel may be reading this folder while
     # the chat writes, and half a file would show as a broken command.
-    part = path + ".part"
-    with io.open(part, "w", encoding="utf-8") as fh:
-        fh.write(json.dumps(kept, indent=2, ensure_ascii=False))
-    os.replace(part, path)
+    write_whole(path, kept)
     return path
 
 
@@ -327,10 +342,7 @@ def write_runner_note(python, root, home=None, now=None):
             "written": now or time.strftime("%Y-%m-%dT%H:%M:%S"),
         }
         path = os.path.join(where, RUNNER_NOTE)
-        part = path + ".part"
-        with io.open(part, "w", encoding="utf-8") as fh:
-            fh.write(json.dumps(note, indent=2, ensure_ascii=False))
-        os.replace(part, path)
+        write_whole(path, note)
         return path
     except (OSError, ImportError):
         return None

@@ -349,6 +349,16 @@ TOOLS = {
     # (PANEL_ACTIONS below).
     "heron_commands":           (READ,    None),
 
+    # QA checklists (docs/50, D-152). ANALYZE through run_fragment_read,
+    # exactly revit_model_dashboard's level: list, show, save and delete touch
+    # only the modeller's own checklist files, and `run` reads the model check
+    # by check through revit_read's own body - one READ or ANALYZE capability
+    # each, never above (the store refuses a check above ANALYZE, and the read
+    # door refuses it again on every run). The Companion page's Run is the
+    # same run, so - as the dashboard's Refresh - it has no COMPANION_ACTIONS
+    # row; its Select in Revit is the dashboard's own companion_dashboard_select.
+    "heron_checklist":          (ANALYZE, "run_fragment_read"),
+
     # The Companion's editable table (docs/40 section 8). ANALYZE through
     # run_fragment_read, exactly revit_read's level: it reads the elements
     # into a table and changes nothing. Writing the edited cells is the

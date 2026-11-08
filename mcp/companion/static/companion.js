@@ -2422,6 +2422,235 @@ async function dashboard_() {
   } catch (e) { /* the state poll reports a closed page */ }
 }
 
+// ---------------------------------------------------------------- QA checklist
+// The QA Checklist workspace (docs/50). The saved checklists and every row of
+// a run - its words, rule, value, result and colour - were made by Heron's
+// brain; the page draws them, sends the name of the checklist to run, and a
+// row's number for Select in Revit. Model text goes on the page with
+// textContent only. A run only reads the model.
+
+let qaShown = null;
+let qaBusy = false;
+let qaPick = "";
+let qaSaid = { cls: "result", text: "" };
+
+async function qaPost(path, body, waiting) {
+  qaSaid = { cls: "result", text: waiting };
+  const said = $("q-said");
+  if (said) { said.className = qaSaid.cls; said.textContent = qaSaid.text; }
+  try {
+    const res = await fetch(path, {
+      method: "POST",
+      headers: Object.assign({ "Content-Type": "application/json" }, HEADER),
+      credentials: "same-origin",
+      body: JSON.stringify(body),
+    });
+    const answer = await res.json();
+    qaSaid = { cls: answer.ok ? "result ok" : "result failed",
+               text: answer.said || answer.error || (answer.ok ? "Done." : "Not done.") };
+  } catch (e) {
+    qaSaid = { cls: "result failed", text: "The page could not reach Heron. Nothing was read or changed." };
+  }
+  const after = $("q-said");
+  if (after) { after.className = qaSaid.cls; after.textContent = qaSaid.text; }
+}
+
+async function qaRun(name) {
+  if (qaBusy || !name) return;
+  qaBusy = true;
+  document.querySelectorAll("#qa .q-run").forEach(b => { b.disabled = true; });
+  await qaPost("/api/checklist/run", { name: name }, "Running the checks in Revit, one read at a time…");
+  qaBusy = false;
+  qaShown = null;
+  await checklist_();
+}
+
+// A failing check's Select in Revit - the Model Dashboard's own route. The page
+// sends the row's number, never ids: Heron uses the ids its own run found.
+async function qaSelect(row) {
+  if (qaBusy) return;
+  qaBusy = true;
+  document.querySelectorAll("#qa button").forEach(b => { b.disabled = true; });
+  await qaPost("/api/checklist/show", { action: "select", row: row }, "Asking Revit…");
+  document.querySelectorAll("#qa button").forEach(b => { b.disabled = false; });
+  qaBusy = false;
+}
+
+// The CSV is made here, from what the brain sent - nothing is read from Revit
+// and nothing leaves this PC. A cell starting with = + - @ is prefixed with a
+// quote mark, as the dashboard's is, so a spreadsheet never runs model text.
+function qaCsv(R) {
+  const cell = v => {
+    let t = v == null ? "" : String(v);
+    if (/^[=+\-@\t\r]/.test(t)) t = "'" + t;
+    return '"' + t.replace(/"/g, '""') + '"';
+  };
+  const lines = [["#", "Check", "Capability", "Rule", "Value", "Result", "Why", "Element ids"].map(cell).join(",")];
+  (R.rows || []).forEach(r => lines.push([r.n, r.sentence, r.capability, r.rule, r.shown, r.label, r.why,
+                                           (r.ids || []).join(";")].map(cell).join(",")));
+  const blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+  const a = el("a");
+  a.href = URL.createObjectURL(blob);
+  const name = String(R.name || "checklist").replace(/[^A-Za-z0-9 _.-]+/g, "_").slice(0, 60);
+  a.download = "Heron QA checklist - " + name + " - " + String(R.at || "").replace(/:/g, "") + ".csv";
+  document.body.append(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+
+function qaBadge(state, label) {
+  const cls = state === "pass" ? "ok" : state === "fail" ? "fail" : "warn";
+  return el("span", "badge " + cls, label);
+}
+
+function qaResult(R) {
+  const sec = el("section", "q-result");
+  const colours = {};
+  (R.states || []).forEach(s => { colours[s.key] = s.colour; });
+  const meta = el("div", "q-meta");
+  [["Checklist", R.name || "—"], ["Model", R.document || "—"], ["Run at", R.at || "—"]].forEach(([k, v]) => {
+    const item = el("span", "q-meta-item");
+    item.append(el("span", "q-meta-label", k), el("span", "q-meta-value", v));
+    meta.append(item);
+  });
+  sec.append(meta);
+  const sum = el("p", "q-sum");
+  (R.states || []).forEach(s => {
+    const chip = el("span", "q-chip");
+    chip.style.borderLeftColor = dashColour(s.colour, "#0f0f108c");
+    chip.title = s.means;
+    chip.append(el("b", null, num((R.counts || {})[s.key] || 0, 0)), el("span", null, " " + s.label));
+    sum.append(chip);
+  });
+  sec.append(sum, el("p", "muted small", R.said || ""));
+  if (R.running) sec.append(el("p", "q-running", "Running - the rows below are the checks done so far."));
+  const table = el("table", "q-table");
+  const head = el("tr");
+  ["#", "Check", "Rule", "Value", "Result", "Why", ""].forEach(t => head.append(el("th", null, t)));
+  const thead = el("thead");
+  thead.append(head);
+  const body = el("tbody");
+  (R.rows || []).forEach(r => {
+    const tr = el("tr");
+    tr.dataset.state = r.state;
+    const first = el("td", "q-num", r.n);
+    first.style.borderLeftColor = dashColour(colours[r.state], "#0f0f108c");
+    const check = el("td", "q-check");
+    check.append(el("span", null, r.sentence));
+    check.append(el("span", "q-cap", r.capability));
+    if ((r.selection || []).length) check.append(el("span", "q-cap", "reads the selection in Revit"));
+    const result = el("td");
+    result.append(qaBadge(r.state, r.label));
+    const tools = el("td", "q-tools-cell");
+    if (r.idsComplete && (r.ids || []).length) {
+      const sel = el("button", "btn-lite", "Select in Revit");
+      sel.type = "button";
+      sel.title = "Select these " + r.ids.length + " element(s) in Revit - nothing in the model changes";
+      sel.addEventListener("click", () => qaSelect(r.n));
+      const copy = el("button", "btn-lite", "Copy " + r.ids.length + " ID(s)");
+      copy.type = "button";
+      copy.title = "Copy the element ids for Manage > Inquiry > Select by ID in Revit";
+      copy.addEventListener("click", () => copyIds(r.ids, copy));
+      tools.append(sel, copy);
+    }
+    tr.append(first, check, el("td", "q-rule", r.rule), el("td", "q-num", r.shown), result,
+              el("td", "q-why", r.why || ""), tools);
+    body.append(tr);
+  });
+  table.append(thead, body);
+  sec.append(table);
+  const legend = el("ul", "q-legend");
+  (R.states || []).forEach(s => {
+    const li = el("li");
+    li.append(qaBadge(s.key, s.label), el("span", null, " " + s.means));
+    legend.append(li);
+  });
+  sec.append(legend);
+  return sec;
+}
+
+function qaLists(C) {
+  const sec = el("section", "q-lists");
+  sec.append(el("h3", "q-sub", "Saved checklists"));
+  const list = el("ul", "q-list");
+  (C.lists || []).forEach(l => {
+    const li = el("li");
+    const more = el("details");
+    more.append(el("summary", null, l.name + " - " + l.checks + " check(s)" + (l.description ? ": " + l.description : "")));
+    const ol = el("ol");
+    (l.sentences || []).forEach(t => ol.append(el("li", null, t)));
+    more.append(ol);
+    li.append(more);
+    list.append(li);
+  });
+  sec.append(list);
+  return sec;
+}
+
+function renderChecklist(C) {
+  const box = $("q-box");
+  box.replaceChildren();
+  const has = !!C && ((C.lists || []).length > 0 || !!C.result);
+  $("q-empty").hidden = has;
+  if (!has) return;
+  const tools = el("div", "q-tools");
+  const pick = el("select", "q-pick");
+  pick.setAttribute("aria-label", "Checklist to run");
+  (C.lists || []).forEach(l => {
+    const o = el("option", null, l.name + " (" + l.checks + ")");
+    o.value = l.name;
+    pick.append(o);
+  });
+  if (!qaPick && C.result) qaPick = C.result.name || "";
+  if ((C.lists || []).some(l => l.name === qaPick)) pick.value = qaPick;
+  else if ((C.lists || []).length) qaPick = pick.value;
+  pick.addEventListener("change", () => { qaPick = pick.value; });
+  const run = el("button", "btn q-run", C.busy || qaBusy ? "Running…" : "Run");
+  run.type = "button";
+  run.disabled = !!(C.busy || qaBusy) || !(C.lists || []).length;
+  run.title = "Run every check of this checklist on the model in Revit, one read at a time - nothing in it changes";
+  run.addEventListener("click", () => qaRun(pick.value));
+  const said = el("p", qaSaid.cls, qaSaid.text);
+  said.id = "q-said";
+  said.setAttribute("role", "status");
+  said.setAttribute("aria-live", "polite");
+  tools.append(pick, run);
+  if (C.result && !C.result.running) {
+    const print = el("button", "btn-lite", "Print / PDF");
+    print.type = "button";
+    print.title = "Print the results, or choose Save as PDF in the print window";
+    print.addEventListener("click", () => {
+      document.body.classList.add("printing-qa");
+      window.print();
+      document.body.classList.remove("printing-qa");
+    });
+    const csv = el("button", "btn-lite", "Download CSV");
+    csv.type = "button";
+    csv.title = "The results as a spreadsheet file - made on this PC";
+    csv.addEventListener("click", () => qaCsv(C.result));
+    tools.append(print, csv);
+  }
+  tools.append(said);
+  box.append(tools);
+  if ((C.broken || []).length) box.append(el("p", "q-broken", "Could not read these saved files: " + C.broken.join(", ")));
+  if (C.result) box.append(qaResult(C.result));
+  if ((C.lists || []).length) box.append(qaLists(C));
+}
+
+async function checklist_() {
+  try {
+    const res = await fetch("/api/checklist", { headers: HEADER, credentials: "same-origin" });
+    if (!res.ok) return;
+    const C = (await res.json()).checklist;
+    const R = C && C.result;
+    const key = C ? JSON.stringify([(C.lists || []).map(l => [l.name, l.checks, l.description]), C.broken, C.busy,
+                                    R ? [R.at, R.name, R.running, (R.rows || []).length] : null]) : "none";
+    if (key === qaShown) return;
+    qaShown = key;
+    renderChecklist(C);
+  } catch (e) { /* the state poll reports a closed page */ }
+}
+
 // ---------------------------------------------------------------- sprinkler
 // The Sprinkler panel (docs/46 section 7). Every number, question, offer and
 // colour on it was worked out by Heron's brain; the page only shows them,
@@ -3209,6 +3438,7 @@ async function poll() {
     loads_();
     sprinkler_();
     layout_();
+    checklist_();
   } catch (e) {
     failures += 1;
     if (failures >= 3) {
@@ -3252,7 +3482,7 @@ function theme() {
 // elements - nothing here asks Heron or Revit for anything.
 const WORKSPACES = [
   ["dashboard", "d-empty"], ["loads", "l-empty"], ["sprinkler", "k-empty"],
-  ["layout", "y-empty"], ["table", "t-empty"],
+  ["layout", "y-empty"], ["table", "t-empty"], ["qa", "q-empty"],
 ];
 let wsNow = "dashboard";
 const wsHad = {};

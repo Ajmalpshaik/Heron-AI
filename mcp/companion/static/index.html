@@ -50,6 +50,10 @@
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 4v16"/></svg>
       <span class="nav-text"><span class="nav-name">Element Table</span><span class="nav-hint">Edit parameters in a grid</span></span>
       <span class="nav-state" data-for="table">Empty</span></button></li>
+    <li><button type="button" class="nav-item" data-ws="qa" data-key="6" title="QA Checklist (Alt+6)">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8l1.5 1.5L12 7M8 13l1.5 1.5L12 12M14 8h2M14 13h2M8 17h8"/></svg>
+      <span class="nav-text"><span class="nav-name">QA Checklist</span><span class="nav-hint">Your checks, run in one go</span></span>
+      <span class="nav-state" data-for="qa">Empty</span></button></li>
   </ul>
 
   <div class="side-foot">
@@ -223,6 +227,27 @@
       </ol>
       <div class="ask"><span class="ask-label">Say in the chat</span><code class="ask-text">Give me the FCUs with their Mark and Comments in a table</code>
         <button type="button" class="btn-lite ask-copy" data-copy="Give me the FCUs with their Mark and Comments in a table">Copy</button></div>
+    </div>
+  </section>
+
+  <section class="ws" id="qa" aria-labelledby="h-qa">
+    <header class="card-head">
+      <h2 id="h-qa">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8l1.5 1.5L12 7M8 13l1.5 1.5L12 12M14 8h2M14 13h2M8 17h8"/></svg>
+        QA Checklist
+      </h2>
+      <p class="card-sub">Your own checks, saved from the chat and run on the model in one go · PASS means the model meets the value checked, never a verdict · a run only reads - nothing in the model changes</p>
+    </header>
+    <div id="q-box"></div>
+    <div id="q-empty" class="empty welcome">
+      <h3>Check the model against your own list, in one press</h3>
+      <ol class="how">
+        <li><b>Tell the chat what to check,</b> in your own words - one sentence a check.</li>
+        <li><b>Save it as a checklist.</b> Heron checks each one can run before it is kept.</li>
+        <li><b>Press Run here.</b> Each check reads the model once and says PASS, FAIL or NOT RUN, and why.</li>
+      </ol>
+      <div class="ask"><span class="ask-label">Say in the chat</span><code class="ask-text">Save Heron's starter QA checklist as Before issue</code>
+        <button type="button" class="btn-lite ask-copy" data-copy="Save Heron's starter QA checklist as Before issue">Copy</button></div>
     </div>
   </section>
 

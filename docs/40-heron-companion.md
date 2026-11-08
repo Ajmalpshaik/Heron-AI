@@ -1519,3 +1519,24 @@ and send nothing - only Apply reaches Revit; fill-down skips hidden rows; empty 
 card a room with its bindings kept; the one-line top bar). Driven in headless Chromium with sample data: a
 cell edited, *access* found - 5 of 14 rows, *Apply 1 change(s)*; three room cards with their plans; no page
 error. **Not seen** in Revit's browser or on the owner's PC.
+
+### 21.22 The QA Checklist workspace (2026-11-08)
+
+On the owner's word - *"QAQC Checklist. We need it ... We can add also in the companion app also"* - a sixth
+workspace, **QA Checklist**, beside the Model Dashboard. Designed and recorded in
+[docs/50](50-qa-checklists.md) ([D-152](decisions/D-152.md), proposed); what it adds to the page:
+
+- **What it shows:** the modeller's saved checklists, **Run**, and the last run's rows - the sentence, the
+  rule, the value read, PASS, FAIL or NOT RUN as a badge in the brand's Success, Error and Warning, and why.
+  CSV and Print / PDF as the dashboard makes them, from the rows Heron sent.
+- **Run is a read, pressed:** `ChecklistPanel.run` calls the server's `_checklist_run_page`, which reads the
+  model check by check through `revit_read`'s own body. **The lock every tool call holds is taken for each
+  check's read only**, so the pipe is never held longer than the dashboard's one read. One run at a time; a
+  second press is told so in words. Each row reaches the page as it is done.
+- **Select in Revit is §21.11's route**, unchanged: `ChecklistPanel.show` sends `_dashboard_show` the ids
+  the run found - the page names the row's number, never ids - and only for a row whose ids all arrived.
+- **Routes:** `GET /api/checklist`, `POST /api/checklist/run` and `/api/checklist/show`, each behind
+  `_api_ok` - the cookie, the header and, for a POST, the page's Origin.
+
+**Proved without Revit:** `tests/test_companion.py`'s QA Checklist group. **Not run in Revit** -
+[group MV](needs-checking/group-mv.md).
