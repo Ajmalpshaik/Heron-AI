@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -16,9 +16,8 @@ semantic-identity: "change the text that is already there rather than replacing 
 kind: action
 domain: revit.parameters
 capability: EDIT_TEXT_VALUES
-# VERSION 9, BACK TO DRAFT ON 2026-11-07 (FRAGMENT-ISSUES row 5b-1475), AND
-# THE PROOF BLOCK BELOW IS KEPT ON PURPOSE - it is version 8's record and the
-# arrangement to re-prove from; its fingerprint no longer matches. On the
+# VERSION 9, BACK TO DRAFT ON 2026-11-07 (FRAGMENT-ISSUES row 5b-1475), and
+# PROVEN AGAIN ON 2026-11-08 - the proof block below is version 9's. On the
 # owner's model 4355-BHVD-3D-60A10-BL007A (Revit 2020) version 8 renamed four
 # section views correctly and answered changed 0, unverified 4: the replace
 # left a leading space, Revit kept the name without it, and the read-back
@@ -334,43 +333,45 @@ contract:
 # back, and `nameNote` says how many lost a space. A parameter keeps its
 # spaces and is compared exactly.
 
-# VERSION 8's PROOF (signed 2026-11-02), KEPT AS THE RECORD. Version 9 changed
-# impl/, so its fingerprint no longer describes the code and the card is DRAFT
-# until version 9 is proved on a real model (D-30) - NEEDS-CHECKING Group MR
-# owes it.
+# VERSION 9's PROOF, signed by Ajmal PS 2026-11-08 (version 8's, signed
+# 2026-11-02 on Project2 in Revit 2024, is in git history). Run on a copy of the
+# rme_advanced sample in Revit 2020: section view "Section 18" renamed by field
+# Name and read back. NOT exercised: the edge-space trim itself (nameNote) - Group
+# MR4's case is still open. A viewport's "View Name" came back ambiguous 3 (two
+# parameters of that name) - rename the VIEWS, never their viewports.
 proof:
-  date: '2026-11-02'
+  date: '2026-11-08'
   by: Ajmal PS
-  model: Project2 (5,999 elements), Revit 2024, session 57392
-  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
-    filter-elements-by-category with this phase''s own values - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned absent 0 item(s),
-    ambiguous 0 item(s), askingText true, blank 0 item(s), changed 1 item(s) [1200655], collisions
-    0 item(s), defaultSpans 0 item(s), editingFamily false, editingName false, familyRename
-    (null), handed 1, how replace, namesOnHand Func`2, notMatched 0 item(s), notText 0, noteFormatting
-    note 1200655: 1 paragraph(s) before, 1 after; read back 1 no list; indent and text style
-    kept, noteText Func`2, pastEnd 0, readOnly 0 item(s), refused (null), spansOf Func`2,
-    stepKinds 0 item(s), stepSaid 0 item(s), stepSpans 0 item(s), transform Func`2, typeLanded
-    0 entry(ies), typeNotText HashSet`1, typesEdited 0 item(s), untouched 0 item(s), unverified
-    0 item(s). inputs came elements from filter-elements-by-category (1); field as given;
-    mode as given; text as given; replacement as given. on Project2'
-  negative_case: 'run with field=Text, mode=replace, replacement=OCT, text=ZZZNOTHINGHERE
-    arranged with category=Text Notes, inViewOnly=FloorPlan: L1 - Architectural instead -
-    chosen because it should not contain what this fragment reports - the arrangement was
-    re-made first by running filter-elements-by-category with this phase''s own values - run
-    inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
-    returned absent 0 item(s), ambiguous 0 item(s), askingText true, blank 0 item(s), changed
-    0 item(s), collisions 0 item(s), defaultSpans 0 item(s), editingFamily false, editingName
-    false, familyRename (null), handed 1, how replace, namesOnHand Func`2, notMatched 1 item(s)
-    [1200655], notText 0, noteFormatting (null), noteText Func`2, pastEnd 0, readOnly 0 item(s),
+  model: RenameProof-rme (21,446 elements), Revit 2020, session 2672
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    find-views with this phase's own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned absent 0 item(s), ambiguous 0 item(s),
+    asKept Func`2, askingText false, blank 0 item(s), changed 1 item(s) [581310], collisions
+    0 item(s), defaultSpans 0 item(s), editingFamily false, editingName true, familyRename
+    (null), handed 1, how replace, nameNote (null), namesOnHand Func`2, namesTrimmed 0, notMatched
+    0 item(s), notText 0, noteFormatting (null), noteText Func`2, pastEnd 0, readOnly 0 item(s),
     refused (null), spansOf Func`2, stepKinds 0 item(s), stepSaid 0 item(s), stepSpans 0 item(s),
     transform Func`2, typeLanded 0 entry(ies), typeNotText HashSet`1, typesEdited 0 item(s),
-    untouched 1 item(s) [1200655], unverified 0 item(s). inputs came elements from filter-elements-by-category
-    (1); field as given; mode as given; text as given; replacement as given. on Project2'
+    untouched 0 item(s), unverified 0 item(s). inputs came elements from find-views (1); field
+    as given; mode as given; text as given; replacement as given. on RenameProof-rme
+  negative_case: run against 'RenameProof-rme' with field=Name, mode=replace, nameContains=Section
+    18, placement=any, replacement=HVAC Air Duct Section, text=ZZZNOTHINGHERE, viewType=Section,
+    withoutTemplate=false instead - chosen because it should not contain what this fragment
+    reports - the arrangement was re-made first by running find-views with this phase's own
+    values - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned absent 0 item(s), ambiguous 0 item(s), asKept Func`2, askingText
+    false, blank 0 item(s), changed 0 item(s), collisions 0 item(s), defaultSpans 0 item(s),
+    editingFamily false, editingName true, familyRename (null), handed 1, how replace, nameNote
+    (null), namesOnHand Func`2, namesTrimmed 0, notMatched 1 item(s) [581310], notText 0,
+    noteFormatting (null), noteText Func`2, pastEnd 0, readOnly 0 item(s), refused (null),
+    spansOf Func`2, stepKinds 0 item(s), stepSaid 0 item(s), stepSpans 0 item(s), transform
+    Func`2, typeLanded 0 entry(ies), typeNotText HashSet`1, typesEdited 0 item(s), untouched
+    1 item(s) [581310], unverified 0 item(s). inputs came elements from find-views (1); field
+    as given; mode as given; text as given; replacement as given. on RenameProof-rme
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: e6e3a9772dc3c154
+  fingerprint: c5767df8839cc598
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
