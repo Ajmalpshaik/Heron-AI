@@ -40,31 +40,38 @@ DISCLAIMER = ("Prepared with Heron - a design aid from published methods. A peak
               "value.")
 MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 
+# THE BRAND'S COLOURS - D-149, docs/brand/README.md. Ink for words, a see-through
+# Ink for quieter words, lines and the striped rows; the orange line under the
+# heading as on the README's card; Mist behind the column heads. Error and
+# Warning are the left bar and a faint tint of a box, and its words stay Ink:
+# Error and Warning as the colour of small words on white are too faint to read.
 CSS = """
 @page { size: A4; margin: 14mm 12mm; }
-body { font-family: "Segoe UI", Arial, sans-serif; font-size: 9.5pt; line-height: 1.4; color: #1a2230;
-       max-width: 1100px; margin: 0 auto; padding: 18px 22px; }
-.sheet-head { border-bottom: 2px solid #1e4fb8; padding-bottom: 8pt; margin-bottom: 10pt; }
-.kind { font-size: 8pt; letter-spacing: .08em; text-transform: uppercase; color: #5a6778; }
-h1 { font-size: 18pt; margin: 2pt 0 1pt; color: #0f1a2a; }
-.sub { margin: 0 0 6pt; color: #4f5d6e; }
+body { font-family: "Manrope", "Segoe UI", Arial, sans-serif; font-size: 9.5pt; line-height: 1.4;
+       color: #0F0F10; max-width: 1100px; margin: 0 auto; padding: 18px 22px; }
+.sheet-head { border-bottom: 2px solid #FD641A; padding-bottom: 8pt; margin-bottom: 10pt; }
+.kind { font-size: 8pt; letter-spacing: .08em; text-transform: uppercase; color: rgba(15, 15, 16, .55); }
+h1 { font-size: 18pt; margin: 2pt 0 1pt; color: #0F0F10; }
+.sub { margin: 0 0 6pt; color: rgba(15, 15, 16, .72); }
 .meta { display: flex; flex-wrap: wrap; gap: 3pt 20pt; margin: 4pt 0 6pt; }
-.meta span { color: #6b7888; margin-right: 4pt; }
-h2 { font-size: 11.5pt; margin: 16pt 0 6pt; padding-bottom: 3pt; color: #0f1a2a;
-     border-bottom: 1px solid #c9d2dc; page-break-after: avoid; break-after: avoid; }
+.meta span { color: rgba(15, 15, 16, .55); margin-right: 4pt; }
+h2 { font-size: 11.5pt; margin: 16pt 0 6pt; padding-bottom: 3pt; color: #0F0F10;
+     border-bottom: 1px solid rgba(15, 15, 16, .14); page-break-after: avoid; break-after: avoid; }
 table { border-collapse: collapse; width: 100%; margin: 4pt 0 8pt; }
-th, td { border: 1px solid #d5dce4; padding: 3pt 5pt; text-align: left; vertical-align: top; }
-th { background: #eef2f6; color: #2b3a4d; font-weight: 600; }
-tr:nth-child(even) td { background: #f8fafc; }
+th, td { border: 1px solid rgba(15, 15, 16, .14); padding: 3pt 5pt; text-align: left; vertical-align: top; }
+th { background: #F7F5F2; color: #0F0F10; font-weight: 600; }
+tr:nth-child(even) td { background: rgba(15, 15, 16, .04); }
 td.n { text-align: right; font-variant-numeric: tabular-nums; }
 table.summary td:first-child { width: 42%; font-weight: 600; }
-tr { page-break-inside: avoid; } .fail { color: #b3261e; } .warn { color: #9a5b00; }
-.note { font-size: 8.5pt; color: #3c4a5c; }
+tr { page-break-inside: avoid; }
+.fail { color: #0F0F10; background: rgba(255, 90, 78, .14); }
+.warn { color: #0F0F10; background: rgba(245, 165, 36, .18); }
+.note { font-size: 8.5pt; color: rgba(15, 15, 16, .72); }
 .lead { margin: 2pt 0; font-weight: 600; }
-.disclaimer { border: 1px solid #c9d2dc; border-left: 4px solid #9a5b00; background: #fdf8ee;
-              padding: 6pt 8pt; margin: 6pt 0; }
-.disclaimer.fail { border-left-color: #b3261e; background: #fbe7e5; }
-h3 { font-size: 10pt; margin: 10pt 0 4pt; color: #0f1a2a; page-break-after: avoid;
+.disclaimer { border: 1px solid rgba(15, 15, 16, .14); border-left: 4px solid #F5A524;
+              background: rgba(245, 165, 36, .08); padding: 6pt 8pt; margin: 6pt 0; }
+.disclaimer.fail { border-left-color: #FF5A4E; background: rgba(255, 90, 78, .08); }
+h3 { font-size: 10pt; margin: 10pt 0 4pt; color: #0F0F10; page-break-after: avoid;
      break-after: avoid; }
 section.system { page-break-before: always; break-before: page; }
 @media print { body { padding: 0; max-width: none; } }
