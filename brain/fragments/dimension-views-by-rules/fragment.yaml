@@ -1,0 +1,332 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-177
+semantic-identity: "dimension every duct, pipe, cable tray and conduit run in several plans in one go, by a rule per category - the grid, wall, column or parallel run to string it from, one side or both, a search band - one string per run"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-08: the owner's ask, docs/48-studying-bimlogiq.md section 5 item 3 -
+# "Dimension template for MEP runs - categories, which faces, spacing, string
+# placement, per view" - and his own add-in's "Auto MEP Dimension" tool,
+# pointed at as the job wanted. Measured that day on a scratch store, Revit
+# 2024 filter off: "dimension template for MEP runs" and "dimension by
+# template rules" reached CREATE_DIMENSION or CREATE_LINEAR_DIMENSION, which
+# draw ONE string through what is handed to them in one view. Nothing in the
+# library dimensioned every run of a category, measured a run to the nearest
+# grid, wall or column, or worked over several views in a call.
+#
+# WHY A CARD OF ITS OWN, AND NOT CREATE_DIMENSION WIDENED - THE OWNER'S
+# DECISION OF 2026-11-08. CREATE_DIMENSION (FRG-VIEW-021, v5),
+# CREATE_LINEAR_DIMENSION (FRG-VIEW-101), DIMENSION_ELEMENT_FACES
+# (FRG-VIEW-135) and DIMENSION_ROOMS (FRG-VIEW-081) are PROVEN; any change
+# under one's impl/ makes its proof stale, the card goes back to DRAFT, and
+# D-117 then refuses it in revit_change. So the job is split across cards
+# knowingly, named in FRAGMENT-ISSUES row 5b-1478 with the merge planned once
+# this one is proved. None of those cards was edited, not even a routing row.
+#
+# RE-AUTHORED FROM HERON'S OWN CARDS - each lesson beside the code in
+# impl/any/fragment.cs:
+#   from CREATE_DIMENSION - a run's centreline is a reference only when the
+#     geometry is read with ComputeReferences AND IncludeNonVisibleObjects;
+#     the dimension is read back through its References, never Dimension.Curve,
+#     and one holding fewer than asked is taken out again; Revit's refusal is
+#     caught, never let out to abort the caller's transaction.
+#   from CREATE_LINEAR_DIMENSION - a grid is referenced as the whole element and
+#     only when the view shows it; a family instance's faces through
+#     GetSymbolGeometry with its transform, never GetInstanceGeometry; a wall's
+#     faces through HostObjectUtils.GetSideFaces.
+#   from TAG_VIEWS_BY_RULES (DRAFT) - the shape: rules on one line separated by
+#     semicolons, read in full before anything is drawn; views by name or the
+#     active one; "already done" read model-wide by the view that OWNS the
+#     annotation, its primary and the primary's dependents.
+#
+# LESSONS FROM THE OWNER'S AJ-TOOLS "AUTO MEP DIMENSION", STUDIED AND WRITTEN
+# HERE IN HERON'S OWN WORDS (D-25, docs/31) - NO CODE, NAME OR LAYOUT TAKEN:
+#   - what is dimensioned and what it is measured to are two lists: "other
+#     service" searches every run category, not only those with a rule; "same
+#     service" is a separate choice, because measuring a duct to the next duct
+#     is a different decision from measuring it to the pipework beside it;
+#   - a run's whole-element reference is not geometric: NewDimension throws on
+#     it, and in one string that one reference takes the good ones down too;
+#   - two references at one position make a zero-length segment Revit rejects,
+#     losing the whole string - a target on the run's own line is ignored;
+#   - a grid is an end only when it runs parallel to the run and reaches the
+#     run's station along it; one square to the run gives a meaningless number
+#     that wins as "nearest";
+#   - from Revit 2025 a linear dimension is a LinearDimension, which an
+#     exact-class collect misses - existing dimensions are collected by
+#     category;
+#   - "already dimensioned" is decided by a dimension's references, never by
+#     where its string sits;
+#   - a reference into a link carries the link instance as its element id;
+#   - the crop box is read only when the crop is on - off, Revit still returns
+#     a stale extent;
+#   - the dimension line is read for position and direction only; how far it
+#     runs past the last witness line belongs to the dimension type;
+#   - only a linear dimension type draws a linear string;
+#   - only the run a string was drawn FOR is marked done, never every run the
+#     string touches;
+#   - skip reasons are counted by reason, so the counts add up.
+# NOT TAKEN, ON PURPOSE: replacing a dimension drawn earlier by a longer one
+# (that tool marks its own dimensions in extensible storage and deletes them);
+# here nothing already in the model is moved, changed or deleted. A string
+# through every run between the target and this one, and the run's width as a
+# segment, are not in version 1.
+#
+# SAFER, ON PURPOSE:
+#   - A dimension type is NAMED or is the project's DEFAULT LINEAR type - never
+#     the first one loaded; a name that is not a linear type is refused, the
+#     loaded linear types listed.
+#   - One rule, or one call-wide value, that cannot be read stops the whole
+#     call before anything is drawn.
+#   - A string Revit makes holding fewer references than asked, or of another
+#     type and refusing to change, is taken out again and the run named; with
+#     separate segments, a run is all or nothing.
+#   - The same string - exactly the same elements - is never drawn twice in a
+#     view's family, whatever skipDimensioned says.
+#   - "Already dimensioned" is read from every dimension in the model OWNED by
+#     the view, its primary or the primary's dependents - never from what the
+#     view shows - so a dimension a template, Visibility/Graphics or a
+#     temporary hide turns off still counts. Believed from how Revit shares a
+#     dependent view's annotation, as TAG_VIEWS_BY_RULES believes it - not yet
+#     seen on a model (NEEDS-CHECKING Group MU).
+#   - With the crop on, the string sits on the stretch of the run inside it,
+#     and a target whose end of the string would fall outside the crop is
+#     passed over (counted in findings).
+#
+# HOW A STRING IS MADE. Per run: its direction on the paper, and the direction
+# square to it in the plan. The station is the middle of the run's stretch
+# inside the crop, moved `offsetMm` (paper millimetres, times the view scale)
+# along the run - off the middle, where TAG_VIEWS_BY_RULES puts a tag, though
+# not measured clear of it - and kept inside the stretch.
+# Targets: grids shown in the view, walls and columns shown in it, other runs
+# shown in it - each PARALLEL to the run (within about one degree), REACHING
+# the station along it, within the band square to it and more than 1 mm off
+# the run's line. For a wall or a column the face NEARER the run is taken; one
+# with faces on both sides of the run is passed over (the run is inside it).
+# `nearest` keeps the closest target on either side, `both` the closest on
+# each. `one` string holds the target(s) and the run's centreline; `separate`
+# makes one two-reference dimension per gap, end to end on one line.
+#
+# NOT DONE, AND SAID: targets inside LINKED models (a link reference has to be
+# rebuilt from Revit's undocumented stable representation before NewDimension
+# takes it - left out of version 1, and findings says so on every run);
+# sections and elevations; arcs and flex runs; a crop that is not a rectangle
+# (read as its rectangle); a sloped run is measured across its plan direction,
+# which no row has yet seen drawn.
+#
+# EVERY VALUE IS THE MODELLER'S (D-33):
+#   views            the plans, as the Project Browser names them, separated by
+#                    commas. Left out, the active view. Anything not a plan is
+#                    left out by name
+#   rules            separated by SEMICOLONS, all on one line:
+#                        run category | measure to | side | search band in mm
+#                    e.g. "Ducts | grids, walls | both | 1500; Pipes |
+#                    same-service". Measure to: grids, walls, columns,
+#                    same-service, other-service, by commas - required. Side:
+#                    nearest (left out; "one" says the same) or both. Band:
+#                    model mm from the centreline; left out, 3000, said in
+#                    rulesRead. A line break is refused (row 5b-1477: the chat
+#                    drops a second line)
+#   dimensionType    a linear dimension type by its Project Browser name. Left
+#                    out, the project's default linear dimension type
+#   offsetMm         paper millimetres along the run from the middle of the part
+#                    shown. Left out, 10
+#   minRunMm         the shortest run worth a dimension, model millimetres. Left
+#                    out, 0 - every run
+#   skipVertical     true (left out): a run steeper than about 78 degrees is
+#                    skipped. A run seen end-on is always skipped
+#   skipDimensioned  true (left out): a run any dimension in that view's family
+#                    already holds is left alone. false: dimensioned again,
+#                    but never with exactly the same string
+#   chain            one (left out) or separate
+#
+# RISK MODIFY. It adds dimensions, and deletes only a dimension it has just
+# made that read back wrong.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). The
+# executor makes the whole call one TransactionGroup, so every view in the
+# list is ONE undo.
+kind: action
+domain: revit.annotation
+capability: DIMENSION_VIEWS_BY_RULES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Draws new dimension strings on the duct, pipe, cable tray and conduit runs
+  of one plan or many in a single pass, following a rule per run category:
+  string each run from grids, walls, columns, or runs of the same or another
+  service, on the nearest side or both, inside a search band. One string per
+  run, square to it, ending on its centreline, on the part of the run the plan
+  shows. A run that already carries a dimension is left alone, and every plan
+  is one undo. Says per plan what it drew and why each run was left.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The plans, by their Project Browser names, separated by commas. Left out
+    # - an empty list - the active view.
+    - name: views
+      type: IList<View>
+      source: request
+      optional: true
+    # The rules, separated by semicolons on ONE line - a line break is refused:
+    # run category | measure to | side | search band in mm.
+    - name: rules
+      type: string
+      source: request
+    # A linear dimension type by name. Left out, the project's default linear
+    # dimension type - never the first one loaded.
+    - name: dimensionType
+      type: string
+      source: request
+      optional: true
+      absent: ""
+    # Paper millimetres along the run from the middle of the part the plan
+    # shows, times the view scale. Left out, 10.
+    - name: offsetMm
+      type: double
+      source: request
+      optional: true
+      absent: 10
+    # The shortest run worth a dimension, MODEL millimetres. Left out, 0.
+    - name: minRunMm
+      type: double
+      source: request
+      optional: true
+      absent: 0
+    # Skip runs steeper than about 78 degrees. Left out, true. A run seen
+    # end-on is skipped either way.
+    - name: skipVertical
+      type: bool
+      source: request
+      optional: true
+      absent: "true"
+    # Leave a run any dimension in that view's family already holds. Left out,
+    # true.
+    - name: skipDimensioned
+      type: bool
+      source: request
+      optional: true
+      absent: "true"
+    # one - one string through every reference; separate - a dimension per gap.
+    # Left out, one.
+    - name: chain
+      type: string
+      source: request
+      optional: true
+      absent: one
+  provides:
+    - name: dimensioned
+      # RUNS dimensioned, every plan together - not dimensions: with `both` and
+      # `separate` one run has two.
+      role: result
+      type: int
+    - name: newDimensions
+      # Every dimension this drew and kept, each read back holding every
+      # reference asked for, of the type used.
+      role: result
+      type: IList<ElementId>
+    - name: skipped
+      # Runs left without a new dimension, one id per plan they were left in.
+      # What it passed over, never a dimension it made (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: skippedWhy
+      # One line per reason with a count, adding up to `skipped` - "4 x Ducts:
+      # vertical - seen end-on ...", "2 x Ducts: no grid within 1500 mm ..."
+      # (D-52).
+      role: accounting
+      type: IList<string>
+    - name: perView
+      # One line per plan: runs dimensioned, dimensions drawn, and each reason
+      # a run was left with its count - or why the view was left out (D-52).
+      role: accounting
+      type: IList<string>
+    - name: rulesRead
+      # First line: how many rules were read, of how many separated by
+      # semicolons, and their categories. Then each rule as it was understood -
+      # targets, side, band and whether the band was the default (D-52).
+      role: accounting
+      type: IList<string>
+    - name: dimensionTypeUsed
+      # The dimension type, and whether it was named or the project's default
+      # (D-52).
+      role: accounting
+      type: string
+    - name: refused
+      # Why nothing was drawn at all, in plain words - every rule or value that
+      # could not be read, or no plan to draw in. Empty when it ran (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release, no #if. The members it calls, read
+  with tools/api-surface --members on 2026-11-08 and present with these
+  signatures 2020 through 2027: ItemFactoryBase.NewDimension(View, Line,
+  ReferenceArray, DimensionType), DimensionType.StyleType with
+  DimensionStyleType Linear and LinearFixed,
+  Document.GetDefaultElementTypeId(ElementTypeGroup) with
+  ElementTypeGroup.LinearDimensionType, Dimension.References,
+  Reference.LinkedElementId, HostObjectUtils.GetSideFaces(HostObject,
+  ShellLayerType), Element.GetGeometryObjectFromReference,
+  PlanarFace.FaceNormal, GeometryInstance.GetSymbolGeometry,
+  DatumPlane.GetCurvesInView(DatumExtentType, View), Grid.Curve,
+  View.GetDependentViewIds, View.ViewDirection and Element.OwnerViewId. The
+  rest - Options.ComputeReferences and IncludeNonVisibleObjects,
+  View.GetPrimaryViewId, CropBoxActive, CropBox, Scale, GetCategoryHidden,
+  Element.ChangeTypeId, the Reference(Element) constructor - are read off
+  CREATE_DIMENSION, CREATE_LINEAR_DIMENSION and TAG_VIEWS_BY_RULES'
+  compatibility notes. LinearDimension (a Dimension subclass) is in 2025 to
+  2027 only, which is why dimensions are collected by category
+  (OST_Dimensions) and read as Dimension - never by exact class. Categories are
+  matched by comparing ElementIds, never by reading one as a number.
+  Millimetres become feet by dividing by 304.8 (D-20), a paper length then
+  times the view scale.
+
+# ROUTING (2026-11-08) - which card wins which sentence until the merge in row
+# 5b-1478. The PROVEN cards are not edited (the owner's instruction), so these
+# rows are written here and in that row.
+#
+#   "dimension template for MEP runs"            -> here
+#   "dimension by template rules"                -> here
+#   "dimension these ducts" / "dimension the     -> CREATE_DIMENSION - one
+#    duct spacing" / "dimension between the        string through what is
+#    pipes"                                         handed in, one view
+#   "dimension the grids" / "dimension between   -> CREATE_LINEAR_DIMENSION
+#    grid A and grid B"
+#   "dimension the layers of this wall"          -> DIMENSION_ELEMENT_FACES
+#   "dimension the rooms"                        -> DIMENSION_ROOMS
+#   "what dimension types are in this project"   -> REPORT_DIMENSION_TYPES - a read
+#   "which dimensions are less than 500 in this  -> SELECT_DIMENSIONS_BY_VALUE -
+#    view"                                          a read
+#   "how far apart are they"                     -> MEASURE_DISTANCE - a read,
+#                                                   which must never be answered
+#                                                   by drawing
+#   "measure the runs"                           -> MEASURE_RUN_QUANTITIES - a
+#                                                   read
+#   "what runs through this wall"                -> FIND_CLASHES - a read
+# The last two were taken by this card's first wordings ("what each run is
+# measured to", "through its centreline") on check-routing's keyword route,
+# and two paraphrased questions - "which runs are dimensioned to the grids",
+# "how far are the ducts from the walls in these plans" - through the host's
+# lookup. The words were changed, measured, and none reaches it now - row
+# 5b-1478. Questions about which runs ARE dimensioned have no read card yet;
+# they are not this card's, and none was claimed for it.
+utterances:
+  # The owner's own words, docs/48-studying-bimlogiq.md section 5 item 3 and
+  # its feature table, section 2 ("Dimension by template rules").
+  - dimension template for MEP runs
+  - dimension by template rules

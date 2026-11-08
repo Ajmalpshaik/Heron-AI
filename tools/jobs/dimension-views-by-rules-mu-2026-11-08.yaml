@@ -1,0 +1,48 @@
+# NEEDS-CHECKING Group MU - DIMENSION_VIEWS_BY_RULES, built 2026-11-08 in a
+# cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/dimension-views-by-rules-mu-2026-11-08.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/dimension-views-by-rules-mu-2026-11-08.yaml
+#
+# THE MODEL is a SAVED scratch copy of Revit's "Snowdon Towers Sample HVAC",
+# Revit 2024 - never a working model. "FloorPlan: M1" holds 22 ducts (the small
+# view of the fragment-proving skill's rule 1) and, for MU1 to record, no
+# dimensions on them. If it carries duct dimensions already, MU1 removes them
+# in the copy and saves - the positive must have something to draw.
+#
+# THE RULE USES SAME-SERVICE RUNS ON PURPOSE: it needs nothing drawn. In the
+# sample the architecture is a LINKED model, and this version reads no link,
+# so a rule to walls may find none of the HVAC model's own (MU1 records it).
+#
+# NO SETUP CHAIN. This card collects what its rules name in each plan itself;
+# nothing is selected and nothing is handed on.
+#
+# THE NEGATIVE IS A VALUE, NOT A SELECTION (fragment-proving rules 3 and 5): the
+# same plan, the same category and the same target, with a search band of 1 mm
+# - no parallel duct is that close - so every duct must be left alone, in
+# skipped, and nothing drawn. A card that dimensioned whatever it found draws
+# here. Every run is ROLLED BACK.
+
+model: saved scratch copy of Snowdon Towers Sample HVAC (MU1), Revit 2024
+
+defaults:
+  write: true
+
+jobs:
+  - fragment: dimension-views-by-rules
+    expect: newDimensions
+    set:
+      views: "FloorPlan: M1"
+      rules: "Ducts | same-service | nearest | 3000"
+    negative-set:
+      views: "FloorPlan: M1"
+      rules: "Ducts | same-service | nearest | 1"
+    note: >
+      MU2. Negative - THE FIRST CASE TO RUN: dimensioned 0, newDimensions
+      empty, every duct of M1 in skipped ("no same-service run within 1 mm",
+      or vertical), skippedWhy adding up to skipped. Positive: dimensioned
+      above 0, newDimensions each holding two references, dimensionTypeUsed
+      the project's default linear type, perView one line for M1, refused
+      empty. Then look at the plan: each string square to its duct, from
+      centreline to centreline, 10 paper mm along it from the middle of the
+      part shown; a pair of parallel ducts gets one string, not two.
