@@ -4,12 +4,13 @@
 // `rulesRead`, `dimensionTypeUsed`, `refused` and `findings` behind.
 //
 // DIMENSION_VIEWS_BY_RULES, version 1 (2026-11-08). One pass over one plan or
-// many: a RULE PER RUN CATEGORY says what each run is measured TO - grids,
+// many: a RULE PER RUN CATEGORY says what each run is dimensioned to - grids,
 // walls, columns, runs of the same service, runs of another service - on which
-// side, and within what search band. Every straight run of those categories
-// the plan shows gets ONE string across it, from the target(s) to the run's
-// centreline, set along the part of the run the plan shows. Every run left
-// without one is named with the reason.
+// side, and how far across the run to reach. Every straight run of those
+// categories the plan shows gets ONE string square to it, from the target(s)
+// to the run's centreline, placed where run and target lie side by side on
+// the part of the run the plan shows. Every run left without one is named,
+// with the reason.
 //
 // RE-AUTHORED FROM HERON'S OWN CARDS, WHICH THIS DOES NOT CHANGE.
 // CREATE_DIMENSION (FRG-VIEW-021, PROVEN) taught the fact the whole job turns
@@ -33,42 +34,52 @@
 // included, never from what the view shows; the crop read as its rectangle
 // and only when it is on.
 //
-// LESSONS STUDIED IN THE OWNER'S OWN ADD-IN (AJ-Tools, "Auto MEP Dimension"),
-// written here in Heron's words - nothing of its code, names or layout:
-//   - "Other services" means runs of ANOTHER service than the one measured,
-//     and every service category is searched for them, not only the ones that
-//     have a rule: what is dimensioned and what it is measured to are two
-//     different lists. "Same service" is its own choice.
-//   - A pipe's or duct's whole-element Reference is NOT a geometric reference:
-//     NewDimension throws on it, and in one string that one bad reference
-//     takes every good one down with it. It is never used here for a run.
-//   - Two references at one position make a zero-length segment, which Revit
-//     rejects - again taking the whole string. A target on the run's own line
-//     is ignored.
-//   - A grid is a usable end only when it runs PARALLEL to the run, and only
-//     when it reaches the run's station along it - a grid square to the run
-//     projects to a meaningless number that would win as "nearest".
-//   - Linear dimensions are collected by CATEGORY: from Revit 2025 a linear
-//     dimension is a LinearDimension, a subclass an exact-class collect misses.
-//   - Whether a run is already dimensioned is a question about a dimension's
-//     REFERENCES, never about where its string was drawn.
-//   - A reference into a link carries the LINK INSTANCE as its ElementId; it
-//     is never read as a host element of the same number.
-//   - The crop box is read only when the crop is ON - off, Revit still hands
-//     back an extent, and a stale one.
-//   - The dimension line is read by Revit for position and direction only;
-//     how far it runs past the last witness line is the dimension type's.
-//   - Only a linear dimension type can draw a linear dimension.
-//   - The run a string was drawn FOR is the one marked done - never every run
-//     its string happens to touch, which retired runs nobody had dimensioned.
-//   - Skip reasons are counted by reason, so the counts add up to the total.
+// WHAT THE OWNER'S OWN ADD-IN TAUGHT (his AJ-Tools, studied for lessons only:
+// D-25 - none of its code, names, wording or layout is here):
+//   - The categories a rule DIMENSIONS and the runs it may dimension TO are
+//     separate questions. A run of another service is looked for in every run
+//     category, whether or not that category has a rule; a run of the rule's
+//     own service is a target only when the rule says same-service.
+//   - Never hand NewDimension a run as a whole element. Revit rejects that as
+//     not geometric, and the rejection loses every other reference in the
+//     same string too.
+//   - Two references at one spot across the run would make a segment of no
+//     length, which Revit will not draw - so a target lying on the run's own
+//     line is never used.
+//   - A target must run alongside the run and share some of its length. A grid
+//     crossing the run square-on has no single distance from it and would look
+//     like the closest thing; it is never used.
+//   - Existing dimensions are found by their category, not their class: from
+//     Revit 2025 the API hands back a linear one as LinearDimension, which a
+//     search for the Dimension class alone does not return.
+//   - What an existing dimension measures is read from the elements it refers
+//     to, never from where its line happens to sit on the drawing.
+//   - A reference pointing into a linked model names the link instance, not
+//     the element inside it; such a reference is never taken for one of this
+//     model's elements.
+//   - The crop rectangle is believed only while the crop is switched on.
+//   - Where the dimension line is drawn only fixes its position and direction;
+//     the extension past the last witness line is set by the dimension type.
+//   - Linear strings take linear dimension types and nothing else.
+//   - Reasons for leaving a run are tallied per reason, and the tallies sum to
+//     the number left.
+//
+// ALREADY DIMENSIONED - THE OWNER'S RULE (2026-11-08). A run counts as
+// already dimensioned in a view only when a dimension owned by that view's
+// family holds the run TOGETHER WITH a reference of a kind its rule names - a
+// grid, a wall, a column, a run of its own service or of another. A run that
+// is held only as some other run's target, of a kind its own rule does not
+// name, is dimensioned in its own right.
 //
 // WHAT IS SAFER HERE, ON PURPOSE. No dimension type is ever the first one
 // loaded: one is named, or the project's default linear type is used, or the
-// call is refused before anything is drawn. A string Revit makes holding
-// fewer references than asked, or of another type than asked and refusing to
-// change, is taken out again and the run named - never a half string left.
-// A run with separate segments is all or nothing. No dimension already in the
+// call is refused before anything is drawn. Every string is regenerated as
+// soon as it is made and read again: one Revit has removed, one holding fewer
+// references than asked, or one of another type that will not change, is
+// taken out at once and its run named - so a bad string is removed before the
+// call ends rather than left to fail the whole call when it is committed (the
+// executor rolls the whole call back on any error Revit posts then). A run
+// with chain separate is all or nothing. No dimension already in the
 // model is moved, changed or deleted - not even one this card drew earlier.
 //
 // NOT DONE, AND SAID: targets inside a LINKED model (a link reference has to
@@ -80,10 +91,13 @@
 // read as its rectangle.
 //
 // ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). The
-// executor makes the whole call one TransactionGroup, so every view in the
-// list is ONE undo.
+// executor makes the whole call one TransactionGroup, so the whole call -
+// every view in the list - is ONE undo. doc.Regenerate() is called inside the
+// open transaction after each string; it needs no transaction of its own.
 
 const double MmToFeet = 1.0 / 304.8;
+const double Tolerance = 1.0 / 304.8;   // 1 mm: closer than this is one position
+const double ParallelCos = 0.9998;     // about one degree
 
 int dimensioned = 0;
 var newDimensions = new List<ElementId>();
@@ -179,25 +193,26 @@ Func<string, double> readMm = text =>
 // ---- 1. THE RULES, read in full before anything is drawn --------------------
 //
 // Separated by SEMICOLONS, and by nothing else - each
-//     run category | what to measure to | side | search band in mm
+//     run category | dimension to | side | reach in mm
 // e.g. "Ducts | grids, walls | both | 1500; Pipes | same-service | nearest".
 // A LINE BREAK IS NOT A SEPARATOR, ON PURPOSE: revit_change hands a value over
 // line by line and drops a line with no "=" in it, so a rule on a second line
 // never arrives (TAG_VIEWS_BY_RULES, row 5b-1477). Text still holding a line
 // break is refused rather than split, and `rulesRead` opens with the count.
 //
-// What to measure to: grids, walls, columns, same-service (runs of the rule's
-// own category), other-service (runs of every OTHER run category), separated
-// by commas. Required - there is no natural default.
+// Dimension to: grids, walls, columns, same-service (runs of the rule's own
+// category), other-service (runs of every OTHER run category), separated by
+// commas. Required - there is no natural default.
 // Side: nearest (left out; "one" says the same) - the single closest target,
 // on whichever side it is; or both - the closest on each side.
-// Search band: MODEL millimetres from the run's centreline, square to it.
-// Left out, 3000 - a number this card chose, and rulesRead says it was used.
-const double DefaultBandMm = 3000;
+// Reach: MODEL millimetres ACROSS the run, from its centreline - how far a
+// target may be. Left out, 3000 - a number this card chose, and rulesRead
+// says it was used.
+const double DefaultReachMm = 3000;
 var ruleCategory = new List<Category>();
 var ruleTargets = new List<HashSet<string>>();
 var ruleBoth = new List<bool>();
-var ruleBandFeet = new List<double>();
+var ruleReachFeet = new List<double>();
 var ruleProblems = new List<string>();
 
 var ruleText = rules ?? "";
@@ -212,14 +227,14 @@ foreach (var raw in (brokenLines ? new string[0] : ruleText.Split(new[] { ';' },
     var parts = line.Split('|');
     if (parts.Length > 4)
     {
-        ruleProblems.Add(said + " has " + parts.Length + " parts - a rule is at most four: run category | what to "
-            + "measure to | side | search band in mm");
+        ruleProblems.Add(said + " has " + parts.Length + " parts - a rule is at most four: run category | dimension "
+            + "to | side | reach in mm");
         continue;
     }
     var categoryText = parts[0].Trim();
     var targetText = parts.Length > 1 ? parts[1].Trim() : "";
     var sideText = parts.Length > 2 ? parts[2].Trim().ToLowerInvariant() : "";
-    var bandText = parts.Length > 3 ? parts[3].Trim() : "";
+    var reachText = parts.Length > 3 ? parts[3].Trim() : "";
 
     var category = categoryNamed(categoryText);
     if (category == null)
@@ -263,21 +278,21 @@ foreach (var raw in (brokenLines ? new string[0] : ruleText.Split(new[] { ';' },
     }
     if (badTarget != null)
     {
-        ruleProblems.Add(said + ": \"" + badTarget + "\" is not something this measures to - say grids, walls, "
+        ruleProblems.Add(said + ": \"" + badTarget + "\" is not something this dimensions to - say grids, walls, "
             + "columns, same-service or other-service, separated by commas. Linked models are not read in this "
             + "version");
         continue;
     }
     if (targets.Count == 0)
     {
-        ruleProblems.Add(said + ": say what " + category.Name + " are measured to - grids, walls, columns, "
+        ruleProblems.Add(said + ": say what " + category.Name + " are dimensioned to - grids, walls, columns, "
             + "same-service or other-service - e.g. \"" + category.Name + " | grids, walls\"");
         continue;
     }
 
     bool both;
-    if (sideText.Length == 0 || sideText == "nearest" || sideText == "one" || sideText == "one side") both = false;
-    else if (sideText == "both" || sideText == "both sides") both = true;
+    if (sideText.Length == 0 || sideText == "nearest" || sideText == "one") both = false;
+    else if (sideText == "both") both = true;
     else
     {
         ruleProblems.Add(said + ": \"" + sideText + "\" is not a side - say nearest (the closest target, on "
@@ -285,14 +300,14 @@ foreach (var raw in (brokenLines ? new string[0] : ruleText.Split(new[] { ';' },
         continue;
     }
 
-    double bandMm = DefaultBandMm;
-    if (bandText.Length > 0)
+    double reachMm = DefaultReachMm;
+    if (reachText.Length > 0)
     {
-        bandMm = readMm(bandText);
-        if (double.IsNaN(bandMm) || bandMm <= 0)
+        reachMm = readMm(reachText);
+        if (double.IsNaN(reachMm) || reachMm <= 0)
         {
-            ruleProblems.Add(said + ": \"" + bandText + "\" is not a search band - a length in model millimetres "
-                + "from the run's centreline, above 0, e.g. 1500");
+            ruleProblems.Add(said + ": \"" + reachText + "\" is not a reach - how far across the run a target may "
+                + "be, in model millimetres from its centreline, above 0, e.g. 1500");
             continue;
         }
     }
@@ -307,10 +322,10 @@ foreach (var raw in (brokenLines ? new string[0] : ruleText.Split(new[] { ';' },
     ruleCategory.Add(category);
     ruleTargets.Add(targets);
     ruleBoth.Add(both);
-    ruleBandFeet.Add(bandMm * MmToFeet);
-    rulesRead.Add(ruleCategory.Count + ". " + category.Name + " measured to " + string.Join(", ", targetWords.ToArray())
+    ruleReachFeet.Add(reachMm * MmToFeet);
+    rulesRead.Add(ruleCategory.Count + ". " + category.Name + " dimensioned to " + string.Join(", ", targetWords.ToArray())
         + "; " + (both ? "both sides - the closest target on each" : "nearest - the closest target on either side")
-        + "; search band " + bandMm + " mm" + (bandText.Length == 0 ? " (not given - this card's 3000)" : ""));
+        + "; reach " + reachMm + " mm across the run" + (reachText.Length == 0 ? " (not given - this card's 3000)" : ""));
 }
 
 // ---- THE CALL-WIDE VALUES -----------------------------------------------------
@@ -318,13 +333,13 @@ var callProblems = new List<string>();
 
 var chainWord = (chain ?? "").Trim().ToLowerInvariant();
 bool separate;
-if (chainWord.Length == 0 || chainWord == "one" || chainWord == "one string" || chainWord == "single") separate = false;
-else if (chainWord == "separate" || chainWord == "segments" || chainWord == "separate segments") separate = true;
+if (chainWord.Length == 0 || chainWord == "one") separate = false;
+else if (chainWord == "separate") separate = true;
 else
 {
     separate = false;
-    callProblems.Add("chain \"" + chain + "\" is not a chain style - say one (one string through every reference) "
-        + "or separate (a dimension per gap)");
+    callProblems.Add("chain \"" + chain + "\" is not a chain style - say one (the target(s) and the run in a "
+        + "single string) or separate (each target its own dimension to the run)");
 }
 if (offsetMm < 0 || double.IsNaN(offsetMm))
     callProblems.Add("offsetMm " + offsetMm + " is not an offset - paper millimetres along the run from the middle "
@@ -387,9 +402,9 @@ if (brokenLines)
             + "one can be lost on the way to Revit. Put every rule on ONE line, separated by semicolons: "
             + "\"Ducts | grids, walls | both | 1500; Pipes | same-service\".";
 else if (ruleNumber == 0)
-    refused = "No rules were given. Separate them with semicolons, each \"run category | what to measure to | side "
-            + "| search band in mm\" - e.g. \"Ducts | grids, walls | both | 1500\". What to measure to is grids, walls, "
-            + "columns, same-service or other-service; side is nearest (left out) or both.";
+    refused = "No rules were given. Separate them with semicolons, each \"run category | dimension to | side | "
+            + "reach in mm\" - e.g. \"Ducts | grids, walls | both | 1500\". Dimension to is grids, walls, columns, "
+            + "same-service or other-service; side is nearest (left out) or both.";
 else if (ruleProblems.Count > 0)
     refused = ruleProblems.Count + " of the " + ruleNumber + " rule(s) could not be read: "
             + string.Join("; ", ruleProblems.ToArray()) + ".";
@@ -465,19 +480,65 @@ if (refused.Length > 0) refused += " Nothing was drawn.";
 
 // ---- helpers shared by every view -------------------------------------------
 
-// Two directions are parallel when their unit vectors agree within about one
-// degree, either way round.
-Func<XYZ, XYZ, bool> parallel = (a, b) =>
+// WHAT KIND OF TARGET AN ELEMENT IS, for the "already dimensioned" rule:
+// grid, wall, column, or run (with its category) - or nothing this reads.
+var kindCache = new Dictionary<ElementId, string>();
+var runCategoryOf = new Dictionary<ElementId, ElementId>();
+Func<ElementId, string> kindOf = id =>
 {
-    if (a == null || b == null || a.GetLength() < 1e-9 || b.GetLength() < 1e-9) return false;
-    return Math.Abs(a.Normalize().DotProduct(b.Normalize())) > 0.9998;
+    string kind;
+    if (kindCache.TryGetValue(id, out kind)) return kind;
+    kind = "";
+    Element found = null;
+    try { found = doc.GetElement(id); } catch { found = null; }
+    if (found is Grid) kind = "grid";
+    else if (found is Wall) kind = "wall";
+    else if (found != null && found.Category != null)
+    {
+        if (columnIds.Contains(found.Category.Id)) kind = "column";
+        else if (runCategoryIds.Contains(found.Category.Id)) { kind = "run"; runCategoryOf[id] = found.Category.Id; }
+    }
+    kindCache[id] = kind;
+    return kind;
+};
+// Does `partner` count, for a run of `category` under these targets?
+Func<ElementId, HashSet<string>, ElementId, bool> namedByRule = (partner, targets, category) =>
+{
+    var kind = kindOf(partner);
+    if (kind == "grid") return targets.Contains("grid");
+    if (kind == "wall") return targets.Contains("wall");
+    if (kind == "column") return targets.Contains("column");
+    if (kind == "run")
+    {
+        var partnerCategory = runCategoryOf[partner];
+        return partnerCategory == category ? targets.Contains("same") : targets.Contains("other");
+    }
+    return false;
 };
 
-int targetsOffCrop = 0;
+// Points along every edge of a face, each edge on its own so one edge Revit
+// cannot tessellate loses only itself.
+Func<Face, Transform, List<XYZ>> edgePoints = (face, placed) =>
+{
+    var points = new List<XYZ>();
+    EdgeArrayArray loops = null;
+    try { loops = face.EdgeLoops; } catch { loops = null; }
+    if (loops == null) return points;
+    foreach (EdgeArray loop in loops)
+        foreach (Edge edge in loop)
+        {
+            try { foreach (var p in edge.Tessellate()) points.Add(placed.OfPoint(p)); } catch { }
+        }
+    return points;
+};
+
+int offCropPairs = 0;
 int oneSideOnly = 0;
+int sidesApart = 0;
 int offsetsShortened = 0;
 int typeCorrections = 0;
-int heldInLinks = 0;
+int removedOnRegenerate = 0;
+var linkedDimensions = new HashSet<ElementId>();
 var hiddenIn = new List<string>();
 
 // ---- 3. EVERY VIEW -----------------------------------------------------------
@@ -508,17 +569,51 @@ foreach (var view in (refused.Length == 0 ? working : new List<View>()))
         return local.X >= crop.Min.X - 1e-6 && local.X <= crop.Max.X + 1e-6
             && local.Y >= crop.Min.Y - 1e-6 && local.Y <= crop.Max.Y + 1e-6;
     };
+    // THE PART OF A LINE INSIDE THE CROP, exactly: the line clipped against the
+    // crop rectangle in the crop's own coordinates, as the two parameters (0
+    // to 1 along the line) where it enters and leaves. Null when no part is
+    // inside. No crop: the whole line.
+    Func<Line, double[]> clipped = line =>
+    {
+        if (crop == null || toCrop == null) return new[] { 0.0, 1.0 };
+        var a = toCrop.OfPoint(line.GetEndPoint(0));
+        var b = toCrop.OfPoint(line.GetEndPoint(1));
+        double t0 = 0, t1 = 1;
+        double dx = b.X - a.X, dy = b.Y - a.Y;
+        var edges = new[]
+        {
+            new[] { -dx, a.X - crop.Min.X }, new[] { dx, crop.Max.X - a.X },
+            new[] { -dy, a.Y - crop.Min.Y }, new[] { dy, crop.Max.Y - a.Y },
+        };
+        foreach (var e in edges)
+        {
+            double p = e[0], q = e[1] + 1e-6;
+            if (Math.Abs(p) < 1e-12) { if (q < 0) return null; continue; }
+            double t = q / p;
+            if (p < 0) { if (t > t1) return null; if (t > t0) t0 = t; }
+            else { if (t < t0) return null; if (t < t1) t1 = t; }
+        }
+        return t1 > t0 ? new[] { t0, t1 } : null;
+    };
 
     // THE DIMENSIONS ALREADY HERE, read from the WHOLE MODEL by the view that
     // OWNS them - this one, its primary, the primary's dependents - so one a
     // template, Visibility/Graphics or a temporary hide turns off still
-    // counts. Collected by CATEGORY: from Revit 2025 a linear dimension is a
-    // LinearDimension, which an exact-class collect would miss. What each
-    // holds is read from its REFERENCES; a reference into a link carries the
-    // link instance as its ElementId and is left out, never read as a host id.
+    // counts. Found by category (see the lesson above), read as Dimension. A
+    // reference into a link is left out and the dimension counted once.
     var owners = sharing(view);
-    var heldRuns = new HashSet<ElementId>();
     var heldSets = new List<HashSet<ElementId>>();
+    var setsHolding = new Dictionary<ElementId, List<HashSet<ElementId>>>();
+    Action<HashSet<ElementId>> remember = set =>
+    {
+        heldSets.Add(set);
+        foreach (var id in set)
+        {
+            List<HashSet<ElementId>> list;
+            if (!setsHolding.TryGetValue(id, out list)) { list = new List<HashSet<ElementId>>(); setsHolding[id] = list; }
+            list.Add(set);
+        }
+    };
     foreach (var existing in new FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Dimensions)
                                  .WhereElementIsNotElementType())
     {
@@ -533,22 +628,26 @@ foreach (var view in (refused.Length == 0 ? working : new List<View>()))
             foreach (Reference r in held)
             {
                 if (r == null) continue;
-                if (r.LinkedElementId != null && r.LinkedElementId != ElementId.InvalidElementId) { heldInLinks++; continue; }
+                if (r.LinkedElementId != null && r.LinkedElementId != ElementId.InvalidElementId)
+                {
+                    linkedDimensions.Add(existing.Id);
+                    continue;
+                }
                 set.Add(r.ElementId);
             }
         }
         catch { continue; }
-        foreach (var id in set) heldRuns.Add(id);
-        heldSets.Add(set);
+        remember(set);
     }
 
     // THE TARGETS, gathered once per view - never once per run - and only what
     // the view SHOWS: Revit throws on a reference to something the view does
-    // not show, and the throw takes the whole string.
-    List<KeyValuePair<Grid, Line>> grids = null;
-    List<Tuple<Element, Line, List<Tuple<Reference, XYZ, XYZ>>>> walls = null;
-    List<Tuple<Element, double[], List<Tuple<Reference, XYZ, XYZ>>>> columns = null;
-    List<KeyValuePair<Element, Line>> runsShown = null;
+    // not show, and the throw takes the whole string. Each is a plane square
+    // to the paper: {kind, element id, normal, a point on it, points marking
+    // its extent, its reference}. A run's reference is read only when needed.
+    var planes = new List<Tuple<string, ElementId, XYZ, XYZ, List<XYZ>, Reference>>();
+    var runsShown = new List<KeyValuePair<Element, Line>>();
+    bool gridsRead = false, wallsRead = false, columnsRead = false, runsRead = false;
     var centrelines = new Dictionary<ElementId, Line>();
 
     var runOptions = new Options();
@@ -578,9 +677,9 @@ foreach (var view in (refused.Length == 0 ? working : new List<View>()))
         return found;
     };
 
-    Action gatherGrids = () =>
+    Action readGrids = () =>
     {
-        grids = new List<KeyValuePair<Grid, Line>>();
+        gridsRead = true;
         foreach (var grid in new FilteredElementCollector(doc, view.Id).OfClass(typeof(Grid)).Cast<Grid>())
         {
             Line drawn = null;
@@ -591,19 +690,18 @@ foreach (var view in (refused.Length == 0 ? working : new List<View>()))
             }
             catch { drawn = null; }
             if (drawn == null) drawn = grid.Curve as Line;
-            if (drawn != null) grids.Add(new KeyValuePair<Grid, Line>(grid, drawn));
+            if (drawn == null) continue;
+            var normal = viewDir.CrossProduct(drawn.Direction);
+            if (normal.GetLength() < 1e-9) continue;
+            planes.Add(Tuple.Create("grid", grid.Id, normal.Normalize(), drawn.GetEndPoint(0),
+                                    new List<XYZ> { drawn.GetEndPoint(0), drawn.GetEndPoint(1) }, new Reference(grid)));
         }
     };
 
-    Action gatherWalls = () =>
+    Action readWalls = () =>
     {
-        walls = new List<Tuple<Element, Line, List<Tuple<Reference, XYZ, XYZ>>>>();
+        wallsRead = true;
         foreach (var wall in new FilteredElementCollector(doc, view.Id).OfClass(typeof(Wall)).Cast<Wall>())
-        {
-            var located = wall.Location as LocationCurve;
-            var axis = located == null ? null : located.Curve as Line;
-            if (axis == null) continue;
-            var faces = new List<Tuple<Reference, XYZ, XYZ>>();
             foreach (var side in new[] { ShellLayerType.Exterior, ShellLayerType.Interior })
             {
                 IList<Reference> sideFaces = null;
@@ -614,16 +712,16 @@ foreach (var view in (refused.Length == 0 ? working : new List<View>()))
                     PlanarFace planar = null;
                     try { planar = wall.GetGeometryObjectFromReference(reference) as PlanarFace; } catch { planar = null; }
                     if (planar == null) continue;
-                    faces.Add(Tuple.Create(reference, planar.FaceNormal, planar.Origin));
+                    var extent = edgePoints(planar, Transform.Identity);
+                    if (extent.Count == 0) continue;
+                    planes.Add(Tuple.Create("wall", wall.Id, planar.FaceNormal.Normalize(), planar.Origin, extent, reference));
                 }
             }
-            if (faces.Count > 0) walls.Add(Tuple.Create((Element)wall, axis, faces));
-        }
     };
 
-    Action gatherColumns = () =>
+    Action readColumns = () =>
     {
-        columns = new List<Tuple<Element, double[], List<Tuple<Reference, XYZ, XYZ>>>>();
+        columnsRead = true;
         var reading = new Options();
         reading.ComputeReferences = true;
         reading.View = view;
@@ -631,10 +729,7 @@ foreach (var view in (refused.Length == 0 ? working : new List<View>()))
             foreach (var column in new FilteredElementCollector(doc, view.Id).OfCategoryId(categoryId)
                                        .WhereElementIsNotElementType())
             {
-                BoundingBoxXYZ box = null;
-                try { box = column.get_BoundingBox(null); } catch { box = null; }
-                if (box == null) continue;
-                var faces = new List<Tuple<Reference, XYZ, XYZ>>();
+                var columnId = column.Id;
                 Action<GeometryElement, Transform> walk = null;
                 walk = (geometry, placed) =>
                 {
@@ -649,21 +744,20 @@ foreach (var view in (refused.Length == 0 ? working : new List<View>()))
                         {
                             var planar = face as PlanarFace;
                             if (planar == null || planar.Reference == null) continue;
-                            faces.Add(Tuple.Create(planar.Reference, placed.OfVector(planar.FaceNormal).Normalize(),
-                                                   placed.OfPoint(planar.Origin)));
+                            var extent = edgePoints(planar, placed);
+                            if (extent.Count == 0) continue;
+                            planes.Add(Tuple.Create("column", columnId, placed.OfVector(planar.FaceNormal).Normalize(),
+                                                    placed.OfPoint(planar.Origin), extent, planar.Reference));
                         }
                     }
                 };
                 try { walk(column.get_Geometry(reading), Transform.Identity); } catch { }
-                if (faces.Count == 0) continue;
-                columns.Add(Tuple.Create(column, new[] { box.Min.X, box.Min.Y, box.Min.Z, box.Max.X, box.Max.Y, box.Max.Z },
-                                         faces));
             }
     };
 
-    Action gatherRuns = () =>
+    Action readRuns = () =>
     {
-        runsShown = new List<KeyValuePair<Element, Line>>();
+        runsRead = true;
         foreach (var categoryId in runCategoryIds)
             foreach (var other in new FilteredElementCollector(doc, view.Id).OfCategoryId(categoryId)
                                       .WhereElementIsNotElementType())
@@ -677,16 +771,17 @@ foreach (var view in (refused.Length == 0 ? working : new List<View>()))
     for (int r = 0; r < ruleCategory.Count; r++)
     {
         var categoryName = ruleCategory[r].Name;
+        var ruleCategoryId = ruleCategory[r].Id;
         var targets = ruleTargets[r];
-        double band = ruleBandFeet[r];
-        if (targets.Contains("grid") && grids == null) gatherGrids();
-        if (targets.Contains("wall") && walls == null) gatherWalls();
-        if (targets.Contains("column") && columns == null) gatherColumns();
-        if ((targets.Contains("same") || targets.Contains("other")) && runsShown == null) gatherRuns();
+        double reach = ruleReachFeet[r];
+        if (targets.Contains("grid") && !gridsRead) readGrids();
+        if (targets.Contains("wall") && !wallsRead) readWalls();
+        if (targets.Contains("column") && !columnsRead) readColumns();
+        if ((targets.Contains("same") || targets.Contains("other")) && !runsRead) readRuns();
         var targetWords = string.Join(" or ", targets.Select(t => t == "same" ? "same-service run"
             : t == "other" ? "other-service run" : t).ToArray());
 
-        foreach (var element in new FilteredElementCollector(doc, view.Id).OfCategoryId(ruleCategory[r].Id)
+        foreach (var element in new FilteredElementCollector(doc, view.Id).OfCategoryId(ruleCategoryId)
                                     .WhereElementIsNotElementType())
         {
             var located = element.Location as LocationCurve;
@@ -719,29 +814,29 @@ foreach (var view in (refused.Length == 0 ? working : new List<View>()))
                 continue;
             }
 
-            // THE PART OF THE RUN THE VIEW SHOWS. With the crop on, sampled in
-            // the crop's own coordinates; the longest stretch inside is used.
-            const int steps = 64;
-            int bestStart = -1, bestLength = -1, runStart = -1;
-            for (int i = 0; i <= steps; i++)
-            {
-                bool inside = false;
-                try { inside = inCrop(line.Evaluate((double)i / steps, true)); } catch { inside = false; }
-                if (!inside) { runStart = -1; continue; }
-                if (runStart < 0) runStart = i;
-                if (i - runStart > bestLength) { bestStart = runStart; bestLength = i - runStart; }
-            }
-            if (bestStart < 0)
+            // THE PART OF THE RUN THE VIEW SHOWS - clipped to the crop exactly,
+            // so a short piece inside it is found however short.
+            var shown = clipped(line);
+            if (shown == null || (shown[1] - shown[0]) * line.Length < Tolerance)
             {
                 because(element.Id, categoryName + ": no part of it inside the view's crop");
                 continue;
             }
 
-            if (skipDimensioned && heldRuns.Contains(element.Id))
+            // ALREADY DIMENSIONED - the owner's rule: a dimension of this view's
+            // family holds this run TOGETHER WITH a reference of a kind this
+            // rule names.
+            if (skipDimensioned)
             {
-                because(element.Id, categoryName + ": already dimensioned in this view - a dimension owned by it "
-                    + "holds the run, shown or hidden");
-                continue;
+                List<HashSet<ElementId>> holding;
+                bool held = setsHolding.TryGetValue(element.Id, out holding)
+                    && holding.Any(set => set.Any(id => id != element.Id && namedByRule(id, targets, ruleCategoryId)));
+                if (held)
+                {
+                    because(element.Id, categoryName + ": already dimensioned in this view to a " + targetWords
+                        + " - a dimension owned by it holds both, shown or hidden");
+                    continue;
+                }
             }
 
             var centreline = centrelineOf(element);
@@ -751,115 +846,120 @@ foreach (var view in (refused.Length == 0 ? working : new List<View>()))
                 continue;
             }
 
-            // THE STATION: the middle of the visible stretch, moved `offsetMm`
-            // (paper) along the run - off the middle, where a tag is put - and kept
-            // inside the stretch.
-            double t0 = (double)bestStart / steps, t1 = (double)(bestStart + bestLength) / steps;
-            double stretch = (t1 - t0) * line.Length;
-            double shift = offsetFeet;
-            if (shift > stretch / 2)
-            {
-                shift = stretch / 2;
-                if (offsetFeet > 0) offsetsShortened++;
-            }
-            double tStation = (t0 + t1) / 2 + (line.Length > 1e-9 ? shift / line.Length : 0);
-            if (tStation > 1) tStation = 1;
-            var station = line.Evaluate(tStation, true);
+            // ALONG THE RUN, in the paper's terms. `along` is the run's direction
+            // on the paper, `across` square to it; a point on the run is found
+            // from where it lies along it.
             var along = onPaper.Normalize();
             var across = viewDir.CrossProduct(along).Normalize();
-            double stationAlong = station.DotProduct(along);
-            const double tolerance = 1.0 * MmToFeet;   // 1 mm: closer than this is one position
+            var start = line.GetEndPoint(0);
+            double startAlong = start.DotProduct(along);
+            double perAlong = direction.DotProduct(along);      // > 0.01 here
+            Func<double, XYZ> onRun = at => start + direction.Multiply((at - startAlong) / perAlong);
+            double shownLow = line.Evaluate(shown[0], true).DotProduct(along);
+            double shownHigh = line.Evaluate(shown[1], true).DotProduct(along);
+            if (shownLow > shownHigh) { var swap = shownLow; shownLow = shownHigh; shownHigh = swap; }
 
-            // A target counts when it is parallel, reaches this station along
-            // the run, lies within the band and off the run's own line, and -
-            // with the crop on - where the string would end is inside the crop.
-            var candidates = new List<Tuple<double, Reference, ElementId>>();
-            Func<double, double, bool> reaches = (low, high) =>
-                stationAlong >= Math.Min(low, high) - tolerance && stationAlong <= Math.Max(low, high) + tolerance;
-            Action<double, Reference, ElementId> offer = (offset, reference, id) =>
+            // WHERE THE STRING WOULD LIKE TO BE: the middle of the part shown,
+            // moved `offsetMm` (paper) along the run - off the middle, where a
+            // tag is put - and kept inside the part shown.
+            double shownHalf = (shownHigh - shownLow) / 2;
+            double shift = offsetFeet;
+            if (shift > shownHalf) { shift = shownHalf; if (offsetFeet > 0) offsetsShortened++; }
+            double preferred = (shownLow + shownHigh) / 2 + shift;
+
+            // A TARGET'S DISTANCE ACROSS THE RUN at a point along it: where the
+            // line across the run from that point meets the target's plane -
+            // exact for a target up to the parallel tolerance off square.
+            Func<XYZ, XYZ, double, double> crossing = (normal, point, at) =>
             {
-                if (Math.Abs(offset) <= tolerance || Math.Abs(offset) > band) return;
-                if (!inCrop(station + across.Multiply(offset))) { targetsOffCrop++; return; }
-                candidates.Add(Tuple.Create(offset, reference, id));
-            };
-            // The face of an element nearer the run: both faces on one side, the
-            // nearer taken; faces on both sides mean the run sits inside it.
-            Action<List<Tuple<Reference, XYZ, XYZ>>, ElementId> offerNearFace = (faces, id) =>
-            {
-                double? bestOffset = null;
-                Reference bestReference = null;
-                int above = 0, below = 0;
-                foreach (var face in faces)
-                {
-                    if (!parallel(face.Item2, across)) continue;
-                    double offset = (face.Item3 - station).DotProduct(across);
-                    if (offset > tolerance) above++;
-                    else if (offset < -tolerance) below++;
-                    if (bestOffset == null || Math.Abs(offset) < Math.Abs(bestOffset.Value))
-                    {
-                        bestOffset = offset;
-                        bestReference = face.Item1;
-                    }
-                }
-                if (bestReference == null || (above > 0 && below > 0)) return;
-                offer(bestOffset.Value, bestReference, id);
+                var station = onRun(at);
+                double facing = across.DotProduct(normal);
+                return (point - station).DotProduct(normal) / facing;
             };
 
-            if (targets.Contains("grid"))
-                foreach (var pair in grids)
+            // EVERY TARGET THAT RUNS ALONGSIDE: parallel, sharing a stretch of the
+            // part of the run the view shows (its OVERLAP), within reach across
+            // it and off its own line, and - with the crop on - with the
+            // string's end inside the crop. Its station is the point of the
+            // overlap nearest where the string would like to be.
+            // {distance across, station along, overlap low, overlap high,
+            //  normal, point, reference, element id}
+            var candidates = new List<Tuple<double, double, double, double, XYZ, XYZ, Reference, Tuple<ElementId>>>();
+            Func<XYZ, List<XYZ>, double[]> overlapOf = (normal, extent) =>
+            {
+                double low = double.MaxValue, high = double.MinValue;
+                foreach (var p in extent) { double at = p.DotProduct(along); low = Math.Min(low, at); high = Math.Max(high, at); }
+                low = Math.Max(low, shownLow); high = Math.Min(high, shownHigh);
+                return high >= low - Tolerance ? new[] { low, Math.Max(low, high) } : null;
+            };
+            Func<XYZ, XYZ, double[], double[]> placeOn = (normal, point, overlap) =>
+            {
+                double at = Math.Min(Math.Max(preferred, overlap[0]), overlap[1]);
+                double distance = crossing(normal, point, at);
+                if (Math.Abs(distance) <= Tolerance || Math.Abs(distance) > reach) return null;
+                if (!inCrop(onRun(at) + across.Multiply(distance))) { offCropPairs++; return null; }
+                return new[] { distance, at };
+            };
+
+            // Planes - grids, wall faces, column faces. For a wall or a column the
+            // face NEARER the run; faces on both sides mean the run is inside it.
+            var byElement = new Dictionary<ElementId, List<Tuple<double, double, double[], XYZ, XYZ, Reference>>>();
+            foreach (var plane in planes)
+            {
+                if (!targets.Contains(plane.Item1)) continue;
+                if (Math.Abs(plane.Item3.DotProduct(across)) <= ParallelCos) continue;
+                var overlap = overlapOf(plane.Item3, plane.Item5);
+                if (overlap == null) continue;
+                var placed = placeOn(plane.Item3, plane.Item4, overlap);
+                if (placed == null) continue;
+                List<Tuple<double, double, double[], XYZ, XYZ, Reference>> list;
+                if (!byElement.TryGetValue(plane.Item2, out list))
                 {
-                    var gridLine = pair.Value;
-                    if (!parallel(gridLine.Direction, along)) continue;
-                    if (!reaches(gridLine.GetEndPoint(0).DotProduct(along), gridLine.GetEndPoint(1).DotProduct(along))) continue;
-                    offer((gridLine.GetEndPoint(0) - station).DotProduct(across), new Reference(pair.Key), pair.Key.Id);
+                    list = new List<Tuple<double, double, double[], XYZ, XYZ, Reference>>();
+                    byElement[plane.Item2] = list;
                 }
-            if (targets.Contains("wall"))
-                foreach (var wall in walls)
-                {
-                    if (!parallel(wall.Item2.Direction, along)) continue;
-                    if (!reaches(wall.Item2.GetEndPoint(0).DotProduct(along), wall.Item2.GetEndPoint(1).DotProduct(along))) continue;
-                    offerNearFace(wall.Item3, wall.Item1.Id);
-                }
-            if (targets.Contains("column"))
-                foreach (var column in columns)
-                {
-                    var b = column.Item2;
-                    double low = double.MaxValue, high = double.MinValue;
-                    for (int corner = 0; corner < 8; corner++)
-                    {
-                        var p = new XYZ((corner & 1) == 0 ? b[0] : b[3], (corner & 2) == 0 ? b[1] : b[4],
-                                        (corner & 4) == 0 ? b[2] : b[5]);
-                        double at = p.DotProduct(along);
-                        low = Math.Min(low, at); high = Math.Max(high, at);
-                    }
-                    if (!reaches(low, high)) continue;
-                    offerNearFace(column.Item3, column.Item1.Id);
-                }
+                list.Add(Tuple.Create(placed[0], placed[1], overlap, plane.Item3, plane.Item4, plane.Item6));
+            }
+            foreach (var pair in byElement)
+            {
+                var faces = pair.Value;
+                if (faces.Any(f => f.Item1 > 0) && faces.Any(f => f.Item1 < 0)) continue;
+                var nearest = faces.OrderBy(f => Math.Abs(f.Item1)).First();
+                candidates.Add(Tuple.Create(nearest.Item1, nearest.Item2, nearest.Item3[0], nearest.Item3[1],
+                                            nearest.Item4, nearest.Item5, nearest.Item6, pair.Key));
+            }
+
+            // Runs - of the same service or of another, by their centrelines.
             if (targets.Contains("same") || targets.Contains("other"))
                 foreach (var pair in runsShown)
                 {
                     var other = pair.Key;
                     if (other.Id == element.Id || other.Category == null) continue;
-                    bool sameService = other.Category.Id == ruleCategory[r].Id;
+                    bool sameService = other.Category.Id == ruleCategoryId;
                     if (sameService ? !targets.Contains("same") : !targets.Contains("other")) continue;
                     var otherLine = pair.Value;
-                    if (!parallel(otherLine.Direction - viewDir.Multiply(otherLine.Direction.DotProduct(viewDir)), along)) continue;
-                    if (!reaches(otherLine.GetEndPoint(0).DotProduct(along), otherLine.GetEndPoint(1).DotProduct(along))) continue;
-                    double offset = (otherLine.GetEndPoint(0) - station).DotProduct(across);
-                    if (Math.Abs(offset) <= tolerance || Math.Abs(offset) > band) continue;
+                    var normal = viewDir.CrossProduct(otherLine.Direction);
+                    if (normal.GetLength() < 1e-9) continue;
+                    normal = normal.Normalize();
+                    if (Math.Abs(normal.DotProduct(across)) <= ParallelCos) continue;
+                    var overlap = overlapOf(normal, new List<XYZ> { otherLine.GetEndPoint(0), otherLine.GetEndPoint(1) });
+                    if (overlap == null) continue;
+                    var placed = placeOn(normal, otherLine.GetEndPoint(0), overlap);
+                    if (placed == null) continue;
                     var otherCentre = centrelineOf(other);
                     if (otherCentre == null) continue;
-                    offer(offset, otherCentre.Reference, other.Id);
+                    candidates.Add(Tuple.Create(placed[0], placed[1], overlap[0], overlap[1], normal,
+                                                otherLine.GetEndPoint(0), otherCentre.Reference, other.Id));
                 }
 
             // THE SIDE(S): the closest target above the run and the closest below.
-            Tuple<double, Reference, ElementId> plus = null, minus = null;
+            Tuple<double, double, double, double, XYZ, XYZ, Reference, Tuple<ElementId>> plus = null, minus = null;
             foreach (var c in candidates)
             {
                 if (c.Item1 > 0 && (plus == null || c.Item1 < plus.Item1)) plus = c;
                 if (c.Item1 < 0 && (minus == null || c.Item1 > minus.Item1)) minus = c;
             }
-            var chosen = new List<Tuple<double, Reference, ElementId>>();
+            var chosen = new List<Tuple<double, double, double, double, XYZ, XYZ, Reference, Tuple<ElementId>>>();
             if (ruleBoth[r])
             {
                 if (minus != null) chosen.Add(minus);
@@ -872,29 +972,58 @@ foreach (var view in (refused.Length == 0 ? working : new List<View>()))
             }
             if (chosen.Count == 0)
             {
-                because(element.Id, categoryName + ": no " + targetWords + " within " + Math.Round(band / MmToFeet)
-                    + " mm on either side (parallel to it, reaching it, and "
-                    + "inside the crop)");
+                because(element.Id, categoryName + ": no " + targetWords + " within " + Math.Round(reach / MmToFeet)
+                    + " mm across it on either side (running alongside the part of it the view shows, with the "
+                    + "string's end inside the crop)");
                 continue;
             }
-            bool oneSide = ruleBoth[r] && chosen.Count == 1;
 
-            // THE STRINGS. One: every reference and the run's centreline, in
-            // order across. Separate: one two-reference dimension per gap.
-            var pieces = new List<List<Tuple<double, Reference, ElementId>>>();
-            var self = Tuple.Create(0.0, centreline.Reference, element.Id);
-            if (!separate || chosen.Count == 1)
+            // THE STRINGS, each {station along, [distance across, reference, id]}.
+            // One string on both sides needs a station both targets share:
+            // where their overlaps meet, both measured again there. Where they
+            // do not meet, or one falls out of reach there, the closer side
+            // alone is drawn and counted.
+            var pieces = new List<Tuple<double, List<Tuple<double, Reference, ElementId>>>>();
+            Func<double, Tuple<double, Reference, ElementId>> self = at => Tuple.Create(0.0, centreline.Reference, element.Id);
+            if (chosen.Count == 2 && !separate)
             {
-                var all = new List<Tuple<double, Reference, ElementId>>(chosen) { self };
-                pieces.Add(all.OrderBy(p => p.Item1).ToList());
+                double low = Math.Max(chosen[0].Item3, chosen[1].Item3), high = Math.Min(chosen[0].Item4, chosen[1].Item4);
+                var shared = new List<Tuple<double, Reference, ElementId>>();
+                double at = 0;
+                if (high >= low - Tolerance)
+                {
+                    at = Math.Min(Math.Max(preferred, low), Math.Max(low, high));
+                    foreach (var c in chosen)
+                    {
+                        double distance = crossing(c.Item5, c.Item6, at);
+                        if (Math.Abs(distance) <= Tolerance || Math.Abs(distance) > reach
+                            || !inCrop(onRun(at) + across.Multiply(distance))) { shared = null; break; }
+                        shared.Add(Tuple.Create(distance, c.Item7, c.Rest.Item1));
+                    }
+                }
+                else shared = null;
+                if (shared == null)
+                {
+                    sidesApart++;
+                    var closer = Math.Abs(chosen[0].Item1) <= Math.Abs(chosen[1].Item1) ? chosen[0] : chosen[1];
+                    chosen = new List<Tuple<double, double, double, double, XYZ, XYZ, Reference, Tuple<ElementId>>> { closer };
+                }
+                else
+                {
+                    shared.Add(self(at));
+                    pieces.Add(Tuple.Create(at, shared.OrderBy(p => p.Item1).ToList()));
+                }
             }
-            else
-                foreach (var c in chosen) pieces.Add(new[] { c, self }.OrderBy(p => p.Item1).ToList());
+            if (pieces.Count == 0)
+                foreach (var c in chosen)
+                    pieces.Add(Tuple.Create(c.Item2, new List<Tuple<double, Reference, ElementId>>
+                        { Tuple.Create(c.Item1, c.Item7, c.Rest.Item1), self(c.Item2) }.OrderBy(p => p.Item1).ToList()));
+            bool oneSide = ruleBoth[r] && pieces.Sum(p => p.Item2.Count - 1) == 1;
 
             // THE SAME STRING TWICE is never drawn, whatever skipDimensioned
             // says: a piece holding exactly the elements of one already owned
             // by this view's family is left out.
-            pieces = pieces.Where(p => !heldSets.Any(s => s.SetEquals(p.Select(q => q.Item3)))).ToList();
+            pieces = pieces.Where(p => !heldSets.Any(s => s.SetEquals(p.Item2.Select(q => q.Item3)))).ToList();
             if (pieces.Count == 0)
             {
                 because(element.Id, categoryName + ": the same dimension is already in this view");
@@ -905,10 +1034,12 @@ foreach (var view in (refused.Length == 0 ? working : new List<View>()))
             string failure = null;
             foreach (var piece in pieces)
             {
-                var from = station + across.Multiply(piece[0].Item1);
-                var to = station + across.Multiply(piece[piece.Count - 1].Item1);
+                var station = onRun(piece.Item1);
+                var refs = piece.Item2;
+                var from = station + across.Multiply(refs[0].Item1);
+                var to = station + across.Multiply(refs[refs.Count - 1].Item1);
                 var array = new ReferenceArray();
-                foreach (var p in piece) array.Append(p.Item2);
+                foreach (var p in refs) array.Append(p.Item2);
                 Dimension dimension = null;
                 try { dimension = doc.Create.NewDimension(view, Line.CreateBound(from, to), array, chosenType); }
                 catch (Exception error)
@@ -922,15 +1053,6 @@ foreach (var view in (refused.Length == 0 ? working : new List<View>()))
                 if (dimension == null) { failure = "Revit made no dimension and gave no reason"; break; }
                 made.Add(dimension);
 
-                // THE READ-BACK: every reference asked for held, and the type
-                // asked for - corrected and counted, or the string comes out.
-                int heldCount = 0;
-                try { heldCount = dimension.References == null ? 0 : dimension.References.Size; } catch { heldCount = 0; }
-                if (heldCount < piece.Count)
-                {
-                    failure = "Revit kept " + heldCount + " of the " + piece.Count + " references asked for";
-                    break;
-                }
                 if (dimension.GetTypeId() != chosenType.Id)
                 {
                     bool corrected = false;
@@ -939,11 +1061,40 @@ foreach (var view in (refused.Length == 0 ? working : new List<View>()))
                                                 + chosenType.Name + "'"; break; }
                     typeCorrections++;
                 }
+
+                // REGENERATED AND READ AGAIN AT ONCE. A string Revit cannot keep -
+                // a reference it drops, or the whole dimension removed - is found
+                // here and taken out now, rather than posting an error at commit
+                // that would roll the whole call back.
+                try { doc.Regenerate(); }
+                catch (Exception error)
+                {
+                    if (firstRefusal == null) firstRefusal = error.Message;
+                    failure = "Revit could not regenerate the plan with the string in it";
+                    break;
+                }
+                if (!dimension.IsValidObject)
+                {
+                    removedOnRegenerate++;
+                    failure = "Revit removed the string when the plan was regenerated";
+                    break;
+                }
+                int heldCount = 0;
+                try { heldCount = dimension.References == null ? 0 : dimension.References.Size; } catch { heldCount = 0; }
+                if (heldCount < refs.Count)
+                {
+                    failure = "Revit kept " + heldCount + " of the " + refs.Count + " references asked for";
+                    break;
+                }
             }
             if (failure != null)
             {
                 // ALL OR NOTHING per run: no half string, no one segment of two.
-                foreach (var dimension in made) { try { doc.Delete(dimension.Id); } catch { } }
+                foreach (var dimension in made)
+                {
+                    try { if (dimension.IsValidObject) doc.Delete(dimension.Id); } catch { }
+                }
+                try { doc.Regenerate(); } catch { }
                 because(element.Id, categoryName + ": " + failure + ", so nothing was left on it");
                 continue;
             }
@@ -954,11 +1105,8 @@ foreach (var view in (refused.Length == 0 ? working : new List<View>()))
                 stringsHere++;
                 var set = new HashSet<ElementId>();
                 try { foreach (Reference held in dimension.References) if (held != null) set.Add(held.ElementId); } catch { }
-                heldSets.Add(set);
+                remember(set);
             }
-            // THE RUN THIS WAS DRAWN FOR is marked done - never the targets it
-            // touches, which may still need their own.
-            heldRuns.Add(element.Id);
             if (oneSide) oneSideOnly++;
             dimensioned++;
             runsHere++;
@@ -990,20 +1138,26 @@ if (refused.Length == 0)
     if (viewsLeft.Count > 0)
         findings.Add("Left out: " + string.Join("; ", viewsLeft.ToArray()) + ".");
     if (oneSideOnly > 0)
-        findings.Add(oneSideOnly + " run(s) asked for both sides found a target on one side only, and were "
-            + "dimensioned on that side.");
-    if (targetsOffCrop > 0)
-        findings.Add(targetsOffCrop + " target(s) inside the search band were passed over because the string to them "
-            + "would end outside the view's crop.");
+        findings.Add(oneSideOnly + " run(s) asked for both sides were dimensioned on one side only - a target was "
+            + "found on one side alone, or the two did not share a stretch of the run.");
+    if (sidesApart > 0)
+        findings.Add(sidesApart + " of those had a target on each side that did not run alongside the same stretch "
+            + "of the run, so one string could not hold both - chain separate draws each on its own stretch.");
+    if (offCropPairs > 0)
+        findings.Add(offCropPairs + " time(s) a target within a run's reach was passed over for that run, because "
+            + "the string to it would have ended outside the view's crop.");
     if (offsetsShortened > 0)
         findings.Add(offsetsShortened + " run(s) show less than twice the offset inside the view, so their string sits "
             + "at the end of the part shown rather than " + offsetMm + " mm along it.");
     if (typeCorrections > 0)
         findings.Add(typeCorrections + " dimension(s) came out of Revit as another type and were changed to "
             + dimensionTypeUsed + ".");
-    if (heldInLinks > 0)
-        findings.Add(heldInLinks + " reference(s) of dimensions already in these views point into a linked model; "
-            + "they were not read as runs of this one.");
+    if (removedOnRegenerate > 0)
+        findings.Add(removedOnRegenerate + " string(s) were removed by Revit when the plan regenerated; each run is "
+            + "in skipped.");
+    if (linkedDimensions.Count > 0)
+        findings.Add(linkedDimensions.Count + " dimension(s) already in these views refer into a linked model; those "
+            + "references were not read as elements of this one.");
     if (hiddenIn.Count > 0)
         findings.Add("Dimensions are turned off in " + string.Join(", ", hiddenIn.ToArray()) + ", so the ones drawn "
             + "there are in the model and NOT SHOWN.");

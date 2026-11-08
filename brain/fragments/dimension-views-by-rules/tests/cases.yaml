@@ -1,7 +1,7 @@
 # D-30: the negative case is what catches "succeeded and did nothing" - and,
 # for a write that draws dimensions, "dimensioned something nobody asked for":
 # a run of a category no rule names, a run already dimensioned, a string to a
-# target outside the band or on the wrong side, a string of a type nobody named
+# target out of reach or on the wrong side, a string of a type nobody named
 # and the project does not default to, or a half string left with nothing said.
 #
 # THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING Group MU). A SAVED
@@ -31,8 +31,11 @@ positive:
       other duct of M1 - the counts in skippedWhy adding up to skipped; refused
       empty. Then LOOK AT THE PLAN: each string square to its duct, running
       centreline to centreline, sitting 10 paper mm along the duct from the
-      middle of the part shown. A pair of parallel ducts gets ONE string, not
-      two - the second is named "the same dimension is already in this view"
+      middle of the part shown (or at the point nearest it that both ducts run
+      alongside). A pair of parallel ducts gets ONE string, not two - the
+      second duct is named "already dimensioned in this view to a same-service
+      run", because the first's string holds it with a run of the kind its rule
+      names
 
   - given: >
       views "FloorPlan: M1", rules "Ducts | grids | nearest | 6000" - on a plan
@@ -40,17 +43,21 @@ positive:
     expect: >
       each duct parallel to a grid within 6 m measured to the NEAREST such
       grid, the string from the grid line to the duct's centreline; a duct
-      square to every grid named "no grid within 6000 mm" - never measured to a
-      grid running across it
+      square to every grid named "no grid within 6000 mm across it" - never
+      measured to a grid running across it. A grid that stops short of the part
+      of the duct the plan shows is not used either
 
   - given: >
       views "FloorPlan: M1", rules "Ducts | walls | both | 1500" and chain
       "separate", on the duct MU1 arranged between two walls of this model
     expect: >
-      that duct TWO dimensions, end to end on one line - wall face to
-      centreline, centreline to the other wall face - each to the wall face
-      NEARER the duct; dimensioned counts the duct once; with chain left out
-      (one), ONE string holding three references
+      that duct TWO dimensions - wall face to centreline, centreline to the
+      other wall face - each to the wall face NEARER the duct, each where duct
+      and that wall run side by side (on one line when both walls run alongside
+      the middle of the part shown); dimensioned counts the duct once; with
+      chain left out (one), ONE string holding three references, at a station
+      both walls share. And a wall within reach and parallel, but lying beyond
+      the duct's end, is never dimensioned to
 
   - given: >
       views "FloorPlan: M1, <MU1's second plan>", rules "Ducts | same-service;
@@ -64,9 +71,22 @@ positive:
 
   - given: the first case run a SECOND time on the same plan, after it was kept
     expect: >
-      dimensioned 0, newDimensions empty, every duct dimensioned the first
-      time (and every duct its string reached) in skipped as "already
-      dimensioned in this view" - nothing stacked
+      dimensioned 0, newDimensions empty, every duct the first run's strings
+      hold - each held there WITH another duct, a same-service run, the kind
+      this rule names - in skipped as "already dimensioned in this view to a
+      same-service run" - nothing stacked
+
+  - given: >
+      THE OWNER'S RULE FOR "ALREADY DIMENSIONED" (2026-11-08). On a plan with
+      ducts and parallel pipes: rules "Pipes | other-service | nearest | 2000"
+      KEPT, so ducts are held by pipe strings as targets; then rules "Ducts |
+      grids | nearest | 6000" (or "Ducts | walls" on MU1's duct)
+    expect: >
+      the ducts the pipe strings reach are dimensioned to their grid (or wall)
+      all the same - held only as another rule's target, by a pipe, a kind
+      "Ducts | grids" does not name, they do not count as already dimensioned.
+      Then "Ducts | other-service" on the same plan: those ducts ARE in skipped
+      as already dimensioned to an other-service run
 
   - given: >
       the first case after it was kept, with skipDimensioned false
@@ -83,11 +103,11 @@ positive:
 negative:
   - given: >
       THE D-30 NEGATIVE - THE FIRST CASE TO RUN. The positive's plan with
-      rules "Ducts | same-service | nearest | 1" - a search band of 1 mm,
-      which no parallel duct is inside
+      rules "Ducts | same-service | nearest | 1" - a reach of 1 mm across the
+      run, which no parallel duct is inside
     expect: >
       dimensioned 0, newDimensions empty, every duct of M1 in skipped -
-      "no same-service run within 1 mm" or "vertical" - nothing drawn. A card
+      "no same-service run within 1 mm across it" or "vertical" - nothing drawn. A card
       that dimensioned whatever it found would draw here; the value alone
       empties the result
 
@@ -97,7 +117,41 @@ negative:
       no category is called "Ductz" in this model ... Nothing was drawn."
 
   - given: rules "Ducts" - no target named
-    expect: refused saying what Ducts are measured to must be said, nothing drawn
+    expect: refused saying what Ducts are dimensioned to must be said, nothing drawn
+
+  - given: rules "Flex Ducts | same-service"
+    expect: refused, Flex Ducts are not straight, nothing drawn
+
+  - given: rules "Ducts | grids; Ducts | walls" - two rules for one category
+    expect: refused for rule 2, Ducts has a rule already, nothing drawn - not even rule 1's
+
+  - given: rules "Ducts | grids | nearest | 1500 | 10" - five parts
+    expect: refused, a rule is at most four parts, nothing drawn
+
+  - given: rules "Ducts | grids | nearest | 0", then "Ducts | grids | nearest | far"
+    expect: >
+      each refused, "is not a reach" - above 0, in model millimetres - nothing
+      drawn
+
+  - given: rules "Ducts | same-service" with chain "segments"
+    expect: refused, "segments" is not a chain style - one or separate, nothing drawn
+
+  - given: rules "Ducts | same-service" with offsetMm -5, then with minRunMm -1
+    expect: each refused, not an offset / not a length, nothing drawn
+
+  - given: rules ";;" - separators and nothing else
+    expect: refused "No rules were given ...", nothing drawn
+
+  - given: >
+      on a copy holding two linear dimension types of one name (MU3 arranges it
+      by duplicating one and renaming the copy), dimensionType that name
+    expect: refused, two linear dimension types are called that, nothing drawn
+
+  - given: >
+      dimensionType left out, on a project with no default linear dimension
+      type - NOT arrangeable in the Revit UI, which always holds a default;
+      covered only if a model is found without one, else NOT COVERED
+    expect: refused, no type named and no project default, the loaded linear types listed, nothing drawn
 
   - given: rules "Ducts | grids; Air Terminals | grids"
     expect: >
@@ -155,14 +209,15 @@ negative:
     expect: >
       that duct's string inside the crop, on the part of the duct the view
       shows; a duct with no part inside, in skipped "no part of it inside the
-      view's crop"; a target whose end of the string would fall outside the
-      crop passed over and counted in findings
+      view's crop"; a duct with only a short piece inside the crop found and
+      dimensioned on that piece; a target whose end of the string would fall
+      outside the crop passed over and counted in findings
 
   - given: >
       rules "Ducts | walls | both | 3000" on a plan whose walls are only in the
       LINKED architectural model
     expect: >
-      dimensioned 0, every duct in skipped "no wall within 3000 mm", and
+      dimensioned 0, every duct in skipped "no wall within 3000 mm across it", and
       findings saying linked models are not read in this version - never a
       string to a linked wall, and never a silent nothing
 
