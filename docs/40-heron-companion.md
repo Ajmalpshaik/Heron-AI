@@ -1533,8 +1533,10 @@ workspace, **QA Checklist**, beside the Model Dashboard. Designed and recorded i
   model check by check through `revit_read`'s own body. **The lock every tool call holds is taken for each
   check's read only**, so the pipe is never held longer than the dashboard's one read. One run at a time; a
   second press is told so in words. Each row reaches the page as it is done.
-- **Select in Revit is §21.11's route**, unchanged: `ChecklistPanel.show` sends `_dashboard_show` the ids
-  the run found - the page names the row's number, never ids - and only for a row whose ids all arrived.
+- **Select in Revit is §21.11's route**: `ChecklistPanel.show` sends `_dashboard_show` the ids the run
+  found, through `_checklist_show` for its own refusal words - the page names the row's number and the run's
+  token, never ids - and only for a row whose ids all arrived, of the run the page still shows.
+- **One run at a time, chat and page:** a chat's `heron_checklist` run claims the same busy flag.
 - **Routes:** `GET /api/checklist`, `POST /api/checklist/run` and `/api/checklist/show`, each behind
   `_api_ok` - the cookie, the header and, for a POST, the page's Origin.
 

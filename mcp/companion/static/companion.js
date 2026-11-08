@@ -2467,11 +2467,11 @@ async function qaRun(name) {
 
 // A failing check's Select in Revit - the Model Dashboard's own route. The page
 // sends the row's number, never ids: Heron uses the ids its own run found.
-async function qaSelect(row) {
+async function qaSelect(row, run) {
   if (qaBusy) return;
   qaBusy = true;
   document.querySelectorAll("#qa button").forEach(b => { b.disabled = true; });
-  await qaPost("/api/checklist/show", { action: "select", row: row }, "Asking Revit…");
+  await qaPost("/api/checklist/show", { action: "select", row: row, run: run }, "Asking Revit…");
   document.querySelectorAll("#qa button").forEach(b => { b.disabled = false; });
   qaBusy = false;
 }
@@ -2524,6 +2524,7 @@ function qaResult(R) {
   });
   sec.append(sum, el("p", "muted small", R.said || ""));
   if (R.running) sec.append(el("p", "q-running", "Running - the rows below are the checks done so far."));
+  (R.findings || []).forEach(f => sec.append(el("p", "q-finding", f)));
   const table = el("table", "q-table");
   const head = el("tr");
   ["#", "Check", "Rule", "Value", "Result", "Why", ""].forEach(t => head.append(el("th", null, t)));
@@ -2542,11 +2543,11 @@ function qaResult(R) {
     const result = el("td");
     result.append(qaBadge(r.state, r.label));
     const tools = el("td", "q-tools-cell");
-    if (r.idsComplete && (r.ids || []).length) {
-      const sel = el("button", "btn-lite", "Select in Revit");
+    if (r.select && (r.ids || []).length) {
+      const sel = el("button", "btn-lite", r.select);
       sel.type = "button";
-      sel.title = "Select these " + r.ids.length + " element(s) in Revit - nothing in the model changes";
-      sel.addEventListener("click", () => qaSelect(r.n));
+      sel.title = r.select + " - the failing element(s) of this check, selected in Revit; nothing in the model changes";
+      sel.addEventListener("click", () => qaSelect(r.n, R.run));
       const copy = el("button", "btn-lite", "Copy " + r.ids.length + " ID(s)");
       copy.type = "button";
       copy.title = "Copy the element ids for Manage > Inquiry > Select by ID in Revit";
@@ -2605,7 +2606,7 @@ function renderChecklist(C) {
   if ((C.lists || []).some(l => l.name === qaPick)) pick.value = qaPick;
   else if ((C.lists || []).length) qaPick = pick.value;
   pick.addEventListener("change", () => { qaPick = pick.value; });
-  const run = el("button", "btn q-run", C.busy || qaBusy ? "Running…" : "Run");
+  const run = el("button", "btn q-run", C.busy || qaBusy ? (C.busyWith === "chat" ? "Running from the chat…" : "Running…") : "Run");
   run.type = "button";
   run.disabled = !!(C.busy || qaBusy) || !(C.lists || []).length;
   run.title = "Run every check of this checklist on the model in Revit, one read at a time - nothing in it changes";
@@ -2644,7 +2645,7 @@ async function checklist_() {
     const C = (await res.json()).checklist;
     const R = C && C.result;
     const key = C ? JSON.stringify([(C.lists || []).map(l => [l.name, l.checks, l.description]), C.broken, C.busy,
-                                    R ? [R.at, R.name, R.running, (R.rows || []).length] : null]) : "none";
+                                    C.busyWith, R ? [R.run, R.at, R.name, R.running, (R.rows || []).length] : null]) : "none";
     if (key === qaShown) return;
     qaShown = key;
     renderChecklist(C);

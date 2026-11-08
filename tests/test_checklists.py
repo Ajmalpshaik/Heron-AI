@@ -30,7 +30,13 @@ WHAT IT PROVES
      compliant, clean or healthy - in any sentence a run or a save can say.
   6. THE SERVER'S RUN goes through revit_read's own body, one check at a
      time under the lock, refuses a DRAFT, and sends nothing when Revit is not
-     connected - against a stand-in server, as tests/test_commands.py does.
+     connected - against a stand-in server, as tests/test_commands.py does. A
+     read that raises still ends in a final, non-running result; more than
+     three list ids offer no Select, a dictionary keyed by id does; values
+     given as a name -> value set are taken and bad shapes refused in words.
+  Also: float and HashSet outputs refused, true/false and "0" read as numbers,
+  a rule sent twice refused, and hand-edited files of the wrong shape listed as
+  broken while the list keeps working.
   7. HERON'S STARTER STILL FITS TODAY'S CARDS - each of its checks is saved
      through the real cards, read as the server reads them - and the
      --fragments listing names only PROVEN reads with a number to compare.
@@ -77,15 +83,19 @@ CONTRACTS = {
                      {"name": "offenders", "type": "IList<ElementId>"},
                      {"name": "findings", "type": "IList<string>"},
                      {"name": "report", "type": "string"},
-                     {"name": "elements", "type": "IList<Element>"}],
-        "selection": []},
+                     {"name": "elements", "type": "IList<Element>"},
+                     {"name": "ratio", "type": "float"},
+                     {"name": "seen", "type": "HashSet<ElementId>"},
+                     {"name": "workshared", "type": "bool"},
+                     {"name": "elementTotal", "type": "int"}],
+        "required": ["requiredParameters"], "selection": []},
     "FIND_CLASHES": {
         "risk": "READ",
         "needs": [{"name": "elements", "type": "IList<Element>"}],
         "provides": [{"name": "clashes", "type": "IDictionary<ElementId, ICollection<ElementId>>"},
                      {"name": "clashing", "type": "int"}],
-        "selection": ["elements"]},
-    "DELETE_ELEMENTS": {"risk": "MODIFY", "needs": [], "provides": [], "selection": []},
+        "required": [], "selection": ["elements"]},
+    "DELETE_ELEMENTS": {"risk": "MODIFY", "needs": [], "provides": [], "required": [], "selection": []},
 }
 
 
@@ -133,6 +143,42 @@ def shape(home):
     for checklist, words, what in cases:
         said = " ".join(Q.problems(checklist, CONTRACTS))
         check(words in said, "%s - %r" % (what, said[:140]) if words not in said else what)
+    more = [
+        (bad_with(rule="ratio == 0"), "'ratio' is float, not a number",
+         "a float output - Describe sends its type name - is refused when saved"),
+        (bad_with(rule="seen == 0"), "'seen' is HashSet<ElementId>, not a number",
+         "a HashSet output - not a non-generic ICollection - is refused when saved"),
+        (bad_with(ids="seen"), "holds no element ids", "and a HashSet of ids cannot carry the ids either"),
+        (bad_with(rule="failures == 0", output="failures"), "give the rule once",
+         "a rule sent both as text and as output names one sentence, not 'None'"),
+        (bad_with(values="requiredParameters=x"), "its values must be a list",
+         "values that are not a list are refused in words"),
+        (bad_with(values=["requiredParameters=x"]), "each of its values must be a name and a value",
+         "a value that is not a name and value is refused in words"),
+        (bad_with(values=[{"name": "requiredParameters", "value": 3}]), "both text",
+         "a value that is not text is refused in words"),
+        (bad_with(capability=42), "the capability must be its name, as text", "a capability that is not text"),
+        (bad_with(sentence=["x"]), "the sentence must be text", "a sentence that is not text"),
+        (bad_with(ids=7), "'ids' must name one output", "ids that are not text"),
+        (dict(good(), name=7), "The name must be text", "a name that is not text"),
+        (dict(good(), checks=["x"]), "is not a set of named fields", "a check that is not a set of fields"),
+    ]
+    for checklist, words, what in more:
+        said = " ".join(Q.problems(checklist, CONTRACTS))
+        check(words in said, what if words in said else "%s - %r" % (what, said[:200]))
+    for rule, want in (("workshared == true", ("workshared", "==", 1)),
+                       ("workshared != false", ("workshared", "!=", 0))):
+        check(Q.parse_rule(rule) == want, "%r reads true/false as 1/0" % rule)
+    check(Q.problems(bad_with(rule="workshared == true"), CONTRACTS) == [], "a flag rule saves")
+    typed = bad_with(rule=None, output="failures", op="==", target="0")
+    check(Q.problems(typed, CONTRACTS) == [] and Q._normalised(typed["checks"][0])["target"] == 0,
+          "a target sent as the text \"0\" is the number 0")
+    absent_ok = dict(CONTRACTS, CHECK_MODEL_STANDARDS=dict(CONTRACTS["CHECK_MODEL_STANDARDS"], required=[]))
+    check(Q.problems(bad_with(values=[]), absent_ok) == [],
+          "what may be left out is the server's need_may_be_absent answer, never guessed here")
+    check(any("which values" in p for p in Q.problems(good(), dict(
+        CONTRACTS, CHECK_MODEL_STANDARDS=dict(CONTRACTS["CHECK_MODEL_STANDARDS"], required=None)))),
+        "a contract that cannot say what is required is refused, never passed")
     many = good()
     many["checks"] = many["checks"] * (Q.MAX_CHECKS // 2 + 1)
     check(any("at most %d" % Q.MAX_CHECKS in p for p in Q.problems(many, CONTRACTS)),
@@ -177,9 +223,27 @@ def keep(home):
         fh.write(u"{not json")
     with io.open(os.path.join(Q.folder(home), "a-command.json"), "w", encoding="utf-8") as fh:
         fh.write(u'{"heron-command": 1}')
+    bad_files = {
+        "no-name.json": {"heron-checklist": 1, "name": 5, "checks": [dict(first)]},
+        "checks-text.json": {"heron-checklist": 1, "name": "x", "checks": "nope"},
+        "check-text.json": {"heron-checklist": 1, "name": "x", "checks": ["nope"]},
+        "bad-op.json": {"heron-checklist": 1, "name": "x", "checks": [dict(first, op="~")]},
+        "word-target.json": {"heron-checklist": 1, "name": "x", "checks": [dict(first, target="lots")]},
+        "bad-values.json": {"heron-checklist": 1, "name": "x", "checks": [dict(first, values="a=b")]},
+        "no-output.json": {"heron-checklist": 1, "name": "x", "checks": [dict(first, output=None)]},
+    }
+    for file_name, data in bad_files.items():
+        with io.open(os.path.join(Q.folder(home), file_name), "w", encoding="utf-8") as fh:
+            fh.write(json.dumps(data))
     found, broken = Q.all_checklists(home)
-    check([c["name"] for c in found] == ["Before Issue"] and broken == ["a-command.json", "broken.json"],
-          "a broken file, and one that is not a checklist, are named, not hidden")
+    check([c["name"] for c in found] == ["Before Issue"]
+          and broken == sorted(["a-command.json", "broken.json"] + list(bad_files)),
+          "a broken file, one that is not a checklist, and every file of the wrong shape are named, "
+          "not hidden - found %r" % broken)
+    check(len(Q.listing(home)["lists"]) == 1 and Q.describe(found[0]), "and the list still works around them")
+    for file_name in bad_files:
+        os.remove(os.path.join(Q.folder(home), file_name))
+    found, broken = Q.all_checklists(home)
     listed = Q.listing(home)
     check(listed["lists"][0]["sentences"] == ["every duct has a System Name", "nothing clashes"]
           and listed["broken"] == broken, "the page's list is ready to draw")
@@ -262,6 +326,24 @@ def running(home):
           "an output that did not come back is NOT RUN, never a pass")
     null = Q.judge(1, dict(checklist["checks"][0]), {"ran": True, "provides": {"failures": "(null)"}})
     check(null["state"] == "not run", "an output that came back as nothing is NOT RUN")
+    check(answer["run"] and all(st["run"] == answer["run"] for st in steps),
+          "every step of one run carries the same token, for the page's Select")
+    calls = []
+
+    def breaks(check_):
+        calls.append(1)
+        if len(calls) == 2:
+            raise RuntimeError("the pipe closed")
+        return ask(check_)
+    stopped = Q.run(checklist, breaks)
+    check(stopped["running"] is False and stopped["stopped"].startswith("The run stopped at check 2")
+          and [r["state"] for r in stopped["rows"]] == ["fail", "not run", "not run"]
+          and "the pipe closed" in stopped["rows"][2]["why"] and len(calls) == 2,
+          "an ask that raises ends the run in words: what was read is kept, the rest NOT RUN, never running")
+    moving = iter([10, 10, 14])
+    changed = Q.run(checklist, lambda c: dict(ask(c), changes=next(moving)))
+    check(changed["findings"] == [Q.CHANGED_DURING] and Q.CHANGED_DURING in Q.text(changed),
+          "a model that changed between two checks is said, in the result and in the chat")
     blank = Q.run({"name": "x", "checks": checklist["checks"]}, lambda c: {"ran": False, "why": "gone"})
     check(blank["counts"]["pass"] == 0 and blank["counts"]["not run"] == 3,
           "nothing run is nothing passed")
@@ -300,6 +382,8 @@ class _FakeServer(object):
         self._revit_lock = threading.RLock()
 
         class binding(object):
+            pid = 11
+
             @staticmethod
             def resolve():
                 if not bound:
@@ -318,6 +402,13 @@ class _FakeServer(object):
                 return None
 
         self.binding, self.bridge, self.pinned = binding, bridge, pinned
+        self.changes = iter(())
+
+        class companion(object):
+            @staticmethod
+            def live_changes(pid):
+                return next(outer.changes, None)
+        self.companion = companion
 
     def _fragment_for(self, capability):
         return (capability.lower().replace("_", "-"), "PROVEN")
@@ -329,6 +420,8 @@ class _FakeServer(object):
         return ("Tower MEP", "", "11")
 
     def revit_read(self, capability, values, expect_from, ctx=None):
+        if isinstance(self.replies.get(capability), Exception):
+            raise self.replies[capability]
         held = self._revit_lock._is_owned()
         self.sent.append((capability, values, held))
         self.out["reply"] = self.replies[capability]
@@ -345,9 +438,10 @@ def _server_run():
     """The server's _checklist_ask and _run_checklist, lifted out of its source
     and run against a stand-in - the MCP SDK is not needed to read them."""
     text = io.open(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py"), encoding="utf-8").read()
-    start = text.index("\ndef _checklist_ask(")
+    start = text.index("\ndef _checklist_checks(")
     end = text.index("\ndef _checklist_on_page(")
-    return text, text[start:end]
+    values = text[text.index("\ndef _values_array("):text.index("\ndef ", text.index("\ndef _values_array(") + 5)]
+    return text, values + text[start:end]
 
 
 def server(home):
@@ -365,7 +459,8 @@ def server(home):
             @staticmethod
             def checklists():
                 return Q
-        names = {"brain": brain, "NotBound": fake.NotBound, "revit_read": fake.revit_read}
+        names = {"brain": brain, "NotBound": fake.NotBound, "revit_read": fake.revit_read,
+                 "DASHBOARD_SELECT_MOST": 500, "_companion_module": lambda: fake.companion}
         for name in ("binding", "bridge", "pinned", "_revit_lock", "_fragment_for", "_moved_since",
                      "_pin_identity", "_through"):
             names[name] = getattr(fake, name)
@@ -386,8 +481,49 @@ def server(home):
     check(all(s[2] for s in fake.sent), "each read is taken under the lock every tool call holds")
     check([r["state"] for r in answer["rows"]] == ["pass", "pass"]
           and answer["identity"] == ["Tower MEP", "", "11"], "both read, and the run keeps the model it read")
-    check("_revit_lock" in source and source.count("with _revit_lock:") == 1
-          and "for check in" not in source,
+    many = _FakeServer({"CHECK_MODEL_STANDARDS": {"ok": True, "document": "Tower MEP",
+                                                  "provides": {"failures": "9",
+                                                               "offenders": "9 item(s) [1, 2, 3, ...]"}},
+                        "FIND_CLASHES": {"ok": True, "document": "Tower MEP",
+                                         "provides": {"clashing": "4", "clashes": "4 entry(ies)"},
+                                         "providesEntries": {"clashes": dict((str(70 + k), "1 item(s)")
+                                                                             for k in range(4))}}})
+    names = lifted(many)
+    answer = names["_run_checklist"](checklist)
+    first, second = answer["rows"]
+    check(first["state"] == "fail" and first["select"] == "" and first["ids"] == []
+          and "3 of the 9" in first["why"], "more than three list ids: no Select, and why")
+    check(second["state"] == "fail" and second["idsComplete"] and second["select"] == "Select in Revit"
+          and sorted(second["ids"]) == ["70", "71", "72", "73"],
+          "a dictionary keyed by id arrives whole: Select is offered")
+    names["DASHBOARD_SELECT_MOST"] = 2
+    names["_checklist_select_labels"](answer)
+    check(answer["rows"][1]["select"] == "Select the first 2 of 4", "past the cap the button says the first N of M")
+    moving = _FakeServer(fake.replies)
+    moving.changes = iter([5, 6])
+    answer = lifted(moving)["_run_checklist"](checklist)
+    check(answer["findings"] == [Q.CHANGED_DURING], "a model that changed between two checks is a finding")
+    broken = _FakeServer(dict(fake.replies, FIND_CLASHES=RuntimeError("the pipe closed")))
+    held = []
+    answer = lifted(broken)["_run_checklist"](checklist, progress=held.append)
+    check(answer["running"] is False and answer["failed"] and answer["rows"][0]["state"] == "pass"
+          and answer["rows"][1]["state"] == "not run" and "the pipe closed" in answer["rows"][1]["why"],
+          "a read that raises: a final result, the rest NOT RUN with the reason, marked failed")
+    checks = names["_checklist_checks"]
+    got = checks(json.dumps([{"sentence": "s", "capability": "C",
+                              "values": {"requiredParameters": "System Name", "maxRows": 5, "on": True}}]))
+    check(got[0]["values"] == [{"name": "requiredParameters", "value": "System Name"},
+                               {"name": "maxRows", "value": "5"}, {"name": "on", "value": "true"}],
+          "values given as a name -> value set are accepted")
+    for bad, words in (('[{"values": 5}]', "values must be"), ('[{"values": ["a=b"]}]', "each value must be"),
+                       ('["x"]', "must be a set of named fields"), ('{"a": 1}', "JSON list"),
+                       ('[{"values": {"a": [1]}}]', "text or a number"), ("[{", "JSON list")):
+        try:
+            checks(bad)
+            check(False, "%s is refused" % bad)
+        except ValueError as why:
+            check(words in str(why), "%s is refused in words: %s" % (bad, why))
+    check("_revit_lock" in source and source.count("with _revit_lock:") == 1,
           "the lock is taken inside one check's ask - never around the whole list")
     draft = _FakeServer(fake.replies, status="DRAFT")
     answer = lifted(draft)["_run_checklist"](checklist)
@@ -420,7 +556,9 @@ def real_cards(home):
         card = os.path.join(frag.folder, "fragment.yaml") if frag else ""
         contracts[check_["capability"]] = {
             "risk": bridge.fragment_risk(card), "needs": bridge.fragment_needs(card),
-            "provides": frag.provides() if frag else None, "selection": []} if frag else None
+            "provides": frag.provides() if frag else None, "selection": [],
+            "required": [n.get("name") for n in frag.needs() if FRAGMENT.need_source(n) == "request"
+                         and not FRAGMENT.need_may_be_absent(n)]} if frag else None
     said = Q.problems(Q.starter(), contracts)
     check(said == [], "every starter check passes the save's checks against its real card%s"
           % (" - %s" % said if said else ""))

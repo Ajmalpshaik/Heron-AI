@@ -56,6 +56,7 @@ import os
 import re
 import sys
 import time
+import uuid
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -72,7 +73,8 @@ MAX_CHECKS = 25
 # refuses anything above ANALYZE at revit_read, which every run goes through).
 READS = ("READ", "ANALYZE")
 OPERATORS = ("==", "!=", "<=", ">=", "<", ">")
-RULE = re.compile(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*(==|!=|<=|>=|<|>)\s*(-?\d+(?:\.\d+)?)\s*$")
+RULE = re.compile(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*(==|!=|<=|>=|<|>)\s*(-?\d+(?:\.\d+)?|true|false)\s*$",
+                  re.I)
 
 # Each result's colour, decided here and drawn on the Companion page. THE
 # BRAND'S COLOURS (D-149, docs/brand/README.md): Success, Error, and Warning
@@ -83,15 +85,21 @@ STATES = (("pass", "PASS", "#3ecf8e", "meets the value checked"),
           ("not run", "NOT RUN", "#f5a524", "not run - see why; never counted as a pass"))
 LABEL = dict((key, label) for key, label, _c, _m in STATES)
 
-# How a declared output type reads as a number. `Describe` in the add-in sends
-# a number as its text, a collection as "N item(s) [...]" or "N entry(ies)",
-# and a bool as true/false (RevitFragment.Describe).
-_NUMBER_TYPES = ("int", "long", "short", "double", "float", "decimal", "Int32", "Int64", "Double")
-_COLLECTION = re.compile(r"^(IList|List|ICollection|IEnumerable|IReadOnlyList|IReadOnlyCollection|"
-                         r"ISet|HashSet|IDictionary|Dictionary|IReadOnlyDictionary)<")
-_ID_LIST = re.compile(r"^(IList|List|ICollection|IEnumerable|IReadOnlyList|IReadOnlyCollection|ISet|"
-                      r"HashSet)<ElementId>$")
-_ID_KEYS = re.compile(r"^(IDictionary|Dictionary|IReadOnlyDictionary)<ElementId,")
+# How a declared output type reads as a number - ONLY what the add-in's
+# RevitFragment.Describe renders as one: an int, a long or a double as its
+# text, a bool as true/false, and a collection as "N item(s)" or "N entry(ies)"
+# - but only one that is a non-generic ICollection or IDictionary at run time.
+# A float, a short or a decimal is none of Describe's number types and arrives
+# as its type name; a HashSet or an ISet is not a non-generic ICollection and
+# arrives as "HashSet`1". A check on one could never run, so it is refused when
+# saved rather than NOT RUN every time.
+_NUMBER_TYPES = ("int", "long", "double", "Int32", "Int64", "Double")
+_FLAG_TYPES = ("bool", "Boolean")
+_COLLECTION = re.compile(r"^((IList|List|ICollection|IReadOnlyList|IReadOnlyCollection|IDictionary|"
+                         r"Dictionary|IReadOnlyDictionary|SortedDictionary)<.*>|[A-Za-z0-9_.]+\[\])$")
+_ID_LIST = re.compile(r"^((IList|List|ICollection|IReadOnlyList|IReadOnlyCollection)<ElementId>|"
+                      r"ElementId\[\])$")
+_ID_KEYS = re.compile(r"^(IDictionary|Dictionary|IReadOnlyDictionary|SortedDictionary)<ElementId,")
 _ITEMS = re.compile(r"^(\d+) (?:item\(s\)|entry\(ies\))")
 _SAMPLE = re.compile(r"\[(.*)\]\s*$")
 
@@ -123,7 +131,7 @@ def output_kind(type_text):
     shape = _shape(type_text)
     if shape in _NUMBER_TYPES:
         return "number"
-    if shape in ("bool", "Boolean"):
+    if shape in _FLAG_TYPES:
         return "flag"
     if _COLLECTION.match(shape):
         return "count"
@@ -142,39 +150,76 @@ def ids_kind(type_text):
     return None
 
 
+def _target(value):
+    """A rule's number as the chat or a file gave it: a number, a numeric
+    text such as "0", or true/false read as 1/0 - else None."""
+    if isinstance(value, bool):
+        return 1 if value else 0
+    if _number(value):
+        return int(value) if float(value).is_integer() else value
+    if isinstance(value, str):
+        text = value.strip().lower()
+        if text in ("true", "false"):
+            return 1 if text == "true" else 0
+        try:
+            number = float(text)
+        except ValueError:
+            return None
+        if math.isfinite(number):
+            return int(number) if number.is_integer() else number
+    return None
+
+
 def parse_rule(text):
-    """'failures == 0' -> ('failures', '==', 0). ChecklistError otherwise."""
-    found = RULE.match(text or "")
+    """'failures == 0' -> ('failures', '==', 0); 'workshared == true' -> 1.
+    ChecklistError otherwise."""
+    found = RULE.match(text) if isinstance(text, str) else None
     if not found:
-        raise ChecklistError("The rule '%s' must be one output, one of %s and a number - "
-                             "'failures == 0', say." % (text or "", " ".join(OPERATORS)))
-    number = float(found.group(3))
-    return found.group(1), found.group(2), int(number) if number.is_integer() else number
+        raise ChecklistError("The rule '%s' must be one output, one of %s and a number or "
+                             "true/false - 'failures == 0', say." % (text or "", " ".join(OPERATORS)))
+    return found.group(1), found.group(2), _target(found.group(3))
 
 
 def _number(value):
     return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
 
 
+def _text(value):
+    """`value` stripped when it is text, else None - never an error."""
+    return value.strip() if isinstance(value, str) else None
+
+
 def _normalised(check):
     """A check as the chat gave it, with a `rule` text read into its three
-    parts. Never raises: what it cannot read stays for problems() to name."""
-    check = dict(check or {}) if isinstance(check, dict) else {}
-    if check.get("rule") and not check.get("output"):
-        try:
-            check["output"], check["op"], check["target"] = parse_rule(check["rule"])
-        except ChecklistError as why:
-            check["ruleProblem"] = str(why)
+    parts and a typed target read as a number. Never raises: what it cannot
+    read stays for problems() to name."""
+    if not isinstance(check, dict):
+        return {"shapeProblem": "is not a set of named fields - sentence, capability, values, rule"}
+    check = dict(check)
+    parts = [k for k in ("output", "op", "target") if check.get(k) not in (None, "")]
+    if check.get("rule") not in (None, ""):
+        if parts:
+            check["ruleProblem"] = ("give the rule once - as one text, 'failures == 0', or as output, "
+                                    "op and target - not both")
+        else:
+            try:
+                check["output"], check["op"], check["target"] = parse_rule(check["rule"])
+            except ChecklistError as why:
+                check["ruleProblem"] = str(why)
+    elif "target" in check and _target(check.get("target")) is not None:
+        check["target"] = _target(check["target"])
     return check
 
 
-def _required(needs):
-    """The request values a fragment cannot run without - those its card does
-    not mark optional. The add-in refuses an absent request need unless it is
-    marked so (heron_fragment.need_may_be_absent's rule), so leaving one out
-    would make every run of the check NOT RUN."""
-    return [n.get("name") for n in needs or []
-            if n.get("source") == "request" and str(n.get("optional")).strip().lower() != "true"]
+def _values_problem(values):
+    """Why `values` is not a list of {name, value} texts, or None."""
+    if not isinstance(values, list):
+        return "its values must be a list of name and value pairs"
+    for entry in values:
+        if not isinstance(entry, dict) or not isinstance(entry.get("name"), str) \
+                or not isinstance(entry.get("value"), str):
+            return "each of its values must be a name and a value, both text"
+    return None
 
 
 def check_problems(check, contract, where):
@@ -182,8 +227,16 @@ def check_problems(check, contract, where):
     read from the fragment's card: {"risk", "needs", "provides", "selection"}
     - None when nothing in the library is called that."""
     found = []
-    sentence = (check.get("sentence") or "").strip()
-    capability = (check.get("capability") or "").strip().upper()
+    if check.get("shapeProblem"):
+        return ["%s %s." % (where, check["shapeProblem"])]
+    sentence = _text(check.get("sentence"))
+    capability = (_text(check.get("capability")) or "").upper()
+    if sentence is None and check.get("sentence") not in (None, ""):
+        found.append("%s: the sentence must be text." % where)
+        sentence = "-"
+    if check.get("capability") not in (None, "") and _text(check.get("capability")) is None:
+        found.append("%s: the capability must be its name, as text." % where)
+        return found
     if not sentence:
         found.append("%s has no sentence - the modeller's own words for what it checks." % where)
     elif len(sentence) > SENTENCE_MAX or "\n" in sentence or "\r" in sentence:
@@ -207,13 +260,24 @@ def check_problems(check, contract, where):
     # THE SAVED COMMAND'S OWN VALUE CHECK, CALLED (docs/49): a value the
     # fragment does not take, one given twice, one over two lines - and an
     # {input}, which a checklist has none of.
-    values = check.get("values") or []
+    values = check.get("values") if check.get("values") is not None else []
+    shape = _values_problem(values)
+    if shape:
+        found.append("%s: %s." % (where, shape))
+        return found
     as_command = {"name": "check", "tool": "read", "capability": capability,
                   "values": values, "inputs": []}
     for problem in COMMANDS.problems(as_command, needs):
         found.append("%s: %s" % (where, problem))
-    given = set((v or {}).get("name") for v in values)
-    for name in _required(needs):
+    # WHAT IT CANNOT RUN WITHOUT is the server's to say, from the card through
+    # heron_fragment.need_may_be_absent - the add-in's own binding rule,
+    # mirrored there once - and never a second copy written here.
+    required = contract.get("required")
+    if required is None:
+        found.append("%s: Heron could not read which values %s cannot run without." % (where, capability))
+        return found
+    given = set(v["name"] for v in values)
+    for name in required:
         if name not in given:
             found.append("%s: %s cannot run without a value for '%s'." % (where, capability, name))
 
@@ -227,7 +291,9 @@ def check_problems(check, contract, where):
         found.append("%s: %s" % (where, check["ruleProblem"]))
     else:
         output = check.get("output") or ""
-        if not output:
+        if not isinstance(output, str):
+            found.append("%s: the rule's output must be its name, as text." % where)
+        elif not output:
             found.append("%s has no rule - one output, a comparison and a number, 'failures == 0'."
                          % where)
         elif output not in declared:
@@ -241,7 +307,9 @@ def check_problems(check, contract, where):
         if not _number(check.get("target")):
             found.append("%s: the rule must compare with a number, not '%s'." % (where, check.get("target")))
     ids = check.get("ids") or ""
-    if ids:
+    if not isinstance(ids, str):
+        found.append("%s: 'ids' must name one output, as text." % where)
+    elif ids:
         if ids not in declared:
             found.append("%s: '%s' is not something %s leaves behind - it leaves: %s."
                          % (where, ids, capability, leaves))
@@ -261,12 +329,16 @@ def problems(checklist, contracts):
     if not isinstance(checklist, dict):
         return ["A checklist must be a set of named fields."]
     found = []
-    name = (checklist.get("name") or "").strip()
-    if not name:
+    name = _text(checklist.get("name")) or ""
+    if checklist.get("name") not in (None, "") and _text(checklist.get("name")) is None:
+        found.append("The name must be text.")
+    elif not name:
         found.append("It has no name. Give it the name the modeller will look for.")
     elif len(name) > NAME_MAX or not slug(name):
         found.append("The name '%s' must be 1 to %d characters with at least one letter or digit."
                      % (name, NAME_MAX))
+    if checklist.get("description") is not None and not isinstance(checklist.get("description"), str):
+        found.append("The description must be one line of text.")
     checks = checklist.get("checks")
     if not isinstance(checks, list) or not checks:
         found.append("It has no checks.")
@@ -276,8 +348,8 @@ def problems(checklist, contracts):
                      "per check. Split it in two." % (len(checks), MAX_CHECKS))
     for number, check in enumerate(checks, 1):
         check = _normalised(check)
-        where = "Check %d (%s)" % (number, (check.get("sentence") or "").strip()[:60] or "no sentence")
-        capability = (check.get("capability") or "").strip().upper()
+        where = "Check %d (%s)" % (number, (_text(check.get("sentence")) or "")[:60] or "no sentence")
+        capability = (_text(check.get("capability")) or "").upper()
         found.extend(check_problems(check, (contracts or {}).get(capability), where))
     return found
 
@@ -322,7 +394,7 @@ def save(checklist, contracts, home=None, replace=False, now=None):
     kept = {
         "heron-checklist": FORMAT,
         "name": checklist["name"].strip(),
-        "description": (checklist.get("description") or "").strip(),
+        "description": _text(checklist.get("description")) or "",
         "checks": kept_checks,
         "saved": now or time.strftime("%Y-%m-%dT%H:%M:%S"),
     }
@@ -330,12 +402,47 @@ def save(checklist, contracts, home=None, replace=False, now=None):
     return path
 
 
+def _check_shape(check):
+    """Why one saved check cannot be run as it is, or None - the fields every
+    reader below takes for granted (list, the page, judge)."""
+    if not isinstance(check, dict):
+        return "a check is not a set of named fields"
+    for key in ("sentence", "capability", "output"):
+        if not isinstance(check.get(key), str) or not check[key].strip():
+            return "a check has no %s" % key
+    if _values_problem(check.get("values")):
+        return "a check's values are not name and value texts"
+    if check.get("op") not in OPERATORS:
+        return "a check's comparison is not one of %s" % " ".join(OPERATORS)
+    if not _number(check.get("target")):
+        return "a check's rule compares with no number"
+    if not isinstance(check.get("ids", ""), str) or check.get("idsKind", "") not in ("", "list", "keys"):
+        return "a check's ids are not named as text"
+    selection = check.get("selection", [])
+    if not isinstance(selection, list) or not all(isinstance(n, str) for n in selection):
+        return "a check's selection is not a list of names"
+    return None
+
+
 def _read(path):
+    """One saved checklist, its WHOLE shape checked - ValueError otherwise, so
+    a file somebody edited by hand lands in the broken list and never stops
+    the list, the chat or the Companion's poll."""
     with io.open(path, "r", encoding="utf-8") as fh:
         data = json.load(fh)
-    if not isinstance(data, dict) or data.get("heron-checklist") != FORMAT \
-            or not isinstance(data.get("checks"), list):
+    if not isinstance(data, dict) or data.get("heron-checklist") != FORMAT:
         raise ValueError("not a Heron checklist of format %d" % FORMAT)
+    if not isinstance(data.get("name"), str) or not data["name"].strip():
+        raise ValueError("it has no name")
+    if not isinstance(data.get("description", ""), str):
+        raise ValueError("its description is not text")
+    checks = data.get("checks")
+    if not isinstance(checks, list) or not checks:
+        raise ValueError("it has no checks")
+    for check in checks:
+        why = _check_shape(check)
+        if why:
+            raise ValueError(why)
     return data
 
 
@@ -516,7 +623,17 @@ def _labelled(row):
     return row
 
 
-def result(checklist, rows, document=None, running=False):
+CHANGED_DURING = ("The model changed in Revit while the checklist ran, so its checks did not all "
+                  "read the same model. Press Run again for results from one state of it.")
+
+
+def new_token():
+    """The id of one run. The Companion's Select sends it back, so a row's
+    ids are never taken from a run that replaced the one on the page."""
+    return uuid.uuid4().hex[:12]
+
+
+def result(checklist, rows, document=None, running=False, token=None, findings=None, stopped=""):
     """What a run says - the rows, the counts and one sentence - ready to show."""
     counts = {"pass": 0, "fail": 0, "not run": 0}
     for row in rows:
@@ -529,25 +646,54 @@ def result(checklist, rows, document=None, running=False):
                counts["pass"], counts["fail"], counts["not run"]))
     if counts["not run"]:
         said += " A check not run is not a pass."
+    if stopped:
+        said += " " + stopped
     return {"name": checklist.get("name"), "description": checklist.get("description") or "",
             "document": document, "at": time.strftime("%H:%M:%S"), "running": bool(running),
+            "run": token or new_token(), "findings": list(findings or []), "stopped": stopped or "",
             "rows": rows, "counts": dict(counts, total=total, done=len(rows)), "said": said,
             "states": [{"key": k, "label": label, "colour": c, "means": m} for k, label, c, m in STATES]}
 
 
+def finish(checklist, rows, document, why, token=None, findings=None):
+    """A run that stopped part way: the rows it has, every check after them
+    NOT RUN with `why`, and `running` False - so nothing ever shows "Running"
+    for good, and a stopped run is never read as a finished one."""
+    rows = list(rows)
+    checks = checklist.get("checks") or []
+    for number, check in enumerate(checks[len(rows):], len(rows) + 1):
+        rows.append(judge(number, check, {"ran": False, "why": why}))
+    return result(checklist, rows, document, running=False, token=token, findings=findings, stopped=why)
+
+
 def run(checklist, ask, progress=None):
     """Run every check, one read each, in order. `ask(check)` is the server's:
-    it reads through revit_read's own body and returns what judge() takes.
-    `progress(result)` is told after each check, for the Companion page."""
-    rows, document = [], None
+    it reads through revit_read's own body and returns what judge() takes,
+    with `changes` - the model's change count after the read, when known.
+    `progress(result)` is told after each check, for the Companion page.
+
+    A FAULT IN ONE ASK ENDS THE RUN IN WORDS, never as an exception half way:
+    the checks not reached are NOT RUN saying why, and the result is final."""
+    token, rows, document, findings, first = new_token(), [], None, [], None
     checks = checklist.get("checks") or []
     for number, check in enumerate(checks, 1):
-        ran = ask(check) or {}
+        try:
+            ran = ask(check) or {}
+        except Exception as why:                     # noqa: BLE001 - a run never ends "running"
+            return finish(checklist, rows, document,
+                          "The run stopped at check %d: %s. Nothing more was sent to Revit."
+                          % (number, why), token, findings)
         document = document or ran.get("document")
+        changes = ran.get("changes")
+        if isinstance(changes, int) and not isinstance(changes, bool):
+            if first is None:
+                first = changes
+            elif changes != first and CHANGED_DURING not in findings:
+                findings.append(CHANGED_DURING)
         rows.append(judge(number, check, ran))
         if progress is not None and number < len(checks):
-            progress(result(checklist, rows, document, running=True))
-    return result(checklist, rows, document)
+            progress(result(checklist, rows, document, running=True, token=token, findings=findings))
+    return result(checklist, rows, document, token=token, findings=findings)
 
 
 def text(answer):
@@ -561,6 +707,9 @@ def text(answer):
             line += "\n         failing element ids: %s" % ", ".join(row["ids"][:20]) + (
                 " and %d more" % (len(row["ids"]) - 20) if len(row["ids"]) > 20 else "")
         lines.append(line)
+    for finding in answer.get("findings") or []:
+        lines.append("")
+        lines.append(finding)
     lines.append("")
     lines.append("Nothing in the model was changed: each check is a read with no transaction "
                  "open, so there is nothing to undo, keep or discard.")

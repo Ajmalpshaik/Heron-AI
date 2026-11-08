@@ -1695,7 +1695,7 @@ def test_checklist_panel(tmp):
             {"n": 2, "state": "fail", "ids": ["501", "502"], "idsComplete": True},
             {"n": 3, "state": "fail", "ids": [], "idsComplete": False, "idsTotal": 40}]
     answer = {"name": "Before issue", "rows": rows, "counts": {"pass": 1, "fail": 2, "not run": 0},
-              "identity": ["Tower MEP", "", "11"], "said": "said"}
+              "identity": ["Tower MEP", "", "11"], "said": "said", "run": "run-1"}
     seen = []
 
     def run(name, hold):
@@ -1716,30 +1716,67 @@ def test_checklist_panel(tmp):
           "the page is sent the brain's list and rows as they came")
     check("identity" not in shown["result"], "and never the model's identity, which stays with the panel")
 
-    def broken(_name, _hold):
+    def broken(_name, hold):
+        hold(dict(answer, running=True, rows=rows[:1], run="run-0"))
         raise RuntimeError("Revit closed")
     panel.run_hook = broken
-    try:
-        panel.run({"name": "Before issue"})
-    except RuntimeError:
-        pass
-    check(panel.current()["busy"] is False, "busy is cleared even when the run raises")
+    got = panel.run({"name": "Before issue"})
+    shown = panel.current()
+    check(got["ok"] is False and "The run stopped: Revit closed" in got["said"]
+          and shown["busy"] is False and shown["result"]["running"] is False
+          and "stopped" in shown["result"]["said"],
+          "a run that raises is told in words, its held result made final - never left Running")
+    panel.hold(answer)
+
+    # ONE RUN AT A TIME, CHAT AND PAGE TOGETHER.
+    check(panel.begin("chat") is None, "a chat run claims the one run")
+    check(panel.run({"name": "Before issue"})["said"] == "Nothing was run: %s." % hc.ChecklistPanel.BUSY_CHAT
+          and panel.current()["busyWith"] == "chat",
+          "a page Run while a chat run goes is refused in words, naming the chat")
+    check(panel.show({"action": "select", "row": 2, "run": "run-1"})["ok"] is False,
+          "and so is Select, until the chat run ends")
+    panel.end()
+
+    def page_run(_name, _hold):
+        seen.append(("chat said", panel.begin("chat")))
+        return {"ok": True, "said": "ran"}
+    panel.run_hook = page_run
+    panel.run({"name": "Before issue"})
+    check(seen[-1] == ("chat said", hc.ChecklistPanel.BUSY),
+          "a chat run while a page run goes is refused in words, naming the page")
+    check(panel.begin("chat") is None, "after the page run ends, the chat may run")
+    panel.end()
 
     sent = []
     check(panel.show({"action": "select", "row": 2})["said"]
           == "Nothing was sent to Revit: %s." % hc.ChecklistPanel.GONE, "Select with no chat sends nothing")
     panel.show_hook = lambda action, ids, identity: sent.append((action, ids, identity)) or {"ok": True,
                                                                                          "said": "selected"}
-    got = panel.show({"action": "select", "row": 2, "ids": ["999"]})
+    got = panel.show({"action": "select", "row": 2, "run": "run-1", "ids": ["999"]})
     check(got == {"ok": True, "said": "selected"} and sent == [("select", ["501", "502"],
                                                                 ["Tower MEP", "", "11"])],
           "Select sends the ids the panel's own run found, never ids the page typed, with the model it read")
-    check(panel.show({"action": "select", "row": 3})["ok"] is False and len(sent) == 1,
+    check(panel.show({"action": "select", "row": 3, "run": "run-1"})["ok"] is False and len(sent) == 1,
           "a row whose ids did not all arrive sends nothing")
-    check(panel.show({"action": "select", "row": 1})["ok"] is False and len(sent) == 1,
+    check(panel.show({"action": "select", "row": 1, "run": "run-1"})["ok"] is False and len(sent) == 1,
           "a passing row has no ids to send")
-    check(panel.show({"action": "isolate", "row": 2})["ok"] is False and len(sent) == 1,
+    check(panel.show({"action": "isolate", "row": 2, "run": "run-1"})["ok"] is False and len(sent) == 1,
           "an action that is not select is refused")
+    # A CHAT RUN REPLACED THE RESULT BEFORE THE PAGE REDREW: the page's row 2 is
+    # the old run's, so nothing is sent.
+    panel.hold(dict(answer, run="run-2", rows=[dict(rows[1], ids=["901"])]))
+    got = panel.show({"action": "select", "row": 2, "run": "run-1"})
+    check(got["ok"] is False and got["said"] == "Nothing was sent to Revit: %s." % hc.ChecklistPanel.REPLACED
+          and len(sent) == 1, "Select on a run the page no longer shows is refused in words")
+    check(panel.show({"action": "select", "row": 2})["ok"] is False and len(sent) == 1,
+          "and so is Select with no run named")
+    check(panel.show({"action": "select", "row": 2, "run": "run-2"})["ok"] and sent[-1][1] == ["901"],
+          "the run the page does show selects its own ids")
+
+    def raising_list():
+        raise ValueError("one bad file")
+    panel.list_hook = raising_list
+    check(panel.current()["result"] is not None, "a list that cannot be read never stops the page updating")
 
     source = io.open(SOURCE, encoding="utf-8").read()
     i = source.index('if path == "/api/checklist":')
@@ -1751,8 +1788,10 @@ def test_checklist_panel(tmp):
     server = io.open(SERVER, encoding="utf-8").read()
     check("CHECKLIST_PANEL.list_hook = _checklist_list" in server
           and "CHECKLIST_PANEL.run_hook = _checklist_run_page" in server
-          and "CHECKLIST_PANEL.show_hook = _dashboard_show" in server,
-          "the server sets the hooks, and Select is the Model Dashboard's own _dashboard_show")
+          and "CHECKLIST_PANEL.show_hook = _checklist_show" in server
+          and "_dashboard_show(action, ids, identity, moved_said=CHECKLIST_MOVED)" in server,
+          "the server sets the hooks, and Select is the Model Dashboard's own _dashboard_show, in "
+          "the checklist's own words")
     page_run = server[server.index("def _checklist_run_page("):]
     page_run = page_run[:page_run.index(chr(10) + "def ", 10)]
     ask_src = server[server.index("def _checklist_ask("):]
@@ -1800,8 +1839,8 @@ def test_checklist_panel(tmp):
           "the page puts model text on the page with textContent only")
     check(set(re.findall(r'fetch\("([^"]+)"', block)) <= {"/api/checklist"}
           and "/api/checklist/run" in block and "/api/checklist/show" in block
-          and '{ action: "select", row: row }' in block,
-          "it asks Heron only, and Select sends the row's number, never ids")
+          and '{ action: "select", row: row, run: run }' in block,
+          "it asks Heron only, and Select sends the row's number and its run, never ids")
     check("checklist_();" in js[js.index("async function poll()"):js.index("function theme()")]
           and '["qa", "q-empty"]' in js, "the poll reads it, and it is a workspace in the sidebar")
     print()

@@ -72,9 +72,9 @@ problem:
 | A capability declared above `ANALYZE` | A check only reads - the read door's own ceiling (`heron_tools.door_refusal`) |
 | A capability Heron does not have | Nothing would run |
 | A value the fragment does not take, one given twice, one over two lines, an `{input}` | `heron_commands.problems`, called - the same check as a saved command ([docs/49](49-saved-commands-and-the-heron-panel.md)) |
-| A request value the card does not mark optional, left out | The add-in refuses an absent request need, so every run would be NOT RUN |
+| A request value the add-in's binder cannot leave out, left out | Every run would be NOT RUN. Which ones is `heron_fragment.need_may_be_absent`'s answer, asked by the server |
 | A rule on an output the card does not declare | It would never come back; the refusal lists what the fragment does leave |
-| A rule on text, a point or one element | Nothing to compare a number with |
+| A rule on text, a point, one element, a `float`, a `HashSet` or an `ISet` | `RevitFragment.Describe` sends none of them as a number - a float and a HashSet arrive as their type names - so the check could never run |
 | An `ids` output that holds elements, not ids | The add-in sends an element list's **names**, never its ids |
 | More than `MAX_CHECKS` checks | A run is one read per check (`brain/heron_checklists.py`) |
 
@@ -82,9 +82,15 @@ problem:
 Revit is there. A proof can go stale between saving and running ([D-30](DECISIONS.md)).
 
 **How a fragment declares its outputs.** `contract.provides` on its card - each a `name`, a `type` and a
-`role` (`result` or `accounting`). A number reads from `int`, `double` and their kind; a count from a list or
-dictionary, as the add-in describes it (`3 item(s) [...]`, `3 entry(ies)`); `bool` as 1 or 0. Element ids
-come from a list of `ElementId` or a dictionary keyed by one.
+`role` (`result` or `accounting`). A rule may use what `RevitFragment.Describe` sends as a number: `int`,
+`long` and `double` as their text, `bool` as true/false (read as 1/0 - `workshared == true` works), and a
+list, an array or a dictionary as its count (`3 item(s) [...]`, `3 entry(ies)`). A rule's number may be sent
+as text, `"0"`; the rule is given once - as `failures == 0`, or as output, op and target, never both. Element
+ids come from a list of `ElementId` or a dictionary keyed by one.
+
+**A saved file is read whole.** Every field each check needs is checked when a file is read; a file of the
+wrong shape - edited by hand, say - is listed as one that could not be read, and the list, the chat and the
+Companion keep working around it.
 
 ## 3. Which capabilities a check can use today
 
@@ -136,17 +142,25 @@ heron_checklist run  /  Companion QA Checklist: Run
 
 - **One read per check, one check at a time.** The lock every tool call holds is taken for each check's read
   and let go before the next, so a Companion run never holds the pipe longer than the Model Dashboard's one
-  read, and a chat can be answered between two checks. A run from the chat holds it for the tool call, as
-  every tool does.
-- **One run at a time on the page.** A second **Run** while one runs is refused in words. Each finished row
-  reaches the page as it is done.
+  read, and a chat can be answered between two checks. A run from the chat holds it for the whole tool
+  call, as every tool does.
+- **One run at a time, the chat's and the page's together.** Both claim the Companion panel's busy flag: a
+  second **Run**, a page Run while the chat runs one, and a chat run while the page runs one are each
+  refused in words, naming who is running. Each finished row reaches the page as it is done.
+- **A run that stops part way is still finished.** A fault in a read keeps the rows already read, makes every
+  check after it NOT RUN with the reason, and is listed as failed - never left at *Running*.
+- **The model changing between two checks is said.** After each read the add-in's change count (D-147) is
+  read; when it moved during the run, the result says so and asks for Run again.
 - **What arrives.** A number arrives as its text, a list as its count and first three items, a dictionary
   with every entry (`RevitFragment.Describe`, `providesEntries`). So **a list of more than three ids arrives
   incomplete**: the row says how many arrived and **Select in Revit is not offered** for it, rather than
   selecting part of what failed. A dictionary keyed by element id arrives whole.
 - **Select in Revit** is the Model Dashboard's own route (`_dashboard_show`: `FILTER_ELEMENTS_BY_ID`, then
   `SET_SELECTION`, both PROVEN, declared `companion_dashboard_select` at EXECUTE), with the ids the run found
-  - the page sends the row's number, never ids - and only on the model the run read.
+  - the page sends the row's number and the run's token, never ids. A row from a run that has since been
+  replaced - by a chat run, say - is refused in words; so is the model having moved (*the checklist was run on
+  another model - press Run again*). Past the route's limit (`DASHBOARD_SELECT_MOST` in the server) the button and the answer say *the first
+  N of M*.
 - **CSV and Print / PDF** are made on the page from the rows Heron sent; nothing is read again.
 
 ## 5. What was built

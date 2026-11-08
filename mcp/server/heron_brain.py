@@ -2766,7 +2766,7 @@ def fragment_contract(folder):
     fragment's OWN card - proof_status' reason - or None when it cannot be read:
 
         {"risk": "READ", "needs": [...], "provides": [...],
-         "selection": ["elements"]}
+         "required": ["includeRooms"], "selection": ["elements"]}
 
     `selection` is every need the request does not fill and the add-in does
     not supply - heron_fragment.need_source's "fragment" - which a read with
@@ -2786,6 +2786,11 @@ def fragment_contract(folder):
         "risk": str(frag.data.get("risk") or "").upper(),
         "needs": needs,
         "provides": frag.provides(),
+        # The request values it cannot run without: every one the add-in's
+        # binder would refuse when absent - heron_fragment.need_may_be_absent,
+        # its rule mirrored once, asked rather than copied.
+        "required": [n.get("name") for n in needs if FRAGMENT.need_source(n) == "request"
+                     and not FRAGMENT.need_may_be_absent(n)],
         "selection": [n.get("name") for n in needs
                       if FRAGMENT.need_source(n) == "fragment"
                       and str(n.get("optional")).strip().lower() != "true"],

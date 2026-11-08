@@ -106,6 +106,18 @@ def tool(home):
         {"sentence": "delete the duplicates", "capability": "DELETE_ELEMENTS", "rule": "deleted == 0"}]))
     check("a check may only read" in said and "Not saved" in said,
           "a capability that changes the model is never a check")
+    said = body("save", name="Dict values", checks=json.dumps([
+        {"sentence": "every room is placed", "capability": "SELECT_UNENCLOSED_ROOMS",
+         "values": {"includeRooms": True, "includeSpaces": "false"}, "rule": "unplaced == 0",
+         "ids": "unplaced"}]))
+    check(said.startswith("Saved 'Dict values'"), "values as a name -> value set are saved - %r" % said[:160])
+    check(body("delete", name="Dict values").startswith("Deleted"), "and deleted")
+    for bad in ([{"sentence": "x", "capability": "LIST_LINKED_MODELS", "values": 5, "rule": "notLoaded == 0"}],
+                [{"sentence": "x", "capability": "LIST_LINKED_MODELS", "values": ["a"], "rule": "notLoaded == 0"}],
+                [{"sentence": 4, "capability": ["x"], "rule": "notLoaded == 0"}], ["x"]):
+        said = body("save", name="Bad shape", checks=json.dumps(bad))
+        check("Nothing was saved" in said or said.startswith("Not saved"),
+              "a bad shape is refused in a sentence, never a tool error - %r" % said[:120])
     said = body("save", name="Bad json", checks="[{")
     check("JSON list" in said and "Nothing was saved" in said, "checks that are not JSON save nothing")
     check("starter" in body("list"), "with nothing saved, the list offers the starter")
@@ -133,6 +145,31 @@ def tool(home):
         check("4 meet the value checked, 1 do not, 0 not run" in said and "Project1" in said,
               "the counts, on the model it read")
         check(not re.search(r"\b(compliant|clean|healthy)\b", said, re.I), "and never a verdict")
+
+        panel = S._companion_module().CHECKLIST_PANEL
+        check(panel.begin("page") is None, "a page run holds the one run")
+        revit.asked[:] = []
+        said = body("run", name="Before issue")
+        check(said.startswith("Not run: a checklist is already running from the Companion page")
+              and not revit.asked, "a chat run while a page run goes is refused in words, nothing sent")
+        panel.end()
+
+        S.pinned.forget()
+        revit.reply = reply_with(notLoaded="9 item(s) [21, 22, 23, ...]")
+        rows = S._run_checklist(S.brain.checklists().find("Before issue"))["rows"]
+        check(rows[0]["state"] == "fail" and rows[0]["select"] == "" and "3 of the 9" in rows[0]["why"],
+              "a list of more than three ids: no Select in Revit, and why")
+        said = body("save", name="Kinds", checks=json.dumps([
+            {"sentence": "no external reference at all", "capability": "REPORT_EXTERNAL_REFERENCES",
+             "rule": "kinds == 0", "ids": "kinds"}]))
+        check(said.startswith("Saved 'Kinds'"), "a dictionary keyed by id is an ids output")
+        S.pinned.forget()
+        revit.reply = dict(reply_with(kinds="2 entry(ies)"),
+                           providesEntries={"kinds": {"501": "Revit link", "502": "CAD"}})
+        rows = S._run_checklist(S.brain.checklists().find("Kinds"))["rows"]
+        check(rows[0]["state"] == "fail" and rows[0]["select"] == "Select in Revit"
+              and sorted(rows[0]["ids"]) == ["501", "502"],
+              "a dictionary keyed by id arrives whole: Select in Revit is offered")
 
         def gone():
             raise S.NotBound("No Revit is connected to this chat.")
