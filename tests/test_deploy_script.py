@@ -184,6 +184,12 @@ def main():
          "it still copies the runtime metadata .NET 8 and .NET 10 fail without"),
         ("RevitAPI*",
          "it still refuses to redistribute Autodesk's assemblies (docs/07 section 4)"),
+        ("is older than the code beside it",
+         "it refuses a build older than its code - on 2026-11-07 a pulled main "
+         "was installed from the 16:30 build into four Revits and reported success"),
+        ("ProjectReference",
+         "and that age check follows the project's references, so a change in "
+         "Heron.Core counts too"),
     ]:
         check(guard in text, why)
 

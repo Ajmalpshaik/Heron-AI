@@ -452,6 +452,69 @@ if (-not $buildOut) {
 }
 if (-not $FromFolder) { Write-Host "  from $buildOut" }
 
+# A BUILD OLDER THAN ITS CODE IS A REFUSAL - 2026-11-07.
+#
+# This script copies a build; it never makes one. Every guard above asks
+# whether the build is for the right release and runtime, and none asked
+# whether it is the code that is on disk now. On 2026-11-07 main was pulled
+# with four merged changes in it and this ran straight after: it installed
+# the 16:30 build into all four Revits, said "Deployed", and the new Settings
+# button lost its icon because Settings.png had never been built. Only
+# reading the installed DLL afterwards showed the old commit in it.
+#
+# TWO QUESTIONS, because MSBuild answers them differently. Code (.cs, a
+# project file, Directory.Build.props) recompiles the assembly, so anything
+# newer than the assembly means no build since. A picture under Resources is
+# only copied, never compiled - comparing it with the assembly would refuse
+# for ever after a picture-only change - so each one is compared with its own
+# copy in the build folder instead. Only for a local build: a folder handed
+# in (-FromFolder) has no source beside it to compare with.
+if (-not $FromFolder) {
+    $assemblyTime = (Get-Item (Join-Path $buildOut $productAssembly)).LastWriteTimeUtc
+
+    # The product's project and every project it references, followed through
+    # ProjectReference so a change in Heron.Core counts as well.
+    $projects = New-Object System.Collections.Generic.List[string]
+    $toRead = New-Object System.Collections.Generic.Queue[string]
+    $toRead.Enqueue((Join-Path $repoRoot $productProjPath))
+    while ($toRead.Count -gt 0) {
+        $proj = [System.IO.Path]::GetFullPath($toRead.Dequeue())
+        if ($projects.Contains($proj) -or -not (Test-Path $proj)) { continue }
+        $projects.Add($proj)
+        $projText = Get-Content -Raw -Path $proj
+        foreach ($ref in [regex]::Matches($projText, 'ProjectReference\s+Include="([^"]+)"')) {
+            $toRead.Enqueue((Join-Path (Split-Path -Parent $proj) $ref.Groups[1].Value))
+        }
+    }
+
+    $newerCode = @()
+    $props = Join-Path $repoRoot "Directory.Build.props"
+    if ((Test-Path $props) -and (Get-Item $props).LastWriteTimeUtc -gt $assemblyTime) { $newerCode += $props }
+    foreach ($proj in $projects) {
+        $newerCode += @(Get-ChildItem -Path (Split-Path -Parent $proj) -Recurse -File -Include *.cs, *.csproj -ErrorAction SilentlyContinue |
+                        Where-Object { $_.FullName -notmatch '\\(bin|obj)\\' -and $_.LastWriteTimeUtc -gt $assemblyTime } |
+                        ForEach-Object { $_.FullName })
+    }
+
+    $staleResources = @()
+    $resourceSourceDir = Join-Path $projDir "Resources"
+    if (Test-Path $resourceSourceDir) {
+        foreach ($picture in Get-ChildItem -Path $resourceSourceDir -File) {
+            $built = Join-Path (Join-Path $buildOut "Resources") $picture.Name
+            if (-not (Test-Path $built) -or $picture.LastWriteTimeUtc -gt (Get-Item $built).LastWriteTimeUtc) {
+                $staleResources += "Resources\$($picture.Name)"
+            }
+        }
+    }
+
+    if ($newerCode.Count -gt 0 -or $staleResources.Count -gt 0) {
+        $named = @($newerCode | Select-Object -First 3 | ForEach-Object { $_.Substring($repoRoot.Length + 1) }) + @($staleResources | Select-Object -First 3)
+        $total = $newerCode.Count + $staleResources.Count
+        throw "The build in $buildOut is older than the code beside it - $total file(s) changed since it was made, among them: $($named -join ', '). Installing it would put old Heron into Revit $RevitVersion and report success. Nothing was changed. Build this release and run this again:`n  dotnet build $productProjPath -c $Configuration -p:RevitVersion=$RevitVersion"
+    }
+    Write-Host "  the build is newer than every file it was made from"
+}
+
 # THE BUILD OUTPUT USED TO BE SHARED BETWEEN ALL EIGHT RELEASES, and that is
 # why this guard exists. tools/check-compile.py builds 2020 through 2027, and
 # until #242 every one of them wrote into the same folder - so running it left
