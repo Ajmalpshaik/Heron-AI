@@ -1,0 +1,233 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write that draws dimensions, "dimensioned something nobody asked for":
+# a run of a category no rule names, a run already dimensioned, a string to a
+# target out of reach or on the wrong side, a string of a type nobody named
+# and the project does not default to, or a half string left with nothing said.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING Group MU). A SAVED
+# scratch copy of Revit's "Snowdon Towers Sample HVAC", Revit 2024 - never a
+# working model. "FloorPlan: M1" (22 ducts, the small view of the
+# fragment-proving skill's rule 1) with NO dimensions on its ducts. In the
+# sample the architecture is a LINKED model, so walls (and perhaps grids and
+# columns) may not be in the HVAC model itself, and this version does not read
+# links: MU1 records which of grids, walls and columns the HVAC model holds of
+# its own, and draws what the wall and column rows need in the copy. Nothing is
+# selected: this card collects what its rules name in each plan itself, so no
+# setup chain is needed, and the negative leg is the SAME plan with a VALUE
+# that must leave every duct alone - a different value, not an empty selection
+# (fragment-proving, rules 3 and 5). Where the model differs, the job file
+# changes - never the card. EVERY RUN ROLLED BACK but MU7's one run.
+
+positive:
+  - given: >
+      views "FloorPlan: M1", rules "Ducts | same-service | nearest | 3000" -
+      nothing else typed: the project's default linear dimension type, offset
+      10 paper mm, one string, risers and already-dimensioned ducts skipped
+    expect: >
+      dimensioned above 0; newDimensions that many ids, each holding TWO
+      references - this duct's centreline and the nearest parallel duct's;
+      dimensionTypeUsed "'<type>' (the project's default linear dimension
+      type)"; perView one line for M1; skipped and skippedWhy naming every
+      other duct of M1 - the counts in skippedWhy adding up to skipped; refused
+      empty. Then LOOK AT THE PLAN: each string square to its duct, running
+      centreline to centreline, sitting 10 paper mm along the duct from the
+      middle of the part shown (or at the point nearest it that both ducts run
+      alongside). A pair of parallel ducts gets ONE string, not two - the
+      second duct is named "already dimensioned in this view to a same-service
+      run", because the first's string holds it with a run of the kind its rule
+      names
+
+  - given: >
+      views "FloorPlan: M1", rules "Ducts | grids | nearest | 6000" - on a plan
+      showing grids of the HVAC model ITSELF (MU1 records whether M1 does)
+    expect: >
+      each duct parallel to a grid within 6 m measured to the NEAREST such
+      grid, the string from the grid line to the duct's centreline; a duct
+      square to every grid named "no grid within 6000 mm across it" - never
+      measured to a grid running across it. A grid that stops short of the part
+      of the duct the plan shows is not used either
+
+  - given: >
+      views "FloorPlan: M1", rules "Ducts | walls | both | 1500" and chain
+      "separate", on the duct MU1 arranged between two walls of this model
+    expect: >
+      that duct TWO dimensions - wall face to centreline, centreline to the
+      other wall face - each to the wall face NEARER the duct, each where duct
+      and that wall run side by side (on one line when both walls run alongside
+      the middle of the part shown); dimensioned counts the duct once; with
+      chain left out (one), ONE string holding three references, at a station
+      both walls share. And a wall within reach and parallel, but lying beyond
+      the duct's end, is never dimensioned to
+
+  - given: >
+      views "FloorPlan: M1, <MU1's second plan>", rules "Ducts | same-service;
+      Pipes | same-service, other-service | nearest | 2000"
+    expect: >
+      perView two lines, one per plan, each with its own counts; rulesRead
+      opening "2 rule(s) read, of 2 ... : Ducts, Pipes", the first saying
+      "(not given - this card's 3000)"; ONE entry in Revit's undo list for the
+      whole call - one Ctrl+Z takes every dimension in both plans away (Golden
+      Rule 16)
+
+  - given: the first case run a SECOND time on the same plan, after it was kept
+    expect: >
+      dimensioned 0, newDimensions empty, every duct the first run's strings
+      hold - each held there WITH another duct, a same-service run, the kind
+      this rule names - in skipped as "already dimensioned in this view to a
+      same-service run" - nothing stacked
+
+  - given: >
+      THE OWNER'S RULE FOR "ALREADY DIMENSIONED" (2026-11-08). On a plan with
+      ducts and parallel pipes: rules "Pipes | other-service | nearest | 2000"
+      KEPT, so ducts are held by pipe strings as targets; then rules "Ducts |
+      grids | nearest | 6000" (or "Ducts | walls" on MU1's duct)
+    expect: >
+      the ducts the pipe strings reach are dimensioned to their grid (or wall)
+      all the same - held only as another rule's target, by a pipe, a kind
+      "Ducts | grids" does not name, they do not count as already dimensioned.
+      Then "Ducts | other-service" on the same plan: those ducts ARE in skipped
+      as already dimensioned to an other-service run
+
+  - given: >
+      the first case after it was kept, with skipDimensioned false
+    expect: >
+      still nothing new where the string would be exactly the one already
+      there - "the same dimension is already in this view" - never a second
+      identical string
+
+  - given: views left out, with M1 the active view
+    expect: >
+      M1 dimensioned, and findings saying no view was named so the active
+      view "M1" was dimensioned
+
+negative:
+  - given: >
+      THE D-30 NEGATIVE - THE FIRST CASE TO RUN. The positive's plan with
+      rules "Ducts | same-service | nearest | 1" - a reach of 1 mm across the
+      run, which no parallel duct is inside
+    expect: >
+      dimensioned 0, newDimensions empty, every duct of M1 in skipped -
+      "no same-service run within 1 mm across it" or "vertical" - nothing drawn. A card
+      that dimensioned whatever it found would draw here; the value alone
+      empties the result
+
+  - given: rules "Ductz | grids" - a category the model has no name for
+    expect: >
+      refused "1 of the 1 rule(s) could not be read: rule 1 ("Ductz | grids"):
+      no category is called "Ductz" in this model ... Nothing was drawn."
+
+  - given: rules "Ducts" - no target named
+    expect: refused saying what Ducts are dimensioned to must be said, nothing drawn
+
+  - given: rules "Flex Ducts | same-service"
+    expect: refused, Flex Ducts are not straight, nothing drawn
+
+  - given: rules "Ducts | grids; Ducts | walls" - two rules for one category
+    expect: refused for rule 2, Ducts has a rule already, nothing drawn - not even rule 1's
+
+  - given: rules "Ducts | grids | nearest | 1500 | 10" - five parts
+    expect: refused, a rule is at most four parts, nothing drawn
+
+  - given: rules "Ducts | grids | nearest | 0", then "Ducts | grids | nearest | far"
+    expect: >
+      each refused, "is not a reach" - above 0, in model millimetres - nothing
+      drawn
+
+  - given: rules "Ducts | same-service" with chain "segments"
+    expect: refused, "segments" is not a chain style - one or separate, nothing drawn
+
+  - given: rules "Ducts | same-service" with offsetMm -5, then with minRunMm -1
+    expect: each refused, not an offset / not a length, nothing drawn
+
+  - given: rules ";;" - separators and nothing else
+    expect: refused "No rules were given ...", nothing drawn
+
+  - given: >
+      on a copy holding two linear dimension types of one name (MU3 arranges it
+      by duplicating one and renaming the copy), dimensionType that name
+    expect: refused, two linear dimension types are called that, nothing drawn
+
+  - given: >
+      dimensionType left out, on a project with no default linear dimension
+      type - NOT arrangeable in the Revit UI, which always holds a default;
+      covered only if a model is found without one, else NOT COVERED
+    expect: refused, no type named and no project default, the loaded linear types listed, nothing drawn
+
+  - given: rules "Ducts | grids; Air Terminals | grids"
+    expect: >
+      refused for rule 2 ALONE - Air Terminals is not a run category - and
+      nothing drawn, not even the ducts' strings
+
+  - given: rules "Ducts | floors"
+    expect: refused, "floors" is not something this measures to, nothing drawn
+
+  - given: rules "Ducts | grids | left"
+    expect: refused, "left" is not a side - nearest or both, nothing drawn
+
+  - given: >
+      dimensionType "<a SPOT ELEVATION or ANGULAR type the model has>", rules
+      "Ducts | same-service"
+    expect: >
+      refused naming it as not a linear dimension type, the loaded linear
+      types listed, nothing drawn
+
+  - given: dimensionType "ZZZ No Such Type", rules "Ducts | same-service"
+    expect: refused, no linear dimension type of that name, nothing drawn
+
+  - given: views a 3D view and a section, rules "Ducts | grids"
+    expect: >
+      refused "None of the views can take these dimensions: ... is a ThreeD
+      view ...; ... is a Section view ...", nothing drawn
+
+  - given: >
+      rules typed on TWO lines, "Ducts | same-service" then "Pipes |
+      same-service", through the chat (revit_change)
+    expect: >
+      the second line never reaches Revit (row 5b-1477), so rulesRead's first
+      line says "1 rule(s) read, of 1 ... : Ducts" - the count shows the loss.
+      Through a command line, where the line break does arrive: refused, "Put
+      every rule on ONE line, separated by semicolons", nothing drawn
+
+  - given: >
+      "FloorPlan: M1" dimensioned and KEPT; then Dimensions turned off in M1's
+      Visibility/Graphics (or a template); the same call again
+    expect: >
+      dimensioned 0, every duct dimensioned before in skipped as already
+      dimensioned - a dimension the view hides still counts
+
+  - given: >
+      views "<a plan>, <two of its dependent views>", rules "Ducts |
+      same-service"
+    expect: >
+      the plan dimensioned; each dependent's perView line naming as already
+      dimensioned every duct the plan's strings hold - NO duct carries two
+      identical strings on any of the three drawings
+
+  - given: >
+      a dependent view whose crop cuts a duct so its middle lies OUTSIDE the
+      crop, rules "Ducts | same-service"
+    expect: >
+      that duct's string inside the crop, on the part of the duct the view
+      shows; a duct with no part inside, in skipped "no part of it inside the
+      view's crop"; a duct with only a short piece inside the crop found and
+      dimensioned on that piece; a target whose end of the string would fall
+      outside the crop passed over and counted in findings
+
+  - given: >
+      rules "Ducts | walls | both | 3000" on a plan whose walls are only in the
+      LINKED architectural model
+    expect: >
+      dimensioned 0, every duct in skipped "no wall within 3000 mm across it", and
+      findings saying linked models are not read in this version - never a
+      string to a linked wall, and never a silent nothing
+
+  - given: rules "Ducts | same-service" with minRunMm 100000
+    expect: dimensioned 0, every duct in skipped as shorter than 100000 mm (or vertical)
+
+second_route:
+  - >
+    select each new dimension in the plan and read its value and its two (or
+    three) references in Properties - or REPORT_SPOT_DIMENSIONS ("list the
+    dimensions in this view with their values and references") - against the
+    gap MEASURE_DISTANCE reports between the same two elements
+  - one Ctrl+Z removes every dimension from every plan in a single step (Golden Rule 16)
