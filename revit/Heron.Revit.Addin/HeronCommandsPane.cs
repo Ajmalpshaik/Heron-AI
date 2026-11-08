@@ -96,7 +96,11 @@ namespace Heron.Revit.Addin
             _list.Foreground = new SolidColorBrush(HeronWindowStyle.TextPrimary);
             _list.BorderThickness = new Thickness(0);
             _list.FontFamily = new FontFamily(HeronWindowStyle.BodyFont);
-            _list.SelectionChanged += (s, e) => Show(_list.SelectedItem as SavedCommand);
+            // The list holds ListBoxItems, each with its command in Tag - so
+            // the item itself goes to Show, which reads the Tag. Cast to
+            // SavedCommand here it was always null, and a click showed
+            // "Pick a command." with no boxes and no Run (found 2026-11-08).
+            _list.SelectionChanged += (s, e) => Show(_list.SelectedItem);
             Grid.SetRow(_list, 1);
             _root.Children.Add(_list);
 
