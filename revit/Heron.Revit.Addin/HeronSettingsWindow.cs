@@ -21,7 +21,7 @@ namespace Heron.Revit.Addin
     /// </summary>
     internal sealed class HeronSetting
     {
-        /// <summary>"Changes", "Admin", "Publish", "Ask to Keep".</summary>
+        /// <summary>"Changes", "Admin", "Publish", "Ask to Keep", "Companion".</summary>
         internal string Name { get; set; }
 
         /// <summary>The one short line under the name: what ON lets happen.</summary>
@@ -32,7 +32,8 @@ namespace Heron.Revit.Addin
 
         /// <summary>
         /// True for the three padlocks, whose ON is the state to notice (Error,
-        /// D-149). False for Ask to Keep, whose ON is the safe side (Success).
+        /// D-149). False for Ask to Keep, whose ON is the safe side (Success),
+        /// and for the Companion, whose ON only shows a page (Success too).
         /// </summary>
         internal bool OnIsRisky { get; set; }
 
@@ -50,7 +51,9 @@ namespace Heron.Revit.Addin
     /// <summary>
     /// Heron's Settings window - D-150, the owner's word of 2026-11-07: the four
     /// switches leave the ribbon and live here, each one's state being its own
-    /// button. Changes, Admin, Publish and Ask to Keep.
+    /// button. Changes, Admin, Publish and Ask to Keep - and the Companion's,
+    /// which joined them on 2026-11-08 (D-150's amendment), so the ribbon's
+    /// Companion is one push button with no arrow.
     ///
     /// KEPT SIMPLE ON PURPOSE - "very simple, understandable": per switch its
     /// padlock picture, its name, ONE short line and the state button. The
