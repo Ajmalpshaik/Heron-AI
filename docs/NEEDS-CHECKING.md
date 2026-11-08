@@ -1418,6 +1418,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-mv.md`](needs-checking/group-mv.md)
 
+## Group MW - a duct or pipe system drawn as a single-line schematic on a new drafting view, labelled with Revit's own size, flow and pressure drop: `DRAW_MEP_SCHEMATIC` (2026-11-08)
+
+**Its own file:** [`needs-checking/group-mw.md`](needs-checking/group-mw.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

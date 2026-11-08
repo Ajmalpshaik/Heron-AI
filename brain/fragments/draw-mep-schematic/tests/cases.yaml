@@ -1,0 +1,123 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write that makes a view, "drew something nobody asked for": a schematic
+# of the wrong system, a view drawn for a name the model has not got, an
+# existing view overwritten, or a label showing 0 where Revit calculated
+# nothing.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING Group MW). A SAVED
+# scratch copy of Revit's "Snowdon Towers Sample HVAC", Revit 2024 - never a
+# working model. MW1 records the name of one small SUPPLY AIR system with base
+# equipment and calculated flows (the fragment-proving skill's rule 1: a small
+# one first), one pipe system, and an element on each. Nothing is selected for
+# the name cases: this card finds the system by its name and reads its own
+# element sets, so no setup chain is needed. The negative is the SAME call with
+# a NAME no system has - a different value, not an empty one (fragment-proving,
+# rules 2 and 5). Where the model differs, the job file changes - never the
+# card. EVERY RUN ROLLED BACK but MW8's one run through try-once.
+
+positive:
+  - given: >
+      systemName "<MW1's supply air system>" - nothing else typed: the view
+      named "Schematic - <system>", 1:100, spacing 10 paper mm, the project's
+      default text type, at most 2000 elements
+    expect: >
+      viewId a new DRAFTING view; viewName "Schematic - <system>"; nodes,
+      segments and terminals above 0, terminals the number of air terminals on
+      the system; refused empty; findings opening "system ... drawn on the new
+      drafting view ... NOT TO SCALE" and saying nothing in the model was
+      changed. Then OPEN THE VIEW: the base equipment drawn as a small
+      rectangle at the left with its Mark (or type name) behind it; the main
+      run going right; branches square to it, up and down alternately; a
+      circle and the Mark at every terminal; every straight segment labelled
+      with three lines - size, Q flow, Δp pressure drop - matching what
+      Properties shows for that segment's first duct (size, Flow) and its
+      Pressure Drop; a legend above saying NOT TO SCALE and that the values
+      are Revit's own. No two labels touching (findings: "read back: none of
+      the ... text notes touches another")
+
+  - given: >
+      start "selected", with one duct of MW1's supply air system selected and
+      systemName left out
+    expect: >
+      the same system drawn, from THAT duct - "start - <duct type>" beside the
+      root; the base equipment appears as a node further along. findings
+      opening with the same system name
+
+  - given: >
+      systemName "<MW1's pipe system>" - a pipe system, Revit's calculations on
+    expect: >
+      a pipe schematic: sizes as Revit shows a pipe size, Q in the project's
+      pipe flow units, Δp in its piping pressure units; the legend saying
+      "pipes, elbows, transitions and accessories"
+
+  - given: >
+      the first case run a SECOND time, after MW8 kept the first schematic
+    expect: >
+      a NEW view "Schematic - <system> (2)"; findings saying a view called
+      "Schematic - <system>" already exists and was left alone; the kept view
+      unchanged - the same number of lines and notes as before
+
+  - given: >
+      systemName "<a system Revit has NOT calculated - MW4 arranges one by
+      disconnecting one terminal in the copy, or an open-ended system MW1
+      records>"
+    expect: >
+      the schematic drawn; every Δp label "not calculated", never 0; findings
+      saying Revit has NOT calculated the system; labelsWithoutValue one line
+      per segment; open ends marked X and listed in openEnds; the disconnected
+      terminal in skipped with skippedWhy "not joined to the drawn part by its
+      connectors"
+
+negative:
+  - given: >
+      THE D-30 NEGATIVE - THE FIRST CASE TO RUN. systemName "ZZZ No Such
+      System"
+    expect: >
+      refused "no duct or pipe system in this model is called "ZZZ No Such
+      System", and none has it in its name. The systems are: ... Nothing was
+      drawn"; viewId null; no new view in the Project Browser. A card that drew
+      whichever system it found would draw here; the value alone empties the
+      result
+
+  - given: systemName left out and start left out
+    expect: refused, say which system to draw, nothing drawn
+
+  - given: >
+      systemName "<MW1's supply air system>" with start "selected" on a PIPE
+      of another system
+    expect: refused, the selected element is not on that system, nothing drawn
+
+  - given: start "selected" on a wall
+    expect: refused, the selected element is on no duct or pipe system, nothing drawn
+
+  - given: >
+      start "selected" on an air handler that sits on a supply AND a return
+      system, systemName left out
+    expect: refused, it is on 2 systems, both named, say the name too, nothing drawn
+
+  - given: >
+      systemName "Supply" (or another word several system names contain, as
+      MW1 records)
+    expect: refused, several systems have it in their name, listed, nothing drawn
+
+  - given: systemName "<MW1's supply air system>" with maxElements 5
+    expect: >
+      refused "system ... holds N elements, more than the 5 this draws in one
+      call (maxElements). Nothing was drawn ..."
+
+  - given: textType "ZZZ No Such Text"
+    expect: refused, no text type of that name, the text types listed, nothing drawn
+
+  - given: viewScale 0, then spacingMm 0, then maxElements 0
+    expect: each refused in its own words, nothing drawn
+
+second_route:
+  - >
+    for three labelled segments, select the segment's first duct (or pipe) in a
+    plan and read Size, Flow and Pressure Drop in Properties - or
+    READ_ELEMENT_PARAMETERS on it - against the label; for one segment of
+    several ducts, add their Pressure Drop values by hand against its Δp
+  - >
+    REPORT_MEP_PRESSURE_DROP for the same system: "UNCALCULATED" there exactly
+    when this card's labels say "not calculated"
+  - one Ctrl+Z removes the view and everything drawn in it in a single step (Golden Rule 16)
