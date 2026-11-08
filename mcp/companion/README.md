@@ -13,7 +13,7 @@ page drawn for a modeller, with each panel's status.
 flowchart TD
     PG["<b>static/</b> - the page<br/>index.html · companion.js<br/>loads3d.js · sprinkler3d.js"]
     H["<b>heron_companion.py</b> - _Handler<br/>127.0.0.1 · Host · cookie<br/>X-Heron-Companion · Origin"]
-    HOLD["<b>What it holds</b><br/>LOADS_PANEL · SPRINKLER_PANEL · LAYOUT_PANEL<br/>DASHBOARD_PANEL · TABLES · ACTIVITY · CHANGES (off)"]
+    HOLD["<b>What it holds</b><br/>LOADS_PANEL · SPRINKLER_PANEL · LAYOUT_PANEL<br/>DASHBOARD_PANEL · CHECKLIST_PANEL · TABLES · ACTIVITY · CHANGES (off)"]
     SRV["<b>server/heron_mcp_server.py</b><br/>sets every hook at start"]
     BR["<b>brain/</b><br/>every number, question and offer"]
     WR["<b>revit_change's own body</b><br/>_apply_change · _apply_table<br/>_loads_finalize · _sprinkler_layout_place"]
@@ -54,7 +54,8 @@ static/ (the page)  <-- /api, JSON -->  heron_companion.py  _Handler: 127.0.0.1,
                                                             X-Heron-Companion header, Origin
                                             |
                                         what it holds: LOADS_PANEL, SPRINKLER_PANEL, LAYOUT_PANEL,
-                                        DASHBOARD_PANEL, TABLES, ACTIVITY, CHANGES (switched off)
+                                        DASHBOARD_PANEL, CHECKLIST_PANEL, TABLES, ACTIVITY,
+                                        CHANGES (switched off)
                                             |  hooks
                                         server/heron_mcp_server.py  <->  brain/ (every number)
                                             |  a change: revit_change's own body
@@ -73,7 +74,7 @@ keep        -> %TEMP%\Heron\companion\chat-PID.json     (the Companion button re
 | Runs | inside the chat's MCP server process. The keeper (`keep`) starts it when that process starts, while the Companion switch is on (`companion.enabled`, on by default), and stops it when the switch is turned off; `heron_companion`, `revit_edit_table` and the four panel tools - `revit_building_loads`, `revit_sprinkler_hydraulics`, `revit_sprinkler_layout`, `revit_model_dashboard` - open it in the browser |
 | Listens | `127.0.0.1` only, on a port Windows picks — never on the network |
 | Reads | the add-in's live file, `%LOCALAPPDATA%\Heron\live\pid-N.json` (written by `revit/Heron.Revit.Addin/HeronLiveState.cs` while the Heron button is connected) - since [D-147](../../docs/decisions/D-147.md) with the model's change count, which the Model Dashboard compares with its read |
-| Changes | **only through the chat's own write path**: the page's Apply, the Loads panel's Finalize and the Sprinkler Layout's Apply run `revit_change` itself (`_apply_change`, `_apply_table`, `_loads_finalize` and `_sprinkler_layout_place` in `server/heron_mcp_server.py`) under the lock every tool call holds - the same gate, Changes switch, pin and single undo entry, and Revit's Keep or Discard box while *Ask to Keep* is on ([D-126](../../docs/DECISIONS.md), [D-138](../../docs/DECISIONS.md)) - and, since [D-117](../../docs/DECISIONS.md), only from a PROVEN fragment, so the Table's Apply and Finalize are refused today ([docs/40 §21.9](../../docs/40-heron-companion.md)). Its risk is declared in `heron_tools.COMPANION_ACTIONS`. The Model Dashboard's Select in Revit, Isolate in view and Reset isolate change only what is on screen, through `revit_show`'s and the temporary-view tools' own bodies, at EXECUTE (docs/40 s21.11) |
+| Changes | **only through the chat's own write path**: the page's Apply, the Loads panel's Finalize and the Sprinkler Layout's Apply run `revit_change` itself (`_apply_change`, `_apply_table`, `_loads_finalize` and `_sprinkler_layout_place` in `server/heron_mcp_server.py`) under the lock every tool call holds - the same gate, Changes switch, pin and single undo entry, and Revit's Keep or Discard box while *Ask to Keep* is on ([D-126](../../docs/DECISIONS.md), [D-138](../../docs/DECISIONS.md)) - and, since [D-117](../../docs/DECISIONS.md), only from a PROVEN fragment, so the Table's Apply and Finalize are refused today ([docs/40 §21.9](../../docs/40-heron-companion.md)). Its risk is declared in `heron_tools.COMPANION_ACTIONS`. The Model Dashboard's Select in Revit, Isolate in view and Reset isolate change only what is on screen, through `revit_show`'s and the temporary-view tools' own bodies, at EXECUTE (docs/40 s21.11); the QA Checklist's Select in Revit is that same route. The QA Checklist's Run only reads, check by check through `revit_read`'s own body, each check under the chat's lock for its own read (docs/50) |
 | Opens | a Windows folder window when Report is pressed, to ask where the HVAC load calculation sheet or the sprinkler hydraulic calculation sheet goes - its own process, nothing printed (`pick_folder`) |
 | Switched off | the Selected card and the Changes tables with their colour books (owner, 2026-10-04) - kept, behind `SHOW_SELECTION` / `SHOW_CHANGES` in `static/companion.js` (and `SHOW_CHANGES` in `heron_companion.py`); see [docs/40 s21.6](../../docs/40-heron-companion.md) |
 | Leaves a note | for the **Companion** button in Revit, refreshed every few seconds by the keeper: `%TEMP%\Heron\companion`, the user's temporary folder - stepped out of the GUID-named one Revit runs with, so the add-in and the chat name the same folder (`companion_dir`, [D-109](../../docs/DECISIONS.md), [D-135](../../docs/DECISIONS.md), [D-136](../../docs/DECISIONS.md)) |
@@ -83,10 +84,10 @@ keep        -> %TEMP%\Heron\companion\chat-PID.json     (the Companion button re
 
 | | Does |
 |---|---|
-| [`heron_companion.py`](heron_companion.py) | The server: pairing, the protection rules, which Revit to show, the keeper that follows the Companion switch (D-109), the activity list, the element table, the HVAC Load Calculation panel (docs/44), the Sprinkler Hydraulic Calculation panel (docs/46), the Sprinkler Layout panel (docs/47), the Model Dashboard (docs/40 s21.10) and the route that opens either sheet - and the after-change tables, switched off |
+| [`heron_companion.py`](heron_companion.py) | The server: pairing, the protection rules, which Revit to show, the keeper that follows the Companion switch (D-109), the activity list, the element table, the HVAC Load Calculation panel (docs/44), the Sprinkler Hydraulic Calculation panel (docs/46), the Sprinkler Layout panel (docs/47), the Model Dashboard (docs/40 s21.10), the QA Checklist ([docs/50](../../docs/50-qa-checklists.md)) and the route that opens either sheet - and the after-change tables, switched off |
 | [`static/index.html`](static/index.html), [`static/companion.js`](static/companion.js), [`static/companion.css`](static/companion.css), [`static/loads3d.js`](static/loads3d.js), [`static/sprinkler3d.js`](static/sprinkler3d.js) | The page, the 3D views of the Loads panel and the Sprinkler panel, and the Sprinkler Layout panel's plans, drawn by companion.js - renderers of its own. Nothing is loaded from the internet |
 
-**The page is a desktop page**: a sidebar of five workspaces (Model Dashboard, HVAC Loads, Sprinkler Hydraulics, Sprinkler Layout, Element Table), one shown at a time, under a bar that always shows which Revit, model and view. There is no phone or tablet layout; under 1280 px wide the sidebar keeps only its icons ([docs/40 §21.16](../../docs/40-heron-companion.md)). A new panel is a new `<section class="ws" id=...>` in `index.html`, one entry in `WORKSPACES` in `companion.js` and one `body[data-ws=...]` line in `companion.css`.
+**The page is a desktop page**: a sidebar of six workspaces (Model Dashboard, HVAC Loads, Sprinkler Hydraulics, Sprinkler Layout, Element Table, QA Checklist), one shown at a time, under a bar that always shows which Revit, model and view. There is no phone or tablet layout; under 1280 px wide the sidebar keeps only its icons ([docs/40 §21.16](../../docs/40-heron-companion.md)). A new panel is a new `<section class="ws" id=...>` in `index.html`, one entry in `WORKSPACES` in `companion.js` and one `body[data-ws=...]` line in `companion.css`.
 
 ## Rules for this folder
 
@@ -96,8 +97,8 @@ keep        -> %TEMP%\Heron\companion\chat-PID.json     (the Companion button re
    there breaks the chat. The test watches stdout for a whole run.
 3. **Never ask Revit through the pipe to keep the page fresh.** It would raise the READING banner, queue
    work on Revit's own thread and cut the chat's connection ([docs/40 §4.2](../../docs/40-heron-companion.md)).
-   Live state comes from the file. A read the modeller presses for - the Model Dashboard's Refresh -
-   is not that: it runs once per press, through `revit_read` under the chat's lock and pin, never on a
+   Live state comes from the file. A read the modeller presses for - the Model Dashboard's Refresh,
+   the QA Checklist's Run - is not that: it runs once per press, through `revit_read` under the chat's lock and pin, never on a
    timer.
 4. **No BIM logic.** What a column or a colour means belongs in `brain/` fragments; this folder moves rows.
 5. **Model text is data.** Names reach the page through `textContent`, never as HTML (Golden Rule 19).

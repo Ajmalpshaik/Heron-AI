@@ -1523,6 +1523,151 @@ class DashboardPanel(object):
 DASHBOARD_PANEL = DashboardPanel()
 
 
+class ChecklistPanel(object):
+    """
+    The QA Checklist workspace (docs/50): the modeller's saved checklists, a
+    Run button, and the last run's rows.
+
+    IT HOLDS DATA AND CALLS HOOKS - NOTHING ELSE (README rule 4). Every row,
+    word and colour was made in brain/ (heron_checklists); the page draws
+    them. Run is the modeller's own press: run_hook reads the model check by
+    check through revit_read's own body, each check under the chat's lock for
+    its own read only, and calls hold() after each - never a timer (README
+    rule 3).
+
+    ONE RUN AT A TIME, THE CHAT'S AND THE PAGE'S TOGETHER: begin() claims the
+    busy flag for either, and the other is told in words who is running. A
+    failing check's Select in Revit is the Model Dashboard's own route
+    (show_hook is the server's _checklist_show, which calls _dashboard_show),
+    with the ids THIS panel holds, never ids the page sent, only for a row
+    whose ids all arrived, and only while the run the page shows is still the
+    one held - the page sends that run's token. Nothing here writes to the
+    model.
+    """
+
+    GONE = LoadsPanel.GONE
+    BUSY = "a checklist is already running from the Companion page - wait for it to finish"
+    BUSY_CHAT = "a checklist is already running from the chat - wait for it to finish"
+    BUSY_SELECT = "the Companion page is selecting in Revit - try again in a moment"
+    REPLACED = ("these results were replaced by a newer run - look at the new results, then press "
+                "Select again")
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._held = None
+        self._busy = None
+        #: Set by the MCP server. list_hook() -> the saved checklists, ready to
+        #: draw. run_hook(name, hold) -> {"ok", "said"}; it calls hold() with
+        #: each step and the end. show_hook(action, ids, identity) -> the
+        #: Model Dashboard's own Select (docs/40 s21.11).
+        self.list_hook = None
+        self.run_hook = None
+        self.show_hook = None
+
+    def _busy_said(self):
+        return {"chat": self.BUSY_CHAT, "select": self.BUSY_SELECT}.get(self._busy, self.BUSY)
+
+    def begin(self, who):
+        """Claim the one run for "page" or "chat". None when claimed; else the
+        sentence saying who is already running."""
+        with self._lock:
+            if self._busy:
+                return self._busy_said()
+            self._busy = who
+            return None
+
+    def end(self):
+        with self._lock:
+            self._busy = None
+
+    def hold(self, answer):
+        """Hold a run - the brain's result, whole - for the page."""
+        if not isinstance(answer, dict):
+            return
+        with self._lock:
+            self._held = json.loads(json.dumps(answer))
+
+    def _stopped(self, why):
+        """A hook that raised: the result held so far is made final - never
+        left "running" - and says the run stopped."""
+        with self._lock:
+            held = self._held
+            if held and held.get("running"):
+                held["running"] = False
+                held["stopped"] = "The run stopped: %s." % why
+                held["said"] = "%s %s" % (held.get("said") or "", held["stopped"])
+
+    def current(self):
+        hook = self.list_hook
+        listed = {}
+        if hook is not None:
+            try:
+                listed = hook() or {}
+            except Exception:                        # noqa: BLE001 - the page keeps updating
+                listed = {"lists": [], "broken": [], "said": "The saved checklists could not be read."}
+        with self._lock:
+            held = dict(self._held) if self._held else None
+            busy = self._busy
+        if held is not None:
+            held.pop("identity", None)
+        return {"connected": hook is not None, "lists": listed.get("lists") or [],
+                "broken": listed.get("broken") or [], "noHome": bool(listed.get("noHome")),
+                "said": listed.get("said") or "", "result": held, "busy": bool(busy),
+                "busyWith": busy or ""}
+
+    def run(self, body):
+        hook = self.run_hook
+        if hook is None:
+            return {"ok": False, "said": "Nothing was run: %s." % self.GONE}
+        name = body.get("name") if isinstance(body, dict) else None
+        if not isinstance(name, str) or not name.strip() or len(name) > 100:
+            return {"ok": False, "said": "Nothing was run: pick a saved checklist first."}
+        refusal = self.begin("page")
+        if refusal:
+            return {"ok": False, "said": "Nothing was run: %s." % refusal}
+        try:
+            got = hook(name.strip(), self.hold) or {}
+        except Exception as why:                     # noqa: BLE001 - never left "running"
+            self._stopped(why)
+            return {"ok": False, "said": "The run stopped: %s. Nothing more was sent to Revit." % why}
+        finally:
+            self.end()
+        return {"ok": bool(got.get("ok")), "said": got.get("said") or ""}
+
+    def show(self, body):
+        """A failing check's Select in Revit. The page names the row's number
+        and the run it shows; the ids are the ones that run found, and only
+        when every one of them arrived."""
+        hook = self.show_hook
+        if hook is None:
+            return {"ok": False, "said": "Nothing was sent to Revit: %s." % self.GONE}
+        if not isinstance(body, dict) or body.get("action") != "select":
+            return {"ok": False, "said": "Nothing was sent to Revit: not a checklist action."}
+        with self._lock:
+            if self._busy:
+                return {"ok": False, "said": "Nothing was sent to Revit: %s." % self._busy_said()}
+            held = self._held or {}
+            if not held.get("run") or body.get("run") != held.get("run"):
+                return {"ok": False, "said": "Nothing was sent to Revit: %s." % self.REPLACED}
+            rows = [r for r in held.get("rows") or [] if r.get("n") == body.get("row")]
+            row = rows[0] if rows else {}
+            ids = list(row.get("ids") or []) if row.get("idsComplete") else []
+            if not ids:
+                return {"ok": False, "said": "Nothing was sent to Revit: that check has no element "
+                                             "ids from this run."}
+            identity = list(held["identity"]) if held.get("identity") else None
+            self._busy = "select"
+        try:
+            got = hook("select", ids, identity) or {}
+        finally:
+            self.end()
+        return {"ok": bool(got.get("ok")), "said": got.get("said") or ""}
+
+
+#: This process's QA Checklist panel - one chat's.
+CHECKLIST_PANEL = ChecklistPanel()
+
+
 def companion_dir():
     """Where each chat leaves the note the Companion button in Revit reads -
     HeronPaths.Companion, mirrored (D-109). Under the temporary folder since
@@ -2050,6 +2195,11 @@ class _Handler(http.server.BaseHTTPRequestHandler):
             if why:
                 return self._refuse(403, why)
             return self._json(200, {"ok": True, "view": DASHBOARD_PANEL.view()})
+        if path == "/api/checklist":
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            return self._json(200, {"ok": True, "checklist": CHECKLIST_PANEL.current()})
         if path.startswith("/report/"):
             return self._report_file(path)
         return self._refuse(404, "not found")
@@ -2186,6 +2336,18 @@ class _Handler(http.server.BaseHTTPRequestHandler):
             except (ValueError, UnicodeDecodeError):
                 return self._refuse(400, "unreadable")
             return self._json(200, DASHBOARD_PANEL.show(body))
+        if path in ("/api/checklist/run", "/api/checklist/show"):
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            try:
+                length = min(int(self.headers.get("Content-Length", "0")), 4096)
+                body = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
+            except (ValueError, UnicodeDecodeError):
+                return self._refuse(400, "unreadable")
+            if path.endswith("/run"):
+                return self._json(200, CHECKLIST_PANEL.run(body))
+            return self._json(200, CHECKLIST_PANEL.show(body))
         if path == "/api/changes/clear":
             why = self._api_ok()
             if why:

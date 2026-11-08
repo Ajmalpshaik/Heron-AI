@@ -4081,7 +4081,12 @@ def revit_model_dashboard(parameters: str = "", board: str = "", view3d: bool = 
 DASHBOARD_SHOWS = ("select", "isolate", "reset")
 
 
-def _dashboard_show(action, ids, identity=None):
+#: The most ids one Select in Revit sends - FILTER_ELEMENTS_BY_ID's request
+#: is kept to this many. The QA Checklist says "the first N of M" from it.
+DASHBOARD_SELECT_MOST = 500
+
+
+def _dashboard_show(action, ids, identity=None, moved_said=None):
     """
     A dashboard row's Select in Revit, Isolate in view, or Reset isolate -
     pressed on the page. Nothing in the model changes:
@@ -4094,19 +4099,21 @@ def _dashboard_show(action, ids, identity=None):
       reset    revit_reset_temporary's body
 
     Under the lock every tool call holds, and only on the model the
-    dashboard was read from. Returns {"ok", "said"}.
+    dashboard was read from - `moved_said` is the refusal when it is not,
+    for a caller with its own words (the QA Checklist). Returns {"ok", "said"}.
     """
     started, clock = time.strftime("%H:%M:%S"), time.time()
     tool = "companion_dashboard_" + action
-    ids = [str(i) for i in (ids or []) if str(i).isdigit()][:500]
+    ids = [str(i) for i in (ids or []) if str(i).isdigit()][:DASHBOARD_SELECT_MOST]
     if action not in DASHBOARD_SHOWS or (action != "reset" and not ids):
         said = "Nothing was sent to Revit: the row has no element ids."
         _note(tool, started, 0, reply=said, outcome="refused")
         return {"ok": False, "said": said}
     with _revit_lock:
         if _moved_since(identity):
-            said = ("The dashboard was read from another model or another Revit, so nothing "
-                    "was sent. Press Refresh to read the model in front, then try again.")
+            said = moved_said or ("The dashboard was read from another model or another Revit, "
+                                  "so nothing was sent. Press Refresh to read the model in front, "
+                                  "then try again.")
             _note(tool, started, 0, reply=said, outcome="refused")
             return {"ok": False, "said": said}
         out = {}
@@ -4241,6 +4248,64 @@ def _dashboard_demo():
         return brain.model_dashboard_demo()
     except brain.BrainUnavailable as why:
         return {"dashboard": None, "said": str(why)}
+
+
+def _checklist_list():
+    """The QA Checklist page's list of saved checklists, ready to draw - read
+    from the modeller's own files, never from Revit."""
+    try:
+        return brain.checklists().listing()
+    except brain.BrainUnavailable as why:
+        return {"lists": [], "broken": [], "noHome": False, "said": str(why)}
+
+
+def _checklist_run_page(name, hold):
+    """
+    The QA Checklist page's Run, pressed on the page: the same run as
+    heron_checklist's, from the page's thread. Each check takes the lock every
+    tool call holds for its own read and lets it go before the next
+    (_checklist_ask), so the pipe is never held longer than the Model
+    Dashboard's one read. `hold` puts each step, and the end, on the page; a
+    run that stops part way is still held as a final result (_run_checklist)
+    and listed as failed. Returns {"ok", "said"}. Only when the modeller
+    presses it - never on a timer. ChecklistPanel.run holds the busy flag.
+    """
+    started, clock = time.strftime("%H:%M:%S"), time.time()
+    try:
+        store = brain.checklists()
+    except brain.BrainUnavailable as why:
+        _note("companion_checklist", started, 0, reply=str(why), outcome="failed")
+        return {"ok": False, "said": str(why)}
+    try:
+        checklist = store.find(name)
+    except store.ChecklistError as why:
+        said = "Nothing was run: %s" % why
+        _note("companion_checklist", started, 0, reply=said, outcome="refused")
+        return {"ok": False, "said": said}
+    answer = _run_checklist(checklist, origin="companion", progress=hold)
+    hold(answer)
+    ran = answer["counts"]["pass"] + answer["counts"]["fail"]
+    outcome = "failed" if answer.get("failed") else None if ran else "refused"
+    _note("companion_checklist", started, time.time() - clock, reply=answer["said"], outcome=outcome)
+    return {"ok": bool(ran) and not answer.get("failed"), "said": answer["said"]}
+
+
+#: What the QA Checklist's Select says when the chat has moved since the run
+#: - its own words, through the dashboard's own route (docs/50 s4).
+CHECKLIST_MOVED = ("The checklist was run on another model or another Revit, so nothing was "
+                   "sent. Press Run again on the model in front, then try again.")
+
+
+def _checklist_show(action, ids, identity=None):
+    """The QA Checklist's Select in Revit: _dashboard_show itself - the same
+    reads, lock, pin and declared row - with the checklist's own refusal, and
+    the answer saying when only the first DASHBOARD_SELECT_MOST were sent."""
+    got = _dashboard_show(action, ids, identity, moved_said=CHECKLIST_MOVED)
+    if got.get("ok") and len(ids or []) > DASHBOARD_SELECT_MOST:
+        got = dict(got, said="Selected the first %d of the %d failing elements - Revit is sent at "
+                             "most %d at once.\n%s" % (DASHBOARD_SELECT_MOST, len(ids),
+                                                        DASHBOARD_SELECT_MOST, got.get("said") or ""))
+    return got
 
 
 def _dashboard_refresh(parameters="", board=""):
@@ -5868,6 +5933,322 @@ def heron_commands(action: str = "list", name: str = "", capability: str = "",
     return ("Saved '%s'. It runs again from this chat by name, or from the Heron panel in "
             "Revit.\n%s\nKept in %s" % (command["name"].strip(), store.describe(store.find(name)),
                                         path))
+
+
+def _checklist_contracts(checks):
+    """CAPABILITY -> what one QA check is held to (docs/50), each read from its
+    fragment's own card: its risk, its needs as the bridge client reads them -
+    the reader heron_commands is checked against - its declared outputs, and
+    the request values it cannot run without (heron_fragment.need_may_be_absent).
+    A capability Heron does not have is left out, and the store names it."""
+    contracts = {}
+    for check in checks or []:
+        capability = str((check or {}).get("capability") or "").strip().upper()
+        if not capability or capability in contracts:
+            continue
+        folder, _status = _fragment_for(capability)
+        if folder is None:
+            continue
+        card = os.path.join(_repo_root(), "brain", "fragments", folder, "fragment.yaml")
+        read = brain.fragment_contract(folder) or {}
+        contracts[capability] = {"risk": bridge.fragment_risk(card),
+                                 "needs": bridge.fragment_needs(card),
+                                 "provides": read.get("provides"),
+                                 "required": read.get("required"),
+                                 "selection": read.get("selection") or []}
+    return contracts
+
+
+def _checklist_checks(checks):
+    """The chat's `checks` - a JSON list - into the store's check dicts. A
+    check's `values` may be "name=value" lines (read as revit_read reads them),
+    a name -> value set, or a list of {name, value}; anything else is refused
+    in a plain sentence, as ValueError, never left to fail later."""
+    import json
+    try:
+        given = json.loads(checks or "")
+    except ValueError as why:
+        raise ValueError("`checks` must be a JSON list of checks: %s." % why)
+    if not isinstance(given, list):
+        raise ValueError("`checks` must be a JSON list of checks.")
+    found = []
+    for number, check in enumerate(given, 1):
+        if not isinstance(check, dict):
+            raise ValueError("Check %d must be a set of named fields - sentence, capability, values, "
+                             "rule." % number)
+        check = dict(check)
+        values = check.get("values")
+        if values is None or values == "":
+            check["values"] = []
+        elif isinstance(values, str):
+            check["values"] = [{"name": v["name"], "value": v["value"]} for v in _values_array(values)]
+        elif isinstance(values, dict):
+            check["values"] = [{"name": str(k), "value": _checklist_value(v, number)}
+                               for k, v in values.items()]
+        elif isinstance(values, list):
+            for entry in values:
+                if not isinstance(entry, dict):
+                    raise ValueError("Check %d: each value must be a name and a value, as "
+                                     "{\"name\": ..., \"value\": ...}." % number)
+        else:
+            raise ValueError("Check %d: values must be \"name=value\" lines, a name -> value set, "
+                             "or a list of names and values." % number)
+        found.append(check)
+    return found
+
+
+def _checklist_value(value, number):
+    """One value of a name -> value set, as the text revit_read takes."""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, (int, float, str)):
+        return str(value)
+    raise ValueError("Check %d: each value must be text or a number." % number)
+
+
+def _checklist_ask(origin="chat", ctx=None):
+    """
+    `ask` for heron_checklists.run - one check, one read, through revit_read's
+    OWN BODY (_through, as the Companion and the command runner reach it): its
+    door ceiling, its pin, its counting of the model, no transaction. Each read
+    takes the lock every tool call holds and lets it go after: FROM THE PAGE,
+    which holds nothing else, that is one check at a time - never longer than
+    the Model Dashboard's one read - and a chat can be answered between two
+    checks. FROM THE CHAT the tool call already holds the lock (_recorded), so
+    a chat's run holds it for the whole call, as every tool does.
+
+    After each read it notes the model's change count from the add-in's live
+    file (D-147), so the run can say when the model changed between two checks.
+
+    NOT RUN, and nothing sent, when the capability is not PROVEN or its proof
+    is stale (D-30: a result from code nobody proved is not a QA result), and
+    when the chat has moved to another model since the first check.
+    """
+    store = brain.commands()
+    first = {}
+
+    def ask(check):
+        capability = check.get("capability") or ""
+        folder, _status = _fragment_for(capability)
+        if folder is None:
+            return {"ran": False, "why": "Heron has nothing called %s, so nothing was sent." % capability}
+        proof = bridge.proof_of(folder)
+        if proof is None:
+            return {"ran": False, "why": "How far %s is proven could not be read, so nothing was "
+                                         "sent - could not tell is not PROVEN." % capability}
+        if proof.get("status") not in bridge.KEEPABLE_STATUSES:
+            return {"ran": False, "why": "%s is %s - no recorded proof stands behind it, so its "
+                                         "answer is not a QA result. Nothing was sent."
+                                         % (capability, proof.get("status") or "not proven")}
+        if proof.get("stale"):
+            return {"ran": False, "why": "%s was proven, but its code has changed since (D-30), "
+                                         "so nothing was sent." % capability}
+        try:
+            values = store.fill({"name": check.get("sentence"), "values": check.get("values") or [],
+                                 "inputs": []}, {})
+        except store.CommandError as why:
+            return {"ran": False, "why": str(why)}
+        with _revit_lock:
+            moved = _moved_since(first.get("identity"))
+            if moved is not None:
+                return {"ran": False, "why": "The chat is no longer on the model the first check "
+                                             "read, so nothing was sent. Run the checklist again."}
+            out = {}
+            said = _through(revit_read, reply_out=out, origin=origin)(capability, values, "",
+                                                                       ctx=ctx)
+            reply = out.get("reply")
+            if out.get("ended") != "ok" or not isinstance(reply, dict) or not reply.get("ok"):
+                lines = [line.strip() for line in str(said or "").splitlines() if line.strip()]
+                return {"ran": False, "why": " ".join(lines[:2])[:400] or "Revit did not answer."}
+            wrong_model = pinned.check(reply)
+            if wrong_model is not None:
+                return {"ran": False, "why": wrong_model}
+            first.setdefault("identity", _pin_identity())
+        try:
+            changes = _companion_module().live_changes(binding.pid)
+        except Exception:                            # noqa: BLE001 - only a finding is lost
+            changes = None
+        return {"ran": True, "document": reply.get("document"),
+                "provides": reply.get("provides") or {},
+                "entries": reply.get("providesEntries") or {}, "changes": changes}
+
+    return ask, first
+
+
+def _run_checklist(checklist, origin="chat", ctx=None, progress=None):
+    """
+    Run one saved checklist on the one model this chat is bound to. Returns
+    the store's result with the model's identity, for the page's Select. A
+    Revit this chat cannot reach makes every check NOT RUN and sends nothing.
+
+    A FAULT ANYWHERE ENDS IT IN WORDS: the rows already read are kept, every
+    check after them is NOT RUN saying why, `running` is False and `failed`
+    True - so neither the chat nor the page is ever left at "Running".
+    """
+    store = brain.checklists()
+    last = {}
+
+    def step(partial):
+        _checklist_select_labels(partial)
+        last["result"] = partial
+        if progress is not None:
+            progress(partial)
+
+    first = {}
+    try:
+        try:
+            binding.resolve()
+        except NotBound as unbound:
+            said = "Revit is not connected for this chat, so nothing was sent: %s" % unbound
+            answer = store.run(checklist, lambda check: {"ran": False, "why": said})
+        else:
+            ask, first = _checklist_ask(origin=origin, ctx=ctx)
+            answer = store.run(checklist, ask, progress=step)
+        answer["failed"] = bool(answer.get("stopped"))
+    except Exception as why:                         # noqa: BLE001 - a run never ends "running"
+        held = last.get("result") or {}
+        answer = store.finish(checklist, held.get("rows") or [], held.get("document"),
+                              "The run stopped: %s. Nothing more was sent to Revit." % why,
+                              held.get("run"), held.get("findings"))
+        answer["failed"] = True
+    answer["identity"] = list(first["identity"]) if first.get("identity") else None
+    _checklist_select_labels(answer)
+    return answer
+
+
+def _checklist_select_labels(answer):
+    """Each row's Select in Revit label, from the ids the dashboard's route
+    will send - all of them, or the first DASHBOARD_SELECT_MOST of N."""
+    for row in answer.get("rows") or []:
+        ids = row.get("ids") or []
+        if not (row.get("idsComplete") and ids):
+            row["select"] = ""
+        elif len(ids) > DASHBOARD_SELECT_MOST:
+            row["select"] = "Select the first %d of %d" % (DASHBOARD_SELECT_MOST, len(ids))
+        else:
+            row["select"] = "Select in Revit"
+
+
+def _checklist_panel():
+    """The Companion's QA Checklist panel - whose busy flag is what makes "one
+    run at a time" hold for the chat and the page together - or None when the
+    Companion cannot be imported."""
+    try:
+        return _companion_module().CHECKLIST_PANEL
+    except Exception:                                # noqa: BLE001 - the chat still runs
+        return None
+
+
+def _checklist_on_page(answer):
+    """Put a chat's run on the Companion's QA Checklist page too, so its Select
+    in Revit is there. Display only: a page that cannot take it costs nothing."""
+    try:
+        companion_page = _companion_module()
+        if companion_page.enabled():
+            companion_page.CHECKLIST_PANEL.hold(answer)
+            return True
+    except Exception:                                # noqa: BLE001 - display only
+        pass
+    return False
+
+
+@server.tool()
+def heron_checklist(action: str = "list", name: str = "", checks: str = "",
+                    description: str = "", replace: bool = False,
+                    ctx: _Context = None) -> str:
+    """
+    The modeller's QA CHECKLISTS: checks written in their words, saved once,
+    run in one go on the model. A run only reads.
+
+    action="save", when they ask: `name`, `description` (one line) and
+    `checks`, a JSON list - each {"sentence": their words, "capability": ONE
+    capability that reads, "values": "name=value" lines, "rule": "output op
+    number" on one output it declares - "failures == 0", "ids": the output
+    holding failing element ids, or ""}. Turn each sentence into a check with
+    heron_lookup; ask, never guess. replace=true only when they said so.
+
+    "list" names them; "show" gives one's checks; "delete" removes one when
+    asked; "starter" saves Heron's example under `name`, only when asked.
+
+    "run" runs `name` check by check through revit_read: PASS meets the value
+    checked, FAIL does not, NOT RUN says why and is never a pass. Never call
+    the model compliant. Results also go on the Companion's QA Checklist.
+    """
+    try:
+        store = brain.checklists()
+    except brain.BrainUnavailable as why:
+        return _ended("failed", str(why))
+    act = (action or "list").strip().lower()
+    try:
+        if act == "list":
+            found, broken = store.all_checklists()
+            if store.folder() is None:
+                return "This PC has no folder for Heron's data, so no checklist can be saved here."
+            if not found and not broken:
+                return ("No QA checklists are saved yet. action=\"starter\" saves Heron's example, "
+                        "when the modeller asks for it.")
+            lines = ["Saved checklists (%d):" % len(found)]
+            lines += ["- " + store.describe(c) for c in found]
+            lines += ["- could not read %s" % b for b in broken]
+            return "\n".join(lines)
+        if act == "show":
+            checklist = store.find(name)
+            return "\n".join([store.describe(checklist)] + [
+                "%d. %s\n   values: %s" % (i, store.check_line(c), "; ".join(
+                    "%s=%s" % (v["name"], v["value"]) for v in c.get("values") or []) or "none")
+                for i, c in enumerate(checklist.get("checks") or [], 1)])
+        if act == "delete":
+            return "Deleted the checklist '%s'." % store.delete(name)
+        if act == "run":
+            checklist = store.find(name)
+            # ONE RUN AT A TIME, CHAT AND PAGE TOGETHER: the page's busy flag
+            # is claimed for the chat's run too, so neither starts while the
+            # other runs, and the page's Select waits for it.
+            panel = _checklist_panel()
+            refusal = panel.begin("chat") if panel is not None else None
+            if refusal:
+                return _ended("refused", "Not run: %s." % refusal)
+            try:
+                answer = _run_checklist(checklist, origin="chat", ctx=ctx,
+                                        progress=lambda partial: _checklist_on_page(partial))
+            finally:
+                if panel is not None:
+                    panel.end()
+            said = store.text(answer)
+            if _checklist_on_page(answer):
+                said += "\nThe results are on the QA Checklist page of the Heron Companion."
+            ran = answer["counts"]["pass"] + answer["counts"]["fail"]
+            return _ended("failed" if answer.get("failed") else "ok" if ran else "refused", said)
+        if act not in ("save", "starter"):
+            return _ended("refused", "action must be list, show, save, starter, run or delete - "
+                                     "not '%s'." % action)
+    except store.ChecklistError as why:
+        return _ended("refused", str(why))
+
+    if act == "starter":
+        checklist = store.starter(name)
+    else:
+        try:
+            checklist = {"name": name, "description": description,
+                         "checks": _checklist_checks(checks)}
+        except ValueError as why:
+            return _ended("refused", "%s Nothing was saved." % why)
+    try:
+        path = store.save(checklist, _checklist_contracts(checklist["checks"]),
+                          replace=bool(replace))
+    except store.ChecklistError as why:
+        return _ended("refused", str(why))
+    except OSError as why:
+        return _ended("failed", "The checklist could not be written: %s. Nothing was saved." % why)
+    kept = store.find(checklist["name"])
+    lines = ["Saved '%s'. It runs from this chat with action=\"run\", or from the Heron "
+             "Companion's QA Checklist page." % kept["name"]]
+    lines += ["%d. %s" % (i, store.check_line(c)) for i, c in enumerate(kept["checks"], 1)]
+    if any(c.get("selection") for c in kept["checks"]):
+        lines.append("A check that reads what is selected in Revit answers about the selection at "
+                     "the moment it runs.")
+    lines.append("Kept in %s" % path)
+    return "\n".join(lines)
 
 
 @server.tool()
@@ -7726,6 +8107,9 @@ if __name__ == "__main__":
             companion_page.DASHBOARD_PANEL.demo_hook = _dashboard_demo
             companion_page.DASHBOARD_PANEL.colour_hook = _dashboard_colour
             companion_page.DASHBOARD_PANEL.load3d_hook = _dashboard_load3d
+            companion_page.CHECKLIST_PANEL.list_hook = _checklist_list
+            companion_page.CHECKLIST_PANEL.run_hook = _checklist_run_page
+            companion_page.CHECKLIST_PANEL.show_hook = _checklist_show
             companion_page.keep(bound_pid=_companion_revit)
         except Exception as why:                         # noqa: BLE001 - never cost the chat
             sys.stderr.write("Heron Companion keeper did not start: %s\n" % why)

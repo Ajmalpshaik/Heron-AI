@@ -483,6 +483,10 @@ jobs:
           # THE SUITES THAT CANNOT RUN ON A PLAIN LINUX RUNNER, AND WHY.
           #
           #   test_bridge_roundtrip.py needs a built .NET test host
+          #   test_checklist_tool.py   needs the MCP SDK - the chat's
+          #                            heron_checklist tool (docs/50); the
+          #                            store and its run against a stand-in
+          #                            server run here, in test_checklists.py
           #   test_commands_tool.py    needs the MCP SDK - the chat's
           #                            heron_commands tool (docs/49); the store
           #                            and runner it serves run here, in
@@ -530,6 +534,7 @@ jobs:
           # and both still fail if the thing they assert stops being true.
           printf '%s\n' \
             test_bridge_roundtrip.py \
+            test_checklist_tool.py \
             test_commands_tool.py \
             test_loads_finalize.py \
             test_mcp_serves.py \

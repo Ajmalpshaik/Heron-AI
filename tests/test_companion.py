@@ -1675,6 +1675,177 @@ def test_dashboard_panel():
     print()
 
 
+def test_checklist_panel(tmp):
+    """The QA Checklist workspace (docs/50): data and hooks only, its routes behind
+    the pairing on a real server, Run one at a time and only when pressed, each
+    check's read under the lock for that read alone, and Select in Revit the Model
+    Dashboard's own route with the ids the run found - never ids the page sent."""
+    print()
+    print("The QA Checklist: data and hooks only, run when pressed, Select by the dashboard's route")
+    panel = hc.ChecklistPanel()
+    shown = panel.current()
+    check(shown["connected"] is False and shown["lists"] == [] and shown["result"] is None,
+          "with no chat connected, the panel holds nothing")
+    check(panel.run({"name": "Before issue"}) == {"ok": False, "said": "Nothing was run: %s."
+                                                  % hc.ChecklistPanel.GONE},
+          "with no chat connected, Run says so and runs nothing")
+    panel.list_hook = lambda: {"lists": [{"name": "Before issue", "checks": 2, "description": "",
+                                          "sentences": ["a", "b"]}], "broken": ["x.json"]}
+    rows = [{"n": 1, "state": "pass", "ids": [], "idsComplete": False},
+            {"n": 2, "state": "fail", "ids": ["501", "502"], "idsComplete": True},
+            {"n": 3, "state": "fail", "ids": [], "idsComplete": False, "idsTotal": 40}]
+    answer = {"name": "Before issue", "rows": rows, "counts": {"pass": 1, "fail": 2, "not run": 0},
+              "identity": ["Tower MEP", "", "11"], "said": "said", "run": "run-1"}
+    seen = []
+
+    def run(name, hold):
+        seen.append((name, panel.current()["busy"]))
+        check(panel.run({"name": name})["said"] == "Nothing was run: %s." % hc.ChecklistPanel.BUSY,
+              "a second Run while one runs is told so in words and runs nothing")
+        hold(dict(answer, running=True, rows=rows[:1]))
+        check(panel.current()["result"]["running"] is True, "each check's row reaches the page as it is done")
+        hold(answer)
+        return {"ok": True, "said": "ran"}
+    panel.run_hook = run
+    check(panel.run({})["ok"] is False and not seen, "a Run with no checklist named runs nothing")
+    check(panel.run({"name": "Before issue"}) == {"ok": True, "said": "ran"}
+          and seen == [("Before issue", True)], "Run calls the hook once with the name, marked busy")
+    shown = panel.current()
+    check(shown["busy"] is False and shown["lists"][0]["name"] == "Before issue"
+          and shown["broken"] == ["x.json"] and len(shown["result"]["rows"]) == 3,
+          "the page is sent the brain's list and rows as they came")
+    check("identity" not in shown["result"], "and never the model's identity, which stays with the panel")
+
+    def broken(_name, hold):
+        hold(dict(answer, running=True, rows=rows[:1], run="run-0"))
+        raise RuntimeError("Revit closed")
+    panel.run_hook = broken
+    got = panel.run({"name": "Before issue"})
+    shown = panel.current()
+    check(got["ok"] is False and "The run stopped: Revit closed" in got["said"]
+          and shown["busy"] is False and shown["result"]["running"] is False
+          and "stopped" in shown["result"]["said"],
+          "a run that raises is told in words, its held result made final - never left Running")
+    panel.hold(answer)
+
+    # ONE RUN AT A TIME, CHAT AND PAGE TOGETHER.
+    check(panel.begin("chat") is None, "a chat run claims the one run")
+    check(panel.run({"name": "Before issue"})["said"] == "Nothing was run: %s." % hc.ChecklistPanel.BUSY_CHAT
+          and panel.current()["busyWith"] == "chat",
+          "a page Run while a chat run goes is refused in words, naming the chat")
+    check(panel.show({"action": "select", "row": 2, "run": "run-1"})["ok"] is False,
+          "and so is Select, until the chat run ends")
+    panel.end()
+
+    def page_run(_name, _hold):
+        seen.append(("chat said", panel.begin("chat")))
+        return {"ok": True, "said": "ran"}
+    panel.run_hook = page_run
+    panel.run({"name": "Before issue"})
+    check(seen[-1] == ("chat said", hc.ChecklistPanel.BUSY),
+          "a chat run while a page run goes is refused in words, naming the page")
+    check(panel.begin("chat") is None, "after the page run ends, the chat may run")
+    panel.end()
+
+    sent = []
+    check(panel.show({"action": "select", "row": 2})["said"]
+          == "Nothing was sent to Revit: %s." % hc.ChecklistPanel.GONE, "Select with no chat sends nothing")
+    panel.show_hook = lambda action, ids, identity: sent.append((action, ids, identity)) or {"ok": True,
+                                                                                         "said": "selected"}
+    got = panel.show({"action": "select", "row": 2, "run": "run-1", "ids": ["999"]})
+    check(got == {"ok": True, "said": "selected"} and sent == [("select", ["501", "502"],
+                                                                ["Tower MEP", "", "11"])],
+          "Select sends the ids the panel's own run found, never ids the page typed, with the model it read")
+    check(panel.show({"action": "select", "row": 3, "run": "run-1"})["ok"] is False and len(sent) == 1,
+          "a row whose ids did not all arrive sends nothing")
+    check(panel.show({"action": "select", "row": 1, "run": "run-1"})["ok"] is False and len(sent) == 1,
+          "a passing row has no ids to send")
+    check(panel.show({"action": "isolate", "row": 2, "run": "run-1"})["ok"] is False and len(sent) == 1,
+          "an action that is not select is refused")
+    # A CHAT RUN REPLACED THE RESULT BEFORE THE PAGE REDREW: the page's row 2 is
+    # the old run's, so nothing is sent.
+    panel.hold(dict(answer, run="run-2", rows=[dict(rows[1], ids=["901"])]))
+    got = panel.show({"action": "select", "row": 2, "run": "run-1"})
+    check(got["ok"] is False and got["said"] == "Nothing was sent to Revit: %s." % hc.ChecklistPanel.REPLACED
+          and len(sent) == 1, "Select on a run the page no longer shows is refused in words")
+    check(panel.show({"action": "select", "row": 2})["ok"] is False and len(sent) == 1,
+          "and so is Select with no run named")
+    check(panel.show({"action": "select", "row": 2, "run": "run-2"})["ok"] and sent[-1][1] == ["901"],
+          "the run the page does show selects its own ids")
+
+    def raising_list():
+        raise ValueError("one bad file")
+    panel.list_hook = raising_list
+    check(panel.current()["result"] is not None, "a list that cannot be read never stops the page updating")
+
+    source = io.open(SOURCE, encoding="utf-8").read()
+    i = source.index('if path == "/api/checklist":')
+    j = source.index('if path in ("/api/checklist/run", "/api/checklist/show"):')
+    check(source.index("why = self._api_ok()", i) < source.index("CHECKLIST_PANEL.current()", i)
+          and source.index("why = self._api_ok()", j) < source.index("CHECKLIST_PANEL.run(", j)
+          and source.index("why = self._api_ok()", j) < source.index("CHECKLIST_PANEL.show(", j),
+          "every QA Checklist route is behind _api_ok like every other route")
+    server = io.open(SERVER, encoding="utf-8").read()
+    check("CHECKLIST_PANEL.list_hook = _checklist_list" in server
+          and "CHECKLIST_PANEL.run_hook = _checklist_run_page" in server
+          and "CHECKLIST_PANEL.show_hook = _checklist_show" in server
+          and "_dashboard_show(action, ids, identity, moved_said=CHECKLIST_MOVED)" in server,
+          "the server sets the hooks, and Select is the Model Dashboard's own _dashboard_show, in "
+          "the checklist's own words")
+    page_run = server[server.index("def _checklist_run_page("):]
+    page_run = page_run[:page_run.index(chr(10) + "def ", 10)]
+    ask_src = server[server.index("def _checklist_ask("):]
+    ask_src = ask_src[:ask_src.index(chr(10) + "def _run_checklist(", 10)]
+    check("_revit_lock" not in page_run and ask_src.count("with _revit_lock:") == 1
+          and "_through(revit_read, reply_out=out, origin=origin)" in ask_src
+          and "revit_change" not in page_run + ask_src and "pinned.check(reply)" in ask_src,
+          "a page run takes the lock per check, for that read alone, through revit_read's own body "
+          "with the pin's refusal - never revit_change")
+    check(tools.TOOLS.get("heron_checklist") == (tools.ANALYZE, "run_fragment_read")
+          and not any("checklist" in k for k in tools.COMPANION_ACTIONS),
+          "the run is declared at revit_read's level on the chat's tool; the page adds no action of its own")
+
+    # A REAL SERVER: the routes answer only a paired page with the header.
+    companion = hc.Companion(bound_pid=lambda: 100, folder=os.path.join(tmp, "qa-live"),
+                             discovery_dir=os.path.join(tmp, "qa-bridges"), is_alive=lambda pid: True)
+    real_stdout, sys.stdout = sys.stdout, io.StringIO()
+    try:
+        address = companion.pairing_address()
+        port = companion.port
+        origin = "http://127.0.0.1:%d" % port
+        code = address.split("?pair=", 1)[1]
+        paired = ask(port, "POST", "/api/pair", {"X-Heron-Companion": "1", "Origin": origin,
+                                                 "Content-Type": "application/json"},
+                     json.dumps({"code": code}))
+        cookie = paired[1].get("set-cookie", "").split(";", 1)[0]
+        no_cookie = ask(port, "GET", "/api/checklist", {"X-Heron-Companion": "1"})
+        no_origin = ask(port, "POST", "/api/checklist/run", {"X-Heron-Companion": "1", "Cookie": cookie,
+                                                              "Content-Type": "application/json"},
+                        json.dumps({"name": "Before issue"}))
+        got = ask(port, "GET", "/api/checklist", {"X-Heron-Companion": "1", "Cookie": cookie})
+    finally:
+        printed, sys.stdout = sys.stdout.getvalue(), real_stdout
+        companion.stop()
+    check(no_cookie[0] == 403 and no_origin[0] == 403,
+          "without the cookie, or a POST without the page's Origin, the routes refuse")
+    check(got[0] == 200 and json.loads(got[2].decode("utf-8"))["ok"] is True,
+          "a paired page with the header is answered")
+    check(printed == "", "NOTHING reached stdout, where MCP speaks")
+
+    js = io.open(PAGE_JS, encoding="utf-8").read()
+    block = js[js.index("// ---------------------------------------------------------------- QA checklist"):
+               js.index("// ---------------------------------------------------------------- sprinkler")]
+    check("innerHTML" not in block and "insertAdjacentHTML" not in block,
+          "the page puts model text on the page with textContent only")
+    check(set(re.findall(r'fetch\("([^"]+)"', block)) <= {"/api/checklist"}
+          and "/api/checklist/run" in block and "/api/checklist/show" in block
+          and '{ action: "select", row: row, run: run }' in block,
+          "it asks Heron only, and Select sends the row's number and its run, never ids")
+    check("checklist_();" in js[js.index("async function poll()"):js.index("function theme()")]
+          and '["qa", "q-empty"]' in js, "the poll reads it, and it is a workspace in the sidebar")
+    print()
+
+
 def test_sprinkler_panel():
     """The Sprinkler panel (docs/46): data and hooks only, every route behind the
     pairing, its own 3D view, and nothing on it writes to Revit."""
@@ -1865,25 +2036,25 @@ def test_table_and_layout_friendly():
 
 
 def test_page_frame():
-    """The page's frame (docs/40 s21.16): a sidebar of five workspaces, one shown at a
+    """The page's frame (docs/40 s21.16, docs/50): a sidebar of six workspaces, one shown at a
     time, desktop only. Read from the page's own files - how it LOOKS is a person's eye."""
     print()
-    print("The page frame: five workspaces in a sidebar, one at a time, no phone layout")
+    print("The page frame: six workspaces in a sidebar, one at a time, no phone layout")
     static = os.path.join(ROOT, "mcp", "companion", "static")
     index = io.open(os.path.join(static, "index.html"), encoding="utf-8").read()
     css = io.open(os.path.join(static, "companion.css"), encoding="utf-8").read()
     js = io.open(PAGE_JS, encoding="utf-8").read()
     shown = re.sub(r"(?s)<template\b.*?</template>", "", index)
-    spaces = ["dashboard", "loads", "sprinkler", "layout", "table"]
+    spaces = ["dashboard", "loads", "sprinkler", "layout", "table", "qa"]
     check(all(('<section class="ws" id="%s"' % w) in shown for w in spaces)
           and all(('data-ws="%s"' % w) in shown for w in spaces),
-          "each of the five panels is a workspace with its own sidebar button")
+          "each of the six panels is a workspace with its own sidebar button")
     check(all(("body[data-ws=\"%s\"] #%s" % (w, w)) in css for w in spaces),
           "and the stylesheet shows exactly the one the page is on")
     check(re.search(r'<section class="ws" id="(sprinkler|layout)"[^>]*\bhidden\b', shown) is None
           and "$(\"sprinkler\").hidden" not in js and "$(\"layout\").hidden" not in js,
           "the Sprinkler workspaces are always there, empty until the chat opens them")
-    check(all(("%s-empty" % k) in shown or ("id=\"%s-empty\"" % k) in shown for k in "dlkyt"),
+    check(all(("%s-empty" % k) in shown or ("id=\"%s-empty\"" % k) in shown for k in "dlkytq"),
           "every workspace keeps its empty state, which the page shows until it holds something")
     check("viewport" not in index, "no viewport tag: this is not a phone page")
     queries = re.findall(r"@media\s*([^{]+)\{", css)
@@ -1937,6 +2108,10 @@ def main():
         test_layout_panel()
     except Exception as why:                    # noqa: BLE001 - reported, not hidden
         check(False, "the Sprinkler Layout panel checks ran to the end (they raised %r)" % (why,))
+    try:
+        test_checklist_panel(tmp)
+    except Exception as why:                    # noqa: BLE001 - reported, not hidden
+        check(False, "the QA Checklist panel checks ran to the end (they raised %r)" % (why,))
     test_page_frame()
     test_page_is_in_the_brand()
     test_workspace_tabs()

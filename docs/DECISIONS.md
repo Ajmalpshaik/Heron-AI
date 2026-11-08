@@ -220,6 +220,7 @@ an edit.
 | [D-149](#d-149--every-colour-font-and-icon-heron-shows-comes-from-the-brand-kit-in-docsbrand) | Every colour, font and icon Heron shows comes from the brand kit in docs/brand | ✅ Accepted · 2026-11-07 |
 | [D-150](#d-150--herons-four-switches-move-from-the-ribbon-into-a-settings-window-and-the-ribbon-keeps-heron-settings-and-companion) | Heron's four switches move from the ribbon into a Settings window, and the ribbon keeps Heron, Settings and Companion | ✅ Accepted · 2026-11-07 |
 | [D-151](#d-151--a-job-the-modeller-kept-can-be-saved-as-a-named-command-and-the-heron-panel-in-revit-runs-it-through-the-same-door-a-chat-uses) | A job the modeller kept can be saved as a named command, and the Heron panel in Revit runs it through the same door a chat uses | ⏳ Proposed · 2026-11-08 |
+| [D-152](#d-152--a-qa-checklist-is-saved-checks-in-the-modellers-words-each-one-read-with-a-pass-rule-run-in-one-go-from-the-chat-or-the-companion) | A QA checklist is saved checks in the modeller's words, each one read with a pass rule, run in one go from the chat or the Companion | ⏳ Proposed · 2026-11-08 |
 
 ## Format
 
@@ -1318,3 +1319,11 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`heron_commands.py`](../brain/heron_commands.py) · [`heron_command_run.py`](../mcp/server/heron_command_run.py) · [`HeronCommandsPane.cs`](../revit/Heron.Revit.Addin/HeronCommandsPane.cs) · [`HeronCommandStore.cs`](../revit/Heron.Revit.Addin/HeronCommandStore.cs)
 
 **Full record:** [`decisions/D-151.md`](decisions/D-151.md)
+
+## D-152 — A QA checklist is saved checks in the modeller's words, each one read with a pass rule, run in one go from the chat or the Companion
+
+**Status:** Proposed · **Date:** 2026-11-08 · **Asked:** Ajmal PS, 2026-11-08, in conversation: *"QAQC Checklist. We need it ... We can add also in the companion app also."* - the limits (one read per check, a check only reads, Select only when every failing id arrived) are the owner's to accept
+**Keeps:** [D-01](decisions/D-01.md) · [D-30](decisions/D-30.md) · [D-117](decisions/D-117.md) · [D-151](decisions/D-151.md)
+**Affects:** [`heron_checklists.py`](../brain/heron_checklists.py) · [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (`heron_checklist`) · [`heron_companion.py`](../mcp/companion/heron_companion.py) (`ChecklistPanel`)
+
+**Full record:** [`decisions/D-152.md`](decisions/D-152.md)
