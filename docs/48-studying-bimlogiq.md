@@ -224,7 +224,7 @@ serves and `heron_lookup` offers for *"CAD lines to ducts and pipes"* or *"under
   in double mode a tag that disagrees with the spacing wins and is listed. `previewOnly` draws nothing and lists
   every run with its coordinates - the step where the host matches the picture's tags to runs.
 - **The picture and the model:** since 2026-11-09 `revit_view_image` of a plan whose crop is on and annotation
-  crop off adds one line turning a pixel into model mm, so a tag's own position can be handed in; for any other
+  crop off adds one line turning a place on the picture (a fraction of its width and height) into model mm, so a tag's own position can be handed in; for any other
   picture it says why not, and the method gives the tag the middle of its run - a hint only has to be nearest its
   own run. Not run in Revit: whether the picture fills the crop edge to edge is NEEDS-CHECKING MX19, and
   [row 5b-1481](fragment-issues/section-5b-rows-401-425.md) has the detail.

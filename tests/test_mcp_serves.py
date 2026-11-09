@@ -101,9 +101,11 @@ WHAT IT PROVES, when an SDK is installed
      beside its words, holding exactly what the stand-in sent, with no
      output schema; the request is capture_view with the pin and no path;
      and a reply with no readable picture, or a refusal, gives no image.
-     A cropped plan with its annotation crop off adds ONE line turning a
-     pixel into model mm, its numbers checked (row 5b-1481); every other
-     picture says in one line why there is none, and an older add-in's
+     A cropped floor plan with its annotation crop off adds ONE line turning
+     a place on the picture, as a fraction of its width and height, into
+     model mm, its numbers checked (row 5b-1481); every other picture -
+     ceiling plans, mirrored or skewed corners, a crop Revit would not give
+     included - says in one line why there is none, and an older add-in's
      reply with no crop still gives its picture.
  15. `revit_show` AND THE TEMPORARY ISOLATE, against a stand-in Revit. A
      MODIFY capability is refused before a session is bound; an EXECUTE one
@@ -1738,20 +1740,22 @@ def png_of(width, height):
 
 # A 1:100 FLOOR PLAN, cropped 40,000 x 28,000 mm, its top-left corner at x
 # 12,000, y 34,000 mm, as the add-in's PlanFrame sends it - and its picture,
-# 1280 px wide and so 896 high: 31.25 mm a pixel either way.
+# 1280 px wide and so 896 high.
 CROPPED_PLAN = {"viewScale": 100, "cropActive": True, "annotationCropActive": False,
                 "cropShape": "rectangle",
-                "annotationCropOffsetsMm": "254,254,254,254",
                 "cropCornersMm": "12000,34000; 52000,34000; 52000,6000; 12000,6000"}
 
 
 async def exercise_picture_to_model(revit, call):
     """
-    Row 5b-1481: a picture of a cropped PLAN with its annotation crop off
-    says, in one line, how a pixel turns into model mm - the numbers checked
-    against a stand-in reply - and every other picture says in one line why
-    it gives none, never a guessed position. An add-in older than this
-    server, which sends no crop, still gives its picture.
+    Row 5b-1481: a picture of a cropped floor PLAN with its annotation crop
+    off says, in one line, how a place on the picture - as a FRACTION of its
+    width and height, which the chat can measure whatever size it is shown
+    the picture at - turns into model mm, the numbers checked against a
+    stand-in reply; every other picture says in one line why it gives none,
+    never a guessed position. An add-in older than this server, which sends
+    no crop, still gives its picture, and a crop Revit would not give is said
+    as that, not as an old add-in.
     """
     import base64
     print()
@@ -1765,28 +1769,27 @@ async def exercise_picture_to_model(revit, call):
           "a cropped floor plan, annotation crop off, gives its picture and ONE "
           "mapping line - found %r" % said)
     line = mapped[0] if mapped else ""
-    check("1:100 plan" in line and "1280 x 896 px" in line
-          and "top-left corner at x 12000, y 34000 mm" in line,
-          "naming the scale, the picture's own size read from the PNG, and its "
-          "top-left corner in model mm: %r" % line)
-    check("x = 12000 + 31.25*px, y = 34000 - 31.25*py mm" in line,
-          "with the formula: 31.25 mm a pixel, y growing UP in the model and DOWN "
-          "in the picture - found %r" % line)
-    check("MX19" in line and "edge to edge" in line,
-          "and the edge question still open, named: %r" % line)
+    check("1:100 plan" in line and "top-left 12000,34000" in line
+          and "top-right 52000,34000" in line and "bottom-right 52000,6000" in line
+          and "bottom-left 12000,6000" in line,
+          "naming the scale and the four corners in model mm: %r" % line)
+    check("fraction of the picture's width and height" in line
+          and "x = 12000 + 40000*u, y = 34000 - 28000*v mm" in line,
+          "with the formula in FRACTIONS of the picture - u across, v down, 0 to 1 - "
+          "y growing UP in the model and DOWN in the picture: %r" % line)
+    check("px" not in line.replace("plan", ""),
+          "and no pixel count in it - the chat does not see the PNG's own pixels")
+    check("MX19" in line and "edge to edge" in line
+          and "a tag just outside the crop may be missing from the picture" in line,
+          "and the edge question and the tag outside the crop still said: %r" % line)
 
-    # A CROP ROTATED A QUARTER TURN IN THE PLAN: a pixel right is +y in the
-    # model, a pixel down is -x - and a crop of the same shape still maps.
+    # A CROP TURNED A QUARTER TURN IN THE PLAN: across the picture is +y in
+    # the model, down it is +x - seen from above, never a mirror image.
     revit.reply = dict(PICTURE_REPLY, png=picture, **dict(
-        CROPPED_PLAN, cropCornersMm="1000,2000; 1000,14800; -7960,14800; -7960,2000"))
+        CROPPED_PLAN, cropCornersMm="1000,2000; 1000,14800; 9960,14800; 9960,2000"))
     said, _images = await call({"view": "Level 1"})
-    check("x = 1000 - 10*py, y = 2000 + 10*px mm" in said,
-          "a crop rotated in the plan turns into steps in both x and y: %r" % said)
-
-    # A CEILING PLAN IS A PLAN too.
-    revit.reply = dict(PICTURE_REPLY, png=picture, viewType="CeilingPlan", **CROPPED_PLAN)
-    said, _images = await call({"view": "CeilingPlan: Level 1"})
-    check("Model position" in said, "a reflected ceiling plan, cropped, maps the same way")
+    check("x = 1000 + 8960*v, y = 2000 + 12800*u mm" in said,
+          "a crop turned in the plan turns into steps in both x and y: %r" % said)
 
     # EVERY OTHER PICTURE: no numbers, and one line saying why.
     cases = [
@@ -1797,9 +1800,12 @@ async def exercise_picture_to_model(revit, call):
                                               if k != "annotationCropActive"), {},
          "annotation crop is on (or not said)"),
         ("a split crop", dict(CROPPED_PLAN, cropShape="split"), {}, "crop is split"),
+        ("a shaped crop", dict(CROPPED_PLAN, cropShape="shaped"), {}, "crop is shaped"),
         ("a 3D view", dict(CROPPED_PLAN), {"viewType": "ThreeD", "view": "{3D}"},
          "it is a ThreeD, not a plan"),
         ("a section", dict(CROPPED_PLAN), {"viewType": "Section"}, "not a plan"),
+        ("a ceiling plan", dict(CROPPED_PLAN), {"viewType": "CeilingPlan"},
+         "not yet measured for ceiling plans"),
         ("an element-ids capture", {}, {"mode": "elements", "view": "{3D}",
                                         "viewType": "ThreeD", "shown": 2},
          "temporary 3D view of elements"),
@@ -1809,8 +1815,21 @@ async def exercise_picture_to_model(revit, call):
         ("corners that are not a rectangle", dict(
             CROPPED_PLAN, cropCornersMm="12000,34000; 52000,34000; 50000,6000; 12000,6000"),
          {}, "do not make a rectangle"),
+        ("corners not at a right angle", dict(
+            CROPPED_PLAN, cropCornersMm="0,0; 40000,0; 41000,-28000; 1000,-28000"),
+         {}, "not at a right angle"),
+        ("corners mirrored", dict(
+            CROPPED_PLAN, cropCornersMm="1000,2000; 1000,14800; -7960,14800; -7960,2000"),
+         {}, "corners are mirrored"),
+        ("corners the add-in would not send", dict(
+            (k, v) for k, v in CROPPED_PLAN.items() if k != "cropCornersMm"),
+         {"cropCornersWhyNot": "the crop box's axes are not the view's right and up"},
+         "not the view's right and up"),
         ("corners unreadable", dict(CROPPED_PLAN, cropCornersMm="12000;34000"), {},
          "could not be read"),
+        ("a crop Revit would not give", {}, {"planFrame": "unavailable",
+                                             "planFrameError": "InvalidOperationException"},
+         "Revit did not give the crop for this picture (InvalidOperationException)"),
     ]
     for name, fields, extra, reason in cases:
         reply = dict(PICTURE_REPLY, png=picture, **fields)
@@ -1819,17 +1838,18 @@ async def exercise_picture_to_model(revit, call):
         said, images = await call({})
         why = [line for line in said.splitlines() if line.startswith("No model position")]
         check(len(images) == 1 and "Model position" not in said
-              and len(why) == 1 and reason in why[0] and "Nothing was changed." in said,
+              and len(why) == 1 and reason in why[0] and "older than" not in said
+              and "Nothing was changed." in said,
               "%s: the picture, no mapping, and one line why (%r) - found %r"
               % (name, reason, said))
 
-    # AN ADD-IN OLDER THAN THIS SERVER sends no crop at all: the picture still
-    # comes, no mapping, no crash - the stand-in's own plain reply.
+    # AN ADD-IN OLDER THAN THIS SERVER sends none of the fields at all: the
+    # picture still comes, no mapping, no crash - the stand-in's plain reply.
     revit.reply = dict(PICTURE_REPLY)
     said, images = await call({})
     check(len(images) == 1 and "Model position" not in said
           and "older than this server" in said,
-          "an older add-in's reply - a plan with no crop fields - still gives its "
+          "an older add-in's reply - a plan with none of the fields - still gives its "
           "picture, and says no crop came: %r" % said)
 
     # THE TWO SIDES NAME THE SAME FIELDS: every key the server reads is one
@@ -1838,10 +1858,13 @@ async def exercise_picture_to_model(revit, call):
     with io.open(source, encoding="utf-8") as fh:
         text = fh.read()
     missing = [key for key in ("viewScale", "cropActive", "annotationCropActive",
-                               "cropShape", "cropCornersMm")
+                               "cropShape", "cropCornersMm", "cropCornersWhyNot",
+                               "planFrame", "planFrameError")
                if '"%s"' % key not in text]
     check(not missing, "RevitCapture.cs writes every field the server reads - "
                        "missing %r" % missing)
+    check('"annotationCropOffsetsMm"' not in text,
+          "and no longer sends the annotation crop offsets nothing read")
 
 
 async def exercise_view_image(module):

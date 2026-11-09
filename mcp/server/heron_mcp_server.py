@@ -6758,13 +6758,24 @@ def revit_views() -> str:
 
 
 # THE VIEWS A PICTURE CAN BE LAID OVER THE PLAN FROM - Revit's ViewType names
-# for a ViewPlan, the only views the add-in sends a crop for (row 5b-1481).
-_PLAN_TYPES = ("FloorPlan", "CeilingPlan", "EngineeringPlan", "AreaPlan")
+# for a ViewPlan the add-in sends a crop for (row 5b-1481). A CEILING PLAN IS
+# LEFT OUT until NEEDS-CHECKING MX19's reflected-ceiling step has run: it looks
+# up, and nothing yet shows its picture is laid out as its crop box says.
+_PLAN_TYPES = ("FloorPlan", "EngineeringPlan", "AreaPlan")
 
 # How far, in pixels, the picture's height may sit from the one the crop's
 # shape gives at its width - Revit rounds the height to a whole pixel. Beyond
 # it the picture's edges are not the crop's, and no mapping is given.
 _SHAPE_SLACK_PX = 2.0
+
+# How far from square the crop's corners may be - the cosine of the angle
+# between its top edge and its left edge. 0.001 is under a tenth of a degree.
+_SQUARE_SLACK = 0.001
+
+# The fields an add-in that knows about a plan's frame sends - all of them
+# absent means the add-in is older than this server.
+_FRAME_FIELDS = ("planFrame", "viewScale", "cropActive", "annotationCropActive",
+                 "cropShape", "cropCornersMm", "cropCornersWhyNot")
 
 
 def _png_size(picture):
@@ -6801,15 +6812,21 @@ def _mm_text(value, places):
 def _picture_to_model(reply, picture):
     """
     The ONE line revit_view_image adds about where the picture sits in the
-    model (row 5b-1481): how to turn a pixel into model mm, or why it cannot.
+    model (row 5b-1481): how to turn a place on the picture into model mm, or
+    why it cannot.
 
-    Given only for a PLAN whose crop is ON, a plain rectangle, and whose
-    ANNOTATION crop is OFF - the one case where the picture's edges can be
-    the crop's - and only when the picture's own shape, read from its PNG
-    header, is the crop's shape. Anything else - a 3D picture, a section, a
-    crop off or shaped, an annotation crop on, an add-in older than this
-    server that sends no crop - is said in one line and given no numbers:
-    a position guessed from a picture would size the wrong duct.
+    Given only for a floor, engineering or area PLAN whose crop is ON, a plain
+    rectangle, and whose ANNOTATION crop is OFF - the one case where the
+    picture's edges can be the crop's - only when the add-in sent the crop's
+    corners, they are square and seen from above (not mirrored), and the
+    picture's own shape, read from its PNG header, is the crop's shape.
+    Anything else is said in one line with no numbers: a position guessed
+    from a picture would size the wrong duct.
+
+    IN FRACTIONS OF THE PICTURE, NEVER PIXELS (review of ed899b5): the chat
+    does not see the PNG's own pixels - Claude scales a large image down
+    before reading it - so a tag is placed by how far across and down the
+    picture it sits, 0 to 1, which scaling does not change.
 
     Millimetres from Revit's internal origin - the numbers EXTRACT_CAD_CURVES
     and DRAW_MEP_FROM_CAD's runsFound give, and its size@x,y hints take.
@@ -6818,11 +6835,17 @@ def _picture_to_model(reply, picture):
     if reply.get("mode") == "elements":
         return lead + "it is a temporary 3D view of elements."
     view_type = reply.get("viewType") or "view"
+    if view_type == "CeilingPlan":
+        return (lead + "it is a ceiling plan, and the mapping is not yet measured for "
+                "ceiling plans (NEEDS-CHECKING MX19).")
     if view_type not in _PLAN_TYPES:
         return lead + "it is a %s, not a plan." % view_type
-    if "cropActive" not in reply:
+    if not any(field in reply for field in _FRAME_FIELDS):
         return (lead + "the add-in in Revit sent no crop for the plan - it is older than "
                 "this server.")
+    if reply.get("planFrame") == "unavailable":
+        return (lead + "Revit did not give the crop for this picture (%s)."
+                % (reply.get("planFrameError") or "no reason given"))
     if not reply.get("cropActive"):
         return lead + "the plan's crop is off, so its edges are not a known place."
     if reply.get("annotationCropActive") is not False:
@@ -6831,45 +6854,56 @@ def _picture_to_model(reply, picture):
     shape = reply.get("cropShape") or "not said"
     if shape != "rectangle":
         return lead + "the plan's crop is %s, not a plain rectangle." % shape
+    if reply.get("cropCornersWhyNot"):
+        return lead + "%s." % reply.get("cropCornersWhyNot")
     corners = _crop_corners(reply.get("cropCornersMm"))
     size = _png_size(picture)
     if corners is None or size is None:
         return lead + "the crop's corners or the picture's size could not be read."
 
     (x0, y0), (x1, y1), (x2, y2), (x3, y3) = corners
+    right = (x1 - x0, y1 - y0)            # top-left to top-right
+    down = (x3 - x0, y3 - y0)             # top-left to bottom-left
+    across = (right[0] ** 2 + right[1] ** 2) ** 0.5
+    tall = (down[0] ** 2 + down[1] ** 2) ** 0.5
+    if across <= 0 or tall <= 0:
+        return lead + "the crop has no size."
     if abs(x1 + x3 - x0 - x2) > 1.0 or abs(y1 + y3 - y0 - y2) > 1.0:
         return lead + "the crop's corners do not make a rectangle."
-    across = ((x1 - x0) ** 2 + (y1 - y0) ** 2) ** 0.5
-    down = ((x3 - x0) ** 2 + (y3 - y0) ** 2) ** 0.5
+    if abs(right[0] * down[0] + right[1] * down[1]) / (across * tall) > _SQUARE_SLACK:
+        return lead + "the crop's corners are not at a right angle."
+    # SEEN FROM ABOVE, the picture's rightward edge turned clockwise is its
+    # downward edge: the z of (right x down) is negative. Positive is a
+    # mirror image - the picture would put every tag on the wrong side.
+    if right[0] * down[1] - right[1] * down[0] >= 0:
+        return lead + "the crop's corners are mirrored."
     width, height = size
-    if across <= 0 or down <= 0:
-        return lead + "the crop has no size."
-    if abs(height - width * down / across) > _SHAPE_SLACK_PX:
+    if abs(height - width * tall / across) > _SHAPE_SLACK_PX:
         return (lead + "the picture is %d x %d px and the crop %s x %s mm - not the same "
                 "shape, so the picture's edges are not the crop's."
-                % (width, height, _mm_text(across, 0), _mm_text(down, 0)))
+                % (width, height, _mm_text(across, 0), _mm_text(tall, 0)))
 
-    # A PIXEL RIGHT and A PIXEL DOWN, each as a step in model x and y - a crop
-    # rotated in the plan gives steps in both.
-    steps = ((x1 - x0) / width, (y1 - y0) / width, (x3 - x0) / height, (y3 - y0) / height)
-
-    def formula(start, right, down_step):
+    def formula(start, along_u, along_v):
         said = _mm_text(start, 1)
-        for step, name in ((right, "px"), (down_step, "py")):
-            if abs(step) < 5e-6:
+        for step, name in ((along_u, "u"), (along_v, "v")):
+            if abs(step) < 0.05:
                 continue
-            said += " %s %s*%s" % ("-" if step < 0 else "+", _mm_text(abs(step), 5), name)
+            said += " %s %s*%s" % ("-" if step < 0 else "+", _mm_text(abs(step), 1), name)
         return said
 
     scale = reply.get("viewScale")
-    return ("Model position from this picture (%splan, crop on, annotation crop off): it is "
-            "%d x %d px, its top-left corner at x %s, y %s mm from Revit's internal origin; "
-            "a point px pixels right and py pixels down from that corner is at "
-            "x = %s, y = %s mm. Exact only if Revit's picture fills the crop edge to edge "
-            "- not yet measured in Revit (NEEDS-CHECKING MX19)."
-            % ("1:%s " % scale if scale else "", width, height,
-               _mm_text(x0, 1), _mm_text(y0, 1),
-               formula(x0, steps[0], steps[2]), formula(y0, steps[1], steps[3])))
+    return ("Model position from this picture (%splan, crop on, annotation crop off): its "
+            "corners are, in mm from Revit's internal origin, top-left %s,%s, top-right "
+            "%s,%s, bottom-right %s,%s, bottom-left %s,%s. Measure the tag's position as a "
+            "fraction of the picture's width and height - u across from the left edge and "
+            "v down from the top edge, each 0 to 1 - and it is at x = %s, y = %s mm. "
+            "Exact only if Revit's picture fills the crop edge to edge - not yet measured "
+            "in Revit (NEEDS-CHECKING MX19); a tag just outside the crop may be missing "
+            "from the picture."
+            % ("1:%s " % scale if scale else "",
+               _mm_text(x0, 1), _mm_text(y0, 1), _mm_text(x1, 1), _mm_text(y1, 1),
+               _mm_text(x2, 1), _mm_text(y2, 1), _mm_text(x3, 1), _mm_text(y3, 1),
+               formula(x0, right[0], down[0]), formula(y0, right[1], down[1])))
 
 
 @server.tool()
@@ -6883,9 +6917,9 @@ def revit_view_image(view: str = "", elements: str = "", width: int = 1280) -> l
     - `view`: a view or sheet name as the Project Browser shows it. Empty
       means the view in front. It is pictured exactly as it stands - its
       template, crop and filters - and nothing about it is changed. If two
-      views share the name, the answer lists each as "ViewType: Name" to type
-      back. A cropped plan with no annotation crop also maps a pixel to
-      model mm.
+      views share the name, the answer lists each as "ViewType: Name" to
+      copy. A cropped plan, no annotation crop, maps to model mm (not yet
+      measured, MX19).
     - `elements`: element ids, comma separated, as Heron's answers print them
       - Revit's number, or a form's long id from CREATE_FAMILY_FORMS or
       REPORT_FAMILY_FORMS; the two may be mixed. Heron

@@ -52,9 +52,12 @@ purpose: >
      abbreviations ("SA", "RA", "CHWS"). Zoom in with a narrower crop, or a
      second view, when tags are too small to read - never guess a figure that
      cannot be read. Keep the answer's "Model position" line (or its "No model
-     position" line) for step 5: for a plan whose crop is on and annotation
-     crop off it turns a pixel into model mm. Note each tag's pixel position
-     as it is read.
+     position" line) for step 5: for a floor plan whose crop is on and
+     annotation crop off it turns a place on the picture into model mm. Note
+     where each tag sits as a FRACTION of the picture's width and height - u
+     across from the left edge, v down from the top edge, each 0 to 1 - never
+     in pixels: the picture you see may have been scaled down from the one
+     Revit made, and a fraction is the same on both.
 
   3. DECIDE THE LAYERS WITH THE MODELLER. Put the layer list from step 1 and
      what the picture shows side by side, and propose which layer is supply
@@ -95,17 +98,21 @@ purpose: >
      other run - it is given to the one run nearest it, within hintReachMm
      (1500 by default).
      WHEN step 2's answer has a "Model position from this picture" line - a
-     plan whose crop is on and annotation crop off - use it: read the tag's
-     pixel position (px right, py down from the picture's top-left corner) and
-     put it through that line's formula; the result is the hint's x,y, in the
-     same internal mm as runsFound. Check each against runsFound - the hint
-     should land on or beside the run the tag labels; one that lands nowhere
-     near a run means the picture and the crop do not agree, so fall back
-     below and say so. Until NEEDS-CHECKING MX19 has measured that Revit's
-     picture fills the crop edge to edge, the line itself says it is not yet
-     proved exact - a few pixels out is still well inside hintReachMm.
+     floor plan whose crop is on and annotation crop off - use it: measure the
+     tag's position as a fraction of the picture's width and height (u across
+     from the left edge, v down from the top edge, 0 to 1) and put u and v
+     through that line's formula; the result is the hint's x,y, in the same
+     internal mm as runsFound. Check each against runsFound - the hint should
+     land on or beside the run the tag labels; one that lands nowhere near a
+     run means the picture and the crop do not agree, so fall back below and
+     say so. Until NEEDS-CHECKING MX19 has measured that Revit's picture fills
+     the crop edge to edge, the line itself says it is not yet proved exact -
+     a few pixels out is still well inside hintReachMm. A tag just outside the
+     crop may be missing from the picture: ask the modeller to widen the
+     crop, or name the run as untagged - never guess its size.
      WHEN IT HAS NOT - its "No model position" line says why (crop off,
-     annotation crop on, not a plan, a 3D picture, an older add-in) - never
+     annotation crop on, not a plan, a ceiling plan - not yet measured -, a
+     3D picture, an older add-in, the crop not given) - never
      work a position out from the picture alone: give each tag the MIDDLE OF
      THE RUN IT LABELS, taken from runsFound once the picture shows which run
      that is. Turning the crop on and the annotation crop off in a copy of the

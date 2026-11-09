@@ -895,21 +895,25 @@ namespace Heron.Revit.Addin
         /// for DRAW_MEP_FROM_CAD's size@x,y hints.
         ///
         /// IT ONLY READS. View.Scale; View.CropBoxActive; the annotation crop's
-        /// state (VIEWER_ANNOTATION_CROP_ACTIVE) and its four offsets
-        /// (ViewCropRegionShapeManager - feet on paper, so times the scale for
-        /// the model); whether the crop is a plain rectangle, shaped or split;
-        /// and View.CropBox's corners through the box's own Transform. The API
+        /// state (VIEWER_ANNOTATION_CROP_ACTIVE); whether the crop is a plain
+        /// rectangle, shaped or split (ViewCropRegionShapeManager); and
+        /// View.CropBox's corners through the box's own Transform. The API
         /// says of CropBox: "The X direction of the box is right on screen; Y
         /// is up" - so the picture's top-left is (Min.X, Max.Y), and a crop
-        /// rotated in the plan comes out rotated in the corners. Every member
-        /// read with tools/api-surface --members on 2026-11-09: present 2020
-        /// to 2027 with these signatures, so there is no version branch.
+        /// rotated in the plan comes out rotated in the corners. That is
+        /// trusted only where the box's BasisX and BasisY ARE the view's
+        /// RightDirection and UpDirection; otherwise (a reflected ceiling plan
+        /// may be one) `cropCornersWhyNot` says so and no corner is sent.
+        /// Every member read with tools/api-surface --members on 2026-11-09:
+        /// present 2020 to 2027 with these signatures, so there is no version
+        /// branch. The annotation crop's offsets were sent in ed899b5 and
+        /// dropped after its review: nothing read them, and their units were
+        /// not verified.
         ///
         /// MILLIMETRES FROM REVIT'S INTERNAL ORIGIN (D-20, feet x 304.8) - the
         /// numbers EXTRACT_CAD_CURVES and DRAW_MEP_FROM_CAD's runsFound give.
         /// Corners top-left, top-right, bottom-right, bottom-left, as the
-        /// picture is seen, "x,y; x,y; x,y; x,y". Annotation crop offsets in
-        /// model mm, "left,right,top,bottom".
+        /// picture is seen, "x,y; x,y; x,y; x,y".
         ///
         /// WHAT IT CANNOT KNOW: whether Revit's picture covers the crop exactly,
         /// edge to edge. FitToPage is documented only as "fit the whole view
@@ -918,7 +922,9 @@ namespace Heron.Revit.Addin
         /// measures the rest on a real plan.
         ///
         /// A FIELD REVIT WILL NOT GIVE IS LEFT OUT, never guessed - and a throw
-        /// costs the fields, never the picture.
+        /// costs the fields, never the picture: it is answered "planFrame":
+        /// "unavailable" with the exception's type, so the server can tell it
+        /// from an add-in too old to send any of this.
         /// </summary>
         private static string PlanFrame(View view)
         {
@@ -938,40 +944,55 @@ namespace Heron.Revit.Addin
                 {
                     fields.Add(Json.Str("cropShape",
                         shape.Split ? "split" : shape.ShapeSet ? "shaped" : "rectangle"));
-                    if (shape.CanHaveAnnotationCrop)
-                    {
-                        var toModel = view.Scale * MmPerFoot;
-                        fields.Add(Json.Str("annotationCropOffsetsMm",
-                            Mm(shape.LeftAnnotationCropOffset * toModel) + ","
-                            + Mm(shape.RightAnnotationCropOffset * toModel) + ","
-                            + Mm(shape.TopAnnotationCropOffset * toModel) + ","
-                            + Mm(shape.BottomAnnotationCropOffset * toModel)));
-                    }
                 }
 
+                // THE CORNERS ONLY WHEN THE BOX'S AXES ARE THE VIEW'S OWN
+                // right and up - the picture's left-to-right and bottom-to-top.
+                // A reflected ceiling plan, or any view whose box is set up
+                // otherwise, would put the corners in the wrong places; the
+                // reason is sent instead, and the server gives no mapping.
                 var box = view.CropBox;
                 if (box != null)
                 {
                     var transform = box.Transform ?? Transform.Identity;
-                    var corners = new[]
+                    if (!transform.BasisX.IsAlmostEqualTo(view.RightDirection)
+                        || !transform.BasisY.IsAlmostEqualTo(view.UpDirection))
                     {
-                        new XYZ(box.Min.X, box.Max.Y, box.Min.Z),
-                        new XYZ(box.Max.X, box.Max.Y, box.Min.Z),
-                        new XYZ(box.Max.X, box.Min.Y, box.Min.Z),
-                        new XYZ(box.Min.X, box.Min.Y, box.Min.Z),
-                    };
-                    var said = new List<string>();
-                    foreach (var corner in corners)
-                    {
-                        var p = transform.OfPoint(corner);
-                        said.Add(Mm(p.X * MmPerFoot) + "," + Mm(p.Y * MmPerFoot));
+                        fields.Add(Json.Str("cropCornersWhyNot",
+                            "the crop box's axes are not the view's right and up"));
                     }
-                    fields.Add(Json.Str("cropCornersMm", string.Join("; ", said.ToArray())));
+                    else
+                    {
+                        var corners = new[]
+                        {
+                            new XYZ(box.Min.X, box.Max.Y, box.Min.Z),
+                            new XYZ(box.Max.X, box.Max.Y, box.Min.Z),
+                            new XYZ(box.Max.X, box.Min.Y, box.Min.Z),
+                            new XYZ(box.Min.X, box.Min.Y, box.Min.Z),
+                        };
+                        var said = new List<string>();
+                        foreach (var corner in corners)
+                        {
+                            var p = transform.OfPoint(corner);
+                            said.Add(Mm(p.X * MmPerFoot) + "," + Mm(p.Y * MmPerFoot));
+                        }
+                        fields.Add(Json.Str("cropCornersMm", string.Join("; ", said.ToArray())));
+                    }
                 }
                 return string.Join(", ", fields.ToArray());
             }
-            catch (Autodesk.Revit.Exceptions.ApplicationException) { return null; }
-            catch (InvalidOperationException) { return null; }
+            // SAID, NEVER SILENT (review of ed899b5): a reply with no crop
+            // fields read as an older add-in. The exception's type only - no
+            // message, no stack.
+            catch (Autodesk.Revit.Exceptions.ApplicationException ex) { return Unavailable(ex); }
+            catch (InvalidOperationException ex) { return Unavailable(ex); }
+        }
+
+        /// <summary>The reply's fields when PlanFrame could not read the plan.</summary>
+        private static string Unavailable(Exception ex)
+        {
+            return Json.Str("planFrame", "unavailable") + ", "
+                 + Json.Str("planFrameError", ex.GetType().Name);
         }
 
         /// <summary>A length in mm to three places, never culture-dependent.</summary>
