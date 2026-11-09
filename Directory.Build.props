@@ -35,7 +35,7 @@
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <Company>Ajmal PS</Company>
     <Product>Heron AI</Product>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
   </PropertyGroup>
 
   <!--
