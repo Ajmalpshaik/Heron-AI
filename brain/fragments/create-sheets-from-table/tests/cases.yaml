@@ -118,6 +118,43 @@ negative:
       for it in the Project Browser - not even under a number Revit picked;
       the other rows made
 
+  # THE REVIEW OF 2026-11-09 asked for these five. Each must make NOTHING.
+  - given: >
+      THE NO-DEFAULT RULE. The positive's table (no Title Block column) and
+      titleBlockName left out
+    expect: >
+      titleBlockNotFound true; refused saying no title block was named for
+      MY-101, MY-102, MY-103 - give titleBlockName or a Title Block cell, the
+      word none for sheets with none; NOTHING made, the sheet count unchanged.
+      A card that fell back to the first title block, or to none, makes them
+
+  - given: >
+      a table with no Sheet Number column - "Drawing|Sheet Name;MY-101|HERON
+      TEST PLAN 1" - and a title block that exists
+    expect: >
+      refused "No column is headed Sheet Number - the headers given are:
+      "Drawing", "Sheet Name". Nothing was made."; created empty
+
+  - given: >
+      a type name two title block families share - load a copy of MY1's
+      family under another name - as titleBlockName, without Family:
+    expect: >
+      titleBlockNotFound true; titleBlockProblem naming BOTH as Family: Type
+      and asking which; NOTHING made. CREATE_SHEETS' rule: never the first found
+
+  - given: >
+      a header used twice - "Sheet Number|Sheet Name|Drawn By|Drawn
+      By;MY-101|HERON TEST PLAN 1|AP|JS"
+    expect: >
+      refused "the header "Drawn By" is columns 3 and 4 - one column per
+      name ... Nothing was made."; which of the two is meant is not this card's
+      guess
+
+  - given: a table of 1,001 rows (heron_sheet_list refuses to write one; type it, or join two)
+    expect: >
+      refused "The table has 1001 rows; one call makes at most 1000 sheets.
+      Split the list. Nothing was made."; created empty
+
 second_route:
   - >
     open the Sheets branch of the Project Browser and read the numbers and

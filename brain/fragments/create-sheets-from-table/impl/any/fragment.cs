@@ -8,13 +8,17 @@
 // SHEETS FROM A SPREADSHEET - docs/48 section 5 item 7, 2026-11-09. The file
 // is read in Python (brain/heron_sheet_list.py, the chat tool heron_sheet_list)
 // and arrives here as ONE value: rows separated by ";", cells by "|", a ";",
-// "|" or "%" inside a cell percent-encoded - SET_PARAMETER_VALUES_BY_ID's
+// "|" or "%" inside a cell percent-encoded (any %XX is decoded as UTF-8, so
+// the reader's %22, %27, %E2%80%99, %24, %60 and %5C arrive as typed) -
+// SET_PARAMETER_VALUES_BY_ID's
 // `rows` shape and the Companion's table Apply. The first row is the header.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and opens none. Each sheet is
-// made inside a SubTransaction of its own, so a row Revit refuses - its
-// number, its name, the sheet itself - is TAKEN BACK ALONE and listed with
-// Revit's words, and the other rows are kept. That is stricter than
+// made inside a SubTransaction of its own, so a row Revit refuses BY THROWING -
+// its number, its name, the sheet itself - is TAKEN BACK ALONE and listed with
+// Revit's words, and the other rows are kept. A failure Revit only POSTS, at
+// the commit, rolls the WHOLE call back as one undo (Article 8) - section 5
+// says why a SubTransaction cannot prevent that. That is stricter than
 // CREATE_SHEETS, which keeps a sheet whose number did not take and names it in
 // `refused`: here no sheet is left in the register under a number Revit
 // picked. A value Revit will not take is listed and the sheet is kept - a
@@ -22,8 +26,8 @@
 //
 // previewOnly DOES THE WHOLE JOB AND TAKES EVERY ROW BACK - each row's
 // SubTransaction is rolled back instead of committed, after its read-back. So
-// the preview is the run itself, not an estimate of it; only what Revit
-// posts as a whole call is committed (nothing, for a preview) cannot show.
+// the preview is the run itself, not an estimate of it - except for what Revit
+// posts only when a call is committed, which a preview never reaches.
 //
 // WHAT IS CHECKED BEFORE ANY SHEET IS MADE (nothing is made when one fails):
 //   the table's shape - a Sheet Number column, one column per header, no row
@@ -66,9 +70,10 @@
 //                   change nor DisplayUnitType's removal reaches this code.
 // An EMPTY CELL WRITES NOTHING. It does not clear a value - a new sheet has
 // nothing to clear, and a blank in a register usually means "not yet".
-// Every value is read back after doc.Regenerate() and a fresh lookup;
-// text exactly, a tick box and a whole number by the integer Revit holds. A
-// number Revit took is counted - its reading is in the project's units.
+// A kept run reads every value back after ONE doc.Regenerate() at the end
+// and a fresh lookup; text exactly, a tick box and a whole number by the
+// integer Revit holds. A number Revit took is counted - its reading is in the
+// project's units. A preview reads each row at once, before its rollback.
 //
 // No ElementId is built from or read as a number.
 
@@ -476,25 +481,132 @@ Func<Element, string, Tuple<Parameter, string>> oneNamed = (element, name) =>
 };
 
 // What each parameter column met, counted over the sheets made:
-// column -> outcome -> how many sheets.
+// column -> outcome -> how many sheets. A row's outcomes are kept apart and
+// counted ONLY when the row is kept (or, in a preview, would be): a row taken
+// back is not a sheet any column was written on.
 var outcomes = new Dictionary<int, Dictionary<string, int>>();
-Action<int, string> met = (c, outcome) =>
+Action<List<Tuple<int, string>>> count = rowMet =>
 {
-    Dictionary<string, int> counts;
-    if (!outcomes.TryGetValue(c, out counts)) outcomes[c] = counts = new Dictionary<string, int>();
-    int n;
-    counts.TryGetValue(outcome, out n);
-    counts[outcome] = n + 1;
+    foreach (var m in rowMet)
+    {
+        Dictionary<string, int> counts;
+        if (!outcomes.TryGetValue(m.Item1, out counts)) outcomes[m.Item1] = counts = new Dictionary<string, int>();
+        int n;
+        counts.TryGetValue(m.Item2, out n);
+        counts[m.Item2] = n + 1;
+    }
 };
 const string onSheet = "the sheet's own parameter";
 const string onInstance = "the title block instance's parameter";
 const string onType = "NOT WRITTEN - it is a parameter of the title block TYPE, and writing it would change every sheet on that type";
 const string onNothing = "no parameter of this name on the sheet or its title block";
 
+// The title block instance on a sheet just made. The collector is SCOPED TO
+// THE SHEET - not every title block in the model once per row - and asked
+// only when a column is not the sheet's own. Whether a view-scoped collector
+// sees an element placed in this same transaction before a regeneration is
+// NOT KNOWN from the assemblies (NEEDS-CHECKING MY5), so: the scoped
+// collector; if it finds nothing or throws, one doc.Regenerate() and the
+// scoped collector again; then the model's title blocks by OwnerViewId, a
+// property set when the instance is placed. `regenerations` counts how often
+// the second step was needed, for MY5 and MY12 to read.
+int regenerations = 0;
+Func<ViewSheet, FamilyInstance> borderOf = newSheet =>
+{
+    Func<FamilyInstance> scoped = () =>
+    {
+        try
+        {
+            return new FilteredElementCollector(doc, newSheet.Id)
+                .OfCategory(BuiltInCategory.OST_TitleBlocks)
+                .WhereElementIsNotElementType()
+                .FirstElement() as FamilyInstance;
+        }
+        catch (Exception) { return null; }
+    };
+    var found = scoped();
+    if (found != null) return found;
+    doc.Regenerate();
+    regenerations++;
+    found = scoped();
+    if (found != null) return found;
+    foreach (var one in new FilteredElementCollector(doc)
+                 .OfCategory(BuiltInCategory.OST_TitleBlocks)
+                 .WhereElementIsNotElementType()
+                 .ToElements())
+    {
+        if (one.OwnerViewId == newSheet.Id) return one as FamilyInstance;
+    }
+    return null;
+};
+
+// What landed: (values as asked, lines not set, words for the preview line)
+// for the values written - each looked up again by name and compared: text
+// exactly, a tick box and a whole number by the integer Revit holds, any
+// other number as Revit's own reading in the project's units.
+Func<List<Tuple<Element, string, string, string>>, Tuple<int, List<string>, List<string>>> readBack = written =>
+{
+    int asAsked = 0;
+    var notSet = new List<string>();
+    var said = new List<string>();
+    foreach (var w in written)
+    {
+        Parameter again = null;
+        try { again = oneNamed(w.Item1, w.Item4).Item1; } catch (Exception) { }
+        bool differs;
+        string now = null;
+        if (again == null) differs = true;
+        else if (again.StorageType == StorageType.String)
+        {
+            now = again.AsString() ?? "";
+            differs = now != w.Item3;
+        }
+        else if (again.StorageType == StorageType.Integer)
+        {
+            var meant = integerFor(again, w.Item3);
+            try { now = again.AsValueString(); } catch (Exception) { }
+            differs = meant == null || again.AsInteger() != meant.Value;
+            if (now == null) now = again.AsInteger().ToString();
+        }
+        else
+        {
+            try { now = again.AsValueString(); } catch (Exception) { }
+            differs = false;
+        }
+        if (differs)
+        {
+            notSet.Add(w.Item2 + ", " + w.Item4 + " = \"" + w.Item3 + "\": reads back \"" + (now ?? "") + "\"");
+            said.Add(w.Item4 + " NOT SET (reads back \"" + (now ?? "") + "\")");
+        }
+        else
+        {
+            asAsked++;
+            said.Add(w.Item4 + " = " + (now ?? w.Item3));
+        }
+    }
+    return Tuple.Create(asAsked, notSet, said);
+};
+
 // ===========================================================================
 // 5. MAKE THE SHEETS - each in its own SubTransaction
 // ===========================================================================
+// "TAKEN BACK ALONE" COVERS WHAT REVIT THROWS, AND ONLY THAT. A row whose
+// sheet, number or name Revit refuses by THROWING is rolled back in its own
+// SubTransaction and listed, and the others are kept. A failure Revit only
+// POSTS - a warning or error it raises when the call's transaction is
+// committed - is handled by the executor's failure discipline then, and rolls
+// the WHOLE call back, one undo, nothing kept (Article 8): a SubTransaction
+// cannot keep the rest past that (DRAW_MEP_FROM_CAD's measured lesson).
+// Making a sheet posts nothing that is known; MY13 records what a real run
+// shows.
+//
+// ONE REGENERATION FOR THE WHOLE CALL, not one per row. A kept run reads every
+// value back after the last row, after one doc.Regenerate() and a fresh
+// lookup. A PREVIEW must read each row before rolling it back, so it reads it
+// at once, with no regeneration - text and integers read back as set; a
+// number's reading may be Revit's before it regenerates (said in findings).
 var previewLines = new List<string>();
+var keptWritten = new List<Tuple<Element, string, string, string>>();   // element, sheet number, text, column
 int made = 0, wouldSet = 0;
 
 if (refused.Length == 0)
@@ -506,7 +618,9 @@ if (refused.Length == 0)
         var name = nameAt >= 0 ? row[nameAt] : "";
         var titleBlock = titleBlockOf[r];
         var line = new List<string>();
-        var written = new List<Tuple<Element, string, string, string>>();   // element, parameter, text, column
+        var rowMet = new List<Tuple<int, string>>();
+        var rowNotSet = new List<string>();
+        var written = new List<Tuple<Element, string, string, string>>();
         ViewSheet sheet = null;
         string actualNumber = null, actualName = null;
 
@@ -529,21 +643,8 @@ if (refused.Length == 0)
                 if (name.Length > 0 && actualName != name)
                     throw new InvalidOperationException("Revit kept the name as \"" + actualName + "\"");
 
-                // The title block instance on this sheet, by its owner view -
-                // a property set when it is placed, so no regeneration is
-                // needed to find it.
                 FamilyInstance border = null;
-                if (titleBlock.Item1 != ElementId.InvalidElementId)
-                {
-                    foreach (var one in new FilteredElementCollector(doc)
-                                 .OfCategory(BuiltInCategory.OST_TitleBlocks)
-                                 .WhereElementIsNotElementType()
-                                 .ToElements())
-                    {
-                        if (one.OwnerViewId == sheet.Id) { border = one as FamilyInstance; break; }
-                    }
-                }
-
+                bool borderAsked = false;
                 foreach (var c in parameterAt)
                 {
                     var column = header[c];
@@ -552,84 +653,53 @@ if (refused.Length == 0)
                     Parameter p = null;
                     var got = oneNamed(sheet, column);
                     string where = null;
-                    if (got.Item2 != null) { met(c, "NOT WRITTEN - " + got.Item2 + " on the sheet"); continue; }
+                    if (got.Item2 != null) { rowMet.Add(Tuple.Create(c, "NOT WRITTEN - " + got.Item2 + " on the sheet")); continue; }
                     if (got.Item1 != null) { p = got.Item1; target = sheet; where = onSheet; }
-                    else if (border != null)
+                    else if (titleBlock.Item1 != ElementId.InvalidElementId)
                     {
-                        var onBorder = oneNamed(border, column);
-                        if (onBorder.Item2 != null) { met(c, "NOT WRITTEN - " + onBorder.Item2 + " on the title block"); continue; }
-                        if (onBorder.Item1 != null) { p = onBorder.Item1; target = border; where = onInstance; }
-                        else
+                        if (!borderAsked) { border = borderOf(sheet); borderAsked = true; }
+                        if (border != null)
                         {
-                            // On the TYPE: one value for every sheet on it -
-                            // never written from one row.
-                            var borderType = doc.GetElement(border.GetTypeId());
-                            var typeHas = borderType == null ? null : oneNamed(borderType, column);
-                            if (typeHas != null && (typeHas.Item1 != null || typeHas.Item2 != null)) { met(c, onType); continue; }
+                            var onBorder = oneNamed(border, column);
+                            if (onBorder.Item2 != null) { rowMet.Add(Tuple.Create(c, "NOT WRITTEN - " + onBorder.Item2 + " on the title block")); continue; }
+                            if (onBorder.Item1 != null) { p = onBorder.Item1; target = border; where = onInstance; }
+                            else
+                            {
+                                // On the TYPE: one value for every sheet on it -
+                                // never written from one row.
+                                var borderType = doc.GetElement(border.GetTypeId());
+                                var typeHas = borderType == null ? null : oneNamed(borderType, column);
+                                if (typeHas != null && (typeHas.Item1 != null || typeHas.Item2 != null)) { rowMet.Add(Tuple.Create(c, onType)); continue; }
+                            }
                         }
                     }
-                    if (p == null) { met(c, onNothing); continue; }
-                    if (p.IsReadOnly) { met(c, "NOT WRITTEN - read-only, Revit fills it itself"); continue; }
+                    if (p == null) { rowMet.Add(Tuple.Create(c, onNothing)); continue; }
+                    if (p.IsReadOnly) { rowMet.Add(Tuple.Create(c, "NOT WRITTEN - read-only, Revit fills it itself")); continue; }
                     if (p.StorageType == StorageType.ElementId || p.StorageType == StorageType.None)
                     {
-                        met(c, "NOT WRITTEN - it holds " + kindOf(p) + ", which this card does not write");
+                        rowMet.Add(Tuple.Create(c, "NOT WRITTEN - it holds " + kindOf(p) + ", which this card does not write"));
                         continue;
                     }
-                    met(c, where + " (" + kindOf(p) + ")");
+                    rowMet.Add(Tuple.Create(c, where + " (" + kindOf(p) + ")"));
                     if (text.Length == 0) continue;   // an empty cell writes nothing
                     var why = writeValue(p, text);
                     if (why != null)
                     {
-                        valuesNotSet.Add(number + ", " + column + " = \"" + text + "\": " + why);
+                        rowNotSet.Add(number + ", " + column + " = \"" + text + "\": " + why);
                         line.Add(column + " NOT SET (" + why + ")");
                         continue;
                     }
-                    written.Add(Tuple.Create(target, p.Definition == null ? column : p.Definition.Name, text, column));
-                }
-
-                // READ BACK after one regeneration and a fresh lookup - what
-                // landed, not what was asked for.
-                doc.Regenerate();
-                int setHere = 0;
-                foreach (var w in written)
-                {
-                    var again = oneNamed(w.Item1, w.Item4).Item1;
-                    bool differs;
-                    string now = null;
-                    if (again == null) differs = true;
-                    else if (again.StorageType == StorageType.String)
-                    {
-                        now = again.AsString() ?? "";
-                        differs = now != w.Item3;
-                    }
-                    else if (again.StorageType == StorageType.Integer)
-                    {
-                        var meant = integerFor(again, w.Item3);
-                        try { now = again.AsValueString(); } catch (Exception) { }
-                        differs = meant == null || again.AsInteger() != meant.Value;
-                        if (now == null) now = again.AsInteger().ToString();
-                    }
-                    else
-                    {
-                        try { now = again.AsValueString(); } catch (Exception) { }
-                        differs = false;   // Revit's own reading, in the project's units
-                    }
-                    if (differs)
-                    {
-                        valuesNotSet.Add(number + ", " + w.Item4 + " = \"" + w.Item3 + "\": reads back \"" + (now ?? "") + "\"");
-                        line.Add(w.Item4 + " NOT SET (reads back \"" + (now ?? "") + "\")");
-                    }
-                    else
-                    {
-                        setHere++;
-                        line.Add(w.Item4 + " = " + (now ?? w.Item3));
-                    }
+                    written.Add(Tuple.Create(target, number, text, column));
                 }
 
                 if (previewOnly)
                 {
+                    // Read before it is rolled back - at once, no regeneration.
+                    var landed = readBack(written);
                     step.RollBack();
-                    wouldSet += setHere;
+                    wouldSet += landed.Item1;
+                    rowNotSet.AddRange(landed.Item2);
+                    line.AddRange(landed.Item3);
                     previewLines.Add(number + " \"" + actualName + "\" on " + titleBlock.Item2 + ": would be made"
                                      + (line.Count > 0 ? " - " + string.Join("; ", line.ToArray()) : ""));
                 }
@@ -639,22 +709,38 @@ if (refused.Length == 0)
                     created.Add(sheet.Id);
                     numberedAs[sheet.Id] = actualNumber;
                     namedAs[sheet.Id] = actualName;
-                    valuesSet += setHere;
+                    keptWritten.AddRange(written);
                 }
+                // Kept (or would be): only now do its outcomes count.
+                count(rowMet);
+                valuesNotSet.AddRange(rowNotSet);
                 made++;
                 taken[number] = actualName ?? "";
             }
             catch (Exception failure)
             {
                 if (step.HasStarted() && !step.HasEnded()) step.RollBack();
-                // Nothing of this row is kept, and the values it counted go
-                // with it.
-                valuesNotSet.RemoveAll(v => v.StartsWith(number + ", ", StringComparison.Ordinal));
+                // Nothing of this row is kept, and nothing it met is counted.
                 notCreated.Add(number + ": Revit refused it, so this row was taken back - " + oneLine(failure.Message));
                 if (previewOnly) previewLines.Add(number + ": would NOT be made - " + oneLine(failure.Message));
             }
         }
     }
+
+    // A KEPT RUN'S READ-BACK: one regeneration, then every value looked up
+    // again. A value that reads back different is listed; its sheet stays.
+    if (!previewOnly && keptWritten.Count > 0)
+    {
+        doc.Regenerate();
+        var landed = readBack(keptWritten);
+        valuesSet = landed.Item1;
+        valuesNotSet.AddRange(landed.Item2);
+    }
+    if (previewOnly && wouldSet > 0)
+        findings.Add("A preview reads each value back before the row is taken back, with no regeneration; "
+                     + "a kept run reads them after one.");
+    if (regenerations > 0)
+        findings.Add("The title block on " + regenerations + " new sheet(s) was found only after a regeneration.");
 
     foreach (var line in notCreated)
         if (previewOnly && !line.Contains("Revit refused it")) previewLines.Add(line);

@@ -17,9 +17,20 @@ READING THE FILE IS PYTHON, NOT REVIT. Nothing here touches a model, and
 nothing outside the standard library is used: openpyxl is not a Heron
 dependency and adding one needs a decision, so an .xlsx is read as what it
 is - a zip of XML parts (the workbook, its sheet list, the shared strings, the
-styles that say which numbers are dates, and the sheet itself). An old binary
-.xls, an .xlsb and an .ods are refused in words, with how to save the file as
-.xlsx or CSV.
+styles that say which numbers are dates, and the sheet itself).
+
+ONLY FOUR KINDS OF FILE ARE OPENED: .xlsx, .xlsm, .csv and .tsv, by their
+name. Anything else - an old .xls, an .xlsb, an .ods, a file with no
+extension at all (.env, id_rsa) - is refused in words before a byte of it is
+read, and a refusal never quotes what a file holds beyond the header cells of
+a file already accepted, cut at 200 characters. A path a chat hands in is
+never a reason to read an arbitrary file.
+
+HOW BIG. Every part read - the CSV, and each XML part inside an .xlsx - is
+refused above MOST_PART_BYTES (8 MB unpacked), so a damaged or hostile file
+cannot take the chat's memory: a 1,000-row register is well under 2 MB. The
+sheet itself is parsed row by row (iterparse, each row cleared once read) and
+reading stops once more than MOST_ROWS sheets are found.
 
 THE SHAPE. The first row (or `header_row`) is the headers; each row after it
 is one sheet. A column headed Sheet Number (or Number, Sheet No, Drawing
@@ -30,24 +41,40 @@ the sheets are made. Which parameter a column means is never guessed here:
 the card says which columns matched nothing, and the host asks (D-33, D-34).
 
 WHAT IS SAID, NEVER FIXED SILENTLY:
-  a blank row                skipped, and listed
-  a row with no number       not passed, and listed
-  a number twice in the file NEITHER row passed - which one is meant is the
-                             modeller's to say
-  a multi-line cell          made one line, and listed - a sheet name or a
-                             parameter value is one line in Revit
-  an Excel error (#N/A)      left empty, and listed
-  a column with no header,   not passed, and listed
-  or a header used twice
+  a blank row between sheets  skipped, and listed (blank rows after the last
+                              sheet are the end of the table, not listed)
+  a row with no number        not passed, and listed
+  a number twice in the file  NEITHER row passed - which one is meant is the
+                              modeller's to say
+  a Sheet Number Excel shows  NOT passed, and listed: a number shown through a
+  through a number format     format ("000" shows 1 as 001) is stored as 1,
+                              and 1 is not the sheet asked for. Typed as text
+                              in Excel, it is read as typed
+  a multi-line cell           made one line, and listed - a sheet name or a
+                              parameter value is one line in Revit
+  an Excel error (#N/A)       left empty, and listed
+  a value under no header     not passed, and listed, row by row
+  a header used twice         neither column passed, and listed
+  hidden or filtered rows     read like any other, and listed in a note
+Each list is cut at 20 lines in what the chat is told, "... and N more".
 An Excel DATE arrives as an ISO date, 2026-11-09 (with the time when it has
 one): Excel stores a date as a serial number, and the cell's style says it is
-one. A CSV's dates are text and arrive as written.
+one. A duration ([h]:mm) is a number of days and arrives as the number. A
+CSV's dates are text and arrive as written.
 
 WHAT REACHES REVIT is `card_value(...)`: ONE line, rows separated by ";",
-cells by "|", a ";", "|", "%" or '"' in a cell written %3B, %7C, %25, %22 -
-the shape SET_PARAMETER_VALUES_BY_ID's `rows` and the Companion's table Apply
-already use. A chat value loses its line breaks, and nothing between the chat and the
-card splits on ";" or "|".
+cells by "|" - the shape SET_PARAMETER_VALUES_BY_ID's `rows` and the
+Companion's table Apply already use. A chat value loses its line breaks, and
+nothing between the chat and the card splits on ";" or "|". Inside a cell,
+everything that could end that line early or be read as more than text is
+percent-encoded (`_encode`): ";" "|" "%", both kinds of quote and the four
+curly single quotes PowerShell also takes as quotes, "$", the backtick and
+the backslash. The card decodes every %XX (Uri.UnescapeDataString, UTF-8).
+
+WHILE THE CARD IS DRAFT the value travels on a Windows command line, which
+holds 32,767 characters, so a DRAFT command above MOST_COMMAND_CHARS is not
+printed: the modeller splits the file. Once the card is PROVEN, revit_change
+carries the value, up to MOST_VALUE_CHARS.
 """
 
 from __future__ import print_function
@@ -67,10 +94,17 @@ import xml.etree.ElementTree as ET
 MOST_ROWS = 1000
 # The bridge reads one mebibyte a line with the card's source beside the
 # value - heron_mcp_server._apply_table refuses its table at 700,000. This
-# leaves room for the card.
+# leaves room for the card. It bounds the PROVEN route, revit_change.
 MOST_VALUE_CHARS = 600000
-# A spreadsheet part larger than this is not a sheet register.
-MOST_PART_BYTES = 50 * 1024 * 1024
+# A Windows command line holds 32,767 characters (CreateProcess). The DRAFT
+# route - the command-line preview and try-once - carries the whole value on
+# one, so a command above this is refused and the file split.
+MOST_COMMAND_CHARS = 30000
+# A spreadsheet part larger than this, unpacked, is not a sheet register.
+MOST_PART_BYTES = 8 * 1024 * 1024
+# What the chat is shown of any one list, and of header cells in a refusal.
+MOST_LINES = 20
+MOST_QUOTED_CHARS = 200
 
 NUMBER, NAME, TITLE_BLOCK = "Sheet Number", "Sheet Name", "Title Block"
 
@@ -83,6 +117,8 @@ NAME_HEADERS = ("sheet name", "sheet title", "name", "title", "drawing title",
 TITLE_BLOCK_HEADERS = ("title block", "titleblock", "title block type",
                        "title block name", "titleblock type")
 
+WORKBOOK_KINDS = (".xlsx", ".xlsm")
+DELIMITED_KINDS = (".csv", ".tsv")
 REFUSED_KINDS = {
     ".xls": "an Excel 97-2003 workbook (.xls)",
     ".xlsb": "an Excel binary workbook (.xlsb)",
@@ -96,6 +132,19 @@ SAVE_AS = ("In Excel: File > Save As > Excel Workbook (*.xlsx), or CSV UTF-8 "
 # with the East Asian date formats 27-36 and 50-58).
 DATE_FORMATS = set([14, 15, 16, 17, 22] + list(range(27, 37)) + list(range(50, 59)))
 TIME_FORMATS = set([18, 19, 20, 21, 45, 46, 47])
+# Built-in formats with no date in them, by their code, to name one.
+BUILT_IN_CODES = {1: "0", 2: "0.00", 3: "#,##0", 4: "#,##0.00", 9: "0%",
+                  10: "0.00%", 11: "0.00E+00", 12: "# ?/?", 13: "# ??/??",
+                  37: "#,##0 ;(#,##0)", 38: "#,##0 ;[Red](#,##0)",
+                  39: "#,##0.00;(#,##0.00)", 40: "#,##0.00;[Red](#,##0.00)",
+                  48: "##0.0E+0", 49: "@"}
+
+# What _encode writes for each character it encodes - percent-encoded UTF-8,
+# which Uri.UnescapeDataString decodes on every release.
+ENCODED = [("%", "%25"), (";", "%3B"), ("|", "%7C"), ('"', "%22"), ("'", "%27"),
+           (u"\u2018", "%E2%80%98"), (u"\u2019", "%E2%80%99"),
+           (u"\u201a", "%E2%80%9A"), (u"\u201b", "%E2%80%9B"),
+           ("$", "%24"), ("`", "%60"), ("\\", "%5C")]
 
 
 # ---------------------------------------------------------------------------
@@ -146,6 +195,20 @@ def _number_text(value):
     return "%.15g" % value
 
 
+def _quoted(cells):
+    """Header cells for a refusal, cut at MOST_QUOTED_CHARS."""
+    text = ", ".join("\"%s\"" % c for c in cells if c)
+    return text if len(text) <= MOST_QUOTED_CHARS else text[:MOST_QUOTED_CHARS] + " ..."
+
+
+def _capped(items, most=MOST_LINES):
+    """At most `most` lines, the rest said as a count."""
+    items = list(items)
+    if len(items) <= most:
+        return items
+    return items[:most] + ["... and %d more" % (len(items) - most)]
+
+
 def excel_date(serial, date1904=False, with_time=None):
     """An Excel serial as ISO text - 45970 -> '2025-11-09'. Excel's 1900
     system counts a 29 February 1900 that never was (serial 60), kept so
@@ -172,8 +235,12 @@ def excel_date(serial, date1904=False, with_time=None):
 
 
 def _format_is_date(code):
-    """(is a date, has a time) for a custom number format code."""
-    cleaned = re.sub(r'"[^"]*"|\\.|\[[^\]]*\]', "", (code or "").lower())
+    """(is a date, has a time) for a custom number format code. An ELAPSED
+    time - [h]:mm, [m]:ss - is a duration, a number of days, and neither."""
+    lowered = (code or "").lower()
+    if re.search(r"\[(h+|m+|s+)\]", lowered):
+        return False, False
+    cleaned = re.sub(r'"[^"]*"|\\.|\[[^\]]*\]', "", lowered)
     cleaned = cleaned.split(";")[0]
     has_time = "h" in cleaned or "s" in cleaned
     has_date = "y" in cleaned or "d" in cleaned or ("m" in cleaned and not has_time)
@@ -188,14 +255,29 @@ class _Refused(Exception):
     pass
 
 
+class _Row(object):
+    """One row of the grid: its number, its cells, the problems met reading
+    it, whether Excel hides it, and which cells hold a number Excel shows
+    through a number format (column index -> the format's code)."""
+
+    __slots__ = ("number", "cells", "errors", "hidden", "formatted")
+
+    def __init__(self, number, cells, errors=None, hidden=False, formatted=None):
+        self.number = number
+        self.cells = cells
+        self.errors = errors or []
+        self.hidden = hidden
+        self.formatted = formatted or {}
+
+
 def _part(book, name):
     try:
         info = book.getinfo(name)
     except KeyError:
         return None
     if info.file_size > MOST_PART_BYTES:
-        raise _Refused("its part %s is %d MB unpacked - too large to be a sheet register"
-                       % (name, info.file_size // (1024 * 1024)))
+        raise _Refused("its part %s is %d MB unpacked - more than %d MB is not a sheet register"
+                       % (name, info.file_size // (1024 * 1024), MOST_PART_BYTES // (1024 * 1024)))
     return book.read(name)
 
 
@@ -240,9 +322,135 @@ def _text_of(element):
     return "".join(parts)
 
 
-def read_xlsx(path, sheet=None):
-    """(sheet name, every sheet's name, [[cell text, ...] per row with its
-    row number], notes) - or raises _Refused."""
+def _styles(book, styles_path):
+    """{cell style index: (is a date, has a time, format code or None)} -
+    the code is None for General (numFmtId 0)."""
+    found = {}
+    data = _part(book, styles_path) if styles_path else None
+    if data is None:
+        return found
+    styles = _xml(data)
+    custom = {}
+    for node in styles.iter():
+        if _local(node.tag) == "numFmt":
+            try:
+                custom[int(node.get("numFmtId"))] = node.get("formatCode") or ""
+            except (TypeError, ValueError):
+                pass
+    for node in styles:
+        if _local(node.tag) != "cellXfs":
+            continue
+        for index, xf in enumerate(x for x in node if _local(x.tag) == "xf"):
+            try:
+                fmt = int(xf.get("numFmtId") or 0)
+            except ValueError:
+                fmt = 0
+            if fmt == 0:
+                continue
+            if fmt in DATE_FORMATS:
+                found[index] = (True, fmt == 22, "built-in date %d" % fmt)
+            elif fmt in TIME_FORMATS:
+                found[index] = (False, True, "built-in time %d" % fmt)
+            elif fmt in custom:
+                is_date, has_time = _format_is_date(custom[fmt])
+                found[index] = (is_date, has_time, custom[fmt])
+            else:
+                found[index] = (False, False, BUILT_IN_CODES.get(fmt, "built-in format %d" % fmt))
+    return found
+
+
+def _sheet_rows(data, shared, styles, date1904, header_row):
+    """Each row of a worksheet part, parsed row by row and cleared once read.
+    Stops once MOST_ROWS + 1 rows with anything in them follow the header -
+    the caller refuses that many - so a long sheet costs no more than that."""
+    rows = []
+    after_header = 0
+    try:
+        for _event, row in ET.iterparse(io.BytesIO(data), events=("end",)):
+            if _local(row.tag) != "row":
+                continue
+            try:
+                number = int(row.get("r"))
+            except (TypeError, ValueError):
+                number = (rows[-1].number + 1) if rows else 1
+            cells, errors, formatted = {}, [], {}
+            at = -1
+            for c in row:
+                if _local(c.tag) != "c":
+                    continue
+                index = _column_index(c.get("r"))
+                at = index if index is not None else at + 1
+                kind = c.get("t") or "n"
+                value = None
+                inline = None
+                for part in c:
+                    name = _local(part.tag)
+                    if name == "v":
+                        value = part.text or ""
+                    elif name == "is":
+                        inline = _text_of(part)
+                ref = "%s%d" % (_column_letter(at), number)
+                if kind == "s":
+                    try:
+                        text = shared[int(value)]
+                    except (TypeError, ValueError, IndexError):
+                        text = ""
+                        errors.append("%s: a shared text Excel did not store" % ref)
+                elif kind == "inlineStr":
+                    text = inline or ""
+                elif kind == "str":
+                    text = value or ""
+                elif kind == "b":
+                    text = "TRUE" if (value or "").strip() in ("1", "true") else "FALSE"
+                elif kind == "e":
+                    text = ""
+                    errors.append("%s: Excel shows the error %s - left empty" % (ref, value or "?"))
+                elif kind == "d":
+                    text = (value or "").replace("T00:00:00", "").replace("T", " ")
+                elif value is None or value == "":
+                    text = ""
+                else:
+                    try:
+                        serial = float(value)
+                    except ValueError:
+                        text = value
+                    else:
+                        try:
+                            style = int(c.get("s") or 0)
+                        except ValueError:
+                            style = 0
+                        is_date, has_time, code = styles.get(style, (False, False, None))
+                        if is_date:
+                            text = excel_date(serial, date1904, with_time=has_time or None)
+                            if text is None:
+                                text = _number_text(serial)
+                                errors.append("%s: %s is not a date Excel can show - passed as "
+                                              "the number" % (ref, _number_text(serial)))
+                        elif has_time:
+                            whole = datetime.datetime(2000, 1, 1) + datetime.timedelta(
+                                seconds=round((serial % 1) * 86400))
+                            text = whole.strftime("%H:%M")
+                        else:
+                            text = _number_text(serial)
+                            if code is not None:
+                                formatted[at] = code
+                cells[at] = text
+            hidden = (row.get("hidden") or "").lower() in ("1", "true")
+            width = (max(cells) + 1) if cells else 0
+            rows.append(_Row(number, [cells.get(i, "") for i in range(width)], errors,
+                             hidden, formatted))
+            row.clear()
+            if number > header_row and any((t or "").strip() for t in cells.values()):
+                after_header += 1
+                if after_header > MOST_ROWS:
+                    break
+    except ET.ParseError as why:
+        raise _Refused("its sheet is not readable XML (%s)" % why)
+    return rows
+
+
+def read_xlsx(path, sheet=None, header_row=1):
+    """(sheet name, every sheet's name, [_Row], notes) - or raises _Refused."""
     try:
         book = zipfile.ZipFile(path)
     except zipfile.BadZipFile:
@@ -280,7 +488,7 @@ def read_xlsx(path, sheet=None):
             chosen = [entry for entry in listed if entry[0].strip().lower() == sheet.strip().lower()]
             if not chosen:
                 raise _Refused("it has no sheet called \"%s\" - its sheets are: %s"
-                               % (sheet, ", ".join("\"%s\"" % n for n in names)))
+                               % (sheet, _quoted(names)))
             chosen = chosen[0]
         else:
             chosen = listed[0]
@@ -289,7 +497,7 @@ def read_xlsx(path, sheet=None):
             notes.append("the sheet \"%s\" is hidden in Excel" % chosen[0])
         if not sheet and len(listed) > 1:
             notes.append("the workbook has %d sheets; the first, \"%s\", was read - others: %s"
-                         % (len(listed), chosen[0], ", ".join("\"%s\"" % n for n in names[1:])))
+                         % (len(listed), chosen[0], _quoted(names[1:])))
 
         target = rels.get(chosen[1], (None, ""))[0]
         if not target:
@@ -304,114 +512,13 @@ def read_xlsx(path, sheet=None):
                     shared = [_text_of(si) for si in _xml(data) if _local(si.tag) == "si"]
             elif kind.endswith("/styles"):
                 styles_path = part
-
-        # Which cell styles are dates: cellXfs[s].numFmtId, against the
-        # built-in date ids and the workbook's own format codes.
-        date_style = {}
-        if styles_path:
-            data = _part(book, styles_path)
-            if data is not None:
-                styles = _xml(data)
-                custom = {}
-                for node in styles.iter():
-                    if _local(node.tag) == "numFmt":
-                        try:
-                            custom[int(node.get("numFmtId"))] = node.get("formatCode") or ""
-                        except (TypeError, ValueError):
-                            pass
-                for node in styles:
-                    if _local(node.tag) != "cellXfs":
-                        continue
-                    for index, xf in enumerate(x for x in node if _local(x.tag) == "xf"):
-                        try:
-                            fmt = int(xf.get("numFmtId") or 0)
-                        except ValueError:
-                            fmt = 0
-                        if fmt in DATE_FORMATS:
-                            date_style[index] = (True, fmt == 22)
-                        elif fmt in TIME_FORMATS:
-                            date_style[index] = (False, True)
-                        elif fmt in custom:
-                            is_date, has_time = _format_is_date(custom[fmt])
-                            if is_date or has_time:
-                                date_style[index] = (is_date, has_time)
+        styles = _styles(book, styles_path)
 
         data = _part(book, target)
         if data is None:
             raise _Refused("its sheet \"%s\" is missing from the file" % chosen[0])
-        grid = _xml(data)
 
-    rows = []
-    for row in grid.iter():
-        if _local(row.tag) != "row":
-            continue
-        try:
-            number = int(row.get("r"))
-        except (TypeError, ValueError):
-            number = (rows[-1][0] + 1) if rows else 1
-        cells = {}
-        errors = []
-        at = -1
-        for c in row:
-            if _local(c.tag) != "c":
-                continue
-            index = _column_index(c.get("r"))
-            at = index if index is not None else at + 1
-            kind = c.get("t") or "n"
-            value = None
-            inline = None
-            for part in c:
-                name = _local(part.tag)
-                if name == "v":
-                    value = part.text or ""
-                elif name == "is":
-                    inline = _text_of(part)
-            if kind == "s":
-                try:
-                    text = shared[int(value)]
-                except (TypeError, ValueError, IndexError):
-                    text = ""
-                    errors.append("%s%d: a shared text Excel did not store" % (_column_letter(at), number))
-            elif kind == "inlineStr":
-                text = inline or ""
-            elif kind == "str":
-                text = value or ""
-            elif kind == "b":
-                text = "TRUE" if (value or "").strip() in ("1", "true") else "FALSE"
-            elif kind == "e":
-                text = ""
-                errors.append("%s%d: Excel shows the error %s - left empty"
-                              % (_column_letter(at), number, value or "?"))
-            elif kind == "d":
-                text = (value or "").replace("T00:00:00", "").replace("T", " ")
-            elif value is None or value == "":
-                text = ""
-            else:
-                try:
-                    serial = float(value)
-                except ValueError:
-                    text = value
-                else:
-                    try:
-                        style = int(c.get("s") or 0)
-                    except ValueError:
-                        style = 0
-                    is_date, has_time = date_style.get(style, (False, False))
-                    if is_date:
-                        text = excel_date(serial, date1904, with_time=has_time or None)
-                        if text is None:
-                            text = _number_text(serial)
-                            errors.append("%s%d: %s is not a date Excel can show - passed as the number"
-                                          % (_column_letter(at), number, _number_text(serial)))
-                    elif has_time:
-                        whole = datetime.datetime(2000, 1, 1) + datetime.timedelta(
-                            seconds=round((serial % 1) * 86400))
-                        text = whole.strftime("%H:%M")
-                    else:
-                        text = _number_text(serial)
-            cells[at] = text
-        width = (max(cells) + 1) if cells else 0
-        rows.append((number, [cells.get(i, "") for i in range(width)], errors))
+    rows = _sheet_rows(data, shared, styles, date1904, header_row)
     return chosen[0], names, rows, notes
 
 
@@ -419,13 +526,16 @@ def read_xlsx(path, sheet=None):
 # .csv
 # ---------------------------------------------------------------------------
 
-def read_csv(path):
-    """([(row number, [cell text, ...], [])], notes)."""
+def read_csv(path, header_row=1, tab=False):
+    """([_Row], notes). The delimiter is the one that gives the HEADER ROW
+    the most columns - not physical line 1, which may be a title."""
     with io.open(path, "rb") as handle:
         raw = handle.read(MOST_PART_BYTES + 1)
     if len(raw) > MOST_PART_BYTES:
-        raise _Refused("it is larger than %d MB - too large to be a sheet register"
+        raise _Refused("it is larger than %d MB - not a sheet register"
                        % (MOST_PART_BYTES // (1024 * 1024)))
+    if raw.startswith(b"PK") or raw.startswith(b"\xd0\xcf\x11\xe0"):
+        raise _Refused("it is a workbook, not text, whatever its name says. " + SAVE_AS)
     notes = []
     if raw.startswith(b"\xef\xbb\xbf"):
         text = raw.decode("utf-8-sig")
@@ -437,23 +547,39 @@ def read_csv(path):
         except UnicodeDecodeError:
             text = raw.decode("cp1252", errors="replace")
             notes.append("the file is not UTF-8, so it was read as Windows-1252 - Excel's plain "
-                         "'CSV' on Windows. Check any accented or Arabic names in the preview; "
-                         "'CSV UTF-8' keeps them exactly")
-    first = text.split("\n", 1)[0]
-    best, most = ",", 1
-    for delimiter in (",", ";", "\t"):
+                         "'CSV' on a Western Windows. Check any accented names in the preview. A "
+                         "file from an Arabic-locale Windows is Windows-1256, and its Arabic names "
+                         "read here as nonsense: save it from Excel as 'CSV UTF-8' and read it again")
+
+    def parse(delimiter, limit=None):
+        records = []
+        for fields in csv.reader(io.StringIO(text, newline=""), delimiter=delimiter):
+            records.append(fields)
+            if limit is not None and len(records) >= limit:
+                break
+        return records
+
+    candidates = ("\t",) if tab else (",", ";", "\t")
+    best, most = candidates[0], 0
+    for delimiter in candidates:
         try:
-            fields = next(csv.reader([first], delimiter=delimiter))
-        except (csv.Error, StopIteration):
+            records = parse(delimiter, limit=header_row)
+        except csv.Error:
             continue
-        if len(fields) > most:
-            best, most = delimiter, len(fields)
-    if best != ",":
+        count = len(records[header_row - 1]) if len(records) >= header_row else 0
+        if count > most:
+            best, most = delimiter, count
+    if best != "," and not tab:
         notes.append("the columns are separated by %s" % ("tabs" if best == "\t" else "\"%s\"" % best))
     rows = []
+    after_header = 0
     try:
         for number, fields in enumerate(csv.reader(io.StringIO(text, newline=""), delimiter=best), 1):
-            rows.append((number, fields, []))
+            rows.append(_Row(number, fields))
+            if number > header_row and any((f or "").strip() for f in fields):
+                after_header += 1
+                if after_header > MOST_ROWS:
+                    break
     except csv.Error as why:
         raise _Refused("it is not a readable CSV (%s)" % why)
     return rows, notes
@@ -465,7 +591,7 @@ def read_csv(path):
 
 def read(path, sheet=None, header_row=1):
     """
-    The sheet register in a .xlsx or .csv:
+    The sheet register in a .xlsx, .xlsm, .csv or .tsv:
 
         {"ok": True, "file", "kind": "xlsx"|"csv", "sheet", "sheets",
          "headerRow", "columns": [{"letter", "header", "role"}],
@@ -489,10 +615,16 @@ def read(path, sheet=None, header_row=1):
 
     if not path:
         return refuse("no file was named")
+    # BY ITS NAME, BEFORE ANYTHING IS OPENED. A dotfile's whole name is its
+    # stem to splitext ('.env' has no extension), so it is refused here too.
     extension = os.path.splitext(path)[1].lower()
     if extension in REFUSED_KINDS:
         return refuse("it is %s, which Heron cannot read without a new dependency. %s"
                       % (REFUSED_KINDS[extension], SAVE_AS))
+    if extension not in WORKBOOK_KINDS + DELIMITED_KINDS:
+        return refuse("Heron reads a sheet register from .xlsx, .xlsm, .csv or .tsv only, and "
+                      "this %s. %s" % ("has no file extension" if not extension
+                                       else "is a '%s' file" % extension, SAVE_AS))
     if not os.path.isfile(path):
         return refuse("there is no file at %s" % path)
     try:
@@ -509,18 +641,14 @@ def read(path, sheet=None, header_row=1):
         if magic.startswith(b"\xd0\xcf\x11\xe0"):
             return refuse("it is an old binary Excel file or a password-protected workbook, "
                           "whatever its name says. " + SAVE_AS)
-        if extension in (".xlsx", ".xlsm") or magic.startswith(b"PK"):
+        if extension in WORKBOOK_KINDS:
             answer["kind"] = "xlsx"
-            if extension not in (".xlsx", ".xlsm"):
-                answer["notes"].append("read as an Excel workbook, which is what it holds")
-            answer["sheet"], answer["sheets"], grid, notes = read_xlsx(path, sheet)
-        elif extension in (".csv", ".txt", ".tsv", ""):
+            answer["sheet"], answer["sheets"], grid, notes = read_xlsx(path, sheet, header_row)
+        else:
             answer["kind"] = "csv"
             if sheet:
                 answer["notes"].append("a CSV has one sheet, so \"%s\" was not needed" % sheet)
-            grid, notes = read_csv(path)
-        else:
-            return refuse("Heron reads .xlsx and .csv, and this is a '%s' file. %s" % (extension, SAVE_AS))
+            grid, notes = read_csv(path, header_row, tab=(extension == ".tsv"))
     except _Refused as why:
         return refuse(str(why))
     except (IOError, OSError) as why:
@@ -528,8 +656,8 @@ def read(path, sheet=None, header_row=1):
                       "drive that is not connected?" % why)
     answer["notes"].extend(notes)
 
-    by_number = dict((number, (cells, errors)) for number, cells, errors in grid)
-    header_cells = by_number.get(header_row, ([], []))[0]
+    by_number = dict((row.number, row) for row in grid)
+    header_cells = by_number[header_row].cells if header_row in by_number else []
     if not any((h or "").strip() for h in header_cells):
         return refuse("row %d, which should hold the headers, is empty. Give the row the "
                       "headers are on (header_row) - a register with a title above its table "
@@ -541,10 +669,12 @@ def read(path, sheet=None, header_row=1):
     parameters = []
     seen = {}
     unusable = set()
+    no_header = set()
     for index, raw in enumerate(header_cells):
         header, _broken = _one_line(raw)
         letter = _column_letter(index)
         if not header:
+            no_header.add(index)
             continue
         key = _key(header)
         role = None
@@ -556,10 +686,10 @@ def read(path, sheet=None, header_row=1):
             role = TITLE_BLOCK
         if role:
             if role in roles:
-                return refuse("two columns could be the %s - %s \"%s\" and %s \"%s\". Rename one, "
-                              "so which is meant is not a guess"
-                              % (role.lower(), _column_letter(roles[role]), header_cells[roles[role]],
-                                 letter, header))
+                return refuse("two columns could be the %s - %s and %s: %s. Rename one, so "
+                              "which is meant is not a guess"
+                              % (role.lower(), _column_letter(roles[role]), letter,
+                                 _quoted([_one_line(header_cells[roles[role]])[0], header])))
             roles[role] = index
             answer["columns"].append({"letter": letter, "header": header, "role": role})
             continue
@@ -577,24 +707,36 @@ def read(path, sheet=None, header_row=1):
         found = [h for h in (_one_line(c)[0] for c in header_cells) if h]
         return refuse("no column is headed Sheet Number (or Number, Sheet No, Drawing Number). "
                       "Row %d holds: %s. The first row must be the headers - or give the row "
-                      "they are on" % (header_row, ", ".join("\"%s\"" % h for h in found)))
+                      "they are on" % (header_row, _quoted(found)))
 
     parameters = [(i, h) for i, h in parameters if i not in unusable]
     width = len(header_cells)
+    number_at = roles[NUMBER]
+
+    after = sorted(n for n in by_number if n > header_row)
+    # THE END OF THE TABLE is its last row with a sheet number: blank rows
+    # after it - often hundreds of formatted, empty ones - are not listed.
+    last = max([n for n in after
+                if number_at < len(by_number[n].cells)
+                and (by_number[n].cells[number_at] or "").strip()] or [header_row])
 
     rows = []
     numbers = {}
-    for number in sorted(n for n in by_number if n > header_row):
-        cells, errors = by_number[number]
-        answer["problems"].extend("cell " + e for e in errors)
+    hidden = []
+    for number in after:
+        row = by_number[number]
+        cells = row.cells
         if not any((c or "").strip() for c in cells):
-            answer["skipped"].append("row %d: blank" % number)
+            if number < last:
+                answer["skipped"].append("row %d: blank" % number)
             continue
-        for index in range(width, len(cells)):
-            if (cells[index] or "").strip():
+        if row.hidden:
+            hidden.append(number)
+        answer["problems"].extend("cell " + e for e in row.errors)
+        for index in sorted(no_header | set(range(width, len(cells)))):
+            if index < len(cells) and (cells[index] or "").strip():
                 answer["problems"].append("row %d, column %s has a value under no header - not passed"
                                           % (number, _column_letter(index)))
-                break
 
         def cell(index, header):
             if index is None or index >= len(cells):
@@ -606,7 +748,7 @@ def read(path, sheet=None, header_row=1):
             return text
 
         entry = {"row": number,
-                 "number": cell(roles.get(NUMBER), NUMBER),
+                 "number": cell(number_at, NUMBER),
                  "name": cell(roles.get(NAME), NAME),
                  "titleBlock": cell(roles.get(TITLE_BLOCK), TITLE_BLOCK),
                  "values": {}}
@@ -615,6 +757,16 @@ def read(path, sheet=None, header_row=1):
         if not entry["number"]:
             answer["problems"].append("row %d%s: no sheet number - not passed"
                                       % (number, " (\"%s\")" % entry["name"] if entry["name"] else ""))
+            continue
+        if number_at in row.formatted:
+            # The number Excel SHOWS is not the number it STORES: "000" shows
+            # 1 as 001, "0.00" shows 1.1 as 1.10. Which the sheet is meant to
+            # be is the modeller's to say, so the row is not passed.
+            answer["problems"].append("row %d, %s: Excel shows the stored number %s through the "
+                                      "number format \"%s\" (a formatted number like 001) - not "
+                                      "passed. Type the number as text in Excel (start it with ') "
+                                      "and read the file again"
+                                      % (number, NUMBER, entry["number"], row.formatted[number_at]))
             continue
         numbers.setdefault(entry["number"].lower(), []).append(number)
         rows.append(entry)
@@ -626,6 +778,10 @@ def read(path, sheet=None, header_row=1):
                                   "yours to say" % (shown_number, " and ".join(str(n) for n in where)))
     rows = [r for r in rows if r["number"].lower() not in twice]
 
+    if hidden:
+        answer["notes"].append("row(s) %s are hidden or filtered out in Excel - they were read like "
+                               "any other; check them in the preview"
+                               % ", ".join(str(n) for n in _capped(hidden, 10)))
     empty = [h for _i, h in parameters if not any(r["values"].get(h) for r in rows)]
     for header in empty:
         answer["notes"].append("the column \"%s\" is empty in every row, so nothing is written from it"
@@ -637,23 +793,28 @@ def read(path, sheet=None, header_row=1):
                                   "role": "parameter"})
     answer["columns"].sort(key=lambda c: _column_index(c["letter"]))
     answer["rows"] = rows
-    if len(rows) > MOST_ROWS:
-        return refuse("it lists %d sheets, and one call makes at most %d - split the list"
-                      % (len(rows), MOST_ROWS))
+    sheets_found = len([n for n in after if any((c or "").strip() for c in by_number[n].cells)])
+    if len(rows) > MOST_ROWS or sheets_found > MOST_ROWS:
+        return refuse("it lists more than %d sheets, and one call makes at most %d - split the "
+                      "list into parts and read each" % (MOST_ROWS, MOST_ROWS))
     if not rows:
-        return refuse("it has headers but no sheet below them with a number"
-                      + ("" if not answer["problems"] else " - " + "; ".join(answer["problems"][:5])))
+        return refuse("it has headers but no sheet below them that could be passed - %d "
+                      "problem(s) in the rows; read them with the file open in Excel"
+                      % len(answer["problems"]))
     answer["ok"] = True
     return answer
 
 
 def _encode(text):
-    """A cell made safe inside the one value: "%" first, then ";" and "|",
-    which separate rows and cells, and a double quote, which a PowerShell
-    command line and the chat's own quote rule (`_values_array`) both treat
-    as more than text. The card decodes every %XX."""
-    return ((text or "").replace("%", "%25").replace(";", "%3B").replace("|", "%7C")
-            .replace('"', "%22"))
+    """A cell made safe inside the one value - every character in ENCODED,
+    "%" first. ";" and "|" separate rows and cells; quotes (straight and the
+    curly singles PowerShell also honours), "$", the backtick and the
+    backslash could end or change a quoted command-line argument. The card
+    decodes every %XX, UTF-8 included."""
+    text = text or ""
+    for raw, code in ENCODED:
+        text = text.replace(raw, code)
+    return text
 
 
 def card_value(register):
@@ -678,13 +839,30 @@ def card_value(register):
 
 
 def _powershell(text):
+    """One single-quoted PowerShell argument. _encode has already taken every
+    quote, "$", backtick and backslash out of the value; the doubling is for
+    anything typed round it."""
     return "'" + text.replace("'", "''") + "'"
 
 
+def draft_commands(value, needs_title_block):
+    """(preview command, try-once command), or None when either is longer
+    than a Windows command line safely holds (MOST_COMMAND_CHARS)."""
+    title = " --set 'titleBlockName=...'" if needs_title_block else ""
+    base = ("python mcp/client/heron_bridge_client.py %s create-sheets-from-table --set "
+            + _powershell("sheets=" + value).replace("%", "%%"))
+    preview = (base % "fragment") + " --write --set previewOnly=true" + title
+    once = (base % "try-once") + title
+    if max(len(preview), len(once)) > MOST_COMMAND_CHARS:
+        return None
+    return preview, once
+
+
 def chat_answer(register, status=None, most_shown=40):
-    """What heron_sheet_list says: what was read, every problem, the sheets,
-    and the exact values for CREATE_SHEETS_FROM_TABLE - with the route its
-    card's status allows (D-117, D-119)."""
+    """What heron_sheet_list says: what was read, every problem (cut at
+    MOST_LINES), the sheets, and the values for CREATE_SHEETS_FROM_TABLE -
+    the value printed ONCE, with the route its card's status allows (D-117,
+    D-119)."""
     if not register.get("ok"):
         return register.get("refused") or "The file was not read."
     rows = register["rows"]
@@ -700,7 +878,7 @@ def chat_answer(register, status=None, most_shown=40):
                          ("Skipped", register["skipped"]), ("Notes", register["notes"])):
         if items:
             out.append("%s (%d):" % (title, len(items)))
-            out.extend("  - " + i for i in items)
+            out.extend("  - " + i for i in _capped(items))
     out.append("Sheets:")
     for row in rows[:most_shown]:
         bits = ["  %s  %s" % (row["number"], row["name"] or "(no name - Revit names it)")]
@@ -714,37 +892,44 @@ def chat_answer(register, status=None, most_shown=40):
         out.append("  ... and %d more" % (len(rows) - most_shown))
 
     value = card_value(register)
-    if len(value) > MOST_VALUE_CHARS:
-        out.append("The list is %d characters as one value - too long for one call. Split the "
-                   "file and read each part." % len(value))
-        return "\n".join(out)
     needs_title_block = (not register.get("titleBlockColumn")
                          or any(not r["titleBlock"] for r in rows))
     out.append("")
-    out.append("Values for CREATE_SHEETS_FROM_TABLE, exactly:")
-    out.append("sheets=" + value)
-    if needs_title_block:
-        out.append("titleBlockName=<the title block - ASK the modeller, as Family: Type; there is "
-                   "no default>")
     out.append("Which of these numbers are already in the model - FIND_SHEETS through "
                "revit_read, which changes nothing; its notFound are the free ones:")
-    out.append("sheetNumbers=" + ", ".join(r["number"] for r in rows))
+    numbers = ", ".join(r["number"] for r in rows)
+    out.append("sheetNumbers=" + numbers)
+    if needs_title_block:
+        out.append("titleBlockName: ASK the modeller, as Family: Type - there is no default.")
     state = (status or "").upper()
     if state in ("PROVEN", "PRODUCTION"):
-        out.append("Run it through revit_change with previewOnly=true first: which numbers are "
-                   "already used, which columns match no parameter. Then without previewOnly.")
-    else:
-        command = ("python mcp/client/heron_bridge_client.py %%s create-sheets-from-table "
-                   "--set %s" % _powershell("sheets=" + value).replace("%", "%%"))
-        out.append("CREATE_SHEETS_FROM_TABLE is %s, so revit_change refuses it (D-117). The "
-                   "preview runs on the modeller's PC, in PowerShell in the Heron folder, rolled "
-                   "back - nothing kept:" % (state or "not PROVEN"))
-        out.append("  " + (command % "fragment") + " --write --set previewOnly=true"
-                   + (" --set 'titleBlockName=...'" if needs_title_block else ""))
-        out.append("and the creation is its one try-once (D-119), only when the modeller asks, "
-                   "on the saved model in front - Revit asks Keep or Discard:")
-        out.append("  " + (command % "try-once")
-                   + (" --set 'titleBlockName=...'" if needs_title_block else ""))
+        if len(value) > MOST_VALUE_CHARS:
+            out.append("The list is %d characters as one value - more than one call carries "
+                       "(%d). Split the file into parts and read each." % (len(value), MOST_VALUE_CHARS))
+            return "\n".join(out)
+        out.append("CREATE_SHEETS_FROM_TABLE through revit_change, previewOnly=true first (which "
+                   "numbers are used, which columns match no parameter), then without it:")
+        out.append("sheets=" + value)
+        return "\n".join(out)
+
+    commands = draft_commands(value, needs_title_block)
+    if commands is None:
+        out.append("CREATE_SHEETS_FROM_TABLE is %s, so it runs only from a command line, and %d "
+                   "sheet(s) make a command longer than Windows holds (%d characters as one value; "
+                   "a command line takes about %d). Nothing is printed to run. Split the file "
+                   "into parts of about %d rows and read each part - or wait until the card is "
+                   "PROVEN, when revit_change carries the whole list."
+                   % (state or "not PROVEN", len(rows), len(value), MOST_COMMAND_CHARS,
+                      max(1, len(rows) * MOST_COMMAND_CHARS // max(1, len(value)) * 9 // 10)))
+        return "\n".join(out)
+    preview, once = commands
+    out.append("CREATE_SHEETS_FROM_TABLE is %s, so revit_change refuses it (D-117). The preview "
+               "runs on the modeller's PC, in PowerShell in the Heron folder, rolled back - "
+               "nothing kept:" % (state or "not PROVEN"))
+    out.append("  " + preview)
+    out.append("The creation is its one try-once (D-119), only when the modeller asks, on the "
+               "saved model in front - Revit asks Keep or Discard: the same command with "
+               "try-once in place of fragment, and without --write --set previewOnly=true.")
     return "\n".join(out)
 
 

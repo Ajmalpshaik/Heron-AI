@@ -29,9 +29,19 @@ WHAT IT PROVES
      refused.
   5. card_value is one line, a ";", "|", "%" or '"' in a cell encoded, and
      decodes back to the same table - the shape the card splits.
-  6. chat_answer gives the values exactly and the route the card's status
-     allows: the command line and try-once while DRAFT, revit_change once
-     PROVEN.
+  6. chat_answer gives the value exactly and ONCE, and the route the card's
+     status allows: the command line and try-once while DRAFT, revit_change
+     once PROVEN.
+  7-12. THE INDEPENDENT REVIEW'S PROBES (2026-11-09), each a test: a curly
+     apostrophe, "$(calc)" and a trailing backslash cannot end or change the
+     PowerShell argument; a DRAFT command above a Windows command line is
+     refused in words and the split asked for; a Sheet Number shown through
+     a number format (000, 0.00) is not passed; a value under no header is
+     listed; formatted blank rows after the table are not listed; a hidden
+     row is noted; a [h]:mm duration is a number; lists are cut at 20; a big
+     part is refused; only .xlsx, .xlsm, .csv and .tsv are opened and a
+     refusal quotes nothing of a file; the delimiter comes from the header
+     row; more than 1,000 rows is refused.
 
 WHAT IT CANNOT DO: say that Revit makes the sheets. That is NEEDS-CHECKING
 Group MY, on a real model.
@@ -318,20 +328,181 @@ def section_answer(folder):
     got = L.read(register_xlsx(folder))
     draft = L.chat_answer(got, status="DRAFT")
     value = L.card_value(got)
-    check("sheets=" + value in draft, "the exact value is given")
-    check("titleBlockName=<the title block - ASK" in draft,
+    check(draft.count("sheets=" + value) == 1 and draft.count(value) == 1,
+          "the exact value is given, and given ONCE")
+    check("titleBlockName: ASK the modeller" in draft and "--set 'titleBlockName=...'" in draft,
           "with no Title Block column, the title block is to be asked - no default")
     check("revit_change refuses it (D-117)" in draft and "fragment create-sheets-from-table" in draft
-          and "--write --set previewOnly=true" in draft and "try-once create-sheets-from-table" in draft,
+          and "--write --set previewOnly=true" in draft and "try-once in place of fragment" in draft,
           "while DRAFT: the command-line preview, rolled back, and the one try-once")
     check("Nothing in Revit was touched" in draft, "it says it touched no model")
     check("sheetNumbers=M-101, M-102, 105" in draft and "FIND_SHEETS through revit_read" in draft,
           "the numbers for FIND_SHEETS, the read that says which are already used")
     proven = L.chat_answer(got, status="PROVEN")
-    check("revit_change with previewOnly=true first" in proven and "try-once" not in proven,
-          "once PROVEN: revit_change, previewing first")
+    check("through revit_change, previewOnly=true first" in proven and "try-once" not in proven
+          and proven.count(value) == 1,
+          "once PROVEN: revit_change, previewing first, the value once")
     check(L.chat_answer({"ok": False, "refused": "'x' was not read: because"}) == "'x' was not read: because",
           "a refusal is said as it is")
+
+
+def section_quoting(folder):
+    print("7. nothing in a cell can end the quoted value or be run (review finding 1)")
+    path = os.path.join(folder, "quotes.csv")
+    awkward = [u"Owner\u2019s Area", u"$(calc)", u"ends with a backslash\\",
+               u"\u2018single\u2019 \u201alow\u201b", u"`back`tick", u"it's"]
+    with io.open(path, "w", encoding="utf-8", newline="") as handle:
+        handle.write(u"Sheet Number,Sheet Name\r\n")
+        for i, name in enumerate(awkward, 1):
+            handle.write(u"Q-%d,\"%s\"\r\n" % (i, name))
+    got = L.read(path)
+    value = L.card_value(got)
+    raw_left = [ch for ch in (u"'", u"\u2018", u"\u2019", u"\u201a", u"\u201b", u"$", u"`", u"\\", u'"')
+                if ch in value]
+    check(got["ok"] and not raw_left, "no quote, $, backtick or backslash is left raw in the value: %r" % raw_left)
+    check("Owner%E2%80%99s Area" in value and "%24(calc)" in value
+          and "ends with a backslash%5C;" in value and "it%27s" in value and "%60back%60tick" in value,
+          "each is percent-encoded as UTF-8: %E2%80%99, %24, %5C, %27, %60")
+    back = [unquote(row.split("|")[1]) for row in value.split(";")[1:]]
+    check(back == awkward, "every name decodes back whole - as Uri.UnescapeDataString does: %r" % (back,))
+    preview, _once = L.draft_commands(value, True)
+    inside = preview.split("--set '", 1)[1].split("' --write", 1)[0]
+    check("'" not in inside and "$" not in inside and "`" not in inside and not inside.endswith("\\"),
+          "the PowerShell argument holds no quote, $, backtick and no trailing backslash")
+
+
+def section_size(folder):
+    print("8. a DRAFT command never outgrows a Windows command line (finding 2)")
+    path = os.path.join(folder, "big.csv")
+    with io.open(path, "w", encoding="utf-8", newline="") as handle:
+        handle.write(u"Sheet Number,Sheet Name,Drawn By,Checked By,Discipline,Issue Date\r\n")
+        for i in range(400):
+            handle.write(u"M-%04d,Level %d Mechanical Ductwork Plan - Zone A North,AP,JS,Mechanical,"
+                         u"2026-11-09\r\n" % (i, i))
+    got = L.read(path)
+    value = L.card_value(got)
+    draft = L.chat_answer(got, status="DRAFT")
+    check(got["ok"] and len(value) > L.MOST_COMMAND_CHARS, "400 rows: %d characters as one value" % len(value))
+    check(L.draft_commands(value, True) is None and value not in draft
+          and "Split the file into parts of about" in draft and "PROVEN" in draft,
+          "the DRAFT commands are refused in words, the value not printed, the split asked for")
+    check(len(draft) < 10000, "and the answer stays short: %d characters" % len(draft))
+    proven = L.chat_answer(got, status="PROVEN")
+    check(proven.count(value) == 1, "once PROVEN the whole value is given, once")
+    sub = os.path.join(folder, "small-one")
+    os.makedirs(sub)
+    small = L.read(register_xlsx(sub))
+    commands = L.draft_commands(L.card_value(small), True)
+    check(commands is not None and max(len(c) for c in commands) <= L.MOST_COMMAND_CHARS,
+          "a small register's commands are printed, within %d characters" % L.MOST_COMMAND_CHARS)
+
+    many = os.path.join(folder, "many.csv")
+    with io.open(many, "w", encoding="utf-8", newline="") as handle:
+        handle.write(u"Sheet Number\r\n")
+        for i in range(L.MOST_ROWS + 5):
+            handle.write(u"X-%d\r\n" % i)
+    got = L.read(many)
+    check(not got["ok"] and "more than %d sheets" % L.MOST_ROWS in got["refused"],
+          "more than %d rows is refused, split asked for" % L.MOST_ROWS)
+
+
+def section_review_xlsx(folder):
+    print("9. number formats, a value under no header, hidden and trailing blank rows (findings 3-5, 9)")
+    shared = ["Sheet Number", "Sheet Name", "Drawn By", "Plan", "AP", "STRAY", "Hours"]
+    shared = ["<t>%s</t>" % t for t in shared]
+    rows = ['<row r="1">%s%s%s%s</row>' % (s("A1", 0), s("B1", 1), s("D1", 2), s("E1", 6))]
+    # Row 2: number 1 shown through "000" (001), a value under no header (C).
+    rows.append('<row r="2">%s%s%s%s</row>' % (n("A2", 1, 1), s("B2", 3), s("C2", 5), s("D2", 4)))
+    # Row 3: hidden in Excel; its number is text - passed.
+    rows.append('<row r="3" hidden="1"><c r="A3" t="inlineStr"><is><t>M-3</t></is></c>%s</row>' % s("B3", 3))
+    # Row 4: 1.1 shown through "0.00" (1.10).
+    rows.append('<row r="4">%s%s</row>' % (n("A4", "1.1000000000000001", 2), s("B4", 3)))
+    # Row 5: a plain General number, and a duration of 1.5 days in [h]:mm.
+    rows.append('<row r="5">%s%s%s</row>' % (n("A5", "105"), s("B5", 3), n("E5", "1.5", 4)))
+    # 200 formatted, empty rows after the table - Excel writes these.
+    for r in range(6, 206):
+        rows.append('<row r="%d" s="3" customFormat="1"><c r="A%d" s="3"/><c r="B%d" s="3"/></row>' % (r, r, r))
+    path = os.path.join(folder, "formats.xlsx")
+    write_xlsx(path, [("S", "".join(rows))], shared, styles_xf=[0, 164, 2, 0, 165],
+               custom_formats={164: "000", 165: "[h]:mm"})
+    got = L.read(path)
+    numbers = [r["number"] for r in got["rows"]]
+    problems = " | ".join(got["problems"])
+    check(numbers == ["M-3", "105"], "the two formatted numbers are not passed: %s" % numbers)
+    check("row 2, Sheet Number: Excel shows the stored number 1 through the number format \"000\"" in problems
+          and "row 4" in problems and "\"0.00\"" in problems and "Type the number as text" in problems,
+          "each is a problem naming its format and how to fix it")
+    check("row 2, column C has a value under no header - not passed" in problems,
+          "a value under a column with no header is listed")
+    check(got["skipped"] == [], "200 formatted blank rows after the table are not listed: %d" % len(got["skipped"]))
+    check(any("row(s) 3 are hidden or filtered out" in x for x in got["notes"]), "the hidden row is noted")
+    check(got["rows"][1]["values"].get("Hours") == "1.5", "a [h]:mm duration is the number 1.5, not a date: %r"
+          % got["rows"][1]["values"].get("Hours"))
+    answer = L.chat_answer(got, status="DRAFT")
+    check(len(answer) < 4000, "the answer stays short: %d characters" % len(answer))
+
+    print("10. lists are cut, and big parts refused (finding 5)")
+    lots = os.path.join(folder, "lots.csv")
+    with io.open(lots, "w", encoding="utf-8", newline="") as handle:
+        handle.write(u"Sheet Number,Sheet Name\r\n")
+        for i in range(30):
+            handle.write(u",Name only %d\r\n" % i)
+        handle.write(u"OK-1,Fine\r\n")
+    got = L.read(lots)
+    answer = L.chat_answer(got, status="DRAFT")
+    check(len(got["problems"]) == 30 and "... and 10 more" in answer
+          and answer.count("no sheet number - not passed") == L.MOST_LINES,
+          "30 problems are kept, 20 shown and the rest counted")
+    huge = os.path.join(folder, "huge.xlsx")
+    write_xlsx(huge, [("S", '<row r="1">%s</row>' % s("A1", 0) + "<!--%s-->" % ("x" * (L.MOST_PART_BYTES + 10)))],
+               shared, styles_xf=[0])
+    got = L.read(huge)
+    check(not got["ok"] and "MB unpacked" in got["refused"], "a sheet part above %d MB is refused"
+          % (L.MOST_PART_BYTES // (1024 * 1024)))
+
+
+def section_safety(folder):
+    print("11. only four kinds of file, and no content in a refusal (finding 6)")
+    secret = u"API_KEY=sk-live-123\nSheet Number,x\nA-1,y\n"
+    for name in (".env", "id_rsa", "notes.txt", "data.json", "register.ini"):
+        path = os.path.join(folder, name)
+        with io.open(path, "w", encoding="utf-8") as handle:
+            handle.write(secret)
+        got = L.read(path)
+        check(not got["ok"] and "sk-live" not in got["refused"] and ".xlsx, .xlsm, .csv or .tsv" in got["refused"],
+              "%s is refused by its name, nothing of it quoted" % name)
+    got = L.read(os.path.join(folder, ".env"), header_row=2)
+    check(not got["ok"], "a header row does not open a dotfile either")
+    tsv = os.path.join(folder, "reg.tsv")
+    with io.open(tsv, "w", encoding="utf-8", newline="") as handle:
+        handle.write(u"Sheet Number\tSheet Name\r\nT-1\tPlan, Level 1\r\n")
+    got = L.read(tsv)
+    check(got["ok"] and got["rows"][0]["name"] == "Plan, Level 1", "a .tsv is read with tabs")
+    disguised = os.path.join(folder, "zip.csv")
+    with io.open(disguised, "wb") as handle:
+        handle.write(b"PK\x03\x04" + b"\x00" * 40)
+    got = L.read(disguised)
+    check(not got["ok"] and "workbook, not text" in got["refused"], "a workbook named .csv is refused")
+    wide = os.path.join(folder, "wide.csv")
+    with io.open(wide, "w", encoding="utf-8") as handle:
+        handle.write(u",".join(u"Column number %d with a long header" % i for i in range(40)) + u"\nx\n")
+    got = L.read(wide)
+    holds = got["refused"].split("holds: ", 1)[1].split(". The first row", 1)[0]
+    check(len(holds) <= L.MOST_QUOTED_CHARS + 4, "header cells in a refusal are cut at %d characters: %d"
+          % (L.MOST_QUOTED_CHARS, len(holds)))
+
+    print("12. the delimiter is the header row's, under a title (finding 9)")
+    titled = os.path.join(folder, "titled-semicolon.csv")
+    with io.open(titled, "w", encoding="utf-8", newline="") as handle:
+        handle.write(u"Project X sheet register\n\nSheet Number;Sheet Name;Drawn By\nM-101;Plan, L1;AP\n")
+    got = L.read(titled, header_row=3)
+    check(got["ok"] and got["rows"][0]["name"] == "Plan, L1" and got["rows"][0]["values"] == {"Drawn By": "AP"},
+          "';' found from row 3, the header, not from the title on line 1")
+    ansi = os.path.join(folder, "arabic.csv")
+    with io.open(ansi, "wb") as handle:
+        handle.write(u"Sheet Number,Sheet Name\r\nA-1,\u0645\u062e\u0637\u0637\r\n".encode("cp1256"))
+    got = L.read(ansi)
+    check(any("Windows-1256" in x for x in got["notes"]), "a non-UTF-8 CSV's note names Windows-1256 for Arabic")
 
 
 def main():
@@ -342,6 +513,10 @@ def main():
         section_refused(folder)
         section_value(folder)
         section_answer(folder)
+        section_quoting(folder)
+        section_size(folder)
+        section_review_xlsx(folder)
+        section_safety(folder)
     finally:
         shutil.rmtree(folder, ignore_errors=True)
     print()

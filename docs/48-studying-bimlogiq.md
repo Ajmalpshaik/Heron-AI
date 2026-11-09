@@ -252,7 +252,9 @@ C:\...\sheet list.xlsx"* (or .csv) - the method [`sheets-from-excel`](../brain/s
   `header_row`) is the headers: Sheet Number required, Sheet Name and Title Block optional, every other column a
   sheet parameter. It lists a blank row, a row with no number, a number on two rows (neither passed - which is
   meant is the modeller's), a multi-line cell and an Excel error; an Excel date arrives as `2026-11-09`. It hands
-  back the exact value for the card, never typed by hand.
+  back the exact value for the card, never typed by hand. Only .xlsx, .xlsm, .csv and .tsv are opened (each
+  part at most 8 MB), and while the card is DRAFT its command line is printed only up to 30,000 characters - a
+  Windows command line holds 32,767 - above which the modeller splits the file.
 - **Creating is one capability** - [`create-sheets-from-table`](../brain/fragments/create-sheets-from-table/fragment.yaml)
   (`CREATE_SHEETS_FROM_TABLE`, MODIFY), one call, one undo. **The table reaches Revit as ONE value** - rows `;`,
   cells `|`, a `;` `|` `%` or `"` in a cell percent-encoded - the shape `SET_PARAMETER_VALUES_BY_ID`'s `rows` and
@@ -260,7 +262,8 @@ C:\...\sheet list.xlsx"* (or .csv) - the method [`sheets-from-excel`](../brain/s
   cross as comma-separated values that drop an empty name and split a name with a comma. Every title block named
   is found before anything is made (`CREATE_SHEETS`' lookup - none found refuses the call); a number in the register
   or twice in the table is not made; each sheet is made in its own sub-transaction, and a row whose number or name
-  Revit refuses is taken back alone. Each other column is written to the sheet's own parameter of that name, else
+  Revit refuses by throwing is taken back alone - a failure Revit posts only at the commit rolls the whole call back,
+  one undo (Article 8). Each other column is written to the sheet's own parameter of that name, else
   its title block instance's - never a title block TYPE parameter; text, Yes/No, whole numbers and other numbers by
   what the parameter stores; read-only, unmatched and refused ones listed, never guessed. `previewOnly` does the
   whole job and rolls each row back.
@@ -270,8 +273,8 @@ C:\...\sheet list.xlsx"* (or .csv) - the method [`sheets-from-excel`](../brain/s
   command line, rolled back, and the creation is the one `try-once` (D-119); `heron_sheet_list` prints both.
 - **The overlap** with `CREATE_SHEETS` and `SET_PARAMETER_VALUES_BY_ID` (both PROVEN, neither edited), why
   `IMPORT_PARAMETER_VALUES` is not a route (DEPRECATED, merged into `SET_PARAMETER_VALUES_BY_ID`), the routing
-  measured before and after - one question, *"which sheets are in this excel file"*, moved to it on the model
-  backend from another write, OPEN and a **condition for promotion** - and the merge planned once it is proved:
+  measured before and after - after the independent review's changes no question reaches it on lexical or model;
+  the re-ranked backend is still to be asked on the owner's PC - and the merge planned once it is proved:
   [row 5b-1485](fragment-issues/section-5b-rows-401-425.md).
 - **What a real Revit must show:** [NEEDS-CHECKING Group MY](needs-checking/group-my.md) - the D-30 negative (a title
   block that does not exist: nothing made), the preview, title block instance and type columns, Yes/No, dates and

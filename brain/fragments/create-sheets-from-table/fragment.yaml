@@ -62,13 +62,15 @@ purpose: >
   Name and Title Block optional, and each other field is filled into the new
   drawing's own parameter of that name, or else into its title block
   instance; never into a title block TYPE parameter, which would change every
-  other drawing of that type. Text is set as typed, a tick box from Yes or No, a whole
-  number as one, any other number through Revit's own reading in the
-  project's units. Each one is made in its own sub-transaction, so a row Revit
-  refuses is taken back alone and given back with Revit's words; a number in
-  use, or given twice, is not made. Fields that name nothing, read-only
-  parameters and values Revit would not take are given back, never guessed.
-  previewOnly does the whole job and takes it back, row by row.
+  other drawing of that type. Text is set as typed, a tick box from Yes or
+  No, a whole number as one, any other number through Revit's own reading in
+  the project's units. Each one is made in its own sub-transaction, so a row
+  Revit refuses by throwing is taken back alone and given back with Revit's
+  words; a failure Revit posts only as the call is kept rolls the whole call
+  back, one undo. A number in use, or given twice, is not made. Fields that
+  name nothing, read-only parameters and values Revit would not take are
+  given back, never guessed. previewOnly does the whole job and takes it
+  back, row by row.
 
 contract:
   needs:

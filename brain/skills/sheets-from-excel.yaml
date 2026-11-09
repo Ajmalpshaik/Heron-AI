@@ -34,16 +34,19 @@ purpose: >
      `header_row` when a title sits above the table). The first row is the
      headers; each row after it is one sheet. A column headed Sheet Number is
      required; Sheet Name and Title Block are optional; every other column
-     names a sheet parameter. An old .xls is refused - ask the modeller to
-     save it as .xlsx or CSV UTF-8. Never read the file another way and never
+     names a sheet parameter. Only .xlsx, .xlsm, .csv and .tsv are opened; an
+     old .xls, or anything else, is refused - ask the modeller to save it as
+     .xlsx or CSV UTF-8. Never read the file another way and never
      retype what it says: the tool hands back the exact `sheets=` value.
 
   1. THE FILE'S PROBLEMS - ASK, NEVER GUESS (D-33, D-34). Read out what the
      tool lists: a row with no number (not passed), a number on two rows
      (NEITHER passed - which is meant is the modeller's to say), a cell with
-     a line break (made one line), an Excel error cell (left empty), a column
-     with no header or a header used twice (not passed), and which workbook
-     sheet was read when there are several. A fix is made IN THE FILE by the
+     a line break (made one line), an Excel error cell (left empty), a value
+     under a column with no header or a header used twice (not passed), a
+     Sheet Number Excel shows through a number format such as 000 (not passed
+     - the modeller types it as text in Excel), hidden or filtered rows, and
+     which workbook sheet was read when there are several. A fix is made IN THE FILE by the
      modeller and step 0 is run again - the value is never edited by hand.
      When the file has no Title Block column, or a row leaves it empty, ASK
      which title block - revit_families lists the title block families and
@@ -62,7 +65,8 @@ purpose: >
      from the command line, which runs the card and ROLLS IT BACK - nothing
      can be kept without --apply, and --apply is refused for a DRAFT (D-117).
      heron_sheet_list prints that command, quoted for PowerShell, in the
-     Heron folder:
+     Heron folder - up to 30,000 characters, as a Windows command line holds
+     no more; above that it prints none and the modeller splits the file:
        python mcp/client/heron_bridge_client.py fragment create-sheets-from-table
          --set 'sheets=...' --write --set previewOnly=true --set 'titleBlockName=...'
      Say so to the modeller and let them run it, or run it only where they
@@ -98,7 +102,9 @@ purpose: >
      Then say what came back in Revit words: how many sheets were made and
      values set; the rows not made and why (a number already used, Revit's
      words for a number or name it refused - that row was taken back alone);
-     the values not set; the columns not written.
+     the values not set; the columns not written. A failure Revit raises only
+     as the call is kept undoes the WHOLE call - one undo, nothing kept - and
+     its words are the answer; say them, never retry round them.
 
   6. KEEP OR DISCARD, THEN LOOK. While Revit's Keep or Discard box is open,
      no chat tool reaches Revit - the modeller looks in the Project

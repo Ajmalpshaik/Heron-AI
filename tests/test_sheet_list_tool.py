@@ -71,7 +71,7 @@ def tool(folder):
     if (status or "").upper() in ("PROVEN", "PRODUCTION"):
         check("revit_change with previewOnly=true" in said, "PROVEN: revit_change is named")
     else:
-        check("refuses it (D-117)" in said and "try-once create-sheets-from-table" in said,
+        check("refuses it (D-117)" in said and "try-once in place of fragment" in said,
               "not PROVEN: the command-line preview and try-once are named, not revit_change")
     old = os.path.join(folder, "old.xls")
     with io.open(old, "wb") as handle:

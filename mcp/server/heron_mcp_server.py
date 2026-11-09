@@ -6260,16 +6260,17 @@ def heron_sheet_list(path: str, sheet: str = "", header_row: int = 1) -> str:
 
     `path` is the file as the modeller gives it. `sheet` names the workbook
     sheet when it is not the first; `header_row` is the row the headers are
-    on when a title sits above the table. An old .xls is refused - ask them
-    to save it as .xlsx or CSV.
+    on when a title sits above the table. Only .xlsx, .xlsm, .csv and .tsv
+    are opened; ask for anything else saved as .xlsx or CSV.
 
     The first row is headers; each row after it is one sheet. Sheet Number is
     required, Sheet Name and Title Block optional, and every other column
     names a sheet parameter - matched by name in Revit, never guessed here.
 
     It answers with the sheets, every problem in the file (no number, a
-    number twice, a blank or multi-line row), and the exact `sheets=` value
-    for CREATE_SHEETS_FROM_TABLE, with how to preview and run it. Show the
+    number twice, a formatted number, a blank or multi-line row), and the
+    exact `sheets=` value for CREATE_SHEETS_FROM_TABLE, with how to preview
+    and run it. Show the
     modeller the problems and ask about each; ask the title block when the
     file has none. Never type the value by hand - pass it as given.
     """
