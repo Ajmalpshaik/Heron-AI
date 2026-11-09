@@ -1,0 +1,35 @@
+# REPORT_VIEW_WORK_PLANE (FRG-VIEW-168) - the D-30 proof run, 2026-11-09.
+#
+#     python tools/batch-prove.py tools/jobs/report-view-work-plane-project1-2026-11-09.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/report-view-work-plane-project1-2026-11-09.yaml --session <pid>
+#
+# READ: nothing is changed, so no transaction and no write switch.
+#
+# THE MODEL: an unsaved scratch project "Project1", made by Ajmal PS from
+# Revit 2020's default mechanical template - floor plan "1 - Mech" on its own
+# level, and the template's one schedule "Space Outdoor Air Schedule". No
+# sheet: the card names a schedule beside a sheet as a view with no work
+# plane, so the schedule stands where report-view-work-plane-lm-2026-11-02.yaml
+# put the sheet A101.
+#
+# THE NEGATIVE CHANGES ONLY THE VIEW: a schedule has no work plane, so
+# `workPlanes` must come back empty and `withPlane` 0, the schedule named in
+# `findings` as having none. A reader that fell back to the view in front, or
+# to any plan's plane, would give the schedule one.
+
+model: "Project1 scratch project (Revit 2020 mechanical template, unsaved), floor plan 1 - Mech, schedule Space Outdoor Air Schedule, Revit 2020"
+
+defaults:
+  in: "Project1"
+
+jobs:
+  - fragment: report-view-work-plane
+    expect: workPlanes
+    set:
+      views: "FloorPlan: 1 - Mech"
+    negative-set:
+      views: "Schedule: Space Outdoor Air Schedule"
+    note: >
+      Negative - the schedule: workPlanes empty, withPlane 0, noPlane 1,
+      findings naming it with no work plane. Positive - "1 - Mech": withPlane
+      1, the plan's own level, horizontal.

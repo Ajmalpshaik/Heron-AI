@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -95,6 +95,24 @@ contract:
       # A summary line; a line when the view in front was read because none
       # was named; and a line per view with no work plane.
       type: IList<string>
+
+proof:
+  date: '2026-11-09'
+  by: Ajmal PS
+  model: Project1 (3,167 elements), Revit 2020, session 51048
+  positive_case: 'run as it would normally be run. returned findings 1 item(s) [Read 1 view(s)
+    for their work plane: 1 with one, 0 with none...], noPlane 0, withPlane 1, workPlanes
+    ''1 - Mech'' (FloorPlan) work plane "Level 1" - horizontal at elevation 0 mm. inputs came
+    views as given (1). on Project1'
+  negative_case: 'run with views=Schedule: Space Outdoor Air Schedule instead - chosen because
+    it should not contain what this fragment reports. returned findings 2 item(s) [Read 1
+    view(s) for their work plane: 0 with one, 1 with none..., ''Space Outdoor Air Schedule''
+    (Schedule) no work plane], noPlane 1, withPlane 0, workPlanes . inputs came views as given
+    (1). on Project1'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 829c679dda237a1a
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
