@@ -57,11 +57,16 @@ whether a fitting refused inside its SubTransaction leaves a warning Revit raise
 transaction commits, which would undo the whole call however `allOrNothing` is set (MX6); how long a floor of
 linework takes (MX8).
 
-**The picture and the model.** `revit_view_image` gives the picture and the view's name, never its crop extents
-or scale, so a tag's pixel position cannot be turned into model coordinates exactly. The method works round it:
-the preview's `runsFound` gives each run's coordinates and the span of the linework, and a hint needs only to be
-nearer its own run than any other - the host gives a tag the middle of the run it labels. A small addition to
-the capture's reply that would make it exact is described in row 5b-1481 and NOT made; the owner decides.
+**The picture and the model.** Until 2026-11-09 `revit_view_image` gave the picture and the view's name, never
+its crop extents or scale, so a tag's pixel position could not be turned into model coordinates exactly; the
+method gave each tag the middle of the run it labels, from the preview's `runsFound`. **Since 2026-11-09, on the
+owner's word, the capture's reply carries a NAMED PLAN's scale, crop state, annotation crop state and offsets,
+crop shape and the crop's four corners in internal mm** (`RevitCapture.PlanFrame`, read only, compiled 2020-2027,
+NOT RUN), and `revit_view_image` turns them into ONE line - the picture's size, its top-left corner and the
+formula from a pixel to model x and y - only for a plan whose crop is on, a plain rectangle, with the annotation
+crop off, and only when the picture's own shape is the crop's. Anything else is one line saying why; the method
+falls back to the middle of the run. **Whether Revit's picture fills the crop edge to edge is not known** - the
+API says only that FitToPage fits "the whole view" - so MX19 measures it. Row 5b-1481 has the detail.
 
 **Routing.** Measured 2026-11-09 with `tools/score-routing.py --sentences` (54 sentences frozen before the card
 was written: 8 for it, 34 of the neighbouring cards' own words, 12 questions about a drawing; lexical and model -
@@ -98,3 +103,4 @@ on), with ONE test DWG linked. Never a working model. Every run below is rolled 
 | **MX16** | *A crossing drawn with a break.* In a further copy of the DWG: one chilled water pipe drawn stopping 150 mm either side of another; one supply duct drawn stopping 100 mm clear of either edge of another duct; previewOnly, then drawn, rolled back | Each listed "crossing(s) drawn with a break ... left unjoined"; **no union, tee or cross through the other run**; the stopping ends open |
 | **MX17** | *One CAD, and where it is.* Two CADs selected; a Revit link selected; in a further copy, a Revit model holding a CAD linked in, its CAD's name as cadName; a CAD imported "Current view only" with the duct layer turned off in that view - each rolled back | Refused: two selected, both named; the Revit link - a CAD inside a Revit link is not read; the CAD inside the link - named as inside that link; the view-only import - the layer "may be in the drawing and turned off in that view", never "not in the CAD drawing" |
 | **MX18** | *A drawn centreline and doubtful pairs.* In a further copy of the DWG: a centreline on the duct layer along the main; a stray line 250 mm beside one duct edge; four ducts side by side 100-300 mm apart - previewOnly, rolled back | The main at full width, skippedWhy naming the centreline; the duct beside the stray line marked "DOUBTFUL PAIR - check" in runsFound and findings; the four ducts paired as four. Record any wrong pairing the picture shows |
+| **MX19** | *The picture against the model - two known points.* Rebuild and deploy the add-in, restart Revit and the chat. In the scratch copy, on a DUPLICATE of the Level 1 plan: crop ON, crop region visible, annotation crop OFF, not rotated; take two run ends far apart inside the crop from MX3's `runsFound` - internal mm, the numbers the line gives - and note where each is on the DWG. `revit_view_image` of that plan at 1280 and again at 2400 px wide; then the same with the crop region turned by 30 degrees (Rotate the crop in the plan); then with a text note placed OUTSIDE the crop, annotation crop still off; then with the annotation crop ON; then the crop OFF | The answer has a **Model position** line naming the picture's size and formula. Find each point's pixel in the PNG (any picture viewer that shows the cursor's pixel), put it through the formula, and **record the difference** in mm from `runsFound`'s numbers at both widths - within one pixel's worth of mm on both, the picture fills the crop edge to edge; a steady offset at the edges is the margin, recorded in pixels. The rotated crop: the same check. **The text note outside the crop: record whether the picture grew** - if it did and the line was still given, the shape check missed it and the server must refuse that case. Annotation crop ON and crop OFF: a *No model position* line, never numbers. Negative (D-30): a 3D view by name - *No model position ... not a plan* |

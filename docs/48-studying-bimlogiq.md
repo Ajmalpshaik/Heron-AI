@@ -223,10 +223,11 @@ serves and `heron_lookup` offers for *"CAD lines to ducts and pipes"* or *"under
   arrives as `size@x,y` and sizes the one run nearest it; a run with none takes the default and is listed;
   in double mode a tag that disagrees with the spacing wins and is listed. `previewOnly` draws nothing and lists
   every run with its coordinates - the step where the host matches the picture's tags to runs.
-- **The picture and the model:** `revit_view_image` gives no crop extents or scale, so a tag's pixel position
-  cannot be turned into model coordinates exactly. The method works round it - a hint only has to be nearest its
-  own run - and a small addition to the capture's reply that would make it exact is described, NOT made, in
-  [row 5b-1481](fragment-issues/section-5b-rows-401-425.md).
+- **The picture and the model:** since 2026-11-09 `revit_view_image` of a plan whose crop is on and annotation
+  crop off adds one line turning a pixel into model mm, so a tag's own position can be handed in; for any other
+  picture it says why not, and the method gives the tag the middle of its run - a hint only has to be nearest its
+  own run. Not run in Revit: whether the picture fills the crop edge to edge is NEEDS-CHECKING MX19, and
+  [row 5b-1481](fragment-issues/section-5b-rows-401-425.md) has the detail.
 - **The overlap** with `EXTRACT_CAD_CURVES`, `CREATE_MEP_RUNS` and `FIT_MEP_JOINTS` (all PROVEN, none edited),
   the routing measured before and after - one question, *"what size are the ducts on this cad drawing"*, moved
   to it from another write, OPEN and a **condition for promotion** - the independent review's findings and what

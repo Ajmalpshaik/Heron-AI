@@ -51,7 +51,10 @@ purpose: >
      the SIZE TAGS beside them ("600x400", "Ø150"), and system names or
      abbreviations ("SA", "RA", "CHWS"). Zoom in with a narrower crop, or a
      second view, when tags are too small to read - never guess a figure that
-     cannot be read.
+     cannot be read. Keep the answer's "Model position" line (or its "No model
+     position" line) for step 5: for a plan whose crop is on and annotation
+     crop off it turns a pixel into model mm. Note each tag's pixel position
+     as it is read.
 
   3. DECIDE THE LAYERS WITH THE MODELLER. Put the layer list from step 1 and
      what the picture shows side by side, and propose which layer is supply
@@ -90,15 +93,24 @@ purpose: >
      size@x,y in millimetres, all on ONE line with ; between them (a chat value
      loses its line breaks). A hint only has to be NEARER ITS OWN RUN than any
      other run - it is given to the one run nearest it, within hintReachMm
-     (1500 by default) - so the simplest position is the MIDDLE OF THE RUN IT
-     LABELS, taken from runsFound once the picture shows which run that is.
-     Where the picture alone must place it: the span in runsFound is the
-     linework's extremes in model coordinates, and the picture shows the same
-     extremes in pixels - scale between the two (on a plan whose crop is not
-     rotated: x grows to the right, y grows UP in the model and DOWN in the
-     picture). revit_view_image does
-     not give the view's crop extents or scale (row 5b-1481), so this is the
-     way today. Run the preview again with the hints (step 4's route): every
+     (1500 by default).
+     WHEN step 2's answer has a "Model position from this picture" line - a
+     plan whose crop is on and annotation crop off - use it: read the tag's
+     pixel position (px right, py down from the picture's top-left corner) and
+     put it through that line's formula; the result is the hint's x,y, in the
+     same internal mm as runsFound. Check each against runsFound - the hint
+     should land on or beside the run the tag labels; one that lands nowhere
+     near a run means the picture and the crop do not agree, so fall back
+     below and say so. Until NEEDS-CHECKING MX19 has measured that Revit's
+     picture fills the crop edge to edge, the line itself says it is not yet
+     proved exact - a few pixels out is still well inside hintReachMm.
+     WHEN IT HAS NOT - its "No model position" line says why (crop off,
+     annotation crop on, not a plan, a 3D picture, an older add-in) - never
+     work a position out from the picture alone: give each tag the MIDDLE OF
+     THE RUN IT LABELS, taken from runsFound once the picture shows which run
+     that is. Turning the crop on and the annotation crop off in a copy of the
+     view is the modeller's choice, never made for them.
+     Run the preview again with the hints (step 4's route): every
      hint used, runsWithoutSize short, sizeConflicts read out to the modeller -
      a hint that lost to a nearer one on the same run is listed there and was
      not used.

@@ -6757,6 +6757,121 @@ def revit_views() -> str:
     return "\n".join(lines)
 
 
+# THE VIEWS A PICTURE CAN BE LAID OVER THE PLAN FROM - Revit's ViewType names
+# for a ViewPlan, the only views the add-in sends a crop for (row 5b-1481).
+_PLAN_TYPES = ("FloorPlan", "CeilingPlan", "EngineeringPlan", "AreaPlan")
+
+# How far, in pixels, the picture's height may sit from the one the crop's
+# shape gives at its width - Revit rounds the height to a whole pixel. Beyond
+# it the picture's edges are not the crop's, and no mapping is given.
+_SHAPE_SLACK_PX = 2.0
+
+
+def _png_size(picture):
+    """(width, height) in pixels from a PNG's own header, or None."""
+    if len(picture) < 24 or picture[12:16] != b"IHDR":
+        return None
+    width = int.from_bytes(picture[16:20], "big")
+    height = int.from_bytes(picture[20:24], "big")
+    return (width, height) if width and height else None
+
+
+def _crop_corners(text):
+    """The add-in's cropCornersMm - "x,y; x,y; x,y; x,y", top-left first and
+    clockwise as the picture is seen - as four (x, y) in mm, or None."""
+    corners = []
+    for pair in (text or "").split(";"):
+        parts = pair.split(",")
+        if len(parts) != 2:
+            return None
+        try:
+            corners.append((float(parts[0]), float(parts[1])))
+        except ValueError:
+            return None
+    return corners if len(corners) == 4 else None
+
+
+def _mm_text(value, places):
+    """A number with at most PLACES decimals and no trailing zeros."""
+    said = ("%." + str(places) + "f") % value
+    said = said.rstrip("0").rstrip(".") if "." in said else said
+    return "0" if said in ("-0", "") else said
+
+
+def _picture_to_model(reply, picture):
+    """
+    The ONE line revit_view_image adds about where the picture sits in the
+    model (row 5b-1481): how to turn a pixel into model mm, or why it cannot.
+
+    Given only for a PLAN whose crop is ON, a plain rectangle, and whose
+    ANNOTATION crop is OFF - the one case where the picture's edges can be
+    the crop's - and only when the picture's own shape, read from its PNG
+    header, is the crop's shape. Anything else - a 3D picture, a section, a
+    crop off or shaped, an annotation crop on, an add-in older than this
+    server that sends no crop - is said in one line and given no numbers:
+    a position guessed from a picture would size the wrong duct.
+
+    Millimetres from Revit's internal origin - the numbers EXTRACT_CAD_CURVES
+    and DRAW_MEP_FROM_CAD's runsFound give, and its size@x,y hints take.
+    """
+    lead = "No model position from this picture: "
+    if reply.get("mode") == "elements":
+        return lead + "it is a temporary 3D view of elements."
+    view_type = reply.get("viewType") or "view"
+    if view_type not in _PLAN_TYPES:
+        return lead + "it is a %s, not a plan." % view_type
+    if "cropActive" not in reply:
+        return (lead + "the add-in in Revit sent no crop for the plan - it is older than "
+                "this server.")
+    if not reply.get("cropActive"):
+        return lead + "the plan's crop is off, so its edges are not a known place."
+    if reply.get("annotationCropActive") is not False:
+        return (lead + "the plan's annotation crop is on (or not said), so the picture "
+                "may reach past the crop.")
+    shape = reply.get("cropShape") or "not said"
+    if shape != "rectangle":
+        return lead + "the plan's crop is %s, not a plain rectangle." % shape
+    corners = _crop_corners(reply.get("cropCornersMm"))
+    size = _png_size(picture)
+    if corners is None or size is None:
+        return lead + "the crop's corners or the picture's size could not be read."
+
+    (x0, y0), (x1, y1), (x2, y2), (x3, y3) = corners
+    if abs(x1 + x3 - x0 - x2) > 1.0 or abs(y1 + y3 - y0 - y2) > 1.0:
+        return lead + "the crop's corners do not make a rectangle."
+    across = ((x1 - x0) ** 2 + (y1 - y0) ** 2) ** 0.5
+    down = ((x3 - x0) ** 2 + (y3 - y0) ** 2) ** 0.5
+    width, height = size
+    if across <= 0 or down <= 0:
+        return lead + "the crop has no size."
+    if abs(height - width * down / across) > _SHAPE_SLACK_PX:
+        return (lead + "the picture is %d x %d px and the crop %s x %s mm - not the same "
+                "shape, so the picture's edges are not the crop's."
+                % (width, height, _mm_text(across, 0), _mm_text(down, 0)))
+
+    # A PIXEL RIGHT and A PIXEL DOWN, each as a step in model x and y - a crop
+    # rotated in the plan gives steps in both.
+    steps = ((x1 - x0) / width, (y1 - y0) / width, (x3 - x0) / height, (y3 - y0) / height)
+
+    def formula(start, right, down_step):
+        said = _mm_text(start, 1)
+        for step, name in ((right, "px"), (down_step, "py")):
+            if abs(step) < 5e-6:
+                continue
+            said += " %s %s*%s" % ("-" if step < 0 else "+", _mm_text(abs(step), 5), name)
+        return said
+
+    scale = reply.get("viewScale")
+    return ("Model position from this picture (%splan, crop on, annotation crop off): it is "
+            "%d x %d px, its top-left corner at x %s, y %s mm from Revit's internal origin; "
+            "a point px pixels right and py pixels down from that corner is at "
+            "x = %s, y = %s mm. Exact only if Revit's picture fills the crop edge to edge "
+            "- not yet measured in Revit (NEEDS-CHECKING MX19)."
+            % ("1:%s " % scale if scale else "", width, height,
+               _mm_text(x0, 1), _mm_text(y0, 1),
+               formula(x0, steps[0], steps[2]), formula(y0, steps[1], steps[3])))
+
+
 @server.tool()
 def revit_view_image(view: str = "", elements: str = "", width: int = 1280) -> list:
     """
@@ -6769,26 +6884,26 @@ def revit_view_image(view: str = "", elements: str = "", width: int = 1280) -> l
       means the view in front. It is pictured exactly as it stands - its
       template, crop and filters - and nothing about it is changed. If two
       views share the name, the answer lists each as "ViewType: Name" to type
-      back.
+      back. A cropped plan with no annotation crop also maps a pixel to
+      model mm.
     - `elements`: element ids, comma separated, as Heron's answers print them
       - Revit's number, or a form's long id from CREATE_FAMILY_FORMS or
       REPORT_FAMILY_FORMS; the two may be mixed. Heron
       frames just those in a temporary isometric 3D view - a section box round
       them with a margin, model categories only, levels, grids and links left
-      out of the box - and takes the view away again. In a project, floors,
+      out - and takes the view away again. In a project, floors,
       ceilings and roofs over them are hidden, and named. In a family its
       forms are framed too, by their extents; its connectors are hidden
-      unless asked for. An id the
-      model or family in front has not got refuses the whole picture, naming
+      unless asked for. An id
+      not in the model or family in front refuses the whole picture, naming
       it.
 
-    `width` is the picture's width in pixels, 320 to 2400 (default 1280).
+    `width`: the picture's width, 320 to 2400 px (default 1280).
 
     IT CHANGES NOTHING. The temporary view is made inside a group Revit always
-    rolls back - there is no way to keep it - and the picture is written into
-    Heron's own folder on this PC, read back and deleted. Nothing is exported
-    anywhere another person reads. Use revit_views first if you need a view's
-    name.
+    rolls back - there is no way to keep it - and the picture is written to
+    Heron's own folder, read back and deleted. Nothing is exported
+    anywhere another person reads. revit_views gives a view's name.
     """
     if _Image is None:
         return _ended("refused",
@@ -6851,6 +6966,8 @@ def revit_view_image(view: str = "", elements: str = "", width: int = 1280) -> l
     if reply.get("widthClamped"):
         lines.append("The width asked for was outside 320 to 2400 px, so %s was used."
                      % reply.get("pixelWidth"))
+    # WHERE IT SITS IN THE MODEL, or why that is not said (row 5b-1481).
+    lines.append(_picture_to_model(reply, picture))
 
     # THE TWO PROMISES, SAID ONLY WHEN THE ADD-IN SAYS THEY WERE KEPT.
     #

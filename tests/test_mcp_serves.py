@@ -101,6 +101,10 @@ WHAT IT PROVES, when an SDK is installed
      beside its words, holding exactly what the stand-in sent, with no
      output schema; the request is capture_view with the pin and no path;
      and a reply with no readable picture, or a refusal, gives no image.
+     A cropped plan with its annotation crop off adds ONE line turning a
+     pixel into model mm, its numbers checked (row 5b-1481); every other
+     picture says in one line why there is none, and an older add-in's
+     reply with no crop still gives its picture.
  15. `revit_show` AND THE TEMPORARY ISOLATE, against a stand-in Revit. A
      MODIFY capability is refused before a session is bound; an EXECUTE one
      goes as run_fragment_show with no `apply`, and its answer says nothing
@@ -1717,6 +1721,129 @@ async def exercise_single_purpose(module, server, newest):
         module.pinned.forget()
 
 
+def png_of(width, height):
+    """A real, blank greyscale PNG of WIDTH x HEIGHT pixels - the size is what
+    revit_view_image reads from the picture's own header (row 5b-1481)."""
+    import struct
+    import zlib
+
+    def chunk(kind, data):
+        return (struct.pack(">I", len(data)) + kind + data
+                + struct.pack(">I", zlib.crc32(kind + data) & 0xFFFFFFFF))
+    rows = b"".join(b"\x00" + b"\x00" * width for _row in range(height))
+    return (b"\x89PNG\r\n\x1a\n"
+            + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 0, 0, 0, 0))
+            + chunk(b"IDAT", zlib.compress(rows, 9)) + chunk(b"IEND", b""))
+
+
+# A 1:100 FLOOR PLAN, cropped 40,000 x 28,000 mm, its top-left corner at x
+# 12,000, y 34,000 mm, as the add-in's PlanFrame sends it - and its picture,
+# 1280 px wide and so 896 high: 31.25 mm a pixel either way.
+CROPPED_PLAN = {"viewScale": 100, "cropActive": True, "annotationCropActive": False,
+                "cropShape": "rectangle",
+                "annotationCropOffsetsMm": "254,254,254,254",
+                "cropCornersMm": "12000,34000; 52000,34000; 52000,6000; 12000,6000"}
+
+
+async def exercise_picture_to_model(revit, call):
+    """
+    Row 5b-1481: a picture of a cropped PLAN with its annotation crop off
+    says, in one line, how a pixel turns into model mm - the numbers checked
+    against a stand-in reply - and every other picture says in one line why
+    it gives none, never a guessed position. An add-in older than this
+    server, which sends no crop, still gives its picture.
+    """
+    import base64
+    print()
+    print("  a cropped plan's picture says where it sits in the model (row 5b-1481)")
+
+    picture = base64.b64encode(png_of(1280, 896)).decode("ascii")
+    revit.reply = dict(PICTURE_REPLY, png=picture, **CROPPED_PLAN)
+    said, images = await call({"view": "Level 1"})
+    mapped = [line for line in said.splitlines() if line.startswith("Model position")]
+    check(len(images) == 1 and len(mapped) == 1,
+          "a cropped floor plan, annotation crop off, gives its picture and ONE "
+          "mapping line - found %r" % said)
+    line = mapped[0] if mapped else ""
+    check("1:100 plan" in line and "1280 x 896 px" in line
+          and "top-left corner at x 12000, y 34000 mm" in line,
+          "naming the scale, the picture's own size read from the PNG, and its "
+          "top-left corner in model mm: %r" % line)
+    check("x = 12000 + 31.25*px, y = 34000 - 31.25*py mm" in line,
+          "with the formula: 31.25 mm a pixel, y growing UP in the model and DOWN "
+          "in the picture - found %r" % line)
+    check("MX19" in line and "edge to edge" in line,
+          "and the edge question still open, named: %r" % line)
+
+    # A CROP ROTATED A QUARTER TURN IN THE PLAN: a pixel right is +y in the
+    # model, a pixel down is -x - and a crop of the same shape still maps.
+    revit.reply = dict(PICTURE_REPLY, png=picture, **dict(
+        CROPPED_PLAN, cropCornersMm="1000,2000; 1000,14800; -7960,14800; -7960,2000"))
+    said, _images = await call({"view": "Level 1"})
+    check("x = 1000 - 10*py, y = 2000 + 10*px mm" in said,
+          "a crop rotated in the plan turns into steps in both x and y: %r" % said)
+
+    # A CEILING PLAN IS A PLAN too.
+    revit.reply = dict(PICTURE_REPLY, png=picture, viewType="CeilingPlan", **CROPPED_PLAN)
+    said, _images = await call({"view": "CeilingPlan: Level 1"})
+    check("Model position" in said, "a reflected ceiling plan, cropped, maps the same way")
+
+    # EVERY OTHER PICTURE: no numbers, and one line saying why.
+    cases = [
+        ("the crop off", dict(CROPPED_PLAN, cropActive=False), {}, "crop is off"),
+        ("the annotation crop on", dict(CROPPED_PLAN, annotationCropActive=True), {},
+         "annotation crop is on"),
+        ("the annotation crop not said", dict((k, v) for k, v in CROPPED_PLAN.items()
+                                              if k != "annotationCropActive"), {},
+         "annotation crop is on (or not said)"),
+        ("a split crop", dict(CROPPED_PLAN, cropShape="split"), {}, "crop is split"),
+        ("a 3D view", dict(CROPPED_PLAN), {"viewType": "ThreeD", "view": "{3D}"},
+         "it is a ThreeD, not a plan"),
+        ("a section", dict(CROPPED_PLAN), {"viewType": "Section"}, "not a plan"),
+        ("an element-ids capture", {}, {"mode": "elements", "view": "{3D}",
+                                        "viewType": "ThreeD", "shown": 2},
+         "temporary 3D view of elements"),
+        ("a picture not the crop's shape", dict(
+            CROPPED_PLAN, cropCornersMm="12000,34000; 52000,34000; 52000,4000; 12000,4000"),
+         {}, "not the same shape"),
+        ("corners that are not a rectangle", dict(
+            CROPPED_PLAN, cropCornersMm="12000,34000; 52000,34000; 50000,6000; 12000,6000"),
+         {}, "do not make a rectangle"),
+        ("corners unreadable", dict(CROPPED_PLAN, cropCornersMm="12000;34000"), {},
+         "could not be read"),
+    ]
+    for name, fields, extra, reason in cases:
+        reply = dict(PICTURE_REPLY, png=picture, **fields)
+        reply.update(extra)
+        revit.reply = reply
+        said, images = await call({})
+        why = [line for line in said.splitlines() if line.startswith("No model position")]
+        check(len(images) == 1 and "Model position" not in said
+              and len(why) == 1 and reason in why[0] and "Nothing was changed." in said,
+              "%s: the picture, no mapping, and one line why (%r) - found %r"
+              % (name, reason, said))
+
+    # AN ADD-IN OLDER THAN THIS SERVER sends no crop at all: the picture still
+    # comes, no mapping, no crash - the stand-in's own plain reply.
+    revit.reply = dict(PICTURE_REPLY)
+    said, images = await call({})
+    check(len(images) == 1 and "Model position" not in said
+          and "older than this server" in said,
+          "an older add-in's reply - a plan with no crop fields - still gives its "
+          "picture, and says no crop came: %r" % said)
+
+    # THE TWO SIDES NAME THE SAME FIELDS: every key the server reads is one
+    # the add-in writes - a renamed field would leave every plan unmapped.
+    source = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "RevitCapture.cs")
+    with io.open(source, encoding="utf-8") as fh:
+        text = fh.read()
+    missing = [key for key in ("viewScale", "cropActive", "annotationCropActive",
+                               "cropShape", "cropCornersMm")
+               if '"%s"' % key not in text]
+    check(not missing, "RevitCapture.cs writes every field the server reads - "
+                       "missing %r" % missing)
+
+
 async def exercise_view_image(module):
     """
     Section 14: revit_view_image hands the chat a PICTURE, through the SDK's
@@ -1833,6 +1960,8 @@ async def exercise_view_image(module):
         said, _images = await call({})
         check("could not be deleted" in said,
               "a picture file left on this PC is said, never left unannounced")
+
+        await exercise_picture_to_model(revit, call)
 
         # THE NEGATIVES: what comes back with no picture in it.
         revit.reply = dict(PICTURE_REPLY, png="not a picture at all")
