@@ -238,6 +238,11 @@ compatibility-note: >
 #   "which families are unused"          -> FIND_PURGEABLE_ELEMENTS
 #   "delete these"                       -> DELETE_ELEMENTS, deliberately and
 #                                           with the list in front of you
+#   "show me the schematic for SA-01" /  -> here (2026-11-09): the drafting
+#    "is there already a schematic of        view DRAW_MEP_SCHEMATIC made,
+#    this system"                            found by name - never a new one
+#   "draw a schematic of supply air      -> DRAW_MEP_SCHEMATIC - the drawing
+#    system SA-01"
 
 # VERSION 2 (2026-11-01) - FIND_SCHEDULES, FIND_UNPLACED_VIEWS AND
 # FIND_VIEWS_WITHOUT_TEMPLATE WERE MERGED INTO THIS CARD on the owner's
@@ -300,3 +305,9 @@ utterances:
   - are all the views templated
   - find the views missing a template
   - which drawings are not on the standard
+  # ADDED 2026-11-09 (row 5b-1479): asking to SEE a schematic finds the
+  # drafting view DRAW_MEP_SCHEMATIC made - it never draws a new one. The
+  # owner's words, from that card's routing table. Search with nameContains
+  # "Schematic - <system>" and viewType "Drafting View".
+  - show me the schematic for SA-01
+  - is there already a schematic of this system
