@@ -49,8 +49,9 @@ semantic-identity: "turn the duct and pipe linework of a linked CAD background i
 #     the size parameters, read back, re-authored.
 #   FIT_MEP_JOINTS (FRG-MEP-051, PROVEN v3) - how the fitting is chosen from
 #     the connectors (elbow, tee with the most head-on pair as main, cross,
-#     transition with the larger end first) re-authored. ITS ALL-OR-NOTHING IS
-#     NOT the default here - see allOrNothing below.
+#     transition with the larger end first, a tap on an uncut main) re-authored.
+#     ITS ALL-OR-NOTHING IS NOT the default here - see allOrNothing below, and
+#     what a failure Revit posts at the commit still does.
 #   CONVERT_CAD_TO_DIRECTSHAPE (FRG-ELE-050, DRAFT) - solids, not lines; no
 #     code shared.
 #   The duct-layout skill (unit to diffusers) is a different job and was not
@@ -58,10 +59,16 @@ semantic-identity: "turn the duct and pipe linework of a linked CAD background i
 #   method, and heron_method serves a skill whole.
 #
 # EVERY VALUE IS THE MODELLER'S (D-33) - nothing below is assumed for them:
-#   imports      the CAD link or import SELECTED in Revit - or, instead,
-#   cadName      its name as Manage Links / Properties shows it ("M-HVAC.dwg",
-#                with or without ".dwg", ignoring case). Given, it wins over
-#                the selection. Placed twice: refused - select the one
+#   imports      ONE CAD link or import SELECTED in Revit - two or more:
+#                refused; a Revit link selected: refused, saying a CAD inside a
+#                Revit link is not read - or, instead,
+#   cadName      its name as revit_imports and Manage Links show it
+#                ("M-HVAC.dwg", with or without ".dwg", ignoring case). Given,
+#                it wins over the selection. Placed twice: refused - select the
+#                one. A name found only inside a Revit link: refused, saying so.
+#                A CAD placed in ONE VIEW only is read through that view, and a
+#                layer turned off there is not handed out - the refusal says
+#                the layer may be hidden there, not that it is missing
 #   layerNames   the layers to draw, comma separated, EXACTLY as the survey
 #                lists them, case and all. One missing: refused, nothing drawn
 #   drawAs       duct or pipe - asked, never guessed; it must agree with both
@@ -92,24 +99,53 @@ semantic-identity: "turn the duct and pipe linework of a linked CAD background i
 #   hintReachMm  how far a size hint may sit from its run. 1500
 #   minLengthMm  shorter lines are skipped, and shorter runs are not drawn. 100
 #   maxRuns      the most runs one call draws; above it the call is refused, in
-#                words, before anything is made. 500
+#                words, before anything is made. 500. It bounds the reading too:
+#                more than 40 straight pieces per run allowed is refused before
+#                any search, and every neighbour search looks only in a grid
+#                sized on maxWidthMm and bridgeMm (20,000 pieces: well under a
+#                second in the scratch harness)
 #   previewOnly  true: NOTHING is drawn; runsFound lists every run, the size it
 #                would get and where it came from, and the span of the linework
 #                - a look before the real call, and the run positions the host
 #                can match the picture's tags to
-#   allOrNothing true: one fitting Revit refuses rolls the WHOLE call back, as
-#                FIT_MEP_JOINTS does. Left out, false - each fitting is tried in
-#                its own SubTransaction, a refused one is taken back alone and
-#                listed in failedJoins, and the runs stay. THE OWNER'S DESIGN;
-#                Article 8 read strictly says the opposite, so which is the
-#                default is his to confirm (row 5b-1480)
+#   allOrNothing true: any joint left unfitted throws, and the WHOLE call is
+#                rolled back, as FIT_MEP_JOINTS does. Left out, false - THE
+#                OWNER'S DESIGN, his to confirm as the default (row 5b-1480):
+#                each joint's room is checked first - every leg against what
+#                the fittings at both its ends take from it, on a safe estimate
+#                (an elbow 1.5 x the largest size meeting there, a tee, cross or
+#                transition 1 x, a tap 1 x the branch, plus a margin) - and a
+#                joint without room is SKIPPED and listed in failedJoins before
+#                Revit is asked; a fitting Revit refuses by throwing is taken
+#                back alone in its SubTransaction. WHAT IT CANNOT DO: a failure
+#                Revit only POSTS - "modified to be in the opposite direction"
+#                when an estimate was short - is handled when the executor
+#                commits, and that rolls the WHOLE call back, one undo, nothing
+#                kept (Article 8). NEEDS-CHECKING MX6 measures it
 #
 # WHAT IT DOES NOT DO (version 1): read text (the picture is how), open blocks
 # inside the drawing (counted), draw arcs (counted - Revit's elbows replace
 # them), slope, rise or drop between levels (every run flat at one height),
 # change level per layer, or connect to equipment and terminals (CONNECT_OPEN_
-# ENDS afterwards). Crossings - two runs crossing without meeting - are found
-# and listed, never resolved: which goes over is the modeller's call.
+# ENDS afterwards). Crossings - two runs crossing without meeting, or one run
+# drawn stopping either side of another (a crossing drawn with a break) - are
+# found and listed, never joined: which goes over is the modeller's call.
+#
+# TAPS: when the type's routing preference is Taps (RoutingPreferenceManager.
+# PreferredJunctionType), a branch landing on the side of a main is joined by
+# a takeoff (NewTakeoffFitting) and the main is NOT cut - FIT_MEP_JOINTS'
+# "tap, not tee" (2026-09-23). With Tees, the main is split and a tee placed.
+#
+# THE LIMITS OF PAIRING DOUBLE LINES, said so a modeller knows when to look:
+# a line with one possible partner is paired first, repeatedly, so ducts side
+# by side pair as ducts; when every line left has two choices the nearest pair
+# is taken and marked DOUBTFUL in runsFound and findings, and so is a pair
+# beside a parallel line it left with no partner (a stray line, an odd edge).
+# A drawn centreline on the duct's own layer is dropped only when it is
+# exactly midway and neither edge has a possible partner on its far side - a
+# duct with a centreline right beside another duct is not recognised, and may
+# pair as half-width ducts, flagged doubtful. Measured on hand-made lines in
+# the scratch harness, never on a real drawing (Group MX).
 #
 # RISK MODIFY. It creates ducts or pipes and fittings; the CAD file is only read.
 # ASSUMES AN OPEN TRANSACTION and opens none (Golden Rule 16); the executor
@@ -129,17 +165,19 @@ purpose: >
   between them; a lone edge becomes one pipe or duct. Broken pieces in one
   straight line are joined, and at each joint the fitting comes from the
   type's own routing preferences - an elbow at a corner, a tee at a branch off
-  the side of a main, a cross, a transition at a change of width.
-  Each run takes the dimensions of the nearest hint handed in with a
-  position; a run with none takes the default and is listed. A fitting Revit
-  cannot place is listed and the rest stay. Arcs, splines, short pieces and
-  blocks are counted and left out. The CAD file is left untouched.
+  the side of a main, or a tap where the type prefers taps, a cross, a
+  transition at a change of width. Each run takes the dimensions of the
+  nearest hint handed in with a position; a run with none takes the default
+  and is listed. A joint with too little room for its fitting is left
+  unfitted and listed before Revit is asked; a failure Revit raises only as
+  the call is kept still undoes the whole call. Arcs, splines, short pieces
+  and blocks are counted and left out. The CAD file is left untouched.
 
 contract:
   needs:
     - name: doc
       type: Document
-    # The CAD link or import SELECTED in Revit. Absent, empty
+    # ONE CAD link or import SELECTED in Revit. Absent, empty
     # (HeronBindingNote.EmptyWhenAbsent) - then cadName must name it.
     - name: imports
       type: IList<Element>
@@ -247,7 +285,9 @@ contract:
       type: bool
       source: request
       optional: true
-    # true: one refused fitting rolls the whole call back. Absent binds false.
+    # true: any joint left unfitted rolls the whole call back. Absent binds
+    # false: joints without room are skipped and listed - but a failure Revit
+    # posts at the commit still rolls the whole call back (Article 8).
     - name: allOrNothing
       type: bool
       source: request
@@ -264,12 +304,15 @@ contract:
     - name: runsFound
       # ONE string: the span of the linework read, then one line per run - its
       # two ends in mm (internal coordinates), its length, its size and where
-      # the size came from (hint, carried, spacing, default). The first 300.
+      # the size came from (hint, carried, spacing, default), and "DOUBTFUL
+      # PAIR - check" where the double lines could have paired another way.
+      # The first 300.
       role: result
       type: string
     - name: failedJoins
-      # One line per joint left WITHOUT a fitting - where, and Revit's words.
-      # The runs are not connected there (D-52).
+      # One line per joint left WITHOUT a fitting - no room for it, a run that
+      # should meet it not drawn, or Revit's words. The runs are not connected
+      # there (D-52).
       role: accounting
       type: IList<string>
     - name: runsWithoutSize
@@ -279,7 +322,8 @@ contract:
       type: IList<string>
     - name: sizeConflicts
       # One line per run whose hint disagrees with its lines' spacing, or does
-      # not fit the type's shape - and which was used (D-52).
+      # not fit the type's shape - and which was used; and one per hint that
+      # lost to a nearer hint on the same run, NOT used (D-52).
       role: accounting
       type: IList<string>
     - name: skipped
@@ -320,7 +364,10 @@ compatibility-note: >
   GraphicsStyle.GraphicsStyleCategory and PolyLine.GetCoordinates as
   EXTRACT_CAD_CURVES (PROVEN) reads them, and Document.Create's
   NewElbowFitting, NewTeeFitting, NewCrossFitting, NewTransitionFitting and
-  NewUnionFitting as FIT_MEP_JOINTS (PROVEN) calls them. Sizes are set and read
+  NewUnionFitting as FIT_MEP_JOINTS (PROVEN) calls them, and NewTakeoffFitting
+  as it calls it for a tap; MEPCurveType.RoutingPreferenceManager and
+  RoutingPreferenceManager.PreferredJunctionType (the enum's Tee and Tap),
+  RevitLinkInstance.GetLinkDocument and Element.GetTypeId. Sizes are set and read
   back through RBS_CURVE_WIDTH_PARAM, RBS_CURVE_HEIGHT_PARAM,
   RBS_CURVE_DIAMETER_PARAM and RBS_PIPE_DIAMETER_PARAM in feet - no unit API,
   so the 2021 unit change does not reach it; millimetres become feet by
@@ -361,7 +408,10 @@ compatibility-note: >
 # this card after, on both. It carries the words of two of the owner's
 # utterances, which were not weakened; four wordings of identity and purpose
 # did not move it. No read card can answer it - the text in a DWG is read off
-# the picture, the method's step 2.
+# the picture, the method's step 2. A CONDITION FOR PROMOTION TO PROVEN, NOT A
+# LATER NOTE: this question reaching a write is settled before the card is
+# signed - a read that answers it, or the owner's recorded decision that it
+# may stay (row 5b-1480, NEEDS-CHECKING Group MX).
 #
 # WORDING CHANGED BEFORE THIS WAS WRITTEN: a purpose saying "where runs meet
 # ... where a branch meets ... where the width changes" took REPORT_LOCATION's

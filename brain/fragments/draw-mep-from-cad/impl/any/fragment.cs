@@ -14,13 +14,27 @@
 // precise. Only the size HINTS come from the picture, and a hint is matched to
 // the nearest run within `hintReachMm`, so it needs to be near, not exact.
 //
-// ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and opens none. Each FITTING is
-// tried inside its own SubTransaction - Revit's nested undo inside the
-// executor's transaction, as CONNECT_AIR_TERMINALS (PROVEN) does per terminal -
-// so one elbow Revit refuses is taken back alone and listed in `failedJoins`,
-// and the run is not lost. `allOrNothing` true throws instead, and the whole
-// call is rolled back: FIT_MEP_JOINTS' rule (Article 8 read strictly). Which of
-// the two is the default is the owner's to decide (FRAGMENT-ISSUES row 5b-1480).
+// ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and opens none.
+//
+// WHAT "ONE FAILED FITTING DOES NOT LOSE THE RUN" CAN AND CANNOT MEAN. Each
+// fitting is placed inside its own SubTransaction, so a fitting Revit REFUSES
+// BY THROWING is taken back alone and listed in `failedJoins`. But Revit also
+// POSTS failures - a run shorter than its two fittings is "modified to be in
+// the opposite direction" (duct-layout's note, FIT_MEP_JOINTS' measured
+// lesson) - and those are handled only when the executor commits the whole
+// call: its failure discipline (RevitFragment, Discipline) rolls the WHOLE call
+// back, one undo, nothing kept (Article 8). A SubTransaction cannot keep the
+// rest past that. So the room a fitting needs is CHECKED FIRST (`roomFor`
+// below): each leg's length against the fittings at both its ends, from a safe
+// estimate of each fitting's reach (an elbow 1.5 x the largest size meeting
+// there, a tee, cross or transition 1 x, a tap 1 x the branch, plus a margin).
+// A joint without room is SKIPPED and listed in `failedJoins` before Revit is
+// asked, so Revit has nothing to reverse. An estimate can still be short, and
+// what Revit posts then still rolls the whole call back - NEEDS-CHECKING MX6
+// measures it. `allOrNothing` true throws when any joint was left unfitted, so
+// nothing is kept unless every joint is (FIT_MEP_JOINTS' rule); left out it is
+// false - the owner's design - and which is the default is his to confirm
+// (FRAGMENT-ISSUES row 5b-1480).
 //
 // MILLIMETRES TO FEET BY ARITHMETIC (D-20). Points are Revit's INTERNAL
 // coordinates in millimetres - the same numbers EXTRACT_CAD_CURVES' listOnly
@@ -29,44 +43,61 @@
 //
 // HOW THE LINES BECOME RUNS
 // -------------------------
-//   1. Read every Line and PolyLine on the named layers (exact names, case
-//      counts - EXTRACT_CAD_CURVES' rule). Arcs, splines and ellipses are
-//      COUNTED and skipped - an arc is usually a radius elbow, which Revit
-//      draws itself from the routing preferences. A curve whose two ends are at
-//      different heights, a piece shorter than `minLengthMm`, and a block
-//      inside the drawing (not opened) are counted too.
+//   1. Read every Line and PolyLine on the named layers of ONE CAD file (exact
+//      names, case counts - EXTRACT_CAD_CURVES' rule). Arcs, splines and
+//      ellipses are COUNTED and skipped - an arc is usually a radius elbow,
+//      which Revit draws itself from the routing preferences. A curve whose two
+//      ends are at different heights, a piece shorter than `minLengthMm`, and a
+//      block inside the drawing (not opened) are counted too. More than 40
+//      pieces per run of `maxRuns` is refused before any searching is done.
 //   2. DOUBLE (a duct drawn as two parallel lines): two parallel lines
 //      `minWidthMm` to `maxWidthMm` apart, overlapping along their length, with
 //      no third parallel line between them, are one duct: its centreline is
-//      the middle of the overlap and its width the spacing. A line with only
-//      ONE possible partner is paired first, so two ducts side by side pair as
-//      two ducts, not as the gap between them. SINGLE: one line is one run.
-//      AUTO: double for a duct, single for a pipe.
+//      the middle of the overlap and its width the spacing. A third line lying
+//      exactly midway, the only one between them, is the duct's drawn
+//      CENTRELINE and is dropped, said in findings. Pairs are chosen as a chain
+//      is: a line with only ONE possible partner over that stretch is paired
+//      first, again and again, so ducts side by side pair as ducts, never as
+//      the gaps between them; when no line is left with one choice, the nearest
+//      pair is taken and marked DOUBTFUL in runsFound and findings, and so is a
+//      pair beside a parallel line left with no partner. SINGLE: one line is
+//      one run. AUTO: double for a duct, single for a pipe.
 //   3. Pieces in one straight line, of one width, less than `bridgeMm` apart
 //      are one run - a line broken for a tag, or a main whose side line is
 //      broken where a branch enters. NOT when the gap sits on another run:
-//      two branch lines touching a main from either side are a cross.
+//      that is a cross, or a crossing drawn with a break.
 //   4. Joints, every possible one found first and the NEAREST taken first:
 //      two run ends whose lines cross within `bridgeMm` (or half the other
 //      run's width) of both ends meet there - an elbow; an end landing on the
-//      side of another run, within half that run's width, splits it - a tee
-//      (a cross when two land at one point); two ends in one line with
-//      different widths - a transition. An end is trimmed back only by a small
-//      overshoot, and never carried across another run. Two runs crossing in
-//      their middles are NOT joined - they are listed as a crossing.
-//      Anything else is an open end.
+//      side of another run, within half that run's width - a tee that splits
+//      the main (a cross when two land at one point), or, when the type's
+//      routing preference is TAPS, a tap on the main, which is not cut; two
+//      ends in one line with different widths - a transition. An end is
+//      trimmed back only by a small overshoot, and never carried across, or to
+//      a point on, another run: one run stopping either side of another is a
+//      CROSSING DRAWN WITH A BREAK, listed and left unjoined. Two runs crossing
+//      in their middles are listed as a crossing too. Anything else is an open
+//      end.
 //   5. Sizes: each size hint belongs to the ONE run nearest it, within
-//      `hintReachMm`; a run with none takes the size of a tagged run it
-//      continues across an elbow; otherwise the default, and it is listed. In DOUBLE mode the width is the
-//      spacing rounded to `sizeStepMm`, and a hint wins over it - listed in
+//      `hintReachMm` - of two near one run, the nearer wins and the other is
+//      listed in sizeConflicts; a run with none takes the size of a tagged run
+//      it continues across an ELBOW (never across a transition); otherwise the
+//      default, and it is listed. In DOUBLE mode the width is the spacing
+//      rounded to `sizeStepMm`, and a hint wins over it - listed in
 //      `sizeConflicts` where they disagree. For a PIPE the spacing is the drawn
 //      outside diameter, never a nominal size, so it is never used as one.
 //   6. Draw every run as one duct or pipe at the level's elevation plus
 //      `middleElevationMm`, set its size and read it back; then each joint's
-//      fitting by Revit's own routing preferences (NewElbowFitting,
-//      NewTeeFitting, NewCrossFitting, NewTransitionFitting), chosen from the
-//      connectors as FIT_MEP_JOINTS (PROVEN) chooses - its route re-authored
-//      here, not called.
+//      fitting, after its room is checked, by Revit's own routing preferences
+//      (NewElbowFitting, NewTeeFitting, NewCrossFitting, NewTransitionFitting,
+//      NewTakeoffFitting for a tap), chosen from the connectors as
+//      FIT_MEP_JOINTS (PROVEN) chooses - its route re-authored here, not called.
+//      A joint where a run that should meet it was not drawn gets no fitting
+//      and is listed.
+//
+// THE SEARCHES ARE BOUNDED. Every neighbour search - parallel partners,
+// pieces to join, joint candidates - looks only in the cells of a grid sized
+// on `maxWidthMm` and `bridgeMm`, never across the whole drawing.
 
 var mmPerFoot = 304.8;
 var invariant = System.Globalization.CultureInfo.InvariantCulture;
@@ -226,21 +257,53 @@ if (refused.Length == 0 && !isNone(sizes))
 }
 
 // ---------------------------------------------------------------------------
-// The CAD drawing - selected, or named
+// The CAD drawing - ONE, selected or named
 // ---------------------------------------------------------------------------
 
 var cads = new List<ImportInstance>();
+// The file's name as Manage Links and revit_imports show it: the CAD type's name.
+Func<ImportInstance, string> fileOf = import =>
+{
+    var type = doc.GetElement(import.GetTypeId());
+    if (type != null && !string.IsNullOrEmpty(type.Name)) return type.Name;
+    return import.Category != null ? import.Category.Name : import.Name;
+};
+Func<string, string, bool> nameMatches = (name, wanted) =>
+{
+    if (string.IsNullOrEmpty(name)) return false;
+    if (name.Equals(wanted, StringComparison.OrdinalIgnoreCase)) return true;
+    var dot = name.LastIndexOf('.');
+    return dot > 0 && name.Substring(0, dot).Equals(wanted, StringComparison.OrdinalIgnoreCase);
+};
 Func<string> cadList = () =>
 {
     var names = new List<string>();
     foreach (var e in new FilteredElementCollector(doc).OfClass(typeof(ImportInstance)))
     {
-        var shown = e.Category != null ? e.Category.Name : e.Name;
+        var shown = fileOf((ImportInstance)e);
         if (!names.Contains(shown)) names.Add(shown);
         if (names.Count >= 20) break;
     }
-    return names.Count == 0 ? "this model has no imported or linked CAD file"
+    return names.Count == 0 ? "this model has no imported or linked CAD file of its own"
         : "the CAD files in this model: " + string.Join(", ", names.ToArray());
+};
+// A CAD file INSIDE a Revit link: named, so "not here" is never said of it.
+Func<string, string> linkHolding = wanted =>
+{
+    foreach (var e in new FilteredElementCollector(doc).OfClass(typeof(RevitLinkInstance)))
+    {
+        var linked = ((RevitLinkInstance)e).GetLinkDocument();
+        if (linked == null) continue;
+        foreach (var i in new FilteredElementCollector(linked).OfClass(typeof(ImportInstance)))
+        {
+            var import = (ImportInstance)i;
+            var type = linked.GetElement(import.GetTypeId());
+            if (nameMatches(import.Name, wanted) || (type != null && nameMatches(type.Name, wanted))
+                || (import.Category != null && nameMatches(import.Category.Name, wanted)))
+                return e.Name;
+        }
+    }
+    return null;
 };
 
 if (refused.Length == 0)
@@ -248,21 +311,21 @@ if (refused.Length == 0)
     if (!isNone(cadName))
     {
         var wanted = cadName.Trim();
-        Func<string, bool> same = n =>
-        {
-            if (string.IsNullOrEmpty(n)) return false;
-            if (n.Equals(wanted, StringComparison.OrdinalIgnoreCase)) return true;
-            var dot = n.LastIndexOf('.');
-            return dot > 0 && n.Substring(0, dot).Equals(wanted, StringComparison.OrdinalIgnoreCase);
-        };
         foreach (var e in new FilteredElementCollector(doc).OfClass(typeof(ImportInstance)))
         {
             var import = e as ImportInstance;
             if (import == null) continue;
-            if (same(import.Name) || (import.Category != null && same(import.Category.Name))) cads.Add(import);
+            if (nameMatches(import.Name, wanted) || nameMatches(fileOf(import), wanted)
+                || (import.Category != null && nameMatches(import.Category.Name, wanted))) cads.Add(import);
         }
         if (cads.Count == 0)
-            refused = "no imported or linked CAD file is called \"" + wanted + "\" - " + cadList() + ". Nothing was drawn";
+        {
+            var link = linkHolding(wanted);
+            refused = link != null
+                ? "\"" + wanted + "\" is inside the Revit link " + link + ", not in this model - a CAD file inside a "
+                    + "Revit link is not read. Open that model and draw there, or link the CAD into this one. Nothing was drawn"
+                : "no imported or linked CAD file is called \"" + wanted + "\" - " + cadList() + ". Nothing was drawn";
+        }
         else if (cads.Count > 1)
             refused = cads.Count + " CAD files are called \"" + wanted + "\" (it is placed more than once) - select "
                 + "the one to read in Revit and leave cadName out. Nothing was drawn";
@@ -271,20 +334,29 @@ if (refused.Length == 0)
     }
     else
     {
+        var linksSelected = new List<string>();
         if (imports != null)
             foreach (var e in imports)
             {
                 var import = e as ImportInstance;
                 if (import != null) cads.Add(import);
+                else if (e is RevitLinkInstance) linksSelected.Add(e.Name);
             }
-        if (cads.Count == 0)
+        if (cads.Count > 1)
+            refused = cads.Count + " CAD files are selected (" + string.Join(", ", cads.Select(c => fileOf(c)).ToArray())
+                + ") - this reads ONE per call. Select the one to draw from, or name it in cadName. Nothing was drawn";
+        else if (cads.Count == 0 && linksSelected.Count > 0)
+            refused = "the selection is the Revit link " + string.Join(", ", linksSelected.ToArray()) + ", not a CAD "
+                + "file - a CAD file inside a Revit link is not read. Open that model and draw there, or link the CAD "
+                + "into this one. Nothing was drawn";
+        else if (cads.Count == 0)
             refused = "no CAD file was selected or named - select the linked or imported CAD in Revit, or give "
                 + "its name in cadName; " + cadList() + ". Nothing was drawn";
     }
 }
 
 // ---------------------------------------------------------------------------
-// Read the lines on the named layers
+// Read the lines on the named layers - at most 40 pieces per run of maxRuns
 // ---------------------------------------------------------------------------
 
 var wantedLayers = new List<string>();
@@ -297,9 +369,13 @@ var layerCounts = new Dictionary<string, int>();
 var lineA = new List<XYZ>();
 var lineB = new List<XYZ>();
 var lineLayer = new List<string>();
-int arcs = 0, splines = 0, notFlat = 0, tooShort = 0, blocks = 0;
+int arcs = 0, splines = 0, notFlat = 0, tooShort = 0, blocks = 0, overflow = 0;
 var readByLayer = new Dictionary<string, int>();
 var arcsByLayer = new Dictionary<string, int>();
+// THE COST IS BOUNDED BY maxRuns: a run is two edges and a few breaks and caps,
+// so more than 40 pieces per run allowed is refused before any search is done.
+var pieceLimit = Math.Min(Math.Max(maxRuns, 1) * 40, 100000);
+var viewOnlyIn = "";
 
 if (refused.Length == 0)
 {
@@ -313,6 +389,7 @@ if (refused.Length == 0)
     {
         if (Math.Abs(a.Z - b.Z) > 1.0 / mmPerFoot) { notFlat++; return; }
         if (a.DistanceTo(b) < minLen) { tooShort++; return; }
+        if (lineA.Count >= pieceLimit) { overflow++; return; }
         lineA.Add(new XYZ(a.X, a.Y, 0));
         lineB.Add(new XYZ(b.X, b.Y, 0));
         lineLayer.Add(layer);
@@ -325,7 +402,7 @@ if (refused.Length == 0)
         if (import.ViewSpecific)
         {
             var owner = doc.GetElement(import.OwnerViewId) as View;
-            if (owner != null) options.View = owner;
+            if (owner != null) { options.View = owner; viewOnlyIn = owner.Name; }
         }
         var geometry = import.get_Geometry(options);
         if (geometry == null) continue;
@@ -372,13 +449,20 @@ if (refused.Length == 0)
     if (wantedLayers.Count == 0)
         refused = "no layer was named, so nothing was drawn. The layers and their object counts: " + surveyText
             + ". Name the layers to draw exactly as listed, including case";
+    else if (missing.Count > 0 && viewOnlyIn.Length > 0)
+        refused = "no layer called " + string.Join(", ", missing.Select(l => "'" + l + "'").ToArray()) + " came back from "
+            + "this CAD - it is placed in view '" + viewOnlyIn + "' only, and Revit hands out only the layers SHOWN "
+            + "there, so the layer may be in the drawing and turned off in that view (Visibility/Graphics, Imported "
+            + "Categories). Layer names are matched exactly, including case. The layers shown: " + surveyText
+            + ". Nothing was drawn";
     else if (missing.Count > 0)
         refused = "no layer called " + string.Join(", ", missing.Select(l => "'" + l + "'").ToArray())
             + " is in the CAD drawing - layer names are matched exactly, including case. The layers are: "
             + surveyText + ". Nothing was drawn";
-    else if (lineA.Count > 20000)
-        refused = lineA.Count + " straight pieces are on the layers named - more than the 20000 this reads in one "
-            + "call. Name fewer layers, or split the drawing. Nothing was drawn";
+    else if (overflow > 0)
+        refused = "more than " + pieceLimit + " straight pieces are on the layers named - the most this reads for "
+            + "maxRuns " + maxRuns + " (40 pieces a run). Name fewer layers, split the drawing, or raise maxRuns. "
+            + "Nothing was drawn";
 
     foreach (var layer in wantedLayers)
     {
@@ -402,10 +486,51 @@ if (refused.Length == 0)
 }
 
 // ---------------------------------------------------------------------------
+// A grid, so every neighbour search looks only at the cells nearby
+// ---------------------------------------------------------------------------
+
+Func<int, int, long> cellOf = (cx, cy) => ((long)cx << 32) | (uint)cy;
+// boxes are [minX, minY, maxX, maxY] in feet; size is the cell's side.
+Func<List<double[]>, double, Dictionary<long, List<int>>> gridOf = (boxes, size) =>
+{
+    var grid = new Dictionary<long, List<int>>();
+    for (var i = 0; i < boxes.Count; i++)
+    {
+        var b = boxes[i];
+        if (b == null) continue;
+        for (var cx = (int)Math.Floor(b[0] / size); cx <= (int)Math.Floor(b[2] / size); cx++)
+            for (var cy = (int)Math.Floor(b[1] / size); cy <= (int)Math.Floor(b[3] / size); cy++)
+            {
+                List<int> here;
+                var key = cellOf(cx, cy);
+                if (!grid.TryGetValue(key, out here)) { here = new List<int>(); grid[key] = here; }
+                here.Add(i);
+            }
+    }
+    return grid;
+};
+Func<Dictionary<long, List<int>>, double, double[], List<int>> gridNear = (grid, size, box) =>
+{
+    var found = new HashSet<int>();
+    for (var cx = (int)Math.Floor(box[0] / size); cx <= (int)Math.Floor(box[2] / size); cx++)
+        for (var cy = (int)Math.Floor(box[1] / size); cy <= (int)Math.Floor(box[3] / size); cy++)
+        {
+            List<int> here;
+            if (grid.TryGetValue(cellOf(cx, cy), out here)) foreach (var i in here) found.Add(i);
+        }
+    return found.ToList();
+};
+Func<double, double, double, double, double, double[]> boxAround = (x0, y0, x1, y1, pad) => new[]
+{
+    Math.Min(x0, x1) - pad, Math.Min(y0, y1) - pad, Math.Max(x0, x1) + pad, Math.Max(y0, y1) + pad
+};
+
+// ---------------------------------------------------------------------------
 // Lines to centreline segments: [ax, ay, bx, by, width] in feet (width 0 single)
 // ---------------------------------------------------------------------------
 
 var seg = new List<double[]>();
+var segDoubtful = new List<bool>();
 var sinParallel = Math.Sin(Math.PI / 180.0);
 
 if (refused.Length == 0)
@@ -422,7 +547,11 @@ if (refused.Length == 0)
 
     if (!doubleMode)
     {
-        for (var i = 0; i < n; i++) seg.Add(new[] { lineA[i].X, lineA[i].Y, lineB[i].X, lineB[i].Y, 0.0 });
+        for (var i = 0; i < n; i++)
+        {
+            seg.Add(new[] { lineA[i].X, lineA[i].Y, lineB[i].X, lineB[i].Y, 0.0 });
+            segDoubtful.Add(false);
+        }
     }
     else
     {
@@ -432,14 +561,22 @@ if (refused.Length == 0)
         Func<int, double, double, double> along = (i, px, py) =>
             ux[i] * (px - lineA[i].X) + uy[i] * (py - lineA[i].Y);
 
-        // Every parallel neighbour of each line within the widest spacing, on its own layer.
+        // Every parallel neighbour of each line within the widest spacing, on its
+        // own layer - looked for only in the grid cells around the line.
+        var cell = maxW + 2 * tol;
+        var lineBoxes = new List<double[]>();
+        for (var i = 0; i < n; i++) lineBoxes.Add(boxAround(lineA[i].X, lineA[i].Y, lineB[i].X, lineB[i].Y, 0));
+        var lineGrid = gridOf(lineBoxes, cell);
+
         var near = new List<int>[n];
         var nearOff = new List<double>[n];
         var nearLo = new List<double>[n];
         var nearHi = new List<double>[n];
-        for (var i = 0; i < n; i++) { near[i] = new List<int>(); nearOff[i] = new List<double>(); nearLo[i] = new List<double>(); nearHi[i] = new List<double>(); }
         for (var i = 0; i < n; i++)
-            for (var j = 0; j < n; j++)
+        {
+            near[i] = new List<int>(); nearOff[i] = new List<double>(); nearLo[i] = new List<double>(); nearHi[i] = new List<double>();
+            var b = lineBoxes[i];
+            foreach (var j in gridNear(lineGrid, cell, new[] { b[0] - maxW - tol, b[1] - maxW - tol, b[2] + maxW + tol, b[3] + maxW + tol }))
             {
                 if (i == j || layerIndex[i] != layerIndex[j]) continue;
                 if (Math.Abs(ux[i] * uy[j] - uy[i] * ux[j]) > sinParallel) continue;
@@ -455,37 +592,86 @@ if (refused.Length == 0)
                 if (hi - lo < minLen) continue;
                 near[i].Add(j); nearOff[i].Add(off); nearLo[i].Add(lo); nearHi[i].Add(hi);
             }
+        }
+
+        // A DRAWN CENTRELINE: a line exactly midway between two lines that would
+        // pair, and the only line between them, is not an edge. Left in, it pairs
+        // with each edge as two half-width ducts. NOT when either outer line has a
+        // possible partner on its FAR side: three edges equally spaced are then a
+        // duct beside another duct's edge, not a duct and its centreline.
+        Func<int, int, bool> partnerBeyond = (outer, k) =>
+        {
+            var toward = 0.0;
+            for (var m = 0; m < near[outer].Count; m++) if (near[outer][m] == k) toward = nearOff[outer][m];
+            if (toward == 0) return false;
+            for (var m = 0; m < near[outer].Count; m++)
+            {
+                var o = nearOff[outer][m];
+                if (Math.Sign(o) == Math.Sign(toward)) continue;
+                if (Math.Abs(o) >= minW - tol && Math.Abs(o) <= maxW + tol) return true;
+            }
+            return false;
+        };
+        var centre = new bool[n];
+        for (var k = 0; k < n; k++)
+            for (var a = 0; a < near[k].Count && !centre[k]; a++)
+                for (var b = 0; b < near[k].Count && !centre[k]; b++)
+                {
+                    double oa = nearOff[k][a], ob = nearOff[k][b];
+                    if (oa >= 0 || ob <= 0 || Math.Abs(oa + ob) > tol) continue;
+                    if (ob - oa < minW - tol || ob - oa > maxW + tol) continue;
+                    var lo = Math.Max(nearLo[k][a], nearLo[k][b]); var hi = Math.Min(nearHi[k][a], nearHi[k][b]);
+                    if (hi - lo < minLen) continue;
+                    var alone = true;
+                    for (var m = 0; m < near[k].Count && alone; m++)
+                    {
+                        if (m == a || m == b) continue;
+                        var o = nearOff[k][m];
+                        if (o <= oa + tol || o >= ob - tol) continue;
+                        if (Math.Min(nearHi[k][m], hi) - Math.Max(nearLo[k][m], lo) >= minLen) alone = false;
+                    }
+                    if (alone && !partnerBeyond(near[k][a], k) && !partnerBeyond(near[k][b], k)) centre[k] = true;
+                }
+        var centres = centre.Count(c => c);
+        if (centres > 0)
+        {
+            skipped += centres;
+            skippedWhy.Add(centres + " line(s) lying exactly midway between the two edges of a duct, taken as its drawn "
+                + "centreline and left out - not paired as an edge");
+        }
 
         // Candidates: a plausible spacing, and no third parallel line between.
         var candI = new List<int>(); var candJ = new List<int>(); var candK = new List<int>();
-        var candidates = new int[n];
+        var candLoJ = new List<double>(); var candHiJ = new List<double>();
+        var candOf = new List<int>[n];
+        for (var i = 0; i < n; i++) candOf[i] = new List<int>();
         for (var i = 0; i < n; i++)
+        {
+            if (centre[i]) continue;
             for (var k = 0; k < near[i].Count; k++)
             {
                 var j = near[i][k];
-                if (j < i) continue;
+                if (j < i || centre[j]) continue;
                 var off = nearOff[i][k];
                 if (Math.Abs(off) < minW - tol || Math.Abs(off) > maxW + tol) continue;
                 var between = false;
                 for (var m = 0; m < near[i].Count && !between; m++)
                 {
-                    if (m == k) continue;
+                    if (m == k || centre[near[i][m]]) continue;
                     var o = nearOff[i][m];
                     if (Math.Sign(o) != Math.Sign(off) || Math.Abs(o) <= tol || Math.Abs(off) - Math.Abs(o) <= tol) continue;
                     var shared = Math.Min(nearHi[i][m], nearHi[i][k]) - Math.Max(nearLo[i][m], nearLo[i][k]);
                     if (shared >= minLen) between = true;
                 }
                 if (between) continue;
+                var lo = nearLo[i][k]; var hi = nearHi[i][k];
+                var j0 = along(j, lineA[i].X + ux[i] * lo, lineA[i].Y + uy[i] * lo);
+                var j1 = along(j, lineA[i].X + ux[i] * hi, lineA[i].Y + uy[i] * hi);
+                candOf[i].Add(candI.Count); candOf[j].Add(candI.Count);
                 candI.Add(i); candJ.Add(j); candK.Add(k);
-                candidates[i]++; candidates[j]++;
+                candLoJ.Add(Math.Min(j0, j1)); candHiJ.Add(Math.Max(j0, j1));
             }
-
-        // A line with ONE possible partner is paired first - two ducts side by
-        // side pair as two ducts, never as the gap between them. Then nearest first.
-        var order = Enumerable.Range(0, candI.Count)
-            .OrderBy(c => candidates[candI[c]] == 1 || candidates[candJ[c]] == 1 ? 0 : 1)
-            .ThenBy(c => Math.Abs(nearOff[candI[c]][candK[c]]))
-            .ToList();
+        }
 
         var used = new List<double[]>[n];
         for (var i = 0; i < n; i++) used[i] = new List<double[]>();
@@ -495,26 +681,110 @@ if (refused.Length == 0)
                 if (Math.Min(u[1], hi) - Math.Max(u[0], lo) > tol) return false;
             return true;
         };
-        var paired = new bool[n];
-        var pairedLength = 0.0;
-        var totalLength = len.Sum();
-        foreach (var c in order)
+        // The candidate's stretch on one of its two lines.
+        Func<int, int, double[]> stretchOn = (c, line) => candI[c] == line
+            ? new[] { nearLo[candI[c]][candK[c]], nearHi[candI[c]][candK[c]] }
+            : new[] { candLoJ[c], candHiJ[c] };
+        Func<int, bool> candFree = c =>
         {
-            int i = candI[c], j = candJ[c], k = candK[c];
-            double lo = nearLo[i][k], hi = nearHi[i][k], off = nearOff[i][k];
-            var p0x = lineA[i].X + ux[i] * lo; var p0y = lineA[i].Y + uy[i] * lo;
-            var p1x = lineA[i].X + ux[i] * hi; var p1y = lineA[i].Y + uy[i] * hi;
-            var j0 = along(j, p0x, p0y); var j1 = along(j, p1x, p1y);
-            if (!free(i, lo, hi) || !free(j, Math.Min(j0, j1), Math.Max(j0, j1))) continue;
-            used[i].Add(new[] { lo, hi });
-            used[j].Add(new[] { Math.Min(j0, j1), Math.Max(j0, j1) });
-            paired[i] = true; paired[j] = true;
-            pairedLength += 2 * (hi - lo);
-            var nx = -uy[i] * off / 2; var ny = ux[i] * off / 2;
-            seg.Add(new[] { p0x + nx, p0y + ny, p1x + nx, p1y + ny, Math.Abs(off) });
+            var si = stretchOn(c, candI[c]); var sj = stretchOn(c, candJ[c]);
+            return free(candI[c], si[0], si[1]) && free(candJ[c], sj[0], sj[1]);
+        };
+        var decided = new bool[candI.Count];
+        // How many live choices a line has over this candidate's stretch of it.
+        Func<int, int, int> choices = (c, line) =>
+        {
+            var s = stretchOn(c, line);
+            var count = 0;
+            foreach (var other in candOf[line])
+            {
+                if (decided[other] || !candFree(other)) continue;
+                var o = stretchOn(other, line);
+                if (Math.Min(o[1], s[1]) - Math.Max(o[0], s[0]) > tol) count++;
+            }
+            return count;
+        };
+
+        var order = Enumerable.Range(0, candI.Count).OrderBy(c => Math.Abs(nearOff[candI[c]][candK[c]])).ToList();
+        var accepted = new List<int>();
+        var acceptedDoubt = new List<bool>();
+        var isAccepted = new bool[candI.Count];
+        var acceptedOn = new List<int>[n];      // line -> index into `accepted`
+        for (var i = 0; i < n; i++) acceptedOn[i] = new List<int>();
+        var work = new Queue<int>(order);
+        Action<int> reexamine = line =>
+        {
+            foreach (var c2 in candOf[line])
+            {
+                var far = candI[c2] == line ? candJ[c2] : candI[c2];
+                foreach (var c3 in candOf[far]) if (!decided[c3]) work.Enqueue(c3);
+                if (!decided[c2]) work.Enqueue(c2);
+            }
+        };
+        Action<int, bool> accept = (c, doubt) =>
+        {
+            int i = candI[c], j = candJ[c];
+            var si = stretchOn(c, i); var sj = stretchOn(c, j);
+            used[i].Add(si); used[j].Add(sj);
+            decided[c] = true; isAccepted[c] = true;
+            acceptedOn[i].Add(accepted.Count); acceptedOn[j].Add(accepted.Count);
+            accepted.Add(c); acceptedDoubt.Add(doubt);
+            reexamine(i); reexamine(j);
+        };
+
+        // AS A CHAIN IS PAIRED: a line with one choice over a stretch takes it,
+        // and every line near it is looked at again, until no line is left with
+        // one choice; then the nearest pair left is taken and marked doubtful,
+        // and the forcing starts again from there.
+        var nextDoubt = 0;
+        while (true)
+        {
+            while (work.Count > 0)
+            {
+                var c = work.Dequeue();
+                if (decided[c]) continue;
+                if (!candFree(c)) { decided[c] = true; continue; }
+                if (choices(c, candI[c]) == 1 || choices(c, candJ[c]) == 1) accept(c, false);
+            }
+            while (nextDoubt < order.Count && (decided[order[nextDoubt]] || !candFree(order[nextDoubt]))) nextDoubt++;
+            if (nextDoubt >= order.Count) break;
+            accept(order[nextDoubt], true);
         }
 
-        var lonely = paired.Count(p => !p);
+        // A pair beside a parallel line that lost its only partner to it is doubtful too.
+        for (var c = 0; c < candI.Count; c++)
+        {
+            if (isAccepted[c]) continue;
+            int i = candI[c], j = candJ[c];
+            var si = stretchOn(c, i); var sj = stretchOn(c, j);
+            var iFree = free(i, si[0], si[1]); var jFree = free(j, sj[0], sj[1]);
+            if (iFree == jFree) continue;
+            var takenLine = iFree ? j : i; var st = iFree ? sj : si;
+            foreach (var a in acceptedOn[takenLine])
+            {
+                var o = stretchOn(accepted[a], takenLine);
+                if (Math.Min(o[1], st[1]) - Math.Max(o[0], st[0]) > tol) acceptedDoubt[a] = true;
+            }
+        }
+
+        var paired = new bool[n];
+        var pairedLength = 0.0;
+        var totalLength = 0.0;
+        for (var i = 0; i < n; i++) if (!centre[i]) totalLength += len[i];
+        for (var a = 0; a < accepted.Count; a++)
+        {
+            var c = accepted[a];
+            int i = candI[c], k = candK[c];
+            double lo = nearLo[i][k], hi = nearHi[i][k], off = nearOff[i][k];
+            paired[i] = true; paired[candJ[c]] = true;
+            pairedLength += 2 * (hi - lo);
+            var nx = -uy[i] * off / 2; var ny = ux[i] * off / 2;
+            seg.Add(new[] { lineA[i].X + ux[i] * lo + nx, lineA[i].Y + uy[i] * lo + ny,
+                            lineA[i].X + ux[i] * hi + nx, lineA[i].Y + uy[i] * hi + ny, Math.Abs(off) });
+            segDoubtful.Add(acceptedDoubt[a]);
+        }
+
+        var lonely = Enumerable.Range(0, n).Count(i => !paired[i] && !centre[i]);
         if (lonely > 0)
         {
             skipped += lonely;
@@ -535,13 +805,34 @@ var alive = new List<bool>();
 foreach (var s in seg) alive.Add(true);
 Func<double[], double> segLen = s => Math.Sqrt((s[2] - s[0]) * (s[2] - s[0]) + (s[3] - s[1]) * (s[3] - s[1]));
 var sameWidth = Math.Max(tol, step / 2 / mmPerFoot);
+var segCell = Math.Max(bridge, maxW) + 2 * tol;
+var segGrid = new Dictionary<long, List<int>>();
+Action rebuildSegGrid = () =>
+{
+    var boxes = new List<double[]>();
+    for (var i = 0; i < seg.Count; i++) boxes.Add(boxAround(seg[i][0], seg[i][1], seg[i][2], seg[i][3], 0));
+    segGrid = gridOf(boxes, segCell);
+};
+Func<int, int, bool> inLineWith = (c, i) =>
+{
+    if (i < 0 || i >= seg.Count) return false;
+    var a = seg[i]; var b = seg[c];
+    var la = segLen(a);
+    var ax = (a[2] - a[0]) / la; var ay = (a[3] - a[1]) / la;
+    return Math.Abs(-ay * (b[0] - a[0]) + ax * (b[1] - a[1])) <= tol
+        && Math.Abs(-ay * (b[2] - a[0]) + ax * (b[3] - a[1])) <= tol;
+};
+// Does (px,py) lie on the inside of a piece other than i and j? Dead pieces are
+// asked too: they are still linework, now part of the run they were joined to.
 Func<double, double, int, int, bool> onAnotherRun = (px, py, i, j) =>
 {
-    for (var c = 0; c < seg.Count; c++)
+    foreach (var c in gridNear(segGrid, segCell, new[] { px - tol, py - tol, px + tol, py + tol }))
     {
-        if (c == i || c == j || !alive[c]) continue;
+        if (c == i || c == j) continue;
         var s = seg[c]; var l = segLen(s);
         var cx = (s[2] - s[0]) / l; var cy = (s[3] - s[1]) / l;
+        // A dead piece in line with i or j is part of that run, not another one.
+        if (!alive[c] && (inLineWith(c, i) || inLineWith(c, j))) continue;
         var t = cx * (px - s[0]) + cy * (py - s[1]);
         if (t <= tol || t >= l - tol) continue;
         if (Math.Abs(-cy * (px - s[0]) + cx * (py - s[1])) <= tol) return true;
@@ -557,12 +848,14 @@ if (refused.Length == 0)
     {
         changed = false;
         passes++;
+        rebuildSegGrid();
         for (var i = 0; i < seg.Count; i++)
         {
             if (!alive[i]) continue;
-            for (var j = 0; j < seg.Count; j++)
+            var pad = bridge + 2 * tol;
+            foreach (var j in gridNear(segGrid, segCell, boxAround(seg[i][0], seg[i][1], seg[i][2], seg[i][3], pad)))
             {
-                if (i == j || !alive[j]) continue;
+                if (i == j || !alive[i] || !alive[j]) continue;
                 var a = seg[i]; var b = seg[j];
                 var la = segLen(a);
                 var aux = (a[2] - a[0]) / la; var auy = (a[3] - a[1]) / la;
@@ -578,9 +871,9 @@ if (refused.Length == 0)
                 var lo = Math.Min(t1, t2); var hi = Math.Max(t1, t2);
                 var gap = Math.Max(lo - la, -hi);
                 if (gap > bridge + tol) continue;
-                // A GAP THAT SITS ON ANOTHER RUN IS A JOINT, NOT A BREAK: two
-                // branch lines touching a main from either side are a cross,
-                // never one line through it.
+                // A GAP THAT SITS ON ANOTHER RUN IS A JOINT OR A CROSSING, NOT A
+                // BREAK: two branch lines touching a main from either side are a
+                // cross; one run stopping either side of another is a crossing.
                 if (gap > -tol)
                 {
                     var g = lo > la ? (la + lo) / 2 : hi / 2;
@@ -589,11 +882,13 @@ if (refused.Length == 0)
                 var start = Math.Min(0, lo); var finish = Math.Max(la, hi);
                 var width = la >= lb ? a[4] : b[4];
                 seg[i] = new[] { a[0] + aux * start, a[1] + auy * start, a[0] + aux * finish, a[1] + auy * finish, width };
+                segDoubtful[i] = segDoubtful[i] || segDoubtful[j];
                 alive[j] = false;
                 changed = true;
             }
         }
     }
+    rebuildSegGrid();
 }
 
 // ---------------------------------------------------------------------------
@@ -607,6 +902,12 @@ var nodeY = new List<double>();
 var nodeEnds = new List<List<int>>();
 var splitSeg = new List<int>();
 var splitNode = new List<int>();
+var brokenCrossings = new List<string>();
+// TAPS: the duct or pipe type's routing preference says how a branch joins a
+// main. Taps: the main is NOT cut and the branch is joined by a takeoff, as
+// FIT_MEP_JOINTS does - its "tap, not tee" (2026-09-23).
+var tapsWanted = refused.Length == 0 && runType.RoutingPreferenceManager != null
+    && runType.RoutingPreferenceManager.PreferredJunctionType == PreferredJunctionType.Tap;
 
 Func<int, double[]> endPoint = e =>
 {
@@ -636,6 +937,11 @@ if (refused.Length == 0)
 {
     var ends = new List<int>();
     foreach (var s in live) { ends.Add(s * 2); ends.Add(s * 2 + 1); }
+    var endBoxes = new List<double[]>();
+    for (var e = 0; e < seg.Count * 2; e++) endBoxes.Add(null);
+    foreach (var e in ends) { var p = endPoint(e); endBoxes[e] = new[] { p[0], p[1], p[0], p[1] }; }
+    var endCell = 2 * (Math.Max(bridge, maxW / 2) + tol) + tol;
+    var endGrid = gridOf(endBoxes, endCell);
     var sinCorner = Math.Sin(5 * Math.PI / 180.0);
     var sinBranch = Math.Sin(20 * Math.PI / 180.0);
 
@@ -646,9 +952,9 @@ if (refused.Length == 0)
         var px = x1 - x0; var py = y1 - y0;
         var lp = Math.Sqrt(px * px + py * py);
         if (lp <= tol) return false;
-        foreach (var c in live)
+        foreach (var c in gridNear(segGrid, segCell, boxAround(x0, y0, x1, y1, tol)))
         {
-            if (c == s1 || c == s2) continue;
+            if (c == s1 || c == s2 || !alive[c]) continue;
             var q = seg[c];
             var qx = q[2] - q[0]; var qy = q[3] - q[1];
             var den = px * qy - py * qx;
@@ -660,6 +966,15 @@ if (refused.Length == 0)
         }
         return false;
     };
+    // A joint whose stretch lies across, or ends on, a third run is a crossing
+    // drawn with a break - said, and never joined.
+    Func<double, double, double, double, int, int, bool> overARun = (x0, y0, x1, y1, s1, s2) =>
+        crossesARun(x0, y0, x1, y1, s1, s2) || onAnotherRun((x0 + x1) / 2, (y0 + y1) / 2, s1, s2);
+    Action<double, double> brokenAt = (x, y) =>
+    {
+        var where = at(x, y);
+        if (!brokenCrossings.Contains(where)) brokenCrossings.Add(where);
+    };
 
     // EVERY POSSIBLE JOINT, then the nearest first - so a branch end 10 mm
     // from a main tees into it rather than turning a corner a metre away.
@@ -667,12 +982,13 @@ if (refused.Length == 0)
     var jKind = new List<int>(); var jE1 = new List<int>(); var jE2 = new List<int>();
     var jX = new List<double>(); var jY = new List<double>(); var jCost = new List<double>();
 
-    for (var p = 0; p < ends.Count; p++)
-        for (var q = p + 1; q < ends.Count; q++)
+    foreach (var e1 in ends)
+    {
+        var a = endPoint(e1);
+        foreach (var e2 in gridNear(endGrid, endCell, new[] { a[0] - endCell, a[1] - endCell, a[0] + endCell, a[1] + endCell }))
         {
-            int e1 = ends[p], e2 = ends[q];
-            if (e1 / 2 == e2 / 2) continue;
-            var a = endPoint(e1); var b = endPoint(e2);
+            if (e2 <= e1 || e1 / 2 == e2 / 2) continue;
+            var b = endPoint(e2);
             var d1 = outward(e1); var d2 = outward(e2);
             var w1 = seg[e1 / 2][4]; var w2 = seg[e2 / 2][4];
             var reach1 = Math.Max(bridge, w2 / 2) + tol;
@@ -703,13 +1019,14 @@ if (refused.Length == 0)
             jX.Add(a[0] + d1[0] * t1); jY.Add(a[1] + d1[1] * t1);
             jCost.Add(Math.Abs(t1) + Math.Abs(t2));
         }
+    }
 
     foreach (var e in ends)
     {
         var a = endPoint(e); var d = outward(e);
-        foreach (var m in live)
+        foreach (var m in gridNear(segGrid, segCell, new[] { a[0] - maxW, a[1] - maxW, a[0] + maxW, a[1] + maxW }))
         {
-            if (m == e / 2) continue;
+            if (m == e / 2 || !alive[m]) continue;
             var s = seg[m]; var lm = segLen(s);
             var mx = (s[2] - s[0]) / lm; var my = (s[3] - s[1]) / lm;
             var cross = d[0] * my - d[1] * mx;
@@ -732,7 +1049,8 @@ if (refused.Length == 0)
         {
             if (endNode.ContainsKey(e1)) continue;
             var a = endPoint(e1);
-            if (crossesARun(a[0], a[1], jX[c], jY[c], e1 / 2, e2)) continue;
+            if (crossesARun(a[0], a[1], jX[c], jY[c], e1 / 2, e2)
+                || onAnotherRun((a[0] + jX[c]) / 2, (a[1] + jY[c]) / 2, e1 / 2, e2)) { brokenAt(jX[c], jY[c]); continue; }
             var node = -1;
             for (var k = 0; k < splitSeg.Count && node < 0; k++)
             {
@@ -754,8 +1072,13 @@ if (refused.Length == 0)
         var has1 = endNode.ContainsKey(e1); var has2 = endNode.ContainsKey(e2);
         if (has1 && has2) continue;
         var p1 = endPoint(e1); var p2 = endPoint(e2);
-        if (crossesARun(p1[0], p1[1], jX[c], jY[c], e1 / 2, e2 / 2)
-            || crossesARun(p2[0], p2[1], jX[c], jY[c], e1 / 2, e2 / 2)) continue;
+        if (jKind[c] == 2 ? overARun(p1[0], p1[1], p2[0], p2[1], e1 / 2, e2 / 2)
+                          : crossesARun(p1[0], p1[1], jX[c], jY[c], e1 / 2, e2 / 2)
+                            || crossesARun(p2[0], p2[1], jX[c], jY[c], e1 / 2, e2 / 2))
+        {
+            if (jKind[c] == 2 && !has1 && !has2) brokenAt(jX[c], jY[c]);
+            continue;
+        }
         if (!has1 && !has2)
         {
             var node = jKind[c] == 0 ? nodeNear(jX[c], jY[c], new List<int> { e1 / 2, e2 / 2 }) : -1;
@@ -777,15 +1100,21 @@ if (refused.Length == 0)
         nodeEnds[held].Add(other);
         endNode[other] = held;
     }
+
+    // A break later bridged by a real joint is not a crossing.
+    brokenCrossings.RemoveAll(w => Enumerable.Range(0, nodeX.Count).Any(k => at(nodeX[k], nodeY[k]) == w));
 }
 
 // ---------------------------------------------------------------------------
-// Runs: each segment from its (moved) ends, split at the tees on it
+// Runs: each segment from its (moved) ends, split at the tees on it - never at
+// a tap, where the main runs on uncut
 // ---------------------------------------------------------------------------
 
 var runX0 = new List<double>(); var runY0 = new List<double>();
 var runX1 = new List<double>(); var runY1 = new List<double>();
 var runW = new List<double>(); var runN0 = new List<int>(); var runN1 = new List<int>();
+var runDoubtful = new List<bool>(); var runSeg = new List<int>();
+var nodeTapMain = new Dictionary<int, int>();   // tap node -> the run it taps into
 var runsTooShort = 0;
 
 if (refused.Length == 0)
@@ -812,15 +1141,16 @@ if (refused.Length == 0)
         cuts = cuts.OrderBy(c => c[0]).ToList();
 
         var px = x0; var py = y0; var pn = n0;
-        foreach (var cut in cuts)
-        {
-            var node = (int)cut[1];
-            runX0.Add(px); runY0.Add(py); runX1.Add(nodeX[node]); runY1.Add(nodeY[node]);
-            runW.Add(src[4]); runN0.Add(pn); runN1.Add(node);
-            px = nodeX[node]; py = nodeY[node]; pn = node;
-        }
+        if (!tapsWanted)
+            foreach (var cut in cuts)
+            {
+                var node = (int)cut[1];
+                runX0.Add(px); runY0.Add(py); runX1.Add(nodeX[node]); runY1.Add(nodeY[node]);
+                runW.Add(src[4]); runN0.Add(pn); runN1.Add(node); runDoubtful.Add(segDoubtful[s]); runSeg.Add(s);
+                px = nodeX[node]; py = nodeY[node]; pn = node;
+            }
         runX0.Add(px); runY0.Add(py); runX1.Add(x1); runY1.Add(y1);
-        runW.Add(src[4]); runN0.Add(pn); runN1.Add(n1);
+        runW.Add(src[4]); runN0.Add(pn); runN1.Add(n1); runDoubtful.Add(segDoubtful[s]); runSeg.Add(s);
     }
 
     // A run trimmed below the shortest length is dropped, and said.
@@ -829,9 +1159,15 @@ if (refused.Length == 0)
         var l = Math.Sqrt((runX1[r] - runX0[r]) * (runX1[r] - runX0[r]) + (runY1[r] - runY0[r]) * (runY1[r] - runY0[r]));
         if (l >= minLen) continue;
         runX0.RemoveAt(r); runY0.RemoveAt(r); runX1.RemoveAt(r); runY1.RemoveAt(r);
-        runW.RemoveAt(r); runN0.RemoveAt(r); runN1.RemoveAt(r);
+        runW.RemoveAt(r); runN0.RemoveAt(r); runN1.RemoveAt(r); runDoubtful.RemoveAt(r); runSeg.RemoveAt(r);
         runsTooShort++;
     }
+    if (tapsWanted)
+        for (var k = 0; k < splitSeg.Count; k++)
+        {
+            var main = runSeg.IndexOf(splitSeg[k]);
+            if (main >= 0) nodeTapMain[splitNode[k]] = main;
+        }
     if (runsTooShort > 0)
     {
         skipped += runsTooShort;
@@ -855,6 +1191,18 @@ if (refused.Length == 0)
         if (runN1[r] >= 0) { if (!runsAt.ContainsKey(runN1[r])) runsAt[runN1[r]] = new List<int>(); runsAt[runN1[r]].Add(r * 2 + 1); }
     }
 
+// The direction a run leaves a node along, for the angle of a two-way joint.
+Func<int, double[]> leaving = end =>
+{
+    var r = end / 2;
+    return end % 2 == 0 ? new[] { runX1[r] - runX0[r], runY1[r] - runY0[r] } : new[] { runX0[r] - runX1[r], runY0[r] - runY1[r] };
+};
+Func<List<int>, bool> inLine = pair =>
+{
+    var a = leaving(pair[0]); var b = leaving(pair[1]);
+    return (a[0] * b[0] + a[1] * b[1]) / Math.Sqrt((a[0] * a[0] + a[1] * a[1]) * (b[0] * b[0] + b[1] * b[1])) < -0.9998;
+};
+
 // ---------------------------------------------------------------------------
 // Sizes: the nearest hint, else carried across an elbow, else the default
 // ---------------------------------------------------------------------------
@@ -867,13 +1215,15 @@ var runFrom = new string[runX0.Count];
 
 if (refused.Length == 0)
 {
-    // EACH HINT BELONGS TO THE ONE RUN NEAREST IT - a tag beside one duct
-    // never sizes the duct next to it. A run with several takes its nearest.
+    // EACH HINT BELONGS TO THE ONE RUN NEAREST IT - a tag beside one duct never
+    // sizes the duct next to it. Of several near one run, the nearest wins and
+    // the others are listed.
     for (var r = 0; r < runX0.Count; r++) runHint[r] = -1;
     var runHintDistance = new double[runX0.Count];
+    var hintRun = new int[hintSize.Count];
     for (var h = 0; h < hintSize.Count; h++)
     {
-        var bestRun = -1;
+        hintRun[h] = -1;
         var best = reachHint;
         for (var r = 0; r < runX0.Count; r++)
         {
@@ -881,22 +1231,32 @@ if (refused.Length == 0)
             var t = Math.Max(0, Math.Min(1, ((hintX[h] - runX0[r]) * lx + (hintY[h] - runY0[r]) * ly) / (lx * lx + ly * ly)));
             var cx = runX0[r] + lx * t - hintX[h]; var cy = runY0[r] + ly * t - hintY[h];
             var d = Math.Sqrt(cx * cx + cy * cy);
-            if (d <= best) { best = d; bestRun = r; }
+            if (d <= best) { best = d; hintRun[h] = r; }
         }
-        if (bestRun < 0) continue;
-        hintUsed[h] = true;
-        if (runHint[bestRun] < 0 || best < runHintDistance[bestRun]) { runHint[bestRun] = h; runHintDistance[bestRun] = best; }
+        if (hintRun[h] < 0) continue;
+        var rr = hintRun[h];
+        if (runHint[rr] < 0 || best < runHintDistance[rr]) { runHint[rr] = h; runHintDistance[rr] = best; }
+    }
+    for (var h = 0; h < hintSize.Count; h++)
+    {
+        if (hintRun[h] < 0) continue;
+        var rr = hintRun[h];
+        if (runHint[rr] == h) { hintUsed[h] = true; continue; }
+        sizeConflicts.Add("the hint " + hintText[h] + " is nearest run " + (rr + 1) + " " + at(runX0[rr], runY0[rr]) + " to "
+            + at(runX1[rr], runY1[rr]) + ", which has the nearer hint " + hintText[runHint[rr]] + " - " + hintText[h]
+            + " was NOT used; if it labels another run, give it that run's middle");
     }
 
     // A run with no hint takes one from a tagged run it continues across a
-    // two-way joint (an elbow) - a size does not change at a plain bend.
+    // two-way joint AT AN ANGLE - an elbow; a size does not change at a plain
+    // bend. Never across an in-line joint, which is a transition.
     var queue = new Queue<int>(Enumerable.Range(0, runX0.Count).Where(r => runHint[r] >= 0));
     while (queue.Count > 0)
     {
         var r = queue.Dequeue();
         foreach (var node in new[] { runN0[r], runN1[r] })
         {
-            if (node < 0 || !runsAt.ContainsKey(node) || runsAt[node].Count != 2) continue;
+            if (node < 0 || !runsAt.ContainsKey(node) || runsAt[node].Count != 2 || inLine(runsAt[node])) continue;
             foreach (var end in runsAt[node])
             {
                 var o = end / 2;
@@ -981,7 +1341,7 @@ if (refused.Length == 0)
         }
     }
 
-    var unused = Enumerable.Range(0, hintSize.Count).Where(h => !hintUsed[h]).Select(h => hintText[h]).ToList();
+    var unused = Enumerable.Range(0, hintSize.Count).Where(h => hintRun[h] < 0).Select(h => hintText[h]).ToList();
     if (unused.Count > 0)
         findings.Add(unused.Count + " size hint(s) are within " + num(hintReachMm) + " mm of no run and were not used: "
             + string.Join(", ", unused.Take(20).ToArray()) + " - check their coordinates against the runs listed");
@@ -991,30 +1351,23 @@ if (refused.Length == 0)
 // What was found - also the whole answer in a preview
 // ---------------------------------------------------------------------------
 
-int elbowsFound = 0, teesFound = 0, crossesFound = 0, inLineFound = 0, openEnds = 0;
+int elbowsFound = 0, teesFound = 0, crossesFound = 0, inLineFound = 0, tapsFound = 0, openEnds = 0;
 if (refused.Length == 0)
 {
     foreach (var pair in runsAt)
     {
+        if (nodeTapMain.ContainsKey(pair.Key)) { tapsFound += pair.Value.Count; continue; }
         var count = pair.Value.Count;
-        if (count == 2)
-        {
-            int a = pair.Value[0], b = pair.Value[1];
-            var ax = a % 2 == 0 ? runX1[a / 2] - runX0[a / 2] : runX0[a / 2] - runX1[a / 2];
-            var ay = a % 2 == 0 ? runY1[a / 2] - runY0[a / 2] : runY0[a / 2] - runY1[a / 2];
-            var bxd = b % 2 == 0 ? runX1[b / 2] - runX0[b / 2] : runX0[b / 2] - runX1[b / 2];
-            var byd = b % 2 == 0 ? runY1[b / 2] - runY0[b / 2] : runY0[b / 2] - runY1[b / 2];
-            var cos = (ax * bxd + ay * byd) / Math.Sqrt((ax * ax + ay * ay) * (bxd * bxd + byd * byd));
-            if (cos < -0.9998) inLineFound++; else elbowsFound++;
-        }
+        if (count == 2) { if (inLine(pair.Value)) inLineFound++; else elbowsFound++; }
         else if (count == 3) teesFound++;
         else if (count == 4) crossesFound++;
     }
     // An end meeting nothing, or meeting a joint no other run reached.
+    Func<int, bool> openAt = node => node < 0 || (!nodeTapMain.ContainsKey(node) && runsAt[node].Count < 2);
     for (var r = 0; r < runX0.Count; r++)
     {
-        if (runN0[r] < 0 || runsAt[runN0[r]].Count < 2) openEnds++;
-        if (runN1[r] < 0 || runsAt[runN1[r]].Count < 2) openEnds++;
+        if (openAt(runN0[r])) openEnds++;
+        if (openAt(runN1[r])) openEnds++;
     }
 
     // Runs that cross without meeting - drawn at one height, they clash.
@@ -1030,12 +1383,25 @@ if (refused.Length == 0)
             var s = (gx * qy - gy * qx) / den; var t = (gx * py - gy * px) / den;
             var lp = Math.Sqrt(px * px + py * py); var lq = Math.Sqrt(qx * qx + qy * qy);
             if (s * lp <= tol || s * lp >= lp - tol || t * lq <= tol || t * lq >= lq - tol) continue;
-            if (crossings.Count < 10) crossings.Add(at(runX0[p] + px * s, runY0[p] + py * s));
+            // A tap sits on the main's axis inside it - a joint, not a clash.
+            var hx = runX0[p] + px * s; var hy = runY0[p] + py * s;
+            if (nodeTapMain.Keys.Any(k => Math.Abs(nodeX[k] - hx) <= tol && Math.Abs(nodeY[k] - hy) <= tol)) continue;
+            if (crossings.Count < 10) crossings.Add(at(hx, hy));
             else crossings.Add("");
         }
     if (crossings.Count > 0)
         findings.Add(crossings.Count + " place(s) where two runs cross without meeting - they are drawn at one height "
             + "and clash there; one usually goes over the other: " + string.Join(", ", crossings.Where(c => c.Length > 0).ToArray()));
+    if (brokenCrossings.Count > 0)
+        findings.Add(brokenCrossings.Count + " crossing(s) drawn with a break - a run stopping either side of another, "
+            + "or short of it - left unjoined, each end open; one usually goes over the other: "
+            + string.Join(", ", brokenCrossings.Take(10).ToArray()));
+
+    var doubtfulRuns = Enumerable.Range(0, runX0.Count).Where(r => runDoubtful[r]).ToList();
+    if (doubtfulRuns.Count > 0)
+        findings.Add(doubtfulRuns.Count + " run(s) come from a DOUBTFUL pairing of parallel lines - other parallel lines "
+            + "close by could have been paired another way (ducts side by side, a stray line); check them in the "
+            + "picture: runs " + string.Join(", ", doubtfulRuns.Take(30).Select(r => (r + 1).ToString()).ToArray()));
 
     double minX = double.MaxValue, minY = double.MaxValue, maxX = double.MinValue, maxY = double.MinValue;
     for (var i = 0; i < lineA.Count; i++)
@@ -1051,13 +1417,15 @@ if (refused.Length == 0)
     {
         var l = Math.Sqrt((runX1[r] - runX0[r]) * (runX1[r] - runX0[r]) + (runY1[r] - runY0[r]) * (runY1[r] - runY0[r]));
         lines.Add("run " + (r + 1) + ": " + at(runX0[r], runY0[r]) + " to " + at(runX1[r], runY1[r]) + ", " + mm(l)
-            + " mm, " + sizeText(runSize[r]) + " (" + runFrom[r] + ")");
+            + " mm, " + sizeText(runSize[r]) + " (" + runFrom[r] + ")" + (runDoubtful[r] ? " DOUBTFUL PAIR - check" : ""));
     }
     if (runX0.Count > 300) lines.Add("... and " + (runX0.Count - 300) + " more run(s)");
     runsFound = string.Join(" | ", lines.ToArray());
 
     findings.Add(runX0.Count + " run(s) found, with " + elbowsFound + " elbow(s), " + teesFound + " tee(s), "
-        + crossesFound + " cross(es) and " + inLineFound + " in-line joint(s) to fit, and " + openEnds + " open end(s)"
+        + crossesFound + " cross(es), " + tapsFound + " tap(s) and " + inLineFound + " in-line joint(s) to fit, and "
+        + openEnds + " open end(s)" + (tapsWanted ? " - the type's routing preference is Taps, so a branch taps the "
+        + "main and the main is not cut" : "")
         + (hintSize.Count > 0 ? "; " + hintUsed.Count(u => u) + " of " + hintSize.Count + " size hint(s) used" : ""));
     if (previewOnly)
         findings.Add("PREVIEW - NOTHING WAS DRAWN. runsFound lists each run and the size it would get; run again "
@@ -1065,13 +1433,15 @@ if (refused.Length == 0)
 }
 
 // ---------------------------------------------------------------------------
-// Draw - each run, then each joint's fitting in its own SubTransaction
+// Draw - each run, then each joint's fitting: its room checked first, then
+// placed in its own SubTransaction
 // ---------------------------------------------------------------------------
 
 if (refused.Length == 0 && !previewOnly)
 {
     var z = level.ProjectElevation + middleElevationMm / mmPerFoot;
     var made = new MEPCurve[runX0.Count];
+    var plan = new double[runX0.Count];      // each run's size seen in plan, feet - width or diameter
     var notMade = new List<string>();
     var snapped = new List<string>();
 
@@ -1088,6 +1458,7 @@ if (refused.Length == 0 && !previewOnly)
         var p0 = new XYZ(runX0[r], runY0[r], z);
         var p1 = new XYZ(runX1[r], runY1[r], z);
         var where = "run " + (r + 1) + " " + at(runX0[r], runY0[r]) + " to " + at(runX1[r], runY1[r]);
+        plan[r] = runSize[r][0] / mmPerFoot;
         try
         {
             made[r] = kind == "duct"
@@ -1130,6 +1501,7 @@ if (refused.Length == 0 && !previewOnly)
         var differs = false;
         for (var k = 0; k < want.Length; k++) if (double.IsNaN(got[k]) || Math.Abs(got[k] - want[k]) > 0.5) differs = true;
         if (differs) snapped.Add(where + ": asked " + sizeText(want) + ", Revit made it " + sizeText(got));
+        if (!double.IsNaN(got[0])) plan[r] = Math.Max(plan[r], got[0] / mmPerFoot);
     }
 
     if (notMade.Count > 0)
@@ -1140,14 +1512,48 @@ if (refused.Length == 0 && !previewOnly)
     if (snapped.Count > 0)
         findings.Add(snapped.Count + " run(s) are not at the size asked - " + string.Join(" | ", snapped.Take(20).ToArray()));
 
+    // ROOM, BEFORE REVIT IS ASKED. A fitting Revit cannot fit is POSTED as a
+    // failure that rolls the whole call back at the commit - a SubTransaction
+    // does not stop it. So each leg's length is held against a safe estimate of
+    // what the fittings at BOTH its ends take from it, and a joint without room
+    // is skipped and listed. The estimate: an elbow reaches 1.5 x the largest
+    // size meeting there along each leg (duct-layout's measured 1.5 W radius
+    // elbow, 450 mm on a 300 duct); a tee or cross 1 x the largest; a
+    // transition 1 x the larger on the larger run (FIT_MEP_JOINTS' measured
+    // 664 mm for 850 to 300 sits in it); a tap 1 x the branch on the branch;
+    // and a margin beside each, so some straight run is always left.
+    var margin = Math.Max(50.0, toleranceMm) / mmPerFoot;
+    var taken = new double[runX0.Count * 2];
+    Func<int, double> lengthOf = r => Math.Sqrt((runX1[r] - runX0[r]) * (runX1[r] - runX0[r]) + (runY1[r] - runY0[r]) * (runY1[r] - runY0[r]));
+    // needs[k] for legs[k]: what this fitting takes from that leg. Returns "" or why not.
+    Func<List<int>, List<double>, string> roomFor = (legs, needs) =>
+    {
+        for (var k = 0; k < legs.Count; k++)
+        {
+            var r = legs[k] / 2;
+            var other = legs[k] % 2 == 0 ? r * 2 + 1 : r * 2;
+            var want = taken[other] + needs[k] + margin;
+            if (lengthOf(r) < want)
+                return "no room - run " + (r + 1) + " is " + mm(lengthOf(r)) + " mm long and would need about " + mm(want)
+                    + " mm for this fitting" + (taken[other] > 0 ? " and the one at its other end" : "")
+                    + "; left unfitted so Revit has nothing to reverse";
+        }
+        for (var k = 0; k < legs.Count; k++) taken[legs[k]] = needs[k];
+        return "";
+    };
+
     // THE FITTINGS, one joint at a time, each in its own SubTransaction.
-    int elbows = 0, tees = 0, crosses = 0, transitions = 0, unions = 0;
+    int elbows = 0, tees = 0, crosses = 0, transitions = 0, unions = 0, taps = 0;
     foreach (var pair in runsAt.OrderBy(p => p.Key))
     {
         var node = pair.Key;
         var where = at(nodeX[node], nodeY[node]);
         var here = new XYZ(nodeX[node], nodeY[node], z);
+        var isTap = nodeTapMain.ContainsKey(node);
+        if (!isTap && pair.Value.Count < 2) continue;
+
         var connectors = new List<Connector>();
+        var legs = new List<int>();
         var missing = 0;
         foreach (var end in pair.Value)
         {
@@ -1161,22 +1567,77 @@ if (refused.Length == 0 && !previewOnly)
                 var d = c.Origin.DistanceTo(here);
                 if (d < bestD) { bestD = d; best = c; }
             }
-            if (best != null && bestD <= tol) connectors.Add(best); else missing++;
+            if (best != null && bestD <= tol) { connectors.Add(best); legs.Add(end); } else missing++;
         }
-        if (pair.Value.Count < 2) continue;
-        if (connectors.Count < 2)
+        MEPCurve mainCurve = isTap ? made[nodeTapMain[node]] : null;
+
+        // AN INCOMPLETE JOINT GETS NO FITTING: a tee with one run missing is not an elbow.
+        if (missing > 0 || (isTap && mainCurve == null))
         {
-            failedJoins.Add(where + ": " + pair.Value.Count + " runs meet here and only " + connectors.Count
-                + " was drawn - nothing to fit");
+            failedJoins.Add(where + ": " + (isTap ? "a tap - " : "") + (missing + (isTap && mainCurve == null ? 1 : 0))
+                + " of the runs meeting here " + (missing == 1 ? "was" : "were") + " not drawn or could not be found at "
+                + "the joint - no fitting placed, rather than a wrong one");
             continue;
         }
-        if (connectors.Count > 4)
+        if (!isTap && connectors.Count > 4)
         {
             failedJoins.Add(where + ": " + connectors.Count + " runs meet here, and no fitting joins more than four");
             continue;
         }
 
-        var what = connectors.Count == 2 ? "elbow" : connectors.Count == 3 ? "tee" : "cross";
+        var largest = legs.Max(e => plan[e / 2]);
+        if (isTap)
+        {
+            // EACH BRANCH ITS OWN TAKEOFF ON THE UNCUT MAIN - FIT_MEP_JOINTS' route.
+            for (var k = 0; k < connectors.Count; k++)
+            {
+                var room = roomFor(new List<int> { legs[k] }, new List<double> { plan[legs[k] / 2] });
+                if (room.Length > 0) { failedJoins.Add(where + ": the tap - " + room); continue; }
+                SubTransaction tapJoint = null;
+                try
+                {
+                    tapJoint = new SubTransaction(doc);
+                    tapJoint.Start();
+                    var tap = doc.Create.NewTakeoffFitting(connectors[k], mainCurve);
+                    if (tap == null || !connectors[k].IsConnected)
+                    {
+                        tapJoint.RollBack();
+                        failedJoins.Add(where + ": the tap was " + (tap == null ? "not returned by Revit"
+                            : "built but the branch end does not report being joined to it") + " - taken back, the branch left open");
+                        continue;
+                    }
+                    if (tapJoint.Commit() != TransactionStatus.Committed)
+                    {
+                        failedJoins.Add(where + ": the tap was built and Revit would not keep it - the branch left open");
+                        continue;
+                    }
+                    fittings.Add(tap.Id);
+                    taps++;
+                }
+                catch (Exception ex)
+                {
+                    var undo = "";
+                    try { if (tapJoint != null && tapJoint.HasStarted() && !tapJoint.HasEnded()) tapJoint.RollBack(); }
+                    catch (Exception again) { undo = " Taking it back failed too (" + again.Message + ") - check this joint."; }
+                    failedJoins.Add(where + ": Revit would not build the tap - " + ex.Message + undo);
+                }
+                finally
+                {
+                    if (tapJoint != null) tapJoint.Dispose();
+                }
+            }
+            continue;
+        }
+
+        var what = connectors.Count == 2 ? (inLine(legs) ? "transition" : "elbow") : connectors.Count == 3 ? "tee" : "cross";
+        var needs = new List<double>();
+        foreach (var e in legs)
+            needs.Add(what == "elbow" ? 1.5 * largest
+                : what == "transition" ? (plan[e / 2] >= largest - 1e-9 ? largest : 0)
+                : largest);
+        var roomSaid = roomFor(legs, needs);
+        if (roomSaid.Length > 0) { failedJoins.Add(where + ": the " + what + " - " + roomSaid); continue; }
+
         SubTransaction joint = null;
         try
         {
@@ -1187,7 +1648,7 @@ if (refused.Length == 0 && !previewOnly)
             {
                 var first = connectors[0]; var second = connectors[1];
                 var facing = first.CoordinateSystem.BasisZ.DotProduct(second.CoordinateSystem.BasisZ);
-                if (facing > -0.999) fitting = doc.Create.NewElbowFitting(first, second);
+                if (facing > -0.999) { what = "elbow"; fitting = doc.Create.NewElbowFitting(first, second); }
                 else
                 {
                     var sameSize = first.Shape == second.Shape && (first.Shape == ConnectorProfileType.Round
@@ -1257,10 +1718,11 @@ if (refused.Length == 0 && !previewOnly)
 
     findings.Add(created.Count + " " + kind + "(s) drawn at " + num(middleElevationMm) + " mm above " + level.Name
         + " as " + runType.Name + " on " + systemType.Name + "; " + fittings.Count + " fitting(s) placed by the routing "
-        + "preferences - " + elbows + " elbow(s), " + tees + " tee(s), " + crosses + " cross(es), " + transitions
-        + " transition(s), " + unions + " union(s)"
+        + "preferences - " + elbows + " elbow(s), " + tees + " tee(s), " + crosses + " cross(es), " + taps + " tap(s), "
+        + transitions + " transition(s), " + unions + " union(s)"
         + (failedJoins.Count > 0 ? "; " + failedJoins.Count + " joint(s) NOT fitted - the runs are NOT connected there, "
             + "listed in failedJoins" : "")
         + (runsWithoutSize.Count > 0 ? "; " + runsWithoutSize.Count + " run(s) took the default size, listed" : "")
-        + ". The CAD file is untouched");
+        + ". The CAD file is untouched. A failure Revit raises only when the call is kept still rolls the WHOLE call "
+        + "back, one undo, nothing kept");
 }

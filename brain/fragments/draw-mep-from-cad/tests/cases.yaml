@@ -66,6 +66,32 @@ positive:
       the duct case with cadName "<MX1's DWG file name>" and NOTHING selected
     expect: the same runs as the first positive - the CAD found by its name
 
+  - given: >
+      TAPS (MX15). The second positive's call with runType a duct type whose
+      routing preference is Taps - "Mitered Elbows / Taps" where the project
+      has it (the default template's "Taps" type), recorded in MX1
+    expect: >
+      the main drawn as ONE duct through the branch point, never cut; the
+      branch joined by a tap (fittings counts "1 tap(s)", no tee); findings
+      saying the type's routing preference is Taps so the main is not cut;
+      runsFound one run fewer than the Tees call. Select the tap: Properties
+      shows the type's tap family
+
+  - given: >
+      a layer with a duct's CENTRELINE drawn on it (MX1 adds one to the duct
+      layer in a further copy of the DWG), previewOnly true
+    expect: >
+      the same runs as without the centreline, at full width - skippedWhy "N
+      line(s) lying exactly midway between the two edges of a duct, taken as
+      its drawn centreline and left out"; never two half-width ducts
+
+  - given: >
+      sizes with TWO hints near one run - the run's tag and a second tag MX4
+      places 400 mm further out - previewOnly true
+    expect: >
+      the run takes the nearer tag; sizeConflicts naming the other "was NOT
+      used"; findings "1 of 2 size hint(s) used"
+
 second_route:
   - >
     for three runs, measure the two CAD lines in Revit (Measure tool, or
@@ -131,6 +157,74 @@ negative:
   - given: the first positive's call with a layer that holds ONLY text or arcs (MX1 names one, if the DWG has one)
     expect: refused, the layer holds no straight line this can draw, the skipped counts named, nothing drawn
 
+  - given: >
+      a CROSSING DRAWN WITH A BREAK - MX1's pipe layer holds one pipe drawn
+      stopping either side of another (or MX16 adds one), previewOnly true
+    expect: >
+      the two pieces NOT joined to each other and NOT teed into the pipe they
+      cross - findings "1 crossing(s) drawn with a break ... left unjoined";
+      never a union or a cross fitting through the other pipe
+
+  - given: >
+      a corner whose leg is SHORTER than its elbow needs (MX6's copy), drawn
+      with allOrNothing left out
+    expect: >
+      failedJoins "... the elbow - no room - run N is X mm long and would need
+      about Y mm ... left unfitted"; Revit asked for no fitting there; the
+      rest placed and the call kept - unless Revit posts a failure at the
+      commit anyway, which rolls the whole call back (MX6 records which)
+
+  - given: the duct case with the CAD AND a second CAD both selected
+    expect: refused, 2 CAD files are selected, both named, this reads one per call, nothing drawn
+
+  - given: a Revit LINK selected instead of the CAD
+    expect: refused, the selection is a Revit link, a CAD inside a Revit link is not read, nothing drawn
+
+  - given: cadName of a CAD that is only inside a linked Revit model (MX17 arranges one)
+    expect: refused, the CAD is inside the Revit link named, not read, nothing drawn
+
+  - given: >
+      a CAD imported into ONE VIEW only (Current view only), with the duct
+      layer turned OFF in that view's Visibility/Graphics, layerNames the duct
+      layer
+    expect: >
+      refused saying no such layer came back from this CAD, that it is placed
+      in that view only, and that the layer may be turned off there - NOT
+      "not in the CAD drawing"; nothing drawn
+
+  - given: the call run in a FAMILY document (any family open in the Family Editor)
+    expect: refused, this is a family, nothing drawn
+
+  - given: mode "triple"
+    expect: refused, not a mode this reads - double, single or auto - nothing drawn
+
+  - given: middleElevationMm 150000
+    expect: refused, not a height this draws at, within 100 m, nothing drawn
+
+  - given: >
+      each in turn: toleranceMm 0, bridgeMm 9000, minWidthMm 600 with
+      maxWidthMm 300, sizeStepMm 0, hintReachMm -1, minLengthMm 0, maxRuns 0
+    expect: each refused in its own words, naming the value and its range, nothing drawn
+
+  - given: defaultSize "big"
+    expect: refused, cannot be read, how to write one, nothing drawn
+
+  - given: defaultSize "400x300" with a ROUND duct type (or drawAs pipe)
+    expect: refused, the type is round, the default must be a diameter, nothing drawn
+
+  - given: layerNames ","
+    expect: refused, no layer was named, the layers and their object counts listed, nothing drawn
+
+  - given: >
+      the duct layer with minWidthMm 3000 and maxWidthMm 4000 (no two lines
+      that far apart), mode double
+    expect: refused, nothing on the layers makes a run, no two lines paired as a double-line duct, nothing drawn
+
+  - given: maxRuns 1 on a layer with more than 40 straight pieces
+    expect: >
+      refused before any search: more than 40 straight pieces - the most this
+      reads for maxRuns 1 - nothing drawn
+
 # NOT COVERED - in the code, but a test DWG may not hold them; each is in Group
 # MX's MX12 row, run if a drawing is found that has it:
 #   - a block on the named layer (counted, not opened)
@@ -138,6 +232,8 @@ negative:
 #   - a view-specific CAD import (read through its own view)
 #   - two CAD imports of the same file (cadName refused; select one)
 #   - more than 20000 straight pieces on the layers named (refused)
-#   - a fitting Revit refuses (a branch wider than its main, a corner too
-#     short for the elbow): failedJoins names it, the runs stay; with
-#     allOrNothing true the whole call is rolled back
+#   - a fitting Revit refuses by throwing (a branch wider than its main):
+#     failedJoins names it, the runs stay; with allOrNothing true the whole
+#     call is rolled back
+#   - a joint where one run that should meet it was not drawn (Revit refused
+#     the run): failedJoins says so and no wrong fitting is placed

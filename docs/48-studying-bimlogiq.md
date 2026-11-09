@@ -216,8 +216,10 @@ serves and `heron_lookup` offers for *"CAD lines to ducts and pipes"* or *"under
   layers named - the coordinates come from the CAD, never the picture. A duct drawn as two parallel lines
   becomes one duct on their centreline, as wide as their spacing (double; auto for a duct); one line is one run
   (single; auto for a pipe). Broken pieces are joined; at each joint Revit's own routing preferences place an
-  elbow, tee, cross or transition, each fitting in its own SubTransaction so one refusal is listed and the run
-  stays (`allOrNothing` for the strict rule - the owner decides the default). Each size tag read off the picture
+  elbow, tee (a tap on the uncut main where the type prefers taps), cross or transition. Each joint's room is
+  checked first and a joint without room is skipped and listed before Revit is asked; but a failure Revit raises
+  only as the call is kept still undoes the whole call, one undo (`allOrNothing` makes any unfitted joint do so -
+  the owner decides the default). Crossings, including one drawn with a break, are listed, never joined. Each size tag read off the picture
   arrives as `size@x,y` and sizes the one run nearest it; a run with none takes the default and is listed;
   in double mode a tag that disagrees with the spacing wins and is listed. `previewOnly` draws nothing and lists
   every run with its coordinates - the step where the host matches the picture's tags to runs.
@@ -227,11 +229,15 @@ serves and `heron_lookup` offers for *"CAD lines to ducts and pipes"* or *"under
   [row 5b-1480](fragment-issues/section-5b-rows-401-425.md).
 - **The overlap** with `EXTRACT_CAD_CURVES`, `CREATE_MEP_RUNS` and `FIT_MEP_JOINTS` (all PROVEN, none edited),
   the routing measured before and after - one question, *"what size are the ducts on this cad drawing"*, moved
-  to it from another write, OPEN - and the merge planned once it is proved:
+  to it from another write, OPEN and a **condition for promotion** - the independent review's findings and what
+  was done about each, and the merge planned once it is proved:
   [row 5b-1480](fragment-issues/section-5b-rows-401-425.md).
+- **While it is DRAFT no chat tool runs it** - `revit_read` refuses a MODIFY and `revit_change` a DRAFT (D-117):
+  the method's preview is the command line, rolled back, and the draw is the one `try-once` (D-119).
 - **What a real Revit must show:** [NEEDS-CHECKING Group MX](needs-checking/group-mx.md) - a double-line duct
-  DWG with a tee and corners, a single-line pipe DWG, tags read off the picture, a layer with arcs, a fitting
-  Revit refuses, Revit 2020 and 2025 or later, and the whole method in a chat.
+  DWG with a tee and corners, a single-line pipe DWG, tags read off the picture, a layer with arcs, a joint
+  without room and a failure Revit posts, taps, a crossing drawn with a break, Revit 2020 and 2025 or later, and
+  the whole method in a chat.
 
 ---
 
