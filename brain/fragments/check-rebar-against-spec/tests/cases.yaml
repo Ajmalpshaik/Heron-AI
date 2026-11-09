@@ -17,14 +17,49 @@ positive:
       lap 50d, anchorage 40d
     expect: >
       meets 9 (bottom bars, top bars, link bar type, link spacing, link hooks,
-      cover on the top, bottom and other faces, longest bar), doesNotMeet 0,
+      host cover setting on the top, bottom and other faces, longest bar), doesNotMeet 0,
       notChecked 2 - laps ("no lap found": the bars are single lengths) and
       anchorage (never passed; `report` gives each main set's hooks and "both
       ends inside this host", and 40d as 640 mm for the 16 mm bars). The link
-      spacing read is the set's own, 200 mm or less
+      spacing is the widest centre-to-centre gap measured between neighbouring
+      stirrups, 200 mm or less
 
-  - given: the same beam and spec with cover given face by face - "top 30, bottom 30, other 30"
-    expect: the same three cover lines, each meets
+  - given: the same beam and spec with cover given face by face - "top 30, bottom 30, other 30", and linkHook written "135 degrees", then "135°"
+    expect: >
+      the same three "host cover setting" lines, each meets and each saying
+      the bars' own distance to the face is not measured; the hook read as 135
+      both times
+
+  - given: >
+      a 300 mm deep concrete beam with a SECOND bottom layer - two sets of 16
+      mm bars across the beam, the upper one about 110 mm above the soffit
+      (in the middle third) - and bottomBars "5 x 16mm" (3 in the first layer,
+      2 in the second), topBars as placed, no sideBars
+    expect: >
+      bottom bars meets with 5 - both layers sorted below half the depth, as
+      sets spread across the beam - and NO "bars between the layers" line; a
+      card that sorted by thirds would read 3 bottom and 2 side face bars
+
+  - given: >
+      a beam with side face bars placed (PLACE_BEAM_REBAR sideBars 2 x 12mm)
+      and a spec giving only bottomBars and topBars
+    expect: >
+      bottom and top meet as placed, and one NOT CHECKED line "4 bars between
+      the layers not counted" - never silent
+
+  - given: >
+      two 16 mm bars sketched in one wall, touching and overlapping 600 mm,
+      lap 500
+    expect: >
+      laps meets - "1 lap(s) of '16mm' ..., shortest 600 mm" - its line still
+      saying a lap into another element and a spaced lap are not read
+
+  - given: >
+      a concrete column holding 4 x 16mm main bars and 8mm ties at 150 with
+      the 135 degree hook; mainBars "4 x 16mm", links "8mm @ 150", linkHook 135
+    expect: >
+      main bars, link bar type, link spacing (widest centre-to-centre 150 mm
+      or less, measured between neighbouring ties) and link hooks each meets
 
 negative:
   - given: >
@@ -47,6 +82,35 @@ negative:
 
   - given: the beam with no spec value at all
     expect: refused "No spec value was given" - nothing checked
+
+  # EACH REFUSAL, in words, nothing checked - meets, doesNotMeet and
+  # notChecked all 0.
+  - given: bottomBars "4T16" - no "x" between the count and the bar
+    expect: refused "'4T16' is not a bar count and type ... Say it as <count> x <bar type>"
+  - given: links "T10-150" - no "@"
+    expect: refused "'T10-150' is not a link bar type and spacing ... <bar type> @ <largest spacing in mm>"
+  - given: linkHook "a right angle", then "135 deg 90"
+    expect: refused "is not a hook angle - give the links' hook in degrees, 135 or 90"
+  - given: cover "top face 40"
+    expect: refused "'top face 40' is not a cover ... top 40, bottom 75, other 50"
+  - given: lap "1.2m", then anchorage "1.2m"
+    expect: refused "'1.2m' is not a lap length - give it in millimetres (600) or as a multiple of the bar diameter (40d)", and the same for the anchorage length
+  - given: maxBarLength "12" - no unit, below 100
+    expect: refused "'12' is not a bar length - say 12 m or 12000 mm; a bare number is millimetres and one below 100 is not taken"
+  - given: cover "NaN", then links "8mm @ Infinity", then lap "Infinityd", then maxBarLength "NaN m"
+    expect: >
+      each refused in words as not a cover, not a link spacing, not a lap
+      length, not a bar length - .NET reads NaN and Infinity as numbers, and
+      none is a spec value; an infinite spacing or lap would otherwise meet
+      everything
+
+  - given: >
+      a beam whose 8mm stirrups are laid out by Minimum Clear Spacing 150,
+      and links "8mm @ 150"
+    expect: >
+      link spacing DOES NOT MEET - the widest centre-to-centre gap is 158 mm
+      (150 clear plus a bar) - where the Spacing parameter would have read 150
+      and met
 
 second_route:
   - select each rebar set in Revit and read Bar Type, Quantity, Layout Rule, Spacing and the hooks in the Properties palette; the beam's Rebar Cover parameters in its own Properties

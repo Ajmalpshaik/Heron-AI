@@ -61,6 +61,16 @@ Func<string, string> stripMm = text =>
     var s = (text ?? "").Trim();
     return s.EndsWith("mm", StringComparison.OrdinalIgnoreCase) ? s.Substring(0, s.Length - 2).Trim() : s;
 };
+// A plain number, or NaN. double.TryParse takes "NaN", "Infinity" and "∞"
+// as numbers; none of them is a spec value, so every parser below reads
+// through this one and refuses them in words.
+Func<string, double> numberOf = text =>
+{
+    double value;
+    if (!double.TryParse((text ?? "").Trim(), styleFloat, invariant, out value) || double.IsNaN(value) || double.IsInfinity(value))
+        return double.NaN;
+    return value;
+};
 
 // A spec bar: a Rebar Bar Type by its exact name, or a nominal diameter in
 // millimetres - any bar type of that diameter meets it. A word that is
@@ -71,8 +81,8 @@ Func<string, string, Tuple<string, Func<RebarBarType, bool>>> specBar = (text, r
     var named = barTypes.FirstOrDefault(t => string.Equals(t.Name, asked, StringComparison.Ordinal));
     if (named != null)
         return Tuple.Create("'" + named.Name + "'", (Func<RebarBarType, bool>)(t => t != null && t.Id == named.Id));
-    double diameter;
-    if (!double.TryParse(stripMm(asked), styleFloat, invariant, out diameter) || diameter <= 0)
+    var diameter = numberOf(stripMm(asked));
+    if (double.IsNaN(diameter) || diameter <= 0)
     {
         refused = "No Rebar Bar Type is named '" + asked + "' (the " + role + " in the spec). Loaded: " + barList()
             + ". Give one of these names, or the bar's diameter in millimetres - which type a spec word such as "
@@ -105,8 +115,8 @@ Func<string, Tuple<double, string, Func<RebarBarType, bool>>> specLinks = text =
     var asked = (text ?? "").Trim();
     if (asked.Equals("none", StringComparison.OrdinalIgnoreCase)) return Tuple.Create(0.0, "none", (Func<RebarBarType, bool>)null);
     var at = asked.LastIndexOf('@');
-    double spacing;
-    if (at <= 0 || !double.TryParse(stripMm(asked.Substring(at + 1)), styleFloat, invariant, out spacing) || spacing <= 0)
+    var spacing = at <= 0 ? double.NaN : numberOf(stripMm(asked.Substring(at + 1)));
+    if (double.IsNaN(spacing) || spacing <= 0)
     {
         refused = "'" + asked + "' is not a link bar type and spacing. Say it as <bar type> @ <largest spacing in mm> "
             + "- 10mm @ 150 - or none. Nothing was checked";
@@ -120,14 +130,16 @@ Func<string, Tuple<double, string, Func<RebarBarType, bool>>> specLinks = text =
 Func<string, string, Tuple<double, double>> specLength = (text, role) =>
 {
     var asked = (text ?? "").Trim().ToLowerInvariant().Replace(" ", "");
-    double value;
     if (asked.EndsWith("d") || asked.EndsWith("ø") || asked.EndsWith("φ"))
     {
-        var number = asked.Substring(0, asked.Length - 1).TrimEnd('x', '*');
-        if (double.TryParse(number, styleFloat, invariant, out value) && value > 0) return Tuple.Create(value, 0.0);
+        var multiple = numberOf(asked.Substring(0, asked.Length - 1).TrimEnd('x', '*'));
+        if (!double.IsNaN(multiple) && multiple > 0) return Tuple.Create(multiple, 0.0);
     }
-    else if (double.TryParse(stripMm(asked), styleFloat, invariant, out value) && value > 0)
-        return Tuple.Create(0.0, value / 304.8);
+    else
+    {
+        var millimetres = numberOf(stripMm(asked));
+        if (!double.IsNaN(millimetres) && millimetres > 0) return Tuple.Create(0.0, millimetres / 304.8);
+    }
     refused = "'" + text + "' is not a " + role + " - give it in millimetres (600) or as a multiple of the bar "
         + "diameter (40d), as the spec writes it. Nothing was checked";
     return null;
@@ -152,9 +164,11 @@ if (refused.Length == 0 && !notGiven(mainBars)) specMain = specCount(mainBars, "
 if (refused.Length == 0 && !notGiven(links)) specTies = specLinks(links);
 if (refused.Length == 0 && !notGiven(linkHook))
 {
-    var text = (linkHook ?? "").Trim().ToLowerInvariant().Replace("degrees", "").Replace("deg", "").Replace("°", "").Trim();
-    double angle;
-    if (!double.TryParse(text, styleFloat, invariant, out angle) || angle <= 0 || angle > 180)
+    // 135, 135 deg, 135 degree, 135 degrees, 135° - a number and nothing else.
+    var hookWords = System.Text.RegularExpressions.Regex.Match((linkHook ?? "").Trim(),
+        @"^(\d+(?:\.\d+)?)\s*(?:°|º|deg\.?|degrees?)?$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+    var angle = hookWords.Success ? numberOf(hookWords.Groups[1].Value) : double.NaN;
+    if (double.IsNaN(angle) || angle <= 0 || angle > 180)
         refused = "'" + linkHook + "' is not a hook angle - give the links' hook in degrees, 135 or 90. Nothing was checked";
     else specHookDegrees = angle;
 }
@@ -162,8 +176,8 @@ if (refused.Length == 0 && !notGiven(cover))
 {
     // One number for every face, or faces named: "top 40, bottom 75, other 50".
     var text = (cover ?? "").Trim();
-    double all;
-    if (double.TryParse(stripMm(text), styleFloat, invariant, out all) && all >= 0) coverAllFaces = all / 304.8;
+    var all = numberOf(stripMm(text));
+    if (!double.IsNaN(all) && all >= 0) coverAllFaces = all / 304.8;
     else
     {
         var faces = new Dictionary<string, BuiltInParameter>(StringComparer.OrdinalIgnoreCase)
@@ -175,10 +189,9 @@ if (refused.Length == 0 && !notGiven(cover))
         foreach (var piece in text.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries))
         {
             var words = piece.Trim().Split(new[] { ' ', '=', ':' }, StringSplitOptions.RemoveEmptyEntries);
-            double value;
+            var value = words.Length == 2 ? numberOf(stripMm(words[1])) : double.NaN;
             BuiltInParameter face;
-            if (words.Length != 2 || !faces.TryGetValue(words[0], out face)
-                || !double.TryParse(stripMm(words[1]), styleFloat, invariant, out value) || value < 0)
+            if (words.Length != 2 || !faces.TryGetValue(words[0], out face) || double.IsNaN(value) || value < 0)
             {
                 refused = "'" + text + "' is not a cover. Give one number in millimetres for every face (40), or "
                     + "name the faces: top 40, bottom 75, other 50 (exterior and interior on a wall). Nothing was checked";
@@ -193,13 +206,12 @@ if (refused.Length == 0 && !notGiven(anchorage)) specAnchorage = specLength(anch
 if (refused.Length == 0 && !notGiven(maxBarLength))
 {
     var text = (maxBarLength ?? "").Trim().ToLowerInvariant().Replace(" ", "");
-    double value;
-    if (text.EndsWith("mm") && double.TryParse(text.Substring(0, text.Length - 2), styleFloat, invariant, out value) && value > 0)
-        specMaxLength = value / 304.8;
-    else if (text.EndsWith("m") && double.TryParse(text.Substring(0, text.Length - 1), styleFloat, invariant, out value) && value > 0)
-        specMaxLength = value * 1000 / 304.8;
-    else if (double.TryParse(text, styleFloat, invariant, out value) && value >= 100)
-        specMaxLength = value / 304.8;
+    var inMm = text.EndsWith("mm") ? numberOf(text.Substring(0, text.Length - 2)) : double.NaN;
+    var inM = !text.EndsWith("mm") && text.EndsWith("m") ? numberOf(text.Substring(0, text.Length - 1)) : double.NaN;
+    var bare = numberOf(text);
+    if (!double.IsNaN(inMm) && inMm > 0) specMaxLength = inMm / 304.8;
+    else if (!double.IsNaN(inM) && inM > 0) specMaxLength = inM * 1000 / 304.8;
+    else if (!double.IsNaN(bare) && bare >= 100) specMaxLength = bare / 304.8;
     else
         refused = "'" + maxBarLength + "' is not a bar length - say 12 m or 12000 mm; a bare number is millimetres "
             + "and one below 100 is not taken. Nothing was checked";
@@ -268,10 +280,24 @@ Func<Rebar, bool, List<IList<Curve>>> positionsOf = (bar, plain) =>
             found.Add(curves);
             indexes.Add(i);
         }
-        // Where every position comes back on top of the first, these are the
-        // set's reference bar: each is put in its place by the set's own
-        // position transform (NEEDS-CHECKING Group MZ measures which a release
-        // gives).
+#if REVIT2020 || REVIT2021
+        // On 2020 and 2021 GetCenterlineCurves gives the set's FIRST bar at
+        // every index (the API's own remarks), so each bar of a shape-driven
+        // set is put in its place by the set's position transform, always.
+        // A free-form set's bars are each their own curves. MZ2 confirms it.
+        if (bar.IsRebarShapeDriven())
+        {
+            var accessor = bar.GetShapeDrivenAccessor();
+            for (var k = 0; k < found.Count; k++)
+            {
+                var move = accessor.GetBarPositionTransform(indexes[k]);
+                found[k] = found[k].Select(c => c.CreateTransformed(move)).ToList();
+            }
+        }
+#else
+        // GetTransformedCenterlineCurves places each bar. Should a release give
+        // every position on top of the first, the position transform places
+        // them; a set that cannot be placed is not read (MZ10).
         if (found.Count > 1 && found[0][0].GetEndPoint(0).IsAlmostEqualTo(found[found.Count - 1][0].GetEndPoint(0)))
         {
             if (!bar.IsRebarShapeDriven()) return null;
@@ -282,9 +308,56 @@ Func<Rebar, bool, List<IList<Curve>>> positionsOf = (bar, plain) =>
                 found[k] = found[k].Select(c => c.CreateTransformed(move)).ToList();
             }
         }
+#endif
         return found;
     }
     catch (Exception) { return null; }
+};
+// The widest centre-to-centre gap between neighbouring bars of a set that
+// exist, in feet - NaN when it cannot be measured. NOT the Spacing parameter:
+// under Minimum Clear Spacing that is the CLEAR gap, so a set too wide apart
+// would read as meeting. A shape-driven set: the distance between the
+// origins of neighbouring bars' position transforms. A free-form set: between
+// the starts of neighbouring bars' centrelines. On 2027 Revit's own
+// GetSpacingsBetweenBars is read too and the larger is kept.
+Func<Rebar, double> widestGapOf = bar =>
+{
+    try
+    {
+        var indexes = new List<int>();
+        for (var i = 0; i < bar.NumberOfBarPositions; i++) if (bar.DoesBarExistAtPosition(i)) indexes.Add(i);
+        if (indexes.Count < 2) return double.NaN;
+        var widest = 0.0;
+        if (bar.IsRebarShapeDriven())
+        {
+            var accessor = bar.GetShapeDrivenAccessor();
+            var previous = accessor.GetBarPositionTransform(indexes[0]).Origin;
+            for (var k = 1; k < indexes.Count; k++)
+            {
+                var here = accessor.GetBarPositionTransform(indexes[k]).Origin;
+                widest = Math.Max(widest, here.DistanceTo(previous));
+                previous = here;
+            }
+        }
+        else
+        {
+            var placed = positionsOf(bar, true);
+            if (placed == null || placed.Count < 2) return double.NaN;
+            for (var k = 1; k < placed.Count; k++)
+                widest = Math.Max(widest, placed[k][0].GetEndPoint(0).DistanceTo(placed[k - 1][0].GetEndPoint(0)));
+        }
+#if REVIT2027_OR_GREATER
+        try
+        {
+            var gaps = bar.GetSpacingsBetweenBars();
+            if (gaps != null) foreach (var gap in gaps) if (!double.IsNaN(gap)) widest = Math.Max(widest, gap);
+        }
+        catch (Exception) { }
+#endif
+        // Bars on top of each other are not a spacing that was measured.
+        return widest > 1 / 304.8 ? widest : double.NaN;
+    }
+    catch (Exception) { return double.NaN; }
 };
 // One bar's length as Revit gives it: the longest bar of a set whose bars
 // vary, else Bar Length, else the set's total over its quantity.
@@ -373,6 +446,15 @@ if (refused.Length == 0)
             try { shape = doc.GetElement(bar.GetShapeId()) as RebarShape; } catch (Exception) { }
             return shape != null && shape.RebarStyle == RebarStyle.StirrupTie;
         };
+        // Each set's bars read ONCE per host, hooks and bends dropped, and
+        // shared by the position, spacing and lap checks.
+        var plainCache = new Dictionary<ElementId, List<IList<Curve>>>();
+        Func<Rebar, List<IList<Curve>>> plainOf = bar =>
+        {
+            List<IList<Curve>> got;
+            if (!plainCache.TryGetValue(bar.Id, out got)) { got = positionsOf(bar, true); plainCache[bar.Id] = got; }
+            return got;
+        };
         var ties = rebars.Where(b => isTie(b)).ToList();
         var standard = rebars.Where(b => !isTie(b)).ToList();
         lines.Add(rebars.Count + " rebar set(s) (" + ties.Count + " stirrup/tie), " + inSystem.Count + " bar group(s) of area or path reinforcement");
@@ -407,7 +489,7 @@ if (refused.Length == 0)
         if (positionSpecs.Count > 0 && kind != "other")
             foreach (var bar in standard)
             {
-                var at = positionsOf(bar, true);
+                var at = plainOf(bar);
                 if (at == null) { unreadSets.Add("id " + bar.Id); continue; }
                 foreach (var curves in at) placedBars.Add(Tuple.Create(bar, curves));
             }
@@ -446,18 +528,26 @@ if (refused.Length == 0)
                 var inverse = frame.Inverse;
                 // A set whose bars are spread up the beam's depth more than
                 // across it is a side face set, every bar of it - PLACE_BEAM_REBAR
-                // lays side face bars so. Any other bar goes by its own third.
+                // lays side face bars so. A set spread ACROSS the beam is a
+                // layer: below half the depth bottom, above it top - so a second
+                // bottom layer in a shallow beam is still bottom. Only a bar on
+                // its own goes by thirds: lowest bottom, highest top, between
+                // them side face.
                 foreach (var set in placedBars.GroupBy(b => b.Item1.Id))
                 {
                     var middles = set.Select(b => inverse.OfPoint(b.Item2.OrderByDescending(c => c.Length).First().Evaluate(0.5, true))).ToList();
                     var rise = middles.Max(m => m.Z) - middles.Min(m => m.Z);
                     var across = middles.Max(m => m.Y) - middles.Min(m => m.Y);
                     var upright = middles.Count > 1 && rise > 1 / 304.8 && rise > across;
+                    var alone = middles.Count == 1;
                     var k = 0;
                     foreach (var placed in set)
                     {
                         var share = (middles[k++].Z - height[0]) / (height[1] - height[0]);
-                        (upright ? side : share < 1.0 / 3 ? bottom : share > 2.0 / 3 ? top : side).Add(placed);
+                        var zone = upright ? side
+                            : alone ? (share < 1.0 / 3 ? bottom : share > 2.0 / 3 ? top : side)
+                            : (share < 0.5 ? bottom : top);
+                        zone.Add(placed);
                     }
                 }
                 foreach (var spec in positionSpecs)
@@ -478,6 +568,10 @@ if (refused.Length == 0)
                     else check("main bars", "-", spec.Item1.Item1 + " x " + spec.Item1.Item2, -1,
                         "main bars are a column's; a beam's are given as bottom, top and side face bars");
                 }
+                // Never silent: bars between the layers that no value given checks.
+                if (specSide == null && unreadSets.Count == 0 && side.Count > 0)
+                    check("bars between the layers", side.Count + " bar(s)", "side face bars not given", -1,
+                        side.Count + " bars between the layers not counted - give sideBars (on each face) to check them");
             }
         }
         else if (kind == "column" && positionSpecs.Count > 0)
@@ -532,16 +626,15 @@ if (refused.Length == 0)
                         foreach (var t in ties)
                         {
                             if (t.LayoutRule == RebarLayoutRule.Single) { unread.Add("id " + t.Id + " (one tie on its own)"); continue; }
-                            var p = param(t, BuiltInParameter.REBAR_ELEM_BAR_SPACING);
-                            var spacing = p != null && p.StorageType == StorageType.Double ? p.AsDouble() : 0;
-                            if (spacing <= 0) { unread.Add("id " + t.Id); continue; }
+                            var spacing = widestGapOf(t);
+                            if (double.IsNaN(spacing)) { unread.Add("id " + t.Id); continue; }
                             widest = Math.Max(widest, spacing);
                             if (spacing > specTies.Item1 + tolerance) over.Add("id " + t.Id + " at " + mm(spacing) + " mm");
                         }
-                        var readSpacing = widest > 0 ? "largest " + mm(widest) + " mm" : "none read";
+                        var readSpacing = widest > 0 ? "widest centre-to-centre " + mm(widest) + " mm" : "none measured";
                         if (over.Count > 0) check("link spacing", readSpacing, mm(specTies.Item1) + " mm max", 0, "wider: " + string.Join(", ", over.Take(5)));
                         else if (unread.Count > 0) check("link spacing", readSpacing, mm(specTies.Item1) + " mm max", -1,
-                            "the spacing of " + string.Join(", ", unread.Take(5)) + " is not held by Revit as a set's spacing - the gaps between separate ties are not measured");
+                            "the centre-to-centre spacing of " + string.Join(", ", unread.Take(5)) + " could not be measured - a tie on its own has none, and the gaps between separate ties are not measured");
                         else check("link spacing", readSpacing, mm(specTies.Item1) + " mm max", 1, "");
                     }
                 }
@@ -573,7 +666,14 @@ if (refused.Length == 0)
             }
         }
 
-        // ---- cover: the host's own Rebar Cover parameters ------------------------------
+        // ---- cover: the host's own Rebar Cover SETTING, face by face -------------------
+        // What is compared is the cover type set on the host - what Revit places
+        // new bars to and what a schedule or tag reads. How far each bar
+        // actually sits from the concrete face is NOT measured here (it needs
+        // each face of the solid told apart on every kind of host), and each
+        // line says so; Revit's own warning for a bar inside the cover is the
+        // other route.
+        var notMeasured = "the bars' own distance to the face is not measured";
         if (!double.IsNaN(coverAllFaces) || specCover.Count > 0)
         {
             var anyFace = false;
@@ -584,20 +684,20 @@ if (refused.Length == 0)
                 if (p == null || p.StorageType != StorageType.ElementId)
                 {
                     if (specCover.ContainsKey(bip))
-                        check("cover, " + bip.ToString().Replace("CLEAR_COVER_", "").ToLowerInvariant() + " face", "-", mm(wanted) + " mm", -1,
-                            "this host has no cover parameter for that face");
+                        check("host cover setting, " + bip.ToString().Replace("CLEAR_COVER_", "").ToLowerInvariant() + " face", "-", mm(wanted) + " mm", -1,
+                            "this host has no cover parameter for that face; " + notMeasured);
                     continue;
                 }
                 anyFace = true;
                 if (double.IsNaN(wanted)) continue;
                 var coverType = doc.GetElement(p.AsElementId()) as RebarCoverType;
-                if (coverType == null) { check(p.Definition.Name, "no cover type", mm(wanted) + " mm", 0, "no cover is set on this face"); continue; }
+                if (coverType == null) { check("host cover setting, " + p.Definition.Name, "no cover type", mm(wanted) + " mm", 0, "no cover is set on this face; " + notMeasured); continue; }
                 var held = coverType.CoverDistance;
                 var same = Math.Abs(held - wanted) <= tolerance;
-                check(p.Definition.Name, "'" + coverType.Name + "' " + mm(held) + " mm", mm(wanted) + " mm", same ? 1 : 0,
-                    same ? "" : (held < wanted ? "less" : "more") + " than the spec's");
+                check("host cover setting, " + p.Definition.Name, "'" + coverType.Name + "' " + mm(held) + " mm", mm(wanted) + " mm", same ? 1 : 0,
+                    (same ? "" : (held < wanted ? "less" : "more") + " than the spec's; ") + notMeasured);
             }
-            if (!anyFace) check("cover", "-", cover, -1, "this host has no Rebar Cover parameters");
+            if (!anyFace) check("host cover setting", "-", cover, -1, "this host has no Rebar Cover parameters; " + notMeasured);
         }
 
         // ---- the longest bar ----------------------------------------------------------
@@ -622,76 +722,119 @@ if (refused.Length == 0)
         // ---- laps: straight legs of two sets, parallel, touching, ends past each other ---
         if (specLap != null)
         {
-            var legs = new List<Tuple<int, Line, RebarBarType>>();
-            for (var s = 0; s < standard.Count; s++)
+            var lapScope = "a lap is read only between straight, parallel bars of two sets in this one host that touch "
+                + "and end past each other; a lap into another element, a spaced lap and a coupler are not read";
+            // Every straight leg, copied ONCE into arrays: its set, start, unit
+            // direction, length, model radius, bar type, and its box padded.
+            var legSet = new List<int>();
+            var legType = new List<RebarBarType>();
+            var legLine = new List<Line>();
+            var lapUnread = new List<string>();
+            for (var si = 0; si < standard.Count; si++)
             {
-                var at = positionsOf(standard[s], true);
-                if (at == null) continue;
-                var type = typeOf(standard[s]);
+                var at = plainOf(standard[si]);
+                if (at == null) { lapUnread.Add("id " + standard[si].Id); continue; }
+                var type = typeOf(standard[si]);
+                if (type == null) { lapUnread.Add("id " + standard[si].Id + " (no bar type)"); continue; }
                 foreach (var curves in at)
                     foreach (var curve in curves)
                     {
                         var line = curve as Line;
-                        if (line != null && line.Length > 1e-6) legs.Add(Tuple.Create(s, line, type));
+                        if (line != null && line.Length > 1e-6) { legSet.Add(si); legType.Add(type); legLine.Add(line); }
                     }
             }
-            if (legs.Count > 3000)
-                check("laps", legs.Count + " straight legs", lengthText(specLap), -1, "too many bars in one host to compare in one call");
+            var unreadText = lapUnread.Count == 0 ? "" : "the bars of " + lapUnread.Count + " set(s) could not be read, so a lap in them is not known: "
+                + string.Join(", ", lapUnread.Take(5)) + "; ";
+            var n = legLine.Count;
+            if (n > 20000)
+                check("laps", n + " straight legs", lengthText(specLap), -1, "too many bars in one host to compare in one call; " + lapScope);
             else
             {
+                var sx = new double[n]; var sy = new double[n]; var sz = new double[n];
+                var dx = new double[n]; var dy = new double[n]; var dz = new double[n];
+                var len = new double[n]; var radius = new double[n];
+                var lowX = new double[n]; var highX = new double[n]; var lowY = new double[n]; var highY = new double[n];
+                var lowZ = new double[n]; var highZ = new double[n];
+                var widestRadius = 0.0;
+                for (var i = 0; i < n; i++)
+                {
+                    var p0 = legLine[i].GetEndPoint(0); var p1 = legLine[i].GetEndPoint(1);
+                    var u = (p1 - p0).Normalize();
+                    sx[i] = p0.X; sy[i] = p0.Y; sz[i] = p0.Z; dx[i] = u.X; dy[i] = u.Y; dz[i] = u.Z;
+                    len[i] = legLine[i].Length;
+                    radius[i] = modelOf(legType[i]) / 2;
+                    widestRadius = Math.Max(widestRadius, radius[i]);
+                    lowX[i] = Math.Min(p0.X, p1.X); highX[i] = Math.Max(p0.X, p1.X);
+                    lowY[i] = Math.Min(p0.Y, p1.Y); highY[i] = Math.Max(p0.Y, p1.Y);
+                    lowZ[i] = Math.Min(p0.Z, p1.Z); highZ[i] = Math.Max(p0.Z, p1.Z);
+                }
+                var pad = 2 * widestRadius + 1 / 304.8;
                 var cosLimit = Math.Cos(Math.PI / 180);
+                var near = 1 / 304.8;
                 var laps = new Dictionary<string, Tuple<int, double, double, string>>(StringComparer.Ordinal);
                 var mixed = new List<string>();
-                for (var a = 0; a < legs.Count; a++)
-                    for (var b = a + 1; b < legs.Count; b++)
+                // SORT AND SWEEP along X: two legs whose padded boxes do not
+                // meet cannot touch, so each leg is compared only with the legs
+                // whose box starts before its own ends.
+                var order = Enumerable.Range(0, n).OrderBy(i => lowX[i]).ToArray();
+                for (var oa = 0; oa < n; oa++)
+                {
+                    var ia = order[oa];
+                    for (var ob = oa + 1; ob < n; ob++)
                     {
-                        if (legs[a].Item1 == legs[b].Item1) continue;
-                        var la = legs[a].Item2; var lb = legs[b].Item2;
-                        var u = la.Direction.Normalize();
-                        if (Math.Abs(u.DotProduct(lb.Direction.Normalize())) < cosLimit) continue;
-                        var ta = legs[a].Item3; var tb = legs[b].Item3;
-                        if (ta == null || tb == null) continue;
-                        var origin = la.GetEndPoint(0);
-                        var offset = lb.GetEndPoint(0) - origin;
-                        var across = (offset - u.Multiply(offset.DotProduct(u))).GetLength();
-                        if (across > (modelOf(ta) + modelOf(tb)) / 2 + 1 / 304.8) continue;
-                        var s0 = (lb.GetEndPoint(0) - origin).DotProduct(u);
-                        var s1 = (lb.GetEndPoint(1) - origin).DotProduct(u);
-                        if (s0 > s1) { var swap = s0; s0 = s1; s1 = swap; }
-                        var length = la.Length;
-                        var near = 1 / 304.8;
+                        var ib = order[ob];
+                        if (lowX[ib] > highX[ia] + pad) break;
+                        if (legSet[ia] == legSet[ib]) continue;
+                        if (lowY[ib] > highY[ia] + pad || highY[ib] < lowY[ia] - pad || lowZ[ib] > highZ[ia] + pad || highZ[ib] < lowZ[ia] - pad) continue;
+                        if (Math.Abs(dx[ia] * dx[ib] + dy[ia] * dy[ib] + dz[ia] * dz[ib]) < cosLimit) continue;
+                        // B's two ends along A, and B's distance from A's line.
+                        double ox = sx[ib] - sx[ia], oy = sy[ib] - sy[ia], oz = sz[ib] - sz[ia];
+                        var along = ox * dx[ia] + oy * dy[ia] + oz * dz[ia];
+                        double cx = ox - along * dx[ia], cy = oy - along * dy[ia], cz = oz - along * dz[ia];
+                        if (Math.Sqrt(cx * cx + cy * cy + cz * cz) > radius[ia] + radius[ib] + near) continue;
+                        var otherEnd = along + len[ib] * (dx[ia] * dx[ib] + dy[ia] * dy[ib] + dz[ia] * dz[ib]);
+                        var s0 = Math.Min(along, otherEnd); var s1 = Math.Max(along, otherEnd);
+                        var length = len[ia];
                         var passes = (s0 < -near && s1 > near && s1 < length - near) || (s0 > near && s0 < length - near && s1 > length + near);
                         if (!passes) continue;
                         var overlap = Math.Min(length, s1) - Math.Max(0, s0);
+                        var ta = legType[ia]; var tb = legType[ib];
                         var da = nominalOf(ta); var db = nominalOf(tb);
                         if (specLap.Item1 > 0 && Math.Abs(da - db) > 0.05 / 304.8)
                         {
                             mixed.Add("'" + ta.Name + "' with '" + tb.Name + "' " + mm(overlap) + " mm");
                             continue;
                         }
-                        var key = standard[legs[a].Item1].Id + " / " + standard[legs[b].Item1].Id;
+                        var first = Math.Min(legSet[ia], legSet[ib]); var second = Math.Max(legSet[ia], legSet[ib]);
+                        var key = standard[first].Id + " / " + standard[second].Id;
                         var need = required(specLap, da);
                         Tuple<int, double, double, string> held;
                         laps[key] = laps.TryGetValue(key, out held)
                             ? Tuple.Create(held.Item1 + 1, Math.Min(held.Item2, overlap), need, held.Item4)
                             : Tuple.Create(1, overlap, need, "'" + ta.Name + "'");
                     }
+                }
                 var specText = lengthText(specLap);
                 if (laps.Count == 0 && mixed.Count == 0)
-                    check("laps", "no lap found", specText, -1, "a lap is read only between straight, parallel bars of two sets in this one host that touch and end past each other; "
-                        + "a lap into another element, a spaced lap and a coupler are not read");
+                    check("laps", "no lap found", specText, -1, unreadText + lapScope);
                 else
                 {
                     var shortLaps = laps.Where(l => l.Value.Item2 < l.Value.Item3 - tolerance)
                         .Select(l => "sets " + l.Key + " " + mm(l.Value.Item2) + " mm where " + mm(l.Value.Item3) + " mm is asked").ToList();
                     var read = string.Join(", ", laps.Take(5).Select(l => l.Value.Item1 + " lap(s) of " + l.Value.Item4 + " between sets " + l.Key
                         + ", shortest " + mm(l.Value.Item2) + " mm"));
-                    if (specLap.Item1 > 0) specText += " (" + string.Join(", ", laps.Values.Select(v => mm(v.Item3) + " mm").Distinct()) + ")";
+                    if (specLap.Item1 > 0 && laps.Count > 0) specText += " (" + string.Join(", ", laps.Values.Select(v => mm(v.Item3) + " mm").Distinct()) + ")";
+                    // A set that could not be read may hold a short lap, so the
+                    // laps found never MEET while one is unread.
                     if (laps.Count > 0)
-                        check("laps", read, specText, shortLaps.Count == 0 ? 1 : 0, shortLaps.Count == 0 ? "" : "shorter: " + string.Join(", ", shortLaps.Take(5)));
+                    {
+                        if (shortLaps.Count > 0) check("laps", read, specText, 0, "shorter: " + string.Join(", ", shortLaps.Take(5)) + "; " + unreadText + lapScope);
+                        else if (lapUnread.Count > 0) check("laps", read, specText, -1, unreadText + lapScope);
+                        else check("laps", read, specText, 1, lapScope);
+                    }
                     if (mixed.Count > 0)
                         check("laps between two bar sizes", string.Join(", ", mixed.Take(5)), lengthText(specLap), -1,
-                            "which bar's diameter the spec's " + lengthText(specLap) + " means is the engineer's to say - give the lap in mm to check it");
+                            "which bar's diameter the spec's " + lengthText(specLap) + " means is the engineer's to say - give the lap in mm to check it; " + lapScope);
                 }
             }
         }

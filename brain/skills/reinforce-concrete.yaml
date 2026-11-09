@@ -127,12 +127,18 @@ purpose: >
 
   7. CHECK AGAINST THE SPEC - READ, NOTHING CHANGED. CHECK_REBAR_AGAINST_SPEC
      through revit_read on the same hosts, with the confirmed row of the
-     table as its values: bottomBars, topBars, sideBars (each face) or
-     mainBars as "<count> x <bar type>", links "<bar type> @ <largest
-     spacing>", linkHook in degrees, cover (one number, or "top 40, bottom
-     75, other 50"), lap and anchorage in mm or as "50d", maxBarLength
-     ("12 m"). A value the spec does not give is left out and is not
-     checked. Read back, host by host, each check as the card gives it:
+     table as its values. Every bar is passed as the bar type MATCHED IN
+     STEP 2 - its exact name in the model, or its diameter in mm - never the
+     spec's own word: "4T16" in the spec, matched to the type "16mm", is
+     bottomBars "4 x 16mm" (or "4 x 16"); a type named T16 is "4 x T16".
+     bottomBars, topBars, sideBars (each face) or mainBars as "<count> x
+     <bar type>", links "<bar type> @ <largest spacing>" ("8mm @ 150"),
+     linkHook in degrees ("135"), cover (one number, or "top 40, bottom 75,
+     other 50"), lap and anchorage in mm or as "50d", maxBarLength ("12 m").
+     A value the spec does not give is left out and is not checked. The
+     link spacing is measured centre to centre between neighbouring ties;
+     cover is the host's cover setting - the bars' own distance to the face
+     is not measured, and the card says so. Read back, host by host, each check as the card gives it:
      MEETS the value checked, DOES NOT MEET it (both values said), or NOT
      CHECKED with the reason. Anchorage is ALWAYS not checked - Revit holds
      no support for a bar; the card sets each set's hooks and its length

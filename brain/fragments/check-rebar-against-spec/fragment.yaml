@@ -37,29 +37,47 @@ semantic-identity: "compare the placed reinforcement with the spec values handed
 #   - A LAP is read only between straight, parallel bars of two sets in the
 #     same host that touch (centrelines no further apart than the two bars'
 #     radii and 1 mm) and end past each other. A lap into another element, a
-#     spaced (non-contact) lap and a coupler are not read; with none found the
-#     lap is NOT CHECKED. Two bar sizes lapping under a "50d" spec are NOT
-#     CHECKED - which d the spec means is the engineer's; a lap in mm is
-#     checked.
+#     spaced (non-contact) lap and a coupler are not read - every lap line
+#     says so; with none found the lap is NOT CHECKED, and while any set's bars
+#     could not be read the laps found never MEET (a short one still DOES NOT
+#     MEET). Two bar sizes lapping under a "50d" spec are NOT CHECKED - which d
+#     the spec means is the engineer's; a lap in mm is checked. The legs are
+#     compared by sort and sweep along X, at most 20,000 in one host.
 #   - Bars are SORTED BY POSITION in beams and columns only. In a straight
 #     beam a set whose bars are spread up the depth more than across it is a
 #     side face set, every bar of it (PLACE_BEAM_REBAR lays side face bars so);
-#     any other bar goes by the middle of its longest straight leg: the lowest
-#     third of the beam's depth is bottom, the highest third top, between them
-#     side face - measured in the beam's own frame, as PLACE_BEAM_REBAR places
-#     them. In a column every bar that is not a tie is a main bar. Footings,
-#     slabs and walls get cover, bar length, laps and anchorage only.
-#   - Link spacing is the set's own spacing; ties placed one by one have none
-#     and are NOT CHECKED, never measured gap by gap.
+#     a set spread ACROSS the beam is a layer, below half the depth bottom and
+#     above it top - so a second bottom layer in a shallow beam is bottom; a
+#     bar on its own goes by thirds (lowest bottom, highest top, between them
+#     side face). Each bar's place is the middle of its longest straight leg
+#     in the beam's own frame, as PLACE_BEAM_REBAR places them. Bars counted
+#     as side face when no sideBars is given are never silent: "N bars
+#     between the layers not counted", NOT CHECKED. In a column every bar
+#     that is not a tie is a main bar. Footings, slabs and walls get cover,
+#     bar length, laps and anchorage only.
+#   - LINK SPACING is MEASURED, centre to centre, between neighbouring bars
+#     that exist: the origins of their position transforms (a free-form set:
+#     the starts of their centrelines), the widest gap kept; on 2027 Revit's
+#     own GetSpacingsBetweenBars too, the larger kept. Never the Spacing
+#     parameter, which under Minimum Clear Spacing is the CLEAR gap and
+#     would let a set too wide apart meet. A set that cannot be measured, and
+#     ties placed one by one, are NOT CHECKED, never measured gap by gap.
 #
 # NO CODE VALUES. Anchorage, lap and bar-length limits come in as numbers or
 # as multiples of the bar's NOMINAL diameter, from the spec or the modeller.
 # Heron computes nothing from ACI, Eurocode or BS (D-33).
 #
-# COVER: the host's own Rebar Cover parameters, face by face, against the
-# spec. "Meets" is the same distance within 0.5 mm - a cover more than the
-# spec's is a difference too, said with its direction (the owner may want
-# "not less than" instead: row 5b-1489).
+# COVER: the HOST COVER SETTING - the cover type on the host's own Rebar
+# Cover parameters, face by face - against the spec. "Meets" is the same
+# distance within 0.5 mm - a cover more than the spec's is a difference too,
+# said with its direction (the owner may want "not less than" instead: row
+# 5b-1489). How far each bar actually sits from the face is NOT measured, and
+# every cover line says so: telling the faces of a solid apart on every kind
+# of host is not cheap or safe enough for version 1.
+#
+# NUMBERS: every value is read through one parser that refuses NaN and
+# Infinity, which .NET's own parser takes as numbers; a hook angle is a
+# number with deg, degree(s) or a degree sign, matched whole.
 #
 # READ ONLY. Opens no transaction and needs none.
 kind: action
@@ -73,8 +91,8 @@ purpose: >
   Compares the bars placed in concrete beams, columns, footings, slabs and
   walls with the values of a structural spec handed in - bar count and bar
   type at the bottom, top and side faces of a beam or as a column's main
-  bars, link bar type, largest link spacing and link hook angle, cover face
-  by face, minimum lap and anchorage as millimetres or as a multiple of d,
+  bars, link bar type, largest link spacing and link hook angle, the cover
+  set on the host face by face, minimum lap and anchorage as millimetres or as a multiple of d,
   and the longest bar allowed - and gives each value back, host by host, as
   meets, does not meet, or not checked with the reason. A value the spec does
   not give is not checked. How far a bar reaches into its support is never
@@ -123,6 +141,7 @@ contract:
       optional: true
       absent: not given
     # Links (stirrups, ties), "<bar type> @ <largest spacing in mm>": 10mm @ 150.
+    # The spacing is centre to centre, measured between neighbouring ties.
     - name: links
       type: string
       source: request
@@ -136,6 +155,8 @@ contract:
       absent: not given
     # Cover in mm - one number for every face (40), or faces named:
     # "top 40, bottom 75, other 50" (exterior and interior on a wall).
+    # Compared with the host's cover SETTING; the bars' own distance to the
+    # face is not measured.
     - name: cover
       type: string
       source: request
@@ -201,15 +222,16 @@ runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
 
 compatibility-note: >
-  Two version branches, both by #if REVIT2020 || REVIT2021. A bar's place is
+  Three version branches. By #if REVIT2020 || REVIT2021: a bar's place is
   read with Rebar.GetTransformedCenterlineCurves from 2022 (the five-argument
   form, its second argument renamed suppressHooksAndCranks at 2026 - passed by
   position), and with GetCenterlineCurves(..., barPositionIndex) on 2020 and
-  2021, where it is not known from the assemblies whether the curves are the
-  bar at that position or the set's reference bar: when every position comes
-  back on top of the first, each is moved by
-  RebarShapeDrivenAccessor.GetBarPositionTransform (NEEDS-CHECKING Group MZ
-  measures it). Diameters: BarDiameter on 2020-2021, BarNominalDiameter and
+  2021, which the API's remarks say gives the set's FIRST bar at every index -
+  so a shape-driven set's bars are ALWAYS moved there by
+  RebarShapeDrivenAccessor.GetBarPositionTransform (MZ2 confirms it); from
+  2022, only should every position come back on top of the first. By #if
+  REVIT2027_OR_GREATER: Rebar.GetSpacingsBetweenBars, 2027 only, read beside
+  the measured link spacing. Diameters: BarDiameter on 2020-2021, BarNominalDiameter and
   BarModelDiameter from 2022 (2022 has both) - REPORT_HOST_REBAR's and
   PLACE_BEAM_REBAR's branch. Read off the shipped assemblies 2020 to 2027 on
   2026-11-09 with tools/api-surface --members: RebarHostData.IsValidHost,
@@ -223,9 +245,8 @@ compatibility-note: >
   Curve.CreateTransformed; Solid.IntersectWithCurve with
   SolidCurveIntersectionOptions.ResultType CurveSegmentsInside,
   SolidCurveIntersection.SegmentCount and GetCurveSegment; the
-  BuiltInParameters REBAR_MAX_LENGTH, REBAR_ELEM_LENGTH,
-  REBAR_ELEM_BAR_SPACING and CLEAR_COVER_TOP / BOTTOM / OTHER / EXTERIOR /
-  INTERIOR - all on every release. No ElementId is built from or read as a
+  BuiltInParameters REBAR_MAX_LENGTH, REBAR_ELEM_LENGTH and CLEAR_COVER_TOP / BOTTOM / OTHER / EXTERIOR /
+  INTERIOR; XYZ.DistanceTo - all on every release. No ElementId is built from or read as a
   number, so 2024's 64-bit ids do not reach this code.
 
 # ROUTING (2026-11-09) - which card wins which sentence. The cards named here

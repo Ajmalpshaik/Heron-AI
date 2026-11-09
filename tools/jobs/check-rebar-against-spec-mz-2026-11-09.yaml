@@ -8,11 +8,16 @@
 # HY's: Revit 2020, the metric structural template, saved under
 # %TEMP%\heron-work\rebar-hy) - never a working model. MZ1 arranges it with
 # PROVEN cards and KEEPS the arrangement: a 30 mm cover type on the Level 2
-# beam's top, bottom and other faces, then PLACE_BEAM_REBAR with the host's
+# beam's top, bottom and other faces - BEAM B1, whose element id MZ1 records
+# and writes below in place of 0000001 - then PLACE_BEAM_REBAR with the host's
 # cover - 3 x 16mm bottom, 2 x 12mm top, 8mm @ 200 stirrups with the
 # template's 135 degree stirrup/tie hook. The spec below is THAT, so the
 # positive must meet every value it can read. These are this proof's own
 # values, never a design value Heron offers anybody (D-33).
+#
+# B1 IS SELECTED BY ITS ID, never by "the framing in Level 2": MZ2 puts a
+# second, deeper beam (B2) in the copy, and a category-and-view selection
+# would hand both to the check and break the positive's counts.
 #
 # THE BAR WORDS ARE DIAMETERS ("16mm"): the card reads a number as a nominal
 # diameter in millimetres and any bar of it meets it. If the template names a
@@ -28,14 +33,11 @@ model: saved scratch copy of the rebar-hy scratch project with MZ1's beam rebar 
 defaults:
   write: false
   setup:
-    - select-by-category-name
-    - set-selection
+    - filter-elements-by-id
   set:
-    categoryName: Structural Framing
-    inViewOnly: "FloorPlan: Level 2"
+    elementIds: "0000001"
   negative-set:
-    categoryName: Structural Framing
-    inViewOnly: "FloorPlan: Level 2"
+    elementIds: "0000001"
 
 jobs:
   - fragment: check-rebar-against-spec
@@ -57,9 +59,9 @@ jobs:
       cover: "40"
       maxBarLength: "2 m"
     note: >
-      MZ3. Negative FIRST: meets 0, doesNotMeet 8 or more (bottom count,
+      MZ3, on B1 alone (0000001 replaced by MZ1's id). Negative FIRST: meets 0, doesNotMeet 8 or more (bottom count,
       top bar size, link bar type, link spacing, link hooks at each set,
-      cover on top, bottom and other faces, longest bar), each in findings
+      host cover setting on top, bottom and other faces, longest bar), each in findings
       with both values. Positive: meets 9, doesNotMeet 0, notChecked 2 - laps
       "no lap found" and anchorage, never passed, its line giving each main
       set's hooks and "both ends inside this host" with 40d as 640 mm. If

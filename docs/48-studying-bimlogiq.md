@@ -303,7 +303,8 @@ from a spec's values, so it was **extended, not copied**; one new card checks wh
 - **Check - one new READ card,** [`check-rebar-against-spec`](../brain/fragments/check-rebar-against-spec/fragment.yaml)
   (`CHECK_REBAR_AGAINST_SPEC`), run by `revit_read` even while DRAFT, since it keeps nothing. Host by host it compares
   the placed bars with the confirmed values handed in - a beam's bottom, top and side face bars (count and type), a
-  column's main bars, link type, largest link spacing and hook angle, cover face by face, the shortest lap, the
+  column's main bars, link type, largest link spacing (measured centre to centre) and hook angle, the cover set on
+  the host face by face (the bars' own distance to the face is not measured), the shortest lap, the
   longest bar - and gives each as **meets** the value checked, **does not meet** it (both values), or **not checked**
   with the reason. **Anchorage is never passed:** Revit holds no support for a bar, so each main set's hooks and its
   length outside the host are set beside the spec's figure for the engineer. It never says compliant or OK to
