@@ -143,5 +143,5 @@ note: >
   then SET_PARAMETER_VALUES_BY_ID keyed by Sheet Number - both PROVEN, but
   two calls and two entries in the undo list, and CREATE_SHEETS' number and
   name lists cross as comma-separated values that drop an empty name and
-  split a name with a comma in it - FRAGMENT-ISSUES row 5b-1485.
+  split a name with a comma in it - FRAGMENT-ISSUES row 5b-1486.
   NEEDS-CHECKING Group MY.

@@ -24,7 +24,7 @@ semantic-identity: "create new drawing sheets in one go from the rows handed in,
 # every later name onto the wrong sheet. SET_PARAMETER_VALUES_BY_ID (PROVEN)
 # can fill the sheets' parameters afterwards, keyed by Sheet Number - but that
 # is a second call and a second entry in the undo list. The overlap with both,
-# and the merge planned once this is proved: FRAGMENT-ISSUES row 5b-1485.
+# and the merge planned once this is proved: FRAGMENT-ISSUES row 5b-1486.
 #
 # HOW THE TABLE REACHES REVIT - the repo's own way, not a new one. `sheets` is
 # ONE value: rows separated by ";", cells by "|", and a ";", "|" or "%" inside
@@ -39,7 +39,7 @@ semantic-identity: "create new drawing sheets in one go from the rows handed in,
 # the modeller sees in the preview what this card is given.
 #
 # THE WORDING OF THE IDENTITY AND THE PURPOSE WAS MEASURED, NOT CHOSEN AT A
-# DESK (row 5b-1485). 45 sentences were frozen before this card was written -
+# DESK (row 5b-1486). 45 sentences were frozen before this card was written -
 # its words, its neighbours' own words and 12 questions - and asked on lexical
 # and model before and after. A purpose that said "spreadsheet", "Excel",
 # "columns" and "sheet" in every line took four of the questions from
@@ -220,7 +220,7 @@ compatibility-note: >
   OST_TitleBlocks types, exactly as CREATE_SHEETS (PROVEN) finds it.
 
 # ROUTING (2026-11-09) - which card wins which sentence. The cards named here
-# were not edited, so these rows are written here and in row 5b-1485.
+# were not edited, so these rows are written here and in row 5b-1486.
 #
 #   "Sheets from Excel"                               -> here, through the
 #   "read the sheet list from a spreadsheet,              sheets-from-excel

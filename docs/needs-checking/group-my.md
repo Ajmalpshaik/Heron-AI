@@ -13,7 +13,7 @@ the sheets from this Excel: C:\\...\\sheet list.xlsx"* (or .csv) - a preview, th
 undo. Made NEW, at DRAFT. It overlaps `CREATE_SHEETS` and `SET_PARAMETER_VALUES_BY_ID` (both PROVEN) - neither
 was edited; widening a PROVEN card sends it back to DRAFT and out of the chat's reach
 ([D-117](../DECISIONS.md)). The overlap and the merge planned once this is proved are
-[FRAGMENT-ISSUES row 5b-1485](../fragment-issues/section-5b-rows-401-425.md).
+[FRAGMENT-ISSUES row 5b-1486](../fragment-issues/section-5b-rows-401-425.md).
 
 | What | Where | What it does |
 |---|---|---|
@@ -42,7 +42,7 @@ format in a text parameter compares with the ISO date the reader writes (MY6).
 **Routing.** Measured 2026-11-09 with `tools/score-routing.py --sentences` (45 sentences frozen before the card was
 written: 8 for it, 25 of the neighbouring cards' own words, 12 questions about sheets and the file; lexical and
 model - the re-ranked backends NOT ASKED) against main with no card, and `tools/check-routing.py` on a scratch
-store, and again after the independent review's changes. Row 5b-1485 has the result: after the review NO question
+store, and again after the independent review's changes. Row 5b-1486 has the result: after the review NO question
 reaches this card on either backend; before it, *"which sheets are in this excel file"* did on model, and the
 margin is thin. **Before promotion,** the frozen set is asked again on the owner's PC with the re-ranked backend
 (model+rerank), which a cloud session cannot run - MY11 records it.
