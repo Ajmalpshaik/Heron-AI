@@ -359,6 +359,13 @@ TOOLS = {
     # row; its Select in Revit is the dashboard's own companion_dashboard_select.
     "heron_checklist":          (ANALYZE, "run_fragment_read"),
 
+    # The sheet register reader (docs/48 s5 item 7). READ, no operation: it
+    # reads the .xlsx or .csv the modeller names - a file on their own PC -
+    # and hands back the rows and the value CREATE_SHEETS_FROM_TABLE takes. It
+    # reaches no Revit and writes nothing; making the sheets is revit_change
+    # (or, while that card is DRAFT, the command line and try-once).
+    "heron_sheet_list":         (READ,    None),
+
     # The Companion's editable table (docs/40 section 8). ANALYZE through
     # run_fragment_read, exactly revit_read's level: it reads the elements
     # into a table and changes nothing. Writing the edited cells is the

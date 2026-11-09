@@ -103,7 +103,7 @@ the card's own; nothing here was run in Revit.
 | Duplicates and overlaps | `find-duplicate-elements` PROVEN | **Have** |
 | Clash with links | `find-clashes` PROVEN | **Have** |
 | Title block overlap | `report-sheet-title-blocks` exists; overlap check not found | **Unsure** |
-| Sheets from Excel | `create-sheets` PROVEN; `import-parameter-values` DEPRECATED. No Excel reader in front of it | **Partly** |
+| Sheets from Excel | `create-sheets` PROVEN; `import-parameter-values` DEPRECATED. `create-sheets-from-table` (DRAFT, 2026-11-09) makes them from a spreadsheet with their parameters, read by the chat tool `heron_sheet_list` - [§5.3](#53-item-7---sheets-from-excel) | **Built, not run in Revit** |
 | Views, sections per room | `duplicate-views`, `create-section-view`, `create-room-elevations` | **Have** |
 | Rebar from a spec or PDF | rebar fragments (`place-beam-rebar`, `place-column-rebar` ...) and `reinforce-concrete` skill. No spec/PDF reading, no anchorage checklist | **Partly** |
 | Parametric family agent | `family-creation` and the other `brain/skills/*-family-creation.yaml` skills, [43](43-building-revit-families.md) | **Have - deeper** |
@@ -169,7 +169,7 @@ DRAFT, until proven on a real model. Ordered by value to an MEP modeller against
 | 4 | **Plain-language QA rule to saved checklist** - the host turns a sentence into a check that maps onto existing `check-*` fragments; the checklist runs in one call and reports. **Built 2026-11-08, not run in Revit: [docs/50](50-qa-checklists.md)** | Heron has the checks; it lacks the saved list | `heron_modelqa.py`, `heron-model-auditor` |
 | 5 | **3D to 2D MEP schematic** - one system traced, drawn as single lines on a drafting view, with sizes, flow and pressure drop. **Built 2026-11-08 as `DRAW_MEP_SCHEMATIC` (DRAFT), not run in Revit: [§5.1](#51-item-5---the-mep-schematic)** | Real MEP value, and Heron already has the trace and the maths | `trace-connectivity`, `report-mep-pressure-drop`, `heron_hvac` (`heron_graph.py`, named here first, is the graph of fragments, not of ducts - not used) |
 | 6 | **CAD lines to ducts and pipes** - read the CAD layer, ask size and type, draw the run. **Built 2026-11-09 as `DRAW_MEP_FROM_CAD` (DRAFT) and the `cad-to-mep` method, not run in Revit: [§5.2](#52-item-6---cad-lines-to-ducts-and-pipes)** | Common job on Gulf projects with CAD backgrounds | `extract-cad-curves`, `create-mep-runs`, `fit-mep-joints` (the `duct-layout` skill, named here first, is a unit ducted to its diffusers - not extended) |
-| 7 | **Sheets from Excel** - read the sheet list from a spreadsheet, preview, create | Small, quick win | `create-sheets` |
+| 7 | **Sheets from Excel** - read the sheet list from a spreadsheet, preview, create. **Built 2026-11-09 as `CREATE_SHEETS_FROM_TABLE` (DRAFT), the `heron_sheet_list` tool and the `sheets-from-excel` method, not run in Revit: [§5.3](#53-item-7---sheets-from-excel)** | Small, quick win | `create-sheets` (not extended - it is PROVEN; `set-parameter-values-by-id` would be a second call) |
 | 8 | **Rebar from a spec** - read the bar sizes and covers from a given spec, then place, then check anchorage and bar length | Structural, lower for MEP | rebar fragments, `reinforce-concrete` |
 | Later | Dynamo graph to recipe; ACC (after a decision) | | |
 
@@ -238,6 +238,48 @@ serves and `heron_lookup` offers for *"CAD lines to ducts and pipes"* or *"under
   DWG with a tee and corners, a single-line pipe DWG, tags read off the picture, a layer with arcs, a joint
   without room and a failure Revit posts, taps, a crossing drawn with a break, Revit 2020 and 2025 or later, and
   the whole method in a chat.
+
+### 5.3 Item 7 - Sheets from Excel
+
+**Status 2026-11-09: built, DRAFT, compiled for 2020-2027, NOT RUN in Revit.** *"make the sheets from this Excel:
+C:\...\sheet list.xlsx"* (or .csv) - the method [`sheets-from-excel`](../brain/skills/sheets-from-excel.yaml), which
+`heron_method` serves, in three parts, the owner's design:
+
+- **Reading the file is Python, not Revit** - [`brain/heron_sheet_list.py`](../brain/heron_sheet_list.py), served
+  to the chat as the READ tool `heron_sheet_list`. The standard library only: an .xlsx is read as the zip of XML
+  it is (openpyxl is not a dependency, and adding one needs a decision); a .csv with a BOM, `,` `;` or tab, and
+  Windows-1252 when it is not UTF-8. An .xls, .xlsb or .ods is refused with how to save it. The first row (or
+  `header_row`) is the headers: Sheet Number required, Sheet Name and Title Block optional, every other column a
+  sheet parameter. It lists a blank row, a row with no number, a number on two rows (neither passed - which is
+  meant is the modeller's), a multi-line cell and an Excel error; an Excel date arrives as `2026-11-09`. It hands
+  back the exact value for the card, never typed by hand. Only .xlsx, .xlsm, .csv and .tsv are opened (each
+  part at most 8 MB), and while the card is DRAFT its command line is printed only up to 30,000 characters - a
+  Windows command line holds 32,767 - above which the modeller splits the file.
+- **Creating is one capability** - [`create-sheets-from-table`](../brain/fragments/create-sheets-from-table/fragment.yaml)
+  (`CREATE_SHEETS_FROM_TABLE`, MODIFY), one call, one undo. **The table reaches Revit as ONE value** - rows `;`,
+  cells `|`, a `;` `|` `%` or `"` in a cell percent-encoded - the shape `SET_PARAMETER_VALUES_BY_ID`'s `rows` and
+  the Companion's table Apply already use: a chat value loses its line breaks, and `CREATE_SHEETS`' own lists
+  cross as comma-separated values that drop an empty name and split a name with a comma. Every title block named
+  is found before anything is made (`CREATE_SHEETS`' lookup - none found refuses the call); a number in the register
+  or twice in the table is not made; each sheet is made in its own sub-transaction, and a row whose number or name
+  Revit refuses by throwing is taken back alone - a failure Revit posts only at the commit rolls the whole call back,
+  one undo (Article 8). Each other column is written to the sheet's own parameter of that name, else
+  its title block instance's - never a title block TYPE parameter; text, Yes/No, whole numbers and other numbers by
+  what the parameter stores; read-only, unmatched and refused ones listed, never guessed. `previewOnly` does the
+  whole job and rolls each row back.
+- **The job** - read the file, put its problems to the modeller, `FIND_SHEETS` for the numbers already used, the
+  preview, ask about every column that matches nothing (D-33, D-34), create, Keep or Discard. **While the card is
+  DRAFT no chat tool runs it** - `revit_read` refuses a MODIFY and `revit_change` a DRAFT (D-117): the preview is the
+  command line, rolled back, and the creation is the one `try-once` (D-119); `heron_sheet_list` prints both.
+- **The overlap** with `CREATE_SHEETS` and `SET_PARAMETER_VALUES_BY_ID` (both PROVEN, neither edited), why
+  `IMPORT_PARAMETER_VALUES` is not a route (DEPRECATED, merged into `SET_PARAMETER_VALUES_BY_ID`), the routing
+  measured before and after - after the independent review's changes no question reaches it on lexical or model;
+  the re-ranked backend is still to be asked on the owner's PC - and the merge planned once it is proved:
+  [row 5b-1486](fragment-issues/section-5b-rows-401-425.md).
+- **What a real Revit must show:** [NEEDS-CHECKING Group MY](needs-checking/group-my.md) - the D-30 negative (a title
+  block that does not exist: nothing made), the preview, title block instance and type columns, Yes/No, dates and
+  read-only columns, names Revit refuses, a real register and its time, Revit 2020 and 2025 or later, and the whole
+  method in a chat.
 
 ---
 

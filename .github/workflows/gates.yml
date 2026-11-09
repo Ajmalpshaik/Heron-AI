@@ -499,6 +499,10 @@ jobs:
           #                            (D-132), and its stand-in Revit part
           #                            runs (docs/04 7.1)
           #   test_served_claims.py    needs the MCP SDK
+          #   test_sheet_list_tool.py  needs the MCP SDK - the chat's
+          #                            heron_sheet_list tool (docs/48 s5
+          #                            item 7); the reader it serves runs
+          #                            here, in test_sheet_list.py
           #   test_routing_phrases.py  needs the trained embedding (model2vec)
           #
           # The MCP SDK and the .NET host are left out on purpose: both drag in
@@ -541,6 +545,7 @@ jobs:
             test_mcp_stdio.py \
             test_routing_phrases.py \
             test_served_claims.py \
+            test_sheet_list_tool.py \
             | sort > "$RUNNER_TEMP/known-not-runnable.txt"
 
           python - "$RUNNER_TEMP" <<'PY'

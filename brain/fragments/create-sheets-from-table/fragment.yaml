@@ -1,0 +1,249 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SHT-038
+semantic-identity: "create new drawing sheets in one go from the rows handed in, each with its number, name, title block and values filled in"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-09: docs/48-studying-bimlogiq.md section 5 item 7 - "Sheets from
+# Excel - read the sheet list from a spreadsheet, preview, create" - which the
+# owner started that day ("start item 7"). What the modeller gets: "make the
+# sheets from this Excel: C:\...\sheet list.xlsx" (or .csv) - the sheets made,
+# on their title block, with Drawn By, Checked By and the other columns filled
+# in, ONE call and ONE undo.
+#
+# WHY A NEW CARD AND NOT CREATE_SHEETS. CREATE_SHEETS (PROVEN, version 3)
+# takes numbers, names and one title block and fills nothing else; widening a
+# PROVEN card's impl/ sends it back to DRAFT (D-117), so the owner chose a new
+# card. And its lists cannot carry a spreadsheet: an IList<string> crosses as
+# ONE comma-separated value (RevitFragment.Parts) that DROPS EMPTY ENTRIES, so
+# a blank name, or a name with a comma in it ("Ground Floor, Zone A"), moves
+# every later name onto the wrong sheet. SET_PARAMETER_VALUES_BY_ID (PROVEN)
+# can fill the sheets' parameters afterwards, keyed by Sheet Number - but that
+# is a second call and a second entry in the undo list. The overlap with both,
+# and the merge planned once this is proved: FRAGMENT-ISSUES row 5b-1486.
+#
+# HOW THE TABLE REACHES REVIT - the repo's own way, not a new one. `sheets` is
+# ONE value: rows separated by ";", cells by "|", and a ";", "|" or "%" inside
+# a cell percent-encoded (%3B, %7C, %25) - SET_PARAMETER_VALUES_BY_ID's `rows`
+# shape and the Companion's table Apply (heron_mcp_server._apply_table). The
+# reader also writes a double quote as %22, so neither a PowerShell command
+# line nor the chat's quote rule can take it; every %XX is decoded here. A
+# chat value loses its line breaks (`_values_array` splits on them), and
+# ";"/"|" are not split by anything between the chat and this card. The FIRST
+# row is the header. The chat tool `heron_sheet_list` reads the .xlsx or .csv
+# in Python (brain/heron_sheet_list.py) and hands back this value exactly, so
+# the modeller sees in the preview what this card is given.
+#
+# THE WORDING OF THE IDENTITY AND THE PURPOSE WAS MEASURED, NOT CHOSEN AT A
+# DESK (row 5b-1486). 45 sentences were frozen before this card was written -
+# its words, its neighbours' own words and 12 questions - and asked on lexical
+# and model before and after. A purpose that said "spreadsheet", "Excel",
+# "columns" and "sheet" in every line took four of the questions from
+# FIND_SHEETS (a read) - "what is in this sheet list spreadsheet", "which
+# columns of the sheet list match sheet parameters" - and a capability named
+# CREATE_SHEETS_FROM_LIST took one more by its "LIST". So the capability is
+# _FROM_TABLE, the purpose says "drawings" and "fields", and the owner's words
+# are in `utterances` only, unweakened.
+kind: action
+domain: revit.sheets
+capability: CREATE_SHEETS_FROM_TABLE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Makes new drawings in the register from rows handed in as one value -
+  written by heron_sheet_list from the modeller's own file - in one call and
+  one undo. The first row names the fields: Sheet Number is required, Sheet
+  Name and Title Block optional, and each other field is filled into the new
+  drawing's own parameter of that name, or else into its title block
+  instance; never into a title block TYPE parameter, which would change every
+  other drawing of that type. Text is set as typed, a tick box from Yes or
+  No, a whole number as one, any other number through Revit's own reading in
+  the project's units. Each one is made in its own sub-transaction, so a row
+  Revit refuses by throwing is taken back alone and given back with Revit's
+  words; a failure Revit posts only as the call is kept rolls the whole call
+  back, one undo. A number in use, or given twice, is not made. Fields that
+  name nothing, read-only parameters and values Revit would not take are
+  given back, never guessed. previewOnly does the whole job and takes it
+  back, row by row.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # THE TABLE, ONE VALUE. Rows separated by ";", cells by "|"; a ";", "|" or
+    # "%" inside a cell written %3B, %7C, %25 (any %XX is decoded, so a double
+    # quote may be %22). First row the headers:
+    #   Sheet Number|Sheet Name|Title Block|Drawn By|Checked By;M-101|Level 1
+    #   Plan||AP|JS;M-102|Level 2 Plan||AP|JS
+    # Sheet Number (or Number) is required; Sheet Name (or Name) and Title
+    # Block are optional; every other header names a parameter. An empty
+    # cell writes nothing - it does not clear a value. heron_sheet_list
+    # writes this value from the modeller's spreadsheet.
+    - name: sheets
+      type: string
+      source: request
+    # The title block for every row whose Title Block cell is empty, by type
+    # name, or "Family: Type" when two families share a type name (a shared
+    # name is refused, never guessed - CREATE_SHEETS' rule). The word none,
+    # said outright, makes sheets with NO title block, flagged noTitleblock.
+    # Left out it is "from the list": every row must then name its own, and a
+    # row that does not refuses the whole call - THE TITLE BLOCK HAS NO
+    # DEFAULT. Any name not found refuses the whole call: nothing is made.
+    - name: titleBlockName
+      type: string
+      source: request
+      optional: true
+      absent: from the list
+    # true: the whole job is done inside a sub-transaction and TAKEN BACK -
+    # nothing is kept; `preview` lists every row as it would be made or
+    # skipped, the values each would get, and the columns matched or not.
+    # Absent binds false.
+    - name: previewOnly
+      type: bool
+      source: request
+      optional: true
+  provides:
+    - name: created
+      # The sheets made and kept. Empty on a preview, a refusal, or when every
+      # row was skipped.
+      role: result
+      type: IList<ElementId>
+    - name: numberedAs
+      # Each sheet made, with the number Revit holds - read back, not assumed.
+      role: result
+      type: IDictionary<ElementId, string>
+    - name: namedAs
+      # Each sheet made, with the name Revit holds - read back apart from the
+      # number, because the two fail independently (CREATE_SHEETS' rule).
+      role: result
+      type: IDictionary<ElementId, string>
+    - name: valuesSet
+      # Parameter values written AND read back as asked after one
+      # regeneration (a number counts when Revit took it - its reading is in
+      # the project's units). 0 on a preview: the preview's lines say what
+      # would be set.
+      role: result
+      type: int
+    - name: preview
+      # previewOnly only: ONE string, a line per row - made or skipped and
+      # why, its title block, and every value it would get. Empty otherwise.
+      role: result
+      type: string
+    - name: numberTaken
+      # Numbers already in the register (placeholders count, capitals
+      # ignored), checked BEFORE anything is made - no sheet for them (D-52).
+      role: accounting
+      type: IList<string>
+    - name: notCreated
+      # One line per row no sheet was kept for, and why: no number, a number
+      # already used (naming the sheet), a number twice in the table, or
+      # Revit refusing the sheet, its number or its name in its own words -
+      # that row taken back alone (D-52).
+      role: accounting
+      type: IList<string>
+    - name: columnsMatched
+      # One line per parameter column: where it was written - the sheet's own
+      # parameter or the title block instance's - its kind, and on how many
+      # sheets. Evidence it looked, never a value written (D-52).
+      role: accounting
+      type: IList<string>
+    - name: columnsUnmatched
+      # Columns no sheet made has a parameter for - not written. Usually a
+      # project parameter not bound to Sheets, or a header worded unlike the
+      # parameter. Asked of the modeller, never guessed (D-52).
+      role: accounting
+      type: IList<string>
+    - name: columnsNotWritten
+      # Columns that name a parameter this card will not write, and why:
+      # read-only, on the title block TYPE, two parameters sharing the name,
+      # or one holding another element (D-52).
+      role: accounting
+      type: IList<string>
+    - name: valuesNotSet
+      # One line per cell not written or not read back as asked: the sheet,
+      # the column, the value and why - a tick box given a word that is not
+      # yes or no, a number Revit would not read. The sheet itself is kept
+      # (D-52).
+      role: accounting
+      type: IList<string>
+    - name: titleBlockNotFound
+      # A title block named - by titleBlockName or in the Title Block column -
+      # is not loaded, or is a type name two families share. Nothing was made
+      # (D-52).
+      role: accounting
+      type: bool
+    - name: noTitleblock
+      # True when sheets were made with NO title block because none was said
+      # outright. They print bare, so it is said (D-52).
+      role: accounting
+      type: bool
+    - name: titleBlockProblem
+      # Why a title block could not be used, naming every bad name and the
+      # rows that asked for it. Empty when every one was found (D-52).
+      role: accounting
+      type: string
+    - name: refused
+      # Why NOTHING was made, in plain words - a table with no Sheet Number
+      # column, a row with more cells than the header, a title block not
+      # found. Empty when it ran (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release, no version branch. Read with
+  tools/api-surface --members on 2026-11-09, present with these signatures
+  2020 through 2027: ViewSheet.Create(Document, ElementId), ViewSheet.SheetNumber
+  and IsPlaceholder, Element.Name, Element.GetParameters(string) and
+  Element.GetTypeId, Parameter.IsReadOnly, StorageType, Definition, Set(string),
+  Set(int), SetValueString, AsString, AsInteger and AsValueString, and
+  SubTransaction (Start, Commit, RollBack) as CONNECT_AIR_TERMINALS (PROVEN)
+  uses it. A tick box is recognised as SET_PARAMETER_VALUES_BY_ID (PROVEN)
+  recognises one: Definition.GetDataType against SpecTypeId.Boolean.YesNo on
+  2022 and later, Definition.ParameterType == YesNo on 2020 and 2021, both
+  read by reflection so one source compiles on every release - ParameterType
+  is gone from 2023 and ForgeTypeId begins at 2021. No unit API is called: a
+  number goes through SetValueString, Revit's own reading in the project's
+  units. No ElementId is built from or read as a number, so 2024's 64-bit ids
+  do not reach this code. The title block is found by name among
+  OST_TitleBlocks types, exactly as CREATE_SHEETS (PROVEN) finds it.
+
+# ROUTING (2026-11-09) - which card wins which sentence. The cards named here
+# were not edited, so these rows are written here and in row 5b-1486.
+#
+#   "Sheets from Excel"                               -> here, through the
+#   "read the sheet list from a spreadsheet,              sheets-from-excel
+#    preview, create"                                     method, which reads
+#   "make the sheets from this Excel"                     the file first
+#   "make a new sheet" / "add sheet A-201" /          -> CREATE_SHEETS - typed
+#    "set up the drawing register"                        numbers, no file
+#   "duplicate these sheets"                          -> CREATE_SHEETS, copying
+#   "import the parameter values from this csv" /     -> SET_PARAMETER_VALUES_BY_ID
+#    "load these values back into the model from the      - values onto elements
+#    spreadsheet"                                         that already exist
+#   "make a sheet list schedule" / "I need a drawing  -> CREATE_SCHEDULE - the
+#    index"                                               index OF the sheets
+#   "change the title block on these sheets"          -> SET_SHEET_TITLE_BLOCK
+#   "list the sheets" / "which sheets are in this     -> FIND_SHEETS - a QUESTION
+#    model"
+#   "which sheets are in this excel file"             -> heron_sheet_list, the
+#                                                        chat tool - it reads the
+#                                                        file and touches no model
+# No question was claimed for this card (D-86).
+utterances:
+  # The owner's own words: docs/48 section 5 item 7 and its section 2 row,
+  # and the request the modeller is to make (the owner's brief, 2026-11-09).
+  - Sheets from Excel
+  - read the sheet list from a spreadsheet, preview, create
+  - make the sheets from this Excel

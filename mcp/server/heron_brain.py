@@ -2760,6 +2760,21 @@ def checklists():
     return CHECKLISTS
 
 
+def sheet_list():
+    """
+    The sheet register reader (docs/48 s5 item 7) - brain/heron_sheet_list.py,
+    through this seam like every other brain module. Stdlib only: it reads
+    .xlsx as the zip of XML it is, and .csv, and touches no model.
+    """
+    try:
+        import heron_sheet_list as SHEET_LIST
+    except ImportError as exc:
+        raise BrainUnavailable("Heron's sheet list reader could not be imported: %s. It needs "
+                               "nothing beyond Python itself, so this is a broken install."
+                               % exc)
+    return SHEET_LIST
+
+
 def fragment_contract(folder):
     """
     What a QA checklist checks one capability against (docs/50), read from the

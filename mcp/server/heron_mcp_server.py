@@ -6252,6 +6252,41 @@ def heron_checklist(action: str = "list", name: str = "", checks: str = "",
 
 
 @server.tool()
+def heron_sheet_list(path: str, sheet: str = "", header_row: int = 1) -> str:
+    """
+    Read a sheet register from an Excel .xlsx or a .csv - the first step of
+    "make the sheets from this Excel" (heron_method sheets-from-excel). Reads
+    the file only: never touches the model.
+
+    `path` is the file as the modeller gives it. `sheet` names the workbook
+    sheet when it is not the first; `header_row` is the row the headers are
+    on when a title sits above the table. Only .xlsx, .xlsm, .csv and .tsv
+    are opened; ask for anything else saved as .xlsx or CSV.
+
+    The first row is headers; each row after it is one sheet. Sheet Number is
+    required, Sheet Name and Title Block optional, and every other column
+    names a sheet parameter - matched by name in Revit, never guessed here.
+
+    It answers with the sheets, every problem in the file (no number, a
+    number twice, a formatted number, a blank or multi-line row), and the
+    exact `sheets=` value for CREATE_SHEETS_FROM_TABLE, with how to preview
+    and run it. Show the
+    modeller the problems and ask about each; ask the title block when the
+    file has none. Never type the value by hand - pass it as given.
+    """
+    try:
+        reader = brain.sheet_list()
+    except brain.BrainUnavailable as why:
+        return str(why)
+    try:
+        register = reader.read(path, sheet=(sheet or "").strip() or None, header_row=header_row)
+    except Exception as why:                         # noqa: BLE001 - said to the modeller
+        return "'%s' could not be read: %s. Nothing in Revit was touched." % (path, why)
+    _folder, status = _fragment_for("CREATE_SHEETS_FROM_TABLE")
+    return reader.chat_answer(register, status=status)
+
+
+@server.tool()
 def heron_companion() -> str:
     """
     Open the Heron Companion - a page in the user's browser, beside Revit,
