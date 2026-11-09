@@ -59,6 +59,8 @@ finds views (`FIND_VIEWS`, or one like it) owns the *"is there already a schemat
 schematic"* questions, in the owner's own words, and both reach that read on lexical and model - asking to see a
 schematic must never draw a new one. The rows below passing is not enough without it.
 
+**Run 2026-11-09 - MW1, MW2 and MW8 PASSED, and the card was signed by Ajmal PS.** Revit 2024, session 46948, the copy "Snowdon HVAC - schematic proof" (the other Snowdon models beside it, or opening it stops on a Revit warning). MW1: "Mechanical Supply Air 1" is in the model, 10 elements - the job file's name stands; the loop and the disconnected terminal were NOT arranged. MW2: PASS - negative refused with the systems named, no view; positive 4 nodes, 4 segments, 2 terminals, 0 skipped, 0 open ends. MW8: kept by the owner. The promotion condition above was met the same day - FRAGMENT-ISSUES row 5b-1479. Every other row is still NOT RUN; MW10 carries row 5b-1488.
+
 **The model - a SAVED scratch copy of Revit's "Snowdon Towers Sample HVAC", Revit 2024**, the model groups MT
 and MU use. Never a working model. Every run below is rolled back except the arrangements (MW1, and MW15 to MW17 in further copies) and MW8's one run.
 For Revit 2020, *MEP Night Test* - the model `REPORT_MEP_PRESSURE_DROP` was proved on, with its calculated

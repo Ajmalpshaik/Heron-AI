@@ -297,6 +297,8 @@ compatibility-note: >
 # schematic" and "show me the schematic" questions, in the owner's own words,
 # before this card is signed - so that asking to see a schematic never draws
 # a new one (row 5b-1479, NEEDS-CHECKING Group MW).
+# MET 2026-11-09: FIND_VIEWS declares both questions, and both reach it on
+# lexical and model (row 5b-1479). The OPEN notes above are history.
 #
 # WORDINGS CHANGED BEFORE THIS WAS WRITTEN: a purpose saying "the system is
 # traced" sent TRACE_CONNECTIVITY's "trace this system" here on check-routing's
