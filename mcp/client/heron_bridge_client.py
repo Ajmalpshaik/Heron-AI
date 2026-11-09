@@ -275,7 +275,7 @@ RESPONSE_TIMEOUT_S = heron_config.response_timeout()
 #: Heron's own version. Checked against Directory.Build.props by
 #: tools/check-metadata.py, so the two can never quietly disagree - a version
 #: that is typed in two places is a version that is wrong in one of them.
-HERON_VERSION = "0.1.0"
+HERON_VERSION = "0.2.0"
 
 #: Transport retries. Three attempts with a widening gap, so a bridge that is
 #: mid-restart is given time to come back rather than hammered while it does.

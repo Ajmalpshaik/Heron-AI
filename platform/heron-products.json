@@ -6,7 +6,7 @@
   "heron-layer": "platform",
 
   "schema": "heron-products/1",
-  "manifestVersion": "0.1.0",
+  "manifestVersion": "0.2.0",
 
   "sourceNote": [
     "WHERE A RELEASE IS FETCHED FROM - Stage 5. The installer downloads each ticked product's",
@@ -83,7 +83,7 @@
       "revit": ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"],
       "requires": [],
       "needsPython": false,
-      "version": "0.1.0",
+      "version": "0.2.0",
       "partOf": null,
       "state": "SHIPPED"
     },
@@ -99,7 +99,7 @@
       "revit": ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"],
       "requires": [],
       "needsPython": true,
-      "version": "0.1.0",
+      "version": "0.2.0",
       "partOf": "heron",
       "state": "SHIPPED"
     },
@@ -115,7 +115,7 @@
       "revit": ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"],
       "requires": [],
       "needsPython": false,
-      "version": "0.1.0",
+      "version": "0.2.0",
       "partOf": "heron",
       "state": "PROVING"
     },
@@ -131,7 +131,7 @@
       "revit": ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"],
       "requires": [],
       "needsPython": false,
-      "version": "0.1.0",
+      "version": "0.2.0",
       "partOf": null,
       "state": "PROVING"
     },
@@ -147,7 +147,7 @@
       "revit": ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"],
       "requires": [],
       "needsPython": false,
-      "version": "0.1.0",
+      "version": "0.2.0",
       "partOf": null,
       "state": "PLANNED"
     }
