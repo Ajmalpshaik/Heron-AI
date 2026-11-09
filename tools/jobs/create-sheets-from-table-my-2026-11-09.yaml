@@ -1,0 +1,50 @@
+# NEEDS-CHECKING Group MY - CREATE_SHEETS_FROM_TABLE, built 2026-11-09 in a
+# cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/create-sheets-from-table-my-2026-11-09.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/create-sheets-from-table-my-2026-11-09.yaml
+#
+# THE MODEL is a SAVED scratch copy of Project1, Revit 2020 - the project
+# CREATE_SHEETS was first proved on - never a working model. MY1 records the
+# title block type as it shows in the Project Browser (Family: Type) and adds
+# a text project parameter "Discipline" bound to Sheets if the copy has none.
+# "A1 metric" below is the type CREATE_SHEETS' proof named on P1102; if the
+# copy's title block is another, MY1 writes it here - the job file changes,
+# never the card.
+#
+# THE TABLE is what heron_sheet_list prints for MY2's test register: header
+# row, then one row per sheet, ";" between rows and "|" between cells. Numbers
+# MY-101 to MY-103 are free in any project that has not run this group.
+#
+# NO SETUP CHAIN. Nothing is selected and nothing is handed on: every input
+# is a value.
+#
+# THE NEGATIVE IS A VALUE, NOT A SELECTION (fragment-proving rules 2 and 5):
+# the same table with a title block name the model has not got. A card that
+# made sheets with no title block, or on whichever it found, makes them here;
+# this one must refuse and make nothing. Every run is ROLLED BACK.
+
+model: saved scratch copy of Project1 with MY1's title block and Discipline parameter, Revit 2020
+
+defaults:
+  write: true
+  setup: []
+  set:
+    sheets: "Sheet Number|Sheet Name|Drawn By|Checked By|Discipline;MY-101|HERON TEST PLAN 1|AP|JS|Mechanical;MY-102|HERON TEST PLAN 2|AP|JS|Mechanical;MY-103|HERON TEST PLAN 3|AP||Mechanical"
+
+jobs:
+  - fragment: create-sheets-from-table
+    expect: created
+    set:
+      titleBlockName: "A1 metric"
+    negative-set:
+      titleBlockName: "NoSuchTitleBlockAnywhere"
+    note: >
+      MY3. Negative - THE FIRST CASE TO RUN: titleBlockNotFound true, refused
+      "no title block type called \"NoSuchTitleBlockAnywhere\" is loaded in
+      ... (asked by MY-101, MY-102, MY-103) ... Nothing was made.", created
+      empty, valuesSet 0, preview empty. Positive: created three ids,
+      numberedAs MY-101 to MY-103, valuesSet 8 (Checked By is empty on
+      MY-103), columnsMatched naming Drawn By, Checked By and Discipline as
+      the sheet's own parameter (text) on 3 sheet(s); every "not" list empty.
+      Rolled back - so LOOK in MY9, the one kept run.

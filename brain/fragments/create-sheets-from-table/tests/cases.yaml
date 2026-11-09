@@ -1,0 +1,133 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write that makes sheets, "made sheets nobody asked for": on a title
+# block nobody named, under numbers already used, or with a value written
+# into the wrong parameter.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING Group MY). A SAVED
+# scratch copy of Project1 (Revit 2020, the project CREATE_SHEETS was first
+# proved on) - never a working model - with ONE title block family loaded
+# whose type name MY1 records ("<MY1's title block>", written as it shows in
+# the Project Browser, Family: Type), at least one sheet already in the
+# register (MY1 records its number, "<MY1's existing number>"), and a project
+# parameter bound to Sheets, text, called "Discipline" (MY1 adds it if the
+# model has none). The table is written by heron_sheet_list from the test
+# register MY2 makes - tests/test_sheet_list.py writes the same shape - so
+# the value below is what that tool prints, not typed by hand. The negative
+# is the SAME table with a TITLE BLOCK NAME THE MODEL HAS NOT GOT - a
+# different value, not an empty one (the fragment-proving skill's rules 2 and
+# 5). Every run ROLLED BACK but MY9's one run through try-once.
+
+positive:
+  - given: >
+      sheets "Sheet Number|Sheet Name|Drawn By|Checked By|Discipline;MY-101|HERON
+      TEST PLAN 1|AP|JS|Mechanical;MY-102|HERON TEST PLAN 2|AP|JS|Mechanical;MY-103|HERON
+      TEST PLAN 3|AP||Mechanical"; titleBlockName "<MY1's title block>";
+      previewOnly true
+    expect: >
+      NOTHING kept - created empty, the sheet count in the Project Browser
+      unchanged; preview with three lines, each "would be made" on that title
+      block with Drawn By, Checked By (not on MY-103 - its cell is empty) and
+      Discipline; columnsMatched naming Drawn By and Checked By as "the
+      sheet's own parameter (text) on 3 sheet(s)" (Checked By on 3: it is
+      looked up on every sheet, written on 2) and Discipline the same;
+      findings opening "PREVIEW - nothing was kept. 3 of 3 row(s) would be
+      made"
+
+  - given: the same table and title block, previewOnly left out
+    expect: >
+      created with three ids, numberedAs MY-101, MY-102, MY-103 and namedAs
+      the three names; valuesSet 8 (3 Drawn By, 2 Checked By, 3 Discipline);
+      every list of what was not done empty. In Revit: three sheets in the
+      Project Browser, each with the title block DRAWN ON IT, and Drawn By,
+      Checked By and Discipline in each sheet's Properties - and on the title
+      block where its labels show them. ONE entry in the undo list removes
+      all three
+
+  - given: >
+      the table with a Title Block column - one row "<MY1's title block>",
+      one row "none" - and titleBlockName left out
+    expect: >
+      two sheets; the second with NO title block and noTitleblock true, and
+      findings saying they print bare
+
+negative:
+  - given: >
+      THE D-30 NEGATIVE. The positive's table exactly, titleBlockName
+      "NoSuchTitleBlockAnywhere"
+    expect: >
+      titleBlockNotFound true; titleBlockProblem and refused saying no title
+      block type called "NoSuchTitleBlockAnywhere" is loaded, asked by MY-101,
+      MY-102, MY-103, and that nothing was made; created, numberedAs and
+      namedAs empty, valuesSet 0, preview empty - and THE SHEET COUNT
+      UNCHANGED. Revit will happily make a sheet with no title block, and a
+      register full of blank-bordered sheets is discovered at issue
+
+  - given: >
+      a row whose number is "<MY1's existing number>" - already in the
+      register - among two new ones
+    expect: >
+      that number in numberTaken and a line in notCreated naming the sheet
+      that holds it; the two new sheets made. The check runs BEFORE anything
+      is created, so nothing is left behind under a number Revit picked
+
+  - given: THE SAME JOB RUN TWICE
+    expect: >
+      the second run makes nothing: every number in numberTaken. Without the
+      check a re-run makes a second set under whatever numbers Revit picks
+
+  - given: two rows with the same number, M-901 and m-901
+    expect: >
+      NEITHER made - one line in notCreated naming both entries and asking
+      which is meant. Which row the modeller meant is not this card's guess
+
+  - given: >
+      a column headed "Discipln" (misspelt) beside "Drawn By"
+    expect: >
+      "Discipln" in columnsUnmatched and NOTHING written from it - never
+      matched to Discipline by likeness (D-33); Drawn By written as before
+
+  - given: >
+      a column naming a parameter of the title block TYPE - MY1 records one
+      the family has (if none, a type parameter added to a copy of the family
+      is the arrangement)
+    expect: >
+      that column in columnsNotWritten "a parameter of the title block TYPE";
+      the type's value in Edit Type UNCHANGED - writing it from one row would
+      change every sheet on that type
+
+  - given: a column "Current Revision" with a value in each row
+    expect: >
+      "Current Revision" in columnsNotWritten as read-only; nothing written;
+      the sheets made
+
+  - given: >
+      a Yes/No project parameter bound to Sheets, its column holding "Yes",
+      "no", "maybe" on three rows
+    expect: >
+      two sheets ticked and unticked as asked - read in Properties - and
+      "maybe" in valuesNotSet, "a tick box takes Yes or No", with that sheet
+      still made
+
+  - given: a row with more cells than the header - a "|" typed into a name, not encoded
+    expect: >
+      refused naming the entry and that a | is written %7C; NOTHING made
+
+  - given: a sheet name Revit refuses, with a character it does not allow in a name (":" or "{")
+    expect: >
+      that row in notCreated with Revit's own words and "taken back"; NO sheet
+      for it in the Project Browser - not even under a number Revit picked;
+      the other rows made
+
+second_route:
+  - >
+    open the Sheets branch of the Project Browser and read the numbers and
+    names - that list is the drawing register, and it is what gets issued -
+    then open one sheet: the title block is drawn and its labels show Drawn
+    By and Checked By
+  - >
+    a sheet list schedule (CREATE_SCHEDULE, listKind sheets) with Sheet
+    Number, Sheet Name, Drawn By, Checked By and Discipline as fields shows
+    every value written, row by row against the spreadsheet
+  - >
+    COUNT THE SHEETS before and after a kept run - the rise must equal the
+    length of created - and one Ctrl+Z removes every sheet the call made
