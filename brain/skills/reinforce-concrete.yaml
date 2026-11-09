@@ -4,7 +4,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: reinforce-concrete
-name: Reinforce concrete columns, beams, footings, slabs and walls
+name: Reinforce concrete columns, beams, footings, slabs and walls from a spec - read it, confirm it, place, check
 domain: revit.elements
 # Heron wrote this one. D-66: a unit that ships with Heron says where it
 # came from, so an IMPORTED one that says nothing stands out.
@@ -14,53 +14,102 @@ risk: MODIFY
 
 purpose: >
   Puts real Revit rebar into concrete members from the values in a structural
-  spec - "4 T16 main bars and T8 links at 150 in these columns, 40 cover" -
-  and reads every bar back off the model. Every value is the modeller's: a bar
-  size, a cover, a spacing, a hook or a layout the spec does not give is ASKED,
-  one question at a time, never chosen (D-33). A word from a drawing - "T16",
-  "H12", "B1", "links" - is matched to what the model has in step 1, and asked
-  about when nothing matches; Heron never decides that a letter means a size
-  or a steel grade (D-34).
+  spec - pasted text, or a PDF page the chat can read - and checks every bar
+  placed against those values. The owner's words, docs/48 section 5 item 8:
+  "Rebar from a spec - read the bar sizes and covers from a given spec, then
+  place, then check anchorage and bar length". Every value is the spec's or
+  the modeller's: a bar size, a cover, a spacing, a hook, a lap, an anchorage
+  or a bar-length limit the spec does not give is ASKED, one question at a
+  time, never chosen (D-33). Heron computes no code value - no ACI, Eurocode
+  or BS anchorage or lap: those come from the spec or the modeller, as
+  millimetres or as a multiple of d. A word from a drawing - "T16", "H12",
+  "B1", "links" - is matched to what the model has in step 2, and asked about
+  when nothing matches; Heron never decides that a letter means a size or a
+  steel grade (D-34).
 
-  Every placing step below was DRAFT on 2026-10-19 - built and compiled for
-  Revit 2020 to 2027, not yet run in Revit (NEEDS-CHECKING Group HY). Until
-  the owner proves them, revit_change refuses to keep their changes (D-117);
-  each may be run once through try-once, behind Revit's Keep or Discard box
-  (D-119). The list of capabilities after this method is read from the
-  library every time it is served: where the two differ, the list is right.
+  Every tool of this method is DRAFT or PROVEN as the list after it says,
+  read from the library each time this method is served: where the two
+  differ, the list is right. On 2026-11-09 PLACE_BEAM_REBAR,
+  PLACE_FOOTING_REBAR, PLACE_AREA_REINFORCEMENT, PLACE_PATH_REINFORCEMENT,
+  SET_REBAR_COVER, the three CREATE_REBAR_*_TYPE cards, LIST_REBAR_TYPES and
+  REPORT_HOST_REBAR were PROVEN; PLACE_COLUMN_REBAR, PLACE_REBAR and
+  PLACE_FABRIC_REINFORCEMENT were DRAFT (NEEDS-CHECKING Group HY), and
+  CHECK_REBAR_AGAINST_SPEC was written that day, DRAFT, compiled for Revit
+  2020 to 2027 and NOT RUN in Revit (Group MZ). A PROVEN change runs through
+  revit_change. A DRAFT CHANGE IS RUN BY NO CHAT TOOL (D-117): it is
+  previewed on the modeller's PC from the command line, which runs it and
+  ROLLS IT BACK - nothing can be kept without --apply, and --apply is refused
+  for a DRAFT -
+    python mcp/client/heron_bridge_client.py fragment place-column-rebar
+      --write --set mainBars=... --set ties=... (and the other values)
+  and kept only through its ONE try-once on the saved model in front, when
+  the modeller asks for it in the chat (D-119) - once per version, Revit
+  asking Keep or Discard:
+    python mcp/client/heron_bridge_client.py try-once place-column-rebar
+      --set mainBars=... (the same values)
+  Say so to the modeller and let them run it, or run it only where they have
+  asked for exactly that; never send it through another tool. For the
+  modeller this means: a column, a hand-placed bar or a mesh cannot be added
+  from the chat yet - each is one try on a saved model until the owner has
+  proved it. A DRAFT READ, CHECK_REBAR_AGAINST_SPEC, is run by revit_read,
+  which keeps nothing and says it is DRAFT.
 
   0. SAVE THE MODEL FIRST - the rebar for a building is hundreds of sets.
      REPORT_OPEN_DOCUMENTS says whether it has a file and when it was last
      written; ask the modeller to click inside the Revit window, then Ctrl+S.
-  1. LIST_REBAR_TYPES - the bar types with their nominal diameters, hooks,
-     cover types and rebar shapes the model has. Every spec word is matched
-     against this list: a bar type by its exact name ("T16" only when a type
-     is named T16), or a diameter in millimetres (16) matched to the ONE type
-     of that diameter. No rebar shapes at all - an architectural template -
-     stops the job: Revit builds a bar's shape from the shapes already there,
-     so the structural shapes must be loaded first, by the modeller.
-  2. WHAT IS MISSING IS MADE FROM THE SPEC'S OWN VALUES, each asked:
+
+  1. READ THE SPEC, THEN CONFIRM IT - NOTHING IN REVIT. Read the pasted text
+     or the PDF page and write back, PER ELEMENT TYPE, every value found, in
+     one short table - for example "Beams: bottom 4T16, top 2T12, links
+     T10@150 with 135 hooks, cover 40, lap 50d, anchorage 40d, max bar length
+     12 m". Columns: main bars and their layout, links, cover. Footings: each
+     layer both ways and which sits outermost, cover. Slabs and walls: each
+     layer (top/bottom, exterior/interior, each direction), cover. Mark every
+     value the spec does NOT give as "not in the spec - which?" and ASK it;
+     never fill one from a code, a habit or another element type. Quote the
+     spec's own words beside a value read from a sentence rather than a
+     table. The modeller confirms or corrects the table; nothing is placed
+     before they do, and the confirmed table is the only source of every
+     value below.
+
+  2. MATCH THE SPEC'S WORDS TO THE MODEL. LIST_REBAR_TYPES - the bar types
+     with their nominal diameters, hooks, cover types and rebar shapes the
+     model has. Each bar word in the table is matched by a type's exact name
+     ("T16" only when a type is named T16), or by a diameter in millimetres
+     (16) matched to the ONE type of that diameter; anything else is asked.
+     Hooks by angle and style (standard, or stirrup/tie). No rebar shapes at
+     all - an architectural template - stops the job: Revit builds a bar's
+     shape from the shapes already there, so the structural shapes must be
+     loaded first, by the modeller.
+
+  3. WHAT IS MISSING IS MADE FROM THE SPEC'S OWN VALUES, each asked:
      CREATE_REBAR_BAR_TYPE (name, diameter and the three bend diameters),
      CREATE_REBAR_COVER_TYPE (name and distance), CREATE_REBAR_HOOK_TYPE
      (name, angle, extension as a multiple of the bar, standard or
      stirrup/tie). The name follows the modeller's own naming rules.
-  3. THE HOSTS: the modeller's selection, or FILTER_ELEMENTS_BY_CATEGORY with
+
+  4. THE HOSTS: the modeller's selection, or FILTER_ELEMENTS_BY_CATEGORY with
      inViewOnly the view he names and category - or several in categories -
      Structural Columns, Structural Framing, Structural Foundations, Floors or
-     Walls. Count them and say the number before step 5.
-  4. SET_REBAR_COVER on the hosts, when the spec's cover is not what the host
+     Walls. Count them and say the number before step 6. One element type at
+     a time, each with its own row of the table.
+
+  5. SET_REBAR_COVER on the hosts, when the spec's cover is not what the host
      holds - REPORT_HOST_REBAR reads it. Setting the host keeps its schedule,
-     its tags and every later bar agreeing with the spec; a placing tool's own
-     `cover` places the bars there but leaves the host's parameter as it was.
-  5. PLACE, by kind of member - each skips, and names, a host it cannot take
-     and a host that already holds rebar, so a second run never doubles bars:
-       columns   PLACE_COLUMN_REBAR - main bars "<count> x <bar type>", the
-                 layout for a rectangle with more than 4 bars ("3x3" - bars on
-                 each face along the width x along the depth), ties
-                 "<bar type> @ <spacing>" and the tie hook, asked
+     its tags, every later bar and step 7's check agreeing with the spec; a
+     placing tool's own `cover` places the bars there but leaves the host's
+     parameter as it was, and step 7 then reads the host's.
+
+  6. PLACE, by kind of member, with the confirmed values - each skips, and
+     names, a host it cannot take and a host that already holds rebar, so a
+     second run never doubles bars:
        beams     PLACE_BEAM_REBAR - bottom, top and side face bars, stirrups
                  at a spacing, the stirrup hook asked, hooks on the main bars
                  if the spec has them
+       columns   PLACE_COLUMN_REBAR (DRAFT) - main bars "<count> x <bar
+                 type>", the layout for a rectangle with more than 4 bars
+                 ("3x3" - bars on each face along the width x along the
+                 depth), ties "<bar type> @ <spacing>" and the tie hook, asked
        footings  PLACE_FOOTING_REBAR - pad footings and pile caps: bottom
                  and top layers along the length and the width, and WHICH
                  LAYER SITS OUTERMOST, asked
@@ -68,25 +117,69 @@ purpose: >
                  bottom (on a wall: exterior / interior) each major and minor,
                  "none" said for any layer not wanted, and the major direction
        a strip of bars along an edge or a line  PLACE_PATH_REINFORCEMENT
-       welded mesh  PLACE_FABRIC_REINFORCEMENT - the fabric sheet type by
-                 its exact name
-  6. REPORT_HOST_REBAR on the same hosts - THE PROOF, never skipped. Each set's
-     bar type, count, spacing and hooks, and each host's cover, read off the
-     model, against the spec. "Placed 6" from step 5 is not the proof; the bars
-     in the host are (D-30). A count that differs is said, with both numbers.
-  7. When the modeller wants to see them: SET_REBAR_VIEW_STATE - unobscured in
-     a view, and solid in a 3D view on Revit 2020 to 2023 (later releases draw
-     rebar solid at Fine detail). SET_CATEGORY_VISIBILITY turns the Structural
-     Rebar category on or off in a view.
+       welded mesh  PLACE_FABRIC_REINFORCEMENT (DRAFT) - the fabric sheet
+                 type by its exact name
+       one bar or set of a chosen shape - an extra bar over a support, an L
+                 starter bar  PLACE_REBAR (DRAFT) - the shape and points asked
+     A PROVEN card runs through revit_change, and Revit asks Keep or Discard
+     when the owner's Ask to Keep switch is on; a DRAFT one by the route
+     above.
+
+  7. CHECK AGAINST THE SPEC - READ, NOTHING CHANGED. CHECK_REBAR_AGAINST_SPEC
+     through revit_read on the same hosts, with the confirmed row of the
+     table as its values. Every bar is passed as the bar type MATCHED IN
+     STEP 2 - its exact name in the model, or its diameter in mm - never the
+     spec's own word: "4T16" in the spec, matched to the type "16mm", is
+     bottomBars "4 x 16mm" (or "4 x 16"); a type named T16 is "4 x T16".
+     bottomBars, topBars, sideBars (each face) or mainBars as "<count> x
+     <bar type>", links "<bar type> @ <largest spacing>" ("8mm @ 150"),
+     linkHook in degrees ("135"), cover (one number, or "top 40, bottom 75,
+     other 50"), lap and anchorage in mm or as "50d", maxBarLength ("12 m").
+     A value the spec does not give is left out and is not checked. The
+     link spacing is measured centre to centre between neighbouring ties;
+     cover is the host's cover setting - the bars' own distance to the face
+     is not measured, and the card says so. Read back, host by host, each check as the card gives it:
+     MEETS the value checked, DOES NOT MEET it (both values said), or NOT
+     CHECKED with the reason. Anchorage is ALWAYS not checked - Revit holds
+     no support for a bar; the card sets each set's hooks and its length
+     outside the host beside the spec's figure, and the engineer judges it.
+     A lap is read only between touching, parallel bars of two sets in one
+     host. NEVER say the reinforcement is compliant, adequate or OK to build:
+     a check that meets says the model holds the value checked, and the
+     engineer decides.
+
+  8. THE READ-BACK, never skipped. REPORT_HOST_REBAR on the same hosts:
+     each set's bar type, count, spacing and hooks, and each host's cover,
+     read off the model. "Placed 6" from step 6 is not the proof; the bars
+     in the host are (D-30). A count that differs from what was placed is
+     said, with both numbers.
+
+  9. KEEP OR DISCARD, THEN LOOK. While Revit's Keep or Discard box is open
+     no chat tool reaches Revit - the modeller looks in Revit, where the new
+     rebar is selected and shown, and chooses; steps 7 and 8 run after Keep.
+     A DOES NOT MEET after Keep is put right by the modeller's choice - one
+     Ctrl+Z on the step's own undo entry, then the step again with corrected
+     values - never by a second change made to reverse the first. To see the
+     bars: SET_REBAR_VIEW_STATE - unobscured in a view, and solid in a 3D
+     view on Revit 2020 to 2023 (later releases draw rebar solid at Fine
+     detail). SET_CATEGORY_VISIBILITY turns the Structural Rebar category on
+     or off in a view.
 
   NOT YET: a slanted column, a curved or rotated beam, a T or L section, a
-  wall (strip) foundation, bars over supports and curtailment, couplers and
-  laps along a bar, spirals, bending schedules (Revit's own rebar schedule
-  gives them), and taking existing rebar out (a delete, asked in Revit,
-  D-142).
+  wall (strip) foundation, curtailment, couplers and laps along a bar,
+  spirals, bending schedules (Revit's own rebar schedule gives them), taking
+  existing rebar out (a delete, asked in Revit, D-142), anchorage judged
+  into a support, and a footing's, slab's or wall's bar sizes checked layer
+  by layer (step 7 checks their cover, laps and bar length; REPORT_HOST_REBAR
+  lists their layers).
 
-# The words the modeller says when he wants rebar.
+# The words the modeller says when he wants rebar. The first three are the
+# owner's own: docs/48 section 5 item 8 and the request the modeller is to
+# make (the owner's brief, 2026-11-09).
 utterances:
+  - Rebar from a spec
+  - read the bar sizes and covers from a given spec, then place, then check anchorage and bar length
+  - reinforce these beams from this spec
   - put 4 T16 main bars and T8 links at 150 in these columns, 40 cover
   - reinforce these beams
   - reinforce a column
@@ -99,20 +192,22 @@ utterances:
 # CAPABILITIES, never fragment ids - in the order the purpose gives.
 needs:
   - REPORT_OPEN_DOCUMENTS
-  # Read first - it decides step 2.
+  # Read first - it decides step 3.
   - LIST_REBAR_TYPES
   - CREATE_REBAR_BAR_TYPE
   - CREATE_REBAR_COVER_TYPE
   - CREATE_REBAR_HOOK_TYPE
   - FILTER_ELEMENTS_BY_CATEGORY
   - SET_REBAR_COVER
-  - PLACE_COLUMN_REBAR
   - PLACE_BEAM_REBAR
+  - PLACE_COLUMN_REBAR
   - PLACE_FOOTING_REBAR
   - PLACE_AREA_REINFORCEMENT
   - PLACE_PATH_REINFORCEMENT
   - PLACE_FABRIC_REINFORCEMENT
-  # The proof, on the hosts themselves. Never skipped.
+  - PLACE_REBAR
+  # The check against the confirmed spec, then the read-back. Never skipped.
+  - CHECK_REBAR_AGAINST_SPEC
   - REPORT_HOST_REBAR
   - SET_REBAR_VIEW_STATE
   - SET_CATEGORY_VISIBILITY
@@ -123,24 +218,35 @@ preconditions:
   - a project is open in front, and it is the model the modeller means
   - the members are concrete and structural - Revit hosts rebar in nothing else
   - the model has rebar shapes loaded (a structural template has them)
-  - every bar size, spacing, cover, hook and layout comes from the modeller or his spec, in millimetres, and none is assumed (D-33, D-71)
+  - the spec's values have been written back per element type and confirmed or corrected by the modeller before anything is placed
+  - every bar size, spacing, cover, hook, lap, anchorage and bar-length limit comes from the modeller or his spec, in millimetres or as a multiple of d, and none is assumed or taken from a design code (D-33, D-71)
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 
 note: >
+  WHY THE SPEC IS WRITTEN BACK BEFORE ANYTHING IS PLACED. A spec is read by
+  the host, from text or a picture of a page, and a misread figure placed in
+  three hundred beams is three hundred wrong beams. The table, confirmed,
+  is the one source the placing cards and the check both take - so the
+  check compares the model with what the modeller agreed, not with a second
+  reading of the spec.
+
   WHY THE TYPES ARE READ FIRST. A structural spec names bars its own way -
   T16, H16, 16M, #5, Y16 - and a Revit model names its bar types its own way.
-  The two meet only where a person says they do. Step 1 shows what the model
+  The two meet only where a person says they do. Step 2 shows what the model
   has; the modeller says which type each spec word means, or gives the
-  diameter; the placing tools take exactly that and refuse anything else with
-  the list. That refusal is the design, not a gap.
+  diameter; the placing tools and the check take exactly that and refuse
+  anything else with the list. That refusal is the design, not a gap.
 
   WHY THE HOST'S COVER IS SET BEFORE THE BARS. The placing tools read each
   host's own Rebar Cover parameters when no cover is given, so the bars land
-  where the host says, and a schedule or a tag reading the host's cover agrees
-  with the drawing.
+  where the host says, a schedule or a tag reading the host's cover agrees
+  with the drawing, and the check reads the cover the bars were placed to.
 
-  Every step is one entry in Revit's undo list. DRAFT until the whole order
-  has been run on a scratch model with structural content - a column, a beam,
-  a pad footing, a slab and a wall reinforced, and every one read back
-  (NEEDS-CHECKING Group HY).
+  EXTENDED 2026-11-09 for docs/48 section 5 item 8 (steps 1, 7 and 9, the
+  owner's words, PLACE_REBAR and the DRAFT routes), rather than a second
+  method for the same job. Every step is one entry in Revit's undo list.
+  DRAFT until the whole order has been run on a scratch model with
+  structural content - a column, a beam, a pad footing, a slab and a wall
+  reinforced, every one checked and read back (NEEDS-CHECKING Groups HY and
+  MZ; FRAGMENT-ISSUES row 5b-1489).

@@ -1,0 +1,272 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-169
+semantic-identity: "compare the placed reinforcement with the spec values handed in, and say for each value whether it meets it"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-09: docs/48-studying-bimlogiq.md section 5 item 8 - "Rebar from a
+# spec - read the bar sizes and covers from a given spec, then place, then
+# check anchorage and bar length" - which the owner started that day ("yes
+# start item 8"). The spec is read by the host and confirmed by the modeller;
+# the bars are placed by the cards that already exist; THIS is the last step:
+# the placed bars compared with the confirmed values, one line per check.
+#
+# WHY A NEW CARD AND NOT REPORT_HOST_REBAR. REPORT_HOST_REBAR (PROVEN) reads
+# what is there and compares nothing; widening a PROVEN card's impl/ sends it
+# back to DRAFT and out of the chat's reach (D-117). This card takes the spec
+# values as request values and says, per value, meets / DOES NOT MEET / NOT
+# CHECKED with the reason. It also reads what REPORT_HOST_REBAR does not: each
+# bar's place in a beam (bottom, top, side face), laps between bars, the
+# length of bar outside the host. The overlap and the merge to weigh once both
+# are proved: FRAGMENT-ISSUES row 5b-1489.
+#
+# THREE OUTCOMES, NEVER A FOURTH. "meets" says the model holds the value
+# checked and no more; nothing here says "compliant" or "OK to build" - that
+# is the engineer's decision (the heron MCP instructions). A value not given
+# is not checked and not mentioned. What the API cannot read reliably is NOT
+# CHECKED with the reason, and is never passed:
+#   - ANCHORAGE is always NOT CHECKED. Revit holds no support for a bar and no
+#     anchorage length. What is read is put beside the spec's length: each
+#     main set's hooks, and how much of its first bar lies outside this host's
+#     concrete ("both ends inside this host" is what PLACE_BEAM_REBAR's bars
+#     read - they stop at the beam's own solid).
+#   - A LAP is read only between straight, parallel bars of two sets in the
+#     same host that touch (centrelines no further apart than the two bars'
+#     radii and 1 mm) and end past each other. A lap into another element, a
+#     spaced (non-contact) lap and a coupler are not read - every lap line
+#     says so; with none found the lap is NOT CHECKED, and while any set's bars
+#     could not be read the laps found never MEET (a short one still DOES NOT
+#     MEET). Two bar sizes lapping under a "50d" spec are NOT CHECKED - which d
+#     the spec means is the engineer's; a lap in mm is checked. The legs are
+#     compared by sort and sweep along X, at most 20,000 in one host.
+#   - Bars are SORTED BY POSITION in beams and columns only. In a straight
+#     beam a set whose bars are spread up the depth more than across it is a
+#     side face set, every bar of it (PLACE_BEAM_REBAR lays side face bars so);
+#     a set spread ACROSS the beam is a layer, below half the depth bottom and
+#     above it top - so a second bottom layer in a shallow beam is bottom; a
+#     bar on its own goes by thirds (lowest bottom, highest top, between them
+#     side face). Each bar's place is the middle of its longest straight leg
+#     in the beam's own frame, as PLACE_BEAM_REBAR places them. Bars counted
+#     as side face when no sideBars is given are never silent: "N bars
+#     between the layers not counted", NOT CHECKED. In a column every bar
+#     that is not a tie is a main bar. Footings, slabs and walls get cover,
+#     bar length, laps and anchorage only.
+#   - LINK SPACING is MEASURED, centre to centre, between neighbouring bars
+#     that exist: the origins of their position transforms (a free-form set:
+#     the starts of their centrelines), the widest gap kept; on 2027 Revit's
+#     own GetSpacingsBetweenBars too, the larger kept. Never the Spacing
+#     parameter, which under Minimum Clear Spacing is the CLEAR gap and
+#     would let a set too wide apart meet. A set that cannot be measured, and
+#     ties placed one by one, are NOT CHECKED, never measured gap by gap.
+#
+# NO CODE VALUES. Anchorage, lap and bar-length limits come in as numbers or
+# as multiples of the bar's NOMINAL diameter, from the spec or the modeller.
+# Heron computes nothing from ACI, Eurocode or BS (D-33).
+#
+# COVER: the HOST COVER SETTING - the cover type on the host's own Rebar
+# Cover parameters, face by face - against the spec. "Meets" is the same
+# distance within 0.5 mm - a cover more than the spec's is a difference too,
+# said with its direction (the owner may want "not less than" instead: row
+# 5b-1489). How far each bar actually sits from the face is NOT measured, and
+# every cover line says so: telling the faces of a solid apart on every kind
+# of host is not cheap or safe enough for version 1.
+#
+# NUMBERS: every value is read through one parser that refuses NaN and
+# Infinity, which .NET's own parser takes as numbers; a hook angle is a
+# number with deg, degree(s) or a degree sign, matched whole.
+#
+# READ ONLY. Opens no transaction and needs none.
+kind: action
+domain: revit.elements
+capability: CHECK_REBAR_AGAINST_SPEC
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Compares the bars placed in concrete beams, columns, footings, slabs and
+  walls with the values of a structural spec handed in - bar count and bar
+  type at the bottom, top and side faces of a beam or as a column's main
+  bars, link bar type, largest link spacing and link hook angle, the cover
+  set on the host face by face, minimum lap and anchorage as millimetres or as a multiple of d,
+  and the longest bar allowed - and gives each value back, host by host, as
+  meets, does not meet, or not checked with the reason. A value the spec does
+  not give is not checked. How far a bar reaches into its support is never
+  passed - Revit does not hold the support - so its hooks and its length
+  outside the host are set beside the spec's figure for the engineer. Meeting
+  a value is not a judgement that the reinforcement is adequate.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The hosts - the modeller's selection, or the members a filter found.
+    - name: elements
+      type: IList<Element>
+    # EVERY SPEC VALUE BELOW IS OPTIONAL, AND ONE NOT GIVEN IS NOT CHECKED.
+    # A bar type is a Rebar Bar Type by its exact name, or a NOMINAL diameter
+    # in millimetres (16) - any bar of that diameter meets it. A spec word
+    # such as T16, H16 or Y16 is matched by the modeller, never here (D-34): a
+    # word that is neither a loaded type's name nor a number refuses the call.
+    # "none" says the spec has NONE in that place, and is checked as zero.
+    #
+    # A beam's bottom bars, "<count> x <bar type>": 4 x 16mm, 4 x T16.
+    - name: bottomBars
+      type: string
+      source: request
+      optional: true
+      absent: not given
+    # A beam's top bars, "<count> x <bar type>".
+    - name: topBars
+      type: string
+      source: request
+      optional: true
+      absent: not given
+    # A beam's side face bars ON EACH FACE, as PLACE_BEAM_REBAR takes them:
+    # "2 x 12mm" is checked as 4 bars in the middle third of the depth.
+    - name: sideBars
+      type: string
+      source: request
+      optional: true
+      absent: not given
+    # A column's main bars, "<count> x <bar type>" - every bar in the column
+    # that is not a tie.
+    - name: mainBars
+      type: string
+      source: request
+      optional: true
+      absent: not given
+    # Links (stirrups, ties), "<bar type> @ <largest spacing in mm>": 10mm @ 150.
+    # The spacing is centre to centre, measured between neighbouring ties.
+    - name: links
+      type: string
+      source: request
+      optional: true
+      absent: not given
+    # The links' hook angle in degrees at both ends: 135.
+    - name: linkHook
+      type: string
+      source: request
+      optional: true
+      absent: not given
+    # Cover in mm - one number for every face (40), or faces named:
+    # "top 40, bottom 75, other 50" (exterior and interior on a wall).
+    # Compared with the host's cover SETTING; the bars' own distance to the
+    # face is not measured.
+    - name: cover
+      type: string
+      source: request
+      optional: true
+      absent: not given
+    # The shortest lap allowed: mm (800) or a multiple of the bar's nominal
+    # diameter (50d).
+    - name: lap
+      type: string
+      source: request
+      optional: true
+      absent: not given
+    # The spec's anchorage: mm or a multiple of d (40d). Set beside what is
+    # read and NEVER passed - see the note above.
+    - name: anchorage
+      type: string
+      source: request
+      optional: true
+      absent: not given
+    # The longest bar allowed: "12 m" or "12000 mm". A bare number is mm, and
+    # one below 100 is refused - "12" could be metres.
+    - name: maxBarLength
+      type: string
+      source: request
+      optional: true
+      absent: not given
+  provides:
+    - name: meets
+      # Checks whose value read equals, or keeps within, the spec value given.
+      role: result
+      type: int
+    - name: doesNotMeet
+      # Checks whose value read differs from the spec value - each one also in
+      # `findings`, with both values.
+      role: result
+      type: int
+    - name: notChecked
+      # Checks asked for that could not be decided from the model, each with
+      # its reason in `report`. Never counted as a pass (D-52).
+      role: result
+      type: int
+    - name: report
+      # HOST BY HOST, in words: each check's value read, the spec's value and
+      # the outcome. A STRING, because a reply cuts a list to three items and
+      # this is the answer.
+      role: accounting
+      type: string
+    - name: notHosts
+      # Elements Revit does not take as a rebar host - nothing checked in them.
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why NOTHING was checked: no spec value given, a bar word that is not a
+      # loaded type or a diameter, a value in a shape not understood. Empty
+      # when it ran (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  Three version branches. By #if REVIT2020 || REVIT2021: a bar's place is
+  read with Rebar.GetTransformedCenterlineCurves from 2022 (the five-argument
+  form, its second argument renamed suppressHooksAndCranks at 2026 - passed by
+  position), and with GetCenterlineCurves(..., barPositionIndex) on 2020 and
+  2021, which the API's remarks say gives the set's FIRST bar at every index -
+  so a shape-driven set's bars are ALWAYS moved there by
+  RebarShapeDrivenAccessor.GetBarPositionTransform (MZ2 confirms it); from
+  2022, only should every position come back on top of the first. By #if
+  REVIT2027_OR_GREATER: Rebar.GetSpacingsBetweenBars, 2027 only, read beside
+  the measured link spacing. Diameters: BarDiameter on 2020-2021, BarNominalDiameter and
+  BarModelDiameter from 2022 (2022 has both) - REPORT_HOST_REBAR's and
+  PLACE_BEAM_REBAR's branch. Read off the shipped assemblies 2020 to 2027 on
+  2026-11-09 with tools/api-surface --members: RebarHostData.IsValidHost,
+  GetRebarHostData, GetRebarsInHost, GetAreaReinforcementsInHost,
+  GetPathReinforcementsInHost; AreaReinforcement and PathReinforcement
+  GetRebarInSystemIds; Rebar NumberOfBarPositions, DoesBarExistAtPosition,
+  IsRebarShapeDriven, GetShapeDrivenAccessor, LayoutRule, Quantity,
+  TotalLength, GetHookTypeId, GetShapeId; RebarInSystem Quantity and
+  GetHookTypeId; RebarHookType.HookAngle; RebarCoverType.CoverDistance;
+  RebarShape.RebarStyle; MultiplanarOption.IncludeAllMultiplanarCurves;
+  Curve.CreateTransformed; Solid.IntersectWithCurve with
+  SolidCurveIntersectionOptions.ResultType CurveSegmentsInside,
+  SolidCurveIntersection.SegmentCount and GetCurveSegment; the
+  BuiltInParameters REBAR_MAX_LENGTH, REBAR_ELEM_LENGTH and CLEAR_COVER_TOP / BOTTOM / OTHER / EXTERIOR /
+  INTERIOR; XYZ.DistanceTo - all on every release. No ElementId is built from or read as a
+  number, so 2024's 64-bit ids do not reach this code.
+
+# ROUTING (2026-11-09) - which card wins which sentence. The cards named here
+# were not edited, so these rows are written here and in row 5b-1489.
+#
+#   "check anchorage and bar length"                  -> here
+#   "a checklist for anchorage, terminations and
+#    bar-length limits"                               -> here
+#   "Rebar from a spec" / "reinforce these beams      -> the reinforce-concrete
+#    from this spec"                                      method (heron_method):
+#                                                         read the spec, confirm,
+#                                                         place, then here
+#   "what rebar is in these columns" / "what cover    -> REPORT_HOST_REBAR - what
+#    does this slab have" / "how many bars does this      is there, compared with
+#    column have"                                         nothing
+#   "what rebar bar types are loaded"                 -> LIST_REBAR_TYPES
+#   "set the rebar cover on these beams to 40"        -> SET_REBAR_COVER
+#   "reinforce these beams"                           -> PLACE_BEAM_REBAR
+# No question was claimed for a write (D-86); this card is READ.
+utterances:
+  # The owner's own words: docs/48 section 5 item 8 and its section 1.1 Rebar row.
+  - check anchorage and bar length
+  - a checklist for anchorage, terminations and bar-length limits
