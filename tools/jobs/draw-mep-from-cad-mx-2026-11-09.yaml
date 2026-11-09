@@ -1,0 +1,53 @@
+# NEEDS-CHECKING Group MX - DRAW_MEP_FROM_CAD, built 2026-11-09 in a cloud
+# session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/draw-mep-from-cad-mx-2026-11-09.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/draw-mep-from-cad-mx-2026-11-09.yaml
+#
+# THE MODEL is a SAVED scratch copy of Project1, Revit 2020 - the new project
+# CREATE_MEP_RUNS was proved on - with ONE TEST DWG LINKED by MX1 (a small
+# double-line supply duct layout on one layer, a single-line chilled water
+# layout on another, their size tags as text). Never a working model.
+# "MX-TEST.dwg", "M-DUCT-SA" and "M-PIPE-CHWS" below are the names MX1 is
+# asked to give them; if the drawing used has other names, MX1 writes them
+# here - the job file changes, never the card. "Supply Air", "Mitered Elbows /
+# Tees" and "Level 1" are the names CREATE_MEP_RUNS' proof read on Project1.
+#
+# NO SETUP CHAIN. The CAD is found by its name (cadName), so nothing is
+# selected and nothing is handed on.
+#
+# THE NEGATIVE IS A VALUE, NOT A SELECTION (fragment-proving rules 2 and 5):
+# the same call with a layer name the drawing has not got. A card that drew
+# whatever layer it found draws here; this one must refuse, draw nothing, and
+# list the layers the drawing has. Every run is ROLLED BACK.
+
+model: saved scratch copy of Project1 with MX1's test DWG linked, Revit 2020
+
+defaults:
+  write: true
+  setup: []
+  set:
+    cadName: "MX-TEST.dwg"
+    drawAs: duct
+    systemType: "Supply Air"
+    runType: "Mitered Elbows / Tees"
+    level: "Level 1"
+    middleElevationMm: 2700
+    defaultSize: "400x300"
+
+jobs:
+  - fragment: draw-mep-from-cad
+    expect: created
+    set:
+      layerNames: "M-DUCT-SA"
+    negative-set:
+      layerNames: "ZZZ-NO-SUCH-LAYER"
+    note: >
+      MX2. Negative - THE FIRST CASE TO RUN: refused "no layer called
+      'ZZZ-NO-SUCH-LAYER' is in the CAD drawing - layer names are matched
+      exactly, including case. The layers are: ... Nothing was drawn", created
+      and fittings empty. Positive: created one duct per run, fittings the
+      elbows and the tee the drawing has, failedJoins empty, runsFound listing
+      each run with its size and "width from the spacing, height default",
+      layersRead "'M-DUCT-SA': N straight piece(s) read, ... taken as double
+      lines". Rolled back - so LOOK in MX9, the one kept run.

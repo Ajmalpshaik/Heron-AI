@@ -432,6 +432,7 @@ own (§8.9).
 | **Connect and check** | which Revit, which model, is Heron working | `READ` | nothing | `revit_health`, `revit_use_session`, `revit_use_this_model`, `heron_version`, `heron_diagnose`, `heron_companion` |
 | **Saved commands** | keep a job as a named command; list, show, delete ([docs/49](49-saved-commands-and-the-heron-panel.md)) | `READ` - writes only the modeller's own command files | nothing. Running one is `revit_change` or `revit_read`, from the chat or from Revit's Heron panel | `heron_commands` |
 | **QA checklists** | keep checks in the modeller's words as a named checklist; list, show, save, a starter, run, delete ([docs/50](50-qa-checklists.md)) | `ANALYZE` through `run_fragment_read` - `revit_read`'s own level, because `run` reads the model check by check through it; the rest writes only the modeller's own checklist files | a connected Revit to run; Changes may be off. Each check must be PROVEN, or it is NOT RUN | `heron_checklist` |
+| **Read a file** | a sheet register in an .xlsx or .csv on the modeller's PC, for making the sheets ([docs/48 §5.3](48-studying-bimlogiq.md#53-item-7---sheets-from-excel)) | `READ` - reads the file, sends nothing to Revit | the file. Making the sheets is `revit_change` with what it hands back - or, while that card is DRAFT, the command line and `try-once` | `heron_sheet_list` |
 
 `heron_tools.ALWAYS_LOADED` names the few a chat is given before it asks (§8.6); every other tool is one
 search away.

@@ -1,0 +1,147 @@
+heron-status: DRAFT
+heron-step: 17
+heron-since: 0.1.0
+heron-layer: brain
+
+id: sheets-from-excel
+name: Make the sheets from a spreadsheet - read the sheet list, preview, create
+domain: revit.sheets
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
+risk: MODIFY
+
+purpose: >
+  Makes the sheets a sheet register lists - an Excel .xlsx or a .csv - with
+  their numbers, names and title block, and fills Drawn By, Checked By, an
+  issue date and every other column that names a sheet parameter, in ONE
+  call and ONE undo. The owner's words, docs/48 section 5 item 7: "Sheets
+  from Excel - read the sheet list from a spreadsheet, preview, create". The
+  file is read by heron_sheet_list, in Python, and touches no model; the
+  sheets are made by CREATE_SHEETS_FROM_TABLE.
+
+  Every tool of this method is DRAFT or PROVEN as the list after it says.
+  CREATE_SHEETS_FROM_TABLE was written 2026-11-09 and is DRAFT, compiled for
+  Revit 2020 to 2027 and NOT RUN in Revit (NEEDS-CHECKING Group MY). WHILE IT
+  IS DRAFT NO CHAT TOOL RUNS IT, a preview included: revit_read refuses
+  anything above ANALYZE and this card is MODIFY, and revit_change refuses a
+  DRAFT before anything is sent (D-117). Steps 3 and 5 say what runs it until
+  then. Once it is PROVEN, revit_change runs both.
+
+  0. THE FILE - NOTHING IN REVIT. heron_sheet_list with the path the modeller
+     gives (and `sheet` when the register is not the workbook's first sheet,
+     `header_row` when a title sits above the table). The first row is the
+     headers; each row after it is one sheet. A column headed Sheet Number is
+     required; Sheet Name and Title Block are optional; every other column
+     names a sheet parameter. Only .xlsx, .xlsm, .csv and .tsv are opened; an
+     old .xls, or anything else, is refused - ask the modeller to save it as
+     .xlsx or CSV UTF-8. Never read the file another way and never
+     retype what it says: the tool hands back the exact `sheets=` value.
+
+  1. THE FILE'S PROBLEMS - ASK, NEVER GUESS (D-33, D-34). Read out what the
+     tool lists: a row with no number (not passed), a number on two rows
+     (NEITHER passed - which is meant is the modeller's to say), a cell with
+     a line break (made one line), an Excel error cell (left empty), a value
+     under a column with no header or a header used twice (not passed), a
+     Sheet Number Excel shows through a number format such as 000 (not passed
+     - the modeller types it as text in Excel), hidden or filtered rows, and
+     which workbook sheet was read when there are several. A fix is made IN THE FILE by the
+     modeller and step 0 is run again - the value is never edited by hand.
+     When the file has no Title Block column, or a row leaves it empty, ASK
+     which title block - revit_families lists the title block families and
+     types loaded, written Family: Type; there is no default, and the word
+     none (sheets with no title block) only when the modeller says it.
+
+  2. WHAT IS ALREADY THERE - READ, NOTHING CHANGED. FIND_SHEETS through
+     revit_read with the `sheetNumbers=` the tool gives: the sheets it
+     returns are already in the register and will be SKIPPED, not changed;
+     its notFound are the numbers still free. Say which, in one line.
+
+  3. PREVIEW - NOTHING KEPT. CREATE_SHEETS_FROM_TABLE with the tool's
+     `sheets=` value, `titleBlockName` when it is needed, and previewOnly
+     true: it makes every sheet and TAKES EACH ONE BACK, so the preview is the
+     run itself. WHILE IT IS DRAFT the preview is run on the modeller's PC
+     from the command line, which runs the card and ROLLS IT BACK - nothing
+     can be kept without --apply, and --apply is refused for a DRAFT (D-117).
+     heron_sheet_list prints that command, quoted for PowerShell, in the
+     Heron folder - up to 30,000 characters, as a Windows command line holds
+     no more; above that it prints none and the modeller splits the file:
+       python mcp/client/heron_bridge_client.py fragment create-sheets-from-table
+         --set 'sheets=...' --write --set previewOnly=true --set 'titleBlockName=...'
+     Say so to the modeller and let them run it, or run it only where they
+     have asked for exactly that; never send it through another tool. ONCE
+     PROVEN, it is revit_change with previewOnly=true. Read back to the
+     modeller: `preview` - each row "would be made" with its title block and
+     values, or why not; numberTaken (already in the register, not made);
+     notCreated (no number, a number twice, Revit refusing a number or a name
+     in its own words); columnsMatched (where each column goes - the sheet's
+     own parameter, or the title block instance's); columnsUnmatched;
+     columnsNotWritten (read-only, on the title block TYPE, two parameters
+     sharing the name); valuesNotSet (a tick box given a word, a number Revit
+     would not read).
+
+  4. THE COLUMNS THAT MATCH NOTHING - ASK, NEVER GUESS (D-33, D-34). For
+     each column in columnsUnmatched say plainly that it will NOT be
+     written, and ask: is it a sheet parameter worded differently ("Discipln"
+     for Discipline, "Drawn" for Drawn By)? Then the modeller renames the
+     header in the file and steps 0 and 3 run again - never matched by
+     likeness. Is it a project parameter not bound to Sheets? Binding one is
+     ADD_PROJECT_PARAMETER, a separate change of its own, only when the
+     modeller asks. Or should it be left out? Then it is listed and not
+     written, and that is the answer. A column in columnsNotWritten as a
+     title block TYPE parameter is never written from a row - it would change
+     every sheet on that type; say so.
+
+  5. CREATE. The same values without previewOnly - one call, one undo. WHILE
+     DRAFT, this is the card's ONE run on the saved model in front through
+     try-once (D-119), and only when the modeller asks for it in the chat:
+       python mcp/client/heron_bridge_client.py try-once create-sheets-from-table
+         --set 'sheets=...' --set 'titleBlockName=...'
+     once per version; Revit asks Keep or Discard. ONCE PROVEN, revit_change.
+     Then say what came back in Revit words: how many sheets were made and
+     values set; the rows not made and why (a number already used, Revit's
+     words for a number or name it refused - that row was taken back alone);
+     the values not set; the columns not written. A failure Revit raises only
+     as the call is kept undoes the WHOLE call - one undo, nothing kept - and
+     its words are the answer; say them, never retry round them.
+
+  6. KEEP OR DISCARD, THEN LOOK. While Revit's Keep or Discard box is open,
+     no chat tool reaches Revit - the modeller looks in the Project
+     Browser's Sheets, where the new sheets are, and chooses. After Keep,
+     revit_sheets lists every sheet with its title block, and the modeller
+     opens one sheet to see the title block drawn and its labels showing
+     Drawn By and Checked By. After Discard there is nothing to check.
+
+# The owner's own words: docs/48 section 5 item 7 and its section 2 row, and
+# the request the modeller is to make (the owner's brief of 2026-11-09).
+utterances:
+  - Sheets from Excel
+  - read the sheet list from a spreadsheet, preview, create
+  - make the sheets from this Excel
+
+# CAPABILITIES, never fragment ids. heron_sheet_list, revit_families and
+# revit_sheets are Heron tools of their own, not capabilities, so they are
+# named in the method above and not here. ADD_PROJECT_PARAMETER is a separate
+# change the modeller may ask for at step 4, not a step of this method.
+needs:
+  - FIND_SHEETS
+  - CREATE_SHEETS_FROM_TABLE
+
+preconditions:
+  - the sheet register is an .xlsx or a .csv on the modeller's own PC, with the headers on one row and one sheet per row below it
+  - every problem heron_sheet_list listed in the file - no number, a number twice - has been put to the modeller and settled by them, never guessed
+  - the title block is in the file or named by the modeller as Family: Type - never assumed (D-33)
+  - every column that matches no sheet parameter has been put to the modeller - renamed in the file, bound by a separate change, or left out on their word
+  - while CREATE_SHEETS_FROM_TABLE is DRAFT, the model is saved and in front for its one try-once
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  WRITTEN 2026-11-09 IN A CLOUD SESSION, NOT RUN. docs/48 section 5 item 7.
+  One card, CREATE_SHEETS_FROM_TABLE (DRAFT), rather than CREATE_SHEETS and
+  then SET_PARAMETER_VALUES_BY_ID keyed by Sheet Number - both PROVEN, but
+  two calls and two entries in the undo list, and CREATE_SHEETS' number and
+  name lists cross as comma-separated values that drop an empty name and
+  split a name with a comma in it - FRAGMENT-ISSUES row 5b-1486.
+  NEEDS-CHECKING Group MY.

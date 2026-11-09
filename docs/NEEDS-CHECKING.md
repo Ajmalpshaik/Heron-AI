@@ -1422,6 +1422,14 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-mw.md`](needs-checking/group-mw.md)
 
+## Group MX - the lines on named layers of a CAD drawing drawn as real ducts or pipes with their fittings, sized from tags read off a picture: `DRAW_MEP_FROM_CAD` and the `cad-to-mep` method (2026-11-09)
+
+**Its own file:** [`needs-checking/group-mx.md`](needs-checking/group-mx.md)
+
+## Group MY - the sheets of a spreadsheet sheet register made in one call, on their title block, with Drawn By, Checked By and the other columns filled in: `CREATE_SHEETS_FROM_TABLE`, the `heron_sheet_list` tool and the `sheets-from-excel` method (2026-11-09)
+
+**Its own file:** [`needs-checking/group-my.md`](needs-checking/group-my.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
