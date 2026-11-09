@@ -97,7 +97,7 @@ purpose: >
      extremes in pixels - scale between the two (on a plan whose crop is not
      rotated: x grows to the right, y grows UP in the model and DOWN in the
      picture). revit_view_image does
-     not give the view's crop extents or scale (row 5b-1480), so this is the
+     not give the view's crop extents or scale (row 5b-1481), so this is the
      way today. Run the preview again with the hints (step 4's route): every
      hint used, runsWithoutSize short, sizeConflicts read out to the modeller -
      a hint that lost to a nearer one on the same run is listed there and was
@@ -163,5 +163,5 @@ note: >
   EXTRACT_CAD_CURVES' coordinates, CREATE_MEP_RUNS and FIT_MEP_JOINTS: a
   floor's linework is thousands of lines, listOnly hands back 200, and both
   drawing cards undo the whole job on one bad joint - FRAGMENT-ISSUES row
-  5b-1480. NEEDS-CHECKING Group MX. Not the duct-layout skill, which is a
+  5b-1481. NEEDS-CHECKING Group MX. Not the duct-layout skill, which is a
   unit ducted to its diffusers.

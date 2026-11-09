@@ -226,12 +226,12 @@ serves and `heron_lookup` offers for *"CAD lines to ducts and pipes"* or *"under
 - **The picture and the model:** `revit_view_image` gives no crop extents or scale, so a tag's pixel position
   cannot be turned into model coordinates exactly. The method works round it - a hint only has to be nearest its
   own run - and a small addition to the capture's reply that would make it exact is described, NOT made, in
-  [row 5b-1480](fragment-issues/section-5b-rows-401-425.md).
+  [row 5b-1481](fragment-issues/section-5b-rows-401-425.md).
 - **The overlap** with `EXTRACT_CAD_CURVES`, `CREATE_MEP_RUNS` and `FIT_MEP_JOINTS` (all PROVEN, none edited),
   the routing measured before and after - one question, *"what size are the ducts on this cad drawing"*, moved
   to it from another write, OPEN and a **condition for promotion** - the independent review's findings and what
   was done about each, and the merge planned once it is proved:
-  [row 5b-1480](fragment-issues/section-5b-rows-401-425.md).
+  [row 5b-1481](fragment-issues/section-5b-rows-401-425.md).
 - **While it is DRAFT no chat tool runs it** - `revit_read` refuses a MODIFY and `revit_change` a DRAFT (D-117):
   the method's preview is the command line, rolled back, and the draw is the one `try-once` (D-119).
 - **What a real Revit must show:** [NEEDS-CHECKING Group MX](needs-checking/group-mx.md) - a double-line duct

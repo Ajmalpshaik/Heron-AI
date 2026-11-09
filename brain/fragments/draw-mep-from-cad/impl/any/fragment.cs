@@ -34,7 +34,7 @@
 // measures it. `allOrNothing` true throws when any joint was left unfitted, so
 // nothing is kept unless every joint is (FIT_MEP_JOINTS' rule); left out it is
 // false - the owner's design - and which is the default is his to confirm
-// (FRAGMENT-ISSUES row 5b-1480).
+// (FRAGMENT-ISSUES row 5b-1481).
 //
 // MILLIMETRES TO FEET BY ARITHMETIC (D-20). Points are Revit's INTERNAL
 // coordinates in millimetres - the same numbers EXTRACT_CAD_CURVES' listOnly

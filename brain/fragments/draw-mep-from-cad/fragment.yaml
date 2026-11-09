@@ -40,7 +40,7 @@ semantic-identity: "turn the duct and pipe linework of a linked CAD background i
 # all-or-nothing, so one bad joint loses the whole floor. Widening either
 # PROVEN card would make its proof stale and take it out of revit_change
 # (D-117). So this is a card of its own, overlapping four, knowingly - FRAGMENT-
-# ISSUES row 5b-1480, which also plans the merge once it is proved:
+# ISSUES row 5b-1481, which also plans the merge once it is proved:
 #   EXTRACT_CAD_CURVES (FRG-ELE-040, PROVEN v2) - its read of an import's
 #     geometry (GetInstanceGeometry, the layer from the graphics style's
 #     category name, exact names, polylines as segments, splines refused) is
@@ -110,7 +110,7 @@ semantic-identity: "turn the duct and pipe linework of a linked CAD background i
 #                can match the picture's tags to
 #   allOrNothing true: any joint left unfitted throws, and the WHOLE call is
 #                rolled back, as FIT_MEP_JOINTS does. Left out, false - THE
-#                OWNER'S DESIGN, his to confirm as the default (row 5b-1480):
+#                OWNER'S DESIGN, his to confirm as the default (row 5b-1481):
 #                each joint's room is checked first - every leg against what
 #                the fittings at both its ends take from it, on a safe estimate
 #                (an elbow 1.5 x the largest size meeting there, a tee, cross or
@@ -375,7 +375,7 @@ compatibility-note: >
   not reach this code.
 
 # ROUTING (2026-11-09) - which card wins which sentence. The cards named here
-# were not edited, so these rows are written here and in row 5b-1480.
+# were not edited, so these rows are written here and in row 5b-1481.
 #
 #   "CAD lines to ducts and pipes"                    -> here
 #   "read the CAD layer, ask size and type, draw the  -> here
@@ -403,7 +403,7 @@ compatibility-note: >
 # Questions about a drawing - which layer is the supply duct, what sizes are
 # tagged, how many pipes are drawn - are the host's to answer from the survey
 # and the picture; none was claimed for this card. Measured before and after
-# on lexical and model (row 5b-1480): ONE MOVED, OPEN - "what size are the
+# on lexical and model (row 5b-1481): ONE MOVED, OPEN - "what size are the
 # ducts on this cad drawing" reached IMPORT_CAD (a write) before and reaches
 # this card after, on both. It carries the words of two of the owner's
 # utterances, which were not weakened; four wordings of identity and purpose
@@ -411,7 +411,7 @@ compatibility-note: >
 # the picture, the method's step 2. A CONDITION FOR PROMOTION TO PROVEN, NOT A
 # LATER NOTE: this question reaching a write is settled before the card is
 # signed - a read that answers it, or the owner's recorded decision that it
-# may stay (row 5b-1480, NEEDS-CHECKING Group MX).
+# may stay (row 5b-1481, NEEDS-CHECKING Group MX).
 #
 # WORDING CHANGED BEFORE THIS WAS WRITTEN: a purpose saying "where runs meet
 # ... where a branch meets ... where the width changes" took REPORT_LOCATION's
@@ -421,7 +421,7 @@ utterances:
   # The owner's own words: docs/48 section 5 item 6, its section 2 table row,
   # and his request of 2026-11-09 ("IF I SAY UNDERSTAND FROM THE CAD ...").
   # docs/48 section 1.1's "Model MEP networks from a CAD drawing" is the
-  # VENDOR's wording, so it is measured (row 5b-1480) and not declared.
+  # VENDOR's wording, so it is measured (row 5b-1481) and not declared.
   - CAD lines to ducts and pipes
   - read the CAD layer, ask size and type, draw the run
   - MEP from a CAD drawing

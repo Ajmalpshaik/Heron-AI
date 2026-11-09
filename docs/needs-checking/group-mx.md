@@ -13,7 +13,7 @@ SAY UNDERSTAND FROM THE CAD, IT WILL TAKE THE SCREENSHOT AND IT WILL UNDERSTAND 
 DRAFT, with a method for the whole job. It overlaps `EXTRACT_CAD_CURVES`, `CREATE_MEP_RUNS` and
 `FIT_MEP_JOINTS` (all PROVEN) - none was edited; widening a PROVEN one would send it back to DRAFT and out of
 the chat's reach ([D-117](../DECISIONS.md)). The overlap, the merge planned once this is proved and the
-picture-to-model question are [FRAGMENT-ISSUES row 5b-1480](../fragment-issues/section-5b-rows-401-425.md).
+picture-to-model question are [FRAGMENT-ISSUES row 5b-1481](../fragment-issues/section-5b-rows-401-425.md).
 
 | What | Where | What it does |
 |---|---|---|
@@ -27,7 +27,7 @@ ignored (now a tap on an uncut main), a crossing drawn with a break joined, a dr
 half-width ducts, neighbouring ducts able to pair as false ducts, the cost unbounded by `maxRuns`, a losing hint
 counted as used, an incomplete joint given a wrong fitting, sizes carried across transitions, and the method
 naming the wrong tool for the CAD list and an impossible look while Keep or Discard is open. Each is fixed or
-said; row 5b-1480 has the list.
+said; row 5b-1481 has the list.
 
 **What is done and what is not.** The card compiles on all eight releases, 2020 to 2027, with the whole library
 (`tools/check-fragments-compile.py`, 2026-11-09, a Linux container). Every Revit member it uses is in the card's
@@ -61,12 +61,12 @@ linework takes (MX8).
 or scale, so a tag's pixel position cannot be turned into model coordinates exactly. The method works round it:
 the preview's `runsFound` gives each run's coordinates and the span of the linework, and a hint needs only to be
 nearer its own run than any other - the host gives a tag the middle of the run it labels. A small addition to
-the capture's reply that would make it exact is described in row 5b-1480 and NOT made; the owner decides.
+the capture's reply that would make it exact is described in row 5b-1481 and NOT made; the owner decides.
 
 **Routing.** Measured 2026-11-09 with `tools/score-routing.py --sentences` (54 sentences frozen before the card
 was written: 8 for it, 34 of the neighbouring cards' own words, 12 questions about a drawing; lexical and model -
 the re-ranked backends NOT ASKED) and `tools/check-routing.py`, on this tree against the same tree without the
-card, and again after the review's changes. Row 5b-1480 has the result. **A CONDITION FOR PROMOTION TO PROVEN:**
+card, and again after the review's changes. Row 5b-1481 has the result. **A CONDITION FOR PROMOTION TO PROVEN:**
 *"what size are the ducts on this cad drawing"* - a question - reaches this write on both backends, and is settled
 before the card is signed: a read that answers it, or the owner's recorded decision that it may stay.
 
