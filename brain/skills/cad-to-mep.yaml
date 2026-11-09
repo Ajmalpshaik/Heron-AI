@@ -1,0 +1,133 @@
+heron-status: DRAFT
+heron-step: 17
+heron-since: 0.1.0
+heron-layer: brain
+
+id: cad-to-mep
+name: Draw real ducts and pipes from a CAD drawing - read its layers, look at it, read its size tags, draw
+domain: revit.mep
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
+risk: MODIFY
+
+purpose: >
+  Turns a CAD background's duct and pipe linework into real Revit ducts and
+  pipes with their fittings. It is two halves, and the order matters: first
+  UNDERSTAND the drawing - which layer is what, and what sizes it is tagged
+  with - by reading its layers and LOOKING at it; then DRAW, in one call,
+  from the CAD's own geometry. The owner's words, 2026-11-09: "NOT ONLY FROM
+  THE LAYERS. IF I SAY UNDERSTAND FROM THE CAD, IT WILL TAKE THE SCREENSHOT
+  AND IT WILL UNDERSTAND LIKE THAT ALSO". The Revit API cannot read the text
+  in a DWG, so the picture is how the tags are read; the coordinates always
+  come from the CAD, never from the picture.
+
+  Every tool of this method is DRAFT or PROVEN as the list after it says.
+  DRAW_MEP_FROM_CAD was written 2026-11-09 and is DRAFT, compiled for Revit
+  2020 to 2027 and NOT RUN in Revit (NEEDS-CHECKING Group MX): until the owner
+  proves it, revit_change refuses to keep what it draws (D-117), and it may be
+  run once through try-once, behind Revit's Keep or Discard (D-119).
+
+  0. FIND THE CAD. Which CAD file, in which view. LIST_LINKED_MODELS names the
+     links and imports; ask the modeller to SELECT the CAD in the plan, or take
+     its name from that list for `cadName`. Bring a plan where the CAD shows to
+     the front. Ask which level the services are on and their middle
+     elevation above it - never assume a height (D-33).
+
+  1. SURVEY THE LAYERS - READ, NOTHING DRAWN. EXTRACT_CAD_CURVES with the CAD
+     selected and NO layer named lists every layer and how many objects each
+     holds, and creates nothing. Layer names are matched exactly, case and all,
+     so every name used later is copied from this list.
+
+  2. LOOK AT IT. revit_view_image on that plan returns a picture of it and
+     changes nothing. Read from the picture: where the ducts and pipes are,
+     whether a duct is drawn as two parallel lines (double) or one (single),
+     the SIZE TAGS beside them ("600x400", "Ø150"), and system names or
+     abbreviations ("SA", "RA", "CHWS"). Zoom in with a narrower crop, or a
+     second view, when tags are too small to read - never guess a figure that
+     cannot be read.
+
+  3. DECIDE THE LAYERS WITH THE MODELLER. Put the layer list from step 1 and
+     what the picture shows side by side, and propose which layer is supply
+     duct, return duct, chilled water supply ... with the reason ("M-DUCT-SA:
+     double lines, tagged SA"). ASK - a layer's meaning is never guessed (D-33,
+     D-34): a name like "M-HVAC-2" or an office abbreviation not explained by
+     anything Heron holds is a question for the modeller. Also ask, for each
+     layer: duct or pipe, the system type, the duct or pipe type (its routing
+     preferences choose every fitting), and the default size for a run no tag
+     reaches. One call draws ONE system and ONE type, so each layer of a
+     different system is its own call.
+
+  4. PREVIEW - NOTHING DRAWN. DRAW_MEP_FROM_CAD with previewOnly true. Its
+     runsFound gives the span of the linework read (internal coordinates, mm)
+     and every run it would draw - its two ends, length, size and where the
+     size came from - and findings count the elbows, tees and open ends;
+     skippedWhy counts what was left out (arcs, end caps, short pieces).
+     Tell the modeller in one line, and check against the picture: a run count
+     far from what the picture shows means the wrong mode (double / single),
+     the wrong layer, or a spacing range to change.
+
+  5. PLACE THE TAGS. Each tag read in step 2 becomes one size hint,
+     size@x,y in millimetres, all on ONE line with ; between them (a chat value
+     loses its line breaks). A hint only has to be NEARER ITS OWN RUN than any
+     other run - it is given to the one run nearest it, within hintReachMm
+     (1500 by default) - so the simplest position is the MIDDLE OF THE RUN IT
+     LABELS, taken from runsFound once the picture shows which run that is.
+     Where the picture alone must place it: the span in runsFound is the
+     linework's extremes in model coordinates, and the picture shows the same
+     extremes in pixels - scale between the two (on a plan whose crop is not
+     rotated: x grows to the right, y grows UP in the model and DOWN in the
+     picture). revit_view_image does
+     not give the view's crop extents or scale (row 5b-1480), so this is the
+     way today. Run the preview again with the hints: every hint used,
+     runsWithoutSize short, sizeConflicts read out to the modeller.
+
+  6. DRAW. The same call without previewOnly - one call, one undo. Then say
+     what came back in Revit words: how many ducts or pipes and fittings, the
+     joints NOT fitted (failedJoins - the runs are not connected there),
+     the runs at the default size, the tags that disagree with the drawing,
+     the crossings where two runs clash at one height.
+
+  7. LOOK AGAIN, THEN KEEP OR DISCARD. revit_view_image of the plan, or of
+     the new elements by id, and look: every duct over its CAD lines, none
+     where the drawing has none, fittings at the corners and tees. Revit asks
+     the modeller Keep or Discard; nothing stays until Keep. Afterwards,
+     SELECT_BY_CONNECTION_STATUS finds the open ends left, and
+     CONNECT_OPEN_ENDS joins the runs to equipment and terminals already
+     placed.
+
+# The owner's own words: docs/48 section 5 item 6, its section 2 row, and his
+# request of 2026-11-09.
+utterances:
+  - CAD lines to ducts and pipes
+  - read the CAD layer, ask size and type, draw the run
+  - MEP from a CAD drawing
+  - understand from the CAD
+
+# CAPABILITIES, never fragment ids. revit_view_image is a Heron tool of its
+# own, not a capability, so it is named in the method above and not here.
+needs:
+  - LIST_LINKED_MODELS
+  - EXTRACT_CAD_CURVES
+  - DRAW_MEP_FROM_CAD
+  - SELECT_BY_CONNECTION_STATUS
+  - CONNECT_OPEN_ENDS
+
+preconditions:
+  - the CAD is linked or imported in the project and shows in a plan the picture can be taken of
+  - the level and the middle elevation of the services are known from the modeller - never assumed
+  - every layer drawn has been named by the modeller as what it is - duct or pipe, which system - never guessed from its name
+  - the duct or pipe type's routing preferences hold the fittings the modeller wants at a corner and at a branch
+  - each tag's size was READ off the picture; a tag that could not be read is left out and its run takes the default, which is listed
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  WRITTEN 2026-11-09 IN A CLOUD SESSION, NOT RUN. docs/48 section 5 item 6.
+  The one-call drawing is DRAW_MEP_FROM_CAD (DRAFT) rather than a chain of
+  EXTRACT_CAD_CURVES' coordinates, CREATE_MEP_RUNS and FIT_MEP_JOINTS: a
+  floor's linework is thousands of lines, listOnly hands back 200, and both
+  drawing cards undo the whole job on one bad joint - FRAGMENT-ISSUES row
+  5b-1480. NEEDS-CHECKING Group MX. Not the duct-layout skill, which is a
+  unit ducted to its diffusers.
