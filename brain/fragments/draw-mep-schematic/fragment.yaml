@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -216,6 +216,88 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-09'
+  by: Ajmal PS
+  model: Snowdon HVAC - schematic proof (9,628 elements), Revit 2024, session 46948
+  positive_case: "run as it would normally be run - run inside a transaction, and Revit reported\
+    \ the transaction group ROLLED BACK afterwards. returned DX 4 item(s) [1, 0, -1, ...],\
+    \ DY 4 item(s) [0, 1, 0, ...], FarthestMetres 1500, MillimetresPerFoot 304.8, addAll Action`1,\
+    \ adjacent 10 entry(ies), allSystems 148 item(s) [Mechanical Supply Air 1, Mechanical\
+    \ Return Air 1, Mechanical Supply Air 22, ...], baseEquipment (null), began DateTime,\
+    \ categoryIs Func`3, chainTo 3 entry(ies), charMm 1.5478125, childrenOf 10 entry(ies),\
+    \ chooseRoot Func`1, circleItem Func`4, connectorsOf Func`2, createdNotes 8 item(s) [TextNote,\
+    \ TextNote, TextNote, ...], describe Func`2, draftingType ViewFamilyType, drawing 17 item(s)\
+    \ [System.Double[], System.Double[], System.Double[], ...], dropParameter BuiltInParameter,\
+    \ extentOf Func`2, failedCurves 0, failedNotes 0, findings 8 item(s) [system \"Mechanical\
+    \ Supply Air 1\" drawn on the new drafting v..., system \"Mechanical Supply Air 1\" names\
+    \ no base equipment in ..., read back: none of the 8 text notes touches another, ...],\
+    \ fittingOnly 0, flowParameter BuiltInParameter, formatPressure Func`2, gap 10, hasPlumbingEquipment\
+    \ true, isDuct true, isEquipment Func`2, isNode Func`2, isTerminal Func`2, labelOf Func`2,\
+    \ labelOffset 2.5, labelsWithoutValue 3 item(s) [the run from Ducts 1365662 (8\"ø): 1\
+    \ fitting(s) or accessory(..., the run from Flex Ducts 1379280 (6\"ø): no flow - Revit\
+    \ holds..., the run from Flex Ducts 1380483 (6\"ø): 1 fitting(s) or acces...], layoutRun\
+    \ Func`5, leavesUnder 4 entry(ies), leftOut Func`2, lineItem Func`5, lineMm 4.048125,\
+    \ linesMade 11, loopTags 0 entry(ies), loopsCut 0 item(s), maxElements 2000, measure Func`2,\
+    \ mechanical MechanicalSystem, members 10 entry(ies), nameOf Func`2, nameWanted Mechanical\
+    \ Supply Air 1, nodeChildren 4 entry(ies), nodeLabelOf Func`2, nodeOrder 4 item(s) [Heat\
+    \ Recovery Unit (HRU), Standard, 48x4 1/4-8 In Inlet 2-Slot, ...], nodes 4, noteType TextNoteType,\
+    \ notesMade 8, openAt HashSet`1, openConnectors 0, openEnds 0 item(s), ordered 10 item(s)\
+    \ [48x4 1/4-8 In Inlet 2-Slot, Flex - Round, 45 Degree, ...], outsideJoints HashSet`1,\
+    \ parameterOf Func`3, parentOf 9 entry(ies), piping (null), plumbingEquipment BuiltInCategory,\
+    \ reachMetres Func`2, reached HashSet`1, refused , root FamilyInstance, rootCurveTaken\
+    \ false, sectioned 4, segments 4, segmentsTo Func`3, shifted Func`4, sizeOf Func`2, skipped\
+    \ 0 item(s), skippedWhy 0 item(s), spacingMm 10, start (null), straightOn Func`2, symbolAt\
+    \ Action`6, symbolHalf 4, system MechanicalSystem, systemsOf Func`2, terminals 2, textItem\
+    \ Func`6, textMm 2.38125, textWanted , texts 8 item(s) [HRU202, 8\"ø\rQ 299 CFM\rΔp 0.00\
+    \ in-wg, 8\"ø\rQ -\rΔp 0.00 in-wg, ...], tooShort 0, treeDegree Func`2, usedScale 100,\
+    \ view ViewDrafting, viewId 1 item(s) [id 1542917], viewName Schematic - Mechanical Supply\
+    \ Air 1, viewScale 100, viewWanted , widthFactor 1, zeroLossFittings 2. inputs came systemName\
+    \ as given; start not given - null (optional); newViewName not given - \"none\", the card's\
+    \ own default (optional); viewScale not given - \"100\", the card's own default (optional);\
+    \ spacingMm not given - \"10\", the card's own default (optional); textType not given\
+    \ - \"none\", the card's own default (optional); maxElements not given - \"2000\", the\
+    \ card's own default (optional). on Snowdon HVAC - schematic proof"
+  negative_case: 'run with systemName=ZZZ No Such System instead - chosen because it should
+    not contain what this fragment reports - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned DX 4 item(s) [1, 0, -1, ...], DY
+    4 item(s) [0, 1, 0, ...], FarthestMetres 1500, MillimetresPerFoot 304.8, addAll Action`1,
+    adjacent 0 entry(ies), allSystems 148 item(s) [Mechanical Supply Air 1, Mechanical Return
+    Air 1, Mechanical Supply Air 22, ...], baseEquipment (null), began DateTime, categoryIs
+    Func`3, chainTo 0 entry(ies), charMm 1.625, childrenOf 0 entry(ies), chooseRoot Func`1,
+    circleItem Func`4, connectorsOf Func`2, createdNotes 0 item(s), describe Func`2, draftingType
+    (null), drawing 0 item(s), dropParameter BuiltInParameter, extentOf Func`2, failedCurves
+    0, failedNotes 0, findings 0 item(s), fittingOnly 0, flowParameter BuiltInParameter, formatPressure
+    Func`2, gap 10, hasPlumbingEquipment true, isDuct false, isEquipment Func`2, isNode Func`2,
+    isTerminal Func`2, labelOf Func`2, labelOffset 2.5, labelsWithoutValue 0 item(s), layoutRun
+    Func`5, leavesUnder 0 entry(ies), leftOut Func`2, lineItem Func`5, lineMm 4.25, linesMade
+    0, loopTags 0 entry(ies), loopsCut 0 item(s), maxElements 2000, measure Func`2, mechanical
+    (null), members 0 entry(ies), nameOf Func`2, nameWanted ZZZ No Such System, nodeChildren
+    0 entry(ies), nodeLabelOf Func`2, nodeOrder 0 item(s), nodes 0, noteType (null), notesMade
+    0, openAt HashSet`1, openConnectors 0, openEnds 0 item(s), ordered 0 item(s), outsideJoints
+    HashSet`1, parameterOf Func`3, parentOf 0 entry(ies), piping (null), plumbingEquipment
+    BuiltInCategory, reachMetres Func`2, reached HashSet`1, refused no duct or pipe system
+    in this model is called "ZZZ No Such System", and none has it in its name. The systems
+    are: Mechanical Exhaust Air 1, Mechanical Exhaust Air 10, Mechanical Exhaust Air 11, Mechanical
+    Exhaust Air 12, Mechanical Exhaust Air 13, Mechanical Exhaust Air 14, Mechanical Exhaust
+    Air 15, Mechanical Exhaust Air 16, Mechanical Exhaust Air 17, Mechanical Exhaust Air 18,
+    Mechanical Exhaust Air 19, Mechanical Exhaust Air 2, Mechanical Exhaust Air 20, Mechanical
+    Exhaust Air 21, Mechanical Exhaust Air 22 and 133 more. Nothing was drawn, root (null),
+    rootCurveTaken false, sectioned 0, segments 0, segmentsTo Func`3, shifted Func`4, sizeOf
+    Func`2, skipped 0 item(s), skippedWhy 0 item(s), spacingMm 10, start (null), straightOn
+    Func`2, symbolAt Action`6, symbolHalf 4, system (null), systemsOf Func`2, terminals 0,
+    textItem Func`6, textMm 2.5, textWanted , texts 0 item(s), tooShort 0, treeDegree Func`2,
+    usedScale 100, view (null), viewId (null), viewName , viewScale 100, viewWanted , widthFactor
+    1, zeroLossFittings 0. inputs came systemName as given; start not given - null (optional);
+    newViewName not given - "none", the card''s own default (optional); viewScale not given
+    - "100", the card''s own default (optional); spacingMm not given - "10", the card''s own
+    default (optional); textType not given - "none", the card''s own default (optional); maxElements
+    not given - "2000", the card''s own default (optional). on Snowdon HVAC - schematic proof'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 24262f84f56e50f5
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
