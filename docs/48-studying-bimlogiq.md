@@ -167,11 +167,38 @@ DRAFT, until proven on a real model. Ordered by value to an MEP modeller against
 | 2 | **Annotation template + Tag in one pass** - one saved file: which categories, which tag type, leader rule, offset; place and arrange together, no overlaps; **batch over many views** | Most hours on a drawing set go here | `tag-elements-in-view`, `arrange-tags`, `stack-tags` |
 | 3 | **Dimension template for MEP runs** - categories, which faces, spacing, string placement, per view | Same template file as #2 | `create-dimension` |
 | 4 | **Plain-language QA rule to saved checklist** - the host turns a sentence into a check that maps onto existing `check-*` fragments; the checklist runs in one call and reports. **Built 2026-11-08, not run in Revit: [docs/50](50-qa-checklists.md)** | Heron has the checks; it lacks the saved list | `heron_modelqa.py`, `heron-model-auditor` |
-| 5 | **3D to 2D MEP schematic** - one system traced, drawn as single lines on a drafting view, with sizes, flow and pressure drop | Real MEP value, and Heron already has the trace and the maths | `trace-connectivity`, `heron_graph.py`, `report-mep-pressure-drop`, `heron_hvac` |
+| 5 | **3D to 2D MEP schematic** - one system traced, drawn as single lines on a drafting view, with sizes, flow and pressure drop. **Built 2026-11-08 as `DRAW_MEP_SCHEMATIC` (DRAFT), not run in Revit: [§5.1](#51-item-5---the-mep-schematic)** | Real MEP value, and Heron already has the trace and the maths | `trace-connectivity`, `report-mep-pressure-drop`, `heron_hvac` (`heron_graph.py`, named here first, is the graph of fragments, not of ducts - not used) |
 | 6 | **CAD lines to ducts and pipes** - read the CAD layer, ask size and type, draw the run | Common job on Gulf projects with CAD backgrounds | `extract-cad-curves`, `duct-layout` skill |
 | 7 | **Sheets from Excel** - read the sheet list from a spreadsheet, preview, create | Small, quick win | `create-sheets` |
 | 8 | **Rebar from a spec** - read the bar sizes and covers from a given spec, then place, then check anchorage and bar length | Structural, lower for MEP | rebar fragments, `reinforce-concrete` |
 | Later | Dynamo graph to recipe; ACC (after a decision) | | |
+
+
+### 5.1 Item 5 - the MEP schematic
+
+**Status 2026-11-08: built, DRAFT, compiled for 2020-2027, NOT RUN in Revit.** One new card,
+[`draw-mep-schematic`](../brain/fragments/draw-mep-schematic/fragment.yaml) (`DRAW_MEP_SCHEMATIC`, MODIFY):
+*"draw a schematic of supply air system SA-01"*, or of the system of the selected element. In one call and one
+undo it traces the system through its connectors from the source equipment (or the selected element) to every
+terminal, makes a NEW drafting view named after the system (a taken name gets " (2)"), and draws the system as
+single lines - an orthogonal tree, main run across, branches square to it on alternating sides, not to scale.
+Each straight segment carries Revit's own size, flow and pressure drop, read from the model's parameters;
+equipment and terminals carry their Mark or type name; open ends and loops are marked and listed. The 3D model
+is not changed.
+
+- **One card, not a chain:** a traced network handed out by a read arrives as its count and first three items,
+  and chat values lose their line breaks - so trace, layout and drawing are one script.
+- **Revit's numbers, never Heron's:** the one piece of arithmetic is adding the Pressure Drop values of the
+  runs and fittings of a segment, formatted by Revit in the project's units; the legend on the view says so.
+  A system Revit has not calculated is labelled "not calculated", never 0.
+- **The overlap** with `TRACE_CONNECTIVITY`, `REPORT_MEP_PRESSURE_DROP`, `CREATE_DRAFTING_VIEW`,
+  `CREATE_TEXT_NOTE` and `DRAW_FAMILY_DETAIL_LINES` - none edited - and the merge planned once it is proved:
+  [FRAGMENT-ISSUES row 5b-1479](fragment-issues/section-5b-rows-401-425.md).
+- **Before it can be PROVEN:** a read card that finds views must own *"is there already a schematic"* and
+  *"show me the schematic"* - today both reach this card on one search backend, and asking to see a
+  schematic must never draw a new one ([row 5b-1479](fragment-issues/section-5b-rows-401-425.md)).
+- **What a real Revit must show:** [NEEDS-CHECKING Group MW](needs-checking/group-mw.md) - a duct system, a
+  pipe loop, open ends, a system with no flow calculated, a large system and its time, Revit 2020 and 2025/2026.
 
 ---
 

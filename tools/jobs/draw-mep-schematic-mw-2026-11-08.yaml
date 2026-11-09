@@ -1,0 +1,44 @@
+# NEEDS-CHECKING Group MW - DRAW_MEP_SCHEMATIC, built 2026-11-08 in a cloud
+# session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/draw-mep-schematic-mw-2026-11-08.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/draw-mep-schematic-mw-2026-11-08.yaml
+#
+# THE MODEL is a SAVED scratch copy of Revit's "Snowdon Towers Sample HVAC",
+# Revit 2024 - never a working model. MW1 records the name of one SMALL supply
+# air system with base equipment and flows calculated (the fragment-proving
+# skill's rule 1 - a small system first). "Mechanical Supply Air 1" below is
+# Revit's own default naming, NOT a name read off this model: if the copy calls
+# its system something else, MW1 writes that name here - the job file changes,
+# never the card.
+#
+# NO SETUP CHAIN. This card finds the system by its name and reads Revit's own
+# element sets for it; nothing is selected and nothing is handed on.
+#
+# THE NEGATIVE IS A VALUE, NOT A SELECTION (fragment-proving rules 2 and 5):
+# the same call with a system name no system has, and none contains. A card
+# that drew whichever system it found draws here; this one must refuse, make
+# no view, and name the systems the model has. Every run is ROLLED BACK.
+
+model: saved scratch copy of Snowdon Towers Sample HVAC (MW1), Revit 2024
+
+defaults:
+  write: true
+  setup: []
+
+jobs:
+  - fragment: draw-mep-schematic
+    expect: viewId
+    set:
+      systemName: "Mechanical Supply Air 1"
+    negative-set:
+      systemName: "ZZZ No Such System"
+    note: >
+      MW2. Negative - THE FIRST CASE TO RUN: refused "no duct or pipe system in
+      this model is called "ZZZ No Such System", and none has it in its name.
+      The systems are: ... Nothing was drawn", viewId null, no new view in the
+      Project Browser. Positive: viewId a new drafting view, viewName
+      "Schematic - <system>", nodes, segments and terminals above 0, terminals
+      the system's air terminal count, refused empty, findings saying nothing
+      in the model was changed and "read back: none of the ... text notes
+      touches another". Rolled back - so LOOK in MW8, the one kept run.

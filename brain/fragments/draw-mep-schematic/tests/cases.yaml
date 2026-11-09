@@ -1,0 +1,186 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write that makes a view, "drew something nobody asked for": a schematic
+# of the wrong system, a view drawn for a name the model has not got, an
+# existing view overwritten, or a label showing 0 where Revit calculated
+# nothing.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING Group MW). A SAVED
+# scratch copy of Revit's "Snowdon Towers Sample HVAC", Revit 2024 - never a
+# working model. MW1 records the name of one small SUPPLY AIR system with base
+# equipment and calculated flows (the fragment-proving skill's rule 1: a small
+# one first), one pipe system, and an element on each. Nothing is selected for
+# the name cases: this card finds the system by its name and reads its own
+# element sets, so no setup chain is needed. The negative is the SAME call with
+# a NAME no system has - a different value, not an empty one (fragment-proving,
+# rules 2 and 5). Where the model differs, the job file changes - never the
+# card. EVERY RUN ROLLED BACK but MW8's one run through try-once.
+
+positive:
+  - given: >
+      systemName "<MW1's supply air system>" - nothing else typed: the view
+      named "Schematic - <system>", 1:100, spacing 10 paper mm, the project's
+      default text type, at most 2000 elements
+    expect: >
+      viewId a new DRAFTING view; viewName "Schematic - <system>"; nodes,
+      segments and terminals above 0, terminals the number of air terminals on
+      the system; refused empty; findings opening "system ... drawn on the new
+      drafting view ... NOT TO SCALE" and saying nothing in the model was
+      changed. Then OPEN THE VIEW: the base equipment drawn as a small
+      rectangle at the left with its Mark (or type name) behind it; the main
+      run going right; branches square to it, up and down alternately; a
+      circle and the Mark at every terminal; every straight segment labelled
+      with three lines - size, Q flow, Δp pressure drop - matching what
+      Properties shows for that segment's first duct (size, Flow) and its
+      Pressure Drop; a legend above saying NOT TO SCALE and that the values
+      are Revit's own. No two labels touching (findings: "read back: none of
+      the ... text notes touches another")
+
+  - given: >
+      start "selected", with one duct of MW1's supply air system selected and
+      systemName left out
+    expect: >
+      the same system drawn, from THAT duct - "start - <duct type>" beside the
+      root; the base equipment appears as a node further along. findings
+      opening with the same system name
+
+  - given: >
+      systemName "<MW1's pipe system>" - a pipe system, Revit's calculations on
+    expect: >
+      a pipe schematic: sizes as Revit shows a pipe size, Q in the project's
+      pipe flow units, Δp in its piping pressure units; the legend saying
+      "pipes, elbows, transitions and accessories"
+
+  - given: >
+      the first case run a SECOND time, after MW8 kept the first schematic
+    expect: >
+      a NEW view "Schematic - <system> (2)"; findings saying a view called
+      "Schematic - <system>" already exists and was left alone; the kept view
+      unchanged - the same number of lines and notes as before
+
+  - given: >
+      systemName "<a system Revit has NOT calculated - MW4 arranges one by
+      disconnecting one terminal in the copy, or an open-ended system MW1
+      records>"
+    expect: >
+      the schematic drawn; every Δp label "not calculated", never 0; findings
+      saying Revit has NOT calculated the system; labelsWithoutValue one line
+      per segment; open ends marked X and listed in openEnds; the disconnected
+      terminal in skipped with skippedWhy "not joined to the drawn part by its
+      connectors"
+
+  - given: >
+      systemName "<MW1's chilled water system>" - a pipe system whose base
+      equipment is a chiller (or pump) and whose far ends are fan coil units or
+      air handlers (Mechanical Equipment)
+    expect: >
+      the chiller drawn as the root's rectangle; EVERY fan coil or air handler
+      on the loop drawn with the terminal's CIRCLE and its Mark, and counted in
+      terminals - terminals = the number of fan coils and air handlers on the
+      system (the owner's decision: mechanical equipment the system serves is
+      a terminal); the legend's symbol line saying so
+
+  - given: >
+      systemName "<MW1's supply air system>" with its BASE EQUIPMENT
+      disconnected in the copy (MW15 arranges it: the air handler stays on the
+      system in Revit, its duct connector not joined)
+    expect: >
+      the schematic drawn from equipment with joints, else a duct with one
+      joint - findings saying "the base equipment ... is joined to nothing by
+      its connectors, so the system is drawn from ... instead"; the air handler
+      in skipped. Never a view with one rectangle on it
+
+negative:
+  - given: >
+      THE D-30 NEGATIVE - THE FIRST CASE TO RUN. systemName "ZZZ No Such
+      System"
+    expect: >
+      refused "no duct or pipe system in this model is called "ZZZ No Such
+      System", and none has it in its name. The systems are: ... Nothing was
+      drawn"; viewId null; no new view in the Project Browser. A card that drew
+      whichever system it found would draw here; the value alone empties the
+      result
+
+  - given: systemName left out and start left out
+    expect: refused, say which system to draw, nothing drawn
+
+  - given: >
+      systemName "<MW1's supply air system>" with start "selected" on a PIPE
+      of another system
+    expect: refused, the selected element is not on that system, nothing drawn
+
+  - given: start "selected" on a wall
+    expect: refused, the selected element is on no duct or pipe system, nothing drawn
+
+  - given: >
+      start "selected" on an air handler that sits on a supply AND a return
+      system, systemName left out
+    expect: refused, it is on 2 systems, both named, say the name too, nothing drawn
+
+  - given: >
+      systemName "Supply" (or another word several system names contain, as
+      MW1 records)
+    expect: refused, several systems have it in their name, listed, nothing drawn
+
+  - given: systemName "<MW1's supply air system>" with maxElements 5
+    expect: >
+      refused "system ... holds N elements, more than the 5 this draws in one
+      call (maxElements). Nothing was drawn ..."
+
+  - given: textType "ZZZ No Such Text"
+    expect: refused, no text type of that name, the text types listed, nothing drawn
+
+  - given: viewScale 0, then spacingMm 0, then maxElements 0
+    expect: each refused in its own words, nothing drawn
+
+  - given: viewScale 600 - above the 1:500 this draws at
+    expect: refused, a whole number from 1 to 500, nothing drawn
+
+  - given: >
+      MW7's largest system with viewScale 500 and spacingMm 200 - a drawing
+      reaching further than 1500 m from the view's origin (if it does not,
+      record the reach findings would give and call this NOT COVERED)
+    expect: >
+      refused "at 1:500 this schematic would reach ... m from the view's
+      origin ... beyond the 1500 m this draws to. Nothing was drawn" - no view
+      made
+
+  - given: >
+      a system on which NOTHING is joined to anything (MW15 arranges one: a
+      new duct system of two air terminals and an air handler, assigned in
+      Revit, never connected) - systemName that system; then start "selected"
+      on one of its terminals
+    expect: >
+      each refused "in system ... nothing is joined to anything else by its
+      connectors ... There is no network to draw. Nothing was drawn" - no view
+      made
+
+# NOT COVERED - refusals the Revit UI cannot arrange, or a sample model does
+# not hold; each is in the code and in Group MW's MW16 row, run if a model is
+# ever found that has it:
+#   - two duct or pipe systems whose names differ only in case ("SA-01" and
+#     "sa-01"): whether Revit allows two such names is NOT KNOWN - MW16 tries
+#     it in the copy; allowed, the case is "refused, 2 systems are called ...,
+#     nothing drawn"; refused by Revit, NOT COVERED
+#   - a system holding 0 elements Revit will name: believed not to survive in
+#     Revit once its last element leaves it - MW16 tries it; if one survives,
+#     the case is "refused, holds no elements, nothing drawn"
+#   - no default text type: the Revit UI always keeps one (the same as group
+#     MU's "no default linear type") - NOT COVERED
+#   - no Drafting view type: believed not arrangeable - Revit is believed to
+#     refuse deleting the last type of a view family; MW16 tries it on a copy;
+#     if it can be done, the case is "refused, no Drafting view type, nothing
+#     drawn"
+#   - a view name Revit refuses after the characters it bars are replaced: no
+#     such name is known - NOT COVERED; a SCALE Revit refuses is MW17's row (a
+#     Drafting type whose default template fixes the scale)
+
+second_route:
+  - >
+    for three labelled segments, select the segment's first duct (or pipe) in a
+    plan and read Size, Flow and Pressure Drop in Properties - or
+    READ_ELEMENT_PARAMETERS on it - against the label; for one segment of
+    several ducts, add their Pressure Drop values by hand against its Δp
+  - >
+    REPORT_MEP_PRESSURE_DROP for the same system: "UNCALCULATED" there exactly
+    when this card's labels say "not calculated"
+  - one Ctrl+Z removes the view and everything drawn in it in a single step (Golden Rule 16)
