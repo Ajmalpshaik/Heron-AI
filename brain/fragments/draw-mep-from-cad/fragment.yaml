@@ -1,0 +1,428 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-103
+semantic-identity: "turn the duct and pipe linework of a linked CAD background into real ductwork or pipework in one go - the runs, their elbows and tees, at the dimensions handed in"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-09: docs/48-studying-bimlogiq.md section 5 item 6 - "CAD lines to
+# ducts and pipes - read the CAD layer, ask size and type, draw the run" - and
+# the owner's words the same day: "NOT ONLY FROM THE LAYERS. IF I SAY
+# UNDERSTAND FROM THE CAD, IT WILL TAKE THE SCREENSHOT AND IT WILL UNDERSTAND
+# LIKE THAT ALSO ... IT NEEDS TO UTILIZE THE POWER OF AI". Measured that day on
+# scratch stores (lexical and model, 54 sentences frozen before this card was
+# written): nothing in the library turned CAD lines into ducts or pipes - "CAD
+# lines to ducts and pipes" reached EXTRACT_CAD_CURVES (lexical) and
+# SET_MEP_SYSTEM_TYPE (model), "convert the CAD duct lines into real ducts"
+# CONVERT_TO_FLEX_DUCT on both.
+#
+# THE JOB HAS TWO HALVES, AND THIS CARD IS ONLY THE SECOND (the owner's design):
+#   UNDERSTAND - the HOST's (D-01). It surveys the layers with
+#     EXTRACT_CAD_CURVES (no layer named), looks at the view with
+#     revit_view_image, decides with the modeller which layer is supply duct,
+#     return duct, chilled water ..., and READS THE SIZE TAGS off the picture -
+#     the Revit API cannot read DWG text, so the picture is how they are read.
+#     A layer's meaning is never guessed (D-33, D-34): the host asks.
+#   DRAW - this card. It reads the GEOMETRY itself, inside Revit, from the
+#     layers named; the coordinates come from the CAD, never from the picture.
+#     The tags arrive as `sizes`, each with a position near its run.
+# The whole method, in order, is the cad-to-mep skill (heron_method).
+#
+# WHY ONE CARD AND NOT A CHAIN. EXTRACT_CAD_CURVES' listOnly hands back the
+# first 200 segments as one string, CREATE_MEP_RUNS (PROVEN v3) draws runs the
+# host has already worked out, and FIT_MEP_JOINTS (PROVEN v3) fits them - so a
+# chain exists on paper. It fails a real drawing: a floor's ductwork is
+# thousands of lines, pairing double lines and finding joints by reading
+# coordinates in a chat is where a model guesses, and both drawing cards are
+# all-or-nothing, so one bad joint loses the whole floor. Widening either
+# PROVEN card would make its proof stale and take it out of revit_change
+# (D-117). So this is a card of its own, overlapping four, knowingly - FRAGMENT-
+# ISSUES row 5b-1481, which also plans the merge once it is proved:
+#   EXTRACT_CAD_CURVES (FRG-ELE-040, PROVEN v2) - its read of an import's
+#     geometry (GetInstanceGeometry, the layer from the graphics style's
+#     category name, exact names, polylines as segments, splines refused) is
+#     re-authored here; it stays the SURVEY and the "trace it as lines" tool.
+#   CREATE_MEP_RUNS (FRG-MEP-052, PROVEN v3) - Duct.Create / Pipe.Create and
+#     the size parameters, read back, re-authored.
+#   FIT_MEP_JOINTS (FRG-MEP-051, PROVEN v3) - how the fitting is chosen from
+#     the connectors (elbow, tee with the most head-on pair as main, cross,
+#     transition with the larger end first, a tap on an uncut main) re-authored.
+#     ITS ALL-OR-NOTHING IS NOT the default here - see allOrNothing below, and
+#     what a failure Revit posts at the commit still does.
+#   CONVERT_CAD_TO_DIRECTSHAPE (FRG-ELE-050, DRAFT) - solids, not lines; no
+#     code shared.
+#   The duct-layout skill (unit to diffusers) is a different job and was not
+#   extended: its purpose, preconditions and needs are the unit-to-diffuser
+#   method, and heron_method serves a skill whole.
+#
+# EVERY VALUE IS THE MODELLER'S (D-33) - nothing below is assumed for them:
+#   imports      ONE CAD link or import SELECTED in Revit - two or more:
+#                refused; a Revit link selected: refused, saying a CAD inside a
+#                Revit link is not read - or, instead,
+#   cadName      its name as revit_imports and Manage Links show it
+#                ("M-HVAC.dwg", with or without ".dwg", ignoring case). Given,
+#                it wins over the selection. Placed twice: refused - select the
+#                one. A name found only inside a Revit link: refused, saying so.
+#                A CAD placed in ONE VIEW only is read through that view, and a
+#                layer turned off there is not handed out - the refusal says
+#                the layer may be hidden there, not that it is missing
+#   layerNames   the layers to draw, comma separated, EXACTLY as the survey
+#                lists them, case and all. One missing: refused, nothing drawn
+#   drawAs       duct or pipe - asked, never guessed; it must agree with both
+#                types below
+#   systemType   a duct system type (Supply Air ...) or piping system type
+#   runType      a duct type or pipe type - its routing preferences choose
+#                every fitting
+#   level, middleElevationMm  the runs' level and their middle elevation above
+#                it, in millimetres. All runs are drawn flat at that height
+#   defaultSize  the size of a run no hint reaches: 400x300, or Ø150 / d150
+#                for a round duct or a pipe - matching the type's shape
+#   sizes        the size hints the host read off the picture, on ONE line
+#                (a chat value loses its line breaks), ; between them, each
+#                size@x,y in millimetres in Revit's INTERNAL coordinates - the
+#                same numbers runsFound and EXTRACT_CAD_CURVES' listOnly give:
+#                "600x400@12500,30200; Ø150@14000,30200". Left out, none
+#   mode         double (a duct drawn as two parallel lines), single (one line
+#                is one run) or auto - double for a duct, single for a pipe.
+#                NOT DETECTED: a pipe layer with supply and return side by side
+#                pairs like a duct, so auto never guesses from the lines
+#   sizeStepMm   the width read from double lines is rounded to this. 50
+#   minWidthMm, maxWidthMm  how far apart two lines may be to be one duct.
+#                100 and 2500
+#   toleranceMm  how near counts as touching, in line, or parallel. 25
+#   bridgeMm     the widest gap closed: a line broken for a tag, a main's side
+#                line broken where a branch enters, a corner whose elbow is
+#                drawn as an arc. 1000
+#   hintReachMm  how far a size hint may sit from its run. 1500
+#   minLengthMm  shorter lines are skipped, and shorter runs are not drawn. 100
+#   maxRuns      the most runs one call draws; above it the call is refused, in
+#                words, before anything is made. 500. It bounds the reading too:
+#                more than 40 straight pieces per run allowed is refused before
+#                any search, and every neighbour search looks only in a grid
+#                sized on maxWidthMm and bridgeMm (20,000 pieces: well under a
+#                second in the scratch harness)
+#   previewOnly  true: NOTHING is drawn; runsFound lists every run, the size it
+#                would get and where it came from, and the span of the linework
+#                - a look before the real call, and the run positions the host
+#                can match the picture's tags to
+#   allOrNothing true: any joint left unfitted throws, and the WHOLE call is
+#                rolled back, as FIT_MEP_JOINTS does. Left out, false - THE
+#                OWNER'S DESIGN, his to confirm as the default (row 5b-1481):
+#                each joint's room is checked first - every leg against what
+#                the fittings at both its ends take from it, on a safe estimate
+#                (an elbow 1.5 x the largest size meeting there, a tee, cross or
+#                transition 1 x, a tap 1 x the branch, plus a margin) - and a
+#                joint without room is SKIPPED and listed in failedJoins before
+#                Revit is asked; a fitting Revit refuses by throwing is taken
+#                back alone in its SubTransaction. WHAT IT CANNOT DO: a failure
+#                Revit only POSTS - "modified to be in the opposite direction"
+#                when an estimate was short - is handled when the executor
+#                commits, and that rolls the WHOLE call back, one undo, nothing
+#                kept (Article 8). NEEDS-CHECKING MX6 measures it
+#
+# WHAT IT DOES NOT DO (version 1): read text (the picture is how), open blocks
+# inside the drawing (counted), draw arcs (counted - Revit's elbows replace
+# them), slope, rise or drop between levels (every run flat at one height),
+# change level per layer, or connect to equipment and terminals (CONNECT_OPEN_
+# ENDS afterwards). Crossings - two runs crossing without meeting, or one run
+# drawn stopping either side of another (a crossing drawn with a break) - are
+# found and listed, never joined: which goes over is the modeller's call.
+#
+# TAPS: when the type's routing preference is Taps (RoutingPreferenceManager.
+# PreferredJunctionType), a branch landing on the side of a main is joined by
+# a takeoff (NewTakeoffFitting) and the main is NOT cut - FIT_MEP_JOINTS'
+# "tap, not tee" (2026-09-23). With Tees, the main is split and a tee placed.
+#
+# THE LIMITS OF PAIRING DOUBLE LINES, said so a modeller knows when to look:
+# a line with one possible partner is paired first, repeatedly, so ducts side
+# by side pair as ducts; when every line left has two choices the nearest pair
+# is taken and marked DOUBTFUL in runsFound and findings, and so is a pair
+# beside a parallel line it left with no partner (a stray line, an odd edge).
+# A drawn centreline on the duct's own layer is dropped only when it is
+# exactly midway and neither edge has a possible partner on its far side - a
+# duct with a centreline right beside another duct is not recognised, and may
+# pair as half-width ducts, flagged doubtful. Measured on hand-made lines in
+# the scratch harness, never on a real drawing (Group MX).
+#
+# RISK MODIFY. It creates ducts or pipes and fittings; the CAD file is only read.
+# ASSUMES AN OPEN TRANSACTION and opens none (Golden Rule 16); the executor
+# makes the call one TransactionGroup - one undo takes everything away.
+kind: action
+domain: revit.mep
+capability: DRAW_MEP_FROM_CAD
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Turns the duct and pipe linework of a linked or imported CAD background
+  into real Revit ducts or pipes, in one call and one undo. The geometry is
+  taken from the CAD itself inside Revit, never estimated: the two parallel
+  edges of a duct become one duct on their centreline, as wide as the gap
+  between them; a lone edge becomes one pipe or duct. Broken pieces in one
+  straight line are joined, and at each joint the fitting comes from the
+  type's own routing preferences - an elbow at a corner, a tee at a branch off
+  the side of a main, or a tap where the type prefers taps, a cross, a
+  transition at a change of width. Each run takes the dimensions of the
+  nearest hint handed in with a position; a run with none takes the default
+  and is listed. A joint with too little room for its fitting is left
+  unfitted and listed before Revit is asked; a failure Revit raises only as
+  the call is kept still undoes the whole call. Arcs, splines, short pieces
+  and blocks are counted and left out. The CAD file is left untouched.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # ONE CAD link or import SELECTED in Revit. Absent, empty
+    # (HeronBindingNote.EmptyWhenAbsent) - then cadName must name it.
+    - name: imports
+      type: IList<Element>
+      binds: elements
+      optional: true
+    # The CAD file by name, instead of the selection. Left out ("none"), the
+    # selection is used.
+    - name: cadName
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # The layers to draw, comma separated, exactly as the survey lists them.
+    - name: layerNames
+      type: IList<string>
+      source: request
+    # duct or pipe.
+    - name: drawAs
+      type: string
+      source: request
+    # A duct system type or a piping system type - matching drawAs.
+    - name: systemType
+      type: MEPSystemType
+      source: request
+    # A duct type or a pipe type - matching drawAs. Its routing preferences
+    # choose every fitting.
+    - name: runType
+      type: MEPCurveType
+      source: request
+    - name: level
+      type: Level
+      source: request
+    # The runs' middle elevation above the level, millimetres.
+    - name: middleElevationMm
+      type: double
+      source: request
+    # The size of a run no hint reaches: 400x300, or Ø150 for round.
+    - name: defaultSize
+      type: string
+      source: request
+    # Size hints, one line, ; between: size@x,y in mm, internal coordinates.
+    # Left out ("none"), no hints.
+    - name: sizes
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # double, single or auto (double for a duct, single for a pipe).
+    - name: mode
+      type: string
+      source: request
+      optional: true
+      absent: auto
+    # The width read from double lines is rounded to this, mm. Left out, 50.
+    - name: sizeStepMm
+      type: double
+      source: request
+      optional: true
+      absent: 50
+    # The narrowest double-line spacing taken as a duct, mm. Left out, 100.
+    - name: minWidthMm
+      type: double
+      source: request
+      optional: true
+      absent: 100
+    # The widest double-line spacing taken as a duct, mm. Left out, 2500.
+    - name: maxWidthMm
+      type: double
+      source: request
+      optional: true
+      absent: 2500
+    # How near counts as touching, in line or parallel, mm. Left out, 25.
+    - name: toleranceMm
+      type: double
+      source: request
+      optional: true
+      absent: 25
+    # The widest gap closed - a line broken for a tag, an arc elbow, mm.
+    # Left out, 1000.
+    - name: bridgeMm
+      type: double
+      source: request
+      optional: true
+      absent: 1000
+    # How far a size hint may sit from its run, mm. Left out, 1500.
+    - name: hintReachMm
+      type: double
+      source: request
+      optional: true
+      absent: 1500
+    # Shorter lines are skipped and shorter runs not drawn, mm. Left out, 100.
+    - name: minLengthMm
+      type: double
+      source: request
+      optional: true
+      absent: 100
+    # The most runs one call draws; above it, refused. Left out, 500.
+    - name: maxRuns
+      type: int
+      source: request
+      optional: true
+      absent: 500
+    # true: nothing drawn, runsFound is the answer. Absent binds false.
+    - name: previewOnly
+      type: bool
+      source: request
+      optional: true
+    # true: any joint left unfitted rolls the whole call back. Absent binds
+    # false: joints without room are skipped and listed - but a failure Revit
+    # posts at the commit still rolls the whole call back (Article 8).
+    - name: allOrNothing
+      type: bool
+      source: request
+      optional: true
+  provides:
+    - name: created
+      # The new ducts or pipes. Empty when refused or previewed.
+      role: result
+      type: IList<ElementId>
+    - name: fittings
+      # The elbows, tees, crosses, transitions and unions placed.
+      role: result
+      type: IList<ElementId>
+    - name: runsFound
+      # ONE string: the span of the linework read, then one line per run - its
+      # two ends in mm (internal coordinates), its length, its size and where
+      # the size came from (hint, carried, spacing, default), and "DOUBTFUL
+      # PAIR - check" where the double lines could have paired another way.
+      # The first 300.
+      role: result
+      type: string
+    - name: failedJoins
+      # One line per joint left WITHOUT a fitting - no room for it, a run that
+      # should meet it not drawn, or Revit's words. The runs are not connected
+      # there (D-52).
+      role: accounting
+      type: IList<string>
+    - name: runsWithoutSize
+      # One line per run that took the default size, or the default height
+      # (D-52).
+      role: accounting
+      type: IList<string>
+    - name: sizeConflicts
+      # One line per run whose hint disagrees with its lines' spacing, or does
+      # not fit the type's shape - and which was used; and one per hint that
+      # lost to a nearer hint on the same run, NOT used (D-52).
+      role: accounting
+      type: IList<string>
+    - name: skipped
+      # CAD objects and runs left out: arcs, splines, lines not flat or too
+      # short, blocks, unpaired lines, runs too short, runs Revit refused (D-52).
+      role: accounting
+      type: int
+    - name: skippedWhy
+      # One line per reason with its count, adding up to `skipped` (D-52).
+      role: accounting
+      type: IList<string>
+    - name: layersRead
+      # One line per layer named: pieces read, arcs skipped, double or single
+      # (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why nothing was drawn, in plain words - with the layer list when a
+      # layer is not there. Empty when it ran (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release, no version branch. Read with
+  tools/api-surface --members on 2026-11-09, present with these signatures
+  2020 through 2027: Duct.Create and Pipe.Create(Document, ElementId,
+  ElementId, ElementId, XYZ, XYZ) as CREATE_MEP_RUNS (PROVEN) calls them,
+  MEPCurveType.Shape and ConnectorProfileType, Level.ProjectElevation,
+  SubTransaction (Start, Commit, RollBack, HasStarted, HasEnded, Dispose) as
+  CONNECT_AIR_TERMINALS (PROVEN) uses it, Options.View, Element.ViewSpecific
+  and OwnerViewId, ImportInstance, GeometryInstance.GetInstanceGeometry,
+  GraphicsStyle.GraphicsStyleCategory and PolyLine.GetCoordinates as
+  EXTRACT_CAD_CURVES (PROVEN) reads them, and Document.Create's
+  NewElbowFitting, NewTeeFitting, NewCrossFitting, NewTransitionFitting and
+  NewUnionFitting as FIT_MEP_JOINTS (PROVEN) calls them, and NewTakeoffFitting
+  as it calls it for a tap; MEPCurveType.RoutingPreferenceManager and
+  RoutingPreferenceManager.PreferredJunctionType (the enum's Tee and Tap),
+  RevitLinkInstance.GetLinkDocument and Element.GetTypeId. Sizes are set and read
+  back through RBS_CURVE_WIDTH_PARAM, RBS_CURVE_HEIGHT_PARAM,
+  RBS_CURVE_DIAMETER_PARAM and RBS_PIPE_DIAMETER_PARAM in feet - no unit API,
+  so the 2021 unit change does not reach it; millimetres become feet by
+  / 304.8 (D-20). No ElementId is read as a number, so 2024's 64-bit ids do
+  not reach this code.
+
+# ROUTING (2026-11-09) - which card wins which sentence. The cards named here
+# were not edited, so these rows are written here and in row 5b-1481.
+#
+#   "CAD lines to ducts and pipes"                    -> here
+#   "read the CAD layer, ask size and type, draw the  -> here
+#    run"
+#   "MEP from a CAD drawing"                          -> here
+#   "understand from the CAD"                         -> here - and its method,
+#                                                        cad-to-mep, starts with
+#                                                        the survey and the
+#                                                        picture, never the draw
+#   "what layers are in this dwg"                     -> EXTRACT_CAD_CURVES, no
+#                                                        layer named - the survey
+#   "trace this cad background" / "turn the dwg      -> EXTRACT_CAD_CURVES -
+#    lines into model lines"                             LINES, not ducts
+#   "make the dwg into real elements"                 -> CONVERT_CAD_TO_DIRECTSHAPE
+#                                                        - solids
+#   "import this dwg" / "link this cad drawing"       -> IMPORT_CAD / LINK_FILES
+#   "draw the duct run" / "run a pipe from here to    -> CREATE_MEP_RUNS - points
+#    there"                                              the caller gives
+#   "put the fittings in"                             -> FIT_MEP_JOINTS - runs
+#                                                        already drawn
+#   "connect the open ends"                           -> CONNECT_OPEN_ENDS - to
+#                                                        equipment and terminals,
+#                                                        afterwards
+#   "convert these placeholders to real ducts"        -> CONVERT_MEP_PLACEHOLDERS
+# Questions about a drawing - which layer is the supply duct, what sizes are
+# tagged, how many pipes are drawn - are the host's to answer from the survey
+# and the picture; none was claimed for this card. Measured before and after
+# on lexical and model (row 5b-1481): ONE MOVED, OPEN - "what size are the
+# ducts on this cad drawing" reached IMPORT_CAD (a write) before and reaches
+# this card after, on both. It carries the words of two of the owner's
+# utterances, which were not weakened; four wordings of identity and purpose
+# did not move it. No read card can answer it - the text in a DWG is read off
+# the picture, the method's step 2. A CONDITION FOR PROMOTION TO PROVEN, NOT A
+# LATER NOTE: this question reaching a write is settled before the card is
+# signed - a read that answers it, or the owner's recorded decision that it
+# may stay (row 5b-1481, NEEDS-CHECKING Group MX).
+#
+# WORDING CHANGED BEFORE THIS WAS WRITTEN: a purpose saying "where runs meet
+# ... where a branch meets ... where the width changes" took REPORT_LOCATION's
+# "where does this duct run from and to" on check-routing's keyword route; it
+# now says "at each joint ... at a branch ... at a change of width".
+utterances:
+  # The owner's own words: docs/48 section 5 item 6, its section 2 table row,
+  # and his request of 2026-11-09 ("IF I SAY UNDERSTAND FROM THE CAD ...").
+  # docs/48 section 1.1's "Model MEP networks from a CAD drawing" is the
+  # VENDOR's wording, so it is measured (row 5b-1481) and not declared.
+  - CAD lines to ducts and pipes
+  - read the CAD layer, ask size and type, draw the run
+  - MEP from a CAD drawing
+  - understand from the CAD
