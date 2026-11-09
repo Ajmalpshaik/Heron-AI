@@ -1430,6 +1430,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-my.md`](needs-checking/group-my.md)
 
+## Group MZ - rebar from a spec: the placed bars checked against the spec's confirmed values, each as meets, does not meet or not checked: `CHECK_REBAR_AGAINST_SPEC` and the `reinforce-concrete` method extended (2026-11-09)
+
+**Its own file:** [`needs-checking/group-mz.md`](needs-checking/group-mz.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

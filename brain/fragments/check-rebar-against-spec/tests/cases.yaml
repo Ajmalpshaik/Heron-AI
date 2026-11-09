@@ -1,0 +1,53 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - for a
+# check, the card that says "meets" whatever it is handed.
+#
+# THE ARRANGEMENT (NEEDS-CHECKING Group MZ, MZ1): a SAVED scratch copy of the
+# rebar-hy scratch project (Revit 2020, metric structural template), whose
+# straight concrete beam on Level 2 has been given, through PROVEN cards and
+# KEPT: a 30 mm cover type on its top, bottom and other faces
+# (CREATE_REBAR_COVER_TYPE, SET_REBAR_COVER), then PLACE_BEAM_REBAR with the
+# host's cover - bottomBars 3 x 16mm, topBars 2 x 12mm, stirrups 8mm @ 200,
+# stirrupHook the template's 135 degree stirrup/tie hook. The values below are
+# this proof's own, never a design value Heron offers anybody (D-33).
+
+positive:
+  - given: >
+      that beam, and the spec it was placed from - bottomBars 3 x 16mm, topBars
+      2 x 12mm, links 8mm @ 200, linkHook 135, cover 30, maxBarLength 12 m,
+      lap 50d, anchorage 40d
+    expect: >
+      meets 9 (bottom bars, top bars, link bar type, link spacing, link hooks,
+      cover on the top, bottom and other faces, longest bar), doesNotMeet 0,
+      notChecked 2 - laps ("no lap found": the bars are single lengths) and
+      anchorage (never passed; `report` gives each main set's hooks and "both
+      ends inside this host", and 40d as 640 mm for the 16 mm bars). The link
+      spacing read is the set's own, 200 mm or less
+
+  - given: the same beam and spec with cover given face by face - "top 30, bottom 30, other 30"
+    expect: the same three cover lines, each meets
+
+negative:
+  - given: >
+      the same beam with a spec it does NOT hold - bottomBars 4 x 16mm, topBars
+      2 x 16mm, links 10mm @ 150, linkHook 90, cover 40, maxBarLength 2 m
+    expect: >
+      meets 0, doesNotMeet 8 or more, each in `findings` with both values -
+      "3 bar(s) where the spec has 4", "2 bar(s) not 16 mm", the link type not
+      10 mm, a spacing wider than 150, hooks other than 90, cover "less than
+      the spec's" on each face, and bars longer than 2000 mm. A card that says
+      meets here is the defect D-30 exists to catch
+
+  - given: a spec bar word no loaded type is named and that is not a diameter - bottomBars 3 x T16 in the metric template
+    expect: >
+      refused naming 'T16' and listing the loaded bar types; meets 0,
+      doesNotMeet 0, notChecked 0 - nothing checked, never read as 16 mm (D-34)
+
+  - given: a steel column and a wall of a non-structural type, any spec
+    expect: both in `notHosts`; meets 0, doesNotMeet 0 - nothing checked in them
+
+  - given: the beam with no spec value at all
+    expect: refused "No spec value was given" - nothing checked
+
+second_route:
+  - select each rebar set in Revit and read Bar Type, Quantity, Layout Rule, Spacing and the hooks in the Properties palette; the beam's Rebar Cover parameters in its own Properties
+  - a Structural Rebar schedule with Host Mark, Type, Quantity, Bar Length and Spacing gives the same counts and the longest bar

@@ -105,7 +105,7 @@ the card's own; nothing here was run in Revit.
 | Title block overlap | `report-sheet-title-blocks` exists; overlap check not found | **Unsure** |
 | Sheets from Excel | `create-sheets` PROVEN; `import-parameter-values` DEPRECATED. `create-sheets-from-table` (DRAFT, 2026-11-09) makes them from a spreadsheet with their parameters, read by the chat tool `heron_sheet_list` - [§5.3](#53-item-7---sheets-from-excel) | **Built, not run in Revit** |
 | Views, sections per room | `duplicate-views`, `create-section-view`, `create-room-elevations` | **Have** |
-| Rebar from a spec or PDF | rebar fragments (`place-beam-rebar`, `place-column-rebar` ...) and `reinforce-concrete` skill. No spec/PDF reading, no anchorage checklist | **Partly** |
+| Rebar from a spec or PDF | rebar fragments (`place-beam-rebar`, `place-column-rebar` ...) and the `reinforce-concrete` method, extended 2026-11-09 to read the spec and confirm it first; `check-rebar-against-spec` (DRAFT, 2026-11-09) checks the placed bars against it - anchorage never passed - [§5.4](#54-item-8---rebar-from-a-spec) | **Built, not run in Revit** |
 | Parametric family agent | `family-creation` and the other `brain/skills/*-family-creation.yaml` skills, [43](43-building-revit-families.md) | **Have - deeper** |
 | MEP network reasoning | `trace-connectivity` DRAFT, `trace-system` skill, `brain/heron_graph.py` | **Partly** |
 | MEP from a CAD drawing | `extract-cad-curves` PROVEN reads the lines; `draw-mep-from-cad` (DRAFT, 2026-11-09) draws them as ducts or pipes with their fittings - [§5.2](#52-item-6---cad-lines-to-ducts-and-pipes) | **Built, not run in Revit** |
@@ -170,7 +170,7 @@ DRAFT, until proven on a real model. Ordered by value to an MEP modeller against
 | 5 | **3D to 2D MEP schematic** - one system traced, drawn as single lines on a drafting view, with sizes, flow and pressure drop. **Built 2026-11-08 as `DRAW_MEP_SCHEMATIC` (DRAFT), not run in Revit: [§5.1](#51-item-5---the-mep-schematic)** | Real MEP value, and Heron already has the trace and the maths | `trace-connectivity`, `report-mep-pressure-drop`, `heron_hvac` (`heron_graph.py`, named here first, is the graph of fragments, not of ducts - not used) |
 | 6 | **CAD lines to ducts and pipes** - read the CAD layer, ask size and type, draw the run. **Built 2026-11-09 as `DRAW_MEP_FROM_CAD` (DRAFT) and the `cad-to-mep` method, not run in Revit: [§5.2](#52-item-6---cad-lines-to-ducts-and-pipes)** | Common job on Gulf projects with CAD backgrounds | `extract-cad-curves`, `create-mep-runs`, `fit-mep-joints` (the `duct-layout` skill, named here first, is a unit ducted to its diffusers - not extended) |
 | 7 | **Sheets from Excel** - read the sheet list from a spreadsheet, preview, create. **Built 2026-11-09 as `CREATE_SHEETS_FROM_TABLE` (DRAFT), the `heron_sheet_list` tool and the `sheets-from-excel` method, not run in Revit: [§5.3](#53-item-7---sheets-from-excel)** | Small, quick win | `create-sheets` (not extended - it is PROVEN; `set-parameter-values-by-id` would be a second call) |
-| 8 | **Rebar from a spec** - read the bar sizes and covers from a given spec, then place, then check anchorage and bar length | Structural, lower for MEP | rebar fragments, `reinforce-concrete` |
+| 8 | **Rebar from a spec** - read the bar sizes and covers from a given spec, then place, then check anchorage and bar length. **Built 2026-11-09 as `CHECK_REBAR_AGAINST_SPEC` (DRAFT) and the `reinforce-concrete` method extended, not run in Revit: [§5.4](#54-item-8---rebar-from-a-spec)** | Structural, lower for MEP | rebar fragments, `reinforce-concrete` (extended, not copied; `report-host-rebar` not edited - it is PROVEN) |
 | Later | Dynamo graph to recipe; ACC (after a decision) | | |
 
 
@@ -280,6 +280,42 @@ C:\...\sheet list.xlsx"* (or .csv) - the method [`sheets-from-excel`](../brain/s
   block that does not exist: nothing made), the preview, title block instance and type columns, Yes/No, dates and
   read-only columns, names Revit refuses, a real register and its time, Revit 2020 and 2025 or later, and the whole
   method in a chat.
+
+### 5.4 Item 8 - Rebar from a spec
+
+**Status 2026-11-09: built, DRAFT, compiled for 2020-2027, NOT RUN in Revit.** *"reinforce these beams from this
+spec"* - pasted text, or a PDF page the chat can read - is the method
+[`reinforce-concrete`](../brain/skills/reinforce-concrete.yaml), which `heron_method` serves. It already was rebar
+from a spec's values, so it was **extended, not copied**; one new card checks what was placed.
+
+- **Read and confirm - the host, nothing in Revit.** The host reads the spec and writes back, per element type,
+  every value it found - *"Beams: bottom 4T16, top 2T12, links T10@150, cover 40, lap 50d, anchorage 40d, max bar
+  length 12 m"* - and marks every value the spec does not give, which is **asked**, never filled from a code or a
+  habit (D-33, D-34). The modeller confirms or corrects it; that table is the only source of every value after it.
+  Heron computes no ACI, Eurocode or BS value: lap, anchorage and bar-length limits are mm or a multiple of d.
+- **Place - the existing cards, none widened.** `LIST_REBAR_TYPES` matches the spec's bar words to the model's types
+  with the modeller; `CREATE_REBAR_BAR_TYPE` / `COVER_TYPE` / `HOOK_TYPE` make what is missing; `SET_REBAR_COVER`;
+  then `PLACE_BEAM_REBAR`, `PLACE_FOOTING_REBAR`, `PLACE_AREA_REINFORCEMENT`, `PLACE_PATH_REINFORCEMENT` (PROVEN,
+  through `revit_change`) and `PLACE_COLUMN_REBAR`, `PLACE_REBAR`, `PLACE_FABRIC_REINFORCEMENT` (DRAFT). **While a
+  card is DRAFT no chat tool keeps its change** (D-117): it is previewed from the command line, rolled back, and
+  kept only by its one `try-once` on the modeller's ask (D-119) - for the modeller, a column, a hand-placed bar or a
+  mesh is one try on a saved model until the owner proves the card.
+- **Check - one new READ card,** [`check-rebar-against-spec`](../brain/fragments/check-rebar-against-spec/fragment.yaml)
+  (`CHECK_REBAR_AGAINST_SPEC`), run by `revit_read` even while DRAFT, since it keeps nothing. Host by host it compares
+  the placed bars with the confirmed values handed in - a beam's bottom, top and side face bars (count and type), a
+  column's main bars, link type, largest link spacing and hook angle, cover face by face, the shortest lap, the
+  longest bar - and gives each as **meets** the value checked, **does not meet** it (both values), or **not checked**
+  with the reason. **Anchorage is never passed:** Revit holds no support for a bar, so each main set's hooks and its
+  length outside the host are set beside the spec's figure for the engineer. It never says compliant or OK to
+  build. Footings, slabs and walls get cover, laps, bar length and anchorage, not bar sizes by layer.
+- **The overlap** with `REPORT_HOST_REBAR` (PROVEN, not edited - it reads, this compares), the routing measured
+  before and after - none of `REPORT_HOST_REBAR`'s sentences moved and no question moved to a write; six questions
+  already reaching a write on main are recorded, not fixed - what is left, the owner's choices, and the merge to
+  weigh once both are proved: [row 5b-1489](fragment-issues/section-5b-rows-401-425.md).
+- **What a real Revit must show:** [NEEDS-CHECKING Group MZ](needs-checking/group-mz.md) - each bar in its place on
+  2020 (the one API question the assemblies cannot answer) and on 2025 or later, the D-30 negative (a spec the beam
+  does not hold: nothing meets), refusals, laps, the length into a column, a column, a slab and a footing, the time
+  on a big host, and the whole method in a chat.
 
 ---
 

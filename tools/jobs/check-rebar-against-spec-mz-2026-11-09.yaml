@@ -1,0 +1,68 @@
+# NEEDS-CHECKING Group MZ - CHECK_REBAR_AGAINST_SPEC, built 2026-11-09 in a
+# cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/check-rebar-against-spec-mz-2026-11-09.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/check-rebar-against-spec-mz-2026-11-09.yaml
+#
+# THE MODEL is a SAVED scratch copy of the rebar-hy scratch project (Group
+# HY's: Revit 2020, the metric structural template, saved under
+# %TEMP%\heron-work\rebar-hy) - never a working model. MZ1 arranges it with
+# PROVEN cards and KEEPS the arrangement: a 30 mm cover type on the Level 2
+# beam's top, bottom and other faces, then PLACE_BEAM_REBAR with the host's
+# cover - 3 x 16mm bottom, 2 x 12mm top, 8mm @ 200 stirrups with the
+# template's 135 degree stirrup/tie hook. The spec below is THAT, so the
+# positive must meet every value it can read. These are this proof's own
+# values, never a design value Heron offers anybody (D-33).
+#
+# THE BAR WORDS ARE DIAMETERS ("16mm"): the card reads a number as a nominal
+# diameter in millimetres and any bar of it meets it. If the template names a
+# type "16mm" exactly, the name wins - the same bars either way.
+#
+# THE NEGATIVE IS A VALUE, NOT A SELECTION (fragment-proving rules 2 and 5):
+# the same beam with a spec it does not hold. A check that says "meets"
+# whatever it is handed says it here; this one must say DOES NOT MEET for
+# every value, so `meets` comes back 0. READ - nothing is changed by either.
+
+model: saved scratch copy of the rebar-hy scratch project with MZ1's beam rebar kept, Revit 2020
+
+defaults:
+  write: false
+  setup:
+    - select-by-category-name
+    - set-selection
+  set:
+    categoryName: Structural Framing
+    inViewOnly: "FloorPlan: Level 2"
+  negative-set:
+    categoryName: Structural Framing
+    inViewOnly: "FloorPlan: Level 2"
+
+jobs:
+  - fragment: check-rebar-against-spec
+    expect: meets
+    set:
+      bottomBars: "3 x 16mm"
+      topBars: "2 x 12mm"
+      links: "8mm @ 200"
+      linkHook: "135"
+      cover: "30"
+      maxBarLength: "12 m"
+      lap: "50d"
+      anchorage: "40d"
+    negative-set:
+      bottomBars: "4 x 16mm"
+      topBars: "2 x 16mm"
+      links: "10mm @ 150"
+      linkHook: "90"
+      cover: "40"
+      maxBarLength: "2 m"
+    note: >
+      MZ3. Negative FIRST: meets 0, doesNotMeet 8 or more (bottom count,
+      top bar size, link bar type, link spacing, link hooks at each set,
+      cover on top, bottom and other faces, longest bar), each in findings
+      with both values. Positive: meets 9, doesNotMeet 0, notChecked 2 - laps
+      "no lap found" and anchorage, never passed, its line giving each main
+      set's hooks and "both ends inside this host" with 40d as 640 mm. If
+      the copy's Level 2 beam holds no bar longer than 2 m, MZ1 records the
+      longest and the negative's maxBarLength is set below it - the job file
+      changes, never the card.
