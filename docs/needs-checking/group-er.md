@@ -20,7 +20,10 @@ it stands. Given **element ids** it makes a temporary isometric 3D view - a sect
 elements and a margin, non-model categories and datums hidden, levels, grids, base points and links
 left out of the box - inside a TransactionGroup it **always** rolls back. The PNG is written into a
 folder of its own under `HeronPaths.Captures`, read back, deleted, and sent in the reply as base64; the
-chat receives it as an image block. Width 320-2400 px, 1280 by default.
+chat receives it as an image block. Width 320-2400 px, 1280 by default. **Added 2026-11-09:** a named
+plan's reply also carries its scale, crop and annotation crop state and the crop's corners in model mm,
+read only, and for a floor plan the answer turns a place on the picture - a fraction of its width and
+height - into model mm when the crop is on and the annotation crop off, or says in one line why not. Measured by [Group MX](group-mx.md) row MX19, not here.
 
 **What is compiled and what is not run.** The add-in builds for all eight releases 2020 to 2027
 (`tools/check-compile.py`, 2026-10-17) and every Revit member it calls exists in each

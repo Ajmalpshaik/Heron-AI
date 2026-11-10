@@ -28,7 +28,13 @@ semantic-identity: "turn the duct and pipe linework of a linked CAD background i
 #     A layer's meaning is never guessed (D-33, D-34): the host asks.
 #   DRAW - this card. It reads the GEOMETRY itself, inside Revit, from the
 #     layers named; the coordinates come from the CAD, never from the picture.
-#     The tags arrive as `sizes`, each with a position near its run.
+#     The tags arrive as `sizes`, each with a position near its run. Since
+#     2026-11-09 (row 5b-1481) revit_view_image of a floor plan whose crop is
+#     on and annotation crop off also answers how a place on the picture - as
+#     a fraction of its width and height - turns into internal model mm, so a
+#     tag's own position can be handed in; otherwise the host gives
+#     a tag the middle of the run it labels, from runsFound. NEEDS-CHECKING
+#     MX19 measures whether the picture fills the crop edge to edge.
 # The whole method, in order, is the cad-to-mep skill (heron_method).
 #
 # WHY ONE CARD AND NOT A CHAIN. EXTRACT_CAD_CURVES' listOnly hands back the
@@ -218,7 +224,9 @@ contract:
     - name: defaultSize
       type: string
       source: request
-    # Size hints, one line, ; between: size@x,y in mm, internal coordinates.
+    # Size hints, one line, ; between: size@x,y in mm, internal coordinates -
+    # a tag's place on the picture put through revit_view_image's "Model
+    # position" line, or the middle of its run from runsFound (row 5b-1481).
     # Left out ("none"), no hints.
     - name: sizes
       type: string

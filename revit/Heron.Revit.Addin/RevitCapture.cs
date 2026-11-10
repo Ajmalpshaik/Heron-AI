@@ -47,6 +47,11 @@ namespace Heron.Revit.Addin
     ///   box runs the whole width of the model, and framing it would picture
     ///   the building instead of the elements.
     ///
+    ///   A NAMED PLAN ALSO SAYS WHERE IT SITS (row 5b-1481, added 2026-11-09):
+    ///   its scale, whether its crop and annotation crop are on, and the
+    ///   crop's four corners in model mm, so the chat can turn a size tag's
+    ///   pixel into a size@x,y hint. Read only; see PlanFrame.
+    ///
     ///   IN A PROJECT, the floors, ceilings and roofs lying wholly above the
     ///   elements are hidden in that view, and named in the answer: an
     ///   isometric looks down, and a slab inside the margin over three ducts
@@ -786,6 +791,12 @@ namespace Heron.Revit.Addin
             var viewName = view.Name;
             var viewType = view.ViewType.ToString();
 
+            // WHERE THE PICTURE SITS IN THE MODEL, for a named plan only - the
+            // temporary 3D view of the elements way has none to give (row
+            // 5b-1481). Read here, before the export and the rollback, and it
+            // only reads: nothing about the view is set.
+            var frame = mode == "view" ? PlanFrame(view) : null;
+
             var folder = Path.Combine(HeronPaths.Captures, Guid.NewGuid().ToString("N"));
             byte[] picture = null;
             var deleted = false;
@@ -853,6 +864,9 @@ namespace Heron.Revit.Addin
                 // IN THE FRAME AND NOT IN THE PICTURE - said, so a modeller
                 // checking a clearance is never shown a slab as not there.
                 Json.Str("hiddenAbove", string.IsNullOrEmpty(hidden) ? null : hidden),
+                // A PLAN'S SCALE, CROP AND CORNERS - several fields in one
+                // string, left out (null) for anything but a named plan.
+                frame,
                 // HELD, AS FAR AS IT WAS CHECKED: Revit's status, and the
                 // temporary view counted back (RevitFragment.RollBackAndCheck).
                 // `keptLost` and `rollbackNote` say what the rollback took from
@@ -868,6 +882,123 @@ namespace Heron.Revit.Addin
                 Json.Str("projectKey", RevitOperations.ProjectKey(doc)),
                 Json.Str("creationGuid", RevitOperations.CreationGuid(doc)),
                 Json.Str("png", Convert.ToBase64String(picture)));
+        }
+
+        /// <summary>Millimetres in a foot, Revit's internal unit (D-20).</summary>
+        private const double MmPerFoot = 304.8;
+
+        /// <summary>
+        /// A named PLAN's scale, crop and the crop's four corners in the model,
+        /// as reply fields ready to join the answer - or null for any other
+        /// view, or when Revit will not say. Row 5b-1481: the chat reads size
+        /// tags off the picture, and these turn a pixel into a model position
+        /// for DRAW_MEP_FROM_CAD's size@x,y hints.
+        ///
+        /// IT ONLY READS. View.Scale; View.CropBoxActive; the annotation crop's
+        /// state (VIEWER_ANNOTATION_CROP_ACTIVE); whether the crop is a plain
+        /// rectangle, shaped or split (ViewCropRegionShapeManager); and
+        /// View.CropBox's corners through the box's own Transform. The API
+        /// says of CropBox: "The X direction of the box is right on screen; Y
+        /// is up" - so the picture's top-left is (Min.X, Max.Y), and a crop
+        /// rotated in the plan comes out rotated in the corners. That is
+        /// trusted only where the box's BasisX and BasisY ARE the view's
+        /// RightDirection and UpDirection; otherwise (a reflected ceiling plan
+        /// may be one) `cropCornersWhyNot` says so and no corner is sent.
+        /// Every member read with tools/api-surface --members on 2026-11-09:
+        /// present 2020 to 2027 with these signatures, so there is no version
+        /// branch. The annotation crop's offsets were sent in ed899b5 and
+        /// dropped after its review: nothing read them, and their units were
+        /// not verified.
+        ///
+        /// MILLIMETRES FROM REVIT'S INTERNAL ORIGIN (D-20, feet x 304.8) - the
+        /// numbers EXTRACT_CAD_CURVES and DRAW_MEP_FROM_CAD's runsFound give.
+        /// Corners top-left, top-right, bottom-right, bottom-left, as the
+        /// picture is seen, "x,y; x,y; x,y; x,y".
+        ///
+        /// WHAT IT CANNOT KNOW: whether Revit's picture covers the crop exactly,
+        /// edge to edge. FitToPage is documented only as "fit the whole view
+        /// into a specific image size". So the server holds the picture's shape
+        /// against the crop's before it gives a mapping, and NEEDS-CHECKING MX19
+        /// measures the rest on a real plan.
+        ///
+        /// A FIELD REVIT WILL NOT GIVE IS LEFT OUT, never guessed - and a throw
+        /// costs the fields, never the picture: it is answered "planFrame":
+        /// "unavailable" with the exception's type, so the server can tell it
+        /// from an add-in too old to send any of this.
+        /// </summary>
+        private static string PlanFrame(View view)
+        {
+            if (!(view is ViewPlan)) return null;
+            try
+            {
+                var fields = new List<string>();
+                fields.Add(Json.Num("viewScale", view.Scale));
+                fields.Add(Json.Bool("cropActive", view.CropBoxActive));
+
+                var annotation = view.get_Parameter(BuiltInParameter.VIEWER_ANNOTATION_CROP_ACTIVE);
+                if (annotation != null && annotation.HasValue)
+                    fields.Add(Json.Bool("annotationCropActive", annotation.AsInteger() != 0));
+
+                var shape = view.GetCropRegionShapeManager();
+                if (shape != null)
+                {
+                    fields.Add(Json.Str("cropShape",
+                        shape.Split ? "split" : shape.ShapeSet ? "shaped" : "rectangle"));
+                }
+
+                // THE CORNERS ONLY WHEN THE BOX'S AXES ARE THE VIEW'S OWN
+                // right and up - the picture's left-to-right and bottom-to-top.
+                // A reflected ceiling plan, or any view whose box is set up
+                // otherwise, would put the corners in the wrong places; the
+                // reason is sent instead, and the server gives no mapping.
+                var box = view.CropBox;
+                if (box != null)
+                {
+                    var transform = box.Transform ?? Transform.Identity;
+                    if (!transform.BasisX.IsAlmostEqualTo(view.RightDirection)
+                        || !transform.BasisY.IsAlmostEqualTo(view.UpDirection))
+                    {
+                        fields.Add(Json.Str("cropCornersWhyNot",
+                            "the crop box's axes are not the view's right and up"));
+                    }
+                    else
+                    {
+                        var corners = new[]
+                        {
+                            new XYZ(box.Min.X, box.Max.Y, box.Min.Z),
+                            new XYZ(box.Max.X, box.Max.Y, box.Min.Z),
+                            new XYZ(box.Max.X, box.Min.Y, box.Min.Z),
+                            new XYZ(box.Min.X, box.Min.Y, box.Min.Z),
+                        };
+                        var said = new List<string>();
+                        foreach (var corner in corners)
+                        {
+                            var p = transform.OfPoint(corner);
+                            said.Add(Mm(p.X * MmPerFoot) + "," + Mm(p.Y * MmPerFoot));
+                        }
+                        fields.Add(Json.Str("cropCornersMm", string.Join("; ", said.ToArray())));
+                    }
+                }
+                return string.Join(", ", fields.ToArray());
+            }
+            // SAID, NEVER SILENT (review of ed899b5): a reply with no crop
+            // fields read as an older add-in. The exception's type only - no
+            // message, no stack.
+            catch (Autodesk.Revit.Exceptions.ApplicationException ex) { return Unavailable(ex); }
+            catch (InvalidOperationException ex) { return Unavailable(ex); }
+        }
+
+        /// <summary>The reply's fields when PlanFrame could not read the plan.</summary>
+        private static string Unavailable(Exception ex)
+        {
+            return Json.Str("planFrame", "unavailable") + ", "
+                 + Json.Str("planFrameError", ex.GetType().Name);
+        }
+
+        /// <summary>A length in mm to three places, never culture-dependent.</summary>
+        private static string Mm(double mm)
+        {
+            return mm.ToString("0.###", CultureInfo.InvariantCulture);
         }
 
         /// <summary>
