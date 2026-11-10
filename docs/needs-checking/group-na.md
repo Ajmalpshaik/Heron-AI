@@ -38,6 +38,9 @@ file is [`tools/jobs/lock-form-sketch-na-2026-11-10.yaml`](../../tools/jobs/lock
 | **NA5** | *FOLLOW - the circle, kept.* NA2's positive kept; label "Spigot X" from "Center (Left/Right)" and "Spigot Y" from "Center (Front/Back)" (150 / 100); `FLEX_FAMILY` them to 250 / 50 | The circle's centre read back at (250, 50), its 150 mm diameter unchanged - both halves moved together |
 | **NA6** | *Second route.* By hand on a copy: Edit Sweep > Edit Path, Align, the plane, the line, the padlock; Center Mark Visible, Align, the centre, the padlock; flexed side by side with NA4 and NA5 | The two copies read back the same at every size |
 
+**Run 2026-11-10, ~15:10 - NA1, NA2 and NA3 PASS, rolled back** (Revit 2020, session 9912, the scratch family "Heron Sketch Lock Test", 1,529 elements; `tools/batch-prove.py` with a filled copy of the job file; log `%TEMP%\heron-work\sketch-lock
+a-run2.txt`). NA1: four path lines locked; "Ring Left, Spigot Y" refused with nothing locked - **Revit takes a straight sketch line's reference outside sketch mode.** NA2: the circle's centre locked to "Spigot X" and "Spigot Y"; "Ring Left" refused. NA3: "Ring Front, Ring Back" locked; "Ref. Level" refused without naming `LOCK_FORM_TO_PLANES`. The first attempt answered "Could not identify the active model" for all three because a chat held the model; `revit_release` cleared it. Proof drafts are local (gitignored), unsigned. **Still owed:** NA4 and NA5 (kept, then flexed - the FOLLOW half), NA3b, NA6 (second route), and the owner's signature. The card stays DRAFT.
+
 **Before the owner's own families.** The first run on `KDF Square Diffuser - Supply_DRAFT.rfa` or
 `Plenum Box_DETAILED_DRAFT.rfa` is his choice, through `try-once`, behind Revit's Keep or Discard. The diffuser's
 sweeps still carry the FACE locks made on 2026-11-10: the card counts them and says so, and does not remove them -
