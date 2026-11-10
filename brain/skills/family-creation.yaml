@@ -230,9 +230,17 @@ purpose: >
      first flex. Where the size is the form's OWN field rather than a plane,
      LINK_FAMILY_PARAMETER with forms= its id instead: an extrusion's end to a length, a
      revolve's end angle to an angle - a bend whose angle the types choose.
-     Never both on one face.
+     Never both on one face. A SWEEP is the exception: lock its PATH lines with
+     LOCK_FORM_SKETCH_TO_PLANES and never its faces - a sweep with its faces
+     locked failed every later size change ("Can't create sweep", Revit 2020,
+     2026-11-10; whether one END face of an open sweep can be locked safely is
+     not measured).
   9. LABEL_FAMILY_RADIUS for every round size - the parameter holding the size
-     first, as in step 3.
+     first, as in step 3. A label holds the SIZE only: a circle that must stay
+     on planes that move - a spigot centred on a box - also has its centre
+     locked with LOCK_FORM_SKETCH_TO_PLANES, or it drifts (measured 75 mm on
+     2026-11-10). The label FIRST: a centre locked on a circle with no size
+     label stretches it as it moves (NA5, 2026-11-10).
   10. THE VOIDS, built as void forms in step 7, each cut into the solid it must
       cut with COMBINE_FAMILY_FORMS - a void made through the API cuts NOTHING
       until it is combined, and the cut is measured. A void meant to cut a
@@ -495,6 +503,8 @@ needs:
   - CREATE_FAMILY_FORMS
   - CREATE_FAMILY_FREEFORM_SOLID
   - LOCK_FORM_TO_PLANES
+  # Step 8's sweep path and step 9's circle centre - the form's sketch.
+  - LOCK_FORM_SKETCH_TO_PLANES
   # LINK_FAMILY_FORM_PARAMETER was listed here until 2026-11-01, when it was merged into LINK_FAMILY_PARAMETER.
   - LABEL_FAMILY_RADIUS
   - COMBINE_FAMILY_FORMS

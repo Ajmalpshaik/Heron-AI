@@ -206,18 +206,27 @@ def main():
     # SET_REINFORCEMENT_SETTINGS share a signature with each other - two
     # dialogs, one settings-table contract - and are keep-separate for the
     # same reason SET_PROJECT_LOCATION and SET_PROJECT_UNITS are.
-    check(len(real["decided"]) == 3,
-          "exactly three groups of live cards share a contract signature")
+    # 2026-11-10 (NEEDS-CHECKING Group NA, row 5b-1491): FOUR.
+    # LOCK_FORM_SKETCH_TO_PLANES and LOCK_FORM_TO_PLANES share one contract -
+    # a form and named planes in, locked / notAFamily / refused / findings out
+    # - and lock different things: the form's SKETCH (a sweep's path lines, a
+    # circle's centre) against its finished FACES. Face locks on a sweep were
+    # measured to stop every size change, so the two are keep-separate; their
+    # routing rows say which wins an extrusion's straight sides (the faces).
+    check(len(real["decided"]) == 4,
+          "exactly four groups of live cards share a contract signature")
     check(real["for_the_host"] == [],
           "and NOT ONE of them needs the host - all are keep-separate")
     names = sorted(one for group in real["decided"]
                    for one in group["fragments"])
     # 2026-11-02: the new third pair (Group MF) joins the roll-call by name.
-    check(names == ["set-project-location", "set-project-units",
+    # 2026-11-10: the fourth pair (Group NA) joins it the same way.
+    check(names == ["lock-form-sketch-to-planes", "lock-form-to-planes",
+                    "set-project-location", "set-project-units",
                     "set-reinforcement-settings", "set-structural-settings",
                     "transfer-materials-between-documents",
                     "transfer-view-filters-between-documents"],
-          "the six are: %s" % ", ".join(names))
+          "the eight are: %s" % ", ".join(names))
     check(not set(names) & set(real["retired"]),
           "and no retired card is in any group")
     check(all(len(one["capabilities"]) == 2 for one in real["decided"]),

@@ -1,0 +1,81 @@
+# The proof of LOCK_FORM_SKETCH_TO_PLANES (FRG-GEO-082) - NEEDS-CHECKING
+# Group NA, rows NA1 to NA6:
+#
+#     python tools/batch-prove.py tools/jobs/lock-form-sketch-na-2026-11-10.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/lock-form-sketch-na-2026-11-10.yaml
+#
+# A SCRATCH FAMILY, NEVER THE OWNER'S OPEN ONES. File, New, Family, the metric
+# Generic Model template, saved as "Heron Sketch Lock Test" in
+# %TEMP%\heron-work\sketch-lock, Revit 2020. In it, made with Heron's own
+# family tools (APPLIED, kept), so each form's id comes back:
+#
+#   reference planes "Ring Left" / "Ring Right" at X -300 / 300, "Ring Front" /
+#     "Ring Back" at Y -300 / 300, "Spigot X" at X 150 and "Spigot Y" at Y 100
+#   a SWEEP whose path is the rectangle -300,-300; 300,-300; 300,300;
+#     -300,300 on Ref. Level, any small closed profile - NOTHING locked on its
+#     faces
+#   a solid EXTRUSION "circle 150,100 75" on Ref. Level, 0 to 200
+#
+# Then type the forms' ids where the values say SWEEP-ID and CIRCLE-ID. THE DRY
+# RUN DOES NOT CATCH A PLACEHOLDER LEFT IN (2026-10-01) - fill them in first.
+#
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK.
+# LOOK at the family after the run anyway: rollback has failed before on this
+# PC (BD1). The FOLLOW half - the locks kept and the planes flexed - is NA4 and
+# NA5 in the group's file, by hand and through FLEX_FAMILY, not here.
+#
+# NEGATIVES, ONE PER JOB, never an empty name: for the sweep, "Ring Left,
+# Spigot Y" - ALL OR NOTHING: Ring Left has a path line on it, Spigot Y (Y 100)
+# has none, so nothing at all may be locked; for the circle, "Ring Left" (X
+# -300 - the centre is at X 150); and the sweep against "Ref. Level", the
+# level its path lies in, which no path line can be aligned to (NA3).
+#
+# With two Revits connected to Heron, add `--session <process id>` to both
+# commands.
+
+model: Heron Sketch Lock Test (a new family, metric Generic Model template), Revit 2020
+
+defaults:
+  in: "Heron Sketch Lock Test"
+  # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+  write: true
+
+jobs:
+  - fragment: lock-form-sketch-to-planes
+    expect: locked
+    set:
+      form: "SWEEP-ID"
+      planes: "Ring Left, Ring Right, Ring Front, Ring Back"
+    negative-set:
+      form: "SWEEP-ID"
+      planes: "Ring Left, Spigot Y"
+    note: >
+      Positive: four locks, one per path line, in Ref. Level. Negative: refused,
+      naming the nearest path lines 200 mm off "Spigot Y" - and NO lock on
+      "Ring Left" either, which is the all-or-nothing half.
+
+  - fragment: lock-form-sketch-to-planes
+    expect: locked
+    set:
+      form: "CIRCLE-ID"
+      planes: "Spigot X, Spigot Y"
+    negative-set:
+      form: "CIRCLE-ID"
+      planes: "Ring Left"
+    note: >
+      Positive: two locks on ONE half-arc's centre, in Ref. Level. Negative:
+      refused, naming the circle's centre 450 mm off "Ring Left".
+
+  # NA3 - a plane the path cannot be locked to. Its positive is two of the
+  # first job's planes; its negative is the point.
+  - fragment: lock-form-sketch-to-planes
+    expect: locked
+    set:
+      form: "SWEEP-ID"
+      planes: "Ring Front, Ring Back"
+    negative-set:
+      form: "SWEEP-ID"
+      planes: "Ref. Level"
+    note: >
+      Negative: refused as not standing square to the path, saying a sweep's
+      ends follow its path - and NOT naming LOCK_FORM_TO_PLANES.
