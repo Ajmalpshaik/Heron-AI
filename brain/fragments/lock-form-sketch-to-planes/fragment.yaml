@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -92,6 +92,45 @@ contract:
     - name: findings
       type: IList<string>
 
+proof:
+  date: '2026-11-10'
+  by: Ajmal PS
+  model: Heron Sketch Lock Test (1,529 elements), Revit 2020, session 9912
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned at Func`2, datums 9 item(s) [(Autodesk.Revit.DB.ReferencePlane,
+    Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen...,
+    (Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen..., ...], exactly 9.84251968503937E-10,
+    findings 2 item(s) [Locked 2 sketch line(s) and centre(s): the path line from (-..., Locked
+    is not yet PROVED to follow the planes. FLEX_FAMILY c...], fineMm Func`2, halfMillimetre
+    0.00164041994750656, invariant CultureInfo, jobs 2 item(s) [((Autodesk.Revit.DB.ReferencePlane,
+    Autodesk.Revit.DB.Refere..., ((Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Refere...],
+    locked 2 item(s) [the path line from (-300, -300, 0) mm to (300, -300, 0) mm t..., the
+    path line from (300, 300, 0) mm to (-300, 300, 0) mm to ...], mm Func`2, noView 0 item(s),
+    notAFamily false, off Func`3, ownName Func`2, problems 0 item(s), refused (null), sketches
+    1 item(s) [(path, Autodesk.Revit.DB.Sketch)], square 1E-06, target Sweep, wantedPlanes
+    2 item(s) [(Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.ReferencePlane,
+    Autodesk.Revit.DB.Referen...]. inputs came form as given; planes as given (2). on Heron
+    Sketch Lock Test'
+  negative_case: run with form=e2d6d37d-af18-4a28-8c7d-7d0ed26016a2-00000a81, planes=Ref.
+    Level instead - chosen because it should not contain what this fragment reports - run
+    inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned at Func`2, datums 9 item(s) [(Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen...,
+    (Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.ReferencePlane,
+    Autodesk.Revit.DB.Referen..., ...], exactly 9.84251968503937E-10, findings 1 item(s) [Nothing
+    was locked. "Ref. Level" does not stand square to th...], fineMm Func`2, halfMillimetre
+    0.00164041994750656, invariant CultureInfo, jobs 0 item(s), locked 0 item(s), mm Func`2,
+    noView 0 item(s), notAFamily false, off Func`3, ownName Func`2, problems 1 item(s) ["Ref.
+    Level" does not stand square to the form's path, so no...], refused Nothing was locked.
+    "Ref. Level" does not stand square to the form's path, so nothing drawn in it can be aligned
+    to it. A sweep's ends follow its path; lock the path's lines to the planes they lie on
+    instead., sketches 1 item(s) [(path, Autodesk.Revit.DB.Sketch)], square 1E-06, target
+    Sweep, wantedPlanes 1 item(s) [(Autodesk.Revit.DB.Level, Autodesk.Revit.DB.Reference,
+    Autod...]. inputs came form as given; planes as given (1). on Heron Sketch Lock Test
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 77af06dc201b7c96
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -103,8 +142,9 @@ compatibility-note: >
   `TopSketch`, `CurveElement.CenterPointReference`,
   `Reference.ConvertToStableRepresentation` / `ParseFromStableRepresentation`
   and `BuiltInParameter.ARC_CENTER_MARK` read the same 2020 through 2027
-  (tools/api-surface, read 2026-11-10). Nothing here has been run on any
-  release: DRAFT until NEEDS-CHECKING Group NA proves it (D-30).
+  (tools/api-surface, read 2026-11-10). Run and proved on Revit 2020 only
+  (NEEDS-CHECKING Group NA, 2026-11-10); every later release is compiled, not
+  run.
 
 # VERSION 1, 2026-11-10 (row 5b-1491). Written for two jobs that day on Revit
 # 2020 (session 9912): a square diffuser's cone rings as sweeps, whose face
@@ -113,10 +153,22 @@ compatibility-note: >
 # way LABEL_FAMILY_RADIUS reaches them - a sketch curve's own reference, a
 # drawn arc's centre point read back from its written form - with no
 # sketch-editing scope, which a family document refuses. A straight sketch
-# line has NOT been aligned through the API anywhere in Heron before this; the
-# centre-point alignment has (LABEL_FAMILY_RADIUS's torus and swept-blend
+# line had NOT been aligned through the API anywhere in Heron before this; the
+# centre-point alignment had (LABEL_FAMILY_RADIUS's torus and swept-blend
 # routes). The "exactly on it" tolerance is the one measured for faces (row
 # 5b-372), not yet for sketch curves.
+#
+# PROVED 2026-11-10, Revit 2020, session 9912, scratch family "Heron Sketch
+# Lock Test" (NEEDS-CHECKING Group NA), signed by Ajmal PS on his "Yes, sign
+# it". The proof block below is NA3's run (two path lines locked; "Ref. Level"
+# refused). Beside it: NA1 - four path lines locked, and "Ring Left, Spigot Y"
+# refused with NOTHING locked (all or nothing); NA2 - a circle's centre locked
+# to two planes; NA4 - KEPT by the owner, then the ring resized 450 x 450 and
+# 900 x 450 and read back exactly, no "Can't create sweep"; NA5 - the centre
+# followed its planes to (250, 50), the circle whole only once its diameter
+# was labelled. Revit takes a straight sketch line's reference outside sketch
+# mode. Not run: NA3b (a second run), NA6 (the hand route), the kept run's own
+# negative; and no release but 2020.
 #
 # ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #

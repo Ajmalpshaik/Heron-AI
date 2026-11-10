@@ -234,7 +234,7 @@ purpose: >
      LOCK_FORM_SKETCH_TO_PLANES and never its faces - a sweep with its faces
      locked failed every later size change ("Can't create sweep", Revit 2020,
      2026-11-10; whether one END face of an open sweep can be locked safely is
-     not measured). That tool is DRAFT until Group NA proves it.
+     not measured).
   9. LABEL_FAMILY_RADIUS for every round size - the parameter holding the size
      first, as in step 3. A label holds the SIZE only: a circle that must stay
      on planes that move - a spigot centred on a box - also has its centre

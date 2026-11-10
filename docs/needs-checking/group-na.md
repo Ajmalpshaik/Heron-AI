@@ -53,6 +53,9 @@ first, it read X 175..325, Y -25..125 - centre (250, 50), 150 across. So the siz
 locked; the card's purpose and `family-creation` step 9 now say so (no code change, so these runs still describe it).
 **Not run:** the rolled-back negative for the kept NA4 (`validate --kept`), NA3b and NA6 (the hand route). Unsigned.
 
+**SIGNED 2026-11-10 by Ajmal PS - `LOCK_FORM_SKETCH_TO_PLANES` is PROVEN** on NA3's run (the proof block in the card),
+with NA1, NA2, NA4 and NA5 above beside it. Still open, not blocking: NA3b, NA6 and the kept NA4's own negative.
+
 **Before the owner's own families.** The first run on `KDF Square Diffuser - Supply_DRAFT.rfa` or
 `Plenum Box_DETAILED_DRAFT.rfa` is his choice, through `try-once`, behind Revit's Keep or Discard. The diffuser's
 sweeps still carry the FACE locks made on 2026-11-10: the card counts them and says so, and does not remove them -
