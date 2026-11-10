@@ -43,6 +43,13 @@ purpose: >
   top, but never for a sweep, whose ends follow its path. A lock already there
   is left as it is and said, so a second run adds only what is new.
 
+  **A CIRCLE'S SIZE IS LABELLED FIRST.** A locked centre moves the circle, but
+  a circle with no size label stretches as it moves - one edge stays where it
+  was. Measured 2026-11-10 (Revit 2020, NEEDS-CHECKING NA5): with no label the
+  centre reached (250, 50) and the circle read 350 across instead of 150; with
+  its diameter labelled by LABEL_FAMILY_RADIUS it moved whole, 150 across. So
+  LABEL_FAMILY_RADIUS first, then this.
+
   **THE FORM IS NAMED BY ITS ID** - the one its form tool gave back - or
   SELECTED in the family's window and called `selected`. Exactly one.
 

@@ -239,7 +239,8 @@ purpose: >
      first, as in step 3. A label holds the SIZE only: a circle that must stay
      on planes that move - a spigot centred on a box - also has its centre
      locked with LOCK_FORM_SKETCH_TO_PLANES, or it drifts (measured 75 mm on
-     2026-11-10).
+     2026-11-10). The label FIRST: a centre locked on a circle with no size
+     label stretches it as it moves (NA5, 2026-11-10).
   10. THE VOIDS, built as void forms in step 7, each cut into the solid it must
       cut with COMBINE_FAMILY_FORMS - a void made through the API cuts NOTHING
       until it is combined, and the cut is measured. A void meant to cut a

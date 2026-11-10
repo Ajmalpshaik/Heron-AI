@@ -40,6 +40,19 @@ file is [`tools/jobs/lock-form-sketch-na-2026-11-10.yaml`](../../tools/jobs/lock
 
 **Run 2026-11-10, ~15:10 - NA1, NA2 and NA3 PASS, rolled back** (Revit 2020, session 9912, the scratch family "Heron Sketch Lock Test", 1,529 elements; `tools/batch-prove.py` with a filled copy of the job file; log `%TEMP%\heron-work\sketch-lock\na-run2.txt`). NA1: four path lines locked; "Ring Left, Spigot Y" refused with nothing locked - **Revit takes a straight sketch line's reference outside sketch mode.** NA2: the circle's centre locked to "Spigot X" and "Spigot Y"; "Ring Left" refused. NA3: "Ring Front, Ring Back" locked; "Ref. Level" refused without naming `LOCK_FORM_TO_PLANES`. The first attempt answered "Could not identify the active model" for all three because a chat held the model; `revit_release` cleared it. Proof drafts are local (gitignored), unsigned. **Still owed:** NA4 and NA5 (kept, then flexed - the FOLLOW half), NA3b, NA6 (second route), and the owner's signature. The card stays DRAFT.
 
+**Run 2026-11-10, ~15:15-15:20 - NA4 and NA5 PASS** (same Revit, session and scratch family). NA4: `try-once`,
+**KEPT by the owner** - the four path lines locked to "Ring Left / Right / Front / Back" (record
+`brain/proof-drafts/runs/lock-form-sketch-to-planes.once.json`, local); then "Ring Width" / "Ring Depth" labelled
+EQ about the centre planes and the type set with `SET_FAMILY_TYPE_VALUES` (PROVEN, kept), read back with
+`REPORT_FAMILY_FORMS`: 450 x 450 read X -225..225, Y -225..225; 900 x 450 read X -450..450, Y -225..225; back to 600 -
+**no "Can't create sweep"**, the failure of 2026-11-10 gone. NA5: rolled back (`validate --write --keep-chain`, the lock
+and `SET_FAMILY_TYPE_VALUES` as setups, `REPORT_FAMILY_FORMS` under test), "Spigot X / Y" labelled from the centre
+planes. **FINDING:** with NO size label the circle's centre reached (250, 50) but the circle was STRETCHED to 350 across
+(X 75..425, Y -125..225) - one edge stayed put; with its diameter labelled "Spigot Dia" (150) by `LABEL_FAMILY_RADIUS`
+first, it read X 175..325, Y -25..125 - centre (250, 50), 150 across. So the size is labelled before the centre is
+locked; the card's purpose and `family-creation` step 9 now say so (no code change, so these runs still describe it).
+**Not run:** the rolled-back negative for the kept NA4 (`validate --kept`), NA3b and NA6 (the hand route). Unsigned.
+
 **Before the owner's own families.** The first run on `KDF Square Diffuser - Supply_DRAFT.rfa` or
 `Plenum Box_DETAILED_DRAFT.rfa` is his choice, through `try-once`, behind Revit's Keep or Discard. The diffuser's
 sweeps still carry the FACE locks made on 2026-11-10: the card counts them and says so, and does not remove them -
