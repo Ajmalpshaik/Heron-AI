@@ -1,0 +1,133 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-082
+semantic-identity: "align and lock the lines and circle centres of a family form's sketch - a sweep's path, an extrusion's circle - to the named planes they lie on"
+kind: action
+domain: revit.families
+capability: LOCK_FORM_SKETCH_TO_PLANES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  ALIGNS AND LOCKS the SKETCH a form is drawn from to named reference planes
+  and levels in the family open in the Family Editor - what is done by hand in
+  Edit Sweep > Edit Path or Edit Extrusion: Align, the plane, the sketch line
+  or the circle's centre, the padlock. A sweep's path lines follow the planes
+  so the sweep is rebuilt where they move; a round spigot's circle stays
+  centred when the box around it changes size.
+
+  **THE SKETCH, NOT THE FACES.** LOCK_FORM_TO_PLANES locks the finished
+  form's faces. On a sweep that was measured to stop every later size change
+  ("Constraints are not satisfied", "Can't create sweep" - Revit 2020,
+  2026-11-10), because a sweep is rebuilt from its path; and a circle has no
+  flat face at its centre. So for a sweep's path, and for any circle's centre,
+  the lock goes in the sketch.
+
+  **WHAT IS LOCKED, FOR EACH PLANE NAMED**: every straight sketch line lying
+  in it, both ends on it; and every circle or arc whose centre lies on it, once
+  per centre - Revit keeps a sketch circle as two half-arcs, and one half's
+  centre carries the circle. The sketch is an extrusion's or revolve's own, a
+  sweep's or swept blend's PATH, a blend's base and top; a sweep's profile is
+  not touched. An arc whose centre gives no reference is given "Center Mark
+  Visible" first, as by hand, and that is said.
+
+  **LOCKED ONLY WHERE IT ALREADY LIES.** A plane with no line and no centre on
+  it refuses the whole call, naming the nearest ones and how far off - a lock
+  never moves what it locks. A plane that does not stand square to the sketch
+  is refused - naming LOCK_FORM_TO_PLANES for an extrusion's or blend's end or
+  top, but never for a sweep, whose ends follow its path. A lock already there
+  is left as it is and said, so a second run adds only what is new.
+
+  **THE FORM IS NAMED BY ITS ID** - the one its form tool gave back - or
+  SELECTED in the family's window and called `selected`. Exactly one.
+
+  **ALL OR NOTHING, READ BACK.** Every lock reads back locked, and the form
+  must still be a solid that has not moved; any refusal from Revit fails the
+  call with nothing kept. Locks already on the form's own faces are counted
+  and said, never removed. Locked is not yet proved to FOLLOW: FLEX_FAMILY
+  moves the planes and reads the form back.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: uidoc
+      type: UIDocument
+    # The form, by the id its form tool gave back, or `selected`.
+    - name: form
+      type: string
+      source: request
+    # The reference planes and levels to lock its sketch to, by name, commas
+    # between - "Ring Outer Left, Ring Outer Right, Center (Left/Right)".
+    - name: planes
+      type: IList<string>
+      source: request
+  provides:
+    - name: locked
+      # Each lock made: which sketch line or circle centre, to which plane, in
+      # which view.
+      role: result
+      type: IList<string>
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was locked, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `ItemFactoryBase.NewAlignment`, `Dimension.IsLocked`, `Sketch.Profile`,
+  `Sketch.SketchPlane`, `Extrusion.Sketch`, `Revolution.Sketch`,
+  `Sweep.PathSketch`, `SweptBlend.PathSketch`, `Blend.BottomSketch` /
+  `TopSketch`, `CurveElement.CenterPointReference`,
+  `Reference.ConvertToStableRepresentation` / `ParseFromStableRepresentation`
+  and `BuiltInParameter.ARC_CENTER_MARK` read the same 2020 through 2027
+  (tools/api-surface, read 2026-11-10). Nothing here has been run on any
+  release: DRAFT until NEEDS-CHECKING Group NA proves it (D-30).
+
+# VERSION 1, 2026-11-10 (row 5b-1491). Written for two jobs that day on Revit
+# 2020 (session 9912): a square diffuser's cone rings as sweeps, whose face
+# locks broke every size change, and a plenum box's spigot circle that kept
+# its labelled size and drifted 75 mm off centre. References are reached the
+# way LABEL_FAMILY_RADIUS reaches them - a sketch curve's own reference, a
+# drawn arc's centre point read back from its written form - with no
+# sketch-editing scope, which a family document refuses. A straight sketch
+# line has NOT been aligned through the API anywhere in Heron before this; the
+# centre-point alignment has (LABEL_FAMILY_RADIUS's torus and swept-blend
+# routes). The "exactly on it" tolerance is the one measured for faces (row
+# 5b-372), not yet for sketch curves.
+#
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
+#
+#   "lock the sweep path to the planes"            -> here
+#   "lock the circle centre to the center planes"  -> here
+#   "lock the cylinder's top to Body Top"          -> LOCK_FORM_TO_PLANES, a
+#                                                     face
+#   "tie the circle's diameter to Neck Size"       -> LABEL_FAMILY_RADIUS, the
+#                                                     size, not where it sits
+#   "lock this extrusion to the reference planes"  -> LOCK_FORM_TO_PLANES: an
+#                                                     extrusion's straight SIDES
+#                                                     can be held either way, and
+#                                                     the PROVEN face lock wins;
+#                                                     here only for its circle
+
+utterances:
+  - lock the sweep path to the reference planes
+  - align and lock the sweep's path lines to the planes
+  - lock the circle centre to the center reference planes
+  - keep the spigot circle centred on the reference planes
+  - lock the path lines of this sweep to the reference planes

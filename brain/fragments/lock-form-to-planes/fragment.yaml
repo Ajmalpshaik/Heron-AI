@@ -152,6 +152,16 @@ compatibility-note: >
 #
 #   "lock the cylinder's top to Body Top"        -> here
 #   "align and lock this form to the planes"     -> here
+#   "lock the sweep path to the planes"          -> LOCK_FORM_SKETCH_TO_PLANES:
+#                                                   a SWEEP's faces locked here
+#                                                   broke every size change
+#                                                   (Revit 2020, 2026-11-10);
+#                                                   its path is locked there
+#   "lock the circle centre to the planes"       -> LOCK_FORM_SKETCH_TO_PLANES,
+#                                                   a centre, not a face
+#   "lock this extrusion to the reference planes" -> here: its straight sides
+#                                                   lock either way, and this
+#                                                   PROVEN card wins them
 #   "make a box between these planes"            -> EXTRUDE_BETWEEN_PLANES,
 #                                                   which locks its own box
 #   "pin these elements"                         -> SET_PIN_STATE, a pin, not

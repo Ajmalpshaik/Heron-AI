@@ -317,6 +317,9 @@ compatibility-note: >
 #                                                join too
 #   "align and lock this form to the planes"  -> LOCK_FORM_TO_PLANES - any
 #                                                form's flat faces
+#   "lock the sweep path to the planes"       -> LOCK_FORM_SKETCH_TO_PLANES -
+#                                                the sketch: a path's lines,
+#                                                a circle's centre
 #   "label the neck diameter with Neck Diameter" -> LABEL_FAMILY_RADIUS
 #   "show this form only in fine"             -> SET_FAMILY_FORM_VISIBILITY
 #   "set the subcategory of these forms"      -> SET_FAMILY_FORM_SUBCATEGORY

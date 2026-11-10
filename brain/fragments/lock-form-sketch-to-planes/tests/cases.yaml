@@ -1,0 +1,60 @@
+positive:
+  - given: >
+      a new family from the metric Generic Model template (a scratch copy,
+      never the owner's open families) with reference planes "Ring Left" /
+      "Ring Right" at X -300 / 300 and "Ring Front" / "Ring Back" at Y -300 /
+      300; a solid sweep whose path is the rectangle "-300,-300; 300,-300;
+      300,300; -300,300" sketched on Ref. Level, any small closed profile;
+      nothing locked on its faces; form = its id, planes "Ring Left, Ring
+      Right, Ring Front, Ring Back"
+    expect: >
+      four locks, one per path line, all in Ref. Level - LOOKED AT as closed
+      padlocks in Edit Sweep > Edit Path; then the four planes labelled "Ring
+      Size" (600, EQ about the centre planes) and FLEX_FAMILY at 450 and 900:
+      the sweep rebuilt at each size and read back, no "Can't create sweep"
+
+  - given: >
+      the same family with planes "Spigot X" at X 150 and "Spigot Y" at Y 100,
+      each dimensioned from its centre plane and labelled "Spigot X" (150) and
+      "Spigot Y" (100); a solid extrusion "circle 150,100 75" on Ref. Level, 0
+      to 200, its diameter labelled "Neck Size" by LABEL_FAMILY_RADIUS; form =
+      its id, planes "Spigot X, Spigot Y"
+    expect: >
+      two locks on ONE half-arc's centre, in Ref. Level; then FLEX_FAMILY
+      "Spigot X" at 250 and "Spigot Y" at 50: the circle's centre read back at
+      (250, 50) and its diameter still 150 - the drift seen on 2026-11-10 gone
+
+  - given: the sweep's call above run a second time, now with planes "Ring Left, Ring Right, Ring Front, Ring Back"
+    expect: >
+      nothing new locked and nothing refused - each of the four said as
+      already locked and left as it was
+
+negative:
+  - given: >
+      ALL OR NOTHING - the sweep, planes "Ring Left, Spigot Y": "Ring Left"
+      has a path line on it, "Spigot Y" (Y 100) has none
+    expect: >
+      refused before anything is locked, naming the nearest path lines 200 mm
+      off "Spigot Y" - and NO lock on "Ring Left" either
+
+  - given: >
+      the circle, planes "Ring Left" (X -300; the centre is at X 150)
+    expect: refused, naming the circle's centre 450 mm off "Ring Left", and nothing locked
+
+  - given: the sweep, planes "Ref. Level" - the level its path is sketched on
+    expect: >
+      refused as not standing square to the path, saying a sweep's ends follow
+      its path - NOT naming LOCK_FORM_TO_PLANES - and nothing locked
+
+  - given: form = the id of a reference plane rather than a form
+    expect: refused as not a form, and nothing locked
+
+  - given: a project in front
+    expect: notAFamily true and nothing locked anywhere
+
+second_route:
+  - >
+      Edit Sweep > Edit Path by hand on a copy: Align, the plane, the path
+      line, the padlock - and for the circle, Center Mark Visible, Align, the
+      plane, the centre, the padlock; the two copies flexed side by side to the
+      same sizes and read back

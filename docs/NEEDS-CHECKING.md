@@ -1434,6 +1434,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-mz.md`](needs-checking/group-mz.md)
 
+## Group NA - a form's SKETCH locked to named planes - a sweep's path lines, a circle's centre: `LOCK_FORM_SKETCH_TO_PLANES` (2026-11-10)
+
+**Its own file:** [`needs-checking/group-na.md`](needs-checking/group-na.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

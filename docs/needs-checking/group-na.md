@@ -1,0 +1,44 @@
+# Needs checking — Group NA
+
+> One group of [the register](../NEEDS-CHECKING.md), in its own file so that it can be read alone. **The
+> register's rules, and every group's place in it, are on that page.** A new row for this group goes in
+> this file. [`tools/needs-checking-register.py`](../../tools/needs-checking-register.py) reads it back
+> into the register for every tool that reads it, so a row here is seen exactly as it was seen there.
+
+## Group NA - a form's SKETCH locked to named planes - a sweep's path lines, a circle's centre: `LOCK_FORM_SKETCH_TO_PLANES` (2026-11-10)
+
+Two jobs on 2026-11-10 (Revit 2020, session 9912) needed a lock Heron did not have: a square diffuser's cone
+rings as sweeps, whose FACE locks made every size change fail ("Can't create sweep"), and a plenum box's spigot
+circle that kept its labelled size and drifted 75 mm off centre. The owner chose a Heron tool over locking by
+hand. Made NEW, at DRAFT - `LOCK_FORM_TO_PLANES` is PROVEN and stays untouched below `impl/`; why, and what is not
+known yet, is [FRAGMENT-ISSUES row 5b-1491](../fragment-issues/section-5b-rows-401-425.md).
+
+| What | Where | What it does |
+|---|---|---|
+| `LOCK_FORM_SKETCH_TO_PLANES` (MODIFY) | [`brain/fragments/lock-form-sketch-to-planes`](../../brain/fragments/lock-form-sketch-to-planes/fragment.yaml) | For each named plane: every straight sketch line lying in it, and every circle or arc centre on it (once per centre), is aligned and locked - an extrusion's or revolve's sketch, a sweep's or swept blend's path, a blend's base and top. In the plan or elevation looking straight at the sketch. A plane with nothing on it refuses the whole call, naming the nearest line or centre and the gap. Every lock read back locked; the form still a solid, its extent unmoved |
+
+**What is done and what is not.** The card compiles on all eight releases, 2020 to 2027, with the whole library
+(`tools/check-fragments-compile.py`, 2026-11-10, the owner's PC). Every Revit member it uses is in the card's
+compatibility note, looked up with `tools/api-surface --members`. **Nothing here has run in Revit.**
+
+**The model - a SAVED scratch family, never the owner's open families.** File, New, Family, the metric Generic
+Model template, saved as "Heron Sketch Lock Test" under `%TEMP%\heron-work\sketch-lock`, Revit 2020. The job
+file is [`tools/jobs/lock-form-sketch-na-2026-11-10.yaml`](../../tools/jobs/lock-form-sketch-na-2026-11-10.yaml)
+(`--dry-run` reads it back and sends nothing); its header has the arrangement. Every line with
+`HERON_CLIENT_ID=ajmal-pc`, `--session <process id>` when two Revits are connected, and `< /dev/null`.
+
+| # | Run | Look for |
+|---|---|---|
+| **NA0** | *Open and arrange, KEEP it.* The scratch family; its planes, the sweep and the circle extrusion as the job file's header says, made with Heron's own tools; record both forms' ids into the job file. Save | The title bar names the scratch family; the sweep's faces carry NO locks |
+| **NA1** | *The D-30 negative FIRST, then the positive - the sweep.* The job file's first job, rolled back | Negative ("Ring Left, Spigot Y" - all or nothing): refused, the nearest path lines named 200 mm off "Spigot Y", and NO lock on "Ring Left" either. Positive: four locks, one per path line, in Ref. Level - **if Revit refuses a straight sketch line's reference, that is the first thing this group learns** and the card is changed, not proved |
+| **NA2** | *The circle - negative first, then positive.* The job file's second job, rolled back | Negative: the centre named 450 mm off "Ring Left". Positive: two locks on ONE half-arc's centre; a line saying "Center Mark Visible" was switched on, or not |
+| **NA3** | *A plane that cannot be locked.* The job file's third job: the sweep with planes "Ref. Level" | Refused as not standing square to the path, saying a sweep's ends follow its path - and NOT naming `LOCK_FORM_TO_PLANES` |
+| **NA3b** | *A second run.* NA4's kept sweep, the first job's positive once more | Nothing new, nothing refused: each of the four said "already locked, left as it was" |
+| **NA4** | *FOLLOW - the sweep, kept.* Run NA1's positive through `try-once` (or `revit_change` once PROVEN) and KEEP; label "Ring Left"-"Ring Right" and "Ring Front"-"Ring Back" with a length "Ring Size" (600, EQ about the centre planes); `FLEX_FAMILY` "Ring Size" at 450 and 900 | The sweep rebuilt at each size, mitred corners, read back 450 and 900 across; **no "Can't create sweep"** - the failure of 2026-11-10 gone. LOOK at Edit Sweep > Edit Path: four closed padlocks |
+| **NA5** | *FOLLOW - the circle, kept.* NA2's positive kept; label "Spigot X" from "Center (Left/Right)" and "Spigot Y" from "Center (Front/Back)" (150 / 100); `FLEX_FAMILY` them to 250 / 50 | The circle's centre read back at (250, 50), its 150 mm diameter unchanged - both halves moved together |
+| **NA6** | *Second route.* By hand on a copy: Edit Sweep > Edit Path, Align, the plane, the line, the padlock; Center Mark Visible, Align, the centre, the padlock; flexed side by side with NA4 and NA5 | The two copies read back the same at every size |
+
+**Before the owner's own families.** The first run on `KDF Square Diffuser - Supply_DRAFT.rfa` or
+`Plenum Box_DETAILED_DRAFT.rfa` is his choice, through `try-once`, behind Revit's Keep or Discard. The diffuser's
+sweeps still carry the FACE locks made on 2026-11-10: the card counts them and says so, and does not remove them -
+release them by hand first, or the flex will fail for that reason, not this card's.
