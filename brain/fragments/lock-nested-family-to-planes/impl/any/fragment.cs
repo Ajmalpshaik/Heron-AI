@@ -30,6 +30,15 @@
 // A SIDE FACING LEFT-RIGHT OR FRONT-BACK IS LOCKED IN A FLOOR PLAN, one facing
 // up or down in an elevation, as it is done by hand.
 //
+// A DETAIL ITEM TOO (version 3, 2026-11-11). A view-based nested family - a
+// detail item placed in the family's plan, like a diffuser's flow arrows - lives
+// in ONE view, its owner view. It is locked in that view, as Align is used on
+// it by hand, and only to a plane seen edge-on there: a level, or a plane lying
+// flat in that view, is refused. Its extent outside a view is nothing - Revit
+// gives no box with no view, which failed every lock of 2026-11-11 (row
+// 5b-1492) - so it is read back by its own insertion point and, where Revit
+// gives one, its box in its owner view.
+//
 // ALL OR NOTHING, READ BACK. After the locks Revit regenerates, and the nested
 // family's extent must not have moved - a lock never moves what it locks.
 
@@ -90,6 +99,9 @@ FamilyInstance nested = null;
 var plans = new List<Tuple<Tuple<string, string, FamilyInstanceReferenceType, int>, Reference, Tuple<Element, Reference, int, string>>>();
 var problems = new List<string>();
 View plan = null, elevation = null;
+// A view-based nested family's own view (a detail item's plan); null for a
+// model family, which is locked as it always was.
+View ownerView = null;
 
 if (!doc.IsFamilyDocument)
 {
@@ -150,6 +162,20 @@ else
     var transform = nested == null ? null : nested.GetTransform();
     var bases = transform == null ? null : new[] { transform.BasisX, transform.BasisY, transform.BasisZ };
 
+    // A DETAIL ITEM - a view-based nested family - is drawn in one view only.
+    var ownerViewId = nested == null ? ElementId.InvalidElementId : nested.OwnerViewId;
+    if (ownerViewId != null && !ownerViewId.Equals(ElementId.InvalidElementId))
+    {
+        ownerView = doc.GetElement(ownerViewId) as View;
+        if (ownerView == null)
+            problems.Add("The nested family is a detail item drawn in a view this family no longer has - place it "
+                + "again in a plan.");
+    }
+    var flatAxis = ownerView == null ? -1 : axisOf(ownerView.ViewDirection);
+    if (ownerView != null && flatAxis < 0)
+        problems.Add("The nested family is a detail item drawn in \"" + ownerView.Name + "\", which looks at an angle - "
+            + "a detail item is locked in a plan or elevation looking straight along an axis.");
+
     if (locks == null || locks.Count == 0)
         problems.Add("No locks were given - the nested family's side = this family's plane, semicolons between: "
             + "\"Center (Left/Right)=Center (Left/Right); Bottom=Ref. Level\".");
@@ -205,6 +231,15 @@ else
                     + "other. A turned nested family is locked by its sides that face the plane's way.");
                 continue;
             }
+            // A detail item lies flat in its view: a plane facing the way the
+            // view looks - a level under a plan - is not seen edge-on there.
+            if (ownerView != null && flatAxis >= 0 && found[0].Item3 == flatAxis)
+            {
+                problems.Add("The nested family is a detail item drawn in \"" + ownerView.Name + "\", and \"" + name
+                    + "\" faces " + axisWords[flatAxis] + " - it lies flat in that view, not edge-on, so a detail item "
+                    + "cannot be aligned to it. Lock a detail item to planes seen as lines in its view.");
+                continue;
+            }
             plans.Add(Tuple.Create(side, references[0], found[0]));
         }
 
@@ -212,9 +247,10 @@ else
     plan = views.FirstOrDefault(v => v.ViewType == ViewType.FloorPlan);
     elevation = views.Where(v => v.ViewType == ViewType.Elevation)
         .OrderBy(v => Math.Abs(v.ViewDirection.Y) > 0.9999 ? 0 : 1).FirstOrDefault();
-    if (plans.Any(p => p.Item3.Item3 != 2) && plan == null)
+    // A detail item is locked in its own view; a model family as before.
+    if (ownerView == null && plans.Any(p => p.Item3.Item3 != 2) && plan == null)
         problems.Add("This family has no floor plan, where a side facing left-right or front-back is locked.");
-    if (plans.Any(p => p.Item3.Item3 == 2) && elevation == null)
+    if (ownerView == null && plans.Any(p => p.Item3.Item3 == 2) && elevation == null)
         problems.Add("This family has no elevation view, where a side facing up or down is locked.");
 
     if (problems.Count > 0) refused = "Nothing was locked. " + string.Join(" ", problems);
@@ -222,10 +258,13 @@ else
 
 if (refused == null)
 {
-    var start = nested.get_BoundingBox(null);
+    // A model family's extent is read with no view, as it always was; a detail
+    // item's in its owner view, beside its own insertion point.
+    var start = nested.get_BoundingBox(ownerView);
+    var startOrigin = ownerView == null ? null : nested.GetTransform().Origin;
     foreach (var p in plans)
     {
-        var view = p.Item3.Item3 == 2 ? elevation : plan;
+        var view = ownerView ?? (p.Item3.Item3 == 2 ? elevation : plan);
         try
         {
             var alignment = doc.FamilyCreate.NewAlignment(view, p.Item3.Item2, p.Item2);
@@ -243,11 +282,25 @@ if (refused == null)
         doc.Regenerate();
     }
 
-    var end = nested.get_BoundingBox(null);
-    if (start == null || end == null)
+    var end = nested.get_BoundingBox(ownerView);
+    if (ownerView != null)
+    {
+        // A DETAIL ITEM: its insertion point must not have moved. Its box in
+        // its owner view is compared too when Revit gives one before and after.
+        var endOrigin = nested.GetTransform().Origin;
+        for (var i = 0; i < 3; i++)
+            if (Math.Abs(along(startOrigin, i) - along(endOrigin, i)) > halfMillimetre)
+                throw new InvalidOperationException("Locking moved the detail item along " + axisWords[i] + ": its "
+                    + "insertion point was at " + mm(along(startOrigin, i)) + " mm before, " + mm(along(endOrigin, i))
+                    + " mm after. A lock never moves what it locks. The call failed, and Heron rolls the whole call back.");
+        if (start == null || end == null)
+            findings.Add("Revit gives the detail item no box in \"" + ownerView.Name + "\", so it was read back by its "
+                + "insertion point alone.");
+    }
+    else if (start == null || end == null)
         throw new InvalidOperationException("The nested family has no extent to read back. The call failed, and Heron "
             + "rolls the whole call back.");
-    for (var i = 0; i < 3; i++)
+    for (var i = 0; i < 3 && start != null && end != null; i++)
         if (Math.Abs(along(start.Min, i) - along(end.Min, i)) > halfMillimetre
             || Math.Abs(along(start.Max, i) - along(end.Max, i)) > halfMillimetre)
             throw new InvalidOperationException("Locking moved the nested family along " + axisWords[i] + ": "
@@ -255,7 +308,8 @@ if (refused == null)
                 + " to " + mm(along(end.Max, i)) + " mm after. A lock never moves what it locks. The call failed, and "
                 + "Heron rolls the whole call back.");
 
-    findings.Add("Locked " + locked.Count + " side(s) of the nested family " + nested.UniqueId + ": "
+    findings.Add("Locked " + locked.Count + " side(s) of the nested " + (ownerView == null ? "family " : "detail item ")
+        + nested.UniqueId + ": "
         + string.Join("; ", locked) + ".");
     findings.Add("Locked is not yet PROVED to follow the planes. FLEX_FAMILY changes the sizes, reads the family "
         + "back, and puts them back.");

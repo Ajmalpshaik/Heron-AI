@@ -1438,6 +1438,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-na.md`](needs-checking/group-na.md)
 
+## Group NB - a nested DETAIL ITEM locked to named planes in the plan it is drawn in: `LOCK_NESTED_FAMILY_TO_PLANES` version 3 (2026-11-11)
+
+**Its own file:** [`needs-checking/group-nb.md`](needs-checking/group-nb.md)
+
 ## Group NC - a 2D family's lines and filled region edges locked to named planes, along and by their ends: `LOCK_FAMILY_LINES_TO_PLANES` (2026-11-11)
 
 **Its own file:** [`needs-checking/group-nc.md`](needs-checking/group-nc.md)
