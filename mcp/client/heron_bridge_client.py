@@ -282,6 +282,73 @@ HERON_VERSION = "0.2.0"
 RETRY_ATTEMPTS = 3
 RETRY_BACKOFF_S = 0.15
 
+#: THE LARGEST ANSWER HERON READS OFF THE PIPE, in bytes - named here and
+#: nowhere else on this side (FRAGMENT-ISSUES 5b-1167). Until 2026-11-11
+#: `_read_line` read 4096-byte chunks until a newline with no limit and held
+#: all of it before parsing, so one answer could take whatever memory it
+#: asked for. A backstop against a line that never ends, not a budget to tune -
+#: the same reading as the bridge's own limit on a REQUEST. The largest answer
+#: on record is a 6.2 MB read (row 5b-489); this is more than twice that.
+#: NOT MEASURED: the largest reply a real read has sent. THE BRIDGE'S END HAS
+#: NO LIMIT YET - it writes whatever the operation returned - so an answer
+#: over this still crosses the pipe before it is refused here.
+REPLY_LIMIT_BYTES = 16 * 1024 * 1024
+
+
+class _OverLimit(object):
+    """What `_read_line` hands back in place of a line that passed
+    REPLY_LIMIT_BYTES: how many bytes had arrived when it stopped reading."""
+
+    def __init__(self, arrived):
+        self.arrived = arrived
+
+
+def _megabytes(count):
+    """A byte count as a modeller reads one: "16.0 MB"."""
+    return "%.1f MB" % (count / (1024.0 * 1024.0))
+
+
+def too_large_reply(arrived, limit=None):
+    """
+    The answer `request` gives in place of one over REPLY_LIMIT_BYTES.
+
+    IT ARRIVED, SO THE REQUEST RAN - which is why this is an answer with a
+    code of its own and never None: None means nothing came back, and
+    heron_failure reads that on a read as safe to ask again. How big the
+    whole answer was is not known here: reading stopped at the limit.
+    """
+    limit = REPLY_LIMIT_BYTES if limit is None else limit
+    return {"ok": False, "error": "reply_too_large",
+            "message": ("Revit answered, but the answer was larger than Heron reads over "
+                        "the pipe - more than %s had arrived and the limit is %s - so "
+                        "Heron stopped reading and is showing none of it. The request RAN "
+                        "in Revit. Do not send it again as it is: the answer would be as "
+                        "large. Ask for less - fewer elements, one level, one view. If it "
+                        "was a change, look at the model first: where the add-in wrote a "
+                        "run record it holds the whole answer, and heron_run_record lists "
+                        "the newest."
+                        % (_megabytes(arrived), _megabytes(limit)))}
+
+
+def unreadable_reply(size):
+    """
+    The answer `request` gives in place of one that arrived and would not
+    parse (FRAGMENT-ISSUES 5b-1167).
+
+    Until 2026-11-11 this came back None, the same as no reply at all, and
+    heron_failure called None on a read "never ran" and "asking again costs
+    nothing". A reply that arrived is a request that ran: a read that used up
+    the chain, or one the add-in counted changing the model, is not free to
+    ask again. So it has a code of its own, and heron_failure reads it as an
+    unknown outcome.
+    """
+    return {"ok": False, "error": "reply_unreadable",
+            "message": ("Revit answered - %d bytes arrived - but Heron could not read "
+                        "the answer, so it cannot tell you what it said. The request RAN "
+                        "in Revit: what it did is not known from here, and sending it "
+                        "again would run it again." % size)}
+
+
 #: HOW OFTEN A CALLER WAITING ON REVIT IS TOLD THE WAIT GOES ON. A reply can
 #: be minutes away for a reason nobody can see from here - a slow fragment, a
 #: family build, a modeller answering a prompt in Revit - and a host told
@@ -364,7 +431,10 @@ class Bridge(object):
 
     def _read_line(self, handle, timeout, on_wait=None):
         """
-        One newline-terminated response, or None if it never arrives.
+        One newline-terminated response, or None if it never arrives - or an
+        `_OverLimit` when more than REPLY_LIMIT_BYTES arrived with no newline
+        (5b-1167). Reading stops there, so the rest of that line is still in
+        the pipe: the caller must close the handle, never reuse it.
 
         The read runs on a helper thread because a pipe handle cannot be given a
         deadline of its own here. On timeout the caller closes the handle, which
@@ -389,6 +459,10 @@ class Bridge(object):
                     if not chunk:
                         break
                     buffer += chunk
+                    if len(buffer) > REPLY_LIMIT_BYTES:
+                        result["over"] = len(buffer)
+                        buffer = b""
+                        break
             except (OSError, ValueError):
                 buffer = b""
             result["line"] = buffer
@@ -413,12 +487,16 @@ class Bridge(object):
                         on_wait = None
         if worker.is_alive():
             return None            # still waiting; the caller closes the handle
+        if result.get("over"):
+            return _OverLimit(result["over"])
         return result.get("line") or None
 
     def request(self, op, timeout=CONNECT_TIMEOUT_S, response_timeout=RESPONSE_TIMEOUT_S,
                 op_args=None, idempotent=True, on_wait=None):
         """
         Send one request, return the parsed response. None if unreachable.
+        An answer that arrived and could not be used is NOT None (5b-1167): it
+        is `unreadable_reply` or `too_large_reply`, each with a code of its own.
 
         The connection is kept and reused. The bridge hands the session to
         whichever connection is newest, so a client that reconnects for every
@@ -509,13 +587,22 @@ class Bridge(object):
                                         "twice.")}
                 continue
 
+            if isinstance(line, _OverLimit):
+                # MORE THAN THE LIMIT ARRIVED (5b-1167). The rest of that line
+                # is still in the pipe, so this connection is finished: the
+                # next request opens a new one. Not retried - it ran, and the
+                # same request brings the same answer.
+                self.close()
+                return too_large_reply(line.arrived)
+
             try:
                 return json.loads(line.decode("utf-8").strip())
             except ValueError:
                 # A reply arrived and was unreadable. That is not a transport
                 # fault, and repeating the request will not produce a different
-                # answer.
-                return None
+                # answer. IT IS NOT None EITHER (5b-1167): None is "nothing
+                # came back", and this did - so the request ran.
+                return unreadable_reply(len(line))
 
         return None
 

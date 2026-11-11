@@ -28,6 +28,7 @@ one property, asserted from several directions:
 """
 
 import io
+import json
 import os
 import re
 import shutil
@@ -94,6 +95,129 @@ def plant(path, text):
         os.makedirs(folder)
     with io.open(path, "w", encoding="utf-8") as handle:
         handle.write(text)
+
+
+class _Pipe(object):
+    """A pipe whose Revit answers each request with the next of `answers`,
+    bytes as given - readable or not, short or long."""
+
+    def __init__(self, *answers):
+        self.answers = list(answers)
+        self.sent = []
+        self.closed = 0
+        self._left = b""
+
+    def write(self, data):
+        self.sent.append(data)
+        self._left = self.answers.pop(0) if self.answers else b""
+        return len(data)
+
+    def read(self, size):
+        chunk, self._left = self._left[:size], self._left[size:]
+        return chunk
+
+    def close(self):
+        self.closed += 1
+
+
+def arrived_unusable():
+    """
+    AN ANSWER THAT ARRIVED AND COULD NOT BE USED IS NOT "NEVER RAN"
+    (FRAGMENT-ISSUES 5b-1167). Asked of the client's own `request`, with only
+    the pipe replaced, and then of the classification - so the two halves are
+    held to each other and neither needs a Revit.
+    """
+    print()
+    print("An answer that arrived and could not be used (5b-1167)")
+    import heron_bridge_client as bridge
+
+    class StandIn(bridge.Bridge):
+        def __init__(self, pipe):
+            super(StandIn, self).__init__(
+                {"pid": 4242, "pipeName": "heron-5b-1167", "revitVersion": "2024",
+                 "protocolVersion": bridge.PROTOCOL_VERSION, "token": "stand-in"}, None)
+            self.pipe = pipe
+
+        def _connect(self, timeout):
+            return self.pipe
+
+    def error_of(reply):
+        return reply.get("error") if isinstance(reply, dict) else None
+
+    pipe = _Pipe(b"this is not an answer Heron can read\n")
+    reply = StandIn(pipe).request("run_fragment_read", response_timeout=2.0)
+    check(error_of(reply) == "reply_unreadable",
+          "a READ whose answer arrived and would not parse is NOT 'nothing came back': "
+          "%r" % (reply,))
+    check(len(pipe.sent) == 1, "and it is not sent a second time - it ran")
+    read = analyse(reply, writes=False)
+    check(read is not None and read.outcome == fa.UNKNOWN and read.may_retry is False
+          and read.touched_the_model is None,
+          "it is classified as an UNKNOWN outcome, never retried - it arrived, so the "
+          "request ran: %r" % (read,))
+    said = explain(read) or ""
+    check("RAN" in said and "costs nothing" not in said and "never ran" not in said.lower(),
+          "and the chat is told it ran, not that asking again costs nothing: %s" % said[:120])
+
+    pipe = _Pipe(b"{ half an answer\n")
+    reply = StandIn(pipe).request("run_fragment_write", response_timeout=2.0,
+                                  idempotent=False)
+    wrote = analyse(reply, writes=True)
+    check(error_of(reply) == "reply_unreadable" and wrote is not None
+          and wrote.outcome == fa.UNKNOWN and wrote.next_step == fa.LOOK_AT_THE_MODEL,
+          "a WRITE's unreadable answer is the same code, and still a person looking at "
+          "the model: %r" % (wrote,))
+
+    print()
+    print("  and one larger than Heron reads off the pipe")
+    limit = getattr(bridge, "REPLY_LIMIT_BYTES", None)
+    check(isinstance(limit, int) and limit > 6.2 * 1024 * 1024,
+          "the client names ONE limit on an answer, above the largest on record "
+          "(6.2 MB, row 5b-489): %r" % (limit,))
+    small = 8 * 1024
+    big = (json.dumps({"ok": True, "document": "stand-in", "pad": "x" * (5 * small)})
+           + "\n").encode("utf-8")
+    fine = (json.dumps({"ok": True, "document": "stand-in"}) + "\n").encode("utf-8")
+    bridge.REPLY_LIMIT_BYTES = small
+    try:
+        pipe = _Pipe(big, fine)
+        session = StandIn(pipe)
+        reply = session.request("run_fragment_read", response_timeout=2.0)
+        again = session.request("run_fragment_read", response_timeout=2.0)
+    finally:
+        if limit is None:
+            del bridge.REPLY_LIMIT_BYTES
+        else:
+            bridge.REPLY_LIMIT_BYTES = limit
+    check(error_of(reply) == "reply_too_large",
+          "an answer over the limit is refused, not parsed: %s"
+          % (error_of(reply) or "it was read whole"))
+    message = (reply.get("message") or "") if isinstance(reply, dict) else ""
+    check("MB" in message and "RAN" in message and "run record" in message,
+          "in a sentence that says how much had arrived, that it ran, and where a "
+          "change's whole answer is: %s" % message[:100])
+    check(len(pipe.sent) == 2 and pipe.closed >= 1 and isinstance(again, dict)
+          and again.get("ok") is True,
+          "the connection it stopped reading is closed, and the next request gets its "
+          "own answer - never the rest of that line")
+    large = analyse(reply, writes=False)
+    check(large is not None and large.outcome == fa.UNKNOWN and large.may_retry is False,
+          "and it is an UNKNOWN outcome too: asking again brings the same answer")
+
+    print()
+    print("  and nothing at all coming back says only what is known")
+    nothing = analyse(None, writes=False)
+    told = explain(nothing) or ""
+    check("costs nothing" not in told and "Revit was reached" in told,
+          "no reply to a READ no longer says asking again 'costs nothing' - a request "
+          "whose answer never came may have run: %s" % told)
+    table = getattr(fa, "_ARRIVED_UNUSABLE", None)
+    made = [getattr(bridge, name, None) for name in ("unreadable_reply", "too_large_reply")]
+    codes = sorted(make(1).get("error") for make in made if make is not None)
+    check(table is not None and codes == sorted(table) and len(codes) == 2,
+          "and the codes classified are exactly the ones the client produces: %s" % codes)
+    check(table is None or not set(table) & set(fa._KNOWN),
+          "in a table of their own - _KNOWN stays the add-in's codes")
 
 
 def main():
@@ -295,6 +419,8 @@ def main():
     check(len(keys) > 0 and not doubled,
           "and every code has ONE row in _KNOWN's source, none silently overwritten%s"
           % ("" if not doubled else " - TWICE: " + ", ".join(doubled)))
+
+    arrived_unusable()
 
     print()
     if FAILURES:
