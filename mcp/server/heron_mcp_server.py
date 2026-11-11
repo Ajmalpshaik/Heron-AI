@@ -6298,15 +6298,27 @@ def heron_sheet_list(path: str, sheet: str = "", header_row: int = 1) -> str:
 def heron_companion() -> str:
     """
     Open the Heron Companion - a page in the user's browser, beside Revit,
-    that shows which model and view are in front and what is selected, live.
+    that shows which Revit, model and view are in front, live, with what this
+    chat asked Heron to do and Heron's tables and panels.
 
     Use when the user asks to open, show or bring back the Companion (or
     "the Heron page", "the live view"). It opens the page itself; there is
-    no address to pass on, and none is given here on purpose. It reads
-    nothing from Revit through the pipe and changes nothing - the page
+    no address to pass on, and none is given here on purpose. OPENING it
+    reads nothing from Revit through the pipe and changes nothing - the page
     reads a small status file the add-in writes while the Heron button is
-    connected. The page never sends anything to you or any AI.
+    connected. Some of the page's own buttons DO change the model - Apply,
+    Finalize and Place among them - each under the same Changes switch and
+    the same Keep or Discard question as a change asked for in this chat.
+    The page never sends anything to you or any AI.
     """
+    # WHAT THIS SAID UNTIL 2026-11-11 (FRAGMENT-ISSUES 5b-1133): that the page
+    # shows "what is selected" and "changes nothing". The Selected card has
+    # been switched off since 2026-10-04 (docs/40 section 21.6), and the
+    # tables' Apply, the Loads panel's Finalize and the Sprinkler Layout's
+    # Place run revit_change's own body (section 21.9). The chat repeats this
+    # reply, so the modeller was told a page that can change the model is
+    # read-only. NO PANEL IS LISTED BY NAME: the page gains them, and a list
+    # here would go stale as that sentence did.
     import webbrowser
     companion_page = _companion_module()
 
@@ -6330,9 +6342,12 @@ def heron_companion() -> str:
     if not opened:
         return ("The Heron Companion is running, but Windows would not open a "
                 "browser for it. Nothing in Revit was touched.")
-    return ("The Heron Companion is open in your browser. It shows the model, "
-            "the view and the selection of the Revit this chat uses, and "
-            "changes nothing.")
+    return ("The Heron Companion is open in your browser. It shows which Revit, "
+            "model and view are in front and what this chat asked Heron to do, "
+            "with Heron's tables and panels. Opening it changed nothing in Revit. "
+            "Some of its buttons do change the model - Apply, Finalize and Place "
+            "among them - and each does it under the same Changes switch and the "
+            "same Keep or Discard question as a change asked for in this chat.")
 
 
 @server.tool()
