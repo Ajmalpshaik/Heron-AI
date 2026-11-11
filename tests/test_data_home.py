@@ -641,6 +641,68 @@ def run(yard):
           "a folder that cannot be made names nothing, so the refusal that says "
           "what to set is still what is heard (%r)" % (got,))
 
+    # TWO SERVERS STARTING TOGETHER. Both look, neither sees the folder, both
+    # make it: the second must be given the folder the first made, not left
+    # with no store for its whole life (review of f8f727f8 - four processes,
+    # fifteen rounds, three left with none). Played here in the order it
+    # happens: the folder is not there when this one looks, and the other
+    # server's is made the moment before this one's.
+    raced = os.path.join(cloud, "home-raced")
+    with planted_cloud(HOME=raced):
+        there = ask(BRAIN, "library_store_dir", None, "posix")
+        real_makedirs = os.makedirs
+
+        def the_other_first(path, *args, **kwargs):
+            if path == there and not os.path.isdir(path):
+                real_makedirs(path)
+            return real_makedirs(path, *args, **kwargs)
+
+        os.makedirs = the_other_first
+        try:
+            got = ask(BRAIN, "library_store", "posix")
+        finally:
+            os.makedirs = real_makedirs
+        kept = os.environ.get("HERON_KNOWLEDGE")
+    check(isinstance(there, str) and got == there and kept == there,
+          "a folder another server made a moment ago is taken, not tripped over "
+          "(%r)" % (got,))
+
+    # A NAME THAT IS NOT A WHOLE PATH IS NO FOLDER. With HOME unset and no
+    # passwd entry `~` expands to itself, and a relative HOME is the same
+    # shape: the store would be made inside whatever folder the server
+    # started in - the checkout. heron_paths.data_home() refuses that for the
+    # profile (row 5b-168), and so does this. Asked from a scratch folder, so
+    # a wrong answer cannot litter the repository.
+    started_in = os.getcwd()
+    elsewhere = os.path.join(cloud, "started-here")
+    os.makedirs(elsewhere)
+    for planted_home, what in (("~", "a `~` nothing expanded"),
+                               ("relative-home", "a relative HOME")):
+        os.chdir(elsewhere)
+        try:
+            with planted_cloud(HOME=planted_home):
+                got, kept = ask(BRAIN, "library_store", "posix"), os.environ.get("HERON_KNOWLEDGE")
+        finally:
+            os.chdir(started_in)
+        check(got is None and kept is None and not os.listdir(elsewhere),
+              "%s names nothing and makes nothing where the server started (%r, %s)"
+              % (what, got, os.listdir(elsewhere) or "nothing made"))
+        shutil.rmtree(elsewhere, ignore_errors=True)
+        os.makedirs(elsewhere)
+
+    # AND NEVER INSIDE THE CHECKOUT, even by a whole path: an index beside
+    # the cards is an index somebody commits.
+    inside = os.path.join(ROOT, "heron-test-home-%d" % os.getpid())
+    try:
+        with planted_cloud(HOME=inside):
+            got, kept = ask(BRAIN, "library_store", "posix"), os.environ.get("HERON_KNOWLEDGE")
+        made_inside = os.path.exists(inside)
+    finally:
+        shutil.rmtree(inside, ignore_errors=True)
+    check(got is None and kept is None and not made_inside,
+          "a machine-local folder that is inside the checkout names nothing and "
+          "makes nothing there (%r, %s)" % (got, "made" if made_inside else "not made"))
+
     # WHO CALLS IT: the server's own start-up, in D-132's library-only mode.
     under = guarded_by(main_block, "brain.library_store()")
     named_at = main_block.find("brain.library_store()")

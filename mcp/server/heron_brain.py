@@ -272,6 +272,16 @@ def library_store_dir(environ=None, system=None, root=None):
                         "%s-%s" % (name, digest))
 
 
+def _inside(path, root):
+    """True when `path` is `root` or anything under it, links followed."""
+    try:
+        base = os.path.realpath(root)
+        return os.path.commonpath([os.path.realpath(path), base]) == base
+    except ValueError:
+        # Another drive on Windows: certainly not inside.
+        return False
+
+
 def library_store(system=None):
     """Off Windows, give this process a knowledge store of its own when none
     is named (D-153). The folder, or None when nothing was done. Never raises.
@@ -288,10 +298,22 @@ def library_store(system=None):
     branch, exactly as one a person names. Nothing is done:
       - on Windows, where the home answers;
       - when HERON_KNOWLEDGE or HERON_DATA names a folder - theirs is used;
-      - when the folder cannot be made - the lookup then says what to set,
-        as it always did.
+      - when its name is not a whole path - HOME unset for a user with no
+        passwd entry leaves `~` as it is, and a relative HOME is the same
+        shape; made anyway, the store would sit inside whatever folder the
+        server started in, as heron_paths.data_home() refuses for the
+        profile (row 5b-168);
+      - when it would be inside this checkout - an index beside the cards is
+        an index somebody commits;
+      - when the folder cannot be made.
+    In each of those the lookup says what to set, as it always did.
     A suite or a tool that imports the brain is never given one: with nothing
     named it is still refused, by name.
+
+    MADE WITHOUT LOOKING FIRST. Two chats opened together are two servers
+    naming one folder, and "look, then make" let the second trip over the
+    folder the first had just made - and serve its whole life with no store
+    (review of f8f727f8: four processes, fifteen rounds, three left without).
     """
     if (os.name if system is None else system) == "nt":
         return None
@@ -299,8 +321,9 @@ def library_store(system=None):
         if _brain()[0].knowledge_dir() is not None:
             return None
         folder = library_store_dir(system=system)
-        if not os.path.isdir(folder):
-            os.makedirs(folder)
+        if not os.path.isabs(folder) or _inside(folder, ROOT):
+            return None
+        os.makedirs(folder, exist_ok=True)
         os.environ["HERON_KNOWLEDGE"] = folder
         return folder
     except Exception:                                  # noqa: BLE001 - never fatal: the lookup says why
