@@ -115,7 +115,8 @@ import heron_bridge_client as bridge          # noqa: E402
 import heron_session as session                      # noqa: E402
 from heron_session import SessionBinding, NotBound   # noqa: E402
 from heron_write import (BadDistance, DocumentPin, PendingApproval,   # noqa: E402
-                         describe_vertical, parse_millimetres, skipped_sentence)
+                         describe_vertical, parse_millimetres, reported_elsewhere,
+                         skipped_sentence)
 from heron_failure import analyse, explain          # noqa: E402
 from heron_failure import REFUSED as FAILURE_REFUSED  # noqa: E402
 import heron_tools as tools                         # noqa: E402
@@ -816,8 +817,9 @@ def revit_select_by_category(category: str = "ducts") -> str:
         # THE ADD-IN HAS ALREADY SELECTED by the time a reply can be refused
         # here, and between two models made from one template its own check
         # passes: it compares the Project Information id, which they share
-        # (5b-324). The pin's refusal says "Nothing has been sent to Revit",
-        # which is false after a selection - so say what happened instead.
+        # (5b-324). The pin's refusal said "Nothing has been sent to Revit"
+        # until 2026-11-11 (5b-1135), false after a selection - and its own
+        # sentence still cannot know one was made - so say what happened.
         # Found by the review of the 5b-324 change, 2026-10-06.
         if reply.get("selected"):
             # FAILED, NOT REFUSED, on the activity list (row 5b-389): a
@@ -2104,7 +2106,11 @@ def revit_change(capability: str = "", values: str = "",
     # add-in answered ok, so behind an add-in too old to read expectProject
     # the change may have been made in the other model. Neither "refused"
     # nor "ok" is known, so the activity list keeps its guess.
-    wrong_model = pinned.check(reply)
+    #
+    # AND ITS REFUSAL SAYS WHAT THE ADD-IN REPORTED DOING (5b-1135). It ended
+    # "Nothing has been sent to Revit" - after a change the lines above say
+    # may have been made. The write path's own sentence goes in its place.
+    wrong_model = pinned.check(reply, did=reported_elsewhere(capability, reply))
     if wrong_model is not None:
         return wrong_model
 
@@ -3558,7 +3564,8 @@ def revit_reset_temporary() -> str:
     # isolate that landed in the wrong model's view tells the chat to call
     # this to end it, so ending it there is the job done, not a mistake. When
     # nothing was on, the pin's own sentence is used, as every tool here uses
-    # it (row 5b-594 records what that sentence gets wrong after the act).
+    # it (row 5b-594 recorded what that sentence got wrong after the act; it
+    # says since 2026-11-11 that Revit was asked and answered, row 5b-1135).
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
         if reply.get("reset"):
