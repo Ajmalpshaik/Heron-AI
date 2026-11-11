@@ -17,11 +17,12 @@ purpose: >
   their 1-2-3 numbering, bullets and indents. Five steps, in this order:
 
   1. FILTER_ELEMENTS_BY_CATEGORY through revit_read, inViewOnly=<the view or
-     legend, by its name in the Project Browser>, category=Text Notes - version
-     5, DRAFT. SELECT_VISIBLE_IN_VIEW, the PROVEN way to collect one view's
-     notes until it was merged there on 2026-11-01, was measured 2026-10-17 on
-     a scratch copy of Autodesk's rst_basic sample, Revit 2020 - 109 notes in
-     the drafting view "Spread Footing". A legend has not been measured yet.
+     legend, by its name in the Project Browser>, category=Text Notes - since
+     its version 5. SELECT_VISIBLE_IN_VIEW, the PROVEN way to collect one
+     view's notes until it was merged there on 2026-11-01, was measured
+     2026-10-17 on a scratch copy of Autodesk's rst_basic sample, Revit 2020 -
+     109 notes in the drafting view "Spread Footing". A legend has not been
+     measured yet.
 
   2. READ_ELEMENT_PARAMETERS through revit_read, parameterName=Text,
      expect_from="filter-elements-by-category". Its noteWording gives one line
@@ -62,14 +63,18 @@ purpose: >
      EDIT_TEXT_VALUES mode format, text="numbers 1-8" for paragraphs 1 to 8
      (FRAGMENT-ISSUES row 5b-737, not run in Revit).
 
-  BOTH CARDS ARE DRAFT. READ_ELEMENT_PARAMETERS and EDIT_TEXT_VALUES stay
-  DRAFT until Ajmal PS signs them. FRAGMENT-ISSUES row 5b-520 (pull request
-  #570) left two proof drafts; row 5b-737 (#586) widened both cards the same
-  day, so those drafts no longer describe the code, and the proof now owed is
-  NEEDS-CHECKING group FD. A read runs while DRAFT and says so; it changes
-  nothing. The edit is different: revit_change refuses a DRAFT (D-117), so on
-  a real model the ONLY way step 4 runs is try-once, behind Revit's Keep or
-  Discard (D-119), and only when the modeller asks for it (D-122):
+  WHICH DOOR STEP 4 GOES THROUGH IS EDIT_TEXT_VALUES' STATUS, and the list
+  served after this method says it - never this text. Both cards were DRAFT
+  when this was written, 2026-10-17, and stayed so until Ajmal PS signed
+  them: FRAGMENT-ISSUES row 5b-520 (pull request #570) left two proof
+  drafts; row 5b-737 (#586) widened both cards the same day, so those drafts
+  no longer described the code, and the proof then owed was NEEDS-CHECKING
+  group FD. PROVEN in that list, step 4 goes through revit_change - TRY-ONCE
+  EDITS WHAT IS SELECTED, below, ends by saying how. DRAFT in that list: a
+  read runs while DRAFT and says so, and changes nothing. The edit is
+  different: revit_change refuses a DRAFT (D-117), so on a real model the
+  ONLY way step 4 runs is try-once, behind Revit's Keep or Discard (D-119),
+  and only when the modeller asks for it (D-122):
 
     python mcp/client/heron_bridge_client.py try-once edit-text-values
       --set field=Text --set mode=replace --set text=<old> --set replacement=<new>
@@ -86,10 +91,10 @@ purpose: >
   revit_show with expect_from="filter-elements-by-category"; for a set, the one
   note alone - FILTER_ELEMENTS_BY_ID elementIds=<its id from step 2> and then
   SET_SELECTION with expect_from="filter-elements-by-id", or clicked by the
-  modeller. Once both cards are PROVEN, step 4 goes through revit_change
-  instead, the same way: step 1 again and expect_from="filter-elements-by-category"
-  for a replace, FILTER_ELEMENTS_BY_ID and expect_from="filter-elements-by-id"
-  for a set.
+  modeller. With EDIT_TEXT_VALUES PROVEN, step 4 goes through revit_change
+  instead, the same way: step 1 again and
+  expect_from="filter-elements-by-category" for a replace, FILTER_ELEMENTS_BY_ID
+  and expect_from="filter-elements-by-id" for a set.
 
   THE CHAIN NAMES THE LAST RUN. Every run, step 2's read included, becomes
   what the chain carries, so expect_from="filter-elements-by-category" sent after

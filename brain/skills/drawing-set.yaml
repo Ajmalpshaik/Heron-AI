@@ -21,9 +21,9 @@ purpose: >
   below are examples from the first set made this way, never defaults.
 
   The status in brackets after each capability is what that capability's own
-  fragment.yaml said on 2026-10-13. The list of capabilities after this method
-  is read from the library every time it is served: where the two differ, the
-  list is right and this text is out of date.
+  fragment.yaml said when that step was last checked. The list of capabilities
+  after this method is read from the library every time it is served: where
+  the two differ, the list is right and this text is out of date.
 
   0. SAVE IT FIRST, before step 1 - the last precondition, as an act.
      REPORT_OPEN_DOCUMENTS (DRAFT on 2026-10-17) says whether the model has
@@ -34,37 +34,34 @@ purpose: >
      line what is at stake and go on. Twice in two days a whole build was
      lost this way - a house with 9 sheets and a 32-floor tower, 2026-10-13
      and 14.
-  1. CREATE_SHEETS (DRAFT on 2026-11-01 - version 2, with CREATE_SHEET,
-     PROVEN, merged into it), one call for the sheets: their numbers, their
-     names and the title block by its type name ("A1 metric"), or as
-     Family: Type when two families share the type name. Each number is
-     checked for a clash, capitals ignored, before anything is made, and a
-     sheet not made is said in notCreated. Decide the sheets first - one per plan,
-     one per elevation unless two fit, one for the schedules, and a cover when
-     asked - from the size of each drawing at the scale against the title
-     block's drawing area, never from habit: AT 1:50 ONLY ONE ELEVATION OF A
-     BUILDING ABOUT 23 M LONG FITTED ON AN A1 SHEET.
-  2. SET_VIEW_PROPERTIES (DRAFT on 2026-11-01, version 3 - SET_VIEW_SCALE
-     was merged into it; version 2 PROVEN) on every plan and elevation going on a
-     sheet: the scale (50 for 1:50) and the detail level ("Fine").
+  1. CREATE_SHEETS (CREATE_SHEET was merged into it at version 2, 2026-11-01),
+     one call for the sheets: their numbers, their names and the title block by
+     its type name ("A1 metric"), or as Family: Type when two families share the
+     type name. Each number is checked for a clash, capitals ignored, before
+     anything is made, and a sheet not made is said in notCreated. Decide the
+     sheets first - one per plan, one per elevation unless two fit, one for the
+     schedules, and a cover when asked - from the size of each drawing at the
+     scale against the title block's drawing area, never from habit: AT 1:50
+     ONLY ONE ELEVATION OF A BUILDING ABOUT 23 M LONG FITTED ON AN A1 SHEET.
+  2. SET_VIEW_PROPERTIES (SET_VIEW_SCALE was merged into it at version 3,
+     2026-11-01) on every plan and elevation going on a sheet: the scale (50 for
+     1:50) and the detail level ("Fine").
   3. CREATE_PLAN_VIEW (PROVEN) for each level that has no floor plan - a level
      made through the API comes with none - then step 2 on that plan alone,
      so it matches the others.
-  4. THE CROP, one plan and one elevation at a time. SELECT_IN_REGION (DRAFT)
-     with categories=Walls over the box that holds that level's walls - for an
+  4. THE CROP, one plan and one elevation at a time. SELECT_IN_REGION with
+     categories=Walls over the box that holds that level's walls - for an
      elevation, the walls of the face it looks at - then SET_VIEW_CROP
      (PROVEN) on that view with marginMm, expect_from naming that select. The
      crop then frames the building, not the site round it.
-  5. ROOM TAGS, one level at a time. FILTER_ELEMENTS_BY_CATEGORY (PROVEN to
-     version 3; version 4 DRAFT) with
+  5. ROOM TAGS, one level at a time. FILTER_ELEMENTS_BY_CATEGORY with
      category=Rooms and that levelId, then TAG_ELEMENTS_IN_VIEW in that
      level's plan with tagTypeId the room tag type named ("Room Tag With
      Area"), expect_from naming the filter. It tags rooms with Revit's own
-     room tag, never an ordinary element tag. Its status: TAG_ROOMS (PROVEN),
-     which this step used until then, was merged into it on 2026-11-01, and
-     version 7 is DRAFT until it is proved. Name the plan
-     with its view type - "FloorPlan: Level 1" - whenever a ceiling plan has
-     the same name: "Level 1" alone could be either.
+     room tag, never an ordinary element tag. Its status: TAG_ROOMS, which
+     this step used until then, was merged into it on 2026-11-01. Name the
+     plan with its view type - "FloorPlan: Level 1" - whenever a ceiling plan
+     has the same name: "Level 1" alone could be either.
   6. LOAD_FAMILY (PROVEN) the door tag family, only when no door tag is loaded
      - from the path the modeller gives, in the library of the release in use.
   7. DOOR TAGS, one level at a time. FILTER_ELEMENTS_BY_CATEGORY with
@@ -81,32 +78,31 @@ purpose: >
   8. DIMENSIONS, on each plan. DIMENSION_ROOMS (PROVEN) on that level's rooms
      with measureTo=inside, and DIMENSION_ELEMENT_FACES on that level's walls
      with direction=along, withOverall=true and side=right, each at the
-     offsetMm the modeller gives. DIMENSION_WALL_OPENINGS (PROVEN), which this
-     step used until then, was merged into it on 2026-11-01 - side=right is
-     the side it drew on, and side=outside puts the strings away from the
-     rooms; version 2 is DRAFT until it is proved. Look at each plan afterwards: on the first set one wall's strings
-     ran through three room tags, and taking a string away is a delete that
-     needs the modeller's yes for that one delete. One element in a section
-     or elevation - an opening from its level and grid, its own width and
-     height - is CREATE_LINEAR_DIMENSION (DRAFT, version 3 of 2026-10-15),
-     "face ID top" and "family ID Left" among its references. An element in
-     a LINKED model - a builders-work opening in a structural or electrical
-     link, tagged in this model's plans - is the same tool with the link
-     first (version 4): "grid C | link MODEL face ID bottom | link MODEL
-     face ID top" - MODEL the linked model's name as LIST_LINKED_MODELS
-     gives it, or the placed link's id when the model is linked twice.
+     offsetMm the modeller gives. DIMENSION_WALL_OPENINGS, which this step used
+     until then, was merged into it on 2026-11-01 - side=right is the side it
+     drew on, and side=outside puts the strings away from the rooms; version 2
+     is DRAFT until it is proved. Look at each plan afterwards: on the first set
+     one wall's strings ran through three room tags, and taking a string away is
+     a delete that needs the modeller's yes for that one delete. One element in
+     a section or elevation - an opening from its level and grid, its own width
+     and height - is CREATE_LINEAR_DIMENSION (since version 3 of 2026-10-15),
+     "face ID top" and "family ID Left" among its references. An element in a
+     LINKED model - a builders-work opening in a structural or electrical link,
+     tagged in this model's plans - is the same tool with the link first
+     (version 4): "grid C | link MODEL face ID bottom | link MODEL face ID top"
+     - MODEL the linked model's name as LIST_LINKED_MODELS gives it, or the
+     placed link's id when the model is linked twice.
   9. PLACE_VIEW_ON_SHEET (PROVEN), each plan and elevation on its own sheet,
      at a point on the sheet in millimetres inside the title block's drawing
      area ((390, 300) on "A1 metric"). A view goes on one sheet only.
   10. SCHEDULES. CREATE_SCHEDULE (PROVEN) for each - a category and its fields
       ("Rooms", "Doors"); FIND_VIEWS with viewType=Schedule by name
-      (FIND_SCHEDULES, PROVEN, until it was merged there on 2026-11-01;
-      version 2 is DRAFT until it is proved); then
+      (FIND_SCHEDULES until it was merged there on 2026-11-01); then
       PLACE_VIEW_ON_SHEET on the schedules' sheet with `at` in millimetres,
       expect_from naming the find. A schedule's point is its TOP-LEFT corner,
       where a view's is its centre, and a schedule may go on several sheets.
-      PLACE_SCHEDULE_ON_SHEET (PROVEN), which this step used until then, was
-      merged into it on 2026-11-01; version 4 is DRAFT until it is proved.
+      PLACE_SCHEDULE_ON_SHEET, which this step used until then, was merged
+      into it on 2026-11-01.
   11. PRESENTATION GRAPHICS, when the modeller asks for a look. On ONE plan
       only: SET_CATEGORY_GRAPHICS with solidFill=true for the categories
       cut or seen as solid colour - walls, floors, mullions - and
@@ -136,11 +132,10 @@ purpose: >
   happened, and a repeat makes it twice.
 
   NOT YET: colouring the rooms on a plan on Revit 2020 or 2021 -
-  APPLY_COLOR_FILL_SCHEME (DRAFT) colours them on 2022 and later and refuses
-  in plain words on those two, and nothing else in the library does it. A tag
-  on a door that is a curtain panel. Printing or
-  exporting the set is a separate PUBLISH step behind its own switch, not
-  part of this method.
+  APPLY_COLOR_FILL_SCHEME colours them on 2022 and later and refuses in plain
+  words on those two, and nothing else in the library does it. A tag on a
+  door that is a curtain panel. Printing or exporting the set is a separate
+  PUBLISH step behind its own switch, not part of this method.
 
 # The words the modeller says when he wants the drawings made.
 utterances:
@@ -155,9 +150,9 @@ utterances:
 # the method stops before the issue, and a print set is MANAGE_SHEET_SETS',
 # which is not a step here - so there is nothing for the read to check.
 # Row 5b-466's add mode exists since MANAGE_SHEET_SETS version 2 (2026-10-17,
-# DRAFT, NEEDS-CHECKING Group FA), with remove beside it, and this method
-# still has no print-set step: adding one is a change to the method, not to
-# a cross-reference. When it is added, MANAGE_SHEET_SETS is the step and
+# NEEDS-CHECKING Group FA), with remove beside it, and this method still has
+# no print-set step: adding one is a change to the method, not to a
+# cross-reference. When it is added, MANAGE_SHEET_SETS is the step and
 # LIST_SHEET_SETS its read-back - it flags a set left EMPTY and, since its
 # version 2, two sets holding the same sheets (row 5b-545) - and both go in
 # this list.
