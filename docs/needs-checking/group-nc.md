@@ -59,12 +59,12 @@ the cause and the fix.
 
 **Version 2, the same day, the same family, every run rolled back:**
 
-| # | Result |
+| Row | Result |
 |---|---|
-| **NC1** | **As expected.** Refused before anything was locked, naming the tip 400 mm off "Spare"; nothing locked, "Tip" included |
-| **NC2** | **As expected.** Eight locks, exactly the list above; `ends` read back unchanged. Revit 2020 aligns a detail line's END reference to a plane through the API - the first thing this group set out to learn - and gives back the region's sketch from `GetDependentElements` |
-| *`all`* | Planes "Center (Left/Right)": three targets (shaft, control, region), the region's three edges once each, both tail ends locked |
-| **NC3-NC6** | **NOT RUN.** NC4 - KEPT and resized - is what proves the arrow FOLLOWS; no padlock has been looked at yet, as nothing was kept |
+| NC1, run 1 | **As expected.** Refused before anything was locked, naming the tip 400 mm off "Spare"; nothing locked, "Tip" included |
+| NC2, run 1 | **As expected.** Eight locks, exactly the list above; `ends` read back unchanged. Revit 2020 aligns a detail line's END reference to a plane through the API - the first thing this group set out to learn - and gives back the region's sketch from `GetDependentElements` |
+| `all`, run 1 | Planes "Center (Left/Right)": three targets (shaft, control, region), the region's three edges once each, both tail ends locked |
+| NC3 to NC6 | **NOT RUN.** NC4 - KEPT and resized - is what proves the arrow FOLLOWS; no padlock has been looked at yet, as nothing was kept |
 
 Run with `HERON_CLIENT_ID=ajmal-pc python mcp/client/heron_bridge_client.py validate lock-family-lines-to-planes
 --write --set "lines=<shaft>, <head>" --set "planes=Center (Left/Right), Center (Front/Back), Head Base, Tip, Head
