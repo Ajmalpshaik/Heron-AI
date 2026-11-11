@@ -928,8 +928,9 @@ def describe():
 # NOT ONE FILE SINCE 2026-11-11 (row 5b-1554). heron_server_core.py is first:
 # what every file of the server shares - the server object, this chat's
 # state, what every tool call passes through - and no tool. A file that holds
-# tools goes between it and the entry file, which imports each of them.
-SERVER_FILES = ("heron_server_core.py", "heron_mcp_server.py")
+# tools goes between it and the entry file, which imports each of them:
+# heron_inventory.py is the inventory reads, revit_phases to revit_groups.
+SERVER_FILES = ("heron_server_core.py", "heron_inventory.py", "heron_mcp_server.py")
 
 
 def server_files():
