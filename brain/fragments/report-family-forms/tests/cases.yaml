@@ -99,6 +99,14 @@ positive:
       and elements 1, the extrusion ONLY: "all" never hands on a line, so a
       DELETE_ELEMENTS chained after it cannot reach one
 
+  - given: >
+      the Generic Model family with a nested 3D family (a Work Plane-Based
+      generic model) placed beside the nested detail item; which "2d"
+      (Codex review, PR #843)
+    expect: >
+      the symbolic line and the nested DETAIL ITEM only - the nested 3D family
+      is neither listed nor handed on; which "nested" lists both
+
   - given: the Generic Model family, which LEFT OUT
     expect: the same reads as "all" - and elements 0, as version 4 handed on nothing when nothing was named
 

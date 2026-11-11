@@ -112,7 +112,9 @@ var parts = (which ?? "").Split(',').Select(p => p.Trim())
 // VERSION 5: the 2D kinds, squashed, and the rows each one keeps.
 var twoDWords = new Dictionary<string, string[]>
 {
-    { "2d", new[] { "detail line", "symbolic line", "filled region", "masking region", "nested" } },
+    // "2d" takes a nested family only when it is 2D itself - a detail item or
+    // an annotation (Codex review, PR #843); "nested" takes every nested family.
+    { "2d", new[] { "detail line", "symbolic line", "filled region", "masking region", "nested 2d" } },
     { "detailline", new[] { "detail line" } }, { "detaillines", new[] { "detail line" } },
     { "symbolicline", new[] { "symbolic line" } }, { "symboliclines", new[] { "symbolic line" } },
     { "line", new[] { "detail line", "symbolic line" } }, { "lines", new[] { "detail line", "symbolic line" } },
@@ -135,6 +137,18 @@ Func<Element, string> kind2D = e =>
     if (asRegion != null) return asRegion.IsMasking ? "masking region" : "filled region";
     if (e is FamilyInstance) return "nested";
     return null;
+};
+// A nested family that is 2D itself: it has an owner view, or its family is
+// view-based, or it is a detail item or a generic annotation.
+Func<FamilyInstance, bool> isViewBased = fi =>
+{
+    if (fi.OwnerViewId != ElementId.InvalidElementId) return true;
+    var fam = fi.Symbol == null ? null : fi.Symbol.Family;
+    if (fam != null && fam.FamilyPlacementType == FamilyPlacementType.ViewBased) return true;
+    var cat = fi.Category;
+    if (cat == null) return false;
+    return cat.Id == new ElementId(BuiltInCategory.OST_DetailComponents)
+        || cat.Id == new ElementId(BuiltInCategory.OST_GenericAnnotation);
 };
 
 var rows = new List<string>();
@@ -163,7 +177,10 @@ if (doc.IsFamilyDocument)
             foreach (var id in region.GetDependentElements(new ElementClassFilter(typeof(CurveElement))))
                 edges.Add(id);
         }
-        catch (Exception) { edgesUnread++; }
+        catch (Exception) { edges.Clear(); }
+        // Thrown OR empty: a region always has edges, so none read is unread
+        // (Codex review, PR #843) - said in a finding, never "0" said as fact.
+        if (edges.Count == 0) edgesUnread++;
         edgesOf[region.Id] = edges;
         foreach (var id in edges) regionOfEdge[id] = region;
     }
@@ -398,6 +415,13 @@ else
             if (asCurve != null && asCurve.SketchPlane != null) return "on plane " + asCurve.SketchPlane.Name;
             var asNested = e as FamilyInstance;
             if (asNested != null && asNested.Host != null) return "on " + nameOf(asNested.Host.Id);
+            var asRegion = e as FilledRegion;
+            if (asRegion != null && edgesOf.ContainsKey(asRegion.Id))
+                foreach (var edgeId in edgesOf[asRegion.Id])
+                {
+                    var edge = doc.GetElement(edgeId) as CurveElement;
+                    if (edge != null && edge.SketchPlane != null) return "on plane " + edge.SketchPlane.Name;
+                }
             return "no view or plane";
         };
 
@@ -418,7 +442,8 @@ else
             var kind = kind2D(e);
             if (kind == null) continue;
             if (ids.Count > 0 && !named.Contains(e.UniqueId)) continue;
-            if (wanted2D.Count > 0 && !wanted2D.Contains(kind)) continue;
+            if (wanted2D.Count > 0 && !wanted2D.Contains(kind)
+                && !(kind == "nested" && wanted2D.Contains("nested 2d") && isViewBased((FamilyInstance)e))) continue;
             // Handed on only when named by a 2D kind (or by id, below): "all"
             // hands on forms alone, as version 4 did, so a delete chained after
             // "all" can never reach a line it did not before.
@@ -466,6 +491,7 @@ else
                 var type = doc.GetElement(region.GetTypeId());
                 bits.Add("type " + (type == null ? "(none)" : type.Name));
                 double minX = double.MaxValue, minY = double.MaxValue, maxX = double.MinValue, maxY = double.MinValue;
+                double minZ = double.MaxValue, maxZ = double.MinValue;
                 var loops = 0;
                 try
                 {
@@ -477,12 +503,14 @@ else
                             {
                                 minX = Math.Min(minX, p.X); minY = Math.Min(minY, p.Y);
                                 maxX = Math.Max(maxX, p.X); maxY = Math.Max(maxY, p.Y);
+                                minZ = Math.Min(minZ, p.Z); maxZ = Math.Max(maxZ, p.Z);
                             }
                     }
                 }
                 catch (Exception) { }
                 if (loops > 0)
-                    bits.Add(loops + " loop(s), X " + mm(minX) + " to " + mm(maxX) + ", Y " + mm(minY) + " to " + mm(maxY) + " mm");
+                    bits.Add(loops + " loop(s), X " + mm(minX) + " to " + mm(maxX) + ", Y " + mm(minY) + " to " + mm(maxY)
+                        + ", Z " + mm(minZ) + " to " + mm(maxZ) + " mm");
                 var edges = edgesOf.ContainsKey(region.Id) ? edgesOf[region.Id] : new List<ElementId>();
                 bits.Add(edges.Count + " sketch edge(s)");
                 holds = holdsOf(edges.Concat(new[] { region.Id }));

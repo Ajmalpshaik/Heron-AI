@@ -85,7 +85,9 @@ purpose: >
   "locked at an end to Tip", "labelled Length to ...", "EQ with ...". A
   region's sketch edges are counted under it, never listed as loose lines.
   `which` takes "2d", "detail line", "symbolic line", "line", "filled
-  region", "masking region", "region" or "nested", and the 2D tools' ids
+  region", "masking region", "region" or "nested" - "2d" takes a nested
+  family only when it is 2D itself, a detail item or an annotation, so a
+  delete chained after it never reaches a nested 3D part - and the 2D tools' ids
   among the forms'. Form words alone read no 2D; 2D words alone read no
   form. A 2D element is handed on as `elements` only when named by a 2D kind
   or by id - "all" hands on forms alone, so a delete chained after it never
@@ -273,19 +275,22 @@ compatibility-note: >
 #                                                   selection is already there
 #   "which forms are made of steel"              -> SELECT_BY_MATERIAL
 #   "what is locked to the planes in this family" -> here (version 5), the
-#                                                   2D side with its locks
+#                                                   2D side with its locks -
+#                                                   NOT WON YET, see below
 #   "list the symbolic lines in this family"     -> here, which="symbolic line"
 #   "what is the nested arrow linked to"         -> here, which="nested"
 #   "what labels are in this family"             -> REPORT_FAMILY_LABELS
 #   "what is locked to this" - elements given    -> REPORT_CONSTRAINTS
 #   "lock the arrow's lines to the planes"       -> LOCK_FAMILY_LINES_TO_PLANES,
 #                                                   a change; this only reads
-#   MEASURED 2026-11-11 (scratch store, check-routing): four version 5
-#   sentences are not yet won here - "what is locked to the reference planes
-#   in this family" and "which lines in this family are not locked" reach
-#   LOCK_FAMILY_LINES_TO_PLANES, a change, first; "what is the nested arrow
+#   MEASURED 2026-11-11 (scratch store, check-routing): "what is locked to
+#   the reference planes in this family" and "which lines in this family are
+#   not locked" reached LOCK_FAMILY_LINES_TO_PLANES, a CHANGE, first - so
+#   they are NOT utterances of this card (Codex review, PR #843): a READ
+#   question must never be advertised where a change wins it. The routing
+#   fix belongs on that card's side (row 5b-1496). "what is the nested arrow
 #   family linked to" and "read back the plan symbol of this family" reach
-#   other read cards. Recorded in row 5b-1496, not reworded to buy a rank.
+#   other READ cards; kept, recorded, not reworded to buy a rank.
 #
 # 2026-11-01 - SELECT_FAMILY_FORMS WAS MERGED INTO THIS CARD (version 4) on the
 # owner's instruction ("make sure there is no duplicate tools"), and is
@@ -309,9 +314,7 @@ utterances:
   - get the forms with these ids
   - delete one form from the family by its id
   # VERSION 5 (2026-11-11) - the family's 2D side.
-  - what is locked to the reference planes in this family
   - list the symbolic lines and filled regions in this family
   - show me the 2D lines in this family with their ends
   - what is the nested arrow family linked to
-  - which lines in this family are not locked
   - read back the plan symbol of this family
