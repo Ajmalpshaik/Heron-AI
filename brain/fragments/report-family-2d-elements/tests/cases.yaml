@@ -1,0 +1,55 @@
+positive:
+  - given: >
+      the SAVED scratch metric Detail Item family "Heron 2D Read Test" under
+      %TEMP%\heron-work\2d-read (never one of the owner's families), with
+      planes Tip at 600 and Head Top at 80; a detail line "path 0,0; 300,0"
+      and a filled region "polygon 300,80 600,0 300,-80" drawn by
+      DRAW_FAMILY_DETAIL_LINES and DRAW_FAMILY_FILLED_REGION, the line locked
+      along Center (Front/Back) by hand; which left out
+    expect: >
+      elementCount 2, scanned 2: the detail line with "from 0,0,0 to 300,0,0
+      mm, 300 long", style named, "locked along Center (Front/Back)"; the
+      filled region with its type, "1 loop(s), X 300 to 600, Y -80 to 80 mm",
+      "3 sketch edge(s)" and "nothing holds it" - its three edges NOT listed as
+      lines
+
+  - given: >
+      the same family after LOCK_FAMILY_LINES_TO_PLANES has locked the region's
+      tip corner to Tip; which "region"
+    expect: >
+      elementCount 1, the region alone, "locked at an end to Tip" counted
+      under it
+
+  - given: >
+      a scratch metric Generic Model family with a symbolic line "path 0,0;
+      500,0" on Ref. Level drawn by DRAW_FAMILY_SYMBOLIC_LINES for coarse
+      only, and a nested detail item placed in the view Ref. Level with its
+      Visible linked to a Yes/No "Show Arrow"; which "symbolic line, nested"
+    expect: >
+      the symbolic line "shows in coarse | plan"; the nested row names its
+      family and type, its point, "turned 0 deg", its owner view Ref. Level,
+      and "Visible yes (linked to Show Arrow)"
+
+negative:
+  - given: a project in front, which left out
+    expect: notAFamily true, refused saying so, nothing read, scanned 0
+
+  - given: >
+      the first family, which = the detail line's id with its FIRST character
+      changed - the shape of an id that names no element here
+    expect: refused by name, "is not an id in this family", nothing read, elementCount 0, scanned 0
+
+  - given: which = the detail line's id and the UniqueId of the plane Tip
+    expect: refused naming Tip as not a line, region or nested family; the line is not read either - all or nothing
+
+  - given: which = "region, <the detail line's id>"
+    expect: refused - ids and kinds are not mixed - nothing read
+
+  - given: which "nested" on the first family, which holds no nested family
+    expect: elementCount 0, elementList empty, scanned 2 - looked at, none matched; not a refusal
+
+second_route:
+  - >
+      In the Family Editor, select each line, region and nested family and read
+      its Properties, its Visibility Settings, its padlocks and the dimension
+      it is labelled with by hand; the ends measured with Measure

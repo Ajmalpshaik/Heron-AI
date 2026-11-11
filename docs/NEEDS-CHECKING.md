@@ -1446,6 +1446,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-nc.md`](needs-checking/group-nc.md)
 
+## Group ND - a family's 2D side read back - lines, regions, nested families, and what is locked, labelled and linked to each: `REPORT_FAMILY_2D_ELEMENTS` (2026-11-11)
+
+**Its own file:** [`needs-checking/group-nd.md`](needs-checking/group-nd.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
