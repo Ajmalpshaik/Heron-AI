@@ -459,18 +459,22 @@ _KNOWN = {
 # too_large_reply), which no add-in can send - so they are a table of their
 # own, and `_KNOWN` stays the add-in's codes, held to the C# by
 # tests/test_failure_analysis.py. Until 2026-11-11 the first came back as
-# None, and None on a read is "never ran, ask again" below. It arrived, so
-# the request ran: what a read did - used up the chain (row 5b-273), or was
-# counted changing the model (row 5b-350) - is not known from here, and a
-# change may have been kept. Unknown for a read and a write alike, as
-# `read_unverified` is, and never retried.
+# None, and None on a read is "never ran, ask again" below. Something came
+# back, so the request reached Revit and may have run: what a read did - used
+# up the chain (row 5b-273), or was counted changing the model (row 5b-350) -
+# is not known from here, and a change may have been kept. Unknown for a read
+# and a write alike, as `read_unverified` is, and never retried. The reasons
+# say what is known and no more, and neither says "pipe": a chat may show
+# them to somebody for whom a pipe is in the model.
 _ARRIVED_UNUSABLE = {
     "reply_unreadable":  (UNKNOWN, LOOK_AT_THE_MODEL,
-                          "Revit answered and Heron could not read the answer, so the "
-                          "request ran and what it did is not known from here"),
+                          "something came back from Revit that Heron could not read as "
+                          "an answer, so whether the request ran, and what it did, is "
+                          "not known from here"),
     "reply_too_large":   (UNKNOWN, LOOK_AT_THE_MODEL,
-                          "Revit's answer was larger than Heron reads over the pipe, so "
-                          "the request ran and its answer was not read"),
+                          "Revit's answer was larger than Heron takes in one reply, so "
+                          "it was not read, and what the request did is not known from "
+                          "here"),
 }
 
 
@@ -503,8 +507,8 @@ def analyse(reply, writes=False):
         # again costs nothing". None is two cases the client does not tell
         # apart - Revit was never reached, or a request left and its answer
         # never came - and in the second the read may have run. So the
-        # sentence says only what is known. A reply that ARRIVED and could not
-        # be read is no longer None: it is `reply_unreadable`, above.
+        # sentence says only what is known. Something that CAME BACK and could
+        # not be read is no longer None: it is `reply_unreadable`, above.
         return Failure(
             "no_reply", NEVER_RAN, RETRY,
             "nothing came back, so Heron cannot tell whether Revit was reached; the "

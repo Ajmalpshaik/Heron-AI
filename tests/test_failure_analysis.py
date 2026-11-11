@@ -156,8 +156,10 @@ def arrived_unusable():
           "it is classified as an UNKNOWN outcome, never retried - it arrived, so the "
           "request ran: %r" % (read,))
     said = explain(read) or ""
-    check("RAN" in said and "costs nothing" not in said and "never ran" not in said.lower(),
-          "and the chat is told it ran, not that asking again costs nothing: %s" % said[:120])
+    check("whether it ran is not known" in said and "RAN" not in said
+          and "costs nothing" not in said and "never ran" not in said.lower(),
+          "and the chat is told only what is known - something came back, whether it ran "
+          "is not - never that asking again costs nothing: %s" % said[:120])
 
     pipe = _Pipe(b"{ half an answer\n")
     reply = StandIn(pipe).request("run_fragment_write", response_timeout=2.0,
@@ -193,9 +195,10 @@ def arrived_unusable():
           "an answer over the limit is refused, not parsed: %s"
           % (error_of(reply) or "it was read whole"))
     message = (reply.get("message") or "") if isinstance(reply, dict) else ""
-    check("MB" in message and "RAN" in message and "run record" in message,
-          "in a sentence that says how much had arrived, that it ran, and where a "
-          "change's whole answer is: %s" % message[:100])
+    check("MB" in message and "ask for less" in message
+          and "look at the model" not in message.lower(),
+          "in a sentence that says how much had arrived and, for a READ, to ask for "
+          "less - with nothing about looking at the model: %s" % message[:100])
     check(len(pipe.sent) == 2 and pipe.closed >= 1 and isinstance(again, dict)
           and again.get("ok") is True,
           "the connection it stopped reading is closed, and the next request gets its "
@@ -203,6 +206,49 @@ def arrived_unusable():
     large = analyse(reply, writes=False)
     check(large is not None and large.outcome == fa.UNKNOWN and large.may_retry is False,
           "and it is an UNKNOWN outcome too: asking again brings the same answer")
+
+    # AFTER A CHANGE THE SAME SENTENCE WAS AN INVITATION TO DO IT TWICE (the
+    # review of 5b-1167): "Ask for less - fewer elements" was said before "if
+    # it was a change, look at the model". `request` knows which it sent.
+    bridge.REPLY_LIMIT_BYTES = small
+    try:
+        pipe = _Pipe(big)
+        wrote = StandIn(pipe).request("run_fragment_write", response_timeout=2.0,
+                                      idempotent=False)
+    finally:
+        if limit is None:
+            del bridge.REPLY_LIMIT_BYTES
+        else:
+            bridge.REPLY_LIMIT_BYTES = limit
+    after = (wrote.get("message") or "") if isinstance(wrote, dict) else ""
+    check(error_of(wrote) == "reply_too_large" and len(pipe.sent) == 1,
+          "a CHANGE whose answer is over the limit is refused the same way, and sent once")
+    look, less = after.find("LOOK AT THE MODEL FIRST"), after.lower().find("ask for less")
+    check(look >= 0 and less < 0 and "Do not send it again." in after,
+          "but its sentence leads with looking at the model and never says to ask for "
+          "less - the change may have been kept: %s" % after[90:200])
+    check("may have been kept" in after and "run record" in after,
+          "and says the change may have been kept, and where its whole answer is")
+
+    print()
+    print("  in words a modeller reads")
+    said_to_chat = []
+    for make, given in ((getattr(bridge, "unreadable_reply", None), (1,)),
+                        (getattr(bridge, "unreadable_reply", None), (2,)),
+                        (getattr(bridge, "too_large_reply", None), (small + 1,))):
+        if make is not None:
+            said_to_chat.append(make(*given).get("message") or "")
+    said_to_chat.append(after)
+    said_to_chat.extend(reason for _o, _n, reason
+                        in (getattr(fa, "_ARRIVED_UNUSABLE", None) or {}).values())
+    check(len(said_to_chat) >= 6 and not any("pipe" in one.lower() for one in said_to_chat),
+          "none of these sentences says 'pipe' - to an MEP modeller a pipe is in the "
+          "model: %s" % [one[:40] for one in said_to_chat if "pipe" in one.lower()])
+    check(len(said_to_chat) >= 2 and "1 byte " in said_to_chat[0]
+          and "1 bytes" not in said_to_chat[0] and "2 bytes " in said_to_chat[1],
+          "one byte is '1 byte', two are '2 bytes'")
+    check(not any("RAN" in one or "so the request ran" in one for one in said_to_chat),
+          "and none says the request RAN - that is inferred, and only what is known is said")
 
     print()
     print("  and nothing at all coming back says only what is known")
