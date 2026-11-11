@@ -5167,10 +5167,18 @@ def heron_resolve(capability: str) -> str:
         lines.append("    %-14s %-11s %s" % (p["id"], p["status"], p["kind"]))
 
     if revit is None:
+        # WHY THERE IS NO RELEASE, IN `how`'s OWN WORDS, as heron_lookup says
+        # it. This line was typed "No Revit is connected" and never read
+        # `how` - so off Windows, where no Revit can be reached at all
+        # (D-132), it told a chat that none was connected, which sends it
+        # looking for one (FRAGMENT-ISSUES 5b-1506). And on Windows it said
+        # the same with two Revits open and none chosen, or the chosen one
+        # closed: row 130's sentence, repaired in the lookup and left here.
+        said = how or session.NOTHING_CONNECTED
         lines.append("")
-        lines.append("No Revit is connected, so the version filter did not "
-                     "run and this is every provider rather than the ones "
-                     "that would work on your release.")
+        lines.append("%s%s, so the version filter did not run and this is "
+                     "every provider rather than the ones that would work on "
+                     "your release." % (said[:1].upper(), said[1:]))
 
     lines.extend(_contract_lines(capability))
 

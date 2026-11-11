@@ -982,3 +982,8 @@ is proved, what it may do, or which door runs it.
   proved ([row 5b-1521](fragment-issues/section-5b-rows-401-425.md)). Which statuses retire a card is
   the brain's to say (`heron_brain.retired_statuses`); `tests/test_served_claims.py` holds the sentence
   to the files.
+- **`heron_resolve` says why it has no release to filter by, in the lookup's words.** It was typed
+  *"No Revit is connected"* whatever was found - off Windows, where none can be reached
+  ([D-132](DECISIONS.md#d-132--off-windows-the-heron-server-serves-its-library-alone-and-no-revit-tool)),
+  and with several Revits connected and none chosen
+  ([row 5b-1506](fragment-issues/section-5b-rows-401-425.md)).

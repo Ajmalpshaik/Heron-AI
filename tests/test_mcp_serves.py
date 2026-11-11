@@ -135,6 +135,12 @@ WHAT IT PROVES, when an SDK is installed
      on heron_lookup, heron_resolve, heron_capabilities and heron_method.
      Every answer still hands back both limits (item 6); a process that has
      said neither says both whole on its first answer.
+ 19. heron_resolve WITH NO RELEASE TO FILTER BY SAYS WHY, in the words the
+     session layer gave - no Revit on this machine, several connected and
+     none chosen, the chosen one closed - and never "No Revit is connected"
+     for any of those (row 5b-1506, and row 130's sentence where it had
+     been left). That a real server says it off Windows is
+     tests/test_mcp_stdio.py's.
 
 WHAT IT CANNOT DO
   It does not start a transport and it is not Claude Code. It calls the
@@ -2438,6 +2444,36 @@ async def exercise_said_once(module):
           "whichever tool that is")
 
 
+async def exercise_resolve_says_why(module):
+    """Section 19 - with no release to filter by, heron_resolve says WHY in
+    the words _revit_version gave, as heron_lookup does (row 5b-1506)."""
+    server = module.server
+    print()
+    print("  heron_resolve with no release to filter by says why (row 5b-1506)")
+    real = module._revit_version
+    here = getattr(module, "NO_REVIT_HERE", "No Revit on this machine (it is not Windows)")
+    said = {}
+    for how in (here,
+                "2 Revits are connected and none has been chosen",
+                "the Revit you chose (pid 4242) has closed",
+                "nothing is connected"):
+        module._revit_version = lambda how=how: (None, how)
+        try:
+            said[how] = text_of(await server.call_tool(
+                "heron_resolve", {"capability": "SET_SELECTION"}))
+        except Exception as exc:                                # noqa: BLE001
+            said[how] = "(raised %s: %s)" % (type(exc).__name__, exc)
+        finally:
+            module._revit_version = real
+    for how, answer in sorted(said.items()):
+        sentence = how[:1].upper() + how[1:] + ", so the version filter did not run"
+        check(sentence in answer and "every provider" in answer,
+              "told %r, it says so, and that this is every provider" % how)
+    check(not any("No Revit is connected" in answer
+                  for how, answer in said.items() if how != "nothing is connected"),
+          "and never that no Revit is connected when that is not what was found")
+
+
 async def exercise_running_code(module):
     """
     Section 16: a chat whose server is still running code a pull has since
@@ -2634,6 +2670,7 @@ def main():
         asyncio.run(exercise_words(server_module))
         asyncio.run(exercise_lookup_says(server_module))
         asyncio.run(exercise_said_once(server_module))
+        asyncio.run(exercise_resolve_says_why(server_module))
         asyncio.run(exercise_activity(server_module))
         asyncio.run(exercise_earlier(server_module))
         asyncio.run(exercise_change_report(server_module))

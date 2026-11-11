@@ -577,6 +577,23 @@ def library_only(guard, scratch):
         refused = ("error" in reply
                    or (reply.get("result") or {}).get("isError") is True)
         check(refused, "and the answer is a refusal - the tool is not served here")
+
+        # heron_resolve SAYS THE SAME OF THIS MACHINE AS THE LOOKUP DOES (row
+        # 5b-1506). It ended "No Revit is connected, so the version filter
+        # did not run" - the sentence D-132 replaced in heron_lookup, typed
+        # here a second time: a chat told none is connected goes looking for
+        # one, on a machine where none can be reached.
+        line, took = host.call(6, "heron_resolve",
+                               {"capability": "SET_SELECTION"}, DEADLINE)
+        resolved = text_of(line) or ""
+        check("provider(s)" in resolved,
+              "heron_resolve answers for a capability by name (%.1fs)" % took)
+        check("No Revit on this machine" in resolved
+              and "so the version filter did not run" in resolved,
+              "and says there is no Revit on this machine, which is why the "
+              "version filter did not run")
+        check("No Revit is connected" not in resolved,
+              "never that none is connected")
     finally:
         host.close()
 
