@@ -1,0 +1,250 @@
+heron-status: DRAFT
+heron-step: 17
+heron-since: 0.1.0
+heron-layer: brain
+
+id: room-setup
+name: Set up the rooms - numbered, named and tagged, then floors and ceilings from their boundaries
+domain: revit.rooms
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
+risk: MODIFY
+
+purpose: >
+  Turns a level of walls into rooms that schedule: a room in every enclosed
+  area, the ones that did not enclose found and said, the rooms put in the
+  order the modeller reads the plan for numbering, named, and tagged in
+  their plan - and then, when asked, a floor or a ceiling in each room, the
+  shape of the room, shafts and columns cut out. For an MEP model the same
+  steps make Spaces; which of the two is always said, never guessed. ONE
+  STEP HAS NO TOOL A CHAT CAN KEEP TODAY - writing the running numbers, step
+  5 - and the method says what is done instead.
+
+  The status in brackets after each capability is what that capability's own
+  fragment.yaml said on 2026-11-11. The list of capabilities after this method
+  is read from the library every time it is served: where the two differ, the
+  list is right and this text is out of date. A read runs while its card is
+  DRAFT and says so. A change does not: revit_change refuses a DRAFT, and a
+  card whose proof is older than its code (D-117); step 5 says what that
+  leaves.
+
+  0. A FILE TO GO BACK TO. REPORT_OPEN_DOCUMENTS (DRAFT) says whether the
+     model has a file and when it was last saved; one that was never saved is
+     said to the modeller ONCE before step 3. Heron cannot save the model it
+     works in (OPEN-QUESTIONS Q-69).
+  1. WHAT IS THERE - READ. revit_rooms for the rooms, spaces and areas the
+     model already holds, the unplaced and the not enclosed counted apart;
+     revit_levels for the levels by name; revit_phases for the phases by
+     their exact names. WHEN THE WALLS ARE IN A LINKED MODEL - the usual case
+     for an MEP model - rooms and spaces stop at them only while that link is
+     Room Bounding: LIST_LINKED_MODELS (PROVEN), then SET_LINK_ROOM_BOUNDING
+     (PROVEN, version 2) with linkName and roomBounding on. It is the link
+     TYPE's setting and touches a linked model, so the modeller is asked for
+     that one change first (Constitution Article 7).
+  2. ASK WHAT IS WANTED, ONCE (D-33): rooms or spaces; which levels and which
+     phase; how the rooms are numbered - the prefix, the first number, how
+     many digits, and the ORDER (left to right, reading order, clockwise);
+     each room's name; the room tag type; and, for floors and ceilings, the
+     type of each, which rooms, and a ceiling's height above its level in
+     millimetres (D-71). None is assumed.
+  3. PLACE. PLACE_ROOMS (PROVEN, version 3), one call for each level:
+     levelId the level by its name, placeKind rooms or spaces, phaseId the
+     phase by its name. It fills every enclosed area; `unbounded` are the
+     ones that got nothing. Or at chosen points, with `points` in
+     millimetres. IT PLACES AND DOES NOT NUMBER OR NAME: `names` and
+     `numbers` are for areas only, and given with rooms or spaces the whole
+     call is refused and nothing is placed. Each room takes the number Revit
+     gives it.
+  4. THE ONES THAT DID NOT ENCLOSE. SELECT_UNENCLOSED_ROOMS (PROVEN, version
+     3) with includeRooms or includeSpaces: `unplaced` were never put in the
+     model; `unenclosed` were placed where the boundary does not close - a
+     gap, a wall that is not room bounding, an open archway. They are named
+     to the modeller, never deleted and never left out quietly. Across an
+     opening the modeller points at, CREATE_ROOM_SEPARATION_LINES (PROVEN,
+     version 2) with lineKind room or space and the points in millimetres;
+     then step 3 for that area and this step again.
+  5. NUMBER THEM - NO TOOL A CHAT CAN KEEP WRITES THE NUMBERS TODAY. The
+     capability built for it is RENUMBER_SEQUENTIAL - a running number in
+     the order it is handed, with a prefix, a first number and a width - and
+     it is DRAFT: version 3, its proof older than its code, so revit_change
+     refuses it (D-117). ITS TRY-ONCE IS NOT A WAY ROUND FOR THIS JOB. A
+     version is kept ONCE and a second run is refused, so the next level
+     could never be numbered; it acts on whatever is selected in Revit, not
+     on an order worked out before it; and while Revit's Keep or Discard box
+     is up nothing else can be opened to judge the numbers by - the rooms
+     are not tagged yet. That one run is the card's proof (D-119, D-120),
+     its author's to start (D-122), and not a step of this method.
+     WHAT IS DONE INSTEAD, one level at a time. FILTER_ELEMENTS_BY_CATEGORY
+     (PROVEN) with category=Rooms and that levelId, then
+     ORDER_ELEMENTS_BY_POSITION (PROVEN) with the order the modeller gave
+     and rowMm, expect_from naming the filter: its `sequence` is the rooms
+     in the order they would be numbered, and it is read to the modeller.
+     THE MODELLER THEN TYPES THE NUMBERS. revit_edit_table with parameters
+     "Number, Name", expect_from naming a filter of that level's rooms,
+     opens them as a table in the Heron Companion: they type each number
+     there and press Apply - their own act, one entry in Revit's undo list,
+     and nothing is written if a row changed in Revit since the table was
+     read. Whether the table's rows come in the order above is not
+     measured. Or they number in Revit's own room schedule. Heron does not
+     work the numbers out and write them itself until RENUMBER_SEQUENTIAL
+     is proved.
+     ONCE IT IS PROVEN: after the order above, the modeller's yes for that
+     one write - a bulk parameter write (Constitution Article 7) - then
+     RENUMBER_SEQUENTIAL through revit_change with parameterName=Number,
+     the prefix, startAt and width, expect_from="order-elements-by-position".
+     existingValues is an INPUT the card does not read for itself: the room
+     numbers already taken in the scope the modeller means - this level, the
+     whole building. A clash with one of those stops the whole batch before
+     anything is written; left empty, nothing outside the batch is checked,
+     and step 6's FIND_DUPLICATE_VALUES is what finds a number used twice.
+  6. NAME THEM, by their numbers - in step 5's table as they are numbered,
+     or in one write. For the write: read the modeller the list, each number
+     and the name it gets, and get their yes for this one write - a bulk
+     parameter write (Article 7). Then SET_PARAMETER_VALUES_BY_ID (PROVEN,
+     version 7) with rows keyed on the number -
+     "key=Number|in=Rooms;101|Name=Lift Lobby;102|Name=Staircase 1" - the
+     names exactly as the modeller gave them. A number that matches no room,
+     or several, is refused for that row alone and named. Then
+     FIND_DUPLICATE_VALUES (PROVEN) on Number, expect_from naming a filter of
+     the rooms: two rooms with one number survive every look at the plan.
+  7. TAG THEM, one level at a time. FILTER_ELEMENTS_BY_CATEGORY with
+     category=Rooms and that levelId, then TAG_ELEMENTS_IN_VIEW (PROVEN,
+     version 7) with view that level's plan - "FloorPlan: Level 1" when a
+     ceiling plan shares the name - and tagTypeId the room tag type the
+     modeller named, expect_from naming the filter. It uses Revit's own room
+     tag and never puts a second tag on a room already tagged there. Tags
+     that end up off centre: CENTER_ROOM_TAGS (PROVEN) on those tags, which
+     finds a point inside an L-shaped room.
+  8. FLOORS AND CEILINGS FROM THE ROOM BOUNDARIES, when asked for.
+     FILTER_ELEMENTS_BY_CATEGORY for that level's rooms, then
+     CREATE_FROM_ROOM_BOUNDARIES (PROVEN, version 2), expect_from naming the
+     filter. The hostType decides what is made - a floor type makes floors,
+     a ceiling type makes ceilings - so floors and ceilings are two calls.
+     heightAboveLevel is the ceiling's height in millimetres; `rooms` narrows
+     to the numbers or names given. Each room's own boundary is the outline,
+     its holes included. `unenclosed` names every room nothing was built on,
+     and `refused` why.
+  9. THE CHECK, and it is the proof - the calls not failing is not.
+     revit_rooms and step 4 again; REPORT_ROOM_SPACE_DATA (PROVEN, version
+     2), expect_from naming a filter of the rooms, for each room's number,
+     name, level and area as a schedule would print them; and
+     READ_MODEL_WARNINGS (PROVEN) - two rooms in one enclosed region is a
+     warning Revit raises itself. Every change is one entry in Revit's undo
+     list.
+
+  WORKSHARED MODELS. A room, a tag or a wall another person owns is skipped
+  and named, never taken (Article 12): a level named or tagged with some
+  rooms left out says which. Nothing here synchronises with central
+  (Article 10).
+
+  TWO CHATS ON ONE REVIT. expect_from with "where" -
+  expect_from="filter-elements-by-category where category=Rooms" - refuses
+  values the other chat left. Read the model before repeating a change whose
+  answer never came: rooms placed twice are two rooms in one region.
+
+  NOT HERE: HERON WRITING THE ROOM NUMBERS IN ORDER - a gap until
+  RENUMBER_SEQUENTIAL is proved; step 5 says what is done meanwhile. A room
+  schedule on a sheet - CREATE_SCHEDULE and the drawing-set method. Room finishes as parameters, areas and area plans, colouring the
+  rooms on a plan, and an MEP model's Spaces kept in step with an
+  architect's rooms (SYNC_SPACES_WITH_LINKED_ROOMS) are separate changes
+  with cards of their own. Deleting an unplaced room is a delete: the
+  modeller's yes for that one operation, and Revit's own box (Article 7,
+  D-142).
+
+# WRITTEN FOR THIS METHOD on 2026-11-11, from the words of the brief it was
+# asked for in - "room set-up - place rooms, renumber, tag, ceilings/floors
+# from room boundaries". None of the three is the brief's sentence as it
+# stood, and none is from the owner's own question log; his own way of
+# asking is added on his word. No question is declared: this method is above
+# the write line (D-86), and which rooms are not enclosed or what area each
+# has is a read with a card of its own.
+#
+# THE NAME AND THESE KEEP OFF "place", "this" AND "them", AND THE NAME SAYS
+# "numbered" AND "tagged", ON PURPOSE, as delete-by-id keeps off "form": a
+# lookup names a method by the words it shares with the request, when the
+# method needs one of the lookup's answers, and heron_skill._words reads
+# "this" as "thi" and never drops it. Measured 2026-11-11 on the model
+# backend with the first wording - "place, number, name and tag them" in the
+# name, "on this level" and "place the rooms" here: the owner's "Place
+# sprinklers in all the rooms." was offered this method AHEAD of
+# sprinkler-layout, and his "Tag all the ducts in the active view." was
+# offered it too. With this wording neither is. "room", "number" and "tag"
+# stay here - they are the job - so a request to number anything, or about
+# any room, may still be offered this method beside its answer: "number the
+# sprinklers along the branch" and the owner's "Create the piping for all
+# the rooms." were, that day.
+utterances:
+  - set up the rooms
+  - number and tag the rooms
+  - floors and ceilings from the room boundaries
+
+# CAPABILITIES, never fragment ids - in the order the purpose gives.
+needs:
+  # Step 0's check that the model has a file to go back to.
+  - REPORT_OPEN_DOCUMENTS
+  # Only when the walls are in a linked model - step 1.
+  - LIST_LINKED_MODELS
+  - SET_LINK_ROOM_BOUNDING
+  - PLACE_ROOMS
+  - SELECT_UNENCLOSED_ROOMS
+  # Only across an opening the modeller points at - step 4.
+  - CREATE_ROOM_SEPARATION_LINES
+  - FILTER_ELEMENTS_BY_CATEGORY
+  - ORDER_ELEMENTS_BY_POSITION
+  # DRAFT, its proof older than its code: NO CHAT TOOL KEEPS ITS CHANGE, and
+  # step 5 says what is done instead. Named here so the list served with the
+  # method shows the day it is proved.
+  - RENUMBER_SEQUENTIAL
+  # The names, by room number - step 6.
+  - SET_PARAMETER_VALUES_BY_ID
+  - FIND_DUPLICATE_VALUES
+  - TAG_ELEMENTS_IN_VIEW
+  # Only for tags that end up off centre - step 7.
+  - CENTER_ROOM_TAGS
+  # Only when floors or ceilings are asked for - step 8.
+  - CREATE_FROM_ROOM_BOUNDARIES
+  # The check. Never skipped. REPORT_ROOM_SPACE_DATA, step 9's other read,
+  # is left off on purpose, as update-general-notes leaves off its read: a
+  # lookup names a method whose needs hold one of its answers. Measured
+  # 2026-11-11 on the model backend, with it here: the owner's "Make the
+  # dimension in room 4." was offered this method through it alone. PROVEN,
+  # version 2, that day.
+  - READ_MODEL_WARNINGS
+
+# What must be true BEFORE it runs, so it fails early with something
+# useful instead of deep inside a transaction (docs/09 s2).
+preconditions:
+  - a project is open in front, it is the model the modeller means, and the walls that bound the rooms are in it - or in a linked model that is loaded
+  - each level has its floor plan - the tags go in it
+  - the modeller has said rooms or spaces, the levels, the phase, the numbering - prefix, first number, digits and order - each room's name, the tag type and, for floors and ceilings, each type and the ceiling height - and none is assumed (D-33)
+  - every length is in millimetres (D-71)
+  - the owner has Changes on - a refusal that names the switch is the answer
+  - while RENUMBER_SEQUENTIAL is DRAFT, the modeller types the room numbers - in the Heron Companion's table, which must be switched on in Revit, or in Revit's own schedule - and Heron writes none
+  - the modeller has said yes to each bulk write of names, and to the link's Room Bounding change, for that one operation (Article 7)
+  - on a workshared model, what the modeller cannot edit is skipped and named - nothing is checked out or synchronised for them (Articles 10 and 12)
+  - the model has a file and has been saved before step 3
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  WRITTEN 2026-11-11 IN A CLOUD SESSION, NOT RUN. No Revit was reachable. No
+  new capability. On the day it was written two of the capabilities it names
+  were DRAFT: the read REPORT_OPEN_DOCUMENTS, and RENUMBER_SEQUENTIAL - back
+  to DRAFT on 2026-11-07 for its version 3 (FRAGMENT-ISSUES row 5b-215,
+  NEEDS-CHECKING Group MR) - which is the one step of this method no chat
+  tool can keep until it is proved. So Heron does not number rooms today.
+  The first draft of this method said PLACE_ROOMS numbers rooms placed at
+  points; it does not - its `names` and `numbers` are for areas, and with
+  rooms the call is refused, "Nothing was placed". It also sent the numbering
+  level by level through try-once, which keeps one run a version. Both
+  corrected the same day, on review.
+
+  The order - place, find what did not enclose, number, name, tag, then the
+  floors and ceilings - is common Revit practice; it has not been measured
+  on a model here.
+
+  DRAFT until the whole order has been run on a saved scratch copy and read
+  back with REPORT_ROOM_SPACE_DATA; no NEEDS-CHECKING group holds that run
+  yet.

@@ -664,7 +664,10 @@ that point (line 879), so a save there could only ever follow a Keep.
    2026-10-06), and a model with no file has no path. So on Revit 2020 to 2023, and for a family on any
    release, a Save As of a model or family that was never saved leaves the pin holding the title alone; the reply comes back under the new title, and `revit_change` answers *"Heron will not change a
    model you did not point it at ... Nothing has been sent to Revit"* (`heron_mcp_server.py` line 1921)
-   about a model it has just saved. The next call is then aimed at the old title (line 1455) and refused
+   about a model it has just saved. (Since 2026-11-11 that reply says what the add-in reported doing
+   in place of *"Nothing has been sent to Revit"* -
+   [row 5b-1135](../fragment-issues/section-5b-rows-401-425.md); the refusal itself is unchanged.)
+   The next call is then aimed at the old title (line 1455) and refused
    until the modeller says *use this model*. Letting the pin follow a rename is a change to that guard.
 
 **The shapes the owner chooses between:**
@@ -1359,5 +1362,69 @@ changes how every hosted family is built on the strength of a call documented fo
 the safety rules for a shortcut.
 
 **Ajmal PS decides.** Until he does, nothing is built; the method's hand step stands.
+
+---
+
+### 🔵 Q-86 — A card that waits for the modeller's click is timed as a slow job, and a face cannot be clicked from a card at all. How should a card say it is waiting for a person? *(found 2026-11-11 writing `PICK_ON_SCREEN`)*
+
+**What was found.** The owner wants to work by chat with very few clicks in Revit, and nothing in Heron let the
+modeller click to answer the chat. `PICK_ON_SCREEN` was written for it, at DRAFT: Revit's own pick, one point
+for each call, handed back in millimetres. Reading the add-in before writing it
+([row 5b-1507](../fragment-issues/section-5b-rows-401-425.md) has each one with its evidence), nothing there
+knows that a card can be waiting for a person:
+
+- **The dispatcher gives a started job `revit.operationTimeoutSeconds`** - 60 by default - then tells the chat
+  Revit is still running the request and stops listening. A click made after that reaches nobody. The longer wait
+  it gives a Keep or Discard box ([D-119](../decisions/D-119.md), `revit.askTimeoutSeconds`) is asked for by the
+  add-in's own code and cannot be asked for from a card.
+- **The run clock ([D-129](../decisions/D-129.md)) would stop a slow multi-click** at the next pass of a card's
+  loop and report a job that ran out of time - *"a loop that never ends is the usual cause"*, untrue of a slow
+  modeller - with the points already clicked not handed back. So the card asks for one click a call and has no loop. D-129's item 5 wrote a
+  hold for exactly this - *"a prompt pauses it"* - but the compile gate builds a card against Revit alone and
+  cannot compile the call, and the hold does not lengthen the dispatcher's wait in any case.
+- **The chat's side waits 180 seconds for a show run**, so a longer wait in the add-in alone would only move the
+  loss: the chat would give up first.
+- **An element or a face cannot be clicked from a card.** Revit's pick for one names a kind of pick from a
+  namespace cards are not given, and no card takes a face as an input ([D-72](../decisions/D-72.md)).
+
+So the card runs today only while the click lands inside that one wait - about a minute as installed - and
+its own description tells the chat to ask again when it does not. It does not work round the wait.
+What the chat is actually told when a click comes late is not yet seen in Revit
+([NEEDS-CHECKING Group NH](../needs-checking/group-nh.md), NH8 and NH9).
+
+**The shapes the owner chooses between, for the wait:**
+
+1. **The card declares it, and the add-in does the waiting - recommended.** One line on the card's contract, the
+   way a card already declares that it must run with no transaction open ([D-125](../decisions/D-125.md)). For a
+   card that carries it, the add-in marks the job as waiting for the modeller and holds the run clock while the
+   card runs; the chat's side adds the ask timeout for that card, as it does for a keep; and the refusal for a
+   wait that still runs out gets words of its own - today's are about Keep or Discard. **Cost:** a change to the
+   add-in, the card reader on both sides and the chat's wait, with their tests, and a rebuild and redeploy of the
+   add-in. A card that declares it is not stopped by TIME if it loops for ever - a stop asked over the bridge
+   still reaches it - so the line would be honoured on the read and show paths only, and refused on a run that
+   can change the model.
+2. **A public call a card makes round the pick itself.** The hold D-129 already wrote, widened to mark the job
+   too. **Cost:** the compile gate has to be given the add-in's type, the first time a card names one - and the
+   same change to the chat's wait.
+3. **Nothing more.** The limit stays; the chat tells the modeller to be at Revit before it asks, and a slow
+   modeller raises `revit.operationTimeoutSeconds`. **Cost:** that setting lengthens the wait for every slow job
+   and the run clock's budget with it, so a card that loops for ever freezes Revit for longer too.
+
+**And for an element or a face:** whether Revit's selection namespace joins the list a card is given - one line
+in the add-in and one in the compile gate, kept level by `tests/test_fragment_imports.py`, and the same rebuild -
+and what a clicked face is handed on AS, since no card takes one: its element, the point clicked on it and the
+direction it faces are all things cards take today; Revit's own reference to the face is not.
+
+**Why the first.** The card stays plain Revit code that the compile gate can read on every release; the wait is
+decided in one place by the add-in, where the Keep or Discard box's wait already is; and a card cannot lengthen
+its own wait without its contract saying so, where a reviewer sees it.
+
+**And what "put it here" means.** The card first declared that sentence, and a review took it off: it moved the
+sentence away from the cards that place and show, and the chat was then offered no placement card at all. Should
+"put it here" mean *click, then place* - a job of two steps, which is a skill's to claim rather than one card's -
+or stay with the placement cards, the point typed or clicked as a step the chat chooses?
+
+**Ajmal PS decides.** Until he does, nothing in the add-in is changed, and `PICK_ON_SCREEN` stays DRAFT behind
+the limit: one point a call, and "put it here" declared by no card.
 
 ---
