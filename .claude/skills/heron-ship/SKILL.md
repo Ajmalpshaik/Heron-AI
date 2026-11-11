@@ -502,7 +502,7 @@ Not failures. They need a tool, and the error says which.
 |---|---|---|
 | `check-routing.py`, `check-intrusion.py` | a knowledge store | `COULD NOT RUN: no HERON_DATA, no Windows profile and no HERON_KNOWLEDGE`, exit 2 - or, from a worktree or a branch, `NOT RUN: the knowledge store at ... is the SHARED one` (§1) |
 | `check-fragments-compile.py`, `check-api-surface.py` | **`dotnet`** | ``NOT RUN - there is no `dotnet` on PATH``, exit 3 |
-| `check-compile.py` | **`dotnet`** | `FAIL  no .NET SDK on this machine (... 'dotnet')`, **exit 1** - the one of the three that still reads like a failure; it is not your change |
+| `check-compile.py` | **`dotnet`** | `NOT RUN - no .NET SDK on this machine (... 'dotnet')`, exit 3 - it printed `FAIL` and exited **1** until 2026-11-11 ([row 5b-1183](../../../docs/FRAGMENT-ISSUES.md)); an exit 1 from it now means a project does not compile, or a `.csproj` on disk that nothing builds |
 | `check-decision-titles.py` | the **whole git history** | `NOT RUN - this clone's history is cut short (shallow)` |
 | `batch-prove.py` | **a real Revit**, and the owner | — |
 

@@ -1435,6 +1435,59 @@ def risk_refusal(root, name, switched=False):
                                                       name))
 
 
+RELEASE_YEAR = re.compile(r"\b(20[0-9]{2})\b")
+
+
+def fragment_releases(path):
+    """The Revit releases a card's `revit:` line lists, or None if it cannot be read.
+
+    Read the same hand-rolled way as `risk:`, and for the same reason: this
+    client is stdlib only. Every card writes the list on one unindented line -
+    `revit: ["2023", "2024"]` - and a card that writes it another way reads as
+    None here, which refuses nothing.
+    """
+    try:
+        with io.open(path, "r", encoding="utf-8") as fh:
+            for line in fh:
+                if line.startswith("revit:"):
+                    return RELEASE_YEAR.findall(line.split(":", 1)[1]) or None
+    except (OSError, UnicodeDecodeError):
+        return None
+    return None
+
+
+def excluded_release_refusal(root, name, revit_version):
+    """The refusal for sending a fragment to a Revit its own card leaves out, or None.
+
+    ROW 5b-1403. A card's `revit:` list is the card saying where its code
+    compiles, and `validate` sent it anywhere: on 2026-11-02 two cards that
+    start at 2023 and 2025 went to Revit 2020 and each spent a compile to come
+    back `compile_failed`, which the card had already said. Asked before a
+    fragment is sent, by `validate` and by `tools/batch-prove.py` - one rule,
+    called, never copied.
+
+    THE WORDS SAY "NO FRAGMENT WAS SENT", NOT "NOTHING WAS SENT". To know the
+    release at all, both callers have been through `discover`, which pings
+    every Revit in the address book - a ping the bridge answers itself, with
+    no lease, reading nothing from a model. So a Revit WAS asked one thing,
+    and the refusal says what was not done instead of denying that.
+
+    None when the connected release or the card's list cannot be read: this
+    saves a wasted run, it is not a safety gate, and Revit's own compile still
+    answers for a card nobody could read.
+    """
+    connected = str(revit_version or "").strip()
+    releases = fragment_releases(os.path.join(root, "brain", "fragments", name,
+                                              "fragment.yaml"))
+    if not connected or not releases or connected in releases:
+        return None
+    return ("%s does not claim Revit %s, the release connected - its `revit:` is "
+            "%s. No fragment was sent to Revit, and nothing in a model was read "
+            "or changed - Revit was asked only whether it is there. Connect one "
+            "of those releases, or pin one with --session."
+            % (name, connected, ", ".join(releases)))
+
+
 def write_operation(root, name):
     """The add-in operation that runs this fragment as a CHANGE, or None.
 
@@ -1642,6 +1695,16 @@ def unproven_refusal(what, found):
                 "was sent to Revit. It is proved first on a test model, with a "
                 "negative case, and then it can be asked for again - %s.%s"
                 % (what, said, proving, once))
+
+    if found.get("stale") and found.get("proof") is False:
+        # Row 5b-1154: the card says PROVEN and records no proof. Refused as
+        # stale is - and in its own words, because "its code has changed
+        # since" would be untrue of a card that was never proved.
+        return ("%s says %s, but its card records no proof at all, so nothing "
+                "stands behind its code (D-30) and Heron will not let it change a "
+                "live model (Constitution Article 11). Nothing was sent to Revit. "
+                "It is proved first on a test model, with a negative case, and "
+                "then it can be asked for again." % (what, status))
 
     if found.get("stale"):
         when = " on %s" % found["date"] if found.get("date") else ""
@@ -2770,6 +2833,14 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
     for other in live[1:]:
         other.close()
 
+    # A RELEASE THE CARD LEAVES OUT IS REFUSED HERE, before `count_elements`
+    # claims the Revit and before a compile is spent - row 5b-1403.
+    refusal = excluded_release_refusal(root, name, bridge.revit_version)
+    if refusal:
+        bridge.close()
+        print(refusal)
+        return 2
+
     opening = bridge.request("count_elements")
     if opening is None or not opening.get("ok"):
         # SAY WHAT REVIT ACTUALLY SAID. This used to print only the sentence
@@ -3492,7 +3563,32 @@ def cmd_doctor():
     return 0
 
 
+def utf8_output(streams=None):
+    """This command line's output as UTF-8, a character it cannot hold replaced.
+
+    ROW 5b-1487. A label out of the model - the Greek delta of a pressure
+    drop - is printed as it came, and on the owner's laptop `print` encoded it
+    in cp1252, which has no such character. `try-once` died in `print_items`
+    with UnicodeEncodeError AFTER the modeller had pressed Keep and the record
+    was written: a traceback where "Recorded ..." belonged. UTF-8 is what
+    stops the crash, and what `tools/batch-prove.py` decodes this command's
+    output as; `errors="replace"` is for the lone surrogate UTF-8 cannot hold.
+    A stream that cannot be reconfigured - a test's StringIO - is left as it
+    is.
+
+    Called by `main`, never at import: the MCP server imports this module, and
+    its stdout is the protocol's, not this file's to change.
+    """
+    for stream in (sys.stdout, sys.stderr) if streams is None else streams:
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
+
+
 def main(argv):
+    utf8_output()
+
     # NO PLATFORM CHECK HERE. It used to be the first two lines, and it
     # answered "this needs Windows" to command lines that were wrong on every
     # platform - see refuse_off_windows, and FRAGMENT-ISSUES row 160. Each
@@ -3611,13 +3707,17 @@ def main(argv):
         if rest is None:
             return 2
         rest, session = pull_session(rest)
+        # `--in "Doc"` WHEREVER IT STANDS, as `--session` is read - row
+        # 5b-1487. It was read only in front of the fragment's name, so
+        # `try-once <fragment> --in "Doc"` printed the usage and sent nothing.
         in_document = None
-        if rest and rest[0] == "--in":
-            if len(rest) < 2:
+        if "--in" in rest:
+            at = rest.index("--in")
+            if at + 1 >= len(rest):
                 print("--in needs the title of an open document after it")
                 return 2
-            in_document = rest[1]
-            rest = rest[2:]
+            in_document = rest[at + 1]
+            rest = rest[:at] + rest[at + 2:]
         if len(rest) != 1 or rest[0].startswith("--"):
             print("Which DRAFT fragment? e.g. try-once rename-views-by-level")
             print("  --in \"Doc\"         name the model - it must still be the one in front")

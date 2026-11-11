@@ -55,7 +55,10 @@ WHAT IS PROVED
      balance-of-work.py read the same proposals from it, through the reader;
  13. OPEN-QUESTIONS.md splits the same way, one file per tier, and
      owner-queue.py and check-docs.py - its questions and its Progress line
-     - read the same questions from it, through the reader.
+     - read the same questions from it, through the reader;
+ 14. a row that links to a 5b row past 999 does not stop the split: row 1001
+     moves to a rows file named with four digits, the link follows it, and
+     the register still reads back as it was (row 5b-1169).
 """
 
 import contextlib
@@ -661,6 +664,73 @@ def run(work):
     print()
     print("13. OPEN-QUESTIONS.md splits the same way, and its readers count the same questions")
     questions_case(work)
+
+    print()
+    print("14. A link to a 5b row past 999 does not stop the split")
+    four_digit_case(work)
+
+
+def four_digit_case(work):
+    """Row 5b-1169. Rows 1001 to 1025 go to a file named with FOUR digits, and
+    the read-back comparison knew a rows file only by three - so once any row
+    of the register linked to a 5b row numbered 1000 or more, the split
+    refused: *"the new files, read back, differ from the register in more
+    than the rows file a link names"*. Measured on the real register,
+    2026-10-18. Every check below is written to FAIL on that code, not to
+    raise: a file the refused split never wrote is asked for before it is
+    read."""
+    root = make_root(work, register_text(), "thousand")
+    first = SPLIT.plan("fragment-issues", index_of(root), "2026-09-23", root)
+    if SPLIT.write(first) != SPLIT.OK:
+        check(False, "the small register splits before the four-digit row is written (%s)"
+              % (first.fatal or "; ".join(first.problems)))
+        return
+    folder = folder_of(root)
+    old, new = "section-5b-rows-001-025.md", "section-5b-rows-1001-1025.md"
+    last = os.path.join(folder, old)
+    put(last, read(last)
+        + "| **3** | **Three.** It names [row 5b-1001](%s). | OPEN - new. |" % old + NL
+        + "| **1001** | **One thousand and one.** Found 2026-10-18. | OPEN - new. |" + NL)
+    before = whole(root)
+
+    p = SPLIT.plan("fragment-issues", index_of(root), "2026-10-18", root)
+    check(p.fatal is None and not p.problems,
+          "a register whose row links to a four-digit row plans clean (%s)"
+          % (p.fatal or "; ".join(p.problems) or "no problem"))
+    check(p.banding == [(S5B, [old, new])],
+          "row 1001 is to move to the file its number belongs to (%s)" % p.banding)
+    check(SPLIT.write(p) == SPLIT.OK, "and the split is written, not refused")
+
+    moved_to = os.path.join(folder, new)
+    held = read(moved_to) if os.path.isfile(moved_to) else ""
+    check("| **1001** | **One thousand and one.**" in held,
+          "row 1001 is in %s" % new)
+    check("| **1001** |" not in read(last), "and gone from the file it was written in")
+    check("[row 5b-1001](%s)" % new in read(last),
+          "the link that names it follows it to the four-digit file")
+    check("[1001-1025](fragment-issues/%s)" % new in read(index_of(root)),
+          "and the page names the new file")
+    try:
+        after = whole(root)
+    except RT.RegisterBroken as why:
+        after = "broken: %s" % why
+    # Read as one text the link is written from the page, one folder up.
+    check(after == before.replace("[row 5b-1001](fragment-issues/%s)" % old,
+                                  "[row 5b-1001](fragment-issues/%s)" % new),
+          "the register reads back as it was, the one re-pointed link aside")
+    check(after.count("| **1001** | **One thousand and one.**") == 1, "and reads row 1001 once")
+    again = SPLIT.plan("fragment-issues", index_of(root), "2026-10-19", root)
+    check(again.fatal is None and not again.problems and not again.banding and not again.moving,
+          "a second run moves nothing (%s)" % (again.fatal or "; ".join(again.problems) or again.banding))
+
+    blind = getattr(SPLIT, "_band_blind", None)
+    check(blind is not None, "the split tool still has the comparison archive-fragment-issues.py asks")
+    if blind is not None:
+        config = SPLIT.REGISTERS["fragment-issues"]
+        check(blind("see (%s)" % new, config) == blind("see (%s)" % old, config),
+              "which reads a four-digit rows file as it reads a three-digit one")
+        check(blind("see (section-5b-rows-01-25.md)", config) != blind("see (%s)" % old, config),
+              "and still takes nothing shorter than three digits for a rows file")
 
 
 RED, YELLOW, DONE = chr(0x1F534), chr(0x1F7E1), chr(0x2705)

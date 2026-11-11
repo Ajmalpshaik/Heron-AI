@@ -674,6 +674,70 @@ PICTURE_REPLY = {"ok": True, "mode": "view", "view": "Level 1", "viewType": "Flo
                  "projectKey": "key-1", "png": PNG_1PX}
 
 
+def exercise_no_proof_words(module):
+    """A card that SAYS proven and records no proof is told apart from a stale
+    one, in the three places the server reads `stale` - row 5b-1154.
+
+    `proof_status` reads such a card as stale, with `proof: False`, and all
+    three already refuse or warn on stale - in words that say "its code has
+    changed since", which is untrue of a card that was never proved. Nothing
+    is sent anywhere here: each is asked for its sentence, with the status of
+    a real PROVEN read stood in for.
+    """
+    print()
+    print("  a PROVEN card with no proof recorded is said as that, not as stale "
+          "(row 5b-1154)")
+    capability, folder = first_with("READ", "PROVEN")
+    check(bool(capability and folder), "the library has a PROVEN read to ask about")
+    if not (capability and folder):
+        return
+    provider = None
+    with io.open(os.path.join(ROOT, "brain", "fragments", folder, "fragment.yaml"),
+                 encoding="utf-8", errors="replace") as fh:
+        for line in fh:
+            if line.startswith("id:"):
+                provider = line.split(":", 1)[1].strip().strip("\"'")
+                break
+
+    def bare(found):
+        return dict(found or {}, stale=True, proof=False, date=None, model=None, by=None)
+
+    def moved(found):
+        return dict(found or {}, stale=True)
+
+    real_status, real_of = module.brain.proof_status, module.bridge.proof_of
+    said = {}
+    try:
+        for name, made in (("bare", bare), ("moved", moved)):
+            module.brain.proof_status = lambda f, made=made: made(real_status(f))
+            module.bridge.proof_of = lambda f, made=made: made(real_of(f))
+            ask, _first = module._checklist_ask()
+            said[name] = (module._runs_as_matched(folder, provider, capability),
+                          module._proof_line(capability, folder),
+                          (ask({"capability": capability}) or {}))
+    finally:
+        module.brain.proof_status, module.bridge.proof_of = real_status, real_of
+
+    for where, at in (("the words path", 0), ("the line under an answer", 1)):
+        text = said["bare"][at] or ""
+        check("no proof at all" in text.lower() and "D-30" in text,
+              "%s says its card records no proof at all, under D-30" % where)
+        check("changed since" not in text.lower(),
+              "%s does not say its code changed since a proof it never had" % where)
+    qa = said["bare"][2]
+    check(qa.get("ran") is False and "no proof at all" in (qa.get("why") or "")
+          and "changed since" not in (qa.get("why") or ""),
+          "a QA check on it is not run, and says no proof is recorded: %s"
+          % (qa.get("why") or qa))
+    check("not run unasked" in (said["bare"][0] or ""),
+          "and the words path still does not run it unasked")
+    check("Treat this answer as unproven" in (said["bare"][1] or ""),
+          "and the line under an answer still says to treat it as unproven")
+    check(all("changed since" in (said["moved"][at] or "").lower() for at in (0, 1))
+          and "changed since" in (said["moved"][2].get("why") or ""),
+          "a proof the code DID move under is still said as that, in all three")
+
+
 def cards():
     """Each fragment's folder name with its capability, risk and heron-status."""
     folder = os.path.join(ROOT, "brain", "fragments")
@@ -2697,6 +2761,7 @@ def main():
 
         asyncio.run(exercise(server))
         exercise_waiting(server_module)
+        exercise_no_proof_words(server_module)
         asyncio.run(exercise_door(server_module))
         asyncio.run(exercise_show(server_module))
         asyncio.run(exercise_words(server_module))

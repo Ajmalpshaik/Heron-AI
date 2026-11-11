@@ -369,6 +369,14 @@ WindowsDesktop MSBuild targets, because the add-in uses WPF for its ribbon icons
 those targets** rather than for an operating system, and when they are missing it skips the affected
 releases and names the package to install. A skip is still never reported as a pass.
 
+**With no .NET SDK at all it says `NOT RUN` and exits 3**, as `check-fragments-compile.py` and
+`check-api-surface.py` do - it printed `FAIL  no .NET SDK on this machine` and exited 1 until 2026-11-11,
+the code a project that does not compile uses ([row 5b-1183](../docs/FRAGMENT-ISSUES.md)). Exit 1 is
+now a project that does not compile, or a `.csproj` on disk that nothing here builds; exit 2 a release
+Heron does not know. CI's compile job fails on any non-zero code, so a 3 on that runner is still a red
+build, and `change-evidence.py` records a 3 as NOT RUN.
+[`tests/test_check_api_surface.py`](../tests/test_check_api_surface.py) holds it, by hiding `dotnet`.
+
 A pass means the API surface agrees; it is **not** evidence that anything behaves correctly.
 
 ---
@@ -1084,6 +1092,22 @@ the rest are `ALREADY` or `NOT PROVEN`. Its run record and draft are `<slug>@<ye
 another Revit is `WRONG RELEASE` and exits 1, and the drafts are signed with `heron_validate.py accept
 --release`, which adds one entry and leaves `proof:` and `heron-status` as they were.
 [`tests/test_release_proofs.py`](../tests/test_release_proofs.py) holds it.
+
+**A card is not sent to a Revit its own `revit:` list leaves out**
+([row 5b-1403](../docs/FRAGMENT-ISSUES.md)). On 2026-11-02 two cards that start at 2023 and 2025 were
+sent to Revit 2020, the dry run having said `WOULD RUN`, and each spent a compile to come back
+`compile_failed`. Before the first job that is otherwise runnable, the batch now asks the client which
+Revit is connected - a ping, which claims no Revit; with two connected, the one `--session` names - and
+a card that leaves that release out is `REFUSED`, dry run or real, naming the card's releases and the
+connected one. The rule is the client's `excluded_release_refusal`, which `validate` asks of the Revit
+it binds before it sends a fragment, so a dry run with no Revit answering says nothing about releases
+and the run still sends no fragment. **A dry run therefore pings Revit, and says so**: it printed
+*"nothing will be sent to Revit"* until the same day, which the ping made untrue. Its `mode:` line now
+says no fragment is run and nothing in a model is read or changed, and that a connected Revit is asked
+only whether it is there; its closing line says which happened - a dry run with no runnable job asks
+nothing and still says *"Nothing was sent to Revit"*. **The logic is held by
+[`tests/test_batch_prove.py`](../tests/test_batch_prove.py) on a stand-in Revit; the run against a real
+one is still owed** - NEEDS REAL REVIT, [Group NI](../docs/needs-checking/group-ni.md), NI1 to NI4.
 
 **Hole 2 — it passed fragments that had done nothing.** `heron_validate` judges whether the NEGATIVE
 came back empty, which is [D-30](../docs/DECISIONS.md)'s leg and which a fragment that does nothing
@@ -2367,6 +2391,14 @@ before it is cut, so the read-back compares the files with that text byte for by
 as it stood with every rows file's name left out. Every other `.md`, `.yaml`, `.yml` and `.py` git tracks is
 re-pointed as its own pass, written after the register. A link in fenced code or an inline code span, and one naming
 two rows, is left as written. The report says how many links follow and in which documents.
+
+**A rows file past row 999 has four digits in its name, and the read-back knows it** - since 2026-11-11,
+[row 5b-1169](../docs/FRAGMENT-ISSUES.md). Rows 1001 to 1025 go to `section-5b-rows-1001-1025.md`, and the
+comparison that leaves every rows file's name out took exactly three digits, so once any row linked to a 5b row
+numbered 1000 or more the split refused - *"differ from the register in more than the rows file a link names"* -
+and so, by the same function, would `archive-fragment-issues.py`. It takes three or more now. The real register
+was not split in that change ([row 5b-1181](../docs/FRAGMENT-ISSUES.md) is its own, run when no other branch is
+adding rows).
 
 **PROPOSALS.md is split the same way** - `python tools/split-register.py proposals` - every section to its own file in
 [`docs/proposals/`](../docs/proposals/part-a.md), named from its opening words: `## F23 — ...` is `f23.md`, and a

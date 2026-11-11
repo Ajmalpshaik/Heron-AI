@@ -443,6 +443,44 @@ def main():
         shutil.rmtree(base_g, ignore_errors=True)
 
     print()
+    print("A card that claims a proof and records none is STALE, not fresh (row 5b-1154)")
+    # `proof_is_stale` answered False whenever there was no proof at all, under
+    # a docstring saying unknown counts as stale - so a card edited to PROVEN
+    # with no `proof:` block read as fresh to D-117's gate at run time. A
+    # proof that is not a mapping RAISED on that code; here that is one clean
+    # failure, never a traceback (heron-ship 2a).
+    def stale_of(**over):
+        base, folder = scratch(well_formed(**over))
+        try:
+            return F.load(folder).proof_is_stale()
+        except AttributeError as why:
+            return "raised %s" % type(why).__name__
+        finally:
+            shutil.rmtree(base, ignore_errors=True)
+
+    for status in ("PROVEN", "PRODUCTION"):
+        for said, over in (("no proof at all", {}), ("an empty proof", {"proof": {}}),
+                           ("a proof that is not a mapping", {"proof": "it worked"})):
+            got = stale_of(**dict(over, **{"heron-status": status}))
+            check(got is True, "%s with %s is stale (%r)" % (status, said, got))
+    for status in ("DRAFT", "VALIDATED"):
+        got = stale_of(**{"heron-status": status})
+        check(got is False,
+              "%s with no proof is not stale - it claims none, so none can have "
+              "gone stale (%r)" % (status, got))
+    base_h, folder_h = scratch(well_formed(**{"heron-status": "PROVEN", "proof": "it worked"}))
+    try:
+        try:
+            broken = F.validate(F.load(folder_h))
+        except AttributeError as why:
+            broken = ["validate raised %s" % type(why).__name__]
+        check(any("must be a mapping" in p for p in broken),
+              "and validate says a proof that is not a mapping is not one, where it "
+              "raised: %s" % broken[0][:60])
+    finally:
+        shutil.rmtree(base_h, ignore_errors=True)
+
+    print()
     print("Names follow the standard, and the checker says so")
     for bad_id, why in [("select-elements-by-category", "a name, not an id"),
                         ("FRG-filter-001", "a lower-case kind in it"),

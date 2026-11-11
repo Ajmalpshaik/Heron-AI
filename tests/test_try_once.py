@@ -36,6 +36,9 @@ WHAT IT PROVES
   6. THE BRAIN READS THE SAME HASH, and `draft` and `accept` refuse a kept
      phase that cannot stand.
   7. THE AUTHOR AGENT SAYS THE NEW RULE, on both hosts' copies.
+  8. `try-once` PRINTS WHAT REVIT SENT BACK WHATEVER THE OUTPUT'S CODE PAGE -
+     a label cp1252 cannot encode no longer ends a kept run in a traceback -
+     and reads `--in` wherever it stands (row 5b-1487).
 
 WHAT IT CANNOT SAY
 ------------------
@@ -591,6 +594,91 @@ def test_the_author():
               "%s: still never through revit_change" % host)
 
 
+@contextlib.contextmanager
+def cp1252_output():
+    """stdout as Windows hands it to a pipe or a file: cp1252, and strict.
+
+    Yields a list that holds the bytes written, once the block is left. Row
+    5b-1487 was this stream meeting a character cp1252 has not got.
+    """
+    raw, written = io.BytesIO(), []
+    saved = sys.stdout
+    stream = io.TextIOWrapper(raw, encoding="cp1252", errors="strict",
+                              write_through=True)
+    sys.stdout = stream
+    try:
+        yield written
+    finally:
+        sys.stdout = saved
+        written.append(raw.getvalue())
+        stream.detach()         # so dropping the wrapper does not close `raw`
+
+
+def test_the_output(draft, workspace):
+    print("\n8. What Revit sends back is printed whatever the output's code page (5b-1487)")
+    # ASK BEFORE CALLING - heron-ship 2a. The name is not there on the code as
+    # it stood, and the run below must still RUN and FAIL without it.
+    check(getattr(CLIENT, "utf8_output", None) is not None,
+          "the client has a way to make its own output UTF-8")
+    check(draft is not None, "the library has a DRAFT fragment at risk MODIFY to try")
+    if draft is None:
+        return
+
+    # THE ROW'S CHARACTER: the Greek capital delta of a pressure-drop label,
+    # which cp1252 cannot encode. Written as an escape so this suite's own
+    # source and output stay printable anywhere.
+    label = u"ΔP 12 Pa - Supply Air"
+
+    def delta_reply(op, args):
+        reply = kept_reply(op, args)
+        reply["provides"] = {"labels": u"1 item(s) [%s]" % label}
+        reply["providesItems"] = {"labels": {"1": label}}
+        return reply
+
+    once = os.path.join(workspace, "once-delta.json")
+    bridge = FakeBridge(delta_reply)
+    code, died = None, None
+    with no_revit(bridge, once), cp1252_output() as written:
+        try:
+            code = CLIENT.main(["heron_bridge_client.py", "try-once", draft])
+        except UnicodeEncodeError as why:
+            died = why
+    printed = written[0]
+
+    check(died is None,
+          "try-once does not die printing a label cp1252 cannot encode (%s)"
+          % (type(died).__name__ if died else "it did not"))
+    check(code == 0, "the kept run exits 0 (got %r)" % code)
+    check(label.encode("utf-8") in printed,
+          "the label arrives whole, as UTF-8 - what batch-prove decodes")
+    check(b"Recorded " in printed,
+          "and the run ends on its Recorded line, where the traceback was")
+    record = {}
+    if os.path.isfile(once):
+        with io.open(once, encoding="utf-8") as fh:
+            record = json.load(fh)
+    check(record.get("kept") is True
+          and (record.get("phase") or {}).get("providesItems") == {"labels": {"1": label}},
+          "the record, written before the printing, holds the kept run and the label")
+
+    print("\n   ...and --in is read wherever it stands")
+    for tokens, where in (((draft, "--in", "Scratch model"), "after the fragment's name"),
+                          (("--in", "Scratch model", draft), "before it, as it always was"),
+                          ((draft, "--in", "Scratch model", "--session", "4242"),
+                           "between the name and --session")):
+        code, captured, _ = parse_try_once(*tokens)
+        check(code == 0 and captured.get("name") == draft
+              and captured.get("in_document") == "Scratch model",
+              "--in %s reaches try-once as the document (%r, %r)"
+              % (where, code, captured.get("in_document")))
+    code, captured, out = parse_try_once(draft, "--in")
+    check(code == 2 and not captured and "--in needs" in out,
+          "--in with nothing after it is refused in its own words, nothing sent")
+    code, captured, _ = parse_try_once(draft, "stray-word", "--in", "Scratch model")
+    check(code == 2 and not captured,
+          "and a second bare word is still refused - --in takes one title, no more")
+
+
 def main():
     workspace = tempfile.mkdtemp(prefix="heron-try-once-work-")
     once_path = os.path.join(workspace, "once.json")
@@ -603,6 +691,7 @@ def main():
         test_validate_kept(draft, once_path, workspace)
         test_the_brain(workspace)
         test_the_author()
+        test_the_output(draft, workspace)
     finally:
         shutil.rmtree(workspace, ignore_errors=True)
         shutil.rmtree(_SCRATCH, ignore_errors=True)

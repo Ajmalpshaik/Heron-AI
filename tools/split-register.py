@@ -459,9 +459,17 @@ def relink(text, where, folder, moved, said, done):
 
 
 def _band_blind(text, config):
-    """TEXT with the name of every rows file a link may name written alike."""
+    """TEXT with the name of every rows file a link may name written alike.
+
+    THREE DIGITS OR MORE on each side - row 5b-1169. `band_name` pads a row
+    number to three digits, so rows 1001 to 1025 go to a file named with four,
+    and this took exactly three: a link re-pointed at a four-digit file was
+    left as it was, the read-back differed from the register "in more than the
+    rows file a link names", and nothing could be split once any row linked to
+    a 5b row past 999. `archive-fragment-issues.py` asks this function too.
+    """
     for _, stem in config.get("named", ()):
-        text = re.sub(re.escape(stem) + "-[0-9]{3}-[0-9]{3}[.]md", stem + "-NNN-NNN.md", text)
+        text = re.sub(re.escape(stem) + "-[0-9]{3,}-[0-9]{3,}[.]md", stem + "-NNN-NNN.md", text)
     return text
 
 

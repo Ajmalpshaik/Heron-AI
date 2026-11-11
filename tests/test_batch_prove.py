@@ -67,6 +67,15 @@ except ImportError:                                          # pragma: no cover
 
 BP = _load(os.path.join(ROOT, "tools", "batch-prove.py"), "batch_prove")
 
+# NO CASE HERE ASKS THE REVIT ON THIS PC WHICH RELEASE IT IS. Since row
+# 5b-1403 `main` asks the client which Revit is connected before the first
+# runnable job - a ping - and a suite must never reach the Revit running on
+# this PC (row 5b-461). So for every case the answer is "none known"; the
+# case that tests the rule gives its own stand-in, and tests the real
+# function, kept here, against a list.
+REAL_CONNECTED_RELEASE = getattr(BP, "connected_release", None)
+BP.connected_release = lambda session=None: None
+
 FAILURES = []
 
 
@@ -1161,6 +1170,245 @@ def test_every_marker_is_still_what_its_source_prints():
         check(marker in sentence, "the test's own copy carries %r" % marker)
 
 
+class StandInRevit(object):
+    """A connected Revit that runs nothing and writes down what it was asked."""
+
+    pid = 4242
+
+    def __init__(self, revit_version):
+        self.revit_version = revit_version
+        self.sent = []
+        self.closed = False
+
+    def request(self, op, **kwargs):
+        self.sent.append(op)
+        return {"ok": False, "message": "a stand-in Revit - nothing runs here"}
+
+    def release(self):
+        pass
+
+    def close(self):
+        self.closed = True
+
+
+def test_a_card_is_not_sent_to_a_release_it_leaves_out():
+    print("A card is not sent to a Revit release its own `revit:` list leaves out")
+    # Row 5b-1403. `report-analytical-model` (2023 on) and `attach-walls` (2025
+    # on) were sent to Revit 2020: the dry run said WOULD RUN, and each spent a
+    # compile to come back `compile_failed`, which the card had already said.
+    import contextlib
+    import heron_bridge_client as CLIENT
+
+    # ASK BEFORE CALLING - heron-ship 2a. None of these names exists on the
+    # code as it stood, and a traceback would replace every failure below.
+    releases = getattr(CLIENT, "fragment_releases", None)
+    rule = getattr(CLIENT, "excluded_release_refusal", None)
+    batch_rule = getattr(BP, "connected_refusal", None)
+    check(releases is not None, "the client reads a card's `revit:` list")
+    check(rule is not None, "the client has a refusal for a release the card leaves out")
+    check(batch_rule is not None, "the runner asks it before a job is sent")
+    check(REAL_CONNECTED_RELEASE is not None, "the runner asks which Revit is connected")
+    if releases is None:
+        releases = lambda path: None                       # noqa: E731
+    if rule is None:
+        rule = lambda root, name, revit_version: None      # noqa: E731
+    if batch_rule is None:
+        batch_rule = lambda frag, connected: (None, None)  # noqa: E731
+
+    late = FakeFragment("late-sample", [{"name": "found", "role": "result"}])
+    card = os.path.join(late.folder, "fragment.yaml")
+    with io.open(card, "a", encoding="utf-8") as fh:
+        fh.write(u'revit: ["2023", "2024", "2025"]\n')
+    silent = FakeFragment("silent-sample", [{"name": "found", "role": "result"}])
+
+    check(releases(card) == ["2023", "2024", "2025"],
+          "the list is read off the card: %r" % (releases(card),))
+    check(releases(os.path.join(silent.folder, "fragment.yaml")) is None,
+          "a card with no `revit:` line reads as None, not as an empty list")
+
+    said = rule(CARDS, "late-sample", "2020") or ""
+    check(said != "", "Revit 2020 is refused for a card that starts at 2023")
+    check("late-sample" in said and "2020" in said,
+          "the refusal names the card and the connected release: %r" % said[:90])
+    check("2023, 2024, 2025" in said, "and the card's own releases")
+    # THE WORDS ARE EXACT. To know the release, both callers have pinged the
+    # Revits in the address book - so "Nothing was sent to Revit", which this
+    # refusal said at first, was untrue of the run that printed it. It says
+    # what was NOT done, and the one thing that was asked.
+    check("No fragment was sent to Revit" in said
+          and "nothing in a model was read or changed" in said,
+          "and says no fragment was sent and nothing in a model was read or changed")
+    check("Nothing was sent to Revit" not in said and "asked only whether it is there" in said,
+          "without claiming nothing was sent - Revit was asked whether it is there")
+    check(not [m for m in tuple(BP.HELD_ELSEWHERE) + tuple(BP.REVIT_BUSY) if m in said],
+          "and --unattended does not read it as a reason to ask again")
+    check(rule(CARDS, "late-sample", "2024") is None,
+          "a release the card lists is not refused")
+    check(rule(CARDS, "late-sample", None) is None
+          and rule(CARDS, "late-sample", "") is None,
+          "no Revit to name is not a refusal - nothing is guessed")
+    check(rule(CARDS, "silent-sample", "2020") is None,
+          "a card whose list cannot be read is not refused on a guess")
+
+    verdict, why = batch_rule(late, "2020")
+    check(verdict == BP.REFUSED and "2023, 2024, 2025" in (why or ""),
+          "the runner's verdict is REFUSED, with the client's words (%s)" % verdict)
+    check(batch_rule(late, "2025") == (None, None), "and nothing for a release it lists")
+    check(batch_rule(late, None) == (None, None), "and nothing when no Revit is known")
+
+    # WHICH REVIT - the real function, on a list in place of the address book.
+    # One Revit is the answer; two are a question unless --session names one;
+    # none, or an address book that cannot be read, is "not known".
+    if REAL_CONNECTED_RELEASE is not None:
+        old, new = StandInRevit("2020"), StandInRevit("2025")
+        new.pid = 5151
+        real_discover = BP.BRIDGE.discover
+        try:
+            for live, session, want, what in (
+                    ([old], None, "2020", "one Revit connected is the one"),
+                    ([old, new], None, None, "two and no --session is not known"),
+                    ([old, new], "5151", "2025", "two and --session is the one named"),
+                    ([old], "9999", None, "a --session that is not connected is not known"),
+                    ([], None, None, "no Revit connected is not known")):
+                for one in (old, new):
+                    one.sent, one.closed = [], False
+                BP.BRIDGE.discover = lambda prune=True, live=live: (list(live), [], [], [])
+                got = REAL_CONNECTED_RELEASE(session)
+                check(got == want, "%s (%r)" % (what, got))
+                check(all(one.closed for one in live) and not any(one.sent for one in live),
+                      "  every bridge it opened is closed, and nothing was asked of one")
+
+            def broken(prune=True):
+                raise OSError("the address book could not be read")
+            BP.BRIDGE.discover = broken
+            check(REAL_CONNECTED_RELEASE(None) is None,
+                  "an address book that cannot be read costs the answer, not the batch")
+        finally:
+            BP.BRIDGE.discover = real_discover
+
+    # THE BATCH ITSELF: the dry run no longer says WOULD RUN, the real run
+    # hands nothing to `validate`, and a job the connected Revit can take is
+    # still runnable. The Revit is a stand-in - nothing here reaches a pipe.
+    sent, asked = [], []
+    real = (BP.run_one, BP.HF.load_all, BP.free_models, BP.connected_release)
+    workspace = tempfile.mkdtemp(prefix="heron-batch-")
+    try:
+        job_file = os.path.join(workspace, "release.yaml")
+        with io.open(job_file, "w", encoding="utf-8") as fh:
+            fh.write(u"defaults:\n  set: {a: 1}\n  negative-set: {a: 2}\n"
+                     u"jobs:\n  - fragment: late-sample\n  - fragment: silent-sample\n")
+        BP.HF.load_all = lambda *a, **k: ({"x": late, "y": silent}, [])
+        BP.run_one = lambda job, *a, **k: sent.append(job["fragment"]) or (
+            None, BP.DID_NOT_RUN, "")
+        BP.free_models = lambda conversation, session=None: None
+        BP.connected_release = lambda session=None: asked.append(session) or "2020"
+        for flags in (["--dry-run"], []):
+            sent[:], asked[:] = [], []
+            report = os.path.join(workspace, "findings.json")
+            printed = io.StringIO()
+            with contextlib.redirect_stdout(printed):
+                code = BP.main([job_file, "--report", report, "--session", "4242"]
+                               + flags)
+            findings = json.loads(io.open(report, encoding="utf-8").read())
+            label = "dry run" if flags else "real run"
+            if flags:
+                # WHAT THE DRY RUN SAYS OF ITSELF. It printed "nothing will be
+                # sent to Revit" and "Nothing was sent to Revit" while pinging
+                # every Revit in the address book: the words are held to what
+                # the run does.
+                said_of_itself = " ".join(printed.getvalue().lower().split())
+                check("nothing will be sent to revit" not in said_of_itself
+                      and "dry run. nothing was sent to revit" not in said_of_itself,
+                      "a dry run that asked which Revit is connected does not say "
+                      "nothing was sent")
+                check("no fragment is run" in said_of_itself
+                      and "nothing in a model is read or changed" in said_of_itself,
+                      "its mode line says what is not done: no fragment run, nothing "
+                      "in a model read or changed")
+                check("ping" in said_of_itself and "whether it is there" in said_of_itself,
+                      "and what is asked of Revit: whether it is there, a ping")
+                check("no fragment was run" in said_of_itself
+                      and "was asked one thing, once: whether it is there" in said_of_itself,
+                      "and its closing line says the same of what it did")
+            verdicts = [r["verdict"] for r in findings["results"]]
+            check(verdicts[:1] == [BP.REFUSED],
+                  "the %s reports REFUSED for the card that leaves 2020 out (%s)"
+                  % (label, verdicts[:1]))
+            check("2020" in (findings["results"][0]["why"] or ""),
+                  "the %s names the connected release" % label)
+            check(verdicts[1:] == [BP.WOULD_RUN if flags else BP.DID_NOT_RUN],
+                  "the %s still takes the job the connected Revit can run (%s)"
+                  % (label, verdicts[1:]))
+            check(code == 1, "the %s exits 1 - the job file cannot run as written (%s)"
+                  % (label, code))
+            check("late-sample" not in sent,
+                  "the %s never hands the refused card to `validate`" % label)
+            check(asked == ["4242"],
+                  "the %s asks which Revit is connected once, for the pinned session: %s"
+                  % (label, asked))
+
+        # A DRY RUN WITH NOTHING RUNNABLE ASKS NOTHING, AND MAY SAY SO. Only
+        # finished work in the file: no job gets as far as the question, so
+        # "Nothing was sent to Revit" is true of this run and is still said.
+        done = FakeFragment("done-sample", [], status="PROVEN")
+        BP.HF.load_all = lambda *a, **k: ({"z": done}, [])
+        with io.open(job_file, "w", encoding="utf-8") as fh:
+            fh.write(u"defaults:\n  set: {a: 1}\n  negative-set: {a: 2}\n"
+                     u"jobs:\n  - fragment: done-sample\n")
+        asked[:] = []
+        printed = io.StringIO()
+        with contextlib.redirect_stdout(printed):
+            BP.main([job_file, "--dry-run"])
+        check(asked == [], "a dry run with no runnable job asks no Revit anything: %s" % asked)
+        check("Dry run. Nothing was sent to Revit" in printed.getvalue()
+              and "was asked one thing" not in printed.getvalue(),
+              "and its closing line says nothing was sent - true of that run")
+    finally:
+        BP.run_one, BP.HF.load_all, BP.free_models, BP.connected_release = real
+
+    # AND `validate` ITSELF, which the batch runs and a person runs by hand:
+    # refused once the Revit is bound and before anything is asked of it. The
+    # card is the library's own - a DRAFT at READ that leaves a release out -
+    # derived, so it cannot go stale.
+    found, _ = HF.load_all()
+    span = set(year for frag in found.values() for year in frag.supported)
+    partial = sorted((frag for frag in found.values()
+                      if frag.status == "DRAFT" and frag.data.get("risk") == "READ"
+                      and frag.supported and span - set(frag.supported)),
+                     key=lambda frag: frag.slug)
+    check(len(partial) > 0,
+          "the library has a DRAFT read that leaves a release out (%d)" % len(partial))
+    saved = (CLIENT.refuse_off_windows, CLIENT.discover, CLIENT._prompt)
+    try:
+        CLIENT.refuse_off_windows = lambda: False
+        CLIENT._prompt = lambda: ""
+        for frag in partial[:1]:
+            left_out = sorted(span - set(frag.supported))[0]
+            for version, refused in ((left_out, True), (frag.supported[0], False)):
+                revit = StandInRevit(version)
+                CLIENT.discover = lambda prune=True, revit=revit: ([revit], [], [], [])
+                out = io.StringIO()
+                with contextlib.redirect_stdout(out):
+                    code = CLIENT.cmd_validate(
+                        frag.slug, out=os.path.join(workspace, "never-written.json"))
+                if not refused:
+                    check(revit.sent[:1] == ["count_elements"],
+                          "validate on Revit %s, which the card lists, goes on to "
+                          "Revit: %s" % (version, revit.sent[:1]))
+                    continue
+                check(revit.sent == [],
+                      "validate %s on Revit %s asks nothing of Revit: %s"
+                      % (frag.slug, version, revit.sent))
+                check(code == 2, "and exits 2, a refusal (%s)" % code)
+                check(version in out.getvalue()
+                      and ", ".join(frag.supported) in out.getvalue(),
+                      "naming the connected release and the card's own")
+                check(revit.closed, "and closes the bridge it opened")
+    finally:
+        CLIENT.refuse_off_windows, CLIENT.discover, CLIENT._prompt = saved
+        shutil.rmtree(workspace)
+
+
 def main():
     for test in (test_unreadable_is_not_evidence_of_work,
                  test_a_flag_that_flips_is_evidence_and_one_that_does_not_is_not,
@@ -1185,7 +1433,8 @@ def main():
                  test_the_closer_closes_revits_memory_warning_and_nothing_else,
                  test_the_log_has_one_line_per_fragment,
                  test_an_unattended_batch_logs_reports_and_hands_back_each_fragment,
-                 test_every_marker_is_still_what_its_source_prints):
+                 test_every_marker_is_still_what_its_source_prints,
+                 test_a_card_is_not_sent_to_a_release_it_leaves_out):
         test()
         print("")
 

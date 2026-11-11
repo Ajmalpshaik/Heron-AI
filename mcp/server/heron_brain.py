@@ -2768,8 +2768,9 @@ def proof_status(folder):
     """
     How far one fragment is proven, as data - or None when it cannot be read.
 
-        {"status": "PROVEN", "stale": False, "date": "2026-09-08",
-         "model": "Snowdon-scratch ... Revit 2024", "by": "Ajmal PS"}
+        {"status": "PROVEN", "stale": False, "proof": True,
+         "date": "2026-09-08", "model": "Snowdon-scratch ... Revit 2024",
+         "by": "Ajmal PS"}
 
     READ FROM THE FRAGMENT'S OWN FILES, never from the retrieval index, for
     the reason the server gives for every status it prints: a status is a
@@ -2777,6 +2778,14 @@ def proof_status(folder):
     before. `stale` is D-30's fingerprint - True when the implementation
     moved after the proof was taken, which makes the proof describe code that
     no longer runs.
+
+    A CARD THAT SAYS PROVEN AND RECORDS NO PROOF IS STALE, AND SAYS WHICH -
+    row 5b-1154. `stale` was `bool(proof) and ...`, so a card edited to
+    PROVEN with no `proof:` block read as fresh, and every caller that
+    refuses on `stale` - the D-117 gate above all - let it through. Nothing
+    recorded is nothing that can be shown to still hold (D-30). `proof` is
+    False for that card, so a caller can say "no proof is recorded" where
+    "its code has changed since" would be untrue.
 
     None rather than a guess. A caller told None says the status could not be
     read; it never says PROVEN.
@@ -2792,9 +2801,11 @@ def proof_status(folder):
         return None
 
     proof = frag.proof if isinstance(frag.proof, dict) else {}
+    status = str(frag.status or "").upper() or None
     return {
-        "status": str(frag.status or "").upper() or None,
-        "stale": bool(proof) and frag.proof_is_stale(),
+        "status": status,
+        "stale": frag.proof_is_stale() or (status in FRAGMENT.NEEDS_PROOF and not proof),
+        "proof": bool(proof),
         "date": str(proof.get("date") or "") or None,
         "model": str(proof.get("model") or "") or None,
         "by": str(proof.get("by") or "") or None,
