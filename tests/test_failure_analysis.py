@@ -219,6 +219,31 @@ def arrived_unusable():
     check(table is None or not set(table) & set(fa._KNOWN),
           "in a table of their own - _KNOWN stays the add-in's codes")
 
+    print()
+    print("  and discovery still does not list a pipe it could not read")
+    # `discover` asked "is not None" of a ping, and an unreadable reply WAS
+    # None. With a code of its own it would have counted as a live session.
+    could_read = getattr(bridge, "could_read", None)
+    check(could_read is not None, "the client has one question for 'did it answer?'")
+    if could_read is None:
+        def could_read(reply):
+            return reply is not None
+    check(not could_read(None), "nothing coming back is not an answer")
+    check(all(not could_read(make(1)) for make in made if make is not None) and len(made) == 2
+          and None not in made,
+          "nor is either of the client's own stand-ins for an answer it could not use")
+    check(could_read({"ok": True, "pong": True})
+          and could_read({"ok": False, "error": "unauthorized"}),
+          "an answer that was read IS one - a refusal included, as before")
+    source = io.open(os.path.join(ROOT, "mcp", "client", "heron_bridge_client.py"),
+                     encoding="utf-8").read()
+    listing = source[source.find("\ndef discover("):]
+    listing = listing[:listing.find("\ndef ", 1)]
+    check('if could_read(bridge.request("ping")):' in listing
+          and 'bridge.request("ping") is not None' not in listing,
+          "and discover asks it of the ping, so a pipe answering something unreadable "
+          "is not listed as a live Revit")
+
 
 def main():
     print("Success is not a failure")

@@ -349,6 +349,24 @@ def unreadable_reply(size):
                         "again would run it again." % size)}
 
 
+def could_read(reply):
+    """
+    True when `reply` is an answer Heron could read - anything `request`
+    parsed, a refusal included. False for None, and for the two answers this
+    client writes itself in place of one that arrived unusable.
+
+    FOR `discover`, WHICH ASKS "DID IT ANSWER?" OF A PING. An unreadable
+    reply used to be None there, so a pipe answering something that is not
+    Heron's was not listed as a live session. Now that such a reply has a
+    code of its own (5b-1167), "is not None" would have started listing it;
+    this keeps that question's answer exactly what it was.
+    """
+    if reply is None:
+        return False
+    return not (isinstance(reply, dict)
+                and reply.get("error") in ("reply_unreadable", "reply_too_large"))
+
+
 #: HOW OFTEN A CALLER WAITING ON REVIT IS TOLD THE WAIT GOES ON. A reply can
 #: be minutes away for a reason nobody can see from here - a slow fragment, a
 #: family build, a modeller answering a prompt in Revit - and a host told
@@ -831,7 +849,9 @@ def discover(prune=True):
                 mismatched.append(bridge)
             continue
 
-        if bridge.request("ping") is not None:
+        # `could_read`, not "is not None": an answer that arrived and could not
+        # be read is not a live session, as it was not before 5b-1167.
+        if could_read(bridge.request("ping")):
             live.append(bridge)
             continue
 
