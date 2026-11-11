@@ -419,6 +419,14 @@ all four -> Heron add-in (the gate reads the switches) -> Revit, the model
 The read and show doors also refuse code that writes to disk, and code that opens a transaction of its
 own (§8.9).
 
+**`revit_change` has a floor since 2026-11-11.** A fragment declared `READ` or `ANALYZE` is refused there
+before anything is sent, and the refusal names `revit_read`: until then it ran as a change - behind the
+Changes switch, in a transaction group, in front of the Keep box
+(`heron_tools.below_refusal`, [row 5b-1161](fragment-issues/section-5b-rows-401-425.md)). **`EXECUTE` and
+`SUGGEST` still run through it**, which the table's row does not show: a saved command above `ANALYZE` is
+run that way ([49 §2](49-saved-commands-and-the-heron-panel.md)), and the row stays open for them.
+Tested without Revit.
+
 **The tools in groups.** The groups are a reading aid. Every tool's level, and the complete list, is
 `python mcp/server/heron_tools.py`; the table names the main tools of each group, not all of them.
 

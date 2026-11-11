@@ -656,6 +656,55 @@ def door_refusal(door, declared, capability):
             % (capability, NAMES[level], door, NAMES[ceiling], within, instead))
 
 
+def below_refusal(door, declared, capability):
+    """
+    Why one fragment is BELOW what a writing door is for - or None when the
+    door may run it. The floor to `door_refusal`'s ceiling, read from the
+    same table and never typed a second time.
+
+    revit_change HAD A CEILING AND NO FLOOR (FRAGMENT-ISSUES 5b-1161). The
+    client's `risk_refusal` lets every runnable risk through and
+    `write_operation` sends each as `run_fragment_write`, so a capability
+    that only READS, asked for through revit_change, ran as a change: behind
+    the Changes switch, PROVEN or refused, inside a transaction group, and
+    Revit could ask Keep or Discard about a change that is not one. The read
+    door runs it with every switch off and no transaction open, so that is
+    where it is sent - `revit_read`'s own ceiling decides, whatever that
+    becomes.
+
+    A DOOR THAT DOES NOT WRITE HAS NO FLOOR. revit_show runs a READ as
+    harmlessly as revit_read does - no switch, no transaction - so only a
+    door declared MODIFY or above answers here.
+
+    EXECUTE AND SUGGEST ARE NOT REFUSED, AND THAT IS RECORDED RATHER THAN
+    DECIDED HERE. Row 5b-1161 asks for everything below MODIFY to be sent
+    away. Three things stand on revit_change running an EXECUTE today: a
+    saved command whose capability is above ANALYZE is run through
+    revit_change (docs/49 section 2, D-151) and the Heron panel has no show
+    door; D-125 item 1 defines how the WRITE path runs a `noTransactionOpen`
+    fragment such as OPEN_VIEW; and OPEN_FAMILY_FOR_EDITING, EXECUTE, is
+    refused by revit_show for writing to disk (row 5b-591), so sending it
+    there would be a refusal that names a door which refuses too. The row
+    stays open for them.
+
+    An unreadable risk answers None: it is `risk_refusal`'s to refuse, and
+    revit_change asks that first. Pure, so tests/test_read_door.py runs it
+    over every fragment in the library.
+    """
+    level = level_named(declared)
+    if level is None or not writes(door):
+        return None
+    reader = "revit_read"
+    if level > risk_of(reader):
+        return None
+    return ("'%s' is declared %s, which changes nothing in the model, and %s is for "
+            "changes: there it would run as one - behind the Changes switch, inside a "
+            "transaction group, where Revit can ask Keep or Discard about a change "
+            "that is not one. Nothing has been sent to Revit. %s runs it - with "
+            "Changes off, and no transaction open."
+            % (capability, NAMES[level], door, reader))
+
+
 # WHAT A FRAGMENT'S CODE WRITES TO DISK, read as code: comments and string
 # literals blanked first, so a header that names SaveAs is not a SaveAs.
 #
