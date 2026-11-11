@@ -320,7 +320,10 @@ purpose: >
       is placed on every
       release, a level-based one only from Revit 2024 - then
       LOCK_NESTED_FAMILY_TO_PLANES by its own Left, Right, Front, Back, Top,
-      Bottom or centres, then LINK_FAMILY_PARAMETER (family=, type=) for its type's sizes
+      Bottom or centres - a DETAIL ITEM nested in a plan, a diffuser's flow
+      arrows, too: it is locked in the plan it is drawn in, to planes seen
+      edge-on there (version 3, DRAFT until Group NB, row 5b-1492) -
+      then LINK_FAMILY_PARAMETER (family=, type=) for its type's sizes
       and LINK_FAMILY_PARAMETER for its instance's. A nested part that came in
       facing inward or upside down - its plane's normal points the wrong way -
       is FLIP_ELEMENTS with flipWorkPlane=true, never a rotation (row 5b-1335).
