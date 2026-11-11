@@ -2750,13 +2750,27 @@ def host_instructions():
     return text
 
 
+def retired_statuses():
+    """
+    The statuses a card leaves the library by - heron_search.RETIRED_FRAGMENTS,
+    read off docs/09's ladder there and asked here.
+
+    For a count of what the library HOLDS. A retired card is kept so its
+    record is never destroyed, not so it can answer: retrieval never offers
+    one, and a sentence that counts one as a capability nobody has proved is
+    counting something that is not a capability (FRAGMENT-ISSUES 5b-1521).
+    Asked rather than typed on the server's side, so the ladder has one copy.
+    """
+    return tuple(_brain()[3].RETIRED_FRAGMENTS)
+
+
 def proof_status(folder):
     """
     How far one fragment is proven, as data - or None when it cannot be read.
 
         {"status": "PROVEN", "stale": False, "proof": True,
          "date": "2026-09-08", "model": "Snowdon-scratch ... Revit 2024",
-         "by": "Ajmal PS"}
+         "by": "Ajmal PS", "risk": "MODIFY"}
 
     READ FROM THE FRAGMENT'S OWN FILES, never from the retrieval index, for
     the reason the server gives for every status it prints: a status is a
@@ -2772,6 +2786,11 @@ def proof_status(folder):
     recorded is nothing that can be shown to still hold (D-30). `proof` is
     False for that card, so a caller can say "no proof is recorded" where
     "its code has changed since" would be untrue.
+
+    `risk` IS THE CARD'S OWN DECLARED RISK, or None - carried so that the
+    refusal built on this answer can say what comes next for THIS card: a
+    DRAFT's one try takes a card declared MODIFY and no other
+    (heron_bridge_client.unproven_refusal).
 
     None rather than a guess. A caller told None says the status could not be
     read; it never says PROVEN.
@@ -2795,6 +2814,7 @@ def proof_status(folder):
         "date": str(proof.get("date") or "") or None,
         "model": str(proof.get("model") or "") or None,
         "by": str(proof.get("by") or "") or None,
+        "risk": str(frag.data.get("risk") or "").upper() or None,
     }
 
 

@@ -57,6 +57,11 @@ server is started as a host starts it, and must offer exactly that list - no
 revit_ tool, which is how a chat knows there is no Revit here - answer a
 search inside the deadline, say there is no Revit on this machine rather than
 looking for one, and refuse a Revit tool by name at once rather than hang.
+Its first answer ends with the two closing paragraphs whole - which door runs
+what, and how much is proved - and the next says each in one line: once per
+server process, which only a process started for real can show. The one
+line names heron_capabilities for the full text, and that tool, asked again,
+says both paragraphs whole again.
 
 AND WITH NO KNOWLEDGE FOLDER NAMED (D-153, row 5b-1508). The part above gives
 the child a HERON_KNOWLEDGE, which a cloud chat nobody set up has not got -
@@ -539,6 +544,41 @@ def library_only(guard, scratch):
               "and says there is no Revit on this machine, rather than that "
               "none is connected")
 
+        # THE TWO CLOSING PARAGRAPHS, WHOLE ONCE PER PROCESS. Both answers
+        # above ended with the same 1,400 characters - which door runs what,
+        # and how much is proved - and so did every answer after them. The
+        # first answer of a process still carries them whole; the next says
+        # each in one line. Read off the first answer, never typed here.
+        closing = (answered or "").splitlines()[-2:]
+        doors = closing[0].split("Heron can run it. ", 1)[-1] if closing else ""
+        proved = closing[-1] if closing else ""
+        check(len(doors) > 600 and "PROVEN" in proved,
+              "the first answer of this process says both closing paragraphs "
+              "whole (%d and %d characters)" % (len(doors), len(proved)))
+        last = (found or "").splitlines()[-2:] or ["", ""]
+        check(bool(doors) and doors not in (found or doors)
+              and proved not in (found or proved),
+              "the next answer does not say either whole again")
+        check(len(last[0]) * 3 <= len(doors)
+              and all(word in last[0] for word in
+                      ("WRITES", "revit_change", "revit_read", "Changes")),
+              "it says which door runs what in one line - a change through "
+              "revit_change, and only with Changes on (%d characters, was %d)"
+              % (len(last[0]), len(doors)))
+        check(len(last[-1]) < len(proved)
+              and last[-1].split(" capabilities")[0]
+              == proved.split(" capabilities")[0],
+              "and how many are PROVEN in one line, with the same count")
+        # THE ONE LINE STANDS ON ITS OWN. This process serves a whole session
+        # - a cleared conversation and a subagent ask the same one - so the
+        # reader of the short form may never have seen the long one: it
+        # points at nothing said before, and names the tool that has the
+        # whole text whenever it is asked.
+        check("heron_capabilities says this in full" in last[0]
+              and "first time" not in last[0],
+              "the one line names heron_capabilities for the full text, and "
+              "points at nothing this server said before")
+
         line, took = host.call(5, "revit_health", {}, DEADLINE)
         check(line is not None,
               "a Revit tool asked for anyway is answered at once, not left to "
@@ -550,6 +590,31 @@ def library_only(guard, scratch):
         refused = ("error" in reply
                    or (reply.get("result") or {}).get("isError") is True)
         check(refused, "and the answer is a refusal - the tool is not served here")
+
+        # heron_resolve SAYS THE SAME OF THIS MACHINE AS THE LOOKUP DOES (row
+        # 5b-1506). It ended "No Revit is connected, so the version filter
+        # did not run" - the sentence D-132 replaced in heron_lookup, typed
+        # here a second time: a chat told none is connected goes looking for
+        # one, on a machine where none can be reached.
+        line, took = host.call(6, "heron_resolve",
+                               {"capability": "SET_SELECTION"}, DEADLINE)
+        resolved = text_of(line) or ""
+        check("provider(s)" in resolved,
+              "heron_resolve answers for a capability by name (%.1fs)" % took)
+        check("No Revit on this machine" in resolved
+              and "so the version filter did not run" in resolved,
+              "and says there is no Revit on this machine, which is why the "
+              "version filter did not run")
+        check("No Revit is connected" not in resolved,
+              "never that none is connected")
+
+        # AND heron_capabilities HAS THE WHOLE TEXT EVERY TIME IT IS ASKED,
+        # which is what the one line promises of it.
+        line, took = host.call(7, "heron_capabilities", {}, DEADLINE)
+        again = text_of(line) or ""
+        check(bool(doors) and doors in again and proved in again,
+              "heron_capabilities, asked a second time, says both closing "
+              "paragraphs whole again (%.1fs)" % took)
     finally:
         host.close()
 
@@ -677,8 +742,13 @@ def main():
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "brain"))
         import heron_fragment as HF
         found, _problems = HF.load_all()
-        proven = sum(1 for f in found.values() if f.status in ("PROVEN", "PRODUCTION"))
-        tally = "%d of %d are PROVEN" % (proven, len(found))
+        # OF THE CARDS STILL IN THE LIBRARY. A retired card is not a claim
+        # waiting to be proved (row 5b-1521): docs/09's ladder, from
+        # DEPRECATED on, is left out of both numbers.
+        retired = HF.STATUSES[HF.STATUSES.index("DEPRECATED"):]
+        live = [f for f in found.values() if f.status not in retired]
+        proven = sum(1 for f in live if f.status in ("PROVEN", "PRODUCTION"))
+        tally = "%d of %d are PROVEN" % (proven, len(live))
     except Exception:
         tally = "most are not PROVEN"
     print("It says NOTHING about whether any fragment WORKS. %s" % tally)
