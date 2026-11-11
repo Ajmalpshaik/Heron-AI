@@ -419,8 +419,15 @@ def main():
     print("    An agent several add-in files claim was fingerprinted on")
     print("    whichever sorted first, so HERON-REVIT-VIE-013's proof of")
     print("    list_views stood on RevitCapture.cs and never on the file")
-    print("    list_views is in (row 5b-1542).")
+    print("    list_views is in (row 5b-1552).")
     section_12(tool)
+
+    print()
+    print("13. A PROOF WHOSE SIGNED FILE IS GONE SAYS SO, AND NAMES IT")
+    print("    `check` read such a proof against another file claiming the")
+    print("    agent - STALE, rightly - and then printed that the proof")
+    print("    \"was signed on\" that other file, which it never was.")
+    section_13(tool)
 
     print()
     if FAILURES:
@@ -617,6 +624,72 @@ def section_12(tool):
               "a draft for list_things is fingerprinted on Listing.cs")
         check("ONE FILE" in text and "AAA-Picture.cs" in text,
               "and names the picture file as the one it leaves out")
+    finally:
+        shutil.rmtree(home, ignore_errors=True)
+
+
+def section_13(tool):
+    home = tree(tool)
+    try:
+        addin = os.path.join(home, "revit", "Heron.Revit.Addin")
+        signed = os.path.join(addin, "%s.cs" % AGENT)
+        rel = "revit/Heron.Revit.Addin/%s.cs" % AGENT
+
+        def cs(name, text):
+            io.open(os.path.join(addin, name), "w", encoding="utf-8",
+                    newline="\n").write(text)
+        cs("Other.cs", "// Heron-Agent:  %s\nclass Other {}\n" % AGENT)
+        cs("Third.cs", "// Heron-Agent:  %s\nclass Third {}\n" % AGENT)
+        tool.write_draft(AGENT, dict(DRAFT, source=rel,
+                                     fingerprint=tool.fingerprint(signed)))
+        quiet(tool.cmd_accept, types.SimpleNamespace(agent=AGENT, by="A Person"))
+        code, said = quiet(tool.cmd_check, None)
+        lines = [l for l in said.splitlines() if "ONE FILE" in l]
+        check(code == 0 and len(lines) == 1
+              and "was signed on %s" % rel in lines[0],
+              "control: with its file in place the proof reads current and "
+              "the line names the file it was signed on")
+
+        def judged():
+            code, said = quiet(tool.cmd_check, None)
+            stale = [l for l in said.splitlines() if "STALE " in l and AGENT in l]
+            wrong = [l for l in said.splitlines()
+                     if "was signed on revit/Heron.Revit.Addin/Other.cs" in l
+                     or "was signed on revit/Heron.Revit.Addin/Third.cs" in l]
+            named = [l for l in said.splitlines()
+                     if AGENT in l and "%s.cs" % AGENT in l]
+            return code, stale, wrong, named, said
+
+        # The file it was signed for no longer claims the agent.
+        cs("%s.cs" % AGENT, "// Heron-Agent:  HERON-REVIT-APP-003\nclass X {}\n")
+        code, stale, wrong, named, said = judged()
+        check(code == 1 and len(stale) == 1,
+              "a proof whose file no longer claims the agent reads STALE")
+        check(not wrong,
+              "and no line says it was signed on a file it was not signed on"
+              "%s" % ("" if not wrong else " - %r" % wrong[0].strip()))
+        check(bool(named) and "no longer claims" in said,
+              "the file it WAS signed on is named, with what became of it")
+
+        # The file it was signed for is gone.
+        os.remove(signed)
+        code, stale, wrong, named, said = judged()
+        check(code == 1 and len(stale) == 1,
+              "a proof whose file is gone reads STALE")
+        check(not wrong,
+              "and still no line says it was signed on another file"
+              "%s" % ("" if not wrong else " - %r" % wrong[0].strip()))
+        check(bool(named) and "is gone" in said,
+              "the file it WAS signed on is named as gone")
+        check("Other.cs" in said and "Third.cs" in said,
+              "and the files that claim the agent now are still named")
+
+        # Nothing claims the agent at all: NO FILE, as before.
+        os.remove(os.path.join(addin, "Other.cs"))
+        os.remove(os.path.join(addin, "Third.cs"))
+        code, said = quiet(tool.cmd_check, None)
+        check(code == 1 and "NO FILE" in said and "ONE FILE" not in said,
+              "and with no file claiming the agent it is NO FILE, as it was")
     finally:
         shutil.rmtree(home, ignore_errors=True)
 

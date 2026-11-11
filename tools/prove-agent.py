@@ -184,7 +184,7 @@ def source_of(agent_id, operation=None):
 
     Until 2026-11-11 it was the first file in name order whatever the
     operation, so HERON-REVIT-VIE-013's proof of `list_views` was fingerprinted
-    on RevitCapture.cs (row 5b-1542). An operation that cannot be tied to one
+    on RevitCapture.cs (row 5b-1552). An operation that cannot be tied to one
     claiming file still falls back to the first - `uncovered()` names the
     rest, and a draft carries them as a gap, so the fallback is never silent.
     """
@@ -229,7 +229,7 @@ def uncovered(agent_id, source):
     in RevitViews.cs - so that proof read STALE when the picture code changed
     and would have read current through any change to the listing itself.
     Saying which files a fingerprint does not see is the least a reader is
-    owed. That one fingerprint covers one file at all is row 5b-1542's open
+    owed. That one fingerprint covers one file at all is row 5b-1552's open
     half, and the owner's with row 5b-1340.
     """
     here = os.path.abspath(source) if source else None
@@ -1065,17 +1065,32 @@ def cmd_check(_args):
     if not os.path.isdir(PROOFS):
         w("No proofs recorded yet.\n")
         return 0
-    stale, fine, missing, partial = [], [], [], []
+    stale, fine, missing, partial, orphaned = [], [], [], [], {}
     for name in sorted(os.listdir(PROOFS)):
         if not name.endswith(".yaml"):
             continue
         agent = name[:-5]
         body = read_yaml(proof_path(agent))
         # THE FILE IT WAS SIGNED FOR, not whichever file claiming the agent
-        # sorts first today (row 5b-1542).
+        # sorts first today (row 5b-1552).
         source = signed_source(agent, body)
         if source is None:
             missing.append(agent)
+            continue
+        read_as = os.path.relpath(source, ROOT).replace(os.sep, "/")
+        recorded = str(body.get("source") or "").strip()
+        if recorded and recorded != read_as:
+            # THE FILE IT WAS SIGNED ON IS NOT THERE TO READ - gone, or it
+            # stopped claiming the agent - so signed_source() fell back to a
+            # file this proof was never of. That is stale whatever a hash
+            # says, and every line about it names the file that WAS signed,
+            # never the one read in its place.
+            gone = not os.path.isfile(os.path.join(ROOT, *recorded.split("/")))
+            orphaned[agent] = (recorded,
+                               "is gone" if gone else
+                               "no longer claims this agent",
+                               [read_as] + uncovered(agent, source))
+            stale.append(agent)
             continue
         now = fingerprint(source)
         if now != body.get("fingerprint"):
@@ -1084,12 +1099,19 @@ def cmd_check(_args):
             fine.append(agent)
         rest = uncovered(agent, source)
         if rest:
-            partial.append((agent, os.path.relpath(source, ROOT)
-                            .replace(os.sep, "/"), body.get("operation"), rest))
+            partial.append((agent, read_as, body.get("operation"), rest))
     w("\n%d proof(s): %d current, %d STALE, %d whose source is gone\n"
       % (len(fine) + len(stale) + len(missing), len(fine), len(stale),
          len(missing)))
     for agent in stale:
+        if agent in orphaned:
+            recorded, became, now_claim = orphaned[agent]
+            w("  STALE    %s - the file it was signed on, %s, %s; %s claim%s "
+              "the agent now, and no signed proof is of %s\n"
+              % (agent, recorded, became, ", ".join(now_claim),
+                 "s" if len(now_claim) == 1 else "",
+                 "it" if len(now_claim) == 1 else "them"))
+            continue
         w("  STALE    %s - its source changed after the proof was signed\n"
           % agent)
     for agent in missing:
