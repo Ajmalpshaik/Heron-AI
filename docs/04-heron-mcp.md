@@ -939,3 +939,30 @@ was written** — [NEEDS-CHECKING Group ES](needs-checking/group-es.md).
   answer says how many were left out ([`heron_retrieve.py`](../brain/heron_retrieve.py)). The host
   decides that it is a question; Heron does not
   ([D-01](DECISIONS.md#d-01--execution-host-claude-code-plugin)).
+
+### 8.11 What a lookup says of each capability — built 2026-11-11
+
+A chat learned that a capability was `DRAFT` from `revit_change`'s refusal, one turn after choosing it:
+on a ranked answer `heron_lookup` printed the capability and its provider, and nothing about how far it
+is proved, what it may do, or which door runs it.
+
+- **Every capability a lookup lists carries its status, its risk and the door that runs it** - the
+  best match on three lines of its own (`status`, `risk`, `run with`), each runner-up on its one line.
+  The status is the card's own, read with `heron_brain.proof_status`, the answer `revit_change` refuses
+  on; a `PROVEN` card whose code moved after its proof says so
+  ([D-30](DECISIONS.md#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs)). The
+  door is asked of the registry, never typed: `revit_read` up to its ceiling, `revit_show` up to its
+  own unless the card's code writes a file, `revit_change` for the rest (`_lookup_door`).
+- **Where `revit_change` would refuse it, the line says so**
+  ([D-117](decisions/D-117.md)) - the client's own `unproven_refusal`, asked and not copied.
+- **Nothing is ranked, hidden or floored by any of it.** The list is the brain's, in the brain's order;
+  which capability the user meant stays the host's to decide
+  ([D-01](DECISIONS.md#d-01--execution-host-claude-code-plugin), [D-65](decisions/D-65.md),
+  [D-100](decisions/D-100.md)). `tests/test_mcp_serves.py` section 17 holds all three.
+- **The refusal itself names what comes next, and only what exists.** Proving is a run from Heron's
+  command line and a signed proof, not a tool a chat has; a `DRAFT` declared `MODIFY` has its one try
+  behind Revit's Keep or Discard box, `try-once` on that command line
+  ([D-119](DECISIONS.md#d-119--a-draft-fragment-may-run-once-on-the-model-in-front-behind-a-keep-or-discard-prompt-in-revit-and-article-11-says-so)),
+  started only when the modeller asks ([D-122](decisions/D-122.md)). It points at no other capability:
+  `revit_change`'s description forbids trying one to get round a refusal.
+  `tests/test_admin_publish.py` section 7 holds it.

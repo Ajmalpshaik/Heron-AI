@@ -211,6 +211,33 @@ def article_11(names):
           and refusal("X", {"status": "PRODUCTION", "stale": False}) is None,
           "a current PROVEN or PRODUCTION proof is let through")
 
+    # THE REFUSAL NAMES WHAT COMES NEXT, AND ONLY WHAT EXISTS. It ended "it is
+    # proved first on a test model ... and then it can be asked for again",
+    # which told a chat neither that proving is not a chat's to do nor that a
+    # DRAFT has one run behind Revit's Keep or Discard box (D-119).
+    draft = refusal("SOME_CAPABILITY", {"status": "DRAFT", "stale": False}) or ""
+    check("try-once" in draft and "D-119" in draft and "Keep or Discard" in draft,
+          "a DRAFT's refusal names its one try, behind Revit's Keep or Discard "
+          "box (D-119)")
+    check(callable(getattr(CLIENT, "cmd_try_once", None)),
+          "and that run exists: the client has the try-once command it names")
+    check("D-122" in draft and "MODIFY" in draft,
+          "it says the try is for a DRAFT declared MODIFY, started only when "
+          "the modeller asks (D-122)")
+    for said, why in ((draft, "a DRAFT's"), (stale, "a stale proof's")):
+        check("command line" in said and "not a tool a chat has" in said,
+              "%s refusal says proving is done from Heron's command line, not "
+              "by a tool a chat has" % why)
+        named = set(re.findall(r"\b(?:revit|heron)_[a-z_]+\b", said))
+        check(named <= set(TOOLS.TOOLS),
+              "and %s refusal names no tool the registry does not hold - named %s"
+              % (why, ", ".join(sorted(named)) or "none"))
+    check("try-once" not in stale and "no one try" in stale,
+          "a stale proof's refusal offers no one try - that run takes a DRAFT alone")
+    other = refusal("SOME_CAPABILITY", {"status": None, "stale": False}) or ""
+    check("try-once" not in other,
+          "nor does one with no status at all")
+
     # OVER THE WHOLE LIBRARY, through the fake Revit: every write fragment,
     # asked for with --write --apply, and what reached Revit to be KEPT read
     # back off the fake's own record.

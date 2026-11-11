@@ -4940,6 +4940,74 @@ def _what_to_type(failure, capability):
     return ("\n" + "\n".join(block)) if block else ""
 
 
+def _lookup_door(risk, capability, folder):
+    """
+    The door a capability a LOOKUP names is run through - revit_read,
+    revit_show or revit_change - or None when its risk could not be read.
+
+    A LOOKUP IS ASKED AT NO DOOR, so the doors are asked instead, lowest
+    first, and no level is typed here: `_door_that_runs` says what the change
+    door sends to revit_read, heron_tools.door_refusal what revit_show runs,
+    and heron_tools.disk_refusal what revit_show turns away for writing a
+    file (row 5b-591) - that one stays the change door's, which runs it.
+    """
+    if tools.level_named(risk) is None:
+        return None
+    door = _door_that_runs("revit_change", risk, capability)
+    if door != "revit_change" or tools.door_refusal("revit_show", risk, capability):
+        return door
+    source = None
+    if folder:
+        try:
+            with io.open(os.path.join(_repo_root(), "brain", "fragments", folder,
+                                      "impl", "any", "fragment.cs"),
+                         "r", encoding="utf-8", errors="replace") as fh:
+                source = fh.read()
+        except OSError:
+            source = None
+    if source is not None and tools.disk_refusal("revit_show", capability, source):
+        return door
+    return "revit_show"
+
+
+def _how_it_runs(capability, risk):
+    """
+    (status, risk, door, held) for one capability a lookup lists.
+
+    A CHAT LEARNED A CAPABILITY WAS DRAFT FROM revit_change's REFUSAL, a turn
+    after choosing it. On every ranked answer the lookup printed the
+    capability and its provider and nothing about how far it is proved, what
+    it is allowed to do, or which door runs it - the three things that decide
+    the next call. They are shown now, for the best match and for every
+    runner-up alike.
+
+    SHOWN, NEVER USED. Nothing here moves a candidate, hides one or sets a
+    floor: which one the user meant is the host's to decide (D-01), and a
+    status that ranked would be the routing gate D-65 and D-100 refuse.
+
+    THE STATUS IS THE FILE'S, read through heron_brain.proof_status - the
+    answer revit_change refuses on, stale proof included (D-30) - never the
+    index's word (rows 127 and 189). The risk is the one the lookup already
+    carries, as the hand-back in `_by_words` reads it. `held` is the client's
+    own rule, asked and not copied: True when the door is revit_change and
+    `unproven_refusal` would turn this capability away there (D-117).
+    """
+    folder, _status = _fragment_for(capability)
+    proof = brain.proof_status(folder) if folder else None
+    if proof is None:
+        status = "status unread"
+    else:
+        status = proof["status"] or "no status"
+        # ONLY A PROOF THAT WOULD OTHERWISE STAND IS CALLED STALE. A DRAFT
+        # with an old proof draft behind it is a DRAFT, and says so alone.
+        if proof["stale"] and status in bridge.KEEPABLE_STATUSES:
+            status += " but STALE"
+    door = _lookup_door(risk, capability, folder)
+    held = (door == "revit_change"
+            and bridge.unproven_refusal(capability, proof) is not None)
+    return status, risk or "risk unread", door, held
+
+
 @server.tool()
 def heron_resolve(capability: str) -> str:
     """
@@ -5078,9 +5146,19 @@ def heron_lookup(request: str, question: bool = False) -> str:
     lines = ['"%s"' % request,
              "  would need   %s" % found["capability"],
              "  matched by   %s" % found["route"],
-             "  provided by  %s" % found["provider"],
-             "",
-             "  %s" % found["note"]]
+             "  provided by  %s" % found["provider"]]
+    # HOW FAR IT IS PROVED, WHAT IT MAY DO, AND THE DOOR THAT RUNS IT - on
+    # every route, so the next call is the run and not a refusal to learn from.
+    status, risk, door, held = _how_it_runs(found["capability"], found.get("risk"))
+    lines.append("  status       %s" % status)
+    lines.append("  risk         %s" % risk)
+    lines.append("  run with     %s" % (
+        "not said - its risk could not be read" if door is None
+        else door if not held
+        else "%s - which keeps a change only from a capability whose proof "
+             "stands (D-117), so it refuses this one until it is proved"
+             % door))
+    lines.extend(["", "  %s" % found["note"]])
     lines.extend(asked)
     lines.extend(_other_release_lines(found))
     # BEFORE EVERYTHING BELOW, because it qualifies all of it: an answer from
@@ -5146,13 +5224,19 @@ def heron_lookup(request: str, question: bool = False) -> str:
 
     if len(found["candidates"]) > 1:
         lines.append("")
-        lines.append("  Other capabilities that came close:")
+        lines.append("  Other capabilities that came close - each with its "
+                     "status, its risk and the door that runs it:")
         seen = set()
         for c in found["candidates"][1:]:
             if c["capability"] in seen or c["capability"] == found["capability"]:
                 continue
             seen.add(c["capability"])
-            lines.append("    %-30s %s" % (c["capability"], c["why"]))
+            status, risk, door, held = _how_it_runs(c["capability"], c.get("risk"))
+            lines.append("    %-30s %-7s %-8s %-13s %s%s"
+                         % (c["capability"], status, risk, door or "door not said",
+                            c["why"],
+                            "   -> refused there until it is proved (D-117)"
+                            if held else ""))
 
     # WHICH OPTIONAL BACKENDS ANSWERED. Printed on every lookup, because the
     # degradation is invisible otherwise: the same request on two machines can

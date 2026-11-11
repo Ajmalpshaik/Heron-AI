@@ -124,6 +124,12 @@ WHAT IT PROVES, when an SDK is installed
      waiting, revit_change and the Companion's Apply are each refused and
      send nothing. The bytes put back: the answer is as it was. The watch
      itself is tests/test_running_code.py.
+ 17. A LOOKUP SAYS HOW EACH CAPABILITY IT LISTS RUNS - its status as its own
+     card declares it, its risk, and the door that runs it - for the best
+     match and for every runner-up, and says where revit_change would refuse
+     a capability that is not proved (D-117). It lists every candidate the
+     brain returned in the brain's order: nothing is moved, hidden or
+     floored (D-01, D-65, D-100).
 
 WHAT IT CANNOT DO
   It does not start a transport and it is not Claude Code. It calls the
@@ -2179,6 +2185,175 @@ async def exercise_earlier(module):
         module.pinned.forget()
 
 
+def _expected_door(risk, folder):
+    """The door the registry's own ceilings give a card of this risk, worked
+    out here and not by the server: the read door up to its ceiling, the show
+    door up to its own unless the card's code writes a file (row 5b-591), and
+    the change door for the rest."""
+    import heron_tools as TOOLS
+    level = TOOLS.level_named(risk)
+    if level is None:
+        return None
+    if level <= TOOLS.risk_of("revit_read"):
+        return "revit_read"
+    if level <= TOOLS.risk_of("revit_show"):
+        code = os.path.join(ROOT, "brain", "fragments", folder, "impl", "any",
+                            "fragment.cs")
+        source = ""
+        if os.path.isfile(code):
+            with io.open(code, encoding="utf-8", errors="replace") as fh:
+                source = fh.read()
+        return "revit_change" if TOOLS.writes_to_disk(source) else "revit_show"
+    return "revit_change"
+
+
+async def exercise_lookup_says(module):
+    """Section 17 - a lookup says of every capability it lists how far it is
+    proved, what it may do and which door runs it, and moves nothing."""
+    server = module.server
+    print()
+    print("  what a lookup says of each capability it lists")
+    by_capability = dict((seen.get("capability"), (name, seen))
+                         for name, seen in cards())
+
+    # THE ANSWER THE BRAIN GAVE, KEPT, so the reply is compared with the very
+    # dict it was printed from - a second lookup of the same words may come
+    # back by another route.
+    real, kept = module.brain.lookup, []
+
+    def watched(*args, **kwargs):
+        kept.append(real(*args, **kwargs))
+        return kept[-1]
+
+    async def lookup(words):
+        del kept[:]
+        module.brain.lookup = watched
+        try:
+            said = text_of(await server.call_tool("heron_lookup", {"request": words}))
+        except Exception as exc:                                # noqa: BLE001
+            said = "(raised %s: %s)" % (type(exc).__name__, exc)
+        finally:
+            module.brain.lookup = real
+        return said, (kept[-1] if kept else {})
+
+    def line(said, label):
+        """What the reply says after one of its left-hand labels, or None."""
+        got = re.search(r"^  %s\s+(.*)$" % re.escape(label), said, re.MULTILINE)
+        return got.group(1).strip() if got else None
+
+    # ONE CARD OF EACH KIND, FOUND AND NOT TYPED: the first whose own declared
+    # words the lookup answers with it. A status typed here goes red the day
+    # a proof changes it (row 5b-1219).
+    wanted = (("PROVEN", "READ"), ("PROVEN", "EXECUTE"), ("PROVEN", "MODIFY"),
+              ("DRAFT", "MODIFY"), ("DRAFT", "READ"))
+    phrases = _phrases()
+    for status, risk in wanted:
+        words = capability = folder = None
+        for phrase, cap, st, rk, where in phrases:
+            if st != status or rk != risk:
+                continue
+            if real(phrase).get("capability") == cap:
+                words, capability, folder = phrase, cap, where
+                break
+        check(words is not None,
+              "the library has a %s %s card its own words reach" % (status, risk))
+        if words is None:
+            continue
+        said, _found = await lookup(words)
+        door = _expected_door(risk, folder)
+        check(line(said, "status") == status,
+              "%s: the reply says its status, %s, as its own card does - said %r"
+              % (capability, status, line(said, "status")))
+        check(line(said, "risk") == risk,
+              "%s: and its risk, %s - said %r" % (capability, risk, line(said, "risk")))
+        run_with = line(said, "run with") or ""
+        check(run_with.split(" ")[0] == door,
+              "%s: and the door that runs it, %s - said %r"
+              % (capability, door, run_with[:60]))
+        held = "D-117" in run_with and "until it is proved" in run_with
+        check(held == (status == "DRAFT" and door == "revit_change"),
+              "%s: %s" % (capability,
+                          "and that revit_change refuses it until it is proved (D-117)"
+                          if status == "DRAFT" and door == "revit_change" else
+                          "and nothing says that door would refuse it"))
+
+    # THE ONE EXECUTE CARD THE SHOW DOOR TURNS AWAY (row 5b-591) is sent to
+    # the door that runs it, never to one that refuses.
+    import heron_tools as TOOLS
+    disk = [(seen.get("capability"), name) for name, seen in cards()
+            if seen.get("heron-status") not in ("DEPRECATED", "ARCHIVED")
+            and TOOLS.level_named(seen.get("risk")) is not None
+            and TOOLS.risk_of("revit_read") < TOOLS.level_named(seen.get("risk"))
+            <= TOOLS.risk_of("revit_show")
+            and _expected_door(seen.get("risk"), name) == "revit_change"]
+    door_of = getattr(module, "_lookup_door", None)
+    check(door_of is not None, "the server has a word for a lookup's door")
+    if door_of is None:
+        door_of = lambda risk, capability, folder: None         # noqa: E731
+    check(bool(disk), "the library has a show-level card whose code writes a file")
+    for capability, name in disk:
+        check(door_of(by_capability[capability][1].get("risk"), capability, name)
+              == "revit_change",
+              "%s writes a file, so its door is revit_change, not the show door "
+              "that refuses it" % capability)
+    check(door_of(None, "X", None) is None and door_of("NONSENSE", "X", None) is None,
+          "and a risk nobody could read names no door")
+
+    # A PROOF ITS CODE HAS MOVED PAST IS SAID, where it would otherwise stand
+    # (D-30) - the change door refuses that one too. Staged on a PROVEN card:
+    # none in the library is stale on an ordinary day.
+    how = getattr(module, "_how_it_runs", None)
+    check(how is not None, "the server has a word for how a listed capability runs")
+    proven, _folder = first_with("MODIFY", "PROVEN")
+    draft, _folder = first_with("MODIFY", "DRAFT")
+    if how is not None and proven and draft:
+        real_proof = module.brain.proof_status
+        module.brain.proof_status = lambda folder: dict(real_proof(folder) or {},
+                                                        stale=True)
+        try:
+            moved, as_draft = how(proven, "MODIFY"), how(draft, "MODIFY")
+        finally:
+            module.brain.proof_status = real_proof
+        check(tuple(moved) == ("PROVEN but STALE", "MODIFY", "revit_change", True),
+              "a PROVEN change whose code moved after its proof is called STALE, "
+              "and held at revit_change - said %r" % (moved,))
+        check(tuple(as_draft) == ("DRAFT", "MODIFY", "revit_change", True),
+              "while a DRAFT with an old proof behind it is a DRAFT and says so "
+              "alone - said %r" % (as_draft,))
+
+    # THE RUNNERS-UP CARRY THE SAME THREE, AND NOTHING MOVED. D-01: which one
+    # the user meant is the host's to decide; D-65 and D-100: no status, risk
+    # or door re-ranks, hides or floors a candidate - it only shows more.
+    said, found = await lookup("make the pipes slope down to the drain")
+    order = [found.get("capability")]
+    for one in found.get("candidates") or []:
+        if one["capability"] not in order:
+            order.append(one["capability"])
+    check(found.get("route") not in ("identity", None) and len(order) > 1,
+          "a sentence nothing declares is a ranked answer with runners-up "
+          "(%s, %d listed)" % (found.get("route"), len(order)))
+    block = said.split("Other capabilities that came close", 1)
+    rows = []
+    for row in (block[1].splitlines()[1:] if len(block) == 2 else []):
+        if not row.startswith("    ") or not row.strip():
+            break
+        rows.append(row.split())
+    shown = [found.get("capability")] + [r[0] for r in rows]
+    check(shown == order,
+          "the reply lists every candidate the brain returned, in the brain's "
+          "order - none moved, none hidden: %s" % ", ".join(shown))
+    wrong = []
+    for row in rows:
+        name, seen = by_capability.get(row[0], (None, {}))
+        want = [seen.get("heron-status"), seen.get("risk"),
+                _expected_door(seen.get("risk"), name or "")]
+        if row[1:4] != want:
+            wrong.append("%s said %s, its card gives %s" % (row[0], row[1:4], want))
+    check(bool(rows) and not wrong,
+          "and each runner-up carries its card's status, its risk and its door "
+          "(%d)%s" % (len(rows), "" if not wrong else " - " + "; ".join(wrong[:3])))
+
+
 async def exercise_running_code(module):
     """
     Section 16: a chat whose server is still running code a pull has since
@@ -2373,6 +2548,7 @@ def main():
         asyncio.run(exercise_door(server_module))
         asyncio.run(exercise_show(server_module))
         asyncio.run(exercise_words(server_module))
+        asyncio.run(exercise_lookup_says(server_module))
         asyncio.run(exercise_activity(server_module))
         asyncio.run(exercise_earlier(server_module))
         asyncio.run(exercise_change_report(server_module))

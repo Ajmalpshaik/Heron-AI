@@ -1606,19 +1606,42 @@ def unproven_refusal(what, found):
     only ADD caution - the add-in makes its prompt mandatory and says the code
     was never proved - and a request without it lowers nothing. Until then
     there is no prompt to make mandatory, so this refuses.
+
+    IT NAMED NO NEXT STEP, so a chat told "it is proved first on a test model"
+    had nothing to tell the modeller but the refusal - and no way to know that
+    proving is not something a chat can do. What comes next is said now, and
+    only what exists: the proof itself, which is a run from this command line
+    and a person's signature (D-30), and - for a DRAFT alone - its one run
+    behind Revit's Keep or Discard box (D-119), which is `try-once` here and
+    no tool a chat is served. That run takes only a DRAFT declared MODIFY and
+    is started only when the modeller asks (D-122), so the sentence says both
+    rather than promising it. NO OTHER CAPABILITY IS OFFERED: a refusal that
+    pointed at one would be the way round it that revit_change's own
+    description forbids.
     """
     if found is None:
         return ("How far %s is proven could not be read, so Heron will not let it "
                 "change the model - \"could not tell\" is not \"proven\". Nothing "
                 "was sent to Revit." % what)
 
+    proving = ("proving is a run from Heron's command line and a signed proof "
+               "(D-30), not a tool a chat has")
+
     status = found.get("status")
     if status not in KEEPABLE_STATUSES:
         said = "is %s" % status if status else "states no status"
+        once = ""
+        if status == "DRAFT":
+            once = (" What the modeller can ask for meanwhile is one try: "
+                    "`try-once` on Heron's command line runs a DRAFT declared "
+                    "MODIFY a single time on the saved model in front, and Revit "
+                    "asks them Keep or Discard (D-119). It is started only on "
+                    "their word (D-122), never through revit_change.")
         return ("%s %s - no recorded proof stands behind its code, so Heron will "
                 "not let it change a live model (Constitution Article 11). Nothing "
                 "was sent to Revit. It is proved first on a test model, with a "
-                "negative case, and then it can be asked for again." % (what, said))
+                "negative case, and then it can be asked for again - %s.%s"
+                % (what, said, proving, once))
 
     if found.get("stale"):
         when = " on %s" % found["date"] if found.get("date") else ""
@@ -1626,7 +1649,8 @@ def unproven_refusal(what, found):
                 "longer describes what would run (D-30) and Heron will not let it "
                 "change a live model (Constitution Article 11). Nothing was sent "
                 "to Revit. It is proved again on a test model, and then it can be "
-                "asked for again." % (what, status, when))
+                "asked for again - %s. It has no one try meanwhile: that is a "
+                "DRAFT's (D-119)." % (what, status, when, proving))
     return None
 
 
