@@ -20,101 +20,93 @@
 # Where the model differs, the job file changes - never the card. Nothing
 # here keeps anything: the card opens no transaction.
 #
-# THE WAIT (Q-86, FRAGMENT-ISSUES row 5b-1507). Every case but the two
-# marked SLOW is answered at once, well inside the add-in's wait for one job.
+# ONE CLICK PER CALL (Q-86, FRAGMENT-ISSUES row 5b-1507). Every case but the
+# one marked SLOW is answered at once, well inside the add-in's wait for one
+# job.
 
 positive:
   - given: >
-      "Level 1" in front (OPEN_VIEW), count 2. When Revit's status bar reads
-      "Heron: click point 1 of 2 - Esc to stop", click one end of L1, then the
-      other, each on its endpoint snap
+      "Level 1" in front (OPEN_VIEW). When Revit's status bar reads "Heron:
+      click the point - Esc to cancel", click one end of L1 on its endpoint
+      snap
     expect: >
-      clicked 2; pointsMm holds two points, "x, y, z; x, y, z", 5000 mm apart
-      along L1 and both with z 0 - Level 1's height, the view's work plane;
-      cancelled false; refused empty; viewName "Level 1"; findings "2 of 2
-      point(s) clicked in "Level 1" (FloorPlan) ..." and the work plane's
-      name; waitedSeconds about the time the two clicks took. Nothing in the
-      model changed and nothing is selected that was not before
+      clicked 1; pointMm holds one point, "x, y, z", with z 0 - Level 1's
+      height, the view's work plane; cancelled false; refused empty; viewName
+      "Level 1"; findings "One point clicked in "Level 1" (FloorPlan) ..."
+      and the work plane's name; waitedSeconds about the time the click took.
+      Nothing in the model changed and nothing is selected that was not
+      before
 
-  - given: the same view, count left out. Click one end of L1
-    expect: clicked 1 and one point - the status bar asked for "point 1 of 1"
+  - given: the same again, and the OTHER end of L1 clicked
+    expect: >
+      a different point, 5000 mm from the first along L1 - the answer follows
+      the click, and is not the first call's point handed back again
 
   - given: >
-      THE HANDOVER. pointsMm from the first case, typed as it came back into
-      PLACE_FAMILY_INSTANCES as `points`, with a loaded furniture type and
-      level "Level 1", rolled back
+      THE HANDOVER. The two points, joined with "; " as D-67 writes several,
+      typed into PLACE_FAMILY_INSTANCES as `points`, with a loaded furniture
+      type and level "Level 1", rolled back
     expect: >
-      it is taken as typed - two instances, one on each end of L1 - with
-      nothing re-keyed between the two calls. This is the reason the points
-      come back as D-67 writes them
+      taken as typed - two instances, one on each end of L1 - with no number
+      re-keyed. This is the reason the point comes back as D-67 writes one
 
 negative:
   - given: >
       THE WRONG KIND OF VIEW - a different arrangement, not an empty one.
-      "Wall Schedule" in front (OPEN_VIEW), count 2
+      "Wall Schedule" in front (OPEN_VIEW)
     expect: >
       Revit never enters pick mode - the status bar shows no prompt and there
-      is nothing to press Esc on. clicked 0; pointsMm EMPTY; cancelled false;
+      is nothing to press Esc on. clicked 0; pointMm EMPTY; cancelled false;
       refused names "Wall Schedule" as a Schedule and says to bring a plan,
       section, elevation or 3D view to the front. Not a point from the run
       before it
 
   - given: >
-      ESC, AT ONCE. "Level 1" in front, count 2. When the prompt appears,
-      press Esc without clicking
+      ESC. "Level 1" in front. When the prompt appears, press Esc without
+      clicking
     expect: >
-      a normal answer, not a failure: clicked 0; pointsMm EMPTY; cancelled
-      true; refused empty; findings "The modeller stopped the pick after 0 of
-      2 ...". The chat reports it plainly and does not ask Revit again by
-      itself
-
-  - given: ESC, PART WAY. The same, count 3 - click one end of L1, then Esc
-    expect: >
-      clicked 1 and that one point handed back; cancelled true. What was
-      clicked before Esc is never thrown away
-
-  - given: count 0, "Level 1" in front
-    expect: >
-      refused "count is how many clicks to ask for ..."; nothing asked in
-      Revit; clicked 0
+      a normal answer, not a failure: clicked 0; pointMm EMPTY; cancelled
+      true; refused empty; findings "The modeller cancelled the pick ...".
+      The chat reports it plainly and does not ask Revit again by itself
 
   - given: >
-      A VIEW WITH NO WORK PLANE. "{3D}" in front with no work plane set,
-      count 1
+      A VIEW WITH NO WORK PLANE. "{3D}" in front with no work plane set
     expect: >
-      Revit's own refusal, in `refused` with its words, and the advice to set
-      a work plane or use a plan; clicked 0; pointsMm empty. No work plane is
-      set by this card - that would be a change to the model. IF REVIT TAKES
-      THE CLICK INSTEAD, that is the thing this case learns: record the plane
-      findings names
+      Revit's own refusal, in `refused` with its words, and - because the
+      view showed no work plane before the pick - the advice to set one or
+      use a plan; clicked 0; pointMm empty. No work plane is set by this
+      card: that would be a change to the model. IF REVIT TAKES THE CLICK
+      INSTEAD, that is the thing this case learns: record the plane findings
+      names
 
   - given: >
-      TWO MODELS OPEN, and the call aimed at the one that is NOT in front,
-      count 1
+      TWO MODELS OPEN, and the call aimed at the one that is NOT in front
     expect: >
       refused "This model is not the one in front in Revit ..."; nothing
       asked; clicked 0
 
   - given: >
-      SLOW, ONE CLICK (Q-86). "Level 1" in front, count 1. Let the prompt sit
-      until the add-in's wait for one job has passed
-      (revit.operationTimeoutSeconds), then click
+      SLOW (Q-86). "Level 1" in front. Let the prompt sit until the add-in's
+      wait for one job has passed (revit.operationTimeoutSeconds, about a
+      minute as installed), then click
     expect: >
-      READ FROM THE CODE, NOT YET SEEN: the chat is told Revit is still
-      running the request and not to repeat it, before the click; Revit stays
-      in pick mode until the click or Esc; the click's point reaches nobody.
-      Record what the chat was told, word for word, and what Revit did. This
-      is the limit the card is DRAFT behind, not a pass or a fail of the card
+      READ FROM THE CODE, NOT YET SEEN: before the click, the chat is told
+      Revit is still working on the request and not to repeat it; Revit stays
+      in pick mode until the click or Esc; the click's point reaches nobody
+      and no answer follows. Record what the chat was told, word for word,
+      what it then said to the modeller, and what Revit did. This is the
+      limit the card is DRAFT behind, not a pass or a fail of the card
 
   - given: >
-      SLOW, SEVERAL CLICKS (Q-86). count 3. Click the first point at once,
-      wait until the run clock's budget has passed (a margin inside the same
-      wait), then click the second
+      SLOW, BUT INSIDE THE WAIT. The same, clicking about 55 seconds after
+      the request was sent - past the run clock's budget as installed, inside
+      the add-in's wait
     expect: >
-      READ FROM THE CODE, NOT YET SEEN: the job is stopped as having run out
-      of time at the next pass, and the first point is NOT handed back. Record
-      the chat's words
+      the point comes back as in the first case, with waitedSeconds saying
+      how long it took. The card has no loop, so nothing asks the run clock
+      after the click. If the chat is told the job ran out of time instead,
+      record its words - the card's reading of the add-in is then wrong
 
 second_route:
-  - REPORT_LOCATION on L1 (selected) - the two ends it reports, against the two points clicked on them
+  - REPORT_LOCATION on L1 (selected) - the two ends it reports, against the two points clicked on them in two calls
   - Revit's own Measure Between Two References between the same two ends reads 5000, the distance between the two points handed back

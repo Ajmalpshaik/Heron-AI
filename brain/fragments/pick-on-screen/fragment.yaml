@@ -5,13 +5,13 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-SEL-040
-semantic-identity: "ask the modeller to click points in the open Revit view and hand them back in millimetres"
+semantic-identity: "ask the modeller to click a point in the open Revit view and hand it back in millimetres"
 
 # WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
 # 2026-11-11: the owner wants to work by chat with very few clicks in Revit,
 # and nothing in the library let the modeller CLICK to answer the chat. No
-# card and no add-in file called Revit's pick at all, so "put it here" had to
-# be typed as three millimetre numbers (D-67). Searched that day with
+# card and no add-in file called Revit's pick at all, so a point had to be
+# typed as three millimetre numbers (D-67). Searched that day with
 # brain/heron_retrieve.py on a scratch store, Revit 2024: "put it here where I
 # click" reached ADD_FAMILY_FLIP_CONTROL and PLACE_FAMILY_INSTANCES, "pick a
 # point in the view" DRAW_FAMILY_POINT_CURVES, "ask me to pick the element in
@@ -24,7 +24,7 @@ semantic-identity: "ask the modeller to click points in the open Revit view and 
 # deals in points, and this card's whole job is the one thing neither does:
 # wait for a click and say where it landed.
 #
-# POINTS ONLY, AND WHY (FRAGMENT-ISSUES row 5b-1507):
+# A POINT ONLY, AND WHY (FRAGMENT-ISSUES row 5b-1507):
 #   an ELEMENT - READ_SELECTION already answers it: the modeller selects it
 #       in Revit and says so. Nothing here repeats that.
 #   a FACE - Revit's pick for one needs a kind of pick named from a namespace
@@ -33,27 +33,28 @@ semantic-identity: "ask the modeller to click points in the open Revit view and 
 #       (D-72). Adding the namespace is the add-in's promise to make, not
 #       this card's to smuggle in. Owed, with Q-86.
 #
+# ONE CLICK PER CALL, AND WHY (Q-86). Several clicks need a loop, and the run
+# clock (D-129) is asked at the head of each pass of one: a modeller slower
+# than its budget over the first click would have the job stopped at the
+# second pass, reported as "a loop that never ends" with the point they
+# clicked dropped - untrue of a person. With no loop there is no second
+# pass. Several points are several calls until Q-86 is decided.
+#
 # THE WAIT IS A PERSON'S, AND THE ADD-IN DOES NOT KNOW THAT YET (Q-86).
-# Read from the code on 2026-11-11, not yet seen in Revit:
-#   - the dispatcher waits revit.operationTimeoutSeconds (60 by default) for
-#     a job it has started, then answers "still running" and stops
-#     listening - a click after that reaches nobody. Its longer wait for a
-#     Keep or Discard box (revit.askTimeoutSeconds) cannot be asked for from
-#     a fragment.
-#   - the run clock (D-129) is asked at the head of each pass of this card's
-#     click loop. Past its budget - a margin inside the dispatcher's wait -
-#     the next pass stops the job and the points already clicked are not
-#     handed back. The hold D-129 wrote for a prompt cannot be compiled into
-#     a fragment by the compile gate.
-# So every click has to be made inside that wait. The card does not work
-# round either limit; `waitedSeconds` says how long Revit waited.
+# Read from the code on 2026-11-11, not yet seen in Revit: the dispatcher
+# waits revit.operationTimeoutSeconds (60 as installed) for a job it has
+# started, then answers that Revit is still working and stops listening - a
+# click after that reaches nobody and no answer follows. Its longer wait for
+# a Keep or Discard box (revit.askTimeoutSeconds) cannot be asked for from a
+# fragment. The card does not work round it: `purpose` says it to the chat,
+# and `waitedSeconds` says how long Revit waited.
 #
-# WHAT IT REFUSES, NOTHING ASKED IN REVIT: a count below one; a model that is
-# not the one in front; a schedule, report or browser in front. A view with
-# no work plane is Revit's to refuse, and its words come back in `refused`.
+# WHAT IT REFUSES, NOTHING ASKED IN REVIT: a model that is not the one in
+# front; a schedule, report or browser in front. A view with no work plane
+# is Revit's to refuse, and its words come back in `refused`.
 #
-# ESC IS AN ANSWER: `cancelled` true, and what was clicked before it is
-# handed back. Revit reports a switched view or a closed model the same way.
+# ESC IS AN ANSWER: `cancelled` true, no point. Revit reports a switched
+# view or a closed model the same way.
 #
 # RISK EXECUTE, which revit_show runs: it takes over the Revit session until
 # the click or Esc, and changes nothing in the model and nothing in the
@@ -66,49 +67,46 @@ source: OFFICIAL
 risk: EXECUTE
 
 purpose: >
-  Puts Revit into its own pick mode and waits for the modeller to click one
-  or several points in the view in front, then hands them back in
-  millimetres - written the way every point value in this library is typed,
-  so the next step can take them as they are. Esc stops it and hands back
-  what was clicked so far. Changes nothing in the model.
+  Waits for the modeller to click one point in the Revit view in front and
+  hands it back in millimetres, written the way a point is typed everywhere
+  else in this library, so the next step can take it as it is. Esc cancels.
+  Changes nothing in the model. One point for each time it is asked. The
+  modeller has to click within about a minute of being asked: a later click
+  is lost and no answer comes back, so when Revit is reported as still
+  working on this, tell the modeller the click was not received and ask
+  again once they are ready at Revit.
 
 contract:
   needs:
     - name: uidoc
       type: UIDocument
-    # How many clicks to ask for. Left out, one. Esc before the last hands
-    # back the ones already clicked.
-    - name: count
-      type: int
-      source: request
-      optional: true
-      absent: "1"
   provides:
-    - name: pointsMm
-      # "x, y, z" in millimetres from the model's internal origin, several
-      # separated by "; " - D-67's own form. Empty when nothing was clicked.
+    - name: pointMm
+      # "x, y, z" in millimetres from the model's internal origin - D-67's
+      # own form for one point. Empty when nothing was clicked.
       role: result
       type: string
     - name: clicked
+      # 1 when a point was clicked, 0 when not.
       role: result
       type: int
     - name: cancelled
-      # true when the modeller stopped the pick - Esc, or a switched view or
-      # a closed model, which Revit reports the same way. What happened to
-      # the asking, never a thing found (D-52).
+      # true when the modeller cancelled the pick - Esc, or a switched view
+      # or a closed model, which Revit reports the same way. What happened
+      # to the asking, never a thing found (D-52).
       role: accounting
       type: bool
     - name: refused
-      # Why no click, or no further click, could be asked for - Revit's own
-      # words when it was Revit that said no (D-52).
+      # Why no click could be asked for - Revit's own words when it was
+      # Revit that said no (D-52).
       role: accounting
       type: string
     - name: viewName
-      # The view the clicks were made in.
+      # The view the click was made in.
       role: accounting
       type: string
     - name: waitedSeconds
-      # How long Revit waited for the modeller, all clicks together.
+      # How long Revit waited for the modeller.
       role: accounting
       type: double
     - name: findings
@@ -139,15 +137,21 @@ compatibility-note: >
 
 # ROUTING - repeated in READ_SELECTION.
 #
-#   "put it here"                 -> here FIRST, for where "here" is: the
-#                                    modeller clicks, and `pointsMm` goes to
-#                                    the card that places or moves, as its
-#                                    point
+#   "ask me to pick the element in Revit" -> READ_SELECTION. This card clicks
+#                                    a POINT and cannot pick an element: the
+#                                    modeller selects it in Revit, and
+#                                    READ_SELECTION reads it
 #   "use the ones I picked"       -> READ_SELECTION. What is ALREADY selected,
 #                                    read at once - no waiting
 #   "what did I select"           -> READ_SELECTION
+#
+# "PUT IT HERE" IS NOT DECLARED HERE, ON PURPOSE (review, 2026-11-11). As an
+# utterance it took that sentence from the placement cards on every backend
+# measured, and by identity the chat was shown no placement card at all.
+# Whether it should mean "click, then place" is the owner's call - Q-86.
 
-# ONE UTTERANCE, ON PURPOSE. It is the sentence the gap was reported in.
-# Others are the modeller's to add as he says them - none is invented here.
+# ONE UTTERANCE, AND IT IS THE AUTHOR'S, NOT THE MODELLER'S. The card reader
+# refuses a card with none, and nobody has yet said this job in their own
+# words. It is replaced by the modeller's the first time he says one.
 utterances:
-  - put it here
+  - I will click the point in Revit

@@ -1,41 +1,38 @@
-// NOT STANDALONE. Assumes `uidoc` and `count` are in scope, and leaves
-// `pointsMm`, `clicked`, `cancelled`, `refused`, `viewName`, `waitedSeconds`
-// and `findings` for whatever reports the result.
+// NOT STANDALONE. Assumes `uidoc` is in scope, and leaves `pointMm`,
+// `clicked`, `cancelled`, `refused`, `viewName`, `waitedSeconds` and
+// `findings` for whatever reports the result.
 //
 // CHANGES NOTHING IN THE MODEL AND NOTHING IN THE SELECTION. It puts Revit
-// into its own pick mode, waits for the modeller to click, and reads where
-// the click landed. Opens no transaction and needs none.
+// into its own pick mode, waits for the modeller to click ONE point, and
+// reads where the click landed. Opens no transaction and needs none.
 //
 // THE ONE CALL THAT WAITS FOR A PERSON. Revit's own pick does not return
 // until the modeller clicks or presses Esc. Everything else in this library
 // returns as fast as Revit can answer; this one returns as fast as somebody
 // can find the place and click it.
 //
-// WHAT THAT MEETS TODAY, READ FROM THE ADD-IN AND NOT YET SEEN IN REVIT
-// (FRAGMENT-ISSUES row 5b-1507, Q-86):
+// ONE CLICK PER CALL, AND WHY (FRAGMENT-ISSUES row 5b-1507, Q-86). Several
+// clicks need a loop, and the run clock (D-129) is asked at the head of
+// every pass of one: a modeller who took longer than its budget over the
+// first click would have the job stopped at the second pass and reported as
+// having run out of time - "a loop that never ends is the usual cause",
+// which is untrue of a person - with the point they clicked dropped. With no
+// loop there is no second pass. Several points are several calls, until
+// Q-86 is decided.
 //
-//   * the dispatcher waits revit.operationTimeoutSeconds for a job it has
-//     started, then tells the chat "still running" and stops listening. A
-//     click made after that reaches nobody. The longer wait it gives a Keep
-//     or Discard box cannot be asked for from a fragment.
-//
-//   * the run clock (D-129) is asked at the head of every pass of the loop
-//     below. Past its budget - a margin inside the dispatcher's wait - the
-//     next pass stops the job, and the points already clicked are not handed
-//     back. Nothing here holds that clock while the modeller is clicking:
-//     the hold D-129 wrote for a prompt is the add-in's own type, and the
-//     compile gate builds a fragment against Revit alone.
-//
-// So the clicks have to be made inside that wait. This fragment does not
-// work round either limit - it says how long Revit waited, in
-// `waitedSeconds`, so a slow answer can be told from a lost one.
+// THE LIMIT THAT IS LEFT, READ FROM THE ADD-IN AND NOT YET SEEN IN REVIT:
+// the dispatcher waits revit.operationTimeoutSeconds - about a minute as
+// installed - for a job it has started, then tells the chat Revit is still
+// working and stops listening. A click made after that reaches nobody, and
+// no answer follows. The longer wait it gives a Keep or Discard box cannot
+// be asked for from a fragment. This fragment does not work round that; it
+// says how long Revit waited, in `waitedSeconds`.
 //
 // ESC IS AN ANSWER, NOT A FAILURE. Revit reports it by throwing; here it is
-// `cancelled` true, with whatever was clicked before it handed back. Revit
-// throws the same thing when the modeller switches view or closes the model
-// during the pick, and the two cannot be told apart from here - the finding
-// says so. The exception is matched by its type NAME: the namespace it lives
-// in is not one a fragment is given.
+// `cancelled` true. Revit throws the same thing when the modeller switches
+// view or closes the model during the pick, and they cannot be told apart
+// from here - the finding says so. The exception is matched by its type
+// NAME: the namespace it lives in is not one a fragment is given.
 //
 // THE POINT IS ON THE VIEW'S WORK PLANE, NOT ON WHAT WAS CLICKED. Revit
 // projects the click onto the active work plane: in a plan that is the
@@ -50,9 +47,9 @@
 // it follows the snaps the modeller has switched on in Revit. Naming snap
 // types would need a namespace a fragment is not given.
 //
-// MILLIMETRES OUT, AS D-67 WRITES A POINT: "x, y, z", several separated by
-// "; " - the text every point value in this library takes. Revit answers in
-// feet; one foot is 304.8 mm exactly.
+// MILLIMETRES OUT, AS D-67 WRITES A POINT: "x, y, z" - the text every point
+// value in this library takes. Revit answers in feet; one foot is 304.8 mm
+// exactly.
 //
 // A TABLE HAS NOWHERE TO CLICK. A schedule, a report or a browser in front
 // is refused before Revit is asked, so pick mode is never entered in a view
@@ -61,7 +58,7 @@
 // release.
 
 var findings = new List<string>();
-var pointsMm = "";
+var pointMm = "";
 var clicked = 0;
 var cancelled = false;
 var refused = "";
@@ -79,12 +76,7 @@ var waitedSeconds = 0.0;
     View inFront = null;
     try { inFront = uidoc.ActiveView; } catch (Exception) { inFront = null; }
 
-    if (count < 1)
-    {
-        refused = "count is how many clicks to ask for, and " + count
-            + " is not one or more. Nothing was asked in Revit.";
-    }
-    else if (inFront == null)
+    if (inFront == null)
     {
         // Revit answers null for a model that is not the one in front.
         refused = "This model is not the one in front in Revit, so there is no view to click in. "
@@ -108,86 +100,81 @@ var waitedSeconds = 0.0;
 
     if (refused.Length == 0)
     {
+        // Read BEFORE the pick, so the refusal below can say whether a
+        // missing work plane is the reason rather than guess at it.
+        var planeMissing = false;
         try
         {
             var plane = inFront.SketchPlane;
-            if (plane != null) planeName = plane.Name ?? "";
+            if (plane == null) planeMissing = true;
+            else planeName = plane.Name ?? "";
         }
-        catch (Exception) { planeName = ""; }
+        catch (Exception) { planeMissing = false; planeName = ""; }
 
-        var parts = new List<string>();
         var watch = System.Diagnostics.Stopwatch.StartNew();
-
-        while (clicked < count)
+        XYZ point = null;
+        try
         {
-            XYZ point = null;
-            try
-            {
-                point = uidoc.Selection.PickPoint("Heron: click point " + (clicked + 1) + " of " + count
-                    + " - Esc to stop");
-            }
-            catch (Exception ex)
-            {
-                var thrown = ex.GetType().Name;
-                if (thrown == "OperationCanceledException")
-                {
-                    cancelled = true;
-                }
-                else
-                {
-                    refused = "Revit would not take a click in \"" + viewName + "\" (" + kind + "): "
-                        + ex.Message;
-
-                    // The one refusal Revit documents for this call.
-                    if (thrown == "InvalidOperationException")
-                    {
-                        refused += " A view with no work plane takes no click - set one in Revit "
-                            + "(Work Plane > Set) or bring a plan view to the front, and ask again.";
-                    }
-                }
-                break;
-            }
-
-            if (point == null)
-            {
-                refused = "Revit came back from the click with no point. Nothing more was asked.";
-                break;
-            }
-
-            // The + 0.0 turns a rounded minus zero into zero, which the older
-            // and newer .NET releases would otherwise write differently.
-            parts.Add((Math.Round(point.X * 304.8, 3) + 0.0).ToString("0.###", culture) + ", "
-                + (Math.Round(point.Y * 304.8, 3) + 0.0).ToString("0.###", culture) + ", "
-                + (Math.Round(point.Z * 304.8, 3) + 0.0).ToString("0.###", culture));
-            clicked++;
+            point = uidoc.Selection.PickPoint("Heron: click the point - Esc to cancel");
         }
+        catch (Exception ex)
+        {
+            if (ex.GetType().Name == "OperationCanceledException")
+            {
+                cancelled = true;
+            }
+            else
+            {
+                refused = "Revit would not take a click in \"" + viewName + "\" (" + kind + "): "
+                    + ex.Message;
 
+                // SAID ONLY WHEN IT IS WHAT WAS READ: this view showed no
+                // work plane before the pick. Otherwise Revit's words stand
+                // alone - advice about a cause nobody saw is a guess.
+                if (planeMissing)
+                {
+                    refused += " This view has no work plane set, and Revit takes a click only on "
+                        + "one - set one in Revit (Work Plane > Set) or bring a plan view to the "
+                        + "front, and ask again.";
+                }
+            }
+        }
         watch.Stop();
         waitedSeconds = Math.Round(watch.Elapsed.TotalSeconds, 1);
-        pointsMm = string.Join("; ", parts);
 
-        findings.Add(clicked + " of " + count + " point(s) clicked in \"" + viewName + "\" (" + kind
-            + "), in millimetres from the model's internal origin. Revit waited "
-            + waitedSeconds.ToString("0.#", culture) + " second(s) for the modeller.");
-
-        if (clicked > 0)
+        if (point != null)
         {
-            findings.Add("Each point lies on this view's work plane"
+            // The + 0.0 turns a rounded minus zero into zero, which the older
+            // and newer .NET releases would otherwise write differently.
+            pointMm = (Math.Round(point.X * 304.8, 3) + 0.0).ToString("0.###", culture) + ", "
+                + (Math.Round(point.Y * 304.8, 3) + 0.0).ToString("0.###", culture) + ", "
+                + (Math.Round(point.Z * 304.8, 3) + 0.0).ToString("0.###", culture);
+            clicked = 1;
+
+            findings.Add("One point clicked in \"" + viewName + "\" (" + kind + "), in millimetres "
+                + "from the model's internal origin. Revit waited "
+                + waitedSeconds.ToString("0.#", culture) + " second(s) for the modeller.");
+
+            findings.Add("The point lies on this view's work plane"
                 + (planeName.Length == 0 ? "" : " (\"" + planeName + "\")")
                 + ", not on whatever the cursor was over - in a plan its Z is the plane's height.");
 
             if (kind == "DrawingSheet" || kind == "DraftingView" || kind == "Legend")
             {
-                findings.Add("\"" + viewName + "\" is a " + kind + ": these are positions on that "
-                    + "drawing, not places in the building.");
+                findings.Add("\"" + viewName + "\" is a " + kind + ": this is a position on that "
+                    + "drawing, not a place in the building.");
             }
         }
-
-        if (cancelled)
+        else if (cancelled)
         {
-            findings.Add("The modeller stopped the pick after " + clicked + " of " + count
-                + " - Esc, or the view was switched or the model closed while Revit waited; Revit "
-                + "reports all three the same way. Nothing in the model was changed.");
+            findings.Add("The modeller cancelled the pick in \"" + viewName + "\" after "
+                + waitedSeconds.ToString("0.#", culture) + " second(s) - Esc, or the view was "
+                + "switched or the model closed while Revit waited; Revit reports all three the "
+                + "same way. No point was clicked and nothing in the model was changed.");
+        }
+        else if (refused.Length == 0)
+        {
+            refused = "Revit came back from the click with no point.";
         }
     }
 

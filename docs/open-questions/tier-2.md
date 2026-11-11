@@ -1368,8 +1368,8 @@ the safety rules for a shortcut.
 ### 🔵 Q-86 — A card that waits for the modeller's click is timed as a slow job, and a face cannot be clicked from a card at all. How should a card say it is waiting for a person? *(found 2026-11-11 writing `PICK_ON_SCREEN`)*
 
 **What was found.** The owner wants to work by chat with very few clicks in Revit, and nothing in Heron let the
-modeller click to answer the chat. `PICK_ON_SCREEN` was written for it, at DRAFT: Revit's own pick, the points
-handed back in millimetres. Reading the add-in before writing it
+modeller click to answer the chat. `PICK_ON_SCREEN` was written for it, at DRAFT: Revit's own pick, one point
+for each call, handed back in millimetres. Reading the add-in before writing it
 ([row 5b-1507](../fragment-issues/section-5b-rows-401-425.md) has each one with its evidence), nothing there
 knows that a card can be waiting for a person:
 
@@ -1377,8 +1377,9 @@ knows that a card can be waiting for a person:
   Revit is still running the request and stops listening. A click made after that reaches nobody. The longer wait
   it gives a Keep or Discard box ([D-119](../decisions/D-119.md), `revit.askTimeoutSeconds`) is asked for by the
   add-in's own code and cannot be asked for from a card.
-- **The run clock ([D-129](../decisions/D-129.md)) stops a slow multi-click** at the next pass of the card's loop
-  and reports a job that ran out of time; the points already clicked are not handed back. D-129's item 5 wrote a
+- **The run clock ([D-129](../decisions/D-129.md)) would stop a slow multi-click** at the next pass of a card's
+  loop and report a job that ran out of time - *"a loop that never ends is the usual cause"*, untrue of a slow
+  modeller - with the points already clicked not handed back. So the card asks for one click a call and has no loop. D-129's item 5 wrote a
   hold for exactly this - *"a prompt pauses it"* - but the compile gate builds a card against Revit alone and
   cannot compile the call, and the hold does not lengthen the dispatcher's wait in any case.
 - **The chat's side waits 180 seconds for a show run**, so a longer wait in the add-in alone would only move the
@@ -1386,7 +1387,8 @@ knows that a card can be waiting for a person:
 - **An element or a face cannot be clicked from a card.** Revit's pick for one names a kind of pick from a
   namespace cards are not given, and no card takes a face as an input ([D-72](../decisions/D-72.md)).
 
-So the card runs today only while every click lands inside that one wait. It does not work round either clock.
+So the card runs today only while the click lands inside that one wait - about a minute as installed - and
+its own description tells the chat to ask again when it does not. It does not work round the wait.
 What the chat is actually told when a click comes late is not yet seen in Revit
 ([NEEDS-CHECKING Group NH](../needs-checking/group-nh.md), NH8 and NH9).
 
@@ -1417,7 +1419,12 @@ direction it faces are all things cards take today; Revit's own reference to the
 decided in one place by the add-in, where the Keep or Discard box's wait already is; and a card cannot lengthen
 its own wait without its contract saying so, where a reviewer sees it.
 
+**And what "put it here" means.** The card first declared that sentence, and a review took it off: it moved the
+sentence away from the cards that place and show, and the chat was then offered no placement card at all. Should
+"put it here" mean *click, then place* - a job of two steps, which is a skill's to claim rather than one card's -
+or stay with the placement cards, the point typed or clicked as a step the chat chooses?
+
 **Ajmal PS decides.** Until he does, nothing in the add-in is changed, and `PICK_ON_SCREEN` stays DRAFT behind
-the limit, points only.
+the limit: one point a call, and "put it here" declared by no card.
 
 ---

@@ -114,9 +114,9 @@ compatibility-note: >
 #   "highlight what you found" -> SET_SELECTION
 #   "how many ducts are there" -> COUNT_ELEMENTS. Nothing to do with what is
 #                                 picked on screen
-#   "put it here"              -> PICK_ON_SCREEN. A point the modeller has
-#                                 still to CLICK - this card reads what is
-#                                 already selected, and never waits
+#   "ask me to pick the element in Revit" -> here. PICK_ON_SCREEN clicks a
+#                                 POINT and cannot pick an element: the
+#                                 modeller selects it, and this reads it
 
 utterances:
   - what did I select
