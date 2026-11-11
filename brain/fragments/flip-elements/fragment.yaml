@@ -150,10 +150,12 @@ contract:
       role: accounting
       type: IList<string>
 
+# WRITTEN ABOVE AN EARLIER PROOF, since replaced by the `proof:` block below -
+# read that block's own date and fingerprint, not this comment, for what ran.
 # VERSION 2's PROOF, KEPT AS A RECORD. Version 3 changed impl/, so its
-# fingerprint no longer describes the code and the card is DRAFT until
-# NEEDS-CHECKING Group JB proves version 3 (D-30). Version 2's code is still
-# the path every call that leaves flipWorkPlane out takes.
+# fingerprint no longer described the code and the card was DRAFT at the
+# time, until NEEDS-CHECKING Group JB proves version 3 (D-30). Version 2's
+# code is still the path every call that leaves flipWorkPlane out takes.
 proof:
   date: '2026-11-02'
   by: Ajmal PS

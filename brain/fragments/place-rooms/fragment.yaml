@@ -40,8 +40,9 @@ risk: MODIFY
 # `created`; `unenclosed` -> `unbounded`; `placed` -> `created` less
 # `unbounded`; `report` and `findings` -> `refused` and `refusedPoints`.
 #
-# Version 1's proof below no longer describes the code and is kept as the
-# record; DRAFT until version 3 is proved on a real model (D-30).
+# Version 1's proof below no longer described the code and was kept as
+# the record; DRAFT at the time, until version 3 is proved on a real
+# model (D-30).
 
 # VERSION 2 (2026-11-01) - PLACE_ROOM_AT_POINT WAS MERGED INTO THIS CARD on the
 # owner's instruction ("make sure there is no duplicate tools"), and is
@@ -63,8 +64,9 @@ risk: MODIFY
 # outputs are now: `created` -> `created`; `unenclosed` -> `unbounded`;
 # `refused` (a count) -> `pointsRefused`.
 #
-# Version 1's proof below no longer describes the code (impl/ changed) and is
-# kept as the record; DRAFT until version 2 is proved on a real model (D-30).
+# Version 1's proof below no longer described the code (impl/ changed) and
+# was kept as the record; DRAFT at the time, until version 2 is proved on a
+# real model (D-30).
 
 purpose: >
   Places a room - or an MEP space - in every enclosed area on one level, in one

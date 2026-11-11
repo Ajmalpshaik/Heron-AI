@@ -63,9 +63,9 @@ risk: MODIFY
 # counts, each column by its printed heading, each value as Revit shows it -
 # one line each, because a list is cut to three entries before anyone sees it.
 #
-# Version 1's proof below is kept as evidence of version 1; it no longer
-# describes this code (D-30), so this is DRAFT until NEEDS-CHECKING Group IH is
-# run and signed.
+# Version 1's proof below was kept as evidence of version 1; it no longer
+# described this code (D-30), so this was DRAFT at the time, until
+# NEEDS-CHECKING Group IH is run and signed.
 
 purpose: >
   Sets the filter rules on a schedule - which rows it shows - and changes

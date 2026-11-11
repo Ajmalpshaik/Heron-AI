@@ -13,8 +13,9 @@ capability: DRAW_FAMILY_DETAIL_LINES
 # owner's instruction ("make sure there is no duplicate tools", every conflict
 # to keep the safer rule), and is DEPRECATED: a PROJECT's detail lines in a
 # view and model lines on a plane, from the same millimetre shape language.
-# Version 1's proof below no longer describes the code (impl/ changed) and is
-# kept as the record; DRAFT until version 2 is proved on a real model (D-30).
+# Version 1's proof below no longer described the code (impl/ changed) and was
+# kept as the record; DRAFT at the time, until version 2 is proved on a real
+# model (D-30).
 version: 2
 source: OFFICIAL
 risk: MODIFY

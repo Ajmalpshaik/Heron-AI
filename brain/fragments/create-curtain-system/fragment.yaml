@@ -282,15 +282,16 @@ compatibility-note: >
 #                                               curtain SYSTEM type this lays
 #                                               out - its Grid 1 and Grid 2
 #                                               (version 3, 2026-10-29; DRAFT
-#                                               until NEEDS-CHECKING Group JP).
-#                                               This makes the curtain system;
-#                                               that sets the type it is of
+#                                               at the time, until
+#                                               NEEDS-CHECKING Group JP). This
+#                                               makes the curtain system; that
+#                                               sets the type it is of
 #   "put mullions on the curtain system
 #    type"                                   -> SET_CURTAIN_WALL_GRID, `mullions`,
 #                                               the same way - Grid 1 and Grid 2
 #                                               Mullions (SET_CURTAIN_WALL_MULLIONS
 #                                               merged into it 2026-11-01; DRAFT
-#                                               until Group JP)
+#                                               that day, until Group JP)
 #   "put this family on the face of the
 #    mass"                                   -> PLACE_FAMILY_ON_FACE
 
@@ -307,9 +308,9 @@ compatibility-note: >
 #     choosing by the type would skip a re-run for walls and double it here.
 #   - THE FACES DIFFER: vertical, top or all here; sides or vertical there.
 #   - THE RECORD: CREATE_ELEMENTS_BY_FACE did both and was narrowed to walls on
-#     2026-10-29 when this card reached main; this card is PROVEN (2026-11-01)
-#     and that one is DRAFT, so a merge would only put a proven tool back to
-#     DRAFT for a job it does not share.
+#     2026-10-29 when this card reached main; this card was PROVEN
+#     (2026-11-01) and that one DRAFT that day, so a merge would only put a
+#     proven tool back to DRAFT for a job it does not share.
 
 utterances:
   - put a curtain system on the faces of this mass

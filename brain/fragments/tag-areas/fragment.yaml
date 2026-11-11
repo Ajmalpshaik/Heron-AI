@@ -12,16 +12,17 @@ semantic-identity: "put an area tag on each of these areas in this area plan - R
 # plan" and "put area tags on these areas" - Revit's Annotate > Area Tag.
 # Checked that day with brain/heron_retrieve.py on a scratch store, Revit 2024:
 # both sentences reached PLACE_AREAS, which makes areas and tags none. Nothing
-# in the library placed an area tag: TAG_ELEMENTS_IN_VIEW (DRAFT, version 7)
-# tags rooms, spaces and HVAC zones and the other kind of tag, and lists an
-# area in `notTagged` as taking an area tag in an area plan.
+# in the library placed an area tag: TAG_ELEMENTS_IN_VIEW (version 7) tags
+# rooms, spaces and HVAC zones and the other kind of tag, and lists an area in
+# `notTagged` as taking an area tag in an area plan.
 #
 # WHY A NEW CARD AND NOT A WIDENING. Written when TAG_ROOMS was PROVEN; main's
 # #777 has since merged TAG_ROOMS and TAG_ELEMENTS into TAG_ELEMENTS_IN_VIEW,
-# DRAFT, and retired them, so no proof stands in the way now (corrected
-# 2026-11-01). What still differs: an area tag needs an AREA PLAN of the
-# area's own scheme, where a room tag needs a floor plan - the view rule, the
-# scheme rule and the creation call are all different. KEPT APART from
+# DRAFT that day, and retired them, so no proof stood in the way then
+# (corrected 2026-11-01); where that card stands since is its own heron-status
+# line. What still differs: an area tag needs an AREA PLAN of the area's own
+# scheme, where a room tag needs a floor plan - the view rule, the scheme rule
+# and the creation call are all different. KEPT APART from
 # TAG_ELEMENTS_IN_VIEW on 2026-11-04, on the owner's ruling for row 5b-1382 -
 # see the JUDGED block above the utterances.
 #

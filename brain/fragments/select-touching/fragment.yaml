@@ -174,8 +174,8 @@ compatibility-note: >
 # bounding-box filter around the target, or the category filter placed first,
 # would narrow the set before any geometry is opened. Whether Revit reorders
 # the two by itself is not known here, and the time has not been measured
-# here. A note only: the fragment is DRAFT and nothing was changed.
-# NEEDS-CHECKING AJ9 asks for the time on a large model.
+# here. A note only: the fragment was DRAFT at the time and nothing was
+# changed. NEEDS-CHECKING AJ9 asks for the time on a large model.
 
 # ROUTING - repeated in FIND_CLASHES, TRACE_CONNECTIVITY and SELECT_IN_REGION.
 #

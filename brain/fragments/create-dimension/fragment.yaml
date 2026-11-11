@@ -327,8 +327,9 @@ compatibility-note: >
 # safer rule, since a string through some of the grids named reads as the
 # one asked for.
 #
-# Version 1's proof below no longer describes the code and is kept as the
-# record; DRAFT until version 5 is proved on a real model (D-30).
+# Version 1's proof below no longer described the code and was kept as
+# the record; DRAFT at the time, until version 5 is proved on a real
+# model (D-30).
 
 utterances:
   - add a dimension between these

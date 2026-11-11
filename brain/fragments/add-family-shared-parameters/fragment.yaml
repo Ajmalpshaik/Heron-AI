@@ -225,8 +225,8 @@ contract:
       type: IList<string>
 
 # THE PROOF BELOW IS VERSION 2's, KEPT AS A RECORD. Version 3 (createMissing)
-# changed impl/, so it no longer describes the code and the card is DRAFT until
-# NEEDS-CHECKING Group DF proves it again.
+# changed impl/, so it no longer described the code and the card was DRAFT at
+# the time, until NEEDS-CHECKING Group DF proves it again.
 #
 # VERSION 2 (replacing) PROVED 2026-10-12 on scratch Family4 (Revit 2020), signed by
 # Ajmal PS on his word - NEEDS-CHECKING DE. The adding mode of version 1 shares this

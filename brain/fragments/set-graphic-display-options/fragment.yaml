@@ -15,8 +15,8 @@ version: 3
 # Measured on Revit 2020: the elevations of the Systems template, Mechanical
 # or Electrical, take it once their View Discipline is Architectural; the
 # refusal now names the discipline. Version 2's proof below no longer
-# describes the code: DRAFT until it is proved again.
-# VERSION 2, 2026-10-20 - row 5b-1279, found running Group IB's IB5 on Revit
+# described the code: DRAFT at the time, until it is proved again. VERSION
+# 2, 2026-10-20 - row 5b-1279, found running Group IB's IB5 on Revit
 # 2020. On a perspective camera view, version 1's read-back called
 # GetDepthCueing whatever was asked, and Revit threw "This view cannot use
 # Depth Cueing" - the sun, shadow and line changes rolled back with it. Depth

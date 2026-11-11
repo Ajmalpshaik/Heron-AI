@@ -32,9 +32,9 @@ companion-subject: materialsNamed
 # Its `colour` input is "Shading Colour=r,g,b" in `fieldValues` - which also
 # takes "#RRGGBB". Nothing it did is left out.
 #
-# Version 1's proof below no longer describes the code (impl/ changed) and is
-# kept as the record; the card is DRAFT until version 2 is proved on a real
-# model (D-30).
+# Version 1's proof below no longer described the code (impl/ changed) and
+# was kept as the record; the card was DRAFT at the time, until version 2 is
+# proved on a real model (D-30).
 
 # WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
 # searched and long text pulls other sentences here.

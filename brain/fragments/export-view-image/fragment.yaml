@@ -22,9 +22,9 @@ risk: PUBLISH
 # that DPI. And the files are READ BACK: what carries the prefix and was
 # written by this run is listed from the folder - name, pixel size out of the
 # file's own header, size - in `fileReport`, counted in `filesWritten`.
-# Version 1's proof no longer describes the code, so it is kept below as a
-# record and the card is DRAFT until it is proved again (D-30) - D-117 refuses
-# a kept export from it until then.
+# Version 1's proof no longer described the code, so it was kept below as a
+# record and the card was DRAFT at the time, until it is proved again (D-30) -
+# D-117 refuses a kept export from it until then.
 
 purpose: >
   Writes views and sheets out as PNG, JPG, TIFF, BMP or TGA images at a chosen
@@ -98,10 +98,12 @@ contract:
     - name: findings
       type: IList<string>
 
+# WRITTEN ABOVE AN EARLIER PROOF, since replaced by the `proof:` block below -
+# read that block's own date and fingerprint, not this comment, for what ran.
 # VERSION 1's PROOF, KEPT AS A RECORD. Version 2 changed impl/, so its
-# fingerprint no longer describes the code and the card is DRAFT until the
-# rendering tools' NEEDS-CHECKING group proves version 2 (D-30). A PNG at a
-# pixel width still takes the road this proof ran.
+# fingerprint no longer described the code and the card was DRAFT at the
+# time, until the rendering tools' NEEDS-CHECKING group proves version 2
+# (D-30). A PNG at a pixel width still takes the road this proof ran.
 proof:
   date: '2026-10-20'
   by: Ajmal PS

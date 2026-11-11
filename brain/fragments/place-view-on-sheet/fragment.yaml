@@ -24,9 +24,9 @@ capability: PLACE_VIEW_ON_SHEET
 # swap, refused whole. Split, IsSplit, GetSegmentCount, SegmentIndex and the
 # five-argument ScheduleSheetInstance.Create are 2022 and later, reached by
 # name: on 2020 and 2021 a split or a segment refuses that schedule in plain
-# words and places nothing for it. Version 3's proof below no longer describes
-# the code and is kept as a record; the card is DRAFT until NEEDS-CHECKING
-# Group KK proves version 5 and the owner signs.
+# words and places nothing for it. Version 3's proof below no longer described
+# the code and was kept as a record; the card was DRAFT at the time, until
+# NEEDS-CHECKING Group KK proves version 5 and the owner signs.
 version: 5
 source: OFFICIAL
 risk: MODIFY
@@ -231,15 +231,18 @@ contract:
       role: result
       type: IList<string>
 
+# WRITTEN ABOVE AN EARLIER PROOF, since replaced by the `proof:` block below -
+# read that block's own date and fingerprint, not this comment, for what ran.
 # VERSION 1'S PROOF, KEPT AS A RECORD. It proves the placing job as it stood
-# at fingerprint 0b724478ecce6d08; version 2 changed impl/, so it is stale and
-# this card is DRAFT until both jobs are proved again (FRAGMENT-ISSUES row
-# 5b-540, NEEDS-CHECKING Group FC).
+# at fingerprint 0b724478ecce6d08; version 2 changed impl/, so it was stale
+# and this card was DRAFT at the time, until both jobs are proved again
+# (FRAGMENT-ISSUES row 5b-540, NEEDS-CHECKING Group FC).
 #
 # VERSION 3 (2026-11-01). The proof below - signed 2026-10-18 at fingerprint
 # d38ab8529a1d1f56, with oldViewId among its inputs, so version 2's - is kept
-# as the record. Version 3 changed impl/, so it is stale and the card is DRAFT
-# until the placing job, the grid and the swap are proved again.
+# as the record. Version 3 changed impl/, so it was stale and the card was
+# DRAFT at the time, until the placing job, the grid and the swap are proved
+# again.
 proof:
   date: '2026-11-02'
   by: Ajmal PS

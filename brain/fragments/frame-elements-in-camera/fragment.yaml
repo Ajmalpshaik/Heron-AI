@@ -23,8 +23,8 @@ version: 5
 # now, for the typed road. THE SAFER RULE OF THE CONFLICT WAS KEPT: an existing
 # ISOMETRIC view is refused, never turned perspective - SET_VIEW_CAMERA's
 # `perspective` switch, which toggled one for good, was NOT carried. Version
-# 3's proof below no longer describes the code; DRAFT until version 5 is
-# proved.
+# 3's proof below no longer described the code; DRAFT at the time, until
+# version 5 is proved.
 #
 # VERSION 4, 2026-10-21 - four faults found making real cinematic views on
 # Revit 2020's sample house after version 3 was signed (Group IF). No input is
@@ -45,8 +45,8 @@ version: 5
 # last) and the model's own 'Show Complete'. (4) row 5b-1302, folded in - the
 # crop box's Z bottom is again set past the deepest corner, and a far clip that
 # could not be pushed out, or a crop shape that could not be read, is said.
-# Version 3's proof below no longer describes the code: DRAFT until
-# NEEDS-CHECKING Group IM proves version 4, with the pictures looked at.
+# Version 3's proof below no longer described the code: DRAFT at the time,
+# until NEEDS-CHECKING Group IM proves version 4, with the pictures looked at.
 #
 # VERSION 3, 2026-10-20 (night) - row 5b-1287, on the owner's words: "I need
 # this building left side like in a cinematic camera look ... different
@@ -56,8 +56,8 @@ version: 5
 # lookDownDeg and marginPercent now read `auto` when left out, which means
 # version 2's own south-east, 30 and 10, so a version 2 call frames exactly as
 # before - and a shot can tell "not said" from "said". Version 2's proof below
-# no longer describes the code: DRAFT until NEEDS-CHECKING Group IF proves it,
-# with an exported picture of every shot looked at.
+# no longer described the code: DRAFT at the time, until NEEDS-CHECKING Group
+# IF proves it, with an exported picture of every shot looked at.
 #
 # CORRECTED 2026-10-21, before its proof - row 5b-1301, found by Group IF's
 # first picture on Revit 2020's sample house: the building came out a third of
@@ -78,8 +78,9 @@ version: 5
 # crop window on its own near plane, 40 mm in front of the eye, so three
 # exported views showed the elements as a dot. The corners are now projected
 # onto that plane. (The 40 mm was the far clip over a thousand; the window is
-# drawn 30.48 mm in front - row 5b-1301, above.) Version 1's proof below no longer describes the code:
-# DRAFT until it is proved again WITH the picture looked at.
+# drawn 30.48 mm in front - row 5b-1301, above.) Version 1's proof below no
+# longer described the code: DRAFT at the time, until it is proved again WITH
+# the picture looked at.
 source: OFFICIAL
 risk: MODIFY
 
@@ -407,11 +408,13 @@ contract:
     - name: findings
       type: IList<string>
 
+# WRITTEN ABOVE AN EARLIER PROOF, since replaced by the `proof:` block below -
+# read that block's own date and fingerprint, not this comment, for what ran.
 # VERSION 3's PROOF (Group IF, IF12), KEPT AS A RECORD. Version 4 changed
-# impl/, so its fingerprint no longer describes the code and the card is DRAFT
-# until Group IM proves version 4 (D-30). An exterior call whose window holds
-# its elements still takes the road this proof ran; a new view now also gets
-# its phase (row 5b-1307).
+# impl/, so its fingerprint no longer described the code and the card was
+# DRAFT at the time, until Group IM proves version 4 (D-30). An exterior call
+# whose window holds its elements still takes the road this proof ran; a new
+# view now also gets its phase (row 5b-1307).
 proof:
   date: '2026-11-06'
   by: Ajmal PS

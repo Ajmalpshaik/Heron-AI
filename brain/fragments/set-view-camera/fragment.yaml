@@ -47,9 +47,9 @@ deprecated:
 # off, or the Far Clip Offset with Far Clip Active on, read back. A field of
 # view is NOT offered: Revit's API has no field-of-view value on any release
 # 2020 to 2027, and FRAME_ELEMENTS_IN_CAMERA fits the crop to elements instead.
-# Version 1's proof no longer describes the code, so it is kept below as a
-# record and the card is DRAFT until it is proved again (D-30) - D-117 refuses
-# a kept camera from it until then.
+# Version 1's proof no longer described the code, so it was kept below as a
+# record and the card was DRAFT at the time, until it is proved again (D-30) -
+# D-117 refuses a kept camera from it until then.
 
 # WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
 # searched and long text pulls other sentences here.
@@ -139,9 +139,9 @@ contract:
       type: IList<string>
 
 # VERSION 1's PROOF, KEPT AS A RECORD. Version 2 changed impl/, so its
-# fingerprint no longer describes the code and the card is DRAFT until the
-# rendering tools' NEEDS-CHECKING group proves version 2 (D-30). A call with
-# neither new input still takes the road this proof ran.
+# fingerprint no longer described the code and the card was DRAFT at the
+# time, until the rendering tools' NEEDS-CHECKING group proves version 2
+# (D-30). A call with neither new input still takes the road this proof ran.
 proof:
   date: '2026-10-20'
   by: Ajmal PS

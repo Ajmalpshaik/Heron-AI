@@ -20,9 +20,10 @@ semantic-identity: "put a wall foundation under these walls - Structure > Founda
 # and a wall foundation is not a family: it is a system element hosted by the
 # wall, made by WallFoundation.Create.
 #
-# A NEW CAPABILITY, NOT A WIDENING. PLACE_STRUCTURAL_FAMILY is PROVEN and
-# point-based; a wall foundation has no point and no family symbol, so widening
-# it would change its job and make its proof stale. Nothing here touches it.
+# A NEW CAPABILITY, NOT A WIDENING. PLACE_STRUCTURAL_FAMILY (PROVEN then;
+# PLACE_FAMILY_INSTANCES has superseded it since) is point-based; a wall
+# foundation has no point and no family symbol, so widening it would change its
+# job and make its proof stale. Nothing here touches it.
 #
 # THE TYPE IS NEVER GUESSED (D-33). Left out, nothing is made and the model's
 # wall foundation types are named - even when the model holds only one, since
