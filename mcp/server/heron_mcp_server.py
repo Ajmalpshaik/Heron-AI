@@ -2158,6 +2158,7 @@ def revit_change(capability: str = "", values: str = "",
     # AND WHAT THE LAST REPLY OF THIS CAPABILITY ALREADY SHOWED IS COUNTED,
     # NOT PRINTED AGAIN (5b-407) - only within a batch, only word for word, and
     # only when the reply names a run record, where every value can be read.
+    # NEVER A REFUSAL: one that repeats is printed every time (5b-1160).
     shown, same = runs.shown_values(reply, capability, _BATCH)
     lines.extend(_provides_lines(shown, reply.get("providesEntries"), reply.get("providesItems"))
                  or ([""] if same else []))
