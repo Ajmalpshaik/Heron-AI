@@ -1184,7 +1184,7 @@ class Fragment(object):
         be shown to still hold, and treating unknown as fresh is exactly the
         silent-pass this repository keeps catching itself in.
 
-        NO PROOF AT ALL IS UNKNOWN TOO, FOR A CARD THAT CLAIMS ONE - row
+        NO PROOF AT ALL COUNTS THE SAME, FOR A CARD THAT CLAIMS ONE - row
         5b-1154. This returned False whenever `proof:` was missing, five lines
         under the sentence above, so a card edited to `heron-status: PROVEN`
         with no proof read as fresh and passed D-117's gate at run time:
