@@ -36,9 +36,10 @@ risk: READ
 # `parameters` - up to 12 parameter names - and a `fill` key in dashboardJson
 # saying, per category and per name, how many of the counted elements have it
 # populated, empty or absent (heron_modelqa's three states), plus doubled.
-# Still DRAFT and never proved, so no proof went stale. Left out, the answer
-# is version 1's plus "fill": null, so "format" stays 1. The modeller's words
-# for it are not on this card yet: none were given, and none are invented.
+# Still DRAFT at the time and never proved, so no proof went stale. Left out,
+# the answer is version 1's plus "fill": null, so "format" stays 1. The
+# modeller's words for it are not on this card yet: none were given, and none
+# are invented.
 #
 # VERSION 3 (2026-11-01, the owner's phase 3 - the Companion's boards): an
 # optional `breakdowns` - up to 8 "key|categories|groupBy|sum" - and a
@@ -46,8 +47,9 @@ risk: READ
 # categories grouped by a special key or a built-in parameter, counted, and
 # summed in metres, square metres or cubic metres where asked. The boards are
 # defined in brain/heron_model_dashboard.py's BOARDS, which writes the value;
-# this card reads whatever it is sent. Still DRAFT, no proof to go stale, and
-# "format" stays 1. No modeller's words were given for it, and none are added.
+# this card reads whatever it is sent. Still DRAFT at the time, no proof to go
+# stale, and "format" stays 1. No modeller's words were given for it, and none
+# are added.
 purpose: >
   Reads the open project once and counts what it holds, part by part, for the
   Heron Companion's Model Dashboard: the placed model elements by category,

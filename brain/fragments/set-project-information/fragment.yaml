@@ -32,9 +32,9 @@ semantic-identity: "change the values in Manage > Project Information - project 
 #     Information is never selected, nothing upstream hands it in, and it
 #     gives no before value and no list of names when a name is absent.
 #     Widening it would put its proof out of date (heron_apply LANDS_AT).
-#   SET_PARAMETER_VALUES_BY_ID (DRAFT) - LOOK-ALIKE: a different value for
+#   SET_PARAMETER_VALUES_BY_ID - LOOK-ALIKE: a different value for
 #     each named element, refused when anything moved since a table was read.
-#   SET_GLOBAL_PARAMETER (DRAFT) - LOOK-ALIKE: a global parameter is its own
+#   SET_GLOBAL_PARAMETER - LOOK-ALIKE: a global parameter is its own
 #     element, written through its own calls; a Project Information parameter
 #     driven by one is refused here and pointed there.
 kind: action

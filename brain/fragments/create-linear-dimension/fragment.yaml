@@ -47,8 +47,8 @@ capability: CREATE_LINEAR_DIMENSION
 # caller is changed. Every version 2 word reads exactly as it did. The purpose
 # below is version 2's, word for word, so the search reads the same text -
 # its "a face ... is not offered" means a face picked with the mouse; a face
-# named by its side is offered since version 3. DRAFT until version 3 is run
-# in Revit: NEEDS-CHECKING Group EF.
+# named by its side is offered since version 3. DRAFT at the time, until
+# version 3 is run in Revit: NEEDS-CHECKING Group EF.
 #
 # VERSION 4 (2026-10-15, FRAGMENT-ISSUES 5b-486): `between` reaches INTO A
 # LOADED LINK. On the same real project the openings were Generic Model
@@ -67,8 +67,9 @@ capability: CREATE_LINEAR_DIMENSION
 # A link not loaded, or hidden in the view, is refused naming the links the
 # model places; an id not in the link is refused naming where it IS when it is
 # anywhere - this model or another loaded link. Every version 3 word reads as
-# it did; the purpose is still version 2's, word for word. DRAFT until
-# NEEDS-CHECKING Group EH runs it on a new project linking a saved test one.
+# it did; the purpose is still version 2's, word for word. DRAFT at the time,
+# until NEEDS-CHECKING Group EH runs it on a new project linking a saved test
+# one.
 #
 # VERSION 5 (2026-11-01) - GRIDS AND LEVELS ARE THIS CARD'S ALONE. After
 # CREATE_DIMENSION's version 4 (DIMENSION_GRIDS_AND_LEVELS merged in) two
@@ -102,8 +103,9 @@ capability: CREATE_LINEAR_DIMENSION
 # measured its fingerprint, 6155c5d9503d6351, equal to version 4's impl/ on
 # 2026-11-01 - it was taken on version 4's code on 2026-10-18 (its returned
 # values carry the link variables only version 4 has), though its cases ran
-# grids in a floor plan only. Version 5 changed impl/, so it is now the record
-# and this card is DRAFT until version 5 is proved on a real model (D-30).
+# grids in a floor plan only. Version 5 changed impl/, so it was then the
+# record and this card was DRAFT at the time, until version 5 is proved on a
+# real model (D-30).
 version: 5
 source: OFFICIAL
 risk: MODIFY
@@ -194,6 +196,8 @@ contract:
     - name: findings
       type: IList<string>
 
+# WRITTEN ABOVE AN EARLIER PROOF, since replaced by the `proof:` block below -
+# read that block's own date and fingerprint, not this comment, for what ran.
 # THIS PROOF RAN GRIDS IN A FLOOR PLAN ONLY, and never reached a family
 # instance, a solid face, a string run through one point or a link. (This
 # comment said it was version 2's and stale; on 2026-11-01 its fingerprint

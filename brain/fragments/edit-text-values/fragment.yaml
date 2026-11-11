@@ -428,7 +428,7 @@ compatibility-note: >
 #                                           5b-1300)
 #
 #   THE TEXT NOTES OF ONE VIEW, as a chain: FILTER_ELEMENTS_BY_CATEGORY with
-#   category=Text Notes and inViewOnly=<the view> - version 5, DRAFT - then
+#   category=Text Notes and inViewOnly=<the view> - since its version 5 - then
 #   this with expect_from filter-elements-by-category. Measured 2026-10-17 on
 #   the scratch copy "Heron note scratch": SELECT_VISIBLE_IN_VIEW (PROVEN then)
 #   handed 109 notes on in the drafting view "Spread Footing", and

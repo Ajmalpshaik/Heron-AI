@@ -131,7 +131,7 @@ it is recorded rather than built (§6, the IFC schema).
 | Working drawings: views before sheets, exact types, overlaps, export | **Held**, except viewports overlapping on a sheet |
 | Aircraft, ships, rockets, bridges, robots, vehicles, games, characters, cameras, animation, physics, rides, sculpture, organic shells, street scenes, a game engine's materials | **Out** - not a BIM model, and not Heron's |
 
-**39 §5 was out of date on one line,** and still said stairs were unbuilt. `CREATE_STAIRS` exists (DRAFT);
+**39 §5 was out of date on one line,** and still said stairs were unbuilt. `CREATE_STAIRS` exists;
 §5 there now says so.
 
 ---
@@ -239,7 +239,7 @@ needs measuring first. Each waits for the owner, one at a time ([31 §5](31-stud
 | **Where each link sits** - offset and rotation from the host, in millimetres and degrees | Widens `LIST_LINKED_MODELS`, PROVEN |
 | **Elements NOT on a workset** - *ducts not on M-HVAC* | Widens `SELECT_BY_WORKSET`, PROVEN |
 | **A numeric schedule filter** - width 600 mm or more | Widens `SET_SCHEDULE_FILTERS`, PROVEN, which builds every filter from text |
-| **Room proportion and minimum size**, against the modeller's values | Widens `MEASURE_ROOM_DIMENSIONS`, PROVEN |
+| **Room proportion and minimum size**, against the modeller's values | Widens `MEASURE_ROOM_DIMENSIONS`, PROVEN when this was written - merged into `REPORT_ROOM_SPACE_DATA` since |
 | **Panel sizes on a curtain wall**, grouped within the modeller's tolerance | Widens `REPORT_CURTAIN_ELEMENTS`, PROVEN. *As built (2026-10-29, on the owner's word that day): built - `REPORT_CURTAIN_ELEMENTS` version 2 reads each panel's Width and Height as Revit gives them and groups them within a tolerance, 5 mm unless the modeller gives one, per wall and across the walls handed in. DRAFT - its version 1 proof is stale - until [Group JR](needs-checking/group-jr.md) is run and signed; not yet run in Revit* |
 | **A build that can be run twice** - a wall already there is not drawn again | Widens `CREATE_WALL`, PROVEN, then the floor, ceiling and roof creators |
 | **Copy to another level** that lands *on* that level, not on the old one with a large offset | `COPY_ELEMENTS` is PROVEN; until then the route is `COPY_ELEMENTS` then `SET_ELEMENT_LEVEL`. *As built (2026-10-18): built - `COPY_ELEMENTS` version 2 copies onto a list of levels, each copy on its own level (#526, row 5b-460, Group DX), signed PROVEN on 2026-10-14; version 3 (#593, worksets) is DRAFT, not yet run in Revit* |

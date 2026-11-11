@@ -16,8 +16,8 @@ capability: OFFSET_TAGS_FROM_HOST
 # inside the building with no leader and one, on an opening in a north-south
 # wall, had to be turned Vertical by hand: nothing in the library set a tag's
 # orientation. Every new input is an OPTIONAL bool, so a caller that names
-# none of them runs version 1 exactly. DRAFT, not yet run in Revit:
-# NEEDS-CHECKING Group EG.
+# none of them runs version 1 exactly. DRAFT at the time, not yet run in
+# Revit: NEEDS-CHECKING Group EG.
 version: 2
 source: OFFICIAL
 risk: MODIFY

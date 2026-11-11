@@ -80,7 +80,8 @@ purpose: >
 # and a name matching none, or two, is refused with a finding that says which.
 # After the one regeneration the id Revit holds must be the id the name named,
 # or the element is in `snapped`. Every other storage type is version 4's road.
-# Version 4's proof below no longer describes the code: DRAFT until Group HZ.
+# Version 4's proof below no longer described the code: DRAFT at the time,
+# until Group HZ.
 contract:
   needs:
     # Needed for the ONE regeneration that makes the snap visible. Without it
@@ -173,10 +174,12 @@ contract:
       role: accounting
       type: IList<ElementId>
 
+# WRITTEN ABOVE AN EARLIER PROOF, since replaced by the `proof:` block below -
+# read that block's own date and fingerprint, not this comment, for what ran.
 # VERSION 4's PROOF, KEPT AS A RECORD. Version 5 changed impl/ (row 5b-1259), so
-# its fingerprint no longer describes the code and the card is DRAFT until
-# NEEDS-CHECKING Group HZ proves version 5 (D-30). Every value that is not an
-# element reference still takes the road this proof ran.
+# its fingerprint no longer described the code and the card was DRAFT at the
+# time, until NEEDS-CHECKING Group HZ proves version 5 (D-30). Every value that
+# is not an element reference still takes the road this proof ran.
 proof:
   date: '2026-11-02'
   by: Ajmal PS

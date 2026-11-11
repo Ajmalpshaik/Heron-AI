@@ -274,7 +274,11 @@ so either way.** A suite that exits **3** is waiting on a dependency; one that e
 finding. If a waiting one starts passing, somebody installed something. If a failure appears only on
 your operating system, suspect a path assumption before you suspect your change: that is twice now.
 On Windows, suspect the output encoding as well — also twice now, and the subsection below tells it
-from your change in one re-run.
+from your change in one re-run. **And if it fails in the main folder while CI is green, look for a
+session's worktree under `.claude/worktrees/`**: each is a whole copy of the repository that git never
+lists and a walk of the disk does. Four tools read one as part of this tree until 2026-11-11
+([row 5b-1539](../../../docs/FRAGMENT-ISSUES.md)); a walk that starts at the top of the checkout asks
+`brain/heron_checkout.py` which folders are another checkout, and a new one should too.
 
 This sentence counted to four until 2026-09-21. It does not count any more, for the reason the block
 above gives - **the number changes every time a suite learns to say "could not run", and the exit code

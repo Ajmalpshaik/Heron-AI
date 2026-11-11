@@ -62,7 +62,7 @@ risk: MODIFY
 # the change repeats this line and is not needed. What readBack does NOT say is the value
 # BEFORE the change - for that, LIST_CATEGORIES with categories "Generic
 # Annotations > Signature" is one row (version 3) where version 2 was every
-# Object Styles row. Not yet run in Revit.
+# Object Styles row. Not yet run in Revit when this was written.
 #
 # REMAP_LINE_STYLES moves lines from one style to another; this makes or
 # changes a style.

@@ -12,8 +12,8 @@ capability: READ_MODEL_WARNINGS
 # VERSION 2 (2026-11-01): SELECT_WITH_WARNINGS was merged into this card on the
 # owner's instruction - "make sure there is no duplicate tools" - and is
 # DEPRECATED; see the merge block above `utterances`. Version 1's proof below
-# is kept as the record; it no longer describes the code, so the card is DRAFT
-# until version 2 is proved on a real model (D-30).
+# was kept as the record; it no longer described the code, so the card was
+# DRAFT at the time, until version 2 is proved on a real model (D-30).
 version: 2
 source: OFFICIAL
 risk: READ

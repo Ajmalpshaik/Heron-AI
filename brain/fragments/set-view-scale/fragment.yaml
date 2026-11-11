@@ -153,8 +153,9 @@ compatibility-note: >
 #   "set this view to 1:50"           -> here. A change still reaches the write
 #
 # "what scale is this view", declared below, still answers HERE by identity.
-# Moving it to READ_VIEW_SCALE is an utterance change on this PROVEN card and
-# is the owner's call (row 146) - nothing here was changed but this comment.
+# Moving it to READ_VIEW_SCALE is an utterance change on this card, PROVEN
+# then, and was the owner's call (row 146) - nothing here was changed but
+# this comment.
 
 # SENTENCES ADDED 2026-09-01 BECAUSE THE ROUTING TABLE ABOVE ALREADY CLAIMED
 # THEM. A routing table is a COMMENT and comments are not indexed - the search

@@ -160,17 +160,17 @@ compatibility-note: >
   are present 2020 through 2027, read off the reference assemblies on
   2026-09-23.
 
-# BACK TO DRAFT ON 2026-09-23, AND THE PROOF ABOVE IS KEPT AS THE RECORD OF
-# WHAT WAS RUN.
+# BACK TO DRAFT ON 2026-09-23, AND THE PROOF ABOVE WAS KEPT AS THE RECORD
+# OF WHAT WAS RUN.
 #
 # The proof was taken on the code as it stood. The code then changed to follow
 # the INSULATION RULE: every run it colours passes its colour to its own
 # insulation and lining in the view, and a wrap handed in with its run takes
-# the run's colour instead of being grouped on its own value. Nothing the proof
-# recorded is contradicted, but it describes code that no longer runs, so its
-# fingerprint no longer matches, and it must NOT be re-stamped: re-taking it on
-# a named model is the only thing that makes this PROVEN again (D-30).
-# NEEDS-CHECKING AJ7 says what to arrange. FRAGMENT-ISSUES 5b-178.
+# the run's colour instead of being grouped on its own value. Nothing that
+# proof recorded was contradicted, but it described code that no longer ran, so
+# its fingerprint no longer matched, and it was NOT to be re-stamped: re-taking
+# it on a named model was the only thing that would make this PROVEN again
+# (D-30). NEEDS-CHECKING AJ7 says what to arrange. FRAGMENT-ISSUES 5b-178.
 #
 # THE RULE, AND WHERE IT COMES FROM. Insulation and lining take the colour of
 # the run they wrap - the owner's standing rule ("when you colour ducts or

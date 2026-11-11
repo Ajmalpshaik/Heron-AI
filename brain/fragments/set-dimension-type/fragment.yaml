@@ -33,7 +33,7 @@ risk: MODIFY
 #     nothing on the copy; a dimension type named in words is not a selection,
 #     and copy-then-set as two calls is two undo entries for one request
 #     (Article 8).
-#   WRITE_ELEMENT_PARAMETERS (DRAFT) writes one parameter on selected
+#   WRITE_ELEMENT_PARAMETERS writes one parameter on selected
 #     elements through Revit's own text, in project units - "2.5" would be
 #     2.5 of the model's length units, not paper mm - and makes no copy and
 #     no units format.

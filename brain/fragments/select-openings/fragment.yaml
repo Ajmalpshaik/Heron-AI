@@ -15,8 +15,9 @@ capability: SELECT_OPENINGS
 # means the whole model" below described a null nothing could hand it, and
 # the call was refused without a view. The same change as
 # SELECT_BY_CATEGORIES, where it was measured. The code under version 2's
-# proof is unchanged; the absent case was never measured. DRAFT until
-# NEEDS-CHECKING Group IT proves version 3 (D-30); `proof-held:` says so.
+# proof is unchanged; the absent case was never measured. DRAFT at the
+# time, until NEEDS-CHECKING Group IT proves version 3 (D-30);
+# `proof-held:` says so.
 version: 3
 proof-held: >
   Version 3 (2026-10-22, row 5b-1320) made inViewOnly optional - absent or

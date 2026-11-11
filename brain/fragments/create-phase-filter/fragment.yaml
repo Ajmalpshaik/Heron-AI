@@ -18,11 +18,12 @@ semantic-identity: "make a new phase filter under a given name, and set each pha
 # (report-phases' card, FRAGMENT-ISSUES row 107); a phase FILTER is a separate
 # element, and PhaseFilter.Create makes it.
 #
-# A NEW CAPABILITY, NOT A WIDENING. SET_VIEW_PHASE (FRG-VIEW-095, PROVEN) puts
-# a phase filter that already exists on views; it changes views, not the
-# project's list of filters, and a change under its impl/ would make its proof
-# stale for a job it does not do. CREATE_VIEW_FILTER makes VIEW filters -
-# rules on parameters - which are a different element with a different dialog
+# A NEW CAPABILITY, NOT A WIDENING. SET_VIEW_PHASE (FRG-VIEW-095, PROVEN then;
+# SET_VIEW_PROPERTIES has superseded it since) puts a phase filter that
+# already exists on views; it changes views, not the project's list of
+# filters, and a change under its impl/ would make its proof stale for a job
+# it does not do. CREATE_VIEW_FILTER makes VIEW filters - rules on parameters
+# - which are a different element with a different dialog
 # (CREATE_VIEW_FILTERS_BY_RULE did until it was merged into it, 2026-11-01).
 #
 # A NAME ALREADY IN USE REFUSES, naming the filter and what it shows. It is

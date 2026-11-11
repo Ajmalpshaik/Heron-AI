@@ -377,6 +377,17 @@ Heron does not know. CI's compile job fails on any non-zero code, so a 3 on that
 build, and `change-evidence.py` records a 3 as NOT RUN.
 [`tests/test_check_api_surface.py`](../tests/test_check_api_surface.py) holds it, by hiding `dotnet`.
 
+**A session's worktree inside this folder is not this repository.** Claude Code puts each one at
+`.claude/worktrees/<name>/`, a whole copy at another commit. Git never lists it; a walk of the disk
+does. Until 2026-11-11 the *"`.csproj` on disk that nothing builds"* check, on a machine with no git
+to ask, named every copy's projects and exited 1 before the no-SDK answer above - and
+`module-reach.py`, `measure-routes.py` and `check-structure.py` each counted a copy as part of this
+tree ([row 5b-1539](../docs/FRAGMENT-ISSUES.md)). All four now ask
+[`brain/heron_checkout.py`](../brain/heron_checkout.py), which lists no folder by name: a folder
+below the start of a walk that holds its own `.git` is another checkout.
+[`tests/test_nested_worktree.py`](../tests/test_nested_worktree.py) holds it with a fake worktree in a
+temp folder. `next-id.py` reads every worktree on purpose, and still does.
+
 A pass means the API surface agrees; it is **not** evidence that anything behaves correctly.
 
 ---
@@ -2067,7 +2078,7 @@ passing, in another tool's section. Each tool's own header says more - this is w
 | [`cloud-setup.sh`](cloud-setup.sh) | Not run from a checkout: **pasted into a Claude Code cloud environment's setup box**. Installs the .NET 10 SDK, `python-is-python3` and the Python packages, gives the session somewhere to keep knowledge, and warms the store and the NuGet cache. It must exit 0, so its last lines name whatever did not arrive; [`test_cloud_setup.py`](../tests/test_cloud_setup.py) runs it in a sandbox against the refusals of 2026-09-22 (row 5b-167). [38](../docs/38-the-cloud-environment.md) says what goes in the other boxes |
 | [`deploy-addin.ps1`](deploy-addin.ps1) | Copies the built add-in and its manifest into the current user's Revit add-ins folder - **no administrator rights** - and refuses an assembly built for another release's runtime. `-Remove` uninstalls, `-Rollback` puts back the install it last replaced. Revit must be closed |
 | [`module-reach.py`](module-reach.py) | Who imports each module in `brain/`, in four buckets, and which ones a conversation can actually reach by following imports from `mcp/`. **It decides nothing**: a report, exit 0 |
-| [`prove-agent.py`](prove-agent.py) | The proof path for an **add-in agent**, which the fragment tools cannot prove: sessions, a tracking run, a draft, and a person's acceptance **by name**. The machine never signs, and the tool has no write path into `revit/` |
+| [`prove-agent.py`](prove-agent.py) | The proof path for an **add-in agent**, which the fragment tools cannot prove: sessions, a tracking run, a draft, and a person's acceptance **by name**. The machine never signs, and the tool has no write path into `revit/`. `check` reads each signed record against the file it was signed for and exits 1 while one is stale; a `ONE FILE` line names any other file claiming that agent, which the fingerprint does not see ([`brain/agent-proofs/`](../brain/agent-proofs/README.md)) |
 | [`prove-tracking.py`](prove-tracking.py) | [D-53](../docs/DECISIONS.md) tracking for a **fragment**: runs it across several values of one input and shows the declared result following the input - the rows `heron_validate.py` has always judged and nothing had ever produced. `--dry-run` first |
 
 ## `check-declared-questions.py` — does a WRITE claim a QUESTION in writing?

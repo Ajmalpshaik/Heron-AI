@@ -363,9 +363,16 @@ def main(argv):
 
     name = argv[0] if argv else "Heron.Reporting"
     layer = argv[1] if len(argv) > 1 else "mcp"
-    answer = author(name, layer, references=["platform"],
+    # THE ONE PROJECT, BY NAME. "platform" alone was enough while platform/
+    # held one project; it holds several now, WHICH_PROJECT refuses the bare
+    # layer - correctly - and this example went on to index that refusal's
+    # "path" (row 5b-1544). A refusal is an answer, so it is printed as one.
+    answer = author(name, layer, references=["platform/Heron.Core"],
                     why="Reports, rendered away from Revit.")
     print("\n%s" % answer["why"])
+    if not answer.get("authored"):
+        print("\nrefused  %s - nothing was authored." % answer.get("refused"))
+        return 1
     print("\n--- %s ---" % answer["path"])
     print(answer["text"])
 

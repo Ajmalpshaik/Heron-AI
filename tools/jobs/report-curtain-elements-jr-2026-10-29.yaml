@@ -8,7 +8,7 @@
 #     python tools/batch-prove.py tools/jobs/report-curtain-elements-jr-2026-10-29.yaml --session <pid>
 #
 # ON "Heron JR Panel Sizes", A SAVED SCRATCH PROJECT - never a working one. Group
-# JR's row JR0 makes it BY HAND: CREATE_WALL is DRAFT (version 3, Group JG), so
+# JR's row JR0 makes it BY HAND: CREATE_WALL was DRAFT then (version 3, Group JG), so
 # the walls are not drawn by a setup step here. They are found by their Mark,
 # through two PROVEN readers - SELECT_BY_PARAMETER_VALUE, then SET_SELECTION -
 # so nothing in this file changes the model and no leg needs `write`.

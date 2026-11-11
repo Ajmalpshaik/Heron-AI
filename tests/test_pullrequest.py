@@ -78,6 +78,20 @@ def check(condition, what):
         FAILURES.append(what)
 
 
+def own_command_line(module):
+    """(what main([]) returned or how it raised, what it printed)."""
+    was = sys.stdout
+    sys.stdout = io.StringIO()
+    try:
+        try:
+            ended = module.main([])
+        except Exception as exc:                   # noqa: BLE001 - the finding
+            ended = "raised %s: %s" % (type(exc).__name__, exc)
+        return ended, sys.stdout.getvalue()
+    finally:
+        sys.stdout = was
+
+
 def main():
     reached = set()
     whole = io.open(os.path.join(ROOT, "brain", "heron_pullrequest.py"),
@@ -240,6 +254,19 @@ def main():
           "and every one was reached above%s"
           % ("" if not unreached else ": %s" % ", ".join(unreached)))
     check(len(good["unjudged"]) == 4, "four things are left unjudged")
+
+    # ITS OWN COMMAND LINE. `python brain/heron_pullrequest.py` is how a
+    # person meets this agent, and nothing else calls it. It raised
+    # KeyError: 'unjudged' from the day `of` became part of a confirmation:
+    # its own example was never given one, so the example was refused and the
+    # last lines indexed the refusal (row 5b-1544).
+    ended, said = own_command_line(PR)
+    check(ended == 0, "its own command line runs to the end - it %r" % (ended,))
+    check("Prepared, not opened" in said,
+          "and its example pull request is prepared, not refused")
+    tail = said.split("what this agent does not judge")[-1]
+    check(tail.count("\n  - ") == 4,
+          "and it prints the four things it leaves unjudged")
 
     print()
     if FAILURES:

@@ -20,19 +20,19 @@ semantic-identity: "make a roof by extrusion - a profile sketched on a vertical 
 # LOCK_FORM_TO_PLANES.
 #
 # WRITTEN NEW, NOT WIDENED INTO CREATE_FLOOR (heron-duplicate-checker's
-# method, 2026-11-02). CREATE_FLOOR (DRAFT, version 3) makes a FOOTPRINT
-# roof: one CLOSED outline on PLAN at a level, left flat. A roof by
-# extrusion is the other contract - an OPEN profile in a VERTICAL plane,
-# with a start and an end along that plane's normal, on a named reference
-# plane or grid. Widening would make `boundary` mean a closed loop on plan
-# for three types and an open line upright for one, and add three inputs a
-# floor, a ceiling and a footprint roof must refuse - one tool made as two
-# inside one card. LOOK-ALIKE, kept separate. SLOPE_ROOF_EDGES (PROVEN)
-# slopes the edges of a footprint roof and refuses an extrusion roof by name
-# in its own C#. CREATE_FAMILY_FORMS and CREATE_CONCEPTUAL_FORM extrude
-# forms in a family; this refuses a family. CREATE_PROJECT_REFERENCE_PLANES
-# draws planes and makes no roof - this one draws a plane only along a grid
-# it is told to sketch on, and says so.
+# method, 2026-11-02). CREATE_FLOOR (version 3) makes a FOOTPRINT roof: one
+# CLOSED outline on PLAN at a level, left flat. A roof by extrusion is the
+# other contract - an OPEN profile in a VERTICAL plane, with a start and an
+# end along that plane's normal, on a named reference plane or grid.
+# Widening would make `boundary` mean a closed loop on plan for three types
+# and an open line upright for one, and add three inputs a floor, a ceiling
+# and a footprint roof must refuse - one tool made as two inside one card.
+# LOOK-ALIKE, kept separate. SLOPE_ROOF_EDGES (PROVEN) slopes the edges of a
+# footprint roof and refuses an extrusion roof by name in its own C#.
+# CREATE_FAMILY_FORMS and CREATE_CONCEPTUAL_FORM extrude forms in a family;
+# this refuses a family. CREATE_PROJECT_REFERENCE_PLANES draws planes and
+# makes no roof - this one draws a plane only along a grid it is told to
+# sketch on, and says so.
 #
 # NOTHING IS GUESSED (D-33). Level, roof type, plane and both extents are
 # the modeller's; with one missing or a name nothing has, nothing is made

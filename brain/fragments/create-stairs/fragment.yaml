@@ -29,8 +29,8 @@ capability: CREATE_STAIRS
 #     is deleted again. The "2 (no category) kept" of 2026-10-19 were the
 #     add-in's miscount, not elements (5b-1241, fixed in RevitChangedSet).
 # Run rolled back only, Revit 2020, a copy of 'Kerala house design', 2026-10-19
-# (Group HS); never kept. DRAFT until HS is run and signed: version 3's proof
-# below is kept as a record and is stale.
+# (Group HS); never kept. DRAFT at the time, until HS is run and signed:
+# version 3's proof below was kept as a record and was stale.
 #
 # Version 3 (2026-10-13, FRAGMENT-ISSUES 5b-455): the answer names the railings
 # Revit adds with the stair - `railings`, their ids from

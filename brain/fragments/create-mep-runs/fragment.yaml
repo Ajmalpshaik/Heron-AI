@@ -229,13 +229,13 @@ compatibility-note: >
 # instruction ("now merge the other duplicates also"), and is DEPRECATED. The
 # same drawing: straight duct between consecutive points, a system type, a duct
 # type and a level, nothing connected. CREATE_DUCT WAS THE ONLY PROVEN
-# STRAIGHT-DUCT TOOL - signed on 2026-09-13 on Revit 2024 - and this card is
-# DRAFT, never proved (NEEDS-CHECKING Group AL), so until AL1 and AL2 are run
-# a straight duct from here is kept only through D-117's try-once. CARD ONLY: the
-# code already took everything CREATE_DUCT did. One run is the `runs` text with
-# no size and no bar - the same points in millimetres that CREATE_DUCT took as
-# a list; its `created` is this card's `elements`. Its `tooShort` and `refused`
-# counts are, here, a refusal that names each one.
+# STRAIGHT-DUCT TOOL - signed on 2026-09-13 on Revit 2024 - and this card was
+# DRAFT at the time, never proved (NEEDS-CHECKING Group AL), so until AL1 and
+# AL2 were run a straight duct from here was kept only through D-117's try-once.
+# CARD ONLY: the code already took everything CREATE_DUCT did. One run is the
+# `runs` text with no size and no bar - the same points in millimetres that
+# CREATE_DUCT took as a list; its `created` is this card's `elements`. Its
+# `tooShort` and `refused` counts are, here, a refusal that names each one.
 #
 # THE CONFLICT, AND THE SAFER RULE KEPT: CREATE_DUCT kept the segments that
 # worked and COUNTED the ones Revit refused, so a run that failed at segment

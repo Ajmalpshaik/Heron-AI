@@ -1,4 +1,4 @@
-# NEEDS-CHECKING Group II - REPORT_SHARED_PARAMETER_FILE, DRAFT since 2026-10-21.
+# NEEDS-CHECKING Group II - REPORT_SHARED_PARAMETER_FILE, written 2026-10-21 at DRAFT.
 #
 #     python tools/batch-prove.py tools/jobs/report-shared-parameter-file-ii-2026-10-21.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/report-shared-parameter-file-ii-2026-10-21.yaml

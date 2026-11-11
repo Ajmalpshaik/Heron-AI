@@ -21,8 +21,8 @@ IT PARSES, IT DOES NOT IMPORT
 -------------------------------
 Importing `heron_mcp_server` needs the MCP SDK installed and defines
 every tool as a side effect of asking what they are - `grep -c
-'^@server.tool()' mcp/server/heron_mcp_server.py` says how many, and this
-page prints the figure it actually read. A documentation
+'^@server.tool()'` over the files `heron_tools.SERVER_FILES` lists says how
+many, and this page prints the figure it actually read. A documentation
 tool that only works on a machine which can already run the server is
 useless exactly where documentation is wanted - on a reviewer's laptop,
 in CI, on a checkout with no dependencies. `ast` needs nothing.
@@ -65,11 +65,21 @@ sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
 import heron_tools as TOOLS                                   # noqa: E402
 
 OUT = os.environ.get("HERON_API_DOCS_OUT", "api-reference.html")
-SERVER = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
+
+
+def sources():
+    """
+    [(path, the same path as this repository spells it)] for every file the
+    server's source is, in heron_tools.SERVER_FILES' order. That list is the
+    one owner of the answer (FRAGMENT-ISSUES row 5b-1542); this page typed the
+    one file's path until 2026-11-11.
+    """
+    return [(path, os.path.relpath(path, ROOT).replace(os.sep, "/"))
+            for path in TOOLS.server_files()]
 
 
 def decorated(tree):
-    """Every `@server.tool()` function, in the order the file declares them."""
+    """Every `@server.tool()` function, in the order its file declares them."""
     found = []
     for node in tree.body:
         if not isinstance(node, ast.FunctionDef):
@@ -137,11 +147,16 @@ def signature(node):
 
 
 def collect():
-    tree = ast.parse(io.open(SERVER, encoding="utf-8").read())
-    served = decorated(tree)
+    # EACH FILE IS PARSED ALONE, so a row's `line` is a line of the file its
+    # `file` names - a line number with no file is half an address once the
+    # server is more than one.
+    served = []
+    for path, name in sources():
+        tree = ast.parse(io.open(path, encoding="utf-8").read())
+        served.extend((name, node) for node in decorated(tree))
     rows, notes = [], []
 
-    for node in served:
+    for where, node in served:
         doc = ast.get_docstring(node) or ""
         params = signature(node)
         for one in params:
@@ -167,6 +182,7 @@ def collect():
             "doc": doc.strip(),
             "params": params,
             "silent": [one["name"] for one in params if not one["explained"]],
+            "file": where,
             "line": node.lineno,
         })
 
@@ -323,9 +339,10 @@ def main():
         "rows": rows, "notes": notes,
         "subtitle": (
             "%d tool(s) and %d parameter(s), parsed from "
-            "mcp/server/heron_mcp_server.py at %s. %d can change the model. "
+            "%s at %s. %d can change the model. "
             "%d parameter(s) are named by no docstring."
             % (len(rows), params,
+               " and ".join(name for _path, name in sources()),
                datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
                len(writers), silent)),
         "footer": (

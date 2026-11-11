@@ -10,16 +10,15 @@ kind: action
 domain: revit.geometry
 capability: REPORT_DIVIDED_SURFACES
 # VERSION 2 (2026-10-29) - A SURFACE'S OWN SETTINGS AND ITS CUTS, read.
-# SET_DIVIDED_SURFACE_LAYOUT (DRAFT, NEEDS-CHECKING JL) writes a surface's all
-# grid rotation, component rotation, flip, mirror, the two pattern indents and
-# the levels or planes that cut it, and nothing read any of them except that
+# SET_DIVIDED_SURFACE_LAYOUT (NEEDS-CHECKING JL) writes a surface's all grid
+# rotation, component rotation, flip, mirror, the two pattern indents and the
+# levels or planes that cut it, and nothing read any of them except that
 # card's own readBack, after a change - so "is the divided surface flipped"
 # and "which levels cut the divided surface" ranked that WRITE first on the
 # cloud backend on 2026-10-28 (D-86); on 2026-10-29, before this change, the
-# second still did and the first was a coin toss.
-# Each surface's line now carries them, in the words that card's readBack
-# uses. Version 1 was DRAFT, so no proof went stale; DR5a and DR5b are the
-# new rows of its plan.
+# second still did and the first was a coin toss. Each surface's line now
+# carries them, in the words that card's readBack uses. Version 1 was DRAFT,
+# so no proof went stale; DR5a and DR5b are the new rows of its plan.
 version: 2
 source: OFFICIAL
 risk: READ

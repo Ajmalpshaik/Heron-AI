@@ -88,7 +88,6 @@ ICON = os.path.join(ADDIN, "Resources", "FreeModel.png")
 REGISTRY = os.path.join(ROOT, "platform", "Heron.Core", "HeronOperationRegistry.cs")
 CONFIG_CS = os.path.join(ROOT, "platform", "Heron.Core", "HeronConfig.cs")
 LEASE = os.path.join(ROOT, "platform", "Heron.Core", "HeronLease.cs")
-SERVER = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
 BATCH = os.path.join(ROOT, "tools", "batch-prove.py")
 HOST = os.path.join(ROOT, "tests", "Heron.ModelHold.TestHost")
 COULD_NOT_RUN = 3
@@ -105,6 +104,14 @@ def check(condition, what):
 def read(path):
     try:
         return io.open(path, encoding="utf-8").read()
+    except (IOError, OSError):
+        return ""
+
+
+def server_text():
+    """The MCP server's source, every file heron_tools lists - or "", as read() gives."""
+    try:
+        return TOOLS.server_text()
     except (IOError, OSError):
         return ""
 
@@ -274,7 +281,7 @@ def registry():
     check(TOOLS.TOOLS.get("revit_release") == (TOOLS.READ, "release_models"),
           "revit_release is READ and calls release_models - found %r"
           % (TOOLS.TOOLS.get("revit_release"),))
-    server = read(SERVER)
+    server = server_text()
     body = server[server.find("def revit_release("):]
     body = body[:body.find("\n@server.tool()")] if "\n@server.tool()" in body else body
     check("def revit_release(" in server and 'session.request("release_models"' in body,
@@ -331,7 +338,7 @@ def wiring():
                     raw_operations) is not None
           and "HeronModelHold.Session.Check(" in hold_model,
           "a request that only looks - \"claim\": \"no\" - is checked, never claims")
-    health = read(SERVER)
+    health = server_text()
     health = health[health.find("def revit_health("):]
     health = health[:health.find("\n@server.tool()")]
     check(re.search(r'request\("count_elements",\s*op_args=\{"claim": "no"\}\)', health)

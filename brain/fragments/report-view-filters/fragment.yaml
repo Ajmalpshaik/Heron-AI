@@ -16,8 +16,9 @@ capability: REPORT_VIEW_FILTERS
 # its rule as the Filters dialog reads it, how many host elements it catches in
 # that view, and the four ways a filter can be present and do nothing -
 # `disabled`, `hidden`, `blankOverride`, `nothingToActOn` - with the
-# template-owned verdict, `templateOwned`. The proof below is version 2's and
-# no longer describes the code; the card is DRAFT until version 3 is proved.
+# template-owned verdict, `templateOwned`. The proof below was version 2's and
+# no longer described the code; the card was DRAFT at the time, until version 3
+# is proved.
 #
 # VERSION 4 (2026-11-01) - A SAFETY FIX, on the owner's instruction ("in
 # every conflict keep the safer rule"). The "used in" sweep read real views

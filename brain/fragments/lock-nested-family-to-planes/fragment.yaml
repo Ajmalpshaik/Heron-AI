@@ -15,19 +15,19 @@ risk: MODIFY
 
 # VERSION 3 (2026-11-11) - A DETAIL ITEM TOO, and back to DRAFT. Version 2 was
 # PROVEN on 2026-10-07 (the proof block below, kept as the record of what it
-# proved); its C# moved, so it is DRAFT again until NEEDS-CHECKING Group NB is
-# run (D-30, D-117). On 2026-11-11 (Revit 2020) four nested `Diffuser Flow
-# Arrow_DRAFT` detail items in a square diffuser family refused every lock with
-# "The nested family has no extent to read back": Revit gives a view-based
-# instance no box outside a view. FRAGMENT-ISSUES row 5b-1492. A model family
-# takes exactly the path it took before.
+# proved); its C# moved, so it was DRAFT again at the time until NEEDS-CHECKING
+# Group NB is run (D-30, D-117). On 2026-11-11 (Revit 2020) four nested
+# `Diffuser Flow Arrow_DRAFT` detail items in a square diffuser family refused
+# every lock with "The nested family has no extent to read back": Revit gives a
+# view-based instance no box outside a view. FRAGMENT-ISSUES row 5b-1492. A
+# model family takes exactly the path it took before.
 #
 # VERSION 4 (2026-11-11) - A DETAIL ITEM WITH NO OWNER VIEW. Group NB's first
 # run (NB1, Revit 2020, scratch family) threw the same "no extent to read back":
 # version 3 knew a detail item only by its owner view, and a detail item placed
 # by PLACE_FAMILY_INSTANCES - on a level's plane, the only way Heron places one
 # in a family - has none. Now known by its category or View Based placement too,
-# and locked in the plan of its level. Still DRAFT. Row 5b-1494.
+# and locked in the plan of its level. Still DRAFT at the time. Row 5b-1494.
 
 purpose: >
   ALIGNS AND LOCKS a nested family to the planes of the family it sits in - the

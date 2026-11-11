@@ -23,13 +23,19 @@
 > [D-108](decisions/D-108.md). Every other question was answered the same day, and the owner narrowed
 > what the tables are for - §21.1. What was then built is §21.2 and §21.3.
 >
-> **Checked 2026-10-18 - two of the page's writes are refused today, before anything reaches Revit
+> **Checked 2026-10-18 - two of the page's writes were refused that day, before anything reached Revit
 > (§21.9).** The Table's Apply and the Loads panel's Finalize write through `SET_PARAMETER_VALUES_BY_ID`,
-> which went to version 3 and back to DRAFT on 2026-10-17 (#583; its proof is owed in
-> [group FE](needs-checking/group-fe.md)), and Finalize's diffusers through `SET_AIR_TERMINAL_FLOW`, DRAFT;
-> `revit_change`, whose body every Apply uses, keeps a change only from a PROVEN fragment since
-> [D-117](decisions/D-117.md). The Sprinkler Layout's Apply (`PLACE_FAMILY_INSTANCES`, PROVEN) is not
+> which went to version 3 and back to DRAFT on 2026-10-17 (#583; its proof was owed in
+> [group FE](needs-checking/group-fe.md)), and Finalize's diffusers through `SET_AIR_TERMINAL_FLOW`, DRAFT
+> that day; `revit_change`, whose body every Apply uses, keeps a change only from a PROVEN fragment since
+> [D-117](decisions/D-117.md). The Sprinkler Layout's Apply (`PLACE_FAMILY_INSTANCES`) was not
 > affected. Nothing above about what HAS run changes: those runs were before 2026-10-17.
+>
+> **Read again 2026-11-11, in a cloud container - both proofs are signed, and neither write has been run
+> from the page since.** Both cards' `heron-status` lines read PROVEN and `python tools/check-signatures.py`
+> lists neither as stale, so D-117 no longer refuses the two writes
+> ([row 5b-1129](fragment-issues/section-5b-rows-401-425.md)). That is a refusal gone, not a run: NOT RUN.
+> Whether a writer is PROVEN today is on its card - read it there, never here.
 
 ---
 
@@ -969,8 +975,9 @@ The owner asked for the rest the same day: *"you can do that phase 2 and 3"*.
   without counts? - is answered by the rule itself: every input is on the table, so the values ARE the
   whole change.
 - **Phase 3, the element table** (§8): `revit_edit_table` (ANALYZE) reads the elements through
-  `READ_ELEMENT_TABLE` (FRG-PAR-026, DRAFT) - the selection or what an earlier fragment left - and the
-  page's Apply writes the edited cells in one `SET_PARAMETER_VALUES_BY_ID` run (FRG-PAR-027, DRAFT),
+  `READ_ELEMENT_TABLE` (FRG-PAR-026) - the selection or what an earlier fragment left - and the
+  page's Apply writes the edited cells in one `SET_PARAMETER_VALUES_BY_ID` run (FRG-PAR-027; both were
+  DRAFT when this was built, and each one's status since is on its card),
   which writes NOTHING unless every row still holds what the table showed. **Parameters only** in this
   release: the per-element colour writer of §8.5 was not built, because the owner's scope (§21.1) asks
   for parameters and schedules, and colour already has its settings table.
@@ -1152,8 +1159,9 @@ read*, never as zero.
 **Proved without Revit:** `tests/test_model_dashboard.py` (the brain), `tests/test_companion.py`'s
 Dashboard group (the panel, its routes behind the pairing, Refresh under the lock and never on a timer),
 and `tests/test_mcp_serves.py` (served with the SDK's Context; refused when the Companion is off).
-**Not run in Revit** - `REPORT_MODEL_DASHBOARD` is DRAFT, and its proof on a named model, with its
-negative case, is owed before the panel is relied on.
+**The panel is not run in Revit.** `REPORT_MODEL_DASHBOARD` was DRAFT when this was written, its proof on
+a named model with its negative case then owed; its status since is on its card, and a proof of the card
+is not a run of the panel.
 
 ### 21.11 Select in Revit and Isolate from the Model Dashboard (2026-11-01)
 
@@ -1265,8 +1273,8 @@ by a chart*, re-made the Heron way. **It is a change** - to the active view's gr
 element's data:
 
 - **Colour the view** - type a parameter as Revit shows it (*System Type*, *Fire Rating*, *Level*).
-  `FILTER_ELEMENTS_BY_CATEGORY` with `inViewOnly` reads what the active view shows (READ, DRAFT - it took
-  over `SELECT_VISIBLE_IN_VIEW`, PROVEN, merged into it on 2026-11-01); `COLOR_BY_PARAMETER` gives
+  `FILTER_ELEMENTS_BY_CATEGORY` with `inViewOnly` reads what the active view shows (READ - it took
+  over `SELECT_VISIBLE_IN_VIEW`, merged into it on 2026-11-01); `COLOR_BY_PARAMETER` gives
   every distinct value its own colour, the same colours every run, a blank its own group (MODIFY, PROVEN).
 - **Clear colours** - `RESET_GRAPHIC_OVERRIDES` on the same elements (MODIFY, PROVEN). A category's own
   colour is not touched; only the per-element ones come off.

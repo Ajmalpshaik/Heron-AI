@@ -67,7 +67,10 @@ import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SERVER = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
+sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+
+import heron_tools as TOOLS                                     # noqa: E402
+
 ADDIN = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "RevitSystems.cs")
 
 WHERE = "Project1 (Revit 2024, session 17492)"
@@ -85,6 +88,14 @@ def read(path):
         return None
 
 
+def server_text():
+    """The MCP server's source, every file heron_tools lists - or None, as read() gives."""
+    try:
+        return TOOLS.server_text()
+    except OSError:
+        return None
+
+
 def lifted():
     """`_systems_answer` out of the server's source, or None if it is gone.
 
@@ -92,7 +103,7 @@ def lifted():
     or moved returns None, which becomes ONE clean failure below rather than
     a traceback standing in for every check (heron-ship section 2a).
     """
-    text = read(SERVER)
+    text = server_text()
     if text is None:
         return None
     nl = chr(10)
@@ -263,7 +274,7 @@ def main():
     keys = keys or []
     for key in ("network", "components"):
         check(key in keys, "the C# writes `%s` into every system's row" % key)
-    server = read(SERVER) or ""
+    server = server_text() or ""
     start = server.find(chr(10) + "def _systems_answer(")
     body = server[start:server.find(chr(10) * 3, start)] if start >= 0 else ""
     for key in keys:

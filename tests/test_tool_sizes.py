@@ -70,8 +70,6 @@ sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
 
 import heron_tools as TOOLS                                   # noqa: E402
 
-SERVER = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
-
 # WHAT EVERY CHAT PAYS FOR BEFORE IT ASKS ANYTHING, in characters of
 # description - docs/19: "if a context assembly exceeds its budget, that is a
 # bug in retrieval, not a reason to raise the budget". The six measured 6,802
@@ -115,20 +113,23 @@ def check(condition, what):
         FAILURES.append(what)
 
 
-def arguments(path=SERVER):
+def arguments(path=None):
     """
-    {tool: [argument names]} for every `@server.tool()`, read with ast.
+    {tool: [argument names]} for every `@server.tool()`, read with ast - in
+    every file heron_tools lists as the server's source, or the one at `path`.
 
     Not an argument annotated `_Context`: the SDK fills that in itself and a
     host never sees it (tests/test_mcp_serves.py holds that no served schema
     shows a `ctx`), so there is nothing for a description to explain.
     """
-    with io.open(path, encoding="utf-8") as fh:
-        tree = ast.parse(fh.read(), path)
+    nodes = []
+    for one in ([path] if path else TOOLS.server_files()):
+        with io.open(one, encoding="utf-8") as fh:
+            nodes.extend(ast.parse(fh.read(), one).body)
     return dict((node.name, [a.arg for a in node.args.args
                              if not (a.annotation is not None
                                      and ast.unparse(a.annotation) == "_Context")])
-                for node in tree.body
+                for node in nodes
                 if isinstance(node, ast.FunctionDef)
                 and any(ast.unparse(d) == "server.tool()" for d in node.decorator_list))
 
@@ -139,7 +140,7 @@ def over_budget(report, per_tool=PER_TOOL_BUDGET):
             if r["description"] > per_tool]
 
 
-def unnamed(path=SERVER):
+def unnamed(path=None):
     """[(tool, argument)] for every argument a tool's description never names."""
     said = TOOLS.descriptions(path)
     return [(tool, arg) for tool, args in sorted(arguments(path).items())

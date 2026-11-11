@@ -30,8 +30,8 @@ built `DRAFT`, and stays so until it has been run on a real family with a negati
 > **As built (2026-10-18):** many of the §11 tools are now `PROVEN` - proved in family documents in
 > Revit 2024 on 2026-10-03 (#395, commit `931777ea`), each proof in its
 > own card's `proof:` block - and others, `REPORT_FAMILY_TEMPLATE`, `ADD_FAMILY_TYPE_PARAMETER`,
-> `SET_FAMILY_SETTINGS`, `SET_FAMILY_CONNECTOR_ROLES` and `ADD_FAMILY_CONNECTOR` among them, are still
-> `DRAFT`. **Every family skill is still `DRAFT`.** Read the state from the cards, never from here:
+> `SET_FAMILY_SETTINGS`, `SET_FAMILY_CONNECTOR_ROLES` and `ADD_FAMILY_CONNECTOR` among them, were
+> still `DRAFT` that day. **Every family skill is still `DRAFT`.** Read the state from the cards, never from here:
 > `grep -H '^heron-status:' brain/fragments/<folder>/fragment.yaml brain/skills/<skill>.yaml`. Since
 > 2026-10-09 (#451) a chat gets each skill's method through the `heron_method` tool - its jobs carry the
 > skills' names, `family-creation` to `lighting-fixture-family-creation`.
@@ -391,7 +391,7 @@ pattern decides how many cells one panel takes (Rectangle 1 x 1, Hexagon 2 x 3, 
 the rest), the panels are adaptive and schedule as curtain panels. **Mass Floors** are cut at chosen levels in
 the PROJECT and report area, perimeter, volume and exterior surface; Gross Volume, Gross Surface Area and Gross
 Floor Area are read-only and schedulable. An in-place mass is for one-off massing, a mass family for repeats.
-**In the project (built 2026-10-28, DRAFT, [Group JO](needs-checking/group-jo.md)):** `REPORT_MASSES` reads every
+**In the project (built 2026-10-28, [Group JO](needs-checking/group-jo.md)):** `REPORT_MASSES` reads every
 mass's gross values and mass floors with their Usage, totals them by level and by use, gives plot ratio and site
 coverage from a site area, and names unjoined masses that overlap - **SOURCED:** Autodesk Help, joining mass
 instances removes the overlap from gross volume and floor area; and Revit makes no mass floor at a level on the
@@ -808,11 +808,11 @@ Source category with `ElementTransformUtils` and reads the transform back (**UNS
 | Wall-, ceiling-, floor-, roof-, face-based | [`hosted-family-creation`](../brain/skills/hosted-family-creation.yaml) | `CREATE_OPENING` with `shape`, `SET_FAMILY_SETTINGS` (Cut with Voids When Loaded, Maintain Annotation Orientation) |
 | Line-based | [`line-based-family-creation`](../brain/skills/line-based-family-creation.yaml) | `REPORT_FAMILY_TEMPLATE` with the arrays and locks already built |
 | Pattern-based panel | [`pattern-based-family-creation`](../brain/skills/pattern-based-family-creation.yaml) | `DRAW_FAMILY_POINT_CURVES`, `CREATE_CONCEPTUAL_FORM`, `PLACE_ADAPTIVE_POINTS` for points hosted on its edges, `DIVIDE_FAMILY_SURFACE` in the mass it fills |
-| Conceptual mass | [`mass-family-creation`](../brain/skills/mass-family-creation.yaml), and in the project [`massing-study`](../brain/skills/massing-study.yaml) (both DRAFT, Group JO) | `CREATE_CONCEPTUAL_FORM` (every form, a revolve too), `DIVIDE_FAMILY_SURFACE`; in the project `REPORT_MASSES`, `SET_MASS_FLOOR_USAGE`, `REMOVE_MASS_FLOORS`, `CREATE_WALLS_BY_FACE`; a curtain system on a mass is `CREATE_CURTAIN_SYSTEM` (Group JM) (built 2026-10-28, DRAFT) |
-| Adaptive component | [`adaptive-family-creation`](../brain/skills/adaptive-family-creation.yaml) | `PLACE_ADAPTIVE_POINTS` (free or hosted), `SET_ADAPTIVE_POINT_ORIENTATION` (each placement point's Orientation - DRAFT, Group JK), `DRAW_FAMILY_POINT_CURVES`, `CREATE_CONCEPTUAL_FORM` (a sweep along a path for a two-point beam) |
+| Conceptual mass | [`mass-family-creation`](../brain/skills/mass-family-creation.yaml), and in the project [`massing-study`](../brain/skills/massing-study.yaml) (both DRAFT, Group JO) | `CREATE_CONCEPTUAL_FORM` (every form, a revolve too), `DIVIDE_FAMILY_SURFACE`; in the project `REPORT_MASSES`, `SET_MASS_FLOOR_USAGE`, `REMOVE_MASS_FLOORS`, `CREATE_WALLS_BY_FACE`; a curtain system on a mass is `CREATE_CURTAIN_SYSTEM` (Group JM) (built 2026-10-28) |
+| Adaptive component | [`adaptive-family-creation`](../brain/skills/adaptive-family-creation.yaml) | `PLACE_ADAPTIVE_POINTS` (free or hosted), `SET_ADAPTIVE_POINT_ORIENTATION` (each placement point's Orientation - Group JK), `DRAW_FAMILY_POINT_CURVES`, `CREATE_CONCEPTUAL_FORM` (a sweep along a path for a two-point beam) |
 | Profile | [`profile-family-creation`](../brain/skills/profile-family-creation.yaml) | `DRAW_FAMILY_DETAIL_LINES`, `SET_FAMILY_SETTINGS` (Profile Usage), `SET_FAMILY_SWEEP_PROFILE` |
 | Detail item, annotation symbol | [`detail-family-creation`](../brain/skills/detail-family-creation.yaml) | `DRAW_FAMILY_DETAIL_LINES`, `DRAW_FAMILY_FILLED_REGION` |
-| Tag - pipe, duct, equipment, any tag category | [`tag-family-creation`](../brain/skills/tag-family-creation.yaml) | `REPORT_FAMILY_LABELS`, `COPY_ELEMENTS_BETWEEN_DOCUMENTS` with `labels=true`, `SET_FAMILY_LABEL_LAYOUT` (DRAFT, Group IJ), with the category, line, type and load tools already built |
+| Tag - pipe, duct, equipment, any tag category | [`tag-family-creation`](../brain/skills/tag-family-creation.yaml) | `REPORT_FAMILY_LABELS`, `COPY_ELEMENTS_BETWEEN_DOCUMENTS` with `labels=true`, `SET_FAMILY_LABEL_LAYOUT` (Group IJ), with the category, line, type and load tools already built |
 | Duct or pipe fitting | [`mep-fitting-family-creation`](../brain/skills/mep-fitting-family-creation.yaml) | `SET_FAMILY_SETTINGS` (Part Type) with the size table and connector tools already built, `SET_FAMILY_CONNECTOR_ROLES` |
 | Door, window, curtain wall door | [`door-window-family-creation`](../brain/skills/door-window-family-creation.yaml) | `REPORT_FAMILY_TEMPLATE`, `ADD_FAMILY_TYPE_PARAMETER`, `ADD_FAMILY_FLIP_CONTROL` with the form, symbol and nesting tools already built |
 | Structural framing, structural column | [`structural-family-creation`](../brain/skills/structural-family-creation.yaml) | `REPORT_FAMILY_TEMPLATE`, `SET_FAMILY_SETTINGS` (Material for Model Behavior, Section Shape) with the extrusion, lock and delete tools already built |
@@ -823,7 +823,7 @@ Source category with `ElementTransformUtils` and reads the transform back (**UNS
 | Not built | Why |
 |---|---|
 | A part that rotates about a reference line | No documented call gives a reference line's planes (§9) |
-| A label in a tag, symbol or title block | Revit's API cannot make one on any release, and cannot change what one shows (§8.3a). **Built 2026-10-21, DRAFT:** `REPORT_FAMILY_LABELS` reads them (their parameters on 2027 only), `SET_FAMILY_LABEL_LAYOUT` moves and sizes them, `COPY_ELEMENTS_BETWEEN_DOCUMENTS` with `labels=true` copies them from a seed family of the same category (§8.3b) - owed Group IJ |
+| A label in a tag, symbol or title block | Revit's API cannot make one on any release, and cannot change what one shows (§8.3a). **Built 2026-10-21, DRAFT that day:** `REPORT_FAMILY_LABELS` reads them (their parameters on 2027 only), `SET_FAMILY_LABEL_LAYOUT` moves and sizes them, `COPY_ELEMENTS_BETWEEN_DOCUMENTS` with `labels=true` copies them from a seed family of the same category (§8.3b) - owed Group IJ |
 | Setting a pattern-based panel's tile pattern | `CurtainPanelTilePattern` is read-only (§7) |
 | A point hosted on a line at a ratio; a profile on a point's plane | **Built 2026-10-02** - `PLACE_ADAPTIVE_POINTS` hosts points on a line (`NewPointOnEdge`) or on a point's own plane (`PointOnPlane.NewPointOnPlane`), and `CREATE_CONCEPTUAL_FORM` sweeps a profile along a path (`NewSweptBlendForm`) - the two-point beam; owed BV19 and BV20 |
 | A connector's primary flag, linked connectors, a light source | **Built 2026-10-02** - `SET_FAMILY_CONNECTOR_ROLES` and `SET_FAMILY_LIGHT_SOURCE`, owed BV17 and BV18. The Light Source tick, the light source's position and aim, a wattage, loss factor, dimming and filter **built 2026-10-21**, owed Group IK (§10); by hand only unticking Light Source |
