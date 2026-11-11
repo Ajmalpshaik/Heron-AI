@@ -8342,6 +8342,14 @@ if __name__ == "__main__":
         # exist here (Q-67, D-132). stderr, because stdout is the MCP channel.
         sys.stderr.write("%s. Heron serves only its library here: %s.\n"
                          % (NO_REVIT_HERE, ", ".join(tools.LIBRARY)))
+        # And somewhere to keep its index of that library, when nobody named
+        # one: there is no home off Windows, and a cloud chat with no
+        # HERON_KNOWLEDGE was answered only "nowhere to keep what it knows"
+        # (D-153, row 5b-1508). Before anything below opens the store.
+        kept = brain.library_store()
+        if kept:
+            sys.stderr.write("No knowledge folder is named here, so the library's "
+                             "index is kept in %s.\n" % kept)
     # Load the trained encoder on a background thread BEFORE serving anything.
     # It is about a second in a fresh process and was measured still importing
     # forty seconds later when it first ran inside a request handler, on the

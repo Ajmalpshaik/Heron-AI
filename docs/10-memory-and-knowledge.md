@@ -33,7 +33,9 @@ As built (2026-10-18). Every store is one SQLite file under `<home>\knowledge`, 
 `HERON_DATA` when it is set and otherwise, on Windows, `%USERPROFILE%\.heron`
 ([D-135](DECISIONS.md#d-135--herons-python-side-keeps-its-data-in-userprofileheron-and-the-companions-notes-in-the-temporary-folder-where-a-store-claudes-copy-cannot-reach-them)).
 `HERON_KNOWLEDGE` moves the knowledge folder alone. Off Windows with neither set there is no home, and
-the stores refuse to open rather than guess a folder. `python brain/heron_paths.py --where` names the
+the stores refuse to open rather than guess a folder - except for the MCP server serving its library
+alone there, which since 2026-11-11 keeps its index in a derived folder of its own
+([D-153](decisions/D-153.md), Proposed). `python brain/heron_paths.py --where` names the
 folders on this PC. A file exists only once something has opened its scope.
 
 | Scope | File, under `<home>\knowledge` | What goes in it today | Read by |
