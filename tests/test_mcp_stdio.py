@@ -88,7 +88,9 @@ import heron_bridge_client as bridge                           # noqa: E402
 import live_revit_guard as GUARD                               # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SERVER = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
+# The file a host starts: the entry file, the last on heron_tools' list of the
+# files the server's source is.
+SERVER = REGISTRY.server_files()[-1]
 SLOW_SERVER = os.path.join(ROOT, "tests", "support", "slow_revit_server.py")
 
 sys.path.insert(0, os.path.join(ROOT, "tests", "support"))

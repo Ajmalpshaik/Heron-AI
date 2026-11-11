@@ -240,9 +240,9 @@ def test_spaces_take_unique_ids_and_refuse_element_ids():
 
 
 def test_the_chat_tool_checks_spaces_before_revit_is_asked():
-    path = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
-    with open(path, encoding="utf-8") as fh:
-        source = fh.read()
+    sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+    import heron_tools as TOOLS
+    source = TOOLS.server_text()
     body = source.split("def revit_sprinkler_layout(", 1)[1].split("@server.tool()", 1)[0]
     check = body.index("LAYOUT.spaces_asked(spaces)")
     sent = body.index('"REPORT_SPRINKLER_LAYOUT_SPACES", "spaces=" + rooms_asked')

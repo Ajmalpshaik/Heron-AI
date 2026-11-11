@@ -511,9 +511,6 @@ def test_5b333_the_chat_answer_names_every_space_not_calculated():
 
 # --- the seam and the tool (Task 5) - through heron_brain, which needs no MCP SDK
 
-SERVER = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
-
-
 def _brain():
     sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
     import heron_brain
@@ -758,7 +755,9 @@ def test_a_remembered_folder_that_was_removed_falls_back_to_the_usual_place():
 
 
 def test_tool_reads_the_envelope_checks_the_pin_and_tells_only_totals():
-    server = io.open(SERVER, encoding="utf-8").read()
+    sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+    import heron_tools as TOOLS
+    server = TOOLS.server_text()
     body = server[server.index("def revit_building_loads("):]
     body = body[:body.index(chr(10) + "@server.tool()")]
     assert '_through(revit_read, reply_out=out)(' in body
@@ -768,8 +767,6 @@ def test_tool_reads_the_envelope_checks_the_pin_and_tells_only_totals():
     assert body.index("if pinned.check(reply):") < body.index("brain.building_loads(")
     assert "LOADS_PANEL.open(document, answer, _pin_identity())" in body
     assert "revit_change" not in body and "_change(" not in body
-    sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
-    import heron_tools as TOOLS
     assert TOOLS.TOOLS.get("revit_building_loads") == (TOOLS.ANALYZE, "run_fragment_read")
 
 

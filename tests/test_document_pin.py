@@ -61,6 +61,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
 
 from heron_write import DocumentPin                        # noqa: E402
+import heron_tools as TOOLS                                # noqa: E402
 
 FAILURES = []
 
@@ -203,8 +204,7 @@ def main():
     print()
     print("After a change, the refusal says what the add-in reported (5b-1135)")
     import heron_write as WRITE
-    server_text = io.open(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py"),
-                          encoding="utf-8").read()
+    server_text = TOOLS.server_text()
     reported = getattr(WRITE, "reported_elsewhere", None)
     check(reported is not None, "heron_write has the write path's own sentence")
     kept = {"document": "Annexe", "projectKey": "99999999-dead-beef",
@@ -450,8 +450,7 @@ def main():
           "which is why the add-in has to refuse an ambiguous title rather "
           "than pick one")
 
-    server = io.open(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py"),
-                     encoding="utf-8").read()
+    server = TOOLS.server_text()
     check('args["document"] = pinned.title' in server,
           "revit_change AIMS the write at the pinned model by name instead of "
           "letting the add-in fall back to whatever is in front. That inverts "

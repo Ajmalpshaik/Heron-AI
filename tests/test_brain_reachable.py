@@ -467,9 +467,7 @@ def main():
         # --- 6. declared, and honest about what it cannot do ----------------
         print()
         print("The server's own declarations, read as text")
-        server = io.open(os.path.join(ROOT, "mcp", "server",
-                                      "heron_mcp_server.py"),
-                         encoding="utf-8").read()
+        server = TOOLS.server_text()
         declared = set(re.findall(r"@server\.tool\(\)\s*\ndef\s+(\w+)", server))
         check(declared == set(TOOLS.TOOLS),
               "every tool the server declares is in the registry and vice "
