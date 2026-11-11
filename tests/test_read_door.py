@@ -434,6 +434,107 @@ def disk_doors(text, cs):
           "ISOLATE_ELEMENTS and for no other change")
 
 
+def change_floor(text, door_refusal):
+    """
+    12. THE CHANGE DOOR HAS A FLOOR (FRAGMENT-ISSUES 5b-1161, its first part).
+    revit_change ran a capability that only reads as a change - behind the
+    Changes switch, inside a transaction group, in front of the Keep box -
+    because it asked `risk_refusal`, which lets every runnable risk through,
+    and never the doors' own table. `below_refusal` is that floor: pure, so
+    every outcome runs here and over the library; the wiring is read as text,
+    and the call through a real SDK is tests/test_mcp_serves.py's.
+    """
+    print()
+    print("12. The change door's floor: a read is not a change (5b-1161)")
+    below = getattr(TOOLS, "below_refusal", None)
+    check(below is not None, "heron_tools has a below_refusal to ask")
+    if below is None:
+        # So everything under it still RUNS and FAILS (heron-ship 2a).
+        def below(_door, _declared, _capability):
+            return None
+    change = "revit_change"
+    for word in ("READ", "ANALYZE"):
+        said = below(change, word, "COUNT_THE_DUCTS") or ""
+        check(bool(said), "a capability declared %s is refused at %s" % (word, change))
+        check("revit_read runs it" in said and "Nothing has been sent to Revit" in said,
+              "and the refusal names the door that runs it, and says nothing was sent: "
+              "%s" % said[:110])
+        check("Changes" in said and "Keep or Discard" in said,
+              "and why: there it would need Changes and could meet the Keep box (%s)"
+              % word)
+        check(below(change, word.lower(), "X") is not None,
+              "whatever the case its risk word is written in (%s)" % word.lower())
+    for word in ("MODIFY", "PUBLISH", "ADMIN"):
+        check(below(change, word, "X") is None,
+              "%s is what %s is for - the floor says nothing" % (word, change))
+    for word in ("EXECUTE", "SUGGEST"):
+        check(below(change, word, "X") is None,
+              "%s is NOT refused there - recorded, not decided: a saved command above "
+              "ANALYZE runs through %s (docs/49 s2), row 5b-1161 stays open" % (word, change))
+    check(below(change, None, "X") is None and below(change, "banana", "X") is None,
+          "an unreadable risk is not this function's to refuse - risk_refusal has it, first")
+    for door in ("revit_read", "revit_show"):
+        check(below(door, "READ", "X") is None,
+              "%s does not write, so it has no floor - a read there costs no switch" % door)
+    check(TOOLS.risk_of("revit_read") == TOOLS.ANALYZE,
+          "the floor is the read door's own ceiling, read from the table (ANALYZE today)")
+
+    # OVER THE LIBRARY, AND NEVER INTO A DEAD END: every card the floor sends
+    # away must be one the door it names really runs - its ceiling lets it
+    # through, and its code writes nothing to disk.
+    sent, stranded, kept = [], [], []
+    disk = getattr(TOOLS, "disk_refusal", None)
+    for name in sorted(os.listdir(FRAGMENTS)):
+        card = os.path.join(FRAGMENTS, name, "fragment.yaml")
+        if not os.path.isfile(card):
+            continue
+        risk = CLIENT.fragment_risk(card)
+        capability = card_line(card, "capability") or name
+        if not below(change, risk, capability):
+            if risk in ("READ", "ANALYZE"):
+                kept.append(name)
+            continue
+        sent.append(name)
+        code = os.path.join(FRAGMENTS, name, "impl", "any", "fragment.cs")
+        source = read(code) if os.path.isfile(code) else ""
+        if (door_refusal is not None and door_refusal("revit_read", risk, capability)) \
+                or (disk is not None and disk("revit_read", capability, source)):
+            stranded.append(name)
+    check(len(sent) > 100 and not kept,
+          "every one of the library's READ and ANALYZE cards is sent to the read door "
+          "(%d sent, still let through: %s)" % (len(sent), kept[:3] or "none"))
+    check(not stranded,
+          "and the read door runs every one of them - none is refused at both doors%s"
+          % ("" if not stranded else ": " + ", ".join(stranded[:5])))
+
+    body = body_of(text, change) or ""
+    floor = body.find('tools.below_refusal(\n        "revit_change"')
+    level = body.find("bridge.risk_refusal(")
+    proof = body.find("bridge.unproven_refusal(")
+    bound = body.find("binding.resolve(")
+    check(floor > 0, "revit_change asks the floor")
+    check(0 < level < floor,
+          "after risk_refusal, which refuses a risk nobody can read")
+    check(0 < floor < proof and floor < bound,
+          "and before the proof is asked for or a session is bound - a read sent to "
+          "its own door costs nothing and is not told to be PROVEN first")
+    after = body[floor:floor + 400] if floor > 0 else ""
+    check('return _ended("refused", below)' in after,
+          "and the call ends 'refused' on the activity list, nothing having been sent")
+
+    # THE WORDS PATH MUST NOT HAND BACK A DOOR THAT REFUSES (the review of
+    # 5b-1161). Read as text here; tests/test_mcp_serves.py calls it.
+    words = body_of(text, "_by_words") or ""
+    runs = body_of(text, "_door_that_runs") or ""
+    check('tools.below_refusal(door, risk, capability)' in runs and '"revit_read"' in runs,
+          "the server asks the floor which door runs a capability it lists")
+    check("_door_that_runs(door, risk, name)" in words
+          and words.count("marked(") >= 3,
+          "and the hand-back marks the best match and every other candidate with it")
+    check("revit_read for " in words and "if elsewhere:" in words,
+          "and its closing sentence names revit_read whenever one listed is a read")
+
+
 def main():
     # ASK BEFORE CALLING - heron-ship 2a. On the code as it stood these names
     # do not exist, and a traceback would replace every failure below.
@@ -861,6 +962,7 @@ def main():
               % pick.get("PROVEN"))
 
     show_door(text, cs, door_refusal)
+    change_floor(text, door_refusal)
 
     print()
     if FAILURES:

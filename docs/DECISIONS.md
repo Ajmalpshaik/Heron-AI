@@ -221,6 +221,7 @@ an edit.
 | [D-150](#d-150--herons-four-switches-move-from-the-ribbon-into-a-settings-window-and-the-ribbon-keeps-heron-settings-and-companion) | Heron's four switches move from the ribbon into a Settings window, and the ribbon keeps Heron, Settings and Companion | ✅ Accepted · 2026-11-07 |
 | [D-151](#d-151--a-job-the-modeller-kept-can-be-saved-as-a-named-command-and-the-heron-panel-in-revit-runs-it-through-the-same-door-a-chat-uses) | A job the modeller kept can be saved as a named command, and the Heron panel in Revit runs it through the same door a chat uses | ⏳ Proposed · 2026-11-08 |
 | [D-152](#d-152--a-qa-checklist-is-saved-checks-in-the-modellers-words-each-one-read-with-a-pass-rule-run-in-one-go-from-the-chat-or-the-companion) | A QA checklist is saved checks in the modeller's words, each one read with a pass rule, run in one go from the chat or the Companion | ⏳ Proposed · 2026-11-08 |
+| [D-153](#d-153--off-windows-the-library-only-server-keeps-its-index-in-a-folder-of-its-own-when-nobody-named-one) | Off Windows, the library-only server keeps its index in a folder of its own when nobody named one | 🕐 Proposed - **owner has not read this back** |
 
 ## Format
 
@@ -1327,3 +1328,13 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`heron_checklists.py`](../brain/heron_checklists.py) · [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (`heron_checklist`) · [`heron_companion.py`](../mcp/companion/heron_companion.py) (`ChecklistPanel`)
 
 **Full record:** [`decisions/D-152.md`](decisions/D-152.md)
+
+## D-153 — Off Windows, the library-only server keeps its index in a folder of its own when nobody named one
+
+**Status:** Proposed · **Date:** 2026-11-11 · the owner has not read this back; it is what the 2026-11-11 task asked for - Heron's library tools answering in a cloud chat nobody set up - written down so it can be accepted or overturned · **Source:** [row 5b-1508](fragment-issues/section-5b-rows-401-425.md)
+**Numbering:** D-153 was the id `tools/next-id.py` printed free on 2026-11-11, with `origin/main` at `d77439ad` ending at D-152 and no branch, open pull request or worktree adding one.
+**Extends:** [D-132](#d-132--off-windows-the-heron-server-serves-its-library-alone-and-no-revit-tool) - it says the server serves its library off Windows, and nothing about where that server keeps its index when no folder is named
+**Keeps:** [D-135](#d-135--herons-python-side-keeps-its-data-in-userprofileheron-and-the-companions-notes-in-the-temporary-folder-where-a-store-claudes-copy-cannot-reach-them) point 1 - off Windows there is still no home, and `HERON_KNOWLEDGE` and `HERON_DATA` win as they did · D-132 points 3 and 4 - on Windows nothing changes, and only when run as the server · [D-17](#d-17--runtime-state-is-machine-local-not-roaming) · docs/06 s2's product, data and derived
+**Affects:** [`heron_brain.py`](../mcp/server/heron_brain.py) (`library_store_dir`, `library_store`), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (start-up), [38 §1](38-the-cloud-environment.md), [10 §1.1](10-memory-and-knowledge.md), [`tests/test_data_home.py`](../tests/test_data_home.py) section 7, [`tests/test_mcp_stdio.py`](../tests/test_mcp_stdio.py)
+
+**Full record:** [`decisions/D-153.md`](decisions/D-153.md)

@@ -282,6 +282,107 @@ HERON_VERSION = "0.2.0"
 RETRY_ATTEMPTS = 3
 RETRY_BACKOFF_S = 0.15
 
+#: THE LARGEST ANSWER HERON READS OFF THE PIPE, in bytes - named here and
+#: nowhere else on this side (FRAGMENT-ISSUES 5b-1167). Until 2026-11-11
+#: `_read_line` read 4096-byte chunks until a newline with no limit and held
+#: all of it before parsing, so one answer could take whatever memory it
+#: asked for. A backstop against a line that never ends, not a budget to tune -
+#: the same reading as the bridge's own limit on a REQUEST. The largest answer
+#: on record is a 6.2 MB read (row 5b-489); this is more than twice that.
+#: NOT MEASURED: the largest reply a real read has sent. THE BRIDGE'S END HAS
+#: NO LIMIT YET - it writes whatever the operation returned - so an answer
+#: over this still crosses the pipe before it is refused here.
+REPLY_LIMIT_BYTES = 16 * 1024 * 1024
+
+
+class _OverLimit(object):
+    """What `_read_line` hands back in place of a line that passed
+    REPLY_LIMIT_BYTES: how many bytes had arrived when it stopped reading."""
+
+    def __init__(self, arrived):
+        self.arrived = arrived
+
+
+def _megabytes(count):
+    """A byte count as a modeller reads one: "16.0 MB"."""
+    return "%.1f MB" % (count / (1024.0 * 1024.0))
+
+
+def too_large_reply(arrived, limit=None, wrote=False):
+    """
+    The answer `request` gives in place of one over REPLY_LIMIT_BYTES.
+
+    SOMETHING ARRIVED, SO THE REQUEST REACHED REVIT - which is why this is an
+    answer with a code of its own and never None: None means nothing came
+    back, and heron_failure reads that on a read as safe to ask again. How
+    big the whole answer was is not known here: reading stopped at the limit.
+
+    TWO SENTENCES, BECAUSE WHAT COMES NEXT DIFFERS. `wrote` is `request`'s
+    own `idempotent`, the other way up. After a READ the next step is a
+    smaller question. After a CHANGE it is the model: the change may have
+    been kept, so the reply leads with that and never invites asking again -
+    "ask for less" said of a move is an invitation to move twice.
+
+    NO "PIPE" IN THE WORDS A MODELLER READS. To somebody drawing chilled
+    water a pipe is in the model.
+    """
+    limit = REPLY_LIMIT_BYTES if limit is None else limit
+    size = ("Revit's answer was larger than Heron takes in one reply - more than %s "
+            "had arrived and the limit is %s - so Heron stopped reading and is showing "
+            "none of it." % (_megabytes(arrived), _megabytes(limit)))
+    if wrote:
+        then = ("LOOK AT THE MODEL FIRST: the change reached Revit and was being "
+                "answered, so it may have been kept, and Heron cannot say. Do not send "
+                "it again. Where the add-in wrote a run record it holds the whole "
+                "answer, and heron_run_record lists the newest.")
+    else:
+        then = ("The request reached Revit and was being answered. Sent again as it "
+                "is, the answer would be as large: ask for less - fewer elements, one "
+                "level, one view.")
+    return {"ok": False, "error": "reply_too_large", "message": "%s %s" % (size, then)}
+
+
+def unreadable_reply(size):
+    """
+    The answer `request` gives in place of one that arrived and would not
+    parse (FRAGMENT-ISSUES 5b-1167).
+
+    Until 2026-11-11 this came back None, the same as no reply at all, and
+    heron_failure called None on a read "never ran" and "asking again costs
+    nothing". Something came back, so the request reached Revit and may have
+    run: a read that used up the chain, or one the add-in counted changing the
+    model, is not free to ask again. So it has a code of its own, and
+    heron_failure reads it as an unknown outcome.
+
+    IT SAYS ONLY WHAT IS KNOWN. That the request RAN is an inference from a
+    line nobody could read, so the sentence does not make it.
+    """
+    return {"ok": False, "error": "reply_unreadable",
+            "message": ("Something came back from Revit - %d byte%s - and Heron could "
+                        "not read it as an answer, so it cannot tell you what Revit "
+                        "did. The request was sent; whether it ran is not known from "
+                        "here, and sending it again could run it a second time."
+                        % (size, "" if size == 1 else "s"))}
+
+
+def could_read(reply):
+    """
+    True when `reply` is an answer Heron could read - anything `request`
+    parsed, a refusal included. False for None, and for the two answers this
+    client writes itself in place of one that arrived unusable.
+
+    FOR `discover`, WHICH ASKS "DID IT ANSWER?" OF A PING. An unreadable
+    reply used to be None there, so a pipe answering something that is not
+    Heron's was not listed as a live session. Now that such a reply has a
+    code of its own (5b-1167), "is not None" would have started listing it;
+    this keeps that question's answer exactly what it was.
+    """
+    if reply is None:
+        return False
+    return not (isinstance(reply, dict)
+                and reply.get("error") in ("reply_unreadable", "reply_too_large"))
+
+
 #: HOW OFTEN A CALLER WAITING ON REVIT IS TOLD THE WAIT GOES ON. A reply can
 #: be minutes away for a reason nobody can see from here - a slow fragment, a
 #: family build, a modeller answering a prompt in Revit - and a host told
@@ -364,7 +465,10 @@ class Bridge(object):
 
     def _read_line(self, handle, timeout, on_wait=None):
         """
-        One newline-terminated response, or None if it never arrives.
+        One newline-terminated response, or None if it never arrives - or an
+        `_OverLimit` when more than REPLY_LIMIT_BYTES arrived with no newline
+        (5b-1167). Reading stops there, so the rest of that line is still in
+        the pipe: the caller must close the handle, never reuse it.
 
         The read runs on a helper thread because a pipe handle cannot be given a
         deadline of its own here. On timeout the caller closes the handle, which
@@ -389,6 +493,10 @@ class Bridge(object):
                     if not chunk:
                         break
                     buffer += chunk
+                    if len(buffer) > REPLY_LIMIT_BYTES:
+                        result["over"] = len(buffer)
+                        buffer = b""
+                        break
             except (OSError, ValueError):
                 buffer = b""
             result["line"] = buffer
@@ -413,12 +521,16 @@ class Bridge(object):
                         on_wait = None
         if worker.is_alive():
             return None            # still waiting; the caller closes the handle
+        if result.get("over"):
+            return _OverLimit(result["over"])
         return result.get("line") or None
 
     def request(self, op, timeout=CONNECT_TIMEOUT_S, response_timeout=RESPONSE_TIMEOUT_S,
                 op_args=None, idempotent=True, on_wait=None):
         """
         Send one request, return the parsed response. None if unreachable.
+        An answer that arrived and could not be used is NOT None (5b-1167): it
+        is `unreadable_reply` or `too_large_reply`, each with a code of its own.
 
         The connection is kept and reused. The bridge hands the session to
         whichever connection is newest, so a client that reconnects for every
@@ -509,13 +621,23 @@ class Bridge(object):
                                         "twice.")}
                 continue
 
+            if isinstance(line, _OverLimit):
+                # MORE THAN THE LIMIT ARRIVED (5b-1167). The rest of that line
+                # is still in the pipe, so this connection is finished: the
+                # next request opens a new one. Not retried - it reached
+                # Revit, and the same request brings the same answer. A
+                # request that is not idempotent is a change, and is told so.
+                self.close()
+                return too_large_reply(line.arrived, wrote=not idempotent)
+
             try:
                 return json.loads(line.decode("utf-8").strip())
             except ValueError:
                 # A reply arrived and was unreadable. That is not a transport
                 # fault, and repeating the request will not produce a different
-                # answer.
-                return None
+                # answer. IT IS NOT None EITHER (5b-1167): None is "nothing
+                # came back", and this did - so the request reached Revit.
+                return unreadable_reply(len(line))
 
         return None
 
@@ -744,7 +866,9 @@ def discover(prune=True):
                 mismatched.append(bridge)
             continue
 
-        if bridge.request("ping") is not None:
+        # `could_read`, not "is not None": an answer that arrived and could not
+        # be read is not a live session, as it was not before 5b-1167.
+        if could_read(bridge.request("ping")):
             live.append(bridge)
             continue
 

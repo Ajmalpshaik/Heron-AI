@@ -40,6 +40,7 @@ WHAT IT PROVES
      change print whole every time. A value the last reply of the same
      capability showed word for word is counted rather than printed - only
      with a run record to read it from, and never a value that changed.
+     A REFUSAL IS PRINTED EVERY TIME, however often it repeats (5b-1160).
   6a. A KEEP THE MODELLER PRESSED IN REVIT IS SAID AS THEIRS (5b-1093). The
      add-in's `asking` sentence is printed once beside every asked KEPT
      verdict, the paragraph or the short sentence; a Discard prints its own
@@ -412,6 +413,56 @@ def batching(runs):
     values.turn(1.9 + 10, 12.0)
     shown, same = runs.shown_values(two, "X", values)
     check(same == [], "a new batch prints every value again")
+
+    # A REFUSAL THAT REPEATS IS STILL A REFUSAL (FRAGMENT-ISSUES 5b-1160). Two
+    # changes refused for one reason are two refusals: the second used to
+    # print as "and 1 value unchanged from the last reply", which reads as a
+    # change that went through with nothing new to say.
+    said_no = "1 item(s) [The view is a template, so nothing was moved]"
+    refused = dict(reply_with(run=run), provides={"moved": "0", "refused": said_no,
+                                                  "mm": "Func`2"})
+    twice = runs.Batch()
+    twice.turn(5.0, 5.1)
+    runs.shown_values(refused, "MOVE_ELEMENTS", twice)
+    twice.turn(5.2, 5.3)
+    shown, same = runs.shown_values(dict(refused), "MOVE_ELEMENTS", twice)
+    shown = shown if isinstance(shown, dict) else {}
+    check(shown.get("refused") == said_no and "refused" not in same,
+          "the same refusal a second time in a batch is PRINTED, never counted as "
+          "'unchanged' (5b-1160): shown %r, left out %r" % (shown, same))
+    check(same == ["mm", "moved"]
+          and runs.unchanged_line(same)[0].startswith("  and 2 values unchanged"),
+          "and what else repeated is still counted, so the saving 5b-407 measured stays")
+    twice.turn(5.4, 5.5)
+    shown, same = runs.shown_values(dict(refused), "MOVE_ELEMENTS", twice)
+    shown = shown if isinstance(shown, dict) else {}
+    check(shown.get("refused") == said_no and "refused" not in same,
+          "and a third time, and every time after - however often it repeats")
+    named = dict(reply_with(run=run), provides={"refusedWhy": "No such level.",
+                                                "refusalReasons": said_no,
+                                                "Refused": "True", "made": "0"})
+    others = runs.Batch()
+    others.turn(6.0, 6.1)
+    runs.shown_values(named, "X", others)
+    others.turn(6.2, 6.3)
+    shown, same = runs.shown_values(dict(named), "X", others)
+    shown = shown if isinstance(shown, dict) else {}
+    check(sorted(shown) == ["Refused", "refusalReasons", "refusedWhy"] and same == ["made"],
+          "so is every other output a card names as its refusals - refusedWhy, "
+          "refusalReasons: shown %r, left out %r" % (sorted(shown), same))
+    nothing = dict(reply_with(run=run), provides={"refused": "0 item(s)", "made": "1"})
+    empty = runs.Batch()
+    empty.turn(7.0, 7.1)
+    runs.shown_values(nothing, "X", empty)
+    empty.turn(7.2, 7.3)
+    shown, same = runs.shown_values(dict(nothing), "X", empty)
+    shown = shown if isinstance(shown, dict) else {}
+    check(shown.get("refused") == "0 item(s)" and same == ["made"],
+          "an empty one is printed too - the card saying nothing was refused")
+    names = getattr(runs, "names_refusal", None)
+    check(names is not None and names("refused") and names("refusedWhy")
+          and not names("moved") and not names("blocked"),
+          "and the rule is one function, by the name the card declares")
 
 
 def asked(runs):

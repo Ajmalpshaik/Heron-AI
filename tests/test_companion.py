@@ -269,6 +269,7 @@ def test_no_way_to_an_ai():
           "the page calls a Revit this chat's only when the modeller CHOSE it")
     check(tools.TOOLS.get("heron_companion") == (tools.READ, None),
           "heron_companion is declared READ with no Revit operation")
+    _what_the_chat_is_told(server)
 
     static = os.path.join(ROOT, "mcp", "companion", "static")
     for name in sorted(n for n in os.listdir(static) if n.endswith(".js")):
@@ -444,6 +445,60 @@ def test_activity():
           "and revit_read, revit_show, revit_change and revit_apply_move label a "
           "failure from the add-in's reply, not from the words that explain it")
     _single_purpose_endings(server)
+
+
+def _what_the_chat_is_told(server):
+    """
+    heron_companion SAYS WHAT THE PAGE IS TODAY (FRAGMENT-ISSUES 5b-1133). Its
+    reply and its description said the page shows "the selection" and "changes
+    nothing": the Selected card is off (SHOW_SELECTION in companion.js), and
+    Apply, Finalize and Place change the model through revit_change's own
+    body. The chat repeats the reply, so the modeller was told a page that can
+    change the model is read-only. Read with ast, as text: CI cannot import
+    the server.
+    """
+    import ast
+    tool = None
+    for node in ast.walk(ast.parse(server)):
+        if isinstance(node, ast.FunctionDef) and node.name == "heron_companion":
+            tool = node
+    check(tool is not None, "heron_companion can be read out of the server")
+    if tool is None:
+        return
+    described = " ".join((ast.get_docstring(tool) or "").split())
+    replies = [" ".join(node.value.value.split()) for node in ast.walk(tool)
+               if isinstance(node, ast.Return) and isinstance(node.value, ast.Constant)
+               and isinstance(node.value.value, str)]
+    opened = [said for said in replies if "is open in your browser" in said]
+    check(len(opened) == 1, "it has one reply for a page it opened")
+    opened = opened[0] if opened else ""
+
+    js = io.open(os.path.join(ROOT, "mcp", "companion", "static", "companion.js"),
+                 encoding="utf-8").read()
+    check("const SHOW_SELECTION = false;" in js,
+          "the Selected card is switched off on the page (docs/40 section 21.6)")
+    check("selection" not in opened.lower() and "selected" not in described.lower(),
+          "so neither the reply nor the description says the page shows the selection: "
+          "%s" % opened[:90])
+    writes = [name for name, (level, _op) in tools.COMPANION_ACTIONS.items()
+              if level >= tools.MODIFY]
+    check(all(name in writes for name in
+              ("companion_table_apply", "companion_loads_finalize",
+               "companion_sprinkler_place")),
+          "the page's Apply, Finalize and Place are declared MODIFY in heron_tools")
+    for where, said in (("reply", opened), ("description", described)):
+        check(all(word in said for word in ("Apply", "Finalize", "Place"))
+              and "change the model" in said,
+              "the %s says the page's Apply, Finalize and Place change the model" % where)
+        check("Changes switch" in said and "Keep or Discard" in said,
+              "and that they do it under the same Changes switch and Keep or Discard "
+              "question as a change from the chat (%s)" % where)
+        check(not said.rstrip().endswith("changes nothing.")
+              and "It reads nothing from Revit through the pipe and changes nothing"
+              not in said,
+              "and the %s no longer says, of the page, that it changes nothing" % where)
+    check("Opening it changed nothing" in opened and "OPENING it reads nothing" in described,
+          "what changes nothing is OPENING the page, and both say so of that alone")
 
 
 def _single_purpose_endings(server):

@@ -1086,6 +1086,71 @@ async def exercise_words(module):
         check(not revit.asked and not resolved and "Nothing has been sent to Revit" in said,
               "revit_change with a ranked guess sends nothing and binds no session")
 
+        # A READ IS NOT A CHANGE (FRAGMENT-ISSUES 5b-1161). revit_change ran a
+        # PROVEN read as run_fragment_write - behind the Changes switch, in a
+        # transaction group, in front of the Keep box. It is sent to the read
+        # door now, by name or by the words that choose it, before a session
+        # is bound.
+        phrase, capability, _ = _pick(module, "PROVEN", "READ", False)
+        for label, arguments in (("named", {"capability": capability}),
+                                 ("chosen by its words", {"request": phrase})):
+            if not phrase:
+                continue
+            revit.asked[:] = []
+            del resolved[:]
+            said = await call("revit_change", arguments)
+            check(not revit.asked and not resolved,
+                  "a PROVEN read (%s) %s at revit_change is NOT sent as a change, and "
+                  "binds no session: asked %s" % (capability, label,
+                                                  [one[0] for one in revit.asked] or "nothing"))
+            check("revit_read runs it" in said and "Nothing has been sent to Revit" in said,
+                  "and the refusal names revit_read: %s" % said[:100])
+
+        # AND THE HAND-BACK NAMES THE DOOR THAT RUNS EACH (the review of
+        # 5b-1161). revit_change(request="count the doors") listed a READ as
+        # its best match and ended "call revit_change again with
+        # capability=<it>" - the one call the floor above refuses. The lookup
+        # is stood in for, so the list does not depend on how this machine
+        # ranks: a READ first, a MODIFY second, neither an exact phrasing.
+        change_cap, _folder = first_with("MODIFY", "PROVEN")
+        ranked = {"capability": capability, "risk": "READ", "route": "ranked",
+                  "candidates": [{"capability": capability, "risk": "READ", "why": "close"},
+                                 {"capability": change_cap, "risk": "MODIFY",
+                                  "why": "also close"}]}
+        real_lookup = module.brain.lookup
+        module.brain.lookup = lambda *_a, **_k: dict(ranked)
+        try:
+            revit.asked[:] = []
+            del resolved[:]
+            listed = await call("revit_change", {"request": "count the things"})
+            asked_read = await call("revit_read", {"request": "count the things"})
+            only_changes = dict(ranked, capability=change_cap, risk="MODIFY",
+                                candidates=ranked["candidates"][1:])
+            module.brain.lookup = lambda *_a, **_k: dict(only_changes)
+            plain = await call("revit_change", {"request": "change the things"})
+        finally:
+            module.brain.lookup = real_lookup
+        best = [line for line in listed.splitlines() if "best match" in line]
+        check(bool(capability and change_cap) and len(best) == 1
+              and capability in best[0] and "run it with revit_read, not revit_change" in best[0],
+              "revit_change handing back a READ as its best match says revit_read runs "
+              "it: %s" % (best[0].strip() if best else listed[:80]))
+        other = [line for line in listed.splitlines() if "also close" in line]
+        check(len(other) == 1 and "revit_read" not in other[0],
+              "and leaves the change beside it unmarked - that one is revit_change's")
+        closing = listed.strip().splitlines()[-1] if listed.strip() else ""
+        check("revit_read for one marked so above" in closing
+              and "call revit_change again with capability=<it>" not in closing,
+              "and its closing line no longer sends every candidate back to revit_change: "
+              "%s" % closing.strip()[:110])
+        check(not revit.asked and not resolved, "still sending nothing and binding no session")
+        check("run it with" not in asked_read
+              and "call revit_read again with capability=<it>" in asked_read,
+              "the same list asked for at revit_read is unmarked - that door runs a read")
+        check("run it with" not in plain
+              and "call revit_change again with capability=<it>" in plain,
+              "and a list of changes at revit_change reads exactly as it did")
+
         # THE READ DOOR ASKS AS A QUESTION (D-128, issue #799). Field use on
         # Villa 1: "read parameter values of the elements" through revit_read
         # ranked SET_PARAMETER_VALUES_BY_ID first, which the door then refused,

@@ -664,7 +664,10 @@ that point (line 879), so a save there could only ever follow a Keep.
    2026-10-06), and a model with no file has no path. So on Revit 2020 to 2023, and for a family on any
    release, a Save As of a model or family that was never saved leaves the pin holding the title alone; the reply comes back under the new title, and `revit_change` answers *"Heron will not change a
    model you did not point it at ... Nothing has been sent to Revit"* (`heron_mcp_server.py` line 1921)
-   about a model it has just saved. The next call is then aimed at the old title (line 1455) and refused
+   about a model it has just saved. (Since 2026-11-11 that reply says what the add-in reported doing
+   in place of *"Nothing has been sent to Revit"* -
+   [row 5b-1135](../fragment-issues/section-5b-rows-401-425.md); the refusal itself is unchanged.)
+   The next call is then aimed at the old title (line 1455) and refused
    until the modeller says *use this model*. Letting the pin follow a rename is a change to that guard.
 
 **The shapes the owner chooses between:**
