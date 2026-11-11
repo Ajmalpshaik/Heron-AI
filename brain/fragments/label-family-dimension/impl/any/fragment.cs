@@ -1,6 +1,23 @@
-// NOT STANDALONE. Assumes `doc`, `fromPlane`, `toPlane`, `parameterName` and
-// `centrePlane` are in scope; leaves `labelled`, `equalised`, `distanceMm`,
-// `notAFamily`, `refused` and `findings` behind.
+// NOT STANDALONE. Assumes `doc`, `fromPlane`, `toPlane`, `parameterName`,
+// `centrePlane` and `pinFreeEnd` are in scope; leaves `labelled`, `freeEnd`,
+// `pinnedEnd`, `equalised`, `distanceMm`, `angleDegrees`, `notAFamily`,
+// `refused` and `findings` behind.
+//
+// VERSION 3 (2026-11-11, FRAGMENT-ISSUES 5b-1498) - AN ANGLE TOO. When the
+// parameter named is an ANGLE (ParameterType.Angle before 2022,
+// SpecTypeId.Angle through GetDataType from 2022, both read by reflection,
+// newest first), the two planes are
+// two reference planes that MEET - not parallel - and the label is an angular
+// dimension, FamilyItemFactory.NewAngularDimension(View, Arc, Reference,
+// Reference), on an arc centred where the two planes cross in a floor plan or
+// elevation that looks along the line they meet on. The same safety order as
+// a distance: the parameter must already hold the angle the planes make on
+// one side or the other (checked before anything is made, a difference
+// refuses the call with both numbers), one label per parameter and per pair
+// of planes, read back after the regeneration - the label, the angle the
+// dimension reads, and neither plane turned or moved. With a LENGTH parameter
+// every line below runs exactly as version 2's did; only the refusal of a
+// parameter that is neither now names the angle too.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one.
 //
@@ -45,6 +62,9 @@ var notAFamily = false;
 string refused = null;
 var freeEnd = "";
 var pinnedEnd = "";
+// VERSION 3: the angle read off a labelled ANGULAR dimension, in degrees; 0
+// for a distance.
+var angleDegrees = 0.0;
 
 var flags = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static;
 var revitAssembly = typeof(Document).Assembly;
@@ -130,9 +150,45 @@ Func<FamilyParameter, bool> isLength = p =>
     }
 };
 
+// VERSION 3: is this parameter an ANGLE? Read as isLength reads a length -
+// SpecTypeId.Angle through GetDataType where the release has it, the
+// ParameterType enum's "Angle" before (SET_FAMILY_TYPE_VALUES reads it the
+// same way).
+Func<FamilyParameter, bool> isAngle = p =>
+{
+    try
+    {
+        var definition = p.Definition;
+        var getDataType = definition.GetType().GetMethod("GetDataType", System.Type.EmptyTypes);
+        if (getDataType != null)
+        {
+            var spec = getDataType.Invoke(definition, null);
+            var owner = revitAssembly.GetType(dbNamespace + ".SpecTypeId");
+            var property = owner == null ? null : owner.GetProperty("Angle", flags);
+            var angleSpec = property == null ? null : property.GetValue(null);
+            return sameKind(spec, angleSpec);
+        }
+        var old = definition.GetType().GetProperty("ParameterType");
+        var value = old == null ? null : old.GetValue(definition);
+        return value != null && value.ToString() == "Angle";
+    }
+    catch (Exception)
+    {
+        return false;
+    }
+};
+
 Tuple<Element, Reference, int, double, string> a = null, b = null, centre = null;
 FamilyParameter parameter = null;
 View view = null;
+
+// VERSION 3 - AN ANGLE: the two planes, the angle the parameter holds (in
+// radians, Revit's own unit for an angle) and how close a reading must be.
+var angular = false;
+ReferencePlane angleFrom = null, angleTo = null;
+var angleTarget = 0.0;
+var angleTolerance = 0.01 * Math.PI / 180.0;
+Func<double, string> deg = radians => Math.Round(radians * 180.0 / Math.PI, 3).ToString(invariant);
 
 if (!doc.IsFamilyDocument)
 {
@@ -161,104 +217,232 @@ else
         return found[0];
     };
 
-    a = one(fromPlane, "first plane");
-    b = one(toPlane, "second plane");
-    var wantsCentre = !string.IsNullOrEmpty(centrePlane) && centrePlane.Trim().Length > 0;
-    if (wantsCentre) centre = one(centrePlane, "centre plane");
+    // VERSION 3 - AN ANGLE. Decided by the parameter's kind alone, so a call
+    // with a length takes version 2's path below untouched.
+    var earlyName = parameterName == null ? "" : parameterName.Trim();
+    FamilyParameter early = null;
+    try { early = earlyName.Length == 0 ? null : fm.get_Parameter(earlyName); } catch (Exception) { early = null; }
+    angular = early != null && isAngle(early);
 
-    var wantedParameter = parameterName == null ? "" : parameterName.Trim();
-    parameter = wantedParameter.Length == 0 ? null : fm.get_Parameter(wantedParameter);
-
-    if (wantedParameter.Length == 0) problems.Add("No parameter was named to label the dimension with.");
-    else if (parameter == null) problems.Add("\"" + wantedParameter + "\" is not a parameter of this family - ADD_FAMILY_PARAMETERS makes one.");
-    else if (!isLength(parameter)) problems.Add("\"" + wantedParameter + "\" is not a length, and only a length can label a straight dimension.");
-    else if (parameter.IsReporting) problems.Add("\"" + wantedParameter + "\" is a reporting parameter - it would read the distance, not drive it.");
-
-    if (problems.Count == 0)
+    if (!angular)
     {
-        if (a.Item1.Id == b.Item1.Id) problems.Add("Both ends are \"" + a.Item5 + "\" - a dimension needs two planes.");
-        else if (a.Item3 != b.Item3) problems.Add("\"" + a.Item5 + "\" controls " + axisWords[a.Item3] + " and \"" + b.Item5 + "\" controls " + axisWords[b.Item3] + " - they are not parallel.");
-        else if (Math.Abs(a.Item4 - b.Item4) < halfMillimetre) problems.Add("\"" + a.Item5 + "\" and \"" + b.Item5
-            + "\" are in the same place - there is no distance to label. Pin the one that must stay (SET_PIN_STATE, "
-            + "pinned=true), move the other to where it belongs, set \"" + (parameter == null ? wantedParameter : parameter.Definition.Name)
-            + "\" to that distance (SET_FAMILY_TYPE_VALUES), then label - a label put on first would drive the free one.");
-    }
+        a = one(fromPlane, "first plane");
+        b = one(toPlane, "second plane");
+        var wantsCentre = !string.IsNullOrEmpty(centrePlane) && centrePlane.Trim().Length > 0;
+        if (wantsCentre) centre = one(centrePlane, "centre plane");
 
-    if (problems.Count == 0 && fm.CurrentType == null)
-        problems.Add("This family has no type yet, so \"" + parameter.Definition.Name + "\" holds no value "
-            + "and a label would drive the planes to nothing. SET_FAMILY_TYPE_VALUES makes the first type.");
+        var wantedParameter = parameterName == null ? "" : parameterName.Trim();
+        parameter = wantedParameter.Length == 0 ? null : fm.get_Parameter(wantedParameter);
 
-    if (problems.Count == 0)
-    {
-        // THE GUARD THIS FRAGMENT EXISTS AROUND: the parameter must already say
-        // what the planes say.
-        var apart = Math.Abs(a.Item4 - b.Item4);
-        var holds = fm.CurrentType.AsDouble(parameter);
-        if (!holds.HasValue || Math.Abs(holds.Value - apart) > halfMillimetre)
-            problems.Add("\"" + a.Item5 + "\" and \"" + b.Item5 + "\" are " + mm(apart) + " mm apart and \""
-                + parameter.Definition.Name + "\" holds " + (holds.HasValue ? mm(holds.Value) + " mm" : "no value")
-                + " in type \"" + fm.CurrentType.Name + "\". Labelling now would MOVE the planes to that "
-                + "value. Set it to " + mm(apart) + " first with SET_FAMILY_TYPE_VALUES, or name the planes "
-                + "that are that far apart.");
+        if (wantedParameter.Length == 0) problems.Add("No parameter was named to label the dimension with.");
+        else if (parameter == null) problems.Add("\"" + wantedParameter + "\" is not a parameter of this family - ADD_FAMILY_PARAMETERS makes one.");
+        else if (!isLength(parameter)) problems.Add("\"" + wantedParameter + "\" is not a length, and only a length can label a straight dimension"
+            + " - or an angle, between two planes that meet (version 3).");
+        else if (parameter.IsReporting) problems.Add("\"" + wantedParameter + "\" is a reporting parameter - it would read the distance, not drive it.");
 
-        foreach (var d in new FilteredElementCollector(doc).OfClass(typeof(Dimension)).Cast<Dimension>())
+        if (problems.Count == 0)
         {
-            FamilyParameter label = null;
-            try { label = d.FamilyLabel; } catch (Exception) { }
-            if (label == null) continue;
+            if (a.Item1.Id == b.Item1.Id) problems.Add("Both ends are \"" + a.Item5 + "\" - a dimension needs two planes.");
+            else if (a.Item3 != b.Item3) problems.Add("\"" + a.Item5 + "\" controls " + axisWords[a.Item3] + " and \"" + b.Item5 + "\" controls " + axisWords[b.Item3] + " - they are not parallel.");
+            else if (Math.Abs(a.Item4 - b.Item4) < halfMillimetre) problems.Add("\"" + a.Item5 + "\" and \"" + b.Item5
+                + "\" are in the same place - there is no distance to label. Pin the one that must stay (SET_PIN_STATE, "
+                + "pinned=true), move the other to where it belongs, set \"" + (parameter == null ? wantedParameter : parameter.Definition.Name)
+                + "\" to that distance (SET_FAMILY_TYPE_VALUES), then label - a label put on first would drive the free one.");
+        }
 
-            if (label.Id == parameter.Id)
-            {
-                problems.Add("\"" + parameter.Definition.Name + "\" already labels a dimension in this family. "
-                    + "A second label on it would fight the first as soon as anything moves.");
-                break;
-            }
+        if (problems.Count == 0 && fm.CurrentType == null)
+            problems.Add("This family has no type yet, so \"" + parameter.Definition.Name + "\" holds no value "
+                + "and a label would drive the planes to nothing. SET_FAMILY_TYPE_VALUES makes the first type.");
 
-            // ONE LABEL PER PAIR OF PLANES TOO. Two parameters each driving the
-            // same two planes agree only while their values do; the first flex
-            // that changes one of them is a constraint Revit cannot satisfy.
-            var measured = new List<ElementId>();
-            try { foreach (Reference r in d.References) measured.Add(r.ElementId); } catch (Exception) { }
-            if (measured.Contains(a.Item1.Id) && measured.Contains(b.Item1.Id))
+        if (problems.Count == 0)
+        {
+            // THE GUARD THIS FRAGMENT EXISTS AROUND: the parameter must already say
+            // what the planes say.
+            var apart = Math.Abs(a.Item4 - b.Item4);
+            var holds = fm.CurrentType.AsDouble(parameter);
+            if (!holds.HasValue || Math.Abs(holds.Value - apart) > halfMillimetre)
+                problems.Add("\"" + a.Item5 + "\" and \"" + b.Item5 + "\" are " + mm(apart) + " mm apart and \""
+                    + parameter.Definition.Name + "\" holds " + (holds.HasValue ? mm(holds.Value) + " mm" : "no value")
+                    + " in type \"" + fm.CurrentType.Name + "\". Labelling now would MOVE the planes to that "
+                    + "value. Set it to " + mm(apart) + " first with SET_FAMILY_TYPE_VALUES, or name the planes "
+                    + "that are that far apart.");
+
+            foreach (var d in new FilteredElementCollector(doc).OfClass(typeof(Dimension)).Cast<Dimension>())
             {
-                problems.Add("A dimension labelled \"" + label.Definition.Name + "\" already measures \"" + a.Item5
-                    + "\" to \"" + b.Item5 + "\". A second label on the same two planes would fight it as soon as "
-                    + "either parameter changes.");
-                break;
+                FamilyParameter label = null;
+                try { label = d.FamilyLabel; } catch (Exception) { }
+                if (label == null) continue;
+
+                if (label.Id == parameter.Id)
+                {
+                    problems.Add("\"" + parameter.Definition.Name + "\" already labels a dimension in this family. "
+                        + "A second label on it would fight the first as soon as anything moves.");
+                    break;
+                }
+
+                // ONE LABEL PER PAIR OF PLANES TOO. Two parameters each driving the
+                // same two planes agree only while their values do; the first flex
+                // that changes one of them is a constraint Revit cannot satisfy.
+                var measured = new List<ElementId>();
+                try { foreach (Reference r in d.References) measured.Add(r.ElementId); } catch (Exception) { }
+                if (measured.Contains(a.Item1.Id) && measured.Contains(b.Item1.Id))
+                {
+                    problems.Add("A dimension labelled \"" + label.Definition.Name + "\" already measures \"" + a.Item5
+                        + "\" to \"" + b.Item5 + "\". A second label on the same two planes would fight it as soon as "
+                        + "either parameter changes.");
+                    break;
+                }
             }
         }
-    }
 
-    if (problems.Count == 0 && centre != null)
-    {
-        var lo = Math.Min(a.Item4, b.Item4);
-        var hi = Math.Max(a.Item4, b.Item4);
-        if (centre.Item3 != a.Item3)
-            problems.Add("\"" + centre.Item5 + "\" controls " + axisWords[centre.Item3] + ", not " + axisWords[a.Item3] + " - it cannot centre these planes.");
-        else if (Math.Abs(centre.Item4 - (lo + hi) / 2) > halfMillimetre)
-            problems.Add("\"" + centre.Item5 + "\" is not midway between \"" + a.Item5 + "\" and \"" + b.Item5
-                + "\" (it is at " + mm(centre.Item4) + " mm, midway is " + mm((lo + hi) / 2) + " mm). An EQ "
-                + "would move the planes until it is, so nothing was made.");
-    }
+        if (problems.Count == 0 && centre != null)
+        {
+            var lo = Math.Min(a.Item4, b.Item4);
+            var hi = Math.Max(a.Item4, b.Item4);
+            if (centre.Item3 != a.Item3)
+                problems.Add("\"" + centre.Item5 + "\" controls " + axisWords[centre.Item3] + ", not " + axisWords[a.Item3] + " - it cannot centre these planes.");
+            else if (Math.Abs(centre.Item4 - (lo + hi) / 2) > halfMillimetre)
+                problems.Add("\"" + centre.Item5 + "\" is not midway between \"" + a.Item5 + "\" and \"" + b.Item5
+                    + "\" (it is at " + mm(centre.Item4) + " mm, midway is " + mm((lo + hi) / 2) + " mm). An EQ "
+                    + "would move the planes until it is, so nothing was made.");
+        }
 
-    if (problems.Count == 0)
+        if (problems.Count == 0)
+        {
+            var views = new FilteredElementCollector(doc).OfClass(typeof(View)).Cast<View>()
+                .Where(v => !v.IsTemplate).ToList();
+            view = a.Item3 == 2
+                ? views.Where(v => v.ViewType == ViewType.Elevation)
+                       .OrderBy(v => Math.Abs(v.ViewDirection.Y) > 0.9999 ? 0 : 1).FirstOrDefault()
+                : views.FirstOrDefault(v => v.ViewType == ViewType.FloorPlan);
+            if (view == null)
+                problems.Add(a.Item3 == 2
+                    ? "This family has no elevation view, and a height is dimensioned in one."
+                    : "This family has no floor plan, and a left-right or front-back size is dimensioned in one.");
+        }
+
+    }
+    else
     {
-        var views = new FilteredElementCollector(doc).OfClass(typeof(View)).Cast<View>()
-            .Where(v => !v.IsTemplate).ToList();
-        view = a.Item3 == 2
-            ? views.Where(v => v.ViewType == ViewType.Elevation)
-                   .OrderBy(v => Math.Abs(v.ViewDirection.Y) > 0.9999 ? 0 : 1).FirstOrDefault()
-            : views.FirstOrDefault(v => v.ViewType == ViewType.FloorPlan);
-        if (view == null)
-            problems.Add(a.Item3 == 2
-                ? "This family has no elevation view, and a height is dimensioned in one."
-                : "This family has no floor plan, and a left-right or front-back size is dimensioned in one.");
+        parameter = early;
+
+        // THE TWO PLANES, BY NAME. Any reference plane, square to the family
+        // or not - an angle is between planes that are not. A level is not
+        // taken: it lies flat, and an angle in this family is drawn between
+        // two reference planes, one of them on the level if it must be.
+        var everyPlane = new FilteredElementCollector(doc).OfClass(typeof(ReferencePlane)).Cast<ReferencePlane>()
+            .Where(x => ownName(x).Length > 0).ToList();
+        Func<string, string, ReferencePlane> planeNamed = (said, which) =>
+        {
+            var text = (said ?? "").Trim();
+            if (text.Length == 0) { problems.Add("No " + which + " was named."); return null; }
+            var found = everyPlane.Where(x => string.Equals(ownName(x), text, StringComparison.OrdinalIgnoreCase)).ToList();
+            if (found.Count == 1) return found[0];
+            if (found.Count > 1) { problems.Add("\"" + text + "\" names " + found.Count + " planes - rename one first."); return null; }
+            var isLevel = new FilteredElementCollector(doc).OfClass(typeof(Level)).Cast<Level>()
+                .Any(x => string.Equals(x.Name, text, StringComparison.OrdinalIgnoreCase));
+            problems.Add(isLevel
+                ? "\"" + text + "\" is a level. An angle is labelled between two reference planes - draw one on the "
+                  + "level (CREATE_REFERENCE_PLANES) and name that."
+                : "No reference plane is called \"" + text + "\". This family has "
+                  + (everyPlane.Count == 0 ? "no named ones." : string.Join(", ", everyPlane.Select(ownName).Distinct()
+                      .OrderBy(n => n).Take(15)) + "."));
+            return null;
+        };
+        angleFrom = planeNamed(fromPlane, "first plane");
+        angleTo = planeNamed(toPlane, "second plane");
+
+        if (!string.IsNullOrEmpty(centrePlane) && centrePlane.Trim().Length > 0)
+            problems.Add("A centre plane keeps a DISTANCE equal either side with an EQ; \"" + earlyName + "\" is an "
+                + "angle, and an angle has no EQ here. Leave the centre plane out.");
+        if (parameter.IsReporting)
+            problems.Add("\"" + earlyName + "\" is a reporting parameter - it would read the angle, not drive it.");
+
+        XYZ fromNormal = null, toNormal = null, meetsAlong = null;
+        if (problems.Count == 0)
+        {
+            fromNormal = angleFrom.Normal.Normalize();
+            toNormal = angleTo.Normal.Normalize();
+            var crossing = fromNormal.CrossProduct(toNormal);
+            if (angleFrom.Id == angleTo.Id)
+                problems.Add("Both ends are \"" + ownName(angleFrom) + "\" - an angle needs two planes.");
+            else if (crossing.GetLength() < Math.Sin(angleTolerance))
+                problems.Add("\"" + ownName(angleFrom) + "\" and \"" + ownName(angleTo) + "\" are parallel - they never "
+                    + "meet, so they make no angle. A LENGTH parameter labels the distance between them.");
+            else meetsAlong = crossing.Normalize();
+        }
+
+        // THE VIEW: a floor plan or an elevation that looks ALONG the line the
+        // two planes meet on, so both are seen edge on, as lines. Two upright
+        // planes meet on a vertical line and are labelled in the floor plan.
+        if (problems.Count == 0)
+        {
+            var looking = new FilteredElementCollector(doc).OfClass(typeof(View)).Cast<View>()
+                .Where(x => !x.IsTemplate && (x.ViewType == ViewType.FloorPlan || x.ViewType == ViewType.Elevation))
+                .Where(x => Math.Abs(x.ViewDirection.Normalize().DotProduct(meetsAlong)) > 0.9999)
+                .OrderBy(x => x.ViewType == ViewType.FloorPlan ? 0 : 1).ToList();
+            view = looking.FirstOrDefault();
+            if (view == null)
+                problems.Add("\"" + ownName(angleFrom) + "\" and \"" + ownName(angleTo) + "\" meet on a line that no floor "
+                    + "plan or elevation of this family looks along, so no view shows both edge on to draw the angle "
+                    + "in. Two upright planes are labelled in the floor plan.");
+        }
+
+        if (problems.Count == 0 && fm.CurrentType == null)
+            problems.Add("This family has no type yet, so \"" + earlyName + "\" holds no value and a label would turn "
+                + "the planes to nothing. SET_FAMILY_TYPE_VALUES makes the first type.");
+
+        // THE GUARD, FOR AN ANGLE: the parameter must already hold the angle
+        // the planes make - on one side of where they cross or the other, the
+        // angle or what it leaves of 180 degrees. Labelled first, Revit would
+        // TURN a plane to the parameter's value.
+        if (problems.Count == 0)
+        {
+            var acute = Math.Acos(Math.Min(1.0, Math.Abs(fromNormal.DotProduct(toNormal))));
+            var obtuse = Math.PI - acute;
+            var holdsAngle = fm.CurrentType.AsDouble(parameter);
+            if (holdsAngle.HasValue && Math.Abs(holdsAngle.Value - acute) <= angleTolerance) angleTarget = acute;
+            else if (holdsAngle.HasValue && Math.Abs(holdsAngle.Value - obtuse) <= angleTolerance) angleTarget = obtuse;
+            else
+                problems.Add("\"" + ownName(angleFrom) + "\" and \"" + ownName(angleTo) + "\" meet at " + deg(acute)
+                    + " degrees (" + deg(obtuse) + " on the other side) and \"" + earlyName + "\" holds "
+                    + (holdsAngle.HasValue ? deg(holdsAngle.Value) + " degrees" : "no value") + " in type \""
+                    + fm.CurrentType.Name + "\". Labelling now would TURN a plane to that value. Set it to "
+                    + deg(acute) + " or " + deg(obtuse) + " first with SET_FAMILY_TYPE_VALUES, or name the planes "
+                    + "that make that angle.");
+        }
+
+        // ONE LABEL PER PARAMETER, AND PER PAIR OF PLANES - as for a distance.
+        if (problems.Count == 0)
+        {
+            foreach (var labelledAlready in new FilteredElementCollector(doc).OfClass(typeof(Dimension)).Cast<Dimension>())
+            {
+                FamilyParameter labelOn = null;
+                try { labelOn = labelledAlready.FamilyLabel; } catch (Exception) { }
+                if (labelOn == null) continue;
+                if (labelOn.Id == parameter.Id)
+                {
+                    problems.Add("\"" + earlyName + "\" already labels a dimension in this family. A second label on "
+                        + "it would fight the first as soon as anything moves.");
+                    break;
+                }
+                var ends = new List<ElementId>();
+                try { foreach (Reference r in labelledAlready.References) ends.Add(r.ElementId); } catch (Exception) { }
+                if (ends.Contains(angleFrom.Id) && ends.Contains(angleTo.Id))
+                {
+                    problems.Add("A dimension labelled \"" + labelOn.Definition.Name + "\" already measures \""
+                        + ownName(angleFrom) + "\" to \"" + ownName(angleTo) + "\". A second label on the same two "
+                        + "planes would fight it as soon as either parameter changes.");
+                    break;
+                }
+            }
+        }
     }
 
     if (problems.Count > 0) refused = "Nothing was made. " + string.Join(" ", problems);
 }
 
-if (refused == null)
+if (refused == null && !angular)
 {
     var fm = doc.FamilyManager;
     var axis = a.Item3;
@@ -587,6 +771,187 @@ if (refused == null)
         + "is LOCKED to them - EXTRUDE_BETWEEN_PLANES builds a box that is. FLEX_FAMILY proves it by "
         + "changing the value and reading the geometry back.");
 
+    if (freeEnd.Length > 0) findings.Add(freeEnd);
+    if (pinnedEnd.Length > 0) findings.Add(pinnedEnd);
+}
+
+// ---------------------------------------------------------------------------
+// VERSION 3 - THE ANGLE, MADE AND READ BACK
+// ---------------------------------------------------------------------------
+
+if (refused == null && angular)
+{
+    var fromName = ownName(angleFrom);
+    var toName = ownName(angleTo);
+    var drivesAngle = parameter.Definition.Name;
+    var fromNormalBefore = angleFrom.Normal.Normalize();
+    var toNormalBefore = angleTo.Normal.Normalize();
+    var fromOriginBefore = angleFrom.GetPlane().Origin;
+    var toOriginBefore = angleTo.GetPlane().Origin;
+    var meetsAlong = fromNormalBefore.CrossProduct(toNormalBefore).Normalize();
+
+    // WHERE THE TWO PLANES CROSS, in the view's own plane: the one point on
+    // both planes and on the plane of the view - a floor plan at its level, an
+    // elevation through its origin. The arc is centred there, because an arc
+    // centred anywhere else reads a different angle with no error at all
+    // (CREATE_ANGULAR_DIMENSION's lesson).
+    var viewLevel = view.GenLevel;
+    var onView = view.ViewType == ViewType.FloorPlan
+        ? new XYZ(0, 0, viewLevel == null ? 0.0 : viewLevel.Elevation)
+        : view.Origin;
+    var across = fromNormalBefore.DotProduct(toNormalBefore.CrossProduct(meetsAlong));
+    var meet = (toNormalBefore.CrossProduct(meetsAlong) * fromNormalBefore.DotProduct(fromOriginBefore)
+              + meetsAlong.CrossProduct(fromNormalBefore) * toNormalBefore.DotProduct(toOriginBefore)
+              + fromNormalBefore.CrossProduct(toNormalBefore) * meetsAlong.DotProduct(onView)) / across;
+
+    // EACH PLANE AS SEEN IN THE VIEW, as an arm from where they cross towards
+    // the middle of the plane as it is drawn - so the arc sits between the two
+    // arms as they appear, not behind them.
+    Func<ReferencePlane, XYZ, XYZ> armOf = (plane, normal) =>
+    {
+        var trace = meetsAlong.CrossProduct(normal).Normalize();
+        var middle = (plane.BubbleEnd + plane.FreeEnd) / 2.0;
+        return (middle - meet).DotProduct(trace) < -1e-6 ? trace.Negate() : trace;
+    };
+    Func<XYZ, XYZ, double> angleBetween = (one, two) =>
+        Math.Acos(Math.Max(-1.0, Math.Min(1.0, one.DotProduct(two))));
+    var fromArm = armOf(angleFrom, fromNormalBefore);
+    var toArm = armOf(angleTo, toNormalBefore);
+    // THE SIDE THE PARAMETER HOLDS. The two arms as drawn make the angle or
+    // what it leaves of 180 degrees; when it is the other one, the arc goes
+    // to the other side of the second plane.
+    if (Math.Abs(angleBetween(fromArm, toArm) - angleTarget) > angleTolerance) toArm = toArm.Negate();
+    var sweep = angleBetween(fromArm, toArm);
+    var square = (toArm - fromArm * fromArm.DotProduct(toArm)).Normalize();
+
+    // THE RADIUS: well inside the shorter arm as drawn, and 300 mm when an
+    // arm is drawn short of where they cross or behind it.
+    Func<ReferencePlane, XYZ, double> reach = (plane, arm) =>
+        Math.Max((plane.BubbleEnd - meet).DotProduct(arm), (plane.FreeEnd - meet).DotProduct(arm));
+    var shorter = Math.Min(reach(angleFrom, fromArm), reach(angleTo, toArm));
+    var radius = shorter > 200.0 / 304.8 ? shorter * 0.6 : 300.0 / 304.8;
+    var arc = Arc.Create(meet, radius, 0.0, sweep, fromArm, square);
+
+    // WHICH PLANE A FLEX WOULD TURN. Read before the label exists, as for a
+    // distance, but only what holds a plane FAST - pinned, or defining the
+    // origin. Which plane Revit turns, and about which point, when the angle
+    // changes has not been measured yet (NEEDS-CHECKING Group NE): it is said
+    // as expected, never as known.
+    Func<ReferencePlane, string> heldFast = plane =>
+    {
+        var why = new List<string>();
+        var isPinned = false;
+        try { isPinned = plane.Pinned; } catch (Exception) { }
+        if (isPinned) why.Add("pinned");
+        Parameter origin = null;
+        try { origin = plane.get_Parameter(BuiltInParameter.DATUM_PLANE_DEFINES_ORIGIN); } catch (Exception) { }
+        if (origin != null && origin.AsInteger() == 1) why.Add("defines the origin");
+        return string.Join(" and ", why);
+    };
+    var fromFast = heldFast(angleFrom);
+    var toFast = heldFast(angleTo);
+    ReferencePlane pinAngleEnd = null;
+    string noAnglePin = null;
+    if (fromFast.Length > 0 && toFast.Length > 0)
+    {
+        findings.Add("Both planes are held fast - \"" + fromName + "\" is " + fromFast + "; \"" + toName + "\" is " + toFast
+            + " - so a flex of \"" + drivesAngle + "\" has nothing it can turn. Unpin the one meant to turn "
+            + "(SET_PIN_STATE, pinned=false).");
+        noAnglePin = "both planes are already held fast";
+    }
+    else if (fromFast.Length > 0 || toFast.Length > 0)
+    {
+        var stays = fromFast.Length > 0 ? fromName : toName;
+        var turns = fromFast.Length > 0 ? toName : fromName;
+        findings.Add("\"" + stays + "\" is " + (fromFast.Length > 0 ? fromFast : toFast) + ", so a flex of \""
+            + drivesAngle + "\" is expected to turn \"" + turns + "\" - expected, not yet measured in Revit.");
+        noAnglePin = "\"" + stays + "\" is held fast already, so \"" + turns + "\" is the only plane a flex can turn - "
+            + "pinned, the flex would have nothing";
+    }
+    else
+    {
+        freeEnd = "Neither \"" + fromName + "\" nor \"" + toName + "\" is pinned or defines the origin, so which one a "
+            + "flex of \"" + drivesAngle + "\" turns is Revit's choice. Pin the one that must stay (SET_PIN_STATE, "
+            + "pinned=true); asked with pinFreeEnd=true, this call pins \"" + fromName + "\", the first named.";
+        pinAngleEnd = angleFrom;
+    }
+
+    if (pinFreeEnd && pinAngleEnd != null)
+    {
+        try { pinAngleEnd.Pinned = true; }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException("Revit would not pin \"" + fromName + "\": " + ex.Message
+                + " NOTHING from this call was kept.");
+        }
+    }
+    else if (pinFreeEnd)
+        findings.Add("pinFreeEnd was asked and nothing was pinned: " + noAnglePin + ".");
+
+    Dimension angleDimension = null;
+    try
+    {
+        angleDimension = doc.FamilyCreate.NewAngularDimension(view, arc, angleFrom.GetReference(), angleTo.GetReference());
+        if (angleDimension == null) throw new InvalidOperationException("Revit returned no dimension.");
+        angleDimension.FamilyLabel = parameter;
+    }
+    catch (Exception ex)
+    {
+        throw new InvalidOperationException("Revit refused the angle between \"" + fromName + "\" and \"" + toName
+            + "\" in \"" + view.Name + "\": " + ex.Message + " NOTHING from this call was kept.");
+    }
+
+    doc.Regenerate();
+
+    // READ BACK, AFTER THE REGENERATION - the label, the angle the dimension
+    // reads, and both planes where they were. The guard made the parameter
+    // agree with the planes, so NOTHING should have turned; a plane that did
+    // is thrown, not reported.
+    var angleLabel = angleDimension.FamilyLabel;
+    if (angleLabel == null || angleLabel.Id != parameter.Id)
+        throw new InvalidOperationException("The angle between \"" + fromName + "\" and \"" + toName + "\" was made and "
+            + "does not carry \"" + drivesAngle + "\" afterwards. NOTHING from this call was kept.");
+
+    var angleReads = angleDimension.Value;
+    if (!angleReads.HasValue || Math.Abs(angleReads.Value - angleTarget) > angleTolerance)
+        throw new InvalidOperationException("The labelled angle reads " + (angleReads.HasValue
+                ? deg(angleReads.Value) + " degrees" : "nothing") + " where \"" + drivesAngle + "\" holds "
+            + deg(angleTarget) + ". NOTHING from this call was kept.");
+
+    foreach (var check in new[] {
+        Tuple.Create(angleFrom, fromName, fromNormalBefore, fromOriginBefore),
+        Tuple.Create(angleTo, toName, toNormalBefore, toOriginBefore) })
+    {
+        var normalNow = check.Item1.Normal.Normalize();
+        var originNow = check.Item1.GetPlane().Origin;
+        var turned = angleBetween(normalNow, check.Item3);
+        if (turned > angleTolerance && Math.PI - turned > angleTolerance)
+            throw new InvalidOperationException("\"" + check.Item2 + "\" turned " + deg(turned) + " degrees when the "
+                + "angle was labelled. NOTHING from this call was kept.");
+        if (Math.Abs(normalNow.DotProduct(check.Item4 - originNow)) > halfMillimetre)
+            throw new InvalidOperationException("\"" + check.Item2 + "\" moved when the angle was labelled. NOTHING "
+                + "from this call was kept.");
+    }
+
+    if (pinFreeEnd && pinAngleEnd != null)
+    {
+        var stillPinned = false;
+        try { stillPinned = pinAngleEnd.Pinned; } catch (Exception) { }
+        if (!stillPinned)
+            throw new InvalidOperationException("\"" + fromName + "\" was pinned before the label and does not read "
+                + "back pinned afterwards. NOTHING from this call was kept.");
+        pinnedEnd = "\"" + fromName + "\" pinned first, as asked (pinFreeEnd), and reads back pinned: a flex of \""
+            + drivesAngle + "\" is expected to turn \"" + toName + "\" instead - expected, not yet measured.";
+        freeEnd += " Pinned now - see pinnedEnd.";
+    }
+
+    angleDegrees = Math.Round(angleReads.Value * 180.0 / Math.PI, 3);
+    labelled = drivesAngle + " drives the angle between \"" + fromName + "\" and \"" + toName + "\", reading "
+        + angleDegrees.ToString(invariant) + " degrees";
+    findings.Add(labelled + ", in \"" + view.Name + "\", on an arc centred where the two planes cross.");
+    findings.Add("The planes now follow \"" + drivesAngle + "\". Geometry follows only if it is LOCKED to them - "
+        + "LOCK_FAMILY_LINES_TO_PLANES locks a line along a plane. FLEX_FAMILY proves it by changing the angle and "
+        + "reading the geometry back.");
     if (freeEnd.Length > 0) findings.Add(freeEnd);
     if (pinnedEnd.Length > 0) findings.Add(pinnedEnd);
 }

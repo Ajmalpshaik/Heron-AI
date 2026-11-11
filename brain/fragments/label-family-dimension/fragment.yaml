@@ -1,11 +1,11 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-GEO-035
-semantic-identity: "tie the distance between two family planes to a parameter, kept centred if asked"
+semantic-identity: "tie the distance between two family planes to a parameter, kept centred if asked - or the angle between two planes that meet to an angle parameter"
 kind: action
 domain: revit.families
 capability: LABEL_FAMILY_DIMENSION
@@ -25,7 +25,20 @@ capability: LABEL_FAMILY_DIMENSION
 # Revit 2020 that a level nobody pinned is MOVED by a flex when the other end
 # is pinned (Height P 250 -> 400 moved Ref. Level down 150 mm), so "a level is
 # held fast" was wrong there; the findings now say so (row 5b-1332).
-version: 2
+#
+# VERSION 3 (2026-11-11) - AN ANGLE TOO, and back to DRAFT. Version 2 was
+# PROVEN on 2026-10-24 (the proof block below, kept as the record of what it
+# proved); its C# changed, so it is DRAFT again until NEEDS-CHECKING Group NE
+# is run (D-30, D-117). Found missing (row 5c) when Ajmal PS asked on
+# 2026-11-11 for a family's whole 2D side to be covered, building a diffuser
+# family's plan arrows: when
+# the parameter named is an ANGLE, two reference planes that meet are labelled
+# with an angular dimension (FamilyItemFactory.NewAngularDimension) on an arc
+# centred where they cross. The owner's yes to widening rather than a second
+# card: "widen ... no duplicate tools, same kind of work 2 tools no need".
+# FRAGMENT-ISSUES row 5b-1498. A LENGTH parameter takes version 2's path
+# unchanged; no need was added, so a version 2 caller binds as before.
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -97,6 +110,25 @@ purpose: >
   ends is named as what the label will fight; a plain dimension holds
   nothing.
 
+  **AN ANGLE TOO (version 3, 2026-11-11, FRAGMENT-ISSUES 5b-1498).** When
+  the parameter named is an ANGLE, the two planes are two reference planes
+  that MEET - "Arrow Left" and "Arrow Right", both upright, seen in Ref.
+  Level - and the label is an angular dimension on an arc centred where they
+  cross, drawn in the floor plan (two upright planes) or the elevation that
+  looks along the line they meet on. The same safety order as a distance: the
+  parameter must already hold the angle the planes make - on one side of
+  where they cross or the other, 30 or 150 degrees say - checked before
+  anything is made, a difference refusing the call with both numbers; one
+  label per parameter and per pair of planes; read back after the
+  regeneration - the label, the angle it reads, and neither plane turned or
+  moved. Parallel planes make no angle and are refused; a centre plane (an
+  EQ) is for a distance and is refused with an angle; a level is not taken -
+  draw a reference plane on it. Which plane a flex turns is said from what
+  holds each FAST (pinned, or defining the origin), and `pinFreeEnd` pins the
+  first named when neither is - but which one Revit turns, and about what
+  point, is not yet measured (Group NE). A LENGTH parameter takes version 2's
+  path exactly as before.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -111,7 +143,10 @@ contract:
     - name: toPlane
       type: string
       source: request
-    # The length parameter that will drive the distance - "Width".
+    # The length parameter that will drive the distance - "Width". VERSION 3:
+    # or an ANGLE parameter - "Arrow Angle" - and the two planes are then two
+    # reference planes that meet, labelled with an angular dimension. Which
+    # one is read from the parameter's own kind, so no need was added.
     - name: parameterName
       type: string
       source: request
@@ -151,6 +186,11 @@ contract:
     - name: equalised
       role: result
       type: bool
+    - name: angleDegrees
+      # Version 3. The angle read off the labelled ANGULAR dimension after the
+      # write, in degrees. 0 for a distance.
+      role: result
+      type: double
     - name: distanceMm
       # The distance between the planes, read off the labelled dimension after
       # the write.
@@ -227,11 +267,27 @@ compatibility-note: >
   2020 and 2027 alike (read 2026-10-22). Whether Revit counts a locked
   alignment as a `Dimension` with `IsLocked` in every release, and which end
   it moves when both are held, is what NEEDS-CHECKING Group IU has to show.
+  Version 3: `FamilyItemFactory.NewAngularDimension(View, Arc, Reference,
+  Reference)`, `Arc.Create(XYZ, double, double, double, XYZ, XYZ)`,
+  `ReferencePlane.BubbleEnd` / `FreeEnd` / `Normal` and `Dimension.Value`
+  (radians for an angle) read the same 2020 through 2027 (api-surface, read
+  2026-11-11). An angle's kind moved at 2022 like a length's -
+  `ParameterType.Angle` before, `SpecTypeId.Angle` through
+  `Definition.GetDataType()` from - so it is read by reflection, newest first,
+  as SET_FAMILY_TYPE_VALUES reads it. Which plane Revit turns when an angle
+  label is flexed is what Group NE has to show.
 
 # ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "label the width with the Width parameter"   -> here
 #   "keep it centred as it resizes"               -> here, with a centre plane
+#   "label the angle between these planes with Arrow Angle"
+#                                                 -> here, version 3, an angle
+#                                                    parameter between two
+#                                                    planes that meet
+#   "dimension the angle between these grids"     -> CREATE_ANGULAR_DIMENSION -
+#                                                    a project annotation,
+#                                                    no label
 #   "dimension these ducts"                       -> CREATE_DIMENSION - a
 #                                                    project annotation
 #   "dimension the grids and levels"              -> CREATE_LINEAR_DIMENSION, version 5
@@ -249,3 +305,5 @@ utterances:
   - add an EQ and label the depth with Depth
   - label the width with the Width parameter
   - keep it centred as it resizes
+  # VERSION 3 (2026-11-11): an angle.
+  - label the angle between these planes with Arrow Angle

@@ -83,6 +83,37 @@ positive:
   - given: the second form's id, links "Material=by category"
     expect: the form back to <By Category>, changed 1
 
+  # VERSION 4 (2026-11-11, row 5b-1497): a family's 2D. Each new case FAILS on
+  # version 3, which refused all four kinds by id. The first case re-proves
+  # version 3's positive on the same scratch family (Group NE, NE1).
+  - given: >
+      version 4, the scratch family of NEEDS-CHECKING Group NE (a metric
+      Generic Model family saved under %TEMP%\heron-work\link-angle) with a
+      Yes/No type parameter "Show Handle" and an extrusion; forms = the
+      extrusion's id, links "Visible=Show Handle"
+    expect: >
+      changed 1, matched 1; linkReport "Extrusion id N: Visible not linked ->
+      Show Handle" - version 3's form path, unchanged; Group NE, NE1
+
+  - given: >
+      version 4, the same family with a Yes/No type parameter "Show Arrow" and
+      a symbolic line, a detail line, a filled region and a model text drawn in
+      Ref. Level; forms = the symbolic line's and the filled region's ids,
+      links "Visible=Show Arrow"
+    expect: >
+      changed 2, matched 2; linkReport "Symbolic Line id N: Visible not linked
+      -> Show Arrow || Filled Region id M: Visible not linked -> Show Arrow";
+      the detail line and the model text untouched; read back by
+      GetAssociatedFamilyParameter; Group NE, NE2
+
+  - given: version 4, forms = the detail line's and the model text's ids, links "Visible=Show Arrow"
+    expect: >
+      changed 2, both named "Detail Line id N" and "Model Text id M", Visible
+      -> Show Arrow; Group NE, NE3
+
+  - given: version 4, the symbolic line linked to Show Arrow, links "Visible=none"
+    expect: changed 1, "Visible Show Arrow -> not linked", the Visible value kept
+
 negative:
   - given: >
       the same family, category "Duct Connector", system "Supply Air", links
@@ -170,9 +201,39 @@ negative:
       the material back to <By Category> (SET_FAMILY_FORM_MATERIAL's reading,
       not carried)
 
+  # VERSION 4 (2026-11-11, row 5b-1497).
+  - given: >
+      version 4, the Group NE family; forms = the extrusion's id and a
+      reference plane's id, links "Visible=Show Handle" - version 3's negative,
+      re-proved
+    expect: >
+      refused naming the plane as none of a form, a nested family, a detail or
+      symbolic line, a region or model text - and NEITHER linked; Group NE,
+      NE1's negative
+
+  - given: >
+      version 4, forms = the symbolic line's id, links "Visible=Arrow Length"
+      - a LENGTH parameter
+    expect: >
+      refused naming both kinds, Length and Yes/No, and the Yes/No parameters
+      that could drive Visible; nothing linked - the kind check runs on a line
+      as on a form; Group NE, NE2's negative
+
+  - given: >
+      version 4, forms = the symbolic line's id and the level Ref. Level's id,
+      links "Visible=Show Arrow"
+    expect: >
+      refused naming the level, and the symbolic line NOT linked - a level is
+      not one of the kinds accepted; Group NE, NE3's negative
+
 second_route:
   - >
       Family Editor by hand: select the connector, press the button at the end
       of Flow's row in Properties, and read which family parameter the
       Associate Family Parameter dialog has selected - compared with
       linkReport, before and after
+  - >
+      Version 4: select the symbolic line or filled region in Ref. Level, read
+      the button at the end of Visible's row in Properties (Associate Family
+      Parameter shows "Show Arrow"), then FLEX_FAMILY Show Arrow off and on -
+      the line or region leaves and returns in the plan
