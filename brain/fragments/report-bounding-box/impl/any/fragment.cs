@@ -19,17 +19,102 @@
 // AN ELEMENT WITH NO BOX IS REPORTED, NOT SKIPPED. Skipping makes the combined
 // box look like it covers everything that was asked about.
 //
-// A FAMILY INSTANCE'S BOX CAN BE WIDER THAN WHAT SHOWS, AND THE ANSWER SAYS SO
-// (version 2, FRAGMENT-ISSUES 5b-352). Measured 2026-10-07, Revit 2024: a
-// nested C-channel family holding an upright body and a horizontal one, each
-// switched by its own Visible parameter, read 200 x 1075 x 1100 mm - the
-// hidden body and the shown one together. The box is still Revit's own and
-// is not re-measured here; when anything measured is a family instance the
-// answer says the figure can take in bodies the family has switched off.
+// A FAMILY INSTANCE'S BOX CAN BE WIDER THAN WHAT IT SHOWS, AND THE ANSWER SAYS
+// SO - FOR THE INSTANCES IT IS TRUE OF, AND NO OTHERS (version 2,
+// FRAGMENT-ISSUES 5b-352). Measured 2026-10-07, Revit 2024: a nested C-channel
+// family holding an upright body and a horizontal one, each switched by its
+// own Visible parameter, read 200 x 1075 x 1100 mm - the hidden body and the
+// shown one together.
+//
+// The figure reported is still Revit's own box; nothing here replaces it.
+// Beside it, each family instance's GEOMETRY is read the way Revit hands it
+// out by default - Fine detail, objects not set as Visible left out - and its
+// extent taken. Where Revit's box reaches more than a millimetre past that
+// extent on any side, the instance is named with both sizes. Where the two
+// agree - an ordinary fitting, a terminal, a door - NOTHING is said: a caveat
+// on every family instance would be read once and skipped for ever. The
+// first 200 family instances are compared and the answer says when there
+// were more.
 
 var findings = new List<string>();
 var measured = 0;
 var familyInstances = 0;
+var comparedInstances = 0;
+var widerThanShown = new List<string>();
+const int compareAtMost = 200;
+var oneMillimetre = 1.0 / 304.8;
+
+// The extent of what an element's geometry shows, or null when it gives none.
+Func<Element, BoundingBoxXYZ> shownBoxOf = element =>
+{
+    var options = new Options();
+    options.DetailLevel = ViewDetailLevel.Fine;
+    GeometryElement geometry = null;
+    try { geometry = element.get_Geometry(options); }
+    catch (Exception) { geometry = null; }
+    if (geometry == null) return null;
+
+    var any = false;
+    double x0 = 0, y0 = 0, z0 = 0, x1 = 0, y1 = 0, z1 = 0;
+    Action<XYZ> take = p =>
+    {
+        if (p == null) return;
+        if (!any) { x0 = x1 = p.X; y0 = y1 = p.Y; z0 = z1 = p.Z; any = true; return; }
+        x0 = Math.Min(x0, p.X); y0 = Math.Min(y0, p.Y); z0 = Math.Min(z0, p.Z);
+        x1 = Math.Max(x1, p.X); y1 = Math.Max(y1, p.Y); z1 = Math.Max(z1, p.Z);
+    };
+
+    Action<GeometryElement> walk = null;
+    walk = pieces =>
+    {
+        foreach (GeometryObject piece in pieces)
+        {
+            var instance = piece as GeometryInstance;
+            if (instance != null)
+            {
+                // In the model's own coordinates already.
+                var inner = instance.GetInstanceGeometry();
+                if (inner != null) walk(inner);
+                continue;
+            }
+
+            var solid = piece as Solid;
+            if (solid != null)
+            {
+                if (solid.Faces.Size == 0) continue;
+                var box = solid.GetBoundingBox();
+                if (box == null) continue;
+                // A solid's box sits in its own transform: all eight corners.
+                foreach (var x in new[] { box.Min.X, box.Max.X })
+                    foreach (var y in new[] { box.Min.Y, box.Max.Y })
+                        foreach (var z in new[] { box.Min.Z, box.Max.Z })
+                            take(box.Transform.OfPoint(new XYZ(x, y, z)));
+                continue;
+            }
+
+            var curve = piece as Curve;
+            if (curve != null) { foreach (var p in curve.Tessellate()) take(p); continue; }
+
+            var polyline = piece as PolyLine;
+            if (polyline != null) { foreach (var p in polyline.GetCoordinates()) take(p); continue; }
+
+            var mesh = piece as Mesh;
+            if (mesh != null) { foreach (XYZ p in mesh.Vertices) take(p); continue; }
+
+            var point = piece as Point;
+            if (point != null) take(point.Coord);
+        }
+    };
+
+    try { walk(geometry); }
+    catch (Exception) { return null; }
+    if (!any) return null;
+
+    var shown = new BoundingBoxXYZ();
+    shown.Min = new XYZ(x0, y0, z0);
+    shown.Max = new XYZ(x1, y1, z1);
+    return shown;
+};
 var noBoundingBox = new List<string>();
 var combinedSizeMm = "";
 
@@ -55,7 +140,29 @@ foreach (var element in elements)
     }
 
     measured++;
-    if (element is FamilyInstance) familyInstances++;
+    if (element is FamilyInstance)
+    {
+        familyInstances++;
+        if (comparedInstances < compareAtMost)
+        {
+            var shown = shownBoxOf(element);
+            if (shown != null)
+            {
+                comparedInstances++;
+                var past = Math.Max(Math.Max(Math.Max(shown.Min.X - box.Min.X, box.Max.X - shown.Max.X),
+                    Math.Max(shown.Min.Y - box.Min.Y, box.Max.Y - shown.Max.Y)),
+                    Math.Max(shown.Min.Z - box.Min.Z, box.Max.Z - shown.Max.Z));
+                if (past > oneMillimetre)
+                    widerThanShown.Add(string.Format("{0} (id {1}): Revit's box {2:0} x {3:0} x {4:0} mm, what "
+                        + "its geometry shows {5:0} x {6:0} x {7:0} mm",
+                        element.Name, element.Id,
+                        (box.Max.X - box.Min.X) * 304.8, (box.Max.Y - box.Min.Y) * 304.8,
+                        (box.Max.Z - box.Min.Z) * 304.8,
+                        (shown.Max.X - shown.Min.X) * 304.8, (shown.Max.Y - shown.Min.Y) * 304.8,
+                        (shown.Max.Z - shown.Min.Z) * 304.8));
+            }
+        }
+    }
 
     // Combined first, so it covers EVERY element and not just the listed ones.
     if (!haveCombined)
@@ -108,12 +215,18 @@ else
     findings.Add("Nothing handed in has a bounding box, so there is no combined extent to report");
 }
 
-if (familyInstances > 0)
+if (widerThanShown.Count > 0)
 {
-    findings.Add(string.Format("{0} of the {1} measured are family instances. Revit's box for a family "
-        + "instance can take in bodies the family has switched off with a Visible parameter, so it can read "
-        + "larger than what shows - this does not measure only what shows",
-        familyInstances, measured));
+    findings.Add(string.Format("{0} of the {1} family instance(s) compared have a box LARGER than the geometry "
+        + "they show - the family holds something that is not shown, as a body switched off with a Visible "
+        + "parameter is. The sizes above and the COMBINED box are Revit's own boxes, the larger ones: {2}{3}",
+        widerThanShown.Count, comparedInstances, string.Join("; ", widerThanShown.Take(20)),
+        widerThanShown.Count > 20 ? string.Format("; and {0} more", widerThanShown.Count - 20) : ""));
+
+    if (familyInstances > comparedInstances)
+        findings.Add(string.Format("{0} more family instance(s) were not compared with what they show - "
+            + "the first {1} are, and any whose geometry Revit does not give is left out",
+            familyInstances - comparedInstances, compareAtMost));
 }
 
 if (noBoundingBox.Count > 0)
