@@ -377,6 +377,17 @@ Heron does not know. CI's compile job fails on any non-zero code, so a 3 on that
 build, and `change-evidence.py` records a 3 as NOT RUN.
 [`tests/test_check_api_surface.py`](../tests/test_check_api_surface.py) holds it, by hiding `dotnet`.
 
+**A session's worktree inside this folder is not this repository.** Claude Code puts each one at
+`.claude/worktrees/<name>/`, a whole copy at another commit. Git never lists it; a walk of the disk
+does. Until 2026-11-11 the *"`.csproj` on disk that nothing builds"* check, on a machine with no git
+to ask, named every copy's projects and exited 1 before the no-SDK answer above - and
+`module-reach.py`, `measure-routes.py` and `check-structure.py` each counted a copy as part of this
+tree ([row 5b-1539](../docs/FRAGMENT-ISSUES.md)). All four now ask
+[`brain/heron_checkout.py`](../brain/heron_checkout.py), which lists no folder by name: a folder
+below the start of a walk that holds its own `.git` is another checkout.
+[`tests/test_nested_worktree.py`](../tests/test_nested_worktree.py) holds it with a fake worktree in a
+temp folder. `next-id.py` reads every worktree on purpose, and still does.
+
 A pass means the API surface agrees; it is **not** evidence that anything behaves correctly.
 
 ---
