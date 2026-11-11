@@ -949,29 +949,45 @@ is proved, what it may do, or which door runs it.
 - **Every capability a lookup lists carries its status, its risk and the door that runs it** - the
   best match on three lines of its own (`status`, `risk`, `run with`), each runner-up on its one line.
   The status is the card's own, read with `heron_brain.proof_status`, the answer `revit_change` refuses
-  on; a `PROVEN` card whose code moved after its proof says so
-  ([D-30](DECISIONS.md#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs)). The
+  on; a `PROVEN` card whose code moved after its proof reads `PROVEN but STALE`
+  ([D-30](DECISIONS.md#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs)).
+  **That line is seen only from a knowledge store built before the code moved** - staged 2026-11-11 on
+  a scratch copy of the library, in the same process and in a new one. A store built afterwards does not
+  hold such a card at all: the lookup then answers with another capability and says the store does not
+  match the checkout. The
   door is asked of the registry, never typed: `revit_read` up to its ceiling, `revit_show` up to its
-  own unless the card's code writes a file, `revit_change` for the rest (`_lookup_door`).
+  own unless the card's code writes a file, `revit_change` for the rest (`_lookup_door`). Which folder
+  declares which capability is read once and kept while no card's name, modified time or size has
+  changed (`_folders_by_capability`), so the lines cost a stat of each card and no open. **What that
+  saves on the owner's PC has not been measured**: [row 5b-271](fragment-issues/section-5b-rows-251-275.md)
+  is where opening every card was found to be a lookup's cost there.
 - **Where `revit_change` would refuse it, the line says so**
   ([D-117](decisions/D-117.md)) - the client's own `unproven_refusal`, asked and not copied.
 - **Nothing is ranked, hidden or floored by any of it.** The list is the brain's, in the brain's order;
   which capability the user meant stays the host's to decide
   ([D-01](DECISIONS.md#d-01--execution-host-claude-code-plugin), [D-65](decisions/D-65.md),
   [D-100](decisions/D-100.md)). `tests/test_mcp_serves.py` section 17 holds all three.
-- **The refusal itself names what comes next, and only what exists.** Proving is a run from Heron's
-  command line and a signed proof, not a tool a chat has; a `DRAFT` declared `MODIFY` has its one try
-  behind Revit's Keep or Discard box, `try-once` on that command line
+- **The refusal itself names what comes next, and only what exists.** It states the card's risk.
+  Proving is a run from Heron's command line and a signed proof, not a tool a chat has; a `DRAFT`
+  declared `MODIFY` - and no other - is also told of its one try behind Revit's Keep or Discard box,
+  `try-once` on that command line
   ([D-119](DECISIONS.md#d-119--a-draft-fragment-may-run-once-on-the-model-in-front-behind-a-keep-or-discard-prompt-in-revit-and-article-11-says-so)),
-  started only when the modeller asks ([D-122](decisions/D-122.md)). It points at no other capability:
+  started only when the modeller asks ([D-122](decisions/D-122.md)). `try-once` refuses a card
+  declared anything else, so a `DRAFT` declared `ADMIN`, `PUBLISH` or `EXECUTE` is told of the proof and
+  nothing more; the one risk is named once, `ONCE_RISK` in the client. It points at no other capability:
   `revit_change`'s description forbids trying one to get round a refusal.
   `tests/test_admin_publish.py` section 7 holds it.
-- **The two closing paragraphs are said whole once per server process, and in one line after.**
+- **The two closing paragraphs are said whole once per server process, and in one line after - and
+  `heron_capabilities` says both whole every time.**
   `heron_lookup`, `heron_resolve` and `heron_capabilities` ended every answer with which door runs what
   and how much is proved, and `heron_method` a job's method with the first: the same words each time,
-  measured 2026-11-11 over stdio off Windows at 28% of a lookup's reply and 36% of a resolve's. A
-  process is what a chat is given, so the first answer still carries them whole
-  (`_SAID_IN_FULL` in `heron_mcp_server.py`). **The line is never dropped:** every answer still hands
+  measured 2026-11-11 over stdio off Windows at 28% of a lookup's reply and 36% of a resolve's. The
+  first of `heron_lookup`, `heron_resolve` and `heron_method` to answer in a process still carries them
+  whole (`_SAID_IN_FULL` in `heron_mcp_server.py`). **The one line stands on its own, because once a
+  process is not once a reader:** `.mcp.json` starts one server for a whole Claude Code session, which
+  outlives a cleared or compacted conversation and answers a subagent too, so the short form says the
+  limits itself, points at nothing said before, and names `heron_capabilities` for the full text.
+  **The line is never dropped:** every answer still hands
   back that a change is gated and how many capabilities are `PROVEN`, which
   `tests/test_brain_reachable.py` and `tests/test_mcp_serves.py` hold. The tools outside those four say
   their line whole, as before. `tests/test_mcp_serves.py` section 18 and `tests/test_mcp_stdio.py` hold

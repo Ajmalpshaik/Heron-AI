@@ -215,15 +215,59 @@ def article_11(names):
     # proved first on a test model ... and then it can be asked for again",
     # which told a chat neither that proving is not a chat's to do nor that a
     # DRAFT has one run behind Revit's Keep or Discard box (D-119).
-    draft = refusal("SOME_CAPABILITY", {"status": "DRAFT", "stale": False}) or ""
+    #
+    # AND THE ONE TRY IS OFFERED ONLY TO A CARD try-once WILL TAKE (review,
+    # 2026-11-11). It was offered to every DRAFT, and `cmd_try_once` refuses
+    # anything but a card declared MODIFY - so for a DRAFT declared ADMIN,
+    # PUBLISH or EXECUTE the step the refusal named was itself a refusal. The
+    # card's risk travels in what proof_of answers, and the refusal states it.
+    once_risk = getattr(CLIENT, "ONCE_RISK", None)
+    check(once_risk == "MODIFY",
+          "the client names the one risk a DRAFT's single run is open to (ONCE_RISK)")
+
+    def drafted(risk):
+        found = {"status": "DRAFT", "stale": False}
+        if risk is not None:
+            found["risk"] = risk
+        return refusal("SOME_CAPABILITY", found) or ""
+
+    draft = drafted("MODIFY")
     check("try-once" in draft and "D-119" in draft and "Keep or Discard" in draft,
-          "a DRAFT's refusal names its one try, behind Revit's Keep or Discard "
-          "box (D-119)")
+          "a DRAFT declared MODIFY: the refusal names its one try, behind "
+          "Revit's Keep or Discard box (D-119)")
     check(callable(getattr(CLIENT, "cmd_try_once", None)),
           "and that run exists: the client has the try-once command it names")
-    check("D-122" in draft and "MODIFY" in draft,
-          "it says the try is for a DRAFT declared MODIFY, started only when "
+    check("D-122" in draft and "declared MODIFY" in draft,
+          "it states the card's risk, and that the try is started only when "
           "the modeller asks (D-122)")
+    for risk in ("ADMIN", "PUBLISH", "EXECUTE"):
+        said = drafted(risk)
+        check("try-once" not in said and "one try" not in said
+              and "declared %s" % risk in said
+              and "proved first on a test model" in said,
+              "a DRAFT declared %s: the refusal states its risk, offers no try "
+              "that try-once would refuse, and says it is proved first" % risk)
+    unsaid = drafted(None)
+    check("try-once" not in unsaid and "proved first on a test model" in unsaid,
+          "a DRAFT whose risk was not handed over is offered no try either")
+    # OVER THE LIBRARY: what proof_of answers carries each card's own risk,
+    # and the try is named for exactly the DRAFTs try-once takes.
+    drafts = [n for n in names if (proof_of(n) or {}).get("status") == "DRAFT"]
+    carried = [n for n in drafts
+               if ((proof_of(n) or {}).get("risk") or "") != (card_risk(n) or "").upper()]
+    check(bool(drafts) and not carried,
+          "proof_of carries every DRAFT card's own declared risk (%d) - not: %s"
+          % (len(drafts), carried[:5]))
+    offered = set(n for n in drafts if "try-once" in (refusal(n, proof_of(n)) or ""))
+    taken = set(n for n in drafts if card_risk(n) == "MODIFY")
+    others = [n for n in drafts if n not in taken
+              and card_risk(n) not in ("READ", "ANALYZE")]
+    check(bool(taken) and bool(others) and offered == taken,
+          "over the library the try is offered to exactly the DRAFTs declared "
+          "MODIFY (%d) and to none of the other DRAFT writers (%d) - wrongly "
+          "offered: %s, wrongly withheld: %s"
+          % (len(taken), len(others), sorted(offered - taken)[:5],
+             sorted(taken - offered)[:5]))
     for said, why in ((draft, "a DRAFT's"), (stale, "a stale proof's")):
         check("command line" in said and "not a tool a chat has" in said,
               "%s refusal says proving is done from Heron's command line, not "

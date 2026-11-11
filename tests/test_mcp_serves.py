@@ -132,7 +132,10 @@ WHAT IT PROVES, when an SDK is installed
      floored (D-01, D-65, D-100).
  18. THE TWO CLOSING PARAGRAPHS ARE SERVED WHOLE ONCE PER SERVER PROCESS -
      which door runs what, and how much is proved - and in one line after,
-     on heron_lookup, heron_resolve, heron_capabilities and heron_method.
+     on heron_lookup, heron_resolve and heron_method. heron_capabilities
+     says both whole every time, and the one line names it: one server
+     serves a whole session, subagents and a cleared conversation included,
+     so the short form stands on its own and points at nothing said before.
      Every answer still hands back both limits (item 6); a process that has
      said neither says both whole on its first answer.
  19. heron_resolve WITH NO RELEASE TO FILTER BY SAYS WHY, in the words the
@@ -2460,10 +2463,67 @@ async def exercise_lookup_says(module):
           "walked %d time(s) for all, %d for one capability each"
           % (listed, walks["once"], walks["each"]))
 
+    # AND THAT ONE WALK OPENS NO CARD WHILE NONE HAS CHANGED (review,
+    # 2026-11-11): the map is kept against every card's name, modified time
+    # and size, taken with a stat. Staged on a folder of this test's own -
+    # a card edited, and a card added, are each read again; nothing changed
+    # is the very same answer handed back.
+    if real_map is not None:
+        home = tempfile.mkdtemp(prefix="heron-folders-")
+        cards_at = os.path.join(home, "brain", "fragments")
+
+        def card(name, capability, pad=""):
+            os.makedirs(os.path.join(cards_at, name), exist_ok=True)
+            with io.open(os.path.join(cards_at, name, "fragment.yaml"), "w",
+                         encoding="utf-8") as fh:
+                fh.write("id: FRG-T-%s\ncapability: %s\n%s" % (name, capability, pad))
+
+        opened = []
+        real_open, real_root = module.io.open, module._repo_root
+
+        def watched_open(path, *args, **kwargs):
+            if str(path).startswith(cards_at):
+                opened.append(os.path.basename(os.path.dirname(str(path))))
+            return real_open(path, *args, **kwargs)
+
+        card("one", "FIRST_THING")
+        card("two", "SECOND_THING")
+        module._repo_root = lambda: home
+        module.io.open = watched_open
+        try:
+            first_map = module._folders_by_capability()
+            read_first = len(opened)
+            second_map = module._folders_by_capability()
+            read_second = len(opened) - read_first
+            module.io.open = real_open
+            card("two", "SECOND_THING_RENAMED", pad="# longer now\n")
+            card("three", "THIRD_THING")
+            third_map = dict(module._folders_by_capability())
+        finally:
+            module.io.open = real_open
+            module._repo_root = real_root
+            shutil.rmtree(home, ignore_errors=True)
+        check(first_map == {"FIRST_THING": "one", "SECOND_THING": "two"}
+              and read_first == 2,
+              "the first call reads each card once - %r, %d opened"
+              % (first_map, read_first))
+        check(second_map is first_map and read_second == 0,
+              "a second call with no card changed opens none (%d opened) and "
+              "hands back the same answer" % read_second)
+        check(third_map == {"FIRST_THING": "one", "SECOND_THING_RENAMED": "two",
+                            "THIRD_THING": "three"},
+              "a card edited and a card added are read again - %r" % third_map)
+        check(module._folders_by_capability() is not first_map,
+              "and back on the real library it answers for the real library")
+    else:
+        check(False, "the server keeps one map of the cards for a lookup's lines")
+
 
 async def exercise_said_once(module):
-    """Section 18 - the two closing paragraphs are served whole once per
-    server process and in one line after, and no answer loses its limits."""
+    """Section 18 - heron_lookup, heron_resolve and heron_method say the two
+    closing paragraphs whole once per server process and in one line after;
+    heron_capabilities says both whole every time; and the one line stands on
+    its own."""
     server = module.server
     print()
     print("  the closing paragraphs: whole once per server process, one line after")
@@ -2474,6 +2534,8 @@ async def exercise_said_once(module):
     check(said is not None, "the server keeps what this process has said in full")
     if said is None:
         said = set()
+    in_short = getattr(module, "_doors_in_short", None)
+    check(in_short is not None, "the server has the doors in one line, by name")
 
     async def call(tool, arguments):
         try:
@@ -2481,9 +2543,8 @@ async def exercise_said_once(module):
         except Exception as exc:                                # noqa: BLE001
             return "(raised %s: %s)" % (type(exc).__name__, exc)
 
-    # BOTH PARAGRAPHS AS A NEW PROCESS SAYS THEM, read off the server and not
-    # typed here, then forgotten again so the calls below start as a new
-    # process does.
+    # BOTH PARAGRAPHS WHOLE, read off the server and not typed here, then
+    # forgotten so the calls below start as a new process does.
     said.clear()
     doors, proved = module._cannot_run(), module._not_proven()
     said.clear()
@@ -2497,7 +2558,6 @@ async def exercise_said_once(module):
     later = [("heron_lookup", await call("heron_lookup", words)),
              ("heron_resolve", await call("heron_resolve",
                                           {"capability": "SET_SELECTION"})),
-             ("heron_capabilities", await call("heron_capabilities", {})),
              ("heron_method", await call("heron_method", {"job": job}))]
     check(doors in first and proved in first,
           "the first answer of a process carries both paragraphs whole")
@@ -2516,23 +2576,49 @@ async def exercise_said_once(module):
         if tool != "heron_method":
             check("PROVEN" in answer and "are not" in answer,
                   "%s still says how many are PROVEN and how many are not" % tool)
+        # THE ONE LINE STANDS ON ITS OWN (review, 2026-11-11). One server
+        # serves a whole Claude Code session - it outlives /clear and a
+        # compacted conversation, and a subagent asks the same process - so
+        # the reader of the short form may never have been shown the long
+        # one. It claims nothing about what was said before, and names the
+        # tool that has the whole text on demand.
+        check("heron_capabilities says this in full" in answer,
+              "%s names where the full text is: heron_capabilities" % tool)
+        closing = low.split("the doors, in short")[-1]
+        check("first time" not in closing and "earlier" not in closing
+              and "said before" not in closing,
+              "%s does not point at text it said before, which this reader "
+              "may never have seen" % tool)
     again = later[0][1]
     saved = len(first) - len(again)
     check(saved > (len(doors) + len(proved)) // 2,
           "the same lookup asked again is %d characters shorter - more than "
           "half of the two paragraphs (%d)" % (saved, len(doors) + len(proved)))
-    short = module._cannot_run()
+    short = in_short() if in_short is not None else doors
     check(len(short) * 3 <= len(doors),
           "the one line about the doors is a third of the paragraph or less "
           "(%d of %d characters)" % (len(short), len(doors)))
 
-    # A TOOL THAT WAS NOT ASKED TO SHORTEN STILL SAYS ITS LINE WHOLE.
-    check(module._not_proven() == proved,
-          "and _not_proven, asked plainly, answers whole every time - the "
-          "tools outside the four are as they were")
+    # heron_capabilities SAYS BOTH WHOLE EVERY TIME - it is what the one line
+    # names, so it has to have them however much this process has said.
+    for nth in ("after the others", "asked again"):
+        listed = await call("heron_capabilities", {})
+        check(doors in listed and proved in listed,
+              "heron_capabilities, %s, says both paragraphs whole" % nth)
+    said.clear()
+    await call("heron_capabilities", {})
+    after = await call("heron_lookup", words)
+    check(doors not in after and "heron_capabilities says this in full" in after,
+          "and a process whose first answer was heron_capabilities has said "
+          "them: the lookup after it is the one line")
 
-    # A NEW PROCESS SAYS IT WHOLE AGAIN - which is a new chat (mcp/README.md
-    # rule 5). Staged by forgetting; tests/test_mcp_stdio.py starts a real one.
+    # A TOOL THAT WAS NOT ASKED TO SHORTEN STILL SAYS ITS LINE WHOLE.
+    check(module._not_proven() == proved and module._cannot_run() == doors,
+          "and both, asked plainly, answer whole every time - the tools "
+          "outside these are as they were")
+
+    # A NEW PROCESS SAYS IT WHOLE AGAIN. Staged by forgetting;
+    # tests/test_mcp_stdio.py starts a real one.
     said.clear()
     fresh = await call("heron_resolve", {"capability": "SET_SELECTION"})
     check(doors in fresh and proved in fresh,

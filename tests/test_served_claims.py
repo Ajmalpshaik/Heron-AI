@@ -49,7 +49,7 @@ import os
 import re
 import sys
 
-HERE =os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 
 sys.path.insert(0, os.path.join(ROOT, "mcp", "client"))
@@ -171,15 +171,14 @@ def run():
         failures.append(
             "no retired card found on disk, so the checks on the served "
             "sentence's total could not tell the two counts apart")
-    said_once = getattr(server, "_SAID_IN_FULL", set())
-    said_once.clear()
     forms = [("whole", message)]
     try:
-        server._not_proven(once=True)
-        forms.append(("in one line", server._not_proven(once=True)))
+        forms.append(("in one line", server._not_proven(short=True)))
     except TypeError:
         failures.append("the served sentence has no one-line form to check")
-    said_once.clear()
+    if len(forms) == 2 and not len(forms[1][1]) < len(message):
+        failures.append("the one-line form of the served sentence is no "
+                        "shorter than the whole one")
     for form, sentence in forms:
         stated = re.search(r"(\d+) of (\d+) capabilities are PROVEN", sentence)
         other = re.search(r"[Tt]he other (\d+) are not", sentence)

@@ -4623,9 +4623,19 @@ def _live_split():
 # up five things read them five times, and what it needed the fifth time was
 # one line.
 #
-# SO EACH IS SAID IN FULL ONCE AND IN ONE LINE AFTER. Once per server process,
-# because a process is what a chat is given: closing and reopening the chat
-# starts a new one (mcp/README.md, rule 5), and that one says it whole again.
+# SO heron_lookup, heron_resolve AND heron_method SAY EACH IN FULL ONCE A
+# PROCESS AND IN ONE LINE AFTER - and heron_capabilities says both whole every
+# time, which is where the one line sends a reader who wants them.
+#
+# THE ONE LINE HAS TO STAND ON ITS OWN, because "once a process" is not "once
+# a reader". This comment said *a process is what a chat is given*, and that
+# was untrue: .mcp.json starts one server for a whole Claude Code session. It
+# outlives /clear and a compacted conversation, and a subagent given these
+# tools (heron-fragment-author holds heron_lookup) asks the same process. Any
+# of those can meet the short form having never been shown the long one - so
+# it says the limits itself, claims nothing about what was said before, and
+# names the tool that has the whole text on demand.
+#
 # THE LINE IS NEVER DROPPED. tests/test_brain_reachable.py and
 # tests/test_mcp_serves.py hold that EVERY answer hands back its own limits -
 # that a change is gated, and how much is proved - so a plan is never built on
@@ -4642,10 +4652,21 @@ def _said_before(what):
     return False
 
 
+def _doors_in_short():
+    """`_cannot_run` in one line, for an answer after the first - whole in
+    itself, and naming where the full text is (_SAID_IN_FULL has why)."""
+    return (
+        "The doors, in short: what READS runs through revit_read and what "
+        "only changes what is SHOWN through revit_show, both with Changes "
+        "off; what WRITES runs through revit_change, and Heron refuses it "
+        "while the owner's Changes switch is off - Admin and Publish have "
+        "switches of their own (D-106). heron_capabilities says this in full.")
+
+
 def _cannot_run():
     """
-    What can and cannot reach Revit today, and through which tool - whole the
-    first time this process is asked, and in one line after (_SAID_IN_FULL).
+    What can and cannot reach Revit today, and through which tool - whole,
+    every time it is asked. `_doors_in_short` is its one line.
 
     IT SAID A READ COULD RUN, AND FROM A CHAT IT COULD NOT. "Heron can now RUN
     a read-only fragment against the open model" was true of the command line
@@ -4653,14 +4674,6 @@ def _cannot_run():
     this went on to reach reads through revit_change - with Changes ON, inside
     a transaction. It names the door now, and the door exists.
     """
-    if _said_before("cannot_run"):
-        return (
-            "The doors, in short (in full the first time this server said "
-            "them): what READS runs through revit_read and what only changes "
-            "what is SHOWN through revit_show, both with Changes off; what "
-            "WRITES runs through revit_change, and Heron refuses it while the "
-            "owner's Changes switch is off - Admin and Publish have switches "
-            "of their own (D-106).")
     return (
         "A capability that READS runs through revit_read - D-28's executor "
         "compiles it inside Revit with no transaction open, so Revit refuses a "
@@ -4681,14 +4694,13 @@ def _cannot_run():
         "until he turns them on in Revit.")
 
 
-def _not_proven(once=False):
+def _not_proven(short=False):
     """How much is proved, counted rather than claimed.
 
-    `once` is for the tools that close EVERY answer with it: whole the first
-    time this process says it, one line after (_SAID_IN_FULL). The counts are
-    in both - they are the live fingerprint of which tree this server reads
-    (row 127) - and a count that could not be read is said the same way each
-    time.
+    `short` is its one line, for an answer after a process's first
+    (_SAID_IN_FULL). The counts are in both - they are the live fingerprint of
+    which tree this server reads (row 127) - and a count that could not be
+    read is said the same way each time.
 
     COUNTED OVER THE CARDS STILL IN THE LIBRARY (_live_split): a retired card
     is not a capability, proved or otherwise."""
@@ -4701,7 +4713,7 @@ def _not_proven(once=False):
         return ("Nothing here is proven yet. D-30 promotes on one recorded "
                 "proof containing a negative case, which needs a real model. "
                 "See NEEDS-CHECKING.md.")
-    if once and _said_before("not_proven"):
+    if short:
         return ("%d of %d capabilities are PROVEN (D-30); the other %d are "
                 "not, and one that has not been proved is a claim."
                 % (proven, total, total - proven))
@@ -4802,7 +4814,10 @@ def heron_capabilities() -> str:
     lines.append('"Every part provided" means each piece has something on disk '
                  "that claims to do it. It does not mean Heron can run it. "
                  + _cannot_run())
-    lines.append(_not_proven(once=True))
+    lines.append(_not_proven())
+    # BOTH WHOLE, EVERY TIME: this is the tool the one-line forms name for
+    # the full text. And this process has now said them.
+    _SAID_IN_FULL.update(("doors", "proved"))
     return "\n".join(lines)
 
 
@@ -4864,7 +4879,7 @@ def heron_method(job: str = "") -> str:
     lines.append("")
     lines.append("Each step's values: heron_resolve <capability>, or call it "
                  "with request= and the hand-back says what to type.")
-    lines.append(_cannot_run())
+    lines.append(_doors_in_short() if _said_before("doors") else _cannot_run())
     return "\n".join(lines)
 
 
@@ -5073,25 +5088,49 @@ def _lookup_door(risk, capability, folder):
     return "revit_show"
 
 
+# WHICH FOLDER DECLARES WHICH CAPABILITY, KEPT WHILE NO CARD HAS CHANGED.
+# `signature` is every fragment.yaml's name, modified time and size, taken
+# with one stat each and no file opened; the map is read again only when that
+# differs. The brain keeps its own shallow read the same way
+# (heron_search.disk_status, row 127).
+_FOLDERS = {"signature": None, "found": {}}
+
+
 def _folders_by_capability():
     """
-    {CAPABILITY: folder} for every card, from ONE walk of the fragment files -
-    `_fragment_for`'s answer for each, the first folder in order that declares
-    it, without `_fragment_for`'s walk once per capability.
+    {CAPABILITY: folder} for every card - `_fragment_for`'s answer for each,
+    the first folder in order that declares it - without opening a card
+    unless one has changed since this process last read them.
 
     A LOOKUP LISTS FIVE, AND A WALK EACH IS THE COST ROW 5b-271 MEASURED ON
-    THE OWNER'S PC: there a lookup's time was reading every card again, not
-    the search. One walk, each card read only as far as its capability line.
+    THE OWNER'S PC: there a lookup's time was opening every card again, not
+    the search. So the cards are read once, each only as far as its
+    capability line, and the answer is kept against `_FOLDERS`' signature: a
+    card edited, added or removed changes it, and the next call reads again.
+    A STAT IS NOT AN OPEN, and that difference is the saving - measured here
+    only (a cloud container); what it saves on the owner's PC is not.
     {} when the folder cannot be read - every status is then "status unread",
     never a guess.
     """
     root = os.path.join(_repo_root(), "brain", "fragments")
-    found = {}
+    marks = []
     try:
         for name in sorted(os.listdir(root)):
-            path = os.path.join(root, name, "fragment.yaml")
-            if not os.path.isfile(path):
+            try:
+                at = os.stat(os.path.join(root, name, "fragment.yaml"))
+            except OSError:
                 continue
+            marks.append((name, at.st_mtime_ns, at.st_size))
+    except OSError:
+        return {}
+    signature = (root, tuple(marks))
+    if _FOLDERS["signature"] == signature:
+        return _FOLDERS["found"]
+
+    found = {}
+    try:
+        for name, _when, _size in marks:
+            path = os.path.join(root, name, "fragment.yaml")
             with io.open(path, "r", encoding="utf-8", errors="replace") as fh:
                 for line in fh:
                     if line.startswith("capability:"):
@@ -5099,6 +5138,7 @@ def _folders_by_capability():
                         break
     except OSError:
         return {}
+    _FOLDERS["signature"], _FOLDERS["found"] = signature, found
     return found
 
 
@@ -5136,6 +5176,10 @@ def _how_it_runs(capability, risk, folders=None):
         status = proof["status"] or "no status"
         # ONLY A PROOF THAT WOULD OTHERWISE STAND IS CALLED STALE. A DRAFT
         # with an old proof draft behind it is a DRAFT, and says so alone.
+        # WHEN A REPLY CAN SAY IT: only from a store built BEFORE the code
+        # moved, which still holds the card's row. A store built after does
+        # not index such a card, so the lookup never lists it there. Staged
+        # 2026-11-11 on a scratch copy of the library, both ways.
         if proof["stale"] and status in bridge.KEEPABLE_STATUSES:
             status += " but STALE"
     door = _lookup_door(risk, capability, folder)
@@ -5230,8 +5274,8 @@ def heron_resolve(capability: str) -> str:
     lines.extend(_contract_lines(capability))
 
     lines.append("")
-    lines.append(_cannot_run())
-    lines.append(_not_proven(once=True))
+    lines.append(_doors_in_short() if _said_before("doors") else _cannot_run())
+    lines.append(_not_proven(short=_said_before("proved")))
     return "\n".join(lines)
 
 
@@ -5415,8 +5459,8 @@ def heron_lookup(request: str, question: bool = False) -> str:
         lines.append("Filtered to Revit %s (%s)." % (revit, how))
 
     lines.append("")
-    lines.append(_cannot_run())
-    lines.append(_not_proven(once=True))
+    lines.append(_doors_in_short() if _said_before("doors") else _cannot_run())
+    lines.append(_not_proven(short=_said_before("proved")))
     return "\n".join(lines)
 
 
