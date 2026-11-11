@@ -40,6 +40,12 @@ purpose: >
      the family's own Solid Black or a hatch - or "masking", which Revit makes
      through its API only from 2024; before that a filled region type with its
      Masking box ticked hides what is behind it the same way.
+  4b. LOCK_FAMILY_LINES_TO_PLANES for what step 3 cannot lock: lines already
+     drawn, a SLANTED line - an arrow head's edge - whose ENDS sit on planes
+     crossing it, and every filled region's edges. Each end on a plane is
+     locked to it, so the slanted line re-draws between planes a length
+     moves. Run it again after a size change: every lock said as already
+     there and the ends read where the planes now are (row 5b-1493).
   5. A part only some types show: ADD_FAMILY_PARAMETERS makes a Yes/No, then
      LINK_FAMILY_PARAMETER links the part's Visible to it - the part named by
      its category, or a nested detail component by its family name. It links
@@ -88,6 +94,8 @@ needs:
   # Step 3's subcategory colour, weight and pattern (version 2, row 5b-463).
   - CREATE_LINE_STYLE
   - DRAW_FAMILY_FILLED_REGION
+  # Step 4b's locks: line ends to crossing planes, a filled region's edges.
+  - LOCK_FAMILY_LINES_TO_PLANES
   - LINK_FAMILY_PARAMETER
   # FAMILY-CREATION's step 2 reads first: the shared parameter file and its
   # GUIDs, against the family, before ADD_FAMILY_PARAMETERS' shared kind writes.

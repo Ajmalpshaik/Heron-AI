@@ -320,6 +320,10 @@ compatibility-note: >
 #   "lock the sweep path to the planes"       -> LOCK_FORM_SKETCH_TO_PLANES -
 #                                                the sketch: a path's lines,
 #                                                a circle's centre
+#   "lock the arrow's lines to the planes"    -> LOCK_FAMILY_LINES_TO_PLANES -
+#                                                2D lines and a filled
+#                                                region's edges, along and
+#                                                by their ends
 #   "label the neck diameter with Neck Diameter" -> LABEL_FAMILY_RADIUS
 #   "show this form only in fine"             -> SET_FAMILY_FORM_VISIBILITY
 #   "set the subcategory of these forms"      -> SET_FAMILY_FORM_SUBCATEGORY

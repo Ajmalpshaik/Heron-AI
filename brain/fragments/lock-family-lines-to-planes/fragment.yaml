@@ -1,0 +1,142 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-083
+semantic-identity: "lock a 2D family's lines and filled region edges to named planes - along the planes they lie on, and by their ends to planes crossing there - so a detail item's arrow stretches with its length"
+kind: action
+domain: revit.families
+capability: LOCK_FAMILY_LINES_TO_PLANES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  ALIGNS AND LOCKS a family's 2D LINES to named reference planes, so they
+  stretch when a labelled dimension moves the planes - detail lines and
+  symbolic lines already drawn, and the edges of a FILLED REGION's sketch.
+  What is done by hand with Align, the plane, the line or its end, the
+  padlock. The step that makes a detail item's flow arrow grow with its
+  Length.
+
+  **TWO KINDS OF LOCK.** ALONG: a straight line lying ON a plane named is
+  locked along it. AT AN END: a line's END lying on a plane that CROSSES the
+  line is locked to it, so the end goes where the plane goes. That is what
+  makes a SLANTED line - an arrow head's edge - follow: its ends are locked
+  to the head-base and tip planes, and it re-draws between them.
+
+  **A FILLED REGION'S CORNERS ONCE.** Its edges are joined at the corners, so
+  each corner is locked once per plane, and not to a plane an edge through it
+  is already locked along. Loose detail and symbolic lines are separate, so
+  every end is locked on its own.
+
+  **WHICH LINES**: by id (commas between - the ids DRAW_FAMILY_DETAIL_LINES
+  and DRAW_FAMILY_FILLED_REGION gave back), `selected` in the family's window,
+  or `all` - every detail line, symbolic line and filled region in the family.
+  A form's own sketch is refused, naming LOCK_FORM_SKETCH_TO_PLANES.
+
+  **LOCKED ONLY WHERE IT ALREADY LIES.** A plane named that nothing lies along
+  and nothing ends on refuses the WHOLE call, naming the nearest ends and how
+  far off - a lock never moves what it locks. A plane not seen edge on in the
+  lines' view is refused. A lock already there is left as it is and said, so a
+  second run adds only what is new. Ends on no plane named are counted and
+  said: they stay put when the planes move.
+
+  **ALL OR NOTHING, READ BACK.** Every lock reads back locked, and every
+  line's ends read back exactly where they were; any refusal from Revit fails
+  the call with nothing kept. The ends come back in `ends`. Locked is not yet
+  proved to FOLLOW: change the length in Family Types and run this again -
+  every lock said as already there, and `ends` read where the planes now are.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: uidoc
+      type: UIDocument
+    # The detail lines, symbolic lines and filled regions, by unique id with
+    # commas between, `selected`, or `all`.
+    - name: lines
+      type: string
+      source: request
+    # The reference planes and levels to lock them to, by name, commas between
+    # - "Center (Left/Right), Center (Front/Back), Head Base, Tip".
+    - name: planes
+      type: IList<string>
+      source: request
+  provides:
+    - name: locked
+      # Each lock made: which line, end or corner, to which plane, in which view.
+      role: result
+      type: IList<string>
+    - name: ends
+      # Every line's two ends, read back after the locks, in millimetres.
+      role: result
+      type: string
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was locked, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `ItemFactoryBase.NewAlignment`, `Dimension.IsLocked`, `Curve.GetEndPointReference`,
+  `Curve.Reference`, `Sketch.Profile`, `Sketch.SketchPlane`,
+  `Element.GetDependentElements(ElementFilter)`, `Element.OwnerViewId`,
+  `DetailCurve`, `SymbolicCurve`, `FilledRegion` and
+  `Reference.ConvertToStableRepresentation` / `ParseFromStableRepresentation`
+  read the same 2020 through 2027. One implementation, no #if. Compiled for
+  every release on 2026-11-11; NOT RUN in any Revit.
+
+# VERSION 1, 2026-11-11 (row 5b-1493). Asked for a detail item's flow arrow:
+# Autodesk's sample supply diffuser carries arrows that grow with its size, and
+# Heron's own arrow family was fixed at 600. LABEL_FAMILY_DIMENSION labels
+# between planes; DRAW_FAMILY_DETAIL_LINES locks only lines it draws, along
+# planes they lie on; DRAW_FAMILY_FILLED_REGION locks nothing - so a slanted
+# head edge could not follow a parameter. Checked against the library first
+# (heron-duplicate-checker, 2026-11-11): LOCK_FORM_SKETCH_TO_PLANES is the
+# closest, a 3D form's sketch lines lying IN a plane and circle centres, and
+# PROVEN - widening it would have sent it back to DRAFT and broken its
+# form-only read-back, so this is a card of its own sharing its method:
+# references reached with no sketch-editing scope, written down and read back
+# at lock time, asked twice, all or nothing.
+#
+# NOT KNOWN UNTIL RUN (NEEDS-CHECKING Group NC): whether Revit aligns a line's
+# END reference to a plane at all (only a circle's centre point has been,
+# LOCK_FORM_SKETCH_TO_PLANES NA2); whether a filled region's sketch comes back
+# from GetDependentElements and its edges take a lock outside Edit Boundary;
+# whether a region's corners stay joined as one edge moves.
+#
+# ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
+#
+#   "lock the arrow's lines to the reference planes"   -> here
+#   "make the arrow head stretch with Length"          -> here, after
+#                                                         LABEL_FAMILY_DIMENSION
+#                                                         labels the planes
+#   "lock the ends of these detail lines to the planes"-> here
+#   "draw the arrow's lines and lock them"             -> DRAW_FAMILY_DETAIL_LINES
+#                                                         lockToPlanes - new lines
+#                                                         along their planes
+#   "lock the sweep path to the planes"                -> LOCK_FORM_SKETCH_TO_PLANES -
+#                                                         a 3D form's sketch
+#   "lock this extrusion to the reference planes"      -> LOCK_FORM_TO_PLANES, faces
+#   "lock the nested arrow family to the planes"       -> LOCK_NESTED_FAMILY_TO_PLANES
+
+utterances:
+  - lock the arrow's lines to the reference planes
+  - lock the ends of these detail lines to the reference planes
+  - lock the filled region's edges to the reference planes
+  - make the arrow head stretch with the Length parameter
+  - align and lock the detail lines and the filled region to the planes
