@@ -1944,6 +1944,24 @@ def revit_change(capability: str = "", values: str = "",
     if refusal:
         _ended("refused")
         return refusal
+
+    # A READ IS NOT A CHANGE, AND THIS DOOR RAN ONE AS IF IT WERE (5b-1161).
+    # `risk_refusal` lets every runnable risk through and `write_operation`
+    # sends each as run_fragment_write, so "how many ducts" asked here needed
+    # Changes on and a PROVEN card, ran inside a transaction group, and could
+    # meet the Keep box. revit_read and revit_show have asked
+    # heron_tools.door_refusal since they were built; this door asked nothing.
+    # It asks the floor now - a capability the read door runs is sent there,
+    # before its code is read or a session is bound. EXECUTE and SUGGEST still
+    # run here: `below_refusal` says what stands on that.
+    below = tools.below_refusal(
+        "revit_change",
+        bridge.fragment_risk(os.path.join(root, "brain", "fragments", folder,
+                                          "fragment.yaml")),
+        capability)
+    if below:
+        return _ended("refused", below)
+
     operation = bridge.write_operation(root, folder)
     if operation is None:
         return _ended("refused",

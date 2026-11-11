@@ -1086,6 +1086,26 @@ async def exercise_words(module):
         check(not revit.asked and not resolved and "Nothing has been sent to Revit" in said,
               "revit_change with a ranked guess sends nothing and binds no session")
 
+        # A READ IS NOT A CHANGE (FRAGMENT-ISSUES 5b-1161). revit_change ran a
+        # PROVEN read as run_fragment_write - behind the Changes switch, in a
+        # transaction group, in front of the Keep box. It is sent to the read
+        # door now, by name or by the words that choose it, before a session
+        # is bound.
+        phrase, capability, _ = _pick(module, "PROVEN", "READ", False)
+        for label, arguments in (("named", {"capability": capability}),
+                                 ("chosen by its words", {"request": phrase})):
+            if not phrase:
+                continue
+            revit.asked[:] = []
+            del resolved[:]
+            said = await call("revit_change", arguments)
+            check(not revit.asked and not resolved,
+                  "a PROVEN read (%s) %s at revit_change is NOT sent as a change, and "
+                  "binds no session: asked %s" % (capability, label,
+                                                  [one[0] for one in revit.asked] or "nothing"))
+            check("revit_read runs it" in said and "Nothing has been sent to Revit" in said,
+                  "and the refusal names revit_read: %s" % said[:100])
+
         # THE READ DOOR ASKS AS A QUESTION (D-128, issue #799). Field use on
         # Villa 1: "read parameter values of the elements" through revit_read
         # ranked SET_PARAMETER_VALUES_BY_ID first, which the door then refused,
