@@ -1,5 +1,5 @@
 # NEEDS-CHECKING Group IJ - REPORT_FAMILY_LABELS, SET_FAMILY_LABEL_LAYOUT and
-# COPY_LABELS_FROM_FAMILY, DRAFT since 2026-10-21.
+# COPY_LABELS_FROM_FAMILY, written 2026-10-21 at DRAFT.
 #
 #     python tools/batch-prove.py tools/jobs/family-labels-ij-2026-10-21.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/family-labels-ij-2026-10-21.yaml
