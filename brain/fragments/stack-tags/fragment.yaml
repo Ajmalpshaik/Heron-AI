@@ -18,8 +18,8 @@ capability: STACK_TAGS
 # own extent when the view is not cropped (`usedTagExtent`), with `perSide`
 # saying how many went each way. `point`, the default, is version 1's one
 # column at `stackAt`; a stack point left out reads 0,0,0 and is refused on
-# that road. Version 1's proof below no longer describes the code; DRAFT until
-# version 2 is proved.
+# that road. Version 1's proof below no longer described the code; DRAFT at
+# the time, until version 2 is proved.
 version: 2
 source: OFFICIAL
 risk: MODIFY

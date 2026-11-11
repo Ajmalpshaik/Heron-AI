@@ -84,9 +84,9 @@ capability: SET_PARAMETER_VALUES_BY_ID
 #   exactly (Codex review of #362). keepFace never reads the value to decide a
 #   move, so the trap that cost 2.25 mm cannot reach it.
 #
-#   Version 2's proof below no longer describes the code and is kept as a
-#   record; the card is DRAFT until the version 3 proof is signed (NEEDS-CHECKING
-#   Group FE).
+#   Version 2's proof below no longer described the code and was kept as a
+#   record; the card was DRAFT at the time, until the version 3 proof is signed
+#   (NEEDS-CHECKING Group FE).
 #
 # VERSION 4 (2026-10-19, FRAGMENT-ISSUES 5b-1259 and 5b-1260). Measured that
 # day on Revit 2020, the owner's Kerala house: two M_Round Column instances
@@ -112,8 +112,9 @@ capability: SET_PARAMETER_VALUES_BY_ID
 #   holds must be the one the name named, or findings says what it reads back.
 #   readBack's raw for a reference is the id Revit prints.
 #
-#   Version 3's proof below no longer describes the code and is kept as a
-#   record; the card is DRAFT until NEEDS-CHECKING Group HZ proves version 4.
+#   Version 3's proof below no longer described the code and was kept as a
+#   record; the card was DRAFT at the time, until NEEDS-CHECKING Group HZ
+#   proves version 4.
 #
 # VERSION 5 (2026-10-19, FRAGMENT-ISSUES 5b-1221, D-145): an optional
 # `renameViews` answers the one question Revit asks when a LEVEL's name is
@@ -131,10 +132,10 @@ capability: SET_PARAMETER_VALUES_BY_ID
 #         naming renameViews: by id the whole run, by key that row. Every other
 #         parameter and element is version 4's run, statement for statement.
 #
-#   Version 3's proof below no longer describes the code and is kept as a
-#   record; the card is DRAFT until versions 4 and 5 are proved in Revit
-#   (NEEDS-CHECKING Groups HZ and HP). Kept out of the purpose and the identity line
-#   for the reason version 3 gives: both are searched.
+#   Version 3's proof below no longer described the code and was kept as a
+#   record; the card was DRAFT at the time, until versions 4 and 5 are proved in
+#   Revit (NEEDS-CHECKING Groups HZ and HP). Kept out of the purpose and the
+#   identity line for the reason version 3 gives: both are searched.
 #
 # VERSION 6 (2026-10-28, FRAGMENT-ISSUES 5b-1344): a parameter may be named by
 # its GUID, as "Equipment Tag {e133774c-3f62-45f1-a0c6-7e6c6238380b}" - by id
@@ -156,14 +157,16 @@ capability: SET_PARAMETER_VALUES_BY_ID
 #   now says to name the one meant that way. REPORT_PARAMETER_INVENTORY prints
 #   every parameter's GUID.
 #
-#   The proof below no longer describes the code and is kept as a record; the
-#   card is DRAFT until NEEDS-CHECKING Group JF proves version 6. Kept out of
-#   the purpose and the identity line, for the reason version 3 gives.
+#   The proof below no longer described the code and was kept as a record;
+#   the card was DRAFT at the time, until NEEDS-CHECKING Group JF proves
+#   version 6. Kept out of the purpose and the identity line, for the reason
+#   version 3 gives.
 #
 # VERSION 7 (2026-11-01) - IMPORT_PARAMETER_VALUES MERGED IN: rows read from a
 # CSV, `blankCells`, rows matched by id as text - see the purpose's last
-# paragraph and the comment above `utterances`. The proof below is version
-# 6's, kept as the record; DRAFT until version 7 is proved on a real model.
+# paragraph and the comment above `utterances`. The proof below was version
+# 6's, kept as the record; DRAFT at the time, until version 7 is proved on a
+# real model.
 version: 7
 source: OFFICIAL
 risk: MODIFY
@@ -354,10 +357,13 @@ contract:
       role: accounting
       type: string
 
+# WRITTEN ABOVE AN EARLIER PROOF, since replaced by the `proof:` block below -
+# read that block's own date and fingerprint, not this comment, for what ran.
 # VERSION 3's PROOF, KEPT AS A RECORD. Version 4 changed impl/ (rows 5b-1259,
-# 5b-1260), so its fingerprint no longer describes the code and the card is
-# DRAFT until NEEDS-CHECKING Group HZ proves version 4 (D-30). A row that names
-# neither a type nor an element reference still takes the road this proof ran.
+# 5b-1260), so its fingerprint no longer described the code and the card was
+# DRAFT at the time, until NEEDS-CHECKING Group HZ proves version 4 (D-30). A
+# row that names neither a type nor an element reference still takes the road
+# this proof ran.
 proof:
   date: '2026-11-02'
   by: Ajmal PS

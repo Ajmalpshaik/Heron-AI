@@ -35,8 +35,9 @@ risk: READ
 # which creates real dimensions; a question about a room's size must never be
 # answered by something that marks the drawing.
 #
-# Version 1's proof below no longer describes the code (impl/ changed) and is
-# kept as the record; DRAFT until version 2 is proved on a real model (D-30).
+# Version 1's proof below no longer described the code (impl/ changed) and
+# was kept as the record; DRAFT at the time, until version 2 is proved on a
+# real model (D-30).
 
 purpose: >
   The room and space table: number, name, level, area and volume for every

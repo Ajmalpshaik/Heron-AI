@@ -47,7 +47,6 @@ import tempfile
 import types
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SERVER = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
 sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "client"))
 
@@ -55,6 +54,8 @@ try:
     import heron_running_code as RC
 except ImportError:
     RC = None
+
+import heron_tools as TOOLS                                     # noqa: E402
 
 FAILURES = []
 
@@ -237,9 +238,9 @@ def the_wiring():
     print()
     print("3. The server is wired to it")
     try:
-        text = io.open(SERVER, encoding="utf-8").read()
+        text = TOOLS.server_text()
     except OSError as why:
-        check(False, "could not read %s: %s" % (SERVER, why))
+        check(False, "could not read %s: %s" % (", ".join(TOOLS.server_files()), why))
         return
 
     def body_of(name):

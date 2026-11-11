@@ -136,6 +136,29 @@ ls tests/test_*.py | wc -l     # suites on disk
 python tools/check-gaps.py     # what it ran, sorted into unfinished vs waiting
 ```
 
+## A suite that reads the MCP server asks `heron_tools` where it is
+
+`import heron_mcp_server` needs the MCP SDK, which CI's gates job leaves out, so a suite that holds a
+tool's body to a rule reads the server's source as text. **It never types the path.**
+[`mcp/server/heron_tools.py`](../mcp/server/heron_tools.py) owns the list of the files that source is,
+`SERVER_FILES`, and hands it over two ways:
+
+```python
+sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+import heron_tools as TOOLS
+
+text = TOOLS.server_text()          # every listed file as one text, the entry file last
+for path in TOOLS.server_files():   # the same files as paths: to parse each alone, or to say which file
+    ...
+```
+
+Until 2026-11-11 each of those suites built the path of the one file the server is, so no function could
+move out of it without all of them being edited in the same change
+([row 5b-1542](../docs/fragment-issues/section-5b-rows-401-425.md)). **What the list cannot do for a
+suite:** one that cuts from one named `def` to another still assumes both are in one file, in that order;
+and a check of the module header or of the `if __name__ == "__main__"` block is about the entry file,
+`TOOLS.server_files()[-1]`, not about the text's first or last lines.
+
 ## Before you change a test
 
 **Never edit a test until it passes.** A red test is a claim about the code; making the claim quieter

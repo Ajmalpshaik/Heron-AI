@@ -18,8 +18,8 @@ See docs/29-metadata-standard.md
 >
 > **As built (2026-10-18):** both phases merged 2026-10-06 as #415 (commit `e2066de9`) - the
 > `revit_sprinkler_hydraulics` tool (`python mcp/server/heron_tools.py` lists it, at `ANALYZE`), the
-> Companion's Sprinkler panel, and `REPORT_SPRINKLER_NETWORK` (FRG-MEP-059), which is DRAFT and compiles
-> on 2020, 2024 and 2027. **NEEDS REAL REVIT:** no row of [group CE](needs-checking/group-ce.md) has been
+> Companion's Sprinkler panel, and `REPORT_SPRINKLER_NETWORK` (FRG-MEP-059), which compiles on 2020,
+> 2024 and 2027 - its status is on its card. **NEEDS REAL REVIT:** no row of [group CE](needs-checking/group-ce.md) has been
 > run, and no solve has been compared with a listed hydraulic program (§11). The arithmetic is tested,
 > not proven, by `tests/test_fire.py`.
 
@@ -284,7 +284,7 @@ that printer - one home). Written by the brain from its own numbers; nothing is 
 | **A comparison against a listed hydraulic program** | The proof (§11). Needs the owner's model and a calculation from one |
 
 *Checked 2026-10-18:* phase 2 is still not built. Were it built today, its value write would be refused
-before anything was sent: `SET_PARAMETER_VALUES_BY_ID` is DRAFT at version 3 and `revit_change` keeps
+before anything was sent: `SET_PARAMETER_VALUES_BY_ID` was DRAFT at version 3 that day and `revit_change` keeps
 a change only from a PROVEN fragment ([D-117](decisions/D-117.md); the Loads panel's Finalize meets the
 same, [row 5b-1129](fragment-issues/section-5b-rows-401-425.md)). `SET_MEP_SIZE` is PROVEN.
 

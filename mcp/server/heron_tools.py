@@ -907,19 +907,71 @@ def describe():
 # THE SCHEMA AND THE WHOLE TOOL need the SDK, because the SDK writes the
 # schema from the signature at run time. Without one they are NOT MEASURED,
 # and said to be, never reported as zero.
-SERVER_SOURCE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                             "heron_mcp_server.py")
+#
+# WHICH FILES ARE THE SERVER'S SOURCE - ONE LIST, AND EVERY READER ASKS IT.
+#
+# The server cannot be imported without the MCP SDK, which CI leaves out on
+# purpose, so whatever holds it to a rule there READS it: `descriptions`
+# below, heron_diagnose, tools/generate-api-docs.py and every suite that
+# checks a tool's body as text. Until 2026-11-11 each of them typed the path
+# of the one file the server is, so no function could move to a second file
+# without every reader being edited in the same change (FRAGMENT-ISSUES row
+# 5b-1542). The path has one owner now. A file joins the server's source by
+# joining this list and by nothing else, and tests/test_tool_registry.py
+# fails on a file in this folder that registers a tool and is not on it.
+#
+# THE ORDER IS THE ORDER THE TEXT IS READ IN, AND THE ENTRY FILE IS LAST - the
+# one a host starts (.mcp.json). It ends in the `if __name__ == "__main__"`
+# block that runs the server and does not return, so everything the server
+# defines is above that block: in the one text as in the one file.
+SERVER_FILES = ("heron_mcp_server.py",)
 
 
-def descriptions(path=SERVER_SOURCE):
-    """{tool: the description a host is served} for every `@server.tool()`."""
-    with io.open(path, encoding="utf-8") as fh:
-        tree = ast.parse(fh.read(), path)
+def server_files():
+    """
+    The server's source files as paths, in SERVER_FILES' order - for a reader
+    that parses each file alone, or must say WHICH file a thing is in. The
+    last is the entry file.
+    """
+    here = os.path.dirname(os.path.abspath(__file__))
+    return [os.path.join(here, name) for name in SERVER_FILES]
+
+
+def server_text(errors="strict"):
+    """
+    The server's source as ONE text - for a reader that searches it.
+
+    Every listed file, in order, with two blank lines between one file and the
+    next: what ends a top-level function in this folder, so a reader that cuts
+    a function there stops at the end of its file. While the list holds one
+    file, this is that file's text to the character.
+
+    A listed file that cannot be read RAISES, as `open` does: a server read
+    one file short would pass every check that looks for something absent.
+    `errors` is `open`'s own - heron_diagnose passes "replace", because a
+    probe must not stop at a byte.
+    """
+    text = ""
+    for path in server_files():
+        with io.open(path, encoding="utf-8", errors=errors) as fh:
+            part = fh.read()
+        text = text.rstrip("\n") + "\n\n\n" + part if text else part
+    return text
+
+
+def descriptions(path=None):
+    """
+    {tool: the description a host is served} for every `@server.tool()` - in
+    every file of SERVER_FILES, each parsed alone, or in the one file at `path`.
+    """
     found = {}
-    for node in tree.body:
-        if isinstance(node, ast.FunctionDef) and any(
-                ast.unparse(d) == "server.tool()" for d in node.decorator_list):
-            found[node.name] = ast.get_docstring(node) or ""
+    for one in ([path] if path else server_files()):
+        with io.open(one, encoding="utf-8") as fh:
+            tree = ast.parse(fh.read(), one)
+        for node in tree.body:
+            if isinstance(node, ast.FunctionDef) and any(
+                    ast.unparse(d) == "server.tool()" for d in node.decorator_list):
+                found[node.name] = ast.get_docstring(node) or ""
     return found
 
 
@@ -955,7 +1007,7 @@ def instructions_size():
         return None, "%s: %s" % (type(why).__name__, why)
 
 
-def sizes(served=None, path=SERVER_SOURCE):
+def sizes(served=None, path=None):
     """
     What each tool costs, largest first, and the totals a budget is held to.
 
@@ -1033,7 +1085,8 @@ def print_sizes(as_json=False):
             print("  a schema is written by the SDK, so it needs one:  %s"
                   % INSTALL.install_line("pip install --user mcp"))
     print()
-    print("Descriptions from heron_mcp_server.py's own docstrings; schemas and the whole")
+    print("Descriptions from %s's own docstrings; schemas and the whole"
+          % " and ".join(SERVER_FILES))
     print("tool from the SDK's own list. The budget is tests/test_tool_sizes.py.")
     return 0
 

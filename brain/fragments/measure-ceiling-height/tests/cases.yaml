@@ -24,13 +24,49 @@ positive:
       gives the linked ceiling's clear height in mm and its type, checked
       against the ceiling's Height Offset From Level in the link
 
-negative:
-  - given: A ROOM WHOSE UPPER LIMIT IS LEFT AT ITS OWN LEVEL, the common case
+  # Row 5b-1128, added 2026-11-11 with version 3. NOT RUN - NEEDS-CHECKING
+  # Group NK, NK1. Version 2 answered these rooms exactly as it answers a room
+  # with no ceiling.
+  - given: >
+      two rooms placed with the template's default limits (upper limit below
+      2600 mm), each under a ceiling drawn at 2600 mm - the arrangement row
+      5b-1128 measured
     expect: >
-      the ceiling still found. This is the trap that makes ceiling-height
-      scripts look broken: a room's SOLID stops at its upper limit, so a
-      solid-intersection method finds nothing and reports "no ceiling" for a
-      room that plainly has one. Nothing here uses the room solid
+      both ids in limitBelowCeiling AND in noCeiling, no entry in mainHeight,
+      and one finding each naming the room, the height of its upper limit
+      above its floor, 1 ceiling above that and 2600 mm. Then raise the
+      rooms' upper limit to Level 2 (SET_ROOM_LIMITS) and ask again: both in
+      mainHeight at 2600, limitBelowCeiling and findings EMPTY
+
+negative:
+  # CORRECTED 2026-11-11 (row 5b-1128). This case said "the ceiling still
+  # found ... Nothing here uses the room solid". Measured 2026-10-18, Revit
+  # 2020: it is NOT found - the plan-overlap test stops at the top of the
+  # room's box, which is its upper limit. Version 3 does not measure it
+  # either; it names the room.
+  - given: A ROOM WHOSE UPPER LIMIT IS LEFT BELOW ITS CEILING, the common case
+    expect: >
+      NOT measured, and NAMED: its id in limitBelowCeiling and a finding
+      saying it stops short of the ceiling over it - never the silence of a
+      room with no ceiling. The positive case above is this one, arranged
+
+  # Row 5b-1128, added 2026-11-11 with version 3. NOT RUN - Group NK, NK1.
+  - given: >
+      a room whose upper limit IS above its ceiling, and a second room in the
+      same plan with no ceiling anywhere over it - a shaft
+    expect: >
+      limitBelowCeiling and findings EMPTY: the first room is measured, the
+      shaft is in noCeiling alone. The new sentence is said only of a room
+      with a ceiling over it above its limit
+
+  # Row 5b-1128, added 2026-11-11 with version 3. NOT RUN - Group NK, NK1.
+  - given: >
+      a room with NO ceiling in its own storey and its limits left at the
+      default, directly under a ceiling drawn on Level 2 - the storey above's
+    expect: >
+      its id in noCeiling ALONE - not in limitBelowCeiling, and no finding.
+      Level 2 is above the room's limit, so that ceiling is another storey's,
+      and the room must never be told to raise its limit to reach it
 
   - given: a room directly above another room that has its own ceiling
     expect: >

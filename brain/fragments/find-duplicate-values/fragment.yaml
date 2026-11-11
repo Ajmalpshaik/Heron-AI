@@ -1,6 +1,6 @@
 heron-agent: HERON-QA-BIM-011
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,21 @@ semantic-identity: "two of these carry the same mark or number"
 kind: filter
 domain: revit.quality
 capability: FIND_DUPLICATE_VALUES
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
+
+# VERSION 2 (2026-11-11) - A NAME TWO PARAMETERS SHARE IS NEVER READ, and back
+# to DRAFT. Version 1 was PROVEN on 2026-09-08 (the proof block below, kept as
+# the record of what it proved). Its C# moved, so it is DRAFT again until
+# NEEDS-CHECKING Group NK, NK8, is run (D-30). D-54 s3 and FRAGMENT-ISSUES row
+# 5b-203: version 1 took `LookupParameter`'s first match, which Autodesk's
+# reference calls random when two parameters on one element share the name. An
+# element carrying the name twice is now counted in `ambiguous` and named in
+# findings - never read, never compared, never called unique. Every other
+# element answers exactly as version 1 answered. Written here and not in
+# `purpose`: the purpose is routing text. A read: it still answers through
+# revit_read while DRAFT, and says DRAFT (D-117 item 4).
 
 purpose: >
   Finds elements that share the SAME value in one named parameter - two doors
@@ -60,6 +72,13 @@ contract:
     - name: noSuchParameter
       # Elements not carrying that parameter, so it could not be compared. The
       # evidence it looked, never a thing it found (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: ambiguous
+      # VERSION 2. Elements carrying TWO OR MORE parameters by this name,
+      # where Revit's lookup would pick one at random. Not read and never
+      # compared: which one was meant is the modeller's to say (D-54 s3,
+      # FRAGMENT-ISSUES 5b-203). Turned down, never found (D-52).
       role: accounting
       type: IList<ElementId>
 

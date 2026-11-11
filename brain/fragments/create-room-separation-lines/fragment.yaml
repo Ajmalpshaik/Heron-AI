@@ -44,8 +44,9 @@ risk: MODIFY
 # read back with their category); `made` -> how many are in `created`;
 # `report` -> `refused`; `findings` -> `findings`. Its sentences moved here.
 #
-# Version 1's proof below no longer describes the code (impl/ changed) and is
-# kept as the record; DRAFT until version 2 is proved on a real model (D-30).
+# Version 1's proof below no longer described the code (impl/ changed) and
+# was kept as the record; DRAFT at the time, until version 2 is proved on a
+# real model (D-30).
 
 purpose: >
   Draws room separation lines - or space separation lines, when asked - along

@@ -35,7 +35,7 @@ WHAT IT PROVES
   2. NOTHING ON THAT LIST CHANGES THE MODEL OR THE CHAT. The tools that do
      are named below with what each one changes.
   3. EVERY HERON TOOL ANY AGENT NAMES EXISTS ON THE SERVER, found by reading
-     `mcp/server/heron_mcp_server.py` rather than by listing them here.
+     the server's source rather than by listing them here.
   4. THE NAMES IN (2) EXIST TOO, so the list of what changes things cannot
      rot into names the server no longer has.
   5. THE COMPARISON IS NOT EMPTY. At least one background agent is found.
@@ -73,7 +73,6 @@ sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
 import heron_tools as REGISTRY                                  # noqa: E402
 
 AGENTS = os.path.join(ROOT, ".claude", "agents")
-SERVER = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
 PREFIX = "mcp__heron__"
 
 # Every tool on the server that changes something, and what it changes. A
@@ -111,7 +110,9 @@ def server_tools():
     Python 3.9, so an older interpreter reads the same answer.
     """
     names = set()
-    for node in ast.parse(read(SERVER)).body:
+    nodes = [node for path in REGISTRY.server_files()
+             for node in ast.parse(read(path)).body]
+    for node in nodes:
         if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             continue
         for decorator in node.decorator_list:

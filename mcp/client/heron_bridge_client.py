@@ -1616,6 +1616,11 @@ def setup_values_refusal(steps):
 # fragment's own files, and only while that proof still describes its code.
 KEEPABLE_STATUSES = ("PROVEN", "PRODUCTION")
 
+# THE ONE RISK A DRAFT'S SINGLE RUN IS OPEN TO (D-119) - what `try-once`
+# refuses everything else for, and what the refusal below reads before it
+# offers that run. One name, so the two cannot come to disagree.
+ONCE_RISK = "MODIFY"
+
 
 def proof_of(name):
     """How far one fragment is proven - `heron_brain.proof_status`, asked.
@@ -1659,19 +1664,53 @@ def unproven_refusal(what, found):
     only ADD caution - the add-in makes its prompt mandatory and says the code
     was never proved - and a request without it lowers nothing. Until then
     there is no prompt to make mandatory, so this refuses.
+
+    IT NAMED NO NEXT STEP, so a chat told "it is proved first on a test model"
+    had nothing to tell the modeller but the refusal - and no way to know that
+    proving is not something a chat can do. What comes next is said now, and
+    only what exists: the proof itself, which is a run from this command line
+    and a person's signature (D-30), and - for a DRAFT alone - its one run
+    behind Revit's Keep or Discard box (D-119), which is `try-once` here and
+    no tool a chat is served. NO OTHER CAPABILITY IS OFFERED: a refusal that
+    pointed at one would be the way round it that revit_change's own
+    description forbids.
+
+    THE ONE TRY IS OFFERED ONLY TO A CARD `try-once` WILL TAKE. It was offered
+    to every DRAFT, in words - "runs a DRAFT declared MODIFY" - that left the
+    reader to find out which this one was; and `cmd_try_once` refuses
+    anything but ONCE_RISK, so for a DRAFT declared ADMIN, PUBLISH or EXECUTE
+    the step the refusal named was itself a refusal. `found` carries the
+    card's own risk (heron_brain.proof_status), the refusal states it, and
+    the try is named only where that risk is ONCE_RISK. For every other card,
+    and one whose risk was not handed over, what comes next is the proof and
+    nothing else is said.
     """
     if found is None:
         return ("How far %s is proven could not be read, so Heron will not let it "
                 "change the model - \"could not tell\" is not \"proven\". Nothing "
                 "was sent to Revit." % what)
 
+    proving = ("proving is a run from Heron's command line and a signed proof "
+               "(D-30), not a tool a chat has")
+
     status = found.get("status")
+    risk = found.get("risk")
     if status not in KEEPABLE_STATUSES:
         said = "is %s" % status if status else "states no status"
+        if risk:
+            said += ", declared %s" % risk
+        once = ""
+        if status == "DRAFT" and risk == ONCE_RISK:
+            once = (" What the modeller can ask for meanwhile is one try: "
+                    "`try-once` on Heron's command line runs it a single time "
+                    "on the saved model in front, and Revit asks them Keep or "
+                    "Discard (D-119). It is started only on their word (D-122), "
+                    "never through revit_change.")
         return ("%s %s - no recorded proof stands behind its code, so Heron will "
                 "not let it change a live model (Constitution Article 11). Nothing "
                 "was sent to Revit. It is proved first on a test model, with a "
-                "negative case, and then it can be asked for again." % (what, said))
+                "negative case, and then it can be asked for again - %s.%s"
+                % (what, said, proving, once))
 
     if found.get("stale") and found.get("proof") is False:
         # Row 5b-1154: the card says PROVEN and records no proof. Refused as
@@ -1689,7 +1728,8 @@ def unproven_refusal(what, found):
                 "longer describes what would run (D-30) and Heron will not let it "
                 "change a live model (Constitution Article 11). Nothing was sent "
                 "to Revit. It is proved again on a test model, and then it can be "
-                "asked for again." % (what, status, when))
+                "asked for again - %s. It has no one try meanwhile: that is a "
+                "DRAFT's (D-119)." % (what, status, when, proving))
     return None
 
 
@@ -2147,7 +2187,7 @@ def cmd_try_once(name, values=None, session=None, in_document=None):
         return 2
 
     risk = fragment_risk(card)
-    if risk != "MODIFY":
+    if risk != ONCE_RISK:
         print("%s is declared risk: %s, and only a MODIFY fragment is tried this way. "
               "A read changes nothing and needs no Keep or Discard; a session change "
               "or an export is not put back by Discard. Nothing was sent to Revit."

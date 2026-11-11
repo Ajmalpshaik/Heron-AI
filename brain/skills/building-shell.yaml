@@ -60,16 +60,14 @@ purpose: >
      saved" means the save did not reach the disk: say so and ask again.
      On 2026-10-19 a 40-floor tower's .rvt stayed at 10:42 for 25 minutes
      while 124 changes went in, Ctrl+S pressed twice into the chat.
-  1. CREATE_LEVELS (DRAFT, version 2 - version 1 was PROVEN; CREATE_LEVEL was
-     merged into it on 2026-11-01, and until version 2 is proved a kept change
-     from it is refused, D-117) first, every level the building will have. A
-     name already taken is refused before any level is made. A wall,
-     a slab and a roof each belong to a level, and a level added afterwards
-     leaves what was already built on the wrong one. Count them before going
-     on.
-  2. CREATE_GRIDS (DRAFT, version 2 - version 1 was PROVEN; merged 2026-11-01, and until it is proved on a real model a kept change from it is refused, D-117) when the plan is set out on bays - the lines the
-     walls are drawn to, so a wall position is read off the plan rather than
-     worked out.
+  1. CREATE_LEVELS (CREATE_LEVEL was merged into it on 2026-11-01) first,
+     every level the building will have. A name already taken is refused
+     before any level is made. A wall, a slab and a roof each belong to a
+     level, and a level added afterwards leaves what was already built on the
+     wrong one. Count them before going on.
+  2. CREATE_GRIDS (merged 2026-11-01) when the plan is set out on bays - the
+     lines the walls are drawn to, so a wall position is read off the plan
+     rather than worked out.
   3. CREATE_WALL (PROVEN, version 3 - signed on 2026-11-01 on Revit 2020,
      NEEDS-CHECKING Group JG; version 2 in Group HM), one run of points per
      wall line, on its level, at the height from that level to the one above.
@@ -87,89 +85,78 @@ purpose: >
      elements handed in, so it needs one placed, and a new project has
      none. Until it is widened, SELECT_TYPES (PROVEN) - categories= the
      type's category, typeNameContains= the template type's name - then
-     EDIT_TEXT_VALUES (DRAFT, version 7 - RENAME_ELEMENTS, PROVEN, was merged
-     into it on 2026-11-01) with expect_from naming that select, field=Name,
+     EDIT_TEXT_VALUES (RENAME_ELEMENTS was merged into it at version 7,
+     2026-11-01) with expect_from naming that select, field=Name,
      mode=replace, text= the whole old name and replacement= the new one,
-     renames the unused
-     template type itself. A type renamed is renamed wherever it is used,
-     and an unused one is used nowhere. It is still the template's type
-     underneath: what makes it different - its material, its layers - is
-     set afterwards, as step 15 does.
-  4. SET_ELEMENT_LEVEL (DRAFT, version 2 - SET_WALL_CONSTRAINTS, PROVEN, was
-     merged into it on 2026-11-01, and until version 2 is proved a kept change
-     from it is refused, D-117) on those walls, one call per storey:
-     newLevel= the walls' own level, so their bases stay as they are,
-     topLevelId= the level above, and allowUnconnectedToBecomeBound=true -
-     tying each top to the level above. A wall drawn at a typed height does
-     not follow when the level above is moved, and one tied to it does.
-     Because step 3 drew it to that height, nothing moves when it is tied:
-     heightChanged must be empty and unconnectedTop too.
-  5. CREATE_FLOOR (DRAFT at version 3 since 2026-11-01, when CREATE_CEILING
-     and CREATE_ROOF were merged into it - version 2 was PROVEN, and until
-     version 3 is proved a change kept from it is refused (D-117); an arc has
-     run through the pre-2022 call only, and the 2022-and-later one is still
-     owed in Group HM), one slab per floor, drawn to the OUTSIDE faces of the
-     outside walls - not to their centrelines, which leaves the slab half a
-     wall short all the way round. A curved edge is written the same way, `arc
-     MX,MY X,Y`; the outside face of a curved wall is an arc on the same
-     centre, half the wall's thickness further out. A terrace or a roof deck
-     is a slab of its own. Every slab a stair arrives at must be in before
-     step 7, which cuts it.
-     A TYPICAL STOREY IS DRAWN ONCE AND COPIED. When floors repeat - a tower,
-     or upper floors that match - draw one storey's walls, curtain walls and
-     slab (steps 3 to 5), collect them with FILTER_ELEMENTS_BY_CATEGORY
-     (version 5, DRAFT - SELECT_BY_LEVEL, PROVEN, was merged into it on
-     2026-11-01), levelId= that level, categories=Walls, Floors, then
-     COPY_ELEMENTS (PROVEN, version 3 - proved again and signed on 2026-10-18)
-     with expect_from naming that filter, offset=0,0,0 and
-     toLevels= the levels to repeat on - "Level 2..Roof" is every level from
-     Level 2 to Roof by height. Each copy BELONGS to its level at its
-     original's offset, so it is never a ground-floor wall lifted by a height;
-     a wall tied to the level above is tied to the level above its new base,
-     and on the top storey keeps its height unconnected. A TWISTING TOWER is
-     the same call with turnDegrees= the turn per storey and turnCentreMm= the
-     plan point it turns about, in millimetres; leave both blank for none.
-     In a workshared model Revit puts every copy on the ACTIVE workset;
-     toWorkset=source keeps each copy on its original's workset.
-     Read the answer: each level's line must say every copy belongs to it and
-     every plan point sits where the turn puts it. On 2026-10-13 a 32-storey
-     twisting tower took 33 CREATE_WALL and 36 CREATE_FLOOR calls without
-     it. Rooms, stairs and doors still go in level by level, as below.
-     FLOORS THAT CHANGE - a tower that turns AND tapers, swells or bulges:
-     COPY_ELEMENTS turns a copy but never scales it, so every storey is
-     drawn on its own. Work out each storey's CREATE_WALL points and
-     CREATE_FLOOR boundary with a small script in the session's scratch
-     folder - %TEMP%\heron-work when the session names none, never inside or
-     beside the Heron folder - then one CREATE_WALL and one CREATE_FLOOR per
-     level. A curved plan goes in as arcs, written as steps 3 and 5 write
-     them; on 2026-10-19, before either card took an arc, the tower's curved
-     plans went in as polygons of about 20 sides. The wall run ends back on
-     its first point, because CREATE_WALL draws only between consecutive
-     points; the slab's boundary closes itself, and with no arc in it a last
-     corner repeating the first is refused. A straight piece that runs NEAR
-     the plan's X or Y axis is kept more than about 1 degree off it: Revit's
-     "slightly off axis" warning fired even at 0.5 degrees, and
-     READ_MODEL_WARNINGS at step 16 lists each one. On 2026-10-19 the calls
-     went in batches of 6 at once and none was lost.
-  6. PLACE_ROOMS (DRAFT, version 2 - PLACE_ROOM_AT_POINT, which was PROVEN,
-     was merged into it on 2026-11-01, and until it is proved again a kept
-     change from it is refused, D-117) with `points`, a point inside every
-     space, all of one level in one call, placeKind room and the phase named -
-     both are asked for, never taken from the document. Then SELECT_UNENCLOSED_ROOMS (PROVEN) must return none:
-     a room that is not enclosed has no area, and it almost always means two
-     walls do not meet. SET_ROOM_LIMITS (PROVEN) ties each room's top to the
+     renames the unused template type itself. A type renamed is renamed
+     wherever it is used, and an unused one is used nowhere. It is still the
+     template's type underneath: what makes it different - its material, its
+     layers - is set afterwards, as step 15 does.
+  4. SET_ELEMENT_LEVEL (SET_WALL_CONSTRAINTS was merged into it on 2026-11-01)
+     on those walls, one call per storey: newLevel= the walls' own level, so
+     their bases stay as they are, topLevelId= the level above, and
+     allowUnconnectedToBecomeBound=true - tying each top to the level above. A
+     wall drawn at a typed height does not follow when the level above is
+     moved, and one tied to it does. Because step 3 drew it to that height,
+     nothing moves when it is tied: heightChanged must be empty and
+     unconnectedTop too.
+  5. CREATE_FLOOR (version 3 since 2026-11-01, when CREATE_CEILING and
+     CREATE_ROOF were merged into it; an arc has run through the pre-2022 call
+     only, and the 2022-and-later one is still owed in Group HM), one slab per
+     floor, drawn to the OUTSIDE faces of the outside walls - not to their
+     centrelines, which leaves the slab half a wall short all the way round. A
+     curved edge is written the same way, `arc MX,MY X,Y`; the outside face of
+     a curved wall is an arc on the same centre, half the wall's thickness
+     further out. A terrace or a roof deck is a slab of its own. Every slab a
+     stair arrives at must be in before step 7, which cuts it. A TYPICAL
+     STOREY IS DRAWN ONCE AND COPIED. When floors repeat - a tower, or upper
+     floors that match - draw one storey's walls, curtain walls and slab
+     (steps 3 to 5), collect them with FILTER_ELEMENTS_BY_CATEGORY
+     (SELECT_BY_LEVEL was merged into it at version 5, 2026-11-01), levelId=
+     that level, categories=Walls, Floors, then COPY_ELEMENTS (its version
+     and its proof are on its card) with expect_from naming that
+     filter, offset=0,0,0 and toLevels= the levels to repeat on - "Level
+     2..Roof" is every level from Level 2 to Roof by height. Each copy BELONGS
+     to its level at its original's offset, so it is never a ground-floor wall
+     lifted by a height; a wall tied to the level above is tied to the level
+     above its new base, and on the top storey keeps its height unconnected. A
+     TWISTING TOWER is the same call with turnDegrees= the turn per storey and
+     turnCentreMm= the plan point it turns about, in millimetres; leave both
+     blank for none. In a workshared model Revit puts every copy on the ACTIVE
+     workset; toWorkset=source keeps each copy on its original's workset. Read
+     the answer: each level's line must say every copy belongs to it and every
+     plan point sits where the turn puts it. On 2026-10-13 a 32-storey
+     twisting tower took 33 CREATE_WALL and 36 CREATE_FLOOR calls without it.
+     Rooms, stairs and doors still go in level by level, as below. FLOORS THAT
+     CHANGE - a tower that turns AND tapers, swells or bulges: COPY_ELEMENTS
+     turns a copy but never scales it, so every storey is drawn on its own.
+     Work out each storey's CREATE_WALL points and CREATE_FLOOR boundary with
+     a small script in the session's scratch folder - %TEMP%\heron-work when
+     the session names none, never inside or beside the Heron folder - then
+     one CREATE_WALL and one CREATE_FLOOR per level. A curved plan goes in as
+     arcs, written as steps 3 and 5 write them; on 2026-10-19, before either
+     card took an arc, the tower's curved plans went in as polygons of about
+     20 sides. The wall run ends back on its first point, because CREATE_WALL
+     draws only between consecutive points; the slab's boundary closes itself,
+     and with no arc in it a last corner repeating the first is refused. A
+     straight piece that runs NEAR the plan's X or Y axis is kept more than
+     about 1 degree off it: Revit's "slightly off axis" warning fired even at
+     0.5 degrees, and READ_MODEL_WARNINGS at step 16 lists each one. On
+     2026-10-19 the calls went in batches of 6 at once and none was lost.
+  6. PLACE_ROOMS (PLACE_ROOM_AT_POINT was merged into it at version 2,
+     2026-11-01) with `points`, a point inside every space, all of one level in
+     one call, placeKind room and the phase named - both are asked for, never
+     taken from the document. Then SELECT_UNENCLOSED_ROOMS (PROVEN) must return
+     none: a room that is not enclosed has no area, and it almost always means
+     two walls do not meet. SET_ROOM_LIMITS (PROVEN) ties each room's top to the
      level above, when the rooms must reach it. Names go on in ONE
-     SET_PARAMETER_VALUES_BY_ID (DRAFT, version 5 - version 3 was PROVEN, and
-     until NEEDS-CHECKING Groups HZ and HP prove versions 4 and 5 a kept
-     change from it is refused, D-117) call keyed on Number -
+     SET_PARAMETER_VALUES_BY_ID call keyed on Number -
      key=Number|in=Rooms|Level=<level>;1|Name=Lift Lobby;2|Name=... - never a
      find and a write per room.
-  7. CREATE_STAIRS (DRAFT, version 4 - version 3 was PROVEN, and until
-     NEEDS-CHECKING Group HS is run and signed a kept change from it is
-     refused, D-117), after the rooms, one call per flight from a level to
-     the level above: straight, or a U with a landing across the far end,
-     inside a rectangle that is the CLEAR inside of the stair hall - its wall
-     faces, not its centrelines - in the stair type the modeller names. Give
+  7. CREATE_STAIRS, after the rooms, one call per flight from a level to the
+     level above: straight, or a U with a landing across the far end, inside
+     a rectangle that is the CLEAR inside of the stair hall - its wall faces,
+     not its centrelines - in the stair type the modeller names. Give
      cutOpening=true, so the slab of the level above is cut over the stair in
      the same undo entry; the stair is taken away again if the cut removed
      nothing. Version 4 lays a type with side stringers inside the hall: a
@@ -180,24 +167,24 @@ purpose: >
      so (5b-1239). A stair whose base level is not at 0 was refused by
      version 1; version 2 (5b-445) makes it, and no proof yet covers a base
      above 0 (NEEDS-CHECKING BX6).
-  8. CREATE_RAILING (DRAFT) along each terrace and roof-deck edge, and round
-     each stair opening, as pathMm on the level it stands on, in the railing
-     type the modeller names. COUNT THE RAILINGS FIRST. A stair made by
-     CREATE_STAIRS comes with railings of its own: Revit adds them as the
-     stair is finished, in the type the model sets as its default for stair
-     railings - two on every stair measured on Revit 2020.2 on 2026-10-13, an
-     inner and an outer on a U and one each side of a straight run; not
-     measured on 2021 to 2027. So a stair is given railings here (elements=
-     that stair) only when it has none, or it ends up with two sets. For another
-     railing type on a stair, the modeller changes the model's default stair
-     railing type before the stair is made. Count
-     them with FILTER_ELEMENTS_BY_CATEGORY, category=OST_StairsRailing - the
-     API name, which the add-in takes exactly as typed. "Railings" was read as
-     a different category, OST_Railings, and answered 0 for two railings that
-     day in it and in SELECT_IN_REGION (5b-444); the add-in now asks the name
-     Revit shows first, and that fix has not yet been run in Revit.
-     SELECT_BY_CATEGORY_NAME, which counted them by the name that day, was
-     merged into FILTER_ELEMENTS_BY_CATEGORY on 2026-11-01.
+  8. CREATE_RAILING along each terrace and roof-deck edge, and round each stair
+     opening, as pathMm on the level it stands on, in the railing type the
+     modeller names. COUNT THE RAILINGS FIRST. A stair made by CREATE_STAIRS
+     comes with railings of its own: Revit adds them as the stair is finished,
+     in the type the model sets as its default for stair railings - two on every
+     stair measured on Revit 2020.2 on 2026-10-13, an inner and an outer on a U
+     and one each side of a straight run; not measured on 2021 to 2027. So a
+     stair is given railings here (elements= that stair) only when it has none,
+     or it ends up with two sets. For another railing type on a stair, the
+     modeller changes the model's default stair railing type before the stair is
+     made. Count them with FILTER_ELEMENTS_BY_CATEGORY,
+     category=OST_StairsRailing - the API name, which the add-in takes exactly
+     as typed. "Railings" was read as a different category, OST_Railings, and
+     answered 0 for two railings that day in it and in SELECT_IN_REGION
+     (5b-444); the add-in now asks the name Revit shows first, and that fix has
+     not yet been run in Revit. SELECT_BY_CATEGORY_NAME, which counted them by
+     the name that day, was merged into FILTER_ELEMENTS_BY_CATEGORY on
+     2026-11-01.
   9. PLACE_HOSTED_FAMILY (PROVEN) for the doors and windows, after the rooms
      because each door is turned toward the room it opens into: for every one,
      a point on its wall's line, a point inside that room and a point at its
@@ -208,33 +195,30 @@ purpose: >
      once the curtain wall is up (the curtain-wall method). LOAD_FAMILY
      (PROVEN) the curtain-wall door family when its type is not in the model;
      SELECT_IN_REGION (PROVEN) with categories=Curtain Panels, on a box inside
-     that one panel only; then CHANGE_ELEMENT_TYPE (DRAFT, version 2 - version 1 was PROVEN; merged 2026-11-01, and until it is proved on a real model a kept change from it is refused, D-117) of that panel to
-     the door type, with expect_from naming that select. On 2026-10-13 this
-     worked on a wall whose grid is on its type, with nothing unpinned, and
-     the door took the whole panel's size - so the grid lines decide the
-     door's width and height.
-  10. CREATE_FROM_ROOM_BOUNDARIES (DRAFT, version 2 - version 1 was PROVEN, and
-      until NEEDS-CHECKING Group HX proves version 2 a kept change from it is
-      refused, D-117) for the ceilings, the shape of each room, at the height
-      the modeller gives. Rooms at different ceiling heights - a corridor
-      higher than the rooms off it - are separate calls, one per height; or
-      one call per height with rooms= the numbers or names at that height.
-      WALL FINISHES, only when the modeller asks for them - plaster, tile,
-      cladding: the same capability with a WALL type, after the doors and
+     that one panel only; then CHANGE_ELEMENT_TYPE (merged 2026-11-01) of that
+     panel to the door type, with expect_from naming that select. On 2026-10-13
+     this worked on a wall whose grid is on its type, with nothing unpinned, and
+     the door took the whole panel's size - so the grid lines decide the door's
+     width and height.
+  10. CREATE_FROM_ROOM_BOUNDARIES for the ceilings, the shape of each room, at
+      the height the modeller gives. Rooms at different ceiling heights - a
+      corridor higher than the rooms off it - are separate calls, one per
+      height; or one call per height with rooms= the numbers or names at that
+      height. WALL FINISHES, only when the modeller asks for them - plaster,
+      tile, cladding: the same capability with a WALL type, after the doors and
       windows (step 9), because the finish leaves a gap at each door and is
-      built round each window it finds in the wall. heightAboveLevel is the
-      top of the finish above the room's floor, baseOffset where it starts
-      (100 for a skirting; left out, 0), joinToHost=true to join each finish to
-      its wall. Every finish is not room bounding, so the rooms' areas do not
-      change. Read finishSummary - one line per room - and skippedSummary:
-      a curtain wall, a separation line or a linked wall is not lined, and is
+      built round each window it finds in the wall. heightAboveLevel is the top
+      of the finish above the room's floor, baseOffset where it starts (100 for
+      a skirting; left out, 0), joinToHost=true to join each finish to its
+      wall. Every finish is not room bounding, so the rooms' areas do not
+      change. Read finishSummary - one line per room - and skippedSummary: a
+      curtain wall, a separation line or a linked wall is not lined, and is
       counted, never passed over. A second run lays a second finish over the
       first: count the finish type's walls before running it again.
   11. CREATE_FLOOR with a ROOF type on the top level, from the outline of the
-      outside walls (CREATE_ROOF, PROVEN, until it was merged into CREATE_FLOOR
-      on 2026-11-01 - DRAFT until version 3 is proved, as step 5). It makes a
-      FLAT roof, and it takes its level as an input, so which view is open does
-      not decide where it goes.
+      outside walls (CREATE_ROOF until it was merged into CREATE_FLOOR on
+      2026-11-01). It makes a FLAT roof, and it takes its level as an input, so
+      which view is open does not decide where it goes.
   12. SLOPE_ROOF_EDGES (PROVEN), only when the roof is pitched: a gable slopes
       the two long eaves and leaves the two ends upright, a hip slopes every
       edge. The pitch is the modeller's and is never assumed.
@@ -269,15 +253,16 @@ purpose: >
          unsaved work, because a load reads the file.
       e. With the project in front again - ACTIVATE_DOCUMENT with its file,
          as the family method brings a host back - LOAD_FAMILY (PROVEN) the
-         .rfa, then PLACE_FAMILY_INSTANCES (DRAFT, version 4 - version 3 was PROVEN; merged 2026-11-01, and until it is proved on a real model a kept change from it is refused, D-117) at 0,0,0 on the base
-         level. A point's Z is its height in the model, so the family's
+         .rfa, then PLACE_FAMILY_INSTANCES (merged 2026-11-01) at 0,0,0 on the
+         base level. A point's Z is its height in the model, so the family's
          origin lands on the project's.
-  14. BEAMS BETWEEN TWO POINTS are PLACE_LINE_BASED_FAMILY (DRAFT, no proof
-      recorded): one line per beam, from its start to its end, on its level,
-      in the beam type the modeller names, with structuralType=Beam - asked,
-      never assumed. As a DRAFT its change is kept only through try-once:
-      one run on a saved model with nothing unsaved, behind Revit's Keep or
-      Discard (D-117, D-119, D-121). NEVER A POINT PLACEMENT for a beam -
+  14. BEAMS BETWEEN TWO POINTS are PLACE_LINE_BASED_FAMILY: one line per
+      beam, from its start to its end, on its level, in the beam type the
+      modeller names, with structuralType=Beam - asked, never assumed. Its
+      change goes through revit_change like any other while the list after
+      this method gives it as PROVEN; were it DRAFT there, only through
+      try-once on a saved model, behind Revit's Keep or Discard (D-117,
+      D-119, D-121). NEVER A POINT PLACEMENT for a beam -
       PLACE_FAMILY_INSTANCES, which took PLACE_STRUCTURAL_FAMILY in on
       2026-11-01: it places at POINTS, and on 2026-10-19 the beams the
       structural one made had no length. It refuses a beam, a brace or a
@@ -286,66 +271,64 @@ purpose: >
       (FRAGMENT-ISSUES 5b-1201).
   15. COLOURS, only when the modeller asks for them. First
       CREATE_STARTER_MATERIALS with materialNames, colours and transparencies
-      - CREATE_MATERIAL's job since 2026-11-01, DRAFT until proved again -
+      - CREATE_MATERIAL's job since 2026-11-01 -
       one material per colour, named, with its colour and transparency, and
       none of the starter set. Then one of three routes.
       A COLOUR THAT IS PART OF THE WALL, FLOOR OR ROOF TYPE - every wall of a
-      type finished alike: SET_COMPOUND_LAYER_WIDTH (PROVEN), version 2, sets
+      type finished alike: SET_COMPOUND_LAYER_WIDTH, since its version 2, sets
       one layer's material by name - hostType= the type, layerIndex (0 is the
       outside face) or layerIndex=-1 with layerFunction ("Finish 1") to find
       the layer, material= a name the project already holds, widthMm=0 to
       leave the thickness. With a layer given by its index, leave
       layerFunction blank: given there, it is written onto the layer. It
       changes every element of that type, so
-      DUPLICATE_TYPE (PROVEN) first and CHANGE_ELEMENT_TYPE (DRAFT, version 2) the walls
-      that should change onto the copy. Version 2 was proved and signed on
-      2026-10-18, on Revit 2020 only; the other releases wait in
-      NEEDS-CHECKING Group DU (FRAGMENT-ISSUES 5b-449).
-      A COLOUR ON A TYPE WITH NO LAYERS - a mullion, a fin, a panel:
-      REPLACE_MATERIAL (PROVEN), handed those elements, with findMaterial=
-      the material they use now and replaceMaterial= the one made above.
-      Read the name they use first - REPORT_MATERIAL_TAKEOFF (DRAFT, version
-      2 - READ_ELEMENT_MATERIAL, PROVEN, was merged into it on 2026-11-01),
-      its `materials`, on one of them - and give it exactly: on 2026-10-19 the material in use was
-      "Aluminium", not "Metal - Aluminum", and this swap gave the tower its
-      white fins. It changes the TYPE, so every element of that type
-      changes; DUPLICATE_TYPE first, as above, when only some should.
-      A COLOUR ON CHOSEN FACES OR BANDS - a white strip under a window on a
-      wall of one type: paint. PAINT_FACES (PROVEN) on what
-      SELECT_IN_REGION (PROVEN) finds in a thin band of height - one band and
-      one category at a time, so the band that picks up a white strip under a
-      window does not pick up the glass above it. In each band paint the walls
-      first and the curtain walls after: a curtain wall is a wall to Revit, so
-      a band selected by Walls holds both, and that order is the one that
-      worked on 2026-10-13. SELECT_IN_REGION tests bounding boxes unless
-      exact=true, so picking one small wall out from beside a curtain wall
-      needs exact=true - the box test caught a glass wall as well that day. To
-      see the colours, SET_VIEW_PROPERTIES (PROVEN) on the 3D view with
-      visualStyle=Shaded with Edges. It takes the words the View Control Bar
-      shows - Wireframe, Hidden Line, Shaded, Shaded with Edges, Consistent
-      Colors, Realistic, Realistic with Edges, Textures from Revit 2024 - and
-      the API's names as well; until version 2 (5b-457) it took only the
-      API's, so "Shaded" was refused. Never Ray Trace: Revit will not let a
-      tool set it.
+      DUPLICATE_TYPE (PROVEN) first and CHANGE_ELEMENT_TYPE the walls that
+      should change onto the copy. Which release SET_COMPOUND_LAYER_WIDTH's
+      proof ran on is on its card; the other releases wait in NEEDS-CHECKING
+      Group DU (FRAGMENT-ISSUES 5b-449). A COLOUR ON A TYPE WITH NO LAYERS - a
+      mullion, a fin, a panel: REPLACE_MATERIAL (PROVEN), handed those elements,
+      with findMaterial= the material they use now and replaceMaterial= the one
+      made above. Read the name they use first - REPORT_MATERIAL_TAKEOFF
+      (READ_ELEMENT_MATERIAL was merged into it at version 2, 2026-11-01), its
+      `materials`, on one of them - and give it exactly: on 2026-10-19 the
+      material in use was "Aluminium", not "Metal - Aluminum", and this swap
+      gave the tower its white fins. It changes the TYPE, so every element of
+      that type changes; DUPLICATE_TYPE first, as above, when only some should.
+      A COLOUR ON CHOSEN FACES OR BANDS - a white strip under a window on a wall
+      of one type: paint. PAINT_FACES (PROVEN) on what SELECT_IN_REGION (PROVEN)
+      finds in a thin band of height - one band and one category at a time, so
+      the band that picks up a white strip under a window does not pick up the
+      glass above it. In each band paint the walls first and the curtain walls
+      after: a curtain wall is a wall to Revit, so a band selected by Walls
+      holds both, and that order is the one that worked on 2026-10-13.
+      SELECT_IN_REGION tests bounding boxes unless exact=true, so picking one
+      small wall out from beside a curtain wall needs exact=true - the box test
+      caught a glass wall as well that day. To see the colours,
+      SET_VIEW_PROPERTIES (PROVEN) on the 3D view with visualStyle=Shaded with
+      Edges. It takes the words the View Control Bar shows - Wireframe, Hidden
+      Line, Shaded, Shaded with Edges, Consistent Colors, Realistic, Realistic
+      with Edges, Textures from Revit 2024 - and the API's names as well; until
+      version 2 (5b-457) it took only the API's, so "Shaded" was refused. Never
+      Ray Trace: Revit will not let a tool set it.
   16. The count, and it is the proof that the shell is the plan - the calls
-      not failing is not. FILTER_ELEMENTS_BY_CATEGORY (PROVEN to version 3;
-     version 4, which merged two other selectors in, DRAFT) then
+      not failing is not. FILTER_ELEMENTS_BY_CATEGORY (its version 4 merged
+      two other selectors in) then
       COUNT_ELEMENTS (PROVEN) for the walls, floors, rooms, stairs, doors,
       windows and ceilings on each level against the plan's own numbers -
       and the families and beams steps 13 and 14 placed - and
       the railings with FILTER_ELEMENTS_BY_CATEGORY as in step 8;
-      MEASURE_RUN_QUANTITIES (DRAFT, version 2 - MEASURE_ELEMENT_LENGTHS was
-      merged into it on 2026-11-01; a read, so nothing is kept) for the total
-      length of wall against the plan's - its totalMm, with lengthUnknown
-      naming anything it could not measure; READ_MODEL_WARNINGS (PROVEN) for anything the shell added. A
-      door counted is not a door in its wall: the wall it went into is smaller
-      by the opening, and that is the check that it is hosted.
+      MEASURE_RUN_QUANTITIES (MEASURE_ELEMENT_LENGTHS was merged into it at
+      version 2, 2026-11-01; a read, so nothing is kept) for the total length of
+      wall against the plan's - its totalMm, with lengthUnknown naming anything
+      it could not measure; READ_MODEL_WARNINGS (PROVEN) for anything the shell
+      added. A door counted is not a door in its wall: the wall it went into is
+      smaller by the opening, and that is the check that it is hosted.
 
   NOT YET: curtain walls have a method of their own - the curtain-wall skill,
   whose grid and mullions sit on the TYPE. The ground: CREATE_TOPOSOLID
-  (DRAFT) makes terrain on Revit 2024 and later only; on an older release
-  nothing in the library builds it, and on 2026-10-13 the garden and the deck
-  were drawn as floors.
+  makes terrain on Revit 2024 and later only; on an older release nothing in
+  the library builds it, and on 2026-10-13 the garden and the deck were drawn
+  as floors.
 
 # The words the modeller says when he wants a building put up.
 utterances:
@@ -479,9 +462,9 @@ note: >
 
   Step 10's wall finishes were added on 2026-10-19 from a comparison of jobs
   Heron could not yet do, not from a building: CREATE_FROM_ROOM_BOUNDARIES
-  version 2 (row 5b-1255) has not run in Revit, and NEEDS-CHECKING Group HX is
-  its proof - a room with a door and a window lined, and a room bounded only
-  by curtain walls and separation lines left alone.
+  version 2 (row 5b-1255) had not run in Revit that day, and NEEDS-CHECKING
+  Group HX was its proof - a room with a door and a window lined, and a room
+  bounded only by curtain walls and separation lines left alone.
 
   Every step is one entry in Revit's undo list. DRAFT until the whole order has
   been run from an empty level on a scratch model, with the count at the end

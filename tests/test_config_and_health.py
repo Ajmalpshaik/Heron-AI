@@ -41,6 +41,7 @@ sys.path.insert(0, os.path.join(ROOT, "mcp", "client"))
 
 import heron_config as cfg                                   # noqa: E402
 import heron_health as hp                                    # noqa: E402
+import heron_tools as TOOLS                                  # noqa: E402
 
 CONFIG_CS = os.path.join(ROOT, "platform", "Heron.Core", "HeronConfig.cs")
 CS_DIRS = [os.path.join(ROOT, "platform"), os.path.join(ROOT, "revit")]
@@ -103,9 +104,11 @@ def host_configs():
     """
     Every file that STARTS the MCP server, found rather than listed.
 
-    A `.json` or `.toml` naming `heron_mcp_server.py` is a host door, whoever
+    A `.json` or `.toml` naming the server's entry file - the last on
+    heron_tools' list of the files its source is - is a host door, whoever
     added it. Returns [(path relative to root, text)], sorted.
     """
+    entry = os.path.basename(TOOLS.server_files()[-1])
     found = []
     for where, folders, files in os.walk(ROOT):
         folders[:] = [f for f in folders if f not in SKIP_FOLDERS]
@@ -118,7 +121,7 @@ def host_configs():
                     text = handle.read()
             except (IOError, UnicodeDecodeError):
                 continue
-            if "heron_mcp_server.py" in text:
+            if entry in text:
                 found.append((os.path.relpath(path, ROOT), text))
     return sorted(found)
 
@@ -211,8 +214,9 @@ def main():
     # fix, and the next fragment-running call site will be written by copying
     # one of these five.
     literals = []
-    for where in ("mcp/client/heron_bridge_client.py",
-                  "mcp/server/heron_mcp_server.py"):
+    for where in ["mcp/client/heron_bridge_client.py"] + [
+            os.path.relpath(path, ROOT).replace(os.sep, "/")
+            for path in TOOLS.server_files()]:
         body = io.open(os.path.join(ROOT, where), encoding="utf-8").read()
         for number, line in enumerate(body.split("\n"), 1):
             if re.search(r"response_timeout\s*=\s*\d", line) and "def " not in line:

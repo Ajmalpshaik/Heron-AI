@@ -37,8 +37,9 @@ risk: READ
 # same solids. Where its outputs are now: `geometry`, `solidCount`, `findings`
 # -> the same names; `noGeometry` -> `noSolid`.
 #
-# Version 1's proof below no longer describes the code (impl/ changed) and is
-# kept as the record; DRAFT until version 2 is proved on a real model (D-30).
+# Version 1's proof below no longer described the code (impl/ changed) and
+# was kept as the record; DRAFT at the time, until version 2 is proved on a
+# real model (D-30).
 
 purpose: >
   The solid volume and surface area of each element, in cubic and square

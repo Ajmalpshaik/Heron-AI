@@ -50,16 +50,18 @@ capability: PLACE_FAMILY_INSTANCES
 # the point, and which parameter holds it (Base Offset, Elevation from Level),
 # is NEEDS REAL REVIT.
 #
-# Version 3's proof below no longer describes the code (impl/ changed) and is
-# kept as the record; DRAFT until version 4 is proved on a real model (D-30).
+# Version 3's proof below no longer described the code (impl/ changed) and
+# was kept as the record; DRAFT at the time, until version 4 is proved on a
+# real model (D-30).
 #
 # VERSION 5 (2026-11-01) - PLACE_NESTED_FAMILY WAS MERGED INTO THIS CARD on
 # the owner's instruction ("make sure there is no duplicate tools", every
 # conflict to keep the safer rule), and is DEPRECATED: a type of a family
 # loaded into the FAMILY being edited, placed in it - a nested component - by
 # the family's own creation object. See "VERSION 5" above `utterances` for
-# where each of its inputs and outputs is now. DRAFT until version 5 is proved
-# on a real model (D-30); version 4 was never proved either.
+# where each of its inputs and outputs is now. DRAFT at the time, until
+# version 5 is proved on a real model (D-30); version 4 was never proved
+# either.
 version: 5
 source: OFFICIAL
 risk: MODIFY

@@ -1,0 +1,128 @@
+# Needs checking — Group NK
+
+> One group of [the register](../NEEDS-CHECKING.md), in its own file so that it can be read alone. **The
+> register's rules, and every group's place in it, are on that page.** A new row for this group goes in
+> this file. [`tools/needs-checking-register.py`](../../tools/needs-checking-register.py) reads it back
+> into the register for every tool that reads it, so a row here is seen exactly as it was seen there.
+
+## Group NK - PROVEN reads that gave a wrong answer, repaired in code and DRAFT again until each is proved: the cards of rows 5b-1128, 5b-393, 5b-323, 5b-351, 5b-295, 5b-352, 5b-154 and 5b-203 (2026-11-11)
+
+> **THE ONE THING TO KNOW: until this group is run and signed, these fourteen reads answer only when the chat
+> NAMES them.** A sentence a modeller types no longer runs one of them by itself; the chat is handed the
+> candidates, calls `revit_read` again with the capability's name, and the answer says DRAFT. The QA
+> checklists cannot use them at all until then. What that costs, as measured, is
+> [row 5b-1554](../fragment-issues/section-5b-rows-401-425.md) and the section below.
+
+A triage on 2026-11-11 found PROVEN cards that only READ and still gave a modeller an answer he would act
+on that was wrong - each with its repair already stated in its [FRAGMENT-ISSUES](../FRAGMENT-ISSUES.md) row,
+and each left alone because a change under `impl/` stales a proof. The owner's instruction that day: *"if
+you are finding any fragment's mistake, even though it is proven, you can change that one."* The cards below
+were changed, and **each is DRAFT again at a new version, its old proof block kept on the card as the record
+of what it proved** ([D-30](../DECISIONS.md)).
+
+### What being DRAFT costs these reads - measured 2026-11-11, not estimated
+
+**They still answer.** `revit_read` does not ask [D-117](../decisions/D-117.md)'s question (item 4): it opens
+no transaction, so a DRAFT read runs when the chat names its capability, and the answer says DRAFT.
+
+**They do not lose nothing** - this section said they did until a review the same day measured it:
+
+- **A declared sentence still matches its card and no longer runs unasked.** Words alone run only a PROVEN
+  match (`revit_read`'s short path). The lookup now says, of the ceiling card, *"matched exactly but is DRAFT -
+  nobody has watched it work, so it is offered, not run"*, where the base said *"is PROVEN, so it may run
+  without asking"* (`brain/heron_retrieve.py`, this branch against its base, a scratch store).
+- **A PROVEN card wins a near-tie against a DRAFT one, and these fourteen gave that up.** The reviewer's
+  measurement, 5,268 sentences: a few best matches moved, on the built-in backend and on the trained one, none
+  of them one of the owner's own sentences. This session's, six sentences on the trained backend with no
+  re-ranker: no best match moved, each of these cards scored 0.0001 lower, and one winner's lead over its
+  runner-up fell from 1.9 ranks to 1.5.
+- **Some QUESTIONS now rank a card that changes the model first, on a backend without the re-ranker** - the
+  reviewer's examples: *"which materials does this model have"*, *"which materials do the ducts use"*, *"what
+  is the occupancy of this space"*, and `tools/check-routing.py`'s *"show airflow in CFM"*, `READ_SPACE_LOADS`
+  to `SET_AIR_TERMINAL_FLOW`. **None runs by itself**: a change is `revit_change`'s, and a question is offered
+  no change when the chat says it is one ([D-128](../DECISIONS.md)). Not reproduced on this session's
+  backend, where *"show airflow in CFM"* is served by `READ_SPACE_LOADS` before and after - which backend
+  ranks is part of the measurement.
+- **`tools/check-routing.py`, trained backend, no re-ranker, base against this branch: one line differs.**
+  *"make a sheet set for each value of TCM_Project Browser 1"*, which `MANAGE_SHEET_SETS` claims, was served by
+  `CHECK_SHEET_SETS_BY_PARAMETER` and is now served by the card that claims it.
+- **The QA checklists lose these capabilities until they are re-proved.** A check uses only a PROVEN read
+  whose proof still describes its code (`brain/heron_checklists.py`, `usable`); a saved check naming one of
+  the fourteen reads NOT RUN, nothing sent.
+
+### What changed
+
+| Card | Version | Row | What it answered | What it answers now |
+|---|---|---|---|---|
+| [`measure-ceiling-height`](../../brain/fragments/measure-ceiling-height/fragment.yaml) | 3 | [5b-1128](../fragment-issues/section-5b-rows-401-425.md) | A room left at Revit's default height, under a ceiling above that height, read exactly like a room with no ceiling | The room is listed in `limitBelowCeiling` and said in `findings`, with its own height and the lowest such ceiling's - counting only a ceiling drawn on a level inside the room's own height, so a shaft under the storey above is not told to raise its limit. It is still **not measured** until its Upper Limit is raised |
+| [`select-by-material`](../../brain/fragments/select-by-material/fragment.yaml) | 4 | [5b-393](../fragment-issues/section-5b-rows-401-425.md) | With `includePaint`, only what is PAINTED with the material, under a sentence saying *"made of it OR painted with it"* | Both sets are read and joined |
+| [`read-space-loads`](../../brain/fragments/read-space-loads/fragment.yaml) | 3 | [5b-323](../fragment-issues/section-5b-rows-301-325.md) | *"NO LOAD READABLE"* for a Space holding typed design loads, wherever Revit refused the calculated ones | Each figure is read on its own: what was typed is reported, what Revit refused is named |
+| [`report-family-parameters`](../../brain/fragments/report-family-parameters/fragment.yaml) | 2 | [5b-351](../fragment-issues/section-5b-rows-351-375.md) | `<blank>` for a Yes/No | Yes or No, read from the stored tick where Revit's own string is empty |
+| [`report-family-forms`](../../brain/fragments/report-family-forms/fragment.yaml) | 5 | [5b-295](../fragment-issues/section-5b-rows-276-300.md) | `0 L` for a solid with a void cut in it | The form says no volume is read on it and that it is in a join or cut; the join or cut is listed with its own volume |
+| [`report-bounding-box`](../../brain/fragments/report-bounding-box/fragment.yaml) | 2 | [5b-352](../fragment-issues/section-5b-rows-351-375.md) | A nested family's box with the bodies its `Visible` parameters hide, and no word about it | The same box - and a family instance whose box reaches past the geometry it shows is named, with both sizes. An instance whose box and geometry agree carries no caveat |
+| [`read-graphic-overrides`](../../brain/fragments/read-graphic-overrides/fragment.yaml) | 2 | [5b-154](../fragment-issues/section-5b-rows-151-175.md) | *"NO per-element override"* for an element overridden only by a pattern - or only by a detail level, a line pattern, a cut line weight, a background pattern or a pattern switched off | Every setting the Override Graphics in View box holds is read; `overrideList` carries every line in full |
+| `read-element-parameters` 7 · `find-duplicate-values` 2 · `compare-elements` 2 · `compare-models` 2 · `list-materials` 7 · `report-material-takeoff` 4 · `check-sheet-sets-by-parameter` 2 | | [5b-203](../fragment-issues/section-5b-rows-201-225.md) | Whichever of two parameters sharing a name Revit returned first | The name is counted first; carried twice, it is **NOT READ**. All seven say it in the same words and list what was not read in `ambiguous`, as ids. `check-sheet-sets-by-parameter` calls no set "in step" while a sheet was not read |
+
+**What is done and what is not.** Every card compiles on every release it claims, 2020 to 2027
+(`tools/check-fragments-compile.py`, 2026-11-11, a cloud container), and
+[`tests/test_same_name_guard.py`](../../tests/test_same_name_guard.py) holds the seven readers of row 5b-203 to
+the refusal, and to one shape, as text. **Nothing here has run in Revit.** A compile is not a proof.
+
+**Not done, and said so the card does not read as more than it is:**
+
+- `measure-ceiling-height` does not look above a room's upper limit. Row 5b-1128 offered that as its other
+  repair; which level bounds the look is a choice nobody has made. A ceiling of the room's own storey drawn on
+  a level of its own above the room's limit is not counted, so that room is not named. Its `purpose` still says
+  the plan-overlap test *"never meets the trap at all"* - it does; correcting that sentence moved other cards'
+  routing, so it is left and recorded on the row.
+- `report-bounding-box` reports no combined box of only what shows. And what it now says rests on one thing
+  no Revit has shown this card: that Revit's default geometry leaves out a body whose `Visible` is off while
+  its box keeps it. NK6 is where that is seen.
+- [Row 5b-1404](../fragment-issues/section-5b-rows-401-425.md) - `list-materials` with `withAllTabs` crashing
+  inside Revit 2020 - is **not repaired**: it was never traced to a line, so no repair is stated. That is why
+  this group runs on Revit 2024.
+- `export-parameters-to-csv` (PUBLISH) and the three MODIFY cards of
+  [row 5b-1534](../fragment-issues/section-5b-rows-401-425.md) still take the first match.
+
+### The run
+
+**One job file covers all fourteen cards:**
+[`tools/jobs/proven-reads-repaired-nk-2026-11-11.yaml`](../../tools/jobs/proven-reads-repaired-nk-2026-11-11.yaml).
+Its header lists the scratch files; NK0 below is the same arrangement, step by step.
+
+```bash
+python tools/batch-prove.py tools/jobs/proven-reads-repaired-nk-2026-11-11.yaml --dry-run
+python tools/batch-prove.py tools/jobs/proven-reads-repaired-nk-2026-11-11.yaml --session <pid>
+```
+
+**The PC, Revit 2024, SAVED scratch files under `%TEMP%\heron-work\nk` - never the owner's own model.** Every
+line by hand with `HERON_CLIENT_ID=ajmal-pc`, `--session <process id>` when two Revits are connected, and
+`< /dev/null`. Two jobs run a setup step that changes the model and are rolled back; nothing in this group
+keeps a change except NK0, which the modeller makes by hand.
+
+**The batch judges two things and no more: a declared result moved off zero, and in the negative every
+declared result is empty - a sentence included. It cannot read what a sentence says.** So each row below
+says what to READ in the answer the batch printed, and most ask one more run by hand, because the half that
+changed is a sentence, or a refusal that no batch positive can be. Three positives - NK2, NK7 and NK6's
+finding - are arranged so that the unrepaired card could not fill them.
+
+| # | Run | Look for |
+|---|---|---|
+| **NK0** | *Arrange, KEEP it, by hand.* **"Heron Reads Test"**, a new project from the default metric template. Materials "Heron A", "Heron B" and "Heron C", each a duplicate of any material. Wall type "Heron Made", a duplicate of "Generic - 200mm" with its structure layer's material set to "Heron A". On Level 1: wall W1 of "Heron Made" and W2, W3, W4 of "Generic - 200mm" closing a rectangle, and W5 of "Generic - 200mm" across the middle - two rooms, **five walls**; Mark typed W1 "A", W2 "A", W3 "B", W4 "C", W5 "E"; one face of W2 painted "Heron B" (Modify, Paint). **"Heron A" is painted on nothing; "Heron C" is used by nothing.** A Room in each half, "Room 1" and "Room 2", with Tag on Placement on and its limits untouched. A Ceiling over **Room 1 only**, at 2600 mm, drawn on Level 1; and **on Level 2**, a Ceiling over Room 2's footprint at 2600 mm above Level 2 - the storey above's ceiling, with nothing over Room 2 on Level 1. Two Spaces, one per room: on the first type Design Heating Load 3000 W, Design Cooling Load 5000 W, Specified Supply Airflow 250 L/s; Area and Volume Computations on; **never run Heating and Cooling Loads here**. In the Level 1 plan, W3 alone: Override Graphics in View, By Element, Surface Patterns, a foreground pattern and no colour. **"Heron Two Bodies.rfa"**, a Generic Model family: two 200 mm cubes 2000 mm apart, each with Visible linked to its own Yes/No type parameter "Show A", "Show B"; loaded into the project, placed once on Level 1, "Show B" unticked. **"Heron Host.rfa"**, a Generic Model family with "Heron Two Bodies" loaded into it and placed once on Ref. Level, the nested type's "Show B" unticked. **One Sheet** (View, Sheet). **Last**, Manage, Project Parameters: "Comments" (Text, Instance) bound to Walls, and "Keywords" (Text, Instance) bound to Materials; on "Heron A", Identity tab, Keywords "probe". Save. Save As "Heron Reads Test - earlier.rvt" beside it; open "Heron Reads Test" again, change W3's Mark to "D" and type something in the first Comments of W3; Save; **close the "earlier" file**. **"Heron Flag Test.rfa"**, a Generic Model family: Yes/No "Flag" ticked, "Derived" = `not(Flag)`, "Plain" unticked with no formula, Integer "Count" = 1; a solid extrusion 1000 x 1000 from 0 to 1000 mm and a void extrusion, circle radius 100, from -10 to 1010 through it, cut with Cut Geometry. And a scratch copy of Revit 2024's `Samples\Snowdon Towers Sample Architectural.rvt`, as [round 20](../../tools/jobs/p1102-round20-revit2024-arch-2026-11-02.yaml) used it | Each title bar names a scratch file. A wall, selected, shows **Comments twice** in Properties, and a material shows **Keywords twice** - if either shows it once, Revit refused the second parameter and NK8 has nothing to refuse: write down what Revit said. Room 1's Limit Offset reads below 2600. The Level 2 ceiling's own Level reads Level 2 |
+| **NK1** | *`measure-ceiling-height`, row 5b-1128.* The batch job: SET_ROOM_LIMITS raises both rooms to Level 2 inside the rolled-back run. **Then by hand, limits left alone:** select the two rooms, `python mcp/client/heron_bridge_client.py fragment measure-ceiling-height --set includeLinks=false` | Batch: `mainHeight` 1 entry, Room 1 at 2600 mm; Room 2 in `noCeiling`; `limitBelowCeiling` 0, `findings` 0. **By hand - the D-30 pair for what changed.** Positive: Room 1 in `limitBelowCeiling` and in `noCeiling`, `mainHeight` empty, and one finding naming Room 1, its limit's height above the floor, *1 ceiling(s)* and *2600 mm*. Negative: **Room 2 in `noCeiling` ALONE - not in `limitBelowCeiling`, no finding**: the ceiling over it is drawn on Level 2, another storey's, and the room must not be told to raise its limit to reach it. If Room 1 IS measured, the template's limit is above 2600: lower its Limit Offset to 2000 and run again |
+| **NK2** | *`select-by-material`, row 5b-393.* The batch job: "Heron A", `includePaint` true, Walls; negative "Heron C". **Then by hand:** "Heron B" with `includePaint=true`, then `false`; and "Heron A" with `false` | Batch: `elements` **1**, W1 - made of Heron A, which is painted on nothing - and the finding ends *"made of it OR painted with it"*; negative `0 of 5 scanned`. **`POSITIVE EMPTY` is version 3's defect still there:** asked for paint, it read the painted set alone. **By hand:** Heron B with paint, W2; without, nothing, *"Paint was NOT included"*; Heron A without paint, W1 - the same wall the batch found with it. To see both in one answer, paint a face of W3 with Heron A and ask Heron A with paint: W1 and W3. Undo the paint |
+| **NK3** | *`read-space-loads`, row 5b-323.* The batch job on the two Spaces; negative the walls | `coolingW`, `heatingW` and `airflowLs` hold **one** entry each - the first Space's 5000 W, 3000 W and 250 L/s, each *"(entered)"*, the same numbers Properties shows. The second Space is in `noLoad`. **READ the first Space's finding:** if it ends *"Revit refused Calculated Heating Load, ..."* the repair was exercised - write the names down. If it names nothing, Revit refused nothing on this model and only the unchanged path ran: turn **Area and Volume Computations off** (Architecture, Room and Area panel), run `fragment read-space-loads` on the Spaces by hand, and record what the first Space reads - version 2 said *"NO LOAD READABLE"* for it. **And check the unit, which no proof has yet:** 5000 W typed must read 5000 W; a constant factor off is the card's own first warning |
+| **NK4** | *`report-family-parameters`, row 5b-351.* The batch job on "Heron Flag Test"; the negative is the PROJECT - `currentTypeName` is a result and a sentence, filled in both legs inside a family, so a name nothing matches would read `NEG NOT EMPTY`. **Then by hand:** untick Flag in Family Types, run `fragment report-family-parameters --set nameContains=` again | `parameterList` reads *"Flag [Integer/instance] = Yes"* (or `/type`), *"Derived ... = No (formula: not(Flag))"*, *"Plain ... = No"*, and *"Count [Integer/...] = 1"* - **never Yes for Count**. Negative: `notAFamily` true, every result empty. By hand: Flag No, Derived Yes. A `<blank>` on any of the three is the row still there - record which, and whether it is the formula one: that Revit gives the stored tick for a formula-driven Yes/No is **not established** until this runs. This also answers [CP2](group-cp.md) |
+| **NK5** | *`report-family-forms`, row 5b-295.* The batch job on "Heron Flag Test", `which=all`; negative the project | `formList`: the solid extrusion's row says *"no volume read on the form itself - it is in a join or cut"* and **not** *"0 L"*; the void carries no volume, as before. `combinationList`: the cut, both members, then *"968.584 L as joined or cut"* (1000 L less a 100 mm radius cylinder 1000 mm long). Negative: `notAFamily` true, nothing read. **By hand, the negative for what changed:** on a copy of the family with the cut removed (Uncut Geometry), the solid reads *"1000 L"* and no row says *"join or cut"*. If the cut solid reads its OWN volume in this Revit, the 0 was release-specific: record the release and the figure |
+| **NK6** | *`report-bounding-box`, row 5b-352.* The batch job on the instance NESTED in "Heron Host"; negative the two room tags in the project. If its setup hands on 0, select the nested instance in "Heron Host" and run `python mcp/client/heron_bridge_client.py fragment --in "Heron Host" report-bounding-box --set maxRows=5` (`--in` before the name - after it, it is refused). **Then by hand:** tick "Show B" on the nested type and run it again; then the instance placed in the PROJECT, Show B unticked | Batch: `measured` 1. **READ findings - this is the one row where the repair may not appear at all.** It is exercised if a finding says *"1 of the 1 family instance(s) compared have a box LARGER than the geometry they show"*, with Revit's box about 2200 mm long beside about 200 for the body that shows. **If there is no such finding, write down the box Revit gave**: about 2200 means Revit's default geometry held the hidden body too, about 200 means its box left it out - either way the card's premise failed here, row 5b-352 stays open, and that is the finding. This is what [CP3](group-cp.md) asks. **By hand, the negative for what changed:** with Show B ticked, **no** finding - the box and the geometry agree. The project instance should read as the nested one did; write it down if it does not |
+| **NK7** | *`read-graphic-overrides`, row 5b-154.* The batch job on the five walls in the Level 1 plan; negative the generic model in the project. **Then by hand, one wall at a time, each given ONE override and nothing else:** W1 a detail level of Fine; W2 a projection line pattern; W4 a cut line weight of 5; W5 the surface foreground pattern's Visible box unticked - `fragment read-graphic-overrides --set "view=FloorPlan: Level 1"` on the five walls | Batch: `withOverride` **1** and `overrideList` reading *"Generic - 200mm (id ...): surface pattern <the pattern's name>"*; the other four walls each *"NO per-element override in this view"*. `POSITIVE EMPTY` is version 1's defect still there. Negative: `withOverride` 0, `overrideList` empty. **By hand:** `withOverride` 5, and each wall's line naming its one setting - *"detail level Fine"*, *"line pattern <name>"*, *"cut line weight 5"*, *"surface pattern switched off"*. Any of them still reading *"NO per-element override"* is that setting not read: record which. Undo the four overrides afterwards |
+| **NK8** | *The seven readers of row 5b-203, a name two parameters share.* The batch runs all seven. **Four have the refusal as their own negative, or carry it:** `read-element-parameters`, `find-duplicate-values` and `compare-models` on "Comments", and `compare-elements`, whose positive carries it. **By hand:** (a) `list-materials` - after the batch, delete the "Keywords" project parameter and run `fragment list-materials --set withAllTabs=true --set "namePattern=Heron A"`; (b) `report-material-takeoff` - add a Number project parameter "Carbon Factor" to Materials **twice** (two parameters of that name; if Revit refuses the second, make one shared and one project), type 100 on "Heron A", select the walls, `fragment report-material-takeoff --set "factorParameter=Carbon Factor"`; (c) `check-sheet-sets-by-parameter` - in the Snowdon copy, with a set for each "Drawn By" value kept in the model first (MANAGE_SHEET_SETS, mode by-parameter, kept - or File, Print, View/Sheet Set by hand), add a Text project parameter "Drawn By" bound to **Views only** and run `fragment check-sheet-sets-by-parameter --set "parameterName=Drawn By" --set setPrefix=none`; (d) the same with that parameter bound to **Sheets**; then delete the parameter | Batch: `read-element-parameters` negative `values` 0, all five walls in `ambiguous`, findings *"5 element(s) carry TWO OR MORE parameters called 'Comments' - NOT READ ..."*; `find-duplicate-values` positive `duplicated` 2 (W1, W2), negative `duplicated` 0 and `ambiguous` 5 - **never** *"every Comments is unique"*; `compare-elements` `differing` holds Mark, `ambiguous` holds the five walls and `findings` one line for Comments; `compare-models` positive `changed` 1 (W3, 'B' -> 'D'), negative `changed` 0 with W3 in `ambiguous` and a finding naming 'Comments'; `list-materials` identity *"keywords NOT READ - 2 parameters share that name"*, never 'probe', and Heron A in `ambiguous`; `report-material-takeoff` and `check-sheet-sets-by-parameter` as their last proofs, `ambiguous` empty and `unconfirmed` 0. **Every one of the seven says the refusal in the same words** - *"carry TWO OR MORE parameters called '...' - NOT READ, because Revit hands back whichever of them it meets first"*. **By hand:** (a) *"keywords 'probe'"* and `ambiguous` empty - the name read again once it occurs once; (b) `totalKg` 0 for Heron A, the material in `ambiguous`, a finding naming it as NOT READ, and **not** in `noFactor`; (c) every view in `ambiguous`, each set **NOT CONFIRMED** and counted in `unconfirmed`, `inStep` **0** - never "in step" while a view was not read; (d) refused *"Nothing was checked: 'Drawn By' was not read on any sheet or view ..."*, every sheet in `ambiguous`, `inStep` 0 and `outOfStep` 0. **`NEG NOT EMPTY` on the first two is the finding this row exists for** - a value read off whichever parameter came first - unless NK0's second parameter never bound: check Properties before blaming the card. This arranges what [Group AP](group-ap.md) AP11 asks of the other readers |
+| **NK9** | *Second route, by eye.* For each card, the route its own `second_route` names: a section through a room for the ceiling; a wall type's structure and the Paint tool for the material; a Space's Properties for the loads; Family Types for the Yes/No; COMBINE_FAMILY_FORMS' own "before, after" for the cut; a section box for the extents; Visibility/Graphics, Override By Element for the pattern; Properties for the two parameters | Each agrees with what the card said. A person's route has no recorded run, so `second_route` on a proof stays NOT ESTABLISHED: write what was seen here |
+
+**Then, for each card whose rows passed:** `python brain/heron_validate.py review <fragment>`, read the
+draft, and `python brain/heron_validate.py accept <fragment> --by "Your Name"` - the machine never signs.
+`accept` writes the proof; `heron-status: PROVEN` is a line a person edits, and
+`python tools/check-signatures.py` says when one is signed and still DRAFT. **A row that fails reopens its
+FRAGMENT-ISSUES row**, with what was passed and what came back, verbatim; nothing in a row is changed to make
+it pass. **When all fourteen are signed, [row 5b-1554](../fragment-issues/section-5b-rows-401-425.md)
+closes**, and the cost above ends with it.

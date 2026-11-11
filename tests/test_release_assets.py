@@ -306,10 +306,13 @@ def main():
                   "the workspace is not nearly empty: %d entries" % len(names))
 
             # THE BRAIN, BY NAME. Q-PE-13 was "nothing installs the brain";
-            # this is the line that makes it false.
-            for needed in (".mcp.json",
-                           "platform/heron-products.json",
-                           "mcp/server/heron_mcp_server.py"):
+            # this is the line that makes it false. The server is every file
+            # heron_tools lists as its source, so one added there is asked
+            # for here without this line being edited.
+            sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+            import heron_tools as TOOLS
+            for needed in [".mcp.json", "platform/heron-products.json"] + [
+                    "mcp/server/" + name for name in TOOLS.SERVER_FILES]:
                 check(needed in names, "it carries %s" % needed)
             for folder in ("brain/fragments/", "brain/skills/", "docs/"):
                 check(any(n.startswith(folder) for n in names),

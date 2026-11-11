@@ -159,7 +159,7 @@ flowchart LR
     T["<b>tests</b> — every suite<br/>FAIL or HUNG is red · NOT RUN kept apart"]
     GEN["<b>generated</b><br/>the committed registry matches its generator"]
     REP["<b>reports</b> — a finding is a question<br/>never red"]
-    WIN["<b>windows.yml</b> — only when installer files change<br/>the lock installs · the installer test host"]
+    WIN["<b>windows.yml</b> — only when installer or mcp/ files change<br/>the lock installs · the installer test host"]
     REV["<b>Review</b> — design fit"]
     M(["<b>Merge</b> to main"])
 
@@ -202,7 +202,7 @@ You, on your branch
        generated  docs/28-agent-registry.md matches its generator       red when stale
        reports    check-reachable, check-revit-gate, agent-count,       never red
                   check-declared-questions
-     windows.yml, only when the installer, the lock, heron-ready or the release builder change
+     windows.yml, only when the installer, the lock, heron-ready, the release builder or mcp/ change
   -> review, for design fit
   -> merge to main
 ```

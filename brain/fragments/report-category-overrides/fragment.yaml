@@ -16,7 +16,7 @@ capability: REPORT_CATEGORY_OVERRIDES
 # the view, so on a real HVAC project on Revit 2020 it said "7 of 16" while the
 # view overrode 77 of 85 model categories for the LINKED architecture. Left out
 # it is false and every version 1 output is computed exactly as before. DRAFT
-# until version 2 is run in Revit: NEEDS-CHECKING Group ED.
+# at the time, until version 2 is run in Revit: NEEDS-CHECKING Group ED.
 #
 # VERSION 3 (2026-11-01): REPORT_CATEGORY_VISIBILITY was merged into this card
 # on the owner's instruction ("make sure there is no duplicate tools"), and is
@@ -26,8 +26,8 @@ capability: REPORT_CATEGORY_OVERRIDES
 # named when nothing is off. THE SAFER RULE OF THE CONFLICT WAS KEPT: every
 # hidden category is listed, empty ones included and marked so, where that
 # card left out a category with nothing in the model; and it does not depend
-# on `allCategories`. The proof below is version 1's and stale; the card is
-# DRAFT until version 3 is proved.
+# on `allCategories`. The proof below was version 1's and stale; the card was
+# DRAFT at the time, until version 3 is proved.
 version: 3
 source: OFFICIAL
 risk: READ
@@ -163,6 +163,8 @@ contract:
       role: accounting
       type: string
 
+# WRITTEN ABOVE AN EARLIER PROOF, since replaced by the `proof:` block below -
+# read that block's own date and fingerprint, not this comment, for what ran.
 # THIS PROOF IS VERSION 1's AND IT IS STALE. It ran with no `allCategories`,
 # which version 2 still answers exactly the same way, but the implementation
 # changed and the fingerprint below no longer matches it. NEEDS-CHECKING Group

@@ -27,8 +27,8 @@ capability: TAG_ELEMENTS_IN_VIEW
 # `leaderOffsetMm` are optional, each left out as the value a caller typed for
 # "nothing" - none, none, 0, 0 - so "tag these" needs only the view, as
 # TAG_ELEMENTS' did. A card change; impl/ reads the same values as before.
-# Version 5's proof below no longer describes the code and is kept as the
-# record; the card is DRAFT until it is proved again.
+# Version 5's proof below no longer described the code and was kept as the
+# record; the card was DRAFT at the time, until it is proved again.
 #
 # Version 7 (2026-11-01): TAG_ROOMS was merged into this card on the owner's
 # instruction ("make sure there is no duplicate tools"), and is DEPRECATED.
@@ -305,6 +305,8 @@ contract:
       # its own words. Prose, so it carries no role (D-51).
       type: IList<string>
 
+# WRITTEN ABOVE AN EARLIER PROOF, since replaced by the `proof:` block below -
+# read that block's own date and fingerprint, not this comment, for what ran.
 # THE VERSION 5 RECORD (Group DV DV5), signed 2026-10-13. It replaces the
 # version 1 record of 2026-09-14, which counted 14 tagged on the `none` path
 # while every head it passed was the project origin (5b-452). Both legs are

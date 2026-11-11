@@ -207,3 +207,17 @@ brain/proof-drafts/runs/
 # copy of the code and no release, `.\tools\setup.ps1` builds and installs
 # Heron with no installer at all.
 /revit/HeronInstaller.exe
+
+# ANOTHER SESSION'S CHECKOUT, INSIDE THIS ONE.
+# Claude Code puts each agent's worktree at .claude/worktrees/<name>/ - a whole
+# copy of the repository at whatever commit that session started from. The
+# harness writes this same line into .git/info/exclude, which is one clone's
+# and is never committed; on a machine where it did not, every worktree shows
+# as untracked work, and one `git add` of the folder commits a link to a
+# checkout nobody else has.
+#
+# This line is for git. A tool that WALKS THE DISK never reads it - the four
+# that walked into a worktree ask brain/heron_checkout.py, which looks for the
+# copy's own .git instead of for a folder by name (docs/FRAGMENT-ISSUES row
+# 5b-1539).
+.claude/worktrees/

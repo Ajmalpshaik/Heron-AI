@@ -67,9 +67,9 @@ sys.path.insert(0, os.path.join(ROOT, "brain"))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
 
 import heron_instructions as INS                              # noqa: E402
+import heron_tools as TOOLS                                   # noqa: E402
 
 CONSTITUTION = os.path.join(ROOT, "HERON_CONSTITUTION.md")
-SERVER = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
 
 # WHAT EVERY CHAT PAYS FOR, whatever it asks - docs/19: "if a context
 # assembly exceeds its budget, that is a bug in retrieval, not a reason to
@@ -151,7 +151,7 @@ def host_and_table(rules, known):
     check(given == text,
           "the seam the MCP server uses hands over exactly what the registry "
           "assembles")
-    server = io.open(SERVER, encoding="utf-8").read()
+    server = TOOLS.server_text()
     check('instructions=_host_instructions()' in server
           and "brain.host_instructions()" in server,
           "and the server is built with it as its instructions")

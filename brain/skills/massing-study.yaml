@@ -52,12 +52,12 @@ purpose: >
      counts in the gross floor area is step 5's question.
   3. THE MASSES - one loaded mass family per block, built by the
      MASS-FAMILY-CREATION method, then LOAD_FAMILY (PROVEN) into the project
-     and PLACE_FAMILY_INSTANCES (DRAFT, version 4 - version 3 was PROVEN; merged 2026-11-01, and until it is proved on a real model a kept change from it is refused, D-117) at each block's insertion point on
-     the ground level. Masses already in the model - in-place or loaded -
-     are used as they are.
-  4. REPORT_MASSES (DRAFT) - every mass with its base, top and height. Check
-     each block against the brief table before going on; a mass 200 mm off
-     a level misses a mass floor.
+     and PLACE_FAMILY_INSTANCES (merged 2026-11-01) at each block's insertion
+     point on the ground level. Masses already in the model - in-place or loaded
+     - are used as they are.
+  4. REPORT_MASSES - every mass with its base, top and height. Check each
+     block against the brief table before going on; a mass 200 mm off a
+     level misses a mass floor.
   5. CREATE_MASS_FLOORS (PROVEN) with REPORT_MASSES' elements through
      expect_from, levelNames empty for every level each mass reaches. A level
      on the TOP face of a mass still gets a mass floor element - measured on
@@ -65,18 +65,18 @@ purpose: >
      reads it EMPTY, 0 m2, and no total counts it; Autodesk Help says no
      mass floor is made there, and which is right on other releases is not
      measured. Say it in the count. A level the study should NOT count -
-     a plant deck, a parapet - is taken off with REMOVE_MASS_FLOORS (DRAFT),
-     naming it; that is a change the modeller says yes to (Article 7).
-  6. SET_MASS_FLOOR_USAGE (DRAFT) - "Level 1=Retail; Level 2..Level 6=Office;
-     Level 7..Level 20=Residential", the bands from step 1's table. The
-     words are the modeller's; Heron keeps no list of uses.
+     a plant deck, a parapet - is taken off with REMOVE_MASS_FLOORS, naming
+     it; that is a change the modeller says yes to (Article 7).
+  6. SET_MASS_FLOOR_USAGE - "Level 1=Retail; Level 2..Level 6=Office; Level
+     7..Level 20=Residential", the bands from step 1's table. The words are
+     the modeller's; Heron keeps no list of uses.
   7. JOIN WHERE BLOCKS MEET: REPORT_MASSES names every pair of masses that
      overlap and are NOT joined, with the volume they share - both count it
      in volume and floor area until they are joined (Autodesk Help, joining
      mass instances). JOIN_GEOMETRY (DRAFT, version 2 - version 1 was PROVEN; merged 2026-11-01, and until it is proved on a real model a kept change from it is refused, D-117) joins each pair named, then
      REPORT_MASSES again: the finding gone and the total smaller.
-  8. THE NUMBERS: REPORT_MASSES (DRAFT) with siteArea - the m2 from step 1,
-     or "property lines" - gives gross floor area by level and by Usage, the
+  8. THE NUMBERS: REPORT_MASSES with siteArea - the m2 from step 1, or
+     "property lines" - gives gross floor area by level and by Usage, the
      plot ratio (FAR) and site coverage. Say each against the brief: "FAR
      3.42 against 3.5 allowed" is a comparison of the values checked, never
      a statement that the scheme complies - that is the authority's.
@@ -84,34 +84,34 @@ purpose: >
      the Mass Floor category with Mass : Family and Type, Level, Usage,
      Floor Area, Floor Perimeter, Exterior Surface Area and Floor Volume;
      SET_SCHEDULE_SORT_GROUP (PROVEN) by Usage then Level, and
-     SET_SCHEDULE_APPEARANCE with calculateTotals on Floor Area (DRAFT,
-     version 4 - SET_SCHEDULE_FIELD_TOTALS, PROVEN, was merged into it on
-     2026-11-01). That a Mass Floor
-     schedule is made this way is owed in NEEDS-CHECKING Group JO.
+     SET_SCHEDULE_APPEARANCE with calculateTotals on Floor Area
+     (SET_SCHEDULE_FIELD_TOTALS was merged into it at version 4,
+     2026-11-01). That a Mass Floor schedule is made this way is owed in
+     NEEDS-CHECKING Group JO.
   10. REVISE AND READ AGAIN: a block changed in its family is reloaded with
      LOAD_FAMILY reload=true; the mass floors follow the new shape. Run
      step 8 again after every change - a number reported before a change
      is not a number about the scheme now.
   11. FROM MASS TO BUILDING, only once the modeller says the scheme is
      agreed:
-     a. CREATE_WALLS_BY_FACE (DRAFT) with a wall type - Wall by Face on
-        every side face, Finish Face: Exterior on the mass face unless the
-        modeller says otherwise. A glazed block is CREATE_CURTAIN_SYSTEM
-        (PROVEN, Group JM) with a curtain system type instead - its upright
-        faces, or "top" for a glazed roof - and its grid and mullions are
+     a. CREATE_WALLS_BY_FACE with a wall type - Wall by Face on every side
+        face, Finish Face: Exterior on the mass face unless the modeller
+        says otherwise. A glazed block is CREATE_CURTAIN_SYSTEM (PROVEN,
+        Group JM) with a curtain system type instead - its upright faces, or
+        "top" for a glazed roof - and its grid and mullions are
         SET_CURTAIN_WALL_GRID on that curtain system type, Grid 1 and Grid 2
         (Group JP proved the grid and the mullion setters on 2026-11-01; the
-        mullions were merged into the grid setter that day, version 4, DRAFT
-        until proved again, D-117). Both stay tied to the faces; after the
-        mass changes, Update to Face by hand.
+        mullions were merged into the grid setter that day, version 4). Both
+        stay tied to the faces; after the mass changes, Update to Face by
+        hand.
      b. SLABS: REPORT_MASSES with withOutlines gives each mass floor's
-        outline in the writing CREATE_FLOOR (version 2 PROVEN; DRAFT at
-        version 3 since 2026-11-01, so a kept change is refused until it is
-        proved again, D-117) takes - one
-        CREATE_FLOOR per outline, on its level. A slab made this way does
-        NOT follow the mass; say so. An outline with a hole - a courtyard,
-        an atrium - is the outside edge only: CREATE_OPENING (PROVEN) cuts
-        the hole after, from the inner edge the modeller confirms.
+        outline in the writing CREATE_FLOOR (version 3 since 2026-11-01)
+        takes - one CREATE_FLOOR per outline, on its level. A slab made
+        this way does NOT follow the mass; say so. An outline with a hole -
+        a courtyard, an atrium - is the outside edge only: CREATE_OPENING
+        (its status is in the list served after this method; while it is
+        not PROVEN there, a kept change from it is refused, D-117) cuts the
+        hole after, from the inner edge the modeller confirms.
      c. ROOF: CREATE_FLOOR with a roof type on the top outline (CREATE_ROOF,
         PROVEN, until it was merged in on 2026-11-01), or Roof by Face by
         hand - no API makes one.

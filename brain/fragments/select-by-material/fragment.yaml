@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,22 @@ semantic-identity: "the elements made of one material"
 kind: filter
 domain: revit.selection
 capability: SELECT_BY_MATERIAL
-version: 3
+version: 4
 source: OFFICIAL
 risk: READ
+
+# VERSION 4 (2026-11-11) - PAINT IS ADDED TO THE MAKE-UP, and back to DRAFT.
+# Version 3 was PROVEN on 2026-10-18 (the proof block below, kept as the record
+# of what it proved: five walls PAINTED with Glass, found with includePaint
+# true and absent with it false). Its C# moved, so it is DRAFT again until
+# NEEDS-CHECKING Group NK, NK2, is run (D-30). FRAGMENT-ISSUES row 5b-393:
+# version 3 made one call, `GetMaterialIds(includePaint)`, and Revit's true
+# answer is the painted materials ALONE - so asking for paint dropped every
+# element made of the material and not painted with it, while the finding said
+# "made of it OR painted with it". Both sets are read and joined now, as
+# FIND_UNUSED_MATERIALS does. With includePaint false the answer is version
+# 3's, unchanged. A read: it still answers through revit_read while DRAFT,
+# and says DRAFT (D-117 item 4).
 
 purpose: >
   Narrows the model to the elements that use one named material - "which walls

@@ -21,8 +21,8 @@ See docs/29-metadata-standard.md
 > `revit_sprinkler_layout` tool at `ANALYZE` (in `python mcp/server/heron_tools.py`'s list), the page's
 > Apply as `companion_sprinkler_place` at `MODIFY` (a `COMPANION_ACTIONS` row in
 > [`heron_tools.py`](../mcp/server/heron_tools.py)), `sprinkler_layout_room` in
-> [`heron_fire.py`](../brain/heron_fire.py), and `REPORT_SPRINKLER_LAYOUT_SPACES` (FRG-MEP-060), DRAFT,
-> compiled on 2020, 2024 and 2027. **NEEDS REAL REVIT:** no row of [group CG](needs-checking/group-cg.md)
+> [`heron_fire.py`](../brain/heron_fire.py), and `REPORT_SPRINKLER_LAYOUT_SPACES` (FRG-MEP-060),
+> compiled on 2020, 2024 and 2027 - its status is on its card. **NEEDS REAL REVIT:** no row of [group CG](needs-checking/group-cg.md)
 > has been run, so no head has been placed by this feature in a model - read again 2026-10-18. Apply is
 > NOT refused by [D-117](decisions/D-117.md): `PLACE_FAMILY_INSTANCES` is PROVEN (version 3, proof dated
 > 2026-10-17); with *Ask to Keep* on ([D-138](decisions/D-138.md)) Revit asks Keep or Discard for it.

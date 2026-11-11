@@ -55,7 +55,29 @@ positive:
   - given: a family holding a freeform made by CREATE_FAMILY_FREEFORM_SOLID, which "freeform"
     expect: formCount 1 and elements 1, the freeform - version 3 knew no "freeform" and read it as an id
 
+  # Row 5b-295, added 2026-11-11 with version 5. NOT RUN - NEEDS-CHECKING
+  # Group NK, NK5. Version 4 listed the cut solid as "0 L".
+  - given: >
+      a scratch family with a solid extrusion "rect -500,-500 500,500" from 0 to
+      1000 (1000 L) and a void extrusion "circle 0,0 100" from -10 to 1010
+      through it, the two cut with COMBINE_FAMILY_FORMS - which reports the
+      volume before and after; which "all"
+    expect: >
+      the solid's row does NOT say "0 L": it says no volume was read on the
+      form itself and that it is in a join or cut; combinationList names the
+      cut with both members and the SAME after-volume COMBINE_FAMILY_FORMS
+      reported, 968.584 L, "as joined or cut"
+
 negative:
+  # Row 5b-295, added 2026-11-11 with version 5. NOT RUN - Group NK, NK5.
+  - given: >
+      the same family BEFORE the cut - the solid and the void there, in no
+      join or cut
+    expect: >
+      the solid reads its own 1000 L exactly as version 4 read it,
+      combinationList is empty, and no row says "join or cut" - the new words
+      are only ever said of a form that is in one
+
   - given: which "revolve" on the same family, which holds no revolve
     expect: formCount 0, formList empty, scanned 2 - the forms were looked at and none matched
 

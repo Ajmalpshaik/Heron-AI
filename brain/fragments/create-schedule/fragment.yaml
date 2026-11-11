@@ -33,9 +33,9 @@ capability: CREATE_SCHEDULE
 # and every version 2 word of `listKind` means what it meant, so a version 2
 # caller is bound exactly as before and runs version 2's path to the word.
 # `madeAs` is new: a second read of what was made, for every kind. The
-# version 2 card was itself not yet proved; version 1's proof below is kept
-# as a record, and the card is DRAFT until NEEDS-CHECKING Group KK (KK31-KK37)
-# proves version 3 and the owner signs.
+# version 2 card was itself not yet proved; version 1's proof below was kept
+# as a record, and the card was DRAFT at the time, until NEEDS-CHECKING Group
+# KK (KK31-KK37) proves version 3 and the owner signs.
 #
 # NOT HERE, ON PURPOSE: "Filter by sheet" and the embedded schedule are
 # settings of a schedule that exists, and are SET_SCHEDULE_OPTIONS'

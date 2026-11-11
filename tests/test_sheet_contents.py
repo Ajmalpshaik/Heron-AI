@@ -61,7 +61,10 @@ for _stream in (sys.stdout, sys.stderr):
         pass
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SERVER = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
+sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+
+import heron_tools as TOOLS                                     # noqa: E402
+
 SHEETS_CS = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "RevitSheets.cs")
 
 FAILURES = []
@@ -121,7 +124,7 @@ def sheet(number, name, views, schedules="absent", placeholder=False,
 
 
 def main():
-    server = read(SERVER)
+    server = TOOLS.server_text()
     cs = read(SHEETS_CS)
 
     line = lifted(server, "_sheet_line")

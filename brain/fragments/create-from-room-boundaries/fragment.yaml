@@ -213,10 +213,13 @@ contract:
       role: accounting
       type: int
 
+# WRITTEN ABOVE AN EARLIER PROOF, since replaced by the `proof:` block below -
+# read that block's own date and fingerprint, not this comment, for what ran.
 # VERSION 1's PROOF, kept as the record. It describes floors and ceilings only,
 # before wall finishes (row 5b-1255), and is STALE by D-30's fingerprint, so
-# version 2 is DRAFT and a change kept from it is refused (D-117) - floors and
-# ceilings by room included - until NEEDS-CHECKING Group HX is run and signed.
+# version 2 was DRAFT at the time and a change kept from it was refused (D-117)
+# - floors and ceilings by room included - until NEEDS-CHECKING Group HX is run
+# and signed.
 proof:
   date: '2026-10-21'
   by: Ajmal PS

@@ -16,8 +16,9 @@ capability: SELECT_BY_CATEGORIES
 # (View)' is a value the CALLER supplies", and with an empty one it was looked
 # up as a view named "". The code under version 2's proof is unchanged, so its
 # fingerprint still holds; the absent case was never measured, and the binding
-# that makes it work is in the add-in. DRAFT until NEEDS-CHECKING Group IT
-# proves version 3 (D-30); `proof-held:` below says so for check-signatures.
+# that makes it work is in the add-in. DRAFT at the time, until NEEDS-CHECKING
+# Group IT proves version 3 (D-30); `proof-held:` below says so for
+# check-signatures.
 version: 3
 proof-held: >
   Version 3 (2026-10-22, row 5b-1320) made inViewOnly optional - absent or

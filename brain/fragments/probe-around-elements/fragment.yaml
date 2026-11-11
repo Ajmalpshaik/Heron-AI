@@ -37,8 +37,8 @@ capability: PROBE_AROUND_ELEMENTS
 # words when links were not read - a beam in the structural link does not
 # block a point tested against this model alone - and to set includeLinks.
 #
-# The proof below is version 2's and no longer describes the code; DRAFT
-# until version 3 is proved on a real model (D-30).
+# The proof below was version 2's and no longer described the code;
+# DRAFT at the time, until version 3 is proved on a real model (D-30).
 version: 3
 source: OFFICIAL
 risk: READ

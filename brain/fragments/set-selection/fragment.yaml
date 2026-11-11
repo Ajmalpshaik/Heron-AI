@@ -72,9 +72,11 @@ contract:
       role: accounting
       type: IList<string>
 
+# WRITTEN ABOVE AN EARLIER PROOF, since replaced by the `proof:` block below -
+# read that block's own date and fingerprint, not this comment, for what ran.
 # VERSION 1's PROOF, KEPT AS THE RECORD. Version 2 changed impl/, so its
-# fingerprint no longer describes the code and the card is DRAFT until
-# version 2 is proved on a real model (D-30).
+# fingerprint no longer described the code and the card was DRAFT at the
+# time, until version 2 is proved on a real model (D-30).
 proof:
   date: '2026-11-02'
   by: Ajmal PS

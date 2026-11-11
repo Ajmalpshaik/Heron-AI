@@ -44,6 +44,10 @@ on:
       - 'requirements-lock.txt'
       - 'tools/heron-ready.py'
       - 'tools/build-release-assets.py'
+      # The server test_mcp_serves.py imports. gates.yml installs no MCP SDK
+      # and reports that suite NOT RUN, so without this line a pull request
+      # that changed only the server ran it nowhere.
+      - 'mcp/**'
       # What runs the checks, and this file: a change to either is a change
       # to what is measured here, and nothing else runs them on Windows.
       - 'tests/Heron.Installer.TestHost/**'

@@ -29,6 +29,15 @@ import os
 import re
 import sys
 
+# The one module of brain/ this gate imports, and it imports nothing but `os`
+# itself - so the gate still needs nothing installed. Found from this file's
+# own place, never the working folder: the checks below read the folder they
+# are RUN in.
+sys.path.insert(0, os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "brain"))
+
+import heron_checkout as CHECKOUT  # noqa: E402
+
 # ---------------------------------------------------------------- structure
 # The canonical layout. Top-level folders mirror the four product parts from
 # the specification, so "where do I fix the Revit thing" has one answer.
@@ -318,10 +327,18 @@ def main():
     # written and edited on machines with NO POWERSHELL - there is nothing to
     # fail on until the file reaches Windows, which is exactly the wrong moment
     # to find out. Safe either way: a BOM, or no non-ASCII byte.
+    #
+    # THIS IS THE ONE WALK HERE THAT STARTS AT THE TOP, so it is the one that
+    # met a session's worktree under .claude/worktrees/ - a second copy of
+    # every script, at another commit. It counted each twice, and a trap
+    # already fixed here would have failed this gate from a copy nobody is
+    # shipping (row 5b-1539). A folder holding its own .git is not this
+    # checkout, and `heron_checkout` is where that is decided.
     ps_checked = 0
     for dirpath, dirnames, filenames in os.walk("."):
-        dirnames[:] = [d for d in dirnames
-                       if d not in ("__pycache__", "bin", "obj", ".vs", ".git")]
+        dirnames[:] = CHECKOUT.own(dirpath, [
+            d for d in dirnames
+            if d not in ("__pycache__", "bin", "obj", ".vs", ".git")])
         for name in filenames:
             if not name.endswith(".ps1"):
                 continue

@@ -74,6 +74,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 
+import heron_checkout as CHECKOUT                  # noqa: E402
 import heron_fragment as FRAG                      # noqa: E402
 
 FRAGMENTS = os.path.join(ROOT, "brain", "fragments")
@@ -163,7 +164,11 @@ def remember_callers():
 
     found = []
     for where, dirs, files in os.walk(ROOT):
-        dirs[:] = [d for d in dirs if d not in (".git", "__pycache__")]
+        # A session's worktree under .claude/worktrees/ is another checkout, at
+        # another commit: a caller found there is not a caller this tree has,
+        # and each one this tree does have was named twice (row 5b-1539).
+        dirs[:] = CHECKOUT.own(
+            where, [d for d in dirs if d not in (".git", "__pycache__")])
         for name in files:
             if not name.endswith(".py"):
                 continue

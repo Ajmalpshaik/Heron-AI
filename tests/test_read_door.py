@@ -81,7 +81,6 @@ import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SERVER = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
 REGISTRY_CS = os.path.join(ROOT, "platform", "Heron.Core", "HeronOperationRegistry.cs")
 FRAGMENTS = os.path.join(ROOT, "brain", "fragments")
 AUDITOR_MD = os.path.join(ROOT, ".claude", "agents", "heron-model-auditor.md")
@@ -611,7 +610,7 @@ def main():
 
     print()
     print("3. Its wiring, read as text")
-    text = read(SERVER)
+    text = TOOLS.server_text()
     body = body_of(text, DOOR)
     check(body is not None, "%s is a function in the server" % DOOR)
     body = body or ""

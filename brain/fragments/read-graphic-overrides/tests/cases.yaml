@@ -14,7 +14,41 @@ positive:
       source is taken deliberately - choosing between several silently is how
       the wrong element's look gets copied
 
+  # Row 5b-154, added 2026-11-11 with version 2. NOT RUN - NEEDS-CHECKING
+  # Group NK, NK7. Version 1 answered "NO per-element override" for both.
+  - given: >
+      a wall whose ONLY per-element override in the view is a surface
+      foreground pattern - Override Graphics in View, By Element, Surface
+      Patterns, a pattern chosen and no colour
+    expect: >
+      withOverride 1, and its line in findings and in overrideList reading
+      "surface pattern <the pattern's name>" - never "NO per-element override"
+
+  - given: >
+      a wall whose ONLY override is a cut pattern with a red colour
+    expect: >
+      "cut RGB(255,0,0), cut pattern <name>" on its line, withOverride 1
+
+  - given: >
+      four walls, each with ONE override and nothing else: a detail level of
+      Fine; a projection line pattern; a cut line weight of 5; the surface
+      foreground pattern's Visible box unticked
+    expect: >
+      withOverride 4, and each wall's line naming its one setting - "detail
+      level Fine", "line pattern <name>", "cut line weight 5", "surface
+      pattern switched off". Version 1 answered "NO per-element override" for
+      all four
+
 negative:
+  # Row 5b-154, added 2026-11-11 with version 2. NOT RUN - Group NK, NK7.
+  - given: >
+      walls in the same view carrying no per-element override of any kind -
+      no pattern either
+    expect: >
+      withOverride 0, overrideList EMPTY, and each wall's "NO per-element
+      override in this view" line - reading the patterns must not make a plain
+      element look overridden
+
   - given: an element with NO override in that view
     expect: >
       an EMPTY settings object still handed back, and the row saying so. THIS IS

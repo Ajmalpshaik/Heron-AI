@@ -223,10 +223,10 @@ compatibility-note: >
   because its type moved in 2022 and 2023. `System.IO.Path.GetTempPath`,
   `Guid.TryParse` and `File.ReadAllText` are the framework's own (.NET 4.0
   and later). Compiles on every release
-  (tools/check-fragments-compile.py, 2026-10-11); how it behaves has not yet
-  been run in Revit. Version 3 adds the calls CREATE_FAMILY_BLEND,
-  CREATE_FAMILY_SWEEP and CREATE_FAMILY_SWEPT_BLEND made, unchanged 2020 to
-  2027 (their own cards, read 2026-10-01 and 2026-10-08):
+  (tools/check-fragments-compile.py, 2026-10-11); how it behaves had not yet
+  been run in Revit when this was written. Version 3 adds the calls
+  CREATE_FAMILY_BLEND, CREATE_FAMILY_SWEEP and CREATE_FAMILY_SWEPT_BLEND made,
+  unchanged 2020 to 2027 (their own cards, read 2026-10-01 and 2026-10-08):
   `FamilyItemFactory.NewBlend(isSolid, profile1, profile2, sketchPlane)`,
   `NewSweep(isSolid, path, pathPlane, profile, index, ProfilePlaneLocation)`,
   `NewSweptBlend(isSolid, path, pathPlane, bottomProfile, topProfile)`,
@@ -278,8 +278,9 @@ compatibility-note: >
 # back is theirs, moved. SET_FAMILY_SWEEP_PROFILE takes a sweep's id from
 # `formIds` as it took CREATE_FAMILY_SWEEP's `formId`. FREEFORM SOLIDS
 # (CREATE_FAMILY_FREEFORM_SOLID) and CONCEPTUAL FORMS stay their own cards.
-# Version 2's proof below no longer describes the code (impl/ changed) and is
-# kept as the record; the card is DRAFT until version 3 is proved (D-30).
+# Version 2's proof below no longer described the code (impl/ changed) and
+# was kept as the record; the card was DRAFT at the time, until version 3 is
+# proved (D-30).
 
 # ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #

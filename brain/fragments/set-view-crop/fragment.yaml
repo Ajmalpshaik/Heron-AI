@@ -21,8 +21,8 @@ capability: SET_VIEW_CROP
 # `elements` and `marginMm` are optional now, for a shaped crop. The binder
 # binds an optional curve list empty (HeronBindingNote.EmptyWhenAbsent,
 # mirrored in heron_fragment.EMPTY_WHEN_ABSENT) - the case added for this card.
-# The proof below is version 1's and no longer describes the code; DRAFT until
-# version 2 is proved.
+# The proof below was version 1's and no longer described the code; DRAFT at
+# the time, until version 2 is proved.
 version: 2
 source: OFFICIAL
 risk: MODIFY

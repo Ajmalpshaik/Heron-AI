@@ -95,8 +95,8 @@ purpose: >
 #
 #   Built on version 2 (row 5b-1290, filter rules) and changing none of it.
 #   Still READ ONLY. Version 2's proof below (signed 2026-10-21, #721) no
-#   longer describes the code and is kept as a record; the card is DRAFT until
-#   the version 3 proof (NEEDS-CHECKING Group IG) is signed.
+#   longer described the code and was kept as a record; the card was DRAFT at
+#   the time, until the version 3 proof (NEEDS-CHECKING Group IG) is signed.
 
 contract:
   needs:
@@ -143,10 +143,12 @@ contract:
       # A count of what was passed over, not of anything described.
       role: accounting
 
+# WRITTEN ABOVE AN EARLIER PROOF, since replaced by the `proof:` block below -
+# read that block's own date and fingerprint, not this comment, for what ran.
 # VERSION 2's PROOF, KEPT AS A RECORD - signed by Ajmal PS on 2026-10-21
 # (Group IH, #721). Version 3 changed impl/, so its fingerprint no longer
-# describes the code and the card is DRAFT until NEEDS-CHECKING Group IG
-# proves version 3 (D-30).
+# described the code and the card was DRAFT at the time, until
+# NEEDS-CHECKING Group IG proves version 3 (D-30).
 proof:
   date: '2026-10-22'
   by: Ajmal PS

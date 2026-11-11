@@ -20,9 +20,9 @@ capability: SET_CURTAIN_WALL_MULLIONS
 # type also carries is now refused naming both (D-54 s3), and a name no type
 # has is refused by the fragment, listing the curtain wall and curtain system
 # types, where the add-in used to refuse it before the run. Version 1's proof
-# below no longer describes the code and is kept as a record; the card is DRAFT
-# until NEEDS-CHECKING Group JP proves version 2 - both paths - and the owner
-# signs.
+# below no longer described the code and was kept as a record; the card was
+# DRAFT at the time, until NEEDS-CHECKING Group JP proves version 2 - both
+# paths - and the owner signs.
 #
 # THE CURTAIN SYSTEM TYPE, IN FULL - comments, not `purpose`, because
 # `purpose` is searched: written there at first, this text sent "select all
@@ -315,12 +315,13 @@ compatibility-note: >
 #   "put 50 x 150 mullions on the borders"  -> here
 #   "take the top mullion off"              -> here, horizontal border 2=none
 #   "put mullions on the curtain system type" -> here, on the curtain SYSTEM
-#                                              type (version 2, DRAFT until
-#                                              Group JP): grid 1 or grid 2,
-#                                              never vertical or horizontal -
-#                                              which way each grid runs is the
-#                                              face's. The curtain system itself
-#                                              is CREATE_CURTAIN_SYSTEM's
+#                                              type (version 2, DRAFT at the
+#                                              time, until Group JP): grid 1 or
+#                                              grid 2, never vertical or
+#                                              horizontal - which way each grid
+#                                              runs is the face's. The curtain
+#                                              system itself is
+#                                              CREATE_CURTAIN_SYSTEM's
 #   "which mullions are on this curtain system" -> NOT HERE - a question never
 #                                              lands on a write (D-86). Nothing
 #                                              reads a curtain system type's

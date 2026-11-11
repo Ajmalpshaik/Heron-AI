@@ -380,9 +380,7 @@ def main():
     import heron_brain as BRAIN
     check(hasattr(BRAIN, "check_answer"),
           "and the brain has the seam it is served through")
-    server_source = open(os.path.join(ROOT, "mcp", "server",
-                                      "heron_mcp_server.py"),
-                         encoding="utf-8").read()
+    server_source = TOOLS.server_text()
     check('part.get("citation")' in server_source,
           "the MCP renderer reads the citation - it was put in the dictionary "
           "and dropped by the formatter, so a host got a quoted clause with "
@@ -971,8 +969,12 @@ def main():
           "brain's README names that command - it said 'Four MCP tools' and "
           "listed them, and heron_check and heron_standards made it a stale "
           "description of which surfaces a caller can reach")
-    opened = server_source.index('"""')
-    header = server_source[opened:server_source.index('"""', opened + 3)]
+    # THE ENTRY FILE'S header - the module a host starts, the last on
+    # heron_tools' list. The one text opens with whichever file is listed
+    # first, and that file's header is not the server's.
+    entry_source = open(TOOLS.server_files()[-1], encoding="utf-8").read()
+    opened = entry_source.index('"""')
+    header = entry_source[opened:entry_source.index('"""', opened + 3)]
     check("revit_use_this_model      reads" not in header
           and "mcp/server/heron_tools.py" in header,
           "and the server's own module header does too - it listed seven "

@@ -101,15 +101,23 @@ def main():
     # It happened on 2026-09-15: `revit_phases` was appended to the end of
     # the file and sat 16 lines past the main block. Found by a review,
     # not by anything here - which is why this check exists now.
+    #
+    # THE BLOCK IS LOOKED FOR IN EVERY FILE THE SERVER IS (heron_tools owns
+    # the list), and a tool is late only when it sits below the block IN THE
+    # BLOCK'S OWN FILE - a line number compares with nothing in another one.
     import ast
-    tree = ast.parse(io.open(tool.SERVER, encoding="utf-8").read())
-    blocks = [node.lineno for node in tree.body
-              if isinstance(node, ast.If)
-              and "__main__" in ast.dump(node.test)]
+    blocks, entry = [], None
+    for path, name in tool.sources():
+        tree = ast.parse(io.open(path, encoding="utf-8").read())
+        for node in tree.body:
+            if isinstance(node, ast.If) and "__main__" in ast.dump(node.test):
+                blocks.append(node.lineno)
+                entry = name
     check(len(blocks) == 1,
           "the server has exactly one `if __name__ == \"__main__\"` block, "
           "at line %s" % (blocks or "nowhere"))
-    late = [one["name"] for one in rows if one["line"] > blocks[0]]
+    late = [one["name"] for one in rows
+            if one["file"] == entry and one["line"] > blocks[0]]
     check(not late,
           "and every one of the %d tool(s) is defined ABOVE it - a tool "
           "below never registers, because server.run() does not return%s"

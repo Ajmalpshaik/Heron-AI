@@ -120,7 +120,8 @@ and every one of its request values must be given; **not yet saved or run as a c
 ids in `overlapping`, per view), `REPORT_TAGS_AND_TARGETS` (`orphanTags`, per view).
 
 **A check that reads the selection.** A fragment whose card takes `elements` (or `devices`, `fixtures`...)
-from no request value - `FIND_DUPLICATE_ELEMENTS`, `FIND_DUPLICATE_VALUES`, `FIND_CLASHES` - runs on what is
+from no request value - `FIND_DUPLICATE_ELEMENTS`, `FIND_DUPLICATE_VALUES`, `FIND_CLASHES`, each while its
+card is PROVEN, which `--fragments` above lists and this sentence does not - runs on what is
 selected in Revit at that moment: the read starts with the chain reset. It can be saved; the chat says so,
 and the page marks it *reads the selection in Revit*.
 

@@ -15,8 +15,8 @@ capability: AUDIT_VIEW_FILTERS
 # override, as one string. Version 1 answered in counts and in lists a reply
 # cuts to three items of sixty characters; on a real HVAC project on Revit 2020
 # with 21 filters, no read printed a filter's rule at all. Left out it is false
-# and the audit answers exactly as version 1. DRAFT until version 2 is run in
-# Revit: NEEDS-CHECKING Group ED.
+# and the audit answers exactly as version 1. DRAFT at the time, until version
+# 2 is run in Revit: NEEDS-CHECKING Group ED.
 version: 2
 source: OFFICIAL
 risk: ANALYZE

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -33,7 +33,19 @@ capability: REPORT_FAMILY_FORMS
 # "freeform" is a kind. `which` left out now binds "not named" - every form
 # read, none handed on. DRAFT until proved on a real model (D-30); version 3's
 # proof below is the record.
-version: 4
+#
+# Version 5 (2026-11-11) changed impl/: A CUT OR JOINED SOLID NO LONGER READS
+# "0 L", and the card is back to DRAFT. Version 4 was PROVEN on 2026-11-02 (the
+# proof block below, kept as the record of what it proved - a family with no
+# join or cut in it). FRAGMENT-ISSUES row 5b-295: a solid cut by a void listed
+# as "0 L" (Revit 2024, 2026-10-02), because Revit gives the cut body to the
+# combination. Every join or cut in `combinationList` now carries its own
+# volume, read as COMBINE_FAMILY_FORMS reads it, and a solid that reads no
+# volume of its own while it is in one says so and points there. A solid in no
+# join or cut prints exactly as version 4 printed it. DRAFT until
+# NEEDS-CHECKING Group NK, NK5, is run (D-30). A read: it still answers
+# through revit_read while DRAFT, and says DRAFT (D-117 item 4).
+version: 5
 source: OFFICIAL
 risk: READ
 
@@ -104,7 +116,10 @@ contract:
       role: result
       type: string
     - name: combinationList
-      # Every join or cut in the family, with its members, on one line.
+      # Every join or cut in the family, with its members, on one line - and,
+      # since version 5 (row 5b-295), the volume Revit reads on the join or
+      # cut itself, in litres: where a cut solid's volume is, since the form
+      # reads none of its own.
       role: result
       type: string
     - name: scanned
