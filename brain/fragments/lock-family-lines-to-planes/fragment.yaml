@@ -44,6 +44,12 @@ purpose: >
   second run adds only what is new. Ends on no plane named are counted and
   said: they stay put when the planes move.
 
+  **ONE PLANE PER PLACE**, as DRAW_FAMILY_DETAIL_LINES rules it: of planes
+  named that coincide, the one that does not define the origin is locked to;
+  two such are refused as ambiguous, never both locked. A plane that touches
+  a line in a view where it is not seen edge on refuses the whole call - lock
+  each view's lines in a call of their own.
+
   **ALL OR NOTHING, READ BACK.** Every lock reads back locked, and every
   line's ends read back exactly where they were; any refusal from Revit fails
   the call with nothing kept. The ends come back in `ends`. Locked is not yet

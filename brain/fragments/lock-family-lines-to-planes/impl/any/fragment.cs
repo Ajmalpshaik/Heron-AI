@@ -263,6 +263,41 @@ else
         else wantedPlanes.Add(found[0]);
     }
 
+    // ONE PLANE PER PLACE - DRAW_FAMILY_DETAIL_LINES' rule. Where planes named
+    // coincide - a template's centre plane under an edge plane - the one that
+    // does not define the origin is the one a size moves, so the line follows it
+    // alone. Two such planes are ambiguous and refused, never both locked: a
+    // label moving one apart would leave the line held by both, and the family
+    // would not flex.
+    Func<Element, bool> fixedOrigin = e =>
+    {
+        var origin = e.get_Parameter(BuiltInParameter.DATUM_PLANE_DEFINES_ORIGIN);
+        return origin != null && origin.StorageType == StorageType.Integer && origin.AsInteger() == 1;
+    };
+    var placed = new List<Tuple<Element, Reference, Plane, string>>();
+    var seen = new HashSet<ElementId>();
+    foreach (var p in wantedPlanes)
+    {
+        if (seen.Contains(p.Item1.Id)) continue;
+        var together = wantedPlanes.Where(q => Math.Abs(Math.Abs(q.Item3.Normal.DotProduct(p.Item3.Normal)) - 1) < square
+            && Math.Abs(off(p.Item3, q.Item3.Origin)) < exactly).ToList();
+        foreach (var q in together) seen.Add(q.Item1.Id);
+        if (together.Count == 1) { placed.Add(p); continue; }
+        var movable = together.Where(q => !fixedOrigin(q.Item1)).ToList();
+        if (movable.Count != 1)
+            problems.Add(string.Join(" and ", together.Select(q => "\"" + q.Item4 + "\"")) + " coincide, and nothing "
+                + "says which a line on them should follow - both locked, a label moving one apart would leave the line "
+                + "held by both. Name only one of them, or move one apart first.");
+        else
+        {
+            placed.Add(movable[0]);
+            findings.Add(string.Join(", ", together.Where(q => q.Item1.Id != movable[0].Item1.Id).Select(q => "\"" + q.Item4 + "\""))
+                + " coincide with \"" + movable[0].Item4 + "\" and define the origin - only \"" + movable[0].Item4
+                + "\" is locked to.");
+        }
+    }
+    wantedPlanes = placed;
+
     Func<Curve, int, string> writtenEnd = (curve, i) =>
     {
         try
@@ -290,11 +325,21 @@ else
         var planeHits = wantedPlanes.ToDictionary(p => p.Item4, p => false);
         var planeSquare = wantedPlanes.ToDictionary(p => p.Item4, p => false);
         var near = wantedPlanes.ToDictionary(p => p.Item4, p => new List<Tuple<double, string>>());
+        // A line in a view where the plane is NOT seen edge on, though the line
+        // touches the plane - it cannot be locked there, and leaving it free
+        // while the rest is locked would answer for less than was asked.
+        var unseen = wantedPlanes.ToDictionary(p => p.Item4, p => new List<string>());
 
         foreach (var p in wantedPlanes)
             foreach (var piece in pieces)
             {
-                if (Math.Abs(p.Item3.Normal.DotProduct(piece.Item2.ViewDirection)) > square) continue;
+                if (Math.Abs(p.Item3.Normal.DotProduct(piece.Item2.ViewDirection)) > square)
+                {
+                    if (Math.Abs(off(p.Item3, piece.Item3.GetEndPoint(0))) < exactly
+                        || Math.Abs(off(p.Item3, piece.Item3.GetEndPoint(1))) < exactly)
+                        unseen[p.Item4].Add(piece.Item1 + " (in " + piece.Item2.Name + ")");
+                    continue;
+                }
                 planeSquare[p.Item4] = true;
                 var line = piece.Item3 as Line;
                 if (line == null || Math.Abs(line.Direction.DotProduct(p.Item3.Normal)) > square) continue;
@@ -372,6 +417,10 @@ else
             if (!planeSquare[p.Item4])
                 problems.Add("\"" + p.Item4 + "\" is not seen edge on in the view the lines are in, so nothing drawn "
                     + "there can be aligned to it.");
+            else if (unseen[p.Item4].Count > 0)
+                problems.Add("\"" + p.Item4 + "\" touches " + string.Join("; ", unseen[p.Item4].Distinct().Take(4))
+                    + ", but is not seen edge on in that view, so it cannot be locked there - and the rest is not locked "
+                    + "without it. Lock the lines of each view in a call of their own, or leave \"" + p.Item4 + "\" out.");
             else if (!planeHits[p.Item4])
                 problems.Add("Nothing lies along \"" + p.Item4 + "\" and nothing ends on it. " + (near[p.Item4].Count == 0
                     ? "No line end comes near it." : "Nearest: " + string.Join("; ", near[p.Item4].OrderBy(n => n.Item1)
