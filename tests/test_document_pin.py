@@ -241,6 +241,43 @@ def main():
           "did not point it at - the add-in has just reported doing so")
     check("will not change a model you did not point it at" in (other or ""),
           "the promise stays where it is true: on a read, which changes nothing")
+
+    # --- A CALLER THAT ASKS BEFORE A CHANGE SAYS THE CHANGE WAS NOT SENT ---
+    # The move's preview and the dashboard's Colour read first and change
+    # second. "Nothing has been sent to Revit" told their modeller outright
+    # that nothing was moved or coloured; the sentence that replaced it is
+    # true of the read and silent on the change (the review of 5b-1135).
+    print()
+    print("Before a change, the refusal still says the change was not sent")
+    not_sent = "No move has been sent to Revit: nothing was moved, and there is nothing to approve."
+    pin = DocumentPin()
+    pin.check(READ_REPLY)
+    asked_first = {"document": "Annexe", "projectKey": "99999999-dead-beef"}
+    try:
+        before = pin.check(asked_first, unsent=not_sent)
+    except TypeError:
+        # The pin as it stood takes no `unsent` (heron-ship 2a: fail, not crash).
+        before = pin.check(asked_first)
+    check(not_sent in (before or ""),
+          "the caller's own plain sentence is in the refusal: nothing was moved")
+    check("Heron had already asked Revit, and Revit answered from Annexe" in (before or "")
+          and (before or "").find("Heron had already asked Revit") < (before or "").find(not_sent)
+          and "Nothing has been sent to Revit" not in (before or ""),
+          "after the sentence that is true of the read - which never says nothing was sent")
+    check("will not change a model you did not point it at" in (before or ""),
+          "and the promise is kept beside it: nothing has been changed")
+    try:
+        both = pin.check(kept, did=did, unsent=not_sent)
+    except TypeError:
+        both = ""
+    check(bool(both) and not_sent not in both and did in both,
+          "it is never said beside a change the add-in reported - `did` wins")
+    for name, call in (("revit_preview_move", "reply, unsent="),
+                       ("_dashboard_colour", "views, unsent=")):
+        start = server_text.find("\ndef %s(" % name)
+        body = server_text[start:server_text.find("\ndef ", start + 1)] if start >= 0 else ""
+        check("pinned.check(" in body and call in body,
+              "%s hands the pin its own sentence for the change it has not sent" % name)
     body = server_text[server_text.find("\ndef revit_change("):]
     body = body[:body.find("\n@server.tool()")]
     check("pinned.check(reply, did=reported_elsewhere(capability, reply))" in body,

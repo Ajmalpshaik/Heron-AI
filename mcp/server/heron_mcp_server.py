@@ -1109,7 +1109,13 @@ def revit_preview_move(category: str = "ducts", distance: str = "") -> str:
     # that is not the model this chat has been working on, say so and offer
     # nothing to approve - a preview the user skims for the model they THINK
     # they are in is exactly how the wrong building gets changed.
-    wrong_model = pinned.check(reply)
+    #
+    # THE PREVIEW WAS A READ, AND THE MOVE HAS NOT BEEN SENT - so the refusal
+    # says that outright (`unsent`), as "Nothing has been sent to Revit" did
+    # for this caller until 5b-1135 took that sentence away.
+    wrong_model = pinned.check(
+        reply, unsent="No move has been sent to Revit: nothing was moved, and "
+                      "there is nothing to approve.")
     if wrong_model is not None:
         approval.clear()
         return _ended("refused", wrong_model)
@@ -1789,9 +1795,24 @@ def _by_words(request, door, values):
     lines.extend(_other_release_lines(found))
     lines.extend(_drift_lines(found))
     lines.extend(_method_lines(found))
+    # WHICH DOOR RUNS EACH ONE LISTED (review of 5b-1161). revit_change sends
+    # a capability that only reads to revit_read, so a hand-back that listed
+    # a READ and ended "call revit_change again with capability=<it>" named a
+    # door that refuses exactly that call - a turn spent learning it. Each
+    # such line is marked, and the closing sentence names both doors.
+    elsewhere = []
+
+    def marked(name, risk):
+        runs = _door_that_runs(door, risk, name)
+        if runs == door:
+            return ""
+        elsewhere.append(name)
+        return "   -> run it with %s, not %s" % (runs, door)
+
     lines.append("")
-    lines.append("  best match   %s   (%s)"
-                 % (capability, found.get("risk") or "risk unread"))
+    lines.append("  best match   %s   (%s)%s"
+                 % (capability, found.get("risk") or "risk unread",
+                    marked(capability, found.get("risk"))))
     lines.extend(_contract_lines(capability, separator=False))
 
     # EVERY CANDIDATE CARRIES WHAT IT NEEDS TYPED, not only the first. A host
@@ -1806,8 +1827,9 @@ def _by_words(request, door, values):
         others.append(c)
     for c in others[:5]:
         lines.append("")
-        lines.append("  also close   %s   (%s)   %s"
-                     % (c["capability"], c.get("risk") or "risk unread", c["why"]))
+        lines.append("  also close   %s   (%s)   %s%s"
+                     % (c["capability"], c.get("risk") or "risk unread", c["why"],
+                        marked(c["capability"], c.get("risk"))))
         lines.extend("  " + line if line else line
                      for line in _contract_lines(c["capability"], separator=False,
                                                  notes=False))
@@ -1816,10 +1838,28 @@ def _by_words(request, door, values):
     lines.append("  A NEWLINE separates one value from the next. A SEMICOLON "
                  "does not - it belongs to the value it sits inside.")
     lines.append("")
-    lines.append("  If one of these is what the user meant, call %s again with "
-                 "capability=<it> and its values. If none is, ask the user."
-                 % door)
+    if elsewhere:
+        lines.append("  If one of these is what the user meant, call the door that "
+                     "runs it with capability=<it> and its values: revit_read for "
+                     "one marked so above - %s does not run a capability that only "
+                     "reads - and %s again for any other. If none is, ask the user."
+                     % (door, door))
+    else:
+        lines.append("  If one of these is what the user meant, call %s again with "
+                     "capability=<it> and its values. If none is, ask the user."
+                     % door)
     return None, _ended("handed_back", "\n".join(lines))
+
+
+def _door_that_runs(door, risk, capability):
+    """
+    The door a capability listed in a hand-back is run through, when the
+    list was asked for at `door`: revit_read for one the change door sends
+    there (heron_tools.below_refusal), and `door` itself for every other -
+    a risk nobody could read included, which the door refuses in its own
+    words.
+    """
+    return "revit_read" if tools.below_refusal(door, risk, capability) else door
 
 
 def _matched_line(request, capability):
@@ -4200,7 +4240,10 @@ def _dashboard_colour(parameter, clear=False, identity=None):
             said = "Revit did not say which view is active, so nothing was changed."
             _note(tool, started, 0, reply=said, outcome="refused")
             return {"ok": False, "said": said}
-        wrong_model = pinned.check(views)
+        # ONLY THE VIEWS WERE READ; THE COLOURING HAS NOT BEEN SENT (`unsent`).
+        wrong_model = pinned.check(
+            views, unsent="No change has been sent to Revit: no view was coloured "
+                          "or cleared.")
         if wrong_model is not None:
             _note(tool, started, 0, reply=wrong_model, outcome="refused")
             return {"ok": False, "said": wrong_model}

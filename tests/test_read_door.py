@@ -522,6 +522,18 @@ def change_floor(text, door_refusal):
     check('return _ended("refused", below)' in after,
           "and the call ends 'refused' on the activity list, nothing having been sent")
 
+    # THE WORDS PATH MUST NOT HAND BACK A DOOR THAT REFUSES (the review of
+    # 5b-1161). Read as text here; tests/test_mcp_serves.py calls it.
+    words = body_of(text, "_by_words") or ""
+    runs = body_of(text, "_door_that_runs") or ""
+    check('tools.below_refusal(door, risk, capability)' in runs and '"revit_read"' in runs,
+          "the server asks the floor which door runs a capability it lists")
+    check("_door_that_runs(door, risk, name)" in words
+          and words.count("marked(") >= 3,
+          "and the hand-back marks the best match and every other candidate with it")
+    check("revit_read for " in words and "if elsewhere:" in words,
+          "and its closing sentence names revit_read whenever one listed is a read")
+
 
 def main():
     # ASK BEFORE CALLING - heron-ship 2a. On the code as it stood these names

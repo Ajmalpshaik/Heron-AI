@@ -427,7 +427,7 @@ class DocumentPin(object):
                 return field
         return None
 
-    def check(self, reply, did=None):
+    def check(self, reply, did=None, unsent=None):
         """
         Pin on first sight; afterwards, refuse a different document.
 
@@ -444,6 +444,12 @@ class DocumentPin(object):
         acted by then, and says so itself. `did` is the write path's own
         sentence in place of that one (`reported_elsewhere`): what the add-in
         reported doing.
+
+        `unsent` IS FOR A CALLER THAT ASKS BEFORE A CHANGE - the move's
+        preview, the dashboard's Colour. Only a read has gone, and the change
+        it was for has not: that caller says so in one plain sentence, added
+        after the read's. "Nothing has been sent to Revit" used to say it for
+        them, and was true of the change though never of the read.
 
         IT COMPARES LIKE WITH LIKE, WHICH IT DID NOT USED TO. The version
         before this one compared the collapsed keys `key_of` builds, so the
@@ -519,6 +525,8 @@ class DocumentPin(object):
             "Heron had already asked Revit, and Revit answered from %s. Heron is not "
             "showing that answer, because it is not about the model this chat works on."
             % ("the model in front" if was == now else now))
+        if unsent and not did:
+            after = "%s %s" % (after, unsent)
 
         # "HERON WILL NOT CHANGE A MODEL YOU DID NOT POINT IT AT" IS A PROMISE
         # ONLY BEFORE A CHANGE. After one - `did` - the add-in may have kept it
