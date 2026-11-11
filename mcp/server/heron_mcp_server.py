@@ -4892,14 +4892,22 @@ def heron_resolve(capability: str) -> str:
 
     It names every value the caller supplies, with its type and how to write
     one - which is the question that otherwise sends somebody into
-    fragment.yaml and the add-in's parser. It touches nothing and needs no
-    Revit.
+    fragment.yaml and the add-in's parser. It changes nothing in the model
+    and needs no Revit. A capability nobody provides is noted as wanted, for
+    Heron's gap report (D-63).
 
     NOT NEEDED FOR THE CAPABILITY heron_lookup ALREADY NAMED, nor after a
     revit_read or revit_change handed back a list: both already carry these
     same lines. Call it for a capability named some other way, or for the
     risk, releases and providers.
     """
+    # "IT TOUCHES NOTHING" UNTIL 2026-11-11 (FRAGMENT-ISSUES 5b-1165), and it
+    # does: heron_brain.resolve records a want for a capability no fragment
+    # provides on any release, in the knowledge store every chat on the
+    # machine reads unless HERON_KNOWLEDGE names another. The write is by
+    # decision (D-63); the sentence was the defect. Whatever the host typed is
+    # what is noted, a typo included; whether a name close to nothing Heron
+    # knows should be noted at all is the gap report's question, the owner's.
     revit, how = _revit_version()
 
     try:

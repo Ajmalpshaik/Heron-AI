@@ -136,6 +136,20 @@ def main():
         check(not missing.get("blocked_by_version"),
               "and it is not mistaken for a version refusal, which would send "
               "the reader looking for a fragment that does not exist")
+        # AND ASKING WROTE SOMETHING DOWN (D-63, FRAGMENT-ISSUES 5b-1165): the
+        # name is noted as wanted, in the store. That is by decision; it is
+        # why the tool's description may not say "It touches nothing", which
+        # section 6 below reads.
+        noted = None
+        opened = getattr(BRAIN, "_Open", None)
+        if opened is not None:
+            with opened() as store:
+                noted = store.execute(
+                    "SELECT why FROM capabilities_wanted WHERE name = ?",
+                    ("NO_SUCH_CAPABILITY_EXISTS",)).fetchone()
+        check(noted is not None and "asked for by name" in str(noted[0]),
+              "and the name asked for is noted as WANTED in the knowledge store "
+              "(D-63) - so resolving is not 'touching nothing'")
 
         # --- 3. the wall ----------------------------------------------------
         print()
@@ -479,6 +493,21 @@ def main():
             # that fails at its last step.
             check("_cannot_run()" in body,
                   "%s tells the caller what it still cannot RUN" % name)
+
+        # WHAT heron_resolve SAYS OF ITSELF (FRAGMENT-ISSUES 5b-1165). Its
+        # description said "It touches nothing and needs no Revit", and
+        # section 2 above has just watched it note a want in the store.
+        import ast
+        described = ""
+        for node in ast.walk(ast.parse(server)):
+            if isinstance(node, ast.FunctionDef) and node.name == "heron_resolve":
+                described = " ".join((ast.get_docstring(node) or "").split())
+        check(bool(described) and "touches nothing" not in described,
+              "heron_resolve's description no longer says it touches nothing")
+        check("changes nothing in the model" in described and "needs no Revit" in described,
+              "it says what is so: nothing in the MODEL changes, and it needs no Revit")
+        check("noted as wanted" in described and "D-63" in described,
+              "and that a capability nobody provides is noted as wanted (D-63)")
 
         # --- 6b. a window that empties the trail is not an empty trail ------
         # ROW 5b-93, AND IT IS SECTION 7's ARGUMENT ONE TOOL ALONG. `gaps`
