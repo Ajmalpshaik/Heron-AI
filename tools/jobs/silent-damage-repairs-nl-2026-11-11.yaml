@@ -1,20 +1,24 @@
-# A card that was PROVEN, changes the model, and could report a wrong result
-# as a success - repaired in code on 2026-11-11, back to DRAFT, and the job
-# for the proof it now owes. NEEDS-CHECKING Group NL has the rows.
+# Two cards that were PROVEN, change the model, and could report a wrong
+# result as a success - repaired in code on 2026-11-11, each back to DRAFT,
+# one job each for the proof it now owes. NEEDS-CHECKING Group NL has the rows.
 #
 #   set-routing-preference  SET_ROUTING_PREFERENCE  FRG-MEP-046  version 2  rows 5b-1120, 5b-1549  NL1 - NL4
+#   add-project-parameter   ADD_PROJECT_PARAMETER   FRG-PAR-010  version 3  row 5b-1127            NL5 - NL8
 #
 #     python tools/batch-prove.py tools/jobs/silent-damage-repairs-nl-2026-11-11.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/silent-damage-repairs-nl-2026-11-11.yaml --session <pid>
 #
 # NOTHING HERE HAS RUN. Written 2026-11-11 in a cloud session with no Revit:
-# the card compiles on every release it declares, and a compile is not a
+# each card compiles on every release it declares, and a compile is not a
 # proof.
 #
 # THE MODEL IS THE ONE THE 2026-11-02 ROUNDS USED, so nothing new is arranged:
 # on Revit 2020, "P1102 MEP" - the scratch copy of
-# Samples\rme_advanced_sample_project.rvt under %TEMP%\heron-work\prove-1102.
-# NEVER A WORKING PROJECT. If it has gone, make the copy again.
+# Samples\rme_advanced_sample_project.rvt under %TEMP%\heron-work\prove-1102 -
+# and, beside it in that folder, heron-p1102-shared.txt, the shared parameter
+# file ADD_PROJECT_PARAMETER was proved on that day (group HERON, parameter
+# HERON_P1102_TAG). NEVER A WORKING PROJECT. If either has gone, make the copy
+# again; NL8 in Group NL says how a new file is made.
 #
 # TWO VALUES BELOW ARE MY ASSUMPTION OF WHAT THAT SAMPLE HOLDS, because no
 # session here has read it. Read both in Revit before the run, and type what
@@ -32,7 +36,7 @@
 #
 # `write: true` runs each leg inside a transaction group and ROLLS IT BACK.
 # Look at the model afterwards anyway - rollback has failed on this PC before
-# (BD1).
+# (BD1). A shared parameter file is NOT rolled back: it is a file on disk.
 
 model: "P1102 MEP (a scratch copy of the Revit 2020 sample rme_advanced_sample_project), Revit 2020"
 
@@ -64,3 +68,32 @@ jobs:
       "No Elbows part is called 'Standard'" there would mean no loaded family
       has that type, and the negative proved nothing. The refused swap that is
       PUT BACK (row 5b-1549) is not either leg: it is NL3, run by name.
+
+  # ------------------------------------------------------------------- 5b-1127
+  # ADMIN: no batch sends it (D-106). The dry run prints the command to run it
+  # by name, the owner's Admin switch on. POSITIVE: the file and the parameter
+  # the 2026-11-02 proof used, both there, so it is reused and bound - and
+  # `createMissing` is left out on purpose. NEGATIVE: THE SAME CALL WITH ONE
+  # LETTER OF THE FILE NAME WRONG - refused naming the path, `bound` false, and
+  # NO file of that name in the folder afterwards. Version 2 made the file,
+  # bound the parameter and answered `bound true`.
+  - fragment: add-project-parameter
+    expect: bound
+    set:
+      sharedParameterFile: "C:/Users/ajmal/AppData/Local/Temp/heron-work/prove-1102/heron-p1102-shared.txt"
+      groupName: "HERON"
+      parameterName: "HERON_P1102_TAG"
+      categories: "Ducts"
+      instanceBinding: true
+    negative-set:
+      sharedParameterFile: "C:/Users/ajmal/AppData/Local/Temp/heron-work/prove-1102/heron-p1102-shraed.txt"
+      groupName: "HERON"
+      parameterName: "HERON_P1102_TAG"
+      categories: "Ducts"
+      instanceBinding: true
+    note: >
+      The path is the one on the card's own proof block. BEFORE the run, look
+      in the folder: heron-p1102-shraed.txt must NOT be there, or the negative
+      is the positive. AFTER it, look again - that look is the proof of row
+      5b-1127, and `bound false` is only the fragment's own word for it. Read
+      Manage > Shared Parameters before and after as well (5b-317).

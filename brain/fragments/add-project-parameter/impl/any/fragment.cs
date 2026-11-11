@@ -1,5 +1,6 @@
 // NOT STANDALONE. Assumes `doc`, `app`, `sharedParameterFile`, `groupName`,
-// `parameterName`, `categories` and `instanceBinding` are in scope; leaves
+// `parameterName`, `categories`, `instanceBinding` and `createMissing` are in
+// scope; leaves
 // `findings`, `bound`, `boundCategories`, `categoriesNotBound` and
 // `sharedParameterFileRestored` behind.
 //
@@ -58,6 +59,22 @@
 // after the binding each category asked for is looked for in what the
 // document now holds. Every one missing, for either reason, is in
 // `categoriesNotBound` with the reason.
+//
+// ===========================================================================
+// VERSION 3 (FRAGMENT-ISSUES 5b-1127).
+// ===========================================================================
+//
+// A FILE OR A PARAMETER THAT IS NOT THERE IS REFUSED UNLESS IT WAS ASKED FOR.
+// Version 2 made whatever was missing: given a shared parameter file path
+// that did not exist it wrote a new file there, wrote the definition into it,
+// bound it and answered `bound true` - so a mistyped path left a new file on
+// disk and a parameter with a new GUID in the project, and a mistyped name did
+// the same inside the office's own file. Neither is in the model's
+// transaction, so neither goes with Undo. A mistyped path or name is more
+// likely than a missing one, so both are now refused, naming what was not
+// found, unless the caller passes `createMissing` true. The file is looked
+// for before Revit's shared parameter file setting is touched, and the
+// definition before a group is made for it, so a refusal writes nothing.
 
 var findings = new List<string>();
 var bound = false;
@@ -131,6 +148,16 @@ else if (!categories.Any(each => each != null && each.AllowsBoundParameters))
     // Nothing was changed, so there is nothing to put back.
     sharedParameterFileRestored = true;
 }
+else if (!createMissing && !System.IO.File.Exists(sharedParameterFile))
+{
+    // A MISTYPED PATH IS MORE LIKELY THAN A MISSING FILE (version 3). Nothing
+    // is written, and the setting was never touched, so nothing is put back.
+    findings.Add(string.Format("There is no shared parameter file at '{0}', so nothing was done: no "
+        + "file was made, no parameter was added and the shared parameter file Revit has set was "
+        + "not touched. Check the path against Manage > Shared Parameters. If a NEW shared "
+        + "parameter file is wanted there, ask again and say to create it.", sharedParameterFile));
+    sharedParameterFileRestored = true;
+}
 else
 {
     // Read BEFORE anything is changed, so it can be put back whatever happens.
@@ -147,8 +174,9 @@ else
     {
         try
         {
-            // Create the file if it is not there. The header is what makes Revit
-            // recognise it as a shared parameter file rather than a text file.
+            // Create the file if it is not there - only when asked to, see the
+            // branch above. The header is what makes Revit recognise it as a
+            // shared parameter file rather than a text file.
             if (!System.IO.File.Exists(sharedParameterFile))
             {
                 System.IO.File.WriteAllText(sharedParameterFile,
@@ -168,21 +196,44 @@ else
             }
             else
             {
-                var group = file.Groups.get_Item(groupName) ?? file.Groups.Create(groupName);
+                // LOOKED FOR BEFORE ANYTHING IS MADE (version 3): a group is not
+                // created to hold a parameter that is then refused.
+                var group = file.Groups.get_Item(groupName);
 
                 // Reuse rather than duplicate. Two definitions of one name in one
                 // group means two different GUIDs, and a colleague's model then
                 // has a parameter that looks the same and is not.
-                var definition = group.Definitions.get_Item(parameterName) as ExternalDefinition;
+                var definition = group == null
+                    ? null
+                    : group.Definitions.get_Item(parameterName) as ExternalDefinition;
                 var reusedDefinition = definition != null;
-                if (definition == null)
+                var refusedNew = definition == null && !createMissing;
+                if (definition == null && createMissing)
                 {
+                    if (group == null) group = file.Groups.Create(groupName);
                     var options = (ExternalDefinitionCreationOptions)optionsCtor.Invoke(
                         new object[] { parameterName, textSpec(optionsCtor.GetParameters()[1].ParameterType) });
                     definition = group.Definitions.Create(options) as ExternalDefinition;
+                    if (definition != null)
+                        findings.Add(string.Format("'{0}' was not in the shared parameter file, so it was "
+                            + "created there in group '{1}', as asked. The file keeps it whatever is done "
+                            + "with this change - Undo does not take it out", parameterName, groupName));
                 }
 
-                if (definition == null)
+                if (refusedNew)
+                {
+                    // A MISTYPED NAME IS MORE LIKELY THAN A NEW PARAMETER. The
+                    // file is exactly as it was: nothing was written into it.
+                    findings.Add(string.Format("The shared parameter file '{0}' has no {1}, so nothing was "
+                        + "done: nothing was written into the file and no parameter was added. Check "
+                        + "the name and the group in Manage > Shared Parameters. If a NEW parameter is "
+                        + "wanted, ask again and say to create it.",
+                        sharedParameterFile,
+                        group == null
+                            ? "group called '" + groupName + "' to find '" + parameterName + "' in"
+                            : "parameter called '" + parameterName + "' in group '" + groupName + "'"));
+                }
+                else if (definition == null)
                 {
                     findings.Add(string.Format("Could not create a definition for '{0}'", parameterName));
                 }
