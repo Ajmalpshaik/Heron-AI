@@ -1100,10 +1100,14 @@ sent to Revit 2020, the dry run having said `WOULD RUN`, and each spent a compil
 Revit is connected - a ping, which claims no Revit; with two connected, the one `--session` names - and
 a card that leaves that release out is `REFUSED`, dry run or real, naming the card's releases and the
 connected one. The rule is the client's `excluded_release_refusal`, which `validate` asks of the Revit
-it binds before it sends anything, so a dry run with no Revit answering says nothing about releases
-and the run still sends nothing. **The logic is held by
+it binds before it sends a fragment, so a dry run with no Revit answering says nothing about releases
+and the run still sends no fragment. **A dry run therefore pings Revit, and says so**: it printed
+*"nothing will be sent to Revit"* until the same day, which the ping made untrue. Its `mode:` line now
+says no fragment is run and nothing in a model is read or changed, and that a connected Revit is asked
+only whether it is there; its closing line says which happened - a dry run with no runnable job asks
+nothing and still says *"Nothing was sent to Revit"*. **The logic is held by
 [`tests/test_batch_prove.py`](../tests/test_batch_prove.py) on a stand-in Revit; the run against a real
-one is still owed** - NEEDS REAL REVIT.
+one is still owed** - NEEDS REAL REVIT, [Group NI](../docs/needs-checking/group-ni.md), NI1 to NI4.
 
 **Hole 2 — it passed fragments that had done nothing.** `heron_validate` judges whether the NEGATIVE
 came back empty, which is [D-30](../docs/DECISIONS.md)'s leg and which a fragment that does nothing
