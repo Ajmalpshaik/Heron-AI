@@ -2388,6 +2388,14 @@ as it stood with every rows file's name left out. Every other `.md`, `.yaml`, `.
 re-pointed as its own pass, written after the register. A link in fenced code or an inline code span, and one naming
 two rows, is left as written. The report says how many links follow and in which documents.
 
+**A rows file past row 999 has four digits in its name, and the read-back knows it** - since 2026-11-11,
+[row 5b-1169](../docs/FRAGMENT-ISSUES.md). Rows 1001 to 1025 go to `section-5b-rows-1001-1025.md`, and the
+comparison that leaves every rows file's name out took exactly three digits, so once any row linked to a 5b row
+numbered 1000 or more the split refused - *"differ from the register in more than the rows file a link names"* -
+and so, by the same function, would `archive-fragment-issues.py`. It takes three or more now. The real register
+was not split in that change ([row 5b-1181](../docs/FRAGMENT-ISSUES.md) is its own, run when no other branch is
+adding rows).
+
 **PROPOSALS.md is split the same way** - `python tools/split-register.py proposals` - every section to its own file in
 [`docs/proposals/`](../docs/proposals/part-a.md), named from its opening words: `## F23 — ...` is `f23.md`, and a
 section headed only by a date takes its first five words as well, so two written on one day get two files.
