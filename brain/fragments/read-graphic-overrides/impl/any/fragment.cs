@@ -1,5 +1,5 @@
 // NOT STANDALONE. Assumes `doc`, `view` and `elements` are in scope; leaves
-// `overrides`, `findings` and `withOverride` behind.
+// `overrides`, `findings`, `withOverride` and `overrideList` behind.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -21,10 +21,26 @@
 // PER-ELEMENT ONLY. A category or filter override in the same view is a
 // different setting and is not read here - which is why an element can look
 // grey and come back with nothing on it.
+//
+// THE FILL IS READ TOO (version 2, FRAGMENT-ISSUES 5b-154) - the surface
+// pattern, and the cut pattern and its colour, the way REPORT_CATEGORY_
+// OVERRIDES reads them since row 173. Version 1 read the line colours, the
+// surface colour, transparency, halftone and line weight and no pattern at
+// all, so an element overridden ONLY by a fill pattern, or only by a cut
+// colour, was reported "NO per-element override in this view" - the sentence
+// that sends a person to look somewhere else. The `overrides` object handed on
+// was always Revit's own, patterns included; only the report was blind.
+//
+// AND THE WHOLE ANSWER TRAVELS AS ONE STRING, `overrideList` - every element
+// that carries an override, its line in full, joined; empty when none does.
+// `findings` holds the same lines as a list, unchanged, because every proof
+// record quotes it.
 
 var findings = new List<string>();
 var withOverride = 0;
 OverrideGraphicSettings overrides = null;
+var overrideList = "";
+var lines = new List<string>();
 
 if (!view.AreGraphicsOverridesAllowed())
 {
@@ -74,6 +90,27 @@ else
                 surfaceColour.Red, surfaceColour.Green, surfaceColour.Blue));
         }
 
+        // A real pattern id is a set pattern (5b-154) - read as
+        // REPORT_CATEGORY_OVERRIDES reads it.
+        if (settings.SurfaceForegroundPatternId != ElementId.InvalidElementId)
+        {
+            var pattern = doc.GetElement(settings.SurfaceForegroundPatternId);
+            parts.Add("surface pattern " + (pattern == null ? "set" : pattern.Name));
+        }
+
+        // THE CUT HALF OF THE FILL, read the same way as the surface half.
+        var cutFill = settings.CutForegroundPatternColor;
+        if (cutFill != null && cutFill.IsValid)
+        {
+            parts.Add(string.Format("cut RGB({0},{1},{2})", cutFill.Red, cutFill.Green, cutFill.Blue));
+        }
+
+        if (settings.CutForegroundPatternId != ElementId.InvalidElementId)
+        {
+            var cutPattern = doc.GetElement(settings.CutForegroundPatternId);
+            parts.Add("cut pattern " + (cutPattern == null ? "set" : cutPattern.Name));
+        }
+
         if (settings.Transparency > 0) parts.Add(string.Format("{0}% transparent", settings.Transparency));
         if (settings.Halftone) parts.Add("halftone");
         if (settings.ProjectionLineWeight > 0) parts.Add("line weight " + settings.ProjectionLineWeight);
@@ -81,8 +118,10 @@ else
         if (parts.Count > 0)
         {
             withOverride++;
-            findings.Add(string.Format("{0} (id {1}): {2}", element.Name, element.Id,
-                string.Join(", ", parts)));
+            var line = string.Format("{0} (id {1}): {2}", element.Name, element.Id,
+                string.Join(", ", parts));
+            findings.Add(line);
+            lines.Add(line);
         }
         else
         {
@@ -94,4 +133,6 @@ else
 
     findings.Insert(0, string.Format("{0} of {1} element(s) carry a per-element override in '{2}'",
         withOverride, elements.Count, view.Name));
+
+    overrideList = string.Join("  ||  ", lines.ToArray());
 }
