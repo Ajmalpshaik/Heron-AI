@@ -1458,6 +1458,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ni.md`](needs-checking/group-ni.md)
 
+## Group NL - a card that was PROVEN, changes the model and could report a wrong result as a success, repaired in code and back to DRAFT: `SET_ROUTING_PREFERENCE` version 2 (2026-11-11)
+
+**Its own file:** [`needs-checking/group-nl.md`](needs-checking/group-nl.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

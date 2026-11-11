@@ -30,6 +30,27 @@
 // A PART NAMED BUT NOT FOUND RETURNS THE NEAR MISSES. "Copper" and
 // "Copper - K" are different segments, and choosing one for the caller is a
 // confident wrong answer.
+//
+// ===========================================================================
+// VERSION 2 (FRAGMENT-ISSUES 5b-1120 and 5b-1549).
+// ===========================================================================
+//
+// A FITTING IS A FAMILY AND A TYPE, AND THE TYPE NAME ALONE DOES NOT SAY WHICH.
+// "Standard" is the type name of a mitred elbow and of a balancing damper in
+// one ordinary project, and version 1 took whichever of them the collector met
+// first, wrote it into the rule and reported a change. A fitting is now named
+// the way Revit's type selector writes it - "Family: Type", with or without a
+// space round the colon, the spelling the binder takes for a type - or by its
+// type name alone when ONE loaded family has a type of that name. A type name
+// two families share is refused, and each is listed as "Family: Type".
+//
+// A REFUSED SWAP IS PUT BACK. RemoveRule comes before AddRule because there is
+// no SetRule, and until version 2 a refusal after it - AddRule throwing, or
+// the read-back not showing the part - left the type with its rule REMOVED:
+// nothing here threw, so the caller's transaction was kept. The two calls and
+// the read-back now sit in one SubTransaction, kept only when the rule reads
+// back as asked and rolled back otherwise, so a refusal leaves that type's
+// routing preferences exactly as they were (Constitution Article 8).
 
 var findings = new List<string>();
 var rulesChanged = 0;
@@ -81,6 +102,53 @@ if (proceed && wantedName.Length == 0)
 // THE PART, BY NAME. Segments are Segment elements; every other group points
 // at a loaded family symbol, and looking in the wrong collection is how a
 // perfectly real name comes back missing.
+//
+// ---- PART NAMES: plain text only, no Revit type ----------------------------
+// tests/test_binding_note.py compiles everything between this marker line and
+// END PART NAMES into Heron.BindingNote.TestHost and asks it row 5b-1120's own
+// names, beside the binder's rule - so the matching is tested with no Revit.
+// Keep both marker lines, and keep every Revit type out from between them.
+//
+// A name fits a part when it is the part's own name, or "Family: Type" for a
+// part that has a family. Revit allows no colon in a family or type name, so
+// the first colon is the divider and the spaces round it carry nothing.
+// Capitals do not count, as they never did here.
+Func<string, string, string, bool> namesPart = (family, name, wanted) =>
+{
+    if (name == null || wanted == null) return false;
+    if (string.Equals(name, wanted, StringComparison.OrdinalIgnoreCase)) return true;
+    var colon = wanted.IndexOf(':');
+    if (colon < 0 || string.IsNullOrEmpty(family)) return false;
+    return string.Equals(wanted.Substring(0, colon).Trim(), family, StringComparison.OrdinalIgnoreCase)
+        && string.Equals(wanted.Substring(colon + 1).Trim(), name, StringComparison.OrdinalIgnoreCase);
+};
+
+// Every part the name fits, by position. ONE is the part; two or more is a
+// name that does not say which; none is a name nothing has.
+Func<IList<string>, IList<string>, string, List<int>> partsNamed = (families, names, wanted) =>
+{
+    var fits = new List<int>();
+    for (var i = 0; i < names.Count; i++)
+        if (namesPart(families[i], names[i], wanted)) fits.Add(i);
+    return fits;
+};
+// ---- END PART NAMES ---------------------------------------------------------
+
+// A part the way Revit's type selector writes it: "Family: Type" for a
+// fitting, the name alone for a segment.
+Func<Element, string> partLabel = part =>
+{
+    if (part == null) return "<not loaded>";
+    var symbol = part as FamilySymbol;
+    var family = "";
+    if (symbol != null)
+    {
+        try { family = symbol.FamilyName ?? ""; }
+        catch (Exception) { family = ""; }
+    }
+    return family.Length == 0 ? part.Name : family + ": " + part.Name;
+};
+
 Element wantedPart = null;
 if (proceed)
 {
@@ -102,23 +170,56 @@ if (proceed)
     }
     catch (Exception) { }
 
+    // Three lists, position for position: the part, its family ("" for a
+    // segment) and its own name. Only the two text lists go to the matching.
+    var parts = new List<Element>();
+    var partFamilies = new List<string>();
+    var partNames = new List<string>();
     foreach (var candidate in candidates)
     {
         if (candidate == null || candidate.Name == null) continue;
-        if (string.Equals(candidate.Name, wantedName, StringComparison.OrdinalIgnoreCase))
+        var asSymbol = candidate as FamilySymbol;
+        var familyName = "";
+        if (asSymbol != null)
         {
-            wantedPart = candidate;
-            break;
+            try { familyName = asSymbol.FamilyName ?? ""; }
+            catch (Exception) { familyName = ""; }
         }
+        parts.Add(candidate);
+        partFamilies.Add(familyName);
+        partNames.Add(candidate.Name);
     }
 
-    if (wantedPart == null)
+    var fitting = partsNamed(partFamilies, partNames, wantedName);
+    if (fitting.Count == 1)
     {
-        foreach (var candidate in candidates)
+        wantedPart = parts[fitting[0]];
+    }
+    else if (fitting.Count > 1)
+    {
+        // TWO PARTS OF ONE NAME ARE NEVER CHOSEN BETWEEN. Version 1 took the
+        // first, and which came first was the collector's order.
+        foreach (var at in fitting) nearMisses.Add(partLabel(parts[at]));
+
+        // Only a bare type name can fit twice - "Family: Type" is one type - so
+        // for a fitting the parts that fit are types of different families,
+        // and not all of them need be fittings: every loaded family is looked
+        // through, because Revit has no list of what a group will take.
+        findings.Add(wantedGroup == RoutingPreferenceRuleGroupType.Segments
+            ? string.Format("{0} segments are called '{1}', so the name does not say which one is "
+                + "meant, and nothing was changed. They are listed.", fitting.Count, wantedName)
+            : string.Format("'{0}' is the type name of {1} loaded families, so it does not say which "
+                + "one is meant, and nothing was changed. They are listed - name the one meant as "
+                + "'Family: Type', the way Revit's type selector writes it.", wantedName, fitting.Count));
+        proceed = false;
+    }
+    else
+    {
+        foreach (var candidate in parts)
         {
-            if (candidate == null || candidate.Name == null) continue;
-            if (candidate.Name.IndexOf(wantedName, StringComparison.OrdinalIgnoreCase) >= 0)
-                nearMisses.Add(candidate.Name);
+            var written = partLabel(candidate);
+            if (written.IndexOf(wantedName, StringComparison.OrdinalIgnoreCase) >= 0)
+                nearMisses.Add(written);
         }
 
         findings.Add(string.Format("No {0} part is called '{1}' in this project. {2}",
@@ -207,12 +308,11 @@ foreach (var type in typesToChange)
     if (old.MEPPartId != null && old.MEPPartId.Equals(wantedPart.Id))
     {
         alreadyCorrect.Add(string.Format("'{0}' {1} rule {2} already uses '{3}'",
-            type.Name, wantedGroup, ruleIndex, wantedPart.Name));
+            type.Name, wantedGroup, ruleIndex, partLabel(wantedPart)));
         continue;
     }
 
-    var oldPart = doc.GetElement(old.MEPPartId);
-    var oldName = oldPart == null ? "<not loaded>" : oldPart.Name;
+    var oldName = partLabel(doc.GetElement(old.MEPPartId));
 
     // THE CRITERIA COME OFF FIRST. See the header - this is the whole reason
     // the rule is rebuilt rather than replaced outright.
@@ -242,36 +342,51 @@ foreach (var type in typesToChange)
     var rebuilt = new RoutingPreferenceRule(wantedPart.Id, old.Description);
     foreach (var criterion in criteria) rebuilt.AddCriterion(criterion);
 
-    try
+    // THE SWAP, IN A SUBTRANSACTION OF ITS OWN. See the header - a refusal
+    // after RemoveRule must not leave the rule removed.
+    string notSwapped = null;
+    using (var swap = new SubTransaction(doc))
     {
-        manager.RemoveRule(wantedGroup, ruleIndex);
-        manager.AddRule(wantedGroup, rebuilt, ruleIndex);
+        try
+        {
+            swap.Start();
+            manager.RemoveRule(wantedGroup, ruleIndex);
+            manager.AddRule(wantedGroup, rebuilt, ruleIndex);
+
+            // READ BACK, BEFORE IT IS KEPT. See the header.
+            RoutingPreferenceRule after = null;
+            try { after = manager.GetRule(wantedGroup, ruleIndex); }
+            catch (Exception) { after = null; }
+
+            if (after != null && after.MEPPartId != null && after.MEPPartId.Equals(wantedPart.Id))
+            {
+                swap.Commit();
+            }
+            else
+            {
+                swap.RollBack();
+                notSwapped = string.Format("did not read back as '{0}' - Revit took the call without "
+                    + "complaint and the rule did not point there", partLabel(wantedPart));
+            }
+        }
+        catch (Exception error)
+        {
+            if (swap.HasStarted() && !swap.HasEnded()) swap.RollBack();
+            notSwapped = "could not be rebuilt: " + error.Message;
+        }
     }
-    catch (Exception error)
+
+    if (notSwapped != null)
     {
-        unverified.Add(string.Format("'{0}' {1} rule {2} could not be rebuilt: {3}",
-            type.Name, wantedGroup, ruleIndex, error.Message));
+        unverified.Add(string.Format("'{0}' {1} rule {2} {3}. The rule was put back as it was, "
+            + "still pointing at '{4}'.", type.Name, wantedGroup, ruleIndex, notSwapped, oldName));
         continue;
     }
 
-    // READ BACK. See the header.
-    RoutingPreferenceRule after = null;
-    try { after = manager.GetRule(wantedGroup, ruleIndex); }
-    catch (Exception) { after = null; }
-
-    if (after != null && after.MEPPartId != null && after.MEPPartId.Equals(wantedPart.Id))
-    {
-        rulesChanged++;
-        findings.Add(string.Format("'{0}' {1} rule {2}: '{3}' -> '{4}', {5} size window(s) "
-            + "carried across", type.Name, wantedGroup, ruleIndex, oldName, wantedPart.Name,
-            criteria.Count));
-    }
-    else
-    {
-        unverified.Add(string.Format("'{0}' {1} rule {2} did not read back as '{3}' - the call "
-            + "returned without complaint and the rule still does not point there",
-            type.Name, wantedGroup, ruleIndex, wantedPart.Name));
-    }
+    rulesChanged++;
+    findings.Add(string.Format("'{0}' {1} rule {2}: '{3}' -> '{4}', {5} size window(s) "
+        + "carried across", type.Name, wantedGroup, ruleIndex, oldName, partLabel(wantedPart),
+        criteria.Count));
 }
 
 findings.Insert(0, string.Format("{0} rule(s) changed across {1} type(s) examined; {2} already "

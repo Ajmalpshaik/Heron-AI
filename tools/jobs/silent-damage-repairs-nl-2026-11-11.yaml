@@ -1,0 +1,66 @@
+# A card that was PROVEN, changes the model, and could report a wrong result
+# as a success - repaired in code on 2026-11-11, back to DRAFT, and the job
+# for the proof it now owes. NEEDS-CHECKING Group NL has the rows.
+#
+#   set-routing-preference  SET_ROUTING_PREFERENCE  FRG-MEP-046  version 2  rows 5b-1120, 5b-1549  NL1 - NL4
+#
+#     python tools/batch-prove.py tools/jobs/silent-damage-repairs-nl-2026-11-11.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/silent-damage-repairs-nl-2026-11-11.yaml --session <pid>
+#
+# NOTHING HERE HAS RUN. Written 2026-11-11 in a cloud session with no Revit:
+# the card compiles on every release it declares, and a compile is not a
+# proof.
+#
+# THE MODEL IS THE ONE THE 2026-11-02 ROUNDS USED, so nothing new is arranged:
+# on Revit 2020, "P1102 MEP" - the scratch copy of
+# Samples\rme_advanced_sample_project.rvt under %TEMP%\heron-work\prove-1102.
+# NEVER A WORKING PROJECT. If it has gone, make the copy again.
+#
+# TWO VALUES BELOW ARE MY ASSUMPTION OF WHAT THAT SAMPLE HOLDS, because no
+# session here has read it. Read both in Revit before the run, and type what
+# Revit shows. THE DRY RUN DOES NOT CATCH A WRONG NAME.
+#   - set-routing-preference's positive `partName`. It must be an ELBOW the
+#     duct type's Elbows rule 0 does NOT point at now, written "Family: Type".
+#     REPORT_ROUTING_PREFERENCES on the duct type says what rule 0 points at;
+#     SELECT_TYPES with categories "Duct Fittings" prints every loaded fitting
+#     as "Family : Type" - either spelling is taken.
+#   - "Standard", its negative. It has to be the type name of TWO OR MORE
+#     loaded families - the same SELECT_TYPES answer shows whether it is. If
+#     only one family has it, pick a type name two do; if none do, load any
+#     second fitting family whose type is called the same (row 5b-1120 used
+#     M_Rectangular Elbow - Mitered and M_Balancing Damper - Rectangular).
+#
+# `write: true` runs each leg inside a transaction group and ROLLS IT BACK.
+# Look at the model afterwards anyway - rollback has failed on this PC before
+# (BD1).
+
+model: "P1102 MEP (a scratch copy of the Revit 2020 sample rme_advanced_sample_project), Revit 2020"
+
+defaults:
+  in: "P1102 MEP"
+  setup: []
+  write: true
+
+jobs:
+  # ------------------------------------------------------------ 5b-1120, 5b-1549
+  # POSITIVE: the duct type's Elbows rule 0 pointed at another elbow, named as
+  # Revit's type selector writes it. NEGATIVE: the SAME type and rule, the part
+  # named by a type name two loaded families share - refused, nothing changed,
+  # each of them listed in `nearMisses` as "Family: Type". Version 1 answered
+  # "No Elbows part is called ..." to the first and bound whichever "Standard"
+  # the collector met first to the second.
+  - fragment: set-routing-preference
+    setup: [select-types, set-selection]
+    expect: rulesChanged
+    setup-set: {categories: "Ducts", familyNameContains: "Rectangular Duct", typeNameContains: "Mitered Elbows / Tees"}
+    negative-setup-set: {categories: "Ducts", familyNameContains: "Rectangular Duct", typeNameContains: "Mitered Elbows / Tees"}
+    set: {group: "Elbows", partName: "Rectangular Elbow - Radius: 1.5 W", ruleIndex: 0}
+    negative-set: {group: "Elbows", partName: "Standard", ruleIndex: 0}
+    note: >
+      READ THE BINDING NOTE: "elements from set-selection (1)" - one duct type.
+      Positive: `findings` names the old and the new elbow as "Family: Type"
+      and the size windows carried across. Negative: `findings` says the name
+      does not say which one is meant, and `nearMisses` holds two or more -
+      "No Elbows part is called 'Standard'" there would mean no loaded family
+      has that type, and the negative proved nothing. The refused swap that is
+      PUT BACK (row 5b-1549) is not either leg: it is NL3, run by name.

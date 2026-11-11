@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,26 @@ semantic-identity: "point this pipe or duct type's routing rule at a different s
 kind: action
 domain: revit.mep
 capability: SET_ROUTING_PREFERENCE
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 2 (2026-11-11) - A FITTING IS NAMED "Family: Type", A REFUSED SWAP IS
+# PUT BACK, and back to DRAFT. Version 1 was PROVEN on 2026-09-15 (the proof
+# block below, kept as the record of what it proved - a SEGMENT swapped by
+# name); its C# moved, so it is DRAFT again until NEEDS-CHECKING Group NL is
+# run (D-30, D-117). Two defects, both in the change it makes:
+#   - FRAGMENT-ISSUES row 5b-1120, measured 2026-10-18 on Revit 2020: a fitting
+#     was found by its TYPE NAME alone, so "Standard" - the type name of a
+#     mitred elbow and of a balancing damper in one project - bound whichever
+#     the collector met first, and "Family: Type" was refused as no part.
+#   - FRAGMENT-ISSUES row 5b-1549, read in the code 2026-11-11, never seen in
+#     Revit: the rule is removed BEFORE the new one is added, and a refusal
+#     after that left the type with its rule removed while the run answered
+#     only `unverified`.
+# The name rule is tested with no Revit (tests/test_binding_note.py compiles
+# the fragment's own lines beside the binder's rule). Nothing of version 2 has
+# run in Revit.
 
 purpose: >
   Points one routing preference rule at a different part - the segment a pipe
@@ -70,6 +87,9 @@ contract:
       type: string
       source: request
     # The part to point at, BY NAME. A caller says "Copper", not an element id.
+    # A fitting is named "Family: Type" - "M_Rectangular Elbow - Mitered:
+    # Standard" - or by its type name alone when one loaded family has it
+    # (version 2).
     - name: partName
       type: string
       source: request
@@ -94,8 +114,10 @@ contract:
       role: accounting
       type: IList<string>
     - name: nearMisses
-      # Part names that nearly matched when the one named was not found. What
-      # turns a dead end into one more sentence, and never a thing it changed.
+      # Part names that nearly matched when the one named was not found - and,
+      # version 2, every part a name FITS when it fits more than one, each
+      # written "Family: Type". What turns a dead end into one more sentence,
+      # and never a thing it changed.
       role: accounting
       type: IList<string>
     - name: notRoutable
@@ -106,7 +128,8 @@ contract:
     - name: unverified
       # Rules that could not be read back as changed. Never counted as
       # changed - a thing that cannot be checked must not be reported as
-      # checked.
+      # checked. Version 2: each one's swap is rolled back first, so the rule
+      # named here is as it was before the run.
       role: accounting
       type: IList<string>
     - name: findings
@@ -162,6 +185,12 @@ compatibility-note: >
   `Autodesk.Revit.DB`, which the executor imports, so no type is named that
   compiles green and fails at the PC.
 
+  Version 2 adds `ElementType.FamilyName`, read off a `FamilySymbol`, and
+  `SubTransaction` - its constructor, `Start`, `Commit`, `RollBack`,
+  `HasStarted` and `HasEnded`. All are on every release 2020 to 2027
+  (`tools/api-surface --members`, 2026-11-11), and `AddRule(group, rule,
+  index)` and `RemoveRule(group, index)` read the same on all eight.
+
 # ROUTING - repeated in REPORT_ROUTING_PREFERENCES.
 #
 #   "make this pipe type copper"         -> here, group=Segments
@@ -179,7 +208,8 @@ compatibility-note: >
 #     this points ONE rule at a named part and carries its size window; that
 #     copies EVERY rule of each group from another type, Segments only when
 #     named. "make this pipe type copper" is only reachable here. See the
-#     same block on that card. Both PROVEN.
+#     same block on that card. Both PROVEN that day; this card is DRAFT
+#     again since version 2 (2026-11-11, rows 5b-1120 and 5b-1549).
 
 utterances:
   - make this pipe type copper
