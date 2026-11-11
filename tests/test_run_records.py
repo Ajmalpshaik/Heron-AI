@@ -510,8 +510,7 @@ def declared(runs):
           "heron_run_record is declared READ with no bridge operation - found %r"
           % (tools.TOOLS.get("heron_run_record"),))
     check(not tools.writes("heron_run_record"), "so it cannot write")
-    server = io.open(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py"),
-                     encoding="utf-8").read()
+    server = tools.server_text()
     check(re.search(r"@server\.tool\(\)\s*\ndef heron_run_record\(run: str = \"\", "
                     r"offset: int = 0, limit: int = 40\) -> str:", server) is not None,
           "the server serves it with a run, an offset and a limit")

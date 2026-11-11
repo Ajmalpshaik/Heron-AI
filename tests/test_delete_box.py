@@ -60,6 +60,7 @@ import test_failure_note as NOTE_SUITE                            # noqa: E402
 import heron_config as CFG                                         # noqa: E402
 import heron_failure as FAIL                                       # noqa: E402
 import heron_run_records as RUNS                                   # noqa: E402
+import heron_tools as TOOLS                                        # noqa: E402
 
 ADDIN = os.path.join(ROOT, "revit", "Heron.Revit.Addin")
 EXECUTOR = os.path.join(ADDIN, "RevitFragment.cs")
@@ -69,7 +70,6 @@ GRANT = os.path.join(ADDIN, "HeronKeepGrant.cs")
 COLLECTOR = os.path.join(ADDIN, "RevitChangedSet.cs")
 DISPATCHER = os.path.join(ADDIN, "RevitDispatcher.cs")
 CLOCK = os.path.join(ADDIN, "HeronRunClock.cs")
-SERVER = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
 
 FAILURES = []
 
@@ -83,6 +83,14 @@ def check(condition, what):
 def read(path):
     try:
         return io.open(path, encoding="utf-8").read()
+    except (IOError, OSError):
+        return ""
+
+
+def server_text():
+    """The MCP server's source, every file heron_tools lists - or "", as read() gives."""
+    try:
+        return TOOLS.server_text()
     except (IOError, OSError):
         return ""
 
@@ -158,7 +166,7 @@ def reply():
           "and a no is said in the add-in's own words, with no offer to try again")
 
     print("\n4. the chat's own words travel, to be quoted in the box and obeyed by nothing")
-    server = read(SERVER)
+    server = server_text()
     check(re.search(r'args\["chatWords"\]\s*=\s*request\.strip\(\)', server) is not None,
           "revit_change sends the words it was given as chatWords")
     gate = read(GATE)

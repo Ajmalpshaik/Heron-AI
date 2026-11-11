@@ -207,8 +207,8 @@ def declared_in_source():
     comparison: the point of this file is that text and a running SDK can
     disagree, so it has to hold both and check they match.
     """
-    path = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
-    source = io.open(path, encoding="utf-8").read()
+    import heron_tools as TOOLS
+    source = TOOLS.server_text()
     return set(re.findall(r"@server\.tool\(\)\s*\ndef\s+(\w+)", source))
 
 
@@ -1663,9 +1663,8 @@ async def exercise_single_purpose(module, server, newest):
              # D-141. One request and no pin: handing a model back reads and
              # changes none, so neither the model's name nor the pin is its.
              ("revit_release", {}))
-    with io.open(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py"),
-                 encoding="utf-8") as fh:
-        shaped = set(re.findall(r'_ended_by_reply\("(revit_\w+)", reply\)', fh.read()))
+    import heron_tools as TOOLS
+    shaped = set(re.findall(r'_ended_by_reply\("(revit_\w+)", reply\)', TOOLS.server_text()))
     left_out = sorted(shaped - set(tool for tool, _arguments in tools))
     check(not left_out, "every tool that labels its one reply is called here (%d listed): "
           "left out %s" % (len(tools), left_out))

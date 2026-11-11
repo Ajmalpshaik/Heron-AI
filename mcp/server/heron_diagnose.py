@@ -52,7 +52,6 @@ diagnosis a lie about what the machine was like. Every finding says what to
 run or change, and a person runs it.
 """
 
-import io
 import os
 import sys
 
@@ -304,10 +303,11 @@ def _tools(components, notes):
     declared = set(tools.TOOLS)
     changing = sum(1 for name in declared if tools.writes(name))
 
-    server = os.path.join(HERE, "heron_mcp_server.py")
+    # WHICH FILES THE SERVER IS, is heron_tools' to say - one list, so a tool
+    # that moves to a second file is still found here (row 5b-1542).
     try:
         import re
-        text = io.open(server, encoding="utf-8", errors="replace").read()
+        text = tools.server_text(errors="replace")
         offered = set(re.findall(r"@server\.tool\(\)\s*\ndef\s+([a-z_]+)\s*\(",
                                  text))
     except (IOError, OSError) as exc:

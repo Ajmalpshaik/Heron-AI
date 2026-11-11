@@ -350,9 +350,9 @@ def main():
     # fragments legitimately need nothing typed, so silence is already an
     # answer and a failure rendered as silence sends the caller back to
     # guessing. Read as TEXT, because importing the server needs the MCP SDK.
-    server = io.open(os.path.join(ROOT, "mcp", "server",
-                                  "heron_mcp_server.py"),
-                     encoding="utf-8").read()
+    sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+    import heron_tools as TOOLS
+    server = TOOLS.server_text()
     check("rather than listed short" in server,
           "an unreadable contract is reported, not printed as 'nothing to type'")
 

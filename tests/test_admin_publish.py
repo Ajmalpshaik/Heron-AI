@@ -56,7 +56,6 @@ FRAGMENTS = os.path.join(ROOT, "brain", "fragments")
 ADDIN = os.path.join(ROOT, "revit", "Heron.Revit.Addin")
 REGISTRY_CS = os.path.join(ROOT, "platform", "Heron.Core", "HeronOperationRegistry.cs")
 CONFIG_CS = os.path.join(ROOT, "platform", "Heron.Core", "HeronConfig.cs")
-SERVER = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
 
 # The client reads heron.config for its timeouts. Point it at a file that is
 # not there, so the owner's own settings are neither read nor needed.
@@ -83,6 +82,14 @@ def check(condition, what):
 def read(path):
     try:
         return io.open(path, encoding="utf-8").read()
+    except (IOError, OSError):
+        return ""
+
+
+def server_text():
+    """The MCP server's source, every file heron_tools lists - or "", as read() gives."""
+    try:
+        return TOOLS.server_text()
     except (IOError, OSError):
         return ""
 
@@ -598,7 +605,7 @@ def main():
     # ------------------------------------------------------------------
     print()
     print("5. revit_change sends a fragment as the operation its own card names")
-    text = read(SERVER)
+    text = server_text()
     start = text.find("\ndef revit_change(")
     body = text[start:] if start > 0 else ""
     end = body.find("\n@server.tool()")

@@ -53,6 +53,9 @@ import os
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+
+import heron_tools as TOOLS                                     # noqa: E402
 
 FAILURES = []
 
@@ -67,8 +70,7 @@ def main():
                                     "RevitFragment.cs"), encoding="utf-8").read()
     client = io.open(os.path.join(ROOT, "mcp", "client",
                                   "heron_bridge_client.py"), encoding="utf-8").read()
-    server = io.open(os.path.join(ROOT, "mcp", "server",
-                                  "heron_mcp_server.py"), encoding="utf-8").read()
+    server = TOOLS.server_text()
 
     # ------------------------------------------------------------------
     # THE DEFAULT MUST NOT MOVE. Everything already written depends on it.
