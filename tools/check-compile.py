@@ -183,13 +183,25 @@ def main():
         print("      PROJECTS, or to NOT_SHIPPED where the reason is READABLE.")
         return 1
 
+    # NOT RUN IS EXIT 3, NOT 1 - row 5b-1183. This printed "FAIL  no .NET SDK"
+    # and exited 1, the code a project that does not compile uses, so "the C#
+    # is broken" and "this machine has no compiler" read the same - while
+    # check-fragments-compile.py and check-api-surface.py already said NOT RUN
+    # and 3 for the same cause (row 5b-150). Nothing was compiled, so nothing
+    # is claimed. CI's compile job fails on ANY non-zero code, 3 included: on
+    # that runner a missing SDK is a fault. change-evidence.py reads 3 as NOT
+    # RUN. The unlisted-project check above stays exit 1 - it needs no
+    # compiler, and it is a finding about the repository.
     ok, detail = have_dotnet()
     if not ok:
-        print("FAIL  no .NET SDK on this machine (%s)" % detail)
+        print("NOT RUN - no .NET SDK on this machine (%s), so nothing was" % detail)
+        print("          compiled and nothing is claimed about any release.")
         print("      Windows: install the .NET SDK, or run tools/setup.ps1 which checks it.")
         print("      Linux:   your distribution almost certainly packages it -")
         print("               see docs/30-compiling-away-from-windows.md.")
-        return 1
+        print("NOT RUN is not a pass and it is not a failure: exit 3 says so, and")
+        print("exit 1 here means a project does NOT compile.")
+        return 3
 
     print("Compiling with .NET SDK %s on %s." % (detail, "Windows" if WINDOWS else os.name))
 

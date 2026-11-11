@@ -369,6 +369,14 @@ WindowsDesktop MSBuild targets, because the add-in uses WPF for its ribbon icons
 those targets** rather than for an operating system, and when they are missing it skips the affected
 releases and names the package to install. A skip is still never reported as a pass.
 
+**With no .NET SDK at all it says `NOT RUN` and exits 3**, as `check-fragments-compile.py` and
+`check-api-surface.py` do - it printed `FAIL  no .NET SDK on this machine` and exited 1 until 2026-11-11,
+the code a project that does not compile uses ([row 5b-1183](../docs/FRAGMENT-ISSUES.md)). Exit 1 is
+now a project that does not compile, or a `.csproj` on disk that nothing here builds; exit 2 a release
+Heron does not know. CI's compile job fails on any non-zero code, so a 3 on that runner is still a red
+build, and `change-evidence.py` records a 3 as NOT RUN.
+[`tests/test_check_api_surface.py`](../tests/test_check_api_surface.py) holds it, by hiding `dotnet`.
+
 A pass means the API surface agrees; it is **not** evidence that anything behaves correctly.
 
 ---
