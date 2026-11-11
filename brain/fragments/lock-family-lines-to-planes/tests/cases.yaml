@@ -1,0 +1,65 @@
+positive:
+  - given: >
+      a new family from the metric Detail Item template, Revit 2020, a scratch
+      copy SAVED under %TEMP%\heron-work\line-lock (never the owner's own
+      families); an instance length parameter "Length" 600; reference planes
+      "Tip" at X 600, labelled Length from "Center (Left/Right)", and "Head
+      Base" at X 300, labelled Length / 2 from "Center (Left/Right)"; "Head
+      Top" / "Head Bottom" at Y 80 / -80; a detail line "path 0,0; 300,0" (the
+      shaft) and a Solid Black filled region "polygon 300,80 600,0 300,-80"
+      (the head); lines = the line's id and the region's id, planes "Center
+      (Left/Right), Center (Front/Back), Head Base, Tip, Head Top, Head Bottom"
+    expect: >
+      the shaft locked ALONG "Center (Front/Back)", its tail end to "Center
+      (Left/Right)", its head end to "Head Base"; the head's base edge ALONG
+      "Head Base", its corners to "Head Top" and "Head Bottom" once each, the
+      tip corner to "Tip" and "Center (Front/Back)" once each - eight locks,
+      each LOOKED AT as a closed padlock; ends read back unchanged
+
+  - given: >
+      the same family after the call above, Length set to 900 in Family Types,
+      then the same call run again
+    expect: >
+      nothing new locked, every lock said as already there; ends read back
+      "(0, 0) to (450, 0)" for the shaft and the head's corners at (450, 80),
+      (900, 0), (450, -80) - the slanted edges re-drawn between them; Length
+      300 does the same at 150 / 300
+      - while a CONTROL detail line "path 0,-200; 300,-200", drawn beside it
+      and never locked, still reads (0, -200) to (300, -200) at Length 900
+
+negative:
+  - given: >
+      ALL OR NOTHING - the same lines, planes "Tip, Spare" where "Spare" is a
+      plane at X 1000 that nothing touches
+    expect: >
+      refused before anything is locked, naming the nearest end (the tip) 400
+      mm off "Spare" - and NO lock on "Tip" either
+
+  - given: >
+      the same lines, planes "Tip, Tip Copy" where "Tip Copy" is a second
+      plane at X 600, coinciding with "Tip" - neither defines the origin
+    expect: >
+      refused as two coinciding planes with nothing to say which the tip
+      should follow - and nothing locked
+
+  - given: >
+      the same lines and a second detail line drawn in a different view where
+      "Tip" is not seen edge on, its end touching "Tip"; planes "Tip"
+    expect: >
+      refused, naming that line and its view - and NO lock on the head's tip
+      either (never a partial answer)
+
+  - given: the shaft alone, planes "Ref. Level"
+    expect: refused as not seen edge on in the view, and nothing locked
+
+  - given: lines = the id of a reference plane
+    expect: refused as not a detail line, symbolic line or filled region, nothing locked
+
+  - given: a project in front
+    expect: notAFamily true and nothing locked anywhere
+
+second_route:
+  - >
+      by hand on a copy: Align, the plane, the shaft or its end, the padlock;
+      Edit Boundary on the head, Align each corner to its planes, the padlock;
+      both copies set to Length 900 and 300 side by side and their ends read
