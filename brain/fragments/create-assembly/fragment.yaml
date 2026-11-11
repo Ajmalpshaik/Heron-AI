@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-GRP-033
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,39 @@ semantic-identity: "make an assembly from these elements"
 kind: action
 domain: revit.elements
 capability: CREATE_ASSEMBLY
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 2 (2026-11-11) - "NOTHING WAS MADE" IS TRUE WHEN IT IS SAID, and back
+# to DRAFT. Version 1 was signed PROVEN on 2026-10-21 (the proof block below,
+# kept as the record of what was signed); its C# moved, so it is DRAFT again
+# until NEEDS-CHECKING Group NL is run (D-30, D-117).
+#
+# READ THAT PROOF BLOCK BEFORE TRUSTING IT. Its POSITIVE case is the defect:
+# "assembly (null) ... memberIds 2 item(s) ... refused Revit refused the
+# assembly: No valid type for the assembly instance.. NOTHING WAS MADE." No
+# assembly was ever seen made by this card - the count of `memberIds` passed
+# the judgement, the same as on 2026-10-18 (FRAGMENT-ISSUES row 5b-1117).
+#
+# WHAT VERSION 2 CHANGES: the making sits in one SubTransaction, kept only
+# after its members and name have been read back, and `memberIds` is filled
+# only then. A refusal part way rolls it back, so the half-made assembly is
+# not left in the model and `memberIds` stays empty. Read in the code
+# 2026-11-11: version 1's catch took nothing back, and the caller's
+# transaction is kept unless something throws out of the fragment - so with
+# the change kept, an assembly stayed in the model beside "NOTHING WAS MADE".
+# That leftover has not been looked for in a Revit.
+#
+# WHAT IT DOES NOT CHANGE - FRAGMENT-ISSUES row 5b-1553, OPEN. Both measured
+# refusals are the same sentence, and Revit's own remark on
+# AssemblyInstance.Create explains it on all eight releases: "Transaction must
+# be committed after calling this method before performing any action on the
+# newly created instance. Assembly type is assigned after the transaction for
+# creating assembly instance is complete." This card names the assembly, and
+# reads its name, inside the transaction that makes it. So until that row is
+# repaired the expected answer is the refusal - now a true one - and the
+# card's positive case cannot pass. Nothing of version 2 has run in Revit.
 
 # WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
 # searched and long text pulls other sentences here.
@@ -54,7 +84,8 @@ contract:
       role: result
       type: AssemblyInstance
     - name: memberIds
-      # Read off the new assembly.
+      # Read off the new assembly - and EMPTY whenever `assembly` is null
+      # (version 2, 5b-1117): filled only after the assembly is kept.
       role: result
       type: IList<ElementId>
     - name: alreadyInOne
@@ -62,7 +93,8 @@ contract:
       role: accounting
       type: IList<ElementId>
     - name: refused
-      # Why NOTHING WAS MADE, as one sentence; null otherwise (D-52).
+      # Why NOTHING WAS MADE, as one sentence; null otherwise (D-52). Version
+      # 2: whatever Revit had started is rolled back before this is said.
       role: accounting
       type: string
     - name: findings
@@ -106,6 +138,12 @@ compatibility-note: >
   GetMemberIds, and Element.AssemblyInstanceId, are present 2020 through 2027
   - read off RevitAPI.xml in the Nice3point reference packages for all eight
   releases on 2026-10-12.
+
+  Version 2 adds `SubTransaction` - its constructor, `Start`, `Commit`,
+  `RollBack`, `HasStarted` and `HasEnded` - on every release 2020 to 2027
+  (`tools/api-surface --members`, 2026-11-11). The same RevitAPI.xml carries
+  the remark on `AssemblyInstance.Create` that row 5b-1553 is about, word for
+  word the same in all eight.
 
 # ROUTING - the same rows are in the fragments named here.
 #

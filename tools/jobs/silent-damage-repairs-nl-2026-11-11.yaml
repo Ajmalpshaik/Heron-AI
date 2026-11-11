@@ -1,9 +1,10 @@
-# Two cards that were PROVEN, change the model, and could report a wrong
+# Three cards that were PROVEN, change the model, and could report a wrong
 # result as a success - repaired in code on 2026-11-11, each back to DRAFT,
 # one job each for the proof it now owes. NEEDS-CHECKING Group NL has the rows.
 #
 #   set-routing-preference  SET_ROUTING_PREFERENCE  FRG-MEP-046  version 2  rows 5b-1120, 5b-1549  NL1 - NL4
 #   add-project-parameter   ADD_PROJECT_PARAMETER   FRG-PAR-010  version 3  row 5b-1127            NL5 - NL8
+#   create-assembly         CREATE_ASSEMBLY         FRG-ELE-080  version 2  rows 5b-1117, 5b-1553  NL9 - NL10
 #
 #     python tools/batch-prove.py tools/jobs/silent-damage-repairs-nl-2026-11-11.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/silent-damage-repairs-nl-2026-11-11.yaml --session <pid>
@@ -97,3 +98,27 @@ jobs:
       is the positive. AFTER it, look again - that look is the proof of row
       5b-1127, and `bound false` is only the fragment's own word for it. Read
       Manage > Shared Parameters before and after as well (5b-317).
+
+  # ------------------------------------------------------------ 5b-1117, 5b-1553
+  # THIS JOB IS NOT EXPECTED TO PASS, AND A PASS WOULD NEED READING. Version 2
+  # makes "NOTHING WAS MADE" true; it does not make the naming work - Revit
+  # gives a new assembly its type only after the transaction that made it is
+  # committed (row 5b-1553, OPEN). So the expected verdict is POSITIVE EMPTY,
+  # with `refused` quoting Revit and ending "What it had started was taken
+  # back, so NOTHING WAS MADE", `assembly` null and `memberIds` 0 item(s).
+  # Version 1 answered the same sentence with `memberIds` filled and was judged
+  # a PASS twice. A PASS here means Revit DID make and name one: read
+  # `assembly` and the Assemblies node before believing it, and put what was
+  # seen on row 5b-1553.
+  - fragment: create-assembly
+    setup: [filter-elements-by-category]
+    keep-chain: true
+    expect: memberIds
+    setup-set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP"}
+    negative-setup-set: {category: "Ducts", inViewOnly: "Callout of Level 1 HVAC WSHP TYP"}
+    set: {assemblyName: "HERON NL A1", namingCategory: "Ducts"}
+    negative-set: {assemblyName: "HERON NL A1", namingCategory: "Zz No Such Category"}
+    note: >
+      Round 9's arrangement on the same model (2026-11-02): the ducts in that
+      callout. Whether anything is LEFT in the model by a refused run that is
+      KEPT is NL10, through try-once - a rolled-back batch cannot show it.

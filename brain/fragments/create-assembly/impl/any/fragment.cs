@@ -18,6 +18,27 @@
 // first element's category when Revit accepts it.
 //
 // READ BACK: the members and the type name are read off the new assembly.
+//
+// ===========================================================================
+// VERSION 2 (FRAGMENT-ISSUES 5b-1117).
+// ===========================================================================
+//
+// "NOTHING WAS MADE" IS NOW TRUE WHEN IT IS SAID. Version 1 made the assembly,
+// filled `memberIds` from it, and only then met Revit's refusal - on both
+// measured runs "No valid type for the assembly instance", thrown when the
+// new assembly's type name was read. Its catch set `refused` to "... NOTHING
+// WAS MADE" and `assembly` to null, and took nothing back: the assembly stayed
+// in the caller's transaction, which is kept unless something throws out of
+// here, and `memberIds` stayed filled beside the refusal - a run that read as
+// a pass, and was signed as one. Now the making sits in one SubTransaction.
+// It is kept only after the members and the name have been read back, and
+// `memberIds` is filled only then; any refusal rolls it back, so nothing of a
+// refused assembly is left in the model and `memberIds` stays empty.
+//
+// THIS DOES NOT MAKE THE NAMING WORK (FRAGMENT-ISSUES 5b-1553). Revit's own
+// remark on AssemblyInstance.Create, the same on all eight releases: "Assembly
+// type is assigned after the transaction for creating assembly instance is
+// complete." Until that row is repaired, expect the refusal above.
 
 var findings = new List<string>();
 string refused = null;
@@ -81,25 +102,40 @@ if (refused == null)
 
 if (refused == null)
 {
-    try
+    // IN A SUBTRANSACTION OF ITS OWN, so a refusal part way takes the assembly
+    // back. See the header.
+    using (var making = new SubTransaction(doc))
     {
-        assembly = AssemblyInstance.Create(doc, ids, categoryId);
-        doc.Regenerate();
-        var name = (assemblyName ?? "").Trim();
-        if (name != "")
+        try
         {
-            try { assembly.AssemblyTypeName = name; }
-            catch (Exception ex) { findings.Add("The assembly was made, but Revit refused the name \"" + name + "\": " + ex.Message); }
+            making.Start();
+            assembly = AssemblyInstance.Create(doc, ids, categoryId);
+            doc.Regenerate();
+            var name = (assemblyName ?? "").Trim();
+            string nameRefused = null;
+            if (name != "")
+            {
+                try { assembly.AssemblyTypeName = name; }
+                catch (Exception ex) { nameRefused = "The assembly was made, but Revit refused the name \"" + name + "\": " + ex.Message; }
+            }
+            doc.Regenerate();
+            var readBack = new List<ElementId>(assembly.GetMemberIds());
+            var made = "Made assembly \"" + assembly.AssemblyTypeName + "\" with " + readBack.Count + " member(s), read "
+                + "back, from " + ids.Count + " offered" + (alreadyInOne.Count > 0 ? "; " + alreadyInOne.Count + " already in an assembly left out." : ".");
+
+            // KEPT ONLY NOW, and only now is anything reported as made.
+            making.Commit();
+            memberIds.AddRange(readBack);
+            if (nameRefused != null) findings.Add(nameRefused);
+            findings.Add(made);
         }
-        doc.Regenerate();
-        memberIds.AddRange(assembly.GetMemberIds());
-        findings.Add("Made assembly \"" + assembly.AssemblyTypeName + "\" with " + memberIds.Count + " member(s), read "
-            + "back, from " + ids.Count + " offered" + (alreadyInOne.Count > 0 ? "; " + alreadyInOne.Count + " already in an assembly left out." : "."));
-    }
-    catch (Exception ex)
-    {
-        refused = "Revit refused the assembly: " + ex.Message + ". NOTHING WAS MADE.";
-        assembly = null;
+        catch (Exception ex)
+        {
+            if (making.HasStarted() && !making.HasEnded()) making.RollBack();
+            assembly = null;
+            refused = "Revit refused the assembly: " + ex.Message.TrimEnd('.', ' ')
+                + ". What it had started was taken back, so NOTHING WAS MADE.";
+        }
     }
 }
 if (refused != null) findings.Add(refused);

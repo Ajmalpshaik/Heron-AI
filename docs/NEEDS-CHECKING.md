@@ -1458,7 +1458,7 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ni.md`](needs-checking/group-ni.md)
 
-## Group NL - cards that were PROVEN, change the model and could report a wrong result as a success, repaired in code and back to DRAFT: `SET_ROUTING_PREFERENCE` version 2 and `ADD_PROJECT_PARAMETER` version 3 (2026-11-11)
+## Group NL - cards that were PROVEN, change the model and could report a wrong result as a success, repaired in code and back to DRAFT: `SET_ROUTING_PREFERENCE` version 2, `ADD_PROJECT_PARAMETER` version 3 and `CREATE_ASSEMBLY` version 2 (2026-11-11)
 
 **Its own file:** [`needs-checking/group-nl.md`](needs-checking/group-nl.md)
 
