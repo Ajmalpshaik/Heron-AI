@@ -59,8 +59,8 @@ EVERY CHAT IS TOLD THE RULES, AND EVERY TOOL CARRIES ITS LABELS. The server's
 instructions are the Instruction Registry's `host.chat`, with the Constitution's
 Articles assembled at start-up (heron_brain.host_instructions), and each tool's
 MCP safety labels are read off its risk in heron_tools.TOOLS as it registers
-(_Labelled below). Neither is typed in this file, for the reason the tool list
-is not.
+(_Labelled, in heron_server_core.py). Neither is typed in this file, for the
+reason the tool list is not.
 
     ============ revit_change: RUN, AND E16 STILL OPEN ============
     Written 2026-09-15 at the owner's instruction and run the SAME
@@ -90,6 +90,17 @@ is not.
 The answer is written for a person, not for a machine to parse. The host reads
 it aloud, so it says what is true and what to do next - never a status code.
 
+THIS IS THE ENTRY FILE, AND NOT THE WHOLE SERVER. It was one file until
+2026-11-11 (FRAGMENT-ISSUES row 5b-1554). heron_tools.SERVER_FILES lists
+the files the server's source is, this one last:
+
+    heron_server_core.py    the server object, this chat's binding, pin and
+                            approval, the lock, and what every tool call
+                            passes through - imported below, defined once
+
+It does not import this file: this one runs as `__main__`, and importing it
+by name would run it a second time and register every tool twice.
+
 NAMING NOTE: this repository has a folder called `mcp/` and the MCP SDK is a
 package called `mcp`. They do not collide: a real installed package always wins
 over a same-named directory, verified rather than assumed. Do not "fix" this by
@@ -98,13 +109,10 @@ renaming the folder.
 
 import base64
 import binascii
-import functools
-import inspect
 import io
 import os
 import re
 import sys
-import threading
 import time
 
 # The bridge client is the layer below this one. It stays dependency-free on
@@ -113,26 +121,26 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 
 import heron_bridge_client as bridge          # noqa: E402
 import heron_session as session                      # noqa: E402
-from heron_session import SessionBinding, NotBound   # noqa: E402
-from heron_write import (BadDistance, DocumentPin, PendingApproval,   # noqa: E402
-                         describe_vertical, parse_millimetres, reported_elsewhere,
-                         skipped_sentence)
+from heron_session import NotBound                  # noqa: E402
+from heron_write import (BadDistance, describe_vertical,   # noqa: E402
+                         parse_millimetres, reported_elsewhere, skipped_sentence)
 from heron_failure import analyse, explain          # noqa: E402
-from heron_failure import REFUSED as FAILURE_REFUSED  # noqa: E402
 import heron_tools as tools                         # noqa: E402
 import heron_config as configuration                # noqa: E402
 import heron_health as health                       # noqa: E402
 import heron_brain as brain                         # noqa: E402
 import heron_run_records as runs                    # noqa: E402
-import heron_running_code as running_code           # noqa: E402
 
-# WHAT THIS CHAT IS RUNNING, fingerprinted now - before a pull can land under
-# it. A git pull changes the files and not this process, and on 2026-09-07 that
-# had revit_apply_move answering from code a fix had already replaced
-# (NEEDS-CHECKING B8). heron_running_code says how, and what is decided when
-# the two differ: every reply says so, and nothing changes the model.
-RUNNING = running_code.RunningCode.of_checkout(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+# THE SERVER OBJECT, THIS CHAT'S STATE AND WHAT EVERY TOOL CALL PASSES THROUGH
+# are heron_server_core's - one of each in a process, shared with every other
+# file of the server (heron_tools.SERVER_FILES). Imported, never defined here:
+# a second definition would be a second lock, a second pin, a second server.
+# A suite that stands in one of ITS names sets it on that module, not on this.
+from heron_server_core import (                             # noqa: E402
+    approval, binding, _companion_module, _Context, _ctx, _ended,
+    _ended_by_reply, _failure_ended, _Image, LIBRARY_ONLY, NEWLINE,
+    NO_REVIT_HERE, _note, _old_code, pinned, _refused_for_old_code,
+    _revit_lock, server)
 
 # WHAT A PERSON IS TOLD TO INSTALL, when the SDK is missing or has no image
 # type: requirements-lock.txt's own line on Windows, the unpinned one elsewhere
@@ -140,197 +148,7 @@ RUNNING = running_code.RunningCode.of_checkout(
 # Heron; heron_brain, imported above, has put brain/ on the path.
 from heron_install import install_line                     # noqa: E402
 
-
-# THE SDK RENAMED THIS CLASS, AND AN UNPINNED INSTALL GETS THE NEW ONE.
-# `pip install --user mcp` - which is what tools/HeronRevit.ps1 told a user to
-# run until 2026-10-17 - resolved to 1.x when this server was written and
-# resolves to 2.x now.
-# In 2.x `mcp.server.fastmcp` does not exist: FastMCP was renamed MCPServer.
-# The import is the ONLY thing that changed for this file. Measured 2026-08-31
-# against both SDKs installed side by side: `MCPServer("heron")`, the
-# `@server.tool()` decorator and `server.run()` behave identically, and all ten
-# tools are served with the same names, descriptions and argument schemas.
-#
-# So the class is looked up rather than assumed, newest first. This is D-05's
-# rule about Revit releases applied to a Python dependency: an unlisted version
-# must be a loud failure, never a silent one - which is why the final except
-# re-raises with the install line rather than leaving an ImportError that names
-# a module the user never typed.
-#
-# Context comes from the same module as the server class, in both SDKs, so it
-# is looked up beside it rather than on its own.
-try:                                                       # noqa: E402
-    from mcp.server.mcpserver import MCPServer as _Server   # SDK 2.x
-    from mcp.server.mcpserver import Context as _Context
-except ImportError:
-    try:
-        from mcp.server.fastmcp import FastMCP as _Server   # SDK 1.x
-        from mcp.server.fastmcp import Context as _Context
-    except ImportError as exc:
-        raise ImportError(
-            "Heron's MCP server needs the MCP SDK, and this one has neither "
-            "mcp.server.mcpserver (2.x) nor mcp.server.fastmcp (1.x): %s\n"
-            "Install it, in the Heron folder, with:  %s"
-            % (exc, install_line("pip install --user mcp"))
-        )
-
 import anyio.from_thread                                   # noqa: E402 - the SDK's own dependency
-
-NEWLINE = chr(10)
-
-# THE SAFETY LABELS NEED A TYPE THE SDK ONLY GAINED PART-WAY THROUGH 1.x, so it
-# is looked up the same way the server class is. Without it every tool is
-# served unlabelled - which is SAFE, because a host told nothing assumes the
-# worst of a tool (not read-only, destructive, not idempotent) - and so an old
-# SDK costs the labels and never the server.
-try:                                                       # noqa: E402
-    from mcp.types import ToolAnnotations as _Annotations
-except ImportError:
-    _Annotations = None
-
-# A PICTURE GOES BACK AS THE SDK'S OWN IMAGE HELPER, and it moved with the
-# server class - so it is looked up the same way, newest first (D-45). Both
-# SDKs carry it beside the class above; None means an SDK without one, and
-# then revit_view_image says so rather than the server failing to start.
-try:                                                       # noqa: E402
-    from mcp.server.mcpserver import Image as _Image       # SDK 2.x
-except ImportError:
-    try:
-        from mcp.server.fastmcp import Image as _Image     # SDK 1.x
-    except ImportError:
-        _Image = None
-
-_TAKES_LABELS = (_Annotations is not None
-                 and "annotations" in inspect.signature(_Server.tool).parameters)
-
-# THE DESCRIPTION A HOST IS SERVED IS THE DOCSTRING CLEANED, ON EVERY PYTHON.
-# The SDK takes `fn.__doc__` as it finds it, and Python 3.12 - the owner's -
-# keeps every line of it indented four spaces where 3.13 strips them: measured
-# 2026-10-17, 3,014 characters of indentation across the list, paid for in
-# context and read by nobody. inspect.cleandoc is what ast.get_docstring
-# returns, so heron_tools' --sizes reads off the source exactly what a host is
-# handed (row 5b-491).
-_TAKES_DESCRIPTION = "description" in inspect.signature(_Server.tool).parameters
-
-# NO REVIT ON THIS MACHINE, AND THE LIBRARY ALONE (Q-67, D-132). The bridge is
-# a Windows named pipe and Revit is Windows-only, so off Windows - a cloud
-# session is the case - this server registers heron_tools.LIBRARY and nothing
-# else. It exited 2 here until 2026-10-17, which took the library search out
-# of every cloud session along with the Revit tools.
-#
-# Only when RUN as the server: a test or a tool that IMPORTS this module is
-# served every tool on any system, exactly as before - test_mcp_serves calls
-# them in-process on Linux, and heron_tools --sizes measures them all. On
-# Windows this is False and nothing below changes.
-LIBRARY_ONLY = __name__ == "__main__" and os.name != "nt"
-
-NO_REVIT_HERE = "No Revit on this machine (it is not Windows)"
-
-
-class _Labelled(_Server):
-    """
-    The SDK's server with one difference: every `@server.tool()` is registered
-    with the MCP safety labels its declared risk implies.
-
-    WHY A SUBCLASS AND NOT A LABEL ON EACH DECORATOR. A label typed beside a
-    tool is a second declaration of what the tool can do, and the first one -
-    heron_tools.TOOLS - is the one the add-in's gate is checked against. Typed
-    twice, the two drift; and the drift that matters is a write labelled
-    read-only, which a host may call without asking. So the decorator every
-    tool already carries stays exactly as it is, and the label is read off the
-    registry at the moment the tool registers. tests/test_tool_registry.py
-    holds the rule; tests/test_mcp_serves.py reads the labels back from a real
-    SDK and compares them with the registry.
-
-    The labels are advice to the host. The gate stays in the add-in.
-    """
-
-    def tool(self, *args, **kwargs):
-        register = super(_Labelled, self).tool
-
-        def decorate(fn):
-            # A COPY, so one decorator applied twice cannot hand the second
-            # tool the first one's label.
-            options = dict(kwargs)
-            name = (args[0] if args else None) or options.get("name") or fn.__name__
-            if LIBRARY_ONLY and name not in tools.LIBRARY:
-                # NOT REGISTERED, so the host never lists it - never listed
-                # and then refused. Still callable from this file, as
-                # every tool is.
-                return _recorded(fn)
-            if _TAKES_LABELS and "annotations" not in options:
-                options["annotations"] = _Annotations.model_validate(
-                    tools.annotations(name))
-            if _TAKES_DESCRIPTION and "description" not in options and fn.__doc__:
-                options["description"] = inspect.cleandoc(fn.__doc__)
-            return register(*args, **options)(_recorded(fn))
-
-        return decorate
-
-    async def list_tools(self, *args, **kwargs):
-        """The SDK's list, with heron_tools.ALWAYS_LOADED marked to be loaded
-        at session start rather than found by a search (see that list for
-        why). The SDK's tool() takes no _meta in 1.x, so it is added here; a
-        list that cannot be marked is served unmarked, which only costs the
-        chat the search step it already had."""
-        listed = await super(_Labelled, self).list_tools(*args, **kwargs)
-        for tool in listed:
-            if getattr(tool, "name", None) in tools.ALWAYS_LOADED:
-                try:
-                    tool.meta = dict(tool.meta or {}, **{"anthropic/alwaysLoad": True})
-                except (AttributeError, TypeError, ValueError):
-                    pass
-        return listed
-
-
-def _host_instructions():
-    """
-    What every chat is told before its first tool call - or, when it cannot be
-    assembled, a sentence saying so in the same place.
-
-    The Constitution's Enforcement table said its Articles were injected into
-    agent instructions, and this server was built with none: the AI a modeller
-    talks to was given no Article at all. The words come from the Instruction
-    Registry (`host.chat`), with the Articles assembled from
-    HERON_CONSTITUTION.md when the server starts - so an amendment reaches the
-    next chat with nobody editing this file.
-
-    A FAILURE IS SAID, NOT FATAL. A server that refused to start over its own
-    instructions would take every Revit tool out of the host with it.
-
-    OFF WINDOWS THE CHAT IS TOLD FIRST THAT THERE IS NO REVIT HERE (D-132), so
-    a library that answers is never read as a Revit that is connected.
-    """
-    try:
-        said = brain.host_instructions()
-    except brain.BrainUnavailable as why:
-        said = ("Heron could not give this chat its rules: %s\n"
-                "They are in HERON_CONSTITUTION.md, and they bind this chat "
-                "whether or not they arrived here." % why)
-    if not LIBRARY_ONLY:
-        return said
-    return ("%s. Heron serves only its library here - %s - and no revit_ "
-            "tool, because there is no Revit to reach. Anything that needs a "
-            "model is done on the modeller's Windows PC.%s%s"
-            % (NO_REVIT_HERE, ", ".join(tools.LIBRARY), NEWLINE + NEWLINE, said))
-
-
-_depth = threading.local()
-
-# ONE CONVERSATION WITH REVIT AT A TIME, from this process. Every tool call
-# holds it (through _recorded) and so does the Companion's Apply, so a change
-# from the page can never open a second pipe connection while the chat's
-# request is in flight - which would displace it and lose its answer (docs/40
-# section 4). Re-entrant, because a tool may call another.
-_revit_lock = threading.RLock()
-
-# THE COMPANION'S SIDE CHANNEL INTO THE TWO DOORS. The page's Apply runs
-# revit_change itself, and a table read runs revit_read itself - their own
-# bodies, unchanged, so every rule the suites read in them holds for the page
-# too. What the page needs that the chat does not - the add-in's raw reply,
-# and not to be offered its own change back as a new table - travels here,
-# per thread, set only for the length of one call.
-_ctx = threading.local()
 
 
 def _ctx_reply(reply):
@@ -369,152 +187,6 @@ def _through(tool, reply_out=None, origin="chat"):
                 reply_out["ended"] = getattr(_ctx, "outcome", None)
             _ctx.reply_out, _ctx.origin, _ctx.outcome = None, "chat", kept
     return call
-
-
-def _ended(outcome, answer=None):
-    """
-    HOW THIS CALL ENDED, said by the code that knows - for the Companion's
-    activity list - and the answer handed back unchanged, so a tool writes
-    `return _ended("refused", text)` (row 5b-274).
-
-    The list used to guess it from the answer's first line, and got two
-    kinds of reply backwards: a words-path hand-back was labelled refused,
-    and an add-in refusal whose first line said nothing of refusing was
-    labelled OK. Say "ok", "refused", "failed" or "handed_back"
-    (heron_companion.Activity.OUTCOMES); a call that says nothing is still
-    guessed, as before. Display only: it never changes the answer.
-    """
-    _ctx.outcome = outcome
-    return answer
-
-
-def _failure_ended(failure):
-    """A classified bridge failure's label: a refusal only when Revit or the
-    add-in said no (heron_failure's REFUSED). Never ran, still running,
-    rolled back and an unknown outcome all mean the work was not done as
-    asked, which the list calls failed."""
-    return "refused" if failure.outcome == FAILURE_REFUSED else "failed"
-
-
-def _ended_by_reply(tool, reply):
-    """
-    HOW A SINGLE-PURPOSE TOOL'S CALL ENDED, said from the add-in's reply the
-    moment it arrives (row 5b-389). revit_levels, revit_views and the rest
-    send one operation and answer from it, so the reply is what knows: a
-    good one is "ok", and a missing or failed one is labelled by
-    heron_failure's own classification through _failure_ended, exactly as
-    the three doors label theirs. `writes` is the tool's declared risk
-    (heron_tools.writes), never a flag typed here.
-
-    The lines after it still speak last: the pin's refusal is
-    `return _ended("refused", wrong_model)`. Display only, like _ended - the
-    answer each branch returns is untouched.
-    """
-    failure = analyse(reply, writes=tools.writes(tool))
-    _ended("ok" if failure is None else _failure_ended(failure))
-
-
-def _recorded(fn):
-    """
-    The same tool, and a line on the Companion's activity list (D-108,
-    docs/40 section 7) - the tool's name, the first line of its answer, how
-    it ended and how long it took.
-
-    functools.wraps keeps the signature the SDK reads, which
-    tests/test_mcp_serves.py checks against the real SDK. The answer and any
-    exception pass through untouched, and a fault in the recording is
-    dropped: the list is display, and must never cost a tool its answer. A
-    tool called from inside another is not listed twice.
-
-    AND THE ONE PLACE A CHAT HEARS THAT ITS CODE IS OLD. While RUNNING finds
-    a file changed since it was loaded, a tool that changes the model is
-    refused before its body runs, and every answer ends with one line saying
-    to reopen the chat - a read still answers in full (heron_running_code has
-    the decision). Nothing changed, nothing is added: a stat per file.
-    """
-    @functools.wraps(fn)
-    def run(*a, **k):
-        with _revit_lock:
-            return _run(*a, **k)
-
-    def _run(*a, **k):
-        outer = not getattr(_depth, "busy", False)
-        _depth.busy = True
-        # HOW IT ENDED, AS THE TOOL SAID IT (_ended, row 5b-274). Emptied
-        # before the call and put back after, so a tool called inside
-        # another never speaks for the outer one's line.
-        kept, _ctx.outcome = getattr(_ctx, "outcome", None), None
-        started, clock = time.strftime("%H:%M:%S"), time.time()
-        try:
-            reply = _refused_for_old_code(fn.__name__)
-            if reply is None:
-                reply = fn(*a, **k)
-        except Exception as error:
-            if outer:
-                _note(fn.__name__, started, time.time() - clock, error=error)
-            raise
-        finally:
-            said, _ctx.outcome = getattr(_ctx, "outcome", None), kept
-            if outer:
-                _depth.busy = False
-        if outer:
-            _note(fn.__name__, started, time.time() - clock, reply=reply, outcome=said)
-            reply = _said_old_code(reply)
-        return reply
-    return run
-
-
-def _changes_model(tool):
-    """heron_tools.writes, and a tool nobody declared is never harmless."""
-    try:
-        return tools.writes(tool)
-    except tools.NotDeclared:
-        return True
-
-
-def _old_code():
-    """What RUNNING finds changed - and nothing when the watch itself faults,
-    which leaves a tool as it was before the watch existed rather than
-    costing every tool its answer."""
-    try:
-        return RUNNING.changed()
-    except Exception:                                # noqa: BLE001 - never cost a tool its answer
-        return []
-
-
-def _refused_for_old_code(tool):
-    """The refusal, said as one, when `tool` would change the model and this
-    process is not running the code on disk - else None."""
-    if _changes_model(tool) and _old_code():
-        return _ended("refused", running_code.REFUSED)
-    return None
-
-
-def _said_old_code(reply):
-    """The reply with one line after it while this process is not running the
-    code on disk, and untouched otherwise. A refusal for it already says so."""
-    if not _old_code():
-        return reply
-    if isinstance(reply, str):
-        if running_code.REFUSED in reply:
-            return reply
-        return reply + NEWLINE + NEWLINE + running_code.SAID
-    if isinstance(reply, (list, tuple)):
-        return list(reply) + [running_code.SAID]
-    return reply
-
-
-def _note(tool, started, seconds, reply=None, error=None, outcome=None):
-    # A TOOL THAT ANSWERS WITH A PICTURE ANSWERS WITH A LIST - its words, then
-    # the image (revit_view_image). The list shows the words, never the repr
-    # of an image object.
-    if isinstance(reply, (list, tuple)):
-        reply = next((part for part in reply if isinstance(part, str)), "")
-    try:
-        _companion_module().ACTIVITY.record(tool, started, seconds, reply=reply, error=error,
-                                            outcome=outcome)
-    except Exception:                                # noqa: BLE001 - display only
-        pass
 
 
 # WHAT A HOST IS TOLD WHILE A TOOL WAITS ON REVIT. A tool that sends a
@@ -579,18 +251,6 @@ def _waiting(ctx):
         anyio.from_thread.run(ctx.report_progress, round(waited, 1), None,
                               WAITING_ON_REVIT % waited)
     return note
-
-
-server = _Labelled("heron", instructions=_host_instructions())
-
-# One chat, one Revit. Lives as long as this server does, which is as long as
-# the chat does - the correct scope for a binding (docs/25).
-binding = SessionBinding()
-
-# One chat, one MODEL - the other half of the same question (Golden Rule 20),
-# and the approval the user has actually been shown. Same scope, same reason.
-pinned = DocumentPin()
-approval = PendingApproval()
 
 
 def _describe(b, reply):
@@ -6172,14 +5832,6 @@ def _companion_revit():
     (Article 12a).
     """
     return binding.pid if binding.was_chosen else None
-
-
-def _companion_module():
-    """mcp/companion, imported on first use - it is not on the server's path."""
-    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                    "..", "companion"))
-    import heron_companion as companion_page
-    return companion_page
 
 
 def _input_lines(inputs):

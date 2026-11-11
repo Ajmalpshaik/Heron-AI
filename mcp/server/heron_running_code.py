@@ -45,7 +45,8 @@ system's clock as the first look. A pull lands minutes or days after a chat
 starts, not inside that tick.
 
 WHAT THE SERVER DOES WITH THE ANSWER - THE DECISION, written down here because
-this is where it is enforced (heron_mcp_server._recorded and _through):
+this is where it is enforced (heron_server_core._recorded and
+heron_mcp_server._through):
 
     every reply        carries SAID, one line, while anything has changed
     a read             is never refused for it - it answers, and says SAID
