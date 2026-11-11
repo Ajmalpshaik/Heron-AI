@@ -126,9 +126,21 @@ var findings = new List<string>();
             var text = p == null || !p.HasValue ? "" : p.StorageType == StorageType.String ? p.AsString() : p.AsValueString();
             if (!string.IsNullOrEmpty(text)) identity.Add(field.Item1 + " '" + text + "'");
         }
-        var keywords = material.LookupParameter("Keywords");
-        if (keywords != null && keywords.StorageType == StorageType.String && !string.IsNullOrEmpty(keywords.AsString()))
-            identity.Add("keywords '" + keywords.AsString() + "'");
+        // KEYWORDS HAS NO BUILT-IN ID HERE, SO IT IS READ BY NAME - AND A NAME
+        // TWO PARAMETERS SHARE IS NOT READ (version 7; D-54 s3, FRAGMENT-ISSUES
+        // 5b-203). LookupParameter hands back "the first one encountered" when
+        // two parameters on one element share the name, which Autodesk's
+        // reference says "is determined at random": a shared or project
+        // parameter called Keywords bound to Materials does it.
+        var keywordsNamed = material.GetParameters("Keywords").Count;
+        if (keywordsNamed > 1)
+            identity.Add("keywords NOT READ - " + keywordsNamed + " parameters share that name");
+        else
+        {
+            var keywords = material.LookupParameter("Keywords");
+            if (keywords != null && keywords.StorageType == StorageType.String && !string.IsNullOrEmpty(keywords.AsString()))
+                identity.Add("keywords '" + keywords.AsString() + "'");
+        }
         parts.Add("identity " + (identity.Count == 0 ? "empty" : string.Join(", ", identity)));
 
         parts.Add(string.Format("graphics shading {0} at {1}% transparency{2}; surface {3} {4} / {5} {6}; cut {7} {8} / {9} {10}",

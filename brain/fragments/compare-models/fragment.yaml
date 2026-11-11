@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DOC-004
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -8,10 +8,24 @@ id: FRG-QA-024
 semantic-identity: "what changed between this model and the last issue of it"
 kind: action
 domain: revit.qa
-version: 1
+version: 2
 capability: COMPARE_MODELS
 source: OFFICIAL
 risk: READ
+
+# VERSION 2 (2026-11-11) - A NAME TWO PARAMETERS SHARE IS NEVER READ, and back
+# to DRAFT. Version 1 was PROVEN on 2026-09-08 (the proof block below, kept as
+# the record of what it proved). Its C# moved, so it is DRAFT again until
+# NEEDS-CHECKING Group NK, NK8, is run (D-30). D-54 s3 and FRAGMENT-ISSUES row
+# 5b-203: version 1 took `LookupParameter`'s first match, which Autodesk's
+# reference calls random when two parameters on one element share the name -
+# so one element could read one of a pair in this model and the other in the
+# earlier save. A value that would come from a doubled name, on the element or
+# on the type the read falls through to, is now not read, not compared and
+# counted in `ambiguous`, and the answer names the parameter. Every other
+# value is compared exactly as version 1 compared it. Written here and not in
+# `purpose`: the purpose is routing text. A read: it still answers through
+# revit_read while DRAFT, and says DRAFT (D-117 item 4).
 
 purpose: >
   Compares the open model against another `.rvt` on disk - what was added, what
@@ -100,6 +114,14 @@ contract:
       # diff. A caveat on the comparison, never a change it found (D-52).
       role: accounting
       type: bool
+    - name: ambiguous
+      # VERSION 2. How many values were NOT READ because two or more
+      # parameters share the name on the element, or on its type, in either
+      # model - where Revit's lookup would pick one at random. Not compared:
+      # never "changed", never "unchanged" (D-54 s3, FRAGMENT-ISSUES 5b-203).
+      # Turned down, never found (D-52).
+      role: accounting
+      type: int
 
 proof:
   date: '2026-09-08'

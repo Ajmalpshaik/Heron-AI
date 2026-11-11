@@ -1,6 +1,6 @@
 // NOT STANDALONE. Assumes `doc`, `parameterName` and `setPrefix` are in scope,
-// and leaves `report`, `inStep`, `outOfStep`, `missingSets`, `findings` and
-// `refused` behind.
+// and leaves `report`, `inStep`, `outOfStep`, `missingSets`, `findings`,
+// `refused` and `ambiguous` behind.
 //
 // A READ. The sets are read as elements - never through the print manager,
 // whose current set is application state - so nothing about Revit changes.
@@ -9,6 +9,16 @@
 // grouped by its value; the set for a value is the one named prefix + value,
 // compared case-blind. A sheet with the parameter empty belongs to no set and
 // is counted in a finding, never guessed at.
+//
+// A NAME TWO PARAMETERS SHARE IS NOT READ (version 2; D-54 s3, FRAGMENT-ISSUES
+// 5b-203). LookupParameter hands back "the first one encountered" when two
+// parameters on one sheet share the name, and Autodesk's reference says that
+// match "is determined at random" - a project parameter bound to Sheets beside
+// a built-in or shared one of the same name does it. A sheet filed under the
+// value of whichever came first would make its set read out of step, or in
+// step, on a coin toss. So the name is counted on each sheet and view first:
+// one carrying it twice is in `ambiguous`, belongs to no value's group, and
+// is never listed as missing from a set or extra in one.
 
 string report = "";
 int inStep = 0;
@@ -41,12 +51,20 @@ if (wanted.Length == 0) refused = "No parameter name was given.";
 var byValue = new Dictionary<string, List<View>>(StringComparer.OrdinalIgnoreCase);
 int carriers = 0;
 int blank = 0;
+// Sheets and views carrying the name twice - not read (5b-203).
+var ambiguous = new List<string>();
+var ambiguousIds = new HashSet<ElementId>();
 if (refused.Length == 0)
 {
     foreach (var element in new FilteredElementCollector(doc).OfClass(typeof(View)))
     {
         var view = element as View;
         if (view == null || view.IsTemplate) continue;
+
+        var sameName = 0;
+        try { sameName = view.GetParameters(wanted).Count; } catch { }
+        if (sameName > 1) { ambiguous.Add(label(view)); ambiguousIds.Add(view.Id); continue; }
+
         Parameter parameter = null;
         try { parameter = view.LookupParameter(wanted); } catch { }
         if (parameter == null) continue;
@@ -57,9 +75,12 @@ if (refused.Length == 0)
         if (!byValue.TryGetValue(value, out group)) { group = new List<View>(); byValue[value] = group; }
         group.Add(view);
     }
-    if (carriers == 0)
+    if (carriers == 0 && ambiguous.Count == 0)
         refused = "No sheet or view in " + (doc.Title ?? "this model") + " has a parameter called '" + wanted
             + "'. Name it exactly as the sheet's Properties show it.";
+    else if (carriers == 0)
+        refused = "Nothing was checked: every sheet and view in " + (doc.Title ?? "this model") + " that has '"
+            + wanted + "' has two or more parameters of that name, so it was not read on any of them.";
 }
 
 if (refused.Length == 0)
@@ -99,7 +120,8 @@ if (refused.Length == 0)
         var heldIds = new HashSet<ElementId>(holds.Select(v => v.Id));
         var wantIds = new HashSet<ElementId>(group.Select(v => v.Id));
         var lacking = group.Where(v => !heldIds.Contains(v.Id)).Select(label).OrderBy(t => t, StringComparer.OrdinalIgnoreCase).ToList();
-        var extra = holds.Where(v => !wantIds.Contains(v.Id)).Select(label).OrderBy(t => t, StringComparer.OrdinalIgnoreCase).ToList();
+        // A member whose value was not read is not called extra (5b-203).
+        var extra = holds.Where(v => !wantIds.Contains(v.Id) && !ambiguousIds.Contains(v.Id)).Select(label).OrderBy(t => t, StringComparer.OrdinalIgnoreCase).ToList();
 
         if (lacking.Count == 0 && extra.Count == 0)
         {
@@ -124,3 +146,10 @@ if (refused.Length == 0)
         findings.Add(blank + " sheet(s) and view(s) carry '" + wanted + "' with no value, so belong to no set.");
 }
 else findings.Add(refused);
+
+if (ambiguous.Count > 0)
+    findings.Add(ambiguous.Count + " sheet(s) and view(s) carry TWO OR MORE parameters called '" + wanted
+        + "' - NOT READ, because Revit hands back whichever of them it meets first. They are in no value's count "
+        + "and are never listed as missing from a set or extra in one: "
+        + string.Join(", ", ambiguous.OrderBy(t => t, StringComparer.OrdinalIgnoreCase).Take(20))
+        + (ambiguous.Count > 20 ? ", and " + (ambiguous.Count - 20) + " more." : "."));

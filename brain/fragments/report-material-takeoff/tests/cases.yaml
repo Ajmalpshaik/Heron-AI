@@ -33,6 +33,14 @@ positive:
       carbon empty, totalKg 0, noFactor empty, noVolume 0 - the takeoff alone,
       version 2's to the number
 
+  # Row 5b-203, added 2026-11-11 with version 4. NOT RUN - Group NK, NK8.
+  - given: >
+      VERSION 4. The carbon floors as version 3's positive arranged them - one
+      Carbon Factor parameter on Materials, a number typed on Concrete
+    expect: >
+      the same totalKg version 3 gave and `sharedFactor` EMPTY - the count
+      must not turn down a name that occurs once
+
 negative:
   # VERSION 3 - the carbon negative; fails on version 2, which had no noFactor.
   - given: VERSION 3. The same floors with the Carbon Factor parameter cleared
@@ -86,6 +94,18 @@ negative:
       `volumeM3` equal to `volumes` times 0.028316846592 for every material,
       `areaM2` to `areas` times 0.09290304 - and `volumes` still in cubic feet,
       unchanged from version 1
+
+  # Row 5b-203, added 2026-11-11 with version 4. NOT RUN - NEEDS-CHECKING
+  # Group NK, NK8; it needs a model that carries a duplicated name.
+  - given: >
+      VERSION 4. The carbon floors, with a SECOND parameter called "Carbon
+      Factor" bound to Materials - a project parameter beside the shared one
+      - holding a different number
+    expect: >
+      totalKg 0 for that material, its name in `sharedFactor` and a finding
+      saying FACTOR NOT READ, two or more parameters share the name - NOT in
+      noFactor, and never a total multiplied by whichever of the two Revit
+      returned first (row 5b-203)
 
 second_route:
   - >

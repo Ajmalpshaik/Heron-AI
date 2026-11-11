@@ -20,6 +20,14 @@ positive:
       it opens. Without allowing the wrong user, Revit refuses outright and the
       commonest real path fails
 
+  # Row 5b-203, added 2026-11-11 with version 2. NOT RUN - Group NK, NK8.
+  - given: >
+      the same pair of saves, parameterNames "Mark" - a name each wall
+      carries once - with one wall's Mark edited between them
+    expect: >
+      changed 1, that wall named with its old and new Mark, and `ambiguous`
+      0 - the count must not turn down a name that occurs once
+
 negative:
   - given: the same file compared with itself
     expect: >
@@ -53,6 +61,20 @@ negative:
     expect: >
       the other document CLOSED afterwards, and no transaction opened on either.
       A document left open holds a file lock the modeller cannot explain
+
+  # Row 5b-203, added 2026-11-11 with version 2. NOT RUN - NEEDS-CHECKING
+  # Group NK, NK8; it needs a model that carries a duplicated name.
+  - given: >
+      this model and an earlier save of it, Walls, parameterNames "Comments",
+      with "Comments" bound to Walls a second time as a project parameter in
+      both saves, and one wall's built-in Comments edited between them
+    expect: >
+      changed 0 on that name and `ambiguous` above 0 - one for each wall whose
+      parameters were read: every matched wall on Revit 2020, and from 2021
+      only those Revit's own per-element stamp says changed - with a finding
+      naming 'Comments' as NOT READ. Never a wall reported as changed, or the
+      edit silently passed as unchanged, on whichever of the two parameters
+      Revit returned first (row 5b-203)
 
 second_route:
   - >

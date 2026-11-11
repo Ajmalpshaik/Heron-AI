@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,25 @@ semantic-identity: "every material this project or family holds, by name, with i
 kind: filter
 domain: revit.elements
 capability: LIST_MATERIALS
-version: 6
+version: 7
 source: OFFICIAL
 risk: READ
+
+# VERSION 7 (2026-11-11) - A "Keywords" TWO PARAMETERS SHARE IS NEVER READ, and
+# back to DRAFT. Version 6 was PROVEN on 2026-11-07 (the proof block below,
+# kept as the record of what it proved). Its C# moved, so it is DRAFT again
+# until NEEDS-CHECKING Group NK, NK8, is run (D-30). D-54 s3 and
+# FRAGMENT-ISSUES row 5b-203: with `withAllTabs`, a material's Keywords is read
+# by name, and version 6 took `LookupParameter`'s first match - which
+# Autodesk's reference calls random when two parameters on one element share
+# the name. A material carrying two parameters called Keywords now reads
+# "keywords NOT READ - N parameters share that name" on its identity line;
+# every other material, and everything with `withAllTabs` false, reads
+# exactly as version 6 read it. NOT TOUCHED: row 5b-1404, `withAllTabs`
+# crashing inside Revit 2020 with an access violation - not traced to a line,
+# so no repair is stated and none is made here; NK8 runs on Revit 2024 for
+# that reason. A read: it still answers through revit_read while DRAFT, and
+# says DRAFT (D-117 item 4).
 
 # WHY THIS EXISTS. FRAGMENT-ISSUES row 5b-376, 2026-10-09: a modeller with a
 # Duct Accessories family open in Revit 2024 asked "list the materials in this

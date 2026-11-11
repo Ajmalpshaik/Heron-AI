@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,21 @@ semantic-identity: "what is actually different between these two elements"
 kind: action
 domain: revit.qa
 capability: COMPARE_ELEMENTS
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
+
+# VERSION 2 (2026-11-11) - A NAME TWO PARAMETERS SHARE IS NEVER READ, and back
+# to DRAFT. Version 1 was PROVEN on 2026-09-09 (the proof block below, kept as
+# the record of what it proved). Its C# moved, so it is DRAFT again until
+# NEEDS-CHECKING Group NK, NK8, is run (D-30). D-54 s3 and FRAGMENT-ISSUES row
+# 5b-203: version 1 took `LookupParameter`'s first match, which Autodesk's
+# reference calls random when two parameters on one element share the name. A
+# name carried twice on any compared element, or on its type, is now listed in
+# `ambiguous` - never read, never counted identical, never reported as
+# differing. Every other row is exactly version 1's. Written here and not in
+# `purpose`: the purpose is routing text. A read: it still answers through
+# revit_read while DRAFT, and says DRAFT (D-117 item 4).
 
 purpose: >
   Given two or more elements, reports only the parameters whose values DIFFER
@@ -69,6 +81,14 @@ contract:
       # AT, never a difference it found (D-52).
       role: accounting
       type: int
+    - name: ambiguous
+      # VERSION 2. One sentence for each parameter name that TWO OR MORE
+      # parameters share on a compared element or its type, naming the
+      # elements. Not read: Revit's lookup would pick one at random, so the
+      # row is neither identical nor differing (D-54 s3, FRAGMENT-ISSUES
+      # 5b-203). Turned down, never found (D-52).
+      role: accounting
+      type: IList<string>
     - name: tooFewToCompare
       # That fewer than two elements arrived, so there was nothing to compare.
       # The evidence it looked and declined (D-52).

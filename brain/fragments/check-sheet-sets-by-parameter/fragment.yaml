@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,22 @@ semantic-identity: "which View/Sheet Sets are out of step with the sheet paramet
 kind: action
 domain: revit.sheets
 capability: CHECK_SHEET_SETS_BY_PARAMETER
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
+
+# VERSION 2 (2026-11-11) - A NAME TWO PARAMETERS SHARE IS NEVER READ, and back
+# to DRAFT. Version 1 was PROVEN on 2026-11-02 (the proof block below, kept as
+# the record of what it proved). Its C# moved, so it is DRAFT again until
+# NEEDS-CHECKING Group NK, NK8, is run (D-30). D-54 s3 and FRAGMENT-ISSUES row
+# 5b-203: version 1 took `LookupParameter`'s first match, which Autodesk's
+# reference calls random when two parameters on one element share the name. A
+# sheet or view carrying the name twice is now listed in `ambiguous` and named
+# in findings as NOT READ; it joins no value's group and is never called
+# missing from a set or extra in one. Every other sheet is grouped exactly as
+# version 1 grouped it. Written here and not in `purpose`: the purpose is
+# routing text. A read: it still answers through revit_read while DRAFT, and
+# says DRAFT (D-117 item 4).
 
 # WRITTEN 2026-11-01 FOR FRAGMENT-ISSUES ROW 5b-1361. Ajmal PS groups his
 # sheets by a sheet parameter - "TCM_Project Browser 1", values such as
@@ -76,6 +89,13 @@ contract:
       # thing it FOUND (D-52).
       role: accounting
       type: string
+    - name: ambiguous
+      # VERSION 2. Sheets and views carrying TWO OR MORE parameters by this
+      # name, by number and name, where Revit's lookup would pick one at
+      # random. Not read, in no value's group, never missing or extra (D-54
+      # s3, FRAGMENT-ISSUES 5b-203). Turned down, never found (D-52).
+      role: accounting
+      type: IList<string>
 
 proof:
   date: '2026-11-02'

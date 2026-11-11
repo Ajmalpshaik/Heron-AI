@@ -1,5 +1,6 @@
 // NOT STANDALONE. Assumes `elements` and `doc` are in scope, and leaves
-// `differing`, `identicalCount`, `comparedCount` and `tooFewToCompare` behind.
+// `differing`, `identicalCount`, `comparedCount`, `tooFewToCompare` and
+// `ambiguous` behind.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -34,9 +35,20 @@
 // confident wrong answer to the exact question asked. Type parameters are
 // gathered too and their names carry a marker so it stays clear where a
 // difference has to be fixed.
+//
+// A NAME TWO PARAMETERS SHARE IS NOT READ (version 2; D-54 s3, FRAGMENT-ISSUES
+// 5b-203). The names are gathered off each element's own parameter list, so a
+// name that sits there twice - a shared or project parameter bound beside a
+// built-in one, a curtain wall type's two "Interior Type" - is asked for once
+// and LookupParameter hands back "the first one encountered", which Autodesk's
+// reference says "is determined at random". Compared that way the row could
+// read identical, or different, on a coin toss. So each name is counted on
+// each element first, and a name carried twice on any of them is neither
+// identical nor differing: it goes to `ambiguous`, said in full.
 
 var differing = new Dictionary<string, IList<string>>();
 int identicalCount = 0;
+var ambiguous = new List<string>();
 
 // Eight columns is where a side-by-side stops being readable. The rest are not
 // dropped silently - comparedCount says how many were actually looked at, so
@@ -112,6 +124,8 @@ if (!tooFewToCompare)
         string lookFor = fromType ? name.Substring(0, name.Length - TypeMarker.Length) : name;
 
         var row = new List<string>();
+        // The elements this name sits on twice (5b-203).
+        var twiceOn = new List<string>();
         foreach (var element in comparing)
         {
             Element source = element;
@@ -124,9 +138,21 @@ if (!tooFewToCompare)
             Parameter found = null;
             if (source != null)
             {
+                var sameName = 0;
+                try { sameName = source.GetParameters(lookFor).Count; } catch { }
+                if (sameName > 1) { twiceOn.Add("id " + element.Id); continue; }
+
                 try { found = source.LookupParameter(lookFor); } catch { }
             }
             row.Add(readValue(found));
+        }
+
+        if (twiceOn.Count > 0)
+        {
+            ambiguous.Add(string.Format("{0}: NOT READ - two or more parameters share this name on {1}, and "
+                + "Revit hands back whichever of them it meets first. Not counted as identical or as "
+                + "differing; compare it in Properties", name, string.Join(", ", twiceOn)));
+            continue;
         }
 
         bool allSame = true;

@@ -19,6 +19,14 @@ positive:
       are the useful ones - "that one has no System Name at all" is usually what
       the question meant
 
+  # Row 5b-203, added 2026-11-11 with version 2. NOT RUN - Group NK, NK8.
+  - given: >
+      two walls of one type, differing in Mark, on a model where no parameter
+      name is carried twice
+    expect: >
+      Mark in `differing` and `ambiguous` EMPTY - the count must not turn
+      down a name that occurs once
+
 negative:
   - given: two ducts drawn at the same size, whose internal feet differ in noise
     expect: >
@@ -45,6 +53,17 @@ negative:
     expect: >
       "(empty)" for that side rather than a throw or a raw id number. Reading
       an ElementId as a number is also what breaks on Revit 2024
+
+  # Row 5b-203, added 2026-11-11 with version 2. NOT RUN - NEEDS-CHECKING
+  # Group NK, NK8; it needs a model that carries a duplicated name.
+  - given: >
+      two walls of one type, with "Comments" bound to Walls a second time as
+      a project parameter, each wall holding a different built-in Comments
+    expect: >
+      "Comments" in `ambiguous`, naming both walls and saying NOT READ - NOT
+      in `differing` and NOT counted in identicalCount: either answer would
+      be read from whichever parameter Revit returned first (row 5b-203).
+      Every name the walls carry once is compared as before
 
 second_route:
   - >
