@@ -29,8 +29,8 @@ purpose: >
   is read from the library every time it is served: where the two differ, the
   list is right and this text is out of date. A read runs while its card is
   DRAFT and says so. A change does not: revit_change refuses a DRAFT, and a
-  card whose proof is older than its code (D-117); step 3 says what runs its
-  DRAFT until then.
+  card whose proof is older than its code (D-117); step 3 says what that
+  leaves.
 
   TWO SWITCHES, AND BOTH THE OWNER'S. Every change needs Changes on in Heron's
   Settings; steps 4 and 7 need the Admin switch as well (D-106). A refusal
@@ -53,22 +53,24 @@ purpose: >
      it - project name and number, client, address, status, issue date. A
      name that matches nothing is refused and nothing at all is changed.
   3. THE MODEL THIS ONE FOLLOWS, when there is one - before coordinates,
-     levels and grids, because all three are taken from it. LINK_FILES
-     (DRAFT, version 2) with paths the file the modeller names and placement
-     origin or shared - shared only when the files already agree, which step
-     4's check says. WHILE IT IS DRAFT no chat tool keeps its change. Its one
-     run is try-once, behind Revit's Keep or Discard (D-119), only when the
-     modeller asks for it (D-122), on a SAVED model with nothing unsaved
-     (D-121) - so before step 2, or after the modeller saves:
-       python mcp/client/heron_bridge_client.py try-once link-files
-         --set 'paths=...' --set placement=origin --set viewName=
-     Or the modeller links it with Revit's own Insert > Link Revit. Either
-     way, LIST_LINKED_MODELS again: the link is there and LOADED. Then, when
-     the modeller wants it pinned, SET_PIN_STATE (PROVEN) with pinned=true,
+     levels and grids, because all three are taken from it. TODAY THE
+     MODELLER LINKS IT, with Revit's own Insert > Link Revit - origin to
+     origin, unless they say the two files already share coordinates. The
+     capability built for it is LINK_FILES (DRAFT, version 2) - paths, and
+     placement origin or shared - and while it is DRAFT revit_change refuses
+     it (D-117). Its try-once is not a step of this method: a version is
+     kept ONCE, on one model, and a second run - the next project - is
+     refused; that one run is the card's proof (D-119, D-120), its author's
+     to start (D-122). Once it is PROVEN it goes through revit_change, after
+     the modeller's yes for that one link (Article 7). Either way,
+     LIST_LINKED_MODELS again: the link is there and LOADED. Then, when the
+     modeller wants it pinned, SET_PIN_STATE (PROVEN) with pinned=true,
      expect_from="list-linked-models".
   4. COORDINATES - ONE OF TWO, AND THE MODELLER SAYS WHICH. From the link:
-     CHECK_LINK_COORDINATES (PROVEN) first, with the toleranceMm they give -
-     a link sitting in the wrong place hands over the wrong system - then
+     CHECK_LINK_COORDINATES (PROVEN) first, with the toleranceMm they give.
+     It can only be asked once the link is in: it says whether each loaded
+     link sits where its own shared coordinates say - a link sitting in the
+     wrong place hands over the wrong system. Then
      ACQUIRE_COORDINATES (PROVEN, ADMIN) with linkInstance the link by its
      name. No element moves; where everything is SAID to be changes, and its
      `before` and `after` are both read out. Or by hand: SET_PROJECT_LOCATION
@@ -110,7 +112,8 @@ purpose: >
   modeller does File > New > Project. Enabling worksharing and saving the
   central file: turning a model into a central one changes how everybody
   works, CREATE_WORKSET never does it as a side effect, and no capability
-  does it at all - Collaborate > Worksets is the modeller's. Copy/Monitor:
+  does it at all - Collaborate > Worksets is the modeller's. Linking the
+  model by Heron: a gap until LINK_FILES is proved, step 3. Copy/Monitor:
   levels and grids made in steps 5 and 6 are this model's own and do not
   watch the linked model's. Publishing coordinates INTO a link changes the
   other team's file; PUBLISH_COORDINATES (DRAFT, ADMIN) is a separate change
@@ -118,11 +121,12 @@ purpose: >
   standards and loading families are separate changes with cards of their
   own. Nothing here synchronises with central (Article 10).
 
-# The words of the brief this method was written from (2026-11-11): "project
-# set-up - levels, grids, worksets, linking a model, coordinates, project
-# information", "set up a new project". They are not taken from the owner's
-# own question log; his own way of asking is added on his word. No question
-# is declared: this method is above the write line (D-86).
+# FROM THE BRIEF THIS METHOD WAS ASKED FOR IN (2026-11-11): "set up a new
+# project" is its words as they stood. The other two were written for this
+# method, from its "project set-up - levels, grids, worksets, linking a
+# model, coordinates, project information". None is from the owner's own
+# question log; his own way of asking is added on his word. No question is
+# declared: this method is above the write line (D-86).
 #
 # THE NAME AND THESE KEEP OFF "model" ON PURPOSE, as delete-by-id keeps off
 # "form": a lookup names a method by the words it shares with the request,
@@ -132,10 +136,12 @@ purpose: >
 # owner's own - were offered this set-up. No possessive either:
 # heron_skill._words splits "architect's" into "architect" and "s", and "s"
 # is then a word this method shares with every "model's" and "view's".
+# The third sentence says "levels" again on purpose - see views-per-level's
+# note on "create the levels".
 utterances:
   - set up a new project
   - set up the project with its levels, grids and worksets
-  - start the project set-up from the architecture link
+  - project set-up with levels, grids, worksets, coordinates and project information
 
 # CAPABILITIES, never fragment ids - in the order the purpose gives.
 #
@@ -156,7 +162,9 @@ needs:
   - LIST_LINKED_MODELS
   - REPORT_LOCATION
   - SET_PROJECT_INFORMATION
-  # Only when the project follows another model - step 3. DRAFT.
+  # Only when the project follows another model - step 3. DRAFT: no chat
+  # tool keeps its change, and the modeller links by hand until it is proved.
+  # Named here so the list served with the method shows the day it is.
   - LINK_FILES
   # Only when the modeller wants the link, the levels or the grids pinned.
   - SET_PIN_STATE
@@ -183,7 +191,7 @@ preconditions:
   - the owner has Changes on, and the Admin switch on for coordinates and worksets - a refusal that names a switch is the answer (D-106)
   - the modeller has said yes to each of linking, coordinates and worksets for that one operation (Article 7)
   - for worksets, the model is already workshared - made so by the modeller
-  - while LINK_FILES is DRAFT, the model is saved with nothing unsaved for its one try-once (D-119, D-121)
+  - while LINK_FILES is DRAFT, the modeller links the model it follows with Revit's own Insert > Link Revit, and Heron links nothing
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 
@@ -192,7 +200,10 @@ note: >
   new capability. On the day it was written three of the capabilities it
   names were DRAFT: LINK_FILES, the one change among them, and the reads
   REPORT_OPEN_DOCUMENTS and REPORT_LEVEL_ELEVATIONS - the last with a proof
-  older than its code.
+  older than its code. So Heron does not link the model today: the first
+  draft of this method sent step 3 through try-once, which keeps one run a
+  version and so cannot serve a second project. Corrected the same day, on
+  review.
 
   The order - the linked model before coordinates, coordinates before levels
   and grids, worksets after them - is how a discipline model is normally set

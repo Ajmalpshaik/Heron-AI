@@ -4,7 +4,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: issue-drawing-package
-name: Issue a drawing package - revision, print set, export check, then PDF and DWG
+name: Issue a drawing package - revision, print set, then PDF and DWG
 domain: revit.sheets
 # Heron wrote this one. D-66: a unit that ships with Heron says where it
 # came from, so an IMPORTED one that says nothing stands out.
@@ -86,8 +86,13 @@ purpose: >
      (PROVEN) with the exportFolder the modeller gives and combinedFileName -
      one name for one combined file - expect_from naming the find. Its
      `exported` are the files found on disk afterwards; `notExported` and
-     `folderProblem` are read out, never left. REVIT 2022 AND LATER ONLY -
-     see NOT HERE.
+     `folderProblem` are read out, never left. THE FOLDER RULE OF STEP 9
+     HOLDS HERE TOO, AND FOR A SECOND REASON: a PDF of the same name already
+     in the folder is replaced with no undo - and the card's read-back is
+     only that a file of that name is there, so the last issue's PDF, left
+     in place by an export that wrote nothing, would be read back as this
+     one. A new or an empty folder, or a file name no file there has - asked
+     before the call. REVIT 2022 AND LATER ONLY - see NOT HERE.
   9. DWG, when asked for. LIST_EXPORT_SETUPS (PROVEN) with kind=dwg for the
      export setups this project holds, and the modeller says which: the
      setup carries the office's layers, and its absence is a refusal, never
@@ -107,7 +112,8 @@ purpose: >
   11. THE CHECK. LIST_REVISIONS once more, and the files: the paths steps 8
       and 9 found on disk, read back to the modeller with how many sheets
       went out and which did not. The calls not failing is not the proof;
-      the files being there is.
+      the files being there is - and only because the folder held none of
+      those names before: a file that was already there proves nothing.
 
   WORKSHARED MODELS. A sheet another person owns is skipped and named, never
   taken (Article 12). Nothing here synchronises with central.
@@ -121,12 +127,13 @@ purpose: >
   cloud round what changed is ADD_REVISION_CLOUD, a separate change the
   modeller asks for view by view.
 
-# The words of the brief this method was written from (2026-11-11): "issue a
-# drawing package", "issue drawings for tender". They are not taken from the
-# owner's own question log; his own way of asking is added on his word. No
-# question is declared: this method is above the write line (D-86), and what
-# is on the sheets or which revisions there are is a read with a card of its
-# own.
+# FROM THE BRIEF THIS METHOD WAS ASKED FOR IN (2026-11-11): "issue a drawing
+# package" is its words as they stood, and "issue the drawings for tender"
+# is its "issue drawings for tender" with one word added. The third was
+# written for this method. None is from the owner's own question log; his
+# own way of asking is added on his word. No question is declared: this
+# method is above the write line (D-86), and what is on the sheets or which
+# revisions there are is a read with a card of its own.
 #
 # THE NAME SAYS "print set" - NOT "sheet set" AND NOT "saved set" - AND THESE
 # KEEP OFF "sheet", ON PURPOSE, as delete-by-id keeps off "form": a lookup
@@ -135,9 +142,10 @@ purpose: >
 # backend: with "sheet" in both, the owner's "Fill each element's
 # drawing-number parameter with the number of the sheet it's on" was offered
 # this PUBLISH method in place of sheets-from-excel; with "saved set", "is
-# my model saved" was offered it. "issue", "drawing" and "export" stay - they
-# are the job - so "what is missing before I issue this" and "check the model
-# before I export IFC" were still offered it beside their answers, that day.
+# my model saved" was offered it; and with "export check" in the name, as it
+# was until review that day, "check the model before I export IFC" was.
+# "issue" and "drawing" stay - they are the job - so "what is missing before
+# I issue this" is still offered this method beside its answer.
 utterances:
   - issue a drawing package
   - issue the drawings for tender
@@ -178,7 +186,7 @@ preconditions:
   - a project is open in front, it is the model the modeller means, and the sheets going out are already made, with their views on them
   - the modeller has said which sheets, and the revision's description, date, issued to and issued by - or which existing revision - and none is assumed (D-33)
   - for an export, the modeller asked for THIS export and named the folder for it, and for DWG the export setup by name (Article 10)
-  - the DWG folder is new or empty, or the modeller has said the files in it may be replaced - a DWG of the same name is overwritten with no undo
+  - the export folder is new or empty for PDF and for DWG, or the modeller has said the files in it may be replaced - a file of the same name is overwritten with no undo, and an old PDF of that name would be read back as this export
   - the owner has Changes on for steps 3 to 5 and 10, and the Publish switch on for steps 8 and 9 - a refusal that names a switch is the answer (D-106, D-107)
   - the model has a file and has been saved before step 3
 

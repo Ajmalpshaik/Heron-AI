@@ -55,24 +55,43 @@ purpose: >
      normally take different templates - one call for each. With no template
      wanted, SET_VIEW_PROPERTIES (PROVEN, version 4) sets the scale and the
      detail level the modeller gives instead.
-  5. THE SCOPE BOX ON THE PLANS, when one extent holds every level.
-     ASSIGN_SCOPE_BOX_TO_VIEW (PROVEN) with views the plans and scopeBoxName
-     exactly as step 1 listed it. An empty name takes the scope box off.
+  5. DEPENDENT VIEWS, when asked for - BEFORE any scope box goes on, step 6
+     says why. For each parent plan and each part: FIND_VIEWS narrowed to
+     that ONE plan by nameContains, then DUPLICATE_VIEWS (PROVEN, version 3)
+     with duplicateOption=AsDependent and newName the name the modeller gave
+     that part, expect_from naming the find. One parent a call: newName is
+     applied only when one view is copied. THE FIND MUST BRING BACK ONE: a
+     name that is also the start of a dependent already made - "Level 1"
+     and "Level 1 - East" - brings back both, so its count is read before
+     the duplicate is asked for. `notDuplicated` names a view Revit will not
+     make a dependent of.
+  6. THE SCOPE BOXES, LAST, AND NEVER ON A PARENT AND ITS DEPENDENTS BOTH.
+     ASSIGN_SCOPE_BOX_TO_VIEW (PROVEN) with views and scopeBoxName exactly
+     as step 1 listed it; an empty name takes a scope box off. A plan with
+     NO dependents takes the one scope box that holds every level. A plan
+     WITH dependents takes none itself - it keeps the whole floor - and each
+     dependent takes its own. A parent that already holds one has it taken
+     off first, on the modeller's word. WHY THIS ORDER, AND WHAT IS NOT
+     KNOWN: Revit is reported to make a dependent's Scope Box read-only
+     while its parent holds one. That is
+     not measured here - no Revit was reachable - and this order does not
+     depend on it: a parent holding none cannot lock its dependents. If the
+     card still refuses a dependent with "the scope box is read-only here,
+     usually because a view template controls it", the cause may be the
+     PARENT's scope box and not a template: say both to the modeller, and do
+     not change a template on that sentence alone.
      A SCOPE BOX MUST ALREADY BE DRAWN - see NOT HERE.
-  6. DEPENDENT VIEWS, when asked for. For each parent plan and each part:
-     FIND_VIEWS narrowed to that ONE plan by nameContains, then
-     DUPLICATE_VIEWS (PROVEN, version 3) with duplicateOption=AsDependent
-     and newName the name the modeller gave that part, expect_from naming
-     the find. One parent a call: newName is applied only when one view is
-     copied. `notDuplicated` names a view Revit will not make a dependent
-     of. Then ASSIGN_SCOPE_BOX_TO_VIEW on that dependent with its own scope
-     box. The parent keeps the whole floor.
   7. THE CHECK, and it is the proof - the calls not failing is not.
      FIND_VIEWS again for the plans by level and by type, and with
      withoutTemplate for any plan no template holds; revit_views for a view
      on no sheet and what governs each; READ_MODEL_WARNINGS (PROVEN) for
      anything the views added. OPEN_VIEW (PROVEN) puts one on screen for the
      modeller to look at.
+
+  WORKSHARED MODELS. A view or a view template another person owns is
+  skipped and named, never taken (Constitution Article 12): a level left
+  without its plan, its template or its scope box for that reason is said.
+  Nothing here synchronises with central (Article 10).
 
   TWO CHATS ON ONE REVIT. expect_from with "where" -
   expect_from="find-views where nameContains=Level 1" - refuses a find the
@@ -82,37 +101,52 @@ purpose: >
   NOT HERE, AND SAID RATHER THAN WORKED ROUND. DRAWING A SCOPE BOX: Revit
   gives add-ins no way to create one on any release Heron supports, so each
   box is drawn once by the modeller - View > Scope Box, in a plan - and
-  named; from then on steps 5 and 6 put it on as many views as the job
+  named; from then on step 6 puts it on as many views as the job
   needs. Resizing one is the modeller's too. Matchlines and view references
   between dependents: nothing in the library draws them. Renaming many
   views in one go is a separate change. Sections, elevations and 3D views
   per level are not this method.
 
-# The words of the brief this method was written from (2026-11-11): "views
-# per level - plans per level, view template, dependent views, scope boxes".
-# They are not taken from the owner's own question log; his own way of asking
-# is added on his word. No question is declared: this method is above the
-# write line (D-86), and which views or templates there are is a read with a
-# card of its own.
+# WRITTEN FOR THIS METHOD on 2026-11-11, from the words of the brief it was
+# asked for in - "views per level - plans per level, view template,
+# dependent views, scope boxes". None of the three is the brief's sentence as
+# it stood, and none is from the owner's own question log; his own way of
+# asking is added on his word. No question is declared: this method is above
+# the write line (D-86), and which views or templates there are is a read
+# with a card of its own.
+#
+# THE SECOND SENTENCE SAID "per level" UNTIL REVIEW, AND DOES NOT NOW, ON
+# PURPOSE: between two methods that share one word with a request, a lookup
+# puts first the one whose own phrasing says that word most often
+# (heron_skill.methods_for). Measured 2026-11-11, both backends: with "level"
+# four times here, "create the levels" named this method first and
+# project-setup - the method that makes levels - not at all; now it names
+# project-setup first and this one second.
 utterances:
   - make the plans for every level
-  - create floor plans and ceiling plans per level with the view template
+  - create floor plans and ceiling plans with the view template
   - make dependent views of each plan with the scope boxes
 
 # CAPABILITIES, never fragment ids - in the order the purpose gives.
 needs:
   # Step 0's check that the model has a file to go back to.
   - REPORT_OPEN_DOCUMENTS
-  - FIND_VIEWS
+  # FIND_VIEWS - step 1's read, step 5's find and step 7's read-back - is
+  # left off on purpose, as update-general-notes leaves off its read: a
+  # lookup names a method whose needs hold one of its answers. Measured
+  # 2026-11-11 on the model backend, with it here: the owner's "In these
+  # sheets, how many floor plan views are there?" - a count - was offered
+  # this method FIRST, through it alone. PROVEN, version 3, that day.
   - SELECT_VIEW_TEMPLATES
   - SELECT_SCOPE_BOXES
   - CREATE_PLAN_VIEW
   - APPLY_VIEW_TEMPLATE
   # Only when no template is wanted - step 4.
   - SET_VIEW_PROPERTIES
-  - ASSIGN_SCOPE_BOX_TO_VIEW
-  # Only when dependents are asked for - step 6.
+  # Only when dependents are asked for - step 5.
   - DUPLICATE_VIEWS
+  # Last of the changes - step 6.
+  - ASSIGN_SCOPE_BOX_TO_VIEW
   # The check. Never skipped.
   - READ_MODEL_WARNINGS
   # Only to put one plan on screen for the modeller - step 7. EXECUTE.
@@ -126,6 +160,7 @@ preconditions:
   - every scope box named is already drawn in the model and named - Revit lets nothing but a person draw one
   - the view template named is already in the model
   - the owner has Changes on - a refusal that names the switch is the answer
+  - on a workshared model, what the modeller cannot edit is skipped and named - nothing is checked out or synchronised for them (Articles 10 and 12)
   - the model has a file and has been saved before step 3
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
@@ -135,10 +170,17 @@ note: >
   new capability: every step names one the library already has, and on the
   day it was written only REPORT_OPEN_DOCUMENTS among them was DRAFT.
 
-  The order - plans, then the template, then the scope box, then the
-  dependents with a scope box each - is common Revit practice; whether a
-  dependent made after the template really follows it, and what a parent's
-  scope box does to its dependents' crops, are not measured here.
+  The order - plans, then the template, then the dependents, then the scope
+  boxes - was changed on review the day it was written: the first draft put
+  one scope box on every plan and then one on each dependent. NEEDS REAL
+  REVIT, on the owner's PC, on a saved scratch copy: (1) with a scope box
+  on a parent plan, is a dependent's Scope Box read-only - and what does
+  ASSIGN_SCOPE_BOX_TO_VIEW answer for it; (2) with none on the parent, does
+  each dependent take its own; (3) does a dependent made after the template
+  follow it. The first was looked for on 2026-11-11 and not settled: forum
+  reports say yes for a parent holding one, and that dependent sections and
+  elevations take none at all from Revit 2023 - plans only, here - and
+  Autodesk's own help pages could not be opened from the session.
 
   DRAFT until the whole order has been run on a saved scratch copy and read
   back with FIND_VIEWS; no NEEDS-CHECKING group holds that run yet.

@@ -54,7 +54,12 @@ purpose: >
      the modeller names, then FIND_DUPLICATE_ELEMENTS (PROVEN) with the
      toleranceMm they give, expect_from naming the filter. Same type AND
      same place; its `elements` are the extras, one of each cluster kept.
-     `noPoint` are elements it could not place and did not judge.
+     `noPoint` are elements it could not place and did not judge. TYPE AND
+     PLACE ARE ALL IT COMPARES. It reads no phase and no design option: an
+     element demolished in one phase and its replacement in the next, or the
+     same element in two design options, share a type and a point and come
+     back as an "extra" - and neither is a duplicate. So this list is what
+     to LOOK at, never what to delete.
   4. THE PROJECT'S OWN RULES. CHECK_MODEL_STANDARDS (PROVEN, version 2) with
      the name patterns and the required parameters the modeller gives -
      Heron knows no standard of its own (D-33). A section with no rule
@@ -73,13 +78,27 @@ purpose: >
      it checked were met. Ask which of steps 7 to 9 the modeller wants; each
      is its own change, its own entry in Revit's undo list, and its own yes.
   7. THE DUPLICATES OUT, first of the changes - they are what Revit's
-     "identical instances in the same place" warning is about. Step 3 again,
-     right before: the chain names the last run. Tell the modeller how many
-     extras and of which categories, and get their yes for this delete. Then
-     DELETE_ELEMENTS
-     (PROVEN) through revit_change with expect_from="find-duplicate-elements".
-     It reports what Revit really removed: `alsoWent` is what went with them
-     - a duct's insulation, a wall's doors.
+     "identical instances in the same place" warning is about. A COUNT IS
+     NOT ENOUGH TO SAY YES TO: before the modeller is asked, they see WHAT
+     would go. Each of these acts on step 3 run again right before it - the
+     chain names the last run - with expect_from="find-duplicate-elements":
+     DESCRIBE_ELEMENTS (PROVEN) for each extra's category, family, type and
+     id; READ_ELEMENT_PHASE (PROVEN) for the phase each was created in and
+     the phase it is demolished in; SET_SELECTION (PROVEN) through
+     revit_show, with show, to put them on screen. REPORT_DESIGN_OPTIONS
+     (PROVEN) says whether the model has design options at all, and how many
+     elements sit in each. Read the modeller the list - not the total - and
+     say plainly what step 3 does not know: which of each pair is kept, and
+     whether the two are in different phases or different design options.
+     On a model with more than one phase in use, or with design options,
+     the modeller says which extras really are duplicates; the rest stay.
+     Then their yes for THIS delete, naming what goes. All of them:
+     step 3 again, then DELETE_ELEMENTS (PROVEN) through revit_change with
+     expect_from="find-duplicate-elements". Only some: FILTER_ELEMENTS_BY_ID
+     (PROVEN) with elementIds the ones agreed, then DELETE_ELEMENTS with
+     expect_from="filter-elements-by-id". Revit's own box then shows them and
+     asks again (D-142). It reports what Revit really removed: `alsoWent` is
+     what went with them - a duct's insulation, a wall's doors.
   8. SLIGHTLY OFF AXIS, when the warnings named it. READ_MODEL_WARNINGS with
      descriptionContains the warning's own words, then
      STRAIGHTEN_OFF_AXIS_LINES (PROVEN) with the snapDegrees and
@@ -104,7 +123,9 @@ purpose: >
   clean-up of a central model's local copy reaches nobody else until the
   modeller synchronises it themselves (Article 10).
 
-  NOT HERE: a fix for every kind of warning. This method repairs two kinds
+  NOT HERE: telling a true duplicate from a phase or design-option twin -
+  step 3 compares type and place alone, and step 7 puts that judgement to
+  the modeller. A fix for every kind of warning. This method repairs two kinds
   - identical instances, and slightly off axis; every other kind is read,
   with its elements, and its repair is a separate change the modeller asks
   for.
@@ -114,9 +135,10 @@ purpose: >
   Revit's Audit tick on opening a file, and compacting a central file, are
   Revit's own and nothing in the library does either.
 
-# The words of the brief this method was written from (2026-11-11): "model
-# health audit and clean-up", "health check and fix", "purge". They are not
-# taken from the owner's own question log; his own way of asking is added on
+# FROM THE BRIEF THIS METHOD WAS ASKED FOR IN (2026-11-11): "health check
+# and fix" is its words as they stood. The other two were written for this
+# method, from its "model health audit and clean-up" and its "purge". None
+# is from the owner's own question log; his own way of asking is added on
 # his word. No question is declared: this method is above the write line
 # (D-86), and "how many warnings" or "is anything placed twice" is a read
 # with a card of its own - the audit half of this job is asked for as an
@@ -149,6 +171,14 @@ needs:
   - FIND_PURGEABLE_ELEMENTS
   # Steps 7 and 9. Never without the modeller's yes for that one delete, and
   # never without the expect_from that names what it acts on.
+  # WHAT SHOWS THE MODELLER THE EXTRAS BEFORE THAT YES - DESCRIBE_ELEMENTS,
+  # READ_ELEMENT_PHASE, REPORT_DESIGN_OPTIONS, SET_SELECTION - and
+  # FILTER_ELEMENTS_BY_ID, which hands on the ones agreed, are named in step
+  # 7 and left off here on purpose, as update-general-notes leaves off its
+  # read and the capabilities that only pick: a lookup names a method whose
+  # needs hold one of its answers, and these five answer "what is this",
+  # "which phase is this on", "select these". Not measured with them here.
+  # All five PROVEN on 2026-11-11.
   - DELETE_ELEMENTS
   # Only when the warnings named it - step 8.
   - STRAIGHTEN_OFF_AXIS_LINES
@@ -158,7 +188,7 @@ needs:
 preconditions:
   - a project is open in front and it is the model the modeller means - a family in front is purged from inside it, which is not this method
   - the categories to look for duplicates in, the tolerance in millimetres, and the project's own name patterns and required parameters are the modeller's, or that step is left out and says so (D-33, D-71)
-  - for steps 7 to 9 the owner has Changes on, and the modeller has said yes to that one delete or purge after seeing what goes and how many (Article 7) - Revit's own Delete box still asks (D-142)
+  - for steps 7 to 9 the owner has Changes on, and the modeller has said yes to that one delete or purge after seeing WHAT goes - each extra's category, type, phase and, where the model has them, design option - and not only how many (Article 7); Revit's own Delete box still asks (D-142)
   - the model has a file and has been saved before step 7
   - on a workshared model, what the modeller cannot edit is skipped and named - nothing is checked out or synchronised for them (Articles 10 and 12)
 
