@@ -31,6 +31,16 @@
 // that sends a person to look somewhere else. The `overrides` object handed on
 // was always Revit's own, patterns included; only the report was blind.
 //
+// AND EVERY OTHER SETTING THE OVERRIDE BOX HOLDS, so no single one of them can
+// read as "no override": the detail level; the line pattern, projection and
+// cut; the cut line weight; the background patterns and their colours, surface
+// and cut; and a pattern switched OFF for the element (its Visible box
+// unticked), which is an override that sets no colour and no pattern at all.
+// A pattern's "is visible" flag reads TRUE on an element with nothing
+// overridden - REPORT_CATEGORY_OVERRIDES' trap - so only FALSE is read as set.
+// A line weight is set when it is above zero, a detail level when it is not
+// Undefined, a pattern when its id is a real one.
+//
 // AND THE WHOLE ANSWER TRAVELS AS ONE STRING, `overrideList` - every element
 // that carries an override, its line in full, joined; empty when none does.
 // `findings` holds the same lines as a list, unchanged, because every proof
@@ -111,9 +121,58 @@ else
             parts.Add("cut pattern " + (cutPattern == null ? "set" : cutPattern.Name));
         }
 
+        // THE BACKGROUND PATTERNS, surface and cut - read as the foreground
+        // ones are.
+        var surfaceBack = settings.SurfaceBackgroundPatternColor;
+        if (surfaceBack != null && surfaceBack.IsValid)
+        {
+            parts.Add(string.Format("surface background RGB({0},{1},{2})",
+                surfaceBack.Red, surfaceBack.Green, surfaceBack.Blue));
+        }
+
+        if (settings.SurfaceBackgroundPatternId != ElementId.InvalidElementId)
+        {
+            var backPattern = doc.GetElement(settings.SurfaceBackgroundPatternId);
+            parts.Add("surface background pattern " + (backPattern == null ? "set" : backPattern.Name));
+        }
+
+        var cutBack = settings.CutBackgroundPatternColor;
+        if (cutBack != null && cutBack.IsValid)
+        {
+            parts.Add(string.Format("cut background RGB({0},{1},{2})", cutBack.Red, cutBack.Green, cutBack.Blue));
+        }
+
+        if (settings.CutBackgroundPatternId != ElementId.InvalidElementId)
+        {
+            var cutBackPattern = doc.GetElement(settings.CutBackgroundPatternId);
+            parts.Add("cut background pattern " + (cutBackPattern == null ? "set" : cutBackPattern.Name));
+        }
+
+        // A PATTERN SWITCHED OFF for this element. FALSE is the override; TRUE
+        // is also what an element with nothing overridden reads.
+        if (!settings.IsSurfaceForegroundPatternVisible) parts.Add("surface pattern switched off");
+        if (!settings.IsSurfaceBackgroundPatternVisible) parts.Add("surface background pattern switched off");
+        if (!settings.IsCutForegroundPatternVisible) parts.Add("cut pattern switched off");
+        if (!settings.IsCutBackgroundPatternVisible) parts.Add("cut background pattern switched off");
+
+        // THE LINE PATTERNS, projection and cut.
+        if (settings.ProjectionLinePatternId != ElementId.InvalidElementId)
+        {
+            var linePattern = doc.GetElement(settings.ProjectionLinePatternId);
+            parts.Add("line pattern " + (linePattern == null ? "set" : linePattern.Name));
+        }
+
+        if (settings.CutLinePatternId != ElementId.InvalidElementId)
+        {
+            var cutLinePattern = doc.GetElement(settings.CutLinePatternId);
+            parts.Add("cut line pattern " + (cutLinePattern == null ? "set" : cutLinePattern.Name));
+        }
+
         if (settings.Transparency > 0) parts.Add(string.Format("{0}% transparent", settings.Transparency));
         if (settings.Halftone) parts.Add("halftone");
         if (settings.ProjectionLineWeight > 0) parts.Add("line weight " + settings.ProjectionLineWeight);
+        if (settings.CutLineWeight > 0) parts.Add("cut line weight " + settings.CutLineWeight);
+        if (settings.DetailLevel != ViewDetailLevel.Undefined) parts.Add("detail level " + settings.DetailLevel);
 
         if (parts.Count > 0)
         {

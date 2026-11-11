@@ -29,6 +29,16 @@ positive:
     expect: >
       "cut RGB(255,0,0), cut pattern <name>" on its line, withOverride 1
 
+  - given: >
+      four walls, each with ONE override and nothing else: a detail level of
+      Fine; a projection line pattern; a cut line weight of 5; the surface
+      foreground pattern's Visible box unticked
+    expect: >
+      withOverride 4, and each wall's line naming its one setting - "detail
+      level Fine", "line pattern <name>", "cut line weight 5", "surface
+      pattern switched off". Version 1 answered "NO per-element override" for
+      all four
+
 negative:
   # Row 5b-154, added 2026-11-11 with version 2. NOT RUN - Group NK, NK7.
   - given: >
