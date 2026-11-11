@@ -1,17 +1,30 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-114
-semantic-identity: "set at which coarse, medium or fine level, and in which kinds of project view, a family form appears"
+semantic-identity: "set at which coarse, medium or fine level, and in which kinds of project view, a family form or a symbolic line appears"
 kind: action
 domain: revit.families
 capability: SET_FAMILY_FORM_VISIBILITY
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 2 (2026-11-11) - SYMBOLIC LINES TOO, and back to DRAFT. Version 1
+# was PROVEN on 2026-10-03 (the proof block below, kept as the record of what
+# it proved: an extrusion set to medium and fine, a project refused); its C#
+# moved, so it is DRAFT again until NEEDS-CHECKING Group NF is run (D-30,
+# D-117). A family's plan symbol - symbolic lines already drawn - could have
+# its detail levels set only while it was drawn (DRAW_FAMILY_SYMBOLIC_LINES).
+# Version 2 takes a symbolic line's id, builds its setting with the kind the
+# line already reads (ViewSpecific, where a form's is Model), refuses rather
+# than guesses where the kinds of view do not read back, refuses detail lines,
+# filled regions and nested families by name (no API on any release), and
+# reads an absent `views` as "unchanged". Owner's yes to widen rather than add
+# a card: Ajmal PS, 2026-11-11. FRAGMENT-ISSUES row 5b-1501.
 
 purpose: >
   Sets a family form's VISIBILITY SETTINGS in the family open in the Family
@@ -34,6 +47,19 @@ purpose: >
   fails the call and nothing is kept. The Family Editor itself keeps showing
   every form - this is what a project shows.
 
+  **SYMBOLIC LINES TOO** (version 2, 2026-11-11) - a plan symbol's lines
+  already drawn, named by the ids DRAW_FAMILY_SYMBOLIC_LINES gave back or
+  selected. A symbolic line's setting is of another kind than a form's, so
+  it is written in the kind the line already reads. Its detail levels are set
+  as a form's; whether its kinds of view can be set is not yet measured, so
+  when they are named they are read back and anything else refuses the call,
+  saying what Revit read. Views "unchanged" - what leaving them out means -
+  sets only the detail levels and keeps each one's kinds of view.
+
+  **DETAIL LINES, FILLED REGIONS AND NESTED FAMILIES ARE REFUSED BY NAME** -
+  Revit's API has no visibility settings for any of them on any release 2020
+  to 2027; they are set by hand in the Family Editor.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -43,7 +69,7 @@ contract:
     - name: uidoc
       type: UIDocument
     # The forms, by the ids the form tools gave back, commas between - or
-    # `selected`.
+    # `selected`. Version 2: symbolic lines' ids too.
     - name: forms
       type: string
       source: request
@@ -52,12 +78,17 @@ contract:
       type: string
       source: request
     # The kinds of project view it shows in - "plan, front, left", or "all".
+    # Version 2: "unchanged" keeps each one's kinds of view as they read and
+    # sets only the detail levels - what leaving it out means, so a call
+    # saying only "coarse" binds.
     - name: views
       type: string
       source: request
+      optional: true
+      absent: unchanged
   provides:
     - name: changed
-      # Each form, with its setting before and after.
+      # Each form or symbolic line, with its setting before and after.
       role: result
       type: IList<string>
     - name: notAFamily
@@ -104,12 +135,27 @@ compatibility-note: >
   `IsShownInCoarse`, `IsShownInMedium`, `IsShownInFine`, `IsShownInTopBottom`,
   `IsShownInFrontBack` and `IsShownInLeftRight`, and `GenericForm.SetVisibility`
   / `GetVisibility`, read the same 2020 through 2027 (the RevitAPI reference
-  assemblies, read 2026-10-01).
+  assemblies, read 2026-10-01). Version 2's `SymbolicCurve.GetVisibility` /
+  `SetVisibility`, `FamilyElementVisibility.VisibilityType` and its
+  constructor taking a `FamilyElementVisibilityType` read the same 2020
+  through 2027; `DetailCurve`, `FilledRegion` and `FamilyInstance` carry no
+  `GetVisibility` or `SetVisibility` on any of them (`tools/api-surface
+  --members --inherited`, 2026-11-11).
 
 # ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "show this form only in fine"                -> here
 #   "hide the body in plan views in the family"  -> here
+#   "show this symbolic line only in coarse"     -> here, version 2. On the
+#                                                   keyword route alone
+#                                                   DRAW_FAMILY_SYMBOLIC_LINES
+#                                                   ranks first; `find` answers
+#                                                   it here by identity, and
+#                                                   that card's table says so
+#                                                   (check-routing, 2026-11-11)
+#   "draw the arrow as symbolic lines in plan"   -> DRAW_FAMILY_SYMBOLIC_LINES,
+#                                                   which sets the levels as it
+#                                                   draws
 #   "hide ducts in this view"                    -> SET_CATEGORY_VISIBILITY,
 #                                                   a project view setting
 
@@ -119,3 +165,4 @@ utterances:
   - set the family element visibility of these forms
   - show this extrusion in medium and fine only
   - make this form visible only in front and side views
+  - show this symbolic line only in coarse
