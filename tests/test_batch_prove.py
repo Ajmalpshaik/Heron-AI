@@ -67,6 +67,15 @@ except ImportError:                                          # pragma: no cover
 
 BP = _load(os.path.join(ROOT, "tools", "batch-prove.py"), "batch_prove")
 
+# NO CASE HERE ASKS THE REVIT ON THIS PC WHICH RELEASE IT IS. Since row
+# 5b-1403 `main` asks the client which Revit is connected before the first
+# runnable job - a ping - and a suite must never reach the Revit running on
+# this PC (row 5b-461). So for every case the answer is "none known"; the
+# case that tests the rule gives its own stand-in, and tests the real
+# function, kept here, against a list.
+REAL_CONNECTED_RELEASE = getattr(BP, "connected_release", None)
+BP.connected_release = lambda session=None: None
+
 FAILURES = []
 
 
@@ -1198,8 +1207,7 @@ def test_a_card_is_not_sent_to_a_release_it_leaves_out():
     check(releases is not None, "the client reads a card's `revit:` list")
     check(rule is not None, "the client has a refusal for a release the card leaves out")
     check(batch_rule is not None, "the runner asks it before a job is sent")
-    check(getattr(BP, "connected_release", None) is not None,
-          "the runner asks which Revit is connected")
+    check(REAL_CONNECTED_RELEASE is not None, "the runner asks which Revit is connected")
     if releases is None:
         releases = lambda path: None                       # noqa: E731
     if rule is None:
@@ -1240,13 +1248,41 @@ def test_a_card_is_not_sent_to_a_release_it_leaves_out():
     check(batch_rule(late, "2025") == (None, None), "and nothing for a release it lists")
     check(batch_rule(late, None) == (None, None), "and nothing when no Revit is known")
 
+    # WHICH REVIT - the real function, on a list in place of the address book.
+    # One Revit is the answer; two are a question unless --session names one;
+    # none, or an address book that cannot be read, is "not known".
+    if REAL_CONNECTED_RELEASE is not None:
+        old, new = StandInRevit("2020"), StandInRevit("2025")
+        new.pid = 5151
+        real_discover = BP.BRIDGE.discover
+        try:
+            for live, session, want, what in (
+                    ([old], None, "2020", "one Revit connected is the one"),
+                    ([old, new], None, None, "two and no --session is not known"),
+                    ([old, new], "5151", "2025", "two and --session is the one named"),
+                    ([old], "9999", None, "a --session that is not connected is not known"),
+                    ([], None, None, "no Revit connected is not known")):
+                for one in (old, new):
+                    one.sent, one.closed = [], False
+                BP.BRIDGE.discover = lambda prune=True, live=live: (list(live), [], [], [])
+                got = REAL_CONNECTED_RELEASE(session)
+                check(got == want, "%s (%r)" % (what, got))
+                check(all(one.closed for one in live) and not any(one.sent for one in live),
+                      "  every bridge it opened is closed, and nothing was asked of one")
+
+            def broken(prune=True):
+                raise OSError("the address book could not be read")
+            BP.BRIDGE.discover = broken
+            check(REAL_CONNECTED_RELEASE(None) is None,
+                  "an address book that cannot be read costs the answer, not the batch")
+        finally:
+            BP.BRIDGE.discover = real_discover
+
     # THE BATCH ITSELF: the dry run no longer says WOULD RUN, the real run
     # hands nothing to `validate`, and a job the connected Revit can take is
     # still runnable. The Revit is a stand-in - nothing here reaches a pipe.
     sent, asked = [], []
-    absent = object()
-    real = (BP.run_one, BP.HF.load_all, BP.free_models,
-            getattr(BP, "connected_release", absent))
+    real = (BP.run_one, BP.HF.load_all, BP.free_models, BP.connected_release)
     workspace = tempfile.mkdtemp(prefix="heron-batch-")
     try:
         job_file = os.path.join(workspace, "release.yaml")
@@ -1283,11 +1319,7 @@ def test_a_card_is_not_sent_to_a_release_it_leaves_out():
                   "the %s asks which Revit is connected once, for the pinned session: %s"
                   % (label, asked))
     finally:
-        BP.run_one, BP.HF.load_all, BP.free_models = real[:3]
-        if real[3] is absent:
-            del BP.connected_release
-        else:
-            BP.connected_release = real[3]
+        BP.run_one, BP.HF.load_all, BP.free_models, BP.connected_release = real
 
     # AND `validate` ITSELF, which the batch runs and a person runs by hand:
     # refused once the Revit is bound and before anything is asked of it. The

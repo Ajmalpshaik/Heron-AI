@@ -70,6 +70,13 @@ except ImportError:                                          # pragma: no cover
 
 BP = _load(os.path.join(ROOT, "tools", "batch-prove.py"), "batch_prove")
 
+# NO CASE HERE ASKS THE REVIT ON THIS PC WHICH RELEASE IT IS. Since row
+# 5b-1403 `main` asks the client which Revit is connected before the first
+# runnable job - a ping - and a suite must never reach the Revit running on
+# this PC (row 5b-461). Section 9's Revit is a stand-in client, so the answer
+# here is "none known"; tests/test_batch_prove.py holds the rule itself.
+BP.connected_release = lambda session=None: None
+
 FAILURES = []
 
 
