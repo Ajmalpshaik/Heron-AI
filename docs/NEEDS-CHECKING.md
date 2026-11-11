@@ -1438,13 +1438,17 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-na.md`](needs-checking/group-na.md)
 
-## Group NB - a nested DETAIL ITEM locked to named planes in the plan it is drawn in: `LOCK_NESTED_FAMILY_TO_PLANES` version 3 (2026-11-11)
+## Group NB - a nested DETAIL ITEM locked to named planes in the plan it is drawn in: `LOCK_NESTED_FAMILY_TO_PLANES` version 3, now version 4 (2026-11-11)
 
 **Its own file:** [`needs-checking/group-nb.md`](needs-checking/group-nb.md)
 
 ## Group NC - a 2D family's lines and filled region edges locked to named planes, along and by their ends: `LOCK_FAMILY_LINES_TO_PLANES` (2026-11-11)
 
 **Its own file:** [`needs-checking/group-nc.md`](needs-checking/group-nc.md)
+
+## Group NE - a family's 2D linked to a Yes/No by id, and an angle labelled between two planes: `LINK_FAMILY_PARAMETER` version 4 and `LABEL_FAMILY_DIMENSION` version 3 (2026-11-11)
+
+**Its own file:** [`needs-checking/group-ne.md`](needs-checking/group-ne.md)
 
 ## Group NF - a family's 2D side through five widened cards: a detail item placed and arrayed in a family view, a symbolic line's detail levels, lines on a subcategory, an arc's radius labelled: `PLACE_DETAIL_COMPONENTS` v2, `ARRAY_FAMILY_FORMS` v4, `SET_FAMILY_FORM_VISIBILITY` v2, `SET_FAMILY_FORM_SUBCATEGORY` v2, `LABEL_FAMILY_RADIUS` v6 (2026-11-11)
 

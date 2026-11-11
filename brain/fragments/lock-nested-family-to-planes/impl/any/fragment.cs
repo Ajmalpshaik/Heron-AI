@@ -39,6 +39,18 @@
 // 5b-1492) - so it is read back by its own insertion point and, where Revit
 // gives one, its box in its owner view.
 //
+// A DETAIL ITEM WITH NO OWNER VIEW (version 4, 2026-11-11). PLACE_FAMILY_INSTANCES
+// puts a nested detail item down on a level's plane, not in a plan - Revit
+// reports its family Work Plane-Based there - and Revit then gives it NO owner
+// view and no box outside a view. Version 3 knew a detail item by its owner view
+// alone, so it took a model family's path and threw "no extent to read back"
+// (Group NB, NB1, Revit 2020, row 5b-1494). So a detail item is now known by its
+// CATEGORY (Detail Items) or its family's placement (View Based) as well, and one
+// with no owner view is locked in the view that looks along its own Z: the floor
+// plan of the level it sits on (any floor plan when none is of that level), or an
+// elevation for one standing on a vertical plane - where Align is used on it by
+// hand, which is how the owner locked four of them on 2026-11-11.
+//
 // ALL OR NOTHING, READ BACK. After the locks Revit regenerates, and the nested
 // family's extent must not have moved - a lock never moves what it locks.
 
@@ -99,9 +111,11 @@ FamilyInstance nested = null;
 var plans = new List<Tuple<Tuple<string, string, FamilyInstanceReferenceType, int>, Reference, Tuple<Element, Reference, int, string>>>();
 var problems = new List<string>();
 View plan = null, elevation = null;
-// A view-based nested family's own view (a detail item's plan); null for a
+// The view a detail item is locked in - its owner view, or (version 4), for one
+// with no owner view, the plan or elevation looking along its own Z; null for a
 // model family, which is locked as it always was.
 View ownerView = null;
+var hasOwnerView = false;
 
 if (!doc.IsFamilyDocument)
 {
@@ -166,10 +180,51 @@ else
     var ownerViewId = nested == null ? ElementId.InvalidElementId : nested.OwnerViewId;
     if (ownerViewId != null && !ownerViewId.Equals(ElementId.InvalidElementId))
     {
+        hasOwnerView = true;
         ownerView = doc.GetElement(ownerViewId) as View;
         if (ownerView == null)
             problems.Add("The nested family is a detail item drawn in a view this family no longer has - place it "
                 + "again in a plan.");
+    }
+    // A DETAIL ITEM WITH NO OWNER VIEW (version 4): known by its category or its
+    // family's placement, and locked in the view that looks along its own Z.
+    var detailCategory = nested != null && nested.Category != null
+        && nested.Category.Id.Equals(new ElementId(BuiltInCategory.OST_DetailComponents));
+    var viewBasedFamily = nested != null && nested.Symbol != null && nested.Symbol.Family != null
+        && nested.Symbol.Family.FamilyPlacementType == FamilyPlacementType.ViewBased;
+    if (nested != null && !hasOwnerView && (detailCategory || viewBasedFamily))
+    {
+        var looksAlong = axisOf(bases[2]);
+        var allViews = new FilteredElementCollector(doc).OfClass(typeof(View)).Cast<View>()
+            .Where(v => !v.IsTemplate).ToList();
+        if (looksAlong == 2)
+        {
+            var onLevel = nested.Host as Level;
+            if (onLevel == null && nested.LevelId != null && !nested.LevelId.Equals(ElementId.InvalidElementId))
+                onLevel = doc.GetElement(nested.LevelId) as Level;
+            var floorPlans = allViews.OfType<ViewPlan>().Where(v => v.ViewType == ViewType.FloorPlan).ToList();
+            ownerView = floorPlans.FirstOrDefault(v => onLevel != null && v.GenLevel != null
+                    && v.GenLevel.Id.Equals(onLevel.Id))
+                ?? floorPlans.FirstOrDefault();
+            if (ownerView == null)
+                problems.Add("The nested family is a detail item lying flat, and this family has no floor plan to "
+                    + "lock it in.");
+        }
+        else if (looksAlong >= 0)
+        {
+            ownerView = allViews.FirstOrDefault(v => (v.ViewType == ViewType.Elevation || v.ViewType == ViewType.Section)
+                && axisOf(v.ViewDirection) == looksAlong);
+            if (ownerView == null)
+                problems.Add("The nested family is a detail item standing on a plane that faces "
+                    + axisWords[looksAlong] + ", and this family has no elevation looking that way to lock it in.");
+        }
+        else
+            problems.Add("The nested family is a detail item lying at an angle - it is locked in a plan or an "
+                + "elevation looking straight at it.");
+        if (ownerView != null)
+            findings.Add("The nested family is a detail item that belongs to no view - PLACE_FAMILY_INSTANCES puts "
+                + "one down on a plane, not in a plan - so it is locked in \"" + ownerView.Name + "\", where it is "
+                + "aligned by hand.");
     }
     var flatAxis = ownerView == null ? -1 : axisOf(ownerView.ViewDirection);
     if (ownerView != null && flatAxis < 0)

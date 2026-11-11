@@ -293,6 +293,11 @@ compatibility-note: >
 #   "neck top is height plus neck depth"      -> SET_FAMILY_FORMULA
 #   "add reference planes at 300 each side"   -> CREATE_REFERENCE_PLANES
 #   "label the width with the Width parameter"-> LABEL_FAMILY_DIMENSION
+#   "label the angle between these planes with Arrow Angle"
+#                                             -> LABEL_FAMILY_DIMENSION,
+#                                                version 3 - an angle
+#                                                parameter, two planes
+#                                                that meet
 #   "make a box between these planes"         -> EXTRUDE_BETWEEN_PLANES
 #   "extrude a circle 300 diameter 500 high"  -> CREATE_FAMILY_FORMS -
 #                                                any other shape, solid or void
@@ -337,6 +342,11 @@ compatibility-note: >
 #   "link the handle's visible to Show_Handle" -> LINK_FAMILY_PARAMETER -
 #                                                a form's Visible, angles or
 #                                                extrusion ends, one form
+#   "link the arrow's visible to Show Arrow"  -> LINK_FAMILY_PARAMETER,
+#                                                version 4 - a symbolic or
+#                                                detail line's, a filled or
+#                                                masking region's or model
+#                                                text's Visible, by its id
 #   "make this plane the left reference"      -> SET_FAMILY_PLANE_REFERENCE -
 #                                                Is Reference, Defines Origin
 #   "draw the valve symbol in plan"           -> DRAW_FAMILY_SYMBOLIC_LINES -
