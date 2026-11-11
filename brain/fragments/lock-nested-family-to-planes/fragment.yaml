@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "align and lock a nested family's own reference planes to the
 kind: action
 domain: revit.families
 capability: LOCK_NESTED_FAMILY_TO_PLANES
-version: 3
+version: 4
 source: OFFICIAL
 risk: MODIFY
 
@@ -21,6 +21,13 @@ risk: MODIFY
 # "The nested family has no extent to read back": Revit gives a view-based
 # instance no box outside a view. FRAGMENT-ISSUES row 5b-1492. A model family
 # takes exactly the path it took before.
+#
+# VERSION 4 (2026-11-11) - A DETAIL ITEM WITH NO OWNER VIEW. Group NB's first
+# run (NB1, Revit 2020, scratch family) threw the same "no extent to read back":
+# version 3 knew a detail item only by its owner view, and a detail item placed
+# by PLACE_FAMILY_INSTANCES - on a level's plane, the only way Heron places one
+# in a family - has none. Now known by its category or View Based placement too,
+# and locked in the plan of its level. Still DRAFT. Row 5b-1494.
 
 purpose: >
   ALIGNS AND LOCKS a nested family to the planes of the family it sits in - the
@@ -54,6 +61,13 @@ purpose: >
   locked in the view it is drawn in, as Align is used on it by hand, and only to
   a plane seen edge-on there: a level, or any plane lying flat in that view, is
   refused before anything is locked.
+
+  **ONE WITH NO VIEW OF ITS OWN TOO** (version 4, 2026-11-11): a detail item
+  placed by PLACE_FAMILY_INSTANCES sits on a level's plane and belongs to no
+  view, so it is known by its category, Detail Items, or its family's View
+  Based placement, and locked in the floor plan of the level it sits on - any
+  floor plan when none is of that level - or, standing on a vertical plane, in
+  an elevation looking at it: where Align is used on it by hand.
 
   **ALL OR NOTHING, READ BACK**: a lock never moves what it locks, so the
   nested family's extent is read before and after, and any move fails the
@@ -95,45 +109,47 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-07'
+  date: '2026-11-11'
   by: Ajmal PS
-  model: SpringProof (1,753 elements), Revit 2024, session 9240
-  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned along Func`3, axisOf Func`2, axisWords
-    3 item(s) [left-right, front-back, up-down], datums 5 item(s) [(Autodesk.Revit.DB.ReferencePlane,
-    Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen...,
-    (Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen..., ...], elevation ViewSection,
-    findings 3 item(s) ["Array Group 1" is a group - an array's copy - and the neste..., Locked
-    1 side(s) of the nested family 337ead81-f16a-40e6-83a..., Locked is not yet PROVED to
-    follow the planes. FLEX_FAMILY c...], halfMillimetre 0.00164041994750656, invariant CultureInfo,
-    locked 1 item(s) [Top to "Top Turn Start" (in Back)], mm Func`2, nested FamilyInstance,
-    notAFamily false, ownName Func`2, plan ViewPlan, plans 1 item(s) [((top, Top, Top, 2),
-    Autodesk.Revit.DB.Reference, (Autodesk....], problems 0 item(s), refused (null), sides
-    9 item(s) [(left, Left, Left, 0), (centerleftright, Center (Left/Right), CenterLeftRight,
-    0), (right, Right, Right, 0), ...], squash Func`2. inputs came instance as given; locks
-    as given (1). on SpringProof
-  negative_case: run against 'SpringProof' with instance=337ead81-f16a-40e6-83ae-b97c6ded58ab-00000ead,
-    locks=Top=Top Turn Start instead - chosen because it should not contain what this fragment
+  model: Heron Detail Lock Test (1,531 elements), Revit 2020, session 44624
+  positive_case: run ONCE on the live model through the Keep or Discard box in Revit (D-119)
+    on 2026-11-11; the modeller saw the result in Revit and pressed Keep, and Revit kept it
+    as one undo step. returned along Func`3, axisOf Func`2, axisWords 3 item(s) [left-right,
+    front-back, up-down], datums 5 item(s) [(Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen...,
+    (Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.ReferencePlane,
+    Autodesk.Revit.DB.Referen..., ...], elevation ViewSection, findings 3 item(s) [The nested
+    family is a detail item that belongs to no view -..., Locked 2 side(s) of the nested detail
+    item 931ee163-891c-425..., Locked is not yet PROVED to follow the planes. FLEX_FAMILY
+    c...], halfMillimetre 0.00164041994750656, hasOwnerView false, invariant CultureInfo,
+    locked 2 item(s) [Center (Front/Back) to "Center (Left/Right)" (in Ref. Level), Center
+    (Left/Right) to "Arrow Front" (in Ref. Level)], mm Func`2, nested FamilyInstance, notAFamily
+    false, ownName Func`2, ownerView ViewPlan, plan ViewPlan, plans 2 item(s) [((centerfrontback,
+    Center (Front/Back), CenterFrontBack, 1),..., ((centerleftright, Center (Left/Right),
+    CenterLeftRight, 0),...], problems 0 item(s), refused (null), sides 9 item(s) [(left,
+    Left, Left, 0), (centerleftright, Center (Left/Right), CenterLeftRight, 0), (right, Right,
+    Right, 0), ...], squash Func`2. inputs came instance as given; locks as given (2). on
+    Heron Detail Lock Test
+  negative_case: run with instance=931ee163-891c-4259-9427-fb96141d1c74-00000bdc, locks=Center
+    (Front/Back)=Ref. Level instead - chosen because it should not contain what this fragment
     reports - run inside a transaction, and Revit reported the transaction group ROLLED BACK
     afterwards. returned along Func`3, axisOf Func`2, axisWords 3 item(s) [left-right, front-back,
     up-down], datums 5 item(s) [(Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen...,
     (Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.ReferencePlane,
-    Autodesk.Revit.DB.Referen..., ...], elevation ViewSection, findings 1 item(s) [Nothing
-    was locked. "Array" is not a nested family - PLACE_N...], halfMillimetre 0.00164041994750656,
-    invariant CultureInfo, locked 0 item(s), mm Func`2, nested (null), notAFamily false, ownName
-    Func`2, plan ViewPlan, plans 0 item(s), problems 1 item(s) ["Array" is not a nested family
-    - PLACE_NESTED_FAMILY gives b...], refused Nothing was locked. "Array" is not a nested
-    family - PLACE_NESTED_FAMILY gives back the id of one it places, and ARRAY_FAMILY_FORMS
-    the ids of its copies., sides 9 item(s) [(left, Left, Left, 0), (centerleftright, Center
-    (Left/Right), CenterLeftRight, 0), (right, Right, Right, 0), ...], squash Func`2. inputs
-    came instance as given; locks as given (1). on SpringProof
-  second_route: 'The parametric spring TRG_Spring_Compression Spring, built 2026-10-07 (Revit
-    2024, session 9240): this fragment locked the nested turn''s Bottom to "Pitch" and the
-    array''s last copy''s Top to "Top Turn Start". Read back by a scratch probe (not a Heron
-    fragment - FLEX_FAMILY does not read nested families, row 5b-367), rolled back: at Free
-    Height 147, 181 and 191 and Active Coils 4, 5 and 8 the turns re-spaced exactly one Pitch
-    apart between the two planes.'
-  fingerprint: 44a4578e0c006726
+    Autodesk.Revit.DB.Referen..., ...], elevation ViewSection, findings 2 item(s) [The nested
+    family is a detail item that belongs to no view -..., Nothing was locked. The nested family's
+    Center (Front/Back) ...], halfMillimetre 0.00164041994750656, hasOwnerView false, invariant
+    CultureInfo, locked 0 item(s), mm Func`2, nested FamilyInstance, notAFamily false, ownName
+    Func`2, ownerView ViewPlan, plan ViewPlan, plans 0 item(s), problems 1 item(s) [The nested
+    family's Center (Front/Back) faces left-right whe...], refused Nothing was locked. The
+    nested family's Center (Front/Back) faces left-right where it stands, and "Ref. Level"
+    faces up-down - they cannot lie on each other. A turned nested family is locked by its
+    sides that face the plane's way., sides 9 item(s) [(left, Left, Left, 0), (centerleftright,
+    Center (Left/Right), CenterLeftRight, 0), (right, Right, Right, 0), ...], squash Func`2.
+    inputs came instance as given; locks as given (1). on Heron Detail Lock Test
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: b929860fea00d92b
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -146,6 +162,11 @@ compatibility-note: >
   2026-10-01). Version 3's `Element.OwnerViewId`, `Element.get_BoundingBox(View)`,
   `ElementId.InvalidElementId`, `ElementId.Equals` and `View.ViewDirection` are
   on every release 2020 to 2027 (`tools/api-surface --members`, 2026-11-11).
+  Version 4's `Element.Category`, `Category.Id`, `ElementId(BuiltInCategory)`,
+  `BuiltInCategory.OST_DetailComponents`, `FamilyInstance.Symbol`,
+  `FamilyInstance.Host`, `Element.LevelId`, `Family.FamilyPlacementType`,
+  `FamilyPlacementType.ViewBased` and `View.GenLevel` - checked the same way,
+  2026-11-11.
 
 # ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
@@ -153,6 +174,7 @@ compatibility-note: >
 #   "lock the nested family to the reference planes" -> here
 #   "lock the last copy of the array to the top plane" -> here, version 2
 #   "lock the flow arrows to the arrow planes"    -> here, version 3, a detail item
+#                                                    (version 4: one with no view of its own)
 #   "lock this extrusion to the planes"           -> LOCK_FORM_TO_PLANES, a form
 
 utterances:

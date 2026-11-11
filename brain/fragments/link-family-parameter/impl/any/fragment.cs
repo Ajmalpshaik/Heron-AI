@@ -29,6 +29,18 @@
 // leaves the value - <By Category> is said "by category". Unlinking changes no
 // material; reading "none" as a material change would.
 //
+// VERSION 4 (2026-11-11, FRAGMENT-ISSUES 5b-1497): A FAMILY'S 2D TOO. Ids
+// in `forms` (or `selected`) may now name a DETAIL LINE (DetailCurve - line,
+// arc, ellipse or spline), a SYMBOLIC LINE (SymbolicCurve), a FILLED or
+// MASKING REGION (FilledRegion) or MODEL TEXT, as well as a form or a nested
+// copy - for whatever parameter Revit lets be linked on it, the job asked for
+// being a plan arrow's Visible on a Yes/No family parameter. Version 3 refused
+// every one of them by name. Nothing else changed: anything that is none of
+// these is still refused by name, every check runs as it did, and every link
+// is read back with GetAssociatedFamilyParameter as before. The Properties
+// palette's own words now name these kinds in the answer ("Symbolic Line id
+// N") where version 3 said their Revit category.
+//
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one.
 //
 // THE "ASSOCIATE FAMILY PARAMETER" BUTTON, FOR ELEMENTS ALREADY IN THE FAMILY.
@@ -220,6 +232,17 @@ Func<Element, string> kindName = e =>
         try { solid = form.IsSolid; } catch (Exception) { solid = true; }
         return solid ? shape : "Void " + shape;
     }
+    // A FAMILY'S 2D (version 4): the words the Properties palette uses.
+    if (e is DetailCurve) return "Detail Line";
+    if (e is SymbolicCurve) return "Symbolic Line";
+    var region = e as FilledRegion;
+    if (region != null)
+    {
+        var masking = false;
+        try { masking = region.IsMasking; } catch (Exception) { masking = false; }
+        return masking ? "Masking Region" : "Filled Region";
+    }
+    if (e is ModelText) return "Model Text";
     var nested = e as FamilyInstance;
     if (nested != null)
     {
@@ -479,8 +502,9 @@ else
     // THE ELEMENTS, NAMED ONE WAY (version 3).
     if (ways == 0)
         problems.Add("No elements were named - a category such as \"Duct Connector\" or \"Extrusion\", or \"all\" "
-            + "(with a system); or forms and nested parts by the ids the form tools or PLACE_NESTED_FAMILY gave "
-            + "back, or \"selected\"; or a nested family and its type, for its type parameters.");
+            + "(with a system); or forms, nested parts, detail and symbolic lines, regions and model text by the "
+            + "ids the tools that made them gave back, or \"selected\"; or a nested family and its type, for its "
+            + "type parameters.");
     else if (ways > 1)
         problems.Add("Name the elements ONE way in a call - a category, forms by id, or a nested family and its "
             + "type - not " + (byCategory ? "category \"" + saidCategory + "\"" : "")
@@ -526,7 +550,12 @@ else
     // FORMS AND NESTED PARTS BY ID, or SELECTED (version 3, from
     // LINK_FAMILY_FORM_PARAMETER and SET_FAMILY_FORM_MATERIAL). In a family
     // open in the Family Editor every FamilyInstance is a nested family's
-    // placed copy; nothing but a form or a copy gets in.
+    // placed copy. VERSION 4: a detail line, a symbolic line, a filled or
+    // masking region and model text get in too - a family's 2D, whose Visible
+    // a plan symbol hangs on. Nothing else does.
+    Func<Element, bool> canBeNamed = element =>
+        element is GenericForm || element is FamilyInstance || element is DetailCurve
+        || element is SymbolicCurve || element is FilledRegion || element is ModelText;
     if (problems.Count == 0 && byForms)
     {
         var named = new List<Element>();
@@ -554,15 +583,15 @@ else
 
         foreach (var element in named)
         {
-            if (!(element is GenericForm) && !(element is FamilyInstance))
-                problems.Add("\"" + (element.Name ?? element.UniqueId) + "\" (" + element.UniqueId + ") is neither a "
-                    + "form - an extrusion, revolve, blend, sweep or swept blend - nor a nested family placed in "
-                    + "this one.");
+            if (!canBeNamed(element))
+                problems.Add("\"" + (element.Name ?? element.UniqueId) + "\" (" + element.UniqueId + ") is none of what "
+                    + "this links by id - a form (an extrusion, revolve, blend, sweep or swept blend), a nested family "
+                    + "placed in this one, a detail line, a symbolic line, a filled or masking region, or model text.");
             else if (!chosen.Any(c => c.Id == element.Id)) chosen.Add(element);
         }
         if (problems.Count == 0 && chosen.Count == 0)
-            problems.Add("No form or nested part was named. Name them by the ids the form tools or "
-                + "PLACE_NESTED_FAMILY gave back, commas between, or select them and say \"selected\".");
+            problems.Add("No form, nested part, line, region or model text was named. Name them by the ids the "
+                + "tools that made them gave back, commas between, or select them and say \"selected\".");
         if (problems.Count > 0) chosen.Clear();
     }
 

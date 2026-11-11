@@ -1,15 +1,27 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-PAR-025
-semantic-identity: "associate a family parameter: link or unlink a parameter of elements in the family - by category, particular forms by id, or a nested type - or set a form's material, and read it back"
+semantic-identity: "associate a family parameter: link or unlink a parameter of elements in the family - by category, particular forms, nested copies, lines, regions or model text by id, or a nested type - or set a form's material, and read it back"
 kind: action
 domain: revit.families
 capability: LINK_FAMILY_PARAMETER
-version: 3
+# VERSION 4 (2026-11-11) - A FAMILY'S 2D TOO, and back to DRAFT. Version 3 was
+# PROVEN on 2026-11-02 (the proof block below, kept as the record of what it
+# proved); its C# changed, so it is DRAFT again until NEEDS-CHECKING Group NE
+# is run (D-30, D-117). Found missing (rows 4d and 6c) when Ajmal PS asked
+# on 2026-11-11 for a family's whole 2D side to be covered, building a
+# diffuser family's plan arrows: ids of detail lines, symbolic lines, filled
+# and masking regions and model text are now accepted in `forms`, for their
+# Visible on a Yes/No parameter or whatever else Revit lets be linked on them;
+# version 3 refused them as "neither a form nor a nested family". The owner's
+# yes to widening rather than a second card: "widen ... no duplicate tools,
+# same kind of work 2 tools no need". FRAGMENT-ISSUES row 5b-1497. Every other
+# path is version 3's, unchanged.
+version: 4
 source: OFFICIAL
 risk: MODIFY
 
@@ -67,6 +79,17 @@ purpose: >
   proof no longer describes the code and is kept as a record, and the fragment
   is DRAFT until it is proved again.
 
+  **VERSION 4 (2026-11-11, FRAGMENT-ISSUES 5b-1497): A FAMILY'S 2D TOO.**
+  The ids in `forms`, or what is `selected`, may also name a detail line
+  (straight, arc, ellipse or spline), a symbolic line, a filled or masking
+  region, or model text - a plan arrow's Visible linked to "Show Arrow", a
+  symbolic outline's Visible to a Yes/No - for whatever parameter Revit lets
+  be linked on it. Anything that is none of these, nor a form or a nested
+  copy, is still refused by name. The answer names them as the Properties
+  palette does ("Symbolic Line id N", "Masking Region id N"). This is version
+  4: version 3's proof is kept as the record, and the tool is DRAFT until
+  NEEDS-CHECKING Group NE proves it again.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -109,6 +132,11 @@ contract:
     # commas between - or `selected`, what is
     # selected in this family's window. Anything that is not a form or a
     # nested copy refuses the call. Optional, "none" when left out.
+    # VERSION 4: a detail line, a symbolic line, a filled or masking region
+    # and model text are accepted too, by the ids DRAW_FAMILY_DETAIL_LINES,
+    # DRAW_FAMILY_SYMBOLIC_LINES and DRAW_FAMILY_FILLED_REGION gave back;
+    # anything else still refuses the call by name. The name and the binding
+    # are version 3's, so a version 3 caller binds unchanged.
     - name: forms
       type: string
       source: request
@@ -248,7 +276,12 @@ compatibility-note: >
   found by `Family.GetFamilySymbolIds`, is named by `family` and `type`, as
   LINK_NESTED_TYPE_PARAMETER named it. `BuiltInParameter.MATERIAL_ID_PARAM`,
   `Parameter.Set(ElementId)` and `Selection.GetElementIds` read the same 2020
-  through 2027.
+  through 2027. Version 4's kinds - `DetailCurve` and `SymbolicCurve` (both
+  `: CurveElement`), `FilledRegion` with `IsMasking`, and `ModelText` (`:
+  Element`, not a form) - are the same classes 2020 through 2027 (api-surface,
+  read 2026-11-11). A filled region in a 3D family needs Revit 2023 and a
+  masking region 2024 to exist at all (DRAW_FAMILY_FILLED_REGION); linking one
+  that exists has no release limit of its own.
 
 # 2026-11-01 - LINK_FAMILY_FORM_PARAMETER, SET_FAMILY_FORM_MATERIAL AND
 # LINK_NESTED_TYPE_PARAMETER WERE MERGED INTO THIS CARD (version 3) on the
@@ -274,6 +307,10 @@ compatibility-note: >
 #   "link the connector flow to a family parameter"  -> here
 #   "unlink the solid's material"                    -> here, Material=none
 #   "link the handle's visible to Show_Handle"       -> here, forms= its id
+#   "link the arrow's visible to Show Arrow"         -> here, forms= the
+#                                                       symbolic line's,
+#                                                       region's or nested
+#                                                       arrow's id (version 4)
 #   "link the elbow's end angle to Bend Angle"       -> here, forms= its id
 #   "link this nested beam's length to Beam Length"  -> here, forms= ONE copy's id
 #   "link the nested type's width to Motor Width"    -> here, family= and type=
@@ -315,6 +352,8 @@ utterances:
   - make this part optional in some types
   - link this nested beam's length to Beam Length
   - link only this copy's visible to Pipe 2 Visible
+  # VERSION 4 (2026-11-11): a family's 2D - the owner's words for the job.
+  - link the arrow's visible to Show Arrow
   # MOVED 2026-11-01 from SET_FAMILY_FORM_MATERIAL, merged into this card.
   - link the body material to Body Material
   - make this extrusion steel

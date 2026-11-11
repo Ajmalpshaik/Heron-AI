@@ -42,7 +42,7 @@ does it by hand.
 | 1b | Rotate it | ROTATE_ELEMENTS (vertical axis) | **have PROVEN** | In a PLAN view. Not measured in a family; an item in an elevation view turns about the wrong axis - recorded, not built |
 | 1c | Mirror it | MIRROR_ELEMENTS (vertical plane through two plan points) | **have PROVEN** | In plan; not measured in a family |
 | 1d | Array it | ARRAY_FAMILY_FORMS | **widen** (PR C) | Today arrays a nested family in a 3D view, where a detail item does not show; widened to its owner view |
-| 2 | Lock nested 2D families to planes | LOCK_NESTED_FAMILY_TO_PLANES | **have DRAFT** | Fix in flight: #842 |
+| 2 | Lock nested 2D families to planes | LOCK_NESTED_FAMILY_TO_PLANES | **have PROVEN** | v4 (#842, merged 2026-11-11), proved on Revit 2020 (Group NB), a detail item with no owner view included |
 | 3a | Draw detail lines / symbolic lines, arcs included | DRAW_FAMILY_DETAIL_LINES, DRAW_FAMILY_SYMBOLIC_LINES | **have PROVEN** | - |
 | 3b | Lock a line ALONG a plane, a line END to a crossing plane | LOCK_FAMILY_LINES_TO_PLANES | **have DRAFT** | Its first run refused a plain detail line (Group NC); fixed in v2 ([#844](https://github.com/Ajmalpshaik/Heron-AI/pull/844), merged 2026-11-11, row 5b-1495), still DRAFT until Group NC passes |
 | 3c | Slanted lines follow parameters | the same, by end locks | **have DRAFT** | As 3b |
@@ -80,8 +80,8 @@ gap but these:
    session already changing that card.
 2. **A reference plane at an angle (5d)** - one more widening, of CREATE_REFERENCE_PLANES. Until then the
    sloped plane an angle label needs is drawn by hand.
-3. **The in-flight fix #842** (LOCK_NESTED_FAMILY_TO_PLANES) must land, or a placed arrow still cannot be
-   locked; the LOCK_FAMILY_LINES_TO_PLANES fix (#844) is merged.
+3. **The in-flight fixes have landed:** LOCK_NESTED_FAMILY_TO_PLANES v4 (#842) is merged and PROVEN;
+   LOCK_FAMILY_LINES_TO_PLANES v2 (#844) is merged, DRAFT until Group NC passes.
 4. **Two things no tool can do (NO API)** - a filled region's and a nested family's Visibility Settings.
    Done by hand, or avoided: put the region inside the nested 2D family and control that family's
    visibility by its view and Visible.
@@ -96,7 +96,7 @@ radius (LABEL_FAMILY_RADIUS) were added; the arc centre and the angled plane are
 | PR | Cards (each back to DRAFT, version raised) | Proof plan | Why split so |
 |---|---|---|---|
 | A - `claude/report-family-2d-elements` | REPORT_FAMILY_FORMS v5 (READ) + this note | [Group ND](../../needs-checking/group-nd.md), row 5b-1496 | READ: `revit_read` still runs a DRAFT, so nothing is blocked |
-| B - `claude/family-2d-link-and-angle` | LINK_FAMILY_PARAMETER v4, LABEL_FAMILY_DIMENSION v3 | Group NE, rows 5b-1497, 5b-1498 | Used in every family build: small, so it can be merged and re-proved first and family work is blocked as briefly as possible |
+| B - #849, **MERGED 2026-11-11** | LINK_FAMILY_PARAMETER v4, LABEL_FAMILY_DIMENSION v3 | Group NE, rows 5b-1497, 5b-1498 | Used in every family build: small, so it can be merged and re-proved first and family work is blocked as briefly as possible |
 | C - `claude/family-2d-place-show-label` | PLACE_DETAIL_COMPONENTS v2, ARRAY_FAMILY_FORMS v4, SET_FAMILY_FORM_VISIBILITY v2, SET_FAMILY_FORM_SUBCATEGORY v2, LABEL_FAMILY_RADIUS v6 | Group NF, rows 5b-1499 to 5b-1503 | The rest |
 
 **What a widening costs, said plainly:** a change under a PROVEN card's `impl/` makes its proof stale, so the

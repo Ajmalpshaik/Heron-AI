@@ -1438,7 +1438,7 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-na.md`](needs-checking/group-na.md)
 
-## Group NB - a nested DETAIL ITEM locked to named planes in the plan it is drawn in: `LOCK_NESTED_FAMILY_TO_PLANES` version 3 (2026-11-11)
+## Group NB - a nested DETAIL ITEM locked to named planes in the plan it is drawn in: `LOCK_NESTED_FAMILY_TO_PLANES` version 3, now version 4 (2026-11-11)
 
 **Its own file:** [`needs-checking/group-nb.md`](needs-checking/group-nb.md)
 
@@ -1449,6 +1449,10 @@ Step 6 is finished, and not before. At that point:
 ## Group ND - a family's 2D side read back - lines, regions, nested families, and what is locked, labelled and linked to each: `REPORT_FAMILY_FORMS` version 5 (2026-11-11)
 
 **Its own file:** [`needs-checking/group-nd.md`](needs-checking/group-nd.md)
+
+## Group NE - a family's 2D linked to a Yes/No by id, and an angle labelled between two planes: `LINK_FAMILY_PARAMETER` version 4 and `LABEL_FAMILY_DIMENSION` version 3 (2026-11-11)
+
+**Its own file:** [`needs-checking/group-ne.md`](needs-checking/group-ne.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
