@@ -7,10 +7,13 @@ people who actually do BIM work are worth more than contributions from people wh
 > path from a sentence to a selection changing on screen — is proven in real Revit 2020 and 2024. The
 > add-in has since loaded in Revit 2020, 2024, 2026 and 2027
 > ([Group EQ](docs/needs-checking/group-eq.md)), and D-28's executor compiles a fragment's C# inside
-> Revit's own process, so fragments do now meet real models — on every one of those but 2026, where no
-> fragment could run until a repair that has not yet been run in Revit
-> ([Group GW](docs/needs-checking/group-gw.md)). The [README's Status](README.md#status) says what else
-> has met a real Revit.
+> Revit's own process, so fragments do now meet real models. On 2026 no fragment could run until a
+> repair that [Group GW](docs/needs-checking/group-gw.md) still records as not yet run in Revit; one
+> card has since been proved there - `attach-walls`, signed 2026-11-07 - and the group's own rows are
+> not written back. Which release each proof names is on the cards, and the command that counts it is
+> the first block of [Group EQ](docs/needs-checking/group-eq.md) - it reads the whole `proof:` block,
+> because a `model:` line can wrap, and a one-line `grep` printed here until 2026-11-11 missed those.
+> The [README's Status](README.md#status) says what else has met a real Revit.
 >
 > **Most fragments are `PROVEN`** — each on a recorded run against a named model. **The rest are
 > `DRAFT`**, which is Heron's word for *not proven as it stands* - most of those have never met a
@@ -156,7 +159,7 @@ flowchart LR
     T["<b>tests</b> — every suite<br/>FAIL or HUNG is red · NOT RUN kept apart"]
     GEN["<b>generated</b><br/>the committed registry matches its generator"]
     REP["<b>reports</b> — a finding is a question<br/>never red"]
-    WIN["<b>windows.yml</b> — only when installer files change<br/>the lock installs · the installer test host"]
+    WIN["<b>windows.yml</b> — only when installer or mcp/ files change<br/>the lock installs · the installer test host"]
     REV["<b>Review</b> — design fit"]
     M(["<b>Merge</b> to main"])
 
@@ -199,7 +202,7 @@ You, on your branch
        generated  docs/28-agent-registry.md matches its generator       red when stale
        reports    check-reachable, check-revit-gate, agent-count,       never red
                   check-declared-questions
-     windows.yml, only when the installer, the lock, heron-ready or the release builder change
+     windows.yml, only when the installer, the lock, heron-ready, the release builder or mcp/ change
   -> review, for design fit
   -> merge to main
 ```

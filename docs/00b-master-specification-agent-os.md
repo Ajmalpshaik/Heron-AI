@@ -230,7 +230,8 @@ Status:          PRODUCTION
 > agent, it is `DRAFT`; no agent has reached `PRODUCTION`. Its run in a real Revit was signed by a person
 > into [`brain/agent-proofs/`](../brain/agent-proofs/README.md), and on 2026-10-18
 > `python tools/prove-agent.py check` reported every proof there STALE: each agent's source has changed
-> since it was signed.
+> since it was signed. All of them were run again on Revit 2020 and signed on 2026-10-25; that command,
+> not this note, says which still stand.
 
 ## 6. Capability Registry
 

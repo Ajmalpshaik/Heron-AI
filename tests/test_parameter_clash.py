@@ -41,12 +41,13 @@ does not prove Revit ever reports a clash - that needs a model, see D-30.
     python tests/test_parameter_clash.py
 """
 
-import io
 import os
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SERVER = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
+sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+
+import heron_tools as TOOLS                                     # noqa: E402
 
 DASH = "—"
 
@@ -54,7 +55,7 @@ DASH = "—"
 def coverage():
     """`_parameter_coverage` lifted out of the server, or None if it moved."""
     try:
-        text = io.open(SERVER, encoding="utf-8").read()
+        text = TOOLS.server_text()
     except OSError:
         return None
 

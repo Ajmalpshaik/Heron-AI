@@ -1428,3 +1428,78 @@ or stay with the placement cards, the point typed or clicked as a step the chat 
 the limit: one point a call, and "put it here" declared by no card.
 
 ---
+
+### 🔵 Q-87 — Bringing an edited spreadsheet back writes every cell with nothing shown first. Should Heron read the file itself before Revit does - and if so, how does a chat reach that, and should the export carry each element's UniqueId? *(found 2026-11-11 writing the round-trip method)*
+
+**What was found.** A modeller's weekly round trip - parameters out to Excel, edited, brought back - is two
+cards Heron already has: `EXPORT_PARAMETERS_TO_CSV` writes the file and `SET_PARAMETER_VALUES_BY_ID` reads it
+back (`csvPath`, since `IMPORT_PARAMETER_VALUES` was merged into it on 2026-11-01 on the owner's word *"make
+sure there is no duplicate tools"*). The method
+[`parameters-csv-round-trip`](../../brain/skills/parameters-csv-round-trip.yaml) puts them in order. Reading
+both cards' C# for it found that the return is safe in one way and blunt in three. Safe: it checks the whole
+file inside Revit before writing anything, and one bad row means nothing is written. Blunt:
+
+- **It reads a CSV only.** An `.xlsx` must be saved as CSV first, and as *CSV UTF-8*, or a name with an accent
+  or in Arabic may be written wrong ([row 5b-1528](../fragment-issues/section-5b-rows-401-425.md)).
+- **It writes every cell that is not blank, and shows nothing first.** A value somebody changed in Revit after
+  the export is put back to the file's old one with no notice, and a length the project shows rounded is
+  written back rounded in a cell nobody edited ([row 5b-1525](../fragment-issues/section-5b-rows-401-425.md)).
+  The only preview is Revit's Keep or Discard box.
+- **A file the export just wrote can be refused whole** - for a type parameter, a read-only one, or a
+  parameter some of the elements have not got
+  ([row 5b-1526](../fragment-issues/section-5b-rows-401-425.md)). And the export writes no UniqueId column, so
+  a file from another model whose ids happen to be in use here is not caught.
+
+Today the method covers this by telling the modeller three things to do by hand: delete every column and row
+they did not edit, save as CSV UTF-8, and bring the file back in the same sitting. None of it has run in Revit
+([NEEDS-CHECKING Group NJ](../needs-checking/group-nj.md)).
+
+**Three questions, in a modeller's words.**
+
+**(a) Before anything is written, do you want Heron to show you what the file would change?** The shapes:
+
+1. **Nothing more.** The method stands as written, with its three hand rules. **Cost:** a slip - a column left
+   in, a file brought back a day late - writes old or rounded values over the model, and nothing says so.
+2. **Heron reads the file first, outside Revit - recommended.** As it already reads a sheet list
+   ([`heron_sheet_list.py`](../../brain/heron_sheet_list.py)): an `.xlsx` or a CSV, with the file as exported
+   kept beside the edited one. It lists the cells that differ - how many, and a sample of them, old value and
+   new - says which ids were changed, doubled or added and which headers were renamed, and writes a small CSV
+   holding ONLY the changed cells to the work folder. That small file goes to the same card as today. Nothing
+   in Revit is touched by the reading, and **no second tool writes to the model** - the card that changes it
+   stays the one card. **Cost:** a reader and its tests, a door for the chat to reach it (question b), and one
+   habit for the modeller - keep the exported file. A cell blanked on purpose needs the card's `clear`, so it
+   is asked about apart. It still cannot see a value changed in Revit since the export in a cell the modeller
+   ALSO edited; only question (c) reaches that.
+3. **The card does it, inside Revit.** A new version of `SET_PARAMETER_VALUES_BY_ID` takes the exported file as
+   well, writes only the cells that differ, checks each against what the export held, and gains a preview.
+   **Cost:** the card is PROVEN, and a change to its code makes its proof out of date - every chat is then
+   refused a kept change from it ([D-117](../decisions/D-117.md)), the Companion's table Apply and the rows by
+   key included, until it has been proved again on a real model. And an `.xlsx` is still not read.
+
+**(b) If Heron reads the file (shape 2), how should a chat ask for it?** Every tool's description is paid for
+by every chat ([D-118](../decisions/D-118.md)), and off Windows Heron serves its library tools only
+([D-132](../decisions/D-132.md)), so a new door is a decision and was not built:
+
+1. **A tool of its own**, beside `heron_sheet_list`. Plain to find; one more description in every chat.
+2. **One tool that reads a spreadsheet, told which job it is for** - `heron_sheet_list` widened. No new
+   description; but it changes a tool whose own run in Revit is still owed
+   ([Group MY](../needs-checking/group-my.md)), and one description then explains two jobs.
+3. **No tool** - the method gives the modeller one command to run on their PC. Nothing added to any chat;
+   the modeller leaves the chat to do it.
+
+**(c) Should the exported file carry each element's UniqueId as a second column?** With it, a file from
+another model is refused, and a cell changed in Revit since the export can be refused too, as the Companion's
+table already does. **Cost:** `EXPORT_PARAMETERS_TO_CSV` is PROVEN; a new column is a new version, DRAFT until
+it is proved again, and while it is DRAFT no chat can run the export. A modeller also sees a long column of
+letters they must not touch.
+
+**Why shape 2 for (a).** The hand rules are exactly the kind a tired modeller skips, and the damage is silent.
+Shape 3 buys the same thing by taking a proved card out of use until the PC has run it again. Shape 2 leaves
+both proved cards alone, keeps one writer, and puts the check where a mistake costs nothing - before Revit.
+For (b) and (c) nothing is recommended: (b) is a budget only the owner sets, and (c) trades a proved card for
+a safer file.
+
+**Ajmal PS decides.** Until he does, nothing is built: the method's hand rules stand, and it says so at the
+steps where they bite.
+
+---

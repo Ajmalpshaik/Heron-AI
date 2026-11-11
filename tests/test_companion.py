@@ -57,7 +57,6 @@ import heron_tools as tools                                  # noqa: E402
 SOURCE = os.path.join(ROOT, "mcp", "companion", "heron_companion.py")
 PAGE_JS = os.path.join(ROOT, "mcp", "companion", "static", "companion.js")
 LIVE_CS = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "HeronLiveState.cs")
-SERVER = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
 
 FAILURES = []
 
@@ -257,7 +256,7 @@ def test_no_way_to_an_ai():
     check("create_connection" not in text and "connect((" not in text,
           "and opens no outgoing socket anywhere in its code")
 
-    server = io.open(SERVER, encoding="utf-8").read()
+    server = tools.server_text()
     body = server[server.index("def heron_companion("):]
     body = body[:body.index("\n@server.tool()")] if "\n@server.tool()" in body else body
     returns = [l for l in body.splitlines() if l.strip().startswith("return")]
@@ -429,7 +428,7 @@ def test_activity():
           and len(act.since(0)[-1]["summary"]) <= hc.Activity.FIRST_LINE,
           "at most 500 kept, each line at most 200 characters")
 
-    server = io.open(SERVER, encoding="utf-8").read()
+    server = tools.server_text()
     check("register(*args, **options)(_recorded(fn))" in server
           and "@functools.wraps(fn)" in server,
           "every tool is recorded through one wrapper that keeps its signature")
@@ -731,7 +730,7 @@ def test_changes():
     check("set-category-graphics" in marked and "override-graphics-in-view" not in marked,
           "category graphics is offered; per-element overrides (read from the selection) are not")
 
-    server = io.open(SERVER, encoding="utf-8").read()
+    server = tools.server_text()
     check('_through(revit_change, origin="companion")(capability, values)' in server
           and '_through(revit_change, reply_out=out, origin="companion")(' in server
           and 'body = getattr(tool, "__wrapped__", tool)' in server,
@@ -818,7 +817,7 @@ def test_tables():
           and tools.COMPANION_ACTIONS.get("companion_table_apply") == (tools.MODIFY,
                                                                        "run_fragment_write"),
           "opening a table reads (ANALYZE); applying it writes (MODIFY), each declared once")
-    server = io.open(SERVER, encoding="utf-8").read()
+    server = tools.server_text()
     offer = server[server.index("def revit_offer_settings("):server.index("def revit_edit_table(")]
     check(tools.TOOLS.get("revit_offer_settings") == (tools.READ, None)
           and "session.request" not in offer and "_change(" not in offer
@@ -855,7 +854,7 @@ def test_tables():
 def test_model_guard():
     print()
     print("A table made in one model never applies in another (Codex review of #362)")
-    server = io.open(SERVER, encoding="utf-8").read()
+    server = tools.server_text()
     for name in ("def _apply_change(", "def _apply_table("):
         body = server[server.index(name):]
         body = body[:body.index(chr(10) + "def ", 10)]
@@ -1041,7 +1040,7 @@ def test_loads():
     check("fetch(\"/api/loads/view\"" in page_js and "import " not in page_js,
           "the 3D view fetches only its own data and loads no library")
 
-    server = io.open(SERVER, encoding="utf-8").read()
+    server = tools.server_text()
     fin = server[server.index("def _loads_finalize("):]
     fin = fin[:fin.index(chr(10) + "def ", 10)]
     check("_apply_table(rows, identity)" in fin
@@ -1136,7 +1135,7 @@ def test_loads_recalculate_overtaken_by_a_fresh_read():
     check(again["ok"] and kept == ["new"],
           "a Recalculate nothing overtook is kept and shown, as before")
 
-    server = io.open(SERVER, encoding="utf-8").read()
+    server = tools.server_text()
     tool = server[server.index("def revit_building_loads("):]
     tool = tool[:tool.index(chr(10) + "@server.tool()")]
     check(-1 < tool.find("LOADS_PANEL.reading()") < tool.find("brain.building_loads("),
@@ -1314,7 +1313,7 @@ def test_finalize_asks_for_nothing_by_typed_ids():
     day for the Spaces schedule to be made by Finalize too."""
     print()
     print("Finalize on a real add-in: no typed ids, a real read-back, the schedule")
-    server = io.open(SERVER, encoding="utf-8").read()
+    server = tools.server_text()
     fin = server[server.index("def _loads_finalize("):]
     fin = fin[:fin.index(chr(10) + "def ", 10)]
     check("elementIds=" not in fin and "FILTER_ELEMENTS_BY_ID" not in fin,
@@ -1371,7 +1370,7 @@ def test_switched_off_parts():
           "their code is kept, and nothing calls it while the switches are off")
     check(hc.SHOW_CHANGES is False and callable(hc.Changes().offer),
           "the server's switch is off, and its Changes tables are still whole")
-    server = io.open(SERVER, encoding="utf-8").read()
+    server = tools.server_text()
     for name in ("def _offer_change(", "def _load_settings(", "def revit_offer_settings("):
         body = server[server.index(name):]
         body = body[:body.index(chr(10) + "def ", 10) if chr(10) + "def " in body[10:] else len(body)]
@@ -1454,7 +1453,7 @@ def test_layout_panel():
     check(source.index("why = self._api_ok()", i) < source.index("LAYOUT_PANEL.current()", i)
           and source.index("why = self._api_ok()", j) < source.index("LAYOUT_PANEL.preview(", j),
           "every Layout route is behind _api_ok like every other route")
-    server = io.open(SERVER, encoding="utf-8").read()
+    server = tools.server_text()
     for hook in ("preview_hook = _sprinkler_layout_preview",
                  "place_hook = _sprinkler_layout_place"):
         check(hook in server, "the server sets %s" % hook.split(" =")[0])
@@ -1545,7 +1544,7 @@ def test_dashboard_panel():
           and source.index("why = self._api_ok()", k) < source.index("DASHBOARD_PANEL.show(", k)
           and source.index("why = self._api_ok()", m) < source.index("DASHBOARD_PANEL.demo(", m),
           "every Dashboard route is behind _api_ok like every other route")
-    server = io.open(SERVER, encoding="utf-8").read()
+    server = tools.server_text()
     check("DASHBOARD_PANEL.refresh_hook = _dashboard_refresh" in server,
           "the server sets the Dashboard's refresh_hook")
     refresh_src = server[server.index("def _dashboard_refresh("):]
@@ -1840,7 +1839,7 @@ def test_checklist_panel(tmp):
           and source.index("why = self._api_ok()", j) < source.index("CHECKLIST_PANEL.run(", j)
           and source.index("why = self._api_ok()", j) < source.index("CHECKLIST_PANEL.show(", j),
           "every QA Checklist route is behind _api_ok like every other route")
-    server = io.open(SERVER, encoding="utf-8").read()
+    server = tools.server_text()
     check("CHECKLIST_PANEL.list_hook = _checklist_list" in server
           and "CHECKLIST_PANEL.run_hook = _checklist_run_page" in server
           and "CHECKLIST_PANEL.show_hook = _checklist_show" in server
@@ -1975,7 +1974,7 @@ def test_sprinkler_panel():
                       encoding="utf-8").read()
     check('fetch("/api/sprinkler/view"' in page_js and "import " not in page_js,
           "the Sprinkler 3D view fetches only its own data and loads no library")
-    server = io.open(SERVER, encoding="utf-8").read()
+    server = tools.server_text()
     for hook in ("calculate_hook = _sprinkler_calculate", "suggest_hook = _sprinkler_suggest",
                  "confirm_hook = _sprinkler_confirm", "report_hook = _sprinkler_report"):
         check(hook in server, "the server sets %s" % hook.split(" =")[0])

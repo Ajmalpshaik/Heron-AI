@@ -4551,33 +4551,122 @@ def _proven_split():
     (None, None) when it cannot be read, which is reported as UNKNOWN rather
     than as zero proven. Those are different sentences.
     """
+    counts = _status_counts()
+    if not counts:
+        return None, None
+    return (sum(counts.get(s, 0) for s in ("PROVEN", "PRODUCTION")),
+            sum(counts.values()))
+
+
+def _status_counts():
+    """
+    {status: how many cards declare it} over every fragment.yaml, read from
+    the files for `_proven_split`'s reason - or None when they cannot be
+    read. A card that states no status is counted under "".
+    """
     folder = os.path.join(_repo_root(), "brain", "fragments")
     if not os.path.isdir(folder):
-        return None, None
+        return None
 
-    proven = total = 0
+    counts = {}
     try:
         for name in sorted(os.listdir(folder)):
             path = os.path.join(folder, name, "fragment.yaml")
             if not os.path.isfile(path):
                 continue
-            total += 1
+            status = ""
             with io.open(path, "r", encoding="utf-8", errors="replace") as fh:
                 for line in fh:
-                    if not line.startswith("heron-status:"):
-                        continue
-                    if line.split(":", 1)[1].strip().upper() in ("PROVEN", "PRODUCTION"):
-                        proven += 1
-                    break
+                    if line.startswith("heron-status:"):
+                        status = line.split(":", 1)[1].strip().upper()
+                        break
+            counts[status] = counts.get(status, 0) + 1
     except OSError:
-        return None, None
+        return None
+    return counts
 
-    return (proven, total) if total else (None, None)
+
+def _live_split():
+    """
+    (proven, live) - how many capabilities are proved, of the ones the
+    library still HOLDS. (None, None) when that cannot be read.
+
+    A RETIRED CARD IS NOT A CAPABILITY (FRAGMENT-ISSUES 5b-1521). The closing
+    sentence counted every fragment.yaml, so "the other N are not" proven
+    counted each DEPRECATED card as a capability nobody had proved - a card
+    retrieval never offers, kept only so its record is not destroyed. Measured
+    2026-11-11: the sentence's "other" was the DRAFT cards and the DEPRECATED
+    ones added together, nearly half of it cards that are not in the library.
+
+    WHICH STATUSES RETIRE A CARD IS THE BRAIN'S TO SAY - docs/09's ladder,
+    through heron_brain.retired_statuses - never a second list typed here.
+    """
+    counts = _status_counts()
+    if not counts:
+        return None, None
+    try:
+        retired = brain.retired_statuses()
+    except brain.BrainUnavailable:
+        return None, None
+    live = sum(n for status, n in counts.items() if status not in retired)
+    if not live:
+        return None, None
+    return sum(counts.get(s, 0) for s in ("PROVEN", "PRODUCTION")), live
+
+
+# WHICH OF THE TWO CLOSING PARAGRAPHS THIS PROCESS HAS ALREADY SERVED WHOLE.
+#
+# heron_lookup, heron_resolve and heron_capabilities ended every answer with
+# both, and heron_method a job's method with the first - about 1,400
+# characters, the same words every time. Measured 2026-11-11 over stdio, off
+# Windows: 28% of a lookup's reply and 36% of a resolve's. A chat that looks
+# up five things read them five times, and what it needed the fifth time was
+# one line.
+#
+# SO heron_lookup, heron_resolve AND heron_method SAY EACH IN FULL ONCE A
+# PROCESS AND IN ONE LINE AFTER - and heron_capabilities says both whole every
+# time, which is where the one line sends a reader who wants them.
+#
+# THE ONE LINE HAS TO STAND ON ITS OWN, because "once a process" is not "once
+# a reader". This comment said *a process is what a chat is given*, and that
+# was untrue: .mcp.json starts one server for a whole Claude Code session. It
+# outlives /clear and a compacted conversation, and a subagent given these
+# tools (heron-fragment-author holds heron_lookup) asks the same process. Any
+# of those can meet the short form having never been shown the long one - so
+# it says the limits itself, claims nothing about what was said before, and
+# names the tool that has the whole text on demand.
+#
+# THE LINE IS NEVER DROPPED. tests/test_brain_reachable.py and
+# tests/test_mcp_serves.py hold that EVERY answer hands back its own limits -
+# that a change is gated, and how much is proved - so a plan is never built on
+# a resolution read as a promise. The short form keeps both, in fewer words.
+_SAID_IN_FULL = set()
+
+
+def _said_before(what):
+    """Whether this process has served `what` whole already - and from now on
+    it has."""
+    if what in _SAID_IN_FULL:
+        return True
+    _SAID_IN_FULL.add(what)
+    return False
+
+
+def _doors_in_short():
+    """`_cannot_run` in one line, for an answer after the first - whole in
+    itself, and naming where the full text is (_SAID_IN_FULL has why)."""
+    return (
+        "The doors, in short: what READS runs through revit_read and what "
+        "only changes what is SHOWN through revit_show, both with Changes "
+        "off; what WRITES runs through revit_change, and Heron refuses it "
+        "while the owner's Changes switch is off - Admin and Publish have "
+        "switches of their own (D-106). heron_capabilities says this in full.")
 
 
 def _cannot_run():
     """
-    What can and cannot reach Revit today, and through which tool.
+    What can and cannot reach Revit today, and through which tool - whole,
+    every time it is asked. `_doors_in_short` is its one line.
 
     IT SAID A READ COULD RUN, AND FROM A CHAT IT COULD NOT. "Heron can now RUN
     a read-only fragment against the open model" was true of the command line
@@ -4605,9 +4694,17 @@ def _cannot_run():
         "until he turns them on in Revit.")
 
 
-def _not_proven():
-    """How much is proved, counted rather than claimed."""
-    proven, total = _proven_split()
+def _not_proven(short=False):
+    """How much is proved, counted rather than claimed.
+
+    `short` is its one line, for an answer after a process's first
+    (_SAID_IN_FULL). The counts are in both - they are the live fingerprint of
+    which tree this server reads (row 127) - and a count that could not be
+    read is said the same way each time.
+
+    COUNTED OVER THE CARDS STILL IN THE LIBRARY (_live_split): a retired card
+    is not a capability, proved or otherwise."""
+    proven, total = _live_split()
     if proven is None:
         return ("How much of this is proven could not be read from disk just "
                 "now, which is not the same as none. D-30 promotes on one "
@@ -4616,6 +4713,10 @@ def _not_proven():
         return ("Nothing here is proven yet. D-30 promotes on one recorded "
                 "proof containing a negative case, which needs a real model. "
                 "See NEEDS-CHECKING.md.")
+    if short:
+        return ("%d of %d capabilities are PROVEN (D-30); the other %d are "
+                "not, and one that has not been proved is a claim."
+                % (proven, total, total - proven))
     return ("%d of %d capabilities are PROVEN - each on a recorded proof "
             "against a named model, carrying a negative case and a fingerprint "
             "that reports STALE if the code moves under it (D-30). The other "
@@ -4714,6 +4815,9 @@ def heron_capabilities() -> str:
                  "that claims to do it. It does not mean Heron can run it. "
                  + _cannot_run())
     lines.append(_not_proven())
+    # BOTH WHOLE, EVERY TIME: this is the tool the one-line forms name for
+    # the full text. And this process has now said them.
+    _SAID_IN_FULL.update(("doors", "proved"))
     return "\n".join(lines)
 
 
@@ -4775,7 +4879,7 @@ def heron_method(job: str = "") -> str:
     lines.append("")
     lines.append("Each step's values: heron_resolve <capability>, or call it "
                  "with request= and the hand-back says what to type.")
-    lines.append(_cannot_run())
+    lines.append(_doors_in_short() if _said_before("doors") else _cannot_run())
     return "\n".join(lines)
 
 
@@ -4954,6 +5058,136 @@ def _what_to_type(failure, capability):
     return ("\n" + "\n".join(block)) if block else ""
 
 
+def _lookup_door(risk, capability, folder):
+    """
+    The door a capability a LOOKUP names is run through - revit_read,
+    revit_show or revit_change - or None when its risk could not be read.
+
+    A LOOKUP IS ASKED AT NO DOOR, so the doors are asked instead, lowest
+    first, and no level is typed here: `_door_that_runs` says what the change
+    door sends to revit_read, heron_tools.door_refusal what revit_show runs,
+    and heron_tools.disk_refusal what revit_show turns away for writing a
+    file (row 5b-591) - that one stays the change door's, which runs it.
+    """
+    if tools.level_named(risk) is None:
+        return None
+    door = _door_that_runs("revit_change", risk, capability)
+    if door != "revit_change" or tools.door_refusal("revit_show", risk, capability):
+        return door
+    source = None
+    if folder:
+        try:
+            with io.open(os.path.join(_repo_root(), "brain", "fragments", folder,
+                                      "impl", "any", "fragment.cs"),
+                         "r", encoding="utf-8", errors="replace") as fh:
+                source = fh.read()
+        except OSError:
+            source = None
+    if source is not None and tools.disk_refusal("revit_show", capability, source):
+        return door
+    return "revit_show"
+
+
+# WHICH FOLDER DECLARES WHICH CAPABILITY, KEPT WHILE NO CARD HAS CHANGED.
+# `signature` is every fragment.yaml's name, modified time and size, taken
+# with one stat each and no file opened; the map is read again only when that
+# differs. The brain keeps its own shallow read the same way
+# (heron_search.disk_status, row 127).
+_FOLDERS = {"signature": None, "found": {}}
+
+
+def _folders_by_capability():
+    """
+    {CAPABILITY: folder} for every card - `_fragment_for`'s answer for each,
+    the first folder in order that declares it - without opening a card
+    unless one has changed since this process last read them.
+
+    A LOOKUP LISTS FIVE, AND A WALK EACH IS THE COST ROW 5b-271 MEASURED ON
+    THE OWNER'S PC: there a lookup's time was opening every card again, not
+    the search. So the cards are read once, each only as far as its
+    capability line, and the answer is kept against `_FOLDERS`' signature: a
+    card edited, added or removed changes it, and the next call reads again.
+    A STAT IS NOT AN OPEN, and that difference is the saving - measured here
+    only (a cloud container); what it saves on the owner's PC is not.
+    {} when the folder cannot be read - every status is then "status unread",
+    never a guess.
+    """
+    root = os.path.join(_repo_root(), "brain", "fragments")
+    marks = []
+    try:
+        for name in sorted(os.listdir(root)):
+            try:
+                at = os.stat(os.path.join(root, name, "fragment.yaml"))
+            except OSError:
+                continue
+            marks.append((name, at.st_mtime_ns, at.st_size))
+    except OSError:
+        return {}
+    signature = (root, tuple(marks))
+    if _FOLDERS["signature"] == signature:
+        return _FOLDERS["found"]
+
+    found = {}
+    try:
+        for name, _when, _size in marks:
+            path = os.path.join(root, name, "fragment.yaml")
+            with io.open(path, "r", encoding="utf-8", errors="replace") as fh:
+                for line in fh:
+                    if line.startswith("capability:"):
+                        found.setdefault(line.split(":", 1)[1].strip().upper(), name)
+                        break
+    except OSError:
+        return {}
+    _FOLDERS["signature"], _FOLDERS["found"] = signature, found
+    return found
+
+
+def _how_it_runs(capability, risk, folders=None):
+    """
+    (status, risk, door, held) for one capability a lookup lists. `folders`
+    is `_folders_by_capability()`, taken once by a caller that lists several.
+
+    A CHAT LEARNED A CAPABILITY WAS DRAFT FROM revit_change's REFUSAL, a turn
+    after choosing it. On every ranked answer the lookup printed the
+    capability and its provider and nothing about how far it is proved, what
+    it is allowed to do, or which door runs it - the three things that decide
+    the next call. They are shown now, for the best match and for every
+    runner-up alike.
+
+    SHOWN, NEVER USED. Nothing here moves a candidate, hides one or sets a
+    floor: which one the user meant is the host's to decide (D-01), and a
+    status that ranked would be the routing gate D-65 and D-100 refuse.
+
+    THE STATUS IS THE FILE'S, read through heron_brain.proof_status - the
+    answer revit_change refuses on, stale proof included (D-30) - never the
+    index's word (rows 127 and 189). The risk is the one the lookup already
+    carries, as the hand-back in `_by_words` reads it. `held` is the client's
+    own rule, asked and not copied: True when the door is revit_change and
+    `unproven_refusal` would turn this capability away there (D-117).
+    """
+    if folders is None:
+        folder, _status = _fragment_for(capability)
+    else:
+        folder = folders.get((capability or "").strip().upper())
+    proof = brain.proof_status(folder) if folder else None
+    if proof is None:
+        status = "status unread"
+    else:
+        status = proof["status"] or "no status"
+        # ONLY A PROOF THAT WOULD OTHERWISE STAND IS CALLED STALE. A DRAFT
+        # with an old proof draft behind it is a DRAFT, and says so alone.
+        # WHEN A REPLY CAN SAY IT: only from a store built BEFORE the code
+        # moved, which still holds the card's row. A store built after does
+        # not index such a card, so the lookup never lists it there. Staged
+        # 2026-11-11 on a scratch copy of the library, both ways.
+        if proof["stale"] and status in bridge.KEEPABLE_STATUSES:
+            status += " but STALE"
+    door = _lookup_door(risk, capability, folder)
+    held = (door == "revit_change"
+            and bridge.unproven_refusal(capability, proof) is not None)
+    return status, risk or "risk unread", door, held
+
+
 @server.tool()
 def heron_resolve(capability: str) -> str:
     """
@@ -5024,16 +5258,24 @@ def heron_resolve(capability: str) -> str:
         lines.append("    %-14s %-11s %s" % (p["id"], p["status"], p["kind"]))
 
     if revit is None:
+        # WHY THERE IS NO RELEASE, IN `how`'s OWN WORDS, as heron_lookup says
+        # it. This line was typed "No Revit is connected" and never read
+        # `how` - so off Windows, where no Revit can be reached at all
+        # (D-132), it told a chat that none was connected, which sends it
+        # looking for one (FRAGMENT-ISSUES 5b-1506). And on Windows it said
+        # the same with two Revits open and none chosen, or the chosen one
+        # closed: row 130's sentence, repaired in the lookup and left here.
+        said = how or session.NOTHING_CONNECTED
         lines.append("")
-        lines.append("No Revit is connected, so the version filter did not "
-                     "run and this is every provider rather than the ones "
-                     "that would work on your release.")
+        lines.append("%s%s, so the version filter did not run and this is "
+                     "every provider rather than the ones that would work on "
+                     "your release." % (said[:1].upper(), said[1:]))
 
     lines.extend(_contract_lines(capability))
 
     lines.append("")
-    lines.append(_cannot_run())
-    lines.append(_not_proven())
+    lines.append(_doors_in_short() if _said_before("doors") else _cannot_run())
+    lines.append(_not_proven(short=_said_before("proved")))
     return "\n".join(lines)
 
 
@@ -5092,9 +5334,21 @@ def heron_lookup(request: str, question: bool = False) -> str:
     lines = ['"%s"' % request,
              "  would need   %s" % found["capability"],
              "  matched by   %s" % found["route"],
-             "  provided by  %s" % found["provider"],
-             "",
-             "  %s" % found["note"]]
+             "  provided by  %s" % found["provider"]]
+    # HOW FAR IT IS PROVED, WHAT IT MAY DO, AND THE DOOR THAT RUNS IT - on
+    # every route, so the next call is the run and not a refusal to learn from.
+    folders = _folders_by_capability()
+    status, risk, door, held = _how_it_runs(found["capability"], found.get("risk"),
+                                            folders)
+    lines.append("  status       %s" % status)
+    lines.append("  risk         %s" % risk)
+    lines.append("  run with     %s" % (
+        "not said - its risk could not be read" if door is None
+        else door if not held
+        else "%s - which keeps a change only from a capability whose proof "
+             "stands (D-117), so it refuses this one until it is proved"
+             % door))
+    lines.extend(["", "  %s" % found["note"]])
     lines.extend(asked)
     lines.extend(_other_release_lines(found))
     # BEFORE EVERYTHING BELOW, because it qualifies all of it: an answer from
@@ -5160,13 +5414,20 @@ def heron_lookup(request: str, question: bool = False) -> str:
 
     if len(found["candidates"]) > 1:
         lines.append("")
-        lines.append("  Other capabilities that came close:")
+        lines.append("  Other capabilities that came close - each with its "
+                     "status, its risk and the door that runs it:")
         seen = set()
         for c in found["candidates"][1:]:
             if c["capability"] in seen or c["capability"] == found["capability"]:
                 continue
             seen.add(c["capability"])
-            lines.append("    %-30s %s" % (c["capability"], c["why"]))
+            status, risk, door, held = _how_it_runs(c["capability"], c.get("risk"),
+                                                    folders)
+            lines.append("    %-30s %-7s %-8s %-13s %s%s"
+                         % (c["capability"], status, risk, door or "door not said",
+                            c["why"],
+                            "   -> refused there until it is proved (D-117)"
+                            if held else ""))
 
     # WHICH OPTIONAL BACKENDS ANSWERED. Printed on every lookup, because the
     # degradation is invisible otherwise: the same request on two machines can
@@ -5198,8 +5459,8 @@ def heron_lookup(request: str, question: bool = False) -> str:
         lines.append("Filtered to Revit %s (%s)." % (revit, how))
 
     lines.append("")
-    lines.append(_cannot_run())
-    lines.append(_not_proven())
+    lines.append(_doors_in_short() if _said_before("doors") else _cannot_run())
+    lines.append(_not_proven(short=_said_before("proved")))
     return "\n".join(lines)
 
 

@@ -70,6 +70,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "client"))
 
+import heron_tools as TOOLS                                     # noqa: E402
+
 FAILURES = []
 
 
@@ -79,8 +81,7 @@ def check(condition, what):
 
 
 def main():
-    server = io.open(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py"),
-                     encoding="utf-8").read()
+    server = TOOLS.server_text()
     fragment = io.open(os.path.join(ROOT, "revit", "Heron.Revit.Addin",
                                     "RevitFragment.cs"), encoding="utf-8").read()
 

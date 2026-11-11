@@ -35,8 +35,9 @@ a person's Windows PC**: not the window's new lines, not an install into a real 
 not the identity test inside a Store-built Claude.
 
 **What runs on Windows in CI, since 2026-10-17.** [`.github/workflows/windows.yml`](../../.github/workflows/windows.yml)
-runs on every pull request that touches the installer projects, the lock, `tools/heron-ready.py` or
-`tools/build-release-assets.py`, and on demand - on a GitHub `windows-latest` runner, with no Revit and no
+runs on every pull request that touches the installer projects, the lock, `tools/heron-ready.py`,
+`tools/build-release-assets.py` or - since 2026-11-11, for the server `test_mcp_serves.py` imports -
+anything under `mcp/`, and on demand - on a GitHub `windows-latest` runner, with no Revit and no
 person. Every suite there must exit 0; a 3 fails the job.
 
 - **EP7's measurable half**, on Python 3.12 and on 3.13: `python -m pip install --user --require-hashes -r

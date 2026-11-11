@@ -470,7 +470,9 @@ def run(yard):
           and same(asked[2], os.path.join(home, "audit")) and not os.path.exists(home),
           "knowledge_dir(), shared_dir() and brain_audit_dir() name the default home "
           "and carry nothing into it (%s)" % ("made" if os.path.exists(home) else "not made"))
-    server = read(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py"))
+    sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+    import heron_tools as TOOLS
+    server = TOOLS.server_text()
     main_block = server[server.find('if __name__ == "__main__":'):]
     carry_at, warm_at = main_block.find("brain.carry_home()"), main_block.find("brain.warm_store()")
     check(carry_at != -1 and warm_at != -1 and carry_at < warm_at,
