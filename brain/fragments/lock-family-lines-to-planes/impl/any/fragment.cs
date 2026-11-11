@@ -109,16 +109,51 @@ else
         datums.Add(Tuple.Create((Element)level, level.GetPlaneReference(),
             Plane.CreateByNormalAndOrigin(XYZ.BasisZ, new XYZ(0, 0, level.Elevation)), level.Name));
 
-    // Every line that belongs to a sketch - a form's, a region's - so "all"
-    // never takes a sketch's line for a loose detail line.
+    // Every line that belongs to a FORM'S or a REGION'S sketch, so "all" never
+    // takes a sketch's line for a loose detail line - and only those sketches.
+    // VERSION 2 (row 5b-1495): a Detail Item family keeps a Sketch of its own
+    // on "Ref. Level", owned by no form or region, whose profile lists EVERY
+    // loose detail line drawn there. Reading every Sketch in the family took
+    // the shaft for a form's sketch line and refused the whole call (Group NC,
+    // Revit 2020, 2026-11-11 - sketch 401 listed the shaft and the control).
+    // So a sketch counts only when a form names it (as LOCK_FORM_SKETCH_TO_PLANES
+    // reaches it) or a filled region has it as a dependent.
     var inSketch = new HashSet<ElementId>();
-    foreach (var sketch in new FilteredElementCollector(doc).OfClass(typeof(Sketch)).Cast<Sketch>())
+    var inFormSketch = new HashSet<ElementId>();
+    Func<Func<Sketch>, Sketch> readSketch = get => { try { return get(); } catch (Exception) { return null; } };
+    Action<Sketch, bool> collect = (sketch, ofForm) =>
     {
+        if (sketch == null) return;
         try
         {
             foreach (CurveArray loop in sketch.Profile)
                 foreach (Curve curve in loop)
-                    if (curve.Reference != null) inSketch.Add(curve.Reference.ElementId);
+                    if (curve.Reference != null)
+                    {
+                        inSketch.Add(curve.Reference.ElementId);
+                        if (ofForm) inFormSketch.Add(curve.Reference.ElementId);
+                    }
+        }
+        catch (Exception) { }
+    };
+    foreach (var form in new FilteredElementCollector(doc).OfClass(typeof(GenericForm)).ToElements())
+    {
+        if (form is Extrusion) collect(readSketch(() => ((Extrusion)form).Sketch), true);
+        else if (form is Revolution) collect(readSketch(() => ((Revolution)form).Sketch), true);
+        else if (form is Sweep) collect(readSketch(() => ((Sweep)form).PathSketch), true);
+        else if (form is SweptBlend) collect(readSketch(() => ((SweptBlend)form).PathSketch), true);
+        else if (form is Blend)
+        {
+            collect(readSketch(() => ((Blend)form).BottomSketch), true);
+            collect(readSketch(() => ((Blend)form).TopSketch), true);
+        }
+    }
+    foreach (var filled in new FilteredElementCollector(doc).OfClass(typeof(FilledRegion)).ToElements())
+    {
+        try
+        {
+            foreach (var sid in filled.GetDependentElements(new ElementClassFilter(typeof(Sketch))))
+                collect(doc.GetElement(sid) as Sketch, false);
         }
         catch (Exception) { }
     }
@@ -237,8 +272,11 @@ else
             problems.Add(owner != null
                 ? "The line " + e.UniqueId + " is an edge of the filled region " + owner.UniqueId + ". Name the filled "
                     + "region instead - its edges are locked together, a corner once."
-                : "The line " + e.UniqueId + " belongs to a form's sketch. A form's sketch is locked with "
-                    + "LOCK_FORM_SKETCH_TO_PLANES.");
+                : inFormSketch.Contains(curveElement.Id)
+                ? "The line " + e.UniqueId + " belongs to a form's sketch. A form's sketch is locked with "
+                    + "LOCK_FORM_SKETCH_TO_PLANES."
+                : "The line " + e.UniqueId + " is a model line, not a detail line or a symbolic line - only 2D lines "
+                    + "and filled regions are locked here.");
         }
         else
             problems.Add("\"" + (e.Name ?? e.UniqueId) + "\" is not a detail line, a symbolic line or a filled region. "
