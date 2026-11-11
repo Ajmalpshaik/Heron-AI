@@ -30,7 +30,10 @@ risk: READ
 # (heron-ship 3a). WHAT CHANGED: a room or space with no ceiling inside its upper limit
 # and one or more over it in plan ABOVE that limit is listed in
 # `limitBelowCeiling` and said in `findings`, with its own height and the
-# lowest such ceiling's. WHAT DID NOT: a ceiling above the limit is still not
+# lowest such ceiling's. ONLY a ceiling drawn on a level INSIDE the room's own
+# height counts for that: one drawn on a level at or above the room's limit is
+# another storey's, so a ceiling-less shaft under the storey above is never
+# told to raise its limit. WHAT DID NOT: a ceiling above the limit is still not
 # measured as the room's - the row's other repair, looking up to the next
 # level, is a choice about which level counts and is not taken here - so
 # every measured figure is version 2's. A read: it still answers through
@@ -155,7 +158,9 @@ contract:
       # VERSION 3 (row 5b-1128). Rooms and spaces with NO ceiling inside their
       # upper limit and one or more ceilings over them in plan ABOVE it - the
       # room stops short of its ceiling, Revit's default room height under a
-      # normal ceiling. Every one is in `noCeiling` too. Not measured, so
+      # normal ceiling. Only a ceiling drawn on a level inside the room's own
+      # height counts: one on a level at or above the room's limit is another
+      # storey's. Every one is in `noCeiling` too. Not measured, so
       # accounting: the evidence it looked, never a thing it found (D-52).
       role: accounting
       type: IList<ElementId>

@@ -59,6 +59,15 @@ negative:
       shaft is in noCeiling alone. The new sentence is said only of a room
       with a ceiling over it above its limit
 
+  # Row 5b-1128, added 2026-11-11 with version 3. NOT RUN - Group NK, NK1.
+  - given: >
+      a room with NO ceiling in its own storey and its limits left at the
+      default, directly under a ceiling drawn on Level 2 - the storey above's
+    expect: >
+      its id in noCeiling ALONE - not in limitBelowCeiling, and no finding.
+      Level 2 is above the room's limit, so that ceiling is another storey's,
+      and the room must never be told to raise its limit to reach it
+
   - given: a room directly above another room that has its own ceiling
     expect: >
       only this room's ceiling. The one below overlaps perfectly in plan, so a
