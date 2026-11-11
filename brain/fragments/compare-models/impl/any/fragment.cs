@@ -34,15 +34,16 @@
 // the pair in this model and the other in the earlier save, and report a
 // change nobody made, or hide one somebody did. The name is counted first, on
 // the element and on the type the read falls through to; a value that would
-// come from a doubled name is not read, not compared and counted in
-// `ambiguous`, and the answer names the parameter.
+// come from a doubled name is not read and not compared: the element is in
+// `ambiguous`, and the answer names the parameter in the words every reader
+// of row 5b-203 uses.
 
 var findings = new List<string>();
 var added = 0;
 var removed = 0;
 var changed = 0;
 var sameSaveVersion = false;
-var ambiguous = 0;
+var ambiguous = new List<ElementId>();
 // What `valueOf` hands back in place of a value it would not read, and the
 // names it turned down (5b-203).
 const string SharedName = "(two or more parameters share this name)";
@@ -297,7 +298,11 @@ else
                         var then = valueOf(older, parameterName);
                         // Not read on either side is not compared - never
                         // "unchanged", never "changed" (5b-203).
-                        if (now == SharedName || then == SharedName) { ambiguous++; continue; }
+                        if (now == SharedName || then == SharedName)
+                        {
+                            if (!ambiguous.Contains(pair.Key)) ambiguous.Add(pair.Key);
+                            continue;
+                        }
                         if (now == then) continue;
                         differences.Add(parameterName + ": '" + then + "' -> '" + now + "'");
                     }
@@ -328,11 +333,14 @@ else
                         + "per-element stamp, without reading a parameter");
 
                 if (sharedNames.Count > 0)
-                    findings.Add(ambiguous + " value(s) were NOT READ and not compared: two or more parameters "
-                        + "called " + string.Join(", ", sharedNames.Distinct().Select(n => "'" + n + "'").ToArray())
-                        + " sit on the same element or its type, in this model or the other, and Revit hands "
-                        + "back whichever of them it meets first. A change in one of those would not show "
-                        + "above - rename one of the parameters, or compare those by eye");
+                    findings.Add(ambiguous.Count + " element(s) carry TWO OR MORE parameters called "
+                        + string.Join(", ", sharedNames.Distinct().Select(n => "'" + n + "'").ToArray())
+                        + " - NOT READ, because Revit hands back whichever of them it meets first: "
+                        + string.Join(", ", ambiguous.Take(20).Select(id => id.ToString()).ToArray())
+                        + (ambiguous.Count > 20 ? ", and " + (ambiguous.Count - 20) + " more" : "")
+                        + ". On the element or its type, in this model or the other. Not compared, so a change "
+                        + "in one of those would not show above - rename one of the parameters, or compare "
+                        + "those by eye");
 
                 findings.Add("COVERED: " + string.Join(", ", categoryNames.ToArray())
                     + " | parameters compared: "

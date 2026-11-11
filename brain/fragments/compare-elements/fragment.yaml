@@ -19,9 +19,11 @@ risk: READ
 # NEEDS-CHECKING Group NK, NK8, is run (D-30). D-54 s3 and FRAGMENT-ISSUES row
 # 5b-203: version 1 took `LookupParameter`'s first match, which Autodesk's
 # reference calls random when two parameters on one element share the name. A
-# name carried twice on any compared element, or on its type, is now listed in
-# `ambiguous` - never read, never counted identical, never reported as
-# differing. Every other row is exactly version 1's. Written here and not in
+# name carried twice on any compared element, or on its type, is now never
+# read, never counted identical and never reported as differing: the elements
+# are in `ambiguous` and `findings` says which name. Where Revit will not
+# count the name at all, it is said as not read too - never looked up anyway.
+# Every other row is exactly version 1's. Written here and not in
 # `purpose`: the purpose is routing text. A read: it still answers through
 # revit_read while DRAFT, and says DRAFT (D-117 item 4).
 
@@ -82,12 +84,17 @@ contract:
       role: accounting
       type: int
     - name: ambiguous
-      # VERSION 2. One sentence for each parameter name that TWO OR MORE
-      # parameters share on a compared element or its type, naming the
-      # elements. Not read: Revit's lookup would pick one at random, so the
-      # row is neither identical nor differing (D-54 s3, FRAGMENT-ISSUES
-      # 5b-203). Turned down, never found (D-52).
+      # VERSION 2. The compared elements that carry TWO OR MORE parameters by
+      # one name, on themselves or on their type. That name is not read:
+      # Revit's lookup would pick one at random, so its row is neither
+      # identical nor differing, and `findings` says which name (D-54 s3,
+      # FRAGMENT-ISSUES 5b-203). Turned down, never found (D-52).
       role: accounting
+      type: IList<ElementId>
+    - name: findings
+      # VERSION 2. One sentence for each name that was NOT READ - carried
+      # twice on a compared element, or one Revit would not count - naming
+      # the elements. Empty when every name was read.
       type: IList<string>
     - name: tooFewToCompare
       # That fewer than two elements arrived, so there was nothing to compare.

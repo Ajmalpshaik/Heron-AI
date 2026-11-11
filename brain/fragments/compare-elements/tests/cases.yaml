@@ -60,8 +60,9 @@ negative:
       two walls of one type, with "Comments" bound to Walls a second time as
       a project parameter, each wall holding a different built-in Comments
     expect: >
-      "Comments" in `ambiguous`, naming both walls and saying NOT READ - NOT
-      in `differing` and NOT counted in identicalCount: either answer would
+      both walls in `ambiguous`, and a finding naming 'Comments' and saying
+      NOT READ - "Comments" is NOT in `differing` and NOT counted in
+      identicalCount: either answer would
       be read from whichever parameter Revit returned first (row 5b-203).
       Every name the walls carry once is compared as before
 

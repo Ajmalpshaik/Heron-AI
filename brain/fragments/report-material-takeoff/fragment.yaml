@@ -21,8 +21,8 @@ risk: READ
 # the name in `factorParameter`, and version 3 took `LookupParameter`'s first
 # match - which Autodesk's reference calls random when two parameters on one
 # element share the name. A material carrying that name twice now adds
-# nothing to the total and is named in `sharedFactor` and in findings as
-# FACTOR NOT READ, apart from the materials with no factor. With no
+# nothing to the total and is listed in `ambiguous` and named in findings as
+# NOT READ, apart from the materials with no factor. With no
 # `factorParameter` nothing is looked up and the take-off is version 3's,
 # unchanged. Written here and not in `purpose`: the purpose is routing text.
 # A read: it still answers through revit_read while DRAFT, and says DRAFT
@@ -174,13 +174,13 @@ contract:
       # nothing to the total, said aloud (D-52).
       role: accounting
       type: IList<string>
-    - name: sharedFactor
-      # VERSION 4. Materials carrying TWO OR MORE parameters by the name in
-      # factorParameter, where Revit's lookup would pick one at random. Not
-      # read, and they add nothing to the total (D-54 s3, FRAGMENT-ISSUES
-      # 5b-203). Turned down, never found (D-52).
+    - name: ambiguous
+      # VERSION 4. The materials carrying TWO OR MORE parameters by the name
+      # in factorParameter, where Revit's lookup would pick one at random. Not
+      # read, and they add nothing to the total; `findings` names them (D-54
+      # s3, FRAGMENT-ISSUES 5b-203). Turned down, never found (D-52).
       role: accounting
-      type: IList<string>
+      type: IList<ElementId>
     - name: noVolume
       # VERSION 3. Elements whose materials have no volume, so no carbon
       # (D-52). Counted only when a factor was named.

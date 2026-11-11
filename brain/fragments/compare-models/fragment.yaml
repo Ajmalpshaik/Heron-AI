@@ -21,8 +21,8 @@ risk: READ
 # reference calls random when two parameters on one element share the name -
 # so one element could read one of a pair in this model and the other in the
 # earlier save. A value that would come from a doubled name, on the element or
-# on the type the read falls through to, is now not read, not compared and
-# counted in `ambiguous`, and the answer names the parameter. Every other
+# on the type the read falls through to, is now not read and not compared:
+# the element is in `ambiguous`, and the answer names the parameter. Every other
 # value is compared exactly as version 1 compared it. Written here and not in
 # `purpose`: the purpose is routing text. A read: it still answers through
 # revit_read while DRAFT, and says DRAFT (D-117 item 4).
@@ -115,13 +115,13 @@ contract:
       role: accounting
       type: bool
     - name: ambiguous
-      # VERSION 2. How many values were NOT READ because two or more
-      # parameters share the name on the element, or on its type, in either
-      # model - where Revit's lookup would pick one at random. Not compared:
-      # never "changed", never "unchanged" (D-54 s3, FRAGMENT-ISSUES 5b-203).
-      # Turned down, never found (D-52).
+      # VERSION 2. The matched elements on which a named parameter was NOT
+      # READ because two or more parameters share the name on the element, or
+      # on its type, in either model - where Revit's lookup would pick one at
+      # random. Not compared: never "changed", never "unchanged" (D-54 s3,
+      # FRAGMENT-ISSUES 5b-203). Turned down, never found (D-52).
       role: accounting
-      type: int
+      type: IList<ElementId>
 
 proof:
   date: '2026-09-08'

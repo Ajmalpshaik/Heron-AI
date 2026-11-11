@@ -1,8 +1,8 @@
 // NOT STANDALONE. Assumes `doc`, `withAssets`, `withAllTabs`,
 // `withLibraryAppearances`, `namePattern`, `libraryPattern`, `withTextures`
 // and `onlyMissing` are in scope; leaves `materialCount`, `materialList`, `materialClasses`,
-// `materialIds`, `libraryAppearances`, `textures`, `missing` and `findings`
-// behind.
+// `materialIds`, `libraryAppearances`, `textures`, `missing`, `ambiguous` and
+// `findings` behind.
 //
 // VERSION 5 (2026-11-01) - REPORT_MATERIAL_TEXTURES MERGED IN. `withTextures`
 // lists the image files behind each listed material's appearance, SLOT BY
@@ -56,6 +56,11 @@ var libraryAppearances = "";
 var textures = "";
 var missing = new List<string>();
 var findings = new List<string>();
+// VERSION 7 (5b-203): the materials whose Keywords was not read, because two
+// or more parameters share that name - `ambiguous`, as every reader of that
+// row names it; the names are for the finding.
+var ambiguous = new List<ElementId>();
+var ambiguousNames = new List<string>();
 
 {
     var found = new List<Material>();
@@ -134,7 +139,11 @@ var findings = new List<string>();
         // parameter called Keywords bound to Materials does it.
         var keywordsNamed = material.GetParameters("Keywords").Count;
         if (keywordsNamed > 1)
+        {
             identity.Add("keywords NOT READ - " + keywordsNamed + " parameters share that name");
+            ambiguous.Add(material.Id);
+            ambiguousNames.Add(material.Name);
+        }
         else
         {
             var keywords = material.LookupParameter("Keywords");
@@ -306,6 +315,12 @@ var findings = new List<string>();
         findings.Add(materialCount == 0
             ? string.Format("No materials at all in this {0} - '{1}'", kind, doc.Title)
             : string.Format("{0} material(s) in this {1} - '{2}'", materialCount, kind, doc.Title));
+
+    if (ambiguous.Count > 0)
+        findings.Add(ambiguous.Count + " material(s) carry TWO OR MORE parameters called 'Keywords' - NOT READ, "
+            + "because Revit hands back whichever of them it meets first: "
+            + string.Join(", ", ambiguousNames.Take(15)) + (ambiguousNames.Count > 15 ? ", and more" : "")
+            + ". Everything else on their lines was read.");
 
     // VERSION 5: the tool named is the one that answers it now -
     // FIND_UNUSED_MATERIALS was merged into FIND_PURGEABLE_ELEMENTS on

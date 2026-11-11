@@ -21,8 +21,11 @@ risk: READ
 # reference calls random when two parameters on one element share the name. A
 # sheet or view carrying the name twice is now listed in `ambiguous` and named
 # in findings as NOT READ; it joins no value's group and is never called
-# missing from a set or extra in one. Every other sheet is grouped exactly as
-# version 1 grouped it. Written here and not in `purpose`: the purpose is
+# missing from a set or extra in one. While any sheet was not read, no set is
+# called "in step": one that matches every sheet that was read is NOT
+# CONFIRMED and counted in `unconfirmed`. A sheet Revit will not count the
+# name on is not read either. With every sheet read, each is grouped exactly
+# as version 1 grouped it. Written here and not in `purpose`: the purpose is
 # routing text. A read: it still answers through revit_read while DRAFT, and
 # says DRAFT (D-117 item 4).
 
@@ -90,12 +93,19 @@ contract:
       role: accounting
       type: string
     - name: ambiguous
-      # VERSION 2. Sheets and views carrying TWO OR MORE parameters by this
-      # name, by number and name, where Revit's lookup would pick one at
-      # random. Not read, in no value's group, never missing or extra (D-54
-      # s3, FRAGMENT-ISSUES 5b-203). Turned down, never found (D-52).
+      # VERSION 2. The sheets and views carrying TWO OR MORE parameters by
+      # this name, where Revit's lookup would pick one at random; `findings`
+      # names them. Not read, in no value's group, never missing or extra
+      # (D-54 s3, FRAGMENT-ISSUES 5b-203). Turned down, never found (D-52).
       role: accounting
-      type: IList<string>
+      type: IList<ElementId>
+    - name: unconfirmed
+      # VERSION 2. Sets that match every sheet and view that WAS read while
+      # some were not read - reported NOT CONFIRMED, never "in step": an
+      # unread sheet may carry the set's value and be missing from it. 0 when
+      # every sheet was read. Not judged, so accounting (D-52).
+      role: accounting
+      type: int
 
 proof:
   date: '2026-11-02'

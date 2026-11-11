@@ -26,7 +26,7 @@ positive:
       carries once - with one wall's Mark edited between them
     expect: >
       changed 1, that wall named with its old and new Mark, and `ambiguous`
-      0 - the count must not turn down a name that occurs once
+      EMPTY - the count must not turn down a name that occurs once
 
 negative:
   - given: the same file compared with itself
@@ -69,8 +69,8 @@ negative:
       with "Comments" bound to Walls a second time as a project parameter in
       both saves, and one wall's built-in Comments edited between them
     expect: >
-      changed 0 on that name and `ambiguous` above 0 - one for each wall whose
-      parameters were read: every matched wall on Revit 2020, and from 2021
+      changed 0 on that name and `ambiguous` holding each wall whose
+      parameters were read - every matched wall on Revit 2020, and from 2021
       only those Revit's own per-element stamp says changed - with a finding
       naming 'Comments' as NOT READ. Never a wall reported as changed, or the
       edit silently passed as unchanged, on whichever of the two parameters

@@ -21,7 +21,8 @@ risk: READ
 # by name, and version 6 took `LookupParameter`'s first match - which
 # Autodesk's reference calls random when two parameters on one element share
 # the name. A material carrying two parameters called Keywords now reads
-# "keywords NOT READ - N parameters share that name" on its identity line;
+# "keywords NOT READ - N parameters share that name" on its identity line,
+# and is listed in `ambiguous` and named in a finding;
 # every other material, and everything with `withAllTabs` false, reads
 # exactly as version 6 read it. NOT TOUCHED: row 5b-1404, `withAllTabs`
 # crashing inside Revit 2020 with an access violation - not traced to a line,
@@ -278,6 +279,14 @@ contract:
       # Empty when not asked.
       role: result
       type: string
+    - name: ambiguous
+      # VERSION 7. The materials whose Keywords was NOT READ because two or
+      # more parameters share that name on them, where Revit's lookup would
+      # pick one at random; `findings` names them. Filled only with
+      # withAllTabs, which is what reads Keywords (D-54 s3, FRAGMENT-ISSUES
+      # 5b-203). Turned down, never found (D-52).
+      role: accounting
+      type: IList<ElementId>
     - name: missing
       # Version 5. "material / slot: path" for each FULL path with no file - a
       # relative path is never in it (D-52).

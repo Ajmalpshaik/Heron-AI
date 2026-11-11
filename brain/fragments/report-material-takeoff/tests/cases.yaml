@@ -38,7 +38,7 @@ positive:
       VERSION 4. The carbon floors as version 3's positive arranged them - one
       Carbon Factor parameter on Materials, a number typed on Concrete
     expect: >
-      the same totalKg version 3 gave and `sharedFactor` EMPTY - the count
+      the same totalKg version 3 gave and `ambiguous` EMPTY - the count
       must not turn down a name that occurs once
 
 negative:
@@ -102,8 +102,9 @@ negative:
       Factor" bound to Materials - a project parameter beside the shared one
       - holding a different number
     expect: >
-      totalKg 0 for that material, its name in `sharedFactor` and a finding
-      saying FACTOR NOT READ, two or more parameters share the name - NOT in
+      totalKg 0 for that material, the material in `ambiguous` and a finding
+      naming it and saying NOT READ, two or more parameters called Carbon
+      Factor - NOT in
       noFactor, and never a total multiplied by whichever of the two Revit
       returned first (row 5b-203)
 

@@ -81,7 +81,8 @@ positive:
       typed on its Identity tab, the name carried once; withAllTabs true
     expect: >
       "keywords '<what was typed>'" on its identity line, as version 6 gave
-      it - the count must not turn down a name that occurs once
+      it, and `ambiguous` EMPTY - the count must not turn down a name that
+      occurs once
 
 negative:
   - given: >
@@ -140,8 +141,9 @@ negative:
       namePattern one material whose Identity tab has Keywords typed in
     expect: >
       that material's identity line reads "keywords NOT READ - 2 parameters
-      share that name" - never the typed keywords and never the project
-      parameter's value, whichever Revit returned first (row 5b-203). The
+      share that name", the material is in `ambiguous` and a finding names
+      it - never the typed keywords and never the project parameter's value,
+      whichever Revit returned first (row 5b-203). The
       rest of its line - description, class, graphics, assets - is unchanged
 
 second_route:

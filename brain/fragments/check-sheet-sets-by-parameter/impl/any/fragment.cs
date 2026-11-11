@@ -1,6 +1,6 @@
 // NOT STANDALONE. Assumes `doc`, `parameterName` and `setPrefix` are in scope,
 // and leaves `report`, `inStep`, `outOfStep`, `missingSets`, `findings`,
-// `refused` and `ambiguous` behind.
+// `refused`, `ambiguous` and `unconfirmed` behind.
 //
 // A READ. The sets are read as elements - never through the print manager,
 // whose current set is application state - so nothing about Revit changes.
@@ -18,7 +18,14 @@
 // value of whichever came first would make its set read out of step, or in
 // step, on a coin toss. So the name is counted on each sheet and view first:
 // one carrying it twice is in `ambiguous`, belongs to no value's group, and
-// is never listed as missing from a set or extra in one.
+// is never listed as missing from a set or extra in one. IT FAILS CLOSED:
+// a sheet Revit will not count the name on is not read either, and is said.
+//
+// AND NO SET IS CALLED "IN STEP" WHILE ANY SHEET WAS NOT READ. An unread
+// sheet may carry a set's value and be missing from it, and an unread member
+// may not belong, so a set that matches every sheet that WAS read is
+// reported NOT CONFIRMED and counted in `unconfirmed`, never in `inStep`. A
+// set out of step on the sheets that were read is still out of step.
 
 string report = "";
 int inStep = 0;
@@ -51,9 +58,15 @@ if (wanted.Length == 0) refused = "No parameter name was given.";
 var byValue = new Dictionary<string, List<View>>(StringComparer.OrdinalIgnoreCase);
 int carriers = 0;
 int blank = 0;
-// Sheets and views carrying the name twice - not read (5b-203).
-var ambiguous = new List<string>();
-var ambiguousIds = new HashSet<ElementId>();
+// Sheets and views carrying the name twice - not read (5b-203). `ambiguous`
+// as every reader of that row names it; the labels are for the finding.
+var ambiguous = new List<ElementId>();
+var ambiguousLabels = new List<string>();
+// Sheets and views Revit would not count the name on - not read either.
+var uncounted = new List<string>();
+// Both kinds: whatever was not read.
+var notReadIds = new HashSet<ElementId>();
+int unconfirmed = 0;
 if (refused.Length == 0)
 {
     foreach (var element in new FilteredElementCollector(doc).OfClass(typeof(View)))
@@ -61,9 +74,10 @@ if (refused.Length == 0)
         var view = element as View;
         if (view == null || view.IsTemplate) continue;
 
-        var sameName = 0;
+        var sameName = -1;
         try { sameName = view.GetParameters(wanted).Count; } catch { }
-        if (sameName > 1) { ambiguous.Add(label(view)); ambiguousIds.Add(view.Id); continue; }
+        if (sameName > 1) { ambiguous.Add(view.Id); ambiguousLabels.Add(label(view)); notReadIds.Add(view.Id); continue; }
+        if (sameName < 0) { uncounted.Add(label(view)); notReadIds.Add(view.Id); continue; }
 
         Parameter parameter = null;
         try { parameter = view.LookupParameter(wanted); } catch { }
@@ -75,12 +89,13 @@ if (refused.Length == 0)
         if (!byValue.TryGetValue(value, out group)) { group = new List<View>(); byValue[value] = group; }
         group.Add(view);
     }
-    if (carriers == 0 && ambiguous.Count == 0)
+    if (carriers == 0 && notReadIds.Count == 0)
         refused = "No sheet or view in " + (doc.Title ?? "this model") + " has a parameter called '" + wanted
             + "'. Name it exactly as the sheet's Properties show it.";
     else if (carriers == 0)
-        refused = "Nothing was checked: every sheet and view in " + (doc.Title ?? "this model") + " that has '"
-            + wanted + "' has two or more parameters of that name, so it was not read on any of them.";
+        refused = "Nothing was checked: '" + wanted + "' was not read on any sheet or view in "
+            + (doc.Title ?? "this model") + " - each one that has it has two or more parameters of that name, "
+            + "or Revit would not count them.";
 }
 
 if (refused.Length == 0)
@@ -121,9 +136,19 @@ if (refused.Length == 0)
         var wantIds = new HashSet<ElementId>(group.Select(v => v.Id));
         var lacking = group.Where(v => !heldIds.Contains(v.Id)).Select(label).OrderBy(t => t, StringComparer.OrdinalIgnoreCase).ToList();
         // A member whose value was not read is not called extra (5b-203).
-        var extra = holds.Where(v => !wantIds.Contains(v.Id) && !ambiguousIds.Contains(v.Id)).Select(label).OrderBy(t => t, StringComparer.OrdinalIgnoreCase).ToList();
+        var extra = holds.Where(v => !wantIds.Contains(v.Id) && !notReadIds.Contains(v.Id)).Select(label).OrderBy(t => t, StringComparer.OrdinalIgnoreCase).ToList();
 
-        if (lacking.Count == 0 && extra.Count == 0)
+        if (lacking.Count == 0 && extra.Count == 0 && notReadIds.Count > 0)
+        {
+            // NOT "IN STEP" - see the header. It matches what was read.
+            unconfirmed++;
+            var unreadHere = holds.Count(v => notReadIds.Contains(v.Id));
+            rows.Add(value + " -> set '" + set.Name + "': NOT CONFIRMED - it matches the " + group.Count
+                + " sheets and views that were read, but " + notReadIds.Count + " sheet(s) and view(s) were not read"
+                + (unreadHere > 0 ? ", " + unreadHere + " of them in this set" : "")
+                + ", so whether it is in step is not known");
+        }
+        else if (lacking.Count == 0 && extra.Count == 0)
         {
             inStep++;
             rows.Add(value + " -> set '" + set.Name + "': in step, " + group.Count + " sheets and views");
@@ -134,14 +159,16 @@ if (refused.Length == 0)
             var parts = new List<string>();
             if (lacking.Count > 0) parts.Add("missing " + string.Join(", ", lacking));
             if (extra.Count > 0) parts.Add("extra " + string.Join(", ", extra));
-            rows.Add(value + " -> set '" + set.Name + "': OUT OF STEP - " + string.Join("; ", parts));
+            rows.Add(value + " -> set '" + set.Name + "': OUT OF STEP - " + string.Join("; ", parts)
+                + (notReadIds.Count > 0 ? " (among the sheets and views that were read)" : ""));
         }
     }
 
     report = string.Join(" || ", rows);
     missingSets = string.Join("; ", missing);
     findings.Add(values.Count + " value(s) of '" + wanted + "' in " + (doc.Title ?? "this model") + ": " + inStep
-        + " set(s) in step, " + outOfStep + " out of step, " + missing.Count + " with no set.");
+        + " set(s) in step, " + outOfStep + " out of step, " + missing.Count + " with no set"
+        + (unconfirmed > 0 ? ", " + unconfirmed + " not confirmed because some sheets were not read" : "") + ".");
     if (blank > 0)
         findings.Add(blank + " sheet(s) and view(s) carry '" + wanted + "' with no value, so belong to no set.");
 }
@@ -149,7 +176,13 @@ else findings.Add(refused);
 
 if (ambiguous.Count > 0)
     findings.Add(ambiguous.Count + " sheet(s) and view(s) carry TWO OR MORE parameters called '" + wanted
-        + "' - NOT READ, because Revit hands back whichever of them it meets first. They are in no value's count "
-        + "and are never listed as missing from a set or extra in one: "
-        + string.Join(", ", ambiguous.OrderBy(t => t, StringComparer.OrdinalIgnoreCase).Take(20))
-        + (ambiguous.Count > 20 ? ", and " + (ambiguous.Count - 20) + " more." : "."));
+        + "' - NOT READ, because Revit hands back whichever of them it meets first: "
+        + string.Join(", ", ambiguousLabels.OrderBy(t => t, StringComparer.OrdinalIgnoreCase).Take(20))
+        + (ambiguousLabels.Count > 20 ? ", and " + (ambiguousLabels.Count - 20) + " more" : "")
+        + ". They are in no value's count and are never listed as missing from a set or extra in one.");
+
+if (uncounted.Count > 0)
+    findings.Add(uncounted.Count + " sheet(s) and view(s) were NOT READ: Revit would not say how many parameters "
+        + "called '" + wanted + "' they carry, so none was picked - "
+        + string.Join(", ", uncounted.OrderBy(t => t, StringComparer.OrdinalIgnoreCase).Take(20))
+        + (uncounted.Count > 20 ? ", and " + (uncounted.Count - 20) + " more." : "."));

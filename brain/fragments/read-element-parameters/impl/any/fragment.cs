@@ -384,7 +384,8 @@ var findings = "";
     if (blank.Count > 0) line += " Blank: " + ids(blank) + ".";
     if (absent.Count > 0) line += " Absent: " + ids(absent) + ".";
     if (ambiguous.Count > 0)
-        line += " NOT READ - two or more parameters called \"" + asked + "\" sit on the element or its type, "
-            + "and Revit hands back whichever of them it meets first: " + ids(ambiguous) + ".";
+        line += " " + ambiguous.Count + " element(s) carry TWO OR MORE parameters called '" + asked
+            + "' - NOT READ, because Revit hands back whichever of them it meets first: " + ids(ambiguous)
+            + ". On the element, or on its type where the read reached it.";
     findings = line;
 }

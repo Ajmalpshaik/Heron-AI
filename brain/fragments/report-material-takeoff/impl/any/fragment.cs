@@ -1,7 +1,7 @@
 // NOT STANDALONE. Assumes `elements`, `doc`, `factorParameter`, `groupBy` and
 // `top` are in scope, and leaves `areas`, `volumes`, `paintedMaterials`,
 // `elementsWithNoMaterial`, `materials`, `noMaterial`, `volumeM3`, `areaM2`,
-// `carbon`, `totalKg`, `noFactor`, `sharedFactor`, `noVolume` and `findings`
+// `carbon`, `totalKg`, `noFactor`, `ambiguous`, `noVolume` and `findings`
 // behind.
 //
 // VERSION 3 (2026-11-01) - REPORT_EMBODIED_CARBON MERGED IN. Given
@@ -82,7 +82,10 @@ const double CubicMetresPerCubicFoot = 0.028316846592;
 var findings = new List<string>();
 var noFactor = new List<string>();
 // VERSION 4 (5b-203): materials carrying the factor's name twice - not read.
-var sharedFactor = new List<string>();
+// `ambiguous` as every reader of that row names it; the names are for the
+// finding.
+var ambiguous = new List<ElementId>();
+var ambiguousNames = new List<string>();
 var noVolume = 0;
 var totalKg = 0.0;
 var carbon = "";
@@ -110,7 +113,11 @@ Func<ElementId, double?> factorOf = id =>
         var factorsNamed = material.GetParameters(factorName).Count;
         if (factorsNamed > 1)
         {
-            if (!sharedFactor.Contains(material.Name)) sharedFactor.Add(material.Name);
+            if (!ambiguous.Contains(material.Id))
+            {
+                ambiguous.Add(material.Id);
+                ambiguousNames.Add(material.Name);
+            }
         }
         else
         {
@@ -229,10 +236,11 @@ if (withCarbon)
     if (noFactor.Count > 0)
         findings.Add("NO FACTOR on " + noFactor.Count + " material(s), so they add nothing to the total: " + string.Join(", ", noFactor.Take(15))
             + (noFactor.Count > 15 ? ", and more." : "."));
-    if (sharedFactor.Count > 0)
-        findings.Add("FACTOR NOT READ on " + sharedFactor.Count + " material(s), so they add nothing to the total: two or "
-            + "more parameters called \"" + factorName + "\" sit on each, and Revit hands back whichever of them it "
-            + "meets first - " + string.Join(", ", sharedFactor.Take(15)) + (sharedFactor.Count > 15 ? ", and more." : "."));
+    if (ambiguous.Count > 0)
+        findings.Add(ambiguous.Count + " material(s) carry TWO OR MORE parameters called '" + factorName
+            + "' - NOT READ, because Revit hands back whichever of them it meets first: "
+            + string.Join(", ", ambiguousNames.Take(15)) + (ambiguousNames.Count > 15 ? ", and more" : "")
+            + ". They add nothing to the total.");
     if (noVolume > 0)
         findings.Add(noVolume + " element(s) have no material volume - a line, an annotation, a painted face - and add nothing.");
 }
