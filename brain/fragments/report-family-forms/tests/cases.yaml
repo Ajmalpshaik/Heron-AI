@@ -92,6 +92,18 @@ positive:
 
   - given: the same family, which = the extrusion's id and the symbolic line's id
     expect: formCount 1 and twoDCount 1, elements 2 in the order named
+
+  - given: the Generic Model family, which "all"
+    expect: >
+      formCount 1, the symbolic line and the nested detail item in twoDList -
+      and elements 1, the extrusion ONLY: "all" never hands on a line, so a
+      DELETE_ELEMENTS chained after it cannot reach one
+
+  - given: the Generic Model family, which LEFT OUT
+    expect: the same reads as "all" - and elements 0, as version 4 handed on nothing when nothing was named
+
+  - given: the Generic Model family, which = the extrusion's id alone
+    expect: formCount 1, twoDCount 0, no 2D finding - the findings read exactly as version 4's
 negative:
   - given: which "revolve" on the same family, which holds no revolve
     expect: formCount 0, formList empty, scanned 2 - the forms were looked at and none matched
@@ -154,6 +166,14 @@ negative:
 
   - given: which "nested" on the Detail Item family, which holds no nested family
     expect: twoDCount 0, twoDList empty - looked at, none matched; not a refusal
+
+  - given: >
+      the Detail Item family, which = the id of one EDGE of the filled region
+      (read with Select by ID from Edit Boundary, or from LOCK_FAMILY_LINES_TO_PLANES'
+      answer)
+    expect: >
+      refused naming the region - "is an edge of the filled region ... name
+      the region"; nothing read, elements 0 - an edge is never handed on alone
 second_route:
   - >
       In the Family Editor, select each form and read its Properties and its

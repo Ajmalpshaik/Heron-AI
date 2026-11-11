@@ -146,6 +146,30 @@ var named = new HashSet<string>();
 var namedInOrder = new List<Element>();
 var problems = new List<string>();
 
+// VERSION 5: a filled region's sketch edges, found once - they are the
+// region's own, never read or handed on as loose lines.
+var edgesOf = new Dictionary<ElementId, List<ElementId>>();
+var regionOfEdge = new Dictionary<ElementId, FilledRegion>();
+var regions = new List<FilledRegion>();
+var edgesUnread = 0;
+if (doc.IsFamilyDocument)
+{
+    regions = new FilteredElementCollector(doc).OfClass(typeof(FilledRegion)).Cast<FilledRegion>().ToList();
+    foreach (var region in regions)
+    {
+        var edges = new List<ElementId>();
+        try
+        {
+            foreach (var id in region.GetDependentElements(new ElementClassFilter(typeof(CurveElement))))
+                edges.Add(id);
+        }
+        catch (Exception) { edgesUnread++; }
+        edgesOf[region.Id] = edges;
+        foreach (var id in edges) regionOfEdge[id] = region;
+    }
+}
+var named2D = false;
+
 if (doc.IsFamilyDocument && words.Count == 0 && words2D.Count == 0)
 {
     foreach (var id in ids)
@@ -167,8 +191,14 @@ if (doc.IsFamilyDocument && words.Count == 0 && words2D.Count == 0)
                 + (string.IsNullOrEmpty(element.Name) ? "an element" : "\"" + element.Name + "\"")
                 + (element.Category != null ? " (" + element.Category.Name + ")" : "")
                 + ", not a form, a line, a region or a nested family");
+        else if (regionOfEdge.ContainsKey(element.Id))
+            problems.Add("\"" + id + "\" is an edge of the filled region " + regionOfEdge[element.Id].UniqueId
+                + " - name the region; its edges are read under it");
         else if (named.Add(element.UniqueId))
+        {
             namedInOrder.Add(element);
+            if (form == null) named2D = true;
+        }
     }
 }
 
@@ -266,7 +296,9 @@ else
     var rows2D = new List<string>();
     var scanned2D = 0;
     var locks2D = 0;
-    if (words2D.Count > 0 || words.Count == 0)
+    var dimensionsUnread = 0;
+    var read2D = words2D.Count > 0 || (words.Count == 0 && (ids.Count == 0 || named2D));
+    if (read2D)
     {
         Func<ElementId, string> nameOf = id =>
         {
@@ -291,12 +323,17 @@ else
         {
             var refIds = new List<ElementId>();
             try { foreach (Reference r in d.References) if (r != null) refIds.Add(r.ElementId); }
-            catch (Exception) { continue; }
+            catch (Exception) { dimensionsUnread++; continue; }
             dimensions.Add(Tuple.Create(d, refIds));
         }
 
         // What holds an element (or a region by its edges), in words.
-        Func<IEnumerable<ElementId>, Curve, List<string>> holdsOf = (ownIds, curve) =>
+        Func<ElementId, Curve> curveOf = id =>
+        {
+            var asCurve = doc.GetElement(id) as CurveElement;
+            return asCurve == null ? null : asCurve.GeometryCurve;
+        };
+        Func<IEnumerable<ElementId>, List<string>> holdsOf = ownIds =>
         {
             var own = new HashSet<ElementId>(ownIds);
             var said = new List<string>();
@@ -305,6 +342,10 @@ else
                 if (!t.Item2.Any(own.Contains)) continue;
                 var d = t.Item1;
                 var others = t.Item2.Where(i => !own.Contains(i)).Distinct().ToList();
+                // The line - or the region's edge - this dimension holds.
+                var curve = curveOf(t.Item2.First(own.Contains));
+                var segments = 0;
+                try { segments = d.NumberOfSegments; } catch (Exception) { segments = 0; }
                 var otherNames = others.Count == 0 ? "itself" : string.Join(", ", others.Select(nameOf));
                 string label = null;
                 try { label = d.FamilyLabel == null ? null : d.FamilyLabel.Definition.Name; } catch (Exception) { label = null; }
@@ -329,6 +370,8 @@ else
                     }
                     said.Add(how + otherNames);
                 }
+                else if (segments > 1) said.Add("a dimension of " + segments + " segments to " + otherNames
+                    + " (locks per segment not read)");
                 else said.Add("dimensioned (not locked) to " + otherNames);
             }
             return said;
@@ -360,26 +403,12 @@ else
 
         Func<XYZ, string> at = p => mm(p.X) + "," + mm(p.Y) + "," + mm(p.Z);
 
-        // A REGION'S EDGES ARE ITS OWN, never listed as loose lines.
-        var regions = new FilteredElementCollector(doc).OfClass(typeof(FilledRegion)).Cast<FilledRegion>().ToList();
-        var edgesOf = new Dictionary<ElementId, List<ElementId>>();
-        var edgeIds = new HashSet<ElementId>();
-        foreach (var region in regions)
-        {
-            var edges = new List<ElementId>();
-            try
-            {
-                foreach (var id in region.GetDependentElements(new ElementClassFilter(typeof(CurveElement))))
-                    edges.Add(id);
-            }
-            catch (Exception) { }
-            edgesOf[region.Id] = edges;
-            foreach (var id in edges) edgeIds.Add(id);
-        }
+        // A REGION'S EDGES ARE ITS OWN, never listed as loose lines - found
+        // once, before the ids were read.
 
         var candidates = new List<Element>();
         foreach (var c in new FilteredElementCollector(doc).OfClass(typeof(CurveElement)).Cast<CurveElement>())
-            if ((c is DetailCurve || c is SymbolicCurve) && !edgeIds.Contains(c.Id)) candidates.Add(c);
+            if ((c is DetailCurve || c is SymbolicCurve) && !regionOfEdge.ContainsKey(c.Id)) candidates.Add(c);
         candidates.AddRange(regions);
         candidates.AddRange(new FilteredElementCollector(doc).OfClass(typeof(FamilyInstance)).Cast<FamilyInstance>());
         scanned2D = candidates.Count;
@@ -430,7 +459,7 @@ else
                             + (views.Count == 0 ? "no plan or elevation" : string.Join(", ", views)));
                     }
                 }
-                holds = holdsOf(new[] { e.Id }, curve);
+                holds = holdsOf(new[] { e.Id });
             }
             else if (region != null)
             {
@@ -456,7 +485,7 @@ else
                     bits.Add(loops + " loop(s), X " + mm(minX) + " to " + mm(maxX) + ", Y " + mm(minY) + " to " + mm(maxY) + " mm");
                 var edges = edgesOf.ContainsKey(region.Id) ? edgesOf[region.Id] : new List<ElementId>();
                 bits.Add(edges.Count + " sketch edge(s)");
-                holds = holdsOf(edges.Concat(new[] { region.Id }), null);
+                holds = holdsOf(edges.Concat(new[] { region.Id }));
             }
             else
             {
@@ -486,7 +515,7 @@ else
                         if (linked != null) links.Add("type " + p.Definition.Name + "=" + linked.Definition.Name);
                     }
                 if (links.Count > 0) bits.Add("linked " + string.Join("; ", links.OrderBy(x => x)));
-                holds = holdsOf(new[] { e.Id }, null);
+                holds = holdsOf(new[] { e.Id });
             }
 
             var visibleText = visibleOf(e);
@@ -498,7 +527,13 @@ else
     }
     twoDCount = rows2D.Count;
     twoDList = string.Join("  ||  ", rows2D);
-    if (words2D.Count > 0 || words.Count == 0)
+    if (read2D && edgesUnread > 0)
+        findings.Add("Revit did not give the sketch edges of " + edgesUnread + " filled region(s): those regions read "
+            + "\"0 sketch edge(s)\", their edges may be listed as loose lines, and locks on them are not read.");
+    if (read2D && dimensionsUnread > 0)
+        findings.Add(dimensionsUnread + " dimension(s) or alignment(s) could not be read, so a \"nothing holds it\" "
+            + "above may be wrong.");
+    if (read2D)
         findings.Add(twoDCount + " 2D element(s) of " + scanned2D + " lines, regions and nested families"
             + (words2D.Count > 0 ? " match \"" + string.Join(", ", words2D) + "\"" : ids.Count > 0 ? ", by id" : "")
             + "; " + locks2D + " lock(s), label(s) or EQ on them.");
@@ -516,6 +551,6 @@ else
     findings.Add(notNamed
         ? "No form was named, so none is handed on - every form was read. Name them by id, by kind and side, or "
           + "say all, to hand them to SET_SELECTION or DELETE_ELEMENTS."
-        : elements.Count + " form(s) and 2D element(s) handed on as elements - SET_SELECTION highlights them; DELETE_ELEMENTS "
-          + "deletes them once the modeller has said yes.");
+        : elements.Count + (read2D ? " form(s) and 2D element(s)" : " form(s)") + " handed on as elements - "
+          + "SET_SELECTION highlights them; DELETE_ELEMENTS deletes them once the modeller has said yes.");
 }

@@ -89,7 +89,9 @@ purpose: >
   among the forms'. Form words alone read no 2D; 2D words alone read no
   form. A 2D element is handed on as `elements` only when named by a 2D kind
   or by id - "all" hands on forms alone, so a delete chained after it never
-  reaches a line.
+  reaches a line. A region's edge named by id is refused, naming the region:
+  its edges are read under it, never handed on alone. Revit giving no edges
+  for a region, or a dimension that cannot be read, is said in a finding.
 
   It reads only; nothing is changed.
 
@@ -179,8 +181,10 @@ contract:
     - name: findings
       type: IList<string>
 
-# VERSION 5 (2026-11-11) changed impl/ again: this proof describes version 4's
-# code at most, and the card is DRAFT until Group ND proves version 5.
+# THE LAST PROOF, KEPT AS A RECORD (2026-11-02, fingerprint fd07c9fa...). It
+# was run against version 4's code; version 5 (2026-11-11) changed impl/, so the
+# card is DRAFT until Group ND proves version 5. The older note below is kept
+# as it was written.
 #
 # VERSION 2's PROOF, KEPT AS A RECORD. Version 3 changed impl/, so its
 # fingerprint no longer describes the code and the card is DRAFT until Group
@@ -273,6 +277,15 @@ compatibility-note: >
 #   "list the symbolic lines in this family"     -> here, which="symbolic line"
 #   "what is the nested arrow linked to"         -> here, which="nested"
 #   "what labels are in this family"             -> REPORT_FAMILY_LABELS
+#   "what is locked to this" - elements given    -> REPORT_CONSTRAINTS
+#   "lock the arrow's lines to the planes"       -> LOCK_FAMILY_LINES_TO_PLANES,
+#                                                   a change; this only reads
+#   MEASURED 2026-11-11 (scratch store, check-routing): four version 5
+#   sentences are not yet won here - "what is locked to the reference planes
+#   in this family" and "which lines in this family are not locked" reach
+#   LOCK_FAMILY_LINES_TO_PLANES, a change, first; "what is the nested arrow
+#   family linked to" and "read back the plan symbol of this family" reach
+#   other read cards. Recorded in row 5b-1496, not reworded to buy a rank.
 #
 # 2026-11-01 - SELECT_FAMILY_FORMS WAS MERGED INTO THIS CARD (version 4) on the
 # owner's instruction ("make sure there is no duplicate tools"), and is
