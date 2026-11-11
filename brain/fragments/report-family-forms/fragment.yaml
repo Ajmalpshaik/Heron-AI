@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -33,7 +33,17 @@ capability: REPORT_FAMILY_FORMS
 # "freeform" is a kind. `which` left out now binds "not named" - every form
 # read, none handed on. DRAFT until proved on a real model (D-30); version 3's
 # proof below is the record.
-version: 4
+#
+# Version 5 (2026-11-11, row 5b-1496) changed impl/: THE FAMILY'S 2D SIDE, on
+# the owner's word ("no duplicate tools, same kind of work 2 tools no need") -
+# a 2D read-back was first written as a card of its own, REPORT_FAMILY_2D_ELEMENTS,
+# and folded in here before it was ever merged. Detail lines, symbolic lines,
+# filled and masking regions and nested families are read into `twoDList` with
+# their locks, labels and links; `which` takes 2D kinds and ids. A call naming
+# only form words, and every form row, answer as version 4 did; "all" now reads
+# the 2D too but hands on forms alone. DRAFT until NEEDS-CHECKING Group ND
+# proves version 5 (D-30); a READ card, so revit_read still runs it meanwhile.
+version: 5
 source: OFFICIAL
 risk: READ
 
@@ -65,6 +75,22 @@ purpose: >
   reach part of a list. Left out, `which` reads every form and hands none on -
   a delete needs the forms named, or "all" said.
 
+  **AND THE FAMILY'S 2D SIDE (version 5, 2026-11-11)** - every DETAIL LINE,
+  SYMBOLIC LINE, FILLED and MASKING REGION and NESTED FAMILY, in `twoDList`:
+  its view or plane, ends in millimetres (an arc's centre and radius), line
+  style or region type, a symbolic line's detail levels and kinds of view,
+  its Visible and what that is linked to, a nested family's type, point,
+  rotation, mirror and linked parameters - and WHAT HOLDS EACH ONE, every
+  dimension and alignment referencing it in words: "locked along Head Top",
+  "locked at an end to Tip", "labelled Length to ...", "EQ with ...". A
+  region's sketch edges are counted under it, never listed as loose lines.
+  `which` takes "2d", "detail line", "symbolic line", "line", "filled
+  region", "masking region", "region" or "nested", and the 2D tools' ids
+  among the forms'. Form words alone read no 2D; 2D words alone read no
+  form. A 2D element is handed on as `elements` only when named by a 2D kind
+  or by id - "all" hands on forms alone, so a delete chained after it never
+  reaches a line.
+
   It reads only; nothing is changed.
 
 contract:
@@ -87,6 +113,10 @@ contract:
     # nobody named; this card read them all (row 5b-488). The safer rule is
     # kept for what is handed on, and the read stays as the owner had it.
     # "all" typed names every form and hands every one on.
+    #
+    # VERSION 5 (2026-11-11): also the 2D kinds - "2d", "detail line",
+    # "symbolic line", "line", "filled region", "masking region", "region",
+    # "nested" - and 2D elements' UniqueIds among the forms' ids.
     - name: which
       type: string
       source: request
@@ -134,9 +164,24 @@ contract:
       # answer, not a refusal.
       role: accounting
       type: string
+    - name: twoDCount
+      # VERSION 5: how many detail lines, symbolic lines, regions and nested
+      # families matched `which`. 0 when only form words were named.
+      role: result
+      type: int
+    - name: twoDList
+      # VERSION 5: every matching 2D element on ONE line, rows "  ||  " apart:
+      # kind, id, view or plane, ends or extent or point, style or type,
+      # visibility, Visible and its link, parameter links, and every lock,
+      # label and EQ on it.
+      role: result
+      type: string
     - name: findings
       type: IList<string>
 
+# VERSION 5 (2026-11-11) changed impl/ again: this proof describes version 4's
+# code at most, and the card is DRAFT until Group ND proves version 5.
+#
 # VERSION 2's PROOF, KEPT AS A RECORD. Version 3 changed impl/, so its
 # fingerprint no longer describes the code and the card is DRAFT until Group
 # IO proves version 3 (D-30). It ran `which` "all" and a project, both of
@@ -197,6 +242,14 @@ compatibility-note: >
   `Blend.BottomSketch`, `Sweep.PathSketch` and `SweptBlend.PathSketch`;
   `Sketch.SketchPlane` and `GeomCombination.AllMembers` read the same 2020
   through 2027 (the RevitAPI reference assemblies, read 2026-10-01).
+  Version 5 adds `DetailCurve`, `SymbolicCurve.GetVisibility`,
+  `CurveElement.GeometryCurve` / `LineStyle` / `SketchPlane`,
+  `FilledRegion.IsMasking` / `GetBoundaries`,
+  `Element.GetDependentElements(ElementFilter)`, `Element.OwnerViewId`,
+  `Dimension.References` / `FamilyLabel` / `IsLocked` / `AreSegmentsEqual` /
+  `NumberOfSegments`, `FamilyManager.GetAssociatedFamilyParameter`,
+  `LocationPoint.Rotation` and `FamilyInstance.Mirrored`, the same 2020
+  through 2027 (read 2026-11-11). One implementation, no #if.
 
 # ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
@@ -215,6 +268,11 @@ compatibility-note: >
 #   "delete the ones I selected"                 -> DELETE_ELEMENTS - the
 #                                                   selection is already there
 #   "which forms are made of steel"              -> SELECT_BY_MATERIAL
+#   "what is locked to the planes in this family" -> here (version 5), the
+#                                                   2D side with its locks
+#   "list the symbolic lines in this family"     -> here, which="symbolic line"
+#   "what is the nested arrow linked to"         -> here, which="nested"
+#   "what labels are in this family"             -> REPORT_FAMILY_LABELS
 #
 # 2026-11-01 - SELECT_FAMILY_FORMS WAS MERGED INTO THIS CARD (version 4) on the
 # owner's instruction ("make sure there is no duplicate tools"), and is
@@ -237,3 +295,10 @@ utterances:
   - select the void forms
   - get the forms with these ids
   - delete one form from the family by its id
+  # VERSION 5 (2026-11-11) - the family's 2D side.
+  - what is locked to the reference planes in this family
+  - list the symbolic lines and filled regions in this family
+  - show me the 2D lines in this family with their ends
+  - what is the nested arrow family linked to
+  - which lines in this family are not locked
+  - read back the plan symbol of this family

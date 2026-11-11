@@ -1,6 +1,22 @@
 // NOT STANDALONE. Assumes `doc` and `which` are in scope; leaves `formCount`,
 // `formList`, `combinationList`, `scanned`, `notAFamily`, `elements`,
-// `refused` and `findings` behind.
+// `twoDCount`, `twoDList`, `refused` and `findings` behind.
+//
+// VERSION 5 (2026-11-11, row 5b-1496) - THE FAMILY'S 2D SIDE TOO, on the
+// owner's word: no second tool for the same kind of job. Beside the forms,
+// every DETAIL LINE, SYMBOLIC LINE, FILLED and MASKING REGION and NESTED
+// FAMILY in the family is read into `twoDList`: its view or plane, ends in
+// millimetres (an arc's centre and radius), line style or region type, a
+// symbolic line's visibility settings, its Visible and what that is linked to,
+// a nested family's type, point, rotation, mirror and parameter links - and
+// every dimension and alignment that references it, in words: "locked along
+// Head Top", "locked at an end to Tip", "labelled Length to ...", "EQ with".
+// A filled region's sketch edges are its own (GetDependentElements), counted
+// under it and never listed as loose lines. `which` takes the 2D kinds - "2d",
+// "detail line", "symbolic line", "line", "filled region", "masking region",
+// "region", "nested" - and their ids, mixed with forms' ids as one list. A call
+// naming only form words reads no 2D, and one naming only 2D words reads no
+// form, so every version 4 call answers its forms exactly as before.
 //
 // READS ONLY. Nothing is changed, and nothing is highlighted - SET_SELECTION
 // does that with the `elements` this leaves, and DELETE_ELEMENTS deletes them.
@@ -49,6 +65,9 @@
 var findings = new List<string>();
 var formCount = 0;
 var formList = "";
+// VERSION 5: the family's 2D side.
+var twoDCount = 0;
+var twoDList = "";
 var combinationList = "";
 var scanned = 0;
 var notAFamily = false;
@@ -90,18 +109,44 @@ var known = new[] { "solid", "void", "extrusion", "revolve", "revolution", "blen
 var notNamed = squash(which) == "notnamed";
 var parts = (which ?? "").Split(',').Select(p => p.Trim())
     .Where(p => squash(p).Length > 0 && squash(p) != "all" && squash(p) != "notnamed").ToList();
+// VERSION 5: the 2D kinds, squashed, and the rows each one keeps.
+var twoDWords = new Dictionary<string, string[]>
+{
+    { "2d", new[] { "detail line", "symbolic line", "filled region", "masking region", "nested" } },
+    { "detailline", new[] { "detail line" } }, { "detaillines", new[] { "detail line" } },
+    { "symbolicline", new[] { "symbolic line" } }, { "symboliclines", new[] { "symbolic line" } },
+    { "line", new[] { "detail line", "symbolic line" } }, { "lines", new[] { "detail line", "symbolic line" } },
+    { "filledregion", new[] { "filled region" } }, { "filledregions", new[] { "filled region" } },
+    { "maskingregion", new[] { "masking region" } }, { "maskingregions", new[] { "masking region" } },
+    { "region", new[] { "filled region", "masking region" } }, { "regions", new[] { "filled region", "masking region" } },
+    { "nested", new[] { "nested" } }, { "nestedfamily", new[] { "nested" } }, { "nestedfamilies", new[] { "nested" } },
+};
 var words = parts.Select(squash).Where(w => known.Contains(w)).ToList();
-var ids = parts.Where(p => !known.Contains(squash(p))).ToList();
+var words2D = parts.Select(squash).Where(w => twoDWords.ContainsKey(w)).ToList();
+var ids = parts.Where(p => !known.Contains(squash(p)) && !twoDWords.ContainsKey(squash(p))).ToList();
+var wanted2D = new HashSet<string>(words2D.SelectMany(w => twoDWords[w]));
+
+// VERSION 5: the 2D kind of an element, or null when it is not one read here.
+Func<Element, string> kind2D = e =>
+{
+    if (e is SymbolicCurve) return "symbolic line";
+    if (e is DetailCurve) return "detail line";
+    var asRegion = e as FilledRegion;
+    if (asRegion != null) return asRegion.IsMasking ? "masking region" : "filled region";
+    if (e is FamilyInstance) return "nested";
+    return null;
+};
 
 var rows = new List<string>();
 var joins = new List<string>();
 var named = new HashSet<string>();
-// The forms named by id, in the order named, each once - the order `elements`
-// hands them on in (SELECT_FAMILY_FORMS' rule).
-var namedInOrder = new List<GenericForm>();
+// The forms - and, since version 5, the 2D elements - named by id, in the
+// order named, each once - the order `elements` hands them on in
+// (SELECT_FAMILY_FORMS' rule).
+var namedInOrder = new List<Element>();
 var problems = new List<string>();
 
-if (doc.IsFamilyDocument && words.Count == 0)
+if (doc.IsFamilyDocument && words.Count == 0 && words2D.Count == 0)
 {
     foreach (var id in ids)
     {
@@ -115,13 +160,15 @@ if (doc.IsFamilyDocument && words.Count == 0)
                 + (id.All(char.IsDigit)
                     ? "that is an element number; give the long id the form tools gave back"
                     : "nor a kind of form or a side (solid, void, extrusion, revolve, blend, sweep, swept blend, "
-                      + "freeform)"));
-        else if (form == null)
+                      + "freeform) or of 2D (2d, detail line, symbolic line, line, filled region, masking region, "
+                      + "region, nested)"));
+        else if (form == null && kind2D(element) == null)
             problems.Add("\"" + id + "\" is "
                 + (string.IsNullOrEmpty(element.Name) ? "an element" : "\"" + element.Name + "\"")
-                + (element.Category != null ? " (" + element.Category.Name + ")" : "") + ", not a form");
-        else if (named.Add(form.UniqueId))
-            namedInOrder.Add(form);
+                + (element.Category != null ? " (" + element.Category.Name + ")" : "")
+                + ", not a form, a line, a region or a nested family");
+        else if (named.Add(element.UniqueId))
+            namedInOrder.Add(element);
     }
 }
 
@@ -132,12 +179,13 @@ if (!doc.IsFamilyDocument)
         + "read inside the family - open it first.";
     findings.Add(refused);
 }
-else if (words.Count > 0 && ids.Count > 0)
+else if ((words.Count > 0 || words2D.Count > 0) && ids.Count > 0)
 {
     refused = "Nothing was read. Name forms by their ids OR by kind and side, not both in one call - \""
-        + string.Join(", ", ids) + "\" read as ids beside \"" + string.Join(", ", words) + "\". A word that is "
-        + "neither is read as an id: name solid or void, and extrusion, revolve, blend, sweep, swept blend or "
-        + "freeform, or all.";
+        + string.Join(", ", ids) + "\" read as ids beside \"" + string.Join(", ", words.Concat(words2D)) + "\". A "
+        + "word that is neither is read as an id: name solid or void, and extrusion, revolve, blend, sweep, swept "
+        + "blend or freeform; or 2d, detail line, symbolic line, line, filled region, masking region, region or "
+        + "nested; or all.";
     findings.Add(refused);
 }
 else if (problems.Count > 0)
@@ -155,6 +203,8 @@ else
         var side = f.IsSolid ? "solid" : "void";
         var matches = words.All(w => w == side || w == squash(kind) || (w == "revolution" && kind == "revolve"));
         if (!matches || (ids.Count > 0 && !named.Contains(f.UniqueId))) continue;
+        // VERSION 5: a call naming only 2D kinds reads no form.
+        if (words.Count == 0 && words2D.Count > 0) continue;
         if (ids.Count == 0 && !notNamed) elements.Add(f);
 
         var extent = "";
@@ -209,6 +259,250 @@ else
         joins.Add(c.UniqueId + ": " + string.Join(", ", members));
     }
 
+    // ---- VERSION 5: THE FAMILY'S 2D SIDE ----------------------------------------
+    // Read when nothing narrowed the call, when 2D kinds were named, or when
+    // ids were named (then only those). A call naming only form words reads
+    // none, so it answers as version 4 did.
+    var rows2D = new List<string>();
+    var scanned2D = 0;
+    var locks2D = 0;
+    if (words2D.Count > 0 || words.Count == 0)
+    {
+        Func<ElementId, string> nameOf = id =>
+        {
+            var e = doc.GetElement(id);
+            if (e == null) return "an element no longer here";
+            var plane = e as ReferencePlane;
+            if (plane != null)
+            {
+                var datum = plane.get_Parameter(BuiltInParameter.DATUM_TEXT);
+                var text = datum == null ? null : datum.AsString();
+                return string.IsNullOrEmpty(text) ? "an unnamed reference plane " + e.UniqueId : text;
+            }
+            if (e is Level) return e.Name;
+            var gf = e as GenericForm;
+            if (gf != null) return kindOf(gf) + " " + e.UniqueId;
+            return (kind2D(e) ?? (e.Category != null ? e.Category.Name : "element")) + " " + e.UniqueId;
+        };
+
+        // Every dimension and alignment, once, with the ids it references.
+        var dimensions = new List<Tuple<Dimension, List<ElementId>>>();
+        foreach (var d in new FilteredElementCollector(doc).OfClass(typeof(Dimension)).Cast<Dimension>())
+        {
+            var refIds = new List<ElementId>();
+            try { foreach (Reference r in d.References) if (r != null) refIds.Add(r.ElementId); }
+            catch (Exception) { continue; }
+            dimensions.Add(Tuple.Create(d, refIds));
+        }
+
+        // What holds an element (or a region by its edges), in words.
+        Func<IEnumerable<ElementId>, Curve, List<string>> holdsOf = (ownIds, curve) =>
+        {
+            var own = new HashSet<ElementId>(ownIds);
+            var said = new List<string>();
+            foreach (var t in dimensions)
+            {
+                if (!t.Item2.Any(own.Contains)) continue;
+                var d = t.Item1;
+                var others = t.Item2.Where(i => !own.Contains(i)).Distinct().ToList();
+                var otherNames = others.Count == 0 ? "itself" : string.Join(", ", others.Select(nameOf));
+                string label = null;
+                try { label = d.FamilyLabel == null ? null : d.FamilyLabel.Definition.Name; } catch (Exception) { label = null; }
+                var locked = false;
+                try { locked = d.NumberOfSegments == 0 && d.IsLocked; } catch (Exception) { locked = false; }
+                var equal = false;
+                try { equal = d.NumberOfSegments > 1 && d.AreSegmentsEqual; } catch (Exception) { equal = false; }
+
+                if (label != null) said.Add("labelled " + label + " to " + otherNames);
+                else if (equal) said.Add("EQ with " + otherNames);
+                else if (locked)
+                {
+                    // ALONG or AT AN END: a straight line in a plane running along
+                    // it is locked along it; a plane crossing it holds an end.
+                    var how = "locked to ";
+                    var line = curve as Line;
+                    if (line != null && others.Count == 1)
+                    {
+                        var plane = doc.GetElement(others[0]) as ReferencePlane;
+                        if (plane != null)
+                            how = Math.Abs(plane.Normal.DotProduct(line.Direction)) < 1e-6 ? "locked along " : "locked at an end to ";
+                    }
+                    said.Add(how + otherNames);
+                }
+                else said.Add("dimensioned (not locked) to " + otherNames);
+            }
+            return said;
+        };
+
+        Func<Element, string> visibleOf = e =>
+        {
+            var visible = e.get_Parameter(BuiltInParameter.IS_VISIBLE_PARAM);
+            if (visible == null) return "";
+            FamilyParameter linked = null;
+            try { linked = doc.FamilyManager.GetAssociatedFamilyParameter(visible); } catch (Exception) { linked = null; }
+            return "Visible " + (visible.AsInteger() == 1 ? "yes" : "no")
+                + (linked != null ? " (linked to " + linked.Definition.Name + ")" : "");
+        };
+
+        Func<Element, string> whereOf = e =>
+        {
+            if (e.OwnerViewId != ElementId.InvalidElementId)
+            {
+                var view = doc.GetElement(e.OwnerViewId) as View;
+                return "in view " + (view == null ? "(gone)" : view.Name);
+            }
+            var asCurve = e as CurveElement;
+            if (asCurve != null && asCurve.SketchPlane != null) return "on plane " + asCurve.SketchPlane.Name;
+            var asNested = e as FamilyInstance;
+            if (asNested != null && asNested.Host != null) return "on " + nameOf(asNested.Host.Id);
+            return "no view or plane";
+        };
+
+        Func<XYZ, string> at = p => mm(p.X) + "," + mm(p.Y) + "," + mm(p.Z);
+
+        // A REGION'S EDGES ARE ITS OWN, never listed as loose lines.
+        var regions = new FilteredElementCollector(doc).OfClass(typeof(FilledRegion)).Cast<FilledRegion>().ToList();
+        var edgesOf = new Dictionary<ElementId, List<ElementId>>();
+        var edgeIds = new HashSet<ElementId>();
+        foreach (var region in regions)
+        {
+            var edges = new List<ElementId>();
+            try
+            {
+                foreach (var id in region.GetDependentElements(new ElementClassFilter(typeof(CurveElement))))
+                    edges.Add(id);
+            }
+            catch (Exception) { }
+            edgesOf[region.Id] = edges;
+            foreach (var id in edges) edgeIds.Add(id);
+        }
+
+        var candidates = new List<Element>();
+        foreach (var c in new FilteredElementCollector(doc).OfClass(typeof(CurveElement)).Cast<CurveElement>())
+            if ((c is DetailCurve || c is SymbolicCurve) && !edgeIds.Contains(c.Id)) candidates.Add(c);
+        candidates.AddRange(regions);
+        candidates.AddRange(new FilteredElementCollector(doc).OfClass(typeof(FamilyInstance)).Cast<FamilyInstance>());
+        scanned2D = candidates.Count;
+
+        foreach (var e in candidates.OrderBy(x => kind2D(x)).ThenBy(x => x.UniqueId))
+        {
+            var kind = kind2D(e);
+            if (kind == null) continue;
+            if (ids.Count > 0 && !named.Contains(e.UniqueId)) continue;
+            if (wanted2D.Count > 0 && !wanted2D.Contains(kind)) continue;
+            // Handed on only when named by a 2D kind (or by id, below): "all"
+            // hands on forms alone, as version 4 did, so a delete chained after
+            // "all" can never reach a line it did not before.
+            if (ids.Count == 0 && !notNamed && words2D.Count > 0) elements.Add(e);
+
+            var bits = new List<string> { kind + " " + e.UniqueId + " (" + whereOf(e) + ")" };
+            List<string> holds;
+            var curveElement = e as CurveElement;
+            var region = e as FilledRegion;
+            var nested = e as FamilyInstance;
+            if (curveElement != null)
+            {
+                var curve = curveElement.GeometryCurve;
+                var arc = curve as Arc;
+                if (arc != null)
+                    bits.Add(curve.IsBound
+                        ? "arc from " + at(curve.GetEndPoint(0)) + " to " + at(curve.GetEndPoint(1)) + ", centre "
+                          + at(arc.Center) + ", radius " + mm(arc.Radius) + " mm"
+                        : "circle centre " + at(arc.Center) + ", radius " + mm(arc.Radius) + " mm");
+                else if (curve != null && curve.IsBound)
+                    bits.Add("from " + at(curve.GetEndPoint(0)) + " to " + at(curve.GetEndPoint(1)) + " mm, "
+                        + mm(curve.Length) + " long");
+                else if (curve != null) bits.Add("a closed " + curve.GetType().Name.ToLowerInvariant());
+                var style = curveElement.LineStyle as GraphicsStyle;
+                bits.Add("style " + (style == null || style.GraphicsStyleCategory == null ? "(none)" : style.GraphicsStyleCategory.Name));
+                var symbolic = e as SymbolicCurve;
+                if (symbolic != null)
+                {
+                    FamilyElementVisibility seen = null;
+                    try { seen = symbolic.GetVisibility(); } catch (Exception) { seen = null; }
+                    if (seen != null)
+                    {
+                        var levels = new[] { seen.IsShownInCoarse ? "coarse" : null, seen.IsShownInMedium ? "medium" : null,
+                                             seen.IsShownInFine ? "fine" : null }.Where(x => x != null).ToList();
+                        var views = new[] { seen.IsShownInTopBottom ? "plan" : null, seen.IsShownInFrontBack ? "front/back" : null,
+                                            seen.IsShownInLeftRight ? "left/right" : null }.Where(x => x != null).ToList();
+                        bits.Add("shows in " + (levels.Count == 0 ? "no detail level" : string.Join(", ", levels)) + " | "
+                            + (views.Count == 0 ? "no plan or elevation" : string.Join(", ", views)));
+                    }
+                }
+                holds = holdsOf(new[] { e.Id }, curve);
+            }
+            else if (region != null)
+            {
+                var type = doc.GetElement(region.GetTypeId());
+                bits.Add("type " + (type == null ? "(none)" : type.Name));
+                double minX = double.MaxValue, minY = double.MaxValue, maxX = double.MinValue, maxY = double.MinValue;
+                var loops = 0;
+                try
+                {
+                    foreach (var loop in region.GetBoundaries())
+                    {
+                        loops++;
+                        foreach (var c in loop)
+                            foreach (var p in new[] { c.GetEndPoint(0), c.GetEndPoint(1) })
+                            {
+                                minX = Math.Min(minX, p.X); minY = Math.Min(minY, p.Y);
+                                maxX = Math.Max(maxX, p.X); maxY = Math.Max(maxY, p.Y);
+                            }
+                    }
+                }
+                catch (Exception) { }
+                if (loops > 0)
+                    bits.Add(loops + " loop(s), X " + mm(minX) + " to " + mm(maxX) + ", Y " + mm(minY) + " to " + mm(maxY) + " mm");
+                var edges = edgesOf.ContainsKey(region.Id) ? edgesOf[region.Id] : new List<ElementId>();
+                bits.Add(edges.Count + " sketch edge(s)");
+                holds = holdsOf(edges.Concat(new[] { region.Id }), null);
+            }
+            else
+            {
+                var symbol = nested.Symbol;
+                bits.Add((symbol == null ? "(no type)" : (symbol.Family == null ? "" : symbol.Family.Name + " : ") + symbol.Name)
+                    + (nested.Category != null ? " (" + nested.Category.Name + ")" : ""));
+                var point = nested.Location as LocationPoint;
+                if (point != null)
+                {
+                    var turned = 0.0;
+                    try { turned = point.Rotation * 180.0 / Math.PI; } catch (Exception) { turned = 0.0; }
+                    bits.Add("at " + at(point.Point) + " mm, turned " + Math.Round(turned, 2).ToString(invariant) + " deg");
+                }
+                if (nested.Mirrored) bits.Add("mirrored");
+                var links = new List<string>();
+                foreach (Parameter p in nested.Parameters)
+                {
+                    FamilyParameter linked = null;
+                    try { linked = doc.FamilyManager.GetAssociatedFamilyParameter(p); } catch (Exception) { linked = null; }
+                    if (linked != null) links.Add(p.Definition.Name + "=" + linked.Definition.Name);
+                }
+                if (symbol != null)
+                    foreach (Parameter p in symbol.Parameters)
+                    {
+                        FamilyParameter linked = null;
+                        try { linked = doc.FamilyManager.GetAssociatedFamilyParameter(p); } catch (Exception) { linked = null; }
+                        if (linked != null) links.Add("type " + p.Definition.Name + "=" + linked.Definition.Name);
+                    }
+                if (links.Count > 0) bits.Add("linked " + string.Join("; ", links.OrderBy(x => x)));
+                holds = holdsOf(new[] { e.Id }, null);
+            }
+
+            var visibleText = visibleOf(e);
+            if (visibleText.Length > 0) bits.Add(visibleText);
+            locks2D += holds.Count(h => h.StartsWith("locked") || h.StartsWith("labelled") || h.StartsWith("EQ"));
+            bits.Add(holds.Count == 0 ? "nothing holds it" : string.Join("; ", holds));
+            rows2D.Add(string.Join(", ", bits));
+        }
+    }
+    twoDCount = rows2D.Count;
+    twoDList = string.Join("  ||  ", rows2D);
+    if (words2D.Count > 0 || words.Count == 0)
+        findings.Add(twoDCount + " 2D element(s) of " + scanned2D + " lines, regions and nested families"
+            + (words2D.Count > 0 ? " match \"" + string.Join(", ", words2D) + "\"" : ids.Count > 0 ? ", by id" : "")
+            + "; " + locks2D + " lock(s), label(s) or EQ on them.");
+
     // BY ID, IN THE ORDER NAMED (version 4) - the order a caller listed them
     // in is the order they are handed on.
     if (ids.Count > 0) foreach (var f in namedInOrder) elements.Add(f);
@@ -222,6 +516,6 @@ else
     findings.Add(notNamed
         ? "No form was named, so none is handed on - every form was read. Name them by id, by kind and side, or "
           + "say all, to hand them to SET_SELECTION or DELETE_ELEMENTS."
-        : elements.Count + " form(s) handed on as elements - SET_SELECTION highlights them; DELETE_ELEMENTS "
+        : elements.Count + " form(s) and 2D element(s) handed on as elements - SET_SELECTION highlights them; DELETE_ELEMENTS "
           + "deletes them once the modeller has said yes.");
 }

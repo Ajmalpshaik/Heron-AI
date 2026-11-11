@@ -55,6 +55,43 @@ positive:
   - given: a family holding a freeform made by CREATE_FAMILY_FREEFORM_SOLID, which "freeform"
     expect: formCount 1 and elements 1, the freeform - version 3 knew no "freeform" and read it as an id
 
+
+  # VERSION 5 (2026-11-11, row 5b-1496) - the family's 2D side. Each FAILS on
+  # version 4, which leaves no twoDList and refuses every 2D word as an id.
+  - given: >
+      the SAVED scratch metric Detail Item family "Heron 2D Read Test" under
+      %TEMP%\heron-work\2d-read (never one of the owner's families), arranged
+      as NEEDS-CHECKING ND0: planes Tip (X 600) and Head Top (Y 80); a detail
+      line "path 0,0; 300,0" locked along Center (Front/Back); a filled region
+      "polygon 300,80 600,0 300,-80", its tip corner locked to Tip by hand; a
+      CONTROL detail line "path 0,-200; 300,-200", never locked; which "2d"
+    expect: >
+      twoDCount 3, formCount 0: the shaft "from 0,0,0 to 300,0,0 mm, 300 long",
+      style named, "locked along Center (Front/Back)"; the CONTROL "nothing
+      holds it"; the region with its type, "1 loop(s), X 300 to 600, Y -80 to
+      80 mm", "3 sketch edge(s)" and "locked at an end to Tip" - its three
+      edges NOT listed as lines. elements 3
+
+  - given: the same family, which "all"
+    expect: >
+      the same three 2D rows in twoDList beside formCount 0 - and elements 0:
+      "all" hands on forms alone, never a line
+
+  - given: >
+      a scratch metric Generic Model family with one solid extrusion, a
+      symbolic line "path 0,0; 500,0" on Ref. Level for coarse only, and a
+      nested detail item placed in the view Ref. Level with its Visible linked
+      to a Yes/No "Show Arrow"; which "symbolic line, nested"
+    expect: >
+      formCount 0; the symbolic line "shows in coarse | plan"; the nested row
+      names its family and type, "in view Ref. Level", its point, "turned 0
+      deg", and "Visible yes (linked to Show Arrow)"
+
+  - given: the same family, which "solid"
+    expect: formCount 1, twoDCount 0 and twoDList empty - form words read no 2D, as version 4
+
+  - given: the same family, which = the extrusion's id and the symbolic line's id
+    expect: formCount 1 and twoDCount 1, elements 2 in the order named
 negative:
   - given: which "revolve" on the same family, which holds no revolve
     expect: formCount 0, formList empty, scanned 2 - the forms were looked at and none matched
@@ -102,8 +139,27 @@ negative:
   - given: a project in front, which "all"
     expect: notAFamily true, refused saying so, elements 0
 
+
+  # VERSION 5 (2026-11-11).
+  - given: >
+      the Detail Item family, which = the shaft's id with its FIRST character
+      changed - the shape of an id that names no element here
+    expect: refused by name, "is not an id in this family", nothing read, twoDCount 0, elements 0
+
+  - given: the Detail Item family, which = the shaft's id and the UniqueId of the plane Tip
+    expect: refused naming Tip as not a form, a line, a region or a nested family; the shaft not read either
+
+  - given: the Detail Item family, which "region, <the shaft's id>"
+    expect: refused - ids and kinds are not mixed - nothing read
+
+  - given: which "nested" on the Detail Item family, which holds no nested family
+    expect: twoDCount 0, twoDList empty - looked at, none matched; not a refusal
 second_route:
   - >
       In the Family Editor, select each form and read its Properties and its
       Visibility Settings by hand; the extents measured with a dimension in a
       plan and an elevation
+  - >
+      VERSION 5: in the Family Editor, select each line, region and nested
+      family and read its Properties, its Visibility Settings, its padlocks and
+      the dimension it is labelled with by hand; the ends measured with Measure

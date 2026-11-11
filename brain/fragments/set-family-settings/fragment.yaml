@@ -324,7 +324,7 @@ compatibility-note: >
 #                                                2D lines and a filled
 #                                                region's edges, along and
 #                                                by their ends
-#   "what is locked to the planes in this family" -> REPORT_FAMILY_2D_ELEMENTS -
+#   "what is locked to the planes in this family" -> REPORT_FAMILY_FORMS (v5) -
 #                                                lines, regions and nested
 #                                                families, read back with
 #                                                their locks and links
