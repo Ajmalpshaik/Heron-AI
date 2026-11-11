@@ -56,6 +56,7 @@ does it by hand.
 | 5a | Label plane to plane, and EQ | LABEL_FAMILY_DIMENSION | **have PROVEN** | - |
 | 5b | Label line to line, line to plane | - | **not built, on purpose** | Lines are locked to planes (3b) and the PLANES labelled (5a), as Autodesk's own families are made; a label on a line stretches nothing a locked plane would not |
 | 5c | ANGULAR label (an angle parameter between two planes) | LABEL_FAMILY_DIMENSION | **widen** (PR B) | `FamilyItemFactory.NewAngularDimension`; CREATE_ANGULAR_DIMENSION refuses a family |
+| 5d | A reference plane drawn AT AN ANGLE (what an angle label needs) | CREATE_REFERENCE_PLANES (planes along the family's axes only) | **widen - owed, not in these PRs** | Found while writing PR B (2026-11-11): its proof draws the sloped plane by hand. Recorded in row 5b-1498 |
 | 6a | Symbolic line visibility (plan / front-back / left-right, coarse / medium / fine) after drawing | SET_FAMILY_FORM_VISIBILITY | **widen** (PR C) | `SymbolicCurve.SetVisibility`; DRAW_FAMILY_SYMBOLIC_LINES sets it only when drawing |
 | 6b | A nested family's Visibility Settings | - | **NO API** | The Family Editor shows it for a nested instance; the API has no call. By hand |
 | 6c | Yes/No linking of 2D | LINK_FAMILY_PARAMETER | **have PROVEN** for nested families; **widen** (PR B) for lines and regions | As 4d |
@@ -77,16 +78,18 @@ gap but these:
 
 1. **An arc's centre locked to planes (3e)** - one more widening, of LOCK_FAMILY_LINES_TO_PLANES, owed to the
    session already changing that card.
-2. **The in-flight fix #842** (LOCK_NESTED_FAMILY_TO_PLANES) must land, or a placed arrow still cannot be
+2. **A reference plane at an angle (5d)** - one more widening, of CREATE_REFERENCE_PLANES. Until then the
+   sloped plane an angle label needs is drawn by hand.
+3. **The in-flight fix #842** (LOCK_NESTED_FAMILY_TO_PLANES) must land, or a placed arrow still cannot be
    locked; the LOCK_FAMILY_LINES_TO_PLANES fix (#844) is merged.
-3. **Two things no tool can do (NO API)** - a filled region's and a nested family's Visibility Settings.
+4. **Two things no tool can do (NO API)** - a filled region's and a nested family's Visibility Settings.
    Done by hand, or avoided: put the region inside the nested 2D family and control that family's
    visibility by its view and Visible.
-4. **PROOFS.** Every "have DRAFT" and "widen" row is unproven until its NEEDS-CHECKING group runs on a
+5. **PROOFS.** Every "have DRAFT" and "widen" row is unproven until its NEEDS-CHECKING group runs on a
    scratch family. Nothing in this note has run in Revit.
 
 So the six tools first named were not the whole list: the read-back (REPORT_FAMILY_FORMS) and the 2D arc's
-radius (LABEL_FAMILY_RADIUS) were added, and the arc centre is still owed.
+radius (LABEL_FAMILY_RADIUS) were added; the arc centre and the angled plane are still owed.
 
 ## The pull requests
 
