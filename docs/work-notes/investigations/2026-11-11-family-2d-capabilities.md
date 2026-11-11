@@ -44,7 +44,7 @@ does it by hand.
 | 1d | Array it | ARRAY_FAMILY_FORMS | **widen** (PR C) | Today arrays a nested family in a 3D view, where a detail item does not show; widened to its owner view |
 | 2 | Lock nested 2D families to planes | LOCK_NESTED_FAMILY_TO_PLANES | **have DRAFT** | Fix in flight: #842 |
 | 3a | Draw detail lines / symbolic lines, arcs included | DRAW_FAMILY_DETAIL_LINES, DRAW_FAMILY_SYMBOLIC_LINES | **have PROVEN** | - |
-| 3b | Lock a line ALONG a plane, a line END to a crossing plane | LOCK_FAMILY_LINES_TO_PLANES | **have DRAFT** | Its first run refused a plain detail line (Group NC) - fix in flight in its own session |
+| 3b | Lock a line ALONG a plane, a line END to a crossing plane | LOCK_FAMILY_LINES_TO_PLANES | **have DRAFT** | Its first run refused a plain detail line (Group NC); fixed in v2 ([#844](https://github.com/Ajmalpshaik/Heron-AI/pull/844), merged 2026-11-11, row 5b-1495), still DRAFT until Group NC passes |
 | 3c | Slanted lines follow parameters | the same, by end locks | **have DRAFT** | As 3b |
 | 3d | An ARC's RADIUS following a parameter | LABEL_FAMILY_RADIUS | **widen** (PR C) | Today form sketches only; `FamilyItemFactory.NewRadialDimension` on a 2D arc |
 | 3e | An arc's CENTRE locked to planes | LOCK_FAMILY_LINES_TO_PLANES | **widen - owed, not in these PRs** | Belongs to that card, which its own session is changing now; given to it, not built here, so two sessions do not edit one card |
@@ -77,8 +77,8 @@ gap but these:
 
 1. **An arc's centre locked to planes (3e)** - one more widening, of LOCK_FAMILY_LINES_TO_PLANES, owed to the
    session already changing that card.
-2. **The two in-flight fixes** - #842 and the LOCK_FAMILY_LINES_TO_PLANES fix - must land, or a placed arrow
-   still cannot be locked.
+2. **The in-flight fix #842** (LOCK_NESTED_FAMILY_TO_PLANES) must land, or a placed arrow still cannot be
+   locked; the LOCK_FAMILY_LINES_TO_PLANES fix (#844) is merged.
 3. **Two things no tool can do (NO API)** - a filled region's and a nested family's Visibility Settings.
    Done by hand, or avoided: put the region inside the nested 2D family and control that family's
    visibility by its view and Visible.
