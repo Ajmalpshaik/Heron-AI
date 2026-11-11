@@ -4537,28 +4537,67 @@ def _proven_split():
     (None, None) when it cannot be read, which is reported as UNKNOWN rather
     than as zero proven. Those are different sentences.
     """
+    counts = _status_counts()
+    if not counts:
+        return None, None
+    return (sum(counts.get(s, 0) for s in ("PROVEN", "PRODUCTION")),
+            sum(counts.values()))
+
+
+def _status_counts():
+    """
+    {status: how many cards declare it} over every fragment.yaml, read from
+    the files for `_proven_split`'s reason - or None when they cannot be
+    read. A card that states no status is counted under "".
+    """
     folder = os.path.join(_repo_root(), "brain", "fragments")
     if not os.path.isdir(folder):
-        return None, None
+        return None
 
-    proven = total = 0
+    counts = {}
     try:
         for name in sorted(os.listdir(folder)):
             path = os.path.join(folder, name, "fragment.yaml")
             if not os.path.isfile(path):
                 continue
-            total += 1
+            status = ""
             with io.open(path, "r", encoding="utf-8", errors="replace") as fh:
                 for line in fh:
-                    if not line.startswith("heron-status:"):
-                        continue
-                    if line.split(":", 1)[1].strip().upper() in ("PROVEN", "PRODUCTION"):
-                        proven += 1
-                    break
+                    if line.startswith("heron-status:"):
+                        status = line.split(":", 1)[1].strip().upper()
+                        break
+            counts[status] = counts.get(status, 0) + 1
     except OSError:
-        return None, None
+        return None
+    return counts
 
-    return (proven, total) if total else (None, None)
+
+def _live_split():
+    """
+    (proven, live) - how many capabilities are proved, of the ones the
+    library still HOLDS. (None, None) when that cannot be read.
+
+    A RETIRED CARD IS NOT A CAPABILITY (FRAGMENT-ISSUES 5b-1521). The closing
+    sentence counted every fragment.yaml, so "the other N are not" proven
+    counted each DEPRECATED card as a capability nobody had proved - a card
+    retrieval never offers, kept only so its record is not destroyed. Measured
+    2026-11-11: the sentence's "other" was the DRAFT cards and the DEPRECATED
+    ones added together, nearly half of it cards that are not in the library.
+
+    WHICH STATUSES RETIRE A CARD IS THE BRAIN'S TO SAY - docs/09's ladder,
+    through heron_brain.retired_statuses - never a second list typed here.
+    """
+    counts = _status_counts()
+    if not counts:
+        return None, None
+    try:
+        retired = brain.retired_statuses()
+    except brain.BrainUnavailable:
+        return None, None
+    live = sum(n for status, n in counts.items() if status not in retired)
+    if not live:
+        return None, None
+    return sum(counts.get(s, 0) for s in ("PROVEN", "PRODUCTION")), live
 
 
 # WHICH OF THE TWO CLOSING PARAGRAPHS THIS PROCESS HAS ALREADY SERVED WHOLE.
@@ -4635,8 +4674,11 @@ def _not_proven(once=False):
     time this process says it, one line after (_SAID_IN_FULL). The counts are
     in both - they are the live fingerprint of which tree this server reads
     (row 127) - and a count that could not be read is said the same way each
-    time."""
-    proven, total = _proven_split()
+    time.
+
+    COUNTED OVER THE CARDS STILL IN THE LIBRARY (_live_split): a retired card
+    is not a capability, proved or otherwise."""
+    proven, total = _live_split()
     if proven is None:
         return ("How much of this is proven could not be read from disk just "
                 "now, which is not the same as none. D-30 promotes on one "

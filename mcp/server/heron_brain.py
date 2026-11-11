@@ -2750,6 +2750,20 @@ def host_instructions():
     return text
 
 
+def retired_statuses():
+    """
+    The statuses a card leaves the library by - heron_search.RETIRED_FRAGMENTS,
+    read off docs/09's ladder there and asked here.
+
+    For a count of what the library HOLDS. A retired card is kept so its
+    record is never destroyed, not so it can answer: retrieval never offers
+    one, and a sentence that counts one as a capability nobody has proved is
+    counting something that is not a capability (FRAGMENT-ISSUES 5b-1521).
+    Asked rather than typed on the server's side, so the ladder has one copy.
+    """
+    return tuple(_brain()[3].RETIRED_FRAGMENTS)
+
+
 def proof_status(folder):
     """
     How far one fragment is proven, as data - or None when it cannot be read.

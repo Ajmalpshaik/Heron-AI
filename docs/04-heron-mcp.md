@@ -977,3 +977,8 @@ is proved, what it may do, or which door runs it.
   their line whole, as before. `tests/test_mcp_serves.py` section 18 and `tests/test_mcp_stdio.py` hold
   it. Measured the same way at this change, 2026-11-11: a lookup of a sentence nothing declares went
   from 3,113 characters to 2,399 with its three new lines, and a resolve from 2,947 to 1,982.
+- **How many are `PROVEN` is counted over the cards still in the library.** The sentence counted every
+  `fragment.yaml`, so its *"the other N are not"* took each retired card for a capability nobody had
+  proved ([row 5b-1521](fragment-issues/section-5b-rows-401-425.md)). Which statuses retire a card is
+  the brain's to say (`heron_brain.retired_statuses`); `tests/test_served_claims.py` holds the sentence
+  to the files.
