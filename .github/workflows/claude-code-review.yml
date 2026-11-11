@@ -2,8 +2,19 @@ name: Claude Code Review
 on:
   pull_request:
     types: [opened, synchronize, ready_for_review, reopened]
+# One review per pull request at a time. Without this, two pushes a few
+# seconds apart started two full reviews of the same PR (2026-11-11, two runs
+# on report-family-2d-elements at 09:34), each spending the owner's Claude
+# allowance. A newer push cancels the review of the older one.
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 jobs:
   review:
+    # A draft is still being written: it is reviewed when it is marked ready
+    # (ready_for_review above). Dependabot's pull requests get no secrets, so
+    # a review there could only fail.
+    if: github.event.pull_request.draft == false && github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -11,7 +22,7 @@ jobs:
       issues: read
       id-token: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 1
       - uses: anthropics/claude-code-action@v1
