@@ -7,10 +7,12 @@ people who actually do BIM work are worth more than contributions from people wh
 > path from a sentence to a selection changing on screen — is proven in real Revit 2020 and 2024. The
 > add-in has since loaded in Revit 2020, 2024, 2026 and 2027
 > ([Group EQ](docs/needs-checking/group-eq.md)), and D-28's executor compiles a fragment's C# inside
-> Revit's own process, so fragments do now meet real models — on every one of those but 2026, where no
-> fragment could run until a repair that has not yet been run in Revit
-> ([Group GW](docs/needs-checking/group-gw.md)). The [README's Status](README.md#status) says what else
-> has met a real Revit.
+> Revit's own process, so fragments do now meet real models. On 2026 no fragment could run until a
+> repair that [Group GW](docs/needs-checking/group-gw.md) still records as not yet run in Revit; one
+> card has since been proved there - `attach-walls`, signed 2026-11-07 - and the group's own rows are
+> not written back. Which release each proof names is on the cards:
+> `grep -h '^  model: ' brain/fragments/*/fragment.yaml | grep -o 'Revit 20[0-9][0-9]' | sort | uniq -c`.
+> The [README's Status](README.md#status) says what else has met a real Revit.
 >
 > **Most fragments are `PROVEN`** — each on a recorded run against a named model. **The rest are
 > `DRAFT`**, which is Heron's word for *not proven as it stands* - most of those have never met a
