@@ -987,3 +987,8 @@ is proved, what it may do, or which door runs it.
   ([D-132](DECISIONS.md#d-132--off-windows-the-heron-server-serves-its-library-alone-and-no-revit-tool)),
   and with several Revits connected and none chosen
   ([row 5b-1506](fragment-issues/section-5b-rows-401-425.md)).
+- **Recorded, not repaired.** The list a door hands back for the user's own words (`request`) still
+  names each capability's risk and not its status
+  ([row 5b-1523](fragment-issues/section-5b-rows-401-425.md)). And the first lookup of a server that
+  has just started ranks nearness as noise while calling it the trained model; asked again, the same
+  words rank properly ([row 5b-1522](fragment-issues/section-5b-rows-401-425.md)).
