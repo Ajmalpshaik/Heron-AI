@@ -3397,7 +3397,32 @@ def cmd_doctor():
     return 0
 
 
+def utf8_output(streams=None):
+    """This command line's output as UTF-8, a character it cannot hold replaced.
+
+    ROW 5b-1487. A label out of the model - the Greek delta of a pressure
+    drop - is printed as it came, and on the owner's laptop `print` encoded it
+    in cp1252, which has no such character. `try-once` died in `print_items`
+    with UnicodeEncodeError AFTER the modeller had pressed Keep and the record
+    was written: a traceback where "Recorded ..." belonged. UTF-8 is what
+    stops the crash, and what `tools/batch-prove.py` decodes this command's
+    output as; `errors="replace"` is for the lone surrogate UTF-8 cannot hold.
+    A stream that cannot be reconfigured - a test's StringIO - is left as it
+    is.
+
+    Called by `main`, never at import: the MCP server imports this module, and
+    its stdout is the protocol's, not this file's to change.
+    """
+    for stream in (sys.stdout, sys.stderr) if streams is None else streams:
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
+
+
 def main(argv):
+    utf8_output()
+
     # NO PLATFORM CHECK HERE. It used to be the first two lines, and it
     # answered "this needs Windows" to command lines that were wrong on every
     # platform - see refuse_off_windows, and FRAGMENT-ISSUES row 160. Each
@@ -3516,13 +3541,17 @@ def main(argv):
         if rest is None:
             return 2
         rest, session = pull_session(rest)
+        # `--in "Doc"` WHEREVER IT STANDS, as `--session` is read - row
+        # 5b-1487. It was read only in front of the fragment's name, so
+        # `try-once <fragment> --in "Doc"` printed the usage and sent nothing.
         in_document = None
-        if rest and rest[0] == "--in":
-            if len(rest) < 2:
+        if "--in" in rest:
+            at = rest.index("--in")
+            if at + 1 >= len(rest):
                 print("--in needs the title of an open document after it")
                 return 2
-            in_document = rest[1]
-            rest = rest[2:]
+            in_document = rest[at + 1]
+            rest = rest[:at] + rest[at + 2:]
         if len(rest) != 1 or rest[0].startswith("--"):
             print("Which DRAFT fragment? e.g. try-once rename-views-by-level")
             print("  --in \"Doc\"         name the model - it must still be the one in front")
