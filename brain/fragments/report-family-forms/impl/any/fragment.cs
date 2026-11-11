@@ -45,6 +45,16 @@
 // whole call, each bad one named, before anything is read. The short number
 // Select by ID shows is refused with that said - an ElementId built from typed
 // text is the constructor that changed at 2024.
+//
+// A CUT OR JOINED SOLID DOES NOT READ "0 L" (version 5, FRAGMENT-ISSUES
+// 5b-295). Measured 2026-10-02, Revit 2024: a minibus body cut by a void with
+// COMBINE_FAMILY_FORMS - which itself measured 33288.157 L before and
+// 31796.287 L after - listed here as "0 L", while every uncut form read its
+// real volume. Revit gives the cut body to the COMBINATION, which is where
+// COMBINE_FAMILY_FORMS reads it. So every join or cut is listed with its own
+// volume, read the same way, and a solid that reads no volume of its own while
+// it is in one says that and points there - a 0 that reads as an empty form
+// is never printed for it. A solid in no join or cut prints as before.
 
 var findings = new List<string>();
 var formCount = 0;
@@ -192,7 +202,11 @@ else
 
         rows.Add(side + " " + kind + " " + f.UniqueId + " (" + planeOf(f) + ")"
             + (extent.Length > 0 ? ": " + extent : "")
-            + (f.IsSolid ? ", " + Math.Round(volume * 28.316846592, 3).ToString(invariant) + " L" : "")
+            + (!f.IsSolid ? ""
+                : volume <= 0 && inJoin.Count > 0
+                    ? ", no volume read on the form itself - it is in a join or cut, and the volume is listed "
+                      + "with that join or cut"
+                    : ", " + Math.Round(volume * 28.316846592, 3).ToString(invariant) + " L")
             + ", subcategory " + (f.Subcategory == null ? "(the family's own)" : f.Subcategory.Name)
             + (shows.Length > 0 ? ", " + shows : "")
             + (inJoin.Count > 0 ? ", in " + string.Join(" and ", inJoin) : ""));
@@ -206,7 +220,21 @@ else
             var mf = m as GenericForm;
             members.Add(mf == null ? m.UniqueId : (mf.IsSolid ? "solid " : "void ") + kindOf(mf) + " " + m.UniqueId);
         }
-        joins.Add(c.UniqueId + ": " + string.Join(", ", members));
+
+        // THE COMBINATION'S OWN VOLUME (version 5, 5b-295) - the solids left
+        // after the join or cut, read as COMBINE_FAMILY_FORMS reads them.
+        var combined = 0.0;
+        var combinedGeometry = c.get_Geometry(new Options());
+        if (combinedGeometry != null)
+            foreach (GeometryObject piece in combinedGeometry)
+            {
+                var body = piece as Solid;
+                if (body != null && body.Volume > 0) combined += body.Volume;
+            }
+        joins.Add(c.UniqueId + ": " + string.Join(", ", members) + " - "
+            + (combined > 0
+                ? Math.Round(combined * 28.316846592, 3).ToString(invariant) + " L as joined or cut"
+                : "no volume read on it"));
     }
 
     // BY ID, IN THE ORDER NAMED (version 4) - the order a caller listed them
