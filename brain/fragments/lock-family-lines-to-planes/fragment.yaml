@@ -9,7 +9,7 @@ semantic-identity: "lock a 2D family's lines and filled region edges to named pl
 kind: action
 domain: revit.families
 capability: LOCK_FAMILY_LINES_TO_PLANES
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -105,6 +105,10 @@ compatibility-note: >
   `Reference.ConvertToStableRepresentation` / `ParseFromStableRepresentation`
   read the same 2020 through 2027. One implementation, no #if. Compiled for
   every release on 2026-11-11; NOT RUN in any Revit.
+  Version 2 also reads `Extrusion.Sketch`, `Revolution.Sketch`,
+  `Sweep.PathSketch`, `SweptBlend.PathSketch`, `Blend.BottomSketch` /
+  `TopSketch` - the same 2020 through 2027, as LOCK_FORM_SKETCH_TO_PLANES
+  reads them. Compiled for every release on 2026-11-11.
 
 # VERSION 1, 2026-11-11 (row 5b-1493). Asked for a detail item's flow arrow:
 # Autodesk's sample supply diffuser carries arrows that grow with its size, and
@@ -124,6 +128,20 @@ compatibility-note: >
 # LOCK_FORM_SKETCH_TO_PLANES NA2); whether a filled region's sketch comes back
 # from GetDependentElements and its edges take a lock outside Edit Boundary;
 # whether a region's corners stay joined as one edge moves.
+#
+# VERSION 2, 2026-11-11 (row 5b-1495). Group NC's first run (Revit 2020,
+# scratch "Heron Line Lock Test") refused NC1 and NC2 before locking anything:
+# "The line ...00000814 belongs to a form's sketch" - the shaft, a plain detail
+# line. A read-only probe on that family found why: a Detail Item family holds
+# a Sketch of its own on "Ref. Level" (id 401, from the template), owned by no
+# form or region, whose Profile lists EVERY loose detail line drawn there - the
+# shaft and the control line both. Version 1 counted every Sketch in the family.
+# Now a sketch counts only when a form names it (Extrusion.Sketch,
+# Sweep.PathSketch, ... as LOCK_FORM_SKETCH_TO_PLANES reads them) or a filled
+# region has it as a dependent - the probe read only sketch 2073 that way, the
+# region's three edges in it, the shaft and the control not. A line in neither
+# that is not a detail or symbolic line is now refused as a MODEL line, never
+# as a form's sketch line. NC1 and NC2 are to be run again on this version.
 #
 # ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
