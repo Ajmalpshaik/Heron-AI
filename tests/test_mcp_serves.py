@@ -2364,6 +2364,38 @@ async def exercise_lookup_says(module):
           "and each runner-up carries its card's status, its risk and its door "
           "(%d)%s" % (len(rows), "" if not wrong else " - " + "; ".join(wrong[:3])))
 
+    # THE CARDS ARE WALKED ONCE FOR THE LINES THIS ADDS, not once for each
+    # capability listed. On the owner's PC a lookup's time was reading every
+    # card again (row 5b-271), and five listed was five more walks.
+    walks = {"each": 0, "once": 0}
+    real_for = module._fragment_for
+    real_map = getattr(module, "_folders_by_capability", None)
+
+    def counted_for(capability):
+        walks["each"] += 1
+        return real_for(capability)
+
+    def counted_map():
+        walks["once"] += 1
+        return real_map()
+
+    module._fragment_for = counted_for
+    if real_map is not None:
+        module._folders_by_capability = counted_map
+    try:
+        again, _found = await lookup("make the pipes slope down to the drain")
+    finally:
+        module._fragment_for = real_for
+        if real_map is not None:
+            module._folders_by_capability = real_map
+    listed = len(again.split("Other capabilities that came close", 1)[-1]
+                 .split("\n\n", 1)[0].splitlines()) - 1
+    check(listed > 1 and walks["once"] == 1 and walks["each"] <= 1,
+          "a lookup listing %d runners-up walks the cards once for their status "
+          "lines, beside the one walk for what the best match needs typed - "
+          "walked %d time(s) for all, %d for one capability each"
+          % (listed, walks["once"], walks["each"]))
+
 
 async def exercise_said_once(module):
     """Section 18 - the two closing paragraphs are served whole once per

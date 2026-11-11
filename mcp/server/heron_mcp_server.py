@@ -5059,9 +5059,39 @@ def _lookup_door(risk, capability, folder):
     return "revit_show"
 
 
-def _how_it_runs(capability, risk):
+def _folders_by_capability():
     """
-    (status, risk, door, held) for one capability a lookup lists.
+    {CAPABILITY: folder} for every card, from ONE walk of the fragment files -
+    `_fragment_for`'s answer for each, the first folder in order that declares
+    it, without `_fragment_for`'s walk once per capability.
+
+    A LOOKUP LISTS FIVE, AND A WALK EACH IS THE COST ROW 5b-271 MEASURED ON
+    THE OWNER'S PC: there a lookup's time was reading every card again, not
+    the search. One walk, each card read only as far as its capability line.
+    {} when the folder cannot be read - every status is then "status unread",
+    never a guess.
+    """
+    root = os.path.join(_repo_root(), "brain", "fragments")
+    found = {}
+    try:
+        for name in sorted(os.listdir(root)):
+            path = os.path.join(root, name, "fragment.yaml")
+            if not os.path.isfile(path):
+                continue
+            with io.open(path, "r", encoding="utf-8", errors="replace") as fh:
+                for line in fh:
+                    if line.startswith("capability:"):
+                        found.setdefault(line.split(":", 1)[1].strip().upper(), name)
+                        break
+    except OSError:
+        return {}
+    return found
+
+
+def _how_it_runs(capability, risk, folders=None):
+    """
+    (status, risk, door, held) for one capability a lookup lists. `folders`
+    is `_folders_by_capability()`, taken once by a caller that lists several.
 
     A CHAT LEARNED A CAPABILITY WAS DRAFT FROM revit_change's REFUSAL, a turn
     after choosing it. On every ranked answer the lookup printed the
@@ -5081,7 +5111,10 @@ def _how_it_runs(capability, risk):
     own rule, asked and not copied: True when the door is revit_change and
     `unproven_refusal` would turn this capability away there (D-117).
     """
-    folder, _status = _fragment_for(capability)
+    if folders is None:
+        folder, _status = _fragment_for(capability)
+    else:
+        folder = folders.get((capability or "").strip().upper())
     proof = brain.proof_status(folder) if folder else None
     if proof is None:
         status = "status unread"
@@ -5246,7 +5279,9 @@ def heron_lookup(request: str, question: bool = False) -> str:
              "  provided by  %s" % found["provider"]]
     # HOW FAR IT IS PROVED, WHAT IT MAY DO, AND THE DOOR THAT RUNS IT - on
     # every route, so the next call is the run and not a refusal to learn from.
-    status, risk, door, held = _how_it_runs(found["capability"], found.get("risk"))
+    folders = _folders_by_capability()
+    status, risk, door, held = _how_it_runs(found["capability"], found.get("risk"),
+                                            folders)
     lines.append("  status       %s" % status)
     lines.append("  risk         %s" % risk)
     lines.append("  run with     %s" % (
@@ -5328,7 +5363,8 @@ def heron_lookup(request: str, question: bool = False) -> str:
             if c["capability"] in seen or c["capability"] == found["capability"]:
                 continue
             seen.add(c["capability"])
-            status, risk, door, held = _how_it_runs(c["capability"], c.get("risk"))
+            status, risk, door, held = _how_it_runs(c["capability"], c.get("risk"),
+                                                    folders)
             lines.append("    %-30s %-7s %-8s %-13s %s%s"
                          % (c["capability"], status, risk, door or "door not said",
                             c["why"],
