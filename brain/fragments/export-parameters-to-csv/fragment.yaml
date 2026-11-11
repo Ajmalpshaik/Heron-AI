@@ -110,8 +110,15 @@ compatibility-note: >
 #                                       without writing a file
 #   "set these values"               -> WRITE_ELEMENT_PARAMETERS. Nothing here
 #                                       changes the model
-#   "bring the edited file back in"  -> not a fragment yet. Reading a CSV back
-#                                       is the other half of this round trip
+#   "bring the edited file back in"  -> SET_PARAMETER_VALUES_BY_ID, with
+#                                       csvPath naming the file and blankCells
+#                                       skip or clear - the other half of this
+#                                       round trip since 2026-11-01, when
+#                                       IMPORT_PARAMETER_VALUES was merged into
+#                                       it. This row said "not a fragment yet"
+#                                       until 2026-11-11. The method
+#                                       parameters-csv-round-trip has the order
+#                                       and what stops a file coming back
 
 utterances:
   - get these parameters into a spreadsheet

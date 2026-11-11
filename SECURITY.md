@@ -50,7 +50,7 @@ them, that is a vulnerability worth reporting:
 
 - **The permission gate lives in the Revit add-in**, not in the AI layer
   ([`HeronPermissions`](platform/Heron.Core/HeronPermissions.cs)). Every operation declares its risk in
-  code; one that changes a model is refused while `write.enabled` (the ribbon's **Changes**) is off,
+  code; one that changes a model is refused while `write.enabled` (the **Changes** switch, in Heron's Settings window since [D-150](docs/decisions/D-150.md)) is off,
   which is the default, and an `ADMIN` or `PUBLISH` operation also needs a switch of its own, each off by
   default ([D-106](docs/DECISIONS.md)). With Changes on, a change asked for in a chat is kept at once,
   as one entry in Revit's undo list, unless the owner has turned **Ask to Keep** on, when Revit shows the
