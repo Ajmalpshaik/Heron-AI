@@ -70,9 +70,9 @@ purpose: >
      leader=none, minLengthMm=0 and leaderOffsetMm=0, expect_from naming the
      filter. It reads the plan's own tags and never stacks a second on a door
      already tagged there, so no FIND_UNTAGGED_ELEMENTS is needed in front of
-     it. Its status: version 5 was signed on 2026-10-13 and tagged doors
-     since version 4; TAG_ELEMENTS, which this step used until then, was
-     merged into it on 2026-11-01, and version 6 is DRAFT until it is proved.
+     it. It has tagged doors since version 4 and was signed at version 5 on
+     2026-10-13; TAG_ELEMENTS, which this step used until then, was merged
+     into it on 2026-11-01. Its status since is in the list after this method.
      A door that is a curtain panel is tagged too, at the centre of its
      extent (5b-454).
   8. DIMENSIONS, on each plan. DIMENSION_ROOMS (PROVEN) on that level's rooms
@@ -80,8 +80,8 @@ purpose: >
      with direction=along, withOverall=true and side=right, each at the
      offsetMm the modeller gives. DIMENSION_WALL_OPENINGS, which this step used
      until then, was merged into it on 2026-11-01 - side=right is the side it
-     drew on, and side=outside puts the strings away from the rooms; version 2
-     is DRAFT until it is proved. Look at each plan afterwards: on the first set
+     drew on, and side=outside puts the strings away from the rooms. Look at
+     each plan afterwards: on the first set
      one wall's strings ran through three room tags, and taking a string away is
      a delete that needs the modeller's yes for that one delete. One element in
      a section or elevation - an opening from its level and grid, its own width
@@ -206,7 +206,7 @@ needs:
   - FIND_VIEWS
   # PLACE_VIEW_ON_SHEET, above, places the schedules too since 2026-11-01,
   # when PLACE_SCHEDULE_ON_SHEET was merged into it.
-  # Only when a look is asked for - see step 11. DRAFT, version 3 of
+  # Only when a look is asked for - see step 11. Version 3 of
   # 2026-11-01: SET_CATEGORY_SOLID_FILL was merged into it as its solidFill
   # switch.
   - SET_CATEGORY_GRAPHICS

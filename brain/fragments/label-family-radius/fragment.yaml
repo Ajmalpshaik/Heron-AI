@@ -20,11 +20,13 @@ capability: LABEL_FAMILY_RADIUS
 # without refusing on it; never lets Revit's words out alone; and when Revit
 # refuses with both in hand asks again with each read back from its written
 # form so the answer names the one it would not take. Version 4's proof below
-# no longer described the code: DRAFT at the time, until NEEDS-CHECKING Group
-# IS proves version 5 (D-30). Still version 5, never signed: on 2026-10-24
-# Group IS's IS6 measured on Revit 2020 that the ring route (a circle centre's
-# distance from the axis) moved three other forms with the plane it made; the
-# ring is refused until that is understood (row 5b-1333).
+# no longer described the code: DRAFT then, until NEEDS-CHECKING Group IS
+# proves version 5 (D-30).
+# Still version 5, not signed when this was written: on 2026-10-24 Group IS's
+# IS6 measured on
+# Revit 2020 that the ring route (a circle centre's distance from the axis)
+# moved three other forms with the plane it made; the ring is refused until
+# that is understood (row 5b-1333).
 version: 5
 source: OFFICIAL
 risk: MODIFY

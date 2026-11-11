@@ -65,8 +65,8 @@ purpose: >
 
   WHICH DOOR STEP 4 GOES THROUGH IS EDIT_TEXT_VALUES' STATUS, and the list
   served after this method says it - never this text. Both cards were DRAFT
-  when this was written, 2026-10-17, and stayed so until Ajmal PS signed
-  them: FRAGMENT-ISSUES row 5b-520 (pull request #570) left two proof
+  when this was written, 2026-10-17 - a card leaves DRAFT only when Ajmal PS
+  signs its proof: FRAGMENT-ISSUES row 5b-520 (pull request #570) left two proof
   drafts; row 5b-737 (#586) widened both cards the same day, so those drafts
   no longer described the code, and the proof then owed was NEEDS-CHECKING
   group FD. PROVEN in that list, step 4 goes through revit_change - TRY-ONCE

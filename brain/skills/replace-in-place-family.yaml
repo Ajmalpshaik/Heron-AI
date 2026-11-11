@@ -150,7 +150,7 @@ purpose: >
        is in a linked model.
      - A WALL, FLOOR, CEILING OR ROOF: PLACE_HOSTED_FAMILY at each point.
      These two are not in the list after this method (the note there says
-     why): heron_resolve each by name, and both are DRAFT.
+     why): heron_resolve each by name - its answer gives each one's status.
      WHERE THE PLACEMENT REFUSES, OR PUTS IT ELSEWHERE THAN ASKED - copy an
      existing instance of the new type. 2026-10-15, Revit 2020: asked 2152
      mm, PLACE_FAMILY_INSTANCES stood the TRG cut-out 2014.5 mm above the

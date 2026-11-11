@@ -33,9 +33,8 @@ risk: READ
 # is no Material is skipped here, as this card's takeoff always skipped it -
 # that card keyed one by its id. Nothing else of that card is left out.
 #
-# DRAFT at the time, as version 2 was: version 1's proof no longer described
-# the code and was kept as the record; to be proved again on a real model
-# (D-30).
+# DRAFT, as version 2 was: version 1's proof no longer describes the code and
+# is kept as the record; proved again on a real model (D-30).
 
 purpose: >
   Area and volume of each material across a set of elements, taken from Revit's

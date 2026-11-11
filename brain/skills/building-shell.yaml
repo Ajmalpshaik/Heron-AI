@@ -113,8 +113,8 @@ purpose: >
      floors that match - draw one storey's walls, curtain walls and slab
      (steps 3 to 5), collect them with FILTER_ELEMENTS_BY_CATEGORY
      (SELECT_BY_LEVEL was merged into it at version 5, 2026-11-01), levelId=
-     that level, categories=Walls, Floors, then COPY_ELEMENTS (PROVEN, version
-     3 - proved again and signed on 2026-10-18) with expect_from naming that
+     that level, categories=Walls, Floors, then COPY_ELEMENTS (its version
+     and its proof are on its card) with expect_from naming that
      filter, offset=0,0,0 and toLevels= the levels to repeat on - "Level
      2..Roof" is every level from Level 2 to Roof by height. Each copy BELONGS
      to its level at its original's offset, so it is never a ground-floor wall
@@ -258,9 +258,10 @@ purpose: >
          origin lands on the project's.
   14. BEAMS BETWEEN TWO POINTS are PLACE_LINE_BASED_FAMILY: one line per
       beam, from its start to its end, on its level, in the beam type the
-      modeller names, with structuralType=Beam - asked, never assumed. As a
-      DRAFT its change is kept only through try-once: one run on a saved
-      model with nothing unsaved, behind Revit's Keep or Discard (D-117,
+      modeller names, with structuralType=Beam - asked, never assumed. Its
+      change goes through revit_change like any other while the list after
+      this method gives it as PROVEN; were it DRAFT there, only through
+      try-once on a saved model, behind Revit's Keep or Discard (D-117,
       D-119, D-121). NEVER A POINT PLACEMENT for a beam -
       PLACE_FAMILY_INSTANCES, which took PLACE_STRUCTURAL_FAMILY in on
       2026-11-01: it places at POINTS, and on 2026-10-19 the beams the
@@ -274,7 +275,7 @@ purpose: >
       one material per colour, named, with its colour and transparency, and
       none of the starter set. Then one of three routes.
       A COLOUR THAT IS PART OF THE WALL, FLOOR OR ROOF TYPE - every wall of a
-      type finished alike: SET_COMPOUND_LAYER_WIDTH (PROVEN), version 2, sets
+      type finished alike: SET_COMPOUND_LAYER_WIDTH, since its version 2, sets
       one layer's material by name - hostType= the type, layerIndex (0 is the
       outside face) or layerIndex=-1 with layerFunction ("Finish 1") to find
       the layer, material= a name the project already holds, widthMm=0 to
@@ -282,8 +283,8 @@ purpose: >
       layerFunction blank: given there, it is written onto the layer. It
       changes every element of that type, so
       DUPLICATE_TYPE (PROVEN) first and CHANGE_ELEMENT_TYPE the walls that
-      should change onto the copy. Version 2 was proved and signed on
-      2026-10-18, on Revit 2020 only; the other releases wait in NEEDS-CHECKING
+      should change onto the copy. Which release SET_COMPOUND_LAYER_WIDTH's
+      proof ran on is on its card; the other releases wait in NEEDS-CHECKING
       Group DU (FRAGMENT-ISSUES 5b-449). A COLOUR ON A TYPE WITH NO LAYERS - a
       mullion, a fin, a panel: REPLACE_MATERIAL (PROVEN), handed those elements,
       with findMaterial= the material they use now and replaceMaterial= the one
