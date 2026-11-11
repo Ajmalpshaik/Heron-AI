@@ -17,6 +17,19 @@ positive:
       each LOOKED AT as a closed padlock; ends read back unchanged
 
   - given: >
+      VERSION 2 (row 5b-1495) - the same family, a plain detail line drawn by
+      DRAW_FAMILY_DETAIL_LINES in "Ref. Level" BESIDE the filled region (the
+      shaft, and the control "path 0,-200; 300,-200"); the family's own Sketch
+      on "Ref. Level", owned by no form or region, lists both in its profile;
+      lines = the control line's id alone, planes "Center (Left/Right)"
+    expect: >
+      the control line taken as a DETAIL LINE - its tail end locked to "Center
+      (Left/Right)" - and never refused as "belongs to a form's sketch"; and
+      with lines = "all", the shaft, the control and the region are all
+      targets, the region's three edges once each through the region, none of
+      them twice
+
+  - given: >
       the same family after the call above, Length set to 900 in Family Types,
       then the same call run again
     expect: >
@@ -51,6 +64,13 @@ negative:
 
   - given: the shaft alone, planes "Ref. Level"
     expect: refused as not seen edge on in the view, and nothing locked
+
+  - given: >
+      lines = the id of a MODEL line drawn loose in the family (no form, no
+      region), planes "Center (Left/Right)"
+    expect: >
+      refused as a model line, not a detail or symbolic line - never as a
+      form's sketch line - and nothing locked
 
   - given: lines = the id of a reference plane
     expect: refused as not a detail line, symbolic line or filled region, nothing locked
