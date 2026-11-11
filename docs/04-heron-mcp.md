@@ -930,7 +930,7 @@ was written** — [NEEDS-CHECKING Group ES](needs-checking/group-es.md).
   ([D-132](DECISIONS.md#d-132--off-windows-the-heron-server-serves-its-library-alone-and-no-revit-tool)).
   A cloud session has no named pipe and no Revit. The server registers only `heron_tools.LIBRARY` there,
   so no `revit_` tool appears, and its instructions open by saying no Revit can be reached
-  (`LIBRARY_ONLY` in `heron_mcp_server.py`). On Windows every tool is served, as before.
+  (`LIBRARY_ONLY` in `heron_server_core.py`). On Windows every tool is served, as before.
   `tests/test_mcp_stdio.py` and `tests/test_tool_registry.py` hold it.
 - **A question is never offered a change**
   ([D-128](DECISIONS.md#d-128--a-request-the-host-calls-a-question-is-never-offered-a-capability-that-changes-the-model)).

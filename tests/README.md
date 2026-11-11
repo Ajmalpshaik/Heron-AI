@@ -159,6 +159,22 @@ suite:** one that cuts from one named `def` to another still assumes both are in
 and a check of the module header or of the `if __name__ == "__main__"` block is about the entry file,
 `TOOLS.server_files()[-1]`, not about the text's first or last lines.
 
+**The source is more than one file since 2026-11-11**
+([row 5b-1555](../docs/fragment-issues/section-5b-rows-401-425.md)), and three things follow for a suite:
+
+- **Cut a function at its own end** - the next line back at the margin, or the two blank lines that end a
+  top-level function, which is also what `server_text()` puts between two files. *"To the next
+  `@server.tool()`"* is a boundary only while a tool follows in the same file: for the last tool of a file the
+  cut runs on into the next file, or to the end of the text. `test_companion.py` read `heron_companion` that
+  way.
+- **A name a suite REBINDS is rebound on the module that reads it.** A suite that imports the server and
+  stands in its watch on its own code sets `RUNNING` on the module `_old_code` is defined in, not on the entry
+  module: `sys.modules[type(module.server).__module__]` finds it without naming a file
+  (`test_mcp_serves.py`, `shared()`). Set on the entry module, the stand-in changes nothing the server does.
+- **The order of the text is not the order tools are served in.** The entry file is last in the text and
+  imports the tool files as it loads, so a tool in another file registers where that import stands. A suite
+  that needs the served order asks a real SDK (`test_mcp_serves.py`), never the text.
+
 ## Before you change a test
 
 **Never edit a test until it passes.** A red test is a claim about the code; making the claim quieter
