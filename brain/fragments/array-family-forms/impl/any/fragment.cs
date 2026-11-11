@@ -62,6 +62,18 @@
 // place are read again - each copy one step further along than the last - and
 // anything that does not read as asked fails the call; the host rolls the
 // whole call back.
+//
+// A DETAIL ITEM NESTED IN A VIEW (version 4, 2026-11-11, row 5b-1500). A
+// view-based nested family - a diffuser's flow arrow, placed in the family's
+// Ref. Level plan by PLACE_DETAIL_COMPONENTS - belongs to that one view and is
+// not drawn in a 3D view, so its row is made IN ITS OWNER VIEW, as Array is
+// used on it by hand, never in the first 3D view. Revit gives it no extent
+// outside a view (`get_BoundingBox(null)` is empty - the trap
+// LOCK_NESTED_FAMILY_TO_PLANES version 3 met), so where it sits is read from
+// its INSERTION POINT - a copy's from the one nested family its group holds -
+// the same way for the original and every copy. Its row runs in its view's
+// plane: a step along the view's own direction is refused before anything is
+// made. Every other form and nested family takes exactly the path it took.
 
 var findings = new List<string>();
 var arrayId = "";
@@ -136,9 +148,34 @@ Func<FamilyParameter, bool> isInteger = p =>
     }
 };
 
+// VERSION 4: the view a view-based nested family belongs to - its Owner View -
+// or null for a form or a model family. Set once the original is known.
+View ownerView = null;
+// Where a view-based nested family, or the group an array copy of one is, sits:
+// the nested family's insertion point. Null when it has none to read.
+Func<Element, XYZ> insertionOf = e =>
+{
+    var instance = e as FamilyInstance;
+    var group = e as Group;
+    if (instance == null && group != null)
+    {
+        var inside = group.GetMemberIds().Select(id => doc.GetElement(id)).OfType<FamilyInstance>().ToList();
+        if (inside.Count == 1) instance = inside[0];
+    }
+    var at = instance == null ? null : instance.Location as LocationPoint;
+    return at == null ? null : at.Point;
+};
+
 // The lowest point of a form's box along one axis, in feet - where a copy sits.
+// A view-based nested family (version 4) is read by its insertion point instead.
 Func<Element, int, double?> lowest = (e, index) =>
 {
+    if (ownerView != null)
+    {
+        var point = insertionOf(e);
+        if (point == null) return null;
+        return index == 0 ? point.X : index == 1 ? point.Y : point.Z;
+    }
     var box = e.get_BoundingBox(null);
     if (box == null) return null;
     return index == 0 ? box.Min.X : index == 1 ? box.Min.Y : box.Min.Z;
@@ -148,8 +185,9 @@ Func<int, XYZ> unitAlong = index => new XYZ(index == 0 ? 1 : 0, index == 1 ? 1 :
 
 // The view an array is made in: a 3D view of the family when it has one - the
 // array's view must see the form, and only a view-specific element needs the
-// step in that view's plane - or else the view open.
-Func<View> arrayView = () => (View)new FilteredElementCollector(doc).OfClass(typeof(View3D)).Cast<View3D>()
+// step in that view's plane - or else the view open. A view-based nested
+// family (version 4) is arrayed in its own Owner View, the one view it is in.
+Func<View> arrayView = () => ownerView ?? (View)new FilteredElementCollector(doc).OfClass(typeof(View3D)).Cast<View3D>()
     .FirstOrDefault(v => !v.IsTemplate) ?? doc.ActiveView;
 
 // The plane a form is sketched on, where it has one to name: an extrusion's or
@@ -275,6 +313,22 @@ else
             if (original == null)
                 problems.Add("\"" + (named[0].Name ?? named[0].UniqueId) + "\" (" + named[0].UniqueId + ") is neither "
                     + "a form - an extrusion, revolve, blend, sweep or swept blend - nor a nested family.");
+            else if (originalForm == null && original.OwnerViewId != null
+                && !original.OwnerViewId.Equals(ElementId.InvalidElementId))
+            {
+                // VERSION 4: a view-based nested family - a detail item or an
+                // annotation - is arrayed in the view it is drawn in.
+                ownerView = doc.GetElement(original.OwnerViewId) as View;
+                if (ownerView == null || ownerView.IsTemplate)
+                {
+                    problems.Add("The " + describe(original) + " belongs to a view that cannot be read, so the view to "
+                        + "array it in is not known.");
+                    ownerView = null;
+                }
+                else if (insertionOf(original) == null)
+                    problems.Add("The " + describe(original) + " has no insertion point to read, so its copies could not "
+                        + "be read back.");
+            }
         }
     }
 
@@ -338,6 +392,17 @@ else
     {
         axis = Array.IndexOf(axisLetters, words[0].ToUpperInvariant());
         if (axis < 0) problems.Add("\"" + words[0] + "\" is not an axis - X, Y or Z.");
+        // VERSION 4: a detail item's row stays in its view's plane.
+        else if (ownerView != null && Math.Abs(ownerView.ViewDirection.DotProduct(unitAlong(axis))) > 1e-6)
+        {
+            var inPlane = Enumerable.Range(0, 3)
+                .Where(i => Math.Abs(ownerView.ViewDirection.DotProduct(unitAlong(i))) < 1e-6)
+                .Select(i => axisLetters[i]).ToList();
+            problems.Add("The " + describe(original) + " is drawn in \"" + ownerView.Name + "\" and stays in that view's "
+                + "plane, so a row along " + axisLetters[axis] + " - out of the view - cannot be made."
+                + (inPlane.Count > 0 ? " A row along " + string.Join(" or ", inPlane) + " stays in it." : "")
+                + " For a row along " + axisLetters[axis] + ", draw it in a view that looks across " + axisLetters[axis] + ".");
+        }
         if (!double.TryParse(words[1], System.Globalization.NumberStyles.Float, invariant, out distance)
             || double.IsNaN(distance) || double.IsInfinity(distance))
             problems.Add("\"" + words[1] + "\" is not a distance in millimetres.");
@@ -422,7 +487,14 @@ else
             var leavesPlane = originalForm == null
                 || (plane != null && Math.Abs(Math.Abs(plane.GetPlane().Normal.DotProduct(unitAlong(axis))) - 1) < 1e-6);
             var across = axis == 0 ? "Y" : axis == 1 ? "X" : "X and Y";
-            if (leavesPlane)
+            if (ownerView != null)
+                problems.Add("The copies of the " + describe(original) + ", arrayed in \"" + ownerView.Name + "\", do not "
+                    + "follow a row along " + axisLetters[axis] + ": " + measured
+                    + (holds.Count > 0 ? " It is held - " + string.Join("; ", holds) + ". A copy of a nested family "
+                        + "locked to a plane along the row stays on that plane; lock it after the array instead - the "
+                        + "first one and the last copy (LOCK_NESTED_FAMILY_TO_PLANES, the last id in `members`)."
+                        : " Nothing found holds it, so what kept the copies back is not known."));
+            else if (leavesPlane)
                 problems.Add("A copy of this " + shapeOf(original) + " cannot leave the plane it "
                     + (originalForm == null ? "is placed on" : "is sketched on")
                     + (planeName.Length > 0 ? ", " + planeName + "," : "") + " and a row along " + axisLetters[axis]
@@ -467,6 +539,10 @@ if (refused == null)
     if (view == null)
         throw new InvalidOperationException("This family has no 3D view and no view open, and an array is made in a "
             + "view. The call failed, and Heron rolls the whole call back.");
+    // VERSION 4: a view-based nested family's array must be in its own view.
+    if (ownerView != null && !view.Id.Equals(ownerView.Id))
+        throw new InvalidOperationException("The array of the " + describe(original) + " would be made in \"" + view.Name
+            + "\", not \"" + ownerView.Name + "\" where it is drawn. The call failed, and Heron rolls the whole call back.");
 
     var direction = unitAlong(axis);
     var translation = direction * (stepMm / 304.8);
@@ -527,6 +603,15 @@ if (refused == null)
                     + "rolls the whole call back.");
     }
 
+    // VERSION 4: every copy of a view-based nested family belongs to its view.
+    if (ownerView != null)
+    {
+        var away = copies.FirstOrDefault(c => c.OwnerViewId == null || !c.OwnerViewId.Equals(ownerView.Id));
+        if (away != null)
+            throw new InvalidOperationException("A copy of the " + describe(original) + " does not belong to \""
+                + ownerView.Name + "\" after the array. The call failed, and Heron rolls the whole call back.");
+    }
+
     arrayId = array.UniqueId;
     // IN ORDER ALONG THE ROW, nearest the original first - Revit hands the
     // copies back in no order, and the last one is the one a plane holds.
@@ -538,6 +623,7 @@ if (refused == null)
     findings.Add("Arrayed the " + describe(original) + ": " + n + " in all, " + plain(spacingMm) + " mm apart along "
         + (spacingMm > 0 ? "+" : "-") + axisLetters[axis] + (toLast ? ", the last " + plain(stepMm) + " mm from the first"
             : "") + (labelled ? ", the count following \"" + driver.Definition.Name + "\" in each type" : "")
+        + (ownerView != null ? ", in \"" + ownerView.Name + "\" where it is drawn" : "")
         + " - every copy read back. The array's id is " + arrayId + ".");
     if (toLast && originalForm != null)
         findings.Add("The last member anchors the spacing. LOCK_FORM_TO_PLANES can lock it to a plane, and FLEX_FAMILY "
