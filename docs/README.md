@@ -6,8 +6,8 @@
 > ([B8](NEEDS-CHECKING.md)), and **on 2026-10-17 a tape measure was put on it** — three ducts +200.0000 mm
 > each, a pinned one beside them unmoved, one undo (`D1` to `D6`, [Group D](needs-checking/group-d.md)),
 > Revit 2024 and free ducts only.
-> **A change asked for in a chat runs inside one named `TransactionGroup`**, and while the ribbon's
-> **Ask to Keep** is on, Revit asks the modeller **Keep or Discard** before it is kept
+> **A change asked for in a chat runs inside one named `TransactionGroup`**, and while
+> **Ask to Keep** is on - a switch in Heron's Settings window since 2026-11-07 ([D-150](decisions/D-150.md)) - Revit asks the modeller **Keep or Discard** before it is kept
 > ([D-126](DECISIONS.md), [D-138](DECISIONS.md)). Ask to Keep is off by default, and then the change is
 > kept at once, still as one undo entry. That box and the rails beside it — try-once, the run guard,
 > dialogs, the rollback check, the run clock — were run by hand in Revit 2024 and 2027 on 2026-10-18,
@@ -76,7 +76,7 @@ The links: [FOR-THE-OWNER](FOR-THE-OWNER.md) · [HANDOVER](HANDOVER.md) · [01](
 | **MCP tools** | Narrow tools, each with its own declared risk level *([D-03](DECISIONS.md))*. A fragment is reached by **capability** through three doors — `revit_read`, `revit_show` and `revit_change` — never by its id ([04 §8](04-heron-mcp.md)). The list, with what each tool may do: `python mcp/server/heron_tools.py` |
 | **Off Windows** | No Revit can be there, so the server serves its library tools alone and no `revit_` tool *([D-132](DECISIONS.md))* |
 | **Generated code** | Hybrid — C# compiled at run time inside Revit's process, and into an assembly only at `PRODUCTION`, which no fragment has reached *([D-04](DECISIONS.md), [D-28](DECISIONS.md))* |
-| **Changing the model** | Off until the ribbon's **Changes** switch is on *([D-19](DECISIONS.md))*. One request is one named `TransactionGroup` and one undo entry (Golden Rule 16); while **Ask to Keep** is on, Revit asks Keep or Discard first *([D-126](DECISIONS.md), [D-138](DECISIONS.md))*. **Admin** and **Publish** each have a switch of their own *([D-106](DECISIONS.md))* |
+| **Changing the model** | Off until the **Changes** switch is on, in Heron's Settings window since [D-150](decisions/D-150.md) *([D-19](DECISIONS.md))*. One request is one named `TransactionGroup` and one undo entry (Golden Rule 16); while **Ask to Keep** is on, Revit asks Keep or Discard first *([D-126](DECISIONS.md), [D-138](DECISIONS.md))*. **Admin** and **Publish** each have a switch of their own *([D-106](DECISIONS.md))* |
 | **Proof** | One recorded run against a named real model, with a negative case and a staleness fingerprint. A compile or a passing test is not one *([D-30](DECISIONS.md))* |
 | **Licence** | Apache 2.0 *([D-08](DECISIONS.md))* |
 | **Distribution** | Free and open source on public GitHub; app store later, also free *([D-07](DECISIONS.md))* |

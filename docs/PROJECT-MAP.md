@@ -85,7 +85,7 @@ What this diagram is easy to misread:
 - **Resolving is not running.** The brain answering *"`FILTER_ELEMENTS_BY_CATEGORY`, provided by
   `filter-elements-by-category`"* has changed nothing. A change goes through `revit_change` — or
   `revit_apply_move`, which applies a preview the modeller has already seen — and only while
-  `write.enabled`, the ribbon's **Changes** switch, is on; it defaults to `false`. It runs inside one named
+  `write.enabled`, the **Changes** switch in Heron's Settings window ([D-150](decisions/D-150.md)), is on; it defaults to `false`. It runs inside one named
   `TransactionGroup`, and while **Ask to Keep** is on Revit asks the modeller Keep or Discard before
   anything is kept ([D-126](DECISIONS.md), [D-138](DECISIONS.md)).
 - **Off Windows the chain stops at `mcp/server/`.** No Revit can be there, so the server serves its
@@ -173,7 +173,7 @@ name it, because a checker has to be able to name what it checks.
 | Folder | Owns | Must not own | Start at | Gate after changing it |
 |---|---|---|---|---|
 | [`platform/`](../platform/README.md) | Kernel plumbing — paths, config, identity, audit, run records, lease, permissions, emergency stop, units — and the installer, its window and its command line | **Any BIM knowledge.** If a duct is named in here, the boundary is crossed | `Heron.Core/HeronPaths.cs` — the only thing that builds a Heron path | `check-structure.py` · `check-compile.py` |
-| [`revit/`](../revit/README.md) | Everything loaded into `Revit.exe` — ribbon and its switches, commands, the pipe server, the fragment executor, the Keep or Discard box, the run guard and run clock, the live file the Companion reads | Network of any kind. Business decisions that could live outside Revit | `Heron.Revit.Addin/HeronApplication.cs` (add-in entry) · `Heron.Bridge/BridgeServer.cs` (the pipe) | `check-compile.py` · `check-api-surface.py` · **a real Revit** |
+| [`revit/`](../revit/README.md) | Everything loaded into `Revit.exe` — the ribbon, the Settings window and its switches, commands, the pipe server, the fragment executor, the Keep or Discard box, the run guard and run clock, the live file the Companion reads | Network of any kind. Business decisions that could live outside Revit | `Heron.Revit.Addin/HeronApplication.cs` (add-in entry) · `Heron.Bridge/BridgeServer.cs` (the pipe) | `check-compile.py` · `check-api-surface.py` · **a real Revit** |
 | [`mcp/`](../mcp/README.md) | Transport between the host and Revit, the single seam to the brain, and the Companion page | BIM logic, knowledge, or any judgement about what the user meant | `server/heron_mcp_server.py` (the MCP entry) · `server/heron_tools.py` (every tool and its risk) · `client/heron_bridge_client.py` (the pipe client) · `server/heron_brain.py` (the **only** seam to `brain/`) · `companion/heron_companion.py` (the page) | `test_mcp_serves.py` · `test_served_claims.py` · `test_loads_finalize.py` — all three need the MCP SDK |
 | [`brain/`](../brain/README.md) | Knowledge — fragments, skills, capabilities, retrieval, context, the graph, and the HVAC and fire-protection design engines | Anything that must import a Revit type. It has to stay runnable on a machine with no Revit | `heron_fragment.py` (what a fragment is) · `heron_retrieve.py` (the lookup) · `heron_capability.py` (ask for what you want done) | `heron_fragment.py` · `check-routing.py` · `check-fragments-compile.py` |
 
@@ -352,7 +352,8 @@ Do **not** pick whichever makes the cleanup easier, and do not close a policy co
 [NEEDS-CHECKING.md](NEEDS-CHECKING.md).
 
 What matters to you: **read and write are different things, and what keeps you safe is the switch,
-not the library.** Heron reads the model and changes nothing until the ribbon's **Changes** switch is on
+not the library.** Heron reads the model and changes nothing until the **Changes** switch is on, in
+Heron's Settings window ([D-150](decisions/D-150.md))
 — `write.enabled`, **`false`** by default whatever the fragment says ([D-19](DECISIONS.md)). With it on,
 a change from the chat runs only a `PROVEN` capability whose proof still stands ([D-117](DECISIONS.md)),
 inside one named `TransactionGroup` that is one entry in Revit's undo list; while **Ask to Keep** is on,
