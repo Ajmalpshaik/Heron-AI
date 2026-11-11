@@ -56,6 +56,20 @@ def check(condition, what):
         FAILURES.append(what)
 
 
+def own_command_line(module):
+    """(what main([]) returned or how it raised, what it printed)."""
+    was = sys.stdout
+    sys.stdout = io.StringIO()
+    try:
+        try:
+            ended = module.main([])
+        except Exception as exc:                   # noqa: BLE001 - the finding
+            ended = "raised %s: %s" % (type(exc).__name__, exc)
+        return ended, sys.stdout.getvalue()
+    finally:
+        sys.stdout = was
+
+
 def main():
     reached = set()
     whole = io.open(os.path.join(ROOT, "brain", "heron_scaffold.py"),
@@ -235,6 +249,20 @@ def main():
         check(len(answer["unjudged"]) == 7, "seven things are left unjudged")
     finally:
         shutil.rmtree(yard, ignore_errors=True)
+
+    # ITS OWN COMMAND LINE, against the real tree. `python
+    # brain/heron_scaffold.py` is how a person meets this agent, and nothing
+    # else calls it. It raised KeyError: 'path' from the day platform/ held a
+    # second project: its own example asks for "platform", WHICH_PROJECT
+    # refuses that correctly, and the next line indexed the refusal
+    # (row 5b-1544).
+    ended, said = own_command_line(NCR)
+    check(ended == 0, "its own command line runs to the end - it %r" % (ended,))
+    check("Nothing was written" in said and "<Project" in said,
+          "and its example project is authored, not refused")
+    tail = said.split("what this agent does not judge")[-1]
+    check(tail.count("\n  - ") == 7,
+          "and it prints the seven things it leaves unjudged")
 
     print()
     if FAILURES:

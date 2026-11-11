@@ -222,6 +222,7 @@ an edit.
 | [D-151](#d-151--a-job-the-modeller-kept-can-be-saved-as-a-named-command-and-the-heron-panel-in-revit-runs-it-through-the-same-door-a-chat-uses) | A job the modeller kept can be saved as a named command, and the Heron panel in Revit runs it through the same door a chat uses | ⏳ Proposed · 2026-11-08 |
 | [D-152](#d-152--a-qa-checklist-is-saved-checks-in-the-modellers-words-each-one-read-with-a-pass-rule-run-in-one-go-from-the-chat-or-the-companion) | A QA checklist is saved checks in the modeller's words, each one read with a pass rule, run in one go from the chat or the Companion | ⏳ Proposed · 2026-11-08 |
 | [D-153](#d-153--off-windows-the-library-only-server-keeps-its-index-in-a-folder-of-its-own-when-nobody-named-one) | Off Windows, the library-only server keeps its index in a folder of its own when nobody named one | 🕐 Proposed - **owner has not read this back** |
+| [D-154](#d-154--an-agent-is-retired-when-nothing-calls-it-and-a-named-thing-already-does-its-job-under-the-owners-name-with-its-row-and-its-file-kept) | An agent is retired when nothing calls it and a named thing already does its job, under the owner's name, with its row and its file kept | ⏳ Proposed · 2026-11-11 |
 
 ## Format
 
@@ -1338,3 +1339,12 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`heron_brain.py`](../mcp/server/heron_brain.py) (`library_store_dir`, `library_store`), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (start-up), [38 §1](38-the-cloud-environment.md), [10 §1.1](10-memory-and-knowledge.md), [`tests/test_data_home.py`](../tests/test_data_home.py) section 7, [`tests/test_mcp_stdio.py`](../tests/test_mcp_stdio.py)
 
 **Full record:** [`decisions/D-153.md`](decisions/D-153.md)
+
+## D-154 — An agent is retired when nothing calls it and a named thing already does its job, under the owner's name, with its row and its file kept
+
+**Status:** Proposed · **Date:** 2026-11-11 · **Asked:** Ajmal PS, 2026-11-11, in his own words: *"if an agent is not needed, retire that agent"* - he has not read this back, and **nothing is retired under it until he accepts it** · **Source:** [row 5b-1546](fragment-issues/section-5b-rows-401-425.md) · **Answers the question of:** [row 5b-83](fragment-issues/section-5b-rows-076-100.md), OPEN since 2026-09-21
+**Numbering:** D-154 was the id `tools/next-id.py` printed free on 2026-11-11, with `origin/main` at `d77439ad` ending at D-152 and D-153 added by `claude/stoic-planck-folhnp` (#855).
+**Keeps:** [Article 1](../HERON_CONSTITUTION.md) - deprecated, never deleted · [Golden Rule 7](14-golden-rules.md) - a machine never signs · [D-01](decisions/D-01.md) and [D-80](decisions/D-80.md) - the host's rows stay the host's · [D-76](decisions/D-76.md), [D-77](decisions/D-77.md) and [D-78](decisions/D-78.md) - a fold is still a fold, and is not a retirement
+**Affects:** [`28-agent-registry.md`](28-agent-registry.md) · [`heron_retirement.py`](../brain/heron_retirement.py) · [`tools/agent-count.py`](../tools/agent-count.py), which would need a fifth state before the first retirement · every agent the table below names
+
+**Full record:** [`decisions/D-154.md`](decisions/D-154.md)
