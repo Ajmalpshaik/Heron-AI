@@ -23,8 +23,11 @@ risk: MODIFY
 # line already reads (ViewSpecific, where a form's is Model), refuses rather
 # than guesses where the kinds of view do not read back, refuses detail lines,
 # filled regions and nested families by name (no API on any release), and
-# reads an absent `views` as "unchanged". Owner's yes to widen rather than add
-# a card: Ajmal PS, 2026-11-11. FRAGMENT-ISSUES row 5b-1501.
+# reads an absent `views` as "unchanged" - for a symbolic line only: a form
+# with no kinds of view named is refused exactly as version 1 refused it
+# (the edit-checker's review, 2026-11-11: the binder reads `views ""` as
+# absent). Owner's yes to widen rather than add a card: Ajmal PS,
+# 2026-11-11. FRAGMENT-ISSUES row 5b-1501.
 
 purpose: >
   Sets a family form's VISIBILITY SETTINGS in the family open in the Family
@@ -54,7 +57,9 @@ purpose: >
   as a form's; whether its kinds of view can be set is not yet measured, so
   when they are named they are read back and anything else refuses the call,
   saying what Revit read. Views "unchanged" - what leaving them out means -
-  sets only the detail levels and keeps each one's kinds of view.
+  sets only a symbolic line's detail levels and keeps its kinds of view. A
+  FORM's kinds of view are still named in full: left out, or "unchanged",
+  the call is refused as version 1 refused it.
 
   **DETAIL LINES, FILLED REGIONS AND NESTED FAMILIES ARE REFUSED BY NAME** -
   Revit's API has no visibility settings for any of them on any release 2020
@@ -78,9 +83,10 @@ contract:
       type: string
       source: request
     # The kinds of project view it shows in - "plan, front, left", or "all".
-    # Version 2: "unchanged" keeps each one's kinds of view as they read and
-    # sets only the detail levels - what leaving it out means, so a call
-    # saying only "coarse" binds.
+    # Version 2: "unchanged" keeps a SYMBOLIC LINE's kinds of view and sets
+    # only its detail levels - what leaving it out, or giving it empty,
+    # means, so "show this symbolic line only in coarse" binds. For a FORM it
+    # is refused, exactly as version 1 refused `views ""`.
     - name: views
       type: string
       source: request

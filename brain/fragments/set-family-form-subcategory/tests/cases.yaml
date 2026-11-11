@@ -30,6 +30,11 @@ positive:
       back - or, if Revit does not offer that style to a detail line, refused
       by name with nothing kept; record which
 
+  - given: VERSION 2 - one symbolic line's id, subcategory "none"
+    expect: >
+      the line on the family category's own projection style, read back by
+      its line style
+
 negative:
   - given: forms = the id of a reference plane rather than a form
     expect: refused as not a form, nothing changed and no subcategory made

@@ -15,8 +15,9 @@
 // setting, never half of it - and a list naming nothing is refused: a form
 // shown in no detail level, or in no view, would vanish from every project view
 // with no trace in the family. Version 2: views "unchanged" - what an absent
-// list is read as - keeps each element's own kinds of view as they read now,
-// and sets only the detail levels.
+// or empty list is read as - keeps a SYMBOLIC LINE's kinds of view and sets
+// only its detail levels; for a form it is refused, as version 1 refused a
+// form with no kinds of view named.
 //
 // SYMBOLIC LINES TOO (version 2, 2026-11-11, row 5b-1501). A symbolic line
 // already drawn - a plan symbol's arrow, the 2D lines a plan shows in place of
@@ -137,7 +138,16 @@ else
 
     var viewWords = (views ?? "").Split(',').Select(squash).Where(w => w.Length > 0).ToList();
     if (viewWords.Count == 1 && (viewWords[0] == "unchanged" || viewWords[0] == "asitis" || viewWords[0] == "keep"))
+    {
         keepViews = true;
+        // VERSION 1'S RULE KEPT FOR A FORM: its kinds of view are named in full.
+        // "unchanged" - also what an empty or left-out `views` binds as - is for
+        // symbolic lines only, so a form with no kinds of view named is refused
+        // exactly as version 1 refused it.
+        if (targets.Any(t => t is GenericForm))
+            problems.Add("No kind of view was named. A form shown in none would vanish from plans and elevations - "
+                + "name plan, front or left, or all. (\"unchanged\" keeps the kinds of view of a SYMBOLIC LINE only.)");
+    }
     else
     {
         foreach (var word in viewWords)
@@ -146,21 +156,19 @@ else
             else if (word == "plan" || word == "planrcp" || word == "rcp" || word == "top" || word == "topbottom") top = true;
             else if (word == "front" || word == "back" || word == "frontback") front = true;
             else if (word == "left" || word == "right" || word == "leftright" || word == "side") side = true;
-            else problems.Add("\"" + word + "\" is not a kind of view. Name plan, front and left, or all - or "
-                + "\"unchanged\" to keep them as they are.");
+            else problems.Add("\"" + word + "\" is not a kind of view. Name plan, front and left, or all.");
         }
         if (!top && !front && !side)
             problems.Add("No kind of view was named. A form shown in none would vanish from plans and elevations - "
-                + "name plan, front or left, or all - or \"unchanged\" to keep them as they are.");
+                + "name plan, front or left, or all.");
     }
 
     // A symbolic line's setting is read before anything is written: the kind
     // the new one is built with is the kind it already has.
-    // With "unchanged", a form's own kinds of view are read the same way.
-    foreach (var t in targets.Where(x => x is SymbolicCurve || keepViews))
+    foreach (var t in targets.Where(x => x is SymbolicCurve))
         if (visibilityOf(t) == null)
-            problems.Add("The " + kindOf(t) + " " + t.UniqueId + " gives no visibility setting to read, so "
-                + (t is SymbolicCurve ? "the kind of setting to write is not known." : "its kinds of view cannot be kept."));
+            problems.Add("The symbolic line " + t.UniqueId + " gives no visibility setting to read, so the kind of "
+                + "setting to write is not known.");
 
     if (problems.Count > 0) refused = "Nothing was changed. " + string.Join(" ", problems);
 }
@@ -171,18 +179,28 @@ if (refused == null)
         string.Join(", ", new[] { c ? "coarse" : null, m ? "medium" : null, f ? "fine" : null }.Where(s => s != null));
     Func<bool, bool, bool, string> kinds = (t, fr, s) =>
         string.Join(", ", new[] { t ? "plan" : null, fr ? "front/back" : null, s ? "left/right" : null }.Where(x => x != null));
+    // A setting's kinds of view - plan, front/back, left/right - or null when
+    // Revit will not give them. A ViewSpecific setting may not have them at all,
+    // so they are never read outside a guard.
+    Func<FamilyElementVisibility, bool[]> viewKindsOf = v =>
+    {
+        if (v == null) return null;
+        try { return new[] { v.IsShownInTopBottom, v.IsShownInFrontBack, v.IsShownInLeftRight }; }
+        catch (Exception) { return null; }
+    };
+    Func<bool[], string> viewsSaid = k => k == null ? "kinds of view not readable"
+        : (kinds(k[0], k[1], k[2]).Length == 0 ? "no kind of view" : kinds(k[0], k[1], k[2]));
 
     var lineKinds = new List<string>();
     foreach (var f in targets)
     {
         var was = visibilityOf(f);
         var before = was == null ? "unknown" : levels(was.IsShownInCoarse, was.IsShownInMedium, was.IsShownInFine)
-            + " | " + kinds(was.IsShownInTopBottom, was.IsShownInFrontBack, was.IsShownInLeftRight);
-        // The kinds of view this element is to read: as asked, or as it reads now.
-        var wantTop = keepViews && was != null ? was.IsShownInTopBottom : top;
-        var wantFront = keepViews && was != null ? was.IsShownInFrontBack : front;
-        var wantSide = keepViews && was != null ? was.IsShownInLeftRight : side;
+            + " | " + viewsSaid(viewKindsOf(was));
         var line = f as SymbolicCurve;
+        // "unchanged" reaches here for symbolic lines only (refused above for a
+        // form): their kinds of view are neither written nor checked.
+        var writeViews = line == null || !keepViews;
         // A form's setting is Model, as version 1 wrote it; a symbolic line's is
         // the kind it already reads.
         var kind = line != null ? was.VisibilityType : FamilyElementVisibilityType.Model;
@@ -193,20 +211,21 @@ if (refused == null)
             setting.IsShownInCoarse = coarse;
             setting.IsShownInMedium = medium;
             setting.IsShownInFine = fine;
-            // A form's kinds of view are always written. A symbolic line's are
-            // written only when named - whether its kind of setting keeps them is
-            // not measured, so the read-back below decides.
-            if (line == null || !keepViews)
+            if (writeViews)
             {
-                setting.IsShownInTopBottom = wantTop;
-                setting.IsShownInFrontBack = wantFront;
-                setting.IsShownInLeftRight = wantSide;
+                setting.IsShownInTopBottom = top;
+                setting.IsShownInFrontBack = front;
+                setting.IsShownInLeftRight = side;
             }
             if (line != null) line.SetVisibility(setting);
             else ((GenericForm)f).SetVisibility(setting);
         }
         catch (Exception ex)
         {
+            if (line != null && writeViews)
+                throw new InvalidOperationException("Revit would not take kinds of view for the symbolic line " + f.UniqueId
+                    + " - its setting is of the " + kind + " kind, and whether that kind has kinds of view is not "
+                    + "measured. Give views \"unchanged\" to set only its detail levels. NOTHING from this call was kept.");
             throw new InvalidOperationException("Revit refused the visibility of the " + kindOf(f) + " " + f.UniqueId
                 + (line != null ? " (its setting is of the " + kind + " kind)" : "") + ": " + ex.Message
                 + " NOTHING from this call was kept.");
@@ -217,16 +236,16 @@ if (refused == null)
             throw new InvalidOperationException("The " + kindOf(f) + " " + f.UniqueId + " does not read back at the detail "
                 + "levels asked" + (now == null ? "" : " - it reads " + levels(now.IsShownInCoarse, now.IsShownInMedium,
                     now.IsShownInFine)) + ". NOTHING from this call was kept.");
-        var viewsRead = kinds(now.IsShownInTopBottom, now.IsShownInFrontBack, now.IsShownInLeftRight);
-        if ((line == null || !keepViews)
-            && (now.IsShownInTopBottom != wantTop || now.IsShownInFrontBack != wantFront || now.IsShownInLeftRight != wantSide))
-            throw new InvalidOperationException("The " + kindOf(f) + " " + f.UniqueId + " reads its kinds of view as \""
-                + (viewsRead.Length == 0 ? "none" : viewsRead) + "\", not \"" + kinds(wantTop, wantFront, wantSide)
-                + "\" as asked" + (line != null ? ". A symbolic line's setting is of the " + kind + " kind, and whether "
-                    + "that kind keeps the kinds of view is not measured, so this is refused rather than guessed - give "
-                    + "views \"unchanged\" to set only its detail levels" : "") + ". NOTHING from this call was kept.");
+        var readViews = viewKindsOf(now);
+        if (writeViews && (readViews == null || readViews[0] != top || readViews[1] != front || readViews[2] != side))
+            throw new InvalidOperationException("The " + kindOf(f) + " " + f.UniqueId + " reads " + (readViews == null
+                    ? "its kinds of view as not readable" : "its kinds of view as \"" + viewsSaid(readViews) + "\"")
+                + ", not \"" + kinds(top, front, side) + "\" as asked"
+                + (line != null ? ". A symbolic line's setting is of the " + kind + " kind, and whether that kind keeps "
+                    + "kinds of view is not measured, so this is refused rather than guessed - give views \"unchanged\" "
+                    + "to set only its detail levels" : "") + ". NOTHING from this call was kept.");
 
-        var after = levels(coarse, medium, fine) + " | " + (viewsRead.Length == 0 ? "no kind of view" : viewsRead);
+        var after = levels(coarse, medium, fine) + " | " + viewsSaid(readViews);
         changed.Add(kindOf(f) + " " + f.UniqueId + ": " + before + " -> " + after);
     }
 

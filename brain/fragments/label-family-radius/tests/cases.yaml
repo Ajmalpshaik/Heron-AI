@@ -144,7 +144,8 @@ positive:
       on Ref. Level by DRAW_FAMILY_SYMBOLIC_LINES; form = its id,
       parameterName "Arc Diameter", diameter true
     expect: >
-      a diameter dimension on the arc in the Ref. Level plan, labelled "Arc
+      a diameter dimension on the arc in the Ref. Level FLOOR plan - never the
+      Ref. Level ceiling plan while a floor plan looks at it - labelled "Arc
       Diameter", reading 300 mm; the arc's radius read back at 150
 
 negative:

@@ -36,7 +36,13 @@ negative:
     expect: refused as not a detail level, and no form changed
 
   - given: views "" (nothing)
-    expect: refused as naming no kind of view, and no form changed
+    expect: >
+      refused as naming no kind of view, and no form changed - still so in
+      version 2: the binder reads "" as left out, which binds "unchanged",
+      and "unchanged" is refused for a form
+
+  - given: VERSION 2 - the form's id, detailLevels "coarse", views "unchanged"
+    expect: refused as naming no kind of view - "unchanged" is for symbolic lines only
 
   - given: a project in front
     expect: notAFamily true and nothing changed anywhere

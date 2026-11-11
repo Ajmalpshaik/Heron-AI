@@ -97,8 +97,10 @@
 // named by its id, takes a radial dimension (a diameter one for a diameter
 // parameter) on the arc itself, in the arc's OWN VIEW: a detail line's Owner
 // View, and for a symbolic line its Owner View where Revit gives one, else
-// the plan or elevation looking straight at its sketch plane - the one whose
-// own sketch plane it is when there is one. The same safety order as a form:
+// the view looking straight at its sketch plane: for a plane facing up or
+// down a FLOOR plan, the one on its level first, and a ceiling plan only when
+// no floor plan looks at it (said in the answer); for one facing sideways an
+// elevation or section, the one whose own sketch plane it is first. The same safety order as a form:
 // the parameter must already hold the arc's size (half of it for a diameter),
 // one label per parameter, and the label and the value read back after Revit
 // regenerates - and the arc's own radius read again. A straight line is
@@ -166,6 +168,8 @@ GenericForm target = null;
 CurveElement line2d = null;
 Arc lineArc = null;
 View lineView = null;
+// Said in the answer when the view had to be a ceiling plan.
+string lineViewNote = null;
 FamilyParameter parameter = null;
 double wanted = 0;
 View view = null;
@@ -466,18 +470,45 @@ else
                                 || v.ViewType == ViewType.Elevation || v.ViewType == ViewType.Section)
                             && Math.Abs(Math.Abs(v.ViewDirection.DotProduct(drawnOn.Normal)) - 1) < 1e-6)
                         .ToList();
+                    // Does a view stand on the line's plane - its own sketch plane
+                    // there, or, for a plan, its level at the plane's height?
                     Func<View, bool> ownPlane = v =>
                     {
                         try
                         {
                             var sketch = v.SketchPlane;
-                            if (sketch == null) return false;
-                            var plane = sketch.GetPlane();
-                            return Math.Abs((plane.Origin - drawnOn.Origin).DotProduct(drawnOn.Normal)) <= halfMillimetre;
+                            if (sketch != null
+                                && Math.Abs((sketch.GetPlane().Origin - drawnOn.Origin).DotProduct(drawnOn.Normal)) <= halfMillimetre)
+                                return true;
+                            var level = v.GenLevel;
+                            return level != null && Math.Abs(Math.Abs(drawnOn.Normal.Z) - 1) < 1e-6
+                                && Math.Abs(level.Elevation - drawnOn.Origin.Z) <= halfMillimetre;
                         }
                         catch (Exception) { return false; }
                     };
-                    lineView = facing.FirstOrDefault(ownPlane) ?? facing.FirstOrDefault();
+                    // A plane facing up or down is seen in a FLOOR plan - the one on
+                    // its level first, then any - and in a ceiling plan only when no
+                    // floor plan looks at it, said in the answer. A plane facing
+                    // sideways is seen in an elevation or section, its own first.
+                    var upDown = Math.Abs(Math.Abs(drawnOn.Normal.Z) - 1) < 1e-6;
+                    if (upDown)
+                    {
+                        var floors = facing.Where(v => v.ViewType == ViewType.FloorPlan).ToList();
+                        lineView = floors.FirstOrDefault(ownPlane) ?? floors.FirstOrDefault();
+                        if (lineView == null)
+                        {
+                            var ceilings = facing.Where(v => v.ViewType == ViewType.CeilingPlan).ToList();
+                            lineView = ceilings.FirstOrDefault(ownPlane) ?? ceilings.FirstOrDefault();
+                            if (lineView != null)
+                                lineViewNote = "No floor plan of this family looks at the plane the symbolic line is drawn "
+                                    + "on, so the dimension is in the CEILING plan \"" + lineView.Name + "\".";
+                        }
+                    }
+                    else
+                    {
+                        var sides = facing.Where(v => v.ViewType == ViewType.Elevation || v.ViewType == ViewType.Section).ToList();
+                        lineView = sides.FirstOrDefault(ownPlane) ?? sides.FirstOrDefault();
+                    }
                     if (lineView == null)
                         problems.Add("No plan or elevation of this family looks straight at the plane the symbolic line "
                             + line2d.UniqueId + " is drawn on, so there is no view to label it in.");
@@ -999,6 +1030,7 @@ if (refused == null && line2d != null)
     labelled = "The " + what + ", labelled \"" + parameter.Definition.Name + "\", reading " + mm(reads.Value) + " mm"
         + " - the arc's radius read back at " + mm(arcNow.Radius) + " mm.";
     findings.Add(labelled);
+    if (lineViewNote != null) findings.Add(lineViewNote);
     findings.Add("FLEX_FAMILY with \"" + parameter.Definition.Name + "\" at two different sizes is what shows the arc "
         + "following. Where the arc's ends are locked to planes, those planes hold its ends while its radius moves.");
 }

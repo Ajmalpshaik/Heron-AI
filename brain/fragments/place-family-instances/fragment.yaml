@@ -364,6 +364,11 @@ compatibility-note: >
 #   "put the motor family into this air handler" -> here, in the family being
 #                                   edited - PLACE_NESTED_FAMILY until
 #                                   2026-11-01
+#   "place the flow arrow in the Ref. Level view" -> PLACE_DETAIL_COMPONENTS
+#                                   version 2 - a detail item or annotation
+#                                   NESTED in a family goes in one family view;
+#                                   this card's nested branch refuses a
+#                                   view-based family (row 5b-1499, 2026-11-11)
 #   "lock the motor's centre to the centre planes" -> LOCK_NESTED_FAMILY_TO_PLANES,
 #                                   by the instanceId given back here
 #   "what families are nested in this one" -> REPORT_NESTED_FAMILIES

@@ -34,7 +34,12 @@
 #     radius 150 (SYM-ARC-ID). A detail
 #     line in Ref. Level "path 0,-400; 600,-400" (DETAIL-LINE-ID). A solid
 #     extrusion "circle 0,-800 10" 0 to 100 (CYL-ID) and a length type
-#     parameter "Shaft Radius" = 10. "Heron NF Arrow" loaded. A Generic Model
+#     parameter "Shaft Radius" = 10. A solid extrusion sketched on "Center
+#     (Front/Back)", "rect -1000,0 -990,100" 0 to 10 (VANE-ID) - version 3's
+#     negative. A solid revolve on "Center (Front/Back)", profile "1000,300;
+#     1060,300; 1060,500; 1000,500" about "1000,300 1000,500" - no plane
+#     through its axis (REV-ID) - and a length type parameter "Bell Radius" =
+#     60, version 5's negative. "Heron NF Arrow" loaded. A Generic Model
 #     family "Heron NF Box" loaded too (a model family, the negative's).
 #
 #   "Heron NF Project" - a NEW project from Revit 2020's default metric
@@ -125,12 +130,15 @@ jobs:
       count: "3"
       step: "X 700"
     negative-set:
-      form: "FORM-ID"
-      count: "1"
-      step: "X 700"
+      form: "VANE-ID"
+      count: "3"
+      step: "Y 20"
     note: >
       NF3 OLD - a solid extrusion arrayed in the 3D view exactly as version 3
-      did. The negative a count of 1 - refused, not an array.
+      did. The negative is version 3's own proof negative: a form sketched on
+      Center (Front/Back) arrayed along Y leaves its sketch plane - the trial
+      row is measured and the leavesPlane refusal (now after the version 4
+      ownerView branch) names the plane, members empty.
 
   - fragment: array-family-forms
     expect: members
@@ -159,7 +167,34 @@ jobs:
       forms: "FORM-ID"
       detailLevels: "rough"
       views: "front, left"
-    note: NF5 OLD - the form, as version 1's positive and negative.
+    note: NF5 OLD - the form, as version 1's positive; the negative a word that is no detail level.
+
+  - fragment: set-family-form-visibility
+    expect: changed
+    set:
+      forms: "FORM-ID"
+      detailLevels: "all"
+      views: "all"
+    negative-set:
+      forms: "FORM-ID"
+      detailLevels: "all"
+      views: ""
+    note: >
+      NF5b OLD - every box ticked again. The negative is version 1's tests
+      case "views (nothing)": the binder reads "" as left out, which binds
+      "unchanged", and a FORM with "unchanged" is refused as naming no kind
+      of view - version 1's behaviour kept.
+
+  - fragment: set-family-form-visibility
+    expect: changed
+    set:
+      forms: "FORM-ID"
+      detailLevels: "medium, fine"
+      views: "front, left"
+    negative-in: "Heron NF Project"
+    note: >
+      NF5c OLD - version 1's PROOF negative: the same call against a project,
+      notAFamily true, nothing changed.
 
   - fragment: set-family-form-visibility
     expect: changed
@@ -176,6 +211,38 @@ jobs:
       finding names the kind of setting Revit read. The negative a DETAIL
       line - refused by name, no API on any release.
 
+  - fragment: set-family-form-visibility
+    expect: changed
+    set:
+      forms: "SYM-ARC-ID"
+      detailLevels: "medium, fine"
+      views: ""
+    negative-set:
+      forms: "FORM-ID"
+      detailLevels: "medium, fine"
+      views: "unchanged"
+    note: >
+      NF6c NEW - views left EMPTY on a symbolic line binds "unchanged": only
+      its detail levels set. The negative the same word on a FORM - refused,
+      "unchanged" is for symbolic lines only.
+
+  - fragment: set-family-form-visibility
+    expect: changed
+    set:
+      forms: "SYM-LINE-ID"
+      detailLevels: "all"
+      views: "plan"
+    negative-set:
+      forms: "DETAIL-LINE-ID"
+      detailLevels: "all"
+      views: "plan"
+    note: >
+      NF6b - THE MEASUREMENT: kinds of view NAMED on a symbolic line. The
+      positive leg EITHER reads "plan" back (changed filled) OR is refused
+      naming what Revit read - a refusal here is the finding, not a fault in
+      the run; record which in group-nf.md. The negative a detail line,
+      refused by name.
+
   # ---- SET_FAMILY_FORM_SUBCATEGORY v2 --------------------------------------
   - fragment: set-family-form-subcategory
     expect: changed
@@ -190,6 +257,17 @@ jobs:
   - fragment: set-family-form-subcategory
     expect: changed
     set:
+      forms: "FORM-ID"
+      subcategory: "none"
+    negative-in: "Heron NF Project"
+    note: >
+      NF7b OLD - the form back on the family's category ("none"), as version
+      1's second positive. The negative is version 1's PROOF negative: a
+      project, notAFamily true, nothing changed.
+
+  - fragment: set-family-form-subcategory
+    expect: changed
+    set:
       forms: "SYM-LINE-ID, SYM-ARC-ID"
       subcategory: "Flow Arrow"
     negative-set:
@@ -199,6 +277,34 @@ jobs:
       NF8 NEW - two symbolic lines on a new "Flow Arrow", read back by line
       style. The negative the nested arrow - neither a form nor a line;
       nothing changed, no subcategory made.
+
+  - fragment: set-family-form-subcategory
+    expect: changed
+    set:
+      forms: "SYM-LINE-ID"
+      subcategory: "none"
+    negative-set:
+      forms: "SYM-LINE-ID"
+      subcategory: ""
+    note: >
+      NF8b NEW - "none" on a LINE: the symbolic line put on the family
+      category's own projection style, read back. The negative names no
+      subcategory - refused.
+
+  - fragment: set-family-form-subcategory
+    in: "Heron NF Arrow"
+    expect: changed
+    set:
+      forms: "SHAFT-ID"
+      subcategory: "Arrow Head"
+    negative-set:
+      forms: "SHAFT-ID"
+      subcategory: ""
+    note: >
+      NF8c NEW - a DETAIL line in a Detail Item family on a new "Arrow Head"
+      under Detail Items, read back by line style - or refused by name with
+      nothing kept if Revit does not offer that style to the line; record
+      which. The negative names no subcategory.
 
   # ---- LABEL_FAMILY_RADIUS v6 ----------------------------------------------
   - fragment: label-family-radius
@@ -215,6 +321,21 @@ jobs:
       NF9 OLD - the extrusion's sketched circle labelled "Shaft Radius" inside
       its sketch, as version 5's positive. The negative the square box -
       refused, no circle of 10 mm in its sketch.
+
+  - fragment: label-family-radius
+    expect: labelled
+    set:
+      form: "CYL-ID"
+      parameterName: "Shaft Radius"
+      diameter: false
+    negative-set:
+      form: "REV-ID"
+      parameterName: "Bell Radius"
+      diameter: false
+    note: >
+      NF9b OLD - version 5's PROOF negative beside its positive: a revolve
+      with no reference plane through its axis, "Bell Radius" - refused,
+      naming the plane to make first; nothing labelled.
 
   - fragment: label-family-radius
     expect: labelled
