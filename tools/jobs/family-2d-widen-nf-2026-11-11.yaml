@@ -1,0 +1,247 @@
+# The proof of five PROVEN family cards widened to a family's 2D side on
+# 2026-11-11, each back at DRAFT - NEEDS-CHECKING Group NF, FRAGMENT-ISSUES
+# rows 5b-1499 to 5b-1503:
+#
+#   place-detail-components      v2  a detail item placed in a family's view
+#   array-family-forms           v4  a nested detail item arrayed in its view
+#   set-family-form-visibility   v2  a symbolic line's detail levels
+#   set-family-form-subcategory  v2  detail and symbolic lines on a subcategory
+#   label-family-radius          v6  a detail or symbolic arc's radius labelled
+#
+#     python tools/batch-prove.py tools/jobs/family-2d-widen-nf-2026-11-11.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/family-2d-widen-nf-2026-11-11.yaml
+#
+# NOT RUN - written and read back with --dry-run only. The proof is the
+# owner's to run (D-120), never the authoring session's.
+#
+# TWO SAVED SCRATCH FAMILIES, NEVER THE OWNER'S OWN (not the KDF diffuser, not
+# Diffuser Flow Arrow_DRAFT.rfa), Revit 2020, both under
+# %TEMP%\heron-work\family-2d-widen. MAKE THEM FIRST, KEPT - Group NF's NF0
+# (docs/needs-checking/group-nf.md) lists every step and the PROVEN tool for
+# each:
+#
+#   "Heron NF Arrow" - metric Detail Item template. A length type parameter
+#     "Arc Radius" = 150. Detail lines (DRAW_FAMILY_DETAIL_LINES, Ref. Level):
+#     the shaft "path 0,0; 600,0" (SHAFT-ID) and, a second call, an arc of
+#     radius 150 "path 0,150; arc 150,0 0,-150" (ARC-ID). Saved, then LOADED
+#     into the next.
+#
+#   "Heron NF Generic" - metric Generic Model template. One solid extrusion
+#     (CREATE_FAMILY_FORMS, rect -300,-300 300,300 on Ref. Level, 0 to 50,
+#     FORM-ID). Length type parameter "Arc Diameter" = 300. Symbolic lines
+#     on Ref. Level (DRAW_FAMILY_SYMBOLIC_LINES, all levels): "path 0,0;
+#     600,0" (SYM-LINE-ID) and "path 0,150; arc 150,0 0,-150", an arc of
+#     radius 150 (SYM-ARC-ID). A detail
+#     line in Ref. Level "path 0,-400; 600,-400" (DETAIL-LINE-ID). A solid
+#     extrusion "circle 0,-800 10" 0 to 100 (CYL-ID) and a length type
+#     parameter "Shaft Radius" = 10. "Heron NF Arrow" loaded. A Generic Model
+#     family "Heron NF Box" loaded too (a model family, the negative's).
+#
+#   "Heron NF Project" - a NEW project from Revit 2020's default metric
+#     template, "Heron NF Arrow" loaded. Saved. Only for NF1.
+#
+# EVERY UPPER-CASE ID BELOW IS A PLACEHOLDER: type the real unique id in before
+# running. THE DRY RUN DOES NOT CATCH A PLACEHOLDER LEFT IN (row 5b-264).
+#
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK.
+# LOOK at the family afterwards anyway - nothing should have stayed.
+#
+# WHAT EACH ROW PROVES - an OLD positive and negative (the version still
+# works), then the NEW ability with its own negative. Rows needing the arrow
+# PLACED first (the array) take ARROW-ID from NF2's kept run - see group-nf.md.
+#
+# THE VIEWS ARE WRITTEN "FloorPlan: Ref. Level": a Generic Model family has a
+# floor plan AND a ceiling plan called Ref. Level, and a name that matches
+# twice is refused rather than chosen from.
+#
+# NOT `--session` HERE: with two Revits connected to Heron, add
+# `--session <process id>` to both commands, and `< /dev/null`.
+
+model: Heron NF Generic and Heron NF Arrow (SAVED scratch families made as above, under %TEMP%\heron-work\family-2d-widen), Revit 2020
+
+defaults:
+  in: "Heron NF Generic"
+  write: true
+
+jobs:
+  # ---- PLACE_DETAIL_COMPONENTS v2 ------------------------------------------
+  - fragment: place-detail-components
+    in: "Heron NF Project"
+    expect: instanceId
+    set:
+      view: "FloorPlan: Level 1"
+      symbol: "Heron NF Arrow: Heron NF Arrow"
+      points: "1000,2000,0"
+      rotationDegrees: 0
+    negative-set:
+      view: "{3D}"
+      symbol: "Heron NF Arrow: Heron NF Arrow"
+      points: "1000,2000,0"
+      rotationDegrees: 0
+    note: >
+      NF1 OLD - the PROJECT path, unchanged but for the read-back: the arrow
+      placed on Level 1 of a scratch project with Heron NF Arrow loaded, read
+      back. The negative the project's 3D view - refused, as version 1's was.
+
+  - fragment: place-detail-components
+    expect: instanceId
+    set:
+      view: "FloorPlan: Ref. Level"
+      symbol: "Heron NF Arrow: Heron NF Arrow"
+      points: "0,300,0"
+      rotationDegrees: 0
+    negative-set:
+      view: "FloorPlan: Ref. Level"
+      symbol: "Heron NF Box: Heron NF Box"
+      points: "0,300,0"
+      rotationDegrees: 0
+    note: >
+      NF2 NEW. The arrow placed in the family's Ref. Level plan, read back
+      (Owner View, point, type), instanceId its unique id. The negative is a
+      MODEL family loaded in the same family - refused as not view-based,
+      pointed at PLACE_FAMILY_INSTANCES.
+
+  - fragment: place-detail-components
+    expect: instanceId
+    set:
+      view: "FloorPlan: Ref. Level"
+      symbol: "Heron NF Arrow: Heron NF Arrow"
+      points: "300,0,0"
+      rotationDegrees: 90
+    negative-set:
+      view: "View 1"
+      symbol: "Heron NF Arrow: Heron NF Arrow"
+      points: "300,0,0"
+      rotationDegrees: 90
+    note: >
+      NF2 NEW, turned. The negative is the family's 3D view - refused as a 3D
+      view, the version 1 negative's rule in a family.
+
+  # ---- ARRAY_FAMILY_FORMS v4 -----------------------------------------------
+  - fragment: array-family-forms
+    expect: members
+    set:
+      form: "FORM-ID"
+      count: "3"
+      step: "X 700"
+    negative-set:
+      form: "FORM-ID"
+      count: "1"
+      step: "X 700"
+    note: >
+      NF3 OLD - a solid extrusion arrayed in the 3D view exactly as version 3
+      did. The negative a count of 1 - refused, not an array.
+
+  - fragment: array-family-forms
+    expect: members
+    set:
+      form: "ARROW-ID"
+      count: "4"
+      step: "X 200"
+    negative-set:
+      form: "ARROW-ID"
+      count: "3"
+      step: "Z 100"
+    note: >
+      NF4 NEW - the nested arrow (ARROW-ID, from NF2 run KEPT through
+      try-once) arrayed in Ref. Level, its copies read by insertion point,
+      each owned by Ref. Level. The negative a step OUT of the plan, along Z -
+      refused before anything is made.
+
+  # ---- SET_FAMILY_FORM_VISIBILITY v2 ---------------------------------------
+  - fragment: set-family-form-visibility
+    expect: changed
+    set:
+      forms: "FORM-ID"
+      detailLevels: "medium, fine"
+      views: "front, left"
+    negative-set:
+      forms: "FORM-ID"
+      detailLevels: "rough"
+      views: "front, left"
+    note: NF5 OLD - the form, as version 1's positive and negative.
+
+  - fragment: set-family-form-visibility
+    expect: changed
+    set:
+      forms: "SYM-LINE-ID"
+      detailLevels: "coarse"
+      views: "unchanged"
+    negative-set:
+      forms: "DETAIL-LINE-ID"
+      detailLevels: "coarse"
+      views: "unchanged"
+    note: >
+      NF6 NEW - the symbolic line at coarse only, its kinds of view kept; the
+      finding names the kind of setting Revit read. The negative a DETAIL
+      line - refused by name, no API on any release.
+
+  # ---- SET_FAMILY_FORM_SUBCATEGORY v2 --------------------------------------
+  - fragment: set-family-form-subcategory
+    expect: changed
+    set:
+      forms: "FORM-ID"
+      subcategory: "Casing"
+    negative-set:
+      forms: "FORM-ID"
+      subcategory: ""
+    note: NF7 OLD - the form on a new "Casing"; the negative names none.
+
+  - fragment: set-family-form-subcategory
+    expect: changed
+    set:
+      forms: "SYM-LINE-ID, SYM-ARC-ID"
+      subcategory: "Flow Arrow"
+    negative-set:
+      forms: "ARROW-ID"
+      subcategory: "Flow Arrow"
+    note: >
+      NF8 NEW - two symbolic lines on a new "Flow Arrow", read back by line
+      style. The negative the nested arrow - neither a form nor a line;
+      nothing changed, no subcategory made.
+
+  # ---- LABEL_FAMILY_RADIUS v6 ----------------------------------------------
+  - fragment: label-family-radius
+    expect: labelled
+    set:
+      form: "CYL-ID"
+      parameterName: "Shaft Radius"
+      diameter: false
+    negative-set:
+      form: "FORM-ID"
+      parameterName: "Shaft Radius"
+      diameter: false
+    note: >
+      NF9 OLD - the extrusion's sketched circle labelled "Shaft Radius" inside
+      its sketch, as version 5's positive. The negative the square box -
+      refused, no circle of 10 mm in its sketch.
+
+  - fragment: label-family-radius
+    expect: labelled
+    set:
+      form: "SYM-ARC-ID"
+      parameterName: "Arc Diameter"
+      diameter: true
+    negative-set:
+      form: "SYM-LINE-ID"
+      parameterName: "Arc Diameter"
+      diameter: true
+    note: >
+      NF10 NEW, symbolic - a diameter dimension on the symbolic arc in the Ref.
+      Level plan, reading 300. The negative a STRAIGHT symbolic line - refused
+      as not an arc.
+
+  - fragment: label-family-radius
+    in: "Heron NF Arrow"
+    expect: labelled
+    set:
+      form: "ARC-ID"
+      parameterName: "Arc Radius"
+      diameter: false
+    negative-set:
+      form: "SHAFT-ID"
+      parameterName: "Arc Radius"
+      diameter: false
+    note: >
+      NF11 NEW, detail - a radial dimension on the detail arc in its Owner
+      View, reading 150. The negative the straight shaft.
