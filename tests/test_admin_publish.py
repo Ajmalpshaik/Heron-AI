@@ -268,6 +268,84 @@ def article_11(names):
               "a PROVEN fragment (%s) %s is refused, saying so" % (proven_one, why))
 
 
+def no_proof_at_all(names):
+    """Section 7b - a card that SAYS proven and records no proof (row 5b-1154).
+
+    `proof_is_stale` answered "not stale" for a card with no proof at all, and
+    `proof_status` asked it only when there was one - so a card edited to
+    `heron-status: PROVEN` with its `proof:` block gone read as PROVEN and
+    fresh, and D-117's gate let its change be KEPT. `validate` catches such a
+    card when it is committed; the gate at run time never asks `validate`.
+
+    The card is a real one whose proof stands, read with the reader's own
+    `load` and edited IN MEMORY as it is handed over - nothing on disk is
+    touched, and the last check reads it back as it was. The Revit is the
+    fake, so on the code as it stood the kept change reaches a list.
+    """
+    print()
+    print("7b. A card that says PROVEN and records no proof is not sent to be kept "
+          "(row 5b-1154)")
+    proof_of = getattr(CLIENT, "proof_of", None) or (lambda name: None)
+    refusal = getattr(CLIENT, "unproven_refusal", None) or (lambda what, found: None)
+
+    said = refusal("SOME_CAPABILITY", {"status": "PROVEN", "stale": True, "proof": False}) or ""
+    check("SOME_CAPABILITY" in said and "no proof" in said and "D-30" in said
+          and "Nothing was sent to Revit" in said,
+          "the refusal for a PROVEN card with no proof says so, names D-30, and "
+          "says nothing was sent")
+    check("changed since" not in said,
+          "and does not say its code changed since a proof it never had")
+
+    proven_one = next((n for n in names if card_risk(n) == "MODIFY"
+                       and current(proof_of(n))), None)
+    check(proven_one is not None, "the library has a MODIFY fragment whose proof stands")
+    if proven_one is None:
+        return
+
+    sys.path.insert(0, os.path.join(ROOT, "brain"))
+    import heron_fragment as FRAGMENT
+    real_load = FRAGMENT.load
+
+    def gone(data):
+        data.pop("proof", None)
+
+    def empty(data):
+        data["proof"] = {}
+
+    def a_sentence(data):
+        data["proof"] = "it worked"
+
+    for edit, how in ((gone, "its `proof:` block taken out"),
+                      (empty, "an empty `proof:`"),
+                      (a_sentence, "a `proof:` that is a sentence, not a mapping")):
+        def edited(folder, *args, **kwargs):
+            frag = real_load(folder, *args, **kwargs)
+            edit(frag.data)
+            return frag
+
+        FRAGMENT.load = edited
+        try:
+            found = proof_of(proven_one) or {}
+            with fake_revit() as (bridge, asked, out):
+                code = CLIENT.cmd_fragment(proven_one, writing=True, apply_it=True)
+        finally:
+            FRAGMENT.load = real_load
+        check(found.get("status") in ("PROVEN", "PRODUCTION") and found.get("stale") is True,
+              "%s with %s still says %s, and reads as STALE (stale=%r)"
+              % (proven_one, how, found.get("status"), found.get("stale")))
+        check(found.get("proof") is False, "and as having no proof recorded")
+        check(not current(found), "so no current proof stands behind it")
+        kept = [a.get("name") for a in bridge.args if a.get("apply") == "true"]
+        check(code == 2 and not bridge.sent and not kept and asked["discover"] == 0,
+              "`fragment --write --apply` is refused before Revit is asked anything "
+              "(exit %s, sent %r)" % (code, bridge.sent))
+        check("no proof" in out.getvalue() and "Nothing was sent to Revit" in out.getvalue(),
+              "and the refusal says no proof is recorded, and that nothing was sent")
+
+    check(current(proof_of(proven_one)),
+          "the card itself was never touched: read again, its proof still stands")
+
+
 def main():
     switched_ops = getattr(CLIENT, "SWITCHED_OPERATIONS", None)
     write_operation = getattr(CLIENT, "write_operation", None)
@@ -600,6 +678,7 @@ def main():
           "the question window touches no Revit API")
 
     article_11(names)
+    no_proof_at_all(names)
 
     # ------------------------------------------------------------------
     print()

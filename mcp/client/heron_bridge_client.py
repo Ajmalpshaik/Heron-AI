@@ -1541,6 +1541,16 @@ def unproven_refusal(what, found):
                 "was sent to Revit. It is proved first on a test model, with a "
                 "negative case, and then it can be asked for again." % (what, said))
 
+    if found.get("stale") and found.get("proof") is False:
+        # Row 5b-1154: the card says PROVEN and records no proof. Refused as
+        # stale is - and in its own words, because "its code has changed
+        # since" would be untrue of a card that was never proved.
+        return ("%s says %s, but its card records no proof at all, so nothing "
+                "stands behind its code (D-30) and Heron will not let it change a "
+                "live model (Constitution Article 11). Nothing was sent to Revit. "
+                "It is proved first on a test model, with a negative case, and "
+                "then it can be asked for again." % (what, status))
+
     if found.get("stale"):
         when = " on %s" % found["date"] if found.get("date") else ""
         return ("%s was %s%s, but its code has changed since, so that proof no "
