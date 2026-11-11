@@ -52,3 +52,21 @@ connected, and `< /dev/null`.
 choice, through `try-once`, behind Revit's Keep or Discard. Its four arrows were locked BY HAND on 2026-11-11:
 locking them again through Heron makes a second alignment beside each, which is not measured here - release the
 hand locks first, or run it only on arrows placed afresh.
+
+**Run 2026-11-11, ~13:00-13:05 local - version 4, NB1, NB2 and NB3 PASS** (Revit 2020, session 44624, the scratch family
+"Heron Detail Lock Test", 1,529 elements; arrow id 3036 / `931ee163-891c-4259-9427-fb96141d1c74-00000bdc` at (0, -390),
+turned 90). NB1 through `validate --write`: negative `locks=Center (Front/Back)=Ref. Level` refused before anything was
+locked - "faces left-right where it stands, and Ref. Level faces up-down" - and NOT "no extent to read back"; positive:
+"a detail item that belongs to no view ... locked in Ref. Level", one lock, Center (Front/Back) to "Center (Left/Right)".
+NB2 (`locks=Center (Left/Right)=Arrow Back`, a parallel plane 780 mm off): Revit's own "not geometrically aligned",
+named with "move the nested family onto the plane first", rolled back. NB3 through `try-once`, KEPT by the owner: two
+locks - Center (Front/Back) to "Center (Left/Right)", Center (Left/Right) to "Arrow Front" (record
+`brain/proof-drafts/runs/lock-nested-family-to-planes.once.json`, local); "Arrow Span" 600 read the arrow at (0, -300),
+1,200 at (0, -600) - it followed; set back to 780. `validate --write --kept` then ran the negative again (refused, as
+NB1). **The control, on the owner's diffuser the same day:** its four nested arrows, placed by PLACE_FAMILY_INSTANCES
+and never locked, stayed at +-476 mm when 150x150 moved the "Arrow" planes to +-183.3 - a nested detail item does not
+follow a plane by itself, so the lock is what moved the scratch arrow. **Not run:** NB4 (a 3D nested family on version 4),
+NB5 (the hand route), any release but 2020.
+
+**SIGNED 2026-11-11 by Ajmal PS - `LOCK_NESTED_FAMILY_TO_PLANES` version 4 is PROVEN** on NB3's kept run with NB1's
+negative (the proof block in the card). Still open, not blocking: NB4, NB5.
