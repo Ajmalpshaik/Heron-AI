@@ -45,6 +45,24 @@ jobs:
       Visible not linked -> Show Handle". Negative: refused naming Box Left as
       none of the kinds linked by id, and the extrusion NOT linked either.
 
+  # NE1b - version 3's OWN proven case, by category: the answer text of the
+  # category path changed with version 4's element words.
+  - fragment: link-family-parameter
+    expect: changed
+    set:
+      category: "Duct Connector"
+      system: "Supply Air"
+      links: "Flow=Nominal Air Flow"
+    negative-set:
+      category: "Duct Connector"
+      system: "Supply Air"
+      links: "Flow=ZZZ No Such Parameter"
+    note: >
+      NE1b. Positive: changed 1, "Duct Connector (Supply Air) id N: Flow not
+      linked -> Nominal Air Flow". Negative: refused, no family parameter of
+      that name, Nominal Air Flow named as the one that could drive Flow.
+      The Exhaust Air inventory sentence is run by name.
+
   # NE2 - the new ability: a symbolic line and a filled region.
   - fragment: link-family-parameter
     expect: changed
@@ -91,6 +109,25 @@ jobs:
       numbers (600 apart, holds 450), nothing made, the planes still 600
       apart.
 
+  # NE4b - version 2's OWN proven case: the free-end finding, and two planes
+  # in the same place.
+  - fragment: label-family-dimension
+    expect: freeEnd
+    set:
+      fromPlane: "Floor Top"
+      toPlane: "Trap Top"
+      parameterName: "Trap Depth"
+      centrePlane: ""
+    negative-set:
+      fromPlane: "Same A"
+      toPlane: "Same B"
+      parameterName: "Gap C"
+      centrePlane: ""
+    note: >
+      NE4b. Positive: reading 300 mm, freeEnd naming "Floor Top" held by
+      nothing and "Trap Top" held by the dimension labelled "Rim Height".
+      Negative: refused as in the same place, nothing made.
+
   # NE5 - the new ability: an angle.
   - fragment: label-family-dimension
     expect: angleDegrees
@@ -108,6 +145,26 @@ jobs:
       NE5. Positive: angleDegrees 30, labelled "Arrow Angle drives the angle
       between ...", in Ref. Level. Negative: "Wrong Angle" holds 45 - refused
       before anything is made, "meet at 30 degrees (150 on the other side)".
+
+  # NE5b - two free planes: the angle path's pinFreeEnd branch.
+  - fragment: label-family-dimension
+    expect: pinnedEnd
+    set:
+      fromPlane: "Arrow Slope"
+      toPlane: "Arrow Low"
+      parameterName: "Spread Angle"
+      centrePlane: ""
+      pinFreeEnd: true
+    negative-set:
+      fromPlane: "Center (Front/Back)"
+      toPlane: "Arrow Slope"
+      parameterName: "Arrow Angle"
+      centrePlane: ""
+      pinFreeEnd: true
+    note: >
+      NE5b. Positive: angleDegrees 45, "Arrow Slope" pinned first and read
+      back pinned. Negative: one plane defines the origin - labelled,
+      nothing pinned, the finding says why.
 
   # NE6 - the other side of the crossing, and parallel planes refused.
   - fragment: label-family-dimension

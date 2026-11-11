@@ -950,7 +950,8 @@ if (refused == null && angular)
         + angleDegrees.ToString(invariant) + " degrees";
     findings.Add(labelled + ", in \"" + view.Name + "\", on an arc centred where the two planes cross.");
     findings.Add("The planes now follow \"" + drivesAngle + "\". Geometry follows only if it is LOCKED to them - "
-        + "LOCK_FAMILY_LINES_TO_PLANES locks a line along a plane. FLEX_FAMILY proves it by changing the angle and "
+        + "LOCK_FAMILY_LINES_TO_PLANES (DRAFT, not yet proved) locks a line along a plane. FLEX_FAMILY proves it by "
+        + "changing the angle and "
         + "reading the geometry back.");
     if (freeEnd.Length > 0) findings.Add(freeEnd);
     if (pinnedEnd.Length > 0) findings.Add(pinnedEnd);

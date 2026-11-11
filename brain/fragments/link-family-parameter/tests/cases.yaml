@@ -111,6 +111,16 @@ positive:
       changed 2, both named "Detail Line id N" and "Model Text id M", Visible
       -> Show Arrow; Group NE, NE3
 
+  - given: >
+      version 4, version 3's own proven case on the Group NE family, which
+      also holds a Supply Air duct connector and an Air Flow parameter
+      "Nominal Air Flow": category "Duct Connector", system "Supply Air",
+      links "Flow=Nominal Air Flow"
+    expect: >
+      changed 1 (or alreadyLinked 1 once kept), linkReport "Duct Connector
+      (Supply Air) id N: Flow ... Nominal Air Flow" - the by-category answer
+      as version 3 gave it; Group NE, NE1b
+
   - given: version 4, the symbolic line linked to Show Arrow, links "Visible=none"
     expect: changed 1, "Visible Show Arrow -> not linked", the Visible value kept
 
@@ -175,8 +185,9 @@ negative:
 
   - given: forms = a form's id and the UniqueId of a reference plane, links "Visible=Show_Handle"
     expect: >
-      refused - the plane is neither a form nor a nested part - and NEITHER
-      linked
+      refused - the plane is none of what is linked by id (a form, a nested
+      family, a detail or symbolic line, a filled or masking region, model
+      text) - and NEITHER linked
 
   - given: a nested copy's id, links a field that is a TYPE parameter of its family
     expect: >
@@ -210,6 +221,21 @@ negative:
       refused naming the plane as none of a form, a nested family, a detail or
       symbolic line, a region or model text - and NEITHER linked; Group NE,
       NE1's negative
+
+  - given: >
+      version 4, category "Duct Connector", system "Supply Air", links
+      "Flow=ZZZ No Such Parameter" - version 3's own negative, re-proved
+    expect: >
+      refused naming "ZZZ No Such Parameter" and Nominal Air Flow as the one
+      that could drive Flow; nothing changed; Group NE, NE1b's negative
+
+  - given: >
+      version 4, category "Duct Connector", system "Exhaust Air", in the
+      Group NE family (no exhaust connector)
+    expect: >
+      refused with what the family has - now in the palette's words, "1
+      Symbolic Line", "1 Filled Region", "1 Duct Connector (Supply Air)" -
+      where version 3 printed a line's Revit category; Group NE, NE1b
 
   - given: >
       version 4, forms = the symbolic line's id, links "Visible=Arrow Length"

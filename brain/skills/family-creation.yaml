@@ -445,10 +445,13 @@ purpose: >
   as step 0 checks it - REPORT_OPEN_DOCUMENTS' `fileTimes` and
   `staleFileCount` - never taken from "I pressed Ctrl+S".
 
-  NOT YET: reference lines and angles - a part that swings or tilts about a
-  pivot. A reference line can be made through the API, and an angle labelled,
-  but no DOCUMENTED call gives the planes a reference line carries, so a form
-  cannot be put on one; the only route found reads a reference out of an
+  AN ANGLE LABEL between two reference planes that meet is
+  LABEL_FAMILY_DIMENSION version 3 (DRAFT, not yet proved - NEEDS-CHECKING
+  Group NE) with an Angle parameter; no Heron card draws a plane at an angle
+  yet, so the sloped plane is drawn by hand for now (row 5b-1498).
+  NOT YET: reference lines - a part that swings or tilts about a pivot. A
+  reference line can be made through the API, but no DOCUMENTED call gives
+  the planes a reference line carries, so a form cannot be put on one; the only route found reads a reference out of an
   undocumented string Autodesk says is not meant to be parsed (row 5b-280).
   A revolve whose angle the types choose is the documented route for a bend.
   A Family Type parameter, a type catalog, flip controls and filled and

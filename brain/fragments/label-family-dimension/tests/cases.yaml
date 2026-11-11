@@ -61,6 +61,26 @@ positive:
       "Arrow Slope". Then, KEPT, Arrow Angle typed as 45 in Family Types turns
       ONE plane - record which, and about what point; Group NE, NE5 and NE7
 
+  - given: >
+      version 3, version 2's own proven case on the Group NE family: a new
+      unpinned height plane "Floor Top" at Z 0, "Trap Top" at Z 300 held by a
+      dimension labelled "Rim Height", "Trap Depth" holding 300; fromPlane
+      "Floor Top", toPlane "Trap Top", pinFreeEnd left out
+    expect: >
+      version 2's answer - reading 300 mm in an elevation, `freeEnd` naming
+      "Floor Top" as held by nothing and "Trap Top" as held by the dimension
+      labelled "Rim Height"; nothing pinned; Group NE, NE4b
+
+  - given: >
+      version 3, two hand-drawn upright planes "Arrow Slope" (30 degrees) and
+      "Arrow Low" (-15 degrees), both through the family's centre and neither
+      pinned nor defining the origin, an Angle "Spread Angle" holding 45;
+      fromPlane "Arrow Slope", toPlane "Arrow Low", pinFreeEnd=true
+    expect: >
+      angleDegrees 45; `freeEnd` saying neither is pinned or defines the
+      origin, then "Pinned now"; `pinnedEnd` saying "Arrow Slope" was pinned
+      first and reads back pinned; Group NE, NE5b
+
   - given: version 3, the same planes and an Angle parameter "Arrow Back Angle" holding 150 (the other side of the crossing)
     expect: >
       labelled reading 150, the arc on the obtuse side - the parameter's
@@ -141,6 +161,22 @@ negative:
       refused before anything is made - "meet at 30 degrees (150 on the other
       side) and Wrong Angle holds 45" - naming SET_FAMILY_TYPE_VALUES; no
       dimension made and neither plane turned; Group NE, NE5's negative
+
+  - given: >
+      version 3, two height planes "Same A" and "Same B" both at Z 500, a
+      length "Gap C" - version 2's own negative, re-proved
+    expect: >
+      refused as in the same place, naming the pin route (SET_PIN_STATE, move
+      the other, SET_FAMILY_TYPE_VALUES, then label); nothing made; Group NE,
+      NE4b's negative
+
+  - given: >
+      version 3, "Center (Front/Back)" to "Arrow Slope" with "Arrow Angle"
+      and pinFreeEnd=true - one plane held fast (it defines the origin)
+    expect: >
+      labelled, NOTHING pinned, and a finding "pinFreeEnd was asked and
+      nothing was pinned" naming "Center (Front/Back)" as held fast; Group
+      NE, NE5b's negative
 
   - given: version 3, "Arrow Angle" between "Box Left" and "Box Right" (parallel)
     expect: refused as parallel, making no angle, a LENGTH labelling them; nothing made; Group NE, NE6's negative
