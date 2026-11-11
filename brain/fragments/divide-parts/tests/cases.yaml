@@ -6,11 +6,43 @@ positive:
       divided equal to the parts handed in, partCountAfter higher than before,
       read back
 
+  # VERSION 2, added 2026-11-11 (row 5b-1418). NEITHER HAS BEEN RUN. Each was
+  # REFUSED on version 1 on Revit 2024 - "The element id should refer to a
+  # valid SketchPlane" - so each FAILS there.
+  - given: >
+      Revit 2024: parts made from walls standing on one level, a level
+      "HERON MID" kept 1500 mm up them; those parts handed in, cutterNames
+      "HERON MID"
+    expect: >
+      no refusal; divided equal to the parts handed in and partCountAfter
+      higher than the parts handed in, read back; in a section with Show
+      Parts each wall's parts meet at the level
+  - given: >
+      the same walls' parts, a grid "HERON CUT" kept across at least two of
+      the walls; the parts near it handed in, cutterNames "HERON CUT"
+    expect: >
+      no refusal; partCountAfter higher than the parts handed in; in a plan
+      with Show Parts the new seams lie on the grid line
+
 negative:
   - given: cutterNames "Z9", a name no datum has
     expect: >
       refused naming it, nothing divided
 
+  # VERSION 2, added 2026-11-11. NOT RUN. What Revit answers here is NOT KNOWN
+  # and is recorded as it comes - it decides row 5b-1515.
+  - given: >
+      the same parts, cutterNames a level kept far above every wall, crossing
+      none of them
+    expect: >
+      either refused - "Revit divided none of these parts" - with
+      partCountAfter as before, or Revit's own refusal quoted; never divided
+      above 0 beside a partCountAfter that did not move
+
 second_route:
   - a plan with Show Parts, the new seams on the grid lines
+  - >
+      version 2: Revit's own Divide Parts on the same parts with the same level
+      or grid ticked under Intersecting References, in a second scratch copy -
+      the same part count
   - one Ctrl+Z undoes the division in a single step (Golden Rule 16)

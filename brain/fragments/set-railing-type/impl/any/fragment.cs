@@ -26,6 +26,15 @@
 //
 // READ BACK: every value asked is read again from the type after a
 // regeneration.
+//
+// VERSION 2 (2026-11-11, row 5b-1415) - THE HANDRAIL IS READ ONLY WHEN THE
+// TYPE HAS ONE. Revit throws "The rail has no primary hand rail" on the
+// primary handrail's height for a type whose Handrail 1 is None - how most
+// railing types ship - and version 1 read its side and height into the report
+// unasked, so every such type was refused whatever was asked. Now the type's
+// handrail is looked up first: with none the report says "handrail none" and
+// neither is read. With one, a read Revit still refuses is said in the report,
+// and counts as NOT AS ASKED only when the side or the height was asked for.
 
 const double MmPerFoot = 304.8;
 RailingType railingType = null;
@@ -81,19 +90,35 @@ if (refusal == null)
         }
         doc.Regenerate();
 
+        // The handrail as the type now holds it (version 2) - see the header.
+        var hasHandrail = doc.GetElement(railingType.PrimaryHandrailType) is HandRailType;
+        var sideNow = HandRailPosition.None;
+        var handHeightNowMm = 0.0;
+        string handUnread = null;
+        if (hasHandrail)
+        {
+            try { sideNow = railingType.PrimaryHandRailPosition; handHeightNowMm = railingType.PrimaryHandrailHeight * MmPerFoot; }
+            catch (Exception ex) { handUnread = ex.Message; }
+        }
+
         // Read back.
         var wrong = new List<string>();
         if (topRail != null && railingType.TopRailType != topRail.Id) wrong.Add("the top rail reads another type");
         if (topRailHeightMm > 0 && Math.Abs(railingType.TopRailHeight * MmPerFoot - topRailHeightMm) > 0.5) wrong.Add("the top rail height reads " + Math.Round(railingType.TopRailHeight * MmPerFoot) + " mm");
         if (handrail != null && railingType.PrimaryHandrailType != handrail.Id) wrong.Add("the handrail reads another type");
-        if (side != "" && railingType.PrimaryHandRailPosition != position) wrong.Add("the handrail side reads " + railingType.PrimaryHandRailPosition);
-        if (handrailHeightMm > 0 && Math.Abs(railingType.PrimaryHandrailHeight * MmPerFoot - handrailHeightMm) > 0.5) wrong.Add("the handrail height reads " + Math.Round(railingType.PrimaryHandrailHeight * MmPerFoot) + " mm");
+        if ((side != "" || handrailHeightMm > 0) && handUnread != null) wrong.Add("the handrail's side and height could not be read back");
+        else
+        {
+            if (side != "" && sideNow != position) wrong.Add(hasHandrail ? "the handrail side reads " + sideNow : "the type has no handrail to put on a side");
+            if (handrailHeightMm > 0 && Math.Abs(handHeightNowMm - handrailHeightMm) > 0.5) wrong.Add("the handrail height reads " + Math.Round(handHeightNowMm) + " mm");
+        }
 
         var topName = doc.GetElement(railingType.TopRailType) != null ? doc.GetElement(railingType.TopRailType).Name : "none";
         var handName = doc.GetElement(railingType.PrimaryHandrailType) != null ? doc.GetElement(railingType.PrimaryHandrailType).Name : "none";
         lines.Add((newName != "" ? "Copied \"" + start.Name + "\" as \"" + railingType.Name + "\"; " : "\"" + railingType.Name + "\": ")
             + "top rail " + topName + " at " + Math.Round(railingType.TopRailHeight * MmPerFoot) + " mm, handrail " + handName
-            + " " + railingType.PrimaryHandRailPosition + " at " + Math.Round(railingType.PrimaryHandrailHeight * MmPerFoot) + " mm"
+            + (!hasHandrail ? "" : handUnread != null ? " (Revit would not give its side and height - " + handUnread + ")"
+                : " " + sideNow + " at " + Math.Round(handHeightNowMm) + " mm")
             + (wrong.Count > 0 ? " - NOT AS ASKED: " + string.Join("; ", wrong) : ", read back as asked") + ".");
         if (sharing > 0) lines.Add("The handrail height is the handrail type \"" + handType.Name + "\"'s, and " + sharing + " other railing type(s) share it and changed with it.");
         var users = new FilteredElementCollector(doc).OfClass(typeof(Railing)).Count(e => e.GetTypeId() == railingType.Id);

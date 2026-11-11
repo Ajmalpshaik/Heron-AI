@@ -3,6 +3,18 @@
 // `placeAtMm` are in scope; leaves `copied`, `copiedIds`, `kept`, `readBack`,
 // `report` and `findings` behind.
 //
+// VERSION 4 (2026-11-11, row 5b-1123) - A TITLE TWO OPEN DOCUMENTS CARRY IS
+// REFUSED, NEVER GUESSED.
+//
+//   Versions 1 to 3 took the FIRST open document whose title matched and said
+//   nothing - right only while every document of that title is the same file.
+//   Now, when the document the words find shares its title with another open
+//   document, nothing is copied: the answer names each one's path, or says it
+//   is not saved yet, and asks for the ones not meant to be closed - as a link
+//   placed twice is refused on the other route. The document in front and
+//   linked documents are not counted: neither is ever a source here. Label
+//   mode finds its seed the same way, so the same refusal holds there.
+//
 // VERSION 3 (2026-11-01) - COPY_LABELS_FROM_FAMILY MERGED IN, AS `labels`.
 //
 //   VIEW-SPECIFIC ELEMENTS STAY OUT BY DEFAULT - this card's rule, kept. LABEL
@@ -86,6 +98,8 @@ string refusal = null;
 var wanted = (sourceDocumentTitle ?? "").Trim();
 Document source = null;
 var openTitles = new List<string>();
+var openPaths = new List<string>();
+string titleRefusal = null;
 var linkedTitleMatched = false;
 var placed = Transform.Identity;
 string linkRefusal = null;
@@ -106,7 +120,25 @@ if (!fromLink)
             continue;
         }
         openTitles.Add(title);
+        var path = "";
+        try { path = candidate.PathName ?? ""; } catch { }
+        openPaths.Add(path != "" ? path : "one not saved yet");
         if (wanted.Length > 0 && title.IndexOf(wanted, StringComparison.OrdinalIgnoreCase) >= 0 && source == null) source = candidate;
+    }
+    // VERSION 4: a title two open documents carry cannot say which is meant.
+    if (source != null)
+    {
+        var sourceTitle = "";
+        try { sourceTitle = source.Title ?? ""; } catch { }
+        var sameTitle = new List<string>();
+        for (var i = 0; i < openTitles.Count; i++)
+            if (string.Equals(openTitles[i], sourceTitle, StringComparison.OrdinalIgnoreCase)) sameTitle.Add(openPaths[i]);
+        if (sameTitle.Count > 1)
+        {
+            titleRefusal = sameTitle.Count + " open documents are titled \"" + sourceTitle + "\" - " + string.Join("; ", sameTitle)
+                + ". The title cannot say which one to copy from: close the ones you do not mean and ask again. NOTHING WAS COPIED.";
+            source = null;
+        }
     }
 }
 else
@@ -167,6 +199,7 @@ if (offsetText != "")
 }
 
 if (refusal == null && linkRefusal != null) refusal = linkRefusal;
+if (refusal == null && titleRefusal != null) refusal = titleRefusal;
 if (refusal == null && source == null && linkedTitleMatched)
     refusal = "\"" + sourceDocumentTitle + "\" is a LINKED model here, not another open document. Ask again with "
         + "fromLink=true so the copies land where the link puts them. NOTHING WAS COPIED.";

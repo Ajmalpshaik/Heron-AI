@@ -9,7 +9,7 @@ semantic-identity: "set up a railing type - its top rail, handrail, heights and 
 kind: action
 domain: revit.elements
 capability: SET_RAILING_TYPE
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -30,6 +30,17 @@ risk: MODIFY
 # CREATE_RAILING places railings; DUPLICATE_TYPE copies any type by name.
 #
 # READ BACK: each value asked is read again from the type.
+#
+# VERSION 2, 2026-11-11 (row 5b-1415). Version 1 read the primary handrail's
+# side and height into its report whether or not a handrail was asked about,
+# and Revit throws "The rail has no primary hand rail" on the height for a
+# type whose Handrail 1 is None - how most railing types ship - so every such
+# type was refused (Revit 2020 and 2024, four types, 2026-11-02). Version 2
+# looks the type's handrail up first: with none the report reads "handrail
+# none" and neither is read; with one they are read as before, and a read
+# Revit still refuses is said in the report. Asking for a handrail side or
+# height on a type with no handrail is still Revit's to refuse. COMPILED ON
+# EVERY RELEASE, NOT RUN IN ANY REVIT (NEEDS-CHECKING Group DR, DR6a to DR6c).
 #
 # ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 purpose: >
@@ -90,6 +101,8 @@ compatibility-note: >
   read only) and ElementType.Duplicate are
   present 2020 through 2027 - read off RevitAPI.xml in the Nice3point
   reference packages for all eight releases on 2026-10-13.
+  Version 2 calls no new member; the card compiled for every release on
+  2026-11-11. NOT RUN in any Revit.
 
 # ROUTING - the same rows are in the fragments named here.
 #

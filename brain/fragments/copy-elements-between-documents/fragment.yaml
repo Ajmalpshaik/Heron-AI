@@ -32,7 +32,22 @@ capability: COPY_ELEMENTS_BETWEEN_DOCUMENTS
 # view to view, same category only, each read back against its seed. See the
 # merge block above `utterances`. DRAFT until version 3 is proved (D-30);
 # version 2 was never proved either.
-version: 3
+#
+# VERSION 4 (2026-11-11, row 5b-1123): a title two open documents carry is
+# REFUSED, never guessed. Versions 1 to 3 took the first open document whose
+# title matched and said nothing - measured 2026-10-18 on Revit 2020 with
+# thirteen open documents of one title, right there only because all were one
+# file. Now, when the document the words find shares its title with another
+# open document, nothing is copied and each one's path is named (or "one not
+# saved yet"), as a link placed twice is refused on the other route. Revit's
+# title leaves the file extension off (this card's 2020 proof record;
+# RevitAPI.xml), so a project and a family saved under one name should be
+# such a pair - not yet seen. The document in front and linked documents are
+# not counted - neither is ever a source. Label mode finds its seed by the
+# same lines, so it refuses the same way. COMPILED ON EVERY RELEASE, NOT RUN
+# IN ANY REVIT (NEEDS-CHECKING Group DR, DR10a and DR10b). DRAFT as before:
+# versions 2 and 3 were never proved either.
+version: 4
 source: OFFICIAL
 risk: MODIFY
 
@@ -208,6 +223,9 @@ compatibility-note: >
   surface --members, 2026-10-21); the parameter-by-parameter comparison reads
   AnnotationLabel under #if REVIT2027_OR_GREATER - 2020 to 2026 compare text
   and type only. Built on all eight releases on 2026-11-01.
+  Version 4 adds Document.PathName, all eight releases (tools/api-surface
+  --members, 2026-11-11); compiled for each on 2026-11-11. NOT RUN in any
+  Revit.
 
 # ROUTING - the same rows are in the fragments named here.
 #

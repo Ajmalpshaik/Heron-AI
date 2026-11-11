@@ -7,6 +7,22 @@ positive:
       handrail on both sides, read back as asked; the original unchanged; 0
       railings of the new type
 
+  # VERSION 2, added 2026-11-11 (row 5b-1415). NEITHER HAS BEEN RUN. The first
+  # FAILS on version 1, which answered "Revit refused - The rail has no primary
+  # hand rail" for it on Revit 2020 and 2024.
+  - given: >
+      a railing type whose Handrail 1 Type is None - "900mm Pipe" in Revit
+      2020's rac_advanced_sample_project, "Handrail - Pipe" in Revit 2024's
+      Snowdon Towers Sample Architectural - duplicateAs "Heron Guard",
+      topRailHeightMm 1000, nothing asked of the handrail
+    expect: >
+      a new type "Heron Guard" with its top rail at 1000 mm; the report reads
+      "handrail none, read back as asked"; the original unchanged
+  - given: a railing type that HAS a primary handrail, the same values
+    expect: >
+      the report names the handrail, its side and its height in mm, as version
+      1 did - the read the repair must not have lost
+
 negative:
   - given: 'railing type "No Such Railing", topRailHeightMm 1100'
     expect: >

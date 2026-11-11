@@ -10,6 +10,19 @@
 //
 // READ BACK: the parts made from the original elements are counted again
 // afterwards.
+//
+// VERSION 2 (2026-11-11, row 5b-1418) - THE DIVISION IS GIVEN A SKETCH PLANE.
+// Revit keeps a sketch with every division, also one cut by datums alone, and
+// Revit 2024 refused the empty id version 1 passed - "The element id should
+// refer to a valid SketchPlane" - for a level and a grid alike. A sketch plane
+// is now made for the call, on the largest flat face of the first part: where
+// a division is sketched by hand, and square to any datum that crosses the
+// part. A part showing no flat face gets a horizontal one. Nothing is drawn
+// on it - the named datums do the cutting. It is made in a step of its own,
+// taken back whole when Revit refuses or hands back no division, so a refusal
+// leaves no sketch plane behind, and an answer with no division in it is
+// refused rather than counted.
+// WHICH PLANE REVIT ACCEPTS IS NOT MEASURED: compiled only, not run in Revit.
 
 var divided = 0;
 var partCountAfter = 0;
@@ -49,12 +62,50 @@ if (refusal == null)
         var part = doc.GetElement(id) as Part;
         try { foreach (var s in part.GetSourceElementIds()) sources.Add(s.HostElementId); } catch { }
     }
+    // Where the division's sketch lies (version 2) - see the header.
+    var sketchOn = Plane.CreateByNormalAndOrigin(XYZ.BasisZ, XYZ.Zero);
     try
     {
-        PartUtils.DivideParts(doc, parts, cutters, new List<Curve>(), ElementId.InvalidElementId);
-        divided = parts.Count;
+        var largest = 0.0;
+        var shape = doc.GetElement(parts[0]).get_Geometry(new Options());
+        if (shape != null)
+            foreach (var piece in shape)
+            {
+                var solid = piece as Solid;
+                if (solid == null) continue;
+                foreach (Face face in solid.Faces)
+                {
+                    var flat = face as PlanarFace;
+                    if (flat == null || flat.Area <= largest) continue;
+                    largest = flat.Area;
+                    sketchOn = Plane.CreateByNormalAndOrigin(flat.FaceNormal, flat.Origin);
+                }
+            }
     }
-    catch (Exception ex) { refusal = "Revit refused the division: " + ex.Message + ". NOTHING WAS DIVIDED."; }
+    catch { }
+    var step = new SubTransaction(doc);
+    try
+    {
+        step.Start();
+        var sketch = SketchPlane.Create(doc, sketchOn);
+        doc.Regenerate();
+        var maker = PartUtils.DivideParts(doc, parts, cutters, new List<Curve>(), sketch.Id);
+        if (maker == null)
+        {
+            step.RollBack();
+            refusal = "Revit divided none of these parts at the datum(s) named - check that one of them crosses the parts. NOTHING WAS DIVIDED.";
+        }
+        else
+        {
+            step.Commit();
+            divided = parts.Count;
+        }
+    }
+    catch (Exception ex)
+    {
+        try { if (step.HasStarted() && !step.HasEnded()) step.RollBack(); } catch { }
+        refusal = "Revit refused the division: " + ex.Message + ". NOTHING WAS DIVIDED.";
+    }
     doc.Regenerate();
     foreach (var s in sources)
     {
