@@ -1,17 +1,31 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-138
-semantic-identity: "put a detail component or an annotation symbol on this view at these points"
+semantic-identity: "put a detail component or an annotation symbol on this view at these points, in a project or in a family's own view"
 kind: action
 domain: revit.annotation
 capability: PLACE_DETAIL_COMPONENTS
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 2 (2026-11-11) - IN A FAMILY'S OWN VIEW TOO, READ BACK, and back to
+# DRAFT. Version 1 was PROVEN on 2026-10-18 (the proof block below, kept as
+# the record of what it proved: a project's plan, and a 3D view refused); its
+# C# moved, so it is DRAFT again until NEEDS-CHECKING Group NF is run (D-30,
+# D-117). On 2026-11-11 (Revit 2020) the owner's square diffuser family needed
+# its plan flow arrows - a nested 600 mm detail item - and no tool placed a
+# view-based family inside a family: this card called `doc.Create`, a
+# project's factory, and PLACE_FAMILY_INSTANCES' nested branch takes only
+# work plane-based and level-based families. Version 2 calls
+# `doc.FamilyCreate`'s view overload in a family, reads every one placed back
+# (exists, Owner View, point, type) on BOTH paths, and leaves `instanceId` and
+# `instanceIds`. Owner's yes to widen rather than add a card: Ajmal PS,
+# 2026-11-11. FRAGMENT-ISSUES row 5b-1499.
 
 purpose: >
   Places a detail component - a detail item family - or an annotation symbol
@@ -23,6 +37,20 @@ purpose: >
   detail item or a symbol exists only in the view it was drawn in. So the view
   is asked for, and a family that is NOT view-based is refused by name and
   pointed at PLACE_FAMILY_INSTANCES.
+
+  **IN A FAMILY TOO** (version 2, 2026-11-11). With a family open in the
+  Family Editor, a detail item or a generic annotation LOADED INTO THE FAMILY
+  - a diffuser's flow arrows - is placed in one of the family's own views, as
+  Detail Component and Symbol do by hand: in the Ref. Level plan it shows in a
+  project's plans only. The points are millimetres from the family's origin.
+  The first one's id comes back as `instanceId`, for
+  LOCK_NESTED_FAMILY_TO_PLANES to lock it to the family's planes and
+  ARRAY_FAMILY_FORMS to array it.
+
+  **READ BACK, ALL OR NOTHING** (version 2): each one placed is read again -
+  it exists, its Owner View is the view asked for, its insertion point is
+  where asked (half a millimetre, in the view's plane) and its type is the
+  one asked. One that does not read so fails the call; nothing is kept.
 
   **A 3D VIEW OR A TEMPLATE IS REFUSED.** Revit draws neither kind in a 3D
   view, and a view template holds no elements.
@@ -55,6 +83,18 @@ contract:
     - name: placed
       role: result
       type: IList<Element>
+    - name: instanceId
+      # VERSION 2: the first one placed, by its unique id - the same kind of
+      # id PLACE_FAMILY_INSTANCES' nested branch leaves, which
+      # LOCK_NESTED_FAMILY_TO_PLANES and ARRAY_FAMILY_FORMS take. Empty when
+      # nothing was placed.
+      role: result
+      type: string
+    - name: instanceIds
+      # VERSION 2: every one placed, by unique id, commas between, in the
+      # order of the points. Empty when nothing was placed.
+      role: result
+      type: string
     - name: refused
       role: accounting
       type: IList<string>
@@ -92,12 +132,25 @@ compatibility-note: >
   FamilySymbol, View)`, `Family.FamilyPlacementType`, `FamilySymbol.IsActive`
   / `Activate` and `ElementTransformUtils.RotateElement` are present 2020
   through 2027, read with tools/api-surface on 2026-10-14. PLACE_FLOW_ARROWS
-  already places view-based annotation through the same call.
+  already places view-based annotation through the same call. Version 2's
+  `FamilyItemFactory`'s inherited `ItemFactoryBase.NewFamilyInstance(XYZ,
+  FamilySymbol, View)`, `Document.IsFamilyDocument`, `Element.OwnerViewId`,
+  `Element.GetTypeId`, `LocationPoint.Point`, `View.RightDirection` /
+  `UpDirection` and `ElementId.InvalidElementId` are present 2020 through
+  2027 (`tools/api-surface --members --inherited`, 2026-11-11).
 
 # ROUTING - the same rows are in PLACE_FAMILY_INSTANCES and PLACE_FLOW_ARROWS.
 #
 #   "put the north arrow on this plan"      -> here
 #   "add a detail component here"           -> here
+#   "place the flow arrow in the Ref. Level view" -> here, version 2 - a
+#                                              detail item or annotation
+#                                              NESTED in a family is placed
+#                                              with THIS card, in a family
+#                                              view; PLACE_FAMILY_INSTANCES
+#                                              nests only work plane- and
+#                                              level-based families
+#   "put the motor family into this air handler" -> PLACE_FAMILY_INSTANCES
 #   "place a diffuser"                      -> PLACE_FAMILY_INSTANCES - a model
 #                                              family, on a level
 #   "show which way the air is going"       -> PLACE_FLOW_ARROWS, which works out
@@ -110,3 +163,4 @@ utterances:
   - add a detail component at these points
   - place this detail item in the drafting view
   - put the fire rating symbol on this view
+  - place the flow arrow in the Ref. Level view
