@@ -18,9 +18,18 @@
 //
 // AN ELEMENT WITH NO BOX IS REPORTED, NOT SKIPPED. Skipping makes the combined
 // box look like it covers everything that was asked about.
+//
+// A FAMILY INSTANCE'S BOX CAN BE WIDER THAN WHAT SHOWS, AND THE ANSWER SAYS SO
+// (version 2, FRAGMENT-ISSUES 5b-352). Measured 2026-10-07, Revit 2024: a
+// nested C-channel family holding an upright body and a horizontal one, each
+// switched by its own Visible parameter, read 200 x 1075 x 1100 mm - the
+// hidden body and the shown one together. The box is still Revit's own and
+// is not re-measured here; when anything measured is a family instance the
+// answer says the figure can take in bodies the family has switched off.
 
 var findings = new List<string>();
 var measured = 0;
+var familyInstances = 0;
 var noBoundingBox = new List<string>();
 var combinedSizeMm = "";
 
@@ -46,6 +55,7 @@ foreach (var element in elements)
     }
 
     measured++;
+    if (element is FamilyInstance) familyInstances++;
 
     // Combined first, so it covers EVERY element and not just the listed ones.
     if (!haveCombined)
@@ -96,6 +106,14 @@ if (haveCombined)
 else
 {
     findings.Add("Nothing handed in has a bounding box, so there is no combined extent to report");
+}
+
+if (familyInstances > 0)
+{
+    findings.Add(string.Format("{0} of the {1} measured are family instances. Revit's box for a family "
+        + "instance can take in bodies the family has switched off with a Visible parameter, so it can read "
+        + "larger than what shows - this does not measure only what shows",
+        familyInstances, measured));
 }
 
 if (noBoundingBox.Count > 0)
