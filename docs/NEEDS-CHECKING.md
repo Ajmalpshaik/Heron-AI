@@ -1450,6 +1450,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ne.md`](needs-checking/group-ne.md)
 
+## Group NG - one value, blank or filled, into MANY types in ONE call: `SET_FAMILY_TYPE_VALUES` version 4 in a family, `SET_PARAMETER_VALUES_BY_ID` version 8 in a project (2026-11-11)
+
+**Its own file:** [`needs-checking/group-ng.md`](needs-checking/group-ng.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

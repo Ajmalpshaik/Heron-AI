@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,19 @@ semantic-identity: "give this family type these parameter values, making the typ
 kind: action
 domain: revit.families
 capability: SET_FAMILY_TYPE_VALUES
-version: 3
+version: 4
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 4 (2026-11-11) - MANY TYPES IN ONE CALL, and back to DRAFT. Version 3
+# was PROVEN on 2026-10-06 (the proof block below, kept as the record of what it
+# proved); its C# moved, so it is DRAFT again until NEEDS-CHECKING Group NG is
+# run (D-30, D-117). On 2026-11-11 (Revit 2020) the owner cleared Manufacturer,
+# Model, URL, Model_Number and Family_Source from three air terminal families of
+# seven types each: one call per type, and each call raised a "delete 1 element"
+# question - making a type current deletes an automatic sketch dimension, the
+# geometry untouched - 21 questions. FRAGMENT-ISSUES row 5b-1504. A call naming
+# ONE type takes exactly the path it took before, line for line.
 
 purpose: >
   Writes values into one TYPE of the family open in the Family Editor -
@@ -68,6 +78,18 @@ purpose: >
   constraints cannot take, and keep the value while the planes stay put - so a
   dimension that no longer reads its parameter fails the call too.
 
+  **MANY TYPES AT ONCE (version 4).** `typeName` "all" - or a comma list,
+  "600 x 600, 625 x 625" - writes the same values into every type it names in
+  ONE change, one undo entry, and reads every type back: blanking two text
+  values in all seven types is one call, a blank written as empty text. A list
+  writes only types the family has - one name it does not have refuses the
+  whole call, nothing written - and never makes, renames or deletes a type.
+  Revit writes a family type only while it is current, so each type is made
+  current in turn, as the Family Types dialog does, and the type that was
+  current is current again at the end; a type already holding every value is
+  not touched. TEXT into EVERY type is tried first with no type made current at
+  all - see the compatibility note.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -75,6 +97,10 @@ contract:
     - name: doc
       type: Document
     # The family type to write into - made if the family does not have it.
+    # VERSION 4: "all" (or "every type") for every type of the family, or a
+    # comma list "600 x 600, 625 x 625" of types it HAS - the same values go
+    # into each, in one change. A name that is one type's whole name is that
+    # type, comma or not. A list never makes, renames or deletes a type.
     - name: typeName
       type: string
       source: request
@@ -116,6 +142,22 @@ contract:
       # proof a rename or a delete took, and the list a missing name is given.
       role: accounting
       type: string
+    - name: typesWritten
+      # Version 4: the types a list or "all" wrote into, read back. Empty for a
+      # call naming one type, as before.
+      role: result
+      type: IList<string>
+    - name: alreadyHeld
+      # Version 4: types a list or "all" named that already held every value
+      # asked for, so they were not written and not made current - the
+      # evidence it looked, never a change (D-52).
+      role: accounting
+      type: IList<string>
+    - name: route
+      # Version 4: how a list or "all" was written - "no type made current" or
+      # "each type made current in turn". Empty for one type.
+      role: accounting
+      type: string
     - name: notAFamily
       role: accounting
       type: bool
@@ -126,6 +168,10 @@ contract:
     - name: findings
       type: IList<string>
 
+# VERSION 3's PROOF, KEPT AS A RECORD. Version 4 changed impl/ (row 5b-1504), so
+# its fingerprint no longer describes the code and the card is DRAFT until
+# NEEDS-CHECKING Group NG proves version 4 (D-30). A call naming one type still
+# takes the road this proof ran.
 proof:
   date: '2026-10-06'
   by: Ajmal PS
@@ -187,6 +233,24 @@ compatibility-note: >
   millimetres divided by 304.8, degrees times pi over 180 - never a units API,
   which is what breaks across 2021.
 
+  VERSION 4 (2026-11-11, the RevitAPI.dll of 2020 read by reflection, compiled
+  2020 to 2027): `FamilyType` has `AsDouble`, `AsInteger`, `AsString`,
+  `AsElementId`, `AsValueString` and `HasValue` and NO setter, and every
+  `FamilyManager.Set` overload writes the CURRENT type - so a family type is
+  written only while it is current, on every release. Making a type current is
+  a regeneration; on Revit 2020 it can delete an automatic sketch dimension, and
+  that deletion is what Revit's Keep or Discard question counts. The one way
+  around it here: TEXT going into EVERY type, where `FamilyParameter.CanAssignFormula`
+  is true and the text holds no double quote, is written as a formula that is
+  the text - `"Acme"`, or `""` for a blank - which Revit evaluates for every type
+  at once, and the formula is cleared again (`SetFormula(p, null)`), inside a
+  `SubTransaction`, kept only if every type then reads the text and no formula
+  is left. Whether Revit keeps each type's value when a formula is cleared, and
+  whether that trial deletes nothing, is NOT KNOWN until Group NG runs it; if it
+  does not hold, the trial is rolled back and the types are made current in
+  turn. Lengths, angles, numbers, integers, yes/no and materials - and text into
+  only some types - always make each type current in turn.
+
 # ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "make a 600 x 600 type"               -> here
@@ -194,6 +258,12 @@ compatibility-note: >
 #   "set the nut material to galvanised"  -> here (a family type's material)
 #   "rename the family type"              -> here ("Type Name=..." in values)
 #   "delete this family type"             -> here (deleteType)
+#   "clear the manufacturer in every type of this family"
+#                                         -> here, typeName all (version 4)
+#   "clear the manufacturer on every type of this family in the project"
+#                                         -> SET_PARAMETER_VALUES_BY_ID, a
+#                                            pattern key with types=yes - a
+#                                            project's types, not a family's own
 #   "rename these duct types"             -> EDIT_TEXT_VALUES field Name - types in a
 #                                            project, not a family's own types
 #   "add a Width parameter"               -> ADD_FAMILY_PARAMETERS
@@ -216,3 +286,6 @@ utterances:
   # sentence, and a comment is not indexed, so ranking decided: "set the nut
   # material to galvanised": SELECT_BY_MATERIAL answered it on both backends.
   - set the nut material to galvanised
+  # ADDED 2026-11-11, row 5b-1504 - version 4, every type at once.
+  - blank these values in all the family types
+  - set the same value in all the family types

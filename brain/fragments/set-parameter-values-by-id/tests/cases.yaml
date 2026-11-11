@@ -199,3 +199,30 @@ negative_by_guid:
 
   - given: rows AND csvPath both given
     expect: REFUSED - one source of rows per run
+
+# VERSION 8 (row 5b-1504) - a key with a * names many. NEEDS-CHECKING Group NG.
+positive_pattern:
+  - given: >
+      key=Type Name|in=Air Terminals|types=yes|Family Name=<a family of three
+      types>;*|Manufacturer=|Model=Proof - in a scratch project
+    expect: >
+      written 3, Manufacturer empty and Model "Proof" on all three types in
+      Type Properties, every other air terminal type untouched, ONE entry in
+      Revit's undo list, a finding naming the three
+
+  - given: key=Type Name|in=Air Terminals|types=yes;600*|Comments=x
+    expect: every type whose name starts 600 (any case) written, no other
+
+negative_pattern:
+  - given: >
+      the same * row, one of the three types made from a family that lacks
+      Model (a shared parameter on two only)
+    expect: >
+      NOTHING on that row written - refused naming the type without Model and
+      saying none of the three is written; the other two types' Model unchanged
+
+  - given: key=Type Name|in=Air Terminals|types=yes;ZZZ*|Comments=x
+    expect: refused - no type has a Type Name matching 'ZZZ*'; nothing written
+
+  - given: a * row and an exact row naming one of the same types
+    expect: both refused - another row's key names it too

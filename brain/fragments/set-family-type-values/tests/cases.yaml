@@ -99,3 +99,45 @@ second_route:
   - >
       Family Types in the Family Editor, the same type chosen and each value
       read there, compared with `written`
+
+# VERSION 4 (row 5b-1504) - many types in one call. NEEDS-CHECKING Group NG.
+positive_many:
+  - given: >
+      a scratch family with seven types, Manufacturer and URL filled in each,
+      typeName "all", values "Manufacturer=; URL="
+    expect: >
+      typesWritten lists all seven, every type reads Manufacturer and URL empty
+      in the Family Types dialog, ONE entry in Revit's undo list, route "no type
+      made current" (the formula trial held) or "each type made current in
+      turn" (it did not) - whichever, the current type is the one that was
+      current before
+
+  - given: >
+      the same family, typeName "600 x 600, 625 x 625", values "Width=900",
+      Width labelling a dimension
+    expect: >
+      both types read Width 900 mm, the five others unchanged, route "each type
+      made current in turn", the dimension agreeing in both, the starting type
+      current again
+
+  - given: the same call run a second time
+    expect: >
+      nothing written, alreadyHeld lists both types, no type made current
+
+negative_many:
+  - given: typeName "600 x 600, No Such Type", values "Manufacturer=Acme"
+    expect: >
+      REFUSED naming "No Such Type" and listing the family's types; NOTHING
+      written - 600 x 600's Manufacturer still reads what it did, no type made
+
+  - given: typeName "all", values "Not A Parameter=x"
+    expect: refused naming the parameter - no type written
+
+  - given: typeName "all", values "Type Name=New"
+    expect: refused - a rename names one type
+
+  - given: typeName "all", deleteType true
+    expect: refused - types are deleted one at a time
+
+  - given: a family with a type called "All", typeName "all"
+    expect: refused naming the type, pointing at "every type"

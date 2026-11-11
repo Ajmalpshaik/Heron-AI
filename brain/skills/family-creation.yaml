@@ -160,7 +160,10 @@ purpose: >
      the Admin switch and his yes for those names.
   3. SET_FAMILY_TYPE_VALUES - make the first type and write the real sizes into
      it. BEFORE any dimension is labelled: a new length reads 0, and a label on
-     a 0 drives its planes onto each other.
+     a 0 drives its planes onto each other. The SAME values into several
+     types - typeName "all", or a comma list of types the family has - is ONE
+     call, never one per type (version 4, DRAFT until NEEDS-CHECKING Group NG,
+     row 5b-1504).
   4. SET_FAMILY_FORMULA where one size follows another - "Neck Width = Width -
      100 mm", "Radius = Diameter / 2". Names are written bare, spaces and all.
   5. CREATE_REFERENCE_PLANES - the skeleton, at the positions the sizes put
