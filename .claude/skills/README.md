@@ -48,7 +48,7 @@ The same folder also holds `heron-*.md` files, and they are **a different kind o
 rules for whoever works on Heron, but Heron's own agents for a modeller - the first is
 `heron-model-auditor`, which audits the open model with Heron's read tools while the modeller keeps
 working; `heron-fragment-author` writes a new Heron tool at DRAFT when nothing in the library does the
-job, and runs it only once, behind Revit's Keep or Discard box, when the modeller asks (D-119). They sit here only because this is where the host reads agents from.
+job, and runs it only once, behind Revit's Keep or Discard box, when the modeller asks (D-119). **Three more keep the fragment library itself in order**, and until 2026-11-11 this page did not name them: `heron-duplicate-checker` says whether two tools do the same job, by what they do rather than by name; `heron-fragment-edit-checker` reviews a change to a card or its C# before it is committed; and `heron-fragment-merger` makes one card of several that do one job and retires the rest as DEPRECATED. They sit here only because this is where the host reads agents from.
 [PROJECT-MAP](../../docs/PROJECT-MAP.md) says where they fit; `tests/test_agent_tools.py` holds what
 they may call. **Every agent file here has a copy for a second host in `.codex/agents/`**, and
 `tests/test_host_agents.py` fails until name, description and body agree - an edit to one is made to

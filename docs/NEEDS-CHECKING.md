@@ -1458,6 +1458,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ni.md`](needs-checking/group-ni.md)
 
+## Group NJ - parameters out to a CSV and back: `SET_PARAMETER_VALUES_BY_ID` from a file has no run in Revit on record, and what was read off the two cards' code (2026-11-11)
+
+**Its own file:** [`needs-checking/group-nj.md`](needs-checking/group-nj.md)
+
 ## Group NM - two add-in agent proofs read STALE and are run again, and the proof tool now says which file a proof was signed for (2026-11-11)
 
 **Its own file:** [`needs-checking/group-nm.md`](needs-checking/group-nm.md)

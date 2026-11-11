@@ -60,8 +60,23 @@ tools behind it.
 | 9 | `report-family-template` widened to version 4, on the owner's word (2026-10-29) - each adaptive point's **Orientation** on its `pointList` row, in the words `set-adaptive-point-orientation` prints, so what 4 writes is read back and *"what orientation are the adaptive points"* stops landing on that write. It was PROVEN; the change made its proof stale | [JQ](../../needs-checking/group-jq.md) | DRAFT |
 | 10 | `set-curtain-wall-grid` widened to version 3 and `set-curtain-wall-mullions` to version 2 - each also takes a **curtain system type**, by its Grid 1 and Grid 2, on the owner's word of 2026-10-29; a curtain wall type as before. Both proofs went stale with it, so route A's grid and mullion steps wait on the same group | [JP](../../needs-checking/group-jp.md) | DRAFT |
 
-None of it is proved. A compile is not a proof (D-30): each tool is refused for a kept change until its
-group has been run on a named model with its negative case (D-117).
+**The State column is 2026-10-29's, and so was the sentence that stood here - *"None of it is proved."***
+Read 2026-11-11: every fragment card in the table says `PROVEN`, signed by Ajmal PS on 2026-11-01 and
+2026-11-02 - each card's `proof:` block names its model and its Revit release. `set-curtain-wall-mullions`
+is `DEPRECATED`, superseded by `SET_CURTAIN_WALL_GRID`, which is at version 4. The `facade` method (row 7)
+is still `DRAFT`. Derive it rather than reading it here:
+
+```bash
+for f in create-curtain-system set-curtain-panel-type add-curtain-grid-lines set-adaptive-point-orientation \
+         set-divided-surface-layout report-divided-surfaces report-curtain-elements report-family-template \
+         set-curtain-wall-grid set-curtain-wall-mullions; do
+  echo "$f $(grep -h '^heron-status:' brain/fragments/$f/fragment.yaml)"; done
+grep -h '^heron-status:' brain/skills/facade.yaml
+```
+
+A card that says `PROVEN` was proved on one arrangement with its negative case (D-30). **That is not the
+same as its group's rows having been run:** Groups JM and JP record results row by row; JI, JJ, JK and JL
+record none, so which of their rows were run is not written anywhere.
 
 ## Waiting for the owner's word - each widens a PROVEN tool
 
@@ -88,3 +103,8 @@ Said by the `facade` method when asked, never worked round:
 
 When Groups JI to JM, and JP, are proved, or the owner drops one, this note is deleted. Its durable parts are
 already where they live: the cards, the `facade` method and the groups.
+
+**Read 2026-11-11 - close to it, and the call is the owner's.** The cards those groups name say `PROVEN`
+(above). What is left before the file can go: whether a `PROVEN` card with no results in its group counts
+as *the group proved* for JI to JL; and the lines that name this file by its path - the `facade` method,
+two fragment cards and Groups JP, JQ and JR (`grep -rl facade-capability brain docs`) - re-pointed first.
