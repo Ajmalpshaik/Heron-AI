@@ -57,6 +57,13 @@ server is started as a host starts it, and must offer exactly that list - no
 revit_ tool, which is how a chat knows there is no Revit here - answer a
 search inside the deadline, say there is no Revit on this machine rather than
 looking for one, and refuse a Revit tool by name at once rather than hang.
+
+AND WITH NO KNOWLEDGE FOLDER NAMED (D-153, row 5b-1508). The part above gives
+the child a HERON_KNOWLEDGE, which a cloud chat nobody set up has not got -
+and there every library tool answered only that Heron had nowhere to keep what
+it knows. So the server is started once more off Windows with no
+HERON_KNOWLEDGE and no HERON_DATA, and must still answer a search, list its
+methods and its jobs, from a store of its own under the machine-local folder.
 """
 
 import json
@@ -531,6 +538,58 @@ def library_only(guard, scratch):
         host.close()
 
 
+def library_no_folder_named(guard, scratch):
+    """The same server on a machine nobody set up for Heron: off Windows, no
+    HERON_KNOWLEDGE and no HERON_DATA. That is a cloud chat opened from a
+    phone, and until 2026-11-11 every library tool there answered only that
+    Heron had nowhere to keep what it knows (row 5b-1508). library_only()
+    above could not see it: it names a store for the child, which is the one
+    thing such a session has not got."""
+    print()
+    print("  off Windows, no knowledge folder named: the library still answers (D-153)")
+    env = guard.for_child(os.environ, os.path.join(scratch, "unnamed"))
+    local = os.path.join(scratch, "unnamed-local")
+    env["LOCALAPPDATA"] = local
+    env["XDG_DATA_HOME"] = local
+    for name in ("HERON_KNOWLEDGE", "HERON_DATA"):
+        env.pop(name, None)
+    host = Host(env)
+    try:
+        t0 = time.time()
+        host.send({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {
+            "protocolVersion": "2024-11-05", "capabilities": {},
+            "clientInfo": {"name": "heron-stdio-test", "version": "0"}}})
+        host.send({"jsonrpc": "2.0", "method": "notifications/initialized"})
+        init = host.read(DEADLINE)
+        check(init is not None,
+              "the server starts with no knowledge folder named (%.1fs)%s"
+              % (time.time() - t0, "" if init is not None else
+                 " - it said: %s" % "".join(host.err).strip()[-300:]))
+        if init is None:
+            return
+        for ident, name, args, want, what in (
+                (2, "heron_lookup", {"request": "select all the ducts"},
+                 "would need", "heron_lookup answers a sentence in BIM language"),
+                (3, "heron_method", {"job": ""},
+                 "pass one as `job`", "heron_method lists the jobs it has a method for"),
+                (4, "heron_capabilities", {},
+                 "job(s) Heron knows by name", "heron_capabilities answers")):
+            line, took = host.call(ident, name, args, DEADLINE)
+            said = text_of(line)
+            check(said is not None and want in said and "nowhere to keep" not in said,
+                  "%s, with no folder named (%.1fs)%s"
+                  % (what, took, "" if said is not None and want in said else
+                     " - it said: %s" % " ".join((said or "nothing").split())[:160]))
+    finally:
+        host.close()
+    stores = [os.path.join(folder, name) for folder, _dirs, names in os.walk(local)
+              for name in names if name == "global.db"]
+    under = os.path.join(local, "Heron", "index") + os.sep
+    check(len(stores) == 1 and stores[0].startswith(under),
+          "and its store is one of its own, under the machine-local Heron folder's "
+          "index (%s)" % (", ".join(os.path.relpath(s, local) for s in stores) or "none made"))
+
+
 def main():
     print("Heron over real stdio, as a host sees it")
     missing = sdk_missing()
@@ -550,6 +609,7 @@ def main():
         as_a_host(guard, scratch)
     else:
         library_only(guard, scratch)
+        library_no_folder_named(guard, scratch)
     if missing:
         print()
         print("  NOT RUN - the stand-in Revit's part needs the MCP SDK (%s)" % missing)

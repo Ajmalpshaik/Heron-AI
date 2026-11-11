@@ -49,6 +49,13 @@ WHAT IT PROVES
      which the app copies (row 5b-416, D-109). And both step out of a
      GUID-named temporary folder, as Revit's own is, so a Revit-style TMP on
      either side still gives one folder (row 5b-1100, D-136).
+  7. OFF WINDOWS, THE LIBRARY-ONLY SERVER KEEPS A STORE OF ITS OWN (D-153).
+     There is still no home there (D-135 point 1), so a cloud chat nobody
+     gave a HERON_KNOWLEDGE was answered only that Heron had nowhere to keep
+     what it knows (row 5b-1508). `heron_brain.library_store()` names a
+     folder for this checkout under the machine-local Heron folder's index -
+     DERIVED, private, never inside the checkout - and only when nothing was
+     named, only off Windows, and only from the server's own start-up.
 """
 
 import hashlib
@@ -127,6 +134,29 @@ class planted(object):
                 os.environ.pop(key, None)
             else:
                 os.environ[key] = value
+
+
+class planted_cloud(planted):
+    """The same, and XDG_DATA_HOME and HOME with it - what names the
+    machine-local folder off Windows (heron_bridge_client.local_app_data)."""
+
+    KEYS = planted.KEYS + ("XDG_DATA_HOME", "HOME")
+
+
+def guarded_by(block, call):
+    """The line `call` sits under in `block` - the nearest line above it that
+    is indented less and is not a comment - or None when `call` is not there."""
+    lines = block.splitlines()
+    for at, text in enumerate(lines):
+        if call not in text or text.lstrip().startswith("#"):
+            continue
+        depth = len(text) - len(text.lstrip())
+        for above in reversed(lines[:at]):
+            if above.strip() and not above.lstrip().startswith("#") \
+                    and len(above) - len(above.lstrip()) < depth:
+                return above.strip()
+        return None
+    return None
 
 
 class planted_temp(object):
@@ -529,13 +559,108 @@ def run(yard):
           "HeronPaths.Companion steps out of a GUID-named temporary folder too, "
           "through SharedTemp (%s)" % " ".join(body.split())[:120])
 
+    print("\n7. Off Windows, the library-only server keeps a store of its own (D-153)")
+    sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+    try:
+        import heron_brain as BRAIN
+    except Exception as error:                     # noqa: BLE001 - reported as a FAIL
+        BRAIN = error
+    check(hasattr(BRAIN, "library_store") and hasattr(BRAIN, "library_store_dir"),
+          "heron_brain can name a store for a server nobody named one for at all")
+
+    # THE NAME, asked without touching the disk. Forward slashes compared, so
+    # the rule is checked the same on either system.
+    def spelt(folder):
+        return folder.replace("\\", "/") if isinstance(folder, str) else repr(folder)
+
+    one = ask(BRAIN, "library_store_dir", {"XDG_DATA_HOME": "/srv/share", "HOME": "/home/someone"},
+              "posix", "/work/Heron-AI")
+    check(spelt(one).startswith("/srv/share/Heron/index/"),
+          "it is in the machine-local Heron folder, under index - $XDG_DATA_HOME's (%s)"
+          % spelt(one))
+    got = ask(BRAIN, "library_store_dir", {"HOME": "/home/someone"}, "posix", "/work/Heron-AI")
+    check(spelt(got).startswith("/home/someone/.local/share/Heron/index/"),
+          "or ~/.local/share's, where the hooks' diary already is (%s)" % spelt(got))
+    again = ask(BRAIN, "library_store_dir", {"XDG_DATA_HOME": "/srv/share", "HOME": "/home/someone"},
+                "posix", "/work/Heron-AI")
+    other = ask(BRAIN, "library_store_dir", {"XDG_DATA_HOME": "/srv/share", "HOME": "/home/someone"},
+                "posix", "/work/second/Heron-AI")
+    check(isinstance(one, str) and one == again, "one checkout names one folder, every time")
+    check(isinstance(one, str) and isinstance(other, str) and one != other
+          and os.path.dirname(one) == os.path.dirname(other),
+          "and a second checkout a folder of its own beside it, so neither indexes "
+          "the other's cards (%s)" % spelt(other))
+    klass = ask(PATHS, "classify", one if isinstance(one, str) else "")
+    check(isinstance(klass, dict) and klass.get("class") == PATHS.DERIVED,
+          "heron_paths classes the folder DERIVED - safe to delete, because the "
+          "cards rebuild it (%s)" % (klass.get("class") if isinstance(klass, dict) else klass,))
+
+    # THE ACT. A cloud session: nothing named, and no Windows profile.
+    cloud = os.path.join(yard, "cloud")
+    with planted_cloud(HOME=os.path.join(cloud, "home")):
+        made = ask(BRAIN, "library_store", "posix")
+        named = os.environ.get("HERON_KNOWLEDGE")
+        asked = ask(SCOPE, "knowledge_dir")
+        refusal = ask(SCOPE, "rebuild_refusal")
+        homes = (ask(PATHS, "data_home"), ask(SCOPE, "shared_dir"))
+    check(isinstance(made, str) and os.path.isdir(made) and spelt(made).startswith(
+              spelt(os.path.join(cloud, "home")) + "/.local/share/Heron/index/"),
+          "with no folder named it makes this checkout's (%s)" % spelt(made))
+    check(isinstance(made, str) and named == made and same(asked, made),
+          "and names it as this process's HERON_KNOWLEDGE, so knowledge_dir() "
+          "answers (%r)" % (asked,))
+    check(isinstance(made, str) and refusal is None,
+          "a private store: it may be filled from this checkout's cards, on any "
+          "branch (%r)" % (refusal,))
+    check(isinstance(made, str) and homes == (None, None),
+          "and still no home and no shared store - D-135's 'anywhere else none' "
+          "stands (%r)" % (homes,))
+    check(isinstance(made, str) and not same(made, ROOT) and not os.path.abspath(
+              made).startswith(os.path.abspath(ROOT) + os.sep),
+          "never inside the checkout")
+
+    # AND WHAT IT LEAVES ALONE.
+    theirs = os.path.join(cloud, "named")
+    with planted_cloud(HOME=os.path.join(cloud, "home-2"), HERON_KNOWLEDGE=theirs):
+        got, kept = ask(BRAIN, "library_store", "posix"), os.environ.get("HERON_KNOWLEDGE")
+    check(got is None and kept == theirs,
+          "a HERON_KNOWLEDGE somebody named is left as it is (%r)" % (got,))
+    with planted_cloud(HOME=os.path.join(cloud, "home-2"), HERON_DATA=os.path.join(cloud, "data")):
+        got, kept = ask(BRAIN, "library_store", "posix"), os.environ.get("HERON_KNOWLEDGE")
+    check(got is None and kept is None,
+          "and so is a HERON_DATA home - the store is its knowledge folder (%r)" % (got,))
+    with planted_cloud(HOME=os.path.join(cloud, "home-2")):
+        got, kept = ask(BRAIN, "library_store", "nt"), os.environ.get("HERON_KNOWLEDGE")
+    check(got is None and kept is None and not os.path.exists(os.path.join(cloud, "home-2")),
+          "on Windows it does nothing at all, whatever is or is not named (%r)" % (got,))
+    blocked = os.path.join(cloud, "a-file")
+    write(blocked, "not a folder")
+    with planted_cloud(HOME=blocked):
+        got, kept = ask(BRAIN, "library_store", "posix"), os.environ.get("HERON_KNOWLEDGE")
+    check(got is None and kept is None,
+          "a folder that cannot be made names nothing, so the refusal that says "
+          "what to set is still what is heard (%r)" % (got,))
+
+    # WHO CALLS IT: the server's own start-up, in D-132's library-only mode.
+    under = guarded_by(main_block, "brain.library_store()")
+    named_at = main_block.find("brain.library_store()")
+    check(under == "if LIBRARY_ONLY:",
+          "the MCP server asks for it only when it is serving the library alone "
+          "(under %r)" % (under,))
+    check(named_at != -1 and carry_at != -1 and named_at < carry_at,
+          "before anything opens the store")
+    check('LIBRARY_ONLY = __name__ == "__main__" and os.name != "nt"' in server,
+          "and that mode is still never Windows, and never a suite or a tool that "
+          "imports the server")
+
     print()
     if FAILURES:
         print("FAILED  %d check(s)" % len(FAILURES))
         for what in FAILURES:
             print("  - %s" % what)
         return 1
-    print("PASSED - the home, the two readers, the carry and the Companion's folder")
+    print("PASSED - the home, the two readers, the carry, the Companion's folder and")
+    print("the store a library-only server keeps where nobody named one")
     return 0
 
 

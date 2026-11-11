@@ -62,7 +62,9 @@ carries the `status` of what it found, and a reader who wants to know whether
 something works reads that rather than trusting this paragraph.
 """
 
+import hashlib
 import os
+import re
 import sqlite3
 import sys
 import threading
@@ -238,6 +240,70 @@ def carry_home():
         import heron_paths as PATHS
         return PATHS.home()
     except Exception:                                  # noqa: BLE001 - never fatal, D-135
+        return None
+
+
+def library_store_dir(environ=None, system=None, root=None):
+    """The folder a library-only server keeps its store in when nobody named
+    one (D-153): <machine-local>/Heron/index/<this checkout>. ONLY A NAME -
+    it looks at nothing on disk and makes nothing.
+
+    MACHINE-LOCAL AND DERIVED, as HeronPaths.Derived is: the folder
+    `heron_bridge_client.local_app_data()` names - off Windows
+    $XDG_DATA_HOME, else ~/.local/share, where the hooks' diary already is -
+    and under `index`, which docs/06 s2 lists as safe to delete. All such a
+    server writes there is the search index of the cards beside it, which a
+    rebuild makes again. NOT a home: D-135 point 1 keeps none off Windows.
+
+    ONE FOLDER PER CHECKOUT - its folder's name, and a digest of its whole
+    path. A store somebody else's server also writes follows whichever cards
+    asked last (rows 136 and 5b-233), and two chats in two worktrees are two
+    servers.
+    """
+    client = os.path.join(ROOT, "mcp", "client")
+    if client not in sys.path:
+        sys.path.insert(0, client)
+    import heron_bridge_client as BRIDGE
+    root = os.path.realpath(root or ROOT)
+    name = re.sub(r"[^A-Za-z0-9._-]", "-", os.path.basename(root))[:40] or "heron"
+    digest = hashlib.blake2b(os.path.normcase(root).encode("utf-8", "replace"),
+                             digest_size=6).hexdigest()
+    return os.path.join(BRIDGE.local_app_data(environ, system), "Heron", "index",
+                        "%s-%s" % (name, digest))
+
+
+def library_store(system=None):
+    """Off Windows, give this process a knowledge store of its own when none
+    is named (D-153). The folder, or None when nothing was done. Never raises.
+
+    CALLED ONLY BY THE SERVER'S OWN START-UP IN ITS LIBRARY-ONLY MODE (D-132),
+    before anything opens the store. A cloud chat is the case: no Windows
+    profile, so no home (D-135 point 1), and a session nobody gave a
+    HERON_KNOWLEDGE (docs/38 s1) was answered by every library tool only that
+    Heron had nowhere to keep what it knows (row 5b-1508).
+
+    It names `library_store_dir()` as THIS PROCESS's HERON_KNOWLEDGE, which
+    is what every reader already asks - so the store is a private one
+    (heron_scope.rebuild_refusal), filled from this checkout's cards on any
+    branch, exactly as one a person names. Nothing is done:
+      - on Windows, where the home answers;
+      - when HERON_KNOWLEDGE or HERON_DATA names a folder - theirs is used;
+      - when the folder cannot be made - the lookup then says what to set,
+        as it always did.
+    A suite or a tool that imports the brain is never given one: with nothing
+    named it is still refused, by name.
+    """
+    if (os.name if system is None else system) == "nt":
+        return None
+    try:
+        if _brain()[0].knowledge_dir() is not None:
+            return None
+        folder = library_store_dir(system=system)
+        if not os.path.isdir(folder):
+            os.makedirs(folder)
+        os.environ["HERON_KNOWLEDGE"] = folder
+        return folder
+    except Exception:                                  # noqa: BLE001 - never fatal: the lookup says why
         return None
 
 
