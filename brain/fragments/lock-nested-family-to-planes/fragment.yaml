@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,18 @@ semantic-identity: "align and lock a nested family's own reference planes to the
 kind: action
 domain: revit.families
 capability: LOCK_NESTED_FAMILY_TO_PLANES
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 3 (2026-11-11) - A DETAIL ITEM TOO, and back to DRAFT. Version 2 was
+# PROVEN on 2026-10-07 (the proof block below, kept as the record of what it
+# proved); its C# moved, so it is DRAFT again until NEEDS-CHECKING Group NB is
+# run (D-30, D-117). On 2026-11-11 (Revit 2020) four nested `Diffuser Flow
+# Arrow_DRAFT` detail items in a square diffuser family refused every lock with
+# "The nested family has no extent to read back": Revit gives a view-based
+# instance no box outside a view. FRAGMENT-ISSUES row 5b-1492. A model family
+# takes exactly the path it took before.
 
 purpose: >
   ALIGNS AND LOCKS a nested family to the planes of the family it sits in - the
@@ -40,9 +49,16 @@ purpose: >
   of a row stepped member by member was refused by Revit. Proved again
   2026-10-07 on scratch SpringProof, signed by Ajmal PS.
 
+  **A DETAIL ITEM TOO** (version 3, 2026-11-11): a view-based nested family -
+  a detail item placed in the family's plan, like a diffuser's flow arrows - is
+  locked in the view it is drawn in, as Align is used on it by hand, and only to
+  a plane seen edge-on there: a level, or any plane lying flat in that view, is
+  refused before anything is locked.
+
   **ALL OR NOTHING, READ BACK**: a lock never moves what it locks, so the
   nested family's extent is read before and after, and any move fails the
-  call.
+  call. A detail item has no extent outside its view, so it is read back by its
+  insertion point and, where Revit gives one, its box in its own view.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -127,13 +143,16 @@ compatibility-note: >
   says a plane that is Not a Reference makes no reference - `GetTransform`,
   `FamilyItemFactory.NewAlignment` and `Dimension.IsLocked` read the same 2020
   through 2027 (the RevitAPI reference assemblies and their XML remarks, read
-  2026-10-01).
+  2026-10-01). Version 3's `Element.OwnerViewId`, `Element.get_BoundingBox(View)`,
+  `ElementId.InvalidElementId`, `ElementId.Equals` and `View.ViewDirection` are
+  on every release 2020 to 2027 (`tools/api-surface --members`, 2026-11-11).
 
 # ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "lock the motor's centre to the centre planes" -> here
 #   "lock the nested family to the reference planes" -> here
 #   "lock the last copy of the array to the top plane" -> here, version 2
+#   "lock the flow arrows to the arrow planes"    -> here, version 3, a detail item
 #   "lock this extrusion to the planes"           -> LOCK_FORM_TO_PLANES, a form
 
 utterances:

@@ -21,6 +21,21 @@ positive:
       elevation; extent unchanged; a flex of the planes re-spaced the row.
       Ran 2026-10-07, scratch SpringMainProbe, kept there
 
+  - given: >
+      version 3, A DETAIL ITEM. A 600 mm detail item (Detail Item template,
+      tail at its origin pointing +X, its Center (Left/Right) and Center
+      (Front/Back) planes Is Reference) placed in the host's "Ref. Level" plan,
+      turned 90 degrees and moved onto host planes "Arrow Front" and
+      "Center (Left/Right)"; locks "Center (Front/Back)=Center (Left/Right)"
+    expect: >
+      one side locked, "(in Ref. Level)"; its insertion point unmoved; Group
+      NB, NB1
+
+  - given: >
+      version 3, the same detail item kept locked, then the planes it is
+      locked to moved by their labelled dimension (FLEX_FAMILY)
+    expect: the detail item follows the plane; Group NB, NB3
+
 negative:
   - given: locks "Left=Center (Left/Right)" where the nested family has no plane that is Left
     expect: refused, naming the sides it does show, and nothing locked
@@ -33,6 +48,20 @@ negative:
 
   - given: instance = the array itself (its arrayId), not a copy
     expect: refused as not a nested family, naming ARRAY_FAMILY_FORMS' copies, and nothing locked
+
+  - given: >
+      version 3, the detail item above, locks "Center (Front/Back)=Ref. Level"
+      - a level, which lies flat in the plan the detail item is drawn in
+    expect: >
+      refused before anything is locked - the side faces left-right, the level
+      up-down - and NOT "no extent to read back"; Group NB, NB1's negative
+
+  - given: >
+      version 3, the detail item above, locks "Center (Front/Back)=Arrow Back"
+      - a plane it does not lie on
+    expect: >
+      Revit's own refusal named, "move the nested family onto the plane
+      first", the call rolled back and nothing locked; Group NB, NB2
 
 second_route:
   - >
