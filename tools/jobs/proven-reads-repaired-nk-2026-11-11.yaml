@@ -1,0 +1,285 @@
+# Fourteen READ cards that were PROVEN, gave a modeller a wrong answer, and were
+# repaired in code on 2026-11-11 on the owner's word that a proven card found
+# wrong may be changed. Each is DRAFT again at a new version, its old proof kept
+# on the card as the record - one job each, the proof each still owes:
+#
+#   measure-ceiling-height         MEASURE_CEILING_HEIGHT         v3  row 5b-1128  NK1
+#   select-by-material             SELECT_BY_MATERIAL             v4  row 5b-393   NK2
+#   read-space-loads               READ_SPACE_LOADS               v3  row 5b-323   NK3
+#   report-family-parameters       REPORT_FAMILY_PARAMETERS       v2  row 5b-351   NK4
+#   report-family-forms            REPORT_FAMILY_FORMS            v5  row 5b-295   NK5
+#   report-bounding-box            REPORT_BOUNDING_BOX            v2  row 5b-352   NK6
+#   read-graphic-overrides         READ_GRAPHIC_OVERRIDES         v2  row 5b-154   NK7
+#   read-element-parameters        READ_ELEMENT_PARAMETERS        v7  row 5b-203   NK8
+#   find-duplicate-values          FIND_DUPLICATE_VALUES          v2  row 5b-203   NK8
+#   compare-elements               COMPARE_ELEMENTS               v2  row 5b-203   NK8
+#   compare-models                 COMPARE_MODELS                 v2  row 5b-203   NK8
+#   list-materials                 LIST_MATERIALS                 v7  row 5b-203   NK8
+#   report-material-takeoff        REPORT_MATERIAL_TAKEOFF        v4  row 5b-203   NK8
+#   check-sheet-sets-by-parameter  CHECK_SHEET_SETS_BY_PARAMETER  v2  row 5b-203   NK8
+#
+#     python tools/batch-prove.py tools/jobs/proven-reads-repaired-nk-2026-11-11.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/proven-reads-repaired-nk-2026-11-11.yaml --session <pid>
+#
+# NOTHING HERE HAS RUN. Written 2026-11-11 in a cloud session with no Revit:
+# every card compiles on every release it declares, and a compile is not a
+# proof. The rows are docs/needs-checking/group-nk.md, which also lists what
+# to look at BY EYE in each answer - the runner cannot read a sentence.
+#
+# NEVER ON A WORKING PROJECT. REVIT 2024, because LIST_MATERIALS with
+# withAllTabs crashed inside Revit 2020 (row 5b-1404, not repaired). The old
+# proofs' models cannot fill these cases - "Project1" was a scratch never
+# saved, and each case below needs content arranged for it - except one: the
+# scratch copy of Snowdon Towers Sample Architectural, which fills
+# CHECK_SHEET_SETS_BY_PARAMETER exactly as round 20 did on 2026-11-02.
+#
+# THE SCRATCH FILES, all saved under %TEMP%\heron-work\nk and open in ONE
+# Revit 2024 - except the "earlier" save, which must be CLOSED:
+#
+#   "Heron Reads Test" - a NEW project from the default metric template, in
+#   front. In it, on Level 1 (Group NK's table NK0 says each step in full):
+#     - two materials made by duplicating any material: "Heron A", "Heron B"
+#     - wall W1, of a type duplicated from "Generic - 200mm" and named "Heron
+#       Made", its one structure layer set to material "Heron A"
+#     - walls W2, W3 and W4 of "Generic - 200mm", closing a rectangle with W1,
+#       and W5 of the same type across the middle, so it is two rooms and FIVE
+#       walls; one face of W2 PAINTED "Heron A". Mark typed on all five: W1
+#       "A", W2 "A", W3 "B", W4 "C", W5 "E"
+#     - a ROOM in each half, each placed with Tag on Placement on and its
+#       limits LEFT AT THE DEFAULT - read the room's Limit Offset, it must be
+#       below 2600
+#     - a CEILING over each room at 2600 mm
+#     - two SPACES, one in each room: on the first, typed Design Heating Load
+#       3000 W, Design Cooling Load 5000 W and Specified Supply Airflow 250
+#       L/s; on the second nothing typed. Area and Volume Computations ON.
+#       Revit's own Heating and Cooling Loads analysis NEVER run in this file
+#     - in the Level 1 plan, W3 alone given a per-element override: Override
+#       Graphics in View, By Element, Surface Patterns, Foreground, a pattern
+#       chosen and NO colour. Nothing else in the view overridden
+#     - one instance of the family "Heron Two Bodies" (below), its "Show B"
+#       unticked
+#     - LAST, two project parameters (Manage, Project Parameters), both Text,
+#       Instance: "Comments" bound to Walls, and "Keywords" bound to Materials.
+#       Every wall then carries Comments twice and every material Keywords
+#       twice. On material "Heron A", Identity tab, Keywords typed "probe"
+#     - Save. Save As "Heron Reads Test - earlier.rvt" in the same folder,
+#       then open "Heron Reads Test" again, change W3's Mark to "D" and type
+#       the built-in Comments of W3, Save. CLOSE the "earlier" file - Revit
+#       refuses to open a file twice, and COMPARE_MODELS opens it itself
+#
+#   "Heron Flag Test.rfa" - a new family from the metric Generic Model
+#   template: Yes/No parameters "Flag" (ticked), "Derived" with the formula
+#   not(Flag), "Plain" (unticked, no formula); an Integer "Count" set to 1. A
+#   solid extrusion 1000 x 1000 from 0 to 1000 mm and a void extrusion, a
+#   circle of radius 100, from -10 to 1010 through it, cut with Cut Geometry
+#   (or COMBINE_FAMILY_FORMS, which prints the volume before and after)
+#
+#   "Heron Two Bodies.rfa" - a new Generic Model family: two solid boxes, A at
+#   the origin and B 2000 mm away along X, each 200 mm cube, each with Visible
+#   linked to its own Yes/No type parameter "Show A", "Show B". Loaded into
+#   "Heron Reads Test" and placed once
+#
+#   A scratch copy of Revit 2024's own Samples\Snowdon Towers Sample
+#   Architectural.rvt, as round 20 used it (tools/jobs/p1102-round20-revit2024-
+#   arch-2026-11-02.yaml)
+#
+# Where Revit's title bar shows a title differently from the names here, type
+# what it shows. THE DRY RUN DOES NOT CATCH A WRONG TITLE, A WRONG VIEW NAME OR
+# A WRONG PATH. The path of the "earlier" save below is the owner's PC's.
+#
+# The selection is re-made before each phase (`setup:`). The two jobs marked
+# `write: true` run a setup step that changes the model inside a transaction
+# group and ROLL IT BACK; every other job only reads. Look at the models
+# afterwards anyway - rollback has failed on this PC before (BD1).
+
+model: "Heron Reads Test (new scratch project), Heron Flag Test.rfa (new scratch family) and a scratch copy of Snowdon Towers Sample Architectural, Revit 2024"
+
+# No `set:` here on purpose: a default value reaches EVERY job, the ones with
+# no selection included, and a card handed a value it never asked for reads
+# oddly in its proof record. Each job types its own.
+defaults:
+  in: "Heron Reads Test"
+  setup:
+    - filter-elements-by-category
+    - set-selection
+
+jobs:
+  # ---- row 5b-1128 -----------------------------------------------------------
+  - fragment: measure-ceiling-height
+    write: true
+    setup: [filter-elements-by-category, set-selection, set-room-limits]
+    expect: mainHeight
+    set: {category: "Rooms", inViewOnly: "FloorPlan: Level 1", upperLevel: "Level 2", limitOffset: 0, includeLinks: false}
+    negative-set: {category: "Walls", inViewOnly: "FloorPlan: Level 1", upperLevel: "Level 2", limitOffset: 0, includeLinks: false}
+    note: >
+      Round 22b's job of 2026-10-18, unchanged in shape: SET_ROOM_LIMITS raises
+      the two rooms' upper limit to Level 2 inside the rolled-back run, so the
+      2600 mm ceilings are inside them and are MEASURED - mainHeight 2 entries,
+      limitBelowCeiling 0, findings 0. That is the half a batch can judge. THE
+      HALF THAT CHANGED is NK1, by hand, on the same rooms with their limits
+      left alone: both in limitBelowCeiling, one finding each. A batch cannot
+      take that as its positive - nothing is measured in it, by design.
+
+  # ---- row 5b-393 ------------------------------------------------------------
+  - fragment: select-by-material
+    setup: []
+    expect: elements
+    set: {materialName: "Heron A", includePaint: true, categories: "Walls"}
+    negative-set: {materialName: "Heron B", includePaint: true, categories: "Walls"}
+    note: >
+      THE CASE VERSION 3'S PROOF COULD NOT ARRANGE. W1 is MADE of Heron A and
+      not painted; W2 is painted with it and not made of it. elements must be
+      BOTH - 2. If it is 1, read which: W2 alone is version 3's defect, paint
+      asked INSTEAD of the make-up. The negative is a material in the model
+      that no wall is made of or painted with: 0 of 5 scanned. NK2 then asks
+      Heron A with includePaint false by hand - W1 alone.
+
+  # ---- row 5b-323 ------------------------------------------------------------
+  - fragment: read-space-loads
+    expect: coolingW
+    set: {category: "Spaces", inViewOnly: "FloorPlan: Level 1"}
+    negative-set: {category: "Walls", inViewOnly: "FloorPlan: Level 1"}
+    note: >
+      The first space holds a typed Design Cooling Load, Design Heating Load
+      and Specified Supply Airflow, in a model where Revit's own analysis has
+      never run. Version 2 called such a space NO LOAD READABLE (Project2,
+      Revit 2024, 2026-10-05). coolingW, heatingW and airflowLs should each
+      hold ONE entry, marked "entered" in findings; the second space, nothing
+      typed, is in noLoad. READ THE FINDING: it names each figure Revit
+      refused, or names none - if Revit refuses nothing on this model the
+      repair was not exercised, and NK3 says how to make it refuse. The
+      negative is the walls: every one in notSpaces. If no Space shows in the
+      plan, turn Spaces on in its Visibility/Graphics, or the setup finds 0.
+
+  # ---- row 5b-351 ------------------------------------------------------------
+  - fragment: report-family-parameters
+    in: "Heron Flag Test"
+    setup: []
+    expect: parameterCount
+    set: {nameContains: ""}
+    negative-set: {nameContains: "ZZZNOTAPARAMETER"}
+    note: >
+      READ parameterList: "Flag ... = Yes", "Derived ... = No (formula:
+      not(Flag))", "Plain ... = No", and "Count ... = 1" - never Yes. Any of
+      the three reading <blank> is row 5b-351 still there: write on NK4 which,
+      and whether it is the formula one.
+
+  # ---- row 5b-295 ------------------------------------------------------------
+  - fragment: report-family-forms
+    in: "Heron Flag Test"
+    setup: []
+    expect: formList
+    set: {which: "all"}
+    negative-in: "Heron Reads Test"
+    negative-set: {which: "all"}
+    note: >
+      Round 4's shape of 2026-11-02 - a family for the positive, a project for
+      the negative (notAFamily, nothing read). READ formList and
+      combinationList: the cut solid must NOT say "0 L"; it says no volume was
+      read on the form itself, and combinationList gives the cut's volume,
+      968.584 L for the arrangement above.
+
+  # ---- row 5b-352 ------------------------------------------------------------
+  - fragment: report-bounding-box
+    expect: measured
+    set: {category: "Generic Models", inViewOnly: "FloorPlan: Level 1", maxRows: 5}
+    negative-set: {category: "Room Tags", inViewOnly: "FloorPlan: Level 1", maxRows: 5}
+    note: >
+      The one instance of "Heron Two Bodies" with Show B unticked. READ
+      findings: "1 of the 1 measured are family instances ..." must be there,
+      and WRITE DOWN ON NK6 the box it gives - about 200 mm long if Revit
+      measures only body A, about 2200 if it takes in hidden body B. The
+      negative is the two room tags: no bounding box, measured 0.
+
+  # ---- row 5b-154 ------------------------------------------------------------
+  - fragment: read-graphic-overrides
+    expect: withOverride
+    set: {category: "Walls", inViewOnly: "FloorPlan: Level 1", view: "FloorPlan: Level 1"}
+    negative-set: {category: "Generic Models", inViewOnly: "FloorPlan: Level 1", view: "FloorPlan: Level 1"}
+    note: >
+      W3 is the only element overridden in the view, and ONLY by a surface
+      pattern. withOverride must be 1 and overrideList must read "surface
+      pattern <its name>". Version 1 answered withOverride 0 here - POSITIVE
+      EMPTY is the defect still there. The negative is the generic model,
+      which carries no override: withOverride 0, overrideList empty.
+
+  # ---- row 5b-203, seven readers ---------------------------------------------
+  - fragment: read-element-parameters
+    expect: values
+    set: {category: "Walls", inViewOnly: "FloorPlan: Level 1", parameterName: "Mark"}
+    negative-set: {category: "Walls", inViewOnly: "FloorPlan: Level 1", parameterName: "Comments"}
+    note: >
+      THE NEGATIVE IS THE NEW REFUSAL. Every wall carries Comments twice, so
+      values must be EMPTY, all five walls in `ambiguous`, and findings must
+      say NOT READ. NEG NOT EMPTY here means a value was read off whichever
+      parameter Revit returned first - or the project parameter is not bound
+      to Walls: check that before blaming the card.
+
+  - fragment: find-duplicate-values
+    expect: duplicated
+    set: {category: "Walls", inViewOnly: "FloorPlan: Level 1", parameterName: "Mark"}
+    negative-set: {category: "Walls", inViewOnly: "FloorPlan: Level 1", parameterName: "Comments"}
+    note: >
+      W1 and W2 are both marked "A": duplicated 2. The negative is the
+      refusal: Comments twice on every wall, so duplicated 0, blank 0,
+      `ambiguous` 5 and a finding saying NOT READ - never "every Comments is
+      unique".
+
+  - fragment: compare-elements
+    expect: differing
+    set: {category: "Walls", inViewOnly: "FloorPlan: Level 1"}
+    negative-set: {category: "Room Tags", inViewOnly: "FloorPlan: Level 1"}
+    note: >
+      Five walls: differing holds Mark and more, and `ambiguous` holds ONE
+      line, for Comments, naming the walls - READ IT, it is the refusal. The
+      negative is the two room tags, placed alike, so nothing differs. If
+      differing is not empty there, read which parameter and make the two
+      tags alike - that is the arrangement, not the card.
+
+  - fragment: compare-models
+    setup: []
+    expect: changed
+    set: {otherModelPath: "C:/Users/ajmal/AppData/Local/Temp/heron-work/nk/Heron Reads Test - earlier.rvt", categories: "Walls", parameterNames: "Mark", maxRows: 10}
+    negative-set: {otherModelPath: "C:/Users/ajmal/AppData/Local/Temp/heron-work/nk/Heron Reads Test - earlier.rvt", categories: "Walls", parameterNames: "Comments", maxRows: 10}
+    note: >
+      W3's Mark went from "B" to "D" after the earlier save: changed 1. THE
+      NEGATIVE IS THE REFUSAL: W3's built-in Comments was edited too, but
+      every wall carries Comments twice, so changed must be 0, `ambiguous`
+      above 0, and a finding must name 'Comments' as NOT READ. changed 1
+      there means the edit was read off whichever parameter came first. No
+      wall was added or removed between the saves, so added and removed are
+      0 in both legs - if they are not, the saves differ by more than the
+      arrangement says.
+
+  - fragment: list-materials
+    setup: []
+    expect: materialCount
+    set: {withAllTabs: true, namePattern: "Heron A"}
+    negative-set: {withAllTabs: true, namePattern: "ZZZ*"}
+    note: >
+      REVIT 2024 ONLY - withAllTabs crashed inside Revit 2020 (row 5b-1404).
+      READ materialList: Heron A's identity must read "keywords NOT READ - 2
+      parameters share that name", never 'probe'. NK8 then removes the
+      project parameter by hand and asks again: keywords 'probe'.
+
+  - fragment: report-material-takeoff
+    set: {category: "Walls", inViewOnly: "FloorPlan: Level 1"}
+    negative-set: {category: "Sheets"}
+    note: >
+      Round 2's job of 2026-11-02: the walls' materials by area and volume,
+      and sheets for the negative. No factor is named, so nothing is looked
+      up by name in this job - the take-off itself is what it re-proves. The
+      doubled factor name is NK8, by hand.
+
+  - fragment: check-sheet-sets-by-parameter
+    in: "Snowdon Towers Sample Architectural"
+    write: true
+    setup: [manage-sheet-sets]
+    expect: inStep
+    set: {mode: "by-parameter", parameterName: "Drawn By", setPrefix: "none", values: "all"}
+    negative-set: {mode: "by-parameter", parameterName: "ZZZ NO SUCH PARAMETER", setPrefix: "none", values: "all"}
+    note: >
+      Round 20's job of 2026-11-02, unchanged: MANAGE_SHEET_SETS makes the
+      sets from "Drawn By" inside the rolled-back run and the check reads
+      them - inStep 2, `ambiguous` empty, because each sheet carries Drawn By
+      once. The doubled name is NK8, by hand.
