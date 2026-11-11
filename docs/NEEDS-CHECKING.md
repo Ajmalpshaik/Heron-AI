@@ -1442,6 +1442,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-nb.md`](needs-checking/group-nb.md)
 
+## Group NC - a 2D family's lines and filled region edges locked to named planes, along and by their ends: `LOCK_FAMILY_LINES_TO_PLANES` (2026-11-11)
+
+**Its own file:** [`needs-checking/group-nc.md`](needs-checking/group-nc.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
