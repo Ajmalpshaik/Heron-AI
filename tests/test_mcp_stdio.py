@@ -71,6 +71,21 @@ HERON_KNOWLEDGE and no HERON_DATA, and must still answer a search, list its
 methods and its jobs, from a store of its own under the machine-local folder.
 That part builds a second store from nothing, so it is held to COLD_DEADLINE:
 its claim is that an answer comes, and how soon is the part above's.
+
+AND ONE OF EACH (FRAGMENT-ISSUES row 5b-1554). The server's source is more
+than one file. What the files share - the server object, the binding, the
+pin, the approval, the watch on its own code - is defined in one of them and
+imported by the rest, and a definition typed again in a second file is a
+second object: two pins is a chat that checks one model and writes to another,
+and nothing would say so. And the file a host starts runs as `__main__`, so
+anything that imported it by name would run it a second time. Both are held
+here as facts about a process: the entry file is run the way Python runs a
+script, with the one call that never returns stood in by a report, and the
+report must find one of each alive and the entry file loaded under one name.
+tests/test_tool_registry.py holds, as text, that no listed file imports the
+entry file. Off Windows only, where start-up reaches nothing but the child's
+own scratch store; on Windows the same start writes the Companion's note where
+Revit looks.
 """
 
 import json
@@ -619,6 +634,81 @@ def library_only(guard, scratch):
         host.close()
 
 
+# THE ENTRY FILE, RUN AS PYTHON RUNS A SCRIPT, with `server.run()` - the one
+# call that never returns - stood in by a report of what the process holds.
+# Nothing else is replaced. The classes are found from the objects the entry
+# file itself names, so no module of the server is named here.
+ONE_OF_EACH = r"""
+import gc, json, os, runpy, sys
+entry = sys.argv[1]
+try:
+    from mcp.server.mcpserver import MCPServer as sdk_server      # SDK 2.x
+except ImportError:
+    from mcp.server.fastmcp import FastMCP as sdk_server          # SDK 1.x
+
+def report(server, *_a, **_k):
+    main = vars(sys.modules["__main__"])
+    again = os.path.splitext(os.path.basename(entry))[0]
+    gc.collect()
+    alive = {}
+    for name in ("server", "binding", "pinned", "approval"):
+        kind = type(main[name]) if name in main else None
+        alive[name] = sum(1 for o in gc.get_objects() if type(o) is kind) if kind else None
+    watch = [o for o in gc.get_objects() if type(o).__name__ == "RunningCode"]
+    alive["watch"] = len(watch)
+    sys.stdout.write(json.dumps({
+        "as_main": os.path.samefile(sys.modules["__main__"].__file__, entry),
+        "again": again in sys.modules, "alive": alive,
+        "same_server": main.get("server") is server}) + chr(10))
+    sys.stdout.flush()
+    os._exit(0)
+
+sdk_server.run = report
+sys.argv = [entry]
+sys.path.insert(0, os.path.dirname(entry))
+runpy.run_path(entry, run_name="__main__")
+"""
+
+
+def one_of_each(guard, scratch):
+    """One server object, one binding, one pin, one approval and one watch in
+    a process started on the entry file - and that file loaded once. Off
+    Windows only (the module header says why)."""
+    print()
+    print("  started on the entry file, the process holds one of each (row 5b-1554)")
+    env = guard.for_child(os.environ, os.path.join(scratch, "one-of-each"))
+    env["LOCALAPPDATA"] = os.path.join(scratch, "local")
+    env["XDG_DATA_HOME"] = os.path.join(scratch, "local")
+    env["HERON_KNOWLEDGE"] = os.path.join(scratch, "knowledge")
+    env["HERON_AUDIT"] = os.path.join(scratch, "audit")
+    try:
+        ran = subprocess.run([sys.executable, "-c", ONE_OF_EACH, SERVER], cwd=ROOT, env=env,
+                             capture_output=True, text=True, encoding="utf-8",
+                             timeout=COLD_DEADLINE)
+        said, why = ran.stdout, ran.stderr.strip()[-300:]
+    except subprocess.TimeoutExpired:
+        said, why = "", "it did not reach server.run() in %d s" % COLD_DEADLINE
+    found = {}
+    for line in said.splitlines():
+        try:
+            found = json.loads(line)
+        except ValueError:
+            continue
+    check(bool(found), "the entry file ran as far as server.run()%s"
+          % ("" if found else " - it said: %s" % why))
+    if not found:
+        return
+    check(found.get("as_main") is True and found.get("again") is False,
+          "it ran as `__main__` and was not loaded a second time under its own name")
+    alive = found.get("alive") or {}
+    for name, what in (("server", "server object"), ("binding", "binding"), ("pinned", "pin"),
+                       ("approval", "approval"), ("watch", "watch on its own code")):
+        check(alive.get(name) == 1,
+              "exactly one %s is alive in the process (%s)" % (what, alive.get(name)))
+    check(found.get("same_server") is True,
+          "and the server that runs is the one the tools registered on")
+
+
 def library_no_folder_named(guard, scratch):
     """The same server on a machine nobody set up for Heron: off Windows, no
     HERON_KNOWLEDGE and no HERON_DATA. That is a cloud chat opened from a
@@ -698,6 +788,7 @@ def main():
         as_a_host(guard, scratch)
     else:
         library_only(guard, scratch)
+        one_of_each(guard, scratch)
         library_no_folder_named(guard, scratch)
     if missing:
         print()

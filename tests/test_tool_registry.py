@@ -206,6 +206,38 @@ def source_list():
           "the last one is the entry file - .mcp.json starts it and it holds the "
           "block that runs the server: %s" % names[-1])
 
+    # AND NO OTHER LISTED FILE IMPORTS IT, OR SPELLS ITS BLOCK (row 5b-1554).
+    # The entry file runs as `__main__`, so a file it loads that imported it
+    # by name would run it a SECOND time, under that name: every tool in it
+    # defined and registered again, and a second copy of all the state it
+    # holds. Done at a file's top level it is louder - the second run asks the
+    # half-loaded file for its tools and the server does not start (seen in a
+    # scratch copy, 2026-11-11). What the files share is defined in one that
+    # imports none of them. And a reader that finds the main block by its
+    # words finds the FIRST such words in the one text - so they may be
+    # nowhere above the entry file, a comment included.
+    import ast
+    entry = names[-1][:-3]
+    importing, spelling = [], []
+    for name, path in zip(names[:-1], listed[:-1]):
+        text = text_of(path)
+        for node in ast.walk(ast.parse(text)):
+            asked = ([alias.name for alias in node.names] if isinstance(node, ast.Import)
+                     else [node.module or ""] if isinstance(node, ast.ImportFrom) else [])
+            if any(one.split(".")[0] == entry for one in asked) and name not in importing:
+                importing.append(name)
+        if (re.search(r"""(?:import_module|__import__)\(\s*["']%s["']""" % re.escape(entry), text)
+                and name not in importing):
+            importing.append(name)
+        if 'if __name__ == "__main__":' in text:
+            spelling.append(name)
+    check(not importing,
+          "no other listed file imports the entry file, which would run it a second "
+          "time%s" % ("" if not importing else "  <- %s" % ", ".join(importing)))
+    check(not spelling,
+          "and none spells the block that runs the server, which a reader finds by "
+          "its first words%s" % ("" if not spelling else "  <- %s" % ", ".join(spelling)))
+
     whole = tools.server_text()
     at, in_order = 0, True
     for path in listed:

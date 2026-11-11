@@ -124,6 +124,31 @@ def main():
           % (len(rows),
              "" if not late else ": %s" % ", ".join(late)))
 
+    # A TOOL IN ANOTHER FILE REGISTERS WHEN THAT FILE IS IMPORTED, so for it
+    # the same rule reads differently (FRAGMENT-ISSUES row 5b-1554): the entry
+    # file must import the tool's file, at its own top level, ABOVE the block.
+    # An import below the block, or none at all, and every tool in that file
+    # is absent from tools/list exactly as revit_phases was - registered by
+    # nothing, declared by the registry, and nothing fails.
+    imported = {}
+    for path, name in tool.sources():
+        if name != entry:
+            continue
+        for node in ast.parse(io.open(path, encoding="utf-8").read()).body:
+            asked = ([alias.name for alias in node.names] if isinstance(node, ast.Import)
+                     else [node.module or ""] if isinstance(node, ast.ImportFrom) else [])
+            for module in asked:
+                imported.setdefault(module.split(".")[0], node.lineno)
+    elsewhere = sorted(set(one["file"] for one in rows if one["file"] != entry))
+    block = blocks[0] if blocks else 0
+    never = [name for name in elsewhere
+             if not 0 < imported.get(os.path.basename(name)[:-3], 0) < block]
+    check(not never,
+          "and every other file that holds a tool (%s) is imported by the entry "
+          "file above it, or its tools never register%s"
+          % (", ".join(elsewhere) or "there is none",
+             "" if not never else ": %s" % ", ".join(never)))
+
     print("\n2. explained is a word boundary, not a substring")
     check(tool.explains("the depth to walk to", "depth"),
           "a docstring naming the parameter explains it")

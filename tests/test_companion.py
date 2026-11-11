@@ -258,7 +258,13 @@ def test_no_way_to_an_ai():
 
     server = tools.server_text()
     body = server[server.index("def heron_companion("):]
-    body = body[:body.index("\n@server.tool()")] if "\n@server.tool()" in body else body
+    # TO THE END OF THE FUNCTION, not to the next tool. No tool is defined
+    # after this one in its file since row 5b-1554 - the ones that followed it
+    # are in another file, earlier in the one text - so "the next
+    # @server.tool()" stopped being a boundary and the cut ran on to the end
+    # of the text. The first line back at the margin ends a top-level function.
+    end = re.search(r"\n(?=\S)", body)
+    body = body[:end.start()] if end else body
     returns = [l for l in body.splitlines() if l.strip().startswith("return")]
     check(returns and not any("address" in l for l in returns),
           "heron_companion never puts the one-time address in its reply to the chat")

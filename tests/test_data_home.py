@@ -713,9 +713,34 @@ def run(yard):
           "(under %r)" % (under,))
     check(named_at != -1 and carry_at != -1 and named_at < carry_at,
           "before anything opens the store")
-    check('LIBRARY_ONLY = __name__ == "__main__" and os.name != "nt"' in server,
+    # THE MODE IS DECIDED WHERE THE SERVER OBJECT IS MADE, and since row 5b-1554
+    # that is heron_server_core, not the entry file - so it cannot ask its own
+    # `__name__`, which there is never "__main__". It asks whether the program
+    # Python was started on is the entry file. Held two ways: the line as it
+    # is written, and the question itself, lifted out of the source and put
+    # to three programs - the entry file, this suite, and one with no file.
+    check('LIBRARY_ONLY = os.name != "nt" and _started_as_the_server()' in server,
           "and that mode is still never Windows, and never a suite or a tool that "
           "imports the server")
+    lifted = re.search(r"^def _started_as_the_server\(\):\n(?:(?:[ \t]+.*)?\n)+", server, re.M)
+    check(lifted is not None, "the server has that question to ask at all")
+    answers = []
+    if lifted is not None:
+        import types
+        for started in (TOOLS.server_files()[-1], os.path.abspath(__file__), None):
+            program = types.SimpleNamespace()
+            if started:
+                program.__file__ = started
+            names = {"os": os, "tools": TOOLS,
+                     "sys": types.SimpleNamespace(modules={"__main__": program})}
+            try:
+                exec(compile(lifted.group(0), "the server's source", "exec"), names)
+                answers.append(names["_started_as_the_server"]())
+            except Exception as why:                            # noqa: BLE001 - a FAIL, not a crash
+                answers.append("%s: %s" % (type(why).__name__, why))
+    check(answers == [True, False, False],
+          "it is yes for a process started on the entry file, and no for a suite "
+          "that imports the server and for a program with no file (%r)" % (answers,))
 
     print()
     if FAILURES:

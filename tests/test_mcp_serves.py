@@ -647,6 +647,18 @@ def exercise_waiting(module):
               "a Context with no request behind it carries no progressToken, so no callback")
 
 
+def shared(module):
+    """
+    The module that holds what every file of the server shares - the server
+    object, the lock, `_recorded`, the watch on its own code - which since
+    FRAGMENT-ISSUES row 5b-1554 is not the entry module, `module`. Found from
+    the server object's own class, so no file is named here. A name a check
+    REBINDS is rebound there, where the code that reads it is: set on the
+    entry module it would change nothing the server does.
+    """
+    return sys.modules[type(module.server).__module__]
+
+
 class StandIn(object):
     """A Revit that answers from a script and remembers what it was asked."""
 
@@ -1434,15 +1446,15 @@ async def exercise_activity(module):
 
             def revit_probe():
                 module._through(revit_probe_inner)()
-                module._recorded(revit_probe_inner)()
+                shared(module)._recorded(revit_probe_inner)()
                 return "Done."
 
             def revit_probe_says():
                 return say("refused", "All went as asked.")
 
             before = newest()
-            module._recorded(revit_probe)()
-            module._recorded(revit_probe_says)()
+            shared(module)._recorded(revit_probe)()
+            shared(module)._recorded(revit_probe_says)()
             got = [(i.get("tool"), i.get("outcome")) for i in activity.since(before)]
             check(got[:1] == [("revit_probe", "ok")],
                   "what a body run on another tool's behalf says never labels that "
@@ -2667,8 +2679,10 @@ async def exercise_running_code(module):
     print()
     print("  the chat is told when Heron's own code changed under it (B8)")
 
-    running = getattr(module, "running_code", None)
-    real = getattr(module, "RUNNING", None)
+    # The watch is the shared module's, and `_old_code` reads it THERE.
+    core = shared(module)
+    running = getattr(core, "running_code", None)
+    real = getattr(core, "RUNNING", None)
     check(running is not None and real is not None,
           "the server keeps a watch on its own code")
     line = getattr(running, "SAID", "close and reopen the chat")
@@ -2687,7 +2701,7 @@ async def exercise_running_code(module):
     loaded = types.ModuleType("heron_changed")
     loaded.__file__ = source
     if running is not None:
-        module.RUNNING = running.RunningCode.of_checkout(
+        core.RUNNING = running.RunningCode.of_checkout(
             os.path.join(home, "Heron"), {"heron_changed": loaded})
 
     async def call(name, arguments):
@@ -2760,7 +2774,7 @@ async def exercise_running_code(module):
         module.pinned.forget()
         module.approval.clear()
         if real is not None:
-            module.RUNNING = real
+            core.RUNNING = real
         shutil.rmtree(home, ignore_errors=True)
 
 
