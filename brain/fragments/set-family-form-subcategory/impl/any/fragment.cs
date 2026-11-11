@@ -18,8 +18,18 @@
 // A CATEGORY THAT TAKES NO SUBCATEGORIES IS REFUSED BY NAME, from Revit's own
 // flag for it, before anything is made.
 //
-// READ BACK, ALL OR NOTHING. Each form's subcategory is read again after it is
-// set; one that does not read as asked fails the call and nothing is kept.
+// DETAIL AND SYMBOLIC LINES TOO (version 2, 2026-11-11, row 5b-1502). A line
+// already drawn - a plan symbol's arrow, a detail item's outline - is put on
+// the subcategory by its LINE STYLE, the subcategory's projection style, as
+// the Subcategory field does by hand for a line. A line takes only the styles
+// Revit offers it (its GetLineStyleIds), so a subcategory not among them is
+// refused by name - before anything is made when the subcategory exists, and
+// after it is made, rolling it back, when it is new. "none" is the family's
+// category's own projection style.
+//
+// READ BACK, ALL OR NOTHING. Each form's subcategory, and each line's style,
+// is read again after it is set; one that does not read as asked fails the
+// call and nothing is kept.
 
 var findings = new List<string>();
 var changed = new List<string>();
@@ -28,6 +38,8 @@ var notAFamily = false;
 string refused = null;
 
 var targets = new List<GenericForm>();
+// VERSION 2: detail and symbolic lines, put on the subcategory by line style.
+var lines = new List<CurveElement>();
 var problems = new List<string>();
 Category parent = null;
 Category wanted = null;
@@ -36,7 +48,26 @@ var backToCategory = string.Equals(wantedName, "none", StringComparison.OrdinalI
 
 Func<GenericForm, string> kindOf = f => f is Extrusion ? "extrusion" : f is Revolution ? "revolve"
     : f is Blend ? "blend" : f is SweptBlend ? "swept blend" : f is Sweep ? "sweep" : "form";
+Func<CurveElement, string> lineKind = l => l is DetailCurve ? "detail line" : "symbolic line";
 Func<Category, string> nameOf = c => c == null ? "(none)" : c.Name;
+// A subcategory's projection line style - what a line is put on.
+Func<Category, GraphicsStyle> projectionOf = c =>
+{
+    try { return c == null ? null : c.GetGraphicsStyle(GraphicsStyleType.Projection); }
+    catch (Exception) { return null; }
+};
+// Does a line take this style? Revit's own list of the styles it offers it.
+Func<CurveElement, GraphicsStyle, bool> takes = (l, style) =>
+{
+    try { return style != null && l.GetLineStyleIds().Any(id => id.Equals(style.Id)); }
+    catch (Exception) { return false; }
+};
+Func<CurveElement, string> styleNameOf = l =>
+{
+    var style = l.LineStyle as GraphicsStyle;
+    var category = style == null ? null : style.GraphicsStyleCategory;
+    return category == null ? (l.LineStyle == null ? "(none)" : l.LineStyle.Name) : category.Name;
+};
 
 if (!doc.IsFamilyDocument)
 {
@@ -72,12 +103,17 @@ else
     foreach (var element in named)
     {
         var f = element as GenericForm;
-        if (f == null)
+        var line = (element is DetailCurve || element is SymbolicCurve) ? (CurveElement)element : null;
+        if (line != null)
+        {
+            if (!lines.Any(l => l.Id == line.Id)) lines.Add(line);
+        }
+        else if (f == null)
             problems.Add("\"" + (element.Name ?? element.UniqueId) + "\" (" + element.UniqueId + ") is not a form - "
-                + "an extrusion, revolve, blend, sweep or swept blend.");
+                + "an extrusion, revolve, blend, sweep or swept blend - nor a detail or symbolic line.");
         else if (!targets.Any(t => t.Id == f.Id)) targets.Add(f);
     }
-    if (problems.Count == 0 && targets.Count == 0)
+    if (problems.Count == 0 && targets.Count == 0 && lines.Count == 0)
         problems.Add("No form was named. Name them by the ids the form tools gave back, commas between, or select "
             + "them and say \"selected\".");
 
@@ -93,6 +129,19 @@ else
         if (wanted == null && !parent.CanAddSubcategory)
             problems.Add("The family's category, " + parent.Name + ", takes no subcategories, so \"" + wantedName
                 + "\" cannot be made in it.");
+    }
+
+    // VERSION 2: a subcategory that exists is checked against every line
+    // before anything is changed.
+    if (wanted != null && lines.Count > 0)
+    {
+        var style = projectionOf(wanted);
+        if (style == null)
+            problems.Add("\"" + wanted.Name + "\" has no projection line style for a line to take.");
+        else
+            foreach (var l in lines.Where(x => !takes(x, style)))
+                problems.Add("The " + lineKind(l) + " " + l.UniqueId + " cannot take \"" + wanted.Name + "\" - Revit offers "
+                    + "it only its own list of line styles, and that subcategory is not on it.");
     }
 
     if (problems.Count > 0) refused = "Nothing was changed. " + string.Join(" ", problems);
@@ -136,8 +185,40 @@ if (refused == null)
         changed.Add(kindOf(f) + " " + f.UniqueId + ": " + before + " -> " + wanted.Name);
     }
 
+    // VERSION 2: the lines, by their line style.
+    if (lines.Count > 0)
+    {
+        if (createdSubcategory) doc.Regenerate();
+        var style = projectionOf(wanted);
+        if (style == null)
+            throw new InvalidOperationException("\"" + wanted.Name + "\" has no projection line style for a line to take. "
+                + "NOTHING from this call was kept" + (createdSubcategory ? ", the new subcategory included" : "") + ".");
+        foreach (var l in lines)
+        {
+            if (!takes(l, style))
+                throw new InvalidOperationException("The " + lineKind(l) + " " + l.UniqueId + " cannot take \"" + wanted.Name
+                    + "\" - it is not on the list of line styles Revit offers it. NOTHING from this call was kept"
+                    + (createdSubcategory ? ", the new subcategory included" : "") + ".");
+            var before = styleNameOf(l);
+            try
+            {
+                l.LineStyle = style;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Revit would not put the " + lineKind(l) + " " + l.UniqueId + " on \""
+                    + wanted.Name + "\": " + ex.Message + " NOTHING from this call was kept.");
+            }
+            var reads = l.LineStyle;
+            if (reads == null || !reads.Id.Equals(style.Id))
+                throw new InvalidOperationException("The " + lineKind(l) + " " + l.UniqueId + " reads \"" + styleNameOf(l)
+                    + "\" after being put on \"" + wanted.Name + "\". NOTHING from this call was kept.");
+            changed.Add(lineKind(l) + " " + l.UniqueId + ": " + before + " -> " + wanted.Name);
+        }
+    }
+
     findings.Add((createdSubcategory ? "Made the subcategory \"" + wanted.Name + "\" under " + parent.Name + ", and put "
-        : "Put ") + changed.Count + " form(s) on \"" + wanted.Name + "\": " + string.Join("; ", changed) + ".");
+        : "Put ") + changed.Count + " element(s) on \"" + wanted.Name + "\": " + string.Join("; ", changed) + ".");
     if (createdSubcategory)
         findings.Add("Its line weights, colour and material are Revit's defaults until set in Object Styles.");
 }

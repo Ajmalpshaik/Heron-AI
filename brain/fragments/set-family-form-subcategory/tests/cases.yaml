@@ -1,8 +1,8 @@
 positive:
   - given: >
-      a new family from the metric Generic Model template with one solid
-      extrusion made by create-family-forms; forms = its id, subcategory
-      "Casing", which the family does not have
+      VERSION 1, STILL - a new family from the metric Generic Model template
+      with one solid extrusion made by create-family-forms; forms = its id,
+      subcategory "Casing", which the family does not have
     expect: >
       createdSubcategory true; changed reads the form going from "Generic
       Models" to "Casing" - and Object Styles, opened by hand, lists "Casing"
@@ -12,6 +12,23 @@ positive:
     expect: >
       createdSubcategory false; the form back on the family's own category,
       read back the same way
+
+  - given: >
+      VERSION 2 - LINES. A saved scratch metric Generic Model family with two
+      symbolic lines drawn on Ref. Level by DRAW_FAMILY_SYMBOLIC_LINES; forms
+      = both ids, subcategory "Flow Arrow", which the family does not have
+    expect: >
+      createdSubcategory true; changed reads each symbolic line going to "Flow
+      Arrow", read back by its line style; each line's Properties, opened by
+      hand, reads Subcategory Flow Arrow
+
+  - given: >
+      a saved scratch metric Detail Item family with one detail line drawn by
+      DRAW_FAMILY_DETAIL_LINES; forms = its id, subcategory "Arrow Head"
+    expect: >
+      the subcategory made under Detail Items and the detail line on it, read
+      back - or, if Revit does not offer that style to a detail line, refused
+      by name with nothing kept; record which
 
 negative:
   - given: forms = the id of a reference plane rather than a form
@@ -23,8 +40,19 @@ negative:
   - given: a project in front
     expect: notAFamily true and nothing changed anywhere
 
+  - given: >
+      VERSION 2 - a nested detail item's id (placed by
+      PLACE_DETAIL_COMPONENTS) with subcategory "Flow Arrow"
+    expect: >
+      refused as neither a form nor a detail or symbolic line; nothing changed
+      and no subcategory made
+
 second_route:
   - >
       Manage, Object Styles in the Family Editor by hand on a copy: New
       Subcategory "Casing"; then the form's Subcategory set in Properties; the
       two copies' Object Styles and Properties read side by side
+  - >
+      Version 2: select each line and read Subcategory in Properties; load the
+      family into a project and switch the subcategory off in Visibility/
+      Graphics - the lines go
