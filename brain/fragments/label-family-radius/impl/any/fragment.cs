@@ -91,6 +91,19 @@
 // on a Revit in another language the refusal is wrapped as version 4 did.
 // Which of the two it is on 2020 is NOT known here: NEEDS-CHECKING Group IS
 // asks Revit, on 2020 and again on 2024.
+//
+// A 2D ARC TOO - version 6, 2026-11-11, row 5b-1503. A DETAIL or SYMBOLIC line
+// that is an arc - a plan symbol's round end, a detail item's curved arrow -
+// named by its id, takes a radial dimension (a diameter one for a diameter
+// parameter) on the arc itself, in the arc's OWN VIEW: a detail line's Owner
+// View, and for a symbolic line its Owner View where Revit gives one, else
+// the plan or elevation looking straight at its sketch plane - the one whose
+// own sketch plane it is when there is one. The same safety order as a form:
+// the parameter must already hold the arc's size (half of it for a diameter),
+// one label per parameter, and the label and the value read back after Revit
+// regenerates - and the arc's own radius read again. A straight line is
+// refused: it has no radius, and its planes are labelled by
+// LABEL_FAMILY_DIMENSION. Forms take exactly the path they took.
 
 var findings = new List<string>();
 var labelled = "";
@@ -149,6 +162,10 @@ Func<FamilyParameter, bool> isLength = p =>
 };
 
 GenericForm target = null;
+// VERSION 6: a detail or symbolic line that is an arc, its arc, and its view.
+CurveElement line2d = null;
+Arc lineArc = null;
+View lineView = null;
 FamilyParameter parameter = null;
 double wanted = 0;
 View view = null;
@@ -347,12 +364,14 @@ else
         chosen = doc.GetElement(said);
         if (chosen == null) problems.Add("No element in this family has the id \"" + said + "\".");
     }
-    if (chosen != null)
+    if (chosen != null && (chosen is DetailCurve || chosen is SymbolicCurve))
+        line2d = (CurveElement)chosen;
+    else if (chosen != null)
     {
         target = chosen as GenericForm;
         if (target == null)
             problems.Add("\"" + (chosen.Name ?? said) + "\" is not a form - an extrusion, revolve, blend, sweep or "
-                + "swept blend.");
+                + "swept blend - nor a detail or symbolic line that is an arc.");
         else if (!(target is Extrusion) && !(target is Revolution) && !(target is SweptBlend))
             problems.Add("\"" + (chosen.Name ?? said) + "\" is a " + target.GetType().Name.ToLowerInvariant() + ". A round "
                 + "size is labelled on an extrusion's circle, a revolve's radius or a swept blend's path and profiles; "
@@ -404,6 +423,68 @@ else
         return views.FirstOrDefault(v => axisOf(v.ViewDirection) == facing
             && (facing == 2 ? v.ViewType == ViewType.FloorPlan : v.ViewType == ViewType.Elevation));
     };
+
+    // VERSION 6 - A 2D ARC: a detail or symbolic line, labelled in its own view.
+    if (problems.Count == 0 && line2d != null)
+    {
+        var lineWord = line2d is DetailCurve ? "detail line" : "symbolic line";
+        lineArc = line2d.GeometryCurve as Arc;
+        if (lineArc == null)
+            problems.Add("The " + lineWord + " " + line2d.UniqueId + " is not an arc - a straight line has no radius. Its "
+                + "length follows the planes its ends are locked to (LOCK_FAMILY_LINES_TO_PLANES), and the planes are "
+                + "labelled by LABEL_FAMILY_DIMENSION.");
+        else if (lineArc.Reference == null)
+            problems.Add("The " + lineWord + " " + line2d.UniqueId + " gives no reference for a dimension to measure.");
+        else if (Math.Abs(lineArc.Radius - wanted) > halfMillimetre)
+            problems.Add("The " + lineWord + "'s arc has a radius of " + mm(lineArc.Radius) + " mm (a diameter of "
+                + mm(lineArc.Radius * 2) + " mm), and \"" + parameter.Definition.Name + "\" holds " + mm(diameter ? wanted * 2
+                    : wanted) + " mm as a " + (diameter ? "diameter" : "radius") + ". Set it to the arc's size first with "
+                + "SET_FAMILY_TYPE_VALUES - a label moves the arc to the parameter's value.");
+        else
+        {
+            View owned = null;
+            if (line2d.OwnerViewId != null && !line2d.OwnerViewId.Equals(ElementId.InvalidElementId))
+                owned = doc.GetElement(line2d.OwnerViewId) as View;
+            if (owned != null && !owned.IsTemplate && !(owned is View3D)) lineView = owned;
+            else if (line2d is DetailCurve)
+                problems.Add("The detail line " + line2d.UniqueId + " gives no view of its own to read, so the view to "
+                    + "label it in is not known.");
+            else
+            {
+                // A symbolic line: the view looking straight at its sketch plane,
+                // the one whose own sketch plane it is first.
+                Plane drawnOn = null;
+                try { drawnOn = line2d.SketchPlane == null ? null : line2d.SketchPlane.GetPlane(); } catch (Exception) { drawnOn = null; }
+                if (drawnOn == null)
+                    problems.Add("The symbolic line " + line2d.UniqueId + " gives no sketch plane to read, so the view to "
+                        + "label it in is not known.");
+                else
+                {
+                    var facing = new FilteredElementCollector(doc).OfClass(typeof(View)).Cast<View>()
+                        .Where(v => !v.IsTemplate && !(v is View3D)
+                            && (v.ViewType == ViewType.FloorPlan || v.ViewType == ViewType.CeilingPlan
+                                || v.ViewType == ViewType.Elevation || v.ViewType == ViewType.Section)
+                            && Math.Abs(Math.Abs(v.ViewDirection.DotProduct(drawnOn.Normal)) - 1) < 1e-6)
+                        .ToList();
+                    Func<View, bool> ownPlane = v =>
+                    {
+                        try
+                        {
+                            var sketch = v.SketchPlane;
+                            if (sketch == null) return false;
+                            var plane = sketch.GetPlane();
+                            return Math.Abs((plane.Origin - drawnOn.Origin).DotProduct(drawnOn.Normal)) <= halfMillimetre;
+                        }
+                        catch (Exception) { return false; }
+                    };
+                    lineView = facing.FirstOrDefault(ownPlane) ?? facing.FirstOrDefault();
+                    if (lineView == null)
+                        problems.Add("No plan or elevation of this family looks straight at the plane the symbolic line "
+                            + line2d.UniqueId + " is drawn on, so there is no view to label it in.");
+                }
+            }
+        }
+    }
 
     // AN EXTRUSION: a sketch arc of the radius the parameter holds.
     if (problems.Count == 0 && target is Extrusion)
@@ -865,7 +946,64 @@ else
     if (problems.Count > 0) refused = "Nothing was labelled. " + string.Join(" ", problems);
 }
 
-if (refused == null && blend == null)
+// ---------------------------------------------------------------------------
+// VERSION 6 - A 2D ARC: LABEL IN ITS VIEW, THEN READ IT BACK
+// ---------------------------------------------------------------------------
+
+if (refused == null && line2d != null)
+{
+    var lineWord = line2d is DetailCurve ? "detail line" : "symbolic line";
+    var what = (diameter ? "diameter" : "radius") + " of the " + lineWord + "'s arc " + line2d.UniqueId + " (radius "
+        + mm(lineArc.Radius) + " mm) in \"" + lineView.Name + "\"";
+    // Where the dimension's text sits: the arc's middle, or a point on a full circle.
+    var origin = lineArc.IsBound ? lineArc.Evaluate(0.5, true)
+        : lineArc.Center + lineArc.XDirection.Normalize() * lineArc.Radius;
+    Dimension dimension;
+    try
+    {
+        dimension = diameter
+            ? doc.FamilyCreate.NewDiameterDimension(lineView, lineArc.Reference, origin)
+            : doc.FamilyCreate.NewRadialDimension(lineView, lineArc.Reference, origin);
+        if (dimension == null) throw new InvalidOperationException("Revit made no dimension and raised no error.");
+        dimension.FamilyLabel = parameter;
+    }
+    catch (Exception ex)
+    {
+        throw new InvalidOperationException("Revit refused to label the " + what + " with \"" + parameter.Definition.Name
+            + "\": " + ex.Message + " NOTHING from this call was kept.");
+    }
+
+    doc.Regenerate();
+
+    var readLabel = dimension.FamilyLabel;
+    var reads = dimension.Value;
+    var holds = doc.FamilyManager.CurrentType.AsDouble(parameter);
+    if (readLabel == null || readLabel.Id != parameter.Id)
+        throw new InvalidOperationException("The dimension was made and does not carry \"" + parameter.Definition.Name
+            + "\" afterwards. NOTHING from this call was kept.");
+    if (!reads.HasValue || !holds.HasValue || Math.Abs(reads.Value - holds.Value) > halfMillimetre)
+        throw new InvalidOperationException("The labelled dimension reads "
+            + (reads.HasValue ? mm(reads.Value) + " mm" : "nothing") + " and \"" + parameter.Definition.Name
+            + "\" holds " + (holds.HasValue ? mm(holds.Value) + " mm" : "nothing") + ". NOTHING from this call was kept.");
+    if (dimension.OwnerViewId == null || !dimension.OwnerViewId.Equals(lineView.Id))
+        throw new InvalidOperationException("The labelled dimension is not in \"" + lineView.Name + "\", the view the arc "
+            + "was labelled in. NOTHING from this call was kept.");
+    var arcNow = line2d.GeometryCurve as Arc;
+    var radiusAsked = diameter ? holds.Value / 2 : holds.Value;
+    if (arcNow == null || Math.Abs(arcNow.Radius - radiusAsked) > halfMillimetre)
+        throw new InvalidOperationException("After the label the " + lineWord + " reads "
+            + (arcNow == null ? "no arc" : "a radius of " + mm(arcNow.Radius) + " mm") + ", not the " + mm(radiusAsked)
+            + " mm \"" + parameter.Definition.Name + "\" gives it. NOTHING from this call was kept.");
+
+    valueMm = Math.Round(reads.Value * 304.8, 2);
+    labelled = "The " + what + ", labelled \"" + parameter.Definition.Name + "\", reading " + mm(reads.Value) + " mm"
+        + " - the arc's radius read back at " + mm(arcNow.Radius) + " mm.";
+    findings.Add(labelled);
+    findings.Add("FLEX_FAMILY with \"" + parameter.Definition.Name + "\" at two different sizes is what shows the arc "
+        + "following. Where the arc's ends are locked to planes, those planes hold its ends while its radius moves.");
+}
+
+if (refused == null && blend == null && line2d == null)
 {
     Dimension dimension;
     var what = arc != null ? (diameter ? "diameter" : "radius") + " of the " + (target is Extrusion
