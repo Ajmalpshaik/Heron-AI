@@ -1085,6 +1085,18 @@ another Revit is `WRONG RELEASE` and exits 1, and the drafts are signed with `he
 --release`, which adds one entry and leaves `proof:` and `heron-status` as they were.
 [`tests/test_release_proofs.py`](../tests/test_release_proofs.py) holds it.
 
+**A card is not sent to a Revit its own `revit:` list leaves out**
+([row 5b-1403](../docs/FRAGMENT-ISSUES.md)). On 2026-11-02 two cards that start at 2023 and 2025 were
+sent to Revit 2020, the dry run having said `WOULD RUN`, and each spent a compile to come back
+`compile_failed`. Before the first job that is otherwise runnable, the batch now asks the client which
+Revit is connected - a ping, which claims no Revit; with two connected, the one `--session` names - and
+a card that leaves that release out is `REFUSED`, dry run or real, naming the card's releases and the
+connected one. The rule is the client's `excluded_release_refusal`, which `validate` asks of the Revit
+it binds before it sends anything, so a dry run with no Revit answering says nothing about releases
+and the run still sends nothing. **The logic is held by
+[`tests/test_batch_prove.py`](../tests/test_batch_prove.py) on a stand-in Revit; the run against a real
+one is still owed** - NEEDS REAL REVIT.
+
 **Hole 2 — it passed fragments that had done nothing.** `heron_validate` judges whether the NEGATIVE
 came back empty, which is [D-30](../docs/DECISIONS.md)'s leg and which a fragment that does nothing
 satisfies without trying. So the POSITIVE is judged too, by one rule: **a declared result has to have

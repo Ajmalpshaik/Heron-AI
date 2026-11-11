@@ -57,6 +57,15 @@ signed with `heron_validate.py accept --release`, which writes one entry and
 leaves `proof:` and `heron-status` exactly as they were - and the before/after
 status check below holds for this mode as for every other.
 
+**A card is not sent to a Revit its own `revit:` list leaves out (row 5b-1403).**
+Before the first job that is otherwise runnable, the batch asks the client
+which Revit is connected - a ping, which claims no Revit, and the one a
+`--session` names when there are two - and a card that leaves that release out
+is `REFUSED`, in a dry run as in a real one, with the card's releases and the
+connected one named. `validate` asks the same rule of the Revit it binds, so
+with no Revit answering yet the dry run says nothing about releases and the
+run still sends nothing.
+
 **2. It passed fragments that had done nothing.** `heron_validate` judges
 whether the NEGATIVE came back empty - which is D-30's leg, and which a fragment
 that does nothing at all satisfies trivially. So the POSITIVE is judged too, and
@@ -496,6 +505,43 @@ def release_refusal(frag, release):
         return ALREADY, ("already proved on Revit %s, by %s" % (
             release, "its proof" if fresh[release] == "proof"
             else "an entry of proof.releases"))
+    return None, None
+
+
+def connected_release(session=None):
+    """The release of the ONE Revit this batch's jobs would reach, or None.
+
+    Row 5b-1403. Asked of the client's own address book, as `list` asks it -
+    a ping, which claims no Revit - and of `only_session`, so the answer is
+    the Revit `validate` would bind. None when no Revit answers, when two do
+    and no --session names one, or when asking failed: the batch then says
+    nothing about releases, and `validate` asks the same rule of the Revit it
+    binds. Nothing is pruned - a dry run changes nothing.
+    """
+    try:
+        live = BRIDGE.discover(prune=False)[0]
+    except Exception:                                     # noqa: BLE001 - as free_models
+        return None
+    chosen, _refusal = BRIDGE.only_session(live, session)
+    for bridge in live:
+        bridge.close()
+    if not chosen or len(chosen) != 1:
+        return None
+    return str(chosen[0].revit_version or "").strip() or None
+
+
+def connected_refusal(frag, connected):
+    """(REFUSED, why) when the connected Revit is one the card leaves out, else (None, None).
+
+    Row 5b-1403: `report-analytical-model` (2023 on) and `attach-walls` (2025
+    on) were sent to Revit 2020, the dry run having said WOULD RUN, and each
+    spent a compile to come back `compile_failed`. The rule is the client's -
+    `validate` asks it of the Revit it binds - so the dry run and the run
+    cannot disagree with it.
+    """
+    why = BRIDGE.excluded_release_refusal(card_root(frag), frag.slug, connected)
+    if why:
+        return REFUSED, why
     return None, None
 
 
@@ -1316,11 +1362,20 @@ def main(argv=None):
     note("batch-prove %s: %d job(s)%s" % (
         args.jobs, len(jobs), ", unattended" if args.unattended else ""))
 
+    # WHICH REVIT IS CONNECTED, asked once and only when a job is otherwise
+    # runnable - a batch of finished work, or of refusals, asks nothing.
+    connected = []
+
     results = []
     for index, job in enumerate(jobs, 1):
         name = job["fragment"]
         verdict, why = job_refusal(job, library, args.release)
         tries, sent = 1, False
+
+        if verdict is None:
+            if not connected:
+                connected.append(connected_release(args.session))
+            verdict, why = connected_refusal(library[name], connected[0])
 
         if verdict is None and args.dry_run:
             # WHAT IT WOULD SEND, printed in full. A job file is read by a

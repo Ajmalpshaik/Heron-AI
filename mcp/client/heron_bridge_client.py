@@ -1311,6 +1311,51 @@ def risk_refusal(root, name, switched=False):
                                                       name))
 
 
+RELEASE_YEAR = re.compile(r"\b(20[0-9]{2})\b")
+
+
+def fragment_releases(path):
+    """The Revit releases a card's `revit:` line lists, or None if it cannot be read.
+
+    Read the same hand-rolled way as `risk:`, and for the same reason: this
+    client is stdlib only. Every card writes the list on one unindented line -
+    `revit: ["2023", "2024"]` - and a card that writes it another way reads as
+    None here, which refuses nothing.
+    """
+    try:
+        with io.open(path, "r", encoding="utf-8") as fh:
+            for line in fh:
+                if line.startswith("revit:"):
+                    return RELEASE_YEAR.findall(line.split(":", 1)[1]) or None
+    except (OSError, UnicodeDecodeError):
+        return None
+    return None
+
+
+def excluded_release_refusal(root, name, revit_version):
+    """The refusal for sending a fragment to a Revit its own card leaves out, or None.
+
+    ROW 5b-1403. A card's `revit:` list is the card saying where its code
+    compiles, and `validate` sent it anywhere: on 2026-11-02 two cards that
+    start at 2023 and 2025 went to Revit 2020 and each spent a compile to come
+    back `compile_failed`, which the card had already said. Asked before
+    anything is sent, by `validate` and by `tools/batch-prove.py` - one rule,
+    called, never copied.
+
+    None when the connected release or the card's list cannot be read: this
+    saves a wasted run, it is not a safety gate, and Revit's own compile still
+    answers for a card nobody could read.
+    """
+    connected = str(revit_version or "").strip()
+    releases = fragment_releases(os.path.join(root, "brain", "fragments", name,
+                                              "fragment.yaml"))
+    if not connected or not releases or connected in releases:
+        return None
+    return ("%s does not claim Revit %s, the release connected - its `revit:` is "
+            "%s. Nothing was sent to Revit. Connect one of those releases, or "
+            "pin one with --session." % (name, connected, ", ".join(releases)))
+
+
 def write_operation(root, name):
     """The add-in operation that runs this fragment as a CHANGE, or None.
 
@@ -2621,6 +2666,14 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
     bridge = live[0]
     for other in live[1:]:
         other.close()
+
+    # A RELEASE THE CARD LEAVES OUT IS REFUSED HERE, before `count_elements`
+    # claims the Revit and before a compile is spent - row 5b-1403.
+    refusal = excluded_release_refusal(root, name, bridge.revit_version)
+    if refusal:
+        bridge.close()
+        print(refusal)
+        return 2
 
     opening = bridge.request("count_elements")
     if opening is None or not opening.get("ok"):

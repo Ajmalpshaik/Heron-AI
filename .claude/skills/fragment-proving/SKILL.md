@@ -238,7 +238,7 @@ Until IW1 passes, check in the morning that the log shows the warning closed whe
 | `NO NEGATIVE` | the second leg never ran | usually `needs_unbound` — the negative selection was empty. **Rule 3** |
 | `DID NOT RUN` | the positive never ran | read the message. Often a caller value the contract asks for |
 | `TIMEOUT` | Revit did not answer in time | **rule 1.** Retry on a smaller selection. It says nothing about the fragment |
-| `REFUSED` / `NO FRAGMENT` | the job file cannot be run as written | fix the file. Nothing was sent to Revit |
+| `REFUSED` / `NO FRAGMENT` | the job file cannot be run as written - or, since row 5b-1403, the card's own `revit:` list leaves out the Revit that is connected | fix the file, or connect a release the card lists. Nothing was sent to Revit |
 
 A failure is the tool's **output**, not an error — it exits 0 with fourteen failures and non-zero only
 when the batch itself could not run: a `NO FRAGMENT`, a `REFUSED`, a `WRONG RELEASE`, or the library
