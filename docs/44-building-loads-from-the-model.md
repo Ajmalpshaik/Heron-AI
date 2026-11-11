@@ -668,10 +668,10 @@ take-off and pressed **Finalize to Revit**. What it did, read back by hand:
   file set one terminal's flow and read it back through its connector. The read-back reads the take-off
   again and sets each written value beside what Revit now prints (`read_back`), allowing Revit's own
   rounding; the diffusers through READ_SPACE_LOADS on each level's Spaces.
-- **READ_SPACE_LOADS could not have read them back anyway** on this model: it reads the design and the
-  calculated figures in one guard, and the calculated ones throw until Revit's own loads analysis has
-  run. Recorded as [FRAGMENT-ISSUES row 5b-323](fragment-issues/section-5b-rows-301-325.md); Finalize no
-  longer uses it.
+- **READ_SPACE_LOADS could not have read them back anyway** on this model, as it stood that day: it read
+  the design and the calculated figures in one guard, and the calculated ones throw until Revit's own loads
+  analysis has run. Recorded as [FRAGMENT-ISSUES row 5b-323](fragment-issues/section-5b-rows-301-325.md),
+  which says what was changed on 2026-11-11 and what is still owed a Revit; Finalize no longer uses it.
 - **A family finding, not a Heron one:** the office's `TRG_SAD_T202_SupplyAirDiffuser_SquarePlaqueFaceType`
   ties its duct connector's flow to no parameter, so no tool can set its flow from outside - the tool says
   `noFlowParameter` and writes nothing. `TCM_SAD_Supply Diffuser - Rectangular Face Rectangular Neck Auto

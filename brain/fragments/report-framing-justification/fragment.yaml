@@ -17,7 +17,7 @@ semantic-identity: "what justification these beams and braces have - yz, y and z
 # `find` with no question flag, words #1 and nearness #1.
 #
 # LOOK-ALIKES, KEPT SEPARATE (heron-duplicate-checker's method, 2026-11-02):
-#   READ_ELEMENT_PARAMETERS (PROVEN)  reads ONE parameter named exactly. A
+#   READ_ELEMENT_PARAMETERS           reads ONE parameter named exactly. A
 #     member's justification is up to fourteen parameters, which ones depend
 #     on its own yz Justification, and the choices are numbers underneath -
 #     this reads the set that applies, each choice in Revit's own word.

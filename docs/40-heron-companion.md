@@ -490,9 +490,10 @@ Changes OFF.
   reader. Colour is the first reader; a parameter reader (instance first, then type, display units,
   the way `read-element-parameters` reads) is the second, in a later step.
 
-**Why a new fragment rather than widening one:** `read-graphic-overrides` (PROVEN) reads the right
+**Why a new fragment rather than widening one:** `read-graphic-overrides` (PROVEN when this was
+decided - its card says what it is now) reads the right
 values but returns them as sentences, and changing its output would change what its proof describes.
-`read-element-parameters` (PROVEN) reads parameters but returns a count. A new reader that **calls the
+`read-element-parameters` (the same) reads parameters but returns a count. A new reader that **calls the
 same API the same way** leaves both proofs intact. **NEEDS_REVIEW** against the owner's rule *"widen
 an existing fragment first"*.
 
@@ -734,9 +735,9 @@ The names follow the existing prefixes: `revit_*` touches Revit, `heron_*` does 
 |---|---|---|
 | Read the selection | `read-selection` (READ_SELECTION, PROVEN); the executor fills `elements` from the selection | **Reused** by `revit_edit_table` with `scope=selection` |
 | Select rows in Revit | `set-selection` (SET_SELECTION, PROVEN, EXECUTE) | **Reused** — which door it goes through is §13's open point |
-| Read current overrides | `read-graphic-overrides` (PROVEN) — sentences, not rows | Its API calls are **re-used in method** by the new reader; the fragment itself is untouched |
+| Read current overrides | `read-graphic-overrides` (its status is on its card) — sentences, not rows | Its API calls are **re-used in method** by the new reader; the fragment itself is untouched |
 | Write one override to many | `override-graphics-in-view` (DRAFT), `highlight-vs-rest` (PROVEN), `color-by-parameter` (DRAFT) | Not suitable — one value for all, or colours chosen by the fragment. **New** `SET_ELEMENT_OVERRIDES_BY_ID` |
-| Read parameters for many | `read-element-parameters` (PROVEN) — count only in the reply; bridge `read_parameters` — real rows, per category, max 500 | Later parameter columns reuse its reading rule inside `READ_ELEMENT_TABLE` |
+| Read parameters for many | `read-element-parameters` (its status is on its card) — count only in the reply; bridge `read_parameters` — real rows, per category, max 500 | Later parameter columns reuse its reading rule inside `READ_ELEMENT_TABLE` |
 | Write a parameter per element | `import-parameter-values` (DRAFT) — per element, from a CSV file | Later: **widen** it to take rows from the request as well as a CSV (the "widen first" rule) |
 | Colour as text | `OneColour` in the executor: `"R,G,B"` | **Reused**, no new format |
 | Colour-by-standard | `create-view-filter`, `create-view-filters-by-value`, `apply-view-filter` | Not V1; a possible later "system colours" table (§9) |

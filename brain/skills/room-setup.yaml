@@ -107,7 +107,8 @@ purpose: >
      "key=Number|in=Rooms;101|Name=Lift Lobby;102|Name=Staircase 1" - the
      names exactly as the modeller gave them. A number that matches no room,
      or several, is refused for that row alone and named. Then
-     FIND_DUPLICATE_VALUES (PROVEN) on Number, expect_from naming a filter of
+     FIND_DUPLICATE_VALUES (its status is in the list served after this
+     method) on Number, expect_from naming a filter of
      the rooms: two rooms with one number survive every look at the plan.
   7. TAG THEM, one level at a time. FILTER_ELEMENTS_BY_CATEGORY with
      category=Rooms and that levelId, then TAG_ELEMENTS_IN_VIEW (PROVEN,

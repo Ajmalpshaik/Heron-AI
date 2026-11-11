@@ -16,7 +16,7 @@ semantic-identity: "which way these structural floors span - each floor's span d
 # write without the host's question flag, and a read that does not answer it
 # with the flag.
 #
-# A CARD OF ITS OWN, NOT READ_ELEMENT_PARAMETERS (FRG-PAR-001, PROVEN) with
+# A CARD OF ITS OWN, NOT READ_ELEMENT_PARAMETERS (FRG-PAR-001) with
 # parameterName "Span Direction". That card owns one-value-off-an-element
 # questions, but whether Revit hands FLOOR_PARAM_SPAN_DIRECTION to a lookup by
 # that name needs a real Revit to know (row 5b-1369), and it could not say why

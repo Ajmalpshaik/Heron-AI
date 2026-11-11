@@ -68,7 +68,8 @@ purpose: >
      measured before and after - a void that took nothing away fails the
      call. Whether it is accepted in a mass family is owed in NEEDS-CHECKING
      Group JO. Two solids that make one block are joined by the same call.
-  6. CHECK IT: REPORT_FAMILY_FORMS (PROVEN) - every form, solid or void,
+  6. CHECK IT: REPORT_FAMILY_FORMS (its status is in the list served after
+     this method) - every form, solid or void,
      its extent and volume against step 1's table. LINK_FAMILY_PARAMETER (links
      Material=<it>; its status is in the list served after this method; while it
      is not PROVEN there, a kept change from it is refused, D-117) when the
