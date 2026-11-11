@@ -11,15 +11,16 @@ against the Heron library, and every gap checked against the Revit API reference
 > Some API reference sites could not be reached from the cloud session, so every **UNSURE** is a
 > question still open, not a no.
 
-**Lifecycle:** **completed, not yet retired** (read 2026-11-11). The "build next" list below was built
-on 2026-11-04 by [#781](https://github.com/Ajmalpshaik/Heron-AI/pull/781) (`b0bc60a7`) - see the note
-under its heading. The condition this line stated until that day - *retire once each "build next" item
-has a fragment, or has been moved to [PROPOSALS.md](../../PROPOSALS.md) /
-[OPEN-QUESTIONS.md](../../OPEN-QUESTIONS.md)* - is met for that list but for two halves of item 17,
-named there. **Three things still keep the file, and each is a person's to settle** - in the
-[work-notes README](../README.md)'s lifecycle, *knowledge preserved* comes before *retired*:
+**Lifecycle:** **built except for the items named under the next heading, and not retired** (read
+2026-11-11, corrected the same day after a fact-check). Most of the "build next" list below was built by
+[#781](https://github.com/Ajmalpshaik/Heron-AI/pull/781) (`b0bc60a7`, merged 2026-11-04). The condition
+this line stated until then - *retire once each "build next" item has a fragment, or has been moved to
+[PROPOSALS.md](../../PROPOSALS.md) / [OPEN-QUESTIONS.md](../../OPEN-QUESTIONS.md)* - is met only because
+what was not built is now in the register: rows 5b-1423 and 5b-1529 to 5b-1532 of
+[FRAGMENT-ISSUES](../../fragment-issues/section-5b-rows-401-425.md). **Two things still keep the file, and each is a person's to
+settle** - in the [work-notes README](../README.md)'s lifecycle, *knowledge preserved* comes before
+*retired*:
 
-- Item 17's slanted column and structural plan: built, or moved to a register as a gap.
 - *The API cannot do it*, *Still UNSURE* and the four tab-by-tab tables are in no register and no
   numbered document; this file is their only copy.
 - Fragment cards and [Group MO](../../needs-checking/group-mo.md) name this file by its path -
@@ -43,24 +44,34 @@ mostly covered.
 
 ## Build next - missing, and the Revit API can do it
 
-> **BUILT 2026-11-04 - history, not a list to work from.**
+> **MOSTLY BUILT, MERGED 2026-11-04 - history, not a list to work from.**
 > [#781](https://github.com/Ajmalpshaik/Heron-AI/pull/781) wrote the tools for this list, every one at
 > DRAFT and none run in Revit that day; each card's own `heron-status` says what it is now, and the
 > NEEDS-CHECKING groups that pull request added hold the runs owed. Checked 2026-11-11 by searching
-> `brain/fragments/*/impl` for the Revit member each item names: a fragment was found for every item
-> but these.
+> `brain/fragments/*/impl` for the Revit member each item names, and - after a fact-check found that
+> search had passed item 1 on the word *structural* alone - by reading the card and code behind each
+> item that widens a tool Heron already had. **Five things on the list are not built, or not built as
+> the list meant them. Each is a row now, so none lives only in this file:**
 >
-> - **Item 19, Reload Latest - not built, and recorded.** Revit refuses it while any transaction group
->   is open, and every Heron door that may change a model runs inside one:
->   [FRAGMENT-ISSUES row 5b-1423](../../fragment-issues/section-5b-rows-401-425.md), OPEN, the owner's
->   to choose.
-> - **Item 17, the slanted column and the structural plan - NOT FOUND by that search, in no register.**
->   The span direction half is `place-span-direction-symbols`. No card names a slanted column, and
->   `create-plan-view` asks for `ViewFamily.FloorPlan` or `CeilingPlan` alone. Whether another card
->   reaches either by a parameter was not settled; a search of the library is the next step, not this
->   sentence.
+> - **Item 1, a structural floor - not built.** `CREATE_FLOOR` has no structural input and passes
+>   `false`: [row 5b-1529](../../fragment-issues/section-5b-rows-401-425.md).
+> - **Item 8, insulation on fittings - not built.** `SET_MEP_INSULATION` still refuses a fitting, an
+>   accessory and a flex run; the other two halves, remove insulation and duct lining, were built:
+>   [row 5b-1530](../../fragment-issues/section-5b-rows-401-425.md).
+> - **Item 17, a slanted column - in code, on no card's words, never run.** `PLACE_LINE_BASED_FAMILY`
+>   makes the call the table below names when it is asked for a column; the table had it as MISSING:
+>   [row 5b-1531](../../fragment-issues/section-5b-rows-401-425.md).
+> - **Item 17, a structural plan - not built.** `CREATE_PLAN_VIEW` makes a floor plan or a ceiling
+>   plan and refuses anything else: [row 5b-1532](../../fragment-issues/section-5b-rows-401-425.md). The span
+>   direction third of the item is `place-span-direction-symbols`.
+> - **Item 19, Reload Latest - not built.** Revit refuses it while any transaction group is open, and
+>   every Heron door that may change a model runs inside one:
+>   [row 5b-1423](../../fragment-issues/section-5b-rows-401-425.md), OPEN, the owner's to choose.
 >
-> The longer per-tab priority lists further down were **not** re-checked item by item.
+> **A fragment that names an item's Revit member is not that item built as a modeller would ask for
+> it**, and the first reading of 2026-11-11 said *"a fragment was found for every item but these"* of
+> two items where five belonged. The longer per-tab priority lists further down were **not** re-checked
+> item by item.
 
 Most used by a modeller first, across all tabs.
 

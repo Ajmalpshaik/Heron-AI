@@ -10,8 +10,9 @@ people who actually do BIM work are worth more than contributions from people wh
 > Revit's own process, so fragments do now meet real models. On 2026 no fragment could run until a
 > repair that [Group GW](docs/needs-checking/group-gw.md) still records as not yet run in Revit; one
 > card has since been proved there - `attach-walls`, signed 2026-11-07 - and the group's own rows are
-> not written back. Which release each proof names is on the cards:
-> `grep -h '^  model: ' brain/fragments/*/fragment.yaml | grep -o 'Revit 20[0-9][0-9]' | sort | uniq -c`.
+> not written back. Which release each proof names is on the cards, and the command that counts it is
+> the first block of [Group EQ](docs/needs-checking/group-eq.md) - it reads the whole `proof:` block,
+> because a `model:` line can wrap, and a one-line `grep` printed here until 2026-11-11 missed those.
 > The [README's Status](README.md#status) says what else has met a real Revit.
 >
 > **Most fragments are `PROVEN`** — each on a recorded run against a named model. **The rest are

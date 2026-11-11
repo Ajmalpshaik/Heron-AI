@@ -60,7 +60,12 @@ The fixes of the day are in `git log --first-parent d77439ad..` on the branch an
   how a card says it is waiting for a person, and whether a face can be clicked.
 - **One cloud chat with no `HERON_KNOWLEDGE`,** on a branch carrying D-153's change: ask `heron_lookup`
   once (row 5b-1508, seen from a test host only).
-- **Rows recorded and not repaired:** `python tools/open-defects.py` lists them - 5b-1505, 5b-1506,
-  5b-1509 to 5b-1515, 5b-1517, 5b-1518 and 5b-1520 on 2026-11-11. **It does not list 5b-1519**, whose
+- **Rows recorded and not repaired:** `python tools/open-defects.py` lists them - 5b-1505 to 5b-1507,
+  5b-1509 to 5b-1515, 5b-1517, 5b-1518 and 5b-1520 on 2026-11-11; 5b-1507 is `PICK_ON_SCREEN`'s own row,
+  open until Group NH is run. **It does not list 5b-1519**, whose
   state begins *RECORDED, NOT FIXED* and not *OPEN*; that row is unrepaired too.
+- **Five rows from the documentation pass of the same day,** 5b-1529 to 5b-1533: a structural floor,
+  insulation on fittings and a structural plan are not built; a slanted column is in
+  `PLACE_LINE_BASED_FAMILY`'s code, on no card's words and never run; and Article 9 of the Constitution
+  still puts *Ask to Keep* on the ribbon, which is the owner's to amend (D-150).
 - **No group holds a run of the five methods.** Row 5b-1518 says what each still needs from a real Revit.
