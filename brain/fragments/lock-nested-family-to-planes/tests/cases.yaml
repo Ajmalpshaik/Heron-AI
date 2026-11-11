@@ -36,6 +36,18 @@ positive:
       locked to moved by their labelled dimension (FLEX_FAMILY)
     expect: the detail item follows the plane; Group NB, NB3
 
+  - given: >
+      version 4, A DETAIL ITEM WITH NO OWNER VIEW. The same detail item placed
+      by PLACE_FAMILY_INSTANCES with level "Ref. Level" (its record reads
+      "nested on "Ref. Level"" - on the level's plane, not in a plan), turned
+      90 degrees with ROTATE_ELEMENTS and moved as above; locks "Center
+      (Front/Back)=Center (Left/Right)". Version 3 threw "no extent to read
+      back" here (2026-11-11, Revit 2020, NB1)
+    expect: >
+      a finding that it belongs to no view and is locked in "Ref. Level"; one
+      side locked, "(in Ref. Level)"; its insertion point unmoved; NOT "no
+      extent to read back"; Group NB, NB1
+
 negative:
   - given: locks "Left=Center (Left/Right)" where the nested family has no plane that is Left
     expect: refused, naming the sides it does show, and nothing locked
