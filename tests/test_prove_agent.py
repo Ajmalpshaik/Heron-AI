@@ -415,6 +415,14 @@ def main():
         shutil.rmtree(home, ignore_errors=True)
 
     print()
+    print("12. A PROOF IS CHECKED AGAINST THE FILE IT WAS SIGNED FOR")
+    print("    An agent several add-in files claim was fingerprinted on")
+    print("    whichever sorted first, so HERON-REVIT-VIE-013's proof of")
+    print("    list_views stood on RevitCapture.cs and never on the file")
+    print("    list_views is in (row 5b-1542).")
+    section_12(tool)
+
+    print()
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))
         for line in FAILURES:
@@ -500,6 +508,117 @@ def section_10(tool):
     tail = text[text.rfind('if __name__ == "__main__":'):]
     check(re.search(r"sys\.exit\(run\(\)\)", tail) is not None,
           "and the command line goes through run(), so it is done every time")
+
+
+def section_12(tool):
+    home = tree(tool)
+    try:
+        addin = os.path.join(home, "revit", "Heron.Revit.Addin")
+        signed = os.path.join(addin, "%s.cs" % AGENT)
+        rel = "revit/Heron.Revit.Addin/%s.cs" % AGENT
+        tool.write_draft(AGENT, dict(DRAFT, source=rel,
+                                     fingerprint=tool.fingerprint(signed)))
+        quiet(tool.cmd_accept, types.SimpleNamespace(agent=AGENT, by="A Person"))
+        code, said = quiet(tool.cmd_check, None)
+        check(code == 0 and "1 current" in said and "0 STALE" in said,
+              "control: a proof whose file is as it was signed reads current")
+        check("ONE FILE" not in said,
+              "control: and with one file claiming the agent nothing more is said")
+
+        # A second file claims the same agent, and it sorts FIRST.
+        earlier = os.path.join(addin, "AAA-Earlier.cs")
+        io.open(earlier, "w", encoding="utf-8", newline="\n").write(
+            "// Heron-Agent:  %s\nclass Y {}\n" % AGENT)
+        code, said = quiet(tool.cmd_check, None)
+        check(code == 0 and "1 current" in said and "0 STALE" in said,
+              "a new file claiming the agent does not stale a proof whose "
+              "signed file has not changed")
+        check("ONE FILE" in said and "AAA-Earlier.cs" in said,
+              "and `check` names the file this proof's fingerprint does not "
+              "cover")
+
+        # The other file changing is NOT seen, and that is said rather than hidden.
+        io.open(earlier, "a", encoding="utf-8", newline="\n").write("// changed\n")
+        code, said = quiet(tool.cmd_check, None)
+        check(code == 0 and "AAA-Earlier.cs" in said,
+              "a change to the file it does not cover still reads current, "
+              "with that file named")
+
+        # The file it WAS signed for changing stales it.
+        io.open(signed, "a", encoding="utf-8", newline="\n").write("// changed\n")
+        code, said = quiet(tool.cmd_check, None)
+        check(code == 1 and "STALE" in said and "1 STALE" in said,
+              "and a change to the file it was signed for reads STALE")
+
+        claimants = getattr(tool, "claimants", None)
+        check(callable(claimants), "the tool can list every file claiming an agent")
+        if callable(claimants):
+            found = [os.path.basename(p) for p in claimants(AGENT)]
+            check(found == ["AAA-Earlier.cs", "%s.cs" % AGENT],
+                  "and it lists both, in name order - %r" % (found,))
+
+        # A draft says so as a gap, which is what a person reads first.
+        replies = {"Ducts": {"x": 1}, "Pipes": {"x": 2}, "Flex Pipes": {"x": 3}}
+        text = vary_gap(tool, "list_somethings", replies)
+        check("ONE FILE" in text and "%s.cs" % AGENT in text,
+              "a draft for an agent two files claim records, as a gap, which "
+              "file its fingerprint leaves out")
+        os.remove(earlier)
+        text = vary_gap(tool, "list_somethings", replies)
+        check(text != "" and "ONE FILE" not in text,
+              "and a draft for an agent one file claims records no such gap")
+
+        # A NEW draft is fingerprinted on the file its OPERATION is in. The
+        # shape is the add-in's own: the dispatcher's `case` hands the
+        # operation to a class, and a file claiming the agent declares it.
+        def cs(name, text):
+            io.open(os.path.join(addin, name), "w", encoding="utf-8",
+                    newline="\n").write(text)
+        cs("AAA-Picture.cs", "// Heron-Agent:  %s\nclass Picture {}\n" % AGENT)
+        cs("Listing.cs", "// Heron-Agent:  %s\nclass Listing {\n"
+           "  // case \"commented_thing\": in a comment, which is not code\n"
+           "  case \"own_thing\":\n    return 2;\n}\n" % AGENT)
+        cs("Dispatch.cs", "// Heron-Agent:  HERON-REVIT-APP-003\nclass D {\n"
+           "  case \"list_things\":\n    return Listing.List(app);\n"
+           "  case \"take_picture\":\n    return Picture.Take(app);\n"
+           "  case \"inline_thing\":\n    return 1;\n}\n")
+        try:
+            by_op = [os.path.basename(tool.source_of(AGENT, op) or "")
+                     for op in ("list_things", "take_picture")]
+        except TypeError:
+            by_op = ["source_of() takes no operation"]
+        check(by_op == ["Listing.cs", "AAA-Picture.cs"],
+              "source_of() picks the file the operation's class is in - %r"
+              % (by_op,))
+        check(os.path.basename(tool.source_of(AGENT) or "") == "AAA-Picture.cs",
+              "with no operation named it is the first in name order, as before")
+        try:
+            unknown = os.path.basename(tool.source_of(AGENT, "no_such_op") or "")
+            inline = os.path.basename(tool.source_of(AGENT, "inline_thing") or "")
+        except TypeError:
+            unknown = inline = "source_of() takes no operation"
+        check(unknown == "AAA-Picture.cs" and inline == "AAA-Picture.cs",
+              "an operation no claiming file can be tied to falls back to "
+              "the first, never to a guess - %r, %r" % (unknown, inline))
+        try:
+            own = os.path.basename(tool.source_of(AGENT, "own_thing") or "")
+            said = os.path.basename(tool.source_of(AGENT, "commented_thing") or "")
+        except TypeError:
+            own = said = "source_of() takes no operation"
+        check(own == "Listing.cs",
+              "an operation whose `case` is in a claiming file itself picks "
+              "that file - %r" % (own,))
+        check(said == "AAA-Picture.cs",
+              "and a `case` that is only in a comment picks nothing - %r"
+              % (said,))
+        text = vary_gap(tool, "list_things", replies)
+        check("source: 'revit/Heron.Revit.Addin/Listing.cs'" in text
+              or "source: revit/Heron.Revit.Addin/Listing.cs" in text,
+              "a draft for list_things is fingerprinted on Listing.cs")
+        check("ONE FILE" in text and "AAA-Picture.cs" in text,
+              "and names the picture file as the one it leaves out")
+    finally:
+        shutil.rmtree(home, ignore_errors=True)
 
 
 if __name__ == "__main__":

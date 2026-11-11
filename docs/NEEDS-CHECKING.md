@@ -1458,6 +1458,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ni.md`](needs-checking/group-ni.md)
 
+## Group NM - two add-in agent proofs read STALE and are run again, and the proof tool now says which file a proof was signed for (2026-11-11)
+
+**Its own file:** [`needs-checking/group-nm.md`](needs-checking/group-nm.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

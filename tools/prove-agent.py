@@ -133,8 +133,8 @@ def registry_agents():
     return agents
 
 
-def source_of(agent_id):
-    """The add-in file claiming this agent, or None.
+def claimants(agent_id):
+    """Every add-in file claiming this agent, in name order.
 
     Anchored to a header comment, the same way agent-count.py and
     check-metadata.py find a claim - a regex in the body of a file is not a
@@ -142,8 +142,9 @@ def source_of(agent_id):
     """
     base = os.path.join(ROOT, "revit", "Heron.Revit.Addin")
     if not os.path.isdir(base):
-        return None
+        return []
     header = re.compile(r"^\s*//\s*Heron-Agent\s*:\s*(.+?)\s*$")
+    found = []
     for name in sorted(os.listdir(base)):
         if not name.endswith(".cs"):
             continue
@@ -157,8 +158,115 @@ def source_of(agent_id):
                     continue
                 claimed = [a.strip() for a in m.group(1).split(",")]
                 if agent_id in claimed:
-                    return path
-    return None
+                    found.append(path)
+                    break
+    return found
+
+
+def _code(path):
+    """A .cs file's text with its comments taken out."""
+    with io.open(path, encoding="utf-8", errors="replace") as fh:
+        text = fh.read()
+    return re.sub(r"//[^\n]*|/\*.*?\*/", "", text, flags=re.S)
+
+
+def source_of(agent_id, operation=None):
+    """The add-in file a NEW draft is fingerprinted on, or None.
+
+    One fingerprint covers one file. With one file claiming the agent it is
+    that file. With several, it is the one the OPERATION is in, found the way
+    the add-in itself finds it and never by a name that happens to match:
+
+        the dispatcher's   case "list_views":   hands the work to a class -
+                           return RevitViews.List(app);
+        and the file claiming the agent that DECLARES that class is the one;
+        or the file claiming the agent that holds the `case` itself.
+
+    Until 2026-11-11 it was the first file in name order whatever the
+    operation, so HERON-REVIT-VIE-013's proof of `list_views` was fingerprinted
+    on RevitCapture.cs (row 5b-1542). An operation that cannot be tied to one
+    claiming file still falls back to the first - `uncovered()` names the
+    rest, and a draft carries them as a gap, so the fallback is never silent.
+    """
+    found = claimants(agent_id)
+    if not found:
+        return None
+    if len(found) == 1 or not operation:
+        return found[0]
+
+    base = os.path.join(ROOT, "revit", "Heron.Revit.Addin")
+    case = re.compile(r'case\s+"%s"\s*:(.{0,400})' % re.escape(str(operation)),
+                      re.S)
+    called, holders = set(), []
+    for name in sorted(os.listdir(base)):
+        if not name.endswith(".cs"):
+            continue
+        path = os.path.join(base, name)
+        match = case.search(_code(path))
+        if not match:
+            continue
+        holders.append(path)
+        # up to the next case: the class this one hands the work to
+        body = re.split(r"\bcase\s+\"", match.group(1))[0]
+        called.update(re.findall(r"\b([A-Z]\w+)\s*\.\s*[A-Z]\w*\s*\(", body))
+
+    declares = [path for path in found
+                if any(re.search(r"\bclass\s+%s\b" % re.escape(one), _code(path))
+                       for one in called)]
+    if len(declares) == 1:
+        return declares[0]
+    holding = [path for path in found if path in holders]
+    if len(holding) == 1 and not declares:
+        return holding[0]
+    return found[0]
+
+
+def uncovered(agent_id, source):
+    """The files claiming this agent that `source`'s fingerprint leaves out.
+
+    Repository paths with `/`. HERON-REVIT-VIE-013's proof of `list_views`
+    was signed on RevitCapture.cs, which sorts first, while `list_views` is
+    in RevitViews.cs - so that proof read STALE when the picture code changed
+    and would have read current through any change to the listing itself.
+    Saying which files a fingerprint does not see is the least a reader is
+    owed. That one fingerprint covers one file at all is row 5b-1542's open
+    half, and the owner's with row 5b-1340.
+    """
+    here = os.path.abspath(source) if source else None
+    return [os.path.relpath(path, ROOT).replace(os.sep, "/")
+            for path in claimants(agent_id)
+            if os.path.abspath(path) != here]
+
+
+def uncovered_gap(agent_id, source):
+    """The gap line a draft carries for the files above, or None."""
+    rest = uncovered(agent_id, source)
+    if not rest:
+        return None
+    return ("THE FINGERPRINT COVERS ONE FILE: %s. %s also claim%s this agent, "
+            "and a change there will not make this proof read stale. If the "
+            "operation run here is in one of them, this proof is watching the "
+            "wrong file"
+            % (os.path.relpath(source, ROOT).replace(os.sep, "/"),
+               ", ".join(rest), "s" if len(rest) == 1 else ""))
+
+
+def signed_source(agent_id, body):
+    """The file a recorded proof was signed for, or None.
+
+    The record's own `source:` when that file is still there and still claims
+    the agent - a proof is an answer about the file somebody signed for, so a
+    second file claiming the agent later must not move the comparison onto
+    itself by sorting first. Anything else falls back to `source_of`, which is
+    what every record written before this was read against.
+    """
+    recorded = str(body.get("source") or "").strip()
+    if recorded:
+        path = os.path.join(ROOT, *recorded.split("/"))
+        known = [os.path.abspath(p) for p in claimants(agent_id)]
+        if os.path.abspath(path) in known:
+            return path
+    return source_of(agent_id)
 
 
 def fingerprint(path):
@@ -448,7 +556,7 @@ def cmd_track(args):
           % (args.agent, os.path.relpath(REGISTRY, ROOT)))
         return 1
 
-    source = source_of(args.agent)
+    source = source_of(args.agent, getattr(args, "operation", None))
     if source is None:
         w("Nothing in revit/Heron.Revit.Addin/ claims '%s', so there is no\n"
           "add-in agent to prove. This tool is for the add-in half only.\n"
@@ -558,6 +666,9 @@ def cmd_track(args):
         "be: this agent describes whatever model it is handed, so no input "
         "makes it correctly return nothing. D-53 tracking is the substitute "
         "and it is what the two runs above are")
+    one_file = uncovered_gap(args.agent, source)
+    if one_file:
+        gaps.append(one_file)
 
     draft = {
         "agent": args.agent,
@@ -767,7 +878,7 @@ def cmd_vary(args):
         w("'%s' is not in %s. An agent starts as a row there.%s"
           % (args.agent, os.path.relpath(REGISTRY, ROOT), "\n"))
         return 1
-    source = source_of(args.agent)
+    source = source_of(args.agent, getattr(args, "operation", None))
     if not source:
         w("No add-in source declares %s.%s" % (args.agent, "\n"))
         return 1
@@ -833,6 +944,9 @@ def cmd_vary(args):
             "met by D-53 tracking rather than by an empty case. If the model "
             "has a value of this argument it holds none of, adding it would "
             "be stronger")
+    one_file = uncovered_gap(args.agent, source)
+    if one_file:
+        gaps.append(one_file)
 
     draft = {
         "agent": args.agent,
@@ -951,13 +1065,15 @@ def cmd_check(_args):
     if not os.path.isdir(PROOFS):
         w("No proofs recorded yet.\n")
         return 0
-    stale, fine, missing = [], [], []
+    stale, fine, missing, partial = [], [], [], []
     for name in sorted(os.listdir(PROOFS)):
         if not name.endswith(".yaml"):
             continue
         agent = name[:-5]
         body = read_yaml(proof_path(agent))
-        source = source_of(agent)
+        # THE FILE IT WAS SIGNED FOR, not whichever file claiming the agent
+        # sorts first today (row 5b-1542).
+        source = signed_source(agent, body)
         if source is None:
             missing.append(agent)
             continue
@@ -966,6 +1082,10 @@ def cmd_check(_args):
             stale.append(agent)
         else:
             fine.append(agent)
+        rest = uncovered(agent, source)
+        if rest:
+            partial.append((agent, os.path.relpath(source, ROOT)
+                            .replace(os.sep, "/"), body.get("operation"), rest))
     w("\n%d proof(s): %d current, %d STALE, %d whose source is gone\n"
       % (len(fine) + len(stale) + len(missing), len(fine), len(stale),
          len(missing)))
@@ -974,6 +1094,14 @@ def cmd_check(_args):
           % agent)
     for agent in missing:
         w("  NO FILE  %s - nothing in revit/ claims it any more\n" % agent)
+    # NOT A VERDICT, AND IT MOVES NO EXIT CODE. A fingerprint is of one file;
+    # an agent several files claim is only partly watched, and a reader told
+    # "current" is owed the names of the files nobody is watching.
+    for agent, signed, operation, rest in partial:
+        w("  ONE FILE %s - `%s` was signed on %s; %s also claim%s this agent, "
+          "and a change there does not show here\n"
+          % (agent, operation or "?", signed, ", ".join(rest),
+             "s" if len(rest) == 1 else ""))
     if stale or missing:
         w("\nA stale proof is not a wrong answer - it is an answer about code "
           "that has since moved on.\n")

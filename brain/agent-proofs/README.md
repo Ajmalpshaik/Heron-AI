@@ -45,6 +45,34 @@ The normalisation is not cosmetic. The fragment side learned it on 2026-09-06, w
 fragments reported STALE the first time they were read on a different operating system. None of them
 was.
 
+## One fingerprint is of one file
+
+`source:` names the file a proof was signed for, and `check` reads the proof against **that file** -
+not against whichever file claiming the agent sorts first today. Most agents here are one file. Two
+are not, and `check` says so on a line of its own:
+
+```
+ONE FILE HERON-REVIT-VIE-013 - `list_views` was signed on ...; ... also claim this agent, and a change there does not show here
+```
+
+That line is not a verdict and moves no exit code. It is there because *current* means **the file that
+was signed has not changed**, and for an agent several files claim that is less than *the agent has not
+changed*. A new draft is fingerprinted on the file its operation is in - the dispatcher's
+`case "list_views":` hands the work to a class, and the file declaring that class is the one - and
+carries the files it leaves out as a gap. Until 2026-11-11 it was the first file in name order whatever
+the operation, which is how `VIE-013`'s proof of `list_views` came to stand on the picture code
+([row 5b-1542](../../docs/fragment-issues/section-5b-rows-401-425.md)).
+
+**A stale proof is run again, never edited.** On the PC, with Revit open on a saved scratch copy:
+`track` for an agent that describes a model (two sessions, two different models) or `vary` for one that
+takes an input, then `review`, then `accept --by` with the owner's own name -
+[`../agent-proof-drafts/README.md`](../agent-proof-drafts/README.md) has each command, and
+[Group NM](../../docs/needs-checking/group-nm.md) has the two that read STALE on 2026-11-11.
+
+**A record names its models and its sessions, and no Revit release.** *"Revit 2020"* for the
+2026-10-25 run is in this page and in that pull request, not in the fifteen files
+([row 5b-1546](../../docs/fragment-issues/section-5b-rows-401-425.md)).
+
 ## What every proof carries
 
 `moved` is the argument. A `list_*` agent has no negative case — it describes whatever model it is

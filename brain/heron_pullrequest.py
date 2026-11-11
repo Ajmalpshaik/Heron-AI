@@ -310,11 +310,18 @@ def main(argv):
 
     good = {"title": "Two agents", "body": "What they do and why.",
             "head": "claude/two-agents", "base": "main"}
+    # `of` IS PART OF A CONFIRMATION, and this example had none: it was
+    # written before the fingerprint was required, so its own "good" case was
+    # refused and the last lines here indexed that refusal (row 5b-1544). A
+    # refusal is an answer, so it is printed as one.
     yes = {"by": "Ajmal", "at": "2026-09-15 09:12",
-           "head": "claude/two-agents"}
+           "head": "claude/two-agents", "of": fingerprint_of(good)}
 
     answer = open_request(good, yes)
     print("\n%s" % answer["why"])
+    if not answer.get("prepared"):
+        print("\nrefused  %s - nothing was prepared." % answer.get("refused"))
+        return 1
 
     print("\nrefused")
     for request, confirmation in (
