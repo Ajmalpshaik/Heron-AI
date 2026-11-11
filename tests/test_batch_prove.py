@@ -1231,7 +1231,15 @@ def test_a_card_is_not_sent_to_a_release_it_leaves_out():
     check("late-sample" in said and "2020" in said,
           "the refusal names the card and the connected release: %r" % said[:90])
     check("2023, 2024, 2025" in said, "and the card's own releases")
-    check("Nothing was sent to Revit" in said, "and says nothing was sent")
+    # THE WORDS ARE EXACT. To know the release, both callers have pinged the
+    # Revits in the address book - so "Nothing was sent to Revit", which this
+    # refusal said at first, was untrue of the run that printed it. It says
+    # what was NOT done, and the one thing that was asked.
+    check("No fragment was sent to Revit" in said
+          and "nothing in a model was read or changed" in said,
+          "and says no fragment was sent and nothing in a model was read or changed")
+    check("Nothing was sent to Revit" not in said and "asked only whether it is there" in said,
+          "without claiming nothing was sent - Revit was asked whether it is there")
     check(not [m for m in tuple(BP.HELD_ELSEWHERE) + tuple(BP.REVIT_BUSY) if m in said],
           "and --unattended does not read it as a reason to ask again")
     check(rule(CARDS, "late-sample", "2024") is None,
@@ -1297,11 +1305,31 @@ def test_a_card_is_not_sent_to_a_release_it_leaves_out():
         for flags in (["--dry-run"], []):
             sent[:], asked[:] = [], []
             report = os.path.join(workspace, "findings.json")
-            with contextlib.redirect_stdout(io.StringIO()):
+            printed = io.StringIO()
+            with contextlib.redirect_stdout(printed):
                 code = BP.main([job_file, "--report", report, "--session", "4242"]
                                + flags)
             findings = json.loads(io.open(report, encoding="utf-8").read())
             label = "dry run" if flags else "real run"
+            if flags:
+                # WHAT THE DRY RUN SAYS OF ITSELF. It printed "nothing will be
+                # sent to Revit" and "Nothing was sent to Revit" while pinging
+                # every Revit in the address book: the words are held to what
+                # the run does.
+                said_of_itself = " ".join(printed.getvalue().lower().split())
+                check("nothing will be sent to revit" not in said_of_itself
+                      and "dry run. nothing was sent to revit" not in said_of_itself,
+                      "a dry run that asked which Revit is connected does not say "
+                      "nothing was sent")
+                check("no fragment is run" in said_of_itself
+                      and "nothing in a model is read or changed" in said_of_itself,
+                      "its mode line says what is not done: no fragment run, nothing "
+                      "in a model read or changed")
+                check("ping" in said_of_itself and "whether it is there" in said_of_itself,
+                      "and what is asked of Revit: whether it is there, a ping")
+                check("no fragment was run" in said_of_itself
+                      and "was asked one thing, once: whether it is there" in said_of_itself,
+                      "and its closing line says the same of what it did")
             verdicts = [r["verdict"] for r in findings["results"]]
             check(verdicts[:1] == [BP.REFUSED],
                   "the %s reports REFUSED for the card that leaves 2020 out (%s)"
@@ -1318,6 +1346,23 @@ def test_a_card_is_not_sent_to_a_release_it_leaves_out():
             check(asked == ["4242"],
                   "the %s asks which Revit is connected once, for the pinned session: %s"
                   % (label, asked))
+
+        # A DRY RUN WITH NOTHING RUNNABLE ASKS NOTHING, AND MAY SAY SO. Only
+        # finished work in the file: no job gets as far as the question, so
+        # "Nothing was sent to Revit" is true of this run and is still said.
+        done = FakeFragment("done-sample", [], status="PROVEN")
+        BP.HF.load_all = lambda *a, **k: ({"z": done}, [])
+        with io.open(job_file, "w", encoding="utf-8") as fh:
+            fh.write(u"defaults:\n  set: {a: 1}\n  negative-set: {a: 2}\n"
+                     u"jobs:\n  - fragment: done-sample\n")
+        asked[:] = []
+        printed = io.StringIO()
+        with contextlib.redirect_stdout(printed):
+            BP.main([job_file, "--dry-run"])
+        check(asked == [], "a dry run with no runnable job asks no Revit anything: %s" % asked)
+        check("Dry run. Nothing was sent to Revit" in printed.getvalue()
+              and "was asked one thing" not in printed.getvalue(),
+              "and its closing line says nothing was sent - true of that run")
     finally:
         BP.run_one, BP.HF.load_all, BP.free_models, BP.connected_release = real
 

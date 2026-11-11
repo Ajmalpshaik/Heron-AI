@@ -1462,9 +1462,15 @@ def excluded_release_refusal(root, name, revit_version):
     ROW 5b-1403. A card's `revit:` list is the card saying where its code
     compiles, and `validate` sent it anywhere: on 2026-11-02 two cards that
     start at 2023 and 2025 went to Revit 2020 and each spent a compile to come
-    back `compile_failed`, which the card had already said. Asked before
-    anything is sent, by `validate` and by `tools/batch-prove.py` - one rule,
+    back `compile_failed`, which the card had already said. Asked before a
+    fragment is sent, by `validate` and by `tools/batch-prove.py` - one rule,
     called, never copied.
+
+    THE WORDS SAY "NO FRAGMENT WAS SENT", NOT "NOTHING WAS SENT". To know the
+    release at all, both callers have been through `discover`, which pings
+    every Revit in the address book - a ping the bridge answers itself, with
+    no lease, reading nothing from a model. So a Revit WAS asked one thing,
+    and the refusal says what was not done instead of denying that.
 
     None when the connected release or the card's list cannot be read: this
     saves a wasted run, it is not a safety gate, and Revit's own compile still
@@ -1476,8 +1482,10 @@ def excluded_release_refusal(root, name, revit_version):
     if not connected or not releases or connected in releases:
         return None
     return ("%s does not claim Revit %s, the release connected - its `revit:` is "
-            "%s. Nothing was sent to Revit. Connect one of those releases, or "
-            "pin one with --session." % (name, connected, ", ".join(releases)))
+            "%s. No fragment was sent to Revit, and nothing in a model was read "
+            "or changed - Revit was asked only whether it is there. Connect one "
+            "of those releases, or pin one with --session."
+            % (name, connected, ", ".join(releases)))
 
 
 def write_operation(root, name):

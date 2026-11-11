@@ -64,7 +64,12 @@ which Revit is connected - a ping, which claims no Revit, and the one a
 is `REFUSED`, in a dry run as in a real one, with the card's releases and the
 connected one named. `validate` asks the same rule of the Revit it binds, so
 with no Revit answering yet the dry run says nothing about releases and the
-run still sends nothing.
+run still sends no fragment.
+
+**So a dry run is no longer silent towards Revit, and says so.** It runs no
+fragment and reads or changes nothing in a model, as before. What it may send
+is that one ping to each Revit in the address book - and it prints that it
+did, where it used to print "nothing will be sent to Revit".
 
 **2. It passed fragments that had done nothing.** `heron_validate` judges
 whether the NEGATIVE came back empty - which is D-30's leg, and which a fragment
@@ -494,6 +499,12 @@ def release_refusal(frag, release):
     if frag.status not in FINISHED:
         return NOT_PROVEN, ("heron-status is %s - a first proof is a run "
                             "without --release" % frag.status)
+    if not isinstance(frag.proof, dict) or not frag.proof:
+        # Row 5b-1154: PROVEN on the card and no proof recorded. Stale by
+        # `proof_is_stale` - but "the code moved under it" is untrue of a
+        # proof that was never there.
+        return NOT_PROVEN, ("its card says %s and records no proof at all. "
+                            "Prove it without --release first (D-30)" % frag.status)
     if frag.proof_is_stale():
         return NOT_PROVEN, ("its proof is STALE - the code moved under it. Prove "
                             "it again without --release first (D-30)")
@@ -508,15 +519,34 @@ def release_refusal(frag, release):
     return None, None
 
 
+# WHAT A RUN THAT ASKED SAYS IT ASKED - one sentence, printed by a dry run that
+# reached `connected_release`. The dry run used to say "nothing will be sent to
+# Revit" and that stopped being true with row 5b-1403: every Revit in the
+# address book is pinged. The words say what is asked and what is not.
+PING_SAID = ("Heron's address book was read, and each Revit it lists - none, "
+             "where no Revit is connected - was asked one thing, once: whether "
+             "it is there. That is a ping, as `list` sends: it claims no Revit "
+             "and reads nothing from a model. The release is read from the "
+             "address book.")
+
+
 def connected_release(session=None):
     """The release of the ONE Revit this batch's jobs would reach, or None.
 
     Row 5b-1403. Asked of the client's own address book, as `list` asks it -
-    a ping, which claims no Revit - and of `only_session`, so the answer is
-    the Revit `validate` would bind. None when no Revit answers, when two do
-    and no --session names one, or when asking failed: the batch then says
-    nothing about releases, and `validate` asks the same rule of the Revit it
-    binds. Nothing is pruned - a dry run changes nothing.
+    and of `only_session`, so the answer is the Revit `validate` would bind.
+    None when no Revit answers, when two do and no --session names one, or
+    when asking failed: the batch then says nothing about releases, and
+    `validate` asks the same rule of the Revit it binds.
+
+    WHAT THIS SENDS, EXACTLY, BECAUSE A DRY RUN CALLS IT. `discover` reads
+    each address-book file, which names the release, and sends every Revit
+    listed ONE request: `ping`. The bridge answers a ping itself, with no
+    lease taken (BridgeServer.Dispatch) - so no Revit is claimed, no fragment
+    is run and nothing in a model is read or changed. Nothing is pruned
+    either: a dry run changes no file. It is still a message to a running
+    Revit, so a dry run that got this far says so (PING_SAID) rather than
+    "nothing was sent".
     """
     try:
         live = BRIDGE.discover(prune=False)[0]
@@ -874,8 +904,13 @@ def wrong_release(record, release):
     return None
 
 
-def report(results, dry_run, release=None):
-    """The findings, worst first, and only what a person has to act on."""
+def report(results, dry_run, release=None, pinged=False):
+    """The findings, worst first, and only what a person has to act on.
+
+    `pinged`: this run asked which Revit is connected (`connected_release`).
+    A dry run's closing line says so, because "nothing was sent to Revit"
+    stopped being true of such a run with row 5b-1403.
+    """
     width = max([len(r["fragment"]) for r in results] + [10])
 
     print("")
@@ -898,7 +933,12 @@ def report(results, dry_run, release=None):
 
     if dry_run:
         print("")
-        print("Dry run. Nothing was sent to Revit and nothing was written.")
+        if pinged:
+            print("Dry run. No fragment was run, nothing in a model was read or "
+                  "changed, and nothing was written.")
+            print("%s" % PING_SAID)
+        else:
+            print("Dry run. Nothing was sent to Revit and nothing was written.")
         return
 
     passed = [r for r in results if r["verdict"] == PASS]
@@ -1252,7 +1292,9 @@ def main(argv=None):
         description="Prove many fragments in one pass. It never signs one.")
     parser.add_argument("jobs", help="a YAML job file")
     parser.add_argument("--dry-run", action="store_true",
-                        help="read the job file and check it. Run nothing")
+                        help="read the job file and check it. Run no fragment: "
+                             "a connected Revit is only pinged, to learn which "
+                             "release a runnable job would reach")
     parser.add_argument("--only", action="append",
                         help="run just this fragment. Repeatable")
     parser.add_argument("--verbose", action="store_true",
@@ -1337,12 +1379,20 @@ def main(argv=None):
     if args.release:
         print("release:   Revit %s - PROVEN fragments not yet proved on it (D-131)"
               % args.release)
-    # A DRY RUN SENDS NOTHING, so it has nothing to wait for and nothing to log.
+    # A DRY RUN SENDS NO FRAGMENT, so it has nothing to wait for and nothing to
+    # log. It may send a ping - see connected_release - and the line below
+    # says so rather than "nothing will be sent to Revit", which it said
+    # until the ping made that untrue (row 5b-1403).
     log = None
     if not args.dry_run and (args.log or args.unattended):
         log = args.log or os.path.join(BRIDGE.LOG_DIR, LOG_NAME)
     if args.dry_run:
-        print("mode:      DRY RUN - nothing will be sent to Revit")
+        print("mode:      DRY RUN - no fragment is run, and nothing in a model is "
+              "read or changed")
+        print("           a connected Revit is asked only whether it is there (a "
+              "ping), and only")
+        print("           if a job is otherwise runnable - to refuse a card its "
+              "release leaves out")
     elif args.unattended:
         print("mode:      UNATTENDED - asks again while Revit is held or busy, "
               "closes only Revit's \"%s\" warning" % MEMORY_WARNING)
@@ -1437,7 +1487,7 @@ def main(argv=None):
         print("Another session is writing it. Read the findings below, then "
               "check what it did before trusting them.")
 
-    report(results, args.dry_run, args.release)
+    report(results, args.dry_run, args.release, pinged=bool(connected))
 
     note("finished: %s" % ", ".join(
         "%d %s" % (len([r for r in results if r["verdict"] == v]), v)

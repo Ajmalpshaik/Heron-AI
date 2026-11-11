@@ -1684,6 +1684,13 @@ def _runs_as_matched(folder, provider, capability):
     if found["status"] not in ("PROVEN", "PRODUCTION"):
         return ("They match %s exactly, but its own file says %s, so it is "
                 "not run unasked." % (capability, found["status"] or "no status"))
+    if found["stale"] and found.get("proof") is False:
+        # Row 5b-1154: the card says PROVEN and records no proof. Not run, as
+        # a stale one is not - in its own words, because "its code has changed
+        # since it was proven" is untrue of a card that never was.
+        return ("They match %s exactly, but its own file says %s and records no "
+                "proof at all (D-30), so it is not run unasked."
+                % (capability, found["status"]))
     if found["stale"]:
         return ("They match %s exactly, but its code has changed since it was "
                 "proven, so that proof no longer describes it (D-30) and it is "
@@ -3093,6 +3100,13 @@ def _proof_line(capability, folder):
         when.append("signed by %s" % found["by"])
     when = " (%s)" % ", ".join(when) if when else ""
 
+    if found["stale"] and found.get("proof") is False:
+        # Row 5b-1154: PROVEN on the card, and no proof recorded. Its own
+        # sentence - "its code has changed since" is untrue of a card that
+        # was never proved.
+        return ("'%s' says it is %s, BUT ITS CARD RECORDS NO PROOF AT ALL - no "
+                "model, no date, no negative case. Treat this answer as unproven "
+                "until it is proved (D-30)." % (capability, status))
     if found["stale"]:
         return ("'%s' was %s%s%s - BUT ITS CODE HAS CHANGED SINCE, so that proof "
                 "describes code that no longer runs. Treat this answer as unproven "
@@ -6117,6 +6131,11 @@ def _checklist_ask(origin="chat", ctx=None):
             return {"ran": False, "why": "%s is %s - no recorded proof stands behind it, so its "
                                          "answer is not a QA result. Nothing was sent."
                                          % (capability, proof.get("status") or "not proven")}
+        if proof.get("stale") and proof.get("proof") is False:
+            # Row 5b-1154: the card says proven and records no proof.
+            return {"ran": False, "why": "%s says it is %s, but its card records no proof at all "
+                                         "(D-30), so its answer is not a QA result. Nothing was "
+                                         "sent." % (capability, proof.get("status"))}
         if proof.get("stale"):
             return {"ran": False, "why": "%s was proven, but its code has changed since (D-30), "
                                          "so nothing was sent." % capability}

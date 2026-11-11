@@ -611,6 +611,22 @@ def test_batch_prove_runs_only_what_is_proven_elsewhere():
         check(verdict("sample", None) == BP.ALREADY,
               "and without --release a PROVEN fragment is ALREADY, exactly as before")
 
+        # A CARD THAT SAYS PROVEN AND RECORDS NO PROOF - row 5b-1154. It is NOT
+        # PROVEN for this mode, as a stale one is, and says which: "the code
+        # moved under it" is untrue of a proof that was never there. Edited in
+        # memory - no card on disk is touched.
+        bare = HF.load(ws.fragment(slug="bare").folder)
+        bare.data.pop("proof", None)
+        library["bare"] = bare
+        bare_verdict, bare_why = BP.job_refusal(job("bare"), library, "2025")
+        check(bare_verdict == BP.NOT_PROVEN,
+              "a PROVEN card with no proof recorded is NOT PROVEN for this mode (%s)"
+              % bare_verdict)
+        check("records no proof" in (bare_why or "") and "moved" not in (bare_why or ""),
+              "and is said as that, not as code that moved under a proof: %s" % bare_why)
+        check("moved under it" in (BP.job_refusal(job("stale"), library, "2025")[1] or ""),
+              "while a proof the code did move under is still said as stale")
+
         line = BP.validate_command(job("sample"), BP.record_name("sample", "2025"))
         check(line[line.index("--out") + 1].endswith(os.path.join("runs", "sample@2025.json")),
               "its run record is <slug>@<year>, never the proof's own")

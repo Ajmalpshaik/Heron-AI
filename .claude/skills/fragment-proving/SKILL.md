@@ -136,11 +136,20 @@ python tools/batch-prove.py my-jobs.yaml --dry-run    # check it, run nothing
 python tools/batch-prove.py my-jobs.yaml              # run it
 ```
 
-`--dry-run` reads the file against the fragment library and answers, before Revit is touched, whether
+`--dry-run` reads the file against the fragment library and answers, before any fragment is sent, whether
 every fragment exists, whether any is already proved, whether the setup chain is real, whether
 `expect:` names something the fragment provides, and whether a negative case is arranged at all. It
 prints the exact command each job would send. **Always dry-run first** — a batch of fourteen should
 not discover on the eleventh that a name was mistyped on the first.
+
+**A dry run is not silent towards Revit, and this line said it was until 2026-11-11** - *"before Revit
+is touched"*. Since [row 5b-1403](../../../docs/FRAGMENT-ISSUES.md), when a job is otherwise runnable
+the dry run asks **one thing** of each Revit in Heron's address book: whether it is there - a ping, the
+one `heron_bridge_client.py list` sends, which the bridge answers itself with no lease taken - and reads
+that Revit's release from the address book, so a card whose `revit:` list leaves the connected release
+out is `REFUSED` here rather than after a wasted compile. **What it does not do is unchanged:** no
+fragment is run, nothing in a model is read or changed, no Revit is claimed and nothing is written. With
+no runnable job in the file it asks nothing at all, and its closing line says which of the two happened.
 
 Three things the shape of the file is doing:
 
@@ -238,7 +247,7 @@ Until IW1 passes, check in the morning that the log shows the warning closed whe
 | `NO NEGATIVE` | the second leg never ran | usually `needs_unbound` — the negative selection was empty. **Rule 3** |
 | `DID NOT RUN` | the positive never ran | read the message. Often a caller value the contract asks for |
 | `TIMEOUT` | Revit did not answer in time | **rule 1.** Retry on a smaller selection. It says nothing about the fragment |
-| `REFUSED` / `NO FRAGMENT` | the job file cannot be run as written - or, since row 5b-1403, the card's own `revit:` list leaves out the Revit that is connected | fix the file, or connect a release the card lists. Nothing was sent to Revit |
+| `REFUSED` / `NO FRAGMENT` | the job file cannot be run as written - or, since row 5b-1403, the card's own `revit:` list leaves out the Revit that is connected | fix the file, or connect a release the card lists. No fragment was sent to Revit - for the release, Revit was pinged (above) |
 
 A failure is the tool's **output**, not an error — it exits 0 with fourteen failures and non-zero only
 when the batch itself could not run: a `NO FRAGMENT`, a `REFUSED`, a `WRONG RELEASE`, or the library
