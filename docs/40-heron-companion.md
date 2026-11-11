@@ -1109,11 +1109,12 @@ Neither is a new defect of the page: the refusal is Article 11 doing its job. Th
 again when their fragments are PROVEN - [group FE](needs-checking/group-fe.md) for
 `SET_PARAMETER_VALUES_BY_ID`, [group AQ](needs-checking/group-aq.md) for `SET_AIR_TERMINAL_FLOW`.
 
-**One thing the chat is told is wrong today, and it is recorded, not repaired**
-([row 5b-1133](fragment-issues/section-5b-rows-401-425.md)): the `heron_companion` tool's reply says the
+**One thing the chat was told was wrong until 2026-11-11**
+([row 5b-1133](fragment-issues/section-5b-rows-401-425.md)): the `heron_companion` tool's reply said the
 page *"shows the model, the view and the selection ... and changes nothing"*. The Selected card is off
 since §21.6, and the page's Apply, Finalize and Place change the model under the same switches as a chat.
-Until the reply is fixed, describe the page from this section, not from that reply.
+The reply and the tool's description say that now - what changes nothing is opening the page - and
+`tests/test_companion.py` holds both to it. Tested without Revit; the page was not opened on a PC for it.
 
 ### 21.10 The Model Dashboard panel (2026-11-01)
 

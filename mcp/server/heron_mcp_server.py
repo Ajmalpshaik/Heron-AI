@@ -115,7 +115,8 @@ import heron_bridge_client as bridge          # noqa: E402
 import heron_session as session                      # noqa: E402
 from heron_session import SessionBinding, NotBound   # noqa: E402
 from heron_write import (BadDistance, DocumentPin, PendingApproval,   # noqa: E402
-                         describe_vertical, parse_millimetres, skipped_sentence)
+                         describe_vertical, parse_millimetres, reported_elsewhere,
+                         skipped_sentence)
 from heron_failure import analyse, explain          # noqa: E402
 from heron_failure import REFUSED as FAILURE_REFUSED  # noqa: E402
 import heron_tools as tools                         # noqa: E402
@@ -816,8 +817,9 @@ def revit_select_by_category(category: str = "ducts") -> str:
         # THE ADD-IN HAS ALREADY SELECTED by the time a reply can be refused
         # here, and between two models made from one template its own check
         # passes: it compares the Project Information id, which they share
-        # (5b-324). The pin's refusal says "Nothing has been sent to Revit",
-        # which is false after a selection - so say what happened instead.
+        # (5b-324). The pin's refusal said "Nothing has been sent to Revit"
+        # until 2026-11-11 (5b-1135), false after a selection - and its own
+        # sentence still cannot know one was made - so say what happened.
         # Found by the review of the 5b-324 change, 2026-10-06.
         if reply.get("selected"):
             # FAILED, NOT REFUSED, on the activity list (row 5b-389): a
@@ -1107,7 +1109,13 @@ def revit_preview_move(category: str = "ducts", distance: str = "") -> str:
     # that is not the model this chat has been working on, say so and offer
     # nothing to approve - a preview the user skims for the model they THINK
     # they are in is exactly how the wrong building gets changed.
-    wrong_model = pinned.check(reply)
+    #
+    # THE PREVIEW WAS A READ, AND THE MOVE HAS NOT BEEN SENT - so the refusal
+    # says that outright (`unsent`), as "Nothing has been sent to Revit" did
+    # for this caller until 5b-1135 took that sentence away.
+    wrong_model = pinned.check(
+        reply, unsent="No move has been sent to Revit: nothing was moved, and "
+                      "there is nothing to approve.")
     if wrong_model is not None:
         approval.clear()
         return _ended("refused", wrong_model)
@@ -1787,9 +1795,24 @@ def _by_words(request, door, values):
     lines.extend(_other_release_lines(found))
     lines.extend(_drift_lines(found))
     lines.extend(_method_lines(found))
+    # WHICH DOOR RUNS EACH ONE LISTED (review of 5b-1161). revit_change sends
+    # a capability that only reads to revit_read, so a hand-back that listed
+    # a READ and ended "call revit_change again with capability=<it>" named a
+    # door that refuses exactly that call - a turn spent learning it. Each
+    # such line is marked, and the closing sentence names both doors.
+    elsewhere = []
+
+    def marked(name, risk):
+        runs = _door_that_runs(door, risk, name)
+        if runs == door:
+            return ""
+        elsewhere.append(name)
+        return "   -> run it with %s, not %s" % (runs, door)
+
     lines.append("")
-    lines.append("  best match   %s   (%s)"
-                 % (capability, found.get("risk") or "risk unread"))
+    lines.append("  best match   %s   (%s)%s"
+                 % (capability, found.get("risk") or "risk unread",
+                    marked(capability, found.get("risk"))))
     lines.extend(_contract_lines(capability, separator=False))
 
     # EVERY CANDIDATE CARRIES WHAT IT NEEDS TYPED, not only the first. A host
@@ -1804,8 +1827,9 @@ def _by_words(request, door, values):
         others.append(c)
     for c in others[:5]:
         lines.append("")
-        lines.append("  also close   %s   (%s)   %s"
-                     % (c["capability"], c.get("risk") or "risk unread", c["why"]))
+        lines.append("  also close   %s   (%s)   %s%s"
+                     % (c["capability"], c.get("risk") or "risk unread", c["why"],
+                        marked(c["capability"], c.get("risk"))))
         lines.extend("  " + line if line else line
                      for line in _contract_lines(c["capability"], separator=False,
                                                  notes=False))
@@ -1814,10 +1838,28 @@ def _by_words(request, door, values):
     lines.append("  A NEWLINE separates one value from the next. A SEMICOLON "
                  "does not - it belongs to the value it sits inside.")
     lines.append("")
-    lines.append("  If one of these is what the user meant, call %s again with "
-                 "capability=<it> and its values. If none is, ask the user."
-                 % door)
+    if elsewhere:
+        lines.append("  If one of these is what the user meant, call the door that "
+                     "runs it with capability=<it> and its values: revit_read for "
+                     "one marked so above - %s does not run a capability that only "
+                     "reads - and %s again for any other. If none is, ask the user."
+                     % (door, door))
+    else:
+        lines.append("  If one of these is what the user meant, call %s again with "
+                     "capability=<it> and its values. If none is, ask the user."
+                     % door)
     return None, _ended("handed_back", "\n".join(lines))
+
+
+def _door_that_runs(door, risk, capability):
+    """
+    The door a capability listed in a hand-back is run through, when the
+    list was asked for at `door`: revit_read for one the change door sends
+    there (heron_tools.below_refusal), and `door` itself for every other -
+    a risk nobody could read included, which the door refuses in its own
+    words.
+    """
+    return "revit_read" if tools.below_refusal(door, risk, capability) else door
 
 
 def _matched_line(request, capability):
@@ -1942,6 +1984,24 @@ def revit_change(capability: str = "", values: str = "",
     if refusal:
         _ended("refused")
         return refusal
+
+    # A READ IS NOT A CHANGE, AND THIS DOOR RAN ONE AS IF IT WERE (5b-1161).
+    # `risk_refusal` lets every runnable risk through and `write_operation`
+    # sends each as run_fragment_write, so "how many ducts" asked here needed
+    # Changes on and a PROVEN card, ran inside a transaction group, and could
+    # meet the Keep box. revit_read and revit_show have asked
+    # heron_tools.door_refusal since they were built; this door asked nothing.
+    # It asks the floor now - a capability the read door runs is sent there,
+    # before its code is read or a session is bound. EXECUTE and SUGGEST still
+    # run here: `below_refusal` says what stands on that.
+    below = tools.below_refusal(
+        "revit_change",
+        bridge.fragment_risk(os.path.join(root, "brain", "fragments", folder,
+                                          "fragment.yaml")),
+        capability)
+    if below:
+        return _ended("refused", below)
+
     operation = bridge.write_operation(root, folder)
     if operation is None:
         return _ended("refused",
@@ -2104,7 +2164,11 @@ def revit_change(capability: str = "", values: str = "",
     # add-in answered ok, so behind an add-in too old to read expectProject
     # the change may have been made in the other model. Neither "refused"
     # nor "ok" is known, so the activity list keeps its guess.
-    wrong_model = pinned.check(reply)
+    #
+    # AND ITS REFUSAL SAYS WHAT THE ADD-IN REPORTED DOING (5b-1135). It ended
+    # "Nothing has been sent to Revit" - after a change the lines above say
+    # may have been made. The write path's own sentence goes in its place.
+    wrong_model = pinned.check(reply, did=reported_elsewhere(capability, reply))
     if wrong_model is not None:
         return wrong_model
 
@@ -2158,6 +2222,7 @@ def revit_change(capability: str = "", values: str = "",
     # AND WHAT THE LAST REPLY OF THIS CAPABILITY ALREADY SHOWED IS COUNTED,
     # NOT PRINTED AGAIN (5b-407) - only within a batch, only word for word, and
     # only when the reply names a run record, where every value can be read.
+    # NEVER A REFUSAL: one that repeats is printed every time (5b-1160).
     shown, same = runs.shown_values(reply, capability, _BATCH)
     lines.extend(_provides_lines(shown, reply.get("providesEntries"), reply.get("providesItems"))
                  or ([""] if same else []))
@@ -3557,7 +3622,8 @@ def revit_reset_temporary() -> str:
     # isolate that landed in the wrong model's view tells the chat to call
     # this to end it, so ending it there is the job done, not a mistake. When
     # nothing was on, the pin's own sentence is used, as every tool here uses
-    # it (row 5b-594 records what that sentence gets wrong after the act).
+    # it (row 5b-594 recorded what that sentence got wrong after the act; it
+    # says since 2026-11-11 that Revit was asked and answered, row 5b-1135).
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
         if reply.get("reset"):
@@ -4174,7 +4240,10 @@ def _dashboard_colour(parameter, clear=False, identity=None):
             said = "Revit did not say which view is active, so nothing was changed."
             _note(tool, started, 0, reply=said, outcome="refused")
             return {"ok": False, "said": said}
-        wrong_model = pinned.check(views)
+        # ONLY THE VIEWS WERE READ; THE COLOURING HAS NOT BEEN SENT (`unsent`).
+        wrong_model = pinned.check(
+            views, unsent="No change has been sent to Revit: no view was coloured "
+                          "or cleared.")
         if wrong_model is not None:
             _note(tool, started, 0, reply=wrong_model, outcome="refused")
             return {"ok": False, "said": wrong_model}
@@ -4884,14 +4953,22 @@ def heron_resolve(capability: str) -> str:
 
     It names every value the caller supplies, with its type and how to write
     one - which is the question that otherwise sends somebody into
-    fragment.yaml and the add-in's parser. It touches nothing and needs no
-    Revit.
+    fragment.yaml and the add-in's parser. It changes nothing in the model
+    and needs no Revit. A capability nobody provides is noted as wanted, for
+    Heron's gap report (D-63).
 
     NOT NEEDED FOR THE CAPABILITY heron_lookup ALREADY NAMED, nor after a
     revit_read or revit_change handed back a list: both already carry these
     same lines. Call it for a capability named some other way, or for the
     risk, releases and providers.
     """
+    # "IT TOUCHES NOTHING" UNTIL 2026-11-11 (FRAGMENT-ISSUES 5b-1165), and it
+    # does: heron_brain.resolve records a want for a capability no fragment
+    # provides on any release, in the knowledge store every chat on the
+    # machine reads unless HERON_KNOWLEDGE names another. The write is by
+    # decision (D-63); the sentence was the defect. Whatever the host typed is
+    # what is noted, a typo included; whether a name close to nothing Heron
+    # knows should be noted at all is the gap report's question, the owner's.
     revit, how = _revit_version()
 
     try:
@@ -6290,15 +6367,27 @@ def heron_sheet_list(path: str, sheet: str = "", header_row: int = 1) -> str:
 def heron_companion() -> str:
     """
     Open the Heron Companion - a page in the user's browser, beside Revit,
-    that shows which model and view are in front and what is selected, live.
+    that shows which Revit, model and view are in front, live, with what this
+    chat asked Heron to do and Heron's tables and panels.
 
     Use when the user asks to open, show or bring back the Companion (or
     "the Heron page", "the live view"). It opens the page itself; there is
-    no address to pass on, and none is given here on purpose. It reads
-    nothing from Revit through the pipe and changes nothing - the page
+    no address to pass on, and none is given here on purpose. OPENING it
+    reads nothing from Revit through the pipe and changes nothing - the page
     reads a small status file the add-in writes while the Heron button is
-    connected. The page never sends anything to you or any AI.
+    connected. Some of the page's own buttons DO change the model - Apply,
+    Finalize and Place among them - each under the same Changes switch and
+    the same Keep or Discard question as a change asked for in this chat.
+    The page never sends anything to you or any AI.
     """
+    # WHAT THIS SAID UNTIL 2026-11-11 (FRAGMENT-ISSUES 5b-1133): that the page
+    # shows "what is selected" and "changes nothing". The Selected card has
+    # been switched off since 2026-10-04 (docs/40 section 21.6), and the
+    # tables' Apply, the Loads panel's Finalize and the Sprinkler Layout's
+    # Place run revit_change's own body (section 21.9). The chat repeats this
+    # reply, so the modeller was told a page that can change the model is
+    # read-only. NO PANEL IS LISTED BY NAME: the page gains them, and a list
+    # here would go stale as that sentence did.
     import webbrowser
     companion_page = _companion_module()
 
@@ -6322,9 +6411,12 @@ def heron_companion() -> str:
     if not opened:
         return ("The Heron Companion is running, but Windows would not open a "
                 "browser for it. Nothing in Revit was touched.")
-    return ("The Heron Companion is open in your browser. It shows the model, "
-            "the view and the selection of the Revit this chat uses, and "
-            "changes nothing.")
+    return ("The Heron Companion is open in your browser. It shows which Revit, "
+            "model and view are in front and what this chat asked Heron to do, "
+            "with Heron's tables and panels. Opening it changed nothing in Revit. "
+            "Some of its buttons do change the model - Apply, Finalize and Place "
+            "among them - and each does it under the same Changes switch and the "
+            "same Keep or Discard question as a change asked for in this chat.")
 
 
 @server.tool()
@@ -8250,6 +8342,14 @@ if __name__ == "__main__":
         # exist here (Q-67, D-132). stderr, because stdout is the MCP channel.
         sys.stderr.write("%s. Heron serves only its library here: %s.\n"
                          % (NO_REVIT_HERE, ", ".join(tools.LIBRARY)))
+        # And somewhere to keep its index of that library, when nobody named
+        # one: there is no home off Windows, and a cloud chat with no
+        # HERON_KNOWLEDGE was answered only "nowhere to keep what it knows"
+        # (D-153, row 5b-1508). Before anything below opens the store.
+        kept = brain.library_store()
+        if kept:
+            sys.stderr.write("No knowledge folder is named here, so the library's "
+                             "index is kept in %s.\n" % kept)
     # Load the trained encoder on a background thread BEFORE serving anything.
     # It is about a second in a fresh process and was measured still importing
     # forty seconds later when it first ran inside a request handler, on the
