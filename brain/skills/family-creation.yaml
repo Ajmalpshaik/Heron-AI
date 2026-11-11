@@ -322,7 +322,7 @@ purpose: >
       LOCK_NESTED_FAMILY_TO_PLANES by its own Left, Right, Front, Back, Top,
       Bottom or centres - a DETAIL ITEM nested in a plan, a diffuser's flow
       arrows, too: it is locked in the plan it is drawn in, to planes seen
-      edge-on there (version 3, DRAFT until Group NB, row 5b-1492) -
+      edge-on there; one placed by PLACE_FAMILY_INSTANCES belongs to no view and is locked in the plan of its level (PROVEN 2026-11-11, Group NB) -
       then LINK_FAMILY_PARAMETER (family=, type=) for its type's sizes
       and LINK_FAMILY_PARAMETER for its instance's. A nested part that came in
       facing inward or upside down - its plane's normal points the wrong way -
