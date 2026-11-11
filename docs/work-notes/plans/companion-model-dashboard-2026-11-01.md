@@ -12,7 +12,9 @@ See docs/29-metadata-standard.md
 > **Started 2026-11-01, on the owner's word:** *"Check always this as a referance and buld the conpnaiban
 > app with this and what are the ideas you have you can add that aslo okkey"* - "this" being
 > [BIMLens](https://github.com/IbrahimFahdah/BIMLens). **Phase 1 is built** ([docs/40 §21.10](../../40-heron-companion.md));
-> the rest is a plan, and each phase is the owner's to start. **Every idea BIMLens has is in the inventory below**, each with Heron's way of doing it. Retire this note when its last phase is
+> so, since, are rows of phases 2, 4, 5 and 6 - the Status column below holds each row's state, and this
+> sentence said *"the rest is a plan"* until 2026-11-11. What a row still calls *planned* is the owner's to
+> start. **Every idea BIMLens has is in the inventory below**, each with Heron's way of doing it. Retire this note when its last phase is
 > built or dropped, after moving what lasts into docs/40.
 
 ## The reference, and what may be taken from it

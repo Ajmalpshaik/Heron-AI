@@ -11,8 +11,23 @@ against the Heron library, and every gap checked against the Revit API reference
 > Some API reference sites could not be reached from the cloud session, so every **UNSURE** is a
 > question still open, not a no.
 
-**Lifecycle:** active. Retire once each "build next" item below has a fragment, or has been moved
-to [PROPOSALS.md](../../PROPOSALS.md) / [OPEN-QUESTIONS.md](../../OPEN-QUESTIONS.md).
+**Lifecycle:** **completed, not yet retired** (read 2026-11-11). The "build next" list below was built
+on 2026-11-04 by [#781](https://github.com/Ajmalpshaik/Heron-AI/pull/781) (`b0bc60a7`) - see the note
+under its heading. The condition this line stated until that day - *retire once each "build next" item
+has a fragment, or has been moved to [PROPOSALS.md](../../PROPOSALS.md) /
+[OPEN-QUESTIONS.md](../../OPEN-QUESTIONS.md)* - is met for that list but for two halves of item 17,
+named there. **Three things still keep the file, and each is a person's to settle** - in the
+[work-notes README](../README.md)'s lifecycle, *knowledge preserved* comes before *retired*:
+
+- Item 17's slanted column and structural plan: built, or moved to a register as a gap.
+- *The API cannot do it*, *Still UNSURE* and the four tab-by-tab tables are in no register and no
+  numbered document; this file is their only copy.
+- Fragment cards and [Group MO](../../needs-checking/group-mo.md) name this file by its path -
+  `grep -rl revit-ribbon-coverage brain docs` lists them. Deleting it needs those lines re-pointed
+  first.
+
+**Nothing here is a build list any more.** Ask `heron_lookup`, or search `brain/fragments`, before
+building anything a table below calls MISSING: the tables are the picture of 2026-11-01.
 
 ## Summary on the day
 
@@ -27,6 +42,25 @@ to [PROPOSALS.md](../../PROPOSALS.md) / [OPEN-QUESTIONS.md](../../OPEN-QUESTIONS
 mostly covered.
 
 ## Build next - missing, and the Revit API can do it
+
+> **BUILT 2026-11-04 - history, not a list to work from.**
+> [#781](https://github.com/Ajmalpshaik/Heron-AI/pull/781) wrote the tools for this list, every one at
+> DRAFT and none run in Revit that day; each card's own `heron-status` says what it is now, and the
+> NEEDS-CHECKING groups that pull request added hold the runs owed. Checked 2026-11-11 by searching
+> `brain/fragments/*/impl` for the Revit member each item names: a fragment was found for every item
+> but these.
+>
+> - **Item 19, Reload Latest - not built, and recorded.** Revit refuses it while any transaction group
+>   is open, and every Heron door that may change a model runs inside one:
+>   [FRAGMENT-ISSUES row 5b-1423](../../fragment-issues/section-5b-rows-401-425.md), OPEN, the owner's
+>   to choose.
+> - **Item 17, the slanted column and the structural plan - NOT FOUND by that search, in no register.**
+>   The span direction half is `place-span-direction-symbols`. No card names a slanted column, and
+>   `create-plan-view` asks for `ViewFamily.FloorPlan` or `CeilingPlan` alone. Whether another card
+>   reaches either by a parameter was not settled; a search of the library is the next step, not this
+>   sentence.
+>
+> The longer per-tab priority lists further down were **not** re-checked item by item.
 
 Most used by a modeller first, across all tabs.
 
