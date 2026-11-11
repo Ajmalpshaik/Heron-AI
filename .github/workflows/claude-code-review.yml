@@ -17,11 +17,30 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          plugin_marketplaces: "https://github.com/anthropics/claude-code.git"
-          plugins: "code-review@claude-code-plugins"
-          prompt: "/code-review:code-review --comment ${{ github.repository }}/pull/${{ github.event.pull_request.number }}"
-          # The code-review command reads the PR with gh, runs helper agents
-          # (Task) and posts its summary with `gh pr comment` - all must be
-          # allowed, or it stops in seconds with nothing posted (2026-11-11,
-          # PR #842). The list follows the action's own pr-review example.
-          claude_args: '--allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(gh issue view:*),Bash(gh issue list:*),Bash(gh search:*),Task,Read,Glob,Grep"'
+          # A plain review prompt, after the action's own
+          # examples/pr-review-comprehensive.yml. The code-review plugin used
+          # before (#841, #845) ran green but decided to skip every time and
+          # posted nothing (2026-11-11, PR #842).
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            Review this pull request. The PR branch is checked out in the
+            working directory. Read AGENTS.md first - it holds this
+            repository's house rules - and the README of each folder the PR
+            changes.
+
+            Read the diff with `gh pr diff` and the description with
+            `gh pr view`. Look for:
+            - bugs and wrong logic in the changed code
+            - anything that breaks AGENTS.md's rules (for example a claim of
+              "proven" with no evidence, `Autodesk.Revit` outside revit/)
+            - documentation that no longer matches the code it describes
+
+            Report only real problems you can point to in the diff - no
+            nitpicks, no style preferences. Post each one as an inline
+            comment on its line with mcp__github_inline_comment__create_inline_comment.
+            Then post ONE short summary comment with `gh pr comment`: what
+            the PR does, and what you found - or "No issues found." if
+            nothing.
+          claude_args: '--allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Read,Glob,Grep"'
