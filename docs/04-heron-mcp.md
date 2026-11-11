@@ -966,3 +966,14 @@ is proved, what it may do, or which door runs it.
   started only when the modeller asks ([D-122](decisions/D-122.md)). It points at no other capability:
   `revit_change`'s description forbids trying one to get round a refusal.
   `tests/test_admin_publish.py` section 7 holds it.
+- **The two closing paragraphs are said whole once per server process, and in one line after.**
+  `heron_lookup`, `heron_resolve` and `heron_capabilities` ended every answer with which door runs what
+  and how much is proved, and `heron_method` a job's method with the first: the same words each time,
+  measured 2026-11-11 over stdio off Windows at 28% of a lookup's reply and 36% of a resolve's. A
+  process is what a chat is given, so the first answer still carries them whole
+  (`_SAID_IN_FULL` in `heron_mcp_server.py`). **The line is never dropped:** every answer still hands
+  back that a change is gated and how many capabilities are `PROVEN`, which
+  `tests/test_brain_reachable.py` and `tests/test_mcp_serves.py` hold. The tools outside those four say
+  their line whole, as before. `tests/test_mcp_serves.py` section 18 and `tests/test_mcp_stdio.py` hold
+  it. Measured the same way at this change, 2026-11-11: a lookup of a sentence nothing declares went
+  from 3,113 characters to 2,399 with its three new lines, and a resolve from 2,947 to 1,982.

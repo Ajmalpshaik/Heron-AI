@@ -57,6 +57,9 @@ server is started as a host starts it, and must offer exactly that list - no
 revit_ tool, which is how a chat knows there is no Revit here - answer a
 search inside the deadline, say there is no Revit on this machine rather than
 looking for one, and refuse a Revit tool by name at once rather than hang.
+Its first answer ends with the two closing paragraphs whole - which door runs
+what, and how much is proved - and the next says each in one line: once per
+server process, which only a process started for real can show.
 
 AND WITH NO KNOWLEDGE FOLDER NAMED (D-153, row 5b-1508). The part above gives
 the child a HERON_KNOWLEDGE, which a cloud chat nobody set up has not got -
@@ -536,6 +539,32 @@ def library_only(guard, scratch):
         check(found is not None and "No Revit on this machine" in found,
               "and says there is no Revit on this machine, rather than that "
               "none is connected")
+
+        # THE TWO CLOSING PARAGRAPHS, WHOLE ONCE PER PROCESS. Both answers
+        # above ended with the same 1,400 characters - which door runs what,
+        # and how much is proved - and so did every answer after them. The
+        # first answer of a process still carries them whole; the next says
+        # each in one line. Read off the first answer, never typed here.
+        closing = (answered or "").splitlines()[-2:]
+        doors = closing[0].split("Heron can run it. ", 1)[-1] if closing else ""
+        proved = closing[-1] if closing else ""
+        check(len(doors) > 600 and "PROVEN" in proved,
+              "the first answer of this process says both closing paragraphs "
+              "whole (%d and %d characters)" % (len(doors), len(proved)))
+        last = (found or "").splitlines()[-2:] or ["", ""]
+        check(bool(doors) and doors not in (found or doors)
+              and proved not in (found or proved),
+              "the next answer does not say either whole again")
+        check(len(last[0]) * 3 <= len(doors)
+              and all(word in last[0] for word in
+                      ("WRITES", "revit_change", "revit_read", "Changes")),
+              "it says which door runs what in one line - a change through "
+              "revit_change, and only with Changes on (%d characters, was %d)"
+              % (len(last[0]), len(doors)))
+        check(len(last[-1]) < len(proved)
+              and last[-1].split(" capabilities")[0]
+              == proved.split(" capabilities")[0],
+              "and how many are PROVEN in one line, with the same count")
 
         line, took = host.call(5, "revit_health", {}, DEADLINE)
         check(line is not None,

@@ -130,6 +130,11 @@ WHAT IT PROVES, when an SDK is installed
      a capability that is not proved (D-117). It lists every candidate the
      brain returned in the brain's order: nothing is moved, hidden or
      floored (D-01, D-65, D-100).
+ 18. THE TWO CLOSING PARAGRAPHS ARE SERVED WHOLE ONCE PER SERVER PROCESS -
+     which door runs what, and how much is proved - and in one line after,
+     on heron_lookup, heron_resolve, heron_capabilities and heron_method.
+     Every answer still hands back both limits (item 6); a process that has
+     said neither says both whole on its first answer.
 
 WHAT IT CANNOT DO
   It does not start a transport and it is not Claude Code. It calls the
@@ -2354,6 +2359,85 @@ async def exercise_lookup_says(module):
           "(%d)%s" % (len(rows), "" if not wrong else " - " + "; ".join(wrong[:3])))
 
 
+async def exercise_said_once(module):
+    """Section 18 - the two closing paragraphs are served whole once per
+    server process and in one line after, and no answer loses its limits."""
+    server = module.server
+    print()
+    print("  the closing paragraphs: whole once per server process, one line after")
+
+    # ASK BEFORE USING (heron-ship 2a): on the code as it stood there is no
+    # such set, and the stand-in lets every check below run and FAIL.
+    said = getattr(module, "_SAID_IN_FULL", None)
+    check(said is not None, "the server keeps what this process has said in full")
+    if said is None:
+        said = set()
+
+    async def call(tool, arguments):
+        try:
+            return text_of(await server.call_tool(tool, arguments))
+        except Exception as exc:                                # noqa: BLE001
+            return "(raised %s: %s)" % (type(exc).__name__, exc)
+
+    # BOTH PARAGRAPHS AS A NEW PROCESS SAYS THEM, read off the server and not
+    # typed here, then forgotten again so the calls below start as a new
+    # process does.
+    said.clear()
+    doors, proved = module._cannot_run(), module._not_proven()
+    said.clear()
+    check(len(doors) > 600 and len(proved) > 150,
+          "a new process has both paragraphs whole to say (%d and %d characters)"
+          % (len(doors), len(proved)))
+
+    words = {"request": "select all the ducts"}
+    job = (module.brain.method("").get("jobs") or [{}])[0].get("id") or ""
+    first = await call("heron_lookup", words)
+    later = [("heron_lookup", await call("heron_lookup", words)),
+             ("heron_resolve", await call("heron_resolve",
+                                          {"capability": "SET_SELECTION"})),
+             ("heron_capabilities", await call("heron_capabilities", {})),
+             ("heron_method", await call("heron_method", {"job": job}))]
+    check(doors in first and proved in first,
+          "the first answer of a process carries both paragraphs whole")
+    for tool, answer in later:
+        check(doors not in answer and proved not in answer,
+              "%s, asked after it, does not say either whole again" % tool)
+        low = answer.lower()
+        # THE LIMITS EVERY ANSWER MUST STILL HAND BACK - what
+        # tests/test_brain_reachable.py and section 6 above hold - in the
+        # short form as in the long one.
+        check(all(word in answer for word in
+                  ("WRITES", "revit_change", "revit_read", "revit_show", "Changes"))
+              and "refuses" in low,
+              "%s still says which door runs what, and that a change is "
+              "refused while Changes is off" % tool)
+        if tool != "heron_method":
+            check("PROVEN" in answer and "are not" in answer,
+                  "%s still says how many are PROVEN and how many are not" % tool)
+    again = later[0][1]
+    saved = len(first) - len(again)
+    check(saved > (len(doors) + len(proved)) // 2,
+          "the same lookup asked again is %d characters shorter - more than "
+          "half of the two paragraphs (%d)" % (saved, len(doors) + len(proved)))
+    short = module._cannot_run()
+    check(len(short) * 3 <= len(doors),
+          "the one line about the doors is a third of the paragraph or less "
+          "(%d of %d characters)" % (len(short), len(doors)))
+
+    # A TOOL THAT WAS NOT ASKED TO SHORTEN STILL SAYS ITS LINE WHOLE.
+    check(module._not_proven() == proved,
+          "and _not_proven, asked plainly, answers whole every time - the "
+          "tools outside the four are as they were")
+
+    # A NEW PROCESS SAYS IT WHOLE AGAIN - which is a new chat (mcp/README.md
+    # rule 5). Staged by forgetting; tests/test_mcp_stdio.py starts a real one.
+    said.clear()
+    fresh = await call("heron_resolve", {"capability": "SET_SELECTION"})
+    check(doors in fresh and proved in fresh,
+          "a process that has said neither says both whole on its first answer, "
+          "whichever tool that is")
+
+
 async def exercise_running_code(module):
     """
     Section 16: a chat whose server is still running code a pull has since
@@ -2549,6 +2633,7 @@ def main():
         asyncio.run(exercise_show(server_module))
         asyncio.run(exercise_words(server_module))
         asyncio.run(exercise_lookup_says(server_module))
+        asyncio.run(exercise_said_once(server_module))
         asyncio.run(exercise_activity(server_module))
         asyncio.run(exercise_earlier(server_module))
         asyncio.run(exercise_change_report(server_module))

@@ -4561,9 +4561,38 @@ def _proven_split():
     return (proven, total) if total else (None, None)
 
 
+# WHICH OF THE TWO CLOSING PARAGRAPHS THIS PROCESS HAS ALREADY SERVED WHOLE.
+#
+# heron_lookup, heron_resolve and heron_capabilities ended every answer with
+# both, and heron_method a job's method with the first - about 1,400
+# characters, the same words every time. Measured 2026-11-11 over stdio, off
+# Windows: 28% of a lookup's reply and 36% of a resolve's. A chat that looks
+# up five things read them five times, and what it needed the fifth time was
+# one line.
+#
+# SO EACH IS SAID IN FULL ONCE AND IN ONE LINE AFTER. Once per server process,
+# because a process is what a chat is given: closing and reopening the chat
+# starts a new one (mcp/README.md, rule 5), and that one says it whole again.
+# THE LINE IS NEVER DROPPED. tests/test_brain_reachable.py and
+# tests/test_mcp_serves.py hold that EVERY answer hands back its own limits -
+# that a change is gated, and how much is proved - so a plan is never built on
+# a resolution read as a promise. The short form keeps both, in fewer words.
+_SAID_IN_FULL = set()
+
+
+def _said_before(what):
+    """Whether this process has served `what` whole already - and from now on
+    it has."""
+    if what in _SAID_IN_FULL:
+        return True
+    _SAID_IN_FULL.add(what)
+    return False
+
+
 def _cannot_run():
     """
-    What can and cannot reach Revit today, and through which tool.
+    What can and cannot reach Revit today, and through which tool - whole the
+    first time this process is asked, and in one line after (_SAID_IN_FULL).
 
     IT SAID A READ COULD RUN, AND FROM A CHAT IT COULD NOT. "Heron can now RUN
     a read-only fragment against the open model" was true of the command line
@@ -4571,6 +4600,14 @@ def _cannot_run():
     this went on to reach reads through revit_change - with Changes ON, inside
     a transaction. It names the door now, and the door exists.
     """
+    if _said_before("cannot_run"):
+        return (
+            "The doors, in short (in full the first time this server said "
+            "them): what READS runs through revit_read and what only changes "
+            "what is SHOWN through revit_show, both with Changes off; what "
+            "WRITES runs through revit_change, and Heron refuses it while the "
+            "owner's Changes switch is off - Admin and Publish have switches "
+            "of their own (D-106).")
     return (
         "A capability that READS runs through revit_read - D-28's executor "
         "compiles it inside Revit with no transaction open, so Revit refuses a "
@@ -4591,8 +4628,14 @@ def _cannot_run():
         "until he turns them on in Revit.")
 
 
-def _not_proven():
-    """How much is proved, counted rather than claimed."""
+def _not_proven(once=False):
+    """How much is proved, counted rather than claimed.
+
+    `once` is for the tools that close EVERY answer with it: whole the first
+    time this process says it, one line after (_SAID_IN_FULL). The counts are
+    in both - they are the live fingerprint of which tree this server reads
+    (row 127) - and a count that could not be read is said the same way each
+    time."""
     proven, total = _proven_split()
     if proven is None:
         return ("How much of this is proven could not be read from disk just "
@@ -4602,6 +4645,10 @@ def _not_proven():
         return ("Nothing here is proven yet. D-30 promotes on one recorded "
                 "proof containing a negative case, which needs a real model. "
                 "See NEEDS-CHECKING.md.")
+    if once and _said_before("not_proven"):
+        return ("%d of %d capabilities are PROVEN (D-30); the other %d are "
+                "not, and one that has not been proved is a claim."
+                % (proven, total, total - proven))
     return ("%d of %d capabilities are PROVEN - each on a recorded proof "
             "against a named model, carrying a negative case and a fingerprint "
             "that reports STALE if the code moves under it (D-30). The other "
@@ -4699,7 +4746,7 @@ def heron_capabilities() -> str:
     lines.append('"Every part provided" means each piece has something on disk '
                  "that claims to do it. It does not mean Heron can run it. "
                  + _cannot_run())
-    lines.append(_not_proven())
+    lines.append(_not_proven(once=True))
     return "\n".join(lines)
 
 
@@ -5087,7 +5134,7 @@ def heron_resolve(capability: str) -> str:
 
     lines.append("")
     lines.append(_cannot_run())
-    lines.append(_not_proven())
+    lines.append(_not_proven(once=True))
     return "\n".join(lines)
 
 
@@ -5269,7 +5316,7 @@ def heron_lookup(request: str, question: bool = False) -> str:
 
     lines.append("")
     lines.append(_cannot_run())
-    lines.append(_not_proven())
+    lines.append(_not_proven(once=True))
     return "\n".join(lines)
 
 
