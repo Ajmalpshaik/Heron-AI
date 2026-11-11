@@ -1446,6 +1446,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-nc.md`](needs-checking/group-nc.md)
 
+## Group NE - a family's 2D linked to a Yes/No by id, and an angle labelled between two planes: `LINK_FAMILY_PARAMETER` version 4 and `LABEL_FAMILY_DIMENSION` version 3 (2026-11-11)
+
+**Its own file:** [`needs-checking/group-ne.md`](needs-checking/group-ne.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

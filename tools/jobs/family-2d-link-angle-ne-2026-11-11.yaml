@@ -1,0 +1,185 @@
+# NEEDS-CHECKING Group NE - LINK_FAMILY_PARAMETER version 4 (a family's 2D by
+# id) and LABEL_FAMILY_DIMENSION version 3 (an angle), both DRAFT since
+# 2026-11-11 (FRAGMENT-ISSUES 5b-1497 and 5b-1498).
+#
+#     HERON_CLIENT_ID=ajmal-pc python tools/batch-prove.py tools/jobs/family-2d-link-angle-ne-2026-11-11.yaml --dry-run
+#     HERON_CLIENT_ID=ajmal-pc python tools/batch-prove.py tools/jobs/family-2d-link-angle-ne-2026-11-11.yaml
+#
+# NOT RUN. Written 2026-11-11 with no Revit: both cards compile for 2020 to
+# 2027 and nothing more.
+#
+# THE ARRANGEMENT is NE0 in docs/needs-checking/group-ne.md, on Revit 2024 (a
+# filled region in a 3D family needs 2023, a masking region 2024): a SCRATCH
+# family "Heron Link Angle Test", metric Generic Model, saved under
+# %TEMP%\heron-work\link-angle - never the owner's own families. The ids
+# below are PLACEHOLDERS: NE0 records each element's UniqueId, and they are
+# written in here before the run. A placeholder left in refuses the positive
+# as "No element in this family has the id", which proves nothing - fill them.
+#
+# THE NEGATIVES ARE A DIFFERENT ARRANGEMENT, never a cleared value: a
+# reference plane beside a form; a Length where a Yes/No belongs; a parameter
+# holding the wrong angle; parallel planes for an angle.
+#
+# THE WRITES ARE ROLLED BACK (`write: true`). The kept run of each card is
+# the modeller's try-once (D-119), never this file's. NE7 (which plane an
+# angle flex turns) and the second routes are run by name, not here.
+
+model: Heron Link Angle Test (scratch metric Generic Model family, %TEMP%\heron-work\link-angle), Revit 2024
+
+defaults:
+  in: "Heron Link Angle Test"
+  write: true
+
+jobs:
+  # NE1 - version 3's positive and negative, re-proved: a form by id.
+  - fragment: link-family-parameter
+    expect: changed
+    set:
+      forms: "<NE0: the extrusion's UniqueId>"
+      links: "Visible=Show Handle"
+    negative-set:
+      forms: "<NE0: the extrusion's UniqueId>, <NE0: reference plane Box Left's UniqueId>"
+      links: "Visible=Show Handle"
+    note: >
+      NE1. Positive: changed 1, matched 1, linkReport "Extrusion id N:
+      Visible not linked -> Show Handle". Negative: refused naming Box Left as
+      none of the kinds linked by id, and the extrusion NOT linked either.
+
+  # NE1b - version 3's OWN proven case, by category: the answer text of the
+  # category path changed with version 4's element words.
+  - fragment: link-family-parameter
+    expect: changed
+    set:
+      category: "Duct Connector"
+      system: "Supply Air"
+      links: "Flow=Nominal Air Flow"
+    negative-set:
+      category: "Duct Connector"
+      system: "Supply Air"
+      links: "Flow=ZZZ No Such Parameter"
+    note: >
+      NE1b. Positive: changed 1, "Duct Connector (Supply Air) id N: Flow not
+      linked -> Nominal Air Flow". Negative: refused, no family parameter of
+      that name, Nominal Air Flow named as the one that could drive Flow.
+      The Exhaust Air inventory sentence is run by name.
+
+  # NE2 - the new ability: a symbolic line and a filled region.
+  - fragment: link-family-parameter
+    expect: changed
+    set:
+      forms: "<NE0: the symbolic line's UniqueId>, <NE0: the filled region's UniqueId>"
+      links: "Visible=Show Arrow"
+    negative-set:
+      forms: "<NE0: the symbolic line's UniqueId>"
+      links: "Visible=Arrow Length"
+    note: >
+      NE2. Positive: changed 2, "Symbolic Line id N: Visible not linked ->
+      Show Arrow || Filled Region id M: ...". Negative: Arrow Length is a
+      LENGTH - refused naming both kinds, nothing linked.
+
+  # NE3 - the new ability: a detail line and model text.
+  - fragment: link-family-parameter
+    expect: changed
+    set:
+      forms: "<NE0: the detail line's UniqueId>, <NE0: the model text's UniqueId>"
+      links: "Visible=Show Arrow"
+    negative-set:
+      forms: "<NE0: the symbolic line's UniqueId>, <NE0: level Ref. Level's UniqueId>"
+      links: "Visible=Show Arrow"
+    note: >
+      NE3. Positive: changed 2, "Detail Line id N" and "Model Text id M".
+      Negative: the level refused by name, the symbolic line NOT linked.
+
+  # NE4 - version 2's length path, re-proved.
+  - fragment: label-family-dimension
+    expect: distanceMm
+    set:
+      fromPlane: "Box Left"
+      toPlane: "Box Right"
+      parameterName: "Width"
+      centrePlane: "Center (Left/Right)"
+    negative-set:
+      fromPlane: "Box Left"
+      toPlane: "Box Right"
+      parameterName: "Wrong Width"
+      centrePlane: "Center (Left/Right)"
+    note: >
+      NE4. Positive: version 2's answer - reading 600 mm, equalised true,
+      angleDegrees 0. Negative: "Wrong Width" holds 450 - refused with both
+      numbers (600 apart, holds 450), nothing made, the planes still 600
+      apart.
+
+  # NE4b - version 2's OWN proven case: the free-end finding, and two planes
+  # in the same place.
+  - fragment: label-family-dimension
+    expect: freeEnd
+    set:
+      fromPlane: "Floor Top"
+      toPlane: "Trap Top"
+      parameterName: "Trap Depth"
+      centrePlane: ""
+    negative-set:
+      fromPlane: "Same A"
+      toPlane: "Same B"
+      parameterName: "Gap C"
+      centrePlane: ""
+    note: >
+      NE4b. Positive: reading 300 mm, freeEnd naming "Floor Top" held by
+      nothing and "Trap Top" held by the dimension labelled "Rim Height".
+      Negative: refused as in the same place, nothing made.
+
+  # NE5 - the new ability: an angle.
+  - fragment: label-family-dimension
+    expect: angleDegrees
+    set:
+      fromPlane: "Center (Front/Back)"
+      toPlane: "Arrow Slope"
+      parameterName: "Arrow Angle"
+      centrePlane: ""
+    negative-set:
+      fromPlane: "Center (Front/Back)"
+      toPlane: "Arrow Slope"
+      parameterName: "Wrong Angle"
+      centrePlane: ""
+    note: >
+      NE5. Positive: angleDegrees 30, labelled "Arrow Angle drives the angle
+      between ...", in Ref. Level. Negative: "Wrong Angle" holds 45 - refused
+      before anything is made, "meet at 30 degrees (150 on the other side)".
+
+  # NE5b - two free planes: the angle path's pinFreeEnd branch.
+  - fragment: label-family-dimension
+    expect: pinnedEnd
+    set:
+      fromPlane: "Arrow Slope"
+      toPlane: "Arrow Low"
+      parameterName: "Spread Angle"
+      centrePlane: ""
+      pinFreeEnd: true
+    negative-set:
+      fromPlane: "Center (Front/Back)"
+      toPlane: "Arrow Slope"
+      parameterName: "Arrow Angle"
+      centrePlane: ""
+      pinFreeEnd: true
+    note: >
+      NE5b. Positive: angleDegrees 45, "Arrow Slope" pinned first and read
+      back pinned. Negative: one plane defines the origin - labelled,
+      nothing pinned, the finding says why.
+
+  # NE6 - the other side of the crossing, and parallel planes refused.
+  - fragment: label-family-dimension
+    expect: angleDegrees
+    set:
+      fromPlane: "Center (Front/Back)"
+      toPlane: "Arrow Slope"
+      parameterName: "Arrow Back Angle"
+      centrePlane: ""
+    negative-set:
+      fromPlane: "Box Left"
+      toPlane: "Box Right"
+      parameterName: "Arrow Angle"
+      centrePlane: ""
+    note: >
+      NE6. Positive: angleDegrees 150 - the arc on the obtuse side, chosen
+      by the parameter's value. Negative: an angle between parallel planes,
+      refused as making no angle, nothing made.
