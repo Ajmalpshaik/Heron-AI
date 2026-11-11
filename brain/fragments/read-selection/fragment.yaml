@@ -105,7 +105,7 @@ compatibility-note: >
   condition and not a defect: the fragment is asking about the screen and there
   is no screen.
 
-# ROUTING - repeated in SET_SELECTION.
+# ROUTING - repeated in SET_SELECTION; the last row in PICK_ON_SCREEN.
 #
 #   "what did I select"        -> here. A QUESTION about the selection
 #   "how many did I select"    -> here
@@ -114,6 +114,9 @@ compatibility-note: >
 #   "highlight what you found" -> SET_SELECTION
 #   "how many ducts are there" -> COUNT_ELEMENTS. Nothing to do with what is
 #                                 picked on screen
+#   "put it here"              -> PICK_ON_SCREEN. A point the modeller has
+#                                 still to CLICK - this card reads what is
+#                                 already selected, and never waits
 
 utterances:
   - what did I select

@@ -1,0 +1,120 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a card that asks a person, "answered without asking": a point handed
+# back that nobody clicked, a point from an earlier run, or a pick started in
+# a view where a point means nothing.
+#
+# A PERSON IS HALF OF EVERY CASE. This card waits for the modeller's click, so
+# no case here runs unattended: somebody is at Revit for each one, and the
+# case says what they click. That is the card's job, not a gap in the cases.
+#
+# THE ARRANGEMENT (NEEDS-CHECKING Group NH, NH0). A scratch project from
+# Revit's metric architectural template, Revit 2024, SAVED - never a working
+# model:
+#   - in the floor plan "Level 1", one straight MODEL LINE "L1" drawn 5000 mm
+#     long (type 5000 while drawing). A model line, not a wall: its two ends
+#     are the only things an endpoint snap can land on
+#   - a schedule "Wall Schedule" (View, Schedules, Schedule/Quantities, Walls)
+#   - the default 3D view "{3D}", with no work plane set in it
+#   - Revit's Endpoints snap ON (Manage, Snaps) - the card takes Revit's own
+#     snaps
+# Where the model differs, the job file changes - never the card. Nothing
+# here keeps anything: the card opens no transaction.
+#
+# THE WAIT (Q-86, FRAGMENT-ISSUES row 5b-1507). Every case but the two
+# marked SLOW is answered at once, well inside the add-in's wait for one job.
+
+positive:
+  - given: >
+      "Level 1" in front (OPEN_VIEW), count 2. When Revit's status bar reads
+      "Heron: click point 1 of 2 - Esc to stop", click one end of L1, then the
+      other, each on its endpoint snap
+    expect: >
+      clicked 2; pointsMm holds two points, "x, y, z; x, y, z", 5000 mm apart
+      along L1 and both with z 0 - Level 1's height, the view's work plane;
+      cancelled false; refused empty; viewName "Level 1"; findings "2 of 2
+      point(s) clicked in "Level 1" (FloorPlan) ..." and the work plane's
+      name; waitedSeconds about the time the two clicks took. Nothing in the
+      model changed and nothing is selected that was not before
+
+  - given: the same view, count left out. Click one end of L1
+    expect: clicked 1 and one point - the status bar asked for "point 1 of 1"
+
+  - given: >
+      THE HANDOVER. pointsMm from the first case, typed as it came back into
+      PLACE_FAMILY_INSTANCES as `points`, with a loaded furniture type and
+      level "Level 1", rolled back
+    expect: >
+      it is taken as typed - two instances, one on each end of L1 - with
+      nothing re-keyed between the two calls. This is the reason the points
+      come back as D-67 writes them
+
+negative:
+  - given: >
+      THE WRONG KIND OF VIEW - a different arrangement, not an empty one.
+      "Wall Schedule" in front (OPEN_VIEW), count 2
+    expect: >
+      Revit never enters pick mode - the status bar shows no prompt and there
+      is nothing to press Esc on. clicked 0; pointsMm EMPTY; cancelled false;
+      refused names "Wall Schedule" as a Schedule and says to bring a plan,
+      section, elevation or 3D view to the front. Not a point from the run
+      before it
+
+  - given: >
+      ESC, AT ONCE. "Level 1" in front, count 2. When the prompt appears,
+      press Esc without clicking
+    expect: >
+      a normal answer, not a failure: clicked 0; pointsMm EMPTY; cancelled
+      true; refused empty; findings "The modeller stopped the pick after 0 of
+      2 ...". The chat reports it plainly and does not ask Revit again by
+      itself
+
+  - given: ESC, PART WAY. The same, count 3 - click one end of L1, then Esc
+    expect: >
+      clicked 1 and that one point handed back; cancelled true. What was
+      clicked before Esc is never thrown away
+
+  - given: count 0, "Level 1" in front
+    expect: >
+      refused "count is how many clicks to ask for ..."; nothing asked in
+      Revit; clicked 0
+
+  - given: >
+      A VIEW WITH NO WORK PLANE. "{3D}" in front with no work plane set,
+      count 1
+    expect: >
+      Revit's own refusal, in `refused` with its words, and the advice to set
+      a work plane or use a plan; clicked 0; pointsMm empty. No work plane is
+      set by this card - that would be a change to the model. IF REVIT TAKES
+      THE CLICK INSTEAD, that is the thing this case learns: record the plane
+      findings names
+
+  - given: >
+      TWO MODELS OPEN, and the call aimed at the one that is NOT in front,
+      count 1
+    expect: >
+      refused "This model is not the one in front in Revit ..."; nothing
+      asked; clicked 0
+
+  - given: >
+      SLOW, ONE CLICK (Q-86). "Level 1" in front, count 1. Let the prompt sit
+      until the add-in's wait for one job has passed
+      (revit.operationTimeoutSeconds), then click
+    expect: >
+      READ FROM THE CODE, NOT YET SEEN: the chat is told Revit is still
+      running the request and not to repeat it, before the click; Revit stays
+      in pick mode until the click or Esc; the click's point reaches nobody.
+      Record what the chat was told, word for word, and what Revit did. This
+      is the limit the card is DRAFT behind, not a pass or a fail of the card
+
+  - given: >
+      SLOW, SEVERAL CLICKS (Q-86). count 3. Click the first point at once,
+      wait until the run clock's budget has passed (a margin inside the same
+      wait), then click the second
+    expect: >
+      READ FROM THE CODE, NOT YET SEEN: the job is stopped as having run out
+      of time at the next pass, and the first point is NOT handed back. Record
+      the chat's words
+
+second_route:
+  - REPORT_LOCATION on L1 (selected) - the two ends it reports, against the two points clicked on them
+  - Revit's own Measure Between Two References between the same two ends reads 5000, the distance between the two points handed back

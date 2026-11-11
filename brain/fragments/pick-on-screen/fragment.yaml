@@ -1,0 +1,153 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-040
+semantic-identity: "ask the modeller to click points in the open Revit view and hand them back in millimetres"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-11: the owner wants to work by chat with very few clicks in Revit,
+# and nothing in the library let the modeller CLICK to answer the chat. No
+# card and no add-in file called Revit's pick at all, so "put it here" had to
+# be typed as three millimetre numbers (D-67). Searched that day with
+# brain/heron_retrieve.py on a scratch store, Revit 2024: "put it here where I
+# click" reached ADD_FAMILY_FLIP_CONTROL and PLACE_FAMILY_INSTANCES, "pick a
+# point in the view" DRAW_FAMILY_POINT_CURVES, "ask me to pick the element in
+# Revit" READ_SELECTION. heron_duplicates and heron_matcher over the whole
+# library: nothing shares this capability or contract.
+#
+# WHY A CARD OF ITS OWN, AND NOT READ_SELECTION OR SET_SELECTION WIDENED.
+# READ_SELECTION reads what the modeller picked BEFORE asking and never
+# waits; SET_SELECTION puts elements on screen. Both are PROVEN, neither
+# deals in points, and this card's whole job is the one thing neither does:
+# wait for a click and say where it landed.
+#
+# POINTS ONLY, AND WHY (FRAGMENT-ISSUES row 5b-1507):
+#   an ELEMENT - READ_SELECTION already answers it: the modeller selects it
+#       in Revit and says so. Nothing here repeats that.
+#   a FACE - Revit's pick for one needs a kind of pick named from a namespace
+#       a fragment is not given (HeronFragmentImports and the compile gate
+#       hold one list), and no card takes a face reference as an input
+#       (D-72). Adding the namespace is the add-in's promise to make, not
+#       this card's to smuggle in. Owed, with Q-86.
+#
+# THE WAIT IS A PERSON'S, AND THE ADD-IN DOES NOT KNOW THAT YET (Q-86).
+# Read from the code on 2026-11-11, not yet seen in Revit:
+#   - the dispatcher waits revit.operationTimeoutSeconds (60 by default) for
+#     a job it has started, then answers "still running" and stops
+#     listening - a click after that reaches nobody. Its longer wait for a
+#     Keep or Discard box (revit.askTimeoutSeconds) cannot be asked for from
+#     a fragment.
+#   - the run clock (D-129) is asked at the head of each pass of this card's
+#     click loop. Past its budget - a margin inside the dispatcher's wait -
+#     the next pass stops the job and the points already clicked are not
+#     handed back. The hold D-129 wrote for a prompt cannot be compiled into
+#     a fragment by the compile gate.
+# So every click has to be made inside that wait. The card does not work
+# round either limit; `waitedSeconds` says how long Revit waited.
+#
+# WHAT IT REFUSES, NOTHING ASKED IN REVIT: a count below one; a model that is
+# not the one in front; a schedule, report or browser in front. A view with
+# no work plane is Revit's to refuse, and its words come back in `refused`.
+#
+# ESC IS AN ANSWER: `cancelled` true, and what was clicked before it is
+# handed back. Revit reports a switched view or a closed model the same way.
+#
+# RISK EXECUTE, which revit_show runs: it takes over the Revit session until
+# the click or Esc, and changes nothing in the model and nothing in the
+# selection. Opens no transaction.
+kind: action
+domain: revit.selection
+capability: PICK_ON_SCREEN
+version: 1
+source: OFFICIAL
+risk: EXECUTE
+
+purpose: >
+  Puts Revit into its own pick mode and waits for the modeller to click one
+  or several points in the view in front, then hands them back in
+  millimetres - written the way every point value in this library is typed,
+  so the next step can take them as they are. Esc stops it and hands back
+  what was clicked so far. Changes nothing in the model.
+
+contract:
+  needs:
+    - name: uidoc
+      type: UIDocument
+    # How many clicks to ask for. Left out, one. Esc before the last hands
+    # back the ones already clicked.
+    - name: count
+      type: int
+      source: request
+      optional: true
+      absent: "1"
+  provides:
+    - name: pointsMm
+      # "x, y, z" in millimetres from the model's internal origin, several
+      # separated by "; " - D-67's own form. Empty when nothing was clicked.
+      role: result
+      type: string
+    - name: clicked
+      role: result
+      type: int
+    - name: cancelled
+      # true when the modeller stopped the pick - Esc, or a switched view or
+      # a closed model, which Revit reports the same way. What happened to
+      # the asking, never a thing found (D-52).
+      role: accounting
+      type: bool
+    - name: refused
+      # Why no click, or no further click, could be asked for - Revit's own
+      # words when it was Revit that said no (D-52).
+      role: accounting
+      type: string
+    - name: viewName
+      # The view the clicks were made in.
+      role: accounting
+      type: string
+    - name: waitedSeconds
+      # How long Revit waited for the modeller, all clicks together.
+      role: accounting
+      type: double
+    - name: findings
+      role: accounting
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Selection.PickPoint(string)`,
+  `UIDocument.ActiveView`, `View.ViewType`, `View.SketchPlane` and
+  `Element.Name` are declared the same 2020 to 2027 - read with
+  `tools/api-surface --members` on 2026-11-11 against all eight releases'
+  reference assemblies. The view type is tested by its NAME, never by a
+  member: the pressure loss report's member was re-spelled at Revit 2027.
+  The cancel is matched by the exception's type name, as
+  TRANSFER_PROJECT_STANDARDS does. Each release's own remarks on PickPoint
+  say it throws when the view has no work plane, and when the modeller
+  cancels, switches view or closes the model - read in all eight reference
+  packages' own XML that day. No ElementId is read.
+
+  NOT KNOWN UNTIL IT RUNS IN REVIT: whether a pick started from Heron's
+  external event behaves as one started from a ribbon command does; whether
+  a 3D view nobody has set a work plane in takes a click; what the chat is
+  told when the click comes after the add-in's wait (Group NH).
+
+# ROUTING - repeated in READ_SELECTION.
+#
+#   "put it here"                 -> here FIRST, for where "here" is: the
+#                                    modeller clicks, and `pointsMm` goes to
+#                                    the card that places or moves, as its
+#                                    point
+#   "use the ones I picked"       -> READ_SELECTION. What is ALREADY selected,
+#                                    read at once - no waiting
+#   "what did I select"           -> READ_SELECTION
+
+# ONE UTTERANCE, ON PURPOSE. It is the sentence the gap was reported in.
+# Others are the modeller's to add as he says them - none is invented here.
+utterances:
+  - put it here

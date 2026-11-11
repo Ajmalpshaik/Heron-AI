@@ -1,0 +1,53 @@
+# NEEDS-CHECKING Group NH - PICK_ON_SCREEN, built 2026-11-11 in a cloud
+# session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/pick-on-screen-nh-2026-11-11.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/pick-on-screen-nh-2026-11-11.yaml
+#
+# SOMEBODY HAS TO BE AT REVIT FOR THIS ONE. The card waits for the modeller's
+# click, so this job is never part of a night run and never `--unattended`:
+# the positive leg puts Revit into pick mode and waits for two clicks.
+#
+# THE MODEL is a scratch project from Revit's metric architectural template,
+# Revit 2024, SAVED (NH0): in the floor plan "Level 1" one straight MODEL LINE
+# "L1" drawn 5000 mm long, a schedule "Wall Schedule", and Revit's Endpoints
+# snap on. Never a working model.
+#
+# THE ARRANGEMENT is the view in front, made by OPEN_VIEW before each leg:
+#   positive  "Level 1" - when the status bar reads "Heron: click point 1 of
+#             2 - Esc to stop", click one end of L1, then the other
+#   negative  "Wall Schedule" - a different view, not a cleared one. A
+#             schedule has nowhere to click, so the card must refuse before
+#             Revit is asked: no prompt appears and NOTHING IS CLICKED. A
+#             point coming back here would be one nobody clicked
+#
+# CLICK AT ONCE. The add-in waits revit.operationTimeoutSeconds for one job
+# (Q-86, FRAGMENT-ISSUES row 5b-1507): a click after that reaches nobody, and
+# the leg reads as a timeout, which says nothing about the card. The slow
+# cases are Group NH's own rows, NH8 and NH9, run by hand.
+#
+# Nothing here writes: the card opens no transaction and keeps nothing.
+
+model: scratch project from the metric architectural template (NH0), Revit 2024
+
+defaults:
+  setup:
+    - open-view
+
+jobs:
+  - fragment: pick-on-screen
+    expect: clicked
+    setup-set:
+      viewName: "Level 1"
+    negative-setup-set:
+      viewName: "Wall Schedule"
+    set:
+      count: 2
+    negative-set:
+      count: 2
+    note: >
+      NH1. Positive - clicked 2, pointsMm two points 5000 mm apart with z 0,
+      cancelled false, refused empty, viewName "Level 1". Negative - clicked
+      0, pointsMm empty, refused naming "Wall Schedule" as a Schedule, and no
+      prompt ever shown in Revit. Read the binding note: count as given, and
+      nothing from a chain.
