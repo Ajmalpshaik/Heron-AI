@@ -925,7 +925,7 @@ def describe():
 # block that runs the server and does not return, so everything the server
 # defines is above that block: in the one text as in the one file.
 #
-# NOT ONE FILE SINCE 2026-11-11 (row 5b-1554). heron_server_core.py is first:
+# NOT ONE FILE SINCE 2026-11-11 (row 5b-1555). heron_server_core.py is first:
 # what every file of the server shares - the server object, this chat's
 # state, what every tool call passes through - and no tool. A file that holds
 # tools goes between it and the entry file, which imports each of them:

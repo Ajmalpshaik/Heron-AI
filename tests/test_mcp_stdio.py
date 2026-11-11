@@ -72,7 +72,7 @@ methods and its jobs, from a store of its own under the machine-local folder.
 That part builds a second store from nothing, so it is held to COLD_DEADLINE:
 its claim is that an answer comes, and how soon is the part above's.
 
-AND ONE OF EACH (FRAGMENT-ISSUES row 5b-1554). The server's source is more
+AND ONE OF EACH (FRAGMENT-ISSUES row 5b-1555). The server's source is more
 than one file. What the files share - the server object, the binding, the
 pin, the approval, the watch on its own code - is defined in one of them and
 imported by the rest, and a definition typed again in a second file is a
@@ -675,7 +675,7 @@ def one_of_each(guard, scratch):
     a process started on the entry file - and that file loaded once. Off
     Windows only (the module header says why)."""
     print()
-    print("  started on the entry file, the process holds one of each (row 5b-1554)")
+    print("  started on the entry file, the process holds one of each (row 5b-1555)")
     env = guard.for_child(os.environ, os.path.join(scratch, "one-of-each"))
     env["LOCALAPPDATA"] = os.path.join(scratch, "local")
     env["XDG_DATA_HOME"] = os.path.join(scratch, "local")

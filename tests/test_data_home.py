@@ -713,7 +713,7 @@ def run(yard):
           "(under %r)" % (under,))
     check(named_at != -1 and carry_at != -1 and named_at < carry_at,
           "before anything opens the store")
-    # THE MODE IS DECIDED WHERE THE SERVER OBJECT IS MADE, and since row 5b-1554
+    # THE MODE IS DECIDED WHERE THE SERVER OBJECT IS MADE, and since row 5b-1555
     # that is heron_server_core, not the entry file - so it cannot ask its own
     # `__name__`, which there is never "__main__". It asks whether the program
     # Python was started on is the entry file. Held two ways: the line as it

@@ -651,7 +651,7 @@ def shared(module):
     """
     The module that holds what every file of the server shares - the server
     object, the lock, `_recorded`, the watch on its own code - which since
-    FRAGMENT-ISSUES row 5b-1554 is not the entry module, `module`. Found from
+    FRAGMENT-ISSUES row 5b-1555 is not the entry module, `module`. Found from
     the server object's own class, so no file is named here. A name a check
     REBINDS is rebound there, where the code that reads it is: set on the
     entry module it would change nothing the server does.

@@ -206,7 +206,7 @@ def source_list():
           "the last one is the entry file - .mcp.json starts it and it holds the "
           "block that runs the server: %s" % names[-1])
 
-    # AND NO OTHER LISTED FILE IMPORTS IT, OR SPELLS ITS BLOCK (row 5b-1554).
+    # AND NO OTHER LISTED FILE IMPORTS IT, OR SPELLS ITS BLOCK (row 5b-1555).
     # The entry file runs as `__main__`, so a file it loads that imported it
     # by name would run it a SECOND time, under that name: every tool in it
     # defined and registered again, and a second copy of all the state it

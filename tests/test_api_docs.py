@@ -125,7 +125,7 @@ def main():
              "" if not late else ": %s" % ", ".join(late)))
 
     # A TOOL IN ANOTHER FILE REGISTERS WHEN THAT FILE IS IMPORTED, so for it
-    # the same rule reads differently (FRAGMENT-ISSUES row 5b-1554): the entry
+    # the same rule reads differently (FRAGMENT-ISSUES row 5b-1555): the entry
     # file must import the tool's file, at its own top level, ABOVE the block.
     # An import below the block, or none at all, and every tool in that file
     # is absent from tools/list exactly as revit_phases was - registered by

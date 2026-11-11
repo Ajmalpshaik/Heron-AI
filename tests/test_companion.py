@@ -259,7 +259,7 @@ def test_no_way_to_an_ai():
     server = tools.server_text()
     body = server[server.index("def heron_companion("):]
     # TO THE END OF THE FUNCTION, not to the next tool. No tool is defined
-    # after this one in its file since row 5b-1554 - the ones that followed it
+    # after this one in its file since row 5b-1555 - the ones that followed it
     # are in another file, earlier in the one text - so "the next
     # @server.tool()" stopped being a boundary and the cut ran on to the end
     # of the text. The first line back at the margin ends a top-level function.

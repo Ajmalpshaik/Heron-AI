@@ -91,7 +91,7 @@ The answer is written for a person, not for a machine to parse. The host reads
 it aloud, so it says what is true and what to do next - never a status code.
 
 THIS IS THE ENTRY FILE, AND NOT THE WHOLE SERVER. It was one file until
-2026-11-11 (FRAGMENT-ISSUES row 5b-1554). heron_tools.SERVER_FILES lists
+2026-11-11 (FRAGMENT-ISSUES row 5b-1555). heron_tools.SERVER_FILES lists
 the files the server's source is, this one last:
 
     heron_server_core.py    the server object, this chat's binding, pin and
@@ -6349,7 +6349,7 @@ def heron_companion() -> str:
 # heron_inventory loads - and so after every tool above, which is where they
 # were defined while they were in this file. The order a host is served is
 # the order of registration, so this import stays the LAST thing above the
-# block that runs the server (FRAGMENT-ISSUES row 5b-1554). The names are
+# block that runs the server (FRAGMENT-ISSUES row 5b-1555). The names are
 # imported so that each is still this module's to call, as every tool is.
 from heron_inventory import (                               # noqa: E402,F401
     revit_phases, revit_levels, revit_worksets, revit_views,

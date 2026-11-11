@@ -22,7 +22,7 @@ each READ, and the picture ANALYZE - none a change to the model.
 
 WHY THEY ARE HERE. They were the foot of heron_mcp_server.py until
 2026-11-11, moved whole and unchanged - the first tools to leave that file
-(FRAGMENT-ISSUES row 5b-1554). They were first because they need the least:
+(FRAGMENT-ISSUES row 5b-1555). They were first because they need the least:
 the server object, the binding and the pin, and two helpers that say how a
 call ended, all from heron_server_core. Nothing here imports the entry file,
 which would run it a second time.

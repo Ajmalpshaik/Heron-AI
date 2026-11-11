@@ -27,7 +27,7 @@ those files needs, so that there is exactly ONE of each in a process:
 WHY IT IS A FILE OF ITS OWN. Until 2026-11-11 all of this sat at the top of
 heron_mcp_server.py, which held every tool as well - over eight thousand
 lines in one file that day, so every change to any tool collided with every
-other (FRAGMENT-ISSUES row 5b-1554). A tool cannot move to a second file and
+other (FRAGMENT-ISSUES row 5b-1555). A tool cannot move to a second file and
 import these from the entry file: the entry file runs as `__main__`, so
 `import heron_mcp_server` from a module it loads would execute it a SECOND
 time, under its other name - a second server object, a second lock, a second
@@ -167,7 +167,7 @@ _TAKES_DESCRIPTION = "description" in inspect.signature(_Server.tool).parameters
 # `__name__` is never "__main__". So the same fact is asked from the other
 # side: whether the program Python was started on IS the entry file, the last
 # of heron_tools.SERVER_FILES. Off Windows only; on Windows the question is
-# never put (FRAGMENT-ISSUES row 5b-1554).
+# never put (FRAGMENT-ISSUES row 5b-1555).
 def _started_as_the_server():
     """Whether this process was started on the server's entry file - `python
     mcp/server/heron_mcp_server.py`, as .mcp.json starts it - and not on a
