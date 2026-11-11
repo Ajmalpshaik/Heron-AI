@@ -1438,7 +1438,7 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-na.md`](needs-checking/group-na.md)
 
-## Group NB - a nested DETAIL ITEM locked to named planes in the plan it is drawn in: `LOCK_NESTED_FAMILY_TO_PLANES` version 3 (2026-11-11)
+## Group NB - a nested DETAIL ITEM locked to named planes in the plan it is drawn in: `LOCK_NESTED_FAMILY_TO_PLANES` version 3, now version 4 (2026-11-11)
 
 **Its own file:** [`needs-checking/group-nb.md`](needs-checking/group-nb.md)
 
