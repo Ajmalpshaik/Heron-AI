@@ -14,15 +14,20 @@
 // VERSION 2 (2026-11-11, row 5b-1418) - THE DIVISION IS GIVEN A SKETCH PLANE.
 // Revit keeps a sketch with every division, also one cut by datums alone, and
 // Revit 2024 refused the empty id version 1 passed - "The element id should
-// refer to a valid SketchPlane" - for a level and a grid alike. A sketch plane
-// is now made for the call, on the largest flat face of the first part: where
-// a division is sketched by hand, and square to any datum that crosses the
-// part. A part showing no flat face gets a horizontal one. Nothing is drawn
-// on it - the named datums do the cutting. It is made in a step of its own,
-// taken back whole when Revit refuses or hands back no division, so a refusal
-// leaves no sketch plane behind, and an answer with no division in it is
-// refused rather than counted.
-// WHICH PLANE REVIT ACCEPTS IS NOT MEASURED: compiled only, not run in Revit.
+// refer to a valid SketchPlane" - for a level and a grid alike. A HORIZONTAL
+// sketch plane through the origin is now made for the call. Revit's API
+// reference calls that argument the sketch plane "for the curves that divide
+// the elements", and no curve is handed in, so the plane carries nothing: the
+// named datums do the cutting, each where it stands. ONE plane for every part,
+// whatever way a part faces - never a plane taken from one part, which would
+// govern the others if Revit did read it.
+//
+// It is made in a step of its own, taken back whole when Revit refuses or
+// hands back no division, and then looked for again: a refusal says so if the
+// plane is still there. An answer with no division in it is refused rather
+// than counted. A division that is made KEEPS the plane - Revit holds one
+// with every division - and the answer says a work plane was added.
+// COMPILED ONLY, NOT RUN IN REVIT: that Revit takes this plane is not measured.
 
 var divided = 0;
 var partCountAfter = 0;
@@ -62,34 +67,15 @@ if (refusal == null)
         var part = doc.GetElement(id) as Part;
         try { foreach (var s in part.GetSourceElementIds()) sources.Add(s.HostElementId); } catch { }
     }
-    // Where the division's sketch lies (version 2) - see the header.
-    var sketchOn = Plane.CreateByNormalAndOrigin(XYZ.BasisZ, XYZ.Zero);
-    try
-    {
-        var largest = 0.0;
-        var shape = doc.GetElement(parts[0]).get_Geometry(new Options());
-        if (shape != null)
-            foreach (var piece in shape)
-            {
-                var solid = piece as Solid;
-                if (solid == null) continue;
-                foreach (Face face in solid.Faces)
-                {
-                    var flat = face as PlanarFace;
-                    if (flat == null || flat.Area <= largest) continue;
-                    largest = flat.Area;
-                    sketchOn = Plane.CreateByNormalAndOrigin(flat.FaceNormal, flat.Origin);
-                }
-            }
-    }
-    catch { }
+    // The division's sketch plane (version 2) - see the header.
+    var sketchId = ElementId.InvalidElementId;
     var step = new SubTransaction(doc);
     try
     {
         step.Start();
-        var sketch = SketchPlane.Create(doc, sketchOn);
+        sketchId = SketchPlane.Create(doc, Plane.CreateByNormalAndOrigin(XYZ.BasisZ, XYZ.Zero)).Id;
         doc.Regenerate();
-        var maker = PartUtils.DivideParts(doc, parts, cutters, new List<Curve>(), sketch.Id);
+        var maker = PartUtils.DivideParts(doc, parts, cutters, new List<Curve>(), sketchId);
         if (maker == null)
         {
             step.RollBack();
@@ -107,12 +93,16 @@ if (refusal == null)
         refusal = "Revit refused the division: " + ex.Message + ". NOTHING WAS DIVIDED.";
     }
     doc.Regenerate();
+    // READ BACK (version 2): a refusal leaves no work plane behind - or says so.
+    if (refusal != null && sketchId != ElementId.InvalidElementId && doc.GetElement(sketchId) != null)
+        refusal += " The work plane made for the division could not be taken back and is still in the model - Undo this call to remove it.";
     foreach (var s in sources)
     {
         try { partCountAfter += PartUtils.GetAssociatedParts(doc, s, false, true).Count; } catch { }
     }
     if (refusal == null)
-        findings.Add(divided + " part(s) divided at " + cutters.Count + " datum(s); their elements now carry " + partCountAfter + " part(s), read back.");
+        findings.Add(divided + " part(s) divided at " + cutters.Count + " datum(s); their elements now carry " + partCountAfter + " part(s), read back."
+            + " Revit keeps a work plane with every division, so one unnamed horizontal work plane was added with it - nothing is drawn on it, and one Undo takes both back.");
 }
 
 if (refusal != null) lines.Add(refusal);

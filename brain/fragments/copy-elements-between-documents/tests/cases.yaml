@@ -51,15 +51,18 @@ positive:
       no label copied - view-specific elements stay out by default - and the
       report counting them as left
 
-  # VERSION 4, added 2026-11-11 (row 5b-1123). NOT RUN. The refusal must not
-  # reach a title only ONE other open document carries.
+  # VERSION 4, added 2026-11-11 (rows 5b-1123, 5b-1516). NOT RUN. The refusal
+  # must not reach words that are ONE open document's whole title, even when
+  # another's title holds them too.
   - given: >
       the negative's arrangement below with the family "Heron Twin.rfa" closed,
-      so one other open document is titled "Heron Twin"; sourceDocumentTitle
-      "Heron Twin", categories "Generic Models"
+      so "Heron Twin" and "Heron Twin 2" are open; sourceDocumentTitle the
+      whole title of the first as Revit shows it - "Heron Twin", or "Heron
+      Twin.rvt" on a Revit 2020 or 2021 that shows extensions - categories
+      "Generic Models"
     expect: >
-      its generic models arrive in the project in front, read back by id - no
-      refusal about the title
+      its one generic model arrives in the project in front, read back by id -
+      no refusal, although "Heron Twin 2" holds the same words
 
 negative:
   - given: 'sourceDocumentTitle "No Such File", categories "all"'
@@ -67,17 +70,30 @@ negative:
       refused, naming the documents that are open; nothing copied
 
   # VERSION 4, added 2026-11-11 (row 5b-1123). NOT RUN. FAILS on version 3,
-  # which copied from whichever of the two Revit listed first and said nothing.
+  # which copied from whichever Revit listed first and said nothing.
   - given: >
-      a scratch project in front, and two more documents open that Revit
-      titles alike - a scratch project saved as "Heron Twin.rvt" holding
-      generic models and a scratch family saved as "Heron Twin.rfa" (the title
-      leaves the extension off); sourceDocumentTitle "Heron Twin", categories
-      "Generic Models"
+      a scratch project in front, and three more documents open - a scratch
+      project saved as "Heron Twin.rvt" holding one generic model, a scratch
+      family saved as "Heron Twin.rfa" and an empty scratch project "Heron
+      Twin 2.rvt"; sourceDocumentTitle "Heron Twin", categories "Generic
+      Models"
     expect: >
-      copied 0 and refused - "2 open documents are titled "Heron Twin"" with
-      BOTH paths named, the .rvt and the .rfa, and NOTHING WAS COPIED; the
-      project in front unchanged
+      copied 0, NOTHING WAS COPIED, the project in front unchanged, and the
+      refusal by release. Revit 2022 and later, and 2020 or 2021 with
+      extensions hidden: "2 open documents match "Heron Twin"" - the two
+      titled "Heron Twin", each with its path, the .rvt and the .rfa; "Heron
+      Twin 2" not named; "Some of them share a title ... close the ones you
+      do not mean". Revit 2020 or 2021 showing extensions: "3 open documents
+      match", each title with its extension, and "Give the whole title of the
+      one you mean"
+
+  # VERSION 4, added 2026-11-11 (row 5b-1516). NOT RUN. FAILS on version 3,
+  # which copied from the first of them.
+  - given: the same documents; sourceDocumentTitle "Twin", categories "Generic Models"
+    expect: >
+      copied 0 and refused, every open document whose title holds "Twin"
+      named with its title and path; where their titles all differ the answer
+      asks for the whole title of the one meant; NOTHING WAS COPIED
 
   # VERSION 2, added 2026-11-01. NONE OF THESE HAS BEEN RUN.
   - given: fromLink false, sourceDocumentTitle matching ONLY a loaded link's title

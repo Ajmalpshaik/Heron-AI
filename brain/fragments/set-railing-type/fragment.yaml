@@ -37,10 +37,12 @@ risk: MODIFY
 # type whose Handrail 1 is None - how most railing types ship - so every such
 # type was refused (Revit 2020 and 2024, four types, 2026-11-02). Version 2
 # looks the type's handrail up first: with none the report reads "handrail
-# none" and neither is read; with one they are read as before, and a read
-# Revit still refuses is said in the report. Asking for a handrail side or
-# height on a type with no handrail is still Revit's to refuse. COMPILED ON
-# EVERY RELEASE, NOT RUN IN ANY REVIT (NEEDS-CHECKING Group DR, DR6a to DR6c).
+# none" and neither is read; with one they are read as before, each on its
+# own, and a read Revit still refuses is said in the report for that one
+# alone, so a height Revit will not give leaves the side read. Asking for a
+# handrail side or height on a type with no handrail is still Revit's to
+# refuse. COMPILED ON EVERY RELEASE, NOT RUN IN ANY REVIT (NEEDS-CHECKING
+# Group DR, DR6a to DR6c).
 #
 # ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 purpose: >

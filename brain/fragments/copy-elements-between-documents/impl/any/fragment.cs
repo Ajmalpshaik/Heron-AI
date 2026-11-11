@@ -3,17 +3,27 @@
 // `placeAtMm` are in scope; leaves `copied`, `copiedIds`, `kept`, `readBack`,
 // `report` and `findings` behind.
 //
-// VERSION 4 (2026-11-11, row 5b-1123) - A TITLE TWO OPEN DOCUMENTS CARRY IS
-// REFUSED, NEVER GUESSED.
+// VERSION 4 (2026-11-11, rows 5b-1123 and 5b-1516) - ONE DOCUMENT, NEVER A
+// GUESSED ONE.
 //
-//   Versions 1 to 3 took the FIRST open document whose title matched and said
-//   nothing - right only while every document of that title is the same file.
-//   Now, when the document the words find shares its title with another open
-//   document, nothing is copied: the answer names each one's path, or says it
-//   is not saved yet, and asks for the ones not meant to be closed - as a link
-//   placed twice is refused on the other route. The document in front and
-//   linked documents are not counted: neither is ever a source here. Label
-//   mode finds its seed the same way, so the same refusal holds there.
+//   Versions 1 to 3 took the FIRST open document whose title held the words
+//   and said nothing. Now the words must find exactly one: the document whose
+//   WHOLE title they are, when there is one - so "Project1" is reachable
+//   beside "Project10" - and otherwise the one whose title holds them. When
+//   more than one is left, nothing is copied and each is named with its title
+//   and its path (or "not saved yet"), as a link placed twice is refused on
+//   the other route. What to do next depends on what tells them apart: their
+//   titles (give the whole title), their paths alone (close the ones not
+//   meant), or nothing at all (close them in Revit).
+//
+//   The title is Revit's own, and it is not the same on every release: 2022
+//   and later leave the file extension off, 2020 and 2021 show it when the
+//   user's settings do. Either way two matches are refused - by this rule
+//   whether or not their titles come out alike.
+//
+//   The document in front and linked documents are not counted: neither is
+//   ever a source here. Label mode finds its seed by the same lines, so the
+//   same refusal holds there.
 //
 // VERSION 3 (2026-11-01) - COPY_LABELS_FROM_FAMILY MERGED IN, AS `labels`.
 //
@@ -99,6 +109,7 @@ var wanted = (sourceDocumentTitle ?? "").Trim();
 Document source = null;
 var openTitles = new List<string>();
 var openPaths = new List<string>();
+var openDocuments = new List<Document>();
 string titleRefusal = null;
 var linkedTitleMatched = false;
 var placed = Transform.Identity;
@@ -122,23 +133,30 @@ if (!fromLink)
         openTitles.Add(title);
         var path = "";
         try { path = candidate.PathName ?? ""; } catch { }
-        openPaths.Add(path != "" ? path : "one not saved yet");
-        if (wanted.Length > 0 && title.IndexOf(wanted, StringComparison.OrdinalIgnoreCase) >= 0 && source == null) source = candidate;
+        openPaths.Add(path != "" ? path : "not saved yet");
+        openDocuments.Add(candidate);
     }
-    // VERSION 4: a title two open documents carry cannot say which is meant.
-    if (source != null)
+    // VERSION 4: the words must find ONE document - see the header.
+    var fits = new List<int>();
+    var whole = new List<int>();
+    for (var i = 0; i < openTitles.Count && wanted.Length > 0; i++)
     {
-        var sourceTitle = "";
-        try { sourceTitle = source.Title ?? ""; } catch { }
-        var sameTitle = new List<string>();
-        for (var i = 0; i < openTitles.Count; i++)
-            if (string.Equals(openTitles[i], sourceTitle, StringComparison.OrdinalIgnoreCase)) sameTitle.Add(openPaths[i]);
-        if (sameTitle.Count > 1)
-        {
-            titleRefusal = sameTitle.Count + " open documents are titled \"" + sourceTitle + "\" - " + string.Join("; ", sameTitle)
-                + ". The title cannot say which one to copy from: close the ones you do not mean and ask again. NOTHING WAS COPIED.";
-            source = null;
-        }
+        if (openTitles[i].IndexOf(wanted, StringComparison.OrdinalIgnoreCase) < 0) continue;
+        fits.Add(i);
+        if (string.Equals(openTitles[i], wanted, StringComparison.OrdinalIgnoreCase)) whole.Add(i);
+    }
+    var found = whole.Count > 0 ? whole : fits;
+    if (found.Count == 1) source = openDocuments[found[0]];
+    else if (found.Count > 1)
+    {
+        var named = found.Select(i => "\"" + openTitles[i] + "\" (" + openPaths[i] + ")").ToList();
+        var titlesDiffer = found.Select(i => openTitles[i]).Distinct(StringComparer.OrdinalIgnoreCase).Count() == found.Count;
+        var allDiffer = named.Distinct(StringComparer.OrdinalIgnoreCase).Count() == named.Count;
+        titleRefusal = found.Count + " open documents match \"" + sourceDocumentTitle + "\" - " + string.Join("; ", named) + ". "
+            + (titlesDiffer ? "Give the whole title of the one you mean and ask again."
+                : allDiffer ? "Some of them share a title, so a title cannot say which one to copy from: close the ones you do not mean and ask again."
+                : "Some of them share a title and a path, so nothing tells them apart from here: close them in Revit - or restart Revit if they are not on screen - open the one you mean and ask again.")
+            + " NOTHING WAS COPIED.";
     }
 }
 else

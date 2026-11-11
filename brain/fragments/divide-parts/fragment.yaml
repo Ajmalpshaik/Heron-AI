@@ -24,14 +24,19 @@ risk: MODIFY
 # VERSION 2, 2026-11-11 (row 5b-1418). Version 1 passed Revit an empty sketch
 # plane and Revit 2024 refused every division, by a level and by a grid alike:
 # "The element id should refer to a valid SketchPlane". Revit keeps a sketch
-# with every division, also one cut by datums alone. Version 2 makes a sketch
-# plane for the call - on the largest flat face of the first part, where a
-# division is sketched by hand, or horizontal when the part shows no flat
-# face - draws nothing on it, and takes it back with the rest when Revit
-# refuses or divides nothing, so a refusal leaves no sketch plane behind. A
-# division Revit answers with nothing is now refused, never counted. COMPILED
-# ON EVERY RELEASE, NOT RUN IN ANY REVIT: which plane Revit accepts is exactly
-# what the next run measures (NEEDS-CHECKING Group DQ, DQ3a to DQ3c).
+# with every division, also one cut by datums alone. Version 2 makes a
+# HORIZONTAL sketch plane through the origin for the call and draws nothing
+# on it: Revit's API reference calls that argument the sketch plane "for the
+# curves that divide the elements", and no curve is handed in. One plane for
+# every part, never one taken from a part. It is taken back with the rest
+# when Revit refuses or divides nothing, and looked for again, so a refusal
+# leaves no work plane behind or says so. A division that is made keeps it -
+# Revit holds one with every division - and the answer says a work plane was
+# added. A division Revit answers with nothing is now refused, never counted.
+# COMPILED ON EVERY RELEASE, NOT RUN IN ANY REVIT: that Revit takes this
+# plane, and that a wall skew to a grid is cut on the grid line, is what the
+# next run measures (NEEDS-CHECKING Group DQ, DQ3a to DQ3d). The evidence for
+# the plane is on row 5b-1418.
 #
 # ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 purpose: >
@@ -76,11 +81,10 @@ compatibility-note: >
   RevitAPI.xml in the Nice3point reference packages for all eight releases on
   2026-10-12.
   Version 2 adds SketchPlane.Create(Document, Plane),
-  Plane.CreateByNormalAndOrigin, SubTransaction (Start, Commit, RollBack,
-  HasStarted, HasEnded), Element.Geometry[Options], Solid.Faces, Face.Area and
-  PlanarFace.FaceNormal and Origin - each read with tools/api-surface
-  --members on all eight releases on 2026-11-11, and the card compiled for
-  each. NOT RUN in any Revit.
+  Plane.CreateByNormalAndOrigin and SubTransaction (Start, Commit, RollBack,
+  HasStarted, HasEnded) - each read with tools/api-surface --members on all
+  eight releases on 2026-11-11, and the card compiled for each. NOT RUN in
+  any Revit.
 
 # ROUTING - the same rows are in the fragments named here.
 #
