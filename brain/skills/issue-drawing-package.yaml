@@ -1,0 +1,209 @@
+heron-status: DRAFT
+heron-step: 17
+heron-since: 0.1.0
+heron-layer: brain
+
+id: issue-drawing-package
+name: Issue a drawing package - revision, print set, then PDF and DWG
+domain: revit.sheets
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
+# PUBLISH, the highest rung any step stands on: the two exports write files
+# that go to other people (D-107). Every step before them is a read or MODIFY.
+risk: PUBLISH
+
+purpose: >
+  Takes sheets that are already drawn out as an issue: the revision the issue
+  goes out under is put on its sheets, the sheets are kept as a named set,
+  the set is checked for what turns up in issued drawings and cannot be seen
+  before export, and only then are the PDF and the DWG files written - to the
+  folder the modeller names, and nowhere else. Making the sheets is the
+  drawing-set method's; this one starts where that one stops.
+
+  The status in brackets after each capability is what that capability's own
+  fragment.yaml said on 2026-11-11. The list of capabilities after this method
+  is read from the library every time it is served: where the two differ, the
+  list is right and this text is out of date. A read runs while its card is
+  DRAFT and says so. A change does not: revit_change refuses a DRAFT, and a
+  card whose proof is older than its code (D-117). Nothing here is tried
+  round that refusal.
+
+  NOTHING IS EXPORTED ON HERON'S OWN INITIATIVE (Constitution Article 10).
+  Steps 8 and 9 run only when the modeller asked for THIS export, to a folder
+  they named for it, with the Publish switch on in Heron's Settings (D-106,
+  D-107) - the owner's switch, never turned on from a chat. A refusal that
+  names the switch is the answer; tell the modeller and stop. Each of steps
+  3, 4, 5 and 10 is one entry in Revit's undo list; no Undo un-sends a file.
+
+  0. A FILE TO GO BACK TO. REPORT_OPEN_DOCUMENTS (DRAFT) says whether the
+     model has a file and when it was last saved. A model never saved, or
+     with unsaved work, is said to the modeller ONCE before step 3: Heron
+     cannot save the model it works in (OPEN-QUESTIONS Q-69).
+  1. WHAT IS THERE - READ. LIST_REVISIONS (PROVEN, version 2) for the
+     revision table as Sheet Issues/Revisions shows it and each sheet's
+     revisions in sequence; FIND_SHEETS (PROVEN) for the sheets going out -
+     by sheetNumbers, by numberOrNameContains, or by a revision they already
+     carry. Its `placeholders` are sheets with no title block: they cannot
+     be exported, and they are named to the modeller, never dropped quietly.
+  2. ASK WHAT THE ISSUE IS, ONCE (D-33): which sheets, and the revision's
+     description, date, issued to and issued by - or which EXISTING revision
+     the issue goes out under. None is assumed, and no date is taken from
+     today's.
+  3. THE REVISION, only when the issue needs a new one. CREATE_REVISION
+     (PROVEN) with the values from step 2. It is NOT ticked issued here:
+     issuing locks its description, date and numbering, and that is step 10.
+  4. THE REVISION ONTO THE SHEETS. FIND_SHEETS again, then
+     SET_SHEET_REVISIONS (PROVEN, version 2) with revisionIds naming the
+     issue's revision - "Seq. 21 - <its description>", the name a revision
+     is resolved by - and attach=true, expect_from naming that find. It adds
+     to each sheet's list and never overwrites it. To SWAP the revision the
+     sheets end on for the issue's, the old one is handed in and replaceWith
+     names the new. A sheet in `cloudDriven` still prints a revision because
+     a cloud holds it there: LIST_REVISION_CLOUDS (PROVEN) for that sheet
+     and that revision, then EDIT_REVISION_CLOUDS (PROVEN) with
+     action reassign, expect_from naming that find - only when the modeller
+     says those clouds move. Its delete is a delete: the modeller's yes for
+     that one operation first (Article 7), and Revit asks again in its own
+     box (D-142).
+  5. THE SHEET SET, when the modeller wants the issue kept as a saved set.
+     FIND_SHEETS again, then MANAGE_SHEET_SETS (PROVEN, version 4) with
+     mode=create and the setName the modeller gives, expect_from naming the
+     find. A name already taken is said, never overwritten.
+  6. READ THE REVISIONS AND THE SET BACK. LIST_REVISIONS with expectedLast
+     the issue's revision: `lastDiffers` names every sheet that does not end
+     on it. LIST_SHEET_SETS (PROVEN, version 2): the set is there, it is not
+     EMPTY, and no second set holds the same sheets.
+  7. THE EXPORT CHECK - NOTHING LEAVES THE MODEL. revit_export_check for
+     sheets that would print blank, links not loaded and rooms with no area;
+     revit_sheets for a sheet with no title block; LIST_VIEWS_ON_SHEET
+     (PROVEN, version 2) for a view or schedule running off its title block
+     or over another. Say what each found, in Revit words, and ask whether
+     to go on. A check that passes means the values it checked were met -
+     never that the drawings are ready, approved or compliant.
+  8. PDF, when asked for. FIND_SHEETS again, then EXPORT_SHEETS_TO_PDF
+     (PROVEN) with the exportFolder the modeller gives and combinedFileName -
+     one name for one combined file - expect_from naming the find. Its
+     `exported` are the files found on disk afterwards; `notExported` and
+     `folderProblem` are read out, never left. THE FOLDER RULE OF STEP 9
+     HOLDS HERE TOO, AND FOR A SECOND REASON: a PDF of the same name already
+     in the folder is replaced with no undo - and the card's read-back is
+     only that a file of that name is there, so the last issue's PDF, left
+     in place by an export that wrote nothing, would be read back as this
+     one. A new or an empty folder, or a file name no file there has - asked
+     before the call. REVIT 2022 AND LATER ONLY - see NOT HERE.
+  9. DWG, when asked for. LIST_EXPORT_SETUPS (PROVEN) with kind=dwg for the
+     export setups this project holds, and the modeller says which: the
+     setup carries the office's layers, and its absence is a refusal, never
+     Revit's defaults. Then EXPORT_VIEWS_TO_DWG (PROVEN) with views the
+     sheets, each by its NAME - "DrawingSheet: <name>" when a plan shares
+     it, never its number - the folder and that setupName. A FILE OF THE
+     SAME NAME ALREADY IN THE FOLDER IS REPLACED, with no undo: the card
+     names it in `wouldOverwrite` and exports all the same. So the folder is
+     a new or an empty one, or the modeller has said the files in it may go
+     - asked before the call, never found out after it.
+  10. THE ISSUED TICK, only when the modeller says the issue has gone out.
+      SELECT_BY_PARAMETER_VALUE (PROVEN) on the Revisions category, by
+      Revision Sequence, finds the ONE revision; then EDIT_REVISION (PROVEN,
+      version 3) with issueState=issue and every other field left empty,
+      expect_from naming that find. It locks the revision; unissue takes the
+      tick off.
+  11. THE CHECK. LIST_REVISIONS once more, and the files: the paths steps 8
+      and 9 found on disk, read back to the modeller with how many sheets
+      went out and which did not. The calls not failing is not the proof;
+      the files being there is - and only because the folder held none of
+      those names before: a file that was already there proves nothing.
+
+  WORKSHARED MODELS. A sheet another person owns is skipped and named, never
+  taken (Article 12). Nothing here synchronises with central.
+
+  NOT HERE: a PDF on Revit 2020 or 2021 - EXPORT_SHEETS_TO_PDF is declared
+  for 2022 and later, on purpose: the older way drives a printer, and the
+  card will not print on an office copier by mistake. On those two releases
+  the PDF is the modeller's own Print. Sending, uploading or transmitting
+  the files - nothing in the library does it, and Article 10 would ask
+  first. A transmittal or drawing register document. Drawing a revision
+  cloud round what changed is ADD_REVISION_CLOUD, a separate change the
+  modeller asks for view by view.
+
+# FROM THE BRIEF THIS METHOD WAS ASKED FOR IN (2026-11-11): "issue a drawing
+# package" is its words as they stood, and "issue the drawings for tender"
+# is its "issue drawings for tender" with one word added. The third was
+# written for this method. None is from the owner's own question log; his
+# own way of asking is added on his word. No question is declared: this
+# method is above the write line (D-86), and what is on the sheets or which
+# revisions there are is a read with a card of its own.
+#
+# THE NAME SAYS "print set" - NOT "sheet set" AND NOT "saved set" - AND THESE
+# KEEP OFF "sheet", ON PURPOSE, as delete-by-id keeps off "form": a lookup
+# names a method by the words it shares with the request, when the method
+# needs one of the lookup's answers. Measured 2026-11-11 on the model
+# backend: with "sheet" in both, the owner's "Fill each element's
+# drawing-number parameter with the number of the sheet it's on" was offered
+# this PUBLISH method in place of sheets-from-excel; with "saved set", "is
+# my model saved" was offered it; and with "export check" in the name, as it
+# was until review that day, "check the model before I export IFC" was.
+# "issue" and "drawing" stay - they are the job - so "what is missing before
+# I issue this" is still offered this method beside its answer.
+utterances:
+  - issue a drawing package
+  - issue the drawings for tender
+  - issue the package as PDF and DWG under a new revision
+
+# CAPABILITIES, never fragment ids - in the order the purpose gives.
+needs:
+  # Step 0's check that the model has a file to go back to.
+  - REPORT_OPEN_DOCUMENTS
+  - LIST_REVISIONS
+  - FIND_SHEETS
+  # Only when the issue needs a new revision - step 3.
+  - CREATE_REVISION
+  - SET_SHEET_REVISIONS
+  # Only for a sheet a cloud keeps the old revision on - step 4.
+  - LIST_REVISION_CLOUDS
+  - EDIT_REVISION_CLOUDS
+  # Only when the issue is kept as a saved set - step 5.
+  - MANAGE_SHEET_SETS
+  - LIST_SHEET_SETS
+  # The export check's layout read - step 7.
+  - LIST_VIEWS_ON_SHEET
+  # PUBLISH. Revit 2022 and later.
+  - EXPORT_SHEETS_TO_PDF
+  - LIST_EXPORT_SETUPS
+  # PUBLISH.
+  - EXPORT_VIEWS_TO_DWG
+  # Only when the modeller says the issue has gone out - step 10.
+  # SELECT_BY_PARAMETER_VALUE, the find that hands it its one revision, is
+  # left off on purpose, as update-general-notes leaves off the capabilities
+  # that only pick: a lookup names a method whose needs hold one of its
+  # answers, and that find answers most "select the ones where ..." requests.
+  - EDIT_REVISION
+
+# What must be true BEFORE it runs, so it fails early with something
+# useful instead of deep inside a transaction (docs/09 s2).
+preconditions:
+  - a project is open in front, it is the model the modeller means, and the sheets going out are already made, with their views on them
+  - the modeller has said which sheets, and the revision's description, date, issued to and issued by - or which existing revision - and none is assumed (D-33)
+  - for an export, the modeller asked for THIS export and named the folder for it, and for DWG the export setup by name (Article 10)
+  - the export folder is new or empty for PDF and for DWG, or the modeller has said the files in it may be replaced - a file of the same name is overwritten with no undo, and an old PDF of that name would be read back as this export
+  - the owner has Changes on for steps 3 to 5 and 10, and the Publish switch on for steps 8 and 9 - a refusal that names a switch is the answer (D-106, D-107)
+  - the model has a file and has been saved before step 3
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  WRITTEN 2026-11-11 IN A CLOUD SESSION, NOT RUN. No Revit was reachable; the
+  order is the one drawing-set's own comments recorded for an issue on
+  2026-10-14, 2026-10-17 and 2026-11-07 (FRAGMENT-ISSUES rows 5b-465, 5b-550
+  and 5b-1463), put into one method with the exports after it. No new
+  capability. Every step names a capability the library already has, and on
+  the day it was written only REPORT_OPEN_DOCUMENTS among them was DRAFT.
+
+  The revit: list is every release because every step but step 8 runs on
+  all of them; step 8 is 2022 and later, and the list of capabilities served
+  with this method says so for the Revit in front.
+
+  DRAFT until the whole order has been run on a saved scratch copy, a PDF
+  and a DWG found on disk, and the revisions read back; no NEEDS-CHECKING
+  group holds that run yet.

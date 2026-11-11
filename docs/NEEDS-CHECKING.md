@@ -1450,6 +1450,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ne.md`](needs-checking/group-ne.md)
 
+## Group NH - the modeller clicks in Revit to answer the chat: `PICK_ON_SCREEN` (2026-11-11)
+
+**Its own file:** [`needs-checking/group-nh.md`](needs-checking/group-nh.md)
+
 ## Group NI - three repairs to the proving tools that only a PC with Revit can watch: a card refused on a release its own list leaves out, the client's output on Windows, and two suites that reach the live Revit (2026-11-11)
 
 **Its own file:** [`needs-checking/group-ni.md`](needs-checking/group-ni.md)
