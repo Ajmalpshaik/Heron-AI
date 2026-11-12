@@ -30,8 +30,8 @@ knowledge of what a duct is.
 > ([D-28](DECISIONS.md#d-28--generated-code-is-c-compiled-at-run-time-in-process),
 > [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs)). On Revit 2025 and later the
 > compiler ships beside the add-in as `Heron.Scripting` ([revit/README](../revit/README.md)). The
-> add-in also holds the ribbon switches, the Keep or Discard box, the run clock, the run guard and the
-> dialog watch. Take its size from a build, never from this table. **What still holds:** no RAG, no
+> add-in also holds the Settings window and its switches ([D-150](decisions/D-150.md)), the Keep or
+> Discard box, the run clock, the run guard and the dialog watch. Take its size from a build, never from this table. **What still holds:** no RAG, no
 > vector store, no skills, no model calls, and no knowledge of what a duct is beyond the fragment it is
 > handed.
 
@@ -234,10 +234,11 @@ result -> back through IPC -> MCP -> AI
 > point 4). It has read no selection since 2026-10-04, when the owner took the Selected card off the
 > page (`WatchSelection` is false in
 > [`HeronLiveState.cs`](../revit/Heron.Revit.Addin/HeronLiveState.cs),
-> [40 §21.6](40-heron-companion.md#216-the-page-after-the-owners-first-test-2026-10-04)). It also keeps
-> the Ask to Keep button's label current
+> [40 §21.6](40-heron-companion.md#216-the-page-after-the-owners-first-test-2026-10-04)). It also ends
+> a job's *keep the rest* grant once its ten quiet minutes are up
 > ([D-138](DECISIONS.md#d-138--the-keep-or-discard-question-gets-a-switch-on-the-ribbon-and-its-box-can-keep-the-rest-of-one-job-without-asking)
-> item 8).
+> item 8). The Ask to Keep button whose label that kept current left the ribbon on 2026-11-07
+> ([D-150](decisions/D-150.md)), so no button is repainted.
 >
 > - **Rule 3 is built.** The dispatcher keeps two waits apart. *Never picked up* means Revit is busy
 >   (`revit.busyTimeoutSeconds`). *Started but not finished* means the work is slow
@@ -431,7 +432,7 @@ requires level 4 (`PRODUCTION`).
 > modeller **Keep** or **Discard**. Only Keep keeps it
 > ([D-126](DECISIONS.md#d-126--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept),
 > which superseded D-99's *kept at once*). Whether the box is shown is the owner's *Ask to Keep* switch
-> on the ribbon, **off by default**. Off, a change is kept at once as one undo entry, as D-99 recorded.
+> - in Heron's Settings window since 2026-11-07, [D-150](decisions/D-150.md) - **off by default**. Off, a change is kept at once as one undo entry, as D-99 recorded.
 > On, one click can keep the rest of a job without asking
 > ([D-138](DECISIONS.md#d-138--the-keep-or-discard-question-gets-a-switch-on-the-ribbon-and-its-box-can-keep-the-rest-of-one-job-without-asking)).
 > A DRAFT's one run is always asked. A publish is asked whenever Ask to Keep is on, even under a job's
