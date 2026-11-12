@@ -35,10 +35,12 @@ purpose: >
   TEST_VIEW_FILTER_MATCH; heron_resolve gives each one's status.
 
   WHETHER REVIT ASKS BEFORE IT KEEPS A CHANGE IS THE OWNER'S SWITCH, Ask to
-  Keep, AND IT IS OFF ON A PC AS INSTALLED (D-138). No Heron tool tells a
-  chat how it stands, so ASK THE MODELLER before the first change: it is in
-  Heron's Settings on the Heron tab (D-150), and python tools/heron-ready.py,
-  run in the Heron folder, prints it.
+  Keep, AND IT IS OFF ON A PC AS INSTALLED (D-138). revit_health says which
+  way it is set for that Revit, read from Revit itself (built, not yet run
+  in Revit - Group NP), so CHECK IT before the first change. Where its line
+  says that Revit's Heron does not say, or could not be read, ASK THE
+  MODELLER: it is in Heron's Settings on the Heron tab (D-150), and python
+  tools/heron-ready.py, run in the Heron folder, prints it.
   - OFF: each change below is KEPT AT ONCE, with nothing shown first - one
     entry in Revit's undo list, which Revit's Undo takes back.
   - ON: Revit selects and isolates what the call touched and asks Keep or
@@ -64,9 +66,11 @@ purpose: >
      stepped ones. And which other views take the same.
   1. WHAT IS ALREADY THERE - READ, NOTHING CHANGED. REPORT_VIEW_FILTERS with
      viewName the view: every filter in the project, the ones on this view
-     with their settings, and templateOwned. A VIEW IN templateOwned FOLLOWS
-     A VIEW TEMPLATE THAT HOLDS ITS FILTERS: a filter put on that view does
-     not stay. Stop and say so - whether the template lets go of its filters,
+     with their settings, and templateOwned - true or false, with a line in
+     `findings` naming the view and its template. templateOwned TRUE MEANS
+     THE VIEW FOLLOWS A VIEW TEMPLATE THAT HOLDS ITS FILTERS: a filter put on
+     that view does not stay. Stop and say so - whether the template lets
+     go of its filters,
      or the filters are put on the template by hand, is the modeller's; no
      template is changed from this method. A filter the project already has
      for one of these values is said too, before a near-copy of it is made.
@@ -120,9 +124,12 @@ purpose: >
      disabled, hidden, blankOverride and nothingToActOn each name a filter
      that is on the view and drawing nothing, and why. Then the modeller
      looks at the view.
-  6. THE OTHER VIEWS. COPY_VIEW_FILTERS with sourceView the view just done
-     and targetViews the others by name; onlyFilterNamed for one filter
-     alone. Each filter goes over WITH its colour and its ticks. It answers
+  6. THE OTHER VIEWS. COPY_VIEW_FILTERS with sourceView the view just done,
+     targetViews the others by name, and onlyFilterNamed= typed with nothing
+     after the equals sign, which copies every filter - or a filter's name
+     there, for that one alone. onlyFilterNamed LEFT OUT ALTOGETHER IS
+     REFUSED and nothing is copied (FRAGMENT-ISSUES row 5b-227, open). Each
+     filter goes over WITH its colour and its ticks. It answers
      viewsChanged and filtersApplied, and blockedByTemplate for every view
      whose template holds its filters - named, and left as they are. Never
      step 4 again on a second view: the filters exist by then, so every one
@@ -136,9 +143,19 @@ purpose: >
      take the colour of the run they wrap. `ambiguous` names elements that
      carry two parameters by that name: they are left plain, and when every
      element is one, nothing is coloured and `refused` says so. The same
-     request gives the same colours every time. To take it off again:
-     step 3's filter once more, then RESET_GRAPHIC_OVERRIDES with view and
-     expect_from naming it.
+     request gives the same colours every time.
+     TAKING THE ONE-OFF BACK. Straight after the call, Revit's Undo - one
+     entry - is the true way back: it puts every element as it was. Later,
+     RESET_GRAPHIC_OVERRIDES is NOT the same thing, and both differences are
+     said before it is asked for. It clears only the elements handed to it,
+     and the colouring also painted insulation and lining it was never
+     handed - so step 3's filter is run again WITH the insulation and
+     lining categories added to it, or those stay coloured. And it wipes
+     EVERY override on each of those elements in this view, one made by hand
+     before the colouring included: nothing tells the two apart. So the
+     modeller's yes for THAT reset comes first; then the filter, then
+     RESET_GRAPHIC_OVERRIDES with view and expect_from naming it. It answers
+     `cleared`, hadNothing and viewRefused.
   8. SAY WHAT WAS DONE, in Revit words: which filters were made and which
      were already there, the colour of each, the views they are on, and
      every view a template kept as it was.
@@ -191,7 +208,13 @@ purpose: >
 # pipe system and make it red.", "Add a solid fill pattern to that pipe
 # system filter.", "Create an air terminals filter, give it colours, and
 # apply it to the active 3D view.", and his sentence asking for three ducts
-# in a different colour each. No other sentence is offered a different list.
+# in a different colour each. No other sentence IN THAT SET is offered a
+# different list. A capability's bare name typed as the request was not in
+# that set, bar the few the plain questions hold; measured on review,
+# 2026-11-12, every live card's capability name as the request, the same
+# backend, on the branch with main merged in: none changed for this method.
+# NOT MEASURED AT ALL: the spelling backend CI uses, and the re-ranker the
+# owner's PC has.
 utterances:
   - colour code the services, one colour for each system
   - give every system its own colour and put the same on the other drawings
@@ -224,9 +247,9 @@ needs:
 preconditions:
   - a project is open in front, it is the model the modeller means, and the view named is a real view of it - not a view template
   - the modeller has said which view, which categories, which parameter, filters or a one-off, and how the filters are named - and none is assumed (D-33)
-  - the view's filters are not held by a view template - or the modeller has said what is done about the template
+  - the view's filters are not held by a view template (REPORT_VIEW_FILTERS' templateOwned reads false) - or the modeller has said what is done about the template
   - the elements carry the parameter - a duct on no system has no system to be coloured by
-  - the modeller has said whether Ask to Keep is on - Heron cannot read it - and has been told that with it off each change is kept at once
+  - revit_health has said whether Ask to Keep is on for that Revit - or, where its line could not say, the modeller has - and the modeller has been told that with it off each change is kept at once
   - the owner has Changes on - a refusal that names the switch is the answer
   - on a workshared model, a view the modeller cannot edit is skipped and named - nothing is checked out or synchronised for them (Articles 10 and 12)
 

@@ -929,6 +929,69 @@ def main():
                 check(not _re.search(r"\((?:PROVEN|DRAFT)\b", words),
                       "%s: no step types a card's status in brackets - the "
                       "list served after the method carries it" % job)
+                # revit_health reports Ask to Keep for each Revit since
+                # Group NP; the first wording told a chat no tool could.
+                # A precondition with a colon and a space in it parses as
+                # a mapping, not a sentence, and is served as one: asked
+                # before it is joined, so that it FAILS here, not crashes.
+                before = (served or {}).get("preconditions") or []
+                broken = [p for p in before if not isinstance(p, str)]
+                check(bool(before) and not broken,
+                      "%s: every precondition is a sentence%s"
+                      % (job, "" if before and not broken else
+                         " - NOT ONE: %s" % (broken[:1] or "it has none")))
+                check("revit_health says which way it is set" in words
+                      and "No Heron tool tells" not in words
+                      and "Heron cannot read it" not in
+                      " ".join(str(p) for p in before),
+                      "%s: a chat is sent to revit_health for Ask to Keep, "
+                      "and is not told that nothing reads it" % job)
+
+            # WHAT A REVIEW OF THE FIRST WORDING FOUND, each a step that told
+            # a chat something its card does not do (2026-11-12). Held as
+            # words, because each was a sentence and nothing else notices
+            # when a sentence goes back.
+            def _steps_of(job):
+                got = BRAIN.method(job) or {}
+                return " ".join(got.get("purpose", "").split())
+
+            said = _steps_of("annotate-a-view")
+            check("MODEL MILLIMETRES" in said and "5b-240" in said
+                  and "TIMES THE VIEW'S SCALE" in said,
+                  "annotate-a-view: ARRANGE_TAGS' gap is sent in MODEL "
+                  "millimetres, the paper gap times the view's scale (row "
+                  "5b-240) - the card's own words say paper and its code "
+                  "does not scale")
+            check("ONE STRING, ONE KIND" in said,
+                  "annotate-a-view: runs and fixtures are never handed to "
+                  "one dimension call - it is refused whole")
+            said = _steps_of("system-colours")
+            check("onlyFilterNamed= typed with nothing" in said
+                  and "5b-227" in said,
+                  "system-colours: COPY_VIEW_FILTERS is sent onlyFilterNamed= "
+                  "empty - left out, the call is refused (row 5b-227)")
+            check("wipes EVERY override" in said
+                  and "insulation and lining it was never handed" in said
+                  and "yes for THAT reset" in said,
+                  "system-colours: the reset is not sold as an undo - it "
+                  "misses the insulation and wipes overrides made by hand, "
+                  "and is asked for")
+            said = _steps_of("hvac-spaces-and-zones")
+            check("updateNames=false" in said
+                  and "RENAMING IS A SECOND CALL, ON ITS OWN YES" in said,
+                  "hvac-spaces-and-zones: the spaces are never renamed in "
+                  "the first call - the differences are read out and asked "
+                  "about first (Article 7)")
+            check("IT ALWAYS MAKES A NEW ZONE" in said
+                  and "`refused` IS READ OUT EVERY TIME" in said,
+                  "hvac-spaces-and-zones: a zone call never adds to a zone "
+                  "that is there, and its refused lines are always read out")
+            check("volumeComputationOff IS NOT THE ANSWER HERE" in said
+                  and said.find("REPORT_AREA_VOLUME_COMPUTATIONS answers")
+                  < said.find("REPORT_ROOM_SPACE_DATA with expect_from")
+                  and said.find("REPORT_AREA_VOLUME_COMPUTATIONS answers") >= 0,
+                  "hvac-spaces-and-zones: the project's volume setting is "
+                  "read before any space's volume is (rows 5b-327, 5b-336)")
 
             # THEIR WORDS. The capabilities are the ones the live lookup
             # returned for each sentence on 2026-11-12 (the trained encoder,
