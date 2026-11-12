@@ -145,7 +145,10 @@ A DRAFT's one run is always asked. A publish is asked whenever *Ask to Keep* is 
 > the rest* grant is held now is not reported, and a settings file the add-in could not read is reported as
 > off, the default the executor would act on at that instant.
 > `revit_health`'s description does not mention the line: the six always-loaded descriptions are at their
-> budget (§8.8), and the methods in `brain/skills/` are not reworded yet. Its write-gate line is still read
+> budget (§8.8). Four methods in `brain/skills/` send the chat there since the same day -
+> `parameters-csv-round-trip`, `cad-to-mep`, `sheets-from-excel`, `reinforce-concrete`; this sentence said
+> *"not reworded yet"* until then - and still say to ask the modeller where the line could not say; any other
+> method that speaks of the switch is found with `grep -l "Ask to Keep" brain/skills/*.yaml`. Its write-gate line is still read
 > from the server's own copy of the settings ([Q-70](open-questions/tier-2.md), open). Held without Revit by
 > [`tests/test_ask_to_keep_health.py`](../tests/test_ask_to_keep_health.py); **built, not yet run in Revit**
 > ([Group NP](needs-checking/group-np.md)).
