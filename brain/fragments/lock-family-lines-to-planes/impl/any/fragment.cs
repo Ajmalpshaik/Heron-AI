@@ -46,6 +46,17 @@
 // line has none, so the plan or elevation looking straight at it. The plane
 // named must be seen edge on there.
 //
+// VERSION 3 (2026-11-12, row 5b-1576) - AN ARC'S CENTRE TOO. An arc - or a
+// whole circle - drawn as a detail or symbolic line whose CENTRE lies on a plane
+// named is locked there by its centre (CurveElement.CenterPointReference, the
+// way LOCK_FORM_SKETCH_TO_PLANES locks a form's circle, PROVED 2026-11-10), so a
+// symbol's circle stays on its planes when a size moves them - with
+// LABEL_FAMILY_RADIUS labelling its size. A centre mark Revit hides gives no
+// centre reference; it is switched on first and said. A whole circle - a closed
+// curve, with no ends - is taken now for its centre alone; an ellipse is still
+// refused. The gap table's row 3e (docs/work-notes/investigations/
+// 2026-11-11-family-2d-capabilities.md).
+//
 // ALL OR NOTHING, READ BACK. Every lock reads back locked; every line's ends
 // read back where they were. Any refusal from Revit fails the call with nothing
 // kept. Locked is not yet proved to FOLLOW: change the length parameter and run
@@ -89,6 +100,8 @@ var problems = new List<string>();
 var wantedPlanes = new List<Tuple<Element, Reference, Plane, string>>();
 var targets = new List<Element>();
 var freeEnds = 0;
+// VERSION 3: centre marks switched on to reach a centre.
+var centreMarks = 0;
 var freeCorners = new List<Tuple<ElementId, XYZ>>();
 
 if (!doc.IsFamilyDocument)
@@ -245,9 +258,13 @@ else
             var view = ownView(curveElement);
             if (view == null && curveElement.SketchPlane != null) view = viewFacing(curveElement.SketchPlane.GetPlane().Normal);
             var kind = curveElement is SymbolicCurve ? "symbolic line" : "detail line";
-            if (curve == null || !curve.IsBound)
-                problems.Add("The " + kind + " " + e.UniqueId + " is a closed curve with no ends - a circle or an "
-                    + "ellipse - and only lines and arcs with ends are locked here.");
+            if (curve == null || (!curve.IsBound && !(curve is Arc)))
+                problems.Add("The " + kind + " " + e.UniqueId + " is a closed curve that is not a circle - an ellipse "
+                    + "or a spline - and only lines, arcs and circles are locked here.");
+            else if (!curve.IsBound)
+                // VERSION 3: a whole circle, locked by its centre alone.
+                pieces.Add(Tuple.Create("the " + kind + " circle centred at " + at(((Arc)curve).Center) + " (radius "
+                    + mm(((Arc)curve).Radius) + " mm)", view, curve, curveElement, (Sketch)null));
             else pieces.Add(Tuple.Create("the " + kind + " from " + at(curve.GetEndPoint(0)) + " to "
                 + at(curve.GetEndPoint(1)), view, curve, curveElement, (Sketch)null));
         }
@@ -373,8 +390,11 @@ else
             {
                 if (Math.Abs(p.Item3.Normal.DotProduct(piece.Item2.ViewDirection)) > square)
                 {
-                    if (Math.Abs(off(p.Item3, piece.Item3.GetEndPoint(0))) < exactly
-                        || Math.Abs(off(p.Item3, piece.Item3.GetEndPoint(1))) < exactly)
+                    var touches = piece.Item3.IsBound
+                        && (Math.Abs(off(p.Item3, piece.Item3.GetEndPoint(0))) < exactly
+                            || Math.Abs(off(p.Item3, piece.Item3.GetEndPoint(1))) < exactly);
+                    var centreOn = piece.Item3 is Arc && Math.Abs(off(p.Item3, ((Arc)piece.Item3).Center)) < exactly;
+                    if (touches || centreOn)
                         unseen[p.Item4].Add(piece.Item1 + " (in " + piece.Item2.Name + ")");
                     continue;
                 }
@@ -401,7 +421,7 @@ else
             }
 
         foreach (var piece in pieces)
-            for (var i = 0; i < 2; i++)
+            for (var i = 0; i < 2 && piece.Item3.IsBound; i++)
             {
                 var point = piece.Item3.GetEndPoint(i);
                 var onAny = false;
@@ -449,6 +469,47 @@ else
                     if (piece.Item5 != null) freeCorners.Add(Tuple.Create(piece.Item5.Id, point));
                 }
             }
+
+        // VERSION 3: AN ARC'S OR A CIRCLE'S CENTRE on a plane named, locked once.
+        foreach (var piece in pieces.Where(q => q.Item3 is Arc && q.Item5 == null))
+        {
+            var arc = (Arc)piece.Item3;
+            foreach (var p in wantedPlanes)
+            {
+                if (Math.Abs(p.Item3.Normal.DotProduct(piece.Item2.ViewDirection)) > square) continue;
+                var gap = Math.Abs(off(p.Item3, arc.Center));
+                if (gap >= exactly)
+                {
+                    near[p.Item4].Add(Tuple.Create(gap, "the centre of " + piece.Item1 + " " + fineMm(gap) + " mm off"));
+                    continue;
+                }
+                planeHits[p.Item4] = true;
+                Reference centre = null;
+                try { centre = piece.Item4.CenterPointReference; } catch (Exception) { centre = null; }
+                if (centre == null)
+                {
+                    // A hidden centre mark gives no centre reference: switched on.
+                    var mark = piece.Item4.get_Parameter(BuiltInParameter.ARC_CENTER_MARK);
+                    if (mark != null && !mark.IsReadOnly && mark.AsInteger() == 0 && mark.Set(1))
+                    {
+                        doc.Regenerate();
+                        centreMarks++;
+                        try { centre = piece.Item4.CenterPointReference; } catch (Exception) { centre = null; }
+                    }
+                }
+                string writtenCentre = null;
+                try { writtenCentre = centre == null ? null : centre.ConvertToStableRepresentation(doc); }
+                catch (Exception) { writtenCentre = null; }
+                if (writtenCentre == null)
+                {
+                    problems.Add("Revit gives no centre reference for " + piece.Item1 + ", so its centre cannot be locked "
+                        + "to \"" + p.Item4 + "\" - tick Center Mark Visible in its Properties and ask again.");
+                    continue;
+                }
+                jobs.Add(Tuple.Create(p, piece.Item2, "the centre of " + piece.Item1, writtenCentre, piece.Item4, -2,
+                    new List<ElementId> { piece.Item4.Id }));
+            }
+        }
 
         foreach (var p in wantedPlanes)
         {
@@ -501,7 +562,9 @@ if (refused == null)
     var skipped = new List<string>();
 
     // Every line's ends before, to read back after.
-    var before = pieces.Select(p => Tuple.Create(p.Item1, p.Item4, p.Item3.GetEndPoint(0), p.Item3.GetEndPoint(1))).ToList();
+    // A whole circle (version 3) has no ends: its centre stands for both.
+    Func<Curve, int, XYZ> endOrCentre = (c, i) => c.IsBound ? c.GetEndPoint(i) : ((Arc)c).Center;
+    var before = pieces.Select(p => Tuple.Create(p.Item1, p.Item4, endOrCentre(p.Item3, 0), endOrCentre(p.Item3, 1))).ToList();
 
     foreach (var job in jobs)
     {
@@ -527,7 +590,8 @@ if (refused == null)
             try
             {
                 var curve = job.Item5.GeometryCurve;
-                again = curve == null ? null : job.Item6 < 0 ? curve.Reference : curve.GetEndPointReference(job.Item6);
+                again = job.Item6 == -2 ? job.Item5.CenterPointReference
+                    : curve == null ? null : job.Item6 < 0 ? curve.Reference : curve.GetEndPointReference(job.Item6);
             }
             catch (Exception) { again = null; }
             if (again == null)
@@ -567,8 +631,8 @@ if (refused == null)
         if (curve == null)
             throw new InvalidOperationException(b.Item1 + " has no curve to read back after the locks. NOTHING from this "
                 + "call was kept.");
-        var a = curve.GetEndPoint(0);
-        var z = curve.GetEndPoint(1);
+        var a = endOrCentre(curve, 0);
+        var z = endOrCentre(curve, 1);
         var same = (a.IsAlmostEqualTo(b.Item3, halfMillimetre) && z.IsAlmostEqualTo(b.Item4, halfMillimetre))
             || (a.IsAlmostEqualTo(b.Item4, halfMillimetre) && z.IsAlmostEqualTo(b.Item3, halfMillimetre));
         if (!same)
@@ -584,6 +648,9 @@ if (refused == null)
         + string.Join("; ", locked) + "."));
     if (skipped.Count > 0)
         findings.Add("Already locked, left as it was: " + string.Join("; ", skipped) + ".");
+    if (centreMarks > 0)
+        findings.Add("Center Mark Visible was switched on for " + centreMarks + " arc(s) - Revit gives no centre to lock "
+            + "while the mark is hidden. Untick it in Properties afterwards if it should not show.");
     if (freeEnds > 0)
         findings.Add(freeEnds + " line end(s) lie on none of the planes named. Each stays where it is when the planes "
             + "move, unless the line through it is locked along a plane, or a region's corner carries it.");
