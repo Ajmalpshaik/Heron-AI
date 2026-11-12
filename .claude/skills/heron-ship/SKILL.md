@@ -590,7 +590,7 @@ every new row went on the end of that one file, so it held rows a thousand past 
 pair of branches that each added a row conflicted in it** - measured 2026-11-11: changed on both sides
 in 17 of the 48 merges of the sixty days before, and on almost every merge of parallel work in one
 session, each resolved by hand as "keep both, in number order"
-(row 5b-1564). A row already in a rows file is
+([row 5b-1564](../../../docs/fragment-issues/row-5b-1564.md)). A row already in a rows file is
 still **edited** there - its state changed, the row closed - and that is the only reason to open one.
 `check-docs` §10 fails on a row from 5b-1564 on left in a rows file - a branch cut before the change
 will have one - and one command moves it, with every link that names it, re-banding nothing:

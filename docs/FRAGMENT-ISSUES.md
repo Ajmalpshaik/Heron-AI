@@ -205,7 +205,7 @@ anywhere lists the rows' files - the folder is the list.** [`tools/register-text
 reads them back after the rows files' rows, in number order, for every tool that reads the register. That
 is the point of it: until then every new row was appended to the end of ONE file,
 `section-5b-rows-401-425.md`, and two branches that each added a row stopped at each other in every merge
-(row 5b-1564 has what that cost). Two branches now collide only when
+([row 5b-1564](fragment-issues/row-5b-1564.md) has what that cost). Two branches now collide only when
 both take the same **number**, and git says so by name - two files called `row-5b-N.md`. The side merging
 second renames its row with [`tools/renumber.py`](../tools/renumber.py); the recipe is
 [`heron-ship` §6a](../.claude/skills/heron-ship/SKILL.md).
