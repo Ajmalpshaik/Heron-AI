@@ -14,9 +14,10 @@
 > 2026-10-06, Spaces calculated and written back ([Group CC](needs-checking/group-cc.md) CC11 - its
 > Space half PASSED, its diffuser half FAILED as CC13 and is fixed but not run again), and one roof term
 > matched a hand sum (CC19). That is a model meeting the engine, not a comparison with HAP or TRACE, so
-> the status above stands. *Checked 2026-10-18:* writing those loads back from the Companion is refused
-> today, before anything is sent - [44](44-building-loads-from-the-model.md)'s status says why
-> ([D-117](decisions/D-117.md)); this engine is not touched by it.
+> the status above stands. *Checked 2026-10-18:* writing those loads back from the Companion was refused
+> that day, before anything was sent - [44](44-building-loads-from-the-model.md)'s status says why
+> ([D-117](decisions/D-117.md)), and that both writers' proofs have been signed since, with Finalize not
+> run again; this engine is not touched by it.
 
 ---
 

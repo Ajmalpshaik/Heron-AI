@@ -26,6 +26,12 @@ See docs/29-metadata-standard.md
 > has been run, so no head has been placed by this feature in a model - read again 2026-10-18. Apply is
 > NOT refused by [D-117](decisions/D-117.md): `PLACE_FAMILY_INSTANCES` is PROVEN (version 3, proof dated
 > 2026-10-17); with *Ask to Keep* on ([D-138](decisions/D-138.md)) Revit asks Keep or Discard for it.
+>
+> **Since then (read 2026-11-12):** `REPORT_SPRINKLER_LAYOUT_SPACES`'s card reads PROVEN - a run signed
+> by Ajmal PS on 2026-10-21, *MEP Night Test*, Revit 2020, in its `proof:` block - and
+> `PLACE_FAMILY_INSTANCES` is at version 5, PROVEN. That is the read and the placing tool, each alone:
+> [group CG](needs-checking/group-cg.md)'s file marks none of its rows as run, so no head is recorded
+> as placed by this feature.
 
 **In Revit words.** Today Heron can tell you how many sprinklers a *rectangular* room needs and give you
 the points, and you place them. This feature lets you select one or more Spaces or Rooms of **any
@@ -315,7 +321,7 @@ its review log says what each of the 19 findings changed.
 
 | Piece | Holds | Tested by |
 |---|---|---|
-| [`report-sprinkler-layout-spaces`](../brain/fragments/report-sprinkler-layout-spaces/fragment.yaml) | The read (s3), FRG-MEP-060, DRAFT. Compiles on Revit 2020, 2024 and 2027 | `tests/cases.yaml`; NEEDS-CHECKING [group CG](needs-checking/group-cg.md) |
+| [`report-sprinkler-layout-spaces`](../brain/fragments/report-sprinkler-layout-spaces/fragment.yaml) | The read (s3), FRG-MEP-060, DRAFT when built - its card reads PROVEN since 2026-10-21. Compiles on Revit 2020, 2024 and 2027 | `tests/cases.yaml`; NEEDS-CHECKING [group CG](needs-checking/group-cg.md) |
 | [`heron_fire.py`](../brain/heron_fire.py) `sprinkler_layout_room` | The layout of any shape (s4); `measure_heads`, the one copy of the measure `sprinkler_spacing` also runs | `tests/test_fire.py` section 12 |
 | [`heron_sprinkler_layout.py`](../brain/heron_sprinkler_layout.py) | The runner (s5): heads in plan, the questions, the preview, one level's placing, the fingerprint, the read-back, the kept answers | `tests/test_sprinkler_layout.py` |
 | `revit_sprinkler_layout`, `_sprinkler_layout_place` | The chat tool and Apply (s6) - `ANALYZE` and `companion_sprinkler_place` at `MODIFY` | `tests/test_companion.py` |
