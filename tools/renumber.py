@@ -48,7 +48,7 @@ a merge is half done this refuses - abort it, renumber, and merge again.
 
 A file this branch added whose name carries the id is renamed with it -
 docs/decisions/D-116.md, docs/needs-checking/group-ej.md, and a 5b row's own
-file docs/fragment-issues/row-5b-1576.md. The rename is on disk only; this
+file docs/fragment-issues/row-5b-1585.md. The rename is on disk only; this
 never stages anything. Stage the paths it prints, by name.
 
 WHAT IT RENAMES, PER REGISTER

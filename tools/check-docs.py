@@ -1038,16 +1038,16 @@ else:
 
 # AND EVERY ROW'S OWN FILE OF THE DEFECT REGISTER IS ONE THE REGISTER READS.
 # Since 2026-11-12 a new row of FRAGMENT-ISSUES section 5b is a file of its
-# own, docs/fragment-issues/row-5b-1576.md, so that two branches adding rows
+# own, docs/fragment-issues/row-5b-1585.md, so that two branches adding rows
 # change no file in common. NO INDEX LINE NAMES SUCH A FILE - a line every
 # branch added to would be the same merge conflict in a new place - so the
 # check above, "a file its index never names", has nothing to read here. The
 # folder is the list, and what can go wrong is different:
 #
 #   * a file the reader does not read - a row saved under any name but its
-#     own (Row-5b-1576.md, 5b-1576.md, rows/5b-1576.md, a .txt), a file named
+#     own (Row-5b-1585.md, 5b-1585.md, rows/5b-1585.md, a .txt), a file named
 #     like a row's own under a section whose page has no line for them, or
-#     one misspelt (row-5b-01576.md, row-5b-1576-copy.md). Skipped, it is a row every tool has lost, which is
+#     one misspelt (row-5b-01576.md, row-5b-1585-copy.md). Skipped, it is a row every tool has lost, which is
 #     the failure the group check above was written for. register-text.py
 #     raises on the misspelt one, and this says so with the gate's exit code;
 #   * a file that holds another row than its name says - the name is what

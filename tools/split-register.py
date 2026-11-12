@@ -46,7 +46,7 @@ file's band is moved to its own band by the next run.
 A ROW FROM THE CUT-OVER ON HAS A FILE OF ITS OWN, AND THIS KEEPS IT THERE.
 Since 2026-11-12 the page says, under the line naming a section's rows files,
 which row is the first with a file to itself - "**Its rows from 1576 on, one
-file each:**" - and row 5b-1576 is fragment-issues/row-5b-1576.md
+file each:**" - and row 5b-1585 is fragment-issues/row-5b-1585.md
 (register-text.py has the why: two branches adding rows no longer change the
 same file). The page's line is the rule, and this tool never writes one where
 the page has none. A row from that number on is written to its own file and
@@ -245,7 +245,7 @@ REGISTERS = {
     },
 }
 
-# What a row's own file is named with, before its number: row-5b-1576.md. The
+# What a row's own file is named with, before its number: row-5b-1585.md. The
 # page's own line is what says it (register-text.py's each_of), and this is
 # only how _band_blind knows such a name when it compares two texts.
 OWN_STEM = "row-%s"
@@ -374,7 +374,7 @@ def _rows_header(title, page, heading, low, high, today, own=None):
 
 def _row_header(title, page, heading, number):
     """What a row's own file says above its table. The row is named
-    `5b-1576`, the way a link names it, so tools/renumber.py renames it here
+    `5b-1585`, the way a link names it, so tools/renumber.py renames it here
     with every other use; its bare number is in the row's first cell alone."""
     label = label_of(heading)
     return NL.join([

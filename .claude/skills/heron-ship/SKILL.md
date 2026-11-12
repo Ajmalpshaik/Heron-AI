@@ -583,10 +583,10 @@ python tools/next-id.py     # take the 5b `next` it prints - free on main, every
 **That is all of it. No other file is touched, and no index line is added** - the folder is the list, and
 [`tools/register-text.py`](../../../tools/register-text.py) reads every `row-5b-N.md` back into the
 register, in number order, for `open-defects.py` and every other reader. The file holds a heading that
-names the row (`row 5b-1576` - the reader refuses a heading that names another), the note under it, the table's two header lines and the row's ONE line -
+names the row (`row 5b-1585` - the reader refuses a heading that names another), the note under it, the table's two header lines and the row's ONE line -
 three cells, a literal pipe written as `\|`, exactly as a row in a rows file is written - and nothing
 under it: the reader refuses a row's file with words below its table. A link to it
-says *row 5b-1576* in its words and names the file - `row-5b-1576.md` from another row, the whole path
+says *row 5b-1585* in its words and names the file - `row-5b-1585.md` from another row, the whole path
 from anywhere else - and `check-docs` §12 fails on a link that reaches a file not holding its row.
 
 **Never append a row to `docs/fragment-issues/section-5b-rows-401-425.md` again.** Until 2026-11-12
@@ -595,9 +595,9 @@ written after them, and **every
 pair of branches that each added a row conflicted in it** - measured 2026-11-11: changed on both sides
 in 17 of the 48 merges of the sixty days before, and on almost every merge of parallel work in one
 session, each resolved by hand as "keep both, in number order"
-([row 5b-1576](../../../docs/fragment-issues/row-5b-1576.md)). A row already in a rows file is
+([row 5b-1585](../../../docs/fragment-issues/row-5b-1585.md)). A row already in a rows file is
 still **edited** there - its state changed, the row closed - and that is the only reason to open one.
-`check-docs` §10 fails on a row from 5b-1576 on left in a rows file - a branch cut before the change
+`check-docs` §10 fails on a row from 5b-1585 on left in a rows file - a branch cut before the change
 will have one - and one command moves it, with every link that names it, re-banding nothing:
 
 ```bash
@@ -611,7 +611,7 @@ end of the file they all edit, which is the conflict again. **A branch cut befor
 not know any of this**: its own `next-id.py` cannot see a row's file, so it can be given a number a
 row's file already has. That is loud when it merges - `tests/test_open_defects.py` and `check-docs`
 (HELD TWICE) name the number, or git stops on the file - and `renumber.py`, below, repairs it. It
-happened to row 5b-1576 itself, written as 5b-1564, on the day it was written.
+happened to row 5b-1585 itself, written as 5b-1564, on the day it was written.
 
 A row of **section 5** (found by proving, numbered on its own) still goes at the end of that section's
 last rows file; it has no cut-over line on the page, and it is not where the merges stopped.
@@ -636,7 +636,7 @@ the one file, or by taking a side**: abort the merge and renumber, below.
 (`BY` before `BZ`). Never take one side: a dropped group line leaves its `group-xx.md` on disk with
 nothing pointing at it, and the group silently leaves the register. `check-docs` §10 fails on exactly
 that - a `docs/needs-checking/group-*.md` its index never names. (A branch cut before 2026-11-12 can
-still conflict at the end of `section-5b-rows-401-425.md` with rows numbered before 5b-1576: keep both,
+still conflict at the end of `section-5b-rows-401-425.md` with rows numbered before 5b-1585: keep both,
 in row-number order, as before - then no new row goes there.)
 **If both sides took the same id - a group, a 5b row, a `Q-nn` or a `D-nnn`** - the side merging
 second takes the next free one, and renames it with [`tools/renumber.py`](../../../tools/renumber.py)

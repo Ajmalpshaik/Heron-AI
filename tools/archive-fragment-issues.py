@@ -109,7 +109,7 @@ the archive files this run writes and in every other document, by the split's
 own rule (row 5b-381).
 
 SINCE 2026-11-12 A ROW FROM THE CUT-OVER ON HAS A FILE OF ITS OWN -
-docs/fragment-issues/row-5b-1576.md, where the page says so. Nothing here
+docs/fragment-issues/row-5b-1585.md, where the page says so. Nothing here
 changed for it: register-text.py reads such a row into the one text this
 plans on, and layout_relinked() writes its shortened line back to the file
 it came from, so a finished row's own file keeps its number, its title and

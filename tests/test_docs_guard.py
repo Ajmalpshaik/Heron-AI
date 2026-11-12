@@ -74,7 +74,7 @@ WHAT IT PROVES
      pattern knew a rows file by exactly three digits, so a link into
      section-5b-rows-1001-1025.md was never judged (row 5b-1509).
 
- 12. A ROW'S OWN FILE IS ONE THE REGISTER READS (row 5b-1576). Since
+ 12. A ROW'S OWN FILE IS ONE THE REGISTER READS (row 5b-1585). Since
      2026-11-12 a new 5b row is docs/fragment-issues/row-5b-N.md and no
      index line names it. A right one passes and a link to it is judged
      like any other; a row saved under any other name - another case, an
@@ -444,7 +444,7 @@ def main():
                 os.remove(four_path)
 
         print("\n12. a row's own file is one the register reads, and holds "
-              "the row its name says (row 5b-1576)")
+              "the row its name says (row 5b-1585)")
         # Since 2026-11-12 a new 5b row is a file of its own and NO index
         # line names it - the folder is the list - so "a file its index
         # never names" has nothing to read. What can go wrong instead is

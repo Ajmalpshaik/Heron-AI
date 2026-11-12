@@ -304,7 +304,7 @@ def main():
     else:
         three_gates(src)
 
-    print("\n8. and a number is used twice wherever its two rows are kept (5b-1576)")
+    print("\n8. and a number is used twice wherever its two rows are kept (5b-1585)")
     across_layouts()
 
     print()

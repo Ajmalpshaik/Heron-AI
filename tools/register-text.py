@@ -32,7 +32,7 @@ index now keeps one more line, written once and never added to:
 
     **Its rows from 1576 on, one file each:** [`fragment-issues/row-5b-NNNN.md`](fragment-issues/)
 
-and row 5b-1576 is fragment-issues/row-5b-1576.md: the table's two header
+and row 5b-1585 is fragment-issues/row-5b-1585.md: the table's two header
 lines and that row's own line, in the cells every rows file uses, so a row
 moves between the two layouts by copying its line. THE FOLDER IS THE LIST.
 No line anywhere names a row's file - a line every branch added to would be
@@ -65,7 +65,7 @@ names it, or a rows file with no table, raises RegisterBroken rather than
 returning a shorter register. So does a row's own file that holds any row
 but the one its name says, a heading that names another row or none, or
 any text under its table, a file named like one that is not one
-(row-5b-1576-copy.md would otherwise be a row nobody reads), and a caller
+(row-5b-1585-copy.md would otherwise be a row nobody reads), and a caller
 that serves the register from memory and gave no way to list the folder. An index that names no file is returned as it
 is: that is how a register that was never split, and every register a suite
 builds for itself, is read.
@@ -188,7 +188,7 @@ def each_of(line, folder):
 
 
 def row_name(stem, number):
-    """The file row NUMBER has to itself: row-5b-1576.md."""
+    """The file row NUMBER has to itself: row-5b-1585.md."""
     return "%s-%d.md" % (stem, number)
 
 
@@ -533,7 +533,7 @@ def register_text(index, read=None, listing=None):
                                  % (folder, name, number, heading))
         top, bottom = table
         # THE HEADING NAMES THE ROW, as the file's name and the row's first
-        # cell do - `row 5b-1576`. tools/renumber.py renames the three
+        # cell do - `row 5b-1585`. tools/renumber.py renames the three
         # together, and a file whose heading says another row is one a person
         # opens for the wrong defect. Read where the section has a label to
         # name a row by, which is how a link names one (row_links).

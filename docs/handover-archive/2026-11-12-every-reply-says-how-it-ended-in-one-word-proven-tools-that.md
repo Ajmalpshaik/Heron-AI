@@ -32,8 +32,8 @@ in Revit.** The fixes are in `git log --first-parent origin/main..` on the branc
 - **`revit_health` says, under each connected Revit, whether that Revit will ask Keep or Discard** - read
   from the add-in itself; four methods send the chat there ([row 5b-1579](../fragment-issues/row-5b-1579.md),
   [Group NP](../needs-checking/group-np.md)). Compiled for 2020 to 2027; the add-in has to be rebuilt and deployed.
-- **A new 5b defect row is a file of its own**, `docs/fragment-issues/row-5b-<n>.md`, from 5b-1576 on - two
-  branches adding rows no longer share a file ([row 5b-1576](../fragment-issues/row-5b-1576.md);
+- **A new 5b defect row is a file of its own**, `docs/fragment-issues/row-5b-<n>.md`, from 5b-1585 on - two
+  branches adding rows no longer share a file ([row 5b-1585](../fragment-issues/row-5b-1585.md);
   [`heron-ship` §6a](../../.claude/skills/heron-ship/SKILL.md) has the two steps).
 - **The MCP server is split at its first seam:** the inventory reads are in `mcp/server/heron_inventory.py`
   on a core any later tool file can import, `heron_server_core.py`, and one list says which files the
@@ -66,7 +66,7 @@ in Revit.** The fixes are in `git log --first-parent origin/main..` on the branc
   its own, and `ROLLED BACK` for a read that threw. Where the server did not work the ending out, the word is
   `OUTCOME UNKNOWN`.
 - **An id taken in review.** The row written as 5b-1564 met main's own 5b-1564 to 5b-1574 at the merge and
-  became 5b-1576. Run `python tools/next-id.py` again just before a branch merges, not only when the row is
+  became 5b-1585. Run `python tools/next-id.py` again just before a branch merges, not only when the row is
   written.
 
 **TO DO.**

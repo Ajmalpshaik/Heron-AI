@@ -15,7 +15,7 @@
 > | **Waiting on you?** | `python tools/owner-queue.py` — **never a list typed on this page** |
 > | **Adding to it** | One row per fragment or defect, with **the model it was seen on named**. A defect found while tidying is **recorded, not fixed** |
 > | **Its numbers** | Counts inside a row describe **the day it was written** and are deliberately not updated. Derive today's: `grep -rh '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c` |
-> | **Where each section lives** | Since 2026-09-23 **each section is its own file** in [`fragment-issues/`](fragment-issues/section-1.md) — [section 1's](fragment-issues/section-1.md), for one — and this page keeps the rules and, where each section was, its heading and a line naming its file. **Sections 5 and 5b keep their own words here, and their rows are in files of 25 by number:** row 5b-62 is in `fragment-issues/section-5b-rows-051-075.md`. **The last of 5b's is not 25:** `section-5b-rows-401-425.md` holds every 5b row from 401 to 1575, appended there and never re-banded (`python tools/split-register.py fragment-issues`, with no `--write`, says what a re-banding would move). **A new row of section 5b is a file of its own** — `python tools/next-id.py` gives its number, and row 5b-1576 is `fragment-issues/row-5b-1576.md` — so two branches adding rows never change the same file; no line lists those files, the folder is the list. A new row of section 5 goes at the end of that section's last file. [*Add to this file*](#add-to-this-file-do-not-start-another) has the steps. The whole register, read as one text: `python tools/register-text.py docs/FRAGMENT-ISSUES.md` |
+> | **Where each section lives** | Since 2026-09-23 **each section is its own file** in [`fragment-issues/`](fragment-issues/section-1.md) — [section 1's](fragment-issues/section-1.md), for one — and this page keeps the rules and, where each section was, its heading and a line naming its file. **Sections 5 and 5b keep their own words here, and their rows are in files of 25 by number:** row 5b-62 is in `fragment-issues/section-5b-rows-051-075.md`. **The last of 5b's is not 25:** `section-5b-rows-401-425.md` holds every 5b row from 401 to 1575, appended there and never re-banded (`python tools/split-register.py fragment-issues`, with no `--write`, says what a re-banding would move). **A new row of section 5b is a file of its own** — `python tools/next-id.py` gives its number, and row 5b-1585 is `fragment-issues/row-5b-1585.md` — so two branches adding rows never change the same file; no line lists those files, the folder is the list. A new row of section 5 goes at the end of that section's last file. [*Add to this file*](#add-to-this-file-do-not-start-another) has the steps. The whole register, read as one text: `python tools/register-text.py docs/FRAGMENT-ISSUES.md` |
 > | **Finished rows** | A finished row of section 5 or 5b keeps its line where it was, in its rows file or its own file — its number, a one-line title and the opening of its state — and its full text moves to [`fragment-issues-archive/`](fragment-issues-archive/README.md). **Nothing is deleted, and an open row always stays in full.** `python tools/archive-fragment-issues.py` says what would move |
 
 > **Read [FOR-THE-OWNER.md](FOR-THE-OWNER.md) first if you are the owner.** It is the one page that
@@ -192,26 +192,26 @@ the moment it fills with things somebody thought might be wrong, it stops being 
 **Where to write it.** Since 2026-09-23 each section is its own file in
 [`fragment-issues/`](fragment-issues/section-1.md), named under its heading above.
 
-**A new row of section 5b is a file of its own** - since 2026-11-12, from row 5b-1576 on. Two steps:
+**A new row of section 5b is a file of its own** - since 2026-11-12, from row 5b-1585 on. Two steps:
 
 ```bash
 python tools/next-id.py    # the 5b `next` it prints is free on main, every branch, every open pull request and every worktree
 # write docs/fragment-issues/row-5b-<that number>.md - copy the newest row-5b-*.md and change its number, its defect and its state
 ```
 
-The file is a heading that names the row (`row 5b-1576`), the note under it, the table's two header lines and
+The file is a heading that names the row (`row 5b-1585`), the note under it, the table's two header lines and
 the row's one line, in the same three cells every rows file uses - and nothing under the row: what is to
 be said of it goes in its cells. **No other file is touched, and no line
 anywhere lists the rows' files - the folder is the list.** [`tools/register-text.py`](../tools/register-text.py)
 reads them back after the rows files' rows, in number order, for every tool that reads the register. That
 is the point of it: until then every new row was appended to the end of ONE file,
 `section-5b-rows-401-425.md`, and two branches that each added a row stopped at each other in every merge
-([row 5b-1576](fragment-issues/row-5b-1576.md) has what that cost). Two branches now collide only when
+([row 5b-1585](fragment-issues/row-5b-1585.md) has what that cost). Two branches now collide only when
 both take the same **number**, and git says so by name - two files called `row-5b-N.md`. The side merging
 second renames its row with [`tools/renumber.py`](../tools/renumber.py); the recipe is
 [`heron-ship` §6a](../.claude/skills/heron-ship/SKILL.md).
 
-**Rows before 5b-1576 stay in the rows files** and are edited there - a state changed, a row closed.
+**Rows before 5b-1585 stay in the rows files** and are edited there - a state changed, a row closed.
 Nothing new is appended to a rows file: `python tools/check-docs.py` fails on a row from 1576 on left in
 one, and `python tools/split-register.py fragment-issues --new-rows --write` moves it to its own file, with
 every link that names it, and re-bands nothing.
