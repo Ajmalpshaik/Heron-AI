@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -164,7 +164,27 @@ capability: SET_PARAMETER_VALUES_BY_ID
 # CSV, `blankCells`, rows matched by id as text - see the purpose's last
 # paragraph and the comment above `utterances`. The proof below is version
 # 6's, kept as the record; DRAFT until version 7 is proved on a real model.
-version: 7
+#
+# VERSION 8 (2026-11-11, FRAGMENT-ISSUES 5b-1504) - A KEY WITH A * NAMES MANY.
+# On 2026-11-11 the owner cleared brand data (Manufacturer, Model, URL,
+# Model_Number, Family_Source) from air terminal families, a type at a time, and
+# asked for one call that writes a value - blank or filled - into many types,
+# in a family and in a project. In a project the job was this card's already,
+# one row per type: `types=yes` finds types by key and a row takes any number of
+# parameter=value pairs - but a key naming several types refused its row, so
+# seven types of one family took seven rows, each typed by its exact name. Now
+# a key with a * is a PATTERN that names every element (or type) in the search
+# whose key matches it, ignoring case; `*` alone names all of them, and the
+# first row's narrowing - `Family Name=KDF Square Diffuser` - keeps it to one
+# family. A pattern row is ALL OR NOTHING ON ITS OWN: one element it names that
+# lacks a parameter, holds it read-only or turns a value down, and nothing on
+# that row is written, each such element named with why. Every other row - by
+# id, by csv, by a key without a * - is exactly version 7's. A key that is some
+# element's whole value is that key, star and all.
+#   Widened, not made new: the duplicate check of 2026-11-11 found this card and
+# WRITE_ELEMENT_PARAMETERS an OVERLAP and said several pairs at once belong
+# here (all or nothing), not there. DRAFT until NEEDS-CHECKING Group NG.
+version: 8
 source: OFFICIAL
 risk: MODIFY
 
@@ -200,7 +220,9 @@ purpose: >
   **Or by a value each element holds** (version 2): a first row of the key
   parameter and the categories to look in, then rows of a key value and the
   values to write. A key matching no element, or more than one, is refused for
-  that row alone; the other rows are written and read back.
+  that row alone; the other rows are written and read back. A key with a * is
+  a pattern (version 8): it names every element or type whose key matches, and
+  the same values go onto all of them - that row written whole or not at all.
 
   ASSUMES AN OPEN TRANSACTION and does not open one - the operation's
   TransactionGroup makes the whole Apply one entry in Revit's undo list
@@ -234,7 +256,11 @@ contract:
     # level by name, or a family type as Family: Type. VERSION 6: two shared
     # parameters with one name are told apart by GUID - Equipment Tag
     # {e133774c-3f62-45f1-a0c6-7e6c6238380b} - as REPORT_PARAMETER_INVENTORY
-    # prints it.
+    # prints it. VERSION 8: a key with a * names EVERY element or type whose key
+    # matches it, ignoring case - * alone all of them - and the row's values go
+    # onto each, all or nothing for that row: key=Type Name|in=Air Terminals|
+    # types=yes|Family Name=KDF Square Diffuser;*|Manufacturer=|URL= clears
+    # both on every type of that family. A blank value writes empty text.
     - name: rows
       type: string
       source: request
@@ -354,6 +380,8 @@ contract:
       role: accounting
       type: string
 
+# VERSION 8 (row 5b-1504) changed impl/ again: the proof below describes none of
+# versions 4 to 8, and the card is DRAFT until Group NG proves version 8.
 # VERSION 3's PROOF, KEPT AS A RECORD. Version 4 changed impl/ (rows 5b-1259,
 # 5b-1260), so its fingerprint no longer describes the code and the card is
 # DRAFT until NEEDS-CHECKING Group HZ proves version 4 (D-30). A row that names
@@ -430,6 +458,12 @@ compatibility-note: >
   and `Definition.Name` are unchanged 2020 to 2027, and `Guid.TryParse` is the
   .NET Framework 4 call every runtime here carries.
 
+  Version 8 (row 5b-1504) adds no Revit member: a pattern is matched in plain
+  C# against the key text already read, `ElementType.FamilyName` and
+  `ElementType.Name` name what was written, and one `SubTransaction` per row
+  holds a pattern row's elements - all unchanged 2020 to 2027 (compiled
+  2020 to 2027 with the whole library, 2026-11-11).
+
 # IMPORT_PARAMETER_VALUES WAS MERGED INTO THIS CARD on 2026-11-01, on the
 # owner's instruction ("make sure there is no duplicate tools"; "in every
 # conflict keep the safer rule"), and is DEPRECATED. The same job: a different
@@ -472,6 +506,15 @@ compatibility-note: >
 #                                           outward leg; check its header
 #   "which of these are blank"           -> DESCRIBE_BLANK_PARAMETERS
 #   "clear these values"                 -> WRITE_ELEMENT_PARAMETERS clear=true
+# ROUTING, version 8 (row 5b-1504):
+#   "clear the manufacturer on every type of this family"
+#                                        -> here, a * key with types=yes and
+#                                           the family as the first row's
+#                                           Family Name - several parameters
+#                                           at once, all or nothing
+#   "clear the manufacturer in every type" in the FAMILY EDITOR
+#                                        -> SET_FAMILY_TYPE_VALUES typeName all
+#                                           - a family's own types
 
 utterances:
   - apply the values edited in the Companion table
@@ -495,3 +538,6 @@ utterances:
   - bulk set different values per element from a file
   - push the edited schedule back into revit
   - the client sent the tags back
+  # ADDED 2026-11-11, row 5b-1504 - version 8, a * key.
+  - set the same values on every type of this family in the project
+  - blank the manufacturer and URL on all these types
