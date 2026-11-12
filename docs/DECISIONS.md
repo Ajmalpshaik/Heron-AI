@@ -229,6 +229,7 @@ an edit.
 | [D-158](#d-158--a-qa-checks-failing-ids-travel-whole-only-when-the-check-names-them) | A QA check's failing ids travel whole, only when the check names them | ✅ Accepted · 2026-11-12 |
 | [D-159](#d-159--a-qa-check-carries-its-severity-clause-and-advice-and-a-run-says-what-changed-since-the-last-one-on-the-same-model) | A QA check carries its severity, clause and advice, and a run says what changed since the last one on the same model | ✅ Accepted · 2026-11-12 |
 | [D-160](#d-160--a-keep-that-changed-nothing-is-rolled-back-so-no-empty-entry-is-left-in-the-undo-list) | A keep that changed nothing is rolled back, so no empty entry is left in the undo list | ✅ Accepted · 2026-11-12 |
+| [D-161](#d-161--a-change-whose-answer-was-lost-can-still-be-read-by-the-requests-own-name) | A change whose answer was lost can still be read, by the request's own name | ✅ Accepted · 2026-11-12 |
 
 ## Format
 
@@ -1403,3 +1404,11 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs) (`Run`, `WithVerdict`)
 
 **Full record:** [`decisions/D-160.md`](decisions/D-160.md)
+
+## D-161 — A change whose answer was lost can still be read, by the request's own name
+
+**Status:** Accepted · **Date:** 2026-11-12 · **Accepted:** Ajmal PS, 2026-11-12, in conversation: item 9 of the plan
+**Keeps:** [D-129](decisions/D-129.md) · [D-46](decisions/D-46.md)
+**Affects:** [`RevitDispatcher.cs`](../revit/Heron.Revit.Addin/RevitDispatcher.cs) (`RunRecord`) · [`heron_run_records.py`](../mcp/server/heron_run_records.py) (`by_request`)
+
+**Full record:** [`decisions/D-161.md`](decisions/D-161.md)

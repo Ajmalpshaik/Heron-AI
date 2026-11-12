@@ -827,6 +827,9 @@ namespace Heron.Revit.Addin
                 Json.Str("at", DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture)),
                 Json.Str("op", op),
                 Json.Str("fragment", Json.ReadString(job.Request, "name")),
+                // D-161: THE REQUEST THIS ANSWERS, as the chat named it - so an
+                // answer the chat stopped waiting for can still be found by it.
+                Json.Str("requestId", Json.ReadString(job.Request, "requestId")),
                 Json.Str("document", Json.ReadString(response, "document")),
                 elements,
                 "\"reply\": " + response);

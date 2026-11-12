@@ -115,6 +115,7 @@ import os
 import re
 import sys
 import time
+import uuid
 
 # The bridge client is the layer below this one. It stays dependency-free on
 # purpose, so `doctor` keeps working on a machine where nothing else does.
@@ -126,6 +127,8 @@ from heron_session import NotBound                  # noqa: E402
 from heron_write import (BadDistance, describe_vertical,   # noqa: E402
                          parse_millimetres, reported_elsewhere, skipped_sentence)
 from heron_failure import analyse, explain          # noqa: E402
+from heron_failure import RUNNING as RUNNING_OUTCOME   # noqa: E402
+from heron_failure import UNKNOWN as UNKNOWN_OUTCOME   # noqa: E402
 import heron_tools as tools                         # noqa: E402
 import heron_config as configuration                # noqa: E402
 import heron_health as health                       # noqa: E402
@@ -1819,6 +1822,10 @@ def revit_change(capability: str = "", values: str = "",
         # switch is read inside the add-in and nothing sent from here can skip
         # it.
         "apply": "true",
+        # D-161: THIS REQUEST'S OWN NAME, written into the run record the
+        # add-in keeps when the job ends - so an answer lost on the way back
+        # can still be read, by heron_run_record request=<it>.
+        "requestId": uuid.uuid4().hex[:16],
     }
     # A DRY RUN SENDS NO `apply` AT ALL, never "false": absent is the word
     # the add-in reads as run-and-roll-back (RevitFragment.Run), and a field
@@ -1883,7 +1890,8 @@ def revit_change(capability: str = "", values: str = "",
     if failure is not None:
         return (_ended(_failure_ended(failure), explain(failure))
                 + _what_to_type(failure, capability)
-                + (elsewhere if failure.code == "write_disabled" else ""))
+                + (elsewhere if failure.code == "write_disabled" else "")
+                + _late_answer(failure, args.get("requestId")))
 
     # GOLDEN RULE 20. An answer about a model the user is not looking at is
     # how the wrong building gets changed.
@@ -2028,6 +2036,20 @@ def revit_change(capability: str = "", values: str = "",
 
 #: What this chat has already printed in the current batch - see heron_run_records.Batch.
 _BATCH = runs.Batch()
+
+
+def _late_answer(failure, request_id):
+    """
+    D-161: where a lost answer can still be read - or "" when the answer was
+    not lost. Said only when the outcome is UNKNOWN (the request left and its
+    answer did not come back) or Revit is still RUNNING it: Revit finishes the
+    job anyway and keeps its record under this request's name.
+    """
+    if not request_id or failure is None or failure.outcome not in (UNKNOWN_OUTCOME, RUNNING_OUTCOME):
+        return ""
+    return ("\n\nIf Revit finishes this job, its answer is kept on this PC: "
+            "heron_run_record request=%s reads it. Ask that before trying the change again."
+            % request_id)
 
 
 def _never_saved_line(reply):
@@ -5895,7 +5917,8 @@ def heron_gaps(days: int = 0) -> str:
 
 
 @server.tool()
-def heron_run_record(run: str = "", offset: int = 0, limit: int = 40) -> str:
+def heron_run_record(run: str = "", offset: int = 0, limit: int = 40,
+                     request: str = "") -> str:
     """
     Read back what a change did in full - every element id it added, modified
     or deleted, and every value it left - a page at a time.
@@ -5904,12 +5927,21 @@ def heron_run_record(run: str = "", offset: int = 0, limit: int = 40) -> str:
     naming the run, e.g. run=wf-20261009-133432-0042-a1b2. Pass that run here.
     `offset` and `limit` page through it (limit at most 200); a page that has
     more ends by naming the next offset. Leave `run` empty to list the newest
-    records on this PC.
+    records on this PC. `request` finds the record of a change whose answer
+    was lost, by the name its reply gave.
 
     Reads Heron's own files on this PC - never the model, never Revit - so it
     needs no Changes switch and Revit need not be running. Records are pruned
     after runs.retainDays (14 by default).
     """
+    # D-161: A LOST ANSWER, FOUND BY THE REQUEST'S OWN NAME.
+    if (request or "").strip() and not (run or "").strip():
+        run = runs.by_request(request.strip()) or ""
+        if not run:
+            return ("No record answers request %s yet. Revit may still be working on it, or "
+                    "it ended before it changed anything a record holds. Look at the model, "
+                    "and ask again in a minute before trying the change again."
+                    % request.strip())
     if not (run or "").strip():
         found = runs.recent()
         if not found:

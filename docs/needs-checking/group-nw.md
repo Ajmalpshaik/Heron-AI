@@ -19,3 +19,11 @@ and its Revit-free half runs here; none of it has run in Revit.**
 | **NW1** | Ask the chat to rename views with a find text that matches no view | The reply says *NOTHING CHANGED, SO NOTHING WAS KEPT* and *no new entry in Revit's undo list*. Revit's undo list has **no** new `Heron:` entry on top |
 | **NW2** | *The negative:* the same rename with a find text that matches two views | Kept as before: one `Heron:` entry, the two views renamed |
 | **NW3** | Look at the log for NW1 | The change report says it was witnessed with 0 changed. If it says *not counted - no change event*, Revit raises no event for an empty transaction and the empty keep was kept as before: note it here |
+
+### D-161 - a lost answer read late
+
+| ID | Do this | Pass looks like |
+|---|---|---|
+| **NW4** | Set `revit.operationTimeoutSeconds` low (10), ask for a PROVEN change that takes longer on a large model | The reply says the answer was lost and names `heron_run_record request=<id>` |
+| **NW5** | When Revit has finished, ask `heron_run_record request=<that id>` | The run's record: what it changed, its verdict. **Not** the record of another run |
+| **NW6** | *The negative:* `heron_run_record request=` an id nobody sent | *No record answers request ... yet* - nothing else is shown |
