@@ -49,7 +49,30 @@ positive:
       arrayed - the trial row of three spaced as asked - and FLEX_FAMILY
       through a count change comes back restored (5b-373)
 
+  - given: >
+      VERSION 4 - a DETAIL ITEM. A saved scratch metric Generic Model family
+      with a metric Detail Item "Flow Arrow" (one 600 mm detail line) loaded,
+      placed once in the "Ref. Level" plan at 0,300,0 by
+      PLACE_DETAIL_COMPONENTS; form = that instanceId, count "4", step "X 200"
+    expect: >
+      arrayed IN "Ref. Level" (not the 3D view): four in all, 200 mm apart
+      along +X, each copy read back by its insertion point and belonging to
+      "Ref. Level"; members three group ids, the last the far one. In Revit
+      the four arrows show in the plan and in no elevation
+
+  - given: VERSION 3, STILL - the solid extrusion's id, count "3", step "X 20"
+    expect: >
+      arrayed in the 3D view as before, every copy read back by its box -
+      version 4 changed nothing for a form
+
 negative:
+  - given: >
+      VERSION 4 - the same nested Flow Arrow in "Ref. Level"; count "3", step
+      "Z 100" - out of the view's plane
+    expect: >
+      refused before anything is made - drawn in "Ref. Level", its row stays
+      in that plane, along X or Y; arrayId and members empty
+
   - given: >
       a vane sketched on Center (Left/Right), X -401 to -399 (5b-357); count
       "21", step "X 40" - or "X 800 last"
@@ -90,3 +113,7 @@ second_route:
       The Ref. Level plan and the 3D view in the Family Editor: count the
       blades and dimension two neighbours by hand; select the array and read
       its label; flex Blade Count in Family Types and count again
+  - >
+      Version 4: the Ref. Level plan in the Family Editor - the arrows counted
+      and two neighbours dimensioned by hand; select one copy and Properties
+      names its Owner View; the elevations and 3D view show none of them

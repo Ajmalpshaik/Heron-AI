@@ -1450,6 +1450,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ne.md`](needs-checking/group-ne.md)
 
+## Group NF - a family's 2D side through five widened cards: a detail item placed and arrayed in a family view, a symbolic line's detail levels, lines on a subcategory, an arc's radius labelled: `PLACE_DETAIL_COMPONENTS` v2, `ARRAY_FAMILY_FORMS` v4, `SET_FAMILY_FORM_VISIBILITY` v2, `SET_FAMILY_FORM_SUBCATEGORY` v2, `LABEL_FAMILY_RADIUS` v6 (2026-11-11)
+
+**Its own file:** [`needs-checking/group-nf.md`](needs-checking/group-nf.md)
+
 ## Group NN - a reference plane at an angle: `CREATE_REFERENCE_PLANES` version 2 (2026-11-12)
 
 **Its own file:** [`needs-checking/group-nn.md`](needs-checking/group-nn.md)

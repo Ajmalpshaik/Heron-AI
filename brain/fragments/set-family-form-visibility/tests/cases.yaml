@@ -1,8 +1,8 @@
 positive:
   - given: >
-      a new family from the metric Generic Model template with one solid
-      extrusion made by create-family-forms; forms = its id, detailLevels
-      "medium, fine", views "front, left"
+      VERSION 1, STILL - a new family from the metric Generic Model template
+      with one solid extrusion made by create-family-forms; forms = its id,
+      detailLevels "medium, fine", views "front, left"
     expect: >
       changed reads the form going from "coarse, medium, fine | plan,
       front/back, left/right" to "medium, fine | front/back, left/right" - and
@@ -12,18 +12,59 @@ positive:
   - given: the same form, detailLevels "all", views "all"
     expect: every box ticked again, read back the same way
 
+  - given: >
+      VERSION 2 - a SYMBOLIC LINE. A saved scratch metric Generic Model family
+      with two symbolic lines drawn on Ref. Level by DRAW_FAMILY_SYMBOLIC_LINES
+      at all three levels; forms = the first line's id, detailLevels "coarse",
+      views left out (read as "unchanged")
+    expect: >
+      changed reads the line going to "coarse" with its kinds of view as they
+      read before; the finding names the kind of setting Revit read (expected
+      ViewSpecific). Visibility Settings on the line, opened by hand, shows
+      only Coarse ticked. The second line still reads all three levels
+
+  - given: >
+      the same symbolic line, detailLevels "all", views "plan" - the kinds of
+      view NAMED on a symbolic line
+    expect: >
+      EITHER the line reads "plan" back and changed says so, OR the call is
+      refused with what Revit read and nothing kept - this run is the
+      measurement NEEDS-CHECKING Group NF asks for; whichever it is, record it
+
 negative:
   - given: detailLevels "rough"
     expect: refused as not a detail level, and no form changed
 
   - given: views "" (nothing)
-    expect: refused as naming no kind of view, and no form changed
+    expect: >
+      refused as naming no kind of view, and no form changed - still so in
+      version 2: the binder reads "" as left out, which binds "unchanged",
+      and "unchanged" is refused for a form
+
+  - given: VERSION 2 - the form's id, detailLevels "coarse", views "unchanged"
+    expect: refused as naming no kind of view - "unchanged" is for symbolic lines only
 
   - given: a project in front
     expect: notAFamily true and nothing changed anywhere
+
+  - given: >
+      VERSION 2 - a DETAIL LINE's id in the same family (drawn by
+      DRAW_FAMILY_DETAIL_LINES in Ref. Level), detailLevels "coarse"
+    expect: >
+      refused by name - a detail line has no visibility settings in Revit's
+      API on any release - and nothing changed, the symbolic lines included
+
+  - given: >
+      VERSION 2 - a nested detail item's id (placed by
+      PLACE_DETAIL_COMPONENTS), detailLevels "coarse"
+    expect: refused by name as a nested family, set by hand; nothing changed
 
 second_route:
   - >
       Select the form in the Family Editor, Visibility Settings, tick the same
       boxes by hand; load the family into a project and look at it in a coarse
       plan, a fine plan and an elevation
+  - >
+      Version 2: select the symbolic line, Visibility Settings - read which
+      boxes the dialog offers for it and which are ticked; load the family and
+      look at a coarse and a fine plan

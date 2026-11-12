@@ -5,13 +5,26 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-115
-semantic-identity: "put family forms on a subcategory of the family's category, making it if it is new"
+semantic-identity: "put family forms, or detail and symbolic lines already drawn, on a subcategory of the family's category, making it if it is new"
 kind: action
 domain: revit.families
 capability: SET_FAMILY_FORM_SUBCATEGORY
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 2 (2026-11-11) - DETAIL AND SYMBOLIC LINES TOO, and back to DRAFT.
+# Version 1 was PROVEN on 2026-10-03 (the proof block below, kept as the
+# record of what it proved: an extrusion put on a new "Insulation", a project
+# refused); its C# moved, so it is DRAFT again until NEEDS-CHECKING Group NF
+# is run (D-30, D-117). A family's 2D lines took a subcategory only while
+# they were drawn (DRAW_FAMILY_DETAIL_LINES, DRAW_FAMILY_SYMBOLIC_LINES).
+# Version 2 puts lines already drawn on one by their line style - the
+# subcategory's projection style - and refuses by name a style Revit does not
+# offer that line (its GetLineStyleIds). REMAP_LINE_STYLES is not this: it
+# sees only styles under Lines, never a family's own subcategories. Owner's
+# yes to widen rather than add a card: Ajmal PS, 2026-11-11. FRAGMENT-ISSUES
+# row 5b-1502.
 
 purpose: >
   Puts forms on a SUBCATEGORY of the family's own category in the family open
@@ -36,6 +49,20 @@ purpose: >
   is set, and reported before and after; one that does not read as asked fails
   the call and nothing is kept - the new subcategory included.
 
+  **DETAIL AND SYMBOLIC LINES TOO** (version 2, 2026-11-11) - a plan
+  symbol's lines, a detail item's outline, already drawn and named by the ids
+  their draw tools gave back or selected. A line is put on the subcategory by
+  its LINE STYLE, the subcategory's projection style, which is what its
+  Subcategory field sets by hand. A line takes only the styles Revit offers
+  it; a subcategory not among them is refused by name, and a new one made for
+  it is not kept.
+
+  **"none" WORKS ON REVIT 2020 (row 5b-1571, measured 2026-11-12).** Setting a
+  form's Subcategory to its family's category throws "The input subcategory is
+  illegal" - from a subcategory, and from the category itself - so "none" is
+  written as the Subcategory field's empty id, what "None" in Properties is,
+  and a form already on the category is left as it was and said.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -45,7 +72,7 @@ contract:
     - name: uidoc
       type: UIDocument
     # The forms, by the ids the form tools gave back, commas between - or
-    # `selected`.
+    # `selected`. Version 2: detail and symbolic lines' ids too.
     - name: forms
       type: string
       source: request
@@ -56,7 +83,7 @@ contract:
       source: request
   provides:
     - name: changed
-      # Each form, with its subcategory before and after.
+      # Each form or line, with its subcategory before and after.
       role: result
       type: IList<string>
     - name: createdSubcategory
@@ -74,31 +101,31 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-03'
+  date: '2026-11-12'
   by: Ajmal PS
-  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family1, Project1 - active was Family6,
-    Revit 2024, session 32340'
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Heron NF Generic, Heron NF Project - active
+    was Heron NF Generic, Revit 2020, session 33000'
   positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned backToCategory false, changed 1
-    item(s) [extrusion bfa50ce5-921a-49fe-86b2-5220cec4d34a-00000b71: (no...], createdSubcategory
-    true, findings 2 item(s) [Made the subcategory "Insulation" under Generic Models, and
-    ..., Its line weights, colour and material are Revit''s defaults u...], kindOf Func`2,
-    nameOf Func`2, notAFamily false, parent Category, problems 0 item(s), refused (null),
-    targets 1 item(s) [Extrusion], wanted Category, wantedName Insulation. inputs came forms
-    as given; subcategory as given. on Family1'
-  negative_case: run against 'Project1' instead - chosen because it should not contain what
-    this fragment reports - run inside a transaction, and Revit reported the transaction group
-    ROLLED BACK afterwards. returned backToCategory false, changed 0 item(s), createdSubcategory
+    the transaction group ROLLED BACK afterwards. returned backToCategory true, changed 1
+    item(s) [extrusion d09df1e6-65b3-4385-9279-48572506fe4e-00000a7f: Cas...], createdSubcategory
+    false, findings 1 item(s) [Put 1 element(s) on "Generic Models": extrusion d09df1e6-65b...],
+    kindOf Func`2, lineKind Func`2, lines 0 item(s), nameOf Func`2, notAFamily false, parent
+    Category, problems 0 item(s), projectionOf Func`2, refused (null), styleNameOf Func`2,
+    takes Func`3, targets 1 item(s) [Extrusion], wanted Category, wantedName none. inputs
+    came forms as given; subcategory as given. on Heron NF Generic'
+  negative_case: run against 'Heron NF Project' instead - chosen because it should not contain
+    what this fragment reports - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned backToCategory true, changed 0 item(s), createdSubcategory
     false, findings 1 item(s) [The document in front is a project, not a family open in the...],
-    kindOf Func`2, nameOf Func`2, notAFamily true, parent (null), problems 0 item(s), refused
-    The document in front is a project, not a family open in the Family Editor. A form's subcategory
-    is set inside the family - open it first., targets 0 item(s), wanted (null), wantedName
-    Insulation. inputs came forms as given; subcategory as given. on Project1
+    kindOf Func`2, lineKind Func`2, lines 0 item(s), nameOf Func`2, notAFamily true, parent
+    (null), problems 0 item(s), projectionOf Func`2, refused The document in front is a project,
+    not a family open in the Family Editor. A form's subcategory is set inside the family
+    - open it first., styleNameOf Func`2, takes Func`3, targets 0 item(s), wanted (null),
+    wantedName none. inputs came forms as given; subcategory as given. on Heron NF Project
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 0fd4c4bd8f71992f
-
+  fingerprint: 39ea802b294a5b18
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -109,12 +136,20 @@ compatibility-note: >
   `Category.SubCategories`, `Category.CanAddSubcategory` and
   `Categories.NewSubcategory(parent, name)` read the same 2020 through 2027
   (the RevitAPI reference assemblies and their own XML remarks, read
-  2026-10-01).
+  2026-10-01). Version 2's `CurveElement.LineStyle { get; set; }`,
+  `CurveElement.GetLineStyleIds()`, `Category.GetGraphicsStyle(
+  GraphicsStyleType.Projection)` and `GraphicsStyle.GraphicsStyleCategory`
+  read the same 2020 through 2027 (`tools/api-surface --members
+  --inherited`, 2026-11-11).
 
 # ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "put the insulation on its own subcategory"  -> here
 #   "set the subcategory of these forms"         -> here
+#   "put these lines on the Flow Arrow subcategory" -> here, version 2 -
+#                                                   detail or symbolic lines
+#   "change these lines to the Thin Lines style" -> REMAP_LINE_STYLES, styles
+#                                                   under Lines only
 #   "make this family an air terminal"           -> SET_FAMILY_SETTINGS, the
 #                                                   family's own category
 #                                                   (SET_FAMILY_CATEGORY until
@@ -126,3 +161,4 @@ utterances:
   - set the subcategory of these forms
   - make a subcategory for the frame and put it on it
   - put this extrusion on the Hidden Lines subcategory
+  - put these lines on the Flow Arrow subcategory
