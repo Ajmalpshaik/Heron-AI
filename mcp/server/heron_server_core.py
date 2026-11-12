@@ -426,7 +426,11 @@ _ctx = threading.local()
 #     error reply carries no field for whether that held (row 5b-1559: C#,
 #     and a real Revit), so the line does not say it did, and does not send
 #     the chat to the reply to find out - a reply whose rollback held says
-#     nothing about it at all.
+#     nothing about it at all. A DRY RUN (D-155) is ROLLED BACK too, and only
+#     when the add-in's own verdict says its rollback held: the door reads it
+#     with `_change_outcome`, as it reads a Discard. Until 2026-11-12 a dry
+#     run said no word at all, so a good one read OUTCOME UNKNOWN - "do not
+#     send a change again" - and one whose rollback did not hold read `ok`.
 #   - On revit_read and revit_show nothing is rolled back: no transaction is
 #     open. The same failure there - the code threw, Heron's clock or a Revit
 #     dialog stopped it - is NOT ANSWERED for a read, and OUTCOME UNKNOWN for
@@ -486,9 +490,12 @@ OUTCOMES = (
     (ROLLED_BACK,
      "Heron did not keep it: it asked Revit to roll the whole job back; send "
      "it again only once what stopped it is fixed, or the modeller asks",
-     "revit_change only: the job failed part way, Heron stopped it, or the "
-     "modeller pressed Discard. What is known is that the rollback was asked "
-     "for - not, from an error reply, that it held."),
+     "revit_change only: the job failed part way, Heron stopped it, the "
+     "modeller pressed Discard, or it was asked as a dry run (D-155). What "
+     "is known is that the rollback was asked for - not, from an error "
+     "reply, that it held. A Discard and a dry run are given this word only "
+     "when the add-in said its rollback held; otherwise theirs is OUTCOME "
+     "UNKNOWN."),
     (STILL_RUNNING,
      "do not send it again; no id follows a run yet, so ask the modeller what "
      "Revit shows",
@@ -502,6 +509,16 @@ OUTCOMES = (
      "itself; it ran in a model this chat does not work on; a show stopped "
      "part way; or the door broke, or did not say how it ended."),
 )
+
+# THE SAME WORD, SAID OF A DRY RUN (D-155). ROLLED BACK's own line ends "send
+# it again only once what stopped it is fixed" - and nothing stopped a dry
+# run: it was asked to be rolled back, and it is given the word only when the
+# add-in said that rollback held. So this one ending of ROLLED BACK carries
+# these words after it, and says the one thing more that is known there. The
+# word is still the table's, and nothing else decides it.
+ROLLED_BACK_AS_ASKED = (
+    "it was asked as a dry run and Heron kept nothing: Revit's Heron said the "
+    "rollback held; send it without dry_run only when the modeller asks")
 
 #: How every outcome line starts. One spelling, here.
 OUTCOME_LINE = "outcome: "
@@ -525,10 +542,12 @@ _BY_FAILURE = {
 _BY_LABEL = {"refused": REFUSED, "handed_back": NOT_RUN}
 
 
-def outcome_line(word):
+def outcome_line(word, says=None):
     """The line a reply carries `word` on: `outcome: WORD - ` and what the
-    word means and what to do next, whole."""
-    said = _SAYS_NEXT.get(word)
+    word means and what to do next, whole. `says` is the door's own words
+    for this ending, where the table's would be untrue of it
+    (ROLLED_BACK_AS_ASKED is the only one)."""
+    said = says or _SAYS_NEXT.get(word)
     return OUTCOME_LINE + word + (_OUTCOME_TAIL + said if said else "")
 
 
@@ -546,15 +565,17 @@ def outcome_of(text):
     return word if word in _WORDS else None
 
 
-def _outcome(word, answer=None):
+def _outcome(word, answer=None, says=None):
     """
     THE WORD FOR HOW THIS CALL ENDED, said by the door on the line before
     the `_ended` it goes with, wherever that label is not a word by itself -
     and the answer handed back unchanged, as `_ended` hands it.
 
     It changes nothing `_ended` says: the activity list's label is its own.
+    `says` replaces what the table's line goes on to say, for the one ending
+    it would be untrue of (ROLLED_BACK_AS_ASKED).
     """
-    _ctx.how = word
+    _ctx.how = (word, says) if says else word
     return answer
 
 
@@ -600,7 +621,8 @@ def _change_outcome(reply):
     KEPT only when the add-in says "kept", and ROLLED BACK only when it says
     the rollback HELD (`rolledBack`, which RevitFragment.WithVerdict sets
     only when Revit reported the group rolled back and nothing the run added
-    still stands) - the modeller's Discard is one.
+    still stands) - the modeller's Discard is one, and a run sent without
+    `apply`, which is a dry run (D-155), is the other.
 
     AND ONLY WHEN THE FIELDS BESIDE THE VERDICT AGREE WITH IT. The add-in
     writes `applied`, `rolledBack`, `asked` and `kept` in the same reply, and
@@ -654,13 +676,36 @@ def _said_outcome(tool, reply, label, how):
     """
     if tool not in tools.STATES_OUTCOME or not isinstance(reply, str):
         return reply
+    says = None
+    if isinstance(how, tuple) and len(how) == 2:
+        how, says = how
     word = how if how in _WORDS else _BY_LABEL.get(label, UNKNOWN)
+    if word != how:
+        says = None
     if word == ROLLED_BACK and not _changes_model(tool):
         word = NOT_ANSWERED if tools.risk_of(tool) <= tools.ANALYZE else UNKNOWN
+        says = None
     if not reply.strip():
-        return outcome_line(word)
-    first, newline, rest = reply.partition(NEWLINE)
-    return first + NEWLINE + outcome_line(word) + newline + rest
+        return outcome_line(word, says)
+    # NO OTHER LINE OF THE REPLY MAY PASS FOR THIS ONE (second review,
+    # 2026-11-12). A chat is told to go by the `outcome:` line, and a door's
+    # reply quotes text Heron did not write: a refusal's message, a fragment's
+    # exception, a name from the model. A line of it that starts the way the
+    # outcome line starts is set in by two spaces - nothing is dropped and
+    # every word is still there - so the reply has ONE such line, whatever was
+    # quoted. The doors put model text on one line themselves
+    # (heron_run_records.as_data); this is the backstop for what they print
+    # that may span lines by design, such as a compile error.
+    first, newline, rest = _not_the_line(reply).partition(NEWLINE)
+    return first + NEWLINE + outcome_line(word, says) + newline + rest
+
+
+def _not_the_line(text):
+    """`text` with every line that starts as the outcome line does set in by
+    two spaces. Any spelling of it: a chat reading by eye is not a parser."""
+    start = OUTCOME_LINE.strip()
+    return NEWLINE.join(("  " + line) if line[:len(start)].lower() == start else line
+                        for line in text.split(NEWLINE))
 
 
 def _after_it_left(tool, error):

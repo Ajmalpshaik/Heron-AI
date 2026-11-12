@@ -91,6 +91,10 @@ MUST_KEEP = {
         "Changes",       # and only while the owner's switch is on
         "Publish",       # D-106's two switches beside it
         "Admin",
+        # ...EACH BEHIND A SWITCH OF ITS OWN (D-106). A trim on 2026-11-12
+        # left "needs that switch on too", which read as the Changes switch
+        # named in the clause before it.
+        "its own switch",
         "Article 7",     # destructive work needs the user's yes first
         "Article 10",    # and nothing is saved, synced or exported unasked
         "Article 11",    # only a PROVEN capability is kept - D-117

@@ -144,6 +144,10 @@
 
 **Its own file:** [`proposals/f43.md`](proposals/f43.md)
 
+## F44 — a kept change could say how its counts compare with the dry run before it, once Heron knows whose dry run that was
+
+**Its own file:** [`proposals/f44.md`](proposals/f44.md)
+
 ## 2026-09-19 — what is left after twenty-three gaps were closed, and the two that never can be
 
 **Its own file:** [`proposals/2026-09-19-what-is-left-after-twenty-three.md`](proposals/2026-09-19-what-is-left-after-twenty-three.md)
