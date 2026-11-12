@@ -478,6 +478,22 @@ _ARRIVED_UNUSABLE = {
 }
 
 
+def recognised(code):
+    """
+    Whether this file has a row for `code` - the add-in's table or the
+    client's two. Asked by the outcome line (heron_server_core, row 5b-1159),
+    which says OUTCOME UNKNOWN of every code that has none.
+
+    `analyse` files such a code on a read under "refused" - it only reads -
+    and that is its judgement of what may safely be asked next. It is not a
+    statement that nothing ran: `handler_failed` has no row on purpose (see
+    the note at the foot of the table), and the bridge raises it after the
+    job may have run. So the line asks THIS, and never reads "refused" off a
+    code nobody recognised.
+    """
+    return code in _KNOWN or code in _ARRIVED_UNUSABLE
+
+
 def analyse(reply, writes=False):
     """
     Classify one bridge reply.
@@ -513,6 +529,16 @@ def analyse(reply, writes=False):
             "no_reply", NEVER_RAN, RETRY,
             "nothing came back, so Heron cannot tell whether Revit was reached; the "
             "request only reads, so it may be asked again")
+
+    # JSON THAT IS NOT AN OBJECT - a list, a number, a bare string. The
+    # client hands back whatever parsed, and until 2026-11-12 the line below
+    # raised on it: an exception out of a door AFTER its request had left,
+    # which the host reports as a tool that failed, with nothing said about a
+    # change that may have been made. It is an answer that arrived and could
+    # not be used - the client's own `reply_unreadable`, and its outcome.
+    if not isinstance(reply, dict):
+        outcome, next_step, reason = _ARRIVED_UNUSABLE["reply_unreadable"]
+        return Failure("reply_unreadable", outcome, next_step, reason)
 
     if reply.get("ok"):
         return None

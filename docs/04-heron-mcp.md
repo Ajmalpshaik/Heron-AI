@@ -510,6 +510,18 @@ the authority decides; and **an unfamiliar word is looked up, and asked about** 
 ([D-33](DECISIONS.md#d-33--heron-never-assumes-an-input-it-asks--and-it-asks-once),
 [D-34](DECISIONS.md#d-34--herons-own-wording-is-english-understanding-the-user-is-not-herons-job)).
 
+**Since 2026-11-12 the Articles reach a chat without their citations** — the *(Golden Rule N)* line that
+closes one, and the targets of its links — **and with every word of the rule.** `host.chat` declares
+`citations: leave-out`, and `heron_instructions._without_citations` leaves them out at assembly. A chat is
+told never to read Heron's folder, so it could follow neither, and paid for each in every chat.
+[`HERON_CONSTITUTION.md`](../HERON_CONSTITUTION.md) is not edited, and Heron's own agents are given their
+Articles as the file has them. The room it made, inside the same word budget, went to one paragraph: a
+reply from `revit_change`, `revit_read` or `revit_show` carries a line starting `outcome:`, and that
+line, not the wording around it, says how the request ended (§8.12,
+[row 5b-1562](fragment-issues/section-5b-rows-401-425.md)).
+[`tests/test_outcome_line.py`](../tests/test_outcome_line.py) section 8 holds both halves: the paragraph
+is there, and each Article's words are all there, in order.
+
 If they cannot be assembled the server **still starts**, and says so in the same place the rules would
 have been. The Constitution's Enforcement table now says which Articles reach every chat this way and
 which do not, and the registry test fails when the two disagree.
@@ -1028,49 +1040,68 @@ add-in's own `verdictKind` — and shown to the Companion's activity list alone,
 read as success, and *"never ran"* said of an answer that was lost.
 
 - **The three doors say it on one line** — `revit_change`, `revit_read` and `revit_show`
-  (`heron_tools.STATES_OUTCOME`). The line is `outcome: ` and a word, and for a word that needs it, what
-  to do next:
+  (`heron_tools.STATES_OUTCOME`). The line is `outcome: `, a word, and what the word means and what to do
+  next:
 
   ```text
   ADD_CURTAIN_GRID_LINES ran in Project1.
-  outcome: KEPT
+  outcome: KEPT - Revit kept this call's transaction; the result lines say what, if anything, it changed
     inputs: all as given
   ...
   ```
 
   ```text
   Heron has nothing that does 'NO_SUCH_CAPABILITY_AT_ALL', so nothing has been sent to Revit. Ask heron_lookup ...
-  outcome: REFUSED - Heron or Revit said no and the reply says why; do what it says or tell the modeller, and never get round it another way
+  outcome: NOT RUN - nothing ran in Revit and nothing needs undoing; choose or fix what the reply names, then ask again
   ```
 
   Both are a door's own reply against the suite's stand-in Revit, cut short where the dots are.
+
+- **Every line stands alone.** A chat is told to go by the line and not by the wording around it (§8.3),
+  and some replies say nothing more — a change that came back `ok` with no verdict says only that it ran.
+  So what follows the word leans on no sentence of the reply.
 
 - **One vocabulary, in one table** — `heron_server_core.OUTCOMES`: each word, what its line goes on to
   say, and what it means. Nothing else decides a word.
 
   | Word | Said when | Read from |
   |---|---|---|
-  | `KEPT` | the change ran and Revit kept it | the add-in's `verdictKind` is `kept` — never `ok` alone |
-  | `ANSWERED` | a read or a show ran and its answer is in the reply | the door's own last return |
-  | `REFUSED` | Heron or Revit said no before the job ran, or Heron would not show an answer from another model | `_ended("refused")`, or `heron_failure`'s `refused` |
-  | `NOT RUN` | nothing ran, and it is not a refusal: the words did not settle one capability, Heron's library could not be read, Revit was busy or held by another chat | `_ended("handed_back")`, or `heron_failure`'s `never_ran` |
-  | `ROLLED BACK` | the job was not kept: it failed part way, Heron stopped it, or the modeller pressed Discard | `heron_failure`'s `rolled_back`, or a Discard whose `rolledBack` is true |
+  | `KEPT` | a change ran and Revit kept its transaction — not a claim that anything changed | the add-in's `verdictKind` is `kept` and no field beside it says otherwise — never `ok` alone |
+  | `ANSWERED` | a read or a show ran to its end and answered | the door's own last return |
+  | `NOT ANSWERED` | a read stopped before it answered: its code threw, or Heron's clock or a Revit dialog stopped it. Nothing is rolled back, because no transaction was open | `heron_failure`'s `rolled_back`, at `revit_read` |
+  | `REFUSED` | Heron or Revit looked at what was asked and said no, or Heron would not show an answer from another model | `_ended("refused")`, or `heron_failure`'s `refused` for a code it has a row for |
+  | `NOT RUN` | nothing said no: there was no capability by that name or those words, no Revit session to send it to, Heron's library could not be read, or Revit was busy or held by another chat | the door, `_ended("handed_back")`, or `heron_failure`'s `never_ran` |
+  | `ROLLED BACK` | a change was not kept: it failed part way, Heron stopped it, or the modeller pressed Discard | `heron_failure`'s `rolled_back` at `revit_change`, or a Discard whose `rolledBack` is true |
   | `STILL RUNNING` | Revit took it and has not finished, or is still asking the modeller | `heron_failure`'s `running` |
-  | `OUTCOME UNKNOWN` | the answer was lost, too large or unreadable; a rollback was not confirmed; it ran in a model this chat does not work on; or the door did not say how it ended | `heron_failure`'s `unknown`, and everything the rows above do not claim |
+  | `OUTCOME UNKNOWN` | the answer was lost, too large, unreadable or not an object; the failure is one Heron has no row for; a rollback was not confirmed, or a verdict contradicts itself; it ran in a model this chat does not work on; a show stopped part way; the door broke after its request had left, or did not say how it ended | `heron_failure`'s `unknown`, and everything the rows above do not claim |
 
-  **`NOT RUN`, and not "not sent":** some of what it covers was sent — Revit was busy, or another chat
-  held the model — and the add-in answered before anything ran.
+  **`REFUSED` or `NOT RUN`:** `REFUSED` when Heron or Revit looked at what was asked and said no to it;
+  `NOT RUN` when nothing said no. So nothing by that name is `NOT RUN` whether the capability was named or
+  the modeller's words were. **And not "not sent":** some of what `NOT RUN` covers was sent — Revit was
+  busy, or another chat held the model — and the add-in answered before anything ran.
 
 - **A word never says more than the code that returned knew.**
   - `KEPT` is never said of an `ok` that names no verdict, never while Revit is still asking Keep or
-    Discard (that is `STILL RUNNING`), and never of a Discard.
-  - `ROLLED BACK` goes on to say that **whether Revit confirmed the rollback is in the reply.** An error
-    reply from the add-in carries no field for it, so the word says a rollback was made and not that it
-    held ([row 5b-1559](fragment-issues/section-5b-rows-401-425.md) — C#, and a real Revit).
-  - **Nothing coming back at all is `OUTCOME UNKNOWN`, for a read as for a change.** `heron_failure`
-    files that case on a read under `never_ran`, beside a reason that says Heron cannot tell whether
-    Revit was reached; the line follows the reason
-    ([row 5b-1560](fragment-issues/section-5b-rows-401-425.md)).
+    Discard (that is `STILL RUNNING`), never of a Discard, and never of a verdict the fields beside it
+    contradict. It claims the transaction and nothing else: a fragment that found nothing to change is
+    `KEPT` too, so the line says *"what, if anything, it changed"* and promises no undo step.
+  - `ROLLED BACK` says what is known — **Heron asked Revit to roll the whole job back** — and not that it
+    held. An error reply from the add-in carries no field for that
+    ([row 5b-1559](fragment-issues/section-5b-rows-401-425.md) — C#, and a real Revit).
+  - **It is said only where something was open to roll back.** `heron_failure` calls `fragment_threw`,
+    `ran_too_long` and `dialog_refused` rolled back whichever operation they came from; on the read and
+    show paths no transaction is open. There the same failure is `NOT ANSWERED` for a read, and `OUTCOME
+    UNKNOWN` for a show, whose selection or view may stand as the run left it.
+  - **Every failure code `heron_failure` has no row for is `OUTCOME UNKNOWN`, at every door** — and so is
+    nothing coming back at all. On a read the classifier files such a code under `refused`, which answers
+    *may this be asked again* and not *did anything run*: `handler_failed` is raised by the bridge after
+    the job may have run ([row 5b-1560](fragment-issues/section-5b-rows-401-425.md)).
+  - **A door that breaks after its request has left still answers.** Heron's own code raising once Revit
+    has been asked used to reach the host as the SDK's bare *"Error executing tool"* — which says nothing
+    of a change that may have been made, and is what a chat sends again. From the line the request leaves
+    on, the door answers `OUTCOME UNKNOWN` itself, names the kind of fault and not its text, and writes
+    the traceback to the server's own log. Raised before anything was sent, it is the SDK's to report, as
+    it always was.
   - **It fails closed.** A door that returns without saying how it ended is `OUTCOME UNKNOWN`, never
     guessed to have worked.
 
@@ -1084,9 +1115,9 @@ read as success, and *"never ran"* said of an answer that was lost.
   twice — as text, and as `structuredContent` `{"result": ...}` (§8.8). For the three doors that object
   now carries `outcome` beside `result`, read back off the reply's own line (`outcome_of`) so the two
   cannot disagree. **The listed `outputSchema` is unchanged** — `result`, and nothing forbidding a key
-  beside it: declaring the key would mean a different return type for the tool. What a host is listed —
-  names, order, descriptions, input and output schemas, labels, instructions — was dumped before and
-  after this change and compared byte for byte.
+  beside it: declaring the key would mean a different return type for the tool. The tools a host is
+  listed — names, order, descriptions, input and output schemas, labels — were dumped before and after
+  this change and compared byte for byte.
 
 - **Never `isError`.** The SDK sets that itself, for a tool that raised. A refusal is Heron working; and
   the MCP schema says of the flag only that it lets the model *"see that an error occurred and
@@ -1099,12 +1130,15 @@ read as success, and *"never ran"* said of an answer that was lost.
   and Revit's Heron panel — which run a door's body through `_through` — read exactly what they read
   before, and the activity list still shows the reply's own first sentence and the label the tool gave.
 
+- **The chat is told, in its instructions** (§8.3): a door's reply carries a line starting `outcome:`,
+  and that line, not the wording around it, says how the request ended.
+
 [`tests/test_outcome_line.py`](../tests/test_outcome_line.py) holds all of it against a stand-in Revit:
 a word for each ending through the real tool functions, every return of the three doors it can force
 (and a list of those it cannot), the line taken out again, and the SDK's own dispatch. It was seen to
-fail before the code was written, and run on the SDK installed here, on the one
-[`requirements-lock.txt`](../requirements-lock.txt) pins and on a 1.x. **None of it has met a real
-Revit**: which reply the add-in sends for each ending is the C#'s.
+fail before the code was written — and again before each correction a review asked for — and run on the
+SDK installed here and on the one [`requirements-lock.txt`](../requirements-lock.txt) pins. **None of it
+has met a real Revit**: which reply the add-in sends for each ending is the C#'s.
 
 **Not built, and recorded:**
 
@@ -1113,9 +1147,6 @@ Revit**: which reply the add-in sends for each ending is the C#'s.
   real Revit to show it. Until then the line says what a chat can do: not send it again, and ask the
   modeller what Revit shows. A fragment that never ends is stopped by its own run clock
   ([D-129](DECISIONS.md#d-129--a-fragment-that-never-ends-is-stopped-by-a-run-clock-it-carries-and-the-bridge-can-stop-heron-again)).
-- **A chat's instructions do not name the words.** `host.chat` is at its word budget, and the server's
-  instructions are held to exactly `host.chat` (§8.3), so each line that needs it says what to do next
-  instead ([row 5b-1562](fragment-issues/section-5b-rows-401-425.md)).
 - **Only the three doors.** Every other tool that says `_ended` — `revit_apply_move`, the inventory
   reads, the Companion's panels — still answers in prose alone: each one's "ok" is a different fact, and
   a tool joins when its returns have been read against the table

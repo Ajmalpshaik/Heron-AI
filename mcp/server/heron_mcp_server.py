@@ -157,7 +157,8 @@ from heron_server_core import (                             # noqa: E402
 # says where the label it gives `_ended` is not a word by itself. The table,
 # and the line a reply carries the word on, are the core's.
 from heron_server_core import (                             # noqa: E402
-    ANSWERED, _change_outcome, _failure_outcome, NOT_RUN, _outcome, UNKNOWN)
+    ANSWERED, _change_outcome, _failure_outcome, NOT_RUN, _outcome, _sent,
+    UNKNOWN)
 
 import anyio.from_thread                                   # noqa: E402 - the SDK's own dependency
 
@@ -1635,6 +1636,9 @@ def revit_change(capability: str = "", values: str = "",
 
     folder, _status = _fragment_for(capability)
     if folder is None:
+        # NOT RUN, AS THE SAME FACT IS WHEN THE WORDS NAMED IT (`_by_words`):
+        # nothing said no to the request - there is nothing by that name.
+        _outcome(NOT_RUN)
         return _ended("refused",
                       "Heron has nothing that does '%s', so nothing has been sent to "
                       "Revit. Ask heron_lookup in your own words and it will name the "
@@ -1756,6 +1760,9 @@ def revit_change(capability: str = "", values: str = "",
     try:
         session = binding.resolve()
     except NotBound as unbound:
+        # NOT RUN: nothing judged the request - there was no one Revit to
+        # send it to (none connected, several and none chosen, or closed).
+        _outcome(NOT_RUN)
         return _ended("refused", str(unbound))
 
     args = {
@@ -1818,6 +1825,9 @@ def revit_change(capability: str = "", values: str = "",
     # Modify and below, run_fragment_publish or run_fragment_admin above it.
     # `keeping`, because Revit may stop and ask the modeller Keep or Discard
     # before this is kept (D-126), and their time to look is added to the wait.
+    # FROM HERE THE REQUEST HAS LEFT. A fault in this file below this line
+    # is answered OUTCOME UNKNOWN, never raised to the host (`_after_it_left`).
+    _sent()
     reply = session.request(operation, op_args=args,
                             idempotent=False,
                             response_timeout=configuration.fragment_timeout(keeping=True),
@@ -2858,6 +2868,9 @@ def revit_read(capability: str = "", values: str = "",
 
     folder, _status = _fragment_for(capability)
     if folder is None:
+        # NOT RUN, AS THE SAME FACT IS WHEN THE WORDS NAMED IT (`_by_words`):
+        # nothing said no to the request - there is nothing by that name.
+        _outcome(NOT_RUN)
         return _ended("refused",
                       "Heron has nothing that does '%s', so nothing has been sent to "
                       "Revit. Ask heron_lookup in your own words and it will name the "
@@ -2908,6 +2921,7 @@ def revit_read(capability: str = "", values: str = "",
     try:
         session = binding.resolve()
     except NotBound as unbound:
+        _outcome(NOT_RUN)
         return _ended("refused", str(unbound))
 
     # NO "apply", EVER, AND NOTHING FOR ONE TO KEEP. run_fragment_read opens no
@@ -2936,6 +2950,7 @@ def revit_read(capability: str = "", values: str = "",
     # comes back as unknown_outcome instead of being asked for again. The
     # FRAGMENT timeout, because a fragment's first run in a session includes
     # compiling it.
+    _sent()
     reply = session.request("run_fragment_read", op_args=args,
                             response_timeout=configuration.fragment_timeout(),
                             idempotent=not consumes, on_wait=_waiting(ctx))
@@ -3056,6 +3071,9 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
 
     folder, _status = _fragment_for(capability)
     if folder is None:
+        # NOT RUN, AS THE SAME FACT IS WHEN THE WORDS NAMED IT (`_by_words`):
+        # nothing said no to the request - there is nothing by that name.
+        _outcome(NOT_RUN)
         return _ended("refused",
                       "Heron has nothing that does '%s', so nothing has been sent to "
                       "Revit. Ask heron_lookup in your own words and it will name the "
@@ -3108,6 +3126,7 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
     try:
         session = binding.resolve()
     except NotBound as unbound:
+        _outcome(NOT_RUN)
         return _ended("refused", str(unbound))
 
     # NO "apply", EVER. run_fragment_show opens no transaction and is counted
@@ -3129,6 +3148,7 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
     # elements again, or zooming to them again, leaves the screen as it was.
     # A consuming run replaces the chain, so a resend would be refused on
     # expect_from - revit_read's reason, and its rule.
+    _sent()
     reply = session.request("run_fragment_show", op_args=args,
                             response_timeout=configuration.fragment_timeout(),
                             idempotent=not consumes, on_wait=_waiting(ctx))

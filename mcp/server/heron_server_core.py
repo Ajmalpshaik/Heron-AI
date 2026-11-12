@@ -21,8 +21,10 @@ those files needs, so that there is exactly ONE of each in a process:
     _revit_lock             one conversation with Revit at a time
     _recorded, _ended,      the activity line, how a call ended, and the one
     _ended_by_reply         place a chat hears that its code is old
-    OUTCOMES, _outcome      how a call ended in ONE FIXED WORD, and the line a
-                            door's reply carries it on (row 5b-1159)
+    OUTCOMES, _outcome,     how a call ended in ONE FIXED WORD, the line a
+    _sent                   door's reply carries it on, and the answer for a
+                            door that breaks after its request has left (row
+                            5b-1159)
     RUNNING                 what this process loaded, against the disk now
     LIBRARY_ONLY            off Windows, started as the server (D-132) -
                             said by the entry file, through started()
@@ -59,6 +61,7 @@ import os
 import sys
 import threading
 import time
+import traceback
 
 # The bridge client is the layer below the server, and heron_session imports
 # it. The entry file has already put it on the path when this is loaded
@@ -397,34 +400,52 @@ _ctx = threading.local()
 # So the tools heron_tools.STATES_OUTCOME lists say it, on a line of their
 # reply that is always written the same way:
 #
-#     outcome: REFUSED - Heron or Revit said no and the reply says why; do ...
+#     outcome: REFUSED - Heron or Revit looked at what was asked and said no; ...
 #
 # ONE VOCABULARY, THIS TABLE, and nothing else decides a word. Each row is
-# the word, what its line goes on to say (nothing, for the two that mean it
-# worked - the reply below them says what was done), and what it means.
+# the word, what its line goes on to say, and what it means.
+#
+# EVERY LINE STANDS ALONE. What follows the word is its whole meaning and what
+# to do next, in words that lean on no sentence of the reply: a chat is told
+# to go by this line and not by the wording around it (host.chat), and some
+# replies say nothing more - a change that came back `ok` with no verdict
+# says only that it ran.
 #
 # A WORD NEVER SAYS MORE THAN THE CODE THAT RETURNED KNEW. That is the whole
 # rule, and it is why:
-#   - KEPT is said only of a reply whose own `verdictKind` is "kept". Never
-#     of an `ok` that names no verdict, never while Revit is still asking the
-#     modeller Keep or Discard (that is STILL RUNNING), never of a Discard.
-#   - ROLLED BACK goes on to say that whether Revit CONFIRMED the rollback is
-#     in the reply. heron_failure calls `fragment_threw`, `ran_too_long` and
-#     their kind rolled back, and whether Revit confirmed it is in the
-#     add-in's message alone - an error reply carries no field for it (row
-#     5b-1559: C#, and a real Revit). The word says a rollback was made; it
-#     does not say it held.
-#   - Nothing coming back at all is OUTCOME UNKNOWN, for a read as for a
-#     change (`_failure_outcome`).
-#   - A door that returns without saying how it ended is OUTCOME UNKNOWN.
-#     The line fails closed, as heron_failure does on a code it has never
-#     seen: an unsaid ending is never guessed to have worked.
+#   - KEPT is said only of a reply whose own `verdictKind` is "kept" and whose
+#     other fields do not contradict it. Never of an `ok` that names no
+#     verdict, never while Revit is still asking the modeller Keep or Discard
+#     (that is STILL RUNNING), never of a Discard. And it claims the
+#     transaction and nothing else: a fragment that found nothing to change
+#     is KEPT too, so the line says "what, if anything, it changed" and
+#     promises no undo step - told to press Ctrl+Z after a run that wrote
+#     nothing, a modeller undoes what they did before it.
+#   - ROLLED BACK is said only by a door that opens a transaction group, and
+#     says what is known: Heron asked Revit to roll the whole job back. An
+#     error reply carries no field for whether that held (row 5b-1559: C#,
+#     and a real Revit), so the line does not say it did, and does not send
+#     the chat to the reply to find out - a reply whose rollback held says
+#     nothing about it at all.
+#   - On revit_read and revit_show nothing is rolled back: no transaction is
+#     open. The same failure there - the code threw, Heron's clock or a Revit
+#     dialog stopped it - is NOT ANSWERED for a read, and OUTCOME UNKNOWN for
+#     a show, whose selection or view may stand as the run left it.
+#   - Every failure code heron_failure has no row for is OUTCOME UNKNOWN, at
+#     every door, and so is nothing coming back at all (`_failure_outcome`).
+#   - A door that returns without saying how it ended is OUTCOME UNKNOWN, and
+#     so is one that breaks after its request has left (`_after_it_left`).
+#     The line fails closed: an unsaid ending is never guessed to have worked.
 #
-# NOT RUN, AND NOT "NOT SENT": some of what it covers was sent - Revit was
-# busy, or another chat held the model - and the add-in answered before
-# anything ran. What is true of all of it is that nothing ran in Revit.
+# REFUSED OR NOT RUN: REFUSED when Heron or Revit looked at what was asked and
+# said no to it; NOT RUN when nothing said no - there was no capability by
+# that name or those words, no Revit session to send it to, or Revit could not
+# take it just then. NOT RUN, and not "not sent": some of it was sent - Revit
+# was busy, or another chat held the model - and the add-in answered before
+# anything ran.
 KEPT = "KEPT"
 ANSWERED = "ANSWERED"
+NOT_ANSWERED = "NOT ANSWERED"
 REFUSED = "REFUSED"
 NOT_RUN = "NOT RUN"
 ROLLED_BACK = "ROLLED BACK"
@@ -432,41 +453,54 @@ STILL_RUNNING = "STILL RUNNING"
 UNKNOWN = "OUTCOME UNKNOWN"
 
 OUTCOMES = (
-    (KEPT, "",
-     "The change ran and Revit kept it - the add-in's own verdict. What it did, "
-     "and the undo rule, are in the reply."),
-    (ANSWERED, "",
-     "It ran and its answer is in the reply. revit_read and revit_show: nothing "
-     "was asked to be kept in the model."),
+    (KEPT,
+     "Revit kept this call's transaction; the result lines say what, if "
+     "anything, it changed",
+     "A change ran and Revit kept its transaction - the add-in's own verdict, "
+     "with nothing beside it saying otherwise. Not a claim that anything "
+     "changed: the result lines are that."),
+    (ANSWERED,
+     "it ran, and what follows is its answer; this door keeps nothing in the "
+     "model",
+     "revit_read or revit_show ran to its end and answered. Neither opens a "
+     "transaction, so Heron kept nothing."),
+    (NOT_ANSWERED,
+     "it stopped before it answered, and Heron had no transaction open to keep "
+     "anything; fix what stopped it before asking again",
+     "revit_read only: its code threw, or Heron's clock or a Revit dialog "
+     "stopped it. Nothing is rolled back, because nothing was open - which is "
+     "why this is not ROLLED BACK."),
     (REFUSED,
-     "Heron or Revit said no and the reply says why; do what it says or tell "
-     "the modeller, and never get round it another way",
-     "Refused before the job ran - a switch that is off, a capability that is "
-     "not proved, the wrong door, the wrong model, no session - or an answer "
-     "Heron would not show."),
+     "Heron or Revit looked at what was asked and said no; do what the reply "
+     "says or tell the modeller, and never get round it another way",
+     "A switch that is off, a capability that is not proved, the wrong door, "
+     "the wrong model, a card Heron cannot read - or an answer from another "
+     "model, which Heron would not show."),
     (NOT_RUN,
-     "nothing ran in Revit and nothing needs undoing; the reply says what to "
-     "choose or fix first",
-     "Not a refusal of what was asked: the words did not settle one capability, "
-     "Heron's library could not be read, or Revit could not take the request "
-     "just then."),
+     "nothing ran in Revit and nothing needs undoing; choose or fix what the "
+     "reply names, then ask again",
+     "REFUSED is a no to what was asked; NOT RUN is when nothing said no - "
+     "there was no capability by that name or those words, no Revit session to "
+     "send it to, Heron's library could not be read, or Revit could not take "
+     "it just then."),
     (ROLLED_BACK,
-     "Heron rolled the job back rather than keep it; the reply says whether "
-     "Revit confirmed the model is as it was",
-     "The job was not kept: it failed part way, Heron stopped it, or the "
-     "modeller pressed Discard. That the rollback HELD is the reply's to say, "
-     "not this word's."),
+     "Heron did not keep it: it asked Revit to roll the whole job back; send "
+     "it again only once what stopped it is fixed, or the modeller asks",
+     "revit_change only: the job failed part way, Heron stopped it, or the "
+     "modeller pressed Discard. What is known is that the rollback was asked "
+     "for - not, from an error reply, that it held."),
     (STILL_RUNNING,
      "do not send it again; no id follows a run yet, so ask the modeller what "
      "Revit shows",
      "Revit took it and has not finished, or is still asking the modeller. "
      "Sending it again is how one job is done twice."),
     (UNKNOWN,
-     "never assume it worked, or that it did not; the reply says what is safe "
-     "to do next",
-     "The answer was lost or could not be used, a rollback was not confirmed, "
-     "it ran in a model this chat does not work on, or the door did not say "
-     "how it ended."),
+     "Heron cannot tell what this did in Revit; look at the model first, and "
+     "do not send a change again",
+     "The answer was lost, too large or unreadable; the failure is one Heron "
+     "has no row for; a rollback was not confirmed, or a verdict contradicts "
+     "itself; it ran in a model this chat does not work on; a show stopped "
+     "part way; or the door broke, or did not say how it ended."),
 )
 
 #: How every outcome line starts. One spelling, here.
@@ -492,8 +526,8 @@ _BY_LABEL = {"refused": REFUSED, "handed_back": NOT_RUN}
 
 
 def outcome_line(word):
-    """The line a reply carries `word` on: `outcome: WORD`, and for a word
-    that needs one, what to do next."""
+    """The line a reply carries `word` on: `outcome: WORD - ` and what the
+    word means and what to do next, whole."""
     said = _SAYS_NEXT.get(word)
     return OUTCOME_LINE + word + (_OUTCOME_TAIL + said if said else "")
 
@@ -524,18 +558,35 @@ def _outcome(word, answer=None):
     return answer
 
 
+def _sent():
+    """
+    Said by a door on the line before its request leaves for Revit. From
+    there on a fault in Heron's own code is no longer "nothing happened":
+    `_after_it_left` reads this, and answers OUTCOME UNKNOWN rather than let
+    the exception reach the host.
+    """
+    _ctx.sent = True
+
+
 def _failure_outcome(failure):
     """
     A classified failure's word: heron_failure's own outcome, through
-    `_BY_FAILURE`.
+    `_BY_FAILURE` - for a code heron_failure HAS A ROW FOR.
 
-    ONE CODE IS NOT TAKEN AT ITS OUTCOME. `no_reply` is what `analyse` makes
-    of nothing coming back at all, and on a read it files that under
-    never-ran with the reason "Heron cannot tell whether Revit was reached".
-    Its reason is the truth and its outcome says more (row 5b-1560), so the
-    word is the reason's: not known - for a read as for a change.
+    ANYTHING IT DOES NOT POSITIVELY RECOGNISE IS OUTCOME UNKNOWN, at every
+    door. `analyse` files an unrecognised code on a read under "refused",
+    which is its answer to "may this be asked again" and not a statement
+    that nothing ran: `handler_failed` is left out of its table on purpose,
+    and the bridge raises it after the job may have run. A reply with no
+    `ok` and no code at all goes the same way.
+
+    AND SO IS NOTHING COMING BACK AT ALL. `no_reply` is what `analyse` makes
+    of that, and on a read it files it under never-ran beside the reason
+    "Heron cannot tell whether Revit was reached" (row 5b-1560). It has no
+    row either, so the one rule covers it: not known - for a read as for a
+    change.
     """
-    if failure.code == "no_reply":
+    if not failures.recognised(failure.code):
         return UNKNOWN
     return _BY_FAILURE.get(failure.outcome, UNKNOWN)
 
@@ -546,17 +597,30 @@ def _change_outcome(reply):
     `verdictKind`, the field heron_run_records already prints the verdict by.
     Never from `ok` alone, and never from the verdict's sentence.
 
-    KEPT only when the add-in says "kept". A rollback it says HELD
-    (`rolledBack`, which RevitFragment.WithVerdict sets only when Revit
-    reported the group rolled back and nothing the run added still stands) is
-    ROLLED BACK - the modeller's Discard is one. Everything else is not known
-    from here: a rollback that did not hold or was not confirmed, and an
-    `ok` from an add-in old enough to name no verdict at all.
+    KEPT only when the add-in says "kept", and ROLLED BACK only when it says
+    the rollback HELD (`rolledBack`, which RevitFragment.WithVerdict sets
+    only when Revit reported the group rolled back and nothing the run added
+    still stands) - the modeller's Discard is one.
+
+    AND ONLY WHEN THE FIELDS BESIDE THE VERDICT AGREE WITH IT. The add-in
+    writes `applied`, `rolledBack`, `asked` and `kept` in the same reply, and
+    today they cannot disagree with `verdictKind`. A reply in which they do -
+    kept beside a rollback, kept beside a modeller who was asked and did not
+    keep, discarded beside `applied` - is from an add-in this server was not
+    written against, and one field is wrong: which one is not knowable here,
+    so it is not known. The same goes for a rollback that did not hold or
+    was not confirmed, and an `ok` old enough to name no verdict at all.
     """
     kind = reply.get("verdictKind")
+    declined = bool(reply.get("asked")) and not reply.get("kept")
     if kind == "kept":
+        if (reply.get("rolledBack") is True or reply.get("applied") is False
+                or declined):
+            return UNKNOWN
         return KEPT
     if kind in ("rolledBack", "discarded") and reply.get("rolledBack") is True:
+        if reply.get("applied") is True or reply.get("kept") is True:
+            return UNKNOWN
         return ROLLED_BACK
     return UNKNOWN
 
@@ -571,6 +635,15 @@ def _said_outcome(tool, reply, label, how):
     classified failure); with none said, the label when the label is a word
     by itself (`_BY_LABEL`); and otherwise OUTCOME UNKNOWN.
 
+    ROLLED BACK IS PRINTED ONLY FOR A TOOL THAT OPENS SOMETHING TO ROLL BACK
+    (heron_tools.writes). heron_failure calls `fragment_threw`,
+    `ran_too_long` and `dialog_refused` rolled back whichever operation
+    they came from, and on the read and show paths nothing is: no
+    transaction is open (RevitFragment, the `!writing` branch). There the
+    word is NOT ANSWERED for a tool that only reads, and OUTCOME UNKNOWN for
+    one that acts on the screen - a selection or a view the run changed
+    before it stopped is still changed.
+
     THE SECOND LINE, directly under the reply's opening sentence. Not the
     first and not the last, because both ends of a door's reply are already
     held by tests/test_mcp_serves.py: a kept change to a model never saved
@@ -582,10 +655,48 @@ def _said_outcome(tool, reply, label, how):
     if tool not in tools.STATES_OUTCOME or not isinstance(reply, str):
         return reply
     word = how if how in _WORDS else _BY_LABEL.get(label, UNKNOWN)
+    if word == ROLLED_BACK and not _changes_model(tool):
+        word = NOT_ANSWERED if tools.risk_of(tool) <= tools.ANALYZE else UNKNOWN
     if not reply.strip():
         return outcome_line(word)
     first, newline, rest = reply.partition(NEWLINE)
     return first + NEWLINE + outcome_line(word) + newline + rest
+
+
+def _after_it_left(tool, error):
+    """
+    The answer for a door whose own code raised AFTER its request had left
+    for Revit - or None, and the exception goes on to the host as before.
+
+    AN EXCEPTION OUT OF A DOOR IS REPORTED BY THE SDK AS "Error executing
+    tool revit_change" AND NOTHING ELSE. Before the request leaves that is
+    the truth - the tool failed and Revit was not asked. After it, the same
+    sentence says nothing of a change Revit may have made and kept, and a
+    tool that "failed" is what a chat sends again. So from `_sent()` on the
+    door answers for itself: OUTCOME UNKNOWN, the sentence that sends a
+    person to the model, and no exception - which also means no `isError`.
+
+    WHAT RAISED IS RECORDED AND NOT REPEATED. The kind of fault is named in
+    the reply; its text is not, for the reason the SDK keeps a crash's text
+    on the server - it can quote what the model sent. The traceback goes to
+    this process's stderr, which is the host's log for the server, and the
+    activity list has the call as failed (`_recorded` notes it).
+    """
+    if tool not in tools.STATES_OUTCOME or not getattr(_ctx, "sent", False):
+        return None
+    try:
+        sys.stderr.write("Heron: %s raised after its request had left for Revit, "
+                         "and answered OUTCOME UNKNOWN:%s" % (tool, NEWLINE))
+        traceback.print_exception(type(error), error, error.__traceback__,
+                                  file=sys.stderr)
+    except Exception:                                # noqa: BLE001 - the answer matters more
+        pass
+    _outcome(UNKNOWN)
+    return ("%s broke in Heron's own code (%s) after its request had gone to "
+            "Revit, so Heron cannot tell you what Revit did with it.%s"
+            "Look at the model before anything is sent again - repeating a "
+            "change could do the work twice."
+            % (tool, type(error).__name__, NEWLINE))
 
 
 def _ended(outcome, answer=None):
@@ -671,7 +782,11 @@ def _recorded(fn):
         # another never speaks for the outer one's line.
         kept, _ctx.outcome = getattr(_ctx, "outcome", None), None
         kept_how, _ctx.how = getattr(_ctx, "how", None), None
+        if outer:
+            # NOTHING HAS LEFT FOR REVIT YET, in this call (`_sent`).
+            _ctx.sent = False
         started, clock = time.strftime("%H:%M:%S"), time.time()
+        broke = False
         try:
             reply = _refused_for_old_code(fn.__name__)
             if reply is None:
@@ -679,14 +794,20 @@ def _recorded(fn):
         except Exception as error:
             if outer:
                 _note(fn.__name__, started, time.time() - clock, error=error)
-            raise
+            # A DOOR THAT BREAKS AFTER ITS REQUEST HAS LEFT STILL ANSWERS
+            # (`_after_it_left`); every other exception goes on, as before.
+            reply = _after_it_left(fn.__name__, error) if outer else None
+            if reply is None:
+                raise
+            broke = True
         finally:
             said, _ctx.outcome = getattr(_ctx, "outcome", None), kept
             how, _ctx.how = getattr(_ctx, "how", None), kept_how
             if outer:
                 _depth.busy = False
-        if outer:
+        if outer and not broke:
             _note(fn.__name__, started, time.time() - clock, reply=reply, outcome=said)
+        if outer:
             # AFTER THE NOTE, so the activity list still shows the reply's own
             # first sentence; and only for the call the host made - a door
             # run inside another tool answers that tool, not the chat.

@@ -18,7 +18,7 @@ server already worked the outcome out (`_ended`, heron_failure) and showed
 it to the Companion's activity list alone. revit_change, revit_read and
 revit_show now say it, on one line:
 
-    outcome: REFUSED - Heron or Revit said no and the reply says why; ...
+    outcome: REFUSED - Heron or Revit looked at what was asked and said no; ...
 
 The real tool functions are called, against a stand-in Revit that answers
 from a script - the way tests/test_mcp_serves.py stands the platform aside.
@@ -33,16 +33,30 @@ WHAT IT PROVES
 
   2. A WORD PER WAY OF ENDING, each forced through the door itself: a kept
      change; refusals of several kinds (the switch off, a DRAFT, a read sent
-     to revit_change, the add-in's own wrong-model refusal, nothing by that
-     name, no session); a rollback; a lost, oversize or unreadable answer -
-     OUTCOME UNKNOWN, never REFUSED and never KEPT; a run still going; a read
-     answered; words that settled nothing.
+     to revit_change, the add-in's own wrong-model refusal); a rollback; a
+     read that stopped before it answered; a lost, oversize or unreadable
+     answer - OUTCOME UNKNOWN, never REFUSED and never KEPT; a run still
+     going; a read answered; nothing by that name, no session, and words
+     that settled nothing - NOT RUN, whichever way the capability was named.
 
   3. NEVER MORE THAN IS KNOWN. Ask to Keep still open is STILL RUNNING and a
      Discard is ROLLED BACK - neither is KEPT. A Discard Revit did not
-     confirm, a reply that names no verdict, and a change behind the first
-     call's pin check are OUTCOME UNKNOWN. A door that returned without
-     saying how it ended is OUTCOME UNKNOWN too: the line fails closed.
+     confirm, a reply that names no verdict, a verdict its own reply
+     contradicts, and a change behind the first call's pin check are OUTCOME
+     UNKNOWN. So is every failure code heron_failure has no row for, at
+     every door - `handler_failed` is raised after the job may have run - and
+     a reply with no code at all. ROLLED BACK is said only where a
+     transaction group was open to roll back: a read that threw is NOT
+     ANSWERED and a show that threw is OUTCOME UNKNOWN, because its selection
+     may stand. A door that returned without saying how it ended is OUTCOME
+     UNKNOWN too: the line fails closed.
+
+  3b. A DOOR THAT BREAKS AFTER ITS REQUEST HAS LEFT STILL ANSWERS. Heron's
+     own code raising once Revit has been asked - or Revit's answer being
+     JSON that is not an object - is OUTCOME UNKNOWN with the sentence that
+     sends a person to the model, never the SDK's bare "Error executing
+     tool", which invites sending a change a second time. Raised before
+     anything was sent, it is the SDK's to report, as it always was.
 
   4. EVERY PATH, EXACTLY ONE LINE, IN ONE PLACE. Each case above and each
      further return of the three doors that could be forced: one line that
@@ -62,6 +76,27 @@ WHAT IT PROVES
      reply's own first sentence and the label the tool gave; the page's and
      the panel's route into a door (`_through`) carries no line; a tool that
      is not a door carries none.
+
+  8. THE CHAT IS TOLD, IN ITS INSTRUCTIONS (row 5b-1562). host.chat says the
+     doors' replies carry an `outcome:` line and that the line, not the
+     wording, says how the request ended. Room was made by leaving the
+     Constitution's CITATIONS - "(Golden Rule 9)", and the targets of its
+     links - out of what a chat is given: every word of every Article is
+     still there, the Constitution's own file still carries the citations,
+     and Heron's own agents are still given them. Needs no SDK, so it runs
+     wherever this file does.
+
+WHAT A REVIEW CHANGED, AND WHICH OF THIS FILE'S OWN ASSERTIONS WERE WRONG.
+The first version of this suite pinned four words the review of 2026-11-12
+showed to be untrue, and each is changed here rather than defended:
+  - a read or a show that threw was ROLLED BACK. Nothing is rolled back on
+    the path that opens no transaction; now NOT ANSWERED and OUTCOME UNKNOWN.
+  - nothing by that name was REFUSED when named by `capability` and NOT RUN
+    when named by `request`. One fact, one word: NOT RUN. No session is NOT
+    RUN too - nothing judged the request, there was nowhere to send it.
+  - KEPT and ANSWERED carried no words after them. A chat reads the line
+    with nothing else to explain it, so every word now says what it means.
+  - the table held seven words. It holds eight.
 
 WHY THE SECOND LINE, AND NOT THE FIRST OR THE LAST. Both ends of a door's
 reply are held by tests/test_mcp_serves.py: a kept change to a model never
@@ -107,7 +142,7 @@ FAILURES = []
 PREFIX = "outcome: "
 TAIL = " - "
 DOORS = ("revit_change", "revit_read", "revit_show")
-WORDS = ("KEPT", "ANSWERED", "REFUSED", "NOT RUN", "ROLLED BACK",
+WORDS = ("KEPT", "ANSWERED", "NOT ANSWERED", "REFUSED", "NOT RUN", "ROLLED BACK",
          "STILL RUNNING", "OUTCOME UNKNOWN")
 
 
@@ -216,6 +251,14 @@ DISCARD_UNCONFIRMED = dict(DISCARDED, rolledBack=False,
 
 NO_VERDICT = dict(MODEL, ok=True, ran="x", provides={"renamed": "3"})
 
+# A VERDICT ITS OWN REPLY CONTRADICTS. No add-in sends one today; a word may
+# still never be read off one field while the field beside it says otherwise.
+KEPT_BUT_ROLLED_BACK = dict(KEPT, rolledBack=True)
+KEPT_BUT_NOT_APPLIED = dict(KEPT, applied=False)
+KEPT_BUT_ASKED_AND_DECLINED = dict(KEPT, asked=True, kept=False)
+DISCARDED_BUT_KEPT = dict(DISCARDED, kept=True)
+DISCARDED_BUT_APPLIED = dict(DISCARDED, applied=True)
+
 ELSEWHERE = dict(READ_OK, document="Tower B", documentPath="C:/jobs/TowerB.rvt",
                  projectKey="key-2")
 
@@ -277,6 +320,7 @@ class Case(object):
         self.name, self.door, self.word = name, door, word
         self.arguments, self.reply, self.pin = arguments, reply, pin
         self.setup, self.kind = setup, kind
+        self.logged = ""
 
     def run(self, stage, body=False):
         """The door's reply - through the tool function a host is served, or
@@ -284,6 +328,10 @@ class Case(object):
         passed the wrapper. A crash comes back as text no check will take for
         an answer (heron-ship 2a)."""
         stage.fresh(self.reply, self.pin)
+        # WHAT THE SERVER WRITES TO ITS OWN LOG is kept, not printed among the
+        # checks: a door that breaks after sending records the traceback
+        # there on purpose, and one in this suite's output reads as a crash.
+        had, sys.stderr = sys.stderr, io.StringIO()
         try:
             if self.setup is not None:
                 self.setup(stage)
@@ -294,6 +342,7 @@ class Case(object):
         except Exception as exc:                                # noqa: BLE001
             return "(%s raised %s: %s)" % (self.door, type(exc).__name__, exc)
         finally:
+            self.logged, sys.stderr = sys.stderr.getvalue(), had
             stage.unpatch()
 
 
@@ -352,6 +401,16 @@ def build_cases(module, core):
     def patched(owner, name, value):
         return lambda stage: stage.patch(owner, name, value)
 
+    def breaks_after_asking(stage):
+        def boom(_reply):
+            raise RuntimeError("a fault in Heron's own code, after Revit was asked")
+        stage.patch(module, "_ctx_reply", boom)
+
+    def pipe_breaks(stage):
+        def boom(*_a, **_k):
+            raise OSError("the pipe broke with the request on it")
+        stage.patch(stage.revit, "request", boom)
+
     def no_code(stage):
         real = os.path.isfile
         stage.patch(os.path, "isfile",
@@ -389,10 +448,10 @@ def build_cases(module, core):
              KEPT, kind="refused"),
         Case("the add-in's own wrong-model refusal (wrong_document)", C, "REFUSED",
              {"capability": change}, error("wrong_document"), kind="refused"),
-        Case("nothing by that name", C, "REFUSED",
-             {"capability": "NO_SUCH_CAPABILITY_AT_ALL"}, KEPT, kind="refused"),
-        Case("no Revit session to send it to", C, "REFUSED",
-             {"capability": change}, KEPT, setup=not_bound, kind="refused"),
+        Case("nothing by that name", C, "NOT RUN",
+             {"capability": "NO_SUCH_CAPABILITY_AT_ALL"}, KEPT),
+        Case("no Revit session to send it to", C, "NOT RUN",
+             {"capability": change}, KEPT, setup=not_bound),
         Case("a risk Heron cannot read (risk_refusal)", C, "REFUSED",
              {"capability": change}, KEPT,
              setup=patched(bridge, "risk_refusal",
@@ -428,6 +487,30 @@ def build_cases(module, core):
              "OUTCOME UNKNOWN", {"capability": change}, error("never_seen_before")),
         Case("a rollback Revit did not confirm after a dialog", C,
              "OUTCOME UNKNOWN", {"capability": change}, error("dialog_unconfirmed")),
+        Case("the bridge's own handler failed, on a change (handler_failed)", C,
+             "OUTCOME UNKNOWN", {"capability": change}, error("handler_failed"),
+             kind="unrecognised"),
+        Case("a reply with no `ok` and no code, on a change", C,
+             "OUTCOME UNKNOWN", {"capability": change}, {}, kind="unrecognised"),
+        Case("a verdict of kept beside `rolledBack`", C, "OUTCOME UNKNOWN",
+             {"capability": change}, KEPT_BUT_ROLLED_BACK, kind="contradiction"),
+        Case("a verdict of kept beside `applied: false`", C, "OUTCOME UNKNOWN",
+             {"capability": change}, KEPT_BUT_NOT_APPLIED, kind="contradiction"),
+        Case("a verdict of kept beside asked-and-not-kept", C, "OUTCOME UNKNOWN",
+             {"capability": change}, KEPT_BUT_ASKED_AND_DECLINED, kind="contradiction"),
+        Case("a verdict of discarded beside `kept`", C, "OUTCOME UNKNOWN",
+             {"capability": change}, DISCARDED_BUT_KEPT, kind="contradiction"),
+        Case("a verdict of discarded beside `applied`", C, "OUTCOME UNKNOWN",
+             {"capability": change}, DISCARDED_BUT_APPLIED, kind="contradiction"),
+        Case("Heron's own code raising after the change was sent", C,
+             "OUTCOME UNKNOWN", {"capability": change}, KEPT,
+             setup=breaks_after_asking, kind="raised"),
+        Case("the request itself raising, on a change", C, "OUTCOME UNKNOWN",
+             {"capability": change}, KEPT, setup=pipe_breaks, kind="raised"),
+        Case("an answer that is a JSON list, on a change", C, "OUTCOME UNKNOWN",
+             {"capability": change}, [1, 2, 3], kind="lost"),
+        Case("an answer that is a JSON string, on a change", C, "OUTCOME UNKNOWN",
+             {"capability": change}, "ok", kind="lost"),
         Case("a change that came back from ANOTHER model than the pinned one", C,
              "OUTCOME UNKNOWN", {"capability": change},
              dict(KEPT, document="Tower B", documentPath="C:/jobs/TowerB.rvt",
@@ -450,9 +533,9 @@ def build_cases(module, core):
              {"capability": read, "expect_from": "find-views"}, READ_OK),
         Case("a change sent to revit_read", R, "REFUSED", {"capability": change},
              READ_OK, kind="refused"),
-        Case("nothing by that name, at revit_read", R, "REFUSED",
+        Case("nothing by that name, at revit_read", R, "NOT RUN",
              {"capability": "NO_SUCH_CAPABILITY_AT_ALL"}, READ_OK),
-        Case("no Revit session, at revit_read", R, "REFUSED",
+        Case("no Revit session, at revit_read", R, "NOT RUN",
              {"capability": read}, READ_OK, setup=not_bound),
         Case("a read whose code writes to disk (disk_refusal)", R, "REFUSED",
              {"capability": read}, READ_OK,
@@ -470,8 +553,28 @@ def build_cases(module, core):
              {"capability": read}, error("wrong_document"), kind="refused"),
         Case("a read answered from ANOTHER model than the pinned one", R,
              "REFUSED", {"capability": read}, ELSEWHERE, pin=MODEL, kind="refused"),
-        Case("a read that threw (fragment_threw)", R, "ROLLED BACK",
-             {"capability": read}, error("fragment_threw")),
+        Case("a read that threw (fragment_threw)", R, "NOT ANSWERED",
+             {"capability": read}, error("fragment_threw"), kind="not answered"),
+        Case("a read Heron's run clock stopped (ran_too_long)", R, "NOT ANSWERED",
+             {"capability": read}, error("ran_too_long"), kind="not answered"),
+        Case("a read a Revit dialog stopped (dialog_refused)", R, "NOT ANSWERED",
+             {"capability": read}, error("dialog_refused"), kind="not answered"),
+        Case("the bridge's own handler failed, on a read (handler_failed)", R,
+             "OUTCOME UNKNOWN", {"capability": read}, error("handler_failed"),
+             kind="unrecognised"),
+        Case("a failure code Heron has never seen, on a read", R,
+             "OUTCOME UNKNOWN", {"capability": read}, error("never_seen_before"),
+             kind="unrecognised"),
+        Case("a reply with no `ok` and no code, on a read", R, "OUTCOME UNKNOWN",
+             {"capability": read}, {}, kind="unrecognised"),
+        Case("Heron's own code raising after the read was sent", R,
+             "OUTCOME UNKNOWN", {"capability": read}, READ_OK,
+             setup=breaks_after_asking, kind="raised"),
+        Case("an answer that is a JSON list, on a read", R, "OUTCOME UNKNOWN",
+             {"capability": read}, [1, 2, 3], kind="lost"),
+        Case("an answer that is a JSON list, on a consuming read", R,
+             "OUTCOME UNKNOWN", {"capability": read, "expect_from": "find-views"},
+             [1, 2, 3], kind="raised"),
         Case("a read still running in Revit", R, "STILL RUNNING",
              {"capability": read}, error("still_running"), kind="running"),
         Case("NO ANSWER AT ALL to a read", R, "OUTCOME UNKNOWN",
@@ -499,9 +602,9 @@ def build_cases(module, core):
              kind="answered"),
         Case("a change sent to revit_show", S, "REFUSED", {"capability": change},
              READ_OK, kind="refused"),
-        Case("nothing by that name, at revit_show", S, "REFUSED",
+        Case("nothing by that name, at revit_show", S, "NOT RUN",
              {"capability": "NO_SUCH_CAPABILITY_AT_ALL"}, READ_OK),
-        Case("no Revit session, at revit_show", S, "REFUSED",
+        Case("no Revit session, at revit_show", S, "NOT RUN",
              {"capability": show}, READ_OK, setup=not_bound),
         Case("a show whose contract cannot be read", S, "REFUSED",
              {"capability": show}, READ_OK,
@@ -517,8 +620,22 @@ def build_cases(module, core):
              {"capability": show}, error("wrong_document")),
         Case("a show that ran in ANOTHER model than the pinned one", S,
              "OUTCOME UNKNOWN", {"capability": show}, ELSEWHERE, pin=MODEL),
-        Case("a show that threw", S, "ROLLED BACK", {"capability": show},
-             error("fragment_threw")),
+        Case("a show that threw - its selection may stand", S, "OUTCOME UNKNOWN",
+             {"capability": show}, error("fragment_threw"), kind="show stopped"),
+        Case("a show Heron's run clock stopped", S, "OUTCOME UNKNOWN",
+             {"capability": show}, error("ran_too_long"), kind="show stopped"),
+        Case("a show a Revit dialog stopped", S, "OUTCOME UNKNOWN",
+             {"capability": show}, error("dialog_refused"), kind="show stopped"),
+        Case("the bridge's own handler failed, on a show (handler_failed)", S,
+             "OUTCOME UNKNOWN", {"capability": show}, error("handler_failed"),
+             kind="unrecognised"),
+        Case("a reply with no `ok` and no code, on a show", S, "OUTCOME UNKNOWN",
+             {"capability": show}, {}, kind="unrecognised"),
+        Case("Heron's own code raising after the show was sent", S,
+             "OUTCOME UNKNOWN", {"capability": show}, READ_OK,
+             setup=breaks_after_asking, kind="raised"),
+        Case("an answer that is a JSON number, on a show", S, "OUTCOME UNKNOWN",
+             {"capability": show}, 7, kind="lost"),
         Case("a show still running in Revit", S, "STILL RUNNING",
              {"capability": show}, error("still_running")),
         Case("NO ANSWER AT ALL to a show", S, "OUTCOME UNKNOWN",
@@ -544,8 +661,9 @@ NOT_REACHED = (
     "the three doors: words that match a PROVEN phrasing exactly and are short of a "
     "value (`_by_words`' `exact` branches) - the hand-back they end in is the one "
     "the ranked case reaches, by the same return",
-    "a tool body that raises: the SDK answers for it (`isError`, and the "
-    "exception's text stays on the server), so there is no reply to carry a line",
+    "a door's body that raises BEFORE anything is sent: the SDK answers for it "
+    "(`isError`, and the exception's text stays on the server), so there is no reply "
+    "to carry a line - section 3b sees it still raise, and sees that nothing was sent",
 )
 
 
@@ -559,16 +677,36 @@ def the_vocabulary(core, registry):
     rows = list(table or ())
     words = [row[0] for row in rows]
     check(sorted(words) == sorted(WORDS),
-          "it holds exactly the seven words a host is told - found %r" % (words,))
+          "it holds exactly the eight words a host is told - found %r" % (words,))
     check(len(set(words)) == len(words), "each once")
     check(all(len(row) == 3 and (row[2] or "").strip() for row in rows),
           "and each with a plain sentence saying what it means")
     told = dict((row[0], row[1]) for row in rows if len(row) == 3)
-    check(not told.get("KEPT") and not told.get("ANSWERED"),
-          "the two that mean it worked add nothing to their line - the reply "
-          "below already says what was done")
-    check(all(told.get(word) for word in WORDS if word not in ("KEPT", "ANSWERED")),
-          "and each of the others says, on the line, what to do next")
+    # EVERY WORD, KEPT AND ANSWERED TOO (the review of 2026-11-12). This check
+    # held the opposite - that those two add nothing - on the argument that
+    # the reply below says the rest. A chat reads the line with nothing to
+    # explain it, so each word says what it means, alone.
+    check(all((told.get(word) or "").strip() for word in WORDS),
+          "every word's line goes on to say what it means - a chat is given "
+          "nothing else to read the word by")
+    kept_says = told.get("KEPT") or ""
+    check("undo" not in kept_says.lower() and "Ctrl" not in kept_says
+          and "if anything" in kept_says,
+          "KEPT claims only that the transaction was kept - never that anything "
+          "changed, and never an undo step that may not exist - found %r" % kept_says)
+    unknown_says = told.get("OUTCOME UNKNOWN") or ""
+    check("look at the model" in unknown_says and "again" in unknown_says
+          and "reply" not in unknown_says,
+          "OUTCOME UNKNOWN says it inline - look at the model, and send no change "
+          "again - and leans on no sentence of the reply - found %r" % unknown_says)
+    rolled_says = told.get("ROLLED BACK") or ""
+    check("asked Revit to roll" in rolled_says and "reply" not in rolled_says
+          and "confirmed" not in rolled_says,
+          "ROLLED BACK says what is known - Heron asked Revit to roll the whole job "
+          "back - and promises nothing of what the reply says - found %r" % rolled_says)
+    meant = dict((row[0], row[2]) for row in rows if len(row) == 3)
+    check("REFUSED" in (meant.get("NOT RUN") or ""),
+          "the table says in one sentence how NOT RUN differs from REFUSED")
     running = told.get("STILL RUNNING") or ""
     check("again" in running and "id" in running,
           "STILL RUNNING says not to send it again, and that no id follows a "
@@ -631,7 +769,7 @@ def never_more_than_known(stage, core, cases, replies):
           "and never KEPT, REFUSED, ANSWERED or NOT RUN")
     only_kept = [c.name for c in cases if stated(replies[c]) == "KEPT"]
     check(sorted(only_kept) == sorted(c.name for c in cases
-                                      if c.reply in (KEPT, ASKED_KEPT)
+                                      if (c.reply is KEPT or c.reply is ASKED_KEPT)
                                       and c.word == "KEPT"),
           "KEPT is said only of a reply whose own verdict is `kept` - found %r"
           % (only_kept,))
@@ -639,6 +777,32 @@ def never_more_than_known(stage, core, cases, replies):
     check(running and all("again" in replies[c].split("\n")[1] for c in running
                           if len(replies[c].split("\n")) > 1),
           "a run still going says, on the line itself, not to send it again")
+
+    # EVERY CODE heron_failure HAS NO ROW FOR, AT EVERY DOOR (the review's
+    # blocker). On a read it files one under "refused", and `handler_failed`
+    # is raised by the bridge after the job may have run.
+    strange = [c for c in cases if c.kind == "unrecognised"]
+    check(len(strange) >= 7 and sorted(set(c.door for c in strange)) == sorted(DOORS)
+          and all(stated(replies[c]) == "OUTCOME UNKNOWN" for c in strange),
+          "a code nothing recognises, and a reply with none, is OUTCOME UNKNOWN at "
+          "all three doors (%d cases) - found %r"
+          % (len(strange), sorted(set("%s %s" % (c.door, stated(replies[c]))
+                                      for c in strange))))
+    torn = [c for c in cases if c.kind == "contradiction"]
+    check(len(torn) >= 5 and all(stated(replies[c]) == "OUTCOME UNKNOWN" for c in torn),
+          "a verdict the fields beside it contradict is OUTCOME UNKNOWN, never the "
+          "verdict (%d cases) - found %r"
+          % (len(torn), sorted(set(str(stated(replies[c])) for c in torn))))
+    rolled = [c for c in cases if stated(replies[c]) == "ROLLED BACK"]
+    check(rolled and all(c.door == "revit_change" for c in rolled),
+          "ROLLED BACK is said only by the door that opens something to roll back "
+          "- found it at %r" % sorted(set(c.door for c in rolled)))
+    check(all(stated(replies[c]) == "NOT ANSWERED" for c in cases
+              if c.kind == "not answered")
+          and all(stated(replies[c]) == "OUTCOME UNKNOWN" for c in cases
+                  if c.kind == "show stopped"),
+          "a read that stopped is NOT ANSWERED, and a show that stopped is OUTCOME "
+          "UNKNOWN - its selection may stand")
 
     # THE LINE FAILS CLOSED. A door that returns having said nothing, or only
     # that it was "ok", is never guessed to have worked.
@@ -657,6 +821,12 @@ def never_more_than_known(stage, core, cases, replies):
           and stated(said("revit_read", "Choose.", "handed_back", None)) == "NOT RUN",
           "a refusal and a hand-back are the two labels that are a word by "
           "themselves")
+    check(stated(said("revit_change", "It threw.", "failed", "ROLLED BACK")) == "ROLLED BACK"
+          and stated(said("revit_read", "It threw.", "failed", "ROLLED BACK")) == "NOT ANSWERED"
+          and stated(said("revit_show", "It threw.", "failed", "ROLLED BACK"))
+          == "OUTCOME UNKNOWN",
+          "ROLLED BACK said at a door that opens no transaction is never printed: "
+          "NOT ANSWERED at revit_read, OUTCOME UNKNOWN at revit_show")
     check(said("revit_health", "Connected.", "ok", None) == "Connected."
           and said("revit_read", ["words", object()], "ok", None)[0] == "words",
           "a tool that is not on the list, and an answer that is not text, are "
@@ -703,6 +873,10 @@ def additive(stage, cases, replies, core):
     said_old = getattr(getattr(core, "running_code", None), "SAID", None)
     differs = []
     for case in cases:
+        if case.kind == "raised":
+            # THE BODY RAISED: there is no reply of its own to compare, and
+            # the whole answer is the wrapper's. Section 3b reads it.
+            continue
         body = case.run(stage, body=True)
         whole = replies[case]
         if said_old and body != whole and whole.endswith(said_old) \
@@ -714,9 +888,70 @@ def additive(stage, cases, replies, core):
             differs.append(case.name)
         if lines_of(body):
             differs.append("%s (its body carries a line of its own)" % case.name)
+    compared = len([c for c in cases if c.kind != "raised"])
     check(not differs,
           "all %d: every sentence the door wrote is there, in the same order - "
-          "not: %s" % (len(cases), "; ".join(differs[:5]) or "none"))
+          "not: %s" % (compared, "; ".join(differs[:5]) or "none"))
+
+
+def breaks_after_sending(stage, cases, replies, core):
+    print()
+    print("3b. A door that breaks after its request has left still answers")
+    module = stage.module
+    raised = [c for c in cases if c.kind == "raised"]
+    check(len(raised) >= 5 and sorted(set(c.door for c in raised)) == sorted(DOORS),
+          "forced at all three doors (%d cases)" % len(raised))
+    check(all(not replies[c].startswith("(%s raised " % c.door) for c in raised),
+          "none of them reaches the SDK as an exception - found %r"
+          % [replies[c][:60] for c in raised if replies[c].startswith("(")])
+    check(all(stated(replies[c]) == "OUTCOME UNKNOWN" for c in raised),
+          "each is OUTCOME UNKNOWN")
+    check(all("Look at the model" in replies[c] for c in raised),
+          "each sends a person to the model before anything is sent again")
+    check(all("Error executing tool" not in replies[c] for c in raised),
+          "and none is the SDK's bare sentence, which says nothing of what Revit did")
+    names = ("RuntimeError", "OSError", "AttributeError")
+    check(all(any(name in replies[c] for name in names) for c in raised)
+          and not any("a fault in Heron's own code" in replies[c]
+                      or "the pipe broke" in replies[c] for c in raised),
+          "the reply names the KIND of fault and not its text - the text stays on "
+          "the server, as the SDK keeps a crash's")
+
+    # WHAT RAISED IS RECORDED: the traceback, text and all, in the server's
+    # own log - and the call on the Companion's activity list, as a failure.
+    try:
+        activity = module._companion_module().ACTIVITY
+        before = (activity.since(0) or [{"seq": 0}])[-1]["seq"]
+        raised[0].run(stage)
+        check("Traceback" in raised[0].logged
+              and "a fault in Heron's own code" in raised[0].logged
+              and raised[0].door in raised[0].logged,
+              "the server's log has the traceback, the fault's own words and the "
+              "door it broke in - found %r" % raised[0].logged[:90])
+        mine = [i for i in activity.since(before) if i.get("tool") == raised[0].door]
+        check(len(mine) == 1 and mine[0].get("outcome") == "failed",
+              "the activity list records it once, as failed - found %r" % (mine,))
+    except Exception as exc:                                    # noqa: BLE001
+        check(False, "the activity list can be read: %s: %s" % (type(exc).__name__, exc))
+
+    # BEFORE ANYTHING WAS SENT, IT IS THE SDK'S TO REPORT, AS IT ALWAYS WAS -
+    # and nothing was sent, which is why saying so costs nothing.
+    picked_change = [c for c in cases if c.name == "a change Revit kept"][0]
+
+    def boom(*_a, **_k):
+        raise RuntimeError("a fault before anything was sent")
+    stage.fresh(dict(KEPT))
+    stage.patch(module.bridge, "fragment_needs", boom)
+    try:
+        said = module.revit_change(**picked_change.arguments)
+        early = "returned %r" % said[:60]
+    except RuntimeError:
+        early = "raised"
+    finally:
+        stage.unpatch()
+    check(early == "raised" and not stage.revit.asked,
+          "a fault BEFORE the request leaves still raises, and nothing was sent - "
+          "found: %s, asked %d" % (early, len(stage.revit.asked)))
 
 
 async def through_the_sdk(stage, cases, picked):
@@ -741,13 +976,15 @@ async def through_the_sdk(stage, cases, picked):
                        or getattr(result, "isError", False))
         return text, structured, flagged
 
-    wanted = ("kept", "refused", "rollback", "lost", "running", "answered", "not run")
+    wanted = ("kept", "refused", "rollback", "lost", "running", "answered", "not run",
+              "raised", "unrecognised", "not answered")
     seen = set()
     for case in cases:
         if case.kind not in wanted or (case.kind, case.door) in seen:
             continue
         seen.add((case.kind, case.door))
         stage.fresh(case.reply, case.pin)
+        had, sys.stderr = sys.stderr, io.StringIO()
         try:
             if case.setup is not None:
                 case.setup(stage)
@@ -758,6 +995,7 @@ async def through_the_sdk(stage, cases, picked):
                       % (case.door, type(exc).__name__, exc))
                 continue
         finally:
+            sys.stderr = had
             stage.unpatch()
         text, structured, flagged = parts(result)
         structured = structured if isinstance(structured, dict) else {}
@@ -856,6 +1094,59 @@ def nothing_else_moved(stage, cases, replies, picked):
     check(not lines_of(said), "a library tool (heron_lookup) carries none")
 
 
+def the_chat_is_told():
+    """Section 8, and it runs first: it needs no SDK and no server."""
+    print()
+    print("8. The chat is told, in its instructions (row 5b-1562)")
+    sys.path.insert(0, os.path.join(ROOT, "brain"))
+    try:
+        import heron_instructions as INS
+        rules = INS.articles()
+        known = INS.instructions()
+        text, used = INS.compose(INS.HOST)
+        agents, _used = INS.compose("agent.modify")
+    except Exception as exc:                                    # noqa: BLE001
+        check(False, "host.chat assembles: %s: %s" % (type(exc).__name__, exc))
+        return
+    own = (known.get(INS.HOST) or {}).get("text") or ""
+    told = [part for part in own.split("\n\n") if PREFIX.strip() in part]
+    check(len(told) == 1 and all(door in told[0] for door in DOORS),
+          "host.chat says, once, that the three doors' replies carry an `outcome:` "
+          "line - found %r" % [t[:80] for t in told])
+    check(told and "not the wording" in " ".join(told[0].split()),
+          "and that the line, not the wording around it, says how the request ended")
+    guards = " ".join(" ".join(case.get("must-contain") or [])
+                      for case in (known.get(INS.HOST) or {}).get("cases") or [])
+    check(PREFIX.strip() in guards, "a case in host.chat guards the sentence")
+    with io.open(os.path.join(ROOT, "tests", "test_instructions.py"), encoding="utf-8") as fh:
+        budget = re.search(r"^HOST_BUDGET_WORDS = (\d+)", fh.read(), re.M)
+    words = len(text.split())
+    check(budget is not None and words <= int(budget.group(1)),
+          "it is %d words, inside the budget tests/test_instructions.py holds (%s) - "
+          "which was not raised" % (words, budget.group(1) if budget else "unread"))
+
+    def citation(line):
+        return line.strip().startswith("*(") and line.strip().endswith(")*")
+
+    def plain(article):
+        kept = [line for line in article.splitlines() if not citation(line)]
+        return re.sub(r"\[([^\]]+)\]\([^)\s]+\)", r"\1", "\n".join(kept)).strip()
+
+    cited = [n for n in used if any(citation(line) for line in rules[n].splitlines())]
+    check(len(cited) >= 5,
+          "the Constitution's own file still carries its citations (%d of the "
+          "Articles a chat is given end in one)" % len(cited))
+    check("Golden Rule" not in text and "](" not in text,
+          "a chat is given none of them, and no link target")
+    missing = [n for n in used if plain(rules[n]) not in text]
+    check(not missing,
+          "and every word of every Article it is given is still there, in order - "
+          "all %d; not: %s" % (len(used), ", ".join(missing) or "none"))
+    check("Golden Rule" in agents,
+          "Heron's own agents are still given the citations: only what a chat is "
+          "given changed")
+
+
 # ------------------------------------------------------------------- main
 
 def sdk_version():
@@ -877,9 +1168,15 @@ def sdk_version():
 def main():
     print("How a call through a door ended, in one fixed word (row 5b-1159)")
     print("=" * 66)
+    the_chat_is_told()
     version, broken = sdk_version()
     if version is None:
         print()
+        if FAILURES:
+            print("FAILED  %d check(s) that need no SDK:" % len(FAILURES))
+            for failure in FAILURES:
+                print("  - %s" % failure[:200])
+            return 1
         print("SKIPPED - %s" % ("an MCP SDK is installed and cannot be imported: %s"
                                 % broken if broken else
                                 "no MCP SDK is installed, and the doors are functions "
@@ -930,6 +1227,7 @@ def main():
         the_vocabulary(core, registry)
         replies = a_word_per_ending(stage, cases)
         never_more_than_known(stage, core, cases, replies)
+        breaks_after_sending(stage, cases, replies, core)
         every_path_one_line(cases, replies, core)
         additive(stage, cases, replies, core)
         asyncio.run(through_the_sdk(stage, cases, picked))
