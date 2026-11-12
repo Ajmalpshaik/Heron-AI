@@ -41,8 +41,10 @@ purpose: >
   and an integer as they are, text as typed. The parameter's kind is read from
   the family, so "Width=600" needs no unit beside it - and "600mm" is refused,
   because a unit typed into the value is how a length ends up a thousand times
-  wrong. A kind this does not write - an area, a flow - is refused by name
-  rather than written as something else.
+  wrong. Every other MEASURED kind - an area, an air flow, a volume, a
+  pressure - is read in the family's own units by Revit's own parser, so its
+  unit may be typed ("94.4 L/s") or left out (version 4). A kind this does not
+  write at all is refused by name rather than written as something else.
 
   **A MATERIAL IS WRITTEN BY ITS NAME** - "Nut Material=Steel - Galvanised" -
   and only a material the family already holds: the exact name, or the same
@@ -199,9 +201,12 @@ compatibility-note: >
   (api-surface, read 2026-09-24). A parameter's KIND does not: it is
   `Definition.ParameterType` up to 2022 and `Definition.GetDataType()` from 2022,
   so it is read by reflection and compared with the SpecTypeId property, or the
-  enum name, of each kind this writes. Units are plain arithmetic at the edge -
-  millimetres divided by 304.8, degrees times pi over 180 - never a units API,
-  which is what breaks across 2021.
+  enum name, of each kind this writes. Lengths and angles are plain arithmetic
+  at the edge - millimetres divided by 304.8, degrees times pi over 180. Every
+  other measured kind (version 4) uses `UnitFormatUtils.TryParse` and `Format`
+  with the family's `Units`: by `Definition.UnitType` on 2020 and 2021, by
+  `Definition.GetDataType()` from 2022 - an `#if REVIT2020 || REVIT2021`, the
+  units API's own break.
 
 # ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
