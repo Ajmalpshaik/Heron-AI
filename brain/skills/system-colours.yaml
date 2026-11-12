@@ -267,11 +267,11 @@ note: >
   key for a view's filters, and the method says so under NOT HERE instead of
   describing one.
 
-  What only Revit can show is in NEEDS-CHECKING Group NQ: what
+  What only Revit can show is in NEEDS-CHECKING Group NR: what
   CREATE_VIEW_FILTER answers on a view whose template holds its filters -
   step 1 stops before it, on REPORT_VIEW_FILTERS' word; that the colours read
   back in readBack are the ones on the view; and that COPY_VIEW_FILTERS
   carries each colour to a second view.
 
   DRAFT until the whole order has been run on a saved scratch copy and the
-  views looked at by a person: NEEDS-CHECKING Group NQ.
+  views looked at by a person: NEEDS-CHECKING Group NR.

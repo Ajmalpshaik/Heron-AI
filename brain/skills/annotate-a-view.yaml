@@ -280,7 +280,7 @@ note: >
   CREATE_DIMENSION's offset and FIND_OVERLAPPING_TAGS' threshold, off the
   card's code and its recorded proof run.
 
-  What only Revit can show is in NEEDS-CHECKING Group NQ: that a filter
+  What only Revit can show is in NEEDS-CHECKING Group NR: that a filter
   carrying several tag categories at once hands ARRANGE_TAGS what it expects
   (the cards' own proofs ran one category a call, which is what step 4
   gives); that step 3 read again after step 4 comes back clear on a crowded
@@ -288,4 +288,4 @@ note: >
   annotation categories.
 
   DRAFT until the whole order has been run on a saved scratch copy and the
-  view looked at by a person: NEEDS-CHECKING Group NQ.
+  view looked at by a person: NEEDS-CHECKING Group NR.

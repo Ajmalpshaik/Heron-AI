@@ -865,7 +865,7 @@ def main():
                   [u["capability"] for u in layout["uses"]],
                   "and never syncs - it asks the modeller to")
 
-            # THREE EVERYDAY MEP JOBS, 2026-11-12 (NEEDS-CHECKING Group NQ):
+            # THREE EVERYDAY MEP JOBS, 2026-11-12 (NEEDS-CHECKING Group NR):
             # annotate a view, colour a view by system, spaces and zones from
             # the architect's link. Each was written from cards the library
             # already has, so what is held here is that it still is: served,
