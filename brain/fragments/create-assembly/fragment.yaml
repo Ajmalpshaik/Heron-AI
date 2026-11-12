@@ -13,35 +13,50 @@ version: 2
 source: OFFICIAL
 risk: MODIFY
 
-# VERSION 2 (2026-11-11) - "NOTHING WAS MADE" IS TRUE WHEN IT IS SAID, and back
-# to DRAFT. Version 1 was signed PROVEN on 2026-10-21 (the proof block below,
-# kept as the record of what was signed); its C# moved, so it is DRAFT again
-# until NEEDS-CHECKING Group NL is run (D-30, D-117).
+# VERSION 2 (2026-11-12) - MADE IN ONE TRANSACTION AND NAMED IN THE NEXT, ALL
+# OR NOTHING, and back to DRAFT. Version 1 was signed PROVEN on 2026-10-21 (the
+# proof block below, kept as the record of what was signed); its C# moved, so
+# it is DRAFT again until NEEDS-CHECKING Group NL is run (D-30, D-117).
 #
 # READ THAT PROOF BLOCK BEFORE TRUSTING IT. Its POSITIVE case is the defect:
 # "assembly (null) ... memberIds 2 item(s) ... refused Revit refused the
 # assembly: No valid type for the assembly instance.. NOTHING WAS MADE." No
 # assembly was ever seen made by this card - the count of `memberIds` passed
 # the judgement, the same as on 2026-10-18 (FRAGMENT-ISSUES row 5b-1117).
+# Read in the code: version 1's catch took nothing back, and the add-in keeps
+# a change unless something throws out of the fragment - so with the change
+# kept, an assembly stayed in the model beside "NOTHING WAS MADE". That
+# leftover was never looked for in a Revit.
 #
-# WHAT VERSION 2 CHANGES: the making sits in one SubTransaction, kept only
-# after its members and name have been read back, and `memberIds` is filled
-# only then. A refusal part way rolls it back, so the half-made assembly is
-# not left in the model and `memberIds` stays empty. Read in the code
-# 2026-11-11: version 1's catch took nothing back, and the caller's
-# transaction is kept unless something throws out of the fragment - so with
-# the change kept, an assembly stayed in the model beside "NOTHING WAS MADE".
-# That leftover has not been looked for in a Revit.
-#
-# WHAT IT DOES NOT CHANGE - FRAGMENT-ISSUES row 5b-1553, OPEN. Both measured
-# refusals are the same sentence, and Revit's own remark on
-# AssemblyInstance.Create explains it on all eight releases: "Transaction must
+# WHY TWO TRANSACTIONS - FRAGMENT-ISSUES row 5b-1553. Revit's own remark on
+# AssemblyInstance.Create, the same on all eight releases: "Transaction must
 # be committed after calling this method before performing any action on the
 # newly created instance. Assembly type is assigned after the transaction for
-# creating assembly instance is complete." This card names the assembly, and
-# reads its name, inside the transaction that makes it. So until that row is
-# repaired the expected answer is the refusal - now a true one - and the
-# card's positive case cannot pass. Nothing of version 2 has run in Revit.
+# creating assembly instance is complete." Version 1 named the assembly, and
+# read its name, inside the one transaction that made it; both recorded runs
+# are that refusal. So this card now declares `editScopeFailures`, D-112's
+# switch, as the stair cards do: the add-in runs it inside its TransactionGroup
+# with no transaction of its own open, and the card makes the assembly in one
+# transaction, commits, and names it in a second. One group, so ONE undo.
+#
+# THAT SWITCH WAS DECIDED FOR REVIT'S EDIT MODES (D-112, still Proposed), and
+# an assembly is not one. Using it here was the manager's decision of
+# 2026-11-12; the owner's to confirm, with the run.
+#
+# NOT MEASURED, AND THE CARD RESTS ON IT: whether Revit assigns the type at a
+# commit made INSIDE an open TransactionGroup. NEEDS-CHECKING NL9 is the run
+# that says. If Revit does not, the second step fails and the card refuses -
+# truthfully: whatever fails after the first commit takes the assembly apart
+# again (Disassemble, which releases the members), the model is READ - the
+# assembly gone, its type gone, every element in no assembly - and only then
+# is "NOTHING WAS MADE" said. If it does not read so, the card throws and the
+# add-in rolls the whole job back.
+#
+# IT CAN NO LONGER BE A SETUP STEP OF ANOTHER CARD'S PROOF: a setup step runs
+# inside the add-in's own step transaction, where this card cannot open its
+# own (tools/jobs/p1102-round9-2026-11-02.yaml arranged CREATE_ASSEMBLY_VIEWS
+# that way). An assembly for another proof is made and KEPT first.
+# Nothing of version 2 has run in Revit.
 
 # WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
 # searched and long text pulls other sentences here.
@@ -54,12 +69,14 @@ risk: MODIFY
 # by name it must be one Revit accepts for the set; empty takes the first
 # element's category.
 #
-# READ BACK: members and type name off the new assembly.
+# READ BACK: members and type name off the new assembly, after its own
+# transaction is committed - and a result is given only then.
 #
 # CREATE_ASSEMBLY_VIEWS makes the shop drawing views of an EXISTING assembly;
 # GROUP_ELEMENTS makes a group, which is not an assembly.
 #
-# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+# OPENS ITS OWN TRANSACTIONS inside the add-in's group, with none of the
+# add-in's open - D-112's `editScopeFailures`. Still one undo (Golden Rule 16).
 purpose: >
   Creates an assembly from the elements handed in - Create Assembly in the
   ribbon - named as asked, ready for its shop drawing views.
@@ -68,9 +85,15 @@ contract:
   needs:
     - name: doc
       type: Document
+    # D-112's switch: the add-in runs this with no transaction of its own
+    # open, and hands in the failure discipline every transaction here takes.
+    - name: editScopeFailures
+      type: IFailuresPreprocessor
+      source: ambient
     - name: elements
       type: IList<Element>
-    # The assembly's name; an EMPTY value lets Revit name it.
+    # The assembly's name; an EMPTY value lets Revit name it. A name Revit
+    # will not take - one already used - is refused and NOTHING is made.
     - name: assemblyName
       type: string
       source: request
@@ -81,6 +104,8 @@ contract:
       source: request
   provides:
     - name: assembly
+      # The assembly, after it has been made, named and read back with a type
+      # - null whenever anything was refused (version 2).
       role: result
       type: AssemblyInstance
     - name: memberIds
@@ -94,7 +119,8 @@ contract:
       type: IList<ElementId>
     - name: refused
       # Why NOTHING WAS MADE, as one sentence; null otherwise (D-52). Version
-      # 2: whatever Revit had started is rolled back before this is said.
+      # 2: an assembly Revit had already made is taken apart again and the
+      # model read before this is said.
       role: accounting
       type: string
     - name: findings
@@ -139,11 +165,14 @@ compatibility-note: >
   - read off RevitAPI.xml in the Nice3point reference packages for all eight
   releases on 2026-10-12.
 
-  Version 2 adds `SubTransaction` - its constructor, `Start`, `Commit`,
-  `RollBack`, `HasStarted` and `HasEnded` - on every release 2020 to 2027
-  (`tools/api-surface --members`, 2026-11-11). The same RevitAPI.xml carries
+  Version 2 opens its own `Transaction`s and adds `AssemblyInstance.Disassemble`,
+  `Element.GetTypeId`, `Transaction.GetFailureHandlingOptions` and
+  `SetFailureHandlingOptions`, and `FailureHandlingOptions.SetFailuresPreprocessor`
+  and `SetClearAfterRollback` - each on every release 2020 to 2027
+  (`tools/api-surface --members`, 2026-11-12). The same RevitAPI.xml carries
   the remark on `AssemblyInstance.Create` that row 5b-1553 is about, word for
-  word the same in all eight.
+  word the same in all eight, and says of `Disassemble`: "Removes the assembly
+  instance and releases the member elements."
 
 # ROUTING - the same rows are in the fragments named here.
 #

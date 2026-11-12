@@ -4,34 +4,55 @@ positive:
   - given: three pipes and two pipe fittings in one run, assemblyName "Spool 01", namingCategory "Pipes"
     expect: >
       one assembly named Spool 01, memberIds the five elements, read back.
-      NOT YET SEEN ON ANY RUN, AND NOT EXPECTED UNTIL ROW 5b-1553 IS REPAIRED:
-      Revit gives a new assembly its type only after the transaction that made
-      it is committed, and this card names it inside that transaction. What
-      version 2 is expected to answer here is the first negative below
+      NEVER SEEN ON ANY RUN OF VERSION 1 - it named the assembly inside the
+      transaction that made it, and Revit assigns the type only at that
+      transaction's commit (row 5b-1553). Version 2 commits first and names in
+      a second transaction; whether Revit assigns the type at a commit inside
+      the add-in's open group is what the first run of this case decides
 
   - given: >
-      version 2, once row 5b-1553 is repaired - the same five elements,
-      assemblyName empty
+      version 2, THE CASE THAT DECIDES IT, Group NL (NL9 and NL10) - elements
+      Revit will assemble (the ducts in one small view), namingCategory their
+      own category, assemblyName a name no assembly has. Count the entries
+      under Assemblies in the Project Browser first
     expect: >
-      one assembly under the name Revit gives it, `assembly` not null, and
-      memberIds the five elements. The Project Browser's Assemblies node shows
-      exactly one new entry
+      `assembly` NOT null, memberIds the elements, and the finding "Made
+      assembly "<the name asked for>" with N member(s), read back". Through
+      `try-once`, answered Keep: ONE new entry under Assemblies with exactly
+      that name, each element's Properties naming it, and ONE entry in Revit's
+      undo list - one Undo takes the assembly AND its name away together.
+      Nothing else is a pass: a filled memberIds beside a null `assembly`
+      cannot happen in version 2, and would be the old defect
+
+  - given: version 2 - the same elements, assemblyName empty
+    expect: >
+      one assembly under the name Revit gives it, the finding quoting that
+      name, `assembly` not null
 
 negative:
   - given: >
-      version 2 (5b-1117), THE CASE THE ROW IS ABOUT, Group NL - any elements
-      Revit will assemble (two ducts, or two pieces of furniture),
-      namingCategory their own category, assemblyName given or empty. Count
-      the entries under Assemblies in the Project Browser first
+      version 2 (5b-1117), ALL OR NOTHING, Group NL - the same elements,
+      assemblyName a name an assembly of that category ALREADY has (make one
+      and keep it first), so Revit makes the assembly and then refuses the name
     expect: >
-      while row 5b-1553 is open: `refused` quoting Revit and ending "What it
-      had started was taken back, so NOTHING WAS MADE", `assembly` null and
-      memberIds EMPTY - never the elements handed in. Then the same call
-      through `try-once`, answered Keep: the Assemblies node holds what it
-      held, and no element reports an assembly in its Properties (Undo
-      afterwards). Version 1 answered the same sentence with memberIds filled;
-      its code took nothing back, so a kept run left the assembly in the model
-      - read in the code, never looked for in Revit
+      `refused` quoting REVIT'S OWN WORDS for the name, then "It was taken
+      apart again and the model read ... NOTHING WAS MADE"; `assembly` null and
+      memberIds EMPTY. Afterwards the Assemblies node holds what it held
+      before, no element reports an assembly it was not in, and no unused
+      assembly type is left. If the answer is instead
+      "threw while running ... Heron stopped here so that the whole job is
+      rolled back", the taking-apart did not read clean and the add-in undid
+      everything - the model must read the same, and the words go on row
+      5b-1117
+
+  - given: >
+      version 2 - if Revit does NOT assign the type at a commit inside the
+      group: any call at all
+    expect: >
+      the same shape of refusal, quoting "No valid type for the assembly
+      instance" or what Revit says in its place, memberIds EMPTY and nothing
+      left in the model. Then row 5b-1553 stays open with those words, and
+      the card is not signed
 
   - given: the same five elements straight after
     expect: >
@@ -48,4 +69,7 @@ second_route:
     version 2 - after a REFUSED run that was kept: the Assemblies node counted
     before and after, and one of the elements selected - its Properties must
     show no assembly. The report alone cannot settle whether anything was left
+  - >
+    version 2 - Revit's undo list after a kept run: ONE entry for the job,
+    whatever the card did inside it
   - one Ctrl+Z takes it away in a single step (Golden Rule 16)
