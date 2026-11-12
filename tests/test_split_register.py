@@ -66,9 +66,10 @@ WHAT IS PROVED
      row an older branch appended to the rows file is read in the same
      order, and `--new-rows` moves it alone, with every link that names it,
      and re-bands nothing; a number held in both layouts is read twice and
-     the move is refused; a file that is not what its name says, and a
-     reader that cannot list the folder, are RegisterBroken; and the archive
-     tool leaves a finished row's line in the row's own file.
+     the move is refused; a file that is not what its name says or that
+     holds words under its table, and a reader that cannot list the folder,
+     are RegisterBroken; and the archive tool leaves a finished row's line
+     in the row's own file.
 """
 
 import contextlib
@@ -899,6 +900,9 @@ def own_file_case(work):
     put(wrong, own_file(6, "Six.", "OPEN - new.").rstrip(NL) + NL
         + "| **7** | **Seven.** | OPEN - new. |" + NL)
     check(raises(lambda: whole(root)), "and one that holds a second row beside its own")
+    put(wrong, own_file(6, "Six.", "OPEN - new.") + NL + "A note under the table, which would be read "
+        "into the middle of the register's table." + NL)
+    check(raises(lambda: whole(root)), "and one with words under its table: the file ends with its row")
     os.remove(wrong)
     check(not raises(lambda: whole(root)), "taken away, it reads whole again")
     served = dict((os.path.join(folder, n).replace(os.sep, "/"), read(os.path.join(folder, n)))

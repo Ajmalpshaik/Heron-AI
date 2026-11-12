@@ -63,7 +63,8 @@ section is the failure a register exists to prevent, so a line naming a file
 that is not there, a section's file that does not open with the heading that
 names it, or a rows file with no table, raises RegisterBroken rather than
 returning a shorter register. So does a row's own file that holds any row
-but the one its name says, a file named like one that is not one
+but the one its name says or any text under its table, a file named like
+one that is not one
 (row-5b-1564-copy.md would otherwise be a row nobody reads), and a caller
 that serves the register from memory and gave no way to list the folder. An index that names no file is returned as it
 is: that is how a register that was never split, and every register a suite
@@ -529,8 +530,16 @@ def register_text(index, read=None, listing=None):
         if table is None:
             raise RegisterBroken("%s/%s holds no table, and its name says it holds row %d of %r"
                                  % (folder, name, number, heading))
-        top, _ = table
-        body = got[top + 2:last_filled(got, top, len(got))]
+        top, bottom = table
+        # THE FILE ENDS WITH ITS ROW. A rows file is read to its last line,
+        # and words under a row's own table would be read into the register's
+        # table as part of the row - a blank line and a paragraph in the
+        # middle of the rows that follow.
+        if any(line.strip() for line in got[bottom:]):
+            raise RegisterBroken("%s/%s holds text under its table, and a row's own file ends with "
+                                 "its row - what is to be said of row %d goes in the row's cells"
+                                 % (folder, name, number))
+        body = got[top + 2:bottom]
         has = [n for n, _ in row_groups(body) if n is not None]
         if has != [number] or not ROW.match(body[0]):
             raise RegisterBroken("%s/%s holds %s, and its name says it holds row %d alone"
