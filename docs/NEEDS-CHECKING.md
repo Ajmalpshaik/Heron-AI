@@ -1474,9 +1474,9 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-nq.md`](needs-checking/group-nq.md)
 
-## Group NR - a dry run from the chat: `revit_change` with `dry_run` (2026-11-12)
+## Group NT - a dry run from the chat: `revit_change` with `dry_run` (2026-11-12)
 
-**Its own file:** [`needs-checking/group-nr.md`](needs-checking/group-nr.md)
+**Its own file:** [`needs-checking/group-nt.md`](needs-checking/group-nt.md)
 
 ## Group NS - a write's values before and after: `readBack` (2026-11-12)
 
