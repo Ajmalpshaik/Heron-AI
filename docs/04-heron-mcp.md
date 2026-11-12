@@ -471,7 +471,7 @@ Tested without Revit.
 | **Work it out** | HVAC and fire protection calculations | `READ` for `heron_hvac` and `heron_fire`, arithmetic on the values given; `ANALYZE` for the three that read the model first | nothing, and none of them changes the model. Writing a result back is the Companion page's Apply, at `MODIFY` (`heron_tools.COMPANION_ACTIONS`) | `heron_hvac`, `heron_fire`, `revit_building_loads`, `revit_sprinkler_hydraulics`, `revit_sprinkler_layout` |
 | **Read the model** | answer a question about the model in front | `READ`, `ANALYZE` | a connected Revit; Changes may be off | `revit_read` (door); fixed readers such as `revit_levels`, `revit_views`, `revit_sheets`, `revit_rooms`, `revit_parameters`, `revit_worksets`; `revit_view_image` |
 | **Show on screen** | select, zoom, open a view, isolate for now | `EXECUTE` | a connected Revit; Changes may be off | `revit_show` (door), `revit_select_by_category`, `revit_isolate_temporary`, `revit_reset_temporary` |
-| **Change the model** | keep a change | `MODIFY`; `PUBLISH` and `ADMIN` through `revit_change` only | Changes; Publish or Admin as well for those levels | `revit_change` (door); `revit_preview_move` (`ANALYZE`) then `revit_apply_move` |
+| **Change the model** | keep a change | `MODIFY`; `PUBLISH` and `ADMIN` through `revit_change` only | Changes; Publish or Admin as well for those levels | `revit_change` (door); `revit_preview_move` (`ANALYZE`) then `revit_apply_move`; `revit_undo_last`, which makes no change of its own - it sends Revit's own Undo for Heron's last kept change, only while Heron has seen nothing change that model since ([D-157](decisions/D-157.md)), and with `check_only` sends nothing and needs no switch |
 | **Connect and check** | which Revit, which model, is Heron working | `READ` | nothing | `revit_health`, `revit_use_session`, `revit_use_this_model`, `heron_version`, `heron_diagnose`, `heron_companion` |
 | **Saved commands** | keep a job as a named command; list, show, delete ([docs/49](49-saved-commands-and-the-heron-panel.md)) | `READ` - writes only the modeller's own command files | nothing. Running one is `revit_change` or `revit_read`, from the chat or from Revit's Heron panel | `heron_commands` |
 | **QA checklists** | keep checks in the modeller's words as a named checklist; list, show, save, a starter, run, delete ([docs/50](50-qa-checklists.md)) | `ANALYZE` through `run_fragment_read` - `revit_read`'s own level, because `run` reads the model check by check through it; the rest writes only the modeller's own checklist files | a connected Revit to run; Changes may be off. Each check must be PROVEN, or it is NOT RUN | `heron_checklist` |
@@ -1065,9 +1065,9 @@ add-in's own `verdictKind` — and shown to the Companion's activity list alone,
 ([row 5b-1159](fragment-issues/section-5b-rows-401-425.md)). It got that wrong more than once: a refusal
 read as success, and *"never ran"* said of an answer that was lost.
 
-- **The three doors say it on one line** — `revit_change`, `revit_read` and `revit_show`
-  (`heron_tools.STATES_OUTCOME`). The line is `outcome: `, a word, and what the word means and what to do
-  next:
+- **The three doors say it on one line** — `revit_change`, `revit_read` and `revit_show` — **and so
+  does `revit_undo_last`**, since 2026-11-12 (`heron_tools.STATES_OUTCOME`). The line is `outcome: `, a
+  word, and what the word means and what to do next:
 
   ```text
   ADD_CURTAIN_GRID_LINES ran in Project1.
@@ -1093,13 +1093,13 @@ read as success, and *"never ran"* said of an answer that was lost.
   | Word | Said when | Read from |
   |---|---|---|
   | `KEPT` | a change ran and Revit kept its transaction — not a claim that anything changed | the add-in's `verdictKind` is `kept` and no field beside it says otherwise — never `ok` alone |
-  | `ANSWERED` | a read or a show ran to its end and answered | the door's own last return |
+  | `ANSWERED` | a read or a show ran to its end and answered; or `revit_undo_last` with `check_only` said whether Undo would be sent, and sent nothing | the door's own last return |
   | `NOT ANSWERED` | a read stopped before it answered: its code threw, or Heron's clock or a Revit dialog stopped it. Nothing is rolled back, because no transaction was open | `heron_failure`'s `rolled_back`, at `revit_read` |
   | `REFUSED` | Heron or Revit looked at what was asked and said no, or Heron would not show an answer from another model | `_ended("refused")`, or `heron_failure`'s `refused` for a code it has a row for |
   | `NOT RUN` | nothing said no: there was no capability by that name or those words, no Revit session to send it to, Heron's library could not be read, or Revit was busy or held by another chat | the door, `_ended("handed_back")`, or `heron_failure`'s `never_ran` |
   | `ROLLED BACK` | a change was not kept: it failed part way, Heron stopped it, or the modeller pressed Discard | `heron_failure`'s `rolled_back` at `revit_change`, or a Discard whose `rolledBack` is true |
-  | `STILL RUNNING` | Revit took it and has not finished, or is still asking the modeller | `heron_failure`'s `running` |
-  | `OUTCOME UNKNOWN` | the answer was lost, too large, unreadable or not an object; the failure is one Heron has no row for; a rollback was not confirmed, or a verdict contradicts itself; it ran in a model this chat does not work on; a show stopped part way; the door broke after its request had left, or did not say how it ended | `heron_failure`'s `unknown`, and everything the rows above do not claim |
+  | `STILL RUNNING` | Revit took it and has not finished, or is still asking the modeller; or `revit_undo_last` sent Revit's Undo, which Revit runs after the reply - sent, not yet done | `heron_failure`'s `running`; the add-in's own `sent` at `revit_undo_last` |
+  | `OUTCOME UNKNOWN` | the answer was lost, too large, unreadable or not an object; the failure is one Heron has no row for; a rollback was not confirmed, or a verdict contradicts itself; it ran - or Undo was sent - in a model this chat does not work on; a show stopped part way; the door broke after its request had left, or did not say how it ended | `heron_failure`'s `unknown`, and everything the rows above do not claim |
 
   **`REFUSED` or `NOT RUN`:** `REFUSED` when Heron or Revit looked at what was asked and said no to it;
   `NOT RUN` when nothing said no. So nothing by that name is `NOT RUN` whether the capability was named or
@@ -1173,9 +1173,13 @@ has met a real Revit**: which reply the add-in sends for each ending is the C#'s
   real Revit to show it. Until then the line says what a chat can do: not send it again, and ask the
   modeller what Revit shows. A fragment that never ends is stopped by its own run clock
   ([D-129](DECISIONS.md#d-129--a-fragment-that-never-ends-is-stopped-by-a-run-clock-it-carries-and-the-bridge-can-stop-heron-again)).
-- **Only the three doors.** Every other tool that says `_ended` — `revit_apply_move`, the inventory
-  reads, the Companion's panels — still answers in prose alone: each one's "ok" is a different fact, and
-  a tool joins when its returns have been read against the table
-  ([row 5b-1563](fragment-issues/section-5b-rows-401-425.md)).
+- **Only the three doors, and `revit_undo_last`.** Every other tool that says `_ended` —
+  `revit_apply_move`, the inventory reads, the Companion's panels — still answers in prose alone: each
+  one's "ok" is a different fact, and a tool joins when its returns have been read against the table
+  ([row 5b-1563](fragment-issues/section-5b-rows-401-425.md)). `revit_undo_last` joined that way on
+  2026-11-12 ([row 5b-1610](fragment-issues/row-5b-1610.md)): Undo sent is `STILL RUNNING`, never
+  `KEPT`; each refusal `REFUSED`, a chat pinned to no model among them; no session, or an add-in
+  older than the tool, `NOT RUN`; no answer, or an Undo sent in a model this chat does not work on,
+  `OUTCOME UNKNOWN`. Tested without Revit.
 - **Which of the two a host shows its model** — the text or the structured content — is still not
   measured (§8.8). Both carry the word.

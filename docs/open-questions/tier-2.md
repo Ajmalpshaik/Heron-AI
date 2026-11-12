@@ -1527,3 +1527,36 @@ a safer file.
 steps where they bite.
 
 ---
+
+### 🔵 Q-88 — Heron remembers a MODEL's last kept change, not which chat kept it. May one chat undo a change another chat made? *(found 2026-11-12 repairing `revit_undo_last`)*
+
+**What was found.** `revit_undo_last` ([D-157](../decisions/D-157.md)) sends Revit's own Undo for Heron's
+last kept change in a model. The add-in's guard keeps one entry per model - the job, its undo entry, the
+time - and nothing about which chat asked for it. D-157 item 3 refuses when *"the pinned model is not that
+one"*; it says nothing of a chat that has no pinned model, or of two chats in one model. **Built, as the
+cautious reading:** a chat that has worked in no model is refused before anything is sent - it has no
+change of its own there ([row 5b-1604](../fragment-issues/row-5b-1604.md)). **Still possible:** a chat
+that has only *read* a model, or was moved onto it with *use this model*, is pinned to it - and can undo
+the last change another chat kept there, once that chat's hold on the model has lapsed
+([D-141](../decisions/D-141.md)). Nothing is taken that is not Heron's: the guard's other rules stand.
+The question is only whose Heron change.
+
+**The question, in a modeller's words: when you ask a chat to undo what Heron did, may it undo something a
+different chat did?**
+
+1. **Yes - any chat working on the model.** It is your Revit and your undo list; a second chat is still
+   you. **Cost:** *"undo that"* typed into the wrong chat window takes back the other chat's change, and
+   the reply names the job, so you find out after.
+2. **No - only the chat that kept it.** The add-in records which chat kept the change, and another chat
+   is refused: *"another chat made Heron's last change here; press Ctrl+Z, or ask in that chat"*. **Cost:**
+   after closing the chat that made a change, no new chat can undo it for you - Ctrl+Z still does, exactly
+   as today. It needs the add-in rebuilt, one field in the guard and its tests.
+
+**Shape 2 is recommended** - it keeps *"its own last change"* true of the chat as well as of Heron, and
+what it costs is one keystroke. It was not built: D-157 does not say it.
+
+**Ajmal PS decides.** Until he does: a chat pinned to no model is refused, and a chat pinned to the model
+can undo Heron's last change there, whichever chat kept it. None of it has run in Revit
+([NEEDS-CHECKING Group NU](../needs-checking/group-nu.md)).
+
+---
