@@ -1615,6 +1615,8 @@ async def exercise_single_purpose(module, server, newest):
              ("revit_view_image", {}),
              ("revit_isolate_temporary", {"category": "ducts"}),
              ("revit_reset_temporary", {}),
+             # D-157. One request, the pin sent and checked.
+             ("revit_undo_last", {}),
              # D-141. One request and no pin: handing a model back reads and
              # changes none, so neither the model's name nor the pin is its.
              ("revit_release", {}))

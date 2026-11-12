@@ -98,9 +98,10 @@ def wiring():
     listener = NOTE.body_of(code, "void OnDocumentChanged(")
     hear = at(listener, "if (Undo.Any) HearForUndo(e);")
     early = at(listener, "if (armed == null && !Witness.Any) return;")
-    check(0 <= hear < early,
-          "heard first - a Ctrl+Z or an edit between two jobs is exactly what the guard is "
-          "for, and the witness returns early then")
+    guarded = at(listener, "try")
+    check(0 <= guarded < hear < early,
+          "heard first, inside the listener's own try - a Ctrl+Z or an edit between two jobs "
+          "is exactly what the guard is for, and the witness returns early then")
     hearing = NOTE.body_of(code, "void HearForUndo(")
     check(re.search(r"var\s+ours\s*=\s*armed\s*!=\s*null\s*&&\s*armed\.Document\s*==\s*key\s*;",
                     hearing) is not None,
@@ -118,18 +119,23 @@ def wiring():
     check("DocumentSynchronizedWithCentral += OnSynchronized" in app
           and "DocumentSynchronizedWithCentral -= OnSynchronized" in app,
           "sync with central - which clears Revit's undo list - is heard, and let go at shutdown")
-    check("RevitFragment.UndoSynced(e.Document)" in NOTE.body_of(app, "void OnSynchronized(")
-          and "RevitFragment.UndoForget(e.Document)" in NOTE.body_of(app, "void OnDocumentClosing("),
-          "and each tells the guard - a closed model is forgotten")
+    check("RevitUndo.Synced(e.Document)" in NOTE.body_of(app, "void OnSynchronized(")
+          and "RevitUndo.Forget(e.Document)" in NOTE.body_of(app, "void OnDocumentClosing(")
+          and "RevitFragment" not in NOTE.body_of(app, "void OnSynchronized("),
+          "and each tells the guard through RevitUndo - never RevitFragment, which would "
+          "load Roslyn outside its guard - and a closed model is forgotten")
+    check("internal static readonly HeronUndoGuard Guard" in NOTE.code_only(NOTE.read(OPERATION) or "")
+          and "return RevitUndo.KeyOf(doc);" in NOTE.body_of(code, "string WitnessKey("),
+          "the guard is held by RevitUndo, and the rollback witness keys models the same way")
 
     print("\n4. Undo is posted only after the pin and the guard said yes")
     op = NOTE.code_only(NOTE.read(OPERATION) or "")
     last = NOTE.body_of(op, "public static string Last(")
     pin = at(last, "RevitOperations.ProjectKey(doc) != expectProject")
-    asked = at(last, "RevitFragment.Undo.Refusal(key, doc.Title, true, canPost)")
+    asked = at(last, "Guard.Refusal(key, doc.Title, true, canPost)")
     refused = at(last, "if (refusal != null) return Json.Error(")
     posted = at(last, "app.PostCommand(undo);")
-    sent = at(last, "RevitFragment.Undo.SentFor(key);")
+    sent = at(last, "Guard.SentFor(key);")
     check(0 <= pin < asked < refused < posted < sent,
           "the pinned model, then the guard, then the post - and marked sent after it, so a "
           "second request before Revit reports it is refused")

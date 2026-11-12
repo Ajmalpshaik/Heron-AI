@@ -35,6 +35,50 @@ namespace Heron.Revit.Addin
     /// </summary>
     internal static class RevitUndo
     {
+        /// <summary>
+        /// Whether Heron's last kept change is still the top of each model's
+        /// undo list. Held HERE, in a class that names no compiler, so
+        /// HeronApplication can tell it of a sync or a close without loading
+        /// RevitFragment - and Roslyn with it - outside its guard.
+        /// RevitFragment feeds it from the keep and its permanent listener.
+        /// </summary>
+        internal static readonly HeronUndoGuard Guard = new HeronUndoGuard();
+
+        /// <summary>
+        /// A model's identity as three strings - its CreationGUID where the
+        /// release has one (2024 on), its path, its title. The guid alone is
+        /// shared by copies of one model, so two copies open at once are told
+        /// apart by path; a Save As starts a new key. RevitFragment's rollback
+        /// witness keys by this too, so both watchers agree on a model.
+        /// </summary>
+        internal static string KeyOf(Document doc)
+        {
+            if (doc == null) return null;
+
+            string guid = null;
+            try { guid = RevitOperations.CreationGuid(doc); } catch { }
+            var path = "";
+            try { path = doc.PathName ?? ""; } catch { }
+            var title = "";
+            try { title = doc.Title ?? ""; } catch { }
+
+            return (guid ?? "") + "|" + path + "|" + title;
+        }
+
+        /// <summary>Synchronized with central: Revit cleared the model's undo list.</summary>
+        internal static void Synced(Document doc)
+        {
+            try { Guard.SyncedIn(KeyOf(doc)); }
+            catch (Exception ex) { HeronApplication.Log("Undo guard missed a sync: " + ex.Message); }
+        }
+
+        /// <summary>The model is closing: nothing about its undo list is kept.</summary>
+        internal static void Forget(Document doc)
+        {
+            try { Guard.Closed(KeyOf(doc)); }
+            catch (Exception ex) { HeronApplication.Log("Undo guard could not forget a model: " + ex.Message); }
+        }
+
         public static string Last(UIApplication app, string expectProject)
         {
             var front = app == null ? null : app.ActiveUIDocument;
@@ -53,17 +97,17 @@ namespace Heron.Revit.Addin
                     + "NOTHING was undone. Bring the chat's model to the front and ask again.");
             }
 
-            var key = RevitFragment.UndoKey(doc);
+            var key = KeyOf(doc);
             var undo = RevitCommandId.LookupPostableCommandId(PostableCommand.Undo);
             bool canPost;
             try { canPost = undo != null && app.CanPostCommand(undo); }
             catch (Exception) { canPost = false; }
 
-            var refusal = RevitFragment.Undo.Refusal(key, doc.Title, true, canPost);
+            var refusal = Guard.Refusal(key, doc.Title, true, canPost);
             if (refusal != null) return Json.Error("undo_refused", refusal);
 
-            var said = RevitFragment.Undo.SentSentence(key);
-            var entry = RevitFragment.Undo.Of(key);
+            var said = Guard.SentSentence(key);
+            var entry = Guard.Of(key);
             try
             {
                 app.PostCommand(undo);
@@ -73,7 +117,7 @@ namespace Heron.Revit.Addin
                 return Json.Error("undo_refused",
                     "Revit would not take the Undo command: " + ex.Message + " Nothing was undone.");
             }
-            RevitFragment.Undo.SentFor(key);
+            Guard.SentFor(key);
 
             return Json.Ok(
                 Json.Bool("sent", true),

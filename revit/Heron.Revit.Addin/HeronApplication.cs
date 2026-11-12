@@ -817,7 +817,7 @@ namespace Heron.Revit.Addin
 
             // NOR WHAT HERON KEPT IN IT (D-157): a model opened again has an
             // undo list of its own, and nothing of Heron's is on it.
-            if (e != null && e.Document != null) RevitFragment.UndoForget(e.Document);
+            if (e != null && e.Document != null) RevitUndo.Forget(e.Document);
 
             try
             {
@@ -839,7 +839,7 @@ namespace Heron.Revit.Addin
         /// </summary>
         private static void OnSynchronized(object sender, DocumentSynchronizedWithCentralEventArgs e)
         {
-            if (e != null && e.Document != null) RevitFragment.UndoSynced(e.Document);
+            if (e != null && e.Document != null) RevitUndo.Synced(e.Document);
         }
 
         internal static void Log(string message)

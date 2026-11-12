@@ -390,6 +390,12 @@ def wiring():
           and re.search(r"\bstatic\s+(readonly\s+)?Document\s+\w+\s*[;=]", mover) is None,
           "no static field holds a Document - the sample is keyed by identity strings")
     key = body_of(code, "string WitnessKey(")
+    # SINCE D-157 THE KEY IS BUILT IN RevitUndo.KeyOf, which the undo guard
+    # shares and HeronApplication can reach without loading RevitFragment's
+    # compiler. WitnessKey only delegates; the claim is read where it lives.
+    if "return RevitUndo.KeyOf(doc);" in key:
+        undo = code_only(io.open(os.path.join(ADDIN, "RevitUndo.cs"), encoding="utf-8").read())
+        key = body_of(undo, "string KeyOf(")
     check(all(part in key for part in ("CreationGuid(", "PathName", "Title")),
           "the key is the model's own id, its path and its title")
 

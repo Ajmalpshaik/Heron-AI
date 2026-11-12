@@ -3527,31 +3527,11 @@ namespace Heron.Revit.Addin
         private static readonly HeronRollbackWitness Witness = new HeronRollbackWitness();
 
         /// <summary>
-        /// Whether Heron's last kept change is still the top of each model's
-        /// undo list - D-157's guard for undo_last. Fed by the same permanent
-        /// listener and the same keep as the witness above; see HeronUndoGuard.
+        /// D-157's undo guard, held by RevitUndo - which names no compiler, so
+        /// a closing model or a sync can reach it without loading Roslyn - and
+        /// fed from here by the keep and the permanent listener.
         /// </summary>
-        internal static readonly HeronUndoGuard Undo = new HeronUndoGuard();
-
-        /// <summary>A model's key for the undo guard - the witness's own, so both agree.</summary>
-        internal static string UndoKey(Document doc)
-        {
-            return WitnessKey(doc);
-        }
-
-        /// <summary>Synchronized with central: Revit cleared the model's undo list.</summary>
-        internal static void UndoSynced(Document doc)
-        {
-            try { Undo.SyncedIn(WitnessKey(doc)); }
-            catch (Exception ex) { HeronApplication.Log("Undo guard missed a sync: " + ex.Message); }
-        }
-
-        /// <summary>The model is closing: nothing about its undo list is kept.</summary>
-        internal static void UndoForget(Document doc)
-        {
-            try { Undo.Closed(WitnessKey(doc)); }
-            catch (Exception ex) { HeronApplication.Log("Undo guard could not forget a model: " + ex.Message); }
-        }
+        private static HeronUndoGuard Undo { get { return RevitUndo.Guard; } }
 
         /// <summary>
         /// Start watching one write job: count the last kept job's elements as
@@ -3583,16 +3563,9 @@ namespace Heron.Revit.Addin
         /// </summary>
         private static string WitnessKey(Document doc)
         {
-            if (doc == null) return null;
-
-            string guid = null;
-            try { guid = RevitOperations.CreationGuid(doc); } catch { }
-            var path = "";
-            try { path = doc.PathName ?? ""; } catch { }
-            var title = "";
-            try { title = doc.Title ?? ""; } catch { }
-
-            return (guid ?? "") + "|" + path + "|" + title;
+            // ONE KEY FOR BOTH WATCHERS: the undo guard (D-157) keys the same
+            // models, and is told by HeronApplication without naming this class.
+            return RevitUndo.KeyOf(doc);
         }
 
         /// <summary>
@@ -3644,14 +3617,14 @@ namespace Heron.Revit.Addin
         private static void OnDocumentChanged(object sender,
             Autodesk.Revit.DB.Events.DocumentChangedEventArgs e)
         {
-            // D-157: EVERY CHANGE TO A MODEL WHERE HERON KEPT ONE, heard before
-            // the witness's own early return - a Ctrl+Z or the modeller's own
-            // edit between two jobs is exactly what the undo guard is for. One
-            // dictionary test when Heron has kept nothing.
-            if (Undo.Any) HearForUndo(e);
-
             try
             {
+                // D-157: EVERY CHANGE TO A MODEL WHERE HERON KEPT ONE, heard
+                // before the witness's own early return - a Ctrl+Z or the
+                // modeller's own edit between two jobs is exactly what the undo
+                // guard is for. One dictionary test when Heron has kept nothing.
+                if (Undo.Any) HearForUndo(e);
+
                 var armed = Witness.Armed;
                 if (armed == null && !Witness.Any) return;
 

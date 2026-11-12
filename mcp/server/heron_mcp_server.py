@@ -3651,19 +3651,23 @@ def revit_undo_last() -> str:
                             op_args={"expectProject": pinned.project_information_id or ""},
                             idempotent=False)
     session.close()
-    _ctx_reply(reply)
+    _ended_by_reply("revit_undo_last", reply)
 
-    failure = analyse(reply, writes=tools.writes("revit_undo_last"))
-    if failure is not None:
-        return _ended(_failure_ended(failure), explain(failure))
+    if reply is None:
+        return ("Revit %s (session %s) did not answer, so whether Undo was sent cannot be "
+                "known from here. Look at Revit's undo list before asking again."
+                % (session.revit_version, session.pid))
+
+    if not reply.get("ok"):
+        return reply.get("message") or reply.get("error") or "The request was refused."
 
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
-        return wrong_model
+        return _ended("refused", wrong_model)
 
-    return _ended("ok", "%s (%s, Revit %s, session %s)" % (
+    return "%s (%s, Revit %s, session %s)" % (
         reply.get("said") or "Undo was sent.", reply.get("document"),
-        session.revit_version, session.pid))
+        session.revit_version, session.pid)
 
 
 @server.tool()
