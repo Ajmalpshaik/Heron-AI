@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -193,51 +193,41 @@ contract:
 # IO proves version 3 (D-30). It ran `which` "all" and a project, both of
 # which version 3 answers as version 2 did.
 proof:
-  date: '2026-11-02'
+  date: '2026-11-12'
   by: Ajmal PS
-  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: P1102 MEP Family, P1102 Family - active
-    was P1102 MEP, Revit 2020, session 59096'
-  positive_case: 'run as it would normally be run. returned combinationList , elements 7 item(s)
-    [Extrusion, Extrusion, Extrusion, ...], findings 2 item(s) [7 form(s) of 7 in the family;
-    0 join(s) or cut(s)., 7 form(s) handed on as elements - SET_SELECTION highlights t...],
-    formCount 7, formList solid extrusion a0683e65-4584-4c07-94d1-ebbad3e4649b-000009cb (on
-    Ref. Level): X 0 to 539.8, Y 0 to 184.1, Z 0 to 38.1 mm, 3.787 L, subcategory (the family''s
-    own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid extrusion
-    a0683e65-4584-4c07-94d1-ebbad3e4649b-000009e2 (on Center (Left/Right)): X 63.6 to 463.6,
-    Y -12.7 to 184.1, Z 38.1 to 222.3 mm, 14.262 L, subcategory (the family''s own), shows
-    in coarse, medium, fine | plan, front/back, left/right  ||  solid extrusion a0683e65-4584-4c07-94d1-ebbad3e4649b-000009f9
-    (on Center (Left/Right)): X 14 to 489, Y 184.1 to 495.3, Z -38.1 to 222.3 mm, 38.479 L,
-    subcategory (the family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
-    extrusion a0683e65-4584-4c07-94d1-ebbad3e4649b-00000a17 (on Center (Front/Back)): X 503.3
-    to 525.5, Y 184.1 to 209.5, Z 7.9 to 30.2 mm, 0.01 L, subcategory (the family''s own),
-    shows in coarse, medium, fine | plan, front/back, left/right  ||  solid extrusion a0683e65-4584-4c07-94d1-ebbad3e4649b-00000a23
-    (on Center (Left/Right)): X 463.6 to 489, Y 46 to 61.9, Z 106.4 to 122.2 mm, 0.005 L,
-    subcategory (the family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
-    extrusion a0683e65-4584-4c07-94d1-ebbad3e4649b-00000a2a (on Center (Left/Right)): X 463.6
-    to 489, Y 100 to 115.9, Z 106.4 to 122.2 mm, 0.005 L, subcategory (the family''s own),
-    shows in coarse, medium, fine | plan, front/back, left/right  ||  solid extrusion a0683e65-4584-4c07-94d1-ebbad3e4649b-00000a39
-    (on Ref. Level): X 0 to 14, Y 393.7 to 469.9, Z 174.7 to 200.1 mm, 0.027 L, subcategory
-    (the family''s own), shows in coarse, medium, fine | plan, front/back, left/right, ids
-    0 item(s), invariant CultureInfo, joins 0 item(s), kindOf Func`2, known 9 item(s) [solid,
-    void, extrusion, ...], mm Func`2, named HashSet`1, namedInOrder 0 item(s), notAFamily
-    false, notNamed false, parts 0 item(s), planeOf Func`2, problems 0 item(s), refused (null),
-    rows 7 item(s) [solid extrusion a0683e65-4584-4c07-94d1-ebbad3e4649b-000009c..., solid
-    extrusion a0683e65-4584-4c07-94d1-ebbad3e4649b-000009e..., solid extrusion a0683e65-4584-4c07-94d1-ebbad3e4649b-000009f...,
-    ...], scanned 7, squash Func`2, words 0 item(s). inputs came which as given. on P1102
-    MEP Family'
-  negative_case: run against 'P1102 Family' with which=all instead - chosen because it should
-    not contain what this fragment reports. returned combinationList , elements 0 item(s),
-    findings 3 item(s) [0 form(s) of 0 in the family; 0 join(s) or cut(s)., This family has
-    no forms yet - nothing has been modelled in ..., 0 form(s) handed on as elements - SET_SELECTION
-    highlights t...], formCount 0, formList , ids 0 item(s), invariant CultureInfo, joins
-    0 item(s), kindOf Func`2, known 9 item(s) [solid, void, extrusion, ...], mm Func`2, named
-    HashSet`1, namedInOrder 0 item(s), notAFamily false, notNamed false, parts 0 item(s),
-    planeOf Func`2, problems 0 item(s), refused (null), rows 0 item(s), scanned 0, squash
-    Func`2, words 0 item(s). inputs came which as given. on P1102 Family
+  model: Heron Link Detail Test (1,503 elements), Revit 2020, session 33000
+  positive_case: run as it would normally be run. returned combinationList , edgesOf 1 entry(ies),
+    edgesUnread 0, elements 2 item(s) [Line, Detail Filled Region], findings 4 item(s) [2
+    2D element(s) of 2 lines, regions and nested families matc..., 0 form(s) of 0 in the family;
+    0 join(s) or cut(s)., This family has no forms yet - nothing has been modelled in ...,
+    ...], formCount 0, formList , ids 0 item(s), invariant CultureInfo, isViewBased Func`2,
+    joins 0 item(s), kind2D Func`2, kindOf Func`2, known 9 item(s) [solid, void, extrusion,
+    ...], mm Func`2, named HashSet`1, named2D false, namedInOrder 0 item(s), notAFamily false,
+    notNamed false, parts 1 item(s) [2d], planeOf Func`2, problems 0 item(s), refused (null),
+    regionOfEdge 3 entry(ies), regions 1 item(s) [Detail Filled Region], rows 0 item(s), scanned
+    0, squash Func`2, twoDCount 2, twoDList detail line 3c975bca-b042-4e80-baf8-2fdebc27245c-0000080c
+    (in view Ref. Level), from 0,0,0 to 300,0,0 mm, 300 long, style Detail Items, Visible
+    yes, nothing holds it  ||  filled region 3c975bca-b042-4e80-baf8-2fdebc27245c-0000080f
+    (in view Ref. Level), type Solid Fill - Black, 1 loop(s), X 300 to 600, Y -80 to 80, Z
+    0 to 0 mm, 3 sketch edge(s), Visible yes, nothing holds it, twoDWords 16 entry(ies), wanted2D
+    HashSet`1, words 0 item(s), words2D 1 item(s) [2d]. inputs came which as given. on Heron
+    Link Detail Test
+  negative_case: run with which=nested instead - chosen because it should not contain what
+    this fragment reports. returned combinationList , edgesOf 1 entry(ies), edgesUnread 0,
+    elements 0 item(s), findings 4 item(s) [0 2D element(s) of 2 lines, regions and nested
+    families matc..., 0 form(s) of 0 in the family; 0 join(s) or cut(s)., This family has
+    no forms yet - nothing has been modelled in ..., ...], formCount 0, formList , ids 0 item(s),
+    invariant CultureInfo, isViewBased Func`2, joins 0 item(s), kind2D Func`2, kindOf Func`2,
+    known 9 item(s) [solid, void, extrusion, ...], mm Func`2, named HashSet`1, named2D false,
+    namedInOrder 0 item(s), notAFamily false, notNamed false, parts 1 item(s) [nested], planeOf
+    Func`2, problems 0 item(s), refused (null), regionOfEdge 3 entry(ies), regions 1 item(s)
+    [Detail Filled Region], rows 0 item(s), scanned 0, squash Func`2, twoDCount 0, twoDList
+    , twoDWords 16 entry(ies), wanted2D HashSet`1, words 0 item(s), words2D 1 item(s) [nested].
+    inputs came which as given. on Heron Link Detail Test
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: fd07c9faafcdd691
+  fingerprint: e4a1c3bb31a47ced
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
