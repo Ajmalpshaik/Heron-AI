@@ -15,8 +15,8 @@
 > | **Waiting on you?** | `python tools/owner-queue.py` — **never a list typed on this page** |
 > | **Adding to it** | One row per fragment or defect, with **the model it was seen on named**. A defect found while tidying is **recorded, not fixed** |
 > | **Its numbers** | Counts inside a row describe **the day it was written** and are deliberately not updated. Derive today's: `grep -rh '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c` |
-> | **Where each section lives** | Since 2026-09-23 **each section is its own file** in [`fragment-issues/`](fragment-issues/section-1.md) — [section 1's](fragment-issues/section-1.md), for one — and this page keeps the rules and, where each section was, its heading and a line naming its file. **Sections 5 and 5b keep their own words here, and their rows are in files of 25 by number:** row 5b-62 is in `fragment-issues/section-5b-rows-051-075.md`. **A new row goes at the end of its section's last file.** The whole register, read as one text: `python tools/register-text.py docs/FRAGMENT-ISSUES.md` |
-> | **Finished rows** | A finished row of section 5 or 5b keeps its line in its rows file — its number, a one-line title and the opening of its state — and its full text moves to [`fragment-issues-archive/`](fragment-issues-archive/README.md). **Nothing is deleted, and an open row always stays in full.** `python tools/archive-fragment-issues.py` says what would move |
+> | **Where each section lives** | Since 2026-09-23 **each section is its own file** in [`fragment-issues/`](fragment-issues/section-1.md) — [section 1's](fragment-issues/section-1.md), for one — and this page keeps the rules and, where each section was, its heading and a line naming its file. **Sections 5 and 5b keep their own words here, and their rows are in files of 25 by number:** row 5b-62 is in `fragment-issues/section-5b-rows-051-075.md`. **A new row of section 5b is a file of its own** — `python tools/next-id.py` gives its number, and row 5b-1564 is `fragment-issues/row-5b-1564.md` — so two branches adding rows never change the same file; no line lists those files, the folder is the list. A new row of section 5 goes at the end of that section's last file. [*Add to this file*](#add-to-this-file-do-not-start-another) has the steps. The whole register, read as one text: `python tools/register-text.py docs/FRAGMENT-ISSUES.md` |
+> | **Finished rows** | A finished row of section 5 or 5b keeps its line where it was, in its rows file or its own file — its number, a one-line title and the opening of its state — and its full text moves to [`fragment-issues-archive/`](fragment-issues-archive/README.md). **Nothing is deleted, and an open row always stays in full.** `python tools/archive-fragment-issues.py` says what would move |
 
 > **Read [FOR-THE-OWNER.md](FOR-THE-OWNER.md) first if you are the owner.** It is the one page that
 > says what is waiting on you, across every register, without holding a list of its own.
@@ -190,17 +190,40 @@ it and what came back **verbatim**. The value of the list is that every row was 
 the moment it fills with things somebody thought might be wrong, it stops being worth the sit-down.
 
 **Where to write it.** Since 2026-09-23 each section is its own file in
-[`fragment-issues/`](fragment-issues/section-1.md), named under its heading above. A new row of section 5
-or 5b goes **at the end of that section's last rows file**, whatever its number, and the next run of
-[`tools/split-register.py`](../tools/split-register.py) moves it to the file its number belongs to.
-Anything else goes in its section's file, and a new section goes on this page, in full, for the next run
-to move. Two branches adding rows at that end conflict there: keep both rows, in row-number order - the
-recipe is [`heron-ship` §6a](../.claude/skills/heron-ship/SKILL.md).
+[`fragment-issues/`](fragment-issues/section-1.md), named under its heading above.
+
+**A new row of section 5b is a file of its own** - since 2026-11-12, from row 5b-1564 on. Two steps:
+
+```bash
+python tools/next-id.py    # the 5b `next` it prints is free on main, every branch, every open pull request and every worktree
+# write docs/fragment-issues/row-5b-<that number>.md - copy the newest row-5b-*.md and change its number, its defect and its state
+```
+
+The file is a heading that names the row (`row 5b-1564`), the note under it, the table's two header lines and
+the row's one line, in the same three cells every rows file uses. **No other file is touched, and no line
+anywhere lists the rows' files - the folder is the list.** [`tools/register-text.py`](../tools/register-text.py)
+reads them back after the rows files' rows, in number order, for every tool that reads the register. That
+is the point of it: until then every new row was appended to the end of ONE file,
+`section-5b-rows-401-425.md`, and two branches that each added a row stopped at each other in every merge
+(row 5b-1564 has what that cost). Two branches now collide only when
+both take the same **number**, and git says so by name - two files called `row-5b-N.md`. The side merging
+second renames its row with [`tools/renumber.py`](../tools/renumber.py); the recipe is
+[`heron-ship` §6a](../.claude/skills/heron-ship/SKILL.md).
+
+**Rows before 5b-1564 stay in the rows files** and are edited there - a state changed, a row closed.
+Nothing new is appended to a rows file: `python tools/check-docs.py` fails on a row from 1564 on left in
+one, and `python tools/split-register.py fragment-issues --new-rows --write` moves it to its own file, with
+every link that names it, and re-bands nothing.
+
+**A new row of section 5** goes at the end of that section's last rows file, whatever its number, and the
+next run of [`tools/split-register.py`](../tools/split-register.py) moves it to the file its number belongs
+to. Anything else goes in its section's file, and a new section goes on this page, in full, for the next
+run to move.
 
 **Nothing leaves this register except by [`tools/archive-fragment-issues.py`](../tools/archive-fragment-issues.py)**,
 which moves a finished row of section 5 or 5b to [`fragment-issues-archive/`](fragment-issues-archive/README.md)
-and leaves its line in its rows file with a link to it. The archive is never written by hand, and a new row
-never goes there: it goes in this register, the same day.
+and leaves its line where the row was - its rows file, or its own file - with a link to it. The archive is
+never written by hand, and a new row never goes there: it goes in this register, the same day.
 
 **A row of section 5 or 5b, from the day it is seen to the archive** - read from the rules above and from
 the two tools that act on them. `open-defects.py` reads only the first word of a row's state, so a row that
@@ -210,15 +233,17 @@ is finished says so there.
 %%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
     SEEN["<b>A defect seen</b><br/>proving a fragment - section 5<br/>reading a file - section 5b"]
-    ROW["<b>A row, the same day</b><br/>at the end of its section's last rows file"]
+    OWN["<b>Section 5b: a file of its own, the same day</b><br/>python tools/next-id.py gives the number N<br/>docs/fragment-issues/row-5b-N.md"]
+    ROW["<b>Section 5: a row, the same day</b><br/>at the end of its section's last rows file"]
     SPLIT["<b>python tools/split-register.py fragment-issues --write</b><br/>moves it to the file of 25 its number belongs to"]
     STATE{"What does its state<br/>begin with?"}
     OPEN(["<b>OPEN</b><br/>python tools/open-defects.py lists it by id"])
     DONE["<b>A closing word</b> - FIXED, CLOSED, ANSWERED ...<br/>and nothing in the state still owed"]
     ARCH["<b>python tools/archive-fragment-issues.py --write</b><br/>moves its full text to fragment-issues-archive/"]
-    LINE(["its number, its title and the opening of its state<br/>stay in its rows file, with a link to the archive"])
+    LINE(["its number, its title and the opening of its state<br/>stay where the row was, with a link to the archive"])
 
-    SEEN --> ROW --> SPLIT --> STATE
+    SEEN -- reading --> OWN --> STATE
+    SEEN -- proving --> ROW --> SPLIT --> STATE
     STATE -- OPEN --> OPEN
     STATE -- a closing word --> DONE --> ARCH --> LINE
 ```

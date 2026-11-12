@@ -1,10 +1,12 @@
 # Fragment issues — section 5b, rows 401 to 425
 
 > Rows 401 to 425 of section 5b of [the register](../FRAGMENT-ISSUES.md), in their own file since 2026-10-09 so that
-> they can be read alone. **The section's own rules are on that page, under its heading.** A new
-> row goes at the end of the section's last file, whatever its number, and the next run of
-> [`tools/split-register.py`](../../tools/split-register.py) moves it to the file its number
-> belongs to. [`tools/register-text.py`](../../tools/register-text.py) reads every row back into
+> they can be read alone. **The section's own rules are on that page, under its heading.**
+> **NOTHING NEW IS APPENDED TO THIS FILE, or to any rows file of section 5b.** Since 2026-11-12 a new
+> row is a file of its own, `row-5b-N.md` beside this one -
+> [the page](../FRAGMENT-ISSUES.md#add-to-this-file-do-not-start-another) has the two steps - because
+> every row appended here met every other branch's row in the same lines, and stopped the merge. A row
+> already here is edited here. [`tools/register-text.py`](../../tools/register-text.py) reads every row back into
 > the register for every tool that reads it, so a row here is seen exactly as it was seen there.
 
 | # | Defect | State |
