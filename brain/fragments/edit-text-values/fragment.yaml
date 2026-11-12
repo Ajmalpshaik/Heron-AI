@@ -180,7 +180,7 @@ purpose: >
 #
 #   RUN 2026-10-17 IN REVIT 2020, every run rolled back, on "Heron Note Format
 #   Test" (a copy of the rst_basic sample): NEEDS-CHECKING group FD rows FD1-FD3
-#   and FD5-FD9 answered as looked for. The proof below is FD1/FD2, signed by
+#   and FD5-FD9 answered as looked for. The proof below was then FD1/FD2, signed by
 #   Ajmal PS and PROVEN on 2026-10-18 (FD10). Compiled for all eight releases;
 #   not run on 2021-2027. The purpose's sentence that version 1's proof no
 #   longer describes the code is older than this proof - left there because

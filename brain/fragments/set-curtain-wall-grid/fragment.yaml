@@ -512,7 +512,7 @@ compatibility-note: >
 #    panels"                               -> ADD_CURTAIN_GRID_LINES, "equal 6"
 #                                             on that one wall: five lines on the
 #                                             wall's own grid, its type untouched
-#                                             (DRAFT since 2026-10-28). Fixed
+#                                             (DRAFT at the time, since 2026-10-28). Fixed
 #                                             Number is still refused HERE - the
 #                                             count is each wall's own "Number",
 #                                             and WRITE_ELEMENT_PARAMETERS refuses

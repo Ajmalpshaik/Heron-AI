@@ -15,7 +15,7 @@ capability: SET_CATEGORY_GRAPHICS
 # with nothing stored. One that reads back empty is in `refused` in a
 # sentence; one that kept part of it is in the new `notKept`, each setting
 # named. The inputs and the other outputs mean what they meant. The proof below
-# is version 2's, signed by Ajmal PS on 2026-10-13 (Group DV, DV6).
+# was then version 2's, signed by Ajmal PS on 2026-10-13 (Group DV, DV6).
 #
 # Version 3 (2026-11-01): SET_CATEGORY_SOLID_FILL was merged into this card on
 # the owner's instruction, and is DEPRECATED. Its job is one optional switch

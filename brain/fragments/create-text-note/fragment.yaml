@@ -233,7 +233,7 @@ compatibility-note: >
 #   "make a numbered note"                 -> here, listType ArabicNumbers.
 #                                             Declared. Measured on main with
 #                                             #586 in, lexical and trained:
-#                                             version 2 is DRAFT, so it loses
+#                                             version 2 was DRAFT then, so it lost
 #                                             PROVEN's tie-break nudge - main
 #                                             with only its status set DRAFT
 #                                             sends "create a text note with a

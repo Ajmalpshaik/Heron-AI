@@ -44,7 +44,7 @@ risk: MODIFY
 # SLOPE_ROOF_EDGES STAYS SEPARATE: it slopes the edges of a footprint roof that
 # exists, a decision about the design this card does not make.
 #
-# Version 2's proof below no longer describes the code (impl/ changed) and is
+# Version 2's proof below no longer described the code (impl/ changed) and was
 # kept as the record; CREATE_ROOF's held signature and CREATE_CEILING's proof
 # stay on their own cards. DRAFT at the time, until version 3 is proved on a
 # real model (D-30) - a ceiling on 2024 and refused on 2020, a roof measured,

@@ -27,11 +27,11 @@ capability: LABEL_FAMILY_RADIUS
 # Revit 2020 that the ring route (a circle centre's distance from the axis)
 # moved three other forms with the plane it made; the ring is refused until
 # that is understood (row 5b-1333).
-# VERSION 6 (2026-11-11, row 5b-1503) - A 2D ARC TOO, and DRAFT. Version 5
-# was PROVEN on 2026-10-24 (the proof block below, kept as the record of what
+# VERSION 6 (2026-11-11, row 5b-1503) - A 2D ARC TOO, and DRAFT that day. Version 5
+# was PROVEN on 2026-10-24 (the proof block then below, kept as the record of what
 # it proved: an extrusion's sketched circle labelled "Shaft Radius", a
-# revolve with no plane through its axis refused); its C# moved, so it is
-# DRAFT again until NEEDS-CHECKING Group NF is run (D-30, D-117). A family's
+# revolve with no plane through its axis refused); its C# moved, so it was
+# DRAFT again at the time until NEEDS-CHECKING Group NF is run (D-30, D-117). A family's
 # plan symbol drawn as detail or symbolic lines had no tool to put its arc's
 # radius on a parameter - CREATE_RADIAL_DIMENSION refuses a family. Version 6
 # takes a detail or symbolic line that is an arc, by its id, and labels a

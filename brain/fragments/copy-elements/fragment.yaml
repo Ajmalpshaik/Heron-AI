@@ -42,7 +42,7 @@ capability: COPY_ELEMENTS
 # building-shell skill unchanged. A choice in a model that is not workshared,
 # or a workset name the model does not have, is refused before anything is
 # copied. Changing impl/ made version 2's proof stale: DRAFT at the time, until
-# it is proved again (NEEDS-CHECKING Group GP). Version 2's proof is kept below
+# it is proved again (NEEDS-CHECKING Group GP). Version 2's proof was kept below
 # as a record.
 #
 # VERSION 4 (2026-11-01) - ARRAY_ELEMENTS WAS MERGED INTO THIS CARD on the

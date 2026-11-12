@@ -10,8 +10,8 @@ kind: action
 domain: revit.families
 capability: REPORT_FAMILY_TEMPLATE
 # Version 4, 2026-10-29: each adaptive point's Orientation in pointList - see
-# VERSION 4 below. Version 3 was PROVEN (2026-10-18); its proof is kept below
-# as a record and no longer describes the code.
+# VERSION 4 below. Version 3 was PROVEN (2026-10-18); its proof was kept below
+# as a record and no longer described the code.
 version: 4
 source: OFFICIAL
 risk: READ
@@ -57,8 +57,8 @@ purpose: >
 # inches is caught at a family build's first step rather than after it. A
 # comment, not `purpose`, because `purpose` is searched: units words there
 # moved "which template was this family made from" from 2nd to 3rd
-# (check-routing, measured 2026-10-12). Version 2's proof is still owed;
-# both are re-proved together (NEEDS-CHECKING DB15).
+# (check-routing, measured 2026-10-12). Version 2's proof was still owed then;
+# both were to be re-proved together (NEEDS-CHECKING DB15).
 #
 # VERSION 4 (2026-10-29, the owner's yes the same day): EACH ADAPTIVE POINT'S
 # ORIENTATION joins its pointList row, after the position - "placement point

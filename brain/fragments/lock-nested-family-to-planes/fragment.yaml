@@ -14,7 +14,7 @@ source: OFFICIAL
 risk: MODIFY
 
 # VERSION 3 (2026-11-11) - A DETAIL ITEM TOO, and back to DRAFT. Version 2 was
-# PROVEN on 2026-10-07 (the proof block below, kept as the record of what it
+# PROVEN on 2026-10-07 (the proof block then below, kept as the record of what it
 # proved); its C# moved, so it was DRAFT again at the time until NEEDS-CHECKING
 # Group NB is run (D-30, D-117). On 2026-11-11 (Revit 2020) four nested
 # `Diffuser Flow Arrow_DRAFT` detail items in a square diffuser family refused

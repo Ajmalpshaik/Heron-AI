@@ -14,9 +14,9 @@ source: OFFICIAL
 risk: MODIFY
 
 # VERSION 2 (2026-11-11) - SYMBOLIC LINES TOO, and back to DRAFT. Version 1
-# was PROVEN on 2026-10-03 (the proof block below, kept as the record of what
+# was PROVEN on 2026-10-03 (the proof block then below, kept as the record of what
 # it proved: an extrusion set to medium and fine, a project refused); its C#
-# moved, so it is DRAFT again until NEEDS-CHECKING Group NF is run (D-30,
+# moved, so it was DRAFT again at the time until NEEDS-CHECKING Group NF is run (D-30,
 # D-117). A family's plan symbol - symbolic lines already drawn - could have
 # its detail levels set only while it was drawn (DRAW_FAMILY_SYMBOLIC_LINES).
 # Version 2 takes a symbolic line's id, builds its setting with the kind the

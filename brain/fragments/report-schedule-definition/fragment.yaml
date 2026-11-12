@@ -25,7 +25,7 @@ risk: READ
 # be read before a change and after it. Only the filter part of the report
 # changed: the same rule wording is in `findings`, columns, sorting and totals
 # are as version 1 reported them. Version 2 was run and signed on Revit 2020
-# on 2026-10-21 (NEEDS-CHECKING Group IH, #721) - the proof below is that one.
+# on 2026-10-21 (NEEDS-CHECKING Group IH, #721) - the proof below was that one then.
 
 purpose: >
   Reads back how a schedule is CONFIGURED - the columns it carries, the order

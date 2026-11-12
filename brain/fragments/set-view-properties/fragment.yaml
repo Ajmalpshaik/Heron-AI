@@ -20,7 +20,7 @@ capability: SET_VIEW_PROPERTIES
 # API will not set it, and 2021 on has no value for it. An unknown word is
 # refused once, listing every word this Revit takes, and that refusal and the
 # style each view reads back are left whole in the new `visualStyleNote`.
-# Scale and detail level are unchanged. The proof below is the re-run on the
+# Scale and detail level are unchanged. The proof below was then the re-run on the
 # fixed build, signed by Ajmal PS on 2026-10-14. The first, signed 2026-10-13
 # (fingerprint 49da3f00afa98157), went stale with a review's fixes (Realistic's
 # edges, a template's refusal in the note). Version 1's (2026-09-08, Snowdon,
