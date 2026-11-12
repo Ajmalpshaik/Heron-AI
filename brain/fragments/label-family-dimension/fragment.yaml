@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -207,50 +207,49 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-24'
+  date: '2026-11-12'
   by: Ajmal PS
-  model: Heron IT Planes (1,614 elements), Revit 2020, session 83568
+  model: Heron Link Angle Test (1,546 elements), Revit 2020, session 33000
   positive_case: run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned a Tuple`5, along Func`3, axisOf
-    Func`2, axisWords 3 item(s) [left-right, front-back, height], b Tuple`5, centre (null),
-    datums 19 item(s) [(Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.ReferencePlane,
+    the transaction group ROLLED BACK afterwards. returned a (null), along Func`3, angleDegrees
+    30, angleFrom ReferencePlane, angleTarget 0.523598775598299, angleTo ReferencePlane, angleTolerance
+    0.000174532925199433, angular true, axisOf Func`2, axisWords 3 item(s) [left-right, front-back,
+    height], b (null), centre (null), datums 11 item(s) [(Autodesk.Revit.DB.ReferencePlane,
     Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen...,
-    ...], dbNamespace Autodesk.Revit.DB, distanceMm 300, equalised false, findings 3 item(s)
-    [Trap Depth drives "Floor Top" to "Trap Top", reading 300 mm,..., The planes now follow
-    "Trap Depth". Geometry follows only if..., "Floor Top" is held by nothing - not pinned,
-    not a level, no...], flags BindingFlags, freeEnd "Floor Top" is held by nothing - not
-    pinned, not a level, not an origin plane, and no labelled dimension, EQ or lock references
-    it - while "Trap Top" is held by the dimension labelled "Rim Height". A flex of "Trap
-    Depth" may move "Floor Top" and leave "Trap Top" where it is. Pin it (SET_PIN_STATE, pinned=true)
-    or dimension it to a level; asked with pinFreeEnd=true, this call pins it first., halfMillimetre
-    0.00164041994750656, invariant CultureInfo, isLength Func`2, labelled Trap Depth drives
-    "Floor Top" to "Trap Top", reading 300 mm, mm Func`2, named Func`2, notAFamily false,
-    ownName Func`2, parameter FamilyParameter, pinFreeEnd false, pinnedEnd , refused (null),
-    revitAssembly RuntimeAssembly, sameKind Func`3, view ViewSection. inputs came fromPlane
-    as given; toPlane as given; parameterName as given; centrePlane as given; pinFreeEnd not
-    given - false (optional). on Heron IT Planes
-  negative_case: run with fromPlane=A, toPlane=C, parameterName=Gap C, centrePlane= instead
-    - chosen because it should not contain what this fragment reports - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned a Tuple`5, along
-    Func`3, axisOf Func`2, axisWords 3 item(s) [left-right, front-back, height], b Tuple`5,
-    centre (null), datums 19 item(s) [(Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen...,
+    (Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen..., ...], dbNamespace Autodesk.Revit.DB,
+    deg Func`2, distanceMm 0, equalised false, findings 3 item(s) ["Center (Front/Back)" is
+    pinned and defines the origin, so a..., Arrow Angle drives the angle between "Center (Front/Back)"
+    a..., The planes now follow "Arrow Angle". Geometry follows only i...], flags BindingFlags,
+    freeEnd , halfMillimetre 0.00164041994750656, invariant CultureInfo, isAngle Func`2, isLength
+    Func`2, labelled Arrow Angle drives the angle between "Center (Front/Back)" and "Arrow
+    Slope", reading 30 degrees, mm Func`2, named Func`2, notAFamily false, ownName Func`2,
+    parameter FamilyParameter, pinFreeEnd false, pinnedEnd , refused (null), revitAssembly
+    RuntimeAssembly, sameKind Func`3, view ViewPlan. inputs came fromPlane as given; toPlane
+    as given; parameterName as given; centrePlane as given; pinFreeEnd not given - false (optional).
+    on Heron Link Angle Test
+  negative_case: run with fromPlane=Center (Front/Back), toPlane=Arrow Slope, parameterName=Wrong
+    Angle, centrePlane= instead - chosen because it should not contain what this fragment
+    reports - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned a (null), along Func`3, angleDegrees 0, angleFrom ReferencePlane,
+    angleTarget 0, angleTo ReferencePlane, angleTolerance 0.000174532925199433, angular true,
+    axisOf Func`2, axisWords 3 item(s) [left-right, front-back, height], b (null), centre
+    (null), datums 11 item(s) [(Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen...,
     (Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.ReferencePlane,
-    Autodesk.Revit.DB.Referen..., ...], dbNamespace Autodesk.Revit.DB, distanceMm 0, equalised
-    false, findings 1 item(s) [Nothing was made. "A" and "C" are in the same place - there
-    ...], flags BindingFlags, freeEnd , halfMillimetre 0.00164041994750656, invariant CultureInfo,
-    isLength Func`2, labelled , mm Func`2, named Func`2, notAFamily false, ownName Func`2,
-    parameter FamilyParameter, pinFreeEnd false, pinnedEnd , refused Nothing was made. "A"
-    and "C" are in the same place - there is no distance to label. Pin the one that must stay
-    (SET_PIN_STATE, pinned=true), move the other to where it belongs, set "Gap C" to that
-    distance (SET_FAMILY_TYPE_VALUES), then label - a label put on first would drive the free
-    one., revitAssembly RuntimeAssembly, sameKind Func`3, view (null). inputs came fromPlane
-    as given; toPlane as given; parameterName as given; centrePlane as given; pinFreeEnd not
-    given - false (optional). on Heron IT Planes
+    Autodesk.Revit.DB.Referen..., ...], dbNamespace Autodesk.Revit.DB, deg Func`2, distanceMm
+    0, equalised false, findings 1 item(s) [Nothing was made. "Center (Front/Back)" and "Arrow
+    Slope" me...], flags BindingFlags, freeEnd , halfMillimetre 0.00164041994750656, invariant
+    CultureInfo, isAngle Func`2, isLength Func`2, labelled , mm Func`2, named Func`2, notAFamily
+    false, ownName Func`2, parameter FamilyParameter, pinFreeEnd false, pinnedEnd , refused
+    Nothing was made. "Center (Front/Back)" and "Arrow Slope" meet at 30 degrees (150 on the
+    other side) and "Wrong Angle" holds 45 degrees in type "Test". Labelling now would TURN
+    a plane to that value. Set it to 30 or 150 first with SET_FAMILY_TYPE_VALUES, or name
+    the planes that make that angle., revitAssembly RuntimeAssembly, sameKind Func`3, view
+    ViewPlan. inputs came fromPlane as given; toPlane as given; parameterName as given; centrePlane
+    as given; pinFreeEnd not given - false (optional). on Heron Link Angle Test
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: f1dfef10a5fe066a
-
+  fingerprint: a07fd2d67c53ba41
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

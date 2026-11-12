@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -113,34 +113,39 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-03'
+  date: '2026-11-12'
   by: Ajmal PS
-  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family1, Project1 - active was Family6,
-    Revit 2024, session 32340'
-  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+  model: Heron Link Angle Test (1,546 elements), Revit 2020, session 33000
+  positive_case: 'run ONCE on the live model through the Keep or Discard box in Revit (D-119)
+    on 2026-11-12; the modeller saw the result in Revit and pressed Keep, and Revit kept it
+    as one undo step. returned along Func`3, alreadyThere 0 item(s), axisLetters 3 item(s)
+    [X, Y, Z], axisOf Func`2, axisWords 3 item(s) [left-right (X), front-back (Y), height
+    (Z)], created 2 item(s) [Arrow Slope (at 30 degrees from left-right, through 0,0 mm),
+    Arrow Low (at -15 degrees from left-right, through 0,0 mm)], degreesOf Func`2, findings
+    2 item(s) [Made 2 reference plane(s) in "Ref. Level", each read back: A..., Next: LABEL_FAMILY_DIMENSION
+    ties the distance between two p...], folded Func`2, invariant CultureInfo, lineAt Func`2,
+    mm Func`2, notAFamily false, ownName Func`2, passesThrough Func`2, refused (null), said
+    angle, squash Func`2, through XYZ, throughProblem (null), throughText none, toMake 2 item(s)
+    [[Arrow Slope, 30], [Arrow Low, -15]], view ViewPlan, wantedAxis 3. inputs came planes
+    as given (2); axis as given; throughMm not given - "none", the card''s own default (optional).
+    on Heron Link Angle Test'
+  negative_case: run with planes=Arrow Slope=45, axis=angle instead - chosen because it should
+    not contain what this fragment reports - run inside a transaction, and Revit reported
     the transaction group ROLLED BACK afterwards. returned along Func`3, alreadyThere 0 item(s),
     axisLetters 3 item(s) [X, Y, Z], axisOf Func`2, axisWords 3 item(s) [left-right (X), front-back
-    (Y), height (Z)], created 1 item(s) [Proof A (left-right (X), at X = 700 mm)], findings
-    2 item(s) [Made 1 reference plane(s) in "Ref. Level", each read back: P..., Next: LABEL_FAMILY_DIMENSION
-    ties the distance between two p...], invariant CultureInfo, mm Func`2, notAFamily false,
-    ownName Func`2, refused (null), said leftright, squash Func`2, toMake 1 item(s) [[Proof
-    A, 2.29658792650919]], view ViewPlan, wantedAxis 0. inputs came planes as given (1); axis
-    as given. on Family1'
-  negative_case: run against 'Project1' instead - chosen because it should not contain what
-    this fragment reports - run inside a transaction, and Revit reported the transaction group
-    ROLLED BACK afterwards. returned along Func`3, alreadyThere 0 item(s), axisLetters 3 item(s)
-    [X, Y, Z], axisOf Func`2, axisWords 3 item(s) [left-right (X), front-back (Y), height
-    (Z)], created 0 item(s), findings 1 item(s) [The document in front is a project, not a
-    family open in the...], invariant CultureInfo, mm Func`2, notAFamily true, ownName Func`2,
-    refused The document in front is a project, not a family open in the Family Editor. Reference
-    planes for a family are made inside the family - open it first., said leftright, squash
-    Func`2, toMake 0 item(s), view (null), wantedAxis 0. inputs came planes as given (1);
-    axis as given. on Project1
+    (Y), height (Z)], created 0 item(s), degreesOf Func`2, findings 1 item(s) [Nothing was
+    made. "Arrow Slope" is already a reference plane...], folded Func`2, invariant CultureInfo,
+    lineAt Func`2, mm Func`2, notAFamily false, ownName Func`2, passesThrough Func`2, refused
+    Nothing was made. "Arrow Slope" is already a reference plane in this family, at 30 degrees.
+    Turning or moving it would drag whatever is locked to it, so give the new one another
+    name or change that one by hand., said angle, squash Func`2, through XYZ, throughProblem
+    (null), throughText none, toMake 0 item(s), view ViewPlan, wantedAxis 3. inputs came planes
+    as given (1); axis as given; throughMm not given - "none", the card's own default (optional).
+    on Heron Link Angle Test
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: ccc5952e02f5b6df
-
+  fingerprint: 24c2f5cae62b566b
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
