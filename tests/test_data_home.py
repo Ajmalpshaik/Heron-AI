@@ -708,39 +708,118 @@ def run(yard):
     # WHO CALLS IT: the server's own start-up, in D-132's library-only mode.
     under = guarded_by(main_block, "brain.library_store()")
     named_at = main_block.find("brain.library_store()")
-    check(under == "if LIBRARY_ONLY:",
+    check(under == "if core.LIBRARY_ONLY:",
           "the MCP server asks for it only when it is serving the library alone "
           "(under %r)" % (under,))
     check(named_at != -1 and carry_at != -1 and named_at < carry_at,
           "before anything opens the store")
-    # THE MODE IS DECIDED WHERE THE SERVER OBJECT IS MADE, and since row 5b-1555
-    # that is heron_server_core, not the entry file - so it cannot ask its own
-    # `__name__`, which there is never "__main__". It asks whether the program
-    # Python was started on is the entry file. Held two ways: the line as it
-    # is written, and the question itself, lifted out of the source and put
-    # to three programs - the entry file, this suite, and one with no file.
-    check('LIBRARY_ONLY = os.name != "nt" and _started_as_the_server()' in server,
-          "and that mode is still never Windows, and never a suite or a tool that "
-          "imports the server")
-    lifted = re.search(r"^def _started_as_the_server\(\):\n(?:(?:[ \t]+.*)?\n)+", server, re.M)
-    check(lifted is not None, "the server has that question to ask at all")
-    answers = []
-    if lifted is not None:
+    # THE MODE IS THE ENTRY FILE'S TO SAY, AND THE RULE IS ONE PURE FUNCTION.
+    # Only the entry file knows it was run - its own `__name__ == "__main__"` -
+    # so it hands that to heron_server_core, which keeps the one LIBRARY_ONLY
+    # there is (FRAGMENT-ISSUES row 5b-1555). For a day the core worked it out
+    # from `sys.modules["__main__"].__file__` instead, and off Windows that
+    # failed OPEN for a server run by exec(compile()) or runpy.run_module:
+    # every revit_ tool offered where no Revit can be. tests/test_mcp_stdio.py
+    # starts the server each of those ways for real, which needs the MCP SDK.
+    # This is the part that needs nothing: the two functions lifted out of
+    # the source and asked, with the system stood in, and the entry file's
+    # own lines read.
+    entry = read(TOOLS.server_files()[-1])
+    check('core.started(__name__ == "__main__")' in entry,
+          "the entry file hands the core its own `__name__ == \"__main__\"` - the "
+          "fact the rule was written on, and nothing worked out from how Python "
+          "was started")
+
+    def lifted(*names):
+        """The named top-level functions out of the server's source, defined
+        in a namespace that stands in for the module - or None."""
         import types
-        for started in (TOOLS.server_files()[-1], os.path.abspath(__file__), None):
-            program = types.SimpleNamespace()
-            if started:
-                program.__file__ = started
-            names = {"os": os, "tools": TOOLS,
-                     "sys": types.SimpleNamespace(modules={"__main__": program})}
-            try:
-                exec(compile(lifted.group(0), "the server's source", "exec"), names)
-                answers.append(names["_started_as_the_server"]())
-            except Exception as why:                            # noqa: BLE001 - a FAIL, not a crash
-                answers.append("%s: %s" % (type(why).__name__, why))
-    check(answers == [True, False, False],
-          "it is yes for a process started on the entry file, and no for a suite "
-          "that imports the server and for a program with no file (%r)" % (answers,))
+        pieces = []
+        for name in names:
+            found = re.search(r"^def %s\(.*\n(?:(?:[ \t]+.*)?\n)+" % name, server, re.M)
+            if found is None:
+                return None
+            pieces.append(found.group(0))
+        space = {"os": types.SimpleNamespace(name=os.name), "LIBRARY_ONLY": False}
+        try:
+            exec(compile("\n".join(pieces), "the server's source", "exec"), space)
+        except Exception:                                       # noqa: BLE001 - a FAIL, not a crash
+            return None
+        return space
+
+    def asked(space, call, *args):
+        try:
+            return space[call](*args)
+        except Exception as why:                                # noqa: BLE001
+            return "%s: %s" % (type(why).__name__, why)
+
+    space = lifted("library_only", "started")
+    check(space is not None, "the server has the rule, and the call that sets it, to ask at all")
+    table = []
+    if space is not None:
+        for run_as_main, system in ((True, "posix"), (True, "nt"), (False, "posix"), (False, "nt")):
+            table.append(asked(space, "library_only", run_as_main, system))
+    check(table == [True, False, False, False],
+          "the library alone exactly when the entry file was RUN and the system is not "
+          "Windows: run off Windows, run on Windows, imported off Windows, imported on "
+          "Windows - %r" % (table,))
+    set_to = []
+    for system, run_as_main in (("posix", True), ("posix", False), ("nt", True)):
+        space = lifted("library_only", "started")
+        if space is None:
+            break
+        space["os"].name = system
+        asked(space, "started", run_as_main)
+        set_to.append(space.get("LIBRARY_ONLY"))
+    check(set_to == [True, False, False],
+          "and started() sets the one LIBRARY_ONLY to that answer, on the system it runs "
+          "on - %r" % (set_to,))
+    # ONCE THE SERVER OBJECT IS MADE THE ANSWER MAY NOT CHANGE: a server made
+    # with every tool and then told it is the library alone is half each.
+    space = lifted("library_only", "started")
+    changed = again = "not asked"
+    if space is not None:
+        space["os"].name = "posix"
+        space["server"] = object()                  # made, with LIBRARY_ONLY False
+        changed = asked(space, "started", True)
+        again = asked(space, "started", False)
+    check(str(changed).startswith("RuntimeError") and "Nothing is served" in str(changed)
+          and space is not None and space.get("LIBRARY_ONLY") is False and again is False,
+          "after the server object is made, a different answer is refused in words "
+          "and changes nothing; the same answer is taken (%r, %r)" % (changed, again))
+
+    # ONE LIBRARY_ONLY, NOT ONE A FILE. A second binding is a copy that a
+    # rebinding of the first never reaches - which is how the entry file's
+    # start-up could have disagreed with the server object about the mode.
+    import ast
+    bound = []
+    for path in TOOLS.server_files():
+        for node in ast.walk(ast.parse(read(path))):
+            names = []
+            if isinstance(node, (ast.Assign, ast.AnnAssign, ast.AugAssign)):
+                targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+                names = [t.id for t in targets if isinstance(t, ast.Name)]
+            elif isinstance(node, (ast.Import, ast.ImportFrom)):
+                names = [(alias.asname or alias.name) for alias in node.names]
+            if "LIBRARY_ONLY" in names:
+                bound.append(os.path.basename(path))
+    check(sorted(set(bound)) == [os.path.basename(TOOLS.server_files()[0])],
+          "LIBRARY_ONLY is bound in one file of the server, the one that makes the "
+          "server object - and imported as a name by none: %s" % (sorted(bound) or "nowhere"))
+    bare = re.findall(r"(?<![.\w])LIBRARY_ONLY\b", "\n".join(
+        line for line in entry.split("\n") if not line.lstrip().startswith("#")))
+    check(not bare and "core.LIBRARY_ONLY" in entry,
+          "and the entry file reads it as the core's attribute every time (%d bare)" % len(bare))
+
+    # BELT AND BRACES. Run off Windows with the library NOT alone, the entry
+    # file serves nothing: it says so and stops, before it opens a store.
+    refuses = guarded_by(main_block, "raise SystemExit(2)")
+    stops_at = main_block.find("raise SystemExit(2)")
+    check(refuses == 'if os.name != "nt" and not core.LIBRARY_ONLY:'
+          and "Heron did not start" in main_block
+          and 0 < stops_at < named_at < main_block.find("server.run()"),
+          "and run off Windows without it, the entry file refuses to start, in a "
+          "sentence, before it opens a store or serves anything (under %r)" % (refuses,))
 
     print()
     if FAILURES:

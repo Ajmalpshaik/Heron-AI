@@ -149,6 +149,35 @@ def main():
           % (", ".join(elsewhere) or "there is none",
              "" if not never else ": %s" % ", ".join(never)))
 
+    # AND WHERE THAT IMPORT STANDS IS THE ORDER A HOST IS SERVED. The SDK lists
+    # tools as they register, so a tool file's tools land wherever its import
+    # line is. heron_tools.served_order states the order meant - the entry
+    # file's own tools first, then each other file's in SERVER_FILES' order -
+    # and tests/test_mcp_serves.py holds a real SDK to it, which CI cannot run.
+    # So the same rule is held here as text: each tool file is imported BELOW
+    # the entry file's last own tool, and they are imported in the list's
+    # order. Moved to the top of the file, an import passes every other check
+    # on this page (review of row 5b-1555).
+    own = [one["line"] for one in rows if one["file"] == entry]
+    last_own = max(own) if own else 0
+    early = [name for name in elsewhere
+             if 0 < imported.get(os.path.basename(name)[:-3], 0) < last_own]
+    check(not early,
+          "each is imported below the entry file's last own tool, so its tools are "
+          "served after them%s" % ("" if not early else ": %s is not" % ", ".join(early)))
+    listed = [name for path, name in tool.sources() if name in elsewhere]
+    by_import = sorted(elsewhere, key=lambda name: imported.get(os.path.basename(name)[:-3], 0))
+    check(by_import == listed,
+          "and in the order heron_tools.SERVER_FILES lists them: %s"
+          % (", ".join(by_import) or "there is none"))
+    rule = getattr(TOOLS, "served_order", None)
+    by_rule = rule() if rule is not None else None
+    by_text = ([one["name"] for one in rows if one["file"] == entry]
+               + [one["name"] for name in listed for one in rows if one["file"] == name])
+    check(by_rule == by_text,
+          "which is the order heron_tools.served_order states (%d tools)"
+          % len(by_rule or []))
+
     print("\n2. explained is a word boundary, not a substring")
     check(tool.explains("the depth to walk to", "depth"),
           "a docstring naming the parameter explains it")

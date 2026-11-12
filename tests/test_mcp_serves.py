@@ -311,6 +311,27 @@ async def exercise(server):
     if missing:
         check(False, "declared but NOT served: %s" % ", ".join(missing))
 
+    # AND IN THE ORDER THE REGISTRY SAYS. The SDK lists tools as they
+    # registered, and a tool in another file registers wherever the entry
+    # file's import of that file stands: one line, and moved to the top of
+    # the file it reordered every chat's list while every suite passed
+    # (review of FRAGMENT-ISSUES row 5b-1555). heron_tools.served_order reads
+    # the rule off the source without looking at that line - the entry file's
+    # own tools, then each other file's in SERVER_FILES' order - so the two
+    # are independent, and no name is typed here.
+    import heron_tools as registry
+    rule = getattr(registry, "served_order", None)
+    check(rule is not None, "heron_tools says what order the tools are served in")
+    meant = rule() if rule is not None else []
+    got = [t.name for t in tools]
+    first = next((i for i, (a, b) in enumerate(zip(got, meant)) if a != b), None)
+    check(got == meant,
+          "and the SDK lists them in exactly that order (%d)%s"
+          % (len(got), "" if got == meant else
+             " - at place %s the SDK has %s and the rule %s"
+             % (first, got[first] if first is not None else "fewer or more",
+                meant[first] if first is not None else "the same start")))
+
     print()
     print("  what a host would actually see")
     undescribed = sorted(n for n, t in served.items() if not (t.description or "").strip())

@@ -164,9 +164,13 @@ def check(condition, what):
 class Host(object):
     """The smallest thing that behaves like an MCP host over stdio."""
 
-    def __init__(self, env, script=SERVER):
+    def __init__(self, env, script=SERVER, argv=None, cwd=ROOT):
+        """`argv` is everything after the interpreter, for a server started
+        some other way than by its file's path."""
+        self.dead = False
         self.proc = subprocess.Popen(
-            [sys.executable, "-u", script], cwd=ROOT, env=env,
+            [sys.executable] + (list(argv) if argv is not None else ["-u", script]),
+            cwd=cwd, env=env,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=subprocess.PIPE, text=True, encoding="utf-8", bufsize=1)
         self.err = []
@@ -177,8 +181,32 @@ class Host(object):
             self.err.append(line)
 
     def send(self, obj):
-        self.proc.stdin.write(json.dumps(obj) + "\n")
-        self.proc.stdin.flush()
+        """A SERVER THAT HAS STOPPED TAKES ITS PIPE WITH IT, and writing to it
+        raised BrokenPipeError: one traceback where the suite's failures should
+        have been, and every section after it never run (FRAGMENT-ISSUES row
+        5b-1558). It is said once, as a FAIL carrying what the server wrote
+        to stderr, and the checks that follow fail in their own words."""
+        try:
+            self.proc.stdin.write(json.dumps(obj) + "\n")
+            self.proc.stdin.flush()
+        except (OSError, ValueError):
+            try:
+                # What could not be written is still in the buffer, and would be
+                # tried again - and complained of - when the pipe is collected.
+                self.proc.stdin.close()
+            except (OSError, ValueError):
+                pass
+            if not self.dead:
+                self.dead = True
+                try:
+                    code = self.proc.wait(5)
+                except Exception:                               # noqa: BLE001
+                    code = None
+                time.sleep(0.2)                 # let the stderr reader catch up
+                check(False, "the server is still running to be asked for %s - it had "
+                      "stopped (exit %s) and said: %s"
+                      % (obj.get("method"), code,
+                         "".join(self.err).strip()[-400:] or "nothing"))
 
     def read(self, timeout):
         box = {}
@@ -544,6 +572,11 @@ def library_only(guard, scratch):
                     sorted(offered - set(library)) or "none")))
         check(not any(n.startswith("revit_") for n in names),
               "and no revit_ tool, so the list itself says there is no Revit here")
+        rule = getattr(REGISTRY, "served_order", None)
+        meant = [n for n in (rule() if rule is not None else []) if n in library]
+        check(names == meant,
+              "in the order heron_tools.served_order states for them: %s"
+              % ", ".join(names))
 
         line, took = host.call(3, "heron_capabilities", {}, DEADLINE)
         answered = text_of(line)
@@ -709,6 +742,118 @@ def one_of_each(guard, scratch):
           "and the server that runs is the one the tools registered on")
 
 
+def however_it_is_started(guard, scratch):
+    """
+    D-132 DOES NOT DEPEND ON HOW PYTHON WAS STARTED (review of FRAGMENT-ISSUES
+    row 5b-1555). Off Windows a server RUN as the program serves the library
+    alone - by its path, by `-m`, through a symlinked folder, by runpy, or by
+    exec(compile()) with `__name__` set to "__main__" - and one that is only
+    IMPORTED serves every tool, as a suite needs. For a day the answer was
+    worked out from `sys.modules["__main__"].__file__`, and two of these rows
+    served every revit_ tool on a machine with no Revit.
+
+    Each row is a real process asked as a host asks: initialize, then
+    tools/list. The Windows half of the table - never the library alone - is
+    held without a process, in tests/test_data_home.py.
+    """
+    print()
+    print("  the library alone, however the server is started (D-132, row 5b-1555)")
+    library = getattr(REGISTRY, "LIBRARY", None) or ()
+    folder = os.path.dirname(SERVER)
+    name = os.path.splitext(os.path.basename(SERVER))[0]
+    relative = os.path.relpath(SERVER, ROOT)
+    link = os.path.join(scratch, "linked-checkout")
+    try:
+        os.symlink(ROOT, link)
+        linked = os.path.join(link, relative)
+    except (OSError, NotImplementedError, AttributeError):
+        linked = None
+    path = "import sys; sys.path.insert(0, %r); " % folder
+    rows = [
+        ("its path, relative", ["-u", relative], ROOT, "library"),
+        ("its path, absolute", ["-u", os.path.abspath(SERVER)], ROOT, "library"),
+        ("its path, through a symlinked folder", linked and ["-u", linked], ROOT, "library"),
+        ("python -m, from its folder", ["-u", "-m", name], folder, "library"),
+        ("runpy.run_path as __main__", ["-u", "-c", path + "import runpy; runpy.run_path(%r, "
+                                        "run_name='__main__')" % SERVER], ROOT, "library"),
+        ("runpy.run_module as __main__", ["-u", "-c", path + "import runpy; runpy.run_module("
+                                          "%r, run_name='__main__')" % name], ROOT, "library"),
+        ("exec(compile()) as __main__", ["-u", "-c", path + "exec(compile(open(%r, encoding="
+                                         "'utf-8').read(), %r, 'exec'), {'__name__': '__main__', "
+                                         "'__file__': %r})" % (SERVER, SERVER, SERVER)],
+         ROOT, "library"),
+        ("imported, then served", ["-u", "-c", path + "import %s as it; it.server.run()" % name],
+         ROOT, "every tool"),
+        # BELT AND BRACES: run, off Windows, with the mode never set - nothing is served.
+        ("run with the mode never set", ["-u", "-c", path + "import heron_server_core as core; "
+                                         "core.started = lambda run: False; import runpy; "
+                                         "runpy.run_path(%r, run_name='__main__')" % SERVER],
+         ROOT, "refuses"),
+        # AND A SERVER OBJECT MADE BEFORE THE ENTRY FILE SPOKE is not re-labelled.
+        ("run after the server object was made", ["-u", "-c", path + "import heron_server_core "
+                                                  "as core; core.server; import runpy; "
+                                                  "runpy.run_path(%r, run_name='__main__')"
+                                                  % SERVER], ROOT, "refuses"),
+    ]
+    for at, (how, argv, cwd, expected) in enumerate(rows):
+        if argv is None:
+            print("  NOT RUN  %s - this system makes no symlink here" % how)
+            continue
+        home = os.path.join(scratch, "started-%d" % at)
+        env = guard.for_child(os.environ, home)
+        env["LOCALAPPDATA"] = os.path.join(scratch, "local")
+        env["XDG_DATA_HOME"] = os.path.join(scratch, "local")
+        env["HERON_KNOWLEDGE"] = os.path.join(scratch, "knowledge")
+        env["HERON_AUDIT"] = os.path.join(scratch, "audit")
+        env["HERON_DATA"] = os.path.join(home, "data")
+        host = Host(env, argv=argv, cwd=cwd)
+        try:
+            if expected == "refuses":
+                try:
+                    code = host.proc.wait(DEADLINE)
+                except subprocess.TimeoutExpired:
+                    code = None
+                time.sleep(0.2)
+                said = "".join(host.err)
+                check(code not in (0, None)
+                      and ("Heron did not start" in said or "Nothing is served" in said),
+                      "%s: it does not start, and says nothing is served (exit %s)%s"
+                      % (how, code, "" if code not in (0, None) else
+                         " - it said: %s" % said.strip()[-200:]))
+                continue
+            host.send({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {
+                "protocolVersion": "2024-11-05", "capabilities": {},
+                "clientInfo": {"name": "heron-stdio-test", "version": "0"}}})
+            host.send({"jsonrpc": "2.0", "method": "notifications/initialized"})
+            init = host.read(DEADLINE)
+            host.send({"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}})
+            listed = host.read(DEADLINE)
+            try:
+                told = json.loads(init)["result"].get("instructions") or ""
+                names = [t["name"] for t in json.loads(listed)["result"]["tools"]]
+            except Exception:                                   # noqa: BLE001
+                told, names = "", []
+            revit = [n for n in names if n.startswith("revit_")]
+            if expected == "library":
+                check(bool(names) and set(names) == set(library) and not revit
+                      and told.startswith("No Revit on this machine"),
+                      "%s: the library alone, and the chat is told first that there is "
+                      "no Revit here - %d tool(s), %d of them revit_%s"
+                      % (how, len(names), len(revit),
+                         "" if names else " - it said: %s" % "".join(host.err).strip()[-200:]))
+                wrote = [os.path.join(where, f) for where, _d, files in os.walk(home)
+                         for f in files if f == "runner.json"]
+                check(not wrote, "%s: and no runner note is written for a Heron panel "
+                      "that cannot be here%s" % (how, "" if not wrote else " - %s" % wrote))
+            else:
+                check(set(names) == set(TOOLS) and bool(revit)
+                      and not told.startswith("No Revit on this machine"),
+                      "%s: every declared tool, as a suite that imports the server "
+                      "needs - %d tool(s), %d of them revit_" % (how, len(names), len(revit)))
+        finally:
+            host.close()
+
+
 def library_no_folder_named(guard, scratch):
     """The same server on a machine nobody set up for Heron: off Windows, no
     HERON_KNOWLEDGE and no HERON_DATA. That is a cloud chat opened from a
@@ -788,6 +933,7 @@ def main():
         as_a_host(guard, scratch)
     else:
         library_only(guard, scratch)
+        however_it_is_started(guard, scratch)
         one_of_each(guard, scratch)
         library_no_folder_named(guard, scratch)
     if missing:
