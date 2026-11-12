@@ -41,6 +41,34 @@
 // and does nothing else, so it is refused beside any value or a rename. Absent
 // is false (`optional: true`). The last type is never deleted: a family with no
 // type cannot hold a formula, and making one again is a different call.
+//
+// MANY TYPES IN ONE CALL (version 5, 2026-11-11). `typeName` may be "all" (or
+// "every type") or a comma list - "600 x 600, 625 x 625" - and the same values
+// go into every type it names, in ONE change: one entry in Revit's undo list,
+// one Keep or Discard question. A name that is exactly one type's whole name is
+// still that one type, as before. A list only writes types that EXIST: one name
+// the family does not have refuses the whole call, nothing written, and a list
+// never makes, renames or deletes a type. Every type is read back.
+//
+// REVIT WRITES A FAMILY TYPE ONLY WHILE IT IS THE CURRENT TYPE: FamilyType has
+// readers and no setter, and FamilyManager.Set writes the current type (the
+// 2020 RevitAPI.dll, read 2026-11-11). Making a type current is a regeneration,
+// and on Revit 2020 that can delete an automatic sketch dimension - one
+// "delete 1 element" question per type when each type was its own call
+// (2026-11-11, three air terminal families of seven types). So:
+//   - a type that already holds every value asked for is NOT made current;
+//   - TEXT going into EVERY type of the family, where Revit lets the parameter
+//     take a formula (CanAssignFormula) and the text holds no double quote, is
+//     first tried with NO type made current: the text set as a formula on the
+//     parameter - which Revit evaluates for every type at once - and the
+//     formula cleared again, inside a sub-transaction, kept only if every type
+//     then reads the text and no formula is left. Anything else rolls the trial
+//     back and the types are made current in turn;
+//   - every other kind - a length, an angle, a number, an integer, a yes/no, a
+//     material - and text into only SOME types, makes each type current in
+//     turn, as the Family Types dialog does.
+// The type that was current before the call is made current again at the end,
+// so the family is left showing the type it showed.
 
 var findings = new List<string>();
 var typeUsed = "";
@@ -50,6 +78,15 @@ var drives = 0;
 var typesNow = "";
 var notAFamily = false;
 string refused = null;
+
+// Version 5: the types a list or "all" named, those written, those that
+// already held every value, and how they were written - "no type made current"
+// or "each type made current in turn".
+var askedMany = false;
+var manyTypes = new List<string>();
+var typesWritten = new List<string>();
+var alreadyHeld = new List<string>();
+var route = "";
 
 var flags = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static;
 var revitAssembly = typeof(Document).Assembly;
@@ -165,6 +202,41 @@ Func<FamilyParameter, string> kindOf = p =>
     }
 };
 
+// VERSION 4 (2026-11-12, row 5b-1575) - ANY OTHER MEASURED KIND - an air flow,
+// an area, a volume, a pressure - is read and written in the family's OWN units
+// by Revit's own parser: "94.4 L/s", or "94.4" in the unit the family shows.
+// Measured missing 2026-11-12 in Group NE (Revit 2020): "Nominal Air Flow" (Air
+// Flow) was refused, "an area or a flow is set in the Family Types dialog for
+// now". UnitType is 2020's spec and gone at 2022; ForgeTypeId 2021 on.
+Func<FamilyParameter, string, double?> parseInUnits = (p, text) =>
+{
+    try
+    {
+        double parsed;
+#if REVIT2020 || REVIT2021
+        var spec = p.Definition.UnitType;
+        if (!UnitFormatUtils.TryParse(doc.GetUnits(), spec, text, out parsed)) return null;
+#else
+        var spec = p.Definition.GetDataType();
+        if (!UnitFormatUtils.TryParse(doc.GetUnits(), spec, text, out parsed)) return null;
+#endif
+        return parsed;
+    }
+    catch (Exception) { return null; }
+};
+Func<FamilyParameter, double, string> formatInUnits = (p, value) =>
+{
+    try
+    {
+#if REVIT2020 || REVIT2021
+        return UnitFormatUtils.Format(doc.GetUnits(), p.Definition.UnitType, value, false, false);
+#else
+        return UnitFormatUtils.Format(doc.GetUnits(), p.Definition.GetDataType(), value, false);
+#endif
+    }
+    catch (Exception) { return value.ToString(invariant) + " (Revit's internal units)"; }
+};
+
 // A value as the type holds it, in the unit it was typed in.
 Func<FamilyType, FamilyParameter, string, string> shown = (type, p, kindWord) =>
 {
@@ -190,6 +262,12 @@ Func<FamilyType, FamilyParameter, string, string> shown = (type, p, kindWord) =>
             var flag = type.AsInteger(p);
             return flag.HasValue ? (flag.Value != 0 ? "yes" : "no") : "(no value)";
         default:
+            // VERSION 4: a measured kind in the family's own units.
+            if (p.StorageType == StorageType.Double)
+            {
+                var measured = type.AsDouble(p);
+                return measured.HasValue ? formatInUnits(p, measured.Value) : "(no value)";
+            }
             var text = type.AsString(p);
             return text == null ? "(no value)" : "\"" + text + "\"";
     }
@@ -233,7 +311,8 @@ if (!doc.IsFamilyDocument)
     notAFamily = true;
     refused = "The document in front is a project, not a family open in the Family Editor, so it "
         + "has no family types to write. Values on elements in a project are "
-        + "WRITE_ELEMENT_PARAMETERS' job.";
+        + "WRITE_ELEMENT_PARAMETERS' job; the same values on many of a project's TYPES are "
+        + "SET_PARAMETER_VALUES_BY_ID's, a key with a * and types=yes.";
 }
 else if (wantedType.Length == 0)
 {
@@ -265,7 +344,52 @@ else
         if (existing != null && string.Equals(existing.Name, wantedType, StringComparison.OrdinalIgnoreCase))
         { named = existing; break; }
 
-    if (deleteType)
+    // VERSION 5 - "all" or a comma list names MANY types. A name that is one
+    // type's whole name is that type, comma or not, exactly as before.
+    var typeWord = wantedType.ToLowerInvariant();
+    var everyWord = typeWord == "all" || typeWord == "all types" || typeWord == "every type" || typeWord == "*";
+    if (everyWord && named != null)
+    {
+        problems.Add("The family has a type called \"" + named.Name + "\", so \"" + wantedType + "\" could "
+            + "mean that type or every type - say \"every type\" for every type.");
+    }
+    else if (everyWord)
+    {
+        askedMany = true;
+        foreach (FamilyType existing in fm.Types)
+            if (existing != null) manyTypes.Add(existing.Name);
+        if (manyTypes.Count == 0)
+            problems.Add("The family has no type yet, so there is no type to write - name one, and it is made.");
+    }
+    else if (named == null && wantedType.IndexOf(',') >= 0)
+    {
+        askedMany = true;
+        var unknown = new List<string>();
+        foreach (var part in wantedType.Split(','))
+        {
+            var one = part.Trim();
+            if (one.Length == 0) continue;
+            FamilyType hit = null;
+            foreach (FamilyType existing in fm.Types)
+                if (existing != null && string.Equals(existing.Name, one, StringComparison.OrdinalIgnoreCase))
+                { hit = existing; break; }
+            if (hit == null) { if (!unknown.Contains(one)) unknown.Add(one); }
+            else if (!manyTypes.Contains(hit.Name)) manyTypes.Add(hit.Name);
+        }
+        if (unknown.Count > 0)
+            problems.Add("This family has no type " + string.Join(", ", unknown.Select(u => "\"" + u + "\""))
+                + ", so NO type in the list was written - a list writes only types that exist and never "
+                + "makes one. The family's types are " + typeList() + ".");
+        else if (manyTypes.Count == 0)
+            problems.Add("The list \"" + wantedType + "\" names no type.");
+    }
+
+    if (askedMany && deleteType)
+        problems.Add("Types are deleted one at a time - a list or \"all\" deletes nothing. Name the one type.");
+    if (askedMany && renameTo != null)
+        problems.Add("A rename names one type - \"Type Name=\" cannot go into a list or \"all\".");
+
+    if (deleteType && !askedMany)
     {
         if (named == null)
             problems.Add("There is no type \"" + wantedType + "\" to delete - the family's types are "
@@ -275,7 +399,7 @@ else
                 + "cannot hold a formula or a value - make another type first, then delete this one.");
     }
 
-    if (renameTo != null)
+    if (renameTo != null && !askedMany)
     {
         var badNew = renameTo.Where(c => forbidden.IndexOf(c) >= 0).Distinct().ToList();
         // Another type with the new name, in any case - never the type being renamed.
@@ -410,8 +534,21 @@ else
                     planned.Add(Tuple.Create(p, "text", (object)text));
                     break;
                 }
-                problems.Add("\"" + name + "\" holds a kind this does not write (" + kindWord + ") - an "
-                    + "area or a flow is set in the Family Types dialog for now.");
+                // VERSION 4: ANY OTHER MEASURED KIND, in the family's own units.
+                if (p.StorageType == StorageType.Double)
+                {
+                    var measured = parseInUnits(p, text);
+                    if (!measured.HasValue)
+                    {
+                        problems.Add("\"" + text + "\" is not a value Revit reads for \"" + name + "\" (" + kindWord
+                            + ") - give a number in the unit the family shows it in, or with its unit, as the "
+                            + "Family Types dialog takes it: \"94.4 L/s\".");
+                        break;
+                    }
+                    planned.Add(Tuple.Create(p, "measured", (object)measured.Value));
+                    break;
+                }
+                problems.Add("\"" + name + "\" holds a kind this does not write (" + kindWord + ").");
                 break;
         }
     }
@@ -456,7 +593,253 @@ if (refused == null && deleteType)
         + "\"; its types are " + typeList() + ".");
 }
 
-if (refused == null && !deleteType)
+// ---------------------------------------------------------------------------
+// VERSION 5 - WRITE MANY TYPES IN ONE CHANGE
+// ---------------------------------------------------------------------------
+
+if (refused == null && askedMany)
+{
+    var fm = doc.FamilyManager;
+    var startName = fm.CurrentType == null ? null : fm.CurrentType.Name;
+
+    // A type by name, fetched afresh - a FamilyType held across a rolled-back
+    // sub-transaction or a switch is not trusted.
+    Func<string, FamilyType> typeNamed = name =>
+        fm.Types.Cast<FamilyType>().FirstOrDefault(t => t != null && t.Name == name);
+
+    // Does this type hold this planned value now? Read from the type itself,
+    // which needs no switch, compared in Revit's own unit.
+    Func<FamilyType, Tuple<FamilyParameter, string, object>, bool> holdsPlan = (t, plan) =>
+    {
+        var p = plan.Item1;
+        if (plan.Item3 is double)
+        {
+            var value = t.HasValue(p) ? t.AsDouble(p) : null;
+            return value.HasValue && Math.Abs(value.Value - (double)plan.Item3) < 1e-6;
+        }
+        if (plan.Item3 is int)
+        {
+            var value = t.HasValue(p) ? t.AsInteger(p) : null;
+            return value.HasValue && value.Value == (int)plan.Item3;
+        }
+        if (plan.Item3 is ElementId)
+        {
+            ElementId value = null;
+            try { value = t.AsElementId(p); } catch (Exception) { }
+            return (value ?? ElementId.InvalidElementId).Equals((ElementId)plan.Item3);
+        }
+        // A blank asked and nothing held read the same - Revit shows both empty.
+        return string.Equals(t.AsString(p) ?? "", (string)plan.Item3, StringComparison.Ordinal);
+    };
+
+    // WHAT EACH TYPE HELD BEFORE, and which types need writing at all.
+    var beforeMany = new Dictionary<string, string>();
+    var toWrite = new List<string>();
+    foreach (var name in manyTypes)
+    {
+        var t = typeNamed(name);
+        foreach (var plan in planned)
+            beforeMany[name + "|" + plan.Item1.Definition.Name] = shown(t, plan.Item1, plan.Item2);
+        if (planned.All(plan => holdsPlan(t, plan))) alreadyHeld.Add(name);
+        else toWrite.Add(name);
+    }
+
+    var everyType = manyTypes.Count == fm.Types.Cast<FamilyType>().Count(t => t != null);
+    var movesGeometry = planned.Any(plan => plan.Item2 != "text" && plan.Item2 != "material");
+
+    // THE WAY WITH NO TYPE MADE CURRENT - text into EVERY type: a formula that
+    // is the text itself, evaluated by Revit for every type at once, then the
+    // formula cleared. Tried inside a sub-transaction and kept only if every
+    // type reads the text afterwards and no formula is left behind.
+    var formulaTried = false;
+    // A text parameter Revit gives no formula - a URL, measured 2026-11-12 on
+    // Revit 2024 (Group NG1) - sends the whole call the other way, and the
+    // answer names it rather than leaving the modeller to guess why.
+    var noFormula = planned
+        .Where(plan => plan.Item2 == "text" && plan.Item3 is string)
+        .Where(plan => { try { return !plan.Item1.CanAssignFormula; } catch (Exception) { return true; } })
+        .Select(plan => "\"" + plan.Item1.Definition.Name + "\"")
+        .ToList();
+    var formulaReady = toWrite.Count > 0 && everyType && planned.All(plan =>
+    {
+        if (plan.Item2 != "text" || !(plan.Item3 is string)) return false;
+        var text = (string)plan.Item3;
+        if (text.IndexOf('"') >= 0 || text.IndexOf('\n') >= 0 || text.IndexOf('\r') >= 0) return false;
+        try { return plan.Item1.CanAssignFormula; } catch (Exception) { return false; }
+    });
+    if (formulaReady)
+    {
+        formulaTried = true;
+        using (var trial = new SubTransaction(doc))
+        {
+            trial.Start();
+            var took = false;
+            try
+            {
+                foreach (var plan in planned) fm.SetFormula(plan.Item1, "\"" + (string)plan.Item3 + "\"");
+                doc.Regenerate();
+                foreach (var plan in planned) fm.SetFormula(plan.Item1, null);
+                doc.Regenerate();
+                took = planned.All(plan => !plan.Item1.IsDeterminedByFormula)
+                    && toWrite.All(name => planned.All(plan => holdsPlan(typeNamed(name), plan)));
+            }
+            catch (Exception)
+            {
+                // Revit refused the formula: the trial is rolled back whole and
+                // the types are made current in turn instead.
+                took = false;
+            }
+            if (took) { trial.Commit(); route = "no type made current"; }
+            else trial.RollBack();
+        }
+    }
+
+    // THE WAY THE FAMILY TYPES DIALOG WRITES - each type made current in turn.
+    // Revit posts a size its constraints cannot take as a WARNING and keeps the
+    // value while the planes stay put, so where a value can move geometry every
+    // labelled dimension that agreed with its parameter in that type before
+    // the write must agree after it.
+    var broken = new List<string>();
+    if (route.Length == 0 && toWrite.Count > 0)
+    {
+        route = "each type made current in turn";
+        Func<List<Dimension>> labelledNow = () => new FilteredElementCollector(doc).OfClass(typeof(Dimension))
+            .Cast<Dimension>()
+            .Where(d => { try { return d.FamilyLabel != null; } catch (Exception) { return false; } })
+            .ToList();
+        Func<Dimension, bool> agrees = d =>
+        {
+            var holds = fm.CurrentType == null ? null : fm.CurrentType.AsDouble(d.FamilyLabel);
+            var reads = d.Value;
+            return holds.HasValue && reads.HasValue && Math.Abs(holds.Value - reads.Value) < 0.01 / 304.8;
+        };
+
+        foreach (var name in toWrite)
+        {
+            var t = typeNamed(name);
+            HashSet<string> agreedHere = null;
+            try
+            {
+                if (fm.CurrentType == null || fm.CurrentType.Name != name) fm.CurrentType = t;
+                if (movesGeometry)
+                {
+                    doc.Regenerate();
+                    agreedHere = new HashSet<string>(labelledNow().Where(d => agrees(d)).Select(d => d.UniqueId));
+                }
+                foreach (var plan in planned)
+                {
+                    if (plan.Item3 is double) fm.Set(plan.Item1, (double)plan.Item3);
+                    else if (plan.Item3 is int) fm.Set(plan.Item1, (int)plan.Item3);
+                    else if (plan.Item3 is ElementId) fm.Set(plan.Item1, (ElementId)plan.Item3);
+                    else fm.Set(plan.Item1, (string)plan.Item3);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Revit refused the values for type \"" + name + "\": "
+                    + ex.Message + " NOTHING from this call was kept - no type was written.");
+            }
+            if (movesGeometry)
+            {
+                doc.Regenerate();
+                var current = fm.CurrentType;
+                broken.AddRange(labelledNow()
+                    .Where(d => agreedHere.Contains(d.UniqueId))
+                    .Where(d => !agrees(d))
+                    .Select(d => "in \"" + name + "\" the dimension labelled " + d.FamilyLabel.Definition.Name
+                        + " reads " + (d.Value.HasValue ? mm(d.Value.Value) + " mm" : "nothing")
+                        + " where the parameter holds "
+                        + (current.AsDouble(d.FamilyLabel).HasValue ? mm(current.AsDouble(d.FamilyLabel).Value) + " mm" : "nothing")));
+            }
+        }
+
+        // THE TYPE THAT WAS CURRENT BEFORE IS CURRENT AGAIN.
+        var start = startName == null ? null : typeNamed(startName);
+        if (start != null && (fm.CurrentType == null || fm.CurrentType.Name != startName))
+        {
+            try { fm.CurrentType = start; }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Revit would not make \"" + startName + "\" current again: "
+                    + ex.Message + " NOTHING from this call was kept.");
+            }
+        }
+    }
+
+    doc.Regenerate();
+
+    // READ BACK, every type asked for, from the type itself.
+    var mismatchedMany = new List<string>();
+    foreach (var name in manyTypes)
+    {
+        var t = typeNamed(name);
+        foreach (var plan in planned)
+        {
+            var p = plan.Item1;
+            var now = shown(t, p, plan.Item2);
+            if (toWrite.Contains(name))
+                written.Add("\"" + name + "\": " + p.Definition.Name + " = " + now
+                    + " (was " + beforeMany[name + "|" + p.Definition.Name] + ")");
+            if (!holdsPlan(t, plan)) mismatchedMany.Add("\"" + name + "\": " + p.Definition.Name + " reads " + now);
+        }
+    }
+    typesWritten.AddRange(toWrite);
+    typeUsed = fm.CurrentType == null ? "" : fm.CurrentType.Name;
+
+    var labelsMany = new FilteredElementCollector(doc).OfClass(typeof(Dimension)).Cast<Dimension>()
+        .Where(d => { try { return d.FamilyLabel != null; } catch (Exception) { return false; } })
+        .ToList();
+    foreach (var plan in planned)
+    {
+        drives += labelsMany.Count(d => d.FamilyLabel.Id == plan.Item1.Id);
+        try { drives += plan.Item1.AssociatedParameters.Size; } catch (Exception) { }
+    }
+
+    // ALL OR NOTHING, READ BACK - a value that did not hold in any type, or a
+    // dimension that stopped agreeing with its parameter, THROWS.
+    if (mismatchedMany.Count > 0)
+        throw new InvalidOperationException("Not every type held what was asked for: "
+            + string.Join("; ", mismatchedMany) + ". NOTHING from this call was kept.");
+    if (broken.Count > 0)
+        throw new InvalidOperationException("Revit could not move the family to these values: "
+            + string.Join("; ", broken) + ". Its constraints cannot take them, so NOTHING from this call "
+            + "was kept.");
+
+    if (toWrite.Count == 0)
+        findings.Add("Every type asked for already held these values, so nothing was written and no type "
+            + "was made current: " + string.Join(", ", manyTypes.Select(n => "\"" + n + "\"")) + ".");
+    else
+        findings.Add("Wrote into " + toWrite.Count + " of the " + manyTypes.Count + " type(s) asked for, in ONE "
+            + "change - one entry in Revit's undo list: " + string.Join(", ", toWrite.Select(n => "\"" + n + "\""))
+            + ". Read back: " + string.Join("; ", written) + ".");
+    if (toWrite.Count > 0 && alreadyHeld.Count > 0)
+        findings.Add(alreadyHeld.Count + " type(s) already held every value and were not touched or made "
+            + "current: " + string.Join(", ", alreadyHeld.Select(n => "\"" + n + "\"")) + ".");
+    if (route == "no type made current")
+        findings.Add("No type was made current: Revit's API writes a family type only while it is current, so "
+            + "this text was set as a formula on every type at once and the formula cleared again - every type "
+            + "keeps the text, no formula is left, and nothing a type switch deletes was deleted.");
+    else if (route == "each type made current in turn")
+        findings.Add((formulaTried ? "The way with no type made current was tried and did not hold, so it was "
+                + "taken back. " : "")
+            + (!formulaTried && everyType && noFormula.Count > 0
+                ? "Revit gives " + string.Join(", ", noFormula) + " no formula, so the way with no type made "
+                  + "current could not be used for this call; the other text values, in a call of their own, "
+                  + "may take it. "
+                : "")
+            + "Each type was made current in turn to write it, as the Family Types dialog does - Revit's API "
+            + "writes a family type only while it is current. On Revit 2020 a switch can delete an automatic "
+            + "sketch dimension, and anything deleted is counted once, in this call's one question. The family's "
+            + "current type is \"" + typeUsed + "\", as it was before the call.");
+    if (toWrite.Count > 0)
+        findings.Add(drives == 0
+            ? "Nothing in the family is labelled with or associated to these parameters, so no geometry moved."
+            : "These parameters drive " + drives + " labelled dimension(s) or associated element parameter(s)"
+              + (movesGeometry ? ", and every labelled dimension reads its parameter in every type written."
+                               : "; text and materials move no geometry."));
+}
+
+if (refused == null && !deleteType && !askedMany)
 {
     var fm = doc.FamilyManager;
 

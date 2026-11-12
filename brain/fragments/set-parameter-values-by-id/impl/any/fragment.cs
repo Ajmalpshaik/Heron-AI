@@ -31,6 +31,19 @@
 //   element takes a NAME, by either shape (5b-1259) - see "an element
 //   reference takes a name".
 //
+//   VERSION 8 (2026-11-11): A KEY WITH A * IS A PATTERN and names EVERY
+//   element (or type) in the search whose key matches it - `*` alone every
+//   one, `600*` every one starting 600 - ignoring case, as Revit names types.
+//   The same values go onto all of them, so "clear Manufacturer, Model and URL
+//   on every type of this family" is ONE row:
+//   `key=Type Name|in=Air Terminals|types=yes|Family Name=KDF Square
+//   Diffuser;*|Manufacturer=|Model=|URL=`. A pattern row is ALL OR NOTHING ON
+//   ITS OWN: one element it names that lacks a parameter, holds it read-only,
+//   or turns a value down, and NOTHING on that row is written, the elements
+//   named. A blank value - `Manufacturer=` - writes empty text, as on any row.
+//   A key that is some element's whole value is still that one key, star and
+//   all, exactly as before.
+//
 // BY ID: TWO PASSES, AND THE FIRST WRITES NOTHING. Every row is checked
 // against the model before any row is written - still there, the same
 // element, the parameter there once, writable, and still holding the value
@@ -1653,6 +1666,35 @@ if (keyed)
         return levelAsks(element, target);
     };
 
+    // VERSION 8 - a key with a * matches as a pattern: * is any run of
+    // characters, anything else is itself, ignoring case.
+    Func<string, string, bool> starMatch = (pattern, value) =>
+    {
+        var p = pattern.ToLowerInvariant();
+        var v = (value ?? "").ToLowerInvariant();
+        int pi = 0, vi = 0, starAt = -1, resumeAt = 0;
+        while (vi < v.Length)
+        {
+            if (pi < p.Length && p[pi] != '*' && p[pi] == v[vi]) { pi++; vi++; }
+            else if (pi < p.Length && p[pi] == '*') { starAt = pi++; resumeAt = vi; }
+            else if (starAt >= 0) { pi = starAt + 1; vi = ++resumeAt; }
+            else return false;
+        }
+        while (pi < p.Length && p[pi] == '*') pi++;
+        return pi == p.Length;
+    };
+    var patternKeys = new HashSet<string>(StringComparer.Ordinal);
+
+    // An element as a modeller knows it - a type as Family: Type - with its id.
+    Func<Element, string> described = element =>
+    {
+        var type = element as ElementType;
+        var name = type != null && !string.IsNullOrEmpty(type.FamilyName)
+            ? type.FamilyName + ": " + type.Name
+            : element.Name;
+        return "'" + name + "' (id " + element.Id + ")";
+    };
+
     var keyedPlan = new List<Tuple<string, Element, List<Tuple<string, string>>>>();
     if (problem == null)
     {
@@ -1691,6 +1733,28 @@ if (keyed)
             var key = row.Item1;
             List<Element> hits;
             byKey.TryGetValue(key, out hits);
+            // VERSION 8 - a key with a * that is no element's whole value is a
+            // PATTERN: every element whose key matches it, each listed once.
+            if (key.IndexOf('*') >= 0 && (hits == null || hits.Count == 0) && timesGiven[key] == 1)
+            {
+                var named = new List<Element>();
+                var seenIds = new HashSet<string>(StringComparer.Ordinal);
+                foreach (var entry in byKey)
+                {
+                    if (!starMatch(key, entry.Key)) continue;
+                    foreach (var element in entry.Value)
+                        if (seenIds.Add(element.Id.ToString())) named.Add(element);
+                }
+                if (named.Count == 0)
+                {
+                    refuse(key, "no " + (wantTypes ? "type" : "element") + " in " + where + " has a " + keyName
+                           + " matching '" + key + "' - not written");
+                    continue;
+                }
+                patternKeys.Add(key);
+                foreach (var element in named) matched.Add(Tuple.Create(key, element, row.Item2));
+                continue;
+            }
             if (timesGiven[key] > 1)
                 refuse(key, "given on " + timesGiven[key] + " rows, so which value is meant would be a guess - not written");
             else if ((hits == null || hits.Count == 0) && typeKeys.Contains(key))
@@ -1716,6 +1780,7 @@ if (keyed)
 
         foreach (var row in matched)
         {
+            if (patternKeys.Contains(row.Item1)) continue;
             var element = row.Item2;
             if (rowsOnElement[element.Id.ToString()] > 1)
             {
@@ -1738,6 +1803,39 @@ if (keyed)
             }
             keyedPlan.Add(row);
         }
+
+        // VERSION 8 - A PATTERN ROW IS CHECKED WHOLE: every element it names
+        // must take every value, or none of them is written, each one that
+        // cannot named with why.
+        foreach (var key in patternKeys)
+        {
+            var members = matched.Where(r => r.Item1 == key).ToList();
+            var cannot = new List<string>();
+            foreach (var row in members)
+            {
+                var element = row.Item2;
+                string why = null;
+                if (rowsOnElement[element.Id.ToString()] > 1)
+                    why = "another row's key names it too";
+                foreach (var pair in row.Item3)
+                {
+                    if (why != null) break;
+                    why = whyNot(element, pair.Item1, pair.Item2);
+                }
+                if (why == null && faceKeeper != null) why = faceKeeper.Check(element);
+                if (why != null) cannot.Add(described(element) + ": " + why);
+            }
+            if (cannot.Count > 0)
+            {
+                refuse(key, "the pattern names " + members.Count + " " + (wantTypes ? "type(s)" : "element(s)")
+                       + " and " + cannot.Count + " cannot take these values - "
+                       + string.Join("; ", cannot.Take(5).ToArray())
+                       + (cannot.Count > 5 ? "; and " + (cannot.Count - 5) + " more" : "")
+                       + " - so NONE of the " + members.Count + " is written");
+                continue;
+            }
+            keyedPlan.AddRange(members);
+        }
     }
 
     // ------------------------------------------------------------ write
@@ -1747,45 +1845,54 @@ if (keyed)
     var done = new List<Tuple<string, Element, List<Tuple<string, string>>>>();
     // Version 4: the id each element reference was set to, by element and name.
     var idAsked = new Dictionary<string, ElementId>(StringComparer.Ordinal);
-    foreach (var row in keyedPlan)
+    // VERSION 8: a ROW is one sub-transaction - one element for a key, every
+    // element a pattern names for a pattern - so a pattern row is kept whole or
+    // taken back whole.
+    foreach (var keyRows in keyedPlan.GroupBy(r => r.Item1))
     {
-        var element = row.Item2;
+        var rowGroup = keyRows.ToList();
+        Element element = null;
         string turnedDown = null;
         using (var attempt = new SubTransaction(doc))
         {
             attempt.Start();
             try
             {
-                foreach (var pair in row.Item3)
+                foreach (var row in rowGroup)
                 {
-                    var target = theOne(element, pair.Item1);
-                    var asked = pair.Item2 ?? "";
-                    var ok = false;
-                    if (isYesNo(target))
+                    element = row.Item2;
+                    foreach (var pair in row.Item3)
                     {
-                        var said = same(asked).ToLowerInvariant();
-                        if (Array.IndexOf(ticked, said) >= 0) ok = target.Set(1);
-                        else if (Array.IndexOf(unticked, said) >= 0) ok = target.Set(0);
+                        var target = theOne(element, pair.Item1);
+                        var asked = pair.Item2 ?? "";
+                        var ok = false;
+                        if (isYesNo(target))
+                        {
+                            var said = same(asked).ToLowerInvariant();
+                            if (Array.IndexOf(ticked, said) >= 0) ok = target.Set(1);
+                            else if (Array.IndexOf(unticked, said) >= 0) ok = target.Set(0);
+                        }
+                        else if (target.StorageType == StorageType.String)
+                        {
+                            ok = target.Set(asked);
+                        }
+                        else if (target.StorageType == StorageType.ElementId)
+                        {
+                            var id = referenceByName(target, asked).Item1;
+                            ok = id != null && target.Set(id);
+                            if (ok) idAsked[element.Id + "|" + pair.Item1] = id;
+                        }
+                        else
+                        {
+                            ok = target.SetValueString(asked);
+                        }
+                        if (!ok)
+                        {
+                            turnedDown = "Revit would not take '" + asked + "' for " + pair.Item1;
+                            break;
+                        }
                     }
-                    else if (target.StorageType == StorageType.String)
-                    {
-                        ok = target.Set(asked);
-                    }
-                    else if (target.StorageType == StorageType.ElementId)
-                    {
-                        var id = referenceByName(target, asked).Item1;
-                        ok = id != null && target.Set(id);
-                        if (ok) idAsked[element.Id + "|" + pair.Item1] = id;
-                    }
-                    else
-                    {
-                        ok = target.SetValueString(asked);
-                    }
-                    if (!ok)
-                    {
-                        turnedDown = "Revit would not take '" + asked + "' for " + pair.Item1;
-                        break;
-                    }
+                    if (turnedDown != null) break;
                 }
             }
             catch (Exception failure)
@@ -1799,10 +1906,19 @@ if (keyed)
 
         if (turnedDown != null)
         {
-            refuse(row.Item1, turnedDown + " - nothing on this row was kept (id " + element.Id + ")");
+            if (patternKeys.Contains(keyRows.Key))
+                refuse(keyRows.Key, turnedDown + " on " + (element == null ? "an element" : described(element))
+                       + " - the pattern names " + rowGroup.Count + ", and NONE of them was kept");
+            else
+                refuse(keyRows.Key, turnedDown + " - nothing on this row was kept (id " + element.Id + ")");
             continue;
         }
-        done.Add(row);
+        done.AddRange(rowGroup);
+        if (patternKeys.Contains(keyRows.Key))
+            findings.Add("'" + keyRows.Key + "' named " + rowGroup.Count + " " + (wantTypes ? "type(s)" : "element(s)")
+                         + " in " + where + ", and all " + rowGroup.Count + " were written: "
+                         + string.Join(", ", rowGroup.Take(10).Select(r => described(r.Item2)).ToArray())
+                         + (rowGroup.Count > 10 ? " and " + (rowGroup.Count - 10) + " more" : "") + ".");
     }
 
     // ------------------------------------------------------- read back

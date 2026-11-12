@@ -1446,6 +1446,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-nc.md`](needs-checking/group-nc.md)
 
+## Group ND - a family's 2D side read back - lines, regions, nested families, and what is locked, labelled and linked to each: `REPORT_FAMILY_FORMS` version 5 (2026-11-11)
+
+**Its own file:** [`needs-checking/group-nd.md`](needs-checking/group-nd.md)
+
 ## Group NE - a family's 2D linked to a Yes/No by id, and an angle labelled between two planes: `LINK_FAMILY_PARAMETER` version 4 and `LABEL_FAMILY_DIMENSION` version 3 (2026-11-11)
 
 **Its own file:** [`needs-checking/group-ne.md`](needs-checking/group-ne.md)
@@ -1453,6 +1457,10 @@ Step 6 is finished, and not before. At that point:
 ## Group NF - a family's 2D side through five widened cards: a detail item placed and arrayed in a family view, a symbolic line's detail levels, lines on a subcategory, an arc's radius labelled: `PLACE_DETAIL_COMPONENTS` v2, `ARRAY_FAMILY_FORMS` v4, `SET_FAMILY_FORM_VISIBILITY` v2, `SET_FAMILY_FORM_SUBCATEGORY` v2, `LABEL_FAMILY_RADIUS` v6 (2026-11-11)
 
 **Its own file:** [`needs-checking/group-nf.md`](needs-checking/group-nf.md)
+
+## Group NG - one value, blank or filled, into MANY types in ONE call: `SET_FAMILY_TYPE_VALUES` version 5 in a family, `SET_PARAMETER_VALUES_BY_ID` version 8 in a project (2026-11-11)
+
+**Its own file:** [`needs-checking/group-ng.md`](needs-checking/group-ng.md)
 
 ## Group NN - a reference plane at an angle: `CREATE_REFERENCE_PLANES` version 2 (2026-11-12)
 
