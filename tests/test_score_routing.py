@@ -81,8 +81,11 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TOOL = os.path.join(ROOT, "tools", "score-routing.py")
 KEY = os.path.join(ROOT, "tests", "data", "owner-questions.yaml")
 PLAIN_KEY = os.path.join(ROOT, "tests", "data", "plain-questions.yaml")
-PLAIN_ROWS = os.path.join(ROOT, "docs", "fragment-issues",
-                          "section-5b-rows-401-425.md")
+# The register's page, read as one text through tools/register-text.py -
+# never one rows file by name: a row moves between files (the split
+# re-bands them, and since 2026-11-12 a new row is a file of its own), and a
+# suite that named the file would fail for the register being tidied.
+PLAIN_REGISTER = os.path.join(ROOT, "docs", "FRAGMENT-ISSUES.md")
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
 sys.path.insert(0, os.path.join(ROOT, "tests", "support"))
@@ -354,10 +357,18 @@ def _frozen_from_rows():
     """{477: [...], 478: [...], 1005: [...]} - each row's frozen list, split the
     way the yaml was made from it, so the file is checked against the
     register's own words rather than against a second copy of them."""
+    import importlib.util
     import re
     out = {}
-    with io.open(PLAIN_ROWS, encoding="utf-8") as handle:
-        lines = handle.read().splitlines()
+    spec = importlib.util.spec_from_file_location(
+        "register_text", os.path.join(ROOT, "tools", "register-text.py"))
+    reader = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(reader)
+    whole = reader.register_text(PLAIN_REGISTER) or ""
+    # Section 5b alone: section 5 numbers its own rows from 1.
+    opened = whole.find("\n## 5b. ")
+    closed = whole.find("\n## ", opened + 1)
+    lines = whole[opened:closed if closed > opened else len(whole)].splitlines()
     for n, lead, _size in PLAIN_SOURCES:
         line = [x for x in lines if x.startswith("| **%d** |" % n)]
         found = re.search(r"\*\*%s\*\* (.*?)\. \|" % re.escape(lead),

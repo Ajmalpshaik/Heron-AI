@@ -37,13 +37,27 @@ WHAT IT PROVES
   4. THE REAL REGISTER IS REPORTED, NOT GATED. This suite prints what the
      sweep finds today and does not fail on it - a finding is a question,
      which is the rule every report in tools/ is written to.
+
+  5-7. THREE THINGS THAT ARE GATES: every row has three cells, no blank line
+     splits a table, and no number is used twice.
+
+  8. A NUMBER IS USED TWICE WHEREVER ITS TWO ROWS ARE KEPT. Since 2026-11-12
+     a new row of section 5b is a file of its own, so the same number can sit
+     in a rows file on one branch and in row-5b-N.md on another, and merge
+     without a conflict. Check 7 has to see that pair, and is shown here to -
+     on a register built in a scratch folder, never the real one. (Two
+     branches that both write row-5b-N.md collide in git before any suite
+     runs: one name, two files.)
 """
 
 import collections
 import importlib.util
+import io
 import os
 import re
+import shutil
 import sys
+import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -65,6 +79,83 @@ def state_of(line):
     """The state cell, read exactly as the tool reads it."""
     cells = OD.CELL.split(line)
     return re.sub(r"[`*]", "", cells[-2]).strip()
+
+
+def used_twice():
+    """The ids used by more than one row, in either section, of the register
+    OD.REGISTER names - read as the tool reads it."""
+    twice = []
+    for label, start, ends in OD.SECTIONS:
+        found = OD.rows(start, ends, label) or []
+        seen_ids = collections.Counter(number for number, _ in found)
+        twice.extend(OD.ident(label, number)
+                     for number, count in sorted(seen_ids.items())
+                     if count > 1)
+    return twice
+
+
+NL = chr(10)
+ROWS_FILE = "section-5b-rows-001-025.md"
+
+
+def scratch_register(top, in_rows_file, own_files):
+    """A small register in TOP/docs: section 5b's rows IN_ROWS_FILE in its one
+    rows file, and one file each for the numbers in OWN_FILES, under a page
+    that says rows from 3 on are one file each."""
+    folder = os.path.join(top, "docs", "fragment-issues")
+    if os.path.isdir(os.path.join(top, "docs")):
+        shutil.rmtree(os.path.join(top, "docs"))
+    os.makedirs(folder)
+    head = ["| # | Defect | State |", "|---|---|---|"]
+    page = NL.join([
+        "# The register", "",
+        OD.SECTION_START + " found by proving", "",
+        "| # | Defect | State |", "|---|---|---|",
+        "| **1** | **One.** | OPEN - recorded. |", "",
+        OD.SECTION_5B + " the repository, file by file", "",
+        "**Its rows, in order:** [001-025](fragment-issues/%s)" % ROWS_FILE, "",
+        "**Its rows from 3 on, one file each:** [`fragment-issues/row-5b-NNNN.md`](fragment-issues/)", "",
+        OD.SECTION_END, "", "Nothing.", ""])
+    files = {ROWS_FILE: NL.join(["# Rows", ""] + head + [
+        "| **%d** | **Row %d, in the rows file.** | OPEN - recorded. |" % (n, n) for n in in_rows_file] + [""])}
+    for n in own_files:
+        files["row-5b-%d.md" % n] = NL.join(["# Row 5b-%d" % n, ""] + head + [
+            "| **%d** | **Row %d, in a file of its own.** | OPEN - recorded. |" % (n, n), ""])
+    with io.open(os.path.join(top, "docs", "FRAGMENT-ISSUES.md"), "w", encoding="utf-8", newline="") as handle:
+        handle.write(page)
+    for name, text in files.items():
+        with io.open(os.path.join(folder, name), "w", encoding="utf-8", newline="") as handle:
+            handle.write(text)
+    return os.path.join(top, "docs", "FRAGMENT-ISSUES.md")
+
+
+def across_layouts():
+    """Check 8. Each check FAILS, and does not raise, on a reader that does
+    not read a row's own file: there the two rows of one number are never in
+    one text, and nothing is used twice."""
+    real, top = OD.REGISTER, tempfile.mkdtemp()
+    try:
+        OD.REGISTER = scratch_register(top, [1, 2], [3, 4])
+        found = OD.rows(OD.SECTION_5B, [OD.SECTION_END], "5b") or []
+        check([number for number, _ in found] == [1, 2, 3, 4],
+              "rows kept one to a file are read with the rows file's, each once (%s)"
+              % ", ".join("5b-%d" % number for number, _ in found))
+        check(used_twice() == [], "and no number is used twice")
+
+        OD.REGISTER = scratch_register(top, [1, 2, 3], [3, 4])
+        found = OD.rows(OD.SECTION_5B, [OD.SECTION_END], "5b") or []
+        check([number for number, _ in found].count(3) == 2,
+              "a number in the rows file and in a file of its own is read as two rows")
+        check(used_twice() == ["5b-3"],
+              "and check 7's own count names it: %s" % (", ".join(used_twice()) or "nothing repeated"))
+
+        OD.REGISTER = scratch_register(top, [1, 2, 4, 4], [3])
+        check(used_twice() == ["5b-4"],
+              "as it names a number used twice in one rows file, which it always did: %s"
+              % (", ".join(used_twice()) or "nothing repeated"))
+    finally:
+        OD.REGISTER = real
+        shutil.rmtree(top, ignore_errors=True)
 
 
 def main():
@@ -188,16 +279,13 @@ def main():
     # and suite exited 0 on the tree that kept both - so "row 5b-158" named
     # two rows. test_owner_queue already refuses the same clash in
     # NEEDS-CHECKING; this is the register's half of it.
-    twice = []
-    for label, start, ends in OD.SECTIONS:
-        found = OD.rows(start, ends, label) or []
-        seen_ids = collections.Counter(number for number, _ in found)
-        twice.extend(OD.ident(label, number)
-                     for number, count in sorted(seen_ids.items())
-                     if count > 1)
+    twice = used_twice()
     check(not twice,
           "every row number is used once%s"
           % ("" if not twice else " - repeated: %s" % ", ".join(twice)))
+
+    print("\n8. and a number is used twice wherever its two rows are kept (5b-1564)")
+    across_layouts()
 
     print()
     if FAILURES:
