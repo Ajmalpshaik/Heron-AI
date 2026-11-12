@@ -160,4 +160,3 @@ SIGNED by Ajmal PS and marked PROVEN on the run named; second routes and Revit 2
 `LOCK_FAMILY_LINES_TO_PLANES` v2, Group ND's lock-reading rows, and every test on Revit 2024. Beyond any tool (NO
 API): a filled region's, a nested family's and a symbolic line's view-direction settings, and placing a nested
 detail item in a family VIEW.
-
