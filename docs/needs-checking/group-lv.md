@@ -62,3 +62,9 @@ never a working model. Every write here is ROLLED BACK unless the modeller keeps
 | **LV4** | *A number and a refusal of the wrong kind.* On a second scratch copy with *Project Code* re-made as a Number parameter: `values=Project Code=PRJ-77`, then `values=Project Code=12.5`, each rolled back | The first refused naming *Project Code* and *PRJ-77*, nothing written; the second `written` 1 and the dialog showing 12.5 as the project shows numbers |
 | **LV5** | *Already that, and a family.* `values=Client Name=Owner` on LV1's project; then any values with a family open in front | `alreadyThat` *["Client Name"]*, `written` 0; then `notAProject` true and nothing written |
 | **LV6** | *The second route.* Manage > Project Information by hand on the same copy, the same values typed | The same labels; a title block on a sheet showing the new values; `REPORT_PROJECT_INFORMATION` after the run giving `changes`' after column |
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `SET_PROJECT_INFORMATION` reads PROVEN on its card, at version 2 - its `proof` block is signed by Ajmal PS,
+2026-11-07, on Test for Issue (6,120 elements), Revit 2024, session 16836. So where this page calls a card named here
+DRAFT, or says nothing has run in Revit, that was true when it was written and is out of date as a statement about the
+card. Whether LV1 to LV6 were what that proof ran is NOT sorted here: for the owner.

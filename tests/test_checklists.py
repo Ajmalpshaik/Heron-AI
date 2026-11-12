@@ -472,7 +472,9 @@ class _FakeServer(object):
 def _server_run():
     """The server's _checklist_ask and _run_checklist, lifted out of its source
     and run against a stand-in - the MCP SDK is not needed to read them."""
-    text = io.open(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py"), encoding="utf-8").read()
+    sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+    import heron_tools as TOOLS
+    text = TOOLS.server_text()
     start = text.index("\ndef _checklist_checks(")
     end = text.index("\ndef _checklist_on_page(")
     values = text[text.index("\ndef _values_array("):text.index("\ndef ", text.index("\ndef _values_array(") + 5)]

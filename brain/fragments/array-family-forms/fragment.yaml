@@ -14,9 +14,9 @@ source: OFFICIAL
 risk: MODIFY
 
 # VERSION 4 (2026-11-11) - A DETAIL ITEM NESTED IN A VIEW, and back to DRAFT.
-# Version 3 was PROVEN on 2026-10-18 (the proof block below, kept as the
+# Version 3 was PROVEN on 2026-10-18 (the proof block then below, kept as the
 # record of what it proved: a solid extrusion arrayed, and a row leaving its
-# sketch plane refused); its C# moved, so it is DRAFT again until
+# sketch plane refused); its C# moved, so it was DRAFT again at the time until
 # NEEDS-CHECKING Group NF is run (D-30, D-117). A view-based nested family -
 # the owner's diffuser flow arrows, a detail item in the Ref. Level plan - is
 # not drawn in a 3D view, and version 3 made every array in the first 3D view

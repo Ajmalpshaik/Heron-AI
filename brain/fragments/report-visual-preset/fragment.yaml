@@ -18,7 +18,7 @@ version: 4
 # back with the answer. They are now built only where a setting is skipped,
 # byte for byte the same change in APPLY_ and REPORT_VISUAL_PRESET. Nothing
 # the card reads, writes or counts changed. Version 3's proof below no longer
-# describes the code. DRAFT until NEEDS-CHECKING Group MQ proves it.
+# described the code. DRAFT then, until NEEDS-CHECKING Group MQ proves it.
 # VERSION 3, 2026-10-21 - row 5b-1306, found 2026-10-21 making interior
 # renders for the owner on Revit 2020: a Still sun's time was written and read
 # through the SITE's time zone (SiteLocation.ConvertFromProjectTime /
@@ -30,12 +30,12 @@ version: 4
 # 171 - the dialog's 11:00. Both directions now go through the PC's zone (the
 # rule row 5b-1282 found for Revit's sunset). The shared block's two conversions changed, byte for
 # byte the same in APPLY_ and REPORT_VISUAL_PRESET. Version 2's proof below no
-# longer describes the code.
-# DRAFT until NEEDS-CHECKING Group IN proves it.
+# longer described the code.
+# DRAFT then, until NEEDS-CHECKING Group IN proves it.
 # VERSION 2, 2026-10-20 - rows 5b-1282 and 5b-1283: the same two repairs as
 # APPLY_VISUAL_PRESET version 2 - the sunset date handed over as UTC, and the
 # depth-cueing reason naming the view's discipline. Version 1's proof below
-# no longer describes the code: DRAFT until it is proved again.
+# no longer described the code: DRAFT then, until it is proved again.
 source: OFFICIAL
 risk: READ
 

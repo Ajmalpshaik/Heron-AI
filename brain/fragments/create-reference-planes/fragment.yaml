@@ -16,8 +16,8 @@ capability: CREATE_REFERENCE_PLANES
 # owner asked that the missing tool be built and proved in the same scratch
 # family ("you are testing tool a but for that need tool b ... test tools b
 # also"). Widened rather than made new: the same job, a named reference plane.
-# Version 1's proof below no longer describes the code and is kept as the
-# record; DRAFT until NEEDS-CHECKING Group NN proves version 2 (D-30).
+# Version 1's proof below no longer described the code and was kept as the
+# record; DRAFT at the time, until NEEDS-CHECKING Group NN proves version 2 (D-30).
 version: 2
 source: OFFICIAL
 risk: MODIFY

@@ -16,13 +16,17 @@ not planned as if they were unrelated.
 
 **Nothing here is built. Phase 1 is planned; Phase 2 is a paragraph; Phase 3 is a promise.**
 
+**That was 2026-09-21. Read 2026-11-12:** most of Phase 1 has been built since, and stages of it proved on the
+owner's PC - [`02-implementation.md` §4](02-implementation.md#4-progress) holds each stage's state and its
+evidence, and nothing else does. Phases 2 and 3 are as written here.
+
 ---
 
 ## 2. The three phases
 
 | | Phase | State |
 |---|---|---|
-| **1** | **Installation** — the installer, the three routes, the Settings panel | **Planned in this folder.** Nothing built |
+| **1** | **Installation** — the installer, the three routes, the Settings panel | **Planned in this folder.** Nothing built on 2026-09-21; mostly built since - [`02-implementation.md` §4](02-implementation.md#4-progress) |
 | **2** | **AI that fixes and AI that builds** — bring AJ AI's debugging and tool-creation across, then port the AJ Tools tools onto Heron fragments | **Outlined below.** Not planned |
 | **3** | Not told yet | The owner will walk through it. **Some of it reaches back into Phase 2**, so Phase 2 is not designed in detail until Phase 3 is heard |
 
@@ -63,6 +67,10 @@ chat-to-create behaviour actually lives, so **it is the next thing to read**, an
 those two work should be designed before it is. Recorded here so an unread repository is not later
 mistaken for a studied one.
 
+**Since:** [08](08-lessons-from-the-brain.md) records the owner's earlier brain repository as read on
+2026-09-21, and [`plans/earlier-brain/`](../earlier-brain/README.md) what was taken from it, package by
+package, after the owner asked on 2026-09-22 for all of it to be checked.
+
 Two capabilities to bring across from AJ AI / AJ AI Brain:
 
 | | What it does |
@@ -102,7 +110,8 @@ The owner's reasoning, and it is the strongest argument in the whole programme:
 > them as well; while the AI is using them, if the tools are solid, it will not make mistakes."*
 
 **A tool built on fragments is a test of those fragments that someone actually wants to run.** 327 of
-395 fragments are `PROVEN` and the rest have never met a model — and a fragment nobody calls is a
+395 fragments were `PROVEN` on 2026-09-21 (today:
+`grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`) and the rest have never met a model — and a fragment nobody calls is a
 fragment nobody finds the fault in. Wiring a real tool to them turns daily use into proving.
 
 **This is [S6](00-structure.md) arrived at from the other direction.** S6 says a ribbon button should

@@ -1,0 +1,291 @@
+heron-status: DRAFT
+heron-step: 17
+heron-since: 0.1.0
+heron-layer: brain
+
+id: annotate-a-view
+name: Annotate a view - the missing tags placed, the clashing ones moved apart, then the strings asked for
+domain: revit.views
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
+risk: MODIFY
+
+purpose: >
+  Takes one view - a services plan, a section - from bare to annotated: what
+  is untagged in the categories the modeller names is counted and then
+  tagged, each category with its own tag; the tags that print on top of each
+  other are found and moved apart; leaders and offsets are set the way the
+  drawing standard wants; the strings of dimensions the modeller asks for
+  are drawn; and the view is read again. One view at a time. The rooms, doors
+  and walls of an architectural set are the drawing-set method's; this is the
+  services drawing after it.
+
+  NO STATUS IS TYPED BESIDE A CAPABILITY HERE. Each one's status is in the
+  list served after this method, read from the library every time it is
+  served. A read runs while its card is DRAFT and says so. A change does not:
+  revit_change refuses a DRAFT, and a card whose proof is older than its code
+  (D-117). A refusal that names the status is the answer for that step;
+  nothing here is tried round it. Steps 1, 3, 4 and 7 use reads the list
+  does not carry - FIND_UNTAGGED_ELEMENTS, FIND_OVERLAPPING_TAGS,
+  REPORT_VIEW_SETTINGS and REPORT_TAGS_AND_TARGETS; heron_resolve gives each
+  one's status.
+
+  WHETHER REVIT ASKS BEFORE IT KEEPS A CHANGE IS THE OWNER'S SWITCH, Ask to
+  Keep, AND IT IS OFF ON A PC AS INSTALLED (D-138). revit_health says which
+  way it is set for that Revit, read from Revit itself (built, not yet run
+  in Revit - Group NP), so CHECK IT before the first change. Where its line
+  says that Revit's Heron does not say, or could not be read, ASK THE
+  MODELLER: it is in Heron's Settings on the Heron tab (D-150), and python
+  tools/heron-ready.py, run in the Heron folder, prints it.
+  - OFF: each change below is KEPT AT ONCE, with nothing shown first - one
+    entry in Revit's undo list, which Revit's Undo takes back.
+  - ON: Revit selects and isolates what the call touched and asks Keep or
+    Discard, and nothing is kept until Keep (D-126). One exception: where
+    the modeller has used that box's link to keep the rest of a job without
+    asking, this chat's changes to this model are kept unasked until ten
+    quiet minutes pass, and each answer says so.
+  Say which of these it will be. It is the owner's switch and is never
+  turned from a chat. Every change here is annotation in ONE view: the model
+  itself is not touched, and each call is one entry in Revit's undo list.
+
+  A STEP KEEPS ONLY WHAT THE CALL BEFORE IT LEFT. expect_from names the one
+  call that ran last, and a call sent without it forgets what was found. So
+  each find below is run straight before the call that uses it, and run
+  again for the next one.
+
+  0. ASK WHAT IS WANTED, ONCE (D-33). Which view, by its name - with its view
+     type in front when two views share the name, "FloorPlan: Level 1".
+     Which categories are tagged. The tag type for each, or the project's own
+     default. A leader or none. Whether short runs are left bare, and under
+     what length. None is assumed - no tag family and no spacing is Heron's.
+  1. WHAT IS THERE, AND WHAT IS MISSING - READ, NOTHING CHANGED.
+     FILTER_ELEMENTS_BY_CATEGORY with categories the ones asked for, comma
+     separated - "Ducts, Duct Accessories, Air Terminals" - and inViewOnly
+     the view, so only what that view draws is read. Then
+     FIND_UNTAGGED_ELEMENTS with view the same view, expect_from naming the
+     filter: `elements` is the untagged ones and alreadyTagged the rest. Say
+     both counts to the modeller before anything is tagged - that is the
+     preview. A tag is counted PER VIEW: a duct tagged on another plan is
+     untagged here, and that is right. ROOMS, SPACES AND HVAC ZONES ARE NOT
+     READ BY THIS STEP: it reads ordinary tags only, so every room reads as
+     untagged whatever the plan shows. For those, the filter alone, and
+     then step 2 with expect_from naming the filter: step 2 reads their own
+     tags itself.
+  2. TAG THEM - ONE CALL, ONE UNDO, straight after step 1.
+     TAG_ELEMENTS_IN_VIEW with view the same view and
+     expect_from="find-untagged-elements" - step 1's last read, whose
+     `elements` are the untagged ones. It reads the view's own tags again
+     first and never puts a second tag on an element that has one, so
+     running it twice stacks nothing. Left to itself each category takes the
+     project's default tag of its kind.
+     tagTypeHintId names a tag type to try first for its own category;
+     tagTypeId names ONE type used on every element whatever its category -
+     only when the modeller asked for that. leader is none or straight;
+     minLengthMm is the RUN's own length in the model, not a length on the
+     paper; leaderOffsetMm is millimetres on the PAPER. READ THE ANSWER OUT,
+     all of it: `tagged`; alreadyTagged - 0 after step 1, which had already
+     taken the tagged ones out and counted them; tagTypesUsed, one line a
+     category
+     saying which tag type was used and how it was chosen - "the first one
+     loaded" is a GUESS and is said to the modeller as one; notTagged with
+     notTaggedWhy - no tag family loaded for that category is the usual
+     reason, and loading one is the modeller's to ask for; tooShort;
+     verticalSkipped - risers, which have no length on the paper and are left
+     bare on purpose. Rooms, spaces and zones take their own kind of tag, only
+     in a plan of their own level: unplaced, notEnclosed and otherLevel name
+     the rest.
+  3. WHICH ANNOTATION PRINTS ON TOP OF OTHER ANNOTATION - READ.
+     FIND_OVERLAPPING_TAGS with view and minOverlapMm, the overlap on the
+     PAPER, in millimetres, below which two boxes are let pass - asked for,
+     there is no default. It answers `pairs` and the `overlapping` ids, and
+     noBox for what it could not measure. It compares boxes, which are bigger
+     than the ink, so it over-reports a little; it does not compare
+     dimensions, and it cannot see a tag over a duct or over a linked
+     model's lines. Nothing is moved by it. With pairs 0, step 4 is skipped.
+  4. MOVE THEM APART, when step 3 found any. Collect the tags first: the
+     overlap read's ids do not travel to the next step, so
+     FILTER_ELEMENTS_BY_CATEGORY with categoryName the tag category as the
+     model names it - "Duct Tags" - and inViewOnly the view, one tag
+     category a call. Then ARRANGE_TAGS with view and expect_from naming that
+     filter. It moves only tags that clash, each as little as it can, and a
+     tag whose leader is already bent stays where it is while the other one
+     of the pair moves. FOUR VALUES, ALL ASKED FOR, NONE ASSUMED: minGapMm,
+     the clear gap between two tags; maxPasses; and fallbackTagWidthMm and
+     fallbackTagHeightMm, a tag's size, used only when every tag handed in
+     has a leader so that none can be measured.
+     THOSE THREE LENGTHS ARE MODEL MILLIMETRES, WHATEVER THE CARD'S OWN WORDS
+     SAY: its code never multiplies them by the view's scale (FRAGMENT-ISSUES
+     row 5b-240, open). Every other length in this method that is on the
+     paper is scaled by its card. So ask the modeller for the gap ON THE
+     PAPER and send it TIMES THE VIEW'S SCALE - 2 mm on a 1:100 plan is
+     minGapMm=200, and a tag 12 by 4 mm on that sheet is
+     fallbackTagWidthMm=1200 and fallbackTagHeightMm=400 - and say the
+     figure sent. A paper figure sent as it stands leaves the tags
+     touching - 2 model millimetres is 0.02 mm on that sheet - and a
+     paper-sized fallback is taken for a speck. The scale is read, not
+     asked: REPORT_VIEW_SETTINGS with views the view answers it in
+     viewScales - BEFORE the tags are collected, since a read in between
+     would lose them. It answers `moved`, stillOverlapping - what it could
+     NOT clear - and bothHadToMove. Then step 3 again: that read is the
+     proof, the call not failing is not. Step 3 measures on the PAPER and
+     this step in the MODEL, so the two are compared through the scale: tags
+     this step set 200 apart at 1:100 stand 2 mm apart on the sheet.
+     WHERE THERE IS NO ROOM FOR THE TAGS AT ALL, spreading cannot work and
+     the modeller says so. STACK_TAGS, with view and the tags from a filter
+     run straight before it, then gathers them in a column, each still
+     leadered to its own element: stackAt the point, or layout=edges with
+     marginMm to park them down both sides of the view; gapMm between them
+     on the paper. It is a different picture, never chosen for them.
+  5. THE DRAWING STANDARD'S OFFSET AND LEADERS, only when asked for. Each
+     takes the tags from a filter run straight before it, as step 4
+     collects them.
+     OFFSET_TAGS_FROM_HOST puts every tag the same distance off ITS OWN
+     element: view; tagCategories the tag categories by name or the word
+     all; offsetRightMm and offsetUpMm on the paper; addLeader true, false
+     or keep; and one of orientHorizontal, orientVertical, orientModel or
+     orientToHost when the tags are to be turned. FORCE_TAG_LEADER_LSHAPE
+     bends each straight leader into an L, with view and legMm on the paper.
+     Either can put tags back on top of each other: step 3 is read again
+     after it.
+  6. DIMENSIONS, each string asked for by the modeller - which runs, in which
+     view, how far off. CREATE_DIMENSION draws ONE string through a set of
+     parallel straight runs, centre to centre: the runs are the ones selected
+     in Revit, or a filter's run straight before it with expect_from; view;
+     and offsetMm, MODEL
+     millimetres from the runs - 500 is half a metre whatever the view's
+     scale. axis is left out to measure across the runs. A string through
+     FIXTURES - air terminals, equipment - is a call of its own, and then
+     axis=x or axis=y MUST be given: left out, the call is refused. ONE
+     STRING, ONE KIND: runs and fixtures handed in together are refused
+     whole and nothing is drawn. Grids and levels handed to
+     it are refused whole; a string between grids, or from a grid to a face,
+     is CREATE_LINEAR_DIMENSION, a call of its own with its own values. It
+     answers `created`, dimensionedCount - the references the string really
+     holds - and notLinear, noReference and `problem` for what it left out.
+  7. THE CHECK, and it is the proof. FIND_UNTAGGED_ELEMENTS again as step 1
+     ran it: what is still untagged is named, with step 2's reason for each
+     kind. FIND_OVERLAPPING_TAGS again. REPORT_TAGS_AND_TARGETS with view:
+     orphanTags are tags pointing at nothing - a deleted element's - and
+     linkedTags the ones whose element is inside a linked model, which is
+     normal on a services drawing and is said, not treated as a fault. Then
+     the modeller looks at the view: a box test cannot judge a drawing.
+
+  WORKSHARED MODELS. A view another person owns is skipped and named, never
+  taken (Constitution Article 12). Nothing here synchronises with central
+  (Article 10).
+
+  TWO CHATS ON ONE REVIT. expect_from with "where" -
+  expect_from="filter-elements-by-category where categoryName=Duct Tags" -
+  refuses a find the other chat left. Read the view before repeating a
+  change whose answer never came.
+
+  NOT HERE, AND SAID RATHER THAN WORKED ROUND. Taking a tag off is a delete:
+  REMOVE_TAGS, on the modeller's yes for that delete (Article 7), never as
+  part of a tidy-up. Several views in one go: this method is run view by
+  view. Loading a tag family that is missing. A tag over a duct, a hatch or
+  a linked model's lines is not found by step 3. Text notes are found by
+  step 3 and moved by nothing here - the modeller moves them. Room tags
+  belong in their rooms: CENTER_ROOM_TAGS, a call of its own. Sheets, title
+  blocks and printing are the drawing-set and issue-drawing-package methods.
+
+# WRITTEN FOR THIS METHOD on 2026-11-12, from the words of the brief it was
+# asked for in - "annotating a plan for issue (tag everything in a view, then
+# fix clashing tags, dimensions if a card exists)". None is from the owner's
+# own question log; his own way of asking is added on his word. No question
+# is declared: this method is above the write line (D-86), and what is
+# untagged or overlapping is a read with a card of its own.
+#
+# MEASURED 2026-11-12 through heron_brain.lookup, on the trained encoder the
+# container had and no re-ranker, against every sentence on file - the
+# owner's questions, the plain questions, every other method's utterances
+# and every live card's own. A method's words are not searched, so the
+# capability a lookup answers with cannot move; what can is the methods it
+# names beside it. Two sentences changed, both the owner's: "Tag all the
+# ducts in the active view." names this method first where it named
+# tag-family-creation and size-breakdown, and "Tag the ducts again using
+# this tag family." names it second in place of drawing-set. No other
+# sentence IN THAT SET is offered a different list.
+#
+# NOT IN THAT SET, AND IT MOVED MORE: a capability's bare name typed as the
+# request - the plain questions hold a few of those and no more. Measured on
+# review, 2026-11-12, every live card's capability name as the request, the
+# same backend, on the branch with main merged in: thirteen names changed
+# for this method. TAG_ELEMENTS_IN_VIEW and TAG_VIEWS_BY_RULES name it first,
+# ahead of tag-family-creation; ARRANGE_TAGS, STACK_TAGS,
+# OFFSET_TAGS_FROM_HOST, REMOVE_TAGS, REPORT_TAGS_AND_TARGETS, TAG_AREAS and
+# TAG_MATERIAL_OR_MULTI_CATEGORY second, in place of drawing-set;
+# FIND_OVERLAPPING_TAGS and FORCE_TAG_LEADER_LSHAPE where no method was
+# named; DIMENSION_VIEWS_BY_RULES ahead of drawing-set; and
+# APPLY_VIEW_TEMPLATE second, beside views-per-level. Two of the thirteen
+# are reads. Recorded, not tuned away: a bare name is what a chat sends
+# after it has chosen, not how a modeller asks.
+# NOT MEASURED AT ALL: the spelling backend CI uses, and the re-ranker the
+# owner's PC has.
+#
+# WHAT WAS TAKEN OUT TO GET THERE. "annotate this view for issue", the
+# brief's own wording, was the first sentence and named NO method: the
+# lookup answers it with the beam annotation cards, none of which this
+# method needs. "dimension" is in no sentence and not in the name: with it,
+# "which dimensions are overridden" - a read - named this method first, and
+# drawing-set's own "tag the rooms and the doors and dimension the plans"
+# lost room-setup.
+utterances:
+  - tag everything in this view for issue
+  - tag the whole view and sort out the clashing tags
+  - get this view tagged and tidy for issue
+
+# CAPABILITIES, never fragment ids - in the order the purpose gives.
+#
+# THE FOUR READS ARE LEFT OFF ON PURPOSE - FIND_UNTAGGED_ELEMENTS,
+# FIND_OVERLAPPING_TAGS, REPORT_VIEW_SETTINGS and REPORT_TAGS_AND_TARGETS -
+# as views-per-level leaves off FIND_VIEWS: a lookup names a method whose
+# needs hold one of its
+# answers, and each of those reads answers a QUESTION ("which ducts have no
+# tag", "the tags are on top of each other") that would then be offered this
+# change. FILTER_ELEMENTS_BY_CATEGORY, the find that hands every step its
+# elements, is left off for the reason update-general-notes gives: it answers
+# most requests about a category. So the list served with this method does
+# not carry those five; the purpose says where their status is read.
+needs:
+  - TAG_ELEMENTS_IN_VIEW
+  # Only when step 3 found a clash.
+  - ARRANGE_TAGS
+  # Only when the modeller says there is no room to spread them.
+  - STACK_TAGS
+  # Only when the drawing standard's offset or leader is asked for - step 5.
+  - OFFSET_TAGS_FROM_HOST
+  - FORCE_TAG_LEADER_LSHAPE
+  # Step 6, each string asked for.
+  - CREATE_DIMENSION
+
+# What must be true BEFORE it runs, so it fails early with something
+# useful instead of deep inside a transaction (docs/09 s2).
+preconditions:
+  - a project is open in front, it is the model the modeller means, and the view named is a real view of it - not a view template
+  - the modeller has said which view, which categories, the tag type for each or the project's default, and a leader or none - and none is assumed (D-33)
+  - a tag family for each category asked for is loaded in the project
+  - the gap between tags, the smallest overlap that counts and every offset are given for THIS drawing, in millimetres on the paper - there is no default - and the view's scale is known, because ARRANGE_TAGS is sent the gap times that scale (row 5b-240)
+  - revit_health has said whether Ask to Keep is on for that Revit - or, where its line could not say, the modeller has - and the modeller has been told that with it off each change is kept at once
+  - the owner has Changes on - a refusal that names the switch is the answer
+  - on a workshared model, a view the modeller cannot edit is skipped and named - nothing is checked out or synchronised for them (Articles 10 and 12)
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  WRITTEN 2026-11-12 IN A CLOUD SESSION, NOT RUN. No Revit was reachable. No
+  new capability and no new tool: every step names one the library already
+  has, and each step's values were read off that card's contract - and for
+  CREATE_DIMENSION's offset and FIND_OVERLAPPING_TAGS' threshold, off the
+  card's code and its recorded proof run.
+
+  What only Revit can show is in NEEDS-CHECKING Group NR: that a filter
+  carrying several tag categories at once hands ARRANGE_TAGS what it expects
+  (the cards' own proofs ran one category a call, which is what step 4
+  gives); that step 3 read again after step 4 comes back clear on a crowded
+  plan; and what the answers read like on a view whose template owns its
+  annotation categories.
+
+  DRAFT until the whole order has been run on a saved scratch copy and the
+  view looked at by a person: NEEDS-CHECKING Group NR.

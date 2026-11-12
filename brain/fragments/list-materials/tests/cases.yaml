@@ -75,6 +75,15 @@ positive:
       materials only, and the library came back whole - 1,942 assets, 87,931
       characters - or not at all
 
+  # Row 5b-203, added 2026-11-11 with version 7. NOT RUN - Group NK, NK8.
+  - given: >
+      the same material BEFORE the project parameter is added - Keywords
+      typed on its Identity tab, the name carried once; withAllTabs true
+    expect: >
+      "keywords '<what was typed>'" on its identity line, as version 6 gave
+      it, and `ambiguous` EMPTY - the count must not turn down a name that
+      occurs once
+
 negative:
   - given: >
       "Heron Materials Annotation", a family new from Metric Generic
@@ -122,6 +131,20 @@ negative:
       libraryAppearances empty and the finding saying 0 kept and every visible
       asset left out - never the whole library. The same run's project
       materials still listed, because libraryPattern filters the library alone
+
+  # Row 5b-203, added 2026-11-11 with version 7. NOT RUN - NEEDS-CHECKING
+  # Group NK, NK8; it needs a model that carries a duplicated name. On Revit
+  # 2024, never 2020: withAllTabs crashed there (row 5b-1404).
+  - given: >
+      a project with a project parameter called "Keywords" (Text) bound to
+      Materials, so every material carries the name twice; withAllTabs true,
+      namePattern one material whose Identity tab has Keywords typed in
+    expect: >
+      that material's identity line reads "keywords NOT READ - 2 parameters
+      share that name", the material is in `ambiguous` and a finding names
+      it - never the typed keywords and never the project parameter's value,
+      whichever Revit returned first (row 5b-203). The
+      rest of its line - description, class, graphics, assets - is unchanged
 
 second_route:
   - >

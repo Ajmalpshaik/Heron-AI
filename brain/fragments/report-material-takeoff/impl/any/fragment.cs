@@ -1,7 +1,8 @@
 // NOT STANDALONE. Assumes `elements`, `doc`, `factorParameter`, `groupBy` and
 // `top` are in scope, and leaves `areas`, `volumes`, `paintedMaterials`,
 // `elementsWithNoMaterial`, `materials`, `noMaterial`, `volumeM3`, `areaM2`,
-// `carbon`, `totalKg`, `noFactor`, `noVolume` and `findings` behind.
+// `carbon`, `totalKg`, `noFactor`, `ambiguous`, `noVolume` and `findings`
+// behind.
 //
 // VERSION 3 (2026-11-01) - REPORT_EMBODIED_CARBON MERGED IN. Given
 // `factorParameter` - a Number parameter on each MATERIAL holding kgCO2e per
@@ -80,6 +81,11 @@ const double MetresPerFoot = 0.3048;
 const double CubicMetresPerCubicFoot = 0.028316846592;
 var findings = new List<string>();
 var noFactor = new List<string>();
+// VERSION 4 (5b-203): materials carrying the factor's name twice - not read.
+// `ambiguous` as every reader of that row names it; the names are for the
+// finding.
+var ambiguous = new List<ElementId>();
+var ambiguousNames = new List<string>();
 var noVolume = 0;
 var totalKg = 0.0;
 var carbon = "";
@@ -97,10 +103,29 @@ Func<ElementId, double?> factorOf = id =>
     var material = doc.GetElement(id) as Material;
     if (material != null)
     {
-        var p = material.LookupParameter(factorName);
-        if (p != null && p.HasValue && (p.StorageType == StorageType.Double || p.StorageType == StorageType.Integer))
-            value = p.StorageType == StorageType.Double ? p.AsDouble() : p.AsInteger();
-        if (value == null && !noFactor.Contains(material.Name)) noFactor.Add(material.Name);
+        // A FACTOR NAME TWO PARAMETERS SHARE IS NOT READ (version 4; D-54 s3,
+        // FRAGMENT-ISSUES 5b-203). LookupParameter hands back "the first one
+        // encountered" when two parameters on one material share the name,
+        // which Autodesk's reference says "is determined at random" - and a
+        // carbon total multiplied by whichever came first is a number nobody
+        // chose. Such a material adds nothing and is named apart from the
+        // ones with no factor: the fix is different.
+        var factorsNamed = material.GetParameters(factorName).Count;
+        if (factorsNamed > 1)
+        {
+            if (!ambiguous.Contains(material.Id))
+            {
+                ambiguous.Add(material.Id);
+                ambiguousNames.Add(material.Name);
+            }
+        }
+        else
+        {
+            var p = material.LookupParameter(factorName);
+            if (p != null && p.HasValue && (p.StorageType == StorageType.Double || p.StorageType == StorageType.Integer))
+                value = p.StorageType == StorageType.Double ? p.AsDouble() : p.AsInteger();
+            if (value == null && !noFactor.Contains(material.Name)) noFactor.Add(material.Name);
+        }
     }
     factors[id] = value;
     return value;
@@ -211,6 +236,11 @@ if (withCarbon)
     if (noFactor.Count > 0)
         findings.Add("NO FACTOR on " + noFactor.Count + " material(s), so they add nothing to the total: " + string.Join(", ", noFactor.Take(15))
             + (noFactor.Count > 15 ? ", and more." : "."));
+    if (ambiguous.Count > 0)
+        findings.Add(ambiguous.Count + " material(s) carry TWO OR MORE parameters called '" + factorName
+            + "' - NOT READ, because Revit hands back whichever of them it meets first: "
+            + string.Join(", ", ambiguousNames.Take(15)) + (ambiguousNames.Count > 15 ? ", and more" : "")
+            + ". They add nothing to the total.");
     if (noVolume > 0)
         findings.Add(noVolume + " element(s) have no material volume - a line, an annotation, a painted face - and add nothing.");
 }

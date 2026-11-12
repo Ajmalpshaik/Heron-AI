@@ -95,3 +95,10 @@ version 3 change.
 **Left for the owner.** Sign `report-family-forms` version 3 on IO3 and IO6's first negative:
 `python brain/heron_validate.py accept report-family-forms --by "Ajmal PS"`, on his word. Row 5b-1311 closes on
 IO0 to IO2 above - no card, `capture_view` is the add-in's own. Nothing else in this group is left.
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `REPORT_FAMILY_FORMS` reads PROVEN on its card, at version 5 - its `proof` block is signed by Ajmal PS,
+2026-11-12, on Heron Link Detail Test (1,503 elements), Revit 2020, session 33000; a `proof.releases` entry adds Revit
+2024 (2026-11-12, Ajmal PS). So where this page calls a card named here DRAFT, or says nothing has run in Revit, that
+was true when it was written and is out of date as a statement about the card. Whether IO0 to IO7 were what that proof
+ran is NOT sorted here: for the owner.

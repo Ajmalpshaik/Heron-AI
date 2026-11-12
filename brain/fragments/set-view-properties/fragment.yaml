@@ -20,7 +20,7 @@ capability: SET_VIEW_PROPERTIES
 # API will not set it, and 2021 on has no value for it. An unknown word is
 # refused once, listing every word this Revit takes, and that refusal and the
 # style each view reads back are left whole in the new `visualStyleNote`.
-# Scale and detail level are unchanged. The proof below is the re-run on the
+# Scale and detail level are unchanged. The proof below was then the re-run on the
 # fixed build, signed by Ajmal PS on 2026-10-14. The first, signed 2026-10-13
 # (fingerprint 49da3f00afa98157), went stale with a review's fixes (Realistic's
 # edges, a template's refusal in the note). Version 1's (2026-09-08, Snowdon,
@@ -33,11 +33,11 @@ capability: SET_VIEW_PROPERTIES
 # written nor counted as changed (`alreadyThatScale`; version 2 counted it),
 # the ids of the views that refused (`refused`) - and a view named twice is
 # handled once. Its read mode did not: reading a scale is READ_VIEW_SCALE's.
-# Version 2's proof below no longer describes the code and is kept as the
-# record; the card is DRAFT until it is proved again. Review fix of the same
-# day: the detail level and the visual style are read first too - a view
-# already so is neither written nor counted as changed, and is counted in
-# `alreadyThatDetailLevel` or `alreadyThatVisualStyle`.
+# Version 2's proof below no longer described the code and was kept as the
+# record; the card was DRAFT at the time, until it is proved again. Review
+# fix of the same day: the detail level and the visual style are read first
+# too - a view already so is neither written nor counted as changed, and is
+# counted in `alreadyThatDetailLevel` or `alreadyThatVisualStyle`.
 #
 # Version 4 (2026-11-01): SET_VIEW_PHASE and SET_VIEW_RANGE were merged into
 # this card on the owner's instruction ("make sure there is no duplicate
@@ -51,8 +51,8 @@ capability: SET_VIEW_PROPERTIES
 # refused by name, and the range read back. An offset left out is not
 # touched, where SET_VIEW_RANGE wrote all three - this card's safer rule.
 # scale, detailLevel and visualStyle are optional now, so a phase or a view
-# range can be asked for alone. Version 2's proof below is still the record;
-# the card is DRAFT until version 4 is proved.
+# range can be asked for alone. Version 2's proof below was still the
+# record; the card was DRAFT at the time, until version 4 is proved.
 version: 4
 source: OFFICIAL
 risk: MODIFY

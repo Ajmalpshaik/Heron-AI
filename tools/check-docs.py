@@ -1036,6 +1036,120 @@ else:
     out("  docs/NEEDS-CHECKING.md or docs/needs-checking/ not found - "
         "nothing to check\n")
 
+# AND EVERY ROW'S OWN FILE OF THE DEFECT REGISTER IS ONE THE REGISTER READS.
+# Since 2026-11-12 a new row of FRAGMENT-ISSUES section 5b is a file of its
+# own, docs/fragment-issues/row-5b-1585.md, so that two branches adding rows
+# change no file in common. NO INDEX LINE NAMES SUCH A FILE - a line every
+# branch added to would be the same merge conflict in a new place - so the
+# check above, "a file its index never names", has nothing to read here. The
+# folder is the list, and what can go wrong is different:
+#
+#   * a file the reader does not read - a row saved under any name but its
+#     own (Row-5b-1585.md, 5b-1585.md, rows/5b-1585.md, a .txt), a file named
+#     like a row's own under a section whose page has no line for them, or
+#     one misspelt (row-5b-01576.md, row-5b-1585-copy.md). Skipped, it is a row every tool has lost, which is
+#     the failure the group check above was written for. register-text.py
+#     raises on the misspelt one, and this says so with the gate's exit code;
+#   * a file that holds another row than its name says - the name is what
+#     makes two branches taking one number collide in git, so it has to be
+#     true. register-text.py raises on that too;
+#   * a row from the cut-over on still appended to a rows file, by a branch
+#     cut before the change. The reader reads it, in number order, so nothing
+#     is lost - but that file is where every merge used to stop, and
+#     `python tools/split-register.py fragment-issues --new-rows --write`
+#     moves it with every link that names it;
+#   * a row's own file numbered BEFORE the cut-over: those rows are in the
+#     rows files, and the page's line is what says where the change is.
+_fi_page = os.path.join(root, 'docs', 'FRAGMENT-ISSUES.md')
+_fi_dir = os.path.join(root, 'docs', 'fragment-issues')
+if os.path.isfile(_fi_page) and os.path.isdir(_fi_dir):
+    _fi_text = io.open(_fi_page, encoding='utf-8').read()
+    _fi_names = sorted(os.listdir(_fi_dir))
+    _fi_rows = _rt.rows_files(_fi_text, _fi_page)
+    _fi_bad, _fi_read = [], set()
+    try:
+        _rt.register_text(_fi_page)
+    except _rt.RegisterBroken as _broken:
+        _fi_bad.append("NOT READ: docs/FRAGMENT-ISSUES.md - %s" % _broken)
+    for _heading, _cut, _stem in _rt.each_lines(_fi_text, _fi_page):
+        _numbered = re.match(r'## ([0-9]+[a-z]*)\. ', _heading)
+        _label = _numbered.group(1) if _numbered else '?'
+        for _name in _fi_names:
+            _n = _rt.row_number(_name, _stem)
+            if _n is None:
+                continue
+            _fi_read.add(_name)
+            if _n < _cut:
+                _fi_bad.append(
+                    "BEFORE THE CUT-OVER: docs/fragment-issues/%s - the page says rows of "
+                    "section %s from %d on are one file each; a row before it is in a "
+                    "rows file" % (_name, _label, _cut))
+        for _name in _fi_rows.get(_heading, []):
+            _path = os.path.join(_fi_dir, _name)
+            if not os.path.isfile(_path):
+                continue
+            for _n in sorted(_rt.rows_held(io.open(_path, encoding='utf-8').read())):
+                if _n >= _cut and _rt.row_name(_stem, _n) in _fi_names:
+                    _fi_bad.append(
+                        "HELD TWICE: row %s-%d is in docs/fragment-issues/%s, and %s holds "
+                        "that number too - two rows, one number: the one written second "
+                        "takes the next free id (`python tools/renumber.py --next`)"
+                        % (_label, _n, _name, _rt.row_name(_stem, _n)))
+                elif _n >= _cut:
+                    _fi_bad.append(
+                        "LEFT IN A ROWS FILE: row %s-%d is in docs/fragment-issues/%s, and "
+                        "rows from %d on are one file each - `python tools/split-register.py "
+                        "fragment-issues --new-rows --write` moves it to %s, with every link "
+                        "that names it" % (_label, _n, _name, _cut, _rt.row_name(_stem, _n)))
+    # A ROW IN A FILE NOTHING READS, WHATEVER THE FILE IS CALLED. The first
+    # version of this looked only at names beginning `row-`, and the reader
+    # skips every name that does not begin with the stem - so a row saved as
+    # Row-5b-1589.md, row_5b_1580.md, rows-5b-1589.md or 5b-1589.md passed
+    # this gate, was listed by no reader, and left next-id.py offering its
+    # number again (found by review, 2026-11-12). So every file under the
+    # folder - any name, any extension, any depth - that the page does not
+    # name and the reader does not read is opened, and one holding a register
+    # row's line fails the run with the name it should have. A file with no
+    # row in it is not this check's to judge.
+    _fi_known = set(_rt.named_files(_fi_text, _fi_page)) | _fi_read
+    _fi_each = _rt.each_lines(_fi_text, _fi_page)
+    for _dp, _dn, _fn in os.walk(_fi_dir):
+        for _one in sorted(_fn):
+            _rel = os.path.relpath(os.path.join(_dp, _one), _fi_dir).replace(os.sep, '/')
+            if _rel in _fi_known:
+                continue
+            try:
+                _raw = io.open(os.path.join(_dp, _one), 'rb').read()
+            except (IOError, OSError):
+                continue
+            _rows = [] if b'\0' in _raw else sorted(
+                _rt.rows_held(_raw.decode('utf-8', 'replace')))
+            if _rows:
+                _right = ("; a row's own file is named %s" % " or ".join(
+                    _rt.row_name(_stem, _rows[0]) if len(_rows) == 1 else "%s-<its number>.md" % _stem
+                    for _heading, _cut, _stem in _fi_each)) if _fi_each else ""
+                _fi_bad.append(
+                    "NOT READ: docs/fragment-issues/%s holds row%s %s, and no line of "
+                    "docs/FRAGMENT-ISSUES.md reads it, so the register has lost %s%s"
+                    % (_rel, "" if len(_rows) == 1 else "s", ", ".join(str(n) for n in _rows),
+                       "that row" if len(_rows) == 1 else "those rows", _right))
+            elif _one.startswith('row-') and _one.endswith('.md'):
+                _fi_bad.append(
+                    "NOT READ: docs/fragment-issues/%s - named like a row's own file, and no "
+                    "line of docs/FRAGMENT-ISSUES.md reads it, so the register has lost that "
+                    "row" % _rel)
+    for _line in _fi_bad:
+        out("  %s\n" % _line)
+    if _fi_bad:
+        failed = True
+    else:
+        out("  docs/fragment-issues/: all %d of its rows' own files are read by the "
+            "register, each holds the row its name says, and no new row is left in a "
+            "rows file\n" % len(_fi_read))
+else:
+    out("  docs/FRAGMENT-ISSUES.md or docs/fragment-issues/ not found - "
+        "nothing to check\n")
+
 # ---------- 11. text hygiene, over every tracked file ----------
 #
 # Three faults no reader sees and every tool trips over:
@@ -1231,8 +1345,10 @@ else:
 #
 # SECTION 1 CANNOT SEE THIS ONE: the file is there, it is just the wrong
 # file. Section 5b's rows live 25 to a file, section-5b-rows-NNN-MMM.md, and
-# a new row is written at the end of the last file until
-# tools/split-register.py moves it to its own. On 2026-10-08 that moved the
+# until 2026-11-12 a new row was written at the end of the last file until
+# tools/split-register.py moved it to its own; since then a new row is a file
+# of its own, row-5b-N.md, and a link to it is read by the same rule - it has
+# to reach the file that holds the row. On 2026-10-08 the split moved the
 # rows after 200, and every link naming one of them - [row 5b-307](...) in a
 # NEEDS-CHECKING group, a decision, a skill, another row - still reached
 # section-5b-rows-176-200.md, which no longer held it. This passed: a one-off
@@ -1247,7 +1363,12 @@ else:
 # not there is section 1's finding, not this one's. The rule is
 # register-text.py's row_links() and rows_held(), the same the split uses.
 out("\n=== 12. A LINK THAT NAMES A 5b ROW REACHES THE FILE THAT HOLDS IT ===\n")
-_band_name = re.compile(r'^section-5b-rows-[0-9]{3}-[0-9]{3}\.md$')
+# THREE DIGITS OR MORE on each side (row 5b-1509). `band_name` pads a row
+# number to three, so rows 1001 to 1025 go to a file named with four, and this
+# took exactly three: a link into such a file was passed over by the
+# `continue` below and never judged, and a row held there was reported as
+# held nowhere. And a row's own file, which is a rows file of one row.
+_band_name = re.compile(r'^(?:section-5b-rows-[0-9]{3,}-[0-9]{3,}|row-5b-[1-9][0-9]*)\.md$')
 _held, _astray, _row_named = {}, [], 0
 
 

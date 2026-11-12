@@ -32,8 +32,9 @@ capability: FIND_CLASHES
 # element handed in as `elements`; its `categories` list is `categories` -
 # names, or `all` (left out, the building list; SELECT_TOUCHING's list could
 # not be left blank either - the binder refuses a blank category list).
-# NOT CARRIED: nothing. The proof below is version 3's and no longer
-# describes the code; DRAFT until version 4 is proved on a real model (D-30).
+# NOT CARRIED: nothing. The proof below was version 3's and no longer
+# described the code; DRAFT at the time, until version 4 is proved on a real
+# model (D-30).
 version: 4
 source: OFFICIAL
 risk: READ
@@ -316,8 +317,9 @@ compatibility-note: >
 # same: an element Revit's filter threw on - a view, a group, one whose
 # geometry is not generated - went into `clear`, and the header said that was
 # true. It was not: nothing was tested. Now it goes to `notChecked` with
-# Revit's reason, and an empty `against` counts nothing clear. The fragment is
-# DRAFT, so no proof moved. FRAGMENT-ISSUES 5b-176; NEEDS-CHECKING AJ6.
+# Revit's reason, and an empty `against` counts nothing clear. The fragment
+# was DRAFT at the time, so no proof moved. FRAGMENT-ISSUES 5b-176;
+# NEEDS-CHECKING AJ6.
 
 # ROUTING - repeated in PROBE_AROUND_ELEMENTS (CHECK_OBSTRUCTIONS' table until
 # it was merged into that card on 2026-11-01), and this pair is the sharpest

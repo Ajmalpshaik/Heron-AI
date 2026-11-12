@@ -14,8 +14,8 @@ version: 3
 # Browser as "Glass (Clear)"; version 2 listed and matched it as "Glass -
 # clear" and refused the browser's spelling. With no exact match, a library
 # name is now matched with capitals, spaces and punctuation ignored, and the
-# answer names the asset taken. Version 2's proof below no longer describes
-# the code: DRAFT until it is proved again.
+# answer names the asset taken. Version 2's proof below no longer described
+# the code: DRAFT at the time, until it is proved again.
 source: OFFICIAL
 risk: MODIFY
 

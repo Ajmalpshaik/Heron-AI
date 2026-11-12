@@ -12,6 +12,7 @@ keep the register's page as its index.
 
     python tools/split-register.py fragment-issues            # what would move - writes nothing
     python tools/split-register.py fragment-issues --write    # move it
+    python tools/split-register.py fragment-issues --new-rows # only a new row left in a rows file
 
 Exits 0 when the plan is clean or was written, 1 when a check refused and
 NOTHING was written, 2 when the register could not be read at all.
@@ -40,8 +41,24 @@ its rows, 25 to a file by row number, the way fragment-issues-archive/ bands
 them: rows 26 to 50 of section 5b are in section-5b-rows-026-050.md. A row
 with the lines that continue it moves as one, and the page keeps one line
 where the table was, naming the files in order. A row written after the last
-file's band - the register's rule is that a new row goes at the end of its
-section's last file - is moved to its own band by the next run.
+file's band is moved to its own band by the next run.
+
+A ROW FROM THE CUT-OVER ON HAS A FILE OF ITS OWN, AND THIS KEEPS IT THERE.
+Since 2026-11-12 the page says, under the line naming a section's rows files,
+which row is the first with a file to itself - "**Its rows from 1576 on, one
+file each:**" - and row 5b-1585 is fragment-issues/row-5b-1585.md
+(register-text.py has the why: two branches adding rows no longer change the
+same file). The page's line is the rule, and this tool never writes one where
+the page has none. A row from that number on is written to its own file and
+never to a band; the banding above is for the rows before it. So the job
+this had for a NEW row - move it from the end of the last file to its band -
+is retired: a new row is written straight into its own file, by hand, and no
+run of this is needed. What is left of it is `--new-rows`: a branch cut
+before the change may still append a row to the last rows file, and
+`--new-rows` moves exactly those rows into their own files, with every link
+that names one, and re-bands nothing - every other file is left byte for
+byte, so it can be run while other branches are open. check-docs.py fails
+on a row left that way and names this command.
 
 PROPOSALS.md - `python tools/split-register.py proposals` - and
 OPEN-QUESTIONS.md - `... open-questions` - move every section whole:
@@ -228,6 +245,11 @@ REGISTERS = {
     },
 }
 
+# What a row's own file is named with, before its number: row-5b-1585.md. The
+# page's own line is what says it (register-text.py's each_of), and this is
+# only how _band_blind knows such a name when it compares two texts.
+OWN_STEM = "row-%s"
+
 # The documents whose links follow a row that moved, and the folders a walk
 # of a tree with no git leaves out because git would never track them.
 RELINKED = (".md", ".yaml", ".yml", ".py")
@@ -314,8 +336,27 @@ def _section_header(title, page, heading, today):
     ])
 
 
-def _rows_header(title, page, heading, low, high, today):
+def _rows_header(title, page, heading, low, high, today, own=None):
+    """What a rows file says above its table. OWN is the stem of the files
+    the section's newer rows are kept in, one each, when the page says it
+    keeps them so: nothing new is appended to such a section's rows files,
+    and the header must not send anybody there."""
     label = label_of(heading)
+    if own:
+        return NL.join([
+            "# %s %s section %s, rows %d to %d" % (title, DASH, label, low, high),
+            "",
+            "> Rows %d to %d of section %s of [the register](../%s), in their own file since %s so that"
+            % (low, high, label, page, today),
+            "> they can be read alone. **The section's own rules are on that page, under its heading.**",
+            "> **NOTHING NEW IS APPENDED TO THIS FILE, or to any rows file of section %s.** A new row is a" % label,
+            "> file of its own, `%s-N.md` beside this one, so that two branches adding rows never change the" % own,
+            "> same file; a row already here is edited here.",
+            "> [`tools/register-text.py`](../../tools/register-text.py) reads every row back into",
+            "> the register for every tool that reads it, so a row here is seen exactly as it was seen there.",
+            "",
+            "",
+        ])
     return NL.join([
         "# %s %s section %s, rows %d to %d" % (title, DASH, label, low, high),
         "",
@@ -325,6 +366,25 @@ def _rows_header(title, page, heading, low, high, today):
         "> row goes at the end of the section's last file, whatever its number, and the next run of",
         "> [`tools/split-register.py`](../../tools/split-register.py) moves it to the file its number",
         "> belongs to. [`tools/register-text.py`](../../tools/register-text.py) reads every row back into",
+        "> the register for every tool that reads it, so a row here is seen exactly as it was seen there.",
+        "",
+        "",
+    ])
+
+
+def _row_header(title, page, heading, number):
+    """What a row's own file says above its table. The row is named
+    `5b-1585`, the way a link names it, so tools/renumber.py renames it here
+    with every other use; its bare number is in the row's first cell alone."""
+    label = label_of(heading)
+    return NL.join([
+        "# %s %s row %s-%d" % (title, DASH, label, number),
+        "",
+        "> One row of section %s of [the register](../%s), in a file of its own so that two branches"
+        % (label, page),
+        "> adding rows never change the same file. **The section's own rules are on that page, under its",
+        "> heading.** The file is named for the row and holds that row alone: the table's two header lines",
+        "> and the row's line. [`tools/register-text.py`](../../tools/register-text.py) reads it back into",
         "> the register for every tool that reads it, so a row here is seen exactly as it was seen there.",
         "",
         "",
@@ -356,10 +416,13 @@ def _beside(text, folder_name):
     return text.replace("](../" + folder_name + "/", "](")
 
 
-def split_by(text, layout, banded, config, headers, today, index):
+def split_by(text, layout, banded, config, headers, today, index, each=None):
     """(page text, {file: text}, trouble) - TEXT, the register as one text,
     with each section LAYOUT maps by its heading line moved to its file, and
-    the rows of each section in BANDED moved to their bands' files."""
+    the rows of each section in BANDED moved to their bands' files. EACH is
+    {heading: (first row with a file of its own, those files' stem)}, as the
+    page says it: a row from that number on goes to its own file, never to
+    a band, and the page keeps the line that says so."""
     folder_name = RT.folder_of(index)
     folder = os.path.join(os.path.dirname(index), folder_name)
     page = os.path.basename(index)
@@ -394,39 +457,120 @@ def split_by(text, layout, banded, config, headers, today, index):
             out.append(AH._repoint(NL.join(lines[start:end]), None, moved, index, folder, trouble, heading))
             continue
         top, bottom = table
-        chunks = bands(lines[top + 2:bottom])
+        body, own = lines[top + 2:bottom], []
+        cut, own_stem = (each or {}).get(heading, (None, None))
+        if cut is not None:
+            groups = RT.row_groups(body)
+            body = [line for n, got in groups if n is None or n < cut for line in got]
+            own = [(n, got) for n, got in groups if n is not None and n >= cut]
+        chunks = bands(body)
         stem = rows_stem(config, heading)
         names = [band_name(stem, low, high) for low, high, _ in chunks]
         labels = ["%03d-%03d" % (low, high) for low, high, _ in chunks]
-        kept = lines[start:top] + [RT.rows_line(folder_name, names, labels)] + lines[bottom:end]
+        said = [RT.rows_line(folder_name, names, labels)] if names or cut is None else []
+        if cut is not None:
+            said += ([""] if said else []) + [RT.each_line(folder_name, own_stem, cut)]
+        kept = lines[start:top] + said + lines[bottom:end]
         out.append(AH._repoint(NL.join(kept), None, moved, index, folder, trouble, heading))
+        for number, got in own:
+            name = RT.row_name(own_stem, number)
+            if name in files:
+                trouble.append("row %s-%d is written twice, and %s holds one row - one of the two takes "
+                               "another number first (tools/renumber.py)" % (label_of(heading), number, name))
+                continue
+            body = _beside(AH._repoint(NL.join(lines[top:top + 2] + got), name, moved, index, folder,
+                                       trouble, "%s, row %d" % (heading, number)), folder_name)
+            opening = headers.get(name) or _row_header(config["title"], page, heading, number)
+            files[name] = opening + body + NL
         for (low, high, chunk), name in zip(chunks, names):
             body = _beside(AH._repoint(NL.join(lines[top:top + 2] + chunk), name, moved, index, folder,
                                        trouble, "%s, rows %d to %d" % (heading, low, high)), folder_name)
-            opening = headers.get(name) or _rows_header(config["title"], page, heading, low, high, today)
+            opening = headers.get(name) or _rows_header(config["title"], page, heading, low, high, today,
+                                                        own_stem)
             files[name] = opening + body + NL
     return NL.join(out), files, trouble
 
 
+# ------------------------------------------- a new row left in a rows file
+
+def own_files(index, page_text, files, each, config):
+    """({file: text}, trouble) - FILES, the register's files as they stand,
+    with every row from its section's cut-over on that is still in a rows
+    file moved out to a file of its own. Nothing else changes: a rows file
+    that held no such row is the same text, and no row is re-banded - which
+    is what lets --new-rows run while other branches are open. EACH is
+    {heading: (cut-over, stem)} as the page PAGE_TEXT says it."""
+    folder_name = RT.folder_of(index)
+    page = os.path.basename(index)
+    lines = page_text.replace(CR + NL, NL).split(NL)
+    spans, _ = RT.sections(lines)
+    fenced = RT.fenced_lines(lines)
+    out, trouble = dict(files), []
+    for start, end in spans:
+        heading = lines[start]
+        if heading not in each:
+            continue
+        cut, stem = each[heading]
+        for k in range(start, end):
+            for name in (None if k in fenced else RT.rows_names(lines[k], folder_name)) or []:
+                if out.get(name) is None:
+                    continue
+                eol = CR + NL if CR + NL in out[name] else NL
+                held = out[name].replace(CR + NL, NL).split(NL)
+                table = RT.table_of(held)
+                if table is None:
+                    continue
+                top, bottom = table
+                groups = RT.row_groups(held[top + 2:bottom])
+                going = [(n, got) for n, got in groups if n is not None and n >= cut]
+                if not going:
+                    continue
+                staying = [line for n, got in groups if n is None or n < cut for line in got]
+                out[name] = NL.join(held[:top + 2] + staying + held[bottom:]).replace(NL, eol)
+                for number, got in going:
+                    own = RT.row_name(stem, number)
+                    if own in out:
+                        trouble.append("row %s-%d is in %s, and %s holds that number too - one of the two "
+                                       "takes another number first (tools/renumber.py)"
+                                       % (label_of(heading), number, name, own))
+                        continue
+                    out[own] = (_row_header(config["title"], page, heading, number)
+                                + NL.join(held[top:top + 2] + got) + NL).replace(NL, eol)
+    return out, trouble
+
+
 # --------------------------------------------------- a link that names a row
 
-def _holders(files, stem):
-    """{row: file} for every rows file in FILES whose name starts with STEM."""
+def _own_stems(config, each):
+    """{a section's rows-file stem: the stem of its rows' own files}."""
+    return dict((rows_stem(config, heading), stem) for heading, (_, stem) in (each or {}).items()
+                if rows_stem(config, heading))
+
+
+def _holders(files, stem, own=None):
+    """{row: file} for every rows file in FILES whose name starts with STEM,
+    and every row's own file named with OWN. A row both hold is its own
+    file's - that is where it is going."""
     held = {}
     for name in sorted(files):
         if name.startswith(stem + "-"):
             for number in RT.rows_held(files[name]):
                 held[number] = name
+    for name in sorted(files):
+        number = RT.row_number(name, own) if own else None
+        if number is not None and number in RT.rows_held(files[name]):
+            held[number] = name
     return held
 
 
-def moved_rows(config, files_before, files_after):
+def moved_rows(config, files_before, files_after, each=None):
     """{label: {row: (the file it is in, the file it goes to)}} - each row
-    this run moves to another rows file, for each section whose rows a link
-    names by label."""
-    out = {}
+    this run moves to another rows file, or to a file of its own, for each
+    section whose rows a link names by label."""
+    out, own = {}, _own_stems(config, each)
     for label, stem in config.get("named", ()):
-        was, now = _holders(files_before, stem), _holders(files_after, stem)
+        was = _holders(files_before, stem, own.get(stem))
+        now = _holders(files_after, stem, own.get(stem))
         out[label] = dict((n, (was[n], now[n])) for n in sorted(was) if n in now and was[n] != now[n])
     return out
 
@@ -459,9 +603,21 @@ def relink(text, where, folder, moved, said, done):
 
 
 def _band_blind(text, config):
-    """TEXT with the name of every rows file a link may name written alike."""
-    for _, stem in config.get("named", ()):
-        text = re.sub(re.escape(stem) + "-[0-9]{3}-[0-9]{3}[.]md", stem + "-NNN-NNN.md", text)
+    """TEXT with the name of every rows file a link may name written alike.
+
+    THREE DIGITS OR MORE on each side - row 5b-1169. `band_name` pads a row
+    number to three digits, so rows 1001 to 1025 go to a file named with four,
+    and this took exactly three: a link re-pointed at a four-digit file was
+    left as it was, the read-back differed from the register "in more than the
+    rows file a link names", and nothing could be split once any row linked to
+    a 5b row past 999. `archive-fragment-issues.py` asks this function too.
+    """
+    for label, stem in config.get("named", ()):
+        text = re.sub(re.escape(stem) + "-[0-9]{3,}-[0-9]{3,}[.]md", stem + "-NNN-NNN.md", text)
+        # A row's own file is a rows file of one row, and a link that follows
+        # a row into it changed in nothing but that name.
+        text = re.sub("(?<![A-Za-z0-9-])" + re.escape(OWN_STEM % label) + "-[1-9][0-9]*[.]md",
+                      stem + "-NNN-NNN.md", text)
     return text
 
 
@@ -520,6 +676,11 @@ def _served(index, index_text, files):
             return files.get(path[len(folder):])
         return None
     return read
+
+
+def _listed(files):
+    """The folder's listing for a register served from memory: FILES' names."""
+    return lambda path: sorted(files)
 
 
 def _lay_out(top, page, folder_name, index_text, files, beside, source):
@@ -601,11 +762,14 @@ class Plan(object):
         self.banding = []           # (heading, [file]) rows files written by this run
         self.staying = []           # (heading, why)
         self.already = 0
+        self.new_rows = False       # --new-rows: nothing moves but a new row left in a rows file
 
 
 def _current(index, before, files_before):
     """The layout on disk: {heading: file} for each section the page names a
-    file for, and the headings under which it names rows files."""
+    file for, the headings under which it names rows files, and {heading:
+    (first row with a file of its own, those files' stem)} for each section
+    the page says keeps its newer rows one to a file."""
     folder_name = RT.folder_of(index)
     lines = before.replace(CR + NL, NL).split(NL)
     spans, _ = RT.sections(lines)
@@ -616,9 +780,11 @@ def _current(index, before, files_before):
         if name:
             layout[lines[start]] = name
             continue
-        if any(RT.rows_names(lines[k], folder_name) for k in range(start, end) if k not in fenced):
+        if any(RT.rows_names(lines[k], folder_name) or RT.each_of(lines[k], folder_name)
+               for k in range(start, end) if k not in fenced):
             banded.add(lines[start])
-    return layout, banded
+    each = dict((heading, (cut, stem)) for heading, cut, stem in RT.each_lines(before, index))
+    return layout, banded, each
 
 
 def _headers(files):
@@ -639,7 +805,7 @@ def _files_in(folder):
     return found
 
 
-def plan(key="fragment-issues", index=None, today=None, root=ROOT, check_others=True):
+def plan(key="fragment-issues", index=None, today=None, root=ROOT, check_others=True, new_rows=False):
     config = REGISTERS[key]
     index = index or os.path.join(root, config["index"])
     folder = os.path.join(os.path.dirname(index), RT.folder_of(index))
@@ -654,13 +820,15 @@ def plan(key="fragment-issues", index=None, today=None, root=ROOT, check_others=
         p.fatal = "%s mixes CRLF and LF line endings" % os.path.basename(index)
         return p
     p.files_before = _files_in(folder)
+    p.new_rows = new_rows
     try:
-        p.joined = RT.register_text(index, read=_served(index, p.before, p.files_before)).replace(CR + NL, NL)
+        p.joined = RT.register_text(index, read=_served(index, p.before, p.files_before),
+                                    listing=_listed(p.files_before)).replace(CR + NL, NL)
     except RT.RegisterBroken as broken:
         p.fatal = str(broken)
         return p
 
-    layout, banded = _current(index, p.before, p.files_before)
+    layout, banded, each = _current(index, p.before, p.files_before)
     p.already = len(layout)
     taken = set(p.files_before)
     joined = p.joined.split(NL)
@@ -669,7 +837,7 @@ def plan(key="fragment-issues", index=None, today=None, root=ROOT, check_others=
     wanted = set()
     for start, end in spans:
         heading = joined[start]
-        if heading in layout:
+        if heading in layout or new_rows:
             continue
         if heading in config["stays"]:
             p.staying.append((heading, "the page's own rules"))
@@ -688,21 +856,34 @@ def plan(key="fragment-issues", index=None, today=None, root=ROOT, check_others=
         taken.add(name)
         p.moving.append((heading, name))
 
-    after, files, trouble = split_by(p.joined, layout, banded | wanted, config,
-                                     _headers(p.files_before), p.today, index)
-    # A link that names a row this split moves follows it: re-pointed in the
-    # register as one text, which is then cut again - re-pointing changes no
-    # row's place, so the files differ only in those links.
-    p.moved = moved_rows(config, p.files_before, files)
-    p.joined_after = relink(p.joined, os.path.dirname(index), folder, p.moved, "the register", p.relinked)
-    if p.relinked:
-        after, files, trouble = split_by(p.joined_after, layout, banded | wanted, config,
-                                         _headers(p.files_before), p.today, index)
+    if new_rows:
+        # ONLY A NEW ROW LEFT IN A ROWS FILE MOVES. The page and every other
+        # file stay as they are on disk, so nothing is cut again from the one
+        # text: the links that name a moved row are re-pointed where they are.
+        files, trouble = own_files(index, p.before, p.files_before, each, config)
+        p.moved = moved_rows(config, p.files_before, files, each)
+        p.joined_after = relink(p.joined, os.path.dirname(index), folder, p.moved, "the register", p.relinked)
+        p.after = relink(p.before, os.path.dirname(index), folder, p.moved, None, [])
+        p.files_after = dict((n, relink(t, folder, folder, p.moved, None, [])) for n, t in files.items())
+    else:
+        after, files, trouble = split_by(p.joined, layout, banded | wanted, config,
+                                         _headers(p.files_before), p.today, index, each)
+        # A link that names a row this split moves follows it: re-pointed in the
+        # register as one text, which is then cut again - re-pointing changes no
+        # row's place, so the files differ only in those links.
+        p.moved = moved_rows(config, p.files_before, files, each)
+        p.joined_after = relink(p.joined, os.path.dirname(index), folder, p.moved, "the register", p.relinked)
+        if p.relinked:
+            after, files, trouble = split_by(p.joined_after, layout, banded | wanted, config,
+                                             _headers(p.files_before), p.today, index, each)
+        p.after = after.replace(NL, p.eol)
+        p.files_after = dict((n, t.replace(NL, p.eol)) for n, t in files.items())
     p.problems.extend(trouble)
-    p.after = after.replace(NL, p.eol)
-    p.files_after = dict((n, t.replace(NL, p.eol)) for n, t in files.items())
     for heading in sorted(banded | wanted):
-        written = [n for n in sorted(files) if n.startswith(rows_stem(config, heading) + "-")
+        own = each.get(heading, (None, None))[1]
+        written = [n for n in sorted(files)
+                   if (n.startswith(rows_stem(config, heading) + "-")
+                       or (own and RT.row_number(n, own) is not None))
                    and p.files_after[n] != p.files_before.get(n)]
         if written:
             p.banding.append((heading, written))
@@ -713,7 +894,8 @@ def plan(key="fragment-issues", index=None, today=None, root=ROOT, check_others=
         p.problems.append("the folder holds %s, which the new layout does not name - look at %s by "
                           "hand before running this again" % (", ".join(stale), "it" if len(stale) == 1 else "them"))
 
-    back = (RT.register_text(index, read=_served(index, p.after, p.files_after)) or "").replace(CR + NL, NL)
+    back = (RT.register_text(index, read=_served(index, p.after, p.files_after),
+                             listing=_listed(p.files_after)) or "").replace(CR + NL, NL)
     if back != p.joined_after:
         p.problems.append("the new files, read back, are not the register byte for byte")
     if _band_blind(back, config) != _band_blind(p.joined, config):
@@ -776,10 +958,10 @@ def layout_split(index, joined, today=None, key=None):
     folder = os.path.join(os.path.dirname(index), RT.folder_of(index))
     before = AF._read(index)
     files_before = _files_in(folder)
-    layout, banded = _current(index, before, files_before)
+    layout, banded, each = _current(index, before, files_before)
     eol = CR + NL if CR + NL in before else NL
     after, files, trouble = split_by(joined, layout, banded, config, _headers(files_before),
-                                     today or datetime.date.today().isoformat(), index)
+                                     today or datetime.date.today().isoformat(), index, each)
     return after.replace(NL, eol), dict((n, t.replace(NL, eol)) for n, t in files.items()), trouble
 
 
@@ -804,7 +986,9 @@ def layout_relinked(index, joined, today=None, key=None, root=ROOT):
     config = REGISTERS[key]
     folder = os.path.join(os.path.dirname(index), RT.folder_of(index))
     after, files, trouble = layout_split(index, joined, today, key)
-    moved = moved_rows(config, _files_in(folder), files)
+    files_before = _files_in(folder)
+    each = _current(index, AF._read(index), files_before)[2]
+    moved = moved_rows(config, files_before, files, each)
     done = []
     joined_after = relink(joined, os.path.dirname(index), folder, moved, "the register", done)
     if done:
@@ -817,21 +1001,28 @@ def layout_relinked(index, joined, today=None, key=None, root=ROOT):
 
 def report(p, writing):
     page = os.path.basename(p.index)
-    print("%s - one file per section" % page)
-    print("=" * (len(page) + 25))
+    said = "a new row left in a rows file goes to a file of its own" if p.new_rows else "one file per section"
+    print("%s - %s" % (page, said))
+    print("=" * (len(page) + 5 + len(said)))
     if p.fatal:
         print("  COULD NOT RUN: %s" % p.fatal)
         return
     folder = RT.folder_of(p.index)
     done = writing and not p.problems
-    print("  %-26s: %d, into %s/" % ("sections moved" if done else "sections to move", len(p.moving), folder))
-    print("  %-26s: %d" % ("moved by a past run", p.already))
+    if not p.new_rows:
+        print("  %-26s: %d, into %s/" % ("sections moved" if done else "sections to move", len(p.moving), folder))
+        print("  %-26s: %d" % ("moved by a past run", p.already))
     for heading, names in p.banding:
         print("  %-26s: %d file(s) - %s" % (("rows written" if done else "rows to write"), len(names),
                                              heading[3:60]))
-    print("  %-26s: %d" % ("staying on the page", len(p.staying)))
-    for heading, why in p.staying:
-        print("    %-58s %s" % (heading[3:61], why))
+    if p.new_rows:
+        for label in sorted(p.moved):
+            for number in sorted(p.moved[label]):
+                print("    row %s-%d: %s -> %s" % ((label, number) + p.moved[label][number]))
+    else:
+        print("  %-26s: %d" % ("staying on the page", len(p.staying)))
+        for heading, why in p.staying:
+            print("    %-58s %s" % (heading[3:61], why))
     if p.relinked or p.others:
         print("  %-26s: %d in the register, %d in %d other document(s), read from %s"
               % ("links that follow a row" if done else "links to follow a row", len(p.relinked),
@@ -863,8 +1054,11 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="Give every section of a register its own file.")
     parser.add_argument("register", choices=sorted(REGISTERS), help="which register")
     parser.add_argument("--write", action="store_true", help="move them - without this, nothing is written")
+    parser.add_argument("--new-rows", action="store_true",
+                        help="move only a row the page says has a file of its own and a rows file still "
+                             "holds; re-band nothing")
     args = parser.parse_args(argv)
-    p = plan(args.register)
+    p = plan(args.register, new_rows=args.new_rows)
     if args.write and not p.fatal and not p.problems:
         write(p)
     report(p, args.write)

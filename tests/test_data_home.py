@@ -49,6 +49,13 @@ WHAT IT PROVES
      which the app copies (row 5b-416, D-109). And both step out of a
      GUID-named temporary folder, as Revit's own is, so a Revit-style TMP on
      either side still gives one folder (row 5b-1100, D-136).
+  7. OFF WINDOWS, THE LIBRARY-ONLY SERVER KEEPS A STORE OF ITS OWN (D-153).
+     There is still no home there (D-135 point 1), so a cloud chat nobody
+     gave a HERON_KNOWLEDGE was answered only that Heron had nowhere to keep
+     what it knows (row 5b-1508). `heron_brain.library_store()` names a
+     folder for this checkout under the machine-local Heron folder's index -
+     DERIVED, private, never inside the checkout - and only when nothing was
+     named, only off Windows, and only from the server's own start-up.
 """
 
 import hashlib
@@ -127,6 +134,29 @@ class planted(object):
                 os.environ.pop(key, None)
             else:
                 os.environ[key] = value
+
+
+class planted_cloud(planted):
+    """The same, and XDG_DATA_HOME and HOME with it - what names the
+    machine-local folder off Windows (heron_bridge_client.local_app_data)."""
+
+    KEYS = planted.KEYS + ("XDG_DATA_HOME", "HOME")
+
+
+def guarded_by(block, call):
+    """The line `call` sits under in `block` - the nearest line above it that
+    is indented less and is not a comment - or None when `call` is not there."""
+    lines = block.splitlines()
+    for at, text in enumerate(lines):
+        if call not in text or text.lstrip().startswith("#"):
+            continue
+        depth = len(text) - len(text.lstrip())
+        for above in reversed(lines[:at]):
+            if above.strip() and not above.lstrip().startswith("#") \
+                    and len(above) - len(above.lstrip()) < depth:
+                return above.strip()
+        return None
+    return None
 
 
 class planted_temp(object):
@@ -440,7 +470,9 @@ def run(yard):
           and same(asked[2], os.path.join(home, "audit")) and not os.path.exists(home),
           "knowledge_dir(), shared_dir() and brain_audit_dir() name the default home "
           "and carry nothing into it (%s)" % ("made" if os.path.exists(home) else "not made"))
-    server = read(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py"))
+    sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+    import heron_tools as TOOLS
+    server = TOOLS.server_text()
     main_block = server[server.find('if __name__ == "__main__":'):]
     carry_at, warm_at = main_block.find("brain.carry_home()"), main_block.find("brain.warm_store()")
     check(carry_at != -1 and warm_at != -1 and carry_at < warm_at,
@@ -529,13 +561,274 @@ def run(yard):
           "HeronPaths.Companion steps out of a GUID-named temporary folder too, "
           "through SharedTemp (%s)" % " ".join(body.split())[:120])
 
+    print("\n7. Off Windows, the library-only server keeps a store of its own (D-153)")
+    sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+    try:
+        import heron_brain as BRAIN
+    except Exception as error:                     # noqa: BLE001 - reported as a FAIL
+        BRAIN = error
+    check(hasattr(BRAIN, "library_store") and hasattr(BRAIN, "library_store_dir"),
+          "heron_brain can name a store for a server nobody named one for at all")
+
+    # THE NAME, asked without touching the disk. Forward slashes compared, so
+    # the rule is checked the same on either system.
+    def spelt(folder):
+        return folder.replace("\\", "/") if isinstance(folder, str) else repr(folder)
+
+    one = ask(BRAIN, "library_store_dir", {"XDG_DATA_HOME": "/srv/share", "HOME": "/home/someone"},
+              "posix", "/work/Heron-AI")
+    check(spelt(one).startswith("/srv/share/Heron/index/"),
+          "it is in the machine-local Heron folder, under index - $XDG_DATA_HOME's (%s)"
+          % spelt(one))
+    got = ask(BRAIN, "library_store_dir", {"HOME": "/home/someone"}, "posix", "/work/Heron-AI")
+    check(spelt(got).startswith("/home/someone/.local/share/Heron/index/"),
+          "or ~/.local/share's, where the hooks' diary already is (%s)" % spelt(got))
+    again = ask(BRAIN, "library_store_dir", {"XDG_DATA_HOME": "/srv/share", "HOME": "/home/someone"},
+                "posix", "/work/Heron-AI")
+    other = ask(BRAIN, "library_store_dir", {"XDG_DATA_HOME": "/srv/share", "HOME": "/home/someone"},
+                "posix", "/work/second/Heron-AI")
+    check(isinstance(one, str) and one == again, "one checkout names one folder, every time")
+    check(isinstance(one, str) and isinstance(other, str) and one != other
+          and os.path.dirname(one) == os.path.dirname(other),
+          "and a second checkout a folder of its own beside it, so neither indexes "
+          "the other's cards (%s)" % spelt(other))
+    klass = ask(PATHS, "classify", one if isinstance(one, str) else "")
+    check(isinstance(klass, dict) and klass.get("class") == PATHS.DERIVED,
+          "heron_paths classes the folder DERIVED - safe to delete, because the "
+          "cards rebuild it (%s)" % (klass.get("class") if isinstance(klass, dict) else klass,))
+
+    # THE ACT. A cloud session: nothing named, and no Windows profile.
+    cloud = os.path.join(yard, "cloud")
+    with planted_cloud(HOME=os.path.join(cloud, "home")):
+        made = ask(BRAIN, "library_store", "posix")
+        named = os.environ.get("HERON_KNOWLEDGE")
+        asked = ask(SCOPE, "knowledge_dir")
+        refusal = ask(SCOPE, "rebuild_refusal")
+        homes = (ask(PATHS, "data_home"), ask(SCOPE, "shared_dir"))
+    check(isinstance(made, str) and os.path.isdir(made) and spelt(made).startswith(
+              spelt(os.path.join(cloud, "home")) + "/.local/share/Heron/index/"),
+          "with no folder named it makes this checkout's (%s)" % spelt(made))
+    check(isinstance(made, str) and named == made and same(asked, made),
+          "and names it as this process's HERON_KNOWLEDGE, so knowledge_dir() "
+          "answers (%r)" % (asked,))
+    check(isinstance(made, str) and refusal is None,
+          "a private store: it may be filled from this checkout's cards, on any "
+          "branch (%r)" % (refusal,))
+    check(isinstance(made, str) and homes == (None, None),
+          "and still no home and no shared store - D-135's 'anywhere else none' "
+          "stands (%r)" % (homes,))
+    check(isinstance(made, str) and not same(made, ROOT) and not os.path.abspath(
+              made).startswith(os.path.abspath(ROOT) + os.sep),
+          "never inside the checkout")
+
+    # AND WHAT IT LEAVES ALONE.
+    theirs = os.path.join(cloud, "named")
+    with planted_cloud(HOME=os.path.join(cloud, "home-2"), HERON_KNOWLEDGE=theirs):
+        got, kept = ask(BRAIN, "library_store", "posix"), os.environ.get("HERON_KNOWLEDGE")
+    check(got is None and kept == theirs,
+          "a HERON_KNOWLEDGE somebody named is left as it is (%r)" % (got,))
+    with planted_cloud(HOME=os.path.join(cloud, "home-2"), HERON_DATA=os.path.join(cloud, "data")):
+        got, kept = ask(BRAIN, "library_store", "posix"), os.environ.get("HERON_KNOWLEDGE")
+    check(got is None and kept is None,
+          "and so is a HERON_DATA home - the store is its knowledge folder (%r)" % (got,))
+    with planted_cloud(HOME=os.path.join(cloud, "home-2")):
+        got, kept = ask(BRAIN, "library_store", "nt"), os.environ.get("HERON_KNOWLEDGE")
+    check(got is None and kept is None and not os.path.exists(os.path.join(cloud, "home-2")),
+          "on Windows it does nothing at all, whatever is or is not named (%r)" % (got,))
+    blocked = os.path.join(cloud, "a-file")
+    write(blocked, "not a folder")
+    with planted_cloud(HOME=blocked):
+        got, kept = ask(BRAIN, "library_store", "posix"), os.environ.get("HERON_KNOWLEDGE")
+    check(got is None and kept is None,
+          "a folder that cannot be made names nothing, so the refusal that says "
+          "what to set is still what is heard (%r)" % (got,))
+
+    # TWO SERVERS STARTING TOGETHER. Both look, neither sees the folder, both
+    # make it: the second must be given the folder the first made, not left
+    # with no store for its whole life (review of f8f727f8 - four processes,
+    # fifteen rounds, three left with none). Played here in the order it
+    # happens: the folder is not there when this one looks, and the other
+    # server's is made the moment before this one's.
+    raced = os.path.join(cloud, "home-raced")
+    with planted_cloud(HOME=raced):
+        there = ask(BRAIN, "library_store_dir", None, "posix")
+        real_makedirs = os.makedirs
+
+        def the_other_first(path, *args, **kwargs):
+            if path == there and not os.path.isdir(path):
+                real_makedirs(path)
+            return real_makedirs(path, *args, **kwargs)
+
+        os.makedirs = the_other_first
+        try:
+            got = ask(BRAIN, "library_store", "posix")
+        finally:
+            os.makedirs = real_makedirs
+        kept = os.environ.get("HERON_KNOWLEDGE")
+    check(isinstance(there, str) and got == there and kept == there,
+          "a folder another server made a moment ago is taken, not tripped over "
+          "(%r)" % (got,))
+
+    # A NAME THAT IS NOT A WHOLE PATH IS NO FOLDER. With HOME unset and no
+    # passwd entry `~` expands to itself, and a relative HOME is the same
+    # shape: the store would be made inside whatever folder the server
+    # started in - the checkout. heron_paths.data_home() refuses that for the
+    # profile (row 5b-168), and so does this. Asked from a scratch folder, so
+    # a wrong answer cannot litter the repository.
+    started_in = os.getcwd()
+    elsewhere = os.path.join(cloud, "started-here")
+    os.makedirs(elsewhere)
+    for planted_home, what in (("~", "a `~` nothing expanded"),
+                               ("relative-home", "a relative HOME")):
+        os.chdir(elsewhere)
+        try:
+            with planted_cloud(HOME=planted_home):
+                got, kept = ask(BRAIN, "library_store", "posix"), os.environ.get("HERON_KNOWLEDGE")
+        finally:
+            os.chdir(started_in)
+        check(got is None and kept is None and not os.listdir(elsewhere),
+              "%s names nothing and makes nothing where the server started (%r, %s)"
+              % (what, got, os.listdir(elsewhere) or "nothing made"))
+        shutil.rmtree(elsewhere, ignore_errors=True)
+        os.makedirs(elsewhere)
+
+    # AND NEVER INSIDE THE CHECKOUT, even by a whole path: an index beside
+    # the cards is an index somebody commits.
+    inside = os.path.join(ROOT, "heron-test-home-%d" % os.getpid())
+    try:
+        with planted_cloud(HOME=inside):
+            got, kept = ask(BRAIN, "library_store", "posix"), os.environ.get("HERON_KNOWLEDGE")
+        made_inside = os.path.exists(inside)
+    finally:
+        shutil.rmtree(inside, ignore_errors=True)
+    check(got is None and kept is None and not made_inside,
+          "a machine-local folder that is inside the checkout names nothing and "
+          "makes nothing there (%r, %s)" % (got, "made" if made_inside else "not made"))
+
+    # WHO CALLS IT: the server's own start-up, in D-132's library-only mode.
+    under = guarded_by(main_block, "brain.library_store()")
+    named_at = main_block.find("brain.library_store()")
+    check(under == "if core.LIBRARY_ONLY:",
+          "the MCP server asks for it only when it is serving the library alone "
+          "(under %r)" % (under,))
+    check(named_at != -1 and carry_at != -1 and named_at < carry_at,
+          "before anything opens the store")
+    # THE MODE IS THE ENTRY FILE'S TO SAY, AND THE RULE IS ONE PURE FUNCTION.
+    # Only the entry file knows it was run - its own `__name__ == "__main__"` -
+    # so it hands that to heron_server_core, which keeps the one LIBRARY_ONLY
+    # there is (FRAGMENT-ISSUES row 5b-1555). For a day the core worked it out
+    # from `sys.modules["__main__"].__file__` instead, and off Windows that
+    # failed OPEN for a server run by exec(compile()) or runpy.run_module:
+    # every revit_ tool offered where no Revit can be. tests/test_mcp_stdio.py
+    # starts the server each of those ways for real, which needs the MCP SDK.
+    # This is the part that needs nothing: the two functions lifted out of
+    # the source and asked, with the system stood in, and the entry file's
+    # own lines read.
+    entry = read(TOOLS.server_files()[-1])
+    check('core.started(__name__ == "__main__")' in entry,
+          "the entry file hands the core its own `__name__ == \"__main__\"` - the "
+          "fact the rule was written on, and nothing worked out from how Python "
+          "was started")
+
+    def lifted(*names):
+        """The named top-level functions out of the server's source, defined
+        in a namespace that stands in for the module - or None."""
+        import types
+        pieces = []
+        for name in names:
+            found = re.search(r"^def %s\(.*\n(?:(?:[ \t]+.*)?\n)+" % name, server, re.M)
+            if found is None:
+                return None
+            pieces.append(found.group(0))
+        space = {"os": types.SimpleNamespace(name=os.name), "LIBRARY_ONLY": False}
+        try:
+            exec(compile("\n".join(pieces), "the server's source", "exec"), space)
+        except Exception:                                       # noqa: BLE001 - a FAIL, not a crash
+            return None
+        return space
+
+    def asked(space, call, *args):
+        try:
+            return space[call](*args)
+        except Exception as why:                                # noqa: BLE001
+            return "%s: %s" % (type(why).__name__, why)
+
+    space = lifted("library_only", "started")
+    check(space is not None, "the server has the rule, and the call that sets it, to ask at all")
+    table = []
+    if space is not None:
+        for run_as_main, system in ((True, "posix"), (True, "nt"), (False, "posix"), (False, "nt")):
+            table.append(asked(space, "library_only", run_as_main, system))
+    check(table == [True, False, False, False],
+          "the library alone exactly when the entry file was RUN and the system is not "
+          "Windows: run off Windows, run on Windows, imported off Windows, imported on "
+          "Windows - %r" % (table,))
+    set_to = []
+    for system, run_as_main in (("posix", True), ("posix", False), ("nt", True)):
+        space = lifted("library_only", "started")
+        if space is None:
+            break
+        space["os"].name = system
+        asked(space, "started", run_as_main)
+        set_to.append(space.get("LIBRARY_ONLY"))
+    check(set_to == [True, False, False],
+          "and started() sets the one LIBRARY_ONLY to that answer, on the system it runs "
+          "on - %r" % (set_to,))
+    # ONCE THE SERVER OBJECT IS MADE THE ANSWER MAY NOT CHANGE: a server made
+    # with every tool and then told it is the library alone is half each.
+    space = lifted("library_only", "started")
+    changed = again = "not asked"
+    if space is not None:
+        space["os"].name = "posix"
+        space["server"] = object()                  # made, with LIBRARY_ONLY False
+        changed = asked(space, "started", True)
+        again = asked(space, "started", False)
+    check(str(changed).startswith("RuntimeError") and "Nothing is served" in str(changed)
+          and space is not None and space.get("LIBRARY_ONLY") is False and again is False,
+          "after the server object is made, a different answer is refused in words "
+          "and changes nothing; the same answer is taken (%r, %r)" % (changed, again))
+
+    # ONE LIBRARY_ONLY, NOT ONE A FILE. A second binding is a copy that a
+    # rebinding of the first never reaches - which is how the entry file's
+    # start-up could have disagreed with the server object about the mode.
+    import ast
+    bound = []
+    for path in TOOLS.server_files():
+        for node in ast.walk(ast.parse(read(path))):
+            names = []
+            if isinstance(node, (ast.Assign, ast.AnnAssign, ast.AugAssign)):
+                targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+                names = [t.id for t in targets if isinstance(t, ast.Name)]
+            elif isinstance(node, (ast.Import, ast.ImportFrom)):
+                names = [(alias.asname or alias.name) for alias in node.names]
+            if "LIBRARY_ONLY" in names:
+                bound.append(os.path.basename(path))
+    check(sorted(set(bound)) == [os.path.basename(TOOLS.server_files()[0])],
+          "LIBRARY_ONLY is bound in one file of the server, the one that makes the "
+          "server object - and imported as a name by none: %s" % (sorted(bound) or "nowhere"))
+    bare = re.findall(r"(?<![.\w])LIBRARY_ONLY\b", "\n".join(
+        line for line in entry.split("\n") if not line.lstrip().startswith("#")))
+    check(not bare and "core.LIBRARY_ONLY" in entry,
+          "and the entry file reads it as the core's attribute every time (%d bare)" % len(bare))
+
+    # BELT AND BRACES. Run off Windows with the library NOT alone, the entry
+    # file serves nothing: it says so and stops, before it opens a store.
+    refuses = guarded_by(main_block, "raise SystemExit(2)")
+    stops_at = main_block.find("raise SystemExit(2)")
+    check(refuses == 'if os.name != "nt" and not core.LIBRARY_ONLY:'
+          and "Heron did not start" in main_block
+          and 0 < stops_at < named_at < main_block.find("server.run()"),
+          "and run off Windows without it, the entry file refuses to start, in a "
+          "sentence, before it opens a store or serves anything (under %r)" % (refuses,))
+
     print()
     if FAILURES:
         print("FAILED  %d check(s)" % len(FAILURES))
         for what in FAILURES:
             print("  - %s" % what)
         return 1
-    print("PASSED - the home, the two readers, the carry and the Companion's folder")
+    print("PASSED - the home, the two readers, the carry, the Companion's folder and")
+    print("the store a library-only server keeps where nobody named one")
     return 0
 
 

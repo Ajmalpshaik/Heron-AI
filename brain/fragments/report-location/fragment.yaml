@@ -46,8 +46,8 @@ risk: READ
 # placement, and copying a layout from one room to the next needs both
 # halves. Measured 2026-09-28 on "heron ai bulding": an FCU the modeller had
 # turned by hand read "turned 180 degrees", and one left alone read 0. This
-# is version 2; version 1's proof no longer describes the code, and the
-# fragment is DRAFT until it is proved again.
+# is version 2; version 1's proof no longer described the code, and the
+# fragment was DRAFT at the time, until it is proved again.
 #
 # **SHARED COORDINATES, TRUE NORTH AND THE TWO SITE POINTS (version 3).**
 # Version 2's paragraph above calling a surveyor's coordinate "a different
@@ -68,8 +68,9 @@ risk: READ
 # beyond the 20 miles (about 32 km) Revit's own help gives as the limit for
 # geometry from the internal origin. A facing direction without the switch
 # is said to be in project north, which v2 printed without saying. This is
-# version 3; version 2 was never proved, version 1's proof does not
-# describe this code, and the fragment is DRAFT until it is proved again.
+# version 3; version 2 was never proved, version 1's proof did not describe
+# this code, and the fragment was DRAFT at the time, until it is proved
+# again.
 #
 # **WHERE THE PROJECT IS, WITH NOTHING SELECTED (version 4).** The site is
 # now the whole of Manage > Location too - place name, latitude and
@@ -85,7 +86,8 @@ risk: READ
 # list and the answer is the site alone, so "where is this project" needs no
 # selection - an add-in older than this version still refuses, as before.
 # SET_PROJECT_LOCATION writes the same settings in the same words. Versions
-# 1 to 3's proofs do not describe this code; it is DRAFT until proved again.
+# 1 to 3's proofs did not describe this code; it was DRAFT at the time, until
+# proved again.
 
 purpose: >
   Answers WHERE. Where the project is on the earth - which place its site is

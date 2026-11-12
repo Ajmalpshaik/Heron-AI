@@ -47,10 +47,11 @@ import os
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SERVER = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
 sys.path.insert(0, os.path.join(ROOT, "mcp", "client"))
+sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
 
 import heron_bridge_client as CLIENT                            # noqa: E402
+import heron_tools as TOOLS                                     # noqa: E402
 
 FAILURES = []
 
@@ -95,9 +96,9 @@ def main():
     print()
     print("2. revit_change calls it, and prints what it returns")
     try:
-        text = io.open(SERVER, encoding="utf-8").read()
+        text = TOOLS.server_text()
     except OSError as why:
-        print("  FAIL  could not read %s: %s" % (SERVER, why))
+        print("  FAIL  could not read %s: %s" % (", ".join(TOOLS.server_files()), why))
         return 1
 
     def body_of(name):

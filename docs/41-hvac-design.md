@@ -14,9 +14,10 @@
 > 2026-10-06, Spaces calculated and written back ([Group CC](needs-checking/group-cc.md) CC11 - its
 > Space half PASSED, its diffuser half FAILED as CC13 and is fixed but not run again), and one roof term
 > matched a hand sum (CC19). That is a model meeting the engine, not a comparison with HAP or TRACE, so
-> the status above stands. *Checked 2026-10-18:* writing those loads back from the Companion is refused
-> today, before anything is sent - [44](44-building-loads-from-the-model.md)'s status says why
-> ([D-117](decisions/D-117.md)); this engine is not touched by it.
+> the status above stands. *Checked 2026-10-18:* writing those loads back from the Companion was refused
+> that day, before anything was sent - [44](44-building-loads-from-the-model.md)'s status says why
+> ([D-117](decisions/D-117.md)), and that both writers' proofs have been signed since, with Finalize not
+> run again; this engine is not touched by it.
 
 ---
 
@@ -129,10 +130,10 @@ is `revit_change`'s job, behind the Changes switch, exactly as before.
 
 > **Checked 2026-10-18:** since [D-117](decisions/D-117.md) `revit_change` keeps a change only from a
 > PROVEN fragment. Of the writers the table names, `SET_MEP_SIZE`, `CHANGE_ELEMENT_TYPE` and
-> `PLACE_FAMILY_INSTANCES` are PROVEN; **`SET_AIR_TERMINAL_FLOW` is DRAFT**, so a diffuser's flow is
-> refused there and can be kept only through one try-once on a saved model ([D-119](decisions/D-119.md),
-> [D-121](decisions/D-121.md)) until [group AQ](needs-checking/group-aq.md) proves it. Of the reads,
-> `REPORT_MEP_PRESSURE_DROP` is DRAFT. Each card's `heron-status:` line is the current word.
+> `PLACE_FAMILY_INSTANCES` are PROVEN; **`SET_AIR_TERMINAL_FLOW` was DRAFT that day**, so a
+> diffuser's flow was refused there and could be kept only through one try-once on a saved model ([D-119](decisions/D-119.md),
+> [D-121](decisions/D-121.md)) until it was proved ([group AQ](needs-checking/group-aq.md)). Of the
+> reads, `REPORT_MEP_PRESSURE_DROP` was DRAFT that day. Each card's `heron-status:` line is the current word.
 
 ---
 

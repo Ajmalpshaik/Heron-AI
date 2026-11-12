@@ -50,3 +50,11 @@ proof goes stale** - it changes this card's code; Project1's two sets hold the s
 `sameSets` flags. Signing, from the checkout that holds the draft:
 `python brain/heron_validate.py accept list-sheet-sets --by "Ajmal PS"`, then `heron-status: PROVEN` on his word.
 **Signed by Ajmal PS and PROVEN the same day** (fingerprint `ead2d4ff5f4b7360`). EA2 and EA3 stay owed.
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `LIST_SHEET_SETS` reads PROVEN on its card, at version 2 - its `proof` block is signed by Ajmal PS,
+2026-10-18, on PHASES RAN AGAINST DIFFERENT DOCUMENTS: Project1, Family1 - active was Project1, Revit 2020, session 2648.
+`MANAGE_SHEET_SETS` reads PROVEN on its card, at version 4 - its `proof` block is signed by Ajmal PS, 2026-11-02, on
+P1102 MEP (21,446 elements), Revit 2020, session 59096. So where this page calls a card named here DRAFT, or says
+nothing has run in Revit, that was true when it was written and is out of date as a statement about the card. Whether
+EA1 to EA3 were what that proof ran is NOT sorted here: for the owner.

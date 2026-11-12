@@ -303,38 +303,37 @@ purpose: >
       on each end plane - opening the duct size, outside 20 mm larger, faces
       locked to the duct and ring planes, Visible linked to a Yes/No set No -
       and name the connector by that end plane: version 5 measures a ring face
-      by its opening and centres the port in it (DRAFT until Group JA is
-      signed). A pipe or duct port is sized by a length
-      parameter even in a fixed family - add it and its value (steps 2 and 3)
-      first. A DRAIN's pipe connectors need Allow Slope Adjustments ticked
-      before the pipework drawn from them can be given a fall:
+      by its opening and centres the port in it. A pipe or duct port is sized by
+      a length parameter even in a fixed family - add it and its value (steps 2
+      and 3) first. A DRAIN's pipe connectors need Allow Slope Adjustments
+      ticked before the pipework drawn from them can be given a fall:
       SET_FAMILY_CONNECTOR_ROLES "allowSlopeAdjustments=yes" on each, a pipe
-      connector's box only (version 4, PROVEN 2026-10-24 on Revit 2020,
-      Group IR). An ELECTRICAL connector is made with Revit's defaults and no
-      load: SET_FAMILY_CONNECTOR_ROLES then gives it its Voltage, Number of
-      Poles, Apparent Load and Power Factor - "voltage=400 V; poles=3;
-      apparentLoad=1.5 kVA; powerFactor=0.85" - each a value the modeller
-      gave in step 0's list, never assumed (D-33), or a family parameter in
-      square brackets that drives it, a shared one where a project must
-      schedule it (step 2). A part that is a family of its own, loaded in with LOAD_FAMILY:
-      PLACE_FAMILY_INSTANCES, nested in the family being edited, on the plane
-      it sits on - workPlane= a reference plane, or the level (PLACE_NESTED_FAMILY
-      until it was merged into it, 2026-11-01) - a Work Plane-Based family
-      is placed on every
+      connector's box only (version 4, PROVEN 2026-10-24 on Revit 2020, Group
+      IR). An ELECTRICAL connector is made with Revit's defaults and no load:
+      SET_FAMILY_CONNECTOR_ROLES then gives it its Voltage, Number of Poles,
+      Apparent Load and Power Factor - "voltage=400 V; poles=3; apparentLoad=1.5
+      kVA; powerFactor=0.85" - each a value the modeller gave in step 0's list,
+      never assumed (D-33), or a family parameter in square brackets that drives
+      it, a shared one where a project must schedule it (step 2). A part that is
+      a family of its own, loaded in with LOAD_FAMILY: PLACE_FAMILY_INSTANCES,
+      nested in the family being edited, on the plane it sits on - workPlane= a
+      reference plane, or the level (PLACE_NESTED_FAMILY until it was merged
+      into it, 2026-11-01) - a Work Plane-Based family is placed on every
       release, a level-based one only from Revit 2024 - then
       LOCK_NESTED_FAMILY_TO_PLANES by its own Left, Right, Front, Back, Top,
       Bottom or centres - a DETAIL ITEM nested in a plan, a diffuser's flow
       arrows, too: it is locked in the plan it is drawn in, to planes seen
-      edge-on there; one placed by PLACE_FAMILY_INSTANCES belongs to no view and is locked in the plan of its level (PROVEN 2026-11-11, Group NB) -
-      then LINK_FAMILY_PARAMETER (family=, type=) for its type's sizes
-      and LINK_FAMILY_PARAMETER for its instance's. A nested part that came in
+      edge-on there; one placed by PLACE_FAMILY_INSTANCES belongs to no view and
+      is locked in the plan of its level (PROVEN 2026-11-11, Group NB) - then
+      LINK_FAMILY_PARAMETER (family=, type=) for its type's sizes and
+      LINK_FAMILY_PARAMETER for its instance's. A nested part that came in
       facing inward or upside down - its plane's normal points the wrong way -
       is FLIP_ELEMENTS with flipWorkPlane=true, never a rotation (row 5b-1335).
-      A nested part whose TYPE
-      the family's types choose - the 5 kW or the 7 kW motor - is
-      ADD_FAMILY_TYPE_PARAMETER, which also swaps a sweep's loaded profile.
-      A NESTED PART THAT IS NOT A FAMILY YET - the tyre of a car, the motor of
-      a fan - is made in its own window and brought back, one call at a time:
+      A nested part whose TYPE the family's types choose - the 5 kW or the 7 kW
+      motor - is ADD_FAMILY_TYPE_PARAMETER, which also swaps a sweep's loaded
+      profile. A NESTED PART THAT IS NOT A FAMILY YET - the tyre of a car, the
+      motor of a fan - is made in its own window and brought back, one call at a
+      time:
       a. The HOST needs a file for the way back to be automatic: Revit lets no
          tool bring forward a window with no file. A host never saved is asked
          to be saved once (Ctrl+S). Declined, b to g still run, with e skipped,
@@ -382,21 +381,19 @@ purpose: >
       it stays editable text; never letters built of forms in step 7. A
       fixed family's materials are set outright:
       CREATE_STARTER_MATERIALS with materialNames, colours and transparencies
-      for each colour (CREATE_MATERIAL's job since 2026-11-01, DRAFT until
-      proved again; none of the starter set is made beside names) - the
-      shading colour only, nothing a render uses, with a transparencies value
-      for glass or a vial (2026-10-14, Revit 2020) - then
-      LINK_FAMILY_PARAMETER (links Material=<it>) once per
-      material, naming
-      every form id that takes it. Made before step 7, the materials can be
-      named on CREATE_FAMILY_FORMS's rows instead. A FAMILY THAT WILL BE
-      RENDERED, or shown in a Realistic view, gives each material an
-      appearance too: SET_MATERIAL_APPEARANCE with materialsNamed the names
+      for each colour (CREATE_MATERIAL's job since 2026-11-01; none of the
+      starter set is made beside names) - the shading colour only, nothing a
+      render uses, with a transparencies value for glass or a vial (2026-10-14,
+      Revit 2020) - then LINK_FAMILY_PARAMETER (links Material=<it>) once per
+      material, naming every form id that takes it. Made before step 7, the
+      materials can be named on CREATE_FAMILY_FORMS's rows instead. A FAMILY
+      THAT WILL BE RENDERED, or shown in a Realistic view, gives each material
+      an appearance too: SET_MATERIAL_APPEARANCE with materialsNamed the names
       CREATE_STARTER_MATERIALS made (';' between, or the prefix and *) and
       matchShading true - a shading colour alone draws flat dark grey there
-      (2026-10-20, Revit 2020, row 5b-1263). A better look than its own
-      colour - glass, a metal, a texture - is SET_MATERIAL_APPEARANCE's
-      appearance and values, or CREATE_STARTER_MATERIALS' ready-made set.
+      (2026-10-20, Revit 2020, row 5b-1263). A better look than its own colour -
+      glass, a metal, a texture - is SET_MATERIAL_APPEARANCE's appearance and
+      values, or CREATE_STARTER_MATERIALS' ready-made set.
   13. REPORT_FAMILY_FORMS - every form read back with its size, against the
       list from step 0, before the proof. For a fixed family it is the last
       check: the number of forms and the overall extents against the plan.
@@ -449,9 +446,14 @@ purpose: >
   `staleFileCount` - never taken from "I pressed Ctrl+S".
 
   AN ANGLE LABEL between two reference planes that meet is
-  LABEL_FAMILY_DIMENSION version 3 (DRAFT, not yet proved - NEEDS-CHECKING
-  Group NE) with an Angle parameter; no Heron card draws a plane at an angle
-  yet, so the sloped plane is drawn by hand for now (row 5b-1498).
+  LABEL_FAMILY_DIMENSION with an Angle parameter - one that already holds
+  the angle the two planes make, or the call is refused with both numbers.
+  The sloped plane itself is CREATE_REFERENCE_PLANES with axis=angle: each
+  entry of `planes` is then Name=degrees, not millimetres - a vertical
+  plane drawn in the floor plan, its line turned that many degrees from the
+  left-right line towards the back - and throughMm, "X,Y" in millimetres,
+  is the point it passes through, the family's origin when left out. Each
+  card's status is in the list served after this method.
   NOT YET: reference lines - a part that swings or tilts about a pivot. A
   reference line can be made through the API, but no DOCUMENTED call gives
   the planes a reference line carries, so a form cannot be put on one; the only route found reads a reference out of an

@@ -127,9 +127,9 @@ compatibility-note: >
 # the cure rather than the trap - except where a fallback decides the point:
 # the box centre (step 3) and the room's own location point (step 4) are not
 # promised to be inside an L- or U-shaped room, and a tag sent there lands
-# outside it with no leader. A note only: the fragment is DRAFT and nothing
-# was changed. When it is proved, include a room whose boundary cannot be read
-# and check where its tag lands. NEEDS-CHECKING AJ9.
+# outside it with no leader. A note only: the fragment was DRAFT at the time
+# and nothing was changed. When it is proved, include a room whose boundary
+# cannot be read and check where its tag lands. NEEDS-CHECKING AJ9.
 
 # ROUTING - the same rows are in the fragments named here.
 #

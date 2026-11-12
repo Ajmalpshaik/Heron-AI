@@ -131,7 +131,7 @@ it is recorded rather than built (§6, the IFC schema).
 | Working drawings: views before sheets, exact types, overlaps, export | **Held**, except viewports overlapping on a sheet |
 | Aircraft, ships, rockets, bridges, robots, vehicles, games, characters, cameras, animation, physics, rides, sculpture, organic shells, street scenes, a game engine's materials | **Out** - not a BIM model, and not Heron's |
 
-**39 §5 was out of date on one line,** and still said stairs were unbuilt. `CREATE_STAIRS` exists (DRAFT);
+**39 §5 was out of date on one line,** and still said stairs were unbuilt. `CREATE_STAIRS` exists;
 §5 there now says so.
 
 ---
@@ -198,7 +198,11 @@ Every one below was DRAFT before it was touched, so **no proven fragment lost it
 > `PLACE_HOSTED_FAMILY`, `PLACE_STRUCTURAL_FAMILY` and `REPORT_LOCATION` are at later versions than this
 > table gives. The table is what this study built; each card's own `version:` and `heron-status:` lines
 > are the current word. Every card in it is still DRAFT, and no row of [Group CD](needs-checking/group-cd.md)
-> has been run.
+> has been run. *Read 2026-11-12, off the cards:* that no longer holds - `CHECK_MODEL_STANDARDS`,
+> `PLACE_HOSTED_FAMILY`, `REPORT_LOCATION`, `TRANSFER_PROJECT_PARAMETERS_BETWEEN_DOCUMENTS` and the
+> mirrored-instances report read PROVEN, `IMPORT_PARAMETER_VALUES` and `PLACE_STRUCTURAL_FAMILY` read
+> DEPRECATED (merged into other cards), and `ADD_PROJECT_PARAMETER` and `REPORT_LEVEL_ELEVATIONS` read
+> DRAFT.
 
 And the recipe [`ifc-export-readiness`](../brain/skills/ifc-export-readiness.yaml): storeys, elements on no
 level, duplicates, duplicate IFC identities, elements with no IFC class or set not to export, required
@@ -224,8 +228,12 @@ model does not have is NOT CHECKED, never zero**.
    utterance waits for the modeller's real words.
 4. **The two shared-parameter fragments are ADMIN**, so Heron refuses them until the owner's Admin switch
    is on. Their fix is in; their proof waits for that switch. And `ADD_PROJECT_PARAMETER`, given a name the
-   shared parameter FILE does not hold, writes the definition into that file on disk, where no Undo
-   reaches either. Its card does not say so yet; recorded here, unchanged.
+   shared parameter FILE does not hold, wrote the definition into that file on disk, where no Undo
+   reaches either, and its card did not say so. **Changed 2026-11-12**
+   ([row 5b-1127](fragment-issues/section-5b-rows-401-425.md)): version 3 refuses a name, or a file, that
+   is not there unless the modeller asked for a new one, and says what Undo does not take back. That
+   moved its code, so what it is now - proved or not - is on
+   [its card](../brain/fragments/add-project-parameter/fragment.yaml), not in this sentence.
 
 ---
 
@@ -239,7 +247,7 @@ needs measuring first. Each waits for the owner, one at a time ([31 §5](31-stud
 | **Where each link sits** - offset and rotation from the host, in millimetres and degrees | Widens `LIST_LINKED_MODELS`, PROVEN |
 | **Elements NOT on a workset** - *ducts not on M-HVAC* | Widens `SELECT_BY_WORKSET`, PROVEN |
 | **A numeric schedule filter** - width 600 mm or more | Widens `SET_SCHEDULE_FILTERS`, PROVEN, which builds every filter from text |
-| **Room proportion and minimum size**, against the modeller's values | Widens `MEASURE_ROOM_DIMENSIONS`, PROVEN |
+| **Room proportion and minimum size**, against the modeller's values | Widens `MEASURE_ROOM_DIMENSIONS`, PROVEN when this was written - merged into `REPORT_ROOM_SPACE_DATA` since |
 | **Panel sizes on a curtain wall**, grouped within the modeller's tolerance | Widens `REPORT_CURTAIN_ELEMENTS`, PROVEN. *As built (2026-10-29, on the owner's word that day): built - `REPORT_CURTAIN_ELEMENTS` version 2 reads each panel's Width and Height as Revit gives them and groups them within a tolerance, 5 mm unless the modeller gives one, per wall and across the walls handed in. DRAFT - its version 1 proof is stale - until [Group JR](needs-checking/group-jr.md) is run and signed; not yet run in Revit* |
 | **A build that can be run twice** - a wall already there is not drawn again | Widens `CREATE_WALL`, PROVEN, then the floor, ceiling and roof creators |
 | **Copy to another level** that lands *on* that level, not on the old one with a large offset | `COPY_ELEMENTS` is PROVEN; until then the route is `COPY_ELEMENTS` then `SET_ELEMENT_LEVEL`. *As built (2026-10-18): built - `COPY_ELEMENTS` version 2 copies onto a list of levels, each copy on its own level (#526, row 5b-460, Group DX), signed PROVEN on 2026-10-14; version 3 (#593, worksets) is DRAFT, not yet run in Revit* |

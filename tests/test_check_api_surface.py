@@ -25,6 +25,9 @@ WHAT IT PROVES, on any machine, because it hides `dotnet` itself:
   2. An unknown release is still refused with its own exit code, 2 - the
      argument question is answered first.
   3. change-evidence records a gate that exits 3 as NOT RUN, not FAIL.
+  4. `tools/check-compile.py` says the same for the same cause - row 5b-1183.
+     It printed "FAIL  no .NET SDK on this machine" and exited 1, the one of
+     the three compile tools that still read like a failure.
 """
 
 import importlib.util
@@ -91,6 +94,44 @@ def main():
     finally:
         evidence.run = real
     check(got == evidence.NOT_RUN, "a gate that exits 3 is NOT RUN (got %s)" % got)
+
+    print()
+    print("4. check-compile.py: no .NET SDK is NOT RUN, exit 3 (row 5b-1183)")
+    compiler = os.path.join(ROOT, "tools", "check-compile.py")
+    empty = tempfile.mkdtemp(prefix="heron-nodotnet-")
+    try:
+        def compile_without_dotnet(*args):
+            out = subprocess.run([sys.executable, compiler] + list(args), cwd=ROOT,
+                                 env=dict(os.environ, PATH=empty), capture_output=True,
+                                 text=True, encoding="utf-8", errors="replace",
+                                 timeout=120)
+            return out.returncode, out.stdout + out.stderr
+
+        code, said = compile_without_dotnet("2020")
+        check(code == 3, "exit 3 with no dotnet on PATH (got %s)" % code)
+        check("NOT RUN" in said and ".NET SDK" in said,
+              "and it says NOT RUN, naming what is missing")
+        check("FAIL" not in said, "the word FAIL is not printed for a machine with no compiler")
+        check("Traceback" not in said, "no traceback")
+        check("Compiling with" not in said and "Revit 2020" not in said,
+              "asked before anything is built")
+        code, said = compile_without_dotnet("1999")
+        check(code == 2 and "1999" in said,
+              "an unknown release is still refused first, exit 2 (got %s)" % code)
+    finally:
+        os.rmdir(empty)
+    evidence.run = lambda cmd, timeout=1800: (3, "NOT RUN - no .NET SDK")
+    try:
+        got = evidence.gate_results(["check-compile"])["check-compile"]["result"]
+    finally:
+        evidence.run = real
+    check(got == evidence.NOT_RUN,
+          "and change-evidence records check-compile's exit 3 as NOT RUN (got %s)" % got)
+    workflow = io.open(os.path.join(ROOT, ".github", "workflows", "gates.yml"),
+                       encoding="utf-8").read()
+    step = workflow[workflow.find("python tools/check-compile.py"):]
+    check('if [ "$status" -ne 0 ]; then' in step[:900],
+          "CI's compile job still fails on any non-zero code, so a 3 there is a red build")
 
     print()
     if FAILURES:

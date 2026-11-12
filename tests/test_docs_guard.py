@@ -70,6 +70,20 @@ WHAT IT PROVES
      link naming two rows are not (row 5b-381). That
      the whole tree passes is 2.
 
+ 11. A LINK INTO A ROWS FILE NAMED WITH FOUR DIGITS IS JUDGED TOO. The
+     pattern knew a rows file by exactly three digits, so a link into
+     section-5b-rows-1001-1025.md was never judged (row 5b-1509).
+
+ 12. A ROW'S OWN FILE IS ONE THE REGISTER READS (row 5b-1585). Since
+     2026-11-12 a new 5b row is docs/fragment-issues/row-5b-N.md and no
+     index line names it. A right one passes and a link to it is judged
+     like any other; a row saved under any other name - another case, an
+     underscore, no prefix, a .txt, a subfolder - a file named like one that
+     is not read, one that holds
+     another row than its name says, one numbered before the cut-over, a new
+     row still appended to the last rows file, and a row's own file left on
+     disk when the page's line is gone each fail the run and are named.
+
 WHAT IT DOES NOT PROVE
   That the README is WRITTEN by anybody. Nothing generates it, and after
   D-77 nothing is scheduled to. The rows are closed on the guarding half
@@ -397,6 +411,174 @@ def main():
             check(bool(astray) and "%s does" % first in astray[0],
                   "and says which file does hold the row")
             io.open(arch, "w", encoding="utf-8").write(kept)
+
+        print("\n11. a link into a rows file named with four digits is "
+              "judged like any other (row 5b-1509)")
+        # The pattern knew a rows file by exactly three digits each side, so
+        # a link into section-5b-rows-1001-1025.md was passed over and never
+        # judged. The file is made here: the real register has none yet.
+        if len(names) > 1:
+            four = "section-5b-rows-1001-1025.md"
+            four_path = os.path.join(rows_dir, four)
+            made = not os.path.exists(four_path)
+            if made:
+                io.open(four_path, "w", encoding="utf-8").write(
+                    "# Rows\n\n| # | Defect | State |\n|---|---|---|\n"
+                    "| **1001** | **A row past 999.** | OPEN - planted. |\n")
+            kept = io.open(arch, encoding="utf-8").read()
+            io.open(arch, "w", encoding="utf-8").write(
+                kept + "\n\nSee [row 5b-%d](fragment-issues/%s).\n" % (row, four))
+            code, out = run_guard(tree)
+            astray = [line for line in section(
+                out, "12. A LINK THAT NAMES A 5b ROW").split("\n")
+                if "ASTRAY" in line]
+            check(code != 0 and len(astray) == 1 and four in astray[0]
+                  and "5b-%d" % row in astray[0],
+                  "a link naming row 5b-%d at %s, which does not hold it, "
+                  "fails the run and is named (%s)"
+                  % (row, four, " / ".join(astray) or "none named"))
+            check(bool(astray) and "%s does" % first in astray[0],
+                  "with the file that does hold the row")
+            io.open(arch, "w", encoding="utf-8").write(kept)
+            if made:
+                os.remove(four_path)
+
+        print("\n12. a row's own file is one the register reads, and holds "
+              "the row its name says (row 5b-1585)")
+        # Since 2026-11-12 a new 5b row is a file of its own and NO index
+        # line names it - the folder is the list - so "a file its index
+        # never names" has nothing to read. What can go wrong instead is
+        # planted here, one at a time, each taken away again.
+        page_path = os.path.join(tree, "docs", "FRAGMENT-ISSUES.md")
+        page = io.open(page_path, encoding="utf-8").read()
+        said = re.search(r"^\*\*Its rows from ([0-9]+) on, one file each:\*\* "
+                         r"\[`fragment-issues/(row-5b)-NNNN\.md`\]\(fragment-issues/\)$",
+                         page, re.M)
+        check(said is not None,
+              "the register's page says from which 5b row on a row is a "
+              "file of its own")
+        if said is not None and len(names) > 1:
+            cut = int(said.group(1))
+            new = cut + 900
+
+            def own(number, holds=None):
+                return ("# Fragment issues - row 5b-%d\n\n"
+                        "| # | Defect | State |\n|---|---|---|\n"
+                        "| **%d** | **A planted row.** | OPEN - planted. |\n"
+                        % (number, number if holds is None else holds))
+
+            def tenth(out):
+                return section(out, "10. EVERY TOOL AND EVERY SKILL")
+
+            def planted(name, text):
+                path = os.path.join(rows_dir, name)
+                io.open(path, "w", encoding="utf-8").write(text)
+                return path
+
+            right = planted("row-5b-%d.md" % new, own(new))
+            kept = io.open(arch, encoding="utf-8").read()
+            io.open(arch, "w", encoding="utf-8").write(
+                kept + "\n\nSee [row 5b-%d](fragment-issues/row-5b-%d.md), and "
+                       "[row 5b-%d](fragment-issues/row-5b-%d.md) at the wrong "
+                       "file.\n" % (new, new, row, new))
+            code, out = run_guard(tree)
+            check("rows' own files are read by the register" in tenth(out),
+                  "a row in a file of its own, named for it, is read: the "
+                  "guard says every such file is")
+            astray = [line for line in section(
+                out, "12. A LINK THAT NAMES A 5b ROW").split("\n")
+                if "ASTRAY" in line]
+            check(code != 0 and len(astray) == 1
+                  and "5b-%d" % row in astray[0]
+                  and "row-5b-%d.md" % new in astray[0]
+                  and "%s does" % first in astray[0],
+                  "a link naming another row at that file is astray, and "
+                  "the link naming its own row is not (%s)"
+                  % (" / ".join(astray) or "none named"))
+            io.open(arch, "w", encoding="utf-8").write(kept)
+            code, out = run_guard(tree)
+            check(code == 0, "with the wrong link gone the guard passes, "
+                             "the row's own file still there")
+
+            stray = planted("row-5b-%d-copy.md" % new, own(new + 1))
+            code, out = run_guard(tree)
+            check(code != 0 and "NOT READ" in tenth(out)
+                  and "row-5b-%d-copy.md" % new in tenth(out),
+                  "a file named like a row's own that the register does not "
+                  "read fails the run and is named")
+            os.remove(stray)
+
+            # A ROW SAVED UNDER ANY NAME BUT ITS OWN. The first version of the
+            # guard looked only at names beginning `row-`, and the reader
+            # skips what does not begin with the stem - so each of these held
+            # a real row that no reader listed while every gate passed
+            # (review, 2026-11-12). All planted at once: one run of the guard.
+            lost = {"Row-5b-%d.md": new + 10, "row_5b_%d.md": new + 11,
+                    "rows-5b-%d.md": new + 12, "row5b-%d.md": new + 13,
+                    "5b-%d.md": new + 14, "5b-%d.txt": new + 15,
+                    "rows/5b-%d.md": new + 16}
+            os.makedirs(os.path.join(rows_dir, "rows"))
+            for shape, number in lost.items():
+                planted(shape % number, own(number))
+            code, out = run_guard(tree)
+            unread = [line for line in tenth(out).split("\n") if "NOT READ" in line]
+            check(code != 0, "a row saved under a name the register does not "
+                             "read fails the run, whatever the name")
+            for shape, number in sorted(lost.items(), key=lambda one: one[1]):
+                mine = [line for line in unread
+                        if "docs/fragment-issues/%s " % (shape % number) in line]
+                check(len(mine) == 1 and "holds row %d" % number in mine[0]
+                      and "row-5b-%d.md" % number in mine[0].split("named", 1)[-1],
+                      "%s is named, with the row it holds and the name it "
+                      "should have" % (shape % number))
+            for shape, number in lost.items():
+                os.remove(os.path.join(rows_dir, shape % number))
+            os.rmdir(os.path.join(rows_dir, "rows"))
+
+            wrong = planted("row-5b-%d.md" % (new + 1), own(new + 1, new + 2))
+            code, out = run_guard(tree)
+            check(code != 0 and "NOT READ" in tenth(out)
+                  and "row-5b-%d.md holds row %d" % (new + 1, new + 2) in tenth(out),
+                  "a row's file that holds another row than its name says "
+                  "fails the run, and both numbers are said")
+            os.remove(wrong)
+
+            early = planted("row-5b-%d.md" % (cut - 1), own(cut - 1))
+            code, out = run_guard(tree)
+            check(code != 0 and "BEFORE THE CUT-OVER" in tenth(out)
+                  and "row-5b-%d.md" % (cut - 1) in tenth(out),
+                  "a row's own file numbered before the cut-over fails the "
+                  "run: those rows are in the rows files")
+            os.remove(early)
+
+            tail = os.path.join(rows_dir, last)
+            tail_kept = io.open(tail, encoding="utf-8").read()
+            io.open(tail, "w", encoding="utf-8").write(
+                tail_kept + "| **%d** | **Appended the old way.** | OPEN - "
+                            "planted. |\n" % (new + 5))
+            code, out = run_guard(tree)
+            left = [line for line in tenth(out).split("\n")
+                    if "LEFT IN A ROWS FILE" in line]
+            check(code != 0 and len(left) == 1 and "5b-%d" % (new + 5) in left[0]
+                  and last in left[0],
+                  "a new row appended to the last rows file, where every "
+                  "merge used to stop, fails the run and is named")
+            check(bool(left) and "split-register.py fragment-issues --new-rows --write" in left[0]
+                  and "row-5b-%d.md" % (new + 5) in left[0],
+                  "with the command that moves it, and the file it goes to")
+            io.open(tail, "w", encoding="utf-8").write(tail_kept)
+
+            io.open(page_path, "w", encoding="utf-8").write(
+                page.replace(said.group(0) + "\n", ""))
+            code, out = run_guard(tree)
+            check(code != 0 and "NOT READ" in tenth(out)
+                  and "row-5b-%d.md" % new in tenth(out)
+                  and "no line of docs/FRAGMENT-ISSUES.md reads it" in tenth(out),
+                  "and with the page's line gone, the row's own file is on "
+                  "disk with nothing reading it - the register has lost that "
+                  "row, and the guard says so")
+            io.open(page_path, "w", encoding="utf-8").write(page)
+            os.remove(right)
 
         code, _out = run_guard(tree)
         check(code == 0,

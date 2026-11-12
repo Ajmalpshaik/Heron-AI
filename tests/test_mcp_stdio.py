@@ -57,6 +57,35 @@ server is started as a host starts it, and must offer exactly that list - no
 revit_ tool, which is how a chat knows there is no Revit here - answer a
 search inside the deadline, say there is no Revit on this machine rather than
 looking for one, and refuse a Revit tool by name at once rather than hang.
+Its first answer ends with the two closing paragraphs whole - which door runs
+what, and how much is proved - and the next says each in one line: once per
+server process, which only a process started for real can show. The one
+line names heron_capabilities for the full text, and that tool, asked again,
+says both paragraphs whole again.
+
+AND WITH NO KNOWLEDGE FOLDER NAMED (D-153, row 5b-1508). The part above gives
+the child a HERON_KNOWLEDGE, which a cloud chat nobody set up has not got -
+and there every library tool answered only that Heron had nowhere to keep what
+it knows. So the server is started once more off Windows with no
+HERON_KNOWLEDGE and no HERON_DATA, and must still answer a search, list its
+methods and its jobs, from a store of its own under the machine-local folder.
+That part builds a second store from nothing, so it is held to COLD_DEADLINE:
+its claim is that an answer comes, and how soon is the part above's.
+
+AND ONE OF EACH (FRAGMENT-ISSUES row 5b-1555). The server's source is more
+than one file. What the files share - the server object, the binding, the
+pin, the approval, the watch on its own code - is defined in one of them and
+imported by the rest, and a definition typed again in a second file is a
+second object: two pins is a chat that checks one model and writes to another,
+and nothing would say so. And the file a host starts runs as `__main__`, so
+anything that imported it by name would run it a second time. Both are held
+here as facts about a process: the entry file is run the way Python runs a
+script, with the one call that never returns stood in by a report, and the
+report must find one of each alive and the entry file loaded under one name.
+tests/test_tool_registry.py holds, as text, that no listed file imports the
+entry file. Off Windows only, where start-up reaches nothing but the child's
+own scratch store; on Windows the same start writes the Companion's note where
+Revit looks.
 """
 
 import json
@@ -79,7 +108,9 @@ import heron_bridge_client as bridge                           # noqa: E402
 import live_revit_guard as GUARD                               # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SERVER = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
+# The file a host starts: the entry file, the last on heron_tools' list of the
+# files the server's source is.
+SERVER = REGISTRY.server_files()[-1]
 SLOW_SERVER = os.path.join(ROOT, "tests", "support", "slow_revit_server.py")
 
 sys.path.insert(0, os.path.join(ROOT, "tests", "support"))
@@ -109,6 +140,18 @@ COULD_NOT_RUN = 3
 # unbounded. A number here is a claim about the worst acceptable wait.
 DEADLINE = 90
 
+# For library_no_folder_named() alone, whose claim is that the library
+# ANSWERS where nobody named a folder - not how fast. It builds a second
+# store from nothing, and that is all processor: about 22 s on a quiet
+# machine, 88 s with three times the work running beside it (review of
+# f8f727f8, 2026-11-11), and with thirty-two busy processes on four cores it
+# had not come at 90 s and came at 167 s (measured the same day, other
+# sessions working on the machine too). So 90 s there was a claim about the
+# machine's other work, not about Heron. A hang is still caught - only later.
+# The speed of an answer is held where it is the claim: library_only() and
+# as_a_host(), on DEADLINE.
+COLD_DEADLINE = 3 * DEADLINE
+
 FAILURES = []
 
 
@@ -121,9 +164,13 @@ def check(condition, what):
 class Host(object):
     """The smallest thing that behaves like an MCP host over stdio."""
 
-    def __init__(self, env, script=SERVER):
+    def __init__(self, env, script=SERVER, argv=None, cwd=ROOT):
+        """`argv` is everything after the interpreter, for a server started
+        some other way than by its file's path."""
+        self.dead = False
         self.proc = subprocess.Popen(
-            [sys.executable, "-u", script], cwd=ROOT, env=env,
+            [sys.executable] + (list(argv) if argv is not None else ["-u", script]),
+            cwd=cwd, env=env,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=subprocess.PIPE, text=True, encoding="utf-8", bufsize=1)
         self.err = []
@@ -134,8 +181,32 @@ class Host(object):
             self.err.append(line)
 
     def send(self, obj):
-        self.proc.stdin.write(json.dumps(obj) + "\n")
-        self.proc.stdin.flush()
+        """A SERVER THAT HAS STOPPED TAKES ITS PIPE WITH IT, and writing to it
+        raised BrokenPipeError: one traceback where the suite's failures should
+        have been, and every section after it never run (FRAGMENT-ISSUES row
+        5b-1558). It is said once, as a FAIL carrying what the server wrote
+        to stderr, and the checks that follow fail in their own words."""
+        try:
+            self.proc.stdin.write(json.dumps(obj) + "\n")
+            self.proc.stdin.flush()
+        except (OSError, ValueError):
+            try:
+                # What could not be written is still in the buffer, and would be
+                # tried again - and complained of - when the pipe is collected.
+                self.proc.stdin.close()
+            except (OSError, ValueError):
+                pass
+            if not self.dead:
+                self.dead = True
+                try:
+                    code = self.proc.wait(5)
+                except Exception:                               # noqa: BLE001
+                    code = None
+                time.sleep(0.2)                 # let the stderr reader catch up
+                check(False, "the server is still running to be asked for %s - it had "
+                      "stopped (exit %s) and said: %s"
+                      % (obj.get("method"), code,
+                         "".join(self.err).strip()[-400:] or "nothing"))
 
     def read(self, timeout):
         box = {}
@@ -501,6 +572,11 @@ def library_only(guard, scratch):
                     sorted(offered - set(library)) or "none")))
         check(not any(n.startswith("revit_") for n in names),
               "and no revit_ tool, so the list itself says there is no Revit here")
+        rule = getattr(REGISTRY, "served_order", None)
+        meant = [n for n in (rule() if rule is not None else []) if n in library]
+        check(names == meant,
+              "in the order heron_tools.served_order states for them: %s"
+              % ", ".join(names))
 
         line, took = host.call(3, "heron_capabilities", {}, DEADLINE)
         answered = text_of(line)
@@ -516,6 +592,41 @@ def library_only(guard, scratch):
               "and says there is no Revit on this machine, rather than that "
               "none is connected")
 
+        # THE TWO CLOSING PARAGRAPHS, WHOLE ONCE PER PROCESS. Both answers
+        # above ended with the same 1,400 characters - which door runs what,
+        # and how much is proved - and so did every answer after them. The
+        # first answer of a process still carries them whole; the next says
+        # each in one line. Read off the first answer, never typed here.
+        closing = (answered or "").splitlines()[-2:]
+        doors = closing[0].split("Heron can run it. ", 1)[-1] if closing else ""
+        proved = closing[-1] if closing else ""
+        check(len(doors) > 600 and "PROVEN" in proved,
+              "the first answer of this process says both closing paragraphs "
+              "whole (%d and %d characters)" % (len(doors), len(proved)))
+        last = (found or "").splitlines()[-2:] or ["", ""]
+        check(bool(doors) and doors not in (found or doors)
+              and proved not in (found or proved),
+              "the next answer does not say either whole again")
+        check(len(last[0]) * 3 <= len(doors)
+              and all(word in last[0] for word in
+                      ("WRITES", "revit_change", "revit_read", "Changes")),
+              "it says which door runs what in one line - a change through "
+              "revit_change, and only with Changes on (%d characters, was %d)"
+              % (len(last[0]), len(doors)))
+        check(len(last[-1]) < len(proved)
+              and last[-1].split(" capabilities")[0]
+              == proved.split(" capabilities")[0],
+              "and how many are PROVEN in one line, with the same count")
+        # THE ONE LINE STANDS ON ITS OWN. This process serves a whole session
+        # - a cleared conversation and a subagent ask the same one - so the
+        # reader of the short form may never have seen the long one: it
+        # points at nothing said before, and names the tool that has the
+        # whole text whenever it is asked.
+        check("heron_capabilities says this in full" in last[0]
+              and "first time" not in last[0],
+              "the one line names heron_capabilities for the full text, and "
+              "points at nothing this server said before")
+
         line, took = host.call(5, "revit_health", {}, DEADLINE)
         check(line is not None,
               "a Revit tool asked for anyway is answered at once, not left to "
@@ -527,8 +638,280 @@ def library_only(guard, scratch):
         refused = ("error" in reply
                    or (reply.get("result") or {}).get("isError") is True)
         check(refused, "and the answer is a refusal - the tool is not served here")
+
+        # heron_resolve SAYS THE SAME OF THIS MACHINE AS THE LOOKUP DOES (row
+        # 5b-1506). It ended "No Revit is connected, so the version filter
+        # did not run" - the sentence D-132 replaced in heron_lookup, typed
+        # here a second time: a chat told none is connected goes looking for
+        # one, on a machine where none can be reached.
+        line, took = host.call(6, "heron_resolve",
+                               {"capability": "SET_SELECTION"}, DEADLINE)
+        resolved = text_of(line) or ""
+        check("provider(s)" in resolved,
+              "heron_resolve answers for a capability by name (%.1fs)" % took)
+        check("No Revit on this machine" in resolved
+              and "so the version filter did not run" in resolved,
+              "and says there is no Revit on this machine, which is why the "
+              "version filter did not run")
+        check("No Revit is connected" not in resolved,
+              "never that none is connected")
+
+        # AND heron_capabilities HAS THE WHOLE TEXT EVERY TIME IT IS ASKED,
+        # which is what the one line promises of it.
+        line, took = host.call(7, "heron_capabilities", {}, DEADLINE)
+        again = text_of(line) or ""
+        check(bool(doors) and doors in again and proved in again,
+              "heron_capabilities, asked a second time, says both closing "
+              "paragraphs whole again (%.1fs)" % took)
     finally:
         host.close()
+
+
+# THE ENTRY FILE, RUN AS PYTHON RUNS A SCRIPT, with `server.run()` - the one
+# call that never returns - stood in by a report of what the process holds.
+# Nothing else is replaced. The classes are found from the objects the entry
+# file itself names, so no module of the server is named here.
+ONE_OF_EACH = r"""
+import gc, json, os, runpy, sys
+entry = sys.argv[1]
+try:
+    from mcp.server.mcpserver import MCPServer as sdk_server      # SDK 2.x
+except ImportError:
+    from mcp.server.fastmcp import FastMCP as sdk_server          # SDK 1.x
+
+def report(server, *_a, **_k):
+    main = vars(sys.modules["__main__"])
+    again = os.path.splitext(os.path.basename(entry))[0]
+    gc.collect()
+    alive = {}
+    for name in ("server", "binding", "pinned", "approval"):
+        kind = type(main[name]) if name in main else None
+        alive[name] = sum(1 for o in gc.get_objects() if type(o) is kind) if kind else None
+    watch = [o for o in gc.get_objects() if type(o).__name__ == "RunningCode"]
+    alive["watch"] = len(watch)
+    sys.stdout.write(json.dumps({
+        "as_main": os.path.samefile(sys.modules["__main__"].__file__, entry),
+        "again": again in sys.modules, "alive": alive,
+        "same_server": main.get("server") is server}) + chr(10))
+    sys.stdout.flush()
+    os._exit(0)
+
+sdk_server.run = report
+sys.argv = [entry]
+sys.path.insert(0, os.path.dirname(entry))
+runpy.run_path(entry, run_name="__main__")
+"""
+
+
+def one_of_each(guard, scratch):
+    """One server object, one binding, one pin, one approval and one watch in
+    a process started on the entry file - and that file loaded once. Off
+    Windows only (the module header says why)."""
+    print()
+    print("  started on the entry file, the process holds one of each (row 5b-1555)")
+    env = guard.for_child(os.environ, os.path.join(scratch, "one-of-each"))
+    env["LOCALAPPDATA"] = os.path.join(scratch, "local")
+    env["XDG_DATA_HOME"] = os.path.join(scratch, "local")
+    env["HERON_KNOWLEDGE"] = os.path.join(scratch, "knowledge")
+    env["HERON_AUDIT"] = os.path.join(scratch, "audit")
+    try:
+        ran = subprocess.run([sys.executable, "-c", ONE_OF_EACH, SERVER], cwd=ROOT, env=env,
+                             capture_output=True, text=True, encoding="utf-8",
+                             timeout=COLD_DEADLINE)
+        said, why = ran.stdout, ran.stderr.strip()[-300:]
+    except subprocess.TimeoutExpired:
+        said, why = "", "it did not reach server.run() in %d s" % COLD_DEADLINE
+    found = {}
+    for line in said.splitlines():
+        try:
+            found = json.loads(line)
+        except ValueError:
+            continue
+    check(bool(found), "the entry file ran as far as server.run()%s"
+          % ("" if found else " - it said: %s" % why))
+    if not found:
+        return
+    check(found.get("as_main") is True and found.get("again") is False,
+          "it ran as `__main__` and was not loaded a second time under its own name")
+    alive = found.get("alive") or {}
+    for name, what in (("server", "server object"), ("binding", "binding"), ("pinned", "pin"),
+                       ("approval", "approval"), ("watch", "watch on its own code")):
+        check(alive.get(name) == 1,
+              "exactly one %s is alive in the process (%s)" % (what, alive.get(name)))
+    check(found.get("same_server") is True,
+          "and the server that runs is the one the tools registered on")
+
+
+def however_it_is_started(guard, scratch):
+    """
+    D-132 DOES NOT DEPEND ON HOW PYTHON WAS STARTED (review of FRAGMENT-ISSUES
+    row 5b-1555). Off Windows a server RUN as the program serves the library
+    alone - by its path, by `-m`, through a symlinked folder, by runpy, or by
+    exec(compile()) with `__name__` set to "__main__" - and one that is only
+    IMPORTED serves every tool, as a suite needs. For a day the answer was
+    worked out from `sys.modules["__main__"].__file__`, and two of these rows
+    served every revit_ tool on a machine with no Revit.
+
+    Each row is a real process asked as a host asks: initialize, then
+    tools/list. The Windows half of the table - never the library alone - is
+    held without a process, in tests/test_data_home.py.
+    """
+    print()
+    print("  the library alone, however the server is started (D-132, row 5b-1555)")
+    library = getattr(REGISTRY, "LIBRARY", None) or ()
+    folder = os.path.dirname(SERVER)
+    name = os.path.splitext(os.path.basename(SERVER))[0]
+    relative = os.path.relpath(SERVER, ROOT)
+    link = os.path.join(scratch, "linked-checkout")
+    try:
+        os.symlink(ROOT, link)
+        linked = os.path.join(link, relative)
+    except (OSError, NotImplementedError, AttributeError):
+        linked = None
+    path = "import sys; sys.path.insert(0, %r); " % folder
+    rows = [
+        ("its path, relative", ["-u", relative], ROOT, "library"),
+        ("its path, absolute", ["-u", os.path.abspath(SERVER)], ROOT, "library"),
+        ("its path, through a symlinked folder", linked and ["-u", linked], ROOT, "library"),
+        ("python -m, from its folder", ["-u", "-m", name], folder, "library"),
+        ("runpy.run_path as __main__", ["-u", "-c", path + "import runpy; runpy.run_path(%r, "
+                                        "run_name='__main__')" % SERVER], ROOT, "library"),
+        ("runpy.run_module as __main__", ["-u", "-c", path + "import runpy; runpy.run_module("
+                                          "%r, run_name='__main__')" % name], ROOT, "library"),
+        ("exec(compile()) as __main__", ["-u", "-c", path + "exec(compile(open(%r, encoding="
+                                         "'utf-8').read(), %r, 'exec'), {'__name__': '__main__', "
+                                         "'__file__': %r})" % (SERVER, SERVER, SERVER)],
+         ROOT, "library"),
+        ("imported, then served", ["-u", "-c", path + "import %s as it; it.server.run()" % name],
+         ROOT, "every tool"),
+        # BELT AND BRACES: run, off Windows, with the mode never set - nothing is served.
+        ("run with the mode never set", ["-u", "-c", path + "import heron_server_core as core; "
+                                         "core.started = lambda run: False; import runpy; "
+                                         "runpy.run_path(%r, run_name='__main__')" % SERVER],
+         ROOT, "refuses"),
+        # AND A SERVER OBJECT MADE BEFORE THE ENTRY FILE SPOKE is not re-labelled.
+        ("run after the server object was made", ["-u", "-c", path + "import heron_server_core "
+                                                  "as core; core.server; import runpy; "
+                                                  "runpy.run_path(%r, run_name='__main__')"
+                                                  % SERVER], ROOT, "refuses"),
+    ]
+    for at, (how, argv, cwd, expected) in enumerate(rows):
+        if argv is None:
+            print("  NOT RUN  %s - this system makes no symlink here" % how)
+            continue
+        home = os.path.join(scratch, "started-%d" % at)
+        env = guard.for_child(os.environ, home)
+        env["LOCALAPPDATA"] = os.path.join(scratch, "local")
+        env["XDG_DATA_HOME"] = os.path.join(scratch, "local")
+        env["HERON_KNOWLEDGE"] = os.path.join(scratch, "knowledge")
+        env["HERON_AUDIT"] = os.path.join(scratch, "audit")
+        env["HERON_DATA"] = os.path.join(home, "data")
+        host = Host(env, argv=argv, cwd=cwd)
+        try:
+            if expected == "refuses":
+                try:
+                    code = host.proc.wait(DEADLINE)
+                except subprocess.TimeoutExpired:
+                    code = None
+                time.sleep(0.2)
+                said = "".join(host.err)
+                check(code not in (0, None)
+                      and ("Heron did not start" in said or "Nothing is served" in said),
+                      "%s: it does not start, and says nothing is served (exit %s)%s"
+                      % (how, code, "" if code not in (0, None) else
+                         " - it said: %s" % said.strip()[-200:]))
+                continue
+            host.send({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {
+                "protocolVersion": "2024-11-05", "capabilities": {},
+                "clientInfo": {"name": "heron-stdio-test", "version": "0"}}})
+            host.send({"jsonrpc": "2.0", "method": "notifications/initialized"})
+            init = host.read(DEADLINE)
+            host.send({"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}})
+            listed = host.read(DEADLINE)
+            try:
+                told = json.loads(init)["result"].get("instructions") or ""
+                names = [t["name"] for t in json.loads(listed)["result"]["tools"]]
+            except Exception:                                   # noqa: BLE001
+                told, names = "", []
+            revit = [n for n in names if n.startswith("revit_")]
+            if expected == "library":
+                check(bool(names) and set(names) == set(library) and not revit
+                      and told.startswith("No Revit on this machine"),
+                      "%s: the library alone, and the chat is told first that there is "
+                      "no Revit here - %d tool(s), %d of them revit_%s"
+                      % (how, len(names), len(revit),
+                         "" if names else " - it said: %s" % "".join(host.err).strip()[-200:]))
+                wrote = [os.path.join(where, f) for where, _d, files in os.walk(home)
+                         for f in files if f == "runner.json"]
+                check(not wrote, "%s: and no runner note is written for a Heron panel "
+                      "that cannot be here%s" % (how, "" if not wrote else " - %s" % wrote))
+            else:
+                check(set(names) == set(TOOLS) and bool(revit)
+                      and not told.startswith("No Revit on this machine"),
+                      "%s: every declared tool, as a suite that imports the server "
+                      "needs - %d tool(s), %d of them revit_" % (how, len(names), len(revit)))
+        finally:
+            host.close()
+
+
+def library_no_folder_named(guard, scratch):
+    """The same server on a machine nobody set up for Heron: off Windows, no
+    HERON_KNOWLEDGE and no HERON_DATA. That is a cloud chat opened from a
+    phone, and until 2026-11-11 every library tool there answered only that
+    Heron had nowhere to keep what it knows (row 5b-1508). library_only()
+    above could not see it: it names a store for the child, which is the one
+    thing such a session has not got."""
+    print()
+    print("  off Windows, no knowledge folder named: the library still answers (D-153)")
+    env = guard.for_child(os.environ, os.path.join(scratch, "unnamed"))
+    local = os.path.join(scratch, "unnamed-local")
+    env["LOCALAPPDATA"] = local
+    env["XDG_DATA_HOME"] = local
+    for name in ("HERON_KNOWLEDGE", "HERON_DATA"):
+        env.pop(name, None)
+    host = Host(env)
+    # Every answer is matched to its own call by id, on a reader of its own:
+    # Host.read() takes whichever line comes next, so one late answer would
+    # be read as the next call's and fail every check after it.
+    hears = Listener(host)
+    try:
+        t0 = time.time()
+        host.send({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {
+            "protocolVersion": "2024-11-05", "capabilities": {},
+            "clientInfo": {"name": "heron-stdio-test", "version": "0"}}})
+        host.send({"jsonrpc": "2.0", "method": "notifications/initialized"})
+        init = hears.answer(1, COLD_DEADLINE)[1]
+        check(init is not None,
+              "the server starts with no knowledge folder named (%.1fs)%s"
+              % (time.time() - t0, "" if init is not None else
+                 " - it said: %s" % "".join(host.err).strip()[-300:]))
+        if init is None:
+            return
+        for ident, name, args, want, what in (
+                (2, "heron_lookup", {"request": "select all the ducts"},
+                 "would need", "heron_lookup answers a sentence in BIM language"),
+                (3, "heron_method", {"job": ""},
+                 "pass one as `job`", "heron_method lists the jobs it has a method for"),
+                (4, "heron_capabilities", {},
+                 "job(s) Heron knows by name", "heron_capabilities answers")):
+            asked = time.time()
+            host.send({"jsonrpc": "2.0", "id": ident, "method": "tools/call",
+                       "params": {"name": name, "arguments": args}})
+            at, reply = hears.answer(ident, COLD_DEADLINE)
+            said = text_of(json.dumps(reply)) if reply is not None else None
+            check(said is not None and want in said and "nowhere to keep" not in said,
+                  "%s, with no folder named (%.1fs of %d allowed)%s"
+                  % (what, (at or time.time()) - asked, COLD_DEADLINE,
+                     "" if said is not None and want in said else
+                     " - it said: %s" % " ".join((said or "nothing").split())[:160]))
+    finally:
+        host.close()
+    stores = [os.path.join(folder, name) for folder, _dirs, names in os.walk(local)
+              for name in names if name == "global.db"]
+    under = os.path.join(local, "Heron", "index") + os.sep
+    check(len(stores) == 1 and stores[0].startswith(under),
+          "and its store is one of its own, under the machine-local Heron folder's "
+          "index (%s)" % (", ".join(os.path.relpath(s, local) for s in stores) or "none made"))
 
 
 def main():
@@ -550,6 +933,9 @@ def main():
         as_a_host(guard, scratch)
     else:
         library_only(guard, scratch)
+        however_it_is_started(guard, scratch)
+        one_of_each(guard, scratch)
+        library_no_folder_named(guard, scratch)
     if missing:
         print()
         print("  NOT RUN - the stand-in Revit's part needs the MCP SDK (%s)" % missing)
@@ -593,8 +979,13 @@ def main():
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "brain"))
         import heron_fragment as HF
         found, _problems = HF.load_all()
-        proven = sum(1 for f in found.values() if f.status in ("PROVEN", "PRODUCTION"))
-        tally = "%d of %d are PROVEN" % (proven, len(found))
+        # OF THE CARDS STILL IN THE LIBRARY. A retired card is not a claim
+        # waiting to be proved (row 5b-1521): docs/09's ladder, from
+        # DEPRECATED on, is left out of both numbers.
+        retired = HF.STATUSES[HF.STATUSES.index("DEPRECATED"):]
+        live = [f for f in found.values() if f.status not in retired]
+        proven = sum(1 for f in live if f.status in ("PROVEN", "PRODUCTION"))
+        tally = "%d of %d are PROVEN" % (proven, len(live))
     except Exception:
         tally = "most are not PROVEN"
     print("It says NOTHING about whether any fragment WORKS. %s" % tally)

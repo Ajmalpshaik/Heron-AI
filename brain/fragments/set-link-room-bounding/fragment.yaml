@@ -28,8 +28,9 @@ risk: MODIFY
 # could not be told from "off"; left out it reads "unchanged". `changed` counts
 # link types changed in either setting, `alreadyThat` those already as asked in
 # every setting asked. Nothing of that card is left out, and no rule of the two
-# was opposite. Version 1's proof below no longer describes the code and is
-# kept as the record; DRAFT until version 2 is proved on a real model (D-30).
+# was opposite. Version 1's proof below no longer described the code and was
+# kept as the record; DRAFT at the time, until version 2 is proved on a real
+# model (D-30).
 
 purpose: >
   Switches Room Bounding on or off for one Revit link or every link - the

@@ -46,8 +46,8 @@ number, the particular day. Keep what will be true next time.
 | A rule for how code here is written | An existing skill, extended — check first |
 | A rule for work no skill covers yet | A new skill — hand it to `skill-author` |
 | A choice that was made, with reasoning | `docs/DECISIONS.md` — append-only, never edited in place |
-| Something still unresolved | `docs/OPEN-QUESTIONS.md` |
-| Behaviour observed in a real Revit | The [NEEDS-CHECKING](../../docs/NEEDS-CHECKING.md) row it answers, dated, with the release - or, when a fragment failed in front of a model, a [FRAGMENT-ISSUES](../../docs/FRAGMENT-ISSUES.md) row the same day. Observed beats designed, [D-15](../../docs/DECISIONS.md); the field notes, `docs/00e`, are the owner's record of his earlier bridge and are not written to |
+| Something still unresolved | `docs/OPEN-QUESTIONS.md` - at the end of its tier's file, `docs/open-questions/tier-N.md` |
+| Behaviour observed in a real Revit | The [NEEDS-CHECKING](../../docs/NEEDS-CHECKING.md) row it answers, dated, with the release - or, when a fragment failed in front of a model, a [FRAGMENT-ISSUES](../../docs/FRAGMENT-ISSUES.md) row the same day (that page's *Add to this file* says where: a defect found by reading is a file of its own, `docs/fragment-issues/row-5b-N.md`, with N from `python tools/next-id.py` - never a line appended to a rows file). Observed beats designed, [D-15](../../docs/DECISIONS.md); the field notes, `docs/00e`, are the owner's record of his earlier bridge and are not written to |
 
 **Prefer extending an existing skill.** A new skill for every finding fragments the guidance until none
 of it is found.

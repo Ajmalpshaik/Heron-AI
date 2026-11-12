@@ -88,3 +88,9 @@ PROOF*, and Vertical and Horizontal Grid set to Fixed Distance 1500 in Type Prop
 | **JI14** | The signature, on the owner's word only, after JI1 to JI10 | `python brain/heron_validate.py accept set-curtain-panel-type --by "Ajmal PS"` |
 
 A row that fails stays open; nothing in a row changes to make it pass.
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `SET_CURTAIN_PANEL_TYPE` reads PROVEN on its card, at version 1 - its `proof` block is signed by Ajmal PS,
+2026-11-02, on Snowdon Towers Sample Architectural (34,509 elements), Revit 2024, session 57392. So where this page
+calls a card named here DRAFT, or says nothing has run in Revit, that was true when it was written and is out of date
+as a statement about the card. Whether JI0 to JI14 were what that proof ran is NOT sorted here: for the owner.

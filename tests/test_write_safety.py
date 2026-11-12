@@ -142,8 +142,15 @@ def main():
     check(refusal is not None, "a DIFFERENT model in front is refused")
     check("Tower A" in (refusal or "") and "Annexe" in (refusal or ""),
           "the refusal names BOTH models, so the user knows which is which")
-    check("Nothing has been sent to Revit" in (refusal or ""),
-          "the refusal answers 'did it half-do something?' unasked")
+    # THIS CHECK HELD THE SENTENCE "Nothing has been sent to Revit" UNTIL
+    # 2026-11-11, and the sentence was the defect (FRAGMENT-ISSUES 5b-594,
+    # 5b-1135): the pin is asked of a REPLY, so Revit had been asked and had
+    # answered. It holds what is true of every reply now.
+    check("Nothing has been sent to Revit" not in (refusal or "")
+          and "Heron had already asked Revit, and Revit answered from Annexe" in (refusal or "")
+          and "not showing that answer" in (refusal or ""),
+          "the refusal answers 'did it half-do something?' unasked, truthfully - Revit "
+          "was asked and answered, and the answer is withheld (5b-1135)")
     check("click back" not in (refusal or "").lower(),
           "it does NOT say 'click back' - from here it cannot know the old model is still open")
 

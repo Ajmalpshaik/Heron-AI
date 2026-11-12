@@ -62,7 +62,9 @@ carries the `status` of what it found, and a reader who wants to know whether
 something works reads that rather than trusting this paragraph.
 """
 
+import hashlib
 import os
+import re
 import sqlite3
 import sys
 import threading
@@ -238,6 +240,93 @@ def carry_home():
         import heron_paths as PATHS
         return PATHS.home()
     except Exception:                                  # noqa: BLE001 - never fatal, D-135
+        return None
+
+
+def library_store_dir(environ=None, system=None, root=None):
+    """The folder a library-only server keeps its store in when nobody named
+    one (D-153): <machine-local>/Heron/index/<this checkout>. ONLY A NAME -
+    it looks at nothing on disk and makes nothing.
+
+    MACHINE-LOCAL AND DERIVED, as HeronPaths.Derived is: the folder
+    `heron_bridge_client.local_app_data()` names - off Windows
+    $XDG_DATA_HOME, else ~/.local/share, where the hooks' diary already is -
+    and under `index`, which docs/06 s2 lists as safe to delete. All such a
+    server writes there is the search index of the cards beside it, which a
+    rebuild makes again. NOT a home: D-135 point 1 keeps none off Windows.
+
+    ONE FOLDER PER CHECKOUT - its folder's name, and a digest of its whole
+    path. A store somebody else's server also writes follows whichever cards
+    asked last (rows 136 and 5b-233), and two chats in two worktrees are two
+    servers.
+    """
+    client = os.path.join(ROOT, "mcp", "client")
+    if client not in sys.path:
+        sys.path.insert(0, client)
+    import heron_bridge_client as BRIDGE
+    root = os.path.realpath(root or ROOT)
+    name = re.sub(r"[^A-Za-z0-9._-]", "-", os.path.basename(root))[:40] or "heron"
+    digest = hashlib.blake2b(os.path.normcase(root).encode("utf-8", "replace"),
+                             digest_size=6).hexdigest()
+    return os.path.join(BRIDGE.local_app_data(environ, system), "Heron", "index",
+                        "%s-%s" % (name, digest))
+
+
+def _inside(path, root):
+    """True when `path` is `root` or anything under it, links followed."""
+    try:
+        base = os.path.realpath(root)
+        return os.path.commonpath([os.path.realpath(path), base]) == base
+    except ValueError:
+        # Another drive on Windows: certainly not inside.
+        return False
+
+
+def library_store(system=None):
+    """Off Windows, give this process a knowledge store of its own when none
+    is named (D-153). The folder, or None when nothing was done. Never raises.
+
+    CALLED ONLY BY THE SERVER'S OWN START-UP IN ITS LIBRARY-ONLY MODE (D-132),
+    before anything opens the store. A cloud chat is the case: no Windows
+    profile, so no home (D-135 point 1), and a session nobody gave a
+    HERON_KNOWLEDGE (docs/38 s1) was answered by every library tool only that
+    Heron had nowhere to keep what it knows (row 5b-1508).
+
+    It names `library_store_dir()` as THIS PROCESS's HERON_KNOWLEDGE, which
+    is what every reader already asks - so the store is a private one
+    (heron_scope.rebuild_refusal), filled from this checkout's cards on any
+    branch, exactly as one a person names. Nothing is done:
+      - on Windows, where the home answers;
+      - when HERON_KNOWLEDGE or HERON_DATA names a folder - theirs is used;
+      - when its name is not a whole path - HOME unset for a user with no
+        passwd entry leaves `~` as it is, and a relative HOME is the same
+        shape; made anyway, the store would sit inside whatever folder the
+        server started in, as heron_paths.data_home() refuses for the
+        profile (row 5b-168);
+      - when it would be inside this checkout - an index beside the cards is
+        an index somebody commits;
+      - when the folder cannot be made.
+    In each of those the lookup says what to set, as it always did.
+    A suite or a tool that imports the brain is never given one: with nothing
+    named it is still refused, by name.
+
+    MADE WITHOUT LOOKING FIRST. Two chats opened together are two servers
+    naming one folder, and "look, then make" let the second trip over the
+    folder the first had just made - and serve its whole life with no store
+    (review of f8f727f8: four processes, fifteen rounds, three left without).
+    """
+    if (os.name if system is None else system) == "nt":
+        return None
+    try:
+        if _brain()[0].knowledge_dir() is not None:
+            return None
+        folder = library_store_dir(system=system)
+        if not os.path.isabs(folder) or _inside(folder, ROOT):
+            return None
+        os.makedirs(folder, exist_ok=True)
+        os.environ["HERON_KNOWLEDGE"] = folder
+        return folder
+    except Exception:                                  # noqa: BLE001 - never fatal: the lookup says why
         return None
 
 
@@ -2661,12 +2750,27 @@ def host_instructions():
     return text
 
 
+def retired_statuses():
+    """
+    The statuses a card leaves the library by - heron_search.RETIRED_FRAGMENTS,
+    read off docs/09's ladder there and asked here.
+
+    For a count of what the library HOLDS. A retired card is kept so its
+    record is never destroyed, not so it can answer: retrieval never offers
+    one, and a sentence that counts one as a capability nobody has proved is
+    counting something that is not a capability (FRAGMENT-ISSUES 5b-1521).
+    Asked rather than typed on the server's side, so the ladder has one copy.
+    """
+    return tuple(_brain()[3].RETIRED_FRAGMENTS)
+
+
 def proof_status(folder):
     """
     How far one fragment is proven, as data - or None when it cannot be read.
 
-        {"status": "PROVEN", "stale": False, "date": "2026-09-08",
-         "model": "Snowdon-scratch ... Revit 2024", "by": "Ajmal PS"}
+        {"status": "PROVEN", "stale": False, "proof": True,
+         "date": "2026-09-08", "model": "Snowdon-scratch ... Revit 2024",
+         "by": "Ajmal PS", "risk": "MODIFY"}
 
     READ FROM THE FRAGMENT'S OWN FILES, never from the retrieval index, for
     the reason the server gives for every status it prints: a status is a
@@ -2674,6 +2778,19 @@ def proof_status(folder):
     before. `stale` is D-30's fingerprint - True when the implementation
     moved after the proof was taken, which makes the proof describe code that
     no longer runs.
+
+    A CARD THAT SAYS PROVEN AND RECORDS NO PROOF IS STALE, AND SAYS WHICH -
+    row 5b-1154. `stale` was `bool(proof) and ...`, so a card edited to
+    PROVEN with no `proof:` block read as fresh, and every caller that
+    refuses on `stale` - the D-117 gate above all - let it through. Nothing
+    recorded is nothing that can be shown to still hold (D-30). `proof` is
+    False for that card, so a caller can say "no proof is recorded" where
+    "its code has changed since" would be untrue.
+
+    `risk` IS THE CARD'S OWN DECLARED RISK, or None - carried so that the
+    refusal built on this answer can say what comes next for THIS card: a
+    DRAFT's one try takes a card declared MODIFY and no other
+    (heron_bridge_client.unproven_refusal).
 
     None rather than a guess. A caller told None says the status could not be
     read; it never says PROVEN.
@@ -2689,12 +2806,15 @@ def proof_status(folder):
         return None
 
     proof = frag.proof if isinstance(frag.proof, dict) else {}
+    status = str(frag.status or "").upper() or None
     return {
-        "status": str(frag.status or "").upper() or None,
-        "stale": bool(proof) and frag.proof_is_stale(),
+        "status": status,
+        "stale": frag.proof_is_stale() or (status in FRAGMENT.NEEDS_PROOF and not proof),
+        "proof": bool(proof),
         "date": str(proof.get("date") or "") or None,
         "model": str(proof.get("model") or "") or None,
         "by": str(proof.get("by") or "") or None,
+        "risk": str(frag.data.get("risk") or "").upper() or None,
     }
 
 

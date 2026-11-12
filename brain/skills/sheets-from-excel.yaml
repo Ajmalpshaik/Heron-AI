@@ -88,8 +88,10 @@ purpose: >
      header in the file and steps 0 and 3 run again - never matched by
      likeness. Is it a project parameter not bound to Sheets? Binding one is
      ADD_PROJECT_PARAMETER, a separate change of its own, only when the
-     modeller asks. Or should it be left out? Then it is listed and not
-     written, and that is the answer. A column in columnsNotWritten as a
+     modeller asks - heron_lookup says whether that card may run today, and
+     it makes a NEW parameter or a NEW shared parameter file only when the
+     modeller asked for one in words. Or should it be left out? Then it is
+     listed and not written, and that is the answer. A column in columnsNotWritten as a
      title block TYPE parameter is never written from a row - it would change
      every sheet on that type; say so.
 
@@ -106,7 +108,15 @@ purpose: >
      as the call is kept undoes the WHOLE call - one undo, nothing kept - and
      its words are the answer; say them, never retry round them.
 
-  6. KEEP OR DISCARD, THEN LOOK. While Revit's Keep or Discard box is open,
+  6. KEEP OR DISCARD, THEN LOOK. The box is certain only for the DRAFT's
+     try-once (D-119). Once the card is PROVEN and runs through
+     revit_change, Revit asks only while the owner's Ask to Keep is on - it
+     is OFF as installed (D-138), and with it off the sheets are KEPT AT
+     ONCE, one undo entry. revit_health says which way it is set for that
+     Revit (built, not yet run in Revit - Group NP): check it, and say
+     which it will be, before step 5; where its line says that Revit's
+     Heron does not say, or could not be read, ask the modeller. While
+     Revit's Keep or Discard box is open,
      no chat tool reaches Revit - the modeller looks in the Project
      Browser's Sheets, where the new sheets are, and chooses. After Keep,
      revit_sheets lists every sheet with its title block, and the modeller

@@ -37,3 +37,9 @@ Revit 2020 first. The tool is a read, so nothing it does needs Keep or Discard.
 | **FG8** | A schedule on S-03, split into two pieces (Revit 2022 or later) and one piece dragged over the Site plan | One schedule row with two boxes, and one overlap naming the schedule and the plan |
 | **FG9** | FG1 once on Revit 2024 and once on 2027 | The same answers - one implementation for every release |
 | **FG10** | In the chat, *"which sheets is this legend on"*, *"does any view run off the sheet"*, *"check the sheets for overlapping viewports"* | Each reaches `LIST_VIEWS_ON_SHEET` through `revit_read`, and the answer says the boxes and amounts in millimetres |
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `LIST_VIEWS_ON_SHEET` reads PROVEN on its card, at version 2 - its `proof` block is signed by Ajmal PS,
+2026-10-18, on Project2 (3,027 elements), Revit 2020, session 13520. So where this page calls a card named here DRAFT,
+or says nothing has run in Revit, that was true when it was written and is out of date as a statement about the card.
+Whether FG1 to FG10 were what that proof ran is NOT sorted here: for the owner.

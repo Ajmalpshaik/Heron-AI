@@ -136,7 +136,15 @@ purpose: >
      call is kept undoes the WHOLE call - one undo, nothing kept - and its
      words are the answer; say them, never retry round them.
 
-  7. KEEP OR DISCARD, THEN LOOK AGAIN. While Revit's Keep or Discard box is
+  7. KEEP OR DISCARD, THEN LOOK AGAIN. The box is certain only for the
+     DRAFT's try-once (D-119). Once the card is PROVEN and runs through
+     revit_change, Revit asks only while the owner's Ask to Keep is on - it
+     is OFF as installed (D-138), and with it off the drawing is KEPT AT
+     ONCE, one undo entry. revit_health says which way it is set for that
+     Revit (built, not yet run in Revit - Group NP): check it, and say
+     which it will be, before step 6; where its line says that Revit's
+     Heron does not say, or could not be read, ask the modeller. While
+     Revit's Keep or Discard box is
      open, no chat tool reaches Revit - the modeller looks in Revit itself,
      where the change is selected and shown, and chooses. AFTER KEEP,
      revit_view_image of the PLAN VIEW itself - not of the new elements by id,

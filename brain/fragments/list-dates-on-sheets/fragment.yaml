@@ -251,7 +251,8 @@ compatibility-note: >
   and `FilteredElementCollector.OfClass` are documented in the RevitAPI.xml
   of every release 2020 to 2027 (read 2026-10-10 from the reference
   packages the compile uses; tools/api-surface could not run on that PC).
-  The same members are in FIND_DATES_IN_VIEWS and LIST_SHEETS, both PROVEN.
+  The same members are in FIND_DATES_IN_VIEWS and LIST_SHEETS, both PROVEN
+  when this was written.
 
   **No ElementId is ever read as a number** - ids are dictionary keys and
   compared to `InvalidElementId` - so 2024's 64-bit ids do not reach this,

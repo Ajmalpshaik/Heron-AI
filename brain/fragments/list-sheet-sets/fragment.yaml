@@ -14,9 +14,10 @@ capability: LIST_SHEET_SETS
 # a finding. Found 2026-10-14 on BL001A: a seventh set was made there holding
 # the same 8 sheets as the first, and this read named both without a word.
 # Version 1 was run and PROVEN the same day as this was written (2026-10-17,
-# NEEDS-CHECKING EA1, "Project1", Revit 2020). Its proof below is kept as the
-# record it is; its fingerprint no longer matches this code, so the card is
-# DRAFT again, on Ajmal PS's choice that day, until Group FA's FA5 re-proves it.
+# NEEDS-CHECKING EA1, "Project1", Revit 2020). Its proof below was kept as the
+# record it is; its fingerprint no longer matched this code, so the card was
+# DRAFT again at the time, on Ajmal PS's choice that day, until Group FA's FA5
+# re-proves it.
 version: 2
 source: OFFICIAL
 risk: READ

@@ -74,9 +74,9 @@ capability: SET_SCHEDULE_APPEARANCE
 #   ribbon's Reset does more is read off the dialog. A Count column is assumed
 #   to have no unit type and is refused for units.
 #
-#   Version 3's proof below no longer describes the code and is kept as a
-#   record; the card is DRAFT until NEEDS-CHECKING Group KK proves version 5
-#   and the owner signs.
+#   Version 3's proof below no longer described the code and was kept as a
+#   record; the card was DRAFT at the time, until NEEDS-CHECKING Group KK
+#   proves version 5 and the owner signs.
 version: 5
 source: OFFICIAL
 risk: MODIFY
@@ -170,9 +170,9 @@ purpose: >
 #   or an orientation is refused once per schedule, as version 2 refused it,
 #   not once per column.
 #
-#   Version 2's proof below no longer describes the code and is kept as a
-#   record; the card is DRAFT until the version 3 proof (NEEDS-CHECKING Group
-#   FY) is signed.
+#   Version 2's proof below no longer described the code and was kept as a
+#   record; the card was DRAFT at the time, until the version 3 proof
+#   (NEEDS-CHECKING Group FY) is signed.
 
 contract:
   needs:

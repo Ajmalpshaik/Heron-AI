@@ -498,6 +498,10 @@ jobs:
           #                            the real server with its library alone
           #                            (D-132), and its stand-in Revit part
           #                            runs (docs/04 7.1)
+          #   test_outcome_line.py     needs the MCP SDK - it calls the three
+          #                            doors, which are functions of the
+          #                            server, against a stand-in Revit
+          #                            (docs/04 8.12)
           #   test_served_claims.py    needs the MCP SDK
           #   test_sheet_list_tool.py  needs the MCP SDK - the chat's
           #                            heron_sheet_list tool (docs/48 s5
@@ -543,6 +547,7 @@ jobs:
             test_loads_finalize.py \
             test_mcp_serves.py \
             test_mcp_stdio.py \
+            test_outcome_line.py \
             test_routing_phrases.py \
             test_served_claims.py \
             test_sheet_list_tool.py \

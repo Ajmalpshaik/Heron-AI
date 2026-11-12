@@ -29,12 +29,11 @@ risk: MODIFY
 #   LIST_DATES_ON_SHEETS (DRAFT, READ) finds the dates. Making it write would
 #   raise a read to MODIFY, so "what dates are on the sheets" would need the
 #   Changes switch and land in the Undo list.
-#   CREATE_REVISION (DRAFT) makes ONE revision from typed values, and its
-#   contract - one `created`, one `sequence` - is what ADD_REVISION_CLOUD and
-#   two job files read.
-#   SET_SHEET_REVISIONS (PROVEN) puts revisions it is HANDED on sheets it is
-#   HANDED. Teaching it to find both would change code under a proof, and its
-#   question is a different one: this revision, these sheets.
+#   CREATE_REVISION makes ONE revision from typed values, and its contract -
+#   one `created`, one `sequence` - is what ADD_REVISION_CLOUD and two job
+#   files read. SET_SHEET_REVISIONS (PROVEN) puts revisions it is HANDED on
+#   sheets it is HANDED. Teaching it to find both would change code under a
+#   proof, and its question is a different one: this revision, these sheets.
 #
 # A chain of the three cannot do it either: a chain cannot loop over dates, and
 # every revision name it carries between steps goes stale when Revit renumbers.

@@ -1,6 +1,6 @@
 ---
 name: heron-ship
-description: What to run before pushing Heron, in what order, and which failures are the machine rather than the change. Use before any commit or push, when a gate or test fails and it is not obvious whether the change caused it, or when asked whether the work is ready. Covers stating the change's intent and capturing its before/after evidence, the four gates you run before pushing and the twelve CI actually decides on, the reports whose findings are questions, how to measure what a card's routing words moved - main against the branch on a named backend, the checker whose exit code follows the unfinished list, the seven checks that need something this container has not got - a tool, a store or the whole git history, why no derived count is typed in prose, and how to resolve a merge conflict in the NEEDS-CHECKING group index or at the end of the 5b rows.
+description: What to run before pushing Heron, in what order, and which failures are the machine rather than the change. Use before any commit or push, when a gate or test fails and it is not obvious whether the change caused it, or when asked whether the work is ready. Covers stating the change's intent and capturing its before/after evidence, the four gates you run before pushing and the twelve CI actually decides on, the reports whose findings are questions, how to measure what a card's routing words moved - main against the branch on a named backend, the checker whose exit code follows the unfinished list, the seven checks that need something this container has not got - a tool, a store or the whole git history, why no derived count is typed in prose, where a new 5b defect row is written (a file of its own), and how to resolve a merge conflict in the NEEDS-CHECKING group index or between two branches that took the same id.
 allowed-tools:
   - Bash
   - Read
@@ -193,7 +193,10 @@ trained embedding the owner's PC ranks with (model2vec), and exits 3 anywhere el
 runnable for that reason. Leave it to that PC, or to a venv of its own (§3a): model2vec in the system
 Python would put every other suite on a backend CI does not use. Measured 2026-10-18 in a container with
 both installs above: this one and `test_bridge_roundtrip.py`, its host not yet built, were the only
-suites waiting.
+suites waiting. **Where the system Python already has model2vec it runs, and a red there may be the
+machine:** measured 2026-11-12 in a cloud container with model2vec and no re-ranker installed, it failed 8
+checks - the same 8 on `origin/main` at `c65509a9`, so not the branch's change. That is the model
+alone, where the PC ranks `model+rerank` (§3a): run it on main's tree before reading such a red as yours.
 
 **Derive which ones, rather than reading a list here** — the same rule as the suite total four lines
 up, and for the same reason it is written twice:
@@ -274,7 +277,11 @@ so either way.** A suite that exits **3** is waiting on a dependency; one that e
 finding. If a waiting one starts passing, somebody installed something. If a failure appears only on
 your operating system, suspect a path assumption before you suspect your change: that is twice now.
 On Windows, suspect the output encoding as well — also twice now, and the subsection below tells it
-from your change in one re-run.
+from your change in one re-run. **And if it fails in the main folder while CI is green, look for a
+session's worktree under `.claude/worktrees/`**: each is a whole copy of the repository that git never
+lists and a walk of the disk does. Four tools read one as part of this tree until 2026-11-11
+([row 5b-1539](../../../docs/FRAGMENT-ISSUES.md)); a walk that starts at the top of the checkout asks
+`brain/heron_checkout.py` which folders are another checkout, and a new one should too.
 
 This sentence counted to four until 2026-09-21. It does not count any more, for the reason the block
 above gives - **the number changes every time a suite learns to say "could not run", and the exit code
@@ -502,7 +509,7 @@ Not failures. They need a tool, and the error says which.
 |---|---|---|
 | `check-routing.py`, `check-intrusion.py` | a knowledge store | `COULD NOT RUN: no HERON_DATA, no Windows profile and no HERON_KNOWLEDGE`, exit 2 - or, from a worktree or a branch, `NOT RUN: the knowledge store at ... is the SHARED one` (§1) |
 | `check-fragments-compile.py`, `check-api-surface.py` | **`dotnet`** | ``NOT RUN - there is no `dotnet` on PATH``, exit 3 |
-| `check-compile.py` | **`dotnet`** | `FAIL  no .NET SDK on this machine (... 'dotnet')`, **exit 1** - the one of the three that still reads like a failure; it is not your change |
+| `check-compile.py` | **`dotnet`** | `NOT RUN - no .NET SDK on this machine (... 'dotnet')`, exit 3 - it printed `FAIL` and exited **1** until 2026-11-11 ([row 5b-1183](../../../docs/FRAGMENT-ISSUES.md)); an exit 1 from it now means a project does not compile, or a `.csproj` on disk that nothing builds |
 | `check-decision-titles.py` | the **whole git history** | `NOT RUN - this clone's history is cut short (shallow)` |
 | `batch-prove.py` | **a real Revit**, and the owner | — |
 
@@ -545,7 +552,7 @@ container with no Revit has nothing to break, so the compile gates are cheaper t
 - Changed a count anybody states in prose? `check-docs` already told you. Fix the sentence - and
   the fix is to **take the number out**, not to re-type it (§6a).
 
-## 6a. No typed derived count in prose, and how to merge the registers
+## 6a. No typed derived count in prose, where a new row goes, and how to merge the registers
 
 **Never type a count a command can derive** - fragments `PROVEN` / `DRAFT`, the library's total,
 `MODIFY` fragments `PROVEN`, fragments carrying the stack guard. Write the sentence without the number
@@ -566,22 +573,75 @@ two others four times each. A typed count is a merge conflict with every other p
 that comes back is still held to the truth; a dated measurement (*"measured 2026-10-02: 163"*) stays
 legal, because it is a record and nobody needs to update it.
 
-**Two collision points are left on purpose, because both are append-only registers.** Every pull
-request that adds a NEEDS-CHECKING group puts its `## Group XX` heading and its one `**Its own file:**`
-line after the last group in [`docs/NEEDS-CHECKING.md`](../../../docs/NEEDS-CHECKING.md), and every new
-5b row goes at the end of the last `docs/fragment-issues/section-5b-rows-*.md`. The index cannot be
+### Adding a 5b row: a file of its own, in two steps
+
+```bash
+python tools/next-id.py     # take the 5b `next` it prints - free on main, every branch, every open pull request, every worktree
+# write docs/fragment-issues/row-5b-<that number>.md: copy the newest row-5b-*.md, change its number (heading and first cell), its defect and its state
+```
+
+**That is all of it. No other file is touched, and no index line is added** - the folder is the list, and
+[`tools/register-text.py`](../../../tools/register-text.py) reads every `row-5b-N.md` back into the
+register, in number order, for `open-defects.py` and every other reader. The file holds a heading that
+names the row (`row 5b-1585` - the reader refuses a heading that names another), the note under it, the table's two header lines and the row's ONE line -
+three cells, a literal pipe written as `\|`, exactly as a row in a rows file is written - and nothing
+under it: the reader refuses a row's file with words below its table. A link to it
+says *row 5b-1585* in its words and names the file - `row-5b-1585.md` from another row, the whole path
+from anywhere else - and `check-docs` §12 fails on a link that reaches a file not holding its row.
+
+**Never append a row to `docs/fragment-issues/section-5b-rows-401-425.md` again.** Until 2026-11-12
+every new row went on the end of that one file, so a file named for rows 401 to 425 held every row
+written after them, and **every
+pair of branches that each added a row conflicted in it** - measured 2026-11-11: changed on both sides
+in 17 of the 48 merges of the sixty days before, and on almost every merge of parallel work in one
+session, each resolved by hand as "keep both, in number order"
+([row 5b-1585](../../../docs/fragment-issues/row-5b-1585.md)). A row already in a rows file is
+still **edited** there - its state changed, the row closed - and that is the only reason to open one.
+`check-docs` §10 fails on a row from 5b-1585 on left in a rows file - a branch cut before the change
+will have one - and one command moves it, with every link that names it, re-banding nothing:
+
+```bash
+python tools/split-register.py fragment-issues --new-rows            # what would move - writes nothing
+python tools/split-register.py fragment-issues --new-rows --write    # move it
+```
+
+**Run it on the branch that appended the row, before that branch merges** - it then takes out only
+lines no other branch has. Run on rows other open branches are still appending beside, it edits the
+end of the file they all edit, which is the conflict again. **A branch cut before 2026-11-12 does
+not know any of this**: its own `next-id.py` cannot see a row's file, so it can be given a number a
+row's file already has. That is loud when it merges - `tests/test_open_defects.py` and `check-docs`
+(HELD TWICE) name the number, or git stops on the file - and `renumber.py`, below, repairs it. It
+happened to row 5b-1585 itself, written as 5b-1564, on the day it was written.
+
+A row of **section 5** (found by proving, numbered on its own) still goes at the end of that section's
+last rows file; it has no cut-over line on the page, and it is not where the merges stopped.
+
+### The two conflicts that are left, and both are about an id
+
+**One collision point is left on purpose, and one is what the row files are for.** Every pull request
+that adds a NEEDS-CHECKING group puts its `## Group XX` heading and its one `**Its own file:**` line
+after the last group in [`docs/NEEDS-CHECKING.md`](../../../docs/NEEDS-CHECKING.md). The index cannot be
 generated: its early groups are in **dependency order** (A, K, J, R, B...), not letter order, and
 other sections sit between them - only a person knows where a group belongs.
 [`needs-checking-register.py`](../../../tools/needs-checking-register.py) is a reader by design, and
-stays one. **Before choosing a group, a 5b row, a `Q-nn` or a `D-nnn`, run `python tools/next-id.py`** - it prints the id free on main, on every branch, in every open pull request and in every worktree's working files on this machine, and names an id two of them add (**HELD TWICE**) or one main has taken from under this checkout or an open pull request (**TAKEN ON MAIN**), at any number. Take the `next` it prints, never a round number picked to stay clear: round numbers are how three pull requests came to hold 5b-540 at once. When it says the pull requests were **NOT READ** (no gh, or one not logged in), it has still read every branch - but TAKEN ON MAIN then judges this checkout alone. Run it again just before the pull request merges.
+stays one. **Two branches that add different 5b rows no longer conflict at all**: each added a file
+the other has not got. They conflict only when both took the same **number**, and then git stops on
+the file by name - `CONFLICT (add/add): Merge conflict in docs/fragment-issues/row-5b-1589.md` -
+which is the loud failure the layout was chosen for. **Never resolve that one by keeping both rows in
+the one file, or by taking a side**: abort the merge and renumber, below.
 
-**Resolving either conflict: keep BOTH sides, in order** - two-letter groups in letter order (`BY`
-before `BZ`), 5b rows in row-number order. Never take one side: a dropped group line leaves its
-`group-xx.md` on disk with nothing pointing at it, and the group silently leaves the register.
-`check-docs` §10 now fails on exactly that - a `docs/needs-checking/group-*.md` its index never names.
+**Before choosing a group, a 5b row, a `Q-nn` or a `D-nnn`, run `python tools/next-id.py`** - it prints the id free on main, on every branch, in every open pull request and in every worktree's working files on this machine, and names an id two of them add (**HELD TWICE**) or one main has taken from under this checkout or an open pull request (**TAKEN ON MAIN**), at any number. Take the `next` it prints, never a round number picked to stay clear: round numbers are how three pull requests came to hold 5b-540 at once. When it says the pull requests were **NOT READ** (no gh, or one not logged in), it has still read every branch - but TAKEN ON MAIN then judges this checkout alone. Run it again just before the pull request merges.
+
+**Resolving the group-index conflict: keep BOTH sides, in order** - two-letter groups in letter order
+(`BY` before `BZ`). Never take one side: a dropped group line leaves its `group-xx.md` on disk with
+nothing pointing at it, and the group silently leaves the register. `check-docs` §10 fails on exactly
+that - a `docs/needs-checking/group-*.md` its index never names. (A branch cut before 2026-11-12 can
+still conflict at the end of `section-5b-rows-401-425.md` with rows numbered before 5b-1585: keep both,
+in row-number order, as before - then no new row goes there.)
 **If both sides took the same id - a group, a 5b row, a `Q-nn` or a `D-nnn`** - the side merging
 second takes the next free one, and renames it with [`tools/renumber.py`](../../../tools/renumber.py)
-**before it merges main**, so the merge has nothing to collide on:
+**before it merges main**, so the merge has nothing to collide on. If the merge has already stopped,
+`git merge --abort` first - the tool refuses while one is half done:
 
 ```bash
 python tools/renumber.py --next                                   # the free id (next-id.py's answer)
@@ -591,7 +651,8 @@ python tools/renumber.py --from D-116 --to D-131                  # make them; Q
 
 It renames only what this branch added since its merge-base with `origin/main` - headings, index rows,
 anchors, items (`EJ1`), the row's number cell, every reference, and the files named for the id
-(`decisions/D-116.md`, `group-ej.md`) - and **never main's own use of the same id**. A renamed
+(`decisions/D-116.md`, `group-ej.md`, and a 5b row's own `row-5b-489.md`, whose heading and first cell
+move with its name) - and **never main's own use of the same id**. A renamed
 decision's **Numbering:** line is history, so its words stay and the tool adds *"Renumbered from D-116
 to D-131 on <date> with `tools/renumber.py`, because `main` had given D-116 to another decision
 first"* (or names the branch that holds it); one with no Numbering line gets one under its Status line.
@@ -601,8 +662,8 @@ branch edited, a bare group letter, which can be a word, or a decision with no S
 its Numbering line under. Not `git grep`: a grep
 cannot tell this branch's D-116 from main's. The gates still catch a clash left in:
 `check-docs` a number defined twice, `check-decision-titles` a number reused with another title,
-`tests/test_open_defects.py` a 5b number used twice, and two `group-xx.md` files collide as an add/add
-conflict.
+`tests/test_open_defects.py` a 5b number used twice - in one rows file, or in a rows file and a row's
+own file - and two `group-xx.md` or two `row-5b-N.md` files collide as an add/add conflict.
 
 ## What this deliberately does not do
 

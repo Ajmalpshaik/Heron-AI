@@ -525,6 +525,20 @@ LIBRARY = ("heron_capabilities", "heron_lookup", "heron_method",
            "heron_resolve", "heron_standards")
 
 
+# THE TOOLS WHOSE EVERY ANSWER SAYS HOW THE CALL ENDED, IN ONE FIXED WORD
+# (FRAGMENT-ISSUES row 5b-1159): the three doors to the fragment library. The
+# words and what each means are heron_server_core.OUTCOMES, and that file says
+# where the line stands in a reply and why.
+#
+# THREE, AND NOT EVERY TOOL THAT SAYS `_ended`. A door's every return was read
+# against the vocabulary before it joined, because a word here must never say
+# more than the code that returned knew. "ok" from another tool is a different
+# fact each time - a panel opened, a session bound, a preview shown - and a
+# tool joins when its own returns have been read the same way, never because
+# the line would be easy to add.
+STATES_OUTCOME = ("revit_change", "revit_read", "revit_show")
+
+
 class NotDeclared(Exception):
     """A tool nobody declared. Never treated as harmless."""
 
@@ -660,6 +674,55 @@ def door_refusal(door, declared, capability):
     return ("'%s' is declared %s, and %s runs nothing above %s - %s only. "
             "Nothing has been sent to Revit. %s"
             % (capability, NAMES[level], door, NAMES[ceiling], within, instead))
+
+
+def below_refusal(door, declared, capability):
+    """
+    Why one fragment is BELOW what a writing door is for - or None when the
+    door may run it. The floor to `door_refusal`'s ceiling, read from the
+    same table and never typed a second time.
+
+    revit_change HAD A CEILING AND NO FLOOR (FRAGMENT-ISSUES 5b-1161). The
+    client's `risk_refusal` lets every runnable risk through and
+    `write_operation` sends each as `run_fragment_write`, so a capability
+    that only READS, asked for through revit_change, ran as a change: behind
+    the Changes switch, PROVEN or refused, inside a transaction group, and
+    Revit could ask Keep or Discard about a change that is not one. The read
+    door runs it with every switch off and no transaction open, so that is
+    where it is sent - `revit_read`'s own ceiling decides, whatever that
+    becomes.
+
+    A DOOR THAT DOES NOT WRITE HAS NO FLOOR. revit_show runs a READ as
+    harmlessly as revit_read does - no switch, no transaction - so only a
+    door declared MODIFY or above answers here.
+
+    EXECUTE AND SUGGEST ARE NOT REFUSED, AND THAT IS RECORDED RATHER THAN
+    DECIDED HERE. Row 5b-1161 asks for everything below MODIFY to be sent
+    away. Three things stand on revit_change running an EXECUTE today: a
+    saved command whose capability is above ANALYZE is run through
+    revit_change (docs/49 section 2, D-151) and the Heron panel has no show
+    door; D-125 item 1 defines how the WRITE path runs a `noTransactionOpen`
+    fragment such as OPEN_VIEW; and OPEN_FAMILY_FOR_EDITING, EXECUTE, is
+    refused by revit_show for writing to disk (row 5b-591), so sending it
+    there would be a refusal that names a door which refuses too. The row
+    stays open for them.
+
+    An unreadable risk answers None: it is `risk_refusal`'s to refuse, and
+    revit_change asks that first. Pure, so tests/test_read_door.py runs it
+    over every fragment in the library.
+    """
+    level = level_named(declared)
+    if level is None or not writes(door):
+        return None
+    reader = "revit_read"
+    if level > risk_of(reader):
+        return None
+    return ("'%s' is declared %s, which changes nothing in the model, and %s is for "
+            "changes: there it would run as one - behind the Changes switch, inside a "
+            "transaction group, where Revit can ask Keep or Discard about a change "
+            "that is not one. Nothing has been sent to Revit. %s runs it - with "
+            "Changes off, and no transaction open."
+            % (capability, NAMES[level], door, reader))
 
 
 # WHAT A FRAGMENT'S CODE WRITES TO DISK, read as code: comments and string
@@ -864,20 +927,110 @@ def describe():
 # THE SCHEMA AND THE WHOLE TOOL need the SDK, because the SDK writes the
 # schema from the signature at run time. Without one they are NOT MEASURED,
 # and said to be, never reported as zero.
-SERVER_SOURCE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                             "heron_mcp_server.py")
+#
+# WHICH FILES ARE THE SERVER'S SOURCE - ONE LIST, AND EVERY READER ASKS IT.
+#
+# The server cannot be imported without the MCP SDK, which CI leaves out on
+# purpose, so whatever holds it to a rule there READS it: `descriptions`
+# below, heron_diagnose, tools/generate-api-docs.py and every suite that
+# checks a tool's body as text. Until 2026-11-11 each of them typed the path
+# of the one file the server is, so no function could move to a second file
+# without every reader being edited in the same change (FRAGMENT-ISSUES row
+# 5b-1542). The path has one owner now. A file joins the server's source by
+# joining this list and by nothing else, and tests/test_tool_registry.py
+# fails on a file in this folder that registers a tool and is not on it.
+#
+# THE ORDER IS THE ORDER THE TEXT IS READ IN, AND THE ENTRY FILE IS LAST - the
+# one a host starts (.mcp.json). It ends in the `if __name__ == "__main__"`
+# block that runs the server and does not return, so everything the server
+# defines is above that block: in the one text as in the one file.
+#
+# NOT ONE FILE SINCE 2026-11-11 (row 5b-1555). heron_server_core.py is first:
+# what every file of the server shares - the server object, this chat's
+# state, what every tool call passes through - and no tool. A file that holds
+# tools goes between it and the entry file, which imports each of them:
+# heron_inventory.py is the inventory reads, revit_phases to revit_groups.
+#
+# AND THE LIST'S ORDER IS HALF OF THE ORDER A HOST IS SERVED THE TOOLS IN. The
+# SDK lists tools in the order they register, which for a tool in another
+# file is wherever the entry file's import of that file stands - one line,
+# and moving it to the top of the file reordered every chat's tool list while
+# every suite passed (review of row 5b-1555). So the rule is written down, in
+# `served_order` below: the entry file's own tools first, as it defines them,
+# then each other file's, in this list's order. The entry file imports the
+# tool files below its last tool, in that order, and two suites hold it there.
+SERVER_FILES = ("heron_server_core.py", "heron_inventory.py", "heron_mcp_server.py")
 
 
-def descriptions(path=SERVER_SOURCE):
-    """{tool: the description a host is served} for every `@server.tool()`."""
-    with io.open(path, encoding="utf-8") as fh:
-        tree = ast.parse(fh.read(), path)
+def server_files():
+    """
+    The server's source files as paths, in SERVER_FILES' order - for a reader
+    that parses each file alone, or must say WHICH file a thing is in. The
+    last is the entry file.
+    """
+    here = os.path.dirname(os.path.abspath(__file__))
+    return [os.path.join(here, name) for name in SERVER_FILES]
+
+
+def server_text(errors="strict"):
+    """
+    The server's source as ONE text - for a reader that searches it.
+
+    Every listed file, in order, with two blank lines between one file and the
+    next: what ends a top-level function in this folder, so a reader that cuts
+    a function there stops at the end of its file. While the list holds one
+    file, this is that file's text to the character.
+
+    A listed file that cannot be read RAISES, as `open` does: a server read
+    one file short would pass every check that looks for something absent.
+    `errors` is `open`'s own - heron_diagnose passes "replace", because a
+    probe must not stop at a byte.
+    """
+    text = ""
+    for path in server_files():
+        with io.open(path, encoding="utf-8", errors=errors) as fh:
+            part = fh.read()
+        text = text.rstrip("\n") + "\n\n\n" + part if text else part
+    return text
+
+
+def descriptions(path=None):
+    """
+    {tool: the description a host is served} for every `@server.tool()` - in
+    every file of SERVER_FILES, each parsed alone, or in the one file at `path`.
+    """
     found = {}
-    for node in tree.body:
-        if isinstance(node, ast.FunctionDef) and any(
-                ast.unparse(d) == "server.tool()" for d in node.decorator_list):
-            found[node.name] = ast.get_docstring(node) or ""
+    for one in ([path] if path else server_files()):
+        with io.open(one, encoding="utf-8") as fh:
+            tree = ast.parse(fh.read(), one)
+        for node in tree.body:
+            if isinstance(node, ast.FunctionDef) and any(
+                    ast.unparse(d) == "server.tool()" for d in node.decorator_list):
+                found[node.name] = ast.get_docstring(node) or ""
     return found
+
+
+def tool_files():
+    """The listed files that hold a tool, by name, in SERVER_FILES' order - a
+    file that only holds what the others share is not one of them."""
+    return [name for name, path in zip(SERVER_FILES, server_files()) if descriptions(path)]
+
+
+def served_order():
+    """
+    Every tool by name, in the order a host is served them - read off the
+    source, so it needs no SDK.
+
+    THE RULE (the comment on SERVER_FILES has why): the entry file's own
+    tools, in the order that file defines them, then every other listed
+    file's, file by file in the list's order. It does not look at where the
+    entry file imports a tool file, and that is the point: this is what the
+    order is MEANT to be, tests/test_mcp_serves.py holds a real SDK's list to
+    it, and tests/test_api_docs.py holds the import lines to it as text.
+    """
+    files = server_files()
+    return (list(descriptions(files[-1]))
+            + [name for path in files[:-1] for name in descriptions(path)])
 
 
 def served_tools():
@@ -912,7 +1065,7 @@ def instructions_size():
         return None, "%s: %s" % (type(why).__name__, why)
 
 
-def sizes(served=None, path=SERVER_SOURCE):
+def sizes(served=None, path=None):
     """
     What each tool costs, largest first, and the totals a budget is held to.
 
@@ -990,7 +1143,10 @@ def print_sizes(as_json=False):
             print("  a schema is written by the SDK, so it needs one:  %s"
                   % INSTALL.install_line("pip install --user mcp"))
     print()
-    print("Descriptions from heron_mcp_server.py's own docstrings; schemas and the whole")
+    # THE FILES THAT HOLD A TOOL, not every listed file: one of them holds only
+    # what the others share, and has no docstring a description was read from.
+    print("Descriptions from %s's own docstrings; schemas and the whole"
+          % " and ".join(tool_files()))
     print("tool from the SDK's own list. The budget is tests/test_tool_sizes.py.")
     return 0
 

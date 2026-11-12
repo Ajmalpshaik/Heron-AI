@@ -33,7 +33,9 @@ As built (2026-10-18). Every store is one SQLite file under `<home>\knowledge`, 
 `HERON_DATA` when it is set and otherwise, on Windows, `%USERPROFILE%\.heron`
 ([D-135](DECISIONS.md#d-135--herons-python-side-keeps-its-data-in-userprofileheron-and-the-companions-notes-in-the-temporary-folder-where-a-store-claudes-copy-cannot-reach-them)).
 `HERON_KNOWLEDGE` moves the knowledge folder alone. Off Windows with neither set there is no home, and
-the stores refuse to open rather than guess a folder. `python brain/heron_paths.py --where` names the
+the stores refuse to open rather than guess a folder - except for the MCP server serving its library
+alone there, which since 2026-11-11 keeps its index in a derived folder of its own
+([D-153](decisions/D-153.md), Proposed). `python brain/heron_paths.py --where` names the
 folders on this PC. A file exists only once something has opened its scope.
 
 | Scope | File, under `<home>\knowledge` | What goes in it today | Read by |
@@ -171,7 +173,10 @@ If a user repeatedly performs a workflow successfully — *"select all ducts and
 - **Learn the pattern, not the numbers.** The reusable thing is *select by category → move by vertical offset*, parameterised. Hard-coding "200 mm" produces a brittle, single-use pattern.
 - **Confirm before saving a pattern.** *"You've done this 5 times. Save it as a shortcut?"* Silent learning is unsettling; a one-line confirmation converts it into a feature the user feels ownership of.
 
-> **As built (2026-10-18):** nothing recognises a repeated workflow or offers to save one.
+> **As built (2026-10-18):** nothing recognises a repeated workflow or offers to save one. (Since
+> 2026-11-08 a job the modeller asks to keep is saved as a named command, `heron_commands` -
+> [49](49-saved-commands-and-the-heron-panel.md), [D-151](decisions/D-151.md), Proposed, never run in a
+> real Revit; recognising a repeat is still not built.)
 > [`heron_userskills.py`](../brain/heron_userskills.py) plans raising a personal skill one step at a
 > time - user, then company, then global - refuses a raise its author approves, and moves nothing.
 > [`heron_memory.py`](../brain/heron_memory.py) decides what may be remembered and writes nothing: a

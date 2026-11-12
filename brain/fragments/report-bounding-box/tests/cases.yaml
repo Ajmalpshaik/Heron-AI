@@ -16,7 +16,34 @@ positive:
       silently answers about a subset, and "will it fit" is then wrong in the
       dangerous direction
 
+  # Row 5b-352, added 2026-11-11 with version 2. NOT RUN - NEEDS-CHECKING
+  # Group NK, NK6 (and Group CP, CP3, which asks what the box covers).
+  - given: >
+      a family holding two bodies far apart, each with Visible linked to its
+      own Yes/No, nested in a host family with one switched off; the nested
+      instance handed in
+    expect: >
+      its box as Revit gives it, AND a finding naming it: "1 of the 1 family
+      instance(s) compared have a box LARGER than the geometry they show",
+      with Revit's box and the smaller size of the body that shows. If no such
+      finding comes, record on NK6 the box and what shows - Revit's default
+      geometry and its box then agree, and row 5b-352 is not closed
+
 negative:
+  # Row 5b-352, added 2026-11-11 with version 2. NOT RUN - Group NK, NK6.
+  - given: >
+      the same nested instance with BOTH bodies switched on, and a second
+      family instance of an ordinary one-body family
+    expect: >
+      every figure as version 1 gave it and NO finding about a box larger
+      than what shows - an instance whose box and geometry agree carries no
+      caveat
+
+  - given: ducts, pipes or walls only - nothing handed in is a family instance
+    expect: >
+      every figure as version 1 gave it and no such finding - nothing was
+      compared
+
   - given: a duct rotated 30 degrees to project north
     expect: >
       a box LARGER than the duct, and the reply saying so. THIS IS THE FIRST CASE

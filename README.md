@@ -239,7 +239,7 @@ tool ([D-132](docs/DECISIONS.md)). Everything that needs a model runs on the mod
 flowchart TD
     A(["You ask for a change in the chat"])
     P{{"Is the fragment PROVEN,<br/>and its proof still current?"}}
-    S{{"Ribbon switches on?<br/>Changes · and Admin or Publish<br/>if the job needs one"}}
+    S{{"Switches on in Settings?<br/>Changes · and Admin or Publish<br/>if the job needs one"}}
     K{{"Ask to Keep on?"}}
     B{{"Revit asks<br/><b>Keep</b> or <b>Discard</b>"}}
     KEEP(["Kept — one Undo entry<br/>named Heron: …"])
@@ -276,8 +276,8 @@ flowchart TD
 ```text
 You ask for a change in the chat
   -> is the fragment PROVEN, its proof current?     no  -> refused, says why, model not touched (D-117)
-  -> are the ribbon switches on? Changes, and Admin
-     or Publish if the job needs one                off -> refused, says why, model not touched
+  -> are the switches on, in Settings? Changes, and
+     Admin or Publish if the job needs one          off -> refused, says why, model not touched
   -> Ask to Keep on?                                off (the default) -> kept at once
                                                     on  -> Revit asks Keep or Discard
        Keep -> kept          Discard, Esc or close -> rolled back, the model is as it was
@@ -291,10 +291,10 @@ through revit_change; the switches still apply, and Revit always asks Keep or Di
 
 | Guard | What it does | Where |
 |---|---|---|
-| **Changes** button | Heron may read the model and nothing else until you turn it on. `write.enabled` defaults to `false` | [D-19](docs/DECISIONS.md) · `platform/Heron.Core/HeronConfig.cs` |
-| **Ask to Keep** button | Revit asks Keep or Discard before a change from a chat is kept. Off by default; its box can keep the rest of one job without asking | [D-126](docs/DECISIONS.md), [D-138](docs/DECISIONS.md) |
+| **Changes** switch | Heron may read the model and nothing else until you turn it on. `write.enabled` defaults to `false`. Since 2026-11-07 this switch, Ask to Keep, Admin and Publish are in Heron's **Settings** window, not on the ribbon | [D-19](docs/DECISIONS.md) · [D-150](docs/decisions/D-150.md) · `platform/Heron.Core/HeronConfig.cs` |
+| **Ask to Keep** switch | Revit asks Keep or Discard before a change from a chat is kept. Off by default; its box can keep the rest of one job without asking | [D-126](docs/DECISIONS.md), [D-138](docs/DECISIONS.md) |
 | **The delete box** | Anything a change would delete is shown in Revit first - *Delete N elements?*, by category, with what goes along with them - and nothing goes until you press Delete. Ask to Keep on or off, and never skipped for a job. Built, not yet run in Revit | [D-142](docs/DECISIONS.md) |
-| **Admin** and **Publish** buttons | Off by default, and only the owner turns them on | [D-106](docs/DECISIONS.md) |
+| **Admin** and **Publish** switches | Off by default, and only the owner turns them on | [D-106](docs/DECISIONS.md) |
 | One request, one Undo | Every change is one named `TransactionGroup`; on any failure the whole of it rolls back | [Golden Rule 16](docs/14-golden-rules.md) |
 | The right model | With more than one Revit open Heron sends nothing until you choose; once bound it stays bound to that document | [Golden Rule 20](docs/14-golden-rules.md) · [Article 12a](HERON_CONSTITUTION.md) |
 | A run that never ends | A fragment carries a run clock, and the bridge can stop Heron; the stop lasts until Revit restarts | [D-129](docs/DECISIONS.md), [D-130](docs/DECISIONS.md) |
@@ -314,9 +314,9 @@ and [NEEDS-CHECKING.md](docs/NEEDS-CHECKING.md) holds everything still owed a re
 | **Phase 0 — the bridge** (Steps 1–5) | ✅ **Proven** in Revit 2020 and 2024. One button connects; the thread hop counted `5,844` elements in 2024 and `3,167` in 2020; *"select all ducts"* highlighted 4 in both; with two Revits open Heron refused to guess and stopped when the chosen one closed | [HANDOVER §3](docs/HANDOVER.md) · [field notes](docs/00e-field-notes-proven-bridge.md) |
 | **Step 6 — the first write** | ⚠️ **Measured on one release.** On 2026-10-17 three ducts in a copy of Autodesk's MEP sample moved **+200.0000 mm** each in Revit 2024, read two ways, a pinned duct beside them did not move, and **one** Ctrl+Z put them back. A forced failure mid-move and the other rails are still owed | [Group D](docs/needs-checking/group-d.md) |
 | **Keep or Discard, and the safety rails** | ⚠️ **Run in Revit 2024 and 2027 on 2026-10-18** on the owner's laptop — Keep, Discard, Esc and Undo pressed by hand. Faults found were logged, not hidden | [Group ET](docs/needs-checking/group-et.md) · [FRAGMENT-ISSUES](docs/FRAGMENT-ISSUES.md) rows 5b-1090 to 5b-1095 |
-| **The fragment library** | Mostly `PROVEN`, the rest `DRAFT` — count with the `grep` above. A `DRAFT` is *not proven as it stands*: new, or sent back when its code changed | [D-30](docs/DECISIONS.md) · [FRAGMENT-ISSUES](docs/FRAGMENT-ISSUES.md) |
+| **The fragment library** | Mostly `PROVEN`, the rest `DRAFT` — count with the `grep` above, which also counts the cards retired as `DEPRECATED` when their job was merged into another. A `DRAFT` is *not proven as it stands*: new, or sent back when its code changed | [D-30](docs/DECISIONS.md) · [FRAGMENT-ISSUES](docs/FRAGMENT-ISSUES.md) |
 | **A fragment cannot end Revit** | ✅ **Proved in front of Revit on 2026-09-16.** A runaway recursion comes back as a finding, with Revit still running. `python tests/test_stack_guard.py` prints how many fragments carry the guard | [J9](docs/needs-checking/group-j.md) |
-| **Reading a model beyond counting it** | Four of five ran against real models and were signed between 2026-09-19 and 2026-09-22 — `revit_phases`, `revit_systems`, `revit_parameters`, `revit_groups`; `revit_links` never has. **Every signed agent record is stale now**: the code has changed since it was signed — `python tools/prove-agent.py check` | [`brain/agent-proofs/`](brain/agent-proofs/README.md) |
+| **Reading a model beyond counting it** | Four of five ran against real models and were signed between 2026-09-19 and 2026-09-22 — `revit_phases`, `revit_systems`, `revit_parameters`, `revit_groups`; `revit_links` never has. Every signed agent record had gone stale by 2026-10-18; **all fifteen were run again on Revit 2020 and signed on 2026-10-25**, and which are current today is `python tools/prove-agent.py check` — it named two as stale again on 2026-11-11 | [`brain/agent-proofs/`](brain/agent-proofs/README.md) |
 | **Phase 2 — the brain** (Steps 7–14) | Built in full, mostly unproven: the fragment store, one knowledge store per scope, word and meaning search behind a hard Revit-version filter, the capability registry, the dependency graph | [27 — Build order](docs/27-build-order.md) |
 | **Skills** | Every one `DRAFT` — `grep -h '^heron-status:' brain/skills/*.yaml \| sort \| uniq -c` | [`brain/README.md`](brain/README.md) |
 | **Companion, HVAC, fire, building loads, sprinkler layout and hydraulics, family building** | Built, **not proven** — each page's status line says exactly how far | [40](docs/40-heron-companion.md) · [41](docs/41-hvac-design.md) · [42](docs/42-fire-protection-design.md) · [43](docs/43-building-revit-families.md) · [44](docs/44-building-loads-from-the-model.md) · [46](docs/46-sprinkler-hydraulics-from-the-model.md) · [47](docs/47-sprinkler-layout-from-the-model.md) |

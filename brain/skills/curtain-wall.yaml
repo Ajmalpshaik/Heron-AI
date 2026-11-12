@@ -46,8 +46,7 @@ purpose: >
      Steps 4 and 5 were widened to curtain system types on 2026-10-29 and
      proved again on Revit 2020 on 2026-11-01 (NEEDS-CHECKING Group JP), as
      the two setters' version 3 and version 2; a curtain wall type's keys and
-     words are unchanged. The merged setter, SET_CURTAIN_WALL_GRID version 4,
-     is DRAFT until it is proved: a kept change is refused until then (D-117).
+     words are unchanged. The merged setter is SET_CURTAIN_WALL_GRID version 4.
   6. REPORT_CURTAIN_ELEMENTS on the wall - its grid lines each way and its
      mullions by type, measured - against what the spacing should give. A 9000
      mm wall at a 1500 mm fixed distance has five vertical lines inside it. The
@@ -57,10 +56,10 @@ purpose: >
   - ADD_CURTAIN_GRID_LINES for a line the type's spacing does not give - a
     transom at 1100, a mullion at 900 and 2700 - or "equal 6" to divide the
     wall into six equal panels, with a mullion type on the new lines when
-    asked. DRAFT until NEEDS-CHECKING Group JJ proves it.
+    asked.
   - SET_CURTAIN_PANEL_TYPE for panels by row, column or floor line -
     spandrels in the bottom row, a louvre panel in column 2. One panel picked
-    on screen is CHANGE_ELEMENT_TYPE's. DRAFT until Group JI proves it.
+    on screen is CHANGE_ELEMENT_TYPE's.
   REPORT_CURTAIN_ELEMENTS (step 6) is run after these too.
 
   NOT YET: Fixed Number on the TYPE - the count lives on each wall, so the

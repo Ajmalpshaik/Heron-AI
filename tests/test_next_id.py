@@ -63,6 +63,12 @@ WHAT THIS PROVES
      group's own file, a question's or a decision's heading - is NOT TAKEN
      ON MAIN and is named as already merged, CRLF on disk or not; the id main
      took with a DIFFERENT entry still is.
+ 14. A 5b ROW IN A FILE OF ITS OWN (docs/fragment-issues/row-5b-N.md, where
+     a new row is written since 2026-11-12): the file's name and the row in
+     it are the id; a name the register's reader would not read is none; the
+     next row is above every such file on every branch; two branches that
+     each wrote the same file are HELD TWICE; and one saved in this checkout
+     and not committed is taken.
 
 WHAT IT DOES NOT PROVE. That the real registers keep the shapes it reads.
 Running the tool on this repository and reading the ids it names is that
@@ -757,6 +763,58 @@ def section_13(home):
           "the plain report calls 36 TAKEN ON MAIN and says 35 is merged, exit %s" % code)
 
 
+def own_row(number, words):
+    """A 5b row's own file, as docs/fragment-issues/row-5b-N.md is written."""
+    return ("# Fragment issues — row 5b-%d\n\n"
+            "| # | Defect | State |\n|---|---|---|\n"
+            "| **%d** | %s | open |\n" % (number, number, words))
+
+
+def section_14(home):
+    """Since 2026-11-12 a new 5b row is a file of its own, so that two
+    branches adding rows change no file in common. The id is the file's name
+    and the row in it. Each check FAILS, and does not raise, on a reader that
+    knows only the rows files: there a row's own file holds no id at all."""
+    print("\n14. a 5b row in a file of its own")
+    name = "docs/fragment-issues/row-5b-%d.md"
+    check(NI.ids_in([(name % 45, own_row(45, "a row"))])["5b"] == {45},
+          "a row's own file gives its row")
+    check(NI.ids_in([(name % 45, "")])["5b"] == {45},
+          "and its name alone is the id, as a decision's file and a group's are")
+    check(NI.ids_in([("docs/fragment-issues/row-5b-045.md", ""),
+                     ("docs/fragment-issues/row-5b-45-copy.md", ""),
+                     ("docs/other/row-5b-45.md", "")])["5b"] == set(),
+          "a name the register's reader would not read as a row's file holds no id")
+    entries = NI.entries_in([(name % 45, own_row(45, "a row"))]) if hasattr(NI, "entries_in") else None
+    if entries is not None:
+        check(entries.get("5b", {}).get(45) == {"| **45** | a row | open |"},
+              "its entry is the row's line, so the same row merged onto main is told from a clash")
+
+    os.makedirs(home)
+    origin, seed, work = world(home)
+    branch(seed, "feat/file-one", {name % 45: own_row(45, "file-one's row")},
+           "file-one takes 45, in a file of its own")
+    branch(seed, "feat/file-two", {name % 46: own_row(46, "file-two's row")},
+           "file-two takes 46")
+    branch(seed, "feat/file-three", {name % 45: own_row(45, "file-three's row, the same number")},
+           "file-three takes 45 as well")
+    code, got = as_json("--repo", work)
+    one = got.get("registers", {}).get("5b", {})
+    check(code == 0 and one.get("next") == "5b-47",
+          "the next row is above every row a branch keeps in a file of its own (got %s)" % one.get("next"))
+    above = one.get("above_main", {})
+    check(above.get("origin/feat/file-one") == ["5b-45"] and above.get("origin/feat/file-two") == ["5b-46"],
+          "each branch is named with the row its file holds: %s"
+          % dict((k, v) for k, v in above.items() if "file-" in k))
+    check(one.get("held_twice") == {"5b-45": ["origin/feat/file-one", "origin/feat/file-three"]},
+          "and two branches that each wrote row-5b-45.md are HELD TWICE: %s" % one.get("held_twice"))
+    write(work, {name % 50: own_row(50, "typed here, not committed")})
+    code, got = as_json("--repo", work, "--no-fetch")
+    one = got.get("registers", {}).get("5b", {})
+    check(one.get("next") == "5b-51",
+          "a row's own file saved in this checkout and not committed is taken too (got %s)" % one.get("next"))
+
+
 def main():
     print("tools/next-id.py")
     section_1()
@@ -769,6 +827,7 @@ def main():
         section_10_and_11(os.path.join(home, "pulls"))
         section_12(os.path.join(home, "trees"))
         section_13(os.path.join(home, "squash"))
+        section_14(os.path.join(home, "own"))
     finally:
         shutil.rmtree(home, ignore_errors=True)
     print("\n%s" % ("%d FAILED" % len(FAILURES) if FAILURES else "all passed"))

@@ -19,7 +19,7 @@ capability: LABEL_FAMILY_DIMENSION
 # dimension, an EQ or a lock = held; none of those = FREE); a free end is named
 # in `freeEnd` and the findings with the pin route, and `pinFreeEnd` may pin it
 # on the modeller's word, read back. The zero-distance refusal names the same
-# route. Version 1's proof below no longer describes the code: DRAFT until
+# route. Version 1's proof below no longer described the code: DRAFT at the time, until
 # NEEDS-CHECKING Group IU proves version 2 (D-30).
 # Still version 2, never signed: on 2026-10-24 Group IU's IU10 measured on
 # Revit 2020 that a level nobody pinned is MOVED by a flex when the other end
@@ -27,8 +27,8 @@ capability: LABEL_FAMILY_DIMENSION
 # held fast" was wrong there; the findings now say so (row 5b-1332).
 #
 # VERSION 3 (2026-11-11) - AN ANGLE TOO, and back to DRAFT. Version 2 was
-# PROVEN on 2026-10-24 (the proof block below, kept as the record of what it
-# proved); its C# changed, so it is DRAFT again until NEEDS-CHECKING Group NE
+# PROVEN on 2026-10-24 (the proof block then below, kept as the record of what it
+# proved); its C# changed, so it was DRAFT again at the time until NEEDS-CHECKING Group NE
 # is run (D-30, D-117). Found missing (row 5c) when Ajmal PS asked on
 # 2026-11-11 for a family's whole 2D side to be covered, building a diffuser
 # family's plan arrows: when

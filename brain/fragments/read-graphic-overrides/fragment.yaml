@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,27 @@ semantic-identity: "read the graphic overrides already on these elements in a vi
 kind: filter
 domain: revit.views
 capability: READ_GRAPHIC_OVERRIDES
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
+
+# VERSION 2 (2026-11-11) - THE FILL IS READ TOO, and back to DRAFT. Version 1
+# was PROVEN on 2026-09-10 (the proof block below, kept as the record of what
+# it proved - two fittings overridden by a line colour). Its C# moved, so it is
+# DRAFT again until NEEDS-CHECKING Group NK, NK7, is run (D-30).
+# FRAGMENT-ISSUES row 5b-154: version 1 read no pattern at all, so an element
+# overridden ONLY by a surface fill pattern, or only by a cut pattern or cut
+# colour, was reported "NO per-element override in this view". The surface
+# pattern, the cut pattern and the cut pattern's colour are read now, the way
+# REPORT_CATEGORY_OVERRIDES reads them (row 173), and `overrideList` carries
+# every overridden element's line in full as one string. The same change
+# reads the rest of what the Override Graphics in View box holds, each of
+# which alone had read as "NO override" too: the detail level (which the
+# purpose below has always claimed), the projection and cut line patterns,
+# the cut line weight, the background patterns and their colours, and a
+# pattern switched off for the element. The `overrides`
+# object handed on is unchanged - it was always Revit's own. A read: it still
+# answers through revit_read while DRAFT, and says DRAFT (D-117 item 4).
 
 purpose: >
   Reads back the graphic overrides ALREADY on elements in one view - line
@@ -60,6 +78,17 @@ contract:
     - name: withOverride
       role: result
       type: int
+    - name: overrideList
+      # VERSION 2 (row 5b-154). EVERY ELEMENT THAT CARRIES AN OVERRIDE, ITS
+      # LINE IN FULL, JOINED - line colours, patterns and weights, the surface
+      # and cut patterns and their colours, foreground and background, a
+      # pattern switched off, transparency, halftone, detail level. A STRING, as
+      # REPORT_CATEGORY_OVERRIDES' is: a list reaches a reply as its first
+      # three entries, each cut at sixty characters, and a fill starts past
+      # the sixtieth once the line colours are set. Empty when no element
+      # handed in carries a per-element override.
+      role: result
+      type: string
 
 proof:
   date: '2026-09-10'
@@ -98,6 +127,13 @@ compatibility-note: >
   `ProjectionLineColor`, `CutLineColor`, `Transparency`, `Halftone` and
   `DetailLevel` were all read off the reference assemblies at both ends and are
   present on each. So the reader needs no branch where the writer would.
+  Version 2 reads more getters and no setter: `SurfaceForegroundPatternId`,
+  `SurfaceBackgroundPatternId`, `CutForegroundPatternId`,
+  `CutForegroundPatternColor`, `CutBackgroundPatternId`,
+  `CutBackgroundPatternColor`, `ProjectionLinePatternId`, `CutLinePatternId`,
+  `CutLineWeight`, the four `Is...PatternVisible` flags and
+  `ViewDetailLevel.Undefined` are each in the reference XML of every release
+  2020 to 2027 (read 2026-11-11).
 
 # ROUTING - repeated in OVERRIDE_GRAPHICS_IN_VIEW and RESET_GRAPHIC_OVERRIDES.
 #

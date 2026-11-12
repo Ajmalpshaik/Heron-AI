@@ -184,7 +184,7 @@ compatibility-note: >
 #                                                    point's Orientation in the
 #                                                    words this card prints,
 #                                                    from version 4 (2026-10-29,
-#                                                    DRAFT, NEEDS-CHECKING JQ).
+#                                                    DRAFT at the time, NEEDS-CHECKING JQ).
 #                                                    A question must not land
 #                                                    on this write (D-86). It
 #                                                    was NOT HERE, with no

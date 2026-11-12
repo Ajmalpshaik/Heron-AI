@@ -74,3 +74,13 @@ kept run is the modeller's one try-once ([D-119](../DECISIONS.md)).
 | **IJ13** | *The method's category step.* A new Generic Tag; `SET_FAMILY_CATEGORY` to Pipe Tags | The category reads Pipe Tags afterwards, or the refusal is recorded and the method's step 1 says to set it by hand |
 | **IJ14** | *The method end to end.* In a chat with a new Generic Tag open: *"build a pipe tag family showing system abbreviation, diameter with prefix Ø and bottom elevation with prefix BOP in mm with a + sign, on one line"* | `heron_method` tag-family-creation runs; the chat says before starting that Revit's API cannot make a label; the label comes from `Heron Label Seed` or the modeller makes it; the tag is loaded into a scratch project and tags a pipe whose Bottom Elevation is +1200 as *BOP +1200* |
 | **IJ15** | *Routing on the owner's PC* - `model+rerank`, the backend there. The modeller's sentences: *"read the labels in this tag family"*, *"which parameters does this label show and in what order"*, *"move the diameter label up 2 mm"*, *"copy the diameter label from the seed pipe tag into this tag family"*, *"build a pipe tag family"*, *"add a label to this tag"*, *"is this downloaded family any good"*, main against the branch with `tools/score-routing.py` | Each reaches the card or method named; *"is this downloaded family any good"* answered as on main; no question reaches a write that did not before |
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `REPORT_FAMILY_LABELS` reads PROVEN on its card, at version 1 - its `proof` block is signed by Ajmal PS,
+2026-10-22, on N22 M_Pipe Size Tag, Revit 2020, session 60544. `SET_FAMILY_LABEL_LAYOUT` reads PROVEN on its card, at
+version 1 - its `proof` block is signed by Ajmal PS, 2026-10-22, on PHASES RAN AGAINST DIFFERENT DOCUMENTS: N22 M_Pipe
+Size Tag, N22 M_Downlight - Recessed Can - active was Heron Capture Test, Revit 2020, session 60544. Of the other
+cards this group names: `COPY_LABELS_FROM_FAMILY` is DEPRECATED, superseded by `COPY_ELEMENTS_BETWEEN_DOCUMENTS`. So
+where this page calls a card named here DRAFT, or says nothing has run in Revit, that was true when it was written and
+is out of date as a statement about the card. Whether IJ0 to IJ15 were what that proof ran is NOT sorted here: for the
+owner.

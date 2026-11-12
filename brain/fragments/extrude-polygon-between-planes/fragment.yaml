@@ -16,7 +16,7 @@ capability: EXTRUDE_POLYGON_BETWEEN_PLANES
 # scratch family Heron IS Radius): six side planes, three labelled pairs with
 # an EQ each, six side faces locked - Across Flats 18, 46 and 10 read back as
 # 18, 46 and 10 across the flats and 20.78, 53.12 and 11.55 across the
-# corners. DRAFT until NEEDS-CHECKING Group IZ proves it (D-30).
+# corners. DRAFT at the time, until NEEDS-CHECKING Group IZ proves it (D-30).
 version: 1
 source: OFFICIAL
 risk: MODIFY

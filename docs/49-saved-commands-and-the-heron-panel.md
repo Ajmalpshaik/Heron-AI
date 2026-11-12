@@ -88,8 +88,12 @@ second copy, and two copies drift.
 | **Commands** row, pane registration | [`Commands.cs`](../revit/Heron.Revit.Addin/Commands.cs), [`HeronApplication.cs`](../revit/Heron.Revit.Addin/HeronApplication.cs) |
 | The shared folder | [`HeronPaths.cs`](../platform/Heron.Core/HeronPaths.cs) (`PythonData`, `CommandsPersonal`, `CommandRunnerNote`) |
 
-Running from the chat needs no tool of its own: `heron_commands show` gives the capability and values,
-and the chat calls `revit_change` with the inputs put in.
+Running from the chat needs no tool of its own: `heron_commands show` gives the capability, its values
+and the door on its *runs through* line, and the chat calls that door with the inputs put in -
+`revit_read` for a `READ` or `ANALYZE` command, `revit_change` for one above. Since 2026-11-11
+`revit_change` refuses a command that only reads and names `revit_read`
+([row 5b-1161](fragment-issues/section-5b-rows-401-425.md)); this said *"the chat calls `revit_change`"*
+for every command until then.
 
 ## 5. What is proven, and what is not
 

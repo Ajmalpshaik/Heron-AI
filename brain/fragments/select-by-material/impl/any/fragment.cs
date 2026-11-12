@@ -13,6 +13,15 @@
 // "what did we paint" have different answers, and folding them together
 // silently inflates the first.
 //
+// ASKED FOR, PAINT IS ADDED TO THE MAKE-UP - BOTH SETS ARE READ (version 4,
+// FRAGMENT-ISSUES 5b-393). Revit's GetMaterialIds answers ONE of two questions
+// by its flag: false, the materials of the geometry and the compound layers;
+// true, ONLY the materials the Paint tool put on faces - its own reference
+// says the true answer is empty for an element with no painted face. Version 3
+// made the one call with the flag, so asking for paint DROPPED every element
+// made of the material and not painted with it, under a sentence saying paint
+// had been added. Both are read now and joined, FIND_UNUSED_MATERIALS' way.
+//
 // A MISSED NAME IS REFUSED WITH THE REAL NAMES. Revit material names are long,
 // near-duplicated and punctuated inconsistently - "Steel, Galvanized" against
 // "Steel - Galvanized" - so a miss is far more often a spelling than an
@@ -51,6 +60,20 @@ var formsScanned = 0;
 var formsByCategory = 0;
 
 var wanted = string.IsNullOrEmpty(materialName) ? "" : materialName.Trim();
+
+// What an element is made of and, when paint is asked for, what is painted on
+// it as well - see the header (5b-393).
+Func<Element, ICollection<ElementId>> materialsOf = element =>
+{
+    var made = element.GetMaterialIds(false);
+    if (!includePaint) return made;
+
+    var both = new HashSet<ElementId>();
+    if (made != null) foreach (var id in made) both.Add(id);
+    var painted = element.GetMaterialIds(true);
+    if (painted != null) foreach (var id in painted) both.Add(id);
+    return both;
+};
 
 if (wanted.Length == 0)
 {
@@ -100,7 +123,7 @@ else
             if (element is GenericForm) formsScanned++;
             try
             {
-                var ids = element.GetMaterialIds(includePaint);
+                var ids = materialsOf(element);
                 // A void shows nothing, so its empty material is not news.
                 if ((ids == null || ids.Count == 0) && element is GenericForm && ((GenericForm)element).IsSolid)
                 {
@@ -234,7 +257,7 @@ for (var i = 0; i < linkDocs.Count && linkBlocked.Length == 0; i++)
         linkScanned++;
         try
         {
-            var ids = element.GetMaterialIds(includePaint);
+            var ids = materialsOf(element);
             if (ids != null && ids.Contains(linkTarget.Id)) linkMatched++;
         }
         catch (Exception) { }

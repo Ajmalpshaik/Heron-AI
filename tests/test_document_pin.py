@@ -61,6 +61,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
 
 from heron_write import DocumentPin                        # noqa: E402
+import heron_tools as TOOLS                                # noqa: E402
 
 FAILURES = []
 
@@ -168,8 +169,17 @@ def main():
     check(other is not None, "a different project key is refused")
     check("Project1" in (other or "") and "Annexe" in (other or ""),
           "and the refusal names both models")
-    check("Nothing has been sent to Revit" in (other or ""),
-          "and answers 'did it half-do something?' unasked")
+    # THIS CHECK HELD THE SENTENCE "Nothing has been sent to Revit" UNTIL
+    # 2026-11-11, and the sentence was the defect (FRAGMENT-ISSUES 5b-594,
+    # 5b-1135): the pin is asked of a REPLY, so Revit had been asked and had
+    # answered. Row 594's repair names this move - "the suite's rule moved to
+    # it". The question it answers unasked is the same; the answer is true.
+    check("Nothing has been sent to Revit" not in (other or "")
+          and "Heron had already asked Revit, and Revit answered from Annexe" in (other or "")
+          and "not showing that answer" in (other or ""),
+          "and answers 'did it half-do something?' unasked, truthfully - Revit was "
+          "asked and answered, and the answer is withheld (5b-1135): %s"
+          % (other or "")[-260:])
 
     print()
     print("Two open models with the SAME name - the case the pin exists for")
@@ -185,6 +195,99 @@ def main():
           "it does not give an instruction the user cannot carry out")
     check("click back" not in (twin or "").lower(),
           "and still never says 'click back' - it cannot know the other is open")
+    check("Nothing has been sent to Revit" not in (twin or "")
+          and "Revit answered from the model in front" in (twin or ""),
+          "nor that nothing was sent - it names the model in front, since the two "
+          "share a name (5b-1135)")
+
+    # --- 5b-1135: THE WRITE PATH SAYS WHAT THE ADD-IN REPORTED ------------
+    print()
+    print("After a change, the refusal says what the add-in reported (5b-1135)")
+    import heron_write as WRITE
+    server_text = TOOLS.server_text()
+    reported = getattr(WRITE, "reported_elsewhere", None)
+    check(reported is not None, "heron_write has the write path's own sentence")
+    kept = {"document": "Annexe", "projectKey": "99999999-dead-beef",
+            "verdict": "'move-elements' was KEPT: 4 elements moved."}
+    did = (reported("MOVE_ELEMENTS", kept) if reported is not None else
+           "MOVE_ELEMENTS WAS SENT and ran in Annexe.")
+    check("MOVE_ELEMENTS WAS SENT" in did and "Annexe" in did
+          and "'move-elements' was KEPT: 4 elements moved." in did
+          and "not showing that as this chat's work" in did,
+          "it names the capability, the model it ran in and the add-in's own verdict, "
+          "whole: %s" % did[:160])
+    silent = (reported("MOVE_ELEMENTS", {"document": "Annexe"})
+              if reported is not None else "")
+    check("did not say whether anything was kept" in silent,
+          "and with no verdict - an older add-in - it says the add-in did not say, "
+          "never that nothing happened")
+    pin = DocumentPin()
+    pin.check(READ_REPLY)
+    try:
+        after = pin.check(kept, did=did)
+    except TypeError:
+        # The pin as it stood takes no `did` (heron-ship 2a: fail, not crash).
+        after = pin.check(kept)
+    check(did in (after or "") and "Nothing has been sent to Revit" not in (after or "")
+          and "not showing that answer" not in (after or ""),
+          "the pin's refusal carries the write path's sentence in place of the read's, "
+          "and never 'Nothing has been sent to Revit' after a change that may have "
+          "been kept")
+    check("Project1" in (after or "") and "Annexe" in (after or "")
+          and "use this model" in (after or ""),
+          "and still names both models and the way to move the chat on purpose")
+    check(bool(after) and "will not change a model you did not point it at" not in after,
+          "and does not promise beside it that Heron will not change a model the chat "
+          "did not point it at - the add-in has just reported doing so")
+    check("will not change a model you did not point it at" in (other or ""),
+          "the promise stays where it is true: on a read, which changes nothing")
+
+    # --- A CALLER THAT ASKS BEFORE A CHANGE SAYS THE CHANGE WAS NOT SENT ---
+    # The move's preview and the dashboard's Colour read first and change
+    # second. "Nothing has been sent to Revit" told their modeller outright
+    # that nothing was moved or coloured; the sentence that replaced it is
+    # true of the read and silent on the change (the review of 5b-1135).
+    print()
+    print("Before a change, the refusal still says the change was not sent")
+    not_sent = "No move has been sent to Revit: nothing was moved, and there is nothing to approve."
+    pin = DocumentPin()
+    pin.check(READ_REPLY)
+    asked_first = {"document": "Annexe", "projectKey": "99999999-dead-beef"}
+    try:
+        before = pin.check(asked_first, unsent=not_sent)
+    except TypeError:
+        # The pin as it stood takes no `unsent` (heron-ship 2a: fail, not crash).
+        before = pin.check(asked_first)
+    check(not_sent in (before or ""),
+          "the caller's own plain sentence is in the refusal: nothing was moved")
+    check("Heron had already asked Revit, and Revit answered from Annexe" in (before or "")
+          and (before or "").find("Heron had already asked Revit") < (before or "").find(not_sent)
+          and "Nothing has been sent to Revit" not in (before or ""),
+          "after the sentence that is true of the read - which never says nothing was sent")
+    check("will not change a model you did not point it at" in (before or ""),
+          "and the promise is kept beside it: nothing has been changed")
+    try:
+        both = pin.check(kept, did=did, unsent=not_sent)
+    except TypeError:
+        both = ""
+    check(bool(both) and not_sent not in both and did in both,
+          "it is never said beside a change the add-in reported - `did` wins")
+    for name, call in (("revit_preview_move", "reply, unsent="),
+                       ("_dashboard_colour", "views, unsent=")):
+        start = server_text.find("\ndef %s(" % name)
+        body = server_text[start:server_text.find("\ndef ", start + 1)] if start >= 0 else ""
+        check("pinned.check(" in body and call in body,
+              "%s hands the pin its own sentence for the change it has not sent" % name)
+    body = server_text[server_text.find("\ndef revit_change("):]
+    body = body[:body.find("\n@server.tool()")]
+    check("pinned.check(reply, did=reported_elsewhere(capability, reply))" in body,
+          "revit_change hands the pin what the add-in reported - read as text, because "
+          "CI cannot import the server")
+    reads = [name for name in ("revit_read", "revit_levels", "revit_views")
+             if "did=" in server_text[server_text.find("\ndef %s(" % name):][:
+                 server_text[server_text.find("\ndef %s(" % name):].find("\n@server.tool()")]]
+    check(not reads, "and the read tools hand it nothing: theirs is the pin's own "
+          "sentence - %s" % (reads or "none does"))
 
     print()
     print("A fragment reply cannot smuggle a write into a differently-named model")
@@ -347,8 +450,7 @@ def main():
           "which is why the add-in has to refuse an ambiguous title rather "
           "than pick one")
 
-    server = io.open(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py"),
-                     encoding="utf-8").read()
+    server = TOOLS.server_text()
     check('args["document"] = pinned.title' in server,
           "revit_change AIMS the write at the pinned model by name instead of "
           "letting the add-in fall back to whatever is in front. That inverts "

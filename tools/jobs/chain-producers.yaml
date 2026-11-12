@@ -5,8 +5,10 @@
 #
 # Both need VALUES, and a selection cannot supply them - so the producer runs
 # inside the setup chain and the fragment under test consumes what it left.
-# read-element-parameters and measure-run-quantities are both PROVEN, so the
-# thing being tested here is the consumer and nothing else.
+# read-element-parameters and measure-run-quantities are the producers, not
+# what is tested here: the consumer is. Each producer's own status is on its
+# card - both were PROVEN when this was written on 2026-09-10, and
+# `--dry-run` says which this file would refuse as ALREADY today.
 #
 # THE NEGATIVE IS VALUE-DRIVEN, and that is deliberate. Both fragments declare
 # their empty case as "an empty values dictionary" - not a different selection.

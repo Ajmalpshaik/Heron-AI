@@ -227,11 +227,14 @@ contract:
       role: accounting
       type: IList<string>
 
-# VERSION 3 HAS NOT RUN IN REVIT - compiled only; NEEDS-CHECKING Group EK is its
-# proof plan. VERSION 2 RAN 2026-10-12 on 4355-BHVD-3D-60A10-BL003A (Revit 2020),
-# read only, both legs held - NEEDS-CHECKING DI, row 5b-443 - and was never
-# signed. The proof below is version 1's, kept as it was signed: the code has
-# changed since, so it reads STALE until version 3 is signed (D-30).
+# WRITTEN ABOVE AN EARLIER PROOF, since replaced by the `proof:` block below -
+# read that block's own date and fingerprint, not this comment, for what ran.
+# WHEN THIS WAS WRITTEN VERSION 3 HAD NOT RUN IN REVIT - compiled only;
+# NEEDS-CHECKING Group EK was its proof plan. VERSION 2 RAN 2026-10-12 on
+# 4355-BHVD-3D-60A10-BL003A (Revit 2020), read only, both legs held -
+# NEEDS-CHECKING DI, row 5b-443 - and was never signed. The proof below was then
+# version 1's, kept as it was signed: the code had changed since, so it read
+# STALE until version 3 was signed (D-30).
 proof:
   date: '2026-10-18'
   by: Ajmal PS

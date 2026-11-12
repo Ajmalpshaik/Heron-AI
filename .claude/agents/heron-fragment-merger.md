@@ -90,6 +90,10 @@ grep -rnE "RETIRED_CAPABILITY|retired-folder" brain mcp tools tests platform rev
 - **Another card's `impl/` - DO NOT EDIT IT**, not even a comment or a message string. The fingerprint
   hashes `impl/`, so the edit would make that card's proof stale and send a PROVEN card to DRAFT for a
   word. Record each one as a FRAGMENT-ISSUES row instead, for the next time that card's C# changes anyway.
+  **A row is a file of its own**: `python tools/next-id.py` prints the next free 5b number, and the row is
+  written as `docs/fragment-issues/row-5b-<that number>.md` - copy the newest `row-5b-*.md` and change its
+  number, its defect and its state. Never append to a `section-5b-rows-*.md` file, and add no index line
+  ([FRAGMENT-ISSUES, *Add to this file*](../../docs/FRAGMENT-ISSUES.md#add-to-this-file-do-not-start-another)).
 - **Tests and data** - a confirmed answer in `tests/data/owner-questions.yaml` moves to the keeper, with a
   comment saying it was the retired capability until the merge. A test asserting a measured fact about the
   library changes only if the fact changed - say which fact, never edit a test to make it pass.

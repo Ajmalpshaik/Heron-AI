@@ -1,15 +1,19 @@
 # 40 — Heron Companion: a window beside the chat that shows what Heron does and lets you edit a table
 
 > **Status now: BUILT, NOT PROVEN - Phases 1, 2 and 3 are in the code, allowed by [D-108](decisions/D-108.md)
-> and [D-109](decisions/D-109.md), with three panels added since: Loads (§21.5), Sprinkler Hydraulic
-> Calculation (§21.7) and Sprinkler Layout (§21.8). What was built, and how it differs from the design
-> below, is §21. The paragraph that follows is the status this document was written with.**
+> and [D-109](decisions/D-109.md), with five panels added since: Loads (§21.5), Sprinkler Hydraulic
+> Calculation (§21.7), Sprinkler Layout (§21.8), the Model Dashboard (§21.10) and the QA Checklist
+> (§21.22). What was built, and how it differs from the design below, is §21. The paragraph that
+> follows is the status this document was written with.**
 >
 > **What has run in Revit**, all of it Revit 2024: NEEDS-CHECKING [group BK](needs-checking/group-bk.md)
 > row BK6 (BK1 and BK2's positive halves, on *Project1*) and row BK13 (BK10 and BK11 PASSED, on a test
 > copy of *heron ai bulding*); §21.4's two Load buttons on 2026-09-30, with one fault left open; and the
 > Loads panel in [Group CC](needs-checking/group-cc.md) on 2026-10-06. **Still NOT RUN:** BK7, BK8, BK9,
-> BK12, BK11's stale-row negative, both Sprinkler panels, and the Companion button on the code of
+> BK12, BK11's stale-row negative, both Sprinkler panels, the Model Dashboard past its first opening
+> (JT22, PART, Revit 2024, 2026-11-01 - [group JT](needs-checking/group-jt.md); its buttons, and version 3
+> of its 3D read in [group JU](needs-checking/group-ju.md), are owed), the QA Checklist
+> ([group MV](needs-checking/group-mv.md)), and the Companion button on the code of
 > [D-136](decisions/D-136.md) - BK14, which FAILED on 2026-10-18 on D-135's code (§21.8).
 >
 > **Status when written: A DESIGN, NOT A DECISION. Nothing here is built.** Written 2026-09-29 as Phase 0 of the
@@ -23,13 +27,19 @@
 > [D-108](decisions/D-108.md). Every other question was answered the same day, and the owner narrowed
 > what the tables are for - §21.1. What was then built is §21.2 and §21.3.
 >
-> **Checked 2026-10-18 - two of the page's writes are refused today, before anything reaches Revit
+> **Checked 2026-10-18 - two of the page's writes were refused that day, before anything reached Revit
 > (§21.9).** The Table's Apply and the Loads panel's Finalize write through `SET_PARAMETER_VALUES_BY_ID`,
-> which went to version 3 and back to DRAFT on 2026-10-17 (#583; its proof is owed in
-> [group FE](needs-checking/group-fe.md)), and Finalize's diffusers through `SET_AIR_TERMINAL_FLOW`, DRAFT;
-> `revit_change`, whose body every Apply uses, keeps a change only from a PROVEN fragment since
-> [D-117](decisions/D-117.md). The Sprinkler Layout's Apply (`PLACE_FAMILY_INSTANCES`, PROVEN) is not
+> which went to version 3 and back to DRAFT on 2026-10-17 (#583; its proof was owed in
+> [group FE](needs-checking/group-fe.md)), and Finalize's diffusers through `SET_AIR_TERMINAL_FLOW`, DRAFT
+> that day; `revit_change`, whose body every Apply uses, keeps a change only from a PROVEN fragment since
+> [D-117](decisions/D-117.md). The Sprinkler Layout's Apply (`PLACE_FAMILY_INSTANCES`) was not
 > affected. Nothing above about what HAS run changes: those runs were before 2026-10-17.
+>
+> **Read again 2026-11-11, in a cloud container - both proofs are signed, and neither write has been run
+> from the page since.** Both cards' `heron-status` lines read PROVEN and `python tools/check-signatures.py`
+> lists neither as stale, so D-117 no longer refuses the two writes
+> ([row 5b-1129](fragment-issues/section-5b-rows-401-425.md)). That is a refusal gone, not a run: NOT RUN.
+> Whether a writer is PROVEN today is on its card - read it there, never here.
 
 ---
 
@@ -118,13 +128,14 @@ Companion button (Heron tab, D-109)    reads the note, opens the address - serve
 | Panel | Opened by | What it does | Changes the model? | Has it run in Revit? |
 |---|---|---|---|---|
 | **Revit** strip | always shown, from the live file | which Revit, model and view are in front | No - reads a file | BK1's positive half PASSED (BK6, *Project1*, Revit 2024, 2026-09-29); its negative is owed |
-| **HVAC Load Calculation** ([44](44-building-loads-from-the-model.md)) | `revit_building_loads` | each Space's cooling and heating load, the model's checks, a 3D view of the faces; Recalculate, The take-off is right, Report | **Finalize** - `companion_loads_finalize`, `MODIFY`. **Refused today** (§21.9) | PART - [group CC](needs-checking/group-cc.md), *Heron loads test*, Revit 2024, 2026-10-06; CC8, CC13, CC22 and CC24 FAILED - [44](44-building-loads-from-the-model.md)'s status says which are fixed |
+| **HVAC Load Calculation** ([44](44-building-loads-from-the-model.md)) | `revit_building_loads` | each Space's cooling and heating load, the model's checks, a 3D view of the faces; Recalculate, The take-off is right, Report | **Finalize** - `companion_loads_finalize`, `MODIFY`. Refused on 2026-10-18 (§21.9); both writers' cards read PROVEN since, and Finalize has not been run again | PART - [group CC](needs-checking/group-cc.md), *Heron loads test*, Revit 2024, 2026-10-06; CC8, CC13, CC22 and CC24 FAILED - [44](44-building-loads-from-the-model.md)'s status says which are fixed |
 | **Sprinkler Hydraulic Calculation** ([46](46-sprinkler-hydraulics-from-the-model.md)) | `revit_sprinkler_hydraulics` | K-factors, fittings, criteria, remote area with Suggest; Calculate, The network is right, Report, 3D view | No - phase 1 has no Finalize | NOT RUN - [group CE](needs-checking/group-ce.md) |
 | **Sprinkler Layout** ([47](47-sprinkler-layout-from-the-model.md)) | `revit_sprinkler_layout` | each selected room's plan, heads OK or FAIL; Preview, then Apply one level at a time | **Apply** - `companion_sprinkler_place`, `MODIFY`, through `PLACE_FAMILY_INSTANCES` (PROVEN) | NOT RUN - [group CG](needs-checking/group-cg.md) |
-| **Table** (§8, §21.3) | `revit_edit_table` | elements and their parameters; edit the white cells, Apply | **Apply** - `companion_table_apply`, `MODIFY`. **Refused today** (§21.9) | BK11 PASSED on sheets (BK13, *heron ai bulding* test copy, Revit 2024, 2026-09-29), before version 3; its stale-row negative and BK12 are owed |
+| **Table** (§8, §21.3) | `revit_edit_table` | elements and their parameters; edit the white cells, Apply | **Apply** - `companion_table_apply`, `MODIFY`. Refused on 2026-10-18 (§21.9); its writer's card reads PROVEN since, and Apply has not been run again | BK11 PASSED on sheets (BK13, *heron ai bulding* test copy, Revit 2024, 2026-09-29), before version 3; its stale-row negative and BK12 are owed |
 | **Activity** - the corner button | every tool call this chat makes | time, tool, the answer's first line, how it ended | No - kept in memory | NOT RUN - BK9 |
 | **Changes you can adjust** - switched off 2026-10-04, kept (§21.6) | a settings change from the chat; Load filters, Load category colours | the values a change used, as a table; Apply again | **Apply again** - `companion_apply`, `MODIFY` | BK10 PASSED (BK13); the Load buttons ran 2026-09-30 with one filter fault open (§21.4) |
 | **Selected** - switched off 2026-10-04, kept (§21.6) | was always shown, from the live file | the selection by category | No | BK2's positive half PASSED (BK6) |
+| **Model Dashboard** (§21.10 to §21.18) and **QA Checklist** (§21.22, [50](50-qa-checklists.md)) - added 2026-11-01 and 2026-11-08, after this table was read | `revit_model_dashboard` · `heron_checklist`, or the page's own Run | the model counted part by part, a 3D view; saved checks run in one go | Dashboard: **Colour the view** and **Clear colours** only, `MODIFY`; Select and Isolate are on screen only. Checklist: no - it reads | Dashboard: JT22 PART (Revit 2024, 2026-11-01), the rest owed - groups [JT](needs-checking/group-jt.md), [JU](needs-checking/group-ju.md). Checklist: NOT RUN - [group MV](needs-checking/group-mv.md) |
 | *The Companion button* - in Revit, not on the page | the ribbon | opens the address a chat left | No | BK14 and HF4 FAILED 2026-10-18 on D-135's code ([row 5b-1100](fragment-issues/section-5b-rows-401-425.md)); D-136's fix and BK7 NOT RUN |
 
 ---
@@ -234,12 +245,13 @@ written (D-117 on 2026-10-17, D-126 and D-138), and the line numbers it carried 
 moved. Every name is a function or class in the code today; `bridge.` is
 [`mcp/client/heron_bridge_client.py`](../mcp/client/heron_bridge_client.py).
 
-**How a write is approved today, in order:** the owner's **Changes** switch on the ribbon
-(`write.enabled`, off by default, read inside the add-in); **Admin** and **Publish** switches for those
-levels ([D-106](decisions/D-106.md)); the operation's risk read **by name** from the registry — nothing
+**How a write is approved today, in order:** the owner's **Changes** switch (`write.enabled`, off by
+default, read inside the add-in) - on the ribbon when this was written, in Heron's Settings window since
+2026-11-07 with the other switches ([D-150](decisions/D-150.md)); **Admin** and **Publish** switches for
+those levels ([D-106](decisions/D-106.md)); the operation's risk read **by name** from the registry — nothing
 on the wire says how dangerous a request is ([Golden Rule 19](14-golden-rules.md)); the pin
 (Article 12b); one named `TransactionGroup` rolled back on any failure (Article 8). `revit_change`
-keeps a change at once while the ribbon's *Ask to Keep* is off, the default, and shows Revit's Keep or
+keeps a change at once while *Ask to Keep* is off, the default, and shows Revit's Keep or
 Discard box while it is on ([D-126](decisions/D-126.md), [D-138](decisions/D-138.md); D-99's "no
 preview" is superseded); `revit_apply_move` keeps its
 preview, one-use approval and re-count (`PendingApproval`, `heron_write.py`). Article 7's
@@ -425,8 +437,8 @@ Every Heron tool call this chat makes appears as a line: **time · tool · one-l
 refused / failed / handed back · how long**. For example:
 *14:02:11 · revit_change · OVERRIDE_GRAPHICS_IN_VIEW ran in heron ai bulding · OK · 1.8 s*.
 
-- **Where it comes from:** the `_Labelled` subclass that already wraps every `@server.tool()` in
-  `heron_mcp_server.py` records the tool's name, start, end and the **first line** of its reply
+- **Where it comes from:** the `_Labelled` subclass that already wraps every `@server.tool()` - in
+  `heron_server_core.py` since 2026-11-11, in `heron_mcp_server.py` before - records the tool's name, start, end and the **first line** of its reply
   (capped at 200 characters) into an in-memory ring of the last 500 calls. It uses
   `functools.wraps`, so each tool's signature — which `tests/test_mcp_serves.py` reads back from the
   real SDK — is unchanged. A fault in the recorder is caught and dropped; it can never change a tool's
@@ -484,9 +496,10 @@ Changes OFF.
   reader. Colour is the first reader; a parameter reader (instance first, then type, display units,
   the way `read-element-parameters` reads) is the second, in a later step.
 
-**Why a new fragment rather than widening one:** `read-graphic-overrides` (PROVEN) reads the right
+**Why a new fragment rather than widening one:** `read-graphic-overrides` (PROVEN when this was
+decided - its card says what it is now) reads the right
 values but returns them as sentences, and changing its output would change what its proof describes.
-`read-element-parameters` (PROVEN) reads parameters but returns a count. A new reader that **calls the
+`read-element-parameters` (the same) reads parameters but returns a count. A new reader that **calls the
 same API the same way** leaves both proofs intact. **NEEDS_REVIEW** against the owner's rule *"widen
 an existing fragment first"*.
 
@@ -728,9 +741,9 @@ The names follow the existing prefixes: `revit_*` touches Revit, `heron_*` does 
 |---|---|---|
 | Read the selection | `read-selection` (READ_SELECTION, PROVEN); the executor fills `elements` from the selection | **Reused** by `revit_edit_table` with `scope=selection` |
 | Select rows in Revit | `set-selection` (SET_SELECTION, PROVEN, EXECUTE) | **Reused** — which door it goes through is §13's open point |
-| Read current overrides | `read-graphic-overrides` (PROVEN) — sentences, not rows | Its API calls are **re-used in method** by the new reader; the fragment itself is untouched |
+| Read current overrides | `read-graphic-overrides` (its status is on its card) — sentences, not rows | Its API calls are **re-used in method** by the new reader; the fragment itself is untouched |
 | Write one override to many | `override-graphics-in-view` (DRAFT), `highlight-vs-rest` (PROVEN), `color-by-parameter` (DRAFT) | Not suitable — one value for all, or colours chosen by the fragment. **New** `SET_ELEMENT_OVERRIDES_BY_ID` |
-| Read parameters for many | `read-element-parameters` (PROVEN) — count only in the reply; bridge `read_parameters` — real rows, per category, max 500 | Later parameter columns reuse its reading rule inside `READ_ELEMENT_TABLE` |
+| Read parameters for many | `read-element-parameters` (its status is on its card) — count only in the reply; bridge `read_parameters` — real rows, per category, max 500 | Later parameter columns reuse its reading rule inside `READ_ELEMENT_TABLE` |
 | Write a parameter per element | `import-parameter-values` (DRAFT) — per element, from a CSV file | Later: **widen** it to take rows from the request as well as a CSV (the "widen first" rule) |
 | Colour as text | `OneColour` in the executor: `"R,G,B"` | **Reused**, no new format |
 | Colour-by-standard | `create-view-filter`, `create-view-filters-by-value`, `apply-view-filter` | Not V1; a possible later "system colours" table (§9) |
@@ -749,7 +762,7 @@ The names follow the existing prefixes: `revit_*` touches Revit, `heron_*` does 
 | Phase | Create | Change | Needs a Revit restart |
 |---|---|---|---|
 | **1 — live view** | `revit/Heron.Revit.Addin/HeronLiveState.cs` · `mcp/companion/heron_companion.py` (server) · `mcp/companion/static/index.html`, `companion.js`, `companion.css` · `mcp/companion/README.md` · `tests/test_companion_security.py` · `tests/test_companion_live.py` · a Revit-free test host for the live-state tally and throttle | `revit/Heron.Revit.Addin/HeronApplication.cs` (subscribe, version adapter) · `platform/Heron.Core/HeronPaths.cs` (`Live`) · `platform/Heron.Core/HeronConfig.cs` + `mcp/client/heron_config.py` (`ui.liveState`) · `mcp/server/heron_mcp_server.py` + `heron_tools.py` (`heron_companion`) · `mcp/README.md` · `revit/README.md` · `docs/DECISIONS.md` + `docs/decisions/` (the §19 decision, once accepted) · `docs/NEEDS-CHECKING.md` (a new group) | **Yes**, all three installed releases |
-| **2 — activity** | `tests/test_companion_activity.py` | `mcp/server/heron_mcp_server.py` (`_Labelled` records) · `mcp/companion/*` | No — Python only; the Claude app restarts the MCP server |
+| **2 — activity** | `tests/test_companion_activity.py` | `mcp/server/heron_server_core.py` (`_Labelled` records) · `mcp/companion/*` | No — Python only; the Claude app restarts the MCP server |
 | **3 — table** | `brain/fragments/read-element-table/` · `brain/fragments/set-element-overrides-by-id/` (each `fragment.yaml`, `impl/any/fragment.cs`, proof plan) · `tests/test_companion_table.py` | `mcp/server/heron_mcp_server.py` (`revit_edit_table`; the shared write helper) · `heron_tools.py` (`revit_edit_table`, `COMPANION_ACTIONS`) · `tests/test_tool_registry.py` · `mcp/companion/*` · the fragment store row for each new card (never `--rebuild` the shared store) | No — fragments are compiled at run time |
 | **4 — undo and polish** | — | `mcp/companion/*` · optionally `RevitFragment.cs` (the undo `label`, §10) | Only if the label is chosen |
 
@@ -771,7 +784,7 @@ behaviour; `.claude/settings.json` and its hooks; the Revit version targets.
 | `test_companion_table.py` | Only changed rows are sent; a colour outside 0–255 is refused before any request; the request built for Apply has exactly the keys `revit_change` sends (`apply`, `document`, `documentPath`, `expectProject`, `idempotent=False`) and the same operation from the card; unpinned or unbound → refused, nothing sent; the lock serialises a tool call and an Apply |
 | `test_tool_registry.py` (extended) | The two new tools and every Companion action have a declared risk; labels match |
 | No-outbound test | `mcp/companion/` imports nothing that reaches a network or a model provider |
-| The four gates and CI's eleven | `check-docs`, `check-metadata`, `check-structure`, `check-package`, then CI's `check-signatures`, `check-licence`, `check-narrow-errors`, `check-products`, `check-decision-titles`, `check-routing`, `check-intrusion` |
+| The four gates and CI's twelve | `check-docs`, `check-metadata`, `check-structure`, `check-package`, then CI's `check-signatures`, `check-licence`, `check-narrow-errors`, `check-secrets`, `check-products`, `check-decision-titles`, `check-routing`, `check-intrusion` |
 | `check-compile.py` | `HeronLiveState.cs` compiles on every release 2020–2027, with the `SelectionChanged` adapter taking the Idling branch for 2020–2022. **A compile is not a proof** |
 | `check-fragments-compile.py`, `check-routing.py` | The two new fragments compile and do not steal routing from existing cards (compare `find` on a scratch store against main) |
 | `tools/check-change.py`, `tools/change-evidence.py` | The diff touched only the areas each phase declared; before/after evidence recorded — a change with no evidence is not a pass |
@@ -960,7 +973,8 @@ The owner asked for the rest the same day: *"you can do that phase 2 and 3"*.
 
 - **The Companion button and switch** - [D-109](decisions/D-109.md). A button on the Heron tab opens the
   page; its arrow turns the Companion off without touching Heron. While on, each chat keeps its page
-  ready and leaves a note the button reads.
+  ready and leaves a note the button reads. *Since 2026-11-08 the button has no arrow: the on/off is the
+  Companion row in Heron's Settings window ([D-150](decisions/D-150.md), as amended).*
 - **Phase 2, the activity list** (§7): every tool call this chat makes, in memory only, through the one
   wrapper every tool already passes.
 - **Phase 3, settings** (§21.1): a change through a card marked `companion: settings`, whose inputs are
@@ -969,8 +983,9 @@ The owner asked for the rest the same day: *"you can do that phase 2 and 3"*.
   without counts? - is answered by the rule itself: every input is on the table, so the values ARE the
   whole change.
 - **Phase 3, the element table** (§8): `revit_edit_table` (ANALYZE) reads the elements through
-  `READ_ELEMENT_TABLE` (FRG-PAR-026, DRAFT) - the selection or what an earlier fragment left - and the
-  page's Apply writes the edited cells in one `SET_PARAMETER_VALUES_BY_ID` run (FRG-PAR-027, DRAFT),
+  `READ_ELEMENT_TABLE` (FRG-PAR-026) - the selection or what an earlier fragment left - and the
+  page's Apply writes the edited cells in one `SET_PARAMETER_VALUES_BY_ID` run (FRG-PAR-027; both were
+  DRAFT when this was built, and each one's status since is on its card),
   which writes NOTHING unless every row still holds what the table showed. **Parameters only** in this
   release: the per-element colour writer of §8.5 was not built, because the owner's scope (§21.1) asks
   for parameters and schedules, and colour already has its settings table.
@@ -1109,11 +1124,18 @@ Neither is a new defect of the page: the refusal is Article 11 doing its job. Th
 again when their fragments are PROVEN - [group FE](needs-checking/group-fe.md) for
 `SET_PARAMETER_VALUES_BY_ID`, [group AQ](needs-checking/group-aq.md) for `SET_AIR_TERMINAL_FLOW`.
 
-**One thing the chat is told is wrong today, and it is recorded, not repaired**
-([row 5b-1133](fragment-issues/section-5b-rows-401-425.md)): the `heron_companion` tool's reply says the
+**Read again 2026-11-12, in a cloud container:** `SET_AIR_TERMINAL_FLOW` reads PROVEN on its proof of
+2026-10-18. `SET_PARAMETER_VALUES_BY_ID` was signed PROVEN on 2026-11-02 (version 7) and is **DRAFT again
+at version 8** since 2026-11-11 - a key with a `*` names many - until
+[group NG](needs-checking/group-ng.md) proves it (each card's own header and `proof` block). So the
+Table's Apply and Finalize are refused again until then, and neither has been run from the page.
+
+**One thing the chat was told was wrong until 2026-11-11**
+([row 5b-1133](fragment-issues/section-5b-rows-401-425.md)): the `heron_companion` tool's reply said the
 page *"shows the model, the view and the selection ... and changes nothing"*. The Selected card is off
 since §21.6, and the page's Apply, Finalize and Place change the model under the same switches as a chat.
-Until the reply is fixed, describe the page from this section, not from that reply.
+The reply and the tool's description say that now - what changes nothing is opening the page - and
+`tests/test_companion.py` holds both to it. Tested without Revit; the page was not opened on a PC for it.
 
 ### 21.10 The Model Dashboard panel (2026-11-01)
 
@@ -1151,8 +1173,9 @@ read*, never as zero.
 **Proved without Revit:** `tests/test_model_dashboard.py` (the brain), `tests/test_companion.py`'s
 Dashboard group (the panel, its routes behind the pairing, Refresh under the lock and never on a timer),
 and `tests/test_mcp_serves.py` (served with the SDK's Context; refused when the Companion is off).
-**Not run in Revit** - `REPORT_MODEL_DASHBOARD` is DRAFT, and its proof on a named model, with its
-negative case, is owed before the panel is relied on.
+**The panel is not run in Revit.** `REPORT_MODEL_DASHBOARD` was DRAFT when this was written, its proof on
+a named model with its negative case then owed; its status since is on its card, and a proof of the card
+is not a run of the panel.
 
 ### 21.11 Select in Revit and Isolate from the Model Dashboard (2026-11-01)
 
@@ -1264,8 +1287,8 @@ by a chart*, re-made the Heron way. **It is a change** - to the active view's gr
 element's data:
 
 - **Colour the view** - type a parameter as Revit shows it (*System Type*, *Fire Rating*, *Level*).
-  `FILTER_ELEMENTS_BY_CATEGORY` with `inViewOnly` reads what the active view shows (READ, DRAFT - it took
-  over `SELECT_VISIBLE_IN_VIEW`, PROVEN, merged into it on 2026-11-01); `COLOR_BY_PARAMETER` gives
+  `FILTER_ELEMENTS_BY_CATEGORY` with `inViewOnly` reads what the active view shows (READ - it took
+  over `SELECT_VISIBLE_IN_VIEW`, merged into it on 2026-11-01); `COLOR_BY_PARAMETER` gives
   every distinct value its own colour, the same colours every run, a blank its own group (MODIFY, PROVEN).
 - **Clear colours** - `RESET_GRAPHIC_OVERRIDES` on the same elements (MODIFY, PROVEN). A category's own
   colour is not touched; only the per-element ones come off.
@@ -1276,8 +1299,8 @@ Keep* is on (D-126). The page asks the modeller first; only on the model the das
 never on the DEMO. Declared `companion_dashboard_colour` and `companion_dashboard_clear_colours`, MODIFY.
 
 **Not built from phase 5, and why:** *fix from a row* (fill a parameter, rename to the standard, move to
-a workset) needs `SET_PARAMETER_VALUES_BY_ID` PROVEN first ([group FE](needs-checking/group-fe.md)) and
-the owner's word on which fixes; *purge unused families* is destructive - Article 7 asks the owner's yes
+a workset) needs `SET_PARAMETER_VALUES_BY_ID` PROVEN first (version 8 is DRAFT until
+[group NG](needs-checking/group-ng.md) is run; read 2026-11-12) and the owner's word on which fixes; *purge unused families* is destructive - Article 7 asks the owner's yes
 for that exact job, so it is not offered as a button.
 
 **Proved without Revit:** `tests/test_companion.py` - the hook gets the parameter and the read's model,

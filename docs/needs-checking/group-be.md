@@ -48,3 +48,9 @@ walls and rooms. A second, **link-free model** is the negative case for every ro
 **What cannot be answered here.** Every row needs a Revit. What was checked without one: the eleven compile
 on 2020 to 2027, and the binder's new rule is run in `tests/Heron.BindingNote.TestHost` through
 `tests/test_binding_note.py`.
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `REPORT_DOOR_ROOM_LINKS` reads PROVEN on its card, at version 2 - its `proof` block is signed by Ajmal PS,
+2026-10-21, on MEP Night Test, Revit 2020, session 68704. So where this page calls a card named here DRAFT, or says
+nothing has run in Revit, that was true when it was written and is out of date as a statement about the card. Whether
+BE1 to BE13 were what that proof ran is NOT sorted here: for the owner.

@@ -57,3 +57,10 @@ left as it was - except IG12.**
 
 **Then sign** `add-schedule-combined-field` on IG2/IG3 and `report-schedule-definition` on IG7/IG8. **One signature covers the report card's code as it stands**, version 2's filter rules and version 3's combined columns alike - version 2's own proof (Group IH, 2026-10-21) is stale once this merges - so read [Group IH](group-ih.md)'s report rows on the same run before it is signed. Ajmal PS
 says whether each goes back to PROVEN.
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `REPORT_SCHEDULE_DEFINITION` reads PROVEN on its card, at version 3 - its `proof` block is signed by Ajmal
+PS, 2026-10-22, on Heron Capture Test (21,317 elements), Revit 2020, session 60544. Of the other cards this group
+names: `ADD_SCHEDULE_COMBINED_FIELD` is DEPRECATED, superseded by `ADD_SCHEDULE_FIELDS`. So where this page calls a
+card named here DRAFT, or says nothing has run in Revit, that was true when it was written and is out of date as a
+statement about the card. Whether IG1 to IG12 were what that proof ran is NOT sorted here: for the owner.

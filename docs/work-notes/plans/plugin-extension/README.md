@@ -32,7 +32,7 @@
 > PC on 2026-09-21 - two Heron tabs in one Revit, on Revit 2024.3 and 2020.2.9, with `AA2` not broken -
 > except `AA9`.
 
-Heron today is **one tab with three buttons**. This folder plans the step from that to **several Heron
+Heron, when this folder opened, was **one tab with three buttons**. This folder plans the step from that to **several Heron
 products**, each its own Revit tab, and **one installer window** that installs whichever ones the user
 ticks.
 

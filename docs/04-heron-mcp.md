@@ -127,6 +127,32 @@ A DRAFT's one run is always asked. A publish is asked whenever *Ask to Keep* is 
 > ([NEEDS-CHECKING Group ET](needs-checking/group-et.md), rows ET2, ET3, ET5, ET11, ET13). The *Ask to
 > Keep* button and the grant have **not** run in Revit ([Group HG](needs-checking/group-hg.md)).
 
+> **As built (2026-11-12) - a chat can ask which it is, before the change.** The switch is read inside the
+> add-in and was sent to nobody, so a chat learned whether Revit asked only afterwards, from the verdict.
+> The add-in's lease-exempt `info` answer ([`BridgeServer.cs`](../revit/Heron.Bridge/BridgeServer.cs)) now
+> carries `askToKeep` - `HeronPermissions.AsksBeforeKeeping`, read at the moment of the call - and
+> `revit_health` prints one line under each connected Revit: *Ask to Keep is ON* (a change made through
+> `revit_change` is shown in Revit's Keep or Discard box and kept only on Keep), *Ask to Keep is off* (kept at
+> once, one entry in Revit's Undo list), *this Revit's Heron does not say* for an add-in that answered and
+> sent no such field, or *Heron could not read it from this Revit just now* when no usable answer came -
+> never the default ([`heron_health.py`](../mcp/server/heron_health.py) `ask_to_keep_line`). **On and off are
+> said of `revit_change` and name what is different**, as the paragraph above does: a delete is asked in its
+> own Delete box whatever the switch says ([D-142](decisions/D-142.md)), an export, save or sync is done
+> before the box opens, a change Revit counted nothing in and the rest of a job the modeller chose to keep
+> are kept unasked, and `revit_apply_move` never reads the switch - it keeps the preview it showed. It is
+> said and never set: no request carries it, and the executor still reads the switch for itself when it
+> keeps. An optional field, so the protocol number stands. It is the switch alone - whether a job's *keep
+> the rest* grant is held now is not reported, and a settings file the add-in could not read is reported as
+> off, the default the executor would act on at that instant.
+> `revit_health`'s description does not mention the line: the six always-loaded descriptions are at their
+> budget (§8.8). Four methods in `brain/skills/` send the chat there since the same day -
+> `parameters-csv-round-trip`, `cad-to-mep`, `sheets-from-excel`, `reinforce-concrete`; this sentence said
+> *"not reworded yet"* until then - and still say to ask the modeller where the line could not say; any other
+> method that speaks of the switch is found with `grep -l "Ask to Keep" brain/skills/*.yaml`. Its write-gate line is still read
+> from the server's own copy of the settings ([Q-70](open-questions/tier-2.md), open). Held without Revit by
+> [`tests/test_ask_to_keep_health.py`](../tests/test_ask_to_keep_health.py); **built, not yet run in Revit**
+> ([Group NP](needs-checking/group-np.md)).
+
 ---
 
 ## 5. **[NOTE]** Version compatibility triangle
@@ -179,6 +205,10 @@ The spec's rule applies at every level: **do not blindly retry the same failed a
 > never classified as retryable. A modeller's **Discard** is never retried: it is their answer, not a
 > fault ([D-126](DECISIONS.md#d-126--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept)
 > item 4, [Article 25](../HERON_CONSTITUTION.md)).
+>
+> **Since 2026-11-12 the three doors say which of these it was in one fixed word** - `outcome: REFUSED`,
+> `ROLLED BACK`, `OUTCOME UNKNOWN` and the rest - on a line of the reply and in its structured content
+> (§8.12). The table is still what decides; the word is how a chat reads it without reading sentences.
 
 ---
 
@@ -261,6 +291,11 @@ If this is not designed in early it becomes very expensive to retrofit, because 
 **What is built is the "still working" note, and nothing else in the list above.** No job id, no
 `heron_job_status`, no percentage, no cancelling. A tool still blocks until Revit answers; what changed
 is that the host is told, while it blocks, that the wait goes on.
+
+**And when Heron stops waiting before Revit has finished, the reply says so in a word** - `outcome: STILL
+RUNNING`, with what a chat can do today: not send it again, and ask the modeller what Revit shows
+(§8.12, 2026-11-12). It names no run to follow, because none comes back yet
+([row 5b-1159](fragment-issues/section-5b-rows-401-425.md)).
 
 - **The tools that send a fragment carry the SDK's `Context`**: `revit_change`, `revit_read`, `revit_show`
   (§8.9), `revit_building_loads`, `revit_sprinkler_hydraulics`, `revit_sprinkler_layout` and
@@ -411,13 +446,21 @@ all four -> Heron add-in (the gate reads the switches) -> Revit, the model
 
 | Way in | Runs a fragment declared | Transaction | Switch it needs | Proof it needs | A `DRAFT` |
 |---|---|---|---|---|---|
-| `revit_read` | `READ`, `ANALYZE` | none open; the add-in counts the model before and after ([row 5b-350](fragment-issues/section-5b-rows-326-350.md)) | none | none; the answer says how far it is proven | runs, and says DRAFT |
-| `revit_show` | anything up to `EXECUTE`: the selection, the camera, the active view | none open; counted the same way | none | none | runs, and says DRAFT ([D-117](DECISIONS.md#d-117--a-change-is-kept-only-from-a-fragment-whose-proof-still-stands) items 3 and 4) |
+| `revit_read` | `READ`, `ANALYZE` | none open; the add-in counts the model before and after ([row 5b-350](fragment-issues/section-5b-rows-326-350.md)) | none | none; the answer says how far it is proven | runs when the chat names its capability, and says DRAFT; the modeller's words alone never run one (§8.5) |
+| `revit_show` | anything up to `EXECUTE`: the selection, the camera, the active view | none open; counted the same way | none | none | runs when named, and says DRAFT ([D-117](DECISIONS.md#d-117--a-change-is-kept-only-from-a-fragment-whose-proof-still-stands) items 3 and 4) |
 | `revit_change` | `MODIFY`; `PUBLISH` and `ADMIN` each as an operation of its own ([D-106](DECISIONS.md#d-106--admin-and-publish-each-get-a-switch-of-their-own-and-only-the-owner-turns-them-on)) | one named `TransactionGroup`, one undo entry | Changes; and Publish or Admin for those two levels | `PROVEN`, and its code unchanged since the proof (D-117, [D-30](DECISIONS.md#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs)) | refused before anything is sent |
 | `try-once`, command line only | `MODIFY` only | one named `TransactionGroup` | Changes | must be `DRAFT`; once per version kept | its one run, always asked Keep or Discard, on a saved model in front ([D-119](DECISIONS.md#d-119--a-draft-fragment-may-run-once-on-the-model-in-front-behind-a-keep-or-discard-prompt-in-revit-and-article-11-says-so), D-121) |
 
 The read and show doors also refuse code that writes to disk, and code that opens a transaction of its
 own (§8.9).
+
+**`revit_change` has a floor since 2026-11-11.** A fragment declared `READ` or `ANALYZE` is refused there
+before anything is sent, and the refusal names `revit_read`: until then it ran as a change - behind the
+Changes switch, in a transaction group, in front of the Keep box
+(`heron_tools.below_refusal`, [row 5b-1161](fragment-issues/section-5b-rows-401-425.md)). **`EXECUTE` and
+`SUGGEST` still run through it**, which the table's row does not show: a saved command above `ANALYZE` is
+run that way ([49 §2](49-saved-commands-and-the-heron-panel.md)), and the row stays open for them.
+Tested without Revit.
 
 **The tools in groups.** The groups are a reading aid. Every tool's level, and the complete list, is
 `python mcp/server/heron_tools.py`; the table names the main tools of each group, not all of them.
@@ -468,8 +511,8 @@ reach a read only through `revit_change`, with Changes ON, inside a transaction.
 > [D-126](DECISIONS.md#d-126--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept),
 > Revit can ask the modeller **Keep** or **Discard** before a change is kept. Since
 > [D-138](DECISIONS.md#d-138--the-keep-or-discard-question-gets-a-switch-on-the-ribbon-and-its-box-can-keep-the-rest-of-one-job-without-asking),
-> the owner's *Ask to Keep* switch on the ribbon decides whether it does, and the switch is **off by
-> default**. Off, the behaviour below is what runs. Since
+> the owner's *Ask to Keep* switch - in Heron's Settings window since 2026-11-07,
+> [D-150](decisions/D-150.md) - decides whether it does, and the switch is **off by default**. Off, the behaviour below is what runs. Since
 > [D-117](DECISIONS.md#d-117--a-change-is-kept-only-from-a-fragment-whose-proof-still-stands),
 > `revit_change` keeps a change only from a fragment whose proof still stands. A DRAFT gets D-119's one
 > run, which is always asked. The section below is kept as it was written on 2026-09-23.
@@ -492,6 +535,18 @@ change; a passing check means the model meets the values checked, **never "compl
 the authority decides; and **an unfamiliar word is looked up, and asked about** when nothing records it
 ([D-33](DECISIONS.md#d-33--heron-never-assumes-an-input-it-asks--and-it-asks-once),
 [D-34](DECISIONS.md#d-34--herons-own-wording-is-english-understanding-the-user-is-not-herons-job)).
+
+**Since 2026-11-12 the Articles reach a chat without their citations** — the *(Golden Rule N)* line that
+closes one, and the targets of its links — **and with every word of the rule.** `host.chat` declares
+`citations: leave-out`, and `heron_instructions._without_citations` leaves them out at assembly. A chat is
+told never to read Heron's folder, so it could follow neither, and paid for each in every chat.
+[`HERON_CONSTITUTION.md`](../HERON_CONSTITUTION.md) is not edited, and Heron's own agents are given their
+Articles as the file has them. The room it made, inside the same word budget, went to one paragraph: a
+reply from `revit_change`, `revit_read` or `revit_show` carries a line starting `outcome:`, and that
+line, not the wording around it, says how the request ended (§8.12,
+[row 5b-1562](fragment-issues/section-5b-rows-401-425.md)).
+[`tests/test_outcome_line.py`](../tests/test_outcome_line.py) section 8 holds both halves: the paragraph
+is there, and each Article's words are all there, in order.
 
 If they cannot be assembled the server **still starts**, and says so in the same place the rules would
 have been. The Constitution's Enforcement table now says which Articles reach every chat this way and
@@ -735,7 +790,7 @@ in one call. It then built a fixed end-suction pump set in five `CREATE_FAMILY_F
 base frame, pump body, nozzles, shaft and coupling, motor - and made three `COMBINE_FAMILY_FORMS` cuts: the
 anchor holes, the suction bore and the discharge bore. Then it looked, as the family method's step 13 says:
 `REPORT_FAMILY_FORMS` read 44 forms of 44 and 3 cuts, and `View 1` was pictured. No connectors:
-`ADD_FAMILY_CONNECTOR` is DRAFT. The tool read the chat's transcript and the add-in's `audit-202610.jsonl`,
+`ADD_FAMILY_CONNECTOR` was DRAFT. The tool read the chat's transcript and the add-in's `audit-202610.jsonl`,
 over the window from the owner's request to the picture (`--since 2026-10-17T17:53:25.525Z --until
 2026-10-17T18:01:24.569Z`):
 
@@ -843,7 +898,8 @@ least the name, description and input schema, and the rest is the host's to pass
   6,343 characters across the list - and each result carries the answer twice, as text and as
   `structuredContent` (`tests/test_mcp_serves.py`'s `text_of` reads the pair). Whether Claude Code puts
   either in the model's context was **not measured**. `structured_output=False` would drop both, and it
-  changes the shape of every reply, so it is a question rather than part of this change.
+  changes the shape of every reply, so it is a question rather than part of this change. Since
+  2026-11-12 the three doors' `structuredContent` carries how the call ended beside the answer (§8.12).
 - **`host.chat`** - [`tests/test_instructions.py`](../tests/test_instructions.py) already holds its word
   budget.
 
@@ -922,7 +978,7 @@ was written** — [NEEDS-CHECKING Group ES](needs-checking/group-es.md).
   ([D-132](DECISIONS.md#d-132--off-windows-the-heron-server-serves-its-library-alone-and-no-revit-tool)).
   A cloud session has no named pipe and no Revit. The server registers only `heron_tools.LIBRARY` there,
   so no `revit_` tool appears, and its instructions open by saying no Revit can be reached
-  (`LIBRARY_ONLY` in `heron_mcp_server.py`). On Windows every tool is served, as before.
+  (`LIBRARY_ONLY` in `heron_server_core.py`). On Windows every tool is served, as before.
   `tests/test_mcp_stdio.py` and `tests/test_tool_registry.py` hold it.
 - **A question is never offered a change**
   ([D-128](DECISIONS.md#d-128--a-request-the-host-calls-a-question-is-never-offered-a-capability-that-changes-the-model)).
@@ -931,3 +987,195 @@ was written** — [NEEDS-CHECKING Group ES](needs-checking/group-es.md).
   answer says how many were left out ([`heron_retrieve.py`](../brain/heron_retrieve.py)). The host
   decides that it is a question; Heron does not
   ([D-01](DECISIONS.md#d-01--execution-host-claude-code-plugin)).
+
+### 8.11 What a lookup says of each capability — built 2026-11-11
+
+A chat learned that a capability was `DRAFT` from `revit_change`'s refusal, one turn after choosing it:
+on a ranked answer `heron_lookup` printed the capability and its provider, and nothing about how far it
+is proved, what it may do, or which door runs it.
+
+- **Every capability a lookup lists carries its status, its risk and the door that runs it** - the
+  best match on three lines of its own (`status`, `risk`, `run with`), each runner-up on its one line.
+  The status is the card's own, read with `heron_brain.proof_status`, the answer `revit_change` refuses
+  on; a `PROVEN` card whose code moved after its proof reads `PROVEN but STALE`
+  ([D-30](DECISIONS.md#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs)).
+  **That line is seen only from a knowledge store built before the code moved** - staged 2026-11-11 on
+  a scratch copy of the library, in the same process and in a new one. A store built afterwards does not
+  hold such a card at all: the lookup then answers with another capability and says the store does not
+  match the checkout. The
+  door is asked of the registry, never typed: `revit_read` up to its ceiling, `revit_show` up to its
+  own unless the card's code writes a file, `revit_change` for the rest (`_lookup_door`). Which folder
+  declares which capability is read once and kept while no card's name, modified time or size has
+  changed (`_folders_by_capability`), so the lines cost a stat of each card and no open. **What that
+  saves on the owner's PC has not been measured**: [row 5b-271](fragment-issues/section-5b-rows-251-275.md)
+  is where opening every card was found to be a lookup's cost there.
+- **Where `revit_change` would refuse it, the line says so**
+  ([D-117](decisions/D-117.md)) - the client's own `unproven_refusal`, asked and not copied.
+- **Nothing is ranked, hidden or floored by any of it.** The list is the brain's, in the brain's order;
+  which capability the user meant stays the host's to decide
+  ([D-01](DECISIONS.md#d-01--execution-host-claude-code-plugin), [D-65](decisions/D-65.md),
+  [D-100](decisions/D-100.md)). `tests/test_mcp_serves.py` section 17 holds all three.
+- **The refusal itself names what comes next, and only what exists.** It states the card's risk.
+  Proving is a run from Heron's command line and a signed proof, not a tool a chat has; a `DRAFT`
+  declared `MODIFY` - and no other - is also told of its one try behind Revit's Keep or Discard box,
+  `try-once` on that command line
+  ([D-119](DECISIONS.md#d-119--a-draft-fragment-may-run-once-on-the-model-in-front-behind-a-keep-or-discard-prompt-in-revit-and-article-11-says-so)),
+  started only when the modeller asks ([D-122](decisions/D-122.md)). `try-once` refuses a card
+  declared anything else, so a `DRAFT` declared `ADMIN`, `PUBLISH` or `EXECUTE` is told of the proof and
+  nothing more; the one risk is named once, `ONCE_RISK` in the client. It points at no other capability:
+  `revit_change`'s description forbids trying one to get round a refusal.
+  `tests/test_admin_publish.py` section 7 holds it.
+- **The two closing paragraphs are said whole once per server process, and in one line after - and
+  `heron_capabilities` says both whole every time.**
+  `heron_lookup`, `heron_resolve` and `heron_capabilities` ended every answer with which door runs what
+  and how much is proved, and `heron_method` a job's method with the first: the same words each time,
+  measured 2026-11-11 over stdio off Windows at 28% of a lookup's reply and 36% of a resolve's. The
+  first of `heron_lookup`, `heron_resolve` and `heron_method` to answer in a process still carries them
+  whole (`_SAID_IN_FULL` in `heron_mcp_server.py`). **The one line stands on its own, because once a
+  process is not once a reader:** `.mcp.json` starts one server for a whole Claude Code session, which
+  outlives a cleared or compacted conversation and answers a subagent too, so the short form says the
+  limits itself, points at nothing said before, and names `heron_capabilities` for the full text.
+  **The line is never dropped:** every answer still hands
+  back that a change is gated and how many capabilities are `PROVEN`, which
+  `tests/test_brain_reachable.py` and `tests/test_mcp_serves.py` hold. The tools outside those four say
+  their line whole, as before. `tests/test_mcp_serves.py` section 18 and `tests/test_mcp_stdio.py` hold
+  it. Measured the same way at this change, 2026-11-11: a lookup of a sentence nothing declares went
+  from 3,113 characters to 2,399 with its three new lines, and a resolve from 2,947 to 1,982.
+- **How many are `PROVEN` is counted over the cards still in the library.** The sentence counted every
+  `fragment.yaml`, so its *"the other N are not"* took each retired card for a capability nobody had
+  proved ([row 5b-1521](fragment-issues/section-5b-rows-401-425.md)). Which statuses retire a card is
+  the brain's to say (`heron_brain.retired_statuses`); `tests/test_served_claims.py` holds the sentence
+  to the files.
+- **`heron_resolve` says why it has no release to filter by, in the lookup's words.** It was typed
+  *"No Revit is connected"* whatever was found - off Windows, where none can be reached
+  ([D-132](DECISIONS.md#d-132--off-windows-the-heron-server-serves-its-library-alone-and-no-revit-tool)),
+  and with several Revits connected and none chosen
+  ([row 5b-1506](fragment-issues/section-5b-rows-401-425.md)).
+- **Recorded, not repaired.** The list a door hands back for the user's own words (`request`) still
+  names each capability's risk and not its status
+  ([row 5b-1523](fragment-issues/section-5b-rows-401-425.md)). And the first lookup of a server that
+  has just started ranks nearness as noise while calling it the trained model; asked again, the same
+  words rank properly ([row 5b-1522](fragment-issues/section-5b-rows-401-425.md)).
+
+### 8.12 How a call ended, in one fixed word — built 2026-11-12
+
+Every reply was prose. How a call ended **was** worked out — `_ended`, `heron_failure`'s outcomes, the
+add-in's own `verdictKind` — and shown to the Companion's activity list alone, so a chat told *kept* from
+*refused* from *nobody knows* by reading sentences
+([row 5b-1159](fragment-issues/section-5b-rows-401-425.md)). It got that wrong more than once: a refusal
+read as success, and *"never ran"* said of an answer that was lost.
+
+- **The three doors say it on one line** — `revit_change`, `revit_read` and `revit_show`
+  (`heron_tools.STATES_OUTCOME`). The line is `outcome: `, a word, and what the word means and what to do
+  next:
+
+  ```text
+  ADD_CURTAIN_GRID_LINES ran in Project1.
+  outcome: KEPT - Revit kept this call's transaction; the result lines say what, if anything, it changed
+    inputs: all as given
+  ...
+  ```
+
+  ```text
+  Heron has nothing that does 'NO_SUCH_CAPABILITY_AT_ALL', so nothing has been sent to Revit. Ask heron_lookup ...
+  outcome: NOT RUN - nothing ran in Revit and nothing needs undoing; choose or fix what the reply names, then ask again
+  ```
+
+  Both are a door's own reply against the suite's stand-in Revit, cut short where the dots are.
+
+- **Every line stands alone.** A chat is told to go by the line and not by the wording around it (§8.3),
+  and some replies say nothing more — a change that came back `ok` with no verdict says only that it ran.
+  So what follows the word leans on no sentence of the reply.
+
+- **One vocabulary, in one table** — `heron_server_core.OUTCOMES`: each word, what its line goes on to
+  say, and what it means. Nothing else decides a word.
+
+  | Word | Said when | Read from |
+  |---|---|---|
+  | `KEPT` | a change ran and Revit kept its transaction — not a claim that anything changed | the add-in's `verdictKind` is `kept` and no field beside it says otherwise — never `ok` alone |
+  | `ANSWERED` | a read or a show ran to its end and answered | the door's own last return |
+  | `NOT ANSWERED` | a read stopped before it answered: its code threw, or Heron's clock or a Revit dialog stopped it. Nothing is rolled back, because no transaction was open | `heron_failure`'s `rolled_back`, at `revit_read` |
+  | `REFUSED` | Heron or Revit looked at what was asked and said no, or Heron would not show an answer from another model | `_ended("refused")`, or `heron_failure`'s `refused` for a code it has a row for |
+  | `NOT RUN` | nothing said no: there was no capability by that name or those words, no Revit session to send it to, Heron's library could not be read, or Revit was busy or held by another chat | the door, `_ended("handed_back")`, or `heron_failure`'s `never_ran` |
+  | `ROLLED BACK` | a change was not kept: it failed part way, Heron stopped it, or the modeller pressed Discard | `heron_failure`'s `rolled_back` at `revit_change`, or a Discard whose `rolledBack` is true |
+  | `STILL RUNNING` | Revit took it and has not finished, or is still asking the modeller | `heron_failure`'s `running` |
+  | `OUTCOME UNKNOWN` | the answer was lost, too large, unreadable or not an object; the failure is one Heron has no row for; a rollback was not confirmed, or a verdict contradicts itself; it ran in a model this chat does not work on; a show stopped part way; the door broke after its request had left, or did not say how it ended | `heron_failure`'s `unknown`, and everything the rows above do not claim |
+
+  **`REFUSED` or `NOT RUN`:** `REFUSED` when Heron or Revit looked at what was asked and said no to it;
+  `NOT RUN` when nothing said no. So nothing by that name is `NOT RUN` whether the capability was named or
+  the modeller's words were. **And not "not sent":** some of what `NOT RUN` covers was sent — Revit was
+  busy, or another chat held the model — and the add-in answered before anything ran.
+
+- **A word never says more than the code that returned knew.**
+  - `KEPT` is never said of an `ok` that names no verdict, never while Revit is still asking Keep or
+    Discard (that is `STILL RUNNING`), never of a Discard, and never of a verdict the fields beside it
+    contradict. It claims the transaction and nothing else: a fragment that found nothing to change is
+    `KEPT` too, so the line says *"what, if anything, it changed"* and promises no undo step.
+  - `ROLLED BACK` says what is known — **Heron asked Revit to roll the whole job back** — and not that it
+    held. An error reply from the add-in carries no field for that
+    ([row 5b-1559](fragment-issues/section-5b-rows-401-425.md) — C#, and a real Revit).
+  - **It is said only where something was open to roll back.** `heron_failure` calls `fragment_threw`,
+    `ran_too_long` and `dialog_refused` rolled back whichever operation they came from; on the read and
+    show paths no transaction is open. There the same failure is `NOT ANSWERED` for a read, and `OUTCOME
+    UNKNOWN` for a show, whose selection or view may stand as the run left it.
+  - **Every failure code `heron_failure` has no row for is `OUTCOME UNKNOWN`, at every door** — and so is
+    nothing coming back at all. On a read the classifier files such a code under `refused`, which answers
+    *may this be asked again* and not *did anything run*: `handler_failed` is raised by the bridge after
+    the job may have run ([row 5b-1560](fragment-issues/section-5b-rows-401-425.md)).
+  - **A door that breaks after its request has left still answers.** Heron's own code raising once Revit
+    has been asked used to reach the host as the SDK's bare *"Error executing tool"* — which says nothing
+    of a change that may have been made, and is what a chat sends again. From the line the request leaves
+    on, the door answers `OUTCOME UNKNOWN` itself, names the kind of fault and not its text, and writes
+    the traceback to the server's own log. Raised before anything was sent, it is the SDK's to report, as
+    it always was.
+  - **It fails closed.** A door that returns without saying how it ended is `OUTCOME UNKNOWN`, never
+    guessed to have worked.
+
+- **Where the line stands: the reply's second line**, directly under its opening sentence. Not the
+  first and not the last, because both ends of a door's reply were already held by
+  `tests/test_mcp_serves.py`: a kept change to a model never saved **opens** with the *NEVER SAVED*
+  warning, and a hand-back **closes** on the sentence naming the door to call again. Neither assertion
+  was edited.
+
+- **And in the structured content, for a host that reads structure.** The SDK already sent every reply
+  twice — as text, and as `structuredContent` `{"result": ...}` (§8.8). For the three doors that object
+  now carries `outcome` beside `result`, read back off the reply's own line (`outcome_of`) so the two
+  cannot disagree. **The listed `outputSchema` is unchanged** — `result`, and nothing forbidding a key
+  beside it: declaring the key would mean a different return type for the tool. The tools a host is
+  listed — names, order, descriptions, input and output schemas, labels — were dumped before and after
+  this change and compared byte for byte.
+
+- **Never `isError`.** The SDK sets that itself, for a tool that raised. A refusal is Heron working; and
+  the MCP schema says of the flag only that it lets the model *"see that an error occurred and
+  self-correct"* — trying again is the one thing a chat must not be invited to do with an outcome nobody
+  knows. What each host does with a flagged result is **not measured**
+  ([row 5b-1561](fragment-issues/section-5b-rows-401-425.md)).
+
+- **Additive.** Take the line out and the reply is, character for character, what the door's body
+  returned. The line is added where every tool call already passes (`_recorded`), so the Companion's page
+  and Revit's Heron panel — which run a door's body through `_through` — read exactly what they read
+  before, and the activity list still shows the reply's own first sentence and the label the tool gave.
+
+- **The chat is told, in its instructions** (§8.3): a door's reply carries a line starting `outcome:`,
+  and that line, not the wording around it, says how the request ended.
+
+[`tests/test_outcome_line.py`](../tests/test_outcome_line.py) holds all of it against a stand-in Revit:
+a word for each ending through the real tool functions, every return of the three doors it can force
+(and a list of those it cannot), the line taken out again, and the SDK's own dispatch. It was seen to
+fail before the code was written — and again before each correction a review asked for — and run on the
+SDK installed here and on the one [`requirements-lock.txt`](../requirements-lock.txt) pins. **None of it
+has met a real Revit**: which reply the add-in sends for each ending is the C#'s.
+
+**Not built, and recorded:**
+
+- **A run that is still going carries no id to follow** — the second half of
+  [row 5b-1159](fragment-issues/section-5b-rows-401-425.md), which needs the add-in to send one and a
+  real Revit to show it. Until then the line says what a chat can do: not send it again, and ask the
+  modeller what Revit shows. A fragment that never ends is stopped by its own run clock
+  ([D-129](DECISIONS.md#d-129--a-fragment-that-never-ends-is-stopped-by-a-run-clock-it-carries-and-the-bridge-can-stop-heron-again)).
+- **Only the three doors.** Every other tool that says `_ended` — `revit_apply_move`, the inventory
+  reads, the Companion's panels — still answers in prose alone: each one's "ok" is a different fact, and
+  a tool joins when its returns have been read against the table
+  ([row 5b-1563](fragment-issues/section-5b-rows-401-425.md)).
+- **Which of the two a host shows its model** — the text or the structured content — is still not
+  measured (§8.8). Both carry the word.

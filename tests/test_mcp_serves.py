@@ -124,6 +124,26 @@ WHAT IT PROVES, when an SDK is installed
      waiting, revit_change and the Companion's Apply are each refused and
      send nothing. The bytes put back: the answer is as it was. The watch
      itself is tests/test_running_code.py.
+ 17. A LOOKUP SAYS HOW EACH CAPABILITY IT LISTS RUNS - its status as its own
+     card declares it, its risk, and the door that runs it - for the best
+     match and for every runner-up, and says where revit_change would refuse
+     a capability that is not proved (D-117). It lists every candidate the
+     brain returned in the brain's order: nothing is moved, hidden or
+     floored (D-01, D-65, D-100).
+ 18. THE TWO CLOSING PARAGRAPHS ARE SERVED WHOLE ONCE PER SERVER PROCESS -
+     which door runs what, and how much is proved - and in one line after,
+     on heron_lookup, heron_resolve and heron_method. heron_capabilities
+     says both whole every time, and the one line names it: one server
+     serves a whole session, subagents and a cleared conversation included,
+     so the short form stands on its own and points at nothing said before.
+     Every answer still hands back both limits (item 6); a process that has
+     said neither says both whole on its first answer.
+ 19. heron_resolve WITH NO RELEASE TO FILTER BY SAYS WHY, in the words the
+     session layer gave - no Revit on this machine, several connected and
+     none chosen, the chosen one closed - and never "No Revit is connected"
+     for any of those (row 5b-1506, and row 130's sentence where it had
+     been left). That a real server says it off Windows is
+     tests/test_mcp_stdio.py's.
 
 WHAT IT CANNOT DO
   It does not start a transport and it is not Claude Code. It calls the
@@ -207,8 +227,8 @@ def declared_in_source():
     comparison: the point of this file is that text and a running SDK can
     disagree, so it has to hold both and check they match.
     """
-    path = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
-    source = io.open(path, encoding="utf-8").read()
+    import heron_tools as TOOLS
+    source = TOOLS.server_text()
     return set(re.findall(r"@server\.tool\(\)\s*\ndef\s+(\w+)", source))
 
 
@@ -290,6 +310,27 @@ async def exercise(server):
     missing = sorted(declared - set(served))
     if missing:
         check(False, "declared but NOT served: %s" % ", ".join(missing))
+
+    # AND IN THE ORDER THE REGISTRY SAYS. The SDK lists tools as they
+    # registered, and a tool in another file registers wherever the entry
+    # file's import of that file stands: one line, and moved to the top of
+    # the file it reordered every chat's list while every suite passed
+    # (review of FRAGMENT-ISSUES row 5b-1555). heron_tools.served_order reads
+    # the rule off the source without looking at that line - the entry file's
+    # own tools, then each other file's in SERVER_FILES' order - so the two
+    # are independent, and no name is typed here.
+    import heron_tools as registry
+    rule = getattr(registry, "served_order", None)
+    check(rule is not None, "heron_tools says what order the tools are served in")
+    meant = rule() if rule is not None else []
+    got = [t.name for t in tools]
+    first = next((i for i, (a, b) in enumerate(zip(got, meant)) if a != b), None)
+    check(got == meant,
+          "and the SDK lists them in exactly that order (%d)%s"
+          % (len(got), "" if got == meant else
+             " - at place %s the SDK has %s and the rule %s"
+             % (first, got[first] if first is not None else "fewer or more",
+                meant[first] if first is not None else "the same start")))
 
     print()
     print("  what a host would actually see")
@@ -629,6 +670,18 @@ def exercise_waiting(module):
               "a Context with no request behind it carries no progressToken, so no callback")
 
 
+def shared(module):
+    """
+    The module that holds what every file of the server shares - the server
+    object, the lock, `_recorded`, the watch on its own code - which since
+    FRAGMENT-ISSUES row 5b-1555 is not the entry module, `module`. Found from
+    the server object's own class, so no file is named here. A name a check
+    REBINDS is rebound there, where the code that reads it is: set on the
+    entry module it would change nothing the server does.
+    """
+    return sys.modules[type(module.server).__module__]
+
+
 class StandIn(object):
     """A Revit that answers from a script and remembers what it was asked."""
 
@@ -657,6 +710,70 @@ PICTURE_REPLY = {"ok": True, "mode": "view", "view": "Level 1", "viewType": "Flo
                  "leftOut": None, "rolledBack": True, "fileDeleted": True,
                  "document": "Project1", "documentPath": "C:/jobs/Project1.rvt",
                  "projectKey": "key-1", "png": PNG_1PX}
+
+
+def exercise_no_proof_words(module):
+    """A card that SAYS proven and records no proof is told apart from a stale
+    one, in the three places the server reads `stale` - row 5b-1154.
+
+    `proof_status` reads such a card as stale, with `proof: False`, and all
+    three already refuse or warn on stale - in words that say "its code has
+    changed since", which is untrue of a card that was never proved. Nothing
+    is sent anywhere here: each is asked for its sentence, with the status of
+    a real PROVEN read stood in for.
+    """
+    print()
+    print("  a PROVEN card with no proof recorded is said as that, not as stale "
+          "(row 5b-1154)")
+    capability, folder = first_with("READ", "PROVEN")
+    check(bool(capability and folder), "the library has a PROVEN read to ask about")
+    if not (capability and folder):
+        return
+    provider = None
+    with io.open(os.path.join(ROOT, "brain", "fragments", folder, "fragment.yaml"),
+                 encoding="utf-8", errors="replace") as fh:
+        for line in fh:
+            if line.startswith("id:"):
+                provider = line.split(":", 1)[1].strip().strip("\"'")
+                break
+
+    def bare(found):
+        return dict(found or {}, stale=True, proof=False, date=None, model=None, by=None)
+
+    def moved(found):
+        return dict(found or {}, stale=True)
+
+    real_status, real_of = module.brain.proof_status, module.bridge.proof_of
+    said = {}
+    try:
+        for name, made in (("bare", bare), ("moved", moved)):
+            module.brain.proof_status = lambda f, made=made: made(real_status(f))
+            module.bridge.proof_of = lambda f, made=made: made(real_of(f))
+            ask, _first = module._checklist_ask()
+            said[name] = (module._runs_as_matched(folder, provider, capability),
+                          module._proof_line(capability, folder),
+                          (ask({"capability": capability}) or {}))
+    finally:
+        module.brain.proof_status, module.bridge.proof_of = real_status, real_of
+
+    for where, at in (("the words path", 0), ("the line under an answer", 1)):
+        text = said["bare"][at] or ""
+        check("no proof at all" in text.lower() and "D-30" in text,
+              "%s says its card records no proof at all, under D-30" % where)
+        check("changed since" not in text.lower(),
+              "%s does not say its code changed since a proof it never had" % where)
+    qa = said["bare"][2]
+    check(qa.get("ran") is False and "no proof at all" in (qa.get("why") or "")
+          and "changed since" not in (qa.get("why") or ""),
+          "a QA check on it is not run, and says no proof is recorded: %s"
+          % (qa.get("why") or qa))
+    check("not run unasked" in (said["bare"][0] or ""),
+          "and the words path still does not run it unasked")
+    check("Treat this answer as unproven" in (said["bare"][1] or ""),
+          "and the line under an answer still says to treat it as unproven")
+    check(all("changed since" in (said["moved"][at] or "").lower() for at in (0, 1))
+          and "changed since" in (said["moved"][2].get("why") or ""),
+          "a proof the code DID move under is still said as that, in all three")
 
 
 def cards():
@@ -1108,6 +1225,71 @@ async def exercise_words(module):
         check(not revit.asked and not resolved and "Nothing has been sent to Revit" in said,
               "revit_change with a ranked guess sends nothing and binds no session")
 
+        # A READ IS NOT A CHANGE (FRAGMENT-ISSUES 5b-1161). revit_change ran a
+        # PROVEN read as run_fragment_write - behind the Changes switch, in a
+        # transaction group, in front of the Keep box. It is sent to the read
+        # door now, by name or by the words that choose it, before a session
+        # is bound.
+        phrase, capability, _ = _pick(module, "PROVEN", "READ", False)
+        for label, arguments in (("named", {"capability": capability}),
+                                 ("chosen by its words", {"request": phrase})):
+            if not phrase:
+                continue
+            revit.asked[:] = []
+            del resolved[:]
+            said = await call("revit_change", arguments)
+            check(not revit.asked and not resolved,
+                  "a PROVEN read (%s) %s at revit_change is NOT sent as a change, and "
+                  "binds no session: asked %s" % (capability, label,
+                                                  [one[0] for one in revit.asked] or "nothing"))
+            check("revit_read runs it" in said and "Nothing has been sent to Revit" in said,
+                  "and the refusal names revit_read: %s" % said[:100])
+
+        # AND THE HAND-BACK NAMES THE DOOR THAT RUNS EACH (the review of
+        # 5b-1161). revit_change(request="count the doors") listed a READ as
+        # its best match and ended "call revit_change again with
+        # capability=<it>" - the one call the floor above refuses. The lookup
+        # is stood in for, so the list does not depend on how this machine
+        # ranks: a READ first, a MODIFY second, neither an exact phrasing.
+        change_cap, _folder = first_with("MODIFY", "PROVEN")
+        ranked = {"capability": capability, "risk": "READ", "route": "ranked",
+                  "candidates": [{"capability": capability, "risk": "READ", "why": "close"},
+                                 {"capability": change_cap, "risk": "MODIFY",
+                                  "why": "also close"}]}
+        real_lookup = module.brain.lookup
+        module.brain.lookup = lambda *_a, **_k: dict(ranked)
+        try:
+            revit.asked[:] = []
+            del resolved[:]
+            listed = await call("revit_change", {"request": "count the things"})
+            asked_read = await call("revit_read", {"request": "count the things"})
+            only_changes = dict(ranked, capability=change_cap, risk="MODIFY",
+                                candidates=ranked["candidates"][1:])
+            module.brain.lookup = lambda *_a, **_k: dict(only_changes)
+            plain = await call("revit_change", {"request": "change the things"})
+        finally:
+            module.brain.lookup = real_lookup
+        best = [line for line in listed.splitlines() if "best match" in line]
+        check(bool(capability and change_cap) and len(best) == 1
+              and capability in best[0] and "run it with revit_read, not revit_change" in best[0],
+              "revit_change handing back a READ as its best match says revit_read runs "
+              "it: %s" % (best[0].strip() if best else listed[:80]))
+        other = [line for line in listed.splitlines() if "also close" in line]
+        check(len(other) == 1 and "revit_read" not in other[0],
+              "and leaves the change beside it unmarked - that one is revit_change's")
+        closing = listed.strip().splitlines()[-1] if listed.strip() else ""
+        check("revit_read for one marked so above" in closing
+              and "call revit_change again with capability=<it>" not in closing,
+              "and its closing line no longer sends every candidate back to revit_change: "
+              "%s" % closing.strip()[:110])
+        check(not revit.asked and not resolved, "still sending nothing and binding no session")
+        check("run it with" not in asked_read
+              and "call revit_read again with capability=<it>" in asked_read,
+              "the same list asked for at revit_read is unmarked - that door runs a read")
+        check("run it with" not in plain
+              and "call revit_change again with capability=<it>" in plain,
+              "and a list of changes at revit_change reads exactly as it did")
+
         # THE READ DOOR ASKS AS A QUESTION (D-128, issue #799). Field use on
         # Villa 1: "read parameter values of the elements" through revit_read
         # ranked SET_PARAMETER_VALUES_BY_ID first, which the door then refused,
@@ -1307,15 +1489,15 @@ async def exercise_activity(module):
 
             def revit_probe():
                 module._through(revit_probe_inner)()
-                module._recorded(revit_probe_inner)()
+                shared(module)._recorded(revit_probe_inner)()
                 return "Done."
 
             def revit_probe_says():
                 return say("refused", "All went as asked.")
 
             before = newest()
-            module._recorded(revit_probe)()
-            module._recorded(revit_probe_says)()
+            shared(module)._recorded(revit_probe)()
+            shared(module)._recorded(revit_probe_says)()
             got = [(i.get("tool"), i.get("outcome")) for i in activity.since(before)]
             check(got[:1] == [("revit_probe", "ok")],
                   "what a body run on another tool's behalf says never labels that "
@@ -1620,9 +1802,8 @@ async def exercise_single_purpose(module, server, newest):
              # D-141. One request and no pin: handing a model back reads and
              # changes none, so neither the model's name nor the pin is its.
              ("revit_release", {}))
-    with io.open(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py"),
-                 encoding="utf-8") as fh:
-        shaped = set(re.findall(r'_ended_by_reply\("(revit_\w+)", reply\)', fh.read()))
+    import heron_tools as TOOLS
+    shaped = set(re.findall(r'_ended_by_reply\("(revit_\w+)", reply\)', TOOLS.server_text()))
     left_out = sorted(shaped - set(tool for tool, _arguments in tools))
     check(not left_out, "every tool that labels its one reply is called here (%d listed): "
           "left out %s" % (len(tools), left_out))
@@ -1683,6 +1864,110 @@ async def exercise_single_purpose(module, server, newest):
         module.bridge.discover = real_discover
     check(got == ["failed"] and said.startswith("Heron could not read its own session list"),
           "revit_health: a session list it could not read is 'failed' - found %r" % got)
+
+    # AND IT SAYS, FOR EACH REVIT, WHETHER THAT REVIT WILL ASK KEEP OR DISCARD
+    # (added 2026-11-12). The owner's Ask to Keep switch is read in the add-in
+    # and was sent to nobody, so a chat could not tell the modeller beforehand
+    # which it would be. Three Revits: one whose `info` says the switch is on -
+    # the one this chat holds - one that says off, and one running an older
+    # add-in that says nothing. The sentences themselves are held, with no SDK,
+    # by tests/test_ask_to_keep_health.py; this is the real tool saying them.
+    class Says(object):
+        """A connected Revit whose `info` answers as its add-in would."""
+
+        def __init__(self, pid, release, info):
+            self.pid, self.revit_version, self.info = pid, release, info
+            self.asked = []
+
+        def request(self, op, op_args=None, **_ignored):
+            self.asked.append(op)
+            if op == "info":
+                if self.info is None:
+                    return {"ok": False, "error": "handler_failed",
+                            "message": "The add-in could not answer."}
+                return dict(self.info, ok=True, inUse=False, mine=False,
+                            leaseSecondsRemaining=0)
+            return {"ok": True, "document": "Project1", "count": 12,
+                    "projectKey": "key-1"}
+
+        def close(self):
+            pass
+
+    asks = Says(5001, "2026", {"askToKeep": True})
+    keeps = Says(5002, "2024", {"askToKeep": False})
+    older = Says(5003, "2020", {})
+    # AND ONE WHOSE `info` DID NOT COME BACK USABLE (the review of 2026-11-12):
+    # that is not an older add-in, and its line must not say it is.
+    silent = Says(5004, "2027", None)
+    module.binding.forget()
+    module.pinned.forget()
+    module.binding.sessions = lambda: ([asks], [], [])
+    module.bridge.discover = lambda: ([asks, keeps, older, silent], [], [], [])
+    result = None
+    try:
+        try:
+            module.binding.resolve()
+        except Exception:                                       # noqa: BLE001
+            pass
+        for session in (asks, keeps, older, silent):
+            session.asked[:] = []
+        before = newest()
+        try:
+            result = await server.call_tool("revit_health", {})
+            said = text_of(result) or ""
+        except Exception as exc:                                # noqa: BLE001
+            said = "(revit_health could not be called: %s: %s)" % (type(exc).__name__, exc)
+        got = [i.get("outcome") for i in activity.since(before)
+               if i.get("tool") == "revit_health"]
+    finally:
+        module.bridge.discover = real_discover
+        del module.binding.sessions
+        module.binding.forget()
+        module.pinned.forget()
+
+    listed = said.splitlines()
+
+    def under(pid):
+        """The line directly under the numbered line that names this session."""
+        for at, line in enumerate(listed):
+            if "session %s" % pid in line and line.lstrip()[:1].isdigit():
+                return listed[at + 1] if at + 1 < len(listed) else ""
+        return "(session %s is not listed)" % pid
+
+    check("Ask to Keep is ON" in under(5001) and "Keep or Discard" in under(5001),
+          "revit_health: under a Revit whose add-in says the switch is on, that Revit "
+          "will ask Keep or Discard - found %r" % under(5001)[:90])
+    check("Ask to Keep is off" in under(5002) and "kept at once" in under(5002),
+          "revit_health: under one that says off, a change is kept at once - found %r"
+          % under(5002)[:90])
+    check("does not say" in under(5003) and "older" in under(5003)
+          and "is ON" not in under(5003)
+          and "is off" not in under(5003) and "kept at once" not in under(5003),
+          "revit_health: under an older add-in, which sends nothing, it does not say - "
+          "and no default is guessed - found %r" % under(5003)[:90])
+    check("could not read" in under(5004) and "older" not in under(5004)
+          and "is ON" not in under(5004) and "is off" not in under(5004),
+          "revit_health: under a Revit whose answer could not be read, it says THAT - "
+          "not that its add-in is older, and no default - found %r" % under(5004)[:90])
+    check("revit_change" in under(5001) and "revit_change" in under(5002),
+          "revit_health: on and off are each said of a change made through revit_change, "
+          "not of every change")
+    check(said.count("Ask to Keep") == 4,
+          "revit_health: one such line for each connected Revit, and no more - found %d"
+          % said.count("Ask to Keep"))
+    check(set(keeps.asked) == set(["info"]) and set(older.asked) == set(["info"])
+          and "info" in asks.asked,
+          "revit_health: each was asked through the lease-exempt `info` - the two this "
+          "chat does not hold were sent nothing else: %r %r %r"
+          % (asks.asked, keeps.asked, older.asked))
+    check(got == ["ok"], "revit_health: and the report is still 'ok' - found %r" % got)
+    structured = (result[1] if isinstance(result, tuple) and len(result) == 2
+                  else getattr(result, "structured_content", None)
+                  or getattr(result, "structuredContent", None))
+    check(isinstance(structured, dict) and structured.get("result") == said
+          and "Ask to Keep" in said and "outcome" not in structured,
+          "revit_health: the structured content is the same reply whole, those lines "
+          "included, and still carries no `outcome` - it is not a door")
 
     revit = StandIn(None)
     module.binding.resolve = lambda: revit
@@ -2200,6 +2485,399 @@ async def exercise_earlier(module):
         module.pinned.forget()
 
 
+def _expected_door(risk, folder):
+    """The door the registry's own ceilings give a card of this risk, worked
+    out here and not by the server: the read door up to its ceiling, the show
+    door up to its own unless the card's code writes a file (row 5b-591), and
+    the change door for the rest."""
+    import heron_tools as TOOLS
+    level = TOOLS.level_named(risk)
+    if level is None:
+        return None
+    if level <= TOOLS.risk_of("revit_read"):
+        return "revit_read"
+    if level <= TOOLS.risk_of("revit_show"):
+        code = os.path.join(ROOT, "brain", "fragments", folder, "impl", "any",
+                            "fragment.cs")
+        source = ""
+        if os.path.isfile(code):
+            with io.open(code, encoding="utf-8", errors="replace") as fh:
+                source = fh.read()
+        return "revit_change" if TOOLS.writes_to_disk(source) else "revit_show"
+    return "revit_change"
+
+
+async def exercise_lookup_says(module):
+    """Section 17 - a lookup says of every capability it lists how far it is
+    proved, what it may do and which door runs it, and moves nothing."""
+    server = module.server
+    print()
+    print("  what a lookup says of each capability it lists")
+    by_capability = dict((seen.get("capability"), (name, seen))
+                         for name, seen in cards())
+
+    # THE ANSWER THE BRAIN GAVE, KEPT, so the reply is compared with the very
+    # dict it was printed from - a second lookup of the same words may come
+    # back by another route.
+    real, kept = module.brain.lookup, []
+
+    def watched(*args, **kwargs):
+        kept.append(real(*args, **kwargs))
+        return kept[-1]
+
+    async def lookup(words):
+        del kept[:]
+        module.brain.lookup = watched
+        try:
+            said = text_of(await server.call_tool("heron_lookup", {"request": words}))
+        except Exception as exc:                                # noqa: BLE001
+            said = "(raised %s: %s)" % (type(exc).__name__, exc)
+        finally:
+            module.brain.lookup = real
+        return said, (kept[-1] if kept else {})
+
+    def line(said, label):
+        """What the reply says after one of its left-hand labels, or None."""
+        got = re.search(r"^  %s\s+(.*)$" % re.escape(label), said, re.MULTILINE)
+        return got.group(1).strip() if got else None
+
+    # ONE CARD OF EACH KIND, FOUND AND NOT TYPED: the first whose own declared
+    # words the lookup answers with it. A status typed here goes red the day
+    # a proof changes it (row 5b-1219).
+    wanted = (("PROVEN", "READ"), ("PROVEN", "EXECUTE"), ("PROVEN", "MODIFY"),
+              ("DRAFT", "MODIFY"), ("DRAFT", "READ"))
+    phrases = _phrases()
+    for status, risk in wanted:
+        words = capability = folder = None
+        for phrase, cap, st, rk, where in phrases:
+            if st != status or rk != risk:
+                continue
+            if real(phrase).get("capability") == cap:
+                words, capability, folder = phrase, cap, where
+                break
+        check(words is not None,
+              "the library has a %s %s card its own words reach" % (status, risk))
+        if words is None:
+            continue
+        said, _found = await lookup(words)
+        door = _expected_door(risk, folder)
+        check(line(said, "status") == status,
+              "%s: the reply says its status, %s, as its own card does - said %r"
+              % (capability, status, line(said, "status")))
+        check(line(said, "risk") == risk,
+              "%s: and its risk, %s - said %r" % (capability, risk, line(said, "risk")))
+        run_with = line(said, "run with") or ""
+        check(run_with.split(" ")[0] == door,
+              "%s: and the door that runs it, %s - said %r"
+              % (capability, door, run_with[:60]))
+        held = "D-117" in run_with and "until it is proved" in run_with
+        check(held == (status == "DRAFT" and door == "revit_change"),
+              "%s: %s" % (capability,
+                          "and that revit_change refuses it until it is proved (D-117)"
+                          if status == "DRAFT" and door == "revit_change" else
+                          "and nothing says that door would refuse it"))
+
+    # THE ONE EXECUTE CARD THE SHOW DOOR TURNS AWAY (row 5b-591) is sent to
+    # the door that runs it, never to one that refuses.
+    import heron_tools as TOOLS
+    disk = [(seen.get("capability"), name) for name, seen in cards()
+            if seen.get("heron-status") not in ("DEPRECATED", "ARCHIVED")
+            and TOOLS.level_named(seen.get("risk")) is not None
+            and TOOLS.risk_of("revit_read") < TOOLS.level_named(seen.get("risk"))
+            <= TOOLS.risk_of("revit_show")
+            and _expected_door(seen.get("risk"), name) == "revit_change"]
+    door_of = getattr(module, "_lookup_door", None)
+    check(door_of is not None, "the server has a word for a lookup's door")
+    if door_of is None:
+        door_of = lambda risk, capability, folder: None         # noqa: E731
+    check(bool(disk), "the library has a show-level card whose code writes a file")
+    for capability, name in disk:
+        check(door_of(by_capability[capability][1].get("risk"), capability, name)
+              == "revit_change",
+              "%s writes a file, so its door is revit_change, not the show door "
+              "that refuses it" % capability)
+    check(door_of(None, "X", None) is None and door_of("NONSENSE", "X", None) is None,
+          "and a risk nobody could read names no door")
+
+    # A PROOF ITS CODE HAS MOVED PAST IS SAID, where it would otherwise stand
+    # (D-30) - the change door refuses that one too. Staged on a PROVEN card:
+    # none in the library is stale on an ordinary day.
+    how = getattr(module, "_how_it_runs", None)
+    check(how is not None, "the server has a word for how a listed capability runs")
+    proven, _folder = first_with("MODIFY", "PROVEN")
+    draft, _folder = first_with("MODIFY", "DRAFT")
+    if how is not None and proven and draft:
+        real_proof = module.brain.proof_status
+        module.brain.proof_status = lambda folder: dict(real_proof(folder) or {},
+                                                        stale=True)
+        try:
+            moved, as_draft = how(proven, "MODIFY"), how(draft, "MODIFY")
+        finally:
+            module.brain.proof_status = real_proof
+        check(tuple(moved) == ("PROVEN but STALE", "MODIFY", "revit_change", True),
+              "a PROVEN change whose code moved after its proof is called STALE, "
+              "and held at revit_change - said %r" % (moved,))
+        check(tuple(as_draft) == ("DRAFT", "MODIFY", "revit_change", True),
+              "while a DRAFT with an old proof behind it is a DRAFT and says so "
+              "alone - said %r" % (as_draft,))
+
+    # THE RUNNERS-UP CARRY THE SAME THREE, AND NOTHING MOVED. D-01: which one
+    # the user meant is the host's to decide; D-65 and D-100: no status, risk
+    # or door re-ranks, hides or floors a candidate - it only shows more.
+    said, found = await lookup("make the pipes slope down to the drain")
+    order = [found.get("capability")]
+    for one in found.get("candidates") or []:
+        if one["capability"] not in order:
+            order.append(one["capability"])
+    check(found.get("route") not in ("identity", None) and len(order) > 1,
+          "a sentence nothing declares is a ranked answer with runners-up "
+          "(%s, %d listed)" % (found.get("route"), len(order)))
+    block = said.split("Other capabilities that came close", 1)
+    rows = []
+    for row in (block[1].splitlines()[1:] if len(block) == 2 else []):
+        if not row.startswith("    ") or not row.strip():
+            break
+        rows.append(row.split())
+    shown = [found.get("capability")] + [r[0] for r in rows]
+    check(shown == order,
+          "the reply lists every candidate the brain returned, in the brain's "
+          "order - none moved, none hidden: %s" % ", ".join(shown))
+    wrong = []
+    for row in rows:
+        name, seen = by_capability.get(row[0], (None, {}))
+        want = [seen.get("heron-status"), seen.get("risk"),
+                _expected_door(seen.get("risk"), name or "")]
+        if row[1:4] != want:
+            wrong.append("%s said %s, its card gives %s" % (row[0], row[1:4], want))
+    check(bool(rows) and not wrong,
+          "and each runner-up carries its card's status, its risk and its door "
+          "(%d)%s" % (len(rows), "" if not wrong else " - " + "; ".join(wrong[:3])))
+
+    # THE CARDS ARE WALKED ONCE FOR THE LINES THIS ADDS, not once for each
+    # capability listed. On the owner's PC a lookup's time was reading every
+    # card again (row 5b-271), and five listed was five more walks.
+    walks = {"each": 0, "once": 0}
+    real_for = module._fragment_for
+    real_map = getattr(module, "_folders_by_capability", None)
+
+    def counted_for(capability):
+        walks["each"] += 1
+        return real_for(capability)
+
+    def counted_map():
+        walks["once"] += 1
+        return real_map()
+
+    module._fragment_for = counted_for
+    if real_map is not None:
+        module._folders_by_capability = counted_map
+    try:
+        again, _found = await lookup("make the pipes slope down to the drain")
+    finally:
+        module._fragment_for = real_for
+        if real_map is not None:
+            module._folders_by_capability = real_map
+    listed = len(again.split("Other capabilities that came close", 1)[-1]
+                 .split("\n\n", 1)[0].splitlines()) - 1
+    check(listed > 1 and walks["once"] == 1 and walks["each"] <= 1,
+          "a lookup listing %d runners-up walks the cards once for their status "
+          "lines, beside the one walk for what the best match needs typed - "
+          "walked %d time(s) for all, %d for one capability each"
+          % (listed, walks["once"], walks["each"]))
+
+    # AND THAT ONE WALK OPENS NO CARD WHILE NONE HAS CHANGED (review,
+    # 2026-11-11): the map is kept against every card's name, modified time
+    # and size, taken with a stat. Staged on a folder of this test's own -
+    # a card edited, and a card added, are each read again; nothing changed
+    # is the very same answer handed back.
+    if real_map is not None:
+        home = tempfile.mkdtemp(prefix="heron-folders-")
+        cards_at = os.path.join(home, "brain", "fragments")
+
+        def card(name, capability, pad=""):
+            os.makedirs(os.path.join(cards_at, name), exist_ok=True)
+            with io.open(os.path.join(cards_at, name, "fragment.yaml"), "w",
+                         encoding="utf-8") as fh:
+                fh.write("id: FRG-T-%s\ncapability: %s\n%s" % (name, capability, pad))
+
+        opened = []
+        real_open, real_root = module.io.open, module._repo_root
+
+        def watched_open(path, *args, **kwargs):
+            if str(path).startswith(cards_at):
+                opened.append(os.path.basename(os.path.dirname(str(path))))
+            return real_open(path, *args, **kwargs)
+
+        card("one", "FIRST_THING")
+        card("two", "SECOND_THING")
+        module._repo_root = lambda: home
+        module.io.open = watched_open
+        try:
+            first_map = module._folders_by_capability()
+            read_first = len(opened)
+            second_map = module._folders_by_capability()
+            read_second = len(opened) - read_first
+            module.io.open = real_open
+            card("two", "SECOND_THING_RENAMED", pad="# longer now\n")
+            card("three", "THIRD_THING")
+            third_map = dict(module._folders_by_capability())
+        finally:
+            module.io.open = real_open
+            module._repo_root = real_root
+            shutil.rmtree(home, ignore_errors=True)
+        check(first_map == {"FIRST_THING": "one", "SECOND_THING": "two"}
+              and read_first == 2,
+              "the first call reads each card once - %r, %d opened"
+              % (first_map, read_first))
+        check(second_map is first_map and read_second == 0,
+              "a second call with no card changed opens none (%d opened) and "
+              "hands back the same answer" % read_second)
+        check(third_map == {"FIRST_THING": "one", "SECOND_THING_RENAMED": "two",
+                            "THIRD_THING": "three"},
+              "a card edited and a card added are read again - %r" % third_map)
+        check(module._folders_by_capability() is not first_map,
+              "and back on the real library it answers for the real library")
+    else:
+        check(False, "the server keeps one map of the cards for a lookup's lines")
+
+
+async def exercise_said_once(module):
+    """Section 18 - heron_lookup, heron_resolve and heron_method say the two
+    closing paragraphs whole once per server process and in one line after;
+    heron_capabilities says both whole every time; and the one line stands on
+    its own."""
+    server = module.server
+    print()
+    print("  the closing paragraphs: whole once per server process, one line after")
+
+    # ASK BEFORE USING (heron-ship 2a): on the code as it stood there is no
+    # such set, and the stand-in lets every check below run and FAIL.
+    said = getattr(module, "_SAID_IN_FULL", None)
+    check(said is not None, "the server keeps what this process has said in full")
+    if said is None:
+        said = set()
+    in_short = getattr(module, "_doors_in_short", None)
+    check(in_short is not None, "the server has the doors in one line, by name")
+
+    async def call(tool, arguments):
+        try:
+            return text_of(await server.call_tool(tool, arguments))
+        except Exception as exc:                                # noqa: BLE001
+            return "(raised %s: %s)" % (type(exc).__name__, exc)
+
+    # BOTH PARAGRAPHS WHOLE, read off the server and not typed here, then
+    # forgotten so the calls below start as a new process does.
+    said.clear()
+    doors, proved = module._cannot_run(), module._not_proven()
+    said.clear()
+    check(len(doors) > 600 and len(proved) > 150,
+          "a new process has both paragraphs whole to say (%d and %d characters)"
+          % (len(doors), len(proved)))
+
+    words = {"request": "select all the ducts"}
+    job = (module.brain.method("").get("jobs") or [{}])[0].get("id") or ""
+    first = await call("heron_lookup", words)
+    later = [("heron_lookup", await call("heron_lookup", words)),
+             ("heron_resolve", await call("heron_resolve",
+                                          {"capability": "SET_SELECTION"})),
+             ("heron_method", await call("heron_method", {"job": job}))]
+    check(doors in first and proved in first,
+          "the first answer of a process carries both paragraphs whole")
+    for tool, answer in later:
+        check(doors not in answer and proved not in answer,
+              "%s, asked after it, does not say either whole again" % tool)
+        low = answer.lower()
+        # THE LIMITS EVERY ANSWER MUST STILL HAND BACK - what
+        # tests/test_brain_reachable.py and section 6 above hold - in the
+        # short form as in the long one.
+        check(all(word in answer for word in
+                  ("WRITES", "revit_change", "revit_read", "revit_show", "Changes"))
+              and "refuses" in low,
+              "%s still says which door runs what, and that a change is "
+              "refused while Changes is off" % tool)
+        if tool != "heron_method":
+            check("PROVEN" in answer and "are not" in answer,
+                  "%s still says how many are PROVEN and how many are not" % tool)
+        # THE ONE LINE STANDS ON ITS OWN (review, 2026-11-11). One server
+        # serves a whole Claude Code session - it outlives /clear and a
+        # compacted conversation, and a subagent asks the same process - so
+        # the reader of the short form may never have been shown the long
+        # one. It claims nothing about what was said before, and names the
+        # tool that has the whole text on demand.
+        check("heron_capabilities says this in full" in answer,
+              "%s names where the full text is: heron_capabilities" % tool)
+        closing = low.split("the doors, in short")[-1]
+        check("first time" not in closing and "earlier" not in closing
+              and "said before" not in closing,
+              "%s does not point at text it said before, which this reader "
+              "may never have seen" % tool)
+    again = later[0][1]
+    saved = len(first) - len(again)
+    check(saved > (len(doors) + len(proved)) // 2,
+          "the same lookup asked again is %d characters shorter - more than "
+          "half of the two paragraphs (%d)" % (saved, len(doors) + len(proved)))
+    short = in_short() if in_short is not None else doors
+    check(len(short) * 3 <= len(doors),
+          "the one line about the doors is a third of the paragraph or less "
+          "(%d of %d characters)" % (len(short), len(doors)))
+
+    # heron_capabilities SAYS BOTH WHOLE EVERY TIME - it is what the one line
+    # names, so it has to have them however much this process has said.
+    for nth in ("after the others", "asked again"):
+        listed = await call("heron_capabilities", {})
+        check(doors in listed and proved in listed,
+              "heron_capabilities, %s, says both paragraphs whole" % nth)
+    said.clear()
+    await call("heron_capabilities", {})
+    after = await call("heron_lookup", words)
+    check(doors not in after and "heron_capabilities says this in full" in after,
+          "and a process whose first answer was heron_capabilities has said "
+          "them: the lookup after it is the one line")
+
+    # A TOOL THAT WAS NOT ASKED TO SHORTEN STILL SAYS ITS LINE WHOLE.
+    check(module._not_proven() == proved and module._cannot_run() == doors,
+          "and both, asked plainly, answer whole every time - the tools "
+          "outside these are as they were")
+
+    # A NEW PROCESS SAYS IT WHOLE AGAIN. Staged by forgetting;
+    # tests/test_mcp_stdio.py starts a real one.
+    said.clear()
+    fresh = await call("heron_resolve", {"capability": "SET_SELECTION"})
+    check(doors in fresh and proved in fresh,
+          "a process that has said neither says both whole on its first answer, "
+          "whichever tool that is")
+
+
+async def exercise_resolve_says_why(module):
+    """Section 19 - with no release to filter by, heron_resolve says WHY in
+    the words _revit_version gave, as heron_lookup does (row 5b-1506)."""
+    server = module.server
+    print()
+    print("  heron_resolve with no release to filter by says why (row 5b-1506)")
+    real = module._revit_version
+    here = getattr(module, "NO_REVIT_HERE", "No Revit on this machine (it is not Windows)")
+    said = {}
+    for how in (here,
+                "2 Revits are connected and none has been chosen",
+                "the Revit you chose (pid 4242) has closed",
+                "nothing is connected"):
+        module._revit_version = lambda how=how: (None, how)
+        try:
+            said[how] = text_of(await server.call_tool(
+                "heron_resolve", {"capability": "SET_SELECTION"}))
+        except Exception as exc:                                # noqa: BLE001
+            said[how] = "(raised %s: %s)" % (type(exc).__name__, exc)
+        finally:
+            module._revit_version = real
+    for how, answer in sorted(said.items()):
+        sentence = how[:1].upper() + how[1:] + ", so the version filter did not run"
+        check(sentence in answer and "every provider" in answer,
+              "told %r, it says so, and that this is every provider" % how)
+    check(not any("No Revit is connected" in answer
+                  for how, answer in said.items() if how != "nothing is connected"),
+          "and never that no Revit is connected when that is not what was found")
+
+
 async def exercise_running_code(module):
     """
     Section 16: a chat whose server is still running code a pull has since
@@ -2212,8 +2890,10 @@ async def exercise_running_code(module):
     print()
     print("  the chat is told when Heron's own code changed under it (B8)")
 
-    running = getattr(module, "running_code", None)
-    real = getattr(module, "RUNNING", None)
+    # The watch is the shared module's, and `_old_code` reads it THERE.
+    core = shared(module)
+    running = getattr(core, "running_code", None)
+    real = getattr(core, "RUNNING", None)
     check(running is not None and real is not None,
           "the server keeps a watch on its own code")
     line = getattr(running, "SAID", "close and reopen the chat")
@@ -2232,7 +2912,7 @@ async def exercise_running_code(module):
     loaded = types.ModuleType("heron_changed")
     loaded.__file__ = source
     if running is not None:
-        module.RUNNING = running.RunningCode.of_checkout(
+        core.RUNNING = running.RunningCode.of_checkout(
             os.path.join(home, "Heron"), {"heron_changed": loaded})
 
     async def call(name, arguments):
@@ -2305,7 +2985,7 @@ async def exercise_running_code(module):
         module.pinned.forget()
         module.approval.clear()
         if real is not None:
-            module.RUNNING = real
+            core.RUNNING = real
         shutil.rmtree(home, ignore_errors=True)
 
 
@@ -2391,9 +3071,13 @@ def main():
 
         asyncio.run(exercise(server))
         exercise_waiting(server_module)
+        exercise_no_proof_words(server_module)
         asyncio.run(exercise_door(server_module))
         asyncio.run(exercise_show(server_module))
         asyncio.run(exercise_words(server_module))
+        asyncio.run(exercise_lookup_says(server_module))
+        asyncio.run(exercise_said_once(server_module))
+        asyncio.run(exercise_resolve_says_why(server_module))
         asyncio.run(exercise_activity(server_module))
         asyncio.run(exercise_earlier(server_module))
         asyncio.run(exercise_change_report(server_module))

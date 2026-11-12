@@ -32,8 +32,9 @@ risk: MODIFY
 # `rotatedIds`; `didNotMove` -> `blocked`; `refused` -> `refused`; `findings`
 # -> `findings`.
 #
-# Version 1's proof below no longer describes the code (impl/ changed) and is
-# kept as the record; DRAFT until version 2 is proved on a real model (D-30).
+# Version 1's proof below no longer described the code (impl/ changed) and
+# was kept as the record; DRAFT at the time, until version 2 is proved on a
+# real model (D-30).
 #
 # VERSION 3 (2026-11-01, the review of the merges) - THE PIVOT CAN BE LEFT OUT,
 # AS THE PURPOSE SAID IT COULD. `pivot` was declared XYZ, and the add-in refuses
@@ -45,7 +46,7 @@ risk: MODIFY
 # element about its own point ("itself" reads the same). A pivot that is not
 # three numbers is refused and nothing turned. The least change: no binder
 # change, one contract type, one parse the card already had for `axisLine`.
-# Still DRAFT (D-30); version 1's proof is still the record.
+# Still DRAFT at the time (D-30); version 1's proof was still the record.
 
 purpose: >
   Turns every element about a vertical axis - a mis-oriented piece of equipment

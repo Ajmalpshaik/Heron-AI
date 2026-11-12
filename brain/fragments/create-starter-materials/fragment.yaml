@@ -19,7 +19,8 @@ version: 4
 # answer names the asset taken. (This said version 2's proof no longer
 # described the code; the proof below is dated 2026-10-20 and its fingerprint
 # matched version 3's code - it was version 3's. Version 4 changed impl/, so
-# it is now the record, and this card is DRAFT until version 4 is proved.)
+# it was then the record, and this card was DRAFT at the time, until version
+# 4 is proved.)
 source: OFFICIAL
 risk: MODIFY
 
@@ -55,8 +56,9 @@ risk: MODIFY
 # `alreadyThere` -> `alreadyThere`; `findings` -> `findings` and the line per
 # material in `starterReport`. Its sentences moved here.
 #
-# Version 3's proof below no longer describes the code (impl/ changed) and is
-# kept as the record; DRAFT until version 4 is proved on a real model (D-30).
+# Version 3's proof below no longer described the code (impl/ changed) and
+# was kept as the record; DRAFT at the time, until version 4 is proved on a
+# real model (D-30).
 
 # WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
 # searched and long text pulls other sentences here.

@@ -17,8 +17,8 @@ capability: ADD_FAMILY_MODEL_TEXT
 # measures each text once placed - its left end, centre or right end along
 # the text, its foot against the baseline, its back against the plane -
 # places one that missed again moved by the miss, and refuses the whole call
-# when it still misses. Version 1's proof below no longer describes the code:
-# DRAFT until NEEDS-CHECKING Group IQ proves version 2 (D-30).
+# when it still misses. Version 1's proof below no longer described the code:
+# DRAFT at the time, until NEEDS-CHECKING Group IQ proves version 2 (D-30).
 version: 2
 source: OFFICIAL
 risk: MODIFY
@@ -200,19 +200,19 @@ compatibility-note: >
   `SketchPlane.Create(Document, ElementId)` and `(Document, Plane)`,
   `Plane.CreateByOriginAndBasis` and the material parameter's kind read by
   reflection are the calls CREATE_FAMILY_FORMS and SET_FAMILY_FORM_MATERIAL
-  already make on every release. Not yet run in Revit: which way Revit lays
-  the letters on a sketch plane (along its X, up its Y, standing out along
-  its normal is what the code assumes and the answer reports), whether `at`
-  is the start, middle or end of the baseline per alignment, whether the
-  metric templates hold a Model Text type, and that model text takes
-  MATERIAL_ID_PARAM - NEEDS-CHECKING Group DC. Seen on Revit 2020 and fixed
-  by measuring in version 2 (row 5b-1315): the point given is not simply
-  where the letters go - on a work plane offset from the named one they went
-  to twice the offset, and a centred text started at the point. Which reading
-  Revit makes is not known, and version 2 does not assume one; it places
-  again by the measured miss. `Document.Delete`, `Element.IsValidObject`,
-  `XYZ.CrossProduct` and `DotProduct` are the same 2020 to 2027.
-  NEEDS-CHECKING Group IQ.
+  already make on every release. Not yet run in Revit when this was first
+  written: which way Revit lays the letters on a sketch plane (along its X,
+  up its Y, standing out along its normal is what the code assumes and the
+  answer reports), whether `at` is the start, middle or end of the baseline
+  per alignment, whether the metric templates hold a Model Text type, and
+  that model text takes MATERIAL_ID_PARAM - NEEDS-CHECKING Group DC. Seen on
+  Revit 2020 and fixed by measuring in version 2 (row 5b-1315): the point
+  given is not simply where the letters go - on a work plane offset from the
+  named one they went to twice the offset, and a centred text started at the
+  point. Which reading Revit makes is not known, and version 2 does not
+  assume one; it places again by the measured miss. `Document.Delete`,
+  `Element.IsValidObject`, `XYZ.CrossProduct` and `DotProduct` are the same
+  2020 to 2027. NEEDS-CHECKING Group IQ.
 
 # ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #

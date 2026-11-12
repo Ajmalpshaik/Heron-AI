@@ -81,6 +81,18 @@ Func<Element, BuiltInParameter, double> flowOf = (element, which) =>
     return 0.0;
 };
 
+// ONE LOAD FIGURE, READ ON ITS OWN (version 3, FRAGMENT-ISSUES 5b-323): null
+// when Revit refuses it. The six figures were read inside one guard, and the
+// calculated ones throw until Revit's own Heating and Cooling Loads analysis
+// has run - so a Design Cooling Load somebody typed was lost with them and
+// the space read "NO LOAD READABLE". Measured 2026-10-05 on Project2, Revit
+// 2024: three Spaces holding typed design loads, all three called unreadable.
+Func<Func<double>, double?> figure = read =>
+{
+    try { return read(); }
+    catch (Exception) { return null; }
+};
+
 // Exact. See above.
 var litresPerCubicFoot = 28.316846592;
 
@@ -162,25 +174,51 @@ foreach (var element in elements)
     // list, which is where it was always meant to end up. One space with
     // volumes off costs that space, not the report for the other fifteen -
     // the rule this file already applies everywhere else.
-    double designHeat, calcHeat, designCool, calcCool, designAir, calcAir;
-    try
-    {
-        designHeat = space.DesignHeatingLoad;
-        calcHeat = space.CalculatedHeatingLoad;
-        designCool = space.DesignCoolingLoad;
-        calcCool = space.CalculatedCoolingLoad;
-        designAir = space.DesignSupplyAirflow;
-        calcAir = space.CalculatedSupplyAirflow;
-    }
-    // `catch (Exception)` rather than Revit's own exception type, and not by
-    // preference. Revit's exceptions namespace is not among the ones the
-    // executor imports (HeronFragmentImports), so the type cannot be named
-    // unqualified - and naming it in full would put a vendor namespace inside
-    // `brain/`, which check-structure refuses on sight, comments included: the
-    // adapter boundary in docs/16 section 4. It is also what every other
-    // fragment in this library does. The catch is narrow in REACH even if broad
-    // in TYPE: it wraps six property reads and nothing else.
-    catch (Exception)
+    //
+    // EACH ON ITS OWN SINCE VERSION 3 (5b-323) - one refused figure costs that
+    // figure, not the other five. `figure` catches `Exception` rather than
+    // Revit's own exception type, and not by preference. Revit's exceptions
+    // namespace is not among the ones the executor imports
+    // (HeronFragmentImports), so the type cannot be named unqualified - and
+    // naming it in full would put a vendor namespace inside `brain/`, which
+    // check-structure refuses on sight, comments included: the adapter
+    // boundary in docs/16 section 4. It is also what every other fragment in
+    // this library does. The catch is narrow in REACH even if broad in TYPE:
+    // it wraps one property read and nothing else.
+    var designHeat = figure(() => space.DesignHeatingLoad);
+    var calcHeat = figure(() => space.CalculatedHeatingLoad);
+    var designCool = figure(() => space.DesignCoolingLoad);
+    var calcCool = figure(() => space.CalculatedCoolingLoad);
+    var designAir = figure(() => space.DesignSupplyAirflow);
+    var calcAir = figure(() => space.CalculatedSupplyAirflow);
+    // Named as the Properties palette names them, so the finding can say which.
+    var refusedNames = new List<string>();
+    if (!designHeat.HasValue) refusedNames.Add("Design Heating Load");
+    if (!calcHeat.HasValue) refusedNames.Add("Calculated Heating Load");
+    if (!designCool.HasValue) refusedNames.Add("Design Cooling Load");
+    if (!calcCool.HasValue) refusedNames.Add("Calculated Cooling Load");
+    if (!designAir.HasValue) refusedNames.Add("Specified Supply Airflow");
+    if (!calcAir.HasValue) refusedNames.Add("Calculated Supply Airflow");
+    var refusedAny = refusedNames.Count > 0;
+
+    // Design overrides calculated where somebody has entered one, which is what
+    // Revit itself does. Zero means nothing was entered. A figure Revit
+    // refused stays null - it is never read as zero.
+    var heatIsDesign = designHeat.HasValue && designHeat.Value > 1e-9;
+    var heat = heatIsDesign ? designHeat : calcHeat;
+
+    var coolIsDesign = designCool.HasValue && designCool.Value > 1e-9;
+    var cool = coolIsDesign ? designCool : calcCool;
+
+    var airIsDesign = designAir.HasValue && designAir.Value > 1e-9;
+    var air = airIsDesign ? designAir : calcAir;
+
+    var anyFigure = (heat.HasValue && heat.Value > 1e-9) || (cool.HasValue && cool.Value > 1e-9)
+        || (air.HasValue && air.Value > 1e-9);
+
+    // REFUSED, AND NOTHING ELSE TO REPORT: the answer version 2 gave whenever
+    // any figure threw, kept for the space that has no figure at all.
+    if (refusedAny && !anyFigure)
     {
         noLoad.Add(space.Id);
         findings.Add(string.Format(
@@ -192,27 +230,16 @@ foreach (var element in elements)
         continue;
     }
 
-    // Design overrides calculated where somebody has entered one, which is what
-    // Revit itself does. Zero means nothing was entered.
-    var heatIsDesign = designHeat > 1e-9;
-    var heat = heatIsDesign ? designHeat : calcHeat;
-
-    var coolIsDesign = designCool > 1e-9;
-    var cool = coolIsDesign ? designCool : calcCool;
-
-    var airIsDesign = designAir > 1e-9;
-    var air = airIsDesign ? designAir : calcAir;
-
-    heatingW[space.Id] = heat * wattsPerInternalLoad;
-    coolingW[space.Id] = cool * wattsPerInternalLoad;
-    airflowLs[space.Id] = air * litresPerCubicFoot;
-    calculatedSupplyLs[space.Id] = calcAir * litresPerCubicFoot;
+    if (heat.HasValue) heatingW[space.Id] = heat.Value * wattsPerInternalLoad;
+    if (cool.HasValue) coolingW[space.Id] = cool.Value * wattsPerInternalLoad;
+    if (air.HasValue) airflowLs[space.Id] = air.Value * litresPerCubicFoot;
+    if (calcAir.HasValue) calculatedSupplyLs[space.Id] = calcAir.Value * litresPerCubicFoot;
 
     var name = string.Format("{0} {1}", space.Number ?? "", space.Name ?? "").Trim();
 
     // Everything zero is the "nothing has been run" case, and it is reported as
     // that rather than as three zeroes.
-    if (heat <= 1e-9 && cool <= 1e-9 && air <= 1e-9)
+    if (!anyFigure)
     {
         noLoad.Add(space.Id);
         findings.Add(string.Format(
@@ -223,11 +250,27 @@ foreach (var element in elements)
 
     // Every figure says where it came from. A design figure that disagrees with
     // the calculated one is either a decision or a stale analysis, and the row
-    // has to let somebody tell which.
+    // has to let somebody tell which. A figure Revit refused, with none entered
+    // in its place, is said as that - never as a number (5b-323).
+    Func<double?, string> missing = entered => entered.HasValue
+        ? "NOT COMPUTED - Revit refused the calculated figure and none is entered"
+        : "NOT READ - Revit refused the entered figure and the calculated one";
     findings.Add(string.Format(
-        "{0}  - heating {1:0} W ({2}), cooling {3:0} W ({4}), supply {5:0.#} L/s ({6}){7}",
+        "{0}  - heating {1}, cooling {2}, supply {3}{4}{5}",
         name,
-        heat * wattsPerInternalLoad, heatIsDesign ? "entered" : "calculated",
-        cool * wattsPerInternalLoad, coolIsDesign ? "entered" : "calculated",
-        air * litresPerCubicFoot, airIsDesign ? "entered" : "calculated", flows));
+        heat.HasValue
+            ? string.Format("{0:0} W ({1})", heat.Value * wattsPerInternalLoad, heatIsDesign ? "entered" : "calculated")
+            : missing(designHeat),
+        cool.HasValue
+            ? string.Format("{0:0} W ({1})", cool.Value * wattsPerInternalLoad, coolIsDesign ? "entered" : "calculated")
+            : missing(designCool),
+        air.HasValue
+            ? string.Format("{0:0.#} L/s ({1})", air.Value * litresPerCubicFoot, airIsDesign ? "entered" : "calculated")
+            : missing(designAir),
+        flows,
+        refusedAny
+            ? ". Revit refused " + string.Join(", ", refusedNames.ToArray()) + " for this space - a calculated "
+              + "figure is not computed until Revit's own Heating and Cooling Loads analysis has run with Area "
+              + "and Volume Computations on - so only what could be read is reported"
+            : ""));
 }

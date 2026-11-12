@@ -72,6 +72,12 @@ positive:
       "38 entry(ies)". Version 5 named the first twelve and said "... and 26
       more" - the case of 2026-10-28 (5b-1341)
 
+  # Row 5b-203, added 2026-11-11 with version 7. NOT RUN - Group NK, NK8.
+  - given: the same walls read on "Mark", a name each carries once
+    expect: >
+      every Mark in `values` or `blank` as version 6 gave it, and `ambiguous`
+      EMPTY - the count must not turn down a name that occurs once
+
 negative:
   - given: the same 4 ducts, reading a parameter name that does not exist
     expect: >
@@ -107,6 +113,18 @@ negative:
     expect: >
       looked up as a parameter, exactly as version 2 - absent where there is
       none, and never a wording invented for them
+
+  # Row 5b-203, added 2026-11-11 with version 7. NOT RUN - NEEDS-CHECKING
+  # Group NK, NK8; it needs a model that carries a duplicated name.
+  - given: >
+      walls read on "Comments", with "Comments" bound to Walls a second time
+      as a project parameter - or "Interior Type" on a curtain wall, whose
+      type shows it twice
+    expect: >
+      every such wall in `ambiguous` and named in findings as NOT READ, two
+      or more parameters sharing the name - NOT in `values`, `blank` or
+      `absent`: any of the three would be read from whichever parameter Revit
+      returned first (row 5b-203)
 
 second_route:
   - open one element's properties in Revit and read the value by eye

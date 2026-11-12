@@ -21,7 +21,9 @@
 > and [47](47-sprinkler-layout-from-the-model.md)'s layout (`sprinkler_layout_room`, added here for a
 > room of any shape, with `measure_heads`). Both are built and NEEDS REAL REVIT: no row of their
 > NEEDS-CHECKING groups [CE](needs-checking/group-ce.md) and [CG](needs-checking/group-cg.md) has been
-> run - checked again 2026-10-18, neither group records a run.
+> run - checked again 2026-10-18, neither group records a run. *Read 2026-11-12:* the two reads those
+> features stand on, `REPORT_SPRINKLER_NETWORK` and `REPORT_SPRINKLER_LAYOUT_SPACES`, have each been
+> proved and signed since (their cards' `proof:` blocks); the groups' own rows are still not marked run.
 
 ---
 

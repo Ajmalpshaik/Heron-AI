@@ -406,8 +406,11 @@ class Batch(object):
       A VALUE THE LAST REPLY OF THE SAME CAPABILITY ALREADY SHOWED, word for
       word - and only when this reply names a run record, which holds every
       value. A fragment's helpers and constants come back identical on every
-      call; a value that differs, a refusal above all, is printed as ever, and
-      the reply says how many were left out.
+      call; a value that differs is printed as ever, and the reply says how
+      many were left out. A REFUSAL IS PRINTED EVERY TIME, HOWEVER OFTEN IT
+      REPEATS (`names_refusal`, 5b-1160): the same change refused twice for
+      one reason is two refusals, and "1 value unchanged" under the second
+      read as a change that went through.
 
     A BATCH ENDS AT A PAUSE. A call that starts more than the gap after the
     last one ended opens a new batch, and the next kept change prints the
@@ -534,18 +537,42 @@ def _with_asking(line, asking):
     return said + " " + line
 
 
+def names_refusal(name):
+    """
+    True for an output a card names as its refusals - `refused`, and the names
+    built on it: `refusedWhy`, `refusalReasons`, `refusedCount`.
+
+    SUCH A VALUE IS NEVER COUNTED AS "UNCHANGED" (FRAGMENT-ISSUES 5b-1160).
+    Until 2026-11-11 `shown_values` left out every value the last reply of
+    the capability had shown word for word, and looked at neither the name
+    nor what the value said. So ten revit_change calls refused for one reason
+    printed the refusal once and then, nine times, "and 1 value unchanged
+    from the last reply" - which reads as a change that went through with
+    nothing new to say. An empty one is printed too: "refused 0 item(s)" is
+    the card saying nothing was refused, and it is one short line.
+
+    BY THE NAME THE CARD DECLARES, because a card has no other way to say
+    which of its outputs is a refusal: `role: accounting` also covers what it
+    only counted. `blocked`, `skipped` and `failed` are therefore still
+    counted when they repeat - row 5b-1505.
+    """
+    return str(name).strip().lower().startswith("refus")
+
+
 def shown_values(reply, capability, batch):
     """
     (values to print, names left out as unchanged) for one reply.
 
     Nothing is left out unless the reply names a run record - the record is
     where a value left out here can still be read - and the chat is told on
-    one line how many were.
+    one line how many were. A refusal is never left out (`names_refusal`).
     """
     provides = reply.get("provides") if isinstance(reply, dict) else None
     if not isinstance(provides, dict):
         return provides, []
-    same = batch.repeated(capability, provides, reply.get("providesEntries"))
+    same = [name for name
+            in batch.repeated(capability, provides, reply.get("providesEntries"))
+            if not names_refusal(name)]
     if not same or not is_run_id(reply.get("run")):
         return provides, []
     left = set(same)

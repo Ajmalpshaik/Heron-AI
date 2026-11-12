@@ -64,3 +64,9 @@ kept run and no try-once.
 | **II10** | *The 2022-and-later branch.* II1, II2 and II5 again on **Revit 2024** (or any of 2022 to 2027), the same files, the family upgraded on a copy | The same counts; each data type read through `GetDataType()` - *Length [autodesk.spec.aec:length-2.0.0]*, *Text [autodesk.spec:spec.string-2.0.0]* or what that Revit says - never an empty bracket. Add a **Family Type** parameter to the file first (Mechanical, any category) and look for *Family Type: <category>* |
 | **II11** | *The method.* In a chat with `Heron SPF Test` open: *"add the shared parameter Duct_Accessory_Height from our file to this family"* | `heron_method` family-creation step 2 runs `REPORT_SHARED_PARAMETER_FILE` FIRST and the chat says the family already carries that name with another GUID - before any write is offered |
 | **II12** | *Routing on the owner's PC* - `model+rerank`, the backend there. The 16 sentences in row 5b-1291, main against the branch, with `tools/score-routing.py` | The four task phrasings reach this card; no question reaches a write that did not before; *"what data is hidden in this file"* - REPORT_ADDIN_DATA's - say which card answers it |
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `REPORT_SHARED_PARAMETER_FILE` reads PROVEN on its card, at version 1 - its `proof` block is signed by Ajmal
+PS, 2026-11-02, on P1102 MEP, Revit 2020, session 59096. So where this page calls a card named here DRAFT, or says
+nothing has run in Revit, that was true when it was written and is out of date as a statement about the card. Whether
+II0 to II12 were what that proof ran is NOT sorted here: for the owner.

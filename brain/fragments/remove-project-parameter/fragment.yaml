@@ -19,7 +19,7 @@ semantic-identity: "take a project parameter out of the project - Manage > Proje
 # heron_duplicates.look: 0 already here.
 #
 # LOOK-ALIKES, KEPT SEPARATE (heron-duplicate-checker's method, 2026-11-02):
-#   ADD_PROJECT_PARAMETER (PROVEN)  makes and binds one; never unbinds. Its
+#   ADD_PROJECT_PARAMETER           makes and binds one; never unbinds. Its
 #     own purpose says why this is a different class of change: "un-binding a
 #     parameter discards every value anybody typed into it".
 #   TRANSFER_PROJECT_PARAMETERS_BETWEEN_DOCUMENTS (PROVEN)  copies bindings

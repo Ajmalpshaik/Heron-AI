@@ -64,3 +64,9 @@ rolled-back half and JL2, once its `FORM-ID` is replaced.
 | **JL13** | The signature, on the owner's word only, after JL0 to JL11 | `python brain/heron_validate.py accept set-divided-surface-layout --by "Ajmal PS"` |
 
 A row that fails stays open; nothing in a row changes to make it pass.
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `SET_DIVIDED_SURFACE_LAYOUT` reads PROVEN on its card, at version 1 - its `proof` block is signed by Ajmal
+PS, 2026-11-02, on P1102 Box, Revit 2024, session 59960. So where this page calls a card named here DRAFT, or says
+nothing has run in Revit, that was true when it was written and is out of date as a statement about the card. Whether
+JL0 to JL13 were what that proof ran is NOT sorted here: for the owner.

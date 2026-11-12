@@ -55,3 +55,11 @@ is rolled back.
 | **IH10** | *Signing, after IH1 to IH3.* `python brain/heron_validate.py draft <fragment> --from brain/proof-drafts/runs/<fragment>.json` for each, read against IH1 to IH3, then `accept --by "Ajmal PS"` | The proof blocks written - `SET_SCHEDULE_FILTERS`' positive IH3's kept run (D-120), its negative IH2's. **`heron-status: PROVEN` is a separate edit, the owner's** |
 | **IH11** | *The other releases.* IH1 and IH2 on Revit 2024 and on 2027 (`batch-prove --release`, D-131) | The same answers. A difference is a finding for this group, not a pass |
 | **IH12** | *Second route.* Revit's schedule Properties, Filter tab, opened beside every read-back above | What the answers said, rule for rule and in the same order |
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `SET_SCHEDULE_FILTERS` reads PROVEN on its card, at version 2 - its `proof` block is signed by Ajmal PS,
+2026-10-22, on Heron Capture Test (21,317 elements), Revit 2020, session 60544. `REPORT_SCHEDULE_DEFINITION` reads
+PROVEN on its card, at version 3 - its `proof` block is signed by Ajmal PS, 2026-10-22, on Heron Capture Test (21,317
+elements), Revit 2020, session 60544. So where this page calls a card named here DRAFT, or says nothing has run in
+Revit, that was true when it was written and is out of date as a statement about the card. Whether IH0 to IH12 were
+what that proof ran is NOT sorted here: for the owner.

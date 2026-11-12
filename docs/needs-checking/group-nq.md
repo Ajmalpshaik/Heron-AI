@@ -11,7 +11,7 @@ Built 2026-11-12 on the owner's word ("make the arc centre lock tool") - the gap
 ([2026-11-11-family-2d-capabilities](../work-notes/investigations/2026-11-11-family-2d-capabilities.md)). Widened, not
 made new: locking a 2D line to planes is this card's job, and `LOCK_FORM_SKETCH_TO_PLANES` (PROVEN) locks a FORM's
 circle centre the same way. Why, and what is not known, is
-[FRAGMENT-ISSUES row 5b-1576](../fragment-issues/section-5b-rows-401-425.md).
+[FRAGMENT-ISSUES row 5b-1576](../fragment-issues/row-5b-1576.md).
 
 | What | Where | What it does |
 |---|---|---|

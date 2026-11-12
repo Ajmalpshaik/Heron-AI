@@ -60,7 +60,7 @@
 > | Languages | C# for everything that touches the Revit API; Python for the brain and the MCP side | [D-06](DECISIONS.md) |
 > | Generated code | C#, compiled at run time inside Revit's process | [D-04](DECISIONS.md), [D-28](DECISIONS.md) |
 > | Distribution | Apache 2.0, free and open source on public GitHub. One release, [v0.1.0](https://github.com/Ajmalpshaik/Heron-AI/releases/tag/v0.1.0), published 2026-10-08 for testing, **unsigned** | [D-08](DECISIONS.md), [D-07](DECISIONS.md), [Group AC](needs-checking/group-ac.md) |
-> | Secondary user: Administrator | No user management and no admin role. The owner's **Admin** and **Publish** switches on the Revit ribbon; for shared company knowledge, whoever reviews the pull requests | [D-106](DECISIONS.md), [D-41](DECISIONS.md) |
+> | Secondary user: Administrator | No user management and no admin role. The owner's **Admin** and **Publish** switches, in Heron's Settings window since [D-150](decisions/D-150.md); for shared company knowledge, whoever reviews the pull requests | [D-106](DECISIONS.md), [D-41](DECISIONS.md) |
 
 ---
 
@@ -88,7 +88,7 @@ What Heron AI is · why it is being built · how the system should work · how u
 > | Phase 0 — the bridge, Steps 1 to 5 | **Proven** in Revit 2020 and 2024 | [HANDOVER §3](HANDOVER.md), [field notes](00e-field-notes-proven-bridge.md) |
 > | Step 6 — the first write | **Measured on one release:** on 2026-10-17 three ducts moved +200 mm in Revit 2024 and one Ctrl+Z put them back. A failure forced mid-move is still owed | [Group D](needs-checking/group-d.md) |
 > | Keep or Discard and the safety rails | Run by hand in Revit 2024 and 2027 on 2026-10-18; the faults found were logged | [Group ET](needs-checking/group-et.md) |
-> | The fragment library | Mostly `PROVEN`, the rest `DRAFT` — `grep -h '^heron-status:' brain/fragments/*/fragment.yaml \| sort \| uniq -c` | [D-30](DECISIONS.md) |
+> | The fragment library | Mostly `PROVEN`, the rest `DRAFT` or - cards retired since this note - `DEPRECATED` — `grep -h '^heron-status:' brain/fragments/*/fragment.yaml \| sort \| uniq -c` | [D-30](DECISIONS.md) |
 > | Skills | Every one `DRAFT` — the same `grep` over `brain/skills/*.yaml` | [`brain/README.md`](../brain/README.md) |
 > | Everything else | Built, not proven, or not built — phase by phase | [ROADMAP](ROADMAP.md), [27 — Build order](27-build-order.md) |
 >
@@ -145,7 +145,7 @@ USER -> NATURAL LANGUAGE -> HERON ORCHESTRATOR -> SPECIALIZED AGENTS
 
 > **As built (2026-10-18):** the *HERON ORCHESTRATOR* box is Claude Code, the host — Heron never
 > classifies intent ([D-01](DECISIONS.md)). *VALIDATION* happens on both sides of *EXECUTION*: before it,
-> the add-in refuses a change unless the fragment's proof still stands and the ribbon switches allow it
+> the add-in refuses a change unless the fragment's proof still stands and the owner's switches allow it
 > ([D-117](DECISIONS.md), [D-19](DECISIONS.md)); after it, while *Ask to Keep* is on, Revit selects what
 > changed and asks Keep or Discard ([D-126](DECISIONS.md), [D-138](DECISIONS.md)), and the answer carries
 > what the fragment reported, with a run record kept (`heron_run_record`). §5's note has the parts as
@@ -170,7 +170,7 @@ USER -> NATURAL LANGUAGE -> HERON ORCHESTRATOR -> SPECIALIZED AGENTS
 >
 > | Part | As built | Not as the table says |
 > |---|---|---|
-> | **Heron Revit** — [`revit/`](../revit/README.md) | The add-in, the ribbon (the connect button, Bridge Status, Changes, Admin, Publish, Ask to Keep, Companion), the bridge, and the fragment's C# compiled and run in Revit | Families, worksets and links are reached through read-only tools (`revit_families`, `revit_worksets`, `revit_links`) and fragments, not built-in commands; deployment belongs to the installer |
+> | **Heron Revit** — [`revit/`](../revit/README.md) | The add-in, the ribbon (the connect button, Settings, Companion - the Changes, Admin, Publish and Ask to Keep switches are in the Settings window since [D-150](decisions/D-150.md)), the bridge, and the fragment's C# compiled and run in Revit | Families, worksets and links are reached through read-only tools (`revit_families`, `revit_worksets`, `revit_links`) and fragments, not built-in commands; deployment belongs to the installer |
 > | **Heron MCP** — [`mcp/`](../mcp/README.md) | The MCP server and its tools, `revit_health` and `heron_diagnose`, a token per connect on the pipe, and the Companion page | Capability discovery is `heron_lookup` and `heron_capabilities`, served by the brain |
 > | **Heron Brain** — [`brain/`](../brain/README.md) | Fragments, skills, the capability registry, one knowledge store per scope, word and meaning search, the design calculations | Many of its modules are DRAFT and no conversation reaches them — `python tools/module-reach.py --list` |
 > | **Heron Platform** — [`platform/`](../platform/README.md) | `HeronInstaller.exe` and `heron-install`, configuration and the switches, the audit trail, permissions | The update system is one line after an install; the package manager, agent creation and GitHub agents are `brain/` modules, DRAFT; backup is `tools/heron-backup.py` |
@@ -265,7 +265,7 @@ Heron Platform, platform/: installs and configures the add-in; config, switches,
 
 > | The specification's box | As built | Where |
 > |---|---|---|
-> | USER INTERFACE | A Claude chat. In Revit: the ribbon, the activity banner and the Keep or Discard box. Beside Revit: the Companion page, on this PC only | [D-01](DECISIONS.md), [D-50](DECISIONS.md), [D-126](DECISIONS.md), [D-108](DECISIONS.md) |
+> | USER INTERFACE | A Claude chat. In Revit: the ribbon, the activity banner and the Keep or Discard box - and since November 2026 the Settings window ([D-150](decisions/D-150.md)) and the Heron panel for saved commands ([49](49-saved-commands-and-the-heron-panel.md), not run in a real Revit). Beside Revit: the Companion page, on this PC only | [D-01](DECISIONS.md), [D-50](DECISIONS.md), [D-126](DECISIONS.md), [D-108](DECISIONS.md) |
 > | CONVERSATION AGENT · ORCHESTRATOR | The host. Heron never classifies intent and has no persona layer | [D-01](DECISIONS.md), [D-27](DECISIONS.md), [D-80](DECISIONS.md) |
 > | TASK SYSTEM — agents, workflows, tools, validation | The MCP tools; `heron_method` gives a job's steps in order. The workflow engine (`mcp/server/heron_workflow.py`) is DRAFT and no tool reaches it | [04](04-heron-mcp.md), [23](23-heron-kernel.md) |
 > | KNOWLEDGE SYSTEM — RAG, fragments, skills, memory | `brain/`: the fragment library, skills, one SQLite store per scope, word and meaning search | [05](05-heron-brain.md), [D-23](DECISIONS.md) |
@@ -517,7 +517,7 @@ The same system therefore supports both BIM Modeler and Developer workflows.
 > reads the code, the run records (`heron_run_record`) and the audit trail directly, and works on Heron in
 > Claude Code against this repository. Modes were specified as a permission boundary that must be granted,
 > never inferred ([22 §3](22-users-modes-and-extensibility.md)); what holds that boundary today is the
-> switches on the Revit ribbon — §57's note.
+> switches - on the Revit ribbon then, in Heron's Settings window since [D-150](decisions/D-150.md) - §57's note.
 
 ## 20. RAG System
 
@@ -937,7 +937,7 @@ SMART DUCT DIMENSIONING
 > be replaced, split or retired without a skill changing ([D-29](DECISIONS.md), `brain/heron_skill.py`).
 > The capability registry finds who provides each one. A job of several steps, such as building a family,
 > is served whole by `heron_method`. There is no *smart duct dimensioning* skill; dimensioning between MEP
-> runs is one fragment, `dimension-mep-runs`. A skill is proved in two halves, its words and a model
+> runs is one fragment, `create-dimension` (`dimension-mep-runs` until that card was retired into it). A skill is proved in two halves, its words and a model
 > (`python tools/prove-skill.py`).
 
 ## 44. Skill Lifecycle
@@ -948,12 +948,12 @@ DRAFT -> TESTING -> VALIDATED -> PROVEN -> PRODUCTION -> DEPRECATED
 
 > **As built (2026-10-18):** skills and fragments share one list of statuses — `DISCOVERED`, `DRAFT`,
 > `TESTING`, `VALIDATED`, `PROVEN`, `PRODUCTION`, `DEPRECATED`, `ARCHIVED` (`STATUSES` in
-> `brain/heron_fragment.py`) — but only two are used:
+> `brain/heron_fragment.py`) — but only two were used that day, and `DEPRECATED` since, for a retired card:
 >
 > | | As built | Count it with |
 > |---|---|---|
 > | Skills | Every one `DRAFT` | `grep -h '^heron-status:' brain/skills/*.yaml \| sort \| uniq -c` |
-> | Fragments | `DRAFT` and `PROVEN`; none has reached `PRODUCTION` | `grep -h '^heron-status:' brain/fragments/*/fragment.yaml \| sort \| uniq -c` |
+> | Fragments | `DRAFT` and `PROVEN`, and `DEPRECATED` for a card retired since; none has reached `PRODUCTION` | `grep -h '^heron-status:' brain/fragments/*/fragment.yaml \| sort \| uniq -c` |
 >
 > `TESTING` and `VALIDATED` are skipped: a fragment goes from `DRAFT` to `PROVEN` on **one recorded proof**
 > against a named real model, with a negative case, signed by a person ([D-30](DECISIONS.md)), and back to
@@ -1176,7 +1176,7 @@ Agent Failure -> Failure Analysis -> Identify Cause -> Select Repair Agent
 High-risk operations: deleting files · deleting knowledge · modifying production code · GitHub push · release publishing · destructive Revit operations · external package installation. These require controlled permissions.
 
 > **As built (2026-10-18):** only the Revit operations are gated in code. The add-in refuses an
-> operation nobody declared, then checks the risk the registry declares for it against the ribbon
+> operation nobody declared, then checks the risk the registry declares for it against the owner's
 > switches (`Gate` in `revit/Heron.Revit.Addin/RevitOperations.cs`), and
 > [Article 7](../HERON_CONSTITUTION.md) asks the modeller to confirm each destructive one. Every Revit
 > export is `PUBLISH` ([D-107](DECISIONS.md)). Deleting files or knowledge, changing Heron's code, a
@@ -1208,7 +1208,8 @@ READ / ANALYZE / SUGGEST / EXECUTE / MODIFY / PUBLISH / ADMIN
 > by default): Revit asks Keep or Discard, and its third link keeps the rest of one job unasked
 > ([D-126](DECISIONS.md), [D-138](DECISIONS.md)). Only a `PROVEN` fragment whose proof still stands can be
 > kept from a chat ([D-117](DECISIONS.md)); a `DRAFT` gets one try, always asked ([D-119](DECISIONS.md)).
-> The switches are on the ribbon, so there are no modes to grant ([22 §3](22-users-modes-and-extensibility.md)).
+> The switches are the owner's to turn - on the ribbon then, in Heron's Settings window since
+> [D-150](decisions/D-150.md) - so there are no modes to grant ([22 §3](22-users-modes-and-extensibility.md)).
 
 ## 58. Audit System
 
@@ -1358,7 +1359,7 @@ Exposes: agent registry · workflow · fragments · skills · logs · RAG · dep
 Controls: users **(not built - deferred, D-41)** · permissions · standards · company knowledge · packages · updates · agents · security · audit logs.
 
 > **As built (2026-10-18): no Admin Mode.** There are no users to control ([D-41](DECISIONS.md)). What an
-> administrator would control is the owner's: the **Admin** and **Publish** switches on the ribbon, which
+> administrator would control is the owner's: the **Admin** and **Publish** switches (in Heron's Settings window since [D-150](decisions/D-150.md)), which
 > only the owner turns on ([D-106](DECISIONS.md)), and `heron.config` on the PC. A company's standards are
 > asked once per project and kept for it ([D-111](DECISIONS.md)); `brain/heron_company.py` cites a
 > company standard and is `DRAFT`.

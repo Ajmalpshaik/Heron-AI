@@ -11,8 +11,8 @@ domain: revit.annotation
 capability: DIMENSION_WALL_OPENINGS
 # Version 2 (2026-10-13, FRAGMENT-ISSUES 5b-451): the caller chooses which side
 # of the wall the strings go - `side`, blank keeping version 1's side exactly.
-# Version 1's proof below no longer describes the code, so this is DRAFT until
-# it is proved again (D-30).
+# Version 1's proof below no longer described the code, so this was DRAFT at
+# the time, until it is proved again (D-30).
 version: 2
 source: OFFICIAL
 risk: MODIFY

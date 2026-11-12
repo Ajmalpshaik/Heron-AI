@@ -9,9 +9,10 @@ semantic-identity: "swap the panels in one row, one column or at each floor line
 kind: action
 domain: revit.elements
 capability: SET_CURTAIN_PANEL_TYPE
-# VERSION 1, 2026-10-28, written in a cloud session with no Revit. DRAFT until
-# NEEDS-CHECKING Group JI proves it on a named model with its negative case
-# (D-30); revit_change refuses to keep a change from it until then (D-117).
+# VERSION 1, 2026-10-28, written in a cloud session with no Revit. DRAFT at
+# the time, until NEEDS-CHECKING Group JI proves it on a named model with its
+# negative case (D-30); revit_change refuses to keep a change from it until
+# then (D-117).
 version: 1
 source: OFFICIAL
 risk: MODIFY

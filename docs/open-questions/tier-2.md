@@ -621,12 +621,12 @@ API opened is still open - *"Operation is not permitted when there is any open s
 transaction, or transaction group"*, the same words for `Document.Save` and `Document.SaveAs` (RevitAPI.xml
 2024; 2020 and 2027 read the same on 2026-10-07, row 5b-365). Every fragment `revit_change` runs goes to
 the add-in's write path, which opens ONE `TransactionGroup` in the document for the whole run
-([`RevitFragment.cs`](../../revit/Heron.Revit.Addin/RevitFragment.cs) line 706) and assimilates or rolls it
-back at the end (line 900) - Article 8's one undo entry. So a fragment can never save the document it runs
+([`RevitFragment.cs`](../../revit/Heron.Revit.Addin/RevitFragment.cs) line 779) and assimilates or rolls it
+back at the end (line 1041) - Article 8's one undo entry. So a fragment can never save the document it runs
 in, however it is written.
 
 **What would work, read from the code - NOT RUN.** In the same request, AFTER that group is closed (lines
-900 to 916, before the reply is built), nothing of Heron's is open and the Revit remarks allow a save. So
+1052 to 1060, before the reply is built), nothing of Heron's is open and the Revit remarks allow a save. So
 the add-in could run the save itself at that point, on the fragment's behalf: `SAVE_DOCUMENT` version 3
 asks for it - the document it works in, by its own file for a Save, or a full `.rvt` or `.rfa` path the
 modeller typed for a Save As of a model that has none - and the add-in does it once the group has closed,
@@ -635,7 +635,7 @@ by Heron; `SaveAsOptions.OverwriteExistingFile` left at Revit's own default, fal
 said to replace the file. The group itself does not change: one request, one `TransactionGroup`, one undo
 entry, and the save is not in it - a save is not a model change and cannot be undone. Where Revit asks
 the modeller Keep or Discard ([D-126](../decisions/D-126.md)), the box is answered inside the group, before
-that point (line 879), so a save there could only ever follow a Keep.
+that point (line 1009), so a save there could only ever follow a Keep.
 
 **Why it was NOT built - three things need the owner, and the third is a guard:**
 
@@ -657,20 +657,23 @@ that point (line 879), so a save there could only ever follow a Keep.
    be proved; with a preview that saves, it can be proved today, on a scratch model, the way version 2 was.
 3. **A Save As renames the model, and the chat's model pin would read that as a DIFFERENT model** -
    Golden Rule 20's guard, Articles 12a and 12b. The pin compares the model's own id where both sides have
-   one ([`heron_write.py`](../../mcp/server/heron_write.py) line 255), and only a match on it or on the file
-   path lets a new title through (line 461, *"a save can rename it; same document"*). But that id,
+   one ([`heron_write.py`](../../mcp/server/heron_write.py) line 485), and only a match on it or on the file
+   path lets a new title through (line 504, *"a save can rename it; same document"*). But that id,
    `Document.CreationGUID`, arrived at Revit 2024 and is null on 2020 to 2023 and on every family document
-   ([`RevitOperations.cs`](../../revit/Heron.Revit.Addin/RevitOperations.cs) line 664, measured
+   ([`RevitOperations.cs`](../../revit/Heron.Revit.Addin/RevitOperations.cs) line 705, measured
    2026-10-06), and a model with no file has no path. So on Revit 2020 to 2023, and for a family on any
    release, a Save As of a model or family that was never saved leaves the pin holding the title alone; the reply comes back under the new title, and `revit_change` answers *"Heron will not change a
-   model you did not point it at ... Nothing has been sent to Revit"* (`heron_mcp_server.py` line 1921)
-   about a model it has just saved. The next call is then aimed at the old title (line 1455) and refused
+   model you did not point it at ... Nothing has been sent to Revit"* (`heron_mcp_server.py` line 1878, in the words of `check` in `heron_write.py`)
+   about a model it has just saved. (Since 2026-11-11 that reply says what the add-in reported doing
+   in place of *"Nothing has been sent to Revit"* -
+   [row 5b-1135](../fragment-issues/section-5b-rows-401-425.md); the refusal itself is unchanged.)
+   The next call is then aimed at the old title (line 1296) and refused
    until the modeller says *use this model*. Letting the pin follow a rename is a change to that guard.
 
 **The shapes the owner chooses between:**
 
 1. **Leave Heron as it is.** The methods ask the modeller to save before a big build, and
-   `REPORT_OPEN_DOCUMENTS` version 2 says which open model or family has NEVER BEEN SAVED. The cheapest; it
+   `REPORT_OPEN_DOCUMENTS` - version 3 today, and DRAFT - says which open model or family has NEVER BEEN SAVED. The cheapest; it
    still rests on the modeller pressing Ctrl+S, which is how both builds were lost.
 2. **Save after the group, from the add-in - recommended.** As above: `SAVE_DOCUMENT` version 3, an
    optional switch for a Save As of a never-saved model and one for replacing a file, and the add-in saving
@@ -713,7 +716,7 @@ above, asks about for packages and data. So there are **two settings files on on
 | a Revit started from a chat's shell | the copy |
 | a Revit the owner starts himself | the real file |
 
-Each side writes only its own. A switch on the ribbon - **Changes, Admin or Publish** - pressed in one kind of
+Each side writes only its own. A switch - **Changes, Admin or Publish**, on the ribbon that day and in Heron's Settings window since [D-150](../decisions/D-150.md) - pressed in one kind of
 Revit is not seen by the other kind, nor by the server when the Revit is one the owner started. Measured
 both ways that day: `fragments.warmUp = false` written from the chat's shell landed in the copy and the real
 file kept `true`, and the Changes switch pressed in a chat-started Revit rewrote the copy and left the real
@@ -721,13 +724,13 @@ file as it was.
 
 **What is still safe, read from the code - NOT RUN on the laptop as a case of its own.** The add-in decides
 every change from ITS OWN file: the permission gate loads `heron.config` fresh on every call
-([`RevitOperations.cs`](../../revit/Heron.Revit.Addin/RevitOperations.cs) line 339), and its refusal names the
+([`RevitOperations.cs`](../../revit/Heron.Revit.Addin/RevitOperations.cs) line 372), and its refusal names the
 file it read ([`HeronPermissions.Explain`](../../platform/Heron.Core/HeronPermissions.cs)). So the server's
 copy can never open a gate Revit has closed. What it can do is **say the wrong thing**:
 
 1. **`revit_health`'s write-gate line** is built from the server's file
    ([`heron_mcp_server.py`](../../mcp/server/heron_mcp_server.py) `revit_health`,
-   [`heron_health.py`](../../mcp/server/heron_health.py) line 177). It can say *"closed - Heron cannot change the
+   [`heron_health.py`](../../mcp/server/heron_health.py) line 182). It can say *"closed - Heron cannot change the
    model"* while the Revit in front has Changes on, or the reverse. `heron_diagnose.py` reads the same file.
 2. **The server's waiting times come from its file too** - `response_timeout`, `fragment_timeout` and
    `try_once_timeout` are worked out from `revit.operationTimeoutSeconds`, `revit.askTimeoutSeconds` and
@@ -779,6 +782,17 @@ none; and which other keys of `heron.config` differ between the two files on the
 
 **Ajmal PS decides.** Until he does, nothing Heron does at runtime changes: the add-in still decides every
 change from its own file, and `revit_health` still reports the server's.
+
+> **2026-11-12 - one switch is now said by Revit itself, and this question is still open.** A separate
+> task - a chat could not tell a modeller beforehand whether Revit would ask Keep or Discard - added
+> `askToKeep` to the add-in's `info` answer, and `revit_health` prints it under each connected Revit
+> ([docs/04 §4](../04-heron-mcp.md), [Group NP](../needs-checking/group-np.md), not yet run in Revit). That
+> is shape 2's mechanism, used for **one** switch that `revit_health` did not report at all. **Both
+> sentences above still hold:** the add-in decides every change from its own file, and the write-gate line
+> is still the server's copy. It does **not** report Changes, Admin or Publish, name the file either side
+> read, compare the two, or move a waiting time - each of those is this question's, and Ajmal PS's. The
+> session that added it had not been asked this question; if he chooses shape 1 or 3, whether the new line
+> stays is part of that choice. [NP6](../needs-checking/group-np.md) is the run on the laptop.
 
 ---
 
@@ -866,7 +880,8 @@ Approval* does not. It is one more way the parts describe how much a change need
   need no switch.
 - **Ask** is Revit's Keep or Discard box, which asks only while *Ask to Keep* is on. It is off by default
   ([D-138](../decisions/D-138.md)).
-- **Require Approval** is a switch on the ribbon: Changes for `MODIFY`, and Publish or Admin on top of it
+- **Require Approval** is a switch - on the ribbon then, in Heron's Settings window since
+  [D-150](../decisions/D-150.md): Changes for `MODIFY`, and Publish or Admin on top of it
   ([D-19](../decisions/D-19.md), [D-106](../decisions/D-106.md)). These are standing switches the owner
   turns on once, not a yes for each operation.
 
@@ -1319,6 +1334,12 @@ the way modellers already reuse labels. The other two trade the safety rules for
 
 **Ajmal PS decides.** Until he does, nothing is built for either.
 
+**2026-11-12 - the cards have moved since; the question has not.** `REPORT_FAMILY_LABELS` and
+`SET_FAMILY_LABEL_LAYOUT` say `PROVEN` on their cards today. `COPY_LABELS_FROM_FAMILY` was merged into
+`COPY_ELEMENTS_BETWEEN_DOCUMENTS` on 2026-11-01 and is `DEPRECATED`: the seed route is that card's `labels`
+mode now, a `DRAFT` at version 4. Each card's `heron-status` line says what it is on the day it is read.
+Neither route this question asks about is built.
+
 ---
 
 ### 🔵 Q-85 — Revit's API cannot make a void cut a hosted family's template host, so the modeller cuts it by hand in the Family Editor. Should Heron do more than say so? *(found 2026-10-22 building a floor drain)*
@@ -1359,5 +1380,150 @@ changes how every hosted family is built on the strength of a call documented fo
 the safety rules for a shortcut.
 
 **Ajmal PS decides.** Until he does, nothing is built; the method's hand step stands.
+
+**2026-11-12 - the card named above has moved since; the question has not.** `CREATE_FAMILY_HOST_OPENING` was
+merged into `CREATE_OPENING` on 2026-11-01 and is `DEPRECATED`; `CREATE_OPENING` carries its wall and
+ceiling job and is `DRAFT` at version 4 until proved again, so *"its wall and ceiling halves are PROVEN"*
+is the record of the retired card. The method's step 5 names `CREATE_OPENING`, and still tells the modeller
+to cut a floor's or a roof's void by hand. Nothing in shapes 2 or 3 is built.
+
+---
+
+### 🔵 Q-86 — A card that waits for the modeller's click is timed as a slow job, and a face cannot be clicked from a card at all. How should a card say it is waiting for a person? *(found 2026-11-11 writing `PICK_ON_SCREEN`)*
+
+**What was found.** The owner wants to work by chat with very few clicks in Revit, and nothing in Heron let the
+modeller click to answer the chat. `PICK_ON_SCREEN` was written for it, at DRAFT: Revit's own pick, one point
+for each call, handed back in millimetres. Reading the add-in before writing it
+([row 5b-1507](../fragment-issues/section-5b-rows-401-425.md) has each one with its evidence), nothing there
+knows that a card can be waiting for a person:
+
+- **The dispatcher gives a started job `revit.operationTimeoutSeconds`** - 60 by default - then tells the chat
+  Revit is still running the request and stops listening. A click made after that reaches nobody. The longer wait
+  it gives a Keep or Discard box ([D-119](../decisions/D-119.md), `revit.askTimeoutSeconds`) is asked for by the
+  add-in's own code and cannot be asked for from a card.
+- **The run clock ([D-129](../decisions/D-129.md)) would stop a slow multi-click** at the next pass of a card's
+  loop and report a job that ran out of time - *"a loop that never ends is the usual cause"*, untrue of a slow
+  modeller - with the points already clicked not handed back. So the card asks for one click a call and has no loop. D-129's item 5 wrote a
+  hold for exactly this - *"a prompt pauses it"* - but the compile gate builds a card against Revit alone and
+  cannot compile the call, and the hold does not lengthen the dispatcher's wait in any case.
+- **The chat's side waits 180 seconds for a show run**, so a longer wait in the add-in alone would only move the
+  loss: the chat would give up first.
+- **An element or a face cannot be clicked from a card.** Revit's pick for one names a kind of pick from a
+  namespace cards are not given, and no card takes a face as an input ([D-72](../decisions/D-72.md)).
+
+So the card runs today only while the click lands inside that one wait - about a minute as installed - and
+its own description tells the chat to ask again when it does not. It does not work round the wait.
+What the chat is actually told when a click comes late is not yet seen in Revit
+([NEEDS-CHECKING Group NH](../needs-checking/group-nh.md), NH8 and NH9).
+
+**The shapes the owner chooses between, for the wait:**
+
+1. **The card declares it, and the add-in does the waiting - recommended.** One line on the card's contract, the
+   way a card already declares that it must run with no transaction open ([D-125](../decisions/D-125.md)). For a
+   card that carries it, the add-in marks the job as waiting for the modeller and holds the run clock while the
+   card runs; the chat's side adds the ask timeout for that card, as it does for a keep; and the refusal for a
+   wait that still runs out gets words of its own - today's are about Keep or Discard. **Cost:** a change to the
+   add-in, the card reader on both sides and the chat's wait, with their tests, and a rebuild and redeploy of the
+   add-in. A card that declares it is not stopped by TIME if it loops for ever - a stop asked over the bridge
+   still reaches it - so the line would be honoured on the read and show paths only, and refused on a run that
+   can change the model.
+2. **A public call a card makes round the pick itself.** The hold D-129 already wrote, widened to mark the job
+   too. **Cost:** the compile gate has to be given the add-in's type, the first time a card names one - and the
+   same change to the chat's wait.
+3. **Nothing more.** The limit stays; the chat tells the modeller to be at Revit before it asks, and a slow
+   modeller raises `revit.operationTimeoutSeconds`. **Cost:** that setting lengthens the wait for every slow job
+   and the run clock's budget with it, so a card that loops for ever freezes Revit for longer too.
+
+**And for an element or a face:** whether Revit's selection namespace joins the list a card is given - one line
+in the add-in and one in the compile gate, kept level by `tests/test_fragment_imports.py`, and the same rebuild -
+and what a clicked face is handed on AS, since no card takes one: its element, the point clicked on it and the
+direction it faces are all things cards take today; Revit's own reference to the face is not.
+
+**Why the first.** The card stays plain Revit code that the compile gate can read on every release; the wait is
+decided in one place by the add-in, where the Keep or Discard box's wait already is; and a card cannot lengthen
+its own wait without its contract saying so, where a reviewer sees it.
+
+**And what "put it here" means.** The card first declared that sentence, and a review took it off: it moved the
+sentence away from the cards that place and show, and the chat was then offered no placement card at all. Should
+"put it here" mean *click, then place* - a job of two steps, which is a skill's to claim rather than one card's -
+or stay with the placement cards, the point typed or clicked as a step the chat chooses?
+
+**Ajmal PS decides.** Until he does, nothing in the add-in is changed, and `PICK_ON_SCREEN` stays DRAFT behind
+the limit: one point a call, and "put it here" declared by no card.
+
+---
+
+### 🔵 Q-87 — Bringing an edited spreadsheet back writes every cell with nothing shown first. Should Heron read the file itself before Revit does - and if so, how does a chat reach that, and should the export carry each element's UniqueId? *(found 2026-11-11 writing the round-trip method)*
+
+**What was found.** A modeller's weekly round trip - parameters out to Excel, edited, brought back - is two
+cards Heron already has: `EXPORT_PARAMETERS_TO_CSV` writes the file and `SET_PARAMETER_VALUES_BY_ID` reads it
+back (`csvPath`, since `IMPORT_PARAMETER_VALUES` was merged into it on 2026-11-01 on the owner's word *"make
+sure there is no duplicate tools"*). The method
+[`parameters-csv-round-trip`](../../brain/skills/parameters-csv-round-trip.yaml) puts them in order. Reading
+both cards' C# for it found that the return is safe in one way and blunt in three. Safe: it checks the whole
+file inside Revit before writing anything, and one bad row means nothing is written. Blunt:
+
+- **It reads a CSV only.** An `.xlsx` must be saved as CSV first, and as *CSV UTF-8*, or a name with an accent
+  or in Arabic may be written wrong ([row 5b-1528](../fragment-issues/section-5b-rows-401-425.md)).
+- **It writes every cell that is not blank, and shows nothing first.** A value somebody changed in Revit after
+  the export is put back to the file's old one with no notice, and a length the project shows rounded is
+  written back rounded in a cell nobody edited ([row 5b-1525](../fragment-issues/section-5b-rows-401-425.md)).
+  The only preview is Revit's Keep or Discard box.
+- **A file the export just wrote can be refused whole** - for a type parameter, a read-only one, or a
+  parameter some of the elements have not got
+  ([row 5b-1526](../fragment-issues/section-5b-rows-401-425.md)). And the export writes no UniqueId column, so
+  a file from another model whose ids happen to be in use here is not caught.
+
+Today the method covers this by telling the modeller three things to do by hand: delete every column and row
+they did not edit, save as CSV UTF-8, and bring the file back in the same sitting. None of it has run in Revit
+([NEEDS-CHECKING Group NJ](../needs-checking/group-nj.md)).
+
+**Three questions, in a modeller's words.**
+
+**(a) Before anything is written, do you want Heron to show you what the file would change?** The shapes:
+
+1. **Nothing more.** The method stands as written, with its three hand rules. **Cost:** a slip - a column left
+   in, a file brought back a day late - writes old or rounded values over the model, and nothing says so.
+2. **Heron reads the file first, outside Revit - recommended.** As it already reads a sheet list
+   ([`heron_sheet_list.py`](../../brain/heron_sheet_list.py)): an `.xlsx` or a CSV, with the file as exported
+   kept beside the edited one. It lists the cells that differ - how many, and a sample of them, old value and
+   new - says which ids were changed, doubled or added and which headers were renamed, and writes a small CSV
+   holding ONLY the changed cells to the work folder. That small file goes to the same card as today. Nothing
+   in Revit is touched by the reading, and **no second tool writes to the model** - the card that changes it
+   stays the one card. **Cost:** a reader and its tests, a door for the chat to reach it (question b), and one
+   habit for the modeller - keep the exported file. A cell blanked on purpose needs the card's `clear`, so it
+   is asked about apart. It still cannot see a value changed in Revit since the export in a cell the modeller
+   ALSO edited; only question (c) reaches that.
+3. **The card does it, inside Revit.** A new version of `SET_PARAMETER_VALUES_BY_ID` takes the exported file as
+   well, writes only the cells that differ, checks each against what the export held, and gains a preview.
+   **Cost:** the card is PROVEN, and a change to its code makes its proof out of date - every chat is then
+   refused a kept change from it ([D-117](../decisions/D-117.md)), the Companion's table Apply and the rows by
+   key included, until it has been proved again on a real model. And an `.xlsx` is still not read.
+
+**(b) If Heron reads the file (shape 2), how should a chat ask for it?** Every tool's description is paid for
+by every chat ([D-118](../decisions/D-118.md)), and off Windows Heron serves its library tools only
+([D-132](../decisions/D-132.md)), so a new door is a decision and was not built:
+
+1. **A tool of its own**, beside `heron_sheet_list`. Plain to find; one more description in every chat.
+2. **One tool that reads a spreadsheet, told which job it is for** - `heron_sheet_list` widened. No new
+   description; but it changes a tool whose own run in Revit is still owed
+   ([Group MY](../needs-checking/group-my.md)), and one description then explains two jobs.
+3. **No tool** - the method gives the modeller one command to run on their PC. Nothing added to any chat;
+   the modeller leaves the chat to do it.
+
+**(c) Should the exported file carry each element's UniqueId as a second column?** With it, a file from
+another model is refused, and a cell changed in Revit since the export can be refused too, as the Companion's
+table already does. **Cost:** `EXPORT_PARAMETERS_TO_CSV` is PROVEN; a new column is a new version, DRAFT until
+it is proved again, and while it is DRAFT no chat can run the export. A modeller also sees a long column of
+letters they must not touch.
+
+**Why shape 2 for (a).** The hand rules are exactly the kind a tired modeller skips, and the damage is silent.
+Shape 3 buys the same thing by taking a proved card out of use until the PC has run it again. Shape 2 leaves
+both proved cards alone, keeps one writer, and puts the check where a mistake costs nothing - before Revit.
+For (b) and (c) nothing is recommended: (b) is a budget only the owner sets, and (c) trades a proved card for
+a safer file.
+
+**Ajmal PS decides.** Until he does, nothing is built: the method's hand rules stand, and it says so at the
+steps where they bite.
 
 ---

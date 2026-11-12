@@ -106,3 +106,10 @@ words; it is a declared sentence and reaches its own card by exact match. `check
 capability. `check-intrusion` does not put this card in its top 12. `check-risk-crossings`, `check-skill-routing` and
 `score-routing` (the owner's 79 questions) answer the same on main and on this branch - score-routing's
 per-question pattern string is identical, character for character.
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `CREATE_REVISIONS_FROM_SHEET_DATES` reads PROVEN on its card, at version 1 - its `proof` block is signed by
+Ajmal PS, 2026-10-18, on PHASES RAN AGAINST DIFFERENT DOCUMENTS: Project1, Family1 - active was Project1, Revit 2020,
+session 30308. So where this page calls a card named here DRAFT, or says nothing has run in Revit, that was true when
+it was written and is out of date as a statement about the card. Whether CZ1 to CZ8 were what that proof ran is NOT
+sorted here: for the owner.

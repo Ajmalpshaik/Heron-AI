@@ -116,17 +116,17 @@ compatibility-note: >
   looked up by NAME at run time and added only where the release has it -
   the spelled-out member would not compile on 2020 to 2022.
 
-# BACK TO DRAFT ON 2026-09-23, AND THE PROOF ABOVE IS KEPT AS THE RECORD OF
-# WHAT WAS RUN.
+# BACK TO DRAFT ON 2026-09-23, AND THE PROOF ABOVE WAS KEPT AS THE RECORD
+# OF WHAT WAS RUN.
 #
 # The proof was taken on the code as it stood. The code then changed: Plumbing
 # Equipment - new as a category from the 2023.1 API - now counts as SERVED, so
 # a run ending at a water heater or a pump is no longer reported as a dead end
-# on the releases that have it. Nothing the proof recorded is contradicted,
-# but it describes code that no longer runs, so its fingerprint no longer
-# matches, and it must NOT be re-stamped: re-taking it on a named model is the
-# only thing that makes this PROVEN again (D-30). NEEDS-CHECKING AJ6 says what
-# to arrange. FRAGMENT-ISSUES 5b-177.
+# on the releases that have it. Nothing that proof recorded was contradicted,
+# but it described code that no longer ran, so its fingerprint no longer
+# matched, and it was NOT to be re-stamped: re-taking it on a named model was
+# the only thing that would make this PROVEN again (D-30). NEEDS-CHECKING AJ6
+# says what to arrange. FRAGMENT-ISSUES 5b-177.
 #
 # TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Another tool's check,
 # mostly on Revit 2020 models, decided "served" by a few category names and

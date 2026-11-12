@@ -15,7 +15,7 @@ capability: SET_CATEGORY_GRAPHICS
 # with nothing stored. One that reads back empty is in `refused` in a
 # sentence; one that kept part of it is in the new `notKept`, each setting
 # named. The inputs and the other outputs mean what they meant. The proof below
-# is version 2's, signed by Ajmal PS on 2026-10-13 (Group DV, DV6).
+# was then version 2's, signed by Ajmal PS on 2026-10-13 (Group DV, DV6).
 #
 # Version 3 (2026-11-01): SET_CATEGORY_SOLID_FILL was merged into this card on
 # the owner's instruction, and is DEPRECATED. Its job is one optional switch
@@ -23,8 +23,8 @@ capability: SET_CATEGORY_GRAPHICS
 # the surface and, where the category is cut, the cut (`notCuttable` names the
 # rest), `solidPattern` names the fill, and a model with none is refused with
 # nothing written. Off, everything is exactly version 2. Version 2's proof
-# below no longer describes the code and is kept as the record; the card is
-# DRAFT until it is proved again.
+# below no longer described the code and was kept as the record; the card was
+# DRAFT at the time, until it is proved again.
 version: 3
 source: OFFICIAL
 risk: MODIFY

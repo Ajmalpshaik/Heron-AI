@@ -42,3 +42,9 @@ every command line.
 | **FE7** | The other two signs, on the same scratch project: link a second new project holding a **20 mm** wall 15 mm outside the exterior wall, and draw two ducts **inside** within 3 m of BOX-OUT; run FE3 again | `signs.skin` names the 20 mm linked wall and `signs.ducts` counts the ducts inside (each by its point nearest the box); all three agree. Then move the 20 mm wall to the **inside**: the signs disagree and the run refuses, naming what each found |
 | **FE8** | FE2 on **Revit 2024** and **2027** | The same answers. Compiled on eight releases here; what Revit DOES was measured on none |
 | **FE9** | The signature, on the owner's word only, after FE2 to FE7 | `python brain/heron_validate.py accept set-parameter-values-by-id --by "Ajmal PS"` - and only then may the card go back to PROVEN |
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `SET_PARAMETER_VALUES_BY_ID` reads PROVEN on its card, at version 7 - its `proof` block is signed by Ajmal
+PS, 2026-11-02, on Snowdon Towers Sample Architectural (34,509 elements), Revit 2024, session 57392. So where this
+page calls a card named here DRAFT, or says nothing has run in Revit, that was true when it was written and is out of
+date as a statement about the card. Whether FE1 to FE9 were what that proof ran is NOT sorted here: for the owner.

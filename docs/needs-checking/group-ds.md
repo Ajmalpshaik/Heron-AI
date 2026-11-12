@@ -74,3 +74,10 @@ been closed. `python tools/batch-prove.py tools/jobs/create-view-filter-project2
   holds the draft, then `heron-status: PROVEN`.
 - **Signed by Ajmal PS the same day** (fingerprint 266666b41263c99c) and set to `heron-status: PROVEN`
   on his yes. DS7's `moreRules` half and DS8 for this card stay open.
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `LIST_GRIDS` reads PROVEN on its card, at version 4 - its `proof` block is signed by Ajmal PS, 2026-10-18, on
+PHASES RAN AGAINST DIFFERENT DOCUMENTS: Project2, Family1 - active was Project2, Revit 2020, session 13520. So where
+this page calls a card named here DRAFT, or says nothing has run in Revit, that was true when it was written and is
+out of date as a statement about the card. Whether DS1 to DS11 were what that proof ran is NOT sorted here: for the
+owner.

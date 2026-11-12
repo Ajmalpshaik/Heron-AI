@@ -149,8 +149,7 @@ def labels(declared_cs):
           "an undeclared tool gets the worst label on every count - which is "
           "also what a host assumes of a tool with none")
 
-    server = io.open(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py"),
-                     encoding="utf-8").read()
+    server = tools.server_text()
     typed = re.findall(r"@server\.tool\((?!\))", server)
     check(not typed,
           "every tool is registered as a bare @server.tool() - no label, and no "
@@ -160,6 +159,94 @@ def labels(declared_cs):
           and "server = _Labelled(" in server,
           "and the server registers every tool through _Labelled, which reads "
           "the label off the registry as the tool registers")
+
+
+def source_list():
+    """
+    WHICH FILES ARE THE SERVER'S SOURCE HAS ONE OWNER, AND IT LEAVES NONE OUT.
+
+    The server cannot be imported without the MCP SDK, so every suite that
+    holds a tool's body to a rule, heron_diagnose and the API page READ its
+    source - and each of them asks heron_tools.SERVER_FILES which files that
+    is (FRAGMENT-ISSUES row 5b-1542). A reader holds only what it is handed: a
+    file that registers a tool and is not on the list is a tool none of them
+    ever sees, and every check that looks for something absent passes on it.
+    """
+    print()
+    print("The files the server's source is are one list, and it leaves none out")
+    folder = os.path.join(ROOT, "mcp", "server")
+    names = list(getattr(tools, "SERVER_FILES", ()))
+    check(names, "heron_tools names the files at all")
+    if not names:
+        return
+    listed = tools.server_files()
+    missing = [name for name, path in zip(names, listed) if not os.path.isfile(path)]
+    check(not missing and len(set(names)) == len(names),
+          "every listed file is there, once: %s%s"
+          % (", ".join(names), "" if not missing else "  <- missing %s" % ", ".join(missing)))
+    if missing:
+        return
+
+    def text_of(path):
+        return io.open(path, encoding="utf-8").read()
+
+    unlisted = sorted(
+        name for name in os.listdir(folder)
+        if name.endswith(".py") and name not in names
+        and re.search(r"^@server\.tool\(", text_of(os.path.join(folder, name)), re.M))
+    check(not unlisted,
+          "no other file in mcp/server registers a tool%s"
+          % ("" if not unlisted else "  <- not on the list: %s" % ", ".join(unlisted)))
+
+    # THE ENTRY FILE IS LAST: the one a host starts, ending in the block that
+    # runs the server. A reader that takes "the main block onwards" relies on it.
+    host = text_of(os.path.join(ROOT, ".mcp.json"))
+    check('"mcp/server/%s"' % names[-1] in host
+          and 'if __name__ == "__main__":' in text_of(listed[-1]),
+          "the last one is the entry file - .mcp.json starts it and it holds the "
+          "block that runs the server: %s" % names[-1])
+
+    # AND NO OTHER LISTED FILE IMPORTS IT, OR SPELLS ITS BLOCK (row 5b-1555).
+    # The entry file runs as `__main__`, so a file it loads that imported it
+    # by name would run it a SECOND time, under that name: every tool in it
+    # defined and registered again, and a second copy of all the state it
+    # holds. Done at a file's top level it is louder - the second run asks the
+    # half-loaded file for its tools and the server does not start (seen in a
+    # scratch copy, 2026-11-11). What the files share is defined in one that
+    # imports none of them. And a reader that finds the main block by its
+    # words finds the FIRST such words in the one text - so they may be
+    # nowhere above the entry file, a comment included.
+    import ast
+    entry = names[-1][:-3]
+    importing, spelling = [], []
+    for name, path in zip(names[:-1], listed[:-1]):
+        text = text_of(path)
+        for node in ast.walk(ast.parse(text)):
+            asked = ([alias.name for alias in node.names] if isinstance(node, ast.Import)
+                     else [node.module or ""] if isinstance(node, ast.ImportFrom) else [])
+            if any(one.split(".")[0] == entry for one in asked) and name not in importing:
+                importing.append(name)
+        if (re.search(r"""(?:import_module|__import__)\(\s*["']%s["']""" % re.escape(entry), text)
+                and name not in importing):
+            importing.append(name)
+        if 'if __name__ == "__main__":' in text:
+            spelling.append(name)
+    check(not importing,
+          "no other listed file imports the entry file, which would run it a second "
+          "time%s" % ("" if not importing else "  <- %s" % ", ".join(importing)))
+    check(not spelling,
+          "and none spells the block that runs the server, which a reader finds by "
+          "its first words%s" % ("" if not spelling else "  <- %s" % ", ".join(spelling)))
+
+    whole = tools.server_text()
+    at, in_order = 0, True
+    for path in listed:
+        found = whole.find(text_of(path).rstrip("\n"), at)
+        in_order = in_order and found >= at
+        at = max(found, at) + 1
+    check(in_order and whole.endswith(text_of(listed[-1])),
+          "and server_text() is every one of them whole, in that order, ending "
+          "with the entry file")
 
 
 def library():
@@ -491,6 +578,7 @@ def main():
           "lease, so only the chat holding this Revit can stop it")
 
     labels(declared_cs)
+    source_list()
     library()
 
     print()

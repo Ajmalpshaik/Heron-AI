@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,24 @@ semantic-identity: "what parameters this open family has, and what the current t
 kind: action
 domain: revit.families
 capability: REPORT_FAMILY_PARAMETERS
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
+
+# VERSION 2 (2026-11-11) - A YES/NO READS Yes OR No, and back to DRAFT. Version
+# 1 was PROVEN on 2026-09-16 (the proof block below, kept as the record of what
+# it proved - its own positive case shows the defect: "Use Annotation Scale
+# [Integer/type] = <blank>"). Its C# moved, so it is DRAFT again until
+# NEEDS-CHECKING Group NK, NK4, is run (D-30). FRAGMENT-ISSUES row 5b-351:
+# every formula-driven Yes/No printed <blank> on Revit 2024 (2026-10-06),
+# because Revit's own string for a tick box is empty. Where that string is
+# empty and the parameter is a Yes/No, the stored whole number is read: 0 is
+# No, anything else Yes. Every other parameter reads exactly as version 1
+# read it - a whole number that is not a Yes/No keeps Revit's string, blank
+# included. NOT ESTABLISHED until NK4 runs: that Revit gives the stored number
+# for a FORMULA-driven tick box; where it gives none the row still reads
+# <blank>. A read: it still answers through revit_read while DRAFT, and says
+# DRAFT (D-117 item 4).
 
 purpose: >
   Lists the parameters of the family open for editing - name, storage type,
@@ -128,7 +143,12 @@ compatibility-note: >
   `FamilyManager.GetParameters`, `CurrentType`, `FamilyParameter.Definition`,
   `StorageType`, `IsInstance`, `Formula` and the `FamilyType.AsString`,
   `AsValueString`, `AsElementId` readers were confirmed present on the 2020
-  assembly on 2026-09-15.
+  assembly on 2026-09-15. Version 2's `FamilyType.AsInteger(FamilyParameter)`
+  is in the reference XML of every release 2020 to 2027 (read 2026-11-11).
+  What a Yes/No IS is asked by reflection, because the member moved:
+  `Definition.ParameterType` on 2020 and 2021, `Definition.GetDataType()`
+  against `SpecTypeId.Boolean.YesNo` from 2022 - the check
+  IMPORT_PARAMETER_VALUES and CREATE_SHEETS_FROM_TABLE already carry.
 
   `FamilyParameter.DisplayUnitType` is DELIBERATELY NOT READ. It is the
   property that became ForgeTypeId at 2021, and touching it is what makes one

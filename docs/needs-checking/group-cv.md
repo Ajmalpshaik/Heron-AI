@@ -65,3 +65,9 @@ sentences: neither moves any more** - *make a parametric spring* and *array the 
 land where they land without this card. The four gains above still hold. One sentence still moves, on the
 lexical backend only: *give the spring a steel material* goes from `SET_MATERIAL_COLOUR` to
 `SELECT_BY_MATERIAL` - neither is its job (`SET_FAMILY_FORM_MATERIAL`), and this card wins neither.
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `CREATE_FAMILY_FREEFORM_SOLID` reads PROVEN on its card, at version 1 - its `proof` block is signed by Ajmal
+PS, 2026-10-18, on Family1, Revit 2020, session 13520. So where this page calls a card named here DRAFT, or says
+nothing has run in Revit, that was true when it was written and is out of date as a statement about the card. Whether
+CV1 to CV14 were what that proof ran is NOT sorted here: for the owner.
