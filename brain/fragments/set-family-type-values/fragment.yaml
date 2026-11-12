@@ -14,8 +14,10 @@ capability: SET_FAMILY_TYPE_VALUES
 # units by Revit's own parser ("94.4 L/s", or "94.4" in the unit the family
 # shows) and read back in Revit's own format. Found 2026-11-12 in Group NE: the
 # Air Flow "Nominal Air Flow" was refused. Built on the owner's standing word to
-# build a gap met while testing. Version 3's proof below no longer describes the
-# code; DRAFT until it is proved again (D-30).
+# build a gap met while testing. PROVED 2026-11-12 on Revit 2020 (scratch family
+# Heron Link Angle Test, both halves) and SIGNED by Ajmal PS on his word in the
+# chat ("Yes, sign it") - the proof below is version 4's; version 3's is in git
+# history. The proof draft it was accepted from is git-ignored, as every one is.
 version: 4
 source: OFFICIAL
 risk: MODIFY
