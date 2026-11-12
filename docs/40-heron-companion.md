@@ -431,8 +431,8 @@ Every Heron tool call this chat makes appears as a line: **time · tool · one-l
 refused / failed / handed back · how long**. For example:
 *14:02:11 · revit_change · OVERRIDE_GRAPHICS_IN_VIEW ran in heron ai bulding · OK · 1.8 s*.
 
-- **Where it comes from:** the `_Labelled` subclass that already wraps every `@server.tool()` in
-  `heron_mcp_server.py` records the tool's name, start, end and the **first line** of its reply
+- **Where it comes from:** the `_Labelled` subclass that already wraps every `@server.tool()` - in
+  `heron_server_core.py` since 2026-11-11, in `heron_mcp_server.py` before - records the tool's name, start, end and the **first line** of its reply
   (capped at 200 characters) into an in-memory ring of the last 500 calls. It uses
   `functools.wraps`, so each tool's signature — which `tests/test_mcp_serves.py` reads back from the
   real SDK — is unchanged. A fault in the recorder is caught and dropped; it can never change a tool's

@@ -173,7 +173,12 @@ and a check of the module header or of the `if __name__ == "__main__"` block is 
   (`test_mcp_serves.py`, `shared()`). Set on the entry module, the stand-in changes nothing the server does.
 - **The order of the text is not the order tools are served in.** The entry file is last in the text and
   imports the tool files as it loads, so a tool in another file registers where that import stands. A suite
-  that needs the served order asks a real SDK (`test_mcp_serves.py`), never the text.
+  that needs the served order asks `heron_tools.served_order()`, which states it - never the text's own order.
+  `test_mcp_serves.py` holds a real SDK's list to that, and `test_api_docs.py` the entry file's import lines.
+- **Whether the server serves the library alone is said by the entry file, not worked out.** A suite that
+  starts the server some other way than by its path - `runpy`, `exec` - is still served the library alone off
+  Windows when it runs the entry file as `__main__`, and every tool when it imports it.
+  `test_mcp_stdio.py` starts it each way; `test_data_home.py` holds the Windows half with no process.
 
 ## Before you change a test
 

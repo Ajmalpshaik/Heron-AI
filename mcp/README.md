@@ -90,9 +90,15 @@ own command line and its tests reach is not called by a chat.
 file; its file joins `heron_tools.SERVER_FILES` before the entry file; and the entry file imports it above its
 `__main__` block. `tests/test_tool_registry.py` and `tests/test_api_docs.py` hold all three.
 
+**Where that import stands is the order a host is served.** The SDK lists tools as they register, so a tool
+file's tools land wherever its import line is. `heron_tools.served_order()` states the order meant - the entry
+file's own tools first, as it defines them, then each other file's in `SERVER_FILES`' order - and reads it off
+the source without looking at the import lines. `tests/test_mcp_serves.py` holds a real SDK's list to it, and
+`tests/test_api_docs.py` holds the import lines to it as text, which CI can run.
+
 | Module | What it does | Used by |
 |---|---|---|
-| `heron_server_core` | what every file of the server shares, one of each in a process: the server object (labelled from `heron_tools.TOOLS`), this chat's binding, pin and approval, the lock that keeps one conversation with Revit at a time, the Companion's activity line and the old-code refusal every tool call passes through, and whether this process serves the library alone ([D-132](../docs/DECISIONS.md)). No tool | the entry file and `heron_inventory`. It imports neither: the entry file runs as `__main__`, and importing it by name would run it a second time and register every tool twice |
+| `heron_server_core` | what every file of the server shares, one of each in a process: the server object (labelled from `heron_tools.TOOLS`), this chat's binding, pin and approval, the lock that keeps one conversation with Revit at a time, the Companion's activity line and the old-code refusal every tool call passes through, and `LIBRARY_ONLY` - whether this process serves the library alone ([D-132](../docs/DECISIONS.md)), which the entry file tells it with `started()` before the server object is made, because only that file knows it was run. No tool | the entry file and `heron_inventory`. It imports neither: the entry file runs as `__main__`, and importing it by name would run it a second time and register every tool twice |
 | `heron_inventory` | the inventory reads, each one fixed operation in the add-in: `revit_phases`, `revit_levels`, `revit_worksets`, `revit_views`, `revit_view_image`, `revit_sheets`, `revit_rooms`, `revit_schedules`, `revit_families`, `revit_export_check`, `revit_imports`, `revit_annotation`, `revit_systems`, `revit_parameters`, `revit_groups`, and the helpers only they use | the entry file, which imports it last, above the block that runs the server, so the order a host is served is unchanged |
 | `heron_session` | one chat, one Revit ([docs/25 §3](../docs/25-multi-session-and-binding.md)) | the server |
 | `heron_write` | the conversation half of writing: the model pin and the move's approval | the server |
