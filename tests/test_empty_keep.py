@@ -94,17 +94,29 @@ def wiring():
 
 def server():
     print("\n2. the server reads 'unchanged' as rolled back")
+    # heron_server_core imports the MCP SDK, which CI does not install, so
+    # _change_outcome is LIFTED from its source and run - it names nothing
+    # but its three words.
+    core = io.open(os.path.join(ROOT, "mcp", "server", "heron_server_core.py"),
+                   encoding="utf-8").read()
+    start = core.find("\ndef _change_outcome(")
+    check(start >= 0, "heron_server_core has _change_outcome")
+    if start >= 0:
+        names = {"KEPT": "KEPT", "ROLLED_BACK": "ROLLED BACK", "UNKNOWN": "OUTCOME UNKNOWN"}
+        exec(compile(core[start:core.index("\ndef ", start + 5)], "heron_server_core.py", "exec"),
+             names)
+        outcome = names["_change_outcome"]
+        reply = {"ok": True, "verdictKind": "unchanged", "applied": False, "rolledBack": True}
+        check(outcome(reply) == "ROLLED BACK",
+              "the activity list says ROLLED BACK - found %r" % outcome(reply))
+        check(outcome(dict(reply, rolledBack=False)) == "OUTCOME UNKNOWN",
+              "and not when the rollback did not hold")
     try:
-        import heron_server_core as CORE
         import heron_run_records as RUNS
     except Exception as why:                         # noqa: BLE001 - one clean failure
-        check(False, "the server modules import: %s" % why)
+        check(False, "heron_run_records imports: %s" % why)
         return
     reply = {"ok": True, "verdictKind": "unchanged", "applied": False, "rolledBack": True}
-    check(CORE._change_outcome(reply) == CORE.ROLLED_BACK,
-          "the activity list says ROLLED BACK - found %r" % CORE._change_outcome(reply))
-    check(CORE._change_outcome(dict(reply, rolledBack=False)) == CORE.UNKNOWN,
-          "and not when the rollback did not hold")
     check(RUNS._ended(reply) == "nothing changed, nothing kept - no undo entry",
           "the run record says nothing changed and no undo entry - found %r" % RUNS._ended(reply))
 
