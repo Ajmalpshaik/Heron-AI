@@ -1,0 +1,52 @@
+# The proof of REPORT_FAMILY_FORMS version 5 (FRG-GEO-046) - NEEDS-CHECKING
+# Group ND, rows ND1 to ND3:
+#
+#     python tools/batch-prove.py tools/jobs/report-family-2d-nd-2026-11-11.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/report-family-2d-nd-2026-11-11.yaml
+#
+# A SCRATCH FAMILY, NEVER THE OWNER'S OPEN ONES. File, New, Family, the metric
+# Detail Item template, saved as "Heron 2D Read Test" in
+# %TEMP%\heron-work\2d-read, Revit 2020, arranged as ND0 in
+# docs/needs-checking/group-nd.md: planes Tip (X 600) and Head Top (Y 80); a
+# detail line "path 0,0; 300,0" locked along Center (Front/Back); a filled
+# region "polygon 300,80 600,0 300,-80", its tip corner locked to Tip by hand;
+# a CONTROL detail line "path 0,-200; 300,-200", never locked. Saved.
+#
+# Type the shaft's id where the values say SHAFT-ID, and the same id with its
+# FIRST character changed where they say NO-SUCH-ID. THE DRY RUN DOES NOT
+# CATCH A PLACEHOLDER LEFT IN (2026-10-01) - fill them in first.
+#
+# READ: nothing is changed, so no write and no rollback. ND3 to ND5 ("all"
+# handing on forms alone, version 4's answers unchanged, a nested detail item
+# and its link) are in the group's file.
+#
+# With two Revits connected to Heron, add `--session <process id>` to both
+# commands.
+
+model: Heron 2D Read Test (a new family, metric Detail Item template), Revit 2020
+
+defaults:
+  in: "Heron 2D Read Test"
+
+jobs:
+  - fragment: report-family-forms
+    expect: twoDList
+    set:
+      which: "2d"
+    negative-set:
+      which: "NO-SUCH-ID"
+    note: >
+      Positive: twoDCount 3, formCount 0, elements 3 - the shaft "locked along Center
+      (Front/Back)", the CONTROL "nothing holds it", the region "3 sketch
+      edge(s)" and "locked at an end to Tip", its edges NOT listed as lines.
+      Negative: refused "is not an id in this family", elements 0.
+
+  - fragment: report-family-forms
+    expect: twoDList
+    set:
+      which: "SHAFT-ID"
+    negative-set:
+      which: "nested"
+    note: >
+      Positive: twoDCount 1, the shaft alone. Negative: twoDCount 0 and
+      twoDList empty - looked at, no nested family here; not a refusal.

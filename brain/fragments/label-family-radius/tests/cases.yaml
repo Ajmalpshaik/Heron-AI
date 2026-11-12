@@ -127,7 +127,38 @@ positive:
       reading of the reference kinds is wrong, not Revit: narrow it, reopen
       row 5b-1318. NOT RUN - IS4, IS5
 
+  - given: >
+      VERSION 6 - a DETAIL ARC. A saved scratch metric Detail Item family with
+      a length type parameter "Arc Radius" holding 150 and one detail line
+      arc of radius 150 drawn in "Ref. Level" by DRAW_FAMILY_DETAIL_LINES;
+      form = the arc's id, parameterName "Arc Radius", diameter false
+    expect: >
+      a radial dimension on the arc in "Ref. Level", labelled "Arc Radius",
+      reading 150 mm, the arc's radius read back at 150; valueMm 150. Then
+      FLEX_FAMILY "Arc Radius=200 | Arc Radius=100" and the arc read at 200
+      and 100
+
+  - given: >
+      VERSION 6 - a SYMBOLIC ARC. A saved scratch metric Generic Model family
+      with "Arc Diameter" holding 300 and a symbolic arc of radius 150 drawn
+      on Ref. Level by DRAW_FAMILY_SYMBOLIC_LINES; form = its id,
+      parameterName "Arc Diameter", diameter true
+    expect: >
+      a diameter dimension on the arc in the Ref. Level FLOOR plan - never the
+      Ref. Level ceiling plan while a floor plan looks at it - labelled "Arc
+      Diameter", reading 300 mm; the arc's radius read back at 150
+
 negative:
+  - given: >
+      VERSION 6 - the same detail arc with "Arc Radius" holding 100 (not the
+      arc's 150)
+    expect: >
+      refused before anything is made - the arc's radius 150 mm named and the
+      parameter's 100 - nothing labelled
+
+  - given: VERSION 6 - a STRAIGHT detail line's id, "Arc Radius"
+    expect: refused as not an arc, pointed at LABEL_FAMILY_DIMENSION; nothing labelled
+
   - given: a revolve about "1000,300 1000,500" - no reference plane runs through its axis
     expect: >
       refused as no reference plane through the axis, naming

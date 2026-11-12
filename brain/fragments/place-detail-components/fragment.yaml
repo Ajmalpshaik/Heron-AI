@@ -5,13 +5,27 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-138
-semantic-identity: "put a detail component or an annotation symbol on this view at these points"
+semantic-identity: "put a detail component or an annotation symbol on this view at these points, in a project or in a family's own view"
 kind: action
 domain: revit.annotation
 capability: PLACE_DETAIL_COMPONENTS
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 2 (2026-11-11) - IN A FAMILY'S OWN VIEW TOO, READ BACK, and back to
+# DRAFT. Version 1 was PROVEN on 2026-10-18 (the proof block below, kept as
+# the record of what it proved: a project's plan, and a 3D view refused); its
+# C# moved, so it is DRAFT again until NEEDS-CHECKING Group NF is run (D-30,
+# D-117). On 2026-11-11 (Revit 2020) the owner's square diffuser family needed
+# its plan flow arrows - a nested 600 mm detail item - and no tool placed a
+# view-based family inside a family: this card called `doc.Create`, a
+# project's factory, and PLACE_FAMILY_INSTANCES' nested branch takes only
+# work plane-based and level-based families. Version 2 calls
+# `doc.FamilyCreate`'s view overload in a family, reads every one placed back
+# (exists, Owner View, point, type) on BOTH paths, and leaves `instanceId` and
+# `instanceIds`. Owner's yes to widen rather than add a card: Ajmal PS,
+# 2026-11-11. FRAGMENT-ISSUES row 5b-1499.
 
 purpose: >
   Places a detail component - a detail item family - or an annotation symbol
@@ -24,11 +38,35 @@ purpose: >
   is asked for, and a family that is NOT view-based is refused by name and
   pointed at PLACE_FAMILY_INSTANCES.
 
+  **IN A FAMILY TOO** (version 2, 2026-11-11). With a family open in the
+  Family Editor, a detail item or a generic annotation LOADED INTO THE FAMILY
+  - a diffuser's flow arrows - is placed in one of the family's own views, as
+  Detail Component and Symbol do by hand: in the Ref. Level plan it shows in a
+  project's plans only. The points are millimetres from the family's origin.
+  The first one's id comes back as `instanceId`, for
+  LOCK_NESTED_FAMILY_TO_PLANES to lock it to the family's planes and
+  ARRAY_FAMILY_FORMS to array it.
+
+  **READ BACK, ALL OR NOTHING** (version 2): each one placed is read again -
+  it exists, its Owner View is the view asked for, its insertion point is
+  where asked (half a millimetre, in the view's plane) and its type is the
+  one asked. One that does not read so fails the call; nothing is kept.
+
   **A 3D VIEW OR A TEMPLATE IS REFUSED.** Revit draws neither kind in a 3D
   view, and a view template holds no elements.
 
   **The points are on the view's own plane, in millimetres.** On a plan that is
   X and Y; a drafting view is the same.
+
+  **MEASURED 2026-11-12, REVIT 2020 (row 5b-1573):** inside a family, Revit
+  reports a nested Detail Items family WorkPlaneBased and refuses it in a view
+  ("its FamilyPlacementType is not ViewBased"), though the same file places as
+  one in a project. So in a family only a type Revit reports ViewBased there is
+  placed here; any other is refused up front with what Revit reports and the
+  route that works: PLACE_FAMILY_INSTANCES on the level, then
+  LOCK_NESTED_FAMILY_TO_PLANES, which locks it in the plan of its level. A
+  family of category Detail Items or Generic Annotations counts as view-based
+  in a project whatever placement type Revit reports.
 
   ASSUMES AN OPEN TRANSACTION (Golden Rule 16). One operation is one undo
   entry, and the caller owns it.
@@ -55,6 +93,18 @@ contract:
     - name: placed
       role: result
       type: IList<Element>
+    - name: instanceId
+      # VERSION 2: the first one placed, by its unique id - the same kind of
+      # id PLACE_FAMILY_INSTANCES' nested branch leaves, which
+      # LOCK_NESTED_FAMILY_TO_PLANES and ARRAY_FAMILY_FORMS take. Empty when
+      # nothing was placed.
+      role: result
+      type: string
+    - name: instanceIds
+      # VERSION 2: every one placed, by unique id, commas between, in the
+      # order of the points. Empty when nothing was placed.
+      role: result
+      type: string
     - name: refused
       role: accounting
       type: IList<string>
@@ -62,27 +112,31 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-18'
+  date: '2026-11-12'
   by: Ajmal PS
-  model: Project1 (3,047 elements), Revit 2020, session 2648
+  model: Heron NF Project, Revit 2020, session 33000 - the count is NOT recorded because 1,564
+    elements was measured on Heron NF Generic, the document in front, and this ran against
+    another one (row 15)
   positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
     the transaction group ROLLED BACK afterwards. returned findings 1 item(s) [Placed 1 of
-    1 ''UB-Universal Beam-Section: UB305x165x40'' on ''...], go true, placed 1 item(s) [FamilyInstance],
-    refused 0 item(s), rotationDegrees 0. inputs came view as given; symbol as given; points
-    as given (1); rotationDegrees as given. on Project1'
-  negative_case: 'run with categoryName=Text Notes, inViewOnly=FloorPlan: Level 1, points=1000,7000,0,
-    rotationDegrees=0, symbol=UB-Universal Beam-Section: UB305x165x40, view=Heron 3D instead
-    - chosen because it should not contain what this fragment reports - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned findings 1 item(s)
-    [''Heron 3D'' is a 3D view, and Revit draws detail components a...], go false, placed
-    0 item(s), refused 1 item(s) [''Heron 3D'' is a 3D view, and Revit draws detail components
-    a...], rotationDegrees 0. inputs came view as given; symbol as given; points as given
-    (1); rotationDegrees as given. on Project1'
+    1 ''Heron NF Arrow: Heron NF Arrow'' on ''Level 1'' ...], go true, halfMillimetre 0.00164041994750656,
+    inFamily false, instanceId 8f82afe3-3eb8-45f2-bcdb-ad7d8fa7cd24-000546a0, instanceIds
+    8f82afe3-3eb8-45f2-bcdb-ad7d8fa7cd24-000546a0, invariant CultureInfo, mm Func`2, placed
+    1 item(s) [FamilyInstance], refused 0 item(s), rotationDegrees 0. inputs came view as
+    given; symbol as given; points as given (1); rotationDegrees as given. on Heron NF Project'
+  negative_case: 'run with view=Architectural Plan, symbol=Heron NF Arrow: Heron NF Arrow,
+    points=1000,2000,0, rotationDegrees=0 instead - chosen because it should not contain what
+    this fragment reports - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned findings 1 item(s) [''Architectural Plan'' is a view
+    TEMPLATE, which holds no elem...], go false, halfMillimetre 0.00164041994750656, inFamily
+    false, instanceId , instanceIds , invariant CultureInfo, mm Func`2, placed 0 item(s),
+    refused 1 item(s) [''Architectural Plan'' is a view TEMPLATE, which holds no elem...],
+    rotationDegrees 0. inputs came view as given; symbol as given; points as given (1); rotationDegrees
+    as given. on Heron NF Project'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: b006a94379ef3df1
-
+  fingerprint: 11640d48052159c9
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -92,12 +146,26 @@ compatibility-note: >
   FamilySymbol, View)`, `Family.FamilyPlacementType`, `FamilySymbol.IsActive`
   / `Activate` and `ElementTransformUtils.RotateElement` are present 2020
   through 2027, read with tools/api-surface on 2026-10-14. PLACE_FLOW_ARROWS
-  already places view-based annotation through the same call.
+  already places view-based annotation through the same call. Version 2's
+  `FamilyItemFactory`'s inherited `ItemFactoryBase.NewFamilyInstance(XYZ,
+  FamilySymbol, View)`, `Document.IsFamilyDocument`, `Element.OwnerViewId`,
+  `Element.GetTypeId`, `LocationPoint.Point`, `View.RightDirection` /
+  `UpDirection` and `ElementId.InvalidElementId` are present 2020 through
+  2027 (`tools/api-surface --members --inherited`, 2026-11-11).
 
 # ROUTING - the same rows are in PLACE_FAMILY_INSTANCES and PLACE_FLOW_ARROWS.
 #
 #   "put the north arrow on this plan"      -> here
 #   "add a detail component here"           -> here
+#   "place the flow arrow in the family on Ref. Level" -> PLACE_FAMILY_INSTANCES,
+#                                              then LOCK_NESTED_FAMILY_TO_PLANES.
+#                                              MEASURED 2026-11-12 (Group NF, NF2,
+#                                              row 5b-1573): inside a family Revit
+#                                              2020 reports a nested detail item
+#                                              WorkPlaneBased and refuses it in a
+#                                              view - this card says so and names
+#                                              that route
+#   "put the motor family into this air handler" -> PLACE_FAMILY_INSTANCES
 #   "place a diffuser"                      -> PLACE_FAMILY_INSTANCES - a model
 #                                              family, on a level
 #   "show which way the air is going"       -> PLACE_FLOW_ARROWS, which works out

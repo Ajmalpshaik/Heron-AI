@@ -364,6 +364,12 @@ compatibility-note: >
 #   "put the motor family into this air handler" -> here, in the family being
 #                                   edited - PLACE_NESTED_FAMILY until
 #                                   2026-11-01
+#   "place the flow arrow in the family on Ref. Level" -> here, on the level,
+#                                   then LOCK_NESTED_FAMILY_TO_PLANES. Inside a
+#                                   family Revit 2020 reports a nested detail
+#                                   item WorkPlaneBased and refuses it in a view
+#                                   (Group NF, NF2, row 5b-1573) - so it nests here
+#                                   like any work plane-based family
 #   "lock the motor's centre to the centre planes" -> LOCK_NESTED_FAMILY_TO_PLANES,
 #                                   by the instanceId given back here
 #   "what families are nested in this one" -> REPORT_NESTED_FAMILIES
@@ -422,6 +428,8 @@ utterances:
   - place the nested handle on the front plane
   - nest this family in the one I am editing
   - place a nested family at the origin of this family
+  # 2026-11-12 (row 5b-1573): a nested detail item in a family is placed here.
+  - place the flow arrow detail item in the family on Ref. Level
   # PLACE_NESTED_FAMILY's semantic identity, "place a loaded component in the
   # family being edited, nested in it", is NOT declared here: measured
   # 2026-11-01 on the model backend, declared it moved the answer key's row 65
