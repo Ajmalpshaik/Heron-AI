@@ -46,7 +46,9 @@ chose to keep, is kept unasked.
 - **A job's *keep the rest* grant is not reported.** The ON line names it in words; whether one is held now
   lives in the add-in (`HeronKeepGrant`) and `info` does not carry it.
 - **No tool description tells a chat the line exists.** The always-loaded descriptions are at their budget
-  ([D-118](../decisions/D-118.md)), so `revit_health`'s was not lengthened.
+  ([D-118](../decisions/D-118.md)), so `revit_health`'s was not lengthened. The four methods that said *no Heron tool tells a chat how it
+  stands* - `parameters-csv-round-trip`, `cad-to-mep`, `sheets-from-excel`, `reinforce-concrete` - name
+  `revit_health` now, and still say to ask the modeller where its line could not say.
 - **`tests/test_keep_question.py` counts the settings key's bare name as text**, so a keyword-argument send
   under another spelling would pass it. The new suite reads the Python for `askToKeep` as a string, a keyword
   or a name; the older check is unchanged.
