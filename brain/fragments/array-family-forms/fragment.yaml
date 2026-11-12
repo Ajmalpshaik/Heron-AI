@@ -69,6 +69,12 @@ purpose: >
   are read again. The array's id and the copies' ids come back; copies of a
   void cut nothing until COMBINE_FAMILY_FORMS combines them.
 
+  **A DETAIL ITEM WITH NO VIEW** (row 5b-1574, measured 2026-11-12 on Revit
+  2020): nested in a family, Revit places a detail item on a plane and gives it
+  no Owner View; arrayed in a 3D view it failed with "An internal error has
+  occurred". It is arrayed in the floor plan of the level it stands on, read by
+  its insertion point - four arrows 200 mm apart in Ref. Level, read back.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:

@@ -58,6 +58,16 @@ purpose: >
   **The points are on the view's own plane, in millimetres.** On a plan that is
   X and Y; a drafting view is the same.
 
+  **MEASURED 2026-11-12, REVIT 2020 (row 5b-1573):** inside a family, Revit
+  reports a nested Detail Items family WorkPlaneBased and refuses it in a view
+  ("its FamilyPlacementType is not ViewBased"), though the same file places as
+  one in a project. So in a family only a type Revit reports ViewBased there is
+  placed here; any other is refused up front with what Revit reports and the
+  route that works: PLACE_FAMILY_INSTANCES on the level, then
+  LOCK_NESTED_FAMILY_TO_PLANES, which locks it in the plan of its level. A
+  family of category Detail Items or Generic Annotations counts as view-based
+  in a project whatever placement type Revit reports.
+
   ASSUMES AN OPEN TRANSACTION (Golden Rule 16). One operation is one undo
   entry, and the caller owns it.
 
@@ -143,13 +153,14 @@ compatibility-note: >
 #
 #   "put the north arrow on this plan"      -> here
 #   "add a detail component here"           -> here
-#   "place the flow arrow in the Ref. Level view" -> here, version 2 - a
-#                                              detail item or annotation
-#                                              NESTED in a family is placed
-#                                              with THIS card, in a family
-#                                              view; PLACE_FAMILY_INSTANCES
-#                                              nests only work plane- and
-#                                              level-based families
+#   "place the flow arrow in the family on Ref. Level" -> PLACE_FAMILY_INSTANCES,
+#                                              then LOCK_NESTED_FAMILY_TO_PLANES.
+#                                              MEASURED 2026-11-12 (Group NF, NF2,
+#                                              row 5b-1573): inside a family Revit
+#                                              2020 reports a nested detail item
+#                                              WorkPlaneBased and refuses it in a
+#                                              view - this card says so and names
+#                                              that route
 #   "put the motor family into this air handler" -> PLACE_FAMILY_INSTANCES
 #   "place a diffuser"                      -> PLACE_FAMILY_INSTANCES - a model
 #                                              family, on a level
@@ -163,4 +174,3 @@ utterances:
   - add a detail component at these points
   - place this detail item in the drafting view
   - put the fire rating symbol on this view
-  - place the flow arrow in the Ref. Level view

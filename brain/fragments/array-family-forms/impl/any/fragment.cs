@@ -151,6 +151,9 @@ Func<FamilyParameter, bool> isInteger = p =>
 // VERSION 4: the view a view-based nested family belongs to - its Owner View -
 // or null for a form or a model family. Set once the original is known.
 View ownerView = null;
+// A detail item with no Owner View, arrayed in the plan of its level instead
+// (row 5b-1574): its copies belong to no view either.
+var ownerless = false;
 // Where a view-based nested family, or the group an array copy of one is, sits:
 // the nested family's insertion point. Null when it has none to read.
 Func<Element, XYZ> insertionOf = e =>
@@ -325,6 +328,32 @@ else
                         + "array it in is not known.");
                     ownerView = null;
                 }
+                else if (insertionOf(original) == null)
+                    problems.Add("The " + describe(original) + " has no insertion point to read, so its copies could not "
+                        + "be read back.");
+            }
+            else if (originalForm == null && original.Category != null
+                && (original.Category.Id.Equals(new ElementId(BuiltInCategory.OST_DetailComponents))
+                    || original.Category.Id.Equals(new ElementId(BuiltInCategory.OST_GenericAnnotation))))
+            {
+                // A DETAIL ITEM WITH NO OWNER VIEW - nested in a family, where
+                // Revit 2020 places it on a plane, not in a view (Group NF, NF2
+                // and NF4, row 5b-1574): arrayed in a 3D view it failed with "An
+                // internal error has occurred". It is arrayed in the floor plan
+                // of the level it stands on - the plan it shows in - as
+                // LOCK_NESTED_FAMILY_TO_PLANES v4 locks it there. Its copies,
+                // like it, belong to no view.
+                var asInstance = original as FamilyInstance;
+                var onLevel = (asInstance == null ? null : asInstance.Host as Level)
+                    ?? (doc.GetElement(original.LevelId) as Level);
+                var plans = new FilteredElementCollector(doc).OfClass(typeof(ViewPlan)).Cast<ViewPlan>()
+                    .Where(v => !v.IsTemplate && v.ViewType == ViewType.FloorPlan).ToList();
+                ownerView = plans.FirstOrDefault(v => onLevel != null && v.GenLevel != null && v.GenLevel.Id.Equals(onLevel.Id))
+                    ?? plans.FirstOrDefault();
+                ownerless = true;
+                if (ownerView == null)
+                    problems.Add("The " + describe(original) + " belongs to no view, and this family has no floor plan to "
+                        + "array it in.");
                 else if (insertionOf(original) == null)
                     problems.Add("The " + describe(original) + " has no insertion point to read, so its copies could not "
                         + "be read back.");
@@ -606,7 +635,8 @@ if (refused == null)
     // VERSION 4: every copy of a view-based nested family belongs to its view.
     if (ownerView != null)
     {
-        var away = copies.FirstOrDefault(c => c.OwnerViewId == null || !c.OwnerViewId.Equals(ownerView.Id));
+        var away = ownerless ? null
+            : copies.FirstOrDefault(c => c.OwnerViewId == null || !c.OwnerViewId.Equals(ownerView.Id));
         if (away != null)
             throw new InvalidOperationException("A copy of the " + describe(original) + " does not belong to \""
                 + ownerView.Name + "\" after the array. The call failed, and Heron rolls the whole call back.");

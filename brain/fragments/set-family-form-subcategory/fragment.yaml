@@ -57,6 +57,12 @@ purpose: >
   it; a subcategory not among them is refused by name, and a new one made for
   it is not kept.
 
+  **"none" WORKS ON REVIT 2020 (row 5b-1571, measured 2026-11-12).** Setting a
+  form's Subcategory to its family's category throws "The input subcategory is
+  illegal" - from a subcategory, and from the category itself - so "none" is
+  written as the Subcategory field's empty id, what "None" in Properties is,
+  and a form already on the category is left as it was and said.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:

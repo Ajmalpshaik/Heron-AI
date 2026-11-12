@@ -1016,9 +1016,18 @@ if (refused == null && line2d != null)
         throw new InvalidOperationException("The labelled dimension reads "
             + (reads.HasValue ? mm(reads.Value) + " mm" : "nothing") + " and \"" + parameter.Definition.Name
             + "\" holds " + (holds.HasValue ? mm(holds.Value) + " mm" : "nothing") + ". NOTHING from this call was kept.");
-    if (dimension.OwnerViewId == null || !dimension.OwnerViewId.Equals(lineView.Id))
-        throw new InvalidOperationException("The labelled dimension is not in \"" + lineView.Name + "\", the view the arc "
-            + "was labelled in. NOTHING from this call was kept.");
+    // A FAMILY'S DIMENSION BELONGS TO NO VIEW. Measured 2026-11-12 on Revit 2020
+    // (Group NF, NF10, row 5b-1572): a diameter dimension made on a symbolic arc
+    // in "Ref. Level" read back with no Owner View at all. So no view is right;
+    // a dimension that belongs to ANOTHER view is still refused.
+    if (dimension.OwnerViewId != null && !dimension.OwnerViewId.Equals(ElementId.InvalidElementId)
+        && !dimension.OwnerViewId.Equals(lineView.Id))
+        throw new InvalidOperationException("The labelled dimension is not in \"" + lineView.Name + "\" ("
+            + lineView.ViewType + ", id " + lineView.Id + "), the view the arc was labelled in - Revit gives it "
+            + (dimension.OwnerViewId == null || dimension.OwnerViewId.Equals(ElementId.InvalidElementId) ? "no view"
+               : "\"" + doc.GetElement(dimension.OwnerViewId).Name + "\" (" + ((View)doc.GetElement(dimension.OwnerViewId)).ViewType
+                 + ", id " + dimension.OwnerViewId + ")")
+            + ". NOTHING from this call was kept.");
     var arcNow = line2d.GeometryCurve as Arc;
     var radiusAsked = diameter ? holds.Value / 2 : holds.Value;
     if (arcNow == null || Math.Abs(arcNow.Radius - radiusAsked) > halfMillimetre)

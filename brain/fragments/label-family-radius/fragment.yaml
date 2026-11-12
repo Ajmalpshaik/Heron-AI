@@ -149,6 +149,11 @@ purpose: >
   carry the parameter and read its value. FLEX_FAMILY at two different sizes
   shows the form following.
 
+  **A FAMILY'S DIMENSION BELONGS TO NO VIEW** (row 5b-1572, measured 2026-11-12
+  on Revit 2020): the label on a 2D arc reads back with no Owner View, and that
+  is right; one in ANOTHER view is refused. Kept and flexed: a detail arc
+  labelled "Arc Radius" followed it from 150 to 200 mm.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:

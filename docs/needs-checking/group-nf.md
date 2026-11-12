@@ -74,3 +74,33 @@ Record every id. **ARROW-ID** comes from NF2 run KEPT through `try-once` (the ar
 
 **Before the owner's own families.** Only once NF is through, and each card only once its own rows are. The first
 run on the KDF diffuser is the owner's choice, through `try-once`, behind Revit's Keep or Discard.
+
+## Run 1 - Revit 2020, 2026-11-12 (session 33000, Ajmal PS watching)
+
+**Models:** the SAVED scratch files `%TEMP%\heron-work\family-2d-widen\` Heron NF Generic.rfa (Generic Model),
+Heron NF Arrow.rfa (Detail Item), Heron NF Box.rfa and Heron NF Project.rvt - all made by `CREATE_FAMILY_DOCUMENT`
+this session, never the owner's own. Rolled back unless it says KEPT. Four defects were found and fixed in the run
+(rows 5b-1571 to 5b-1574); every row below was re-run on the final code.
+
+| Row | Positive | Negative | Verdict |
+|---|---|---|---|
+| NF1 | arrow placed on Level 1 of the project, read back, `instanceId` filled | view template "Architectural Plan" refused (the project has no 3D view; the plan named "{3D}") | held |
+| NF2 | **inside a family Revit 2020 reports the arrow WorkPlaneBased and refuses it in a view** - now refused up front, naming the route | Heron NF Box refused, "placed OneLevelBased, category Generic Models" | finding, row 5b-1573; the arrow nested instead with `PLACE_FAMILY_INSTANCES` |
+| NF3 | 3 x 700 mm along X, every copy read back | "Y 20" on the vane refused after the trial row (version 3's own negative) | held |
+| NF4 | first run "An internal error has occurred" - fixed; then 4 arrows 200 mm apart in Ref. Level | "Z 100" refused, out of the plan | held after row 5b-1574's fix |
+| NF5, NF5b, NF5c | the box's levels and kinds set and read back; "all" again | "rough" refused; views "" refused for a form; the project refused | held |
+| NF6 | the symbolic line at coarse only, kinds of view kept; "settings are of the ViewSpecific kind" | the nested arrow refused, no API | held |
+| NF6b | refused: "Revit would not take kinds of view for the symbolic line ... ViewSpecific" | the box with "unchanged" refused | **the allowed answer**: a symbolic line keeps no kinds of view through the API |
+| NF6c | the arc's levels set, kinds untouched | the box with "unchanged" refused | held |
+| NF7 | "Casing" made, the box on it | "" refused | held |
+| NF7b | first runs threw "The input subcategory is illegal" - fixed; then "Casing -> Generic Models" (Casing KEPT by the owner first) | the project refused | held after row 5b-1571's fix |
+| NF8, NF8b | "Flow Arrow" made, both symbolic lines on it; a line back to "none" | the nested arrow refused; "" refused | held |
+| NF8c | the arrow family's detail line on a new "Arrow Head" | "" refused | held |
+| NF9, NF9b | the cylinder's radius 10 mm in its sketch | the box refused; the revolve with no plane through its axis refused | held |
+| NF10 | first run "not in Ref. Level" - fixed; then the symbolic arc's diameter 300 mm | a straight line refused | held after row 5b-1572's fix |
+| NF11 | the detail arc's radius 150 mm | the shaft refused | held |
+| NF12 | the detail arc's label KEPT by the owner; "Arc Radius" 200 - the arc read back at radius 200 mm | - | **held: a 2D arc follows its parameter** |
+| NF13 | - | - | NOT RUN |
+
+**Proof drafts:** the five cards' drafts are from the last runs on the final code (NF1, NF4, NF7b, NF10, NF6) and
+await the owner's signature.

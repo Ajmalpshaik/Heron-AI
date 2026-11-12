@@ -54,11 +54,42 @@ else if (view is View3D)
         + "2D views - plans, sections, elevations, drafting views. NOTHING WAS PLACED.");
     go = false;
 }
-else if (symbol.Family == null || symbol.Family.FamilyPlacementType != FamilyPlacementType.ViewBased)
+// A DETAIL ITEM OR AN ANNOTATION BY ITS CATEGORY TOO. Measured 2026-11-12 on
+// Revit 2020 (Group NF, NF2, row 5b-1573): a Metric Detail Item family loaded
+// into a Generic Model family did NOT report FamilyPlacementType ViewBased
+// there, though the same file placed as one in a project (NF1) - the finding
+// row 5b-1494 met in PLACE_FAMILY_INSTANCES. So a family whose category is
+// Detail Items or Generic Annotations is view-based whatever placement type
+// Revit reports, as LOCK_NESTED_FAMILY_TO_PLANES v4 decides it.
+else if (symbol.Family == null || !(symbol.Family.FamilyPlacementType == FamilyPlacementType.ViewBased
+    || (symbol.Family.FamilyCategory != null
+        && (symbol.Family.FamilyCategory.Id.Equals(new ElementId(BuiltInCategory.OST_DetailComponents))
+            || symbol.Family.FamilyCategory.Id.Equals(new ElementId(BuiltInCategory.OST_GenericAnnotation))))))
 {
     refused.Add("'" + symbol.FamilyName + ": " + symbol.Name + "' is not a view-based family - not a detail "
-        + "item or an annotation symbol - so NOTHING WAS PLACED. A model family goes on a level"
+        + "item or an annotation symbol (Revit reports it placed "
+        + (symbol.Family == null ? "no way" : symbol.Family.FamilyPlacementType.ToString())
+        + (symbol.Family == null || symbol.Family.FamilyCategory == null ? "" : ", category " + symbol.Family.FamilyCategory.Name)
+        + ") - so NOTHING WAS PLACED. A model family goes on a level"
         + (inFamily ? ", or on a reference plane in a family" : "") + ": PLACE_FAMILY_INSTANCES.");
+    go = false;
+}
+// IN A FAMILY, REVIT PLACES A NESTED DETAIL ITEM ON A PLANE, NOT IN A VIEW.
+// Measured 2026-11-12 on Revit 2020 (Group NF, NF2, row 5b-1573): the view
+// overload refused with "Family cannot be placed as hosted on an input face
+// reference, because its FamilyPlacementType is not ViewBased" for a Metric
+// Detail Item family loaded into a Generic Model family. So in a family only
+// a type Revit reports ViewBased there is placed here; any other is refused
+// up front, naming what Revit reports and the route that works in a family:
+// PLACE_FAMILY_INSTANCES on the level, then LOCK_NESTED_FAMILY_TO_PLANES,
+// which locks such an arrow in the plan of its level (v4, PROVEN 2026-11-11).
+else if (inFamily && symbol.Family.FamilyPlacementType != FamilyPlacementType.ViewBased)
+{
+    refused.Add("'" + symbol.FamilyName + ": " + symbol.Name + "' is a " + symbol.Family.FamilyCategory.Name
+        + " family, but inside this family Revit reports it placed " + symbol.Family.FamilyPlacementType
+        + ", not in a view, and refuses it in one - so NOTHING WAS PLACED. In a family a nested detail item goes "
+        + "on the level its plan shows: PLACE_FAMILY_INSTANCES with that level, then LOCK_NESTED_FAMILY_TO_PLANES, "
+        + "which locks it in the plan of its level.");
     go = false;
 }
 else if (points == null || points.Count == 0)

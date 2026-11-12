@@ -65,6 +65,11 @@ purpose: >
   Revit's API has no visibility settings for any of them on any release 2020
   to 2027; they are set by hand in the Family Editor.
 
+  **MEASURED 2026-11-12 ON REVIT 2020 (Group NF, NF6b):** a symbolic line's
+  setting is of the ViewSpecific kind and Revit would not take kinds of view on
+  it - asked for "plan", the call is refused saying so and nothing is kept. Its
+  detail levels are set with views "unchanged".
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:

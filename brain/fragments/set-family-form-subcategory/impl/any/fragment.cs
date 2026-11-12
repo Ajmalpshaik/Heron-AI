@@ -166,9 +166,30 @@ if (refused == null)
     foreach (var f in targets)
     {
         var before = nameOf(f.Subcategory);
+        // ALREADY ON THE FAMILY'S CATEGORY: left alone. Measured 2026-11-12 on
+        // Revit 2020 (Group NF, NF7b, row 5b-1571): a form with no subcategory
+        // put on its family's category threw "The input subcategory is
+        // illegal" - Revit refuses setting it to what it already is.
+        if (backToCategory && (f.Subcategory == null || f.Subcategory.Id == wanted.Id))
+        {
+            changed.Add(kindOf(f) + " " + f.UniqueId + ": already on " + wanted.Name + " - left as it was");
+            continue;
+        }
         try
         {
-            f.Subcategory = wanted;
+            if (backToCategory)
+            {
+                // BACK TO THE FAMILY'S CATEGORY - "None" in the Properties
+                // palette. Measured 2026-11-12 on Revit 2020 (Group NF, NF7b,
+                // row 5b-1571): `Subcategory = <the family's category>` throws
+                // "The input subcategory is illegal" even from a subcategory,
+                // whatever the API's remarks say. The Subcategory field itself
+                // takes the empty id, which is what "None" is.
+                var field = f.get_Parameter(BuiltInParameter.FAMILY_ELEM_SUBCATEGORY);
+                if (field == null || field.IsReadOnly || !field.Set(ElementId.InvalidElementId))
+                    f.Subcategory = wanted;
+            }
+            else f.Subcategory = wanted;
         }
         catch (Exception ex)
         {
