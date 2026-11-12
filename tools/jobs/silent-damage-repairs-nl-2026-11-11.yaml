@@ -4,7 +4,7 @@
 #
 #   set-routing-preference  SET_ROUTING_PREFERENCE  FRG-MEP-046  version 2  rows 5b-1120, 5b-1549  NL1 - NL4
 #   add-project-parameter   ADD_PROJECT_PARAMETER   FRG-PAR-010  version 3  row 5b-1127            NL5 - NL8
-#   create-assembly         CREATE_ASSEMBLY         FRG-ELE-080  version 2  rows 5b-1117, 5b-1553  NL9 - NL11
+#   create-assembly         CREATE_ASSEMBLY         FRG-ELE-080  version 2  rows 5b-1117, 5b-1553  NL9 - NL12
 #
 #     python tools/batch-prove.py tools/jobs/silent-damage-repairs-nl-2026-11-11.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/silent-damage-repairs-nl-2026-11-11.yaml --session <pid>
@@ -144,11 +144,14 @@ jobs:
   # read back with a type and that name, and committed. Read `findings` all the
   # same - "Made assembly "HERON NL A1" with N member(s), read back".
   #
-  # IF REVIT DOES NOT, the verdict is POSITIVE EMPTY with `refused` quoting
-  # Revit and ending "... taken apart again and the model read ... NOTHING WAS
-  # MADE", `assembly` null and `memberIds` 0 item(s) - or the run answers
-  # "threw while running ... the whole job is rolled back". Either goes on row
-  # 5b-1553 verbatim, the card is not signed, and the row stays open.
+  # IF REVIT DOES NOT, the verdict is DID NOT RUN and the message says so in
+  # as many words: "'create-assembly' threw while running: Revit made the
+  # assembly but had not given it an assembly type after the transaction that
+  # made it was committed ... The call failed, and Heron rolls the whole call
+  # back - no assembly is kept." Every refusal after Revit has made the
+  # assembly is thrown like that, because only the add-in's rollback leaves
+  # the model exactly as it was. It goes on row 5b-1553 verbatim, the card is
+  # not signed, and the row stays open.
   #
   # "HERON NL A1" must be a name NO assembly in the model has; the negative is
   # a naming category that does not exist.
@@ -164,6 +167,7 @@ jobs:
       Round 9's arrangement on the same model (2026-11-02): the ducts in that
       callout. The rolled-back batch shows the answer; that the assembly is in
       the Project Browser under that name, with ONE undo entry, is NL10 -
-      through try-once, kept. A name Revit refuses AFTER it has made the
-      assembly, and nothing left behind, is NL11 - this same line run again
-      with a name NL10 left taken.
+      through try-once, kept. A name that is already another assembly's,
+      with nothing left behind and no undo entry, is NL11 - this same line run
+      again with a name NL10 left taken. A new assembly that matches an
+      existing one is NL12.

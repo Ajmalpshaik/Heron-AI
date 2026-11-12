@@ -42,20 +42,40 @@
 // `editScopeFailures`, so what Revit says reaches the verdict as it would from
 // the add-in's own transaction.
 //
+// THE SWITCH IS DECIDED FOR THIS. D-115 item 1 (Accepted): "A fragment that
+// Revit refuses inside a transaction declares `editScopeFailures` too, whatever
+// the reason", and its item 3 asks each such card to name the Revit refusal
+// that made it need the switch. It is this one, measured on Revit 2020 on
+// 2026-10-18 and again on 2026-10-21, inside the transaction that made the
+// assembly: "No valid type for the assembly instance". D-125 item 2
+// (Accepted) keeps the switch's meaning - "a fragment that opens its own
+// transactions".
+//
 // NOT MEASURED, AND THE WHOLE CARD RESTS ON IT: whether Revit assigns the type
 // at a commit that is INSIDE an open TransactionGroup. The remark says "the
 // transaction", and the stair cards show a commit inside the group is a real
 // commit - but no run has shown an assembly named this way. If Revit does not,
-// step 2 fails, and what follows is what makes that safe.
+// the type is looked for FIRST after the commit and the answer says exactly
+// that - not that a name was refused.
 //
-// ALL OR NOTHING, AND THE NOTHING IS READ. Anything that fails after step 1 -
-// the name refused, the type not there, the members not readable - takes the
-// assembly apart again in a third transaction (Disassemble, which removes the
-// assembly and RELEASES its members; Delete would take the members with it).
-// Then the model is READ: the assembly gone, its type gone, every element back
-// in no assembly. Only then is "NOTHING WAS MADE" said. If any of that does
-// not read so, this THROWS, and the add-in rolls the whole group back and
-// says so - the one thing that can still restore the model exactly.
+// ALL OR NOTHING, AND THE NOTHING IS REVIT'S OWN ROLLBACK. Once step 1 is
+// committed there is an assembly in the group. Anything that then fails - no
+// type, a name Revit will not take, a name that belongs to other assemblies,
+// members that do not read back - THROWS, with the reason in Revit's words.
+// The add-in rolls a fragment that throws back whole, group and all, and says
+// what its own check of the model found; the model is then exactly as it was
+// and there is no undo entry. The first cut of this version took the assembly
+// apart again with Disassemble and returned a refusal: on a kept run that left
+// "make, then unmake" in the undo list and touched elements beside "NOTHING
+// WAS MADE". Only a rollback is exact, so nothing here undoes its own work.
+//
+// A NAME IS NEVER TAKEN FROM OTHER ASSEMBLIES. Revit's reference on
+// AssemblyTypeName: "All matching assembly instances share this name" - one
+// assembly TYPE, shared by every assembly that matches. So Revit may give a
+// new assembly an EXISTING type, and naming the new one would rename all of
+// them. The assemblies already in the model are read before anything is
+// made; if the new one comes back sharing its type with any of them under
+// another name, or the name asked for is already another type's, it stops.
 //
 // A RESULT MEANS AN ASSEMBLY THAT EXISTS. `assembly` and `memberIds` are filled
 // only after step 2 is committed, from what was read back there: an assembly
@@ -142,13 +162,38 @@ if (refused == null)
 
 var wantedName = (assemblyName ?? "").Trim();
 var madeId = ElementId.InvalidElementId;
-var madeTypeId = ElementId.InvalidElementId;
+
+// The house words for a stop: the add-in rolls a fragment that throws back
+// whole, and adds what its own check of the model found.
+var keptNothing = " The call failed, and Heron rolls the whole call back - no assembly is kept.";
+
+// EVERY ASSEMBLY ALREADY IN THE MODEL, read before anything is made: which
+// type each has, and what that type is called. See the header.
+var assembliesBefore = new HashSet<ElementId>();
+var typeOfExisting = new Dictionary<ElementId, ElementId>();
+var nameOfType = new Dictionary<ElementId, string>();
+if (refused == null)
+{
+    foreach (var each in new FilteredElementCollector(doc).OfClass(typeof(AssemblyInstance)).ToElements())
+    {
+        var existing = each as AssemblyInstance;
+        if (existing == null) continue;
+        assembliesBefore.Add(existing.Id);
+        var existingType = existing.GetTypeId();
+        if (existingType == null || existingType == ElementId.InvalidElementId) continue;
+        typeOfExisting[existing.Id] = existingType;
+        if (nameOfType.ContainsKey(existingType)) continue;
+        try { nameOfType[existingType] = existing.AssemblyTypeName ?? ""; }
+        catch (Exception) { nameOfType[existingType] = ""; }
+    }
+}
 
 // ---------------------------------------------------------------------------
 // 1. MAKE IT, AND COMMIT - Revit assigns the type at this commit, not before.
 // ---------------------------------------------------------------------------
 if (refused == null)
 {
+    string notMade = null;      // why Revit made nothing, without the last words
     using (var making = new Transaction(doc, "Heron: create assembly"))
     {
         making.Start();
@@ -156,35 +201,44 @@ if (refused == null)
         try
         {
             var made = AssemblyInstance.Create(doc, ids, categoryId);
-            if (made == null) refused = "Revit returned no assembly, so NOTHING WAS MADE.";
+            if (made == null) notMade = "Revit returned no assembly.";
             else madeId = made.Id;
         }
         catch (Exception ex)
         {
-            refused = "Revit refused the assembly: " + words(ex) + ". NOTHING WAS MADE.";
+            notMade = "Revit refused the assembly: " + words(ex) + ".";
         }
 
-        if (refused != null)
+        if (notMade != null)
             making.RollBack();
         else if (making.Commit() != TransactionStatus.Committed)
-            refused = "Revit would not keep the new assembly" + revitSaid() + ". NOTHING WAS MADE.";
+            notMade = "Revit would not keep the new assembly" + revitSaid() + ".";
     }
 
-    // A transaction Revit would not keep is one Revit rolled back - and that
-    // is read, like every other "nothing" here.
-    if (refused != null && madeId != ElementId.InvalidElementId && doc.GetElement(madeId) != null)
-        throw new InvalidOperationException("Revit would not keep the new assembly, and it is still in "
-            + "the model. Heron stopped here so that the whole job is rolled back.");
+    // "NOTHING WAS MADE" IS READ: the assemblies in the model are looked for
+    // again, and one that was not there before stops the job.
+    if (notMade != null)
+    {
+        var appeared = 0;
+        foreach (var each in new FilteredElementCollector(doc).OfClass(typeof(AssemblyInstance)).ToElementIds())
+            if (!assembliesBefore.Contains(each)) appeared++;
+        if (appeared > 0)
+            throw new InvalidOperationException(notMade + " And " + appeared + " assembly(ies) that were "
+                + "not in the model before are in it now." + keptNothing);
+        refused = notMade + " NOTHING WAS MADE.";
+    }
 }
 
 // ---------------------------------------------------------------------------
 // 2. NAME IT, AND READ IT BACK - in a second transaction, after the commit.
+//    From here on there is an assembly in the group, so every refusal THROWS.
 // ---------------------------------------------------------------------------
-string afterMaking = null;      // what went wrong once the assembly was already kept
 if (refused == null)
 {
+    string stopped = null;      // why, in Revit's words - thrown below
     var readBack = new List<ElementId>();
     string typeName = null;
+
     using (var naming = new Transaction(doc, "Heron: name assembly"))
     {
         naming.Start();
@@ -192,118 +246,118 @@ if (refused == null)
         try
         {
             var made = doc.GetElement(madeId) as AssemblyInstance;
+            var madeTypeId = made == null ? ElementId.InvalidElementId : (made.GetTypeId() ?? ElementId.InvalidElementId);
+            string nameNow = null;
+
+            // THE TYPE FIRST - the one thing not measured. Asked before any name
+            // is tried, so that Revit not having assigned a type is never
+            // reported as a name it refused.
             if (made == null)
             {
-                afterMaking = "the assembly was not there to name once Revit had kept it";
+                stopped = "Revit kept the new assembly, and it was not in the model afterwards.";
+            }
+            else if (madeTypeId == ElementId.InvalidElementId || doc.GetElement(madeTypeId) == null)
+            {
+                stopped = "Revit made the assembly but had not given it an assembly type after the "
+                    + "transaction that made it was committed, so it could not be named or used.";
             }
             else
             {
-                madeTypeId = made.GetTypeId() ?? ElementId.InvalidElementId;
-                if (wantedName != "")
+                try { nameNow = made.AssemblyTypeName; }
+                catch (Exception ex)
                 {
-                    // REVIT'S OWN WORDS ARE KEPT: a name already taken, or one
-                    // with a character Revit does not allow, is said as Revit
-                    // says it.
-                    try { made.AssemblyTypeName = wantedName; }
-                    catch (Exception ex) { afterMaking = "Revit refused the name \"" + wantedName + "\": " + words(ex); }
+                    stopped = "Revit made the assembly but had not given it a usable assembly type after "
+                        + "the transaction that made it was committed (" + words(ex) + "), so it could "
+                        + "not be named or used.";
                 }
+            }
 
-                if (afterMaking == null)
+            if (stopped == null && wantedName != "" && !string.Equals(nameNow, wantedName, StringComparison.Ordinal))
+            {
+                // WHOSE TYPE IS IT? See the header.
+                var sharing = typeOfExisting.Count(pair => pair.Value == madeTypeId);
+                var taken = nameOfType.Any(pair => pair.Key != madeTypeId
+                    && string.Equals(pair.Value, wantedName, StringComparison.OrdinalIgnoreCase));
+                if (sharing > 0)
                 {
-                    doc.Regenerate();
-                    typeName = made.AssemblyTypeName;
-                    readBack.AddRange(made.GetMemberIds());
-                    madeTypeId = made.GetTypeId() ?? ElementId.InvalidElementId;
+                    stopped = "Revit matched the new assembly to the assembly type \"" + nameNow + "\", which "
+                        + sharing + " assembly(ies) already in the model share. Naming it \"" + wantedName
+                        + "\" would rename all of them, so it was not named. Ask again with no name, or with \""
+                        + nameNow + "\".";
+                }
+                else if (taken)
+                {
+                    stopped = "Another assembly type in this model is already called \"" + wantedName
+                        + "\", so the new assembly was not given that name. Ask again with a name no "
+                        + "assembly has.";
+                }
+                else
+                {
+                    // REVIT'S OWN WORDS ARE KEPT: a character Revit does not
+                    // allow in a name is said as Revit says it.
+                    try { made.AssemblyTypeName = wantedName; }
+                    catch (Exception ex) { stopped = "Revit refused the name \"" + wantedName + "\": " + words(ex) + "."; }
+                }
+            }
 
-                    if (string.IsNullOrEmpty(typeName) || madeTypeId == ElementId.InvalidElementId)
-                        afterMaking = "the assembly read back with no type and no name";
-                    else if (wantedName != "" && !string.Equals(typeName, wantedName, StringComparison.Ordinal))
-                        afterMaking = "the assembly read back named \"" + typeName + "\", not \"" + wantedName + "\"";
-                    else if (readBack.Count == 0)
-                        afterMaking = "the assembly read back with no members";
+            if (stopped == null)
+            {
+                doc.Regenerate();
+                typeName = made.AssemblyTypeName;
+                readBack.AddRange(made.GetMemberIds());
+
+                if (string.IsNullOrEmpty(typeName))
+                    stopped = "The assembly read back with no name.";
+                else if (wantedName != "" && !string.Equals(typeName, wantedName, StringComparison.Ordinal))
+                    stopped = "The assembly read back named \"" + typeName + "\", not \"" + wantedName + "\".";
+                else if (readBack.Count == 0)
+                    stopped = "The assembly read back with no members.";
+                else
+                {
+                    // AND NO OTHER ASSEMBLY'S NAME MOVED. Read, because the
+                    // guard above is reasoning and this is the model.
+                    foreach (var known in typeOfExisting)
+                    {
+                        var other = doc.GetElement(known.Key) as AssemblyInstance;
+                        string otherName = null;
+                        try { otherName = other == null ? null : other.AssemblyTypeName; } catch (Exception) { }
+                        if (other == null || !string.Equals(otherName ?? "", nameOfType[known.Value], StringComparison.Ordinal))
+                        {
+                            stopped = "Naming the new assembly changed an assembly that was already in the "
+                                + "model: one called \"" + nameOfType[known.Value] + "\" now reads \""
+                                + (otherName ?? "<gone>") + "\".";
+                            break;
+                        }
+                    }
                 }
             }
         }
         catch (Exception ex)
         {
-            afterMaking = "Revit would not let the new assembly be named or read: " + words(ex);
+            stopped = "Revit would not let the new assembly be named or read: " + words(ex) + ".";
         }
 
-        if (afterMaking != null)
+        if (stopped != null)
             naming.RollBack();
         else if (naming.Commit() != TransactionStatus.Committed)
-            afterMaking = "Revit would not keep the assembly's name" + revitSaid();
+            stopped = "Revit would not keep the assembly's name" + revitSaid() + ".";
     }
 
-    if (afterMaking == null)
-    {
-        // ONLY NOW IS ANYTHING REPORTED AS MADE.
-        assembly = doc.GetElement(madeId) as AssemblyInstance;
-        if (assembly == null)
-            throw new InvalidOperationException("The assembly was made and named, and is not in the model "
-                + "afterwards. Heron stopped here so that the whole job is rolled back.");
-        memberIds.AddRange(readBack);
-        findings.Add("Made assembly \"" + typeName + "\" with " + memberIds.Count + " member(s), read "
-            + "back, from " + ids.Count + " offered" + (alreadyInOne.Count > 0 ? "; " + alreadyInOne.Count + " already in an assembly left out." : "."));
-        if (memberIds.Count != ids.Count)
-            findings.Add("Revit's assembly holds " + memberIds.Count + " member(s) where " + ids.Count
-                + " were offered - look at it in the Project Browser before it is used.");
-    }
-}
+    // OUTSIDE EVERY TRY, so that it leaves the fragment. See the header.
+    if (stopped != null)
+        throw new InvalidOperationException(stopped + keptNothing);
 
-// ---------------------------------------------------------------------------
-// 3. ALL OR NOTHING - and the nothing is READ. See the header.
-// ---------------------------------------------------------------------------
-if (refused == null && afterMaking != null)
-{
-    string notTakenApart = null;
-    using (var undoing = new Transaction(doc, "Heron: take the assembly apart again"))
-    {
-        undoing.Start();
-        discipline(undoing);
-        try
-        {
-            var made = doc.GetElement(madeId) as AssemblyInstance;
-            // Disassemble, never Delete: deleting an assembly takes its
-            // members with it.
-            if (made != null) made.Disassemble();
-        }
-        catch (Exception ex) { notTakenApart = words(ex); }
-
-        if (notTakenApart != null)
-            undoing.RollBack();
-        else if (undoing.Commit() != TransactionStatus.Committed)
-            notTakenApart = "Revit would not keep the change" + revitSaid();
-    }
-
-    // READ, NOT ASSUMED. Outside every try on purpose: what is thrown here has
-    // to leave the fragment, so that the add-in rolls the whole group back.
-    var assemblyLeft = doc.GetElement(madeId) != null;
-    var typeLeft = madeTypeId != ElementId.InvalidElementId && doc.GetElement(madeTypeId) != null;
-    var notReleased = 0;
-    foreach (var id in ids)
-    {
-        var member = doc.GetElement(id);
-        if (member == null
-            || (member.AssemblyInstanceId != null && member.AssemblyInstanceId != ElementId.InvalidElementId))
-            notReleased++;
-    }
-
-    if (assemblyLeft || typeLeft || notReleased > 0)
-    {
-        throw new InvalidOperationException(string.Format("Revit made the assembly, but {0}. Taking it "
-            + "apart again did not leave the model as it was{1}: {2}{3}{4}. Heron stopped here so that "
-            + "the whole job is rolled back - nothing of it is kept.",
-            afterMaking,
-            notTakenApart == null ? "" : " (" + notTakenApart + ")",
-            assemblyLeft ? "the assembly is still there; " : "",
-            typeLeft ? "its assembly type is still in the project; " : "",
-            notReleased > 0 ? notReleased + " element(s) are still in an assembly, or gone" : "the elements are released"));
-    }
-
-    refused = "Revit made the assembly, but " + afterMaking + ". It was taken apart again and the model "
-        + "read: the assembly and its type are gone and all " + ids.Count + " element(s) are in no "
-        + "assembly, as before. NOTHING WAS MADE.";
+    // ONLY NOW IS ANYTHING REPORTED AS MADE.
+    assembly = doc.GetElement(madeId) as AssemblyInstance;
+    if (assembly == null)
+        throw new InvalidOperationException("The assembly was made and named, and is not in the model "
+            + "afterwards." + keptNothing);
+    memberIds.AddRange(readBack);
+    findings.Add("Made assembly \"" + typeName + "\" with " + memberIds.Count + " member(s), read "
+        + "back, from " + ids.Count + " offered" + (alreadyInOne.Count > 0 ? "; " + alreadyInOne.Count + " already in an assembly left out." : "."));
+    if (memberIds.Count != ids.Count)
+        findings.Add("Revit's assembly holds " + memberIds.Count + " member(s) where " + ids.Count
+            + " were offered - look at it in the Project Browser before it is used.");
 }
 
 if (refused != null) findings.Add(refused);

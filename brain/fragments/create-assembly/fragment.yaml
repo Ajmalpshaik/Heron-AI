@@ -39,24 +39,49 @@ risk: MODIFY
 # with no transaction of its own open, and the card makes the assembly in one
 # transaction, commits, and names it in a second. One group, so ONE undo.
 #
-# THAT SWITCH WAS DECIDED FOR REVIT'S EDIT MODES (D-112, still Proposed), and
-# an assembly is not one. Using it here was the manager's decision of
-# 2026-11-12; the owner's to confirm, with the run.
+# THE SWITCH IS DECIDED FOR THIS. D-115 item 1 (Accepted 2026-10-13): "A
+# fragment that Revit refuses inside a transaction declares `editScopeFailures`
+# too, whatever the reason - an edit mode (D-112) or a call Revit will not make
+# while the document is modifiable". Its item 3: "Each further one is named on
+# its card with the Revit refusal that made it need the switch, so the reason
+# can be checked against the release it was measured on." THE REFUSAL, on
+# Revit 2020, 2026-10-18 and again 2026-10-21, inside the transaction that
+# made the assembly: "No valid type for the assembly instance". D-125 item 2
+# (Accepted 2026-10-17) keeps the switch's meaning: "a fragment that opens its
+# own transactions".
 #
 # NOT MEASURED, AND THE CARD RESTS ON IT: whether Revit assigns the type at a
 # commit made INSIDE an open TransactionGroup. NEEDS-CHECKING NL9 is the run
-# that says. If Revit does not, the second step fails and the card refuses -
-# truthfully: whatever fails after the first commit takes the assembly apart
-# again (Disassemble, which releases the members), the model is READ - the
-# assembly gone, its type gone, every element in no assembly - and only then
-# is "NOTHING WAS MADE" said. If it does not read so, the card throws and the
-# add-in rolls the whole job back.
+# that says. After the commit the TYPE is looked for first, so if Revit has
+# not assigned one the answer says exactly that - never that a name was
+# refused.
+#
+# ALL OR NOTHING, BY REVIT'S OWN ROLLBACK. Once the first transaction is
+# committed there is an assembly in the group, so EVERY refusal after it
+# THROWS, with the reason in Revit's words and the house ending ("The call
+# failed, and Heron rolls the whole call back - no assembly is kept"). The
+# add-in rolls a fragment that throws back whole and answers "'create-assembly'
+# threw while running: <those words>", adding what its own check of the model
+# found. Nothing is assimilated, so there is no undo entry and no touched
+# element beside a refusal. (The first cut of this version took the assembly
+# apart again with Disassemble and returned normally - which, on a kept run,
+# left "make, then unmake" in the undo list. A review replaced it.)
+#
+# A NAME IS NEVER TAKEN FROM OTHER ASSEMBLIES. Revit's reference on
+# AssemblyTypeName: "The name for the assembly type. All matching assembly
+# instances share this name." Matching assemblies share ONE type, so Revit
+# may hand a new assembly an existing type, and naming the new one would
+# rename every assembly of that type. The assemblies already in the model are
+# read first; if the new one shares its type with any of them under another
+# name, or the name asked for is already another type's, the card stops - and
+# after naming, every other assembly's name is read again.
 #
 # IT CAN NO LONGER BE A SETUP STEP OF ANOTHER CARD'S PROOF: a setup step runs
 # inside the add-in's own step transaction, where this card cannot open its
-# own (tools/jobs/p1102-round9-2026-11-02.yaml arranged CREATE_ASSEMBLY_VIEWS
-# that way). An assembly for another proof is made and KEPT first.
-# Nothing of version 2 has run in Revit.
+# own, and `validate` and a dry run now refuse it there (FRAGMENT-ISSUES row
+# 5b-1556; tools/jobs/p1102-round9-2026-11-02.yaml arranged
+# CREATE_ASSEMBLY_VIEWS that way). An assembly for another proof is made and
+# KEPT first. Nothing of version 2 has run in Revit.
 
 # WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
 # searched and long text pulls other sentences here.
@@ -85,15 +110,18 @@ contract:
   needs:
     - name: doc
       type: Document
-    # D-112's switch: the add-in runs this with no transaction of its own
-    # open, and hands in the failure discipline every transaction here takes.
+    # D-112's switch, here under D-115 item 1: the add-in runs this with no
+    # transaction of its own open, and hands in the failure discipline every
+    # transaction here takes.
     - name: editScopeFailures
       type: IFailuresPreprocessor
       source: ambient
     - name: elements
       type: IList<Element>
-    # The assembly's name; an EMPTY value lets Revit name it. A name Revit
-    # will not take - one already used - is refused and NOTHING is made.
+    # The assembly's name; an EMPTY value lets Revit name it. A name another
+    # assembly type already has, or one Revit will not take, stops the call
+    # and NOTHING is made. So does a new assembly that Revit matches to an
+    # existing assembly type: naming it would rename the others.
     - name: assemblyName
       type: string
       source: request
@@ -119,8 +147,10 @@ contract:
       type: IList<ElementId>
     - name: refused
       # Why NOTHING WAS MADE, as one sentence; null otherwise (D-52). Version
-      # 2: an assembly Revit had already made is taken apart again and the
-      # model read before this is said.
+      # 2: said only where Revit made nothing at all - and the assemblies in
+      # the model are looked for again before it is said. Once Revit HAS made
+      # the assembly, a refusal is not this: the card throws, and the add-in
+      # rolls the whole call back and says why.
       role: accounting
       type: string
     - name: findings
@@ -165,14 +195,14 @@ compatibility-note: >
   - read off RevitAPI.xml in the Nice3point reference packages for all eight
   releases on 2026-10-12.
 
-  Version 2 opens its own `Transaction`s and adds `AssemblyInstance.Disassemble`,
-  `Element.GetTypeId`, `Transaction.GetFailureHandlingOptions` and
-  `SetFailureHandlingOptions`, and `FailureHandlingOptions.SetFailuresPreprocessor`
-  and `SetClearAfterRollback` - each on every release 2020 to 2027
+  Version 2 opens its own `Transaction`s and adds `Element.GetTypeId`,
+  `Transaction.GetFailureHandlingOptions` and `SetFailureHandlingOptions`,
+  and `FailureHandlingOptions.SetFailuresPreprocessor` and
+  `SetClearAfterRollback` - each on every release 2020 to 2027
   (`tools/api-surface --members`, 2026-11-12). The same RevitAPI.xml carries
-  the remark on `AssemblyInstance.Create` that row 5b-1553 is about, word for
-  word the same in all eight, and says of `Disassemble`: "Removes the assembly
-  instance and releases the member elements."
+  the remark on `AssemblyInstance.Create` that row 5b-1553 is about, and on
+  `AssemblyTypeName` "All matching assembly instances share this name" - both
+  word for word the same in all eight.
 
 # ROUTING - the same rows are in the fragments named here.
 #
