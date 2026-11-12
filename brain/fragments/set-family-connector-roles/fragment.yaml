@@ -83,7 +83,10 @@ purpose: >
   Revit 2020 on 2026-11-12 (Group NO, NO1 - the shape and its size; NO2,
   NO3, NO7 and NO8 held as well, row 5b-1577), signed by Ajmal PS; its proof
   replaced version 4's below. The work-plane host is NOT in that proof - it
-  needs Revit 2023 or later, and NO4-NO6 have not run.
+  needs Revit 2023 or later. RUN ON REVIT 2024 the same day, rolled back
+  (NO4, NO5, row 5b-1578): Revit took a reference plane's reference, the
+  connector was put back where it sat, and with it hosted the box could be
+  deleted and the connector stayed - without the host it went with the box.
 
   **A CONNECTOR'S VALUES ARE SET BY ID HERE** (row 5b-1569). A connector is
   named by the id REPORT_FAMILY_CONNECTORS prints, or its UniqueId;
