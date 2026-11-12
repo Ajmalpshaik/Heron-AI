@@ -831,7 +831,7 @@ if (refused == null && angular)
     var shorter = Math.Min(reach(angleFrom, fromArm), reach(angleTo, toArm));
     var radius = shorter > 200.0 / 304.8 ? shorter * 0.6 : 300.0 / 304.8;
     // THE ARC TURNS COUNTER-CLOCKWISE AS THE VIEW SEES IT. Measured 2026-11-12
-    // on Revit 2020 (Group NE, NE6, row 5b-1565): the 150 degree side drawn from the first
+    // on Revit 2020 (Group NE, NE6): the 150 degree side drawn from the first
     // arm turned clockwise seen from above, and Revit read it as 330 - the
     // angle the other way round. So when the arc's normal faces away from the
     // viewer it is drawn from the second arm instead: the same arc, the other

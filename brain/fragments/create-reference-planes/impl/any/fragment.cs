@@ -2,7 +2,7 @@
 // leaves `created`, `alreadyThere`, `notAFamily`, `refused` and `findings`
 // behind.
 //
-// VERSION 2 (2026-11-12, row 5b-1564) - A PLANE AT AN ANGLE. axis "angle":
+// VERSION 2 (2026-11-12, row 5b-1504) - A PLANE AT AN ANGLE. axis "angle":
 // each plane is Name=degrees, a VERTICAL plane drawn in the floor plan
 // through the point `throughMm` ("X,Y" in mm, the origin when left out), its
 // line turned that many degrees from the left-right line (+X) towards the back
