@@ -830,7 +830,20 @@ if (refused == null && angular)
         Math.Max((plane.BubbleEnd - meet).DotProduct(arm), (plane.FreeEnd - meet).DotProduct(arm));
     var shorter = Math.Min(reach(angleFrom, fromArm), reach(angleTo, toArm));
     var radius = shorter > 200.0 / 304.8 ? shorter * 0.6 : 300.0 / 304.8;
-    var arc = Arc.Create(meet, radius, 0.0, sweep, fromArm, square);
+    // THE ARC TURNS COUNTER-CLOCKWISE AS THE VIEW SEES IT. Measured 2026-11-12
+    // on Revit 2020 (Group NE, NE6): the 150 degree side drawn from the first
+    // arm turned clockwise seen from above, and Revit read it as 330 - the
+    // angle the other way round. So when the arc's normal faces away from the
+    // viewer it is drawn from the second arm instead: the same arc, the other
+    // way round, its normal towards the viewer.
+    var startArm = fromArm;
+    var towards = square;
+    if (fromArm.CrossProduct(square).DotProduct(view.ViewDirection) < 0)
+    {
+        startArm = toArm;
+        towards = (fromArm - toArm * toArm.DotProduct(fromArm)).Normalize();
+    }
+    var arc = Arc.Create(meet, radius, 0.0, sweep, startArm, towards);
 
     // WHICH PLANE A FLEX WOULD TURN. Read before the label exists, as for a
     // distance, but only what holds a plane FAST - pinned, or defining the
