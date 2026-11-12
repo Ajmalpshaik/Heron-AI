@@ -80,14 +80,15 @@ wording.~~ **Mode** must be granted. Conflating the two would let a user talk th
 > [`heron_profile.py`](../brain/heron_profile.py) (`HERON-USR-PRO-001`, DRAFT) refuses a fact that was inferred
 > rather than declared, and a mode that no person granted. The struck sentence is recorded as [PROPOSALS F19](PROPOSALS.md).
 
-> **As built (2026-10-18): no modes, and the permission boundary is the switches on the Revit
-> ribbon.** *Changes* is `write.enabled`, off by default
+> **As built (2026-10-18): no modes, and the permission boundary is the add-in's switches** - on the
+> Revit ribbon then, in Heron's Settings window since 2026-11-07 ([D-150](decisions/D-150.md)).
+> *Changes* is `write.enabled`, off by default
 > ([D-19](DECISIONS.md#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit)).
 > *Admin* and *Publish* are switches only the owner turns on
 > ([D-106](DECISIONS.md#d-106--admin-and-publish-each-get-a-switch-of-their-own-and-only-the-owner-turns-them-on)).
 > *Ask to Keep* is off by default
 > ([D-138](DECISIONS.md#d-138--the-keep-or-discard-question-gets-a-switch-on-the-ribbon-and-its-box-can-keep-the-rest-of-one-job-without-asking)).
-> They are set on the ribbon or in `heron.config` and read inside the add-in, never from a request, so
+> They are set in that window or in `heron.config` and read inside the add-in, never from a request, so
 > no text a chat sends can raise them ([Golden Rule 19](14-golden-rules.md)). There is no generic
 > execute capability: an `ADMIN` fragment from the library runs only while the Admin switch is on
 > ([04 §3](04-heron-mcp.md#3-note-tool-granularity--the-central-mcp-design-decision)).

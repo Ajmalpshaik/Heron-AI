@@ -157,8 +157,9 @@ Trust must be a **hard filter before ranking, not a ranking signal**, for two sp
 - **`EXPERIMENTAL` / `UNVERIFIED`** — never reachable for a `MODIFY` operation on a live model.
   That is [Golden Rule 17](14-golden-rules.md).
 
-> **As built (2026-10-18):** a fragment carries one status field, `heron-status`, and only `DRAFT` and
-> `PROVEN` are in use ([09 §5](09-skills-and-fragments.md#5-fragment-lifecycle)). Unifying the status
+> **As built (2026-10-18):** a fragment carries one status field, `heron-status`, and `DRAFT`,
+> `PROVEN` and - for a card retired in favour of another - `DEPRECATED` are in use
+> ([09 §5](09-skills-and-fragments.md#5-fragment-lifecycle)). Unifying the status
 > words is still proposed, not decided
 > ([D-14](DECISIONS.md#d-14--unify-six-status-vocabularies-into-two-orthogonal-axes)). Both hard filters
 > are built. A fragment for another release is absent from retrieval. A `DRAFT` cannot keep a change
