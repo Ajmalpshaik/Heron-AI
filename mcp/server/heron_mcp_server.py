@@ -2101,8 +2101,10 @@ def revit_change(capability: str = "", values: str = "",
     # before this is kept (D-126), and their time to look is added to the wait.
     reply = session.request(operation, op_args=args,
                             idempotent=False,
-                            response_timeout=configuration.fragment_timeout(
-                                keeping=not dry_run),
+                            # A dry run keeps nothing, so Revit asks nobody: the
+                            # read's wait. A keep may wait for the box.
+                            response_timeout=(configuration.fragment_timeout() if dry_run
+                                              else configuration.fragment_timeout(keeping=True)),
                             on_wait=_waiting(ctx))
     session.close()
     _ctx_reply(reply)
