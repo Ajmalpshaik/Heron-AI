@@ -157,9 +157,12 @@ purpose: >
   9. KEEP OR DISCARD, THEN LOOK. The box is certain only for a DRAFT's
      try-once (D-119). For a PROVEN card through revit_change Revit asks
      only while the owner's Ask to Keep is on - it is OFF as installed
-     (D-138), no Heron tool tells a chat how it stands, and with it off the
-     bars are KEPT AT ONCE, one undo entry: ask the modeller which it is,
-     and say so, before steps 5 and 6. While Revit's Keep or Discard box is open
+     (D-138), and with it off the bars are KEPT AT ONCE, one undo entry.
+     revit_health says which way it is set for that Revit (built, not yet
+     run in Revit - Group NP): check it, and say which it will be, before
+     steps 5 and 6; where its line says that Revit's Heron does not say,
+     or could not be read, ask the modeller. While Revit's Keep or Discard
+     box is open
      no chat tool reaches Revit - the modeller looks in Revit, where the new
      rebar is selected and shown, and chooses; steps 7 and 8 run after Keep.
      A DOES NOT MEET after Keep is put right by the modeller's choice - one

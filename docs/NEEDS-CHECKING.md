@@ -1486,6 +1486,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-nn.md`](needs-checking/group-nn.md)
 
+## Group NP - `revit_health` says, under each connected Revit, whether that Revit will ask Keep or Discard: the add-in's `info` answer now carries the Ask to Keep switch (2026-11-12)
+
+**Its own file:** [`needs-checking/group-np.md`](needs-checking/group-np.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

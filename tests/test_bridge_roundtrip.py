@@ -269,6 +269,120 @@ def call(handle, op, client=CLIENT):
     return json.loads(line.decode("utf-8").strip())
 
 
+def _started(*args, **popen):
+    """A host, with the pipe name and token it printed - (proc, pipe, token)."""
+    proc = subprocess.Popen(
+        host_command(*args), stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        universal_newlines=True, bufsize=1, **popen)
+    pipe_name, token = None, None
+    deadline = time.time() + 25
+    while time.time() < deadline and not (pipe_name and token):
+        line = proc.stdout.readline()
+        if not line:
+            break
+        m = re.search(r"Pipe\s+(heron\.\S+)", line)
+        if m:
+            pipe_name = m.group(1)
+        t = re.search(r"Token\s+(\S+)", line)
+        if t:
+            token = t.group(1)
+    return proc, pipe_name, token
+
+
+def ask_to_keep_said(failures):
+    """
+    `info` says what the owner's Ask to Keep switch is, read at the moment of
+    the call (added 2026-11-12, tests/test_ask_to_keep_health.py has the rest).
+
+    A HOST OF ITS OWN, WITH A SETTINGS FOLDER OF ITS OWN. The switch is a line
+    in the settings file the kernel finds through the operating system's
+    application-data folder, and this check has to WRITE that line. On Linux
+    .NET takes that folder from XDG_CONFIG_HOME, so the host is started with
+    it pointing at a scratch folder and nobody's real settings are touched.
+
+    NOT RUN ANYWHERE ELSE, AND SAID. On Windows that folder is the user's own
+    %APPDATA% whatever the environment says, so the only file there is to
+    flip is the owner's real one - and a suite never writes that. What a real
+    Revit says with the real switch is NEEDS-CHECKING Group NP.
+    """
+    import shutil
+    import tempfile
+
+    print()
+    print("Ask to Keep, said by info (no Revit)...")
+    if not sys.platform.startswith("linux"):
+        print("  NOTE  NOT RUN here: the switch can only be flipped in the user's own")
+        print("        settings file on this system, and a suite never writes that.")
+        print("        Group NP in NEEDS-CHECKING.md is the run on a real Revit.")
+        return
+
+    home = tempfile.mkdtemp(prefix="heron-roundtrip-settings-")
+    settings = os.path.join(home, "Heron", "config", "heron.config")
+    proc, handle = None, None
+    try:
+        proc, pipe_name, token = _started(
+            REVIT_VERSION, HOST_LIFETIME_S, env=dict(os.environ, XDG_CONFIG_HOME=home))
+        if not pipe_name or not token:
+            failures.append("ask to keep: the host never reported a pipe name and token")
+            return
+        globals()["TOKEN"] = token          # this host minted its own
+        handle = connect(pipe_name)
+
+        def said(value):
+            """What info says once the settings file holds `value` (None: no file)."""
+            if value is not None:
+                if not os.path.isdir(os.path.dirname(settings)):
+                    os.makedirs(os.path.dirname(settings))
+                with open(settings, "w") as fh:
+                    fh.write("write.askBeforeKeeping = %s\n" % value)
+            reply = call(handle, "info")
+            # `missing` rather than None, so a field that is not there reads
+            # differently from one that is there and null.
+            return reply.get("askToKeep", "missing") if reply.get("ok") else reply
+
+        first = said(None)
+        if first is False:
+            print("  PASS  no settings file: info says false - off, the default")
+        else:
+            failures.append("ask to keep: with no settings file info said %r, not false" % (first,))
+
+        # THE SAME HOST, THE SAME CONNECTION, and only the file has changed:
+        # what comes back is read at the moment of the call or it is not.
+        on = said("true")
+        if on is True:
+            print("  PASS  switched on while the bridge runs: the next info says true")
+        else:
+            failures.append("ask to keep: switched on mid-session, info said %r, not true" % (on,))
+
+        off = said("false")
+        if off is False:
+            print("  PASS  switched off again: the next info says false")
+        else:
+            failures.append("ask to keep: switched off mid-session, info said %r, not false" % (off,))
+
+        # Asking is still not claiming: three infos later nobody holds it.
+        lease = call(handle, "info")
+        if lease.get("inUse") is False:
+            print("  PASS  and asking claimed nothing - the Revit is still free")
+        else:
+            failures.append("ask to keep: info left the lease held: %r" % lease)
+    except Exception as exc:
+        failures.append("ask to keep: %s: %s" % (type(exc).__name__, exc))
+    finally:
+        if handle:
+            try:
+                handle.close()
+            except OSError:
+                pass
+        if proc is not None:
+            proc.terminate()
+            try:
+                proc.wait(timeout=5)
+            except Exception:
+                proc.kill()
+        shutil.rmtree(home, ignore_errors=True)
+
+
 def main():
     if not os.path.exists(host_binary()):
         # EXIT 3, NOT 1, AND THE DIFFERENCE IS THE WHOLE OF FRAGMENT-ISSUES
@@ -731,6 +845,8 @@ def main():
             cycled.wait(timeout=5)
         except Exception:
             cycled.kill()
+
+    ask_to_keep_said(failures)
 
     print()
     if failures:

@@ -144,10 +144,13 @@ purpose: >
      THERE IS NO PREVIEW BEFORE THIS CALL. Nothing in Heron shows which
      cells differ from the model first (row 5b-1525).
      WHETHER REVIT ASKS BEFORE IT KEEPS THE CHANGE IS THE OWNER'S SWITCH,
-     Ask to Keep, AND IT IS OFF ON A PC AS INSTALLED (D-138). No Heron tool
-     tells a chat how it stands, so ASK THE MODELLER before the call: it is
-     in Heron's Settings on the Heron tab (D-150), and
-     python tools/heron-ready.py, run in the Heron folder, prints it.
+     Ask to Keep, AND IT IS OFF ON A PC AS INSTALLED (D-138). revit_health
+     says which way it is set for that Revit, read from Revit itself
+     (built, not yet run in Revit - Group NP), so CHECK IT before the call.
+     Where its line says that Revit's Heron does not say, or could not be
+     read, ASK THE MODELLER: it is in Heron's Settings on the Heron tab
+     (D-150), and python tools/heron-ready.py, run in the Heron folder,
+     prints it.
      - OFF: the whole file is KEPT AT ONCE, with nothing shown first - one
        entry in Revit's undo list, which Revit's Undo takes back.
      - ON: Revit selects and isolates what the call touched and asks Keep
@@ -255,7 +258,7 @@ preconditions:
   - for the export, the modeller asked for THIS export and named the path, and the owner has Changes and the Publish switch on (Article 10, D-106, D-107)
   - the edited file is saved as a comma-separated CSV in UTF-8, its first column and header row untouched, and every column and row that was not edited deleted from it
   - what a blank cell means - skip or clear - has been asked and answered; it is never assumed
-  - for the return, the modeller has said whether Ask to Keep is on - Heron cannot read it - and has been told that with it off the file is kept at once
+  - for the return, revit_health has said whether Ask to Keep is on for that Revit - or, where its line could not say, the modeller has - and the modeller has been told that with it off the file is kept at once
   - for the return, the modeller has said yes to this write by name before the call (Article 7), the owner has Changes on, and nobody has changed those elements since the export
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

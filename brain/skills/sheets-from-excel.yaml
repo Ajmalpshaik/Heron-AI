@@ -111,10 +111,12 @@ purpose: >
   6. KEEP OR DISCARD, THEN LOOK. The box is certain only for the DRAFT's
      try-once (D-119). Once the card is PROVEN and runs through
      revit_change, Revit asks only while the owner's Ask to Keep is on - it
-     is OFF as installed (D-138), no Heron tool tells a chat how it stands,
-     and with it off the sheets are KEPT AT ONCE, one undo entry: ask the
-     modeller which it is, and say so, before step 5. While Revit's Keep or
-     Discard box is open,
+     is OFF as installed (D-138), and with it off the sheets are KEPT AT
+     ONCE, one undo entry. revit_health says which way it is set for that
+     Revit (built, not yet run in Revit - Group NP): check it, and say
+     which it will be, before step 5; where its line says that Revit's
+     Heron does not say, or could not be read, ask the modeller. While
+     Revit's Keep or Discard box is open,
      no chat tool reaches Revit - the modeller looks in the Project
      Browser's Sheets, where the new sheets are, and chooses. After Keep,
      revit_sheets lists every sheet with its title block, and the modeller

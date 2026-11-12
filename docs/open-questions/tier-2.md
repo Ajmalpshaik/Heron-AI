@@ -783,6 +783,17 @@ none; and which other keys of `heron.config` differ between the two files on the
 **Ajmal PS decides.** Until he does, nothing Heron does at runtime changes: the add-in still decides every
 change from its own file, and `revit_health` still reports the server's.
 
+> **2026-11-12 - one switch is now said by Revit itself, and this question is still open.** A separate
+> task - a chat could not tell a modeller beforehand whether Revit would ask Keep or Discard - added
+> `askToKeep` to the add-in's `info` answer, and `revit_health` prints it under each connected Revit
+> ([docs/04 §4](../04-heron-mcp.md), [Group NP](../needs-checking/group-np.md), not yet run in Revit). That
+> is shape 2's mechanism, used for **one** switch that `revit_health` did not report at all. **Both
+> sentences above still hold:** the add-in decides every change from its own file, and the write-gate line
+> is still the server's copy. It does **not** report Changes, Admin or Publish, name the file either side
+> read, compare the two, or move a waiting time - each of those is this question's, and Ajmal PS's. The
+> session that added it had not been asked this question; if he chooses shape 1 or 3, whether the new line
+> stays is part of that choice. [NP6](../needs-checking/group-np.md) is the run on the laptop.
+
 ---
 
 ### 🟡 Q-71 — Should a stop reach a Revit whose lease nobody holds, from any client id? *(found 2026-10-18)*

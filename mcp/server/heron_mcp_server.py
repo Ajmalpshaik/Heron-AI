@@ -371,6 +371,18 @@ def revit_health() -> str:
                     detail += " - open model: %s" % named
 
             lines.append("  %d)%s%s" % (index, detail, mark))
+
+            # AND WHETHER THIS REVIT WILL ASK KEEP OR DISCARD, as its own
+            # add-in read the owner's Ask to Keep switch at this moment -
+            # from `info` again, so asking claims nothing, for the Revit this
+            # chat holds and for the ones it does not. A chat could only
+            # learn it afterwards, from a verdict, and could not tell the
+            # modeller beforehand which it would be. An older add-in sends
+            # nothing, and the line says THAT; an answer that could not be
+            # read says that instead, and blames no add-in. Never the
+            # default, and never this side's own copy of the settings file,
+            # which on some PCs is not the one Revit reads (Q-70).
+            lines.append("      " + health.ask_to_keep_line(bridge.ask_to_keep_state(b)))
             b.close()
 
         if len(live) > 1 and binding.pid is None:
