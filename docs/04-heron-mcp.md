@@ -1233,5 +1233,18 @@ has met a real Revit**: which reply the add-in sends for each ending is the C#'s
   `KEPT`; each refusal `REFUSED`, a chat pinned to no model among them; no session, or an add-in
   older than the tool, `NOT RUN`; no answer, or an Undo sent in a model this chat does not work on,
   `OUTCOME UNKNOWN`. Tested without Revit.
+- **A sent Undo holds every other job back for a moment, and is not forgotten after it**
+  ([D-157](decisions/D-157.md)'s dated note, [row 5b-1605](fragment-issues/row-5b-1605.md)). Revit
+  runs a posted Undo after Heron's request returns, on whichever model is on screen then. So for a
+  short wait (`HeronUndoGuard.SentWait`) the add-in refuses any job from `EXECUTE` up - `revit_show`,
+  `revit_change`, a second `revit_undo_last`, in any model and from any chat - with `undo_pending`,
+  which is `NOT RUN`: *"Heron sent Revit's Undo for 'x' in 'Tower' at 14:33 and has not seen Revit
+  run it yet, so nothing was run ..."*. A read goes on. After the wait jobs run again, but until
+  Revit reports an undo in that model a change kept there ends *"Heron cannot take this back
+  itself: revit_undo_last would refuse - an Undo Heron sent earlier has not been seen to run; it may
+  still run and take this change ..."*. **The posting operation is `undo_guarded`**, not the first
+  build's `undo_last`: a Revit still running that build answers `unknown_op`, and the chat is told
+  its Heron is older and that nothing was sent. Not run in Revit
+  ([Group NU](needs-checking/group-nu.md)).
 - **Which of the two a host shows its model** — the text or the structured content — is still not
   measured (§8.8). Both carry the word.
