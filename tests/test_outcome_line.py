@@ -27,7 +27,9 @@ No pipe is opened and no discovery folder is read.
 WHAT IT PROVES
   1. ONE VOCABULARY, IN ONE PLACE. heron_server_core.OUTCOMES is the table:
      every word once, each with what it means, and heron_tools.STATES_OUTCOME
-     names the tools that say one.
+     names the tools that say one. docs/04 section 8.12 prints the same
+     words in the same order, and is held to the table - a second copy of a
+     list is how one of them goes stale.
 
   2. A WORD PER WAY OF ENDING, each forced through the door itself: a kept
      change; refusals of several kinds (the switch off, a DRAFT, a read sent
@@ -81,6 +83,7 @@ WHAT IT DOES NOT
 
 import io
 import os
+import re
 import sys
 import shutil
 import asyncio
@@ -591,6 +594,14 @@ def the_vocabulary(core, registry):
           "a reply with no line there, or a word that is not in the table, "
           "reads back as none")
 
+    # THE PAGE A PERSON READS IS HELD TO THE TABLE THE CODE READS.
+    with io.open(os.path.join(ROOT, "docs", "04-heron-mcp.md"), encoding="utf-8") as fh:
+        page = fh.read()
+    at = page.find("### 8.12 ")
+    printed = re.findall(r"^\s*\| `([A-Z ]+)` \|", page[at:] if at >= 0 else "", re.M)
+    check(at >= 0 and printed == words,
+          "docs/04 section 8.12 prints the table's words, in the table's order - "
+          "found %r" % (printed,))
 
 
 def a_word_per_ending(stage, cases):

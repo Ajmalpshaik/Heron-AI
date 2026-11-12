@@ -237,7 +237,7 @@ real edit does.
 | Every fragment's C#, against every release it claims | yes |
 | Every test suite but the ones below | yes |
 | `test_bridge_roundtrip` | yes, after the build in §3 |
-| `test_mcp_serves`, `test_served_claims`, `test_mcp_stdio`, `test_loads_finalize` | yes — the script installs `mcp` |
+| `test_mcp_serves`, `test_served_claims`, `test_mcp_stdio`, `test_loads_finalize`, `test_outcome_line` | yes — the script installs `mcp` |
 | `test_routing_phrases` | yes, where §2's one-line check answers `model`; otherwise it exits 3, COULD NOT RUN |
 | The `heron` server's library tools - `heron_lookup`, `heron_resolve`, `heron_capabilities`, `heron_method`, `heron_standards` | yes - served from 2026-10-17, and no `revit_` tool ([D-132](DECISIONS.md)) |
 | The brain: lookup, gaps, routing, retrieval | yes |
