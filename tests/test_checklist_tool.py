@@ -144,6 +144,12 @@ def tool(home):
               "four PASS and the failing check with its ids, read off the reply")
         check("4 meet the value checked, 1 do not, 0 not run" in said and "Project1" in said,
               "the counts, on the model it read")
+        check("first kept run of this checklist on this model" in said,
+              "the first run on a model says there is nothing to compare with yet")
+        again = body("run", name="Before issue")
+        check("Since the last run on Project1" in again and "0 new, 0 fixed, 1 still open" in again
+              and "STILL OPEN" in again,
+              "the next run says what changed since the last one on the same model")
         check(not re.search(r"\b(compliant|clean|healthy)\b", said, re.I), "and never a verdict")
 
         panel = S._companion_module().CHECKLIST_PANEL

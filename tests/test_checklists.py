@@ -617,6 +617,117 @@ def real_cards(home):
           "and it saves, under the modeller's own name")
 
 
+def labels_and_history(home):
+    """Item 4 of the plan after D-155's comparison: a check's severity, clause
+    and advice, and what changed since the last run on the same model."""
+    print("8. severity, clause and advice; NEW, STILL OPEN and FIXED since the last run")
+    for name in ("SEVERITIES", "compare", "previous", "keep_run", "history", "runs_folder"):
+        check(hasattr(Q, name), "the store has %s" % name)
+    if not all(hasattr(Q, n) for n in ("SEVERITIES", "compare", "previous", "keep_run", "history")):
+        return
+
+    labelled = good()
+    labelled["checks"][0].update(severity="High", clause="BEP 5.3.2 - every duct on a system",
+                                 advice="Assign the duct to a system in its properties")
+    check(Q.problems(labelled, CONTRACTS) == [], "a severity, a clause and advice are accepted")
+    path = Q.save(dict(labelled, name="Labelled"), CONTRACTS, home=home)
+    with io.open(path, encoding="utf-8") as fh:
+        first, second = json.load(fh)["checks"]
+    check((first["severity"], first["clause"], first["advice"]) ==
+          ("high", "BEP 5.3.2 - every duct on a system", "Assign the duct to a system in its properties")
+          and (second["severity"], second["clause"], second["advice"]) == ("", "", ""),
+          "kept as given - the severity lower-cased - and empty where none was given")
+    for change, said in ((dict(severity="urgent"), "the severity must be one of high, medium, low"),
+                         (dict(clause="x" * (Q.CLAUSE_MAX + 1)), "'clause' must be one line"),
+                         (dict(advice="two\nlines"), "'advice' must be one line"),
+                         (dict(clause=5), "'clause' - the BEP or standard clause it comes from - "
+                                          "must be text")):
+        found = Q.problems(bad_with(**change), CONTRACTS)
+        check(any(said in f for f in found), "refused when saved: %r - %s" % (change, found[:1]))
+    older = dict(first)
+    for key in ("severity", "clause", "advice"):
+        older.pop(key, None)
+    with io.open(os.path.join(Q.folder(home), "older.json"), "w", encoding="utf-8") as fh:
+        fh.write(json.dumps({"heron-checklist": 1, "name": "Older", "checks": [older]}))
+    check(Q.find("Older", home)["checks"][0]["capability"] == "CHECK_MODEL_STANDARDS",
+          "a checklist saved before these fields still reads")
+    Q.delete("Older", home)
+    row = Q.judge(1, Q.find("Labelled", home)["checks"][0],
+                  {"ran": True, "provides": {"failures": "2", "offenders": "2 item(s) [501, 502]"}})
+    check(row["severity"] == "high" and row["clause"].startswith("BEP 5.3.2")
+          and row["advice"].startswith("Assign"), "each row carries its check's labels")
+    said = Q.text(Q.result({"name": "Labelled"}, [row], "Tower"))
+    check("severity high" in said and "clause BEP 5.3.2" in said and "to fix: Assign" in said,
+          "and the chat shows them, the advice under a failure")
+
+    def answer(rows, document="Tower", identity=None, **more):
+        out = {"name": "History", "document": document, "identity": identity, "rows": rows,
+               "said": "History on %s." % document}
+        out.update(more)
+        return out
+
+    def r(sentence, state, ids=None, value=None):
+        return {"sentence": sentence, "capability": "C", "rule": "x == 0", "state": state,
+                "ids": list(ids or []), "idsComplete": ids is not None, "value": value,
+                "shown": str(value)}
+
+    one = Q.history(answer([r("a", "fail", ["1", "2"], 2), r("b", "pass", value=0),
+                            r("c", "fail", value=1), r("d", "pass", value=0)]),
+                    home, now="2026-11-12T10-00-00")
+    check(one["history"]["previous"] is None and "first kept run" in one["said"]
+          and all(x.get("change", "") == "" for x in one["rows"]),
+          "the first run on a model has nothing to compare with, and says so")
+    two = Q.history(answer([r("a", "fail", ["2", "3", "4"], 3), r("b", "fail", value=1),
+                            r("c", "pass", value=0), r("d", "not run")]),
+                    home, now="2026-11-12T11-00-00")
+    changes = [x["changeLabel"] for x in two["rows"]]
+    check(changes == ["STILL OPEN", "NEW", "FIXED", "NOT COMPARED"],
+          "still failing, newly failing, fixed and not run are each named - found %r" % changes)
+    check("2 element(s) failing now that were not last time, 1 fixed since" in two["rows"][0]["changeWhy"],
+          "a check still failing says how many elements came and went, when every id arrived")
+    check(two["history"]["counts"] == {"new": 1, "open": 1, "fixed": 1, "unknown": 1}
+          and "Since the last run on Tower at 2026-11-12 10:00: 1 new, 1 fixed, 1 still open, "
+              "1 not compared." in two["said"],
+          "the counts, and one sentence naming the model and when the last run was")
+    other = Q.history(answer([r("a", "pass", value=0)], document="Podium"), home,
+                      now="2026-11-12T12-00-00")
+    check(other["history"]["previous"] is None,
+          "a run on ANOTHER model is never compared with this one")
+    stopped = Q.history(answer([r("a", "not run")], stopped="The run stopped."), home,
+                        now="2026-11-12T13-00-00")
+    check(stopped.get("history") is None
+          and not any(n.startswith("2026-11-12T13") for n in os.listdir(Q.runs_folder("History", home))),
+          "a run that stopped part way is neither compared nor kept")
+    three = Q.history(answer([r("a", "fail", ["2", "3", "4"], 3)]), home, now="2026-11-12T14-00-00")
+    check(three["history"]["previous"] == "2026-11-12 11:00",
+          "the next run compares with the newest kept run on this model, not the first")
+    renamed = Q.history(answer([r("a reworded", "fail", ["2"], 1)]), home, now="2026-11-12T15-00-00")
+    check(renamed["rows"][0]["changeLabel"] == "NOT COMPARED",
+          "a check reworded is a new check - never a false FIXED or STILL OPEN")
+    for hour in range(Q.RUNS_KEPT + 3):
+        Q.history(answer([r("a", "pass", value=0)]), home, now="2026-11-13T%02d-00-00" % hour)
+    kept = [n for n in os.listdir(Q.runs_folder("History", home)) if n.endswith(".json")]
+    check(len(kept) == Q.RUNS_KEPT, "only the newest %d runs are kept - found %d" % (Q.RUNS_KEPT, len(kept)))
+    check(not any(c.get("name") == "History" for c in Q.all_checklists(home)[0]),
+          "a kept run is never listed as a checklist")
+    server = io.open(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py"),
+                     encoding="utf-8").read()
+    check('    if not answer.get("failed"):\n        store.history(answer)' in server,
+          "the server compares and keeps a run only when it finished")
+    real = Q.keep_run
+
+    def broken(*a, **k):
+        raise OSError("disk full")
+    Q.keep_run = broken
+    try:
+        safe = Q.history(answer([r("a", "pass", value=0)]), home)
+    finally:
+        Q.keep_run = real
+    check(safe["rows"][0]["state"] == "pass"
+          and any("could not be kept" in f for f in safe.get("findings") or []),
+          "a run that cannot be kept still stands, and says so")
+
+
 def whole_ids():
     """D-158, read as text: the add-in sends a NAMED list's every id, and only a
     named one; the server names a check's ids output on its read, and only
@@ -660,6 +771,11 @@ def at_least(text, needle):
 
 def main():
     home = tempfile.mkdtemp(prefix="heron-checklists-")
+    # HERON'S DATA HOME IS THIS SUITE'S OWN FOLDER for the whole run: the
+    # server's run keeps each run it makes (history, item 4), and on the
+    # owner's PC the default home is their real %USERPROFILE%\.heron.
+    kept_data = os.environ.get("HERON_DATA")
+    os.environ["HERON_DATA"] = home
     try:
         shape(home)
         keep(home)
@@ -668,7 +784,12 @@ def main():
         server(home)
         real_cards(home)
         whole_ids()
+        labels_and_history(home)
     finally:
+        if kept_data is None:
+            os.environ.pop("HERON_DATA", None)
+        else:
+            os.environ["HERON_DATA"] = kept_data
         shutil.rmtree(home, ignore_errors=True)
     print()
     if FAILURES:

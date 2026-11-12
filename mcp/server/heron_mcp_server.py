@@ -6222,6 +6222,10 @@ def _run_checklist(checklist, origin="chat", ctx=None, progress=None):
                               held.get("run"), held.get("findings"))
         answer["failed"] = True
     answer["identity"] = list(first["identity"]) if first.get("identity") else None
+    # WHAT CHANGED SINCE THE LAST RUN ON THIS MODEL - NEW, STILL OPEN, FIXED -
+    # and this run kept for the next. Only a finished run; never raises.
+    if not answer.get("failed"):
+        store.history(answer)
     _checklist_select_labels(answer)
     return answer
 
@@ -6274,14 +6278,17 @@ def heron_checklist(action: str = "list", name: str = "", checks: str = "",
     `checks`, a JSON list - each {"sentence": their words, "capability": ONE
     capability that reads, "values": "name=value" lines, "rule": "output op
     number" on one output it declares - "failures == 0", "ids": the output
-    holding failing element ids, or ""}. Turn each sentence into a check with
-    heron_lookup; ask, never guess. replace=true only when they said so.
+    holding failing element ids, or ""}. Optional, in their words: "severity"
+    high, medium or low; "clause", the BEP or standard it comes from; "advice",
+    how to fix. Turn each sentence into a check with heron_lookup; ask, never
+    guess. replace=true only when they said so.
 
     "list" names them; "show" gives one's checks; "delete" removes one when
     asked; "starter" saves Heron's example under `name`, only when asked.
 
     "run" runs `name` check by check through revit_read: PASS meets the value
-    checked, FAIL does not, NOT RUN says why and is never a pass. Never call
+    checked, FAIL does not, NOT RUN says why and is never a pass; each says
+    NEW, STILL OPEN or FIXED against the last run on that model. Never call
     the model compliant. Results also go on the Companion's QA Checklist.
     """
     try:

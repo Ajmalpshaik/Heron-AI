@@ -78,6 +78,12 @@ problem:
 | An `ids` output that holds elements, not ids | The add-in sends an element list's **names**, never its ids |
 | More than `MAX_CHECKS` checks | A run is one read per check (`brain/heron_checklists.py`) |
 
+**Three labels, each optional and the modeller's own** ([D-159](decisions/D-159.md)): `severity` - high,
+medium or low; `clause` - the BEP or standard clause the check comes from, one line up to 200 characters;
+`advice` - how to fix a failure, one line up to 300. Heron never sets a severity and never checks a clause:
+it quotes them on every run, in the chat, on the page and in the CSV. A checklist saved before them reads
+as before.
+
 **Not checked when saved, and asked on every run:** whether the capability is PROVEN, which model, whether
 Revit is there. A proof can go stale between saving and running ([D-30](DECISIONS.md)).
 
@@ -163,6 +169,13 @@ heron_checklist run  /  Companion QA Checklist: Run
   replaced - by a chat run, say - is refused in words; so is the model having moved (*the checklist was run on
   another model - press Run again*). Past the route's limit (`DASHBOARD_SELECT_MOST` in the server) the button and the answer say *the first
   N of M*.
+- **What changed since the last run** ([D-159](decisions/D-159.md)). A finished run is kept in
+  `<data home>/checklists/runs/<checklist>/` - the newest 20 - and compared with the newest kept run of the
+  same checklist **on the same model**: each check is **NEW** (failing now, not last time), **STILL OPEN**
+  (with how many elements came and went, when every id arrived), **FIXED**, or **NOT COMPARED** (not run
+  now or last time, or not in the last run - not run is never a change). A check is matched by its
+  sentence, capability and rule. A run that stopped part way is neither compared nor kept, and a history
+  that cannot be read or written never stops a run.
 - **CSV and Print / PDF** are made on the page from the rows Heron sent; nothing is read again.
 
 ## 5. What was built
@@ -198,4 +211,5 @@ List, show, save and delete touch only the modeller's own files.
 4. **A checklist in Revit's Heron panel**, beside the saved commands.
 5. **A rule across two outputs** (`failures == 0 and notChecked == 0`) - one rule per check today; two checks
    say the same.
-6. **Saving a run** as a dated report, to compare with the next.
+6. ~~**Saving a run**~~ **Built 2026-11-12, [D-159](decisions/D-159.md)**: each finished run is kept and
+   compared with the last on the same model. Not yet run in Revit ([Group NV](needs-checking/group-nv.md)).

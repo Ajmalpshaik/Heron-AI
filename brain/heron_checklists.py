@@ -85,6 +85,25 @@ STATES = (("pass", "PASS", "#3ecf8e", "meets the value checked"),
           ("not run", "NOT RUN", "#f5a524", "not run - see why; never counted as a pass"))
 LABEL = dict((key, label) for key, label, _c, _m in STATES)
 
+# HOW MUCH A FAILURE MATTERS, AND WHERE THE RULE COMES FROM (item 4 of the
+# plan after D-155's comparison). Each is optional and the modeller's own:
+# Heron never sets a severity, and a clause is quoted, never checked.
+SEVERITIES = ("high", "medium", "low")
+CLAUSE_MAX = 200
+ADVICE_MAX = 300
+
+# WHAT CHANGED SINCE THE LAST RUN of the same checklist on the same model. A
+# run is kept once it finished; the newest RUNS_KEPT a checklist are kept.
+RUNS_FOLDER = "runs"
+RUNS_FORMAT = 1
+RUNS_KEPT = 20
+CHANGES = (("new", "NEW", "failed now, and did not last time"),
+           ("open", "STILL OPEN", "failed last time too"),
+           ("fixed", "FIXED", "failed last time, meets the value checked now"),
+           ("", "", "met the value checked both times"),
+           ("unknown", "NOT COMPARED", "not run, now or last time, so nothing can be said of it"))
+CHANGE_LABEL = dict((key, label) for key, label, _m in CHANGES)
+
 # How a declared output type reads as a number - ONLY what the add-in's
 # RevitFragment.Describe renders as one: an int, a long or a double as its
 # text, a bool as true/false, and a collection as "N item(s)" or "N entry(ies)"
@@ -320,6 +339,28 @@ def check_problems(check, contract, where):
                              "output that holds element ids." % (where, ids))
             else:
                 found.append("%s: '%s' is %s, which holds no element ids." % (where, ids, declared[ids]))
+    found.extend(_labels_problems(check, where))
+    return found
+
+
+def _labels_problems(check, where):
+    """Why a check's severity, clause or advice cannot be kept - each optional,
+    each one line of the modeller's own words."""
+    found = []
+    severity = check.get("severity")
+    if severity not in (None, ""):
+        if not isinstance(severity, str) or severity.strip().lower() not in SEVERITIES:
+            found.append("%s: the severity must be one of %s, not '%s'."
+                         % (where, ", ".join(SEVERITIES), severity))
+    for key, most, what in (("clause", CLAUSE_MAX, "the BEP or standard clause it comes from"),
+                            ("advice", ADVICE_MAX, "how to fix a failure")):
+        value = check.get(key)
+        if value in (None, ""):
+            continue
+        if not isinstance(value, str):
+            found.append("%s: '%s' - %s - must be text." % (where, key, what))
+        elif len(value.strip()) > most or "\n" in value.strip():
+            found.append("%s: '%s' must be one line of at most %d characters." % (where, key, most))
     return found
 
 
@@ -387,6 +428,10 @@ def save(checklist, contracts, home=None, replace=False, now=None):
             "output": check["output"], "op": check["op"], "target": check["target"],
             "ids": check.get("ids") or "",
             "idsKind": ids_kind(declared.get(check.get("ids"))) if check.get("ids") else "",
+            # The modeller's own labels, each optional (the plan's item 4).
+            "severity": (check.get("severity") or "").strip().lower(),
+            "clause": (check.get("clause") or "").strip(),
+            "advice": (check.get("advice") or "").strip(),
             # WHAT IT READS FROM THE SELECTION: a need the request does not
             # fill is taken from what is selected in Revit when it runs.
             "selection": list(contract.get("selection") or []),
@@ -421,6 +466,10 @@ def _check_shape(check):
     selection = check.get("selection", [])
     if not isinstance(selection, list) or not all(isinstance(n, str) for n in selection):
         return "a check's selection is not a list of names"
+    if check.get("severity", "") not in ("",) + SEVERITIES:
+        return "a check's severity is not one of %s" % ", ".join(SEVERITIES)
+    if not all(isinstance(check.get(key, ""), str) for key in ("clause", "advice")):
+        return "a check's clause or advice is not text"
     return None
 
 
@@ -491,6 +540,12 @@ def rule_text(check):
 def check_line(check):
     """One check in one line, for the chat."""
     extra = []
+    if check.get("severity"):
+        extra.append("severity %s" % check["severity"])
+    if check.get("clause"):
+        extra.append("clause %s" % check["clause"])
+    if check.get("advice"):
+        extra.append("advice: %s" % check["advice"])
     if check.get("ids"):
         extra.append("failing ids from %s" % check["ids"])
     if check.get("selection"):
@@ -596,7 +651,9 @@ def judge(number, check, ran):
     row = {"n": number, "sentence": check.get("sentence"), "capability": check.get("capability"),
            "rule": rule_text(check), "value": None, "shown": "-", "state": "not run", "why": "",
            "ids": [], "idsTotal": 0, "idsComplete": False,
-           "selection": list(check.get("selection") or [])}
+           "selection": list(check.get("selection") or []),
+           "severity": check.get("severity") or "", "clause": check.get("clause") or "",
+           "advice": check.get("advice") or "", "change": "", "changeLabel": "", "changeWhy": ""}
     if not ran.get("ran"):
         row["why"] = ran.get("why") or "It was not run."
         return _labelled(row)
@@ -666,7 +723,9 @@ def result(checklist, rows, document=None, running=False, token=None, findings=N
             "document": document, "at": time.strftime("%H:%M:%S"), "running": bool(running),
             "run": token or new_token(), "findings": list(findings or []), "stopped": stopped or "",
             "rows": rows, "counts": dict(counts, total=total, done=len(rows)), "said": said,
-            "states": [{"key": k, "label": label, "colour": c, "means": m} for k, label, c, m in STATES]}
+            "states": [{"key": k, "label": label, "colour": c, "means": m} for k, label, c, m in STATES],
+            "changes": [{"key": k, "label": label, "means": m} for k, label, m in CHANGES if k],
+            "history": None}
 
 
 def finish(checklist, rows, document, why, token=None, findings=None):
@@ -715,8 +774,17 @@ def text(answer):
     lines = [answer["said"], ""]
     for row in answer["rows"]:
         line = "%-8s %s - %s, read %s" % (row["label"], row["sentence"], row["rule"], row["shown"])
+        tags = [t for t in (row.get("changeLabel"),
+                            row.get("severity") and "severity " + row["severity"],
+                            row.get("clause") and "clause " + row["clause"]) if t]
+        if tags:
+            line += "  [%s]" % ", ".join(tags)
         if row["why"] and row["state"] != "pass":
             line += "\n         %s" % row["why"]
+        if row.get("changeWhy"):
+            line += "\n         %s" % row["changeWhy"]
+        if row.get("advice") and row["state"] == "fail":
+            line += "\n         to fix: %s" % row["advice"]
         if row["ids"]:
             line += "\n         failing element ids: %s" % ", ".join(row["ids"][:20]) + (
                 " and %d more" % (len(row["ids"]) - 20) if len(row["ids"]) > 20 else "")
@@ -728,6 +796,162 @@ def text(answer):
     lines.append("Nothing in the model was changed: each check is a read with no transaction "
                  "open, so there is nothing to undo, keep or discard.")
     return "\n".join(lines)
+
+
+# ---------------------------------------------------------------- what changed
+
+def runs_folder(name, home=None, make=False):
+    """`<home>/checklists/runs/<slug of the checklist>` - beside the saved
+    checklists, never inside them, so a run is never read as a checklist."""
+    personal = folder(home, make=make)
+    if personal is None:
+        return None
+    where = os.path.join(os.path.dirname(personal), RUNS_FOLDER, slug(name))
+    if make and not os.path.isdir(where):
+        os.makedirs(where)
+    return where
+
+
+def _model(answer):
+    """What tells one model from another in a kept run: the pin's identity when
+    the run had one, else the model's title - never nothing."""
+    identity = answer.get("identity")
+    if isinstance(identity, (list, tuple)) and any(identity):
+        return ["identity"] + [str(part or "") for part in identity]
+    return ["title", str(answer.get("document") or "")]
+
+
+def _key(row):
+    """One check across two runs: its sentence, capability and rule - so a check
+    reworded or given another rule is a new check, never a false 'fixed'."""
+    return "%s|%s|%s" % (row.get("sentence"), row.get("capability"), row.get("rule"))
+
+
+def _kept_row(row):
+    return {"key": _key(row), "state": row.get("state"),
+            "value": row.get("value"), "ids": list(row.get("ids") or []),
+            "idsComplete": bool(row.get("idsComplete"))}
+
+
+def previous(answer, home=None):
+    """The newest kept run of this checklist ON THIS MODEL, or None. A run on
+    another model is never compared - what changed between two models is not
+    what changed in one."""
+    where = runs_folder(answer.get("name") or "", home)
+    if where is None or not os.path.isdir(where):
+        return None
+    model = _model(answer)
+    for name in sorted(os.listdir(where), reverse=True):
+        if not name.endswith(".json"):
+            continue
+        try:
+            with io.open(os.path.join(where, name), "r", encoding="utf-8") as fh:
+                kept = json.load(fh)
+        except (OSError, ValueError):
+            continue
+        if (isinstance(kept, dict) and kept.get("heron-checklist-run") == RUNS_FORMAT
+                and kept.get("model") == model and isinstance(kept.get("rows"), list)):
+            return kept
+    return None
+
+
+def compare(answer, before):
+    """Each row's change since `before` - NEW, STILL OPEN, FIXED, nothing, or
+    NOT COMPARED - and `history` with the counts and one sentence. Changes the
+    answer in place and returns it.
+
+    NOT RUN IS NEVER A CHANGE. A check not run now, or last time, is NOT
+    COMPARED: calling it fixed or new would be a claim about a model nobody
+    read. A check with no row last time - added since - is NOT COMPARED too."""
+    counts = {"new": 0, "open": 0, "fixed": 0, "unknown": 0}
+    if not before:
+        answer["history"] = {"previous": None, "counts": counts,
+                             "said": "This is the first kept run of this checklist on this model, "
+                                     "so there is nothing to compare with yet."}
+        return answer
+    earlier = dict((r.get("key"), r) for r in before.get("rows") or [] if isinstance(r, dict))
+    for row in answer.get("rows") or []:
+        then = earlier.get(_key(row))
+        now = row.get("state")
+        why = ""
+        if then is None or now == "not run" or then.get("state") == "not run":
+            change = "unknown"
+            why = ("Not compared: %s." % ("this check was not in the last run" if then is None
+                                          else "it was not run now or last time"))
+        elif now == "fail" and then.get("state") == "fail":
+            change = "open"
+            ids, old = row.get("ids") or [], then.get("ids") or []
+            if row.get("idsComplete") and then.get("idsComplete"):
+                added = len(set(ids) - set(old))
+                gone = len(set(old) - set(ids))
+                why = ("Still failing: %d element(s) failing now that were not last time, %d "
+                       "fixed since." % (added, gone))
+            else:
+                why = "Still failing: %s read %s now, %s last time." % (
+                    row.get("rule", "").split(" ")[0], row.get("shown"), _shown(then.get("value")))
+        elif now == "fail":
+            change, why = "new", "New: this check met the value checked last time."
+        elif then.get("state") == "fail":
+            change, why = "fixed", "Fixed: this check failed last time."
+        else:
+            change = ""
+        row["change"], row["changeLabel"], row["changeWhy"] = change, CHANGE_LABEL[change], why
+        if change:
+            counts[change] += 1
+    said = ("Since the last run on %s at %s: %d new, %d fixed, %d still open%s."
+            % (answer.get("document") or "this model", before.get("at") or "an earlier time",
+               counts["new"], counts["fixed"], counts["open"],
+               ", %d not compared" % counts["unknown"] if counts["unknown"] else ""))
+    answer["history"] = {"previous": before.get("at"), "counts": counts, "said": said}
+    return answer
+
+
+def keep_run(answer, home=None, now=None):
+    """Keep a FINISHED run, so the next one can say what changed. A run that
+    stopped part way, or is still running, is not kept: its NOT RUN rows would
+    make the next comparison say nothing. The newest RUNS_KEPT are kept.
+    Returns the path, or None when nothing was kept."""
+    if answer.get("running") or answer.get("stopped") or not answer.get("rows"):
+        return None
+    where = runs_folder(answer.get("name") or "", home, make=True)
+    if where is None:
+        return None
+    stamp = now or time.strftime("%Y-%m-%dT%H-%M-%S")
+    kept = {"heron-checklist-run": RUNS_FORMAT, "name": answer.get("name"),
+            "document": answer.get("document"), "model": _model(answer),
+            # "2026-11-12T14-05-09" in the file name, "2026-11-12 14:05" to read.
+            "at": stamp[:10] + " " + stamp[11:16].replace("-", ":"),
+            "rows": [_kept_row(r) for r in answer.get("rows") or []]}
+    path = os.path.join(where, stamp + "-" + (answer.get("run") or new_token()) + ".json")
+    COMMANDS.write_whole(path, kept)
+    names = sorted(n for n in os.listdir(where) if n.endswith(".json"))
+    for old in names[:-RUNS_KEPT]:
+        try:
+            os.remove(os.path.join(where, old))
+        except OSError:
+            pass
+    return path
+
+
+def history(answer, home=None, now=None):
+    """Compare a finished run with the last one on this model, then keep it.
+    Never raises: a history that cannot be read or written costs only the
+    comparison, and the run's own result stands as it is."""
+    if answer.get("running") or answer.get("stopped"):
+        return answer
+    try:
+        compare(answer, previous(answer, home))
+    except Exception as why:                         # noqa: BLE001 - the run stands without it
+        answer["history"] = {"previous": None, "counts": {}, "said":
+                             "What changed since the last run could not be read: %s." % why}
+    try:
+        keep_run(answer, home, now)
+    except Exception as why:                         # noqa: BLE001 - the run stands without it
+        answer.setdefault("findings", []).append(
+            "This run could not be kept for the next comparison: %s." % why)
+    if (answer.get("history") or {}).get("said"):
+        answer["said"] = answer.get("said", "") + " " + answer["history"]["said"]
+    return answer
 
 
 # ---------------------------------------------------------------- the starter
