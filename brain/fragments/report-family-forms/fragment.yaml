@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -34,17 +34,15 @@ capability: REPORT_FAMILY_FORMS
 # read, none handed on. DRAFT until proved on a real model (D-30); version 3's
 # proof below is the record.
 #
-# Version 5 (2026-11-11) changed impl/: A CUT OR JOINED SOLID NO LONGER READS
-# "0 L", and the card is back to DRAFT. Version 4 was PROVEN on 2026-11-02 (the
-# proof block below, kept as the record of what it proved - a family with no
-# join or cut in it). FRAGMENT-ISSUES row 5b-295: a solid cut by a void listed
-# as "0 L" (Revit 2024, 2026-10-02), because Revit gives the cut body to the
-# combination. Every join or cut in `combinationList` now carries its own
-# volume, read as COMBINE_FAMILY_FORMS reads it, and a solid that reads no
-# volume of its own while it is in one says so and points there. A solid in no
-# join or cut prints exactly as version 4 printed it. DRAFT until
-# NEEDS-CHECKING Group NK, NK5, is run (D-30). A read: it still answers
-# through revit_read while DRAFT, and says DRAFT (D-117 item 4).
+# Version 5 (2026-11-11, row 5b-1496) changed impl/: THE FAMILY'S 2D SIDE, on
+# the owner's word ("no duplicate tools, same kind of work 2 tools no need") -
+# a 2D read-back was first written as a card of its own, REPORT_FAMILY_2D_ELEMENTS,
+# and folded in here before it was ever merged. Detail lines, symbolic lines,
+# filled and masking regions and nested families are read into `twoDList` with
+# their locks, labels and links; `which` takes 2D kinds and ids. A call naming
+# only form words, and every form row, answer as version 4 did; "all" now reads
+# the 2D too but hands on forms alone. DRAFT until NEEDS-CHECKING Group ND
+# proves version 5 (D-30); a READ card, so revit_read still runs it meanwhile.
 version: 5
 source: OFFICIAL
 risk: READ
@@ -77,6 +75,26 @@ purpose: >
   reach part of a list. Left out, `which` reads every form and hands none on -
   a delete needs the forms named, or "all" said.
 
+  **AND THE FAMILY'S 2D SIDE (version 5, 2026-11-11)** - every DETAIL LINE,
+  SYMBOLIC LINE, FILLED and MASKING REGION and NESTED FAMILY, in `twoDList`:
+  its view or plane, ends in millimetres (an arc's centre and radius), line
+  style or region type, a symbolic line's detail levels and kinds of view,
+  its Visible and what that is linked to, a nested family's type, point,
+  rotation, mirror and linked parameters - and WHAT HOLDS EACH ONE, every
+  dimension and alignment referencing it in words: "locked along Head Top",
+  "locked at an end to Tip", "labelled Length to ...", "EQ with ...". A
+  region's sketch edges are counted under it, never listed as loose lines.
+  `which` takes "2d", "detail line", "symbolic line", "line", "filled
+  region", "masking region", "region" or "nested" - "2d" takes a nested
+  family only when it is 2D itself, a detail item or an annotation, so a
+  delete chained after it never reaches a nested 3D part - and the 2D tools' ids
+  among the forms'. Form words alone read no 2D; 2D words alone read no
+  form. A 2D element is handed on as `elements` only when named by a 2D kind
+  or by id - "all" hands on forms alone, so a delete chained after it never
+  reaches a line. A region's edge named by id is refused, naming the region:
+  its edges are read under it, never handed on alone. Revit giving no edges
+  for a region, or a dimension that cannot be read, is said in a finding.
+
   It reads only; nothing is changed.
 
 contract:
@@ -99,6 +117,10 @@ contract:
     # nobody named; this card read them all (row 5b-488). The safer rule is
     # kept for what is handed on, and the read stays as the owner had it.
     # "all" typed names every form and hands every one on.
+    #
+    # VERSION 5 (2026-11-11): also the 2D kinds - "2d", "detail line",
+    # "symbolic line", "line", "filled region", "masking region", "region",
+    # "nested" - and 2D elements' UniqueIds among the forms' ids.
     - name: which
       type: string
       source: request
@@ -116,10 +138,7 @@ contract:
       role: result
       type: string
     - name: combinationList
-      # Every join or cut in the family, with its members, on one line - and,
-      # since version 5 (row 5b-295), the volume Revit reads on the join or
-      # cut itself, in litres: where a cut solid's volume is, since the form
-      # reads none of its own.
+      # Every join or cut in the family, with its members, on one line.
       role: result
       type: string
     - name: scanned
@@ -149,59 +168,66 @@ contract:
       # answer, not a refusal.
       role: accounting
       type: string
+    - name: twoDCount
+      # VERSION 5: how many detail lines, symbolic lines, regions and nested
+      # families matched `which`. 0 when only form words were named.
+      role: result
+      type: int
+    - name: twoDList
+      # VERSION 5: every matching 2D element on ONE line, rows "  ||  " apart:
+      # kind, id, view or plane, ends or extent or point, style or type,
+      # visibility, Visible and its link, parameter links, and every lock,
+      # label and EQ on it.
+      role: result
+      type: string
     - name: findings
       type: IList<string>
 
+# THE LAST PROOF, KEPT AS A RECORD (2026-11-02, fingerprint fd07c9fa...). It
+# was run against version 4's code; version 5 (2026-11-11) changed impl/, so the
+# card is DRAFT until Group ND proves version 5. The older note below is kept
+# as it was written.
+#
 # VERSION 2's PROOF, KEPT AS A RECORD. Version 3 changed impl/, so its
 # fingerprint no longer describes the code and the card is DRAFT until Group
 # IO proves version 3 (D-30). It ran `which` "all" and a project, both of
 # which version 3 answers as version 2 did.
 proof:
-  date: '2026-11-02'
+  date: '2026-11-12'
   by: Ajmal PS
-  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: P1102 MEP Family, P1102 Family - active
-    was P1102 MEP, Revit 2020, session 59096'
-  positive_case: 'run as it would normally be run. returned combinationList , elements 7 item(s)
-    [Extrusion, Extrusion, Extrusion, ...], findings 2 item(s) [7 form(s) of 7 in the family;
-    0 join(s) or cut(s)., 7 form(s) handed on as elements - SET_SELECTION highlights t...],
-    formCount 7, formList solid extrusion a0683e65-4584-4c07-94d1-ebbad3e4649b-000009cb (on
-    Ref. Level): X 0 to 539.8, Y 0 to 184.1, Z 0 to 38.1 mm, 3.787 L, subcategory (the family''s
-    own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid extrusion
-    a0683e65-4584-4c07-94d1-ebbad3e4649b-000009e2 (on Center (Left/Right)): X 63.6 to 463.6,
-    Y -12.7 to 184.1, Z 38.1 to 222.3 mm, 14.262 L, subcategory (the family''s own), shows
-    in coarse, medium, fine | plan, front/back, left/right  ||  solid extrusion a0683e65-4584-4c07-94d1-ebbad3e4649b-000009f9
-    (on Center (Left/Right)): X 14 to 489, Y 184.1 to 495.3, Z -38.1 to 222.3 mm, 38.479 L,
-    subcategory (the family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
-    extrusion a0683e65-4584-4c07-94d1-ebbad3e4649b-00000a17 (on Center (Front/Back)): X 503.3
-    to 525.5, Y 184.1 to 209.5, Z 7.9 to 30.2 mm, 0.01 L, subcategory (the family''s own),
-    shows in coarse, medium, fine | plan, front/back, left/right  ||  solid extrusion a0683e65-4584-4c07-94d1-ebbad3e4649b-00000a23
-    (on Center (Left/Right)): X 463.6 to 489, Y 46 to 61.9, Z 106.4 to 122.2 mm, 0.005 L,
-    subcategory (the family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
-    extrusion a0683e65-4584-4c07-94d1-ebbad3e4649b-00000a2a (on Center (Left/Right)): X 463.6
-    to 489, Y 100 to 115.9, Z 106.4 to 122.2 mm, 0.005 L, subcategory (the family''s own),
-    shows in coarse, medium, fine | plan, front/back, left/right  ||  solid extrusion a0683e65-4584-4c07-94d1-ebbad3e4649b-00000a39
-    (on Ref. Level): X 0 to 14, Y 393.7 to 469.9, Z 174.7 to 200.1 mm, 0.027 L, subcategory
-    (the family''s own), shows in coarse, medium, fine | plan, front/back, left/right, ids
-    0 item(s), invariant CultureInfo, joins 0 item(s), kindOf Func`2, known 9 item(s) [solid,
-    void, extrusion, ...], mm Func`2, named HashSet`1, namedInOrder 0 item(s), notAFamily
-    false, notNamed false, parts 0 item(s), planeOf Func`2, problems 0 item(s), refused (null),
-    rows 7 item(s) [solid extrusion a0683e65-4584-4c07-94d1-ebbad3e4649b-000009c..., solid
-    extrusion a0683e65-4584-4c07-94d1-ebbad3e4649b-000009e..., solid extrusion a0683e65-4584-4c07-94d1-ebbad3e4649b-000009f...,
-    ...], scanned 7, squash Func`2, words 0 item(s). inputs came which as given. on P1102
-    MEP Family'
-  negative_case: run against 'P1102 Family' with which=all instead - chosen because it should
-    not contain what this fragment reports. returned combinationList , elements 0 item(s),
-    findings 3 item(s) [0 form(s) of 0 in the family; 0 join(s) or cut(s)., This family has
-    no forms yet - nothing has been modelled in ..., 0 form(s) handed on as elements - SET_SELECTION
-    highlights t...], formCount 0, formList , ids 0 item(s), invariant CultureInfo, joins
-    0 item(s), kindOf Func`2, known 9 item(s) [solid, void, extrusion, ...], mm Func`2, named
-    HashSet`1, namedInOrder 0 item(s), notAFamily false, notNamed false, parts 0 item(s),
-    planeOf Func`2, problems 0 item(s), refused (null), rows 0 item(s), scanned 0, squash
-    Func`2, words 0 item(s). inputs came which as given. on P1102 Family
+  model: Heron Link Detail Test (1,503 elements), Revit 2020, session 33000
+  positive_case: run as it would normally be run. returned combinationList , edgesOf 1 entry(ies),
+    edgesUnread 0, elements 2 item(s) [Line, Detail Filled Region], findings 4 item(s) [2
+    2D element(s) of 2 lines, regions and nested families matc..., 0 form(s) of 0 in the family;
+    0 join(s) or cut(s)., This family has no forms yet - nothing has been modelled in ...,
+    ...], formCount 0, formList , ids 0 item(s), invariant CultureInfo, isViewBased Func`2,
+    joins 0 item(s), kind2D Func`2, kindOf Func`2, known 9 item(s) [solid, void, extrusion,
+    ...], mm Func`2, named HashSet`1, named2D false, namedInOrder 0 item(s), notAFamily false,
+    notNamed false, parts 1 item(s) [2d], planeOf Func`2, problems 0 item(s), refused (null),
+    regionOfEdge 3 entry(ies), regions 1 item(s) [Detail Filled Region], rows 0 item(s), scanned
+    0, squash Func`2, twoDCount 2, twoDList detail line 3c975bca-b042-4e80-baf8-2fdebc27245c-0000080c
+    (in view Ref. Level), from 0,0,0 to 300,0,0 mm, 300 long, style Detail Items, Visible
+    yes, nothing holds it  ||  filled region 3c975bca-b042-4e80-baf8-2fdebc27245c-0000080f
+    (in view Ref. Level), type Solid Fill - Black, 1 loop(s), X 300 to 600, Y -80 to 80, Z
+    0 to 0 mm, 3 sketch edge(s), Visible yes, nothing holds it, twoDWords 16 entry(ies), wanted2D
+    HashSet`1, words 0 item(s), words2D 1 item(s) [2d]. inputs came which as given. on Heron
+    Link Detail Test
+  negative_case: run with which=nested instead - chosen because it should not contain what
+    this fragment reports. returned combinationList , edgesOf 1 entry(ies), edgesUnread 0,
+    elements 0 item(s), findings 4 item(s) [0 2D element(s) of 2 lines, regions and nested
+    families matc..., 0 form(s) of 0 in the family; 0 join(s) or cut(s)., This family has
+    no forms yet - nothing has been modelled in ..., ...], formCount 0, formList , ids 0 item(s),
+    invariant CultureInfo, isViewBased Func`2, joins 0 item(s), kind2D Func`2, kindOf Func`2,
+    known 9 item(s) [solid, void, extrusion, ...], mm Func`2, named HashSet`1, named2D false,
+    namedInOrder 0 item(s), notAFamily false, notNamed false, parts 1 item(s) [nested], planeOf
+    Func`2, problems 0 item(s), refused (null), regionOfEdge 3 entry(ies), regions 1 item(s)
+    [Detail Filled Region], rows 0 item(s), scanned 0, squash Func`2, twoDCount 0, twoDList
+    , twoDWords 16 entry(ies), wanted2D HashSet`1, words 0 item(s), words2D 1 item(s) [nested].
+    inputs came which as given. on Heron Link Detail Test
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: fd07c9faafcdd691
+  fingerprint: e4a1c3bb31a47ced
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -212,6 +238,14 @@ compatibility-note: >
   `Blend.BottomSketch`, `Sweep.PathSketch` and `SweptBlend.PathSketch`;
   `Sketch.SketchPlane` and `GeomCombination.AllMembers` read the same 2020
   through 2027 (the RevitAPI reference assemblies, read 2026-10-01).
+  Version 5 adds `DetailCurve`, `SymbolicCurve.GetVisibility`,
+  `CurveElement.GeometryCurve` / `LineStyle` / `SketchPlane`,
+  `FilledRegion.IsMasking` / `GetBoundaries`,
+  `Element.GetDependentElements(ElementFilter)`, `Element.OwnerViewId`,
+  `Dimension.References` / `FamilyLabel` / `IsLocked` / `AreSegmentsEqual` /
+  `NumberOfSegments`, `FamilyManager.GetAssociatedFamilyParameter`,
+  `LocationPoint.Rotation` and `FamilyInstance.Mirrored`, the same 2020
+  through 2027 (read 2026-11-11). One implementation, no #if.
 
 # ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
@@ -230,6 +264,23 @@ compatibility-note: >
 #   "delete the ones I selected"                 -> DELETE_ELEMENTS - the
 #                                                   selection is already there
 #   "which forms are made of steel"              -> SELECT_BY_MATERIAL
+#   "what is locked to the planes in this family" -> here (version 5), the
+#                                                   2D side with its locks -
+#                                                   NOT WON YET, see below
+#   "list the symbolic lines in this family"     -> here, which="symbolic line"
+#   "what is the nested arrow linked to"         -> here, which="nested"
+#   "what labels are in this family"             -> REPORT_FAMILY_LABELS
+#   "what is locked to this" - elements given    -> REPORT_CONSTRAINTS
+#   "lock the arrow's lines to the planes"       -> LOCK_FAMILY_LINES_TO_PLANES,
+#                                                   a change; this only reads
+#   MEASURED 2026-11-11 (scratch store, check-routing): "what is locked to
+#   the reference planes in this family" and "which lines in this family are
+#   not locked" reached LOCK_FAMILY_LINES_TO_PLANES, a CHANGE, first - so
+#   they are NOT utterances of this card (Codex review, PR #843): a READ
+#   question must never be advertised where a change wins it. The routing
+#   fix belongs on that card's side (row 5b-1496). "what is the nested arrow
+#   family linked to" and "read back the plan symbol of this family" reach
+#   other READ cards; kept, recorded, not reworded to buy a rank.
 #
 # 2026-11-01 - SELECT_FAMILY_FORMS WAS MERGED INTO THIS CARD (version 4) on the
 # owner's instruction ("make sure there is no duplicate tools"), and is
@@ -252,3 +303,8 @@ utterances:
   - select the void forms
   - get the forms with these ids
   - delete one form from the family by its id
+  # VERSION 5 (2026-11-11) - the family's 2D side.
+  - list the symbolic lines and filled regions in this family
+  - show me the 2D lines in this family with their ends
+  - what is the nested arrow family linked to
+  - read back the plan symbol of this family

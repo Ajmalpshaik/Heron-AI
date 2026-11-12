@@ -255,7 +255,7 @@ with what each covers.
 | [`decisions/`](decisions/D-01.md) | One file per decision, `D-NN.md`, since 2026-09-23. [DECISIONS.md](DECISIONS.md) is the index and the rules |
 | [`open-questions/`](open-questions/tier-1.md) | [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md), one file per tier or section |
 | [`needs-checking/`](needs-checking/group-a.md) | [NEEDS-CHECKING.md](NEEDS-CHECKING.md), one file per group |
-| [`fragment-issues/`](fragment-issues/section-1.md) | [FRAGMENT-ISSUES.md](FRAGMENT-ISSUES.md), one file per section or band of rows |
+| [`fragment-issues/`](fragment-issues/section-1.md) | [FRAGMENT-ISSUES.md](FRAGMENT-ISSUES.md), one file per section or band of rows - and one file per row, `row-5b-N.md`, for each 5b row written since 2026-11-12, so two branches adding rows share no file |
 | [`proposals/`](proposals/part-a.md) | [PROPOSALS.md](PROPOSALS.md), one file per part or numbered proposal |
 | [`fragment-issues-archive/`](fragment-issues-archive/README.md) | Finished FRAGMENT-ISSUES rows, written by `tools/archive-fragment-issues.py`. Not a live obligation |
 | [`needs-checking-archive/`](needs-checking-archive/README.md) | Finished NEEDS-CHECKING rows, written by `tools/archive-needs-checking.py`. Not a live obligation |

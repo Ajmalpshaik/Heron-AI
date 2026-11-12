@@ -9,9 +9,22 @@ semantic-identity: "repeat one form or one nested family in a row - a linear arr
 kind: action
 domain: revit.families
 capability: ARRAY_FAMILY_FORMS
-version: 3
+version: 4
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 4 (2026-11-11) - A DETAIL ITEM NESTED IN A VIEW, and back to DRAFT.
+# Version 3 was PROVEN on 2026-10-18 (the proof block below, kept as the
+# record of what it proved: a solid extrusion arrayed, and a row leaving its
+# sketch plane refused); its C# moved, so it is DRAFT again until
+# NEEDS-CHECKING Group NF is run (D-30, D-117). A view-based nested family -
+# the owner's diffuser flow arrows, a detail item in the Ref. Level plan - is
+# not drawn in a 3D view, and version 3 made every array in the first 3D view
+# and read every extent with `get_BoundingBox(null)`, which is empty for it.
+# Version 4 arrays it in its OWNER VIEW and reads it by its insertion point;
+# forms and model families take exactly the path they took. Owner's yes to
+# widen rather than add a card: Ajmal PS, 2026-11-11. FRAGMENT-ISSUES row
+# 5b-1500.
 
 purpose: >
   REPEATS ONE FORM IN A ROW in the family open in the Family Editor - a
@@ -35,6 +48,13 @@ purpose: >
   ALONG THE ROW, the last one last, for LOCK_NESTED_FAMILY_TO_PLANES.
   Proved again 2026-10-07 on scratch SpringProof, signed by Ajmal PS.
 
+  **OR A DETAIL ITEM IN ITS VIEW** (version 4, 2026-11-11) - a view-based
+  nested family, such as a diffuser's flow arrow placed in the Ref. Level plan
+  by PLACE_DETAIL_COMPONENTS, is arrayed in that view, the one it is drawn in,
+  as Array is used on it by hand; where each copy sits is read from its
+  insertion point, since Revit gives it no extent outside its view. Its row
+  stays in the view's plane: a step out of the view is refused by name.
+
   **THE COUNT** is a whole number, or an Integer family parameter's name -
   its value in the current type is the count, and the label lets every type
   choose. Revit labels an array only with an Integer parameter; a Yes/No is
@@ -49,6 +69,12 @@ purpose: >
   are read again. The array's id and the copies' ids come back; copies of a
   void cut nothing until COMBINE_FAMILY_FORMS combines them.
 
+  **A DETAIL ITEM WITH NO VIEW** (row 5b-1574, measured 2026-11-12 on Revit
+  2020): nested in a family, Revit places a detail item on a plane and gives it
+  no Owner View; arrayed in a 3D view it failed with "An internal error has
+  occurred". It is arrayed in the floor plan of the level it stands on, read by
+  its insertion point - four arrows 200 mm apart in Ref. Level, read back.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -58,7 +84,8 @@ contract:
     - name: uidoc
       type: UIDocument
     # ONE form or ONE nested family, by the id its tool gave back - or
-    # `selected`, with it selected alone.
+    # `selected`, with it selected alone. Version 4: a nested detail item or
+    # annotation too, by the instanceId PLACE_DETAIL_COMPONENTS gave back.
     - name: form
       type: string
       source: request
@@ -108,44 +135,40 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-18'
+  date: '2026-11-12'
   by: Ajmal PS
-  model: Family3, Revit 2020, session 64176 - the count is NOT recorded because 2,157 elements
-    was measured on Family4, the document in front, and this ran against another one (row
-    15)
-  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned arrayId 323e861b-0aef-4bc5-a21e-480e0d84cd7e-00000da8,
+  model: Heron NF Generic (1,564 elements), Revit 2020, session 33000
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned arrayId 6f9fd345-b0af-49ed-9c09-c5879cbd9774-00001084,
     arrayView Func`1, axis 0, axisLetters 3 item(s) [X, Y, Z], dbNamespace Autodesk.Revit.DB,
-    describe Func`2, driver (null), faceWord Func`3, findings 1 item(s) [Arrayed the solid
-    extrusion 323e861b-0aef-4bc5-a21e-480e0d84...], flags BindingFlags, halfMillimetre 0.00164041994750656,
-    heldBy Func`2, invariant CultureInfo, isInteger Func`2, labelled false, lowest Func`3,
-    members 323e861b-0aef-4bc5-a21e-480e0d84cd7e-00000da7,323e861b-0aef-4bc5-a21e-480e0d84cd7e-00000db6,
-    n 3, notAFamily false, original Extrusion, originalForm Extrusion, plain Func`2, problems
-    0 item(s), refused (null), revitAssembly RuntimeAssembly, sameKind Func`3, shapeOf Func`2,
-    sketchPlaneOf Func`2, stepMm 20, toLast false, unitAlong Func`2. inputs came form as given;
-    count as given; step as given. on Family3
-  negative_case: 'run with form=323e861b-0aef-4bc5-a21e-480e0d84cd7e-00000d5e, count=3, step=Y
-    20 instead - chosen because it should not contain what this fragment reports - run inside
+    describe Func`2, driver (null), faceWord Func`3, findings 1 item(s) [Arrayed the nested
+    family "Heron NF Arrow : Heron NF Arrow" ...], flags BindingFlags, halfMillimetre 0.00164041994750656,
+    heldBy Func`2, insertionOf Func`2, invariant CultureInfo, isInteger Func`2, labelled false,
+    lowest Func`3, members 6f9fd345-b0af-49ed-9c09-c5879cbd9774-00001083,6f9fd345-b0af-49ed-9c09-c5879cbd9774-0000108a,6f9fd345-b0af-49ed-9c09-c5879cbd9774-0000108d,
+    n 4, notAFamily false, original FamilyInstance, originalForm (null), ownerView ViewPlan,
+    ownerless true, plain Func`2, problems 0 item(s), refused (null), revitAssembly RuntimeAssembly,
+    sameKind Func`3, shapeOf Func`2, sketchPlaneOf Func`2, stepMm 200, toLast false, unitAlong
+    Func`2. inputs came form as given; count as given; step as given. on Heron NF Generic'
+  negative_case: 'run with form=d09df1e6-65b3-4385-9279-48572506fe4e-00000fd3, count=3, step=Z
+    100 instead - chosen because it should not contain what this fragment reports - run inside
     a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
-    arrayId , arrayView Func`1, axis 1, axisLetters 3 item(s) [X, Y, Z], dbNamespace Autodesk.Revit.DB,
+    arrayId , arrayView Func`1, axis 2, axisLetters 3 item(s) [X, Y, Z], dbNamespace Autodesk.Revit.DB,
     describe Func`2, driver (null), faceWord Func`3, findings 1 item(s) [Nothing was arrayed.
-    A copy of this extrusion cannot leave t...], flags BindingFlags, halfMillimetre 0.00164041994750656,
-    heldBy Func`2, invariant CultureInfo, isInteger Func`2, labelled false, lowest Func`3,
-    members , n 3, notAFamily false, original Extrusion, originalForm Extrusion, plain Func`2,
-    problems 1 item(s) [A copy of this extrusion cannot leave the plane it is sketch...],
-    refused Nothing was arrayed. A copy of this extrusion cannot leave the plane it is sketched
-    on, Center (Front/Back), and a row along Y leaves it: a trial row of 3, rolled back, moved
-    its copies 0 and 0 mm of the 20 and 40 mm asked, so every copy would sit on the original.
-    A row along X or Z stays in that plane. For a row along Y, sketch the form on a plane
-    the row runs along - Ref. Level or Center (Left/Right) in Revit''s own templates - or,
-    with a fixed count, make each one its own form at its own place., revitAssembly RuntimeAssembly,
-    sameKind Func`3, shapeOf Func`2, sketchPlaneOf Func`2, stepMm 20, toLast false, unitAlong
-    Func`2. inputs came form as given; count as given; step as given. on Family3'
+    The nested family "Heron NF Arrow : Her...], flags BindingFlags, halfMillimetre 0.00164041994750656,
+    heldBy Func`2, insertionOf Func`2, invariant CultureInfo, isInteger Func`2, labelled false,
+    lowest Func`3, members , n 3, notAFamily false, original FamilyInstance, originalForm
+    (null), ownerView ViewPlan, ownerless true, plain Func`2, problems 1 item(s) [The nested
+    family "Heron NF Arrow : Heron NF Arrow" d09df1e6...], refused Nothing was arrayed. The
+    nested family "Heron NF Arrow : Heron NF Arrow" d09df1e6-65b3-4385-9279-48572506fe4e-00000fd3
+    is drawn in "Ref. Level" and stays in that view''s plane, so a row along Z - out of the
+    view - cannot be made. A row along X or Y stays in it. For a row along Z, draw it in a
+    view that looks across Z., revitAssembly RuntimeAssembly, sameKind Func`3, shapeOf Func`2,
+    sketchPlaneOf Func`2, stepMm 100, toLast false, unitAlong Func`2. inputs came form as
+    given; count as given; step as given. on Heron NF Generic'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 4b5a371d188603d8
-
+  fingerprint: 8cd0313e7ef4050c
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -166,13 +189,22 @@ compatibility-note: >
   Version 3 lists what holds a form with `Dimension.References`, `IsLocked`
   and `FamilyLabel`, `Element.GetGeometryObjectFromReference`,
   `PlanarFace.FaceNormal` and `FamilyInstance.GetReferenceName` - every one
-  in the reference assemblies 2020 through 2027, read 2026-10-08.
+  in the reference assemblies 2020 through 2027, read 2026-10-08. Version
+  4's `Element.OwnerViewId`, `ElementId.InvalidElementId`,
+  `View.ViewDirection`, `View.IsTemplate`, `Group.GetMemberIds`,
+  `LocationPoint.Point` and `LinearArray.Create` with its `View` read the
+  same 2020 through 2027 (`tools/api-surface --members --inherited`,
+  2026-11-11).
 
 # ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "array the blade along X with Blade Count"    -> here
 #   "repeat this fin along the width"             -> here
 #   "array the nested family up with the count"   -> here, version 2
+#   "array the arrows in the plan"                -> here, version 4 - a nested
+#                                                    detail item, in its own view
+#   "place the flow arrow in the Ref. Level view" -> PLACE_DETAIL_COMPONENTS,
+#                                                    the one to array
 #   "array them along the corridor"               -> COPY_ELEMENTS, loose
 #                                                    copies in a project
 
@@ -182,3 +214,4 @@ utterances:
   - make a row of these slots with a count parameter
   - array this form so the types choose how many
   - array the nested family up with its count on a parameter
+  - array the arrows in the plan

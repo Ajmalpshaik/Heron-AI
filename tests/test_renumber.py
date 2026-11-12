@@ -40,6 +40,12 @@ WHAT THIS PROVES
      pushed copy. One with no Numbering line gets one under its Status line
      (4, 7); one with no Status line either, and another decision's Numbering
      line naming the old id, are left alone, named, and exit 1.
+  8. A 5b ROW IN A FILE OF ITS OWN (docs/fragment-issues/row-5b-N.md, where
+     a new row is written since 2026-11-12). Two branches that took one
+     number stop the merge on that file, by name; the rename is refused while
+     that merge is half done; with it aborted, the file is renamed with the
+     row's number cell, its heading and every link to it, and the merge that
+     follows has nothing to collide on - main's file byte for byte.
 
 WHAT IT DOES NOT PROVE. That every form a real document writes an id in is
 one of the forms it renames. A form it misses stays as it was, so the gate
@@ -525,6 +531,94 @@ def section_7(home):
           "another decision's Numbering line naming D-116 is left as written, and named")
 
 
+OWN = "docs/fragment-issues/row-5b-%d.md"
+
+
+def own_row(number, words):
+    """A 5b row's own file, as docs/fragment-issues/row-5b-N.md is written."""
+    return ("# Fragment issues — row 5b-%d\n\n"
+            "> One row of section 5b of [the register](../FRAGMENT-ISSUES.md), in a file of its own.\n\n"
+            "| # | Defect | State |\n|---|---|---|\n"
+            "| **%d** | %s | open |\n" % (number, number, words))
+
+
+def section_8(home):
+    """Since 2026-11-12 a new 5b row is a file of its own, so two branches
+    that take one number each write the same FILE, and git stops the merge on
+    it by name - the loud failure the layout was chosen for. The side merging
+    second renumbers: the file is renamed with the row in it. Each check on
+    the rename FAILS, and does not raise, on a tool that knows only the rows
+    files - there a row's own file defines nothing, and nothing is renamed."""
+    print("\n8. a 5b row in a file of its own")
+    origin = os.path.join(home, "own-origin.git")
+    seed = os.path.join(home, "own-seed")
+    work = os.path.join(home, "own-work")
+    git(home, "init", "-q", "--bare", origin)
+    git(origin, "symbolic-ref", "HEAD", "refs/heads/main")
+    git(home, "clone", "-q", origin, seed)
+    configure(seed)
+    git(seed, "checkout", "-q", "-b", "main")
+    commit(seed, START, "the registers before the fork")
+    git(seed, "push", "-q", "origin", "main")
+    git(home, "clone", "-q", origin, work)
+    configure(work)
+    git(work, "checkout", "-q", "-b", "feat/clash")
+    mains = own_row(489, "main's row 489")
+    commit(seed, {OWN % 489: mains}, "main takes 5b-489, in a file of its own")
+    git(seed, "push", "-q", "origin", "main")
+    group = "docs/needs-checking/group-ei.md"
+    commit(work, {
+        OWN % 489: own_row(489, "the branch's row"),
+        OWN % 490: own_row(490, "the branch's next row, after [row 5b-489](row-5b-489.md)"),
+        group: START[group] + "\nSee [row 5b-489](../fragment-issues/row-5b-489.md).\n",
+    }, "the branch takes 5b-489 too, and 5b-490")
+    git(work, "fetch", "-q", "origin")
+
+    done = subprocess.run(["git", "-c", "core.autocrlf=false", "merge", "--no-edit", "origin/main"],
+                          cwd=work, capture_output=True, text=True, encoding="utf-8", timeout=60)
+    said = done.stdout + done.stderr
+    check(done.returncode != 0 and "add/add" in said and "docs/fragment-issues/row-5b-489.md" in said,
+          "two branches that took one number stop the merge, and git names the row's file: %s"
+          % " ".join(said.split())[:150])
+    before = snapshot(work)
+    code, text = run(work, "--from", "5b-489", "--to", "5b-652")
+    check(code == 2 and "a merge is half done" in text and snapshot(work) == before,
+          "while that merge is half done the rename is refused, and nothing is written (%d)" % code)
+    git(work, "merge", "--abort")
+
+    code, text = run(work, "--from", "5b-489", "--to", "5b-652")
+    check(code == 0, "with the merge aborted, 5b-489 -> 5b-652 exits 0 (%d): %s"
+          % (code, " ".join(text.split())[:120]))
+    check("renamed  docs/fragment-issues/row-5b-489.md -> docs/fragment-issues/row-5b-652.md" in text,
+          "it names the row's file it renamed")
+    moved = read(work, OWN % 652) if exists(work, OWN % 652) else ""
+    check(not exists(work, OWN % 489) and moved != "", "row-5b-489.md is now row-5b-652.md")
+    check("| **652** | the branch's row | open |" in moved and "| **489** |" not in moved,
+          "the row's own number cell says 652, so the file still holds the row its name says")
+    check(moved.startswith("# Fragment issues — row 5b-652\n"), "and so does the file's heading")
+    check("[row 5b-652](row-5b-652.md)" in read(work, OWN % 490),
+          "a link to it from another row's own file: its words and the file it names")
+    check("[row 5b-652](../fragment-issues/row-5b-652.md)" in read(work, group),
+          "and from a NEEDS-CHECKING group")
+    check("| **490** |" in read(work, OWN % 490) and exists(work, OWN % 490),
+          "row 5b-490, which nobody else took, is left as it was")
+
+    git(work, "add", "-A")
+    # may_fail: where nothing was renamed there is nothing to commit, and the
+    # checks below are what fail - never this line.
+    git(work, "commit", "-q", "-m", "renumbered", may_fail=True)
+    done = subprocess.run(["git", "-c", "core.autocrlf=false", "merge", "--no-edit", "origin/main"],
+                          cwd=work, capture_output=True, text=True, encoding="utf-8", timeout=60)
+    check(done.returncode == 0, "the merge that follows has nothing to collide on: %s"
+          % " ".join((done.stdout + done.stderr).split())[:120])
+    check(exists(work, OWN % 489) and read(work, OWN % 489) == mains
+          and exists(work, OWN % 652) and exists(work, OWN % 490),
+          "main's row-5b-489.md is byte for byte as main wrote it, beside the branch's two")
+    code, text = run(work, "--from", "5b-652", "--to", "5b-489")
+    check(code == 2 and "already has 5b-489" in text,
+          "and a --to that is a row's own file on main is refused (%d)" % code)
+
+
 def main():
     home = tempfile.mkdtemp(prefix="heron-renumber-")
     try:
@@ -536,6 +630,7 @@ def main():
         section_5(home)
         section_6(home)
         section_7(home)
+        section_8(home)
     finally:
         shutil.rmtree(home, ignore_errors=True)
     print()
