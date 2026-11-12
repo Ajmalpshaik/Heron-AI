@@ -1486,6 +1486,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-nn.md`](needs-checking/group-nn.md)
 
+## Group NQ - three everyday MEP jobs given a method, none run in Revit: annotate a view, colour a view by system, spaces and zones from the architect's link (2026-11-12)
+
+**Its own file:** [`needs-checking/group-nq.md`](needs-checking/group-nq.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

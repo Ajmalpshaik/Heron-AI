@@ -865,6 +865,117 @@ def main():
                   [u["capability"] for u in layout["uses"]],
                   "and never syncs - it asks the modeller to")
 
+            # THREE EVERYDAY MEP JOBS, 2026-11-12 (NEEDS-CHECKING Group NQ):
+            # annotate a view, colour a view by system, spaces and zones from
+            # the architect's link. Each was written from cards the library
+            # already has, so what is held here is that it still is: served,
+            # every capability in its list provided by a card that is not
+            # retired, and - the half tests/test_skills.py cannot see - every
+            # capability its STEPS name too. A method leaves its reads off
+            # `needs` on purpose (a lookup offers a method whose needs hold
+            # its answer), so a step can name a capability no list carries,
+            # and a card merged away under it would leave the step pointing
+            # at nothing with every other check green. Read off the cards,
+            # never a second list: a capability-shaped word in the steps that
+            # no live card declares is the failure.
+            import re as _re
+            import heron_fragment as _FRAG
+            _cards = _FRAG.load_all()[0].values()
+            _retired_states = ("DEPRECATED", "ARCHIVED")
+            _live = set(c.data.get("capability") for c in _cards
+                        if c.status not in _retired_states)
+            _shaped = _re.compile(r"\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\b")
+            _jobs = [j["id"] for j in (BRAIN.method("") or {}).get("jobs", [])]
+            for job, steps_name in (
+                    ("annotate-a-view",
+                     ("FIND_UNTAGGED_ELEMENTS", "TAG_ELEMENTS_IN_VIEW",
+                      "FIND_OVERLAPPING_TAGS", "ARRANGE_TAGS")),
+                    ("system-colours",
+                     ("REPORT_VIEW_FILTERS", "CREATE_VIEW_FILTER",
+                      "TEST_VIEW_FILTER_MATCH", "COPY_VIEW_FILTERS")),
+                    ("hvac-spaces-and-zones",
+                     ("LIST_LINKED_MODELS", "SET_LINK_ROOM_BOUNDING",
+                      "SYNC_SPACES_WITH_LINKED_ROOMS", "CREATE_HVAC_ZONE"))):
+                served = BRAIN.method(job)
+                check(served is not None and job in _jobs,
+                      "%s is served by heron_method, and listed among the "
+                      "jobs" % job)
+                uses = (served or {}).get("uses") or []
+                unprovided = [u["capability"] for u in uses
+                              if u.get("missing")
+                              or u.get("status") in (None,) + _retired_states]
+                check(bool(uses) and not unprovided,
+                      "%s: every capability in its list is provided by a "
+                      "card that is not retired%s"
+                      % (job, "" if uses and not unprovided else
+                         " - " + (", ".join(unprovided) or "it lists none")))
+                words = " ".join((served or {}).get("purpose", "").split())
+                named = sorted(set(_shaped.findall(words)))
+                dead = [n for n in named if n not in _live]
+                check(bool(named) and not dead,
+                      "%s: every capability its steps name is a live card's "
+                      "- %d named%s"
+                      % (job, len(named), "" if named and not dead else
+                         "; NOT LIVE: " + (", ".join(dead) or "none named")))
+                # Read from step 0 on: the paragraph above the steps names
+                # the reads the list does not carry, in no order. Each step
+                # is FOUND before the order is compared: str.find answers -1
+                # for one that is not there, which would pass.
+                first = words.find(" 0. ")
+                at = [words.find(step, max(first, 0)) for step in steps_name]
+                check(first >= 0 and min(at) >= 0 and at == sorted(at),
+                      "%s: its steps come in the order the job needs - %s %s"
+                      % (job, ", ".join(steps_name), at))
+                check(not _re.search(r"\((?:PROVEN|DRAFT)\b", words),
+                      "%s: no step types a card's status in brackets - the "
+                      "list served after the method carries it" % job)
+
+            # THEIR WORDS. The capabilities are the ones the live lookup
+            # returned for each sentence on 2026-11-12 (the trained encoder,
+            # no re-ranker); only the skills decide here, so this holds on
+            # any backend. The first three are each method's own sentence.
+            # The other four are what the first wording cost and the words
+            # were changed to give back: a QUESTION that named no method
+            # must not be offered a change, and another job's method must
+            # not be pushed out of first place.
+            for said, returned, first in (
+                    ("tag everything in this view for issue",
+                     ["TAG_ELEMENTS_IN_VIEW", "REPORT_TAGS_AND_TARGETS",
+                      "FIND_UNTAGGED_ELEMENTS", "TAG_VIEWS_BY_RULES",
+                      "COPY_TAGS_TO_REPLACEMENTS"], "annotate-a-view"),
+                    ("colour code the services, one colour for each system",
+                     ["APPLY_COLOR_FILL_SCHEME", "COLOR_BY_PARAMETER",
+                      "SET_CATEGORY_GRAPHICS", "REPORT_COLOR_FILL_SCHEME",
+                      "CREATE_LINE_STYLE"], "system-colours"),
+                    ("do the HVAC zoning from the architect's linked layout",
+                     ["REPORT_SPACE_ENVELOPE", "SYNC_SPACES_WITH_LINKED_ROOMS",
+                      "CREATE_HVAC_ZONE", "SET_LINK_ROOM_BOUNDING",
+                      "COUNT_BY_SPATIAL_CONTAINER"], "hvac-spaces-and-zones"),
+                    ("What is the biggest space?",
+                     ["REPORT_SPACE_ENVELOPE", "SYNC_SPACES_WITH_LINKED_ROOMS",
+                      "PLACE_ROOMS", "REPORT_BOUNDING_BOX",
+                      "REPORT_ROOM_SPACE_DATA"], "space-airflow")):
+                picked = [s.id for s in SKILL.methods_for(everything, said,
+                                                          returned)]
+                check(picked[:1] == [first],
+                      "\"%s\" names %s first - %s" % (said, first, picked))
+            for said, returned, never in (
+                    ("which filters are on this view",
+                     ["REPORT_VIEW_FILTERS", "REPORT_PHASE_FILTERS",
+                      "COPY_VIEW_FILTERS", "CREATE_VIEW_FILTER",
+                      "REMOVE_VIEW_FILTER"], "system-colours"),
+                    ("is my model saved",
+                     ["REPORT_OPEN_DOCUMENTS"], "hvac-spaces-and-zones"),
+                    ("which dimensions are overridden",
+                     ["SELECT_DIMENSIONS_BY_VALUE", "REPORT_CATEGORY_OVERRIDES",
+                      "CREATE_DIMENSION", "DIMENSION_ELEMENT_FACES",
+                      "DIMENSION_ROOMS"], "annotate-a-view")):
+                picked = [s.id for s in SKILL.methods_for(everything, said,
+                                                          returned)]
+                check(never in _jobs and never not in picked,
+                      "and the question \"%s\" is not offered %s - %s"
+                      % (said, never, picked))
+
         # --- 7. it refuses rather than answering "nothing" ------------------
         # Last, because it takes the knowledge folder away. "Heron knows how to
         # do nothing" and "Heron cannot read what it knows" send a user in

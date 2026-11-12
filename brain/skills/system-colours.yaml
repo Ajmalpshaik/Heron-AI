@@ -1,0 +1,254 @@
+heron-status: DRAFT
+heron-step: 17
+heron-since: 0.1.0
+heron-layer: brain
+
+id: system-colours
+name: Give every system its own colour on a drawing - a rule for each value, checked, then onto the other drawings
+domain: revit.views
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
+risk: MODIFY
+
+purpose: >
+  Makes the coordination picture: supply one colour, return another, chilled
+  water a third - every value of one parameter in its own colour, in one
+  view, then the same on the other views. It is done one of two ways, and
+  WHICH IS ASKED, never assumed, because they age differently.
+  - FILTERS (steps 3 to 6): one view filter for each value. A filter is a
+    rule: work modelled next week is caught and coloured with nobody running
+    anything, and the filters are the project's, there for every view. Right
+    for a drawing that is issued again.
+  - A ONE-OFF (step 7): each element that is there NOW is given its colour,
+    in this one view. Nothing is added to the project, and an element drawn
+    afterwards stays plain. Right for looking at something today.
+
+  NO STATUS IS TYPED BESIDE A CAPABILITY HERE. Each one's status is in the
+  list served after this method, read from the library every time it is
+  served. A read runs while its card is DRAFT and says so. A change does not:
+  revit_change refuses a DRAFT, and a card whose proof is older than its code
+  (D-117). A refusal that names the status is the answer for that step;
+  nothing here is tried round it. Steps 1, 2 and 5 use reads the list does
+  not carry - REPORT_VIEW_FILTERS, REPORT_FILTERABLE_PARAMETERS and
+  TEST_VIEW_FILTER_MATCH; heron_resolve gives each one's status.
+
+  WHETHER REVIT ASKS BEFORE IT KEEPS A CHANGE IS THE OWNER'S SWITCH, Ask to
+  Keep, AND IT IS OFF ON A PC AS INSTALLED (D-138). No Heron tool tells a
+  chat how it stands, so ASK THE MODELLER before the first change: it is in
+  Heron's Settings on the Heron tab (D-150), and python tools/heron-ready.py,
+  run in the Heron folder, prints it.
+  - OFF: each change below is KEPT AT ONCE, with nothing shown first - one
+    entry in Revit's undo list, which Revit's Undo takes back.
+  - ON: Revit selects and isolates what the call touched and asks Keep or
+    Discard, and nothing is kept until Keep (D-126). One exception: where
+    the modeller has used that box's link to keep the rest of a job without
+    asking, this chat's changes to this model are kept unasked until ten
+    quiet minutes pass, and each answer says so.
+  Say which of these it will be. It is the owner's switch and is never
+  turned from a chat.
+
+  A STEP KEEPS ONLY WHAT THE CALL BEFORE IT LEFT. expect_from names the one
+  call that ran last, and a call sent without it forgets what was found. So
+  each find below is run straight before the call that uses it, and run
+  again for the next one.
+
+  0. ASK WHAT IS WANTED, ONCE (D-33). Which view, by its name. Which
+     categories - ducts with their fittings and accessories, pipes with
+     theirs. Which parameter the colours follow - System Classification,
+     System Type, System Name or another: they give different pictures, and
+     none is Heron's to pick. Filters or a one-off. For filters, how each is
+     named - a prefix in front of the value - and whether the colours are the
+     office's own, each given as three numbers, or may be Heron's evenly
+     stepped ones. And which other views take the same.
+  1. WHAT IS ALREADY THERE - READ, NOTHING CHANGED. REPORT_VIEW_FILTERS with
+     viewName the view: every filter in the project, the ones on this view
+     with their settings, and templateOwned. A VIEW IN templateOwned FOLLOWS
+     A VIEW TEMPLATE THAT HOLDS ITS FILTERS: a filter put on that view does
+     not stay. Stop and say so - whether the template lets go of its filters,
+     or the filters are put on the template by hand, is the modeller's; no
+     template is changed from this method. A filter the project already has
+     for one of these values is said too, before a near-copy of it is made.
+  2. WHICH PARAMETERS A FILTER MAY TEST - READ. REPORT_FILTERABLE_PARAMETERS
+     with categoryIds the categories asked for: commonParameters is what a
+     filter over ALL of them together may test, and unfilterableCategories
+     the ones that take no filter at all. The parameter asked for must be in
+     commonParameters, by the name printed there. When it is not, say which
+     category lacks it and ask - a category is not dropped quietly to make
+     the rest work.
+  3. THE ELEMENTS THE VALUES ARE READ FROM. FILTER_ELEMENTS_BY_CATEGORY with
+     categories the ones asked for, comma separated - "Ducts, Duct Fittings,
+     Duct Accessories" - and inViewOnly the view. For the whole project's
+     values, leave inViewOnly out. Its `found` says how many of each; a
+     category at 0 is said.
+  4. THE FILTERS - ONE CALL, ONE UNDO. CREATE_VIEW_FILTER in ONE of two
+     shapes. The first is sent straight after step 3, expect_from naming its
+     filter; the second reads no elements and takes no expect_from.
+     HERON'S COLOURS: perValue=true, parameterName, namePrefix when a prefix
+     was asked for, and view. Each distinct value on those elements becomes a
+     filter named after it, on that view, in a colour of its own stepped
+     evenly round the colour wheel; elements with nothing in the parameter
+     get a filter of their own, "(no value)". filterName, matchValue,
+     moreRules and colour are left OUT - any of them beside perValue is
+     refused. categoryIds may be left out: the categories are then the
+     elements' own, and one that cannot take the rule is dropped and named in
+     droppedCategories.
+     THE OFFICE'S COLOURS: one call for each system - filterName, categoryIds,
+     parameterName, matchValue the value, view, and colour as three numbers,
+     "0,0,255". A view with no colour, or a colour with no view, is refused.
+     EITHER WAY, READ THE ANSWER OUT: readBack is each new filter as Revit
+     holds it - its categories, its rule, how many elements it catches today
+     and its colour on the view; that list IS the key to the colours, and it
+     is given to the modeller as one. alreadyExists names every filter that
+     was NOT made because the project has one by that name: it is left as it
+     was - not changed, and NOT put on this view. valuesFound, and leftOut
+     for the elements that gave no value and why. A view template is refused
+     as the view: a filter goes on a real view.
+     A filter in alreadyExists that should be on this view, or one whose
+     colour is to be the office's, is APPLY_VIEW_FILTER: view; filter, by its
+     name; overrides, as "projection-line-colour=0,0,255; surface-colour=
+     0,0,255" or the word none; visible=true; and enabled=, keepOtherSettings=
+     and solidFill= each typed with nothing after the equals sign, which
+     leaves that setting as it is. On Revit 2020 enabled MUST be left empty:
+     a value there refuses the whole call.
+  5. DOES EVERY FILTER CATCH WHAT IT SHOULD - READ, and it is the proof.
+     Step 3's filter again, then TEST_VIEW_FILTER_MATCH with filterName one
+     filter, expect_from naming that filter: `matched`, and outOfScope for
+     elements the filter could never catch - the pair of calls once for each
+     filter looked at. Then REPORT_VIEW_FILTERS with viewName the view again:
+     disabled, hidden, blankOverride and nothingToActOn each name a filter
+     that is on the view and drawing nothing, and why. Then the modeller
+     looks at the view.
+  6. THE OTHER VIEWS. COPY_VIEW_FILTERS with sourceView the view just done
+     and targetViews the others by name; onlyFilterNamed for one filter
+     alone. Each filter goes over WITH its colour and its ticks. It answers
+     viewsChanged and filtersApplied, and blockedByTemplate for every view
+     whose template holds its filters - named, and left as they are. Never
+     step 4 again on a second view: the filters exist by then, so every one
+     would be skipped and none put on it.
+  7. THE ONE-OFF, in place of steps 4 to 6, straight after step 3.
+     COLOR_BY_PARAMETER with view, parameterName and colourBand - vivid,
+     pastel or neon, asked for - expect_from naming step 3's filter. It
+     answers `coloured` and `legend`,
+     one line a value with its colour, which is given to the modeller; the
+     blank ones are a group of their own, noValue; insulation and lining
+     take the colour of the run they wrap. `ambiguous` names elements that
+     carry two parameters by that name: they are left plain, and when every
+     element is one, nothing is coloured and `refused` says so. The same
+     request gives the same colours every time. To take it off again:
+     step 3's filter once more, then RESET_GRAPHIC_OVERRIDES with view and
+     expect_from naming it.
+  8. SAY WHAT WAS DONE, in Revit words: which filters were made and which
+     were already there, the colour of each, the views they are on, and
+     every view a template kept as it was.
+
+  TAKING IT BACK. Straight after a call, Revit's Undo - one entry a call;
+  never a second change to reverse the first. Later, REMOVE_VIEW_FILTER with
+  view, filterNames and deleteFromProject=false takes filters off ONE view.
+  deleteFromProject=true DELETES them from the project and from every view
+  that used them: that is a delete, asked for by name and only on the
+  modeller's yes for that delete (Constitution Article 7).
+
+  WORKSHARED MODELS. A view or a view template another person owns is
+  skipped and named, never taken (Article 12). Nothing here synchronises
+  with central (Article 10).
+
+  TWO CHATS ON ONE REVIT. expect_from with "where" -
+  expect_from="filter-elements-by-category where category=Ducts", when one
+  category was read - refuses a find the other chat left.
+
+  NOT HERE, AND SAID RATHER THAN WORKED ROUND. A LEGEND DRAWN ON THE SHEET:
+  Revit keeps no legend of a view's filters, and nothing in the library
+  draws one - step 4's readBack and step 7's `legend` are the list of values
+  and colours, for the modeller to make the key from. The Color Fill Legend
+  belongs to rooms, spaces and zones coloured by a Color Scheme:
+  APPLY_COLOR_FILL_SCHEME, another job. Greying the architecture back is the
+  mep-grayout method. Changing a view template.
+
+# WRITTEN FOR THIS METHOD on 2026-11-12, from the words of the brief it was
+# asked for in - "colouring a view by system or by parameter with view
+# filters and a legend". None is from the owner's own question log; his own
+# way of asking is added on his word. No question is declared: this method is
+# above the write line (D-86), and which filters there are is a read with a
+# card of its own.
+#
+# THE NAME AND THE SENTENCES SAY NEITHER "view" NOR "filter" NOR "set up",
+# AND THE ID IS NOT colour-by-system, ON PURPOSE. Measured 2026-11-12 through
+# heron_brain.lookup, on the trained encoder the container had and no
+# re-ranker, against every sentence on file - the owner's questions, the
+# plain questions, every other method's utterances and every live card's
+# own. A method's words are not searched, so the capability a lookup answers
+# with cannot move; what can is the methods it names beside it. With those
+# words, "which filters are on this view" and the bare REPORT_VIEW_FILTERS -
+# reads that named no method - named this one; "Highlight these in the
+# active view and keep everything else grey." named it AHEAD of mep-grayout;
+# "purge after the clean-up" gained it through "up"; and the bare
+# FILTER_ELEMENTS_BY_CATEGORY named it first, through "filter" and the "by"
+# of that id.
+# AS WRITTEN, four sentences changed, all the owner's and each one step of
+# this job, where no method was named before: "Add a view filter for this
+# pipe system and make it red.", "Add a solid fill pattern to that pipe
+# system filter.", "Create an air terminals filter, give it colours, and
+# apply it to the active 3D view.", and his sentence asking for three ducts
+# in a different colour each. No other sentence is offered a different list.
+utterances:
+  - colour code the services, one colour for each system
+  - give every system its own colour and put the same on the other drawings
+  - system colours for the coordination drawings
+
+# CAPABILITIES, never fragment ids - in the order the purpose gives.
+#
+# THE THREE READS ARE LEFT OFF ON PURPOSE - REPORT_VIEW_FILTERS,
+# REPORT_FILTERABLE_PARAMETERS and TEST_VIEW_FILTER_MATCH - as
+# views-per-level leaves off FIND_VIEWS: a lookup names a method whose needs
+# hold one of its answers, and each of those reads answers a QUESTION ("what
+# filters exist", "why is my filter not catching these") that would then be
+# offered this change. FILTER_ELEMENTS_BY_CATEGORY is left off for the
+# reason update-general-notes gives: it answers most requests about a
+# category. So the list served with this method does not carry those four;
+# the purpose says where their status is read.
+needs:
+  - CREATE_VIEW_FILTER
+  # Only for a filter that already existed, or one colour put right - step 4.
+  - APPLY_VIEW_FILTER
+  - COPY_VIEW_FILTERS
+  # The one-off, in place of the filters - step 7.
+  - COLOR_BY_PARAMETER
+  - RESET_GRAPHIC_OVERRIDES
+  # Only to take filters off again; a delete from the project on its own yes.
+  - REMOVE_VIEW_FILTER
+
+# What must be true BEFORE it runs, so it fails early with something
+# useful instead of deep inside a transaction (docs/09 s2).
+preconditions:
+  - a project is open in front, it is the model the modeller means, and the view named is a real view of it - not a view template
+  - the modeller has said which view, which categories, which parameter, filters or a one-off, and how the filters are named - and none is assumed (D-33)
+  - the view's filters are not held by a view template - or the modeller has said what is done about the template
+  - the elements carry the parameter - a duct on no system has no system to be coloured by
+  - the modeller has said whether Ask to Keep is on - Heron cannot read it - and has been told that with it off each change is kept at once
+  - the owner has Changes on - a refusal that names the switch is the answer
+  - on a workshared model, a view the modeller cannot edit is skipped and named - nothing is checked out or synchronised for them (Articles 10 and 12)
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  WRITTEN 2026-11-12 IN A CLOUD SESSION, NOT RUN. No Revit was reachable. No
+  new capability and no new tool: every step names one the library already
+  has. Each step's values were read off that card's contract, and
+  CREATE_VIEW_FILTER's two shapes off its code - what is refused beside
+  perValue, that a name already in the project is skipped and not put on the
+  view, and that a view template is refused as the view.
+
+  The legend the brief asked for has no card: nothing in the library draws a
+  key for a view's filters, and the method says so under NOT HERE instead of
+  describing one.
+
+  What only Revit can show is in NEEDS-CHECKING Group NQ: what
+  CREATE_VIEW_FILTER answers on a view whose template holds its filters -
+  step 1 stops before it, on REPORT_VIEW_FILTERS' word; that the colours read
+  back in readBack are the ones on the view; and that COPY_VIEW_FILTERS
+  carries each colour to a second view.
+
+  DRAFT until the whole order has been run on a saved scratch copy and the
+  views looked at by a person: NEEDS-CHECKING Group NQ.

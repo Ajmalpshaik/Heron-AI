@@ -1,0 +1,272 @@
+heron-status: DRAFT
+heron-step: 17
+heron-since: 0.1.0
+heron-layer: brain
+
+id: hvac-spaces-and-zones
+name: From the architect's linked rooms to HVAC zones - bounding first, then each one's top, then the zoning
+domain: revit.hvac
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
+risk: MODIFY
+
+purpose: >
+  Sets an MEP model up for its load and airflow work when the architecture is
+  a link: the link is made Room Bounding, an MEP space is made over each of
+  the architect's rooms with that room's number and name, each space is
+  given its top, the spaces are grouped into HVAC zones, and the spaces are
+  tagged on their plans - then everything is read back. It is run again
+  when the architect's rooms change, to rename what moved and list the
+  spaces left with no room under them. The loads themselves are the
+  space-airflow method (heron_method) and the tool revit_building_loads;
+  this is the job before them. Rooms in the model's OWN walls are the
+  room-setup method.
+
+  NO STATUS IS TYPED BESIDE A CAPABILITY HERE. Each one's status is in the
+  list served after this method, read from the library every time it is
+  served. A read runs while its card is DRAFT and says so. A change does not:
+  revit_change refuses a DRAFT, and a card whose proof is older than its code
+  (D-117). A refusal that names the status is the answer for that step;
+  nothing here is tried round it. Steps 1 and 8 use reads the list does not
+  carry - LIST_LINKED_MODELS and REPORT_ROOM_SPACE_DATA; heron_resolve gives
+  each one's status.
+
+  WHETHER REVIT ASKS BEFORE IT KEEPS A CHANGE IS THE OWNER'S SWITCH, Ask to
+  Keep, AND IT IS OFF ON A PC AS INSTALLED (D-138). No Heron tool tells a
+  chat how it stands, so ASK THE MODELLER before the first change: it is in
+  Heron's Settings on the Heron tab (D-150), and python tools/heron-ready.py,
+  run in the Heron folder, prints it.
+  - OFF: each change below is KEPT AT ONCE, with nothing shown first - one
+    entry in Revit's undo list, which Revit's Undo takes back.
+  - ON: Revit selects and isolates what the call touched and asks Keep or
+    Discard, and nothing is kept until Keep (D-126). One exception: where
+    the modeller has used that box's link to keep the rest of a job without
+    asking, this chat's changes to this model are kept unasked until ten
+    quiet minutes pass, and each answer says so.
+  Say which of these it will be. It is the owner's switch and is never
+  turned from a chat. STEP 4 HAS NO PREVIEW OF ITS OWN: with Ask to Keep off,
+  every space it makes is in the model the moment the call answers. A
+  modeller who wants to look first turns Ask to Keep on, or runs it on a
+  saved scratch copy.
+
+  A STEP KEEPS ONLY WHAT THE CALL BEFORE IT LEFT. expect_from names the one
+  call that ran last, and a call sent without it forgets what was found. So
+  each find below is run straight before the call that uses it, and run
+  again for the next one.
+
+  0. A FILE TO GO BACK TO. REPORT_OPEN_DOCUMENTS says whether the model has a
+     file and when it was last saved; one that was never saved is said to
+     the modeller ONCE before step 3. Heron cannot save the model it works
+     in (OPEN-QUESTIONS Q-69).
+  1. WHAT IS THERE - READ, NOTHING CHANGED. LIST_LINKED_MODELS for the links
+     by name and whether each is loaded: notLoaded names the ones that are
+     not, and a link that is not loaded gives no rooms - loading it is the
+     modeller's. revit_rooms for the spaces this model already holds, the
+     unplaced and the not enclosed counted apart; revit_levels for the
+     levels by name; revit_phases for the phases by their exact names.
+  2. ASK WHAT IS WANTED, ONCE (D-33). Which link holds the architect's rooms,
+     by the name step 1 printed. Which phase the spaces are made in. Whether
+     a space whose number or name differs from its room is renamed or only
+     reported. Where each level's spaces stop at the top - the level above
+     and an offset from it in millimetres. Which spaces go in which zone and
+     what each zone is called - that is the engineer's, never worked out
+     from the plan. The space tag type, and which plans are tagged. None is
+     assumed.
+  3. ROOM BOUNDING, FIRST. SET_LINK_ROOM_BOUNDING with linkName the link and
+     roomBounding=on; pathType is left out, so no path is touched. IT IS THE
+     LINK TYPE'S OWN SETTING AND IT TOUCHES A LINKED MODEL: every placed copy
+     of that link changes with it, so the modeller is asked for THIS change
+     by name before the call, and it is made only on that yes (Constitution
+     Article 7). An EMPTY linkName is every Revit link in the model - never
+     sent unless every link is what the modeller said. It answers `changed`,
+     alreadyThat for a link already set so, and `refused` and `report` for
+     what it left alone and why.
+     WHY FIRST: a space made where nothing bounds it has no area, and step 4
+     still makes it and still counts it (FRAGMENT-ISSUES row 5b-1125).
+  4. THE SPACES - ONE CALL, ONE UNDO, EVERY LEVEL. SYNC_SPACES_WITH_LINKED_ROOMS
+     with linkName the link, phaseName the phase - EMPTY for the model's last
+     phase - and updateNames true or false as step 2 was answered. With one
+     link loaded an empty linkName takes it; with several, an empty one is
+     refused and names them. For each placed, enclosed room in the link: no
+     space at its point here, one is MADE with the room's number and name;
+     a space there whose number or name differs is renamed when updateNames
+     is true and only reported when it is false; one that matches is
+     counted. There is no way to ask it for the report alone - the missing
+     spaces are made on every run.
+     WHAT IT GOES BY: the level at the room's own HEIGHT in this model, to
+     within 10 mm, never the level's name - a room with no level here at its
+     height is named in notPlaced and put nowhere. A room the architect has
+     not placed, or that is not enclosed, is passed over with no line. Only
+     the number and the name come across: a new space's top is Revit's own
+     default, which is why step 5 follows.
+     READ THE ANSWER OUT: `created`, `renamed`, alreadyMatching, notPlaced
+     with each reason, and `report`, room by room. A LINE THAT SAYS A SPACE
+     READS BACK WITH NO AREA STOPS THE JOB HERE: that space is in the model
+     and bounded by nothing. Say so, take the call back with Revit's Undo -
+     one entry - and go back to step 3 and to what the link shows before
+     trying again. No zone is made on spaces with no area.
+     `orphans` are spaces here with no linked room under them - the room was
+     deleted or moved in the architect's model. They are listed and NEVER
+     deleted: a space carries loads and tags. Deleting one is a delete, the
+     modeller's own, on a yes for that space (Article 7).
+     THE PHASE, READ OFF THE CARD'S CODE AND REVIT'S OWN API REFERENCE, NOT
+     SEEN IN REVIT (FRAGMENT-ISSUES row 5b-1580): the card looks for a space
+     already at each room's point without saying which phase, and Revit
+     answers that for the model's LAST phase only; and it takes every room
+     in the link whatever its phase. So with phaseName a phase that is not
+     the model's last, a second run does not see the spaces the first one
+     made - it renames none of them and may make each again - and a room of
+     an earlier phase in the architect's model may get a space. With a phase
+     other than the last, run this step ONCE, and read revit_rooms before
+     any second run.
+  5. WHERE EACH SPACE STOPS AT THE TOP, one level at a time.
+     FILTER_ELEMENTS_BY_CATEGORY with category=Spaces and levelId that level,
+     then SET_ROOM_LIMITS with upperLevel the level the modeller gave and
+     limitOffset in millimetres from it - negative is below it, -300 for the
+     underside of a 300 mm slab - expect_from naming the filter. It answers
+     `changed`, alreadyRight, topBelowFloor for a top that would sit at or
+     under the space's own floor, and `refused`. A space's volume is what a
+     load is worked out from: a top left at Revit's default is a wrong
+     volume that reads like a right one.
+  6. THE ZONES, one call for each zone. CREATE_HVAC_ZONE with zoneName,
+     `level` and `phase` by name - the phase step 4 made the spaces in: a
+     zone and its spaces must share one - and that zone's spaces: the ones
+     the modeller has selected in Revit, or a whole level's - step 5's
+     filter run again, then expect_from naming it. It answers `zone` and
+     `added`.
+     movedFromAnotherZone IS READ OUT EVERY TIME: a space belongs to one
+     zone only, and Revit takes it out of the zone it was in without asking.
+     A new zone's AREA reads zero until Revit works it out - it is never
+     passed on as a figure. ON REVIT 2027 THE CARD MAKES NO ZONE: that
+     release took the calls away, the answer says so in plain words, and
+     the zones are made by the modeller in Revit.
+  7. TAG THE SPACES, one plan at a time. FILTER_ELEMENTS_BY_CATEGORY with
+     category=Spaces and levelId the plan's level, then TAG_ELEMENTS_IN_VIEW
+     with view that plan, expect_from naming the filter. A space takes a
+     SPACE tag: tagTypeId the type the modeller named, or left out for the
+     project's default space tag - with neither, no tag is placed; it is
+     never the first one loaded. Only in a plan of the space's own level:
+     unplaced, notEnclosed and otherLevel name the rest, and `findings` says
+     when Space Tags are switched off in that view - placed and not shown.
+     A zone tag is the same call with category=HVAC Zones and a zone tag
+     type.
+  8. THE CHECK, and it is the proof - the calls not failing is not.
+     FILTER_ELEMENTS_BY_CATEGORY with category=Spaces, then
+     REPORT_ROOM_SPACE_DATA with expect_from naming it: every space's number,
+     name, level, area and volume; `unplaced` and `unenclosed` named apart;
+     volumeNotComputed for a space with an area and no volume. revit_rooms
+     for the count against the rooms step 4 reported. A space with no
+     volume, or a count that does not agree, is said to the modeller before
+     anybody works a load out from it.
+
+  WHEN THE ARCHITECT'S MODEL CHANGES. The link is reloaded by the modeller.
+  Then step 4 again: new rooms get spaces, changed numbers and names are
+  renamed or reported as step 2 was answered, and `orphans` lists what lost
+  its room. Steps 5 to 8 for whatever is new.
+
+  WORKSHARED MODELS. A link type, a space or a view another person owns is
+  skipped and named, never taken (Article 12). Nothing here synchronises
+  with central, and nothing here reloads a link (Articles 7 and 10).
+
+  TWO CHATS ON ONE REVIT. expect_from with "where" -
+  expect_from="filter-elements-by-category where category=Spaces" - refuses
+  a find the other chat left. Read revit_rooms before repeating step 4 when
+  its answer never came: it may have happened.
+
+  NOT HERE, AND SAID RATHER THAN WORKED ROUND. The loads and the airflow:
+  the space-airflow method and revit_building_loads. Spaces where the
+  architect placed NO rooms - a plant room nobody numbered: PLACE_ROOMS
+  fills an enclosed area with a space, a call of its own, and gives it no
+  name. Copying a room's height, occupancy or any other parameter onto its
+  space: only number and name come across. Deleting an orphan space. Zones
+  on Revit 2027. Colouring the spaces by zone is APPLY_COLOR_FILL_SCHEME,
+  another job. Loading or reloading the link.
+
+# WRITTEN FOR THIS METHOD on 2026-11-12, from the words of the brief it was
+# asked for in - "spaces and zones for HVAC from linked rooms, then loads".
+# None is from the owner's own question log; his own way of asking is added
+# on his word. No question is declared: this method is above the write line
+# (D-86), and what spaces or links there are is a read with a card of its
+# own.
+#
+# THE SENTENCES SAY "layout", NEVER "spaces", "rooms", "link" OR "model", AND
+# THE NAME SAYS "spaces" NOWHERE, ON PURPOSE. Measured 2026-11-12 through
+# heron_brain.lookup, on the trained encoder the container had and no
+# re-ranker, against every sentence on file - the owner's questions, the
+# plain questions, every other method's utterances and every live card's
+# own. A method's words are not searched, so the capability a lookup answers
+# with cannot move; what can is the methods it names beside it. With "model"
+# in a sentence, "is my model saved" and three more reads of the open
+# documents named this method where they named none; with "link", so did
+# "what is the path of this link"; with "spaces" in the name and the
+# sentences, the owner's "What is the biggest space?" named it AHEAD of
+# space-airflow, and building-shell's own "put a room in every space and a
+# ceiling in every room" lost room-setup.
+# AS WRITTEN, three plain sentences still trade one method for this one,
+# through "spaces" in the id - kept, because the id is what a modeller reads
+# in the list of jobs: "which room is this space in" (room-setup),
+# "which spaces have no airflow" (building-shell) and the bare
+# REPORT_ROOM_SPACE_DATA (sprinkler-layout). No other sentence is offered a
+# different list. A request in the modeller's own words - "set up the spaces
+# and zones from the architect's link" - names this method first: the name
+# carries zones, architect and linked, and the id carries spaces.
+utterances:
+  - do the HVAC zoning from the architect's linked layout
+  - make the HVAC zones over the architect's layout
+  - zone the architect's layout for HVAC
+
+# CAPABILITIES, never fragment ids - in the order the purpose gives.
+#
+# TWO READS ARE LEFT OFF ON PURPOSE - LIST_LINKED_MODELS and
+# REPORT_ROOM_SPACE_DATA - as views-per-level leaves off FIND_VIEWS: a lookup
+# names a method whose needs hold one of its answers, and each answers a
+# QUESTION ("which models are linked", "the room and space schedule") that
+# would then be offered this change. FILTER_ELEMENTS_BY_CATEGORY is left off
+# for the reason update-general-notes gives: it answers most requests about
+# a category. So the list served with this method does not carry those
+# three; the purpose says where their status is read.
+needs:
+  # Step 0's check that the model has a file to go back to.
+  - REPORT_OPEN_DOCUMENTS
+  # Touches a linked model - on the modeller's yes for that change.
+  - SET_LINK_ROOM_BOUNDING
+  - SYNC_SPACES_WITH_LINKED_ROOMS
+  - SET_ROOM_LIMITS
+  - CREATE_HVAC_ZONE
+  - TAG_ELEMENTS_IN_VIEW
+
+# What must be true BEFORE it runs, so it fails early with something
+# useful instead of deep inside a transaction (docs/09 s2).
+preconditions:
+  - a project is open in front, it is the MEP model the modeller means, and the architect's model is linked into it and loaded
+  - the architect's rooms are placed and enclosed in the linked model - a room with no area there gets no space
+  - this model has a level at the height of every level the rooms are on - levels are matched by height, never by name
+  - the modeller has said which link, which phase, rename or report, each level's upper limit, the zones and the space tag type - and none is assumed (D-33)
+  - the modeller has said yes to making that link Room Bounding, by name, before step 3 (Article 7)
+  - the modeller has said whether Ask to Keep is on - Heron cannot read it - and has been told that with it off the spaces are made at once
+  - the owner has Changes on - a refusal that names the switch is the answer
+  - on a workshared model, what the modeller cannot edit is skipped and named - nothing is checked out or synchronised for them (Articles 10 and 12)
+  - the model has a file and has been saved before step 3
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  WRITTEN 2026-11-12 IN A CLOUD SESSION, NOT RUN. No Revit was reachable. No
+  new capability and no new tool: every step names one the library already
+  has. Each step's values were read off that card's contract, and step 4 off
+  SYNC_SPACES_WITH_LINKED_ROOMS' code line by line: what it makes, what it
+  renames, what it passes over, and that it has no report-only run.
+
+  TWO THINGS THE CARDS' OWN RECORDS SAY, kept in front of the modeller and
+  not worked round. The proof run of SYNC_SPACES_WITH_LINKED_ROOMS made its
+  spaces and every one read back with no area, on a link set Room Bounding
+  inside a change that was then rolled back (FRAGMENT-ISSUES row 5b-1125) -
+  so step 3 is kept before step 4 is sent, and step 4 stops on that line.
+  And the phase is not carried through its lookups (row 5b-1580, read off
+  the code, not seen in Revit).
+
+  DRAFT until the whole order has been run on a saved scratch copy with a
+  real architect's link, and the spaces read back with their areas and
+  volumes: NEEDS-CHECKING Group NQ.
