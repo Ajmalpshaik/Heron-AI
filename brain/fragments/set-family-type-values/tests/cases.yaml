@@ -43,6 +43,15 @@ positive:
       "T1" is gone from the Family Types dialog, "T2" is the current type, and
       typesNow lists "T2" alone
 
+
+  # VERSION 4 (2026-11-12, row 5b-1575) - a measured kind in the family's units.
+  - given: >
+      the SAVED scratch family Heron Link Angle Test (%TEMP%/heron-work/link-angle),
+      type Test, an Air Flow type parameter "Nominal Air Flow"; values
+      "Nominal Air Flow=94.4 L/s; Width=600"
+    expect: >
+      written 2 - "Nominal Air Flow = 94.4 L/s" read back in Revit's own format,
+      and Width = 600 mm as version 3 wrote it
 negative:
   - given: >
       a family with the types "Standard" and "T2", typeName "Standard", values
@@ -95,6 +104,10 @@ negative:
   - given: a project in front
     expect: notAFamily true and nothing written
 
+
+  # VERSION 4 (2026-11-12).
+  - given: the same family, values "Nominal Air Flow=fast"
+    expect: refused - "fast" is not a value Revit reads for Nominal Air Flow; nothing written
 second_route:
   - >
       Family Types in the Family Editor, the same type chosen and each value

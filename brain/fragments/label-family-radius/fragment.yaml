@@ -248,6 +248,53 @@ proof:
     whether one exists here has not been settled, and a declared absence is not the same as
     none
   fingerprint: 8555de577f0c8128
+  releases:
+  - release: '2024'
+    date: '2026-11-12'
+    by: Ajmal PS
+    model: R24 Generic, Revit 2024, session 13164 - the count is NOT recorded because 3,209
+      elements was measured on R24 Project, the document in front, and this ran against another
+      one (row 15)
+    positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+      the transaction group ROLLED BACK afterwards. returned along (null), already (null), arc
+      (null), axisOf Func`2, axisPlane (null), blend (null), centreArc (null), centrePlane (null),
+      centreReference (null), circles 0 item(s), curveReferenceOf Func`3, dbNamespace Autodesk.Revit.DB,
+      diameter true, findings 2 item(s) [The diameter of the symbolic line's arc 237ece53-33e4-4c24-b...,
+      FLEX_FAMILY with "Arc Diameter" at two different sizes is wh...], flags BindingFlags,
+      halfMillimetre 0.00164041994750656, invariant CultureInfo, isLength Func`2, isRound Func`2,
+      joins Func`4, joinsIds Func`4, kindOf Func`2, labelled The diameter of the symbolic line's
+      arc 237ece53-33e4-4c24-b6df-d034f0c0c31f-00000cfa (radius 150 mm) in "Ref. Level", labelled
+      "Arc Diameter", reading 300 mm - the arc's radius read back at 150 mm., labelledWith Func`2,
+      line2d SymbolicCurve, lineArc Arc, lineView ViewPlan, lineViewNote (null), measures Func`3,
+      mm Func`2, notAFamily false, otherReference (null), parameter FamilyParameter, pathAlready
+      (null), pathArc (null), pathDatum (null), pathDatumReference (null), pathNormal (null),
+      pathView (null), planeReference (null), planeReferenceOf Func`2, problems 0 item(s), readAgain
+      Func`3, readBack Func`2, referenceNotes 0 item(s), refused (null), release 2024, revitAssembly
+      RuntimeAssembly, riseAlready (null), risePlane (null), riseView (null), risers 0 item(s),
+      sameKind Func`3, sideLine (null), target (null), valueMm 300, view (null), wanted 0.492125984251968,
+      writtenOf Func`2. inputs came form as given; parameterName as given; diameter as given.
+      on R24 Generic
+    negative_case: run with form=237ece53-33e4-4c24-b6df-d034f0c0c31f-00000cf7, parameterName=Arc
+      Diameter, diameter=true instead - chosen because it should not contain what this fragment
+      reports - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+      afterwards. returned along (null), already (null), arc (null), axisOf Func`2, axisPlane
+      (null), blend (null), centreArc (null), centrePlane (null), centreReference (null), circles
+      0 item(s), curveReferenceOf Func`3, dbNamespace Autodesk.Revit.DB, diameter true, findings
+      1 item(s) [Nothing was labelled. The symbolic line 237ece53-33e4-4c24-b...], flags BindingFlags,
+      halfMillimetre 0.00164041994750656, invariant CultureInfo, isLength Func`2, isRound Func`2,
+      joins Func`4, joinsIds Func`4, kindOf Func`2, labelled , labelledWith Func`2, line2d SymbolicCurve,
+      lineArc (null), lineView (null), lineViewNote (null), measures Func`3, mm Func`2, notAFamily
+      false, otherReference (null), parameter FamilyParameter, pathAlready (null), pathArc (null),
+      pathDatum (null), pathDatumReference (null), pathNormal (null), pathView (null), planeReference
+      (null), planeReferenceOf Func`2, problems 1 item(s) [The symbolic line 237ece53-33e4-4c24-b6df-d034f0c0c31f-00000...],
+      readAgain Func`3, readBack Func`2, referenceNotes 0 item(s), refused Nothing was labelled.
+      The symbolic line 237ece53-33e4-4c24-b6df-d034f0c0c31f-00000cf7 is not an arc - a straight
+      line has no radius. Its length follows the planes its ends are locked to (LOCK_FAMILY_LINES_TO_PLANES),
+      and the planes are labelled by LABEL_FAMILY_DIMENSION., release 2024, revitAssembly RuntimeAssembly,
+      riseAlready (null), risePlane (null), riseView (null), risers 0 item(s), sameKind Func`3,
+      sideLine (null), target (null), valueMm 0, view (null), wanted 0.492125984251968, writtenOf
+      Func`2. inputs came form as given; parameterName as given; diameter as given. on R24 Generic
+    fingerprint: 8555de577f0c8128
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

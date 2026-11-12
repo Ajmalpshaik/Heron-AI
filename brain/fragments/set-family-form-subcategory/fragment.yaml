@@ -126,6 +126,35 @@ proof:
     whether one exists here has not been settled, and a declared absence is not the same as
     none
   fingerprint: 39ea802b294a5b18
+  releases:
+  - release: '2024'
+    date: '2026-11-12'
+    by: Ajmal PS
+    model: R24 Generic, Revit 2024, session 13164 - the count is NOT recorded because 3,209
+      elements was measured on R24 Project, the document in front, and this ran against another
+      one (row 15)
+    positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+      the transaction group ROLLED BACK afterwards. returned backToCategory false, changed 2
+      item(s) [symbolic line 237ece53-33e4-4c24-b6df-d034f0c0c31f-00000cf7:..., symbolic line
+      237ece53-33e4-4c24-b6df-d034f0c0c31f-00000cfa:...], createdSubcategory true, findings
+      2 item(s) [Made the subcategory "Flow Arrow" under Generic Models, and ..., Its line weights,
+      colour and material are Revit's defaults u...], kindOf Func`2, lineKind Func`2, lines
+      2 item(s) [Symbolic Lines, Symbolic Lines], nameOf Func`2, notAFamily false, parent Category,
+      problems 0 item(s), projectionOf Func`2, refused (null), styleNameOf Func`2, takes Func`3,
+      targets 0 item(s), wanted Category, wantedName Flow Arrow. inputs came forms as given;
+      subcategory as given. on R24 Generic
+    negative_case: run with forms=237ece53-33e4-4c24-b6df-d034f0c0c31f-00000d1b, subcategory=Flow
+      Arrow instead - chosen because it should not contain what this fragment reports - run
+      inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+      returned backToCategory false, changed 0 item(s), createdSubcategory false, findings 1
+      item(s) [Nothing was changed. "R24 Arrow" (237ece53-33e4-4c24-b6df-d0...], kindOf Func`2,
+      lineKind Func`2, lines 0 item(s), nameOf Func`2, notAFamily false, parent Category, problems
+      1 item(s) ["R24 Arrow" (237ece53-33e4-4c24-b6df-d034f0c0c31f-00000d1b) ...], projectionOf
+      Func`2, refused Nothing was changed. "R24 Arrow" (237ece53-33e4-4c24-b6df-d034f0c0c31f-00000d1b)
+      is not a form - an extrusion, revolve, blend, sweep or swept blend - nor a detail or symbolic
+      line., styleNameOf Func`2, takes Func`3, targets 0 item(s), wanted (null), wantedName
+      Flow Arrow. inputs came forms as given; subcategory as given. on R24 Generic
+    fingerprint: 39ea802b294a5b18
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
