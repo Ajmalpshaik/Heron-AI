@@ -1411,7 +1411,7 @@ What this makes easy. What this makes hard. What it locks in.
 
 **Status:** Accepted · **Date:** 2026-11-12 · **Accepted:** Ajmal PS, 2026-11-12, in conversation: item 9 of the plan
 **Keeps:** [D-129](decisions/D-129.md) · [D-46](decisions/D-46.md)
-**Affects:** [`RevitDispatcher.cs`](../revit/Heron.Revit.Addin/RevitDispatcher.cs) (`RunRecord`) · [`heron_run_records.py`](../mcp/server/heron_run_records.py) (`by_request`)
+**Affects:** [`RevitDispatcher.cs`](../revit/Heron.Revit.Addin/RevitDispatcher.cs) (`RunRecord`) · [`heron_run_records.py`](../mcp/server/heron_run_records.py) (`record_for`)
 
 **Full record:** [`decisions/D-161.md`](decisions/D-161.md)
 

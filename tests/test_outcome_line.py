@@ -291,6 +291,11 @@ class Stage(object):
         runs = getattr(module, "runs", None)
         if runs is not None:
             module._BATCH = runs.Batch()
+        # D-161: a change names each request at random; pinned here like every
+        # other state a call starts from, so two calls of one case differ only
+        # in which face of the door was called.
+        if hasattr(module, "_new_request_id"):
+            module._new_request_id = lambda: "request-pinned"
 
     def patch(self, owner, name, value):
         had = getattr(owner, name)

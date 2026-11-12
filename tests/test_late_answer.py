@@ -23,7 +23,7 @@ by it.
 
 THREE HALVES
 ------------
-  THE LOOKUP    heron_run_records.by_request, on a folder of records made
+  THE LOOKUP    heron_run_records.record_for, on a folder of records made
                 here - found, not found, and a folder that is not there.
   THE WORDS     _late_answer, lifted out of the server's source and run: said
                 for a lost answer or a job still running, never otherwise.
@@ -63,8 +63,8 @@ def check(condition, what):
 def lookup():
     print("1. a record is found by the request it answers")
     import heron_run_records as RUNS
-    finder = getattr(RUNS, "by_request", None)
-    check(finder is not None, "heron_run_records has by_request")
+    finder = getattr(RUNS, "record_for", None)
+    check(finder is not None, "heron_run_records has record_for")
     if finder is None:
         return
     folder = tempfile.mkdtemp(prefix="heron-late-")
@@ -121,12 +121,13 @@ def wiring():
     record = dispatcher[dispatcher.find("string RunRecord("):dispatcher.find("string DescribeJob(")]
     check('Json.Str("requestId", Json.ReadString(job.Request, "requestId"))' in record,
           "the add-in writes the request's name into the run record")
-    check('"requestId": uuid.uuid4().hex[:16],' in server,
-          "revit_change names every request it sends")
+    check('"requestId": _new_request_id(),' in server
+          and "return uuid.uuid4().hex[:16]" in server,
+          "revit_change names every request it sends, at random")
     check(re.search(r'\+ _late_answer\(failure, args\.get\("requestId"\)\)\)', server) is not None,
           "and a failure's reply ends with where a late answer can be read")
     tool = server[server.find("def heron_run_record("):server.find("def heron_compatibility(")]
-    check('request: str = ""' in tool and "runs.by_request(request.strip())" in tool,
+    check('request: str = ""' in tool and "runs.record_for(request.strip())" in tool,
           "heron_run_record takes `request` and reads the record by it")
 
 

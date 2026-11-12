@@ -1825,7 +1825,7 @@ def revit_change(capability: str = "", values: str = "",
         # D-161: THIS REQUEST'S OWN NAME, written into the run record the
         # add-in keeps when the job ends - so an answer lost on the way back
         # can still be read, by heron_run_record request=<it>.
-        "requestId": uuid.uuid4().hex[:16],
+        "requestId": _new_request_id(),
     }
     # A DRY RUN SENDS NO `apply` AT ALL, never "false": absent is the word
     # the add-in reads as run-and-roll-back (RevitFragment.Run), and a field
@@ -2036,6 +2036,12 @@ def revit_change(capability: str = "", values: str = "",
 
 #: What this chat has already printed in the current batch - see heron_run_records.Batch.
 _BATCH = runs.Batch()
+
+
+def _new_request_id():
+    """D-161: a change request's own name - random, sixteen characters. One
+    function, so a suite that calls a door twice can pin it."""
+    return uuid.uuid4().hex[:16]
 
 
 def _late_answer(failure, request_id):
@@ -5936,7 +5942,7 @@ def heron_run_record(run: str = "", offset: int = 0, limit: int = 40,
     """
     # D-161: A LOST ANSWER, FOUND BY THE REQUEST'S OWN NAME.
     if (request or "").strip() and not (run or "").strip():
-        run = runs.by_request(request.strip()) or ""
+        run = runs.record_for(request.strip()) or ""
         if not run:
             return ("No record answers request %s yet. Revit may still be working on it, or "
                     "it ended before it changed anything a record holds. Look at the model, "

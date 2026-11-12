@@ -119,7 +119,7 @@ def read(run, folder=None):
 REQUEST_SEARCH = 200
 
 
-def by_request(request_id, folder=None):
+def record_for(request_id, folder=None):
     """
     The run id of the record that answers `request_id`, or None - D-161.
 

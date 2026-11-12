@@ -452,6 +452,12 @@ _KNOWN = {
     # model" for a change, a plain refusal for a read. Naming it here would
     # make one of those two answers wrong.
 
+    # D-163: the Activity pane's Select or Zoom found none of a change's
+    # elements in the model now - deleted or undone since. Nothing selected.
+    "nothing_to_show":   (REFUSED, FIX_FIRST,
+                          "none of the change's elements is in the model now, so nothing was "
+                          "selected"),
+
     # D-162, THE CLIENT'S OWN: the pipe was served by a process that is not the
     # Revit the session names, so nothing - the token included - was sent.
     "wrong_server":      (REFUSED, FIX_FIRST,

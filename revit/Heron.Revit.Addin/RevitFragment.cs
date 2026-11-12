@@ -1042,6 +1042,23 @@ namespace Heron.Revit.Addin
                         else nothingToAsk = true;
                     }
 
+                    // D-160: A KEEP THAT CHANGED NOTHING LEAVES NOTHING. When
+                    // Revit's own report arrived, was read whole, and counted no
+                    // element added, changed or deleted - setup steps included -
+                    // assimilating would leave an empty "Heron: <name>" in the
+                    // undo list, and a modeller who presses Ctrl+Z for it undoes
+                    // whatever they did BEFORE this (row 117's hazard). So it is
+                    // rolled back, and the verdict says so. Never for a publish:
+                    // what it sent out is outside the model and Revit's count.
+                    // A report that saw no event at all keeps as before - silence
+                    // is not "nothing changed" (HeronChangeReport.Witnessed).
+                    if (apply && !sendsOut && described != null && described.Witnessed
+                        && described.Total == 0)
+                    {
+                        apply = false;
+                        keptNothing = true;
+                    }
+
                     // AND AGAIN AFTER THE BOX: showing the change on screen
                     // commits a transaction of its own, and a Revit dialog met
                     // there stops the job exactly as one met in the fragment
@@ -1062,23 +1079,6 @@ namespace Heron.Revit.Addin
                             string.Concat(off, " ", RollBackAndCheck(group, target, watch).Account()));
                         if (putBack != null) putBack();
                         return withdrawn;
-                    }
-
-                    // D-160: A KEEP THAT CHANGED NOTHING LEAVES NOTHING. When
-                    // Revit's own report arrived, was read whole, and counted no
-                    // element added, changed or deleted - setup steps included -
-                    // assimilating would leave an empty "Heron: <name>" in the
-                    // undo list, and a modeller who presses Ctrl+Z for it undoes
-                    // whatever they did BEFORE this (row 117's hazard). So it is
-                    // rolled back, and the verdict says so. Never for a publish:
-                    // what it sent out is outside the model and Revit's count.
-                    // A report that saw no event at all keeps as before - silence
-                    // is not "nothing changed" (HeronChangeReport.Witnessed).
-                    if (apply && !sendsOut && described != null && described.Witnessed
-                        && described.Total == 0)
-                    {
-                        apply = false;
-                        keptNothing = true;
                     }
 
                     // ASSIMILATE, so the whole group collapses to ONE undo step

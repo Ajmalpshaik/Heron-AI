@@ -511,8 +511,10 @@ def declared(runs):
           % (tools.TOOLS.get("heron_run_record"),))
     check(not tools.writes("heron_run_record"), "so it cannot write")
     server = tools.server_text()
+    # `request` since D-161: a lost answer's record, found by the request's own name.
     check(re.search(r"@server\.tool\(\)\s*\ndef heron_run_record\(run: str = \"\", "
-                    r"offset: int = 0, limit: int = 40\) -> str:", server) is not None,
+                    r"offset: int = 0, limit: int = 40(,\s*request: str = \"\")?\) -> str:",
+                    server) is not None,
           "the server serves it with a run, an offset and a limit")
     body = server.split("\ndef heron_run_record(", 1)[-1].split("\n@server.tool()", 1)[0]
     check("session" not in body and "request(" not in body and "binding" not in body,
