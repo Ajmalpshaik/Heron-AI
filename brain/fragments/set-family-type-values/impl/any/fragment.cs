@@ -652,6 +652,14 @@ if (refused == null && askedMany)
     // formula cleared. Tried inside a sub-transaction and kept only if every
     // type reads the text afterwards and no formula is left behind.
     var formulaTried = false;
+    // A text parameter Revit gives no formula - a URL, measured 2026-11-12 on
+    // Revit 2024 (Group NG1) - sends the whole call the other way, and the
+    // answer names it rather than leaving the modeller to guess why.
+    var noFormula = planned
+        .Where(plan => plan.Item2 == "text" && plan.Item3 is string)
+        .Where(plan => { try { return !plan.Item1.CanAssignFormula; } catch (Exception) { return true; } })
+        .Select(plan => "\"" + plan.Item1.Definition.Name + "\"")
+        .ToList();
     var formulaReady = toWrite.Count > 0 && everyType && planned.All(plan =>
     {
         if (plan.Item2 != "text" || !(plan.Item3 is string)) return false;
@@ -814,6 +822,11 @@ if (refused == null && askedMany)
     else if (route == "each type made current in turn")
         findings.Add((formulaTried ? "The way with no type made current was tried and did not hold, so it was "
                 + "taken back. " : "")
+            + (!formulaTried && everyType && noFormula.Count > 0
+                ? "Revit gives " + string.Join(", ", noFormula) + " no formula, so the way with no type made "
+                  + "current could not be used for this call; the other text values, in a call of their own, "
+                  + "may take it. "
+                : "")
             + "Each type was made current in turn to write it, as the Family Types dialog does - Revit's API "
             + "writes a family type only while it is current. On Revit 2020 a switch can delete an automatic "
             + "sketch dimension, and anything deleted is counted once, in this call's one question. The family's "

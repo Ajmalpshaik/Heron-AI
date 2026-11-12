@@ -22,7 +22,7 @@ yet, is [FRAGMENT-ISSUES row 5b-1504](../fragment-issues/section-5b-rows-401-425
 **What is done and what is not.** Both cards compile on all eight releases, 2020 to 2027, with the whole
 library (`tools/check-fragments-compile.py`, 2026-11-11, the owner's PC). `FamilyType` having no setter,
 and `FamilyParameter.CanAssignFormula`, were read from the 2020 RevitAPI.dll by reflection the same day.
-**Nothing here has run in Revit.** The delete-confirmation rule (Article 7, D-126) is NOT changed: a
+**The family card ran on Revit 2024 on 2026-11-12 and is PROVEN - Run 1 below; the project card has not run and stays DRAFT.** The delete-confirmation rule (Article 7, D-126) is NOT changed: a
 switch that deletes something is still asked about - once per call now, not once per type.
 
 **Three things only a run can say,** and NG1 asks the first:
@@ -64,3 +64,31 @@ Every line with `HERON_CLIENT_ID=ajmal-pc`, `--session <process id>` when two Re
 **Before the owner's own families.** The three air terminal families he cleared by hand on 2026-11-11 are
 done; nothing here is run on them or on any job. The first use on a real family after NG passes is his
 choice, through `try-once`, behind Revit's Keep or Discard.
+
+## Run 1 - Revit 2024, 2026-11-12 (session 13164) - the family card PROVEN, the project card not run
+
+**Model:** the scratch family `%TEMP%\heron-work\many-types\Heron Many Types Test.rfa` (metric Generic Model),
+made by `CREATE_FAMILY_DOCUMENT` this session - never the owner's own families. Built through Heron with
+version 4: seven types, a type length Width labelling the dimension between Box Left and Box Right (EQ about
+the centre), a box locked to the planes, a text parameter Model_Number and an Air Flow Nominal Air Flow;
+every type holding Manufacturer "Acme", URL "https://example.com", Model_Number "M-1", 100 L/s. Every run
+below was `fragment --write` or `validate --write` from the branch, ROLLED BACK. Revit 2024 was the only
+Revit connected, so this is evidence about 2024 alone.
+
+| Row | Positive | Negative | Verdict |
+|---|---|---|---|
+| NG1 | `typeName=all`, Manufacturer, URL, Model_Number blank: `typesWritten` 7, all 21 values read back "" (was "Acme", the URL, "M-1"), `route` "each type made current in turn", "600 x 600" current again - **the proof, signed by Ajmal PS** | `typeName=600 x 600, No Such Type`: refused, "This family has no type "No Such Type", so NO type in the list was written", the seven types listed | held |
+| NG1b | Question 1 settled: `Model_Number=` (blank), `Model_Number=M-2` and `Manufacturer=Beta` each into all seven took `route` "no type made current" and read back in every type | `URL=` alone: `route` "each type made current in turn" - Revit gives a URL parameter no formula (`CanAssignFormula` false). The first NG1 run said nothing about why; the answer now names it ("Revit gives "URL" no formula") | held. A call with URL in it switches types |
+| NG2 | - | `values=Manufacturer=Acme; Width=abc`: refused, ""abc" is not a number for the length "Width"", `typesWritten` 0 | held |
+| NG3 | `typeName=600 x 600, 625 x 625`, `Width=900`: both read 900 mm (were 600 and 625), "These parameters drive 1 labelled dimension(s) ... every labelled dimension reads its parameter in every type written", one change, "600 x 600" current again | - | held (rolled back, not kept) |
+| NG4 | `typeName=all`, Manufacturer "Acme" and Model_Number "M-1", already held: `alreadyHeld` 7, `typesWritten` 0, "nothing was written and no type was made current" | - | held |
+| NG-flow | `typeName=all`, `Nominal Air Flow=200 L/s`: seven types read 200.0 L/s (was 100.0) - version 4's measured kind through the many-types path | - | held |
+| NG-rename | - | `typeName=600 x 600, 625 x 625`, `Type Name=Big`: refused, "A rename names one type" | held |
+| NG-one | `typeName=625 x 625`, `Width=650`: `askedMany` false, "Wrote into the type "625 x 625"" - version 4's road | - | held |
+| NG5, NG6, NG7 (project) | - | - | NOT RUN - the owner said the project card is not needed now; `SET_PARAMETER_VALUES_BY_ID` version 8 stays DRAFT |
+| NG8 | - | - | NOT RUN - no second route |
+
+**Still not known:** question 2 - whether a type switch, or the formula trial, deletes anything - was not
+counted: the command-line runs do not print the change counts, and on Revit 2024 the Keep or Discard question
+was never raised (every run rolled back). The first kept many-types call on Revit 2020, where the owner met the
+deletions, answers it. The other releases are not run.
