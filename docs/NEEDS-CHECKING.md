@@ -1498,6 +1498,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-np.md`](needs-checking/group-np.md)
 
+## Group NQ - an arc's or a circle's CENTRE locked to named planes in a 2D family: `LOCK_FAMILY_LINES_TO_PLANES` version 3 (2026-11-12)
+
+**Its own file:** [`needs-checking/group-nq.md`](needs-checking/group-nq.md)
+
 ## Group NR - three everyday MEP jobs given a method, none run in Revit: annotate a view, colour a view by system, spaces and zones from the architect's link (2026-11-12)
 
 **Its own file:** [`needs-checking/group-nr.md`](needs-checking/group-nr.md)
