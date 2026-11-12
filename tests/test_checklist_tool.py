@@ -159,6 +159,22 @@ def tool(home):
         rows = S._run_checklist(S.brain.checklists().find("Before issue"))["rows"]
         check(rows[0]["state"] == "fail" and rows[0]["select"] == "" and "3 of the 9" in rows[0]["why"],
               "a list of more than three ids: no Select in Revit, and why")
+        # D-158: each check that names its ids output asks for that list whole,
+        # and an add-in that sends it lets Select in Revit take every id.
+        reads = [a[1] for a in revit.asked if a[0] == "run_fragment_read"]
+        # A check with no ids output is saved with "" - it names nothing.
+        wanted = [c.get("ids") or None for c in S.brain.checklists().find("Before issue")["checks"]]
+        check([r.get("sendIds") for r in reads] == wanted and wanted[0] == "notLoaded",
+              "each check's read names its own ids output in sendIds, and one with none names "
+              "nothing - found %r, wanted %r" % ([r.get("sendIds") for r in reads], wanted))
+        S.pinned.forget()
+        revit.reply = dict(reply_with(notLoaded="9 item(s) [21, 22, 23, ...]"),
+                           providesIds={"notLoaded": {"total": 9,
+                                                      "ids": [str(21 + i) for i in range(9)]}})
+        rows = S._run_checklist(S.brain.checklists().find("Before issue"))["rows"]
+        check(rows[0]["state"] == "fail" and rows[0]["select"] == "Select in Revit"
+              and len(rows[0]["ids"]) == 9 and rows[0]["ids"][-1] == "29",
+              "with every id sent, Select in Revit is offered for all nine")
         said = body("save", name="Kinds", checks=json.dumps([
             {"sentence": "no external reference at all", "capability": "REPORT_EXTERNAL_REFERENCES",
              "rule": "kinds == 0", "ids": "kinds"}]))

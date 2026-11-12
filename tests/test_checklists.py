@@ -279,6 +279,30 @@ def rules():
     check(Q.ids_from("keys", "c", {"c": "2 entry(ies)"}, {"c": {"9": "1 item(s)", "8": "2 item(s)"}})[2],
           "a dictionary keyed by id arrives whole")
 
+    # D-158: A LIST THE RUN ASKED FOR BY NAME ARRIVES WHOLE, in providesIds.
+    # Asked before it is called, so a module from before D-158 FAILS here
+    # once, cleanly, and every check below still runs and fails.
+    takes_sent = Q.ids_from.__code__.co_argcount >= 5
+    check(takes_sent, "ids_from takes what the add-in sent whole (D-158)")
+    if takes_sent:
+        ids_from = Q.ids_from
+    else:
+        def ids_from(kind, name, provides, entries, sent=None):
+            return Q.ids_from(kind, name, provides, entries)
+    whole = {"o": {"total": 40, "ids": [str(500 + i) for i in range(40)]}}
+    got = ids_from("list", "o", {"o": "40 item(s) [500, 501, 502, ...]"}, {}, whole)
+    check(got[1] == 40 and got[2] and len(got[0]) == 40 and got[0][-1] == "539",
+          "a long list asked for by name arrives whole, and is complete (D-158)")
+    cut = {"o": {"total": 6000, "ids": [str(i) for i in range(5000)]}}
+    got = ids_from("list", "o", {"o": "6000 item(s) [0, 1, 2, ...]"}, {}, cut)
+    check(got[1] == 6000 and not got[2],
+          "one longer than the add-in sends is NOT complete - its total says so")
+    check(ids_from("list", "o", {"o": "40 item(s) [1, 2, 3, ...]"}, {}, {"other": whole["o"]})[2] is False,
+          "a whole list sent under another name is not taken for this one")
+    check(ids_from("keys", "c", {"c": "2 entry(ies)"}, {"c": {"9": "1", "8": "2"}},
+                     {"c": {"total": 5, "ids": ["1"]}})[2],
+          "and a dictionary still comes from its entries, whatever else was sent")
+
 
 class _Ask(object):
     """What the server's ask would say for each capability, recording each call."""
@@ -321,6 +345,14 @@ def running(home):
                       {"ran": True, "provides": {"failures": "40", "offenders": "40 item(s) [1, 2, 3, ...]"}})
     check(partial["state"] == "fail" and partial["ids"] == [] and not partial["idsComplete"]
           and "3 of the 40" in partial["why"], "ids that did not all arrive are not offered, and why is said")
+    check("an updated one sends them all" in partial["why"],
+          "and an add-in from before D-158 is named as the reason, with what fixes it")
+    full = Q.judge(1, dict(checklist["checks"][0]),
+                   {"ran": True, "provides": {"failures": "40", "offenders": "40 item(s) [1, 2, 3, ...]"},
+                    "ids": {"offenders": {"total": 40, "ids": [str(i) for i in range(1, 41)]}}})
+    check(full["state"] == "fail" and full["idsComplete"] and len(full["ids"]) == 40
+          and "Heron received" not in full["why"],
+          "with every id sent (D-158) all 40 are offered for Select, and nothing is said missing")
     gone = Q.judge(1, dict(checklist["checks"][0]), {"ran": True, "provides": {"findings": "0 item(s)"}})
     check(gone["state"] == "not run" and "did not send back 'failures'" in gone["why"],
           "an output that did not come back is NOT RUN, never a pass")
@@ -378,8 +410,10 @@ class _FakeServer(object):
 
     def __init__(self, replies, status="PROVEN", bound=True):
         self.replies, self.sent, self.held = replies, [], []
+        self.named = []
         outer = self
         self._revit_lock = threading.RLock()
+        self._ctx = threading.local()
 
         class binding(object):
             pid = 11
@@ -424,6 +458,7 @@ class _FakeServer(object):
             raise self.replies[capability]
         held = self._revit_lock._is_owned()
         self.sent.append((capability, values, held))
+        self.named.append(list(getattr(self._ctx, "send_ids", None) or []))
         self.out["reply"] = self.replies[capability]
         self.out["ended"] = "ok"
         return "%s read Tower MEP." % capability
@@ -462,7 +497,7 @@ def server(home):
         names = {"brain": brain, "NotBound": fake.NotBound, "revit_read": fake.revit_read,
                  "DASHBOARD_SELECT_MOST": 500, "_companion_module": lambda: fake.companion}
         for name in ("binding", "bridge", "pinned", "_revit_lock", "_fragment_for", "_moved_since",
-                     "_pin_identity", "_through"):
+                     "_pin_identity", "_through", "_ctx"):
             names[name] = getattr(fake, name)
         exec(compile(source, "heron_mcp_server.py", "exec"), names)
         return names
@@ -479,6 +514,10 @@ def server(home):
           and fake.sent[0][1] == "requiredParameters=System Name" and fake.origin == "companion",
           "each check is one read through revit_read's own body, with its saved values")
     check(all(s[2] for s in fake.sent), "each read is taken under the lock every tool call holds")
+    check(fake.named == [[c["ids"]] if c.get("ids") else [] for c in checklist["checks"]]
+          and not getattr(fake._ctx, "send_ids", None),
+          "each read names its check's ids output (D-158), and the name is cleared after it "
+          "- found %r" % fake.named)
     check([r["state"] for r in answer["rows"]] == ["pass", "pass"]
           and answer["identity"] == ["Tower MEP", "", "11"], "both read, and the run keeps the model it read")
     many = _FakeServer({"CHECK_MODEL_STANDARDS": {"ok": True, "document": "Tower MEP",
@@ -578,6 +617,47 @@ def real_cards(home):
           "and it saves, under the modeller's own name")
 
 
+def whole_ids():
+    """D-158, read as text: the add-in sends a NAMED list's every id, and only a
+    named one; the server names a check's ids output on its read, and only
+    through the side channel, never revit_read's schema."""
+    print("7. a check's failing ids travel whole, and only when named (D-158)")
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import test_failure_note as NOTE
+    code = NOTE.code_only(NOTE.read(os.path.join(ROOT, "revit", "Heron.Revit.Addin",
+                                                 "RevitFragment.cs")) or "")
+    run = NOTE.body_of(code, "public static string Run(UIApplication app, string request, bool writing")
+    check("answer = WithIds(answer, state, Json.ReadString(request, \"sendIds\"));" in
+          NOTE.read(os.path.join(ROOT, "revit", "Heron.Revit.Addin", "RevitFragment.cs"))
+          and at_least(run, "WithIds(answer, state,"),
+          "every run's reply passes through WithIds with the request's own sendIds")
+    ids = NOTE.body_of(code, "string WithIds(")
+    check("if (string.IsNullOrEmpty(asked)" in ids and "names.Contains(variable.Name)" in ids,
+          "nothing is added unless the request named a list, and only the lists it named")
+    # Read raw, between WithIds and the method after it: the brace walker
+    # cannot be used on raw text, whose strings hold braces.
+    raw = NOTE.read(os.path.join(ROOT, "revit", "Heron.Revit.Addin", "RevitFragment.cs")) or ""
+    raw_ids = raw[raw.find("string WithIds("):raw.find("string WithReadBack(")]
+    check("ids.Count < IdsSentPerList" in ids and 'Json.Num("total", total)' in raw_ids,
+          "at most IdsSentPerList ids a list, its total always beside them")
+    check("item as ElementId" in ids and "if (id == null) { notIds = true; break; }" in ids,
+          "a list of ids (or elements, by their Id) - anything else named is left out")
+    server = io.open(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py"),
+                     encoding="utf-8").read()
+    signature = re.search(r"def revit_read\(([^)]*)\)", server)
+    check(signature is not None and "send" not in signature.group(1),
+          "revit_read's schema is unchanged - the names travel through the side channel only")
+    check('args["sendIds"] = ",".join(wanted)' in server
+          and '_ctx.send_ids = [check["ids"]] if check.get("ids") else []' in server
+          and "finally:\n                _ctx.send_ids = []" in server
+          and '"ids": reply.get("providesIds") or {}' in server,
+          "the checklist's read names its check's ids output, and its answer carries the lists")
+
+
+def at_least(text, needle):
+    return needle in (text or "")
+
+
 def main():
     home = tempfile.mkdtemp(prefix="heron-checklists-")
     try:
@@ -587,6 +667,7 @@ def main():
         wording(running(home))
         server(home)
         real_cards(home)
+        whole_ids()
     finally:
         shutil.rmtree(home, ignore_errors=True)
     print()

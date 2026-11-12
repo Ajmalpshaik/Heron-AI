@@ -152,9 +152,11 @@ heron_checklist run  /  Companion QA Checklist: Run
 - **The model changing between two checks is said.** After each read the add-in's change count (D-147) is
   read; when it moved during the run, the result says so and asks for Run again.
 - **What arrives.** A number arrives as its text, a list as its count and first three items, a dictionary
-  with every entry (`RevitFragment.Describe`, `providesEntries`). So **a list of more than three ids arrives
-  incomplete**: the row says how many arrived and **Select in Revit is not offered** for it, rather than
-  selecting part of what failed. A dictionary keyed by element id arrives whole.
+  with every entry (`RevitFragment.Describe`, `providesEntries`). **A check's own ids output arrives whole**
+  ([D-158](decisions/D-158.md)): its read names it in `sendIds`, and the add-in sends every id of that list
+  in `providesIds`, up to 5,000, with its total. A list longer than that - or any list from an add-in from
+  before D-158 - arrives incomplete: the row says how many arrived and **Select in Revit is not offered**
+  for it, rather than selecting part of what failed. A dictionary keyed by element id arrives whole.
 - **Select in Revit** is the Model Dashboard's own route (`_dashboard_show`: `FILTER_ELEMENTS_BY_ID`, then
   `SET_SELECTION`, both PROVEN, declared `companion_dashboard_select` at EXECUTE), with the ids the run found
   - the page sends the row's number and the run's token, never ids. A row from a run that has since been
@@ -188,8 +190,9 @@ List, show, save and delete touch only the modeller's own files.
 
 ## 7. Not built - each waits on the owner
 
-1. **All the failing ids of a long list.** The add-in sends a list of ids as its count and first three (D-26).
-   Selecting all of them needs the add-in to send the ids of a list a check names - a C# change, not made.
+1. ~~**All the failing ids of a long list.**~~ **Built 2026-11-12, [D-158](decisions/D-158.md)**: a check's
+   read names its ids output and the add-in sends that list whole, up to 5,000. Not yet run in Revit
+   ([Group NV](needs-checking/group-nv.md)).
 2. **Inputs** - a value asked at each run, as a saved command has. Every value is fixed when saved.
 3. **Team checklists** - a shared folder, and who may publish to it.
 4. **A checklist in Revit's Heron panel**, beside the saved commands.

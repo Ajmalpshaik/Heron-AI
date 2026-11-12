@@ -3200,6 +3200,14 @@ def revit_read(capability: str = "", values: str = "",
     args = {"name": folder, "source": source, "needs": needs, "chain": "reset"}
     _aim_at_pin(args)
 
+    # D-158: THE ID LISTS A QA CHECK NAMED, sent whole by the add-in. Set on
+    # the side channel by _checklist_ask around its one read, and only there,
+    # so no chat's schema or request changes, and an add-in that does not
+    # know the field ignores it.
+    wanted = getattr(_ctx, "send_ids", None)
+    if wanted:
+        args["sendIds"] = ",".join(wanted)
+
     supplied = _values_array(values)
     if supplied:
         args["values"] = supplied
@@ -6148,8 +6156,15 @@ def _checklist_ask(origin="chat", ctx=None):
                 return {"ran": False, "why": "The chat is no longer on the model the first check "
                                              "read, so nothing was sent. Run the checklist again."}
             out = {}
-            said = _through(revit_read, reply_out=out, origin=origin)(capability, values, "",
-                                                                       ctx=ctx)
+            # D-158: a check that names where its failing ids are asks for
+            # that list whole, so Select in Revit can take every one - set
+            # for this one read and cleared after it, whatever happens.
+            _ctx.send_ids = [check["ids"]] if check.get("ids") else []
+            try:
+                said = _through(revit_read, reply_out=out, origin=origin)(capability, values, "",
+                                                                           ctx=ctx)
+            finally:
+                _ctx.send_ids = []
             reply = out.get("reply")
             if out.get("ended") != "ok" or not isinstance(reply, dict) or not reply.get("ok"):
                 lines = [line.strip() for line in str(said or "").splitlines() if line.strip()]
@@ -6164,7 +6179,8 @@ def _checklist_ask(origin="chat", ctx=None):
             changes = None
         return {"ran": True, "document": reply.get("document"),
                 "provides": reply.get("provides") or {},
-                "entries": reply.get("providesEntries") or {}, "changes": changes}
+                "entries": reply.get("providesEntries") or {},
+                "ids": reply.get("providesIds") or {}, "changes": changes}
 
     return ask, first
 

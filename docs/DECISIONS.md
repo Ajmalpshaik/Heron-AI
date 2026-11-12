@@ -224,6 +224,7 @@ an edit.
 | [D-155](#d-155--a-chat-can-ask-for-a-change-as-a-dry-run-the-run-itself-rolled-back-with-nothing-kept) | A chat can ask for a change as a dry run: the run itself, rolled back, with nothing kept | ✅ Accepted · 2026-11-12 |
 | [D-156](#d-156--a-write-says-element-by-element-which-value-went-from-what-to-what) | A write says, element by element, which value went from what to what | ✅ Accepted · 2026-11-12 |
 | [D-157](#d-157--heron-can-undo-its-own-last-change-with-revits-own-undo-only-while-that-change-is-still-on-top) | Heron can undo its own last change, with Revit's own Undo, only while that change is still on top | ✅ Accepted · 2026-11-12 |
+| [D-158](#d-158--a-qa-checks-failing-ids-travel-whole-only-when-the-check-names-them) | A QA check's failing ids travel whole, only when the check names them | ✅ Accepted · 2026-11-12 |
 
 ## Format
 
@@ -1355,3 +1356,11 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`HeronUndoGuard.cs`](../revit/Heron.Revit.Addin/HeronUndoGuard.cs) · [`RevitUndo.cs`](../revit/Heron.Revit.Addin/RevitUndo.cs) · [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (`revit_undo_last`)
 
 **Full record:** [`decisions/D-157.md`](decisions/D-157.md)
+
+## D-158 — A QA check's failing ids travel whole, only when the check names them
+
+**Status:** Accepted · **Date:** 2026-11-12 · **Accepted:** Ajmal PS, 2026-11-12, in conversation: *"5 you can do it"*
+**Keeps:** [D-26](decisions/D-26.md) · [D-152](decisions/D-152.md)
+**Affects:** [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs) (`WithIds`) · [`heron_checklists.py`](../brain/heron_checklists.py) (`ids_from`)
+
+**Full record:** [`decisions/D-158.md`](decisions/D-158.md)

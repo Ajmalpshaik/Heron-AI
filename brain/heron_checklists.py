@@ -551,15 +551,24 @@ def holds(value, op, target):
             "<=": value <= target, ">": value > target, ">=": value >= target}[op]
 
 
-def ids_from(kind, name, provides, entries):
+def ids_from(kind, name, provides, entries, sent=None):
     """(ids, total, complete) of a declared ids output, from what arrived.
 
     A DICTIONARY keyed by element id arrives whole: the add-in sends every
     entry beside its count (providesEntries, row 5b-1341). A LIST of ids
     arrives as its count and its first three (RevitFragment.Describe - D-26:
-    a list of ids is a quantity), so it is complete only when it holds three
-    or fewer. `complete` is what decides whether Select in Revit is offered."""
+    a list of ids is a quantity) - UNLESS the run asked for it by name, when
+    the add-in sends it whole in `providesIds` with its total (D-158, `sent`
+    here), complete up to the add-in's IdsSentPerList. Without that - an
+    add-in from before it - a list is complete only when it holds three or
+    fewer. `complete` is what decides whether Select in Revit is offered."""
     total = as_number((provides or {}).get(name))
+    whole = (sent or {}).get(name) if kind == "list" else None
+    if isinstance(whole, dict) and isinstance(whole.get("ids"), list):
+        ids = [str(i) for i in whole["ids"] if str(i).lstrip("-").isdigit()]
+        count = whole.get("total")
+        count = count if isinstance(count, int) and not isinstance(count, bool) else len(ids)
+        return ids, count, len(ids) == count
     if kind == "keys":
         held = (entries or {}).get(name)
         ids = [k for k in (held or {}) if str(k).isdigit()] if isinstance(held, dict) else []
@@ -609,12 +618,17 @@ def judge(number, check, ran):
     row["state"] = "fail"
     row["why"] = "%s read %s; the rule is %s." % (output, _shown(value), row["rule"])
     if check.get("ids"):
-        ids, total, complete = ids_from(check.get("idsKind"), check["ids"], provides, ran.get("entries"))
+        ids, total, complete = ids_from(check.get("idsKind"), check["ids"], provides,
+                                        ran.get("entries"), ran.get("ids"))
         row["ids"], row["idsTotal"], row["idsComplete"] = (ids if complete else []), total, complete
         if total and not complete:
-            row["why"] += (" Heron received %d of the %d element ids in '%s' - Revit sends a list of "
-                           "ids as its count and its first three - so Select in Revit is not offered."
-                           % (len(ids), total, check["ids"]))
+            row["why"] += (" Heron received %d of the %d element ids in '%s', so Select in Revit is "
+                           "not offered rather than selecting part of what failed. %s"
+                           % (len(ids), total, check["ids"],
+                              "Revit sent the first %d - the most it sends of one list." % len(ids)
+                              if (ran.get("ids") or {}).get(check["ids"]) else
+                              "This Heron in Revit sends a list of ids as its count and its first "
+                              "three; an updated one sends them all."))
     return _labelled(row)
 
 

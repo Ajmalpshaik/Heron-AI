@@ -1486,6 +1486,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-nu.md`](needs-checking/group-nu.md)
 
+## Group NV - a QA check's failing ids whole, and its severity, clause and history (2026-11-12)
+
+**Its own file:** [`needs-checking/group-nv.md`](needs-checking/group-nv.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
