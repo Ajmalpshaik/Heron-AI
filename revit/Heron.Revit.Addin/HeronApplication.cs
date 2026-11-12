@@ -284,6 +284,19 @@ namespace Heron.Revit.Addin
                     Log("The Heron Commands panel could not be registered: " + paneFailure);
                 }
 
+                // THE ACTIVITY PANE (D-163) - Heron's recent changes with Select,
+                // Zoom and Undo. Its buttons reach Revit only through the one
+                // dispatcher (D-09); its fault costs the pane, never the add-in.
+                try
+                {
+                    application.RegisterDockablePane(HeronActivityPane.Id, HeronActivityPane.Title,
+                        new HeronActivityPane(DispatchFromPane, Log));
+                }
+                catch (Exception paneFailure)
+                {
+                    Log("The Heron Activity panel could not be registered: " + paneFailure);
+                }
+
                 // ROSLYN'S FIRST-USE COST, PAID NOW rather than on the
                 // modeller's first request (D-56 measured ~4.5 s of it). A
                 // background thread that touches no Revit API - see WarmUp.
@@ -480,6 +493,16 @@ namespace Heron.Revit.Addin
                 typeof(CommandsPaneCommand).FullName);
             commandsRow.ToolTip = "Show or hide your saved Heron commands.";
             bridgeGroup.AddPushButton(commandsRow);
+
+            // ACTIVITY (D-163) - Heron's recent changes, a text row in this
+            // menu like Commands, so the ribbon keeps its three things (D-150).
+            var activityRow = new PushButtonData(
+                "HeronActivityPane",
+                "Activity",
+                assemblyPath,
+                typeof(ActivityPaneCommand).FullName);
+            activityRow.ToolTip = "Show or hide Heron's recent changes, with Select, Zoom and Undo.";
+            bridgeGroup.AddPushButton(activityRow);
 
             // A split button normally promotes whatever was last picked from
             // the list to the top. Here the top button's picture IS the
@@ -840,6 +863,20 @@ namespace Heron.Revit.Addin
         private static void OnSynchronized(object sender, DocumentSynchronizedWithCentralEventArgs e)
         {
             if (e != null && e.Document != null) RevitUndo.Synced(e.Document);
+        }
+
+        /// <summary>
+        /// A request from the Activity pane into the ONE dispatcher (D-09, D-163)
+        /// - the same queue, event, gate and hold a chat's request goes through.
+        /// Called from a background thread only: Dispatch waits for Revit's
+        /// thread. Null-safe while the add-in is starting or stopping.
+        /// </summary>
+        internal static string DispatchFromPane(string request)
+        {
+            var dispatcher = Dispatcher;
+            if (dispatcher == null)
+                return Json.Error("not_ready", "Heron has not finished starting. Try again in a moment.");
+            return dispatcher.Dispatch(request);
         }
 
         internal static void Log(string message)

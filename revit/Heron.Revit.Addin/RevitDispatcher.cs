@@ -830,6 +830,9 @@ namespace Heron.Revit.Addin
                 // D-161: THE REQUEST THIS ANSWERS, as the chat named it - so an
                 // answer the chat stopped waiting for can still be found by it.
                 Json.Str("requestId", Json.ReadString(job.Request, "requestId")),
+                // D-163: the outcome at the top, where the Activity pane's reader
+                // can read it - the reply below holds it nested.
+                Json.Str("kind", Json.ReadString(response, "verdictKind")),
                 Json.Str("document", Json.ReadString(response, "document")),
                 elements,
                 "\"reply\": " + response);
@@ -892,6 +895,9 @@ namespace Heron.Revit.Addin
 
                 case "undo_last":
                     return "Undoing Heron's last change";
+
+                case "show_elements":
+                    return "Showing a change's elements";
 
                 case "release_models":
                     return "Handing a model back to the other chats";

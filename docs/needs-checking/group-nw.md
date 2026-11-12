@@ -36,3 +36,14 @@ and its Revit-free half runs here; none of it has run in Revit.**
 | **NW8** | In PowerShell: `Get-Acl \\.\pipe\<Heron's pipe name> \| Format-List` (the name is in `%LOCALAPPDATA%\Heron\bridges\*.json`) | A **Deny** rule for `NT AUTHORITY\NETWORK`, and the Allow for this user |
 | **NW9** | `Get-Acl` on the bridge's `.json` file in that folder | One Allow rule, this user, full control; *AreAccessRulesProtected* True |
 | **NW10** | *The negative, from a second PC on the same domain as the same user:* open `\\<this PC>\pipe\<the name>` | Access denied |
+
+### D-163 - the Activity pane
+
+| ID | Do this | Pass looks like |
+|---|---|---|
+| **NW11** | Heron menu > **Activity** | A pane docks on the right, titled Heron activity, in the brand's dark colours; the list or *No change from Heron is recorded* |
+| **NW12** | Keep a change from the chat, wait five seconds | It appears at the top: name, model, time, *Kept*, its counts, and **Select**, **Zoom**, **Undo** |
+| **NW13** | Press **Select**, then **Zoom** | The change's elements are selected, then the view zooms to them; the status line says how many, in which model |
+| **NW14** | Press **Undo** on it | Revit's undo list loses that `Heron:` entry; the status line says Undo was sent. Pressing Undo again is refused |
+| **NW15** | *The negative:* switch to another model, press **Select** on the change | Refused - the change was made in the other model. Nothing is selected in this one |
+| **NW16** | Press **Select** while Revit is busy (a command running) | The pane does not freeze; the status line says Revit is busy |

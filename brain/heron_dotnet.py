@@ -134,6 +134,9 @@ PROJECTS = [
     # plans/plugin-extension/02-implementation.md, Stage 2).
     "revit/Heron.Doc/Heron.Doc.csproj",
     "revit/Heron.Tools/Heron.Tools.csproj",
+    # What the Activity pane lists (D-163), linked by source like the change
+    # report; tests/test_activity_pane.py builds and runs it.
+    "tests/Heron.Activity.TestHost/Heron.Activity.TestHost.csproj",
     "tests/Heron.Banner.TestHost/Heron.Banner.TestHost.csproj",
     "tests/Heron.BindingNote.TestHost/Heron.BindingNote.TestHost.csproj",
     "tests/Heron.Bridge.TestHost/Heron.Bridge.TestHost.csproj",

@@ -618,6 +618,34 @@ namespace Heron.Revit.Addin
         }
     }
 
+    /// <summary>
+    /// ACTIVITY - shows or hides Heron's recent changes (D-163), a row in the
+    /// Heron button's menu like Commands. It only shows the pane; the pane's
+    /// buttons reach Revit through the dispatcher, never from here.
+    /// </summary>
+    [Transaction(TransactionMode.Manual)]
+    [Regeneration(RegenerationOption.Manual)]
+    public sealed class ActivityPaneCommand : IExternalCommand
+    {
+        public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
+        {
+            try
+            {
+                var pane = commandData.Application.GetDockablePane(HeronActivityPane.Id);
+                if (pane.IsShown()) pane.Hide();
+                else pane.Show();
+                return Result.Succeeded;
+            }
+            catch (Exception ex)
+            {
+                HeronApplication.Log("The Heron Activity panel could not be shown: " + ex);
+                message = "Heron could not open its Activity panel. Your model is untouched. " +
+                          "Revit said: " + ex.Message;
+                return Result.Failed;
+            }
+        }
+    }
+
     [Transaction(TransactionMode.Manual)]
     [Regeneration(RegenerationOption.Manual)]
     public sealed class FreeModelCommand : IExternalCommand
