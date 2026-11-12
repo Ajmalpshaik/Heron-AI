@@ -87,7 +87,10 @@ if (throughText.Length > 0 && squash(throughText) != "none" && squash(throughTex
     else
         throughProblem = "\"" + throughText + "\" is not a point - give X,Y in millimetres, such as \"0,0\".";
 }
-if (wantedAxis != 3 && throughProblem == null && !through.IsZeroLength())
+// A point TYPED counts, "0,0" included (Codex review, PR #856): only left out
+// or "none" is no point.
+var throughGiven = throughText.Length > 0 && squash(throughText) != "none";
+if (wantedAxis != 3 && throughProblem == null && throughGiven)
     throughProblem = "throughMm is the point an ANGLED plane passes through - with axis \"" + (axis ?? "")
         + "\" each plane is placed by its distance, so leave throughMm out.";
 
@@ -95,6 +98,9 @@ if (wantedAxis != 3 && throughProblem == null && !through.IsZeroLength())
 // gives back, folded into -90 < a <= 90 (a plane has no front or back).
 Func<double, double> folded = d =>
 {
+    // Brought within one turn first, so the loops below run at most once each
+    // whatever is typed - a huge angle never hangs Revit (Codex review, PR #856).
+    d = d % 180.0;
     while (d > 90.0) d -= 180.0;
     while (d <= -90.0) d += 180.0;
     return d;
@@ -182,9 +188,10 @@ else
         // VERSION 2: an angle is degrees, kept as typed, never divided by 304.8.
         if (wantedAxis == 3)
         {
-            if (double.IsNaN(pair.Value) || double.IsInfinity(pair.Value))
+            if (double.IsNaN(pair.Value) || double.IsInfinity(pair.Value) || Math.Abs(pair.Value) > 360.0)
             {
-                problems.Add("\"" + name + "\" has no angle - give degrees, such as 30 or -15.");
+                problems.Add("\"" + name + "\" has no angle between -360 and 360 degrees - give degrees, such as 30 "
+                    + "or -15.");
                 continue;
             }
             if (same.Count == 0) { toMake.Add(new KeyValuePair<string, double>(name, pair.Value)); continue; }
