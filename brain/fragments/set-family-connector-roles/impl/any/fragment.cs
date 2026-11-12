@@ -52,9 +52,14 @@
 // "shape=Round" (or Rectangular, or Oval) sets a DUCT connector's Shape, the
 // value its Properties show - ConnectorElement.Shape has no setter on any
 // release 2020 to 2027, so it is written through the Shape parameter,
-// MEP_PROFILE_TYPE_PARAM, and only where that parameter already reads the
-// same number as the connector's own Shape: a release that numbers it
-// differently writes nothing. sizeParameters in the same call is counted
+// CONNECTOR_PROFILE_TYPE (MEP_PROFILE_TYPE_PARAM where a release has not got
+// it), and only where that parameter already reads the same number as the
+// connector's own Shape: a release that numbers it differently writes
+// nothing. MEP_PROFILE_TYPE_PARAM alone - the first try - is NOT on a family
+// connector in Revit 2020: the first run refused "has no Shape in this
+// Revit" on a hand-placed one, and a rolled-back probe the same day read its
+// Shape as CONNECTOR_PROFILE_TYPE, 1 on a rectangular connector, and wrote 0,
+// 2 and 1 through it with Shape following each (Group NO, NO1, 2026-11-12). sizeParameters in the same call is counted
 // against the shape asked for, so "shape=Round; sizeParameters=Neck Diameter"
 // finishes a connector Revit placed as Rectangular in one call. Read back
 // after one regeneration; a shape that does not read as asked fails the call.
@@ -430,6 +435,13 @@ Func<ConnectorElement, BuiltInParameter, string> drivenBy = (c, bip) =>
     }
     catch (Exception) { return null; }
 };
+
+// VERSION 5: which built-in parameter holds a duct connector's Shape -
+// CONNECTOR_PROFILE_TYPE on a family connector (read on Revit 2020), the
+// other kept as the fall-back for a release that names it so.
+Func<ConnectorElement, BuiltInParameter> shapeBip = c =>
+    c.get_Parameter(BuiltInParameter.CONNECTOR_PROFILE_TYPE) != null
+        ? BuiltInParameter.CONNECTOR_PROFILE_TYPE : BuiltInParameter.MEP_PROFILE_TYPE_PARAM;
 
 Func<ConnectorElement, string> sizeWords = c =>
 {
@@ -921,7 +933,7 @@ else
             // Shape is, so a release that numbers it otherwise writes nothing.
             if (wantShape.HasValue)
             {
-                var shapeParameter = c.get_Parameter(BuiltInParameter.MEP_PROFILE_TYPE_PARAM);
+                var shapeParameter = c.get_Parameter(shapeBip(c));
                 if (c.Domain != Domain.DomainHvac)
                     problems.Add(label(c) + " is a " + domainWords(c) + " connector - Shape is a duct connector's "
                         + "(Round, Rectangular or Oval).");
@@ -934,9 +946,9 @@ else
                     problems.Add(label(c) + "'s Shape parameter reads " + shapeParameter.AsInteger().ToString(invariant)
                         + " on a " + c.Shape.ToString().ToLowerInvariant() + " connector, which is not the number Heron "
                         + "would write for it, so nothing was written.");
-                else if (drivenBy(c, BuiltInParameter.MEP_PROFILE_TYPE_PARAM) != null)
+                else if (drivenBy(c, shapeBip(c)) != null)
                     problems.Add(label(c) + "'s Shape is driven by the family parameter \""
-                        + drivenBy(c, BuiltInParameter.MEP_PROFILE_TYPE_PARAM) + "\" - LINK_FAMILY_PARAMETER with "
+                        + drivenBy(c, shapeBip(c)) + "\" - LINK_FAMILY_PARAMETER with "
                         + "\"none\" unlinks it first.");
                 else if (shapeParameter.IsReadOnly && c.Shape != wantShape.Value)
                     problems.Add(label(c) + "'s Shape is read-only in this Revit - it keeps the shape it was made with. "
@@ -1241,7 +1253,7 @@ else if (refused == null)
             else
             {
                 var was = c.Shape;
-                var shapeParameter = c.get_Parameter(BuiltInParameter.MEP_PROFILE_TYPE_PARAM);
+                var shapeParameter = c.get_Parameter(shapeBip(c));
                 attempt("Shape " + wantShape.Value + " on " + label(c), () => shapeParameter.Set((int)wantShape.Value));
                 doc.Regenerate();
                 if (c.Shape != wantShape.Value)

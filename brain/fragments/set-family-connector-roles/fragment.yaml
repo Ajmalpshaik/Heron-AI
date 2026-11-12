@@ -300,8 +300,16 @@ compatibility-note: >
   --members, read 2026-11-11 off all eight releases). Whether the Shape
   parameter is writable, whether its numbers are ConnectorProfileType's, and
   whether ChangeHostReference takes a reference plane's reference as its
-  "planar face" are what Group NO measures; not yet run in Revit. Compiles
-  on 2020 to 2027 (tools/check-fragments-compile.py, 2026-11-11).
+  "planar face" are what Group NO measures. Compiles on 2020 to 2027
+  (tools/check-fragments-compile.py, 2026-11-11, and again 2026-11-12).
+  MEASURED 2026-11-12, Revit 2020 (Group NO, row 5b-1577): a family duct
+  connector has NO MEP_PROFILE_TYPE_PARAM - its Properties "Shape" is
+  CONNECTOR_PROFILE_TYPE, Integer, 1 on a rectangular connector, writable,
+  and Shape follows it to 0, 2 and 1 (ConnectorProfileType's numbers). The
+  card reads CONNECTOR_PROFILE_TYPE first and MEP_PROFILE_TYPE_PARAM only
+  where a release has not got it. With that, NO1-NO3, NO7 and NO8 held on
+  Revit 2020, rolled back. ChangeHostReference on a reference plane is still
+  unmeasured - Group NO's NO4-NO6, Revit 2024.
 
 # ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #

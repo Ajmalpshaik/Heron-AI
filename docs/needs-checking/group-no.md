@@ -19,8 +19,8 @@ missing is row 5b-1568.
 | `SET_FAMILY_CONNECTOR_ROLES` version 5 (MODIFY) | [`brain/fragments/set-family-connector-roles`](../../brain/fragments/set-family-connector-roles/fragment.yaml) | `settings` takes "shape=Round / Rectangular / Oval" on a duct connector, through its Shape parameter, with `sizeParameters` counted against the new shape; and "host=<reference plane>" on Revit 2023 on, moving the connector onto the plane where it sat. Everything else version 4's |
 
 **What is done and what is not.** The card compiles on all eight releases, 2020 to 2027, with the whole library
-(`tools/check-fragments-compile.py`, 2026-11-11, the owner's PC). **Nothing here has run in Revit.** No job file
-is written yet: the connector ids are only known once NO0 is made.
+(`tools/check-fragments-compile.py`, 2026-11-11, the owner's PC). **Nothing had run in Revit when this group was written** - the Revit 2020 run of 2026-11-12 is under
+the table.
 
 **The model - a SAVED scratch family, never the owner's own families** (not the KDF diffusers, not the plenum
 boxes). File, New, Family, the metric Mechanical Equipment template, saved as "Heron Connector Shape Test" under
@@ -49,3 +49,5 @@ face) - Revit makes it Rectangular 304.8 x 304.8; a pipe connector on the face l
 | **NO7** | *Revit 2020: the refusal* - "host=Box Top" | Refused naming Revit 2020, ChangeHostReference arriving in 2023, and both ways round; nothing changed |
 | **NO8** | *Version 4's own proven case, re-proved* - on "Heron Connector Ticks Test" (or a fresh copy of its arrangement) connectors "Outlet Face, Inlet Face", "allowSlopeAdjustments=yes"; negative "Duct Face" with the same; rolled back | Version 4's answer and its refusal, word for word |
 | **NO9** | *The proof* - `heron validate` on NO1 (positive) and NO1's negative, Revit 2020; then the signing | A proof block naming the model, both cases and a fingerprint; the card PROVEN again on Ajmal PS's word |
+
+**Run 2026-11-12, Revit 2020, session 45552, on "Heron Connector Shape Test" (every run rolled back; records in `%TEMP%\heron-work\connector-no`).** NO0 made with Heron's PROVEN tools - the pipe connector is id 2572 on "Box Front", the hand-placed duct connector id 2583 on "Box Top", Rectangular 304.8 x 304.8 as expected. **NO1's first run refused "has no Shape in this Revit"** - the card read a parameter a family connector has not got; the Shape is `CONNECTOR_PROFILE_TYPE` (row 5b-1577), fixed the same day. With the fix: **NO1, NO2, NO3, NO7 and NO8 held**, both halves each - the answers are on row 5b-1577. NO2's "then shape=Rectangular" was not run on its own: on a rolled-back family the connector is rectangular already, so it would only test "was already". **NO9:** the proof draft is written from NO1; the signing is the owner's. **NO4-NO6 not run** - they need Revit 2023 or later.
