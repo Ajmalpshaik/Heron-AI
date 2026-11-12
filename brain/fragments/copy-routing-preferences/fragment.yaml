@@ -186,7 +186,8 @@ compatibility-note: >
 #     its index, carrying that rule's size window across. A merged tool would
 #     take a source type or a part, never both - a mode flag with half the
 #     inputs meaningless in each - and each half's safety rule (read all before
-#     clearing; carry the size window) belongs to its own edit. Both PROVEN.
+#     clearing; carry the size window) belongs to its own edit. Both PROVEN
+#     when this was judged - each card's own status says what it is now.
 
 utterances:
   - give this type the same fittings as that one

@@ -4,14 +4,14 @@
 #
 #   set-routing-preference  SET_ROUTING_PREFERENCE  FRG-MEP-046  version 2  rows 5b-1120, 5b-1549  NL1 - NL4
 #   add-project-parameter   ADD_PROJECT_PARAMETER   FRG-PAR-010  version 3  row 5b-1127            NL5 - NL8
-#   create-assembly         CREATE_ASSEMBLY         FRG-ELE-080  version 2  rows 5b-1117, 5b-1553  NL9 - NL10
+#   create-assembly         CREATE_ASSEMBLY         FRG-ELE-080  version 2  rows 5b-1117, 5b-1553  NL9 - NL11
 #
 #     python tools/batch-prove.py tools/jobs/silent-damage-repairs-nl-2026-11-11.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/silent-damage-repairs-nl-2026-11-11.yaml --session <pid>
 #
-# NOTHING HERE HAS RUN. Written 2026-11-11 in a cloud session with no Revit:
-# each card compiles on every release it declares, and a compile is not a
-# proof.
+# NOTHING HERE HAS RUN. Written 2026-11-11 in a cloud session with no Revit,
+# and changed on 2026-11-12 after a review of the three repairs: each card
+# compiles on every release it declares, and a compile is not a proof.
 #
 # THE MODEL IS THE ONE THE 2026-11-02 ROUNDS USED, so nothing new is arranged:
 # on Revit 2020, "P1102 MEP" - the scratch copy of
@@ -21,9 +21,15 @@
 # HERON_P1102_TAG). NEVER A WORKING PROJECT. If either has gone, make the copy
 # again; NL8 in Group NL says how a new file is made.
 #
-# TWO VALUES BELOW ARE MY ASSUMPTION OF WHAT THAT SAMPLE HOLDS, because no
-# session here has read it. Read both in Revit before the run, and type what
-# Revit shows. THE DRY RUN DOES NOT CATCH A WRONG NAME.
+# THREE VALUES BELOW ARE MY ASSUMPTION OF WHAT THAT SAMPLE HOLDS, because no
+# session here has read it. Read all three in Revit before the run, and type
+# what Revit shows. THE DRY RUN DOES NOT CATCH A WRONG NAME.
+#   - THE DUCT TYPE, in set-routing-preference's `setup-set` and
+#     `negative-setup-set`: family "Rectangular Duct", type "Mitered Elbows /
+#     Tees". Round 9 named it on 2026-11-02 as CREATE_MEP_RUNS' `ductType`,
+#     which is why it is here - but this file's setup finds it by two
+#     "contains" words, and a sample that holds two types they both fit hands
+#     on two. The binding note must read "elements from set-selection (1)".
 #   - set-routing-preference's positive `partName`. It must be an ELBOW the
 #     duct type's Elbows rule 0 does NOT point at now, written "Family: Type".
 #     REPORT_ROUTING_PREFERENCES on the duct type says what rule 0 points at;
@@ -34,6 +40,28 @@
 #     only one family has it, pick a type name two do; if none do, load any
 #     second fitting family whose type is called the same (row 5b-1120 used
 #     M_Rectangular Elbow - Mitered and M_Balancing Damper - Rectangular).
+#
+# NL0 - THE READS THAT GIVE ALL THREE, as command lines. Written here, not
+# run: where one is refused, its own message says what it wanted. One
+# conversation id for the series, so the third line can take what the second
+# left; `--in` stands before the card's name.
+#
+#     export HERON_CLIENT_ID=ajmal-pc HERON_CONVERSATION_ID=nl0
+#     C="python mcp/client/heron_bridge_client.py fragment --in"
+#
+#     # every duct type, as "Family : Type" - is "Rectangular Duct : Mitered
+#     # Elbows / Tees" there, and does anything else hold both words?
+#     $C "P1102 MEP" select-types --set categories=Ducts --set familyNameContains= --set typeNameContains=
+#
+#     # that one type, and what its rules point at now - Elbows rule 0 above all
+#     $C "P1102 MEP" select-types --set categories=Ducts --set "familyNameContains=Rectangular Duct" --set "typeNameContains=Mitered Elbows / Tees"
+#     $C "P1102 MEP" report-routing-preferences --expect-from select-types
+#
+#     # every loaded duct fitting, as "Family : Type" - the other elbow for
+#     # `partName`, and how many families have a type called "Standard"
+#     $C "P1102 MEP" select-types --set "categories=Duct Fittings" --set familyNameContains= --set typeNameContains=
+#
+#     python mcp/client/heron_bridge_client.py release
 #
 # `write: true` runs each leg inside a transaction group and ROLLS IT BACK.
 # Look at the model afterwards anyway - rollback has failed on this PC before
@@ -67,17 +95,22 @@ jobs:
       and the size windows carried across. Negative: `findings` says the name
       does not say which one is meant, and `nearMisses` holds two or more -
       "No Elbows part is called 'Standard'" there would mean no loaded family
-      has that type, and the negative proved nothing. The refused swap that is
-      PUT BACK (row 5b-1549) is not either leg: it is NL3, run by name.
+      has that type, and the negative proved nothing. Where more than twelve
+      families have it, twelve are listed and `findings` says how many more.
+      The refused swap that is PUT BACK (row 5b-1549) is not either leg: it is
+      NL3, run by name.
 
   # ------------------------------------------------------------------- 5b-1127
   # ADMIN: no batch sends it (D-106). The dry run prints the command to run it
   # by name, the owner's Admin switch on. POSITIVE: the file and the parameter
   # the 2026-11-02 proof used, both there, so it is reused and bound - and
-  # `createMissing` is left out on purpose. NEGATIVE: THE SAME CALL WITH ONE
-  # LETTER OF THE FILE NAME WRONG - refused naming the path, `bound` false, and
-  # NO file of that name in the folder afterwards. Version 2 made the file,
-  # bound the parameter and answered `bound true`.
+  # `createMissing` and `createFile` are left out on purpose. NEGATIVE: THE
+  # SAME CALL WITH ONE LETTER OF THE FILE NAME WRONG AND `createMissing` TRUE -
+  # what "create a shared parameter" sends. Refused naming the path, `bound`
+  # false, and NO file of that name in the folder afterwards: a new parameter
+  # is one yes, a new FILE is another (`createFile`), and only the second
+  # makes a file. Version 2 made the file, bound the parameter and answered
+  # `bound true`.
   - fragment: add-project-parameter
     expect: bound
     set:
@@ -92,6 +125,7 @@ jobs:
       parameterName: "HERON_P1102_TAG"
       categories: "Ducts"
       instanceBinding: true
+      createMissing: true
     note: >
       The path is the one on the card's own proof block. BEFORE the run, look
       in the folder: heron-p1102-shraed.txt must NOT be there, or the negative
@@ -100,16 +134,24 @@ jobs:
       Manage > Shared Parameters before and after as well (5b-317).
 
   # ------------------------------------------------------------ 5b-1117, 5b-1553
-  # THIS JOB IS NOT EXPECTED TO PASS, AND A PASS WOULD NEED READING. Version 2
-  # makes "NOTHING WAS MADE" true; it does not make the naming work - Revit
-  # gives a new assembly its type only after the transaction that made it is
-  # committed (row 5b-1553, OPEN). So the expected verdict is POSITIVE EMPTY,
-  # with `refused` quoting Revit and ending "What it had started was taken
-  # back, so NOTHING WAS MADE", `assembly` null and `memberIds` 0 item(s).
-  # Version 1 answered the same sentence with `memberIds` filled and was judged
-  # a PASS twice. A PASS here means Revit DID make and name one: read
-  # `assembly` and the Assemblies node before believing it, and put what was
-  # seen on row 5b-1553.
+  # THE RUN THAT DECIDES WHETHER THE CARD WORKS AT ALL. Version 2 makes the
+  # assembly in one transaction, commits, and names it in a second, inside the
+  # add-in's one group. NOT MEASURED: whether Revit assigns the assembly's type
+  # at a commit inside an open group - this job is where that is found out.
+  #
+  # A PASS CAN ONLY MEAN AN ASSEMBLY EXISTED WITH THE NAME ASKED FOR: `assembly`
+  # and `memberIds` are filled only after the assembly has been made, named,
+  # read back with a type and that name, and committed. Read `findings` all the
+  # same - "Made assembly "HERON NL A1" with N member(s), read back".
+  #
+  # IF REVIT DOES NOT, the verdict is POSITIVE EMPTY with `refused` quoting
+  # Revit and ending "... taken apart again and the model read ... NOTHING WAS
+  # MADE", `assembly` null and `memberIds` 0 item(s) - or the run answers
+  # "threw while running ... the whole job is rolled back". Either goes on row
+  # 5b-1553 verbatim, the card is not signed, and the row stays open.
+  #
+  # "HERON NL A1" must be a name NO assembly in the model has; the negative is
+  # a naming category that does not exist.
   - fragment: create-assembly
     setup: [filter-elements-by-category]
     keep-chain: true
@@ -120,5 +162,8 @@ jobs:
     negative-set: {assemblyName: "HERON NL A1", namingCategory: "Zz No Such Category"}
     note: >
       Round 9's arrangement on the same model (2026-11-02): the ducts in that
-      callout. Whether anything is LEFT in the model by a refused run that is
-      KEPT is NL10, through try-once - a rolled-back batch cannot show it.
+      callout. The rolled-back batch shows the answer; that the assembly is in
+      the Project Browser under that name, with ONE undo entry, is NL10 -
+      through try-once, kept. A name Revit refuses AFTER it has made the
+      assembly, and nothing left behind, is NL11 - this same line run again
+      with a name NL10 left taken.

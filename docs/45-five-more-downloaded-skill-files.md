@@ -224,8 +224,12 @@ model does not have is NOT CHECKED, never zero**.
    utterance waits for the modeller's real words.
 4. **The two shared-parameter fragments are ADMIN**, so Heron refuses them until the owner's Admin switch
    is on. Their fix is in; their proof waits for that switch. And `ADD_PROJECT_PARAMETER`, given a name the
-   shared parameter FILE does not hold, writes the definition into that file on disk, where no Undo
-   reaches either. Its card does not say so yet; recorded here, unchanged.
+   shared parameter FILE does not hold, wrote the definition into that file on disk, where no Undo
+   reaches either, and its card did not say so. **Changed 2026-11-12**
+   ([row 5b-1127](fragment-issues/section-5b-rows-401-425.md)): version 3 refuses a name, or a file, that
+   is not there unless the modeller asked for a new one, and says what Undo does not take back. That
+   moved its code, so what it is now - proved or not - is on
+   [its card](../brain/fragments/add-project-parameter/fragment.yaml), not in this sentence.
 
 ---
 

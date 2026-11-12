@@ -312,7 +312,7 @@ API column: **YES** = confirmed in Autodesk's reference or SDK material (sources
 | Attach column top/base | none | MISSING | - | YES: `ColumnAttachment.AddColumnAttachment` / `RemoveColumnAttachment` (2020+) |
 | Framing cut-back / extension / join | disallow-join (framing joins), cope-framing; extensions through generic params | PARTIAL | no end-extension or cut-back tool | YES: `StructuralFramingUtils` (end join, `SetEndReference`), Start/End Extension parameters |
 | Cope | cope-framing | PROVEN | - | - |
-| Parts / Assembly | create-parts, create-assembly (PROVEN); divide-parts, merge-parts, create-assembly-views (DRAFT) | PROVEN / DRAFT | - | - |
+| Parts / Assembly | create-parts (PROVEN); create-assembly (PROVEN when this was written, on a run that made no assembly - [row 5b-1117](../../fragment-issues/section-5b-rows-401-425.md); rebuilt 2026-11-12, its card says what it is now); divide-parts, merge-parts, create-assembly-views (DRAFT) | PROVEN / DRAFT | - | - |
 
 ### Steel tab (all need the Steel Connections for Revit add-in / Advance Steel components)
 
@@ -454,7 +454,7 @@ API notes were checked against the Autodesk Revit API reference (help.autodesk.c
 | Design to Fabrication | none | MISSING | Convert design duct/pipe to fabrication parts | YES `DesignToFabricationConverter.Convert(ISet<ElementId>, int serviceId)` (2017+) |
 | Change Service / Size | none | MISSING | - | YES `FabricationNetworkChangeService` (`ChangeService`, `ChangeSize`, `ApplyChange`) |
 | Hangers | none | MISSING | - | YES `FabricationPart.CreateHanger` |
-| Spool / Assembly | create-assembly (P), create-assembly-views (D), group-by-assembly (P) | PARTIAL | No spool or item numbering for fabrication | YES `AssemblyInstance.Create` (already used). Fabrication numbering: UNSURE |
+| Spool / Assembly | create-assembly (P when this was written; see its card - [row 5b-1553](../../fragment-issues/section-5b-rows-401-425.md)), create-assembly-views (D), group-by-assembly (P) | PARTIAL | No spool or item numbering for fabrication | YES `AssemblyInstance.Create` (already used). Fabrication numbering: UNSURE |
 | Multi-point Routing | none | MISSING | - | UNSURE (no routing API found; `FabricationNetworkChangeService` only changes existing parts) |
 
 ### Plumbing & Piping
@@ -779,7 +779,7 @@ Counts (rows in the tables below): **COVERED 76 · PARTIAL 32 · MISSING 68** (1
 | Select links/underlay/pinned/by face | select-from-link, select-by-pin-state (queries) | PARTIAL (P) | the selection toggles themselves | UNSURE |
 | Measure | measure-element-lengths, measure-perimeter (P), measure-distance (D) | PARTIAL | point-to-point DRAFT | YES (geometry) |
 | Create Parts | create-parts, set-parts-excluded, offset-part-faces (P), divide/merge-parts (D) | COVERED (P) | — | — |
-| Create Assembly | create-assembly (P), create-assembly-views (D) | COVERED (P) | — | — |
+| Create Assembly | create-assembly (P when this was written; see its card - [row 5b-1553](../../fragment-issues/section-5b-rows-401-425.md)), create-assembly-views (D) | COVERED - a card exists; no run has yet made an assembly | — | — |
 | Group / Ungroup | group-elements, ungroup-elements, place-model-groups | COVERED (P) | — | — |
 
 
