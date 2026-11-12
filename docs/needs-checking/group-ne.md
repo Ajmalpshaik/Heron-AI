@@ -68,3 +68,34 @@ text, "Box Left" and the level "Ref. Level", and write them into the job file - 
 
 **Before the owner's own families.** Only once NE is through. The first run on the KDF diffuser or its arrow family
 is the owner's choice, through `try-once`, behind Revit's Keep or Discard.
+
+## Run 1 - Revit 2020, 2026-11-12 (session 33000, Ajmal PS watching)
+
+**Model:** the SAVED scratch families `%TEMP%\heron-work\link-angle\Heron Link Angle Test.rfa` (metric Generic
+Model) and `Heron Link Detail Test.rfa` (metric Detail Item), both made by `CREATE_FAMILY_DOCUMENT` this session -
+never the owner's own families. Everything below was rolled back unless it says KEPT.
+
+| Row | Positive | Negative | Verdict |
+|---|---|---|---|
+| NE1 | changed 1, "Extrusion id 2704: Visible not linked -> Show Handle (reads Yes)" | refused naming Box Left, the extrusion NOT linked | held |
+| NE1b | changed 1, "Duct Connector (Supply Air) id 2722: Flow not linked -> Nominal Air Flow (reads 0.0 L/s)" - version 3's answer | refused, "No family parameter is called ZZZ No Such Parameter ... Nominal Air Flow" | held. Exhaust Air by name: "What it has that can be linked: 1 Duct Connector (Supply Air), 1 Extrusion, 1 Model Text, 1 Symbolic Line - in the Revit categories Connector Element, Lines" (version 4's words) |
+| NE2 | changed 1, "Symbolic Line id 2735: Visible not linked -> Show Arrow" | refused, "Arrow Length (Length) cannot drive Visible (Yes/No) ... The ones that could drive it: Show Arrow, Show Handle" | held |
+| NE2/NE3 (Detail Item family) | changed 2, "Detail Line id 2060 ... Show Arrow  \|\|  Filled Region id 2063 ... Show Arrow" | refused, no such parameter, naming Show Arrow | held - **the filled region on Revit 2020, in a 2D family** |
+| NE3 | changed 1, "Model Text id 2739: Visible not linked -> Show Arrow" | refused naming plane "Box Right" (the level's id was not to hand), the symbolic line NOT linked | held |
+| NE4 | 600 mm, equalised, angleDegrees 0 - version 2's answer | refused, "600 mm apart and Wrong Width holds 450 mm" | held |
+| NE4b | 300 mm; freeEnd: "Floor Top is held by nothing ... while Trap Top is held by the dimension labelled Rim Height" - version 2's answer | refused, "Same A and Same B are in the same place" | held. The Rim Height label was made by this card's own `try-once`, KEPT by the owner |
+| NE5 | 30 degrees, labelled in Ref. Level | refused, "meet at 30 degrees (150 on the other side) and Wrong Angle holds 45" | held |
+| NE5b | 45 degrees between two free planes; "Arrow Slope pinned first ... reads back pinned" | labelled 30, nothing pinned | held |
+| NE6 | **first run threw "The labelled angle reads 330 degrees where Arrow Back Angle holds 150"** - fixed (row 5b-1565), re-run: 150 degrees | refused, parallel planes make no angle | held after the fix |
+| NE7, NE8 (2024), NE9 | - | - | NOT RUN |
+
+**The sloped planes were made by Heron**, not by hand: the owner's hand-drawn planes did not reach the family (Heron
+read none), so `CREATE_REFERENCE_PLANES` was widened to draw a plane at an angle and its `try-once` was KEPT by the
+owner - Group NN, row 5b-1564.
+
+**Plan corrections** (row 5b-1565): a detail line cannot exist in a Generic Model, so it ran in the Detail Item family;
+a triangle is written as corners ("300,80; 600,0; 300,-80"), not "polygon", and the type is "Solid Fill - Black";
+`SET_FAMILY_TYPE_VALUES` cannot write an Air Flow value, and the link needs none.
+
+**Proof drafts:** `brain/proof-drafts/link-family-parameter.yaml` (the detail line and filled region run) and
+`brain/proof-drafts/label-family-dimension.yaml` (NE5, after the fix). Both await the owner's signature.
