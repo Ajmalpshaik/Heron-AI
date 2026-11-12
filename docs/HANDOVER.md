@@ -249,6 +249,15 @@ under `%TEMP%\heron-work`. **Do not deploy the new add-in before item 3**: it ne
     on at least three systems, and for the spaces rows an architect's model linked in with numbered rooms on
     two levels. **Changes** on and **Ask to Keep ON** (one row runs with it off). The group's own page says
     which rows meet open rows 5b-240, 5b-1125 and 5b-1589. **Needs #855** — the methods are only there.
+12. **Groups [NS](needs-checking/group-ns.md), [NT](needs-checking/group-nt.md),
+    [NU](needs-checking/group-nu.md) and [NV](needs-checking/group-nv.md) — the before/after read-back, the
+    dry run, Heron's own Undo, and the QA checklist's ids and history.** Built on 2026-11-12 (pull requests
+    #861 and #866) and repaired the same day after independent reviews (pull request
+    [#867](https://github.com/Ajmalpshaik/Heron-AI/pull/867)). **Run none of them, and use neither
+    `revit_undo_last` nor `revit_change`'s `dry_run`, until #867 is merged, pulled and the add-in rebuilt and
+    deployed:** the first build of the Undo could take a modeller's own change, and the rows were rewritten
+    for the repaired one. No job file: each row is asked in a chat, on a saved scratch project, **Changes**
+    on. Do NU last and read its opening first — it says what only Revit can settle about the undo list.
 
 **Then, as before 2026-11-12** (re-read 2026-11-11; the 2026-10-27 list named *"the twelve rebar
 tools that have never met a model"* and groups IQ to IM as built-not-run, and the rows above now say what
