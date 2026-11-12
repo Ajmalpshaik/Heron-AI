@@ -165,6 +165,41 @@ Func<FamilyParameter, string> kindOf = p =>
     }
 };
 
+// VERSION 4 (2026-11-12, row 5b-1575) - ANY OTHER MEASURED KIND - an air flow,
+// an area, a volume, a pressure - is read and written in the family's OWN units
+// by Revit's own parser: "94.4 L/s", or "94.4" in the unit the family shows.
+// Measured missing 2026-11-12 in Group NE (Revit 2020): "Nominal Air Flow" (Air
+// Flow) was refused, "an area or a flow is set in the Family Types dialog for
+// now". UnitType is 2020's spec and gone at 2022; ForgeTypeId 2021 on.
+Func<FamilyParameter, string, double?> parseInUnits = (p, text) =>
+{
+    try
+    {
+        double parsed;
+#if REVIT2020 || REVIT2021
+        var spec = p.Definition.UnitType;
+        if (!UnitFormatUtils.TryParse(doc.GetUnits(), spec, text, out parsed)) return null;
+#else
+        var spec = p.Definition.GetDataType();
+        if (!UnitFormatUtils.TryParse(doc.GetUnits(), spec, text, out parsed)) return null;
+#endif
+        return parsed;
+    }
+    catch (Exception) { return null; }
+};
+Func<FamilyParameter, double, string> formatInUnits = (p, value) =>
+{
+    try
+    {
+#if REVIT2020 || REVIT2021
+        return UnitFormatUtils.Format(doc.GetUnits(), p.Definition.UnitType, value, false, false);
+#else
+        return UnitFormatUtils.Format(doc.GetUnits(), p.Definition.GetDataType(), value, false);
+#endif
+    }
+    catch (Exception) { return value.ToString(invariant) + " (Revit's internal units)"; }
+};
+
 // A value as the type holds it, in the unit it was typed in.
 Func<FamilyType, FamilyParameter, string, string> shown = (type, p, kindWord) =>
 {
@@ -190,6 +225,12 @@ Func<FamilyType, FamilyParameter, string, string> shown = (type, p, kindWord) =>
             var flag = type.AsInteger(p);
             return flag.HasValue ? (flag.Value != 0 ? "yes" : "no") : "(no value)";
         default:
+            // VERSION 4: a measured kind in the family's own units.
+            if (p.StorageType == StorageType.Double)
+            {
+                var measured = type.AsDouble(p);
+                return measured.HasValue ? formatInUnits(p, measured.Value) : "(no value)";
+            }
             var text = type.AsString(p);
             return text == null ? "(no value)" : "\"" + text + "\"";
     }
@@ -410,8 +451,21 @@ else
                     planned.Add(Tuple.Create(p, "text", (object)text));
                     break;
                 }
-                problems.Add("\"" + name + "\" holds a kind this does not write (" + kindWord + ") - an "
-                    + "area or a flow is set in the Family Types dialog for now.");
+                // VERSION 4: ANY OTHER MEASURED KIND, in the family's own units.
+                if (p.StorageType == StorageType.Double)
+                {
+                    var measured = parseInUnits(p, text);
+                    if (!measured.HasValue)
+                    {
+                        problems.Add("\"" + text + "\" is not a value Revit reads for \"" + name + "\" (" + kindWord
+                            + ") - give a number in the unit the family shows it in, or with its unit, as the "
+                            + "Family Types dialog takes it: \"94.4 L/s\".");
+                        break;
+                    }
+                    planned.Add(Tuple.Create(p, "measured", (object)measured.Value));
+                    break;
+                }
+                problems.Add("\"" + name + "\" holds a kind this does not write (" + kindWord + ").");
                 break;
         }
     }
