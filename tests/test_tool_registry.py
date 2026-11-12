@@ -258,10 +258,15 @@ def main():
     # recorded exception to Article 9, D-99. Since D-126 (2026-10-17) Revit
     # shows its change and asks the modeller Keep or Discard before it is
     # kept, under the owner's write.askBeforeKeeping, read by HeronPermissions
-    # inside the add-in beside write.enabled. A THIRD writer still fails here.
-    check(writers == ["revit_apply_move", "revit_change"],
-          "the writing tools are exactly revit_apply_move and revit_change "
-          "- found: %s" % (writers or "none"))
+    # inside the add-in beside write.enabled.
+    #
+    # revit_undo_last was added 2026-11-12 at the owner's instruction ("now do
+    # the safe undo last"), D-157, typed here as this test asks. It makes no
+    # change of its own: it posts Revit's own Undo, and only while Heron's last
+    # kept change is still the top of the undo list. A FOURTH writer fails here.
+    check(writers == ["revit_apply_move", "revit_change", "revit_undo_last"],
+          "the writing tools are exactly revit_apply_move, revit_change and "
+          "revit_undo_last - found: %s" % (writers or "none"))
 
     # WHETHER REVIT ASKS IS NOT A RISK LEVEL, AND NOT THE CALLER'S (D-126,
     # Golden Rule 19). It is the owner's switch, read where write.enabled is
@@ -284,8 +289,9 @@ def main():
           "revit_change is MODIFY, the question on or off")
 
     cs_writers = sorted(op for op, level in declared_cs.items() if level == "MODIFY")
-    check(cs_writers == ["move_elements", "run_fragment_write"],
-          "the MODIFY operations are exactly move_elements and run_fragment_write "
+    # undo_last since D-157, for the reason revit_undo_last is typed above.
+    check(cs_writers == ["move_elements", "run_fragment_write", "undo_last"],
+          "the MODIFY operations are exactly move_elements, run_fragment_write and undo_last "
           "- found: %s" % (cs_writers or "none"))
 
     # AND ABOVE MODIFY, TYPED HERE FOR THE SAME REASON (D-106, 2026-09-28).

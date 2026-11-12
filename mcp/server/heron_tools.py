@@ -214,6 +214,12 @@ TOOLS = {
     "revit_isolate_temporary":  (EXECUTE, "isolate_temporary"),
     "revit_reset_temporary":    (EXECUTE, "reset_temporary"),
 
+    # Revit's own Undo for Heron's last kept change (D-157). MODIFY, because it
+    # takes a change out of the model and needs Changes ON. The add-in posts
+    # Undo only while Heron's entry is still the top of the undo list, so the
+    # modeller's own work is never what goes.
+    "revit_undo_last":          (MODIFY,  "undo_last"),
+
     # The brain, reachable. These three read what Heron KNOWS - the skills, the
     # capability registry and the fragment library - and none of them sends
     # anything to Revit, which is why every operation here is None.

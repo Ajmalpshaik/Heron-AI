@@ -1830,10 +1830,11 @@ def _matched_line(request, capability):
 @server.tool()
 def revit_change(capability: str = "", values: str = "",
                  expect_from: str = "", request: str = "",
-                 ctx: _Context = None) -> str:
+                 dry_run: bool = False, ctx: _Context = None) -> str:
     """
     Change the open Revit model, and KEEP the change - duplicate a type,
-    rename, change an element's type, set a parameter.
+    rename, change an element's type, set a parameter. `dry_run=true` rolls
+    it back instead.
 
     THE SHORT PATH: pass the user's own words as `request` and leave
     `capability` empty. When they are a phrasing a PROVEN capability declares
@@ -1847,9 +1848,8 @@ def revit_change(capability: str = "", values: str = "",
     result this acts on, and Heron refuses if something else left it; empty,
     the call starts clean.
 
-    It runs only while the owner has Changes ON in Heron's Settings, and a
-    Publish or Admin capability needs the Publish or Admin switch on as
-    well. Only a PROVEN capability runs (Article 11, D-117): a DRAFT one,
+    It runs only while the owner has Changes ON, and a Publish or Admin
+    capability needs that switch on too. Only a PROVEN capability runs (Article 11, D-117): a DRAFT one,
     or one whose proof is older than its code, is refused before anything is
     sent. A refusal names the switch or the status: tell the user, and never
     try another capability to get round it. Revit may ask Keep/Discard (D-126):
@@ -1948,6 +1948,26 @@ def revit_change(capability: str = "", values: str = "",
                       "'%s' does not say what risk it carries in a form Heron can read, "
                       "so nothing has been sent to Revit." % capability)
 
+    # A DRY RUN IS D-55'S PREVIEW, ASKED FOR FROM THE CHAT (D-155): the run
+    # itself, inside the add-in's TransactionGroup, rolled back. It is sent
+    # exactly as a kept change is, WITHOUT `apply` - the add-in's safe half,
+    # and the one every proof was taken on. So it can only keep LESS than the
+    # call without it (Golden Rule 19): nothing a chat sets here raises what
+    # it may do, and every refusal below stands for it unchanged - the Changes
+    # switch in the add-in, the PROVEN rule, the pin.
+    #
+    # NOT FOR A PUBLISH OR AN ADMIN JOB. A rollback takes back what Revit's
+    # transactions hold and nothing else: an export, a save or a sync done
+    # inside the run is done (D-106, D-126 "Discard cannot take it back"). A
+    # dry run that left a file on the server would be the opposite of what
+    # its name promises, so those are refused here, before anything is read.
+    if dry_run and operation != "run_fragment_write":
+        return _ended("refused",
+                      "'%s' is a Publish or Admin job, and a dry run cannot take one "
+                      "back - an export, a save or a sync is done once it runs, and "
+                      "rolling the model back does not undo it. Nothing has been "
+                      "sent to Revit." % capability)
+
     # ARTICLE 11: UNTESTED CODE NEVER TOUCHES A LIVE MODEL, and every call
     # here KEEPS what it does. So a fragment its own files do not call PROVEN,
     # or whose proof no longer describes its code (D-30), is refused HERE -
@@ -2037,6 +2057,11 @@ def revit_change(capability: str = "", values: str = "",
         # it.
         "apply": "true",
     }
+    # A DRY RUN SENDS NO `apply` AT ALL, never "false": absent is the word
+    # the add-in reads as run-and-roll-back (RevitFragment.Run), and a field
+    # that is not there cannot be misread by an add-in of any age.
+    if dry_run:
+        del args["apply"]
 
     # WHICH MODEL: the pinned one, sent with the request and checked in the
     # add-in BEFORE the transaction group opens. _aim_at_pin says why each
@@ -2076,7 +2101,10 @@ def revit_change(capability: str = "", values: str = "",
     # before this is kept (D-126), and their time to look is added to the wait.
     reply = session.request(operation, op_args=args,
                             idempotent=False,
-                            response_timeout=configuration.fragment_timeout(keeping=True),
+                            # A dry run keeps nothing, so Revit asks nobody: the
+                            # read's wait. A keep may wait for the box.
+                            response_timeout=(configuration.fragment_timeout() if dry_run
+                                              else configuration.fragment_timeout(keeping=True)),
                             on_wait=_waiting(ctx))
     session.close()
     _ctx_reply(reply)
@@ -2111,7 +2139,8 @@ def revit_change(capability: str = "", values: str = "",
     # THIS CALL'S PLACE IN THE BATCH, decided once the answer is in hand.
     _BATCH.turn(started, time.monotonic())
 
-    lines = ["%s ran in %s." % (capability, reply.get("document"))]
+    lines = [("DRY RUN: %s was tried in %s and rolled back." if dry_run
+              else "%s ran in %s.") % (capability, reply.get("document"))]
     never_saved = _never_saved_line(reply)
     if never_saved:
         lines.insert(0, never_saved)
@@ -2132,6 +2161,10 @@ def revit_change(capability: str = "", values: str = "",
     # run record that holds every element id. Nothing for an add-in from
     # before the report, which sends no `changes`.
     lines.extend(runs.change_lines(reply))
+
+    # AND WHAT EACH ONE HELD BEFORE AND HOLDS NOW (D-156) - the add-in's
+    # read-back, printed under the counts it explains.
+    lines.extend(runs.read_back_lines(reply))
 
     # AND WHAT NOTHING READ. The other half of the line above: that one says
     # where each input came from, and without this one a value that reached
@@ -2189,6 +2222,20 @@ def revit_change(capability: str = "", values: str = "",
     # says refused, and no after-change table offers values Revit does not hold.
     if reply.get("asked") and not reply.get("kept"):
         return _ended("refused", "\n".join(lines))
+
+    # A DRY RUN ENDS HERE, WITH HOW TO KEEP IT SAID IN THIS TOOL'S WORDS. The
+    # add-in's rollback verdict says "send it again with apply", and a chat
+    # has no `apply` to send. D-126's caution goes with it: the kept run is a
+    # second run, the model can have moved since this one, and its own counts
+    # are the ones that describe what was kept. No after-change table either -
+    # the values were used on a change Revit no longer holds.
+    if dry_run:
+        lines.append("")
+        lines.append("This was a dry run, so the model is as it was. To keep the "
+                     "change, call revit_change again without dry_run - only when "
+                     "the user says to. That is a new run: read its own counts, "
+                     "because the model can have changed since this one.")
+        return _ended("ok", "\n".join(lines))
 
     # THE AFTER-CHANGE TABLE (docs/40 section 21.1): a settings change from
     # the chat leaves the values it used on the Companion page.
@@ -3573,6 +3620,53 @@ def revit_reset_temporary() -> str:
 
     return "%s (%s, Revit %s, session %s)" % (
         reply.get("said") or "Done.", reply.get("document"),
+        session.revit_version, session.pid)
+
+
+@server.tool()
+def revit_undo_last() -> str:
+    """
+    Undo Heron's LAST kept change in the model on screen - Revit's own Undo,
+    exactly as Ctrl+Z, never a second change made to reverse the first.
+
+    Use ONLY when the user asks to undo or take back what Heron just did.
+    Revit's Undo takes the top of the undo list, so it is sent only while
+    Heron's last change is still on top: if anything was done after it - the
+    user's own edit, another Heron action, an undo, a sync - it is refused,
+    nothing is undone, and the reply says why. Undoes one change, once; for
+    more, the user presses Ctrl+Z. Needs Changes ON.
+
+    The reply says Undo was SENT; Revit runs it right after. Ctrl+Y redoes it.
+    """
+    try:
+        session = binding.resolve()
+    except NotBound as unbound:
+        return _ended("refused", str(unbound))
+
+    # idempotent=False: if the answer is lost after the request left, whether
+    # Revit posted Undo cannot be known from here, and asking again could
+    # undo a second thing. The add-in's guard would refuse the second - this
+    # does not lean on it.
+    reply = session.request("undo_last",
+                            op_args={"expectProject": pinned.project_information_id or ""},
+                            idempotent=False)
+    session.close()
+    _ended_by_reply("revit_undo_last", reply)
+
+    if reply is None:
+        return ("Revit %s (session %s) did not answer, so whether Undo was sent cannot be "
+                "known from here. Look at Revit's undo list before asking again."
+                % (session.revit_version, session.pid))
+
+    if not reply.get("ok"):
+        return reply.get("message") or reply.get("error") or "The request was refused."
+
+    wrong_model = pinned.check(reply)
+    if wrong_model is not None:
+        return _ended("refused", wrong_model)
+
+    return "%s (%s, Revit %s, session %s)" % (
+        reply.get("said") or "Undo was sent.", reply.get("document"),
         session.revit_version, session.pid)
 
 

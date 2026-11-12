@@ -158,6 +158,10 @@ PROJECTS = [
     # refused, and what frees it - linked by source like the Keep question.
     # tests/test_model_hold.py builds and runs it.
     "tests/Heron.ModelHold.TestHost/Heron.ModelHold.TestHost.csproj",
+    # Each changed element's values before and after a write (D-156) - the
+    # comparing, linked by source like the change report; tests/test_read_back.py
+    # builds and runs it.
+    "tests/Heron.ReadBack.TestHost/Heron.ReadBack.TestHost.csproj",
     # Whether a rollback took the last kept job's work, and whether it held -
     # linked by source like the failure note; tests/test_rollback_witness.py
     # builds and runs it.
@@ -166,6 +170,10 @@ PROJECTS = [
     # tests/test_run_guard.py builds and runs it.
     "tests/Heron.RunGuard.TestHost/Heron.RunGuard.TestHost.csproj",
     "tests/Heron.StackGuard.TestHost/Heron.StackGuard.TestHost.csproj",
+    # Whether Heron's last kept change is still the top of Revit's undo list
+    # (D-157), linked by source like the rollback witness;
+    # tests/test_undo_last.py builds and runs it.
+    "tests/Heron.UndoGuard.TestHost/Heron.UndoGuard.TestHost.csproj",
     # Row 5b-575: another add-in's newer Roslyn loaded into the default context
     # first, and Heron's door still compiling on its own - linked by source like
     # the rest; tests/test_script_isolation.py builds and runs it. A stub on
