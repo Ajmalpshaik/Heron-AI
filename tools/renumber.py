@@ -47,15 +47,19 @@ renumber BEFORE merging main: then the merge has nothing to collide on. While
 a merge is half done this refuses - abort it, renumber, and merge again.
 
 A file this branch added whose name carries the id is renamed with it -
-docs/decisions/D-116.md, docs/needs-checking/group-ej.md. The rename is on
-disk only; this never stages anything. Stage the paths it prints, by name.
+docs/decisions/D-116.md, docs/needs-checking/group-ej.md, and a 5b row's own
+file docs/fragment-issues/row-5b-1564.md. The rename is on disk only; this
+never stages anything. Stage the paths it prints, by name.
 
 WHAT IT RENAMES, PER REGISTER
 -----------------------------
   D      D-116, and d-116 in an anchor (#d-116--its-title) or a file name
   Q      Q-64, and q-64 likewise
   5b     5b-489, and the number in the first cell of the row's line in a
-         docs/fragment-issues/section-5b-rows-*.md file
+         docs/fragment-issues/section-5b-rows-*.md file or in the row's own
+         file, docs/fragment-issues/row-5b-489.md - which is renamed too, so
+         the file's name, its heading and its first cell still say one number
+         (tools/register-text.py refuses a row's file that holds another row)
   group  Group EJ, an item EJ1, EJ2..., and group-ej in a file name or anchor.
          A bare EJ on its own is NOT renamed - a two-letter group can be a
          word (AT, IT, OR) in the capitals 5b rows are written in - and each
@@ -91,8 +95,10 @@ number, which is what tools/check-decision-titles.py asks of a decision whose
 title moved number. Another decision's Numbering line that names the old id
 is left as written, and named. The date is this machine's.
 
-It does not reorder rows. A renamed 5b row stays where it was in its file;
-heron-ship section 6a has the order rows are kept in when main is merged.
+It does not reorder rows. A renamed 5b row in a rows file stays where it was
+in that file; a row with a file of its own has no place to keep - the
+register reads those files in number order. heron-ship section 6a has the
+rest.
 
 --next is tools/next-id.py's answer, unchanged - it reads main AND every
 branch on the remote, so its "next" is free everywhere, not only on main.
@@ -130,7 +136,9 @@ def _load(name, filename):
 NI = _load("next_id", "next-id.py")
 CouldNot = NI.CouldNot
 REGISTERS = {reg.key: reg for reg in NI.REGISTERS}
-ROWS_5B = re.compile(r"^docs/fragment-issues/section-5b-rows-[0-9-]+\.md$")
+# Where a 5b row's line is: a rows file, or the row's own file (next-id's
+# FI_ROWS and FI_OWN). Only there is a bare number in a first cell the id.
+ROWS_5B = re.compile(r"^docs/fragment-issues/(?:section-5b-rows-[0-9-]+|row-5b-[1-9][0-9]*)\.md$")
 SNIPPET = 36
 
 

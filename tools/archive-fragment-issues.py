@@ -108,6 +108,13 @@ past the last band) takes every link that names it along, in the register, in
 the archive files this run writes and in every other document, by the split's
 own rule (row 5b-381).
 
+SINCE 2026-11-12 A ROW FROM THE CUT-OVER ON HAS A FILE OF ITS OWN -
+docs/fragment-issues/row-5b-1564.md, where the page says so. Nothing here
+changed for it: register-text.py reads such a row into the one text this
+plans on, and layout_relinked() writes its shortened line back to the file
+it came from, so a finished row's own file keeps its number, its title and
+the opening of its state, with the link to its full text here.
+
 NO BACKSLASH IS TYPED IN THIS FILE. The one regular expression it needs, and
 the escaped pipe a table cell needs, are built from chr(92): a typed backslash
 can be turned into a control character on its way into a file, and a regular
@@ -585,7 +592,8 @@ def plan(register=REGISTER, archive=ARCHIVE, today=None):
         writing = [os.path.join(p.archive, name) for name in p.moves]
         p.others = dict((path, pair) for path, pair in p.others.items()
                         if not any(_same(path, one) for one in writing))
-        back = RT.register_text(register, read=split._served(register, p.index_after, p.files_after))
+        back = RT.register_text(register, read=split._served(register, p.index_after, p.files_after),
+                                listing=split._listed(p.files_after))
         if back != joined:
             p.problems.append("the register's files, written the way it is laid out, would not "
                               "read back as the new register")
