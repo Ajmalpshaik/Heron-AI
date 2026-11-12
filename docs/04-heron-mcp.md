@@ -145,7 +145,10 @@ A DRAFT's one run is always asked. A publish is asked whenever *Ask to Keep* is 
 > the rest* grant is held now is not reported, and a settings file the add-in could not read is reported as
 > off, the default the executor would act on at that instant.
 > `revit_health`'s description does not mention the line: the six always-loaded descriptions are at their
-> budget (§8.8), and the methods in `brain/skills/` are not reworded yet. Its write-gate line is still read
+> budget (§8.8). Four methods in `brain/skills/` send the chat there since the same day -
+> `parameters-csv-round-trip`, `cad-to-mep`, `sheets-from-excel`, `reinforce-concrete`; this sentence said
+> *"not reworded yet"* until then - and still say to ask the modeller where the line could not say; any other
+> method that speaks of the switch is found with `grep -l "Ask to Keep" brain/skills/*.yaml`. Its write-gate line is still read
 > from the server's own copy of the settings ([Q-70](open-questions/tier-2.md), open). Held without Revit by
 > [`tests/test_ask_to_keep_health.py`](../tests/test_ask_to_keep_health.py); **built, not yet run in Revit**
 > ([Group NP](needs-checking/group-np.md)).
@@ -443,8 +446,8 @@ all four -> Heron add-in (the gate reads the switches) -> Revit, the model
 
 | Way in | Runs a fragment declared | Transaction | Switch it needs | Proof it needs | A `DRAFT` |
 |---|---|---|---|---|---|
-| `revit_read` | `READ`, `ANALYZE` | none open; the add-in counts the model before and after ([row 5b-350](fragment-issues/section-5b-rows-326-350.md)) | none | none; the answer says how far it is proven | runs, and says DRAFT |
-| `revit_show` | anything up to `EXECUTE`: the selection, the camera, the active view | none open; counted the same way | none | none | runs, and says DRAFT ([D-117](DECISIONS.md#d-117--a-change-is-kept-only-from-a-fragment-whose-proof-still-stands) items 3 and 4) |
+| `revit_read` | `READ`, `ANALYZE` | none open; the add-in counts the model before and after ([row 5b-350](fragment-issues/section-5b-rows-326-350.md)) | none | none; the answer says how far it is proven | runs when the chat names its capability, and says DRAFT; the modeller's words alone never run one (§8.5) |
+| `revit_show` | anything up to `EXECUTE`: the selection, the camera, the active view | none open; counted the same way | none | none | runs when named, and says DRAFT ([D-117](DECISIONS.md#d-117--a-change-is-kept-only-from-a-fragment-whose-proof-still-stands) items 3 and 4) |
 | `revit_change` | `MODIFY`; `PUBLISH` and `ADMIN` each as an operation of its own ([D-106](DECISIONS.md#d-106--admin-and-publish-each-get-a-switch-of-their-own-and-only-the-owner-turns-them-on)) | one named `TransactionGroup`, one undo entry | Changes; and Publish or Admin for those two levels | `PROVEN`, and its code unchanged since the proof (D-117, [D-30](DECISIONS.md#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs)) | refused before anything is sent |
 | `try-once`, command line only | `MODIFY` only | one named `TransactionGroup` | Changes | must be `DRAFT`; once per version kept | its one run, always asked Keep or Discard, on a saved model in front ([D-119](DECISIONS.md#d-119--a-draft-fragment-may-run-once-on-the-model-in-front-behind-a-keep-or-discard-prompt-in-revit-and-article-11-says-so), D-121) |
 
@@ -508,8 +511,8 @@ reach a read only through `revit_change`, with Changes ON, inside a transaction.
 > [D-126](DECISIONS.md#d-126--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept),
 > Revit can ask the modeller **Keep** or **Discard** before a change is kept. Since
 > [D-138](DECISIONS.md#d-138--the-keep-or-discard-question-gets-a-switch-on-the-ribbon-and-its-box-can-keep-the-rest-of-one-job-without-asking),
-> the owner's *Ask to Keep* switch on the ribbon decides whether it does, and the switch is **off by
-> default**. Off, the behaviour below is what runs. Since
+> the owner's *Ask to Keep* switch - in Heron's Settings window since 2026-11-07,
+> [D-150](decisions/D-150.md) - decides whether it does, and the switch is **off by default**. Off, the behaviour below is what runs. Since
 > [D-117](DECISIONS.md#d-117--a-change-is-kept-only-from-a-fragment-whose-proof-still-stands),
 > `revit_change` keeps a change only from a fragment whose proof still stands. A DRAFT gets D-119's one
 > run, which is always asked. The section below is kept as it was written on 2026-09-23.

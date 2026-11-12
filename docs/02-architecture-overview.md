@@ -265,7 +265,7 @@ flowchart TD
     BR["<b>Heron Brain</b> — brain/<br/>fragments, skills, knowledge stores<br/>heron_lookup finds a capability · heron_method gives a job's steps"]
     CP["<b>Heron Companion</b> — mcp/companion/<br/>a page in the browser beside Revit, 127.0.0.1 only — docs/40"]
     BG["<b>Heron.Bridge</b><br/>named pipe heron.version.pid, local only — D-02"]
-    AD["<b>Heron add-in</b>, inside Revit.exe<br/>the gate: Changes · Admin · Publish switches on the ribbon<br/>one ExternalEvent, one queue — D-09"]
+    AD["<b>Heron add-in</b>, inside Revit.exe<br/>the gate: Changes · Admin · Publish switches, in the Settings window — D-150<br/>one ExternalEvent, one queue — D-09"]
     RF["<b>The fragment's C#</b>, compiled and run in Revit — D-28<br/>a read or a show opens no transaction<br/>a change runs in one TransactionGroup, Heron: name"]
     KQ["<b>Keep or Discard</b> box in Revit — D-126<br/>shown while Ask to Keep is on, off by default — D-138<br/>a DRAFT's one run is always asked<br/>a publish is asked whenever Ask to Keep is on, even under a job's grant"]
     MD(["<b>The model</b><br/>one undo entry per change"])
@@ -313,7 +313,8 @@ Heron MCP server            mcp/server/ - its tools: python mcp/server/heron_too
    |  named pipe heron.<version>.<pid>, local only                               (D-02)
 Heron.Bridge
    |
-Heron add-in, in Revit.exe  the gate: Changes / Admin / Publish switches on the ribbon
+Heron add-in, in Revit.exe  the gate: Changes / Admin / Publish switches,
+   |                        in Heron's Settings window                           (D-150)
    |  ExternalEvent         one event, one queue                                 (D-09)
 The fragment's C#           compiled and run in Revit                            (D-28)
    |                        a read or a show opens no transaction

@@ -388,10 +388,15 @@ loaded and had its tab checked on 2020, 2024 and 2027** — [`A12` and `A13`](NE
 laptop on 2020, 2024, 2026 and 2027**, and on 2026 no fragment could run
 ([Group EQ](needs-checking/group-eq.md), [row 5b-575](fragment-issues/section-5b-rows-401-425.md)); the
 repair is in code and has not been run in Revit ([Group GW](needs-checking/group-gw.md)). **The Keep or Discard box and the rails
-around it were run on 2024 and 2027** on 2026-10-18 ([Group ET](needs-checking/group-et.md)). **Fragments
-have been proven on 2020 and 2024 only**: a proof is a recorded run against a named model, none names
-another release, and no fragment yet carries a `proof.releases` entry for one ([D-131](DECISIONS.md)) —
-measured 2026-10-18 by reading every fragment's `proof:` block.
+around it were run on 2024 and 2027** on 2026-10-18 ([Group ET](needs-checking/group-et.md)). **Nearly
+every fragment proof names Revit 2020 or Revit 2024**: a proof is a recorded run against a named model,
+and which release each one names is derived by the command at the top of
+[Group EQ](needs-checking/group-eq.md), never typed here — run on 2026-11-12 it named 2020, 2024, one
+proof on 2022 and one on 2026, and none on 2021, 2023, 2025 or 2027. **Some cards now carry a second
+release under `proof.releases`** ([D-131](DECISIONS.md)), each signed by Ajmal PS on 2026-11-12 for
+Revit 2024 beside a Revit 2020 proof: `grep -l '^  - release:' brain/fragments/*/fragment.yaml` lists
+them (a bare `releases:` also matches a line of prose in one card's comment), and each entry names its own model. This paragraph said *"proven on 2020 and 2024 only"* and
+*"no fragment yet carries a `proof.releases` entry"*, as measured on 2026-10-18, until 2026-11-12.
 
 ### Developer
 

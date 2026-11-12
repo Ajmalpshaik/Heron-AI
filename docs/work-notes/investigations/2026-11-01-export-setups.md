@@ -201,3 +201,9 @@ version 4's mode `by-parameter` now, with the same inputs, refusals and outputs 
 rule. The table row above is the record of what was built first. FRAGMENT-ISSUES row 5b-1379.
 
 What only a Revit run settles is NEEDS-CHECKING Group KA, rows KA11 to KA17.
+
+**Read 2026-11-12:** the statuses typed in this note are 2026-11-01's. Since then `LIST_EXPORT_SETUPS`,
+`MANAGE_EXPORT_SETUPS`, `SET_EXPORT_SETUP_OPTIONS` and `MANAGE_SHEET_SETS` say `PROVEN`, each with a `proof:`
+block dated 2026-11-02 and signed by Ajmal PS; `CHECK_SHEET_SETS_BY_PARAMETER` was proved the same day and is
+`DRAFT` again at version 2 since 2026-11-11, until [Group NK](../../needs-checking/group-nk.md) NK8 is run.
+Group KA's own rows still record no result.

@@ -38,6 +38,10 @@ the first rather than making it three, but two is already one too many for the f
 Revit releases Heron claims to support. Merging them is a change to two working gates and deserves its
 own review.
 
+**Read 2026-11-12 - half of it has moved, and it stays open.** `check-compile.py`'s `ALL_VERSIONS` is
+`heron_dotnet.RELEASES` by identity now, and `check-package.py` says so beside its import.
+`check-api-surface.py` still types its own list, so the releases are still declared in more than one place.
+
 ### ✅ F3. The decision log's status summary stops at D-50 — CLOSED 2026-09-12, and it was twenty decisions behind
 
 [DECISIONS.md](../DECISIONS.md)'s summary table ends at `D-50` while the log itself runs past `D-69`.
