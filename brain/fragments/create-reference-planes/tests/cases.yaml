@@ -15,6 +15,22 @@ positive:
   - given: the first request run again unchanged
     expect: both in alreadyThere, nothing made, no second Box Left
 
+
+  # VERSION 2 (2026-11-12, row 5b-1564) - planes at an angle.
+  - given: >
+      the SAVED scratch metric Generic Model family "Heron Link Angle Test"
+      under %TEMP%/heron-work/link-angle (never one of the owner's families);
+      axis "angle", planes "Arrow Slope=30; Arrow Low=-15", throughMm left out
+    expect: >
+      created 2 - "Arrow Slope (at 30 degrees from left-right, through 0,0
+      mm)" and "Arrow Low (at -15 degrees ...)", in "Ref. Level"; each a
+      vertical plane through the origin, read back
+
+  - given: the same call again
+    expect: created 0, alreadyThere 2 - nothing made twice
+
+  - given: axis "angle", planes "Offset Slope=45", throughMm "300,0"
+    expect: created 1, "at 45 degrees from left-right, through 300,0 mm"
 negative:
   - given: planes "Box Left=-400" where Box Left already sits at -300
     expect: >
@@ -30,6 +46,19 @@ negative:
   - given: a project in front
     expect: notAFamily true and no plane made in the project
 
+
+  # VERSION 2 (2026-11-12).
+  - given: axis "angle", planes "Arrow Slope=45" when "Arrow Slope" is already there at 30 degrees
+    expect: refused - already a plane at 30 degrees; nothing made, nothing turned
+
+  - given: axis "left-right", planes "Box Far=900", throughMm "300,0"
+    expect: refused - throughMm is for an angled plane only; nothing made
+
+  - given: axis "angle", planes "Bad Slope=30", throughMm "here"
+    expect: refused - "here" is not a point; nothing made
+
+  - given: axis "left-right", planes "Box Left=-300; Box Right=300" on a family that has neither, throughMm left out
+    expect: version 1's answer exactly - created 2, along X at -300 and 300
 second_route:
   - >
       Create, Reference Plane in the Family Editor by hand at the same distance,
