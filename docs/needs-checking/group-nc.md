@@ -70,3 +70,22 @@ Run with `HERON_CLIENT_ID=ajmal-pc python mcp/client/heron_bridge_client.py vali
 --write --set "lines=<shaft>, <head>" --set "planes=Center (Left/Right), Center (Front/Back), Head Base, Tip, Head
 Top, Head Bottom" --negative-set "lines=<shaft>, <head>" --negative-set "planes=Tip, Spare" < /dev/null`. The card
 stays DRAFT; next is NC3 on version 2.
+
+### Run 2 - 2026-11-12, Revit 2024 (session 44572), version 3 (PROVEN since PR #860), main at 08d7b411
+
+A fresh SAVED scratch family, `%TEMP%\heron-work\rev2024\R24 Line Lock.rfa` (Metric Detail Item), arranged as NC0
+with PROVEN tools and KEPT: "Length" 600 and "Head Base" = Length / 2 (instance), planes Tip 600, Head Base 300,
+Spare 1000, Tip Copy 600, Head Top 80, Head Bottom -80; the shaft `...-000008fc`, the head `...-00000906` (type
+"Solid Fill - Black" - this template has no "Solid Black"), the control `...-00000900`. Every call through
+`revit_change` - the card is PROVEN - so each lock was KEPT, not rolled back.
+
+| Row | Result |
+|---|---|
+| NC1 | **As expected.** "Tip, Spare" refused, the tip named 400 mm off "Spare"; locked 0 |
+| NC2 | **As expected - KEPT.** The eight locks exactly as listed; ends unchanged. Heron's delete box came up first: the locks REPLACE 8 of Revit's Automatic Sketch Dimensions, and the box asks before anything goes (the owner's screenshot, row 5b-1579). He pressed Delete; the run kept |
+| NC3 | **As expected, all three.** "Ref. Level": not seen edge on. A reference plane's id ("Spare"): not a detail line, symbolic line or filled region. "Tip, Tip Copy": two coinciding planes, nothing says which to follow. Nothing locked in any |
+| NC4 | **As expected.** Length 900: the same call said every lock "already there", nothing new; the shaft (0, 0) to (450, 0), the head's corners (450, 80), (900, 0), (450, -80). Length 300: the shaft (0, 0) to (150, 0), the head X 150 to 300. **The CONTROL did not hold still**: (0, -200) to (450, -200) at 900 and to (150, -200) at 300 - Revit's own Automatic Sketch Dimensions tie an unlocked line to its nearest planes, so it is no control (row 5b-1579). The locks were read back by `REPORT_FAMILY_FORMS` "2d" before and after each flex: "locked along Center (Front/Back); locked at an end to Center (Left/Right); locked at an end to Head Base" on the shaft, and five on the region |
+| NC5 | **Answered: the corners stay joined.** Both slanted edges followed at 900 and 300; the region stayed one closed loop of three edges. The card's finding "whether Revit keeps them joined ... is not yet proved" is now answered on Revit 2024; its words are in `impl/` and are left until the next code change |
+| NC6 | **NOT RUN** - the second route by hand |
+
+The padlocks were not LOOKED at on screen; they were read back as locks by `REPORT_FAMILY_FORMS`.
