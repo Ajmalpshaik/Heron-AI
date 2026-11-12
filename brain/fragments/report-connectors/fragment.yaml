@@ -346,6 +346,10 @@ utterances:
   - what size is the spigot
   - report the connectors
   - is this connector supply or return
+  # ADDED 2026-11-11 (row 5b-1566): this card answered it on main on all four
+  # backends, undeclared; SET_FAMILY_CONNECTOR_ROLES' new shape words took it on
+  # the model backend - a question answered by a write (D-86).
+  - what shape is this connector
   # MOVED 2026-11-01 from CHECK_EQUIPMENT_CONNECTORS, merged into this card.
   - are the equipment connectors the right size for the duct
   - check the spigots on this AHU
