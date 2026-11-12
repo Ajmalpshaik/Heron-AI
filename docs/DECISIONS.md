@@ -222,6 +222,7 @@ an edit.
 | [D-151](#d-151--a-job-the-modeller-kept-can-be-saved-as-a-named-command-and-the-heron-panel-in-revit-runs-it-through-the-same-door-a-chat-uses) | A job the modeller kept can be saved as a named command, and the Heron panel in Revit runs it through the same door a chat uses | ⏳ Proposed · 2026-11-08 |
 | [D-152](#d-152--a-qa-checklist-is-saved-checks-in-the-modellers-words-each-one-read-with-a-pass-rule-run-in-one-go-from-the-chat-or-the-companion) | A QA checklist is saved checks in the modeller's words, each one read with a pass rule, run in one go from the chat or the Companion | ⏳ Proposed · 2026-11-08 |
 | [D-155](#d-155--a-chat-can-ask-for-a-change-as-a-dry-run-the-run-itself-rolled-back-with-nothing-kept) | A chat can ask for a change as a dry run: the run itself, rolled back, with nothing kept | ✅ Accepted · 2026-11-12 |
+| [D-156](#d-156--a-write-says-element-by-element-which-value-went-from-what-to-what) | A write says, element by element, which value went from what to what | ✅ Accepted · 2026-11-12 |
 
 ## Format
 
@@ -1336,3 +1337,11 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (`revit_change`)
 
 **Full record:** [`decisions/D-155.md`](decisions/D-155.md)
+
+## D-156 — A write says, element by element, which value went from what to what
+
+**Status:** Accepted · **Date:** 2026-11-12 · **Accepted:** Ajmal PS, 2026-11-12, in conversation: *"now do the before/after read-back"*
+**Keeps:** [D-55](decisions/D-55.md) · [D-126](decisions/D-126.md) · [D-155](decisions/D-155.md)
+**Affects:** [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs) · [`HeronReadBack.cs`](../revit/Heron.Revit.Addin/HeronReadBack.cs) · [`RevitReadBack.cs`](../revit/Heron.Revit.Addin/RevitReadBack.cs) · [`heron_run_records.py`](../mcp/server/heron_run_records.py)
+
+**Full record:** [`decisions/D-156.md`](decisions/D-156.md)

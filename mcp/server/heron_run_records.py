@@ -325,6 +325,70 @@ def change_lines(reply):
     return lines
 
 
+#: Elements, and values per element, the chat is shown from a read-back. The
+#: reply carries more (HeronReadBack.MostShown, MostValues); what is left out
+#: is counted, never dropped silently.
+READ_BACK_ELEMENTS = 10
+READ_BACK_VALUES = 4
+
+#: The add-in reads at most this many elements on each side -
+#: HeronReadBack.MostRead, held equal by tests/test_read_back.py.
+READ_BACK_MOST_READ = 50
+
+
+def read_back_lines(reply):
+    """
+    Each changed element's values before and after (D-156) - or nothing for a
+    reply that carries no read-back (a read, a Discard, or an add-in from
+    before it).
+
+    WHAT WAS NOT READ IS SAID, NEVER CALLED UNCHANGED. An element Revit
+    counted as changed and nobody read on both sides is counted apart; on a
+    kept change that is every element outside the modeller's selection, and
+    the line says a dry run would show them. An element read on both sides
+    with no value that differs is counted too: Revit regenerated it, or it is
+    hosted or joined to what moved - a real answer, and not the same as "not
+    read".
+    """
+    back = reply.get("readBack") if isinstance(reply, dict) else None
+    if not isinstance(back, dict):
+        return []
+
+    rows = [row for row in (back.get("elements") or []) if isinstance(row, dict)]
+    lines = ["  before -> after: %s of %s changed element(s) read on both sides%s"
+             % (back.get("read", 0), back.get("changed", 0),
+                "" if back.get("mode") != "dryRun" else ", from the dry run")]
+    for row in rows[:READ_BACK_ELEMENTS]:
+        values = [v for v in (row.get("values") or []) if isinstance(v, dict)]
+        shown = ["%s %s -> %s" % (v.get("name"), _said(v.get("before")), _said(v.get("after")))
+                 for v in values[:READ_BACK_VALUES]]
+        more = len(values) - READ_BACK_VALUES + int(row.get("valuesMore") or 0)
+        lines.append("    %s%s: %s%s" % (row.get("id"),
+                                         " " + row["category"] if row.get("category") else "",
+                                         "; ".join(shown),
+                                         "; and %d more" % more if more > 0 else ""))
+    hidden = len(rows) - READ_BACK_ELEMENTS + int(back.get("elementsMore") or 0)
+    if hidden > 0:
+        lines.append("    and %d more element(s) with a value that changed" % hidden)
+    if back.get("noValueChanged"):
+        lines.append("    %s element(s) Revit counted as changed show no difference in any "
+                     "value Heron reads - regenerated, or hosted or joined to what moved"
+                     % back.get("noValueChanged"))
+    if back.get("notRead"):
+        lines.append("    %s changed element(s) were not read on both sides%s"
+                     % (back.get("notRead"),
+                        " - only the selection is read before a kept change; a dry run "
+                        "shows them all" if back.get("mode") == "selection"
+                        else " - past the first %s, or the rollback did not hold"
+                        % READ_BACK_MOST_READ))
+    return lines
+
+
+def _said(value):
+    """A value as the chat sees it: quoted, so an empty one is visible."""
+    return '"%s"' % ("" if value is None else value)
+
+
 class Batch(object):
     """
     What this chat has already printed in the current batch of calls - one per

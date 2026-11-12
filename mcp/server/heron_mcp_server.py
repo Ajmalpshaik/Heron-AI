@@ -2162,6 +2162,10 @@ def revit_change(capability: str = "", values: str = "",
     # before the report, which sends no `changes`.
     lines.extend(runs.change_lines(reply))
 
+    # AND WHAT EACH ONE HELD BEFORE AND HOLDS NOW (D-156) - the add-in's
+    # read-back, printed under the counts it explains.
+    lines.extend(runs.read_back_lines(reply))
+
     # AND WHAT NOTHING READ. The other half of the line above: that one says
     # where each input came from, and without this one a value that reached
     # nothing leaves no trace at all. It is printed with the RESULT rather

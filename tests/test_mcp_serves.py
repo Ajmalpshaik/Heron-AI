@@ -1440,6 +1440,19 @@ async def exercise_change_report(module):
         check(len(revit.asked) > sent and revit.asked[-1][1].get("apply") == "true",
               "the call after a dry run, without the flag, asks to keep as before")
 
+        # D-156: THE ADD-IN'S READ-BACK IS PRINTED UNDER THE COUNTS IT EXPLAINS.
+        revit.reply = dict(kept, readBack={
+            "mode": "dryRun", "changed": 2, "read": 2, "withDifference": 1,
+            "noValueChanged": 1, "notRead": 0, "elementsMore": 0,
+            "elements": [{"id": "101", "category": "Generic Models", "valuesMore": 0,
+                          "values": [{"name": "Height", "before": "600 mm",
+                                      "after": "900 mm"}]}]})
+        backed = await call("revit_change", dict(asked, dry_run=True))
+        check('101 Generic Models: Height "600 mm" -> "900 mm"' in backed
+              and backed.find("  changed:") < backed.find("before -> after"),
+              "a reply carrying a read-back prints each value old -> new, under the counts")
+        revit.reply = kept
+
         # NOT FOR A PUBLISH OR ADMIN JOB: an export or a save is not taken back
         # by a rollback, so nothing is sent at all.
         outward = None
