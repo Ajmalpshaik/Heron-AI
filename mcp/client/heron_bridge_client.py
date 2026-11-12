@@ -1584,6 +1584,52 @@ def setup_order_refusal(steps):
     return None
 
 
+OWN_TRANSACTIONS_NEED = "editScopeFailures"
+
+
+def opens_own_transactions(root, name):
+    """Does this card declare D-112's switch - that it opens its own transactions?
+
+    Read off the card's `contract.needs` by the reader `validate` already
+    trusts. A card whose needs cannot be read answers False: every other
+    check on this path refuses an unreadable card by name, and this one adds
+    nothing to that.
+    """
+    needs = fragment_needs(os.path.join(root, "brain", "fragments", name,
+                                        "fragment.yaml"))
+    return any(need.get("name") == OWN_TRANSACTIONS_NEED for need in needs or [])
+
+
+def setup_own_transactions_refusal(owning):
+    """The refusal for a setup step that opens its own transactions, or None.
+
+    OWNING is the setup steps, in the order typed, whose cards declare
+    `editScopeFailures`. Such a card runs with NO transaction of the add-in's
+    open and starts its own (D-112). As a setup step it cannot: the add-in
+    runs every setup step that changes the model inside a transaction it has
+    already started for that step (`RevitFragment.RunSetupSteps`), where Revit
+    lets no other be started, and it hands a setup step no failure discipline
+    - the step's own first line would ask for one that is not there. So the
+    job would be sent, and die in Revit on a missing key.
+
+    Found 2026-11-12 when CREATE_ASSEMBLY began to declare the switch:
+    tools/jobs/p1102-round9-2026-11-02.yaml arranges CREATE_ASSEMBLY_VIEWS with
+    it as a setup step, and a dry run still said WOULD RUN (FRAGMENT-ISSUES
+    row 5b-1556). Pure, like the two rules above: the caller reads each card.
+    """
+    owning = list(owning or [])
+    if not owning:
+        return None
+    return ("setup: %s open%s %s own transactions - the card declares `%s` - and a setup "
+            "step cannot: the add-in runs each setup step that changes the model inside a "
+            "transaction it has already started, where Revit lets no other be started, and "
+            "hands it no failure discipline. Nothing was sent to Revit (FRAGMENT-ISSUES row "
+            "5b-1556). Run that card by itself first and KEEP what it makes, then arrange this "
+            "proof on what is then in the model."
+            % (", ".join(owning), "s" if len(owning) == 1 else "",
+               "its" if len(owning) == 1 else "their", OWN_TRANSACTIONS_NEED))
+
+
 def setup_values_refusal(steps):
     """The refusal for setup values on a write setup that changes the model, or None.
 
@@ -2757,6 +2803,11 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
             root, "brain", "fragments", step, "fragment.yaml")))
             for step in (setup or [])]
         refusal = setup_order_refusal(step_risks)
+        if refusal is None:
+            # A step that opens its own transactions cannot be a setup step at
+            # all - row 5b-1556.
+            refusal = setup_own_transactions_refusal(
+                [step for step in (setup or []) if opens_own_transactions(root, step)])
         if refusal is None and (setup_values or negative_setup_values):
             refusal = setup_values_refusal(step_risks)
         if refusal:

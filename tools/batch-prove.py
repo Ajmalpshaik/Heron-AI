@@ -398,6 +398,15 @@ def job_refusal(job, library, release=None):
                 library[step].slug, "fragment.yaml")))
             for step in job["setup"]]
         setup_refusal = BRIDGE.setup_order_refusal(step_risks)
+        if setup_refusal is None:
+            # A SETUP STEP THAT OPENS ITS OWN TRANSACTIONS CANNOT RUN AS ONE.
+            # `validate --write` refuses it before anything is sent, so the
+            # dry run says so too - it said WOULD RUN for round 9's job after
+            # CREATE_ASSEMBLY began to declare the switch (row 5b-1556).
+            setup_refusal = BRIDGE.setup_own_transactions_refusal(
+                [step for step in job["setup"]
+                 if BRIDGE.opens_own_transactions(card_root(library[step]),
+                                                  library[step].slug)])
         if setup_refusal is None and (job.get("setup-set")
                                       or job.get("negative-setup-set")):
             setup_refusal = BRIDGE.setup_values_refusal(step_risks)

@@ -36,6 +36,18 @@ WHAT THIS HOLDS
      as REFUSED, so a dry run never reads WOULD RUN for a job `validate` will
      turn away.
 
+  4. A STEP THAT OPENS ITS OWN TRANSACTIONS IS NOT A SETUP STEP - row
+     5b-1556. A card that declares `editScopeFailures` runs with no
+     transaction of the add-in's open and starts its own; a setup step runs
+     inside one the add-in has already started, and is handed no failure
+     discipline. CREATE_ASSEMBLY began to declare the switch on 2026-11-12,
+     and tools/jobs/p1102-round9-2026-11-02.yaml - which arranged
+     CREATE_ASSEMBLY_VIEWS with it as a setup step - still read WOULD RUN.
+     The rule on its own, `validate --write` through the fake Revit, and the
+     batch runner on that job's own entry. On the client as it stood 9 of
+     these 12 checks fail (measured 2026-11-12) - asked by `getattr`, so each
+     is a failure and none a crash.
+
 WHAT IT CANNOT DO
 -----------------
 Run a setup in Revit. Whether a read step could instead run INSIDE the
@@ -84,6 +96,11 @@ UNDER_TEST = "edit-text-values"            # MODIFY - the fragment in row 5b-520
 MAKER = "create-text-note"                 # MODIFY - a setup step that makes notes
 SELECTOR = "select-by-category-name"       # READ   - the step that handed on 0
 PICKER = "set-selection"                   # EXECUTE - runs as a read as well
+
+# Row 5b-1556's shape: round 9's job, by name.
+OWNER = "create-assembly"                  # MODIFY - opens its own transactions
+OWNER_USER = "create-assembly-views"       # MODIFY - the card round 9 proved with it
+READER = "filter-elements-by-category"     # READ   - the step typed before it
 
 FAILURES = []
 
@@ -259,6 +276,51 @@ def main():
 
     verdict, why = bp.job_refusal(dict(base, setup=[SELECTOR, MAKER]), library)
     check(verdict is None, "typed read-first, it is runnable (%s %s)" % (verdict, why))
+
+    # ------------------------------------------------------------------
+    print()
+    print("4. A step that opens its own transactions is not a setup step (row 5b-1556)")
+    owns = getattr(CLIENT, "opens_own_transactions", None)
+    own_rule = getattr(CLIENT, "setup_own_transactions_refusal", None)
+    check(owns is not None, "the client can ask a card whether it opens its own transactions")
+    check(own_rule is not None, "and has a setup_own_transactions_refusal to ask")
+    if owns is None:
+        owns = lambda root, name: False          # so the checks below RUN and FAIL
+    if own_rule is None:
+        own_rule = lambda owning: None
+
+    check(owns(ROOT, OWNER) and owns(ROOT, "create-stairs"),
+          "%s and create-stairs declare the switch" % OWNER)
+    check(not owns(ROOT, SELECTOR) and not owns(ROOT, MAKER) and not owns(ROOT, "open-view"),
+          "a card that opens none does not - open-view declares noTransactionOpen, "
+          "which is another thing")
+    check(own_rule([]) is None, "no such step, no refusal")
+    said = own_rule([OWNER]) or ""
+    check(OWNER in said and "editScopeFailures" in said, "the refusal names the step and the switch: %r" % said[:100])
+    check("Nothing was sent to Revit" in said and "5b-1556" in said,
+          "says nothing was sent, and cites the row")
+    check("KEEP" in said, "and says what to do instead - make it and keep it first")
+
+    with fake_revit() as (bridge, asked, out):
+        code = CLIENT.cmd_validate(OWNER_USER, out=record, negative_in="Other",
+                                   writing=True, setup=[READER, OWNER])
+    check(code == 2 and asked["discover"] == 0 and not bridge.sent,
+          "`validate --write --setup %s --setup %s` is refused before Revit is "
+          "asked (exit %s, sent %r)" % (READER, OWNER, code, bridge.sent[:3]))
+    check(OWNER in out.getvalue() and "own transactions" in out.getvalue(),
+          "and the refusal printed is this one")
+
+    library = dict((n, Card(n)) for n in (OWNER_USER, OWNER, READER))
+    round9 = {"fragment": OWNER_USER, "setup": [READER, OWNER], "keep-chain": True,
+              "set": {"category": "Ducts"}, "negative-set": {"category": "Sheets"},
+              "write": True, "cross": None, "in": None, "negative-in": None,
+              "expect": None, "timeout": 60}
+    verdict, why = bp.job_refusal(round9, library)
+    check(verdict == bp.REFUSED and OWNER in (why or "") and "own transactions" in (why or ""),
+          "round 9's own entry is REFUSED in a dry run, for this reason (%s: %r)"
+          % (verdict, (why or "")[:80]))
+    verdict, why = bp.job_refusal(dict(round9, setup=[READER]), library)
+    check(verdict is None, "and without that step it is runnable (%s %s)" % (verdict, why))
 
     print()
     if FAILURES:

@@ -244,7 +244,12 @@ purpose: >
       REPORT_ROUTING_PREFERENCES on the pipe or duct type FIRST, and
       SET_ROUTING_PREFERENCE to put the fitting in its group with a size
       window that covers the table's sizes - a size outside every rule gets
-      no fitting, silently. The modeller draws a run through it at three
+      no fitting, silently. Name the fitting "Family: Type": its type name
+      alone is refused when two loaded families have a type of that name
+      (version 2, DRAFT until NEEDS-CHECKING Group NL is run, rows 5b-1120
+      and 5b-1549: revit_change refuses a DRAFT, so until then the rule is
+      set by hand in the type's Routing Preferences). The modeller draws a
+      run through it at three
       sizes and the angles above; FIND_DEAD_ENDS on the run then names any
       end the fitting left open, and REPORT_CONNECTORS on a placed fitting
       shows its sizes taken from the run. A project already holding many

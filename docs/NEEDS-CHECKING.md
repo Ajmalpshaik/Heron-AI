@@ -1466,6 +1466,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-nk.md`](needs-checking/group-nk.md)
 
+## Group NL - cards that were PROVEN, change the model and could report a wrong result as a success, repaired in code and back to DRAFT: `SET_ROUTING_PREFERENCE` version 2, `ADD_PROJECT_PARAMETER` version 3 and `CREATE_ASSEMBLY` version 2 (2026-11-11)
+
+**Its own file:** [`needs-checking/group-nl.md`](needs-checking/group-nl.md)
+
 ## Group NM - two add-in agent proofs read STALE and are run again, and the proof tool now says which file a proof was signed for (2026-11-11)
 
 **Its own file:** [`needs-checking/group-nm.md`](needs-checking/group-nm.md)

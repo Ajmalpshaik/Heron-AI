@@ -88,8 +88,10 @@ purpose: >
      header in the file and steps 0 and 3 run again - never matched by
      likeness. Is it a project parameter not bound to Sheets? Binding one is
      ADD_PROJECT_PARAMETER, a separate change of its own, only when the
-     modeller asks. Or should it be left out? Then it is listed and not
-     written, and that is the answer. A column in columnsNotWritten as a
+     modeller asks - heron_lookup says whether that card may run today, and
+     it makes a NEW parameter or a NEW shared parameter file only when the
+     modeller asked for one in words. Or should it be left out? Then it is
+     listed and not written, and that is the answer. A column in columnsNotWritten as a
      title block TYPE parameter is never written from a row - it would change
      every sheet on that type; say so.
 
