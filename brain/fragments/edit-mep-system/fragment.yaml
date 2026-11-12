@@ -19,14 +19,14 @@ semantic-identity: "edit the members of a duct or piping system already in the m
 # Remove from System PARTIAL for exactly this.
 #
 # A NEW CAPABILITY, NOT A WIDENING. CREATE_MEP_SYSTEM (FRG-MEP-062) makes a
-# NEW system from elements on none - DRAFT since main's #777, version 2, which
-# also makes circuits (CREATE_ELECTRICAL_CIRCUIT merged in); written when it
-# was PROVEN (corrected 2026-11-01). It edits no existing system.
-# SET_MEP_SYSTEM_TYPE changes a run's classification, not which system a
-# terminal is on.
-# EDIT_ELECTRICAL_CIRCUIT (FRG-MEP-070) was the same two buttons for circuits,
-# and its shape and its care were copied here. It was MERGED INTO THIS CARD on
-# 2026-11-04 (version 2, below) and is DEPRECATED - row 5b-1382.
+# NEW system from elements on none - DRAFT that day (since main's #777),
+# version 2, which also makes circuits (CREATE_ELECTRICAL_CIRCUIT merged in);
+# written when it was PROVEN (corrected 2026-11-01). It edits no existing
+# system. SET_MEP_SYSTEM_TYPE changes a run's classification, not which system
+# a terminal is on. EDIT_ELECTRICAL_CIRCUIT (FRG-MEP-070) was the same two
+# buttons for circuits, and its shape and its care were copied here. It was
+# MERGED INTO THIS CARD on 2026-11-04 (version 2, below) and is DEPRECATED -
+# row 5b-1382.
 #
 # ONE FRAGMENT FOR THE TWO BUTTONS. Add to System and Remove from System act
 # on the same element - one duct or piping system that already exists - and

@@ -719,9 +719,9 @@ def main():
                       word in steps for word in (
                           "5b-520", "#570", "Ajmal PS", "try-once",
                           "D-119", "D-121")),
-                  "and says both cards are DRAFT until signed, and that on a "
-                  "real model the edit runs only through try-once, on a saved "
-                  "model")
+                  "and names the two proof drafts and who signs, and says that "
+                  "while the edit's card is DRAFT it runs only through try-once, "
+                  "on a saved model")
             check(notes is not None and "EVERY note it is handed" in steps,
                   "and that a whole-wording set goes to one note, never to "
                   "the view's whole set")

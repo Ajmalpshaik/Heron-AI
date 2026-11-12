@@ -14,6 +14,19 @@ positive:
   - given: a name typed in the wrong case
     expect: found anyway
 
+  # Row 5b-393, added 2026-11-11 with version 4. NOT RUN - NEEDS-CHECKING
+  # Group NK, NK2. THE CASE THAT TELLS "made of it OR painted with it" FROM
+  # "painted with it only": the proof of version 3 could not, because its
+  # five walls were painted with the material asked for.
+  - given: >
+      wall 1 of a type whose core is material A, nothing painted on it; wall 2
+      of another type, not made of A, with A painted on one face; A asked for
+      over Walls with includePaint TRUE
+    expect: >
+      both walls - 1 because it is made of A, 2 because A is painted on it.
+      Version 3 answered wall 2 alone. And every wall the includePaint false
+      answer holds is in this one too
+
   # D-59, added 2026-09-28 with version 2. NOT RUN.
   - given: >
       a material that exists ONLY in the architectural
@@ -41,7 +54,17 @@ negative:
       absent from the first answer and present in the second. THIS IS THE FIRST
       CASE TO RUN. If both answers match, one of the two questions is not being
       asked, and "what is this made of" has quietly become "what has this
-      material touched"
+      material touched". Since version 4 (row 5b-393) the second answer must
+      also hold EVERY element of the first: paint is added, never asked instead
+
+  # Row 5b-393, added 2026-11-11 with version 4. NOT RUN - Group NK, NK2.
+  - given: >
+      the same two walls, and a material B that is in the model, that neither
+      wall is made of and that is painted on nothing, asked for over Walls
+      with includePaint TRUE
+    expect: >
+      0 elements, with both walls scanned. Reading two sets must not turn
+      into matching everything
 
   - given: '"Steel - Galvanized" asked for in a model whose material is "Steel, Galvanized"'
     expect: >

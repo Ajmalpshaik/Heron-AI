@@ -53,51 +53,48 @@ purpose: >
      every model category on, then off the ones the modeller names - on the
      first layout ducts, duct accessories, air terminals, cable trays,
      electrical items and mechanical equipment. Then SET_CATEGORY_GRAPHICS
-     (DRAFT, version 3 of 2026-11-01; version 2 PROVEN), with solidFill LEFT
-     OUT - a surface colour alone never stamps a solid fill there, which is
-     version 2's behaviour exactly - on every model category but Generic Models, which
-     stay normal: halftone, projection and cut line colour and pattern colours
-     the grey the modeller gives, line weight 1 - "halftone=true;
-     projection-line-colour=128,128,128; cut-line-colour=128,128,128;
-     surface-foreground-colour=128,128,128;
+     (version 3 of 2026-11-01), with solidFill LEFT OUT - a surface colour alone
+     never stamps a solid fill there, which is version 2's behaviour exactly -
+     on every model category but Generic Models, which stay normal: halftone,
+     projection and cut line colour and pattern colours the grey the modeller
+     gives, line weight 1 - "halftone=true; projection-line-colour=128,128,128;
+     cut-line-colour=128,128,128; surface-foreground-colour=128,128,128;
      cut-foreground-colour=128,128,128; projection-line-weight=1;
      cut-line-weight=1" - and on Walls and Windows also "detail-level=coarse".
-     No solid fill on a category the modeller names (Mechanical Equipment on
-     the first one): its own call, the grey keys and
-     "surface-foreground-visible=false" together.
-     ONE CALL REPLACES A CATEGORY'S WHOLE OVERRIDE: a key left out of the
-     second call is cleared, not kept. Send every key each time - the coarse
-     detail level and the grey together, never one after the other.
-     Then look at the plan. If the layout is drawn over a LINKED model, its
-     walls must read grey too. OVERRIDE_GRAPHICS_IN_VIEW's card says a host category
-     override does not reach inside a link (FRAGMENT-ISSUES 5b-650 records
-     that against the first layout, where host filters did); if the link is
-     not grey, stop and tell the modeller - OVERRIDE_GRAPHICS_IN_VIEW greys the whole
-     link, its openings included, so it is not this step.
+     No solid fill on a category the modeller names (Mechanical Equipment on the
+     first one): its own call, the grey keys and
+     "surface-foreground-visible=false" together. ONE CALL REPLACES A CATEGORY'S
+     WHOLE OVERRIDE: a key left out of the second call is cleared, not kept.
+     Send every key each time - the coarse detail level and the grey together,
+     never one after the other. Then look at the plan. If the layout is drawn
+     over a LINKED model, its walls must read grey too.
+     OVERRIDE_GRAPHICS_IN_VIEW's card says a host category override does not
+     reach inside a link (FRAGMENT-ISSUES 5b-650 records that against the first
+     layout, where host filters did); if the link is not grey, stop and tell the
+     modeller - OVERRIDE_GRAPHICS_IN_VIEW greys the whole link, its openings
+     included, so it is not this step.
 
-  2. THE FILTERS, on the same plan. CREATE_VIEW_FILTER (DRAFT, version 4 of
-     2026-11-01 - CREATE_VIEW_FILTERS_BY_RULE, PROVEN, was merged into it)
-     makes them on no view - view and colour both left out - with the names
-     in filterName and one value each in matchValue, the categories in
+  2. THE FILTERS, on the same plan. CREATE_VIEW_FILTER
+     (CREATE_VIEW_FILTERS_BY_RULE was merged into it at version 4, 2026-11-01)
+     makes them on no view - view and colour both left out - with the names in
+     filterName and one value each in matchValue, the categories in
      categoryIds, by a shared parameter the modeller names (parameterName
-     "Filter By"), the operator in front of the value: for Generic
-     Models, an OUTSEL filter "does not contain Openings" and an INSEL filter
-     "contains Openings" - two names and two values in one call; for Levels
-     and Grids, a filter on Type Name "does not contain" the project's prefix
-     (OUTSEL_..._Level_Grid on the first layout); and a filter that hides
-     what the modeller names (Cable Tray Support on the first). The parameter
-     must be one THIS model can filter those categories by: the call asks
-     every category first and creates nothing, naming the category, when one
-     cannot take it.
-     Then APPLY_VIEW_FILTER (PROVEN, version 2) for each on the plan, its whole
-     row at once: OUTSEL with the grey of step 1 and visible=true; INSEL with
-     overrides "none" and visible=true, so the openings draw normal; the
-     level and grid filter with the overrides the modeller gives; the hiding
-     filter with visible=false.
-     WHAT THE FIRST LAYOUT SHOWED, on Revit 2020: a filter made here acts on a
-     LINKED model's elements too, through the shared parameter; and a filter
-     that hides wins even when a filter that shows sits below it, so an
-     element both match is hidden.
+     "Filter By"), the operator in front of the value: for Generic Models, an
+     OUTSEL filter "does not contain Openings" and an INSEL filter "contains
+     Openings" - two names and two values in one call; for Levels and Grids, a
+     filter on Type Name "does not contain" the project's prefix
+     (OUTSEL_..._Level_Grid on the first layout); and a filter that hides what
+     the modeller names (Cable Tray Support on the first). The parameter must
+     be one THIS model can filter those categories by: the call asks every
+     category first and creates nothing, naming the category, when one cannot
+     take it. Then APPLY_VIEW_FILTER (PROVEN, version 2) for each on the plan,
+     its whole row at once: OUTSEL with the grey of step 1 and visible=true;
+     INSEL with overrides "none" and visible=true, so the openings draw normal;
+     the level and grid filter with the overrides the modeller gives; the
+     hiding filter with visible=false. WHAT THE FIRST LAYOUT SHOWED, on Revit
+     2020: a filter made here acts on a LINKED model's elements too, through
+     the shared parameter; and a filter that hides wins even when a filter that
+     shows sits below it, so an element both match is hidden.
 
   3. THE TEMPLATES. CREATE_VIEW_TEMPLATE_FROM_VIEW (PROVEN) from the plan set
      up in steps 1 and 2, under the name the modeller gives - applyToSource
@@ -123,10 +120,10 @@ purpose: >
      this step. Its own job (the keep-a-face task), not on main yet; the
      modeller sets it.
 
-  6. DIMENSIONS. CREATE_LINEAR_DIMENSION (DRAFT, version 4), one string per
+  6. DIMENSIONS. CREATE_LINEAR_DIMENSION (since version 4), one string per
      call, the references `|` between them. In a SECTION: the opening's height
-     from the level and its distance from the grid to its faces - "level
-     Level 1 | face ID bottom | face ID top", "grid C | face ID left | face ID
+     from the level and its distance from the grid to its faces - "level Level
+     1 | face ID bottom | face ID top", "grid C | face ID left | face ID
      right". In a PLAN: one chain per wall from the grid along its openings -
      "grid 4 | face ID left | face ID right | face ID2 left | face ID2 right"
      - with lineFrom and lineTo OUTSIDE the building, never across it. An
@@ -139,25 +136,24 @@ purpose: >
   7. TAGS. For openings in this model: SELECT_BY_PARAMETER_VALUE (PROVEN)
      with parameterName the shared parameter, matchText "Openings",
      matchMode contains and categories Generic Models, then
-     TAG_ELEMENTS_IN_VIEW (DRAFT, version 6 of 2026-11-01 - TAG_ELEMENTS,
-     PROVEN, was merged into it) in that view with tagTypeId the tag type the
-     modeller names - that one type on every opening, whatever its category -
+     TAG_ELEMENTS_IN_VIEW (TAG_ELEMENTS was merged into it at version 6,
+     2026-11-01) in that view with tagTypeId the tag type the modeller names
+     - that one type on every opening, whatever its category -
      tagTypeHintId=none, leader=none, minLengthMm=0 and leaderOffsetMm=0,
      expect_from naming the select. An opening that already carries a tag OF
      THAT TYPE in the view is skipped and named in `skipped`, so a re-run
      stacks nothing, and no FIND_UNTAGGED_ELEMENTS is needed in front of it.
      GAP - A TAG ON AN OPENING INSIDE A LINK: TAG_ELEMENTS_IN_VIEW tags this
      model's elements only, and nothing on main places a tag on a linked one;
-     the modeller places those.
-     Then OFFSET_TAGS_FROM_HOST (DRAFT, version 2) puts every tag - this
-     model's and the link's alike, it finds a tag's element inside a loaded
-     link - at its own opening, in paper millimetres, addLeader=false. In a
-     PLAN, INSIDE the building, about 6 mm from the opening on the first
-     layout: one call per side of the building, the offset towards the
-     inside; orientVertical=true for the openings in walls running up and
-     down the sheet, orientHorizontal=true for the rest. In a SECTION, above
-     the opening: offsetRightMm=0 and offsetUpMm the distance the modeller
-     gives.
+     the modeller places those. Then OFFSET_TAGS_FROM_HOST (since version 2)
+     puts every tag - this model's and the link's alike, it finds a tag's
+     element inside a loaded link - at its own opening, in paper millimetres,
+     addLeader=false. In a PLAN, INSIDE the building, about 6 mm from the
+     opening on the first layout: one call per side of the building, the
+     offset towards the inside; orientVertical=true for the openings in walls
+     running up and down the sheet, orientHorizontal=true for the rest. In a
+     SECTION, above the opening: offsetRightMm=0 and offsetUpMm the distance
+     the modeller gives.
 
   8. BEFORE ANYTHING IS DELETED - an old opening family, a dimension, a tag:
      REPORT_ELEMENT_DEPENDENCIES (PROVEN) on exactly what will go, then name
@@ -229,6 +225,6 @@ note: >
   and 17, on Revit 2020, in a real project's plans and sections; no name,
   value or id from that model is in this file beyond the examples in quotes.
   Step 4 is replace-in-place-family since row 5b-740 and step 5 a separate task; the tags were moved with OFFSET_TAGS_FROM_HOST version 2 and the dimensions
-  drawn with CREATE_LINEAR_DIMENSION versions 3 and 4, both still DRAFT.
-  The job as a whole has not been watched working through Heron, so it
-  stays DRAFT (D-30); no NEEDS-CHECKING group holds that run yet.
+  drawn with CREATE_LINEAR_DIMENSION versions 3 and 4, both DRAFT that day. The
+  job as a whole has not been watched working through Heron, so it stays DRAFT
+  (D-30); no NEEDS-CHECKING group holds that run yet.

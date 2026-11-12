@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-RM-028
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,35 @@ semantic-identity: "how much clear height there is under the ceiling in each roo
 kind: action
 domain: revit.geometry
 capability: MEASURE_CEILING_HEIGHT
-version: 2
+version: 3
 source: OFFICIAL
 risk: READ
+
+# VERSION 3 (2026-11-11) - A ROOM THAT STOPS SHORT OF ITS CEILING IS NAMED, and
+# back to DRAFT. Version 2 was PROVEN on 2026-10-18 (the proof block below,
+# kept as the record of what it proved - two rooms whose upper limit a setup
+# step had raised to Level 2 first). Its C# moved, so it is DRAFT again until
+# NEEDS-CHECKING Group NK, NK1, is run (D-30). FRAGMENT-ISSUES row 5b-1128: the
+# same two rooms at the template's default limits, under the same two ceilings
+# at 2600 mm, answered `ceilingsOver 0` and an empty `mainHeight` - a model
+# whose rooms keep the default height read as having no ceilings at all.
+# THE PURPOSE BELOW STILL SAYS the plan-overlap test "never meets the trap at
+# all". IT DOES, at the top of the room's own box, which is its upper limit.
+# The sentence is left as it stands and recorded on the row: correcting it
+# was tried on 2026-11-11 and moved other cards' declared utterances in
+# check-routing (the model backend: "find the door schedule" lost its first
+# place), and a purpose is not reworded without routing evidence of its own
+# (heron-ship 3a). WHAT CHANGED: a room or space with no ceiling inside its upper limit
+# and one or more over it in plan ABOVE that limit is listed in
+# `limitBelowCeiling` and said in `findings`, with its own height and the
+# lowest such ceiling's. ONLY a ceiling drawn on a level INSIDE the room's own
+# height counts for that: one drawn on a level at or above the room's limit is
+# another storey's, so a ceiling-less shaft under the storey above is never
+# told to raise its limit. WHAT DID NOT: a ceiling above the limit is still not
+# measured as the room's - the row's other repair, looking up to the next
+# level, is a choice about which level counts and is not taken here - so
+# every measured figure is version 2's. A read: it still answers through
+# revit_read while DRAFT, and says DRAFT (D-117 item 4).
 
 purpose: >
   Which ceilings sit over each room, how high the underside of each one is above
@@ -128,6 +154,22 @@ contract:
       # evidence it looked, never a thing it found (D-52).
       role: accounting
       type: IList<ElementId>
+    - name: limitBelowCeiling
+      # VERSION 3 (row 5b-1128). Rooms and spaces with NO ceiling inside their
+      # upper limit and one or more ceilings over them in plan ABOVE it - the
+      # room stops short of its ceiling, Revit's default room height under a
+      # normal ceiling. Only a ceiling drawn on a level inside the room's own
+      # height counts: one on a level at or above the room's limit is another
+      # storey's. Every one is in `noCeiling` too. Not measured, so
+      # accounting: the evidence it looked, never a thing it found (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: findings
+      # VERSION 3 (row 5b-1128). One sentence for each room or space in
+      # `limitBelowCeiling`: its name, how high its upper limit is above its
+      # floor, how many ceilings lie over it above that and the lowest one's
+      # height. Empty when no room stops short.
+      type: IList<string>
     - name: linksSearched
       # D-59's second field, and the one that does the work: how many
       # linked DOCUMENTS were actually read - a file placed twice is one.

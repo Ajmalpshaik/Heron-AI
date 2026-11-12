@@ -17,9 +17,9 @@ capability: REPORT_CURTAIN_ELEMENTS
 # this facade have" is answered. Only ADDED: every line version 1 wrote is still
 # written, in its words and its order, and every name it left behind is still
 # left. A size Revit does not give is named in sizesNotRead, never guessed.
-# Version 1's proof below no longer describes the code and is kept as a record;
-# the card is DRAFT until NEEDS-CHECKING Group JR proves version 2 and the owner
-# signs.
+# Version 1's proof below no longer described the code and was kept as a record;
+# the card was DRAFT at the time, until NEEDS-CHECKING Group JR proves version 2
+# and the owner signs.
 version: 2
 source: OFFICIAL
 risk: READ
@@ -226,7 +226,7 @@ compatibility-note: >
 #                                          in is "not a wall"
 
 #   "change the bottom row of panels on this curtain wall to solid panels"
-#                                       -> SET_CURTAIN_PANEL_TYPE (DRAFT,
+#                                       -> SET_CURTAIN_PANEL_TYPE (written
 #                                          2026-10-28). Measured through the
 #                                          retriever that day, before it existed,
 #                                          the sentence reached HERE - a write

@@ -35,17 +35,16 @@ purpose: >
   modeller and let them choose; never work round a gap by guessing a value or
   typing an element id.
 
-  0. FIND THE OLD ONES. SELECT_BY_PARAMETER_VALUE (version 4, DRAFT -
-     SELECT_BY_FAMILY, PROVEN, was merged into it on 2026-11-01) with
-     parameterName=Family, matchMode=contains, includeTypeParameters=false,
-     categories empty for the whole model, and matchText= the old family.
-     In-place: the part of the names they share - every in-place element is
-     a family of its own, so "TCM_ACU_T002" catches ..Unit1, ..Unit2 and
-     ..Unit3. Loadable: the family's name with exactMatch=true, one call per
-     old family (2026-10-15: two - a rectangular and a circular cut-out). The
-     answer names each family that matched with its count, in
-     `matchedFamilies`. Confirm the count
-     with the modeller. If only some are to go, they name which, by id:
+  0. FIND THE OLD ONES. SELECT_BY_PARAMETER_VALUE (SELECT_BY_FAMILY was
+     merged into it at version 4, 2026-11-01) with parameterName=Family,
+     matchMode=contains, includeTypeParameters=false, categories empty for
+     the whole model, and matchText= the old family. In-place: the part of
+     the names they share - every in-place element is a family of its own, so
+     "TCM_ACU_T002" catches ..Unit1, ..Unit2 and ..Unit3. Loadable: the
+     family's name with exactMatch=true, one call per old family (2026-10-15:
+     two - a rectangular and a circular cut-out). The answer names each
+     family that matched with its count, in `matchedFamilies`. Confirm the
+     count with the modeller. If only some are to go, they name which, by id:
      FILTER_ELEMENTS_BY_ID, and every later expect_from= names that read.
 
   1. READ EVERYTHING THE OLD ONES HOLD, AND WHAT GOES WITH THEM, BEFORE
@@ -151,7 +150,7 @@ purpose: >
        is in a linked model.
      - A WALL, FLOOR, CEILING OR ROOF: PLACE_HOSTED_FAMILY at each point.
      These two are not in the list after this method (the note there says
-     why): heron_resolve each by name, and both are DRAFT.
+     why): heron_resolve each by name - its answer gives each one's status.
      WHERE THE PLACEMENT REFUSES, OR PUTS IT ELSEWHERE THAN ASKED - copy an
      existing instance of the new type. 2026-10-15, Revit 2020: asked 2152
      mm, PLACE_FAMILY_INSTANCES stood the TRG cut-out 2014.5 mm above the
@@ -203,26 +202,25 @@ purpose: >
      SET_PARAMETER_VALUES_BY_ID with rows id|uniqueId|parameter|was|new, one
      per new element and parameter, the unique ids and the values held now
      from the new ones' record: all or nothing, read back. For many,
-     SET_PARAMETER_VALUES_BY_ID (version 7, DRAFT - IMPORT_PARAMETER_VALUES,
-     PROVEN, was merged into it on 2026-11-01) with csvPath= a CSV whose first
-     column is the NEW element's id and whose other columns are the parameter
-     names, blankCells=skip - the rows alone name the elements, so the CSV
-     holds only the new ones' ids (read off step 6's record, with their
-     UniqueId column if it can be had), and one row that cannot be used
-     stops the run - all or nothing. A TYPE's value is
-     written by naming the type's own id in its row - every unit of that type
-     changes - so ask first. A CSV goes in the session's scratch folder, or
-     %TEMP%\heron-work - never beside Heron or the model. Both write by NAME,
-     and both REFUSE a name the element carries twice, which is right.
-     GAP - A GUID WRITE: nothing writes a value by GUID yet. Checked
+     SET_PARAMETER_VALUES_BY_ID (IMPORT_PARAMETER_VALUES was merged into it at
+     version 7, 2026-11-01) with csvPath= a CSV whose first column is the NEW
+     element's id and whose other columns are the parameter names,
+     blankCells=skip - the rows alone name the elements, so the CSV holds only
+     the new ones' ids (read off step 6's record, with their UniqueId column if
+     it can be had), and one row that cannot be used stops the run - all or
+     nothing. A TYPE's value is written by naming the type's own id in its row -
+     every unit of that type changes - so ask first. A CSV goes in the session's
+     scratch folder, or %TEMP%\heron-work - never beside Heron or the model.
+     Both write by NAME, and both REFUSE a name the element carries twice, which
+     is right. GAP - A GUID WRITE: nothing writes a value by GUID yet. Checked
      2026-10-17 on main: SET_PARAMETER_VALUES_BY_ID versions 2 and 3 (rows
-     5b-459, 5b-610) find a parameter by its name and match a row by a value
-     an element holds - not by GUID - and a CSV (once IMPORT_PARAMETER_VALUES)
-     takes names as headings. So a value is CARRIED by GUID - the map pairs the GUIDs - and
-     WRITTEN by name where the new element carries that name once; where it
-     carries it twice, name it to the modeller, who sets it by hand. Widening
-     one of the two to take a GUID is the fix, not a new capability.
-     On Revit 2020 a Yes/No that was written correctly can come back called
+     5b-459, 5b-610) find a parameter by its name and match a row by a value an
+     element holds - not by GUID - and a CSV (once IMPORT_PARAMETER_VALUES)
+     takes names as headings. So a value is CARRIED by GUID - the map pairs the
+     GUIDs - and WRITTEN by name where the new element carries that name once;
+     where it carries it twice, name it to the modeller, who sets it by hand.
+     Widening one of the two to take a GUID is the fix, not a new capability. On
+     Revit 2020 a Yes/No that was written correctly can come back called
      "rejected": read the value before believing either.
 
   8. READ BACK AND COMPARE, by GUID first, then name:
@@ -246,14 +244,13 @@ purpose: >
      type, head, leader, end and orientation, read back, and `notReproduced`
      names what differs. It never deletes the old tags; a second run makes
      none. Or re-tag from the TAGS lines of step 1's record with
-     TAG_ELEMENTS_IN_VIEW (DRAFT, version 6 - TAG_ELEMENTS was merged into it
-     on 2026-11-01): view, tagTypeId the old tag's own type, tagTypeHintId=
-     none, leader none or straight as the old tag had, minLengthMm=0 and
-     leaderOffsetMm=0. A new one already carrying a tag of that type in the
-     view is skipped. Or hand the list to the modeller - on
-     2026-10-12 the owner chose to re-tag himself. NOTHING COPIES A
-     DIMENSION: one that measured to an old one goes with it, and step 10
-     names it.
+     TAG_ELEMENTS_IN_VIEW (TAG_ELEMENTS was merged into it at version 6,
+     2026-11-01): view, tagTypeId the old tag's own type, tagTypeHintId= none,
+     leader none or straight as the old tag had, minLengthMm=0 and
+     leaderOffsetMm=0. A new one already carrying a tag of that type in the view
+     is skipped. Or hand the list to the modeller - on 2026-10-12 the owner
+     chose to re-tag himself. NOTHING COPIES A DIMENSION: one that measured to
+     an old one goes with it, and step 10 names it.
 
   10. DELETE THE OLD ONES - LAST, ON THE MODELLER'S YES FOR THAT ONE DELETE,
      WITH EVERYTHING THAT GOES WITH THEM NAMED (Article 7). 2026-10-15: the
@@ -358,7 +355,7 @@ note: >
   MOVE_ELEMENTS once per copy, a by-hand compare by GUID, and DELETE_ELEMENTS,
   because PLACE_FAMILY_INSTANCES stood the new one at the wrong height. Its
   lessons are in steps 2, 6, 9 and 10. Since the first version, tags are
-  COPY_TAGS_TO_REPLACEMENTS (DRAFT) and steps 1 and 8 are
-  REPORT_PARAMETER_INVENTORY; the GUID write is still missing. Neither swap
-  has been watched working through this method, so it stays DRAFT (D-30);
-  its proof plan is Group GC of docs/NEEDS-CHECKING.md, on a NEW project.
+  COPY_TAGS_TO_REPLACEMENTS and steps 1 and 8 are REPORT_PARAMETER_INVENTORY;
+  the GUID write is still missing. Neither swap has been watched working
+  through this method, so it stays DRAFT (D-30); its proof plan is Group GC of
+  docs/NEEDS-CHECKING.md, on a NEW project.

@@ -13,8 +13,8 @@ capability: SET_FAMILY_SETTINGS
 # owner's instruction and is DEPRECATED - "Category=Air Terminals" is one more
 # setting, matched to Revit's own names and never guessed, written FIRST in a
 # combined call, read back with `wasCategory` and `parametersGained`. See the
-# merge block above `utterances`. DRAFT until version 4 is proved (D-30); the
-# version 3 proof below is kept as the record of what was run.
+# merge block above `utterances`. DRAFT at the time, until version 4 is proved
+# (D-30); the version 3 proof below was kept as the record of what was run.
 version: 4
 source: OFFICIAL
 risk: MODIFY

@@ -11,8 +11,9 @@ domain: revit.elements
 capability: CREATE_WALL
 # VERSION 3 (2026-10-28, FRAGMENT-ISSUES 5b-1345): `baseOffset`, Revit's Base
 # Offset in millimetres, optional and 0 when left out. Version 2's proof below
-# no longer describes the code and is kept as a record; the card is DRAFT until
-# NEEDS-CHECKING Group JG proves version 3 on Revit 2020 and the owner signs.
+# no longer described the code and was kept as a record; the card was DRAFT at
+# the time, until NEEDS-CHECKING Group JG proves version 3 on Revit 2020 and
+# the owner signs.
 version: 3
 source: OFFICIAL
 risk: MODIFY
@@ -112,6 +113,8 @@ contract:
     - name: findings
       type: IList<string>
 
+# WRITTEN ABOVE AN EARLIER PROOF, since replaced by the `proof:` block below -
+# read that block's own date and fingerprint, not this comment, for what ran.
 # VERSION 2's PROOF - STALE SINCE VERSION 3 (5b-1345), KEPT AS A RECORD. It
 # describes the code before `baseOffset`; NEEDS-CHECKING Group JG proves
 # version 3. (NEEDS-CHECKING Group HM, Revit 2020, 2026-10-19.) The

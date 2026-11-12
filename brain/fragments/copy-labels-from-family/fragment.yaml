@@ -51,8 +51,9 @@ deprecated:
 # new tag. Proof plan: NEEDS-CHECKING Group IJ, which MEASURES whether a copy
 # keeps its parameter binding, sample value, prefix, suffix and unit format.
 #
-# CONSIDERED AND NOT WIDENED. COPY_ELEMENTS_BETWEEN_DOCUMENTS (PROVEN) copies
-# MODEL elements document to document and leaves view-specific ones by design
+# CONSIDERED AND NOT WIDENED. COPY_ELEMENTS_BETWEEN_DOCUMENTS (PROVEN when
+# this was written) copies MODEL elements document to document and leaves
+# view-specific ones by design
 # - a label is view-specific, and a change under its impl/ would make its
 # proof stale. COPY_ELEMENTS copies inside one model. Neither checks the
 # category rule Revit applies to labels, nor reads a label back against its

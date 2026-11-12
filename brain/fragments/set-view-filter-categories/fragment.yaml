@@ -14,8 +14,8 @@ capability: SET_VIEW_FILTER_CATEGORIES
 # `categories` may be blank. A blank keeps what the filter has, so version 1's
 # calls, which give categories and nothing else, mean what they meant. On a
 # live model that day a rename and a re-rule took six undo steps and left a
-# filter behind, because no tool could edit either. DRAFT until version 2 is
-# run in Revit: NEEDS-CHECKING Group EE.
+# filter behind, because no tool could edit either. DRAFT at the time, until
+# version 2 is run in Revit: NEEDS-CHECKING Group EE.
 version: 2
 source: OFFICIAL
 risk: MODIFY

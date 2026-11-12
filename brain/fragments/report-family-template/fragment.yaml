@@ -74,9 +74,9 @@ purpose: >
 # placement point or a shape handle was already in each row (version 1).
 # Everything version 3 printed is printed as before; a family with no
 # adaptive points gets nothing new. Version 3's proof (2026-10-18) no longer
-# describes the code and is kept below as a record; the card is DRAFT until
-# it is proved again (NEEDS-CHECKING Group JQ). A comment, not `purpose`,
-# because `purpose` is searched.
+# described the code and was kept below as a record; the card was DRAFT at
+# the time, until it is proved again (NEEDS-CHECKING Group JQ). A comment,
+# not `purpose`, because `purpose` is searched.
 
 contract:
   needs:

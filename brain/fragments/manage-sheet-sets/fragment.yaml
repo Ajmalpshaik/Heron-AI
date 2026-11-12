@@ -15,19 +15,20 @@ capability: MANAGE_SHEET_SETS
 # and put back afterwards: version 1 set it to "Selected views/sheets" and
 # left it there, and the print manager is not transactional, so an Undo left
 # Revit's Print dialog changed. No new required input - add and remove take
-# the elements and setName create already takes. DRAFT until version 2 is run
-# in Revit: NEEDS-CHECKING Group FA. Ajmal PS's yes to change the PROVEN card
-# was his starting the task, 2026-10-17. Version 1's proof is kept below as
-# the record it is; its fingerprint no longer matches this code.
+# the elements and setName create already takes. DRAFT at the time, until
+# version 2 is run in Revit: NEEDS-CHECKING Group FA. Ajmal PS's yes to
+# change the PROVEN card was his starting the task, 2026-10-17. Version 1's
+# proof was kept below as the record it is; its fingerprint no longer
+# matched this code.
 #
 # VERSION 3 (2026-11-01, FRAGMENT-ISSUES 5b-1361): mode "duplicate" ("copy"
 # taken as the same) - a copy of an existing set under `newName`, the original
 # left as it was. No new input: duplicate takes `setName` and `newName`, as
 # rename does. Ajmal PS's "Yes, add it" was relayed 2026-11-01 by the session
 # that asked him, after being told it puts this card back to unproven. BACK TO
-# DRAFT for that reason: the proof below is version 2's (signed 2026-10-18)
-# and its fingerprint no longer matches this code. NEEDS-CHECKING Group KA,
-# rows KA15 and KA16.
+# DRAFT for that reason, that day: the proof below was version 2's (signed
+# 2026-10-18) and its fingerprint no longer matched this code. NEEDS-CHECKING
+# Group KA, rows KA15 and KA16.
 #
 # VERSION 4 (2026-11-01) - SYNC_SHEET_SETS_BY_PARAMETER WAS MERGED INTO THIS
 # CARD on the owner's instruction (Ajmal PS: "if there's duplicate tools you
@@ -65,8 +66,9 @@ capability: MANAGE_SHEET_SETS
 # since version 4 (`absent: none`, read as no name) so by-parameter can be
 # asked with neither; every mode that needs one refuses as before.
 #
-# BACK TO DRAFT for version 4: impl/ changed, and version 2's proof below is
-# kept as the record. NEEDS-CHECKING Group KA, rows KA12 to KA17.
+# BACK TO DRAFT for version 4, that day: impl/ changed, and version 2's
+# proof below was kept as the record. NEEDS-CHECKING Group KA, rows KA12 to
+# KA17.
 version: 4
 source: OFFICIAL
 risk: MODIFY

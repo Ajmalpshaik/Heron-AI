@@ -1,6 +1,6 @@
 // NOT STANDALONE. Assumes `doc`, `otherModelPath`, `categories`,
 // `parameterNames` and `maxRows` are in scope; leaves `findings`, `added`,
-// `removed`, `changed` and `sameSaveVersion` behind.
+// `removed`, `changed`, `sameSaveVersion` and `ambiguous` behind.
 //
 // READ ONLY on both documents. Opens no transaction on either, and closes the
 // file it opened.
@@ -26,12 +26,28 @@
 // Document.GetChangedElements IS NOT USED, though it is faster on 2023+. It
 // needs an episode GUID from a previous point in time, and nothing here has
 // anywhere to have recorded one.
+//
+// A NAME TWO PARAMETERS SHARE IS NOT READ (version 2; D-54 s3, FRAGMENT-ISSUES
+// 5b-203). Element.LookupParameter hands back "the first one encountered" when
+// two parameters on one element share the name, and Autodesk's reference says
+// that match "is determined at random" - so the same element could read one of
+// the pair in this model and the other in the earlier save, and report a
+// change nobody made, or hide one somebody did. The name is counted first, on
+// the element and on the type the read falls through to; a value that would
+// come from a doubled name is not read and not compared: the element is in
+// `ambiguous`, and the answer names the parameter in the words every reader
+// of row 5b-203 uses.
 
 var findings = new List<string>();
 var added = 0;
 var removed = 0;
 var changed = 0;
 var sameSaveVersion = false;
+var ambiguous = new List<ElementId>();
+// What `valueOf` hands back in place of a value it would not read, and the
+// names it turned down (5b-203).
+const string SharedName = "(two or more parameters share this name)";
+var sharedNames = new List<string>();
 
 Document other = null;
 
@@ -56,11 +72,20 @@ Func<Element, string, string> valueOf = (element, parameterName) =>
     if (element == null) return "(gone)";
     try
     {
+        var onElement = element.GetParameters(parameterName).Count;
+        if (onElement > 1) { sharedNames.Add(parameterName); return SharedName; }
+
         var parameter = element.LookupParameter(parameterName);
         if (parameter == null)
         {
             var type = element.Document.GetElement(element.GetTypeId()) as ElementType;
-            if (type != null) parameter = type.LookupParameter(parameterName);
+            if (type != null)
+            {
+                var onType = type.GetParameters(parameterName).Count;
+                if (onType > 1) { sharedNames.Add(parameterName); return SharedName; }
+
+                parameter = type.LookupParameter(parameterName);
+            }
         }
         if (parameter == null) return "(absent)";
         if (!parameter.HasValue) return "(blank)";
@@ -271,6 +296,13 @@ else
                         if (string.IsNullOrEmpty(parameterName)) continue;
                         var now = valueOf(pair.Value, parameterName);
                         var then = valueOf(older, parameterName);
+                        // Not read on either side is not compared - never
+                        // "unchanged", never "changed" (5b-203).
+                        if (now == SharedName || then == SharedName)
+                        {
+                            if (!ambiguous.Contains(pair.Key)) ambiguous.Add(pair.Key);
+                            continue;
+                        }
                         if (now == then) continue;
                         differences.Add(parameterName + ": '" + then + "' -> '" + now + "'");
                     }
@@ -299,6 +331,16 @@ else
                         + "per-element change stamp, so nothing could be skipped"
                     : skippedByStamp + " matched element(s) were skipped as unchanged on Revit's own "
                         + "per-element stamp, without reading a parameter");
+
+                if (sharedNames.Count > 0)
+                    findings.Add(ambiguous.Count + " element(s) carry TWO OR MORE parameters called "
+                        + string.Join(", ", sharedNames.Distinct().Select(n => "'" + n + "'").ToArray())
+                        + " - NOT READ, because Revit hands back whichever of them it meets first: "
+                        + string.Join(", ", ambiguous.Take(20).Select(id => id.ToString()).ToArray())
+                        + (ambiguous.Count > 20 ? ", and " + (ambiguous.Count - 20) + " more" : "")
+                        + ". On the element or its type, in this model or the other. Not compared, so a change "
+                        + "in one of those would not show above - rename one of the parameters, or compare "
+                        + "those by eye");
 
                 findings.Add("COVERED: " + string.Join(", ", categoryNames.ToArray())
                     + " | parameters compared: "

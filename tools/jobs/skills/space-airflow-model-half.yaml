@@ -46,6 +46,9 @@
 #   ALREADY  read-element-parameters        PROVEN
 #   ALREADY  read-space-loads               PROVEN
 #   ALREADY  write-element-parameters       PROVEN
+#   (AS GENERATED. A card's status is on the card: read-element-parameters'
+#   and read-space-loads' moved on 2026-11-11, and `--dry-run` says which
+#   steps would run today.)
 #
 # THE COMPOSITION IS WHAT IS STILL OWED, AND NOTHING HERE RUNS ONE. `prove` in
 # mcp/client/heron_bridge_client.py runs several fragments in ONE process on

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-RM-028
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,25 @@ semantic-identity: "the heating and cooling load and the airflow on these spaces
 kind: filter
 domain: revit.mep
 capability: READ_SPACE_LOADS
-version: 2
+version: 3
 source: OFFICIAL
 risk: READ
+
+# VERSION 3 (2026-11-11) - EACH LOAD FIGURE IS READ ON ITS OWN, and back to
+# DRAFT. Version 2 was PROVEN on 2026-11-02 (the proof block below, kept as
+# the record of what it proved). Its C# moved, so it is DRAFT again until
+# NEEDS-CHECKING Group NK, NK3, is run (D-30). FRAGMENT-ISSUES row 5b-323:
+# the six load figures were read inside one guard, and Revit refuses the
+# calculated ones ("Not Computed!") until its own Heating and Cooling Loads
+# analysis has run - so on Project2 (Revit 2024, 2026-10-05) three Spaces
+# holding a typed Design Cooling Load, Design Heating Load and Specified
+# Supply Airflow all read "NO LOAD READABLE". Now a refused figure costs that
+# figure alone: what was entered is reported and marked "entered", a figure
+# with neither an entered nor a calculated value reads NOT COMPUTED and gets
+# no entry in its dictionary - never a zero - and the finding names each
+# figure Revit refused. A space with nothing readable at all is in `noLoad`
+# with version 2's sentence, unchanged. A read: it still answers through
+# revit_read while DRAFT, and says DRAFT (D-117 item 4).
 
 purpose: >
   Reports each MEP Space's heating load, cooling load and supply airflow, and

@@ -260,7 +260,8 @@ compatibility-note: >
   flow is filed under PG_GEOMETRY / GroupTypeId.Geometry or PG_MECHANICAL /
   GroupTypeId.Mechanical the same way. Which domains' connectors carry
   Utility, and whether a pipe connector's Allow Slope Adjustments box is the
-  element's own parameter, is what Group IR measures; not yet run in Revit.
+  element's own parameter, is what Group IR measures; not yet run in Revit
+  when this was written.
 
 # ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #

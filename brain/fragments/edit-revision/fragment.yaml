@@ -12,27 +12,28 @@ semantic-identity: "change the revision description or date"
 # the Issued tick; the negative, asked for values already held, changed nothing.
 # NOT covered: the refusal of an edit to an ISSUED revision (5b-412) and the
 # 2020/2021 numbering route. What follows is how version 2 came to be.
-# VERSION 2, BACK TO DRAFT ON 2026-09-28, AND THE PROOF BLOCK IS KEPT.
-# Version 1 found its revision by a `sequenceNumber` it was typed. Version 2 is
-# handed ONE revision by the find before it (SELECT_BY_PARAMETER_VALUE on the
-# Revisions category - by `Revision Sequence` when the number is what is
-# known), so a stale number can no longer edit whichever revision now holds
-# it, and a chat never leans on Revit's selection while other chats share the
-# same Revit. It also gained show and numbering, `alreadyThat`, and a refusal
-# that names an issued revision instead of trying and failing. The 2026-09-09
-# proof's arrangement is still the one to re-prove from; its fingerprint no
-# longer matches.
+# VERSION 2, BACK TO DRAFT ON 2026-09-28, AND THE PROOF BLOCK WAS KEPT. Version
+# 1 found its revision by a `sequenceNumber` it was typed. Version 2 is handed
+# ONE revision by the find before it (SELECT_BY_PARAMETER_VALUE on the Revisions
+# category - by `Revision Sequence` when the number is what is known), so a
+# stale number can no longer edit whichever revision now holds it, and a chat
+# never leans on Revit's selection while other chats share the same Revit. It
+# also gained show and numbering, `alreadyThat`, and a refusal that names an
+# issued revision instead of trying and failing. The 2026-09-09 proof's
+# arrangement was still the one to re-prove from; its fingerprint no longer
+# matched.
 #
-# VERSION 3, 2026-10-10, STILL DRAFT: SEVERAL REVISIONS IN ONE CALL. Seven
-# "IFI - Issued for Information" revisions on a Revit 2020 job were issued,
-# then un-issued and renumbered, through version 2 - a find and an edit per
-# revision, fourteen calls a pass and seven undo entries - and the owner asked
-# why it went one by one. Now the find hands in the set, `confirmCount` must
-# equal the number it found, and the call is one undo entry, all or nothing,
-# with the writes ordered so one revision's state cannot refuse another's
-# (FRAGMENT-ISSUES row 5b-409). The code moved under version 2's 2026-10-10
-# proof (fingerprint b928479162dc855d, signed in #470), so this is DRAFT again
-# and that proof block is kept, the arrangement to re-prove from.
+# VERSION 3, 2026-10-10, STILL DRAFT THAT DAY: SEVERAL REVISIONS IN ONE CALL.
+# Seven "IFI - Issued for Information" revisions on a Revit 2020 job were
+# issued, then un-issued and renumbered, through version 2 - a find and an
+# edit per revision, fourteen calls a pass and seven undo entries - and the
+# owner asked why it went one by one. Now the find hands in the set,
+# `confirmCount` must equal the number it found, and the call is one undo
+# entry, all or nothing, with the writes ordered so one revision's state
+# cannot refuse another's (FRAGMENT-ISSUES row 5b-409). The code moved under
+# version 2's 2026-10-10 proof (fingerprint b928479162dc855d, signed in #470),
+# so this was DRAFT again at the time and that proof block was kept, the
+# arrangement to re-prove from.
 kind: action
 domain: revit.sheets
 capability: EDIT_REVISION

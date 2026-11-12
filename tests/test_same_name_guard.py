@@ -20,6 +20,8 @@ matches twice is refused, never chosen from. FRAGMENT-ISSUES row 5b-203
 (2026-09-24) found fragments taking the first match; the ones that change the
 model were repaired when it was found, and this suite holds them and the
 readers repaired since to it, so a later edit cannot quietly drop a guard.
+The last seven readers were PROVEN and waited for a change of their own; they
+took the guard on 2026-11-11 and are listed below with the rest.
 
 WHAT IT CHECKS, AS TEXT
   1. THE GUARD. In each fragment below, every name handed to `LookupParameter`
@@ -33,7 +35,10 @@ WHAT IT CHECKS, AS TEXT
      has to arrange, because every proof so far used a name that occurs once.
   4. THE COUNT IS ACCOUNTING. Where a reader reports the refused elements as a
      count of its own, the card declares it `role: accounting`: an element
-     turned down is evidence it looked, never a thing it found (D-52).
+     turned down is evidence it looked, never a thing it found (D-52). And
+     the seven readers repaired on 2026-11-11 answer in ONE shape - each
+     provides `ambiguous`, accounting, a list of ids, and says the refusal
+     in the same words.
   5. THE REFUSAL ITSELF, in the readers whose fixed name is guarded inline.
      Check 1 asks only that a name is counted somewhere; a review on
      2026-10-09 deleted the refusal, kept the count, and check 1 stayed
@@ -112,6 +117,20 @@ READERS = (
     # ...a Space's "Space Type", and a fitting's "Angle".
     "report-space-envelope",
     "report-sprinkler-network",
+    # THE SEVEN THAT WERE PROVEN, repaired 2026-11-11 on the owner's word that
+    # a proven card found wrong may be changed. Each took the first match
+    # until then because the guard would stale its proof; each is DRAFT again
+    # and owes NEEDS-CHECKING Group NK, NK8. Four are in the row's own census
+    # (the first four); this suite's rule over the whole library found the
+    # other three - a material's "Keywords", a carbon factor's name, and a
+    # sheet parameter's.
+    "read-element-parameters",
+    "find-duplicate-values",
+    "compare-elements",
+    "compare-models",
+    "list-materials",
+    "report-material-takeoff",
+    "check-sheet-sets-by-parameter",
 )
 
 # Readers whose guard is written inline around one fixed name, so check 5 can
@@ -131,6 +150,15 @@ REFUSED = (
     "select-touching",
     "report-space-envelope",
     "report-sprinkler-network",
+    # The seven repaired 2026-11-11 are all written in the inline shape, a
+    # name from outside included, so the refusal itself is read in each.
+    "read-element-parameters",
+    "find-duplicate-values",
+    "compare-elements",
+    "compare-models",
+    "list-materials",
+    "report-material-takeoff",
+    "check-sheet-sets-by-parameter",
 )
 
 # Readers that report the refused elements as a count of their own.
@@ -138,6 +166,22 @@ COUNTED = {
     "select-by-parameter-value": "ambiguous",
     "select-by-numeric-parameter": "ambiguous",
 }
+
+# THE SEVEN REPAIRED 2026-11-11 ANSWER IN ONE SHAPE: each provides `ambiguous`,
+# a list of this model's own ids - the elements, materials or sheets the name
+# was NOT READ on - declared accounting. A review that day found seven shapes
+# for one refusal (ids, sentences, a count, `sharedFactor`, text alone); one
+# name and one type is what lets a chat, or a checklist, ask every reader the
+# same question.
+LISTED = (
+    "read-element-parameters",
+    "find-duplicate-values",
+    "compare-elements",
+    "compare-models",
+    "list-materials",
+    "report-material-takeoff",
+    "check-sheet-sets-by-parameter",
+)
 
 LOOKUP = re.compile(r"\.LookupParameter\(\s*([^()]+?)\s*\)")
 COUNT = re.compile(r"\.GetParameters\(\s*([^()]+?)\s*\)")
@@ -232,6 +276,25 @@ def the_count():
         code = "".join(LINE_COMMENT.sub("", read(p)) for p in impl_files(name))
         check(re.search(r"\b%s\s*\+\+" % re.escape(provide), code) is not None,
               "%s: the code never counts `%s`" % (name, provide))
+    for name in LISTED:
+        card = os.path.join(FRAGMENTS, name, "fragment.yaml")
+        data = yaml.safe_load(read(card)) if os.path.isfile(card) else {}
+        provides = ((data or {}).get("contract") or {}).get("provides") or []
+        entry = [p for p in provides if isinstance(p, dict) and p.get("name") == "ambiguous"]
+        check(len(entry) == 1, "%s: contract.provides has no single `ambiguous`" % name)
+        if entry:
+            check(entry[0].get("role") == "accounting",
+                  "%s: `ambiguous` is role %r - an element turned down is accounting, never "
+                  "a result (D-52)" % (name, entry[0].get("role")))
+            check(entry[0].get("type") == "IList<ElementId>",
+                  "%s: `ambiguous` is %r - the seven answer in one shape, a list of ids"
+                  % (name, entry[0].get("type")))
+        code = "".join(LINE_COMMENT.sub("", read(p)) for p in impl_files(name))
+        check(re.search(r"\bambiguous\s*\.\s*Add\(", code) is not None,
+              "%s: the code never adds to `ambiguous`" % name)
+        check(re.search(r"TWO OR MORE parameters called", code) is not None,
+              "%s: the refusal is not said in the words the seven share - "
+              "\"carry TWO OR MORE parameters called\"" % name)
 
 
 def literal_end(code, i):

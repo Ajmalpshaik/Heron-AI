@@ -1,5 +1,6 @@
 // NOT STANDALONE. Assumes `elements` and `doc` are in scope, and leaves
-// `differing`, `identicalCount`, `comparedCount` and `tooFewToCompare` behind.
+// `differing`, `identicalCount`, `comparedCount`, `tooFewToCompare`,
+// `ambiguous` and `findings` behind.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -34,9 +35,24 @@
 // confident wrong answer to the exact question asked. Type parameters are
 // gathered too and their names carry a marker so it stays clear where a
 // difference has to be fixed.
+//
+// A NAME TWO PARAMETERS SHARE IS NOT READ (version 2; D-54 s3, FRAGMENT-ISSUES
+// 5b-203). The names are gathered off each element's own parameter list, so a
+// name that sits there twice - a shared or project parameter bound beside a
+// built-in one, a curtain wall type's two "Interior Type" - is asked for once
+// and LookupParameter hands back "the first one encountered", which Autodesk's
+// reference says "is determined at random". Compared that way the row could
+// read identical, or different, on a coin toss. So each name is counted on
+// each element first, and a name carried twice on any of them is neither
+// identical nor differing: the elements go to `ambiguous` and `findings` says
+// which name, in the words every reader of row 5b-203 uses. AND IT FAILS
+// CLOSED: where Revit will not say how many parameters carry the name, none
+// is picked either - the row is said as not read, never looked up anyway.
 
 var differing = new Dictionary<string, IList<string>>();
 int identicalCount = 0;
+var ambiguous = new List<ElementId>();
+var findings = new List<string>();
 
 // Eight columns is where a side-by-side stops being readable. The rest are not
 // dropped silently - comparedCount says how many were actually looked at, so
@@ -112,6 +128,10 @@ if (!tooFewToCompare)
         string lookFor = fromType ? name.Substring(0, name.Length - TypeMarker.Length) : name;
 
         var row = new List<string>();
+        // The elements this name sits on twice, and the ones Revit would not
+        // count it on (5b-203).
+        var twiceOn = new List<ElementId>();
+        var uncountedOn = new List<ElementId>();
         foreach (var element in comparing)
         {
             Element source = element;
@@ -124,9 +144,32 @@ if (!tooFewToCompare)
             Parameter found = null;
             if (source != null)
             {
+                var sameName = -1;
+                try { sameName = source.GetParameters(lookFor).Count; } catch { }
+                if (sameName > 1) { twiceOn.Add(element.Id); continue; }
+                if (sameName < 0) { uncountedOn.Add(element.Id); continue; }
+
                 try { found = source.LookupParameter(lookFor); } catch { }
             }
             row.Add(readValue(found));
+        }
+
+        if (twiceOn.Count > 0)
+        {
+            foreach (var id in twiceOn) if (!ambiguous.Contains(id)) ambiguous.Add(id);
+            findings.Add(string.Format("{0} element(s) carry TWO OR MORE parameters called '{1}' - NOT READ, "
+                + "because Revit hands back whichever of them it meets first: {2}. '{1}' is counted neither as "
+                + "identical nor as differing; compare it in Properties",
+                twiceOn.Count, name, string.Join(", ", twiceOn.Select(id => id.ToString()))));
+            continue;
+        }
+
+        if (uncountedOn.Count > 0)
+        {
+            findings.Add(string.Format("'{0}' was NOT READ on {1}: Revit would not say how many parameters "
+                + "carry that name there, so none was picked. It is counted neither as identical nor as "
+                + "differing", name, string.Join(", ", uncountedOn.Select(id => id.ToString()))));
+            continue;
         }
 
         bool allSame = true;

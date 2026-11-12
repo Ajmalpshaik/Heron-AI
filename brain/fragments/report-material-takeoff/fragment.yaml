@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-EXP-018
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,24 @@ semantic-identity: "how much of each material is in these elements"
 kind: action
 domain: revit.document
 capability: REPORT_MATERIAL_TAKEOFF
-version: 3
+version: 4
 source: OFFICIAL
 risk: READ
+
+# VERSION 4 (2026-11-11) - A FACTOR NAME TWO PARAMETERS SHARE IS NEVER READ,
+# and back to DRAFT. Version 3 was PROVEN on 2026-11-02 (the proof block
+# below, kept as the record of what it proved). Its C# moved, so it is DRAFT
+# again until NEEDS-CHECKING Group NK, NK8, is run (D-30). D-54 s3 and
+# FRAGMENT-ISSUES row 5b-203: the carbon factor is read off each material by
+# the name in `factorParameter`, and version 3 took `LookupParameter`'s first
+# match - which Autodesk's reference calls random when two parameters on one
+# element share the name. A material carrying that name twice now adds
+# nothing to the total and is listed in `ambiguous` and named in findings as
+# NOT READ, apart from the materials with no factor. With no
+# `factorParameter` nothing is looked up and the take-off is version 3's,
+# unchanged. Written here and not in `purpose`: the purpose is routing text.
+# A read: it still answers through revit_read while DRAFT, and says DRAFT
+# (D-117 item 4).
 
 # VERSION 3 (2026-11-01) - REPORT_EMBODIED_CARBON WAS MERGED INTO THIS CARD on
 # the owner's instruction ("make sure there is no duplicate tools", then "ok go
@@ -159,6 +174,13 @@ contract:
       # nothing to the total, said aloud (D-52).
       role: accounting
       type: IList<string>
+    - name: ambiguous
+      # VERSION 4. The materials carrying TWO OR MORE parameters by the name
+      # in factorParameter, where Revit's lookup would pick one at random. Not
+      # read, and they add nothing to the total; `findings` names them (D-54
+      # s3, FRAGMENT-ISSUES 5b-203). Turned down, never found (D-52).
+      role: accounting
+      type: IList<ElementId>
     - name: noVolume
       # VERSION 3. Elements whose materials have no volume, so no carbon
       # (D-52). Counted only when a factor was named.

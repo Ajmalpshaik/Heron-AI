@@ -26,7 +26,7 @@ builds starts DRAFT ([D-30](DECISIONS.md)).
 > [`heron_loads_report.py`](../brain/heron_loads_report.py), the Companion's Loads panel, Finalize, and
 > the `revit_building_loads` tool (`python mcp/server/heron_tools.py` lists it, at `ANALYZE`). Phase 0's
 > decision was never filed: §9 holds the answers and no `D-` number was spent. A second method (§9
-> point 5) is not built. `REPORT_SPACE_ENVELOPE` is DRAFT. **The proof is partial:**
+> point 5) is not built. `REPORT_SPACE_ENVELOPE` was DRAFT that day - its status since is on its card. **The proof is partial:**
 > [Group CC](needs-checking/group-cc.md) ran on *Heron loads test*, Revit 2024, on 2026-10-06 - several
 > rows PASS; CC8 and CC13 FAILED, are fixed in code and are NOT RUN AGAIN; the rest are NOT RUN (§12.9).
 > *Read again 2026-10-18:* CC22 and CC24 FAILED that day too - CC22 is fixed in code and NOT RUN AGAIN,
@@ -34,14 +34,20 @@ builds starts DRAFT ([D-30](DECISIONS.md)).
 > PART (its Space half PASSED). The re-run is §12.9's list.
 > Every load is a design aid until the engineer's comparison §10 names has been made.
 >
-> **Checked 2026-10-18 - Finalize writes nothing today.** Its first write, `SET_PARAMETER_VALUES_BY_ID`,
-> went to version 3 and DRAFT on 2026-10-17 (#583; its proof is owed in
-> [group FE](needs-checking/group-fe.md)), its diffuser write `SET_AIR_TERMINAL_FLOW` is DRAFT
+> **Checked 2026-10-18 - Finalize wrote nothing that day.** Its first write, `SET_PARAMETER_VALUES_BY_ID`,
+> went to version 3 and DRAFT on 2026-10-17 (#583; its proof was owed in
+> [group FE](needs-checking/group-fe.md)), its diffuser write `SET_AIR_TERMINAL_FLOW` was DRAFT
 > ([group AQ](needs-checking/group-aq.md)), and `revit_change` - whose body Finalize runs - keeps a change
 > only from a PROVEN fragment since [D-117](decisions/D-117.md). Called in a cloud container, it refused
-> both before anything was sent. Reading, calculating, the take-off check and the report are untouched
+> both before anything was sent. Reading, calculating, the take-off check and the report were untouched
 > ([40 §21.9](40-heron-companion.md)). Recorded as
-> [row 5b-1129](fragment-issues/section-5b-rows-401-425.md), open; the repair is the two proofs.
+> [row 5b-1129](fragment-issues/section-5b-rows-401-425.md); the repair was the two proofs.
+>
+> **Read again 2026-11-11, in a cloud container - the two proofs are signed, and Finalize has NOT been run
+> since.** Both cards' `heron-status` lines read PROVEN, `python tools/check-signatures.py` lists neither as
+> stale, and the refusal that row reproduced no longer answers for either. That removes D-117's refusal and
+> proves nothing about Finalize: its own run is §12.9's list. Whether a writer is PROVEN today is on its card
+> - read it there, never here; a change under either card's `impl/` brings the refusal back.
 
 **In Revit words.** Today Heron can work out one room's cooling load if you type in its walls and windows.
 This feature lets Heron *read* every Space in the model - its floor, its outside walls and which way they
@@ -64,7 +70,7 @@ flowchart TD
     LP["<b>Companion · Loads panel</b><br/>Recalculate · 3D view<br/>The take-off is right"]
     RP["<b>heron_loads_report</b><br/>the sheet: HTML · CSV<br/>PDF by Edge or Chrome"]
     FN["<b>Finalize</b> · MODIFY<br/>reads the model again<br/>refuses if it moved"]
-    RC["<b>revit_change's own body</b><br/>SET_PARAMETER_VALUES_BY_ID<br/>SET_AIR_TERMINAL_FLOW<br/><i>both DRAFT - refused today · D-117</i>"]
+    RC["<b>revit_change's own body</b><br/>SET_PARAMETER_VALUES_BY_ID<br/>SET_AIR_TERMINAL_FLOW<br/><i>each kept only while its card is PROVEN · D-117</i>"]
 
     U ==>|revit_building_loads| RD
     SP ==> RD
@@ -89,8 +95,8 @@ flowchart TD
 ```
 
 **Built, not proven.** The read and the calculation ran on *Heron loads test* in Revit 2024 on
-2026-10-06 - [Group CC](needs-checking/group-cc.md), PART (the status above). **Finalize is refused today**
-(the status above), and when it runs it is more than one undo entry
+2026-10-06 - [Group CC](needs-checking/group-cc.md), PART (the status above). **Finalize was refused on 2026-10-18 for want of two proofs, both signed since
+and Finalize not run since** (the status above), and when it runs it is more than one undo entry
 ([row 5b-314](fragment-issues/section-5b-rows-301-325.md), open). Every load is a peak estimate and a
 design aid, not an hourly simulation like HAP. Checked against `revit_building_loads`, `_loads_recalculate`,
 `_loads_report`, `_loads_confirm` and `_loads_finalize` in `mcp/server/heron_mcp_server.py`,
@@ -111,7 +117,7 @@ Companion - Loads panel  Recalculate, 3D view, The take-off is right
    |-- Report    ->  heron_loads_report: HTML, CSV, a PDF by Edge or Chrome
    |-- Finalize  (MODIFY, Changes on)  reads the model again, refuses if it moved
                      ->  revit_change's own body: SET_PARAMETER_VALUES_BY_ID, then SET_AIR_TERMINAL_FLOW
-                         (both DRAFT, so refused today - D-117)
+                         (each kept only while its card is PROVEN - D-117)
                      ->  the Spaces' loads and airflow, the diffusers' flows - back in Revit
 ```
 
@@ -124,7 +130,7 @@ Companion - Loads panel  Recalculate, 3D view, The take-off is right
 | Recalculate | runs the brain again on the take-off the panel holds, with the inputs as edited | No |
 | The take-off is right | gate 1: records the modeller's check against this take-off; until then the sheet says DRAFT and Finalize is shut | No |
 | Report | asks where, then writes the sheet - HTML, CSV, the take-off CSV, and a PDF when Edge or Chrome is found | No - files on this PC |
-| Finalize | reads the model again and refuses if the geometry moved; writes the Spaces' loads and airflow, then the diffusers' flows; reads them back; makes the Spaces schedule once | **Yes** - `companion_loads_finalize`, `MODIFY`. Refused today |
+| Finalize | reads the model again and refuses if the geometry moved; writes the Spaces' loads and airflow, then the diffusers' flows; reads them back; makes the Spaces schedule once | **Yes** - `companion_loads_finalize`, `MODIFY`. Refused whenever either writer's card is not PROVEN (D-117) |
 
 ---
 
@@ -306,8 +312,8 @@ row CC4.
 ### 4.3 What already exists and is reused
 
 `READ_SPACE_LOADS` (which `REPORT_SPACE_AIRFLOW` was merged into on 2026-11-01), `REPORT_ROOM_SPACE_DATA` (PROVEN) for checks and read-backs;
-`CREATE_HVAC_ZONE` (PROVEN) when zones are missing; `SET_PARAMETER_VALUES_BY_ID` (DRAFT), the Companion's
-own writer, and `SET_AIR_TERMINAL_FLOW` (DRAFT) for the write-back. Nothing in Heron reads Revit's energy
+`CREATE_HVAC_ZONE` (PROVEN) when zones are missing; `SET_PARAMETER_VALUES_BY_ID`, the Companion's
+own writer, and `SET_AIR_TERMINAL_FLOW` for the write-back - each one's status is on its card. Nothing in Heron reads Revit's energy
 analytical model or exports gbXML, and this plan does not need either: gbXML goes through Autodesk's cloud
 for its own loads, and the model is never uploaded ([D-26](DECISIONS.md)).
 
@@ -368,7 +374,7 @@ no True North, no site location. The owner confirms, or fixes in Revit and reads
 is recorded with the run. **The site location is fixed in Revit by hand** (Manage > Location) **or, since
 2026-10-06, through Heron**: `SET_PROJECT_LOCATION` sets the site, the time zone and True North, and
 `SET_PROJECT_UNITS` the units, both behind the owner's Admin switch, and `REPORT_LOCATION` and
-`REPORT_PROJECT_UNITS` read them back - the two setters PROVEN, the reads DRAFT ([FRAGMENT-ISSUES 5b-322](FRAGMENT-ISSUES.md),
+`REPORT_PROJECT_UNITS` read them back - the two setters PROVEN and the reads DRAFT when this was written, each one's status since on its card ([FRAGMENT-ISSUES 5b-322](FRAGMENT-ISSUES.md),
 [Group CJ](needs-checking/group-cj.md)). It said *nothing in Heron sets it* until then.
 
 **Gate 2 - write only on his word.** Finalize is a `MODIFY` through `revit_change`'s own path ([D-108](DECISIONS.md)):
@@ -662,10 +668,10 @@ take-off and pressed **Finalize to Revit**. What it did, read back by hand:
   file set one terminal's flow and read it back through its connector. The read-back reads the take-off
   again and sets each written value beside what Revit now prints (`read_back`), allowing Revit's own
   rounding; the diffusers through READ_SPACE_LOADS on each level's Spaces.
-- **READ_SPACE_LOADS could not have read them back anyway** on this model: it reads the design and the
-  calculated figures in one guard, and the calculated ones throw until Revit's own loads analysis has
-  run. Recorded as [FRAGMENT-ISSUES row 5b-323](fragment-issues/section-5b-rows-301-325.md); Finalize no
-  longer uses it.
+- **READ_SPACE_LOADS could not have read them back anyway** on this model, as it stood that day: it read
+  the design and the calculated figures in one guard, and the calculated ones throw until Revit's own loads
+  analysis has run. Recorded as [FRAGMENT-ISSUES row 5b-323](fragment-issues/section-5b-rows-301-325.md),
+  which says what was changed on 2026-11-11 and what is still owed a Revit; Finalize no longer uses it.
 - **A family finding, not a Heron one:** the office's `TRG_SAD_T202_SupplyAirDiffuser_SquarePlaqueFaceType`
   ties its duct connector's flow to no parameter, so no tool can set its flow from outside - the tool says
   `noFlowParameter` and writes nothing. `TCM_SAD_Supply Diffuser - Rectangular Face Rectangular Neck Auto

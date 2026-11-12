@@ -12,8 +12,8 @@ capability: CREATE_FAMILY_DOCUMENT
 # VERSION 3 (2026-11-01): CREATE_PROJECT_DOCUMENT was merged into this card on
 # the owner's instruction - "make sure there is no duplicate tools" - and is
 # DEPRECATED; see the merge block above `utterances`. Version 2's proof below
-# is kept as the record; it no longer describes the code, so the card is DRAFT
-# until version 3 is proved on a real model (D-30).
+# was kept as the record; it no longer described the code, so the card was
+# DRAFT at the time, until version 3 is proved on a real model (D-30).
 version: 3
 source: OFFICIAL
 risk: ADMIN

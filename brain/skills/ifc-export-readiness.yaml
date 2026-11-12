@@ -27,7 +27,7 @@ purpose: >
   2. FILTER_ELEMENTS_BY_CATEGORY with withoutLevel and the model categories,
      for the elements that belong to no level at all - they arrive with no
      storey, and most viewers do not show them. SELECT_WITHOUT_LEVEL until it
-     was merged there on 2026-11-01; version 5, DRAFT.
+     was merged there on 2026-11-01, at version 5.
   3. FIND_DUPLICATE_ELEMENTS - two elements in one place are two objects in
      the file, and both are counted downstream.
   4. FIND_DUPLICATE_VALUES on the IFC identity parameter (Revit's own

@@ -7,15 +7,15 @@ heron-layer: brain
 id: FRG-SHT-017
 semantic-identity: "delete that revision from the project"
 
-# VERSION 2, BACK TO DRAFT ON 2026-09-28, AND THE PROOF BLOCK IS KEPT.
-# Version 1 deleted whichever revision held the `sequenceNumber` it was typed,
-# with no confirmation at all - Article 7 lived only in the chat's good
-# manners. Version 2 is handed ONE revision by a find and refuses unless
-# `confirm` names that same revision; it refuses an issued one by name, reports
-# the clouds and sheets it touched and Revit's own reason when Revit says no.
-# Version 1's refusal wording "a revision cloud still uses it" was a guess
-# (section 2 of FRAGMENT-ISSUES quotes it) - on a one-revision model the reason
-# may equally have been that it was the last revision.
+# VERSION 2, BACK TO DRAFT ON 2026-09-28, AND THE PROOF BLOCK WAS KEPT. Version
+# 1 deleted whichever revision held the `sequenceNumber` it was typed, with no
+# confirmation at all - Article 7 lived only in the chat's good manners.
+# Version 2 is handed ONE revision by a find and refuses unless `confirm` names
+# that same revision; it refuses an issued one by name, reports the clouds and
+# sheets it touched and Revit's own reason when Revit says no. Version 1's
+# refusal wording "a revision cloud still uses it" was a guess (section 2 of
+# FRAGMENT-ISSUES quotes it) - on a one-revision model the reason may equally
+# have been that it was the last revision.
 kind: action
 domain: revit.sheets
 capability: DELETE_REVISION

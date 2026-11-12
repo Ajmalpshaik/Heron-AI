@@ -743,7 +743,7 @@ in one call. It then built a fixed end-suction pump set in five `CREATE_FAMILY_F
 base frame, pump body, nozzles, shaft and coupling, motor - and made three `COMBINE_FAMILY_FORMS` cuts: the
 anchor holes, the suction bore and the discharge bore. Then it looked, as the family method's step 13 says:
 `REPORT_FAMILY_FORMS` read 44 forms of 44 and 3 cuts, and `View 1` was pictured. No connectors:
-`ADD_FAMILY_CONNECTOR` is DRAFT. The tool read the chat's transcript and the add-in's `audit-202610.jsonl`,
+`ADD_FAMILY_CONNECTOR` was DRAFT. The tool read the chat's transcript and the add-in's `audit-202610.jsonl`,
 over the window from the owner's request to the picture (`--since 2026-10-17T17:53:25.525Z --until
 2026-10-17T18:01:24.569Z`):
 

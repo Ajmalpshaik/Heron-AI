@@ -19,7 +19,29 @@ positive:
       Revit refuses reads as a broken write rather than a fact about the
       parameter
 
+  # Row 5b-351, added 2026-11-11 with version 2. NOT RUN - NEEDS-CHECKING
+  # Group NK, NK4 (and Group CP, CP2, which asked the same). Version 1 printed
+  # <blank> for all three.
+  - given: >
+      a family with a Yes/No `Flag` ticked, a Yes/No `Derived` with the
+      formula not(Flag), and a Yes/No `Plain` unticked with no formula
+    expect: >
+      "Flag [Integer/instance] = Yes", "Derived ... = No (formula: not(Flag))"
+      and "Plain ... = No" in parameterList - each matching the tick the
+      Family Types dialog shows. Untick Flag and ask again: Flag No, Derived
+      Yes
+
 negative:
+  # Row 5b-351, added 2026-11-11 with version 2. NOT RUN - Group NK, NK4.
+  - given: >
+      the same family, with an Integer parameter `Count` set to 1 and a
+      Number of Poles or other whole-number parameter Revit shows no string
+      for
+    expect: >
+      `Count` reads "1" as Revit shows it - NOT "Yes" - and a whole number
+      Revit gives no string for still reads <blank>. Only a Yes/No is read as
+      Yes or No
+
   - given: a PROJECT document in front instead of a family
     expect: >
       notAFamily true and a finding saying so - never parameterCount 0 alone.

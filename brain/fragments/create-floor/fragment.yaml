@@ -46,9 +46,9 @@ risk: MODIFY
 #
 # Version 2's proof below no longer describes the code (impl/ changed) and is
 # kept as the record; CREATE_ROOF's held signature and CREATE_CEILING's proof
-# stay on their own cards. DRAFT until version 3 is proved on a real model
-# (D-30) - a ceiling on 2024 and refused on 2020, a roof measured, a floor
-# word for word as version 2.
+# stay on their own cards. DRAFT at the time, until version 3 is proved on a
+# real model (D-30) - a ceiling on 2024 and refused on 2020, a roof measured,
+# a floor word for word as version 2.
 
 purpose: >
   Creates a floor from a closed boundary on one level. The slab everything else

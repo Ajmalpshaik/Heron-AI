@@ -1,5 +1,5 @@
 # NEEDS-CHECKING Group IK - SET_FAMILY_LIGHT_SOURCE v2 and SET_FAMILY_SETTINGS
-# v3, DRAFT since 2026-10-21 (rows 5b-1297 to 5b-1299).
+# v3, DRAFT when written, 2026-10-21 (rows 5b-1297 to 5b-1299).
 #
 #     python tools/batch-prove.py tools/jobs/light-source-ik-2026-10-21.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/light-source-ik-2026-10-21.yaml

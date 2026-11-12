@@ -20,6 +20,14 @@ positive:
     expect: >
       inStep 2, outOfStep 0
 
+  # Row 5b-203, added 2026-11-11 with version 2. NOT RUN - Group NK, NK8.
+  - given: >
+      the scratch project as version 1's positive arranged it - one "HERON
+      Browser 1" on Sheets, A103 moved to another value
+    expect: >
+      outOfStep 2 exactly as version 1 gave it and `ambiguous` EMPTY - the
+      count must not turn down a name that occurs once
+
 negative:
   - given: parameterName "ZZZ NO SUCH PARAMETER"
     expect: >
@@ -31,6 +39,29 @@ negative:
     expect: >
       refused naming the parameter and that model's title - the first
       project's sets appearing is what a read of the wrong document would show
+
+  # Row 5b-203, added 2026-11-11 with version 2. NOT RUN - NEEDS-CHECKING
+  # Group NK, NK8; it needs a model that carries a duplicated name.
+  - given: >
+      the scratch project with its two sets in step, and a second parameter
+      called "HERON Browser 1" bound to Sheets - a project parameter beside
+      the first - so every sheet carries the name twice
+    expect: >
+      nothing checked: refused says every sheet that has the parameter has
+      two of that name, every sheet is in `ambiguous` and named in a finding
+      as NOT READ, report empty, inStep 0, outOfStep 0 - never a set called
+      out of step, or in step, on whichever of the two Revit returned first
+      (row 5b-203)
+
+  # Row 5b-203, added 2026-11-11 with version 2. NOT RUN - Group NK, NK8.
+  - given: >
+      the scratch project with its two sets in step, "HERON Browser 1" bound
+      to Sheets AND Views, and a second parameter of that name bound to Views
+      only - so each sheet carries the name once and each view twice
+    expect: >
+      every view in `ambiguous`; each set that matches its sheets reads NOT
+      CONFIRMED and is counted in `unconfirmed`, inStep 0 - never "in step"
+      while a sheet or view was not read
 
 second_route:
   - >

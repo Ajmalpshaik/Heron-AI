@@ -23,8 +23,8 @@ capability: SET_CATEGORY_GRAPHICS
 # the surface and, where the category is cut, the cut (`notCuttable` names the
 # rest), `solidPattern` names the fill, and a model with none is refused with
 # nothing written. Off, everything is exactly version 2. Version 2's proof
-# below no longer describes the code and is kept as the record; the card is
-# DRAFT until it is proved again.
+# below no longer described the code and was kept as the record; the card was
+# DRAFT at the time, until it is proved again.
 version: 3
 source: OFFICIAL
 risk: MODIFY

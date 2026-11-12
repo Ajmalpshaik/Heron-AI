@@ -25,9 +25,9 @@ capability: ADD_SCHEDULE_FIELDS
 # `appliedOrder` (the order read back, new columns marked) are new outputs;
 # every version 2 output is unchanged. The one rule version 2 kept as the
 # safer one - a position with no columnName refused - now holds only when
-# fieldNames is empty too. Version 1's proof below no longer describes the
-# code and is kept as a record; the card is DRAFT until NEEDS-CHECKING Group
-# KK proves version 3 and the owner signs.
+# fieldNames is empty too. Version 1's proof below no longer described the
+# code and was kept as a record; the card was DRAFT at the time, until
+# NEEDS-CHECKING Group KK proves version 3 and the owner signs.
 version: 3
 source: OFFICIAL
 risk: MODIFY
@@ -203,9 +203,11 @@ contract:
       role: result
       type: string
 
+# WRITTEN ABOVE AN EARLIER PROOF, since replaced by the `proof:` block below -
+# read that block's own date and fingerprint, not this comment, for what ran.
 # VERSION 1's PROOF, KEPT AS THE RECORD. Version 2 changed impl/, so its
-# fingerprint no longer describes the code and the card is DRAFT until
-# version 2 is proved on a real model (D-30).
+# fingerprint no longer described the code and the card was DRAFT at the
+# time, until version 2 is proved on a real model (D-30).
 proof:
   date: '2026-11-02'
   by: Ajmal PS
