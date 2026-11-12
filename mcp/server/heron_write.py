@@ -243,6 +243,56 @@ def reported_elsewhere(capability, reply):
             % (capability or "The change", where, did, where))
 
 
+def undo_sent_elsewhere(reply):
+    """
+    The pin's refusal after `revit_undo_last`, in the shape 5b-1135 gave the
+    write path (FRAGMENT-ISSUES 5b-1604): Revit's Undo WAS sent, and in which
+    model.
+
+    revit_undo_last asks the pin about the REPLY, so by then the add-in has
+    answered `ok` - it posted Undo. Today's add-in refuses a model that is not
+    the pinned one before it posts anything, so this is reached only behind an
+    add-in that does not make that check - and there it followed an Undo that
+    Revit has run by now. It ended "Nothing has been sent to Revit", which was
+    false about the one thing a modeller needs to know: that their own last
+    change in another model may be what went. Pure, so
+    tests/test_document_pin.py runs it.
+    """
+    reply = reply if isinstance(reply, dict) else {}
+    where = reply.get("document") or "the model in front"
+    what = str(reply.get("undoing") or "").strip()
+    for_what = (" The add-in reported it was for '%s'." % what) if what else ""
+    return ("Revit's Undo WAS SENT before Heron could tell, in %s, and Revit runs it "
+            "at once.%s Heron is not showing that as this chat's work. Look at %s in "
+            "Revit before anything else: Ctrl+Y (Redo) there puts back what that Undo "
+            "took." % (where, for_what, where))
+
+
+# What the add-in's undo guard held straight after a keep (`undoState` on the
+# kept reply, D-157), each to the one line a kept reply ends on. A state not
+# here - and no state at all, from an add-in older than the field - says
+# nothing: whether Heron can undo it is then not known, and is not guessed.
+_UNDO_LINES = {
+    "onTop": "To take this back: revit_undo_last sends Revit's own Undo for it, "
+             "while Heron has seen nothing else change this model.",
+    "nothing": "Nothing to take back: Revit counted no change from this job, so "
+               "revit_undo_last would refuse - Ctrl+Z now would undo whatever was "
+               "done before it.",
+    "unsure": "Heron cannot take this back itself: revit_undo_last would refuse, "
+              "because Heron missed something in this model. Revit's own undo list "
+              "is the way.",
+}
+
+
+def undo_line(reply):
+    """The line a KEPT reply ends on, saying whether Heron can still undo the
+    change and naming the tool that does - or None when the add-in did not say
+    (an add-in from before D-157's field). Pure, so the suites call it."""
+    if not isinstance(reply, dict):
+        return None
+    return _UNDO_LINES.get(reply.get("undoState"))
+
+
 class DocumentPin(object):
     """
     Document Pinning Agent. Which MODEL this chat is working on, inside the

@@ -6,105 +6,387 @@
 // See docs/29-metadata-standard.md
 
 using System;
+using Autodesk.Revit.ApplicationServices;
 using Autodesk.Revit.DB;
+using Autodesk.Revit.DB.Events;
 using Autodesk.Revit.UI;
 using Heron.Bridge;
+using Heron.Core;
 
 namespace Heron.Revit.Addin
 {
     /// <summary>
-    /// `undo_last` (D-157): Revit's own Undo, sent only while Heron's last kept
-    /// change is still the top of the model's undo list.
+    /// `undo_last` (D-157): Revit's own Undo, sent only while Heron saw its
+    /// last kept change land and has seen nothing change the model since -
+    /// and `undo_check`, the same questions asked with nothing sent.
     ///
     /// REVIT'S UNDO, NEVER A SECOND CHANGE. Heron does not work out how to put
     /// the model back and write that - a second change with risks of its own,
     /// and two entries in the undo list. It posts Revit's Undo command, which
-    /// is exactly what pressing Ctrl+Z does, and only when HeronUndoGuard has
-    /// seen Heron's entry land on top and nothing land on it since. Otherwise
-    /// it refuses and says why, and nothing is sent.
+    /// is exactly what pressing Ctrl+Z does, and only when HeronUndoGuard
+    /// allows it. Otherwise it refuses and says why, and nothing is sent.
     ///
     /// THE UNDO RUNS AFTER THIS ANSWER, NOT IN IT. PostCommand queues the
     /// command; Revit runs it once this external event returns. So the reply
     /// says it was SENT, never that it was done. The guard hears the undo when
-    /// Revit reports it, and a second request before then is refused.
+    /// Revit reports it; until then a second request is refused, the
+    /// dispatcher stops draining its queue (TakePosted), and another Heron job
+    /// in that model is held back (Waiting) - a change kept in between would
+    /// be what the Undo takes (row 5b-1605).
     ///
-    /// ONLY THE MODEL ON SCREEN. Revit's Undo acts on the active document, so
-    /// the pinned model must be the one in front (Golden Rule 20), checked
-    /// before anything is posted. No transaction is opened here: there is
-    /// nothing to change, only a command to send.
+    /// ONLY THE MODEL THIS CHAT IS PINNED TO, AND ONLY WHILE IT IS ON SCREEN
+    /// (row 5b-1604). Revit's Undo acts on the active document. So the
+    /// request names the pinned model exactly as a kept change does - its
+    /// path, else its title - it is found among the open models exactly as
+    /// RevitFragment.Run finds it (RevitOperations.HoldTarget), and it must BE
+    /// the active document, checked before anything is posted. The Project
+    /// Information id alone decided this once: every project started from one
+    /// template carries the same one, and a family has none. No transaction
+    /// is opened here: there is nothing to change, only a command to send.
     /// </summary>
     internal static class RevitUndo
     {
         /// <summary>
-        /// Whether Heron's last kept change is still the top of each model's
-        /// undo list. Held HERE, in a class that names no compiler, so
-        /// HeronApplication can tell it of a sync or a close without loading
+        /// What Heron has seen since its last kept change in each model. Held
+        /// HERE, in a class that names no compiler, so HeronApplication can
+        /// tell it of a sync, a reload, a save or a close without loading
         /// RevitFragment - and Roslyn with it - outside its guard.
         /// RevitFragment feeds it from the keep and its permanent listener.
+        /// Every transition goes to the add-in's log.
         /// </summary>
-        internal static readonly HeronUndoGuard Guard = new HeronUndoGuard();
+        internal static readonly HeronUndoGuard Guard = new HeronUndoGuard(HeronApplication.Log);
 
-        /// <summary>
-        /// A model's identity as three strings - its CreationGUID where the
-        /// release has one (2024 on), its path, its title. The guid alone is
-        /// shared by copies of one model, so two copies open at once are told
-        /// apart by path; a Save As starts a new key. RevitFragment's rollback
-        /// witness keys by this too, so both watchers agree on a model.
-        /// </summary>
-        internal static string KeyOf(Document doc)
-        {
-            if (doc == null) return null;
+        // Whether the request now ending posted Undo - read once by the
+        // dispatcher, on the same thread, straight after it.
+        private static bool _posted;
 
-            string guid = null;
-            try { guid = RevitOperations.CreationGuid(doc); } catch { }
-            var path = "";
-            try { path = doc.PathName ?? ""; } catch { }
-            var title = "";
-            try { title = doc.Title ?? ""; } catch { }
+        // A model's key as its save began, so a save that moves the key (a
+        // first save, Save As) can move what is remembered with it. A string,
+        // never the Document.
+        private static string _keyBeforeSave;
 
-            return (guid ?? "") + "|" + path + "|" + title;
-        }
+        // Reload Latest's event arrived at Revit 2021, so it is found by name:
+        // one build serves 2020 too, where there is none to hear.
+        private static Delegate _reloadHandler;
 
         /// <summary>Synchronized with central: Revit cleared the model's undo list.</summary>
         internal static void Synced(Document doc)
         {
-            try { Guard.SyncedIn(KeyOf(doc)); }
-            catch (Exception ex) { HeronApplication.Log("Undo guard missed a sync: " + ex.Message); }
+            try { Guard.SyncedIn(RevitOperations.DocumentKey(doc)); }
+            catch (Exception ex) { Missed(null, "a sync", ex); }
         }
 
         /// <summary>The model is closing: nothing about its undo list is kept.</summary>
         internal static void Forget(Document doc)
         {
-            try { Guard.Closed(KeyOf(doc)); }
-            catch (Exception ex) { HeronApplication.Log("Undo guard could not forget a model: " + ex.Message); }
+            try { Guard.Closed(RevitOperations.DocumentKey(doc)); }
+            catch (Exception ex) { Missed(null, "a model closing", ex); }
         }
 
-        public static string Last(UIApplication app, string expectProject)
+        /// <summary>
+        /// Heron missed something in this model - or, with none given, cannot
+        /// tell in which - and must stop vouching for what is on top there.
+        /// </summary>
+        internal static void Doubt(Document doc, string why)
+        {
+            string key = null;
+            try { key = doc == null ? null : RevitOperations.DocumentKey(doc); }
+            catch (Exception) { key = null; }
+            try { Guard.Doubt(key, why); }
+            catch (Exception ex) { HeronApplication.Log("Undo guard could not record a doubt: " + ex.Message); }
+        }
+
+        /// <summary>
+        /// The guard could not be told of something. It fails closed: every
+        /// model it remembers - or the one named - refuses from here on.
+        /// </summary>
+        private static void Missed(string key, string what, Exception ex)
+        {
+            HeronApplication.Log("Undo guard missed " + what + ": " + ex.Message);
+            try { Guard.Doubt(key, "Heron could not record " + what + " that Revit reported"); }
+            catch (Exception) { }
+        }
+
+        /// <summary>
+        /// The events only RevitUndo needs: Reload Latest, which clears the
+        /// undo list as a sync does, and a save, which can move a model's key.
+        /// </summary>
+        internal static void Listen(ControlledApplication application)
+        {
+            application.DocumentSaving += OnSaving;
+            application.DocumentSavingAs += OnSavingAs;
+            application.DocumentSaved += OnSaved;
+            application.DocumentSavedAs += OnSavedAs;
+
+            // BY NAME, NOT BY MEMBER: DocumentReloadedLatest is in Revit 2021
+            // and later and not in 2020 (read from the shipped assemblies).
+            // A direct reference compiles for 2024 and is missing on 2020 -
+            // exactly what tools/check-api-surface.py fails. On 2020 nothing
+            // is subscribed and Reload Latest goes unheard (Group NU).
+            try
+            {
+                var reloaded = typeof(ControlledApplication).GetEvent(ReloadEvent);
+                if (reloaded == null)
+                {
+                    HeronApplication.Log("Undo guard: this Revit has no Reload Latest event, "
+                        + "so a reload is not heard.");
+                    return;
+                }
+                _reloadHandler = Delegate.CreateDelegate(reloaded.EventHandlerType,
+                    typeof(RevitUndo).GetMethod("OnReloaded",
+                        System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic));
+                reloaded.AddEventHandler(application, _reloadHandler);
+            }
+            catch (Exception ex)
+            {
+                _reloadHandler = null;
+                HeronApplication.Log("Undo guard could not listen for Reload Latest: " + ex.Message);
+            }
+        }
+
+        private const string ReloadEvent = "DocumentReloadedLatest";
+
+        internal static void StopListening(ControlledApplication application)
+        {
+            application.DocumentSaving -= OnSaving;
+            application.DocumentSavingAs -= OnSavingAs;
+            application.DocumentSaved -= OnSaved;
+            application.DocumentSavedAs -= OnSavedAs;
+            try
+            {
+                var reloaded = typeof(ControlledApplication).GetEvent(ReloadEvent);
+                if (reloaded != null && _reloadHandler != null)
+                    reloaded.RemoveEventHandler(application, _reloadHandler);
+            }
+            catch (Exception ex)
+            {
+                HeronApplication.Log("Undo guard could not stop listening for Reload Latest: " + ex.Message);
+            }
+            _reloadHandler = null;
+        }
+
+        /// <summary>
+        /// Reload Latest finished in a model. Its arguments are read by name
+        /// for the reason the event is: the type does not exist on 2020.
+        /// With no model readable from them, every model refuses.
+        /// </summary>
+        private static void OnReloaded(object sender, EventArgs e)
+        {
+            try
+            {
+                var property = e == null ? null : e.GetType().GetProperty("Document");
+                var doc = property == null ? null : property.GetValue(e, null) as Document;
+                if (doc == null)
+                    Guard.Doubt(null, "a model was reloaded from central and Heron could not tell which");
+                else
+                    Guard.ReloadedIn(RevitOperations.DocumentKey(doc));
+            }
+            catch (Exception ex) { Missed(null, "a Reload Latest", ex); }
+        }
+
+        private static void OnSaving(object sender, DocumentSavingEventArgs e)
+        {
+            Saving(e == null ? null : e.Document);
+        }
+
+        private static void OnSavingAs(object sender, DocumentSavingAsEventArgs e)
+        {
+            Saving(e == null ? null : e.Document);
+        }
+
+        private static void OnSaved(object sender, DocumentSavedEventArgs e)
+        {
+            Saved(e == null ? null : e.Document);
+        }
+
+        private static void OnSavedAs(object sender, DocumentSavedAsEventArgs e)
+        {
+            Saved(e == null ? null : e.Document);
+        }
+
+        private static void Saving(Document doc)
+        {
+            try { _keyBeforeSave = Guard.Any && doc != null ? RevitOperations.DocumentKey(doc) : null; }
+            catch (Exception ex) { _keyBeforeSave = null; Missed(null, "a save starting", ex); }
+        }
+
+        /// <summary>
+        /// A save finished. An ordinary save leaves the key - and, as far as
+        /// Heron knows, the undo list - as it was. A first save or a Save As
+        /// gives the model a new path and title, so its key moves.
+        /// </summary>
+        private static void Saved(Document doc)
+        {
+            var before = _keyBeforeSave;
+            _keyBeforeSave = null;
+            if (before == null || doc == null) return;
+            try
+            {
+                var after = RevitOperations.DocumentKey(doc);
+                if (after != before) Guard.Renamed(before, after);
+            }
+            catch (Exception ex) { Missed(before, "a save", ex); }
+        }
+
+        /// <summary>
+        /// Whether the request that just ended posted Undo - asked once by the
+        /// dispatcher, which then stops draining its queue so Revit can run
+        /// the Undo before any job queued behind it.
+        /// </summary>
+        internal static bool TakePosted()
+        {
+            var posted = _posted;
+            _posted = false;
+            return posted;
+        }
+
+        /// <summary>
+        /// The refusal for a job that would act in a model where an Undo Heron
+        /// sent has not been reported yet - or null. A read goes on: it leaves
+        /// nothing for the Undo to take.
+        /// </summary>
+        internal static string Waiting(UIApplication app, string request, string op)
+        {
+            try
+            {
+                if (!Guard.Any || op == "undo_last" || op == "undo_check") return null;
+                if (!HeronOperationRegistry.IsDeclared(op)
+                    || HeronOperationRegistry.RiskOf(op) < HeronRisk.Execute) return null;
+
+                var doc = RevitOperations.HoldTarget(app, request);
+                if (doc == null) return null;
+                var why = Guard.Pending(RevitOperations.DocumentKey(doc), DateTime.Now);
+                return why == null ? null : Json.Error("undo_pending", why);
+            }
+            catch (Exception ex)
+            {
+                HeronApplication.Log("Undo guard could not say whether an Undo is waiting: " + ex.Message);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// What the guard holds for a model straight after a keep there, for
+        /// the kept reply's `undoState` field - or null when it holds nothing.
+        /// </summary>
+        internal static string StateOf(Document doc)
+        {
+            try
+            {
+                var entry = Guard.Of(RevitOperations.DocumentKey(doc));
+                return entry == null ? null : entry.State;
+            }
+            catch (Exception) { return null; }
+        }
+
+        /// <summary>
+        /// Why the model on screen is not shown to be the one this chat is
+        /// pinned to - or null when it is. The identity is the one a kept
+        /// change is aimed by: `documentPath`, else `document`.
+        /// </summary>
+        private static string NotThePinned(UIApplication app, string request, Document doc)
+        {
+            var title = "";
+            try { title = doc.Title ?? ""; } catch (Exception) { title = ""; }
+            const string NothingSent = " NOTHING was sent to Revit, and nothing was undone.";
+
+            var wantedPath = Json.ReadString(request, "documentPath");
+            var wanted = Json.ReadString(request, "document");
+            if (string.IsNullOrEmpty(wantedPath) && string.IsNullOrEmpty(wanted))
+            {
+                return "This request does not say which model this chat works on, so Heron cannot "
+                     + "tell that \"" + title + "\", the model on screen, is the one its change "
+                     + "was kept in." + NothingSent + " Ctrl+Z in Revit undoes the last change, "
+                     + "whoever made it.";
+            }
+
+            Document pinned;
+            try { pinned = RevitOperations.HoldTarget(app, request); }
+            catch (Exception) { pinned = null; }
+            if (pinned == null)
+            {
+                return "The model this chat works on"
+                     + (string.IsNullOrEmpty(wanted) ? "" : ", \"" + wanted + "\",")
+                     + " is not open in this Revit - or two open models share its name - so "
+                     + "Heron cannot tell that \"" + title + "\", the model on screen, is it."
+                     + NothingSent + " Open it, bring it to the front and ask again.";
+            }
+
+            if (!pinned.Equals(doc))
+            {
+                var pinnedTitle = "";
+                try { pinnedTitle = pinned.Title ?? ""; } catch (Exception) { pinnedTitle = ""; }
+                return "This chat works on \"" + pinnedTitle + "\", and the model on screen in "
+                     + "Revit now is "
+                     + (string.Equals(pinnedTitle, title, StringComparison.OrdinalIgnoreCase)
+                            ? "a different model with the same name"
+                            : "\"" + title + "\"")
+                     + ". Revit's Undo acts on the model on screen." + NothingSent
+                     + " Bring the chat's model to the front and ask again.";
+            }
+
+            // A DIFFERENT SHARED ID STILL PROVES A DIFFERENT MODEL; the same
+            // one proves nothing, which is why it is asked last and never alone.
+            var expectProject = Json.ReadString(request, "expectProject");
+            if (!string.IsNullOrEmpty(expectProject)
+                && RevitOperations.ProjectKey(doc) != expectProject)
+            {
+                return "This chat has been working on another model, and the one on screen in "
+                     + "Revit now is \"" + title + "\"." + NothingSent
+                     + " Bring the chat's model to the front and ask again.";
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// `undo_last`, or with `checkOnly` its questions and nothing sent.
+        /// `gate` is what the switches would answer an `undo_last` now - asked
+        /// by the caller, for a check only: the real one never reaches here
+        /// while they refuse it.
+        /// </summary>
+        public static string Last(UIApplication app, string request, bool checkOnly, string gate)
         {
             var front = app == null ? null : app.ActiveUIDocument;
             var doc = front == null ? null : front.Document;
-            if (doc == null)
+
+            string code = null;
+            string refusal = null;
+            if (checkOnly && gate != null)
             {
-                return Json.Error("no_document",
-                    "No model is open in Revit, so there is nothing to undo. Nothing was undone.");
+                code = Json.ReadString(gate, "error") ?? "write_disabled";
+                refusal = Json.ReadString(gate, "message") ?? "Changes are off.";
+            }
+            else if (doc == null)
+            {
+                code = "no_document";
+                refusal = "No model is open in Revit, so there is nothing to undo. Nothing was undone.";
+            }
+            else
+            {
+                // THE PINNED MODEL, BEFORE THE GUARD AND BEFORE ANYTHING IS POSTED.
+                refusal = NotThePinned(app, request, doc);
+                if (refusal != null) code = "wrong_document";
             }
 
-            if (!string.IsNullOrEmpty(expectProject) && RevitOperations.ProjectKey(doc) != expectProject)
+            string key = null;
+            RevitCommandId undo = null;
+            if (refusal == null)
             {
-                return Json.Error("wrong_document",
-                    "This chat has been working on another model, and the one in front of Revit "
-                    + "now is \"" + doc.Title + "\". Revit's Undo acts on the model in front, so "
-                    + "NOTHING was undone. Bring the chat's model to the front and ask again.");
+                key = RevitOperations.DocumentKey(doc);
+                undo = RevitCommandId.LookupPostableCommandId(PostableCommand.Undo);
+                bool canPost;
+                try { canPost = undo != null && app.CanPostCommand(undo); }
+                catch (Exception) { canPost = false; }
+
+                // An Undo sent long ago and never reported is no longer waited for.
+                Guard.Pending(key, DateTime.Now);
+
+                refusal = Guard.Refusal(key, doc.Title, true, canPost);
+                if (refusal != null) code = "undo_refused";
             }
 
-            var key = KeyOf(doc);
-            var undo = RevitCommandId.LookupPostableCommandId(PostableCommand.Undo);
-            bool canPost;
-            try { canPost = undo != null && app.CanPostCommand(undo); }
-            catch (Exception) { canPost = false; }
-
-            var refusal = Guard.Refusal(key, doc.Title, true, canPost);
-            if (refusal != null) return Json.Error("undo_refused", refusal);
+            if (checkOnly) return Checked(doc, key, refusal);
+            if (refusal != null) return Json.Error(code, refusal);
 
             var said = Guard.SentSentence(key);
             var entry = Guard.Of(key);
@@ -117,10 +399,12 @@ namespace Heron.Revit.Addin
                 return Json.Error("undo_refused",
                     "Revit would not take the Undo command: " + ex.Message + " Nothing was undone.");
             }
-            Guard.SentFor(key);
+            Guard.SentFor(key, DateTime.Now);
+            _posted = true;
 
             return Json.Ok(
                 Json.Bool("sent", true),
+                Json.Str("did", "undo_sent"),
                 Json.Str("undoing", entry == null ? null : entry.Job),
                 Json.Str("undoEntry", entry == null ? null : entry.Label),
                 Json.Str("document", doc.Title),
@@ -128,6 +412,28 @@ namespace Heron.Revit.Addin
                 Json.Str("projectKey", RevitOperations.ProjectKey(doc)),
                 Json.Str("creationGuid", RevitOperations.CreationGuid(doc)),
                 Json.Str("said", said));
+        }
+
+        /// <summary>
+        /// A check's answer. Always `ok`: the check ran, and "no" with the
+        /// exact refusal is its answer. Nothing is posted on this path.
+        /// </summary>
+        private static string Checked(Document doc, string key, string refusal)
+        {
+            var entry = refusal == null ? Guard.Of(key) : null;
+            return Json.Ok(
+                Json.Bool("checked", true),
+                Json.Bool("sent", false),
+                Json.Str("did", "undo_checked"),
+                Json.Bool("wouldSend", refusal == null && entry != null),
+                Json.Str("undoing", entry == null ? null : entry.Job),
+                Json.Str("undoEntry", entry == null ? null : entry.Label),
+                Json.Str("document", doc == null ? null : doc.Title),
+                Json.Str("documentPath",
+                         doc == null || string.IsNullOrEmpty(doc.PathName) ? null : doc.PathName),
+                Json.Str("projectKey", doc == null ? null : RevitOperations.ProjectKey(doc)),
+                Json.Str("creationGuid", doc == null ? null : RevitOperations.CreationGuid(doc)),
+                Json.Str("said", Guard.CheckSentence(key, refusal)));
         }
     }
 }

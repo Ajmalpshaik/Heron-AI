@@ -207,11 +207,19 @@ _KNOWN = {
     "reset_failed":      (ROLLED_BACK, FIX_FIRST,
                           "Revit refused to end the temporary hide/isolate; nothing in the "
                           "model was touched"),
-    # D-157: Revit's Undo was NOT sent - Heron's last change is not the top of
-    # the undo list, or Revit could not take the command. The add-in's own
-    # sentence says which; asking again changes nothing until that does.
+    # D-157: Revit's Undo was NOT sent - Heron has seen something change the
+    # model since its last change, its last job left nothing Revit counted, or
+    # Revit could not take the command. The add-in's own sentence says which;
+    # asking again changes nothing until that does.
     "undo_refused":      (REFUSED, FIX_FIRST,
                           "Revit's Undo was not sent, so nothing was undone"),
+    # D-157: an Undo Heron sent has not been reported by Revit yet, so a job
+    # that would act in that model was held back BEFORE it was routed - a
+    # change kept now would be what that Undo takes. Nothing ran, so NEVER_RAN
+    # like revit_busy; it clears when Revit reports the Undo, or in seconds.
+    "undo_pending":      (NEVER_RAN, FIX_FIRST,
+                          "Revit has not yet run the Undo Heron sent in that model, so "
+                          "nothing was run - look at the model and ask again"),
 
     # --- it ran ------------------------------------------------------------
     "still_running":     (RUNNING, WAIT,

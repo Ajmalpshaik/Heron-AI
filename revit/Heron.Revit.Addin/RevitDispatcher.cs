@@ -579,6 +579,13 @@ namespace Heron.Revit.Addin
                             // exception is Revit's problem, not just Heron's.
                             _log("Operation failed: " + ex);
                             response = Json.Error("operation_failed", ex.Message);
+
+                            // D-157: A JOB THAT COULD CHANGE THE MODEL AND ENDED
+                            // THIS WAY was neither kept nor rolled back as far
+                            // as Heron knows, so the undo guard stops vouching
+                            // for what is on top in any model (row 5b-1607).
+                            if (HeronOperationRegistry.Writes(op))
+                                RevitUndo.Doubt(null, "a Heron job ended in a way Heron did not expect");
                         }
                         finally
                         {
@@ -783,6 +790,42 @@ namespace Heron.Revit.Addin
 
                     job.Finish(response);
                 }
+
+                // D-157: REVIT'S UNDO WAS POSTED, AND REVIT RUNS A POSTED COMMAND
+                // ONLY ONCE THIS HANDLER RETURNS. Draining on would run every
+                // job queued behind it first, and a change one of them kept
+                // would be on top of the undo list - what the Undo then takes,
+                // while the chat was told it was Heron's earlier change (row
+                // 5b-1605). So stop here, and ask Revit to call again for the rest.
+                if (RevitUndo.TakePosted())
+                {
+                    RaiseForTheRest();
+                    return;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Ask Revit to run Execute again for whatever is still queued, after
+        /// it has had the thread back. A request that arrives later raises the
+        /// event itself; this is for the ones already waiting.
+        /// </summary>
+        private void RaiseForTheRest()
+        {
+            try
+            {
+                lock (_queueLock)
+                {
+                    if (_queue.Count == 0) return;
+                }
+                var raiser = _event;
+                if (raiser != null) raiser.Raise();
+            }
+            catch (Exception ex)
+            {
+                // The queued callers time out as "Revit is busy" at worst, and
+                // nothing of theirs has run.
+                _log("Could not ask Revit to run the jobs queued behind an Undo: " + ex.Message);
             }
         }
 
@@ -974,6 +1017,12 @@ namespace Heron.Revit.Addin
                 var grantedAt = Json.ReadString(response, "grantedAt");
                 if (!string.IsNullOrEmpty(grantedAt))
                     return "Kept without asking - job allowed at " + grantedAt;
+
+                // D-157: an Undo is SENT, never done, when this is shown; and a
+                // check sent nothing. "Done" would say more than either.
+                var did = Json.ReadString(response, "did");
+                if (did == "undo_sent") return "Undo sent - Revit runs it next";
+                if (did == "undo_checked") return "Checked - nothing was sent";
             }
             return Explain(failure);
         }
@@ -1000,6 +1049,8 @@ namespace Heron.Revit.Addin
                 case "session_in_use":  return "Another chat is using this Revit";
                 case "model_in_use":    return "Another chat is using this model - nothing was sent";
                 case "unknown_op":      return "Heron does not know that job";
+                case "undo_refused":    return "Undo not sent - nothing was undone";
+                case "undo_pending":    return "Waiting for Revit's Undo - nothing was run";
                 case "not_implemented": return "Heron has no handler for that yet";
                 case "no_source":       return "No job was sent";
                 case "needs_unbound":   return "Nothing to work on - check the selection";

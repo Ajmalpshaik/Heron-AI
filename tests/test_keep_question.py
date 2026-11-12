@@ -193,7 +193,10 @@ def wiring():
     # met there must stop the job like one met in the fragment.
     asked_at = run.find("answered = AskTheModeller(")
     recheck = run.find("if (HeronDialogWatch.Refused)", asked_at)
-    kept_at = run.find("if (apply) keptNote = KeepAndWatch(group, target, watch);")
+    # THE KEEP IS NAMED BY ITS OPENING WORDS SINCE 2026-11-12: it is handed what
+    # Revit counted in the job as well (D-157, the undo guard), so its line no
+    # longer ends at `watch`. What is held here - the ORDER - is unchanged.
+    kept_at = run.find("keptNote = KeepAndWatch(group, target, watch,")
     check(0 < asked_at < recheck < kept_at,
           "the box asks, the dialog watch is asked again, and only then is anything kept")
     check(before(run, "rolledBack = RollBackAndCheck(group, target, watch);",
@@ -506,7 +509,7 @@ def grant():
     check(run.count("GiveTheGrant(") == 1
           and "if (apply && answered == RestOfJob) GiveTheGrant(client, grantKey, name);" in run,
           "and Run calls it only when the modeller pressed the third link and the change was kept")
-    check(before(run, "if (apply) keptNote = KeepAndWatch(group, target, watch);",
+    check(before(run, "keptNote = KeepAndWatch(group, target, watch,",
                  "GiveTheGrant(client, grantKey, name)"),
           "after the group was kept, never before")
     check(re.search(r'Json\.Read\w+\(\s*request\s*,\s*"[^"]*(?:[Gg]rant|[Rr]est)[^"]*"', raw) is None,

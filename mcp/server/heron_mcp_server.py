@@ -124,7 +124,8 @@ import heron_bridge_client as bridge          # noqa: E402
 import heron_session as session                      # noqa: E402
 from heron_session import NotBound                  # noqa: E402
 from heron_write import (BadDistance, describe_vertical,   # noqa: E402
-                         parse_millimetres, reported_elsewhere, skipped_sentence)
+                         parse_millimetres, reported_elsewhere, skipped_sentence,
+                         undo_line, undo_sent_elsewhere)
 from heron_failure import analyse, explain          # noqa: E402
 import heron_tools as tools                         # noqa: E402
 import heron_config as configuration                # noqa: E402
@@ -157,8 +158,8 @@ from heron_server_core import (                             # noqa: E402
 # says where the label it gives `_ended` is not a word by itself. The table,
 # and the line a reply carries the word on, are the core's.
 from heron_server_core import (                             # noqa: E402
-    ANSWERED, _change_outcome, _failure_outcome, NOT_RUN, _outcome, _sent,
-    UNKNOWN)
+    ANSWERED, _change_outcome, _failure_outcome, KEPT, NOT_RUN, _outcome, _sent,
+    STILL_RUNNING, UNKNOWN)
 
 import anyio.from_thread                                   # noqa: E402 - the SDK's own dependency
 
@@ -2022,7 +2023,18 @@ def revit_change(capability: str = "", values: str = "",
     # KEPT ONLY ON THE ADD-IN'S OWN VERDICT (row 5b-1159). The reply was `ok`
     # and the modeller did not say no - which is not yet "kept": an add-in
     # that names no verdict leaves that unknown, and the line says unknown.
-    _outcome(_change_outcome(reply))
+    ended = _change_outcome(reply)
+
+    # WHETHER HERON CAN STILL UNDO IT, on a change that WAS kept (D-157): one
+    # line, last, from what the add-in's undo guard held straight after the
+    # keep (`undoState`). An add-in from before the field sends none, and
+    # nothing is said - not guessed.
+    can_undo = undo_line(reply) if ended == KEPT else None
+    if can_undo:
+        lines.append("")
+        lines.append(can_undo)
+
+    _outcome(ended)
     return _ended("ok", "\n".join(lines))
 
 
@@ -3433,50 +3445,136 @@ def revit_reset_temporary() -> str:
 
 
 @server.tool()
-def revit_undo_last() -> str:
+def revit_undo_last(check_only: bool = False) -> str:
     """
-    Undo Heron's LAST kept change in the model on screen - Revit's own Undo,
-    exactly as Ctrl+Z, never a second change made to reverse the first.
+    Undo Heron's LAST kept change in the model this chat works on - Revit's
+    own Undo, exactly as Ctrl+Z, never a second change made to reverse the first.
 
     Use ONLY when the user asks to undo or take back what Heron just did.
-    Revit's Undo takes the top of the undo list, so it is sent only while
-    Heron's last change is still on top: if anything was done after it - the
-    user's own edit, another Heron action, an undo, a sync - it is refused,
+    Revit's Undo takes whatever was done last, so it is sent only while Heron
+    has seen NOTHING change that model since its own change: after the user's
+    edit, another Heron action, an undo, a sync or a reload it is refused,
     nothing is undone, and the reply says why. Undoes one change, once; for
-    more, the user presses Ctrl+Z. Needs Changes ON.
+    more, the user presses Ctrl+Z. Needs Changes ON and that model on screen.
+
+    `check_only=true` sends nothing: it says whether Undo would be sent now and
+    for which change, or the exact refusal. It works with Changes off.
 
     The reply says Undo was SENT; Revit runs it right after. Ctrl+Y redoes it.
     """
     try:
         session = binding.resolve()
     except NotBound as unbound:
+        # NOT RUN: nothing judged the request - there was no one Revit to
+        # send it to. It was labelled a refusal alone until 2026-11-12.
+        _outcome(NOT_RUN)
         return _ended("refused", str(unbound))
 
-    # idempotent=False: if the answer is lost after the request left, whether
-    # Revit posted Undo cannot be known from here, and asking again could
-    # undo a second thing. The add-in's guard would refuse the second - this
-    # does not lean on it.
-    reply = session.request("undo_last",
-                            op_args={"expectProject": pinned.project_information_id or ""},
-                            idempotent=False)
+    # NO PIN, NO UNDO. The guard in the add-in remembers a MODEL's last kept
+    # change, not whose it was: a chat that has worked in no model has no
+    # change of its own there, and the one it would take is another chat's.
+    # D-157 refuses when "the pinned model is not that one" and is silent on
+    # a chat with no pin at all - so this refuses, and the question is
+    # recorded (OPEN-QUESTIONS). Before anything is sent.
+    if not pinned.is_pinned:
+        return _ended("refused",
+                      "This chat has not worked in a model yet, so there is no change of "
+                      "its own to undo, and Heron will not send Undo for a change it did "
+                      "not see this chat make. Nothing has been sent to Revit. Ctrl+Z in "
+                      "Revit undoes the last change, whoever made it.")
+
+    # THE PINNED MODEL, AS A KEPT CHANGE NAMES IT - its path, else its title,
+    # and the shared id (`_aim_at_pin`). The add-in finds that model among the
+    # open ones and posts Undo only when it IS the one on screen. The shared
+    # id alone was sent until 2026-11-12: every project started from one
+    # template carries the same one, and a family none (row 5b-1604).
+    args = {}
+    _aim_at_pin(args)
+    if check_only:
+        # A check only looks: it claims no model for this chat (D-141).
+        args["claim"] = "no"
+
+    # idempotent=False for the real one: if the answer is lost after the
+    # request left, whether Revit posted Undo cannot be known from here, and
+    # asking again could undo a second thing. The add-in's guard would refuse
+    # the second - this does not lean on it. A check sends nothing, so it may
+    # be asked again.
+    # FROM HERE THE REQUEST HAS LEFT (`_after_it_left`).
+    _sent()
+    reply = session.request("undo_check" if check_only else "undo_last",
+                            op_args=args, idempotent=bool(check_only))
     session.close()
-    _ended_by_reply("revit_undo_last", reply)
 
-    if reply is None:
-        return ("Revit %s (session %s) did not answer, so whether Undo was sent cannot be "
-                "known from here. Look at Revit's undo list before asking again."
-                % (session.revit_version, session.pid))
+    where = "Revit %s, session %s" % (session.revit_version, session.pid)
+    failure = analyse(reply, writes=not check_only)
+    if failure is not None:
+        # THE WORD AND THE LABEL ARE heron_failure's: a refusal REFUSED, Revit
+        # busy or the model held NOT RUN, an answer lost OUTCOME UNKNOWN.
+        label = _failure_ended(failure)
+        if failure.code == "unknown_op":
+            # AN ADD-IN FROM BEFORE D-157 ANSWERS "Heron has no operation
+            # called 'undo_last'" and lists the ones it has - said to a
+            # modeller raw until 2026-11-12. In Revit's words: that Revit's
+            # Heron is older than this chat's, and nothing was sent.
+            return _ended(label,
+                          "The Heron add-in in %s is older than this chat's Heron and "
+                          "cannot %s. Nothing was sent to Revit and nothing was undone. "
+                          "Ctrl+Z in Revit undoes the last change, whoever made it - the "
+                          "arrow beside the Undo button shows what that is. Updating "
+                          "Heron in that Revit adds this."
+                          % (where, "check this" if check_only
+                             else "send Undo for Heron's last change"))
+        if reply is None:
+            return _ended(label,
+                          ("%s did not answer the check. A check sends nothing to "
+                           "Revit's Undo." if check_only else
+                           "%s did not answer, so whether Undo was sent cannot be known "
+                           "from here. Look at the model, and at the arrows beside "
+                           "Revit's Undo and Redo buttons, before asking again.")
+                          % where)
+        said = explain(failure)
+        if not check_only and failure.touched_the_model is None:
+            said += ("\nWhether Undo was sent is not known. If it was, Revit has run it "
+                     "by now: look at the arrows beside Revit's Undo and Redo buttons.")
+        return _ended(label, said)
 
-    if not reply.get("ok"):
-        return reply.get("message") or reply.get("error") or "The request was refused."
+    # GOLDEN RULE 20, AFTER THE ACT - and so never "Nothing has been sent to
+    # Revit" (row 5b-1604, the pattern row 5b-1135 set for revit_change). The
+    # add-in answered ok: for the real call it POSTED Undo. Today's add-in
+    # refuses another model before it posts, so this is reached only behind
+    # one that does not - and there the reply says plainly that Undo was sent,
+    # and in which model. How that ended in the model is not known.
+    if check_only:
+        wrong_model = pinned.check(reply, unsent="Nothing was sent to Revit's Undo: "
+                                                 "this was only a check.")
+        if wrong_model is not None:
+            return _ended("refused", wrong_model)
+        _outcome(ANSWERED)
+        return _ended("ok", "%s (%s, %s)" % (
+            reply.get("said") or ("Undo would be sent." if reply.get("wouldSend")
+                                  else "Undo would not be sent."),
+            reply.get("document"), where))
 
-    wrong_model = pinned.check(reply)
+    wrong_model = pinned.check(reply, did=undo_sent_elsewhere(reply))
     if wrong_model is not None:
-        return _ended("refused", wrong_model)
+        _outcome(UNKNOWN)
+        return _ended("failed", wrong_model)
 
-    return "%s (%s, Revit %s, session %s)" % (
-        reply.get("said") or "Undo was sent.", reply.get("document"),
-        session.revit_version, session.pid)
+    # AN `ok` THAT DOES NOT SAY IT SENT is not read as one that did: the word
+    # below is said only of the add-in's own `sent`.
+    if reply.get("sent") is not True:
+        _outcome(UNKNOWN)
+        return _ended("failed",
+                      "The Heron add-in in %s answered without saying whether Undo was "
+                      "sent, so Heron cannot tell. Look at the model, and at the arrows "
+                      "beside Revit's Undo and Redo buttons, before asking again." % where)
+
+    # SENT, NOT DONE: Revit runs a posted command after this reply. STILL
+    # RUNNING is the word for that - Revit took it and has not finished; do
+    # not send it again.
+    _outcome(STILL_RUNNING)
+    return _ended("ok", "%s (%s, %s)" % (
+        reply.get("said") or "Revit's own Undo was sent.", reply.get("document"), where))
 
 
 @server.tool()

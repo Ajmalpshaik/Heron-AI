@@ -216,8 +216,11 @@ TOOLS = {
 
     # Revit's own Undo for Heron's last kept change (D-157). MODIFY, because it
     # takes a change out of the model and needs Changes ON. The add-in posts
-    # Undo only while Heron's entry is still the top of the undo list, so the
-    # modeller's own work is never what goes.
+    # Undo only while it saw Heron's change land and has seen nothing change
+    # that model since - Revit has no API that reads its undo list, so that is
+    # all that is known. With `check_only` it sends `undo_check` instead, which
+    # the add-in declares READ: it posts nothing, and answers with Changes off.
+    # The tool stays MODIFY - its risk is the most it can do.
     "revit_undo_last":          (MODIFY,  "undo_last"),
 
     # The brain, reachable. These three read what Heron KNOWS - the skills, the
@@ -536,7 +539,14 @@ LIBRARY = ("heron_capabilities", "heron_lookup", "heron_method",
 # fact each time - a panel opened, a session bound, a preview shown - and a
 # tool joins when its own returns have been read the same way, never because
 # the line would be easy to add.
-STATES_OUTCOME = ("revit_change", "revit_read", "revit_show")
+#
+# AND revit_undo_last, SINCE 2026-11-12 (row 5b-1610), joined by those steps:
+# every return read against the table. Undo posted is STILL RUNNING - Revit
+# took it and runs it after the reply - never KEPT and never "done"; a check
+# that sent nothing is ANSWERED; each refusal REFUSED; no session NOT RUN; no
+# answer, or an Undo sent in a model this chat does not work on, OUTCOME
+# UNKNOWN. It is not a door to the library, so the doors are still three.
+STATES_OUTCOME = ("revit_change", "revit_read", "revit_show", "revit_undo_last")
 
 
 class NotDeclared(Exception):
