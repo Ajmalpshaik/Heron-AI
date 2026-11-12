@@ -311,6 +311,7 @@ async def exercise(server):
         "revit_show": ["capability", "values", "expect_from", "request"],
         "revit_isolate_temporary": ["ids", "category"],
         "revit_reset_temporary": [],
+        "revit_undo_last": [],
         # `dry_run` since D-155: the run rolled back, asked for from the chat.
         "revit_change": ["capability", "values", "expect_from", "request", "dry_run"],
         "heron_hvac": ["calculation", "inputs"],
@@ -982,6 +983,26 @@ async def exercise_show(module):
         said = await call("revit_isolate_temporary", {"category": "ducts"})
         check("cannot hide or isolate temporarily" in said,
               "and the add-in's refusal reaches the chat in its own words")
+
+        # D-157: REVIT'S OWN UNDO, SENT ONCE - never retried on a lost answer,
+        # since a second Undo could take something that is not Heron's.
+        revit.asked[:] = []
+        revit.reply = {"ok": True, "sent": True, "undoing": "rename-views-by-level",
+                       "document": "Project1", "projectKey": "key-1",
+                       "said": "Revit's own Undo was sent for 'rename-views-by-level'."}
+        said = await call("revit_undo_last", {})
+        op, args, idempotent = revit.asked[-1] if revit.asked else (None, {}, None)
+        check(op == "undo_last" and args.get("expectProject") == "key-1" and idempotent is False,
+              "revit_undo_last sends undo_last with the pin, never safe to resend - found "
+              "%r %r %r" % (op, args, idempotent))
+        check("Undo was sent for 'rename-views-by-level'" in said,
+              "and says, in the add-in's words, that Undo was SENT")
+        revit.reply = {"ok": False, "error": "undo_refused",
+                       "message": "Heron's last change, 'x' at 14:32, is no longer the top of "
+                                  "Revit's undo list - 'Move' was done after it. Nothing was undone."}
+        said = await call("revit_undo_last", {})
+        check("'Move' was done after it" in said and "Nothing was undone" in said,
+              "and a refusal - something on top of Heron's change - reaches the chat whole")
     finally:
         del module.binding.resolve
         module.pinned.forget()

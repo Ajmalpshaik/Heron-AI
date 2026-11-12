@@ -3624,6 +3624,49 @@ def revit_reset_temporary() -> str:
 
 
 @server.tool()
+def revit_undo_last() -> str:
+    """
+    Undo Heron's LAST kept change in the model on screen - Revit's own Undo,
+    exactly as Ctrl+Z, never a second change made to reverse the first.
+
+    Use ONLY when the user asks to undo or take back what Heron just did.
+    Revit's Undo takes the top of the undo list, so it is sent only while
+    Heron's last change is still on top: if anything was done after it - the
+    user's own edit, another Heron action, an undo, a sync - it is refused,
+    nothing is undone, and the reply says why. Undoes one change, once; for
+    more, the user presses Ctrl+Z. Needs Changes ON.
+
+    The reply says Undo was SENT; Revit runs it right after. Ctrl+Y redoes it.
+    """
+    try:
+        session = binding.resolve()
+    except NotBound as unbound:
+        return _ended("refused", str(unbound))
+
+    # idempotent=False: if the answer is lost after the request left, whether
+    # Revit posted Undo cannot be known from here, and asking again could
+    # undo a second thing. The add-in's guard would refuse the second - this
+    # does not lean on it.
+    reply = session.request("undo_last",
+                            op_args={"expectProject": pinned.project_information_id or ""},
+                            idempotent=False)
+    session.close()
+    _ctx_reply(reply)
+
+    failure = analyse(reply, writes=tools.writes("revit_undo_last"))
+    if failure is not None:
+        return _ended(_failure_ended(failure), explain(failure))
+
+    wrong_model = pinned.check(reply)
+    if wrong_model is not None:
+        return wrong_model
+
+    return _ended("ok", "%s (%s, Revit %s, session %s)" % (
+        reply.get("said") or "Undo was sent.", reply.get("document"),
+        session.revit_version, session.pid))
+
+
+@server.tool()
 def revit_offer_settings(capability: str, values: str) -> str:
     """
     Put a SETTINGS capability's current values on the Heron Companion page as

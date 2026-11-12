@@ -206,6 +206,14 @@ namespace Heron.Core
                 { "isolate_temporary",  HeronRisk.Execute },
                 { "reset_temporary",    HeronRisk.Execute },
 
+                // MODIFY - Revit's own Undo, posted (D-157). It changes the
+                // model - it takes Heron's last kept change back - so it needs
+                // Changes ON like any change. FIXED CODE IN THE ADD-IN: the
+                // command is posted only while HeronUndoGuard has seen Heron's
+                // entry on top of the undo list and nothing on it since, so it
+                // can never take the modeller's own work.
+                { "undo_last",          HeronRisk.Modify },
+
                 // ANALYZE - runs a fragment's own C# against the model and
                 // reports what it left behind. It is here rather than at
                 // Modify for a structural reason: the executor opens NO

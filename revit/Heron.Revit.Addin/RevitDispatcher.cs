@@ -887,6 +887,9 @@ namespace Heron.Revit.Addin
                 case "reset_temporary":
                     return "Resetting the temporary hide/isolate";
 
+                case "undo_last":
+                    return "Undoing Heron's last change";
+
                 case "release_models":
                     return "Handing a model back to the other chats";
 

@@ -2527,6 +2527,13 @@ namespace Heron.Revit.Addin
                                             HeronRollbackWitness.Watch watch)
         {
             if (group.Assimilate() != TransactionStatus.Committed) return "";
+
+            // D-157: THIS JOB'S ENTRY IS THE TOP OF THE UNDO LIST NOW. Said after
+            // Assimilate returned, so whatever Revit reported while assimilating
+            // was heard as this job's own (the witness is still armed).
+            try { if (watch != null) Undo.Kept(watch.Document, watch.Job, watch.Label, DateTime.Now); }
+            catch (Exception ex) { HeronApplication.Log("Undo guard missed a keep: " + ex.Message); }
+
             try
             {
                 return Witness.Assimilated(watch, Resolver(doc));
@@ -3520,6 +3527,33 @@ namespace Heron.Revit.Addin
         private static readonly HeronRollbackWitness Witness = new HeronRollbackWitness();
 
         /// <summary>
+        /// Whether Heron's last kept change is still the top of each model's
+        /// undo list - D-157's guard for undo_last. Fed by the same permanent
+        /// listener and the same keep as the witness above; see HeronUndoGuard.
+        /// </summary>
+        internal static readonly HeronUndoGuard Undo = new HeronUndoGuard();
+
+        /// <summary>A model's key for the undo guard - the witness's own, so both agree.</summary>
+        internal static string UndoKey(Document doc)
+        {
+            return WitnessKey(doc);
+        }
+
+        /// <summary>Synchronized with central: Revit cleared the model's undo list.</summary>
+        internal static void UndoSynced(Document doc)
+        {
+            try { Undo.SyncedIn(WitnessKey(doc)); }
+            catch (Exception ex) { HeronApplication.Log("Undo guard missed a sync: " + ex.Message); }
+        }
+
+        /// <summary>The model is closing: nothing about its undo list is kept.</summary>
+        internal static void UndoForget(Document doc)
+        {
+            try { Undo.Closed(WitnessKey(doc)); }
+            catch (Exception ex) { HeronApplication.Log("Undo guard could not forget a model: " + ex.Message); }
+        }
+
+        /// <summary>
         /// Start watching one write job: count the last kept job's elements as
         /// they stand now, and arm the listener for what this job adds. Opened
         /// just before the group starts, disposed when the job's request ends.
@@ -3610,6 +3644,12 @@ namespace Heron.Revit.Addin
         private static void OnDocumentChanged(object sender,
             Autodesk.Revit.DB.Events.DocumentChangedEventArgs e)
         {
+            // D-157: EVERY CHANGE TO A MODEL WHERE HERON KEPT ONE, heard before
+            // the witness's own early return - a Ctrl+Z or the modeller's own
+            // edit between two jobs is exactly what the undo guard is for. One
+            // dictionary test when Heron has kept nothing.
+            if (Undo.Any) HearForUndo(e);
+
             try
             {
                 var armed = Witness.Armed;
@@ -3653,6 +3693,38 @@ namespace Heron.Revit.Addin
             catch (Exception ex)
             {
                 HeronApplication.Log("Rollback watch missed a change: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// One DocumentChanged, told to the undo guard. A commit while Heron's
+        /// own job is armed in the same model is the job's own - inside its
+        /// group - and covers nothing. Nothing escapes into Revit's event.
+        /// </summary>
+        private static void HearForUndo(Autodesk.Revit.DB.Events.DocumentChangedEventArgs e)
+        {
+            try
+            {
+                var key = WitnessKey(e.GetDocument());
+                var armed = Witness.Armed;
+                var ours = armed != null && armed.Document == key;
+                var names = e.GetTransactionNames();
+                switch (e.Operation)
+                {
+                    case Autodesk.Revit.DB.Events.UndoOperation.TransactionCommitted:
+                        Undo.Committed(key, names, ours);
+                        break;
+                    case Autodesk.Revit.DB.Events.UndoOperation.TransactionUndone:
+                        Undo.UndoneIn(key, names);
+                        break;
+                    case Autodesk.Revit.DB.Events.UndoOperation.TransactionRedone:
+                        Undo.RedoneIn(key, names);
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                HeronApplication.Log("Undo guard missed a change: " + ex.Message);
             }
         }
 

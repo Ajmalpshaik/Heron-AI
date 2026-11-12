@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Proves the undo guard (D-157) WITHOUT Revit.
+
+    The source-linking pattern Heron.RollbackWitness.TestHost uses, and for
+    the same reason: HeronUndoGuard.cs touches no Autodesk type - it keeps
+    three strings per model and answers in words - so it is linked here BY
+    SOURCE rather than through a project reference, which would drag in
+    RevitAPI.dll and make the one testable piece untestable on any machine
+    without Revit.
+
+    Linking keeps ONE copy of the rule: when Heron's last kept change is
+    still the top of Revit's undo list, what covers it, and what the
+    modeller is told when Undo is not sent. RevitUndo.cs, which posts the
+    command, and RevitFragment's listener, which feeds the guard, are the
+    half that needs Revit, and NEEDS-CHECKING says what it owes.
+
+        Run it with `dotnet run`, pointed at this folder, passing
+        -p:RevitVersion=2024. (XML comments cannot carry a double
+        hyphen, so the flag is spelled out rather than shown.)
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>$(HeronTfm)</TargetFramework>
+    <RootNamespace>Heron.UndoGuard.TestHost</RootNamespace>
+    <AssemblyName>Heron.UndoGuard.TestHost</AssemblyName>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\revit\Heron.Revit.Addin\HeronUndoGuard.cs"
+             Link="HeronUndoGuard.cs" />
+  </ItemGroup>
+
+</Project>
