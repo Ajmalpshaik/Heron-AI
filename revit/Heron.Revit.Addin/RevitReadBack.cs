@@ -133,16 +133,40 @@ namespace Heron.Revit.Addin
             catch (Exception) { parameters = null; }
             if (parameters == null) return values;
 
+            // GATHERED WITH EACH PARAMETER'S OWN ID, WHICH IS WHAT THE TWO SIDES
+            // ARE PAIRED BY (HeronReadBack.Values.AddById). Two parameters may
+            // share a name - a built-in and a project parameter both called
+            // "Mark" - the order ParameterSet hands them over in is not
+            // documented to be the same twice, and a type change alters which
+            // of them the element has at all. An id says which is which.
+            var read = new List<HeronReadBack.ParameterRead>();
             foreach (Parameter parameter in parameters)
             {
                 try
                 {
                     if (parameter == null || parameter.Definition == null) continue;
-                    values.Add(parameter.Definition.Name, Text(parameter));
+                    read.Add(new HeronReadBack.ParameterRead(
+                        Number(parameter.Id), parameter.Definition.Name, Text(parameter)));
                 }
                 catch (Exception) { }
             }
+            values.AddById(read);
             return values;
+        }
+
+        /// <summary>
+        /// A parameter's id as a number. Read from the id's own text, the
+        /// way every id here is: ElementId's integer member changed name and
+        /// width at Revit 2024, and this add-in carries no version #if (D-05).
+        /// One that cannot be read is HeronReadBack.NoId, and the rule says
+        /// what it does with a parameter it has no id to pair by.
+        /// </summary>
+        private static long Number(ElementId id)
+        {
+            long number;
+            return id != null && long.TryParse(id.ToString(), NumberStyles.Integer,
+                                               CultureInfo.InvariantCulture, out number)
+                ? number : HeronReadBack.NoId;
         }
 
         /// <summary>A parameter as the modeller would read it, or its stored value.</summary>
@@ -153,7 +177,12 @@ namespace Heron.Revit.Addin
             string shown = null;
             try { shown = parameter.AsValueString(); }
             catch (Exception) { shown = null; }
-            if (shown != null) return shown;
+
+            // The stored value when Revit shows no text - and, for a
+            // parameter that stores text, when the text it shows is empty
+            // (HeronReadBack.HasText says why).
+            if (HeronReadBack.HasText(shown, parameter.StorageType == StorageType.String))
+                return shown;
 
             switch (parameter.StorageType)
             {

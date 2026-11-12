@@ -516,7 +516,15 @@ def _single_purpose_endings(server):
     are connected, so it is not safe to guess which one you mean:", so a
     refusal was labelled ok.
     """
-    doors = ("revit_read", "revit_show", "revit_change", "revit_apply_move")
+    # revit_undo_last IS READ WITH THE DOORS SINCE 2026-11-12 (row 5b-1610): it
+    # says an outcome word, so it classifies its own reply as they do
+    # (`analyse`, `_failure_ended`) and no longer through `_ended_by_reply`;
+    # with no pin it refuses before it sends; and an Undo sent in another
+    # model is not a refusal - it was SENT. The forms below are the read
+    # tools'. Its every ending is held by tests/test_outcome_line.py section 9
+    # and tests/test_mcp_serves.py (exercise_undo).
+    doors = ("revit_read", "revit_show", "revit_change", "revit_apply_move",
+             "revit_undo_last")
     bodies = {}
     for found in re.finditer(r"\n@server\.tool\(\)\ndef (revit_\w+)\(", server):
         rest = server[found.end():]
@@ -1903,6 +1911,20 @@ def test_checklist_panel(tmp):
           "it asks Heron only, and Select sends the row's number and its run, never ids")
     check("checklist_();" in js[js.index("async function poll()"):js.index("function theme()")]
           and '["qa", "q-empty"]' in js, "the poll reads it, and it is a workspace in the sidebar")
+    # ROW 5b-1617: a row NOT COMPARED (a first run, an unsaved model) and one
+    # that met the value both times must read differently, on the page and in
+    # the CSV - the brain marks the first NOT COMPARED, and the page writes
+    # the second in words, never a bare dash or a blank.
+    change = block[block.index("function qaChange("):block.index("function qaResult(")]
+    csv = block[block.index("function qaCsv("):block.index("function qaBadge(")]
+    check('"—"' not in change and "function qaSince(" in block
+          and 'const QA_SAME = "met both times";' in block
+          and 'el("span", "muted small", qaSince(r))' in change,
+          "an unchanged row reads 'met both times' in words on the page - never the dash")
+    check("qaSince(r), compared," in csv and '"Compared with"' in csv
+          and "(R.history || {}).said" in csv and 'r.changeLabel || ""' not in csv,
+          "the CSV's Since last run is never blank for a check, and it carries the run's history "
+          "sentence - which run it was compared with, or why not")
     print()
 
 

@@ -220,6 +220,10 @@ def assess(live=None, starting=None, mismatched=None, config_problems=None,
 #     and a delete confirmed there is not asked Keep or Discard as well (D-142).
 #   - a change Revit counted nothing in is kept without the box (D-126 item 6),
 #     and so is the rest of a job the modeller chose in the box to keep (D-138).
+#   - a DRY RUN - revit_change with dry_run (D-155) - is rolled back whichever
+#     way the switch stands: never kept, so never asked about. Both lines were
+#     written the day before it existed and named no such call, so "is kept at
+#     once" was said of one that keeps nothing (added 2026-11-12, in review).
 # The line says the switch alone. It does not say a change WILL be kept:
 # whether the chat may change the model at all is the Changes switch.
 #
@@ -239,13 +243,14 @@ ASK_TO_KEEP_ON = (
     "a job the modeller chose in that box to keep the rest of, and a change Revit "
     "counted nothing in (both kept unasked); a delete (asked in its own Delete box "
     "instead); an export, save or sync (already done when the box opens - Discard "
-    "cannot take it back); and revit_apply_move (keeps the preview it showed, with "
-    "no box).")
+    "cannot take it back); a dry run (rolled back, so never kept and never asked "
+    "about); and revit_apply_move (keeps the preview it showed, with no box).")
 ASK_TO_KEEP_OFF = (
     "Ask to Keep is off in this Revit right now: a change made through revit_change "
     "is kept at once, with no Keep or Discard box, as one entry in Revit's Undo "
-    "list. Different for: a delete (still asked first, in its own Delete box) and "
-    "an export, save or sync (Undo cannot take back what has left the model).")
+    "list. Different for: a delete (still asked first, in its own Delete box); an "
+    "export, save or sync (Undo cannot take back what has left the model); and a "
+    "dry run (rolled back, so never kept and never asked about).")
 ASK_TO_KEEP_OLDER = (
     "Ask to Keep: this Revit's Heron does not say which way the switch is set - its "
     "Heron add-in is older than this chat's and does not report it. Look in Revit, "

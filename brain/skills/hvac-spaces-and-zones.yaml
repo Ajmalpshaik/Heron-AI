@@ -48,10 +48,14 @@ purpose: >
     asking, this chat's changes to this model are kept unasked until ten
     quiet minutes pass, and each answer says so.
   Say which of these it will be. It is the owner's switch and is never
-  turned from a chat. STEP 4 HAS NO PREVIEW OF ITS OWN: with Ask to Keep off,
-  every space it makes is in the model the moment the call answers. A
-  modeller who wants to look first turns Ask to Keep on, or runs it on a
-  saved scratch copy.
+  turned from a chat. STEP 4'S CARD HAS NO REPORT-ONLY RUN OF ITS OWN: with
+  Ask to Keep off, every space it makes is in the model the moment the call
+  answers. revit_change with dry_run=true runs it and rolls it back, and its
+  answer counts the spaces it would have made (D-155; built, not run in
+  Revit - Group NT). That count is for the chat: it is not the modeller's
+  yes, and the kept call is a second run with counts of its own. A modeller
+  who wants to LOOK first turns Ask to Keep on, or runs it on a saved
+  scratch copy.
 
   A STEP KEEPS ONLY WHAT THE CALL BEFORE IT LEFT. expect_from names the one
   call that ran last, and a call sent without it forgets what was found. So

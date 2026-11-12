@@ -329,6 +329,17 @@ def four_lines_a_modeller_reads():
           "and that Undo cannot take back an export, a save or a sync")
     check("takes it back in one step" not in off,
           "and no longer promises one Undo for every change")
+    # A DRY RUN (D-155) IS DIFFERENT TOO, WHICHEVER WAY THE SWITCH STANDS: it
+    # is rolled back, so it is never kept and never asked about. Until the
+    # review of 2026-11-12 neither line named it, and "a change made through
+    # revit_change is kept at once" was said of a call that keeps nothing.
+    check("dry run" in on and "dry run" in off,
+          "ON and off both name a dry run among what is different")
+    for name, said in (("ON", on), ("off", off)):
+        about = said[said.find("dry run"):][:120]
+        check("rolled back" in about and "never kept" in about and "never asked" in about,
+              "%s says of it: rolled back, never kept and never asked - found %r"
+              % (name, about[:90]))
 
     check("does not say" in older and "older" in older
           and "Heron > AI Bridge > Settings" in older,

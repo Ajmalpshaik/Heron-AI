@@ -216,9 +216,19 @@ TOOLS = {
 
     # Revit's own Undo for Heron's last kept change (D-157). MODIFY, because it
     # takes a change out of the model and needs Changes ON. The add-in posts
-    # Undo only while Heron's entry is still the top of the undo list, so the
-    # modeller's own work is never what goes.
-    "revit_undo_last":          (MODIFY,  "undo_last"),
+    # Undo only while it saw Heron's change land and has seen nothing change
+    # that model since - Revit has no API that reads its undo list, so that is
+    # all that is known. With `check_only` it sends `undo_check` instead, which
+    # the add-in declares READ: it posts nothing, and answers with Changes off.
+    # The tool stays MODIFY - its risk is the most it can do.
+    #
+    # THE OPERATION IS `undo_guarded`, NOT THE FIRST BUILD'S `undo_last` (row
+    # 5b-1604). A Revit still running that build knows the old name and would
+    # post by its old rule - the shared Project Information id, every keep
+    # counted as on top - whatever else this request carried. It does not
+    # know this one, so it answers `unknown_op`, nothing is posted, and the
+    # chat is told that Revit's Heron is older. One request, no window.
+    "revit_undo_last":          (MODIFY,  "undo_guarded"),
 
     # The brain, reachable. These three read what Heron KNOWS - the skills, the
     # capability registry and the fragment library - and none of them sends
@@ -536,7 +546,14 @@ LIBRARY = ("heron_capabilities", "heron_lookup", "heron_method",
 # fact each time - a panel opened, a session bound, a preview shown - and a
 # tool joins when its own returns have been read the same way, never because
 # the line would be easy to add.
-STATES_OUTCOME = ("revit_change", "revit_read", "revit_show")
+#
+# AND revit_undo_last, SINCE 2026-11-12 (row 5b-1610), joined by those steps:
+# every return read against the table. Undo posted is STILL RUNNING - Revit
+# took it and runs it after the reply - never KEPT and never "done"; a check
+# that sent nothing is ANSWERED; each refusal REFUSED; no session NOT RUN; no
+# answer, or an Undo sent in a model this chat does not work on, OUTCOME
+# UNKNOWN. It is not a door to the library, so the doors are still three.
+STATES_OUTCOME = ("revit_change", "revit_read", "revit_show", "revit_undo_last")
 
 
 class NotDeclared(Exception):
@@ -723,6 +740,87 @@ def below_refusal(door, declared, capability):
             "that is not one. Nothing has been sent to Revit. %s runs it - with "
             "Changes off, and no transaction open."
             % (capability, NAMES[level], door, reader))
+
+
+#: The need a card declares to run with NO transaction open (D-125) - the
+#: add-in's RevitFragment.NoTransactionNeed, held to its spelling by
+#: tests/test_read_door.py.
+NO_TRANSACTION_NEED = "noTransactionOpen"
+
+
+def dry_run_refusal(declared, needs, capability):
+    """
+    Why one fragment may not be asked of revit_change as a DRY RUN (D-155) -
+    or None when it may.
+
+    `declared` is the fragment's own `risk:` word and `needs` its
+    `contract.needs`, both as the client's readers found them on this disk
+    (heron_bridge_client.fragment_risk, fragment_needs) - None for either
+    when it could not be read.
+
+    A DRY RUN IS THE CHANGE ITSELF, ROLLED BACK, AND A ROLLBACK TAKES BACK
+    WHAT REVIT'S TRANSACTIONS HOLD AND NOTHING ELSE. So a dry run is only
+    for a job whose whole effect is inside the add-in's transaction group:
+
+      PUBLISH, ADMIN   an export, a save or a sync is done once it runs.
+                       D-155 item 3, and the sentence it gave.
+      EXECUTE          it acts on the screen or the session - a view opened,
+                       a tab closed, another document brought to the front -
+                       and OPEN_FAMILY_FOR_EDITING, declared EXECUTE, saves a
+                       family to disk (row 5b-591). None of that is in a
+                       transaction, so none of it comes back.
+      noTransactionOpen  whatever the risk: the card says it runs with no
+                       transaction open (D-125), so nothing it does is in
+                       what is rolled back.
+
+    UNTIL 2026-11-12 THE DOOR TESTED THE OPERATION'S NAME, which is
+    `run_fragment_write` for an EXECUTE card as for a MODIFY one. Every
+    PROVEN EXECUTE card - `grep -l '^risk: EXECUTE' brain/fragments/*/
+    fragment.yaml` lists them, and each one's `heron-status:` is in the
+    same file - went to Revit as a dry run and came back "tried ... and
+    rolled back" (found in review of #861; not run in Revit).
+
+    AN UNREADABLE RISK OR CONTRACT IS REFUSED, for `door_refusal`'s reason:
+    "I could not tell" must never read as "a rollback takes it all back".
+    READ, ANALYZE and SUGGEST are not this function's: the first two are
+    `below_refusal`'s, asked before it, and a card that proposes changes
+    nothing a rollback would have to return.
+
+    IT NAMES NO OTHER DOOR. Which door runs an EXECUTE card - revit_show, or
+    none for one that writes a file - is the server's to say, card by card.
+
+    BE HONEST ABOUT WHAT THIS IS - `door_refusal`'s caveat again. It stops a
+    MISTAKE made through this server. The add-in never sees a card's risk,
+    and still runs whatever it is sent without `apply` and rolls back what
+    it can: the proving tools depend on exactly that.
+
+    Pure, so tests/test_read_door.py runs every outcome and the library.
+    """
+    level = level_named(declared)
+    if level is None:
+        return ("'%s' does not say what risk it carries in a form Heron can read, so "
+                "Heron cannot tell whether a rollback takes back all it does. Nothing "
+                "has been sent to Revit." % capability)
+    if level > MODIFY:
+        return ("'%s' is a Publish or Admin job, and a dry run cannot take one "
+                "back - an export, a save or a sync is done once it runs, and "
+                "rolling the model back does not undo it. Nothing has been "
+                "sent to Revit." % capability)
+    if level == EXECUTE:
+        return ("'%s' is declared EXECUTE: it acts on the screen or the session, not "
+                "inside a transaction, and a dry run takes back only what Revit's "
+                "transactions hold - a view it opened, a tab it closed or a file it "
+                "wrote would stand. Nothing has been sent to Revit." % capability)
+    if needs is None:
+        return ("'%s' could not be read with certainty - its contract is unclear, so "
+                "Heron cannot tell whether a rollback takes back all it does. Nothing "
+                "has been sent to Revit." % capability)
+    if any(isinstance(need, dict) and need.get("name") == NO_TRANSACTION_NEED
+           for need in needs):
+        return ("'%s' declares %s: it runs with no transaction open (D-125), so "
+                "nothing it does is inside what a dry run rolls back. Nothing has "
+                "been sent to Revit." % (capability, NO_TRANSACTION_NEED))
+    return None
 
 
 # WHAT A FRAGMENT'S CODE WRITES TO DISK, read as code: comments and string
