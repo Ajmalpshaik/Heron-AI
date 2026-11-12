@@ -177,3 +177,15 @@ symbolic line, a **masking region in a 3D family** - Revit 2023+ only, never run
 A Generic Model family holds no filled-region type of its own - a 3D family's region is a masking region unless a
 filled-region type is loaded into it. Still owed after this: the arc-centre lock, Group NC's re-run, Group ND's
 lock rows; Revit 2025 to 2027 not run.
+
+## The arc-centre lock (3e), 2026-11-12 - built and run on Revit 2024
+
+Row 3e is built: `LOCK_FAMILY_LINES_TO_PLANES` version 3 locks an arc's centre - or a whole circle's - to each plane
+named that it lies on, by `CurveElement.CenterPointReference`, switching a hidden Center Mark on first and saying so
+(row 5b-1576, NEEDS-CHECKING Group NQ). Widened, not made new, on the owner's word ("make the arc centre lock tool").
+Run on the SAVED scratch family `%TEMP%\heron-work\rev2024\R24 Arc Lock.rfa` (Revit 2024, session 13164): rolled
+back first, then KEPT by the owner through `try-once` - an arc and the two halves of a circle, 12 locks - and with
+"Arc X" moved 200 -> 300 every centre read back at (300, 100), radii unchanged, an unlocked shaft unmoved. The
+negative ("Spare") refused. Signed by Ajmal PS: PROVEN on Revit 2024. A closed circle is not run: Heron draws a
+circle as two half-arcs. Still owed: Group NC's re-run (along locks, a filled region's corners), Group ND's lock rows;
+Revit 2025 to 2027 not run.

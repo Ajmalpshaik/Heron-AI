@@ -40,6 +40,27 @@ positive:
       - while a CONTROL detail line "path 0,-200; 300,-200", drawn beside it
       and never locked, still reads (0, -200) to (300, -200) at Length 900
 
+
+  # VERSION 3 (2026-11-12, row 5b-1576) - an arc's centre. Group NQ.
+  - given: >
+      the SAVED scratch family "R24 Arc Lock" (Metric Detail Item, Revit 2024,
+      %TEMP%/heron-work/rev2024 - never the owner's own families); a type
+      length parameter "Arc X" 200 labelling "Center (Left/Right)" to plane
+      "Arc X" at X 200; plane "Arc Y" at Y 100; a detail arc centred (200, 100),
+      radius 100, drawn "path 300,100; arc 200,200 100,100"; lines = the arc's
+      id, planes "Arc X, Arc Y"
+    expect: >
+      two locks - the centre of the arc to "Arc X" and to "Arc Y" - each read
+      back locked; Center Mark Visible switched on and said if it was off; the
+      arc's ends read back unchanged
+
+  - given: >
+      the same family after the call above KEPT, "Arc X" set to 300 in Family
+      Types
+    expect: >
+      the arc read back centred at (300, 100), radius 100 - it followed the
+      plane - while a shaft "path -300,0; 0,0" drawn beside it and never locked
+      still reads (-300, 0) to (0, 0)
 negative:
   - given: >
       ALL OR NOTHING - the same lines, planes "Tip, Spare" where "Spare" is a
@@ -78,6 +99,13 @@ negative:
   - given: a project in front
     expect: notAFamily true and nothing locked anywhere
 
+
+  # VERSION 3 (2026-11-12).
+  - given: >
+      the same arc, planes "Spare" - a plane at X 500 its centre is not on
+    expect: >
+      refused before anything is locked, naming the arc's centre 300 mm off
+      "Spare"; nothing locked
 second_route:
   - >
       by hand on a copy: Align, the plane, the shaft or its end, the padlock;
