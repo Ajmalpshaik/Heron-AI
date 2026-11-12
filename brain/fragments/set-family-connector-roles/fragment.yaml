@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -79,9 +79,14 @@ purpose: >
   off, or the modeller places it on the work plane and this card sets the
   rest by its id. The plane must be square to the way the connector points;
   it is put back where it sat and pointing the way it pointed, read back. It
-  is NOT locked to planes there (row 5b-1568). Version 4's proof no longer
-  describes the code and is kept below as a record; the card is DRAFT until
-  NEEDS-CHECKING Group NO is run.
+  is NOT locked to planes there (row 5b-1568). Version 5 was PROVED on
+  Revit 2020 on 2026-11-12 (Group NO, NO1 - the shape and its size; NO2,
+  NO3, NO7 and NO8 held as well, row 5b-1577), signed by Ajmal PS; its proof
+  replaced version 4's below. The work-plane host is NOT in that proof - it
+  needs Revit 2023 or later. RUN ON REVIT 2024 the same day, rolled back
+  (NO4, NO5, row 5b-1578): Revit took a reference plane's reference, the
+  connector was put back where it sat, and with it hosted the box could be
+  deleted and the connector stayed - without the host it went with the box.
 
   **A CONNECTOR'S VALUES ARE SET BY ID HERE** (row 5b-1569). A connector is
   named by the id REPORT_FAMILY_CONNECTORS prints, or its UniqueId;
@@ -172,72 +177,140 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-24'
+  date: '2026-11-12'
   by: Ajmal PS
-  model: Heron Connector Ticks Test (1,526 elements), Revit 2020, session 94928
+  model: Heron Connector Shape Test (1,533 elements), Revit 2020, session 45552
   positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned addParameterFor Func`3, all 3 item(s)
-    [Sanitary, Sanitary, Supply Air], angleOf Func`2, anyDomain Func`2, asked 0 item(s), changed
-    2 item(s) [pipe connector 2564 on "Outlet Face": Allow Slope Adjustment..., pipe connector
-    2565 on "Inlet Face": Allow Slope Adjustments...], connectorReport 3 connector(s), read
-    back: pipe connector 2564 on "Outlet Face", Sanitary, round 50 mm (diameter <- Pipe Size),
-    flow Bidirectional, flow configuration Calculated, slope adjustments allowed, pointing
-    left (-X), at X -300, Y 0, Z 300 mm - PRIMARY, not linked; pipe connector 2565 on "Inlet
-    Face", Sanitary, round 50 mm (diameter <- Pipe Size), flow Bidirectional, flow configuration
-    Calculated, slope adjustments allowed, pointing right (+X), at X 300, Y 0, Z 300 mm -
-    secondary, not linked; duct connector 2566 on "Duct Face", Supply Air, rectangular 600
-    x 300 mm (width <- Box Length, height <- Box Depth), flow Bidirectional, flow configuration
-    Calculated, pointing up, at X 0, Y 0, Z 600 mm - PRIMARY, not linked., dbNamespace Autodesk.Revit.DB,
-    domainWords Func`2, drivenBy Func`3, ductOrPipe Func`2, electricalOnly Func`2, electricalWords
-    Func`2, enumNames Func`2, enumRead Func`3, enumWord Func`3, findings 4 item(s) [pipe connector
-    2564 on "Outlet Face"''s Allow Slope Adjustmen..., pipe connector 2565 on "Inlet Face"''s
-    Allow Slope Adjustment..., Before: pipe connector 2564 on "Outlet Face", Sanitary, roun...,
-    ...], flags BindingFlags, flip false, flowConfigurationOf Func`2, flowDirectionOf Func`2,
-    flowOf Func`2, fm FamilyManager, halfMillimetre 0.00164041994750656, invariant CultureInfo,
-    kindOf Func`2, kindWords Func`2, label Func`2, loadClassAsked false, lossMethodOf Func`2,
-    mm Func`2, moreWords Func`2, notAFamily false, onPlanes 3 entry(ies), ownName Func`2,
-    parameterOf Func`3, pascal 0.3048, perDegree 0.0174532925199433, perLitrePerSecond 0.0353146667214886,
-    perVolt 10.7639104167097, pipeOnly Func`2, pointing Func`2, powerFactorStateOf Func`2,
-    problems 0 item(s), reading false, refused (null), revitAssembly RuntimeAssembly, revitPerUnit
-    Func`3, row Func`2, sameKind Func`3, shownAs 6 entry(ies), sizeWords Func`2, sizesAsked
-    false, spaced Func`2, squash Func`2, targets 2 item(s) [Sanitary, Sanitary], tickKeys
-    7 entry(ies), ticks 1 item(s) [(Allow Slope Adjustments, a pipe connector''s, System.Func`2[...],
-    typed 0 item(s), typedKeys 15 entry(ies), typedValue Func`3, underDimensions Tuple`3,
-    underLoads Tuple`3, underMechanical Tuple`3, wantCoefficient (null), wantDescription (null),
-    wantFlowConfiguration (null), wantFlowDirection (null), wantLoadClass (null), wantLossMethod
-    (null), wantPowerFactorState (null), wantPressure (null), wantPrimary (null), wantSizes
-    0 item(s), wantSystem (null). inputs came connectors as given; settings as given; primary
-    as given; links as given. on Heron Connector Ticks Test'
-  negative_case: run with connectors=Duct Face, links=, primary=, settings=allowSlopeAdjustments=yes
-    instead - chosen because it should not contain what this fragment reports - run inside
-    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
-    addParameterFor Func`3, all 3 item(s) [Sanitary, Sanitary, Supply Air], angleOf Func`2,
-    anyDomain Func`2, asked 0 item(s), changed 0 item(s), connectorReport , dbNamespace Autodesk.Revit.DB,
-    domainWords Func`2, drivenBy Func`3, ductOrPipe Func`2, electricalOnly Func`2, electricalWords
-    Func`2, enumNames Func`2, enumRead Func`3, enumWord Func`3, findings 1 item(s) [Nothing
-    was changed. duct connector 2566 on "Duct Face" is a...], flags BindingFlags, flip false,
-    flowConfigurationOf Func`2, flowDirectionOf Func`2, flowOf Func`2, fm FamilyManager, halfMillimetre
-    0.00164041994750656, invariant CultureInfo, kindOf Func`2, kindWords Func`2, label Func`2,
-    loadClassAsked false, lossMethodOf Func`2, mm Func`2, moreWords Func`2, notAFamily false,
-    onPlanes 3 entry(ies), ownName Func`2, parameterOf Func`3, pascal 0.3048, perDegree 0.0174532925199433,
+    the transaction group ROLLED BACK afterwards. returned addParameterFor Func`3, all 2 item(s)
+    [Domestic Cold Water, Supply Air], angleOf Func`2, anyDomain Func`2, asked 0 item(s),
+    changeHost (null), changed 2 item(s) [duct connector 2583 on "Box Top": shape rectangular
+    -> round..., duct connector 2583 on "Box Top": diameter <- Neck Diameter.], connectorReport
+    2 connector(s), read back: pipe connector 2572 on "Box Front", Domestic Cold Water, round
+    250 mm (diameter <- Neck Diameter), flow Bidirectional, flow configuration Calculated,
+    no slope adjustments, pointing front (-Y), at X 0, Y -150, Z 150 mm - PRIMARY, not linked;
+    duct connector 2583 on "Box Top", Supply Air, round 250 mm (diameter <- Neck Diameter),
+    flow Bidirectional, flow configuration Calculated, pointing up, at X 0, Y 0, Z 300 mm
+    - PRIMARY, not linked., dbNamespace Autodesk.Revit.DB, domainWords Func`2, drivenBy Func`3,
+    ductOrPipe Func`2, electricalOnly Func`2, electricalWords Func`2, enumNames Func`2, enumRead
+    Func`3, enumWord Func`3, findings 2 item(s) [Before: pipe connector 2572 on "Box Front",
+    Domestic Cold Wa..., 2 connector(s), read back: pipe connector 2572 on "Box Front...],
+    flags BindingFlags, flip false, flowConfigurationOf Func`2, flowDirectionOf Func`2, flowOf
+    Func`2, fm FamilyManager, halfMillimetre 0.00164041994750656, hostPlane (null), hostTargets
+    0 entry(ies), invariant CultureInfo, kindOf Func`2, kindWords Func`2, label Func`2, loadClassAsked
+    false, lossMethodOf Func`2, mm Func`2, moreWords Func`2, notAFamily false, onPlanes 2
+    entry(ies), ownName Func`2, parameterOf Func`3, pascal 0.3048, perDegree 0.0174532925199433,
     perLitrePerSecond 0.0353146667214886, perVolt 10.7639104167097, pipeOnly Func`2, pointing
-    Func`2, powerFactorStateOf Func`2, problems 1 item(s) [duct connector 2566 on "Duct Face"
-    is a duct connector - All...], reading false, refused Nothing was changed. duct connector
-    2566 on "Duct Face" is a duct connector - Allow Slope Adjustments is a pipe connector's.,
-    revitAssembly RuntimeAssembly, revitPerUnit Func`3, row Func`2, sameKind Func`3, shownAs
-    6 entry(ies), sizeWords Func`2, sizesAsked false, spaced Func`2, squash Func`2, targets
-    1 item(s) [Supply Air], tickKeys 7 entry(ies), ticks 1 item(s) [(Allow Slope Adjustments,
-    a pipe connector's, System.Func`2[...], typed 0 item(s), typedKeys 15 entry(ies), typedValue
-    Func`3, underDimensions Tuple`3, underLoads Tuple`3, underMechanical Tuple`3, wantCoefficient
-    (null), wantDescription (null), wantFlowConfiguration (null), wantFlowDirection (null),
-    wantLoadClass (null), wantLossMethod (null), wantPowerFactorState (null), wantPressure
-    (null), wantPrimary (null), wantSizes 0 item(s), wantSystem (null). inputs came connectors
-    as given; settings as given; primary as given; links as given. on Heron Connector Ticks
-    Test
+    Func`2, powerFactorStateOf Func`2, problems 0 item(s), reading false, refused (null),
+    revitAssembly RuntimeAssembly, revitPerUnit Func`3, row Func`2, sameKind Func`3, shapeBip
+    Func`2, shownAs 6 entry(ies), sizeWords Func`2, sizesAsked true, spaced Func`2, squash
+    Func`2, targets 1 item(s) [Supply Air], tickKeys 7 entry(ies), ticks 0 item(s), typed
+    0 item(s), typedKeys 15 entry(ies), typedValue Func`3, underDimensions Tuple`3, underLoads
+    Tuple`3, underMechanical Tuple`3, wantCoefficient (null), wantDescription (null), wantFlowConfiguration
+    (null), wantFlowDirection (null), wantHost (null), wantLoadClass (null), wantLossMethod
+    (null), wantPowerFactorState (null), wantPressure (null), wantPrimary (null), wantShape
+    ConnectorProfileType, wantSizes 1 item(s) [Autodesk.Revit.DB.FamilyParameter], wantSystem
+    (null). inputs came connectors as given; settings as given; primary as given; links as
+    given. on Heron Connector Shape Test'
+  negative_case: 'run with connectors=Box Top, settings=sizeParameters=Neck Diameter, primary=,
+    links= instead - chosen because it should not contain what this fragment reports - run
+    inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned addParameterFor Func`3, all 2 item(s) [Domestic Cold Water, Supply Air], angleOf
+    Func`2, anyDomain Func`2, asked 0 item(s), changeHost (null), changed 0 item(s), connectorReport
+    , dbNamespace Autodesk.Revit.DB, domainWords Func`2, drivenBy Func`3, ductOrPipe Func`2,
+    electricalOnly Func`2, electricalWords Func`2, enumNames Func`2, enumRead Func`3, enumWord
+    Func`3, findings 1 item(s) [Nothing was changed. duct connector 2583 on "Box Top" is rec...],
+    flags BindingFlags, flip false, flowConfigurationOf Func`2, flowDirectionOf Func`2, flowOf
+    Func`2, fm FamilyManager, halfMillimetre 0.00164041994750656, hostPlane (null), hostTargets
+    0 entry(ies), invariant CultureInfo, kindOf Func`2, kindWords Func`2, label Func`2, loadClassAsked
+    false, lossMethodOf Func`2, mm Func`2, moreWords Func`2, notAFamily false, onPlanes 2
+    entry(ies), ownName Func`2, parameterOf Func`3, pascal 0.3048, perDegree 0.0174532925199433,
+    perLitrePerSecond 0.0353146667214886, perVolt 10.7639104167097, pipeOnly Func`2, pointing
+    Func`2, powerFactorStateOf Func`2, problems 1 item(s) [duct connector 2583 on "Box Top"
+    is rectangular: TWO length ...], reading false, refused Nothing was changed. duct connector
+    2583 on "Box Top" is rectangular: TWO length parameters, width then height. A connector
+    placed by hand comes in Rectangular - give "shape=Round" in the same call to tie one diameter.,
+    revitAssembly RuntimeAssembly, revitPerUnit Func`3, row Func`2, sameKind Func`3, shapeBip
+    Func`2, shownAs 6 entry(ies), sizeWords Func`2, sizesAsked true, spaced Func`2, squash
+    Func`2, targets 1 item(s) [Supply Air], tickKeys 7 entry(ies), ticks 0 item(s), typed
+    0 item(s), typedKeys 15 entry(ies), typedValue Func`3, underDimensions Tuple`3, underLoads
+    Tuple`3, underMechanical Tuple`3, wantCoefficient (null), wantDescription (null), wantFlowConfiguration
+    (null), wantFlowDirection (null), wantHost (null), wantLoadClass (null), wantLossMethod
+    (null), wantPowerFactorState (null), wantPressure (null), wantPrimary (null), wantShape
+    (null), wantSizes 1 item(s) [Autodesk.Revit.DB.FamilyParameter], wantSystem (null). inputs
+    came connectors as given; settings as given; primary as given; links as given. on Heron
+    Connector Shape Test'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: ef654c3c5f1453e8
+  fingerprint: 334167c5b046a931
+  releases:
+  - release: '2024'
+    date: '2026-11-12'
+    by: Ajmal PS
+    model: Heron Connector Shape Test 2024, Revit 2024, session 44572 - the count is NOT recorded
+      because 1,735 elements was measured on R24 Line Lock, the document in front, and this
+      ran against another one (row 15)
+    positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+      the transaction group ROLLED BACK afterwards. returned addParameterFor Func`3, all 2 item(s)
+      [Domestic Cold Water, Supply Air], angleOf Func`2, anyDomain Func`2, asked 0 item(s),
+      changeHost RuntimeMethodInfo, changed 2 item(s) [duct connector 2805 on "Box Top": shape
+      rectangular -> round..., duct connector 2805 on "Box Top": diameter <- Neck Diameter.],
+      connectorReport 2 connector(s), read back: pipe connector 2804 on "Box Front", Domestic
+      Cold Water, round 250 mm (diameter <- Neck Diameter), flow Bidirectional, flow configuration
+      Calculated, no slope adjustments, pointing front (-Y), at X 0, Y -150, Z 150 mm - PRIMARY,
+      not linked; duct connector 2805 on "Box Top", Supply Air, round 250 mm (diameter <- Neck
+      Diameter), flow Bidirectional, flow configuration Calculated, pointing up, at X 0, Y 0,
+      Z 300 mm - PRIMARY, not linked., dbNamespace Autodesk.Revit.DB, domainWords Func`2, drivenBy
+      Func`3, ductOrPipe Func`2, electricalOnly Func`2, electricalWords Func`2, enumNames Func`2,
+      enumRead Func`3, enumWord Func`3, findings 3 item(s) [duct connector 2805 on "Box Top"
+      is round now, and still car..., Before: pipe connector 2804 on "Box Front", Domestic Cold
+      Wa..., 2 connector(s), read back: pipe connector 2804 on "Box Front...], flags BindingFlags,
+      flip false, flowConfigurationOf Func`2, flowDirectionOf Func`2, flowOf Func`2, fm FamilyManager,
+      halfMillimetre 0.00164041994750656, hostPlane (null), hostTargets 0 entry(ies), invariant
+      CultureInfo, kindOf Func`2, kindWords Func`2, label Func`2, loadClassAsked false, lossMethodOf
+      Func`2, mm Func`2, moreWords Func`2, notAFamily false, onPlanes 2 entry(ies), ownName
+      Func`2, parameterOf Func`3, pascal 0.3048, perDegree 0.0174532925199433, perLitrePerSecond
+      0.0353146667214886, perVolt 10.7639104167097, pipeOnly Func`2, pointing Func`2, powerFactorStateOf
+      Func`2, problems 0 item(s), reading false, refused (null), revitAssembly RuntimeAssembly,
+      revitPerUnit Func`3, row Func`2, sameKind Func`3, shapeBip Func`2, shownAs 6 entry(ies),
+      sizeWords Func`2, sizesAsked true, spaced Func`2, squash Func`2, targets 1 item(s) [Supply
+      Air], tickKeys 7 entry(ies), ticks 0 item(s), typed 0 item(s), typedKeys 15 entry(ies),
+      typedValue Func`3, underDimensions Tuple`3, underLoads Tuple`3, underMechanical Tuple`3,
+      wantCoefficient (null), wantDescription (null), wantFlowConfiguration (null), wantFlowDirection
+      (null), wantHost (null), wantLoadClass (null), wantLossMethod (null), wantPowerFactorState
+      (null), wantPressure (null), wantPrimary (null), wantShape ConnectorProfileType, wantSizes
+      1 item(s) [Autodesk.Revit.DB.FamilyParameter], wantSystem (null). inputs came connectors
+      as given; settings as given; primary as given; links as given. on Heron Connector Shape
+      Test 2024'
+    negative_case: 'run with connectors=Box Top, settings=sizeParameters=Neck Diameter, primary=,
+      links= instead - chosen because it should not contain what this fragment reports - run
+      inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+      returned addParameterFor Func`3, all 2 item(s) [Domestic Cold Water, Supply Air], angleOf
+      Func`2, anyDomain Func`2, asked 0 item(s), changeHost RuntimeMethodInfo, changed 0 item(s),
+      connectorReport , dbNamespace Autodesk.Revit.DB, domainWords Func`2, drivenBy Func`3,
+      ductOrPipe Func`2, electricalOnly Func`2, electricalWords Func`2, enumNames Func`2, enumRead
+      Func`3, enumWord Func`3, findings 1 item(s) [Nothing was changed. duct connector 2805
+      on "Box Top" is rec...], flags BindingFlags, flip false, flowConfigurationOf Func`2, flowDirectionOf
+      Func`2, flowOf Func`2, fm FamilyManager, halfMillimetre 0.00164041994750656, hostPlane
+      (null), hostTargets 0 entry(ies), invariant CultureInfo, kindOf Func`2, kindWords Func`2,
+      label Func`2, loadClassAsked false, lossMethodOf Func`2, mm Func`2, moreWords Func`2,
+      notAFamily false, onPlanes 2 entry(ies), ownName Func`2, parameterOf Func`3, pascal 0.3048,
+      perDegree 0.0174532925199433, perLitrePerSecond 0.0353146667214886, perVolt 10.7639104167097,
+      pipeOnly Func`2, pointing Func`2, powerFactorStateOf Func`2, problems 1 item(s) [duct
+      connector 2805 on "Box Top" is rectangular: TWO length ...], reading false, refused Nothing
+      was changed. duct connector 2805 on "Box Top" is rectangular: TWO length parameters, width
+      then height. A connector placed by hand comes in Rectangular - give "shape=Round" in the
+      same call to tie one diameter., revitAssembly RuntimeAssembly, revitPerUnit Func`3, row
+      Func`2, sameKind Func`3, shapeBip Func`2, shownAs 6 entry(ies), sizeWords Func`2, sizesAsked
+      true, spaced Func`2, squash Func`2, targets 1 item(s) [Supply Air], tickKeys 7 entry(ies),
+      ticks 0 item(s), typed 0 item(s), typedKeys 15 entry(ies), typedValue Func`3, underDimensions
+      Tuple`3, underLoads Tuple`3, underMechanical Tuple`3, wantCoefficient (null), wantDescription
+      (null), wantFlowConfiguration (null), wantFlowDirection (null), wantHost (null), wantLoadClass
+      (null), wantLossMethod (null), wantPowerFactorState (null), wantPressure (null), wantPrimary
+      (null), wantShape (null), wantSizes 1 item(s) [Autodesk.Revit.DB.FamilyParameter], wantSystem
+      (null). inputs came connectors as given; settings as given; primary as given; links as
+      given. on Heron Connector Shape Test 2024'
+    fingerprint: 334167c5b046a931
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -300,8 +373,16 @@ compatibility-note: >
   --members, read 2026-11-11 off all eight releases). Whether the Shape
   parameter is writable, whether its numbers are ConnectorProfileType's, and
   whether ChangeHostReference takes a reference plane's reference as its
-  "planar face" are what Group NO measures; not yet run in Revit. Compiles
-  on 2020 to 2027 (tools/check-fragments-compile.py, 2026-11-11).
+  "planar face" are what Group NO measures. Compiles on 2020 to 2027
+  (tools/check-fragments-compile.py, 2026-11-11, and again 2026-11-12).
+  MEASURED 2026-11-12, Revit 2020 (Group NO, row 5b-1577): a family duct
+  connector has NO MEP_PROFILE_TYPE_PARAM - its Properties "Shape" is
+  CONNECTOR_PROFILE_TYPE, Integer, 1 on a rectangular connector, writable,
+  and Shape follows it to 0, 2 and 1 (ConnectorProfileType's numbers). The
+  card reads CONNECTOR_PROFILE_TYPE first and MEP_PROFILE_TYPE_PARAM only
+  where a release has not got it. With that, NO1-NO3, NO7 and NO8 held on
+  Revit 2020, rolled back. ChangeHostReference on a reference plane is still
+  unmeasured - Group NO's NO4-NO6, Revit 2024.
 
 # ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
@@ -336,8 +417,9 @@ compatibility-note: >
 #   "set this connector's parameter by its id"   -> here, the connector named
 #                                                   by its id - not
 #                                                   SET_PARAMETER_VALUES_BY_ID
-#   "lock the connector to the reference planes" -> NOTHING does it yet (row
-#                                                   5b-1568): align and lock by
+#   "lock the connector to the reference planes" -> NOTHING - an API limit,
+#                                                   measured on Revit 2024 (row
+#                                                   5b-1580): align and lock by
 #                                                   hand, or keep it on a face
 #                                                   of geometry locked to them
 #   "set the connector angle to 90 degrees"      -> here, "angle=90" on a

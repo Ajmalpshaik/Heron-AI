@@ -252,7 +252,9 @@ compatibility-note: >
 #                                                   it on a face here, then
 #                                                   SET_FAMILY_CONNECTOR_ROLES
 #                                                   "host=<plane>" (row 5b-1567)
-#   "lock the connector to the planes"           -> NOTHING yet (row 5b-1568)
+#   "lock the connector to the planes"           -> NOTHING - an API limit
+#                                                   (rows 5b-1568, 5b-1580):
+#                                                   align and lock by hand
 
 utterances:
   - put a supply air duct connector on the neck top
