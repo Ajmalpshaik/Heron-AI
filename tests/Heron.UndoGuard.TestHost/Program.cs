@@ -97,9 +97,17 @@ namespace Heron.UndoGuard.TestHost
             else Find("SentFor", 1).Invoke(guard, new object[] { model });
         }
 
+        /// <summary>
+        /// Whether a job is held back now. The hold is asked of the guard as a
+        /// whole since the second review (any model); the guard before it was
+        /// asked model by model, and `model` is what that one is asked for.
+        /// </summary>
         private static string Pending(HeronUndoGuard guard, string model, DateTime now)
         {
-            return Ask(guard, "Pending", model, now) as string;
+            if (Find("Pending", 1) != null) return Ask(guard, "Pending", now) as string;
+            Ask(guard, "Pending", now);                     // noted as absent
+            var old = Find("Pending", 2);
+            return old == null ? null : old.Invoke(guard, new object[] { model, now }) as string;
         }
 
         private static HeronUndoGuard KeptOne()
@@ -252,12 +260,15 @@ namespace Heron.UndoGuard.TestHost
             var posted = At.AddMinutes(1);
             Send(guard, Model, posted);
             var waiting = Pending(guard, Model, posted.AddSeconds(1));
-            Check(Says(waiting, "has not reported it done yet") && Says(waiting, "nothing was run"),
-                  "another job in that model is held back, and told nothing was run");
-            Check(Pending(guard, Other, posted.AddSeconds(1)) == null,
-                  "a job in another model is not");
+            Check(Says(waiting, "has not seen Revit run it yet") && Says(waiting, "nothing was run")
+                  && Says(waiting, "in 'Tower'"),
+                  "another job is held back, told nothing was run and in which model the Undo is out");
+            Check(Says(Pending(guard, Other, posted.AddSeconds(1)), "whichever model is on screen"),
+                  "a job in ANOTHER model is held too: it could bring that model to the front, and "
+                  + "Revit's Undo acts on the model on screen");
             Keep(guard, Model, "create-sheets", "Heron: create-sheets", posted.AddSeconds(2), 2, true);
-            Check(Says(Refusal(guard), "may be what takes it") && Says(Refusal(guard), "Nothing was undone"),
+            Check(Says(Refusal(guard), "it may still run and take this change")
+                  && Says(Refusal(guard), "Nothing was undone"),
                   "a job kept anyway while the Undo waited is NOT offered: that Undo may take it");
             guard.UndoneIn(Model, Names("Heron: create-sheets"));
             Check(Refusal(guard) != null,
@@ -271,8 +282,10 @@ namespace Heron.UndoGuard.TestHost
             Send(guard, Model, posted);
             var late = posted.AddMinutes(5);
             Check(Pending(guard, Model, late) == null
-                  && Says(Refusal(guard), "Revit never reported the Undo Heron sent at 14:33"),
-                  "an Undo Revit never reported is not waited for for ever - and is not offered again");
+                  && Says(Refusal(guard), "Undo was already sent")
+                  && Says(Refusal(guard), "has not seen Revit run it"),
+                  "an Undo Revit never reported does not hold other jobs for ever - and is not "
+                  + "sent a second time");
 
             Console.WriteLine();
             Console.WriteLine("9. two keeps can carry one name: a redo counts back, it does not match by name");
@@ -289,9 +302,36 @@ namespace Heron.UndoGuard.TestHost
                   "undo x3, redo x1: the top is the OLDER keep of that name, so Undo is refused");
             guard.RedoneIn(Model, Names("Move"));
             Check(Refusal(guard) != null, "redo x2: the Move is on top, still refused");
-            guard.RedoneIn(Model, Names("Heron: rename-views"));      // X2 back
-            Check(Refusal(guard) == null && Says(guard.SentSentence(Model), "kept at 14:30"),
-                  "redo x3: every undo redone and the last is Heron's own - Undo may be sent, for the 14:30 keep");
+            guard.RedoneIn(Model, Names("Heron: rename-views"));      // X2 back, if the events are one each
+            Check(Says(Refusal(guard), "carry the name 'Heron: rename-views'")
+                  && Says(Refusal(guard), "Nothing was undone"),
+                  "redo x3: with TWO keeps under one name no redo is trusted to say which came "
+                  + "back - refused, and said why");
+            guard = new HeronUndoGuard();
+            Keep(guard, Model, "rename-views", "Heron: rename-views", first, 3, true);                  // X1
+            Keep(guard, Model, "rename-views", "Heron: rename-views", first.AddMinutes(30), 3, true);   // X2
+            guard.UndoneIn(Model, Names("Heron: rename-views"));      // X2
+            guard.UndoneIn(Model, Names("Heron: rename-views"));      // X1
+            guard.RedoneIn(Model, Names("Heron: rename-views"));      // X1 back - as TWO redo events
+            guard.RedoneIn(Model, Names("Heron: rename-views"));
+            Check(Refusal(guard) != null,
+                  "one undo event for each, two redo events for one: the top is the OLDER keep, "
+                  + "and Undo is refused whatever the count came to");
+            guard = new HeronUndoGuard();
+            Keep(guard, Model, "rename-views", "Heron: rename-views", first, 3, true);
+            Keep(guard, Model, "create-sheets", "Heron: create-sheets", first.AddMinutes(30), 2, true);
+            guard.UndoneIn(Model, Names("Heron: create-sheets"));
+            guard.RedoneIn(Model, Names("Heron: create-sheets"));
+            Check(Refusal(guard) == null,
+                  "two keeps under DIFFERENT names are not caught by that: undone, redone, vouched for");
+            guard = new HeronUndoGuard();
+            Keep(guard, Model, "rename-views", "Heron: rename-views", first, 3, true);
+            guard.SyncedIn(Model);
+            Keep(guard, Model, "rename-views", "Heron: rename-views", first.AddMinutes(30), 3, true);
+            guard.UndoneIn(Model, Names("Heron: rename-views"));
+            guard.RedoneIn(Model, Names("Heron: rename-views"));
+            Check(Refusal(guard) == null,
+                  "nor a second keep of one name after a sync: Revit's list no longer holds the first");
             guard = KeptOne();
             guard.UndoneIn(Model, Names(Label));
             guard.Committed(Model, Names("Move"), false);
@@ -416,9 +456,9 @@ namespace Heron.UndoGuard.TestHost
             logged.Committed(Model, Names(Label), true);
             logged.Committed(Model, Names("Move"), false);
             logged.UndoneIn(Model, Names("Move"));
-            Keep(logged, Model, "rename-views-by-level", Label, At, 3, true);
-            logged.UndoneIn(Model, Names(Label));
-            logged.RedoneIn(Model, Names(Label));
+            Keep(logged, Model, "create-sheets", "Heron: create-sheets", At, 3, true);
+            logged.UndoneIn(Model, Names("Heron: create-sheets"));
+            logged.RedoneIn(Model, Names("Heron: create-sheets"));
             var log = string.Join("\n", lines.ToArray());
             Check(Says(log, "Undo guard: kept, 3 element(s) counted in 'Tower': nothing kept -> onTop"),
                   "a keep, with what Revit counted");
@@ -426,8 +466,8 @@ namespace Heron.UndoGuard.TestHost
                   && Says(log, "commit ['Move'] in 'Tower': onTop -> covered"),
                   "a commit, Heron's own and anybody else's, each with its transaction name");
             Check(Says(log, "undo ['Move'] in 'Tower': covered -> covered")
-                  && Says(log, "undo ['" + Label + "'] in 'Tower': onTop -> undone (depth 0)")
-                  && Says(log, "redo ['" + Label + "'] in 'Tower': undone -> onTop"),
+                  && Says(log, "undo ['Heron: create-sheets'] in 'Tower': onTop -> undone (depth 0)")
+                  && Says(log, "redo ['Heron: create-sheets'] in 'Tower': undone -> onTop"),
                   "an undo and a redo with the names Revit gave - what Group NU needs from one real run");
             var deaf = new HeronUndoGuard();
             try
@@ -441,6 +481,68 @@ namespace Heron.UndoGuard.TestHost
             Keep(deaf, Model, "rename-views-by-level", Label, At, 3, true);
             Check(deaf.Refusal(Model, "Tower", true, true) == null,
                   "and a log that cannot be written never costs the guard its state");
+
+            Console.WriteLine();
+            Console.WriteLine("15. an Undo that was sent and not seen to run is never forgotten");
+            guard = KeptOne();
+            Send(guard, Model, posted);
+            Pending(guard, Model, posted.AddSeconds(31));       // the hold asks, as before every job
+            Keep(guard, Model, "create-sheets", "Heron: create-sheets", posted.AddSeconds(32), 2, true);
+            var still = Refusal(guard);
+            Check(Says(still, "an Undo Heron sent earlier has not been seen to run; it may still "
+                              + "run and take this change")
+                  && Says(still, "'create-sheets'") && Says(still, "Nothing was undone"),
+                  "sent, 31 s with no undo reported, then a keep: NOT vouched for - the first Undo "
+                  + "may still run and take it");
+            Check(guard.Of(Model) != null && guard.Of(Model).State == "unsure"
+                  && guard.Of(Model).Why == "an Undo Heron sent earlier has not been seen to run; "
+                                            + "it may still run and take this change",
+                  "and the reason is kept for the kept reply to say");
+            guard = KeptOne();
+            Send(guard, Model, posted);
+            guard.Committed(Model, Names("Move"), false);       // the modeller, while it was out
+            Pending(guard, Model, posted.AddSeconds(31));
+            Keep(guard, Model, "create-sheets", "Heron: create-sheets", posted.AddSeconds(32), 2, true);
+            Check(Says(Refusal(guard), "it may still run and take this change"),
+                  "the same after the modeller's own change in between");
+            guard = KeptOne();
+            Send(guard, Model, posted);
+            guard.Doubt(Model, "Heron could not read a change Revit reported here");
+            Keep(guard, Model, "create-sheets", "Heron: create-sheets", posted.AddSeconds(32), 2, true);
+            Check(Says(Refusal(guard), "it may still run and take this change"),
+                  "and after anything Heron missed in between: only an undo Revit reports clears it");
+            guard = KeptOne();
+            Send(guard, Model, posted);
+            var seen = guard.Of(Model).State;
+            Pending(guard, Model, posted.AddSeconds(31));
+            Pending(guard, Model, posted.AddSeconds(1));
+            Check(seen == "sent" && guard.Of(Model).State == "sent",
+                  "asking whether a job is held changes nothing - a check may ask it too");
+            guard = KeptOne();
+            Send(guard, Model, posted);
+            guard.UndoneIn(Model, Names(Label));
+            Keep(guard, Model, "create-sheets", "Heron: create-sheets", posted.AddSeconds(32), 2, true);
+            Check(Refusal(guard) == null && Pending(guard, Model, posted.AddSeconds(2)) == null,
+                  "Revit reported an undo there: the Undo is accounted for, nothing is held, and "
+                  + "the next keep is vouched for");
+            guard = KeptOne();
+            Send(guard, Model, posted);
+            guard.SyncedIn(Model);
+            Keep(guard, Model, "create-sheets", "Heron: create-sheets", posted.AddSeconds(32), 2, true);
+            Check(Refusal(guard) == null, "a sync clears it too: nothing is left for that Undo to take");
+            guard = KeptOne();
+            Send(guard, Model, posted);
+            guard.Closed(Model);
+            Keep(guard, Model, "create-sheets", "Heron: create-sheets", posted.AddSeconds(32), 2, true);
+            Check(Refusal(guard) == null, "and a close");
+            guard = KeptOne();
+            Send(guard, Model, posted);
+            Ask(guard, "Renamed", Model, "guid|C:/models/Tower-B.rvt|Tower-B");
+            Keep(guard, "guid|C:/models/Tower-B.rvt|Tower-B", "create-sheets", "Heron: create-sheets",
+                 posted.AddSeconds(32), 2, true);
+            Check(Says(guard.Refusal("guid|C:/models/Tower-B.rvt|Tower-B", "Tower-B", true, true),
+                       "it may still run and take this change"),
+                  "a save under a new name does not: the Undo still out goes with the model");
 
             Console.WriteLine();
             foreach (var missing in Absent)

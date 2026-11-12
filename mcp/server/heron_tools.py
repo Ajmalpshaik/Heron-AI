@@ -221,7 +221,14 @@ TOOLS = {
     # all that is known. With `check_only` it sends `undo_check` instead, which
     # the add-in declares READ: it posts nothing, and answers with Changes off.
     # The tool stays MODIFY - its risk is the most it can do.
-    "revit_undo_last":          (MODIFY,  "undo_last"),
+    #
+    # THE OPERATION IS `undo_guarded`, NOT THE FIRST BUILD'S `undo_last` (row
+    # 5b-1604). A Revit still running that build knows the old name and would
+    # post by its old rule - the shared Project Information id, every keep
+    # counted as on top - whatever else this request carried. It does not
+    # know this one, so it answers `unknown_op`, nothing is posted, and the
+    # chat is told that Revit's Heron is older. One request, no window.
+    "revit_undo_last":          (MODIFY,  "undo_guarded"),
 
     # The brain, reachable. These three read what Heron KNOWS - the skills, the
     # capability registry and the fragment library - and none of them sends

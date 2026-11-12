@@ -16,9 +16,16 @@ using Heron.Core;
 namespace Heron.Revit.Addin
 {
     /// <summary>
-    /// `undo_last` (D-157): Revit's own Undo, sent only while Heron saw its
+    /// `undo_guarded` (D-157): Revit's own Undo, sent only while Heron saw its
     /// last kept change land and has seen nothing change the model since -
     /// and `undo_check`, the same questions asked with nothing sent.
+    ///
+    /// THE OPERATION WAS `undo_last` IN THE FIRST BUILD, AND IS NOT ANY MORE
+    /// (row 5b-1604, the second review). That build posts on the Project
+    /// Information id alone and counts every keep as on top; a Revit still
+    /// running it would take this chat's request by the old name and post by
+    /// the old rule. Under a name it does not know it answers that it has no
+    /// such operation, and nothing is posted. Nothing answers the old name.
     ///
     /// REVIT'S UNDO, NEVER A SECOND CHANGE. Heron does not work out how to put
     /// the model back and write that - a second change with risks of its own,
@@ -30,9 +37,10 @@ namespace Heron.Revit.Addin
     /// command; Revit runs it once this external event returns. So the reply
     /// says it was SENT, never that it was done. The guard hears the undo when
     /// Revit reports it; until then a second request is refused, the
-    /// dispatcher stops draining its queue (TakePosted), and another Heron job
-    /// in that model is held back (Waiting) - a change kept in between would
-    /// be what the Undo takes (row 5b-1605).
+    /// dispatcher stops draining its queue (TakePosted), every other Heron
+    /// job - in any model - is held back for a short wait (Waiting), and no
+    /// keep in that model is vouched for however long it takes: a change
+    /// kept in between would be what the Undo takes (row 5b-1605).
     ///
     /// ONLY THE MODEL THIS CHAT IS PINNED TO, AND ONLY WHILE IT IS ON SCREEN
     /// (row 5b-1604). Revit's Undo acts on the active document. So the
@@ -241,21 +249,24 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
-        /// The refusal for a job that would act in a model where an Undo Heron
-        /// sent has not been reported yet - or null. A read goes on: it leaves
-        /// nothing for the Undo to take.
+        /// The refusal for a job that would act in Revit while an Undo Heron
+        /// sent a moment ago has not been seen to run - or null. A read goes
+        /// on: it leaves nothing for the Undo to take.
+        ///
+        /// IN ANY MODEL, NOT ONLY THE ONE THE UNDO WAS SENT IN. Revit's Undo
+        /// acts on the model on screen when it runs, and a job from another
+        /// chat that brings another model to the front (ACTIVATE_DOCUMENT is
+        /// EXECUTE) would send it there. A second Undo is held the same way.
         /// </summary>
         internal static string Waiting(UIApplication app, string request, string op)
         {
             try
             {
-                if (!Guard.Any || op == "undo_last" || op == "undo_check") return null;
+                if (!Guard.Any) return null;
                 if (!HeronOperationRegistry.IsDeclared(op)
                     || HeronOperationRegistry.RiskOf(op) < HeronRisk.Execute) return null;
 
-                var doc = RevitOperations.HoldTarget(app, request);
-                if (doc == null) return null;
-                var why = Guard.Pending(RevitOperations.DocumentKey(doc), DateTime.Now);
+                var why = Guard.Pending(DateTime.Now);
                 return why == null ? null : Json.Error("undo_pending", why);
             }
             catch (Exception ex)
@@ -275,6 +286,20 @@ namespace Heron.Revit.Addin
             {
                 var entry = Guard.Of(RevitOperations.DocumentKey(doc));
                 return entry == null ? null : entry.State;
+            }
+            catch (Exception) { return null; }
+        }
+
+        /// <summary>
+        /// The guard's own reason when it is unsure of a model straight after
+        /// a keep there, for the kept reply's `undoWhy` - or null.
+        /// </summary>
+        internal static string WhyOf(Document doc)
+        {
+            try
+            {
+                var entry = Guard.Of(RevitOperations.DocumentKey(doc));
+                return entry == null || entry.State != HeronUndoGuard.Unsure ? null : entry.Why;
             }
             catch (Exception) { return null; }
         }
@@ -339,10 +364,11 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
-        /// `undo_last`, or with `checkOnly` its questions and nothing sent.
-        /// `gate` is what the switches would answer an `undo_last` now - asked
-        /// by the caller, for a check only: the real one never reaches here
-        /// while they refuse it.
+        /// `undo_guarded`, or with `checkOnly` its questions and nothing sent.
+        /// `gate` is what the switches would answer an `undo_guarded` now -
+        /// asked by the caller, for a check only: the real one never reaches
+        /// here while they refuse it. A CHECK CHANGES NOTHING: nothing on its
+        /// path writes to the guard, so asking twice answers twice the same.
         /// </summary>
         public static string Last(UIApplication app, string request, bool checkOnly, string gate)
         {
@@ -377,9 +403,6 @@ namespace Heron.Revit.Addin
                 bool canPost;
                 try { canPost = undo != null && app.CanPostCommand(undo); }
                 catch (Exception) { canPost = false; }
-
-                // An Undo sent long ago and never reported is no longer waited for.
-                Guard.Pending(key, DateTime.Now);
 
                 refusal = Guard.Refusal(key, doc.Title, true, canPost);
                 if (refusal != null) code = "undo_refused";

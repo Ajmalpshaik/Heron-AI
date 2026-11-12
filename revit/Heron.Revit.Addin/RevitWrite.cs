@@ -424,7 +424,7 @@ namespace Heron.Revit.Addin
                     //
                     // WHAT IT COUNTED, for the undo guard (D-157): the elements
                     // verified to have moved, wholly or partly. A move that
-                    // shifted none is not offered to `undo_last`.
+                    // shifted none is not offered to `undo_guarded`.
                     RevitFragment.KeepAndWatch(group, doc, watch, reallyMoved + partly, true);
                 }
                 catch (Exception ex)

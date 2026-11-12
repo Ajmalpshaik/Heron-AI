@@ -206,7 +206,7 @@ namespace Heron.Core
                 { "isolate_temporary",  HeronRisk.Execute },
                 { "reset_temporary",    HeronRisk.Execute },
 
-                // READ - what `undo_last` would answer now, and NOTHING SENT
+                // READ - what `undo_guarded` would answer now, and NOTHING SENT
                 // (D-157's check). It posts no command and opens no
                 // transaction: it asks the same guard the same questions and
                 // says yes, for which job, or the exact refusal. Read, as
@@ -222,7 +222,12 @@ namespace Heron.Core
                 // change land - Revit counted elements in it - and has seen
                 // nothing reported in that model since. Revit has no API that
                 // reads its undo list, so that is the whole of what is known.
-                { "undo_last",          HeronRisk.Modify },
+                //
+                // ITS NAME WAS `undo_last` IN THE FIRST BUILD, which posted by
+                // a weaker rule. A new name, so that build - still running in
+                // some Revit - answers that it has no such operation rather
+                // than posting. The old name is declared nowhere.
+                { "undo_guarded",       HeronRisk.Modify },
 
                 // ANALYZE - runs a fragment's own C# against the model and
                 // reports what it left behind. It is here rather than at

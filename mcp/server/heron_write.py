@@ -276,12 +276,14 @@ _UNDO_LINES = {
     "onTop": "To take this back: revit_undo_last sends Revit's own Undo for it, "
              "while Heron has seen nothing else change this model.",
     "nothing": "Nothing to take back: Revit counted no change from this job, so "
-               "revit_undo_last would refuse - Ctrl+Z now would undo whatever was "
+               "revit_undo_last would refuse - Ctrl+Z now may undo whatever was "
                "done before it.",
-    "unsure": "Heron cannot take this back itself: revit_undo_last would refuse, "
-              "because Heron missed something in this model. Revit's own undo list "
-              "is the way.",
+    "unsure": "Heron cannot take this back itself: revit_undo_last would refuse - "
+              "%s. Revit's own undo list is the way.",
 }
+
+# What the unsure line says when the add-in gives no reason of its own.
+_UNDO_UNSURE = "Heron missed something in this model"
 
 
 def undo_line(reply):
@@ -290,7 +292,14 @@ def undo_line(reply):
     (an add-in from before D-157's field). Pure, so the suites call it."""
     if not isinstance(reply, dict):
         return None
-    return _UNDO_LINES.get(reply.get("undoState"))
+    line = _UNDO_LINES.get(reply.get("undoState"))
+    if line is None or "%s" not in line:
+        return line
+    # THE GUARD'S OWN REASON (`undoWhy`), so an Undo still outstanding is
+    # said as what it is and not as "Heron missed something". One line:
+    # the reason is the add-in's text, and nothing in it may start another.
+    why = " ".join(str(reply.get("undoWhy") or "").split()).rstrip(".")
+    return line % (why or _UNDO_UNSURE)
 
 
 class DocumentPin(object):

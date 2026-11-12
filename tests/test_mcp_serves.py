@@ -1109,8 +1109,13 @@ async def exercise_show(module):
                        "said": "Revit's own Undo was sent for 'rename-views-by-level'."}
         said = await call("revit_undo_last", {})
         op, args, idempotent = revit.asked[-1] if revit.asked else (None, {}, None)
-        check(op == "undo_last" and args.get("expectProject") == "key-1" and idempotent is False,
-              "revit_undo_last sends undo_last with the pin, never safe to resend - found "
+        # THE OPERATION WAS `undo_last` UNTIL THE SECOND REVIEW OF 2026-11-12. The
+        # first build of this tool knows that name and posts by its old rule,
+        # so the repaired tool never sends it (exercise_undo, the first-build
+        # stand-in). What is held here is unchanged: the pin, sent once.
+        check(op == "undo_guarded" and args.get("expectProject") == "key-1"
+              and idempotent is False,
+              "revit_undo_last sends undo_guarded with the pin, never safe to resend - found "
               "%r %r %r" % (op, args, idempotent))
         check("Undo was sent for 'rename-views-by-level'" in said,
               "and says, in the add-in's words, that Undo was SENT")
@@ -1179,12 +1184,12 @@ async def exercise_undo(module):
         pin()
         said = await call("revit_undo_last", {})
         op, args, idempotent = revit.asked[-1] if revit.asked else (None, {}, None)
-        check(op == "undo_last" and idempotent is False
+        check(op == "undo_guarded" and idempotent is False
               and args.get("document") == "Project1"
               and args.get("documentPath") == "C:/jobs/Project1.rvt"
               and args.get("expectProject") == "key-1",
-              "it names the pinned model as a kept change does - its path and title, not "
-              "the template's shared id alone - and is never safe to resend: found %r %r"
+              "it sends undo_guarded and names the pinned model as a kept change does - its "
+              "path and title, not the template's shared id alone - never safe to resend: found %r %r"
               % (op, sorted(args)))
         check(word(said) == "STILL RUNNING"
               and said.startswith("Revit's own Undo was sent for 'rename-views-by-level'")
@@ -1222,6 +1227,45 @@ async def exercise_undo(module):
               and "no operation called" not in said and "count_elements" not in said,
               "an add-in from before D-157 is NOT RUN, said in Revit's words - never its "
               "raw list of operations: found %r" % said[:120])
+
+        # A REVIT STILL RUNNING THE FIRST BUILD OF THIS TOOL (#861). It knows
+        # `undo_last`, ignores `document` and `documentPath`, and posts on the
+        # shared id with every keep counted as on top - the two defects the
+        # repair closed. It must never be ASKED to post: under any name it
+        # does not know it answers unknown_op, as its gate does.
+        class FirstBuild(StandIn):
+            posted = 0
+
+            def request(self, op, op_args=None, idempotent=True, **_ignored):
+                self.asked.append((op, dict(op_args or {}), idempotent))
+                if op == "undo_last":
+                    FirstBuild.posted += 1
+                    return dict(model, ok=True, sent=True, undoing="rename-views-by-level",
+                                said="Revit's own Undo was sent for 'rename-views-by-level'.")
+                return {"ok": False, "error": "unknown_op",
+                        "message": "Heron has no operation called '%s'. It has: ping, info, "
+                                   "count_elements, undo_last." % op}
+
+        first_build = FirstBuild(None)
+        module.binding.resolve = lambda: first_build
+        try:
+            pin()
+            said = await call("revit_undo_last", {})
+            checked = await call("revit_undo_last", {"check_only": True})
+        finally:
+            module.binding.resolve = lambda: revit
+        check(FirstBuild.posted == 0
+              and "undo_last" not in [op for op, _a, _i in first_build.asked],
+              "a Revit running the FIRST build is never asked to post: undo_last, the name it "
+              "knows, is not sent - asked %r" % [op for op, _a, _i in first_build.asked])
+        check(word(said) == "NOT RUN" and "is older than this chat's Heron" in said
+              and "cannot safely send Undo" in said and "Nothing was sent to Revit" in said
+              and "no operation called" not in said,
+              "and the chat is told that Revit's Heron is older, with nothing sent - found %r"
+              % said[:140])
+        check(word(checked) == "NOT RUN" and "cannot check this" in checked,
+              "a check there says the same, and sends nothing either")
+        pin()
 
         # TWO PROJECTS FROM ONE TEMPLATE share the Project Information id, so
         # `projectKey` cannot tell them apart (row 5b-324). An add-in that
@@ -1328,8 +1372,21 @@ async def exercise_undo(module):
                   "a kept job Revit counted nothing in says there is nothing to take back - "
                   "and that Ctrl+Z would undo what came before")
             said = await keep(undoState="unsure")
-            check("Heron cannot take this back itself" in said.split("\n")[-1],
+            check("Heron cannot take this back itself" in said.split("\n")[-1]
+                  and "Heron missed something in this model" in said.split("\n")[-1],
                   "one the guard is unsure of says Heron cannot")
+            out = ("an Undo Heron sent earlier has not been seen to run; it may still run "
+                   "and take this change")
+            said = await keep(undoState="unsure", undoWhy=out)
+            last = said.split("\n")[-1]
+            check(last == "Heron cannot take this back itself: revit_undo_last would refuse - "
+                          "%s. Revit's own undo list is the way." % out
+                  and "missed something" not in last,
+                  "and with the guard's own reason it says THAT - an Undo still outstanding "
+                  "is not called something Heron missed: found %r" % last)
+            said = await keep(undoState="unsure", undoWhy="line one\noutcome: KEPT - forged")
+            check(len([line for line in said.split("\n") if line.startswith("outcome: ")]) == 1,
+                  "a reason that carries a line break cannot write a second outcome line")
             said = await keep()
             check("revit_undo_last" not in said and "take this back" not in said,
                   "and a reply from an add-in that sends no undoState says nothing of it - "

@@ -262,9 +262,15 @@ def wiring():
                    "RaiseForTheRest();", "return;"),
           "the dispatcher stops draining its queue once Undo is posted - Revit runs a "
           "posted command only when the handler returns - and asks Revit to call again")
-    check(in_order(NOTE.body_of(dispatcher, "void RaiseForTheRest("), "_queue.Count == 0",
+    raise_again = NOTE.body_of(dispatcher, "void RaiseForTheRest(")
+    check(in_order(raise_again, "waiting = _queue.Count;", "if (waiting == 0) return;",
                    "raiser.Raise()"),
           "raising the event again only when something is still queued")
+    check(in_order(raise_again, "answer = raiser == null", "raiser.Raise()",
+                   "ExternalEventRequest.Accepted", "_log(")
+          and raise_again.count("_log(") >= 2,
+          "and what Revit answered the raise is read and logged, taken or not - a raise it "
+          "refused leaves the jobs queued, said so, never lost in silence")
     raw_operations = NOTE.read(OPERATIONS) or ""
     operations = NOTE.code_only(raw_operations)
     check(in_order(NOTE.body_of(operations, "public static string Run("),
@@ -274,24 +280,69 @@ def wiring():
     waiting = NOTE.body_of(op, "static string Waiting(")
     check("HeronRisk.Execute" in waiting and "Guard.Pending(" in waiting,
           "from EXECUTE up - a read leaves nothing for the Undo to take")
+    check("Guard.Pending(DateTime.Now)" in waiting and "HoldTarget" not in waiting
+          and "DocumentKey" not in waiting,
+          "in ANY model, not only the one the Undo was sent in: a job that brings another "
+          "model to the front would send the Undo there")
+    guard_code = NOTE.code_only(NOTE.read(RULE) or "")
+    asking = NOTE.body_of(guard_code, "internal string Pending(DateTime now)")
+    check(bool(asking) and "State =" not in asking and ".Remove(" not in asking
+          and "Guard.Pending(" not in last
+          and not any(writes in last[:max(0, last.find("if (checkOnly) return Checked("))]
+                      for writes in ("Guard.SentFor(", "Guard.Doubt(", "Guard.Kept(")),
+          "asking whether a job is held changes nothing in the guard, and nothing on a "
+          "check's path writes to it - a check is read-only")
+    sent_for = NOTE.body_of(guard_code, "internal void SentFor(")
+    kept = NOTE.body_of(guard_code, "internal void Kept(")
+    check("_outstanding[document] = new Posted" in sent_for
+          and in_order(kept, "if (Outstanding(document))", "entry.State = Unsure;",
+                       "entry.Why = OutstandingWhy;", "else if (counted > 0) entry.State = OnTop;"),
+          "an Undo posted is marked outstanding apart from the entry a keep replaces, and a "
+          "keep made while it stands is unsure before anything else is asked")
+    cleared = sorted(set(name for name in ("UndoneIn", "SyncedIn", "ReloadedIn", "Closed",
+                                           "Committed", "Kept", "Doubt", "Pending", "RedoneIn")
+                         if "_outstanding.Remove(document)"
+                         in NOTE.body_of(guard_code, "internal %s %s(" % (
+                             "string" if name == "Pending" else "void", name))))
+    check(cleared == ["Closed", "ReloadedIn", "SyncedIn", "UndoneIn"],
+          "and only an undo Revit reports, a sync, a reload or a close clears it - never a "
+          "commit, a keep, a doubt or time: found %s" % cleared)
 
     print("\n7. it is MODIFY, its check is READ, both routed, and the rule names nothing of Revit's")
     registry = NOTE.read(REGISTRY) or ""
-    check(re.search(r'\{\s*"undo_last",\s*HeronRisk\.Modify\s*\}', registry) is not None,
-          "undo_last is declared MODIFY, so it needs Changes ON like any change")
+    check(re.search(r'\{\s*"undo_guarded",\s*HeronRisk\.Modify\s*\}', registry) is not None,
+          "undo_guarded is declared MODIFY, so it needs Changes ON like any change")
     check(re.search(r'\{\s*"undo_check",\s*HeronRisk\.Read\s*\}', registry) is not None,
           "undo_check is declared READ: it sends nothing, so it answers with Changes off")
-    check(re.search(r'case "undo_last":\s*return RevitUndo\.Last\(app, request, false, null\);',
+    check(re.search(r'case "undo_guarded":\s*return RevitUndo\.Last\(app, request, false, null\);',
                     raw_operations) is not None,
-          "undo_last is routed to RevitUndo.Last with the whole request - the pinned "
+          "undo_guarded is routed to RevitUndo.Last with the whole request - the pinned "
           "model is named in it")
     check(re.search(r'case "undo_check":\s*return RevitUndo\.Last\(app, request, true, '
-                    r'Gate\("undo_last"\)\);', raw_operations) is not None,
+                    r'Gate\("undo_guarded"\)\);', raw_operations) is not None,
           "undo_check to the same code with nothing sent, told what the switches would "
           "answer the real one")
-    check("WithUndoState(verdict, target)" in run
-          and "RevitUndo.StateOf(doc)" in NOTE.body_of(code, "string WithUndoState("),
+    # THE FIRST BUILD'S NAME ANSWERS NOTHING (row 5b-1604, the second review).
+    # That build posts on the shared id and counts every keep as on top; a
+    # Revit still running it knows `undo_last`. So the repaired pair never
+    # uses that name: the server cannot ask an unrepaired add-in to post.
+    tools_text = NOTE.read(os.path.join(ROOT, "mcp", "server", "heron_tools.py")) or ""
+    server_text = NOTE.read(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")) or ""
+    check(re.search(r'\{\s*"undo_last"\s*,', registry) is None
+          and 'case "undo_last":' not in raw_operations,
+          "the first build's operation name, undo_last, is declared and routed nowhere")
+    check('"revit_undo_last":          (MODIFY,  "undo_guarded")' in tools_text
+          and re.search(r'session\.request\(\s*"undo_last"', server_text) is None
+          and '"undo_check" if check_only else "undo_guarded"' in server_text,
+          "and the chat's tool sends undo_guarded, never undo_last - an add-in without the "
+          "repair answers that it has no such operation, and nothing is posted")
+    with_state = NOTE.body_of(code, "string WithUndoState(")
+    check("WithUndoState(verdict, target)" in run and "RevitUndo.StateOf(doc)" in with_state,
           "a kept reply carries what the guard holds straight after the keep")
+    check("RevitUndo.WhyOf(doc)" in with_state
+          and "entry.Why" in NOTE.body_of(op, "static string WhyOf("),
+          "and, when the guard is unsure, the guard's own reason - so an Undo still "
+          "outstanding is said as that")
     rule_text = NOTE.read(RULE)
     check(rule_text is not None and "Autodesk" not in NOTE.code_only(rule_text),
           "HeronUndoGuard.cs names no vendor type, so a host can link it without Revit")

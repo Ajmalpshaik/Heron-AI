@@ -213,13 +213,14 @@ _KNOWN = {
     # asking again changes nothing until that does.
     "undo_refused":      (REFUSED, FIX_FIRST,
                           "Revit's Undo was not sent, so nothing was undone"),
-    # D-157: an Undo Heron sent has not been reported by Revit yet, so a job
-    # that would act in that model was held back BEFORE it was routed - a
-    # change kept now would be what that Undo takes. Nothing ran, so NEVER_RAN
-    # like revit_busy; it clears when Revit reports the Undo, or in seconds.
+    # D-157: an Undo Heron sent a moment ago has not been seen to run, so a
+    # job that would act in Revit - in ANY model: the Undo acts on whichever
+    # is on screen - was held back BEFORE it was routed. Nothing ran, so
+    # NEVER_RAN like revit_busy; the hold ends when Revit reports the Undo, or
+    # in seconds.
     "undo_pending":      (NEVER_RAN, FIX_FIRST,
-                          "Revit has not yet run the Undo Heron sent in that model, so "
-                          "nothing was run - look at the model and ask again"),
+                          "Heron has not yet seen Revit run the Undo it sent a moment "
+                          "ago, so nothing was run - look at the model and ask again"),
 
     # --- it ran ------------------------------------------------------------
     "still_running":     (RUNNING, WAIT,

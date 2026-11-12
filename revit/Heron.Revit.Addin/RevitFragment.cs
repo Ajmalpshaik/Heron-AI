@@ -3849,7 +3849,7 @@ namespace Heron.Revit.Addin
         /// group neither kept nor rolled back - with the undo guard told
         /// first (D-157, row 5b-1607): what is on the undo list now is not
         /// something Heron can vouch for, so an older keep is no longer
-        /// offered to `undo_last`. The reply itself is handed back unchanged.
+        /// offered to `undo_guarded`. The reply itself is handed back unchanged.
         /// </summary>
         private static string LeftOpen(Document target, string name, string reply)
         {
@@ -3871,7 +3871,11 @@ namespace Heron.Revit.Addin
             if (state == null || string.IsNullOrEmpty(verdict)
                 || !verdict.EndsWith("}", StringComparison.Ordinal))
                 return verdict;
-            return verdict.Substring(0, verdict.Length - 1) + "," + Json.Str("undoState", state) + "}";
+            // AND THE GUARD'S OWN REASON WHEN IT IS UNSURE, so the chat says what
+            // it is - an Undo still outstanding above all - and not a guess.
+            var why = RevitUndo.WhyOf(doc);
+            return verdict.Substring(0, verdict.Length - 1) + "," + Json.Str("undoState", state)
+                 + (string.IsNullOrEmpty(why) ? "" : "," + Json.Str("undoWhy", why)) + "}";
         }
 
         /// <summary>

@@ -327,6 +327,12 @@ def main():
               and "Nothing to take back" in (line({"undoState": "nothing"}) or "")
               and "cannot take this back itself" in (line({"undoState": "unsure"}) or ""),
               "one line for each state the add-in's guard can hold after a keep")
+        why = line({"undoState": "unsure", "undoWhy": "an Undo Heron sent earlier has not "
+                    "been seen to run; it may still run and take this change"}) or ""
+        check("an Undo Heron sent earlier has not been seen to run" in why
+              and "missed something" not in why and "\n" not in why,
+              "an unsure state says the add-in's own reason when it gives one - an Undo "
+              "still outstanding is said as that")
         check(line({}) is None and line({"undoState": "something new"}) is None
               and line(None) is None,
               "and none for a reply that names no state, or one this side does not know - "

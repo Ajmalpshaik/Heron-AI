@@ -814,18 +814,35 @@ namespace Heron.Revit.Addin
         {
             try
             {
+                int waiting;
                 lock (_queueLock)
                 {
-                    if (_queue.Count == 0) return;
+                    waiting = _queue.Count;
                 }
+                if (waiting == 0) return;
+
+                // WHAT REVIT SAID TO THE RAISE IS WRITTEN DOWN, either way. A
+                // raise it did not take loses nothing silently: the jobs stay
+                // queued, the next request that arrives raises the event for
+                // all of them, and a caller that stops waiting first abandons
+                // its own job and is told "Revit is busy" - nothing of it ran.
                 var raiser = _event;
-                if (raiser != null) raiser.Raise();
+                var answer = raiser == null ? (ExternalEventRequest?)null : raiser.Raise();
+                var taken = answer == ExternalEventRequest.Accepted
+                         || answer == ExternalEventRequest.Pending;
+                _log(waiting.ToString(CultureInfo.InvariantCulture)
+                     + " job(s) were queued behind an Undo. Asked Revit to call again for them: "
+                     + (answer == null ? "no event to raise" : answer.Value.ToString())
+                     + (taken ? "."
+                              : ". They stay queued until the next request raises the event; "
+                                + "a caller that stops waiting first is told Revit was busy, "
+                                + "and nothing of its job has run."));
             }
             catch (Exception ex)
             {
-                // The queued callers time out as "Revit is busy" at worst, and
-                // nothing of theirs has run.
-                _log("Could not ask Revit to run the jobs queued behind an Undo: " + ex.Message);
+                // The same holds: queued, not lost, and not run.
+                _log("Could not ask Revit to run the jobs queued behind an Undo: " + ex.Message
+                     + " They stay queued until the next request raises the event.");
             }
         }
 
@@ -930,8 +947,11 @@ namespace Heron.Revit.Addin
                 case "reset_temporary":
                     return "Resetting the temporary hide/isolate";
 
-                case "undo_last":
-                    return "Undoing Heron's last change";
+                case "undo_guarded":
+                    return "Sending Undo for Heron's last change";
+
+                case "undo_check":
+                    return "Checking whether Heron can undo its last change";
 
                 case "release_models":
                     return "Handing a model back to the other chats";

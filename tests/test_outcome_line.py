@@ -1542,12 +1542,13 @@ def the_undo_tool(stage, cases, replies):
         pass
     asked =[(op, idempotent) for op, _args, idempotent in stage.revit.asked]
     check(asked == [("undo_check", True)],
-          "a check sends undo_check, once, and never undo_last - found %r" % (asked,))
+          "a check sends undo_check, once, and never a posting operation - found %r"
+          % (asked,))
     stage.fresh(dict(UNDO_SENT), MODEL)
     module.revit_undo_last()
     asked = [(op, idempotent, sorted(args)) for op, args, idempotent in stage.revit.asked]
-    check(asked == [("undo_last", False, ["document", "documentPath", "expectProject"])],
-          "the real one sends undo_last once, never safe to resend, naming the pinned "
+    check(asked == [("undo_guarded", False, ["document", "documentPath", "expectProject"])],
+          "the real one sends undo_guarded once, never safe to resend, naming the pinned "
           "model by path and title - found %r" % (asked,))
 
 

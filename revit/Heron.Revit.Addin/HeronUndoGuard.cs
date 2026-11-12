@@ -13,7 +13,7 @@ namespace Heron.Revit.Addin
 {
     /// <summary>
     /// Whether Heron has seen anything change a model since its last kept
-    /// change there - the bookkeeping behind `undo_last` (D-157), with nothing
+    /// change there - the bookkeeping behind `undo_guarded` (D-157), with nothing
     /// Revit-shaped in it.
     ///
     /// WHY IT HAS TO BE WATCHED. Revit's Undo takes the TOP of the list, and
@@ -61,6 +61,12 @@ namespace Heron.Revit.Addin
     ///              open. It no longer knows what is on top, and refuses
     ///              (row 5b-1607)
     ///   Closed     the model closed - forgotten
+    ///   Sent       Heron posted Undo. From then until Revit reports an undo
+    ///              in that model the Undo is OUTSTANDING: it may still run,
+    ///              and it takes whatever is on top when it does. So no keep
+    ///              made there meanwhile is vouched for, no second Undo is
+    ///              sent, and for the first SentWait no other Heron job starts
+    ///              in any model. Time alone never clears it
     ///
     /// A COMMIT INSIDE HERON'S OWN JOB IS NOT A COVER, and the caller says
     /// which are (`ours`): the job's setup steps and its own transaction
@@ -95,13 +101,22 @@ namespace Heron.Revit.Addin
         internal const string Unsure = "unsure";
 
         /// <summary>
-        /// How long an Undo that was sent is waited for. Revit runs a posted
-        /// command once Heron's request returns; within this, another Heron
-        /// job in that model is held back, so it cannot land on top and be
-        /// what the Undo takes. Past it, Heron stops waiting and says it does
-        /// not know what became of the Undo.
+        /// How long every other Heron job is HELD BACK after an Undo is sent.
+        /// Revit runs a posted command once Heron's request returns; within
+        /// this, a job in ANY model is refused before it runs - it could land
+        /// on top of the undo list, or bring another model to the front, and
+        /// Revit's Undo acts on whichever model is on screen. Past it jobs
+        /// run again, but the Undo is not forgotten: see `Outstanding`.
         /// </summary>
         internal static readonly TimeSpan SentWait = TimeSpan.FromSeconds(30);
+
+        /// <summary>
+        /// Why a job kept while an Undo is outstanding is not vouched for -
+        /// said by `undo_guarded`'s refusal and on that job's kept reply.
+        /// </summary>
+        internal const string OutstandingWhy =
+            "an Undo Heron sent earlier has not been seen to run; it may still run and take "
+            + "this change";
 
         /// <summary>Heron's last kept job in one model, and where it stands.</summary>
         internal sealed class Entry
@@ -115,11 +130,30 @@ namespace Heron.Revit.Addin
             internal int Depth;         // Undone: undos Revit reported after Heron's own went
             internal bool Redoable;     // Undone: nothing has committed since, so Redo still holds it
             internal DateTime SentAt;   // Sent: when Undo was posted
+            internal bool Twin;         // an earlier keep here carried the same Label
+            internal HashSet<string> Earlier;   // the labels of the keeps before this one
             internal long Touched;
+        }
+
+        /// <summary>An Undo that was posted and has not been seen to run.</summary>
+        private sealed class Posted
+        {
+            internal string Job;
+            internal DateTime At;
         }
 
         private readonly Dictionary<string, Entry> _byDocument =
             new Dictionary<string, Entry>(StringComparer.Ordinal);
+
+        // AN UNDO SENT AND NOT SEEN TO RUN, by model - apart from the entry,
+        // because a keep REPLACES the entry and must not replace this (row
+        // 5b-1605, the second review). Set when Undo is posted. Cleared ONLY
+        // by an undo Revit reports there, a sync, a reload or a close - never
+        // by time, a commit or a keep: an Undo that fires late takes whatever
+        // is on top then, so every keep made while one stands is unsure.
+        private readonly Dictionary<string, Posted> _outstanding =
+            new Dictionary<string, Posted>(StringComparer.Ordinal);
+
         private readonly Action<string> _log;
         private long _clock;
 
@@ -132,7 +166,13 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>Any model remembered - the listener's one cheap question on every edit.</summary>
-        internal bool Any { get { return _byDocument.Count > 0; } }
+        internal bool Any { get { return _byDocument.Count > 0 || _outstanding.Count > 0; } }
+
+        /// <summary>Whether an Undo Heron sent in this model has not been seen to run.</summary>
+        internal bool Outstanding(string document)
+        {
+            return document != null && _outstanding.ContainsKey(document);
+        }
 
         /// <summary>What is remembered for a model, or null.</summary>
         internal Entry Of(string document)
@@ -163,11 +203,25 @@ namespace Heron.Revit.Addin
 
             var before = Of(document);
             var entry = new Entry { Job = job, Label = label, KeptAt = keptAt, Touched = ++_clock };
-            if (before != null && before.State == Sent)
+
+            // THE NAMES OF THE KEEPS BEFORE IT, while Revit's list can still
+            // hold them. A second keep under one name makes an undo or a redo
+            // that carries that name ambiguous - see RedoneIn.
+            entry.Earlier = new HashSet<string>(StringComparer.Ordinal);
+            if (before != null && before.State != Synced && before.State != Reloaded)
+            {
+                if (before.Earlier != null) entry.Earlier.UnionWith(before.Earlier);
+                if (!string.IsNullOrEmpty(before.Label)) entry.Earlier.Add(before.Label);
+            }
+            entry.Twin = entry.Earlier.Contains(label);
+
+            // WHILE AN UNDO IS OUTSTANDING NO KEEP IS VOUCHED FOR, whatever the
+            // entry before it says by now - it may have been covered, doubted
+            // or replaced since the Undo was posted, and the Undo is still out.
+            if (Outstanding(document))
             {
                 entry.State = Unsure;
-                entry.Why = "it was kept while the Undo Heron sent for '" + before.Job
-                          + "' had not been reported by Revit, so that Undo may be what takes it";
+                entry.Why = OutstandingWhy;
             }
             else if (counted > 0) entry.State = OnTop;
             else if (read) entry.State = Nothing;
@@ -232,8 +286,17 @@ namespace Heron.Revit.Addin
         /// </summary>
         internal void UndoneIn(string document, IEnumerable<string> names)
         {
+            // AN UNDO RAN HERE, so the one Heron sent - if one was out - is no
+            // longer waited for. Which entry it took is what the state below
+            // records; a keep made while it was out stays unsure.
+            var ran = document != null && _outstanding.Remove(document);
+
             var entry = Of(document);
-            if (entry == null) return;
+            if (entry == null)
+            {
+                if (ran) Say("undo, and the Undo Heron sent is accounted for", names, document, (string)null, null);
+                return;
+            }
 
             var was = entry.State;
             switch (entry.State)
@@ -262,13 +325,21 @@ namespace Heron.Revit.Addin
                     break;
             }
             entry.Touched = ++_clock;
-            Say("undo", names, document, was, entry);
+            Say(ran ? "undo, and the Undo Heron sent is accounted for" : "undo",
+                names, document, was, entry);
         }
 
         /// <summary>
         /// Revit redid something. Heron's own entry is on top again only when
         /// every undo after it has been redone first AND this redo carries its
         /// name. A redo at any other moment is a change after it.
+        ///
+        /// AND NEVER WHEN AN EARLIER KEEP HERE CARRIED THE SAME NAME (`Twin`).
+        /// The count is only as good as the events: whether Revit raises one
+        /// undo or redo event for an entry or several is not known (Group NU),
+        /// and with two keeps under one name a redo's name cannot say which of
+        /// them came back. So such a keep, once undone, is never vouched for
+        /// again - the modeller's Ctrl+Z still takes it.
         /// </summary>
         internal void RedoneIn(string document, IEnumerable<string> names)
         {
@@ -284,6 +355,13 @@ namespace Heron.Revit.Addin
                         entry.State = Unsure;
                         entry.Why = "Revit reported a redo of " + Quoted(First(names))
                                   + " after a change that should have left nothing to redo";
+                    }
+                    else if (entry.Twin)
+                    {
+                        entry.State = Unsure;
+                        entry.Why = "two of Heron's changes in this model carry the name '"
+                                  + entry.Label + "', so Heron cannot tell which of them a "
+                                  + "redo brought back";
                     }
                     else if (entry.Depth > 0) entry.Depth--;
                     else if (Mine(names, entry.Label)) entry.State = OnTop;
@@ -307,6 +385,7 @@ namespace Heron.Revit.Addin
         /// <summary>Synchronized with central: Revit has cleared the undo list.</summary>
         internal void SyncedIn(string document)
         {
+            if (document != null) _outstanding.Remove(document);    // nothing left for it to take
             var entry = Of(document);
             if (entry == null) return;
             var was = entry.State;
@@ -317,6 +396,7 @@ namespace Heron.Revit.Addin
         /// <summary>Reload Latest: Revit has cleared the undo list, as a sync does.</summary>
         internal void ReloadedIn(string document)
         {
+            if (document != null) _outstanding.Remove(document);
             var entry = Of(document);
             if (entry == null) return;
             var was = entry.State;
@@ -331,8 +411,18 @@ namespace Heron.Revit.Addin
         /// </summary>
         internal void Renamed(string before, string after)
         {
+            if (string.IsNullOrEmpty(before) || string.IsNullOrEmpty(after) || before == after) return;
+
+            // An Undo still out goes with the model, not with its old name.
+            Posted posted;
+            if (_outstanding.TryGetValue(before, out posted))
+            {
+                _outstanding.Remove(before);
+                _outstanding[after] = posted;
+            }
+
             var entry = Of(before);
-            if (entry == null || string.IsNullOrEmpty(after) || before == after) return;
+            if (entry == null) return;
             var was = entry.State;
             _byDocument.Remove(before);
             if (Reopens(entry.State))
@@ -372,44 +462,49 @@ namespace Heron.Revit.Addin
         /// <summary>The model closed: nothing about it is remembered.</summary>
         internal void Closed(string document)
         {
+            if (document != null) _outstanding.Remove(document);
             var entry = Of(document);
             if (entry == null) return;
             _byDocument.Remove(document);
             Say("closed, forgotten", null, document, entry.State, null);
         }
 
-        /// <summary>Undo was sent for Heron's entry; it is not sent again until Revit reports it.</summary>
+        /// <summary>
+        /// Undo was sent for Heron's entry. It is not sent again, and no keep
+        /// in this model is vouched for, until Revit reports an undo there.
+        /// </summary>
         internal void SentFor(string document, DateTime now)
         {
             var entry = Of(document);
             if (entry == null || entry.State != OnTop) return;
             entry.State = Sent;
             entry.SentAt = now;
+            _outstanding[document] = new Posted { Job = entry.Job, At = now };
             Say("Undo posted", null, document, OnTop, entry);
         }
 
         /// <summary>
-        /// Why another Heron job must NOT start in this model now, or null.
-        /// An Undo was sent and Revit has not reported it: a change kept now
-        /// would be on top when that Undo runs. Past SentWait Heron stops
-        /// waiting, and no longer says it knows what is on top.
+        /// Why another Heron job must NOT start now - in ANY model - or null.
+        /// An Undo was sent within SentWait and has not been seen to run: a
+        /// change kept now could be on top when it runs, and a job that
+        /// brings another model to the front would send it there.
+        ///
+        /// IT ONLY ANSWERS. Nothing is changed by asking, so a check
+        /// (`undo_check`) and the hold can both ask it. Past SentWait it
+        /// answers null and jobs run again - the Undo is still outstanding,
+        /// and what that means is `Kept`'s and `Refusal`'s to say.
         /// </summary>
-        internal string Pending(string document, DateTime now)
+        internal string Pending(DateTime now)
         {
-            var entry = Of(document);
-            if (entry == null || entry.State != Sent) return null;
-
-            if (now - entry.SentAt > SentWait)
+            foreach (var pair in _outstanding)
             {
-                entry.State = Unsure;
-                entry.Why = "Revit never reported the Undo Heron sent at " + At(entry.SentAt);
-                Say("Undo never reported", null, document, Sent, entry);
-                return null;
+                if (now - pair.Value.At > SentWait) continue;
+                return "Heron sent Revit's Undo for '" + pair.Value.Job + "' in '" + TitleOf(pair.Key)
+                     + "' at " + At(pair.Value.At) + " and has not seen Revit run it yet, so "
+                     + "nothing was run: Revit's Undo acts on whichever model is on screen, and a "
+                     + "change kept now could be what it takes. Look at the model, and ask again.";
             }
-
-            return "Heron sent Revit's Undo for '" + entry.Job + "' at " + At(entry.SentAt)
-                 + " and Revit has not reported it done yet, so nothing was run: a change kept "
-                 + "now is what that Undo would take. Look at the model, and ask again.";
+            return null;
         }
 
         /// <summary>
@@ -427,9 +522,17 @@ namespace Heron.Revit.Addin
                      + "Nothing was undone. Bring " + model + " to the front and ask again.";
             }
 
+            // AN UNDO STILL OUT IN THIS MODEL REFUSES A SECOND, whatever else is
+            // remembered - said here for the two cases no state below covers.
+            const string StillOut = "Heron sent Revit's Undo in this model earlier and has not seen "
+                                  + "Revit run it, so it sends no other: the first may still run. "
+                                  + "Nothing was undone. Look at the arrows beside Revit's Undo and "
+                                  + "Redo buttons to see what Revit holds.";
+
             var entry = Of(document);
             if (entry == null)
             {
+                if (Outstanding(document)) return StillOut;
                 return "Heron has kept no change in " + model + " since Revit started, so there is "
                      + "nothing of Heron's to undo. Nothing was undone. Ctrl+Z in Revit undoes the "
                      + "last change, whoever made it.";
@@ -455,9 +558,8 @@ namespace Heron.Revit.Addin
                     return what + ", has already been undone. Nothing more was undone. Ctrl+Z in "
                          + "Revit undoes whatever is next on the list.";
                 case Sent:
-                    return "Undo was already sent for " + what + ", and Revit has not reported "
-                         + "it done yet. Nothing more was sent. Look at the model before asking "
-                         + "again.";
+                    return "Undo was already sent for " + what + ", and Heron has not seen Revit "
+                         + "run it. Nothing more was sent. Look at the model before asking again.";
                 case Synced:
                     return what + ", was synchronized with central since, and Revit clears its undo "
                          + "list then. Nothing was undone.";
@@ -469,6 +571,8 @@ namespace Heron.Revit.Addin
                          + (string.IsNullOrEmpty(entry.Why) ? "it missed a change here" : entry.Why)
                          + ". So Undo is not sent for " + what + ". Nothing was undone." + Look;
             }
+
+            if (Outstanding(document)) return StillOut;
 
             if (!canPost)
             {
@@ -517,6 +621,14 @@ namespace Heron.Revit.Addin
         private static string At(DateTime when)
         {
             return when.ToString("HH:mm", CultureInfo.InvariantCulture);
+        }
+
+        /// <summary>A model's title, the last of the three parts its key is made of.</summary>
+        private static string TitleOf(string document)
+        {
+            var title = document ?? "";
+            var bar = title.LastIndexOf('|');
+            return bar >= 0 ? title.Substring(bar + 1) : title;
         }
 
         private static string Quoted(string name)

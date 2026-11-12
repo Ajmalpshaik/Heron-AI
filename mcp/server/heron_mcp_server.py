@@ -3631,7 +3631,11 @@ def revit_undo_last(check_only: bool = False) -> str:
     # be asked again.
     # FROM HERE THE REQUEST HAS LEFT (`_after_it_left`).
     _sent()
-    reply = session.request("undo_check" if check_only else "undo_last",
+    # `undo_guarded`, NEVER `undo_last`: the first build of this tool answers
+    # that name by posting on its old rule (heron_tools.TOOLS says why). An
+    # add-in without the repair knows neither name here, and is never asked
+    # to post.
+    reply = session.request("undo_check" if check_only else "undo_guarded",
                             op_args=args, idempotent=bool(check_only))
     session.close()
 
@@ -3642,10 +3646,11 @@ def revit_undo_last(check_only: bool = False) -> str:
         # busy or the model held NOT RUN, an answer lost OUTCOME UNKNOWN.
         label = _failure_ended(failure)
         if failure.code == "unknown_op":
-            # AN ADD-IN FROM BEFORE D-157 ANSWERS "Heron has no operation
-            # called 'undo_last'" and lists the ones it has - said to a
-            # modeller raw until 2026-11-12. In Revit's words: that Revit's
-            # Heron is older than this chat's, and nothing was sent.
+            # AN ADD-IN WITHOUT THE REPAIR - from before D-157, or its first
+            # build - ANSWERS "Heron has no operation called ..." and lists
+            # the ones it has, said to a modeller raw until 2026-11-12. In
+            # Revit's words: that Revit's Heron is older than this chat's,
+            # and nothing was sent.
             return _ended(label,
                           "The Heron add-in in %s is older than this chat's Heron and "
                           "cannot %s. Nothing was sent to Revit and nothing was undone. "
@@ -3653,7 +3658,7 @@ def revit_undo_last(check_only: bool = False) -> str:
                           "arrow beside the Undo button shows what that is. Updating "
                           "Heron in that Revit adds this."
                           % (where, "check this" if check_only
-                             else "send Undo for Heron's last change"))
+                             else "safely send Undo for Heron's last change"))
         if reply is None:
             return _ended(label,
                           ("%s did not answer the check. A check sends nothing to "
