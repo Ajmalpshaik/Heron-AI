@@ -37,7 +37,7 @@ namespace Heron.Revit.Addin
     ///              is what D-126 refused. So the modeller's selection is read
     ///              before the run starts, and only those elements can be
     ///              compared. Every other changed element is counted as not
-    ///              read, and the chat is told a dry run would show them.
+    ///              read, and the chat is told so - never that it is unchanged.
     ///
     /// SPLIT OUT SO IT CAN BE PROVED WITHOUT REVIT, the move HeronChangeReport
     /// makes: this names no Autodesk type, and tests/Heron.ReadBack.TestHost
@@ -62,9 +62,37 @@ namespace Heron.Revit.Addin
         internal const string Selection = "selection";
 
         /// <summary>
-        /// One element's values, in the order they were read, by name. A name
-        /// read twice - two parameters Revit gives the same name - keeps both,
+        /// One parameter as it was read: the number Revit gives the parameter
+        /// itself (Parameter.Id - a built-in's own number, or the id of the
+        /// project or shared parameter behind it), its name and its text.
+        /// </summary>
+        internal struct ParameterRead
+        {
+            internal readonly long Id;
+            internal readonly string Name;
+            internal readonly string Value;
+
+            internal ParameterRead(long id, string name, string value)
+            {
+                Id = id;
+                Name = name;
+                Value = value;
+            }
+        }
+
+        /// <summary>
+        /// One element's values, in the order they were added, by name. A name
+        /// added twice - two parameters Revit gives the same name - keeps both,
         /// the second as "Name (2)", so neither hides the other.
+        ///
+        /// WHICH OF TWO IS "(2)" IS DECIDED BY THE PARAMETERS' OWN IDS, NEVER
+        /// BY THE ORDER REVIT HANDED THEM OVER IN (AddById). The two sides of
+        /// a comparison are two separate reads of the element, and nothing
+        /// documents that ParameterSet lists its parameters in the same order
+        /// twice. Numbered by read order, "Mark (2)" before and "Mark (2)"
+        /// after could be two different parameters, and the reply would show
+        /// a value changing that never did - and hide the one that had.
+        /// Found in review, 2026-11-12; not seen in Revit.
         /// </summary>
         internal sealed class Values
         {
@@ -86,6 +114,32 @@ namespace Heron.Revit.Addin
                 for (var n = 2; _byName.ContainsKey(key); n++) key = name + " (" + n + ")";
                 _order.Add(key);
                 _byName[key] = value ?? "";
+            }
+
+            /// <summary>
+            /// Every parameter of one element, added in the order of the
+            /// parameters' own ids - lowest first, a tie by name - so that a
+            /// name two parameters share is numbered the same way on both
+            /// sides of a comparison, whatever order each read came in.
+            /// </summary>
+            internal void AddById(IList<ParameterRead> parameters)
+            {
+                if (parameters == null) return;
+
+                // List.Sort is not a stable sort, so where each one stood in
+                // the read is the last word of the comparison rather than
+                // something the sort is trusted to keep.
+                var sorted = new List<KeyValuePair<int, ParameterRead>>();
+                for (var i = 0; i < parameters.Count; i++)
+                    sorted.Add(new KeyValuePair<int, ParameterRead>(i, parameters[i]));
+                sorted.Sort((a, b) =>
+                {
+                    var byId = a.Value.Id.CompareTo(b.Value.Id);
+                    if (byId != 0) return byId;
+                    var byName = string.CompareOrdinal(a.Value.Name, b.Value.Name);
+                    return byName != 0 ? byName : a.Key.CompareTo(b.Key);
+                });
+                foreach (var one in sorted) Add(one.Value.Name, one.Value.Value);
             }
 
             internal IList<string> Names { get { return _order; } }
@@ -233,6 +287,23 @@ namespace Heron.Revit.Addin
                 else result.WithDifference.Add(row);
             }
             return result;
+        }
+
+        /// <summary>
+        /// Whether the text Revit shows for a parameter (AsValueString) is the
+        /// text to compare, or its stored value must be read instead.
+        ///
+        /// Null always falls back. AND SO DOES AN EMPTY TEXT FOR A PARAMETER
+        /// THAT STORES TEXT: where AsValueString gives "" for a text
+        /// parameter that holds something, "" before and "" after would hide
+        /// a Comments or a Mark that changed. For a number, a tick box or a
+        /// reference an empty text is kept as Revit's own answer - what its
+        /// stored value means is not Heron's to format. Which releases answer
+        /// "" there has not been seen in Revit: NEEDS-CHECKING Group NS.
+        /// </summary>
+        internal static bool HasText(string shown, bool isText)
+        {
+            return shown != null && !(isText && shown.Length == 0);
         }
 
         /// <summary>The side a value was missing from.</summary>

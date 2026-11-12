@@ -725,6 +725,85 @@ def below_refusal(door, declared, capability):
             % (capability, NAMES[level], door, reader))
 
 
+#: The need a card declares to run with NO transaction open (D-125) - the
+#: add-in's RevitFragment.NoTransactionNeed, held to its spelling by
+#: tests/test_read_door.py.
+NO_TRANSACTION_NEED = "noTransactionOpen"
+
+
+def dry_run_refusal(declared, needs, capability):
+    """
+    Why one fragment may not be asked of revit_change as a DRY RUN (D-155) -
+    or None when it may.
+
+    `declared` is the fragment's own `risk:` word and `needs` its
+    `contract.needs`, both as the client's readers found them on this disk
+    (heron_bridge_client.fragment_risk, fragment_needs) - None for either
+    when it could not be read.
+
+    A DRY RUN IS THE CHANGE ITSELF, ROLLED BACK, AND A ROLLBACK TAKES BACK
+    WHAT REVIT'S TRANSACTIONS HOLD AND NOTHING ELSE. So a dry run is only
+    for a job whose whole effect is inside the add-in's transaction group:
+
+      PUBLISH, ADMIN   an export, a save or a sync is done once it runs.
+                       D-155 item 3, and the sentence it gave.
+      EXECUTE          it acts on the screen or the session - a view opened,
+                       a tab closed, another document brought to the front -
+                       and OPEN_FAMILY_FOR_EDITING, declared EXECUTE, saves a
+                       family to disk (row 5b-591). None of that is in a
+                       transaction, so none of it comes back.
+      noTransactionOpen  whatever the risk: the card says it runs with no
+                       transaction open (D-125), so nothing it does is in
+                       what is rolled back.
+
+    UNTIL 2026-11-12 THE DOOR TESTED THE OPERATION'S NAME, which is
+    `run_fragment_write` for an EXECUTE card as for a MODIFY one. Seven
+    PROVEN EXECUTE cards went to Revit as a dry run and came back "tried
+    ... and rolled back" (found in review of #861; not run in Revit).
+
+    AN UNREADABLE RISK OR CONTRACT IS REFUSED, for `door_refusal`'s reason:
+    "I could not tell" must never read as "a rollback takes it all back".
+    READ, ANALYZE and SUGGEST are not this function's: the first two are
+    `below_refusal`'s, asked before it, and a card that proposes changes
+    nothing a rollback would have to return.
+
+    IT NAMES NO OTHER DOOR. Which door runs an EXECUTE card - revit_show, or
+    none for one that writes a file - is the server's to say, card by card.
+
+    BE HONEST ABOUT WHAT THIS IS - `door_refusal`'s caveat again. It stops a
+    MISTAKE made through this server. The add-in never sees a card's risk,
+    and still runs whatever it is sent without `apply` and rolls back what
+    it can: the proving tools depend on exactly that.
+
+    Pure, so tests/test_read_door.py runs every outcome and the library.
+    """
+    level = level_named(declared)
+    if level is None:
+        return ("'%s' does not say what risk it carries in a form Heron can read, so "
+                "Heron cannot tell whether a rollback takes back all it does. Nothing "
+                "has been sent to Revit." % capability)
+    if level > MODIFY:
+        return ("'%s' is a Publish or Admin job, and a dry run cannot take one "
+                "back - an export, a save or a sync is done once it runs, and "
+                "rolling the model back does not undo it. Nothing has been "
+                "sent to Revit." % capability)
+    if level == EXECUTE:
+        return ("'%s' is declared EXECUTE: it acts on the screen or the session, not "
+                "inside a transaction, and a dry run takes back only what Revit's "
+                "transactions hold - a view it opened, a tab it closed or a file it "
+                "wrote would stand. Nothing has been sent to Revit." % capability)
+    if needs is None:
+        return ("'%s' could not be read with certainty - its contract is unclear, so "
+                "Heron cannot tell whether a rollback takes back all it does. Nothing "
+                "has been sent to Revit." % capability)
+    if any(isinstance(need, dict) and need.get("name") == NO_TRANSACTION_NEED
+           for need in needs):
+        return ("'%s' declares %s: it runs with no transaction open (D-125), so "
+                "nothing it does is inside what a dry run rolls back. Nothing has "
+                "been sent to Revit." % (capability, NO_TRANSACTION_NEED))
+    return None
+
+
 # WHAT A FRAGMENT'S CODE WRITES TO DISK, read as code: comments and string
 # literals blanked first, so a header that names SaveAs is not a SaveAs.
 #

@@ -58,6 +58,16 @@ WHAT IT PROVES
      tool", which invites sending a change a second time. Raised before
      anything was sent, it is the SDK's to report, as it always was.
 
+  3c. A DRY RUN SAYS ONLY WHAT THE ADD-IN SAID (D-155; the register rows
+     written with this section). `revit_change(dry_run=true)` is ROLLED BACK
+     when the add-in's own verdict is a rollback that HELD, and opens "DRY
+     RUN: ... rolled back". A rollback that did not hold, one Revit did not
+     confirm, and a reply that says KEPT are OUTCOME UNKNOWN, end as failed,
+     print the add-in's verdict whole and say neither "rolled back" nor "the
+     model is as it was" nor how to keep it. A dry run of a Publish, Admin
+     or EXECUTE capability, of a DRAFT, and one with Changes off are REFUSED
+     - all but the switch before anything is sent.
+
   4. EVERY PATH, EXACTLY ONE LINE, IN ONE PLACE. Each case above and each
      further return of the three doors that could be forced: one line that
      starts `outcome: `, the SECOND line of the reply, its word in the table.
@@ -262,6 +272,46 @@ DISCARDED_BUT_APPLIED = dict(DISCARDED, applied=True)
 ELSEWHERE = dict(READ_OK, document="Tower B", documentPath="C:/jobs/TowerB.rvt",
                  projectKey="key-2")
 
+# WHAT THE ADD-IN ANSWERS A RUN SENT WITHOUT `apply` - a dry run (D-155) -
+# in each of the three ways RevitFragment.WithVerdict can end one: the
+# rollback held; Revit reported it and something the run added still stands;
+# Revit did not report it at all. The sentences are that function's own.
+DRY_HELD = dict(KEPT, applied=False, rolledBack=True, rollbackReported=True,
+                verdictKind="rolledBack", verdictShort=None,
+                verdict="NOTHING WAS KEPT. 'x' ran for real and Revit reported the "
+                        "transaction group rolled back afterwards, so the counts "
+                        "above are what it actually did rather than a guess. Send "
+                        "it again with apply to keep it.")
+DRY_NOT_HELD = dict(DRY_HELD, rolledBack=False, verdictKind="notHeld",
+                    verdict="THE ROLLBACK DID NOT HOLD. 'x' ran for real and Revit "
+                            "reported the transaction group rolled back, but 2 "
+                            "element(s) still in the model - so THE MODEL STILL "
+                            "HOLDS PART OF THIS CHANGE. Check the thing that was "
+                            "written before trusting anything here, and do not "
+                            "save until you have.")
+DRY_NOT_CONFIRMED = dict(DRY_HELD, rolledBack=False, rollbackReported=False,
+                         verdictKind="notConfirmed",
+                         verdict="THE ROLLBACK DID NOT REPORT SUCCESS. 'x' ran for "
+                                 "real, the rollback was requested, and Revit did "
+                                 "not afterwards report the transaction group as "
+                                 "rolled back - so THE MODEL MAY STILL HOLD THIS "
+                                 "CHANGE. Check the thing that was written before "
+                                 "trusting anything here, and do not save until "
+                                 "you have.")
+
+# The names of the dry-run cases, for the section that reads their sentences.
+DRY_NAMES = {
+    "held": "a dry run whose rollback HELD",
+    "not held": "a dry run whose rollback did NOT hold",
+    "not confirmed": "a dry run whose rollback Revit did not confirm",
+    "kept": "a dry run the add-in answered KEPT",
+    "outward": "a dry run of a Publish or Admin capability",
+    "screen": "a dry run of an EXECUTE capability revit_show runs",
+    "disk": "a dry run of an EXECUTE capability that writes a file",
+    "off": "a dry run with the Changes switch off (write_disabled)",
+    "draft": "a dry run of a DRAFT capability",
+}
+
 
 def error(code, message=None):
     return {"ok": False, "error": code,
@@ -373,6 +423,16 @@ def build_cases(module, core):
     if show is None:
         show, _f = first_with("EXECUTE", "DRAFT", shows)
     picked = {"change": change, "draft": draft, "read": read, "show": show}
+
+    # FOR THE DRY RUN (D-155): a PROVEN job above MODIFY, and a PROVEN
+    # EXECUTE one the show door turns away for writing a file (row 5b-591).
+    outward, _f = first_with("PUBLISH", "PROVEN", stands)
+    if outward is None:
+        outward, _f = first_with("ADMIN", "PROVEN", stands)
+    on_disk, _f = first_with("EXECUTE", "PROVEN",
+                             lambda folder, capability: stands(folder, capability)
+                             and not shows(folder, capability))
+    picked["outward"], picked["on disk"] = outward, on_disk
 
     ranked = {"capability": read, "risk": "READ", "route": "ranked",
               "candidates": [{"capability": read, "risk": "READ", "why": "close"},
@@ -525,6 +585,26 @@ def build_cases(module, core):
              say, KEPT, setup=lookup_nothing),
         Case("words, with Heron's library unreadable, at revit_change", C,
              "NOT RUN", say, KEPT, setup=lookup_unreadable),
+
+        # ---- the change door, asked for a dry run (D-155) ----------------
+        Case(DRY_NAMES["held"], C, "ROLLED BACK",
+             {"capability": change, "dry_run": True}, DRY_HELD, kind="dry run"),
+        Case(DRY_NAMES["not held"], C, "OUTCOME UNKNOWN",
+             {"capability": change, "dry_run": True}, DRY_NOT_HELD),
+        Case(DRY_NAMES["not confirmed"], C, "OUTCOME UNKNOWN",
+             {"capability": change, "dry_run": True}, DRY_NOT_CONFIRMED),
+        Case(DRY_NAMES["kept"], C, "OUTCOME UNKNOWN",
+             {"capability": change, "dry_run": True}, dict(KEPT)),
+        Case(DRY_NAMES["outward"], C, "REFUSED",
+             {"capability": outward, "dry_run": True}, DRY_HELD),
+        Case(DRY_NAMES["screen"], C, "REFUSED",
+             {"capability": show, "dry_run": True}, DRY_HELD),
+        Case(DRY_NAMES["disk"], C, "REFUSED",
+             {"capability": on_disk, "dry_run": True}, DRY_HELD),
+        Case(DRY_NAMES["off"], C, "REFUSED",
+             {"capability": change, "dry_run": True}, error("write_disabled")),
+        Case(DRY_NAMES["draft"], C, "REFUSED",
+             {"capability": draft, "dry_run": True}, DRY_HELD),
 
         # ---- the read door ----------------------------------------------
         Case("a read Revit answered", R, "ANSWERED", {"capability": read},
@@ -705,6 +785,9 @@ def the_vocabulary(core, registry):
           "ROLLED BACK says what is known - Heron asked Revit to roll the whole job "
           "back - and promises nothing of what the reply says - found %r" % rolled_says)
     meant = dict((row[0], row[2]) for row in rows if len(row) == 3)
+    check("dry run" in (meant.get("ROLLED BACK") or ""),
+          "ROLLED BACK's meaning covers a change asked as a dry run (D-155) - "
+          "found %r" % (meant.get("ROLLED BACK") or ""))
     check("REFUSED" in (meant.get("NOT RUN") or ""),
           "the table says in one sentence how NOT RUN differs from REFUSED")
     running = told.get("STILL RUNNING") or ""
@@ -740,6 +823,10 @@ def the_vocabulary(core, registry):
     check(at >= 0 and printed == words,
           "docs/04 section 8.12 prints the table's words, in the table's order - "
           "found %r" % (printed,))
+    rolled_row = re.search(r"^\s*\| `ROLLED BACK` \|(.*)$", page[at:] if at >= 0 else "",
+                           re.M)
+    check(rolled_row is not None and "dry run" in rolled_row.group(1),
+          "and its ROLLED BACK row names the dry run too")
 
 
 def a_word_per_ending(stage, cases):
@@ -831,6 +918,70 @@ def never_more_than_known(stage, core, cases, replies):
           and said("revit_read", ["words", object()], "ok", None)[0] == "words",
           "a tool that is not on the list, and an answer that is not text, are "
           "handed back untouched")
+
+
+def a_dry_run_says_what_the_add_in_said(stage, cases, replies, picked):
+    print()
+    print("3c. A dry run says only what the add-in said (D-155)")
+    by = dict((c.name, c) for c in cases)
+
+    def said_by(key):
+        case = by.get(DRY_NAMES[key])
+        return case, (replies.get(case) or "") if case is not None else ""
+
+    def opening(said):
+        return (said or "").split("\n")[0]
+
+    case, held = said_by("held")
+    check(opening(held).startswith("DRY RUN: %s was tried in " % picked["change"])
+          and opening(held).endswith("and rolled back."),
+          "a rollback that held opens `DRY RUN: ... was tried in ... and rolled "
+          "back.` - found %r" % opening(held)[:90])
+    check(DRY_HELD["verdict"] in held and "so the model is as it was" in held
+          and "call revit_change again without dry_run" in held
+          and "only when the user says to" in held,
+          "with the add-in's verdict whole, that the model is as it was, and how "
+          "to keep it - only when the user says to")
+    check("not approval" in held and "Ask to Keep" in held and "revit_health" in held,
+          "and says a dry run is not approval: the real run is still asked or kept "
+          "as the Ask to Keep switch says, which revit_health tells")
+
+    for key in ("not held", "not confirmed", "kept"):
+        case, said = said_by(key)
+        verdict = case.reply["verdict"] if case is not None else ""
+        check(case is not None and verdict in said,
+              "%s: the add-in's own verdict is printed whole" % DRY_NAMES[key])
+        check("rolled back" not in opening(said).lower()
+              and "the model is as it was" not in said,
+              "    and nothing says it was rolled back or that the model is as it "
+              "was - it opens %r" % opening(said)[:80])
+        check("without dry_run" not in said,
+              "    and nothing says how to keep it")
+        check("look at the model" in said.lower(),
+              "    and it sends a person to the model")
+
+    # NOTHING REACHES REVIT FOR A JOB A ROLLBACK CANNOT TAKE BACK.
+    for key in ("outward", "screen", "disk"):
+        case, _said = said_by(key)
+        if case is None:
+            check(False, "%s is a case" % DRY_NAMES[key])
+            continue
+        said = case.run(stage)
+        check(not stage.revit.asked and "Nothing has been sent to Revit" in said,
+              "%s (%s): nothing is sent - asked %r, said %r"
+              % (DRY_NAMES[key], case.arguments.get("capability"),
+                 [op for op, _a, _i in stage.revit.asked], opening(said)[:70]))
+    _case, screen = said_by("screen")
+    _case, disk = said_by("disk")
+    check("revit_show" in screen,
+          "an EXECUTE job the show door runs is sent there by name")
+    check("revit_show" not in disk,
+          "and one it turns away for writing a file is not sent to a door that "
+          "would refuse it too (row 5b-591)")
+    _case, off = said_by("off")
+    check("without dry_run" not in off and "rolled back" not in opening(off).lower(),
+          "with Changes off the add-in's refusal is the reply - the dry run is no "
+          "way round the switch, and nothing claims a rollback")
 
 
 def every_path_one_line(cases, replies, core):
@@ -977,7 +1128,7 @@ async def through_the_sdk(stage, cases, picked):
         return text, structured, flagged
 
     wanted = ("kept", "refused", "rollback", "lost", "running", "answered", "not run",
-              "raised", "unrecognised", "not answered")
+              "raised", "unrecognised", "not answered", "dry run")
     seen = set()
     for case in cases:
         if case.kind not in wanted or (case.kind, case.door) in seen:
@@ -1052,7 +1203,12 @@ def nothing_else_moved(stage, cases, replies, picked):
               "the fragment threw and the job was rolled back": "failed",
               "NO ANSWER AT ALL to a change": "failed",
               "words that settled no one capability, at revit_change": "handed_back",
-              "a read Revit answered": "ok"}
+              "a read Revit answered": "ok",
+              # A DRY RUN IS `ok` ONLY WHEN ITS ROLLBACK HELD.
+              DRY_NAMES["held"]: "ok",
+              DRY_NAMES["not held"]: "failed",
+              DRY_NAMES["kept"]: "failed",
+              DRY_NAMES["screen"]: "refused"}
     wrong = []
     for case in cases:
         if case.name not in wanted:
@@ -1215,11 +1371,12 @@ def main():
         picked, cases = build_cases(module, core)
         print()
         print("  the cards the doors are asked for, read from the library:")
-        for role in ("change", "draft", "read", "show"):
+        for role in ("change", "draft", "read", "show", "outward", "on disk"):
             print("    %-7s %s" % (role, picked[role]))
         check(all(picked.values()),
               "the library has a PROVEN change whose proof stands, a DRAFT change, "
-              "a PROVEN read and something revit_show runs")
+              "a PROVEN read, something revit_show runs, a PROVEN Publish or Admin "
+              "job and a PROVEN EXECUTE job that writes a file")
         if not all(picked.values()):
             return 1
 
@@ -1228,6 +1385,7 @@ def main():
         replies = a_word_per_ending(stage, cases)
         never_more_than_known(stage, core, cases, replies)
         breaks_after_sending(stage, cases, replies, core)
+        a_dry_run_says_what_the_add_in_said(stage, cases, replies, picked)
         every_path_one_line(cases, replies, core)
         additive(stage, cases, replies, core)
         asyncio.run(through_the_sdk(stage, cases, picked))

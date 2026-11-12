@@ -72,6 +72,7 @@ Claude Code (host) --MCP, stdio--> Heron MCP server (heron_mcp_server.py)
   Read the model      revit_read, revit_levels, ...        READ, ANALYZE
   Show on screen      revit_show, select, isolate          EXECUTE
   Change the model    revit_change, revit_apply_move       MODIFY and above; needs Changes on
+                      revit_change with dry_run            runs a MODIFY job and rolls it back (D-155)
   Connect and check   revit_health, revit_use_session,     READ; revit_release frees this chat's
                       revit_release                        hold on a model (D-141)
 
@@ -103,7 +104,7 @@ the source without looking at the import lines. `tests/test_mcp_serves.py` holds
 | `heron_session` | one chat, one Revit ([docs/25 §3](../docs/25-multi-session-and-binding.md)) | the server |
 | `heron_write` | the conversation half of writing: the model pin and the move's approval | the server |
 | `heron_failure` | why a call failed, and whether to try again; never a blind retry | the server |
-| `heron_run_records` | the short change report `revit_change` prints, and the run records `heron_run_record` pages from disk | the server |
+| `heron_run_records` | the short change report `revit_change` prints, and the run records `heron_run_record` pages from disk - and, since 2026-11-12, the read-back under the counts: each changed element's values old -> new ([D-156](../docs/decisions/D-156.md)), every value printed as one quoted line because it is the model's text, not Heron's ([row 5b-1595](../docs/fragment-issues/row-5b-1595.md)). Not run in Revit - [Group NS](../docs/needs-checking/group-ns.md) | the server |
 | `heron_health` | is Heron working, as one verdict - and, since 2026-11-12, the one line `revit_health` prints under each connected Revit for what that Revit's own add-in says of *Ask to Keep* for a change made through `revit_change`: on, off, *does not say* for an older add-in that does not report it, or *could not read it* when no usable answer came - never the default ([docs/04 §4](../docs/04-heron-mcp.md), not yet run in Revit - [Group NP](../docs/needs-checking/group-np.md)) | the server (`revit_health`), `heron_diagnose` |
 | `heron_diagnose` | self-diagnostics in one answer | the server (`heron_diagnose`), and its own command line |
 | `heron_running_code` | whether this process still runs the Python on disk (rule 5) | the server |

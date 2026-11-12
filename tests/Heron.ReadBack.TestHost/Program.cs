@@ -95,6 +95,67 @@ namespace Heron.ReadBack.TestHost
                   "a value present on one side only is a difference, '(none)' on the side that lacked it");
 
             Console.WriteLine();
+            Console.WriteLine("2b. two parameters with one name are paired by their own ids");
+            // THE SAME ELEMENT, READ TWICE, ITS PARAMETERS HANDED OVER IN A
+            // DIFFERENT ORDER EACH TIME. Only the project parameter "Mark"
+            // (id 5001) changed; the built-in "Mark" (id -1001203) did not.
+            var readBefore = new HeronReadBack.Values("Ducts");
+            readBefore.AddById(new List<HeronReadBack.ParameterRead>
+            {
+                new HeronReadBack.ParameterRead(-1001203, "Mark", "A"),
+                new HeronReadBack.ParameterRead(5001, "Mark", "B"),
+                new HeronReadBack.ParameterRead(-1010106, "Comments", "same"),
+            });
+            var readAfter = new HeronReadBack.Values("Ducts");
+            readAfter.AddById(new List<HeronReadBack.ParameterRead>
+            {
+                new HeronReadBack.ParameterRead(-1010106, "Comments", "same"),
+                new HeronReadBack.ParameterRead(5001, "Mark", "B2"),
+                new HeronReadBack.ParameterRead(-1001203, "Mark", "A"),
+            });
+            before = Side();
+            before["8"] = readBefore;
+            after = Side();
+            after["8"] = readAfter;
+            var paired = HeronReadBack.Compare(HeronReadBack.DryRun, new List<string> { "8" }, before, after);
+            var pairs = paired.WithDifference.Count == 1 ? paired.WithDifference[0].Differences
+                                                         : new List<HeronReadBack.Difference>();
+            Check(pairs.Count == 1,
+                  "read in a different order on each side, ONE value differs - found " + pairs.Count);
+            Check(pairs.Count >= 1 && pairs[0].Name == "Mark (2)" && pairs[0].Before == "B"
+                  && pairs[0].After == "B2",
+                  "and it is the parameter with the higher id, 'Mark (2)', B -> B2 - never the "
+                  + "unchanged one's value shown against it");
+            string firstMark, secondMark;
+            readAfter.TryGet("Mark", out firstMark);
+            readAfter.TryGet("Mark (2)", out secondMark);
+            Check(firstMark == "A" && secondMark == "B2",
+                  "the lower id keeps the bare name on both sides, whichever was read first");
+            var tied = new HeronReadBack.Values(null);
+            tied.AddById(new List<HeronReadBack.ParameterRead>
+            {
+                new HeronReadBack.ParameterRead(7, "Zeta", "z"),
+                new HeronReadBack.ParameterRead(7, "Alpha", "a"),
+            });
+            Check(tied.Names.Count == 2 && tied.Names[0] == "Alpha" && tied.Names[1] == "Zeta",
+                  "two that claim one id are ordered by name, so the order is still not the read's");
+            var noneRead = new HeronReadBack.Values(null);
+            noneRead.AddById(null);
+            Check(noneRead.Names.Count == 0, "and no parameters at all is nothing, not a fault");
+
+            Console.WriteLine();
+            Console.WriteLine("2c. a text parameter with no shown text falls back to its stored text");
+            Check(!HeronReadBack.HasText(null, true) && !HeronReadBack.HasText(null, false),
+                  "no shown text at all - null - is never the value, for any parameter");
+            Check(!HeronReadBack.HasText("", true),
+                  "an EMPTY shown text for a parameter that stores text is not the value either: "
+                  + "its stored text is read");
+            Check(HeronReadBack.HasText("", false),
+                  "an empty shown text for a number, a tick box or a reference is kept as Revit's answer");
+            Check(HeronReadBack.HasText("Level 1", true) && HeronReadBack.HasText("2400 mm", false),
+                  "and a shown text that says something is the value");
+
+            Console.WriteLine();
             Console.WriteLine("3. nothing read is never 'unchanged'");
             var none = HeronReadBack.Compare(HeronReadBack.DryRun, changed, null, after);
             Check(none.Read == 0 && none.NotRead == 4 && none.NoValueChanged == 0,

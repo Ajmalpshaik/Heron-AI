@@ -426,7 +426,11 @@ _ctx = threading.local()
 #     error reply carries no field for whether that held (row 5b-1559: C#,
 #     and a real Revit), so the line does not say it did, and does not send
 #     the chat to the reply to find out - a reply whose rollback held says
-#     nothing about it at all.
+#     nothing about it at all. A DRY RUN (D-155) is ROLLED BACK too, and only
+#     when the add-in's own verdict says its rollback held: the door reads it
+#     with `_change_outcome`, as it reads a Discard. Until 2026-11-12 a dry
+#     run said no word at all, so a good one read OUTCOME UNKNOWN - "do not
+#     send a change again" - and one whose rollback did not hold read `ok`.
 #   - On revit_read and revit_show nothing is rolled back: no transaction is
 #     open. The same failure there - the code threw, Heron's clock or a Revit
 #     dialog stopped it - is NOT ANSWERED for a read, and OUTCOME UNKNOWN for
@@ -486,9 +490,12 @@ OUTCOMES = (
     (ROLLED_BACK,
      "Heron did not keep it: it asked Revit to roll the whole job back; send "
      "it again only once what stopped it is fixed, or the modeller asks",
-     "revit_change only: the job failed part way, Heron stopped it, or the "
-     "modeller pressed Discard. What is known is that the rollback was asked "
-     "for - not, from an error reply, that it held."),
+     "revit_change only: the job failed part way, Heron stopped it, the "
+     "modeller pressed Discard, or it was asked as a dry run (D-155). What "
+     "is known is that the rollback was asked for - not, from an error "
+     "reply, that it held. A Discard and a dry run are given this word only "
+     "when the add-in said its rollback held; otherwise theirs is OUTCOME "
+     "UNKNOWN."),
     (STILL_RUNNING,
      "do not send it again; no id follows a run yet, so ask the modeller what "
      "Revit shows",
@@ -600,7 +607,8 @@ def _change_outcome(reply):
     KEPT only when the add-in says "kept", and ROLLED BACK only when it says
     the rollback HELD (`rolledBack`, which RevitFragment.WithVerdict sets
     only when Revit reported the group rolled back and nothing the run added
-    still stands) - the modeller's Discard is one.
+    still stands) - the modeller's Discard is one, and a run sent without
+    `apply`, which is a dry run (D-155), is the other.
 
     AND ONLY WHEN THE FIELDS BESIDE THE VERDICT AGREE WITH IT. The add-in
     writes `applied`, `rolledBack`, `asked` and `kept` in the same reply, and
