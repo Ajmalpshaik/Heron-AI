@@ -1,15 +1,19 @@
 # 40 — Heron Companion: a window beside the chat that shows what Heron does and lets you edit a table
 
 > **Status now: BUILT, NOT PROVEN - Phases 1, 2 and 3 are in the code, allowed by [D-108](decisions/D-108.md)
-> and [D-109](decisions/D-109.md), with three panels added since: Loads (§21.5), Sprinkler Hydraulic
-> Calculation (§21.7) and Sprinkler Layout (§21.8). What was built, and how it differs from the design
-> below, is §21. The paragraph that follows is the status this document was written with.**
+> and [D-109](decisions/D-109.md), with five panels added since: Loads (§21.5), Sprinkler Hydraulic
+> Calculation (§21.7), Sprinkler Layout (§21.8), the Model Dashboard (§21.10) and the QA Checklist
+> (§21.22). What was built, and how it differs from the design below, is §21. The paragraph that
+> follows is the status this document was written with.**
 >
 > **What has run in Revit**, all of it Revit 2024: NEEDS-CHECKING [group BK](needs-checking/group-bk.md)
 > row BK6 (BK1 and BK2's positive halves, on *Project1*) and row BK13 (BK10 and BK11 PASSED, on a test
 > copy of *heron ai bulding*); §21.4's two Load buttons on 2026-09-30, with one fault left open; and the
 > Loads panel in [Group CC](needs-checking/group-cc.md) on 2026-10-06. **Still NOT RUN:** BK7, BK8, BK9,
-> BK12, BK11's stale-row negative, both Sprinkler panels, and the Companion button on the code of
+> BK12, BK11's stale-row negative, both Sprinkler panels, the Model Dashboard past its first opening
+> (JT22, PART, Revit 2024, 2026-11-01 - [group JT](needs-checking/group-jt.md); its buttons, and version 3
+> of its 3D read in [group JU](needs-checking/group-ju.md), are owed), the QA Checklist
+> ([group MV](needs-checking/group-mv.md)), and the Companion button on the code of
 > [D-136](decisions/D-136.md) - BK14, which FAILED on 2026-10-18 on D-135's code (§21.8).
 >
 > **Status when written: A DESIGN, NOT A DECISION. Nothing here is built.** Written 2026-09-29 as Phase 0 of the
@@ -124,13 +128,14 @@ Companion button (Heron tab, D-109)    reads the note, opens the address - serve
 | Panel | Opened by | What it does | Changes the model? | Has it run in Revit? |
 |---|---|---|---|---|
 | **Revit** strip | always shown, from the live file | which Revit, model and view are in front | No - reads a file | BK1's positive half PASSED (BK6, *Project1*, Revit 2024, 2026-09-29); its negative is owed |
-| **HVAC Load Calculation** ([44](44-building-loads-from-the-model.md)) | `revit_building_loads` | each Space's cooling and heating load, the model's checks, a 3D view of the faces; Recalculate, The take-off is right, Report | **Finalize** - `companion_loads_finalize`, `MODIFY`. **Refused today** (§21.9) | PART - [group CC](needs-checking/group-cc.md), *Heron loads test*, Revit 2024, 2026-10-06; CC8, CC13, CC22 and CC24 FAILED - [44](44-building-loads-from-the-model.md)'s status says which are fixed |
+| **HVAC Load Calculation** ([44](44-building-loads-from-the-model.md)) | `revit_building_loads` | each Space's cooling and heating load, the model's checks, a 3D view of the faces; Recalculate, The take-off is right, Report | **Finalize** - `companion_loads_finalize`, `MODIFY`. Refused on 2026-10-18 (§21.9); both writers' cards read PROVEN since, and Finalize has not been run again | PART - [group CC](needs-checking/group-cc.md), *Heron loads test*, Revit 2024, 2026-10-06; CC8, CC13, CC22 and CC24 FAILED - [44](44-building-loads-from-the-model.md)'s status says which are fixed |
 | **Sprinkler Hydraulic Calculation** ([46](46-sprinkler-hydraulics-from-the-model.md)) | `revit_sprinkler_hydraulics` | K-factors, fittings, criteria, remote area with Suggest; Calculate, The network is right, Report, 3D view | No - phase 1 has no Finalize | NOT RUN - [group CE](needs-checking/group-ce.md) |
 | **Sprinkler Layout** ([47](47-sprinkler-layout-from-the-model.md)) | `revit_sprinkler_layout` | each selected room's plan, heads OK or FAIL; Preview, then Apply one level at a time | **Apply** - `companion_sprinkler_place`, `MODIFY`, through `PLACE_FAMILY_INSTANCES` (PROVEN) | NOT RUN - [group CG](needs-checking/group-cg.md) |
-| **Table** (§8, §21.3) | `revit_edit_table` | elements and their parameters; edit the white cells, Apply | **Apply** - `companion_table_apply`, `MODIFY`. **Refused today** (§21.9) | BK11 PASSED on sheets (BK13, *heron ai bulding* test copy, Revit 2024, 2026-09-29), before version 3; its stale-row negative and BK12 are owed |
+| **Table** (§8, §21.3) | `revit_edit_table` | elements and their parameters; edit the white cells, Apply | **Apply** - `companion_table_apply`, `MODIFY`. Refused on 2026-10-18 (§21.9); its writer's card reads PROVEN since, and Apply has not been run again | BK11 PASSED on sheets (BK13, *heron ai bulding* test copy, Revit 2024, 2026-09-29), before version 3; its stale-row negative and BK12 are owed |
 | **Activity** - the corner button | every tool call this chat makes | time, tool, the answer's first line, how it ended | No - kept in memory | NOT RUN - BK9 |
 | **Changes you can adjust** - switched off 2026-10-04, kept (§21.6) | a settings change from the chat; Load filters, Load category colours | the values a change used, as a table; Apply again | **Apply again** - `companion_apply`, `MODIFY` | BK10 PASSED (BK13); the Load buttons ran 2026-09-30 with one filter fault open (§21.4) |
 | **Selected** - switched off 2026-10-04, kept (§21.6) | was always shown, from the live file | the selection by category | No | BK2's positive half PASSED (BK6) |
+| **Model Dashboard** (§21.10 to §21.18) and **QA Checklist** (§21.22, [50](50-qa-checklists.md)) - added 2026-11-01 and 2026-11-08, after this table was read | `revit_model_dashboard` · `heron_checklist`, or the page's own Run | the model counted part by part, a 3D view; saved checks run in one go | Dashboard: **Colour the view** and **Clear colours** only, `MODIFY`; Select and Isolate are on screen only. Checklist: no - it reads | Dashboard: JT22 PART (Revit 2024, 2026-11-01), the rest owed - groups [JT](needs-checking/group-jt.md), [JU](needs-checking/group-ju.md). Checklist: NOT RUN - [group MV](needs-checking/group-mv.md) |
 | *The Companion button* - in Revit, not on the page | the ribbon | opens the address a chat left | No | BK14 and HF4 FAILED 2026-10-18 on D-135's code ([row 5b-1100](fragment-issues/section-5b-rows-401-425.md)); D-136's fix and BK7 NOT RUN |
 
 ---
@@ -240,12 +245,13 @@ written (D-117 on 2026-10-17, D-126 and D-138), and the line numbers it carried 
 moved. Every name is a function or class in the code today; `bridge.` is
 [`mcp/client/heron_bridge_client.py`](../mcp/client/heron_bridge_client.py).
 
-**How a write is approved today, in order:** the owner's **Changes** switch on the ribbon
-(`write.enabled`, off by default, read inside the add-in); **Admin** and **Publish** switches for those
-levels ([D-106](decisions/D-106.md)); the operation's risk read **by name** from the registry — nothing
+**How a write is approved today, in order:** the owner's **Changes** switch (`write.enabled`, off by
+default, read inside the add-in) - on the ribbon when this was written, in Heron's Settings window since
+2026-11-07 with the other switches ([D-150](decisions/D-150.md)); **Admin** and **Publish** switches for
+those levels ([D-106](decisions/D-106.md)); the operation's risk read **by name** from the registry — nothing
 on the wire says how dangerous a request is ([Golden Rule 19](14-golden-rules.md)); the pin
 (Article 12b); one named `TransactionGroup` rolled back on any failure (Article 8). `revit_change`
-keeps a change at once while the ribbon's *Ask to Keep* is off, the default, and shows Revit's Keep or
+keeps a change at once while *Ask to Keep* is off, the default, and shows Revit's Keep or
 Discard box while it is on ([D-126](decisions/D-126.md), [D-138](decisions/D-138.md); D-99's "no
 preview" is superseded); `revit_apply_move` keeps its
 preview, one-use approval and re-count (`PendingApproval`, `heron_write.py`). Article 7's
@@ -778,7 +784,7 @@ behaviour; `.claude/settings.json` and its hooks; the Revit version targets.
 | `test_companion_table.py` | Only changed rows are sent; a colour outside 0–255 is refused before any request; the request built for Apply has exactly the keys `revit_change` sends (`apply`, `document`, `documentPath`, `expectProject`, `idempotent=False`) and the same operation from the card; unpinned or unbound → refused, nothing sent; the lock serialises a tool call and an Apply |
 | `test_tool_registry.py` (extended) | The two new tools and every Companion action have a declared risk; labels match |
 | No-outbound test | `mcp/companion/` imports nothing that reaches a network or a model provider |
-| The four gates and CI's eleven | `check-docs`, `check-metadata`, `check-structure`, `check-package`, then CI's `check-signatures`, `check-licence`, `check-narrow-errors`, `check-products`, `check-decision-titles`, `check-routing`, `check-intrusion` |
+| The four gates and CI's twelve | `check-docs`, `check-metadata`, `check-structure`, `check-package`, then CI's `check-signatures`, `check-licence`, `check-narrow-errors`, `check-secrets`, `check-products`, `check-decision-titles`, `check-routing`, `check-intrusion` |
 | `check-compile.py` | `HeronLiveState.cs` compiles on every release 2020–2027, with the `SelectionChanged` adapter taking the Idling branch for 2020–2022. **A compile is not a proof** |
 | `check-fragments-compile.py`, `check-routing.py` | The two new fragments compile and do not steal routing from existing cards (compare `find` on a scratch store against main) |
 | `tools/check-change.py`, `tools/change-evidence.py` | The diff touched only the areas each phase declared; before/after evidence recorded — a change with no evidence is not a pass |
@@ -967,7 +973,8 @@ The owner asked for the rest the same day: *"you can do that phase 2 and 3"*.
 
 - **The Companion button and switch** - [D-109](decisions/D-109.md). A button on the Heron tab opens the
   page; its arrow turns the Companion off without touching Heron. While on, each chat keeps its page
-  ready and leaves a note the button reads.
+  ready and leaves a note the button reads. *Since 2026-11-08 the button has no arrow: the on/off is the
+  Companion row in Heron's Settings window ([D-150](decisions/D-150.md), as amended).*
 - **Phase 2, the activity list** (§7): every tool call this chat makes, in memory only, through the one
   wrapper every tool already passes.
 - **Phase 3, settings** (§21.1): a change through a card marked `companion: settings`, whose inputs are

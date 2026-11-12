@@ -44,6 +44,15 @@ built `DRAFT`, and stays so until it has been run on a real family with a negati
 > themselves since #665 (2026-10-18): a DRAFT step *"is refused by revit_change (D-117); it can only be
 > tried once with the bridge client's try-once, on a family saved first with nothing unsaved"* - read
 > back through `heron_method family-creation` the same day.
+> **Read again 2026-11-12, off the cards and `heron_method family-creation`'s own list:** the five tools
+> named above as DRAFT that day read `PROVEN` but one - `ADD_FAMILY_TYPE_PARAMETER`, still DRAFT - and so do
+> `LOCK_FORM_TO_PLANES` and `FLEX_FAMILY`; the method has two more DRAFT steps, both reads. The ten cards
+> that work on a family's 2D side - `REPORT_FAMILY_FORMS`, `LINK_FAMILY_PARAMETER`,
+> `LABEL_FAMILY_DIMENSION`, `LABEL_FAMILY_RADIUS`, `CREATE_REFERENCE_PLANES`, `ARRAY_FAMILY_FORMS`,
+> `SET_FAMILY_FORM_SUBCATEGORY`, `SET_FAMILY_FORM_VISIBILITY`, `SET_FAMILY_TYPE_VALUES` and
+> `PLACE_DETAIL_COMPONENTS` - each carries a run signed by Ajmal PS on Revit 2020 and a second on Revit
+> 2024 (the card's `proof:` block and its `releases:` entry, 2026-11-12, #859). Every family skill is
+> still DRAFT. These sentences go stale like the ones above them: the card is the answer.
 
 | What it produced | Where it lives |
 |---|---|
@@ -135,6 +144,8 @@ how Revit reports each kind, and §11 the tools each one uses.
 | Door, window | the Door or Window template | `door-window-family-creation` | the host wall with its opening already cut; the template's planes never moved |
 | Structural framing, structural column | the framing or column template | `structural-family-creation` | Member Left and Right planes; Material for Model Behavior, Section Shape |
 | Lighting fixture | the Lighting Fixture template | `lighting-fixture-family-creation` | its light source, `SET_FAMILY_LIGHT_SOURCE`, and a power connector |
+| Conceptual mass - *a job added after this table was read* | the Mass template | `mass-family-creation` | conceptual forms on points and lines, `CREATE_CONCEPTUAL_FORM`, `DIVIDE_FAMILY_SURFACE` (§6, §11) |
+| Tag - pipe, duct, equipment - *added after this table was read* | a Generic Tag template | `tag-family-creation` | its labels by hand or copied from a seed family, `SET_FAMILY_LABEL_LAYOUT` (§8.3) |
 | Swapping in-place families for a loadable one | - | `replace-in-place-family` | the swap, whatever the hosting, carrying the data across |
 
 ---

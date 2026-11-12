@@ -278,7 +278,7 @@ refused today (the status at the top).
 The HVAC load belongs to the **MEP Space**: the engineer's conditioned volume, bounded by the ceiling
 (VA BIM Manual v2.2, 2.13.1: MEP Spaces are the volumes used for load calculations). Rooms are the
 architect's. The take-off reads Spaces; a model with Rooms and no Spaces gets a QA line saying so and the
-existing `PLACE_ROOM_AT_POINT asSpace=true` route offered.
+existing `PLACE_ROOM_AT_POINT asSpace=true` route offered (merged into `PLACE_ROOMS` on 2026-11-01).
 
 ### 4.2 The new reader
 
