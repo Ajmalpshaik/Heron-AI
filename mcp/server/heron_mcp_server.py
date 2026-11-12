@@ -153,6 +153,11 @@ from heron_server_core import (                             # noqa: E402
     approval, binding, _companion_module, _Context, _ctx, _ended,
     _ended_by_reply, _failure_ended, NEWLINE, NO_REVIT_HERE, _note, _old_code,
     pinned, _refused_for_old_code, _revit_lock, server)
+# HOW A DOOR'S CALL ENDED, IN ONE FIXED WORD (row 5b-1159): the words a door
+# says where the label it gives `_ended` is not a word by itself. The table,
+# and the line a reply carries the word on, are the core's.
+from heron_server_core import (                             # noqa: E402
+    ANSWERED, _change_outcome, _failure_outcome, NOT_RUN, _outcome, UNKNOWN)
 
 import anyio.from_thread                                   # noqa: E402 - the SDK's own dependency
 
@@ -180,6 +185,9 @@ def _through(tool, reply_out=None, origin="chat"):
 
     def call(*a, **k):
         kept = getattr(_ctx, "outcome", None)
+        # AND THE BODY'S WORD FOR THE OUTCOME LINE (row 5b-1159) never
+        # becomes the calling tool's: put back as it was, like the label.
+        kept_how = getattr(_ctx, "how", None)
         # EMPTIED FOR THE BODY, so "ended" is what THIS body said - never
         # the caller's own word, still standing from before the call.
         _ctx.reply_out, _ctx.origin, _ctx.outcome = reply_out, origin, None
@@ -192,6 +200,7 @@ def _through(tool, reply_out=None, origin="chat"):
             if reply_out is not None:
                 reply_out["ended"] = getattr(_ctx, "outcome", None)
             _ctx.reply_out, _ctx.origin, _ctx.outcome = None, "chat", kept
+            _ctx.how = kept_how
     return call
 
 
@@ -1411,6 +1420,8 @@ def _by_words(request, door, values):
     try:
         found = brain.lookup(request, revit=revit, question=question)
     except brain.BrainUnavailable as why:
+        # NOTHING WAS SENT: the words were never looked up, so no door ran.
+        _outcome(NOT_RUN)
         return None, _ended("failed", str(why))
 
     # D-128 item 4: what was not offered is said, found or not.
@@ -1843,6 +1854,9 @@ def revit_change(capability: str = "", values: str = "",
     # may have been made. The write path's own sentence goes in its place.
     wrong_model = pinned.check(reply, did=reported_elsewhere(capability, reply))
     if wrong_model is not None:
+        # THE OUTCOME LINE SAYS SO IN A WORD (row 5b-1159): not known. The
+        # activity list is still told nothing, for the reason above.
+        _outcome(UNKNOWN)
         return wrong_model
 
     # THIS CALL'S PLACE IN THE BATCH, decided once the answer is in hand.
@@ -1926,6 +1940,9 @@ def revit_change(capability: str = "", values: str = "",
     # was kept and why - but the call ended in their no: the activity list
     # says refused, and no after-change table offers values Revit does not hold.
     if reply.get("asked") and not reply.get("kept"):
+        # ROLLED BACK when the add-in says the rollback HELD, and not known
+        # when it does not - never from the word "refused" (row 5b-1159).
+        _outcome(_change_outcome(reply))
         return _ended("refused", "\n".join(lines))
 
     # THE AFTER-CHANGE TABLE (docs/40 section 21.1): a settings change from
@@ -1933,6 +1950,10 @@ def revit_change(capability: str = "", values: str = "",
     if _from_chat() and _took(reply):
         _offer_change(capability, folder, values, reply.get("document"))
 
+    # KEPT ONLY ON THE ADD-IN'S OWN VERDICT (row 5b-1159). The reply was `ok`
+    # and the modeller did not say no - which is not yet "kept": an add-in
+    # that names no verdict leaves that unknown, and the line says unknown.
+    _outcome(_change_outcome(reply))
     return _ended("ok", "\n".join(lines))
 
 
@@ -2926,6 +2947,9 @@ def revit_read(capability: str = "", values: str = "",
     # the count that would say so (row 5b-350) was in the lost answer - but
     # the chain may have, so say that instead.
     if consumes and reply and reply.get("error") == "unknown_outcome":
+        # heron_failure's own word for that code - the sentence below is this
+        # door's, the outcome is not (row 5b-1159).
+        _outcome(_failure_outcome(analyse(reply, writes=tools.writes("revit_read"))))
         return _ended("failed",
                       "The read reached Revit but its answer was lost, so Heron cannot "
                       "tell whether %s ran. A read opens no transaction, so the model "
@@ -2985,6 +3009,7 @@ def revit_read(capability: str = "", values: str = "",
                      "transaction open. This add-in does not count the model around a "
                      "read, so that is not measured - update it (FRAGMENT-ISSUES row "
                      "5b-350).")
+    _outcome(ANSWERED)
     return _ended("ok", "\n".join(lines))
 
 
@@ -3111,6 +3136,7 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
     _ctx_reply(reply)
 
     if consumes and reply and reply.get("error") == "unknown_outcome":
+        _outcome(_failure_outcome(analyse(reply, writes=tools.writes("revit_show"))))
         return _ended("failed",
                       "The request reached Revit but its answer was lost, so Heron "
                       "cannot tell whether %s ran. No transaction is open, so the model "
@@ -3138,6 +3164,10 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
     if wrong_model is not None:
         if tools.level_named(declared) is not None \
                 and tools.level_named(declared) > tools.ANALYZE:
+            # IT RAN, IN A MODEL THIS CHAT DOES NOT WORK ON. Not refused, not
+            # answered, and nothing rolls a selection back: Heron cannot vouch
+            # for what is on screen there, which is the word (row 5b-1159).
+            _outcome(UNKNOWN)
             return _ended("failed",
                           "%s ran in %s before Heron could tell that it is not the model "
                           "this chat works on (%s). Only what is shown can have changed - "
@@ -3185,6 +3215,7 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
                      "camera or the active view: this runs with no transaction open. "
                      "This add-in does not count the model around a run, so that is "
                      "not measured - update it (FRAGMENT-ISSUES row 5b-350).")
+    _outcome(ANSWERED)
     return _ended("ok", "\n".join(lines))
 
 
