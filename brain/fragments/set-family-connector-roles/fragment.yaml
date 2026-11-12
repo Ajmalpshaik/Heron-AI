@@ -349,8 +349,9 @@ compatibility-note: >
 #   "set this connector's parameter by its id"   -> here, the connector named
 #                                                   by its id - not
 #                                                   SET_PARAMETER_VALUES_BY_ID
-#   "lock the connector to the reference planes" -> NOTHING does it yet (row
-#                                                   5b-1568): align and lock by
+#   "lock the connector to the reference planes" -> NOTHING - an API limit,
+#                                                   measured on Revit 2024 (row
+#                                                   5b-1580): align and lock by
 #                                                   hand, or keep it on a face
 #                                                   of geometry locked to them
 #   "set the connector angle to 90 degrees"      -> here, "angle=90" on a
