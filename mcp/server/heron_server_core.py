@@ -467,7 +467,8 @@ OUTCOMES = (
      "it ran, and what follows is its answer; this door keeps nothing in the "
      "model",
      "revit_read or revit_show ran to its end and answered. Neither opens a "
-     "transaction, so Heron kept nothing."),
+     "transaction, so Heron kept nothing. And revit_undo_last's check_only: "
+     "it answered whether Undo would be sent, and sent nothing."),
     (NOT_ANSWERED,
      "it stopped before it answered, and Heron had no transaction open to keep "
      "anything; fix what stopped it before asking again",
@@ -500,14 +501,17 @@ OUTCOMES = (
      "do not send it again; no id follows a run yet, so ask the modeller what "
      "Revit shows",
      "Revit took it and has not finished, or is still asking the modeller. "
-     "Sending it again is how one job is done twice."),
+     "Sending it again is how one job is done twice. Also revit_undo_last "
+     "once Revit's Undo is sent: Revit runs it after the reply, so it is "
+     "sent, not yet done."),
     (UNKNOWN,
      "Heron cannot tell what this did in Revit; look at the model first, and "
      "do not send a change again",
      "The answer was lost, too large or unreadable; the failure is one Heron "
      "has no row for; a rollback was not confirmed, or a verdict contradicts "
-     "itself; it ran in a model this chat does not work on; a show stopped "
-     "part way; or the door broke, or did not say how it ended."),
+     "itself; it ran - or Undo was sent - in a model this chat does not work "
+     "on; a show stopped part way; or the door broke, or did not say how it "
+     "ended."),
 )
 
 # THE SAME WORD, SAID OF A DRY RUN (D-155). ROLLED BACK's own line ends "send

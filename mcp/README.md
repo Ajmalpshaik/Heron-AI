@@ -35,7 +35,7 @@ flowchart TD
     W["<b>Work it out</b><br/>heron_hvac · heron_fire · loads<br/>READ · ANALYZE"]
     R["<b>Read the model</b><br/>revit_read · revit_levels<br/>READ · ANALYZE"]
     SH["<b>Show on screen</b><br/>revit_show · select · isolate<br/>EXECUTE"]
-    C["<b>Change the model</b><br/>revit_change · revit_apply_move<br/>MODIFY and above · needs Changes"]
+    C["<b>Change the model</b><br/>revit_change · revit_apply_move · revit_undo_last<br/>MODIFY and above · needs Changes"]
     H["<b>Connect and check</b><br/>revit_health · revit_use_session · revit_release<br/>READ"]
     AD["<b>Heron add-in in Revit</b><br/>the gate reads the switches"]
 
@@ -71,7 +71,9 @@ Claude Code (host) --MCP, stdio--> Heron MCP server (heron_mcp_server.py)
                       sprinklers                           read the model, none changes it
   Read the model      revit_read, revit_levels, ...        READ, ANALYZE
   Show on screen      revit_show, select, isolate          EXECUTE
-  Change the model    revit_change, revit_apply_move       MODIFY and above; needs Changes on
+  Change the model    revit_change, revit_apply_move,      MODIFY and above; needs Changes on.
+                      revit_undo_last                      revit_undo_last sends Revit's own Undo for
+                                                           Heron's last kept change (D-157)
                       revit_change with dry_run            runs it and rolls it back, for a job a rollback
                                                            takes back whole: MODIFY, or SUGGEST (D-155)
   Connect and check   revit_health, revit_use_session,     READ; revit_release frees this chat's

@@ -116,7 +116,7 @@ lists every tool with its level.
 | `ANALYZE` | working out from what was read; a picture of a view | none | `revit_read`, `revit_view_image`, the loads and sprinkler tools |
 | `SUGGEST` | proposing without applying | none | no tool declares it. A fragment declared `SUGGEST` is under `revit_show`'s ceiling and above `revit_read`'s |
 | `EXECUTE` | the selection, the camera, the active view | none: `ReadOnlyCeiling` | `revit_show`, `revit_select_by_category`, `revit_isolate_temporary`, `revit_reset_temporary` |
-| `MODIFY` | a change to the model | **Changes** | `revit_change`, `revit_apply_move`, and the Companion page's Apply |
+| `MODIFY` | a change to the model | **Changes** | `revit_change`, `revit_apply_move`, the Companion page's Apply, and `revit_undo_last` - Revit's own Undo for Heron's last kept change ([D-157](decisions/D-157.md)). Its `check_only` sends nothing, is a `READ` operation in the add-in (`undo_check`), and needs no switch; the posting operation is `undo_guarded` |
 | `PUBLISH` | an export, a print, a save, a sync with central, a change of worksharing ownership | **Changes and Publish** | `revit_change`, sent as `run_fragment_publish` |
 | `ADMIN` | a project, shared or global parameter, a workset, the project's units, location or coordinates, a new project or family file | **Changes and Admin** | `revit_change`, sent as `run_fragment_admin` |
 

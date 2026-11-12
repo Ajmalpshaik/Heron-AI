@@ -110,6 +110,15 @@ WHAT IT PROVES
      and Heron's own agents are still given them. Needs no SDK, so it runs
      wherever this file does.
 
+  9. revit_undo_last SAYS A WORD TOO (D-157, 2026-11-12) - the one tool on
+     the list that is not a door. Revit's Undo SENT is STILL RUNNING, never
+     KEPT and never ANSWERED: Revit runs it after the reply. A check
+     (`check_only`) is ANSWERED and sends `undo_check`, never `undo_last`.
+     Each refusal is REFUSED, a chat pinned to no model among them, with
+     nothing sent; no session and an older add-in are NOT RUN; no answer, an
+     answer lost, and an Undo sent in a model this chat does not work on are
+     OUTCOME UNKNOWN - and that last says the Undo WAS sent, and where.
+
 WHAT A REVIEW CHANGED, AND WHICH OF THIS FILE'S OWN ASSERTIONS WERE WRONG.
 The first version of this suite pinned four words the review of 2026-11-12
 showed to be untrue, and each is changed here rather than defended:
@@ -166,6 +175,11 @@ FAILURES = []
 PREFIX = "outcome: "
 TAIL = " - "
 DOORS = ("revit_change", "revit_read", "revit_show")
+# AND THE ONE TOOL THAT IS NOT A DOOR AND SAYS A WORD (2026-11-12, D-157):
+# every return of revit_undo_last was read against the table, as row 5b-1563
+# asks of a tool that joins. Section 9 walks them.
+UNDO_TOOL = "revit_undo_last"
+SAYS = DOORS + (UNDO_TOOL,)
 WORDS = ("KEPT", "ANSWERED", "NOT ANSWERED", "REFUSED", "NOT RUN", "ROLLED BACK",
          "STILL RUNNING", "OUTCOME UNKNOWN")
 
@@ -285,6 +299,17 @@ DISCARDED_BUT_APPLIED = dict(DISCARDED, applied=True)
 
 ELSEWHERE = dict(READ_OK, document="Tower B", documentPath="C:/jobs/TowerB.rvt",
                  projectKey="key-2")
+
+# revit_undo_last (D-157): what the add-in answers when it POSTED Revit's Undo,
+# and when it was only asked whether it would.
+UNDO_SENT = dict(MODEL, ok=True, sent=True, undoing="rename-views",
+                 undoEntry="Heron: rename-views",
+                 said="Revit's own Undo was sent for 'rename-views' (Heron: rename-views, "
+                      "kept at 14:32). Heron has seen nothing change this model since.")
+UNDO_CHECK = dict(MODEL, ok=True, checked=True, sent=False, wouldSend=True,
+                  undoing="rename-views",
+                  said="Yes - Undo would be sent now, for 'rename-views'. This was only "
+                       "a check: nothing was sent to Revit.")
 
 # WHAT THE ADD-IN ANSWERS A RUN SENT WITHOUT `apply` - a dry run (D-155) -
 # in each of the three ways RevitFragment.WithVerdict can end one: the
@@ -490,7 +515,7 @@ def build_cases(module, core):
         stage.patch(os.path, "isfile",
                     lambda path: False if str(path).endswith("fragment.cs") else real(path))
 
-    C, R, S = "revit_change", "revit_read", "revit_show"
+    C, R, S, U = "revit_change", "revit_read", "revit_show", UNDO_TOOL
     say = {"request": "count the things"}
     cases = [
         # ---- the change door --------------------------------------------
@@ -741,6 +766,59 @@ def build_cases(module, core):
              {"capability": show}, error("revit_busy")),
         Case("words that settled no one capability, at revit_show", S, "NOT RUN",
              say, READ_OK, setup=lookup_ranked),
+
+        # ---- revit_undo_last (D-157) -------------------------------------
+        # Not a door: it takes no capability. Every return it has, each with
+        # the chat pinned to MODEL unless the case is about having no pin.
+        Case("Revit's Undo SENT - Revit runs it after the reply", U, "STILL RUNNING",
+             {}, UNDO_SENT, pin=MODEL, kind="undo sent"),
+        Case("a check that would send, and sent nothing", U, "ANSWERED",
+             {"check_only": True}, UNDO_CHECK, pin=MODEL, kind="undo check"),
+        Case("a check that would NOT send", U, "ANSWERED", {"check_only": True},
+             dict(UNDO_CHECK, wouldSend=False, said="No - Undo would not be sent now."),
+             pin=MODEL, kind="undo check"),
+        Case("the guard's refusal: something was done after it (undo_refused)", U,
+             "REFUSED", {}, error("undo_refused"), pin=MODEL, kind="undo refused"),
+        Case("the Changes switch off, at revit_undo_last", U, "REFUSED", {},
+             error("write_disabled"), pin=MODEL, kind="undo refused"),
+        Case("the add-in's wrong-model refusal, at revit_undo_last", U, "REFUSED", {},
+             error("wrong_document"), pin=MODEL, kind="undo refused"),
+        Case("no model open, at revit_undo_last", U, "REFUSED", {},
+             error("no_document"), pin=MODEL, kind="undo refused"),
+        Case("a chat pinned to no model: refused before anything is sent", U,
+             "REFUSED", {}, UNDO_SENT, kind="undo refused"),
+        Case("this chat running old code, at revit_undo_last", U, "REFUSED", {},
+             UNDO_SENT, pin=MODEL, setup=old_code, kind="undo refused"),
+        Case("a check answered from ANOTHER model than the pinned one", U, "REFUSED",
+             {"check_only": True},
+             dict(UNDO_CHECK, document="Tower B", documentPath="C:/jobs/TowerB.rvt",
+                  projectKey="key-2"), pin=MODEL),
+        Case("no Revit session, at revit_undo_last", U, "NOT RUN", {}, UNDO_SENT,
+             pin=MODEL, setup=not_bound, kind="undo not run"),
+        Case("an add-in older than undo_last (unknown_op)", U, "NOT RUN", {},
+             error("unknown_op"), pin=MODEL, kind="undo not run"),
+        Case("Revit busy, so it never took the Undo request", U, "NOT RUN", {},
+             error("revit_busy"), pin=MODEL, kind="undo not run"),
+        Case("another chat holds that model, at revit_undo_last", U, "NOT RUN", {},
+             error("model_in_use"), pin=MODEL, kind="undo not run"),
+        Case("NO ANSWER AT ALL to revit_undo_last", U, "OUTCOME UNKNOWN", {}, None,
+             pin=MODEL, kind="undo unknown"),
+        Case("NO ANSWER AT ALL to a check", U, "OUTCOME UNKNOWN", {"check_only": True},
+             None, pin=MODEL, kind="undo unknown"),
+        Case("an answer LOST after the Undo request was sent", U, "OUTCOME UNKNOWN", {},
+             error("unknown_outcome"), pin=MODEL, kind="undo unknown"),
+        Case("Undo SENT in ANOTHER model than the pinned one", U, "OUTCOME UNKNOWN", {},
+             dict(UNDO_SENT, document="Tower B", documentPath="C:/jobs/TowerB.rvt",
+                  projectKey="key-2"), pin=MODEL, kind="undo elsewhere"),
+        Case("an `ok` that does not say Undo was sent", U, "OUTCOME UNKNOWN", {},
+             dict(MODEL, ok=True), pin=MODEL, kind="undo unknown"),
+        Case("a failure code Heron has never seen, at revit_undo_last", U,
+             "OUTCOME UNKNOWN", {}, error("never_seen_before"), pin=MODEL,
+             kind="undo unknown"),
+        Case("an answer that is a JSON list, at revit_undo_last", U, "OUTCOME UNKNOWN",
+             {}, [1, 2, 3], pin=MODEL, kind="undo unknown"),
+        Case("the request itself raising, at revit_undo_last", U, "OUTCOME UNKNOWN", {},
+             UNDO_SENT, pin=MODEL, setup=pipe_breaks, kind="undo raised"),
     ]
     return picked, cases
 
@@ -810,8 +888,13 @@ def the_vocabulary(core, registry):
           "run yet - found %r" % running)
     check("wf-" not in running and "run=" not in running,
           "and invents none")
-    check(tuple(getattr(registry, "STATES_OUTCOME", ())) == DOORS,
-          "heron_tools.STATES_OUTCOME names the tools that say one: the three doors")
+    # THIS HELD "== DOORS" UNTIL 2026-11-12. revit_undo_last carried no line
+    # at all - a refusal, an Undo sent and a lost answer were told apart by
+    # reading sentences, which is what row 5b-1159 was (row 5b-1610) - so the
+    # list is the three doors and that one tool, and a fifth name fails here.
+    check(tuple(getattr(registry, "STATES_OUTCOME", ())) == SAYS,
+          "heron_tools.STATES_OUTCOME names the tools that say one: the three doors, "
+          "and revit_undo_last - found %r" % (getattr(registry, "STATES_OUTCOME", ()),))
     line = getattr(core, "outcome_line", None)
     read_back = getattr(core, "outcome_of", None)
     check(line is not None and read_back is not None,
@@ -1166,7 +1249,7 @@ def additive(stage, cases, replies, core):
     said_old = getattr(getattr(core, "running_code", None), "SAID", None)
     differs = []
     for case in cases:
-        if case.kind == "raised":
+        if case.kind in ("raised", "undo raised"):
             # THE BODY RAISED: there is no reply of its own to compare, and
             # the whole answer is the wrapper's. Section 3b reads it.
             continue
@@ -1181,7 +1264,7 @@ def additive(stage, cases, replies, core):
             differs.append(case.name)
         if lines_of(body):
             differs.append("%s (its body carries a line of its own)" % case.name)
-    compared = len([c for c in cases if c.kind != "raised"])
+    compared = len([c for c in cases if c.kind not in ("raised", "undo raised")])
     check(not differs,
           "all %d: every sentence the door wrote is there, in the same order - "
           "not: %s" % (compared, "; ".join(differs[:5]) or "none"))
@@ -1270,7 +1353,9 @@ async def through_the_sdk(stage, cases, picked):
         return text, structured, flagged
 
     wanted = ("kept", "refused", "rollback", "lost", "running", "answered", "not run",
-              "raised", "unrecognised", "not answered", "dry run")
+              "raised", "unrecognised", "not answered", "dry run",
+              "undo sent", "undo check", "undo refused", "undo not run", "undo unknown",
+              "undo elsewhere", "undo raised")
     seen = set()
     for case in cases:
         if case.kind not in wanted or (case.kind, case.door) in seen:
@@ -1390,6 +1475,81 @@ def nothing_else_moved(stage, cases, replies, picked):
     except Exception as exc:                                    # noqa: BLE001
         said = "(heron_lookup raised %s: %s)" % (type(exc).__name__, exc)
     check(not lines_of(said), "a library tool (heron_lookup) carries none")
+
+
+def the_undo_tool(stage, cases, replies):
+    """
+    Section 9: revit_undo_last (D-157), the one tool that is not a door and
+    says a word. Its every return was walked above with the doors'; this
+    holds what is its own.
+    """
+    print()
+    print("9. revit_undo_last: sent is not done, a check sends nothing, and no pin sends nothing")
+    module = stage.module
+    mine = [c for c in cases if c.door == UNDO_TOOL]
+    check(len(mine) >= 20, "walked: %s %d paths" % (UNDO_TOOL, len(mine)))
+
+    sent = [c for c in mine if c.kind == "undo sent"]
+    check(sent and all(stated(replies[c]) == "STILL RUNNING" for c in sent)
+          and all(replies[c].startswith("Revit's own Undo was sent") for c in sent),
+          "Undo posted is STILL RUNNING - Revit runs it after the reply - and opens by "
+          "saying it was SENT")
+    never = sorted(set(str(stated(replies[c])) for c in mine)
+                   & set(["KEPT", "ROLLED BACK", "NOT ANSWERED"]))
+    check(not never,
+          "it never says KEPT, ROLLED BACK or NOT ANSWERED - it keeps nothing, rolls "
+          "nothing back and is no read: found %s" % (never or "none"))
+    answered = [c for c in mine if stated(replies[c]) == "ANSWERED"]
+    check(answered and all(c.arguments.get("check_only") for c in answered),
+          "ANSWERED is said only of a check - never of an Undo that was sent")
+
+    refused = [c for c in mine if c.kind == "undo refused"]
+    check(len(refused) >= 5 and all(stated(replies[c]) == "REFUSED" for c in refused),
+          "each refusal - the guard's, the switch, the wrong model, no model, no pin, old "
+          "code - is REFUSED (%d cases)" % len(refused))
+    not_run = [c for c in mine if c.kind == "undo not run"]
+    check(len(not_run) >= 4 and all(stated(replies[c]) == "NOT RUN" for c in not_run),
+          "no session, an older add-in, Revit busy and a model held by another chat are "
+          "NOT RUN (%d cases)" % len(not_run))
+    older = [c for c in mine if "unknown_op" in c.name]
+    check(older and all("older than this chat's Heron" in replies[c]
+                        and "Nothing was sent to Revit" in replies[c] for c in older),
+          "an older add-in is said in Revit's words, with nothing sent")
+    unknown = [c for c in mine if c.kind in ("undo unknown", "undo elsewhere", "undo raised")]
+    check(len(unknown) >= 7 and all(stated(replies[c]) == "OUTCOME UNKNOWN" for c in unknown),
+          "no answer, an answer lost or unreadable, an `ok` that does not say it sent, a "
+          "code nobody knows, Undo sent in another model and a break after sending are "
+          "OUTCOME UNKNOWN (%d cases)" % len(unknown))
+    elsewhere = [c for c in mine if c.kind == "undo elsewhere"]
+    check(elsewhere and all("Revit's Undo WAS SENT" in replies[c] and "Tower B" in replies[c]
+                            and "Nothing has been sent to Revit" not in replies[c]
+                            for c in elsewhere),
+          "an Undo sent in another model says it WAS sent, and where - never that "
+          "nothing was sent")
+
+    # WHAT WAS ASKED OF REVIT, read off the stand-in.
+    stage.fresh(dict(UNDO_SENT))
+    said = module.revit_undo_last()
+    check(not stage.revit.asked and stated(said) == "REFUSED"
+          and "Nothing has been sent to Revit" in said,
+          "with no pin NOTHING is sent - asked %d" % len(stage.revit.asked))
+    stage.fresh(dict(UNDO_CHECK), MODEL)
+    try:
+        module.revit_undo_last(check_only=True)
+    except TypeError:
+        # The tool as it stood takes no `check_only` (heron-ship 2a: fail,
+        # not crash) - nothing was asked, and the check below says so.
+        pass
+    asked =[(op, idempotent) for op, _args, idempotent in stage.revit.asked]
+    check(asked == [("undo_check", True)],
+          "a check sends undo_check, once, and never a posting operation - found %r"
+          % (asked,))
+    stage.fresh(dict(UNDO_SENT), MODEL)
+    module.revit_undo_last()
+    asked = [(op, idempotent, sorted(args)) for op, args, idempotent in stage.revit.asked]
+    check(asked == [("undo_guarded", False, ["document", "documentPath", "expectProject"])],
+          "the real one sends undo_guarded once, never safe to resend, naming the pinned "
+          "model by path and title - found %r" % (asked,))
 
 
 def the_chat_is_told():
@@ -1534,6 +1694,7 @@ def main():
         additive(stage, cases, replies, core)
         asyncio.run(through_the_sdk(stage, cases, picked))
         nothing_else_moved(stage, cases, replies, picked)
+        the_undo_tool(stage, cases, replies)
 
         guard.stop()
         print()

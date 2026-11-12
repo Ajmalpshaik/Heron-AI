@@ -516,7 +516,15 @@ def _single_purpose_endings(server):
     are connected, so it is not safe to guess which one you mean:", so a
     refusal was labelled ok.
     """
-    doors = ("revit_read", "revit_show", "revit_change", "revit_apply_move")
+    # revit_undo_last IS READ WITH THE DOORS SINCE 2026-11-12 (row 5b-1610): it
+    # says an outcome word, so it classifies its own reply as they do
+    # (`analyse`, `_failure_ended`) and no longer through `_ended_by_reply`;
+    # with no pin it refuses before it sends; and an Undo sent in another
+    # model is not a refusal - it was SENT. The forms below are the read
+    # tools'. Its every ending is held by tests/test_outcome_line.py section 9
+    # and tests/test_mcp_serves.py (exercise_undo).
+    doors = ("revit_read", "revit_show", "revit_change", "revit_apply_move",
+             "revit_undo_last")
     bodies = {}
     for found in re.finditer(r"\n@server\.tool\(\)\ndef (revit_\w+)\(", server):
         rest = server[found.end():]
