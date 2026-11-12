@@ -1911,6 +1911,20 @@ def test_checklist_panel(tmp):
           "it asks Heron only, and Select sends the row's number and its run, never ids")
     check("checklist_();" in js[js.index("async function poll()"):js.index("function theme()")]
           and '["qa", "q-empty"]' in js, "the poll reads it, and it is a workspace in the sidebar")
+    # ROW 5b-1617: a row NOT COMPARED (a first run, an unsaved model) and one
+    # that met the value both times must read differently, on the page and in
+    # the CSV - the brain marks the first NOT COMPARED, and the page writes
+    # the second in words, never a bare dash or a blank.
+    change = block[block.index("function qaChange("):block.index("function qaResult(")]
+    csv = block[block.index("function qaCsv("):block.index("function qaBadge(")]
+    check('"—"' not in change and "function qaSince(" in block
+          and 'const QA_SAME = "met both times";' in block
+          and 'el("span", "muted small", qaSince(r))' in change,
+          "an unchanged row reads 'met both times' in words on the page - never the dash")
+    check("qaSince(r), compared," in csv and '"Compared with"' in csv
+          and "(R.history || {}).said" in csv and 'r.changeLabel || ""' not in csv,
+          "the CSV's Since last run is never blank for a check, and it carries the run's history "
+          "sentence - which run it was compared with, or why not")
     print()
 
 

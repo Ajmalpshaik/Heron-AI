@@ -49,6 +49,7 @@ MCP server makes from revit_read's own body.
 
 from __future__ import print_function
 
+import hashlib
 import io
 import json
 import math
@@ -93,9 +94,14 @@ CLAUSE_MAX = 200
 ADVICE_MAX = 300
 
 # WHAT CHANGED SINCE THE LAST RUN of the same checklist on the same model. A
-# run is kept once it finished; the newest RUNS_KEPT a checklist are kept.
+# run is kept once it finished; the newest RUNS_KEPT of a checklist ON ONE
+# MODEL are kept, each model in its own folder. A model is its file path: a
+# model with none (never saved, or detached and not saved) is never compared
+# and its runs are not kept. RUNS_FORMAT 2 notes each check's values; a run
+# kept as format 1 still reads, and is never compared with (row 5b-1613).
 RUNS_FOLDER = "runs"
-RUNS_FORMAT = 1
+RUNS_FORMAT = 2
+RUNS_READ = (1, 2)
 RUNS_KEPT = 20
 CHANGES = (("new", "NEW", "failed now, and did not last time"),
            ("open", "STILL OPEN", "failed last time too"),
@@ -359,7 +365,7 @@ def _labels_problems(check, where):
             continue
         if not isinstance(value, str):
             found.append("%s: '%s' - %s - must be text." % (where, key, what))
-        elif len(value.strip()) > most or "\n" in value.strip():
+        elif len(value.strip()) > most or "\n" in value.strip() or "\r" in value.strip():
             found.append("%s: '%s' must be one line of at most %d characters." % (where, key, most))
     return found
 
@@ -470,6 +476,15 @@ def _check_shape(check):
         return "a check's severity is not one of %s" % ", ".join(SEVERITIES)
     if not all(isinstance(check.get(key, ""), str) for key in ("clause", "advice")):
         return "a check's clause or advice is not text"
+    # THE SAVE'S OWN LIMITS, ON LOAD TOO (row 5b-1618): a file made by hand or
+    # shared from another PC never reached save(), and its words are printed
+    # into the chat. One that breaks them is refused like any other bad field.
+    sentence = check["sentence"].strip()
+    if len(sentence) > SENTENCE_MAX or "\n" in sentence or "\r" in sentence:
+        return "a check's sentence is not one line of up to %d characters" % SENTENCE_MAX
+    labels = _labels_problems(check, "a check")
+    if labels:
+        return "a check breaks the limits a save holds it to - %s" % labels[0][len("a check: "):].rstrip(".")
     return None
 
 
@@ -622,7 +637,11 @@ def ids_from(kind, name, provides, entries, sent=None):
     if isinstance(whole, dict) and isinstance(whole.get("ids"), list):
         ids = [str(i) for i in whole["ids"] if str(i).lstrip("-").isdigit()]
         count = whole.get("total")
-        count = count if isinstance(count, int) and not isinstance(count, bool) else len(ids)
+        if not isinstance(count, int) or isinstance(count, bool) or count < 0:
+            # NO COUNT, NO SELECT (row 5b-1620): without the total beside them
+            # nothing says these ids are all of them - so they are never
+            # taken as complete. The total shown is the reply's own count.
+            return ids, total if isinstance(total, int) else len(ids), False
         return ids, count, len(ids) == count
     if kind == "keys":
         held = (entries or {}).get(name)
@@ -652,6 +671,9 @@ def judge(number, check, ran):
            "rule": rule_text(check), "value": None, "shown": "-", "state": "not run", "why": "",
            "ids": [], "idsTotal": 0, "idsComplete": False,
            "selection": list(check.get("selection") or []),
+           # Its values, so an edited check is never matched with the old one.
+           "values": ["%s=%s" % (v.get("name"), v.get("value")) for v in check.get("values") or []
+                      if isinstance(v, dict)],
            "severity": check.get("severity") or "", "clause": check.get("clause") or "",
            "advice": check.get("advice") or "", "change": "", "changeLabel": "", "changeWhy": ""}
     if not ran.get("ran"):
@@ -678,7 +700,13 @@ def judge(number, check, ran):
         ids, total, complete = ids_from(check.get("idsKind"), check["ids"], provides,
                                         ran.get("entries"), ran.get("ids"))
         row["ids"], row["idsTotal"], row["idsComplete"] = (ids if complete else []), total, complete
-        if total and not complete:
+        sent = (ran.get("ids") or {}).get(check["ids"])
+        if isinstance(sent, dict) and isinstance(sent.get("ids"), list) and not complete and (
+                not isinstance(sent.get("total"), int) or isinstance(sent.get("total"), bool)):
+            row["why"] += (" Revit sent %d element id(s) in '%s' without saying how many the list "
+                           "holds, so Select in Revit is not offered rather than selecting part of "
+                           "what failed." % (len(ids), check["ids"]))
+        elif total and not complete:
             row["why"] += (" Heron received %d of the %d element ids in '%s', so Select in Revit is "
                            "not offered rather than selecting part of what failed. %s"
                            % (len(ids), total, check["ids"],
@@ -812,80 +840,189 @@ def runs_folder(name, home=None, make=False):
     return where
 
 
+# WHY A RUN, OR ONE ROW OF IT, IS NOT COMPARED - each a true sentence the
+# modeller can read. The rule for every doubt: NOT COMPARED, never a guess at
+# FIXED or NEW (the review of #866, rows 5b-1613 to 5b-1616).
+UNSAVED = ("Not compared: this model has no file path - it was never saved, or was detached "
+           "and not saved - so its runs cannot be told from another model's. Save the model so "
+           "runs can be compared. This run is not kept.")
+NO_MODEL = ("Not compared, and not kept: no model was read in this run, so there is nothing to "
+            "compare.")
+FIRST = ("This is the first kept run of this checklist on this model, so there is nothing to "
+         "compare with yet.")
+OLD_FORMAT = ("Not compared: the last run was kept by an earlier Heron, which did not note each "
+              "check's values, so whether this check was edited since cannot be told.")
+EDITED = ("Not compared: no check with these words, capability, rule and values was in the last "
+          "run - it was added or edited since.")
+TWINS = ("Not compared: another check in this checklist has the same words, capability, rule and "
+         "values, so the two cannot be told apart from one run to the next.")
+SELECTION = ("Not compared: this check reads what is selected in Revit, and what was selected "
+             "may not be what was selected last time.")
+NOT_RUN = "Not compared: it was not run now or last time."
+UNREADABLE = "Not compared: the run kept at %s could not be read (%s), and it may be the last " \
+             "run of this checklist on this model, so nothing is compared across it."
+
+
 def _model(answer):
-    """What tells one model from another in a kept run: the pin's identity when
-    the run had one, else the model's title - never nothing."""
+    """["path", <the model's file path>] - what tells one model from another
+    in a kept run - or None when the run has none to give.
+
+    THE PATH ALONE (row 5b-1614). Revit's title is the file name of that path,
+    so it adds nothing; Revit's process id changes every time Revit is
+    started, so it is never part of it - the same file opened again next week
+    is the same model. A Save As gives a new path, and is a new model. A model
+    with no path - never saved, or detached and not saved - is None: two
+    unsaved Project1s cannot be told apart, so they are never compared."""
     identity = answer.get("identity")
-    if isinstance(identity, (list, tuple)) and any(identity):
-        return ["identity"] + [str(part or "") for part in identity]
-    return ["title", str(answer.get("document") or "")]
+    if isinstance(identity, (list, tuple)) and len(identity) >= 2:
+        path = str(identity[1] or "").strip()
+        if path:
+            return ["path", path]
+    return None
+
+
+def _why_no_model(answer):
+    identity = answer.get("identity")
+    return UNSAVED if isinstance(identity, (list, tuple)) and any(identity) else NO_MODEL
+
+
+def _kept_model(kept):
+    """The model a kept run was made on, as _model gives it - reading a run kept
+    before the path alone was the identity (["identity", title, path, pid]) by
+    its path. None when it cannot be told."""
+    model = kept.get("model")
+    if isinstance(model, list):
+        if len(model) == 2 and model[0] == "path" and isinstance(model[1], str) and model[1].strip():
+            return ["path", model[1].strip()]
+        if len(model) == 4 and model[0] == "identity" and isinstance(model[2], str) \
+                and model[2].strip():
+            return ["path", model[2].strip()]
+    return None
+
+
+def _model_folder(base, model):
+    """One model's own folder under a checklist's runs - named by a digest of
+    its path, so a path is never a folder name."""
+    return os.path.join(base, hashlib.sha1(model[1].encode("utf-8")).hexdigest()[:16])
 
 
 def _key(row):
-    """One check across two runs: its sentence, capability and rule - so a check
-    reworded or given another rule is a new check, never a false 'fixed'."""
-    return "%s|%s|%s" % (row.get("sentence"), row.get("capability"), row.get("rule"))
+    """One check across two runs: its sentence, capability, rule AND VALUES,
+    sorted - so a check reworded, given another rule or edited to other values
+    is another check, never a false 'fixed' (row 5b-1613)."""
+    return json.dumps([row.get("sentence"), row.get("capability"), row.get("rule"),
+                       sorted(str(v) for v in row.get("values") or [])])
 
 
 def _kept_row(row):
     return {"key": _key(row), "state": row.get("state"),
             "value": row.get("value"), "ids": list(row.get("ids") or []),
-            "idsComplete": bool(row.get("idsComplete"))}
+            "idsComplete": bool(row.get("idsComplete")),
+            "selection": bool(row.get("selection"))}
+
+
+def _stamp_shown(file_name):
+    """"2026-11-12T14-05-09-<run>.json" -> "2026-11-12 14:05"."""
+    return file_name[:10] + " " + file_name[11:16].replace("-", ":")
 
 
 def previous(answer, home=None):
-    """The newest kept run of this checklist ON THIS MODEL, or None. A run on
-    another model is never compared - what changed between two models is not
-    what changed in one."""
-    where = runs_folder(answer.get("name") or "", home)
-    if where is None or not os.path.isdir(where):
-        return None
+    """{"run": the newest kept run of this checklist ON THIS MODEL or None,
+    "why": why nothing is compared, or ""}.
+
+    A run on another model is never compared - what changed between two
+    models is not what changed in one. A KEPT RUN THAT CANNOT BE READ, newer
+    than the one that would be compared with, ends the search: it may be this
+    model's last run, and comparing across it would skip a run (row 5b-1615).
+    The runs kept before each model had its own folder are read too, by path."""
     model = _model(answer)
-    for name in sorted(os.listdir(where), reverse=True):
-        if not name.endswith(".json"):
-            continue
+    if model is None:
+        return {"run": None, "why": _why_no_model(answer)}
+    base = runs_folder(answer.get("name") or "", home)
+    if base is None or not os.path.isdir(base):
+        return {"run": None, "why": ""}
+    candidates = []
+    for where in (_model_folder(base, model), base):
+        if os.path.isdir(where):
+            candidates += [(n, os.path.join(where, n)) for n in os.listdir(where)
+                           if n.endswith(".json") and os.path.isfile(os.path.join(where, n))]
+    for name, path in sorted(candidates, reverse=True):
         try:
-            with io.open(os.path.join(where, name), "r", encoding="utf-8") as fh:
+            with io.open(path, "r", encoding="utf-8") as fh:
                 kept = json.load(fh)
+            readable = (isinstance(kept, dict) and kept.get("heron-checklist-run") in RUNS_READ
+                        and isinstance(kept.get("rows"), list) and _kept_model(kept) is not None)
         except (OSError, ValueError):
-            continue
-        if (isinstance(kept, dict) and kept.get("heron-checklist-run") == RUNS_FORMAT
-                and kept.get("model") == model and isinstance(kept.get("rows"), list)):
-            return kept
-    return None
+            readable = False
+        if not readable:
+            return {"run": None, "why": UNREADABLE % (_stamp_shown(name), name), "unreadable": True}
+        if _kept_model(kept) == model:
+            return {"run": kept, "why": ""}
+    return {"run": None, "why": ""}
 
 
-def compare(answer, before):
+def _not_compared(answer, said):
+    """Every row NOT COMPARED, for a run with nothing it may be compared with."""
+    for row in answer.get("rows") or []:
+        row["change"], row["changeLabel"], row["changeWhy"] = "unknown", CHANGE_LABEL["unknown"], ""
+    counts = {"new": 0, "open": 0, "fixed": 0, "unknown": len(answer.get("rows") or [])}
+    answer["history"] = {"previous": None, "counts": counts, "said": said}
+    return answer
+
+
+def compare(answer, before, why_not=""):
     """Each row's change since `before` - NEW, STILL OPEN, FIXED, nothing, or
     NOT COMPARED - and `history` with the counts and one sentence. Changes the
-    answer in place and returns it.
+    answer in place and returns it. With no `before`, every row is NOT
+    COMPARED and `why_not` (or "the first kept run") is the sentence: a row
+    that was not compared never reads as one that met the value both times.
 
-    NOT RUN IS NEVER A CHANGE. A check not run now, or last time, is NOT
-    COMPARED: calling it fixed or new would be a claim about a model nobody
-    read. A check with no row last time - added since - is NOT COMPARED too."""
-    counts = {"new": 0, "open": 0, "fixed": 0, "unknown": 0}
+    NOT RUN IS NEVER A CHANGE, and neither is anything that cannot be told: a
+    check not run now or last time, one not in the last run (added or edited
+    since), two checks that cannot be told apart, and a check that reads the
+    selection - which is whatever was selected at that moment - are each NOT
+    COMPARED, with why."""
     if not before:
-        answer["history"] = {"previous": None, "counts": counts,
-                             "said": "This is the first kept run of this checklist on this model, "
-                                     "so there is nothing to compare with yet."}
-        return answer
-    earlier = dict((r.get("key"), r) for r in before.get("rows") or [] if isinstance(r, dict))
+        return _not_compared(answer, why_not or FIRST)
+    counts = {"new": 0, "open": 0, "fixed": 0, "unknown": 0}
+    old_format = before.get("heron-checklist-run") != RUNS_FORMAT
+    earlier, twice = {}, set()
+    for kept in before.get("rows") or []:
+        if isinstance(kept, dict):
+            if kept.get("key") in earlier:
+                twice.add(kept.get("key"))
+            earlier[kept.get("key")] = kept
+    seen = set()
     for row in answer.get("rows") or []:
-        then = earlier.get(_key(row))
+        key = _key(row)
+        if key in seen:
+            twice.add(key)
+        seen.add(key)
+    for row in answer.get("rows") or []:
+        key = _key(row)
+        then = earlier.get(key)
         now = row.get("state")
         why = ""
-        if then is None or now == "not run" or then.get("state") == "not run":
-            change = "unknown"
-            why = ("Not compared: %s." % ("this check was not in the last run" if then is None
-                                          else "it was not run now or last time"))
+        if old_format:
+            change, why = "unknown", OLD_FORMAT
+        elif row.get("selection") or (then or {}).get("selection"):
+            change, why = "unknown", SELECTION
+        elif key in twice:
+            change, why = "unknown", TWINS
+        elif then is None:
+            change, why = "unknown", EDITED
+        elif now == "not run" or then.get("state") == "not run":
+            change, why = "unknown", NOT_RUN
         elif now == "fail" and then.get("state") == "fail":
             change = "open"
             ids, old = row.get("ids") or [], then.get("ids") or []
             if row.get("idsComplete") and then.get("idsComplete"):
                 added = len(set(ids) - set(old))
                 gone = len(set(old) - set(ids))
+                # "No longer failing", never "fixed": an element deleted since
+                # is gone from the list too (row 5b-1619).
                 why = ("Still failing: %d element(s) failing now that were not last time, %d "
-                       "fixed since." % (added, gone))
+                       "no longer failing." % (added, gone))
             else:
                 why = "Still failing: %s read %s now, %s last time." % (
                     row.get("rule", "").split(" ")[0], row.get("shown"), _shown(then.get("value")))
@@ -909,16 +1046,25 @@ def compare(answer, before):
 def keep_run(answer, home=None, now=None):
     """Keep a FINISHED run, so the next one can say what changed. A run that
     stopped part way, or is still running, is not kept: its NOT RUN rows would
-    make the next comparison say nothing. The newest RUNS_KEPT are kept.
-    Returns the path, or None when nothing was kept."""
+    make the next comparison say nothing. NOR IS A RUN WITH NO MODEL PATH: it
+    can never be compared, so it would only take a slot (row 5b-1616). The
+    newest RUNS_KEPT of this checklist ON THIS MODEL are kept - one checklist
+    run on many models never pushes out another model's last run. Returns the
+    path, or None when nothing was kept."""
     if answer.get("running") or answer.get("stopped") or not answer.get("rows"):
         return None
-    where = runs_folder(answer.get("name") or "", home, make=True)
-    if where is None:
+    model = _model(answer)
+    if model is None:
         return None
+    base = runs_folder(answer.get("name") or "", home, make=True)
+    if base is None:
+        return None
+    where = _model_folder(base, model)
+    if not os.path.isdir(where):
+        os.makedirs(where)
     stamp = now or time.strftime("%Y-%m-%dT%H-%M-%S")
     kept = {"heron-checklist-run": RUNS_FORMAT, "name": answer.get("name"),
-            "document": answer.get("document"), "model": _model(answer),
+            "document": answer.get("document"), "model": model,
             # "2026-11-12T14-05-09" in the file name, "2026-11-12 14:05" to read.
             "at": stamp[:10] + " " + stamp[11:16].replace("-", ":"),
             "rows": [_kept_row(r) for r in answer.get("rows") or []]}
@@ -940,10 +1086,13 @@ def history(answer, home=None, now=None):
     if answer.get("running") or answer.get("stopped"):
         return answer
     try:
-        compare(answer, previous(answer, home))
+        found = previous(answer, home)
+        compare(answer, found["run"], found["why"])
+        if found.get("unreadable"):
+            answer.setdefault("findings", []).append(found["why"])
     except Exception as why:                         # noqa: BLE001 - the run stands without it
-        answer["history"] = {"previous": None, "counts": {}, "said":
-                             "What changed since the last run could not be read: %s." % why}
+        _not_compared(answer, "Not compared: what changed since the last run could not be read: "
+                              "%s." % why)
     try:
         keep_run(answer, home, now)
     except Exception as why:                         # noqa: BLE001 - the run stands without it
