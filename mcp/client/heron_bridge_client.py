@@ -771,20 +771,42 @@ def open_model_named(bridge):
     return title if isinstance(title, str) and title.strip() else None
 
 
+# What ask_to_keep_state answers for a Revit whose add-in answered `info` well
+# and named no Ask to Keep switch at all - an add-in from before 2026-11-12.
+# A word and not None, because None is "no usable answer", and the two are
+# different facts a modeller is told differently. heron_health holds the same
+# word; tests/test_ask_to_keep_health.py holds the two to one spelling.
+ASK_TO_KEEP_NOT_SENT = "not sent"
+# Never a value a reply can carry, so "the field is missing" cannot be
+# confused with anything the field holds.
+_FIELD_MISSING = object()
+
+
 def ask_to_keep_state(bridge):
     """
-    Whether this Revit asks Keep or Discard before it keeps a change from a
-    chat - the owner's Ask to Keep switch (D-126, D-138), as that Revit's
-    add-in read it from its own settings at the moment of this call. True,
-    False, or None when the add-in does not say.
+    Whether this Revit asks Keep or Discard before it keeps a change made
+    through revit_change - the owner's Ask to Keep switch (D-126, D-138), as
+    that Revit's add-in read it from its own settings at the moment of this
+    call. One of FOUR answers:
+
+        True                    the switch is on
+        False                   the switch is off
+        ASK_TO_KEEP_NOT_SENT    `info` answered well and carries no such
+                                field - an add-in from before 2026-11-12
+        None                    no usable answer: nothing came back, it was
+                                refused, it is not an object, or the field is
+                                there and is not a JSON true or false
 
     From `info`, lease-exempt, so asking never claims the Revit.
 
-    NONE IS NOT OFF. Off is the switch's default, and a default is exactly
-    what must not be handed back for an answer nobody gave: an add-in from
-    before 2026-11-12 sends no `askToKeep`, and a reply that is missing,
-    refused, or carries anything but a JSON true or false is not a statement
-    either. The caller then says this Revit's Heron does not say.
+    NEITHER OF THE LAST TWO IS OFF. Off is the switch's default, and a
+    default is exactly what must not be handed back for an answer nobody
+    gave.
+
+    AND THEY ARE NOT EACH OTHER. Until the review of 2026-11-12 both were
+    None, and revit_health told a modeller "an older Heron add-in does not
+    report it" of a Revit that had simply not answered. Only a good reply
+    with the field missing says anything about the add-in's age.
 
     READ OFF A REPLY, NEVER PUT IN A REQUEST. Nothing a chat sends may turn
     the question off (Golden Rule 19, D-126 item 5), and the add-in reads no
@@ -798,7 +820,9 @@ def ask_to_keep_state(bridge):
     reply = bridge.request("info")
     if not isinstance(reply, dict) or not reply.get("ok"):
         return None
-    said = reply.get("askToKeep")
+    said = reply.get("askToKeep", _FIELD_MISSING)
+    if said is _FIELD_MISSING:
+        return ASK_TO_KEEP_NOT_SENT
     return said if isinstance(said, bool) else None
 
 

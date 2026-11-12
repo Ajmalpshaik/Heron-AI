@@ -1796,6 +1796,9 @@ async def exercise_single_purpose(module, server, newest):
         def request(self, op, op_args=None, **_ignored):
             self.asked.append(op)
             if op == "info":
+                if self.info is None:
+                    return {"ok": False, "error": "handler_failed",
+                            "message": "The add-in could not answer."}
                 return dict(self.info, ok=True, inUse=False, mine=False,
                             leaseSecondsRemaining=0)
             return {"ok": True, "document": "Project1", "count": 12,
@@ -1807,17 +1810,20 @@ async def exercise_single_purpose(module, server, newest):
     asks = Says(5001, "2026", {"askToKeep": True})
     keeps = Says(5002, "2024", {"askToKeep": False})
     older = Says(5003, "2020", {})
+    # AND ONE WHOSE `info` DID NOT COME BACK USABLE (the review of 2026-11-12):
+    # that is not an older add-in, and its line must not say it is.
+    silent = Says(5004, "2027", None)
     module.binding.forget()
     module.pinned.forget()
     module.binding.sessions = lambda: ([asks], [], [])
-    module.bridge.discover = lambda: ([asks, keeps, older], [], [], [])
+    module.bridge.discover = lambda: ([asks, keeps, older, silent], [], [], [])
     result = None
     try:
         try:
             module.binding.resolve()
         except Exception:                                       # noqa: BLE001
             pass
-        for session in (asks, keeps, older):
+        for session in (asks, keeps, older, silent):
             session.asked[:] = []
         before = newest()
         try:
@@ -1848,11 +1854,19 @@ async def exercise_single_purpose(module, server, newest):
     check("Ask to Keep is off" in under(5002) and "kept at once" in under(5002),
           "revit_health: under one that says off, a change is kept at once - found %r"
           % under(5002)[:90])
-    check("does not say" in under(5003) and "is ON" not in under(5003)
+    check("does not say" in under(5003) and "older" in under(5003)
+          and "is ON" not in under(5003)
           and "is off" not in under(5003) and "kept at once" not in under(5003),
           "revit_health: under an older add-in, which sends nothing, it does not say - "
           "and no default is guessed - found %r" % under(5003)[:90])
-    check(said.count("Ask to Keep") == 3,
+    check("could not read" in under(5004) and "older" not in under(5004)
+          and "is ON" not in under(5004) and "is off" not in under(5004),
+          "revit_health: under a Revit whose answer could not be read, it says THAT - "
+          "not that its add-in is older, and no default - found %r" % under(5004)[:90])
+    check("revit_change" in under(5001) and "revit_change" in under(5002),
+          "revit_health: on and off are each said of a change made through revit_change, "
+          "not of every change")
+    check(said.count("Ask to Keep") == 4,
           "revit_health: one such line for each connected Revit, and no more - found %d"
           % said.count("Ask to Keep"))
     check(set(keeps.asked) == set(["info"]) and set(older.asked) == set(["info"])

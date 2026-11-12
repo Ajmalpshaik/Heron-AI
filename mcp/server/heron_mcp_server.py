@@ -378,9 +378,10 @@ def revit_health() -> str:
             # chat holds and for the ones it does not. A chat could only
             # learn it afterwards, from a verdict, and could not tell the
             # modeller beforehand which it would be. An older add-in sends
-            # nothing, and the line says THAT - never the default, and never
-            # this side's own copy of the settings file, which on some PCs is
-            # not the one Revit reads (Q-70).
+            # nothing, and the line says THAT; an answer that could not be
+            # read says that instead, and blames no add-in. Never the
+            # default, and never this side's own copy of the settings file,
+            # which on some PCs is not the one Revit reads (Q-70).
             lines.append("      " + health.ask_to_keep_line(bridge.ask_to_keep_state(b)))
             b.close()
 

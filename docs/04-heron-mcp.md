@@ -131,12 +131,19 @@ A DRAFT's one run is always asked. A publish is asked whenever *Ask to Keep* is 
 > add-in and was sent to nobody, so a chat learned whether Revit asked only afterwards, from the verdict.
 > The add-in's lease-exempt `info` answer ([`BridgeServer.cs`](../revit/Heron.Bridge/BridgeServer.cs)) now
 > carries `askToKeep` - `HeronPermissions.AsksBeforeKeeping`, read at the moment of the call - and
-> `revit_health` prints one line under each connected Revit: *Ask to Keep is ON* (Revit shows a Keep or
-> Discard box), *Ask to Keep is off* (kept at once, Undo takes it back, a deletion is still asked about), or
-> *this Revit's Heron does not say* for an add-in that sends no such field - never the default
-> ([`heron_health.py`](../mcp/server/heron_health.py) `ask_to_keep_line`). It is said and never set: no
-> request carries it, and the executor still reads the switch for itself when it keeps. An optional field,
-> so the protocol number stands. It is the switch alone - a job's *keep the rest* grant is not reported.
+> `revit_health` prints one line under each connected Revit: *Ask to Keep is ON* (a change made through
+> `revit_change` is shown in Revit's Keep or Discard box and kept only on Keep), *Ask to Keep is off* (kept at
+> once, one entry in Revit's Undo list), *this Revit's Heron does not say* for an add-in that answered and
+> sent no such field, or *Heron could not read it from this Revit just now* when no usable answer came -
+> never the default ([`heron_health.py`](../mcp/server/heron_health.py) `ask_to_keep_line`). **On and off are
+> said of `revit_change` and name what is different**, as the paragraph above does: a delete is asked in its
+> own Delete box whatever the switch says ([D-142](decisions/D-142.md)), an export, save or sync is done
+> before the box opens, a change Revit counted nothing in and the rest of a job the modeller chose to keep
+> are kept unasked, and `revit_apply_move` never reads the switch - it keeps the preview it showed. It is
+> said and never set: no request carries it, and the executor still reads the switch for itself when it
+> keeps. An optional field, so the protocol number stands. It is the switch alone - whether a job's *keep
+> the rest* grant is held now is not reported, and a settings file the add-in could not read is reported as
+> off, the default the executor would act on at that instant.
 > `revit_health`'s description does not mention the line: the six always-loaded descriptions are at their
 > budget (§8.8), and the methods in `brain/skills/` are not reworded yet. Its write-gate line is still read
 > from the server's own copy of the settings ([Q-70](open-questions/tier-2.md), open). Held without Revit by

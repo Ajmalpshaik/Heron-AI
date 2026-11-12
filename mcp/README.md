@@ -104,7 +104,7 @@ the source without looking at the import lines. `tests/test_mcp_serves.py` holds
 | `heron_write` | the conversation half of writing: the model pin and the move's approval | the server |
 | `heron_failure` | why a call failed, and whether to try again; never a blind retry | the server |
 | `heron_run_records` | the short change report `revit_change` prints, and the run records `heron_run_record` pages from disk | the server |
-| `heron_health` | is Heron working, as one verdict - and, since 2026-11-12, the one line `revit_health` prints under each connected Revit for what that Revit's own add-in says of *Ask to Keep*: on, off, or *does not say* for an add-in that does not report it, never the default ([docs/04 §4](../docs/04-heron-mcp.md), not yet run in Revit - [Group NP](../docs/needs-checking/group-np.md)) | the server (`revit_health`), `heron_diagnose` |
+| `heron_health` | is Heron working, as one verdict - and, since 2026-11-12, the one line `revit_health` prints under each connected Revit for what that Revit's own add-in says of *Ask to Keep* for a change made through `revit_change`: on, off, *does not say* for an older add-in that does not report it, or *could not read it* when no usable answer came - never the default ([docs/04 §4](../docs/04-heron-mcp.md), not yet run in Revit - [Group NP](../docs/needs-checking/group-np.md)) | the server (`revit_health`), `heron_diagnose` |
 | `heron_diagnose` | self-diagnostics in one answer | the server (`heron_diagnose`), and its own command line |
 | `heron_running_code` | whether this process still runs the Python on disk (rule 5) | the server |
 | `heron_install_health` | checks an install end to end | its own command line and its tests |

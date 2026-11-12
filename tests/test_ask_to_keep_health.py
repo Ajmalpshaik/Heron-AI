@@ -37,13 +37,19 @@ WHAT IT PROVES
      reason; the field is named for the switch as Revit shows it, so that
      assertion stands as it was written.)
 
-  2. THE CLIENT READS THREE ANSWERS, NOT TWO. True, False, or None when the
-     add-in does not say: an older add-in, a refused or missing reply, or
-     anything that is not a JSON true or false. None is never turned into
-     off, which is only the default.
+  2. THE CLIENT READS FOUR ANSWERS, NOT TWO. True, False, a word of its own
+     for an add-in that answered and named no switch - an older add-in - and
+     None for no usable answer: a refused or missing reply, or a field that
+     is not a JSON true or false. Neither of the last two is ever turned
+     into off, which is only the default, and neither into the other.
 
-  3. THREE LINES A MODELLER CAN READ. On, off, and "does not say" - each one
-     line, in Revit's words, and the third claims neither of the other two.
+  3. FOUR LINES A MODELLER CAN READ. On and off are said of a change made
+     through revit_change and name what is different - a job's kept rest, a
+     change Revit counted nothing in, a delete, a publish, revit_apply_move -
+     because the first wording said them of every change and a review found
+     that untrue. An older add-in "does not say"; an answer that never came
+     "could not be read", and is not blamed on an older add-in. Each is one
+     line, in Revit's words, and the last two claim neither on nor off.
 
   4. revit_health ASKS EVERY CONNECTED REVIT, the one this chat holds and the
      ones it does not, and never answers from the server's own copy of the
@@ -55,6 +61,7 @@ WHAT IT DOES NOT
   an older Heron gets the "does not say" line, is NEEDS-CHECKING Group NP.
 """
 
+import ast
 import io
 import os
 import re
@@ -133,6 +140,25 @@ def every_cs():
                     yield os.path.join(dirpath, name)
 
 
+def named_in_text(source):
+    """Every place Python code names FIELD - [(kind, line)] - as a string, a
+    keyword argument or a bare name. A docstring or a comment that mentions
+    it is not code and is not counted."""
+    found = []
+    for node in ast.walk(ast.parse(source)):
+        if isinstance(node, ast.Constant) and node.value == FIELD:
+            found.append(("text", node.lineno))
+        elif isinstance(node, ast.keyword) and node.arg == FIELD:
+            found.append(("keyword", getattr(node.value, "lineno", 0)))
+        elif isinstance(node, ast.Name) and node.id == FIELD:
+            found.append(("name", node.lineno))
+    return sorted(found, key=lambda item: item[1])
+
+
+def named_in_code(path):
+    return named_in_text(read(path))
+
+
 class Reply(object):
     """A connected Revit that answers every request with one payload, and
     remembers which operations it was asked."""
@@ -181,97 +207,161 @@ def the_addin_says_it():
           "and nothing in the add-in reads %s off a request (Golden Rule 19): %s"
           % (FIELD, readers or "none"))
 
-    # AND THE PYTHON SIDE CANNOT SEND IT. A field in a request is a quoted
-    # name in a dictionary, so the quoted name is counted: once in the
-    # client, where the reply is read, and nowhere in the server's files.
-    quoted = '"%s"' % FIELD
-    client = read(CLIENT_PY)
-    served = dict((os.path.basename(path), read(path).count(quoted))
+    # AND THE PYTHON SIDE CANNOT SEND IT. Read as Python, not as text: the
+    # name as a string, as a keyword argument (`dict(askToKeep=...)`,
+    # `request(..., askToKeep=...)`) or as a name of its own. Once in the
+    # client, the string a reply is read by, and nowhere in the server's
+    # files. A count of the quoted name alone would miss a keyword.
+    client = named_in_code(CLIENT_PY)
+    line = (read(CLIENT_PY).split("\n")[client[0][1] - 1] if len(client) == 1 else "")
+    check(len(client) == 1 and client[0][0] == "text" and "reply.get(" in line,
+          "the client names %s once in its code, where it reads a reply - found %r"
+          % (FIELD, client))
+    served = dict((os.path.basename(path), named_in_code(path))
                   for path in TOOLS.server_files())
-    check(client.count(quoted) == 1 and 'reply.get(%s)' % quoted in client,
-          "the client names %s once, where it reads a reply - found %d"
-          % (FIELD, client.count(quoted)))
     check(not any(served.values()),
           "and no file of the server names it at all, so no request can carry it: %s"
-          % (dict((name, count) for name, count in served.items() if count) or "none"))
+          % (dict((name, found) for name, found in served.items() if found) or "none"))
+    planted = named_in_text("request('x', op_args=dict(%s=False))\n"
+                            "send(**{'%s': 0})\n" % (FIELD, FIELD))
+    check(sorted(kind for kind, _line in planted) == ["keyword", "text"],
+          "the reader has teeth: a keyword argument and a quoted key are both found - %r"
+          % (planted,))
 
 
-def the_client_reads_three_answers():
+def the_client_reads_four_answers():
     print()
-    print("2. The client reads three answers, not two")
+    print("2. The client reads four answers, not two")
     state = getattr(bridge, "ask_to_keep_state", None)
     check(state is not None,
           "the client can ask a Revit whether it asks before keeping a change")
     if state is None:
         def state(_session):                    # so the checks below RUN and FAIL
             return "(the client has no such reader)"
+    not_sent = getattr(bridge, "ASK_TO_KEEP_NOT_SENT", None)
+    check(isinstance(not_sent, str) and bool(not_sent),
+          "the client has a word of its own for a good answer that names no switch")
+    if not isinstance(not_sent, str) or not not_sent:
+        not_sent = "(the client has no such word)"
 
     check(state(Reply({"ok": True, FIELD: True})) is True,
           "a Revit that says true is ON")
     check(state(Reply({"ok": True, FIELD: False})) is False,
           "a Revit that says false is off")
     older = Reply({"ok": True, "inUse": False, "activeModel": "Project1"})
-    check(state(older) is None,
-          "an older add-in, which sends no such field, is None - never off")
+    got = state(older)
+    check(got == not_sent,
+          "an older add-in - a good answer with no such field - is NOT SENT, never off: %r"
+          % (got,))
     check(older.asked == ["info"],
           "and it was asked `info` alone - lease-exempt, so asking claims nothing: %r"
           % (older.asked,))
+
+    # NO USABLE ANSWER IS A DIFFERENT FACT FROM AN OLDER ADD-IN, and until the
+    # review of 2026-11-12 the two were one None: a Revit that did not answer
+    # was told its Heron was old. None now means only "could not be read".
     odd = [("null", None), ('the text "true"', "true"), ('the text "false"', "false"),
            ("the number 1", 1), ("the number 0", 0), ("a list", [True])]
     wrong = [name for name, value in odd
              if state(Reply({"ok": True, FIELD: value})) is not None]
     check(not wrong,
-          "anything that is not a JSON true or false is None, not a guess: %s"
-          % (wrong or "none"))
-    check(state(Reply({"ok": False, "error": "unauthorized", FIELD: True})) is None,
-          "a refused `info` says nothing, whatever it carries")
+          "a field that is there and is not a JSON true or false could not be read - "
+          "None, not a guess and not `older`: %s" % (wrong or "none"))
+    check(state(Reply({"ok": False, "error": "unauthorized", FIELD: True})) is None
+          and state(Reply({"ok": False, "error": "unauthorized"})) is None,
+          "a refused `info` could not be read, whatever it carries - never `older`")
     check(state(Reply(None)) is None and state(Reply("not a reply")) is None,
-          "and neither does no reply at all, or one that is not an object")
+          "and neither could no reply at all, or one that is not an object")
 
 
-def three_lines_a_modeller_reads():
+def four_lines_a_modeller_reads():
     print()
-    print("3. Three lines a modeller can read")
+    print("3. Four lines a modeller can read")
     line = getattr(HEALTH, "ask_to_keep_line", None)
     check(line is not None, "heron_health has the sentence for each answer")
     if line is None:
         def line(_asks):                        # so the checks below RUN and FAIL
             return ""
+    word = getattr(HEALTH, "ASK_TO_KEEP_NOT_SENT", None)
+    check(word is not None and word == getattr(bridge, "ASK_TO_KEEP_NOT_SENT", object()),
+          "heron_health and the client have ONE word for an add-in that sent nothing")
+    if not isinstance(word, str):
+        word = "(heron_health has no such word)"
 
-    on, off, unsaid = line(True), line(False), line(None)
+    on, off, older, unread = line(True), line(False), line(word), line(None)
     print("       on:     %s" % on)
     print("       off:    %s" % off)
-    print("       unsaid: %s" % unsaid)
+    print("       older:  %s" % older)
+    print("       unread: %s" % unread)
 
-    check("Ask to Keep is ON" in on and "Keep or Discard" in on
-          and "until" in on and "Keep" in on.split("until", 1)[-1],
-          "ON says Revit shows a Keep or Discard box and keeps nothing until Keep "
-          "is chosen")
+    # ON AND OFF SAY ONLY WHAT IS TRUE OF EVERY CHANGE THEY NAME. The first
+    # wording said "after a change from the chat ... keeps nothing until the
+    # modeller chooses Keep", and four kinds of change break that: a move
+    # applied from its preview never reads the switch (D-138 item 9), a
+    # publish is done before the box opens (D-126), a delete gets the Delete
+    # box instead (D-142), and a change Revit counted nothing in is kept
+    # unasked (D-126 item 6). So each line is scoped to revit_change and
+    # names what is different.
+    check("Ask to Keep is ON" in on and "Keep or Discard" in on and "revit_change" in on
+          and "only on Keep" in on,
+          "ON is about a change made through revit_change: shown in a Keep or Discard "
+          "box and kept only on Keep")
+    check("after a change from the chat" not in on and "keeps nothing until" not in on,
+          "and no longer says it of every change from the chat")
+    named = [what for what, words in (
+        ("the rest of a job the modeller chose to keep", "keep the rest"),
+        ("a change Revit counted nothing in", "counted nothing"),
+        ("a delete, which gets its own box", "Delete box"),
+        ("an export, save or sync, done before the box", "export, save or sync"),
+        ("revit_apply_move, which keeps its own preview", "revit_apply_move"))
+        if words not in on]
+    check(not named, "ON names what is different: missing %s" % (named or "nothing"))
+    check("Discard cannot" in on,
+          "and that Discard cannot take back what a publish sent out")
     check("kept at once" not in on, "and never that the change is kept at once")
-    check("Ask to Keep is off" in off and "kept at once" in off and "Undo" in off,
-          "off says the change is kept at once and Revit's Undo takes it back")
-    check("delete" in off.lower() and "asked" in off,
-          "and that a change which deletes elements is still asked about first (D-142)")
-    check("does not say" in unsaid and "Heron > AI Bridge > Settings" in unsaid,
-          "no answer says this Revit's Heron does not say, and where the switch is")
-    check(not re.search(r"\bis (ON|off)\b", unsaid) and "kept at once" not in unsaid
-          and "shows a Keep or Discard box" not in unsaid,
-          "and it claims neither ON nor off - no default is passed off as an answer")
-    check(len(set((on, off, unsaid))) == 3 and all((on, off, unsaid)),
-          "three answers, three different lines")
+    check("Ask to Keep is off" in off and "kept at once" in off and "revit_change" in off
+          and "Undo" in off,
+          "off is about a change made through revit_change: kept at once, one entry in "
+          "Revit's Undo list")
+    check("Delete box" in off and "asked" in off,
+          "and that a delete is still asked about first, in its own box (D-142)")
+    check("export, save or sync" in off and "Undo cannot" in off,
+          "and that Undo cannot take back an export, a save or a sync")
+    check("takes it back in one step" not in off,
+          "and no longer promises one Undo for every change")
 
+    check("does not say" in older and "older" in older
+          and "Heron > AI Bridge > Settings" in older,
+          "an add-in that sent nothing: this Revit's Heron does not say, it is an older "
+          "add-in, and where the switch is")
+    check("could not read" in unread and "Heron > AI Bridge > Settings" in unread,
+          "no usable answer: Heron could not read it from this Revit just now, and where "
+          "the switch is")
+    check("older" not in unread and "does not say" not in unread,
+          "and that line does not blame an older add-in for an answer that never came")
+    silent = [name for name, said in (("older", older), ("unread", unread))
+              if re.search(r"\bis (ON|off)\b", said) or "kept at once" in said
+              or "Keep or Discard" in said]
+    check(not silent,
+          "neither claims ON or off - no default is passed off as an answer: %s"
+          % (silent or "none"))
+    check(len(set((on, off, older, unread))) == 4 and all((on, off, older, unread)),
+          "four answers, four different lines")
+
+    lines = (("on", on), ("off", off), ("older", older), ("unread", unread))
     code_words = (FIELD, "write.", "heron.config", "`info`", "protocol", "boolean",
                   "null", "True", "False", "None", "add-in's", "config")
-    spoken = [(name, word) for name, said in (("on", on), ("off", off), ("unsaid", unsaid))
-              for word in code_words if word in said]
+    spoken = [(name, w) for name, said in lines for w in code_words if w in said]
     check(not spoken, "none of them uses a code word: %s" % (spoken or "none"))
-    check(all("\n" not in said and said == said.strip() for said in (on, off, unsaid)),
+    check(all("\n" not in said and said == said.strip() for _name, said in lines),
           "each is one line")
+    check(all(said.count("Ask to Keep") == 1 for _name, said in lines),
+          "and each names the switch once, so a reader can count one line per Revit")
     stray = [repr(value) for value in ("true", "false", 1, 0, "", [], "on")
-             if line(value) != unsaid]
+             if line(value) != unread]
     check(not stray,
-          "only a real true or false is an answer; anything else reads as not said: %s"
-          % (stray or "none"))
+          "only a real true or false is an answer, and only the client's own word is "
+          "`older`; anything else reads as could not read: %s" % (stray or "none"))
 
 
 def health_asks_every_revit():
@@ -302,8 +392,8 @@ def main():
     print("Whether Revit will ask Keep or Discard, said by the Revit that decides it")
     print("=" * 74)
     the_addin_says_it()
-    the_client_reads_three_answers()
-    three_lines_a_modeller_reads()
+    the_client_reads_four_answers()
+    four_lines_a_modeller_reads()
     health_asks_every_revit()
 
     print()
