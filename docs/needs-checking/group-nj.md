@@ -9,7 +9,8 @@
 
 The round trip a modeller runs every week - parameters out to a spreadsheet, edited, brought back - is two
 cards: `EXPORT_PARAMETERS_TO_CSV` writes the file, and `SET_PARAMETER_VALUES_BY_ID` reads it back through
-its `csvPath` since version 7. Both are PROVEN. **The file route of the second has no run in a real Revit
+its `csvPath` since version 7. Both were PROVEN when this was written (read again 2026-11-12: the second is
+at version 8 since 2026-11-11 and DRAFT until [Group NG](group-ng.md) proves it - run NG first). **The file route of the second has no run in a real Revit
 on record** - its proof ran rows by key ([row 5b-1527](../fragment-issues/section-5b-rows-401-425.md)) -
 and the method written for the round trip on 2026-11-11,
 [`parameters-csv-round-trip`](../../brain/skills/parameters-csv-round-trip.yaml), was written in a cloud

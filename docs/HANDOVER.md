@@ -216,8 +216,9 @@ under `%TEMP%\heron-work`. **Do not deploy the new add-in before item 3**: it ne
    scratch copy of *Snowdon Towers Sample Architectural*. DQ3d keeps one division, on your yes only.
    **Needs #855.**
 6. **[Group NJ](needs-checking/group-nj.md) — parameters out to a spreadsheet and back.** Proves the file
-   route of `SET_PARAMETER_VALUES_BY_ID`, which is PROVEN by a proof that never used a file, and measures
-   what the round trip overwrites. No job file: each row is asked in a chat. **Revit 2024** first, a scratch
+   route of `SET_PARAMETER_VALUES_BY_ID`, whose last signed proof (version 7) never used a file, and measures
+   what the round trip overwrites. **Run [Group NG](needs-checking/group-ng.md) first:** main raised the card
+   to version 8 on 2026-11-11 and it is DRAFT until NG proves it, so `revit_change` refuses it meanwhile. No job file: each row is asked in a chat. **Revit 2024** first, a scratch
    copy of a sample with walls and doors; **Changes** and **Publish** on, and **Ask to Keep ON** (row NJ12
    is the one run with it off). NJ9 needs a workshared copy and a second user, and is NOT RUN without them.
    **Needs #855** — row NJ10 is the DRAFT method `parameters-csv-round-trip`, which is only there.

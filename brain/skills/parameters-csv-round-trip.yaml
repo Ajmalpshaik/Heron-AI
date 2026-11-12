@@ -39,7 +39,10 @@ purpose: >
   2026-10-21, but under another rule - it wrote every row it could, where
   this one writes all or nothing - so that proof does not describe this
   route. NEEDS REAL REVIT: NEEDS-CHECKING Group NJ, FRAGMENT-ISSUES row
-  5b-1527. Say so to the modeller before step 5 on a model that matters, and
+  5b-1527. The return's card was raised to version 8 on 2026-11-11 (a key
+  with a * names many); while the served list shows it DRAFT, revit_change
+  refuses step 5 and the modeller is told so before the file is made
+  (NEEDS-CHECKING Group NG proves version 8). Say so to the modeller before step 5 on a model that matters, and
   offer a saved scratch copy first.
 
   THREE THINGS THE MODELLER IS TOLD BEFORE THE FILE IS MADE, because each
@@ -169,7 +172,8 @@ purpose: >
      CELLS THAT IS CANNOT BE SAID YET: the export's `rows` was counted
      before the file was trimmed, and nothing reads the file until Revit
      does. Say so, and read out rowsMatched and `written` afterwards.
-     Then SET_PARAMETER_VALUES_BY_ID (PROVEN, version 7 - see WHAT HAS RUN)
+     Then SET_PARAMETER_VALUES_BY_ID (its status is in the list served
+     after this method - see WHAT HAS RUN)
      through revit_change, with csvPath and blankCells only: `rows` left
      out (both given is refused), and no expect_from - the file's rows alone
      name the elements, and what is selected in Revit is never read.

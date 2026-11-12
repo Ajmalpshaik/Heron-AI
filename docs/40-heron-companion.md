@@ -1124,9 +1124,11 @@ Neither is a new defect of the page: the refusal is Article 11 doing its job. Th
 again when their fragments are PROVEN - [group FE](needs-checking/group-fe.md) for
 `SET_PARAMETER_VALUES_BY_ID`, [group AQ](needs-checking/group-aq.md) for `SET_AIR_TERMINAL_FLOW`.
 
-**Read again 2026-11-12, in a cloud container:** both cards now read PROVEN - `SET_PARAMETER_VALUES_BY_ID`
-on its proof of 2026-11-02 and `SET_AIR_TERMINAL_FLOW` on its proof of 2026-10-18 (each card's own `proof`
-block). The Table's Apply and Finalize have **not been run from the page** since; that run is still owed.
+**Read again 2026-11-12, in a cloud container:** `SET_AIR_TERMINAL_FLOW` reads PROVEN on its proof of
+2026-10-18. `SET_PARAMETER_VALUES_BY_ID` was signed PROVEN on 2026-11-02 (version 7) and is **DRAFT again
+at version 8** since 2026-11-11 - a key with a `*` names many - until
+[group NG](needs-checking/group-ng.md) proves it (each card's own header and `proof` block). So the
+Table's Apply and Finalize are refused again until then, and neither has been run from the page.
 
 **One thing the chat was told was wrong until 2026-11-11**
 ([row 5b-1133](fragment-issues/section-5b-rows-401-425.md)): the `heron_companion` tool's reply said the
@@ -1297,8 +1299,8 @@ Keep* is on (D-126). The page asks the modeller first; only on the model the das
 never on the DEMO. Declared `companion_dashboard_colour` and `companion_dashboard_clear_colours`, MODIFY.
 
 **Not built from phase 5, and why:** *fix from a row* (fill a parameter, rename to the standard, move to
-a workset) needed `SET_PARAMETER_VALUES_BY_ID` PROVEN first ([group FE](needs-checking/group-fe.md);
-its card reads PROVEN since 2026-11-02) and still needs the owner's word on which fixes; *purge unused families* is destructive - Article 7 asks the owner's yes
+a workset) needs `SET_PARAMETER_VALUES_BY_ID` PROVEN first (version 8 is DRAFT until
+[group NG](needs-checking/group-ng.md) is run; read 2026-11-12) and the owner's word on which fixes; *purge unused families* is destructive - Article 7 asks the owner's yes
 for that exact job, so it is not offered as a button.
 
 **Proved without Revit:** `tests/test_companion.py` - the hook gets the parameter and the read's model,

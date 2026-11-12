@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "edit a connector already in the family being edited - set it
 kind: action
 domain: revit.families
 capability: SET_FAMILY_CONNECTOR_ROLES
-version: 4
+version: 5
 source: OFFICIAL
 risk: MODIFY
 
@@ -58,10 +58,35 @@ purpose: >
   electrical values are), and an electrical connector's
   "powerFactorState=Lagging". A KEY ANOTHER DOMAIN'S CONNECTOR HAS NOT GOT
   IS REFUSED naming the connector and its domain - Allow Slope Adjustments
-  asked of a duct connector changes nothing. Version 3 was proved on Revit
-  2020 on 2026-10-18 (Group DD); that proof no longer describes the code and
-  is kept below as a record, and the fragment is DRAFT until it is proved
-  again (NEEDS-CHECKING Group IR).
+  asked of a duct connector changes nothing. Version 4 was proved on Revit
+  2020 on 2026-10-24 (the proof below).
+
+  **VERSION 5 (2026-11-11): THE SHAPE, AND A REFERENCE PLANE TO HOST ON**
+  (FRAGMENT-ISSUES rows 5b-1566 and 5b-1567). "shape=Round", Rectangular or
+  Oval changes a DUCT connector's Shape - a connector placed by hand comes in
+  Rectangular, and sizeParameters with one name was refused on it. The shape
+  is written through the connector's Shape parameter, only where that reads
+  the same number as the connector's own shape, and read back; sizeParameters
+  in the same call is counted against the NEW shape, so "shape=Round;
+  sizeParameters=Neck Diameter; system=Supply Air; flowDirection=In;
+  flowConfiguration=Preset; presetFlow=[Designed_Air_Flow]" finishes a
+  connector in ONE call. Where Revit keeps the shape read-only the refusal
+  says so, with the way round. "host=Neck Top" moves a connector onto the
+  REFERENCE PLANE named, with no solid face under it - Revit's Place on Work
+  Plane - so the solid it was made on can be deleted without taking the
+  connector with it. Revit 2023 and later only (ChangeHostReference); on
+  2020 to 2022 it is refused with the ways round - a thin solid with Visible
+  off, or the modeller places it on the work plane and this card sets the
+  rest by its id. The plane must be square to the way the connector points;
+  it is put back where it sat and pointing the way it pointed, read back. It
+  is NOT locked to planes there (row 5b-1568). Version 4's proof no longer
+  describes the code and is kept below as a record; the card is DRAFT until
+  NEEDS-CHECKING Group NO is run.
+
+  **A CONNECTOR'S VALUES ARE SET BY ID HERE** (row 5b-1569). A connector is
+  named by the id REPORT_FAMILY_CONNECTORS prints, or its UniqueId;
+  SET_PARAMETER_VALUES_BY_ID writes elements found by category or UniqueId
+  and finds no category for a family's connectors.
 
   **REVIT DECIDES WHICH SYSTEM A CONNECTOR MAY TAKE.** Each connector is
   asked (IsSystemClassificationValid) before anything changes, so a system
@@ -97,7 +122,9 @@ contract:
     # "name=value" with `;` between, only the settings to change:
     # system, flowDirection, flowConfiguration, lossMethod, lossCoefficient,
     # pressureDrop (Pa), description, flip, sizeParameters (diameter; or
-    # width, height), utility (yes/no); on a PIPE connector
+    # width, height - counted against the shape it will have), host (a
+    # reference plane's name, Revit 2023 on), utility (yes/no); on a DUCT
+    # connector shape (Round, Rectangular, Oval); on a PIPE connector
     # allowSlopeAdjustments (yes/no - Revit's "Allow Slope Adjustments" box);
     # on a duct or pipe connector flowFactor (0-1 or %) and presetFlow (L/s,
     # m3/h or cfm); on a FITTING's connector - duct, pipe, cable
@@ -260,8 +287,21 @@ compatibility-note: >
   flow is filed under PG_GEOMETRY / GroupTypeId.Geometry or PG_MECHANICAL /
   GroupTypeId.Mechanical the same way. Which domains' connectors carry
   Utility, and whether a pipe connector's Allow Slope Adjustments box is the
-  element's own parameter, is what Group IR measures; not yet run in Revit
-  when this was written.
+  element's own parameter, is what Group IR measures; not yet run in Revit.
+  Version 5 adds `ConnectorElement.Shape` (get only, 2020 to 2027 - no
+  setter on any release), the built-in parameter MEP_PROFILE_TYPE_PARAM
+  ("Shape" in the 2020 and 2027 RevitAPI.xml), the enum ConnectorProfileType
+  (Invalid -1, Round 0, Rectangular 1, Oval 2 on all eight), and
+  `ConnectorElement.ChangeHostReference(Reference)`, present 2023 to 2027
+  only and reached by reflection - the 2027 RevitAPI.xml says a connector
+  on a planar face alone is placed at the plane's origin and may be moved
+  along it later. `ReferencePlane.GetReference` and
+  `ElementTransformUtils.MoveElement`, 2020 to 2027 (tools/api-surface
+  --members, read 2026-11-11 off all eight releases). Whether the Shape
+  parameter is writable, whether its numbers are ConnectorProfileType's, and
+  whether ChangeHostReference takes a reference plane's reference as its
+  "planar face" are what Group NO measures; not yet run in Revit. Compiles
+  on 2020 to 2027 (tools/check-fragments-compile.py, 2026-11-11).
 
 # ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
@@ -287,6 +327,19 @@ compatibility-note: >
 #                                                   on a PIPE connector
 #   "turn off slope adjustment on the pipe connectors" -> here,
 #                                                   "allowSlopeAdjustments=no"
+#   "make the connector round"                   -> here, "shape=Round" on a duct
+#                                                   connector (v5), with its
+#                                                   sizeParameters in the same
+#                                                   call
+#   "move the connector onto the reference plane" -> here, "host=<plane>"
+#                                                   (v5, Revit 2023 on)
+#   "set this connector's parameter by its id"   -> here, the connector named
+#                                                   by its id - not
+#                                                   SET_PARAMETER_VALUES_BY_ID
+#   "lock the connector to the reference planes" -> NOTHING does it yet (row
+#                                                   5b-1568): align and lock by
+#                                                   hand, or keep it on a face
+#                                                   of geometry locked to them
 #   "set the connector angle to 90 degrees"      -> here, "angle=90" on a
 #                                                   fitting's connector
 #   "slope these drain pipes at 1:100"           -> SET_MEP_SLOPE - pipes in
@@ -318,3 +371,10 @@ utterances:
   - allow slope adjustments on the connector
   - tick allow slope adjustment on the outlet connector
   - turn off slope adjustment on the pipe connectors
+  - change the duct connector shape to round
+  - make the connector oval
+  - host the connector on the reference plane instead of the solid face
+  - move the connector onto the reference plane
+  # ADDED 2026-11-11 (row 5b-1569): claimed by this card's routing table and,
+  # undeclared, reached LINK_FAMILY_PARAMETER on the model backend.
+  - set this connector's parameter by its id

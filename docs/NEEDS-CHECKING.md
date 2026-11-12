@@ -1458,6 +1458,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-nf.md`](needs-checking/group-nf.md)
 
+## Group NG - one value, blank or filled, into MANY types in ONE call: `SET_FAMILY_TYPE_VALUES` version 5 in a family, `SET_PARAMETER_VALUES_BY_ID` version 8 in a project (2026-11-11)
+
+**Its own file:** [`needs-checking/group-ng.md`](needs-checking/group-ng.md)
+
 ## Group NH - the modeller clicks in Revit to answer the chat: `PICK_ON_SCREEN` (2026-11-11)
 
 **Its own file:** [`needs-checking/group-nh.md`](needs-checking/group-nh.md)
@@ -1485,6 +1489,10 @@ Step 6 is finished, and not before. At that point:
 ## Group NN - a reference plane at an angle: `CREATE_REFERENCE_PLANES` version 2 (2026-11-12)
 
 **Its own file:** [`needs-checking/group-nn.md`](needs-checking/group-nn.md)
+
+## Group NO - a family connector's shape changed, and a connector moved onto a reference plane: `SET_FAMILY_CONNECTOR_ROLES` version 5 (2026-11-11)
+
+**Its own file:** [`needs-checking/group-no.md`](needs-checking/group-no.md)
 
 ## Group NP - `revit_health` says, under each connected Revit, whether that Revit will ask Keep or Discard: the add-in's `info` answer now carries the Ask to Keep switch (2026-11-12)
 
