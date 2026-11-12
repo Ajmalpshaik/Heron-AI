@@ -48,6 +48,11 @@ WHAT IT PROVES
      on a register built in a scratch folder, never the real one. (Two
      branches that both write row-5b-N.md collide in git before any suite
      runs: one name, two files.)
+
+  A REGISTER THAT CANNOT BE READ FAILS HERE, IN A SENTENCE. Checks 5 to 7
+  read the register as one text; when the reader refuses it - a row's own
+  file that is not what its name says - this suite says so and names
+  check-docs.py, where it used to die with AttributeError.
 """
 
 import collections
@@ -158,6 +163,66 @@ def across_layouts():
         shutil.rmtree(top, ignore_errors=True)
 
 
+def three_gates(src):
+    """Checks 5 to 7, on SRC - the register as one text."""
+    print("\n5. every row of both sections has exactly three cells")
+    # THIS IS A GATE AND NOT A REPORT, which the four above deliberately are
+    # not. A malformed row is not a judgement call: the state cell is read by
+    # position, so a literal pipe anywhere in a row's text makes the tool read
+    # a fragment of a sentence as the state. Rows 15, 156 and 163 each did
+    # that, silently, and row 162 said OPEN for a day while the sweep counted
+    # it neither open nor settled. Write a literal pipe as \\| - in a code
+    # span too, which is where all four hid.
+    # READ AS THE TOOL READS IT - the register as one text, every section's
+    # file back in its place - since the rows of 5 and 5b have their own
+    # files and the page alone holds none of them.
+    opened = src.index(OD.SECTION_START)
+    body_text = src[opened:src.index(OD.SECTION_END)]
+    malformed = []
+    for line in body_text.split("\n"):
+        match = OD.ROW.match(line)
+        if not match:
+            continue
+        cells = OD.CELL.split(line)
+        if len(cells) != 5:
+            malformed.append((match.group(1), len(cells) - 2))
+    check(not malformed,
+          "no row holds a literal | (%s)"
+          % (", ".join("row %s has %d cells" % m for m in malformed)
+             if malformed else "all rows have 3"))
+
+    print("\n6. and no blank line splits either table")
+    # A BLANK LINE ENDS A MARKDOWN TABLE. Twenty of them sat between rows of
+    # sections 5 and 5b until 2026-09-21, so GitHub rendered the register as
+    # about ten separate one-row tables, most without a header - while every
+    # tool that reads it line by line saw nothing wrong. The register is read
+    # by people as well as by open-defects.py, and this is the half no
+    # checker was watching.
+    split = []
+    for label, opened, closed in (("5", OD.SECTION_START, OD.SECTION_5B),
+                                  ("5b", OD.SECTION_5B, OD.SECTION_END)):
+        chunk = src[src.index(opened):src.index(closed)].split("\n")
+        for i in range(1, len(chunk) - 1):
+            if (not chunk[i].strip() and chunk[i - 1].startswith("|")
+                    and chunk[i + 1].startswith("|")):
+                split.append(label)
+    check(not split,
+          "no blank line sits between two table rows%s"
+          % ("" if not split else " - %d in section(s) %s"
+             % (len(split), ", ".join(sorted(set(split))))))
+
+    print("\n7. and no number is used twice in either table (5b-163)")
+    # A GATE, FOR THE REASON CHECK 5 IS ONE. Two sessions working at once each
+    # appended rows 158 and 159 to section 5b on 2026-09-23, and every gate
+    # and suite exited 0 on the tree that kept both - so "row 5b-158" named
+    # two rows. test_owner_queue already refuses the same clash in
+    # NEEDS-CHECKING; this is the register's half of it.
+    twice = used_twice()
+    check(not twice,
+          "every row number is used once%s"
+          % ("" if not twice else " - repeated: %s" % ", ".join(twice)))
+
+
 def main():
     print("1. the detector fires on the shape it was written for")
     # ROW 127 AS IT ACTUALLY STOOD after PR #202 - the fix appended under the
@@ -226,63 +291,18 @@ def main():
                   "not a rule this suite enforces")
         check(True, "reported either way - a finding is a question")
 
-    print("\n5. every row of both sections has exactly three cells")
-    # THIS IS A GATE AND NOT A REPORT, which the four above deliberately are
-    # not. A malformed row is not a judgement call: the state cell is read by
-    # position, so a literal pipe anywhere in a row's text makes the tool read
-    # a fragment of a sentence as the state. Rows 15, 156 and 163 each did
-    # that, silently, and row 162 said OPEN for a day while the sweep counted
-    # it neither open nor settled. Write a literal pipe as \\| - in a code
-    # span too, which is where all four hid.
-    # READ AS THE TOOL READS IT - the register as one text, every section's
-    # file back in its place - since the rows of 5 and 5b have their own
-    # files and the page alone holds none of them.
+    # A REGISTER THAT CANNOT BE READ IS A FAILED CHECK, NOT A TRACEBACK. One
+    # row's own file that is not what its name says stops the reader
+    # (RegisterBroken), `OD.source()` is then None, and until 2026-11-12 the
+    # next line called .index on it: this suite died with AttributeError and
+    # named nothing. open-defects.py itself says "Could not read the
+    # register" and exits 0 (row 5b-1565), so this is where it turns red.
     src = OD.source()
-    opened = src.index(OD.SECTION_START)
-    body_text = src[opened:src.index(OD.SECTION_END)]
-    malformed = []
-    for line in body_text.split("\n"):
-        match = OD.ROW.match(line)
-        if not match:
-            continue
-        cells = OD.CELL.split(line)
-        if len(cells) != 5:
-            malformed.append((match.group(1), len(cells) - 2))
-    check(not malformed,
-          "no row holds a literal | (%s)"
-          % (", ".join("row %s has %d cells" % m for m in malformed)
-             if malformed else "all rows have 3"))
-
-    print("\n6. and no blank line splits either table")
-    # A BLANK LINE ENDS A MARKDOWN TABLE. Twenty of them sat between rows of
-    # sections 5 and 5b until 2026-09-21, so GitHub rendered the register as
-    # about ten separate one-row tables, most without a header - while every
-    # tool that reads it line by line saw nothing wrong. The register is read
-    # by people as well as by open-defects.py, and this is the half no
-    # checker was watching.
-    split = []
-    for label, opened, closed in (("5", OD.SECTION_START, OD.SECTION_5B),
-                                  ("5b", OD.SECTION_5B, OD.SECTION_END)):
-        chunk = src[src.index(opened):src.index(closed)].split("\n")
-        for i in range(1, len(chunk) - 1):
-            if (not chunk[i].strip() and chunk[i - 1].startswith("|")
-                    and chunk[i + 1].startswith("|")):
-                split.append(label)
-    check(not split,
-          "no blank line sits between two table rows%s"
-          % ("" if not split else " - %d in section(s) %s"
-             % (len(split), ", ".join(sorted(set(split))))))
-
-    print("\n7. and no number is used twice in either table (5b-163)")
-    # A GATE, FOR THE REASON CHECK 5 IS ONE. Two sessions working at once each
-    # appended rows 158 and 159 to section 5b on 2026-09-23, and every gate
-    # and suite exited 0 on the tree that kept both - so "row 5b-158" named
-    # two rows. test_owner_queue already refuses the same clash in
-    # NEEDS-CHECKING; this is the register's half of it.
-    twice = used_twice()
-    check(not twice,
-          "every row number is used once%s"
-          % ("" if not twice else " - repeated: %s" % ", ".join(twice)))
+    if src is None:
+        check(False, "the register could not be read, so checks 5 to 7 read nothing - "
+                     "run python tools/check-docs.py, which names the file that is wrong")
+    else:
+        three_gates(src)
 
     print("\n8. and a number is used twice wherever its two rows are kept (5b-1564)")
     across_layouts()
