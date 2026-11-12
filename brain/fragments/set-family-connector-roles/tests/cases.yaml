@@ -117,6 +117,60 @@ positive:
       has none is refused by name - which domains carry it is RECORDED, not
       assumed (Group IR)
 
+  - given: >
+      VERSION 5 (Group NO). A SAVED scratch Mechanical Equipment family from
+      the metric template - never the owner's own families - with one box
+      and a duct connector placed BY HAND on its top face (Revit makes it
+      Rectangular 304.8 x 304.8), named by the plane the face lies on, "Box
+      Top", and a Length type parameter "Neck Diameter" = 250; connectors
+      "Box Top", settings "shape=Round; sizeParameters=Neck Diameter"
+    expect: >
+      changed names "shape rectangular -> round" and "diameter <- Neck
+      Diameter"; connectorReport reads "round 250 mm (diameter <- Neck
+      Diameter)"; the connector's Properties show Shape Round. RECORD what
+      the Shape parameter read before (the number Heron checks against
+      ConnectorProfileType) and whether Revit let it be written at all
+
+  - given: >
+      the same family, the connector Round; connectors "Box Top", settings
+      "shape=Oval; sizeParameters=Box Width, Box Depth", both Length type
+      parameters; then "shape=Rectangular" alone
+    expect: >
+      oval, width and height driven by them; then rectangular, read back.
+      After Round to Oval a finding names the diameter tie its old shape
+      used and Revit no longer sizes it by
+
+  - given: >
+      ONE CALL FOR A CONNECTOR'S WHOLE SET-UP (row 5b-1566) - the
+      hand-placed Rectangular connector again, an Air Flow type parameter
+      "Designed_Air_Flow"; settings "shape=Round; sizeParameters=Neck
+      Diameter; system=Supply Air; flowDirection=In;
+      flowConfiguration=Preset; presetFlow=[Designed_Air_Flow]"
+    expect: >
+      all six changed in one call and read back - Supply Air, flow In,
+      Preset, Flow driven by Designed_Air_Flow, round and sized
+
+  - given: >
+      HOST, Revit 2024 (ChangeHostReference is 2023 on). The family above
+      with a reference plane "Neck Top" lying exactly on the box's top face,
+      and the connector made on that face by ADD_FAMILY_CONNECTOR, KEPT;
+      connectors "Box Top", settings "host=Neck Top"
+    expect: >
+      changed names "hosted on the reference plane Neck Top" at the point it
+      sat; it still points up; the finding says it is not locked. Then the
+      box deleted by hand: the connector STAYS - the only evidence Revit
+      gives that it moved off the face. RECORD whether Revit took a
+      reference plane's reference as its "planar face" at all; if it throws,
+      the card is changed, not proved
+
+  - given: >
+      the same, rolled back; settings "host=Neck Top; flip=true" (review
+      comment on PR #857: the two read-backs once contradicted each other)
+    expect: >
+      hosted on Neck Top at the point it sat, and pointing DOWN - the flip
+      runs after the hosting; changed names both. Before the fix this rolled
+      back every time
+
 negative:
   - given: connectors "Port Middle", where no connector lies on such a plane
     expect: refused, naming the family's connectors - nothing changed. MEASURED 2026-10-04
@@ -186,6 +240,39 @@ negative:
 
   - given: connectors "Outlet Face", settings "presetFlow=-5 L/s"
     expect: refused - a flow of 0 or more - and nothing changed
+
+  - given: >
+      VERSION 5. connectors "Outlet Face" (a pipe connector), settings
+      "shape=Round"
+    expect: >
+      refused naming the connector and its domain - Shape is a duct
+      connector's - and nothing changed
+
+  - given: >
+      the hand-placed Rectangular duct connector; settings
+      "sizeParameters=Neck Diameter" alone (the 2026-11-11 failure)
+    expect: >
+      refused - rectangular: TWO length parameters - with the hint to give
+      "shape=Round" in the same call; nothing changed
+
+  - given: settings "shape=Triangle"
+    expect: refused - not Round, Rectangular or Oval - nothing changed
+
+  - given: Revit 2020 (no ChangeHostReference); settings "host=Neck Top"
+    expect: >
+      refused naming the release, ChangeHostReference arriving in 2023, and
+      the two ways round - a thin solid with Visible off, or placing it by
+      hand on the work plane - nothing changed
+
+  - given: >
+      Revit 2024; connectors "Box Top" (pointing up), settings
+      "host=Center (Left/Right)" - a vertical plane
+    expect: >
+      refused - the plane is not square to the way the connector points, it
+      would turn it - nothing changed
+
+  - given: settings "host=ZZZ No Such Plane" on Revit 2024
+    expect: refused - no reference plane is called that - nothing changed
 
   - given: a project in front
     expect: notAFamily true and nothing changed
