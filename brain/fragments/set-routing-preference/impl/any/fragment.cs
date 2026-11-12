@@ -22,10 +22,14 @@
 // handed straight back in internal feet, so no units call is made - which is
 // what keeps this clear of the 2021 units move.
 //
-// READ BACK, NEVER TRUST THE CALL. AddRule returns nothing and throws nothing
-// when the part is wrong for the group, so the part id is read off the rule
-// again afterwards and compared. That comparison is the fragment; the swap
-// itself is two lines.
+// READ BACK, NEVER TRUST THE CALL. AddRule returns nothing. This said "and
+// throws nothing when the part is wrong for the group" until 2026-11-11; that
+// was never measured, and Revit's own reference says the opposite on every
+// release 2020 to 2027 - ArgumentException, "the rule is not valid for this
+// group (e.g. an elbow may not be added to the junction group)". Which Revit
+// really does is still not measured, so BOTH are handled the same way: a
+// throw, or a rule that does not read back, takes the swap back. The part id
+// AND the number of rules are read again afterwards - see version 2 below.
 //
 // A PART NAMED BUT NOT FOUND RETURNS THE NEAR MISSES. "Copper" and
 // "Copper - K" are different segments, and choosing one for the caller is a
@@ -51,6 +55,23 @@
 // the read-back now sit in one SubTransaction, kept only when the rule reads
 // back as asked and rolled back otherwise, so a refusal leaves that type's
 // routing preferences exactly as they were (Constitution Article 8).
+//
+// "READS BACK AS ASKED" IS THE PART AND THE COUNT. If AddRule added nothing
+// and the NEXT rule already pointed at the part asked for, the rule now at
+// that index reads as asked while one rule has been deleted. So the group
+// must also hold as many rules as it did before, or the swap is taken back.
+//
+// "PUT BACK" IS READ, NEVER SAID ON TRUST. After a swap is rolled back the
+// rule is read again - how many rules, which part, how many criteria - and
+// only when all three read as they did is the type named in `unverified` as
+// put back. If they do not, this throws: the add-in then rolls the WHOLE job
+// back and says so, which is the one thing left that can still restore it.
+//
+// SEVERAL TYPES ARE NOT ALL-OR-NOTHING, and that is said in the answer. Each
+// type's swap is its own SubTransaction, as each column is in ATTACH_COLUMNS
+// and each duct in CONVERT_TO_FLEX_DUCT: a type whose swap is refused is put
+// back and named, and the types already changed STAY changed. It is still one
+// Undo entry. Only a put-back that does not read as before stops everything.
 
 var findings = new List<string>();
 var rulesChanged = 0;
@@ -107,6 +128,7 @@ if (proceed && wantedName.Length == 0)
 // tests/test_binding_note.py compiles everything between this marker line and
 // END PART NAMES into Heron.BindingNote.TestHost and asks it row 5b-1120's own
 // names, beside the binder's rule - so the matching is tested with no Revit.
+// The rule for keeping a swap sits here too, for the same reason (5b-1549).
 // Keep both marker lines, and keep every Revit type out from between them.
 //
 // A name fits a part when it is the part's own name, or "Family: Type" for a
@@ -132,6 +154,13 @@ Func<IList<string>, IList<string>, string, List<int>> partsNamed = (families, na
         if (namesPart(families[i], names[i], wanted)) fits.Add(i);
     return fits;
 };
+
+// A swap is kept only when the group holds as many rules as before AND the
+// rule at the index points at the part asked for. The count is what catches a
+// rule that was removed and never added again while its neighbour happened to
+// point at the same part.
+Func<int, int, bool, bool> swapHeld = (rulesBefore, rulesAfter, pointsAtWanted) =>
+    rulesAfter == rulesBefore && pointsAtWanted;
 // ---- END PART NAMES ---------------------------------------------------------
 
 // A part the way Revit's type selector writes it: "Family: Type" for a
@@ -148,6 +177,37 @@ Func<Element, string> partLabel = part =>
     }
     return family.Length == 0 ? part.Name : family + ": " + part.Name;
 };
+
+// A LIST A PERSON CAN READ. "Standard" is the type name of dozens of loaded
+// families in an ordinary project, and every loaded family is looked through
+// because Revit has no list of what a group will take. So what is listed is
+// capped, duct and pipe fittings first - the ones a routing rule is likeliest
+// to mean - then by name, and the answer says how many were left off.
+var listLimit = 12;
+var ductFittings = new ElementId(BuiltInCategory.OST_DuctFitting);
+var pipeFittings = new ElementId(BuiltInCategory.OST_PipeFitting);
+Func<Element, bool> isFitting = part =>
+{
+    try
+    {
+        var category = part.Category;
+        return category != null && (category.Id == ductFittings || category.Id == pipeFittings);
+    }
+    catch (Exception) { return false; }
+};
+Func<List<Element>, int> listParts = which =>
+{
+    var ordered = which
+        .OrderBy(part => isFitting(part) ? 0 : 1)
+        .ThenBy(part => partLabel(part), StringComparer.OrdinalIgnoreCase)
+        .ToList();
+    foreach (var each in ordered.Take(listLimit)) nearMisses.Add(partLabel(each));
+    return Math.Max(0, ordered.Count - listLimit);
+};
+Func<int, string> leftOff = more => more == 0
+    ? "They are listed"
+    : string.Format("The first {0} are listed, duct and pipe fittings first, and {1} more are not",
+        listLimit, more);
 
 Element wantedPart = null;
 if (proceed)
@@ -199,7 +259,9 @@ if (proceed)
     {
         // TWO PARTS OF ONE NAME ARE NEVER CHOSEN BETWEEN. Version 1 took the
         // first, and which came first was the collector's order.
-        foreach (var at in fitting) nearMisses.Add(partLabel(parts[at]));
+        var several = new List<Element>();
+        foreach (var at in fitting) several.Add(parts[at]);
+        var unlisted = listParts(several);
 
         // Only a bare type name can fit twice - "Family: Type" is one type - so
         // for a fitting the parts that fit are types of different families,
@@ -207,27 +269,29 @@ if (proceed)
         // through, because Revit has no list of what a group will take.
         findings.Add(wantedGroup == RoutingPreferenceRuleGroupType.Segments
             ? string.Format("{0} segments are called '{1}', so the name does not say which one is "
-                + "meant, and nothing was changed. They are listed.", fitting.Count, wantedName)
+                + "meant, and nothing was changed. {2}.", fitting.Count, wantedName, leftOff(unlisted))
             : string.Format("'{0}' is the type name of {1} loaded families, so it does not say which "
-                + "one is meant, and nothing was changed. They are listed - name the one meant as "
-                + "'Family: Type', the way Revit's type selector writes it.", wantedName, fitting.Count));
+                + "one is meant, and nothing was changed. {2} - name the one meant as 'Family: Type', "
+                + "the way Revit's type selector writes it.", wantedName, fitting.Count,
+                leftOff(unlisted)));
         proceed = false;
     }
     else
     {
+        var close = new List<Element>();
         foreach (var candidate in parts)
         {
-            var written = partLabel(candidate);
-            if (written.IndexOf(wantedName, StringComparison.OrdinalIgnoreCase) >= 0)
-                nearMisses.Add(written);
+            if (partLabel(candidate).IndexOf(wantedName, StringComparison.OrdinalIgnoreCase) >= 0)
+                close.Add(candidate);
         }
+        var closeUnlisted = listParts(close);
 
         findings.Add(string.Format("No {0} part is called '{1}' in this project. {2}",
             wantedGroup, wantedName,
-            nearMisses.Count == 0
+            close.Count == 0
                 ? "Nothing came close either, so check the name in Manage > MEP Settings."
-                : string.Format("{0} name(s) came close and are listed - say which one is meant.",
-                    nearMisses.Count)));
+                : string.Format("{0} name(s) came close. {1} - say which one is meant.",
+                    close.Count, leftOff(closeUnlisted))));
         proceed = false;
     }
 }
@@ -312,7 +376,8 @@ foreach (var type in typesToChange)
         continue;
     }
 
-    var oldName = partLabel(doc.GetElement(old.MEPPartId));
+    var oldPartId = old.MEPPartId;
+    var oldName = partLabel(doc.GetElement(oldPartId));
 
     // THE CRITERIA COME OFF FIRST. See the header - this is the whole reason
     // the rule is rebuilt rather than replaced outright.
@@ -353,20 +418,29 @@ foreach (var type in typesToChange)
             manager.RemoveRule(wantedGroup, ruleIndex);
             manager.AddRule(wantedGroup, rebuilt, ruleIndex);
 
-            // READ BACK, BEFORE IT IS KEPT. See the header.
+            // READ BACK, BEFORE IT IS KEPT: the part at the index AND how many
+            // rules the group holds. See the header.
             RoutingPreferenceRule after = null;
             try { after = manager.GetRule(wantedGroup, ruleIndex); }
             catch (Exception) { after = null; }
+            var rulesAfter = -1;
+            try { rulesAfter = manager.GetNumberOfRules(wantedGroup); }
+            catch (Exception) { rulesAfter = -1; }
+            var pointsAtWanted = after != null && after.MEPPartId != null
+                && after.MEPPartId.Equals(wantedPart.Id);
 
-            if (after != null && after.MEPPartId != null && after.MEPPartId.Equals(wantedPart.Id))
+            if (swapHeld(ruleCount, rulesAfter, pointsAtWanted))
             {
                 swap.Commit();
             }
             else
             {
                 swap.RollBack();
-                notSwapped = string.Format("did not read back as '{0}' - Revit took the call without "
-                    + "complaint and the rule did not point there", partLabel(wantedPart));
+                notSwapped = pointsAtWanted
+                    ? string.Format("left the group with {0} rule(s) where it had {1}",
+                        rulesAfter < 0 ? "an unreadable number of" : rulesAfter.ToString(), ruleCount)
+                    : string.Format("did not read back as '{0}' - Revit took the call without "
+                        + "complaint and the rule did not point there", partLabel(wantedPart));
             }
         }
         catch (Exception error)
@@ -378,8 +452,40 @@ foreach (var type in typesToChange)
 
     if (notSwapped != null)
     {
-        unverified.Add(string.Format("'{0}' {1} rule {2} {3}. The rule was put back as it was, "
-            + "still pointing at '{4}'.", type.Name, wantedGroup, ruleIndex, notSwapped, oldName));
+        // PUT BACK IS READ, NOT SAID ON TRUST. See the header. Outside every
+        // try on purpose: what is thrown here has to leave the fragment.
+        var rulesNow = -1;
+        var partNow = ElementId.InvalidElementId;
+        var criteriaNow = -1;
+        try
+        {
+            var managerNow = type.RoutingPreferenceManager;
+            rulesNow = managerNow.GetNumberOfRules(wantedGroup);
+            var ruleNow = managerNow.GetRule(wantedGroup, ruleIndex);
+            partNow = ruleNow.MEPPartId;
+            criteriaNow = ruleNow.NumberOfCriteria;
+        }
+        catch (Exception) { }
+
+        var asBefore = rulesNow == ruleCount && partNow != null && partNow.Equals(oldPartId)
+            && criteriaNow == criteriaSeen;
+        if (!asBefore)
+        {
+            throw new InvalidOperationException(string.Format("'{0}' {1} rule {2} {3}, and after "
+                + "that was taken back the rule does NOT read as it did before: {4} rule(s) where "
+                + "there were {5}, {6} criterion(s) where there were {7}, and it {8} '{9}'. Heron "
+                + "stopped here so that the whole job is rolled back - check the type's Routing "
+                + "Preferences in Revit before anything else is done to it.",
+                type.Name, wantedGroup, ruleIndex, notSwapped,
+                rulesNow < 0 ? "an unreadable number of" : rulesNow.ToString(), ruleCount,
+                criteriaNow < 0 ? "an unreadable number of" : criteriaNow.ToString(), criteriaSeen,
+                partNow != null && partNow.Equals(oldPartId) ? "still points at" : "no longer points at",
+                oldName));
+        }
+
+        unverified.Add(string.Format("'{0}' {1} rule {2} {3}. The rule was put back and read "
+            + "again: {4} rule(s), {5} size window(s), still pointing at '{6}', as before.",
+            type.Name, wantedGroup, ruleIndex, notSwapped, rulesNow, criteriaNow, oldName));
         continue;
     }
 
@@ -397,4 +503,12 @@ if (rulesChanged > 0)
 {
     findings.Add("Editing a type changes EVERY element of that type, not only the ones handed "
         + "in. One Ctrl+Z puts all of this back in a single step.");
+}
+
+// NOT ALL-OR-NOTHING, SAID. See the header.
+if (rulesChanged > 0 && unverified.Count > 0)
+{
+    findings.Add(string.Format("{0} rule(s) were changed and are part of this job; {1} could not "
+        + "be and were put back as they were. The job is not all-or-nothing: keeping it keeps the "
+        + "{0} that changed, and one Undo takes them back.", rulesChanged, unverified.Count));
 }

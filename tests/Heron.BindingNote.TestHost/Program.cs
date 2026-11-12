@@ -379,7 +379,10 @@ namespace Heron.BindingNote.TestHost
         ///
         /// WHAT THIS CANNOT SEE: which parts a project holds, and that the
         /// fragment binds only when ONE fits. The suite reads the second off
-        /// the fragment's code; the first needs a Revit.
+        /// the fragment's code; the first needs a Revit. The same goes for
+        /// the swap rule at the end: what it answers is checked here, that
+        /// the fragment commits on nothing else is read by the suite, and
+        /// what Revit does to the rules needs a Revit.
         /// </summary>
         private static void Parts()
         {
@@ -474,6 +477,36 @@ namespace Heron.BindingNote.TestHost
             Check(agree,
                   "every spelling HeronBindingNote.TypeNameMatches takes for a type names that "
                   + "one fitting here");
+
+            // ROW 5b-1549, THE SWAP THAT IS KEPT. The old rule is removed and
+            // the new one added at the same index. A review of that change
+            // found the read-back asked only which part the rule AT THAT INDEX
+            // pointed at: where AddRule added nothing and the next rule
+            // already pointed at the part asked for, that reads as asked with
+            // one rule deleted. The fragment's rule now takes the count too,
+            // and it is the fragment's own line that is asked here. Without
+            // it, the part alone stands in - the rule as it first stood.
+            var heldRule = handed == null
+                ? null
+                : handed.GetMethod("Held", BindingFlags.NonPublic | BindingFlags.Static);
+            Check(heldRule != null,
+                  "the fragment's own rule for keeping a swap was handed over and compiled in");
+            Func<int, int, bool, bool> held = (rulesBefore, rulesAfter, pointsAtWanted) =>
+                heldRule != null
+                    ? (bool)heldRule.Invoke(null, new object[] { rulesBefore, rulesAfter, pointsAtWanted })
+                    : pointsAtWanted;
+
+            Check(held(3, 3, true),
+                  "a rule that reads back as asked, in a group of as many rules as before, is kept");
+            Check(!held(3, 2, true),
+                  "ONE RULE FEWER is not kept, though the rule at the index reads as asked - "
+                  + "the next rule already pointed there");
+            Check(!held(1, 0, true) && !held(3, 4, true),
+                  "nor is a group left empty, or one rule longer");
+            Check(!held(3, -1, true),
+                  "a count that could not be read is not a count that held");
+            Check(!held(3, 3, false),
+                  "and the right count with the wrong part is still not kept");
         }
 
         /// <summary>

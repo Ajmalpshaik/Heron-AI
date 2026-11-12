@@ -52,10 +52,12 @@ negative:
       project and duct type, group Elbows, partName "Standard" - the type name
       both families share
     expect: >
-      rulesChanged = 0, typesTouched = 0, both parts in `nearMisses` as
+      rulesChanged = 0, typesTouched = 0, the parts in `nearMisses` as
       "Family: Type", and a finding saying the name does not say which one is
       meant. The rule in Revit is untouched. Version 1 bound whichever the
-      collector met first and reported a change
+      collector met first and reported a change. Where more than twelve
+      loaded families have that type name, twelve are listed - duct and pipe
+      fittings first - and the finding says how many more there were
 
   - given: >
       version 2 (5b-1549), Group NL. The same duct type, group Elbows,
@@ -64,12 +66,24 @@ negative:
       Read the rule first with REPORT_ROUTING_PREFERENCES
     expect: >
       rulesChanged = 0, the rule named in `unverified` with "The rule was put
-      back as it was", and REPORT_ROUTING_PREFERENCES run again in the same
+      back and read again: N rule(s), M size window(s), still pointing at ...,
+      as before", and REPORT_ROUTING_PREFERENCES run again in the same
       kept or rolled-back state reading EXACTLY what it read before - the same
       part, the same size window, the same number of rules. Version 1 removed
       the rule before it found out, and left it removed. Whether Revit refuses
       this by throwing or by taking the call and doing nothing is not known;
       either is this case, and which one it was goes on the row
+
+  - given: >
+      version 2, NOT ALL-OR-NOTHING, Group NL - TWO duct types handed in, the
+      part an elbow one of them can take and the other cannot (or already
+      uses), kept through try-once
+    expect: >
+      the type that could change is changed and counted in rulesChanged; the
+      other is in `unverified` or `alreadyCorrect`; and where one changed and
+      one was refused, a finding says in words that the job is not
+      all-or-nothing. ONE entry in Revit's undo list, and one Undo puts the
+      changed type back too
 
   - given: partName set to a name no segment has - ZZZNOTASEGMENT
     expect: >

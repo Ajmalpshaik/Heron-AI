@@ -29,6 +29,26 @@ risk: MODIFY
 # The name rule is tested with no Revit (tests/test_binding_note.py compiles
 # the fragment's own lines beside the binder's rule). Nothing of version 2 has
 # run in Revit.
+#
+# AFTER A REVIEW OF THAT CHANGE (2026-11-12), still version 2, still not run:
+#   - A SWAP IS KEPT ON THE PART AND THE COUNT. The read-back asked only which
+#     part the rule at the index pointed at; where AddRule added nothing and
+#     the next rule already pointed there, that read as asked with one rule
+#     deleted. The group must now hold as many rules as before as well. That
+#     rule is in the tested lines too.
+#   - "PUT BACK" IS READ. After a swap is rolled back the rule is read again -
+#     how many rules, which part, how many criteria - before it is called put
+#     back; if it does not read as before the card THROWS and the add-in rolls
+#     the whole job back.
+#   - SEVERAL TYPES ARE NOT ALL-OR-NOTHING. Each type's swap is its own, as
+#     each column is in ATTACH_COLUMNS: a type that is refused is put back and
+#     named in `unverified`, and the types already changed stay changed - one
+#     Undo entry, and the answer says so in as many words.
+#   - A NAME THAT FITS MANY IS LISTED SHORT: twelve at most, duct and pipe
+#     fittings first, and how many more there were.
+#   - WHETHER AddRule THROWS for a part that is wrong for its group was never
+#     measured. The card said it does not; Revit's reference says it does
+#     (ArgumentException, 2020 to 2027). Both are handled alike.
 
 purpose: >
   Points one routing preference rule at a different part - the segment a pipe
@@ -56,11 +76,11 @@ purpose: >
   is read off the old rule before it is removed and put back on the new one,
   and the count carried across is reported.
 
-  **READ BACK, NEVER TRUST THE CALL.** AddRule returns nothing and throws
-  nothing when the part is wrong for the group, so the part id is read off the
-  rule again afterwards and compared. That comparison is what separates a
-  change from a clean return - the argument MOVE_ELEMENTS makes about a group
-  member, applied to a rule.
+  **READ BACK, NEVER TRUST THE CALL.** AddRule returns nothing, and whether
+  it throws when the part is wrong for the group is not measured, so the part
+  id and the number of rules are read again afterwards and compared. That
+  comparison is what separates a change from a clean return - the argument
+  MOVE_ELEMENTS makes about a group member, applied to a rule.
 
   **A PART NAMED BUT NOT FOUND RETURNS THE NEAR MISSES.** "Copper" and
   "Copper - K" are different segments, and picking one for the caller is a
@@ -100,6 +120,9 @@ contract:
       source: request
   provides:
     - name: rulesChanged
+      # Rules that read back as asked AND left their group with as many rules
+      # as it had. With several types handed in this is NOT all-or-nothing:
+      # these stay changed when another type is named in `unverified`.
       role: result
       type: int
     - name: typesTouched
@@ -116,8 +139,9 @@ contract:
     - name: nearMisses
       # Part names that nearly matched when the one named was not found - and,
       # version 2, every part a name FITS when it fits more than one, each
-      # written "Family: Type". What turns a dead end into one more sentence,
-      # and never a thing it changed.
+      # written "Family: Type" - twelve at most, duct and pipe fittings first;
+      # `findings` says how many more there were. What turns a dead end into
+      # one more sentence, and never a thing it changed.
       role: accounting
       type: IList<string>
     - name: notRoutable
@@ -128,8 +152,9 @@ contract:
     - name: unverified
       # Rules that could not be read back as changed. Never counted as
       # changed - a thing that cannot be checked must not be reported as
-      # checked. Version 2: each one's swap is rolled back first, so the rule
-      # named here is as it was before the run.
+      # checked. Version 2: each one's swap is rolled back and the rule READ
+      # again first, so a rule named here read as it did before the run - the
+      # card throws, and the whole job is rolled back, if it did not.
       role: accounting
       type: IList<string>
     - name: findings
@@ -189,7 +214,10 @@ compatibility-note: >
   `SubTransaction` - its constructor, `Start`, `Commit`, `RollBack`,
   `HasStarted` and `HasEnded`. All are on every release 2020 to 2027
   (`tools/api-surface --members`, 2026-11-11), and `AddRule(group, rule,
-  index)` and `RemoveRule(group, index)` read the same on all eight.
+  index)` and `RemoveRule(group, index)` read the same on all eight. The
+  2026-11-12 changes read `GetNumberOfRules` and `NumberOfCriteria` again and
+  compare a part's `Category.Id` with `ElementId(BuiltInCategory)` for
+  `OST_DuctFitting` and `OST_PipeFitting` - all four the same 2020 to 2027.
 
 # ROUTING - repeated in REPORT_ROUTING_PREFERENCES.
 #

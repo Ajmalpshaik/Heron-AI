@@ -75,11 +75,21 @@ removed afterwards), the host compiles it in beside the binder's rule, and
 the host's last section asks both the row's own names. ONE copy: the lines
 checked are the lines that run in Revit. On the fragment as it stood there
 is no block, the host is built without one, version 1's rule stands in, and
-8 of that section's 18 checks fail (measured 2026-11-11). `routing_part` below
+12 of that section's 24 checks fail (measured 2026-11-12). `routing_part` below
 reads the two things the host cannot: that the fragment binds a part only
 when exactly ONE fits, and that the rule swap sits in a SubTransaction rolled
 back on a refusal (row 5b-1549). Whether Revit's SubTransaction really puts a
 removed rule back needs a Revit, and is owed (NEEDS-CHECKING Group NL).
+
+THE SWAP RULE TOO, after a review of that change. "Reads back as asked" was
+the part at the index alone, which a rule removed and never added again can
+satisfy when its neighbour points at the same part. The fragment's rule now
+takes the number of rules as well; it sits in the same marked block, so the
+host is handed it the same way and makes six checks of it, 4 of which fail on
+the fragment as it stood before the review (measured 2026-11-12; a block with
+no such rule still builds, and the part alone stands in). `routing_part` reads
+that Commit stands under that rule and nowhere else, and that a put-back is
+read again and throws when it does not read as before.
 """
 
 import io
@@ -321,6 +331,18 @@ def part_names_source(folder, block):
     The method's own parameters are named a, b and c so that they can never
     collide with a name the fragment's lines declare.
     """
+    # THE SWAP RULE ONLY WHERE THE BLOCK HAS ONE. A block without it - the
+    # fragment before the review of this change - still compiles, and the host,
+    # finding no `Held`, fails those checks one by one instead of not building
+    # (heron-ship 2a: a check must fail, not crash).
+    held = ""
+    if re.search(r"\bswapHeld\s*=", block):
+        held = ("\n"
+                "        internal static bool Held(int a, int b, bool c)\n"
+                "        {\n"
+                + block + "\n"
+                "            return swapHeld(a, b, c);\n"
+                "        }\n")
     path = os.path.join(folder, "FragmentPartNames.cs")
     with io.open(path, "w", encoding="utf-8", newline="\n") as handle:
         handle.write(
@@ -340,6 +362,7 @@ def part_names_source(folder, block):
             + block + "\n"
             "            return partsNamed(a, b, c);\n"
             "        }\n"
+            + held +
             "    }\n"
             "}\n")
     return path
@@ -378,9 +401,13 @@ def routing_part(block):
     # its strings, so it is read to that `else`, never to the first brace.
     several = re.search(r"else if \(fitting\.Count > 1\)\s*\{(.*?)proceed = false;\s*\}\s*else\b",
                         code, re.S)
-    found.append((several is not None and "nearMisses.Add(" in several.group(1)
+    found.append((several is not None and "listParts(several)" in several.group(1)
                   and "wantedPart" not in several.group(1),
                   "two or more that fit are listed, none is bound, and it stops there"))
+    found.append((re.search(r"foreach \(var each in ordered\.Take\(listLimit\)\) "
+                            r"nearMisses\.Add\(", code) is not None
+                  and "ordered.Count - listLimit" in code,
+                  "and the list is capped, with what was left off counted"))
 
     opened = code.find("using (var swap = new SubTransaction(doc))")
     started = code.find("swap.Start();")
@@ -395,6 +422,30 @@ def routing_part(block):
                   "and nowhere outside it"))
     found.append((re.search(r"else\s*\{\s*swap\.RollBack\(\);", code) is not None,
                   "a swap that does not read back as asked is rolled back"))
+    # The review's point: the part at the index alone is not
+    # "as asked" - the count is read too, and Commit stands under that rule
+    # and nowhere else.
+    found.append((re.search(r"rulesAfter = manager\.GetNumberOfRules\(wantedGroup\);", code)
+                  is not None
+                  and re.search(r"if \(swapHeld\(ruleCount, rulesAfter, pointsAtWanted\)\)\s*\{"
+                                r"\s*swap\.Commit\(\);", code) is not None
+                  and code.count("swap.Commit();") == 1,
+                  "it is kept only when the group holds as many rules as before AND the "
+                  "rule points at the part (row 5b-1549)"))
+    # "Put back" is read: after the rollback the rule is read again, a
+    # mismatch throws - outside every try, so it leaves the fragment - and
+    # only then is the type named as put back.
+    read_at = code.find("var managerNow = type.RoutingPreferenceManager;")
+    judged_at = code.find("var asBefore = rulesNow == ruleCount")
+    thrown = re.search(r"if \(!asBefore\)\s*\{\s*throw new InvalidOperationException\(", code)
+    said_at = code.find("The rule was put back and read ")
+    order = [read_at, judged_at, thrown.start() if thrown else -1, said_at]
+    found.append((min(order) >= 0 and order == sorted(order),
+                  "after a rollback the rule is READ again, a rule that is not as before "
+                  "throws, and only then is it called put back - positions %s" % order))
+    tail = code[judged_at:said_at] if min(order) >= 0 else ""
+    found.append((bool(tail) and "catch" not in tail and "try" not in tail,
+                  "and that throw is inside no try, so it stops the whole job"))
     found.append((re.search(r"catch \(Exception error\)\s*\{\s*"
                             r"if \(swap\.HasStarted\(\) && !swap\.HasEnded\(\)\) "
                             r"swap\.RollBack\(\);", code) is not None,
