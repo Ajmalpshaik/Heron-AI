@@ -80,3 +80,9 @@ flipped it would change the modeller's screen, not the model.
 
 See the table at the top of the pull request and [NEEDS-CHECKING Group KK](../../needs-checking/group-kk.md),
 which hold the same list with the proof owed for each. All of it is DRAFT; nothing has run in Revit.
+
+**That was 2026-11-01. Read 2026-11-12:** the cards Group KK names that are still live say `PROVEN` - all but
+`ADD_KEY_SCHEDULE_ROWS`, still `DRAFT` - and the schedule cards among them carry a `proof:` block dated
+2026-11-02, signed by Ajmal PS.
+Some were merged into another card since and are `DEPRECATED`; a card's own `heron-status:` and
+`superseded-by:` lines say which. Group KK's own rows still record no result.
