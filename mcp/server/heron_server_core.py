@@ -21,6 +21,8 @@ those files needs, so that there is exactly ONE of each in a process:
     _revit_lock             one conversation with Revit at a time
     _recorded, _ended,      the activity line, how a call ended, and the one
     _ended_by_reply         place a chat hears that its code is old
+    OUTCOMES, _outcome      how a call ended in ONE FIXED WORD, and the line a
+                            door's reply carries it on (row 5b-1159)
     RUNNING                 what this process loaded, against the disk now
     LIBRARY_ONLY            off Windows, started as the server (D-132) -
                             said by the entry file, through started()
@@ -69,6 +71,7 @@ from heron_session import SessionBinding                   # noqa: E402
 from heron_write import DocumentPin, PendingApproval       # noqa: E402
 from heron_failure import analyse                          # noqa: E402
 from heron_failure import REFUSED as FAILURE_REFUSED       # noqa: E402
+import heron_failure as failures                           # noqa: E402
 import heron_tools as tools                                # noqa: E402
 import heron_brain as brain                                # noqa: E402
 import heron_running_code as running_code                  # noqa: E402
@@ -278,6 +281,60 @@ class _Labelled(_Server):
                     pass
         return listed
 
+    async def call_tool(self, name, *args, **kwargs):
+        """
+        The SDK's call, and for a tool heron_tools.STATES_OUTCOME lists the
+        word its reply states, as `outcome` in the STRUCTURED content beside
+        the `result` the SDK already sends there (row 5b-1159) - for a host
+        that reads structure rather than text.
+
+        READ OFF THE REPLY'S OWN LINE (`outcome_of`), never worked out again,
+        so the two cannot disagree. NOT DECLARED in the tool's output schema:
+        the SDK writes that schema from the `-> str` every tool returns, and
+        declaring a second key would mean a different return type and a
+        different listing for a host. The schema it lists - `result`,
+        required, and nothing forbidding another key - is still met.
+
+        NEVER `isError`. The SDK sets that itself, for a tool that raised. A
+        refusal is Heron working; and the MCP schema says of the flag only
+        that it lets the model "see that an error occurred and self-correct"
+        - and trying again is the one thing a chat must not be invited to do
+        with an outcome nobody knows. What each host does with the flag is
+        not something this file can show (row 5b-1561).
+
+        A result this does not recognise is handed on untouched: the line in
+        the text is the outcome, and this is a copy of it.
+        """
+        result = await super(_Labelled, self).call_tool(name, *args, **kwargs)
+        if name not in tools.STATES_OUTCOME:
+            return result
+        try:
+            return _structured_outcome(result)
+        except Exception:                            # noqa: BLE001 - never cost a tool its answer
+            return result
+
+
+def _structured_outcome(result):
+    """
+    A door's result with `outcome` beside `result` in its structured content,
+    in whichever shape this SDK hands one back: 2.x a result object carrying
+    `structured_content`, a later 1.x a pair - the content blocks, then the
+    structured dictionary - or an object carrying `structuredContent`. Any
+    other shape, and a reply that states no word, comes back as it was.
+    """
+    if (isinstance(result, tuple) and len(result) == 2
+            and isinstance(result[1], dict)):
+        word = outcome_of(result[1].get("result"))
+        return (result[0], dict(result[1], outcome=word)) if word else result
+    for name in ("structured_content", "structuredContent"):
+        structured = getattr(result, name, None)
+        if isinstance(structured, dict):
+            word = outcome_of(structured.get("result"))
+            if word:
+                setattr(result, name, dict(structured, outcome=word))
+            break
+    return result
+
 
 def _host_instructions():
     """
@@ -329,6 +386,208 @@ _revit_lock = threading.RLock()
 _ctx = threading.local()
 
 
+# HOW A CALL ENDED, IN ONE FIXED WORD - FRAGMENT-ISSUES row 5b-1159.
+#
+# Every reply was prose. How a call ended WAS worked out - `_ended` below,
+# heron_failure's five outcomes, the add-in's own `verdictKind` - and shown to
+# the Companion's activity list alone, so a chat told "kept" from "refused"
+# from "nobody knows" by reading sentences. It got that wrong: a refusal read
+# as success, and "never ran" said of an answer that was lost.
+#
+# So the tools heron_tools.STATES_OUTCOME lists say it, on a line of their
+# reply that is always written the same way:
+#
+#     outcome: REFUSED - Heron or Revit said no and the reply says why; do ...
+#
+# ONE VOCABULARY, THIS TABLE, and nothing else decides a word. Each row is
+# the word, what its line goes on to say (nothing, for the two that mean it
+# worked - the reply below them says what was done), and what it means.
+#
+# A WORD NEVER SAYS MORE THAN THE CODE THAT RETURNED KNEW. That is the whole
+# rule, and it is why:
+#   - KEPT is said only of a reply whose own `verdictKind` is "kept". Never
+#     of an `ok` that names no verdict, never while Revit is still asking the
+#     modeller Keep or Discard (that is STILL RUNNING), never of a Discard.
+#   - ROLLED BACK goes on to say that whether Revit CONFIRMED the rollback is
+#     in the reply. heron_failure calls `fragment_threw`, `ran_too_long` and
+#     their kind rolled back, and whether Revit confirmed it is in the
+#     add-in's message alone - an error reply carries no field for it (row
+#     5b-1559: C#, and a real Revit). The word says a rollback was made; it
+#     does not say it held.
+#   - Nothing coming back at all is OUTCOME UNKNOWN, for a read as for a
+#     change (`_failure_outcome`).
+#   - A door that returns without saying how it ended is OUTCOME UNKNOWN.
+#     The line fails closed, as heron_failure does on a code it has never
+#     seen: an unsaid ending is never guessed to have worked.
+#
+# NOT RUN, AND NOT "NOT SENT": some of what it covers was sent - Revit was
+# busy, or another chat held the model - and the add-in answered before
+# anything ran. What is true of all of it is that nothing ran in Revit.
+KEPT = "KEPT"
+ANSWERED = "ANSWERED"
+REFUSED = "REFUSED"
+NOT_RUN = "NOT RUN"
+ROLLED_BACK = "ROLLED BACK"
+STILL_RUNNING = "STILL RUNNING"
+UNKNOWN = "OUTCOME UNKNOWN"
+
+OUTCOMES = (
+    (KEPT, "",
+     "The change ran and Revit kept it - the add-in's own verdict. What it did, "
+     "and the undo rule, are in the reply."),
+    (ANSWERED, "",
+     "It ran and its answer is in the reply. revit_read and revit_show: nothing "
+     "was asked to be kept in the model."),
+    (REFUSED,
+     "Heron or Revit said no and the reply says why; do what it says or tell "
+     "the modeller, and never get round it another way",
+     "Refused before the job ran - a switch that is off, a capability that is "
+     "not proved, the wrong door, the wrong model, no session - or an answer "
+     "Heron would not show."),
+    (NOT_RUN,
+     "nothing ran in Revit and nothing needs undoing; the reply says what to "
+     "choose or fix first",
+     "Not a refusal of what was asked: the words did not settle one capability, "
+     "Heron's library could not be read, or Revit could not take the request "
+     "just then."),
+    (ROLLED_BACK,
+     "Heron rolled the job back rather than keep it; the reply says whether "
+     "Revit confirmed the model is as it was",
+     "The job was not kept: it failed part way, Heron stopped it, or the "
+     "modeller pressed Discard. That the rollback HELD is the reply's to say, "
+     "not this word's."),
+    (STILL_RUNNING,
+     "do not send it again; no id follows a run yet, so ask the modeller what "
+     "Revit shows",
+     "Revit took it and has not finished, or is still asking the modeller. "
+     "Sending it again is how one job is done twice."),
+    (UNKNOWN,
+     "never assume it worked, or that it did not; the reply says what is safe "
+     "to do next",
+     "The answer was lost or could not be used, a rollback was not confirmed, "
+     "it ran in a model this chat does not work on, or the door did not say "
+     "how it ended."),
+)
+
+#: How every outcome line starts. One spelling, here.
+OUTCOME_LINE = "outcome: "
+_OUTCOME_TAIL = " - "
+_WORDS = tuple(row[0] for row in OUTCOMES)
+_SAYS_NEXT = dict((row[0], row[1]) for row in OUTCOMES)
+
+# heron_failure's five outcomes, each to its word - a classification that is
+# already made, read here and never made a second time.
+_BY_FAILURE = {
+    failures.NEVER_RAN: NOT_RUN,
+    failures.REFUSED: REFUSED,
+    failures.RUNNING: STILL_RUNNING,
+    failures.ROLLED_BACK: ROLLED_BACK,
+    failures.UNKNOWN: UNKNOWN,
+}
+
+# The two labels `_ended` is given that are a word by themselves. "ok" is not
+# one - it is KEPT at one door and ANSWERED at another, and the door says
+# which - and "failed" is four different endings.
+_BY_LABEL = {"refused": REFUSED, "handed_back": NOT_RUN}
+
+
+def outcome_line(word):
+    """The line a reply carries `word` on: `outcome: WORD`, and for a word
+    that needs one, what to do next."""
+    said = _SAYS_NEXT.get(word)
+    return OUTCOME_LINE + word + (_OUTCOME_TAIL + said if said else "")
+
+
+def outcome_of(text):
+    """
+    The word a door's reply states, or None - read off the one place the
+    line is written, the reply's second line. For a host, and for the
+    structured content `_Labelled.call_tool` sends: one line written, one
+    line read, so the two can never disagree.
+    """
+    lines = text.split(NEWLINE, 2) if isinstance(text, str) else []
+    if len(lines) < 2 or not lines[1].startswith(OUTCOME_LINE):
+        return None
+    word = lines[1][len(OUTCOME_LINE):].split(_OUTCOME_TAIL, 1)[0]
+    return word if word in _WORDS else None
+
+
+def _outcome(word, answer=None):
+    """
+    THE WORD FOR HOW THIS CALL ENDED, said by the door on the line before
+    the `_ended` it goes with, wherever that label is not a word by itself -
+    and the answer handed back unchanged, as `_ended` hands it.
+
+    It changes nothing `_ended` says: the activity list's label is its own.
+    """
+    _ctx.how = word
+    return answer
+
+
+def _failure_outcome(failure):
+    """
+    A classified failure's word: heron_failure's own outcome, through
+    `_BY_FAILURE`.
+
+    ONE CODE IS NOT TAKEN AT ITS OUTCOME. `no_reply` is what `analyse` makes
+    of nothing coming back at all, and on a read it files that under
+    never-ran with the reason "Heron cannot tell whether Revit was reached".
+    Its reason is the truth and its outcome says more (row 5b-1560), so the
+    word is the reason's: not known - for a read as for a change.
+    """
+    if failure.code == "no_reply":
+        return UNKNOWN
+    return _BY_FAILURE.get(failure.outcome, UNKNOWN)
+
+
+def _change_outcome(reply):
+    """
+    How a change the add-in answered `ok` ended - from the add-in's own
+    `verdictKind`, the field heron_run_records already prints the verdict by.
+    Never from `ok` alone, and never from the verdict's sentence.
+
+    KEPT only when the add-in says "kept". A rollback it says HELD
+    (`rolledBack`, which RevitFragment.WithVerdict sets only when Revit
+    reported the group rolled back and nothing the run added still stands) is
+    ROLLED BACK - the modeller's Discard is one. Everything else is not known
+    from here: a rollback that did not hold or was not confirmed, and an
+    `ok` from an add-in old enough to name no verdict at all.
+    """
+    kind = reply.get("verdictKind")
+    if kind == "kept":
+        return KEPT
+    if kind in ("rolledBack", "discarded") and reply.get("rolledBack") is True:
+        return ROLLED_BACK
+    return UNKNOWN
+
+
+def _said_outcome(tool, reply, label, how):
+    """
+    The reply with its outcome line, for a tool heron_tools.STATES_OUTCOME
+    lists - and untouched for every other tool, and for an answer that is
+    not text.
+
+    THE WORD is the one the door said (`_outcome`, or `_failure_ended` for a
+    classified failure); with none said, the label when the label is a word
+    by itself (`_BY_LABEL`); and otherwise OUTCOME UNKNOWN.
+
+    THE SECOND LINE, directly under the reply's opening sentence. Not the
+    first and not the last, because both ends of a door's reply are already
+    held by tests/test_mcp_serves.py: a kept change to a model never saved
+    OPENS with the NEVER SAVED warning, and a hand-back CLOSES on the
+    sentence that names the door to call again. Nothing a door wrote is
+    moved or dropped: take the line out and the reply is what it was
+    (tests/test_outcome_line.py).
+    """
+    if tool not in tools.STATES_OUTCOME or not isinstance(reply, str):
+        return reply
+    word = how if how in _WORDS else _BY_LABEL.get(label, UNKNOWN)
+    if not reply.strip():
+        return outcome_line(word)
+    first, newline, rest = reply.partition(NEWLINE)
+    return first + NEWLINE + outcome_line(word) + newline + rest
+
+
 def _ended(outcome, answer=None):
     """
     HOW THIS CALL ENDED, said by the code that knows - for the Companion's
@@ -350,7 +609,11 @@ def _failure_ended(failure):
     """A classified bridge failure's label: a refusal only when Revit or the
     add-in said no (heron_failure's REFUSED). Never ran, still running,
     rolled back and an unknown outcome all mean the work was not done as
-    asked, which the list calls failed."""
+    asked, which the list calls failed.
+
+    AND THE WORD FOR THE OUTCOME LINE, which keeps apart the four endings
+    that label folds into one (`_failure_outcome`, row 5b-1159)."""
+    _outcome(_failure_outcome(failure))
     return "refused" if failure.outcome == FAILURE_REFUSED else "failed"
 
 
@@ -389,6 +652,11 @@ def _recorded(fn):
     refused before its body runs, and every answer ends with one line saying
     to reopen the chat - a read still answers in full (heron_running_code has
     the decision). Nothing changed, nothing is added: a stat per file.
+
+    AND WHERE A DOOR'S REPLY GETS ITS OUTCOME LINE (`_said_outcome`, row
+    5b-1159) - here, once, so the body of a door is the same text it always
+    was, and the Companion's page and Revit's Heron panel, which run that
+    body through `_through`, read exactly what they read before.
     """
     @functools.wraps(fn)
     def run(*a, **k):
@@ -402,6 +670,7 @@ def _recorded(fn):
         # before the call and put back after, so a tool called inside
         # another never speaks for the outer one's line.
         kept, _ctx.outcome = getattr(_ctx, "outcome", None), None
+        kept_how, _ctx.how = getattr(_ctx, "how", None), None
         started, clock = time.strftime("%H:%M:%S"), time.time()
         try:
             reply = _refused_for_old_code(fn.__name__)
@@ -413,10 +682,15 @@ def _recorded(fn):
             raise
         finally:
             said, _ctx.outcome = getattr(_ctx, "outcome", None), kept
+            how, _ctx.how = getattr(_ctx, "how", None), kept_how
             if outer:
                 _depth.busy = False
         if outer:
             _note(fn.__name__, started, time.time() - clock, reply=reply, outcome=said)
+            # AFTER THE NOTE, so the activity list still shows the reply's own
+            # first sentence; and only for the call the host made - a door
+            # run inside another tool answers that tool, not the chat.
+            reply = _said_outcome(fn.__name__, reply, said, how)
             reply = _said_old_code(reply)
         return reply
     return run

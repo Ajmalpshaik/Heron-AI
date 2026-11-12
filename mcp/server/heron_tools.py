@@ -519,6 +519,20 @@ LIBRARY = ("heron_capabilities", "heron_lookup", "heron_method",
            "heron_resolve", "heron_standards")
 
 
+# THE TOOLS WHOSE EVERY ANSWER SAYS HOW THE CALL ENDED, IN ONE FIXED WORD
+# (FRAGMENT-ISSUES row 5b-1159): the three doors to the fragment library. The
+# words and what each means are heron_server_core.OUTCOMES, and that file says
+# where the line stands in a reply and why.
+#
+# THREE, AND NOT EVERY TOOL THAT SAYS `_ended`. A door's every return was read
+# against the vocabulary before it joined, because a word here must never say
+# more than the code that returned knew. "ok" from another tool is a different
+# fact each time - a panel opened, a session bound, a preview shown - and a
+# tool joins when its own returns have been read the same way, never because
+# the line would be easy to add.
+STATES_OUTCOME = ("revit_change", "revit_read", "revit_show")
+
+
 class NotDeclared(Exception):
     """A tool nobody declared. Never treated as harmless."""
 
