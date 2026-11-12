@@ -173,7 +173,10 @@ If a user repeatedly performs a workflow successfully — *"select all ducts and
 - **Learn the pattern, not the numbers.** The reusable thing is *select by category → move by vertical offset*, parameterised. Hard-coding "200 mm" produces a brittle, single-use pattern.
 - **Confirm before saving a pattern.** *"You've done this 5 times. Save it as a shortcut?"* Silent learning is unsettling; a one-line confirmation converts it into a feature the user feels ownership of.
 
-> **As built (2026-10-18):** nothing recognises a repeated workflow or offers to save one.
+> **As built (2026-10-18):** nothing recognises a repeated workflow or offers to save one. (Since
+> 2026-11-08 a job the modeller asks to keep is saved as a named command, `heron_commands` -
+> [49](49-saved-commands-and-the-heron-panel.md), [D-151](decisions/D-151.md), Proposed, never run in a
+> real Revit; recognising a repeat is still not built.)
 > [`heron_userskills.py`](../brain/heron_userskills.py) plans raising a personal skill one step at a
 > time - user, then company, then global - refuses a raise its author approves, and moves nothing.
 > [`heron_memory.py`](../brain/heron_memory.py) decides what may be remembered and writes nothing: a
