@@ -47,11 +47,11 @@ breaks a rule.
 | 1 | Refresh - the modeller's own press, never a timer | R | **built**, not run in Revit |
 | 2 | Select a row's elements in Revit; isolate them in the active view; reset | S | **built** 2026-11-01 on the owner's *"do it until finish"* - [docs/40 §21.11](../../40-heron-companion.md); three `COMPANION_ACTIONS` rows at EXECUTE. Not run in Revit. Zoom to, and clicking a bar, still planned |
 | 2 | Parameter fill-rate by category: filled / empty / missing, for the parameters the modeller types | R | **built** - [docs/40 §21.12](../../40-heron-companion.md). Not run in Revit |
-| 2 | Duplicate Mark / Type Mark, inconsistent values ("Lvl 1" vs "Level 01") | R | planned - `FIND_DUPLICATE_VALUES` is PROVEN |
+| 2 | Duplicate Mark / Type Mark, inconsistent values ("Lvl 1" vs "Level 01") | R | planned - `FIND_DUPLICATE_VALUES` was PROVEN when this was written; its code moved on 2026-11-11 and it is DRAFT at version 2 until [Group NK](../../needs-checking/group-nk.md) NK8 is run |
 | 2 | *The model has changed - Refresh*: the add-in counts the model's changes in the live file | R | **built** on the owner's *"Yes, add it"* - [D-147](../../decisions/D-147.md), [docs/40 §21.15](../../40-heron-companion.md). Not run in Revit |
 | 2 | Rule checks, filters, ratio and element tables behind a bar; read options (categories, links, active view only) | R | planned - see the inventory below |
-| 3 | MEP: elements connected to nothing, open connectors, systems summary (counts, lengths) | R | planned - `CHECK_EQUIPMENT_CONNECTORS`, `CHECK_FIXTURE_CONNECTIVITY`, `MEASURE_RUN_QUANTITIES` are PROVEN |
-| 3 | Quantities by type: lengths, areas, volumes, counts; room areas by level and department | R | planned - `REPORT_MATERIAL_TAKEOFF`, `REPORT_ROOM_SPACE_DATA`, `REPORT_AREAS` are PROVEN |
+| 3 | MEP: elements connected to nothing, open connectors, systems summary (counts, lengths) | R | planned - `REPORT_CONNECTORS` (`CHECK_EQUIPMENT_CONNECTORS` was merged into it on 2026-11-01 and is DEPRECATED), `CHECK_FIXTURE_CONNECTIVITY`, `MEASURE_RUN_QUANTITIES` are PROVEN |
+| 3 | Quantities by type: lengths, areas, volumes, counts; room areas by level and department | R | planned - `REPORT_ROOM_SPACE_DATA`, `REPORT_AREAS` are PROVEN; `REPORT_MATERIAL_TAKEOFF` was, and is DRAFT at version 4 since 2026-11-11 until [Group NK](../../needs-checking/group-nk.md) is run |
 | 3 | Documentation: sheets with no title block or revision, schedules that are empty | R | planned - `REPORT_SHEET_TITLE_BLOCKS`, `LIST_REVISIONS` are PROVEN |
 | 3 | Links and coordinates: shared coordinates agree, elements outside the scope box | R | planned |
 | 4 | Report: Print / PDF of the dashboard alone; CSV made on the PC | R | **built** - docs/40 §21.12 |
@@ -64,7 +64,7 @@ breaks a rule.
 | 6 | A 3D view of the model - the active 3D view or the whole model - drawn by Heron's own WebGL, pick to select, Show in 3D | R | **built** on the owner's ask - [docs/40 §21.13](../../40-heron-companion.md). Stops itself at 40 s by default (owner: *"Yes, stop at ~40 s"*). Not run in Revit |
 | 6 | 3D tools: Top / Front / Side / 3D, Zoom to lit, a Cut height, categories on and off, Save picture, Full screen | R (the page only) | **built** 2026-11-07 on the owner's *"3D views dashboards like this"* - [docs/40 §21.17](../../40-heron-companion.md). Not seen in Revit's browser |
 | 6 | Rooms and spaces as see-through volumes; Colour by Material (each face's shading colour, glass see-through); the dashboard reordered - 3D under the charts, Worth a look summarised, in two columns, found-nothing folded | R | **built** 2026-11-07 on the owner's *"add rooms as volumes and material colours also and make the model dashbord also good"* - [docs/40 §21.18](../../40-heron-companion.md). `REPORT_MODEL_GEOMETRY` v3, **back to DRAFT** - rows JU18-JU22 owed. Not run in Revit |
-| - | Bulk parameter edit in the table | W | **already designed** (docs/40 §8); refused today until `SET_PARAMETER_VALUES_BY_ID` is PROVEN ([group FE](../../needs-checking/group-fe.md)) |
+| - | Bulk parameter edit in the table | W | **already designed** (docs/40 §8); it was refused until `SET_PARAMETER_VALUES_BY_ID` was PROVEN - its card says PROVEN at version 7 on 2026-11-12, and [group FE](../../needs-checking/group-fe.md)'s rows are still open |
 | - | A page served from the internet calling the PC | refused | Companion README rule 1 |
 | - | Refresh on a timer | refused | Companion README rule 3 - it would raise the READING banner and queue work on Revit's thread |
 | - | A health score, or "compliant" | refused | a count is not a verdict ([heron_modelqa](../../../brain/heron_modelqa.py)'s rule) |
@@ -86,7 +86,7 @@ words below are Heron's own.
 | **Filters** - for the whole board, one chart, a pinned parameter; show only / exclude a value | Filters held on the page, applied to rows the brain already sent - no new read | 2 |
 | **Click a bar to pick its elements**; several with Ctrl; right-click for select in Revit, select and zoom, isolate, reset | Copy IDs is phase 1. Select, zoom and isolate from the page in phase 2 - a `COMPANION_ACTIONS` row at EXECUTE through `SET_SELECTION` (PROVEN); isolate through the temporary view door the chat already uses | 1 built; 2 |
 | **Colour the model by a chart** in Revit views; clear colours; keep colours after stopping | Colour a view by a bar's values in phase 5 - a view change through `revit_change`, one undo entry, Keep or Discard ([D-126](../../DECISIONS.md)); Clear is its own undo entry, never automatic | 5 |
-| **Edit a parameter in a table** - propose, approve or reject, push as one named Revit transaction | **Already designed** - the Table's Apply (docs/40 §8) with a stale-row check and one undo entry; refused today until `SET_PARAMETER_VALUES_BY_ID` is PROVEN | waiting on [group FE](../../needs-checking/group-fe.md) |
+| **Edit a parameter in a table** - propose, approve or reject, push as one named Revit transaction | **Already designed** - the Table's Apply (docs/40 §8) with a stale-row check and one undo entry; refused until `SET_PARAMETER_VALUES_BY_ID` was PROVEN, which its card says it is on 2026-11-12 | [group FE](../../needs-checking/group-fe.md)'s rows still open |
 | **Read settings per model** - which categories, which links (each its own choice), design options, only what the active view shows, geometry detail, Area and Volume on or off, a room for each instance (Room, From Room, To Room) | The dashboard read takes options in phase 2: categories, include links, the active view only. Kept per project as the Loads panel keeps its answers | 2 |
 | **What it reads per element** - category, family and type, level, workset, design option, phase created and demolished, group, in-place, materials with area and volume, rooms, warning count and text, source model | Phase 1 counts by category, level and workset. Phase 2-3 adds design option, phase, group, material area and volume (`REPORT_MATERIAL_TAKEOFF`), the room each instance is in, and warnings per element | 2-3 |
 | **File statistics** - file size, loaded families, in-place families, model and detail groups, materials, line styles, fill patterns, view templates, views not on sheets, sheets, imported CAD | Phase 1 has families, in-place, groups, views not on sheets, sheets, CAD. File size, materials, line styles, fill patterns and view templates in phase 2 - counts only | 1 built; 2 |
@@ -103,14 +103,15 @@ words below are Heron's own.
 
 | Part | File |
 |---|---|
-| The read - one pass, one JSON string | `brain/fragments/report-model-dashboard/` (`REPORT_MODEL_DASHBOARD`, DRAFT) |
+| The read - one pass, one JSON string | `brain/fragments/report-model-dashboard/` (`REPORT_MODEL_DASHBOARD`, DRAFT when built; its card says PROVEN at version 3, proof dated 2026-11-02) |
 | Every tile, bar, colour and line | [`brain/heron_model_dashboard.py`](../../../brain/heron_model_dashboard.py), tested by [`tests/test_model_dashboard.py`](../../../tests/test_model_dashboard.py) |
 | The brain's door | `model_dashboard` in [`mcp/server/heron_brain.py`](../../../mcp/server/heron_brain.py) |
 | The chat's tool and the page's Refresh | `revit_model_dashboard`, `_read_dashboard`, `_dashboard_refresh` in [`mcp/server/heron_mcp_server.py`](../../../mcp/server/heron_mcp_server.py); its risk row in [`heron_tools.py`](../../../mcp/server/heron_tools.py) |
 | The panel | `DashboardPanel` in [`mcp/companion/heron_companion.py`](../../../mcp/companion/heron_companion.py); the page in [`static/`](../../../mcp/companion/static/), tested in [`tests/test_companion.py`](../../../tests/test_companion.py) |
 
-**Owed before it is relied on:** the fragment's proof on a named real model, with its negative case -
-its own proof plan says how.
+**Owed before it is relied on,** as written on 2026-11-01: the fragment's proof on a named real model, with its
+negative case. The card's `proof:` block names one, dated 2026-11-02, by Ajmal PS on Revit 2020;
+[Group JT](../../needs-checking/group-jt.md) holds what is still open.
 
 ## Questions for the owner, one at a time, before phase 2
 
