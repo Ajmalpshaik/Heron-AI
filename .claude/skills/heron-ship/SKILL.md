@@ -581,7 +581,8 @@ python tools/next-id.py     # take the 5b `next` it prints - free on main, every
 [`tools/register-text.py`](../../../tools/register-text.py) reads every `row-5b-N.md` back into the
 register, in number order, for `open-defects.py` and every other reader. The file holds a heading that
 names the row (`row 5b-1564`), the note under it, the table's two header lines and the row's ONE line -
-three cells, a literal pipe written as `\|`, exactly as a row in a rows file is written. A link to it
+three cells, a literal pipe written as `\|`, exactly as a row in a rows file is written - and nothing
+under it: the reader refuses a row's file with words below its table. A link to it
 says *row 5b-1564* in its words and names the file - `row-5b-1564.md` from another row, the whole path
 from anywhere else - and `check-docs` §12 fails on a link that reaches a file not holding its row.
 

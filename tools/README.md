@@ -2482,7 +2482,7 @@ files' rows, **in number order**, with its links as the page would write them - 
 change of their own. **No line names a row's file; the folder is the list**, which is what lets two branches add
 rows without changing a file in common. A row from the cut-over on that is still in a rows file is read in that
 same order, so the text does not depend on where the row is kept, and a number held in both places is read twice
-for `tests/test_open_defects.py` to refuse. A row's file that holds another row than its name says, a file named
+for `tests/test_open_defects.py` to refuse. A row's file that holds another row than its name says or any text under its table, a file named
 like one that is not one, and a caller that serves the register from memory with no way to list the folder
 (`listing=`) are each `RegisterBroken`. It also holds the one rule for which links name a row (`row_links`) and which rows a file holds
 (`rows_held`), so `split-register.py`, which re-points such a link, and `check-docs.py` section 12, which fails on

@@ -200,7 +200,8 @@ python tools/next-id.py    # the 5b `next` it prints is free on main, every bran
 ```
 
 The file is a heading that names the row (`row 5b-1564`), the note under it, the table's two header lines and
-the row's one line, in the same three cells every rows file uses. **No other file is touched, and no line
+the row's one line, in the same three cells every rows file uses - and nothing under the row: what is to
+be said of it goes in its cells. **No other file is touched, and no line
 anywhere lists the rows' files - the folder is the list.** [`tools/register-text.py`](../tools/register-text.py)
 reads them back after the rows files' rows, in number order, for every tool that reads the register. That
 is the point of it: until then every new row was appended to the end of ONE file,
