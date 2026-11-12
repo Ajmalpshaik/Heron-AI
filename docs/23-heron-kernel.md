@@ -165,7 +165,8 @@ the Orchestrator thin, which [Golden Rule 2](14-golden-rules.md) requires.
 > the host the method through `heron_method`: what must be true first, the steps in order, and each
 > capability with its risk ([04 §8.7](04-heron-mcp.md#87-a-new-pc-as-quick-as-the-old-one--built-2026-10-09)).
 > The Workflow Engine with checkpoints is [`heron_workflow.py`](../mcp/server/heron_workflow.py)
-> (DRAFT). No tool the server serves calls it yet: `grep -rn 'heron_workflow' mcp/server/heron_mcp_server.py`.
+> (DRAFT). No tool the server serves calls it yet: `grep -l 'heron_workflow' mcp/server/*.py` prints
+> nothing - the tools have been in more than one file since 2026-11-11 (`heron_tools.SERVER_FILES`).
 
 ---
 
@@ -388,5 +389,6 @@ flip one ([Golden Rule 19](14-golden-rules.md)).
 
 > **As built (2026-10-18):** [`heron_flags.py`](../brain/heron_flags.py) (DRAFT) holds the three states,
 > refuses any other word, and lets only a person move a flag. The switches a modeller actually meets
-> are the add-in's: Changes, Admin, Publish and Ask to Keep on the ribbon
+> are the add-in's: Changes, Admin, Publish and Ask to Keep, in Heron's Settings window since
+> 2026-11-07 ([D-150](decisions/D-150.md); on the ribbon until then)
 > ([22 §3](22-users-modes-and-extensibility.md#3-the-three-modes)).

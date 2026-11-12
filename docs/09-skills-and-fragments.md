@@ -217,7 +217,8 @@ Tracked as [Q-9](OPEN-QUESTIONS.md) for the value of N and who may approve.
 > a count.** A fragment is promoted on **one recorded proof against a real model**. The proof has a
 > positive case, a negative case, and a second route to the answer where one exists, and the person who
 > ran it signs it with their name and the date. Its fingerprint makes it stale the moment the code
-> changes. The statuses in use are `DRAFT` and `PROVEN`. Count each with
+> changes. The statuses in use are `DRAFT`, `PROVEN` and `DEPRECATED` - a card retired in favour of
+> another, kept on disk and never offered by retrieval. Count each with
 > `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`. No fragment is
 > `PRODUCTION`. At run time, `revit_change` keeps a change only from a fragment whose proof still stands
 > ([D-117](DECISIONS.md#d-117--a-change-is-kept-only-from-a-fragment-whose-proof-still-stands)). A
