@@ -30,3 +30,9 @@ shares no pipe. Every case reads only; nothing in this group writes to Revit.
 
 **Then sign** REPORT_SPRINKLER_NETWORK on CE1, CE2 and CE8. It also needs **one store row** on the owner's PC
 before a chat can route to it there ([the put_fragment recipe](../../brain/heron_scope.py)).
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `REPORT_SPRINKLER_NETWORK` reads PROVEN on its card, at version 1 - its `proof` block is signed by Ajmal PS,
+2026-11-02, on P1102 MEP, Revit 2020, session 59096. So where this page calls a card named here DRAFT, or says nothing
+has run in Revit, that was true when it was written and is out of date as a statement about the card. Whether CE1 to
+CE10 were what that proof ran is NOT sorted here: for the owner.

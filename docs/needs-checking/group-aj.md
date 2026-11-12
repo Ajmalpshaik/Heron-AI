@@ -28,3 +28,16 @@ Nine traps another tool met on real models, mostly on Revit 2020, that Heron's f
 **Run in part on the owner's PC, 2026-09-23.** Revit 2024 and one test project for every row that ran - `D:\Ajmal\Heron-Proving\Heron-C3-test.rvt`, a new project from the owner's template - with each arrangement built through `revit_change` by proven capabilities, and a few steps by his hand where Heron has none (the locked dimension, the lining, a room tag, one Default Elevation). No row is struck: each owes something - a signature, a decision of the owner's, or the plumbing half deferred to another day. The job file for the proofs is [`tools/jobs/c4-heron-c3-test-2026-09-23.yaml`](../../tools/jobs/c4-heron-c3-test-2026-09-23.yaml). [05-pc-proving](../work-notes/plans/earlier-brain/05-pc-proving.md) section 3 also asked for the owner's three most-used jobs that were still DRAFT: `connect-air-terminals` **accepted by him**; `find-clashes` and `center-room-tags` **drafted, not signed** - the second on one room tag he placed off-centre by hand, centred 1 with the three ducts as the negative (notRoomTags 3, centred 0), fingerprint `3fa828aaf1086daf`.
 
 ---
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `OVERRIDE_GRAPHICS_IN_VIEW` reads PROVEN on its card, at version 2 - its `proof` block is signed by Ajmal PS,
+2026-11-02, on P1102 MEP (21,446 elements), Revit 2020, session 33624. `COLOR_BY_PARAMETER` reads PROVEN on its card,
+at version 2 - its `proof` block is signed by Ajmal PS, 2026-10-18, on Project2 (3,035 elements), Revit 2020, session 13520.
+`FIND_DEAD_ENDS` reads PROVEN on its card, at version 1 - its `proof` block is signed by Ajmal PS, 2026-10-18, on
+Project2 (3,035 elements), Revit 2020, session 13520. `FIND_CLASHES` reads PROVEN on its card, at version 4 - its
+`proof` block is signed by Ajmal PS, 2026-11-02, on Project2 (5,909 elements), Revit 2024, session 57392.
+`CONNECT_AIR_TERMINALS` reads PROVEN on its card, at version 2 - its `proof` block is signed by Ajmal PS, 2026-11-02,
+on Project2 (6,036 elements), Revit 2024, session 57392. `AUTO_SIZE_PIPE` reads PROVEN on its card, at version 1 - its
+`proof` block is signed by Ajmal PS, 2026-10-21, on MEP Night Test, Revit 2020, session 68704. So where this page
+calls a card named here DRAFT, or says nothing has run in Revit, that was true when it was written and is out of date
+as a statement about the card. Whether AJ1 to AJ9 were what that proof ran is NOT sorted here: for the owner.

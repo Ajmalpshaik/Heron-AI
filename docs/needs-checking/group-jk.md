@@ -72,3 +72,10 @@ model. The job file is [`tools/jobs/set-adaptive-point-orientation.yaml`](../../
 
 A row that fails stays open; nothing in a row changes to make it pass. JK3 and JK4 on a second release (2024
 or later) are a [D-131](../decisions/D-131.md) entry after the signature, not part of it.
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `SET_ADAPTIVE_POINT_ORIENTATION` reads PROVEN on its card, at version 1 - its `proof` block is signed by
+Ajmal PS, 2026-11-02, on PHASES RAN AGAINST DIFFERENT DOCUMENTS: P1102 Tripod1, P1102 Light24 - active was Snowdon
+Towers Sample Structural, Revit 2024, session 59960. So where this page calls a card named here DRAFT, or says nothing
+has run in Revit, that was true when it was written and is out of date as a statement about the card. Whether JK0 to
+JK13 were what that proof ran is NOT sorted here: for the owner.

@@ -39,3 +39,9 @@ Never on a working family, and never on the modeller's own signature family. Wit
 | **DY8** | Version 1 unchanged: Group DL's DL2 line-style leg, `familyCategory` left out | made then refused exactly as DL2 says |
 | **DY9** | DY2 on **Revit 2024** and **2027** | the same answers - compiled on all eight, run on none |
 | **DY10** | The signature, on the owner's word only, after DY2 to DY8 | `python brain/heron_validate.py accept create-line-style --by "Ajmal PS"`. `accept` reads ONE run record, `brain/proof-drafts/runs/create-line-style.json`, and DL2's job and DY2's each write it - sign from the run that is meant |
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `CREATE_LINE_STYLE` reads PROVEN on its card, at version 2 - its `proof` block is signed by Ajmal PS,
+2026-10-18, on Family1, Revit 2020, session 13520. So where this page calls a card named here DRAFT, or says nothing
+has run in Revit, that was true when it was written and is out of date as a statement about the card. Whether DY1 to
+DY10 were what that proof ran is NOT sorted here: for the owner.

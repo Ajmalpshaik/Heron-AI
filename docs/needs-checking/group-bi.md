@@ -31,3 +31,9 @@ with no links, checked in Manage Links first.
 
 **What cannot be answered here.** Every row needs a Revit. What was checked without one: the six compile on
 2020 to 2027, and every suite passes.
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `FIND_CLASHES` reads PROVEN on its card, at version 4 - its `proof` block is signed by Ajmal PS, 2026-11-02,
+on Project2 (5,909 elements), Revit 2024, session 57392. So where this page calls a card named here DRAFT, or says
+nothing has run in Revit, that was true when it was written and is out of date as a statement about the card. Whether
+BI1 to BI6 were what that proof ran is NOT sorted here: for the owner.

@@ -72,3 +72,11 @@ connected, and `< /dev/null` on every line.
 | **DR10c** | *Words that fit several documents of different titles, rolled back - row 5b-1516's case.* The same three open as DR10b plus *Heron Copy Source*: `python mcp/client/heron_bridge_client.py validate --in "Heron Repairs Test" --out <a scratch file> --write --set "categories=Generic Models" --set elementIds= --set offsetMm=0,20000,0 --set "sourceDocumentTitle=Heron Copy Source" --negative-set "categories=Generic Models" --negative-set elementIds= --negative-set offsetMm=0,20000,0 --negative-set "sourceDocumentTitle=Twin" copy-elements-between-documents < /dev/null` | Positive: `copied` 3. Negative: `copied` 0 and `report` reading *2 open documents match "Twin"*, naming *Heron Twin* and *Heron Twin 2* each with its path, then *Give the whole title of the one you mean* and *NOTHING WAS COPIED*. Version 3 copied from whichever Revit listed first |
 | **DR11** | The rest on **Revit 2020** and **2027** | the same answers where the card declares the release. Compiled on every declared release; what Revit DOES was measured on none |
 | **DR12** | The signatures, on the owner's word only, after the rows above | `python brain/heron_validate.py accept <fragment> --by "Ajmal PS"` for each |
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `CREATE_TOPOSOLID` reads PROVEN on its card, at version 1 - its `proof` block is signed by Ajmal PS,
+2026-10-23, on N23 Snowdon Site 2024, Revit 2024, session 83588. `REPORT_DIVIDED_SURFACES` reads PROVEN on its card,
+at version 2 - its `proof` block is signed by Ajmal PS, 2026-11-02, on PHASES RAN AGAINST DIFFERENT DOCUMENTS: P1102
+Box, P1102 Light24 - active was Snowdon Towers Sample Structural, Revit 2024, session 59960. So where this page calls
+a card named here DRAFT, or says nothing has run in Revit, that was true when it was written and is out of date as a
+statement about the card. Whether DR1 to DR12 were what that proof ran is NOT sorted here: for the owner.

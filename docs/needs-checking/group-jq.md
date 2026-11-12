@@ -71,3 +71,10 @@ The job file is [`tools/jobs/report-family-template-orientation-2026-10-29.yaml`
 
 A row that fails stays open; nothing in a row changes to make it pass. JQ3 and JQ4 on a second release (2024 or
 later) are a [D-131](../decisions/D-131.md) entry after the signature, not part of it.
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `REPORT_FAMILY_TEMPLATE` reads PROVEN on its card, at version 4 - its `proof` block is signed by Ajmal PS,
+2026-11-02, on PHASES RAN AGAINST DIFFERENT DOCUMENTS: P1102 MEP Family, P1102 MEP - active was P1102 MEP, Revit 2020,
+session 59096. So where this page calls a card named here DRAFT, or says nothing has run in Revit, that was true when
+it was written and is out of date as a statement about the card. Whether JQ0 to JQ9 were what that proof ran is NOT
+sorted here: for the owner.

@@ -54,3 +54,11 @@ deleted after. **LOOK AT EVERY PICTURE.**
 `report-render-settings` version 2 on IM7 - after IM1 to IM8 have passed, every picture looked at. A row that
 fails reopens its card; the 150 mm, the 600 mm and the shots' values change on the owner's word, never to make
 a row pass.
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `FRAME_ELEMENTS_IN_CAMERA` reads PROVEN on its card, at version 5 - its `proof` block is signed by Ajmal PS,
+2026-11-06, on Heron Camera Proof Scratch (3,207 elements), Revit 2024, session 41864. `REPORT_RENDER_SETTINGS` reads
+PROVEN on its card, at version 2 - its `proof` block is signed by Ajmal PS, 2026-10-22, on Heron Capture Test (21,317
+elements), Revit 2020, session 60544. So where this page calls a card named here DRAFT, or says nothing has run in
+Revit, that was true when it was written and is out of date as a statement about the card. Whether IM0 to IM8 were
+what that proof ran is NOT sorted here: for the owner.

@@ -53,3 +53,9 @@ sheet. Note each field's alignment and heading orientation from the Formatting t
 | **FY11** | *Not the proof - an observation.* fieldName=all, hideOrShow=hide, then show | What Revit does with every column hidden - write it down. If Revit refuses, the refusal is named per column; if it allows it, `show` must bring all five back |
 
 Signing: Ajmal PS signs the FY1/FY2 draft; then he says whether the card goes back to PROVEN.
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `SET_SCHEDULE_APPEARANCE` reads PROVEN on its card, at version 5 - its `proof` block is signed by Ajmal PS,
+2026-11-02, on P1102 MEP (21,446 elements), Revit 2020, session 59096. So where this page calls a card named here
+DRAFT, or says nothing has run in Revit, that was true when it was written and is out of date as a statement about the
+card. Whether FY1 to FY11 were what that proof ran is NOT sorted here: for the owner.

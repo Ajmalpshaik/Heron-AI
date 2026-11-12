@@ -28,3 +28,9 @@ already reads and CI compiles for every release 2020 to 2027.
 |---|---|---|
 | **EB1** | Revit 2020 (any release will do), a new project "Heron Wall Offset Test" made as the job's header says - three walls on Level 1 with Base Offset 0, 300 and -150 mm, two grids, all in "FloorPlan: Level 1": `python tools/batch-prove.py tools/jobs/read-element-level-wall-offset-2026-10-14.yaml`, then read [`brain/proof-drafts/read-element-level.yaml`](../../brain/proof-drafts/README.md), `python brain/heron_validate.py accept read-element-level --by "Ajmal PS"` and set `heron-status: PROVEN` | positive: `levelName` "Level 1" for all three walls and `offsetMm` 0, 300 and -150, each equal to that wall's Base Offset in the Properties palette - **a 0 for the 300 or the -150 wall is a FAIL whatever the verdict says**; negative: both grids in `noLevel`, nothing in `levelName` |
 | **EB2** | Any model with ducts or pipes on an offset, the same release | version 1's own case still holds: a duct's `offsetMm` equal to its offset in the Properties palette, as before |
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `READ_ELEMENT_LEVEL` reads PROVEN on its card, at version 2 - its `proof` block is signed by Ajmal PS,
+2026-10-18, on Project2 (3,027 elements), Revit 2020, session 13520. So where this page calls a card named here DRAFT,
+or says nothing has run in Revit, that was true when it was written and is out of date as a statement about the card.
+Whether EB1 to EB2 were what that proof ran is NOT sorted here: for the owner.

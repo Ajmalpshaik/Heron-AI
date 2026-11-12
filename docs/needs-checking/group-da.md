@@ -328,3 +328,9 @@ Re-run 2026-10-18 with both rows fixed: forms built 44, seconds a form 10.9 s, R
 
 **Still owed:** DA4's kept half; the warm-up OFF against ON on 2020 and 2027. DA7 and `combine-family-forms`'
 signature were given and both cards promoted in pull request #624; `combine-family-forms`' second signature, after 5b-1001's fix, was given the same day (above).
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `CREATE_FAMILY_FORMS` reads PROVEN on its card, at version 3 - its `proof` block is signed by Ajmal PS,
+2026-11-02, on P1102 Family, Revit 2020, session 59096. So where this page calls a card named here DRAFT, or says
+nothing has run in Revit, that was true when it was written and is out of date as a statement about the card. Whether
+DA4 were what that proof ran is NOT sorted here: for the owner.

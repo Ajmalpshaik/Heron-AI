@@ -79,3 +79,9 @@ moved to this card**, so no row was owed. `ATTACH_WALLS`'s five sentences still 
 before it they ranked `PLACE_HOSTED_FAMILY`, `PLACE_AREA_REINFORCEMENT`, `PAINT_FACES` and
 `CREATE_FROM_ROOM_BOUNDARIES` - none of which attaches a wall, and none of which claims them. Handed walls
 this card changes nothing and says none of them is a column. Both cards say so in their routing comments.
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `ATTACH_WALLS` reads PROVEN on its card, at version 1 - its `proof` block is signed by Ajmal PS, 2026-11-07,
+on Attach Walls Scratch 2026 (3,332 elements), Revit 2026, session 35148. So where this page calls a card named here
+DRAFT, or says nothing has run in Revit, that was true when it was written and is out of date as a statement about the
+card. It is a card this group names in passing, not the one its rows prove.

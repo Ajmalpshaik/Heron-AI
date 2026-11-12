@@ -35,3 +35,10 @@ links, checked in Manage Links first.
 
 **What cannot be answered here.** Every row needs a Revit. What was checked without one: the ten compile on
 2020 to 2027, and every suite passes.
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `SELECT_OPENINGS` reads PROVEN on its card, at version 3 - its `proof` block is signed by Ajmal PS,
+2026-11-02, on PHASES RAN AGAINST DIFFERENT DOCUMENTS: P1102 ARCH, P1102 Family - active was P1102 ARCH, Revit 2020,
+session 59096. So where this page calls a card named here DRAFT, or says nothing has run in Revit, that was true when
+it was written and is out of date as a statement about the card. Whether BG1 to BG10 were what that proof ran is NOT
+sorted here: for the owner.

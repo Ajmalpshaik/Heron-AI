@@ -111,3 +111,9 @@ Each by `validate --write`, both legs rolled back, then signed by Ajmal PS and s
 
 - `flex-family` - positive Family4, trials *Duct Width=900; Duct Height=450 | Duct Width=400; Duct Height=200*: `allHeld` true, both trials read back (974 mm overall at 900), `restored` true; negative *No Such Size=500*: nothing tried, refused by name.
 - `add-family-connector` - positive Family4 on *Duct Front*: Supply Air rectangular 150 x 300 mm, sized by Frame Length and Duct Height; negative on *Center (Front/Back)*: no solid face, nothing made.
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `ADD_FAMILY_CONNECTOR` reads PROVEN on its card, at version 5 - its `proof` block is signed by Ajmal PS,
+2026-10-24, on TRG_Duct Accessory_Volume Control Damper (2,004 elements), Revit 2020, session 94928. So where this
+page calls a card named here DRAFT, or says nothing has run in Revit, that was true when it was written and is out of
+date as a statement about the card. Whether AN1 to AN18 were what that proof ran is NOT sorted here: for the owner.
