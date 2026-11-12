@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -200,51 +200,53 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-24'
+  date: '2026-11-12'
   by: Ajmal PS
-  model: Heron IS Radius (1,560 elements), Revit 2020, session 83568
+  model: Heron NF Generic (1,564 elements), Revit 2020, session 33000
   positive_case: run as it would normally be run - run inside a transaction, and Revit reported
     the transaction group ROLLED BACK afterwards. returned along (null), already (null), arc
-    Arc, axisOf Func`2, axisPlane (null), blend (null), centreArc (null), centrePlane (null),
+    (null), axisOf Func`2, axisPlane (null), blend (null), centreArc (null), centrePlane (null),
     centreReference (null), circles 0 item(s), curveReferenceOf Func`3, dbNamespace Autodesk.Revit.DB,
-    diameter false, findings 2 item(s) [The radius of the extrusion's sketched circle (radius
-    10 mm)..., The dimension is in the sketch, where Edit Extrusion shows i...], flags BindingFlags,
+    diameter true, findings 2 item(s) [The diameter of the symbolic line's arc d09df1e6-65b3-4385-9...,
+    FLEX_FAMILY with "Arc Diameter" at two different sizes is wh...], flags BindingFlags,
     halfMillimetre 0.00164041994750656, invariant CultureInfo, isLength Func`2, isRound Func`2,
-    joins Func`4, joinsIds Func`4, kindOf Func`2, labelled The radius of the extrusion's sketched
-    circle (radius 10 mm), labelled "Shaft Radius" inside the form's sketch, reading 10 mm.,
-    labelledWith Func`2, measures Func`3, mm Func`2, notAFamily false, otherReference (null),
-    parameter FamilyParameter, pathAlready (null), pathArc (null), pathDatum (null), pathDatumReference
-    (null), pathNormal (null), pathView (null), planeReference (null), planeReferenceOf Func`2,
-    problems 0 item(s), readAgain Func`3, readBack Func`2, referenceNotes 0 item(s), refused
-    (null), release 2020, revitAssembly RuntimeAssembly, riseAlready (null), risePlane (null),
-    riseView (null), risers 0 item(s), sameKind Func`3, sideLine (null), target Extrusion,
-    valueMm 10, view ViewPlan, wanted 0.0328083989501312, writtenOf Func`2. inputs came form
-    as given; parameterName as given; diameter as given. on Heron IS Radius
-  negative_case: run with form=b26ea862-ec61-474f-bf8a-eb580e5b8bff-00000a93, parameterName=Bell
-    Radius, diameter=false instead - chosen because it should not contain what this fragment
+    joins Func`4, joinsIds Func`4, kindOf Func`2, labelled The diameter of the symbolic line's
+    arc d09df1e6-65b3-4385-9279-48572506fe4e-00000aa1 (radius 150 mm) in "Ref. Level", labelled
+    "Arc Diameter", reading 300 mm - the arc's radius read back at 150 mm., labelledWith Func`2,
+    line2d SymbolicCurve, lineArc Arc, lineView ViewPlan, lineViewNote (null), measures Func`3,
+    mm Func`2, notAFamily false, otherReference (null), parameter FamilyParameter, pathAlready
+    (null), pathArc (null), pathDatum (null), pathDatumReference (null), pathNormal (null),
+    pathView (null), planeReference (null), planeReferenceOf Func`2, problems 0 item(s), readAgain
+    Func`3, readBack Func`2, referenceNotes 0 item(s), refused (null), release 2020, revitAssembly
+    RuntimeAssembly, riseAlready (null), risePlane (null), riseView (null), risers 0 item(s),
+    sameKind Func`3, sideLine (null), target (null), valueMm 300, view (null), wanted 0.492125984251968,
+    writtenOf Func`2. inputs came form as given; parameterName as given; diameter as given.
+    on Heron NF Generic
+  negative_case: run with form=d09df1e6-65b3-4385-9279-48572506fe4e-00000a9e, parameterName=Arc
+    Diameter, diameter=true instead - chosen because it should not contain what this fragment
     reports - run inside a transaction, and Revit reported the transaction group ROLLED BACK
     afterwards. returned along (null), already (null), arc (null), axisOf Func`2, axisPlane
     (null), blend (null), centreArc (null), centrePlane (null), centreReference (null), circles
-    0 item(s), curveReferenceOf Func`3, dbNamespace Autodesk.Revit.DB, diameter false, findings
-    1 item(s) [Nothing was labelled. No reference plane runs through the re...], flags BindingFlags,
+    0 item(s), curveReferenceOf Func`3, dbNamespace Autodesk.Revit.DB, diameter true, findings
+    1 item(s) [Nothing was labelled. The symbolic line d09df1e6-65b3-4385-9...], flags BindingFlags,
     halfMillimetre 0.00164041994750656, invariant CultureInfo, isLength Func`2, isRound Func`2,
-    joins Func`4, joinsIds Func`4, kindOf Func`2, labelled , labelledWith Func`2, measures
-    Func`3, mm Func`2, notAFamily false, otherReference (null), parameter FamilyParameter,
-    pathAlready (null), pathArc (null), pathDatum (null), pathDatumReference (null), pathNormal
-    (null), pathView (null), planeReference (null), planeReferenceOf Func`2, problems 1 item(s)
-    [No reference plane runs through the revolve's axis. Measured...], readAgain Func`3, readBack
-    Func`2, referenceNotes 0 item(s), refused Nothing was labelled. No reference plane runs
-    through the revolve's axis. Measured from the axis line itself, Revit moves the axis when
-    the size changes and the revolve breaks - make a reference plane through the axis first
-    (CREATE_REFERENCE_PLANES), then label., release 2020, revitAssembly RuntimeAssembly, riseAlready
-    (null), risePlane (null), riseView (null), risers 0 item(s), sameKind Func`3, sideLine
-    Line, target Revolution, valueMm 0, view (null), wanted 0.196850393700787, writtenOf Func`2.
-    inputs came form as given; parameterName as given; diameter as given. on Heron IS Radius
+    joins Func`4, joinsIds Func`4, kindOf Func`2, labelled , labelledWith Func`2, line2d SymbolicCurve,
+    lineArc (null), lineView (null), lineViewNote (null), measures Func`3, mm Func`2, notAFamily
+    false, otherReference (null), parameter FamilyParameter, pathAlready (null), pathArc (null),
+    pathDatum (null), pathDatumReference (null), pathNormal (null), pathView (null), planeReference
+    (null), planeReferenceOf Func`2, problems 1 item(s) [The symbolic line d09df1e6-65b3-4385-9279-48572506fe4e-00000...],
+    readAgain Func`3, readBack Func`2, referenceNotes 0 item(s), refused Nothing was labelled.
+    The symbolic line d09df1e6-65b3-4385-9279-48572506fe4e-00000a9e is not an arc - a straight
+    line has no radius. Its length follows the planes its ends are locked to (LOCK_FAMILY_LINES_TO_PLANES),
+    and the planes are labelled by LABEL_FAMILY_DIMENSION., release 2020, revitAssembly RuntimeAssembly,
+    riseAlready (null), risePlane (null), riseView (null), risers 0 item(s), sameKind Func`3,
+    sideLine (null), target (null), valueMm 0, view (null), wanted 0.492125984251968, writtenOf
+    Func`2. inputs came form as given; parameterName as given; diameter as given. on Heron
+    NF Generic
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: aa807d3d07693727
-
+  fingerprint: 8555de577f0c8128
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
