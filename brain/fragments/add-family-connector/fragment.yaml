@@ -238,6 +238,21 @@ compatibility-note: >
 #   "report connector sizes in the model"        -> REPORT_CONNECTORS
 #   "delete the connector I just added"          -> REMOVE_FAMILY_CONNECTOR -
 #                                                   one already made, deleted
+#   "make the connector round", "make it oval"   -> SET_FAMILY_CONNECTOR_ROLES
+#                                                   v5 "shape=", a connector
+#                                                   already made - this card
+#                                                   makes round or rectangular
+#                                                   only; an oval one is made
+#                                                   rectangular here, then
+#                                                   turned there (row 5b-1566)
+#   "put the connector on the reference plane"   -> no solid face lies on a
+#                                                   bare plane, so this card
+#                                                   refuses it (measured, Revit
+#                                                   2020). Revit 2023 on: make
+#                                                   it on a face here, then
+#                                                   SET_FAMILY_CONNECTOR_ROLES
+#                                                   "host=<plane>" (row 5b-1567)
+#   "lock the connector to the planes"           -> NOTHING yet (row 5b-1568)
 
 utterances:
   - put a supply air duct connector on the neck top

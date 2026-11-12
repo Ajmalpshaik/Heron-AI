@@ -1466,6 +1466,14 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-nn.md`](needs-checking/group-nn.md)
 
+## Group NO - a family connector's shape changed, and a connector moved onto a reference plane: `SET_FAMILY_CONNECTOR_ROLES` version 5 (2026-11-11)
+
+**Its own file:** [`needs-checking/group-no.md`](needs-checking/group-no.md)
+
+## Group NQ - an arc's or a circle's CENTRE locked to named planes in a 2D family: `LOCK_FAMILY_LINES_TO_PLANES` version 3 (2026-11-12)
+
+**Its own file:** [`needs-checking/group-nq.md`](needs-checking/group-nq.md)
+
 ## Group NR - a dry run from the chat: `revit_change` with `dry_run` (2026-11-12)
 
 **Its own file:** [`needs-checking/group-nr.md`](needs-checking/group-nr.md)
