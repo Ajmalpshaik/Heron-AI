@@ -193,7 +193,10 @@ trained embedding the owner's PC ranks with (model2vec), and exits 3 anywhere el
 runnable for that reason. Leave it to that PC, or to a venv of its own (§3a): model2vec in the system
 Python would put every other suite on a backend CI does not use. Measured 2026-10-18 in a container with
 both installs above: this one and `test_bridge_roundtrip.py`, its host not yet built, were the only
-suites waiting.
+suites waiting. **Where the system Python already has model2vec it runs, and a red there may be the
+machine:** measured 2026-11-12 in a cloud container with model2vec and no re-ranker installed, it failed 8
+checks - the same 8 on `origin/main` at `c65509a9`, so not the branch's change. That is the model
+alone, where the PC ranks `model+rerank` (§3a): run it on main's tree before reading such a red as yours.
 
 **Derive which ones, rather than reading a list here** — the same rule as the suite total four lines
 up, and for the same reason it is written twice:

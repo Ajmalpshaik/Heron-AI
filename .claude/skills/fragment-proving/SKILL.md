@@ -49,12 +49,13 @@ own record - see [the section on it](#a-proven-fragment-on-another-release-and-a
 
 **Since [D-106](../../../docs/DECISIONS.md) (2026-09-28)** a fragment declared `PUBLISH` or `ADMIN`
 travels only as its own operation - `run_fragment_publish` or `run_fragment_admin` - and Revit lets it
-through only while the owner's **Publish** or **Admin** switch is on in the ribbon, with **Changes**.
+through only while the owner's **Publish** or **Admin** switch is on in Heron's Settings window
+([D-150](../../../docs/decisions/D-150.md)), with **Changes**.
 
 - `batch-prove` and `prove` never send one. `validate` refuses one unless it is given
   **`--allow-publish --write` together** - `--allow-publish` alone is refused, because the read path
   would have run an export past the Publish switch.
-- **The switch is the owner's to turn on, at the ribbon.** Ask him; never set `admin.enabled` or
+- **The switch is the owner's to turn on, in Settings.** Ask him; never set `admin.enabled` or
   `publish.enabled` in `heron.config` yourself.
 - A proof rolls the model back; **it does not unwrite a file.** An export proof leaves what it wrote -
   point it at a scratch folder.
@@ -197,7 +198,8 @@ command line is a conversation of its own - so is the chat you run it from. A co
 held when it ends, and `batch-prove` at the end of its batch. **A chat that has just used the Heron tools
 on the model holds it for three quiet minutes**, and a command line run from that chat is refused
 *"Model 'X' is in use by another chat"* - nothing was sent. Call `revit_release` in the chat first, or
-press **Free this model** on the ribbon. For a series of hand-run commands where one consumes what
+press **Free this model** on the ribbon (in the Heron button's menu since D-150). For a series of
+hand-run commands where one consumes what
 another left (`--expect-from`), set **`HERON_CONVERSATION_ID`** to one value of your own for all of them:
 the carried chain belongs to a conversation, and a series with it set is not handed back at each exit -
 `revit_release` or the button frees it.

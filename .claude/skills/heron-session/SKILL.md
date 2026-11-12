@@ -13,7 +13,7 @@ trap [`heron-guard`](../heron-guard/SKILL.md) fell into, and the reason it moved
 
 | | when | what it says | can it block? |
 |---|---|---|---|
-| `bin/session_line.py` | every session start | *"Heron: branch X is N behind and M ahead of origin/main (as last fetched). Fragments: P PROVEN, D DRAFT of T."* — and on any system but Windows, *"Not Windows: no Revit in this session - Heron serves only its library tools …"* | **No** |
+| `bin/session_line.py` | every session start | *"Heron: branch X is N behind and M ahead of origin/main (as last fetched). Fragments: P PROVEN, D DRAFT, K other of T."* — and on any system but Windows, *"Not Windows: no Revit in this session - Heron serves only its library tools …"* | **No** |
 | `bin/main_moved.py` | before a pull request is **merged** or **marked ready** | the commits on origin/main this branch does not have, freshly fetched | **No** |
 | `bin/local_only.py` | before every prompt | only for a prompt **marked LOCAL** in a **cloud container**: *"This prompt is marked LOCAL (it needs Revit on the owner's PC) and this is a cloud container with no Revit. Say so in one line and stop. Tell the owner to start it on the Revit PC."* | **No** |
 | `bin/hook_log.py` | after every decision any Heron hook makes | nothing — it writes one line to a log outside the repository | **No** |
@@ -26,7 +26,8 @@ and the moment before a merge are the two places that knowledge is cheapest and 
 
 - **Derived, never typed.** Behind and ahead from `git rev-list`; the fragment counts from each
   `brain/fragments/*/fragment.yaml`'s own `heron-status:` line — the count
-  [AGENTS.md](../../../AGENTS.md) gives as a command.
+  [AGENTS.md](../../../AGENTS.md) gives as a command. `K other` is every card that is neither - the
+  retired ones, `DEPRECATED` - and is left out when there is none.
 - **It does not fetch.** A session start is not the moment to wait on a network, so it compares with
   origin/main **as last fetched** and says so. The moment that must be current is the merge, and the
   other hook fetches then.

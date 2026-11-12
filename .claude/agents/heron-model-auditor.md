@@ -43,7 +43,8 @@ nothing*.
    else comes back as candidates with what each takes - pick one and run it once. It runs
    only capabilities that read, and it cannot change the model. Its answer ends by saying how far the
    capability is proven: report anything but *PROVEN, and its code has not changed since* as unproven,
-   in the tool's own words.
+   in the tool's own words. The reply's second line is `outcome: WORD - what it means`: only `ANSWERED`
+   is an answer, and anything else goes under *Not checked* with that line.
 
 Call one tool at a time. Revit answers one request at a time, and the modeller may be working in it.
 
