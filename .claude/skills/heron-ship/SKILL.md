@@ -1,6 +1,6 @@
 ---
 name: heron-ship
-description: What to run before pushing Heron, in what order, and which failures are the machine rather than the change. Use before any commit or push, when a gate or test fails and it is not obvious whether the change caused it, or when asked whether the work is ready. Covers stating the change's intent and capturing its before/after evidence, the four gates you run before pushing and the twelve CI actually decides on, the reports whose findings are questions, how to measure what a card's routing words moved - main against the branch on a named backend, the checker whose exit code follows the unfinished list, the seven checks that need something this container has not got - a tool, a store or the whole git history, why no derived count is typed in prose, where a new 5b defect row is written - a file of its own, so two branches adding rows never touch the same file - and how to resolve the two merge conflicts the registers still have, in the NEEDS-CHECKING group index and between two pieces of work that took the same id.
+description: What to run before pushing Heron, in what order, and which failures are the machine rather than the change. Use before any commit or push, when a gate or test fails and it is not obvious whether the change caused it, or when asked whether the work is ready. Covers stating the change's intent and capturing its before/after evidence, the four gates you run before pushing and the twelve CI actually decides on, the reports whose findings are questions, how to measure what a card's routing words moved - main against the branch on a named backend, the checker whose exit code follows the unfinished list, the seven checks that need something this container has not got - a tool, a store or the whole git history, why no derived count is typed in prose, where a new 5b defect row is written (a file of its own), and how to resolve a merge conflict in the NEEDS-CHECKING group index or between two branches that took the same id.
 allowed-tools:
   - Bash
   - Read
@@ -580,14 +580,15 @@ python tools/next-id.py     # take the 5b `next` it prints - free on main, every
 **That is all of it. No other file is touched, and no index line is added** - the folder is the list, and
 [`tools/register-text.py`](../../../tools/register-text.py) reads every `row-5b-N.md` back into the
 register, in number order, for `open-defects.py` and every other reader. The file holds a heading that
-names the row (`row 5b-1564`), the note under it, the table's two header lines and the row's ONE line -
+names the row (`row 5b-1564` - the reader refuses a heading that names another), the note under it, the table's two header lines and the row's ONE line -
 three cells, a literal pipe written as `\|`, exactly as a row in a rows file is written - and nothing
 under it: the reader refuses a row's file with words below its table. A link to it
 says *row 5b-1564* in its words and names the file - `row-5b-1564.md` from another row, the whole path
 from anywhere else - and `check-docs` §12 fails on a link that reaches a file not holding its row.
 
 **Never append a row to `docs/fragment-issues/section-5b-rows-401-425.md` again.** Until 2026-11-12
-every new row went on the end of that one file, so it held rows a thousand past its name and **every
+every new row went on the end of that one file, so a file named for rows 401 to 425 held every row up
+to 5b-1563, and **every
 pair of branches that each added a row conflicted in it** - measured 2026-11-11: changed on both sides
 in 17 of the 48 merges of the sixty days before, and on almost every merge of parallel work in one
 session, each resolved by hand as "keep both, in number order"

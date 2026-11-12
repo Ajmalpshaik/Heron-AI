@@ -166,7 +166,9 @@ Verifies that:
   the register does not read as it should** ([row 5b-1564](../docs/fragment-issues/row-5b-1564.md)): no index
   line names `docs/fragment-issues/row-5b-N.md` - the folder is the list - so what fails is a file named like
   one that [`register-text.py`](#register-textpy---a-split-register-read-as-one-text) does not read
-  (**NOT READ**), one that holds another row than its name says, one numbered before the cut-over the page
+  (**NOT READ**) - **under any name**: a row saved as `Row-5b-N.md`, `5b-N.md`, a `.txt` or in a subfolder is
+  found by its row line, not by what it is called, and named with the name it should have - one that holds
+  another row than its name says, or whose heading names another, one numbered before the cut-over the page
   states (**BEFORE THE CUT-OVER**), a new row still appended to a rows file (**LEFT IN A ROWS FILE**, with the
   `split-register.py --new-rows` command that moves it), and one number in both places (**HELD TWICE**)
 - **text hygiene over every file git tracks**: no control character other than tab, CR and LF, no
@@ -2415,8 +2417,9 @@ never the real one.
 **A new row of section 5b is a file of its own, and this tool's job for a new row there is retired** - since
 2026-11-12, [row 5b-1564](../docs/fragment-issues/row-5b-1564.md). Every new 5b row used to be appended to the end
 of one rows file and wait for a run of this to band it; the run never came, because re-banding changes the file
-every open branch was appending to, so that one file grew to hold more than a thousand rows and stopped almost every
-merge of parallel work. Now the page says, under the line naming the rows files, *"**Its rows from 1564 on, one file
+every open branch was appending to, so that one file, named for rows 401 to 425, went on taking every row written after them
+(`grep -c '^| \*\*[0-9]' docs/fragment-issues/section-5b-rows-401-425.md` counts what it holds) and stopped
+almost every merge of parallel work. Now the page says, under the line naming the rows files, *"**Its rows from 1564 on, one file
 each:**"*, and row 5b-1564 is `docs/fragment-issues/row-5b-1564.md` - written by hand, in one step, with no run of
 anything. The page's line is the rule and this never writes one where the page has none. What it still does:
 
@@ -2482,7 +2485,8 @@ files' rows, **in number order**, with its links as the page would write them - 
 change of their own. **No line names a row's file; the folder is the list**, which is what lets two branches add
 rows without changing a file in common. A row from the cut-over on that is still in a rows file is read in that
 same order, so the text does not depend on where the row is kept, and a number held in both places is read twice
-for `tests/test_open_defects.py` to refuse. A row's file that holds another row than its name says or any text under its table, a file named
+for `tests/test_open_defects.py` to refuse. A row's file that holds another row than its name says, a heading that names another row or none, or any
+text under its table, a file named
 like one that is not one, and a caller that serves the register from memory with no way to list the folder
 (`listing=`) are each `RegisterBroken`. It also holds the one rule for which links name a row (`row_links`) and which rows a file holds
 (`rows_held`), so `split-register.py`, which re-points such a link, and `check-docs.py` section 12, which fails on
