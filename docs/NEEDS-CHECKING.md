@@ -1486,6 +1486,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-nn.md`](needs-checking/group-nn.md)
 
+## Group NP - `revit_health` says, under each connected Revit, whether that Revit will ask Keep or Discard: the add-in's `info` answer now carries the Ask to Keep switch (2026-11-12)
+
+**Its own file:** [`needs-checking/group-np.md`](needs-checking/group-np.md)
+
 ## Group NQ - three everyday MEP jobs given a method, none run in Revit: annotate a view, colour a view by system, spaces and zones from the architect's link (2026-11-12)
 
 **Its own file:** [`needs-checking/group-nq.md`](needs-checking/group-nq.md)

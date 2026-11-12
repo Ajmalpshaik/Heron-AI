@@ -228,6 +228,44 @@ proof:
     whether one exists here has not been settled, and a declared absence is not the same as
     none
   fingerprint: e4a1c3bb31a47ced
+  releases:
+  - release: '2024'
+    date: '2026-11-12'
+    by: Ajmal PS
+    model: R24 Arrow, Revit 2024, session 13164 - the count is NOT recorded because 3,209 elements
+      was measured on R24 Project, the document in front, and this ran against another one (row
+      15)
+    positive_case: run as it would normally be run. returned combinationList , edgesOf 1 entry(ies),
+      edgesUnread 0, elements 3 item(s) [Line, Line, Detail Filled Region], findings 4 item(s)
+      [3 2D element(s) of 3 lines, regions and nested families matc..., 0 form(s) of 0 in the
+      family; 0 join(s) or cut(s)., This family has no forms yet - nothing has been modelled
+      in ..., ...], formCount 0, formList , ids 0 item(s), invariant CultureInfo, isViewBased
+      Func`2, joins 0 item(s), kind2D Func`2, kindOf Func`2, known 9 item(s) [solid, void, extrusion,
+      ...], mm Func`2, named HashSet`1, named2D false, namedInOrder 0 item(s), notAFamily false,
+      notNamed false, parts 1 item(s) [2d], planeOf Func`2, problems 0 item(s), refused (null),
+      regionOfEdge 3 entry(ies), regions 1 item(s) [Detail Filled Region], rows 0 item(s), scanned
+      0, squash Func`2, twoDCount 3, twoDList detail line bbdc94a4-bb02-427a-ad05-ea4d465a29c6-000008f4
+      (in view Ref. Level), from 0,0,0 to 600,0,0 mm, 600 long, style Detail Items, Visible
+      yes, nothing holds it  ||  detail line bbdc94a4-bb02-427a-ad05-ea4d465a29c6-000008f5 (in
+      view Ref. Level), arc from 0,150,0 to 0,-150,0, centre 0,0,0, radius 150 mm, style Detail
+      Items, Visible yes, nothing holds it  ||  filled region bbdc94a4-bb02-427a-ad05-ea4d465a29c6-000008f8
+      (in view Ref. Level), type Solid Fill - Black, 1 loop(s), X 600 to 900, Y -80 to 80, Z
+      0 to 0 mm, 3 sketch edge(s), Visible yes, nothing holds it, twoDWords 16 entry(ies), wanted2D
+      HashSet`1, words 0 item(s), words2D 1 item(s) [2d]. inputs came which as given. on R24
+      Arrow
+    negative_case: run with which=nested instead - chosen because it should not contain what
+      this fragment reports. returned combinationList , edgesOf 1 entry(ies), edgesUnread 0,
+      elements 0 item(s), findings 4 item(s) [0 2D element(s) of 3 lines, regions and nested
+      families matc..., 0 form(s) of 0 in the family; 0 join(s) or cut(s)., This family has
+      no forms yet - nothing has been modelled in ..., ...], formCount 0, formList , ids 0 item(s),
+      invariant CultureInfo, isViewBased Func`2, joins 0 item(s), kind2D Func`2, kindOf Func`2,
+      known 9 item(s) [solid, void, extrusion, ...], mm Func`2, named HashSet`1, named2D false,
+      namedInOrder 0 item(s), notAFamily false, notNamed false, parts 1 item(s) [nested], planeOf
+      Func`2, problems 0 item(s), refused (null), regionOfEdge 3 entry(ies), regions 1 item(s)
+      [Detail Filled Region], rows 0 item(s), scanned 0, squash Func`2, twoDCount 0, twoDList
+      , twoDWords 16 entry(ies), wanted2D HashSet`1, words 0 item(s), words2D 1 item(s) [nested].
+      inputs came which as given. on R24 Arrow
+    fingerprint: e4a1c3bb31a47ced
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

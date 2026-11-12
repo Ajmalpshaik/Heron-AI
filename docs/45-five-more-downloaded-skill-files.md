@@ -198,7 +198,11 @@ Every one below was DRAFT before it was touched, so **no proven fragment lost it
 > `PLACE_HOSTED_FAMILY`, `PLACE_STRUCTURAL_FAMILY` and `REPORT_LOCATION` are at later versions than this
 > table gives. The table is what this study built; each card's own `version:` and `heron-status:` lines
 > are the current word. Every card in it is still DRAFT, and no row of [Group CD](needs-checking/group-cd.md)
-> has been run.
+> has been run. *Read 2026-11-12, off the cards:* that no longer holds - `CHECK_MODEL_STANDARDS`,
+> `PLACE_HOSTED_FAMILY`, `REPORT_LOCATION`, `TRANSFER_PROJECT_PARAMETERS_BETWEEN_DOCUMENTS` and the
+> mirrored-instances report read PROVEN, `IMPORT_PARAMETER_VALUES` and `PLACE_STRUCTURAL_FAMILY` read
+> DEPRECATED (merged into other cards), and `ADD_PROJECT_PARAMETER` and `REPORT_LEVEL_ELEVATIONS` read
+> DRAFT.
 
 And the recipe [`ifc-export-readiness`](../brain/skills/ifc-export-readiness.yaml): storeys, elements on no
 level, duplicates, duplicate IFC identities, elements with no IFC class or set not to export, required

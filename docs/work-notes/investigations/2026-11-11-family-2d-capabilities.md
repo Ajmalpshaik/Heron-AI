@@ -5,6 +5,11 @@ requests below are merged or closed by the owner, each widened card is proved ag
 and the merge candidates are decided; then the durable part is on the cards and in
 [FRAGMENT-ISSUES](../../FRAGMENT-ISSUES.md) and this note is deleted.
 
+**Read against the tree 2026-11-12 - still active, and close.** All three pull requests are merged (A is #843,
+`50ac6cef`; B is #849, `d77439ad`; C is #846, `3cabb8f1`), and each of the eight widened cards says `PROVEN` on
+its card. The merge candidates below are not decided - they wait for the owner's yes - so the closure
+condition is not met. What is still owed is in the last two sections.
+
 **Why.** Ajmal PS built a parametric diffuser family through Heron on Revit 2020. Adding plan-view flow
 arrows - a nested 600 mm detail item, the way Autodesk's own supply diffuser carries them - stopped three
 times in a row on a missing or failing tool. He asked for the whole class of "2D in a family" covered at
@@ -95,9 +100,9 @@ radius (LABEL_FAMILY_RADIUS) were added; the arc centre and the angled plane are
 
 | PR | Cards (each back to DRAFT, version raised) | Proof plan | Why split so |
 |---|---|---|---|
-| A - `claude/report-family-2d-elements` | REPORT_FAMILY_FORMS v5 (READ) + this note | [Group ND](../../needs-checking/group-nd.md), row 5b-1496 | READ: `revit_read` still runs a DRAFT, so nothing is blocked |
+| A - #843, **MERGED 2026-11-12** | REPORT_FAMILY_FORMS v5 (READ) + this note | [Group ND](../../needs-checking/group-nd.md), row 5b-1496 | READ: `revit_read` still runs a DRAFT, so nothing is blocked |
 | B - #849, **MERGED 2026-11-11** | LINK_FAMILY_PARAMETER v4, LABEL_FAMILY_DIMENSION v3 | Group NE, rows 5b-1497, 5b-1498 | Used in every family build: small, so it can be merged and re-proved first and family work is blocked as briefly as possible |
-| C - `claude/family-2d-place-show-label` | PLACE_DETAIL_COMPONENTS v2, ARRAY_FAMILY_FORMS v4, SET_FAMILY_FORM_VISIBILITY v2, SET_FAMILY_FORM_SUBCATEGORY v2, LABEL_FAMILY_RADIUS v6 | Group NF, rows 5b-1499 to 5b-1503 | The rest |
+| C - #846, **MERGED 2026-11-12** | PLACE_DETAIL_COMPONENTS v2, ARRAY_FAMILY_FORMS v4, SET_FAMILY_FORM_VISIBILITY v2, SET_FAMILY_FORM_SUBCATEGORY v2, LABEL_FAMILY_RADIUS v6 | Group NF, rows 5b-1499 to 5b-1503 | The rest |
 
 **What a widening costs, said plainly:** a change under a PROVEN card's `impl/` makes its proof stale, so the
 card goes back to DRAFT and `revit_change` refuses it until it is proved again. Each proof plan re-proves the
@@ -160,3 +165,20 @@ SIGNED by Ajmal PS and marked PROVEN on the run named; second routes and Revit 2
 `LOCK_FAMILY_LINES_TO_PLANES` v2, Group ND's lock-reading rows, and every test on Revit 2024. Beyond any tool (NO
 API): a filled region's, a nested family's and a symbolic line's view-direction settings, and placing a nested
 detail item in a family VIEW.
+
+## Revit 2024, 2026-11-12 - the ten cards of this job proved there too
+
+Run on Revit 2024 (session 13164) on SAVED scratch files made for it under `%TEMP%\heron-work\rev2024` (R24 Generic,
+R24 Arrow, R24 Project), arranged with the cards PROVEN on 2020 that morning - the angled planes by
+`CREATE_REFERENCE_PLANES` v2, the air flow by `SET_FAMILY_TYPE_VALUES` v4, the Rim Height label by
+`LABEL_FAMILY_DIMENSION` v3, the nested arrow by `PLACE_FAMILY_INSTANCES`. Every one of the ten held both halves,
+rolled back, and was SIGNED by Ajmal PS as a `proof.releases` entry for 2024 (D-131): `LINK_FAMILY_PARAMETER` (a
+symbolic line, a **masking region in a 3D family** - Revit 2023+ only, never run before - and model text),
+`LABEL_FAMILY_DIMENSION` (150 degrees), `CREATE_REFERENCE_PLANES` (45 degrees; a typed 0,0 refused),
+`PLACE_DETAIL_COMPONENTS` (project), `ARRAY_FAMILY_FORMS` (the nested arrow in plan), `SET_FAMILY_FORM_VISIBILITY`,
+`SET_FAMILY_FORM_SUBCATEGORY`, `LABEL_FAMILY_RADIUS` (symbolic arc 300 mm), `REPORT_FAMILY_FORMS` (2D read-back) and
+`SET_FAMILY_TYPE_VALUES` (air flow 94.4 -> 120 L/s through the 2022+ units route).
+
+A Generic Model family holds no filled-region type of its own - a 3D family's region is a masking region unless a
+filled-region type is loaded into it. Still owed after this: the arc-centre lock, Group NC's re-run, Group ND's
+lock rows; Revit 2025 to 2027 not run.

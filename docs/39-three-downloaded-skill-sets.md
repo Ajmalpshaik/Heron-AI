@@ -183,6 +183,13 @@ asked which, one at a time.
 > [row 5b-1257](fragment-issues/section-5b-rows-401-425.md), owed [Group HY](needs-checking/group-hy.md). Still with no route: a
 > wall's profile, wall foundations, point clouds, and walls made from a mass.
 
+> **Read 2026-11-12, off `brain/fragments/`:** three more of those have a card now - wall foundations
+> (`CREATE_WALL_FOUNDATION`), walls made from a mass (`CREATE_WALLS_BY_FACE`,
+> [43 §6](43-building-revit-families.md)) and the toposurface route for 2020 to 2023
+> (`CREATE_TOPOSURFACE`). Still with no card: a wall's profile, and point clouds. Several cards the notes
+> on this page call DRAFT or *not run in Revit* have been proved since, and some were merged into
+> others; each card's `heron-status:` line is the current word, never a sentence here.
+
 ---
 
 ## 6. What this is not

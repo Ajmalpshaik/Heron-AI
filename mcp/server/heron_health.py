@@ -191,3 +191,85 @@ def assess(live=None, starting=None, mismatched=None, config_problems=None,
             "closed - Heron cannot change the model"))
 
     return Health(components)
+
+
+# WHETHER A REVIT WILL ASK KEEP OR DISCARD, IN ONE LINE A MODELLER CAN READ.
+#
+# The owner's Ask to Keep switch (D-126, D-138, D-150) decides whether a change
+# made through revit_change is shown in a Keep or Discard box or kept at once,
+# and it is read inside the add-in. Until 2026-11-12 the add-in told nobody, so
+# a chat could not say beforehand which it would be. The add-in's `info` now
+# carries what the switch says (heron_bridge_client.ask_to_keep_state), and
+# revit_health prints one of these four under each connected Revit.
+#
+# NOT A COMPONENT, AND NOT A STATE. Neither setting is a fault and neither is
+# Heron's to recommend: it is the owner's switch, said as it stands. And it is
+# one line per REVIT, where a component is one per Heron - two Revits on one PC
+# can run add-ins of different ages, and one of them may not say.
+#
+# ON AND OFF ARE SAID OF revit_change AND NAME WHAT IS DIFFERENT. The first
+# wording said "after a change from the chat ... keeps nothing until the
+# modeller chooses Keep" and "Undo takes it back in one step", and a review the
+# same day (2026-11-12) found each untrue of changes a chat really makes:
+#   - revit_apply_move never reads the switch. It keeps the preview it showed,
+#     on or off (RevitWrite.Apply; D-138 item 9).
+#   - a publish - an export, a save, a sync - has left the model before the box
+#     opens, so Discard cannot take it back, and with the switch off no Undo
+#     can either (D-126; RevitFragment's `sendsOut`).
+#   - a delete is asked in a Delete box of its own, whatever the switch says,
+#     and a delete confirmed there is not asked Keep or Discard as well (D-142).
+#   - a change Revit counted nothing in is kept without the box (D-126 item 6),
+#     and so is the rest of a job the modeller chose in the box to keep (D-138).
+# The line says the switch alone. It does not say a change WILL be kept:
+# whether the chat may change the model at all is the Changes switch.
+#
+# TWO LINES FOR AN ANSWER NOBODY GAVE, and neither borrows the default. "Off"
+# is what the switch is when nobody has set it, which is a different fact from
+# "this Revit said off", and a chat told the wrong one tells a modeller the box
+# will not come while Revit is about to show it.
+#   - the add-in answered and named no switch: it is older than the field, and
+#     the line says so (the client's ASK_TO_KEEP_NOT_SENT, the same word here).
+#   - no usable answer came back: the line says only that. It used to blame an
+#     older add-in for that too, which is a guess about a Revit that was busy.
+ASK_TO_KEEP_NOT_SENT = "not sent"
+
+ASK_TO_KEEP_ON = (
+    "Ask to Keep is ON in this Revit right now: a change made through revit_change "
+    "is shown in Revit's Keep or Discard box and kept only on Keep. Different for: "
+    "a job the modeller chose in that box to keep the rest of, and a change Revit "
+    "counted nothing in (both kept unasked); a delete (asked in its own Delete box "
+    "instead); an export, save or sync (already done when the box opens - Discard "
+    "cannot take it back); and revit_apply_move (keeps the preview it showed, with "
+    "no box).")
+ASK_TO_KEEP_OFF = (
+    "Ask to Keep is off in this Revit right now: a change made through revit_change "
+    "is kept at once, with no Keep or Discard box, as one entry in Revit's Undo "
+    "list. Different for: a delete (still asked first, in its own Delete box) and "
+    "an export, save or sync (Undo cannot take back what has left the model).")
+ASK_TO_KEEP_OLDER = (
+    "Ask to Keep: this Revit's Heron does not say which way the switch is set - its "
+    "Heron add-in is older than this chat's and does not report it. Look in Revit, "
+    "under Heron > AI Bridge > Settings.")
+ASK_TO_KEEP_NOT_READ = (
+    "Ask to Keep: Heron could not read which way the switch is set from this Revit "
+    "just now - it gave no answer Heron could use. Ask again, or look in Revit, under "
+    "Heron > AI Bridge > Settings.")
+
+
+def ask_to_keep_line(asks):
+    """
+    The line for what one Revit said of its Ask to Keep switch - what
+    heron_bridge_client.ask_to_keep_state returned: True, False, the word for
+    an add-in that sent nothing, or anything else - which is "could not read
+    it", the line that claims least.
+
+    `is`, not `==`: 1 and 0 equal True and False in Python, and a reply that
+    carried a number carried no answer.
+    """
+    if asks is True:
+        return ASK_TO_KEEP_ON
+    if asks is False:
+        return ASK_TO_KEEP_OFF
+    if isinstance(asks, str) and asks == ASK_TO_KEEP_NOT_SENT:
+        return ASK_TO_KEEP_OLDER
+    return ASK_TO_KEEP_NOT_READ
