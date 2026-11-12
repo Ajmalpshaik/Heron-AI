@@ -5,7 +5,7 @@
 > this file. [`tools/needs-checking-register.py`](../../tools/needs-checking-register.py) reads it back
 > into the register for every tool that reads it, so a row here is seen exactly as it was seen there.
 
-## Group NG - one value, blank or filled, into MANY types in ONE call: `SET_FAMILY_TYPE_VALUES` version 4 in a family, `SET_PARAMETER_VALUES_BY_ID` version 8 in a project (2026-11-11)
+## Group NG - one value, blank or filled, into MANY types in ONE call: `SET_FAMILY_TYPE_VALUES` version 5 in a family, `SET_PARAMETER_VALUES_BY_ID` version 8 in a project (2026-11-11)
 
 On 2026-11-11 (Revit 2020) the owner cleared brand data - Manufacturer, Model, URL, Model_Number,
 Family_Source - from three air terminal families of seven types each. Every type took its own
@@ -16,7 +16,7 @@ yet, is [FRAGMENT-ISSUES row 5b-1504](../fragment-issues/section-5b-rows-401-425
 
 | What | Where | What it does |
 |---|---|---|
-| `SET_FAMILY_TYPE_VALUES` version 4 (MODIFY) | [`brain/fragments/set-family-type-values`](../../brain/fragments/set-family-type-values/fragment.yaml) | `typeName` "all" or a comma list writes the same values into every type it names, in one change, every type read back. A list writes only types the family has - one unknown name refuses the whole call. A type already holding every value is not made current. TEXT into EVERY type is first tried with no type made current (a formula that is the text, set and cleared in a sub-transaction); otherwise each type is made current in turn and the starting type is current again at the end. One type named: version 3's path |
+| `SET_FAMILY_TYPE_VALUES` version 5 (MODIFY) | [`brain/fragments/set-family-type-values`](../../brain/fragments/set-family-type-values/fragment.yaml) | `typeName` "all" or a comma list writes the same values into every type it names, in one change, every type read back. A list writes only types the family has - one unknown name refuses the whole call. A type already holding every value is not made current. TEXT into EVERY type is first tried with no type made current (a formula that is the text, set and cleared in a sub-transaction); otherwise each type is made current in turn and the starting type is current again at the end. One type named: version 4's path |
 | `SET_PARAMETER_VALUES_BY_ID` version 8 (MODIFY) | [`brain/fragments/set-parameter-values-by-id`](../../brain/fragments/set-parameter-values-by-id/fragment.yaml) | In the key form, a key with a `*` names every element or type whose key matches it, ignoring case, and the row's values go onto all of them - all or nothing for that row, each element that cannot take them named. Every other row: version 7's |
 
 **What is done and what is not.** Both cards compile on all eight releases, 2020 to 2027, with the whole

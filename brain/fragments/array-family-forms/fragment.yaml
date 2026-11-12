@@ -169,6 +169,41 @@ proof:
     whether one exists here has not been settled, and a declared absence is not the same as
     none
   fingerprint: 8cd0313e7ef4050c
+  releases:
+  - release: '2024'
+    date: '2026-11-12'
+    by: Ajmal PS
+    model: R24 Generic, Revit 2024, session 13164 - the count is NOT recorded because 3,209
+      elements was measured on R24 Project, the document in front, and this ran against another
+      one (row 15)
+    positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+      the transaction group ROLLED BACK afterwards. returned arrayId 237ece53-33e4-4c24-b6df-d034f0c0c31f-00000d3b,
+      arrayView Func`1, axis 0, axisLetters 3 item(s) [X, Y, Z], dbNamespace Autodesk.Revit.DB,
+      describe Func`2, driver (null), faceWord Func`3, findings 1 item(s) [Arrayed the nested
+      family "R24 Arrow : R24 Arrow" 237ece53-3...], flags BindingFlags, halfMillimetre 0.00164041994750656,
+      heldBy Func`2, insertionOf Func`2, invariant CultureInfo, isInteger Func`2, labelled false,
+      lowest Func`3, members 237ece53-33e4-4c24-b6df-d034f0c0c31f-00000d3a,237ece53-33e4-4c24-b6df-d034f0c0c31f-00000d41,237ece53-33e4-4c24-b6df-d034f0c0c31f-00000d44,
+      n 4, notAFamily false, original FamilyInstance, originalForm (null), ownerView ViewPlan,
+      ownerless true, plain Func`2, problems 0 item(s), refused (null), revitAssembly RuntimeAssembly,
+      sameKind Func`3, shapeOf Func`2, sketchPlaneOf Func`2, stepMm 200, toLast false, unitAlong
+      Func`2. inputs came form as given; count as given; step as given. on R24 Generic'
+    negative_case: 'run with form=237ece53-33e4-4c24-b6df-d034f0c0c31f-00000d1b, count=3, step=Z
+      100 instead - chosen because it should not contain what this fragment reports - run inside
+      a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+      arrayId , arrayView Func`1, axis 2, axisLetters 3 item(s) [X, Y, Z], dbNamespace Autodesk.Revit.DB,
+      describe Func`2, driver (null), faceWord Func`3, findings 1 item(s) [Nothing was arrayed.
+      The nested family "R24 Arrow : R24 Arro...], flags BindingFlags, halfMillimetre 0.00164041994750656,
+      heldBy Func`2, insertionOf Func`2, invariant CultureInfo, isInteger Func`2, labelled false,
+      lowest Func`3, members , n 3, notAFamily false, original FamilyInstance, originalForm
+      (null), ownerView ViewPlan, ownerless true, plain Func`2, problems 1 item(s) [The nested
+      family "R24 Arrow : R24 Arrow" 237ece53-33e4-4c24...], refused Nothing was arrayed. The
+      nested family "R24 Arrow : R24 Arrow" 237ece53-33e4-4c24-b6df-d034f0c0c31f-00000d1b is
+      drawn in "Ref. Level" and stays in that view''s plane, so a row along Z - out of the view
+      - cannot be made. A row along X or Y stays in it. For a row along Z, draw it in a view
+      that looks across Z., revitAssembly RuntimeAssembly, sameKind Func`3, shapeOf Func`2,
+      sketchPlaneOf Func`2, stepMm 100, toLast false, unitAlong Func`2. inputs came form as
+      given; count as given; step as given. on R24 Generic'
+    fingerprint: 8cd0313e7ef4050c
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
