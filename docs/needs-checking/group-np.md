@@ -37,7 +37,7 @@ chose to keep, is kept unasked.
 | The client reads true, false, *not sent* or *not read*, and the four lines | [`tests/test_ask_to_keep_health.py`](../../tests/test_ask_to_keep_health.py) | which of them a real Revit sends |
 | `revit_health` says the line under each Revit | [`tests/test_mcp_serves.py`](../../tests/test_mcp_serves.py), the real tool against four stand-in Revits | a real reply, and how the lines read in a chat |
 
-**What the line does not say, recorded and not built** ([row 5b-1579](../fragment-issues/row-5b-1579.md)):
+**What the line does not say, recorded and not built** ([row 5b-1586](../fragment-issues/row-5b-1586.md)):
 
 - **A settings file the add-in could not read is reported as off.** `HeronConfig.Load` gives the defaults when
   the file cannot be read, so `info` says `false`. The executor reads through the same call and would keep

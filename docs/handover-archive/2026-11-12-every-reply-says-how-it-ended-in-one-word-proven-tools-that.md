@@ -30,7 +30,7 @@ in Revit.** The fixes are in `git log --first-parent origin/main..` on the branc
   [Group NL](../needs-checking/group-nl.md), `CREATE_ASSEMBLY` rebuilt on two transactions. What being DRAFT costs
   the reads meanwhile is measured in [row 5b-1554](../fragment-issues/section-5b-rows-401-425.md).
 - **`revit_health` says, under each connected Revit, whether that Revit will ask Keep or Discard** - read
-  from the add-in itself; four methods send the chat there ([row 5b-1579](../fragment-issues/row-5b-1579.md),
+  from the add-in itself; four methods send the chat there ([row 5b-1586](../fragment-issues/row-5b-1586.md),
   [Group NP](../needs-checking/group-np.md)). Compiled for 2020 to 2027; the add-in has to be rebuilt and deployed.
 - **A new 5b defect row is a file of its own**, `docs/fragment-issues/row-5b-<n>.md`, from 5b-1585 on - two
   branches adding rows no longer share a file ([row 5b-1585](../fragment-issues/row-5b-1585.md);
