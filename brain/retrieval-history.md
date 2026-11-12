@@ -113,6 +113,9 @@ meaning**. More fragments means more of them score spuriously close.
 no Windows. On the evidence above it is no longer a nice-to-have: it is the difference between a search
 that finds the right fragment and one that finds a fragment.
 
+**It ran on 2026-09-06, on the owner's PC** - [NEEDS-CHECKING `A7`](../docs/needs-checking/group-a.md),
+done - and this file's first `model` numbers are the 2026-09-10 section below.
+
 ### The fused scores are effectively tied, which matters more than the ranks
 
 At 14 fragments the top five spanned **0.0021**, where one rank of fusion is **0.00026**. The order among

@@ -30,6 +30,18 @@ waiting on a person is not a build failure.
 which are schedules. The same foot prints how many fragments are still `DRAFT` against how many are
 proved, counted from disk as it runs.
 
+**Two more things live in [HANDOVER.md](HANDOVER.md), once each, and this page only points at them**
+(written 2026-11-12):
+
+- **What to run on your PC with Revit open, in order** - the command, the model and the Revit release for
+  each - is the numbered list under the table in
+  [its top section](HANDOVER.md#where-this-stands-right-now--read-this-then-9a-or-9). The tool's *REVIT OPEN*
+  bucket lists every row; that list is the order.
+- **What waits for your word and is on no line of the tool** - a decision still *Proposed* above all, which
+  the tool does not read ([row 5b-1582](fragment-issues/row-5b-1582.md)), and PROVEN tools whose known
+  defects are held for your yes - is the newest table of
+  [its section 8](HANDOVER.md#8-what-is-waiting-on-the-owner).
+
 ---
 
 ## 2. The buckets, and what each one means
@@ -129,7 +141,7 @@ NEEDS-CHECKING  (rows not struck through)    --+
 
 | | Safe on a live project? |
 |---|---|
-| Fragments that are **`PROVEN`** and **`READ`** | **Yes.** A `READ` fragment cannot modify a model — that is enforced, not promised |
+| Fragments that are **`PROVEN`** and **`READ`** | **Yes.** A `READ` fragment cannot modify a model — that is enforced, not promised. **Safe means it cannot change the model, not that every answer is right:** reads found answering wrongly on 2026-11-11 were repaired and are `DRAFT` until each is proved again ([Group NK](needs-checking/group-nk.md)), and one known wrong answer is still on a `PROVEN` card — `REPORT_FAMILY_FORMS` reads a solid with a void cut in it as `0 L` ([row 5b-295](fragment-issues/section-5b-rows-276-300.md)) |
 | Fragments that are **`PROVEN`** and **`MODIFY`** | **A copy only**, until the owner says otherwise. The rollback check built 2026-10-17 passed every rollback row run in Revit 2024 and 2027 on 2026-10-18, on scratch copies — EO1, EO2, EO4, EO5 (its second half; the first could not be arranged apart) and, on 2027, EO7; a refused move (EO6) was not arranged, and nothing ran on 2020 ([Group EO](needs-checking/group-eo.md)) — but a rollback that reported success and kept a rename anyway ([A16b](needs-checking/group-a.md)) has never been run again and is still open |
 | `delete-elements` | **No. Do not run it** until the owner says otherwise. It wiped a model twice on 2026-09-09 and the second hung Revit hard enough to need a forced close ([section 1c](fragment-issues/section-1c.md)). It has since been proved on a test model with the elements counted before and after ([row 55](fragment-issues/section-5-rows-051-075.md)), and its `heron-status` now reads `PROVEN` — whether that lifts this rule is the owner's call, because a delete can take far more than it was handed, and with *Ask to Keep* off — the default — nothing asks before it is kept ([row 5b-161](fragment-issues/section-5b-rows-151-175.md), open) |
 
@@ -146,7 +158,8 @@ done | sort | uniq -c | sort -rn
 — the worst took a model from 9,628 elements to 3,966 — and in every one the file on disk was fine. The
 damage stays in the live session. That is the difference between a bug and a data-loss bug.
 
-**How a change from a chat is kept — your switches on the Heron ribbon.** Nothing changes the model
+**How a change from a chat is kept — your switches in Heron's Settings window** (the *Settings* button on
+the Heron tab; they were on the ribbon itself until 2026-11-07, [D-150](decisions/D-150.md)). Nothing changes the model
 unless **Changes** is on ([D-19](DECISIONS.md)); **Admin** and **Publish** guard their own kinds of job
 ([D-106](DECISIONS.md)). **Ask to Keep** decides whether Revit shows you the change first
 ([D-126](DECISIONS.md), [D-138](DECISIONS.md)): **off by default**, and then a change is kept at once as
@@ -155,7 +168,10 @@ and nothing stays until you press Keep. The box's third link keeps the change an
 job on that model without asking, until ten quiet minutes pass. Even under that grant, a publish and a
 never-proved fragment's one run are asked. **Built for 2020 to 2027; the Ask to Keep switch itself has
 not been run in Revit yet** ([Group HG](needs-checking/group-hg.md)) — the Keep or Discard box it turns on was, in Revit 2024 and 2027 on
-2026-10-18 ([Group ET](needs-checking/group-et.md)).
+2026-10-18 ([Group ET](needs-checking/group-et.md)). **Since 2026-11-12 the chat can tell you which way
+the switch is set before it changes anything:** ask *"is Heron connected?"* and one line under each Revit
+says Ask to Keep is on or off, read from that Revit itself. Built for 2020 to 2027 and **not yet run in
+Revit**; it needs the add-in rebuilt and deployed ([Group NP](needs-checking/group-np.md)).
 
 ---
 

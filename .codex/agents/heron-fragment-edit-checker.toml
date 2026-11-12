@@ -59,9 +59,9 @@ A change to a card's words only - purpose, utterances, ROUTING comments - keeps 
 than asking for a DRAFT it does not need.
 
 **4. Does every routing row name a live capability?** `python tools/check-routing.py --targets` exits 1
-on a row naming no capability. Also grep the changed cards for rows still pointing at a DEPRECATED card
-(each says its successor in `deprecated.superseded-by`), and for a name repeated in one line after a
-repoint.
+on a row naming no capability and, since 2026-11-01, on a live card's row naming one that only a
+DEPRECATED or ARCHIVED card declares - the failure names the successor, that card's
+`deprecated.superseded-by`. Also grep the changed cards for a name repeated in one line after a repoint.
 
 **5. Is there a test case for what changed?** Each new behaviour has a case in that card's
 `tests/cases.yaml` written so it would fail on the old version - and a negative case (D-30). A test file
