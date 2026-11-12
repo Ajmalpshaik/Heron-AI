@@ -186,6 +186,6 @@ named that it lies on, by `CurveElement.CenterPointReference`, switching a hidde
 Run on the SAVED scratch family `%TEMP%\heron-work\rev2024\R24 Arc Lock.rfa` (Revit 2024, session 13164): rolled
 back first, then KEPT by the owner through `try-once` - an arc and the two halves of a circle, 12 locks - and with
 "Arc X" moved 200 -> 300 every centre read back at (300, 100), radii unchanged, an unlocked shaft unmoved. The
-negative ("Spare") refused. Proof draft awaits the owner's signature. A closed circle is not run: Heron draws a
+negative ("Spare") refused. Signed by Ajmal PS: PROVEN on Revit 2024. A closed circle is not run: Heron draws a
 circle as two half-arcs. Still owed: Group NC's re-run (along locks, a filled region's corners), Group ND's lock rows;
 Revit 2025 to 2027 not run.

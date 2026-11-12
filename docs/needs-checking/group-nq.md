@@ -33,3 +33,5 @@ session 13164 - never the owner's own families. Built with PROVEN tools: a type 
 | **NQ4** | *It follows* - "Arc X" set to 300 (SET_FAMILY_TYPE_VALUES), read back with REPORT_FAMILY_FORMS "2d" | centre (300, 100), radius 100; the shaft still (-300, 0) to (0, 0) | **held**: the arc centre (300, 100) radius 100, both halves centre (300, 100) radius 50, the shaft (-300, 0) to (0, 0). The D-30 negative was then run on this state (`validate --write --kept`, planes "Spare"): refused, the centre named 200 mm off, nothing locked |
 | **NQ5** | *A whole circle* - a closed detail circle, centre on both planes | its centre locked twice, no end locks | NOT RUN - Heron draws a circle as two half-arcs (DRAW_FAMILY_DETAIL_LINES "circle"), so a closed one needs drawing by hand. The two halves of "circle 200,100 50" go in NQ3 instead |
 | **NQ6** | *Version 2 unchanged* - Group NC's straight line locks | as Group NC | NOT RUN - Group NC's own re-run is owed |
+
+**Proof:** the kept NQ3 and the negative after NQ4 - SIGNED by Ajmal PS 2026-11-12; the card is PROVEN on Revit 2024.
