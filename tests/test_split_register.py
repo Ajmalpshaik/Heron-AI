@@ -59,7 +59,7 @@ WHAT IS PROVED
  14. a row that links to a 5b row past 999 does not stop the split: row 1001
      moves to a rows file named with four digits, the link follows it, and
      the register still reads back as it was (row 5b-1169);
- 15. a row from the cut-over on has a file of its own (row 5b-1564): the
+ 15. a row from the cut-over on has a file of its own (row 5b-1576): the
      page's one line says where the change is and names no file; the rows are
      read after the rows files' rows, in number order, with their links as
      the page writes them, and open-defects.py lists them unchanged; a new

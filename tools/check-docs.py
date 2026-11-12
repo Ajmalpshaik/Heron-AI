@@ -1038,16 +1038,16 @@ else:
 
 # AND EVERY ROW'S OWN FILE OF THE DEFECT REGISTER IS ONE THE REGISTER READS.
 # Since 2026-11-12 a new row of FRAGMENT-ISSUES section 5b is a file of its
-# own, docs/fragment-issues/row-5b-1564.md, so that two branches adding rows
+# own, docs/fragment-issues/row-5b-1576.md, so that two branches adding rows
 # change no file in common. NO INDEX LINE NAMES SUCH A FILE - a line every
 # branch added to would be the same merge conflict in a new place - so the
 # check above, "a file its index never names", has nothing to read here. The
 # folder is the list, and what can go wrong is different:
 #
 #   * a file the reader does not read - a row saved under any name but its
-#     own (Row-5b-1564.md, 5b-1564.md, rows/5b-1564.md, a .txt), a file named
+#     own (Row-5b-1576.md, 5b-1576.md, rows/5b-1576.md, a .txt), a file named
 #     like a row's own under a section whose page has no line for them, or
-#     one misspelt (row-5b-01564.md, row-5b-1564-copy.md). Skipped, it is a row every tool has lost, which is
+#     one misspelt (row-5b-01576.md, row-5b-1576-copy.md). Skipped, it is a row every tool has lost, which is
 #     the failure the group check above was written for. register-text.py
 #     raises on the misspelt one, and this says so with the gate's exit code;
 #   * a file that holds another row than its name says - the name is what
@@ -1104,7 +1104,7 @@ if os.path.isfile(_fi_page) and os.path.isdir(_fi_dir):
     # A ROW IN A FILE NOTHING READS, WHATEVER THE FILE IS CALLED. The first
     # version of this looked only at names beginning `row-`, and the reader
     # skips every name that does not begin with the stem - so a row saved as
-    # Row-5b-1570.md, row_5b_1570.md, rows-5b-1570.md or 5b-1570.md passed
+    # Row-5b-1580.md, row_5b_1580.md, rows-5b-1580.md or 5b-1580.md passed
     # this gate, was listed by no reader, and left next-id.py offering its
     # number again (found by review, 2026-11-12). So every file under the
     # folder - any name, any extension, any depth - that the page does not

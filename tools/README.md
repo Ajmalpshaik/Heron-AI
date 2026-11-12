@@ -163,7 +163,7 @@ Verifies that:
   2026-09-23, **fails the run**. The same section fails on a `docs/needs-checking/group-*.md` that
   [`NEEDS-CHECKING.md`](../docs/NEEDS-CHECKING.md) never names - a group a merge dropped from the index
   ([heron-ship §6a](../.claude/skills/heron-ship/SKILL.md)). **And, since 2026-11-12, on a 5b row's own file
-  the register does not read as it should** ([row 5b-1564](../docs/fragment-issues/row-5b-1564.md)): no index
+  the register does not read as it should** ([row 5b-1576](../docs/fragment-issues/row-5b-1576.md)): no index
   line names `docs/fragment-issues/row-5b-N.md` - the folder is the list - so what fails is a file named like
   one that [`register-text.py`](#register-textpy---a-split-register-read-as-one-text) does not read
   (**NOT READ**) - **under any name**: a row saved as `Row-5b-N.md`, `5b-N.md`, a `.txt` or in a subfolder is
@@ -2343,7 +2343,7 @@ This checkout's HEAD counts too when it holds commits no remote branch has.
 
 **A 5b row is read wherever it is kept** - in a rows file, on the page of a branch cut before the split, in
 the archive, and since 2026-11-12 in **the row's own file, `docs/fragment-issues/row-5b-N.md`**, where a new
-row is written ([row 5b-1564](../docs/fragment-issues/row-5b-1564.md)). There the file's name is the id as
+row is written ([row 5b-1576](../docs/fragment-issues/row-5b-1576.md)). There the file's name is the id as
 well as the row in it, as a decision's file and a group's are; a name `register-text.py` would not read as a
 row's file (`row-5b-045.md`) holds none.
 
@@ -2415,12 +2415,12 @@ nothing new moves nothing. [`tests/test_split_register.py`](../tests/test_split_
 never the real one.
 
 **A new row of section 5b is a file of its own, and this tool's job for a new row there is retired** - since
-2026-11-12, [row 5b-1564](../docs/fragment-issues/row-5b-1564.md). Every new 5b row used to be appended to the end
+2026-11-12, [row 5b-1576](../docs/fragment-issues/row-5b-1576.md). Every new 5b row used to be appended to the end
 of one rows file and wait for a run of this to band it; the run never came, because re-banding changes the file
 every open branch was appending to, so that one file, named for rows 401 to 425, went on taking every row written after them
 (`grep -c '^| \*\*[0-9]' docs/fragment-issues/section-5b-rows-401-425.md` counts what it holds) and stopped
-almost every merge of parallel work. Now the page says, under the line naming the rows files, *"**Its rows from 1564 on, one file
-each:**"*, and row 5b-1564 is `docs/fragment-issues/row-5b-1564.md` - written by hand, in one step, with no run of
+almost every merge of parallel work. Now the page says, under the line naming the rows files, *"**Its rows from 1576 on, one file
+each:**"*, and row 5b-1576 is `docs/fragment-issues/row-5b-1576.md` - written by hand, in one step, with no run of
 anything. The page's line is the rule and this never writes one where the page has none. What it still does:
 
 - **a whole run keeps every such row in its own file** and bands only the rows before the cut-over - so does
@@ -2478,7 +2478,7 @@ returning a shorter register. A page that names no file is returned as it is, wh
 is read.
 
 **It reads two layouts of a section's rows, and gives them back as one table** - since 2026-11-12,
-[row 5b-1564](../docs/fragment-issues/row-5b-1564.md). Where the page says *"**Its rows from 1564 on, one file
+[row 5b-1576](../docs/fragment-issues/row-5b-1576.md). Where the page says *"**Its rows from 1576 on, one file
 each:**"* under the line naming the rows files, it lists the folder and reads every `row-5b-N.md` after the rows
 files' rows, **in number order**, with its links as the page would write them - so `open-defects.py`,
 `review-ledger.py`, `archive-fragment-issues.py` and everything that reads through them list a new row with no

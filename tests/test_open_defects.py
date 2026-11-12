@@ -296,7 +296,7 @@ def main():
     # (RegisterBroken), `OD.source()` is then None, and until 2026-11-12 the
     # next line called .index on it: this suite died with AttributeError and
     # named nothing. open-defects.py itself says "Could not read the
-    # register" and exits 0 (row 5b-1565), so this is where it turns red.
+    # register" and exits 0 (row 5b-1577), so this is where it turns red.
     src = OD.source()
     if src is None:
         check(False, "the register could not be read, so checks 5 to 7 read nothing - "
@@ -304,7 +304,7 @@ def main():
     else:
         three_gates(src)
 
-    print("\n8. and a number is used twice wherever its two rows are kept (5b-1564)")
+    print("\n8. and a number is used twice wherever its two rows are kept (5b-1576)")
     across_layouts()
 
     print()
