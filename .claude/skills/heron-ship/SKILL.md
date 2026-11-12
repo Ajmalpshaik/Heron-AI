@@ -626,7 +626,7 @@ other sections sit between them - only a person knows where a group belongs.
 [`needs-checking-register.py`](../../../tools/needs-checking-register.py) is a reader by design, and
 stays one. **Two branches that add different 5b rows no longer conflict at all**: each added a file
 the other has not got. They conflict only when both took the same **number**, and then git stops on
-the file by name - `CONFLICT (add/add): Merge conflict in docs/fragment-issues/row-5b-1580.md` -
+the file by name - `CONFLICT (add/add): Merge conflict in docs/fragment-issues/row-5b-1589.md` -
 which is the loud failure the layout was chosen for. **Never resolve that one by keeping both rows in
 the one file, or by taking a side**: abort the merge and renumber, below.
 

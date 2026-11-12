@@ -127,7 +127,7 @@ purpose: >
      deleted: a space carries loads and tags. Deleting one is a delete, the
      modeller's own, on a yes for that space (Article 7).
      THE PHASE, READ OFF THE CARD'S CODE AND REVIT'S OWN API REFERENCE, NOT
-     SEEN IN REVIT (FRAGMENT-ISSUES row 5b-1580): the card looks for a space
+     SEEN IN REVIT (FRAGMENT-ISSUES row 5b-1589): the card looks for a space
      already at each room's point without saying which phase, and Revit
      answers that for the model's LAST phase only; and it takes every room
      in the link whatever its phase. So with phaseName a phase that is not
@@ -326,7 +326,7 @@ note: >
   spaces and every one read back with no area, on a link set Room Bounding
   inside a change that was then rolled back (FRAGMENT-ISSUES row 5b-1125) -
   so step 3 is kept before step 4 is sent, and step 4 stops on that line.
-  And the phase is not carried through its lookups (row 5b-1580, read off
+  And the phase is not carried through its lookups (row 5b-1589, read off
   the code, not seen in Revit).
 
   DRAFT until the whole order has been run on a saved scratch copy with a

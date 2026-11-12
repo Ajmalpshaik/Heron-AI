@@ -20,7 +20,7 @@
 # FOURTEEN UNTIL 2026-11-12. report-family-forms (REPORT_FAMILY_FORMS, row
 # 5b-295, NK5) had a job here. Its repair was withdrawn at a merge that day:
 # main had proved a different version 5 of that card, and main's card was
-# taken whole so that its proof stands (docs/fragment-issues/row-5b-1578.md).
+# taken whole so that its proof stands (docs/fragment-issues/row-5b-1588.md).
 # The card is PROVEN, a dry run answered its job ALREADY, and the job is
 # gone. If the repair comes back as version 6 its job comes back with it -
 # commit ae7a4c59 holds the repair, and this file's history holds the job.

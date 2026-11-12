@@ -1104,7 +1104,7 @@ if os.path.isfile(_fi_page) and os.path.isdir(_fi_dir):
     # A ROW IN A FILE NOTHING READS, WHATEVER THE FILE IS CALLED. The first
     # version of this looked only at names beginning `row-`, and the reader
     # skips every name that does not begin with the stem - so a row saved as
-    # Row-5b-1580.md, row_5b_1580.md, rows-5b-1580.md or 5b-1580.md passed
+    # Row-5b-1589.md, row_5b_1580.md, rows-5b-1589.md or 5b-1589.md passed
     # this gate, was listed by no reader, and left next-id.py offering its
     # number again (found by review, 2026-11-12). So every file under the
     # folder - any name, any extension, any depth - that the page does not

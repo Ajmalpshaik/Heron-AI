@@ -54,7 +54,7 @@ in Revit.** The fixes are in `git log --first-parent origin/main..` on the branc
 
 - **Two branches each wrote a "version 5" of one card.** The owner proved main's `REPORT_FAMILY_FORMS`; the
   merge kept the proved card whole, and the register, Group NK and its job file went on saying the branch's
-  repair was in the tree ([row 5b-1578](../fragment-issues/row-5b-1578.md)). After merging main, read every card
+  repair was in the tree ([row 5b-1588](../fragment-issues/row-5b-1588.md)). After merging main, read every card
   the branch's records name again, from the card.
 - **A cost written as nothing.** Group NK first said the reads lose nothing by going back to DRAFT. A review
   measured it: they no longer run on words alone, they lose a near-tie to a PROVEN card, and the QA checklists
@@ -80,7 +80,7 @@ in Revit.** The fixes are in `git log --first-parent origin/main..` on the branc
 - **In no register group yet:** the outcome line in a real chat on a real Revit (rows 5b-1159 and 5b-1561).
 - **Rows recorded and not repaired** are `python tools/open-defects.py`'s to list, not this note's. Two came
   from writing this note: `tools/next-id.py` names every id of a branch HELD TWICE once for each worktree cut
-  from that branch ([row 5b-1581](../fragment-issues/row-5b-1581.md)), and `tools/owner-queue.py` lists no
+  from that branch ([row 5b-1590](../fragment-issues/row-5b-1590.md)), and `tools/owner-queue.py` lists no
   decision still Proposed ([row 5b-1582](../fragment-issues/row-5b-1582.md)).
 - **Four rows that came with main say less than their cards:** 5b-1498, 5b-1564, 5b-1565 and 5b-1575 read
   *DRAFT, proof owed* or *awaits the owner's signature*, and the cards are signed PROVEN. Both are recorded;
