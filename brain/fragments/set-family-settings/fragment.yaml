@@ -329,9 +329,18 @@ compatibility-note: >
 #                                                2D lines and a filled
 #                                                region's edges, along and
 #                                                by their ends
+#   "what is locked to the planes in this family" -> REPORT_FAMILY_FORMS (v5) -
+#                                                lines, regions and nested
+#                                                families, read back with
+#                                                their locks and links
 #   "label the neck diameter with Neck Diameter" -> LABEL_FAMILY_RADIUS
+#   "label the arc's radius with Arc Radius"  -> LABEL_FAMILY_RADIUS v6 - a
+#                                                detail or symbolic arc
 #   "show this form only in fine"             -> SET_FAMILY_FORM_VISIBILITY
+#   "show this symbolic line only in coarse"  -> SET_FAMILY_FORM_VISIBILITY v2
 #   "set the subcategory of these forms"      -> SET_FAMILY_FORM_SUBCATEGORY
+#   "put these lines on the Flow Arrow subcategory" -> SET_FAMILY_FORM_SUBCATEGORY
+#                                                v2 - detail or symbolic lines
 #   "link the body material to Body Material" -> LINK_FAMILY_PARAMETER -
 #                                                one form, not every one
 #   "link the handle's visible to Show_Handle" -> LINK_FAMILY_PARAMETER -
@@ -348,11 +357,16 @@ compatibility-note: >
 #                                                2D lines, no 3D body
 #   "array the blade along X with Blade Count" -> ARRAY_FAMILY_FORMS - one form
 #                                                in a row, its count a parameter
+#   "array the arrows in the plan"            -> ARRAY_FAMILY_FORMS v4 - a
+#                                                nested detail item, in its view
 #   "group these forms in this family"        -> GROUP_ELEMENTS - a group, when
 #                                                asked; a nested family or an
 #                                                array is usually lighter
 #   "put the motor family into this air handler" -> PLACE_FAMILY_INSTANCES -
 #                                                nested, in the family edited
+#   "place the flow arrow in the Ref. Level view" -> PLACE_DETAIL_COMPONENTS v2 -
+#                                                a nested detail item or
+#                                                annotation, in a family view
 #   "lock the motor's centre to the centre planes" -> LOCK_NESTED_FAMILY_TO_PLANES
 #   "link the motor type's width to Motor Width" -> LINK_FAMILY_PARAMETER -
 #                                                a nested TYPE's parameter

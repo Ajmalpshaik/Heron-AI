@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-GEO-045
-semantic-identity: "tie the radius or diameter of a round family form to a length parameter, inside its sketch"
+semantic-identity: "tie the radius or diameter of a round family form, inside its sketch, or of a 2D arc drawn as a detail or symbolic line, to a length parameter"
 kind: action
 domain: revit.families
 capability: LABEL_FAMILY_RADIUS
@@ -27,7 +27,20 @@ capability: LABEL_FAMILY_RADIUS
 # Revit 2020 that the ring route (a circle centre's distance from the axis)
 # moved three other forms with the plane it made; the ring is refused until
 # that is understood (row 5b-1333).
-version: 5
+# VERSION 6 (2026-11-11, row 5b-1503) - A 2D ARC TOO, and DRAFT. Version 5
+# was PROVEN on 2026-10-24 (the proof block below, kept as the record of what
+# it proved: an extrusion's sketched circle labelled "Shaft Radius", a
+# revolve with no plane through its axis refused); its C# moved, so it is
+# DRAFT again until NEEDS-CHECKING Group NF is run (D-30, D-117). A family's
+# plan symbol drawn as detail or symbolic lines had no tool to put its arc's
+# radius on a parameter - CREATE_RADIAL_DIMENSION refuses a family. Version 6
+# takes a detail or symbolic line that is an arc, by its id, and labels a
+# radial (or diameter) dimension on it in its own view through
+# `FamilyItemFactory.NewRadialDimension` / `NewDiameterDimension`, in the same
+# safety order: the parameter already holds the arc's size, one label per
+# parameter, read back. Forms take exactly the path they took. Owner's yes to
+# widen rather than add a card: Ajmal PS, 2026-11-11.
+version: 6
 source: OFFICIAL
 risk: MODIFY
 
@@ -107,6 +120,17 @@ purpose: >
   Group IS asks Revit, on 2020 and again on 2024. The extrusion and swept
   blend routes are untouched.
 
+  **A 2D ARC TOO** (version 6, 2026-11-11) - a DETAIL or SYMBOLIC line that
+  is an arc, named by its id: a plan symbol's round end, a detail item's
+  curved arrow. A radial dimension - a diameter one for a diameter parameter
+  - goes on the arc itself in the arc's own view: a detail line's Owner View;
+  a symbolic line's Owner View where Revit gives one, else the plan or
+  elevation looking straight at the plane it is drawn on. The same rules as
+  a form's: the parameter must already hold the arc's size, one label per
+  parameter, and the label, the value and the arc's own radius are read back.
+  A straight line is refused - it has no radius; its planes are labelled by
+  LABEL_FAMILY_DIMENSION.
+
   **ONE FAMILY RESIZES WITH THE PIPE SIZE.** With the round sizes labelled,
   one body follows Nominal Diameter through formulas, instead of one shape set
   per size switched on and off.
@@ -126,6 +150,11 @@ purpose: >
   carry the parameter and read its value. FLEX_FAMILY at two different sizes
   shows the form following.
 
+  **A FAMILY'S DIMENSION BELONGS TO NO VIEW** (row 5b-1572, measured 2026-11-12
+  on Revit 2020): the label on a 2D arc reads back with no Owner View, and that
+  is right; one in ANOTHER view is refused. Kept and flexed: a detail arc
+  labelled "Arc Radius" followed it from 150 to 200 mm.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -135,6 +164,8 @@ contract:
     - name: uidoc
       type: UIDocument
     # The round form, by the id its form tool gave back, or `selected`.
+    # Version 6: a detail or symbolic line that is an arc, by the id its draw
+    # tool gave back, too.
     - name: form
       type: string
       source: request
@@ -170,51 +201,53 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-24'
+  date: '2026-11-12'
   by: Ajmal PS
-  model: Heron IS Radius (1,560 elements), Revit 2020, session 83568
+  model: Heron NF Generic (1,564 elements), Revit 2020, session 33000
   positive_case: run as it would normally be run - run inside a transaction, and Revit reported
     the transaction group ROLLED BACK afterwards. returned along (null), already (null), arc
-    Arc, axisOf Func`2, axisPlane (null), blend (null), centreArc (null), centrePlane (null),
+    (null), axisOf Func`2, axisPlane (null), blend (null), centreArc (null), centrePlane (null),
     centreReference (null), circles 0 item(s), curveReferenceOf Func`3, dbNamespace Autodesk.Revit.DB,
-    diameter false, findings 2 item(s) [The radius of the extrusion's sketched circle (radius
-    10 mm)..., The dimension is in the sketch, where Edit Extrusion shows i...], flags BindingFlags,
+    diameter true, findings 2 item(s) [The diameter of the symbolic line's arc d09df1e6-65b3-4385-9...,
+    FLEX_FAMILY with "Arc Diameter" at two different sizes is wh...], flags BindingFlags,
     halfMillimetre 0.00164041994750656, invariant CultureInfo, isLength Func`2, isRound Func`2,
-    joins Func`4, joinsIds Func`4, kindOf Func`2, labelled The radius of the extrusion's sketched
-    circle (radius 10 mm), labelled "Shaft Radius" inside the form's sketch, reading 10 mm.,
-    labelledWith Func`2, measures Func`3, mm Func`2, notAFamily false, otherReference (null),
-    parameter FamilyParameter, pathAlready (null), pathArc (null), pathDatum (null), pathDatumReference
-    (null), pathNormal (null), pathView (null), planeReference (null), planeReferenceOf Func`2,
-    problems 0 item(s), readAgain Func`3, readBack Func`2, referenceNotes 0 item(s), refused
-    (null), release 2020, revitAssembly RuntimeAssembly, riseAlready (null), risePlane (null),
-    riseView (null), risers 0 item(s), sameKind Func`3, sideLine (null), target Extrusion,
-    valueMm 10, view ViewPlan, wanted 0.0328083989501312, writtenOf Func`2. inputs came form
-    as given; parameterName as given; diameter as given. on Heron IS Radius
-  negative_case: run with form=b26ea862-ec61-474f-bf8a-eb580e5b8bff-00000a93, parameterName=Bell
-    Radius, diameter=false instead - chosen because it should not contain what this fragment
+    joins Func`4, joinsIds Func`4, kindOf Func`2, labelled The diameter of the symbolic line's
+    arc d09df1e6-65b3-4385-9279-48572506fe4e-00000aa1 (radius 150 mm) in "Ref. Level", labelled
+    "Arc Diameter", reading 300 mm - the arc's radius read back at 150 mm., labelledWith Func`2,
+    line2d SymbolicCurve, lineArc Arc, lineView ViewPlan, lineViewNote (null), measures Func`3,
+    mm Func`2, notAFamily false, otherReference (null), parameter FamilyParameter, pathAlready
+    (null), pathArc (null), pathDatum (null), pathDatumReference (null), pathNormal (null),
+    pathView (null), planeReference (null), planeReferenceOf Func`2, problems 0 item(s), readAgain
+    Func`3, readBack Func`2, referenceNotes 0 item(s), refused (null), release 2020, revitAssembly
+    RuntimeAssembly, riseAlready (null), risePlane (null), riseView (null), risers 0 item(s),
+    sameKind Func`3, sideLine (null), target (null), valueMm 300, view (null), wanted 0.492125984251968,
+    writtenOf Func`2. inputs came form as given; parameterName as given; diameter as given.
+    on Heron NF Generic
+  negative_case: run with form=d09df1e6-65b3-4385-9279-48572506fe4e-00000a9e, parameterName=Arc
+    Diameter, diameter=true instead - chosen because it should not contain what this fragment
     reports - run inside a transaction, and Revit reported the transaction group ROLLED BACK
     afterwards. returned along (null), already (null), arc (null), axisOf Func`2, axisPlane
     (null), blend (null), centreArc (null), centrePlane (null), centreReference (null), circles
-    0 item(s), curveReferenceOf Func`3, dbNamespace Autodesk.Revit.DB, diameter false, findings
-    1 item(s) [Nothing was labelled. No reference plane runs through the re...], flags BindingFlags,
+    0 item(s), curveReferenceOf Func`3, dbNamespace Autodesk.Revit.DB, diameter true, findings
+    1 item(s) [Nothing was labelled. The symbolic line d09df1e6-65b3-4385-9...], flags BindingFlags,
     halfMillimetre 0.00164041994750656, invariant CultureInfo, isLength Func`2, isRound Func`2,
-    joins Func`4, joinsIds Func`4, kindOf Func`2, labelled , labelledWith Func`2, measures
-    Func`3, mm Func`2, notAFamily false, otherReference (null), parameter FamilyParameter,
-    pathAlready (null), pathArc (null), pathDatum (null), pathDatumReference (null), pathNormal
-    (null), pathView (null), planeReference (null), planeReferenceOf Func`2, problems 1 item(s)
-    [No reference plane runs through the revolve's axis. Measured...], readAgain Func`3, readBack
-    Func`2, referenceNotes 0 item(s), refused Nothing was labelled. No reference plane runs
-    through the revolve's axis. Measured from the axis line itself, Revit moves the axis when
-    the size changes and the revolve breaks - make a reference plane through the axis first
-    (CREATE_REFERENCE_PLANES), then label., release 2020, revitAssembly RuntimeAssembly, riseAlready
-    (null), risePlane (null), riseView (null), risers 0 item(s), sameKind Func`3, sideLine
-    Line, target Revolution, valueMm 0, view (null), wanted 0.196850393700787, writtenOf Func`2.
-    inputs came form as given; parameterName as given; diameter as given. on Heron IS Radius
+    joins Func`4, joinsIds Func`4, kindOf Func`2, labelled , labelledWith Func`2, line2d SymbolicCurve,
+    lineArc (null), lineView (null), lineViewNote (null), measures Func`3, mm Func`2, notAFamily
+    false, otherReference (null), parameter FamilyParameter, pathAlready (null), pathArc (null),
+    pathDatum (null), pathDatumReference (null), pathNormal (null), pathView (null), planeReference
+    (null), planeReferenceOf Func`2, problems 1 item(s) [The symbolic line d09df1e6-65b3-4385-9279-48572506fe4e-00000...],
+    readAgain Func`3, readBack Func`2, referenceNotes 0 item(s), refused Nothing was labelled.
+    The symbolic line d09df1e6-65b3-4385-9279-48572506fe4e-00000a9e is not an arc - a straight
+    line has no radius. Its length follows the planes its ends are locked to (LOCK_FAMILY_LINES_TO_PLANES),
+    and the planes are labelled by LABEL_FAMILY_DIMENSION., release 2020, revitAssembly RuntimeAssembly,
+    riseAlready (null), risePlane (null), riseView (null), risers 0 item(s), sameKind Func`3,
+    sideLine (null), target (null), valueMm 0, view (null), wanted 0.492125984251968, writtenOf
+    Func`2. inputs came form as given; parameterName as given; diameter as given. on Heron
+    NF Generic
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: aa807d3d07693727
-
+  fingerprint: 8555de577f0c8128
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -244,7 +277,13 @@ compatibility-note: >
   exists from 2022 only and is not used. So no call changed between Revit
   2024, where the revolve route was proved, and 2020, where it threw: the
   difference is in what Revit makes of the two references, which only a run
-  on 2020 can read - NEEDS-CHECKING Group IS.
+  on 2020 can read - NEEDS-CHECKING Group IS. Version 6's
+  `FamilyItemFactory.NewRadialDimension(View, Reference, XYZ)` and
+  `NewDiameterDimension(View, Reference, XYZ)`, `CurveElement.GeometryCurve`
+  and `SketchPlane`, `Element.OwnerViewId`, `Arc.Radius`, `Center`,
+  `XDirection`, `Curve.IsBound`, `View.SketchPlane` and `ViewDirection` read
+  the same 2020 through 2027 (`tools/api-surface --members --inherited`,
+  2026-11-11).
 
 # ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
@@ -252,6 +291,8 @@ compatibility-note: >
 #   "drive the radius of this cylinder by Radius"  -> here
 #   "label the swept blend's path arc radius"      -> here, version 4
 #   "make Pitch drive the rise of the swept blend" -> here, version 4
+#   "label the arc's radius with Arc Radius"       -> here, version 6 - a
+#                                                     detail or symbolic arc
 #   "label the width with the Width parameter"     -> LABEL_FAMILY_DIMENSION
 #   "put a radial dimension on this arc"           -> CREATE_RADIAL_DIMENSION,
 #                                                     a project annotation
@@ -269,3 +310,4 @@ utterances:
   - label the swept blend's path arc radius
   - label each profile circle's radius of the swept blend
   - make Pitch drive the rise of the swept blend
+  - label the arc's radius with Arc Radius

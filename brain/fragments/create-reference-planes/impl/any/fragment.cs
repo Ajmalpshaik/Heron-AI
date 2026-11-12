@@ -1,5 +1,18 @@
-// NOT STANDALONE. Assumes `doc`, `planes` and `axis` are in scope; leaves
-// `created`, `alreadyThere`, `notAFamily`, `refused` and `findings` behind.
+// NOT STANDALONE. Assumes `doc`, `planes`, `axis` and `throughMm` are in scope;
+// leaves `created`, `alreadyThere`, `notAFamily`, `refused` and `findings`
+// behind.
+//
+// VERSION 2 (2026-11-12, row 5b-1504) - A PLANE AT AN ANGLE. axis "angle":
+// each plane is Name=degrees, a VERTICAL plane drawn in the floor plan
+// through the point `throughMm` ("X,Y" in mm, the origin when left out), its
+// line turned that many degrees from the left-right line (+X) towards the back
+// (+Y) - 30 runs up to the right, -15 down to the right. What an angle label
+// (LABEL_FAMILY_DIMENSION version 3) needs, and no Heron tool drew before
+// (gap table row 5d). Read back like every other plane: its normal must be
+// horizontal and perpendicular to that line, and the plane must pass through
+// the point; one that does not THROWS and nothing is kept. A plane already of
+// that name at that angle through that point is left alone. Axis words and
+// distances answer exactly as version 1.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one.
 //
@@ -56,6 +69,47 @@ var said = squash(axis);
 if (said == "leftright" || said == "x" || said == "width") wantedAxis = 0;
 else if (said == "frontback" || said == "y" || said == "depth") wantedAxis = 1;
 else if (said == "height" || said == "z" || said == "updown" || said == "topbottom" || said == "elevation") wantedAxis = 2;
+// VERSION 2: a vertical plane at an angle in plan.
+else if (said == "angle" || said == "angled" || said == "sloped" || said == "atanangle" || said == "diagonal") wantedAxis = 3;
+
+// VERSION 2: the point an angled plane passes through, "X,Y" in mm.
+XYZ through = XYZ.Zero;
+string throughProblem = null;
+var throughText = (throughMm ?? "").Trim();
+if (throughText.Length > 0 && squash(throughText) != "none" && squash(throughText) != "origin")
+{
+    var bits = throughText.Split(',');
+    double tx, ty;
+    if (bits.Length == 2
+        && double.TryParse(bits[0].Trim(), System.Globalization.NumberStyles.Float, invariant, out tx)
+        && double.TryParse(bits[1].Trim(), System.Globalization.NumberStyles.Float, invariant, out ty))
+        through = new XYZ(tx / 304.8, ty / 304.8, 0);
+    else
+        throughProblem = "\"" + throughText + "\" is not a point - give X,Y in millimetres, such as \"0,0\".";
+}
+// A point TYPED counts, "0,0" included (Codex review, PR #856): only left out
+// or "none" is no point.
+var throughGiven = throughText.Length > 0 && squash(throughText) != "none";
+if (wantedAxis != 3 && throughProblem == null && throughGiven)
+    throughProblem = "throughMm is the point an ANGLED plane passes through - with axis \"" + (axis ?? "")
+        + "\" each plane is placed by its distance, so leave throughMm out.";
+
+// The direction of an angled plane's line in plan, and the angle a normal
+// gives back, folded into -90 < a <= 90 (a plane has no front or back).
+Func<double, double> folded = d =>
+{
+    // Brought within one turn first, so the loops below run at most once each
+    // whatever is typed - a huge angle never hangs Revit (Codex review, PR #856).
+    d = d % 180.0;
+    while (d > 90.0) d -= 180.0;
+    while (d <= -90.0) d += 180.0;
+    return d;
+};
+Func<double, XYZ> lineAt = degrees =>
+    new XYZ(Math.Cos(degrees * Math.PI / 180.0), Math.Sin(degrees * Math.PI / 180.0), 0);
+Func<XYZ, double> degreesOf = n => folded(Math.Atan2(-n.X, n.Y) * 180.0 / Math.PI);
+Func<ReferencePlane, bool> passesThrough = rp =>
+    Math.Abs((through - rp.GetPlane().Origin).DotProduct(rp.Normal)) < 0.01 / 304.8;
 
 View view = null;
 var toMake = new List<KeyValuePair<string, double>>();
@@ -69,7 +123,11 @@ if (!doc.IsFamilyDocument)
 else if (wantedAxis < 0)
 {
     refused = "\"" + (axis ?? "") + "\" is not a way a plane can face here. It takes left-right, "
-        + "front-back or height.";
+        + "front-back, height, or angle (version 2: Name=degrees, a vertical plane at that angle in plan).";
+}
+else if (throughProblem != null)
+{
+    refused = "Nothing was made. " + throughProblem;
 }
 else if (planes == null || planes.Count == 0)
 {
@@ -127,6 +185,32 @@ else
         var same = existing.Where(rp => string.Equals(ownName(rp), name, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
+        // VERSION 2: an angle is degrees, kept as typed, never divided by 304.8.
+        if (wantedAxis == 3)
+        {
+            if (double.IsNaN(pair.Value) || double.IsInfinity(pair.Value) || Math.Abs(pair.Value) > 360.0)
+            {
+                problems.Add("\"" + name + "\" has no angle between -360 and 360 degrees - give degrees, such as 30 "
+                    + "or -15.");
+                continue;
+            }
+            if (same.Count == 0) { toMake.Add(new KeyValuePair<string, double>(name, pair.Value)); continue; }
+            var have = same[0];
+            var haveDegrees = Math.Abs(have.Normal.Z) > 1e-6 ? double.NaN : degreesOf(have.Normal);
+            if (same.Count == 1 && !double.IsNaN(haveDegrees) && Math.Abs(haveDegrees - folded(pair.Value)) < 0.01
+                && passesThrough(have))
+                alreadyThere.Add(name + " (at " + Math.Round(haveDegrees, 2).ToString(invariant) + " degrees, through "
+                    + mm(through.X) + "," + mm(through.Y) + " mm)");
+            else
+                problems.Add("\"" + name + "\" is already a reference plane in this family"
+                    + (double.IsNaN(haveDegrees) ? ", not a vertical one"
+                       : ", at " + Math.Round(haveDegrees, 2).ToString(invariant) + " degrees"
+                         + (passesThrough(have) ? "" : " and not through " + mm(through.X) + "," + mm(through.Y) + " mm"))
+                    + ". Turning or moving it would drag whatever is locked to it, so give the new one another "
+                    + "name or change that one by hand.");
+            continue;
+        }
+
         if (same.Count == 0) { toMake.Add(new KeyValuePair<string, double>(name, wanted)); continue; }
 
         var plane = same[0];
@@ -155,7 +239,8 @@ else
 if (refused == null)
 {
     // Drawn across the origin and past every distance in the call.
-    var furthest = toMake.Count == 0 ? 0 : toMake.Max(p => Math.Abs(p.Value));
+    // An angle is not a distance (version 2): those lines run 1000 mm each way.
+    var furthest = toMake.Count == 0 || wantedAxis == 3 ? 0 : toMake.Max(p => Math.Abs(p.Value));
     var half = Math.Max(1000.0 / 304.8, furthest * 1.5);
 
     var level = view.GenLevel;
@@ -166,7 +251,16 @@ if (refused == null)
         var at = pair.Value;
         XYZ bubble, free, cut;
 
-        if (wantedAxis == 0)
+        if (wantedAxis == 3)
+        {
+            // VERSION 2: through the point, along the line at that angle, cut
+            // up - (free - bubble) x Z is horizontal, so the plane is vertical.
+            var d = lineAt(at);
+            bubble = new XYZ(through.X - half * d.X, through.Y - half * d.Y, z0);
+            free = new XYZ(through.X + half * d.X, through.Y + half * d.Y, z0);
+            cut = XYZ.BasisZ;
+        }
+        else if (wantedAxis == 0)
         {
             bubble = new XYZ(at, -half, z0); free = new XYZ(at, half, z0); cut = XYZ.BasisZ;
         }
@@ -198,6 +292,20 @@ if (refused == null)
 
         // READ BACK - the axis and the position, before anything relies on them.
         var normal = made.Normal;
+        if (wantedAxis == 3)
+        {
+            var readDegrees = Math.Abs(normal.Z) > 1e-6 ? double.NaN : degreesOf(normal);
+            if (double.IsNaN(readDegrees) || Math.Abs(readDegrees - folded(at)) > 0.01 || !passesThrough(made))
+                throw new InvalidOperationException("The plane \"" + pair.Key + "\" came out facing ("
+                    + Math.Round(normal.X, 3).ToString(invariant) + ", " + Math.Round(normal.Y, 3).ToString(invariant)
+                    + ", " + Math.Round(normal.Z, 3).ToString(invariant) + ")"
+                    + (double.IsNaN(readDegrees) ? "" : ", at " + Math.Round(readDegrees, 3).ToString(invariant) + " degrees")
+                    + " - not the vertical plane at " + at.ToString(invariant) + " degrees through " + mm(through.X)
+                    + "," + mm(through.Y) + " mm that was asked for. NOTHING from this call was kept.");
+            created.Add(pair.Key + " (at " + Math.Round(readDegrees, 2).ToString(invariant) + " degrees from left-right, "
+                + "through " + mm(through.X) + "," + mm(through.Y) + " mm)");
+            continue;
+        }
         var lies = axisOf(normal);
         var sits = lies < 0 ? double.NaN : along(made.GetPlane().Origin, lies);
 

@@ -105,6 +105,11 @@ compatibility-note: >
   its references are compared by `ElementId` rather than through any integer, so
   the 2024 64-bit change does not reach this.
 
+# ROUTING (2026-11-11, row 5b-1496):
+#   "what is locked to this" - the ELEMENTS given      -> here
+#   "what is locked to the planes in this family" -
+#     a whole family's lines, regions and nested parts -> REPORT_FAMILY_FORMS (v5)
+
 utterances:
   - why will this not move
   - what is holding this element
