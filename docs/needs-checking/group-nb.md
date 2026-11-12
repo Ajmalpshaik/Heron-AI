@@ -32,6 +32,8 @@ stops at `needs_request_values` and never runs - which is what happened to NB1's
 **What is done and what is not.** The card compiles on all eight releases, 2020 to 2027, with the whole library
 (`tools/check-fragments-compile.py`, 2026-11-11, the owner's PC). Every new Revit member is in the card's
 compatibility note, looked up with `tools/api-surface --members`. **Nothing here has run in Revit.**
+*Out of date since 2026-11-11: NB1 to NB3 ran and passed on version 4 and the card was signed PROVEN - the run recorded
+below the table. Written 2026-11-12, from that record.*
 
 **The model - a SAVED scratch family, never the owner's open families.** File, New, Family, the metric Generic
 Model template, saved as "Heron Detail Lock Test" under `%TEMP%\heron-work\detail-lock`, Revit 2020; and a
