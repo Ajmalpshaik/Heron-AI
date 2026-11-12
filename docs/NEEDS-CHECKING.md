@@ -1470,7 +1470,7 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-nj.md`](needs-checking/group-nj.md)
 
-## Group NK - PROVEN reads that gave a wrong answer, repaired in code and DRAFT again until each is proved: the cards of rows 5b-1128, 5b-393, 5b-323, 5b-351, 5b-295, 5b-352, 5b-154 and 5b-203 (2026-11-11)
+## Group NK - PROVEN reads that gave a wrong answer, repaired in code and DRAFT again until each is proved: the cards of rows 5b-1128, 5b-393, 5b-323, 5b-351, 5b-352, 5b-154 and 5b-203 (2026-11-11)
 
 **Its own file:** [`needs-checking/group-nk.md`](needs-checking/group-nk.md)
 

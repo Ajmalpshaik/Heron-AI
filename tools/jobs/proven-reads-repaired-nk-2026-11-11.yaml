@@ -1,4 +1,4 @@
-# Fourteen READ cards that were PROVEN, gave a modeller a wrong answer, and were
+# Thirteen READ cards that were PROVEN, gave a modeller a wrong answer, and were
 # repaired in code on 2026-11-11 on the owner's word that a proven card found
 # wrong may be changed. Each is DRAFT again at a new version, its old proof kept
 # on the card as the record - one job each, the proof each still owes:
@@ -7,7 +7,6 @@
 #   select-by-material             SELECT_BY_MATERIAL             v4  row 5b-393   NK2
 #   read-space-loads               READ_SPACE_LOADS               v3  row 5b-323   NK3
 #   report-family-parameters       REPORT_FAMILY_PARAMETERS       v2  row 5b-351   NK4
-#   report-family-forms            REPORT_FAMILY_FORMS            v5  row 5b-295   NK5
 #   report-bounding-box            REPORT_BOUNDING_BOX            v2  row 5b-352   NK6
 #   read-graphic-overrides         READ_GRAPHIC_OVERRIDES         v2  row 5b-154   NK7
 #   read-element-parameters        READ_ELEMENT_PARAMETERS        v7  row 5b-203   NK8
@@ -17,6 +16,14 @@
 #   list-materials                 LIST_MATERIALS                 v7  row 5b-203   NK8
 #   report-material-takeoff        REPORT_MATERIAL_TAKEOFF        v4  row 5b-203   NK8
 #   check-sheet-sets-by-parameter  CHECK_SHEET_SETS_BY_PARAMETER  v2  row 5b-203   NK8
+#
+# FOURTEEN UNTIL 2026-11-12. report-family-forms (REPORT_FAMILY_FORMS, row
+# 5b-295, NK5) had a job here. Its repair was withdrawn at a merge that day:
+# main had proved a different version 5 of that card, and main's card was
+# taken whole so that its proof stands (docs/fragment-issues/row-5b-1578.md).
+# The card is PROVEN, a dry run answered its job ALREADY, and the job is
+# gone. If the repair comes back as version 6 its job comes back with it -
+# commit ae7a4c59 holds the repair, and this file's history holds the job.
 #
 #     python tools/batch-prove.py tools/jobs/proven-reads-repaired-nk-2026-11-11.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/proven-reads-repaired-nk-2026-11-11.yaml --session <pid>
@@ -81,10 +88,9 @@
 #
 #   "Heron Flag Test.rfa" - a new family from the metric Generic Model
 #   template: Yes/No parameters "Flag" (ticked), "Derived" with the formula
-#   not(Flag), "Plain" (unticked, no formula); an Integer "Count" set to 1. A
-#   solid extrusion 1000 x 1000 from 0 to 1000 mm and a void extrusion, a
-#   circle of radius 100, from -10 to 1010 through it, cut with Cut Geometry
-#   (or COMBINE_FAMILY_FORMS, which prints the volume before and after)
+#   not(Flag), "Plain" (unticked, no formula); an Integer "Count" set to 1.
+#   (Until 2026-11-12 it also held a solid with a void cut through it, for
+#   REPORT_FAMILY_FORMS' job. No job left here reads that family's forms.)
 #
 #   "Heron Two Bodies.rfa" - a new Generic Model family: two solid boxes, A at
 #   the origin and B 2000 mm away along X, each a 200 mm cube, each with
@@ -186,21 +192,6 @@ jobs:
       "Derived ... = No (formula: not(Flag))", "Plain ... = No", and "Count
       ... = 1" - never Yes. Any of the three reading <blank> is row 5b-351
       still there: write on NK4 which, and whether it is the formula one.
-
-  # ---- row 5b-295 ------------------------------------------------------------
-  - fragment: report-family-forms
-    in: "Heron Flag Test"
-    setup: []
-    expect: formList
-    set: {which: "all"}
-    negative-in: "Heron Reads Test"
-    negative-set: {which: "all"}
-    note: >
-      Round 4's shape of 2026-11-02 - a family for the positive, a project for
-      the negative (notAFamily, nothing read). READ formList and
-      combinationList: the cut solid must NOT say "0 L"; it says no volume was
-      read on the form itself, and combinationList gives the cut's volume,
-      968.584 L for the arrangement above.
 
   # ---- row 5b-352 ------------------------------------------------------------
   - fragment: report-bounding-box
