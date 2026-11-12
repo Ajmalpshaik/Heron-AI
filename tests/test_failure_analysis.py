@@ -466,7 +466,8 @@ def main():
     # And the other direction, which is how a code that was RENAMED in the
     # C# shows up: a row here for something nothing can produce any more.
     # unknown_outcome is the client's own, not the add-in's.
-    CLIENT_SIDE = set(["unknown_outcome"])
+    # wrong_server since D-162: the pipe's server is not the Revit named.
+    CLIENT_SIDE = set(["unknown_outcome", "wrong_server"])
     orphans = sorted(set(fa._KNOWN) - produced - CLIENT_SIDE)
     check(not orphans,
           "and no row classifies a code the add-in cannot produce%s"

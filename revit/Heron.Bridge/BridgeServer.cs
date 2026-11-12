@@ -330,6 +330,23 @@ namespace Heron.Bridge
             }
         }
 
+        /// <summary>
+        /// NO CONNECTION FROM ANOTHER COMPUTER - D-162. The allow rule names the
+        /// current user, and the same user's account logged on OVER THE NETWORK
+        /// carries that SID too: a named pipe is reachable over SMB while the
+        /// Server service runs. Microsoft's guidance for a pipe meant to be used
+        /// locally only is to deny NT AUTHORITY\NETWORK, which every network
+        /// logon carries and no local one does. A deny rule is read before any
+        /// allow, so this holds whatever the allow says.
+        /// </summary>
+        private static void DenyNetwork(PipeSecurity security)
+        {
+            security.AddAccessRule(new PipeAccessRule(
+                new SecurityIdentifier(WellKnownSidType.NetworkSid, null),
+                PipeAccessRights.FullControl,
+                AccessControlType.Deny));
+        }
+
         private NamedPipeServerStream CreatePipe()
         {
 #if NET472 || NET48
@@ -345,6 +362,7 @@ namespace Heron.Bridge
                 // possible at all.
                 PipeAccessRights.ReadWrite | PipeAccessRights.CreateNewInstance,
                 AccessControlType.Allow));
+            DenyNetwork(security);
 
             return new NamedPipeServerStream(
                 _identity.PipeName,
@@ -404,6 +422,7 @@ namespace Heron.Bridge
                     WindowsIdentity.GetCurrent().User,
                     PipeAccessRights.ReadWrite | PipeAccessRights.CreateNewInstance,
                     AccessControlType.Allow));
+                DenyNetwork(security);
 
                 return NamedPipeServerStreamAcl.Create(
                     _identity.PipeName,

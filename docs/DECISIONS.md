@@ -230,6 +230,7 @@ an edit.
 | [D-159](#d-159--a-qa-check-carries-its-severity-clause-and-advice-and-a-run-says-what-changed-since-the-last-one-on-the-same-model) | A QA check carries its severity, clause and advice, and a run says what changed since the last one on the same model | ✅ Accepted · 2026-11-12 |
 | [D-160](#d-160--a-keep-that-changed-nothing-is-rolled-back-so-no-empty-entry-is-left-in-the-undo-list) | A keep that changed nothing is rolled back, so no empty entry is left in the undo list | ✅ Accepted · 2026-11-12 |
 | [D-161](#d-161--a-change-whose-answer-was-lost-can-still-be-read-by-the-requests-own-name) | A change whose answer was lost can still be read, by the request's own name | ✅ Accepted · 2026-11-12 |
+| [D-162](#d-162--the-pipe-to-revit-refuses-another-computer-the-chat-checks-who-serves-it-and-the-tokens-file-is-this-users-alone) | The pipe to Revit refuses another computer, the chat checks who serves it, and the token's file is this user's alone | ✅ Accepted · 2026-11-12 |
 
 ## Format
 
@@ -1412,3 +1413,11 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`RevitDispatcher.cs`](../revit/Heron.Revit.Addin/RevitDispatcher.cs) (`RunRecord`) · [`heron_run_records.py`](../mcp/server/heron_run_records.py) (`by_request`)
 
 **Full record:** [`decisions/D-161.md`](decisions/D-161.md)
+
+## D-162 — The pipe to Revit refuses another computer, the chat checks who serves it, and the token's file is this user's alone
+
+**Status:** Accepted · **Date:** 2026-11-12 · **Accepted:** Ajmal PS, 2026-11-12, in conversation: item 11 of the plan
+**Keeps:** [D-132](decisions/D-132.md)
+**Affects:** [`BridgeServer.cs`](../revit/Heron.Bridge/BridgeServer.cs) · [`BridgeIdentity.cs`](../revit/Heron.Bridge/BridgeIdentity.cs) · [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py)
+
+**Full record:** [`decisions/D-162.md`](decisions/D-162.md)

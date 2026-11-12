@@ -452,6 +452,12 @@ _KNOWN = {
     # model" for a change, a plain refusal for a read. Naming it here would
     # make one of those two answers wrong.
 
+    # D-162, THE CLIENT'S OWN: the pipe was served by a process that is not the
+    # Revit the session names, so nothing - the token included - was sent.
+    "wrong_server":      (REFUSED, FIX_FIRST,
+                          "the pipe is served by a process that is not that Revit, so nothing "
+                          "was sent"),
+
     # --- the one that cannot be resolved from here -------------------------
     "unknown_outcome":   (UNKNOWN, LOOK_AT_THE_MODEL,
                           "the request reached Revit and the answer was lost"),

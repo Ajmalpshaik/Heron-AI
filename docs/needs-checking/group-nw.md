@@ -27,3 +27,12 @@ and its Revit-free half runs here; none of it has run in Revit.**
 | **NW4** | Set `revit.operationTimeoutSeconds` low (10), ask for a PROVEN change that takes longer on a large model | The reply says the answer was lost and names `heron_run_record request=<id>` |
 | **NW5** | When Revit has finished, ask `heron_run_record request=<that id>` | The run's record: what it changed, its verdict. **Not** the record of another run |
 | **NW6** | *The negative:* `heron_run_record request=` an id nobody sent | *No record answers request ... yet* - nothing else is shown |
+
+### D-162 - the pipe hardened
+
+| ID | Do this | Pass looks like |
+|---|---|---|
+| **NW7** | Connect Heron, ask anything from the chat | Works as before - the server's pid matches, nothing is refused |
+| **NW8** | In PowerShell: `Get-Acl \\.\pipe\<Heron's pipe name> \| Format-List` (the name is in `%LOCALAPPDATA%\Heron\bridges\*.json`) | A **Deny** rule for `NT AUTHORITY\NETWORK`, and the Allow for this user |
+| **NW9** | `Get-Acl` on the bridge's `.json` file in that folder | One Allow rule, this user, full control; *AreAccessRulesProtected* True |
+| **NW10** | *The negative, from a second PC on the same domain as the same user:* open `\\<this PC>\pipe\<the name>` | Access denied |
