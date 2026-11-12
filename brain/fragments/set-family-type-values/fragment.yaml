@@ -18,9 +18,21 @@ capability: SET_FAMILY_TYPE_VALUES
 # Heron Link Angle Test, both halves) and SIGNED by Ajmal PS on his word in the
 # chat ("Yes, sign it") - the proof below is version 4's; version 3's is in git
 # history. The proof draft it was accepted from is git-ignored, as every one is.
-version: 4
+version: 5
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 5 (2026-11-11, renumbered from 4 on 2026-11-12 when row 5b-1575's
+# version 4 reached main first) - MANY TYPES IN ONE CALL. On 2026-11-11 (Revit
+# 2020) the owner cleared Manufacturer, Model, URL, Model_Number and
+# Family_Source from three air terminal families of seven types each: one call
+# per type, and each call raised a "delete 1 element" question - making a type
+# current deletes an automatic sketch dimension, the geometry untouched - 21
+# questions. FRAGMENT-ISSUES row 5b-1504. A call naming ONE type takes exactly
+# the path it took before, line for line. PROVED 2026-11-12 on Revit 2024
+# (scratch family Heron Many Types Test, NEEDS-CHECKING Group NG, both halves)
+# and SIGNED by Ajmal PS on his word in the chat ("test and make it proven") -
+# the proof below is version 5's; version 4's is in git history.
 
 purpose: >
   Writes values into one TYPE of the family open in the Family Editor -
@@ -85,6 +97,19 @@ purpose: >
   read by Revit's own parser in the family's units; read back in Revit's own
   format. A value Revit cannot read is refused by name, nothing written.
 
+  **MANY TYPES AT ONCE (version 5).** `typeName` "all" - or a comma list,
+  "600 x 600, 625 x 625" - writes the same values into every type it names in
+  ONE change, one undo entry, and reads every type back: blanking two text
+  values in all seven types is one call, a blank written as empty text. A list
+  writes only types the family has - one name it does not have refuses the
+  whole call, nothing written - and never makes, renames or deletes a type.
+  Revit writes a family type only while it is current, so each type is made
+  current in turn, as the Family Types dialog does, and the type that was
+  current is current again at the end; a type already holding every value is
+  not touched. TEXT into EVERY type - not a URL, which Revit gives no formula -
+  is written with no type made current at all (measured on Revit 2024) - see
+  the compatibility note.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -92,6 +117,10 @@ contract:
     - name: doc
       type: Document
     # The family type to write into - made if the family does not have it.
+    # VERSION 5: "all" (or "every type") for every type of the family, or a
+    # comma list "600 x 600, 625 x 625" of types it HAS - the same values go
+    # into each, in one change. A name that is one type's whole name is that
+    # type, comma or not. A list never makes, renames or deletes a type.
     - name: typeName
       type: string
       source: request
@@ -133,6 +162,22 @@ contract:
       # proof a rename or a delete took, and the list a missing name is given.
       role: accounting
       type: string
+    - name: typesWritten
+      # Version 5: the types a list or "all" wrote into, read back. Empty for a
+      # call naming one type, as before.
+      role: result
+      type: IList<string>
+    - name: alreadyHeld
+      # Version 5: types a list or "all" named that already held every value
+      # asked for, so they were not written and not made current - the
+      # evidence it looked, never a change (D-52).
+      role: accounting
+      type: IList<string>
+    - name: route
+      # Version 5: how a list or "all" was written - "no type made current" or
+      # "each type made current in turn". Empty for one type.
+      role: accounting
+      type: string
     - name: notAFamily
       role: accounting
       type: bool
@@ -143,45 +188,58 @@ contract:
     - name: findings
       type: IList<string>
 
+# VERSION 5's PROOF (Group NG1). The other many-types cases - a bad value, lengths
+# into a list with a labelled dimension, values already held, an air flow into
+# every type, a rename refused, one type as before - are Group NG's table.
 proof:
   date: '2026-11-12'
   by: Ajmal PS
-  model: Heron Link Angle Test (1,554 elements), Revit 2020, session 33000
-  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned badCharacters 0 item(s), dbNamespace
-    Autodesk.Revit.DB, deleteType false, drives 0, editsApart Func`3, findings 2 item(s) [Wrote
-    into the type "Test", now the family's current type. R..., Nothing in the family is labelled
-    with or associated to thes...], flags BindingFlags, forbidden \:{}[]|;<>?`~, formatInUnits
-    Func`3, invariant CultureInfo, kindOf Func`2, kindsNew 9 item(s) [[length, ], [angle,
-    ], [number, ], ...], kindsOld 9 entry(ies), materialShown Func`3, mm Func`2, notAFamily
-    false, parameterValues 2 entry(ies), parseInUnits Func`3, planned 2 item(s) [(Autodesk.Revit.DB.FamilyParameter,
-    measured, 3.333704538508..., (Autodesk.Revit.DB.FamilyParameter, length, 1.96850393700787...],
-    problems 0 item(s), refused (null), renameTo (null), revitAssembly RuntimeAssembly, sameKind
-    Func`3, shown Func`4, specNamed Func`3, typeCreated false, typeList Func`1, typeNameRow
-    Type Name, typeUsed Test, typesNow "Test", wantedType Test, written 2 item(s) [Nominal
-    Air Flow = 94.4 L/s (was 0.0 L/s), Width = 600 mm (was 600 mm)]. inputs came typeName
-    as given; values as given (2); deleteType not given - false (optional). on Heron Link
-    Angle Test
-  negative_case: 'run with typeName=Test, values=Nominal Air Flow=fast instead - chosen because
-    it should not contain what this fragment reports - run inside a transaction, and Revit
-    reported the transaction group ROLLED BACK afterwards. returned badCharacters 0 item(s),
-    dbNamespace Autodesk.Revit.DB, deleteType false, drives 0, editsApart Func`3, findings
-    1 item(s) [Nothing was written. "fast" is not a value Revit reads for "...], flags BindingFlags,
+  model: Heron Many Types Test (1,739 elements), Revit 2024, session 13164
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned alreadyHeld 0 item(s), askedMany
+    true, badCharacters 0 item(s), dbNamespace Autodesk.Revit.DB, deleteType false, drives
+    0, editsApart Func`3, findings 3 item(s) [Wrote into 7 of the 7 type(s) asked for, in
+    ONE change - one..., Revit gives "URL" no formula, so the way with no type made c...,
+    Nothing in the family is labelled with or associated to thes...], flags BindingFlags,
     forbidden \:{}[]|;<>?`~, formatInUnits Func`3, invariant CultureInfo, kindOf Func`2, kindsNew
-    9 item(s) [[length, ], [angle, ], [number, ], ...], kindsOld 9 entry(ies), materialShown
-    Func`3, mm Func`2, notAFamily false, parameterValues 1 entry(ies), parseInUnits Func`3,
-    planned 0 item(s), problems 1 item(s) ["fast" is not a value Revit reads for "Nominal
-    Air Flow" (HV...], refused Nothing was written. "fast" is not a value Revit reads for
-    "Nominal Air Flow" (HVACAirflow) - give a number in the unit the family shows it in, or
-    with its unit, as the Family Types dialog takes it: "94.4 L/s"., renameTo (null), revitAssembly
-    RuntimeAssembly, sameKind Func`3, shown Func`4, specNamed Func`3, typeCreated false, typeList
-    Func`1, typeNameRow Type Name, typeUsed , typesNow "Test", wantedType Test, written 0
-    item(s). inputs came typeName as given; values as given (1); deleteType not given - false
-    (optional). on Heron Link Angle Test'
+    9 item(s) [[length, Autodesk.Revit.DB.ForgeTypeId], [angle, Autodesk.Revit.DB.ForgeTypeId],
+    [number, Autodesk.Revit.DB.ForgeTypeId], ...], kindsOld 9 entry(ies), manyTypes 7 item(s)
+    [900 x 900, 300 x 300, 500 x 500, ...], materialShown Func`3, mm Func`2, notAFamily false,
+    parameterValues 3 entry(ies), parseInUnits Func`3, planned 3 item(s) [(Autodesk.Revit.DB.FamilyParameter,
+    text, ), (Autodesk.Revit.DB.FamilyParameter, text, ), (Autodesk.Revit.DB.FamilyParameter,
+    text, )], problems 0 item(s), refused (null), renameTo (null), revitAssembly RuntimeAssembly,
+    route each type made current in turn, sameKind Func`3, shown Func`4, specNamed Func`3,
+    typeCreated false, typeList Func`1, typeNameRow Type Name, typeUsed 600 x 600, typesNow
+    "300 x 300", "600 x 600", "500 x 500", "450 x 450", "750 x 750", "900 x 900", "625 x 625",
+    typesWritten 7 item(s) [900 x 900, 300 x 300, 500 x 500, ...], wantedType all, written
+    21 item(s) ["900 x 900": Manufacturer = "" (was "Acme"), "900 x 900": URL = "" (was "https://example.com"),
+    "900 x 900": Model_Number = "" (was "M-1"), ...]. inputs came typeName as given; values
+    as given (3); deleteType not given - false (optional). on Heron Many Types Test'
+  negative_case: run with typeName=600 x 600, No Such Type, values=Manufacturer=Changed instead
+    - chosen because it should not contain what this fragment reports - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned alreadyHeld
+    0 item(s), askedMany true, badCharacters 0 item(s), dbNamespace Autodesk.Revit.DB, deleteType
+    false, drives 0, editsApart Func`3, findings 1 item(s) [Nothing was written. This family
+    has no type "No Such Type",...], flags BindingFlags, forbidden \:{}[]|;<>?`~, formatInUnits
+    Func`3, invariant CultureInfo, kindOf Func`2, kindsNew 9 item(s) [[length, Autodesk.Revit.DB.ForgeTypeId],
+    [angle, Autodesk.Revit.DB.ForgeTypeId], [number, Autodesk.Revit.DB.ForgeTypeId], ...],
+    kindsOld 9 entry(ies), manyTypes 1 item(s) [600 x 600], materialShown Func`3, mm Func`2,
+    notAFamily false, parameterValues 1 entry(ies), parseInUnits Func`3, planned 1 item(s)
+    [(Autodesk.Revit.DB.FamilyParameter, text, Changed)], problems 1 item(s) [This family
+    has no type "No Such Type", so NO type in the li...], refused Nothing was written. This
+    family has no type "No Such Type", so NO type in the list was written - a list writes
+    only types that exist and never makes one. The family's types are "500 x 500", "600 x
+    600", "450 x 450", "900 x 900", "750 x 750", "625 x 625", "300 x 300"., renameTo (null),
+    revitAssembly RuntimeAssembly, route , sameKind Func`3, shown Func`4, specNamed Func`3,
+    typeCreated false, typeList Func`1, typeNameRow Type Name, typeUsed , typesNow "450 x
+    450", "750 x 750", "600 x 600", "900 x 900", "625 x 625", "300 x 300", "500 x 500", typesWritten
+    0 item(s), wantedType 600 x 600, No Such Type, written 0 item(s). inputs came typeName
+    as given; values as given (1); deleteType not given - false (optional). on Heron Many
+    Types Test
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 8e171f21c632fb3e
+  fingerprint: eea4cda064dcfca9
   releases:
   - release: '2024'
     date: '2026-11-12'
@@ -191,35 +249,35 @@ proof:
       one (row 15)
     positive_case: run as it would normally be run - run inside a transaction, and Revit reported
       the transaction group ROLLED BACK afterwards. returned badCharacters 0 item(s), dbNamespace
-      Autodesk.Revit.DB, deleteType false, drives 0, editsApart Func`3, findings 2 item(s) [Wrote
-      into the type "Test", now the family's current type. R..., Nothing in the family is labelled
-      with or associated to thes...], flags BindingFlags, forbidden \:{}[]|;<>?`~, formatInUnits
-      Func`3, invariant CultureInfo, kindOf Func`2, kindsNew 9 item(s) [[length, Autodesk.Revit.DB.ForgeTypeId],
-      [angle, Autodesk.Revit.DB.ForgeTypeId], [number, Autodesk.Revit.DB.ForgeTypeId], ...],
-      kindsOld 9 entry(ies), materialShown Func`3, mm Func`2, notAFamily false, parameterValues
+      Autodesk.Revit.DB, deleteType false, drives 0, editsApart Func`3, findings 2 item(s)
+      [Wrote into the type "Test", now the family's current type. R..., Nothing in the family
+      is labelled with or associated to thes...], flags BindingFlags, forbidden \:{}[]|;<>?`~,
+      formatInUnits Func`3, invariant CultureInfo, kindOf Func`2, kindsNew 9 item(s) [[length,
+      Autodesk.Revit.DB.ForgeTypeId], [angle, Autodesk.Revit.DB.ForgeTypeId], [number, Autodesk.Revit.DB.ForgeTypeId],
+      ...], kindsOld 9 entry(ies), materialShown Func`3, mm Func`2, notAFamily false, parameterValues
       1 entry(ies), parseInUnits Func`3, planned 1 item(s) [(Autodesk.Revit.DB.FamilyParameter,
       measured, 4.237760006578...], problems 0 item(s), refused (null), renameTo (null), revitAssembly
-      RuntimeAssembly, sameKind Func`3, shown Func`4, specNamed Func`3, typeCreated false, typeList
-      Func`1, typeNameRow Type Name, typeUsed Test, typesNow "Test", wantedType Test, written
-      1 item(s) [Nominal Air Flow = 120.0 L/s (was 94.4 L/s)]. inputs came typeName as given;
-      values as given (1); deleteType not given - false (optional). on R24 Generic
-    negative_case: 'run with typeName=Test, values=Nominal Air Flow=fast instead - chosen because
-      it should not contain what this fragment reports - run inside a transaction, and Revit
-      reported the transaction group ROLLED BACK afterwards. returned badCharacters 0 item(s),
-      dbNamespace Autodesk.Revit.DB, deleteType false, drives 0, editsApart Func`3, findings
-      1 item(s) [Nothing was written. "fast" is not a value Revit reads for "...], flags BindingFlags,
-      forbidden \:{}[]|;<>?`~, formatInUnits Func`3, invariant CultureInfo, kindOf Func`2, kindsNew
-      9 item(s) [[length, Autodesk.Revit.DB.ForgeTypeId], [angle, Autodesk.Revit.DB.ForgeTypeId],
-      [number, Autodesk.Revit.DB.ForgeTypeId], ...], kindsOld 9 entry(ies), materialShown Func`3,
-      mm Func`2, notAFamily false, parameterValues 1 entry(ies), parseInUnits Func`3, planned
-      0 item(s), problems 1 item(s) ["fast" is not a value Revit reads for "Nominal Air Flow"
-      (au...], refused Nothing was written. "fast" is not a value Revit reads for "Nominal Air
-      Flow" (autodesk.spec.aec.hvac:airFlow-2.0.0) - give a number in the unit the family shows
-      it in, or with its unit, as the Family Types dialog takes it: "94.4 L/s"., renameTo (null),
-      revitAssembly RuntimeAssembly, sameKind Func`3, shown Func`4, specNamed Func`3, typeCreated
-      false, typeList Func`1, typeNameRow Type Name, typeUsed , typesNow "Test", wantedType
-      Test, written 0 item(s). inputs came typeName as given; values as given (1); deleteType
-      not given - false (optional). on R24 Generic'
+      RuntimeAssembly, sameKind Func`3, shown Func`4, specNamed Func`3, typeCreated false,
+      typeList Func`1, typeNameRow Type Name, typeUsed Test, typesNow "Test", wantedType Test,
+      written 1 item(s) [Nominal Air Flow = 120.0 L/s (was 94.4 L/s)]. inputs came typeName
+      as given; values as given (1); deleteType not given - false (optional). on R24 Generic
+    negative_case: 'run with typeName=Test, values=Nominal Air Flow=fast instead - chosen
+      because it should not contain what this fragment reports - run inside a transaction,
+      and Revit reported the transaction group ROLLED BACK afterwards. returned badCharacters
+      0 item(s), dbNamespace Autodesk.Revit.DB, deleteType false, drives 0, editsApart Func`3,
+      findings 1 item(s) [Nothing was written. "fast" is not a value Revit reads for "...],
+      flags BindingFlags, forbidden \:{}[]|;<>?`~, formatInUnits Func`3, invariant CultureInfo,
+      kindOf Func`2, kindsNew 9 item(s) [[length, Autodesk.Revit.DB.ForgeTypeId], [angle,
+      Autodesk.Revit.DB.ForgeTypeId], [number, Autodesk.Revit.DB.ForgeTypeId], ...], kindsOld
+      9 entry(ies), materialShown Func`3, mm Func`2, notAFamily false, parameterValues 1 entry(ies),
+      parseInUnits Func`3, planned 0 item(s), problems 1 item(s) ["fast" is not a value Revit
+      reads for "Nominal Air Flow" (au...], refused Nothing was written. "fast" is not a value
+      Revit reads for "Nominal Air Flow" (autodesk.spec.aec.hvac:airFlow-2.0.0) - give a number
+      in the unit the family shows it in, or with its unit, as the Family Types dialog takes
+      it: "94.4 L/s"., renameTo (null), revitAssembly RuntimeAssembly, sameKind Func`3, shown
+      Func`4, specNamed Func`3, typeCreated false, typeList Func`1, typeNameRow Type Name,
+      typeUsed , typesNow "Test", wantedType Test, written 0 item(s). inputs came typeName
+      as given; values as given (1); deleteType not given - false (optional). on R24 Generic'
     fingerprint: 8e171f21c632fb3e
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
@@ -247,6 +305,28 @@ compatibility-note: >
   `Definition.GetDataType()` from 2022 - an `#if REVIT2020 || REVIT2021`, the
   units API's own break.
 
+  VERSION 5 (2026-11-11, the RevitAPI.dll of 2020 read by reflection, compiled
+  2020 to 2027): `FamilyType` has `AsDouble`, `AsInteger`, `AsString`,
+  `AsElementId`, `AsValueString` and `HasValue` and NO setter, and every
+  `FamilyManager.Set` overload writes the CURRENT type - so a family type is
+  written only while it is current, on every release. Making a type current is
+  a regeneration; on Revit 2020 it can delete an automatic sketch dimension, and
+  that deletion is what Revit's Keep or Discard question counts. The one way
+  around it here: TEXT going into EVERY type, where `FamilyParameter.CanAssignFormula`
+  is true and the text holds no double quote, is written as a formula that is
+  the text - `"Acme"`, or `""` for a blank - which Revit evaluates for every type
+  at once, and the formula is cleared again (`SetFormula(p, null)`), inside a
+  `SubTransaction`, kept only if every type then reads the text and no formula
+  is left. MEASURED 2026-11-12 on Revit 2024 (Group NG): it holds - every type
+  kept its value when the formula was cleared, a blank and a filled text alike,
+  on the built-in Manufacturer and on a family text parameter. A URL parameter
+  takes NO formula (`CanAssignFormula` false), so a call that includes a URL
+  makes each type current in turn, and its answer names the URL. On Revit 2020
+  to 2023 and 2025 to 2027 the trial is not yet run; where it does not hold it
+  is rolled back and the types are made current in turn. Lengths, angles,
+  numbers, integers, yes/no, materials and every other measured kind - and
+  text into only some types - always make each type current in turn.
+
 # ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "make a 600 x 600 type"               -> here
@@ -254,6 +334,12 @@ compatibility-note: >
 #   "set the nut material to galvanised"  -> here (a family type's material)
 #   "rename the family type"              -> here ("Type Name=..." in values)
 #   "delete this family type"             -> here (deleteType)
+#   "clear the manufacturer in every type of this family"
+#                                         -> here, typeName all (version 5)
+#   "clear the manufacturer on every type of this family in the project"
+#                                         -> SET_PARAMETER_VALUES_BY_ID, a
+#                                            pattern key with types=yes - a
+#                                            project's types, not a family's own
 #   "rename these duct types"             -> EDIT_TEXT_VALUES field Name - types in a
 #                                            project, not a family's own types
 #   "add a Width parameter"               -> ADD_FAMILY_PARAMETERS
@@ -278,3 +364,6 @@ utterances:
   - set the nut material to galvanised
   # VERSION 4 (2026-11-12).
   - set Nominal Air Flow to 94.4 L/s in this family type
+  # ADDED 2026-11-11, row 5b-1504 - version 5, every type at once.
+  - blank these values in all the family types
+  - set the same value in all the family types
