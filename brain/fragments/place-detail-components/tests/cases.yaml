@@ -1,11 +1,32 @@
 positive:
   - given: >
-      "FloorPlan: Level 1", a generic annotation type loaded (a north arrow),
-      one point, rotationDegrees 0
-    expect: one symbol placed in that plan at the point, and only in that plan
+      VERSION 1, STILL - a project: "FloorPlan: Level 1", a generic annotation
+      type loaded (a north arrow), one point, rotationDegrees 0
+    expect: >
+      one symbol placed in that plan at the point, and only in that plan;
+      version 2 reads it back - Owner View that plan, the point within half a
+      millimetre, the type asked - and gives its unique id as instanceId
 
   - given: a detail item type, a drafting view, three points, 45 degrees
-    expect: three placed, each turned 45 degrees
+    expect: >
+      three placed, each turned 45 degrees; instanceIds three ids, commas
+      between, in the order of the points
+
+  - given: >
+      VERSION 2 - a FAMILY. A saved scratch family from the metric Generic
+      Model template with a metric Detail Item family "Flow Arrow" (one 600 mm
+      detail line) loaded into it; view "Ref. Level" (the family's floor
+      plan), symbol "Flow Arrow: Flow Arrow", points 0,300,0 and 0,-300,0,
+      rotationDegrees 0
+    expect: >
+      two placed by the family's factory, each read back with Owner View "Ref.
+      Level", at its point, of that type; instanceId the first one's unique
+      id. In Revit the arrows show in the Ref. Level plan and in no elevation
+      or 3D view
+
+  - given: >
+      the same family, view "Ref. Level", one point 300,0,0, rotationDegrees 90
+    expect: one placed, turned 90 degrees about the view's direction, its point unmoved
 
 negative:
   - given: a MODEL family type - a sprinkler - with the same plan and point
@@ -17,9 +38,22 @@ negative:
   - given: a 3D view
     expect: refused by name, nothing placed
 
+  - given: >
+      VERSION 2 - the same scratch family, a nested GENERIC MODEL type (not
+      view-based) loaded into it, view "Ref. Level", one point
+    expect: >
+      NOTHING PLACED - refused as not view-based and pointed at
+      PLACE_FAMILY_INSTANCES, which nests model families on a plane or level;
+      instanceId empty
+
+  - given: VERSION 2 - the same family with the flow arrow, its "View 1" 3D view
+    expect: refused as a 3D view, nothing placed, instanceId empty
+
   - given: any run at all
     expect: NO TRANSACTION OPENED. Undo is the caller's
 
 second_route: >
   Revit itself: the symbol is visible in the view it was placed in and in no
-  other view; Properties shows its Owner View as that view
+  other view; Properties shows its Owner View as that view. In a family,
+  select a placed arrow in the Ref. Level plan: Properties names its family
+  and type, and the Family Editor's elevations do not show it

@@ -139,6 +139,14 @@ compatibility-note: >
 #   "draw the valve symbol in plan"               -> here
 #   "draw a circle and a cross as the plan symbol" -> here
 #   "hide the body in plan views in the family"   -> SET_FAMILY_FORM_VISIBILITY
+#   "show this symbolic line only in coarse"      -> SET_FAMILY_FORM_VISIBILITY
+#                                                    version 2 - lines ALREADY
+#                                                    drawn; this card sets the
+#                                                    levels only as it draws. On
+#                                                    the keyword route alone this
+#                                                    card ranks first; `find`
+#                                                    answers it there by identity
+#                                                    (check-routing, 2026-11-11)
 #   "draw detail lines in this view"              -> DRAW_FAMILY_DETAIL_LINES, a project
 #                                                    view's lines
 
