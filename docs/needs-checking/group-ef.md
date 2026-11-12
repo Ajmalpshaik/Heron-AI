@@ -64,3 +64,9 @@ and no proof draft was written, so the card stays DRAFT. EF1 to EF5 below still 
 | **EF3** | The third job, which writes the proof draft: `grid A \| face BOXID left \| face BOXID right`; `grid A \| face BOXID up` as the negative | measured `2000 mm + 1000 mm`; the negative refused, naming the six sides; nothing created |
 | **EF4** | The second route: in "Heron Dim Section", Revit's own Annotate > Aligned dimension picked on the same faces and the same grid, by hand | the same three values as EF1 to EF3 |
 | **EF5** | Version 2's own case still holds - `grid A \| grid B \| grid C` in a floor plan with two different points, as its proof ran it | the same chained string it read before |
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `CREATE_LINEAR_DIMENSION` reads PROVEN on its card, at version 5 - its `proof` block is signed by Ajmal PS,
+2026-11-02, on P1102 MEP (21,446 elements), Revit 2020, session 59096. So where this page calls a card named here
+DRAFT, or says nothing has run in Revit, that was true when it was written and is out of date as a statement about the
+card. Whether EF1 to EF5 were what that proof ran is NOT sorted here: for the owner.

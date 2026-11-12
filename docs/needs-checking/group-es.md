@@ -90,3 +90,9 @@ Claude app's private copy of `heron.config`, which still said `true` throughout;
 
 With the switches off, a `create-duct` preview from the command line came back `write_disabled` and
 `save-document` `publish_disabled` - the gates held where the server's own copy of the switches said otherwise.
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `ZOOM_TO_LINKED_ELEMENTS` reads PROVEN on its card, at version 1 - its `proof` block is signed by Ajmal PS,
+2026-10-18, on Project1 (2,954 elements), Revit 2020, session 30308. So where this page calls a card named here DRAFT,
+or says nothing has run in Revit, that was true when it was written and is out of date as a statement about the card.
+Whether ES2 to ES16 were what that proof ran is NOT sorted here: for the owner.

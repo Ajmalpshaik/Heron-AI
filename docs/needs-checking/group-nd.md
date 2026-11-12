@@ -45,3 +45,21 @@ CONTROL. By hand: Align and lock the region's tip corner to "Tip". Record the th
 **What this group also measures for others.** ND2 says whether a plain detail line reads as a loose `DetailCurve`
 with nothing in a sketch - the question Group NC's first run raised for `LOCK_FAMILY_LINES_TO_PLANES` - and ND5
 whether a detail item placed in a family's view has an owner view, Group NB's question.
+
+**SIGNED 2026-11-12 by Ajmal PS - `REPORT_FAMILY_FORMS` version 5 is PROVEN, and NOT on this group's rows.** The
+proof block in the card is a run of 2026-11-12 on another scratch family - "Heron Link Detail Test" (1,503
+elements), Revit 2020, session 33000, [Group NE](group-ne.md)'s Detail Item family. `which` "2d" read 2 elements: a
+detail line "from 0,0,0 to 300,0,0 mm, 300 long" and a filled region "1 loop(s), X 300 to 600, Y -80 to 80",
+"3 sketch edge(s)" - the edges counted under the region and not listed as lines, which is what ND2 asked of
+`GetDependentElements` - both "nothing holds it". The negative, `which` "nested", read none. A `proof.releases`
+entry of the same day adds Revit 2024 ("R24 Arrow", session 13164): two detail lines, one an arc, and a filled
+region, again "nothing holds it". [Group NF](group-nf.md)'s NF12 used the card to read a detail arc back at radius
+200 mm.
+
+**Of this group's rows: ND0 to ND6 were not run as written** - "Heron 2D Read Test" is the family in neither
+proof. Nothing on record reads a lock, a label or a link back (ND2's "locked along" and "locked at an end to",
+ND5's "linked to Show Arrow"), refuses a changed id or a region's edge (ND1, ND3), reads a form beside a symbolic
+line (ND4) or a nested detail item (ND5), or compares by hand (ND6). The 2024 run's own
+[work note](../work-notes/investigations/2026-11-11-family-2d-capabilities.md) lists "Group ND's lock rows" as
+still owed. "Nothing here has run in Revit" and "back to DRAFT", above, were true on 2026-11-11.
+*Written back 2026-11-12 from the card, in a cloud container (no Revit); nothing was run here.*

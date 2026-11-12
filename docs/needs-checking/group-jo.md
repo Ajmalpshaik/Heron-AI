@@ -68,3 +68,14 @@ row that fails is recorded here and the card corrected; nothing in a row changes
 is never Heron's to say. Site coverage is read off each mass's lowest mass floor, which is right for a block
 standing on its ground level and wrong for one that overhangs its base - recorded in the card, and owed a
 better reading only if a real study needs it.
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `REPORT_MASSES` reads PROVEN on its card, at version 1 - its `proof` block is signed by Ajmal PS, 2026-11-02,
+on P1102 MEP (21,446 elements), Revit 2020, session 33624. `SET_MASS_FLOOR_USAGE` reads PROVEN on its card, at version
+1 - its `proof` block is signed by Ajmal PS, 2026-11-02, on P1102 MEP (21,446 elements), Revit 2020, session 59096.
+`REMOVE_MASS_FLOORS` reads PROVEN on its card, at version 1 - its `proof` block is signed by Ajmal PS, 2026-11-02, on
+P1102 MEP (21,446 elements), Revit 2020, session 59096. `CREATE_WALLS_BY_FACE` reads PROVEN on its card, at version
+1 - its `proof` block is signed by Ajmal PS, 2026-11-02, on P1102 MEP (21,446 elements), Revit 2020, session 59096. So
+where this page calls a card named here DRAFT, or says nothing has run in Revit, that was true when it was written and
+is out of date as a statement about the card. Whether JO0 to JO17 were what that proof ran is NOT sorted here: for the
+owner.

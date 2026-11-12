@@ -52,3 +52,9 @@ the model. The job file is
 | **LD3** | *The second route.* The card with nothing selected and `show` left out | Both connections, CN2 "joins 1" with the end Revit reports; the primary of CN1 as its Properties show it; every type Connection Settings lists, with its use count, and the approval types |
 | **LD4** | *A list nobody has.* `show` "bolts" | Findings name the word as neither connections nor types, and that bolts, plates and welds are not read |
 | **LD5** | *Revit 2024 or later.* LD2 and LD3 again on a project made the same way in that release | The same answers |
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `CHANGE_ELEMENT_TYPE` reads PROVEN on its card, at version 2 - its `proof` block is signed by Ajmal PS,
+2026-11-02, on P1102 MEP (21,446 elements), Revit 2020, session 33624. So where this page calls a card named here
+DRAFT, or says nothing has run in Revit, that was true when it was written and is out of date as a statement about the
+card. It is a card this group names in passing, not the one its rows prove.

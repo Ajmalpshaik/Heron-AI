@@ -88,3 +88,21 @@ and sends nothing. Proving waits for Ajmal PS's word.
 | **KK37** | *Second route.* View - Schedules - Material Takeoff, Note Block, Keynote Legend, Schedule/Quantities with Areas and a scheme; Modify Schedule - Insert Data Row on the key schedule, read by a person | Each view the same kind, category and columns as Heron's; the key rows typed by hand behave as Heron's do. **A disagreement is a FRAGMENT-ISSUES row** |
 | **KK38** | *Probe, not a proof: a Percentage field (item 18).* On any scratch schedule, in a rolled-back run: `AddField(ScheduleFieldType.Percentage)` then `PercentageOf` set to a number column | Record whether Revit takes it. **Yes** means a percentage column can be built and is a new card for the owner to ask for; **no** records it beside Calculated Value as a Revit limit in row 5b-1367. Nothing is built either way until this has run |
 | **KK39** | *Item 21, read by hand.* On one scratch schedule: `DUPLICATE_VIEW` with each option, `APPLY_VIEW_TEMPLATE` with a schedule template and with a plan template, `SET_VIEW_PHASE` with the schedule chained from `FIND_SCHEDULES`, `RENAME_ELEMENTS` on the schedule clicked on a sheet - each rolled back | What each did, against [the investigation's table](../work-notes/investigations/2026-11-01-schedule-settings.md) section 2. **And whether Schedule Properties shows a Phase Filter** - `SET_VIEW_PHASE`'s comment says a schedule has none. A disagreement is a FRAGMENT-ISSUES row |
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `SET_SCHEDULE_APPEARANCE` reads PROVEN on its card, at version 5 - its `proof` block is signed by Ajmal PS,
+2026-11-02, on P1102 MEP (21,446 elements), Revit 2020, session 59096. `SET_SCHEDULE_SORT_GROUP` reads PROVEN on its
+card, at version 2 - its `proof` block is signed by Ajmal PS, 2026-11-02, on P1102 MEP (21,446 elements), Revit 2020,
+session 59096. `ADD_SCHEDULE_FIELDS` reads PROVEN on its card, at version 3 - its `proof` block is signed by Ajmal PS,
+2026-11-02, on P1102 MEP (21,446 elements), Revit 2020, session 59096. `SET_SCHEDULE_FIELD_ORDER` reads PROVEN on its
+card, at version 1 - its `proof` block is signed by Ajmal PS, 2026-11-02, on P1102 MEP (21,446 elements), Revit 2020,
+session 59096. `SET_SCHEDULE_OPTIONS` reads PROVEN on its card, at version 1 - its `proof` block is signed by Ajmal
+PS, 2026-11-02, on P1102 MEP (21,446 elements), Revit 2020, session 59096. `GROUP_SCHEDULE_HEADERS` reads PROVEN on
+its card, at version 1 - its `proof` block is signed by Ajmal PS, 2026-11-02, on P1102 MEP (21,446 elements), Revit
+2020, session 59096. `CREATE_SCHEDULE` reads PROVEN on its card, at version 3 - its `proof` block is signed by Ajmal
+PS, 2026-11-02, on P1102 MEP (21,446 elements), Revit 2020, session 33624. `PLACE_VIEW_ON_SHEET` reads PROVEN on its
+card, at version 5 - its `proof` block is signed by Ajmal PS, 2026-11-02, on Snowdon Towers Sample Architectural
+(34,509 elements), Revit 2024, session 57392. Of the other cards this group names: `ADD_KEY_SCHEDULE_ROWS` reads DRAFT
+at version 1. So where this page calls a card named here DRAFT, or says nothing has run in Revit, that was true when
+it was written and is out of date as a statement about the card. Whether KK1 to KK39 were what that proof ran is NOT
+sorted here: for the owner.

@@ -38,3 +38,9 @@ neither run on a Revit. The version 4 code has not run on any model.
 Each by `validate --write`, both legs rolled back, then signed by Ajmal PS and set PROVEN by him. This group's other rows were NOT RUN that day.
 
 - `write-element-parameters` - positive Family3, two forms picked by `select-family-forms`, *Visible=No*: `written` 2; negative *No Such Parameter*: `written` 0, both `absent`.
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `WRITE_ELEMENT_PARAMETERS` reads PROVEN on its card, at version 6 - its `proof` block is signed by Ajmal PS,
+2026-11-02, on P1102 MEP (21,446 elements), Revit 2020, session 33624. So where this page calls a card named here
+DRAFT, or says nothing has run in Revit, that was true when it was written and is out of date as a statement about the
+card. Whether BB1 to BB4 were what that proof ran is NOT sorted here: for the owner.

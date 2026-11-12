@@ -45,3 +45,11 @@ write.
 | **FA6** | **The finding's own shape: a KEPT add, then Undo.** In a chat on "Heron Sheet Sets FA", *"add A103 to the HERON FA SHEETS set"*, **Keep** in Revit's Keep or Discard box ([Group ET](group-et.md)), then Ctrl+Z in Revit | File - Print: HERON FA SHEETS back to A101 and A102, **and the Print Range still Current window** - version 1 left it on Selected views/sheets here |
 | **FA7** | **NOT RUN - Revit 2024 or later.** FA1 and FA2 on a release where a set keeps its own print order (2023+), on a set whose order is set by hand in the View/Sheet Set dialog | the same answers; and WHERE the added sheets land in a hand-ordered set - version 2 does not read or write `OrderedViewList`, so the order is Revit's choice. Record what it does |
 | **FA8** | **A question, recorded, not fixed: the CURRENT set.** After FA1, which set File - Print shows as the current one - before and after the rollback | rename, delete and now add and remove make the set they work on the CURRENT set, and nothing puts the old one back (version 1 did the same for rename and delete). Record what the dialog shows; a fix is a change of its own |
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `MANAGE_SHEET_SETS` reads PROVEN on its card, at version 4 - its `proof` block is signed by Ajmal PS,
+2026-11-02, on P1102 MEP (21,446 elements), Revit 2020, session 59096. `LIST_SHEET_SETS` reads PROVEN on its card, at
+version 2 - its `proof` block is signed by Ajmal PS, 2026-10-18, on PHASES RAN AGAINST DIFFERENT DOCUMENTS: Project1,
+Family1 - active was Project1, Revit 2020, session 2648. So where this page calls a card named here DRAFT, or says
+nothing has run in Revit, that was true when it was written and is out of date as a statement about the card. Whether
+FA1 to FA8 were what that proof ran is NOT sorted here: for the owner.

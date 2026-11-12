@@ -77,3 +77,12 @@ lighting families copied to `%TEMP%\heron-work\night-1022\families`; negative a 
 as made; on 2024 the report does not list them. So the 0s look like how Revit 2020 exposes those parameters to
 `get_Parameter`, not a write that missed - but only Family Types, looked at by eye with each type chosen, answers
 IK2. `set-family-light-source` stays DRAFT until it is looked at.
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `SET_FAMILY_LIGHT_SOURCE` reads PROVEN on its card, at version 2 - its `proof` block is signed by Ajmal PS,
+2026-11-02, on PHASES RAN AGAINST DIFFERENT DOCUMENTS: P1102 Light, P1102 Family - active was P1102 STR, Revit 2020,
+session 12404. `SET_FAMILY_SETTINGS` reads PROVEN on its card, at version 4 - its `proof` block is signed by Ajmal PS,
+2026-11-02, on PHASES RAN AGAINST DIFFERENT DOCUMENTS: P1102 MEP Family, P1102 MEP - active was P1102 MEP, Revit 2020,
+session 59096. So where this page calls a card named here DRAFT, or says nothing has run in Revit, that was true when
+it was written and is out of date as a statement about the card. Whether IK0 to IK10 were what that proof ran is NOT
+sorted here: for the owner.

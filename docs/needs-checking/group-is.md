@@ -121,3 +121,10 @@ All of these were run again on the changed code the same day and read as above. 
 radius and its negative IS0** - the route this card is proved for on Revit 2020 is a round extrusion's circle, by radius
 or diameter, and a revolve's tube; a revolve's radius to a profile line is refused there by Revit (5b-1318), and the
 ring by Heron (5b-1333). Fingerprint `aa807d3d07693727`, second route NOT ESTABLISHED.
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `LABEL_FAMILY_RADIUS` reads PROVEN on its card, at version 6 - its `proof` block is signed by Ajmal PS,
+2026-11-12, on Heron NF Generic (1,564 elements), Revit 2020, session 33000; a `proof.releases` entry adds Revit 2024
+(2026-11-12, Ajmal PS). So where this page calls a card named here DRAFT, or says nothing has run in Revit, that was
+true when it was written and is out of date as a statement about the card. Whether IS0 to IS7 were what that proof ran
+is NOT sorted here: for the owner.

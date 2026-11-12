@@ -54,3 +54,9 @@ Scratch* from any template, Revit 2020 first:
 | **FC8** | FC1 to FC3 once on **Revit 2020** and once on **2027** | the same answers, except the title line. The members were read off the reference assemblies for every release and compiled, not run |
 | **FC9** | **Version 1 still works.** The placing job as version 1 was proved: one free view, a sheet, a point | `placed` one viewport id, `swapped` and `notDone` empty - version 1's proof, re-run so the card can be signed again |
 | **FC10** | **A drafting view keeps its detail number.** `oldViewId` HSW DRAFT A, `views` HSW DRAFT C, `at` 0,0,0 | one line, HSW-04, *detail number 7 kept*; DRAFT C's viewport reads 7 in Properties |
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `PLACE_VIEW_ON_SHEET` reads PROVEN on its card, at version 5 - its `proof` block is signed by Ajmal PS,
+2026-11-02, on Snowdon Towers Sample Architectural (34,509 elements), Revit 2024, session 57392. So where this page
+calls a card named here DRAFT, or says nothing has run in Revit, that was true when it was written and is out of date
+as a statement about the card. Whether FC1 to FC10 were what that proof ran is NOT sorted here: for the owner.
