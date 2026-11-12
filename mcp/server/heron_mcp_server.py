@@ -1830,10 +1830,11 @@ def _matched_line(request, capability):
 @server.tool()
 def revit_change(capability: str = "", values: str = "",
                  expect_from: str = "", request: str = "",
-                 ctx: _Context = None) -> str:
+                 dry_run: bool = False, ctx: _Context = None) -> str:
     """
     Change the open Revit model, and KEEP the change - duplicate a type,
-    rename, change an element's type, set a parameter.
+    rename, change an element's type, set a parameter. `dry_run=true` rolls
+    it back instead.
 
     THE SHORT PATH: pass the user's own words as `request` and leave
     `capability` empty. When they are a phrasing a PROVEN capability declares
@@ -1847,9 +1848,8 @@ def revit_change(capability: str = "", values: str = "",
     result this acts on, and Heron refuses if something else left it; empty,
     the call starts clean.
 
-    It runs only while the owner has Changes ON in Heron's Settings, and a
-    Publish or Admin capability needs the Publish or Admin switch on as
-    well. Only a PROVEN capability runs (Article 11, D-117): a DRAFT one,
+    It runs only while the owner has Changes ON, and a Publish or Admin
+    capability needs that switch on too. Only a PROVEN capability runs (Article 11, D-117): a DRAFT one,
     or one whose proof is older than its code, is refused before anything is
     sent. A refusal names the switch or the status: tell the user, and never
     try another capability to get round it. Revit may ask Keep/Discard (D-126):
@@ -1948,6 +1948,26 @@ def revit_change(capability: str = "", values: str = "",
                       "'%s' does not say what risk it carries in a form Heron can read, "
                       "so nothing has been sent to Revit." % capability)
 
+    # A DRY RUN IS D-55'S PREVIEW, ASKED FOR FROM THE CHAT (D-155): the run
+    # itself, inside the add-in's TransactionGroup, rolled back. It is sent
+    # exactly as a kept change is, WITHOUT `apply` - the add-in's safe half,
+    # and the one every proof was taken on. So it can only keep LESS than the
+    # call without it (Golden Rule 19): nothing a chat sets here raises what
+    # it may do, and every refusal below stands for it unchanged - the Changes
+    # switch in the add-in, the PROVEN rule, the pin.
+    #
+    # NOT FOR A PUBLISH OR AN ADMIN JOB. A rollback takes back what Revit's
+    # transactions hold and nothing else: an export, a save or a sync done
+    # inside the run is done (D-106, D-126 "Discard cannot take it back"). A
+    # dry run that left a file on the server would be the opposite of what
+    # its name promises, so those are refused here, before anything is read.
+    if dry_run and operation != "run_fragment_write":
+        return _ended("refused",
+                      "'%s' is a Publish or Admin job, and a dry run cannot take one "
+                      "back - an export, a save or a sync is done once it runs, and "
+                      "rolling the model back does not undo it. Nothing has been "
+                      "sent to Revit." % capability)
+
     # ARTICLE 11: UNTESTED CODE NEVER TOUCHES A LIVE MODEL, and every call
     # here KEEPS what it does. So a fragment its own files do not call PROVEN,
     # or whose proof no longer describes its code (D-30), is refused HERE -
@@ -2037,6 +2057,11 @@ def revit_change(capability: str = "", values: str = "",
         # it.
         "apply": "true",
     }
+    # A DRY RUN SENDS NO `apply` AT ALL, never "false": absent is the word
+    # the add-in reads as run-and-roll-back (RevitFragment.Run), and a field
+    # that is not there cannot be misread by an add-in of any age.
+    if dry_run:
+        del args["apply"]
 
     # WHICH MODEL: the pinned one, sent with the request and checked in the
     # add-in BEFORE the transaction group opens. _aim_at_pin says why each
@@ -2076,7 +2101,8 @@ def revit_change(capability: str = "", values: str = "",
     # before this is kept (D-126), and their time to look is added to the wait.
     reply = session.request(operation, op_args=args,
                             idempotent=False,
-                            response_timeout=configuration.fragment_timeout(keeping=True),
+                            response_timeout=configuration.fragment_timeout(
+                                keeping=not dry_run),
                             on_wait=_waiting(ctx))
     session.close()
     _ctx_reply(reply)
@@ -2111,7 +2137,8 @@ def revit_change(capability: str = "", values: str = "",
     # THIS CALL'S PLACE IN THE BATCH, decided once the answer is in hand.
     _BATCH.turn(started, time.monotonic())
 
-    lines = ["%s ran in %s." % (capability, reply.get("document"))]
+    lines = [("DRY RUN: %s was tried in %s and rolled back." if dry_run
+              else "%s ran in %s.") % (capability, reply.get("document"))]
     never_saved = _never_saved_line(reply)
     if never_saved:
         lines.insert(0, never_saved)
@@ -2189,6 +2216,20 @@ def revit_change(capability: str = "", values: str = "",
     # says refused, and no after-change table offers values Revit does not hold.
     if reply.get("asked") and not reply.get("kept"):
         return _ended("refused", "\n".join(lines))
+
+    # A DRY RUN ENDS HERE, WITH HOW TO KEEP IT SAID IN THIS TOOL'S WORDS. The
+    # add-in's rollback verdict says "send it again with apply", and a chat
+    # has no `apply` to send. D-126's caution goes with it: the kept run is a
+    # second run, the model can have moved since this one, and its own counts
+    # are the ones that describe what was kept. No after-change table either -
+    # the values were used on a change Revit no longer holds.
+    if dry_run:
+        lines.append("")
+        lines.append("This was a dry run, so the model is as it was. To keep the "
+                     "change, call revit_change again without dry_run - only when "
+                     "the user says to. That is a new run: read its own counts, "
+                     "because the model can have changed since this one.")
+        return _ended("ok", "\n".join(lines))
 
     # THE AFTER-CHANGE TABLE (docs/40 section 21.1): a settings change from
     # the chat leaves the values it used on the Companion page.

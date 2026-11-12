@@ -1466,6 +1466,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-nn.md`](needs-checking/group-nn.md)
 
+## Group NR - a dry run from the chat: `revit_change` with `dry_run` (2026-11-12)
+
+**Its own file:** [`needs-checking/group-nr.md`](needs-checking/group-nr.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
