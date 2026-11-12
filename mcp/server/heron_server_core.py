@@ -618,7 +618,8 @@ def _change_outcome(reply):
                 or declined):
             return UNKNOWN
         return KEPT
-    if kind in ("rolledBack", "discarded") and reply.get("rolledBack") is True:
+    # "unchanged" (D-160): asked to keep, Revit counted no change, rolled back.
+    if kind in ("rolledBack", "discarded", "unchanged") and reply.get("rolledBack") is True:
         if reply.get("applied") is True or reply.get("kept") is True:
             return UNKNOWN
         return ROLLED_BACK

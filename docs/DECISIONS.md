@@ -228,6 +228,7 @@ an edit.
 | [D-157](#d-157--heron-can-undo-its-own-last-change-with-revits-own-undo-only-while-that-change-is-still-on-top) | Heron can undo its own last change, with Revit's own Undo, only while that change is still on top | ✅ Accepted · 2026-11-12 |
 | [D-158](#d-158--a-qa-checks-failing-ids-travel-whole-only-when-the-check-names-them) | A QA check's failing ids travel whole, only when the check names them | ✅ Accepted · 2026-11-12 |
 | [D-159](#d-159--a-qa-check-carries-its-severity-clause-and-advice-and-a-run-says-what-changed-since-the-last-one-on-the-same-model) | A QA check carries its severity, clause and advice, and a run says what changed since the last one on the same model | ✅ Accepted · 2026-11-12 |
+| [D-160](#d-160--a-keep-that-changed-nothing-is-rolled-back-so-no-empty-entry-is-left-in-the-undo-list) | A keep that changed nothing is rolled back, so no empty entry is left in the undo list | ✅ Accepted · 2026-11-12 |
 
 ## Format
 
@@ -1394,3 +1395,11 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`heron_checklists.py`](../brain/heron_checklists.py) (`history`) · [`companion.js`](../mcp/companion/static/companion.js) (`qaResult`)
 
 **Full record:** [`decisions/D-159.md`](decisions/D-159.md)
+
+## D-160 — A keep that changed nothing is rolled back, so no empty entry is left in the undo list
+
+**Status:** Accepted · **Date:** 2026-11-12 · **Accepted:** Ajmal PS, 2026-11-12, in conversation: item 8 of the plan
+**Keeps:** [D-126](decisions/D-126.md) · [D-157](decisions/D-157.md)
+**Affects:** [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs) (`Run`, `WithVerdict`)
+
+**Full record:** [`decisions/D-160.md`](decisions/D-160.md)

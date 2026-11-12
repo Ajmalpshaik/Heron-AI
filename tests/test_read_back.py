@@ -130,7 +130,9 @@ def wiring():
                        r"(.*?)\}\s*\}", run, re.S)
     branch = rolled.group(1) if rolled else ""
     check(rolled is not None
-          and re.search(r"if\s*\(\s*answered\s*==\s*null\s*&&\s*rolledBack\s*!=\s*null\s*&&\s*"
+          # "&& !keptNothing" since D-160: an empty keep rolled back is no dry run.
+          and re.search(r"if\s*\(\s*answered\s*==\s*null\s*&&\s*(!keptNothing\s*&&\s*)?"
+                        r"rolledBack\s*!=\s*null\s*&&\s*"
                         r"rolledBack\.Held\s*\)\s*readBefore\s*=\s*RevitReadBack\.Read\(", branch)
           is not None,
           "only after RollBackAndCheck, only when it HELD, and never after a Discard - a value "
@@ -142,7 +144,7 @@ def wiring():
     check(0 < verdict < spliced,
           "the read-back is spliced onto the add-in's verdict")
     check(re.search(r"string\s+readMode\s*=\s*apply\s*\?\s*HeronReadBack\.Selection\s*:\s*"
-                    r"answered\s*==\s*null\s*\?\s*HeronReadBack\.DryRun\s*:\s*null;", run)
+                    r"answered\s*==\s*null\s*(&&\s*!keptNothing\s*)?\?\s*HeronReadBack\.DryRun\s*:\s*null;", run)
           is not None,
           "kept is 'selection', rolled back with nobody asked is 'dryRun', a Discard is nothing")
 

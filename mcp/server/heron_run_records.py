@@ -253,6 +253,10 @@ def _ended(reply):
         return "KEPT"
     if kind == "rolledBack":
         return "rolled back, nothing kept"
+    if kind == "unchanged":
+        # D-160: asked to keep, and Revit counted nothing changed - rolled back
+        # so no empty entry was left in the undo list.
+        return "nothing changed, nothing kept - no undo entry"
     if kind == "discarded":
         # D-126's Discard. Whether its rollback held is the verdict's to say,
         # in the modeller's words - this line only names who decided.
