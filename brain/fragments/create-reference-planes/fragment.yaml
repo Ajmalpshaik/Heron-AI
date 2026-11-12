@@ -147,6 +147,39 @@ proof:
     whether one exists here has not been settled, and a declared absence is not the same as
     none
   fingerprint: e36ef284ec086587
+  releases:
+  - release: '2024'
+    date: '2026-11-12'
+    by: Ajmal PS
+    model: R24 Generic, Revit 2024, session 13164 - the count is NOT recorded because 3,209
+      elements was measured on R24 Project, the document in front, and this ran against another
+      one (row 15)
+    positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+      the transaction group ROLLED BACK afterwards. returned along Func`3, alreadyThere 0 item(s),
+      axisLetters 3 item(s) [X, Y, Z], axisOf Func`2, axisWords 3 item(s) [left-right (X), front-back
+      (Y), height (Z)], created 1 item(s) [Test Slope (at 45 degrees from left-right, through
+      0,0 mm)], degreesOf Func`2, findings 2 item(s) [Made 1 reference plane(s) in "Ref. Level",
+      each read back: T..., Next: LABEL_FAMILY_DIMENSION ties the distance between two p...],
+      folded Func`2, invariant CultureInfo, lineAt Func`2, mm Func`2, notAFamily false, ownName
+      Func`2, passesThrough Func`2, refused (null), said angle, squash Func`2, through XYZ,
+      throughGiven false, throughProblem (null), throughText none, toMake 1 item(s) [[Test Slope,
+      45]], view ViewPlan, wantedAxis 3. inputs came planes as given (1); axis as given; throughMm
+      not given - "none", the card''s own default (optional). on R24 Generic'
+    negative_case: run with planes=Box Far=900, axis=left-right, throughMm=0,0 instead - chosen
+      because it should not contain what this fragment reports - run inside a transaction, and
+      Revit reported the transaction group ROLLED BACK afterwards. returned along Func`3, alreadyThere
+      0 item(s), axisLetters 3 item(s) [X, Y, Z], axisOf Func`2, axisWords 3 item(s) [left-right
+      (X), front-back (Y), height (Z)], created 0 item(s), degreesOf Func`2, findings 1 item(s)
+      [Nothing was made. throughMm is the point an ANGLED plane pas...], folded Func`2, invariant
+      CultureInfo, lineAt Func`2, mm Func`2, notAFamily false, ownName Func`2, passesThrough
+      Func`2, refused Nothing was made. throughMm is the point an ANGLED plane passes through
+      - with axis "left-right" each plane is placed by its distance, so leave throughMm out.,
+      said leftright, squash Func`2, through XYZ, throughGiven true, throughProblem throughMm
+      is the point an ANGLED plane passes through - with axis "left-right" each plane is placed
+      by its distance, so leave throughMm out., throughText 0,0, toMake 0 item(s), view (null),
+      wantedAxis 0. inputs came planes as given (1); axis as given; throughMm as given. on R24
+      Generic
+    fingerprint: e36ef284ec086587
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
