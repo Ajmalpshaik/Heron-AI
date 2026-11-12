@@ -193,6 +193,48 @@ def tool(home):
               and sorted(rows[0]["ids"]) == ["501", "502"],
               "a dictionary keyed by id arrives whole: Select in Revit is offered")
 
+        # THE REVIEW OF #866 (rows 5b-1614, 5b-1620), through the server.
+        # A missing total beside the ids is never complete: no Select.
+        S.pinned.forget()
+        revit.reply = dict(reply_with(notLoaded="9 item(s) [21, 22, 23, ...]"),
+                           providesIds={"notLoaded": {"ids": ["21", "22"]}})
+        rows = S._run_checklist(S.brain.checklists().find("Before issue"))["rows"]
+        check(rows[0]["state"] == "fail" and rows[0]["select"] == "" and rows[0]["ids"] == [],
+              "ids sent with no total offer no Select in Revit - found %r" % rows[0]["select"])
+        # The same saved model after Revit was closed and opened again: the
+        # process id is new, the path is not - so it is compared.
+        said = body("save", name="Restart", checks=json.dumps([
+            {"sentence": "every linked model is loaded", "capability": "LIST_LINKED_MODELS",
+             "rule": "notLoaded == 0", "ids": "notLoaded"}]))
+        check(said.startswith("Saved 'Restart'"), "a one-check list is saved - %r" % said[:120])
+        real_pid = S.binding._pid
+        try:
+            S.binding._pid = 4242
+            S.pinned.forget()
+            revit.reply = reply_with(notLoaded="2 item(s) [21, 22]")
+            body("run", name="Restart")
+            S.binding._pid = 9999
+            S.pinned.forget()
+            revit.reply = reply_with(notLoaded="0 item(s)")
+            said = body("run", name="Restart")
+            check("Since the last run on Project1" in said and "1 fixed" in said and "[FIXED]" in said,
+                  "the same model after Revit restarted is compared by its path - found %r"
+                  % said.splitlines()[0][-160:])
+            # A model never saved: no path, never compared, told to save.
+            unsaved = dict(reply_with(notLoaded="0 item(s)"), document="Project2", documentPath="")
+            S.pinned.forget()
+            revit.reply = unsaved
+            body("run", name="Restart")
+            S.pinned.forget()
+            said = body("run", name="Restart")
+            check("Save the model so runs can be compared" in said and "Since the last run" not in said
+                  and "[NOT COMPARED]" in said,
+                  "a model with no path is never compared, and the reply says to save it - found %r"
+                  % said.splitlines()[0][-200:])
+        finally:
+            S.binding._pid = real_pid
+        check(body("delete", name="Restart").startswith("Deleted"), "and deleted")
+
         def gone():
             raise S.NotBound("No Revit is connected to this chat.")
         S.binding.resolve = gone

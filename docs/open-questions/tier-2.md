@@ -1567,3 +1567,30 @@ present behaviour is the one fact that decides it, and that needs the PC.
 **Ajmal PS decides.** Until he does the add-in is as it was, and the dry run's reply says what it does.
 
 ---
+
+### 🔵 Q-90 — A QA check with 501 to 5,000 failing elements: should Select in Revit select them in batches, refuse, or stay as built - "the first 500 of N"? *(found 2026-11-12 in review of #866)*
+
+**What was found.** [D-158](../decisions/D-158.md) sends a check's failing ids whole - up to the add-in's
+`IdsSentPerList`, 5,000 - so that *Select in Revit* takes every one. But Select goes through the Model
+Dashboard's route, which sends at most `DASHBOARD_SELECT_MOST`, 500, ids at once. Between 501 and 5,000 the
+button reads *Select the first 500 of N* and selects part of what failed - honestly labelled, but against
+D-158's own *"Select works on every one"* and the rule it keeps, that part of what failed is never selected
+([row 5b-1621](../fragment-issues/row-5b-1621.md)). Read off the code and a stand-in, **not run in Revit**
+([Group NV](../needs-checking/group-nv.md) NV14).
+
+**The question, in a modeller's words: when a check finds 2,000 failing elements, what should the Select
+button do?**
+
+1. **Select all of them, sent to Revit in batches of 500.** **Cost:** several reads in a row under one
+   press, and a selection that grows batch by batch; whether Revit's selection takes thousands at once at a
+   usable speed is not known until it is run.
+2. **Offer no Select past 500, and say why** - as past 5,000 today. **Cost:** the modeller copies the ids
+   and uses Select by ID, or narrows the check.
+3. **As built** - select the first 500 and say so. **Cost:** a partial Select, which the rule forbids.
+
+**Nothing is recommended.** Shape 1 is what D-158 promised; its speed is the one fact that decides it, and
+that needs the PC.
+
+**Ajmal PS decides.** Until he does, the button says *the first 500 of N*, as built.
+
+---
