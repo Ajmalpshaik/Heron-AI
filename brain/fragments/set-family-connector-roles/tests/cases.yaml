@@ -163,6 +163,14 @@ positive:
       reference plane's reference as its "planar face" at all; if it throws,
       the card is changed, not proved
 
+  - given: >
+      the same, rolled back; settings "host=Neck Top; flip=true" (review
+      comment on PR #857: the two read-backs once contradicted each other)
+    expect: >
+      hosted on Neck Top at the point it sat, and pointing DOWN - the flip
+      runs after the hosting; changed names both. Before the fix this rolled
+      back every time
+
 negative:
   - given: connectors "Port Middle", where no connector lies on such a plane
     expect: refused, naming the family's connectors - nothing changed. MEASURED 2026-10-04

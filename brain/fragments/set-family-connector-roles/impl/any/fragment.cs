@@ -1493,8 +1493,13 @@ else if (refused == null)
             if (c.Origin == null || c.Origin.DistanceTo(where.Item1) > halfMillimetre)
                 wrong(label(c) + " sits at " + (c.Origin == null ? "no point" : "X " + mm(c.Origin.X) + ", Y " + mm(c.Origin.Y)
                     + ", Z " + mm(c.Origin.Z) + " mm") + " after hosting, not where it sat on \"" + ownName(hostPlane) + "\".");
-            if (c.Direction == null || c.Direction.DotProduct(where.Item2) < 0.9999)
-                wrong(label(c) + " points " + pointing(c.Direction) + " after hosting; it pointed " + pointing(where.Item2) + ".");
+            // A flip asked in the same call runs after the hosting, so the
+            // connector then points the other way - the flip's read-back below
+            // holds it to that; here it is expected, not refused.
+            var expected = flip ? where.Item2.Negate() : where.Item2;
+            if (c.Direction == null || c.Direction.DotProduct(expected) < 0.9999)
+                wrong(label(c) + " points " + pointing(c.Direction) + " after hosting" + (flip ? " and the flip" : "")
+                    + "; it should point " + pointing(expected) + ".");
             findings.Add(label(c) + " is hosted on \"" + ownName(hostPlane) + "\" and is NOT locked there - Revit lets a "
                 + "connector on a plane alone be moved along it. Align and lock its centre to two planes by hand "
                 + "until Heron can (row 5b-1568). Revit reports no host through its API: deleting the solid it sat on, "
