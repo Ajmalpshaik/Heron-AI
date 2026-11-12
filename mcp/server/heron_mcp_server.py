@@ -2992,6 +2992,14 @@ def revit_read(capability: str = "", values: str = "",
     args = {"name": folder, "source": source, "needs": needs, "chain": "reset"}
     _aim_at_pin(args)
 
+    # D-158: THE ID LISTS A QA CHECK NAMED, sent whole by the add-in. Set on
+    # the side channel by _checklist_ask around its one read, and only there,
+    # so no chat's schema or request changes, and an add-in that does not
+    # know the field ignores it.
+    wanted = getattr(_ctx, "send_ids", None)
+    if wanted:
+        args["sendIds"] = ",".join(wanted)
+
     supplied = _values_array(values)
     if supplied:
         args["values"] = supplied
@@ -6226,8 +6234,15 @@ def _checklist_ask(origin="chat", ctx=None):
                 return {"ran": False, "why": "The chat is no longer on the model the first check "
                                              "read, so nothing was sent. Run the checklist again."}
             out = {}
-            said = _through(revit_read, reply_out=out, origin=origin)(capability, values, "",
-                                                                       ctx=ctx)
+            # D-158: a check that names where its failing ids are asks for
+            # that list whole, so Select in Revit can take every one - set
+            # for this one read and cleared after it, whatever happens.
+            _ctx.send_ids = [check["ids"]] if check.get("ids") else []
+            try:
+                said = _through(revit_read, reply_out=out, origin=origin)(capability, values, "",
+                                                                           ctx=ctx)
+            finally:
+                _ctx.send_ids = []
             reply = out.get("reply")
             if out.get("ended") != "ok" or not isinstance(reply, dict) or not reply.get("ok"):
                 lines = [line.strip() for line in str(said or "").splitlines() if line.strip()]
@@ -6242,7 +6257,8 @@ def _checklist_ask(origin="chat", ctx=None):
             changes = None
         return {"ran": True, "document": reply.get("document"),
                 "provides": reply.get("provides") or {},
-                "entries": reply.get("providesEntries") or {}, "changes": changes}
+                "entries": reply.get("providesEntries") or {},
+                "ids": reply.get("providesIds") or {}, "changes": changes}
 
     return ask, first
 
@@ -6284,6 +6300,10 @@ def _run_checklist(checklist, origin="chat", ctx=None, progress=None):
                               held.get("run"), held.get("findings"))
         answer["failed"] = True
     answer["identity"] = list(first["identity"]) if first.get("identity") else None
+    # WHAT CHANGED SINCE THE LAST RUN ON THIS MODEL - NEW, STILL OPEN, FIXED -
+    # and this run kept for the next. Only a finished run; never raises.
+    if not answer.get("failed"):
+        store.history(answer)
     _checklist_select_labels(answer)
     return answer
 
@@ -6336,14 +6356,17 @@ def heron_checklist(action: str = "list", name: str = "", checks: str = "",
     `checks`, a JSON list - each {"sentence": their words, "capability": ONE
     capability that reads, "values": "name=value" lines, "rule": "output op
     number" on one output it declares - "failures == 0", "ids": the output
-    holding failing element ids, or ""}. Turn each sentence into a check with
-    heron_lookup; ask, never guess. replace=true only when they said so.
+    holding failing element ids, or ""}. Optional, in their words: "severity"
+    high, medium or low; "clause", the BEP or standard it comes from; "advice",
+    how to fix. Turn each sentence into a check with heron_lookup; ask, never
+    guess. replace=true only when they said so.
 
     "list" names them; "show" gives one's checks; "delete" removes one when
     asked; "starter" saves Heron's example under `name`, only when asked.
 
     "run" runs `name` check by check through revit_read: PASS meets the value
-    checked, FAIL does not, NOT RUN says why and is never a pass. Never call
+    checked, FAIL does not, NOT RUN says why and is never a pass; each says
+    NEW, STILL OPEN or FIXED against the last run on that model. Never call
     the model compliant. Results also go on the Companion's QA Checklist.
     """
     try:

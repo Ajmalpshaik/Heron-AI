@@ -144,6 +144,12 @@ def tool(home):
               "four PASS and the failing check with its ids, read off the reply")
         check("4 meet the value checked, 1 do not, 0 not run" in said and "Project1" in said,
               "the counts, on the model it read")
+        check("first kept run of this checklist on this model" in said,
+              "the first run on a model says there is nothing to compare with yet")
+        again = body("run", name="Before issue")
+        check("Since the last run on Project1" in again and "0 new, 0 fixed, 1 still open" in again
+              and "STILL OPEN" in again,
+              "the next run says what changed since the last one on the same model")
         check(not re.search(r"\b(compliant|clean|healthy)\b", said, re.I), "and never a verdict")
 
         panel = S._companion_module().CHECKLIST_PANEL
@@ -159,6 +165,22 @@ def tool(home):
         rows = S._run_checklist(S.brain.checklists().find("Before issue"))["rows"]
         check(rows[0]["state"] == "fail" and rows[0]["select"] == "" and "3 of the 9" in rows[0]["why"],
               "a list of more than three ids: no Select in Revit, and why")
+        # D-158: each check that names its ids output asks for that list whole,
+        # and an add-in that sends it lets Select in Revit take every id.
+        reads = [a[1] for a in revit.asked if a[0] == "run_fragment_read"]
+        # A check with no ids output is saved with "" - it names nothing.
+        wanted = [c.get("ids") or None for c in S.brain.checklists().find("Before issue")["checks"]]
+        check([r.get("sendIds") for r in reads] == wanted and wanted[0] == "notLoaded",
+              "each check's read names its own ids output in sendIds, and one with none names "
+              "nothing - found %r, wanted %r" % ([r.get("sendIds") for r in reads], wanted))
+        S.pinned.forget()
+        revit.reply = dict(reply_with(notLoaded="9 item(s) [21, 22, 23, ...]"),
+                           providesIds={"notLoaded": {"total": 9,
+                                                      "ids": [str(21 + i) for i in range(9)]}})
+        rows = S._run_checklist(S.brain.checklists().find("Before issue"))["rows"]
+        check(rows[0]["state"] == "fail" and rows[0]["select"] == "Select in Revit"
+              and len(rows[0]["ids"]) == 9 and rows[0]["ids"][-1] == "29",
+              "with every id sent, Select in Revit is offered for all nine")
         said = body("save", name="Kinds", checks=json.dumps([
             {"sentence": "no external reference at all", "capability": "REPORT_EXTERNAL_REFERENCES",
              "rule": "kinds == 0", "ids": "kinds"}]))

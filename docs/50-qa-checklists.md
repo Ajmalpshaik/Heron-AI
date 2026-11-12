@@ -78,6 +78,12 @@ problem:
 | An `ids` output that holds elements, not ids | The add-in sends an element list's **names**, never its ids |
 | More than `MAX_CHECKS` checks | A run is one read per check (`brain/heron_checklists.py`) |
 
+**Three labels, each optional and the modeller's own** ([D-159](decisions/D-159.md)): `severity` - high,
+medium or low; `clause` - the BEP or standard clause the check comes from, one line up to 200 characters;
+`advice` - how to fix a failure, one line up to 300. Heron never sets a severity and never checks a clause:
+it quotes them on every run, in the chat, on the page and in the CSV. A checklist saved before them reads
+as before.
+
 **Not checked when saved, and asked on every run:** whether the capability is PROVEN, which model, whether
 Revit is there. A proof can go stale between saving and running ([D-30](DECISIONS.md)).
 
@@ -153,15 +159,24 @@ heron_checklist run  /  Companion QA Checklist: Run
 - **The model changing between two checks is said.** After each read the add-in's change count (D-147) is
   read; when it moved during the run, the result says so and asks for Run again.
 - **What arrives.** A number arrives as its text, a list as its count and first three items, a dictionary
-  with every entry (`RevitFragment.Describe`, `providesEntries`). So **a list of more than three ids arrives
-  incomplete**: the row says how many arrived and **Select in Revit is not offered** for it, rather than
-  selecting part of what failed. A dictionary keyed by element id arrives whole.
+  with every entry (`RevitFragment.Describe`, `providesEntries`). **A check's own ids output arrives whole**
+  ([D-158](decisions/D-158.md)): its read names it in `sendIds`, and the add-in sends every id of that list
+  in `providesIds`, up to 5,000, with its total. A list longer than that - or any list from an add-in from
+  before D-158 - arrives incomplete: the row says how many arrived and **Select in Revit is not offered**
+  for it, rather than selecting part of what failed. A dictionary keyed by element id arrives whole.
 - **Select in Revit** is the Model Dashboard's own route (`_dashboard_show`: `FILTER_ELEMENTS_BY_ID`, then
   `SET_SELECTION`, both PROVEN, declared `companion_dashboard_select` at EXECUTE), with the ids the run found
   - the page sends the row's number and the run's token, never ids. A row from a run that has since been
   replaced - by a chat run, say - is refused in words; so is the model having moved (*the checklist was run on
   another model - press Run again*). Past the route's limit (`DASHBOARD_SELECT_MOST` in the server) the button and the answer say *the first
   N of M*.
+- **What changed since the last run** ([D-159](decisions/D-159.md)). A finished run is kept in
+  `<data home>/checklists/runs/<checklist>/` - the newest 20 - and compared with the newest kept run of the
+  same checklist **on the same model**: each check is **NEW** (failing now, not last time), **STILL OPEN**
+  (with how many elements came and went, when every id arrived), **FIXED**, or **NOT COMPARED** (not run
+  now or last time, or not in the last run - not run is never a change). A check is matched by its
+  sentence, capability and rule. A run that stopped part way is neither compared nor kept, and a history
+  that cannot be read or written never stops a run.
 - **CSV and Print / PDF** are made on the page from the rows Heron sent; nothing is read again.
 
 ## 5. What was built
@@ -189,11 +204,13 @@ List, show, save and delete touch only the modeller's own files.
 
 ## 7. Not built - each waits on the owner
 
-1. **All the failing ids of a long list.** The add-in sends a list of ids as its count and first three (D-26).
-   Selecting all of them needs the add-in to send the ids of a list a check names - a C# change, not made.
+1. ~~**All the failing ids of a long list.**~~ **Built 2026-11-12, [D-158](decisions/D-158.md)**: a check's
+   read names its ids output and the add-in sends that list whole, up to 5,000. Not yet run in Revit
+   ([Group NV](needs-checking/group-nv.md)).
 2. **Inputs** - a value asked at each run, as a saved command has. Every value is fixed when saved.
 3. **Team checklists** - a shared folder, and who may publish to it.
 4. **A checklist in Revit's Heron panel**, beside the saved commands.
 5. **A rule across two outputs** (`failures == 0 and notChecked == 0`) - one rule per check today; two checks
    say the same.
-6. **Saving a run** as a dated report, to compare with the next.
+6. ~~**Saving a run**~~ **Built 2026-11-12, [D-159](decisions/D-159.md)**: each finished run is kept and
+   compared with the last on the same model. Not yet run in Revit ([Group NV](needs-checking/group-nv.md)).
