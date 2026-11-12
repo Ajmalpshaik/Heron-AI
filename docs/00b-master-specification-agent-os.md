@@ -94,7 +94,7 @@ The complexity belongs inside Heron AI.
 > | Agent selection · capability selection | One step: `heron_lookup` matches the request to a capability, and the capability's provider is a fragment, never an agent | [`heron_capability.py`](../brain/heron_capability.py) |
 > | Knowledge retrieval | The identity route first, then words and meaning, fused | [`heron_search.py`](../brain/heron_search.py), [`heron_retrieve.py`](../brain/heron_retrieve.py) |
 > | Implementation | Nothing is written when a fragment covers the job. When none does, the host writes a new `DRAFT` fragment | [`heron-fragment-author`](../.claude/agents/heron-fragment-author.md) |
-> | Validation · execution | The add-in's gate - the ribbon switches, and a change is kept only from a fragment whose proof still stands - then the fragment's C# compiled and run in Revit, in one named `TransactionGroup` | [D-19](DECISIONS.md), [D-106](DECISIONS.md), [D-117](DECISIONS.md), [D-28](DECISIONS.md) |
+> | Validation · execution | The add-in's gate - the owner's switches, in Heron's Settings window since [D-150](decisions/D-150.md), and a change is kept only from a fragment whose proof still stands - then the fragment's C# compiled and run in Revit, in one named `TransactionGroup` | [D-19](DECISIONS.md), [D-106](DECISIONS.md), [D-117](DECISIONS.md), [D-28](DECISIONS.md) |
 > | Testing | Not per request. A fragment is proved once, on a named real model, with a negative case, and a person signs | [D-30](DECISIONS.md) |
 > | Learning · knowledge evolution | Nothing learns by itself. `heron_gaps` reports what was asked for and not done; the agents that would evolve knowledge only propose | [`heron_gaps.py`](../brain/heron_gaps.py), [`heron_evolve.py`](../brain/heron_evolve.py) |
 >
@@ -162,7 +162,7 @@ This should be a **logical** organization, not necessarily separate software pro
 > | Engineering | Revit Engineering, MEP Design Engineering, Standards & BIM QA, Development | [28](28-agent-registry.md) |
 > | Knowledge | Knowledge & RAG, Fragment Lifecycle, Skill Lifecycle, Learning & Self-Growth, User & Personalization, Import & Migration, Naming & Taxonomy | [28](28-agent-registry.md) |
 > | Platform | Kernel & Platform, MCP / Bridge, Session & Bridge Management, Installation & Update, Operations, Health & Resilience, Workspace & Folder Architecture, GitHub, Agent Lifecycle & HR, Documentation, Reporting & Output | [28](28-agent-registry.md) |
-> | User Interface | The Claude chat; the Revit ribbon and its switches; the Companion page beside Revit, which shows the model and is never a second place to talk | [D-01](DECISIONS.md), [D-106](DECISIONS.md), [D-108](DECISIONS.md) |
+> | User Interface | The Claude chat; the Revit ribbon, and Heron's Settings window with the switches ([D-150](decisions/D-150.md)); the Companion page beside Revit, which shows the model and is never a second place to talk | [D-01](DECISIONS.md), [D-106](DECISIONS.md), [D-108](DECISIONS.md) |
 >
 > **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction) point 4): the parts draw the organisation differently and no accepted decision picks one picture; the choice is open and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-76](open-questions/tier-2.md).
 
@@ -183,7 +183,7 @@ Agents should not independently manage these responsibilities.
 > | discovery | By capability, never by agent: `heron_lookup`, `heron_capabilities` | [`heron_capability.py`](../brain/heron_capability.py) |
 > | activation · execution | The host calls an MCP tool and the add-in runs it. Nothing activates an agent on its own | [D-01](DECISIONS.md) |
 > | communication | Modules import one another directly; there is no message bus between agents | [23 §1](23-heron-kernel.md) |
-> | permissions | The add-in's gate and the ribbon switches; each contract's `allowed-tools` | [D-19](DECISIONS.md), [D-106](DECISIONS.md), [`brain/agents/`](../brain/agents/) |
+> | permissions | The add-in's gate and the owner's switches; each contract's `allowed-tools` | [D-19](DECISIONS.md), [D-106](DECISIONS.md), [`brain/agents/`](../brain/agents/) |
 > | health · performance | Reported as UNMEASURED: they need real runs | [`heron_agents.py`](../brain/heron_agents.py) |
 > | versions | Each contract's `version`, each file's `Heron-Since` | [`brain/agents/`](../brain/agents/) |
 > | dependencies | Derived from the files, never stored twice | [`heron_graph.py`](../brain/heron_graph.py), [D-40](DECISIONS.md) |
@@ -711,7 +711,7 @@ EXPERIMENTAL -> UNVERIFIED -> TESTED -> VALIDATED -> PROVEN -> PRODUCTION -> DEP
 RAG should prefer high-trust knowledge.
 
 > **As built (2026-10-18):** a fragment carries one status, `heron-status`, and the library uses two
-> values, `DRAFT` and `PROVEN`:
+> values, `DRAFT` and `PROVEN` - and `DEPRECATED`, for cards retired since this note:
 > `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`. The code knows Part 1's
 > lifecycle (`heron_fragment.STATUSES`), not this section's, and nothing has reached `PRODUCTION`.
 > `PROVEN` means one recorded proof on a named real model, with a negative case and a fingerprint, signed
@@ -1309,7 +1309,7 @@ Never require approval for:
 > | Boundary | Who approves | Where |
 > |---|---|---|
 > | A change kept in the model | The modeller, in Revit's Keep or Discard box, while the owner's *Ask to Keep* switch is on - it is off by default - and one link keeps the rest of one job without asking. A DRAFT's one run is always asked | [D-126](DECISIONS.md), [D-138](DECISIONS.md), [D-119](DECISIONS.md) |
-> | Changing, administering or publishing at all | The owner, by turning Changes, Admin or Publish on in the ribbon | [D-19](DECISIONS.md), [D-106](DECISIONS.md) |
+> | Changing, administering or publishing at all | The owner, by turning Changes, Admin or Publish on - in Heron's Settings window since [D-150](decisions/D-150.md) | [D-19](DECISIONS.md), [D-106](DECISIONS.md) |
 > | A fragment becoming PROVEN, or proved on another release | A person signs the proof; no tool writes the status | [D-30](DECISIONS.md), [D-131](DECISIONS.md) |
 > | Changing a PROVEN fragment's code | The owner says yes first, because the change makes its proof stale | [`heron-fragment-author`](../.claude/agents/heron-fragment-author.md) |
 > | An agent past PROPOSED | A person, at the register row and at every stage after it | [`heron_deployment.py`](../brain/heron_deployment.py), [Golden Rule 13](14-golden-rules.md) |
@@ -1582,7 +1582,7 @@ Two experiences: `USER MODE` and `DEVELOPER MODE`.
 
 Enterprise administrators get: user management · permissions · company knowledge · standards · agent policies · update policies · package policies · security · audit logs. **(not built - deferred, D-41)**
 
-> **As built (2026-10-18):** no enterprise Admin Mode. *Admin* is one switch on the ribbon, turned on
+> **As built (2026-10-18):** no enterprise Admin Mode. *Admin* is one switch - in Heron's Settings window since [D-150](decisions/D-150.md) - turned on
 > only by the owner, which lets an ADMIN fragment run - a project parameter, a workset, a new family file
 > ([D-106](DECISIONS.md)). Heron is single-user now: company knowledge becomes a git repository when
 > there is demand, and its admin is whoever reviews the pull requests ([D-41](DECISIONS.md)). Audit logs
@@ -1676,7 +1676,7 @@ Configuration changes should be auditable.
 > **As built (2026-10-18):** the add-in's settings are one file per PC, `heron.config`
 > ([`HeronConfig.cs`](../platform/Heron.Core/HeronConfig.cs), [D-17](DECISIONS.md)). The supported
 > releases come from [`Directory.Build.props`](../Directory.Build.props). The switches - Changes, Admin,
-> Publish, Ask to Keep - are set on the ribbon or in that file and read inside the add-in, never from a
+> Publish, Ask to Keep - are set in Heron's Settings window ([D-150](decisions/D-150.md); on the ribbon until 2026-11-07) or in that file and read inside the add-in, never from a
 > request. Enabled agents and skills, the AI provider and model routing are not configuration here: the
 > library is what is on disk, and the host chooses the model.
 > [`heron_configuration.py`](../brain/heron_configuration.py) splits machine settings from portable ones,
@@ -1766,7 +1766,7 @@ flowchart TD
     CC["Claude Code — the host<br/>splits the request into steps and plans<br/>no persona — D-01, D-27"]
     LK["heron_lookup, once per step<br/>finds the capability, never an agent"]
     Q{{"Is there a fragment<br/>for this step?"}}
-    G["The add-in's gate<br/>ribbon switches · proof still stands — D-117"]
+    G["The add-in's gate<br/>the owner's switches · proof still stands — D-117"]
     RUN["The fragment's C#, compiled and run in Revit — D-28<br/>a change runs in one named TransactionGroup"]
     KD{{"Keep or Discard, for a change<br/>while Ask to Keep is on — D-126, D-138"}}
     R(["The answer in the chat<br/>a kept change is one Undo entry · a run record"])
@@ -1801,7 +1801,7 @@ The modeller asks
   -> Claude Code, the host: splits the request into steps and plans (no persona - D-01, D-27)
   -> heron_lookup, once per step: finds the capability, never an agent
   -> is there a fragment for this step?
-       yes -> the add-in's gate: ribbon switches, the proof still stands (D-117)
+       yes -> the add-in's gate: the owner's switches, the proof still stands (D-117)
            -> the fragment's C#, compiled and run in Revit (D-28); a change runs in one named TransactionGroup
            -> for a change, Keep or Discard while Ask to Keep is on (D-126, D-138)
            -> the answer in the chat; a kept change is one Undo entry, with a run record

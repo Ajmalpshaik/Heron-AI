@@ -91,8 +91,8 @@ Behind the scenes, Heron AI should perform all required analysis, knowledge retr
 > | *"Select all ducts."* | `revit_select_by_category`, or the `select-elements` skill through `revit_show` | Ran in Revit 2020 and 2024 in Phase 0: the ducts were highlighted in both ([README Status](../README.md#status), [field notes](00e-field-notes-proven-bridge.md)) |
 > | *"Move these ducts 200 mm up."* | `revit_preview_move`, then `revit_apply_move` | Measured in Revit 2024 on 2026-10-17: three ducts moved +200.0000 mm, a pinned one did not, and one Ctrl+Z put them back ([Group D](needs-checking/group-d.md)). Other releases not run |
 > | *"Add end caps."* | `cap-open-pipe-ends`, through `revit_change` — pipes only: its card says the Revit API has no matching call for ducts | card PROVEN |
-> | *"Create dimensions."* | `create-dimension`, `dimension-mep-runs` and their siblings, through `revit_change` | some PROVEN, some DRAFT — `grep -l '^capability: .*DIMENSION' brain/fragments/*/fragment.yaml \| xargs grep -h '^heron-status:' \| sort \| uniq -c` |
-> | *"Check this model against our BIM standard."* | `check-model-standards` against naming patterns the person supplies (DRAFT); `heron_standards` and `heron_check` for a question about a standard; the `heron-model-auditor` subagent for the open model | A passing check is never called compliant ([`host.chat.yaml`](../brain/instructions/host.chat.yaml)) · [Group AG](needs-checking/group-ag.md) |
+> | *"Create dimensions."* | `create-dimension` and its siblings, through `revit_change` (`dimension-mep-runs`, named here on 2026-10-18, was retired into it since) | some PROVEN, some DRAFT, some retired — `grep -l '^capability: .*DIMENSION' brain/fragments/*/fragment.yaml \| xargs grep -h '^heron-status:' \| sort \| uniq -c` |
+> | *"Check this model against our BIM standard."* | `check-model-standards` against naming patterns the person supplies (DRAFT that day, PROVEN since); `heron_standards` and `heron_check` for a question about a standard; the `heron-model-auditor` subagent for the open model | A passing check is never called compliant ([`host.chat.yaml`](../brain/instructions/host.chat.yaml)) · [Group AG](needs-checking/group-ag.md) |
 > | *"Fix this issue."* | No general fixer. A refusal names the switch or step that is missing ([D-21](DECISIONS.md)); `heron_gaps` reports what was asked and not done ([D-63](DECISIONS.md)) | — |
 >
 > Behind the scenes: code generation is the host's [`heron-fragment-author`](../.claude/agents/heron-fragment-author.md)
@@ -176,7 +176,7 @@ flowchart TD
     CC["<b>Claude Code</b> — the host<br/>conversation · works out the intent · plans<br/>no persona layer — D-01, D-27"]
     MS["<b>Heron MCP server</b><br/>heron_lookup finds the capability<br/>heron_method gives a job's steps"]
     BR["<b>Heron Brain</b><br/>fragments · skills · knowledge scopes<br/>search · design calculations"]
-    G{{"<b>Checks before anything runs</b><br/>proof still stands — D-117<br/>ribbon switches — D-19, D-106"}}
+    G{{"<b>Checks before anything runs</b><br/>proof still stands — D-117<br/>the owner's switches — D-19, D-106"}}
     AD["<b>Heron add-in, in Revit</b><br/>compiles and runs the fragment — D-28<br/>one named TransactionGroup"]
     K{{"<b>Keep or Discard</b><br/>while Ask to Keep is on — D-126, D-138"}}
     R(["<b>Result</b><br/>answer in the chat · one Undo entry<br/>run record"])
@@ -207,7 +207,7 @@ flowchart TD
 | Task / workflow engine | `heron_method` serves a job's steps in order. `heron_workflow` exists, DRAFT, and no tool reaches it | [04 §8.7](04-heron-mcp.md), [23](23-heron-kernel.md) |
 | Knowledge system · RAG / library / memory | `brain/`: the fragment library, skills, one knowledge store per scope, word and meaning search | [05](05-heron-brain.md), [10](10-memory-and-knowledge.md) |
 | Specialized agents | The agent register — most agents are plain modules that make no model call | [28](28-agent-registry.md), [D-58](DECISIONS.md), `python tools/agent-count.py` |
-| Validation | Before: the proof must still stand and the ribbon switches be on. After: what the change touched is counted from Revit's own `DocumentChanged` and kept in a run record (`RevitChangedSet.cs`; in Revit, [Group EV](needs-checking/group-ev.md)) | [D-117](DECISIONS.md), [12 §3a](12-security-and-permissions.md) |
+| Validation | Before: the proof must still stand and the owner's switches be on (in Heron's Settings window since [D-150](decisions/D-150.md)). After: what the change touched is counted from Revit's own `DocumentChanged` and kept in a run record (`RevitChangedSet.cs`; in Revit, [Group EV](needs-checking/group-ev.md)) | [D-117](DECISIONS.md), [12 §3a](12-security-and-permissions.md) |
 | Execution | The fragment's C# compiled and run inside Revit, in one named `TransactionGroup` | [D-28](DECISIONS.md), Golden Rule 16 |
 | Result | The answer in the chat, one entry in Revit's Undo list, a run record (`heron_run_record`) | [README](../README.md) |
 | Learning / memory / fragment evolution | A person signs a proof ([D-30](DECISIONS.md)); `heron_gaps` reports what was asked and not done. The split, merge and evolve agents only propose | [09 §5.1](09-skills-and-fragments.md), [21](21-resilience-and-operations.md) |
@@ -220,7 +220,7 @@ The modeller (types in a Claude chat)
   -> Claude Code, the host: conversation, intent, plan (no persona layer - D-01, D-27)
   -> Heron MCP server: heron_lookup finds the capability, heron_method gives a job's steps
        <-> Heron Brain: fragments, skills, knowledge scopes, search, design calculations
-  -> checks before anything runs: the proof still stands (D-117), the ribbon switches (D-19, D-106)
+  -> checks before anything runs: the proof still stands (D-117), the owner's switches (D-19, D-106)
   -> Heron add-in in Revit: compiles and runs the fragment (D-28), one named TransactionGroup
   -> Keep or Discard, while Ask to Keep is on (D-126, D-138)
   -> result: the answer in the chat, one Undo entry, a run record
@@ -238,8 +238,9 @@ Responsible for everything directly related to Revit:
 Revit Add-in, Revit ribbon, Revit connection, Revit document, Revit views, elements, parameters, transactions, families, worksets, links, warnings, selection, model operations, Revit API, Revit versions, deployment.
 
 > **As built (2026-10-18):** the folder [`revit/`](../revit/README.md), the only place the Revit API may
-> be referenced (`tools/check-structure.py`). It holds the Heron tab — the **Heron** connect button, the
-> **Changes**, **Admin**, **Publish** and **Ask to Keep** switches and **Companion** — the named-pipe
+> be referenced (`tools/check-structure.py`). It holds the Heron tab — the **Heron** connect button, **Settings** and **Companion**; the
+> **Changes**, **Admin**, **Publish** and **Ask to Keep** switches left the ribbon for the Settings window
+> on 2026-11-07 ([D-150](decisions/D-150.md)) — the named-pipe
 > server (`Heron.Bridge`), the in-Revit C# compiler that runs fragments (`Heron.Scripting`,
 > [D-28](DECISIONS.md)), the Keep or Discard box, the run clock and the run guard. The model operations
 > themselves are fragments in `brain/fragments/`, sent across the pipe when they run. Deployment is not
@@ -346,7 +347,8 @@ The user should not manually edit configuration files unless they intentionally 
 > | 11–14 | Skills and fragments ship as files; `tools/heron-ready.py` builds the knowledge store, and the server rebuilds an empty or stale one at start |
 > | 15–16 | `heron-ready --check` says READY or names what to fix; the window reports per product, per Revit release |
 >
-> Configuration: the ribbon's switches are the only settings a modeller meets, all off by default
+> Configuration: the switches - in Heron's Settings window since [D-150](decisions/D-150.md), on the
+> ribbon until then - are the only settings a modeller meets, all off by default
 > (`HeronConfig.cs`). There is no developer mode ([22 §3](22-users-modes-and-extensibility.md)).
 >
 > **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)): step 2 — the user picks only
@@ -518,7 +520,7 @@ A dedicated **Revit Plugin Health Agent** must verify:
 >
 > | Agent | As built |
 > |---|---|
-> | Server, Tool Registry | `mcp/server/heron_mcp_server.py` over stdio; every tool and its risk in `heron_tools.TOOLS` |
+> | Server, Tool Registry | `mcp/server/heron_mcp_server.py` over stdio - the entry; since 2026-11-11 the tools are in the files `heron_tools.SERVER_FILES` names; every tool and its risk in `heron_tools.TOOLS` |
 > | Connection, Recovery | the pipe client finds the Revit and the bound model, and never guesses which ([Article 12a](../HERON_CONSTITUTION.md)); failure analysis is a table, not a model call ([D-21](DECISIONS.md)) |
 > | Configuration | `.mcp.json` in the Heron folder |
 > | Health | `revit_health`, `heron_diagnose` (§13) |
@@ -668,9 +670,10 @@ ARCHIVED
 A fragment should not automatically become production knowledge simply because it worked once.
 
 > **As built (2026-10-18):** the code knows all eight stages (`brain/heron_fragment.py`, `STATUSES`), but
-> the library uses **two** — `DRAFT` and `PROVEN` — and no fragment has reached `PRODUCTION`. A fragment
+> the library uses **two** — `DRAFT` and `PROVEN` — and, for cards retired since this note, `DEPRECATED`;
+> no fragment has reached `PRODUCTION`. A fragment
 > is promoted by **one recorded proof** on a named real model, with a negative case, signed by a person
-> ([D-30](DECISIONS.md)); `TESTING` and `VALIDATED` are not used. Count both with
+> ([D-30](DECISIONS.md)); `TESTING` and `VALIDATED` are not used. Count each with
 > `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`.
 
 ```mermaid
@@ -775,7 +778,7 @@ A generic `Select Elements` fragment may then be reused by Select Ducts, Select 
 
 > **As built (2026-10-18):** `brain/heron_split.py` (DRAFT) proposes a split only where two real
 > consumers exist, and writes nothing; no tool reaches it ([09 §6](09-skills-and-fragments.md)). The
-> library already has this shape: a filter such as `select-by-categories` provides `elements`, and
+> library already has this shape: a filter such as `filter-elements-by-category` provides `elements`, and
 > `SET_SELECTION` consumes it. *Create transaction* is never a fragment: the add-in opens one named
 > `TransactionGroup` around the whole change ([Golden Rule 16](14-golden-rules.md)).
 
@@ -1039,7 +1042,9 @@ Example: user repeatedly asks *"Select all ducts and then move them 200 mm up."*
 
 However: personal knowledge should remain personal by default. It should not automatically become community knowledge.
 
-> **As built (2026-10-18): not built.** Nothing recognises a repeated workflow or offers to save one.
+> **As built (2026-10-18): not built.** Nothing recognises a repeated workflow or offers to save one
+> (since 2026-11-08 a job the modeller asks to keep is saved as a named command, `heron_commands`,
+> [49](49-saved-commands-and-the-heron-panel.md) - built, never run in a real Revit).
 > `brain/heron_userskills.py` plans raising a personal skill one step at a time — user, then company,
 > then global — and moves nothing; `brain/heron_memory.py` decides what may be remembered and writes
 > nothing. Both are DRAFT and no tool reaches either ([10 §3](10-memory-and-knowledge.md)). What does
@@ -1405,7 +1410,7 @@ Example: *"Check this model against our company standard."* — Heron then activ
 > ([D-76](DECISIONS.md)): `brain/heron_company.py` carries the BIM, company, modelling, QA/QC, LOD and
 > documentation standard rows, and `heron_iso.py`, `heron_project.py` and `heron_modelqa.py` the ISO,
 > project and model QA rows — all DRAFT, and none reached by a tool. What a chat can use today: the
-> `check-model-standards` fragment (DRAFT) checks names and required parameters against patterns the
+> `check-model-standards` fragment (DRAFT that day, PROVEN since) checks names and required parameters against patterns the
 > person supplies, never a standard it knows; `heron_standards` asks each knowledge scope on its own
 > and decides nothing; a project's governing standards are asked once and kept for that project
 > ([D-111](DECISIONS.md)); and the [`heron-model-auditor`](../.claude/agents/heron-model-auditor.md)
@@ -1715,7 +1720,7 @@ Normal BIM operations can be automated. High-risk operations require confirmatio
 > **As built (2026-10-18):** the same seven, in this order, are `HeronRisk` in `HeronPermissions.cs` and
 > the levels in `heron_tools.py`; `python mcp/server/heron_tools.py` lists every MCP tool with its level,
 > and no tool declares `SUGGEST`. Below `MODIFY` nothing needs a switch. `MODIFY` needs the owner's
-> **Changes** switch on Revit's ribbon; `PUBLISH` and `ADMIN` need Changes and a switch of their own; all
+> **Changes** switch (in Heron's Settings window since [D-150](decisions/D-150.md)); `PUBLISH` and `ADMIN` need Changes and a switch of their own; all
 > three are off by default ([D-19](DECISIONS.md), [D-106](DECISIONS.md)). As built, `PUBLISH` is a Revit
 > export, print, save or sync, and `ADMIN` is project or global parameters, worksets or a new family file.
 > With Changes on, a change is kept at once unless **Ask to Keep** is on — also off by default — so the
@@ -2164,8 +2169,9 @@ Production
 > **As built (2026-10-18)** — the diagram above is kept as the owner wrote it. A new tool today is a new
 > fragment, made by the host's [`heron-fragment-author`](../.claude/agents/heron-fragment-author.md)
 > subagent and promoted by a person, read from [11 §3](11-orchestration-and-workflows.md) and
-> [09 §5.1](09-skills-and-fragments.md). This example would end at *Use it*: `dimension-mep-runs`
-> already puts a dimension between ducts.
+> [09 §5.1](09-skills-and-fragments.md). This example would end at *Use it*: `create-dimension`
+> already puts a dimension between ducts (`dimension-mep-runs`, named here on 2026-10-18, was retired
+> into it since).
 
 ```mermaid
 %%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
