@@ -1450,6 +1450,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ne.md`](needs-checking/group-ne.md)
 
+## Group NO - a family connector's shape changed, and a connector moved onto a reference plane: `SET_FAMILY_CONNECTOR_ROLES` version 5 (2026-11-11)
+
+**Its own file:** [`needs-checking/group-no.md`](needs-checking/group-no.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

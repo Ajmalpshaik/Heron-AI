@@ -46,6 +46,28 @@
 // per second; both factors are checked against Revit's own UnitUtils before
 // anything changes, as the voltage's is.
 //
+// VERSION 5 (2026-11-11): A CONNECTOR'S SHAPE, AND THE PLANE IT IS HOSTED ON -
+// the two settings that stopped a hand-placed connector being finished here
+// on the owner's plenum families (FRAGMENT-ISSUES rows 5b-1566 and 5b-1567).
+// "shape=Round" (or Rectangular, or Oval) sets a DUCT connector's Shape, the
+// value its Properties show - ConnectorElement.Shape has no setter on any
+// release 2020 to 2027, so it is written through the Shape parameter,
+// MEP_PROFILE_TYPE_PARAM, and only where that parameter already reads the
+// same number as the connector's own Shape: a release that numbers it
+// differently writes nothing. sizeParameters in the same call is counted
+// against the shape asked for, so "shape=Round; sizeParameters=Neck Diameter"
+// finishes a connector Revit placed as Rectangular in one call. Read back
+// after one regeneration; a shape that does not read as asked fails the call.
+// "host=Neck Top" moves a connector onto the REFERENCE PLANE named - Revit's
+// Place on Work Plane, with no solid face under it - through
+// ConnectorElement.ChangeHostReference, which Revit added in 2023 and is
+// reached by reflection so one build serves every release; on 2020 to 2022 it
+// is refused with the ways round. The plane must be square to the way the
+// connector points, so it is moved, never turned; it is put back where it sat,
+// projected onto the plane, and pointing the way it pointed - each read back.
+// Revit says a connector on a plane alone "may be moved later along" it, so it
+// is NOT locked there; that is row 5b-1568.
+//
 // `settings` IS ONE VALUE, "system=Global; flowDirection=In; flip=true". The
 // binder refuses an absent string need (HeronBindingNote.AbsentValue), so ten
 // separate optional settings would have to be typed empty on every call; one
@@ -211,6 +233,14 @@ string wantDescription = null;
 var flip = false;
 var wantSizes = new List<FamilyParameter>();
 var sizesAsked = false;
+// VERSION 5: the shape asked for, and the reference plane to host on.
+ConnectorProfileType? wantShape = null;
+string wantHost = null;
+ReferencePlane hostPlane = null;
+// ConnectorElement.ChangeHostReference(Reference), Revit 2023 on - null before.
+var changeHost = typeof(ConnectorElement).GetMethod("ChangeHostReference", new[] { typeof(Reference) });
+// Where each connector hosted on a plane must sit afterwards, and which way point.
+var hostTargets = new Dictionary<ElementId, Tuple<XYZ, XYZ>>();
 
 // THE TYPED VALUES ASKED FOR - an electrical connector's from version 3; a
 // fitting connector's Angle, a duct or pipe connector's Flow Factor and
@@ -656,6 +686,18 @@ else
                 else if (word != "false" && word != "no")
                     problems.Add("flip takes true or false, not \"" + value + "\".");
             }
+            else if (key == "shape" || key == "profile" || key == "profileshape")
+            {
+                var name = enumWord(typeof(ConnectorProfileType), value);
+                if (name == null || name == "Invalid")
+                    problems.Add("Shape \"" + value + "\" is not Round, Rectangular or Oval.");
+                else wantShape = (ConnectorProfileType)Enum.Parse(typeof(ConnectorProfileType), name);
+            }
+            else if (key == "host" || key == "workplane" || key == "hoston")
+            {
+                wantHost = value;
+                if (value.Length == 0) problems.Add("host was given no value - name the reference plane, \"host=Neck Top\".");
+            }
             else if (key == "sizeparameters" || key == "size" || key == "sizes")
             {
                 sizesAsked = true;
@@ -807,10 +849,31 @@ else
             else
                 problems.Add("\"" + entry + "\" is not a connector setting. The settings are system, flowDirection, "
                     + "flowConfiguration, lossMethod, lossCoefficient, pressureDrop (Pa), description, flip, "
-                    + "sizeParameters and utility (yes/no); on a pipe connector allowSlopeAdjustments (yes/no); on a duct "
+                    + "sizeParameters, host (a reference plane) and utility (yes/no); on a duct connector shape (Round, "
+                    + "Rectangular, Oval); on a pipe connector allowSlopeAdjustments (yes/no); on a duct "
                     + "or pipe connector flowFactor and presetFlow; on a fitting's connector angle; and on an electrical "
                     + "connector voltage, poles, apparentLoad, powerFactor, powerFactorState and loadClassification - "
                     + "written \"name=value\" with `;` between.");
+        }
+
+        // VERSION 5: THE REFERENCE PLANE TO HOST ON - one, by its own name.
+        if (wantHost != null && wantHost.Length > 0)
+        {
+            var planesCalled = new FilteredElementCollector(doc).OfClass(typeof(ReferencePlane)).Cast<ReferencePlane>()
+                .Where(rp => squash(ownName(rp)) == squash(wantHost)).ToList();
+            if (changeHost == null)
+                problems.Add("Revit " + doc.Application.VersionNumber + " has no way through its API to move a connector "
+                    + "onto a work plane - ChangeHostReference came in Revit 2023. The ways round on this release: keep "
+                    + "it on a solid face (a thin solid with Visible off - deleting that solid deletes the connector "
+                    + "with it), or place it yourself with Place on Work Plane on \"" + wantHost + "\" and Heron sets "
+                    + "the rest here, naming it by its id.");
+            else if (planesCalled.Count == 0)
+                problems.Add("No reference plane is called \"" + wantHost + "\". A connector is hosted on a named "
+                    + "reference plane - CREATE_REFERENCE_PLANES makes one.");
+            else if (planesCalled.Count > 1)
+                problems.Add(planesCalled.Count + " reference planes are called \"" + wantHost + "\" - "
+                    + string.Join(", ", planesCalled.Select(rp => rp.Id.ToString())) + ". Rename one first.");
+            else hostPlane = planesCalled[0];
         }
 
         // EACH SETTING CHECKED AGAINST EACH CONNECTOR, before anything changes.
@@ -853,15 +916,63 @@ else
                 problems.Add(label(c) + " has no Pressure Drop in this Revit.");
             if (wantDescription != null && c.get_Parameter(BuiltInParameter.RBS_CONNECTOR_DESCRIPTION) == null)
                 problems.Add(label(c) + " has no Description in this Revit.");
+            // VERSION 5: THE SHAPE - a duct connector's, written through its Shape
+            // parameter only where that reads the number the connector's own
+            // Shape is, so a release that numbers it otherwise writes nothing.
+            if (wantShape.HasValue)
+            {
+                var shapeParameter = c.get_Parameter(BuiltInParameter.MEP_PROFILE_TYPE_PARAM);
+                if (c.Domain != Domain.DomainHvac)
+                    problems.Add(label(c) + " is a " + domainWords(c) + " connector - Shape is a duct connector's "
+                        + "(Round, Rectangular or Oval).");
+                else if (shapeParameter == null)
+                    problems.Add(label(c) + " has no Shape in this Revit.");
+                else if (shapeParameter.StorageType != StorageType.Integer)
+                    problems.Add(label(c) + "'s Shape holds " + shapeParameter.StorageType + " in this Revit, not a "
+                        + "number Heron can write - nothing was written.");
+                else if (shapeParameter.AsInteger() != (int)c.Shape)
+                    problems.Add(label(c) + "'s Shape parameter reads " + shapeParameter.AsInteger().ToString(invariant)
+                        + " on a " + c.Shape.ToString().ToLowerInvariant() + " connector, which is not the number Heron "
+                        + "would write for it, so nothing was written.");
+                else if (drivenBy(c, BuiltInParameter.MEP_PROFILE_TYPE_PARAM) != null)
+                    problems.Add(label(c) + "'s Shape is driven by the family parameter \""
+                        + drivenBy(c, BuiltInParameter.MEP_PROFILE_TYPE_PARAM) + "\" - LINK_FAMILY_PARAMETER with "
+                        + "\"none\" unlinks it first.");
+                else if (shapeParameter.IsReadOnly && c.Shape != wantShape.Value)
+                    problems.Add(label(c) + "'s Shape is read-only in this Revit - it keeps the shape it was made with. "
+                        + "The way round: REMOVE_FAMILY_CONNECTOR, then ADD_FAMILY_CONNECTOR on its face, round with "
+                        + "one size parameter or rectangular with two.");
+            }
             if (sizesAsked)
             {
+                // Counted against the shape it WILL have, so a shape and its sizes go in one call.
+                var shapeThen = wantShape.HasValue && c.Domain == Domain.DomainHvac ? wantShape.Value : c.Shape;
                 if (c.Domain != Domain.DomainHvac && c.Domain != Domain.DomainPiping)
                     problems.Add(label(c) + " has no size, so no size parameters are taken.");
-                else if (c.Shape == ConnectorProfileType.Round && wantSizes.Count != 1)
+                else if (shapeThen == ConnectorProfileType.Round && wantSizes.Count != 1)
                     problems.Add(label(c) + " is round: ONE length parameter, its diameter.");
-                else if (c.Shape != ConnectorProfileType.Round && wantSizes.Count != 2)
-                    problems.Add(label(c) + " is " + c.Shape.ToString().ToLowerInvariant() + ": TWO length parameters, "
-                        + "width then height.");
+                else if (shapeThen != ConnectorProfileType.Round && wantSizes.Count != 2)
+                    problems.Add(label(c) + " is " + shapeThen.ToString().ToLowerInvariant() + ": TWO length parameters, "
+                        + "width then height." + (wantShape.HasValue || c.Domain != Domain.DomainHvac ? ""
+                        : " A connector placed by hand comes in Rectangular - give \"shape=Round\" in the same call "
+                        + "to tie one diameter."));
+            }
+
+            // VERSION 5: THE PLANE TO HOST ON must be square to the way the
+            // connector points - it is moved onto the plane, never turned.
+            if (hostPlane != null)
+            {
+                var plane = hostPlane.GetPlane();
+                var origin = c.Origin;
+                if (origin == null || c.Direction == null)
+                    problems.Add(label(c) + " reads no position or direction, so it cannot be put back where it sat.");
+                else if (Math.Abs(plane.Normal.DotProduct(c.Direction)) < 0.9999)
+                    problems.Add("\"" + ownName(hostPlane) + "\" is not square to the way " + label(c) + " points ("
+                        + pointing(c.Direction) + ") - hosting it there would turn it. Name a plane it points straight "
+                        + "out of.");
+                else
+                    hostTargets[c.Id] = Tuple.Create(origin - plane.Normal.Multiply(plane.Normal.DotProduct(origin - plane.Origin)),
+                        c.Direction);
             }
 
             // THE TICK BOXES AND THE TYPED VALUES - a field another domain's
@@ -1063,7 +1174,10 @@ else if (refused == null)
         try { act(); }
         catch (Exception ex)
         {
-            throw new InvalidOperationException("Revit refused " + what + ": " + ex.Message
+            // A call made by reflection (version 5's ChangeHostReference) arrives
+            // wrapped; Revit's own words are the inner exception's.
+            var said = ex is System.Reflection.TargetInvocationException && ex.InnerException != null ? ex.InnerException : ex;
+            throw new InvalidOperationException("Revit refused " + what + ": " + said.Message
                 + " The call failed, and Heron rolls the whole call back.");
         }
     };
@@ -1093,6 +1207,51 @@ else if (refused == null)
 
     foreach (var c in targets)
     {
+        // VERSION 5: ONTO THE PLANE FIRST - then put back where it sat, and
+        // pointing the way it pointed, before anything else is set.
+        if (hostTargets.ContainsKey(c.Id))
+        {
+            var where = hostTargets[c.Id];
+            var planeName = ownName(hostPlane);
+            attempt("hosting " + label(c) + " on \"" + planeName + "\"",
+                () => changeHost.Invoke(c, new object[] { hostPlane.GetReference() }));
+            doc.Regenerate();
+            if (c.Direction != null && c.Direction.DotProduct(where.Item2) < -0.9999)
+            {
+                attempt("turning " + label(c) + " back after hosting", () => c.FlipDirection());
+                doc.Regenerate();
+                findings.Add("Hosting " + label(c) + " on \"" + planeName + "\" turned it round; Heron flipped it back to "
+                    + "point " + pointing(where.Item2) + ".");
+            }
+            var shift = c.Origin == null ? null : where.Item1 - c.Origin;
+            if (shift != null && shift.GetLength() > halfMillimetre)
+            {
+                var moveBy = shift;
+                attempt("moving " + label(c) + " back to where it sat", () => ElementTransformUtils.MoveElement(doc, c.Id, moveBy));
+                doc.Regenerate();
+            }
+            changed.Add(label(c) + ": hosted on the reference plane \"" + planeName + "\", at X " + mm(where.Item1.X) + ", Y "
+                + mm(where.Item1.Y) + ", Z " + mm(where.Item1.Z) + " mm.");
+        }
+        // VERSION 5: THE SHAPE, before the sizes are tied to it.
+        if (wantShape.HasValue)
+        {
+            if (c.Shape == wantShape.Value)
+                findings.Add(label(c) + " was already " + wantShape.Value.ToString().ToLowerInvariant() + ".");
+            else
+            {
+                var was = c.Shape;
+                var shapeParameter = c.get_Parameter(BuiltInParameter.MEP_PROFILE_TYPE_PARAM);
+                attempt("Shape " + wantShape.Value + " on " + label(c), () => shapeParameter.Set((int)wantShape.Value));
+                doc.Regenerate();
+                if (c.Shape != wantShape.Value)
+                    throw new InvalidOperationException(label(c) + " reads " + c.Shape.ToString().ToLowerInvariant()
+                        + " after its Shape was set to " + wantShape.Value.ToString().ToLowerInvariant() + ". The call "
+                        + "failed, and Heron rolls the whole call back.");
+                changed.Add(label(c) + ": shape " + was.ToString().ToLowerInvariant() + " -> "
+                    + wantShape.Value.ToString().ToLowerInvariant() + ".");
+            }
+        }
         if (wantSystem.HasValue)
         {
             if (c.SystemClassification == wantSystem.Value)
@@ -1305,6 +1464,41 @@ else if (refused == null)
                     wrong(label(c) + " reads " + mm(reads) + " mm where \"" + wantSizes[i].Definition.Name + "\" holds "
                         + mm(holds.Value) + " mm.");
             }
+        }
+        // VERSION 5: THE SHAPE AND THE HOST, read back.
+        if (wantShape.HasValue)
+        {
+            if (c.Shape != wantShape.Value)
+                wrong(label(c) + " reads " + c.Shape.ToString().ToLowerInvariant() + ", not "
+                    + wantShape.Value.ToString().ToLowerInvariant() + ".");
+            // A tie the old shape used and the new one does not, or a size the
+            // new shape uses that nothing drives - said, never left unsaid.
+            var round = c.Shape == ConnectorProfileType.Round;
+            var unused = round ? new[] { BuiltInParameter.CONNECTOR_WIDTH, BuiltInParameter.CONNECTOR_HEIGHT }
+                : new[] { BuiltInParameter.CONNECTOR_DIAMETER };
+            var used = round ? new[] { BuiltInParameter.CONNECTOR_DIAMETER }
+                : new[] { BuiltInParameter.CONNECTOR_WIDTH, BuiltInParameter.CONNECTOR_HEIGHT };
+            var stale = unused.Where(b => drivenBy(c, b) != null).Select(b => drivenBy(c, b)).ToList();
+            if (stale.Count > 0)
+                findings.Add(label(c) + " is " + c.Shape.ToString().ToLowerInvariant() + " now, and still carries the "
+                    + "tie(s) to " + string.Join(", ", stale.Select(n => "\"" + n + "\"")) + " its old shape used - "
+                    + "Revit does not size it by them.");
+            if (used.Any(b => drivenBy(c, b) == null))
+                findings.Add(label(c) + "'s " + (round ? "diameter is" : "width and height are") + " not all driven by a "
+                    + "family parameter - give sizeParameters to tie " + (round ? "one" : "two") + ".");
+        }
+        if (hostTargets.ContainsKey(c.Id))
+        {
+            var where = hostTargets[c.Id];
+            if (c.Origin == null || c.Origin.DistanceTo(where.Item1) > halfMillimetre)
+                wrong(label(c) + " sits at " + (c.Origin == null ? "no point" : "X " + mm(c.Origin.X) + ", Y " + mm(c.Origin.Y)
+                    + ", Z " + mm(c.Origin.Z) + " mm") + " after hosting, not where it sat on \"" + ownName(hostPlane) + "\".");
+            if (c.Direction == null || c.Direction.DotProduct(where.Item2) < 0.9999)
+                wrong(label(c) + " points " + pointing(c.Direction) + " after hosting; it pointed " + pointing(where.Item2) + ".");
+            findings.Add(label(c) + " is hosted on \"" + ownName(hostPlane) + "\" and is NOT locked there - Revit lets a "
+                + "connector on a plane alone be moved along it. Align and lock its centre to two planes by hand "
+                + "until Heron can (row 5b-1568). Revit reports no host through its API: deleting the solid it sat on, "
+                + "with the connector still there afterwards, is what shows it moved.");
         }
         foreach (var t in ticks)
         {

@@ -472,6 +472,14 @@ compatibility-note: >
 #                                           outward leg; check its header
 #   "which of these are blank"           -> DESCRIBE_BLANK_PARAMETERS
 #   "clear these values"                 -> WRITE_ELEMENT_PARAMETERS clear=true
+#   "set this family connector's value by its id" -> SET_FAMILY_CONNECTOR_ROLES,
+#                                           the connector named by the id
+#                                           REPORT_FAMILY_CONNECTORS prints. No
+#                                           Heron report prints a connector's
+#                                           UniqueId and no category here finds
+#                                           a family's connectors ("Duct
+#                                           Connectors", "Connector Element" were
+#                                           both refused, 2026-11-11, row 5b-1569)
 
 utterances:
   - apply the values edited in the Companion table
