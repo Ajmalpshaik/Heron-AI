@@ -2485,8 +2485,11 @@ function qaCsv(R) {
     if (/^[=+\-@\t\r]/.test(t)) t = "'" + t;
     return '"' + t.replace(/"/g, '""') + '"';
   };
-  const lines = [["#", "Check", "Capability", "Rule", "Value", "Result", "Why", "Element ids"].map(cell).join(",")];
-  (R.rows || []).forEach(r => lines.push([r.n, r.sentence, r.capability, r.rule, r.shown, r.label, r.why,
+  const lines = [["#", "Check", "Capability", "Rule", "Value", "Result", "Since last run", "Severity", "Clause",
+                  "Why", "To fix", "Element ids"].map(cell).join(",")];
+  (R.rows || []).forEach(r => lines.push([r.n, r.sentence, r.capability, r.rule, r.shown, r.label,
+                                           r.changeLabel || "", r.severity || "", r.clause || "",
+                                           [r.why, r.changeWhy].filter(Boolean).join(" "), r.advice || "",
                                            (r.ids || []).join(";")].map(cell).join(",")));
   const blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
   const a = el("a");
@@ -2501,6 +2504,17 @@ function qaCsv(R) {
 function qaBadge(state, label) {
   const cls = state === "pass" ? "ok" : state === "fail" ? "fail" : "warn";
   return el("span", "badge " + cls, label);
+}
+
+// What changed since the last run on this model - the brain's words and key;
+// the page only picks the badge's colour: new is a failure, fixed a pass, and
+// still open or not compared need a look.
+function qaChange(r) {
+  if (!r.changeLabel) return el("span", "muted small", r.change === "" && r.state === "pass" ? "—" : "");
+  const cls = r.change === "new" ? "fail" : r.change === "fixed" ? "ok" : "warn";
+  const badge = el("span", "badge " + cls, r.changeLabel);
+  if (r.changeWhy) badge.title = r.changeWhy;
+  return badge;
 }
 
 function qaResult(R) {
@@ -2527,7 +2541,7 @@ function qaResult(R) {
   (R.findings || []).forEach(f => sec.append(el("p", "q-finding", f)));
   const table = el("table", "q-table");
   const head = el("tr");
-  ["#", "Check", "Rule", "Value", "Result", "Why", ""].forEach(t => head.append(el("th", null, t)));
+  ["#", "Check", "Rule", "Value", "Result", "Since last run", "Why", ""].forEach(t => head.append(el("th", null, t)));
   const thead = el("thead");
   thead.append(head);
   const body = el("tbody");
@@ -2540,8 +2554,16 @@ function qaResult(R) {
     check.append(el("span", null, r.sentence));
     check.append(el("span", "q-cap", r.capability));
     if ((r.selection || []).length) check.append(el("span", "q-cap", "reads the selection in Revit"));
+    if (r.severity) check.append(el("span", "q-cap", "Severity: " + r.severity));
+    if (r.clause) check.append(el("span", "q-cap", "Clause: " + r.clause));
     const result = el("td");
     result.append(qaBadge(r.state, r.label));
+    const change = el("td");
+    change.append(qaChange(r));
+    const why = el("td", "q-why");
+    if (r.why) why.append(el("span", null, r.why));
+    if (r.changeWhy) why.append(el("span", "q-cap", r.changeWhy));
+    if (r.advice && r.state === "fail") why.append(el("span", "q-cap", "To fix: " + r.advice));
     const tools = el("td", "q-tools-cell");
     if (r.select && (r.ids || []).length) {
       const sel = el("button", "btn-lite", r.select);
@@ -2555,7 +2577,7 @@ function qaResult(R) {
       tools.append(sel, copy);
     }
     tr.append(first, check, el("td", "q-rule", r.rule), el("td", "q-num", r.shown), result,
-              el("td", "q-why", r.why || ""), tools);
+              change, why, tools);
     body.append(tr);
   });
   table.append(thead, body);
@@ -2564,6 +2586,11 @@ function qaResult(R) {
   (R.states || []).forEach(s => {
     const li = el("li");
     li.append(qaBadge(s.key, s.label), el("span", null, " " + s.means));
+    legend.append(li);
+  });
+  (R.changes || []).forEach(c => {
+    const li = el("li");
+    li.append(qaChange({ change: c.key, changeLabel: c.label }), el("span", null, " " + c.means));
     legend.append(li);
   });
   sec.append(legend);

@@ -158,8 +158,8 @@ from heron_server_core import (                             # noqa: E402
 # says where the label it gives `_ended` is not a word by itself. The table,
 # and the line a reply carries the word on, are the core's.
 from heron_server_core import (                             # noqa: E402
-    ANSWERED, _change_outcome, _failure_outcome, KEPT, NOT_RUN, _outcome, _sent,
-    STILL_RUNNING, UNKNOWN)
+    ANSWERED, _change_outcome, _failure_outcome, KEPT, NOT_RUN, _outcome,
+    ROLLED_BACK, ROLLED_BACK_AS_ASKED, _sent, STILL_RUNNING, UNKNOWN)
 
 import anyio.from_thread                                   # noqa: E402 - the SDK's own dependency
 
@@ -1589,7 +1589,7 @@ def revit_change(capability: str = "", values: str = "",
     the call starts clean.
 
     It runs only while the owner has Changes ON, and a Publish or Admin
-    capability needs that switch on too. Only a PROVEN capability runs (Article 11, D-117): a DRAFT one,
+    capability needs its own switch too. Only a PROVEN capability runs (Article 11, D-117): a DRAFT one,
     or one whose proof is older than its code, is refused before anything is
     sent. A refusal names the switch or the status: tell the user, and never
     try another capability to get round it. Revit may ask Keep/Discard (D-126):
@@ -1717,17 +1717,32 @@ def revit_change(capability: str = "", values: str = "",
     # it may do, and every refusal below stands for it unchanged - the Changes
     # switch in the add-in, the PROVEN rule, the pin.
     #
-    # NOT FOR A PUBLISH OR AN ADMIN JOB. A rollback takes back what Revit's
-    # transactions hold and nothing else: an export, a save or a sync done
-    # inside the run is done (D-106, D-126 "Discard cannot take it back"). A
-    # dry run that left a file on the server would be the opposite of what
-    # its name promises, so those are refused here, before anything is read.
-    if dry_run and operation != "run_fragment_write":
-        return _ended("refused",
-                      "'%s' is a Publish or Admin job, and a dry run cannot take one "
-                      "back - an export, a save or a sync is done once it runs, and "
-                      "rolling the model back does not undo it. Nothing has been "
-                      "sent to Revit." % capability)
+    # ONLY FOR A JOB A ROLLBACK TAKES BACK WHOLE. A rollback returns what
+    # Revit's transactions hold and nothing else: an export, a save or a sync
+    # done inside the run is done (D-106, D-126 "Discard cannot take it
+    # back"), and so is a view opened, a tab closed or a family written to
+    # disk by a card declared EXECUTE. A dry run that left any of that behind
+    # would be the opposite of what its name promises, so those are refused
+    # here, before the code is read or a session is bound.
+    #
+    # BY THE CARD'S OWN RISK AND NEEDS, ASKED OF ONE RULE
+    # (heron_tools.dry_run_refusal). Until 2026-11-12 this tested the
+    # OPERATION's name, which is run_fragment_write for an EXECUTE card too:
+    # OPEN_FAMILY_FOR_EDITING, CLOSE_VIEW_TABS, ACTIVATE_DOCUMENT and OPEN_VIEW
+    # went to Revit and came back "tried ... and rolled back".
+    #
+    # AND THE DOOR THAT DOES RUN IT, WHERE THERE IS ONE. `_lookup_door` asks
+    # the doors themselves, so a card revit_show turns away for writing a file
+    # (row 5b-591) is never sent to a door that would refuse it too.
+    if dry_run:
+        card = os.path.join(root, "brain", "fragments", folder, "fragment.yaml")
+        risk = bridge.fragment_risk(card)
+        untriable = tools.dry_run_refusal(risk, bridge.fragment_needs(card), capability)
+        if untriable:
+            if _lookup_door(risk, capability, folder) == "revit_show":
+                untriable += (" revit_show runs it - with Changes off, and no "
+                              "transaction open.")
+            return _ended("refused", untriable)
 
     # ARTICLE 11: UNTESTED CODE NEVER TOUCHES A LIVE MODEL, and every call
     # here KEEPS what it does. So a fragment its own files do not call PROVEN,
@@ -1886,6 +1901,14 @@ def revit_change(capability: str = "", values: str = "",
                 + _what_to_type(failure, capability)
                 + (elsewhere if failure.code == "write_disabled" else ""))
 
+    # WHAT CAME FROM THE MODEL IS DATA, AT THIS DOOR AS AT THE OTHER TWO
+    # (heron_run_records.as_data, row 5b-1596). From here on every text in the
+    # reply is one line: the title in the opening sentence, the inputs line,
+    # the verdict, and each value, entry and item a fragment left. A value of
+    # one line reads exactly as it did. The read-back and the change report
+    # are encoded by their own printers.
+    reply = runs.as_data(reply)
+
     # GOLDEN RULE 20. An answer about a model the user is not looking at is
     # how the wrong building gets changed.
     #
@@ -1908,12 +1931,31 @@ def revit_change(capability: str = "", values: str = "",
         # THE OUTCOME LINE SAYS SO IN A WORD (row 5b-1159): not known. The
         # activity list is still told nothing, for the reason above.
         _outcome(UNKNOWN)
+        # A DRY RUN'S VERDICT, QUOTED WHOLE ABOVE, ENDS "Send it again with
+        # apply to keep it" - the add-in's word to its own callers. A chat
+        # has no `apply`, and after a run in the wrong model nothing is to
+        # be sent again at all.
+        if dry_run:
+            wrong_model += (" It was asked as a dry run: send nothing again on the "
+                            "add-in's \"with apply\" - that is its word to its own "
+                            "callers, not to a chat.")
         return wrong_model
 
     # THIS CALL'S PLACE IN THE BATCH, decided once the answer is in hand.
     _BATCH.turn(started, time.monotonic())
 
-    lines = [("DRY RUN: %s was tried in %s and rolled back." if dry_run
+    # A DRY RUN IS CALLED ROLLED BACK ONLY ON THE ADD-IN'S OWN VERDICT THAT ITS
+    # ROLLBACK HELD - read by the function that reads a Discard's, and a kept
+    # change's (`_change_outcome`). Until 2026-11-12 the two sentences this
+    # door adds - "was tried ... and rolled back" here, "so the model is as it
+    # was" below - were printed whatever the add-in said: above a verdict of
+    # THE ROLLBACK DID NOT HOLD, and above a verdict of KEPT, with the call
+    # labelled ok. The request asking for a rollback is not the rollback
+    # (RevitFragment.WithVerdict learned the same on 2026-09-09).
+    dry_held = dry_run and _change_outcome(reply) == ROLLED_BACK
+    lines = [("DRY RUN: %s was tried in %s and rolled back." if dry_held
+              else "DRY RUN NOT CONFIRMED: %s ran in %s, and Revit's Heron did not "
+                   "say its rollback held." if dry_run
               else "%s ran in %s.") % (capability, reply.get("document"))]
     never_saved = _never_saved_line(reply)
     if never_saved:
@@ -1966,7 +2008,18 @@ def revit_change(capability: str = "", values: str = "",
     # NOT PRINTED AGAIN (5b-407) - only within a batch, only word for word, and
     # only when the reply names a run record, where every value can be read.
     # NEVER A REFUSAL: one that repeats is printed every time (5b-1160).
-    shown, same = runs.shown_values(reply, capability, _BATCH)
+    #
+    # AND A DRY RUN IS OUTSIDE ALL OF IT. Its values are printed whole, and it
+    # is never remembered as "the last reply": a kept run straight after one
+    # printed "and N values unchanged from the last reply" - true word for
+    # word, and measured against a run Revit no longer holds, while the kept
+    # run's own values, the ones that describe what is in the model, were
+    # left out. A kept run after a dry run prints whole.
+    if dry_run:
+        _BATCH.forget(capability)
+        shown, same = reply.get("provides"), []
+    else:
+        shown, same = runs.shown_values(reply, capability, _BATCH)
     lines.extend(_provides_lines(shown, reply.get("providesEntries"), reply.get("providesItems"))
                  or ([""] if same else []))
     lines.extend(runs.unchanged_line(same))
@@ -1984,12 +2037,79 @@ def revit_change(capability: str = "", values: str = "",
     # carrying the undo rule unshortened - and this prints the paragraph on the
     # first kept change of a batch and the sentence on the rest. A rollback, an
     # unconfirmed one, or a reply without the short form prints whole, always.
+    #
+    # A DRY RUN'S IS PRINTED WHOLE, WHATEVER IT IS, and takes no part in the
+    # batch: if the add-in answered KEPT to a run sent without `apply`, that
+    # paragraph is the one thing the chat must read in full.
     if reply.get("verdict"):
         lines.append("")
-        lines.append(runs.verdict_line(reply, _BATCH))
+        lines.append(str(reply["verdict"]) if dry_run
+                     else runs.verdict_line(reply, _BATCH))
 
     # NO "NOT PROVEN" LINE HERE ANY MORE. It warned after the change was kept;
     # a fragment that is not PROVEN is now refused before it is sent (D-117).
+
+    # A DRY RUN ENDS HERE - BEFORE THE DISCARD'S BRANCH BELOW, WHICH IS FOR A
+    # RUN THAT ASKED TO KEEP - AND IT ENDS ONE OF TWO WAYS.
+    #
+    # ITS ROLLBACK HELD: how to keep it, said in this tool's words. The
+    # add-in's rollback verdict says "send it again with apply", and a chat
+    # has no `apply` to send. D-126's caution goes with it: a dry run is a
+    # question the chat asked for itself, NOT the modeller's approval - the
+    # kept run is a second run, still asked about in Revit or kept at once as
+    # the owner's Ask to Keep switch says, the model can have moved since this
+    # one, and its own counts are the ones that describe what was kept. No
+    # after-change table either - the values were used on a change Revit no
+    # longer holds.
+    #
+    # ANYTHING ELSE - the rollback did not hold, Revit did not confirm it, the
+    # add-in said KEPT or named no verdict: the add-in's verdict above is the
+    # reply. Nothing here says the model is as it was and nothing says how to
+    # keep it; the word is OUTCOME UNKNOWN, and the call ends failed.
+    if dry_run:
+        lines.append("")
+        if not dry_held:
+            unconfirmed = ("This was asked as a dry run, and Revit's Heron did not say "
+                           "its rollback held - so the change may be in the model. "
+                           "Look at the model before anything else is sent.")
+            # AN ADD-IN FROM BEFORE `verdictKind` CANNOT SAY IT HELD, so every
+            # dry run through it ends here. That is still the true word - this
+            # server cannot tell - and the reply says what may be behind it.
+            if not reply.get("verdictKind"):
+                unconfirmed += (" Its answer named no kind of verdict at all, which "
+                                "is what a Heron add-in older than this chat's sends: "
+                                "if the model is as it was, that Revit's add-in needs "
+                                "updating before a dry run can be confirmed.")
+            lines.append(unconfirmed)
+            _outcome(UNKNOWN)
+            return _ended("failed", "\n".join(lines))
+        closing = ("This was a dry run, so the model is as it was. A dry run is "
+                   "not approval: to keep the change, call revit_change again "
+                   "without dry_run - only when the user says to - and that run "
+                   "is still asked about in Revit, or kept at once, as the Ask to "
+                   "Keep switch says (revit_health tells which). It is a new run: "
+                   "read its own counts, because the model can have changed since "
+                   "this one.")
+        # WHAT THE DRY RUN DID TO WHAT WAS CARRIED (docs/36). The add-in
+        # remembers what EVERY run left, a rolled-back one included
+        # (RevitFragment.Remember), so after this call the chat's carried
+        # values are the dry run's: the kept call sent with the same
+        # expect_from would be refused (chain_mismatch), and one naming THIS
+        # capability would bind values of a change Revit no longer holds.
+        # Whether a rolled-back run should replace them at all is not decided
+        # anywhere (OPEN-QUESTIONS Q-89, row 5b-1612); until it is, the reply
+        # says what is true of the add-in as built.
+        if expect_from and expect_from.strip():
+            closing += (" This dry run used up what '%s' left: run that call again "
+                        "before the kept run, and send the same expect_from - sent "
+                        "as it is now, the kept run is refused, because what Revit's "
+                        "Heron carries was left by this dry run."
+                        % runs.one_line(expect_from.strip()))
+        closing += (" Take nothing from this dry run with expect_from: what it left "
+                    "is of a change Revit no longer holds.")
+        lines.append(closing)
+        _outcome(ROLLED_BACK, says=ROLLED_BACK_AS_ASKED)
+        return _ended("ok", "\n".join(lines))
 
     # THE MODELLER WAS ASKED IN REVIT AND DID NOT KEEP IT (D-126). The reply is
     # an ok one - the run worked, and the add-in's verdict already says nothing
@@ -2000,20 +2120,6 @@ def revit_change(capability: str = "", values: str = "",
         # when it does not - never from the word "refused" (row 5b-1159).
         _outcome(_change_outcome(reply))
         return _ended("refused", "\n".join(lines))
-
-    # A DRY RUN ENDS HERE, WITH HOW TO KEEP IT SAID IN THIS TOOL'S WORDS. The
-    # add-in's rollback verdict says "send it again with apply", and a chat
-    # has no `apply` to send. D-126's caution goes with it: the kept run is a
-    # second run, the model can have moved since this one, and its own counts
-    # are the ones that describe what was kept. No after-change table either -
-    # the values were used on a change Revit no longer holds.
-    if dry_run:
-        lines.append("")
-        lines.append("This was a dry run, so the model is as it was. To keep the "
-                     "change, call revit_change again without dry_run - only when "
-                     "the user says to. That is a new run: read its own counts, "
-                     "because the model can have changed since this one.")
-        return _ended("ok", "\n".join(lines))
 
     # THE AFTER-CHANGE TABLE (docs/40 section 21.1): a settings change from
     # the chat leaves the values it used on the Companion page.
@@ -3004,6 +3110,14 @@ def revit_read(capability: str = "", values: str = "",
     args = {"name": folder, "source": source, "needs": needs, "chain": "reset"}
     _aim_at_pin(args)
 
+    # D-158: THE ID LISTS A QA CHECK NAMED, sent whole by the add-in. Set on
+    # the side channel by _checklist_ask around its one read, and only there,
+    # so no chat's schema or request changes, and an add-in that does not
+    # know the field ignores it.
+    wanted = getattr(_ctx, "send_ids", None)
+    if wanted:
+        args["sendIds"] = ",".join(wanted)
+
     supplied = _values_array(values)
     if supplied:
         args["values"] = supplied
@@ -3050,6 +3164,14 @@ def revit_read(capability: str = "", values: str = "",
     if failure is not None:
         return (_ended(_failure_ended(failure), explain(failure))
                 + _what_to_type(failure, capability))
+
+    # WHAT CAME FROM THE MODEL IS DATA, AT THIS DOOR AS AT THE OTHER TWO
+    # (heron_run_records.as_data, row 5b-1596). From here on every text in the
+    # reply is one line: the title in the opening sentence, the inputs line,
+    # the verdict, and each value, entry and item a fragment left. A value of
+    # one line reads exactly as it did. The read-back and the change report
+    # are encoded by their own printers.
+    reply = runs.as_data(reply)
 
     # GOLDEN RULE 20, as revit_change keeps it: the add-in has already refused
     # a different model on `expectProject`; this is the first call's pin, and
@@ -3240,6 +3362,14 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
     if failure is not None:
         return (_ended(_failure_ended(failure), explain(failure))
                 + _what_to_type(failure, capability))
+
+    # WHAT CAME FROM THE MODEL IS DATA, AT THIS DOOR AS AT THE OTHER TWO
+    # (heron_run_records.as_data, row 5b-1596). From here on every text in the
+    # reply is one line: the title in the opening sentence, the inputs line,
+    # the verdict, and each value, entry and item a fragment left. A value of
+    # one line reads exactly as it did. The read-back and the change report
+    # are encoded by their own printers.
+    reply = runs.as_data(reply)
 
     # SAID FROM THE ADD-IN'S COUNT, as revit_read says it - row 5b-350. This
     # door runs on the same counted read path, so a run that moved the model
@@ -6324,8 +6454,15 @@ def _checklist_ask(origin="chat", ctx=None):
                 return {"ran": False, "why": "The chat is no longer on the model the first check "
                                              "read, so nothing was sent. Run the checklist again."}
             out = {}
-            said = _through(revit_read, reply_out=out, origin=origin)(capability, values, "",
-                                                                       ctx=ctx)
+            # D-158: a check that names where its failing ids are asks for
+            # that list whole, so Select in Revit can take every one - set
+            # for this one read and cleared after it, whatever happens.
+            _ctx.send_ids = [check["ids"]] if check.get("ids") else []
+            try:
+                said = _through(revit_read, reply_out=out, origin=origin)(capability, values, "",
+                                                                           ctx=ctx)
+            finally:
+                _ctx.send_ids = []
             reply = out.get("reply")
             if out.get("ended") != "ok" or not isinstance(reply, dict) or not reply.get("ok"):
                 lines = [line.strip() for line in str(said or "").splitlines() if line.strip()]
@@ -6340,7 +6477,8 @@ def _checklist_ask(origin="chat", ctx=None):
             changes = None
         return {"ran": True, "document": reply.get("document"),
                 "provides": reply.get("provides") or {},
-                "entries": reply.get("providesEntries") or {}, "changes": changes}
+                "entries": reply.get("providesEntries") or {},
+                "ids": reply.get("providesIds") or {}, "changes": changes}
 
     return ask, first
 
@@ -6382,6 +6520,10 @@ def _run_checklist(checklist, origin="chat", ctx=None, progress=None):
                               held.get("run"), held.get("findings"))
         answer["failed"] = True
     answer["identity"] = list(first["identity"]) if first.get("identity") else None
+    # WHAT CHANGED SINCE THE LAST RUN ON THIS MODEL - NEW, STILL OPEN, FIXED -
+    # and this run kept for the next. Only a finished run; never raises.
+    if not answer.get("failed"):
+        store.history(answer)
     _checklist_select_labels(answer)
     return answer
 
@@ -6434,14 +6576,17 @@ def heron_checklist(action: str = "list", name: str = "", checks: str = "",
     `checks`, a JSON list - each {"sentence": their words, "capability": ONE
     capability that reads, "values": "name=value" lines, "rule": "output op
     number" on one output it declares - "failures == 0", "ids": the output
-    holding failing element ids, or ""}. Turn each sentence into a check with
-    heron_lookup; ask, never guess. replace=true only when they said so.
+    holding failing element ids, or ""}. Optional, in their words: "severity"
+    high, medium or low; "clause", the BEP or standard it comes from; "advice",
+    how to fix. Turn each sentence into a check with heron_lookup; ask, never
+    guess. replace=true only when they said so.
 
     "list" names them; "show" gives one's checks; "delete" removes one when
     asked; "starter" saves Heron's example under `name`, only when asked.
 
     "run" runs `name` check by check through revit_read: PASS meets the value
-    checked, FAIL does not, NOT RUN says why and is never a pass. Never call
+    checked, FAIL does not, NOT RUN says why and is never a pass; each says
+    NEW, STILL OPEN or FIXED against the last run on that model. Never call
     the model compliant. Results also go on the Companion's QA Checklist.
     """
     try:

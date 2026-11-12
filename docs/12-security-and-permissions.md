@@ -272,6 +272,10 @@ Also, not drawn:
     keeps this chat's next changes to the same model without the box, until ten minutes pass with
     none (HeronKeepGrant.IdleLimit). A publish and a DRAFT's one run are still asked.
   - A change Revit counted nothing in is kept without the box, and its answer says so.
+  - A dry run (revit_change with dry_run, D-155) takes steps 1 to 4 and is then rolled back: never
+    kept, so never asked at step 5, and never shown the delete box. It is refused before step 1 for
+    a PUBLISH, ADMIN or EXECUTE fragment and for one that declares noTransactionOpen - a rollback
+    does not return what was done outside a transaction. Not run in Revit (NEEDS-CHECKING Group NT).
   - After the box, the switches are read again; one turned off meanwhile rolls the change back
     (permission_withdrawn).
 ```

@@ -1108,6 +1108,9 @@ namespace Heron.Revit.Addin
                                 globals.__heron);
             if (confirmed != null) answer = confirmed.OnReply(answer);   // D-142
 
+            // D-158: THE WHOLE ID LISTS A CALLER NAMED - only those, only when named.
+            answer = WithIds(answer, state, Json.ReadString(request, "sendIds"));
+
             if (!writing) return WithCount(answer, counted);
             var verdict = WithVerdict(answer, apply, name, rolledBack, keptNote, said,
                                       nothingToAsk,
@@ -1236,6 +1239,84 @@ namespace Heron.Revit.Addin
         /// and under which grant it was kept. The verdict's own first sentence
         /// says the same in words.
         /// </summary>
+        /// <summary>The most ids sent for one list named in `sendIds` (D-158).</summary>
+        internal const int IdsSentPerList = 5000;
+
+        /// <summary>
+        /// The reply with `providesIds` added - D-158: EVERY id of each list the
+        /// caller named in `sendIds`, as text, with its total.
+        ///
+        /// WHY ONLY WHEN NAMED. `Describe` sends a list of ids as its count and
+        /// first three, and D-26 keeps it that way: a list of ids is a quantity,
+        /// and sending every one on every reply would carry the model in bulk.
+        /// A QA check that FAILED needs every failing element to offer Select
+        /// in Revit, so it names the one list it holds them in, and that list
+        /// alone travels whole - up to IdsSentPerList, its total said beside it,
+        /// so a list longer than that is known to be incomplete.
+        ///
+        /// A LIST OF ElementId, or of elements by their Id; anything else named
+        /// is left out rather than guessed at. Run after the fragment, on other
+        /// people's objects, so a list that will not be read is left out too.
+        /// </summary>
+        private static string WithIds(string answer, IList<HeronScriptHost.Variable> state, string asked)
+        {
+            if (string.IsNullOrEmpty(asked) || state == null || string.IsNullOrEmpty(answer)
+                || !answer.EndsWith("}", StringComparison.Ordinal))
+                return answer;
+
+            var names = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var part in asked.Split(','))
+            {
+                var trimmed = part.Trim();
+                if (trimmed.Length > 0) names.Add(trimmed);
+            }
+
+            var lists = new List<string>();
+            foreach (var variable in state)
+            {
+                if (!names.Contains(variable.Name)) continue;
+                object current = null;
+                try { current = variable.Value; } catch { continue; }
+                if (current is string || current is IDictionary) continue;
+                var list = current as ICollection;
+                if (list == null) continue;
+
+                try
+                {
+                    var ids = new List<string>();
+                    var total = 0;
+                    var notIds = false;
+                    foreach (var item in list)
+                    {
+                        string id = null;
+                        var elementId = item as ElementId;
+                        if (elementId != null) id = elementId.ToString();
+                        else
+                        {
+                            var element = item as Element;
+                            if (element != null)
+                            {
+                                try { id = element.Id.ToString(); } catch { id = null; }
+                            }
+                        }
+                        if (id == null) { notIds = true; break; }
+                        total++;
+                        // An ElementId's text is its number, digits and a sign -
+                        // nothing JSON needs escaped.
+                        if (ids.Count < IdsSentPerList) ids.Add("\"" + id + "\"");
+                    }
+                    if (notIds) continue;
+                    lists.Add("\"" + variable.Name + "\": " + Json.Obj(
+                        Json.Num("total", total),
+                        "\"ids\": [" + string.Join(", ", ids) + "]"));
+                }
+                catch { }
+            }
+            if (lists.Count == 0) return answer;
+            return answer.Substring(0, answer.Length - 1)
+                 + ",\"providesIds\": {" + string.Join(", ", lists) + "}}";
+        }
+
         /// <summary>
         /// The reply with D-156's `readBack` field added: each changed element's
         /// values before and after. Spliced in as WithGrant splices its fields.
