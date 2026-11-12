@@ -150,8 +150,11 @@ A Revit dialog that opens **inside** a Heron job has nobody to answer it, so the
 ([row 5b-300](../../../docs/fragment-issues/section-5b-rows-276-300.md): a family from a later release
 froze `LOAD_FAMILY` for over 90 s). Since 2026-10-17 `HeronDialogWatch` answers it while the dispatcher
 has a job armed - **declined** (Cancel, then Close) unless a row in `HeronDialogRule` says otherwise -
-and the job stops, so its group rolls back and the reply quotes what Revit asked. Built, not yet run in
-Revit ([NEEDS-CHECKING group EL](../../../docs/needs-checking/group-el.md)).
+and the job stops, so its group rolls back and the reply quotes what Revit asked. First run in Revit
+2024 on 2026-10-18, where EL1, EL2, EL5 and EL6 passed: the later-release dialog was cancelled and the
+load rolled back, a load no dialog met read as before, and the modeller's own open dialog was left
+alone. Its "Duplicate Types" rollback (EL4) is not run, and nothing ran on Revit 2020
+([NEEDS-CHECKING group EL](../../../docs/needs-checking/group-el.md)).
 
 - **A prompt Heron itself shows during a job goes inside `using (HeronDialogWatch.HeronAsks())`**, or the
   watch answers Heron's own question for the modeller. `tests/test_dialog_note.py` fails a bare prompt in
@@ -269,7 +272,11 @@ Growing a pool instead only postpones the question of which chat is really in ch
 **But taking the pipe is not taking the right to use it.** Since Step 6 a **lease** decides that
 (`HeronLease`, [D-22](../../../docs/DECISIONS.md)): one lease per Revit process, held by one chat, short
 and renewable. A second chat is **refused with a message** rather than silently cutting the first off
-mid-job — chopping a read is harmless, chopping a `MODIFY` mid-transaction is not.
+mid-job — chopping a read is harmless, chopping a `MODIFY` mid-transaction is not. The lease's holder is
+a **client id**, and one person's chats share one (`HERON_CLIENT_ID`), so since
+[D-141](../../../docs/decisions/D-141.md) what keeps two of them apart is `HeronModelHold`: a **model** is
+held by one conversation at a time, and another chat's request for it is refused `model_in_use` before
+anything runs.
 
 Two things about it are easy to get wrong, and both have already been got wrong once:
 
