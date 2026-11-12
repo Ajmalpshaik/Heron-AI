@@ -133,3 +133,31 @@ SET_FAMILY_FORM_VISIBILITY writes - and whether a view-specific setting has view
 unmeasured; a detail line's style must be one of `GetLineStyleIds()`; REMAP_LINE_STYLES sees only styles
 under Lines, never a family's own subcategories; LINK_FAMILY_PARAMETER's kind check refuses all but forms and
 nested families; LABEL_FAMILY_DIMENSION checks values as lengths and needs an angle parameter for 5c.
+
+## Where it stands after the Revit 2020 runs (2026-11-12) - read this section first
+
+Groups NE and NF were run on Revit 2020 on saved scratch families made for the purpose (never the owner's own),
+every gap met on the way built and proved in the same families, on the owner's standing word. Each card below was
+SIGNED by Ajmal PS and marked PROVEN on the run named; second routes and Revit 2024 were not run.
+
+| Row | Need | Now | Where |
+|---|---|---|---|
+| 1a | Detail item into a family view | **NOT POSSIBLE on Revit 2020 through the API**: inside a family Revit reports a nested Detail Items family WorkPlaneBased and refuses it in a view. The route that works and is PROVEN: `PLACE_FAMILY_INSTANCES` on the level, then `LOCK_NESTED_FAMILY_TO_PLANES` (locks it in the plan of its level). `PLACE_DETAIL_COMPONENTS` v2 PROVEN for projects and refuses the family case naming that route | row 5b-1573, #846 |
+| 1d | Array it | **PROVEN** - a detail item with no view arrayed in its level's plan | `ARRAY_FAMILY_FORMS` v4, row 5b-1574, #846 |
+| 2 | Lock nested 2D to planes | **PROVEN** | `LOCK_NESTED_FAMILY_TO_PLANES` v4, #842 (merged) |
+| 3b, 3c, 4b | Lock lines / ends / region edges | **DRAFT** - fixed in v2, Group NC not yet re-run | #844 (merged) |
+| 3d | Arc radius follows a parameter | **PROVEN** - detail arc 150 -> 200 kept and read back | `LABEL_FAMILY_RADIUS` v6, row 5b-1572, #846 |
+| 3e | Arc centre locked to planes | **STILL OWED** | - |
+| 4d, 6c | Visible of lines / regions / model text on a Yes/No | **PROVEN** | `LINK_FAMILY_PARAMETER` v4, #849 + #856 (merged) |
+| 5c | Angular label | **PROVEN** - 30, 45 and 150 degrees (the obtuse side fixed) | `LABEL_FAMILY_DIMENSION` v3, row 5b-1565, #856 (merged) |
+| 5d | Plane at an angle | **PROVEN** | `CREATE_REFERENCE_PLANES` v2, row 5b-1564, #856 (merged) |
+| 6a | Symbolic line visibility after drawing | **PROVEN for detail levels**; kinds of view **NOT POSSIBLE through the API** - a symbolic line's setting is ViewSpecific and Revit takes no view kinds on it; the card refuses rather than guesses | `SET_FAMILY_FORM_VISIBILITY` v2, #846 |
+| 6f | Subcategory of lines after drawing | **PROVEN**, and "none" works on 2020 for the first time | `SET_FAMILY_FORM_SUBCATEGORY` v2, row 5b-1571, #846 |
+| 8 | Read it all back | **PROVEN** (lines and regions; the lock-reading rows of Group ND not run) | `REPORT_FAMILY_FORMS` v5, #843 |
+| - | Air flow and other measured type values (met in Group NE) | **PROVEN** | `SET_FAMILY_TYPE_VALUES` v4, row 5b-1575, #858 |
+
+**Is this everything now?** Nearly. Still owed: an arc's centre locked to planes (3e), Group NC re-run on
+`LOCK_FAMILY_LINES_TO_PLANES` v2, Group ND's lock-reading rows, and every test on Revit 2024. Beyond any tool (NO
+API): a filled region's, a nested family's and a symbolic line's view-direction settings, and placing a nested
+detail item in a family VIEW.
+
