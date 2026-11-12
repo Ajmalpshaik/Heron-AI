@@ -24,6 +24,24 @@ in order:
 
     **Its rows, in order:** [001-025](fragment-issues/section-5b-rows-001-025.md) · ...
 
+A ROW WRITTEN FROM THE CUT-OVER ON HAS A FILE OF ITS OWN. Until 2026-11-12
+every new row of section 5b was appended to the end of one rows file, so two
+branches that each added a row changed the same lines of the same file, and
+git stopped at almost every merge of parallel work. Under the line above, the
+index now keeps one more line, written once and never added to:
+
+    **Its rows from 1576 on, one file each:** [`fragment-issues/row-5b-NNNN.md`](fragment-issues/)
+
+and row 5b-1576 is fragment-issues/row-5b-1576.md: the table's two header
+lines and that row's own line, in the cells every rows file uses, so a row
+moves between the two layouts by copying its line. THE FOLDER IS THE LIST.
+No line anywhere names a row's file - a line every branch added to would be
+the same conflict in a new place - so the reader lists the folder, and two
+branches that take the same number collide in git as two files of one name.
+The rows come back after the rows files' rows, in number order; a row from
+the cut-over on that an older branch still appended to a rows file is read
+in that order too, so the text is the same wherever the row is kept.
+
 register_text() puts every file back where its line stands, with its links
 written as they were in the one file - so a tool that read the register as
 one text reads exactly the text it read before, and prints exactly what it
@@ -44,7 +62,11 @@ A FILE THAT IS MISSING IS NOT SKIPPED. A register that quietly drops a
 section is the failure a register exists to prevent, so a line naming a file
 that is not there, a section's file that does not open with the heading that
 names it, or a rows file with no table, raises RegisterBroken rather than
-returning a shorter register. An index that names no file is returned as it
+returning a shorter register. So does a row's own file that holds any row
+but the one its name says, a heading that names another row or none, or
+any text under its table, a file named like one that is not one
+(row-5b-1576-copy.md would otherwise be a row nobody reads), and a caller
+that serves the register from memory and gave no way to list the folder. An index that names no file is returned as it
 is: that is how a register that was never split, and every register a suite
 builds for itself, is read.
 
@@ -72,6 +94,13 @@ DOT = chr(0xB7)
 FILE_KEY = "**Its own file:** "
 ROWS_KEY = "**Its rows, in order:** "
 ROWS_GAP = " " + DOT + " "
+# The line that says a section's newer rows are one file each. It is written
+# once - by hand on 2026-11-12, and by split-register.py when it writes the
+# page again - and it names the first such row and the files' stem, never a
+# file: "**Its rows from 1576 on, one file each:** [`f/row-5b-NNNN.md`](f/)".
+EACH_KEY = "**Its rows from "
+EACH_MID = " on, one file each:** "
+EACH_ANY = "NNNN"
 NAME = "[a-z0-9][a-z0-9-]*[.]md"
 
 # check-docs.py's link pattern, [text](target), built as archive-fragment-issues.py builds it.
@@ -137,6 +166,84 @@ def rows_names(line, folder):
             return None
         names.append(m.group(1))
     return names or None
+
+
+def each_line(folder, stem, cut):
+    """The line that says rows from CUT on are one file each, named STEM-<n>.md."""
+    return "%s%d%s[`%s/%s-%s.md`](%s/)" % (EACH_KEY, cut, EACH_MID, folder, stem, EACH_ANY, folder)
+
+
+def _each_pattern(folder):
+    return re.compile("^" + re.escape(EACH_KEY) + "([1-9][0-9]*)" + re.escape(EACH_MID + "[`" + folder + "/")
+                      + "([a-z0-9][a-z0-9-]*)" + re.escape("-" + EACH_ANY + ".md`](" + folder + "/)") + "$")
+
+
+def each_of(line, folder):
+    """(the first row that has a file of its own, the stem of those files'
+    names) when LINE is the line that says so - or None."""
+    if not line.startswith(EACH_KEY):
+        return None
+    m = _each_pattern(folder).match(line)
+    return (int(m.group(1)), m.group(2)) if m else None
+
+
+def row_name(stem, number):
+    """The file row NUMBER has to itself: row-5b-1576.md."""
+    return "%s-%d.md" % (stem, number)
+
+
+def row_number(name, stem):
+    """The row the file NAME is for, or None when NAME is not a row's own
+    file of STEM. The number is written as a person writes it - no leading
+    zero - so one row has one name, and two branches that take it collide."""
+    m = re.match("^" + re.escape(stem) + "-([1-9][0-9]*)[.]md$", name)
+    return int(m.group(1)) if m else None
+
+
+def row_files(names, stem, folder="", page=""):
+    """{row: file} for the rows' own files among NAMES, the names in the
+    register's folder. A name that starts like one and is not one raises
+    RegisterBroken: skipped, it would be a row no tool reads."""
+    found = {}
+    for name in sorted(names):
+        if not name.startswith(stem + "-"):
+            continue
+        number = row_number(name, stem)
+        if number is None:
+            raise RegisterBroken("%s%s is named like a row's own file and is not one - a row's file "
+                                 "is %s-<its number>.md, and %s reads no other"
+                                 % (folder + "/" if folder else "", name, stem, page or "the register"))
+        found[number] = name
+    return found
+
+
+def row_groups(lines):
+    """[(row number or None, [lines])] - a table's rows, each with the lines
+    that continue it. Lines before the first row have no number."""
+    groups = []
+    for line in lines:
+        m = ROW.match(line)
+        if m:
+            groups.append((int(m.group(1)), [line]))
+        elif groups:
+            groups[-1][1].append(line)
+        else:
+            groups.append((None, [line]))
+    return groups
+
+
+def settled(body, cut, more=()):
+    """BODY, a table's rows as its rows files hold them, with every row from
+    CUT on taken out of its place and put after the rest, in number order,
+    together with MORE - [(number, [lines])], the rows that have files of
+    their own. Rows before CUT stay exactly as written. A number held twice
+    stays twice, the rows file's first: which one is the row is not for a
+    reader to choose, and tests/test_open_defects.py refuses the pair."""
+    low, high = [], []
+    for number, got in row_groups(body):
+        (high if number is not None and number >= cut else low).append((number, got))
+    high = sorted(high + list(more), key=lambda one: one[0])
+    return [line for _, got in low + high for line in got]
 
 
 def _lines(text):
@@ -315,6 +422,42 @@ def _read(path):
         return handle.read().decode("utf-8", "replace")
 
 
+def _list(path):
+    return sorted(os.listdir(path)) if os.path.isdir(path) else []
+
+
+def rows_files(text, index):
+    """{heading: [the rows files INDEX's text names under it, in order]}."""
+    folder = folder_of(index)
+    lines = _lines(text)
+    spans, _ = sections(lines)
+    fenced = fenced_lines(lines)
+    found = {}
+    for start, end in spans:
+        for k in range(start, end):
+            names = None if k in fenced else rows_names(lines[k], folder)
+            if names:
+                found.setdefault(lines[start], []).extend(names)
+    return found
+
+
+def each_lines(text, index):
+    """[(heading, first row with a file of its own, the files' stem)] - one
+    for every section of INDEX's text that says its newer rows are one file
+    each, in the order the page has them."""
+    folder = folder_of(index)
+    lines = _lines(text)
+    spans, _ = sections(lines)
+    fenced = fenced_lines(lines)
+    found = []
+    for start, end in spans:
+        for k in range(start, end):
+            each = None if k in fenced else each_of(lines[k], folder)
+            if each:
+                found.append((lines[start], each[0], each[1]))
+    return found
+
+
 def named_files(text, index):
     """Every file INDEX's text names, in the order it names them."""
     folder = folder_of(index)
@@ -333,20 +476,26 @@ def named_files(text, index):
     return names
 
 
-def register_text(index, read=None):
+def register_text(index, read=None, listing=None):
     """The whole register, one text, as it was before it was split.
 
     INDEX is the register's own page. READ is the caller's reader, called
     with INDEX and then with each file's path built from INDEX - so a tool
     whose files a suite has served from memory reads the register the suite
-    gave it. Returns what READ returned for the index when it names no file."""
+    gave it. LISTING is the caller's way to name the files in the register's
+    folder, called with that folder's path as path_in(INDEX, "") builds it;
+    it is asked only when the page says a section's newer rows are one file
+    each, and a caller that passes READ passes it too. Returns what READ
+    returned for the index when it names no file."""
+    if listing is None and read is None:
+        listing = _list
     read = read or _read
     text = read(index)
     if not text:
         return text
     folder = folder_of(index)
     page = os.path.basename(index.replace(os.sep, "/"))
-    if not named_files(text, index):
+    if not named_files(text, index) and not each_lines(text, index):
         return text
     eol = CR + NL if CR + NL in text else NL
     lines = _lines(text)
@@ -356,8 +505,9 @@ def register_text(index, read=None):
     def held(name, why):
         found = read(path_in(index, name))
         if not found:
-            raise RegisterBroken("%s names %s/%s %s, and there is no such file"
-                                 % (page, folder, name, why))
+            raise RegisterBroken("%s names %s/%s %s, and %s"
+                                 % (page, folder, name, why,
+                                    "there is no such file" if found is None else "the file is empty"))
         return _lines(found)
 
     def rows(names, heading):
@@ -374,6 +524,65 @@ def register_text(index, read=None):
                 out.extend(unpoint(NL.join(body), name, folder, page).split(NL))
         return out
 
+    def own(number, name, heading):
+        """(the table's two header lines, the row's lines) of a row's own file."""
+        got = held(name, "for row %d of %r" % (number, heading))
+        table = table_of(got)
+        if table is None:
+            raise RegisterBroken("%s/%s holds no table, and its name says it holds row %d of %r"
+                                 % (folder, name, number, heading))
+        top, bottom = table
+        # THE HEADING NAMES THE ROW, as the file's name and the row's first
+        # cell do - `row 5b-1576`. tools/renumber.py renames the three
+        # together, and a file whose heading says another row is one a person
+        # opens for the wrong defect. Read where the section has a label to
+        # name a row by, which is how a link names one (row_links).
+        label = re.match("^## ([0-9]+[a-z]*)[.] ", heading)
+        if label:
+            fenced = fenced_lines(got[:top])
+            titles = [line for i, line in enumerate(got[:top]) if line.startswith("# ") and i not in fenced]
+            named = re.compile("(?<![0-9A-Za-z-])" + re.escape(label.group(1)) + "-([0-9]+)(?![0-9])")
+            says = sorted(set(int(n) for n in named.findall(titles[0]))) if titles else []
+            if says != [number]:
+                raise RegisterBroken("%s/%s %s, and its name says it holds row %s-%d - the heading above "
+                                     "the table names the row, as the name and the row's first cell do"
+                                     % (folder, name,
+                                        ("is headed %r" % titles[0][2:]) if titles else "has no heading",
+                                        label.group(1), number))
+        # THE FILE ENDS WITH ITS ROW. A rows file is read to its last line,
+        # and words under a row's own table would be read into the register's
+        # table as part of the row - a blank line and a paragraph in the
+        # middle of the rows that follow.
+        if any(line.strip() for line in got[bottom:]):
+            raise RegisterBroken("%s/%s holds text under its table, and a row's own file ends with "
+                                 "its row - what is to be said of row %d goes in the row's cells"
+                                 % (folder, name, number))
+        body = got[top + 2:bottom]
+        has = [n for n, _ in row_groups(body) if n is not None]
+        if has != [number] or not ROW.match(body[0]):
+            raise RegisterBroken("%s/%s holds %s, and its name says it holds row %d alone"
+                                 % (folder, name, "row%s %s" % ("" if len(has) == 1 else "s",
+                                                                ", ".join(str(n) for n in has))
+                                    if has else "no row", number))
+        return (unpoint(NL.join(got[top:top + 2]), name, folder, page).split(NL),
+                unpoint(NL.join(body), name, folder, page).split(NL))
+
+    def each_rows(table, cut, stem, heading):
+        """TABLE - the rows a rows line has just put back, header first, or
+        None - with the rows that have files of their own after them."""
+        if listing is None:
+            raise RegisterBroken("%s says the rows of %r from %d on are one file each, and this "
+                                 "reader was given no way to list %s/" % (page, heading, cut, folder))
+        files = row_files(listing(path_in(index, "")), stem, folder, page)
+        head, more = None, []
+        for number in sorted(files):
+            top, body = own(number, files[number], heading)
+            head = head or top
+            more.append((number, body))
+        if table is not None:
+            head, table = table[:2], table[2:]
+        return (head or []) + settled(table or [], cut, more)
+
     out = [unpoint(NL.join(lines[:first]), None, folder, page)] if first else []
     for start, end in spans:
         name = stub_of(lines, start, end, folder)
@@ -387,15 +596,30 @@ def register_text(index, read=None):
             body = unpoint(NL.join(got[begin:last_filled(got, begin, len(got))]), name, folder, page)
             out.append(NL.join([body] + lines[last_filled(lines, start, end):end]))
             continue
-        kept, waiting = [], []
+        # TABLE is where in KEPT the rows of the last rows line begin, while
+        # nothing but blank lines has followed it: the line for the rows'
+        # own files stands under the rows line, and its rows go on the table.
+        kept, waiting, table = [], [], None
         for k in range(start, end):
             names = None if k in fenced else rows_names(lines[k], folder)
-            if names is None:
+            each = None if k in fenced or names is not None else each_of(lines[k], folder)
+            if names is None and each is None:
                 waiting.append(lines[k])
+                continue
+            if each is not None and table is not None and not any(w.strip() for w in waiting):
+                waiting = []
+                before, kept = kept[table:], kept[:table]
+                kept.extend(each_rows(before, each[0], each[1], lines[start]))
+                table = None
                 continue
             if waiting:
                 kept.extend(unpoint(NL.join(waiting), None, folder, page).split(NL))
                 waiting = []
+            if each is not None:
+                kept.extend(each_rows(None, each[0], each[1], lines[start]))
+                table = None
+                continue
+            table = len(kept)
             kept.extend(rows(names, lines[start]))
         if waiting:
             kept.extend(unpoint(NL.join(waiting), None, folder, page).split(NL))

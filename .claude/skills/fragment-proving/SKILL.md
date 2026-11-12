@@ -389,6 +389,9 @@ fresh entry's, and nowhere else - never from `revit:`, and only where a compiler
 - **A fragment that fails in front of a model belongs in
   [docs/FRAGMENT-ISSUES.md](../../../docs/FRAGMENT-ISSUES.md) the same day**, with what was passed to
   it and what came back, verbatim. The value of that list is that every row was observed rather than
-  expected.
+  expected. **Where the row goes is on that page, under *Add to this file*:** a defect in Heron's own
+  code or documents (section 5b) is a file of its own, `docs/fragment-issues/row-5b-N.md`, with N from
+  `python tools/next-id.py` - never a line appended to a rows file, which is where every merge of
+  parallel work used to stop.
 - **Never record a phase that did not run.** A draft saying "with nothing selected it returned 0" when
   nothing checked is worse than no draft, because it looks like evidence.

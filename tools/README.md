@@ -162,7 +162,15 @@ Verifies that:
   direction only, read from the disk so a new tool is caught before it is committed — section 10, added
   2026-09-23, **fails the run**. The same section fails on a `docs/needs-checking/group-*.md` that
   [`NEEDS-CHECKING.md`](../docs/NEEDS-CHECKING.md) never names - a group a merge dropped from the index
-  ([heron-ship §6a](../.claude/skills/heron-ship/SKILL.md))
+  ([heron-ship §6a](../.claude/skills/heron-ship/SKILL.md)). **And, since 2026-11-12, on a 5b row's own file
+  the register does not read as it should** ([row 5b-1576](../docs/fragment-issues/row-5b-1576.md)): no index
+  line names `docs/fragment-issues/row-5b-N.md` - the folder is the list - so what fails is a file named like
+  one that [`register-text.py`](#register-textpy---a-split-register-read-as-one-text) does not read
+  (**NOT READ**) - **under any name**: a row saved as `Row-5b-N.md`, `5b-N.md`, a `.txt` or in a subfolder is
+  found by its row line, not by what it is called, and named with the name it should have - one that holds
+  another row than its name says, or whose heading names another, one numbered before the cut-over the page
+  states (**BEFORE THE CUT-OVER**), a new row still appended to a rows file (**LEFT IN A ROWS FILE**, with the
+  `split-register.py --new-rows` command that moves it), and one number in both places (**HELD TWICE**)
 - **text hygiene over every file git tracks**: no control character other than tab, CR and LF, no
   double-encoded text, no merge-conflict marker — section 11, added 2026-09-23, **fails the run**, except
   a hit inside a PROVEN fragment's `impl/`, which is reported as **waiting** because fixing it makes the
@@ -175,7 +183,10 @@ Verifies that:
   is there, so section 1 cannot see this: it is what a re-band left behind on 2026-10-08
   ([row 5b-381](../docs/fragment-issues/section-5b-rows-376-400.md)). Read from the file's table, not its
   name, so a row appended to the last file is rightly linked there until the split moves it; a link in
-  code is an example, and one naming two rows is not judged
+  code is an example, and one naming two rows is not judged. A rows file is known by **three digits or
+  more** each side of its name since 2026-11-12 - it took exactly three, so a link into
+  `section-5b-rows-1001-1025.md` would never have been judged (row 5b-1509) - and **a row's own file,
+  `row-5b-N.md`, is judged the same way**
 - **a decision another one supersedes says so under its own heading** — section 13, added 2026-10-19,
   **fails the run**. It runs [`check-supersessions.py`](check-supersessions.py), below
   ([D-144](../docs/DECISIONS.md))
@@ -2330,6 +2341,12 @@ prints, per register, **the id above the highest used anywhere**, main's highest
 above it**. An id two branches both hold is printed as **HELD TWICE**: one of them renames before it merges.
 This checkout's HEAD counts too when it holds commits no remote branch has.
 
+**A 5b row is read wherever it is kept** - in a rows file, on the page of a branch cut before the split, in
+the archive, and since 2026-11-12 in **the row's own file, `docs/fragment-issues/row-5b-N.md`**, where a new
+row is written ([row 5b-1576](../docs/fragment-issues/row-5b-1576.md)). There the file's name is the id as
+well as the row in it, as a decision's file and a group's are; a name `register-text.py` would not read as a
+row's file (`row-5b-045.md`) holds none.
+
 **Since 2026-10-17 it also reads the open pull requests and every worktree's working files.** The pull requests
 come from `gh api repos/OWNER/NAME/pulls?state=open` - the REST call, because `gh pr list` asks GraphQL and a
 Claude Code cloud session refuses that (HTTP 403, measured) - with the repository named, never inferred from a
@@ -2364,7 +2381,7 @@ that failed, no main, or a register with no id on main at all, which means the r
 gh, a fork's `refs/pull/N/head`, worktrees in folders whose names hold spaces, and a squash of this checkout's
 own ids onto main - no network.
 
-**An id that clashed anyway is renamed by [`renumber.py`](renumber.py)** - `--next` is this tool's answer, and `--from D-116 --to D-131` (or `Q-`, `"Group EJ"`, `5b-`; `--dry-run` writes nothing) renames it in this branch's own text since its merge-base with `origin/main`, files named for it included, and never main's own use of the same id. A renamed decision's **Numbering:** line keeps its words and gains a sentence naming the old number, the date and why - main took it, or which branch holds it - and one with no Numbering line gets one under its **Status:** line; exits **0**, **1** when it left a line for a person and named it, **2** when it refused and wrote nothing ([`tests/test_renumber.py`](../tests/test_renumber.py)).
+**An id that clashed anyway is renamed by [`renumber.py`](renumber.py)** - `--next` is this tool's answer, and `--from D-116 --to D-131` (or `Q-`, `"Group EJ"`, `5b-`; `--dry-run` writes nothing) renames it in this branch's own text since its merge-base with `origin/main`, files named for it included - a 5b row's own file `row-5b-N.md` with the number in its heading and its first cell - and never main's own use of the same id. A renamed decision's **Numbering:** line keeps its words and gains a sentence naming the old number, the date and why - main took it, or which branch holds it - and one with no Numbering line gets one under its **Status:** line; exits **0**, **1** when it left a line for a person and named it, **2** when it refused and wrote nothing ([`tests/test_renumber.py`](../tests/test_renumber.py)).
 
 ---
 
@@ -2373,6 +2390,7 @@ own ids onto main - no network.
 ```bash
 python tools/split-register.py fragment-issues            # what would move - writes nothing
 python tools/split-register.py fragment-issues --write    # move it
+python tools/split-register.py fragment-issues --new-rows # only a new 5b row left in a rows file; add --write to move it
 ```
 
 The same step as [`split-needs-checking.py`](#split-needs-checkingpy---one-file-per-group-needs-checkingmd-as-the-index),
@@ -2391,9 +2409,28 @@ of 5b and `archive-fragment-issues.py`'s plan - answer exactly the same on a cop
 out the new way; every re-pointed link reaches the file it reached before; and no other document links into a
 heading that would leave the page.
 
-**A new row goes at the end of its section's last file**, whatever its number; the next run moves it to the file its
-number belongs to. A new section written on the page is moved by the next run, and a run with nothing new moves
-nothing. [`tests/test_split_register.py`](../tests/test_split_register.py) builds its own register, never the real one.
+**A new row of section 5 goes at the end of that section's last file**, whatever its number; the next run moves it
+to the file its number belongs to. A new section written on the page is moved by the next run, and a run with
+nothing new moves nothing. [`tests/test_split_register.py`](../tests/test_split_register.py) builds its own register,
+never the real one.
+
+**A new row of section 5b is a file of its own, and this tool's job for a new row there is retired** - since
+2026-11-12, [row 5b-1576](../docs/fragment-issues/row-5b-1576.md). Every new 5b row used to be appended to the end
+of one rows file and wait for a run of this to band it; the run never came, because re-banding changes the file
+every open branch was appending to, so that one file, named for rows 401 to 425, went on taking every row written after them
+(`grep -c '^| \*\*[0-9]' docs/fragment-issues/section-5b-rows-401-425.md` counts what it holds) and stopped
+almost every merge of parallel work. Now the page says, under the line naming the rows files, *"**Its rows from 1576 on, one file
+each:**"*, and row 5b-1576 is `docs/fragment-issues/row-5b-1576.md` - written by hand, in one step, with no run of
+anything. The page's line is the rule and this never writes one where the page has none. What it still does:
+
+- **a whole run keeps every such row in its own file** and bands only the rows before the cut-over - so does
+  `archive-fragment-issues.py`, which writes through this tool's layout;
+- **`--new-rows` moves a row from the cut-over on that a rows file still holds** - a branch cut before the change
+  appended it the old way - into its own file, with every link that names it, **and re-bands nothing**: the page and
+  every other file are left byte for byte, so it can be run while other branches are open. `check-docs.py` fails on
+  a row left that way and names this command. Two rows of one number, one in each place, are refused and named;
+- **the re-band of the rows before the cut-over** is still [row 5b-1181](../docs/FRAGMENT-ISSUES.md)'s, a change of
+  its own, run when no open branch edits those files.
 
 **A link that names a row it moves follows the row** - since 2026-10-09, [row 5b-381](../docs/fragment-issues/section-5b-rows-376-400.md).
 A link whose words name one 5b row and whose target is the rows file that row is leaving is pointed at the file it
@@ -2438,7 +2475,20 @@ its heading, and each band of rows back where the table was, with the links as t
 Standard library only. **A missing file is not skipped** - a line naming a file that is not there, a section's
 file that does not open with its heading, or a rows file with no table stops it with `RegisterBroken` rather than
 returning a shorter register. A page that names no file is returned as it is, which is how a suite's own register
-is read. It also holds the one rule for which links name a row (`row_links`) and which rows a file holds
+is read.
+
+**It reads two layouts of a section's rows, and gives them back as one table** - since 2026-11-12,
+[row 5b-1576](../docs/fragment-issues/row-5b-1576.md). Where the page says *"**Its rows from 1576 on, one file
+each:**"* under the line naming the rows files, it lists the folder and reads every `row-5b-N.md` after the rows
+files' rows, **in number order**, with its links as the page would write them - so `open-defects.py`,
+`review-ledger.py`, `archive-fragment-issues.py` and everything that reads through them list a new row with no
+change of their own. **No line names a row's file; the folder is the list**, which is what lets two branches add
+rows without changing a file in common. A row from the cut-over on that is still in a rows file is read in that
+same order, so the text does not depend on where the row is kept, and a number held in both places is read twice
+for `tests/test_open_defects.py` to refuse. A row's file that holds another row than its name says, a heading that names another row or none, or any
+text under its table, a file named
+like one that is not one, and a caller that serves the register from memory with no way to list the folder
+(`listing=`) are each `RegisterBroken`. It also holds the one rule for which links name a row (`row_links`) and which rows a file holds
 (`rows_held`), so `split-register.py`, which re-points such a link, and `check-docs.py` section 12, which fails on
 one at the wrong file, cannot read a link two ways.
 
