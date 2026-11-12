@@ -240,6 +240,14 @@ under `%TEMP%\heron-work`. **Do not deploy the new add-in before item 3**: it ne
     what a real add-in sends at each ending, and whether a reply flagged as an error still reaches the chat
     (rows 5b-1159 and 5b-1561); and one run of each of the DRAFT methods written on 2026-11-11
     ([row 5b-1518](fragment-issues/section-5b-rows-401-425.md) names them and what each needs).
+11. **[Group NR](needs-checking/group-nr.md) — three everyday jobs given a method on 2026-11-12, none run:**
+    [`annotate-a-view`](../brain/skills/annotate-a-view.yaml),
+    [`system-colours`](../brain/skills/system-colours.yaml) and
+    [`hvac-spaces-and-zones`](../brain/skills/hvac-spaces-and-zones.yaml), all DRAFT. No job file: each row
+    is asked in a chat. The Revit release you work in; a SAVED scratch copy of a services model with ducts
+    on at least three systems, and for the spaces rows an architect's model linked in with numbered rooms on
+    two levels. **Changes** on and **Ask to Keep ON** (one row runs with it off). The group's own page says
+    which rows meet open rows 5b-240, 5b-1125 and 5b-1580. **Needs #855** — the methods are only there.
 
 **Then, as before 2026-11-12** (re-read 2026-11-11; the 2026-10-27 list named *"the twelve rebar
 tools that have never met a model"* and groups IQ to IM as built-not-run, and the rows above now say what
