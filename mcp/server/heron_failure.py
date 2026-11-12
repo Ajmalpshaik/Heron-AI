@@ -207,6 +207,11 @@ _KNOWN = {
     "reset_failed":      (ROLLED_BACK, FIX_FIRST,
                           "Revit refused to end the temporary hide/isolate; nothing in the "
                           "model was touched"),
+    # D-157: Revit's Undo was NOT sent - Heron's last change is not the top of
+    # the undo list, or Revit could not take the command. The add-in's own
+    # sentence says which; asking again changes nothing until that does.
+    "undo_refused":      (REFUSED, FIX_FIRST,
+                          "Revit's Undo was not sent, so nothing was undone"),
 
     # --- it ran ------------------------------------------------------------
     "still_running":     (RUNNING, WAIT,

@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Proves the before and after read-back (D-156) WITHOUT Revit.
+
+    The source-linking pattern Heron.ChangeReport.TestHost uses, and for the
+    same reason: HeronReadBack.cs touches no Autodesk type - it compares
+    values handed to it as text and writes JSON - so it is linked here BY
+    SOURCE rather than through a project reference, which would drag in
+    RevitAPI.dll and make the one testable piece untestable on any machine
+    without Revit.
+
+    Linking keeps ONE copy of the rule: which values differ, what counts as
+    not read rather than unchanged, and what the reply carries and leaves
+    out. RevitReadBack.cs, which reads the elements, is the half that needs
+    Revit, and NEEDS-CHECKING says what it owes.
+
+    And the bridge's JSON writer, linked the same way, so what it writes is
+    parsed by tests/test_read_back.py with a reader that did not write it.
+
+        Run it with `dotnet run`, pointed at this folder, passing
+        -p:RevitVersion=2024. (XML comments cannot carry a double
+        hyphen, so the flag is spelled out rather than shown.)
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>$(HeronTfm)</TargetFramework>
+    <RootNamespace>Heron.ReadBack.TestHost</RootNamespace>
+    <AssemblyName>Heron.ReadBack.TestHost</AssemblyName>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\revit\Heron.Revit.Addin\HeronReadBack.cs"
+             Link="HeronReadBack.cs" />
+    <Compile Include="..\..\revit\Heron.Bridge\Json.cs"
+             Link="Json.cs" />
+  </ItemGroup>
+
+</Project>

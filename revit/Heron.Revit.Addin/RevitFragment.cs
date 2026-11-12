@@ -706,6 +706,15 @@ namespace Heron.Revit.Addin
             // refusal below, which returns before it is described.
             HeronChangeReport.Described described = null;
 
+            // WHAT EACH CHANGED ELEMENT HELD BEFORE AND AFTER - D-156. Read by
+            // RevitReadBack, compared by HeronReadBack. A run that keeps reads
+            // its "before" from the modeller's selection, before it starts; a
+            // run that rolls back reads it once the rollback has held, for
+            // every element Revit counted as changed. Null on the read path.
+            Dictionary<string, HeronReadBack.Values> readBefore = null;
+            Dictionary<string, HeronReadBack.Values> readAfter = null;
+            List<string> changedIds = null;
+
             // What the read path counted before the run - null on the write
             // path, which keeps what it changes on purpose and says so.
             ReadFootprint counted = null;
@@ -764,6 +773,14 @@ namespace Heron.Revit.Addin
                 // keep - for the one delete Revit's report cannot count, the one
                 // whose report never arrives. See DeleteGate.
                 var footprint = apply || asking ? ReadFootprint.Of(target) : null;
+
+                // D-156: THE SELECTION'S VALUES, BEFORE ANYTHING RUNS - the
+                // only "before" a run that keeps can have. Once it runs the old
+                // values are gone, and running twice to read them is what
+                // D-126 refused. Read once, outside D-142's second run.
+                if (apply || asking)
+                    readBefore = RevitReadBack.Read(target, RevitReadBack.SelectedIn(app, target),
+                                                    HeronReadBack.MostRead);
 
                 // WHERE A CONFIRMED DELETE IS RUN AGAIN - D-142. The whole run,
                 // setup steps and all, is what was measured and shown, so the
@@ -964,6 +981,15 @@ namespace Heron.Revit.Addin
                     // counted as part of it, and the report is sealed.
                     described = changed.Describe();
 
+                    // D-156: AND WHAT THEY HOLD NOW, read at the same moment and
+                    // for the same reason - before the box, Assimilate or the
+                    // rollback. A run that keeps reads only the elements whose
+                    // "before" it holds; one that rolls back reads the first
+                    // MostRead Revit named, and reads them again after.
+                    changedIds = IdTexts(changed.Changed);
+                    readAfter = RevitReadBack.Read(target, changed.Changed, HeronReadBack.MostRead,
+                                                   RevitReadBack.Keys(readBefore));
+
                     // D-142: ANYTHING A KEPT CHANGE DELETES IS ASKED FIRST, in a
                     // box of its own, whatever Ask to Keep says and before D-138's
                     // grant is looked at - by Revit's count, never a card's flag.
@@ -1043,6 +1069,16 @@ namespace Heron.Revit.Addin
                     {
                         rolledBack = RollBackAndCheck(group, target, watch);
                         if (putBack != null) selectionRestored = putBack();
+
+                        // D-156: A RUN NOBODY ASKED ABOUT, ROLLED BACK - a dry run
+                        // (D-155) or a proof's trial - reads its "before" now, from
+                        // the model the rollback put back. Only when the rollback
+                        // HELD: a value read from a model still holding part of the
+                        // change is not a "before", and is left unread.
+                        if (answered == null && rolledBack != null && rolledBack.Held)
+                            readBefore = RevitReadBack.Read(target, changed.Changed,
+                                                            HeronReadBack.MostRead,
+                                                            RevitReadBack.Keys(readAfter));
                     }
 
                     // D-138: THE GRANT IS GIVEN HERE AND NOWHERE ELSE - after the
@@ -1068,6 +1104,15 @@ namespace Heron.Revit.Addin
                                       nothingToAsk,
                                       answered != null && answered != Keep && answered != RestOfJob,
                                       selectionRestored, keptUnderGrant, described);
+
+            // D-156: BEFORE AND AFTER, on a change that was kept or a run nobody
+            // was asked about. Never on a Discard: what it would have changed is
+            // not what the modeller is looking at.
+            string readMode = apply ? HeronReadBack.Selection
+                            : answered == null ? HeronReadBack.DryRun : null;
+            if (readMode != null && changedIds != null)
+                verdict = WithReadBack(verdict, HeronReadBack.Compare(readMode, changedIds,
+                                                                      readBefore, readAfter));
             if (keptUnderGrant != null) return WithGrant(verdict, keptUnderGrant);
             return answered != null ? WithAnswer(verdict, answered, refreshed) : verdict;
         }
@@ -1178,6 +1223,30 @@ namespace Heron.Revit.Addin
         /// and under which grant it was kept. The verdict's own first sentence
         /// says the same in words.
         /// </summary>
+        /// <summary>
+        /// The reply with D-156's `readBack` field added: each changed element's
+        /// values before and after. Spliced in as WithGrant splices its fields.
+        /// </summary>
+        private static string WithReadBack(string answer, HeronReadBack.Compared compared)
+        {
+            if (compared == null || string.IsNullOrEmpty(answer)
+                || !answer.EndsWith("}", StringComparison.Ordinal))
+                return answer;
+            return answer.Substring(0, answer.Length - 1) + "," + compared.ReplyField() + "}";
+        }
+
+        /// <summary>Each id as text, in the order the collection holds them.</summary>
+        private static List<string> IdTexts(ICollection<ElementId> ids)
+        {
+            var text = new List<string>();
+            if (ids == null) return text;
+            foreach (var id in ids)
+            {
+                if (id != null) text.Add(id.ToString());
+            }
+            return text;
+        }
+
         private static string WithGrant(string answer, string grantedAt)
         {
             if (string.IsNullOrEmpty(answer) || !answer.EndsWith("}", StringComparison.Ordinal))
@@ -2458,6 +2527,13 @@ namespace Heron.Revit.Addin
                                             HeronRollbackWitness.Watch watch)
         {
             if (group.Assimilate() != TransactionStatus.Committed) return "";
+
+            // D-157: THIS JOB'S ENTRY IS THE TOP OF THE UNDO LIST NOW. Said after
+            // Assimilate returned, so whatever Revit reported while assimilating
+            // was heard as this job's own (the witness is still armed).
+            try { if (watch != null) Undo.Kept(watch.Document, watch.Job, watch.Label, DateTime.Now); }
+            catch (Exception ex) { HeronApplication.Log("Undo guard missed a keep: " + ex.Message); }
+
             try
             {
                 return Witness.Assimilated(watch, Resolver(doc));
@@ -3451,6 +3527,13 @@ namespace Heron.Revit.Addin
         private static readonly HeronRollbackWitness Witness = new HeronRollbackWitness();
 
         /// <summary>
+        /// D-157's undo guard, held by RevitUndo - which names no compiler, so
+        /// a closing model or a sync can reach it without loading Roslyn - and
+        /// fed from here by the keep and the permanent listener.
+        /// </summary>
+        private static HeronUndoGuard Undo { get { return RevitUndo.Guard; } }
+
+        /// <summary>
         /// Start watching one write job: count the last kept job's elements as
         /// they stand now, and arm the listener for what this job adds. Opened
         /// just before the group starts, disposed when the job's request ends.
@@ -3480,16 +3563,9 @@ namespace Heron.Revit.Addin
         /// </summary>
         private static string WitnessKey(Document doc)
         {
-            if (doc == null) return null;
-
-            string guid = null;
-            try { guid = RevitOperations.CreationGuid(doc); } catch { }
-            var path = "";
-            try { path = doc.PathName ?? ""; } catch { }
-            var title = "";
-            try { title = doc.Title ?? ""; } catch { }
-
-            return (guid ?? "") + "|" + path + "|" + title;
+            // ONE KEY FOR BOTH WATCHERS: the undo guard (D-157) keys the same
+            // models, and is told by HeronApplication without naming this class.
+            return RevitUndo.KeyOf(doc);
         }
 
         /// <summary>
@@ -3543,6 +3619,12 @@ namespace Heron.Revit.Addin
         {
             try
             {
+                // D-157: EVERY CHANGE TO A MODEL WHERE HERON KEPT ONE, heard
+                // before the witness's own early return - a Ctrl+Z or the
+                // modeller's own edit between two jobs is exactly what the undo
+                // guard is for. One dictionary test when Heron has kept nothing.
+                if (Undo.Any) HearForUndo(e);
+
                 var armed = Witness.Armed;
                 if (armed == null && !Witness.Any) return;
 
@@ -3584,6 +3666,38 @@ namespace Heron.Revit.Addin
             catch (Exception ex)
             {
                 HeronApplication.Log("Rollback watch missed a change: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// One DocumentChanged, told to the undo guard. A commit while Heron's
+        /// own job is armed in the same model is the job's own - inside its
+        /// group - and covers nothing. Nothing escapes into Revit's event.
+        /// </summary>
+        private static void HearForUndo(Autodesk.Revit.DB.Events.DocumentChangedEventArgs e)
+        {
+            try
+            {
+                var key = WitnessKey(e.GetDocument());
+                var armed = Witness.Armed;
+                var ours = armed != null && armed.Document == key;
+                var names = e.GetTransactionNames();
+                switch (e.Operation)
+                {
+                    case Autodesk.Revit.DB.Events.UndoOperation.TransactionCommitted:
+                        Undo.Committed(key, names, ours);
+                        break;
+                    case Autodesk.Revit.DB.Events.UndoOperation.TransactionUndone:
+                        Undo.UndoneIn(key, names);
+                        break;
+                    case Autodesk.Revit.DB.Events.UndoOperation.TransactionRedone:
+                        Undo.RedoneIn(key, names);
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                HeronApplication.Log("Undo guard missed a change: " + ex.Message);
             }
         }
 

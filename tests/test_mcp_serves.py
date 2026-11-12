@@ -352,7 +352,9 @@ async def exercise(server):
         "revit_show": ["capability", "values", "expect_from", "request"],
         "revit_isolate_temporary": ["ids", "category"],
         "revit_reset_temporary": [],
-        "revit_change": ["capability", "values", "expect_from", "request"],
+        "revit_undo_last": [],
+        # `dry_run` since D-155: the run rolled back, asked for from the chat.
+        "revit_change": ["capability", "values", "expect_from", "request", "dry_run"],
         "heron_hvac": ["calculation", "inputs"],
         "heron_fire": ["calculation", "inputs"],
         "heron_earlier_answers": ["use"],
@@ -1098,6 +1100,26 @@ async def exercise_show(module):
         said = await call("revit_isolate_temporary", {"category": "ducts"})
         check("cannot hide or isolate temporarily" in said,
               "and the add-in's refusal reaches the chat in its own words")
+
+        # D-157: REVIT'S OWN UNDO, SENT ONCE - never retried on a lost answer,
+        # since a second Undo could take something that is not Heron's.
+        revit.asked[:] = []
+        revit.reply = {"ok": True, "sent": True, "undoing": "rename-views-by-level",
+                       "document": "Project1", "projectKey": "key-1",
+                       "said": "Revit's own Undo was sent for 'rename-views-by-level'."}
+        said = await call("revit_undo_last", {})
+        op, args, idempotent = revit.asked[-1] if revit.asked else (None, {}, None)
+        check(op == "undo_last" and args.get("expectProject") == "key-1" and idempotent is False,
+              "revit_undo_last sends undo_last with the pin, never safe to resend - found "
+              "%r %r %r" % (op, args, idempotent))
+        check("Undo was sent for 'rename-views-by-level'" in said,
+              "and says, in the add-in's words, that Undo was SENT")
+        revit.reply = {"ok": False, "error": "undo_refused",
+                       "message": "Heron's last change, 'x' at 14:32, is no longer the top of "
+                                  "Revit's undo list - 'Move' was done after it. Nothing was undone."}
+        said = await call("revit_undo_last", {})
+        check("'Move' was done after it" in said and "Nothing was undone" in said,
+              "and a refusal - something on top of Heron's change - reaches the chat whole")
     finally:
         del module.binding.resolve
         module.pinned.forget()
@@ -1597,6 +1619,68 @@ async def exercise_change_report(module):
         check("NOTHING WAS KEPT. ... rolled back" in rolled,
               "a rollback is printed whole, inside a batch or not")
 
+        # A DRY RUN (D-155): the same request with NO `apply`, which the add-in
+        # reads as run-and-roll-back (D-55). The chat is told nothing was kept
+        # and how to keep it in this tool's own words, and a kept call after
+        # it still sends `apply`.
+        sent = len(revit.asked)
+        tried = await call("revit_change", dict(asked, dry_run=True))
+        op, args, idempotent = revit.asked[-1] if len(revit.asked) > sent else (None, {}, None)
+        check(op == "run_fragment_write" and "apply" not in args
+              and args.get("source") and idempotent is False,
+              "a dry run is sent as run_fragment_write with NO apply - found %r, apply=%r"
+              % (op, args.get("apply")))
+        check(tried.startswith("DRY RUN: %s was tried in Panel and rolled back." % capability)
+              and "NOTHING WAS KEPT. ... rolled back" in tried,
+              "and its reply opens by saying so, with the add-in's rollback verdict whole")
+        check("  changed: 2 added (Generic Models 1, Lines 1)" in tried,
+              "and still says what Revit counted, which is what a dry run is for")
+        check("call revit_change again without dry_run" in tried
+              and "only when the user says to" in tried,
+              "and says how to keep it, and that only the user decides")
+        sent = len(revit.asked)
+        await call("revit_change", asked)
+        check(len(revit.asked) > sent and revit.asked[-1][1].get("apply") == "true",
+              "the call after a dry run, without the flag, asks to keep as before")
+
+        # D-156: THE ADD-IN'S READ-BACK IS PRINTED UNDER THE COUNTS IT EXPLAINS.
+        revit.reply = dict(kept, readBack={
+            "mode": "dryRun", "changed": 2, "read": 2, "withDifference": 1,
+            "noValueChanged": 1, "notRead": 0, "elementsMore": 0,
+            "elements": [{"id": "101", "category": "Generic Models", "valuesMore": 0,
+                          "values": [{"name": "Height", "before": "600 mm",
+                                      "after": "900 mm"}]}]})
+        backed = await call("revit_change", dict(asked, dry_run=True))
+        check('101 Generic Models: Height "600 mm" -> "900 mm"' in backed
+              and backed.find("  changed:") < backed.find("before -> after"),
+              "a reply carrying a read-back prints each value old -> new, under the counts")
+        revit.reply = kept
+
+        # NOT FOR A PUBLISH OR ADMIN JOB: an export or a save is not taken back
+        # by a rollback, so nothing is sent at all.
+        outward = None
+        for folder in sorted(os.listdir(folder_root)):
+            card = os.path.join(folder_root, folder, "fragment.yaml")
+            if not os.path.isfile(card):
+                continue
+            seen = {}
+            with io.open(card, encoding="utf-8", errors="replace") as fh:
+                for line in fh:
+                    for key in ("capability", "risk", "heron-status"):
+                        if line.startswith(key + ":"):
+                            seen[key] = line.split(":", 1)[1].strip().strip("\"'")
+            if seen.get("risk") in ("PUBLISH", "ADMIN") and seen.get("heron-status") == "PROVEN":
+                outward = seen.get("capability")
+                break
+        check(outward is not None, "a PROVEN Publish or Admin capability is there to try")
+        if outward is not None:
+            sent = len(revit.asked)
+            refused = await call("revit_change", {"capability": outward, "dry_run": True})
+            check(len(revit.asked) == sent and "dry run cannot take one back" in refused
+                  and "Nothing has been sent to Revit" in refused,
+                  "a dry run of a Publish or Admin job (%s) is refused, and nothing "
+                  "reaches Revit - found %r" % (outward, refused[:90]))
+
         # THE MODELLER PRESSED KEEP IN REVIT (5b-1093): the add-in's `asking`
         # sentence reaches the chat on each reply, beside whichever verdict.
         said = "You were asked in Revit and pressed KEEP after seeing the result."
@@ -1713,6 +1797,8 @@ async def exercise_single_purpose(module, server, newest):
              ("revit_view_image", {}),
              ("revit_isolate_temporary", {"category": "ducts"}),
              ("revit_reset_temporary", {}),
+             # D-157. One request, the pin sent and checked.
+             ("revit_undo_last", {}),
              # D-141. One request and no pin: handing a model back reads and
              # changes none, so neither the model's name nor the pin is its.
              ("revit_release", {}))

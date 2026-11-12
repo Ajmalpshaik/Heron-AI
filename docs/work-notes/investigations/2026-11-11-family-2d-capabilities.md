@@ -200,3 +200,8 @@ followed Length 900 and 300, the head's corners staying joined; NC1 and all thre
 read back by `REPORT_FAMILY_FORMS` "2d", which also covers Group ND's lock rows on 2024. The "control" line
 followed too, through Revit's Automatic Sketch Dimensions - no control at all (row 5b-1579). Still owed: NC6 by
 hand, Revit 2020 for the arc centre, Revit 2025 to 2027.
+
+**Later the same day:** the arc-centre lock was proved on Revit 2020 too (a `proof.releases` entry signed by
+Ajmal PS, Group NQ NQ7-NQ8), and a closed circle drawn by hand locked by its centre and followed on 2024 (NQ5). What
+is left of this job: NC6 by hand, and Revit 2026 and 2027 for the eleven cards (Revit 2025 is not installed on the
+owner's PC).

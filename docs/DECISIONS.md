@@ -223,6 +223,9 @@ an edit.
 | [D-152](#d-152--a-qa-checklist-is-saved-checks-in-the-modellers-words-each-one-read-with-a-pass-rule-run-in-one-go-from-the-chat-or-the-companion) | A QA checklist is saved checks in the modeller's words, each one read with a pass rule, run in one go from the chat or the Companion | ⏳ Proposed · 2026-11-08 |
 | [D-153](#d-153--off-windows-the-library-only-server-keeps-its-index-in-a-folder-of-its-own-when-nobody-named-one) | Off Windows, the library-only server keeps its index in a folder of its own when nobody named one | 🕐 Proposed - **owner has not read this back** |
 | [D-154](#d-154--an-agent-is-retired-when-nothing-calls-it-and-a-named-thing-already-does-its-job-under-the-owners-name-with-its-row-and-its-file-kept) | An agent is retired when nothing calls it and a named thing already does its job, under the owner's name, with its row and its file kept | ⏳ Proposed · 2026-11-11 |
+| [D-155](#d-155--a-chat-can-ask-for-a-change-as-a-dry-run-the-run-itself-rolled-back-with-nothing-kept) | A chat can ask for a change as a dry run: the run itself, rolled back, with nothing kept | ✅ Accepted · 2026-11-12 |
+| [D-156](#d-156--a-write-says-element-by-element-which-value-went-from-what-to-what) | A write says, element by element, which value went from what to what | ✅ Accepted · 2026-11-12 |
+| [D-157](#d-157--heron-can-undo-its-own-last-change-with-revits-own-undo-only-while-that-change-is-still-on-top) | Heron can undo its own last change, with Revit's own Undo, only while that change is still on top | ✅ Accepted · 2026-11-12 |
 
 ## Format
 
@@ -1348,3 +1351,28 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`28-agent-registry.md`](28-agent-registry.md) · [`heron_retirement.py`](../brain/heron_retirement.py) · [`tools/agent-count.py`](../tools/agent-count.py), which would need a fifth state before the first retirement · every agent the table below names
 
 **Full record:** [`decisions/D-154.md`](decisions/D-154.md)
+
+## D-155 — A chat can ask for a change as a dry run: the run itself, rolled back, with nothing kept
+
+**Status:** Accepted · **Date:** 2026-11-12 · **Accepted:** Ajmal PS, 2026-11-12, in conversation: *"do it"*
+**Keeps:** [D-55](decisions/D-55.md) · [D-117](decisions/D-117.md) · [D-126](decisions/D-126.md) · [Golden Rule 19](14-golden-rules.md)
+**Affects:** [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (`revit_change`)
+
+**Full record:** [`decisions/D-155.md`](decisions/D-155.md)
+
+## D-156 — A write says, element by element, which value went from what to what
+
+**Status:** Accepted · **Date:** 2026-11-12 · **Accepted:** Ajmal PS, 2026-11-12, in conversation: *"now do the before/after read-back"*
+**Keeps:** [D-55](decisions/D-55.md) · [D-126](decisions/D-126.md) · [D-155](decisions/D-155.md)
+**Affects:** [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs) · [`HeronReadBack.cs`](../revit/Heron.Revit.Addin/HeronReadBack.cs) · [`RevitReadBack.cs`](../revit/Heron.Revit.Addin/RevitReadBack.cs) · [`heron_run_records.py`](../mcp/server/heron_run_records.py)
+
+**Full record:** [`decisions/D-156.md`](decisions/D-156.md)
+
+## D-157 — Heron can undo its own last change, with Revit's own Undo, only while that change is still on top
+
+**Status:** Accepted · **Date:** 2026-11-12 · **Accepted:** Ajmal PS, 2026-11-12, in conversation: *"now do the safe undo last"*
+**Acts on, in part:** [proposal F29](proposals/f29.md)
+**Keeps:** Article 8 · [Golden Rule 16](14-golden-rules.md) · [D-19](decisions/D-19.md) · [D-126](decisions/D-126.md)
+**Affects:** [`HeronUndoGuard.cs`](../revit/Heron.Revit.Addin/HeronUndoGuard.cs) · [`RevitUndo.cs`](../revit/Heron.Revit.Addin/RevitUndo.cs) · [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (`revit_undo_last`)
+
+**Full record:** [`decisions/D-157.md`](decisions/D-157.md)

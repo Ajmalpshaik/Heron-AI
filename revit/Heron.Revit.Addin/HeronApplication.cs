@@ -253,6 +253,10 @@ namespace Heron.Revit.Addin
                 // moment no request is running. See RevitFragment.Listen.
                 RevitFragment.Listen(application.ControlledApplication);
 
+                // D-157: A SYNC WITH CENTRAL CLEARS REVIT'S UNDO LIST, so Heron's
+                // last change can no longer be undone by Undo - the guard hears it.
+                application.ControlledApplication.DocumentSynchronizedWithCentral += OnSynchronized;
+
                 // A REVIT DIALOG THAT OPENS INSIDE A JOB IS ANSWERED, not left
                 // for a modeller who is not there - FRAGMENT-ISSUES 5b row 300.
                 // Inert until the dispatcher arms it around a job, so a dialog
@@ -379,6 +383,7 @@ namespace Heron.Revit.Addin
                 application.Idling -= OnIdling;
                 HeronRunGuard.Detach(application);
                 RevitFragment.StopListening(application.ControlledApplication);
+                application.ControlledApplication.DocumentSynchronizedWithCentral -= OnSynchronized;
                 HeronDialogWatch.Detach(application);
                 HeronLiveState.Detach(application);
 
@@ -810,6 +815,10 @@ namespace Heron.Revit.Addin
                 Log("Could not free a closing model's hold: " + ex.Message);
             }
 
+            // NOR WHAT HERON KEPT IN IT (D-157): a model opened again has an
+            // undo list of its own, and nothing of Heron's is on it.
+            if (e != null && e.Document != null) RevitUndo.Forget(e.Document);
+
             try
             {
                 var dispatcher = Dispatcher;
@@ -822,6 +831,15 @@ namespace Heron.Revit.Addin
             {
                 Log("Could not clear the model name: " + ex.Message);
             }
+        }
+
+        /// <summary>
+        /// Revit's own thread: a model was synchronized with central, which
+        /// clears its undo list - see HeronUndoGuard.
+        /// </summary>
+        private static void OnSynchronized(object sender, DocumentSynchronizedWithCentralEventArgs e)
+        {
+            if (e != null && e.Document != null) RevitUndo.Synced(e.Document);
         }
 
         internal static void Log(string message)

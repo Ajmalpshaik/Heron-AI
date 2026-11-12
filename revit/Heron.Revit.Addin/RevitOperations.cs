@@ -284,6 +284,12 @@ namespace Heron.Revit.Addin
                 case "reset_temporary":
                     return RevitTemporaryView.Reset(app, Json.ReadString(request, "expectProject"));
 
+                // D-157: REVIT'S OWN UNDO, sent only while Heron's last kept
+                // change is the top of the undo list. No transaction: a
+                // command is posted, and Revit runs it after this returns.
+                case "undo_last":
+                    return RevitUndo.Last(app, Json.ReadString(request, "expectProject"));
+
                 // THE WRITE PATH FOR FRAGMENTS. It stays in RevitFragment
                 // rather than moving to RevitWrite.cs, and that is the one
                 // place this repository's "all writes in one file" rule is
