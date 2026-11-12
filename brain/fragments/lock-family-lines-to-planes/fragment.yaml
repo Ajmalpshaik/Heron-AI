@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "lock a 2D family's lines and filled region edges to named pl
 kind: action
 domain: revit.families
 capability: LOCK_FAMILY_LINES_TO_PLANES
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -26,6 +26,14 @@ purpose: >
   line is locked to it, so the end goes where the plane goes. That is what
   makes a SLANTED line - an arrow head's edge - follow: its ends are locked
   to the head-base and tip planes, and it re-draws between them.
+
+  **AN ARC'S CENTRE (version 3, 2026-11-12).** An arc - or a whole circle -
+  drawn as a detail or symbolic line whose CENTRE lies on a plane named is
+  locked there by its centre, so a symbol's circle stays on its planes when a
+  size moves them; LABEL_FAMILY_RADIUS labels how big it is. Revit gives no
+  centre to lock while the arc's Center Mark is hidden, so the mark is
+  switched on first and said. A whole circle has no ends and is taken for its
+  centre alone; an ellipse or a spline is refused.
 
   **A FILLED REGION'S CORNERS ONCE.** Its edges are joined at the corners, so
   each corner is locked once per plane, and not to a plane an edge through it
@@ -93,6 +101,54 @@ contract:
     - name: findings
       type: IList<string>
 
+proof:
+  date: '2026-11-12'
+  by: Ajmal PS
+  model: R24 Arc Lock (1,729 elements), Revit 2024, session 13164
+  positive_case: 'run ONCE on the live model through the Keep or Discard box in Revit (D-119)
+    on 2026-11-12; the modeller saw the result in Revit and pressed Keep, and Revit kept it
+    as one undo step. returned at Func`2, centreMarks 0, datums 6 item(s) [(Autodesk.Revit.DB.ReferencePlane,
+    Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen...,
+    (Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen..., ...], ends (300, 100)
+    mm to (100, 100) mm; (250, 100) mm to (150, 100) mm; (150, 100) mm to (250, 100) mm, exactly
+    9.84251968503937E-10, findings 3 item(s) [Locked 12 line(s) and end(s): the end (300,
+    100) mm of the d..., Read back - every line runs: (300, 100) mm to (100, 100) mm;...,
+    Locked is not yet PROVED to follow the planes. Change the le...], fineMm Func`2, freeCorners
+    0 item(s), freeEnds 0, halfMillimetre 0.00164041994750656, invariant CultureInfo, jobs
+    12 item(s) [((Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Refere..., ((Autodesk.Revit.DB.ReferencePlane,
+    Autodesk.Revit.DB.Refere..., ((Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Refere...,
+    ...], locked 12 item(s) [the end (300, 100) mm of the detail line from (300, 100) mm ...,
+    the end (100, 100) mm of the detail line from (300, 100) mm ..., the end (250, 100) mm
+    of the detail line from (250, 100) mm ..., ...], mm Func`2, notAFamily false, off Func`3,
+    ownName Func`2, pieces 3 item(s) [(the detail line from (300, 100) mm to (100, 100) mm,
+    Autode..., (the detail line from (250, 100) mm to (150, 100) mm, Autode..., (the detail
+    line from (150, 100) mm to (250, 100) mm, Autode...], problems 0 item(s), refused (null),
+    square 1E-06, targets 3 item(s) [Line, Line, Line], wantedPlanes 2 item(s) [(Autodesk.Revit.DB.ReferencePlane,
+    Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen...].
+    inputs came lines as given; planes as given (2). on R24 Arc Lock'
+  negative_case: 'run with lines=31dbee95-85f1-485d-9ef5-f4a237b7cd0e-000008f7, planes=Spare
+    instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    at Func`2, centreMarks 0, datums 6 item(s) [(Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen...,
+    (Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.ReferencePlane,
+    Autodesk.Revit.DB.Referen..., ...], ends , exactly 9.84251968503937E-10, findings 1 item(s)
+    [Nothing was locked. Nothing lies along "Spare" and nothing e...], fineMm Func`2, freeCorners
+    0 item(s), freeEnds 2, halfMillimetre 0.00164041994750656, invariant CultureInfo, jobs
+    0 item(s), locked 0 item(s), mm Func`2, notAFamily false, off Func`3, ownName Func`2,
+    pieces 1 item(s) [(the detail line from (400, 100) mm to (200, 100) mm, Autode...], problems
+    1 item(s) [Nothing lies along "Spare" and nothing ends on it. Nearest: ...], refused Nothing
+    was locked. Nothing lies along "Spare" and nothing ends on it. Nearest: an end of the
+    detail line from (400, 100) mm to (200, 100) mm 100 mm off; the centre of the detail line
+    from (400, 100) mm to (200, 100) mm 200 mm off; an end of the detail line from (400, 100)
+    mm to (200, 100) mm 300 mm off. A lock never moves what it locks - move the plane, or
+    the line, onto the other first., square 1E-06, targets 1 item(s) [Line], wantedPlanes
+    1 item(s) [(Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen...]. inputs came
+    lines as given; planes as given (1). on R24 Arc Lock'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 41c881a033aee65d
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -109,6 +165,11 @@ compatibility-note: >
   `Sweep.PathSketch`, `SweptBlend.PathSketch`, `Blend.BottomSketch` /
   `TopSketch` - the same 2020 through 2027, as LOCK_FORM_SKETCH_TO_PLANES
   reads them. Compiled for every release on 2026-11-11.
+  Version 3 also reads `CurveElement.CenterPointReference`, `Arc.Center` and
+  the `ARC_CENTER_MARK` parameter - the same 2020 through 2027, as
+  LOCK_FORM_SKETCH_TO_PLANES reads the centre of a form's circle. Compiled for
+  2020, 2024 and 2027 on 2026-11-12, and RUN on Revit 2024 the same day (Group
+  NQ) - proved and signed by Ajmal PS. Revit 2020 and 2025 to 2027 not run.
 
 # VERSION 1, 2026-11-11 (row 5b-1493). Asked for a detail item's flow arrow:
 # Autodesk's sample supply diffuser carries arrows that grow with its size, and
@@ -143,6 +204,15 @@ compatibility-note: >
 # that is not a detail or symbolic line is now refused as a MODEL line, never
 # as a form's sketch line. NC1 and NC2 are to be run again on this version.
 #
+# VERSION 3, 2026-11-12 (row 5b-1576). AN ARC'S CENTRE. The gap table's row
+# 3e (docs/work-notes/investigations/2026-11-11-family-2d-capabilities.md): a
+# symbol's circle or arc could be drawn and its radius labelled, but nothing
+# kept its centre on the planes a size moves. The owner asked for it on
+# 2026-11-12 ("make the arc centre lock tool"). Widened here, not a new card:
+# locking a 2D line to planes is this card's job, and LOCK_FORM_SKETCH_TO_PLANES
+# (PROVEN) already locks a FORM's circle centre the same way. NEEDS-CHECKING
+# Group NQ.
+#
 # ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
 #   "lock the arrow's lines to the reference planes"   -> here
@@ -150,6 +220,7 @@ compatibility-note: >
 #                                                         LABEL_FAMILY_DIMENSION
 #                                                         labels the planes
 #   "lock the ends of these detail lines to the planes"-> here
+#   "lock the circle's centre to the reference planes" -> here (version 3)
 #   "draw the arrow's lines and lock them"             -> DRAW_FAMILY_DETAIL_LINES
 #                                                         lockToPlanes - new lines
 #                                                         along their planes
@@ -164,3 +235,5 @@ utterances:
   - lock the filled region's edges to the reference planes
   - make the arrow head stretch with the Length parameter
   - align and lock the detail lines and the filled region to the planes
+  # VERSION 3 (2026-11-12).
+  - lock the centre of this arc to the reference planes
