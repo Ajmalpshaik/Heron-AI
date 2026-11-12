@@ -771,6 +771,37 @@ def open_model_named(bridge):
     return title if isinstance(title, str) and title.strip() else None
 
 
+def ask_to_keep_state(bridge):
+    """
+    Whether this Revit asks Keep or Discard before it keeps a change from a
+    chat - the owner's Ask to Keep switch (D-126, D-138), as that Revit's
+    add-in read it from its own settings at the moment of this call. True,
+    False, or None when the add-in does not say.
+
+    From `info`, lease-exempt, so asking never claims the Revit.
+
+    NONE IS NOT OFF. Off is the switch's default, and a default is exactly
+    what must not be handed back for an answer nobody gave: an add-in from
+    before 2026-11-12 sends no `askToKeep`, and a reply that is missing,
+    refused, or carries anything but a JSON true or false is not a statement
+    either. The caller then says this Revit's Heron does not say.
+
+    READ OFF A REPLY, NEVER PUT IN A REQUEST. Nothing a chat sends may turn
+    the question off (Golden Rule 19, D-126 item 5), and the add-in reads no
+    such field. tests/test_ask_to_keep_health.py holds that the read below
+    is the only place the client or the server names it.
+
+    AND NEVER THIS SIDE'S OWN COPY OF heron.config. asks_before_keeping in
+    heron_config reads that, and on a PC whose Claude app keeps a private
+    copy of the settings folder it is not the file Revit decides by (Q-70).
+    """
+    reply = bridge.request("info")
+    if not isinstance(reply, dict) or not reply.get("ok"):
+        return None
+    said = reply.get("askToKeep")
+    return said if isinstance(said, bool) else None
+
+
 def refuse_off_windows():
     """
     True when this machine cannot reach a bridge, having said so.

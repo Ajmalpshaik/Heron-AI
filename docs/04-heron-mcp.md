@@ -127,6 +127,22 @@ A DRAFT's one run is always asked. A publish is asked whenever *Ask to Keep* is 
 > ([NEEDS-CHECKING Group ET](needs-checking/group-et.md), rows ET2, ET3, ET5, ET11, ET13). The *Ask to
 > Keep* button and the grant have **not** run in Revit ([Group HG](needs-checking/group-hg.md)).
 
+> **As built (2026-11-12) - a chat can ask which it is, before the change.** The switch is read inside the
+> add-in and was sent to nobody, so a chat learned whether Revit asked only afterwards, from the verdict.
+> The add-in's lease-exempt `info` answer ([`BridgeServer.cs`](../revit/Heron.Bridge/BridgeServer.cs)) now
+> carries `askToKeep` - `HeronPermissions.AsksBeforeKeeping`, read at the moment of the call - and
+> `revit_health` prints one line under each connected Revit: *Ask to Keep is ON* (Revit shows a Keep or
+> Discard box), *Ask to Keep is off* (kept at once, Undo takes it back, a deletion is still asked about), or
+> *this Revit's Heron does not say* for an add-in that sends no such field - never the default
+> ([`heron_health.py`](../mcp/server/heron_health.py) `ask_to_keep_line`). It is said and never set: no
+> request carries it, and the executor still reads the switch for itself when it keeps. An optional field,
+> so the protocol number stands. It is the switch alone - a job's *keep the rest* grant is not reported.
+> `revit_health`'s description does not mention the line: the six always-loaded descriptions are at their
+> budget (§8.8), and the methods in `brain/skills/` are not reworded yet. Its write-gate line is still read
+> from the server's own copy of the settings ([Q-70](open-questions/tier-2.md), open). Held without Revit by
+> [`tests/test_ask_to_keep_health.py`](../tests/test_ask_to_keep_health.py); **built, not yet run in Revit**
+> ([Group NP](needs-checking/group-np.md)).
+
 ---
 
 ## 5. **[NOTE]** Version compatibility triangle

@@ -1779,6 +1779,96 @@ async def exercise_single_purpose(module, server, newest):
     check(got == ["failed"] and said.startswith("Heron could not read its own session list"),
           "revit_health: a session list it could not read is 'failed' - found %r" % got)
 
+    # AND IT SAYS, FOR EACH REVIT, WHETHER THAT REVIT WILL ASK KEEP OR DISCARD
+    # (added 2026-11-12). The owner's Ask to Keep switch is read in the add-in
+    # and was sent to nobody, so a chat could not tell the modeller beforehand
+    # which it would be. Three Revits: one whose `info` says the switch is on -
+    # the one this chat holds - one that says off, and one running an older
+    # add-in that says nothing. The sentences themselves are held, with no SDK,
+    # by tests/test_ask_to_keep_health.py; this is the real tool saying them.
+    class Says(object):
+        """A connected Revit whose `info` answers as its add-in would."""
+
+        def __init__(self, pid, release, info):
+            self.pid, self.revit_version, self.info = pid, release, info
+            self.asked = []
+
+        def request(self, op, op_args=None, **_ignored):
+            self.asked.append(op)
+            if op == "info":
+                return dict(self.info, ok=True, inUse=False, mine=False,
+                            leaseSecondsRemaining=0)
+            return {"ok": True, "document": "Project1", "count": 12,
+                    "projectKey": "key-1"}
+
+        def close(self):
+            pass
+
+    asks = Says(5001, "2026", {"askToKeep": True})
+    keeps = Says(5002, "2024", {"askToKeep": False})
+    older = Says(5003, "2020", {})
+    module.binding.forget()
+    module.pinned.forget()
+    module.binding.sessions = lambda: ([asks], [], [])
+    module.bridge.discover = lambda: ([asks, keeps, older], [], [], [])
+    result = None
+    try:
+        try:
+            module.binding.resolve()
+        except Exception:                                       # noqa: BLE001
+            pass
+        for session in (asks, keeps, older):
+            session.asked[:] = []
+        before = newest()
+        try:
+            result = await server.call_tool("revit_health", {})
+            said = text_of(result) or ""
+        except Exception as exc:                                # noqa: BLE001
+            said = "(revit_health could not be called: %s: %s)" % (type(exc).__name__, exc)
+        got = [i.get("outcome") for i in activity.since(before)
+               if i.get("tool") == "revit_health"]
+    finally:
+        module.bridge.discover = real_discover
+        del module.binding.sessions
+        module.binding.forget()
+        module.pinned.forget()
+
+    listed = said.splitlines()
+
+    def under(pid):
+        """The line directly under the numbered line that names this session."""
+        for at, line in enumerate(listed):
+            if "session %s" % pid in line and line.lstrip()[:1].isdigit():
+                return listed[at + 1] if at + 1 < len(listed) else ""
+        return "(session %s is not listed)" % pid
+
+    check("Ask to Keep is ON" in under(5001) and "Keep or Discard" in under(5001),
+          "revit_health: under a Revit whose add-in says the switch is on, that Revit "
+          "will ask Keep or Discard - found %r" % under(5001)[:90])
+    check("Ask to Keep is off" in under(5002) and "kept at once" in under(5002),
+          "revit_health: under one that says off, a change is kept at once - found %r"
+          % under(5002)[:90])
+    check("does not say" in under(5003) and "is ON" not in under(5003)
+          and "is off" not in under(5003) and "kept at once" not in under(5003),
+          "revit_health: under an older add-in, which sends nothing, it does not say - "
+          "and no default is guessed - found %r" % under(5003)[:90])
+    check(said.count("Ask to Keep") == 3,
+          "revit_health: one such line for each connected Revit, and no more - found %d"
+          % said.count("Ask to Keep"))
+    check(set(keeps.asked) == set(["info"]) and set(older.asked) == set(["info"])
+          and "info" in asks.asked,
+          "revit_health: each was asked through the lease-exempt `info` - the two this "
+          "chat does not hold were sent nothing else: %r %r %r"
+          % (asks.asked, keeps.asked, older.asked))
+    check(got == ["ok"], "revit_health: and the report is still 'ok' - found %r" % got)
+    structured = (result[1] if isinstance(result, tuple) and len(result) == 2
+                  else getattr(result, "structured_content", None)
+                  or getattr(result, "structuredContent", None))
+    check(isinstance(structured, dict) and structured.get("result") == said
+          and "Ask to Keep" in said and "outcome" not in structured,
+          "revit_health: the structured content is the same reply whole, those lines "
+          "included, and still carries no `outcome` - it is not a door")
+
     revit = StandIn(None)
     module.binding.resolve = lambda: revit
     module.pinned.forget()

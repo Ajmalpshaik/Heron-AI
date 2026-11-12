@@ -191,3 +191,58 @@ def assess(live=None, starting=None, mismatched=None, config_problems=None,
             "closed - Heron cannot change the model"))
 
     return Health(components)
+
+
+# WHETHER A REVIT WILL ASK KEEP OR DISCARD, IN ONE LINE A MODELLER CAN READ.
+#
+# The owner's Ask to Keep switch (D-126, D-138, D-150) decides whether a change
+# from a chat is shown in a Keep or Discard box or kept at once, and it is read
+# inside the add-in. Until 2026-11-12 the add-in told nobody, so a chat could
+# not say beforehand which it would be. The add-in's `info` now carries what
+# the switch says (heron_bridge_client.ask_to_keep_state), and revit_health
+# prints one of these three under each connected Revit.
+#
+# NOT A COMPONENT, AND NOT A STATE. Neither setting is a fault and neither is
+# Heron's to recommend: it is the owner's switch, said as it stands. And it is
+# one line per REVIT, where a component is one per Heron - two Revits on one PC
+# can run add-ins of different ages, and one of them may not say.
+#
+# EACH SAYS ONLY WHAT THE SWITCH DECIDES. On, the box's own third link can keep
+# the rest of one job unasked (D-138), so the line does not promise a box for
+# every change. Off, a change that deletes elements is still asked about, in a
+# box of its own (D-142), so the line does not promise that nothing is asked.
+# And neither says a change WILL be kept: whether the chat may change the model
+# at all is the Changes switch, which this line does not report.
+#
+# THE THIRD LINE IS FOR AN ANSWER NOBODY GAVE, and it never borrows the
+# default. An add-in from before this field sends nothing; "off" is what the
+# switch is when nobody has set it, which is a different fact from "this Revit
+# said off", and a chat told the wrong one tells a modeller the box will not
+# come while Revit is about to show it.
+ASK_TO_KEEP_ON = (
+    "Ask to Keep is ON in this Revit right now: after a change from the chat, Revit "
+    "shows a Keep or Discard box and keeps nothing until the modeller chooses Keep - "
+    "unless they chose in that box to keep the rest of the job without asking.")
+ASK_TO_KEEP_OFF = (
+    "Ask to Keep is off in this Revit right now: a change the chat is allowed to make "
+    "is kept at once, with no Keep or Discard box, and Revit's Undo takes it back in "
+    "one step. A change that deletes elements is still asked about in Revit first.")
+ASK_TO_KEEP_NOT_SAID = (
+    "Ask to Keep: this Revit's Heron does not say which way the switch is set - a "
+    "Heron add-in older than this chat's does not report it. Look in Revit, under "
+    "Heron > AI Bridge > Settings.")
+
+
+def ask_to_keep_line(asks):
+    """
+    The line for what one Revit said of its Ask to Keep switch: True, False,
+    or anything else - which is "it did not say", never a guess.
+
+    `is`, not `==`: 1 and 0 equal True and False in Python, and a reply that
+    carried a number carried no answer.
+    """
+    if asks is True:
+        return ASK_TO_KEEP_ON
+    if asks is False:
+        return ASK_TO_KEEP_OFF
+    return ASK_TO_KEEP_NOT_SAID
