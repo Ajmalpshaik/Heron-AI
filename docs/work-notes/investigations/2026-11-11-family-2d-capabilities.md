@@ -187,5 +187,11 @@ Run on the SAVED scratch family `%TEMP%\heron-work\rev2024\R24 Arc Lock.rfa` (Re
 back first, then KEPT by the owner through `try-once` - an arc and the two halves of a circle, 12 locks - and with
 "Arc X" moved 200 -> 300 every centre read back at (300, 100), radii unchanged, an unlocked shaft unmoved. The
 negative ("Spare") refused. Signed by Ajmal PS: PROVEN on Revit 2024. A closed circle is not run: Heron draws a
-circle as two half-arcs. Still owed: Group NC's re-run (along locks, a filled region's corners), Group ND's lock rows;
+circle as two half-arcs. Still owed then: Group NC's re-run, Group ND's lock rows;
 Revit 2025 to 2027 not run.
+
+**Group NC, Run 2 (Revit 2024, the same day):** the arrow's eight locks KEPT on the scratch family R24 Line Lock and
+followed Length 900 and 300, the head's corners staying joined; NC1 and all three NC3 refusals held. The locks were
+read back by `REPORT_FAMILY_FORMS` "2d", which also covers Group ND's lock rows on 2024. The "control" line
+followed too, through Revit's Automatic Sketch Dimensions - no control at all (row 5b-1579). Still owed: NC6 by
+hand, Revit 2020 for the arc centre, Revit 2025 to 2027.

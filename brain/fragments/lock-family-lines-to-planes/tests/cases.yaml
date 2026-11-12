@@ -36,9 +36,11 @@ positive:
       nothing new locked, every lock said as already there; ends read back
       "(0, 0) to (450, 0)" for the shaft and the head's corners at (450, 80),
       (900, 0), (450, -80) - the slanted edges re-drawn between them; Length
-      300 does the same at 150 / 300
-      - while a CONTROL detail line "path 0,-200; 300,-200", drawn beside it
-      and never locked, still reads (0, -200) to (300, -200) at Length 900
+      300 does the same at 150 / 300. NOT A CONTROL (row 5b-1579): a detail
+      line drawn beside it and never locked FOLLOWS too - Revit's own
+      Automatic Sketch Dimensions tie its ends to the nearest planes - so an
+      unlocked line moving is no evidence against the lock; the lock is read
+      back by REPORT_FAMILY_FORMS ("locked along", "locked at an end")
 
 
   # VERSION 3 (2026-11-12, row 5b-1576) - an arc's centre. Group NQ.
