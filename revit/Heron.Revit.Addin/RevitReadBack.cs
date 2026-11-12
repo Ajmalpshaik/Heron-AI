@@ -133,12 +133,12 @@ namespace Heron.Revit.Addin
             catch (Exception) { parameters = null; }
             if (parameters == null) return values;
 
-            // GATHERED WITH EACH PARAMETER'S OWN ID, AND ADDED IN THAT ORDER
-            // (HeronReadBack.Values.AddById). Two parameters may share a name -
-            // a built-in and a project parameter both called "Mark" - and the
-            // second is shown as "Mark (2)". Which one is second must be the
-            // same on both sides of the comparison, and the order ParameterSet
-            // hands them over in is not documented to be.
+            // GATHERED WITH EACH PARAMETER'S OWN ID, WHICH IS WHAT THE TWO SIDES
+            // ARE PAIRED BY (HeronReadBack.Values.AddById). Two parameters may
+            // share a name - a built-in and a project parameter both called
+            // "Mark" - the order ParameterSet hands them over in is not
+            // documented to be the same twice, and a type change alters which
+            // of them the element has at all. An id says which is which.
             var read = new List<HeronReadBack.ParameterRead>();
             foreach (Parameter parameter in parameters)
             {
@@ -155,17 +155,18 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
-        /// An id as a number to order by. Read from the id's own text, the
+        /// A parameter's id as a number. Read from the id's own text, the
         /// way every id here is: ElementId's integer member changed name and
         /// width at Revit 2024, and this add-in carries no version #if (D-05).
-        /// One that cannot be read sorts last, where its name still orders it.
+        /// One that cannot be read is HeronReadBack.NoId, and the rule says
+        /// what it does with a parameter it has no id to pair by.
         /// </summary>
         private static long Number(ElementId id)
         {
             long number;
             return id != null && long.TryParse(id.ToString(), NumberStyles.Integer,
                                                CultureInfo.InvariantCulture, out number)
-                ? number : long.MaxValue;
+                ? number : HeronReadBack.NoId;
         }
 
         /// <summary>A parameter as the modeller would read it, or its stored value.</summary>

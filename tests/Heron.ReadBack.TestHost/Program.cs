@@ -44,6 +44,33 @@ namespace Heron.ReadBack.TestHost
             return values;
         }
 
+        private static HeronReadBack.ParameterRead P(long id, string name, string value)
+        {
+            return new HeronReadBack.ParameterRead(id, name, value);
+        }
+
+        private static HeronReadBack.Values Read(params HeronReadBack.ParameterRead[] parameters)
+        {
+            var values = new HeronReadBack.Values("Ducts");
+            values.AddById(new List<HeronReadBack.ParameterRead>(parameters));
+            return values;
+        }
+
+        /// <summary>One element read twice, compared: "name: before -> after | ...", or "".</summary>
+        private static string Said(HeronReadBack.Values was, HeronReadBack.Values now)
+        {
+            var before = Side();
+            var after = Side();
+            before["8"] = was;
+            after["8"] = now;
+            var compared = HeronReadBack.Compare(HeronReadBack.DryRun, new List<string> { "8" }, before, after);
+            var said = new List<string>();
+            foreach (var row in compared.WithDifference)
+                foreach (var d in row.Differences)
+                    said.Add(d.Name + ": " + d.Before + " -> " + d.After);
+            return string.Join(" | ", said.ToArray());
+        }
+
         private static Dictionary<string, HeronReadBack.Values> Side()
         {
             return new Dictionary<string, HeronReadBack.Values>(StringComparer.Ordinal);
@@ -99,49 +126,80 @@ namespace Heron.ReadBack.TestHost
             // THE SAME ELEMENT, READ TWICE, ITS PARAMETERS HANDED OVER IN A
             // DIFFERENT ORDER EACH TIME. Only the project parameter "Mark"
             // (id 5001) changed; the built-in "Mark" (id -1001203) did not.
-            var readBefore = new HeronReadBack.Values("Ducts");
-            readBefore.AddById(new List<HeronReadBack.ParameterRead>
-            {
-                new HeronReadBack.ParameterRead(-1001203, "Mark", "A"),
-                new HeronReadBack.ParameterRead(5001, "Mark", "B"),
-                new HeronReadBack.ParameterRead(-1010106, "Comments", "same"),
-            });
-            var readAfter = new HeronReadBack.Values("Ducts");
-            readAfter.AddById(new List<HeronReadBack.ParameterRead>
-            {
-                new HeronReadBack.ParameterRead(-1010106, "Comments", "same"),
-                new HeronReadBack.ParameterRead(5001, "Mark", "B2"),
-                new HeronReadBack.ParameterRead(-1001203, "Mark", "A"),
-            });
-            before = Side();
-            before["8"] = readBefore;
-            after = Side();
-            after["8"] = readAfter;
-            var paired = HeronReadBack.Compare(HeronReadBack.DryRun, new List<string> { "8" }, before, after);
-            var pairs = paired.WithDifference.Count == 1 ? paired.WithDifference[0].Differences
-                                                         : new List<HeronReadBack.Difference>();
-            Check(pairs.Count == 1,
-                  "read in a different order on each side, ONE value differs - found " + pairs.Count);
-            Check(pairs.Count >= 1 && pairs[0].Name == "Mark (2)" && pairs[0].Before == "B"
-                  && pairs[0].After == "B2",
-                  "and it is the parameter with the higher id, 'Mark (2)', B -> B2 - never the "
-                  + "unchanged one's value shown against it");
-            string firstMark, secondMark;
-            readAfter.TryGet("Mark", out firstMark);
-            readAfter.TryGet("Mark (2)", out secondMark);
-            Check(firstMark == "A" && secondMark == "B2",
-                  "the lower id keeps the bare name on both sides, whichever was read first");
-            var tied = new HeronReadBack.Values(null);
-            tied.AddById(new List<HeronReadBack.ParameterRead>
-            {
-                new HeronReadBack.ParameterRead(7, "Zeta", "z"),
-                new HeronReadBack.ParameterRead(7, "Alpha", "a"),
-            });
-            Check(tied.Names.Count == 2 && tied.Names[0] == "Alpha" && tied.Names[1] == "Zeta",
-                  "two that claim one id are ordered by name, so the order is still not the read's");
+            var paired = Said(
+                Read(P(-1001203, "Mark", "A"), P(5001, "Mark", "B"), P(-1010106, "Comments", "same")),
+                Read(P(-1010106, "Comments", "same"), P(5001, "Mark", "B2"), P(-1001203, "Mark", "A")));
+            Check(paired == "Mark (id 5001): B -> B2",
+                  "read in a different order on each side, ONE value differs, and it is named by "
+                  + "its own id - found [" + paired + "]");
+
+            // THE SET OF SAME-NAMED PARAMETERS DIFFERS BETWEEN THE TWO READS -
+            // a type change. Pairing by ORDER after an id sort said the
+            // unchanged X(200) had gone from a to b (review, 2026-11-12).
+            var fewer = Said(Read(P(100, "X", "a"), P(200, "X", "b")), Read(P(200, "X", "b")));
+            Check(fewer == "X (id 100): a -> (none)",
+                  "one of two same-named parameters gone after: THAT one is said as removed, and "
+                  + "the one that stayed shows no change - found [" + fewer + "]");
+            var more = Said(Read(P(300, "X", "keep")), Read(P(150, "X", "other"), P(300, "X", "keep")));
+            Check(more == "X (id 150): (none) -> other",
+                  "a same-named parameter with a LOWER id appearing after is said as added, never "
+                  + "as a change of the one already there - found [" + more + "]");
+            var typeChange = Said(
+                Read(P(-1002050, "Type", "Rect 400x200"), P(7001, "Width", "400 mm"), P(7002, "Depth", "200 mm")),
+                Read(P(-1002050, "Type", "Round 300"), P(8001, "Diameter", "300 mm")));
+            Check(typeChange == "Type: Rect 400x200 -> Round 300 | Diameter: (none) -> 300 mm | "
+                                + "Width: 400 mm -> (none) | Depth: 200 mm -> (none)",
+                  "a type change: the type's value changed, and each parameter the old type had "
+                  + "and the new one has is said as removed or added - found [" + typeChange + "]");
+
+            // A NAME THAT ALREADY ENDS IN "(2)" IS A PARAMETER'S OWN NAME, not
+            // the mark of a second one.
+            var literal = Said(
+                Read(P(1, "Mark", "A"), P(2, "Mark (2)", "L"), P(3, "Mark", "B")),
+                Read(P(1, "Mark", "A"), P(2, "Mark (2)", "L"), P(3, "Mark", "B2")));
+            Check(literal == "Mark (id 3): B -> B2",
+                  "a parameter really named 'Mark (2)' beside two Marks is not confused with "
+                  + "either - found [" + literal + "]");
+
+            // AN ID THAT COULD NOT BE READ HAS NOTHING TO PAIR BY. Two such
+            // with one name are compared as a set of values, so the same two
+            // values in another order are not a change.
+            var unread = Said(
+                Read(P(HeronReadBack.NoId, "Mark", "A"), P(HeronReadBack.NoId, "Mark", "B")),
+                Read(P(HeronReadBack.NoId, "Mark", "B"), P(HeronReadBack.NoId, "Mark", "A")));
+            Check(unread == "",
+                  "two parameters whose ids could not be read, the same two values in another "
+                  + "order: no difference - found [" + unread + "]");
+            var unreadChanged = Said(
+                Read(P(HeronReadBack.NoId, "Mark", "A"), P(HeronReadBack.NoId, "Mark", "B")),
+                Read(P(HeronReadBack.NoId, "Mark", "C"), P(HeronReadBack.NoId, "Mark", "A")));
+            Check(unreadChanged.Contains("id not read") && unreadChanged.Contains("B -> C")
+                  && !unreadChanged.Contains("A ->") && !unreadChanged.Contains("-> A"),
+                  "and when one of them did change, the line says its id was not read and never "
+                  + "shows the unchanged value as changed - found [" + unreadChanged + "]");
+
+            // A NAME ONLY ONE PARAMETER HAS IS PRINTED BARE, and Heron's own
+            // "Type" keeps its name beside a parameter called Type.
+            var plain = Said(Read(P(-1010106, "Comments", "")), Read(P(-1010106, "Comments", "moved")));
+            Check(plain == "Comments:  -> moved",
+                  "a name one parameter has is printed as it is, with no id - found [" + plain + "]");
+            var ownBefore = new HeronReadBack.Values("Ducts");
+            ownBefore.Add("Type", "Rect");
+            ownBefore.AddById(new List<HeronReadBack.ParameterRead> { P(-1002050, "Type", "Rect") });
+            var ownAfter = new HeronReadBack.Values("Ducts");
+            ownAfter.Add("Type", "Rect");
+            ownAfter.AddById(new List<HeronReadBack.ParameterRead> { P(-1002050, "Type", "Round") });
+            var own = Said(ownBefore, ownAfter);
+            Check(own == "Type (id -1002050): Rect -> Round",
+                  "a parameter that shares a name with a value Heron reads itself is told apart "
+                  + "by its id, and Heron's own keeps the bare name - found [" + own + "]");
+            var tied = Said(Read(P(7, "Zeta", "z"), P(7, "Alpha", "a")), Read(P(7, "Alpha", "a2"), P(7, "Zeta", "z")));
+            Check(tied == "Alpha: a -> a2",
+                  "two that claim one id are still told apart by name - found [" + tied + "]");
             var noneRead = new HeronReadBack.Values(null);
             noneRead.AddById(null);
-            Check(noneRead.Names.Count == 0, "and no parameters at all is nothing, not a fault");
+            Check(Said(noneRead, new HeronReadBack.Values(null)) == "",
+                  "and no parameters at all is nothing, not a fault");
 
             Console.WriteLine();
             Console.WriteLine("2c. a text parameter with no shown text falls back to its stored text");

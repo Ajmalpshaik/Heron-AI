@@ -757,9 +757,11 @@ def dry_run_refusal(declared, needs, capability):
                        what is rolled back.
 
     UNTIL 2026-11-12 THE DOOR TESTED THE OPERATION'S NAME, which is
-    `run_fragment_write` for an EXECUTE card as for a MODIFY one. Seven
-    PROVEN EXECUTE cards went to Revit as a dry run and came back "tried
-    ... and rolled back" (found in review of #861; not run in Revit).
+    `run_fragment_write` for an EXECUTE card as for a MODIFY one. Every
+    PROVEN EXECUTE card - `grep -l '^risk: EXECUTE' brain/fragments/*/
+    fragment.yaml` lists them, and each one's `heron-status:` is in the
+    same file - went to Revit as a dry run and came back "tried ... and
+    rolled back" (found in review of #861; not run in Revit).
 
     AN UNREADABLE RISK OR CONTRACT IS REFUSED, for `door_refusal`'s reason:
     "I could not tell" must never read as "a rollback takes it all back".

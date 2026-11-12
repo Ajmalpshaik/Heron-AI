@@ -1527,3 +1527,43 @@ a safer file.
 steps where they bite.
 
 ---
+
+### 🔵 Q-89 — After a run that was rolled back - a dry run, a proof, a Discard - should what the chat had carried stay as it was, or become what that run left? *(found 2026-11-12 in review of the dry run)*
+
+**What was found.** A chat hands one call's result to the next with `expect_from`
+([docs/36](../36-remembering-between-steps.md)): *find the ducts*, then *change them, expecting what the find
+left*. The add-in remembers what each run left, and it does so after **every** run - one that was kept, and
+one that was rolled back ([`RevitFragment.cs`](../../revit/Heron.Revit.Addin/RevitFragment.cs), `Remember`).
+Until [D-155](../decisions/D-155.md) only the proving tools and a Discard rolled a run back. A chat can now
+ask for a dry run, and then:
+
+- **The dry run uses up what the find left.** The kept call sent straight after, with the same
+  `expect_from`, is refused - what is carried was left by the dry run, not by the find.
+- **What the dry run left can be named.** A call with `expect_from` naming the dry run's capability would be
+  given its values - the ids of elements it made among them - from a change Revit no longer holds.
+
+Read off the code, **not run in Revit** ([row 5b-1612](../fragment-issues/row-5b-1612.md),
+[Group NT](../needs-checking/group-nt.md) NT11). The reply now says both, in words: run the find again
+before the kept run, and take nothing from a dry run. Nothing refuses it.
+
+**The question, in a modeller's words: after Heron tries a change and takes it back, should it still
+remember what it had found before the try?**
+
+1. **Yes - a run that was rolled back leaves what was carried alone.** The find's result is still there for
+   the kept run, and nothing a rolled-back run made can be handed on. **Cost:** a change to the add-in -
+   a rebuild and a Revit restart on every release - and it changes a Discard and every proof's rollback the
+   same way. A proof arranged by hand as *run a change rolled back, then read what it left* would stop
+   working; none was found in the proving tools, which arrange a chain inside one request or re-make it for
+   each phase, but the PC's own hand-run records were not all read.
+2. **No - as built.** Every run replaces what is carried, and the reply says to run the find again. **Cost:**
+   one more call for the chat on every dry run that used `expect_from`, and the second hazard stays a
+   sentence, not a refusal.
+3. **As built, and the add-in refuses `expect_from` naming a run that was rolled back.** Closes the second
+   hazard and leaves the first as in 2. **Cost:** the same rebuild as 1, and one more refusal to explain.
+
+**Nothing is recommended.** Shape 1 is what a modeller would expect; whether any recorded proof leans on the
+present behaviour is the one fact that decides it, and that needs the PC.
+
+**Ajmal PS decides.** Until he does the add-in is as it was, and the dry run's reply says what it does.
+
+---

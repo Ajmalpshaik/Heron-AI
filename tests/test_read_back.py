@@ -342,6 +342,26 @@ def data_not_words():
               and "could not be read" in lines[0],
               "%s: one line saying the read-back could not be read - found %r"
               % (label, [line[:70] for line in lines][:2]))
+    # AND A READ-BACK THAT PARSES AND MAKES NO SENSE (second review,
+    # 2026-11-12): a mode Heron does not know got the kept change's words,
+    # and counts that cannot both be true printed as sent - "50 of 1".
+    for label, shape in (
+            ("a mode Heron does not know",
+             {"mode": "preview", "changed": 1, "read": 1, "elements": [
+                 {"id": "1", "values": [{"name": "Mark", "before": "a", "after": "b"}]}]}),
+            ("no mode at all", {"changed": 2, "read": 1, "notRead": 1, "elements": []}),
+            ("more read than changed",
+             {"mode": "dryRun", "changed": 1, "read": 50, "elements": []}),
+            ("more not read than changed",
+             {"mode": "selection", "changed": 3, "read": 2, "notRead": 5, "elements": []}),
+            ("more listed than read",
+             {"mode": "dryRun", "changed": 5, "read": 1, "noValueChanged": 1, "elements": [
+                 {"id": "1", "values": [{"name": "Mark", "before": "a", "after": "b"}]}]})):
+        lines = said_safely(RUNS, {"readBack": shape})
+        check(len(lines) == 1 and lines[0].startswith("  before -> after: not shown")
+              and "could not be read" in lines[0] and "50 of 1" not in lines[0],
+              "%s: said as a read-back that cannot be read, never printed as it came - "
+              "found %r" % (label, [line[:80] for line in lines][:2]))
     check(RUNS.read_back_lines({"readBack": [1, 2]}) == []
           and RUNS.read_back_lines({"readBack": None}) == [],
           "a field that is not a read-back at all still prints nothing, as before")

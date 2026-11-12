@@ -158,7 +158,7 @@ from heron_server_core import (                             # noqa: E402
 # and the line a reply carries the word on, are the core's.
 from heron_server_core import (                             # noqa: E402
     ANSWERED, _change_outcome, _failure_outcome, NOT_RUN, _outcome,
-    ROLLED_BACK, _sent, UNKNOWN)
+    ROLLED_BACK, ROLLED_BACK_AS_ASKED, _sent, UNKNOWN)
 
 import anyio.from_thread                                   # noqa: E402 - the SDK's own dependency
 
@@ -1900,6 +1900,14 @@ def revit_change(capability: str = "", values: str = "",
                 + _what_to_type(failure, capability)
                 + (elsewhere if failure.code == "write_disabled" else ""))
 
+    # WHAT CAME FROM THE MODEL IS DATA, AT THIS DOOR AS AT THE OTHER TWO
+    # (heron_run_records.as_data, row 5b-1596). From here on every text in the
+    # reply is one line: the title in the opening sentence, the inputs line,
+    # the verdict, and each value, entry and item a fragment left. A value of
+    # one line reads exactly as it did. The read-back and the change report
+    # are encoded by their own printers.
+    reply = runs.as_data(reply)
+
     # GOLDEN RULE 20. An answer about a model the user is not looking at is
     # how the wrong building gets changed.
     #
@@ -1922,6 +1930,14 @@ def revit_change(capability: str = "", values: str = "",
         # THE OUTCOME LINE SAYS SO IN A WORD (row 5b-1159): not known. The
         # activity list is still told nothing, for the reason above.
         _outcome(UNKNOWN)
+        # A DRY RUN'S VERDICT, QUOTED WHOLE ABOVE, ENDS "Send it again with
+        # apply to keep it" - the add-in's word to its own callers. A chat
+        # has no `apply`, and after a run in the wrong model nothing is to
+        # be sent again at all.
+        if dry_run:
+            wrong_model += (" It was asked as a dry run: send nothing again on the "
+                            "add-in's \"with apply\" - that is its word to its own "
+                            "callers, not to a chat.")
         return wrong_model
 
     # THIS CALL'S PLACE IN THE BATCH, decided once the answer is in hand.
@@ -2052,19 +2068,46 @@ def revit_change(capability: str = "", values: str = "",
     if dry_run:
         lines.append("")
         if not dry_held:
-            lines.append("This was asked as a dry run, and Revit's Heron did not say "
-                         "its rollback held - so the change may be in the model. "
-                         "Look at the model before anything else is sent.")
+            unconfirmed = ("This was asked as a dry run, and Revit's Heron did not say "
+                           "its rollback held - so the change may be in the model. "
+                           "Look at the model before anything else is sent.")
+            # AN ADD-IN FROM BEFORE `verdictKind` CANNOT SAY IT HELD, so every
+            # dry run through it ends here. That is still the true word - this
+            # server cannot tell - and the reply says what may be behind it.
+            if not reply.get("verdictKind"):
+                unconfirmed += (" Its answer named no kind of verdict at all, which "
+                                "is what a Heron add-in older than this chat's sends: "
+                                "if the model is as it was, that Revit's add-in needs "
+                                "updating before a dry run can be confirmed.")
+            lines.append(unconfirmed)
             _outcome(UNKNOWN)
             return _ended("failed", "\n".join(lines))
-        lines.append("This was a dry run, so the model is as it was. A dry run is "
-                     "not approval: to keep the change, call revit_change again "
-                     "without dry_run - only when the user says to - and that run "
-                     "is still asked about in Revit, or kept at once, as the Ask to "
-                     "Keep switch says (revit_health tells which). It is a new run: "
-                     "read its own counts, because the model can have changed since "
-                     "this one.")
-        _outcome(ROLLED_BACK)
+        closing = ("This was a dry run, so the model is as it was. A dry run is "
+                   "not approval: to keep the change, call revit_change again "
+                   "without dry_run - only when the user says to - and that run "
+                   "is still asked about in Revit, or kept at once, as the Ask to "
+                   "Keep switch says (revit_health tells which). It is a new run: "
+                   "read its own counts, because the model can have changed since "
+                   "this one.")
+        # WHAT THE DRY RUN DID TO WHAT WAS CARRIED (docs/36). The add-in
+        # remembers what EVERY run left, a rolled-back one included
+        # (RevitFragment.Remember), so after this call the chat's carried
+        # values are the dry run's: the kept call sent with the same
+        # expect_from would be refused (chain_mismatch), and one naming THIS
+        # capability would bind values of a change Revit no longer holds.
+        # Whether a rolled-back run should replace them at all is not decided
+        # anywhere (OPEN-QUESTIONS Q-89, row 5b-1612); until it is, the reply
+        # says what is true of the add-in as built.
+        if expect_from and expect_from.strip():
+            closing += (" This dry run used up what '%s' left: run that call again "
+                        "before the kept run, and send the same expect_from - sent "
+                        "as it is now, the kept run is refused, because what Revit's "
+                        "Heron carries was left by this dry run."
+                        % runs.one_line(expect_from.strip()))
+        closing += (" Take nothing from this dry run with expect_from: what it left "
+                    "is of a change Revit no longer holds.")
+        lines.append(closing)
+        _outcome(ROLLED_BACK, says=ROLLED_BACK_AS_ASKED)
         return _ended("ok", "\n".join(lines))
 
     # THE MODELLER WAS ASKED IN REVIT AND DID NOT KEEP IT (D-126). The reply is
@@ -3102,6 +3145,14 @@ def revit_read(capability: str = "", values: str = "",
         return (_ended(_failure_ended(failure), explain(failure))
                 + _what_to_type(failure, capability))
 
+    # WHAT CAME FROM THE MODEL IS DATA, AT THIS DOOR AS AT THE OTHER TWO
+    # (heron_run_records.as_data, row 5b-1596). From here on every text in the
+    # reply is one line: the title in the opening sentence, the inputs line,
+    # the verdict, and each value, entry and item a fragment left. A value of
+    # one line reads exactly as it did. The read-back and the change report
+    # are encoded by their own printers.
+    reply = runs.as_data(reply)
+
     # GOLDEN RULE 20, as revit_change keeps it: the add-in has already refused
     # a different model on `expectProject`; this is the first call's pin, and
     # the cover for an add-in too old to read the key.
@@ -3291,6 +3342,14 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
     if failure is not None:
         return (_ended(_failure_ended(failure), explain(failure))
                 + _what_to_type(failure, capability))
+
+    # WHAT CAME FROM THE MODEL IS DATA, AT THIS DOOR AS AT THE OTHER TWO
+    # (heron_run_records.as_data, row 5b-1596). From here on every text in the
+    # reply is one line: the title in the opening sentence, the inputs line,
+    # the verdict, and each value, entry and item a fragment left. A value of
+    # one line reads exactly as it did. The read-back and the change report
+    # are encoded by their own printers.
+    reply = runs.as_data(reply)
 
     # SAID FROM THE ADD-IN'S COUNT, as revit_read says it - row 5b-350. This
     # door runs on the same counted read path, so a run that moved the model

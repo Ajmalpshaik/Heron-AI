@@ -72,7 +72,8 @@ Claude Code (host) --MCP, stdio--> Heron MCP server (heron_mcp_server.py)
   Read the model      revit_read, revit_levels, ...        READ, ANALYZE
   Show on screen      revit_show, select, isolate          EXECUTE
   Change the model    revit_change, revit_apply_move       MODIFY and above; needs Changes on
-                      revit_change with dry_run            runs a MODIFY job and rolls it back (D-155)
+                      revit_change with dry_run            runs it and rolls it back, for a job a rollback
+                                                           takes back whole: MODIFY, or SUGGEST (D-155)
   Connect and check   revit_health, revit_use_session,     READ; revit_release frees this chat's
                       revit_release                        hold on a model (D-141)
 

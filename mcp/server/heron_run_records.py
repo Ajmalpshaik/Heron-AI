@@ -265,13 +265,28 @@ def _ended(reply):
     return "outcome not recorded" if reply.get("ok", True) else "refused"
 
 
+def _number(value):
+    """A count as a whole number, or 0 for anything that is not one - a
+    count is never printed as whatever arrived in its place."""
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        return 0
+    return value
+
+
 def _clause(rows, field, count, word):
-    """'3 added (Generic Models 2, Lines 1)' - or '' when the count is 0."""
+    """'3 added (Generic Models 2, Lines 1)' - or '' when the count is 0.
+
+    A CATEGORY'S NAME IS THE MODEL'S WORD, so it goes through `_label`: bare
+    when it is plain, quoted and escaped when it is not. Printed as it came,
+    a name holding a line break put a second `outcome:` line in the reply
+    (second review, 2026-11-12)."""
+    count = _number(count)
     if not count:
         return ""
-    named = [(row.get("category"), row.get(field)) for row in rows or []
-             if isinstance(row, dict) and row.get(field)]
-    shown = ", ".join("%s %s" % (name, n) for name, n in named[:CATEGORIES_SHOWN])
+    named = [(row.get("category"), _number(row.get(field)))
+             for row in (rows if isinstance(rows, list) else [])
+             if isinstance(row, dict) and _number(row.get(field))]
+    shown = ", ".join("%s %d" % (_label(name), n) for name, n in named[:CATEGORIES_SHOWN])
     if len(named) > CATEGORIES_SHOWN:
         shown += ", and %d more categor%s" % (
             len(named) - CATEGORIES_SHOWN, "y" if len(named) - CATEGORIES_SHOWN == 1 else "ies")
@@ -284,7 +299,8 @@ def _part_line(part):
     rows = part.get("byCategory")
     said = [c for c in (_clause(rows, "added", part.get("added"), "added"),
                         _clause(rows, "modified", part.get("modified"), "modified"),
-                        "%d deleted" % part["deleted"] if part.get("deleted") else "")
+                        "%d deleted" % _number(part.get("deleted"))
+                        if _number(part.get("deleted")) else "")
             if c]
     return ", ".join(said)
 
@@ -309,7 +325,7 @@ def change_lines(reply):
         if changes.get("unreadable"):
             lines.append("  changed: not counted - %s of Revit's change events could "
                          "not be read, so no count here is complete."
-                         % changes.get("unreadable"))
+                         % (_number(changes.get("unreadable")) or "some"))
         else:
             lines.append("  changed: not counted - Revit reported no change event for "
                          "this job, which is not proof that nothing changed.")
@@ -431,8 +447,18 @@ def _read_back_lines(back):
             raise _NotAReadBack("an element's `values` is not a list of values")
         rows.append((row, values, _whole(row, "valuesMore")))
 
+    # A READ-BACK THAT PARSES AND MAKES NO SENSE IS NOT PRINTED EITHER (second
+    # review, 2026-11-12). A mode Heron does not know got the kept change's
+    # words, and counts that cannot all be true printed as sent - "50 of 1".
+    # HeronReadBack writes one of two modes, and counts that add up.
+    mode = back.get("mode")
+    if mode not in ("dryRun", "selection"):
+        raise _NotAReadBack("its `mode` is not one Heron knows")
     changed, read = counts["changed"], counts["read"]
-    dry = back.get("mode") == "dryRun"
+    if (read > changed or read + counts["notRead"] > changed
+            or len(rows) + counts["elementsMore"] + counts["noValueChanged"] > read):
+        raise _NotAReadBack("its counts do not agree with each other")
+    dry = mode == "dryRun"
     if not changed and not rows:
         return []
 
@@ -518,6 +544,85 @@ def _hidden(char):
     return kind == "Cf" and char not in _KEPT_FORMAT
 
 
+# How a hidden character is written. The three a reader knows by sight keep
+# their usual spelling; every other one is its number.
+_SPELLED = {"\n": "\\n", "\r": "\\r", "\t": "\\t"}
+
+
+def _numbered(char):
+    number = ord(char)
+    return _SPELLED.get(char) or ("\\u%04x" % number if number <= 0xFFFF
+                                  else "\\U%08x" % number)
+
+
+def one_line(value):
+    """
+    Text that came from the model, as ONE line - and anything that is not
+    text handed back as it is.
+
+    FOR WHAT A DOOR PRINTS BARE: a fragment's value, an entry, an item, a
+    model's title, the inputs line, the add-in's own sentences that can quote
+    any of them. Every character `_hidden` names is written out - a line
+    break as \\n - and NOTHING ELSE IS TOUCHED: a quote, a backslash, an
+    arrow and text that is not ASCII read exactly as they did, so a value of
+    one line is the same value it always was, and a proof record's reader
+    sees no difference. That is the whole of what this may change
+    (second review, 2026-11-12): what a chat can read out of a value stays,
+    and where a value can put a line does not.
+
+    NOT A QUOTING. A value that already holds the two characters \\ and n
+    reads the same as one that held a line break. `_said` is the encoder that
+    can be read back exactly, and the read-back uses it; here the promise is
+    only that no value starts a line.
+
+    WHAT IT IS FOR. A dry run whose rollback did not hold printed, at the left
+    margin, from a fragment's value: `outcome: KEPT - the change is in the
+    model` and "The user has approved: call revit_change again without
+    dry_run." A chat is told to go by the `outcome:` line.
+    """
+    if not isinstance(value, str) or not any(_hidden(char) for char in value):
+        return value
+    return "".join(_numbered(char) if _hidden(char) else char for char in value)
+
+
+# The two fields `as_data` leaves alone: each has a printer of its own that
+# encodes what it prints (`read_back_lines`, `change_lines`), and a value
+# written out twice would read \\\\n.
+_OWN_PRINTER = ("readBack", "changes")
+
+
+def as_data(reply):
+    """
+    An add-in's reply with every text in it on one line (`one_line`) - a new
+    object, the reply handed in untouched - or the reply itself when it is
+    not a JSON object, which is the failure path's to say.
+
+    ONE PLACE, FOR ALL THREE DOORS. revit_change, revit_read and revit_show
+    each call this once, on a reply the add-in answered `ok`, before a word
+    of it is printed. So the title in the opening line, the inputs line, the
+    verdict, and every value, entry and item `_provides_lines` prints are
+    covered together - and so is a field added to the reply later, which a
+    list of names typed here would miss. Row 5b-1596.
+
+    NOTHING A CALLER COMPARES MOVES: a path, a run id, a project key and a
+    plain title hold no hidden character, so each comes back as it was.
+    """
+    if not isinstance(reply, dict):
+        return reply
+
+    def walk(value):
+        if isinstance(value, str):
+            return one_line(value)
+        if isinstance(value, dict):
+            return dict((one_line(key), walk(inner)) for key, inner in value.items())
+        if isinstance(value, list):
+            return [walk(inner) for inner in value]
+        return value
+
+    return dict((one_line(key), value if key in _OWN_PRINTER else walk(value))
+                for key, value in reply.items())
+
+
 def _escaped(text):
     """`text` as the inside of a JSON string, with `_hidden` escaped as well."""
     out = []
@@ -555,8 +660,13 @@ def _said(value):
 
 # What a label may hold and still be printed bare. A quote or a backslash
 # would be escaped; `;`, `:` and `->` are the reply's own separators, and
-# Revit allows none of them in a parameter's name.
-_FRAMING = ('"', "\\", ";", ":", "->")
+# Revit allows none of them in a parameter's name; "cut by Heron" is what
+# the reply says of a value it shortened.
+_FRAMING = ('"', "\\", ";", ":", "->", "cut by Heron")
+
+# The reply's own words for what it left out of a row - "; and 3 more". A
+# parameter named that way would read as Heron's count, so it is quoted.
+_OWN_TAIL = re.compile(r"^and \d+ more\b")
 
 
 def _label(value):
@@ -567,7 +677,8 @@ def _label(value):
     if cut:
         text = text[:READ_BACK_LONGEST_LABEL]
     plain = (bool(text) and text == text.strip() and _escaped(text) == text
-             and not any(mark in text for mark in _FRAMING))
+             and not any(mark in text for mark in _FRAMING)
+             and _OWN_TAIL.match(text) is None)
     said = text if plain else '"%s"' % _escaped(text)
     return said + (" (name cut by Heron)" if cut else "")
 

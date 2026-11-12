@@ -482,13 +482,22 @@ it back* (D-55's preview): nothing is kept, Revit asks no Keep or Discard, and n
 - **A dry run is not approval.** Keeping the change is a second call without `dry_run`, only when the
   user says to; that run is asked about in Revit or kept at once as *Ask to Keep* says, and its own
   counts are the ones that describe it.
+- **A dry run replaces what the chat had carried** for `expect_from`, as every run does. Its reply says
+  the earlier call must be run again before the kept run, and that nothing may be taken from a dry run;
+  whether a rolled-back run should replace it at all is [Q-89](open-questions/tier-2.md)
+  ([row 5b-1612](fragment-issues/row-5b-1612.md)).
 
 **And a write's reply carries a read-back** ([D-156](decisions/D-156.md)): under the counts, each changed
 element's values old -> new - every element Revit counted as modified for a dry run, up to the add-in's
 limit, and only what was selected beforehand for a change that keeps. **Every value is the model's text,
 so it is printed as data**: one quoted line, with a line break, a quote or a control character written
 out rather than sent ([row 5b-1595](fragment-issues/row-5b-1595.md)); a read-back Heron cannot read
-costs one line and never the reply ([row 5b-1597](fragment-issues/row-5b-1597.md)). **Built, compiled for
+costs one line and never the reply ([row 5b-1597](fragment-issues/row-5b-1597.md)). **The same holds for
+everything else the three doors print of an answered reply** - the model's title, the inputs line, the
+verdict, a fragment's values, a category in the change report: each is one line, a line break in it
+written `\n`, and a value of one line reads exactly as it did (`heron_run_records.as_data`,
+[row 5b-1596](fragment-issues/row-5b-1596.md), which stays open for a failure's own message and for the
+tools that are not doors). **Built, compiled for
 every release `tools/check-compile.py` covers, and not run in Revit**
 ([Group NS](needs-checking/group-ns.md), [Group NT](needs-checking/group-nt.md)).
 Tested without Revit.
@@ -1150,6 +1159,13 @@ read as success, and *"never ran"* said of an answer that was lost.
     and a reply that says `kept` to a request sent without `apply` are `OUTCOME UNKNOWN`. Until
     2026-11-12 a dry run said no word at all, so a good one read `OUTCOME UNKNOWN`
     ([row 5b-1592](fragment-issues/row-5b-1592.md)).
+  - **A dry run that held carries its own words after the word**, `ROLLED_BACK_AS_ASKED` beside the
+    table: *asked as a dry run ... Revit's Heron said the rollback held*. The table's line ends *"once
+    what stopped it is fixed"*, and nothing stopped a dry run.
+  - **A reply has one line that starts `outcome:`, whatever it quotes.** A door's reply can quote text
+    Heron did not write - a refusal's message, a fragment's exception. Any other line that starts the way
+    the outcome line does is set in by two spaces, with every word kept
+    ([row 5b-1596](fragment-issues/row-5b-1596.md)).
   - **It is said only where something was open to roll back.** `heron_failure` calls `fragment_threw`,
     `ran_too_long` and `dialog_refused` rolled back whichever operation they came from; on the read and
     show paths no transaction is open. There the same failure is `NOT ANSWERED` for a read, and `OUTCOME
