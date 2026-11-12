@@ -21,6 +21,56 @@
 //
 // EVERY PARAMETER COMES BACK AS ONE STRING. A list is abbreviated to three
 // entries before a reader sees it, and forty parameters then read as three.
+//
+// A YES/NO READS Yes OR No (version 2, FRAGMENT-ISSUES 5b-351). Revit's own
+// string for a tick box is empty, so every Yes/No printed <blank> - measured
+// 2026-10-06, Revit 2024: "Show M8 [Integer/instance] = <blank> (formula:
+// and(Thread Size > 7.5 mm, ...))", and a visibility flag could not be read
+// back at all. Where Revit's string is empty and the parameter IS a Yes/No,
+// the stored whole number is read instead: 0 is No, anything else Yes. A
+// tick box Revit holds no value for stays <blank>, and so does every other
+// whole number - what a Yes/No is, is asked of the parameter, never guessed
+// from an empty string.
+
+// A TICK BOX IS FOUND BY WHAT IT IS - the library's version-safe check
+// (IMPORT_PARAMETER_VALUES, CREATE_SHEETS_FROM_TABLE): SpecTypeId.Boolean.
+// YesNo on 2022 and later; null on 2020 and 2021, which answer through
+// ParameterType instead. Read by reflection, so one file serves every release
+// and the unit property this fragment keeps away from is still never touched.
+var yesNoSpecs = typeof(Document).Assembly.GetType(typeof(Document).Namespace + ".SpecTypeId+Boolean");
+var yesNoProperty = yesNoSpecs == null ? null : yesNoSpecs.GetProperty("YesNo",
+    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+var yesNoSpec = yesNoProperty == null ? null : yesNoProperty.GetValue(null, null);
+
+Func<FamilyParameter, bool> isYesNo = p =>
+{
+    try
+    {
+        if (p == null || p.StorageType != StorageType.Integer) return false;
+        var definition = p.Definition;
+        if (definition == null) return false;
+        var getDataType = definition.GetType().GetMethod("GetDataType", System.Type.EmptyTypes);
+        if (getDataType != null && yesNoSpec != null)
+        {
+            var spec = getDataType.Invoke(definition, null);
+            if (spec == null) return false;
+            // NameEquals: a spec id carries its version - "...bool-1.0.0".
+            var nameEquals = spec.GetType().GetMethod("NameEquals", new[] { yesNoSpec.GetType() });
+            return nameEquals != null
+                ? (bool)nameEquals.Invoke(spec, new[] { yesNoSpec })
+                : spec.Equals(yesNoSpec);
+        }
+        var parameterType = definition.GetType().GetProperty("ParameterType");
+        var kind = parameterType == null ? null : parameterType.GetValue(definition, null);
+        return kind != null && kind.ToString() == "YesNo";
+    }
+    catch (Exception)
+    {
+        // Not known to be a tick box: it keeps Revit's own string, blank
+        // included, which is what version 1 printed.
+        return false;
+    }
+};
 
 var findings = new List<string>();
 var parameterCount = 0;
@@ -120,6 +170,14 @@ else
                     else
                     {
                         value = current.AsValueString(parameter) ?? "";
+
+                        // A Yes/No: Revit's string is empty, the stored whole
+                        // number is the tick (5b-351).
+                        if (value.Length == 0 && isYesNo(parameter))
+                        {
+                            var ticked = current.AsInteger(parameter);
+                            if (ticked.HasValue) value = ticked.Value != 0 ? "Yes" : "No";
+                        }
                     }
                 }
                 catch (Exception) { value = "?"; }

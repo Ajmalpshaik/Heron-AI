@@ -56,7 +56,6 @@ FRAGMENTS = os.path.join(ROOT, "brain", "fragments")
 ADDIN = os.path.join(ROOT, "revit", "Heron.Revit.Addin")
 REGISTRY_CS = os.path.join(ROOT, "platform", "Heron.Core", "HeronOperationRegistry.cs")
 CONFIG_CS = os.path.join(ROOT, "platform", "Heron.Core", "HeronConfig.cs")
-SERVER = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
 
 # The client reads heron.config for its timeouts. Point it at a file that is
 # not there, so the owner's own settings are neither read nor needed.
@@ -83,6 +82,14 @@ def check(condition, what):
 def read(path):
     try:
         return io.open(path, encoding="utf-8").read()
+    except (IOError, OSError):
+        return ""
+
+
+def server_text():
+    """The MCP server's source, every file heron_tools lists - or "", as read() gives."""
+    try:
+        return TOOLS.server_text()
     except (IOError, OSError):
         return ""
 
@@ -211,6 +218,77 @@ def article_11(names):
           and refusal("X", {"status": "PRODUCTION", "stale": False}) is None,
           "a current PROVEN or PRODUCTION proof is let through")
 
+    # THE REFUSAL NAMES WHAT COMES NEXT, AND ONLY WHAT EXISTS. It ended "it is
+    # proved first on a test model ... and then it can be asked for again",
+    # which told a chat neither that proving is not a chat's to do nor that a
+    # DRAFT has one run behind Revit's Keep or Discard box (D-119).
+    #
+    # AND THE ONE TRY IS OFFERED ONLY TO A CARD try-once WILL TAKE (review,
+    # 2026-11-11). It was offered to every DRAFT, and `cmd_try_once` refuses
+    # anything but a card declared MODIFY - so for a DRAFT declared ADMIN,
+    # PUBLISH or EXECUTE the step the refusal named was itself a refusal. The
+    # card's risk travels in what proof_of answers, and the refusal states it.
+    once_risk = getattr(CLIENT, "ONCE_RISK", None)
+    check(once_risk == "MODIFY",
+          "the client names the one risk a DRAFT's single run is open to (ONCE_RISK)")
+
+    def drafted(risk):
+        found = {"status": "DRAFT", "stale": False}
+        if risk is not None:
+            found["risk"] = risk
+        return refusal("SOME_CAPABILITY", found) or ""
+
+    draft = drafted("MODIFY")
+    check("try-once" in draft and "D-119" in draft and "Keep or Discard" in draft,
+          "a DRAFT declared MODIFY: the refusal names its one try, behind "
+          "Revit's Keep or Discard box (D-119)")
+    check(callable(getattr(CLIENT, "cmd_try_once", None)),
+          "and that run exists: the client has the try-once command it names")
+    check("D-122" in draft and "declared MODIFY" in draft,
+          "it states the card's risk, and that the try is started only when "
+          "the modeller asks (D-122)")
+    for risk in ("ADMIN", "PUBLISH", "EXECUTE"):
+        said = drafted(risk)
+        check("try-once" not in said and "one try" not in said
+              and "declared %s" % risk in said
+              and "proved first on a test model" in said,
+              "a DRAFT declared %s: the refusal states its risk, offers no try "
+              "that try-once would refuse, and says it is proved first" % risk)
+    unsaid = drafted(None)
+    check("try-once" not in unsaid and "proved first on a test model" in unsaid,
+          "a DRAFT whose risk was not handed over is offered no try either")
+    # OVER THE LIBRARY: what proof_of answers carries each card's own risk,
+    # and the try is named for exactly the DRAFTs try-once takes.
+    drafts = [n for n in names if (proof_of(n) or {}).get("status") == "DRAFT"]
+    carried = [n for n in drafts
+               if ((proof_of(n) or {}).get("risk") or "") != (card_risk(n) or "").upper()]
+    check(bool(drafts) and not carried,
+          "proof_of carries every DRAFT card's own declared risk (%d) - not: %s"
+          % (len(drafts), carried[:5]))
+    offered = set(n for n in drafts if "try-once" in (refusal(n, proof_of(n)) or ""))
+    taken = set(n for n in drafts if card_risk(n) == "MODIFY")
+    others = [n for n in drafts if n not in taken
+              and card_risk(n) not in ("READ", "ANALYZE")]
+    check(bool(taken) and bool(others) and offered == taken,
+          "over the library the try is offered to exactly the DRAFTs declared "
+          "MODIFY (%d) and to none of the other DRAFT writers (%d) - wrongly "
+          "offered: %s, wrongly withheld: %s"
+          % (len(taken), len(others), sorted(offered - taken)[:5],
+             sorted(taken - offered)[:5]))
+    for said, why in ((draft, "a DRAFT's"), (stale, "a stale proof's")):
+        check("command line" in said and "not a tool a chat has" in said,
+              "%s refusal says proving is done from Heron's command line, not "
+              "by a tool a chat has" % why)
+        named = set(re.findall(r"\b(?:revit|heron)_[a-z_]+\b", said))
+        check(named <= set(TOOLS.TOOLS),
+              "and %s refusal names no tool the registry does not hold - named %s"
+              % (why, ", ".join(sorted(named)) or "none"))
+    check("try-once" not in stale and "no one try" in stale,
+          "a stale proof's refusal offers no one try - that run takes a DRAFT alone")
+    other = refusal("SOME_CAPABILITY", {"status": None, "stale": False}) or ""
+    check("try-once" not in other,
+          "nor does one with no status at all")
+
     # OVER THE WHOLE LIBRARY, through the fake Revit: every write fragment,
     # asked for with --write --apply, and what reached Revit to be KEPT read
     # back off the fake's own record.
@@ -266,6 +344,84 @@ def article_11(names):
             CLIENT.proof_of = saved
         check(code == 2 and not bridge.sent and word in out.getvalue(),
               "a PROVEN fragment (%s) %s is refused, saying so" % (proven_one, why))
+
+
+def no_proof_at_all(names):
+    """Section 7b - a card that SAYS proven and records no proof (row 5b-1154).
+
+    `proof_is_stale` answered "not stale" for a card with no proof at all, and
+    `proof_status` asked it only when there was one - so a card edited to
+    `heron-status: PROVEN` with its `proof:` block gone read as PROVEN and
+    fresh, and D-117's gate let its change be KEPT. `validate` catches such a
+    card when it is committed; the gate at run time never asks `validate`.
+
+    The card is a real one whose proof stands, read with the reader's own
+    `load` and edited IN MEMORY as it is handed over - nothing on disk is
+    touched, and the last check reads it back as it was. The Revit is the
+    fake, so on the code as it stood the kept change reaches a list.
+    """
+    print()
+    print("7b. A card that says PROVEN and records no proof is not sent to be kept "
+          "(row 5b-1154)")
+    proof_of = getattr(CLIENT, "proof_of", None) or (lambda name: None)
+    refusal = getattr(CLIENT, "unproven_refusal", None) or (lambda what, found: None)
+
+    said = refusal("SOME_CAPABILITY", {"status": "PROVEN", "stale": True, "proof": False}) or ""
+    check("SOME_CAPABILITY" in said and "no proof" in said and "D-30" in said
+          and "Nothing was sent to Revit" in said,
+          "the refusal for a PROVEN card with no proof says so, names D-30, and "
+          "says nothing was sent")
+    check("changed since" not in said,
+          "and does not say its code changed since a proof it never had")
+
+    proven_one = next((n for n in names if card_risk(n) == "MODIFY"
+                       and current(proof_of(n))), None)
+    check(proven_one is not None, "the library has a MODIFY fragment whose proof stands")
+    if proven_one is None:
+        return
+
+    sys.path.insert(0, os.path.join(ROOT, "brain"))
+    import heron_fragment as FRAGMENT
+    real_load = FRAGMENT.load
+
+    def gone(data):
+        data.pop("proof", None)
+
+    def empty(data):
+        data["proof"] = {}
+
+    def a_sentence(data):
+        data["proof"] = "it worked"
+
+    for edit, how in ((gone, "its `proof:` block taken out"),
+                      (empty, "an empty `proof:`"),
+                      (a_sentence, "a `proof:` that is a sentence, not a mapping")):
+        def edited(folder, *args, **kwargs):
+            frag = real_load(folder, *args, **kwargs)
+            edit(frag.data)
+            return frag
+
+        FRAGMENT.load = edited
+        try:
+            found = proof_of(proven_one) or {}
+            with fake_revit() as (bridge, asked, out):
+                code = CLIENT.cmd_fragment(proven_one, writing=True, apply_it=True)
+        finally:
+            FRAGMENT.load = real_load
+        check(found.get("status") in ("PROVEN", "PRODUCTION") and found.get("stale") is True,
+              "%s with %s still says %s, and reads as STALE (stale=%r)"
+              % (proven_one, how, found.get("status"), found.get("stale")))
+        check(found.get("proof") is False, "and as having no proof recorded")
+        check(not current(found), "so no current proof stands behind it")
+        kept = [a.get("name") for a in bridge.args if a.get("apply") == "true"]
+        check(code == 2 and not bridge.sent and not kept and asked["discover"] == 0,
+              "`fragment --write --apply` is refused before Revit is asked anything "
+              "(exit %s, sent %r)" % (code, bridge.sent))
+        check("no proof" in out.getvalue() and "Nothing was sent to Revit" in out.getvalue(),
+              "and the refusal says no proof is recorded, and that nothing was sent")
+
+    check(current(proof_of(proven_one)),
+          "the card itself was never touched: read again, its proof still stands")
 
 
 def main():
@@ -520,7 +676,7 @@ def main():
     # ------------------------------------------------------------------
     print()
     print("5. revit_change sends a fragment as the operation its own card names")
-    text = read(SERVER)
+    text = server_text()
     start = text.find("\ndef revit_change(")
     body = text[start:] if start > 0 else ""
     end = body.find("\n@server.tool()")
@@ -600,6 +756,7 @@ def main():
           "the question window touches no Revit API")
 
     article_11(names)
+    no_proof_at_all(names)
 
     # ------------------------------------------------------------------
     print()

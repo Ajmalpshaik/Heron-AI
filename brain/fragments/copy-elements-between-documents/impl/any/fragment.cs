@@ -3,6 +3,28 @@
 // `placeAtMm` are in scope; leaves `copied`, `copiedIds`, `kept`, `readBack`,
 // `report` and `findings` behind.
 //
+// VERSION 4 (2026-11-11, rows 5b-1123 and 5b-1516) - ONE DOCUMENT, NEVER A
+// GUESSED ONE.
+//
+//   Versions 1 to 3 took the FIRST open document whose title held the words
+//   and said nothing. Now the words must find exactly one: the document whose
+//   WHOLE title they are, when there is one - so "Project1" is reachable
+//   beside "Project10" - and otherwise the one whose title holds them. When
+//   more than one is left, nothing is copied and each is named with its title
+//   and its path (or "not saved yet"), as a link placed twice is refused on
+//   the other route. What to do next depends on what tells them apart: their
+//   titles (give the whole title), their paths alone (close the ones not
+//   meant), or nothing at all (close them in Revit).
+//
+//   The title is Revit's own, and it is not the same on every release: 2022
+//   and later leave the file extension off, 2020 and 2021 show it when the
+//   user's settings do. Either way two matches are refused - by this rule
+//   whether or not their titles come out alike.
+//
+//   The document in front and linked documents are not counted: neither is
+//   ever a source here. Label mode finds its seed by the same lines, so the
+//   same refusal holds there.
+//
 // VERSION 3 (2026-11-01) - COPY_LABELS_FROM_FAMILY MERGED IN, AS `labels`.
 //
 //   VIEW-SPECIFIC ELEMENTS STAY OUT BY DEFAULT - this card's rule, kept. LABEL
@@ -86,6 +108,9 @@ string refusal = null;
 var wanted = (sourceDocumentTitle ?? "").Trim();
 Document source = null;
 var openTitles = new List<string>();
+var openPaths = new List<string>();
+var openDocuments = new List<Document>();
+string titleRefusal = null;
 var linkedTitleMatched = false;
 var placed = Transform.Identity;
 string linkRefusal = null;
@@ -106,7 +131,32 @@ if (!fromLink)
             continue;
         }
         openTitles.Add(title);
-        if (wanted.Length > 0 && title.IndexOf(wanted, StringComparison.OrdinalIgnoreCase) >= 0 && source == null) source = candidate;
+        var path = "";
+        try { path = candidate.PathName ?? ""; } catch { }
+        openPaths.Add(path != "" ? path : "not saved yet");
+        openDocuments.Add(candidate);
+    }
+    // VERSION 4: the words must find ONE document - see the header.
+    var fits = new List<int>();
+    var whole = new List<int>();
+    for (var i = 0; i < openTitles.Count && wanted.Length > 0; i++)
+    {
+        if (openTitles[i].IndexOf(wanted, StringComparison.OrdinalIgnoreCase) < 0) continue;
+        fits.Add(i);
+        if (string.Equals(openTitles[i], wanted, StringComparison.OrdinalIgnoreCase)) whole.Add(i);
+    }
+    var found = whole.Count > 0 ? whole : fits;
+    if (found.Count == 1) source = openDocuments[found[0]];
+    else if (found.Count > 1)
+    {
+        var named = found.Select(i => "\"" + openTitles[i] + "\" (" + openPaths[i] + ")").ToList();
+        var titlesDiffer = found.Select(i => openTitles[i]).Distinct(StringComparer.OrdinalIgnoreCase).Count() == found.Count;
+        var allDiffer = named.Distinct(StringComparer.OrdinalIgnoreCase).Count() == named.Count;
+        titleRefusal = found.Count + " open documents match \"" + sourceDocumentTitle + "\" - " + string.Join("; ", named) + ". "
+            + (titlesDiffer ? "Give the whole title of the one you mean and ask again."
+                : allDiffer ? "Some of them share a title, so a title cannot say which one to copy from: close the ones you do not mean and ask again."
+                : "Some of them share a title and a path, so nothing tells them apart from here: close them in Revit - or restart Revit if they are not on screen - open the one you mean and ask again.")
+            + " NOTHING WAS COPIED.";
     }
 }
 else
@@ -167,6 +217,7 @@ if (offsetText != "")
 }
 
 if (refusal == null && linkRefusal != null) refusal = linkRefusal;
+if (refusal == null && titleRefusal != null) refusal = titleRefusal;
 if (refusal == null && source == null && linkedTitleMatched)
     refusal = "\"" + sourceDocumentTitle + "\" is a LINKED model here, not another open document. Ask again with "
         + "fromLink=true so the copies land where the link puts them. NOTHING WAS COPIED.";

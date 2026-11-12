@@ -72,6 +72,7 @@ sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
 import test_failure_note as NOTE_SUITE                            # noqa: E402
 import heron_config as CFG                                         # noqa: E402
 import heron_failure as FAIL                                       # noqa: E402
+import heron_tools as TOOLS                                        # noqa: E402
 
 ADDIN = os.path.join(ROOT, "revit", "Heron.Revit.Addin")
 EXECUTOR = os.path.join(ADDIN, "RevitFragment.cs")
@@ -86,7 +87,6 @@ READY = os.path.join(ROOT, "tools", "heron-ready.py")
 COLLECTOR = os.path.join(ADDIN, "RevitChangedSet.cs")
 PERMISSIONS = os.path.join(ROOT, "platform", "Heron.Core", "HeronPermissions.cs")
 CONFIG_CS = os.path.join(ROOT, "platform", "Heron.Core", "HeronConfig.cs")
-SERVER = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
 CLIENT = os.path.join(ROOT, "mcp", "client", "heron_bridge_client.py")
 HOST = os.path.join(ROOT, "tests", "Heron.KeepQuestion.TestHost")
 COULD_NOT_RUN = 3
@@ -103,6 +103,14 @@ def check(condition, what):
 def read(path):
     try:
         return io.open(path, encoding="utf-8").read()
+    except (IOError, OSError):
+        return None
+
+
+def server_text():
+    """The MCP server's source, every file heron_tools lists - or None, as read() gives."""
+    try:
+        return TOOLS.server_text()
     except (IOError, OSError):
         return None
 
@@ -156,7 +164,7 @@ def wiring():
     check(re.search(r'\{\s*"write\.askBeforeKeeping"\s*,\s*"false"\s*\}', config_cs) is not None
           and CFG.DEFAULTS.get("write.askBeforeKeeping") == "false",
           "OFF by default since D-138, on both sides of the bridge")
-    for path in (SERVER, CLIENT):
+    for path in TOOLS.server_files() + [CLIENT]:
         said = read(path) or ""
         check("askBeforeKeeping" not in said.replace("write.askBeforeKeeping", ""),
               "%s sends no field that could skip the question" % os.path.basename(path))
@@ -383,7 +391,7 @@ def wiring():
     check(CFG.fragment_timeout(values, keeping=True) == CFG.try_once_timeout(values),
           "and a keep the owner's switch asks about waits what D-119's try-once waits - "
           "the same box, the same wait")
-    server = read(SERVER) or ""
+    server = server_text() or ""
     check("configuration.fragment_timeout(keeping=True)" in server,
           "revit_change waits as a run that keeps")
     check(re.search(r"fragment_timeout\(\s*keeping=writing and apply_it\)", read(CLIENT) or "")

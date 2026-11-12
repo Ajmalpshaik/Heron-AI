@@ -7,24 +7,24 @@ heron-layer: brain
 id: FRG-SHT-005
 semantic-identity: "every revision in the project and which sheets carry each one"
 
-# BACK TO DRAFT ON 2026-09-28, AND THE PROOF BLOCK BELOW IS KEPT ON PURPOSE.
+# BACK TO DRAFT ON 2026-09-28, AND THE PROOF BLOCK BELOW WAS KEPT ON PURPOSE.
 # The code was widened to read the whole Sheet Issues/Revisions dialog, so the
-# 2026-09-13 fingerprint no longer matches it. What that proof recorded - the
-# sheet lines and `onNoSheets` - is unchanged here and still the arrangement to
+# 2026-09-13 fingerprint no longer matched it. What that proof recorded - the
+# sheet lines and `onNoSheets` - was unchanged and was the arrangement to
 # re-prove from. `can_promote` refuses to carry a stale proof forward.
 #
-# 2026-10-17, STILL DRAFT: A FAMILY IS ANSWERED, NOT THROWN ON. Asked with a
-# family in front on Revit 2020, this threw "ccda is not a project document"
-# (RevisionSettings.GetRevisionSettings) - FRAGMENT-ISSUES row 5b-880. A family
-# now answers that it holds no revisions, with nothing found. That is also what
-# makes a negative case possible at all: a PROJECT always keeps at least one
-# revision (Revit refuses to delete the last), so `elements` and
-# `revisionTable` can never come back empty from one.
+# 2026-10-17, STILL DRAFT THAT DAY: A FAMILY IS ANSWERED, NOT THROWN ON. Asked
+# with a family in front on Revit 2020, this threw "ccda is not a project
+# document" (RevisionSettings.GetRevisionSettings) - FRAGMENT-ISSUES row
+# 5b-880. A family now answers that it holds no revisions, with nothing found.
+# That is also what makes a negative case possible at all: a PROJECT always
+# keeps at least one revision (Revit refuses to delete the last), so `elements`
+# and `revisionTable` can never come back empty from one.
 #
-# VERSION 2, BACK TO DRAFT ON 2026-11-07, AND THE PROOF BLOCK IS KEPT - the
-# 2026-10-17 arrangement is still the one to re-prove the table from; its
-# fingerprint no longer matches. Version 2 adds the SHEET-BY-SHEET check:
-# each sheet's revisions in sequence with what each prints and whether it is
+# VERSION 2, BACK TO DRAFT ON 2026-11-07, AND THE PROOF BLOCK WAS KEPT - the
+# 2026-10-17 arrangement was still the one to re-prove the table from; its
+# fingerprint no longer matched. Version 2 adds the SHEET-BY-SHEET check: each
+# sheet's revisions in sequence with what each prints and whether it is
 # ticked, clouded or both, its current (last) revision, the sheets that do not
 # end on `expectedLast`, and the revisions only clouds hold. Asked for after
 # FRAGMENT-ISSUES row 5b-1463, where an untick "succeeded" on sheets whose

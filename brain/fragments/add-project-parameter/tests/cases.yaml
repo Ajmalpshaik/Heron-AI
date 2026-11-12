@@ -21,7 +21,78 @@ positive:
       own file again - read in Revit's dialog, not from this report. Version 1
       left it pointing at the file asked for (5b-317)
 
+  - given: >
+      version 3 (5b-1127), Group NL - a shared parameter file that EXISTS and
+      already holds HERON_NL_TAG in group HERON, asked for on Ducts,
+      createMissing left out
+    expect: >
+      bound to Ducts, the report saying the definition was reused, and the
+      file on disk byte for byte what it was - compare a copy taken first.
+      What version 2 was proved on, and it must not have moved
+
+  - given: >
+      version 3, Group NL - createMissing=true, the same file, a parameter
+      name it does NOT hold (HERON_NL_NEW)
+    expect: >
+      bound to Ducts, a finding saying the parameter was created in the file
+      as asked and that Undo does not take it out, and the name now in the
+      file - read it in Manage > Shared Parameters. The modeller asked for a
+      new one, so one is made
+
+  - given: >
+      version 3, Group NL - createMissing=true, the same file, a GROUP it
+      does not hold and a new parameter name
+    expect: >
+      bound, and the finding naming the group as NEW as well as the parameter,
+      and saying the file keeps both
+
+  - given: >
+      version 3, Group NL - createFile=true and a path where NO file is, in a
+      folder that exists; createMissing left out
+    expect: >
+      a new shared parameter file there, "Created a new shared parameter file
+      at ..., as asked" with the words that Undo does not remove a file on
+      disk, the parameter created in it and bound. Delete the file afterwards
+      - a rollback does not
+
 negative:
+  - given: >
+      version 3 (5b-1127), THE CASE THE ROW IS ABOUT, Group NL - a path where
+      no file is (the real file's name with one letter wrong), createMissing
+      left out. Note what Manage > Shared Parameters shows first
+    expect: >
+      bound false, boundCategories empty, a finding naming the path and saying
+      nothing was done, and NO file at that path afterwards - look in the
+      folder. Manage > Shared Parameters shows what it showed. Version 2
+      created the file, bound the parameter and answered `bound true`
+
+  - given: >
+      version 3 (5b-1127), THE CASE A REVIEW OF THE REPAIR FOUND, Group NL -
+      the same mistyped path with createMissing=TRUE and createFile left out:
+      what "create a shared parameter" sends
+    expect: >
+      refused exactly as above - bound false, NO file at that path - and the
+      finding saying that asking for a new parameter does not make a new
+      file. As first written, version 3 made the file here and answered
+      `bound true`
+
+  - given: >
+      version 3 (5b-1127), Group NL - the real file, a parameter name it does
+      not hold (HERON_NL_TPYO), createMissing left out
+    expect: >
+      bound false, a finding naming the file, the name and the group and
+      saying nothing was written, and the file on disk byte for byte what it
+      was - no new line in it, no new group. Version 2 wrote the name into the
+      file and bound it
+
+  - given: >
+      version 3, Group NL - the real file, a GROUP name it does not hold,
+      createMissing left out
+    expect: >
+      bound false, the finding saying the file has no such group, and no new
+      group in the file. Version 2 made the group before it looked for the
+      parameter
+
   - given: >
       version 2 - one category the Project Parameters dialog does not offer
       (check with a read that it does not allow bound parameters) asked for
@@ -56,7 +127,10 @@ negative:
     expect: >
       a plain failure naming the path, and NOTHING created anywhere else. The
       earlier library fell back to a temporary folder, which produces a shared
-      parameter nobody can find again
+      parameter nobody can find again. Version 3: refused before anything is
+      tried when createFile is left out; with createFile=true the folder is
+      still not made, and Windows' own words for the missing folder come back
+      in the failure
 
   - given: an empty category list
     expect: >
@@ -70,3 +144,7 @@ second_route:
     in its box - it must be the one noted before the run, whatever the report
     says. Then press Undo once: the binding goes, and the path stays the
     modeller's own, because nothing here leaves Undo anything to do for it
+  - >
+    Version 3: the shared parameter file itself, opened in a text editor
+    before and after a REFUSED run - the same lines, the same size, the same
+    modified time; and the folder, for a file that was not there before

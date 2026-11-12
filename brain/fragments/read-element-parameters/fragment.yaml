@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -28,7 +28,19 @@ capability: READ_ELEMENT_PARAMETERS
 # took some forty reads in groups of twelve or fewer. The add-in's
 # `providesEntries` lost its cap of twelve in the same change. DRAFT until
 # NEEDS-CHECKING Group JD proves version 6 (D-30).
-version: 6
+#
+# Version 7 (2026-11-11; D-54 s3, FRAGMENT-ISSUES row 5b-203) changed impl/: A
+# NAME TWO PARAMETERS SHARE IS NEVER READ, and the card is back to DRAFT.
+# Version 6 was PROVEN on 2026-10-28 (the proof block below, kept as the record of what it
+# proved). It took `LookupParameter`'s first match, which Autodesk's reference
+# calls random when two parameters on one element share the name. An element
+# carrying the name twice - on itself, or on the type the read falls through
+# to - is now in `ambiguous` and named in `findings` as NOT READ: no value,
+# not blank, not absent. Every other element reads exactly as version 6 read
+# it. Written here and not in `purpose`: the purpose is routing text. DRAFT
+# until NEEDS-CHECKING Group NK, NK8, is run (D-30). A read: it still answers
+# through revit_read while DRAFT, and says DRAFT (D-117 item 4).
+version: 7
 source: OFFICIAL
 risk: READ
 
@@ -143,6 +155,14 @@ contract:
     - name: absent
       # Elements handed in that do NOT carry the parameter at all. The
       # evidence it looked, never a value it read (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: ambiguous
+      # VERSION 7. Elements carrying TWO OR MORE parameters by this name - on
+      # the element, or on its type when the read reached it - where Revit's
+      # lookup would pick one at random. Not read: which one was meant is the
+      # modeller's to say (D-54 s3, FRAGMENT-ISSUES 5b-203). Turned down,
+      # never found (D-52).
       role: accounting
       type: IList<ElementId>
     - name: resolvedFrom

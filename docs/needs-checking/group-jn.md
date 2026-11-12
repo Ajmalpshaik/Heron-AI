@@ -43,3 +43,9 @@ elbow the installed library holds - its file name differs by release and is not 
 **Then sign**, on the owner's word only: `python brain/heron_validate.py accept check-family-standards --by "Ajmal
 PS"` once JN3 and JN4 pass, and `heron-status` set to PROVEN in the same change. A row that fails reopens
 5b-1346; nothing in a row changes to make it pass.
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `CHECK_FAMILY_STANDARDS` reads PROVEN on its card, at version 4 - its `proof` block is signed by Ajmal PS,
+2026-11-02, on P1102 Elbow24, Revit 2024, session 59960. So where this page calls a card named here DRAFT, or says
+nothing has run in Revit, that was true when it was written and is out of date as a statement about the card. Whether
+JN0 to JN6 were what that proof ran is NOT sorted here: for the owner.

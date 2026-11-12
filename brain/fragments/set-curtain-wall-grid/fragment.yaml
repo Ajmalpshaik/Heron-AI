@@ -32,8 +32,9 @@ capability: SET_CURTAIN_WALL_GRID
 # carries is now refused naming both (D-54 s3), and a name no type has is
 # refused by the fragment, listing the curtain wall and curtain system types,
 # where the add-in used to refuse it before the run. Version 2's proof below no
-# longer describes the code and is kept as a record; the card is DRAFT until
-# NEEDS-CHECKING Group JP proves version 3 - both paths - and the owner signs.
+# longer described the code and was kept as a record; the card was DRAFT at the
+# time, until NEEDS-CHECKING Group JP proves version 3 - both paths - and the
+# owner signs.
 #
 # THE CURTAIN SYSTEM TYPE, IN FULL - comments, not `purpose`, because
 # `purpose` is searched: written there at first, this text helped send row
@@ -84,9 +85,10 @@ capability: SET_CURTAIN_WALL_GRID
 #
 # Version 3 was proved on main while this merge was being made (NEEDS-CHECKING
 # Group JP, TEST MASS on Revit 2020, signed 2026-11-01 by Ajmal PS, #775) - the
-# proof below. It describes version 3's code, not version 4's, so it stays the
-# record and its fingerprint is stale on purpose. DRAFT until version 4 - the
-# grid, the mullions, and both in one call - is proved and the owner signs.
+# proof below. It described version 3's code, not version 4's, so it stayed the
+# record and its fingerprint was stale on purpose. DRAFT at the time, until
+# version 4 - the grid, the mullions, and both in one call - is proved and the
+# owner signs.
 version: 4
 source: OFFICIAL
 risk: MODIFY
@@ -284,6 +286,8 @@ contract:
     - name: findings
       type: IList<string>
 
+# WRITTEN ABOVE AN EARLIER PROOF, since replaced by the `proof:` block below -
+# read that block's own date and fingerprint, not this comment, for what ran.
 # VERSION 3'S PROOF, KEPT AS A RECORD - NEEDS-CHECKING Group JP, signed
 # 2026-11-01 by Ajmal PS (#775), which settled the curtain system type's grid
 # ids: the type carries SPACING_LAYOUT_1 and _2 and SPACING_LENGTH_1 and _2. It
@@ -433,11 +437,12 @@ compatibility-note: >
 #    1500"                                 -> here
 #   "set the curtain system grid spacing
 #    to 1500"                              -> here, on the curtain SYSTEM type
-#                                             (version 3, DRAFT until Group JP):
-#                                             grid 1 or grid 2, never vertical
-#                                             or horizontal - which way each runs
-#                                             is the face's. The curtain system
-#                                             itself is CREATE_CURTAIN_SYSTEM's
+#                                             (version 3, DRAFT at the time,
+#                                             until Group JP): grid 1 or grid 2,
+#                                             never vertical or horizontal -
+#                                             which way each runs is the face's.
+#                                             The curtain system itself is
+#                                             CREATE_CURTAIN_SYSTEM's
 #   "what is the grid spacing on this
 #    curtain system"                       -> NOT HERE - a question never lands
 #                                             on a write (D-86). Nothing reads a
@@ -462,7 +467,8 @@ compatibility-note: >
 #   "take the top mullion off"             -> here, mullions horizontal border 2=none
 #   "put mullions on the curtain system
 #    type"                                 -> here, grid 1 or grid 2 positions
-#                                             (DRAFT until Group JP)
+#                                             (DRAFT at the time,
+#                                             until Group JP)
 #   "which mullions are on this curtain
 #    system"                               -> NOT HERE - a question never lands
 #                                             on a write (D-86). Nothing reads a
@@ -506,7 +512,7 @@ compatibility-note: >
 #    panels"                               -> ADD_CURTAIN_GRID_LINES, "equal 6"
 #                                             on that one wall: five lines on the
 #                                             wall's own grid, its type untouched
-#                                             (DRAFT since 2026-10-28). Fixed
+#                                             (DRAFT at the time, since 2026-10-28). Fixed
 #                                             Number is still refused HERE - the
 #                                             count is each wall's own "Number",
 #                                             and WRITE_ELEMENT_PARAMETERS refuses
@@ -546,7 +552,7 @@ compatibility-note: >
 #                                             yet. Both are type settings this
 #                                             does not touch
 #   "change the bottom row of panels on this curtain wall to solid panels"
-#                                          -> SET_CURTAIN_PANEL_TYPE (DRAFT,
+#                                          -> SET_CURTAIN_PANEL_TYPE (written
 #                                             2026-10-28): one wall's panels, by
 #                                             the rows and columns this grid
 #                                             makes; the type is left alone

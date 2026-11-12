@@ -96,3 +96,14 @@ the eight releases' own XML remarks, [row 5b-1324](../fragment-issues/section-5b
 [`hosted-family-creation`](../../brain/skills/hosted-family-creation.yaml) step 5 now tells the modeller to
 cut by hand before loading. **Still open in BV12:** the same question for a WALL and a CEILING template,
 and for a ROOF, which nobody has measured - record each as the row says.
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `SET_FAMILY_CONNECTOR_ROLES` reads PROVEN on its card, at version 4 - its `proof` block is signed by Ajmal
+PS, 2026-10-24, on Heron Connector Ticks Test (1,526 elements), Revit 2020, session 94928. `REPORT_FAMILY_TEMPLATE`
+reads PROVEN on its card, at version 4 - its `proof` block is signed by Ajmal PS, 2026-11-02, on PHASES RAN AGAINST
+DIFFERENT DOCUMENTS: P1102 MEP Family, P1102 MEP - active was P1102 MEP, Revit 2020, session 59096.
+`SET_FAMILY_SETTINGS` reads PROVEN on its card, at version 4 - its `proof` block is signed by Ajmal PS, 2026-11-02, on
+PHASES RAN AGAINST DIFFERENT DOCUMENTS: P1102 MEP Family, P1102 MEP - active was P1102 MEP, Revit 2020, session 59096.
+So where this page calls a card named here DRAFT, or says nothing has run in Revit, that was true when it was written
+and is out of date as a statement about the card. Whether BV1 to BV23 were what that proof ran is NOT sorted here: for
+the owner.

@@ -126,8 +126,8 @@ purpose: >
 #   Every change is read back - the parts, the separators, the place and the
 #   heading - into columnNow, which says what the column was and is now; every
 #   refusal is a sentence in refusedWhy. Version 1's proof below no longer
-#   describes the code and is kept as a record; the card is DRAFT until the
-#   version 2 proof (NEEDS-CHECKING Group IG) is signed.
+#   described the code and was kept as a record; the card was DRAFT at the
+#   time, until the version 2 proof (NEEDS-CHECKING Group IG) is signed.
 
 contract:
   needs:
@@ -214,8 +214,8 @@ contract:
       type: string
 
 # VERSION 1's PROOF, KEPT AS A RECORD. Version 2 changed impl/, so its
-# fingerprint no longer describes the code and the card is DRAFT until
-# NEEDS-CHECKING Group IG proves version 2 (D-30).
+# fingerprint no longer described the code and the card was DRAFT at
+# the time, until NEEDS-CHECKING Group IG proves version 2 (D-30).
 proof:
   date: '2026-10-22'
   by: Ajmal PS

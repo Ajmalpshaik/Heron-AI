@@ -101,20 +101,82 @@ def main():
     # It happened on 2026-09-15: `revit_phases` was appended to the end of
     # the file and sat 16 lines past the main block. Found by a review,
     # not by anything here - which is why this check exists now.
+    #
+    # THE BLOCK IS LOOKED FOR IN EVERY FILE THE SERVER IS (heron_tools owns
+    # the list), and a tool is late only when it sits below the block IN THE
+    # BLOCK'S OWN FILE - a line number compares with nothing in another one.
     import ast
-    tree = ast.parse(io.open(tool.SERVER, encoding="utf-8").read())
-    blocks = [node.lineno for node in tree.body
-              if isinstance(node, ast.If)
-              and "__main__" in ast.dump(node.test)]
+    blocks, entry = [], None
+    for path, name in tool.sources():
+        tree = ast.parse(io.open(path, encoding="utf-8").read())
+        for node in tree.body:
+            if isinstance(node, ast.If) and "__main__" in ast.dump(node.test):
+                blocks.append(node.lineno)
+                entry = name
     check(len(blocks) == 1,
           "the server has exactly one `if __name__ == \"__main__\"` block, "
           "at line %s" % (blocks or "nowhere"))
-    late = [one["name"] for one in rows if one["line"] > blocks[0]]
+    late = [one["name"] for one in rows
+            if one["file"] == entry and one["line"] > blocks[0]]
     check(not late,
           "and every one of the %d tool(s) is defined ABOVE it - a tool "
           "below never registers, because server.run() does not return%s"
           % (len(rows),
              "" if not late else ": %s" % ", ".join(late)))
+
+    # A TOOL IN ANOTHER FILE REGISTERS WHEN THAT FILE IS IMPORTED, so for it
+    # the same rule reads differently (FRAGMENT-ISSUES row 5b-1555): the entry
+    # file must import the tool's file, at its own top level, ABOVE the block.
+    # An import below the block, or none at all, and every tool in that file
+    # is absent from tools/list exactly as revit_phases was - registered by
+    # nothing, declared by the registry, and nothing fails.
+    imported = {}
+    for path, name in tool.sources():
+        if name != entry:
+            continue
+        for node in ast.parse(io.open(path, encoding="utf-8").read()).body:
+            asked = ([alias.name for alias in node.names] if isinstance(node, ast.Import)
+                     else [node.module or ""] if isinstance(node, ast.ImportFrom) else [])
+            for module in asked:
+                imported.setdefault(module.split(".")[0], node.lineno)
+    elsewhere = sorted(set(one["file"] for one in rows if one["file"] != entry))
+    block = blocks[0] if blocks else 0
+    never = [name for name in elsewhere
+             if not 0 < imported.get(os.path.basename(name)[:-3], 0) < block]
+    check(not never,
+          "and every other file that holds a tool (%s) is imported by the entry "
+          "file above it, or its tools never register%s"
+          % (", ".join(elsewhere) or "there is none",
+             "" if not never else ": %s" % ", ".join(never)))
+
+    # AND WHERE THAT IMPORT STANDS IS THE ORDER A HOST IS SERVED. The SDK lists
+    # tools as they register, so a tool file's tools land wherever its import
+    # line is. heron_tools.served_order states the order meant - the entry
+    # file's own tools first, then each other file's in SERVER_FILES' order -
+    # and tests/test_mcp_serves.py holds a real SDK to it, which CI cannot run.
+    # So the same rule is held here as text: each tool file is imported BELOW
+    # the entry file's last own tool, and they are imported in the list's
+    # order. Moved to the top of the file, an import passes every other check
+    # on this page (review of row 5b-1555).
+    own = [one["line"] for one in rows if one["file"] == entry]
+    last_own = max(own) if own else 0
+    early = [name for name in elsewhere
+             if 0 < imported.get(os.path.basename(name)[:-3], 0) < last_own]
+    check(not early,
+          "each is imported below the entry file's last own tool, so its tools are "
+          "served after them%s" % ("" if not early else ": %s is not" % ", ".join(early)))
+    listed = [name for path, name in tool.sources() if name in elsewhere]
+    by_import = sorted(elsewhere, key=lambda name: imported.get(os.path.basename(name)[:-3], 0))
+    check(by_import == listed,
+          "and in the order heron_tools.SERVER_FILES lists them: %s"
+          % (", ".join(by_import) or "there is none"))
+    rule = getattr(TOOLS, "served_order", None)
+    by_rule = rule() if rule is not None else None
+    by_text = ([one["name"] for one in rows if one["file"] == entry]
+               + [one["name"] for name in listed for one in rows if one["file"] == name])
+    check(by_rule == by_text,
+          "which is the order heron_tools.served_order states (%d tools)"
+          % len(by_rule or []))
 
     print("\n2. explained is a word boundary, not a substring")
     check(tool.explains("the depth to walk to", "depth"),

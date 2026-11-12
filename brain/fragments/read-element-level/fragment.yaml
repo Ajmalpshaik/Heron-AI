@@ -14,8 +14,8 @@ capability: READ_ELEMENT_LEVEL
 # its offset is WALL_BASE_OFFSET, "Base Offset" - so every wall came back
 # with its level right and 0 mm beside it, whatever its Base Offset was. That
 # parameter is now asked LAST, so nothing version 1 read an offset from reads
-# a different one. DRAFT until version 2 is run in Revit: NEEDS-CHECKING
-# Group EB.
+# a different one. DRAFT at the time, until version 2 is run in Revit:
+# NEEDS-CHECKING Group EB.
 version: 2
 source: OFFICIAL
 risk: READ
@@ -62,6 +62,8 @@ contract:
       role: accounting
       type: IList<ElementId>
 
+# WRITTEN ABOVE AN EARLIER PROOF, since replaced by the `proof:` block below -
+# read that block's own date and fingerprint, not this comment, for what ran.
 # THIS PROOF IS VERSION 1's AND IT IS STALE. It ran on 28 duct taps and 12
 # sheets and never on a wall, which is how a wall's 0 mm went unseen. The
 # fingerprint below no longer matches the implementation; Group EB is the run

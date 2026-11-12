@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,24 @@ semantic-identity: "add a new project parameter to these categories"
 kind: action
 domain: revit.parameters
 capability: ADD_PROJECT_PARAMETER
-version: 2
+version: 3
 source: OFFICIAL
 risk: ADMIN
+
+# VERSION 3 (2026-11-11) - A FILE OR A PARAMETER THAT IS NOT THERE IS REFUSED
+# UNLESS IT WAS ASKED FOR, and back to DRAFT. Version 2 was PROVEN on
+# 2026-11-02 (the proof block below, kept as the record of what it proved - an
+# existing file and an existing definition, reused); its C# moved, so it is
+# DRAFT again until NEEDS-CHECKING Group NL is run (D-30, D-117).
+# FRAGMENT-ISSUES row 5b-1127, measured 2026-10-18 on Revit 2020: given a
+# shared parameter file path that did not exist, it created a file there,
+# wrote the definition, bound it and answered `bound true`; a name the file
+# did not have was written into it the same way. Two new inputs, one yes
+# each: `createMissing` for a parameter (and its group) inside a file that is
+# there, `createFile` for a new file. They are separate because one input for
+# both let "create a shared parameter" make a new FILE at a mistyped path -
+# the row's defect again (a review of this change, 2026-11-12). Nothing of
+# version 3 has run in Revit.
 
 purpose: >
   Creates a shared parameter and binds it to one or more categories as a
@@ -30,8 +45,10 @@ purpose: >
   application had none set. A shared parameter written to a path nobody knows
   about is a parameter that cannot be re-used on the next project or matched by
   a colleague - which defeats the whole point of it being SHARED. So the path
-  comes from the request; the file is created if it is not there yet, and the
-  application is pointed at it.
+  comes from the request. A path with no file, or a name the file does not
+  hold, is refused (version 3): `createMissing` true makes a new parameter in
+  a file that is there, `createFile` true makes a new file. What either one
+  writes to disk, Undo does not take back.
 
   **Re-running it does not make a second parameter.** An existing definition of
   that name in that group is reused, and an existing binding is extended rather
@@ -56,7 +73,7 @@ purpose: >
   category asked for is looked for in the binding afterwards, and any that is
   not there is in `categoriesNotBound` with the reason. If none of them can
   carry a parameter, nothing is done and the shared parameter file setting is
-  never touched. DRAFT, never proved.
+  never touched.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -83,6 +100,27 @@ contract:
     - name: instanceBinding
       type: bool
       source: request
+    # VERSION 3. true makes a NEW PARAMETER - and the group to hold it - in a
+    # shared parameter file that is ALREADY THERE, when the file's group does
+    # not hold the name. It never makes a file: a path with no file is refused
+    # whatever this says. Left out is false - a name the file does not hold is
+    # then refused, and nothing is written. Say true only when the modeller
+    # asked for a NEW parameter. What it writes into the file, Undo does not
+    # take back.
+    - name: createMissing
+      type: bool
+      source: request
+      optional: true
+    # VERSION 3. true makes a NEW SHARED PARAMETER FILE at the path when no
+    # file is there, and the parameter in it. Left out is false - a path with
+    # no file is refused, because a mistyped path is more likely than a
+    # missing file. Say true ONLY when the modeller asked, in words, for a new
+    # shared parameter file at that path. A file on disk is not removed by
+    # Undo.
+    - name: createFile
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: findings
       type: IList<string>
@@ -161,10 +199,18 @@ compatibility-note: >
   `Category.AllowsBoundParameters` and `CategorySet.Contains(Category)`; the
   reference assemblies show all three present and unchanged 2020 through 2027.
 
+  Version 3 calls no new Revit member: it asks whether the file exists before
+  the setting is touched (`System.IO.File.Exists`, already used), and reads
+  `DefinitionGroups.get_Item` before `Create` rather than in one expression.
+
 # ROUTING - repeated in WRITE_ELEMENT_PARAMETERS and COPY_PARAMETER_VALUE.
 #
 #   "add a project parameter"        -> here
-#   "create a shared parameter"      -> here
+#   "create a shared parameter"      -> here, createMissing=true - a NEW
+#                                       parameter is made only when asked for,
+#                                       and only in a file that is there; a
+#                                       new FILE is createFile=true, its own
+#                                       yes (version 3)
 #   "the client wants an extra field on every element" -> here
 #   "fill in the mark"               -> WRITE_ELEMENT_PARAMETERS - the
 #                                       parameter already exists; this one

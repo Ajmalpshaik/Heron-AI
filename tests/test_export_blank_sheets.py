@@ -59,7 +59,10 @@ for _stream in (sys.stdout, sys.stderr):
         pass
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SERVER = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
+sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+
+import heron_tools as TOOLS                                     # noqa: E402
+
 EXPORT_CS = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "RevitExport.cs")
 SHEETS_CS = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "RevitSheets.cs")
 
@@ -121,7 +124,7 @@ def reply(blank, counted="absent", sheets=7):
 
 
 def main():
-    server = read(SERVER)
+    server = TOOLS.server_text()
     export = read(EXPORT_CS)
     sheets = read(SHEETS_CS)
 

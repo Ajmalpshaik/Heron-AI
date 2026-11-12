@@ -68,10 +68,11 @@ purpose: >
 #   note that reads back other than asked is in the drawing, so it goes in
 #   `unverified`, never `created`, and `noteFormatting` names the paragraph.
 #
-#   NOT RUN IN REVIT. Compiled for all eight releases; the proof plan is in
-#   tests/cases.yaml and NEEDS-CHECKING group HE. Version 1's proof below no
-#   longer describes the code and is kept as a record; the card is DRAFT until
-#   version 2's proof is signed.
+#   NOT RUN IN REVIT WHEN THIS WAS WRITTEN. Compiled for all eight releases;
+#   the proof plan was in tests/cases.yaml and NEEDS-CHECKING group HE.
+#   Version 1's proof below no longer described the code and was kept as a
+#   record; the card was DRAFT at the time, until version 2's proof is
+#   signed.
 
 contract:
   needs:
@@ -232,7 +233,7 @@ compatibility-note: >
 #   "make a numbered note"                 -> here, listType ArabicNumbers.
 #                                             Declared. Measured on main with
 #                                             #586 in, lexical and trained:
-#                                             version 2 is DRAFT, so it loses
+#                                             version 2 was DRAFT then, so it lost
 #                                             PROVEN's tie-break nudge - main
 #                                             with only its status set DRAFT
 #                                             sends "create a text note with a

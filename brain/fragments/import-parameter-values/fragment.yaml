@@ -137,7 +137,7 @@ purpose: >
 # two, is refused for that cell with the reason, counted with the values Revit
 # would not take. The read-back compares the id Revit holds with the id the
 # name named - never the name Revit prints for it. Version 4's proof below no
-# longer describes the code: DRAFT until NEEDS-CHECKING Group HZ.
+# longer described the code: DRAFT at the time, until NEEDS-CHECKING Group HZ.
 contract:
   needs:
     - name: doc
@@ -205,9 +205,9 @@ contract:
       type: string
 
 # VERSION 4's PROOF, KEPT AS A RECORD. Version 5 changed impl/ (row 5b-1259), so
-# its fingerprint no longer describes the code and the card is DRAFT until
-# NEEDS-CHECKING Group HZ proves version 5 (D-30). Every value that is not an
-# element reference still takes the road this proof ran.
+# its fingerprint no longer described the code and the card was DRAFT at the
+# time, until NEEDS-CHECKING Group HZ proves version 5 (D-30). Every value that
+# is not an element reference still takes the road this proof ran.
 proof:
   date: '2026-10-21'
   by: Ajmal PS

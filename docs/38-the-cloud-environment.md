@@ -49,6 +49,16 @@ no Windows profile and no HERON_KNOWLEDGE, so there is nowhere to keep knowledge
 [`.github/workflows/gates.yml`](../.github/workflows/gates.yml) does the same thing for the same
 reason, so this is the supported path rather than a workaround.
 
+> **Since 2026-11-11 the `heron` server itself is the exception**
+> ([D-153](decisions/D-153.md), Proposed; [row 5b-1508](fragment-issues/section-5b-rows-401-425.md)). A
+> cloud chat started outside this environment - from a phone - has no `HERON_KNOWLEDGE`, and every library
+> tool there answered only *"Heron has nowhere to keep what it knows"*. Run off Windows with no folder named,
+> the server now keeps its index in a folder of its own, `<machine-local>/Heron/index/<checkout>` -
+> `~/.local/share`, or `$XDG_DATA_HOME` - and says where on stderr. It is derived and safe to delete. The
+> variable set here still wins, and is still what the setup script builds ahead of the first question. **The
+> paragraph above is unchanged for everything else**: a tool, a suite or `heron_scope.py --rebuild` with
+> nothing named is still refused.
+
 `/opt` rather than `$HOME`, because the setup script runs as root and the session may not.
 
 `HERON_CLIENT_ID` matches [`.mcp.json`](../.mcp.json), so a command typed at a shell carries the same
@@ -227,7 +237,7 @@ real edit does.
 | Every fragment's C#, against every release it claims | yes |
 | Every test suite but the ones below | yes |
 | `test_bridge_roundtrip` | yes, after the build in §3 |
-| `test_mcp_serves`, `test_served_claims`, `test_mcp_stdio`, `test_loads_finalize` | yes — the script installs `mcp` |
+| `test_mcp_serves`, `test_served_claims`, `test_mcp_stdio`, `test_loads_finalize`, `test_outcome_line`, `test_checklist_tool`, `test_commands_tool`, `test_sheet_list_tool` | yes — the script installs `mcp` |
 | `test_routing_phrases` | yes, where §2's one-line check answers `model`; otherwise it exits 3, COULD NOT RUN |
 | The `heron` server's library tools - `heron_lookup`, `heron_resolve`, `heron_capabilities`, `heron_method`, `heron_standards` | yes - served from 2026-10-17, and no `revit_` tool ([D-132](DECISIONS.md)) |
 | The brain: lookup, gaps, routing, retrieval | yes |

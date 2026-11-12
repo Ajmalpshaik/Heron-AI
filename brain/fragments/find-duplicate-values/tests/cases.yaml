@@ -7,6 +7,14 @@ positive:
   - given: rooms on one level checked on "Number", three numbered 05
     expect: one row, three ids, all three in `duplicated`
 
+  # Row 5b-203, added 2026-11-11 with version 2. NOT RUN - Group NK, NK8.
+  - given: >
+      the same walls checked on "Mark", a name each carries once, two of them
+      marked alike
+    expect: >
+      those two in `duplicated` and `ambiguous` EMPTY - the count must not
+      turn down a name that occurs once
+
 negative:
   - given: 200 elements of which 180 have no Mark typed in
     expect: >
@@ -29,6 +37,19 @@ negative:
     expect: >
       a plain sentence saying every value is unique, and empty lists - never
       silence, which reads as the check not having run
+
+  # Row 5b-203, added 2026-11-11 with version 2. NOT RUN - NEEDS-CHECKING
+  # Group NK, NK8; it needs a model that carries a duplicated name.
+  - given: >
+      walls checked on a name a project parameter repeats beside a built-in
+      one - "Comments" bound to Walls as a second, project parameter - two of
+      the walls holding the same built-in Comments
+    expect: >
+      every wall in `ambiguous` and named in findings as carrying two
+      parameters called Comments, NOT READ - none in `duplicated`, `blank` or
+      `noSuchParameter`, and never "every Comments is unique": either answer
+      would be read from whichever parameter Revit returned first (row
+      5b-203)
 
 second_route:
   - a schedule of the same category with the parameter as a column, sorted on it, read down for repeats

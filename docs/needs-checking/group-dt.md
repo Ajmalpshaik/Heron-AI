@@ -54,3 +54,11 @@ connected, and `< /dev/null` on every line.
 | **DT9** | **Revit 2021** - no Revit 2021 is on this PC | the plain refusal, as on 2020. Compiled only |
 | **DT10** | **After the merge**, with the main checkout fast-forwarded - the shared store then rewrites the changed card's row and adds the new one by itself (`heron_scope.refresh`, row 5b-406): `heron_lookup` "colour the rooms by name" with Revit 2020 connected | `APPLY_COLOR_FILL_SCHEME`, no longer filtered out; "which colour scheme does this view use" -> `REPORT_COLOR_FILL_SCHEME` |
 | **DT11** | The signatures, on the owner's word only, after DT1 to DT8 | `python brain/heron_validate.py accept <fragment> --by "Ajmal PS"` for each |
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `APPLY_COLOR_FILL_SCHEME` reads PROVEN on its card, at version 2 - its `proof` block is signed by Ajmal PS,
+2026-10-23, on N23 Snowdon HVAC 2024, Revit 2024, session 83588. `REPORT_COLOR_FILL_SCHEME` reads PROVEN on its card,
+at version 1 - its `proof` block is signed by Ajmal PS, 2026-10-22, on Heron Capture Test (21,317 elements), Revit
+2020, session 60544. So where this page calls a card named here DRAFT, or says nothing has run in Revit, that was true
+when it was written and is out of date as a statement about the card. Whether DT1 to DT11 were what that proof ran is
+NOT sorted here: for the owner.

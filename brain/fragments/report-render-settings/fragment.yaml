@@ -18,8 +18,8 @@ version: 2
 # back with the PC's zone (ToLocalTime) - row 5b-1282's rule for GetSunset;
 # raw.ToLocalTime() read 10:00. On a PC in the site's own zone both rules give
 # the same time, which is why version 1's proof could not show it. Version 1's
-# proof below no longer describes the code: DRAFT until NEEDS-CHECKING Group IM
-# proves version 2 against the dialog.
+# proof below no longer described the code: DRAFT at the time, until
+# NEEDS-CHECKING Group IM proves version 2 against the dialog.
 source: OFFICIAL
 risk: READ
 
@@ -74,11 +74,14 @@ contract:
     - name: findings
       type: IList<string>
 
+# WRITTEN ABOVE AN EARLIER PROOF, since replaced by the `proof:` block below -
+# read that block's own date and fingerprint, not this comment, for what ran.
 # VERSION 1's PROOF, KEPT AS A RECORD. Version 2 changed impl/, so its
-# fingerprint no longer describes the code and the card is DRAFT until Group
-# IM proves version 2 (D-30). Its "2026-06-21 10:00" was read through the rule
-# version 2 replaces, from a time SET_SUN_SETTINGS had written through that
-# rule's mirror - the two agreed with each other, not with the dialog.
+# fingerprint no longer described the code and the card was DRAFT at the time,
+# until Group IM proves version 2 (D-30). Its "2026-06-21 10:00" was read
+# through the rule version 2 replaces, from a time SET_SUN_SETTINGS had
+# written through that rule's mirror - the two agreed with each other, not
+# with the dialog.
 proof:
   date: '2026-10-22'
   by: Ajmal PS

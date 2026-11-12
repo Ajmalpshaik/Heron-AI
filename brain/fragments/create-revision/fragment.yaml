@@ -7,11 +7,11 @@ heron-layer: brain
 id: FRG-SHT-004
 semantic-identity: "add a new revision to the project's revision schedule"
 
-# BACK TO DRAFT ON 2026-09-28, AND THE PROOF BLOCK BELOW IS KEPT ON PURPOSE.
+# BACK TO DRAFT ON 2026-09-28, AND THE PROOF BLOCK BELOW WAS KEPT ON PURPOSE.
 # Widened so Add fills every column of the Sheet Issues/Revisions row - issued
 # to, show, numbering and the issued tick joined description, date and issued
-# by - so the 2026-09-08 fingerprint no longer matches the code. The refusal of
-# an empty description it recorded is unchanged, and is the negative to
+# by - so the 2026-09-08 fingerprint no longer matched the code. The refusal of
+# an empty description it recorded was unchanged, and was the negative to
 # re-prove with.
 kind: action
 domain: revit.sheets

@@ -1183,9 +1183,18 @@ class Fragment(object):
         as stale - a proof that never recorded what it was taken against cannot
         be shown to still hold, and treating unknown as fresh is exactly the
         silent-pass this repository keeps catching itself in.
+
+        NO PROOF AT ALL COUNTS THE SAME, FOR A CARD THAT CLAIMS ONE - row
+        5b-1154. This returned False whenever `proof:` was missing, five lines
+        under the sentence above, so a card edited to `heron-status: PROVEN`
+        with no proof read as fresh and passed D-117's gate at run time:
+        nothing was recorded, so nothing could have moved. A PROVEN or
+        PRODUCTION card with no proof, an empty one, or one that is not a
+        mapping is stale. A DRAFT with none is not - it claims nothing, so
+        there is nothing to have gone stale.
         """
-        if not self.proof:
-            return False
+        if not isinstance(self.proof, dict) or not self.proof:
+            return self.status in NEEDS_PROOF
         recorded = self.proof.get("fingerprint")
         if not recorded:
             return True

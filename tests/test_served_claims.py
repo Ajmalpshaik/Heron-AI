@@ -34,11 +34,19 @@ the store still said zero. A count from a cache of the truth is not the truth.
 
     A status is a fact about a file. Read it from the file.
 
+AND A THIRD TIME, 2026-11-11 (FRAGMENT-ISSUES 5b-1521). The count was read
+from the files and the sentence built on it was still untrue: "N of M
+capabilities are PROVEN ... The other K are not", with M every fragment.yaml
+on disk, so K counted each DEPRECATED card as a capability nobody had proved.
+A retired card is kept for its record and is never offered. The sentence is
+held to the cards still in the library, in its whole form and its one line.
+
     python tests/test_served_claims.py
 """
 
 import io
 import os
+import re
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -64,6 +72,35 @@ def disk_count():
                         proven += 1
                     break
     return proven, total
+
+
+def live_count():
+    """(live, live and not proven, retired) cards, counted here from the
+    files. Which statuses retire a card is docs/09's ladder - everything from
+    DEPRECATED on - read off the brain's own tuple, never the server's."""
+    sys.path.insert(0, os.path.join(ROOT, "brain"))
+    import heron_fragment as FRAGMENT
+    ladder = FRAGMENT.STATUSES
+    leaving = set(ladder[ladder.index("DEPRECATED"):])
+    folder = os.path.join(ROOT, "brain", "fragments")
+    live = unproven = retired = 0
+    for name in sorted(os.listdir(folder)):
+        path = os.path.join(folder, name, "fragment.yaml")
+        if not os.path.isfile(path):
+            continue
+        status = ""
+        with io.open(path, encoding="utf-8", errors="replace") as fh:
+            for line in fh:
+                if line.startswith("heron-status:"):
+                    status = line.split(":", 1)[1].strip().upper()
+                    break
+        if status in leaving:
+            retired += 1
+            continue
+        live += 1
+        if status not in ("PROVEN", "PRODUCTION"):
+            unproven += 1
+    return live, unproven, retired
 
 
 def run():
@@ -123,6 +160,46 @@ def run():
             "the served sentence still claims everything is DRAFT while %d "
             "are PROVEN" % proven)
 
+    # A RETIRED CARD IS NOT A CAPABILITY (FRAGMENT-ISSUES 5b-1521). The
+    # sentence said "N of M capabilities are PROVEN ... The other K are not",
+    # with M every fragment.yaml on disk - so K counted each DEPRECATED card
+    # as a capability nobody has proved. Those cards are kept for their
+    # record and never offered. The sentence is held to the cards still IN
+    # the library, counted here from the files, and in both its forms.
+    live, unproven, retired = live_count()
+    if not retired:
+        failures.append(
+            "no retired card found on disk, so the checks on the served "
+            "sentence's total could not tell the two counts apart")
+    forms = [("whole", message)]
+    try:
+        forms.append(("in one line", server._not_proven(short=True)))
+    except TypeError:
+        failures.append("the served sentence has no one-line form to check")
+    if len(forms) == 2 and not len(forms[1][1]) < len(message):
+        failures.append("the one-line form of the served sentence is no "
+                        "shorter than the whole one")
+    for form, sentence in forms:
+        stated = re.search(r"(\d+) of (\d+) capabilities are PROVEN", sentence)
+        other = re.search(r"[Tt]he other (\d+) are not", sentence)
+        if not stated or not other:
+            failures.append(
+                "the served sentence (%s) no longer states its counts in a "
+                "form this can read: %r" % (form, sentence[:90]))
+            continue
+        if int(stated.group(2)) != live:
+            failures.append(
+                "the served sentence (%s) says %s capabilities, and %d cards "
+                "are still in the library - %d on disk less %d retired, "
+                "which are not capabilities"
+                % (form, stated.group(2), live, total, retired))
+        if int(other.group(1)) != unproven:
+            failures.append(
+                "the served sentence (%s) says the other %s are not proven, "
+                "and %d live card(s) are not - it is counting the %d retired "
+                "ones as capabilities nobody proved"
+                % (form, other.group(1), unproven, retired))
+
     runnable = server._cannot_run()
 
     # The executor exists. Saying otherwise sends the host away from something
@@ -151,6 +228,8 @@ def run():
         return 1
 
     print("  PASS  the proven count is read from the files, not from an index")
+    print("  PASS  the sentence counts the %d card(s) still in the library, "
+          "and not the %d retired" % (live, retired))
     print("  PASS  the served sentences match what the repository actually is")
     print("\nA status is a fact about a file. It is read from the file.")
     return 0

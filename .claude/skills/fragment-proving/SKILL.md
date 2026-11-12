@@ -49,12 +49,13 @@ own record - see [the section on it](#a-proven-fragment-on-another-release-and-a
 
 **Since [D-106](../../../docs/DECISIONS.md) (2026-09-28)** a fragment declared `PUBLISH` or `ADMIN`
 travels only as its own operation - `run_fragment_publish` or `run_fragment_admin` - and Revit lets it
-through only while the owner's **Publish** or **Admin** switch is on in the ribbon, with **Changes**.
+through only while the owner's **Publish** or **Admin** switch is on in Heron's Settings window
+([D-150](../../../docs/decisions/D-150.md)), with **Changes**.
 
 - `batch-prove` and `prove` never send one. `validate` refuses one unless it is given
   **`--allow-publish --write` together** - `--allow-publish` alone is refused, because the read path
   would have run an export past the Publish switch.
-- **The switch is the owner's to turn on, at the ribbon.** Ask him; never set `admin.enabled` or
+- **The switch is the owner's to turn on, in Settings.** Ask him; never set `admin.enabled` or
   `publish.enabled` in `heron.config` yourself.
 - A proof rolls the model back; **it does not unwrite a file.** An export proof leaves what it wrote -
   point it at a scratch folder.
@@ -136,11 +137,20 @@ python tools/batch-prove.py my-jobs.yaml --dry-run    # check it, run nothing
 python tools/batch-prove.py my-jobs.yaml              # run it
 ```
 
-`--dry-run` reads the file against the fragment library and answers, before Revit is touched, whether
+`--dry-run` reads the file against the fragment library and answers, before any fragment is sent, whether
 every fragment exists, whether any is already proved, whether the setup chain is real, whether
 `expect:` names something the fragment provides, and whether a negative case is arranged at all. It
 prints the exact command each job would send. **Always dry-run first** — a batch of fourteen should
 not discover on the eleventh that a name was mistyped on the first.
+
+**A dry run is not silent towards Revit, and this line said it was until 2026-11-11** - *"before Revit
+is touched"*. Since [row 5b-1403](../../../docs/FRAGMENT-ISSUES.md), when a job is otherwise runnable
+the dry run asks **one thing** of each Revit in Heron's address book: whether it is there - a ping, the
+one `heron_bridge_client.py list` sends, which the bridge answers itself with no lease taken - and reads
+that Revit's release from the address book, so a card whose `revit:` list leaves the connected release
+out is `REFUSED` here rather than after a wasted compile. **What it does not do is unchanged:** no
+fragment is run, nothing in a model is read or changed, no Revit is claimed and nothing is written. With
+no runnable job in the file it asks nothing at all, and its closing line says which of the two happened.
 
 Three things the shape of the file is doing:
 
@@ -188,7 +198,8 @@ command line is a conversation of its own - so is the chat you run it from. A co
 held when it ends, and `batch-prove` at the end of its batch. **A chat that has just used the Heron tools
 on the model holds it for three quiet minutes**, and a command line run from that chat is refused
 *"Model 'X' is in use by another chat"* - nothing was sent. Call `revit_release` in the chat first, or
-press **Free this model** on the ribbon. For a series of hand-run commands where one consumes what
+press **Free this model** on the ribbon (in the Heron button's menu since D-150). For a series of
+hand-run commands where one consumes what
 another left (`--expect-from`), set **`HERON_CONVERSATION_ID`** to one value of your own for all of them:
 the carried chain belongs to a conversation, and a series with it set is not handed back at each exit -
 `revit_release` or the button frees it.
@@ -238,7 +249,7 @@ Until IW1 passes, check in the morning that the log shows the warning closed whe
 | `NO NEGATIVE` | the second leg never ran | usually `needs_unbound` — the negative selection was empty. **Rule 3** |
 | `DID NOT RUN` | the positive never ran | read the message. Often a caller value the contract asks for |
 | `TIMEOUT` | Revit did not answer in time | **rule 1.** Retry on a smaller selection. It says nothing about the fragment |
-| `REFUSED` / `NO FRAGMENT` | the job file cannot be run as written | fix the file. Nothing was sent to Revit |
+| `REFUSED` / `NO FRAGMENT` | the job file cannot be run as written - or, since row 5b-1403, the card's own `revit:` list leaves out the Revit that is connected | fix the file, or connect a release the card lists. No fragment was sent to Revit - for the release, Revit was pinged (above) |
 
 A failure is the tool's **output**, not an error — it exits 0 with fourteen failures and non-zero only
 when the batch itself could not run: a `NO FRAGMENT`, a `REFUSED`, a `WRONG RELEASE`, or the library
@@ -380,6 +391,9 @@ fresh entry's, and nowhere else - never from `revit:`, and only where a compiler
 - **A fragment that fails in front of a model belongs in
   [docs/FRAGMENT-ISSUES.md](../../../docs/FRAGMENT-ISSUES.md) the same day**, with what was passed to
   it and what came back, verbatim. The value of that list is that every row was observed rather than
-  expected.
+  expected. **Where the row goes is on that page, under *Add to this file*:** a defect in Heron's own
+  code or documents (section 5b) is a file of its own, `docs/fragment-issues/row-5b-N.md`, with N from
+  `python tools/next-id.py` - never a line appended to a rows file, which is where every merge of
+  parallel work used to stop.
 - **Never record a phase that did not run.** A draft saying "with nothing selected it returned 0" when
   nothing checked is worse than no draft, because it looks like evidence.

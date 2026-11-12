@@ -79,6 +79,8 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+import heron_checkout as CHECKOUT  # noqa: E402
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Every project, in dependency order so the first failure is the deepest one.
@@ -422,11 +424,26 @@ def _generated_dirs(where):
 
 
 def _walked_projects(where):
-    """The fallback for a tree that is not a git checkout."""
+    """The fallback when git cannot say: a tree that is not a checkout, or a
+    machine with no git on PATH.
+
+    IT STAYS IN THIS CHECKOUT. A session's worktree sits inside the folder
+    it was added from, at `.claude/worktrees/<name>/`, and is a whole copy
+    of the repository - every project in it a `.csproj` whose path neither
+    list above names. Git never lists one, so `_tracked_projects()` was
+    never wrong; this walk read them all. Measured 2026-11-11, four
+    worktrees under the main folder and no git on PATH:
+    `tools/check-compile.py` exited 1 on a hundred projects "nothing here
+    builds", before it could say the machine has no compiler (row 5b-1539).
+    `.gitignore` could not have told it: the reader above takes plain
+    `name/` lines, and wherever a harness puts its copies is not this
+    repository's to list. `heron_checkout` asks what git asks - does the
+    folder hold a `.git` of its own.
+    """
     skip = _generated_dirs(where)
     out = []
     for folder, dirs, files in os.walk(where):
-        dirs[:] = [d for d in dirs if d not in skip]
+        dirs[:] = CHECKOUT.own(folder, [d for d in dirs if d not in skip])
         for name in files:
             if name.endswith(".csproj"):
                 rel = os.path.relpath(os.path.join(folder, name), where)

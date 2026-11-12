@@ -31,3 +31,9 @@ one string, every check with PASS / FAIL / WARN / NOT CHECKED and its fix.
 
 **Then sign.** CB1 is the positive case and CB3 the negative for D-30; CB2, CB5 and CB6 are the
 second look. Nothing is kept in any family by any of these runs.
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `CHECK_FAMILY_STANDARDS` reads PROVEN on its card, at version 4 - its `proof` block is signed by Ajmal PS,
+2026-11-02, on P1102 Elbow24, Revit 2024, session 59960. So where this page calls a card named here DRAFT, or says
+nothing has run in Revit, that was true when it was written and is out of date as a statement about the card. Whether
+CB1 to CB8 were what that proof ran is NOT sorted here: for the owner.

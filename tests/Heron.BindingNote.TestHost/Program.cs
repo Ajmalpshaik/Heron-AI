@@ -263,6 +263,7 @@ namespace Heron.BindingNote.TestHost
 
             Foreign();
             Typed();
+            Parts();
 
             Console.WriteLine();
             if (Failures.Count > 0)
@@ -354,6 +355,158 @@ namespace Heron.BindingNote.TestHost
                   && write.IndexOf("expect_from", StringComparison.Ordinal) >= 0
                   && write.IndexOf("NOTHING WAS BOUND", StringComparison.Ordinal) >= 0,
                   "a write is sent to the read first, then expect_from - got \"" + write + "\"");
+        }
+
+        /// <summary>
+        /// FRAGMENT-ISSUES row 5b-1120: SET_ROUTING_PREFERENCE found a fitting
+        /// by its TYPE NAME alone, so "Standard" - the type name of a mitred
+        /// elbow and of a balancing damper in the row's project - bound
+        /// whichever the collector met first, and "Family: Type" was not a
+        /// name it took.
+        ///
+        /// THE RULE ASKED HERE IS THE FRAGMENT'S OWN TEXT. A fragment is
+        /// compiled on its own inside Revit and cannot call HeronBindingNote,
+        /// so tests/test_binding_note.py copies the lines between the
+        /// fragment's two PART NAMES markers, unchanged, into
+        /// FragmentPartNames and the project file compiles that in. One copy:
+        /// what is checked here is what runs in Revit.
+        ///
+        /// BY REFLECTION, for Foreign's reason. Built without the fragment's
+        /// block - the fragment as it stood before the row has none - the
+        /// first check fails and VERSION 1'S RULE STANDS IN, the first part
+        /// whose own name is the name asked for. So the checks below still
+        /// run, and the ones that fail are exactly what version 1 got wrong.
+        ///
+        /// WHAT THIS CANNOT SEE: which parts a project holds, and that the
+        /// fragment binds only when ONE fits. The suite reads the second off
+        /// the fragment's code; the first needs a Revit. The same goes for
+        /// the swap rule at the end: what it answers is checked here, that
+        /// the fragment commits on nothing else is read by the suite, and
+        /// what Revit does to the rules needs a Revit.
+        /// </summary>
+        private static void Parts()
+        {
+            Console.WriteLine();
+            Console.WriteLine("SET_ROUTING_PREFERENCE names a fitting as Family: Type (row 5b-1120)");
+
+            var handed = Type.GetType("Heron.BindingNote.TestHost.FragmentPartNames");
+            var rule = handed == null
+                ? null
+                : handed.GetMethod("Named", BindingFlags.NonPublic | BindingFlags.Static);
+            Check(rule != null,
+                  "the fragment's own part-name rule was handed over and compiled in");
+
+            Func<IList<string>, IList<string>, string, List<int>> fits = (inFamilies, inNames, wanted) =>
+            {
+                if (rule != null)
+                    return (List<int>)rule.Invoke(null, new object[] { inFamilies, inNames, wanted });
+
+                // VERSION 1, kept only so the checks below run without the
+                // block: the first part whose own name is the one asked for.
+                var first = new List<int>();
+                for (var i = 0; i < inNames.Count; i++)
+                {
+                    if (!string.Equals(inNames[i], wanted, StringComparison.OrdinalIgnoreCase)) continue;
+                    first.Add(i);
+                    break;
+                }
+                return first;
+            };
+            Func<List<int>, int, bool> only = (answer, at) =>
+                answer != null && answer.Count == 1 && answer[0] == at;
+
+            // THE ROW'S OWN PROJECT: two loaded families with a type called
+            // "Standard", and a third whose type name nothing else has.
+            const string Elbow = "M_Rectangular Elbow - Mitered";
+            const string Damper = "M_Balancing Damper - Rectangular";
+            const string Radius = "M_Rectangular Elbow - Radius";
+            var families = new List<string> { Elbow, Damper, Radius };
+            var names = new List<string> { "Standard", "Standard", "1.5 W" };
+
+            Check(fits(families, names, "Standard").Count == 2,
+                  "\"Standard\" fits BOTH families that have that type, so the fragment refuses - "
+                  + "version 1 took the first");
+            Check(only(fits(families, names, Elbow + ": Standard"), 0),
+                  "\"Family: Type\" names the elbow, and only the elbow");
+            Check(only(fits(families, names, Damper + ": Standard"), 1),
+                  "and the damper is named the same way");
+            Check(only(fits(families, names, Elbow + " : Standard"), 0),
+                  "\"Family : Type\", as SELECT_TYPES prints it, names it too");
+            Check(only(fits(families, names, Elbow + ":Standard"), 0),
+                  "and so does no space at all");
+            Check(only(fits(families, names, "m_rectangular elbow - mitered: STANDARD"), 0),
+                  "capitals do not count in either half, as they never did for a name alone");
+            Check(only(fits(families, names, "1.5 W"), 2),
+                  "a type name only ONE family has still names it alone");
+            Check(only(fits(families, names, "1.5 w"), 2),
+                  "capitals aside");
+            Check(fits(families, names, Elbow).Count == 0,
+                  "a family's name alone names no type - the fragment lists what came close");
+            Check(fits(families, names, "M_Round Elbow: Standard").Count == 0,
+                  "a family that is not loaded names nothing, whatever its type is called");
+            Check(fits(families, names, Elbow + ": 1.5 W").Count == 0,
+                  "and nor does a loaded family with another family's type");
+            Check(fits(families, names, ": Standard").Count == 0,
+                  "a colon with no family before it names nothing");
+
+            // SEGMENTS HAVE NO FAMILY, and are found as before.
+            var none = new List<string> { "", "", "" };
+            var segments = new List<string> { "Copper - K", "Copper - L", "Carbon Steel - Schedule 40" };
+            Check(only(fits(none, segments, "Copper - K"), 0),
+                  "a segment is still named by its own name");
+            Check(only(fits(none, segments, "copper - l"), 1),
+                  "capitals aside, as before");
+            Check(fits(none, segments, "Copper").Count == 0,
+                  "part of a name is still not the name - \"Copper\" is not \"Copper - K\"");
+            Check(fits(none, segments, "Pipe: Copper - K").Count == 0,
+                  "and a segment has no family to be named with");
+
+            // WHAT THE BINDER TAKES FOR A TYPE, THIS TAKES FOR A FITTING - the
+            // name one Heron tool hands out is never refused by this one.
+            var agree = true;
+            for (var i = 0; i < families.Count; i++)
+            {
+                foreach (var spelling in new[] { ": ", " : ", ":" })
+                {
+                    var text = families[i] + spelling + names[i];
+                    if (!HeronBindingNote.TypeNameMatches(families[i], names[i], text)
+                        || !only(fits(families, names, text), i))
+                        agree = false;
+                }
+            }
+            Check(agree,
+                  "every spelling HeronBindingNote.TypeNameMatches takes for a type names that "
+                  + "one fitting here");
+
+            // ROW 5b-1549, THE SWAP THAT IS KEPT. The old rule is removed and
+            // the new one added at the same index. A review of that change
+            // found the read-back asked only which part the rule AT THAT INDEX
+            // pointed at: where AddRule added nothing and the next rule
+            // already pointed at the part asked for, that reads as asked with
+            // one rule deleted. The fragment's rule now takes the count too,
+            // and it is the fragment's own line that is asked here. Without
+            // it, the part alone stands in - the rule as it first stood.
+            var heldRule = handed == null
+                ? null
+                : handed.GetMethod("Held", BindingFlags.NonPublic | BindingFlags.Static);
+            Check(heldRule != null,
+                  "the fragment's own rule for keeping a swap was handed over and compiled in");
+            Func<int, int, bool, bool> held = (rulesBefore, rulesAfter, pointsAtWanted) =>
+                heldRule != null
+                    ? (bool)heldRule.Invoke(null, new object[] { rulesBefore, rulesAfter, pointsAtWanted })
+                    : pointsAtWanted;
+
+            Check(held(3, 3, true),
+                  "a rule that reads back as asked, in a group of as many rules as before, is kept");
+            Check(!held(3, 2, true),
+                  "ONE RULE FEWER is not kept, though the rule at the index reads as asked - "
+                  + "the next rule already pointed there");
+            Check(!held(1, 0, true) && !held(3, 4, true),
+                  "nor is a group left empty, or one rule longer");
+            Check(!held(3, -1, true),
+                  "a count that could not be read is not a count that held");
+            Check(!held(3, 3, false),
+                  "and the right count with the wrong part is still not kept");
         }
 
         /// <summary>

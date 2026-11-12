@@ -32,7 +32,7 @@ risk: READ
 # CONSIDERED AND NOT WIDENED. REPORT_FAMILY_TEMPLATE (PROVEN) reads the kind,
 # planes, views and types of the family - labels are another question, and a
 # change under its impl/ would make its proof stale for a job it does not do.
-# REPORT_FAMILY_PARAMETERS (PROVEN) lists the family's OWN parameters; a tag's
+# REPORT_FAMILY_PARAMETERS lists the family's OWN parameters; a tag's
 # label shows the TAGGED category's parameters, which that list never holds.
 # REPORT_TAGS_AND_TARGETS reads tags placed in a project, not the family.
 #

@@ -45,3 +45,9 @@ before each run. Every row is run once rolled back first.
 
 A row that fails stays open; nothing in a row changes to make it pass. The 44 mm and 150 mm are the scratch
 part's own sizes: if it is built otherwise, JB1's numbers are its sizes, read off JB0's box.
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `FLIP_ELEMENTS` reads PROVEN on its card, at version 3 - its `proof` block is signed by Ajmal PS, 2026-11-02,
+on P1102 MEP (21,446 elements), Revit 2020, session 59096. So where this page calls a card named here DRAFT, or says
+nothing has run in Revit, that was true when it was written and is out of date as a statement about the card. Whether
+JB0 to JB4 were what that proof ran is NOT sorted here: for the owner.

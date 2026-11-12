@@ -162,7 +162,15 @@ Verifies that:
   direction only, read from the disk so a new tool is caught before it is committed — section 10, added
   2026-09-23, **fails the run**. The same section fails on a `docs/needs-checking/group-*.md` that
   [`NEEDS-CHECKING.md`](../docs/NEEDS-CHECKING.md) never names - a group a merge dropped from the index
-  ([heron-ship §6a](../.claude/skills/heron-ship/SKILL.md))
+  ([heron-ship §6a](../.claude/skills/heron-ship/SKILL.md)). **And, since 2026-11-12, on a 5b row's own file
+  the register does not read as it should** ([row 5b-1585](../docs/fragment-issues/row-5b-1585.md)): no index
+  line names `docs/fragment-issues/row-5b-N.md` - the folder is the list - so what fails is a file named like
+  one that [`register-text.py`](#register-textpy---a-split-register-read-as-one-text) does not read
+  (**NOT READ**) - **under any name**: a row saved as `Row-5b-N.md`, `5b-N.md`, a `.txt` or in a subfolder is
+  found by its row line, not by what it is called, and named with the name it should have - one that holds
+  another row than its name says, or whose heading names another, one numbered before the cut-over the page
+  states (**BEFORE THE CUT-OVER**), a new row still appended to a rows file (**LEFT IN A ROWS FILE**, with the
+  `split-register.py --new-rows` command that moves it), and one number in both places (**HELD TWICE**)
 - **text hygiene over every file git tracks**: no control character other than tab, CR and LF, no
   double-encoded text, no merge-conflict marker — section 11, added 2026-09-23, **fails the run**, except
   a hit inside a PROVEN fragment's `impl/`, which is reported as **waiting** because fixing it makes the
@@ -175,7 +183,10 @@ Verifies that:
   is there, so section 1 cannot see this: it is what a re-band left behind on 2026-10-08
   ([row 5b-381](../docs/fragment-issues/section-5b-rows-376-400.md)). Read from the file's table, not its
   name, so a row appended to the last file is rightly linked there until the split moves it; a link in
-  code is an example, and one naming two rows is not judged
+  code is an example, and one naming two rows is not judged. A rows file is known by **three digits or
+  more** each side of its name since 2026-11-12 - it took exactly three, so a link into
+  `section-5b-rows-1001-1025.md` would never have been judged (row 5b-1509) - and **a row's own file,
+  `row-5b-N.md`, is judged the same way**
 - **a decision another one supersedes says so under its own heading** — section 13, added 2026-10-19,
   **fails the run**. It runs [`check-supersessions.py`](check-supersessions.py), below
   ([D-144](../docs/DECISIONS.md))
@@ -368,6 +379,25 @@ WindowsDesktop MSBuild targets, because the add-in uses WPF for its ribbon icons
 `dotnet-sdk-10.0`; the `dotnet-sdk-8.0` package omits them and stops at 2024. The script **probes for
 those targets** rather than for an operating system, and when they are missing it skips the affected
 releases and names the package to install. A skip is still never reported as a pass.
+
+**With no .NET SDK at all it says `NOT RUN` and exits 3**, as `check-fragments-compile.py` and
+`check-api-surface.py` do - it printed `FAIL  no .NET SDK on this machine` and exited 1 until 2026-11-11,
+the code a project that does not compile uses ([row 5b-1183](../docs/FRAGMENT-ISSUES.md)). Exit 1 is
+now a project that does not compile, or a `.csproj` on disk that nothing here builds; exit 2 a release
+Heron does not know. CI's compile job fails on any non-zero code, so a 3 on that runner is still a red
+build, and `change-evidence.py` records a 3 as NOT RUN.
+[`tests/test_check_api_surface.py`](../tests/test_check_api_surface.py) holds it, by hiding `dotnet`.
+
+**A session's worktree inside this folder is not this repository.** Claude Code puts each one at
+`.claude/worktrees/<name>/`, a whole copy at another commit. Git never lists it; a walk of the disk
+does. Until 2026-11-11 the *"`.csproj` on disk that nothing builds"* check, on a machine with no git
+to ask, named every copy's projects and exited 1 before the no-SDK answer above - and
+`module-reach.py`, `measure-routes.py` and `check-structure.py` each counted a copy as part of this
+tree ([row 5b-1539](../docs/FRAGMENT-ISSUES.md)). All four now ask
+[`brain/heron_checkout.py`](../brain/heron_checkout.py), which lists no folder by name: a folder
+below the start of a walk that holds its own `.git` is another checkout.
+[`tests/test_nested_worktree.py`](../tests/test_nested_worktree.py) holds it with a fake worktree in a
+temp folder. `next-id.py` reads every worktree on purpose, and still does.
 
 A pass means the API surface agrees; it is **not** evidence that anything behaves correctly.
 
@@ -1084,6 +1114,22 @@ the rest are `ALREADY` or `NOT PROVEN`. Its run record and draft are `<slug>@<ye
 another Revit is `WRONG RELEASE` and exits 1, and the drafts are signed with `heron_validate.py accept
 --release`, which adds one entry and leaves `proof:` and `heron-status` as they were.
 [`tests/test_release_proofs.py`](../tests/test_release_proofs.py) holds it.
+
+**A card is not sent to a Revit its own `revit:` list leaves out**
+([row 5b-1403](../docs/FRAGMENT-ISSUES.md)). On 2026-11-02 two cards that start at 2023 and 2025 were
+sent to Revit 2020, the dry run having said `WOULD RUN`, and each spent a compile to come back
+`compile_failed`. Before the first job that is otherwise runnable, the batch now asks the client which
+Revit is connected - a ping, which claims no Revit; with two connected, the one `--session` names - and
+a card that leaves that release out is `REFUSED`, dry run or real, naming the card's releases and the
+connected one. The rule is the client's `excluded_release_refusal`, which `validate` asks of the Revit
+it binds before it sends a fragment, so a dry run with no Revit answering says nothing about releases
+and the run still sends no fragment. **A dry run therefore pings Revit, and says so**: it printed
+*"nothing will be sent to Revit"* until the same day, which the ping made untrue. Its `mode:` line now
+says no fragment is run and nothing in a model is read or changed, and that a connected Revit is asked
+only whether it is there; its closing line says which happened - a dry run with no runnable job asks
+nothing and still says *"Nothing was sent to Revit"*. **The logic is held by
+[`tests/test_batch_prove.py`](../tests/test_batch_prove.py) on a stand-in Revit; the run against a real
+one is still owed** - NEEDS REAL REVIT, [Group NI](../docs/needs-checking/group-ni.md), NI1 to NI4.
 
 **Hole 2 — it passed fragments that had done nothing.** `heron_validate` judges whether the NEGATIVE
 came back empty, which is [D-30](../docs/DECISIONS.md)'s leg and which a fragment that does nothing
@@ -2043,7 +2089,7 @@ passing, in another tool's section. Each tool's own header says more - this is w
 | [`cloud-setup.sh`](cloud-setup.sh) | Not run from a checkout: **pasted into a Claude Code cloud environment's setup box**. Installs the .NET 10 SDK, `python-is-python3` and the Python packages, gives the session somewhere to keep knowledge, and warms the store and the NuGet cache. It must exit 0, so its last lines name whatever did not arrive; [`test_cloud_setup.py`](../tests/test_cloud_setup.py) runs it in a sandbox against the refusals of 2026-09-22 (row 5b-167). [38](../docs/38-the-cloud-environment.md) says what goes in the other boxes |
 | [`deploy-addin.ps1`](deploy-addin.ps1) | Copies the built add-in and its manifest into the current user's Revit add-ins folder - **no administrator rights** - and refuses an assembly built for another release's runtime. `-Remove` uninstalls, `-Rollback` puts back the install it last replaced. Revit must be closed |
 | [`module-reach.py`](module-reach.py) | Who imports each module in `brain/`, in four buckets, and which ones a conversation can actually reach by following imports from `mcp/`. **It decides nothing**: a report, exit 0 |
-| [`prove-agent.py`](prove-agent.py) | The proof path for an **add-in agent**, which the fragment tools cannot prove: sessions, a tracking run, a draft, and a person's acceptance **by name**. The machine never signs, and the tool has no write path into `revit/` |
+| [`prove-agent.py`](prove-agent.py) | The proof path for an **add-in agent**, which the fragment tools cannot prove: sessions, a tracking run, a draft, and a person's acceptance **by name**. The machine never signs, and the tool has no write path into `revit/`. `check` reads each signed record against the file it was signed for and exits 1 while one is stale; a `ONE FILE` line names any other file claiming that agent, which the fingerprint does not see ([`brain/agent-proofs/`](../brain/agent-proofs/README.md)) |
 | [`prove-tracking.py`](prove-tracking.py) | [D-53](../docs/DECISIONS.md) tracking for a **fragment**: runs it across several values of one input and shows the declared result following the input - the rows `heron_validate.py` has always judged and nothing had ever produced. `--dry-run` first |
 
 ## `check-declared-questions.py` — does a WRITE claim a QUESTION in writing?
@@ -2295,6 +2341,12 @@ prints, per register, **the id above the highest used anywhere**, main's highest
 above it**. An id two branches both hold is printed as **HELD TWICE**: one of them renames before it merges.
 This checkout's HEAD counts too when it holds commits no remote branch has.
 
+**A 5b row is read wherever it is kept** - in a rows file, on the page of a branch cut before the split, in
+the archive, and since 2026-11-12 in **the row's own file, `docs/fragment-issues/row-5b-N.md`**, where a new
+row is written ([row 5b-1585](../docs/fragment-issues/row-5b-1585.md)). There the file's name is the id as
+well as the row in it, as a decision's file and a group's are; a name `register-text.py` would not read as a
+row's file (`row-5b-045.md`) holds none.
+
 **Since 2026-10-17 it also reads the open pull requests and every worktree's working files.** The pull requests
 come from `gh api repos/OWNER/NAME/pulls?state=open` - the REST call, because `gh pr list` asks GraphQL and a
 Claude Code cloud session refuses that (HTTP 403, measured) - with the repository named, never inferred from a
@@ -2329,7 +2381,7 @@ that failed, no main, or a register with no id on main at all, which means the r
 gh, a fork's `refs/pull/N/head`, worktrees in folders whose names hold spaces, and a squash of this checkout's
 own ids onto main - no network.
 
-**An id that clashed anyway is renamed by [`renumber.py`](renumber.py)** - `--next` is this tool's answer, and `--from D-116 --to D-131` (or `Q-`, `"Group EJ"`, `5b-`; `--dry-run` writes nothing) renames it in this branch's own text since its merge-base with `origin/main`, files named for it included, and never main's own use of the same id. A renamed decision's **Numbering:** line keeps its words and gains a sentence naming the old number, the date and why - main took it, or which branch holds it - and one with no Numbering line gets one under its **Status:** line; exits **0**, **1** when it left a line for a person and named it, **2** when it refused and wrote nothing ([`tests/test_renumber.py`](../tests/test_renumber.py)).
+**An id that clashed anyway is renamed by [`renumber.py`](renumber.py)** - `--next` is this tool's answer, and `--from D-116 --to D-131` (or `Q-`, `"Group EJ"`, `5b-`; `--dry-run` writes nothing) renames it in this branch's own text since its merge-base with `origin/main`, files named for it included - a 5b row's own file `row-5b-N.md` with the number in its heading and its first cell - and never main's own use of the same id. A renamed decision's **Numbering:** line keeps its words and gains a sentence naming the old number, the date and why - main took it, or which branch holds it - and one with no Numbering line gets one under its **Status:** line; exits **0**, **1** when it left a line for a person and named it, **2** when it refused and wrote nothing ([`tests/test_renumber.py`](../tests/test_renumber.py)).
 
 ---
 
@@ -2338,6 +2390,7 @@ own ids onto main - no network.
 ```bash
 python tools/split-register.py fragment-issues            # what would move - writes nothing
 python tools/split-register.py fragment-issues --write    # move it
+python tools/split-register.py fragment-issues --new-rows # only a new 5b row left in a rows file; add --write to move it
 ```
 
 The same step as [`split-needs-checking.py`](#split-needs-checkingpy---one-file-per-group-needs-checkingmd-as-the-index),
@@ -2356,9 +2409,28 @@ of 5b and `archive-fragment-issues.py`'s plan - answer exactly the same on a cop
 out the new way; every re-pointed link reaches the file it reached before; and no other document links into a
 heading that would leave the page.
 
-**A new row goes at the end of its section's last file**, whatever its number; the next run moves it to the file its
-number belongs to. A new section written on the page is moved by the next run, and a run with nothing new moves
-nothing. [`tests/test_split_register.py`](../tests/test_split_register.py) builds its own register, never the real one.
+**A new row of section 5 goes at the end of that section's last file**, whatever its number; the next run moves it
+to the file its number belongs to. A new section written on the page is moved by the next run, and a run with
+nothing new moves nothing. [`tests/test_split_register.py`](../tests/test_split_register.py) builds its own register,
+never the real one.
+
+**A new row of section 5b is a file of its own, and this tool's job for a new row there is retired** - since
+2026-11-12, [row 5b-1585](../docs/fragment-issues/row-5b-1585.md). Every new 5b row used to be appended to the end
+of one rows file and wait for a run of this to band it; the run never came, because re-banding changes the file
+every open branch was appending to, so that one file, named for rows 401 to 425, went on taking every row written after them
+(`grep -c '^| \*\*[0-9]' docs/fragment-issues/section-5b-rows-401-425.md` counts what it holds) and stopped
+almost every merge of parallel work. Now the page says, under the line naming the rows files, *"**Its rows from 1576 on, one file
+each:**"*, and row 5b-1585 is `docs/fragment-issues/row-5b-1585.md` - written by hand, in one step, with no run of
+anything. The page's line is the rule and this never writes one where the page has none. What it still does:
+
+- **a whole run keeps every such row in its own file** and bands only the rows before the cut-over - so does
+  `archive-fragment-issues.py`, which writes through this tool's layout;
+- **`--new-rows` moves a row from the cut-over on that a rows file still holds** - a branch cut before the change
+  appended it the old way - into its own file, with every link that names it, **and re-bands nothing**: the page and
+  every other file are left byte for byte, so it can be run while other branches are open. `check-docs.py` fails on
+  a row left that way and names this command. Two rows of one number, one in each place, are refused and named;
+- **the re-band of the rows before the cut-over** is still [row 5b-1181](../docs/FRAGMENT-ISSUES.md)'s, a change of
+  its own, run when no open branch edits those files.
 
 **A link that names a row it moves follows the row** - since 2026-10-09, [row 5b-381](../docs/fragment-issues/section-5b-rows-376-400.md).
 A link whose words name one 5b row and whose target is the rows file that row is leaving is pointed at the file it
@@ -2367,6 +2439,14 @@ before it is cut, so the read-back compares the files with that text byte for by
 as it stood with every rows file's name left out. Every other `.md`, `.yaml`, `.yml` and `.py` git tracks is
 re-pointed as its own pass, written after the register. A link in fenced code or an inline code span, and one naming
 two rows, is left as written. The report says how many links follow and in which documents.
+
+**A rows file past row 999 has four digits in its name, and the read-back knows it** - since 2026-11-11,
+[row 5b-1169](../docs/FRAGMENT-ISSUES.md). Rows 1001 to 1025 go to `section-5b-rows-1001-1025.md`, and the
+comparison that leaves every rows file's name out took exactly three digits, so once any row linked to a 5b row
+numbered 1000 or more the split refused - *"differ from the register in more than the rows file a link names"* -
+and so, by the same function, would `archive-fragment-issues.py`. It takes three or more now. The real register
+was not split in that change ([row 5b-1181](../docs/FRAGMENT-ISSUES.md) is its own, run when no other branch is
+adding rows).
 
 **PROPOSALS.md is split the same way** - `python tools/split-register.py proposals` - every section to its own file in
 [`docs/proposals/`](../docs/proposals/part-a.md), named from its opening words: `## F23 — ...` is `f23.md`, and a
@@ -2395,7 +2475,20 @@ its heading, and each band of rows back where the table was, with the links as t
 Standard library only. **A missing file is not skipped** - a line naming a file that is not there, a section's
 file that does not open with its heading, or a rows file with no table stops it with `RegisterBroken` rather than
 returning a shorter register. A page that names no file is returned as it is, which is how a suite's own register
-is read. It also holds the one rule for which links name a row (`row_links`) and which rows a file holds
+is read.
+
+**It reads two layouts of a section's rows, and gives them back as one table** - since 2026-11-12,
+[row 5b-1585](../docs/fragment-issues/row-5b-1585.md). Where the page says *"**Its rows from 1576 on, one file
+each:**"* under the line naming the rows files, it lists the folder and reads every `row-5b-N.md` after the rows
+files' rows, **in number order**, with its links as the page would write them - so `open-defects.py`,
+`review-ledger.py`, `archive-fragment-issues.py` and everything that reads through them list a new row with no
+change of their own. **No line names a row's file; the folder is the list**, which is what lets two branches add
+rows without changing a file in common. A row from the cut-over on that is still in a rows file is read in that
+same order, so the text does not depend on where the row is kept, and a number held in both places is read twice
+for `tests/test_open_defects.py` to refuse. A row's file that holds another row than its name says, a heading that names another row or none, or any
+text under its table, a file named
+like one that is not one, and a caller that serves the register from memory with no way to list the folder
+(`listing=`) are each `RegisterBroken`. It also holds the one rule for which links name a row (`row_links`) and which rows a file holds
 (`rows_held`), so `split-register.py`, which re-points such a link, and `check-docs.py` section 12, which fails on
 one at the wrong file, cannot read a link two ways.
 

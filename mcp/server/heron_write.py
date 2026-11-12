@@ -217,6 +217,32 @@ def skipped_sentence(count, reasons, done):
 # ----------------------------------------------------------- document pinning
 
 
+def reported_elsewhere(capability, reply):
+    """
+    The write path's own words for the pin's refusal (FRAGMENT-ISSUES
+    5b-1135): what the add-in reported doing, and that Heron is not showing
+    it as this chat's.
+
+    revit_change asks the pin about the REPLY, so by then the change has been
+    sent and the add-in has answered. Today's add-in refuses a different model
+    before its transaction group opens, and a write is aimed at the pinned
+    model by name (D-74), so this is reached only behind an add-in too old to
+    read `expectProject` - and there it follows a change that may have been
+    KEPT. The verdict is the add-in's, whole and never shortened: it is the
+    only side that saw whether the group held. Pure, so
+    tests/test_document_pin.py runs it.
+    """
+    reply = reply if isinstance(reply, dict) else {}
+    where = reply.get("document") or "the model in front"
+    verdict = str(reply.get("verdict") or "").strip()
+    did = ("The add-in reported: %s" % verdict if verdict else
+           "The add-in did not say whether anything was kept.")
+    return ("%s WAS SENT before Heron could tell, and it ran in %s. %s Heron is not "
+            "showing that as this chat's work. Look at %s in Revit before anything "
+            "else - a change kept there is one entry in that model's undo list."
+            % (capability or "The change", where, did, where))
+
+
 class DocumentPin(object):
     """
     Document Pinning Agent. Which MODEL this chat is working on, inside the
@@ -401,12 +427,29 @@ class DocumentPin(object):
                 return field
         return None
 
-    def check(self, reply):
+    def check(self, reply, did=None, unsent=None):
         """
         Pin on first sight; afterwards, refuse a different document.
 
         Returns None when it is safe to carry on, or the refusal to show the
         user. Never raises: the caller is usually mid-sentence to a person.
+
+        IT IS ASKED OF A REPLY, SO REVIT HAS ALREADY BEEN ASKED AND HAS
+        ANSWERED (FRAGMENT-ISSUES 5b-594, 5b-1135). Both refusals ended
+        "Nothing has been sent to Revit" until 2026-11-11, which was false
+        every time this could run: the request had been sent, and only its
+        answer was being withheld. So the refusal says that - Heron asked,
+        Revit answered from the other model, and the answer is not shown. It
+        does NOT say nothing changed: a tool that selects or isolates has
+        acted by then, and says so itself. `did` is the write path's own
+        sentence in place of that one (`reported_elsewhere`): what the add-in
+        reported doing.
+
+        `unsent` IS FOR A CALLER THAT ASKS BEFORE A CHANGE - the move's
+        preview, the dashboard's Colour. Only a read has gone, and the change
+        it was for has not: that caller says so in one plain sentence, added
+        after the read's. "Nothing has been sent to Revit" used to say it for
+        them, and was true of the change though never of the read.
 
         IT COMPARES LIKE WITH LIKE, WHICH IT DID NOT USED TO. The version
         before this one compared the collapsed keys `key_of` builds, so the
@@ -475,6 +518,21 @@ class DocumentPin(object):
 
         was, now = self._title, title
 
+        # WHAT HAPPENED, WHICH IS NEVER "NOTHING WAS SENT" (5b-1135): the
+        # caller's own sentence on the write path, and otherwise the one thing
+        # true of every reply this is asked about.
+        after = did or (
+            "Heron had already asked Revit, and Revit answered from %s. Heron is not "
+            "showing that answer, because it is not about the model this chat works on."
+            % ("the model in front" if was == now else now))
+        if unsent and not did:
+            after = "%s %s" % (after, unsent)
+
+        # "HERON WILL NOT CHANGE A MODEL YOU DID NOT POINT IT AT" IS A PROMISE
+        # ONLY BEFORE A CHANGE. After one - `did` - the add-in may have kept it
+        # in the other model, so the promise is not made beside that report.
+        promise = "" if did else " Heron will not change a model you did not point it at."
+
         # Deliberately does NOT say "click back to it". From here Heron cannot
         # tell whether the old model is still open or has been closed, and
         # sending someone to look for a model that is no longer there - at the
@@ -488,17 +546,16 @@ class DocumentPin(object):
             # to Project1" would be an instruction the user cannot carry out,
             # so this wording does not give it.
             return ("This chat has been working on a model called %s, and the model in "
-                    "front in Revit now is a DIFFERENT one with the same name. Heron "
-                    "will not change a model you did not point it at.\n\n"
-                    "Nothing has been sent to Revit. Bring back the one you were "
+                    "front in Revit now is a DIFFERENT one with the same name.%s\n\n"
+                    "%s Bring back the one you were "
                     "working on, or say 'use this model' to move this chat onto the "
-                    "one in front deliberately." % was)
+                    "one in front deliberately." % (was, promise, after))
 
-        return ("This chat has been working on %s, but %s is in front in Revit now. "
-                "Heron will not change a model you did not point it at.\n\n"
-                "Nothing has been sent to Revit. Go back to %s if you meant that one, "
+        return ("This chat has been working on %s, but %s is in front in Revit now.%s"
+                "\n\n"
+                "%s Go back to %s if you meant that one, "
                 "or say 'use this model' to move this chat onto %s deliberately."
-                % (was, now, was, now))
+                % (was, now, promise, after, was, now))
 
     @property
     def title(self):

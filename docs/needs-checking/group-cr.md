@@ -56,3 +56,9 @@ connector from this family"*, *"delete the connector on Air Outlet"* and *"delet
 rank it first by words and nearness both. *"delete these elements"* still goes to `DELETE_ELEMENTS`,
 *"put a connector on this face"* to `ADD_FAMILY_CONNECTOR` and *"flip the connector on Port Left"* to
 `SET_FAMILY_CONNECTOR_ROLES`. `check-routing` lists no crossing for it.
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `REMOVE_FAMILY_CONNECTOR` reads PROVEN on its card, at version 1 - its `proof` block is signed by Ajmal PS,
+2026-10-18, on Family4 (2,168 elements), Revit 2020, session 64176. So where this page calls a card named here DRAFT,
+or says nothing has run in Revit, that was true when it was written and is out of date as a statement about the card.
+Whether CR1 to CR11 were what that proof ran is NOT sorted here: for the owner.

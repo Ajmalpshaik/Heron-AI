@@ -17,6 +17,11 @@ See docs/29-metadata-standard.md
 > summaries** of their own site, their docs, the Autodesk App Store listing, ARKANCE reseller pages and
 > AEC Magazine (sources in §7). Most of it is **the vendor's own claim** - nothing here was run.
 > A second pass with `bimlogiq.com` allowed in the environment's network settings should check §1.
+>
+> **Since then:** *nothing built* was true of the day it was written. Six of §5's eight items have been
+> built from it - item 1 as [docs/49](49-saved-commands-and-the-heron-panel.md), item 4 as
+> [docs/50](50-qa-checklists.md), items 5 to 8 as §5.1 to §5.4. Each says what has run in Revit; items 2
+> and 3 are not built.
 
 ---
 
@@ -88,18 +93,18 @@ the card's own; nothing here was run in Revit.
 | Agent that plans and chains | The host plans ([D-01](DECISIONS.md)); `heron_lookup` + `heron_method` + `brain/skills/*.yaml` give the steps | **Have** |
 | Approval before a change | `revit_change` asks **Keep or Discard**, one named undo ([D-126](DECISIONS.md)) | **Have - stricter** |
 | 60+ commands | The fragment library - `ls brain/fragments \| wc -l`, status by `grep -h '^heron-status:' brain/fragments/*/fragment.yaml \| sort \| uniq -c` | **Have - far more** |
-| Save a prompt as a typed command, firm library, pin to ribbon | `brain/heron_userskills.py` (DRAFT) - personal to shared ladder, plans only. No "save this chat as a command", no ribbon pin | **Gap** |
+| Save a prompt as a typed command, firm library, pin to ribbon | `brain/heron_userskills.py` (DRAFT) - personal to shared ladder, plans only. No "save this chat as a command", no ribbon pin. *Since 2026-11-08: a kept job is saved as a personal command and run from Revit's Heron panel - [docs/49](49-saved-commands-and-the-heron-panel.md); no firm library, no ribbon pin* | **Gap** when written - **built, not run in Revit** |
 | Command editor, AI writes C#, validate | `heron-fragment-author` agent writes a DRAFT fragment and compiles every release. No editor inside Revit | **Partly** |
 | Dynamo graph to command | Nothing | **Gap** |
-| `@` element mention | Companion shows the live selection ([40](40-heron-companion.md)) | **Partly** |
+| `@` element mention | A chat reads what is selected with `READ_SELECTION`. The Companion's Selected card, named here first, has been switched off since 2026-10-04 ([40 §21.6](40-heron-companion.md)) | **Partly** |
 | Tag without overlaps | `tag-elements-in-view`, `arrange-tags`, `stack-tags`, `find-overlapping-tags`, `offset-tags-from-host` - all PROVEN. Arrange is a tidy-up after placing, not one placement pass | **Partly** |
-| Dimension by template rules | `create-dimension` (MEP runs merged in 2026-11-01), `dimension-element-faces`, `dimension-grids-and-levels`, `dimension-rooms`, `dimension-wall-openings` | **Partly** - no rule template |
+| Dimension by template rules | `create-dimension` (MEP runs merged in 2026-11-01), `dimension-element-faces`, `dimension-grids-and-levels`, `dimension-rooms`, `dimension-wall-openings` (`dimension-grids-and-levels` and `dimension-wall-openings` were already DEPRECATED on 2026-11-01, merged into `create-linear-dimension` and `dimension-element-faces`) | **Partly** - no rule template |
 | Annotation template, exported and shared | Nothing | **Gap** |
 | Batch across many views | Nothing found as one job | **Gap** |
 | Linked-file tagging | `tag-elements-in-view` tags rooms through a link (card v7) | **Partly** - other categories unsure |
 | Fabrication-part tagging | Fabrication fragments exist; tagging them not found | **Unsure** |
-| 3D to 2D schematic | `report-mep-pressure-drop`, `heron_hvac` duct friction. No schematic drawing | **Gap** |
-| Plain-language QA rule | `heron_modelqa.py`, `check-model-standards`, many `check-*` fragments, `heron-model-auditor` agent. No sentence-to-rule step, no saved checklist | **Partly** |
+| 3D to 2D schematic | `report-mep-pressure-drop`, `heron_hvac` duct friction. No schematic drawing. *Since 2026-11-08: `draw-mep-schematic` - [§5.1](#51-item-5---the-mep-schematic)* | **Gap** when written - **built** |
+| Plain-language QA rule | `heron_modelqa.py`, `check-model-standards`, many `check-*` fragments, `heron-model-auditor` agent. No sentence-to-rule step, no saved checklist. *Since 2026-11-08: saved checklists, the chat turning each sentence into a check - [docs/50](50-qa-checklists.md)* | **Partly** when written - **built, not run in Revit** |
 | Duplicates and overlaps | `find-duplicate-elements` PROVEN | **Have** |
 | Clash with links | `find-clashes` PROVEN | **Have** |
 | Title block overlap | `report-sheet-title-blocks` exists; overlap check not found | **Unsure** |
@@ -163,11 +168,11 @@ DRAFT, until proven on a real model. Ordered by value to an MEP modeller against
 
 | # | Build | Why first | Builds on |
 |---|---|---|---|
-| 1 | **Save this job as a command** - a finished chat job saved as a named recipe with typed inputs, personal first, raised to shared | Turns every good chat into a repeatable button; the biggest everyday win | `heron_userskills.py`, `brain/skills/*.yaml` |
+| 1 | **Save this job as a command** - a finished chat job saved as a named recipe with typed inputs, personal first, raised to shared. **Built 2026-11-08 as the `heron_commands` tool and Revit's Heron panel - personal commands only, not run in Revit: [docs/49](49-saved-commands-and-the-heron-panel.md)** | Turns every good chat into a repeatable button; the biggest everyday win | `heron_userskills.py`, `brain/skills/*.yaml` |
 | 2 | **Annotation template + Tag in one pass** - one saved file: which categories, which tag type, leader rule, offset; place and arrange together, no overlaps; **batch over many views** | Most hours on a drawing set go here | `tag-elements-in-view`, `arrange-tags`, `stack-tags` |
 | 3 | **Dimension template for MEP runs** - categories, which faces, spacing, string placement, per view | Same template file as #2 | `create-dimension` |
 | 4 | **Plain-language QA rule to saved checklist** - the host turns a sentence into a check that maps onto existing `check-*` fragments; the checklist runs in one call and reports. **Built 2026-11-08, not run in Revit: [docs/50](50-qa-checklists.md)** | Heron has the checks; it lacks the saved list | `heron_modelqa.py`, `heron-model-auditor` |
-| 5 | **3D to 2D MEP schematic** - one system traced, drawn as single lines on a drafting view, with sizes, flow and pressure drop. **Built 2026-11-08 as `DRAW_MEP_SCHEMATIC` (DRAFT), not run in Revit: [§5.1](#51-item-5---the-mep-schematic)** | Real MEP value, and Heron already has the trace and the maths | `trace-connectivity`, `report-mep-pressure-drop`, `heron_hvac` (`heron_graph.py`, named here first, is the graph of fragments, not of ducts - not used) |
+| 5 | **3D to 2D MEP schematic** - one system traced, drawn as single lines on a drafting view, with sizes, flow and pressure drop. **Built 2026-11-08 as `DRAW_MEP_SCHEMATIC`, DRAFT and not run in Revit that day - its status since is on its card: [§5.1](#51-item-5---the-mep-schematic)** | Real MEP value, and Heron already has the trace and the maths | `trace-connectivity`, `report-mep-pressure-drop`, `heron_hvac` (`heron_graph.py`, named here first, is the graph of fragments, not of ducts - not used) |
 | 6 | **CAD lines to ducts and pipes** - read the CAD layer, ask size and type, draw the run. **Built 2026-11-09 as `DRAW_MEP_FROM_CAD` (DRAFT) and the `cad-to-mep` method, not run in Revit: [§5.2](#52-item-6---cad-lines-to-ducts-and-pipes)** | Common job on Gulf projects with CAD backgrounds | `extract-cad-curves`, `create-mep-runs`, `fit-mep-joints` (the `duct-layout` skill, named here first, is a unit ducted to its diffusers - not extended) |
 | 7 | **Sheets from Excel** - read the sheet list from a spreadsheet, preview, create. **Built 2026-11-09 as `CREATE_SHEETS_FROM_TABLE` (DRAFT), the `heron_sheet_list` tool and the `sheets-from-excel` method, not run in Revit: [§5.3](#53-item-7---sheets-from-excel)** | Small, quick win | `create-sheets` (not extended - it is PROVEN; `set-parameter-values-by-id` would be a second call) |
 | 8 | **Rebar from a spec** - read the bar sizes and covers from a given spec, then place, then check anchorage and bar length. **Built 2026-11-09 as `CHECK_REBAR_AGAINST_SPEC` (DRAFT) and the `reinforce-concrete` method extended, not run in Revit: [§5.4](#54-item-8---rebar-from-a-spec)** | Structural, lower for MEP | rebar fragments, `reinforce-concrete` (extended, not copied; `report-host-rebar` not edited - it is PROVEN) |
@@ -176,7 +181,9 @@ DRAFT, until proven on a real model. Ordered by value to an MEP modeller against
 
 ### 5.1 Item 5 - the MEP schematic
 
-**Status 2026-11-08: built, DRAFT, compiled for 2020-2027, NOT RUN in Revit.** One new card,
+**Status 2026-11-08: built, DRAFT, compiled for 2020-2027, NOT RUN in Revit.** *Since then: proved and
+signed by Ajmal PS on 2026-11-09 - Snowdon HVAC, Revit 2024, the card's `proof:` block; which rows of
+Group MW that run covered is the group's to say.* One new card,
 [`draw-mep-schematic`](../brain/fragments/draw-mep-schematic/fragment.yaml) (`DRAW_MEP_SCHEMATIC`, MODIFY):
 *"draw a schematic of supply air system SA-01"*, or of the system of the selected element. In one call and one
 undo it traces the system through its connectors from the source equipment (or the selected element) to every

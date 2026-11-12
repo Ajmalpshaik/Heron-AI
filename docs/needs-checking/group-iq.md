@@ -47,3 +47,9 @@ PC.
 **Then sign** `add-family-model-text` version 2 on IQ1 with IQ0's negative, after IQ1 to IQ5 have passed; close
 row 5b-1316 on IQ6 to IQ8 - the sprinkler change is Heron's Python, not a fragment, so there is no card to
 sign. A row that fails reopens its row; nothing in a row changes to make it pass.
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `ADD_FAMILY_MODEL_TEXT` reads PROVEN on its card, at version 2 - its `proof` block is signed by Ajmal PS,
+2026-10-22, on N22 M_Downlight - Recessed Can, Revit 2020, session 60544. So where this page calls a card named here
+DRAFT, or says nothing has run in Revit, that was true when it was written and is out of date as a statement about the
+card. Whether IQ0 to IQ8 were what that proof ran is NOT sorted here: for the owner.

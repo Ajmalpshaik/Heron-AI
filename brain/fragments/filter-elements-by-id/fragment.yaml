@@ -10,8 +10,9 @@ kind: filter
 domain: revit.elements
 capability: FILTER_ELEMENTS_BY_ID
 # VERSION 2 (2026-10-12, FRAGMENT-ISSUES 5b-441): element ids may be TYPED,
-# and the answer names what each element is. DRAFT until a Revit run signs it;
-# version 1's proof below no longer describes the code and reads STALE.
+# and the answer names what each element is. DRAFT at the time, until a Revit
+# run signs it; version 1's proof below no longer described the code and read
+# STALE.
 version: 2
 source: OFFICIAL
 risk: READ

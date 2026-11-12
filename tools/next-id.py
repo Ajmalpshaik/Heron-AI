@@ -62,9 +62,12 @@ Committed files at each branch's head, through `git ls-tree` and one
          docs/needs-checking/group-xx.md and docs/needs-checking-archive/
          group-xx.md, and the xx in each of those file names
   5b     every row of the 5b section: the rows files
-         docs/fragment-issues/section-5b-rows-*.md, the section on the
-         register's page itself (where a branch cut before the split keeps
-         it), and the `Row 5b-N` headings of the archive
+         docs/fragment-issues/section-5b-rows-*.md, each row's own file
+         docs/fragment-issues/row-5b-N.md and the N in its name (where a
+         row written since 2026-11-12 lives - one file each, so two
+         branches adding rows change no file in common), the section on
+         the register's page itself (where a branch cut before the split
+         keeps it), and the `Row 5b-N` headings of the archive
   Q      the first Q-number in each question heading (`### ... Q-nn`) of
          docs/OPEN-QUESTIONS.md and docs/open-questions/ - the reading
          check-docs.py's question count uses
@@ -317,6 +320,10 @@ class Register(object):
 
 FI_PAGE = re.compile(r"^docs/FRAGMENT-ISSUES\.md$")
 FI_ROWS = re.compile(r"^docs/fragment-issues/section-5b-rows-[0-9-]+\.md$")
+# A ROW'S OWN FILE, AND ITS NAME IS THE ID - as a decision's file and a
+# group's are. tools/register-text.py reads no other spelling of the name
+# (no leading zero), so this takes none: a file it would not read holds no row.
+FI_OWN = re.compile(r"^docs/fragment-issues/row-5b-([1-9][0-9]*)\.md$")
 FI_ARCHIVE = re.compile(r"^docs/fragment-issues-archive/reading-defects-5b-[0-9-]+\.md$")
 OQ_PAGE = re.compile(r"^docs/OPEN-QUESTIONS\.md$")
 OQ_FILES = re.compile(r"^docs/open-questions/[^/]+\.md$")
@@ -337,10 +344,12 @@ REGISTERS = [
     Register("5b", "FRAGMENT-ISSUES 5b row", [
         (FI_PAGE, page_rows_5b, None),
         (FI_ROWS, table_rows, None),
+        (FI_OWN, table_rows, int),
         (FI_ARCHIVE, archived_rows, None),
     ], show=lambda n: "5b-%d" % n, order=lambda n: n, after=lambda n: n + 1, entries=[
         (FI_PAGE, page_lines_5b),
         (FI_ROWS, lines_of(ROW)),
+        (FI_OWN, lines_of(ROW)),
         (FI_ARCHIVE, lines_of(ARCHIVED_ROW)),
     ]),
     Register("Q", "open question", [

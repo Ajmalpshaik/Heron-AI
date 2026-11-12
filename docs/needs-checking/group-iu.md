@@ -99,3 +99,11 @@ case returned content"*. IU5 is the negative for the WARNING (`freeEnd` empty, r
 nothing to label, where every result is empty. The draft at `brain/proof-drafts/label-family-dimension.yaml` has IU6
 as its positive and IU9 as its negative, fingerprint `f1dfef10a5fe066a`, second route NOT ESTABLISHED - the flex
 measurements above are recorded here, not as a route.
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `LABEL_FAMILY_DIMENSION` reads PROVEN on its card, at version 3 - its `proof` block is signed by Ajmal PS,
+2026-11-12, on Heron Link Angle Test (1,546 elements), Revit 2020, session 33000; a `proof.releases` entry adds Revit
+2024 (2026-11-12, Ajmal PS). Of the other cards this group names: `READ_ELEMENT_PARAMETERS` reads DRAFT at version 7.
+So where this page calls a card named here DRAFT, or says nothing has run in Revit, that was true when it was written
+and is out of date as a statement about the card. Whether IU0 to IU12 were what that proof ran is NOT sorted here: for
+the owner.

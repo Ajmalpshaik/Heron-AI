@@ -1,5 +1,6 @@
 // NOT STANDALONE. Assumes `doc`, `elements` and `parameterName` are in scope;
-// leaves `findings`, `duplicated`, `blank` and `noSuchParameter` behind.
+// leaves `findings`, `duplicated`, `blank`, `noSuchParameter` and `ambiguous`
+// behind.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -21,17 +22,30 @@
 // what a schedule prints and what somebody reads off the drawing. Comparing the
 // raw internal double would split two identical-looking sizes over a rounding
 // difference nobody can see.
+//
+// A NAME TWO PARAMETERS SHARE IS NOT READ (version 2; D-54 s3, FRAGMENT-ISSUES
+// 5b-203). Element.LookupParameter hands back "the first one encountered" when
+// two parameters on one element share the name, and Autodesk's reference says
+// that match "is determined at random" - a shared or project parameter bound
+// beside a built-in one of the same name does it. A duplicate found, or missed,
+// on a value read that way is a coin toss that reads like a fact. So the name
+// is counted on each element first, and an element carrying it twice goes to
+// `ambiguous`: never read, never compared, never called unique.
 
 var findings = new List<string>();
 var duplicated = new List<ElementId>();
 var blank = new List<ElementId>();
 var noSuchParameter = new List<ElementId>();
+var ambiguous = new List<ElementId>();
 
 var seen = new Dictionary<string, List<ElementId>>();
 
 foreach (var element in elements)
 {
     if (element == null) continue;
+
+    var sameName = element.GetParameters(parameterName).Count;
+    if (sameName > 1) { ambiguous.Add(element.Id); continue; }
 
     var parameter = element.LookupParameter(parameterName);
     if (parameter == null) { noSuchParameter.Add(element.Id); continue; }
@@ -76,6 +90,12 @@ if (blank.Count > 0)
 if (noSuchParameter.Count > 0)
     findings.Add(string.Format("{0} element(s) do not carry a parameter called '{1}' at all - nothing "
         + "was checked on those", noSuchParameter.Count, parameterName));
+
+if (ambiguous.Count > 0)
+    findings.Add(string.Format("{0} element(s) carry TWO OR MORE parameters called '{1}' - NOT READ and not "
+        + "compared, because Revit hands back whichever of them it meets first: {2}. Rename one of the "
+        + "parameters, or check those by eye",
+        ambiguous.Count, parameterName, string.Join(", ", ambiguous.Select(id => id.ToString()))));
 
 if (findings.Count == 0)
     findings.Add(string.Format("Every '{0}' in the {1} element(s) checked is unique",

@@ -25,7 +25,33 @@ positive:
       design target, and if return and exhaust are also untyped the space is
       in noDesignFigure
 
+  # Row 5b-323, added 2026-11-11 with version 3. NOT RUN - NEEDS-CHECKING
+  # Group NK, NK3. Version 2 answered "NO LOAD READABLE" here.
+  - given: >
+      a placed, bounded Space whose Design Heating Load, Design Cooling Load
+      and Specified Supply Airflow were typed, in a model where Revit's own
+      Heating and Cooling Loads analysis has never run
+    expect: >
+      heatingW, coolingW and airflowLs each hold the typed figure for it,
+      marked "entered" - the same numbers the Properties palette shows; it is
+      NOT in noLoad; no entry in calculatedSupplyLs; and its finding names the
+      calculated figures Revit refused
+
+  - given: >
+      the same model, a Space with ONLY a Design Cooling Load typed
+    expect: >
+      coolingW holds it, "entered"; heating and supply read NOT COMPUTED with
+      no entry in heatingW or airflowLs - a refused figure is never a zero
+
 negative:
+  # Row 5b-323, added 2026-11-11 with version 3. NOT RUN - Group NK, NK3.
+  - given: >
+      the same model, a Space with NO load or airflow typed
+    expect: >
+      its id in noLoad, "NO LOAD READABLE" or "NO LOAD", and no entry in
+      heatingW, coolingW or airflowLs - guarding each figure on its own must
+      not turn a space with nothing to report into a row of zeros
+
   - given: ANY space with a known load, checked against what Revit shows on screen
     expect: >
       THE SAME NUMBER - and this is the FIRST case to run against a real model.

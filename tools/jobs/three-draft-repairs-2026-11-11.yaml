@@ -1,0 +1,97 @@
+# Three DRAFT cards repaired in code on 2026-11-11, one job each - the proof
+# each still owes:
+#
+#   divide-parts                     DIVIDE_PARTS                     FRG-ELE-092  version 2  row 5b-1418  Group DQ, DQ3a
+#   set-railing-type                 SET_RAILING_TYPE                 FRG-ELE-097  version 2  row 5b-1415  Group DR, DR6a
+#   copy-elements-between-documents  COPY_ELEMENTS_BETWEEN_DOCUMENTS  FRG-ELE-098  version 4  rows 5b-1123, 5b-1516  Group DR, DR10a
+#
+#     python tools/batch-prove.py tools/jobs/three-draft-repairs-2026-11-11.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/three-draft-repairs-2026-11-11.yaml
+#
+# NOTHING HERE HAS RUN. Written 2026-11-11 in a cloud session with no Revit:
+# each card compiles on every release it declares, and a compile is not a
+# proof.
+#
+# NEVER ON A WORKING PROJECT. On Revit 2024 - where rows 5b-1418 and 5b-1415
+# were measured - these scratch files, all open in ONE Revit:
+#
+#   "Heron Repairs Test" - a NEW project from the default template, saved under
+#   that name, in front. In it:
+#     - five straight walls on the first level, each about 6 m long and 3 m
+#       high: two crossing x = 0 SQUARE to it, one crossing x = 0 SKEW to it,
+#       about 30 degrees off square, and two that do not reach x = 0. The skew
+#       wall is what tells a division cut on the grid line from one cut by the
+#       sketch plane (row DQ3d) - walls all square to the grid cannot.
+#     - KEPT with the PROVEN creators, as rounds 27 and 30 did on 2026-11-02:
+#       CREATE_PARTS on the five walls; CREATE_LEVELS "HERON MID" at 1500 mm and
+#       "HERON HIGH" at 9000 mm (above every wall - row DQ3c); CREATE_GRIDS
+#       "HERON CUT" along x = 0 (rows DQ3b and DQ3d)
+#   A scratch copy of Revit 2024's own Samples\Snowdon Towers Sample
+#   Architectural.rvt - its railing type "Handrail - Pipe" has no primary
+#   handrail (row 5b-1415, round 20).
+#   "Heron Copy Source.rvt" - a new project holding three generic models (any
+#   loaded generic model family).
+#   "Heron Twin.rvt" - a new project holding ONE generic model.
+#   "Heron Twin.rfa" - a new family from any template.
+#   "Heron Twin 2.rvt" - a new, empty project: a title that holds the words
+#   "Heron Twin" without being them.
+#
+# REVIT'S TITLE DIFFERS BY RELEASE. From 2022 it leaves the file extension
+# off, so the first two are both titled "Heron Twin" - the pair row 5b-1123
+# is about. On 2020 and 2021 the extension shows where the user's settings
+# show extensions, and the three titles then all differ; the negative is
+# refused there too, in other words (row DR10a gives both).
+#
+# Where Revit's title bar shows a title differently from the names here, type
+# what it shows. THE DRY RUN DOES NOT CATCH A WRONG TITLE.
+#
+# `write: true` runs each leg inside a transaction group and ROLLS IT BACK.
+# Look at the models afterwards anyway - rollback has failed on this PC before
+# (BD1).
+
+model: "Heron Repairs Test, Heron Copy Source, Heron Twin.rvt, Heron Twin.rfa and Heron Twin 2.rvt (new scratch files) and a scratch copy of Snowdon Towers Sample Architectural, Revit 2024"
+
+defaults:
+  setup: []
+  write: true
+
+jobs:
+  - fragment: divide-parts
+    in: "Heron Repairs Test"
+    setup: [filter-elements-by-category]
+    keep-chain: true
+    expect: divided
+    setup-set: {category: "Parts"}
+    negative-setup-set: {category: "Parts"}
+    set: {cutterNames: "HERON MID"}
+    negative-set: {cutterNames: "ZZZ No Such Level"}
+    note: >
+      Version 1 was refused here on Revit 2024 - "The element id should refer
+      to a valid SketchPlane" (round 27). HERON MID crosses all five walls, so
+      every part handed in is cut. Version 2 passes a horizontal sketch plane
+      through the origin; if Revit refuses again, its words go on row 5b-1418
+      verbatim. `findings` should say a work plane was added with the division.
+
+  - fragment: set-railing-type
+    in: "Snowdon Towers Sample Architectural"
+    expect: railingType
+    set: {railingTypeName: "Handrail - Pipe", duplicateAs: "Heron Guard", topRailTypeName: "", topRailHeightMm: 1000, handrailTypeName: "", handrailHeightMm: 0, handrailSide: ""}
+    negative-set: {railingTypeName: "ZZZ No Such Railing", duplicateAs: "Heron Guard", topRailTypeName: "", topRailHeightMm: 1000, handrailTypeName: "", handrailHeightMm: 0, handrailSide: ""}
+    note: >
+      Round 20's job, unchanged: version 1 answered "Revit refused - The rail
+      has no primary hand rail". The report should now end "handrail none,
+      read back as asked".
+
+  - fragment: copy-elements-between-documents
+    in: "Heron Repairs Test"
+    expect: copied
+    set: {sourceDocumentTitle: "Heron Copy Source", categories: "Generic Models", elementIds: "", offsetMm: "0,20000,0"}
+    negative-set: {sourceDocumentTitle: "Heron Twin", categories: "Generic Models", elementIds: "", offsetMm: "0,20000,0"}
+    note: >
+      The negative is the new refusal: more than one open document matches
+      "Heron Twin", so nothing is copied and `report` names each with its
+      title and path. From Revit 2022, and on 2020 or 2021 with extensions
+      hidden, that is the two titled "Heron Twin" - the .rvt and the .rfa -
+      and "Heron Twin 2" is not named; on 2020 or 2021 showing extensions it
+      is all three. READ THE REPORT: "No other open document matches" there
+      would mean a title was typed wrong, not that the refusal works.

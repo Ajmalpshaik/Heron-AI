@@ -13,8 +13,8 @@ capability: REPORT_CONNECTORS
 # on the owner's instruction and is DEPRECATED - every joint on a placed
 # family is now GRADED as well as described: `mismatched`,
 # `unconnectedSpigots` and `findings`, sizes within `sizeTolerance`. See the
-# merge block above `utterances`. DRAFT until version 3 is proved (D-30); the
-# version 2 proof below is kept as the record of what was run.
+# merge block above `utterances`. DRAFT at the time, until version 3 is proved
+# (D-30); the version 2 proof below was kept as the record of what was run.
 version: 3
 source: OFFICIAL
 risk: READ
@@ -255,17 +255,17 @@ compatibility-note: >
   named - it arrives after 2020. `sizeTolerance` arrives in millimetres and is
   divided by 304.8 in the code (D-71).
 
-# BACK TO DRAFT ON 2026-09-23, AND THE PROOF ABOVE IS KEPT AS THE RECORD OF
-# WHAT WAS RUN.
+# BACK TO DRAFT ON 2026-09-23, AND THE PROOF ABOVE WAS KEPT AS THE RECORD
+# OF WHAT WAS RUN.
 #
 # The proof was taken on the code as it stood. The code then changed: every
 # connector line now carries its duct or pipe system type after the domain -
 # "DomainHvac SupplyAir" - and `connectorSummary` was added, the whole answer
 # as one string, because through a chat the three dictionaries arrived as
-# counts and the connectors never arrived at all. Nothing the proof recorded
-# is contradicted, but it describes code that no longer runs, so its
-# fingerprint no longer matches, and it must NOT be re-stamped: re-taking it on
-# a named model is the only thing that makes this PROVEN again (D-30).
+# counts and the connectors never arrived at all. Nothing that proof recorded
+# was contradicted, but it described code that no longer ran, so its
+# fingerprint no longer matched, and it was NOT to be re-stamped: re-taking it
+# on a named model was the only thing that would make this PROVEN again (D-30).
 # NEEDS-CHECKING AM1 says what to arrange, and
 # tools/jobs/report-connectors-project1-2026-09-23.yaml is that arrangement.
 # FRAGMENT-ISSUES 5b-195.

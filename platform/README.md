@@ -76,8 +76,9 @@ references Heron.Installer except tests/Heron.Installer.TestHost.
 </details>
 
 The test hosts are left out of the picture: `tests/Heron.Installer.TestHost` references the engine and
-`heron-install`, the Kernel, RunGuard and ScriptIsolation hosts reference `Heron.Core`, and the
-StackGuard host compiles its `HeronStop.cs` by source — `grep -l 'platform' tests/*/*.csproj`.
+`heron-install`, the Kernel, RunGuard and ScriptIsolation hosts reference `Heron.Core`, the StackGuard
+host compiles its `HeronStop.cs` by source and the CommandStore host its `HeronPaths.cs` —
+`grep -l 'platform' tests/*/*.csproj`.
 
 ### `Heron.Core`
 
@@ -87,7 +88,7 @@ One file per class (`ls platform/Heron.Core/*.cs`), each the Kernel half of an a
 | Class | Does | Step |
 |---|---|---|
 | [`HeronPaths.cs`](Heron.Core/HeronPaths.cs) | **The Path Manager** — the single place that knows where anything lives. Product, data and derived are separate in code, and `IsSafeToDelete` says yes only inside the derived folders - never for product or data. The Companion's notes are under the user's temporary folder, stepped out of the GUID-named one Revit runs with ([D-135](../docs/DECISIONS.md), [D-136](../docs/DECISIONS.md)) | 1 |
-| [`HeronConfig.cs`](Heron.Core/HeronConfig.cs) | The Configuration Manager. `Load` and `Save`, and deliberately **no** `ApplyFromRequest`. Holds the ribbon's switches as settings - `write.enabled` (Changes), `admin.enabled` (Admin), `publish.enabled` (Publish) and `write.askBeforeKeeping` (Ask to Keep), all `false` by default | 1 |
+| [`HeronConfig.cs`](Heron.Core/HeronConfig.cs) | The Configuration Manager. `Load` and `Save`, and deliberately **no** `ApplyFromRequest`. Holds the switches of Heron's Settings window ([D-150](../docs/decisions/D-150.md); on the ribbon until 2026-11-07) as settings - `write.enabled` (Changes), `admin.enabled` (Admin), `publish.enabled` (Publish) and `write.askBeforeKeeping` (Ask to Keep), all `false` by default, and `companion.enabled` (Companion), `true` by default | 1 |
 | [`HeronIdentity.cs`](Heron.Core/HeronIdentity.cs) | Stable identity for the things Heron must be able to name twice | 1 |
 | [`HeronOperationRegistry.cs`](Heron.Core/HeronOperationRegistry.cs) | The Tool Registry — every operation Heron will run, and the risk level of each | 3 |
 | [`HeronAppend.cs`](Heron.Core/HeronAppend.cs) | One line onto the end of a file another Revit process may be appending to at the same moment — or a plain answer that it could not be done. Used by the audit trail and the add-in log | 1 |

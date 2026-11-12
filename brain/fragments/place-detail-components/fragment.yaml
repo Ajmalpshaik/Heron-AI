@@ -14,9 +14,9 @@ source: OFFICIAL
 risk: MODIFY
 
 # VERSION 2 (2026-11-11) - IN A FAMILY'S OWN VIEW TOO, READ BACK, and back to
-# DRAFT. Version 1 was PROVEN on 2026-10-18 (the proof block below, kept as
+# DRAFT. Version 1 was PROVEN on 2026-10-18 (the proof block then below, kept as
 # the record of what it proved: a project's plan, and a 3D view refused); its
-# C# moved, so it is DRAFT again until NEEDS-CHECKING Group NF is run (D-30,
+# C# moved, so it was DRAFT again at the time until NEEDS-CHECKING Group NF is run (D-30,
 # D-117). On 2026-11-11 (Revit 2020) the owner's square diffuser family needed
 # its plan flow arrows - a nested 600 mm detail item - and no tool placed a
 # view-based family inside a family: this card called `doc.Create`, a

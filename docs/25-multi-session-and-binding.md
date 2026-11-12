@@ -155,7 +155,9 @@ they are working on — while Heron binds to the PID underneath.
 > `availability` in [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py): `(free)`,
 > `(in use by this chat)`, `(in use by another chat, ~N min left)` or `(availability unknown)`.
 > **It names no project**, and **it shows the process number** that the quotation above asks never to
-> show. `revit_health` names the model of the one Revit this chat is bound to, and no other. Choosing by
+> show. `revit_health` names the model of the Revit this chat is bound to and, since 2026-11-07, the model in
+> front in each other one whose add-in reports it (`open_model_named`, from the lease-exempt `info` -
+> [row 5b-1470](fragment-issues/section-5b-rows-401-425.md) (c)); an older add-in names none. Choosing by
 > list number works: `revit_use_session` takes the number or the session id. This section and
 > [`mcp/README.md`](../mcp/README.md) rule 4 state the requirement. The code does not meet it yet, and
 > whether it should is the owner's to decide. Recorded the same day as

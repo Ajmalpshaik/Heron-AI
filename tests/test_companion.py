@@ -57,7 +57,6 @@ import heron_tools as tools                                  # noqa: E402
 SOURCE = os.path.join(ROOT, "mcp", "companion", "heron_companion.py")
 PAGE_JS = os.path.join(ROOT, "mcp", "companion", "static", "companion.js")
 LIVE_CS = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "HeronLiveState.cs")
-SERVER = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
 
 FAILURES = []
 
@@ -257,9 +256,15 @@ def test_no_way_to_an_ai():
     check("create_connection" not in text and "connect((" not in text,
           "and opens no outgoing socket anywhere in its code")
 
-    server = io.open(SERVER, encoding="utf-8").read()
+    server = tools.server_text()
     body = server[server.index("def heron_companion("):]
-    body = body[:body.index("\n@server.tool()")] if "\n@server.tool()" in body else body
+    # TO THE END OF THE FUNCTION, not to the next tool. No tool is defined
+    # after this one in its file since row 5b-1555 - the ones that followed it
+    # are in another file, earlier in the one text - so "the next
+    # @server.tool()" stopped being a boundary and the cut ran on to the end
+    # of the text. The first line back at the margin ends a top-level function.
+    end = re.search(r"\n(?=\S)", body)
+    body = body[:end.start()] if end else body
     returns = [l for l in body.splitlines() if l.strip().startswith("return")]
     check(returns and not any("address" in l for l in returns),
           "heron_companion never puts the one-time address in its reply to the chat")
@@ -269,6 +274,7 @@ def test_no_way_to_an_ai():
           "the page calls a Revit this chat's only when the modeller CHOSE it")
     check(tools.TOOLS.get("heron_companion") == (tools.READ, None),
           "heron_companion is declared READ with no Revit operation")
+    _what_the_chat_is_told(server)
 
     static = os.path.join(ROOT, "mcp", "companion", "static")
     for name in sorted(n for n in os.listdir(static) if n.endswith(".js")):
@@ -428,7 +434,7 @@ def test_activity():
           and len(act.since(0)[-1]["summary"]) <= hc.Activity.FIRST_LINE,
           "at most 500 kept, each line at most 200 characters")
 
-    server = io.open(SERVER, encoding="utf-8").read()
+    server = tools.server_text()
     check("register(*args, **options)(_recorded(fn))" in server
           and "@functools.wraps(fn)" in server,
           "every tool is recorded through one wrapper that keeps its signature")
@@ -444,6 +450,60 @@ def test_activity():
           "and revit_read, revit_show, revit_change and revit_apply_move label a "
           "failure from the add-in's reply, not from the words that explain it")
     _single_purpose_endings(server)
+
+
+def _what_the_chat_is_told(server):
+    """
+    heron_companion SAYS WHAT THE PAGE IS TODAY (FRAGMENT-ISSUES 5b-1133). Its
+    reply and its description said the page shows "the selection" and "changes
+    nothing": the Selected card is off (SHOW_SELECTION in companion.js), and
+    Apply, Finalize and Place change the model through revit_change's own
+    body. The chat repeats the reply, so the modeller was told a page that can
+    change the model is read-only. Read with ast, as text: CI cannot import
+    the server.
+    """
+    import ast
+    tool = None
+    for node in ast.walk(ast.parse(server)):
+        if isinstance(node, ast.FunctionDef) and node.name == "heron_companion":
+            tool = node
+    check(tool is not None, "heron_companion can be read out of the server")
+    if tool is None:
+        return
+    described = " ".join((ast.get_docstring(tool) or "").split())
+    replies = [" ".join(node.value.value.split()) for node in ast.walk(tool)
+               if isinstance(node, ast.Return) and isinstance(node.value, ast.Constant)
+               and isinstance(node.value.value, str)]
+    opened = [said for said in replies if "is open in your browser" in said]
+    check(len(opened) == 1, "it has one reply for a page it opened")
+    opened = opened[0] if opened else ""
+
+    js = io.open(os.path.join(ROOT, "mcp", "companion", "static", "companion.js"),
+                 encoding="utf-8").read()
+    check("const SHOW_SELECTION = false;" in js,
+          "the Selected card is switched off on the page (docs/40 section 21.6)")
+    check("selection" not in opened.lower() and "selected" not in described.lower(),
+          "so neither the reply nor the description says the page shows the selection: "
+          "%s" % opened[:90])
+    writes = [name for name, (level, _op) in tools.COMPANION_ACTIONS.items()
+              if level >= tools.MODIFY]
+    check(all(name in writes for name in
+              ("companion_table_apply", "companion_loads_finalize",
+               "companion_sprinkler_place")),
+          "the page's Apply, Finalize and Place are declared MODIFY in heron_tools")
+    for where, said in (("reply", opened), ("description", described)):
+        check(all(word in said for word in ("Apply", "Finalize", "Place"))
+              and "change the model" in said,
+              "the %s says the page's Apply, Finalize and Place change the model" % where)
+        check("Changes switch" in said and "Keep or Discard" in said,
+              "and that they do it under the same Changes switch and Keep or Discard "
+              "question as a change from the chat (%s)" % where)
+        check(not said.rstrip().endswith("changes nothing.")
+              and "It reads nothing from Revit through the pipe and changes nothing"
+              not in said,
+              "and the %s no longer says, of the page, that it changes nothing" % where)
+    check("Opening it changed nothing" in opened and "OPENING it reads nothing" in described,
+          "what changes nothing is OPENING the page, and both say so of that alone")
 
 
 def _single_purpose_endings(server):
@@ -676,7 +736,7 @@ def test_changes():
     check("set-category-graphics" in marked and "override-graphics-in-view" not in marked,
           "category graphics is offered; per-element overrides (read from the selection) are not")
 
-    server = io.open(SERVER, encoding="utf-8").read()
+    server = tools.server_text()
     check('_through(revit_change, origin="companion")(capability, values)' in server
           and '_through(revit_change, reply_out=out, origin="companion")(' in server
           and 'body = getattr(tool, "__wrapped__", tool)' in server,
@@ -763,7 +823,7 @@ def test_tables():
           and tools.COMPANION_ACTIONS.get("companion_table_apply") == (tools.MODIFY,
                                                                        "run_fragment_write"),
           "opening a table reads (ANALYZE); applying it writes (MODIFY), each declared once")
-    server = io.open(SERVER, encoding="utf-8").read()
+    server = tools.server_text()
     offer = server[server.index("def revit_offer_settings("):server.index("def revit_edit_table(")]
     check(tools.TOOLS.get("revit_offer_settings") == (tools.READ, None)
           and "session.request" not in offer and "_change(" not in offer
@@ -800,7 +860,7 @@ def test_tables():
 def test_model_guard():
     print()
     print("A table made in one model never applies in another (Codex review of #362)")
-    server = io.open(SERVER, encoding="utf-8").read()
+    server = tools.server_text()
     for name in ("def _apply_change(", "def _apply_table("):
         body = server[server.index(name):]
         body = body[:body.index(chr(10) + "def ", 10)]
@@ -986,7 +1046,7 @@ def test_loads():
     check("fetch(\"/api/loads/view\"" in page_js and "import " not in page_js,
           "the 3D view fetches only its own data and loads no library")
 
-    server = io.open(SERVER, encoding="utf-8").read()
+    server = tools.server_text()
     fin = server[server.index("def _loads_finalize("):]
     fin = fin[:fin.index(chr(10) + "def ", 10)]
     check("_apply_table(rows, identity)" in fin
@@ -1081,7 +1141,7 @@ def test_loads_recalculate_overtaken_by_a_fresh_read():
     check(again["ok"] and kept == ["new"],
           "a Recalculate nothing overtook is kept and shown, as before")
 
-    server = io.open(SERVER, encoding="utf-8").read()
+    server = tools.server_text()
     tool = server[server.index("def revit_building_loads("):]
     tool = tool[:tool.index(chr(10) + "@server.tool()")]
     check(-1 < tool.find("LOADS_PANEL.reading()") < tool.find("brain.building_loads("),
@@ -1259,7 +1319,7 @@ def test_finalize_asks_for_nothing_by_typed_ids():
     day for the Spaces schedule to be made by Finalize too."""
     print()
     print("Finalize on a real add-in: no typed ids, a real read-back, the schedule")
-    server = io.open(SERVER, encoding="utf-8").read()
+    server = tools.server_text()
     fin = server[server.index("def _loads_finalize("):]
     fin = fin[:fin.index(chr(10) + "def ", 10)]
     check("elementIds=" not in fin and "FILTER_ELEMENTS_BY_ID" not in fin,
@@ -1316,7 +1376,7 @@ def test_switched_off_parts():
           "their code is kept, and nothing calls it while the switches are off")
     check(hc.SHOW_CHANGES is False and callable(hc.Changes().offer),
           "the server's switch is off, and its Changes tables are still whole")
-    server = io.open(SERVER, encoding="utf-8").read()
+    server = tools.server_text()
     for name in ("def _offer_change(", "def _load_settings(", "def revit_offer_settings("):
         body = server[server.index(name):]
         body = body[:body.index(chr(10) + "def ", 10) if chr(10) + "def " in body[10:] else len(body)]
@@ -1399,7 +1459,7 @@ def test_layout_panel():
     check(source.index("why = self._api_ok()", i) < source.index("LAYOUT_PANEL.current()", i)
           and source.index("why = self._api_ok()", j) < source.index("LAYOUT_PANEL.preview(", j),
           "every Layout route is behind _api_ok like every other route")
-    server = io.open(SERVER, encoding="utf-8").read()
+    server = tools.server_text()
     for hook in ("preview_hook = _sprinkler_layout_preview",
                  "place_hook = _sprinkler_layout_place"):
         check(hook in server, "the server sets %s" % hook.split(" =")[0])
@@ -1490,7 +1550,7 @@ def test_dashboard_panel():
           and source.index("why = self._api_ok()", k) < source.index("DASHBOARD_PANEL.show(", k)
           and source.index("why = self._api_ok()", m) < source.index("DASHBOARD_PANEL.demo(", m),
           "every Dashboard route is behind _api_ok like every other route")
-    server = io.open(SERVER, encoding="utf-8").read()
+    server = tools.server_text()
     check("DASHBOARD_PANEL.refresh_hook = _dashboard_refresh" in server,
           "the server sets the Dashboard's refresh_hook")
     refresh_src = server[server.index("def _dashboard_refresh("):]
@@ -1785,7 +1845,7 @@ def test_checklist_panel(tmp):
           and source.index("why = self._api_ok()", j) < source.index("CHECKLIST_PANEL.run(", j)
           and source.index("why = self._api_ok()", j) < source.index("CHECKLIST_PANEL.show(", j),
           "every QA Checklist route is behind _api_ok like every other route")
-    server = io.open(SERVER, encoding="utf-8").read()
+    server = tools.server_text()
     check("CHECKLIST_PANEL.list_hook = _checklist_list" in server
           and "CHECKLIST_PANEL.run_hook = _checklist_run_page" in server
           and "CHECKLIST_PANEL.show_hook = _checklist_show" in server
@@ -1920,7 +1980,7 @@ def test_sprinkler_panel():
                       encoding="utf-8").read()
     check('fetch("/api/sprinkler/view"' in page_js and "import " not in page_js,
           "the Sprinkler 3D view fetches only its own data and loads no library")
-    server = io.open(SERVER, encoding="utf-8").read()
+    server = tools.server_text()
     for hook in ("calculate_hook = _sprinkler_calculate", "suggest_hook = _sprinkler_suggest",
                  "confirm_hook = _sprinkler_confirm", "report_hook = _sprinkler_report"):
         check(hook in server, "the server sets %s" % hook.split(" =")[0])

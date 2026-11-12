@@ -35,3 +35,9 @@ is the skylight's, the one to sign.
 were turned back by hand with FLIP_ELEMENTS and read back facing out (row 5b-325). No add-in deploy
 and no Revit restart are needed for version 4 - it is fragment code, read from disk on every call;
 chats use it once the PC's main checkout has the merge.
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `PLACE_HOSTED_FAMILY` reads PROVEN on its card, at version 4 - its `proof` block is signed by Ajmal PS,
+2026-10-18, on Project2 (3,035 elements), Revit 2020, session 13520. So where this page calls a card named here DRAFT,
+or says nothing has run in Revit, that was true when it was written and is out of date as a statement about the card.
+Whether CH1 to CH5 were what that proof ran is NOT sorted here: for the owner.

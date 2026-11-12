@@ -46,3 +46,9 @@ header says. Never a 4355 model.
 | **GH10** | **NOT RUN - the real job, as a READ.** On `4355-BHVD-3D-21P60-ST001I` with the 18 openings selected: `categories` "Walls, Air Terminals, Electrical Fixtures", `includeLinks` true, `compareParameter` "Wall Width". Not a proof (a real project, D-30 wants a test one) - the answer the modeller asked for | the 30 mm `WL T0010` walls reading "wall 30 mm thick", 93-128 mm off each centre as the probes found, `HVAC_VERTICAL_LOUVER` 305 mm deep at the louvre openings, the actuators named, and every Wall Width of 255 or 260 listed as differing. Anything else is a finding for the row |
 | **GH11** | **NOT RUN - version 2 unchanged.** Any version 2 call with `categories`, `includeHost` and `compareParameter` all left out - FIND_CLASHES' own version 2 cases in [`tests/cases.yaml`](../../brain/fragments/find-clashes/tests/cases.yaml) | `clashes`, `clashing`, `clear`, `notChecked`, `findings` and `linkedMatches` just as version 2 gave them; `comparison` "No parameter named - nothing compared"; the one new word is a no-solid element tested by its box (GH8) |
 | **GH12** | **NOT RUN - Revit 2021 to 2027.** GH1 on any later release. The length check goes through `Definition.GetDataType` from 2022 and `ParameterType` before it, by reflection; only 2020's branch is in GH1 | as GH1 |
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `FIND_CLASHES` reads PROVEN on its card, at version 4 - its `proof` block is signed by Ajmal PS, 2026-11-02,
+on Project2 (5,909 elements), Revit 2024, session 57392. So where this page calls a card named here DRAFT, or says
+nothing has run in Revit, that was true when it was written and is out of date as a statement about the card. Whether
+GH1 to GH12 were what that proof ran is NOT sorted here: for the owner.

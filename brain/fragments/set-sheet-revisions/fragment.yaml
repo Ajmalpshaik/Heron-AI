@@ -7,15 +7,16 @@ heron-layer: brain
 id: FRG-SHT-018
 semantic-identity: "put that revision on these sheets, take it off, or swap it for another"
 
-# VERSION 2, BACK TO DRAFT ON 2026-11-07, AND THE PROOF BLOCK BELOW IS KEPT ON
-# PURPOSE - it is the arrangement to re-prove from; its fingerprint no longer
-# matches. Version 1 answered `sheetsChanged 3, cloudDriven 0` on the owner's
-# model 4355-BHVD-3D-60A10-BL007A (Revit 2020) for a detach that left Seq. 20
-# on two of the three sheets: there the revision was ticked AND clouded, and
-# the code counted the ticked list shrinking as success (FRAGMENT-ISSUES row
-# 5b-1463). Version 2 judges every sheet on what it PRINTS afterwards, names
-# the clouds that keep a revision on, and gained `replaceWith` - one revision
-# off, another on, in one undo entry. Left out, it is version 1's job.
+# VERSION 2, BACK TO DRAFT ON 2026-11-07, AND THE PROOF BLOCK BELOW WAS KEPT
+# ON PURPOSE - it was the arrangement to re-prove from; its fingerprint no
+# longer matched. Version 1 answered `sheetsChanged 3, cloudDriven 0` on the
+# owner's model 4355-BHVD-3D-60A10-BL007A (Revit 2020) for a detach that left
+# Seq. 20 on two of the three sheets: there the revision was ticked AND
+# clouded, and the code counted the ticked list shrinking as success
+# (FRAGMENT-ISSUES row 5b-1463). Version 2 judges every sheet on what it
+# PRINTS afterwards, names the clouds that keep a revision on, and gained
+# `replaceWith` - one revision off, another on, in one undo entry. Left out,
+# it is version 1's job.
 kind: action
 domain: revit.sheets
 capability: SET_SHEET_REVISIONS

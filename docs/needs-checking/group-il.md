@@ -109,3 +109,11 @@ groups:
     expect: want SET_TEXT_TYPE
     sentences: [make the label text bold, change the tag label font, set the text type size to 3.5 mm]
 ```
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `REPORT_TEXT_TYPES` reads PROVEN on its card, at version 1 - its `proof` block is signed by Ajmal PS,
+2026-10-22, on Heron Capture Test (21,317 elements), Revit 2020, session 60544. `SET_TEXT_TYPE` reads PROVEN on its
+card, at version 1 - its `proof` block is signed by Ajmal PS, 2026-10-22, on Heron Capture Test (21,317 elements),
+Revit 2020, session 60544. So where this page calls a card named here DRAFT, or says nothing has run in Revit, that
+was true when it was written and is out of date as a statement about the card. Whether IL0 to IL14 were what that
+proof ran is NOT sorted here: for the owner.

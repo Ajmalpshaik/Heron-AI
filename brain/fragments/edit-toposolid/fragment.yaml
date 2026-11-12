@@ -16,8 +16,8 @@ capability: EDIT_TOPOSOLID
 # toposolid(s) edited" where one read 2399 -> 1293 points and nine read 0 -> 0.
 # Each one left as it was is now named in the report - "nothing to simplify -
 # 0 shape points" or "unchanged" - and counted in the findings' first line.
-# Excavate, split and smooth are as version 1 had them. DRAFT, never proven:
-# NEEDS-CHECKING Group IY is the proof plan (D-30).
+# Excavate, split and smooth are as version 1 had them. DRAFT at the time,
+# never proven: NEEDS-CHECKING Group IY is the proof plan (D-30).
 #
 # VERSION 3 (2026-11-01) - ADD_TOPOSOLID_SUBDIVISION WAS MERGED INTO THIS CARD
 # on the owner's instruction ("make sure there is no duplicate tools", then "ok

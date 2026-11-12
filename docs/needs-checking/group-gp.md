@@ -54,3 +54,9 @@ is moved aside first, because the job writes to that path.
 | **GP10** | Routing, on the owner's PC after the store is rebuilt from `main`: `heron_lookup` *"copy these and keep them on the same workset"* | `COPY_ELEMENTS`, by identity - measured in the cloud on both backends (trained model with and without the re-ranker), never yet on the owner's PC |
 | **GP11** | After GP1 and GP2 pass: read `brain/proof-drafts/copy-elements.yaml`, then `python brain/heron_validate.py accept copy-elements --by "Ajmal PS"` and set `heron-status: PROVEN` | the card PROVEN again with a new fingerprint; `revit_change` keeps changes from it again, and building-shell's typical storey works as before |
 | **GP12** | *The first use, on the owner's word, on a project he chooses - never a 4355-\* model:* builders-work openings copied with `toWorkset=source` | every copy on BHVD_BW_WALL_OPENING (or that project's own openings workset), no `SET_ELEMENT_WORKSET` afterwards |
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `COPY_ELEMENTS` reads PROVEN on its card, at version 5 - its `proof` block is signed by Ajmal PS, 2026-11-02,
+on P1102 MEP (21,446 elements), Revit 2020, session 33624. So where this page calls a card named here DRAFT, or says
+nothing has run in Revit, that was true when it was written and is out of date as a statement about the card. Whether
+GP0 to GP12 were what that proof ran is NOT sorted here: for the owner.

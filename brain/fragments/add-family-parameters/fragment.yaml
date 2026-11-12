@@ -15,9 +15,9 @@ capability: ADD_FAMILY_PARAMETERS
 # safer rule), and is DEPRECATED. Its code runs here, unchanged, as the SHARED
 # kind - see "VERSION 4" above `utterances`. The field read 2 while the
 # renaming mode has been called version 3 since 2026-10-07 (its proof below),
-# so 4 is the next number free of both. Version 3's proof is kept as the
-# record; it no longer describes the code (impl/ changed), and the card is
-# DRAFT until version 4 is proved on a real model (D-30).
+# so 4 is the next number free of both. Version 3's proof was kept as the
+# record; it no longer described the code (impl/ changed), and the card was
+# DRAFT at the time, until version 4 is proved on a real model (D-30).
 version: 4
 source: OFFICIAL
 # ADMIN FROM VERSION 4 - D-106, ADD_FAMILY_SHARED_PARAMETERS' risk. Its

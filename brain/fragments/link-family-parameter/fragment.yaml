@@ -10,8 +10,8 @@ kind: action
 domain: revit.families
 capability: LINK_FAMILY_PARAMETER
 # VERSION 4 (2026-11-11) - A FAMILY'S 2D TOO, and back to DRAFT. Version 3 was
-# PROVEN on 2026-11-02 (the proof block below, kept as the record of what it
-# proved); its C# changed, so it is DRAFT again until NEEDS-CHECKING Group NE
+# PROVEN on 2026-11-02 (the proof block then below, kept as the record of what it
+# proved); its C# changed, so it was DRAFT again at the time until NEEDS-CHECKING Group NE
 # is run (D-30, D-117). Found missing (rows 4d and 6c) when Ajmal PS asked
 # on 2026-11-11 for a family's whole 2D side to be covered, building a
 # diffuser family's plan arrows: ids of detail lines, symbolic lines, filled

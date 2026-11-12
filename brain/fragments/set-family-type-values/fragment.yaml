@@ -16,7 +16,7 @@ capability: SET_FAMILY_TYPE_VALUES
 # Air Flow "Nominal Air Flow" was refused. Built on the owner's standing word to
 # build a gap met while testing. PROVED 2026-11-12 on Revit 2020 (scratch family
 # Heron Link Angle Test, both halves) and SIGNED by Ajmal PS on his word in the
-# chat ("Yes, sign it") - the proof below is version 4's; version 3's is in git
+# chat ("Yes, sign it") - the proof below was then version 4's; version 3's is in git
 # history. The proof draft it was accepted from is git-ignored, as every one is.
 version: 5
 source: OFFICIAL

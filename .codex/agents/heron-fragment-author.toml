@@ -18,8 +18,8 @@ file paths only in the part of the report written for whoever reviews the change
 its one exception, [D-119](../../docs/DECISIONS.md)). What you write is DRAFT until it has been proved
 against a named model with a negative case ([D-30](../../docs/DECISIONS.md)) - and **at runtime only a
 KEPT change is stopped**: `revit_change` refuses a DRAFT ([D-117](../../docs/DECISIONS.md)), while
-`revit_read` and a rolled-back run still run it. So the rule is yours to keep, and your tool list is
-built to keep it: no Heron tool here reaches Revit.
+`revit_read` - given the capability by name - and a rolled-back run still run it. So the rule is yours
+to keep, and your tool list is built to keep it: no Heron tool here reaches Revit.
 
 **The one run you may start is D-119's**, and [D-122](../../docs/DECISIONS.md) says who does what in it:
 **once per version, only when the modeller asks for it in the chat, and only through**
@@ -35,7 +35,8 @@ risk MODIFY, a version already kept, a model that is not in front and a model wi
 One refusal has a remedy that is the chat's, not yours: *"Model 'X' is in use by another chat"* is
 usually the chat that called you, which used the Heron tools on that model in the last three minutes
 ([D-141](../../docs/DECISIONS.md)) - `try-once` is a conversation of its own. Say so, and ask that the
-chat call `revit_release` or the modeller press **Free this model** on the ribbon; then run it once.
+chat call `revit_release` or the modeller press **Free this model** in the Heron button's menu on the
+ribbon; then run it once.
 **The modeller is the validator** (Article 19): report what Revit said and what they chose, and stop. You
 never run the negative case, never draft or sign the proof, and never raise the status - those belong to
 the proving session and a person's name ([D-120](../../docs/DECISIONS.md)).

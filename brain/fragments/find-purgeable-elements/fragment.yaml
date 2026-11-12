@@ -11,15 +11,15 @@ domain: revit.selection
 capability: FIND_PURGEABLE_ELEMENTS
 # VERSION 2 (2026-11-01): FIND_UNUSED_FAMILIES was merged into this card on the
 # owner's instruction, and is DEPRECATED - see the comment block above
-# `utterances`. Version 1's proof below is kept as the record; it no longer
-# describes the code, so the card is DRAFT until version 2 is proved on a real
-# model (D-30) - on 2024 or later for Revit's list, and on 2020-2023 for the
-# fallback.
+# `utterances`. Version 1's proof below was kept as the record; it no longer
+# described the code, so the card was DRAFT at the time, until version 2 is
+# proved on a real model (D-30) - on 2024 or later for Revit's list, and on
+# 2020-2023 for the fallback.
 #
 # VERSION 3 (2026-11-01): FIND_UNUSED_MATERIALS, FIND_UNUSED_GROUP_TYPES,
 # FIND_UNUSED_IMAGES and FIND_UNUSED_DEFINITIONS were merged in - see the
-# second comment block above `utterances`. Still DRAFT, version 1's proof
-# still the record.
+# second comment block above `utterances`. Still DRAFT at the time,
+# version 1's proof still the record.
 version: 3
 source: OFFICIAL
 risk: READ

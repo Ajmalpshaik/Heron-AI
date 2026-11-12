@@ -647,7 +647,33 @@ namespace Heron.Bridge
                     // The model in front, as the add-in last saw it on Revit's
                     // thread - a title only, read without the lease and without
                     // Revit (5b-1470 c). Null before any view was activated.
-                    Json.Str("activeModel", BridgeActiveModel.Title));
+                    Json.Str("activeModel", BridgeActiveModel.Title),
+                    // WHETHER THIS REVIT ASKS KEEP OR DISCARD before it keeps
+                    // a change from a chat - the owner's Ask to Keep switch
+                    // (D-126, D-138), through the one reader the executor
+                    // decides by, which loads the settings on every call: a
+                    // switch flipped mid-session is what the next info says.
+                    // Until this, a chat learned which it was only afterwards,
+                    // from the verdict, and could not tell the modeller
+                    // beforehand whether Revit would ask.
+                    //
+                    // SAID, NEVER SET, AND NEVER DECIDED BY. Nothing on the
+                    // wire may turn the question off (Golden Rule 19, D-126
+                    // item 5): this file reads no such field off a request,
+                    // and the executor reads the switch again for itself at
+                    // the moment it keeps. It is the switch alone - not
+                    // whether the modeller has kept "the rest of this job"
+                    // (D-138), which lives in the add-in, and not the delete
+                    // box, which is asked whatever this says (D-142). An
+                    // optional field, like activeModel: a client that does not
+                    // know it ignores it, so the protocol version stands.
+                    //
+                    // NAMED FOR THE SWITCH AS REVIT SHOWS IT, not for its
+                    // settings key: tests/test_keep_question.py fails the
+                    // Python side on the bare name of that key anywhere in
+                    // it, as a field that could be SENT to skip the question.
+                    // This one is only ever answered.
+                    Json.Bool("askToKeep", HeronPermissions.AsksBeforeKeeping()));
             }
 
             // HANDING IT BACK, WHICH IS THE HALF THAT WAS MISSING.

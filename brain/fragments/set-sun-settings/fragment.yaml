@@ -21,8 +21,8 @@ version: 2
 # 171 - the dialog's 11:00. Both directions now go through the PC's zone (the
 # rule row 5b-1282 found for Revit's sunset). The read-back also gives the sun's height and bearing
 # at a still time, and a sun below the horizon is a finding. Version 1's
-# proof below no longer describes the code.
-# DRAFT until NEEDS-CHECKING Group IN proves it.
+# proof below no longer described the code.
+# DRAFT at the time, until NEEDS-CHECKING Group IN proves it.
 source: OFFICIAL
 risk: MODIFY
 

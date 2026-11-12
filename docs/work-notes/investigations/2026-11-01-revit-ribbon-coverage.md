@@ -11,8 +11,24 @@ against the Heron library, and every gap checked against the Revit API reference
 > Some API reference sites could not be reached from the cloud session, so every **UNSURE** is a
 > question still open, not a no.
 
-**Lifecycle:** active. Retire once each "build next" item below has a fragment, or has been moved
-to [PROPOSALS.md](../../PROPOSALS.md) / [OPEN-QUESTIONS.md](../../OPEN-QUESTIONS.md).
+**Lifecycle:** **built except for the items named under the next heading, and not retired** (read
+2026-11-11, corrected the same day after a fact-check). Most of the "build next" list below was built by
+[#781](https://github.com/Ajmalpshaik/Heron-AI/pull/781) (`b0bc60a7`, merged 2026-11-04). The condition
+this line stated until then - *retire once each "build next" item has a fragment, or has been moved to
+[PROPOSALS.md](../../PROPOSALS.md) / [OPEN-QUESTIONS.md](../../OPEN-QUESTIONS.md)* - is met only because
+what was not built is now in the register: rows 5b-1423 and 5b-1529 to 5b-1532 of
+[FRAGMENT-ISSUES](../../fragment-issues/section-5b-rows-401-425.md). **Two things still keep the file, and each is a person's to
+settle** - in the [work-notes README](../README.md)'s lifecycle, *knowledge preserved* comes before
+*retired*:
+
+- *The API cannot do it*, *Still UNSURE* and the four tab-by-tab tables are in no register and no
+  numbered document; this file is their only copy.
+- Fragment cards and [Group MO](../../needs-checking/group-mo.md) name this file by its path -
+  `grep -rl revit-ribbon-coverage brain docs` lists them. Deleting it needs those lines re-pointed
+  first.
+
+**Nothing here is a build list any more.** Ask `heron_lookup`, or search `brain/fragments`, before
+building anything a table below calls MISSING: the tables are the picture of 2026-11-01.
 
 ## Summary on the day
 
@@ -27,6 +43,35 @@ to [PROPOSALS.md](../../PROPOSALS.md) / [OPEN-QUESTIONS.md](../../OPEN-QUESTIONS
 mostly covered.
 
 ## Build next - missing, and the Revit API can do it
+
+> **MOSTLY BUILT, MERGED 2026-11-04 - history, not a list to work from.**
+> [#781](https://github.com/Ajmalpshaik/Heron-AI/pull/781) wrote the tools for this list, every one at
+> DRAFT and none run in Revit that day; each card's own `heron-status` says what it is now, and the
+> NEEDS-CHECKING groups that pull request added hold the runs owed. Checked 2026-11-11 by searching
+> `brain/fragments/*/impl` for the Revit member each item names, and - after a fact-check found that
+> search had passed item 1 on the word *structural* alone - by reading the card and code behind each
+> item that widens a tool Heron already had. **Five things on the list are not built, or not built as
+> the list meant them. Each is a row now, so none lives only in this file:**
+>
+> - **Item 1, a structural floor - not built.** `CREATE_FLOOR` has no structural input and passes
+>   `false`: [row 5b-1529](../../fragment-issues/section-5b-rows-401-425.md).
+> - **Item 8, insulation on fittings - not built.** `SET_MEP_INSULATION` still refuses a fitting, an
+>   accessory and a flex run; the other two halves, remove insulation and duct lining, were built:
+>   [row 5b-1530](../../fragment-issues/section-5b-rows-401-425.md).
+> - **Item 17, a slanted column - in code, on no card's words, never run.** `PLACE_LINE_BASED_FAMILY`
+>   makes the call the table below names when it is asked for a column; the table had it as MISSING:
+>   [row 5b-1531](../../fragment-issues/section-5b-rows-401-425.md).
+> - **Item 17, a structural plan - not built.** `CREATE_PLAN_VIEW` makes a floor plan or a ceiling
+>   plan and refuses anything else: [row 5b-1532](../../fragment-issues/section-5b-rows-401-425.md). The span
+>   direction third of the item is `place-span-direction-symbols`.
+> - **Item 19, Reload Latest - not built.** Revit refuses it while any transaction group is open, and
+>   every Heron door that may change a model runs inside one:
+>   [row 5b-1423](../../fragment-issues/section-5b-rows-401-425.md), OPEN, the owner's to choose.
+>
+> **A fragment that names an item's Revit member is not that item built as a modeller would ask for
+> it**, and the first reading of 2026-11-11 said *"a fragment was found for every item but these"* of
+> two items where five belonged. The longer per-tab priority lists further down were **not** re-checked
+> item by item.
 
 Most used by a modeller first, across all tabs.
 
@@ -267,7 +312,7 @@ API column: **YES** = confirmed in Autodesk's reference or SDK material (sources
 | Attach column top/base | none | MISSING | - | YES: `ColumnAttachment.AddColumnAttachment` / `RemoveColumnAttachment` (2020+) |
 | Framing cut-back / extension / join | disallow-join (framing joins), cope-framing; extensions through generic params | PARTIAL | no end-extension or cut-back tool | YES: `StructuralFramingUtils` (end join, `SetEndReference`), Start/End Extension parameters |
 | Cope | cope-framing | PROVEN | - | - |
-| Parts / Assembly | create-parts, create-assembly (PROVEN); divide-parts, merge-parts, create-assembly-views (DRAFT) | PROVEN / DRAFT | - | - |
+| Parts / Assembly | create-parts (PROVEN); create-assembly (PROVEN when this was written, on a run that made no assembly - [row 5b-1117](../../fragment-issues/section-5b-rows-401-425.md); rebuilt 2026-11-12, its card says what it is now); divide-parts, merge-parts, create-assembly-views (DRAFT) | PROVEN / DRAFT | - | - |
 
 ### Steel tab (all need the Steel Connections for Revit add-in / Advance Steel components)
 
@@ -409,7 +454,7 @@ API notes were checked against the Autodesk Revit API reference (help.autodesk.c
 | Design to Fabrication | none | MISSING | Convert design duct/pipe to fabrication parts | YES `DesignToFabricationConverter.Convert(ISet<ElementId>, int serviceId)` (2017+) |
 | Change Service / Size | none | MISSING | - | YES `FabricationNetworkChangeService` (`ChangeService`, `ChangeSize`, `ApplyChange`) |
 | Hangers | none | MISSING | - | YES `FabricationPart.CreateHanger` |
-| Spool / Assembly | create-assembly (P), create-assembly-views (D), group-by-assembly (P) | PARTIAL | No spool or item numbering for fabrication | YES `AssemblyInstance.Create` (already used). Fabrication numbering: UNSURE |
+| Spool / Assembly | create-assembly (P when this was written; see its card - [row 5b-1553](../../fragment-issues/section-5b-rows-401-425.md)), create-assembly-views (D), group-by-assembly (P) | PARTIAL | No spool or item numbering for fabrication | YES `AssemblyInstance.Create` (already used). Fabrication numbering: UNSURE |
 | Multi-point Routing | none | MISSING | - | UNSURE (no routing API found; `FabricationNetworkChangeService` only changes existing parts) |
 
 ### Plumbing & Piping
@@ -734,7 +779,7 @@ Counts (rows in the tables below): **COVERED 76 · PARTIAL 32 · MISSING 68** (1
 | Select links/underlay/pinned/by face | select-from-link, select-by-pin-state (queries) | PARTIAL (P) | the selection toggles themselves | UNSURE |
 | Measure | measure-element-lengths, measure-perimeter (P), measure-distance (D) | PARTIAL | point-to-point DRAFT | YES (geometry) |
 | Create Parts | create-parts, set-parts-excluded, offset-part-faces (P), divide/merge-parts (D) | COVERED (P) | — | — |
-| Create Assembly | create-assembly (P), create-assembly-views (D) | COVERED (P) | — | — |
+| Create Assembly | create-assembly (P when this was written; see its card - [row 5b-1553](../../fragment-issues/section-5b-rows-401-425.md)), create-assembly-views (D) | COVERED - a card exists; no run has yet made an assembly | — | — |
 | Group / Ungroup | group-elements, ungroup-elements, place-model-groups | COVERED (P) | — | — |
 
 

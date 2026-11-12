@@ -39,3 +39,9 @@ links, checked in Manage Links first.
 
 **What cannot be answered here.** Every row needs a Revit. What was checked without one: the seven compile on
 2020 to 2027, and every suite passes.
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `SELECT_BY_ELECTRICAL_CIRCUIT` reads PROVEN on its card, at version 3 - its `proof` block is signed by Ajmal
+PS, 2026-10-18, on Project1 (3,147 elements), Revit 2020, session 2648. So where this page calls a card named here
+DRAFT, or says nothing has run in Revit, that was true when it was written and is out of date as a statement about the
+card. Whether BH1 to BH7 were what that proof ran is NOT sorted here: for the owner.

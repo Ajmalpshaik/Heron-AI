@@ -55,7 +55,22 @@ WHAT IS PROVED
      balance-of-work.py read the same proposals from it, through the reader;
  13. OPEN-QUESTIONS.md splits the same way, one file per tier, and
      owner-queue.py and check-docs.py - its questions and its Progress line
-     - read the same questions from it, through the reader.
+     - read the same questions from it, through the reader;
+ 14. a row that links to a 5b row past 999 does not stop the split: row 1001
+     moves to a rows file named with four digits, the link follows it, and
+     the register still reads back as it was (row 5b-1169);
+ 15. a row from the cut-over on has a file of its own (row 5b-1585): the
+     page's one line says where the change is and names no file; the rows are
+     read after the rows files' rows, in number order, with their links as
+     the page writes them, and open-defects.py lists them unchanged; a new
+     row an older branch appended to the rows file is read in the same
+     order, and `--new-rows` moves it alone, with every link that names it,
+     and re-bands nothing; a number held in both layouts is read twice and
+     the move is refused; a file that is not what its name says, whose
+     heading names another row or none, or that holds words under its table,
+     and a reader that cannot list the folder, are RegisterBroken - an empty
+     one said to be empty, not missing; and the archive tool leaves a
+     finished row's line in the row's own file.
 """
 
 import contextlib
@@ -257,6 +272,15 @@ def raises(call):
     except RT.RegisterBroken:
         return True
     return False
+
+
+def why_broken(call):
+    """What RegisterBroken said, or nothing when CALL read the register."""
+    try:
+        call()
+    except RT.RegisterBroken as broken:
+        return str(broken)
+    return ""
 
 
 def main():
@@ -662,8 +686,273 @@ def run(work):
     print("13. OPEN-QUESTIONS.md splits the same way, and its readers count the same questions")
     questions_case(work)
 
+    print()
+    print("14. A link to a 5b row past 999 does not stop the split")
+    four_digit_case(work)
+
+    print()
+    print("15. A row from the cut-over on has a file of its own")
+    own_file_case(work)
+
+
+def four_digit_case(work):
+    """Row 5b-1169. Rows 1001 to 1025 go to a file named with FOUR digits, and
+    the read-back comparison knew a rows file only by three - so once any row
+    of the register linked to a 5b row numbered 1000 or more, the split
+    refused: *"the new files, read back, differ from the register in more
+    than the rows file a link names"*. Measured on the real register,
+    2026-10-18. Every check below is written to FAIL on that code, not to
+    raise: a file the refused split never wrote is asked for before it is
+    read."""
+    root = make_root(work, register_text(), "thousand")
+    first = SPLIT.plan("fragment-issues", index_of(root), "2026-09-23", root)
+    if SPLIT.write(first) != SPLIT.OK:
+        check(False, "the small register splits before the four-digit row is written (%s)"
+              % (first.fatal or "; ".join(first.problems)))
+        return
+    folder = folder_of(root)
+    old, new = "section-5b-rows-001-025.md", "section-5b-rows-1001-1025.md"
+    last = os.path.join(folder, old)
+    put(last, read(last)
+        + "| **3** | **Three.** It names [row 5b-1001](%s). | OPEN - new. |" % old + NL
+        + "| **1001** | **One thousand and one.** Found 2026-10-18. | OPEN - new. |" + NL)
+    before = whole(root)
+
+    p = SPLIT.plan("fragment-issues", index_of(root), "2026-10-18", root)
+    check(p.fatal is None and not p.problems,
+          "a register whose row links to a four-digit row plans clean (%s)"
+          % (p.fatal or "; ".join(p.problems) or "no problem"))
+    check(p.banding == [(S5B, [old, new])],
+          "row 1001 is to move to the file its number belongs to (%s)" % p.banding)
+    check(SPLIT.write(p) == SPLIT.OK, "and the split is written, not refused")
+
+    moved_to = os.path.join(folder, new)
+    held = read(moved_to) if os.path.isfile(moved_to) else ""
+    check("| **1001** | **One thousand and one.**" in held,
+          "row 1001 is in %s" % new)
+    check("| **1001** |" not in read(last), "and gone from the file it was written in")
+    check("[row 5b-1001](%s)" % new in read(last),
+          "the link that names it follows it to the four-digit file")
+    check("[1001-1025](fragment-issues/%s)" % new in read(index_of(root)),
+          "and the page names the new file")
+    try:
+        after = whole(root)
+    except RT.RegisterBroken as why:
+        after = "broken: %s" % why
+    # Read as one text the link is written from the page, one folder up.
+    check(after == before.replace("[row 5b-1001](fragment-issues/%s)" % old,
+                                  "[row 5b-1001](fragment-issues/%s)" % new),
+          "the register reads back as it was, the one re-pointed link aside")
+    check(after.count("| **1001** | **One thousand and one.**") == 1, "and reads row 1001 once")
+    again = SPLIT.plan("fragment-issues", index_of(root), "2026-10-19", root)
+    check(again.fatal is None and not again.problems and not again.banding and not again.moving,
+          "a second run moves nothing (%s)" % (again.fatal or "; ".join(again.problems) or again.banding))
+
+    blind = getattr(SPLIT, "_band_blind", None)
+    check(blind is not None, "the split tool still has the comparison archive-fragment-issues.py asks")
+    if blind is not None:
+        config = SPLIT.REGISTERS["fragment-issues"]
+        check(blind("see (%s)" % new, config) == blind("see (%s)" % old, config),
+              "which reads a four-digit rows file as it reads a three-digit one")
+        check(blind("see (section-5b-rows-01-25.md)", config) != blind("see (%s)" % old, config),
+              "and still takes nothing shorter than three digits for a rows file")
+
 
 RED, YELLOW, DONE = chr(0x1F534), chr(0x1F7E1), chr(0x2705)
+
+
+EACH_LINE = "**Its rows from 3 on, one file each:** [`fragment-issues/row-5b-NNNN.md`](fragment-issues/)"
+
+
+def own_file(number, title, state):
+    """A row's own file, written the way a person writes one: a heading that
+    names the row, the table's two header lines and the row's line."""
+    return NL.join([
+        "# Fragment issues %s row 5b-%d" % (DASH, number),
+        "",
+        "> One row of section 5b of [the register](../FRAGMENT-ISSUES.md), in a file of its own.",
+        "",
+        "| # | Defect | State |",
+        "|---|---|---|",
+        "| **%d** | **%s** | %s |" % (number, title, state),
+        "",
+    ])
+
+
+def new_rows_plan(root, today):
+    """The split's plan for only the new rows left in a rows file - or None
+    where the tool has no such plan, so its absence is a failed check and
+    not a traceback."""
+    try:
+        return SPLIT.plan("fragment-issues", index_of(root), today, root, new_rows=True)
+    except TypeError:
+        return None
+
+
+def own_file_case(work):
+    """Since 2026-11-12 a row from the cut-over on has a file of its own,
+    because every new row used to be appended to the end of ONE rows file and
+    two branches that each added a row stopped at each other in every merge.
+    The page says where the change is with one line under its rows line, and
+    names no row's file: the folder is the list. Every check below is written
+    to FAIL on the code as it stood, not to raise - there the line is prose,
+    a row's own file is read by nothing, and the split has no plan for one."""
+    root = make_root(work, register_text(), "own")
+    first = SPLIT.plan("fragment-issues", index_of(root), "2026-09-23", root)
+    if SPLIT.write(first) != SPLIT.OK:
+        check(False, "the small register splits before a row gets its own file (%s)"
+              % (first.fatal or "; ".join(first.problems)))
+        return
+    folder = folder_of(root)
+    band = "section-5b-rows-001-025.md"
+    page = read(index_of(root))
+    rows_line = next(line for line in page.split(NL) if line.startswith(RT.ROWS_KEY) and band in line)
+    before = whole(root)
+    put(index_of(root), page.replace(rows_line, rows_line + NL + NL + EACH_LINE))
+    check(whole(root) == before,
+          "the page's line for rows from 3 on is the reader's, not the register's: read back, nothing changed")
+
+    # Written 4 first and 3 second, the way two sessions would.
+    put(os.path.join(folder, "row-5b-4.md"), own_file(4, "Four.** A long account of it, which the archive keeps.**",
+                                                     "FIXED 2026-11-12 - it was."))
+    put(os.path.join(folder, "row-5b-3.md"),
+        own_file(3, "Three.** It names [row 5b-1](%s) and [the tool](../../tools/x.py).**" % band,
+                 "OPEN - recorded, not repaired."))
+    text = whole(root)
+    table = text[text.index(S5B):text.index("*No count is typed here.*")]
+    rows = [int(m.group(1)) for m in map(RT.ROW.match, table.split(NL)) if m]
+    check(rows == [1, 2, 3, 4], "rows 3 and 4 are read from their own files, after the rows files' rows and "
+                                "in number order whichever was written first (%s)" % rows)
+    check((NL + NL + "| **3**") not in table and (NL + NL + "| **4**") not in table
+          and table.count("| # | Defect | State |") == 1,
+          "on the one table: no blank line before them, and its header once")
+    check("[row 5b-1](fragment-issues/%s)" % band in table and "[the tool](../tools/x.py)" in table,
+          "a row's own file is one folder down, and its links are read as the page would write them")
+    check("5b-3 " in readers_at_safe(root), "open-defects.py lists 5b-3, open, with no change to open-defects.py")
+    full = SPLIT.plan("fragment-issues", index_of(root), "2026-11-12", root)
+    check(full.fatal is None and not full.problems and not full.banding and not full.moving
+          and full.after == full.before,
+          "the whole split leaves the rows' own files, and the page's line, as they are (%s)"
+          % (full.fatal or "; ".join(full.problems) or full.banding or
+             ("nothing to move" if full.after == full.before else "the page would change")))
+
+    print()
+    print("   a new row an older branch still appended to the rows file")
+    outside = os.path.join(root, "docs", "OWN-LINKS.md")
+    put(outside, "See [row 5b-5](fragment-issues/%s), and [row 5b-1](fragment-issues/%s)." % (band, band) + NL)
+    three = os.path.join(folder, "row-5b-3.md")
+    put(three, read(three).replace("Three.**", "Three.** After [row 5b-5](%s)." % band))
+    put(os.path.join(folder, band), read(os.path.join(folder, band))
+        + "| **5** | **Five, written the old way.** | OPEN - new. |" + NL)
+    left = whole(root)
+    table = left[left.index(S5B):left.index("*No count is typed here.*")]
+    check([int(m.group(1)) for m in map(RT.ROW.match, table.split(NL)) if m] == [1, 2, 3, 4, 5],
+          "it is read in number order with the rows that have files, wherever it is kept")
+    kept = dict((n, read(os.path.join(folder, n))) for n in sorted(os.listdir(folder)))
+    kept_page = read(index_of(root))
+    p = new_rows_plan(root, "2026-11-12")
+    check(p is not None and p.fatal is None and not p.problems,
+          "the split plans the move of that row alone (%s)"
+          % ("it has no such plan" if p is None else p.fatal or "; ".join(p.problems) or "clean"))
+    check(p is not None and p.moved.get("5b") == {5: (band, "row-5b-5.md")},
+          "row 5b-5 goes from the rows file to row-5b-5.md, and no other row moves")
+    check(p is not None and SPLIT.write(p) == SPLIT.OK, "and it is written")
+    five = os.path.join(folder, "row-5b-5.md")
+    check(os.path.isfile(five) and "| **5** | **Five, written the old way.** | OPEN - new. |" in read(five)
+          and read(five).startswith("# Fragment issues %s row 5b-5" % DASH),
+          "row-5b-5.md holds the row's line as it was written, under a heading that names it")
+    check("| **5** |" not in read(os.path.join(folder, band)), "and the rows file no longer holds it")
+    now = whole(root) if os.path.isfile(five) else ""
+    check(now == left.replace("[row 5b-5](fragment-issues/%s)" % band, "[row 5b-5](fragment-issues/row-5b-5.md)"),
+          "the register reads back as it did, the links that follow the row aside")
+    check("[row 5b-5](row-5b-5.md)" in read(three) and "[row 5b-1](%s)" % band in read(three),
+          "a link to it in another row's own file follows it, and a link to a row that stayed does not")
+    check(read(outside) == "See [row 5b-5](fragment-issues/row-5b-5.md), and [row 5b-1](fragment-issues/%s)."
+          % band + NL, "and so does a document outside the register")
+    unchanged = [n for n in kept if n not in (band, "row-5b-3.md")]
+    check(os.path.isfile(five) and read(index_of(root)) == kept_page
+          and all(read(os.path.join(folder, n)) == kept[n] for n in unchanged),
+          "the page and every other file are byte for byte what they were: nothing was re-banded")
+    again = new_rows_plan(root, "2026-11-13")
+    check(again is not None and again.fatal is None and not again.problems and not any(again.moved.values())
+          and again.after == again.before, "a second run moves nothing")
+
+    print()
+    print("   one number, in a rows file and in a file of its own")
+    clash = os.path.join(work, "own-clash")
+    shutil.copytree(root, clash)
+    cfolder = folder_of(clash)
+    put(os.path.join(cfolder, band), read(os.path.join(cfolder, band))
+        + "| **4** | **Another four, from another branch.** | OPEN - new. |" + NL)
+    twice = whole(clash)
+    twice = twice[twice.index(S5B):twice.index("*No count is typed here.*")]
+    check(twice.count(NL + "| **4** |") == 2,
+          "both rows are read - which one is row 4 is not for a reader to choose, and "
+          "tests/test_open_defects.py refuses the pair")
+    held = dict((n, read(os.path.join(cfolder, n))) for n in sorted(os.listdir(cfolder)))
+    c = new_rows_plan(clash, "2026-11-12")
+    check(c is not None and any("5b-4" in problem and "row-5b-4.md" in problem for problem in c.problems),
+          "the split refuses to put the second one in row-5b-4.md, and names the row (%s)"
+          % ("it has no such plan" if c is None else "; ".join(c.problems) or "no problem"))
+    check(c is not None and SPLIT.write(c) == SPLIT.REFUSED
+          and all(read(os.path.join(cfolder, n)) == held[n] for n in held), "and nothing is written")
+
+    print()
+    print("   a file that is not what its name says is broken, never skipped")
+    stray = os.path.join(folder, "row-5b-4-copy.md")
+    put(stray, own_file(6, "Six.", "OPEN - new."))
+    check(raises(lambda: whole(root)), "a file named like a row's own that is not one raises RegisterBroken")
+    check("Could not read the register" in readers_at_safe(root), "and open-defects says so rather than count less")
+    os.remove(stray)
+    wrong = os.path.join(folder, "row-5b-6.md")
+    put(wrong, own_file(7, "Seven.", "OPEN - new."))
+    check(raises(lambda: whole(root)), "a row's file that holds another row than its name says raises too")
+    put(wrong, own_file(6, "Six.", "OPEN - new.").rstrip(NL) + NL
+        + "| **7** | **Seven.** | OPEN - new. |" + NL)
+    check(raises(lambda: whole(root)), "and one that holds a second row beside its own")
+    put(wrong, own_file(6, "Six.", "OPEN - new.") + NL + "A note under the table, which would be read "
+        "into the middle of the register's table." + NL)
+    check(raises(lambda: whole(root)), "and one with words under its table: the file ends with its row")
+    put(wrong, own_file(6, "Six.", "OPEN - new.").replace("row 5b-6", "row 5b-9"))
+    said = why_broken(lambda: whole(root))
+    check("row 5b-9" in said and "5b-6" in said,
+          "and one whose heading names another row than its name and its cell, saying both (%s)"
+          % (said or "it was read"))
+    put(wrong, NL.join(own_file(6, "Six.", "OPEN - new.").split(NL)[2:]))
+    check("no heading" in why_broken(lambda: whole(root)), "and one with no heading above its table")
+    put(wrong, "")
+    said = why_broken(lambda: whole(root))
+    check("is empty" in said and "no such file" not in said,
+          "and an empty one is said to be empty, not missing (%s)" % (said or "it was read"))
+    os.remove(wrong)
+    check(not raises(lambda: whole(root)), "taken away, it reads whole again")
+    served = dict((os.path.join(folder, n).replace(os.sep, "/"), read(os.path.join(folder, n)))
+                  for n in os.listdir(folder))
+    served[index_of(root).replace(os.sep, "/")] = read(index_of(root))
+    check(raises(lambda: RT.register_text(index_of(root), read=lambda path: served.get(path.replace(os.sep, "/")))),
+          "a caller that serves the register from memory and cannot list the folder is told, not given less")
+
+    print()
+    print("   archive-fragment-issues moves a finished row that has a file of its own")
+    AF = _load("archive_fragment_issues_own", "archive-fragment-issues.py")
+    if AF is None:
+        check(False, "the archive tool loads")
+        return
+    archive = os.path.join(root, "docs", AF.ARCHIVE_NAME)
+    plan = AF.plan(register=index_of(root), archive=archive, today="2026-11-12")
+    idents = [ident for moved in plan.moves.values() for _, ident, _ in moved]
+    check(plan.fatal is None and not plan.problems and "5b-4" in idents,
+          "it plans 5b-4, finished, from its own file (%s)" % (plan.fatal or "; ".join(plan.problems) or "clean"))
+    check(AF.write(plan) == AF.OK, "it writes")
+    four = read(os.path.join(folder, "row-5b-4.md"))
+    check("| **4** |" in four and "](../fragment-issues-archive/" in four and "#row-5b-4)" in four
+          and "A long account" not in four,
+          "row 5b-4's line stays in row-5b-4.md, shortened, with the link to its full text")
+    check(four.startswith("# Fragment issues %s row 5b-4" % DASH), "under the heading the file had")
+    check(not any(n.startswith("section-5b-rows-") and "| **4** |" in read(os.path.join(folder, n))
+                  for n in os.listdir(folder)), "and no rows file has taken it")
+    check(whole(root) == plan.after, "read back, the register is what the archive tool planned")
+
 
 
 def proposals_register():

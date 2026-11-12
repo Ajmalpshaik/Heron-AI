@@ -32,8 +32,9 @@ risk: MODIFY
 # Where its outputs are now: `moved` (ids) -> `movedIds`; `notAtPoint` and
 # `noLocationPoint` -> the same names; `findings` -> `findings`.
 #
-# Version 1's proof below no longer describes the code (impl/ changed) and is
-# kept as the record; DRAFT until version 2 is proved on a real model (D-30).
+# Version 1's proof below no longer described the code (impl/ changed) and
+# was kept as the record; DRAFT at the time, until version 2 is proved on a
+# real model (D-30).
 
 purpose: >
   Shifts every element by one offset and reports FOUR outcomes, because "it did

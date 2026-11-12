@@ -39,4 +39,25 @@
              Link="HeronBindingNote.cs" />
   </ItemGroup>
 
+  <!--
+    A FRAGMENT'S OWN NAME RULE, COMPILED IN WHEN THE SUITE HANDS ONE OVER.
+
+    FRAGMENT-ISSUES row 5b-1120. SET_ROUTING_PREFERENCE names a fitting as
+    "Family: Type", the spelling the binder takes, but a fragment is compiled
+    on its own inside Revit and cannot call HeronBindingNote. So its rule is
+    written in the fragment as plain text handling between two marker lines,
+    and tests/test_binding_note.py copies those lines, unchanged, into one
+    generated file and names it in the HeronFragmentPartNames property. The
+    rule that ships is then the rule that is tested, beside the binder's own,
+    and there is still exactly ONE copy of each.
+
+    Without the property - tools/check-compile.py, or the fragment as it stood
+    before the row - nothing is added and the host still builds: Program.cs
+    asks for the rule by reflection, so its absence is a failed check, never
+    a build error.
+  -->
+  <ItemGroup Condition="'$(HeronFragmentPartNames)' != ''">
+    <Compile Include="$(HeronFragmentPartNames)" Link="FragmentPartNames.cs" />
+  </ItemGroup>
+
 </Project>

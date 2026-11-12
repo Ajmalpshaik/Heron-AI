@@ -69,11 +69,23 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BRAIN_DIR = os.path.join(ROOT, "brain")
 
+sys.path.insert(0, BRAIN_DIR)
+
+import heron_checkout as CHECKOUT  # noqa: E402
+
 # Where an importer can live. `.claude` is in here because a hook is a real
 # caller - leaving it out would report a module as unreached when a skill's
 # hook imports it every time somebody edits a file.
 SEARCHED = ("brain", "mcp", "tools", "tests", ".claude")
 SKIP_DIRS = {"__pycache__", "bin", "obj", ".vs", ".git", "node_modules"}
+# AND `.claude` IS WHERE A SESSION'S WORKTREE SITS - `.claude/worktrees/<name>/`,
+# a whole copy of the repository. Read as part of this one, every suite in
+# it is a second importer whose path starts with `.claude`, which is not a
+# test's path - so with ONE worktree present the two buckets this tool
+# exists to show, "reached only by a tool" and "imported ONLY by its own
+# test", both read 0 (measured 2026-11-11, row 5b-1539). No folder name is
+# added to the list above for it: `heron_checkout` answers for any folder
+# holding a `.git` of its own, wherever a harness puts one.
 
 
 def brain_modules():
@@ -95,7 +107,8 @@ def importers_of(names):
         if not os.path.isdir(base):
             continue
         for dirpath, dirnames, files in os.walk(base):
-            dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
+            dirnames[:] = CHECKOUT.own(
+                dirpath, [d for d in dirnames if d not in SKIP_DIRS])
             for fn in files:
                 if not fn.endswith(".py"):
                     continue

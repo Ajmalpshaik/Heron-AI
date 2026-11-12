@@ -53,3 +53,11 @@ next free FamilyN), in front.
 | **EI6** | Second route: View > Switch Windows, and Ctrl+S in the unsaved family | The same windows as EI1, one for one; Ctrl+S in FamilyN opens Save As rather than saving in place - Revit saying NEVER SAVED itself |
 | **EI7** | *Not the proof - an observation.* In a project with a loaded family, Edit Family on it, then `REPORT_OPEN_DOCUMENTS` | What `familyList` says of a family opened from a project: its own .rfa path if Revit keeps one, or NEVER SAVED. Write down which; if NEVER SAVED, the finding's "closing it loses the family" is too strong for a family the project still holds, and that sentence needs a version 3 |
 | **EI8** | *Watching, not a proof.* A chat starts a large fixed-family build in a family that has never been saved | Before the first write it asks once for Ctrl+S, as `family-creation` step 0 now says, and does not ask again |
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `REPORT_FAMILY_FORMS` reads PROVEN on its card, at version 5 - its `proof` block is signed by Ajmal PS,
+2026-11-12, on Heron Link Detail Test (1,503 elements), Revit 2020, session 33000; a `proof.releases` entry adds Revit
+2024 (2026-11-12, Ajmal PS). Of the other cards this group names: `REPORT_OPEN_DOCUMENTS` reads DRAFT at version 3. So
+where this page calls a card named here DRAFT, or says nothing has run in Revit, that was true when it was written and
+is out of date as a statement about the card. Whether EI1 to EI8 were what that proof ran is NOT sorted here: for the
+owner.

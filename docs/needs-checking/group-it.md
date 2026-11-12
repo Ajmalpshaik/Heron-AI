@@ -83,3 +83,12 @@ grid carries (`matchText=ZZZNOTHINGHERE`); add-in at 7bb93bca.
 
 IT1's record is `brain/proof-drafts/runs/select-by-parameter-value.json`; the draft waits for the owner's
 signature. IT4 to IT10 belong to the other two cards and the binder, and were not run here.
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `SELECT_BY_PARAMETER_VALUE` reads PROVEN on its card, at version 4 - its `proof` block is signed by Ajmal PS,
+2026-11-02, on P1102 MEP (21,446 elements), Revit 2020, session 33624. `SELECT_OPENINGS` reads PROVEN on its card, at
+version 3 - its `proof` block is signed by Ajmal PS, 2026-11-02, on PHASES RAN AGAINST DIFFERENT DOCUMENTS: P1102
+ARCH, P1102 Family - active was P1102 ARCH, Revit 2020, session 59096. Of the other cards this group names:
+`SELECT_BY_CATEGORIES` is DEPRECATED, superseded by `FILTER_ELEMENTS_BY_CATEGORY`. So where this page calls a card
+named here DRAFT, or says nothing has run in Revit, that was true when it was written and is out of date as a
+statement about the card. Whether IT0 to IT10 were what that proof ran is NOT sorted here: for the owner.

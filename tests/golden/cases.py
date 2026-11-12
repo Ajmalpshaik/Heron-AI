@@ -113,9 +113,13 @@ CASES = [
         "revit": ["2020", "2024"],
         "proven_on": "2026-08-27",
         "fingerprint": None,
+        # The tool is in the entry file; the server object, the binding and the
+        # pin it runs on were cut out of that file into heron_server_core.py on
+        # 2026-11-11 (FRAGMENT-ISSUES row 5b-1555), so the proof rests on both.
         "depends": [
             "revit/Heron.Revit.Addin/RevitOperations.cs",
             "mcp/server/heron_mcp_server.py",
+            "mcp/server/heron_server_core.py",
         ],
     },
 

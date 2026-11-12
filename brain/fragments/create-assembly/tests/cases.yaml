@@ -3,9 +3,73 @@
 positive:
   - given: three pipes and two pipe fittings in one run, assemblyName "Spool 01", namingCategory "Pipes"
     expect: >
-      one assembly named Spool 01, memberIds the five elements, read back
+      one assembly named Spool 01, memberIds the five elements, read back.
+      NEVER SEEN ON ANY RUN OF VERSION 1 - it named the assembly inside the
+      transaction that made it, and Revit assigns the type only at that
+      transaction's commit (row 5b-1553). Version 2 commits first and names in
+      a second transaction; whether Revit assigns the type at a commit inside
+      the add-in's open group is what the first run of this case decides
+
+  - given: >
+      version 2, THE CASE THAT DECIDES IT, Group NL (NL9 and NL10) - elements
+      Revit will assemble (the ducts in one small view), namingCategory their
+      own category, assemblyName a name no assembly has. Count the entries
+      under Assemblies in the Project Browser first
+    expect: >
+      `assembly` NOT null, memberIds the elements, and the finding "Made
+      assembly "<the name asked for>" with N member(s), read back". Through
+      `try-once`, answered Keep: ONE new entry under Assemblies with exactly
+      that name, each element's Properties naming it, and ONE entry in Revit's
+      undo list - one Undo takes the assembly AND its name away together.
+      Nothing else is a pass: a filled memberIds beside a null `assembly`
+      cannot happen in version 2, and would be the old defect
+
+  - given: version 2 - the same elements, assemblyName empty
+    expect: >
+      one assembly under the name Revit gives it, the finding quoting that
+      name, `assembly` not null
 
 negative:
+  - given: >
+      version 2 (5b-1117), ALL OR NOTHING, Group NL (NL11) - with an assembly
+      called "HERON NL A2" kept in the model, OTHER elements of that category
+      and assemblyName "HERON NL A2": Revit makes the assembly, and the name
+      is another assembly type's
+    expect: >
+      the call does not return a result at all: "'create-assembly' threw while
+      running: Another assembly type in this model is already called "HERON NL
+      A2" ... The call failed, and Heron rolls the whole call back - no
+      assembly is kept." Through `try-once` there is NO Keep or Discard
+      question, NO new entry in Revit's undo list, the Assemblies node holds
+      what it held, and no element reports an assembly it was not in. A
+      refusal that came back as an ordinary answer with an undo entry beside
+      it is the defect a review found in the first cut
+
+  - given: >
+      version 2, Group NL (NL12) - an assembly kept in the model, and a SECOND
+      set of elements that matches it exactly (the same types, the same
+      arrangement, copied), assemblyName a new name
+    expect: >
+      if Revit gives the second assembly the FIRST one's type: the call stops
+      - "Revit matched the new assembly to the assembly type "...", which 1
+      assembly(ies) already in the model share. Naming it ... would rename all
+      of them" - and the first assembly keeps its name: read it in the Project
+      Browser. With assemblyName empty the same call succeeds and reports the
+      shared name. If Revit gives it a type of its own, the call succeeds
+      under the new name and the first assembly's name is unchanged; which of
+      the two Revit does goes on row 5b-1553
+
+  - given: >
+      version 2 - if Revit does NOT assign the type at a commit inside the
+      group: any call at all
+    expect: >
+      "'create-assembly' threw while running: Revit made the assembly but had
+      not given it an assembly type after the transaction that made it was
+      committed, so it could not be named or used. The call failed, and Heron
+      rolls the whole call back - no assembly is kept." - NOT "Revit refused
+      the name". Nothing is left in the model. Then row 5b-1553 stays open
+      with those words, and the card is not signed
+
   - given: the same five elements straight after
     expect: >
       every one in alreadyInOne and refused - nothing made twice
@@ -17,4 +81,11 @@ negative:
 
 second_route:
   - the Project Browser's Assemblies node, and the assembly's members selected in a view
+  - >
+    version 2 - after a REFUSED run that was kept: the Assemblies node counted
+    before and after, and one of the elements selected - its Properties must
+    show no assembly. The report alone cannot settle whether anything was left
+  - >
+    version 2 - Revit's undo list after a kept run: ONE entry for the job,
+    whatever the card did inside it
   - one Ctrl+Z takes it away in a single step (Golden Rule 16)

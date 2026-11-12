@@ -61,3 +61,9 @@ marks in SINGLE quotes, so the shell leaves the backslashes alone.
 | **HE10** | HE1, HE4, HE5 and HE7 on **Revit 2024** and **Revit 2027** | The same answers. Compiled for all eight releases here; what Revit DOES was measured on none |
 | **HE11** | *Routing, on the owner's PC.* `heron_lookup` *"make a numbered note"*, *"put a bulleted note on the plan"*, *"turn this note into a numbered list"* | `CREATE_TEXT_NOTE` first for the first two, `EDIT_TEXT_VALUES` for the third (its mode format, #586). Measured in the cloud on the lexical and the trained backend, no re-ranker (row 5b-930); the re-ranked backends were not measured there. Also record what *"create a text note with a numbered list"* reaches: on lexical it went to `EDIT_TEXT_VALUES` because a DRAFT card loses PROVEN's tie-break |
 | **HE12** | The signature, on the owner's word only, after HE1 to HE10 | `python brain/heron_validate.py accept create-text-note --by "Ajmal PS"`; then he says whether the card goes back to PROVEN |
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `CREATE_TEXT_NOTE` reads PROVEN on its card, at version 2 - its `proof` block is signed by Ajmal PS,
+2026-10-18, on Heron Safety 2024 (21,569 elements), Revit 2024, session 63712. So where this page calls a card named
+here DRAFT, or says nothing has run in Revit, that was true when it was written and is out of date as a statement
+about the card. Whether HE1 to HE12 were what that proof ran is NOT sorted here: for the owner.

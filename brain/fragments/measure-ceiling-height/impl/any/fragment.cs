@@ -1,7 +1,8 @@
 // NOT STANDALONE. Assumes `elements` (Rooms and/or Spaces), `doc` and
 // `includeLinks` are in scope, and leaves `mainCeiling`, `mainHeight`,
 // `ceilingsOver`, `heights`, `coverage`, `noCeiling`, `linksSearched` and
-// `linkedMatches` behind.
+// `linkedMatches` behind - and, since version 3, `limitBelowCeiling` and
+// `findings`.
 //
 // READ ONLY, AND THAT COST SOMETHING. See the last section.
 //
@@ -45,6 +46,31 @@
 // competes with a smaller main grid. `coverage` comes back per ceiling so a
 // close call is visible instead of settled in silence.
 //
+// A ROOM THAT STOPS SHORT OF ITS CEILING IS NAMED (version 3, FRAGMENT-ISSUES
+// 5b-1128). The plan-overlap test needs no room solid, but it does stop at the
+// top of the room's own box - and that top IS the room's Upper Limit. Measured
+// 2026-10-18, Revit 2020: two rooms at the template's default limits under two
+// ceilings at 2600 mm answered `ceilingsOver 0` and an empty `mainHeight`, and
+// read exactly like rooms with no ceiling at all; with their limit raised to
+// Level 2 the same rooms measured. The limit is still the limit - a ceiling
+// above it is NOT measured as the room's, because the next storey's ceiling
+// lies over the room in plan too and nothing here can tell the two apart. But
+// a room with no ceiling inside its limit and one or more over it above that
+// limit is now listed in `limitBelowCeiling` and said in `findings`, with the
+// room's own height and the lowest such ceiling's, so the modeller can see
+// which it is and raise the limit. `noCeiling` still holds it, as before.
+//
+// ONLY A CEILING HUNG FROM A LEVEL INSIDE THE ROOM'S OWN HEIGHT COUNTS FOR
+// THAT. The storey above has ceilings too, and they lie over this room in
+// plan: a shaft with no ceiling, under them, would be told to raise its limit
+// to reach another storey's ceiling. A ceiling is drawn on a level, so one
+// whose own level is at or above the room's upper limit is another storey's
+// and is left out of the count; a ceiling-less room under it stays in
+// `noCeiling` alone, with nothing said. WHAT THAT LEAVES OUT, stated: a
+// ceiling of this storey drawn on a level of its own above the room's limit -
+// a "Level 1 Ceiling" level at 2600 over a room that stops at 2438 - is not
+// counted either, and that room is not named.
+//
 // THE CEILINGS ARE USUALLY THE ARCHITECT'S, IN A LINK, AND THEY ARE READ ONLY
 // WHEN ASKED FOR - D-59. An MEP model's spaces sit under ceilings it does not
 // contain. With `includeLinks` set, every loaded link's ceilings are measured
@@ -63,6 +89,9 @@ var ceilingsOver = new Dictionary<ElementId, IList<ElementId>>();
 var heights = new Dictionary<ElementId, double>();
 var coverage = new Dictionary<ElementId, double>();
 var noCeiling = new List<ElementId>();
+// VERSION 3 (5b-1128) - see the header.
+var limitBelowCeiling = new List<ElementId>();
+var findings = new List<string>();
 
 // Collected by CATEGORY, not by the `Ceiling` class. The class IS reachable
 // here - measured, not assumed - so this is a choice: a category collector
@@ -77,6 +106,11 @@ var allCeilings = new FilteredElementCollector(doc)
 // origin: the ceiling's own height-above-level plus that level's elevation.
 var undersideOf = new Dictionary<ElementId, double>();
 var boxOf = new Dictionary<ElementId, BoundingBoxXYZ>();
+// The elevation of the level each ceiling is drawn on - what tells this
+// storey's ceiling from the next one's (version 3, see the header).
+var levelOfCeiling = new Dictionary<ElementId, double>();
+// One millimetre, in feet: a level AT the room's limit is not inside it.
+var levelTolerance = 1.0 / 304.8;
 
 foreach (var ceiling in allCeilings)
 {
@@ -102,6 +136,7 @@ foreach (var ceiling in allCeilings)
     catch { }
 
     undersideOf[ceiling.Id] = levelElevation + aboveLevel;
+    levelOfCeiling[ceiling.Id] = levelElevation;
 }
 
 foreach (var element in elements)
@@ -117,6 +152,10 @@ foreach (var element in elements)
     var over = new List<ElementId>();
     ElementId best = ElementId.InvalidElementId;
     double bestOverlap = 0.0;
+    // Ceilings over this room in plan whose underside is above the room's
+    // upper limit - counted, never measured as its ceiling (5b-1128).
+    var aboveLimit = 0;
+    var lowestAboveLimit = double.MaxValue;
 
     foreach (var pair in boxOf)
     {
@@ -136,7 +175,15 @@ foreach (var element in elements)
 
         // Nor may it be so far above that it belongs to the storey above. The
         // room's own box top is the honest limit: it is where the room stops.
-        if (underside > roomBox.Max.Z) continue;
+        if (underside > roomBox.Max.Z)
+        {
+            // Another storey's ceiling - drawn on a level at or above this
+            // room's limit - is not this room's to stop short of.
+            if (levelOfCeiling[pair.Key] >= roomBox.Max.Z - levelTolerance) continue;
+            aboveLimit++;
+            if (underside < lowestAboveLimit) lowestAboveLimit = underside;
+            continue;
+        }
 
         over.Add(pair.Key);
         heights[pair.Key] = underside - roomFloor;
@@ -148,7 +195,26 @@ foreach (var element in elements)
         if (overlap > bestOverlap) { bestOverlap = overlap; best = pair.Key; }
     }
 
-    if (over.Count == 0) { noCeiling.Add(element.Id); continue; }
+    if (over.Count == 0)
+    {
+        noCeiling.Add(element.Id);
+
+        // NOT "NO CEILING" - THE ROOM STOPS SHORT OF ONE (5b-1128).
+        if (aboveLimit > 0)
+        {
+            limitBelowCeiling.Add(element.Id);
+            var stoppedName = "";
+            try { stoppedName = spatial.Name ?? ""; } catch { }
+            findings.Add(string.Format("'{0}' (id {1}): NO CEILING MEASURED - it stops at its upper limit, "
+                + "{2:0} mm above its floor, and {3} ceiling(s) drawn on a level inside that height lie over it "
+                + "in plan above the limit, the lowest with its underside {4:0} mm above the floor. Raise its "
+                + "Upper Limit or Limit Offset to above that ceiling and ask again. A ceiling drawn on a level "
+                + "at or above the limit is taken as another storey's and is not counted here",
+                stoppedName, element.Id, (roomBox.Max.Z - roomFloor) * 304.8, aboveLimit,
+                (lowestAboveLimit - roomFloor) * 304.8));
+        }
+        continue;
+    }
 
     ceilingsOver[element.Id] = over;
     mainCeiling[element.Id] = best;
@@ -210,6 +276,8 @@ var linkBlocked = "";
 var linkedBoxes = new List<Outline>();
 var linkedUndersides = new List<double>();
 var linkedNames = new List<string>();
+// Each linked ceiling's own level, carried here like its underside.
+var linkedLevels = new List<double>();
 
 for (var i = 0; i < linkDocs.Count; i++)
 {
@@ -272,6 +340,7 @@ for (var i = 0; i < linkDocs.Count; i++)
 
             linkedBoxes.Add(new Outline(low, high));
             linkedUndersides.Add(placed.OfPoint(new XYZ(0, 0, levelElevation + aboveLevel)).Z);
+            linkedLevels.Add(placed.OfPoint(new XYZ(0, 0, levelElevation)).Z);
             linkedNames.Add(string.Format("{0} - Ceilings '{1}' (id {2} in the link)",
                 linked.Title, typeName, ceiling.Id));
             count++;
@@ -294,6 +363,9 @@ foreach (var element in linkDocs.Count > 0 ? elements : new List<Element>())
     var best = -1;
     var bestOverlap = 0.0;
     var over = 0;
+    // The same count as the host's, for the linked ceilings (5b-1128).
+    var aboveLimit = 0;
+    var lowestAboveLimit = double.MaxValue;
     for (var c = 0; c < linkedBoxes.Count; c++)
     {
         var box = linkedBoxes[c];
@@ -301,7 +373,14 @@ foreach (var element in linkDocs.Count > 0 ? elements : new List<Element>())
         var deep = Math.Min(roomBox.Max.Y, box.MaximumPoint.Y) - Math.Max(roomBox.Min.Y, box.MinimumPoint.Y);
         if (wide <= 0.0 || deep <= 0.0) continue;
         var underside = linkedUndersides[c];
-        if (underside <= roomFloor || underside > roomBox.Max.Z) continue;
+        if (underside <= roomFloor) continue;
+        if (underside > roomBox.Max.Z)
+        {
+            if (linkedLevels[c] >= roomBox.Max.Z - levelTolerance) continue;
+            aboveLimit++;
+            if (underside < lowestAboveLimit) lowestAboveLimit = underside;
+            continue;
+        }
         over++;
         if (wide * deep > bestOverlap) { bestOverlap = wide * deep; best = c; }
     }
@@ -310,7 +389,13 @@ foreach (var element in linkDocs.Count > 0 ? elements : new List<Element>())
     try { roomName = spatial.Name ?? ""; } catch { }
     if (best < 0)
     {
-        linkedMatches.Add(string.Format("  '{0}' (id {1}): no linked ceiling over it", roomName, element.Id));
+        linkedMatches.Add(aboveLimit > 0
+            ? string.Format("  '{0}' (id {1}): no linked ceiling inside its upper limit, {2:0} mm above its "
+                + "floor - {3} linked ceiling(s) drawn on a level inside that height lie over it in plan above "
+                + "the limit, the lowest {4:0} mm above the floor; raise its Upper Limit or Limit Offset to "
+                + "above that ceiling and ask again", roomName, element.Id,
+                (roomBox.Max.Z - roomFloor) * 304.8, aboveLimit, (lowestAboveLimit - roomFloor) * 304.8)
+            : string.Format("  '{0}' (id {1}): no linked ceiling over it", roomName, element.Id));
         continue;
     }
     linkedTotal++;

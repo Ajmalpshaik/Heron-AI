@@ -282,6 +282,107 @@ HERON_VERSION = "0.2.0"
 RETRY_ATTEMPTS = 3
 RETRY_BACKOFF_S = 0.15
 
+#: THE LARGEST ANSWER HERON READS OFF THE PIPE, in bytes - named here and
+#: nowhere else on this side (FRAGMENT-ISSUES 5b-1167). Until 2026-11-11
+#: `_read_line` read 4096-byte chunks until a newline with no limit and held
+#: all of it before parsing, so one answer could take whatever memory it
+#: asked for. A backstop against a line that never ends, not a budget to tune -
+#: the same reading as the bridge's own limit on a REQUEST. The largest answer
+#: on record is a 6.2 MB read (row 5b-489); this is more than twice that.
+#: NOT MEASURED: the largest reply a real read has sent. THE BRIDGE'S END HAS
+#: NO LIMIT YET - it writes whatever the operation returned - so an answer
+#: over this still crosses the pipe before it is refused here.
+REPLY_LIMIT_BYTES = 16 * 1024 * 1024
+
+
+class _OverLimit(object):
+    """What `_read_line` hands back in place of a line that passed
+    REPLY_LIMIT_BYTES: how many bytes had arrived when it stopped reading."""
+
+    def __init__(self, arrived):
+        self.arrived = arrived
+
+
+def _megabytes(count):
+    """A byte count as a modeller reads one: "16.0 MB"."""
+    return "%.1f MB" % (count / (1024.0 * 1024.0))
+
+
+def too_large_reply(arrived, limit=None, wrote=False):
+    """
+    The answer `request` gives in place of one over REPLY_LIMIT_BYTES.
+
+    SOMETHING ARRIVED, SO THE REQUEST REACHED REVIT - which is why this is an
+    answer with a code of its own and never None: None means nothing came
+    back, and heron_failure reads that on a read as safe to ask again. How
+    big the whole answer was is not known here: reading stopped at the limit.
+
+    TWO SENTENCES, BECAUSE WHAT COMES NEXT DIFFERS. `wrote` is `request`'s
+    own `idempotent`, the other way up. After a READ the next step is a
+    smaller question. After a CHANGE it is the model: the change may have
+    been kept, so the reply leads with that and never invites asking again -
+    "ask for less" said of a move is an invitation to move twice.
+
+    NO "PIPE" IN THE WORDS A MODELLER READS. To somebody drawing chilled
+    water a pipe is in the model.
+    """
+    limit = REPLY_LIMIT_BYTES if limit is None else limit
+    size = ("Revit's answer was larger than Heron takes in one reply - more than %s "
+            "had arrived and the limit is %s - so Heron stopped reading and is showing "
+            "none of it." % (_megabytes(arrived), _megabytes(limit)))
+    if wrote:
+        then = ("LOOK AT THE MODEL FIRST: the change reached Revit and was being "
+                "answered, so it may have been kept, and Heron cannot say. Do not send "
+                "it again. Where the add-in wrote a run record it holds the whole "
+                "answer, and heron_run_record lists the newest.")
+    else:
+        then = ("The request reached Revit and was being answered. Sent again as it "
+                "is, the answer would be as large: ask for less - fewer elements, one "
+                "level, one view.")
+    return {"ok": False, "error": "reply_too_large", "message": "%s %s" % (size, then)}
+
+
+def unreadable_reply(size):
+    """
+    The answer `request` gives in place of one that arrived and would not
+    parse (FRAGMENT-ISSUES 5b-1167).
+
+    Until 2026-11-11 this came back None, the same as no reply at all, and
+    heron_failure called None on a read "never ran" and "asking again costs
+    nothing". Something came back, so the request reached Revit and may have
+    run: a read that used up the chain, or one the add-in counted changing the
+    model, is not free to ask again. So it has a code of its own, and
+    heron_failure reads it as an unknown outcome.
+
+    IT SAYS ONLY WHAT IS KNOWN. That the request RAN is an inference from a
+    line nobody could read, so the sentence does not make it.
+    """
+    return {"ok": False, "error": "reply_unreadable",
+            "message": ("Something came back from Revit - %d byte%s - and Heron could "
+                        "not read it as an answer, so it cannot tell you what Revit "
+                        "did. The request was sent; whether it ran is not known from "
+                        "here, and sending it again could run it a second time."
+                        % (size, "" if size == 1 else "s"))}
+
+
+def could_read(reply):
+    """
+    True when `reply` is an answer Heron could read - anything `request`
+    parsed, a refusal included. False for None, and for the two answers this
+    client writes itself in place of one that arrived unusable.
+
+    FOR `discover`, WHICH ASKS "DID IT ANSWER?" OF A PING. An unreadable
+    reply used to be None there, so a pipe answering something that is not
+    Heron's was not listed as a live session. Now that such a reply has a
+    code of its own (5b-1167), "is not None" would have started listing it;
+    this keeps that question's answer exactly what it was.
+    """
+    if reply is None:
+        return False
+    return not (isinstance(reply, dict)
+                and reply.get("error") in ("reply_unreadable", "reply_too_large"))
+
+
 #: HOW OFTEN A CALLER WAITING ON REVIT IS TOLD THE WAIT GOES ON. A reply can
 #: be minutes away for a reason nobody can see from here - a slow fragment, a
 #: family build, a modeller answering a prompt in Revit - and a host told
@@ -364,7 +465,10 @@ class Bridge(object):
 
     def _read_line(self, handle, timeout, on_wait=None):
         """
-        One newline-terminated response, or None if it never arrives.
+        One newline-terminated response, or None if it never arrives - or an
+        `_OverLimit` when more than REPLY_LIMIT_BYTES arrived with no newline
+        (5b-1167). Reading stops there, so the rest of that line is still in
+        the pipe: the caller must close the handle, never reuse it.
 
         The read runs on a helper thread because a pipe handle cannot be given a
         deadline of its own here. On timeout the caller closes the handle, which
@@ -389,6 +493,10 @@ class Bridge(object):
                     if not chunk:
                         break
                     buffer += chunk
+                    if len(buffer) > REPLY_LIMIT_BYTES:
+                        result["over"] = len(buffer)
+                        buffer = b""
+                        break
             except (OSError, ValueError):
                 buffer = b""
             result["line"] = buffer
@@ -413,12 +521,16 @@ class Bridge(object):
                         on_wait = None
         if worker.is_alive():
             return None            # still waiting; the caller closes the handle
+        if result.get("over"):
+            return _OverLimit(result["over"])
         return result.get("line") or None
 
     def request(self, op, timeout=CONNECT_TIMEOUT_S, response_timeout=RESPONSE_TIMEOUT_S,
                 op_args=None, idempotent=True, on_wait=None):
         """
         Send one request, return the parsed response. None if unreachable.
+        An answer that arrived and could not be used is NOT None (5b-1167): it
+        is `unreadable_reply` or `too_large_reply`, each with a code of its own.
 
         The connection is kept and reused. The bridge hands the session to
         whichever connection is newest, so a client that reconnects for every
@@ -509,13 +621,23 @@ class Bridge(object):
                                         "twice.")}
                 continue
 
+            if isinstance(line, _OverLimit):
+                # MORE THAN THE LIMIT ARRIVED (5b-1167). The rest of that line
+                # is still in the pipe, so this connection is finished: the
+                # next request opens a new one. Not retried - it reached
+                # Revit, and the same request brings the same answer. A
+                # request that is not idempotent is a change, and is told so.
+                self.close()
+                return too_large_reply(line.arrived, wrote=not idempotent)
+
             try:
                 return json.loads(line.decode("utf-8").strip())
             except ValueError:
                 # A reply arrived and was unreadable. That is not a transport
                 # fault, and repeating the request will not produce a different
-                # answer.
-                return None
+                # answer. IT IS NOT None EITHER (5b-1167): None is "nothing
+                # came back", and this did - so the request reached Revit.
+                return unreadable_reply(len(line))
 
         return None
 
@@ -649,6 +771,61 @@ def open_model_named(bridge):
     return title if isinstance(title, str) and title.strip() else None
 
 
+# What ask_to_keep_state answers for a Revit whose add-in answered `info` well
+# and named no Ask to Keep switch at all - an add-in from before 2026-11-12.
+# A word and not None, because None is "no usable answer", and the two are
+# different facts a modeller is told differently. heron_health holds the same
+# word; tests/test_ask_to_keep_health.py holds the two to one spelling.
+ASK_TO_KEEP_NOT_SENT = "not sent"
+# Never a value a reply can carry, so "the field is missing" cannot be
+# confused with anything the field holds.
+_FIELD_MISSING = object()
+
+
+def ask_to_keep_state(bridge):
+    """
+    Whether this Revit asks Keep or Discard before it keeps a change made
+    through revit_change - the owner's Ask to Keep switch (D-126, D-138), as
+    that Revit's add-in read it from its own settings at the moment of this
+    call. One of FOUR answers:
+
+        True                    the switch is on
+        False                   the switch is off
+        ASK_TO_KEEP_NOT_SENT    `info` answered well and carries no such
+                                field - an add-in from before 2026-11-12
+        None                    no usable answer: nothing came back, it was
+                                refused, it is not an object, or the field is
+                                there and is not a JSON true or false
+
+    From `info`, lease-exempt, so asking never claims the Revit.
+
+    NEITHER OF THE LAST TWO IS OFF. Off is the switch's default, and a
+    default is exactly what must not be handed back for an answer nobody
+    gave.
+
+    AND THEY ARE NOT EACH OTHER. Until the review of 2026-11-12 both were
+    None, and revit_health told a modeller "an older Heron add-in does not
+    report it" of a Revit that had simply not answered. Only a good reply
+    with the field missing says anything about the add-in's age.
+
+    READ OFF A REPLY, NEVER PUT IN A REQUEST. Nothing a chat sends may turn
+    the question off (Golden Rule 19, D-126 item 5), and the add-in reads no
+    such field. tests/test_ask_to_keep_health.py holds that the read below
+    is the only place the client or the server names it.
+
+    AND NEVER THIS SIDE'S OWN COPY OF heron.config. asks_before_keeping in
+    heron_config reads that, and on a PC whose Claude app keeps a private
+    copy of the settings folder it is not the file Revit decides by (Q-70).
+    """
+    reply = bridge.request("info")
+    if not isinstance(reply, dict) or not reply.get("ok"):
+        return None
+    said = reply.get("askToKeep", _FIELD_MISSING)
+    if said is _FIELD_MISSING:
+        return ASK_TO_KEEP_NOT_SENT
+    return said if isinstance(said, bool) else None
+
+
 def refuse_off_windows():
     """
     True when this machine cannot reach a bridge, having said so.
@@ -744,7 +921,9 @@ def discover(prune=True):
                 mismatched.append(bridge)
             continue
 
-        if bridge.request("ping") is not None:
+        # `could_read`, not "is not None": an answer that arrived and could not
+        # be read is not a live session, as it was not before 5b-1167.
+        if could_read(bridge.request("ping")):
             live.append(bridge)
             continue
 
@@ -1311,6 +1490,59 @@ def risk_refusal(root, name, switched=False):
                                                       name))
 
 
+RELEASE_YEAR = re.compile(r"\b(20[0-9]{2})\b")
+
+
+def fragment_releases(path):
+    """The Revit releases a card's `revit:` line lists, or None if it cannot be read.
+
+    Read the same hand-rolled way as `risk:`, and for the same reason: this
+    client is stdlib only. Every card writes the list on one unindented line -
+    `revit: ["2023", "2024"]` - and a card that writes it another way reads as
+    None here, which refuses nothing.
+    """
+    try:
+        with io.open(path, "r", encoding="utf-8") as fh:
+            for line in fh:
+                if line.startswith("revit:"):
+                    return RELEASE_YEAR.findall(line.split(":", 1)[1]) or None
+    except (OSError, UnicodeDecodeError):
+        return None
+    return None
+
+
+def excluded_release_refusal(root, name, revit_version):
+    """The refusal for sending a fragment to a Revit its own card leaves out, or None.
+
+    ROW 5b-1403. A card's `revit:` list is the card saying where its code
+    compiles, and `validate` sent it anywhere: on 2026-11-02 two cards that
+    start at 2023 and 2025 went to Revit 2020 and each spent a compile to come
+    back `compile_failed`, which the card had already said. Asked before a
+    fragment is sent, by `validate` and by `tools/batch-prove.py` - one rule,
+    called, never copied.
+
+    THE WORDS SAY "NO FRAGMENT WAS SENT", NOT "NOTHING WAS SENT". To know the
+    release at all, both callers have been through `discover`, which pings
+    every Revit in the address book - a ping the bridge answers itself, with
+    no lease, reading nothing from a model. So a Revit WAS asked one thing,
+    and the refusal says what was not done instead of denying that.
+
+    None when the connected release or the card's list cannot be read: this
+    saves a wasted run, it is not a safety gate, and Revit's own compile still
+    answers for a card nobody could read.
+    """
+    connected = str(revit_version or "").strip()
+    releases = fragment_releases(os.path.join(root, "brain", "fragments", name,
+                                              "fragment.yaml"))
+    if not connected or not releases or connected in releases:
+        return None
+    return ("%s does not claim Revit %s, the release connected - its `revit:` is "
+            "%s. No fragment was sent to Revit, and nothing in a model was read "
+            "or changed - Revit was asked only whether it is there. Connect one "
+            "of those releases, or pin one with --session."
+            % (name, connected, ", ".join(releases)))
+
+
 def write_operation(root, name):
     """The add-in operation that runs this fragment as a CHANGE, or None.
 
@@ -1407,6 +1639,52 @@ def setup_order_refusal(steps):
     return None
 
 
+OWN_TRANSACTIONS_NEED = "editScopeFailures"
+
+
+def opens_own_transactions(root, name):
+    """Does this card declare D-112's switch - that it opens its own transactions?
+
+    Read off the card's `contract.needs` by the reader `validate` already
+    trusts. A card whose needs cannot be read answers False: every other
+    check on this path refuses an unreadable card by name, and this one adds
+    nothing to that.
+    """
+    needs = fragment_needs(os.path.join(root, "brain", "fragments", name,
+                                        "fragment.yaml"))
+    return any(need.get("name") == OWN_TRANSACTIONS_NEED for need in needs or [])
+
+
+def setup_own_transactions_refusal(owning):
+    """The refusal for a setup step that opens its own transactions, or None.
+
+    OWNING is the setup steps, in the order typed, whose cards declare
+    `editScopeFailures`. Such a card runs with NO transaction of the add-in's
+    open and starts its own (D-112). As a setup step it cannot: the add-in
+    runs every setup step that changes the model inside a transaction it has
+    already started for that step (`RevitFragment.RunSetupSteps`), where Revit
+    lets no other be started, and it hands a setup step no failure discipline
+    - the step's own first line would ask for one that is not there. So the
+    job would be sent, and die in Revit on a missing key.
+
+    Found 2026-11-12 when CREATE_ASSEMBLY began to declare the switch:
+    tools/jobs/p1102-round9-2026-11-02.yaml arranges CREATE_ASSEMBLY_VIEWS with
+    it as a setup step, and a dry run still said WOULD RUN (FRAGMENT-ISSUES
+    row 5b-1556). Pure, like the two rules above: the caller reads each card.
+    """
+    owning = list(owning or [])
+    if not owning:
+        return None
+    return ("setup: %s open%s %s own transactions - the card declares `%s` - and a setup "
+            "step cannot: the add-in runs each setup step that changes the model inside a "
+            "transaction it has already started, where Revit lets no other be started, and "
+            "hands it no failure discipline. Nothing was sent to Revit (FRAGMENT-ISSUES row "
+            "5b-1556). Run that card by itself first and KEEP what it makes, then arrange this "
+            "proof on what is then in the model."
+            % (", ".join(owning), "s" if len(owning) == 1 else "",
+               "its" if len(owning) == 1 else "their", OWN_TRANSACTIONS_NEED))
+
+
 def setup_values_refusal(steps):
     """The refusal for setup values on a write setup that changes the model, or None.
 
@@ -1438,6 +1716,11 @@ def setup_values_refusal(steps):
 # "untested code never touches a live model", and D-117. Read from the
 # fragment's own files, and only while that proof still describes its code.
 KEEPABLE_STATUSES = ("PROVEN", "PRODUCTION")
+
+# THE ONE RISK A DRAFT'S SINGLE RUN IS OPEN TO (D-119) - what `try-once`
+# refuses everything else for, and what the refusal below reads before it
+# offers that run. One name, so the two cannot come to disagree.
+ONCE_RISK = "MODIFY"
 
 
 def proof_of(name):
@@ -1482,19 +1765,63 @@ def unproven_refusal(what, found):
     only ADD caution - the add-in makes its prompt mandatory and says the code
     was never proved - and a request without it lowers nothing. Until then
     there is no prompt to make mandatory, so this refuses.
+
+    IT NAMED NO NEXT STEP, so a chat told "it is proved first on a test model"
+    had nothing to tell the modeller but the refusal - and no way to know that
+    proving is not something a chat can do. What comes next is said now, and
+    only what exists: the proof itself, which is a run from this command line
+    and a person's signature (D-30), and - for a DRAFT alone - its one run
+    behind Revit's Keep or Discard box (D-119), which is `try-once` here and
+    no tool a chat is served. NO OTHER CAPABILITY IS OFFERED: a refusal that
+    pointed at one would be the way round it that revit_change's own
+    description forbids.
+
+    THE ONE TRY IS OFFERED ONLY TO A CARD `try-once` WILL TAKE. It was offered
+    to every DRAFT, in words - "runs a DRAFT declared MODIFY" - that left the
+    reader to find out which this one was; and `cmd_try_once` refuses
+    anything but ONCE_RISK, so for a DRAFT declared ADMIN, PUBLISH or EXECUTE
+    the step the refusal named was itself a refusal. `found` carries the
+    card's own risk (heron_brain.proof_status), the refusal states it, and
+    the try is named only where that risk is ONCE_RISK. For every other card,
+    and one whose risk was not handed over, what comes next is the proof and
+    nothing else is said.
     """
     if found is None:
         return ("How far %s is proven could not be read, so Heron will not let it "
                 "change the model - \"could not tell\" is not \"proven\". Nothing "
                 "was sent to Revit." % what)
 
+    proving = ("proving is a run from Heron's command line and a signed proof "
+               "(D-30), not a tool a chat has")
+
     status = found.get("status")
+    risk = found.get("risk")
     if status not in KEEPABLE_STATUSES:
         said = "is %s" % status if status else "states no status"
+        if risk:
+            said += ", declared %s" % risk
+        once = ""
+        if status == "DRAFT" and risk == ONCE_RISK:
+            once = (" What the modeller can ask for meanwhile is one try: "
+                    "`try-once` on Heron's command line runs it a single time "
+                    "on the saved model in front, and Revit asks them Keep or "
+                    "Discard (D-119). It is started only on their word (D-122), "
+                    "never through revit_change.")
         return ("%s %s - no recorded proof stands behind its code, so Heron will "
                 "not let it change a live model (Constitution Article 11). Nothing "
                 "was sent to Revit. It is proved first on a test model, with a "
-                "negative case, and then it can be asked for again." % (what, said))
+                "negative case, and then it can be asked for again - %s.%s"
+                % (what, said, proving, once))
+
+    if found.get("stale") and found.get("proof") is False:
+        # Row 5b-1154: the card says PROVEN and records no proof. Refused as
+        # stale is - and in its own words, because "its code has changed
+        # since" would be untrue of a card that was never proved.
+        return ("%s says %s, but its card records no proof at all, so nothing "
+                "stands behind its code (D-30) and Heron will not let it change a "
+                "live model (Constitution Article 11). Nothing was sent to Revit. "
+                "It is proved first on a test model, with a negative case, and "
+                "then it can be asked for again." % (what, status))
 
     if found.get("stale"):
         when = " on %s" % found["date"] if found.get("date") else ""
@@ -1502,7 +1829,8 @@ def unproven_refusal(what, found):
                 "longer describes what would run (D-30) and Heron will not let it "
                 "change a live model (Constitution Article 11). Nothing was sent "
                 "to Revit. It is proved again on a test model, and then it can be "
-                "asked for again." % (what, status, when))
+                "asked for again - %s. It has no one try meanwhile: that is a "
+                "DRAFT's (D-119)." % (what, status, when, proving))
     return None
 
 
@@ -1960,7 +2288,7 @@ def cmd_try_once(name, values=None, session=None, in_document=None):
         return 2
 
     risk = fragment_risk(card)
-    if risk != "MODIFY":
+    if risk != ONCE_RISK:
         print("%s is declared risk: %s, and only a MODIFY fragment is tried this way. "
               "A read changes nothing and needs no Keep or Discard; a session change "
               "or an export is not put back by Discard. Nothing was sent to Revit."
@@ -2530,6 +2858,11 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
             root, "brain", "fragments", step, "fragment.yaml")))
             for step in (setup or [])]
         refusal = setup_order_refusal(step_risks)
+        if refusal is None:
+            # A step that opens its own transactions cannot be a setup step at
+            # all - row 5b-1556.
+            refusal = setup_own_transactions_refusal(
+                [step for step in (setup or []) if opens_own_transactions(root, step)])
         if refusal is None and (setup_values or negative_setup_values):
             refusal = setup_values_refusal(step_risks)
         if refusal:
@@ -2621,6 +2954,14 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
     bridge = live[0]
     for other in live[1:]:
         other.close()
+
+    # A RELEASE THE CARD LEAVES OUT IS REFUSED HERE, before `count_elements`
+    # claims the Revit and before a compile is spent - row 5b-1403.
+    refusal = excluded_release_refusal(root, name, bridge.revit_version)
+    if refusal:
+        bridge.close()
+        print(refusal)
+        return 2
 
     opening = bridge.request("count_elements")
     if opening is None or not opening.get("ok"):
@@ -3344,7 +3685,32 @@ def cmd_doctor():
     return 0
 
 
+def utf8_output(streams=None):
+    """This command line's output as UTF-8, a character it cannot hold replaced.
+
+    ROW 5b-1487. A label out of the model - the Greek delta of a pressure
+    drop - is printed as it came, and on the owner's laptop `print` encoded it
+    in cp1252, which has no such character. `try-once` died in `print_items`
+    with UnicodeEncodeError AFTER the modeller had pressed Keep and the record
+    was written: a traceback where "Recorded ..." belonged. UTF-8 is what
+    stops the crash, and what `tools/batch-prove.py` decodes this command's
+    output as; `errors="replace"` is for the lone surrogate UTF-8 cannot hold.
+    A stream that cannot be reconfigured - a test's StringIO - is left as it
+    is.
+
+    Called by `main`, never at import: the MCP server imports this module, and
+    its stdout is the protocol's, not this file's to change.
+    """
+    for stream in (sys.stdout, sys.stderr) if streams is None else streams:
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
+
+
 def main(argv):
+    utf8_output()
+
     # NO PLATFORM CHECK HERE. It used to be the first two lines, and it
     # answered "this needs Windows" to command lines that were wrong on every
     # platform - see refuse_off_windows, and FRAGMENT-ISSUES row 160. Each
@@ -3463,13 +3829,17 @@ def main(argv):
         if rest is None:
             return 2
         rest, session = pull_session(rest)
+        # `--in "Doc"` WHEREVER IT STANDS, as `--session` is read - row
+        # 5b-1487. It was read only in front of the fragment's name, so
+        # `try-once <fragment> --in "Doc"` printed the usage and sent nothing.
         in_document = None
-        if rest and rest[0] == "--in":
-            if len(rest) < 2:
+        if "--in" in rest:
+            at = rest.index("--in")
+            if at + 1 >= len(rest):
                 print("--in needs the title of an open document after it")
                 return 2
-            in_document = rest[1]
-            rest = rest[2:]
+            in_document = rest[at + 1]
+            rest = rest[:at] + rest[at + 2:]
         if len(rest) != 1 or rest[0].startswith("--"):
             print("Which DRAFT fragment? e.g. try-once rename-views-by-level")
             print("  --in \"Doc\"         name the model - it must still be the one in front")

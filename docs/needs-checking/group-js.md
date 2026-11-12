@@ -59,3 +59,11 @@ PC ranks with `model+rerank`, which is **NOT RUN** here. Both cards' own sentenc
 identity. A paraphrase that puts a filter on a view - *"apply the new phase filter to level 1 plan"* - reached
 `CREATE_PHASE_FILTER` instead of `SET_VIEW_PHASE`; on main the same sentence already missed `SET_VIEW_PHASE`
 (it reached `SET_ELEMENT_PHASE`). The DRAFT card is offered, never run unasked. Row 5b-1350.
+
+**Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
+written: `CREATE_PHASE_FILTER` reads PROVEN on its card, at version 1 - its `proof` block is signed by Ajmal PS,
+2026-11-02, on P1102 MEP (21,446 elements), Revit 2020, session 33624. `REPORT_PHASE_FILTERS` reads PROVEN on its
+card, at version 1 - its `proof` block is signed by Ajmal PS, 2026-11-02, on P1102 MEP (21,446 elements), Revit 2020,
+session 33624. So where this page calls a card named here DRAFT, or says nothing has run in Revit, that was true when
+it was written and is out of date as a statement about the card. Whether JS0 to JS10 were what that proof ran is NOT
+sorted here: for the owner.

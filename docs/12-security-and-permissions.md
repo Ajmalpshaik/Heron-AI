@@ -45,7 +45,7 @@ Changes and left the element count and the Undo list as they were (ES1). A view 
 > [`HeronPermissions.cs`](../platform/Heron.Core/HeronPermissions.cs) and the same seven in
 > [`heron_tools.py`](../mcp/server/heron_tools.py); `python mcp/server/heron_tools.py` lists every MCP
 > tool with its level, and no tool declares `SUGGEST`. The *Confirmation* column is met by switches the
-> owner sets on Revit's ribbon, read inside the add-in and all off by default in
+> owner sets in Heron's Settings window (on Revit's ribbon until 2026-11-07, [D-150](decisions/D-150.md)), read inside the add-in and all off by default in
 > [`HeronConfig.cs`](../platform/Heron.Core/HeronConfig.cs): **Changes** (`write.enabled`) for
 > `MODIFY` and above ([D-19](DECISIONS.md)), and **Admin** (`admin.enabled`) and **Publish**
 > (`publish.enabled`), each on top of Changes ([D-106](DECISIONS.md)). As built, `PUBLISH` is a Revit
@@ -120,8 +120,9 @@ lists every tool with its level.
 | `PUBLISH` | an export, a print, a save, a sync with central, a change of worksharing ownership | **Changes and Publish** | `revit_change`, sent as `run_fragment_publish` |
 | `ADMIN` | a project, shared or global parameter, a workset, the project's units, location or coordinates, a new project or family file | **Changes and Admin** | `revit_change`, sent as `run_fragment_admin` |
 
-**The four switches.** Each is a button under *Heron > AI Bridge* on Revit's ribbon. The add-in reads
-them fresh on every call. Nothing in a request can set them ([Golden Rule 19](14-golden-rules.md)).
+**The four switches.** Each is a row of Heron's Settings window - *Heron > AI Bridge > Settings* on
+Revit's ribbon - with its state as the button; until 2026-11-07 each was a button on the ribbon itself
+([D-150](decisions/D-150.md)). The add-in reads them fresh on every call. Nothing in a request can set them ([Golden Rule 19](14-golden-rules.md)).
 
 | Button | Setting in `heron.config` | Default in `HeronConfig.cs` | What it does | Decision |
 |---|---|---|---|---|
@@ -188,7 +189,7 @@ Stated as a rule: **no text Heron reads may ever raise Heron's own permission le
 > `HeronPermissions.Allows()`, and every request is a line in the audit trail (§5). Points 2 and 3 are
 > met differently: **no code returns `REQUIRES_CONFIRMATION`**. A call above what the switches allow is
 > refused, and the refusal names the switch (`HeronPermissions.RefusedBy`). The confirmation is the
-> owner's switch on the ribbon and, while Ask to Keep is on, Revit's Keep or Discard box for that one
+> owner's switch - in Heron's Settings window since [D-150](decisions/D-150.md) - and, while Ask to Keep is on, Revit's Keep or Discard box for that one
 > change ([D-126](DECISIONS.md), [D-138](DECISIONS.md)); nothing in a request can set either
 > ([Golden Rule 19](14-golden-rules.md)).
 

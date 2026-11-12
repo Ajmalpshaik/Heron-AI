@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,28 @@ semantic-identity: "the box each element occupies, and the box the whole set occ
 kind: action
 domain: revit.geometry
 capability: REPORT_BOUNDING_BOX
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
+
+# VERSION 2 (2026-11-11) - A FAMILY INSTANCE'S BOX IS SAID TO BE WHAT IT IS,
+# and back to DRAFT. Version 1 was PROVEN on 2026-09-09 (the proof block below,
+# kept as the record of what it proved). Its C# moved, so it is DRAFT again
+# until NEEDS-CHECKING Group NK, NK6, is run (D-30). FRAGMENT-ISSUES row
+# 5b-352: a nested family whose bodies are switched by Visible parameters read
+# 200 x 1075 x 1100 mm on Revit 2024 (2026-10-07), the hidden body and the
+# shown one together, and the answer did not say so. Every figure is version
+# 1's, unchanged - the box is Revit's own. Beside it, each family instance's
+# geometry is read as Revit hands it out by default (Fine detail, objects not
+# set as Visible left out) and its extent compared with the box: an instance
+# whose box reaches more than a millimetre past what its geometry shows is
+# NAMED, with both sizes. Where the two agree nothing is said, so an ordinary
+# fitting or terminal carries no caveat. The first 200 family instances are
+# compared. NOT ESTABLISHED until NK6 runs: that Revit's default geometry
+# leaves a body out when its Visible parameter is off while the box keeps it
+# - if both keep it, or both drop it, the sentence never appears and the row
+# is not closed. NOT DONE: the combined box of only what shows. A read: it
+# still answers through revit_read while DRAFT, and says DRAFT (D-117 item 4).
 
 purpose: >
   The extent each element occupies - its size and its lowest corner, in mm -
@@ -105,7 +124,11 @@ tests: tests/
 compatibility-note: >
   One implementation for every release. `Element.get_BoundingBox(View)`,
   `BoundingBoxXYZ.Min` and `Max`, and `XYZ` are present and unchanged 2020
-  through 2027.
+  through 2027. Version 2's `Options.DetailLevel`, `ViewDetailLevel.Fine`,
+  `GeometryInstance.GetInstanceGeometry()`, `Solid.GetBoundingBox()`,
+  `Curve.Tessellate()`, `PolyLine.GetCoordinates()`, `Mesh.Vertices` and
+  `Point.Coord` are each in the reference XML of every release 2020 to 2027
+  (read 2026-11-11).
 
   `null` is passed as the view deliberately, which asks for the MODEL box rather
   than the box in one view - a view's box is cropped by that view and is not the

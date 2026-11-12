@@ -74,7 +74,8 @@ Applies identically to **fragments, skills, capabilities and agents**.
 > **As built (2026-10-18):** the lifecycle the code holds is
 > [`heron_fragment.py`](../brain/heron_fragment.py)'s `STATUSES` - this table without `SHADOW`;
 > [`tools/check-metadata.py`](../tools/check-metadata.py) accepts `SHADOW` in a source file's header, so
-> the two lists differ. The library's cards use two of the stages, `DRAFT` and `PROVEN`
+> the two lists differ. The library's cards use three of the stages, `DRAFT`, `PROVEN` and - for a card
+> retired in favour of another - `DEPRECATED`
 > (`grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`). **`PROVEN` does not mean
 > N runs:** [D-30](DECISIONS.md), accepted, promotes a fragment on one recorded proof - a named real
 > model, a negative case and a staleness fingerprint - *"not by a count of runs"*. On that point the
@@ -140,7 +141,7 @@ the code is what has to catch up, or the owner decides otherwise.
 | `SHADOW` | L3 | `MODIFY` with a preview the user accepts | **not** in `STATUSES`; `tools/check-metadata.py` accepts it in a source file's header |
 | `PROVEN` | L3 | `MODIFY` with a preview the user accepts | **in use**, on one signed proof, not N runs ([D-30](DECISIONS.md)). `revit_change` keeps its change; with Ask to Keep off, the default, nobody sees a preview first - the break [Golden Rule 17](14-golden-rules.md) records |
 | `PRODUCTION` | L4 | `MODIFY` unattended | in `STATUSES`; no card uses it |
-| `DEPRECATED`, `ARCHIVED` | — | history only | in `STATUSES`; no card uses them |
+| `DEPRECATED`, `ARCHIVED` | — | history only | `DEPRECATED` is **in use**: a card retired in favour of another is kept on disk with its record and retrieval never offers it (`heron_search.RETIRED_FRAGMENTS`). `ARCHIVED` is in `STATUSES`; no card uses it |
 
 | Axis 2 — source | Design | Today |
 |---|---|---|

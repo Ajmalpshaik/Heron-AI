@@ -36,7 +36,7 @@ risk: MODIFY
 #     TextElementType, another class and other parameters.
 #   EDIT_TEXT_VALUES / CREATE_TEXT_NOTE (PROVEN) handle a note's wording and
 #     place a note in a type that exists; neither touches a type.
-#   SET_PARAMETER_VALUES_BY_ID types=yes (DRAFT v5) writes a number through
+#   SET_PARAMETER_VALUES_BY_ID types=yes writes a number through
 #     Revit's own text (SetValueString), so "5" is 5 of the model's length
 #     units - not paper mm in an imperial family - and keys a type by a
 #     category and its name; which category a LABEL type answers to in a

@@ -24,15 +24,15 @@ capability: REPORT_FAMILY_FORMS
 # not a kind or side is an id, ids and words are not mixed, and one id that is
 # not a form of this family refuses the call before anything is read. Words
 # alone, "all" or nothing answer exactly as version 2. Version 2's proof below
-# no longer describes the code: DRAFT until NEEDS-CHECKING Group IO proves
+# no longer described the code: DRAFT at the time, until NEEDS-CHECKING Group IO proves
 # version 3 (D-30).
 #
 # Version 4 (2026-11-01) changed impl/: SELECT_FAMILY_FORMS was merged into
 # this card and is DEPRECATED. The forms read are handed on as `elements`, for
 # SET_SELECTION and DELETE_ELEMENTS; `refused` says why nothing was read;
 # "freeform" is a kind. `which` left out now binds "not named" - every form
-# read, none handed on. DRAFT until proved on a real model (D-30); version 3's
-# proof below is the record.
+# read, none handed on. DRAFT at the time, until proved on a real model (D-30); version 3's
+# proof below was the record.
 #
 # Version 5 (2026-11-11, row 5b-1496) changed impl/: THE FAMILY'S 2D SIDE, on
 # the owner's word ("no duplicate tools, same kind of work 2 tools no need") -
@@ -41,8 +41,8 @@ capability: REPORT_FAMILY_FORMS
 # filled and masking regions and nested families are read into `twoDList` with
 # their locks, labels and links; `which` takes 2D kinds and ids. A call naming
 # only form words, and every form row, answer as version 4 did; "all" now reads
-# the 2D too but hands on forms alone. DRAFT until NEEDS-CHECKING Group ND
-# proves version 5 (D-30); a READ card, so revit_read still runs it meanwhile.
+# the 2D too but hands on forms alone. DRAFT at the time, until NEEDS-CHECKING Group ND
+# proves version 5 (D-30); a READ card, so revit_read still ran it meanwhile.
 version: 5
 source: OFFICIAL
 risk: READ
@@ -183,13 +183,15 @@ contract:
     - name: findings
       type: IList<string>
 
+# WRITTEN ABOVE AN EARLIER PROOF, since replaced by the `proof:` block below -
+# read that block's own date and fingerprint, not this comment, for what ran.
 # THE LAST PROOF, KEPT AS A RECORD (2026-11-02, fingerprint fd07c9fa...). It
 # was run against version 4's code; version 5 (2026-11-11) changed impl/, so the
-# card is DRAFT until Group ND proves version 5. The older note below is kept
-# as it was written.
+# card was DRAFT at the time, until Group ND proves version 5. The older note below is kept
+# as it was written, but for its tense.
 #
 # VERSION 2's PROOF, KEPT AS A RECORD. Version 3 changed impl/, so its
-# fingerprint no longer describes the code and the card is DRAFT until Group
+# fingerprint no longer described the code and the card was DRAFT at the time, until Group
 # IO proves version 3 (D-30). It ran `which` "all" and a project, both of
 # which version 3 answers as version 2 did.
 proof:

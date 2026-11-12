@@ -27,6 +27,11 @@ real rather than aspirational.
   COMPOSABLE   an instruction declares the Constitution articles it needs and
                they are ASSEMBLED from HERON_CONSTITUTION.md, never copied.
 
+An instruction may also declare `citations: leave-out`, and is then given each
+article without the line that names its Golden Rule and without the targets of
+its links - and with every word of the rule (`_without_citations`). host.chat
+does, because every chat pays for every word of it and can follow neither.
+
 THE COPY RULE, AND WHY IT IS ENFORCED RATHER THAN ASKED FOR
 ------------------------------------------------------------
 The Constitution says it itself: "Articles are assembled into an agent's
@@ -118,6 +123,43 @@ def _article_text(lines):
     while kept and kept[-1].strip() in ("", "---"):
         kept.pop()
     return "".join(kept).strip()
+
+
+# A CITATION, AND A LINK'S TARGET - what an Article points at, never what it
+# says. "*(Golden Rule 9)*" closes an Article on a line of its own, and a link
+# is "[D-126](docs/DECISIONS.md#d-126--...)": the words a reader is given are
+# the ones in the square brackets.
+_CITATION = re.compile(r"^\*\(.*\)\*$")
+_LINK = re.compile(r"\[([^\]]+)\]\([^)\s]+\)")
+
+#: An instruction that declares `citations: leave-out` is given its Articles
+#: without them. See `_without_citations`.
+LEAVE_OUT = "leave-out"
+
+
+def _without_citations(article):
+    """
+    One Article as a reader is given it who cannot follow a citation: every
+    word of the rule, without the line that names the Golden Rule it came
+    from and without the targets of its links.
+
+    FOR host.chat, WHICH IS PAID FOR IN EVERY CHAT (docs/19) and is held to a
+    word budget by tests/test_instructions.py. A chat cannot open
+    docs/DECISIONS.md - it is told never to read Heron's folder - so a
+    citation is words it pays for and cannot use. Leaving them out is what
+    made room, on 2026-11-12, to tell every chat that a door's reply says how
+    it ended on its `outcome:` line (FRAGMENT-ISSUES row 5b-1562).
+
+    NOT ONE WORD OF A RULE IS TOUCHED, and that is checked rather than
+    promised: tests/test_outcome_line.py takes each Article from the
+    Constitution, removes the same two things by its own reading, and finds
+    the rest in what a chat is given, whole and in order. HERON_CONSTITUTION.md
+    is not edited. An instruction that does not ask for this - every agent.*
+    one - is given its Articles exactly as the file has them.
+    """
+    kept = [line for line in article.splitlines()
+            if not _CITATION.match(line.strip())]
+    return _LINK.sub(r"\1", "\n".join(kept)).strip()
 
 
 def articles():
@@ -252,7 +294,12 @@ def compose(instruction_id, known=None, rules=None, extra_articles=(),
 
     if used and _render:
         parts.append("Rules you may not violate, from HERON_CONSTITUTION.md:")
-        parts.extend(rules[n] for n in used)
+        # THE OUTERMOST INSTRUCTION DECIDES, as it decides the rendering: an
+        # included one never drops a citation from its parent's Articles.
+        if declaration.get("citations") == LEAVE_OUT:
+            parts.extend(_without_citations(rules[n]) for n in used)
+        else:
+            parts.extend(rules[n] for n in used)
 
     return "\n\n".join(p for p in parts if p), used
 

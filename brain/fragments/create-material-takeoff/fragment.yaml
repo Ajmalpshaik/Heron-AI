@@ -20,12 +20,13 @@ semantic-identity: "make a Material Takeoff schedule view of one category with t
 # CORRECTED 2026-11-01: THIS IS NOT THE ONLY CARD THAT MAKES ONE. When this
 # card was written CREATE_SCHEDULE was PROVEN and called only
 # ViewSchedule.CreateSchedule, which has no material rows - the reason given
-# then for a new card rather than a widening. CREATE_SCHEDULE is DRAFT since
-# main's #777, and its version 3 (#785) makes a Material Takeoff itself
-# (listKind "material", ViewSchedule.CreateMaterialTakeoff). The two now do
-# the same job, with opposite rules for a name already used (refused here, Revit's
+# then for a new card rather than a widening. CREATE_SCHEDULE was DRAFT that day
+# (since main's #777), and its version 3 (#785) makes a Material Takeoff itself
+# (listKind "material", ViewSchedule.CreateMaterialTakeoff). The two now do the
+# same job, with opposite rules for a name already used (refused here, Revit's
 # kept there) and an empty takeoff. Whether this card merges into
-# CREATE_SCHEDULE is OPEN for the owner - row 5b-1382.
+# CREATE_SCHEDULE was OPEN for the owner that day - row 5b-1382; the
+# `deprecated:` block says how it ended.
 #
 # EVERY VALUE IS THE MODELLER'S (D-33):
 #   category     the category, as Revit names it - "Walls", "Floors". Only a

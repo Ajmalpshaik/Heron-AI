@@ -21,9 +21,9 @@ capability: FILTER_ELEMENTS_BY_CATEGORY
 # level ("matching 3", "elements 0"), so the loads' Finalize gave them no flow.
 # VERSION 4 (2026-11-01): SELECT_BY_CATEGORY_NAME and SELECT_BY_CATEGORIES were
 # merged into this card on the owner's instruction, and are DEPRECATED - see
-# the comment block above `utterances`. Version 3's proof below is kept as the
-# record; it no longer describes the code, so the card is DRAFT until version
-# 4 is proved on a real model (D-30).
+# the comment block above `utterances`. Version 3's proof below was kept as the
+# record; it no longer described the code, so the card was DRAFT at the time,
+# until version 4 is proved on a real model (D-30).
 #
 # VERSION 4, THE DETAIL - KEPT HERE BECAUSE `purpose` IS SEARCHED (the lesson
 # of FRAGMENT-ISSUES 5b-1293: a hundred words of mechanics in a purpose moved
@@ -42,8 +42,9 @@ capability: FILTER_ELEMENTS_BY_CATEGORY
 # SELECT_WITHOUT_LEVEL and SELECT_HIDDEN_IN_VIEW were merged into this card on
 # the owner's instruction - "make sure there is no duplicate tools" - and are
 # DEPRECATED; see the second merge block above `utterances`. Version 3's proof
-# below is still kept as the record and still does not describe the code; the
-# card stays DRAFT until version 5 is proved on a real model (D-30).
+# below was still kept as the record and still did not describe the code; the
+# card stayed DRAFT at the time, until version 5 is proved on a real model
+# (D-30).
 #
 # VERSION 5, THE DETAIL. No category with a level is everything on that level;
 # no category with a view is everything that view draws - a view TEMPLATE is
@@ -60,8 +61,9 @@ capability: FILTER_ELEMENTS_BY_CATEGORY
 # information or view-specific element is looked at, here or in a link, and
 # `findings` and `resolvedTo` say so. Version 5 refused it, which left "what
 # has no level" - that card's own sentence - with no answer at all. Version
-# 3's proof below is still the record and still does not describe the code;
-# the card stays DRAFT until version 6 is proved on a real model (D-30).
+# 3's proof below was still the record and still did not describe the code; the
+# card stayed DRAFT at the time, until version 6 is proved on a real model
+# (D-30).
 version: 6
 source: OFFICIAL
 risk: READ
@@ -332,8 +334,9 @@ compatibility-note: >
   ElementId is constructed from an int - which is what would have made 2024's
   move to 64-bit ids matter here.
 
-# No proof, and therefore not past DRAFT. It has never run against a real
-# model; NEEDS-CHECKING.md carries that like everything else unproven.
+# Status and proof are not said here: the heron-status line at the top of
+# this card is the status, and the `proof:` block is the run it rests on
+# (D-30).
 
 # What somebody might actually type. These are what the exact-match short
 # circuit runs on - nobody asks for "all elements of one category in the active

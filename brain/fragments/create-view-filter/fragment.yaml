@@ -21,9 +21,9 @@ capability: CREATE_VIEW_FILTER
 # made on no view; categories by Revit's own name too; every category asked on
 # its own and named in `cannotFilter`; a name already taken - a selection
 # filter's included - skipped and named while the rest are made; and a
-# read-back of what Revit holds. Version 3's proof below no longer describes
-# the code and is kept as the record; the card is DRAFT until it is proved
-# again.
+# read-back of what Revit holds. Version 3's proof below no longer described
+# the code and was kept as the record; the card was DRAFT at the time, until
+# it is proved again.
 #
 # Version 4, review fixes of the same day (the owner's rule that a merged card
 # covers everything both old cards did): a blank value asked for in words -
@@ -52,8 +52,8 @@ capability: CREATE_VIEW_FILTER
 # `filterName`, `matchValue`, `categoryIds`, `moreRules` and `combine` are
 # optional now, because a perValue call names none of them. The purpose gained
 # one short sentence only: version 4 measured that a paragraph there moved
-# owner question 67. Version 3's proof below is still the record; the card is
-# DRAFT until version 5 is proved.
+# owner question 67. Version 3's proof below was still the record; the card was
+# DRAFT at the time, until version 5 is proved.
 version: 5
 source: OFFICIAL
 risk: MODIFY

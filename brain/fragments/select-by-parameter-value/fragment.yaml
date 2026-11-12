@@ -15,13 +15,13 @@ capability: SELECT_BY_PARAMETER_VALUE
 # matchMode=exact fell through to contains without a word, "Outlet Port"
 # answered "Outlet Port" AND "Outlet Port Bore", and the next call would have
 # deleted the plane carrying a connector. Version 2's proof below no longer
-# describes the code: DRAFT until NEEDS-CHECKING Group IT proves version 3
+# described the code: DRAFT at the time, until NEEDS-CHECKING Group IT proves version 3
 # (D-30).
 #
 # Version 4 (2026-11-01) changed impl/ again: SELECT_BY_FAMILY and
 # SELECT_BY_NUMERIC_PARAMETER were merged in - see the purpose's last paragraph
-# and the comment at the end of the routing table. The proof below is
-# version 2's, kept as the record; DRAFT until version 4 is proved.
+# and the comment at the end of the routing table. The proof below was
+# version 2's, kept as the record; DRAFT at the time, until version 4 is proved.
 version: 4
 source: OFFICIAL
 risk: READ

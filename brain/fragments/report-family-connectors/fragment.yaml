@@ -132,7 +132,8 @@ compatibility-note: >
   RBS_ELEC_NUMBER_OF_POLES, RBS_ELEC_APPARENT_LOAD, RBS_ELEC_POWER_FACTOR,
   RBS_ELEC_POWER_FACTOR_STATE and RBS_ELEC_LOAD_CLASSIFICATION, and the enum
   PowerFactorStateType - every one present 2020 to 2027 (tools/api-surface
-  --members, read 2026-10-22 off all eight releases); not yet run in Revit.
+  --members, read 2026-10-22 off all eight releases); not yet run in Revit when
+  this was written.
 
 # ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #

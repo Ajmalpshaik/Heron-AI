@@ -1,5 +1,6 @@
 // NOT STANDALONE. Assumes `elements` and `parameterName` are in scope, and
-// leaves `values`, `blank`, `absent`, `resolvedFrom` and `noteWording`.
+// leaves `values`, `blank`, `absent`, `resolvedFrom` and `noteWording` - and,
+// since version 7, `ambiguous`.
 //
 // THREE OUTCOMES, NOT TWO, and this is the whole point of the fragment.
 //
@@ -80,10 +81,22 @@
 // list's own start number, where version 3 read the first paragraph's only.
 //
 // Not a text note, or not "Text": everything above, exactly as version 2.
+//
+// VERSION 7 (2026-11-11; D-54 s3, FRAGMENT-ISSUES 5b-203) - A NAME TWO
+// PARAMETERS SHARE IS NOT READ. LookupParameter hands back "the first one
+// encountered" when two parameters on one element share the name, and
+// Autodesk's reference says that match "is determined at random" - a shared
+// or project parameter bound beside a built-in one of the same name does it.
+// A value read that way is a coin toss that reads like a fact. So the name is
+// counted first, on the element and on the type the read falls through to,
+// and an element carrying it twice goes to `ambiguous`: no value, not blank,
+// not absent, and said in `findings`.
 
 var values = new Dictionary<ElementId, string>();
 var blank = new List<ElementId>();
 var absent = new List<ElementId>();
+// VERSION 7 (5b-203) - see the header.
+var ambiguous = new List<ElementId>();
 var resolvedFrom = new Dictionary<ElementId, string>();
 
 bool askingForLevel = string.Equals((parameterName ?? "").Trim(), "Level",
@@ -278,6 +291,9 @@ foreach (var e in elements)
         continue;
     }
 
+    var onInstance = e.GetParameters(parameterName).Count;
+    if (onInstance > 1) { ambiguous.Add(e.Id); continue; }
+
     var p = e.LookupParameter(parameterName);
     string from = "instance";
 
@@ -289,6 +305,9 @@ foreach (var e in elements)
         try { typeElement = e.Document.GetElement(e.GetTypeId()); } catch { }
         if (typeElement != null)
         {
+            var onType = typeElement.GetParameters(parameterName).Count;
+            if (onType > 1) { ambiguous.Add(e.Id); continue; }
+
             p = typeElement.LookupParameter(parameterName);
             from = "type";
         }
@@ -364,5 +383,9 @@ var findings = "";
         line += " " + string.Join("; ", said) + ".";
     if (blank.Count > 0) line += " Blank: " + ids(blank) + ".";
     if (absent.Count > 0) line += " Absent: " + ids(absent) + ".";
+    if (ambiguous.Count > 0)
+        line += " " + ambiguous.Count + " element(s) carry TWO OR MORE parameters called '" + asked
+            + "' - NOT READ, because Revit hands back whichever of them it meets first: " + ids(ambiguous)
+            + ". On the element, or on its type where the read reached it.";
     findings = line;
 }

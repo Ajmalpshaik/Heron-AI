@@ -9,7 +9,7 @@
 > | **Adding to it** | A row names the **command**, the **machine it needs**, and what **pass looks like** — including what a FAIL would prove, which is worth the same. **Its ID is bold, and used once in the register** — this page and every group's file — look for the letters in every form, bold, backticks and plain, before a new group takes them: `python tools/needs-checking-register.py | grep` searches all of it. **A results table names the row's ID in plain text, and a row that passed is struck at both ends** — the three readers of the register count by the bold ID, so anything else is a check the owner's queue cannot see, sees twice, or shows him again after it passed. FRAGMENT-ISSUES row 5b-156 |
 > | **Its numbers** | **Do not read the stated totals as today's.** Derive the Group A ids: `grep -oE '\*\*A[0-9]+[a-z]?\*\*|~~\*\*A[0-9]+[a-z]?\*\*~~' docs/needs-checking/group-a.md | grep -oE 'A[0-9]+[a-z]?' | sort -uV` - until 2026-10-18 it read `A[0-9]+`, which cannot see `A16b`: the `R1b` lesson below, again |
 > | **Where each group lives** | Since 2026-09-23 **each group is its own file**, `needs-checking/group-x.md` — [Group A's](needs-checking/group-a.md), for one — and this page keeps the rules and, where each group was, its heading and a line naming its file. **A new row goes in its group's file.** A new group is written here in full, as always, and `python tools/split-needs-checking.py --write` moves it into its own file - write its links relative to `docs/`, and after the split put back any other group file it rewrote, which it can ([row 5b-363](fragment-issues/section-5b-rows-351-375.md)). Every tool reads this page and its groups as ONE text, exactly as it read the single file: `python tools/needs-checking-register.py` prints it |
-> | **Done checks** | A row whose ID is struck through at both ends keeps its line in the register — the struck ID, a title, the opening of its result — and its full text moves to [`needs-checking-archive/`](needs-checking-archive/README.md). **Nothing is deleted, and a struck row that says something is still owed stays in full.** `python tools/archive-needs-checking.py` says what would move |
+> | **Done checks** | A row whose ID is struck through at both ends keeps its line in the register — the struck ID, a title, the opening of its result — and its full text moves to [`needs-checking-archive/`](needs-checking-archive/README.md). **Nothing is deleted, and a struck row that says something is still owed stays in full.** `python tools/archive-needs-checking.py` says what would move - on 2026-11-12 it ends in a traceback instead and moves nothing: [FRAGMENT-ISSUES row 5b-1583](fragment-issues/row-5b-1583.md) |
 
 > **Read [FOR-THE-OWNER.md](FOR-THE-OWNER.md) first if you are the owner.** It is the one page that
 > says what is waiting on you, across every register, without holding a list of its own.
@@ -1462,6 +1462,30 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ng.md`](needs-checking/group-ng.md)
 
+## Group NH - the modeller clicks in Revit to answer the chat: `PICK_ON_SCREEN` (2026-11-11)
+
+**Its own file:** [`needs-checking/group-nh.md`](needs-checking/group-nh.md)
+
+## Group NI - three repairs to the proving tools that only a PC with Revit can watch: a card refused on a release its own list leaves out, the client's output on Windows, and two suites that reach the live Revit (2026-11-11)
+
+**Its own file:** [`needs-checking/group-ni.md`](needs-checking/group-ni.md)
+
+## Group NJ - parameters out to a CSV and back: `SET_PARAMETER_VALUES_BY_ID` from a file has no run in Revit on record, and what was read off the two cards' code (2026-11-11)
+
+**Its own file:** [`needs-checking/group-nj.md`](needs-checking/group-nj.md)
+
+## Group NK - PROVEN reads that gave a wrong answer, repaired in code and DRAFT again until each is proved: the cards of rows 5b-1128, 5b-393, 5b-323, 5b-351, 5b-352, 5b-154 and 5b-203 (2026-11-11)
+
+**Its own file:** [`needs-checking/group-nk.md`](needs-checking/group-nk.md)
+
+## Group NL - cards that were PROVEN, change the model and could report a wrong result as a success, repaired in code and back to DRAFT: `SET_ROUTING_PREFERENCE` version 2, `ADD_PROJECT_PARAMETER` version 3 and `CREATE_ASSEMBLY` version 2 (2026-11-11)
+
+**Its own file:** [`needs-checking/group-nl.md`](needs-checking/group-nl.md)
+
+## Group NM - two add-in agent proofs read STALE and are run again, and the proof tool now says which file a proof was signed for (2026-11-11)
+
+**Its own file:** [`needs-checking/group-nm.md`](needs-checking/group-nm.md)
+
 ## Group NN - a reference plane at an angle: `CREATE_REFERENCE_PLANES` version 2 (2026-11-12)
 
 **Its own file:** [`needs-checking/group-nn.md`](needs-checking/group-nn.md)
@@ -1470,9 +1494,17 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-no.md`](needs-checking/group-no.md)
 
+## Group NP - `revit_health` says, under each connected Revit, whether that Revit will ask Keep or Discard: the add-in's `info` answer now carries the Ask to Keep switch (2026-11-12)
+
+**Its own file:** [`needs-checking/group-np.md`](needs-checking/group-np.md)
+
 ## Group NQ - an arc's or a circle's CENTRE locked to named planes in a 2D family: `LOCK_FAMILY_LINES_TO_PLANES` version 3 (2026-11-12)
 
 **Its own file:** [`needs-checking/group-nq.md`](needs-checking/group-nq.md)
+
+## Group NR - three everyday MEP jobs given a method, none run in Revit: annotate a view, colour a view by system, spaces and zones from the architect's link (2026-11-12)
+
+**Its own file:** [`needs-checking/group-nr.md`](needs-checking/group-nr.md)
 
 ## Group NS - a write's values before and after: `readBack` (2026-11-12)
 
