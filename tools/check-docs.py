@@ -1044,9 +1044,10 @@ else:
 # check above, "a file its index never names", has nothing to read here. The
 # folder is the list, and what can go wrong is different:
 #
-#   * a file the reader does not read - named like a row's own file under a
-#     section whose page has no line for them, or misspelt (row-5b-01564.md,
-#     row-5b-1564-copy.md). Skipped, it is a row every tool has lost, which is
+#   * a file the reader does not read - a row saved under any name but its
+#     own (Row-5b-1564.md, 5b-1564.md, rows/5b-1564.md, a .txt), a file named
+#     like a row's own under a section whose page has no line for them, or
+#     one misspelt (row-5b-01564.md, row-5b-1564-copy.md). Skipped, it is a row every tool has lost, which is
 #     the failure the group check above was written for. register-text.py
 #     raises on the misspelt one, and this says so with the gate's exit code;
 #   * a file that holds another row than its name says - the name is what
@@ -1100,12 +1101,43 @@ if os.path.isfile(_fi_page) and os.path.isdir(_fi_dir):
                         "rows from %d on are one file each - `python tools/split-register.py "
                         "fragment-issues --new-rows --write` moves it to %s, with every link "
                         "that names it" % (_label, _n, _name, _cut, _rt.row_name(_stem, _n)))
-    for _name in _fi_names:
-        if _name.startswith('row-') and _name.endswith('.md') and _name not in _fi_read:
-            _fi_bad.append(
-                "NOT READ: docs/fragment-issues/%s - named like a row's own file, and no "
-                "line of docs/FRAGMENT-ISSUES.md reads it, so the register has lost that "
-                "row" % _name)
+    # A ROW IN A FILE NOTHING READS, WHATEVER THE FILE IS CALLED. The first
+    # version of this looked only at names beginning `row-`, and the reader
+    # skips every name that does not begin with the stem - so a row saved as
+    # Row-5b-1570.md, row_5b_1570.md, rows-5b-1570.md or 5b-1570.md passed
+    # this gate, was listed by no reader, and left next-id.py offering its
+    # number again (found by review, 2026-11-12). So every file under the
+    # folder - any name, any extension, any depth - that the page does not
+    # name and the reader does not read is opened, and one holding a register
+    # row's line fails the run with the name it should have. A file with no
+    # row in it is not this check's to judge.
+    _fi_known = set(_rt.named_files(_fi_text, _fi_page)) | _fi_read
+    _fi_each = _rt.each_lines(_fi_text, _fi_page)
+    for _dp, _dn, _fn in os.walk(_fi_dir):
+        for _one in sorted(_fn):
+            _rel = os.path.relpath(os.path.join(_dp, _one), _fi_dir).replace(os.sep, '/')
+            if _rel in _fi_known:
+                continue
+            try:
+                _raw = io.open(os.path.join(_dp, _one), 'rb').read()
+            except (IOError, OSError):
+                continue
+            _rows = [] if b'\0' in _raw else sorted(
+                _rt.rows_held(_raw.decode('utf-8', 'replace')))
+            if _rows:
+                _right = ("; a row's own file is named %s" % " or ".join(
+                    _rt.row_name(_stem, _rows[0]) if len(_rows) == 1 else "%s-<its number>.md" % _stem
+                    for _heading, _cut, _stem in _fi_each)) if _fi_each else ""
+                _fi_bad.append(
+                    "NOT READ: docs/fragment-issues/%s holds row%s %s, and no line of "
+                    "docs/FRAGMENT-ISSUES.md reads it, so the register has lost %s%s"
+                    % (_rel, "" if len(_rows) == 1 else "s", ", ".join(str(n) for n in _rows),
+                       "that row" if len(_rows) == 1 else "those rows", _right))
+            elif _one.startswith('row-') and _one.endswith('.md'):
+                _fi_bad.append(
+                    "NOT READ: docs/fragment-issues/%s - named like a row's own file, and no "
+                    "line of docs/FRAGMENT-ISSUES.md reads it, so the register has lost that "
+                    "row" % _rel)
     for _line in _fi_bad:
         out("  %s\n" % _line)
     if _fi_bad:

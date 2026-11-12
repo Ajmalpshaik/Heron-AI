@@ -63,8 +63,8 @@ section is the failure a register exists to prevent, so a line naming a file
 that is not there, a section's file that does not open with the heading that
 names it, or a rows file with no table, raises RegisterBroken rather than
 returning a shorter register. So does a row's own file that holds any row
-but the one its name says or any text under its table, a file named like
-one that is not one
+but the one its name says, a heading that names another row or none, or
+any text under its table, a file named like one that is not one
 (row-5b-1564-copy.md would otherwise be a row nobody reads), and a caller
 that serves the register from memory and gave no way to list the folder. An index that names no file is returned as it
 is: that is how a register that was never split, and every register a suite
@@ -505,8 +505,9 @@ def register_text(index, read=None, listing=None):
     def held(name, why):
         found = read(path_in(index, name))
         if not found:
-            raise RegisterBroken("%s names %s/%s %s, and there is no such file"
-                                 % (page, folder, name, why))
+            raise RegisterBroken("%s names %s/%s %s, and %s"
+                                 % (page, folder, name, why,
+                                    "there is no such file" if found is None else "the file is empty"))
         return _lines(found)
 
     def rows(names, heading):
@@ -531,6 +532,23 @@ def register_text(index, read=None, listing=None):
             raise RegisterBroken("%s/%s holds no table, and its name says it holds row %d of %r"
                                  % (folder, name, number, heading))
         top, bottom = table
+        # THE HEADING NAMES THE ROW, as the file's name and the row's first
+        # cell do - `row 5b-1564`. tools/renumber.py renames the three
+        # together, and a file whose heading says another row is one a person
+        # opens for the wrong defect. Read where the section has a label to
+        # name a row by, which is how a link names one (row_links).
+        label = re.match("^## ([0-9]+[a-z]*)[.] ", heading)
+        if label:
+            fenced = fenced_lines(got[:top])
+            titles = [line for i, line in enumerate(got[:top]) if line.startswith("# ") and i not in fenced]
+            named = re.compile("(?<![0-9A-Za-z-])" + re.escape(label.group(1)) + "-([0-9]+)(?![0-9])")
+            says = sorted(set(int(n) for n in named.findall(titles[0]))) if titles else []
+            if says != [number]:
+                raise RegisterBroken("%s/%s %s, and its name says it holds row %s-%d - the heading above "
+                                     "the table names the row, as the name and the row's first cell do"
+                                     % (folder, name,
+                                        ("is headed %r" % titles[0][2:]) if titles else "has no heading",
+                                        label.group(1), number))
         # THE FILE ENDS WITH ITS ROW. A rows file is read to its last line,
         # and words under a row's own table would be read into the register's
         # table as part of the row - a blank line and a paragraph in the

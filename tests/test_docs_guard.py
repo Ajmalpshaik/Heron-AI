@@ -77,7 +77,9 @@ WHAT IT PROVES
  12. A ROW'S OWN FILE IS ONE THE REGISTER READS (row 5b-1564). Since
      2026-11-12 a new 5b row is docs/fragment-issues/row-5b-N.md and no
      index line names it. A right one passes and a link to it is judged
-     like any other; a file named like one that is not read, one that holds
+     like any other; a row saved under any other name - another case, an
+     underscore, no prefix, a .txt, a subfolder - a file named like one that
+     is not read, one that holds
      another row than its name says, one numbered before the cut-over, a new
      row still appended to the last rows file, and a row's own file left on
      disk when the page's line is gone each fail the run and are named.
@@ -505,6 +507,33 @@ def main():
                   "a file named like a row's own that the register does not "
                   "read fails the run and is named")
             os.remove(stray)
+
+            # A ROW SAVED UNDER ANY NAME BUT ITS OWN. The first version of the
+            # guard looked only at names beginning `row-`, and the reader
+            # skips what does not begin with the stem - so each of these held
+            # a real row that no reader listed while every gate passed
+            # (review, 2026-11-12). All planted at once: one run of the guard.
+            lost = {"Row-5b-%d.md": new + 10, "row_5b_%d.md": new + 11,
+                    "rows-5b-%d.md": new + 12, "row5b-%d.md": new + 13,
+                    "5b-%d.md": new + 14, "5b-%d.txt": new + 15,
+                    "rows/5b-%d.md": new + 16}
+            os.makedirs(os.path.join(rows_dir, "rows"))
+            for shape, number in lost.items():
+                planted(shape % number, own(number))
+            code, out = run_guard(tree)
+            unread = [line for line in tenth(out).split("\n") if "NOT READ" in line]
+            check(code != 0, "a row saved under a name the register does not "
+                             "read fails the run, whatever the name")
+            for shape, number in sorted(lost.items(), key=lambda one: one[1]):
+                mine = [line for line in unread
+                        if "docs/fragment-issues/%s " % (shape % number) in line]
+                check(len(mine) == 1 and "holds row %d" % number in mine[0]
+                      and "row-5b-%d.md" % number in mine[0].split("named", 1)[-1],
+                      "%s is named, with the row it holds and the name it "
+                      "should have" % (shape % number))
+            for shape, number in lost.items():
+                os.remove(os.path.join(rows_dir, shape % number))
+            os.rmdir(os.path.join(rows_dir, "rows"))
 
             wrong = planted("row-5b-%d.md" % (new + 1), own(new + 1, new + 2))
             code, out = run_guard(tree)

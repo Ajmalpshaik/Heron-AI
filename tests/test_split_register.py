@@ -66,10 +66,11 @@ WHAT IS PROVED
      row an older branch appended to the rows file is read in the same
      order, and `--new-rows` moves it alone, with every link that names it,
      and re-bands nothing; a number held in both layouts is read twice and
-     the move is refused; a file that is not what its name says or that
-     holds words under its table, and a reader that cannot list the folder,
-     are RegisterBroken; and the archive tool leaves a finished row's line
-     in the row's own file.
+     the move is refused; a file that is not what its name says, whose
+     heading names another row or none, or that holds words under its table,
+     and a reader that cannot list the folder, are RegisterBroken - an empty
+     one said to be empty, not missing; and the archive tool leaves a
+     finished row's line in the row's own file.
 """
 
 import contextlib
@@ -271,6 +272,15 @@ def raises(call):
     except RT.RegisterBroken:
         return True
     return False
+
+
+def why_broken(call):
+    """What RegisterBroken said, or nothing when CALL read the register."""
+    try:
+        call()
+    except RT.RegisterBroken as broken:
+        return str(broken)
+    return ""
 
 
 def main():
@@ -903,6 +913,17 @@ def own_file_case(work):
     put(wrong, own_file(6, "Six.", "OPEN - new.") + NL + "A note under the table, which would be read "
         "into the middle of the register's table." + NL)
     check(raises(lambda: whole(root)), "and one with words under its table: the file ends with its row")
+    put(wrong, own_file(6, "Six.", "OPEN - new.").replace("row 5b-6", "row 5b-9"))
+    said = why_broken(lambda: whole(root))
+    check("row 5b-9" in said and "5b-6" in said,
+          "and one whose heading names another row than its name and its cell, saying both (%s)"
+          % (said or "it was read"))
+    put(wrong, NL.join(own_file(6, "Six.", "OPEN - new.").split(NL)[2:]))
+    check("no heading" in why_broken(lambda: whole(root)), "and one with no heading above its table")
+    put(wrong, "")
+    said = why_broken(lambda: whole(root))
+    check("is empty" in said and "no such file" not in said,
+          "and an empty one is said to be empty, not missing (%s)" % (said or "it was read"))
     os.remove(wrong)
     check(not raises(lambda: whole(root)), "taken away, it reads whole again")
     served = dict((os.path.join(folder, n).replace(os.sep, "/"), read(os.path.join(folder, n)))
