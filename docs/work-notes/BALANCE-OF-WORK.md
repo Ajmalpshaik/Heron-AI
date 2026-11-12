@@ -7,7 +7,7 @@
 
 # The balance of work
 
-> **GENERATED 2026-11-12 09:34 by `python tools/balance-of-work.py --write`.**
+> **GENERATED 2026-11-12 09:44 by `python tools/balance-of-work.py --write`.**
 > **If that stamp is not today, this page is history and not a work list.** Every figure
 > below was read back out of the tool that owns it, and each row names the command that
 > derives it. Nothing here is typed by hand, so where this page and a register disagree,
@@ -82,7 +82,7 @@ and the reason is the second column — read it before deleting one.
 | `plans/agent-build-order-2026-09-13.md` | Every block built - retiring it is the owner's call |
 | `plans/next-steps-2026-09-12.md` | Active, and mostly spent |
 | `investigations/2026-09-17-risk-crossings-not-deterministic.md` | Active, and pinned open by a register |
-| `investigations/2026-11-01-export-setups.md` | Looks finished - its cards say PROVEN; retiring it is the owner's call (read 2026-11-11) |
+| `investigations/2026-11-01-export-setups.md` | Looked finished on 2026-11-11, and one card has gone back to DRAFT since; retiring it is the owner's call |
 | `investigations/2026-11-01-schedule-settings.md` | Nearly finished - all but one of its cards say PROVEN (read 2026-11-11) |
 | `plans/earlier-brain/README.md` | Nearly spent — every package merged or dropped except C8; the status is in [02 §0](plans/earlier-brain/02-work-packages.md) |
 | `plans/earlier-brain/01-findings.md` | Complete as a record |
@@ -101,7 +101,7 @@ and the reason is the second column — read it before deleting one.
 | `plans/companion-model-dashboard-2026-11-01.md` | Active - built well past phase 1; its own table holds each row's state |
 | `plans/facade-capability.md` | Close to finished - its cards say PROVEN; retiring it is the owner's call |
 | `investigations/2026-11-01-revit-ribbon-coverage.md` | Mostly built, and what was not is in the register - not yet retired |
-| `investigations/2026-11-11-family-2d-capabilities.md` | Active by its own first line, and most of what it planned is signed (read 2026-11-12) |
+| `investigations/2026-11-11-family-2d-capabilities.md` | Active, and close - what keeps it is the owner's |
 
 ---
 

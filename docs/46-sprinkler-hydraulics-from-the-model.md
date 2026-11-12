@@ -22,6 +22,11 @@ See docs/29-metadata-standard.md
 > 2024 and 2027 - its status is on its card. **NEEDS REAL REVIT:** no row of [group CE](needs-checking/group-ce.md) has been
 > run, and no solve has been compared with a listed hydraulic program (§11). The arithmetic is tested,
 > not proven, by `tests/test_fire.py`.
+>
+> **Since then (read 2026-11-12):** `REPORT_SPRINKLER_NETWORK`'s card reads PROVEN - a run signed by
+> Ajmal PS on 2026-11-02, *P1102 MEP*, Revit 2020, in its `proof:` block. That is the read alone:
+> [group CE](needs-checking/group-ce.md)'s file marks none of its rows as run, so the K-factors, the
+> panel and the solve are still NOT RUN.
 
 **In Revit words.** Today you can ask Heron *"what pressure does the riser need for these ten
 sprinklers"*, and you have to type in every pipe, every length and every head. This feature lets you say
@@ -334,7 +339,7 @@ every one was taken, and its review log says what each changed. The main changes
 
 | Part | What it is | Its test | Status |
 |---|---|---|---|
-| `REPORT_SPRINKLER_NETWORK` (FRG-MEP-059) | The read, §3 | `tools/check-fragments-compile.py` (2020, 2024, 2027 compiled here); cases in its `tests/` | DRAFT - [NEEDS-CHECKING group CE](needs-checking/group-ce.md) |
+| `REPORT_SPRINKLER_NETWORK` (FRG-MEP-059) | The read, §3 | `tools/check-fragments-compile.py` (2020, 2024, 2027 compiled here); cases in its `tests/` | DRAFT when built - [NEEDS-CHECKING group CE](needs-checking/group-ce.md); its card reads PROVEN since 2026-11-02 |
 | [`heron_sprinkler_takeoff.py`](../brain/heron_sprinkler_takeoff.py) | Nodes, segments, fittings rows, checks, pruning, fingerprint | `tests/test_sprinkler_takeoff.py` | DRAFT |
 | [`heron_sprinkler_run.py`](../brain/heron_sprinkler_run.py) | Questions, suggestion, the run, gate 1, kept runs | `tests/test_sprinkler_run.py` - the same answer as `hydraulic` by hand, and pruning exact | DRAFT |
 | [`heron_sprinkler_view.py`](../brain/heron_sprinkler_view.py), [`heron_sprinkler_report.py`](../brain/heron_sprinkler_report.py) | The 3D data; the sheet | `tests/test_sprinkler_view.py` | DRAFT |

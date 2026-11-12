@@ -5,6 +5,11 @@ requests below are merged or closed by the owner, each widened card is proved ag
 and the merge candidates are decided; then the durable part is on the cards and in
 [FRAGMENT-ISSUES](../../FRAGMENT-ISSUES.md) and this note is deleted.
 
+**Read against the tree 2026-11-12 - still active, and close.** All three pull requests are merged (A is #843,
+`50ac6cef`; B is #849, `d77439ad`; C is #846, `3cabb8f1`), and each of the eight widened cards says `PROVEN` on
+its card. The merge candidates below are not decided - they wait for the owner's yes - so the closure
+condition is not met. What is still owed is in the last two sections.
+
 **Why.** Ajmal PS built a parametric diffuser family through Heron on Revit 2020. Adding plan-view flow
 arrows - a nested 600 mm detail item, the way Autodesk's own supply diffuser carries them - stopped three
 times in a row on a missing or failing tool. He asked for the whole class of "2D in a family" covered at
@@ -95,9 +100,9 @@ radius (LABEL_FAMILY_RADIUS) were added; the arc centre and the angled plane are
 
 | PR | Cards (each back to DRAFT, version raised) | Proof plan | Why split so |
 |---|---|---|---|
-| A - `claude/report-family-2d-elements` | REPORT_FAMILY_FORMS v5 (READ) + this note | [Group ND](../../needs-checking/group-nd.md), row 5b-1496 | READ: `revit_read` still runs a DRAFT, so nothing is blocked |
+| A - #843, **MERGED 2026-11-12** | REPORT_FAMILY_FORMS v5 (READ) + this note | [Group ND](../../needs-checking/group-nd.md), row 5b-1496 | READ: `revit_read` still runs a DRAFT, so nothing is blocked |
 | B - #849, **MERGED 2026-11-11** | LINK_FAMILY_PARAMETER v4, LABEL_FAMILY_DIMENSION v3 | Group NE, rows 5b-1497, 5b-1498 | Used in every family build: small, so it can be merged and re-proved first and family work is blocked as briefly as possible |
-| C - `claude/family-2d-place-show-label` | PLACE_DETAIL_COMPONENTS v2, ARRAY_FAMILY_FORMS v4, SET_FAMILY_FORM_VISIBILITY v2, SET_FAMILY_FORM_SUBCATEGORY v2, LABEL_FAMILY_RADIUS v6 | Group NF, rows 5b-1499 to 5b-1503 | The rest |
+| C - #846, **MERGED 2026-11-12** | PLACE_DETAIL_COMPONENTS v2, ARRAY_FAMILY_FORMS v4, SET_FAMILY_FORM_VISIBILITY v2, SET_FAMILY_FORM_SUBCATEGORY v2, LABEL_FAMILY_RADIUS v6 | Group NF, rows 5b-1499 to 5b-1503 | The rest |
 
 **What a widening costs, said plainly:** a change under a PROVEN card's `impl/` makes its proof stale, so the
 card goes back to DRAFT and `revit_change` refuses it until it is proved again. Each proof plan re-proves the

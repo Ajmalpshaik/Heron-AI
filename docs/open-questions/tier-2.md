@@ -621,12 +621,12 @@ API opened is still open - *"Operation is not permitted when there is any open s
 transaction, or transaction group"*, the same words for `Document.Save` and `Document.SaveAs` (RevitAPI.xml
 2024; 2020 and 2027 read the same on 2026-10-07, row 5b-365). Every fragment `revit_change` runs goes to
 the add-in's write path, which opens ONE `TransactionGroup` in the document for the whole run
-([`RevitFragment.cs`](../../revit/Heron.Revit.Addin/RevitFragment.cs) line 706) and assimilates or rolls it
-back at the end (line 900) - Article 8's one undo entry. So a fragment can never save the document it runs
+([`RevitFragment.cs`](../../revit/Heron.Revit.Addin/RevitFragment.cs) line 779) and assimilates or rolls it
+back at the end (line 1041) - Article 8's one undo entry. So a fragment can never save the document it runs
 in, however it is written.
 
 **What would work, read from the code - NOT RUN.** In the same request, AFTER that group is closed (lines
-900 to 916, before the reply is built), nothing of Heron's is open and the Revit remarks allow a save. So
+1052 to 1060, before the reply is built), nothing of Heron's is open and the Revit remarks allow a save. So
 the add-in could run the save itself at that point, on the fragment's behalf: `SAVE_DOCUMENT` version 3
 asks for it - the document it works in, by its own file for a Save, or a full `.rvt` or `.rfa` path the
 modeller typed for a Save As of a model that has none - and the add-in does it once the group has closed,
@@ -635,7 +635,7 @@ by Heron; `SaveAsOptions.OverwriteExistingFile` left at Revit's own default, fal
 said to replace the file. The group itself does not change: one request, one `TransactionGroup`, one undo
 entry, and the save is not in it - a save is not a model change and cannot be undone. Where Revit asks
 the modeller Keep or Discard ([D-126](../decisions/D-126.md)), the box is answered inside the group, before
-that point (line 879), so a save there could only ever follow a Keep.
+that point (line 1009), so a save there could only ever follow a Keep.
 
 **Why it was NOT built - three things need the owner, and the third is a guard:**
 
@@ -657,23 +657,23 @@ that point (line 879), so a save there could only ever follow a Keep.
    be proved; with a preview that saves, it can be proved today, on a scratch model, the way version 2 was.
 3. **A Save As renames the model, and the chat's model pin would read that as a DIFFERENT model** -
    Golden Rule 20's guard, Articles 12a and 12b. The pin compares the model's own id where both sides have
-   one ([`heron_write.py`](../../mcp/server/heron_write.py) line 255), and only a match on it or on the file
-   path lets a new title through (line 461, *"a save can rename it; same document"*). But that id,
+   one ([`heron_write.py`](../../mcp/server/heron_write.py) line 485), and only a match on it or on the file
+   path lets a new title through (line 504, *"a save can rename it; same document"*). But that id,
    `Document.CreationGUID`, arrived at Revit 2024 and is null on 2020 to 2023 and on every family document
-   ([`RevitOperations.cs`](../../revit/Heron.Revit.Addin/RevitOperations.cs) line 664, measured
+   ([`RevitOperations.cs`](../../revit/Heron.Revit.Addin/RevitOperations.cs) line 705, measured
    2026-10-06), and a model with no file has no path. So on Revit 2020 to 2023, and for a family on any
    release, a Save As of a model or family that was never saved leaves the pin holding the title alone; the reply comes back under the new title, and `revit_change` answers *"Heron will not change a
-   model you did not point it at ... Nothing has been sent to Revit"* (`heron_mcp_server.py` line 1921)
+   model you did not point it at ... Nothing has been sent to Revit"* (`heron_mcp_server.py` line 1878, in the words of `check` in `heron_write.py`)
    about a model it has just saved. (Since 2026-11-11 that reply says what the add-in reported doing
    in place of *"Nothing has been sent to Revit"* -
    [row 5b-1135](../fragment-issues/section-5b-rows-401-425.md); the refusal itself is unchanged.)
-   The next call is then aimed at the old title (line 1455) and refused
+   The next call is then aimed at the old title (line 1296) and refused
    until the modeller says *use this model*. Letting the pin follow a rename is a change to that guard.
 
 **The shapes the owner chooses between:**
 
 1. **Leave Heron as it is.** The methods ask the modeller to save before a big build, and
-   `REPORT_OPEN_DOCUMENTS` version 2 says which open model or family has NEVER BEEN SAVED. The cheapest; it
+   `REPORT_OPEN_DOCUMENTS` - version 3 today, and DRAFT - says which open model or family has NEVER BEEN SAVED. The cheapest; it
    still rests on the modeller pressing Ctrl+S, which is how both builds were lost.
 2. **Save after the group, from the add-in - recommended.** As above: `SAVE_DOCUMENT` version 3, an
    optional switch for a Save As of a never-saved model and one for replacing a file, and the add-in saving
@@ -716,7 +716,7 @@ above, asks about for packages and data. So there are **two settings files on on
 | a Revit started from a chat's shell | the copy |
 | a Revit the owner starts himself | the real file |
 
-Each side writes only its own. A switch on the ribbon - **Changes, Admin or Publish** - pressed in one kind of
+Each side writes only its own. A switch - **Changes, Admin or Publish**, on the ribbon that day and in Heron's Settings window since [D-150](../decisions/D-150.md) - pressed in one kind of
 Revit is not seen by the other kind, nor by the server when the Revit is one the owner started. Measured
 both ways that day: `fragments.warmUp = false` written from the chat's shell landed in the copy and the real
 file kept `true`, and the Changes switch pressed in a chat-started Revit rewrote the copy and left the real
@@ -724,13 +724,13 @@ file as it was.
 
 **What is still safe, read from the code - NOT RUN on the laptop as a case of its own.** The add-in decides
 every change from ITS OWN file: the permission gate loads `heron.config` fresh on every call
-([`RevitOperations.cs`](../../revit/Heron.Revit.Addin/RevitOperations.cs) line 339), and its refusal names the
+([`RevitOperations.cs`](../../revit/Heron.Revit.Addin/RevitOperations.cs) line 372), and its refusal names the
 file it read ([`HeronPermissions.Explain`](../../platform/Heron.Core/HeronPermissions.cs)). So the server's
 copy can never open a gate Revit has closed. What it can do is **say the wrong thing**:
 
 1. **`revit_health`'s write-gate line** is built from the server's file
    ([`heron_mcp_server.py`](../../mcp/server/heron_mcp_server.py) `revit_health`,
-   [`heron_health.py`](../../mcp/server/heron_health.py) line 177). It can say *"closed - Heron cannot change the
+   [`heron_health.py`](../../mcp/server/heron_health.py) line 182). It can say *"closed - Heron cannot change the
    model"* while the Revit in front has Changes on, or the reverse. `heron_diagnose.py` reads the same file.
 2. **The server's waiting times come from its file too** - `response_timeout`, `fragment_timeout` and
    `try_once_timeout` are worked out from `revit.operationTimeoutSeconds`, `revit.askTimeoutSeconds` and
@@ -880,7 +880,8 @@ Approval* does not. It is one more way the parts describe how much a change need
   need no switch.
 - **Ask** is Revit's Keep or Discard box, which asks only while *Ask to Keep* is on. It is off by default
   ([D-138](../decisions/D-138.md)).
-- **Require Approval** is a switch on the ribbon: Changes for `MODIFY`, and Publish or Admin on top of it
+- **Require Approval** is a switch - on the ribbon then, in Heron's Settings window since
+  [D-150](../decisions/D-150.md): Changes for `MODIFY`, and Publish or Admin on top of it
   ([D-19](../decisions/D-19.md), [D-106](../decisions/D-106.md)). These are standing switches the owner
   turns on once, not a yes for each operation.
 
@@ -1333,6 +1334,12 @@ the way modellers already reuse labels. The other two trade the safety rules for
 
 **Ajmal PS decides.** Until he does, nothing is built for either.
 
+**2026-11-12 - the cards have moved since; the question has not.** `REPORT_FAMILY_LABELS` and
+`SET_FAMILY_LABEL_LAYOUT` say `PROVEN` on their cards today. `COPY_LABELS_FROM_FAMILY` was merged into
+`COPY_ELEMENTS_BETWEEN_DOCUMENTS` on 2026-11-01 and is `DEPRECATED`: the seed route is that card's `labels`
+mode now, a `DRAFT` at version 4. Each card's `heron-status` line says what it is on the day it is read.
+Neither route this question asks about is built.
+
 ---
 
 ### 🔵 Q-85 — Revit's API cannot make a void cut a hosted family's template host, so the modeller cuts it by hand in the Family Editor. Should Heron do more than say so? *(found 2026-10-22 building a floor drain)*
@@ -1373,6 +1380,12 @@ changes how every hosted family is built on the strength of a call documented fo
 the safety rules for a shortcut.
 
 **Ajmal PS decides.** Until he does, nothing is built; the method's hand step stands.
+
+**2026-11-12 - the card named above has moved since; the question has not.** `CREATE_FAMILY_HOST_OPENING` was
+merged into `CREATE_OPENING` on 2026-11-01 and is `DEPRECATED`; `CREATE_OPENING` carries its wall and
+ceiling job and is `DRAFT` at version 4 until proved again, so *"its wall and ceiling halves are PROVEN"*
+is the record of the retired card. The method's step 5 names `CREATE_OPENING`, and still tells the modeller
+to cut a floor's or a roof's void by hand. Nothing in shapes 2 or 3 is built.
 
 ---
 
