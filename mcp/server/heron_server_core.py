@@ -22,7 +22,8 @@ those files needs, so that there is exactly ONE of each in a process:
     _recorded, _ended,      the activity line, how a call ended, and the one
     _ended_by_reply         place a chat hears that its code is old
     RUNNING                 what this process loaded, against the disk now
-    LIBRARY_ONLY            off Windows, started as the server (D-132)
+    LIBRARY_ONLY            off Windows, started as the server (D-132) -
+                            said by the entry file, through started()
 
 WHY IT IS A FILE OF ITS OWN. Until 2026-11-11 all of this sat at the top of
 heron_mcp_server.py, which held every tool as well - over eight thousand
@@ -41,7 +42,13 @@ entry file and every tool file import it, and this file imports neither.
 A NAME REBOUND ON THE ENTRY MODULE DOES NOT REACH HERE. `_old_code` reads this
 module's RUNNING and `_Labelled` this module's LIBRARY_ONLY, so a suite that
 stands one in sets it on this module - sys.modules[fn.__module__] finds it
-from any function defined here.
+from any function defined here. And there is ONE LIBRARY_ONLY, this one: the
+entry file binds no copy, and reads it as an attribute of this module.
+
+THE SERVER OBJECT IS MADE THE FIRST TIME IT IS ASKED FOR, not as this module
+loads (`__getattr__`, at the foot). Its instructions and which tools it
+registers both turn on LIBRARY_ONLY, and only the entry file knows that - so
+the entry file says it first, with started(), and asks for `server` after.
 """
 
 import functools
@@ -161,27 +168,57 @@ _TAKES_DESCRIPTION = "description" in inspect.signature(_Server.tool).parameters
 # calls them in-process on Linux, and heron_tools --sizes measures them all.
 # On Windows this is False and nothing below changes.
 #
-# THE ENTRY FILE ASKED ITS OWN `__name__` UNTIL 2026-11-11, and this module
-# cannot: the server object is made HERE, as this module loads, and both its
-# instructions and which tools it registers turn on the answer - and here
-# `__name__` is never "__main__". So the same fact is asked from the other
-# side: whether the program Python was started on IS the entry file, the last
-# of heron_tools.SERVER_FILES. Off Windows only; on Windows the question is
-# never put (FRAGMENT-ISSUES row 5b-1555).
-def _started_as_the_server():
-    """Whether this process was started on the server's entry file - `python
-    mcp/server/heron_mcp_server.py`, as .mcp.json starts it - and not on a
-    suite, a tool or a runner that imports it."""
-    started = getattr(sys.modules.get("__main__"), "__file__", None)
-    if not started:
-        return False
-    try:
-        return os.path.samefile(started, tools.server_files()[-1])
-    except (OSError, ValueError):
-        return False
+# THE ENTRY FILE SAYS SO, AND NOTHING HERE WORKS IT OUT. Only that file knows
+# it was run - its own `__name__ == "__main__"`, the fact this rule was
+# written on - so it hands the fact over, once, with started(), before the
+# server object is made. Until then this is False: every tool, which is what a
+# suite or a tool that loads one file of the server alone is served.
+#
+# FOR A DAY THIS MODULE GUESSED, AND THE GUESS FAILED OPEN. When it was cut out
+# of the entry file on 2026-11-11 it asked whether
+# `sys.modules["__main__"].__file__` was the entry file - a question about how
+# Python was started, not about this file having been run. Run as `__main__` by
+# `exec(compile(...))` or by `runpy.run_module`, on Linux, the answer was no:
+# fifty-five tools offered, thirty-four of them revit_, the chat never told
+# there is no Revit here, and the runner note written. No shipped launcher
+# starts it that way, and D-132 may still not depend on which one does. Found
+# by the review of FRAGMENT-ISSUES row 5b-1555, before it was merged.
+LIBRARY_ONLY = False
 
 
-LIBRARY_ONLY = os.name != "nt" and _started_as_the_server()
+def library_only(run_as_main, system=None):
+    """
+    D-132's rule and nothing else: the library alone when the entry file was
+    RUN (`run_as_main` - its own `__name__ == "__main__"`) on any system but
+    Windows. `system` is os.name; a suite passes it to ask about another
+    system than the one it runs on.
+    """
+    return bool(run_as_main) and (os.name if system is None else system) != "nt"
+
+
+def started(run_as_main):
+    """
+    THE ENTRY FILE'S ONE CALL, made before it asks for the server object:
+    whether it was run. Sets LIBRARY_ONLY, and hands it back.
+
+    AFTER THE SERVER OBJECT IS MADE THE ANSWER MAY NOT CHANGE. Its instructions
+    are written and its first tools registered by what LIBRARY_ONLY was then,
+    so a different answer now would leave a server that is half one thing -
+    and off Windows that half could be every revit_ tool. That is refused,
+    loudly, and the process does not start: it is also what stops the entry
+    file being loaded a second time under its own name while it runs.
+    """
+    global LIBRARY_ONLY
+    said = library_only(run_as_main)
+    if "server" in globals() and said != LIBRARY_ONLY:
+        raise RuntimeError(
+            "Heron's MCP server was already made %s when its entry file said it "
+            "is to be made %s. Nothing is served. Start it with:  python "
+            "mcp/server/heron_mcp_server.py"
+            % tuple("with the library alone" if alone else "with every tool"
+                    for alone in (LIBRARY_ONLY, said)))
+    LIBRARY_ONLY = said
+    return said
 
 NO_REVIT_HERE = "No Revit on this machine (it is not Windows)"
 
@@ -446,7 +483,21 @@ def _companion_module():
     return companion_page
 
 
-server = _Labelled("heron", instructions=_host_instructions())
+def __getattr__(name):
+    """
+    `server`, made the first time anything asks this module for it - and only
+    once: it is this module's own name from then on, and this is not asked
+    again. Not made as the module loads, because what it is told and which
+    tools it registers turn on LIBRARY_ONLY, which the entry file sets first
+    (started, above). A file of the server loaded alone asks for it without
+    that call, and is served every tool, as an import always was.
+    """
+    if name != "server":
+        raise AttributeError("module %r has no attribute %r" % (__name__, name))
+    global server
+    server = _Labelled("heron", instructions=_host_instructions())
+    return server
+
 
 # One chat, one Revit. Lives as long as this server does, which is as long as
 # the chat does - the correct scope for a binding (docs/25).

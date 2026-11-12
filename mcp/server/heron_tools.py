@@ -930,6 +930,15 @@ def describe():
 # state, what every tool call passes through - and no tool. A file that holds
 # tools goes between it and the entry file, which imports each of them:
 # heron_inventory.py is the inventory reads, revit_phases to revit_groups.
+#
+# AND THE LIST'S ORDER IS HALF OF THE ORDER A HOST IS SERVED THE TOOLS IN. The
+# SDK lists tools in the order they register, which for a tool in another
+# file is wherever the entry file's import of that file stands - one line,
+# and moving it to the top of the file reordered every chat's tool list while
+# every suite passed (review of row 5b-1555). So the rule is written down, in
+# `served_order` below: the entry file's own tools first, as it defines them,
+# then each other file's, in this list's order. The entry file imports the
+# tool files below its last tool, in that order, and two suites hold it there.
 SERVER_FILES = ("heron_server_core.py", "heron_inventory.py", "heron_mcp_server.py")
 
 
@@ -979,6 +988,29 @@ def descriptions(path=None):
                     ast.unparse(d) == "server.tool()" for d in node.decorator_list):
                 found[node.name] = ast.get_docstring(node) or ""
     return found
+
+
+def tool_files():
+    """The listed files that hold a tool, by name, in SERVER_FILES' order - a
+    file that only holds what the others share is not one of them."""
+    return [name for name, path in zip(SERVER_FILES, server_files()) if descriptions(path)]
+
+
+def served_order():
+    """
+    Every tool by name, in the order a host is served them - read off the
+    source, so it needs no SDK.
+
+    THE RULE (the comment on SERVER_FILES has why): the entry file's own
+    tools, in the order that file defines them, then every other listed
+    file's, file by file in the list's order. It does not look at where the
+    entry file imports a tool file, and that is the point: this is what the
+    order is MEANT to be, tests/test_mcp_serves.py holds a real SDK's list to
+    it, and tests/test_api_docs.py holds the import lines to it as text.
+    """
+    files = server_files()
+    return (list(descriptions(files[-1]))
+            + [name for path in files[:-1] for name in descriptions(path)])
 
 
 def served_tools():
@@ -1091,8 +1123,10 @@ def print_sizes(as_json=False):
             print("  a schema is written by the SDK, so it needs one:  %s"
                   % INSTALL.install_line("pip install --user mcp"))
     print()
+    # THE FILES THAT HOLD A TOOL, not every listed file: one of them holds only
+    # what the others share, and has no docstring a description was read from.
     print("Descriptions from %s's own docstrings; schemas and the whole"
-          % " and ".join(SERVER_FILES))
+          % " and ".join(tool_files()))
     print("tool from the SDK's own list. The budget is tests/test_tool_sizes.py.")
     return 0
 

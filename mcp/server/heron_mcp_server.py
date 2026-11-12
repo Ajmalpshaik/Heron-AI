@@ -132,6 +132,18 @@ import heron_health as health                       # noqa: E402
 import heron_brain as brain                         # noqa: E402
 import heron_run_records as runs                    # noqa: E402
 
+import heron_server_core as core                           # noqa: E402
+
+# NO REVIT ON THIS MACHINE, AND THE LIBRARY ALONE (Q-67, D-132) - and whether
+# that is so turns on ONE FACT ONLY THIS FILE KNOWS: that it was RUN, not
+# imported. So this file says it, here, before the server object is asked for
+# and before any tool is registered. The core keeps the answer -
+# core.LIBRARY_ONLY, the only one there is; every line below that needs it
+# asks the core, so there is no second copy to disagree with it. A suite or a
+# tool that IMPORTS this module says False here and is served every tool on
+# any system, exactly as before.
+core.started(__name__ == "__main__")
+
 # THE SERVER OBJECT, THIS CHAT'S STATE AND WHAT EVERY TOOL CALL PASSES THROUGH
 # are heron_server_core's - one of each in a process, shared with every other
 # file of the server (heron_tools.SERVER_FILES). Imported, never defined here:
@@ -139,8 +151,8 @@ import heron_run_records as runs                    # noqa: E402
 # A suite that stands in one of ITS names sets it on that module, not on this.
 from heron_server_core import (                             # noqa: E402
     approval, binding, _companion_module, _Context, _ctx, _ended,
-    _ended_by_reply, _failure_ended, LIBRARY_ONLY, NEWLINE, NO_REVIT_HERE,
-    _note, _old_code, pinned, _refused_for_old_code, _revit_lock, server)
+    _ended_by_reply, _failure_ended, NEWLINE, NO_REVIT_HERE, _note, _old_code,
+    pinned, _refused_for_old_code, _revit_lock, server)
 
 import anyio.from_thread                                   # noqa: E402 - the SDK's own dependency
 
@@ -4400,7 +4412,7 @@ def _revit_version():
     With no Revit on this machine (D-132) nothing is looked for: "none is
     connected" would be a different, wrong sentence.
     """
-    if LIBRARY_ONLY:
+    if core.LIBRARY_ONLY:
         return None, NO_REVIT_HERE
     try:
         live, _starting, _mismatched = binding.sessions()
@@ -6359,7 +6371,19 @@ from heron_inventory import (                               # noqa: E402,F401
 
 
 if __name__ == "__main__":
-    if LIBRARY_ONLY:
+    # BELT AND BRACES FOR D-132. This file was run, so off Windows the library
+    # alone is being served - core.started, at the top, saw to it. Should that
+    # ever not be so, nothing is served at all: a chat with no Heron tools
+    # asks why, and a chat offered revit_ tools on a machine with no Revit
+    # believes them. Exit 2, as this server did off Windows before
+    # D-132. On Windows this is never true.
+    if os.name != "nt" and not core.LIBRARY_ONLY:
+        sys.stderr.write(
+            "Heron did not start. This machine is not Windows, so there is no Revit "
+            "to reach, and the server was about to offer its Revit tools anyway. "
+            "Nothing was served. Start it with:  python mcp/server/heron_mcp_server.py\n")
+        raise SystemExit(2)
+    if core.LIBRARY_ONLY:
         # The bridge is a Windows named pipe, and Revit is Windows-only - so
         # the library alone, never a server that waits on a Revit that cannot
         # exist here (Q-67, D-132). stderr, because stdout is the MCP channel.
@@ -6393,7 +6417,7 @@ if __name__ == "__main__":
     # and a fault in it never reaches the chat.
     # Not off Windows: it serves the Companion button IN REVIT, and there
     # is no Revit here (D-132).
-    if not LIBRARY_ONLY:
+    if not core.LIBRARY_ONLY:
         try:
             companion_page = _companion_module()
             companion_page.CHANGES.apply_hook = _apply_change
@@ -6427,7 +6451,7 @@ if __name__ == "__main__":
     # from, for Revit's Heron panel, which starts the saved-command runner
     # with exactly these. Not off Windows - there is no panel there. Never
     # fatal: write_runner_note swallows its own faults.
-    if not LIBRARY_ONLY:
+    if not core.LIBRARY_ONLY:
         try:
             brain.commands().write_runner_note(sys.executable, _repo_root())
         except brain.BrainUnavailable as why:
