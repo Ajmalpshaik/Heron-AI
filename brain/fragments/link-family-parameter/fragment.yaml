@@ -258,6 +258,60 @@ proof:
     whether one exists here has not been settled, and a declared absence is not the same as
     none
   fingerprint: dc19a14da945270c
+  releases:
+  - release: '2024'
+    date: '2026-11-12'
+    by: Ajmal PS
+    model: R24 Generic, Revit 2024, session 13164 - the count is NOT recorded because 3,209
+      elements was measured on R24 Project, the document in front, and this ran against another
+      one (row 15)
+    positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+      the transaction group ROLLED BACK afterwards. returned alreadyLinked 0, asked 1 item(s)
+      [(Visible, Show Arrow, False)], byCategory false, byForms true, byNested false, changed
+      3, chosen 3 item(s) [Symbolic Lines, Masking Region, 50 mm], classificationOf Func`2,
+      dbNamespace Autodesk.Revit.DB, describe Func`2, ductFlow 1 item(s) [id -1013405], everyCategory
+      false, everySystem false, findings 2 item(s) [Family ''R24 Generic'': 3 link(s) or value(s)
+      changed and 0 al..., The links are in the family only. Placed units in a project ...],
+      flags BindingFlags, isFlow Func`2, isMaterialField Func`2, isVoidForm Func`2, kindName
+      Func`2, kindOf Func`2, lacking 0 item(s), leftOut 0, linkReport Symbolic Line id 3319:
+      Visible not linked -> Show Arrow (reads Yes)  ||  Masking Region id 3359: Visible not
+      linked -> Show Arrow (reads Yes)  ||  Model Text id 3326: Visible not linked -> Show Arrow
+      (reads Yes), linked true, matched 3, materialField 1 item(s) [id -1002107], materialWords
+      Func`2, nameOf Func`2, notAFamily false, pipeFlow 1 item(s) [id -1140213], planAlready
+      3 item(s) [False, False, False], planBefore 3 item(s) [, , ], plans 3 item(s) [(Autodesk.Revit.DB.SymbolicCurve,
+      Autodesk.Revit.DB.Paramete..., (Autodesk.Revit.DB.FilledRegion, Autodesk.Revit.DB.Parameter...,
+      (Autodesk.Revit.DB.ModelText, Autodesk.Revit.DB.Parameter, A...], quoted Func`2, reads
+      Func`2, refused (null), revitAssembly RuntimeAssembly, saidCategory , saidFamily , saidForms
+      237ece53-33e4-4c24-b6df-d034f0c0c31f-00000cf7, 237ece53-33e4-4c24-b6df-d034f0c0c31f-00000d1f,
+      237ece53-33e4-4c24-b6df-d034f0c0c31f-00000cfe, saidSystem , saidType , sameKind Func`3,
+      sameSystem Func`3, sameWord Func`3, spaced Func`2, squash Func`2, systemWords Func`2,
+      unlessNone Func`2, ways 1, whatEachLacks Func`1. inputs came category not given - "none",
+      the card''s own default (optional); system not given - "none", the card''s own default
+      (optional); forms as given; family not given - "none", the card''s own default (optional);
+      type not given - "none", the card''s own default (optional); links as given (1). on R24
+      Generic'
+    negative_case: 'run with forms=237ece53-33e4-4c24-b6df-d034f0c0c31f-00000cf7, links=Visible=ZZZ
+      No Such Parameter instead - chosen because it should not contain what this fragment reports
+      - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+      returned alreadyLinked 0, asked 1 item(s) [(Visible, ZZZ No Such Parameter, False)], byCategory
+      false, byForms true, byNested false, changed 0, chosen 1 item(s) [Symbolic Lines], classificationOf
+      Func`2, dbNamespace Autodesk.Revit.DB, describe Func`2, ductFlow 1 item(s) [id -1013405],
+      everyCategory false, everySystem false, findings 1 item(s) [Nothing was changed. No family
+      parameter is called "ZZZ No S...], flags BindingFlags, isFlow Func`2, isMaterialField
+      Func`2, isVoidForm Func`2, kindName Func`2, kindOf Func`2, lacking 0 item(s), leftOut
+      0, linkReport , linked false, matched 1, materialField 1 item(s) [id -1002107], materialWords
+      Func`2, nameOf Func`2, notAFamily false, pipeFlow 1 item(s) [id -1140213], planAlready
+      0 item(s), planBefore 0 item(s), plans 0 item(s), quoted Func`2, reads Func`2, refused
+      Nothing was changed. No family parameter is called "ZZZ No Such Parameter". The ones that
+      could drive "Visible" (Yes/No) on Symbolic Line id 3319: Show Arrow, Show Handle., revitAssembly
+      RuntimeAssembly, saidCategory , saidFamily , saidForms 237ece53-33e4-4c24-b6df-d034f0c0c31f-00000cf7,
+      saidSystem , saidType , sameKind Func`3, sameSystem Func`3, sameWord Func`3, spaced Func`2,
+      squash Func`2, systemWords Func`2, unlessNone Func`2, ways 1, whatEachLacks Func`1. inputs
+      came category not given - "none", the card''s own default (optional); system not given
+      - "none", the card''s own default (optional); forms as given; family not given - "none",
+      the card''s own default (optional); type not given - "none", the card''s own default (optional);
+      links as given (1). on R24 Generic'
+    fingerprint: dc19a14da945270c
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

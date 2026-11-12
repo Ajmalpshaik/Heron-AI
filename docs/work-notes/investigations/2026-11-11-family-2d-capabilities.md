@@ -160,3 +160,20 @@ SIGNED by Ajmal PS and marked PROVEN on the run named; second routes and Revit 2
 `LOCK_FAMILY_LINES_TO_PLANES` v2, Group ND's lock-reading rows, and every test on Revit 2024. Beyond any tool (NO
 API): a filled region's, a nested family's and a symbolic line's view-direction settings, and placing a nested
 detail item in a family VIEW.
+
+## Revit 2024, 2026-11-12 - the ten cards of this job proved there too
+
+Run on Revit 2024 (session 13164) on SAVED scratch files made for it under `%TEMP%\heron-work\rev2024` (R24 Generic,
+R24 Arrow, R24 Project), arranged with the cards PROVEN on 2020 that morning - the angled planes by
+`CREATE_REFERENCE_PLANES` v2, the air flow by `SET_FAMILY_TYPE_VALUES` v4, the Rim Height label by
+`LABEL_FAMILY_DIMENSION` v3, the nested arrow by `PLACE_FAMILY_INSTANCES`. Every one of the ten held both halves,
+rolled back, and was SIGNED by Ajmal PS as a `proof.releases` entry for 2024 (D-131): `LINK_FAMILY_PARAMETER` (a
+symbolic line, a **masking region in a 3D family** - Revit 2023+ only, never run before - and model text),
+`LABEL_FAMILY_DIMENSION` (150 degrees), `CREATE_REFERENCE_PLANES` (45 degrees; a typed 0,0 refused),
+`PLACE_DETAIL_COMPONENTS` (project), `ARRAY_FAMILY_FORMS` (the nested arrow in plan), `SET_FAMILY_FORM_VISIBILITY`,
+`SET_FAMILY_FORM_SUBCATEGORY`, `LABEL_FAMILY_RADIUS` (symbolic arc 300 mm), `REPORT_FAMILY_FORMS` (2D read-back) and
+`SET_FAMILY_TYPE_VALUES` (air flow 94.4 -> 120 L/s through the 2022+ units route).
+
+A Generic Model family holds no filled-region type of its own - a 3D family's region is a masking region unless a
+filled-region type is loaded into it. Still owed after this: the arc-centre lock, Group NC's re-run, Group ND's
+lock rows; Revit 2025 to 2027 not run.
