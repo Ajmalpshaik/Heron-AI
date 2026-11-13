@@ -92,3 +92,31 @@ Revit connected, so this is evidence about 2024 alone.
 counted: the command-line runs do not print the change counts, and on Revit 2024 the Keep or Discard question
 was never raised (every run rolled back). The first kept many-types call on Revit 2020, where the owner met the
 deletions, answers it. The other releases are not run.
+
+## Run 2 - Revit 2020, 2026-11-13 (session 41776) - the project card, NG5 to NG7
+
+**Models, all made through Heron this session and saved under `%TEMP%\heron-work\many-types-2020`** - never
+the owner's families or jobs. Run 1's family is a Revit 2024 file and cannot open in 2020, so the project
+half was arranged again on 2020, with every name the run depends on changed and said:
+- *Family* "Heron Many Types 2020.rfa" (`CREATE_FAMILY_DOCUMENT` from 2020's `Metric Generic Model.rft`;
+  `SET_FAMILY_SETTINGS` Category=Air Terminals; `ADD_FAMILY_PARAMETERS` Model_Number, Text, type, Identity
+  Data; seven types by `SET_FAMILY_TYPE_VALUES` one a call, each read back Manufacturer "Acme", URL
+  "https://example.com", Model_Number "M-1"). **No Width and no dimension** - the project rows do not use them.
+- *Second family* "Heron Two Types 2020.rfa": Air Terminals, types "Small" and "Large", Manufacturer
+  "Other Maker", no Model_Number.
+- *Project* "Heron Many Types Project 2020.rvt" from 2020's `US Metric\DefaultMetric.rte`, both families
+  loaded with `LOAD_FAMILY`. `SELECT_TYPES` Air Terminals: **9**, these nine and no other.
+
+Every run `--write` without `--apply`: rolled back. Afterwards `READ_ELEMENT_PARAMETERS` on the nine read
+Model_Number "M-1" on the seven (2 absent), Manufacturer "Acme" on the seven and "Other Maker" on the two,
+URL on the seven, Type Comments blank on all nine - nothing kept.
+
+| Row | Positive | Negative | Verdict |
+|---|---|---|---|
+| NG5 | `validate`, `rows=key=Type Name|in=Air Terminals|types=yes|Family Name=Heron Many Types 2020;*|Manufacturer=|URL=|Model_Number=` (the family's name is this run's): `written` 7, *"'*' named 7 type(s) in Air Terminals types with Family Name 'Heron Many Types 2020', and all 7 were written"*, all 21 values read back "" - the second family not named. **A type's Family Name narrows a key search - the third thing only a run could say** | `rows=...;*|Model_Number=X`: refused, *"the pattern names 9 type(s) and 2 cannot take these values - 'Heron Two Types 2020: Small' (id 347041): it has no parameter called Model_Number; 'Heron Two Types 2020: Large' (id 347043): ... - so NONE of the 9 is written"*, `written` 0 | **PASS** - draft `brain/proof-drafts/set-parameter-values-by-id.yaml`, gap *no second route*; not signed |
+| NG6 | `...;6*|Comments=six`: refused - *"it has no parameter called Comments"* for 600 x 600 and 625 x 625, NONE written. The pattern named those two and no other; a type has **Type Comments**, not Comments | - | **FAIL as written - the row's premise, not the card** ([row 5b-1634](../fragment-issues/row-5b-1634.md)). Measured beside it, not counted: `Type Comments=six` wrote 2, both read back "six" |
+| NG7 | - | (a) `...;ZZZ*|Comments=x`: refused, *"no type in Air Terminals types has a Type Name matching 'ZZZ*' - not written"*. (b) `...;6*|Comments=x;600 x 600|Comments=y`: both rows refused - *"600 x 600: another row's key names the same element (id 346225)"*, and the pattern's *"another row's key names it too"* - `written` 0 | **PASS** - (b)'s 625 x 625 half was also refused for the missing Comments (row 5b-1634) |
+| NG8 | - | - | NOT RUN - no second route |
+
+**Still not known:** question 2 (whether a type switch deletes anything) - this family has no sketch
+dimension to lose, so it cannot answer it.

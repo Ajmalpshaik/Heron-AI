@@ -38,3 +38,19 @@ beside Heron.
 row changes to make it pass. The records NM4 writes go in a pull request that names Revit 2020, and that
 pull request brings the dated sentences in [the register](../28-agent-registry.md)'s `SEL-008` and
 `VIE-013` rows up to the day: they say *reads STALE (measured 2026-11-11)* until then.
+
+### Run record - 2026-11-13, NM1, NM2 and NM6 on the laptop, Revit 2020
+
+Branch `claude/pc-proofs-2026-11-12` (main at 10334996 and this sitting's records). Revit 2020, session
+41776, the add-in built from 10334996. The model is **P1102 MEP**, the saved scratch copy of Revit 2020's
+`rme_advanced_sample_project.rvt` under `%TEMP%\heron-work\prove-1102` - the same sample the 2026-10-25
+record's *Agent Proof MEP* was copied from, not the same copy. Output in `%TEMP%\heron-work\nm`.
+
+| # | Result | What was seen |
+|---|---|---|
+| NM1 | **PASS** | `15 proof(s): 13 current, 2 STALE, 0 whose source is gone`; STALE `HERON-REVIT-SEL-008` and `HERON-REVIT-VIE-013` and no other; `ONE FILE` for SEL-008 names `RevitTemporaryView.cs`; for VIE-013 says *signed on revit/Heron.Revit.Addin/RevitCapture.cs* and names `RevitTemporaryView.cs`, `RevitViews.cs`; exit 1 |
+| NM2 | **PASS** - draft written, not signed | `vary ... --session 41776`: 6 inputs, 4 distinct answers - Ducts 730, Pipes 488, Air Terminals 309, Flex Pipes 0, Pipe Insulation 0, Duct Insulation 0, each `categories: 1`. Draft `source: 'revit/Heron.Revit.Addin/RevitOperations.cs'`, fingerprint `75a543b6b1a2a209`. `gaps:` 2 - *D-30's NEGATIVE LEG WAS RUN AND IS RECORDED: category=Flex Pipes returned an empty answer*, and *THE FINGERPRINT COVERS ONE FILE ... RevitTemporaryView.cs*. After the last value, `read-selection` read 0 elements selected: Duct Insulation, of which the model has none, and nothing else |
+| NM3 | **NOT RUN** | needs two Revit 2020 sessions open at once; this PC holds one Revit at a time (16 GB, the owner's rule). The owner decides how it is run |
+| NM4 | **NEEDS THE OWNER** | his signature on the SEL-008 draft; VIE-013 has no draft until NM3 |
+| NM5 | **NOT RUN** | after NM4 |
+| NM6 | **PASS** | `brain\heron_pullrequest.py` and `brain\heron_scaffold.py`, each redirected to a file through `cmd`: exit 0 both, no `Traceback` in either; the first ends with four lines under *what this agent does not judge*, the second with seven |

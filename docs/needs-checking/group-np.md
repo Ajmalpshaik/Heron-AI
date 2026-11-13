@@ -74,3 +74,21 @@ pulling, so the chat runs the new server. The switch is turned in Revit - *Heron
 
 **Then** the group closes on NP1 to NP8. A row that fails reopens the change; nothing in a row changes to
 make it pass. NP6 can only be run on a PC with a packaged Claude app; on any other it is **NOT RUN**, said so.
+
+### Run record - 2026-11-13, NP3, Revit 2020 on the laptop
+
+**Arranged differently from the row, and said so.** NP3 asks for two Revits connected at once. This PC holds
+one Revit at a time (16 GB; the owner's rule for this sitting), so NP3 ran as **two halves on one release**,
+the older add-in first and the newer one after it, each on the saved scratch copy *P1102 MEP*
+(`%TEMP%\heron-work\prove-1102`). The add-in reports `0.2.0.0` in both, so the builds are told apart by the
+deployed `Heron.Revit.Addin.dll`: 2026-11-10 08:10 for the older, 2026-11-13 18:48:25 (+03:00) for the newer
+(built from `main` at 10334996, deployed to Revit 2020 only with `tools/deploy-addin.ps1 -RevitVersion 2020`).
+
+| Half | Revit, session, add-in | `revit_health` said under that Revit | Result |
+|---|---|---|---|
+| Older | Revit 2020, session 4504, add-in of 2026-11-10 | `Ask to Keep: this Revit's Heron does not say which way the switch is set - its Heron add-in is older than this chat's and does not report it. Look in Revit, under Heron > AI Bridge > Settings.` Neither ON nor off | **PASS** |
+| Newer | Revit 2020, session 41776, add-in of 2026-11-13 | `Ask to Keep is off in this Revit right now: a change made through revit_change is kept at once, with no Keep or Discard box, as one entry in Revit's Undo list.` - then the three kinds of change that are different (delete, export/save/sync, dry run). The owner's switch was off; not turned for this row | **PASS** |
+| Both at once | two Revits listed in one answer, each with its own line | - | **NOT RUN** - one Revit at a time on this PC. `tests/test_mcp_serves.py` holds the two lines side by side against stand-ins |
+
+The newer add-in's first start stopped at Revit's *Security - Unsigned Add-In* box; the owner answered it.
+Revits 2024, 2026 and 2027 were built from the same commit and **not** deployed in this run.
