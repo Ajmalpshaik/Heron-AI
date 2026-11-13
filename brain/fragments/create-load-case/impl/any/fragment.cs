@@ -47,25 +47,8 @@ Func<string, string> bare = s =>
 };
 
 // ---- What the project has ----------------------------------------------------
-Func<List<LoadCase>> readCases = () => new FilteredElementCollector(doc).OfClass(typeof(LoadCase)).Cast<LoadCase>()
-    .OrderBy(c => c.Number).ThenBy(c => c.Name).ToList();
-Func<LoadCase, string> caseLine = c =>
-{
-    string natureName = "?", categoryName = "?";
-    try { var n = doc.GetElement(c.NatureId); natureName = n == null ? "none" : n.Name; } catch { }
-    try
-    {
-        var p = c.get_Parameter(BuiltInParameter.LOAD_CASE_SUBCATEGORY);
-        categoryName = p == null ? "?" : (p.AsValueString() ?? "?");
-    }
-    catch { }
-    return c.Number + " " + quoted(c.Name) + " - nature " + natureName + ", category " + categoryName;
-};
-
-var cases = readCases();
-foreach (var c in cases) before.Add(caseLine(c));
-var natures = new FilteredElementCollector(doc).OfClass(typeof(LoadNature)).Cast<LoadNature>()
-    .OrderBy(n => n.Name).ToList();
+// The load case categories - the subcategories of Structural Load Cases -
+// gathered FIRST, because every case's line names its category from them.
 var categories = new List<Category>();
 try
 {
@@ -75,6 +58,39 @@ try
 }
 catch { }
 categories = categories.OrderBy(c => c.Name).ToList();
+
+// A CASE'S CATEGORY IS ITS SubcategoryId (version 2, FRAGMENT-ISSUES 5b-1637).
+// Version 1 read LOAD_CASE_SUBCATEGORY's string, which on Revit 2020 is absent
+// or empty on every case, so every line said "category ?" - the new case's
+// too, under "read back from the model". LoadCase.SubcategoryId is the id of
+// one of the categories above (Autodesk's reference, 2017 on, the same on
+// every release 2020 to 2027); it is matched by id, never read as a number,
+// and named by the category's own Name. null when Revit names none.
+Func<LoadCase, Category> categoryOf = c =>
+{
+    ElementId id = null;
+    try { id = c.SubcategoryId; } catch { id = null; }
+    if (id == null || id == ElementId.InvalidElementId) return null;
+    var hit = categories.FirstOrDefault(k => k.Id == id);
+    if (hit != null) return hit;
+    try { return Category.GetCategory(doc, id); } catch { return null; }
+};
+
+Func<List<LoadCase>> readCases = () => new FilteredElementCollector(doc).OfClass(typeof(LoadCase)).Cast<LoadCase>()
+    .OrderBy(c => c.Number).ThenBy(c => c.Name).ToList();
+Func<LoadCase, string> caseLine = c =>
+{
+    string natureName = "?";
+    try { var n = doc.GetElement(c.NatureId); natureName = n == null ? "none" : n.Name; } catch { }
+    var held = categoryOf(c);
+    return c.Number + " " + quoted(c.Name) + " - nature " + natureName + ", category "
+        + (held == null ? "? (Revit named none)" : held.Name);
+};
+
+var cases = readCases();
+foreach (var c in cases) before.Add(caseLine(c));
+var natures = new FilteredElementCollector(doc).OfClass(typeof(LoadNature)).Cast<LoadNature>()
+    .OrderBy(n => n.Name).ToList();
 var categoryList = categories.Count == 0
     ? "Dead, Live, Wind, Snow, Roof Live, Accidental, Temperature, Seismic"
     : string.Join(", ", categories.Select(c => c.Name));
@@ -203,9 +219,47 @@ if (ok)
             catch (Exception ex) { findings.Add("Made, but Revit would not give it number " + number + ": " + ex.Message); }
         }
         added = 1;
-        findings.Add("Made the load case " + caseLine(made) + ", read back from the model.");
-        if (made.NatureId != chosen.Id)
-            findings.Add("Read back, its nature is not " + quoted(chosen.Name) + " - look at it in Analyze > Load Cases.");
+
+        // WHAT WAS ASKED, AS A CATEGORY: a built-in one is the project's own
+        // subcategory for it; a project-made one is the one matched above.
+        Category wanted = custom;
+        if (builtIn != null)
+        {
+            BuiltInCategory? sub = null;
+            switch (builtIn.Value)
+            {
+                case LoadCaseCategory.Dead: sub = BuiltInCategory.OST_LoadCasesDead; break;
+                case LoadCaseCategory.Live: sub = BuiltInCategory.OST_LoadCasesLive; break;
+                case LoadCaseCategory.Wind: sub = BuiltInCategory.OST_LoadCasesWind; break;
+                case LoadCaseCategory.Snow: sub = BuiltInCategory.OST_LoadCasesSnow; break;
+                case LoadCaseCategory.RoofLive: sub = BuiltInCategory.OST_LoadCasesRoofLive; break;
+                case LoadCaseCategory.Accidental: sub = BuiltInCategory.OST_LoadCasesAccidental; break;
+                case LoadCaseCategory.Temperature: sub = BuiltInCategory.OST_LoadCasesTemperature; break;
+                case LoadCaseCategory.Seismic: sub = BuiltInCategory.OST_LoadCasesSeismic; break;
+            }
+            try { wanted = sub == null ? null : doc.Settings.Categories.get_Item(sub.Value); } catch { wanted = null; }
+        }
+
+        // "READ BACK" ONLY OF WHAT WAS READ (5b-1637). The nature and the
+        // category are each confirmed, or each said not to be.
+        var natureRead = made.NatureId == chosen.Id;
+        var held = categoryOf(made);
+        var categoryRead = held != null && (wanted != null ? held.Id == wanted.Id : bare(held.Name) == categoryWord);
+        if (natureRead && categoryRead)
+            findings.Add("Made the load case " + caseLine(made) + " - its nature and its category read back from the "
+                + "model as asked.");
+        else
+        {
+            findings.Add("Made the load case " + caseLine(made) + ".");
+            if (!natureRead)
+                findings.Add("Read back, its nature is not " + quoted(chosen.Name) + " - look at it in Analyze > Load Cases.");
+            if (held == null)
+                findings.Add("Its category could NOT be read back: Revit named no load case category for it, so "
+                    + quoted(wantCategory) + " is set but not confirmed - look at it in Analyze > Load Cases.");
+            else if (!categoryRead)
+                findings.Add("Read back, its category is " + quoted(held.Name) + ", not " + quoted(wantCategory)
+                    + " - look at it in Analyze > Load Cases.");
+        }
     }
 }
 
