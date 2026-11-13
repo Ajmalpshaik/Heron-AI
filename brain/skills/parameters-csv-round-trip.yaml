@@ -144,8 +144,15 @@ purpose: >
      the run, naming WRITE_ELEMENT_PARAMETERS clear=true as Revit's own
      clear for those.
   5. THE RETURN - ONE CALL, ONE UNDO.
-     THERE IS NO PREVIEW BEFORE THIS CALL. Nothing in Heron shows which
-     cells differ from the model first (row 5b-1525).
+     THE CARD COMPARES NOTHING WITH THE MODEL BEFORE IT WRITES (row
+     5b-1525). revit_change with dry_run=true runs a change and rolls it
+     back, and its answer shows old -> new values for the elements it
+     changed, up to a limit it names when it is reached (D-155, D-156;
+     built, not run in Revit - Groups NS, NT) - BUT ONLY FOR A CARD
+     revit_change RUNS AT ALL: while this
+     step's card is DRAFT, a dry run of it is refused exactly as the write
+     is. Where it can be had it is a count for the chat, never the
+     modeller's yes.
      WHETHER REVIT ASKS BEFORE IT KEEPS THE CHANGE IS THE OWNER'S SWITCH,
      Ask to Keep, AND IT IS OFF ON A PC AS INSTALLED (D-138). revit_health
      says which way it is set for that Revit, read from Revit itself

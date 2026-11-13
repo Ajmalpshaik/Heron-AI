@@ -75,6 +75,14 @@ namespace Heron.Revit.Addin
 
             try
             {
+                // D-157: AN UNDO HERON SENT AND REVIT HAS NOT REPORTED YET. A
+                // job that acts in that model now could land on top of the
+                // undo list and be what the Undo takes, so it is held back for
+                // the moment Revit needs - in whichever model, since the Undo
+                // acts on the one on screen. A read goes on. See RevitUndo.Waiting.
+                var waiting = RevitUndo.Waiting(app, request, op);
+                if (waiting != null) return waiting;
+
                 return Route(app, request, op);
             }
             finally
@@ -284,11 +292,24 @@ namespace Heron.Revit.Addin
                 case "reset_temporary":
                     return RevitTemporaryView.Reset(app, Json.ReadString(request, "expectProject"));
 
-                // D-157: REVIT'S OWN UNDO, sent only while Heron's last kept
-                // change is the top of the undo list. No transaction: a
-                // command is posted, and Revit runs it after this returns.
-                case "undo_last":
-                    return RevitUndo.Last(app, Json.ReadString(request, "expectProject"));
+                // D-157: REVIT'S OWN UNDO, sent only while Heron saw its last
+                // kept change land and has seen nothing change the model
+                // since. No transaction: a command is posted, and Revit runs
+                // it after this returns. The whole request goes: the pinned
+                // model is named in it as a kept change names it.
+                //
+                // NOT `undo_last`, the first build's name for it: a Revit
+                // still running that build must not be able to take this
+                // request and post by its old rule (see RevitUndo).
+                case "undo_guarded":
+                    return RevitUndo.Last(app, request, false, null);
+
+                // THE SAME QUESTIONS, AND NOTHING SENT. Declared Read, so it
+                // answers with Changes off - and says what the switches would
+                // say to the real one, which is why the gate is asked here
+                // for `undo_guarded` by name.
+                case "undo_check":
+                    return RevitUndo.Last(app, request, true, Gate("undo_guarded"));
 
                 // D-163: the Activity pane's Select and Zoom - selection and the
                 // view only, no transaction. RevitShowElements says why each part.

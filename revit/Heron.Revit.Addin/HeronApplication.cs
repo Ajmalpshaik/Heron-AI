@@ -257,6 +257,11 @@ namespace Heron.Revit.Addin
                 // last change can no longer be undone by Undo - the guard hears it.
                 application.ControlledApplication.DocumentSynchronizedWithCentral += OnSynchronized;
 
+                // AND SO DOES RELOAD LATEST, where this Revit reports one (2021
+                // on); and a first save or a Save As moves the key a model is
+                // remembered by. RevitUndo listens for both itself.
+                RevitUndo.Listen(application.ControlledApplication);
+
                 // A REVIT DIALOG THAT OPENS INSIDE A JOB IS ANSWERED, not left
                 // for a modeller who is not there - FRAGMENT-ISSUES 5b row 300.
                 // Inert until the dispatcher arms it around a job, so a dialog
@@ -397,6 +402,7 @@ namespace Heron.Revit.Addin
                 HeronRunGuard.Detach(application);
                 RevitFragment.StopListening(application.ControlledApplication);
                 application.ControlledApplication.DocumentSynchronizedWithCentral -= OnSynchronized;
+                RevitUndo.StopListening(application.ControlledApplication);
                 HeronDialogWatch.Detach(application);
                 HeronLiveState.Detach(application);
 

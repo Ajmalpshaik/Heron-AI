@@ -396,6 +396,12 @@ def wiring():
     if "return RevitUndo.KeyOf(doc);" in key:
         undo = code_only(io.open(os.path.join(ADDIN, "RevitUndo.cs"), encoding="utf-8").read())
         key = body_of(undo, "string KeyOf(")
+    # AND SINCE 2026-11-12 IN ITS ONE OWNER, RevitOperations.DocumentKey: KeyOf
+    # was a third copy of it (row 5b-1604). The claim below is the same claim.
+    if "return RevitOperations.DocumentKey(doc);" in key:
+        owner = code_only(io.open(os.path.join(ADDIN, "RevitOperations.cs"),
+                                  encoding="utf-8").read())
+        key = body_of(owner, "string DocumentKey(")
     check(all(part in key for part in ("CreationGuid(", "PathName", "Title")),
           "the key is the model's own id, its path and its title")
 

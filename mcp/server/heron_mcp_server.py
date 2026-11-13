@@ -125,7 +125,8 @@ import heron_bridge_client as bridge          # noqa: E402
 import heron_session as session                      # noqa: E402
 from heron_session import NotBound                  # noqa: E402
 from heron_write import (BadDistance, describe_vertical,   # noqa: E402
-                         parse_millimetres, reported_elsewhere, skipped_sentence)
+                         parse_millimetres, reported_elsewhere, skipped_sentence,
+                         undo_line, undo_sent_elsewhere)
 from heron_failure import analyse, explain          # noqa: E402
 from heron_failure import RUNNING as RUNNING_OUTCOME   # noqa: E402
 from heron_failure import UNKNOWN as UNKNOWN_OUTCOME   # noqa: E402
@@ -160,8 +161,8 @@ from heron_server_core import (                             # noqa: E402
 # says where the label it gives `_ended` is not a word by itself. The table,
 # and the line a reply carries the word on, are the core's.
 from heron_server_core import (                             # noqa: E402
-    ANSWERED, _change_outcome, _failure_outcome, NOT_RUN, _outcome, _sent,
-    UNKNOWN)
+    ANSWERED, _change_outcome, _failure_outcome, KEPT, NOT_RUN, _outcome,
+    ROLLED_BACK, ROLLED_BACK_AS_ASKED, _sent, STILL_RUNNING, UNKNOWN)
 
 import anyio.from_thread                                   # noqa: E402 - the SDK's own dependency
 
@@ -1591,7 +1592,7 @@ def revit_change(capability: str = "", values: str = "",
     the call starts clean.
 
     It runs only while the owner has Changes ON, and a Publish or Admin
-    capability needs that switch on too. Only a PROVEN capability runs (Article 11, D-117): a DRAFT one,
+    capability needs its own switch too. Only a PROVEN capability runs (Article 11, D-117): a DRAFT one,
     or one whose proof is older than its code, is refused before anything is
     sent. A refusal names the switch or the status: tell the user, and never
     try another capability to get round it. Revit may ask Keep/Discard (D-126):
@@ -1719,17 +1720,32 @@ def revit_change(capability: str = "", values: str = "",
     # it may do, and every refusal below stands for it unchanged - the Changes
     # switch in the add-in, the PROVEN rule, the pin.
     #
-    # NOT FOR A PUBLISH OR AN ADMIN JOB. A rollback takes back what Revit's
-    # transactions hold and nothing else: an export, a save or a sync done
-    # inside the run is done (D-106, D-126 "Discard cannot take it back"). A
-    # dry run that left a file on the server would be the opposite of what
-    # its name promises, so those are refused here, before anything is read.
-    if dry_run and operation != "run_fragment_write":
-        return _ended("refused",
-                      "'%s' is a Publish or Admin job, and a dry run cannot take one "
-                      "back - an export, a save or a sync is done once it runs, and "
-                      "rolling the model back does not undo it. Nothing has been "
-                      "sent to Revit." % capability)
+    # ONLY FOR A JOB A ROLLBACK TAKES BACK WHOLE. A rollback returns what
+    # Revit's transactions hold and nothing else: an export, a save or a sync
+    # done inside the run is done (D-106, D-126 "Discard cannot take it
+    # back"), and so is a view opened, a tab closed or a family written to
+    # disk by a card declared EXECUTE. A dry run that left any of that behind
+    # would be the opposite of what its name promises, so those are refused
+    # here, before the code is read or a session is bound.
+    #
+    # BY THE CARD'S OWN RISK AND NEEDS, ASKED OF ONE RULE
+    # (heron_tools.dry_run_refusal). Until 2026-11-12 this tested the
+    # OPERATION's name, which is run_fragment_write for an EXECUTE card too:
+    # OPEN_FAMILY_FOR_EDITING, CLOSE_VIEW_TABS, ACTIVATE_DOCUMENT and OPEN_VIEW
+    # went to Revit and came back "tried ... and rolled back".
+    #
+    # AND THE DOOR THAT DOES RUN IT, WHERE THERE IS ONE. `_lookup_door` asks
+    # the doors themselves, so a card revit_show turns away for writing a file
+    # (row 5b-591) is never sent to a door that would refuse it too.
+    if dry_run:
+        card = os.path.join(root, "brain", "fragments", folder, "fragment.yaml")
+        risk = bridge.fragment_risk(card)
+        untriable = tools.dry_run_refusal(risk, bridge.fragment_needs(card), capability)
+        if untriable:
+            if _lookup_door(risk, capability, folder) == "revit_show":
+                untriable += (" revit_show runs it - with Changes off, and no "
+                              "transaction open.")
+            return _ended("refused", untriable)
 
     # ARTICLE 11: UNTESTED CODE NEVER TOUCHES A LIVE MODEL, and every call
     # here KEEPS what it does. So a fragment its own files do not call PROVEN,
@@ -1893,6 +1909,14 @@ def revit_change(capability: str = "", values: str = "",
                 + (elsewhere if failure.code == "write_disabled" else "")
                 + _late_answer(failure, args.get("requestId")))
 
+    # WHAT CAME FROM THE MODEL IS DATA, AT THIS DOOR AS AT THE OTHER TWO
+    # (heron_run_records.as_data, row 5b-1596). From here on every text in the
+    # reply is one line: the title in the opening sentence, the inputs line,
+    # the verdict, and each value, entry and item a fragment left. A value of
+    # one line reads exactly as it did. The read-back and the change report
+    # are encoded by their own printers.
+    reply = runs.as_data(reply)
+
     # GOLDEN RULE 20. An answer about a model the user is not looking at is
     # how the wrong building gets changed.
     #
@@ -1915,12 +1939,31 @@ def revit_change(capability: str = "", values: str = "",
         # THE OUTCOME LINE SAYS SO IN A WORD (row 5b-1159): not known. The
         # activity list is still told nothing, for the reason above.
         _outcome(UNKNOWN)
+        # A DRY RUN'S VERDICT, QUOTED WHOLE ABOVE, ENDS "Send it again with
+        # apply to keep it" - the add-in's word to its own callers. A chat
+        # has no `apply`, and after a run in the wrong model nothing is to
+        # be sent again at all.
+        if dry_run:
+            wrong_model += (" It was asked as a dry run: send nothing again on the "
+                            "add-in's \"with apply\" - that is its word to its own "
+                            "callers, not to a chat.")
         return wrong_model
 
     # THIS CALL'S PLACE IN THE BATCH, decided once the answer is in hand.
     _BATCH.turn(started, time.monotonic())
 
-    lines = [("DRY RUN: %s was tried in %s and rolled back." if dry_run
+    # A DRY RUN IS CALLED ROLLED BACK ONLY ON THE ADD-IN'S OWN VERDICT THAT ITS
+    # ROLLBACK HELD - read by the function that reads a Discard's, and a kept
+    # change's (`_change_outcome`). Until 2026-11-12 the two sentences this
+    # door adds - "was tried ... and rolled back" here, "so the model is as it
+    # was" below - were printed whatever the add-in said: above a verdict of
+    # THE ROLLBACK DID NOT HOLD, and above a verdict of KEPT, with the call
+    # labelled ok. The request asking for a rollback is not the rollback
+    # (RevitFragment.WithVerdict learned the same on 2026-09-09).
+    dry_held = dry_run and _change_outcome(reply) == ROLLED_BACK
+    lines = [("DRY RUN: %s was tried in %s and rolled back." if dry_held
+              else "DRY RUN NOT CONFIRMED: %s ran in %s, and Revit's Heron did not "
+                   "say its rollback held." if dry_run
               else "%s ran in %s.") % (capability, reply.get("document"))]
     never_saved = _never_saved_line(reply)
     if never_saved:
@@ -1973,7 +2016,18 @@ def revit_change(capability: str = "", values: str = "",
     # NOT PRINTED AGAIN (5b-407) - only within a batch, only word for word, and
     # only when the reply names a run record, where every value can be read.
     # NEVER A REFUSAL: one that repeats is printed every time (5b-1160).
-    shown, same = runs.shown_values(reply, capability, _BATCH)
+    #
+    # AND A DRY RUN IS OUTSIDE ALL OF IT. Its values are printed whole, and it
+    # is never remembered as "the last reply": a kept run straight after one
+    # printed "and N values unchanged from the last reply" - true word for
+    # word, and measured against a run Revit no longer holds, while the kept
+    # run's own values, the ones that describe what is in the model, were
+    # left out. A kept run after a dry run prints whole.
+    if dry_run:
+        _BATCH.forget(capability)
+        shown, same = reply.get("provides"), []
+    else:
+        shown, same = runs.shown_values(reply, capability, _BATCH)
     lines.extend(_provides_lines(shown, reply.get("providesEntries"), reply.get("providesItems"))
                  or ([""] if same else []))
     lines.extend(runs.unchanged_line(same))
@@ -1991,12 +2045,79 @@ def revit_change(capability: str = "", values: str = "",
     # carrying the undo rule unshortened - and this prints the paragraph on the
     # first kept change of a batch and the sentence on the rest. A rollback, an
     # unconfirmed one, or a reply without the short form prints whole, always.
+    #
+    # A DRY RUN'S IS PRINTED WHOLE, WHATEVER IT IS, and takes no part in the
+    # batch: if the add-in answered KEPT to a run sent without `apply`, that
+    # paragraph is the one thing the chat must read in full.
     if reply.get("verdict"):
         lines.append("")
-        lines.append(runs.verdict_line(reply, _BATCH))
+        lines.append(str(reply["verdict"]) if dry_run
+                     else runs.verdict_line(reply, _BATCH))
 
     # NO "NOT PROVEN" LINE HERE ANY MORE. It warned after the change was kept;
     # a fragment that is not PROVEN is now refused before it is sent (D-117).
+
+    # A DRY RUN ENDS HERE - BEFORE THE DISCARD'S BRANCH BELOW, WHICH IS FOR A
+    # RUN THAT ASKED TO KEEP - AND IT ENDS ONE OF TWO WAYS.
+    #
+    # ITS ROLLBACK HELD: how to keep it, said in this tool's words. The
+    # add-in's rollback verdict says "send it again with apply", and a chat
+    # has no `apply` to send. D-126's caution goes with it: a dry run is a
+    # question the chat asked for itself, NOT the modeller's approval - the
+    # kept run is a second run, still asked about in Revit or kept at once as
+    # the owner's Ask to Keep switch says, the model can have moved since this
+    # one, and its own counts are the ones that describe what was kept. No
+    # after-change table either - the values were used on a change Revit no
+    # longer holds.
+    #
+    # ANYTHING ELSE - the rollback did not hold, Revit did not confirm it, the
+    # add-in said KEPT or named no verdict: the add-in's verdict above is the
+    # reply. Nothing here says the model is as it was and nothing says how to
+    # keep it; the word is OUTCOME UNKNOWN, and the call ends failed.
+    if dry_run:
+        lines.append("")
+        if not dry_held:
+            unconfirmed = ("This was asked as a dry run, and Revit's Heron did not say "
+                           "its rollback held - so the change may be in the model. "
+                           "Look at the model before anything else is sent.")
+            # AN ADD-IN FROM BEFORE `verdictKind` CANNOT SAY IT HELD, so every
+            # dry run through it ends here. That is still the true word - this
+            # server cannot tell - and the reply says what may be behind it.
+            if not reply.get("verdictKind"):
+                unconfirmed += (" Its answer named no kind of verdict at all, which "
+                                "is what a Heron add-in older than this chat's sends: "
+                                "if the model is as it was, that Revit's add-in needs "
+                                "updating before a dry run can be confirmed.")
+            lines.append(unconfirmed)
+            _outcome(UNKNOWN)
+            return _ended("failed", "\n".join(lines))
+        closing = ("This was a dry run, so the model is as it was. A dry run is "
+                   "not approval: to keep the change, call revit_change again "
+                   "without dry_run - only when the user says to - and that run "
+                   "is still asked about in Revit, or kept at once, as the Ask to "
+                   "Keep switch says (revit_health tells which). It is a new run: "
+                   "read its own counts, because the model can have changed since "
+                   "this one.")
+        # WHAT THE DRY RUN DID TO WHAT WAS CARRIED (docs/36). The add-in
+        # remembers what EVERY run left, a rolled-back one included
+        # (RevitFragment.Remember), so after this call the chat's carried
+        # values are the dry run's: the kept call sent with the same
+        # expect_from would be refused (chain_mismatch), and one naming THIS
+        # capability would bind values of a change Revit no longer holds.
+        # Whether a rolled-back run should replace them at all is not decided
+        # anywhere (OPEN-QUESTIONS Q-89, row 5b-1612); until it is, the reply
+        # says what is true of the add-in as built.
+        if expect_from and expect_from.strip():
+            closing += (" This dry run used up what '%s' left: run that call again "
+                        "before the kept run, and send the same expect_from - sent "
+                        "as it is now, the kept run is refused, because what Revit's "
+                        "Heron carries was left by this dry run."
+                        % runs.one_line(expect_from.strip()))
+        closing += (" Take nothing from this dry run with expect_from: what it left "
+                    "is of a change Revit no longer holds.")
+        lines.append(closing)
+        _outcome(ROLLED_BACK, says=ROLLED_BACK_AS_ASKED)
+        return _ended("ok", "\n".join(lines))
 
     # THE MODELLER WAS ASKED IN REVIT AND DID NOT KEEP IT (D-126). The reply is
     # an ok one - the run worked, and the add-in's verdict already says nothing
@@ -2008,20 +2129,6 @@ def revit_change(capability: str = "", values: str = "",
         _outcome(_change_outcome(reply))
         return _ended("refused", "\n".join(lines))
 
-    # A DRY RUN ENDS HERE, WITH HOW TO KEEP IT SAID IN THIS TOOL'S WORDS. The
-    # add-in's rollback verdict says "send it again with apply", and a chat
-    # has no `apply` to send. D-126's caution goes with it: the kept run is a
-    # second run, the model can have moved since this one, and its own counts
-    # are the ones that describe what was kept. No after-change table either -
-    # the values were used on a change Revit no longer holds.
-    if dry_run:
-        lines.append("")
-        lines.append("This was a dry run, so the model is as it was. To keep the "
-                     "change, call revit_change again without dry_run - only when "
-                     "the user says to. That is a new run: read its own counts, "
-                     "because the model can have changed since this one.")
-        return _ended("ok", "\n".join(lines))
-
     # THE AFTER-CHANGE TABLE (docs/40 section 21.1): a settings change from
     # the chat leaves the values it used on the Companion page.
     if _from_chat() and _took(reply):
@@ -2030,7 +2137,18 @@ def revit_change(capability: str = "", values: str = "",
     # KEPT ONLY ON THE ADD-IN'S OWN VERDICT (row 5b-1159). The reply was `ok`
     # and the modeller did not say no - which is not yet "kept": an add-in
     # that names no verdict leaves that unknown, and the line says unknown.
-    _outcome(_change_outcome(reply))
+    ended = _change_outcome(reply)
+
+    # WHETHER HERON CAN STILL UNDO IT, on a change that WAS kept (D-157): one
+    # line, last, from what the add-in's undo guard held straight after the
+    # keep (`undoState`). An add-in from before the field sends none, and
+    # nothing is said - not guessed.
+    can_undo = undo_line(reply) if ended == KEPT else None
+    if can_undo:
+        lines.append("")
+        lines.append(can_undo)
+
+    _outcome(ended)
     return _ended("ok", "\n".join(lines))
 
 
@@ -3075,6 +3193,14 @@ def revit_read(capability: str = "", values: str = "",
         return (_ended(_failure_ended(failure), explain(failure))
                 + _what_to_type(failure, capability))
 
+    # WHAT CAME FROM THE MODEL IS DATA, AT THIS DOOR AS AT THE OTHER TWO
+    # (heron_run_records.as_data, row 5b-1596). From here on every text in the
+    # reply is one line: the title in the opening sentence, the inputs line,
+    # the verdict, and each value, entry and item a fragment left. A value of
+    # one line reads exactly as it did. The read-back and the change report
+    # are encoded by their own printers.
+    reply = runs.as_data(reply)
+
     # GOLDEN RULE 20, as revit_change keeps it: the add-in has already refused
     # a different model on `expectProject`; this is the first call's pin, and
     # the cover for an add-in too old to read the key.
@@ -3264,6 +3390,14 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
     if failure is not None:
         return (_ended(_failure_ended(failure), explain(failure))
                 + _what_to_type(failure, capability))
+
+    # WHAT CAME FROM THE MODEL IS DATA, AT THIS DOOR AS AT THE OTHER TWO
+    # (heron_run_records.as_data, row 5b-1596). From here on every text in the
+    # reply is one line: the title in the opening sentence, the inputs line,
+    # the verdict, and each value, entry and item a fragment left. A value of
+    # one line reads exactly as it did. The read-back and the change report
+    # are encoded by their own printers.
+    reply = runs.as_data(reply)
 
     # SAID FROM THE ADD-IN'S COUNT, as revit_read says it - row 5b-350. This
     # door runs on the same counted read path, so a run that moved the model
@@ -3469,50 +3603,141 @@ def revit_reset_temporary() -> str:
 
 
 @server.tool()
-def revit_undo_last() -> str:
+def revit_undo_last(check_only: bool = False) -> str:
     """
-    Undo Heron's LAST kept change in the model on screen - Revit's own Undo,
-    exactly as Ctrl+Z, never a second change made to reverse the first.
+    Undo Heron's LAST kept change in the model this chat works on - Revit's
+    own Undo, exactly as Ctrl+Z, never a second change made to reverse the first.
 
     Use ONLY when the user asks to undo or take back what Heron just did.
-    Revit's Undo takes the top of the undo list, so it is sent only while
-    Heron's last change is still on top: if anything was done after it - the
-    user's own edit, another Heron action, an undo, a sync - it is refused,
+    Revit's Undo takes whatever was done last, so it is sent only while Heron
+    has seen NOTHING change that model since its own change: after the user's
+    edit, another Heron action, an undo, a sync or a reload it is refused,
     nothing is undone, and the reply says why. Undoes one change, once; for
-    more, the user presses Ctrl+Z. Needs Changes ON.
+    more, the user presses Ctrl+Z. Needs Changes ON and that model on screen.
+
+    `check_only=true` sends nothing: it says whether Undo would be sent now and
+    for which change, or the exact refusal. It works with Changes off.
 
     The reply says Undo was SENT; Revit runs it right after. Ctrl+Y redoes it.
     """
     try:
         session = binding.resolve()
     except NotBound as unbound:
+        # NOT RUN: nothing judged the request - there was no one Revit to
+        # send it to. It was labelled a refusal alone until 2026-11-12.
+        _outcome(NOT_RUN)
         return _ended("refused", str(unbound))
 
-    # idempotent=False: if the answer is lost after the request left, whether
-    # Revit posted Undo cannot be known from here, and asking again could
-    # undo a second thing. The add-in's guard would refuse the second - this
-    # does not lean on it.
-    reply = session.request("undo_last",
-                            op_args={"expectProject": pinned.project_information_id or ""},
-                            idempotent=False)
+    # NO PIN, NO UNDO. The guard in the add-in remembers a MODEL's last kept
+    # change, not whose it was: a chat that has worked in no model has no
+    # change of its own there, and the one it would take is another chat's.
+    # D-157 refuses when "the pinned model is not that one" and is silent on
+    # a chat with no pin at all - so this refuses, and the question is
+    # recorded (OPEN-QUESTIONS). Before anything is sent.
+    if not pinned.is_pinned:
+        return _ended("refused",
+                      "This chat has not worked in a model yet, so there is no change of "
+                      "its own to undo, and Heron will not send Undo for a change it did "
+                      "not see this chat make. Nothing has been sent to Revit. Ctrl+Z in "
+                      "Revit undoes the last change, whoever made it.")
+
+    # THE PINNED MODEL, AS A KEPT CHANGE NAMES IT - its path, else its title,
+    # and the shared id (`_aim_at_pin`). The add-in finds that model among the
+    # open ones and posts Undo only when it IS the one on screen. The shared
+    # id alone was sent until 2026-11-12: every project started from one
+    # template carries the same one, and a family none (row 5b-1604).
+    args = {}
+    _aim_at_pin(args)
+    if check_only:
+        # A check only looks: it claims no model for this chat (D-141).
+        args["claim"] = "no"
+
+    # idempotent=False for the real one: if the answer is lost after the
+    # request left, whether Revit posted Undo cannot be known from here, and
+    # asking again could undo a second thing. The add-in's guard would refuse
+    # the second - this does not lean on it. A check sends nothing, so it may
+    # be asked again.
+    # FROM HERE THE REQUEST HAS LEFT (`_after_it_left`).
+    _sent()
+    # `undo_guarded`, NEVER `undo_last`: the first build of this tool answers
+    # that name by posting on its old rule (heron_tools.TOOLS says why). An
+    # add-in without the repair knows neither name here, and is never asked
+    # to post.
+    reply = session.request("undo_check" if check_only else "undo_guarded",
+                            op_args=args, idempotent=bool(check_only))
     session.close()
-    _ended_by_reply("revit_undo_last", reply)
 
-    if reply is None:
-        return ("Revit %s (session %s) did not answer, so whether Undo was sent cannot be "
-                "known from here. Look at Revit's undo list before asking again."
-                % (session.revit_version, session.pid))
+    where = "Revit %s, session %s" % (session.revit_version, session.pid)
+    failure = analyse(reply, writes=not check_only)
+    if failure is not None:
+        # THE WORD AND THE LABEL ARE heron_failure's: a refusal REFUSED, Revit
+        # busy or the model held NOT RUN, an answer lost OUTCOME UNKNOWN.
+        label = _failure_ended(failure)
+        if failure.code == "unknown_op":
+            # AN ADD-IN WITHOUT THE REPAIR - from before D-157, or its first
+            # build - ANSWERS "Heron has no operation called ..." and lists
+            # the ones it has, said to a modeller raw until 2026-11-12. In
+            # Revit's words: that Revit's Heron is older than this chat's,
+            # and nothing was sent.
+            return _ended(label,
+                          "The Heron add-in in %s is older than this chat's Heron and "
+                          "cannot %s. Nothing was sent to Revit and nothing was undone. "
+                          "Ctrl+Z in Revit undoes the last change, whoever made it - the "
+                          "arrow beside the Undo button shows what that is. Updating "
+                          "Heron in that Revit adds this."
+                          % (where, "check this" if check_only
+                             else "safely send Undo for Heron's last change"))
+        if reply is None:
+            return _ended(label,
+                          ("%s did not answer the check. A check sends nothing to "
+                           "Revit's Undo." if check_only else
+                           "%s did not answer, so whether Undo was sent cannot be known "
+                           "from here. Look at the model, and at the arrows beside "
+                           "Revit's Undo and Redo buttons, before asking again.")
+                          % where)
+        said = explain(failure)
+        if not check_only and failure.touched_the_model is None:
+            said += ("\nWhether Undo was sent is not known. If it was, Revit has run it "
+                     "by now: look at the arrows beside Revit's Undo and Redo buttons.")
+        return _ended(label, said)
 
-    if not reply.get("ok"):
-        return reply.get("message") or reply.get("error") or "The request was refused."
+    # GOLDEN RULE 20, AFTER THE ACT - and so never "Nothing has been sent to
+    # Revit" (row 5b-1604, the pattern row 5b-1135 set for revit_change). The
+    # add-in answered ok: for the real call it POSTED Undo. Today's add-in
+    # refuses another model before it posts, so this is reached only behind
+    # one that does not - and there the reply says plainly that Undo was sent,
+    # and in which model. How that ended in the model is not known.
+    if check_only:
+        wrong_model = pinned.check(reply, unsent="Nothing was sent to Revit's Undo: "
+                                                 "this was only a check.")
+        if wrong_model is not None:
+            return _ended("refused", wrong_model)
+        _outcome(ANSWERED)
+        return _ended("ok", "%s (%s, %s)" % (
+            reply.get("said") or ("Undo would be sent." if reply.get("wouldSend")
+                                  else "Undo would not be sent."),
+            reply.get("document"), where))
 
-    wrong_model = pinned.check(reply)
+    wrong_model = pinned.check(reply, did=undo_sent_elsewhere(reply))
     if wrong_model is not None:
-        return _ended("refused", wrong_model)
+        _outcome(UNKNOWN)
+        return _ended("failed", wrong_model)
 
-    return "%s (%s, Revit %s, session %s)" % (
-        reply.get("said") or "Undo was sent.", reply.get("document"),
-        session.revit_version, session.pid)
+    # AN `ok` THAT DOES NOT SAY IT SENT is not read as one that did: the word
+    # below is said only of the add-in's own `sent`.
+    if reply.get("sent") is not True:
+        _outcome(UNKNOWN)
+        return _ended("failed",
+                      "The Heron add-in in %s answered without saying whether Undo was "
+                      "sent, so Heron cannot tell. Look at the model, and at the arrows "
+                      "beside Revit's Undo and Redo buttons, before asking again." % where)
+
+    # SENT, NOT DONE: Revit runs a posted command after this reply. STILL
+    # RUNNING is the word for that - Revit took it and has not finished; do
+    # not send it again.
+    _outcome(STILL_RUNNING)
+    return _ended("ok", "%s (%s, %s)" % (
+        reply.get("said") or "Revit's own Undo was sent.", reply.get("document"), where))
 
 
 @server.tool()

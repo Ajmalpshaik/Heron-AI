@@ -1527,3 +1527,103 @@ a safer file.
 steps where they bite.
 
 ---
+
+### 🔵 Q-88 — Heron remembers a MODEL's last kept change, not which chat kept it. May one chat undo a change another chat made? *(found 2026-11-12 repairing `revit_undo_last`)*
+
+**What was found.** `revit_undo_last` ([D-157](../decisions/D-157.md)) sends Revit's own Undo for Heron's
+last kept change in a model. The add-in's guard keeps one entry per model - the job, its undo entry, the
+time - and nothing about which chat asked for it. D-157 item 3 refuses when *"the pinned model is not that
+one"*; it says nothing of a chat that has no pinned model, or of two chats in one model. **Built, as the
+cautious reading:** a chat that has worked in no model is refused before anything is sent - it has no
+change of its own there ([row 5b-1604](../fragment-issues/row-5b-1604.md)). **Still possible:** a chat
+that has only *read* a model, or was moved onto it with *use this model*, is pinned to it - and can undo
+the last change another chat kept there, once that chat's hold on the model has lapsed
+([D-141](../decisions/D-141.md)). Nothing is taken that is not Heron's: the guard's other rules stand.
+The question is only whose Heron change.
+
+**The question, in a modeller's words: when you ask a chat to undo what Heron did, may it undo something a
+different chat did?**
+
+1. **Yes - any chat working on the model.** It is your Revit and your undo list; a second chat is still
+   you. **Cost:** *"undo that"* typed into the wrong chat window takes back the other chat's change, and
+   the reply names the job, so you find out after.
+2. **No - only the chat that kept it.** The add-in records which chat kept the change, and another chat
+   is refused: *"another chat made Heron's last change here; press Ctrl+Z, or ask in that chat"*. **Cost:**
+   after closing the chat that made a change, no new chat can undo it for you - Ctrl+Z still does, exactly
+   as today. It needs the add-in rebuilt, one field in the guard and its tests.
+
+**Shape 2 is recommended** - it keeps *"its own last change"* true of the chat as well as of Heron, and
+what it costs is one keystroke. It was not built: D-157 does not say it.
+
+**Ajmal PS decides.** Until he does: a chat pinned to no model is refused, and a chat pinned to the model
+can undo Heron's last change there, whichever chat kept it. None of it has run in Revit
+([NEEDS-CHECKING Group NU](../needs-checking/group-nu.md)).
+
+---
+
+### 🔵 Q-89 — After a run that was rolled back - a dry run, a proof, a Discard - should what the chat had carried stay as it was, or become what that run left? *(found 2026-11-12 in review of the dry run)*
+
+**What was found.** A chat hands one call's result to the next with `expect_from`
+([docs/36](../36-remembering-between-steps.md)): *find the ducts*, then *change them, expecting what the find
+left*. The add-in remembers what each run left, and it does so after **every** run - one that was kept, and
+one that was rolled back ([`RevitFragment.cs`](../../revit/Heron.Revit.Addin/RevitFragment.cs), `Remember`).
+Until [D-155](../decisions/D-155.md) only the proving tools and a Discard rolled a run back. A chat can now
+ask for a dry run, and then:
+
+- **The dry run uses up what the find left.** The kept call sent straight after, with the same
+  `expect_from`, is refused - what is carried was left by the dry run, not by the find.
+- **What the dry run left can be named.** A call with `expect_from` naming the dry run's capability would be
+  given its values - the ids of elements it made among them - from a change Revit no longer holds.
+
+Read off the code, **not run in Revit** ([row 5b-1612](../fragment-issues/row-5b-1612.md),
+[Group NT](../needs-checking/group-nt.md) NT11). The reply now says both, in words: run the find again
+before the kept run, and take nothing from a dry run. Nothing refuses it.
+
+**The question, in a modeller's words: after Heron tries a change and takes it back, should it still
+remember what it had found before the try?**
+
+1. **Yes - a run that was rolled back leaves what was carried alone.** The find's result is still there for
+   the kept run, and nothing a rolled-back run made can be handed on. **Cost:** a change to the add-in -
+   a rebuild and a Revit restart on every release - and it changes a Discard and every proof's rollback the
+   same way. A proof arranged by hand as *run a change rolled back, then read what it left* would stop
+   working; none was found in the proving tools, which arrange a chain inside one request or re-make it for
+   each phase, but the PC's own hand-run records were not all read.
+2. **No - as built.** Every run replaces what is carried, and the reply says to run the find again. **Cost:**
+   one more call for the chat on every dry run that used `expect_from`, and the second hazard stays a
+   sentence, not a refusal.
+3. **As built, and the add-in refuses `expect_from` naming a run that was rolled back.** Closes the second
+   hazard and leaves the first as in 2. **Cost:** the same rebuild as 1, and one more refusal to explain.
+
+**Nothing is recommended.** Shape 1 is what a modeller would expect; whether any recorded proof leans on the
+present behaviour is the one fact that decides it, and that needs the PC.
+
+**Ajmal PS decides.** Until he does the add-in is as it was, and the dry run's reply says what it does.
+
+---
+
+### 🔵 Q-90 — A QA check with 501 to 5,000 failing elements: should Select in Revit select them in batches, refuse, or stay as built - "the first 500 of N"? *(found 2026-11-12 in review of #866)*
+
+**What was found.** [D-158](../decisions/D-158.md) sends a check's failing ids whole - up to the add-in's
+`IdsSentPerList`, 5,000 - so that *Select in Revit* takes every one. But Select goes through the Model
+Dashboard's route, which sends at most `DASHBOARD_SELECT_MOST`, 500, ids at once. Between 501 and 5,000 the
+button reads *Select the first 500 of N* and selects part of what failed - honestly labelled, but against
+D-158's own *"Select works on every one"* and the rule it keeps, that part of what failed is never selected
+([row 5b-1621](../fragment-issues/row-5b-1621.md)). Read off the code and a stand-in, **not run in Revit**
+([Group NV](../needs-checking/group-nv.md) NV14).
+
+**The question, in a modeller's words: when a check finds 2,000 failing elements, what should the Select
+button do?**
+
+1. **Select all of them, sent to Revit in batches of 500.** **Cost:** several reads in a row under one
+   press, and a selection that grows batch by batch; whether Revit's selection takes thousands at once at a
+   usable speed is not known until it is run.
+2. **Offer no Select past 500, and say why** - as past 5,000 today. **Cost:** the modeller copies the ids
+   and uses Select by ID, or narrows the check.
+3. **As built** - select the first 500 and say so. **Cost:** a partial Select, which the rule forbids.
+
+**Nothing is recommended.** Shape 1 is what D-158 promised; its speed is the one fact that decides it, and
+that needs the PC.
+
+**Ajmal PS decides.** Until he does, the button says *the first 500 of N*, as built.
+
+---

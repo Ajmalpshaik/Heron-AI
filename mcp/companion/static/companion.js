@@ -2485,10 +2485,14 @@ function qaCsv(R) {
     if (/^[=+\-@\t\r]/.test(t)) t = "'" + t;
     return '"' + t.replace(/"/g, '""') + '"';
   };
-  const lines = [["#", "Check", "Capability", "Rule", "Value", "Result", "Since last run", "Severity", "Clause",
-                  "Why", "To fix", "Element ids"].map(cell).join(",")];
+  // "Since last run" is never blank for a check: NOT COMPARED and "met both
+  // times" are two different things (row 5b-1617), and "Compared with" is the
+  // run's own sentence - which run it was compared with, or why it was not.
+  const compared = (R.history || {}).said || "";
+  const lines = [["#", "Check", "Capability", "Rule", "Value", "Result", "Since last run", "Compared with",
+                  "Severity", "Clause", "Why", "To fix", "Element ids"].map(cell).join(",")];
   (R.rows || []).forEach(r => lines.push([r.n, r.sentence, r.capability, r.rule, r.shown, r.label,
-                                           r.changeLabel || "", r.severity || "", r.clause || "",
+                                           qaSince(r), compared, r.severity || "", r.clause || "",
                                            [r.why, r.changeWhy].filter(Boolean).join(" "), r.advice || "",
                                            (r.ids || []).join(";")].map(cell).join(",")));
   const blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
@@ -2508,12 +2512,21 @@ function qaBadge(state, label) {
 
 // What changed since the last run on this model - the brain's words and key;
 // the page only picks the badge's colour: new is a failure, fixed a pass, and
-// still open or not compared need a look.
-function qaChange(r) {
-  if (!r.changeLabel) return el("span", "muted small", r.change === "" && r.state === "pass" ? "—" : "");
+// still open or not compared need a look. A row the brain compared and found
+// unchanged has no label, and reads "met both times" in words - never a dash
+// a row that was not compared at all could also show (row 5b-1617).
+const QA_SAME = "met both times";
+
+function qaSince(r) {
+  if (r.changeLabel) return r.changeLabel;
+  return r.change === "" && r.state === "pass" ? QA_SAME : "";
+}
+
+function qaChange(r, why) {
+  if (!r.changeLabel) return el("span", "muted small", qaSince(r));
   const cls = r.change === "new" ? "fail" : r.change === "fixed" ? "ok" : "warn";
   const badge = el("span", "badge " + cls, r.changeLabel);
-  if (r.changeWhy) badge.title = r.changeWhy;
+  if (r.changeWhy || why) badge.title = r.changeWhy || why;
   return badge;
 }
 
@@ -2559,7 +2572,7 @@ function qaResult(R) {
     const result = el("td");
     result.append(qaBadge(r.state, r.label));
     const change = el("td");
-    change.append(qaChange(r));
+    change.append(qaChange(r, (R.history || {}).said));
     const why = el("td", "q-why");
     if (r.why) why.append(el("span", null, r.why));
     if (r.changeWhy) why.append(el("span", "q-cap", r.changeWhy));
@@ -2593,6 +2606,12 @@ function qaResult(R) {
     li.append(qaChange({ change: c.key, changeLabel: c.label }), el("span", null, " " + c.means));
     legend.append(li);
   });
+  if ((R.changes || []).length) {
+    const same = el("li");
+    same.append(el("span", "muted small", QA_SAME),
+                el("span", null, " compared with the last run on this model, and met the value checked both times"));
+    legend.append(same);
+  }
   sec.append(legend);
   return sec;
 }

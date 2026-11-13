@@ -421,7 +421,11 @@ namespace Heron.Revit.Addin
                     // A move adds nothing, so there is no note to carry: the
                     // move's reply has no verdict, and KeepAndWatch's only words are
                     // about a job kept before this one.
-                    RevitFragment.KeepAndWatch(group, doc, watch);
+                    //
+                    // WHAT IT COUNTED, for the undo guard (D-157): the elements
+                    // verified to have moved, wholly or partly. A move that
+                    // shifted none is not offered to `undo_guarded`.
+                    RevitFragment.KeepAndWatch(group, doc, watch, reallyMoved + partly, true);
                 }
                 catch (Exception ex)
                 {

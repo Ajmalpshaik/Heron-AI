@@ -289,6 +289,55 @@ def main():
     check(not reads, "and the read tools hand it nothing: theirs is the pin's own "
           "sentence - %s" % (reads or "none does"))
 
+    # --- D-157: REVIT'S UNDO SENT IN ANOTHER MODEL IS SAID TO HAVE BEEN SENT ---
+    print()
+    print("After revit_undo_last, the refusal says Undo WAS sent, and where (D-157)")
+    undone = getattr(WRITE, "undo_sent_elsewhere", None)
+    check(undone is not None, "heron_write has revit_undo_last's own sentence")
+    posted = {"document": "Annexe", "documentPath": r"C:\jobs\Annexe.rvt",
+              "projectKey": READ_REPLY.get("projectKey"), "sent": True,
+              "undoing": "rename-views"}
+    did = undone(posted) if undone is not None else "Nothing has been sent to Revit."
+    check("Revit's Undo WAS SENT" in did and "Annexe" in did and "'rename-views'" in did
+          and "Ctrl+Y" in did and "Nothing has been sent" not in did,
+          "it says Undo was sent, in which model, for which job the add-in named, and "
+          "how to put it back: %s" % did[:160])
+    pin = DocumentPin()
+    pin.check(dict(READ_REPLY, documentPath=r"C:\jobs\Tower.rvt"))
+    try:
+        after = pin.check(posted, did=did)
+    except TypeError:
+        after = pin.check(posted)
+    check(after is not None and "Revit's Undo WAS SENT" in after
+          and "Nothing has been sent to Revit" not in after
+          and "will not change a model you did not point it at" not in after,
+          "two models from ONE TEMPLATE share the Project Information id, and are still "
+          "told apart by path - the refusal carries that sentence, and no promise that "
+          "nothing was changed")
+    body = server_text[server_text.find("\ndef revit_undo_last("):]
+    body = body[:body.find("\n@server.tool()")]
+    check("pinned.check(reply, did=undo_sent_elsewhere(reply))" in body
+          and "_aim_at_pin(args)" in body and "if not pinned.is_pinned:" in body,
+          "revit_undo_last hands the pin that sentence, names the pinned model as "
+          "revit_change does, and refuses a chat with no pin - read as text")
+    line = getattr(WRITE, "undo_line", None)
+    check(line is not None, "heron_write has the kept reply's undo line")
+    if line is not None:
+        check("revit_undo_last" in (line({"undoState": "onTop"}) or "")
+              and "Nothing to take back" in (line({"undoState": "nothing"}) or "")
+              and "cannot take this back itself" in (line({"undoState": "unsure"}) or ""),
+              "one line for each state the add-in's guard can hold after a keep")
+        why = line({"undoState": "unsure", "undoWhy": "an Undo Heron sent earlier has not "
+                    "been seen to run; it may still run and take this change"}) or ""
+        check("an Undo Heron sent earlier has not been seen to run" in why
+              and "missed something" not in why and "\n" not in why,
+              "an unsure state says the add-in's own reason when it gives one - an Undo "
+              "still outstanding is said as that")
+        check(line({}) is None and line({"undoState": "something new"}) is None
+              and line(None) is None,
+              "and none for a reply that names no state, or one this side does not know - "
+              "nothing is guessed")
+
     print()
     print("A fragment reply cannot smuggle a write into a differently-named model")
     pin = DocumentPin()

@@ -66,6 +66,12 @@ MCP SDK, so CI runs it:
      (its contract takes `linkName`) goes through with no question first -
      counted over the library. And its wiring, read as text, in the order
      revit_read keeps.
+ 13. WHAT A DRY RUN MAY BE ASKED OF (D-155, 2026-11-12). A rollback takes
+     back what Revit's transactions hold and nothing else, so
+     `heron_tools.dry_run_refusal` turns away a card declared EXECUTE,
+     PUBLISH or ADMIN and any card that declares `noTransactionOpen` -
+     every outcome, and over the whole library - and revit_change asks it
+     before a session is bound.
 
 WHAT IT CANNOT DO
 -----------------
@@ -534,6 +540,99 @@ def change_floor(text, door_refusal):
           "and its closing sentence names revit_read whenever one listed is a read")
 
 
+def dry_run_floor(text):
+    """
+    13. WHAT A DRY RUN MAY BE ASKED OF (D-155, the review of 2026-11-12).
+    `revit_change(dry_run=true)` runs a change and rolls it back, and a
+    rollback takes back what Revit's transactions hold and nothing else. The
+    door refused only a Publish or Admin job, so an EXECUTE card - a view
+    opened, a tab closed, a family written to disk - went to Revit and came
+    back "tried ... and rolled back". `dry_run_refusal` is the rule: pure,
+    so every outcome runs here and over the library; the wiring is read as
+    text, and the call through a real SDK is tests/test_mcp_serves.py's.
+    """
+    print()
+    print("13. A dry run only of what a rollback takes back (D-155)")
+    refusal = getattr(TOOLS, "dry_run_refusal", None)
+    check(refusal is not None, "heron_tools has a dry_run_refusal to ask")
+    if refusal is None:
+        # So everything under it still RUNS and FAILS (heron-ship 2a).
+        def refusal(_declared, _needs, _capability):
+            return None
+    need = getattr(TOOLS, "NO_TRANSACTION_NEED", None)
+    executor = read(FRAGMENT_CS)
+    check(need is not None
+          and 'NoTransactionNeed = "%s"' % need in executor,
+          "and names the need a card declares to run with no transaction open, in the "
+          "add-in's own spelling - found %r" % (need,))
+    plain = [{"name": "document", "type": "Document"}]
+    none_open = plain + [{"name": need or "noTransactionOpen", "type": "bool"}]
+
+    check(refusal("MODIFY", plain, "RENAME_VIEWS") is None,
+          "a MODIFY card that opens nothing of its own may be tried")
+    for word in ("EXECUTE", "PUBLISH", "ADMIN"):
+        said = refusal(word, plain, "SOME_JOB") or ""
+        check(bool(said) and "Nothing has been sent to Revit" in said and "SOME_JOB" in said,
+              "a card declared %s is refused as a dry run, and the refusal says nothing "
+              "was sent: %s" % (word, said[:90]))
+        check(refusal(word.lower(), plain, "X") is not None,
+              "whatever the case its risk word is written in (%s)" % word.lower())
+    said = refusal("MODIFY", none_open, "SOME_JOB") or ""
+    check(bool(said) and "Nothing has been sent to Revit" in said
+          and (need or "noTransactionOpen") in said,
+          "a card that declares %s is refused whatever its risk - nothing it does is "
+          "inside a transaction to roll back: %s" % (need, said[:90]))
+    check(refusal(None, plain, "X") is not None and refusal("banana", plain, "X") is not None,
+          "a risk nobody can read is refused - never guessed to be something a rollback "
+          "takes back")
+    check(refusal("MODIFY", None, "X") is not None,
+          "and so is a card whose needs cannot be read")
+    check("dry run cannot take one back" in (refusal("PUBLISH", plain, "X") or ""),
+          "a Publish or Admin job keeps the sentence D-155 gave it")
+    check(all("revit_show" not in (refusal(word, plain, "X") or "")
+              for word in ("EXECUTE", "PUBLISH", "ADMIN")),
+          "the rule names no other door - which door runs an EXECUTE card is the "
+          "server's to say, card by card (row 5b-591)")
+
+    # OVER THE LIBRARY: every card a rollback cannot take back is refused,
+    # and every MODIFY card that declares nothing of the kind may be tried.
+    tried, turned, wrong = [], [], []
+    for name in sorted(os.listdir(FRAGMENTS)):
+        card = os.path.join(FRAGMENTS, name, "fragment.yaml")
+        if not os.path.isfile(card):
+            continue
+        risk = CLIENT.fragment_risk(card)
+        needs = CLIENT.fragment_needs(card)
+        level = TOOLS.level_named(risk)
+        if level is None or level < TOOLS.EXECUTE:
+            continue                    # below_refusal's, or risk_refusal's
+        declares = any(n.get("name") == (need or "noTransactionOpen") for n in needs or [])
+        said = refusal(risk, needs, card_line(card, "capability") or name)
+        expected = level != TOOLS.MODIFY or declares or needs is None
+        if bool(said) != expected:
+            wrong.append("%s (%s)" % (name, risk))
+        (turned if said else tried).append(name)
+    check(not wrong,
+          "over the library: EXECUTE, PUBLISH, ADMIN and every card declaring %s are "
+          "refused, every other MODIFY card may be tried (%d refused, %d may be tried) - "
+          "wrong: %s" % (need, len(turned), len(tried), ", ".join(wrong[:5]) or "none"))
+    for name in ("open-view", "open-family-for-editing", "close-view-tabs",
+                 "activate-document", "open-render-dialog"):
+        check(name in turned, "%s is among the refused" % name)
+
+    body = body_of(text, "revit_change") or ""
+    asked = body.find("tools.dry_run_refusal(")
+    level = body.find("bridge.risk_refusal(")
+    bound = body.find("binding.resolve(")
+    left = body.find("_sent()")
+    check(asked > 0, "revit_change asks the rule")
+    check(0 < level < asked < bound and asked < left,
+          "after risk_refusal, and before a session is bound or anything is sent")
+    check('operation != "run_fragment_write"' not in body,
+          "and no longer decides it by the operation's name, which is "
+          "run_fragment_write for an EXECUTE card too")
+
+
 def main():
     # ASK BEFORE CALLING - heron-ship 2a. On the code as it stood these names
     # do not exist, and a traceback would replace every failure below.
@@ -962,6 +1061,7 @@ def main():
 
     show_door(text, cs, door_refusal)
     change_floor(text, door_refusal)
+    dry_run_floor(text)
 
     print()
     if FAILURES:

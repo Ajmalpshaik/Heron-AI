@@ -879,15 +879,19 @@ namespace Heron.Revit.Addin
                         // A run the clock stopped part way is the likeliest
                         // way to leave a transaction open, so it is said - the
                         // advice is the same.
+                        //
+                        // D-157: NEITHER KEPT NOR ROLLED BACK. Whatever this job
+                        // committed sits on the undo list, heard as its own, so
+                        // the undo guard is told before the reply goes (LeftOpen).
                         if (target.IsModifiable)
                         {
-                            return Json.Error("operation_failed",
+                            return LeftOpen(target, name, Json.Error("operation_failed",
                                 "'" + name + "' left a transaction of its own open, so Heron "
                                 + "cannot keep or roll back its work. Press Undo in Revit and "
                                 + "look at the model before trusting it."
                                 + (HeronRunClock.Tripped
                                     ? " It had been stopped part way: it " + HeronRunClock.Why
-                                    : ""));
+                                    : "")));
                         }
                         if (HeronRunClock.Tripped) return ClockStopped(name, RollBackAndCheck(group, target, watch));
                         if (threw != null)
@@ -1085,7 +1089,12 @@ namespace Heron.Revit.Addin
                     // rather than leaving the inner transaction visible as its
                     // own. Rolling back instead is what makes the default a
                     // preview - and what a Discard does.
-                    if (apply) keptNote = KeepAndWatch(group, target, watch);
+                    if (apply) keptNote = KeepAndWatch(group, target, watch,
+                                   // WITH WHAT REVIT COUNTED IN IT, for the undo guard
+                                   // (D-157): a job it counted nothing in left no
+                                   // entry to undo.
+                                   described == null ? 0 : described.Total,
+                                   described != null && described.Unreadable == 0);
                     else
                     {
                         rolledBack = RollBackAndCheck(group, target, watch);
@@ -1128,6 +1137,10 @@ namespace Heron.Revit.Addin
                                       nothingToAsk,
                                       answered != null && answered != Keep && answered != RestOfJob,
                                       selectionRestored, keptUnderGrant, keptNothing, described);
+
+            // D-157: WHETHER HERON CAN STILL UNDO WHAT IT JUST KEPT, as the
+            // guard holds it now - a field, for the chat's one line.
+            if (apply) verdict = WithUndoState(verdict, target);
 
             // D-156: BEFORE AND AFTER, on a change that was kept or a run nobody
             // was asked about. Never on a Discard: what it would have changed is
@@ -2605,15 +2618,28 @@ namespace Heron.Revit.Addin
                                                                       HeronRollbackWitness.Watch watch)
         {
             var reported = SafeRollBack(group);
+            HeronRollbackWitness.Outcome after;
             try
             {
-                return Witness.RolledBack(watch, reported, Resolver(doc));
+                after = Witness.RolledBack(watch, reported, Resolver(doc));
             }
             catch (Exception ex)
             {
                 HeronApplication.Log("Rollback check could not run: " + ex.Message);
-                return new HeronRollbackWitness.Outcome(reported);
+                after = new HeronRollbackWitness.Outcome(reported);
             }
+
+            // D-157: A ROLLBACK THAT DID NOT HOLD, OR THAT TOOK KEPT WORK WITH
+            // IT, leaves Revit's undo list in a state Heron cannot vouch for -
+            // this job's commits were heard as its own and covered nothing. So
+            // the undo guard stops saying an older keep is next (row 5b-1607).
+            if (!after.Held || after.Lost > 0)
+            {
+                RevitUndo.Doubt(doc, "a rollback of Heron's job"
+                    + (watch == null ? "" : " '" + watch.Job + "'")
+                    + (after.Held ? " took earlier kept work with it" : " did not hold"));
+            }
+            return after;
         }
 
         /// <summary>
@@ -2624,17 +2650,44 @@ namespace Heron.Revit.Addin
         ///
         /// ONLY A GROUP REVIT SAYS IT COMMITTED IS WATCHED. Returns what the
         /// start of the job found to say about the job kept before it.
+        ///
+        /// `counted` IS HOW MANY ELEMENTS REVIT COUNTED ADDED, CHANGED OR
+        /// DELETED IN THE JOB, and `read` whether every change it reported was
+        /// read - for the undo guard (D-157, row 5b-1603). A job Revit counted
+        /// nothing in left no undo entry Heron can vouch for: one that runs
+        /// with no transaction (`noTransactionOpen`), or a MODIFY that changed
+        /// nothing. Telling the guard "kept" for those made the next Undo take
+        /// whatever the modeller did before it.
         /// </summary>
         internal static string KeepAndWatch(TransactionGroup group, Document doc,
-                                            HeronRollbackWitness.Watch watch)
+                                            HeronRollbackWitness.Watch watch,
+                                            int counted, bool read)
         {
-            if (group.Assimilate() != TransactionStatus.Committed) return "";
+            if (group.Assimilate() != TransactionStatus.Committed)
+            {
+                // Neither kept nor rolled back, as far as Revit said: what is
+                // on the undo list now is not something Heron can vouch for.
+                RevitUndo.Doubt(doc, "Revit did not report Heron's job"
+                    + (watch == null ? "" : " '" + watch.Job + "'") + " kept");
+                return "";
+            }
 
-            // D-157: THIS JOB'S ENTRY IS THE TOP OF THE UNDO LIST NOW. Said after
-            // Assimilate returned, so whatever Revit reported while assimilating
-            // was heard as this job's own (the witness is still armed).
-            try { if (watch != null) Undo.Kept(watch.Document, watch.Job, watch.Label, DateTime.Now); }
-            catch (Exception ex) { HeronApplication.Log("Undo guard missed a keep: " + ex.Message); }
+            // D-157: WHAT THE GUARD IS TOLD OF THIS KEEP. Said after Assimilate
+            // returned, so whatever Revit reported while assimilating was
+            // heard as this job's own (the witness is still armed). A keep the
+            // guard cannot be told of is a change it cannot account for, so
+            // every model it remembers refuses (row 5b-1607).
+            try
+            {
+                var key = watch == null || watch.Document == null ? WitnessKey(doc) : watch.Document;
+                Undo.Kept(key, watch == null ? null : watch.Job, watch == null ? null : watch.Label,
+                          DateTime.Now, counted, read);
+            }
+            catch (Exception ex)
+            {
+                HeronApplication.Log("Undo guard missed a keep: " + ex.Message);
+                RevitUndo.Doubt(null, "Heron could not record a job it kept");
+            }
 
             try
             {
@@ -3687,9 +3740,10 @@ namespace Heron.Revit.Addin
         /// </summary>
         private static string WitnessKey(Document doc)
         {
-            // ONE KEY FOR BOTH WATCHERS: the undo guard (D-157) keys the same
-            // models, and is told by HeronApplication without naming this class.
-            return RevitUndo.KeyOf(doc);
+            // ONE KEY, ONE OWNER: the undo guard (D-157), the keep grant and the
+            // model hold key the same models by it, and HeronApplication asks
+            // it without naming this class. RevitUndo carried a third copy.
+            return RevitOperations.DocumentKey(doc);
         }
 
         /// <summary>
@@ -3797,12 +3851,18 @@ namespace Heron.Revit.Addin
         /// One DocumentChanged, told to the undo guard. A commit while Heron's
         /// own job is armed in the same model is the job's own - inside its
         /// group - and covers nothing. Nothing escapes into Revit's event.
+        ///
+        /// A CHANGE IT COULD NOT READ IS NOT IGNORED (row 5b-1607). It only
+        /// logged the failure once, and the guard went on saying nothing had
+        /// changed. Now the model it happened in - every model, when even that
+        /// could not be read - refuses from then on.
         /// </summary>
         private static void HearForUndo(Autodesk.Revit.DB.Events.DocumentChangedEventArgs e)
         {
+            string key = null;
             try
             {
-                var key = WitnessKey(e.GetDocument());
+                key = WitnessKey(e.GetDocument());
                 var armed = Witness.Armed;
                 var ours = armed != null && armed.Document == key;
                 var names = e.GetTransactionNames();
@@ -3822,7 +3882,43 @@ namespace Heron.Revit.Addin
             catch (Exception ex)
             {
                 HeronApplication.Log("Undo guard missed a change: " + ex.Message);
+                try { Undo.Doubt(key, "Heron could not read a change Revit reported here"); }
+                catch (Exception) { }
             }
+        }
+
+        /// <summary>
+        /// The reply for a job that left a transaction of its own open - its
+        /// group neither kept nor rolled back - with the undo guard told
+        /// first (D-157, row 5b-1607): what is on the undo list now is not
+        /// something Heron can vouch for, so an older keep is no longer
+        /// offered to `undo_guarded`. The reply itself is handed back unchanged.
+        /// </summary>
+        private static string LeftOpen(Document target, string name, string reply)
+        {
+            RevitUndo.Doubt(target, "Heron's job '" + name + "' left a transaction of its own open");
+            return reply;
+        }
+
+        /// <summary>
+        /// A kept reply with what the undo guard holds for the model straight
+        /// after the keep, as `undoState` - "onTop" when Heron can send Revit's
+        /// Undo for this change while nothing else changes the model, "nothing"
+        /// when Revit counted nothing in it, "unsure" otherwise. The chat's
+        /// revit_change says one line from it, and nothing when an add-in
+        /// from before this field sends none (D-157).
+        /// </summary>
+        private static string WithUndoState(string verdict, Document doc)
+        {
+            var state = RevitUndo.StateOf(doc);
+            if (state == null || string.IsNullOrEmpty(verdict)
+                || !verdict.EndsWith("}", StringComparison.Ordinal))
+                return verdict;
+            // AND THE GUARD'S OWN REASON WHEN IT IS UNSURE, so the chat says what
+            // it is - an Undo still outstanding above all - and not a guess.
+            var why = RevitUndo.WhyOf(doc);
+            return verdict.Substring(0, verdict.Length - 1) + "," + Json.Str("undoState", state)
+                 + (string.IsNullOrEmpty(why) ? "" : "," + Json.Str("undoWhy", why)) + "}";
         }
 
         /// <summary>

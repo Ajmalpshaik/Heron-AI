@@ -85,7 +85,7 @@ They fall into five groups:
 |---|---|---|
 | **Read the model** | Answers questions and changes nothing — views, sheets, schedules, families, levels, rooms, systems, parameters, links, imports, phases, worksets, groups, annotation | `revit_read` and the `revit_views`, `revit_sheets`, `revit_systems`… family, and `revit_model_dashboard` for the whole model on the Companion page |
 | **Show on screen** | Selects, zooms, isolates. Changes what you see, never the model | `revit_select_by_category`, `revit_show`, `revit_isolate_temporary` |
-| **Change the model** | Renames, sets parameters, changes types, places and builds — one named Undo entry per change | `revit_change`, `revit_apply_move` |
+| **Change the model** | Renames, sets parameters, changes types, places and builds — one named Undo entry per change | `revit_change`, `revit_apply_move`; `revit_undo_last` takes Heron's own last change back with Revit's Undo |
 | **Work it out** | HVAC and fire-protection calculations, building loads, sprinkler layout and hydraulics | `heron_hvac`, `heron_fire`, `revit_building_loads`, `revit_sprinkler_layout`, `revit_sprinkler_hydraulics` |
 | **Know the job** | Finds the right capability, gives the method for a job of several steps (a family above all), answers standards questions against their sources | `heron_lookup`, `heron_method`, `heron_standards`, `heron_check` |
 
