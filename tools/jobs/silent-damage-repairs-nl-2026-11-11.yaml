@@ -87,7 +87,10 @@ jobs:
     expect: rulesChanged
     setup-set: {categories: "Ducts", familyNameContains: "Rectangular Duct", typeNameContains: "Mitered Elbows / Tees"}
     negative-setup-set: {categories: "Ducts", familyNameContains: "Rectangular Duct", typeNameContains: "Mitered Elbows / Tees"}
-    set: {group: "Elbows", partName: "Rectangular Elbow - Radius: 1.5 W", ruleIndex: 0}
+    # 2026-11-13, NL0 read on the PC (Revit 2020, P1102 MEP): the family is
+    # "M_Rectangular Elbow - Radius", not "Rectangular Elbow - Radius" - the
+    # name below was changed to it on the owner's word, as NL0 asks.
+    set: {group: "Elbows", partName: "M_Rectangular Elbow - Radius: 1.5 W", ruleIndex: 0}
     negative-set: {group: "Elbows", partName: "Standard", ruleIndex: 0}
     note: >
       READ THE BINDING NOTE: "elements from set-selection (1)" - one duct type.
