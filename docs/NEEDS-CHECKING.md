@@ -1522,6 +1522,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-nv.md`](needs-checking/group-nv.md)
 
+## Group NX - the defects found proving on 2026-11-13, repaired in code and not yet run (2026-11-13)
+
+**Its own file:** [`needs-checking/group-nx.md`](needs-checking/group-nx.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
