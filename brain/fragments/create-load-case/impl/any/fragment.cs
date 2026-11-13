@@ -237,7 +237,20 @@ if (ok)
                 case LoadCaseCategory.Temperature: sub = BuiltInCategory.OST_LoadCasesTemperature; break;
                 case LoadCaseCategory.Seismic: sub = BuiltInCategory.OST_LoadCasesSeismic; break;
             }
-            try { wanted = sub == null ? null : doc.Settings.Categories.get_Item(sub.Value); } catch { wanted = null; }
+            // BY ID, AMONG THE LOAD CASE CATEGORIES GATHERED ABOVE - never by
+            // the category's name, which a localised Revit translates. The id
+            // of a built-in category is its BuiltInCategory (an ElementId made
+            // from the enum, on every release 2020 to 2027); get_Item is asked
+            // only if the list did not hold it.
+            if (sub != null)
+            {
+                var subId = new ElementId(sub.Value);
+                wanted = categories.FirstOrDefault(k => k.Id == subId);
+                if (wanted == null)
+                {
+                    try { wanted = doc.Settings.Categories.get_Item(sub.Value); } catch { wanted = null; }
+                }
+            }
         }
 
         // "READ BACK" ONLY OF WHAT WAS READ (5b-1637). The nature and the
