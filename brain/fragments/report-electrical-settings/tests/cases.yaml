@@ -37,6 +37,31 @@ positive:
       voltageTypes is the count of voltage types whose name holds 230; names
       lists only those, each "(voltage)"
 
+  # VERSION 2, added 2026-11-13 (row 5b-1636). NOT RUN - NEEDS-CHECKING
+  # Group NX. Version 1 read every voltage divided by 10.7639.
+  - given: >
+      on P1102 MEP (Revit 2020's rme_advanced_sample_project, a saved copy
+      under %TEMP%\heron-work\prove-1102), show "voltages; distribution";
+      then the same on a Revit 2024 scratch copy (Group NX names it)
+    expect: >
+      "Voltages (5): \"120\" 120 V (min 110, max 130), in use; \"208\" 208
+      V ...; \"240\" 240 V ...; \"277\" 277 V ...; \"480\" 480 V ..." - each
+      the figure Manage > MEP Settings > Electrical Settings > Voltage
+      Definitions shows, NEVER 11.15 for 120; and "line to line \"208\" 208
+      V, line to ground \"120\" 120 V" for the distribution systems. The
+      same on 2024: a figure 10.76 times smaller than the dialog's is the
+      defect come back
+
+  - given: >
+      show "demand", on a model whose demand factors include one BY LOAD
+      (a load table - made by hand in Manage > MEP Settings > Demand
+      Factors if the model has none)
+    expect: >
+      each load step printed "(x kVA if internal units, y kVA if
+      volt-amperes)" and the finding that says which reading is not
+      established; the one that matches the dialog is RECORDED in the group,
+      so the next version can print that one alone
+
   - given: show templates (added 2026-11-02)
     expect: >
       panelScheduleTemplates is the number Manage > Panel Schedule Templates

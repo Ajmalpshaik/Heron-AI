@@ -35,11 +35,24 @@ semantic-identity: "add a voltage type or a distribution system to the project's
 # named. Its voltages are taken from the model's voltage types by value; a
 # value none has is refused, and the voltage is added first, as its own run.
 #
+# VERSION 2 (2026-11-13) - VOLTS ARE VOLTS. FRAGMENT-ISSUES row 5b-1636:
+# version 1 multiplied every voltage by Revit's internal volt factor,
+# 1 / 0.3048^2, before matching or writing it. VoltageType's values are volts
+# on every release 2020 to 2027 by Autodesk's own reference ("the unit is
+# volt"), and Revit 2020 measured it, so on P1102 MEP (2026-11-13) a
+# distribution system on the model's own 208 V and 120 V was refused - "No
+# voltage type of 208 V ... "208" 19.32 V" - and a 230 V voltage type would
+# have been made at about 2476. Version 2 matches and writes volts as they
+# are. AddVoltageType's own entry names no unit, so the type it makes is READ
+# BACK, and one that does not read the volts asked is removed again in the
+# same undo entry and refused, saying what Revit read. COMPILED, NOT RUN IN
+# ANY REVIT (NEEDS-CHECKING Group NX).
+#
 # ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 kind: action
 domain: revit.mep
 capability: ADD_ELECTRICAL_DISTRIBUTION
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -153,10 +166,12 @@ compatibility-note: >
   MaxValue; DistributionSysType.ElectricalPhase, ElectricalPhaseConfiguration,
   NumWires, VoltageLineToLine and VoltageLineToGround carry the same
   signatures 2020 through 2027 - read with tools/api-surface --members on
-  2026-11-01. Volts are written as volts x 1 / 0.3048^2 internal units, the
-  factor SET_FAMILY_CONNECTOR_ROLES uses, checked against UnitUtils on the
-  release that runs - DisplayUnitType.DUT_VOLTS in 2020 (#if REVIT2020),
-  UnitTypeId.Volts from 2021 - and nothing is written if they disagree. An
+  2026-11-01. VoltageType.ActualValue, MinValue and MaxValue are volts on every
+  release - "the unit is volt" in the reference 2020 to 2027 - so volts are
+  matched and written as volts (version 2), and the type AddVoltageType makes,
+  whose entry names no unit, is read back and removed again if it reads
+  otherwise; ElectricalSetting.RemoveVoltageType is present 2020 to 2027 (the
+  reference, read 2026-11-13). No unit conversion is used, so no #if. An
   ElementId is compared with ==, never read as a number.
 
 # ROUTING (2026-11-01) - the same rows are in REPORT_ELECTRICAL_SETTINGS and

@@ -14,12 +14,25 @@
 // demand; templates; naming - several separated by ; or ,), narrowed to names
 // containing `nameContains`.
 //
-// UNITS. Revit keeps a voltage and a load in its own internal units: one volt,
-// and one volt-ampere, is 1 / (0.3048 * 0.3048) of them - the factor
-// SET_FAMILY_CONNECTOR_ROLES writes connector voltages with. It is checked
-// against Revit's own UnitUtils on the release that runs (DisplayUnitType in
-// 2020, UnitTypeId from 2021); if the two disagree, Revit's own is used and the
-// disagreement is named. A demand factor's percentage is its Factor x 100.
+// UNITS - A VOLTAGE TYPE'S VALUES ARE VOLTS (version 2, FRAGMENT-ISSUES
+// 5b-1636). Autodesk's reference says it of VoltageType.ActualValue, MinValue
+// and MaxValue in the same words on every release 2020 to 2027 - "the unit is
+// volt" (RevitAPI.xml of the Nice3point reference packages, read 2026-11-13) -
+// and Revit 2020 measured it: the type named "120" gave ActualValue 120.
+// Version 1 divided them by Revit's internal volt factor, so "120" read
+// "11.15 V". They are printed as they come, and so are a distribution
+// system's two voltages, which are voltage types.
+//
+// A DEMAND FACTOR'S LOADS ARE NOT SETTLED, SO BOTH READINGS ARE PRINTED. The
+// reference gives no unit for ElectricalDemandFactorValue.MinRange / MaxRange
+// or ElectricalDemandFactorDefinition.AdditionalLoad, and no model has
+// measured one. Version 1 read them in Revit's internal units, where one
+// volt-ampere is 1 / (0.3048 * 0.3048) of them - checked against Revit's own
+// UnitUtils on the release that runs (DisplayUnitType in 2020, UnitTypeId from
+// 2021), Revit's own used and named if the two disagree. A load figure is
+// printed that way AND as volt-amperes, beside each other, with a finding that
+// says which is unsettled - never one of them guessed. A demand factor's
+// percentage is its Factor x 100.
 //
 // RELEASES. ElectricalSetting.GetElectricalSettings, VoltageTypes,
 // DistributionSysTypes, WireTypes; VoltageType.ActualValue, MinValue, MaxValue,
@@ -90,7 +103,8 @@ if (unknownWords.Count > 0)
     findings.Add("\"" + string.Join("\", \"", unknownWords) + "\" is not one of the lists - voltages, distribution, wires, "
         + "loads, demand, templates or naming, or all. Nothing was guessed for it.");
 
-// ---- The unit, checked against Revit's own ---------------------------------
+// ---- The load unit, checked against Revit's own -----------------------------
+// For a demand factor's load figures only - a voltage type's values are volts.
 var perVolt = 1.0 / (0.3048 * 0.3048);
 double revitsPerVolt;
 try
@@ -105,7 +119,7 @@ catch (Exception) { revitsPerVolt = perVolt; }
 if (Math.Abs(revitsPerVolt - perVolt) > 1e-9 * perVolt)
 {
     findings.Add("Revit makes one volt " + revitsPerVolt.ToString(invariant) + " internal units where Heron expected "
-        + perVolt.ToString(invariant) + " - the voltages and loads below use Revit's own.");
+        + perVolt.ToString(invariant) + " - the demand factors' internal-unit load figures below use Revit's own.");
     perVolt = revitsPerVolt;
 }
 
@@ -126,8 +140,9 @@ if (settings != null && wantVoltages)
         if (v == null || !wanted(v.Name)) continue;
         voltageTypes++;
         names.Add(quoted(v.Name) + " (voltage)");
-        rows.Add(quoted(v.Name) + " " + num(v.ActualValue / perVolt) + " V (min " + num(v.MinValue / perVolt)
-            + ", max " + num(v.MaxValue / perVolt) + ")" + (v.IsInUse ? ", in use" : ""));
+        // Volts as they come (version 2) - see UNITS in the header.
+        rows.Add(quoted(v.Name) + " " + num(v.ActualValue) + " V (min " + num(v.MinValue)
+            + ", max " + num(v.MaxValue) + ")" + (v.IsInUse ? ", in use" : ""));
     }
     rows.Sort(StringComparer.OrdinalIgnoreCase);
     lines.Add("Voltages (" + rows.Count + "): " + (rows.Count == 0 ? "none" : string.Join("; ", rows)));
@@ -150,8 +165,8 @@ if (settings != null && wantDistribution)
         var ll = d.VoltageLineToLine;
         var lg = d.VoltageLineToGround;
         rows.Add(quoted(d.Name) + " " + phase + config + " " + d.NumWires + "-wire, line to line "
-            + (ll == null ? "none" : quoted(ll.Name) + " " + num(ll.ActualValue / perVolt) + " V")
-            + ", line to ground " + (lg == null ? "none" : quoted(lg.Name) + " " + num(lg.ActualValue / perVolt) + " V")
+            + (ll == null ? "none" : quoted(ll.Name) + " " + num(ll.ActualValue) + " V")
+            + ", line to ground " + (lg == null ? "none" : quoted(lg.Name) + " " + num(lg.ActualValue) + " V")
             + (d.IsInUse ? ", in use" : ""));
     }
     rows.Sort(StringComparer.OrdinalIgnoreCase);
@@ -203,6 +218,10 @@ if (settings != null && wantWires)
 // ---- Demand Factors (read first: a load classification names one) ----------
 var factorNames = new Dictionary<ElementId, string>();
 var factorRows = new List<string>();
+// A load figure in both readings (version 2) - see UNITS in the header.
+Func<double, string> bothReadings = x => num(x / perVolt / 1000.0) + " kVA if internal units, "
+    + num(x / 1000.0) + " kVA if volt-amperes";
+var loadFiguresPrinted = 0;
 foreach (var e in new FilteredElementCollector(doc).OfClass(typeof(ElectricalDemandFactorDefinition)))
 {
     var f = e as ElectricalDemandFactorDefinition;
@@ -225,14 +244,20 @@ foreach (var e in new FilteredElementCollector(doc).OfClass(typeof(ElectricalDem
     {
         var pct = num(v.Factor * 100) + "%";
         if (rule == ElectricalDemandFactorRule.Constant) { steps.Add(pct); continue; }
-        Func<double, string> amount = x => byLoad ? num(x / perVolt / 1000.0) + " kVA" : num(x);
+        Func<double, string> amount = x => byLoad ? "(" + bothReadings(x) + ")" : num(x);
+        if (byLoad) loadFiguresPrinted++;
         // An unlimited upper end is stored as a very large number.
         var open = v.MaxRange >= 1e12 || double.IsInfinity(v.MaxRange);
         steps.Add(amount(v.MinRange) + (open ? " and over" : " to " + amount(v.MaxRange)) + ": " + pct);
     }
     factorRows.Add(quoted(f.Name) + " " + ruleWords + " - " + (steps.Count == 0 ? "no values" : string.Join(", ", steps))
-        + (f.IncludeAdditionalLoad ? ", plus additional load " + num(f.AdditionalLoad / perVolt / 1000.0) + " kVA" : ""));
+        + (f.IncludeAdditionalLoad ? ", plus additional load (" + bothReadings(f.AdditionalLoad) + ")" : ""));
+    if (f.IncludeAdditionalLoad) loadFiguresPrinted++;
 }
+if (loadFiguresPrinted > 0)
+    findings.Add("A demand factor's load figures are printed TWO WAYS - as Revit's internal units and as volt-amperes - "
+        + "because which of the two Revit's API gives is not established (FRAGMENT-ISSUES 5b-1636). Read the one "
+        + "that matches Manage > MEP Settings > Demand Factors.");
 
 // ---- Load Classifications --------------------------------------------------
 if (wantLoads)
