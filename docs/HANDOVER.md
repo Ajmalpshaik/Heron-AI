@@ -1076,6 +1076,8 @@ mattered most in this repository, and a tape measure answered it in Revit 2024 o
 
 ### The two things left that need Windows but NOT Revit
 
+**Read 2026-11-13: both are DONE, since 2026-09-06 on the owner's PC** - [Group A](needs-checking/group-a.md) rows A4 (32 checks against a real Windows named pipe) and A6 (the SDK probe reads Windows correctly) say so. The block below is kept as it was written.
+
 ```
 A4   python tests/test_bridge_roundtrip.py    the WINDOWS named pipe itself
 A6   python tools/check-compile.py 2025       that the new SDK probe reads Windows correctly

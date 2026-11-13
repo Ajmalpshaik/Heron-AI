@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -96,6 +96,44 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-13'
+  by: Ajmal PS
+  model: P1102 STR (9,179 elements), Revit 2020, session 41776
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-category, set-selection with this phase''s own values. returned DegreesPerRadian
+    57.2957795130823, culture CultureInfo, degreesText Func`2, findings 6 item(s) [5 floor(s)
+    have a span direction, read in degrees from the m..., 133345 (Generic Concrete 300mm):
+    spans 0 deg from the model''..., 134840 (160mm Concrete With 50mm Metal Deck): spans 0
+    deg fr..., ...], lines 5 item(s) [133345 (Generic Concrete 300mm): spans 0 deg from the
+    model''..., 134840 (160mm Concrete With 50mm Metal Deck): spans 0 deg fr..., 139467 (Generic
+    300mm): spans 0 deg from the model''s X axis ..., ...], notFloors 0 item(s), notStructural
+    0 item(s), read 5, report 133345 (Generic Concrete 300mm): spans 0 deg from the model''s
+    X axis (Span Direction parameter: 0.00°); shown by 134539 (M_Span Direction: One Way Slab)
+    in "02 - Floor". | 134840 (160mm Concrete With 50mm Metal Deck): spans 0 deg from the
+    model''s X axis (Span Direction parameter: 0.00°); shown by 135121 (M_Span Direction:
+    One Way Slab) in "02 - Floor". | 139467 (Generic 300mm): spans 0 deg from the model''s
+    X axis (Span Direction parameter: 0.00°); no span direction symbol shows it. | 151849
+    (Generic Concrete 300mm): spans 0 deg from the model''s X axis (Span Direction parameter:
+    0.00°); shown by 151866 (M_Span Direction: One Way Slab) in "03 - Floor". | 152157 (Concrete
+    Deck - Tapered Insulation): spans 0 deg from the model''s X axis (Span Direction parameter:
+    0.00°); shown by 152174 (M_Span Direction: One Way Slab) in "Roof"., seen HashSet`1, spans
+    5 entry(ies), symbolIds 4 item(s) [134539, 135121, 151866, ...], withoutSymbol 1. inputs
+    came elements from the selection (5). on P1102 STR'
+  negative_case: run arranged with elementIds=122477,122478,122479, categories=Structural
+    Columns, inViewOnly=02 - Floor instead - chosen because it should not contain what this
+    fragment reports - the arrangement was re-made first by running filter-elements-by-category,
+    set-selection with this phase's own values. returned DegreesPerRadian 57.2957795130823,
+    culture CultureInfo, degreesText Func`2, findings 1 item(s) [0 floor(s) have a span direction,
+    read in degrees from the m...], lines 0 item(s), notFloors 133 item(s) [122477, 122478,
+    122479, ...], notStructural 0 item(s), read 0, report , seen HashSet`1, spans 0 entry(ies),
+    symbolIds 0 item(s), withoutSymbol 0. inputs came elements from the selection (133). on
+    P1102 STR
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 9cd3ca769010d625
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

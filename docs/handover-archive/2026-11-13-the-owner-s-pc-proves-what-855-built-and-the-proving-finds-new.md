@@ -81,8 +81,9 @@ own file carries its dated run record, and each defect is a file of its own unde
   NI5 and NI6 (Revit 2024); NP3 both at once. Not NI7 before row 5b-1510's repair.
 - **Not signable until repaired:** `read-space-loads`, `report-family-parameters`, `set-railing-type`,
   `report-electrical-settings`, `add-electrical-distribution`, `create-load-case`, `set-floor-span-direction`,
-  `report-structural-loads`, `report-browser-organization`. Drafted and waiting for a *"sign"*:
-  `report-framing-justification`, `report-floor-span-direction`, `report-rebar-numbering`.
+  `report-structural-loads`, `report-browser-organization`. `report-framing-justification`,
+  `report-floor-span-direction` and `report-rebar-numbering` were drafted after ccb8b063 and signed later the same
+  evening on the owner's *"whatever you need to do you can do it"*.
 - **Decisions D-153 to D-159**: read to the owner one at a time, his yes or no recorded - not yet done.
 - **Scratch state on the PC:** *P1102 MEP* holds an unsaved level *Outcome Test* and a loaded
   *M_Multi Category Tag*; close it without saving. The 2020 scratch families and project for NG are in
