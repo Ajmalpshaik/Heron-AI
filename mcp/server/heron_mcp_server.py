@@ -4245,12 +4245,20 @@ def revit_model_dashboard(parameters: str = "", board: str = "", view3d: bool = 
 DASHBOARD_SHOWS = ("select", "isolate", "reset")
 
 
-#: The most ids one Select in Revit sends - FILTER_ELEMENTS_BY_ID's request
-#: is kept to this many. The QA Checklist says "the first N of M" from it.
+#: The most ids one Model Dashboard Select in Revit sends - its
+#: FILTER_ELEMENTS_BY_ID request is kept to this many.
 DASHBOARD_SELECT_MOST = 500
 
+#: THE QA CHECKLIST'S SELECT SENDS EVERY FAILING ID (D-158, row 5b-1621): as
+#: many as the add-in sends of one list, its IdsSentPerList. A list longer
+#: than that never arrives whole, so it is offered no Select at all - part of
+#: what failed is never selected. A list that long is far inside the
+#: bridge's mebibyte a request (BridgeServer.MaxRequestChars). Pinned to the
+#: add-in's own number by tests/test_checklists.py.
+CHECKLIST_SELECT_MOST = 5000
 
-def _dashboard_show(action, ids, identity=None, moved_said=None):
+
+def _dashboard_show(action, ids, identity=None, moved_said=None, most=DASHBOARD_SELECT_MOST):
     """
     A dashboard row's Select in Revit, Isolate in view, or Reset isolate -
     pressed on the page. Nothing in the model changes:
@@ -4264,11 +4272,12 @@ def _dashboard_show(action, ids, identity=None, moved_said=None):
 
     Under the lock every tool call holds, and only on the model the
     dashboard was read from - `moved_said` is the refusal when it is not,
-    for a caller with its own words (the QA Checklist). Returns {"ok", "said"}.
+    for a caller with its own words (the QA Checklist), and `most` the most
+    ids it sends (CHECKLIST_SELECT_MOST for the checklist). Returns {"ok", "said"}.
     """
     started, clock = time.strftime("%H:%M:%S"), time.time()
     tool = "companion_dashboard_" + action
-    ids = [str(i) for i in (ids or []) if str(i).isdigit()][:DASHBOARD_SELECT_MOST]
+    ids = [str(i) for i in (ids or []) if str(i).isdigit()][:most]
     if action not in DASHBOARD_SHOWS or (action != "reset" and not ids):
         said = "Nothing was sent to Revit: the row has no element ids."
         _note(tool, started, 0, reply=said, outcome="refused")
@@ -4463,16 +4472,21 @@ CHECKLIST_MOVED = ("The checklist was run on another model or another Revit, so 
                    "sent. Press Run again on the model in front, then try again.")
 
 
+#: What the QA Checklist's Select says for a list longer than it sends.
+CHECKLIST_TOO_MANY = ("Nothing was sent to Revit: this check found %d failing elements, more than "
+                      "the %d one Select sends, and part of what failed is never selected. Copy the "
+                      "ids for Select by ID, or narrow the check.")
+
+
 def _checklist_show(action, ids, identity=None):
     """The QA Checklist's Select in Revit: _dashboard_show itself - the same
     reads, lock, pin and declared row - with the checklist's own refusal, and
-    the answer saying when only the first DASHBOARD_SELECT_MOST were sent."""
-    got = _dashboard_show(action, ids, identity, moved_said=CHECKLIST_MOVED)
-    if got.get("ok") and len(ids or []) > DASHBOARD_SELECT_MOST:
-        got = dict(got, said="Selected the first %d of the %d failing elements - Revit is sent at "
-                             "most %d at once.\n%s" % (DASHBOARD_SELECT_MOST, len(ids),
-                                                        DASHBOARD_SELECT_MOST, got.get("said") or ""))
-    return got
+    EVERY failing id, up to CHECKLIST_SELECT_MOST (row 5b-1621). More than
+    that is refused whole, never selected in part."""
+    if len(ids or []) > CHECKLIST_SELECT_MOST:
+        return {"ok": False, "said": CHECKLIST_TOO_MANY % (len(ids), CHECKLIST_SELECT_MOST)}
+    return _dashboard_show(action, ids, identity, moved_said=CHECKLIST_MOVED,
+                           most=CHECKLIST_SELECT_MOST)
 
 
 def _dashboard_refresh(parameters="", board=""):
@@ -6572,14 +6586,13 @@ def _run_checklist(checklist, origin="chat", ctx=None, progress=None):
 
 
 def _checklist_select_labels(answer):
-    """Each row's Select in Revit label, from the ids the dashboard's route
-    will send - all of them, or the first DASHBOARD_SELECT_MOST of N."""
+    """Each row's Select in Revit label: offered only when every failing id
+    arrived and Select sends them all - never "the first N of M", a partial
+    Select (row 5b-1621)."""
     for row in answer.get("rows") or []:
         ids = row.get("ids") or []
-        if not (row.get("idsComplete") and ids):
+        if not (row.get("idsComplete") and ids) or len(ids) > CHECKLIST_SELECT_MOST:
             row["select"] = ""
-        elif len(ids) > DASHBOARD_SELECT_MOST:
-            row["select"] = "Select the first %d of %d" % (DASHBOARD_SELECT_MOST, len(ids))
         else:
             row["select"] = "Select in Revit"
 
@@ -6656,7 +6669,8 @@ def heron_checklist(action: str = "list", name: str = "", checks: str = "",
                     "%s=%s" % (v["name"], v["value"]) for v in c.get("values") or []) or "none")
                 for i, c in enumerate(checklist.get("checks") or [], 1)])
         if act == "delete":
-            return "Deleted the checklist '%s'." % store.delete(name)
+            return ("Deleted the checklist '%s', and the runs kept of it to compare with."
+                    % store.delete(name))
         if act == "run":
             checklist = store.find(name)
             # ONE RUN AT A TIME, CHAT AND PAGE TOGETHER: the page's busy flag

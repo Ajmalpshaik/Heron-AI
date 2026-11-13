@@ -172,9 +172,11 @@ heron_checklist run  /  Companion QA Checklist: Run
   `SET_SELECTION`, both PROVEN, declared `companion_dashboard_select` at EXECUTE), with the ids the run found
   - the page sends the row's number and the run's token, never ids. A row from a run that has since been
   replaced - by a chat run, say - is refused in words; so is the model having moved (*the checklist was run on
-  another model - press Run again*). Past the route's limit (`DASHBOARD_SELECT_MOST` in the server) the button and the answer say *the first
-  N of M* - a partial Select, recorded as [row 5b-1621](fragment-issues/row-5b-1621.md) and
-  [Q-90](open-questions/tier-2.md).
+  another model - press Run again*). It sends **every** failing id in one press, up to `CHECKLIST_SELECT_MOST` in the server - the
+  add-in's `IdsSentPerList` - and a longer list has no Select at all: part of what failed is never selected
+  ([row 5b-1621](fragment-issues/row-5b-1621.md), [Q-90](open-questions/tier-2.md)). The page's poll sends a
+  finished run's ids once; after that it names the run it holds and they are left out
+  ([row 5b-1624](fragment-issues/row-5b-1624.md)).
 - **What changed since the last run** ([D-159](decisions/D-159.md), repaired 2026-11-12 - rows
   [5b-1613](fragment-issues/row-5b-1613.md) to [5b-1620](fragment-issues/row-5b-1620.md)). A finished run
   is kept in `<data home>/checklists/runs/<checklist>/<model>/` - the newest `RUNS_KEPT` **of each model** -
@@ -187,7 +189,10 @@ heron_checklist run  /  Companion QA Checklist: Run
   sentence, capability, rule **and values**); two checks the same in all four; a check that reads the
   selection; a newer kept run that cannot be read; or nothing to compare with - a first run, whose rows read
   NOT COMPARED, never *met both times*. A run that stopped part way is neither compared nor kept, and a
-  history that cannot be read or written never stops a run.
+  history that cannot be read or written never stops a run. **"Newest" is the order they were kept in**,
+  by a number at the front of each run's file name, never the PC's clock, which goes back at the end of
+  summer time ([row 5b-1622](fragment-issues/row-5b-1622.md)). **Deleting a checklist deletes its kept
+  runs** with it ([row 5b-1623](fragment-issues/row-5b-1623.md)).
 - **CSV and Print / PDF** are made on the page from the rows Heron sent; nothing is read again.
 
 ## 5. What was built

@@ -1255,11 +1255,6 @@ namespace Heron.Revit.Addin
             HeronApplication.RepaintAskToKeep();
         }
 
-        /// <summary>
-        /// A change kept under D-138's grant, on the reply: nobody was asked,
-        /// and under which grant it was kept. The verdict's own first sentence
-        /// says the same in words.
-        /// </summary>
         /// <summary>The most ids sent for one list named in `sendIds` (D-158).</summary>
         internal const int IdsSentPerList = 5000;
 
@@ -1362,6 +1357,11 @@ namespace Heron.Revit.Addin
             return text;
         }
 
+        /// <summary>
+        /// A change kept under D-138's grant, on the reply: nobody was asked,
+        /// and under which grant it was kept. The verdict's own first sentence
+        /// says the same in words.
+        /// </summary>
         private static string WithGrant(string answer, string grantedAt)
         {
             if (string.IsNullOrEmpty(answer) || !answer.EndsWith("}", StringComparison.Ordinal))
