@@ -152,6 +152,8 @@ finding - are arranged so that the unrepaired card could not fill them.
 
 **Signable on these runs, on the owner's word:** `measure-ceiling-height`, `select-by-material`, `read-graphic-overrides`, `read-element-parameters`, `find-duplicate-values`, `compare-models`, `list-materials`, `report-material-takeoff`, `check-sheet-sets-by-parameter`; `report-bounding-box` and `compare-elements` passed both halves with the findings above. **Not signable:** `read-space-loads` (NK3) and `report-family-parameters` (NK4's Count). Nothing is signed yet.
 
+**Signed 2026-11-13, as Ajmal PS, on the owner's word** (*"You can sign"*): `measure-ceiling-height`, `select-by-material`, `read-graphic-overrides`, `read-element-parameters`, `find-duplicate-values`, `compare-models`, `list-materials`, `report-material-takeoff` and `check-sheet-sets-by-parameter` - `accept` on each draft, the status flipped to PROVEN. **Not signed:** `report-bounding-box` (its premise did not hold, row 5b-352 open) and `compare-elements` (row 5b-1631) - left for the owner to say; `read-space-loads` and `report-family-parameters`, not signable.
+
 **Then, for each card whose rows passed:** `python brain/heron_validate.py review <fragment>`, read the
 draft, and `python brain/heron_validate.py accept <fragment> --by "Your Name"` - the machine never signs.
 `accept` writes the proof; `heron-status: PROVEN` is a line a person edits, and

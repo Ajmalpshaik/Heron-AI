@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -114,6 +114,41 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-13'
+  by: Ajmal PS
+  model: P1102 MEP (21,454 elements), Revit 2020, session 41776
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned after "Outcome Test" - horizontal
+    at elevation 6000 mm, before "Level 1" - horizontal at elevation 94.2 mm, changed 2, culture
+    CultureInfo, datum Level, describe Func`2, findings 1 item(s) ["Level 1 HVAC Duct Plan_A"
+    (FloorPlan): work plane set to Le...], grids 22 item(s) [A, B, D, ...], hostOf Func`2,
+    kindAndName Func`2, levels 5 item(s) [Level 1, Level 2, Outcome Test, ...], mm Func`2,
+    named Func`3, ownName Func`2, planeList Func`1, refPlanes 0 item(s), refused (null), report
+    "Level 1 HVAC Duct Plan_A" (FloorPlan): work plane set to Level : Outcome Test || work
+    plane shown - Revit gives no way to read whether a work plane is shown, so this is not
+    read back; look at the view || work plane before: "Level 1" - horizontal at elevation
+    94.2 mm || after, read back: "Outcome Test" - horizontal at elevation 6000 mm, said Outcome
+    Test, show show, target ViewPlan, tolerance 3.28083989501312E-05, where Func`2. inputs
+    came view as given; plane as given; display as given. on P1102 MEP'
+  negative_case: 'run with view=Level 1 HVAC Duct Plan_A, plane=Zz, display=show instead -
+    chosen because it should not contain what this fragment reports - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned after , before
+    , changed 0, culture CultureInfo, datum (null), describe Func`2, findings 1 item(s) [Nothing
+    in this project named "Zz" can be a work plane - a l...], grids 22 item(s) [A, B, D, ...],
+    hostOf Func`2, kindAndName Func`2, levels 5 item(s) [Level 1, Level 2, Outcome Test, ...],
+    mm Func`2, named Func`3, ownName Func`2, planeList Func`1, refPlanes 0 item(s), refused
+    Nothing in this project named "Zz" can be a work plane - a level, a named reference plane
+    or a grid - and it is never guessed. NOTHING WAS CHANGED. Levels: Level 1, Level 2, Outcome
+    Test, Level 3, Roof Level. Named reference planes: none. Grids: 1, 1.1, 10, 2, 3, 4, 5,
+    6, 7, 8, 9, A, B, C, D, E, F, F.1, G, H, J, K., report , said Zz, show show, target ViewPlan,
+    tolerance 3.28083989501312E-05, where Func`2. inputs came view as given; plane as given;
+    display as given. on P1102 MEP'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 47fd4e006f7db329
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

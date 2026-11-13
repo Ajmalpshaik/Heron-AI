@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -99,6 +99,38 @@ contract:
       type: IList<string>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-13'
+  by: Ajmal PS
+  model: P1102 STR (9,179 elements), Revit 2020, session 41776
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-id, set-selection with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned alreadyRight
+    0 item(s), changed 6, describe Func`2, ends 6 item(s) [Structural Framing '400 x 800mm'
+    (id 124559), Start Join Cut..., Structural Framing '400 x 800mm' (id 124559), End Join
+    Cutba..., Structural Framing '400 x 800mm' (id 124565), Start Join Cut..., ...], findings
+    1 item(s) [6 end(s) set to 20 mm and read back; 0 already there; 0 refu...], framingCategory
+    1 item(s) [id -2001320], isCutback true, isExtension false, lengthMm 20, mm Func`2, refused
+    0 item(s), side joined, sideKnown true, what cutback. inputs came elements from the selection
+    (3); setting as given; whichEnd as given; lengthMm as given. on P1102 STR
+  negative_case: 'run with setting=cutback, whichEnd=joined, lengthMm=20 arranged with elementIds=122477,122478,122479
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running filter-elements-by-id, set-selection with this phase''s own
+    values - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned alreadyRight 0 item(s), changed 0, describe Func`2, ends 0 item(s),
+    findings 4 item(s) [0 end(s) set to 20 mm and read back; 0 already there; 3 refu..., Structural
+    Columns ''450mm'' (id 122477): not structural frami..., Structural Columns ''450mm'' (id
+    122478): not structural frami..., ...], framingCategory 1 item(s) [id -2001320], isCutback
+    true, isExtension false, lengthMm 20, mm Func`2, refused 3 item(s) [Structural Columns
+    ''450mm'' (id 122477): not structural frami..., Structural Columns ''450mm'' (id 122478):
+    not structural frami..., Structural Columns ''450mm'' (id 122479): not structural frami...],
+    side joined, sideKnown true, what cutback. inputs came elements from the selection (3);
+    setting as given; whichEnd as given; lengthMm as given. on P1102 STR'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 72f53d97304af98a
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

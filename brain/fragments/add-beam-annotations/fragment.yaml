@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -174,6 +174,670 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-13'
+  by: Ajmal PS
+  model: P1102 STR (9,179 elements), Revit 2020, session 41776
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-category, set-selection with this phase''s own values - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    MillimetresPerFoot 304.8, OneMillimetre 0.00328083989501312, alreadyTagged 0 item(s),
+    chosenSpot SpotDimensionType, chosenTag FamilySymbol, culture CultureInfo, faceText top,
+    faceWhere top, findings 122 item(s) [119 element(s) handed in, in "03 - Floor": 119 beam
+    tag(s) p..., Starts and ends are 5% of each beam''s length in from that en..., The value
+    each spot shows is printed above ON PURPOSE: a wro..., ...], framingCategory 1 item(s)
+    [id -2001320], framingTagCategory 1 item(s) [id -2005015], given 119 item(s) [400 x 800mm,
+    400 x 800mm, 400 x 800mm, ...], isNamed Func`3, lines 119 item(s) [beam 400 x 800mm (id
+    151693): tag 273218 at the middle; spot..., beam 400 x 800mm (id 151694): tag 273221 at
+    the middle; no s..., beam 400 x 800mm (id 151695): tag 273222 at the middle; spot...,
+    ...], mm Func`2, multiTagCategory 1 item(s) [id -2005022], newSpots 163 item(s) [273219,
+    273220, 273223, ...], newTags 119 item(s) [273218, 273221, 273222, ...], noSpotName true,
+    noTagName true, notAnnotated 0 item(s), refused , report beam 400 x 800mm (id 151693):
+    tag 273218 at the middle; spot elevation 273219 at the start, on the top face at 7300
+    mm from the internal origin - Revit handed back no value for it; read it on the drawing;
+    spot elevation 273220 at the end, on the top face at 7300 mm from the internal origin
+    - Revit handed back no value for it; read it on the drawing. | beam 400 x 800mm (id 151694):
+    tag 273221 at the middle; no spot elevation at the start - no top face lies over the beam''s
+    line there (its line may run along an edge: Y Justification); no spot elevation at the
+    end - no top face lies over the beam''s line there (its line may run along an edge: Y
+    Justification). | beam 400 x 800mm (id 151695): tag 273222 at the middle; spot elevation
+    273223 at the start, on the top face at 7300 mm from the internal origin - Revit handed
+    back no value for it; read it on the drawing; spot elevation 273224 at the end, on the
+    top face at 7300 mm from the internal origin - Revit handed back no value for it; read
+    it on the drawing. | beam 400 x 800mm (id 151696): tag 273225 at the middle; no spot elevation
+    at the start - no top face lies over the beam''s line there (its line may run along an
+    edge: Y Justification); no spot elevation at the end - no top face lies over the beam''s
+    line there (its line may run along an edge: Y Justification). | beam 400 x 800mm (id 151697):
+    tag 273226 at the middle; no spot elevation at the start - no top face lies over the beam''s
+    line there (its line may run along an edge: Y Justification); no spot elevation at the
+    end - no top face lies over the beam''s line there (its line may run along an edge: Y
+    Justification). | beam 400 x 800mm (id 151698): tag 273227 at the middle; spot elevation
+    273228 at the start, on the top face at 7300 mm from the internal origin - Revit handed
+    back no value for it; read it on the drawing; spot elevation 273229 at the end, on the
+    top face at 7300 mm from the internal origin - Revit handed back no value for it; read
+    it on the drawing. | beam 400 x 800mm (id 151699): tag 273230 at the middle; no spot elevation
+    at the start - no top face lies over the beam''s line there (its line may run along an
+    edge: Y Justification); no spot elevation at the end - no top face lies over the beam''s
+    line there (its line may run along an edge: Y Justification). | beam 400 x 800mm (id 151700):
+    tag 273231 at the middle; no spot elevation at the start - no top face lies over the beam''s
+    line there (its line may run along an edge: Y Justification); no spot elevation at the
+    end - no top face lies over the beam''s line there (its line may run along an edge: Y
+    Justification). | beam 400 x 800mm (id 151701): tag 273232 at the middle; spot elevation
+    273233 at the start, on the top face at 7300 mm from the internal origin - Revit handed
+    back no value for it; read it on the drawing; spot elevation 273234 at the end, on the
+    top face at 7300 mm from the internal origin - Revit handed back no value for it; read
+    it on the drawing. | beam 400 x 800mm (id 151702): tag 273235 at the middle; no spot elevation
+    at the start - no top face lies over the beam''s line there (its line may run along an
+    edge: Y Justification); no spot elevation at the end - no top face lies over the beam''s
+    line there (its line may run along an edge: Y Justification). | beam 400 x 800mm (id 151703):
+    tag 273236 at the middle; spot elevation 273237 at the start, on the top face at 7300
+    mm from the internal origin - Revit handed back no value for it; read it on the drawing;
+    spot elevation 273238 at the end, on the top face at 7300 mm from the internal origin
+    - Revit handed back no value for it; read it on the drawing. | beam 400 x 800mm (id 151704):
+    tag 273239 at the middle; spot elevation 273240 at the start, on the top face at 7300
+    mm from the internal origin - Revit handed back no value for it; read it on the drawing;
+    spot elevation 273241 at the end, on the top face at 7300 mm from the internal origin
+    - Revit handed back no value for it; read it on the drawing. | beam 400 x 800mm (id 151705):
+    tag 273242 at the middle; no spot elevation at the start - no top face lies over the beam''s
+    line there (its line may run along an edge: Y Justification); no spot elevation at the
+    end - no top face lies over the beam''s line there (its line may run along an edge: Y
+    Justification). | beam 400 x 800mm (id 151706): tag 273243 at the middle; spot elevation
+    273244 at the start, on the top face at 7300 mm from the internal origin - Revit handed
+    back no value for it; read it on the drawing; spot elevation 273245 at the end, on the
+    top face at 7300 mm from the internal origin - Revit handed back no value for it; read
+    it on the drawing. | beam 400 x 800mm (id 151707): tag 273246 at the middle; spot elevation
+    273247 at the start, on the top face at 7300 mm from the internal origin - Revit handed
+    back no value for it; read it on the drawing; no spot elevation at the end - no top face
+    lies over the beam''s line there (its line may run along an edge: Y Justification). |
+    beam 400 x 800mm (id 151708): tag 273248 at the middle; no spot elevation at the start
+    - no top face lies over the beam''s line there (its line may run along an edge: Y Justification);
+    no spot elevation at the end - no top face lies over the beam''s line there (its line
+    may run along an edge: Y Justification). | beam 400 x 800mm (id 151709): tag 273249 at
+    the middle; spot elevation 273250 at the start, on the top face at 7300 mm from the internal
+    origin - Revit handed back no value for it; read it on the drawing; spot elevation 273251
+    at the end, on the top face at 7300 mm from the internal origin - Revit handed back no
+    value for it; read it on the drawing. | beam 400 x 800mm (id 151710): tag 273252 at the
+    middle; no spot elevation at the start - no top face lies over the beam''s line there
+    (its line may run along an edge: Y Justification); no spot elevation at the end - no top
+    face lies over the beam''s line there (its line may run along an edge: Y Justification).
+    | beam 400 x 800mm (id 151711): tag 273253 at the middle; no spot elevation at the start
+    - no top face lies over the beam''s line there (its line may run along an edge: Y Justification);
+    no spot elevation at the end - no top face lies over the beam''s line there (its line
+    may run along an edge: Y Justification). | beam 400 x 800mm (id 151712): tag 273254 at
+    the middle; spot elevation 273255 at the start, on the top face at 7300 mm from the internal
+    origin - Revit handed back no value for it; read it on the drawing; spot elevation 273256
+    at the end, on the top face at 7300 mm from the internal origin - Revit handed back no
+    value for it; read it on the drawing. | beam 400 x 800mm (id 151713): tag 273257 at the
+    middle; no spot elevation at the start - no top face lies over the beam''s line there
+    (its line may run along an edge: Y Justification); no spot elevation at the end - no top
+    face lies over the beam''s line there (its line may run along an edge: Y Justification).
+    | beam 400 x 800mm (id 151714): tag 273258 at the middle; spot elevation 273259 at the
+    start, on the top face at 7300 mm from the internal origin - Revit handed back no value
+    for it; read it on the drawing; spot elevation 273260 at the end, on the top face at 7300
+    mm from the internal origin - Revit handed back no value for it; read it on the drawing.
+    | beam 400 x 800mm (id 151715): tag 273261 at the middle; no spot elevation at the start
+    - no top face lies over the beam''s line there (its line may run along an edge: Y Justification);
+    no spot elevation at the end - no top face lies over the beam''s line there (its line
+    may run along an edge: Y Justification). | beam 400 x 800mm (id 151716): tag 273262 at
+    the middle; spot elevation 273263 at the start, on the top face at 7300 mm from the internal
+    origin - Revit handed back no value for it; read it on the drawing; spot elevation 273264
+    at the end, on the top face at 7300 mm from the internal origin - Revit handed back no
+    value for it; read it on the drawing. | beam 400 x 800mm (id 151717): tag 273265 at the
+    middle; no spot elevation at the start - no top face lies over the beam''s line there
+    (its line may run along an edge: Y Justification); no spot elevation at the end - no top
+    face lies over the beam''s line there (its line may run along an edge: Y Justification).
+    | beam 400 x 800mm (id 151718): tag 273266 at the middle; no spot elevation at the start
+    - no top face lies over the beam''s line there (its line may run along an edge: Y Justification);
+    no spot elevation at the end - no top face lies over the beam''s line there (its line
+    may run along an edge: Y Justification). | beam 400 x 800mm (id 151719): tag 273267 at
+    the middle; spot elevation 273268 at the start, on the top face at 7300 mm from the internal
+    origin - Revit handed back no value for it; read it on the drawing; spot elevation 273269
+    at the end, on the top face at 7300 mm from the internal origin - Revit handed back no
+    value for it; read it on the drawing. | beam 400 x 800mm (id 151720): tag 273270 at the
+    middle; no spot elevation at the start - no top face lies over the beam''s line there
+    (its line may run along an edge: Y Justification); spot elevation 273271 at the end, on
+    the top face at 7300 mm from the internal origin - Revit handed back no value for it;
+    read it on the drawing. | beam 400 x 800mm (id 151721): tag 273272 at the middle; spot
+    elevation 273273 at the start, on the top face at 7300 mm from the internal origin - Revit
+    handed back no value for it; read it on the drawing; no spot elevation at the end - no
+    top face lies over the beam''s line there (its line may run along an edge: Y Justification).
+    | beam 400 x 800mm (id 151722): tag 273274 at the middle; spot elevation 273275 at the
+    start, on the top face at 7300 mm from the internal origin - Revit handed back no value
+    for it; read it on the drawing; spot elevation 273276 at the end, on the top face at 7300
+    mm from the internal origin - Revit handed back no value for it; read it on the drawing.
+    | beam 400 x 800mm (id 151723): tag 273277 at the middle; no spot elevation at the start
+    - no top face lies over the beam''s line there (its line may run along an edge: Y Justification);
+    no spot elevation at the end - no top face lies over the beam''s line there (its line
+    may run along an edge: Y Justification). | beam 400 x 800mm (id 151724): tag 273278 at
+    the middle; spot elevation 273279 at the start, on the top face at 7300 mm from the internal
+    origin - Revit handed back no value for it; read it on the drawing; spot elevation 273280
+    at the end, on the top face at 7300 mm from the internal origin - Revit handed back no
+    value for it; read it on the drawing. | beam 400 x 800mm (id 151725): tag 273281 at the
+    middle; spot elevation 273282 at the start, on the top face at 7300 mm from the internal
+    origin - Revit handed back no value for it; read it on the drawing; spot elevation 273283
+    at the end, on the top face at 7300 mm from the internal origin - Revit handed back no
+    value for it; read it on the drawing. | beam 400 x 800mm (id 151726): tag 273284 at the
+    middle; spot elevation 273285 at the start, on the top face at 7300 mm from the internal
+    origin - Revit handed back no value for it; read it on the drawing; spot elevation 273286
+    at the end, on the top face at 7300 mm from the internal origin - Revit handed back no
+    value for it; read it on the drawing. | beam 400 x 800mm (id 151727): tag 273287 at the
+    middle; spot elevation 273288 at the start, on the top face at 7300 mm from the internal
+    origin - Revit handed back no value for it; read it on the drawing; spot elevation 273289
+    at the end, on the top face at 7300 mm from the internal origin - Revit handed back no
+    value for it; read it on the drawing. | beam 400 x 800mm (id 151728): tag 273290 at the
+    middle; spot elevation 273291 at the start, on the top face at 7300 mm from the internal
+    origin - Revit handed back no value for it; read it on the drawing; spot elevation 273292
+    at the end, on the top face at 7300 mm from the internal origin - Revit handed back no
+    value for it; read it on the drawing. | beam 400 x 800mm (id 151729): tag 273293 at the
+    middle; spot elevation 273294 at the start, on the top face at 7300 mm from the internal
+    origin - Revit handed back no value for it; read it on the drawing; spot elevation 273295
+    at the end, on the top face at 7300 mm from the internal origin - Revit handed back no
+    value for it; read it on the drawing. | beam 400 x 800mm (id 151730): tag 273296 at the
+    middle; spot elevation 273297 at the start, on the top face at 7300 mm from the internal
+    origin - Revit handed back no value for it; read it on the drawing; spot elevation 273298
+    at the end, on the top face at 7300 mm from the internal origin - Revit handed back no
+    value for it; read it on the drawing. | beam 400 x 800mm (id 151731): tag 273299 at the
+    middle; spot elevation 273300 at the start, on the top face at 7300 mm from the internal
+    origin - Revit handed back no value for it; read it on the drawing; spot elevation 273301
+    at the end, on the top face at 7300 mm from the internal origin - Revit handed back no
+    value for it; read it on the drawing. | beam 400 x 800mm (id 151732): tag 273302 at the
+    middle; spot elevation 273303 at the start, on the top face at 7300 mm from the internal
+    origin - Revit handed back no value for it; read it on the drawing; spot elevation 273304
+    at the end, on the top face at 7300 mm from the internal origin - Revit handed back no
+    value for it; read it on the drawing. | beam 400 x 800mm (id 151733): tag 273305 at the
+    middle; spot elevation 273306 at the start, on the top face at 7300 mm from the internal
+    origin - Revit handed back no value for it; read it on the drawing; spot elevation 273307
+    at the end, on the top face at 7300 mm from the internal origin - Revit handed back no
+    value for it; read it on the drawing. | beam 400 x 800mm (id 151734): tag 273308 at the
+    middle; spot elevation 273309 at the start, on the top face at 7300 mm from the internal
+    origin - Revit handed back no value for it; read it on the drawing; spot elevation 273310
+    at the end, on the top face at 7300 mm from the internal origin - Revit handed back no
+    value for it; read it on the drawing. | beam 400 x 800mm (id 151735): tag 273311 at the
+    middle; spot elevation 273312 at the start, on the top face at 7300 mm from the internal
+    origin - Revit handed back no value for it; read it on the drawing; spot elevation 273313
+    at the end, on the top face at 7300 mm from the internal origin - Revit handed back no
+    value for it; read it on the drawing. | beam 400 x 800mm (id 151736): tag 273314 at the
+    middle; spot elevation 273315 at the start, on the top face at 7300 mm from the internal
+    origin - Revit handed back no value for it; read it on the drawing; spot elevation 273316
+    at the end, on the top face at 7300 mm from the internal origin - Revit handed back no
+    value for it; read it on the drawing. | beam 400 x 800mm (id 151737): tag 273317 at the
+    middle; no spot elevation at the start - no top face lies over the beam''s line there
+    (its line may run along an edge: Y Justification); no spot elevation at the end - no top
+    face lies over the beam''s line there (its line may run along an edge: Y Justification).
+    | beam 400 x 800mm (id 151738): tag 273318 at the middle; spot elevation 273319 at the
+    start, on the top face at 7300 mm from the internal origin - Revit handed back no value
+    for it; read it on the drawing; spot elevation 273320 at the end, on the top face at 7300
+    mm from the internal origin - Revit handed back no value for it; read it on the drawing.
+    | beam 400 x 800mm (id 151739): tag 273321 at the middle; spot elevation 273322 at the
+    start, on the top face at 7300 mm from the internal origin - Revit handed back no value
+    for it; read it on the drawing; spot elevation 273323 at the end, on the top face at 7300
+    mm from the internal origin - Revit handed back no value for it; read it on the drawing.
+    | beam 400 x 800mm (id 151740): tag 273324 at the middle; spot elevation 273325 at the
+    start, on the top face at 7300 mm from the internal origin - Revit handed back no value
+    for it; read it on the drawing; spot elevation 273326 at the end, on the top face at 7300
+    mm from the internal origin - Revit handed back no value for it; read it on the drawing.
+    | beam 400 x 800mm (id 151741): tag 273327 at the middle; spot elevation 273328 at the
+    start, on the top face at 7300 mm from the internal origin - Revit handed back no value
+    for it; read it on the drawing; spot elevation 273329 at the end, on the top face at 7300
+    mm from the internal origin - Revit handed back no value for it; read it on the drawing.
+    | beam 400 x 800mm (id 151742): tag 273330 at the middle; spot elevation 273331 at the
+    start, on the top face at 7300 mm from the internal origin - Revit handed back no value
+    for it; read it on the drawing; spot elevation 273332 at the end, on the top face at 7300
+    mm from the internal origin - Revit handed back no value for it; read it on the drawing.
+    | beam 400 x 800mm (id 151743): tag 273333 at the middle; no spot elevation at the start
+    - no top face lies over the beam''s line there (its line may run along an edge: Y Justification);
+    no spot elevation at the end - no top face lies over the beam''s line there (its line
+    may run along an edge: Y Justification). | beam 400 x 800mm (id 151744): tag 273334 at
+    the middle; spot elevation 273335 at the start, on the top face at 7300 mm from the internal
+    origin - Revit handed back no value for it; read it on the drawing; spot elevation 273336
+    at the end, on the top face at 7300 mm from the internal origin - Revit handed back no
+    value for it; read it on the drawing. | beam 400 x 800mm (id 151745): tag 273337 at the
+    middle; spot elevation 273338 at the start, on the top face at 7300 mm from the internal
+    origin - Revit handed back no value for it; read it on the drawing; spot elevation 273339
+    at the end, on the top face at 7300 mm from the internal origin - Revit handed back no
+    value for it; read it on the drawing. | beam 400 x 800mm (id 151746): tag 273340 at the
+    middle; no spot elevation at the start - no top face lies over the beam''s line there
+    (its line may run along an edge: Y Justification); no spot elevation at the end - no top
+    face lies over the beam''s line there (its line may run along an edge: Y Justification).
+    | beam 400 x 800mm (id 151747): tag 273341 at the middle; no spot elevation at the start
+    - no top face lies over the beam''s line there (its line may run along an edge: Y Justification);
+    no spot elevation at the end - no top face lies over the beam''s line there (its line
+    may run along an edge: Y Justification). | beam 400 x 800mm (id 151748): tag 273342 at
+    the middle; spot elevation 273343 at the start, on the top face at 7300 mm from the internal
+    origin - Revit handed back no value for it; read it on the drawing; spot elevation 273344
+    at the end, on the top face at 7300 mm from the internal origin - Revit handed back no
+    value for it; read it on the drawing. | beam 400 x 800mm (id 151749): tag 273345 at the
+    middle; no spot elevation at the start - no top face lies over the beam''s line there
+    (its line may run along an edge: Y Justification); no spot elevation at the end - no top
+    face lies over the beam''s line there (its line may run along an edge: Y Justification).
+    | beam 400 x 800mm (id 151750): tag 273346 at the middle; spot elevation 273347 at the
+    start, on the top face at 7300 mm from the internal origin - Revit handed back no value
+    for it; read it on the drawing; spot elevation 273348 at the end, on the top face at 7300
+    mm from the internal origin - Revit handed back no value for it; read it on the drawing.
+    | beam 400 x 800mm (id 151751): tag 273349 at the middle; no spot elevation at the start
+    - no top face lies over the beam''s line there (its line may run along an edge: Y Justification);
+    no spot elevation at the end - no top face lies over the beam''s line there (its line
+    may run along an edge: Y Justification). | beam 400 x 800mm (id 151752): tag 273350 at
+    the middle; spot elevation 273351 at the start, on the top face at 7300 mm from the internal
+    origin - Revit handed back no value for it; read it on the drawing; spot elevation 273352
+    at the end, on the top face at 7300 mm from the internal origin - Revit handed back no
+    value for it; read it on the drawing. | beam 400 x 800mm (id 151753): tag 273353 at the
+    middle; no spot elevation at the start - no top face lies over the beam''s line there
+    (its line may run along an edge: Y Justification); no spot elevation at the end - no top
+    face lies over the beam''s line there (its line may run along an edge: Y Justification).
+    | beam 400 x 800mm (id 151754): tag 273354 at the middle; spot elevation 273355 at the
+    start, on the top face at 7300 mm from the internal origin - Revit handed back no value
+    for it; read it on the drawing; spot elevation 273356 at the end, on the top face at 7300
+    mm from the internal origin - Revit handed back no value for it; read it on the drawing.
+    | beam 400 x 800mm (id 151755): tag 273357 at the middle; no spot elevation at the start
+    - no top face lies over the beam''s line there (its line may run along an edge: Y Justification);
+    no spot elevation at the end - no top face lies over the beam''s line there (its line
+    may run along an edge: Y Justification). | beam 400 x 800mm (id 151756): tag 273358 at
+    the middle; spot elevation 273359 at the start, on the top face at 7300 mm from the internal
+    origin - Revit handed back no value for it; read it on the drawing; spot elevation 273360
+    at the end, on the top face at 7300 mm from the internal origin - Revit handed back no
+    value for it; read it on the drawing. | beam 400 x 800mm (id 151757): tag 273361 at the
+    middle; spot elevation 273362 at the start, on the top face at 7300 mm from the internal
+    origin - Revit handed back no value for it; read it on the drawing; spot elevation 273363
+    at the end, on the top face at 7300 mm from the internal origin - Revit handed back no
+    value for it; read it on the drawing. | beam 400 x 800mm (id 151758): tag 273364 at the
+    middle; spot elevation 273365 at the start, on the top face at 7300 mm from the internal
+    origin - Revit handed back no value for it; read it on the drawing; spot elevation 273366
+    at the end, on the top face at 7300 mm from the internal origin - Revit handed back no
+    value for it; read it on the drawing. | beam 400 x 800mm (id 151759): tag 273367 at the
+    middle; spot elevation 273368 at the start, on the top face at 7300 mm from the internal
+    origin - Revit handed back no value for it; read it on the drawing; spot elevation 273369
+    at the end, on the top face at 7300 mm from the internal origin - Revit handed back no
+    value for it; read it on the drawing. | beam 400 x 800mm (id 151760): tag 273370 at the
+    middle; spot elevation 273371 at the start, on the top face at 7300 mm from the internal
+    origin - Revit handed back no value for it; read it on the drawing; spot elevation 273372
+    at the end, on the top face at 7300 mm from the internal origin - Revit handed back no
+    value for it; read it on the drawing. | beam 400 x 800mm (id 151761): tag 273373 at the
+    middle; spot elevation 273374 at the start, on the top face at 7300 mm from the internal
+    origin - Revit handed back no value for it; read it on the drawing; spot elevation 273375
+    at the end, on the top face at 7300 mm from the internal origin - Revit handed back no
+    value for it; read it on the drawing. | beam 400 x 800mm (id 151762): tag 273376 at the
+    middle; spot elevation 273377 at the start, on the top face at 7300 mm from the internal
+    origin - Revit handed back no value for it; read it on the drawing; spot elevation 273378
+    at the end, on the top face at 7300 mm from the internal origin - Revit handed back no
+    value for it; read it on the drawing. | beam 400 x 800mm (id 151763): tag 273379 at the
+    middle; spot elevation 273380 at the start, on the top face at 7300 mm from the internal
+    origin - Revit handed back no value for it; read it on the drawing; spot elevation 273381
+    at the end, on the top face at 7300 mm from the internal origin - Revit handed back no
+    value for it; read it on the drawing. | beam 400 x 800mm (id 151764): tag 273382 at the
+    middle; no spot elevation at the start - no top face lies over the beam''s line there
+    (its line may run along an edge: Y Justification); no spot elevation at the end - no top
+    face lies over the beam''s line there (its line may run along an edge: Y Justification).
+    | beam 400 x 800mm (id 151765): tag 273383 at the middle; spot elevation 273384 at the
+    start, on the top face at 7300 mm from the internal origin - Revit handed back no value
+    for it; read it on the drawing; spot elevation 273385 at the end, on the top face at 7300
+    mm from the internal origin - Revit handed back no value for it; read it on the drawing.
+    | beam 400 x 800mm (id 151766): tag 273386 at the middle; spot elevation 273387 at the
+    start, on the top face at 7300 mm from the internal origin - Revit handed back no value
+    for it; read it on the drawing; spot elevation 273388 at the end, on the top face at 7300
+    mm from the internal origin - Revit handed back no value for it; read it on the drawing.
+    | beam 400 x 800mm (id 151767): tag 273389 at the middle; spot elevation 273390 at the
+    start, on the top face at 7300 mm from the internal origin - Revit handed back no value
+    for it; read it on the drawing; spot elevation 273391 at the end, on the top face at 7300
+    mm from the internal origin - Revit handed back no value for it; read it on the drawing.
+    | beam 400 x 800mm (id 151768): tag 273392 at the middle; spot elevation 273393 at the
+    start, on the top face at 7300 mm from the internal origin - Revit handed back no value
+    for it; read it on the drawing; spot elevation 273394 at the end, on the top face at 7300
+    mm from the internal origin - Revit handed back no value for it; read it on the drawing.
+    | beam 400 x 800mm (id 151769): tag 273395 at the middle; spot elevation 273396 at the
+    start, on the top face at 7300 mm from the internal origin - Revit handed back no value
+    for it; read it on the drawing; spot elevation 273397 at the end, on the top face at 7300
+    mm from the internal origin - Revit handed back no value for it; read it on the drawing.
+    | beam 400 x 800mm (id 151770): tag 273398 at the middle; spot elevation 273399 at the
+    start, on the top face at 7300 mm from the internal origin - Revit handed back no value
+    for it; read it on the drawing; spot elevation 273400 at the end, on the top face at 7300
+    mm from the internal origin - Revit handed back no value for it; read it on the drawing.
+    | beam 400 x 800mm (id 151771): tag 273401 at the middle; spot elevation 273402 at the
+    start, on the top face at 7300 mm from the internal origin - Revit handed back no value
+    for it; read it on the drawing; spot elevation 273403 at the end, on the top face at 7300
+    mm from the internal origin - Revit handed back no value for it; read it on the drawing.
+    | beam 400 x 800mm (id 151772): tag 273404 at the middle; spot elevation 273405 at the
+    start, on the top face at 7300 mm from the internal origin - Revit handed back no value
+    for it; read it on the drawing; spot elevation 273406 at the end, on the top face at 7300
+    mm from the internal origin - Revit handed back no value for it; read it on the drawing.
+    | beam 400 x 800mm (id 151773): tag 273407 at the middle; spot elevation 273408 at the
+    start, on the top face at 7300 mm from the internal origin - Revit handed back no value
+    for it; read it on the drawing; spot elevation 273409 at the end, on the top face at 7300
+    mm from the internal origin - Revit handed back no value for it; read it on the drawing.
+    | beam 400 x 800mm (id 151774): tag 273410 at the middle; spot elevation 273411 at the
+    start, on the top face at 7300 mm from the internal origin - Revit handed back no value
+    for it; read it on the drawing; spot elevation 273412 at the end, on the top face at 7300
+    mm from the internal origin - Revit handed back no value for it; read it on the drawing.
+    | beam 600 x 900 (id 151775): tag 273413 at the middle; spot elevation 273414 at the start,
+    on the top face at 7300 mm from the internal origin - Revit handed back no value for it;
+    read it on the drawing; spot elevation 273415 at the end, on the top face at 7300 mm from
+    the internal origin - Revit handed back no value for it; read it on the drawing. | beam
+    600 x 900 (id 151776): tag 273416 at the middle; no spot elevation at the start - no top
+    face lies over the beam''s line there (its line may run along an edge: Y Justification);
+    no spot elevation at the end - no top face lies over the beam''s line there (its line
+    may run along an edge: Y Justification). | beam 600 x 900 (id 151777): tag 273417 at the
+    middle; spot elevation 273418 at the start, on the top face at 7300 mm from the internal
+    origin - Revit handed back no value for it; read it on the drawing; spot elevation 273419
+    at the end, on the top face at 7300 mm from the internal origin - Revit handed back no
+    value for it; read it on the drawing. | beam 600 x 900 (id 151778): tag 273420 at the
+    middle; no spot elevation at the start - no top face lies over the beam''s line there
+    (its line may run along an edge: Y Justification); no spot elevation at the end - no top
+    face lies over the beam''s line there (its line may run along an edge: Y Justification).
+    | beam 600 x 900 (id 151779): tag 273421 at the middle; no spot elevation at the start
+    - no top face lies over the beam''s line there (its line may run along an edge: Y Justification);
+    no spot elevation at the end - no top face lies over the beam''s line there (its line
+    may run along an edge: Y Justification). | beam 600 x 900 (id 151780): tag 273422 at the
+    middle; spot elevation 273423 at the start, on the top face at 7300 mm from the internal
+    origin - Revit handed back no value for it; read it on the drawing; spot elevation 273424
+    at the end, on the top face at 7300 mm from the internal origin - Revit handed back no
+    value for it; read it on the drawing. | beam 600 x 900 (id 151781): tag 273425 at the
+    middle; no spot elevation at the start - no top face lies over the beam''s line there
+    (its line may run along an edge: Y Justification); no spot elevation at the end - no top
+    face lies over the beam''s line there (its line may run along an edge: Y Justification).
+    | beam 600 x 900 (id 151782): tag 273426 at the middle; no spot elevation at the start
+    - no top face lies over the beam''s line there (its line may run along an edge: Y Justification);
+    no spot elevation at the end - no top face lies over the beam''s line there (its line
+    may run along an edge: Y Justification). | beam 600 x 900 (id 151783): tag 273427 at the
+    middle; spot elevation 273428 at the start, on the top face at 7300 mm from the internal
+    origin - Revit handed back no value for it; read it on the drawing; spot elevation 273429
+    at the end, on the top face at 7300 mm from the internal origin - Revit handed back no
+    value for it; read it on the drawing. | beam 600 x 900 (id 151784): tag 273430 at the
+    middle; no spot elevation at the start - no top face lies over the beam''s line there
+    (its line may run along an edge: Y Justification); no spot elevation at the end - no top
+    face lies over the beam''s line there (its line may run along an edge: Y Justification).
+    | beam 600 x 900 (id 151785): tag 273431 at the middle; spot elevation 273432 at the start,
+    on the top face at 7300 mm from the internal origin - Revit handed back no value for it;
+    read it on the drawing; spot elevation 273433 at the end, on the top face at 7300 mm from
+    the internal origin - Revit handed back no value for it; read it on the drawing. | beam
+    400 x 800mm (id 151786): tag 273434 at the middle; spot elevation 273435 at the start,
+    on the top face at 7300 mm from the internal origin - Revit handed back no value for it;
+    read it on the drawing; spot elevation 273436 at the end, on the top face at 7300 mm from
+    the internal origin - Revit handed back no value for it; read it on the drawing. | beam
+    400 x 800mm (id 151787): tag 273437 at the middle; no spot elevation at the start - no
+    top face lies over the beam''s line there (its line may run along an edge: Y Justification);
+    no spot elevation at the end - no top face lies over the beam''s line there (its line
+    may run along an edge: Y Justification). | beam 400 x 800mm (id 151788): tag 273438 at
+    the middle; spot elevation 273439 at the start, on the top face at 7300 mm from the internal
+    origin - Revit handed back no value for it; read it on the drawing; spot elevation 273440
+    at the end, on the top face at 7300 mm from the internal origin - Revit handed back no
+    value for it; read it on the drawing. | beam 400 x 800mm (id 151789): tag 273441 at the
+    middle; spot elevation 273442 at the start, on the top face at 7300 mm from the internal
+    origin - Revit handed back no value for it; read it on the drawing; spot elevation 273443
+    at the end, on the top face at 7300 mm from the internal origin - Revit handed back no
+    value for it; read it on the drawing. | beam 400 x 800mm (id 151790): tag 273444 at the
+    middle; no spot elevation at the start - no top face lies over the beam''s line there
+    (its line may run along an edge: Y Justification); no spot elevation at the end - no top
+    face lies over the beam''s line there (its line may run along an edge: Y Justification).
+    | beam 400 x 800mm (id 151791): tag 273445 at the middle; spot elevation 273446 at the
+    start, on the top face at 7300 mm from the internal origin - Revit handed back no value
+    for it; read it on the drawing; spot elevation 273447 at the end, on the top face at 7300
+    mm from the internal origin - Revit handed back no value for it; read it on the drawing.
+    | beam 400 x 800mm (id 151802): tag 273448 at the middle; spot elevation 273449 at the
+    start, on the top face at 7300 mm from the internal origin - Revit handed back no value
+    for it; read it on the drawing; spot elevation 273450 at the end, on the top face at 7300
+    mm from the internal origin - Revit handed back no value for it; read it on the drawing.
+    | beam 400 x 800mm (id 151803): tag 273451 at the middle; spot elevation 273452 at the
+    start, on the top face at 7300 mm from the internal origin - Revit handed back no value
+    for it; read it on the drawing; spot elevation 273453 at the end, on the top face at 7300
+    mm from the internal origin - Revit handed back no value for it; read it on the drawing.
+    | beam 400 x 800mm (id 151804): tag 273454 at the middle; spot elevation 273455 at the
+    start, on the top face at 7300 mm from the internal origin - Revit handed back no value
+    for it; read it on the drawing; spot elevation 273456 at the end, on the top face at 7300
+    mm from the internal origin - Revit handed back no value for it; read it on the drawing.
+    | beam 400 x 800mm (id 151814): tag 273457 at the middle; spot elevation 273458 at the
+    start, on the top face at 7300 mm from the internal origin - Revit handed back no value
+    for it; read it on the drawing; spot elevation 273459 at the end, on the top face at 7300
+    mm from the internal origin - Revit handed back no value for it; read it on the drawing.
+    | beam 400 x 800mm (id 151815): tag 273460 at the middle; spot elevation 273461 at the
+    start, on the top face at 7300 mm from the internal origin - Revit handed back no value
+    for it; read it on the drawing; spot elevation 273462 at the end, on the top face at 7300
+    mm from the internal origin - Revit handed back no value for it; read it on the drawing.
+    | beam 400 x 800mm (id 151816): tag 273463 at the middle; spot elevation 273464 at the
+    start, on the top face at 7300 mm from the internal origin - Revit handed back no value
+    for it; read it on the drawing; spot elevation 273465 at the end, on the top face at 7300
+    mm from the internal origin - Revit handed back no value for it; read it on the drawing.
+    | beam 400 x 800mm (id 151824): tag 273466 at the middle; spot elevation 273467 at the
+    start, on the top face at 7300 mm from the internal origin - Revit handed back no value
+    for it; read it on the drawing; spot elevation 273468 at the end, on the top face at 7300
+    mm from the internal origin - Revit handed back no value for it; read it on the drawing.
+    | beam 400 x 800mm (id 151825): tag 273469 at the middle; spot elevation 273470 at the
+    start, on the top face at 7300 mm from the internal origin - Revit handed back no value
+    for it; read it on the drawing; spot elevation 273471 at the end, on the top face at 7300
+    mm from the internal origin - Revit handed back no value for it; read it on the drawing.
+    | beam 400 x 800mm (id 151826): tag 273472 at the middle; spot elevation 273473 at the
+    start, on the top face at 7300 mm from the internal origin - Revit handed back no value
+    for it; read it on the drawing; spot elevation 273474 at the end, on the top face at 7300
+    mm from the internal origin - Revit handed back no value for it; read it on the drawing.
+    | beam 400 x 800mm (id 151836): tag 273475 at the middle; spot elevation 273476 at the
+    start, on the top face at 7300 mm from the internal origin - Revit handed back no value
+    for it; read it on the drawing; spot elevation 273477 at the end, on the top face at 7300
+    mm from the internal origin - Revit handed back no value for it; read it on the drawing.
+    | beam 400 x 800mm (id 151837): tag 273478 at the middle; spot elevation 273479 at the
+    start, on the top face at 7300 mm from the internal origin - Revit handed back no value
+    for it; read it on the drawing; spot elevation 273480 at the end, on the top face at 7300
+    mm from the internal origin - Revit handed back no value for it; read it on the drawing.
+    | beam 400 x 800mm (id 151838): tag 273481 at the middle; spot elevation 273482 at the
+    start, on the top face at 7300 mm from the internal origin - Revit handed back no value
+    for it; read it on the drawing; spot elevation 273483 at the end, on the top face at 7300
+    mm from the internal origin - Revit handed back no value for it; read it on the drawing.
+    | beam 400 x 800mm (id 151839): tag 273484 at the middle; no spot elevation at the start
+    - no top face lies over the beam''s line there (its line may run along an edge: Y Justification);
+    spot elevation 273485 at the end, on the top face at 7300 mm from the internal origin
+    - Revit handed back no value for it; read it on the drawing. | beam 400 x 800mm (id 151840):
+    tag 273486 at the middle; no spot elevation at the start - no top face lies over the beam''s
+    line there (its line may run along an edge: Y Justification); spot elevation 273487 at
+    the end, on the top face at 7300 mm from the internal origin - Revit handed back no value
+    for it; read it on the drawing. | beam 400 x 800mm (id 151841): tag 273488 at the middle;
+    no spot elevation at the start - no top face lies over the beam''s line there (its line
+    may run along an edge: Y Justification); spot elevation 273489 at the end, on the top
+    face at 7300 mm from the internal origin - Revit handed back no value for it; read it
+    on the drawing. | beam 400 x 800mm (id 151842): tag 273490 at the middle; no spot elevation
+    at the start - no top face lies over the beam''s line there (its line may run along an
+    edge: Y Justification); spot elevation 273491 at the end, on the top face at 7300 mm from
+    the internal origin - Revit handed back no value for it; read it on the drawing. | beam
+    400 x 800mm (id 151843): tag 273492 at the middle; no spot elevation at the start - no
+    top face lies over the beam''s line there (its line may run along an edge: Y Justification);
+    spot elevation 273493 at the end, on the top face at 7300 mm from the internal origin
+    - Revit handed back no value for it; read it on the drawing. | beam 400 x 800mm (id 151844):
+    tag 273494 at the middle; no spot elevation at the start - no top face lies over the beam''s
+    line there (its line may run along an edge: Y Justification); spot elevation 273495 at
+    the end, on the top face at 7300 mm from the internal origin - Revit handed back no value
+    for it; read it on the drawing. | beam 400 x 800mm (id 151845): tag 273496 at the middle;
+    no spot elevation at the start - no top face lies over the beam''s line there (its line
+    may run along an edge: Y Justification); spot elevation 273497 at the end, on the top
+    face at 7300 mm from the internal origin - Revit handed back no value for it; read it
+    on the drawing. | beam 400 x 800mm (id 151846): tag 273498 at the middle; no spot elevation
+    at the start - no top face lies over the beam''s line there (its line may run along an
+    edge: Y Justification); spot elevation 273499 at the end, on the top face at 7300 mm from
+    the internal origin - Revit handed back no value for it; read it on the drawing., said
+    Func`2, seen HashSet`1, spotCategory 1 item(s) [id -2000263], spotHow the project''s default
+    spot elevation type, spotName none, spotText both, spotTypes 8 item(s) [Beam Elevation
+    (Project), Beam Elevation (Relative), Crosshair (Project), ...], spotWhere both, tagHow
+    the project''s default structural framing tag, tagName none, tagText middle, tagTypes
+    8 item(s) [Boxed, Standard, Boxed, ...], tagWhere middle, tagged 119, typeLabel Func`2,
+    typesLoaded 2 item(s) [Structural framing and multi-category tag types: ''M_Structur...,
+    Spot elevation types: ''Spot Elevations: Beam Elevation (Proj...], wantSpots true, wantTag
+    true. inputs came view as given; elements from the selection (119); tagType not given
+    - "none", the card''s own default (optional); spotType not given - "none", the card''s
+    own default (optional); tagAt not given - "middle", the card''s own default (optional);
+    spotsAt not given - "both", the card''s own default (optional); face not given - "top",
+    the card''s own default (optional). on P1102 STR'
+  negative_case: 'run with view=03 - Floor arranged with categories=Structural Columns, inViewOnly=03
+    - Floor instead - chosen because it should not contain what this fragment reports - the
+    arrangement was re-made first by running filter-elements-by-category, set-selection with
+    this phase''s own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8, OneMillimetre 0.00328083989501312,
+    alreadyTagged 0 item(s), chosenSpot SpotDimensionType, chosenTag FamilySymbol, culture
+    CultureInfo, faceText top, faceWhere top, findings 128 item(s) [126 element(s) handed
+    in, in "03 - Floor": 0 beam tag(s) pla..., Starts and ends are 5% of each beam''s length
+    in from that en..., Structural Columns 151627: not structural framing - beam ann..., ...],
+    framingCategory 1 item(s) [id -2001320], framingTagCategory 1 item(s) [id -2005015], given
+    126 item(s) [450mm, 450mm, 450mm, ...], isNamed Func`3, lines 126 item(s) [Structural
+    Columns 151627: not structural framing - beam ann..., Structural Columns 151628: not structural
+    framing - beam ann..., Structural Columns 151629: not structural framing - beam ann...,
+    ...], mm Func`2, multiTagCategory 1 item(s) [id -2005022], newSpots 0 item(s), newTags
+    0 item(s), noSpotName true, noTagName true, notAnnotated 126 item(s) [151627, 151628,
+    151629, ...], refused , report Structural Columns 151627: not structural framing - beam
+    annotations go on beams only. Left alone. | Structural Columns 151628: not structural
+    framing - beam annotations go on beams only. Left alone. | Structural Columns 151629:
+    not structural framing - beam annotations go on beams only. Left alone. | Structural Columns
+    151630: not structural framing - beam annotations go on beams only. Left alone. | Structural
+    Columns 151631: not structural framing - beam annotations go on beams only. Left alone.
+    | Structural Columns 151632: not structural framing - beam annotations go on beams only.
+    Left alone. | Structural Columns 151633: not structural framing - beam annotations go
+    on beams only. Left alone. | Structural Columns 151634: not structural framing - beam
+    annotations go on beams only. Left alone. | Structural Columns 151635: not structural
+    framing - beam annotations go on beams only. Left alone. | Structural Columns 151636:
+    not structural framing - beam annotations go on beams only. Left alone. | Structural Columns
+    151637: not structural framing - beam annotations go on beams only. Left alone. | Structural
+    Columns 151638: not structural framing - beam annotations go on beams only. Left alone.
+    | Structural Columns 151639: not structural framing - beam annotations go on beams only.
+    Left alone. | Structural Columns 151640: not structural framing - beam annotations go
+    on beams only. Left alone. | Structural Columns 151641: not structural framing - beam
+    annotations go on beams only. Left alone. | Structural Columns 151642: not structural
+    framing - beam annotations go on beams only. Left alone. | Structural Columns 151643:
+    not structural framing - beam annotations go on beams only. Left alone. | Structural Columns
+    151644: not structural framing - beam annotations go on beams only. Left alone. | Structural
+    Columns 151645: not structural framing - beam annotations go on beams only. Left alone.
+    | Structural Columns 151646: not structural framing - beam annotations go on beams only.
+    Left alone. | Structural Columns 151647: not structural framing - beam annotations go
+    on beams only. Left alone. | Structural Columns 151648: not structural framing - beam
+    annotations go on beams only. Left alone. | Structural Columns 151649: not structural
+    framing - beam annotations go on beams only. Left alone. | Structural Columns 151650:
+    not structural framing - beam annotations go on beams only. Left alone. | Structural Columns
+    151651: not structural framing - beam annotations go on beams only. Left alone. | Structural
+    Columns 151652: not structural framing - beam annotations go on beams only. Left alone.
+    | Structural Columns 151653: not structural framing - beam annotations go on beams only.
+    Left alone. | Structural Columns 151654: not structural framing - beam annotations go
+    on beams only. Left alone. | Structural Columns 151655: not structural framing - beam
+    annotations go on beams only. Left alone. | Structural Columns 151656: not structural
+    framing - beam annotations go on beams only. Left alone. | Structural Columns 151657:
+    not structural framing - beam annotations go on beams only. Left alone. | Structural Columns
+    151658: not structural framing - beam annotations go on beams only. Left alone. | Structural
+    Columns 151659: not structural framing - beam annotations go on beams only. Left alone.
+    | Structural Columns 151660: not structural framing - beam annotations go on beams only.
+    Left alone. | Structural Columns 151661: not structural framing - beam annotations go
+    on beams only. Left alone. | Structural Columns 151662: not structural framing - beam
+    annotations go on beams only. Left alone. | Structural Columns 151663: not structural
+    framing - beam annotations go on beams only. Left alone. | Structural Columns 151664:
+    not structural framing - beam annotations go on beams only. Left alone. | Structural Columns
+    151665: not structural framing - beam annotations go on beams only. Left alone. | Structural
+    Columns 151666: not structural framing - beam annotations go on beams only. Left alone.
+    | Structural Columns 151667: not structural framing - beam annotations go on beams only.
+    Left alone. | Structural Columns 151668: not structural framing - beam annotations go
+    on beams only. Left alone. | Structural Columns 151669: not structural framing - beam
+    annotations go on beams only. Left alone. | Structural Columns 151670: not structural
+    framing - beam annotations go on beams only. Left alone. | Structural Columns 151671:
+    not structural framing - beam annotations go on beams only. Left alone. | Structural Columns
+    151672: not structural framing - beam annotations go on beams only. Left alone. | Structural
+    Columns 151673: not structural framing - beam annotations go on beams only. Left alone.
+    | Structural Columns 151674: not structural framing - beam annotations go on beams only.
+    Left alone. | Structural Columns 151675: not structural framing - beam annotations go
+    on beams only. Left alone. | Structural Columns 151676: not structural framing - beam
+    annotations go on beams only. Left alone. | Structural Columns 151677: not structural
+    framing - beam annotations go on beams only. Left alone. | Structural Columns 151678:
+    not structural framing - beam annotations go on beams only. Left alone. | Structural Columns
+    151679: not structural framing - beam annotations go on beams only. Left alone. | Structural
+    Columns 151680: not structural framing - beam annotations go on beams only. Left alone.
+    | Structural Columns 151681: not structural framing - beam annotations go on beams only.
+    Left alone. | Structural Columns 151682: not structural framing - beam annotations go
+    on beams only. Left alone. | Structural Columns 151683: not structural framing - beam
+    annotations go on beams only. Left alone. | Structural Columns 151684: not structural
+    framing - beam annotations go on beams only. Left alone. | Structural Columns 151685:
+    not structural framing - beam annotations go on beams only. Left alone. | Structural Columns
+    151686: not structural framing - beam annotations go on beams only. Left alone. | Structural
+    Columns 151687: not structural framing - beam annotations go on beams only. Left alone.
+    | Structural Columns 151688: not structural framing - beam annotations go on beams only.
+    Left alone. | Structural Columns 151871: not structural framing - beam annotations go
+    on beams only. Left alone. | Structural Columns 151935: not structural framing - beam
+    annotations go on beams only. Left alone. | Structural Columns 151936: not structural
+    framing - beam annotations go on beams only. Left alone. | Structural Columns 151937:
+    not structural framing - beam annotations go on beams only. Left alone. | Structural Columns
+    151938: not structural framing - beam annotations go on beams only. Left alone. | Structural
+    Columns 151939: not structural framing - beam annotations go on beams only. Left alone.
+    | Structural Columns 151940: not structural framing - beam annotations go on beams only.
+    Left alone. | Structural Columns 151941: not structural framing - beam annotations go
+    on beams only. Left alone. | Structural Columns 151942: not structural framing - beam
+    annotations go on beams only. Left alone. | Structural Columns 151943: not structural
+    framing - beam annotations go on beams only. Left alone. | Structural Columns 151944:
+    not structural framing - beam annotations go on beams only. Left alone. | Structural Columns
+    151945: not structural framing - beam annotations go on beams only. Left alone. | Structural
+    Columns 151946: not structural framing - beam annotations go on beams only. Left alone.
+    | Structural Columns 151947: not structural framing - beam annotations go on beams only.
+    Left alone. | Structural Columns 151948: not structural framing - beam annotations go
+    on beams only. Left alone. | Structural Columns 151949: not structural framing - beam
+    annotations go on beams only. Left alone. | Structural Columns 151950: not structural
+    framing - beam annotations go on beams only. Left alone. | Structural Columns 151951:
+    not structural framing - beam annotations go on beams only. Left alone. | Structural Columns
+    151952: not structural framing - beam annotations go on beams only. Left alone. | Structural
+    Columns 151953: not structural framing - beam annotations go on beams only. Left alone.
+    | Structural Columns 151954: not structural framing - beam annotations go on beams only.
+    Left alone. | Structural Columns 151955: not structural framing - beam annotations go
+    on beams only. Left alone. | Structural Columns 151956: not structural framing - beam
+    annotations go on beams only. Left alone. | Structural Columns 151957: not structural
+    framing - beam annotations go on beams only. Left alone. | Structural Columns 151958:
+    not structural framing - beam annotations go on beams only. Left alone. | Structural Columns
+    151959: not structural framing - beam annotations go on beams only. Left alone. | Structural
+    Columns 151960: not structural framing - beam annotations go on beams only. Left alone.
+    | Structural Columns 151961: not structural framing - beam annotations go on beams only.
+    Left alone. | Structural Columns 151962: not structural framing - beam annotations go
+    on beams only. Left alone. | Structural Columns 151963: not structural framing - beam
+    annotations go on beams only. Left alone. | Structural Columns 151964: not structural
+    framing - beam annotations go on beams only. Left alone. | Structural Columns 151965:
+    not structural framing - beam annotations go on beams only. Left alone. | Structural Columns
+    151966: not structural framing - beam annotations go on beams only. Left alone. | Structural
+    Columns 151967: not structural framing - beam annotations go on beams only. Left alone.
+    | Structural Columns 151968: not structural framing - beam annotations go on beams only.
+    Left alone. | Structural Columns 151969: not structural framing - beam annotations go
+    on beams only. Left alone. | Structural Columns 151970: not structural framing - beam
+    annotations go on beams only. Left alone. | Structural Columns 151971: not structural
+    framing - beam annotations go on beams only. Left alone. | Structural Columns 151972:
+    not structural framing - beam annotations go on beams only. Left alone. | Structural Columns
+    151973: not structural framing - beam annotations go on beams only. Left alone. | Structural
+    Columns 151974: not structural framing - beam annotations go on beams only. Left alone.
+    | Structural Columns 151975: not structural framing - beam annotations go on beams only.
+    Left alone. | Structural Columns 151976: not structural framing - beam annotations go
+    on beams only. Left alone. | Structural Columns 151977: not structural framing - beam
+    annotations go on beams only. Left alone. | Structural Columns 151978: not structural
+    framing - beam annotations go on beams only. Left alone. | Structural Columns 151979:
+    not structural framing - beam annotations go on beams only. Left alone. | Structural Columns
+    151980: not structural framing - beam annotations go on beams only. Left alone. | Structural
+    Columns 151981: not structural framing - beam annotations go on beams only. Left alone.
+    | Structural Columns 151982: not structural framing - beam annotations go on beams only.
+    Left alone. | Structural Columns 151983: not structural framing - beam annotations go
+    on beams only. Left alone. | Structural Columns 151984: not structural framing - beam
+    annotations go on beams only. Left alone. | Structural Columns 151985: not structural
+    framing - beam annotations go on beams only. Left alone. | Structural Columns 151986:
+    not structural framing - beam annotations go on beams only. Left alone. | Structural Columns
+    151987: not structural framing - beam annotations go on beams only. Left alone. | Structural
+    Columns 151988: not structural framing - beam annotations go on beams only. Left alone.
+    | Structural Columns 151989: not structural framing - beam annotations go on beams only.
+    Left alone. | Structural Columns 151990: not structural framing - beam annotations go
+    on beams only. Left alone. | Structural Columns 151991: not structural framing - beam
+    annotations go on beams only. Left alone. | Structural Columns 151992: not structural
+    framing - beam annotations go on beams only. Left alone. | Structural Columns 151993:
+    not structural framing - beam annotations go on beams only. Left alone. | Structural Columns
+    151994: not structural framing - beam annotations go on beams only. Left alone. | Structural
+    Columns 151995: not structural framing - beam annotations go on beams only. Left alone.
+    | Structural Columns 151996: not structural framing - beam annotations go on beams only.
+    Left alone. | Structural Columns 152179: not structural framing - beam annotations go
+    on beams only. Left alone., said Func`2, seen HashSet`1, spotCategory 1 item(s) [id -2000263],
+    spotHow the project''s default spot elevation type, spotName none, spotText both, spotTypes
+    8 item(s) [Beam Elevation (Project), Beam Elevation (Relative), Crosshair (Project), ...],
+    spotWhere both, tagHow the project''s default structural framing tag, tagName none, tagText
+    middle, tagTypes 8 item(s) [Boxed, Standard, Boxed, ...], tagWhere middle, tagged 0, typeLabel
+    Func`2, typesLoaded 2 item(s) [Structural framing and multi-category tag types: ''M_Structur...,
+    Spot elevation types: ''Spot Elevations: Beam Elevation (Proj...], wantSpots true, wantTag
+    true. inputs came view as given; elements from the selection (126); tagType not given
+    - "none", the card''s own default (optional); spotType not given - "none", the card''s
+    own default (optional); tagAt not given - "middle", the card''s own default (optional);
+    spotsAt not given - "both", the card''s own default (optional); face not given - "top",
+    the card''s own default (optional). on P1102 STR'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: efb7414d281d5c5f
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

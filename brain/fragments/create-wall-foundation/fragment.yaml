@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -93,6 +93,87 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-13'
+  by: Ajmal PS
+  model: P1102 MEP (21,454 elements), Revit 2020, session 41776
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-category, set-selection with this phase''s own values - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    all 2 item(s) [Walls "Lamelle 11.5" (id 573595) on "Level 1": wall foundati..., Walls
+    "Standard" (id 573610) on "Level 1": a foundation (102...], allTypes 1 item(s) [Bearing
+    Footing - 900 x 300], askedProblem (null), created 1 item(s) [1020385], describe Func`2,
+    findings 3 item(s) [1 wall foundation(s) made, 0 wall(s) already had one, 1 wall..., Walls
+    "Standard" (id 573610) on "Level 1": a foundation (102..., Each foundation follows its
+    wall''s base and is hosted by it:...], foundationUnder Func`2, hostedBy 2 item(s) [1020385,
+    1020387], hostedOn 2 item(s) [573595, 573610], kindOf Func`2, levelName Func`2, lines
+    1 item(s) [Walls "Lamelle 11.5" (id 573595) on "Level 1": wall foundati...], listOnly
+    false, made 2 item(s) [1020385, 1020387], madeUnder 2 item(s) [Lamelle 11.5, Standard],
+    notWalls 0 item(s), problems 1 item(s) [Walls "Standard" (id 573610) on "Level 1": a foundation
+    (102...], refused (null), report Walls "Lamelle 11.5" (id 573595) on "Level 1": wall foundation
+    made (1020385), type "Bearing Footing - 900 x 300"
+
+    Walls "Standard" (id 573610) on "Level 1": a foundation (1020387) was made but has no
+    extent in the model - look at it in Revit, said Bearing Footing - 900 x 300, seen 2 item(s)
+    [573595, 573610], skipped 0 item(s), typeChoices the model''s wall foundation types are
+    "Wall Foundation: Bearing Footing - 900 x 300", typeNames 1 item(s) ["Wall Foundation:
+    Bearing Footing - 900 x 300"], useType 1 item(s) [id 85113], walls 2 item(s) [Lamelle
+    11.5, Standard]. inputs came elements from the selection (2); foundationType as given.
+    on P1102 MEP'
+  negative_case: 'run with foundationType=Bearing Footing - 900 x 300 arranged with categories=Ducts,
+    inViewOnly=Callout of Level 1 HVAC WSHP TYP instead - chosen because it should not contain
+    what this fragment reports - the arrangement was re-made first by running filter-elements-by-category,
+    set-selection with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned all 10 item(s) [Ducts "Mitered
+    Elbows / Taps" (id 404243): not a wall - a wa..., Ducts "Mitered Elbows / Taps" (id 411658):
+    not a wall - a wa..., Ducts "Mitered Elbows / Taps" (id 411660): not a wall - a wa...,
+    ...], allTypes 1 item(s) [Bearing Footing - 900 x 300], askedProblem (null), created 0
+    item(s), describe Func`2, findings 11 item(s) [0 wall foundation(s) made, 0 wall(s) already
+    had one, 0 wall..., Ducts "Mitered Elbows / Taps" (id 404243): not a wall - a wa..., Ducts
+    "Mitered Elbows / Taps" (id 411658): not a wall - a wa..., ...], foundationUnder Func`2,
+    hostedBy 0 item(s), hostedOn 0 item(s), kindOf Func`2, levelName Func`2, lines 0 item(s),
+    listOnly false, made 0 item(s), madeUnder 0 item(s), notWalls 10 item(s) [Ducts "Mitered
+    Elbows / Taps" (id 404243): not a wall - a wa..., Ducts "Mitered Elbows / Taps" (id 411658):
+    not a wall - a wa..., Ducts "Mitered Elbows / Taps" (id 411660): not a wall - a wa...,
+    ...], problems 0 item(s), refused None of the 10 selected element(s) is a wall, so no
+    wall foundation was made, report Ducts "Mitered Elbows / Taps" (id 404243): not a wall
+    - a wall foundation goes only under a wall
+
+    Ducts "Mitered Elbows / Taps" (id 411658): not a wall - a wall foundation goes only under
+    a wall
+
+    Ducts "Mitered Elbows / Taps" (id 411660): not a wall - a wall foundation goes only under
+    a wall
+
+    Ducts "Mitered Elbows / Taps" (id 411724): not a wall - a wall foundation goes only under
+    a wall
+
+    Ducts "Mitered Elbows / Taps" (id 411780): not a wall - a wall foundation goes only under
+    a wall
+
+    Ducts "Mitered Elbows / Taps" (id 411839): not a wall - a wall foundation goes only under
+    a wall
+
+    Ducts "Mitered Elbows / Taps" (id 478867): not a wall - a wall foundation goes only under
+    a wall
+
+    Ducts "Mitered Elbows / Taps" (id 478940): not a wall - a wall foundation goes only under
+    a wall
+
+    Ducts "Mitered Elbows / Taps" (id 478953): not a wall - a wall foundation goes only under
+    a wall
+
+    Ducts "Mitered Elbows / Taps" (id 478969): not a wall - a wall foundation goes only under
+    a wall, said Bearing Footing - 900 x 300, seen 10 item(s) [404243, 411658, 411660, ...],
+    skipped 0 item(s), typeChoices the model''s wall foundation types are "Wall Foundation:
+    Bearing Footing - 900 x 300", typeNames 1 item(s) ["Wall Foundation: Bearing Footing -
+    900 x 300"], useType 1 item(s) [id 85113], walls 0 item(s). inputs came elements from
+    the selection (10); foundationType as given. on P1102 MEP'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 00ebe08adbb032b7
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

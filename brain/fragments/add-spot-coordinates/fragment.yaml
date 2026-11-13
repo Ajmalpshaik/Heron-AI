@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -149,6 +149,73 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-13'
+  by: Ajmal PS
+  model: P1102 MEP (21,457 elements), Revit 2020, session 41776
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-category, set-selection with this phase''s own values - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    MillimetresPerFoot 304.8, OneMillimetre 0.00328083989501312, atPoint Func`2, atText centre,
+    chosenType SpotDimensionType, coordinateTypes 1 item(s) [Horizontal], culture CultureInfo,
+    findings 12 item(s) [10 spot coordinate(s) placed in "Callout of Level 1 HVAC WSH...,
+    10 spot(s) placed gave back no text through the API, so thei..., Ducts 404243: spot 1021387
+    placed at (41739.3, -6316.8, 3332..., ...], gridMode false, grids 0 item(s), isNamed Func`3,
+    leaderOffsetMm 0, lines 10 item(s) [Ducts 404243: spot 1021387 placed at (41739.3, -6316.8,
+    3332..., Ducts 411658: spot 1021388 placed at (42851.9, -4138.6, 3315..., Ducts 411660:
+    spot 1021389 placed at (43751.9, -4138.6, 3315..., ...], mm Func`2, newSpots 10 item(s)
+    [1021387, 1021388, 1021389, ...], notPlaced 0 item(s), others 10 item(s) [Mitered Elbows
+    / Taps, Mitered Elbows / Taps, Mitered Elbows / Taps, ...], placed 10, refused , report
+    Ducts 404243: spot 1021387 placed at (41739.3, -6316.8, 3332.6) mm from the internal origin;
+    Revit handed back no text for it - read the north and east on the drawing. | Ducts 411658:
+    spot 1021388 placed at (42851.9, -4138.6, 3315.2) mm from the internal origin; Revit handed
+    back no text for it - read the north and east on the drawing. | Ducts 411660: spot 1021389
+    placed at (43751.9, -4138.6, 3315.2) mm from the internal origin; Revit handed back no
+    text for it - read the north and east on the drawing. | Ducts 411724: spot 1021390 placed
+    at (41537.2, -3352.8, 3415.2) mm from the internal origin; Revit handed back no text for
+    it - read the north and east on the drawing. | Ducts 411780: spot 1021391 placed at (43099.7,
+    -3352.8, 3315.2) mm from the internal origin; Revit handed back no text for it - read
+    the north and east on the drawing. | Ducts 411839: spot 1021392 placed at (45517.4, -3352.8,
+    3315.2) mm from the internal origin; Revit handed back no text for it - read the north
+    and east on the drawing. | Ducts 478867: spot 1021393 placed at (23138.3, -2619.5, 2829.2)
+    mm from the internal origin; Revit handed back no text for it - read the north and east
+    on the drawing. | Ducts 478940: spot 1021394 placed at (40798.9, -3352.8, 3240.2) mm from
+    the internal origin; Revit handed back no text for it - read the north and east on the
+    drawing. | Ducts 478953: spot 1021395 placed at (40487.2, -2973.6, 3240.2) mm from the
+    internal origin; Revit handed back no text for it - read the north and east on the drawing.
+    | Ducts 478969: spot 1021396 placed at (40487.2, -2619.5, 3065.2) mm from the internal
+    origin; Revit handed back no text for it - read the north and east on the drawing., seen
+    HashSet`1, spotCategory 1 item(s) [id -2000264], typeLabel Func`2, typeText Horizontal,
+    typesLoaded 1 item(s) [Spot coordinate types: ''Spot Coordinates: Horizontal''], viewProblem
+    (null), wantCorners false. inputs came view as given; elements from the selection (10);
+    spotType as given; at not given - "centre", the card''s own default (optional); leaderOffsetMm
+    not given - "0", the card''s own default (optional). on P1102 MEP'
+  negative_case: 'run with view=Callout of Level 1 HVAC WSHP TYP, spotType=Zz No Such Spot
+    arranged with categories=Ducts, inViewOnly=Callout of Level 1 HVAC WSHP TYP instead -
+    chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running filter-elements-by-category, set-selection with this phase''s
+    own values - run inside a transaction, and Revit reported the transaction group ROLLED
+    BACK afterwards. returned MillimetresPerFoot 304.8, OneMillimetre 0.00328083989501312,
+    atPoint Func`2, atText centre, chosenType (null), coordinateTypes 1 item(s) [Horizontal],
+    culture CultureInfo, findings 1 item(s) [No spot coordinate type is called ''Zz No Such
+    Spot'' - the na...], gridMode false, grids 0 item(s), isNamed Func`3, leaderOffsetMm 0,
+    lines 1 item(s) [No spot coordinate type is called ''Zz No Such Spot'' - the na...], mm
+    Func`2, newSpots 0 item(s), notPlaced 0 item(s), others 10 item(s) [Mitered Elbows / Taps,
+    Mitered Elbows / Taps, Mitered Elbows / Taps, ...], placed 0, refused No spot coordinate
+    type is called ''Zz No Such Spot'' - the name has to match the Project Browser, capitals
+    included. The loaded ones are in typesLoaded. Nothing was placed., report No spot coordinate
+    type is called ''Zz No Such Spot'' - the name has to match the Project Browser, capitals
+    included. The loaded ones are in typesLoaded. Nothing was placed., seen HashSet`1, spotCategory
+    1 item(s) [id -2000264], typeLabel Func`2, typeText Zz No Such Spot, typesLoaded 1 item(s)
+    [Spot coordinate types: ''Spot Coordinates: Horizontal''], viewProblem (null), wantCorners
+    false. inputs came view as given; elements from the selection (10); spotType as given;
+    at not given - "centre", the card''s own default (optional); leaderOffsetMm not given
+    - "0", the card''s own default (optional). on P1102 MEP'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: afd0881f6b8593f2
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

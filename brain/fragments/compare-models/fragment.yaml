@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DOC-004
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -124,27 +124,30 @@ contract:
       type: IList<ElementId>
 
 proof:
-  date: '2026-09-08'
+  date: '2026-11-13'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 1680
-  positive_case: 'run as it would normally be run. returned added 1053, changed 0, describe
-    Func`2, findings 15 item(s) [1053 added, 0 removed, 0 changed on the parameters named.
-    Bo..., Different saves: this model at save 25, the other at save 75...,   ADDED    Ducts
-    / Tees ''Tees'' (id 1365662), ...], maxRows 10, other Document, removed 0, sameSaveVersion
-    false, valueOf Func`3. inputs came otherModelPath as given; categories as given (1); parameterNames
-    as given (1); maxRows as given. on Snowdon-scratch_ajmal.al'
-  negative_case: run with otherModelPath=C:\nope\nosuchfile.rvt, categories=Ducts, parameterNames=Comments,
-    maxRows=10 instead - chosen because it should not contain what this fragment reports.
-    returned added 0, changed 0, describe Func`2, findings 2 item(s) [0 added, 0 removed,
-    0 changed on the parameters named. Both ..., There is no file at 'C:\nope\nosuchfile.rvt',
-    so NOTHING was...], maxRows 10, other (null), removed 0, sameSaveVersion false, valueOf
-    Func`3. inputs came otherModelPath as given; categories as given (1); parameterNames as
-    given (1); maxRows as given. on Snowdon-scratch_ajmal.al
+  model: Heron Reads Test (3,263 elements), Revit 2024, session 22684
+  positive_case: 'run as it would normally be run. returned SharedName (two or more parameters
+    share this name), added 0, ambiguous 0 item(s), changed 1, describe Func`2, findings 5
+    item(s) [0 added, 0 removed, 1 changed on the parameters named. Both ..., Different saves:
+    this model at save 5, the other at save 4. ...,   CHANGED  Walls / Generic - 200mm ''Generic
+    - 200mm'' (id 352..., ...], maxRows 10, other Document, removed 0, sameSaveVersion false,
+    sharedNames 0 item(s), valueOf Func`3. inputs came otherModelPath as given; categories
+    as given (1); parameterNames as given (1); maxRows as given. on Heron Reads Test'
+  negative_case: 'run with categories=Walls, maxRows=10, otherModelPath=C:/Users/ajmal/AppData/Local/Temp/heron-work/nk/Heron
+    Reads Test - earlier.rvt, parameterNames=Comments instead - chosen because it should not
+    contain what this fragment reports. returned SharedName (two or more parameters share
+    this name), added 0, ambiguous 1 item(s) [352555], changed 0, describe Func`2, findings
+    5 item(s) [0 added, 0 removed, 0 changed on the parameters named. Both ..., Different
+    saves: this model at save 5, the other at save 4. ..., 4 matched element(s) were skipped
+    as unchanged on Revit''s ow..., ...], maxRows 10, other Document, removed 0, sameSaveVersion
+    false, sharedNames 2 item(s) [Comments, Comments], valueOf Func`3. inputs came otherModelPath
+    as given; categories as given (1); parameterNames as given (1); maxRows as given. on Heron
+    Reads Test'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 8dc23a6a17c54219
-
+  fingerprint: 1436a3ff4341ea85
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

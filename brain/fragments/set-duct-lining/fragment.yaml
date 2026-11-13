@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -110,6 +110,76 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-13'
+  by: Ajmal PS
+  model: P1102 MEP (21,454 elements), Revit 2020, session 41776
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-category, set-selection with this phase''s own values - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    MillimetresPerFoot 304.8, SameMm 0.005, added 10, all 10 item(s) [Ducts "Mitered Elbows
+    / Taps" (id 404243): lining added, 25 ..., Ducts "Mitered Elbows / Taps" (id 411658):
+    lining added, 25 ..., Ducts "Mitered Elbows / Taps" (id 411660): lining added, 25 ...,
+    ...], allTypes 1 item(s) [Default], alsoWentTotal 0, askedProblem (null), changed 0, describe
+    Func`2, findings 2 item(s) [10 lined, 0 changed and 0 already as asked, of 10 duct, fitt...,
+    Insulation on these elements is untouched. Lining sits insid...], flex 0 item(s), flexDuct
+    1 item(s) [id -2008020], holds Func`3, hosts 10 item(s) [404243, 411658, 411660, ...],
+    insulation 0 item(s), keepType true, lineable 3 item(s) [-2008000, -2008010, -2008016],
+    lines 10 item(s) [Ducts "Mitered Elbows / Taps" (id 404243): lining added, 25 ..., Ducts
+    "Mitered Elbows / Taps" (id 411658): lining added, 25 ..., Ducts "Mitered Elbows / Taps"
+    (id 411660): lining added, 25 ..., ...], mm Func`2, namedType (null), notDuct 0 item(s),
+    onlyType 1 item(s) [id 800887], pickedDirectly 0, pipeCategories 4 item(s) [-2008044,
+    -2008049, -2008055, ...], pipes 0 item(s), problems 0 item(s), refused (null), removed
+    0, removing false, report Ducts "Mitered Elbows / Taps" (id 404243): lining added, 25
+    mm of "Default"
+
+    Ducts "Mitered Elbows / Taps" (id 411658): lining added, 25 mm of "Default"
+
+    Ducts "Mitered Elbows / Taps" (id 411660): lining added, 25 mm of "Default"
+
+    Ducts "Mitered Elbows / Taps" (id 411724): lining added, 25 mm of "Default"
+
+    Ducts "Mitered Elbows / Taps" (id 411780): lining added, 25 mm of "Default"
+
+    Ducts "Mitered Elbows / Taps" (id 411839): lining added, 25 mm of "Default"
+
+    Ducts "Mitered Elbows / Taps" (id 478867): lining added, 25 mm of "Default"
+
+    Ducts "Mitered Elbows / Taps" (id 478940): lining added, 25 mm of "Default"
+
+    Ducts "Mitered Elbows / Taps" (id 478953): lining added, 25 mm of "Default"
+
+    Ducts "Mitered Elbows / Taps" (id 478969): lining added, 25 mm of "Default", said keep,
+    skipped 0 item(s), thickness 0.0820209973753281, thicknessMm 25, typeChoices the model''s
+    lining types are "Default", typeName Func`2, typeNames 1 item(s) ["Default"], unchanged
+    0. inputs came elements from the selection (10); thicknessMm as given; liningType not
+    given - "keep", the card''s own default (optional). on P1102 MEP'
+  negative_case: 'run with thicknessMm=25 arranged with categories=Pipes, inViewOnly=Callout
+    of Level 1 HVAC WSHP TYP instead - chosen because it should not contain what this fragment
+    reports - the arrangement was re-made first by running filter-elements-by-category, set-selection
+    with this phase''s own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8, SameMm 0.005, added 0,
+    all 0 item(s), allTypes 1 item(s) [Default], alsoWentTotal 0, askedProblem (null), changed
+    0, describe Func`2, findings 11 item(s) [0 lined, 0 changed and 0 already as asked, of
+    0 duct, fittin..., A pipe has no lining in Revit - left alone (its outer layer ..., A
+    pipe has no lining in Revit - left alone (its outer layer ..., ...], flex 0 item(s), flexDuct
+    1 item(s) [id -2008020], holds Func`3, hosts 0 item(s), insulation 0 item(s), keepType
+    true, lineable 3 item(s) [-2008000, -2008010, -2008016], lines 0 item(s), mm Func`2, namedType
+    (null), notDuct 0 item(s), onlyType 1 item(s) [id 800887], pickedDirectly 0, pipeCategories
+    4 item(s) [-2008044, -2008049, -2008055, ...], pipes 10 item(s) [Pipes "Standard" (id
+    530187), Pipes "Standard" (id 530188), Pipes "Standard" (id 530189), ...], problems 0
+    item(s), refused Nothing was done: 10 of the 10 selected element(s) are pipes, pipe fittings
+    or accessories, and pipes have no lining in Revit - insulate them instead, removed 0,
+    removing false, report , said keep, skipped 0 item(s), thickness 0.0820209973753281, thicknessMm
+    25, typeChoices the model''s lining types are "Default", typeName Func`2, typeNames 1
+    item(s) ["Default"], unchanged 0. inputs came elements from the selection (10); thicknessMm
+    as given; liningType not given - "keep", the card''s own default (optional). on P1102
+    MEP'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: e682c56ad358b02c
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

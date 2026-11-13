@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -68,6 +68,33 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-13'
+  by: Ajmal PS
+  model: Heron Repairs Test (3,221 elements), Revit 2024, session 22684
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-category with this phase's own values - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned cutters 1 item(s)
+    [352529], divided 5, findings 1 item(s) [5 part(s) divided at 1 datum(s); their elements
+    now carry 10...], lines 0 item(s), partCountAfter 10, parts 5 item(s) [352524, 352525,
+    352526, ...], refusal (null), report . inputs came elements from filter-elements-by-category
+    (5); cutterNames as given. on Heron Repairs Test
+  negative_case: run with cutterNames=ZZZ No Such Level arranged with category=Parts instead
+    - chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running filter-elements-by-category with this phase's own values - run
+    inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned cutters 0 item(s), divided 0, findings 1 item(s) [No grid, level or reference
+    plane is named "ZZZ No Such Leve...], lines 1 item(s) [No grid, level or reference plane
+    is named "ZZZ No Such Leve...], partCountAfter 0, parts 5 item(s) [352524, 352525, 352526,
+    ...], refusal No grid, level or reference plane is named "ZZZ No Such Level". NOTHING
+    WAS DIVIDED., report No grid, level or reference plane is named "ZZZ No Such Level". NOTHING
+    WAS DIVIDED.. inputs came elements from filter-elements-by-category (5); cutterNames as
+    given. on Heron Repairs Test
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 9be5b2abd4525c54
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

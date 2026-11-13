@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -196,6 +196,61 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-13'
+  by: Ajmal PS
+  model: P1102 MEP (21,457 elements), Revit 2020, session 41776
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned borderOf Func`2, cellText Func`2,
+    columnsMatched 0 item(s), columnsNotWritten 0 item(s), columnsUnmatched 0 item(s), count
+    Action`1, created 1 item(s) [1021372], defaultTitleBlock none, findTitleBlock Func`2,
+    findings 2 item(s) [Made 1 of 1 row(s) as sheets and set 0 value(s). 0 row(s) no..., Some
+    sheets were made with NO title block, because none was ...], header 2 item(s) [Sheet Number,
+    Sheet Name], integerFor Func`3, isYesNo Func`2, keptWritten 0 item(s), kindOf Func`2,
+    made 1, mostPreviewLines 500, mostRows 1000, nameAt 1, namedAs 1 entry(ies), noTitleblock
+    true, notCreated 0 item(s), numberAt 0, numberTaken 0 item(s), numberedAs 1 entry(ies),
+    onInstance the title block instance's parameter, onNothing no parameter of this name on
+    the sheet or its title block, onSheet the sheet's own parameter, onType NOT WRITTEN -
+    it is a parameter of the title block TYPE, and writing it would change every sheet on
+    that type, oneLine Func`2, oneNamed Func`3, outcomes 0 entry(ies), parameterAt 0 item(s),
+    preview , previewLines 0 item(s), previewOnly false, readBack Func`2, refused , regenerations
+    0, rowsAsked 1, sameText Func`3, seenHeader 2 entry(ies), shapeProblems 0 item(s), table
+    2 item(s) [System.String[], System.String[]], taken 8 entry(ies), ticked 6 item(s) [yes,
+    y, true, ...], titleBlockAt -1, titleBlockNotFound false, titleBlockOf 1 entry(ies), titleBlockProblem
+    , toMake 1 item(s) [1], unticked 5 item(s) [no, n, false, ...], valuesNotSet 0 item(s),
+    valuesSet 0, wouldSet 0, writeValue Func`3, yesNoProperty (null), yesNoSpec (null), yesNoSpecs
+    (null). inputs came sheets as given; titleBlockName as given; previewOnly not given -
+    false (optional). on P1102 MEP
+  negative_case: 'run with sheets=Sheet Number|Sheet Name;HX-901|Heron Test Sheet, titleBlockName=Zz
+    No Such Block instead - chosen because it should not contain what this fragment reports
+    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned borderOf Func`2, cellText Func`2, columnsMatched 0 item(s), columnsNotWritten
+    0 item(s), columnsUnmatched 0 item(s), count Action`1, created 0 item(s), defaultTitleBlock
+    Zz No Such Block, findTitleBlock Func`2, findings 1 item(s) [no title block type called
+    "Zz No Such Block" is loaded in P...], header 2 item(s) [Sheet Number, Sheet Name], integerFor
+    Func`3, isYesNo Func`2, keptWritten 0 item(s), kindOf Func`2, made 0, mostPreviewLines
+    500, mostRows 1000, nameAt 1, namedAs 0 entry(ies), noTitleblock false, notCreated 0 item(s),
+    numberAt 0, numberTaken 0 item(s), numberedAs 0 entry(ies), onInstance the title block
+    instance''s parameter, onNothing no parameter of this name on the sheet or its title block,
+    onSheet the sheet''s own parameter, onType NOT WRITTEN - it is a parameter of the title
+    block TYPE, and writing it would change every sheet on that type, oneLine Func`2, oneNamed
+    Func`3, outcomes 0 entry(ies), parameterAt 0 item(s), preview , previewLines 0 item(s),
+    previewOnly false, readBack Func`2, refused no title block type called "Zz No Such Block"
+    is loaded in P1102 MEP (asked by HX-901). Name each as it shows in the Project Browser
+    - Family: Type. Nothing was made., regenerations 0, rowsAsked 1, sameText Func`3, seenHeader
+    2 entry(ies), shapeProblems 0 item(s), table 2 item(s) [System.String[], System.String[]],
+    taken 7 entry(ies), ticked 6 item(s) [yes, y, true, ...], titleBlockAt -1, titleBlockNotFound
+    true, titleBlockOf 0 entry(ies), titleBlockProblem no title block type called "Zz No Such
+    Block" is loaded in P1102 MEP (asked by HX-901). Name each as it shows in the Project
+    Browser - Family: Type. Nothing was made., toMake 1 item(s) [1], unticked 5 item(s) [no,
+    n, false, ...], valuesNotSet 0 item(s), valuesSet 0, wouldSet 0, writeValue Func`3, yesNoProperty
+    (null), yesNoSpec (null), yesNoSpecs (null). inputs came sheets as given; titleBlockName
+    as given; previewOnly not given - false (optional). on P1102 MEP'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 3975fdf4dbd619d1
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

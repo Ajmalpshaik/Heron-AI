@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -91,28 +91,28 @@ contract:
       type: string
 
 proof:
-  date: '2026-09-10'
+  date: '2026-11-13'
   by: Ajmal PS
-  model: Project1 work_ajmal.al (3,471 elements), Revit 2024, session 24688
+  model: Heron Reads Test (3,263 elements), Revit 2024, session 22684
   positive_case: 'run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase''s own values. returned findings
-    3 item(s) [2 of 2 element(s) carry a per-element override in ''1 - Mech'', 1.5 W (id 925657):
-    line RGB(255,0,255), 1.5 W (id 925663): line RGB(255,0,255)], overrides OverrideGraphicSettings,
-    withOverride 2. inputs came view as given; elements from the selection (2). on Project1
-    work_ajmal.al'
-  negative_case: 'run with categoryName=Walls, inViewOnly=1 - Mech, view=1 - Mech instead
-    - chosen because it should not contain what this fragment reports - the arrangement was
-    re-made first by running select-by-category-name, set-selection with this phase''s own
-    values. returned findings 5 item(s) [0 of 4 element(s) carry a per-element override in
-    ''1 - Mech'', Generic - 200mm (id 925714): NO per-element override in this..., Generic
-    - 200mm (id 925715): NO per-element override in this..., ...], overrides OverrideGraphicSettings,
-    withOverride 0. inputs came view as given; elements from the selection (4). on Project1
-    work_ajmal.al'
+    filter-elements-by-category, set-selection with this phase''s own values. returned findings
+    6 item(s) [1 of 5 element(s) carry a per-element override in ''Level 1'', Generic - 200mm
+    (id 352517): NO per-element override in this..., Heron Made (id 352545): NO per-element
+    override in this view..., ...], lines 1 item(s) [Generic - 200mm (id 352555): surface
+    pattern Diagonal crossh...], overrideList Generic - 200mm (id 352555): surface pattern
+    Diagonal crosshatch, overrides OverrideGraphicSettings, withOverride 1. inputs came view
+    as given; elements from the selection (5). on Heron Reads Test'
+  negative_case: 'run with category=Generic Models, inViewOnly=FloorPlan: Level 1, view=FloorPlan:
+    Level 1 instead - chosen because it should not contain what this fragment reports - the
+    arrangement was re-made first by running filter-elements-by-category, set-selection with
+    this phase''s own values. returned findings 2 item(s) [0 of 1 element(s) carry a per-element
+    override in ''Level 1'', Type 1 (id 353482): NO per-element override in this view. If...],
+    lines 0 item(s), overrideList , overrides OverrideGraphicSettings, withOverride 0. inputs
+    came view as given; elements from the selection (1). on Heron Reads Test'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: d61edb1615a78aa0
-
+  fingerprint: 1c08b8a751d74240
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

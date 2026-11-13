@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -123,6 +123,54 @@ contract:
     - name: findings
       role: accounting
       type: IList<string>
+
+proof:
+  date: '2026-11-13'
+  by: Ajmal PS
+  model: P1102 MEP (21,454 elements), Revit 2020, session 41776
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned askedRaw 1 item(s) [fill patterns],
+    chosen 1 item(s) [0], copied 7, copiedIds 7 item(s) [1020340, 1020341, 1020342, ...],
+    dupWord keep, elsewhere 0 item(s), elsewhereCards 9 item(s) [TRANSFER_MATERIALS_BETWEEN_DOCUMENTS,
+    TRANSFER_LINE_STYLES_BETWEEN_DOCUMENTS, TRANSFER_OBJECT_STYLES_BETWEEN_DOCUMENTS, ...],
+    elsewhereKeys 9 item(s) [material, linestyle, objectstyle, ...], filterText , findings
+    4 item(s) [From ''Heron Many Types Project 2020'' into ''P1102 MEP'': fill ..., 7 copied,
+    46 skipped as already here, 0 refused., A name already here was KEPT AS IT IS - never
+    overwritten. R..., ...], keyOf Func`2, kindClasses 11 item(s) [Autodesk.Revit.DB.FillPatternElement,
+    Autodesk.Revit.DB.LinePatternElement, Autodesk.Revit.DB.TextNoteType, ...], kindKeys 11
+    item(s) [fillpattern, linepattern, texttype, ...], kindWords 11 item(s) [fill patterns,
+    line patterns, text types, ...], listSaid fill patterns, line patterns, text types, dimension
+    types, wall types, floor types, roof types, ceiling types, filled region types, grid types,
+    level types, plainTitle Func`2, refused , refusedCount 0, report From ''Heron Many Types
+    Project 2020'' into ''P1102 MEP'': fill patterns: 7 copied, 46 skipped (already here,
+    this project''s kept), 0 refused., skipped 46, unknown 0 item(s), wanted heron many types
+    project 2020, wantsEverything false. inputs came sourceDocumentTitle as given; kinds as
+    given; nameContains not given - "all", the card''s own default (optional); duplicates
+    not given - "keep", the card''s own default (optional). on P1102 MEP'
+  negative_case: 'run with sourceDocumentTitle=Heron Many Types Project 2020, kinds=fill patterns,
+    nameContains=Zz No Such instead - chosen because it should not contain what this fragment
+    reports - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned askedRaw 1 item(s) [fill patterns], chosen 1 item(s) [0], copied
+    0, copiedIds 0 item(s), dupWord keep, elsewhere 0 item(s), elsewhereCards 9 item(s) [TRANSFER_MATERIALS_BETWEEN_DOCUMENTS,
+    TRANSFER_LINE_STYLES_BETWEEN_DOCUMENTS, TRANSFER_OBJECT_STYLES_BETWEEN_DOCUMENTS, ...],
+    elsewhereKeys 9 item(s) [material, linestyle, objectstyle, ...], filterText Zz No Such,
+    findings 2 item(s) [From ''Heron Many Types Project 2020'' into ''P1102 MEP'': fill ...,
+    0 copied, 0 skipped as already here, 0 refused.], keyOf Func`2, kindClasses 11 item(s)
+    [Autodesk.Revit.DB.FillPatternElement, Autodesk.Revit.DB.LinePatternElement, Autodesk.Revit.DB.TextNoteType,
+    ...], kindKeys 11 item(s) [fillpattern, linepattern, texttype, ...], kindWords 11 item(s)
+    [fill patterns, line patterns, text types, ...], listSaid fill patterns, line patterns,
+    text types, dimension types, wall types, floor types, roof types, ceiling types, filled
+    region types, grid types, level types, plainTitle Func`2, refused , refusedCount 0, report
+    From ''Heron Many Types Project 2020'' into ''P1102 MEP'': fill patterns: 0 copied, 0
+    skipped (already here, this project''s kept), 0 refused - none in ''Heron Many Types Project
+    2020'' matching ''Zz No Such''., skipped 0, unknown 0 item(s), wanted heron many types
+    project 2020, wantsEverything false. inputs came sourceDocumentTitle as given; kinds as
+    given; nameContains as given; duplicates not given - "keep", the card''s own default (optional).
+    on P1102 MEP'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: b533d7eb1f392e11
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

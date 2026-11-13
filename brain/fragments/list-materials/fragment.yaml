@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -296,116 +296,36 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-11-07'
+  date: '2026-11-13'
   by: Ajmal PS
-  model: Test for Issue (6,120 elements), Revit 2024, session 28560
-  positive_case: 'run as it would normally be run. returned findings 4 item(s) [158 material(s)
-    in this project - ''Test for Issue'', Listed used or not - unused ones: FIND_PURGEABLE_ELEMENTS
-    wi..., 3 appearance asset(s) in Revit''s appearance library on this ..., ...], libraryAppearances
-    Grass - Field - Large patch [Prism-1115] (PrismOpaqueSchema)  ||  Grass - Generic - Medium
-    patch [Prism-840] (PrismOpaqueSchema)  ||  Grass - High Quality - Medium patch [Prism-1116]
-    (PrismOpaqueSchema), materialClasses Carpet 1, Concrete 4, Fabric 1, Gas 1, Generic 23,
-    Glass 5, Insulation 4, Lining 2, Liquid 1, Masonry 4, Metal 26, Miscellaneous 16, Paint
-    7, Plastic 4, System 15, Unassigned 28, Wood 16, materialCount 158, materialIds 158 item(s)
-    [27489, 27492, 18974, ...], materialList Acoustic Ceiling Tile 600 x 1200 (Generic, id
-    27489)  ||  Acoustic Ceiling Tile 600 x 600 (Generic, id 27492)  ||  Air (Gas, id 18974)  ||  Aluminum
-    (Metal, id 18953)  ||  Analytical Floor Surface (Unassigned, id 1289792)  ||  Analytical
-    Panels (Unassigned, id 521493)  ||  Analytical Slab Surface (Unassigned, id 1289793)  ||  Analytical
-    Spaces (Unassigned, id 353673)  ||  Analytical Surface - Air Openings (Unassigned, id
-    353697)  ||  Analytical Surface - Air Surfaces (Unassigned, id 353687)  ||  Analytical
-    Surface - Ceilings (Unassigned, id 353685)  ||  Analytical Surface - Exterior Walls (Unassigned,
-    id 353675)  ||  Analytical Surface - Interior Floors (Unassigned, id 353683)  ||  Analytical
-    Surface - Interior Walls (Unassigned, id 353681)  ||  Analytical Surface - Operable Skylights
-    (Unassigned, id 353693)  ||  Analytical Surface - Operable Windows (Unassigned, id 353691)  ||  Analytical
-    Surface - Roofs (Unassigned, id 353677)  ||  Analytical Surface - Shades (Unassigned,
-    id 353699)  ||  Analytical Surface - Slabs on Grade (Unassigned, id 353679)  ||  Analytical
-    Surface - Sliding Doors (Unassigned, id 353695)  ||  Analytical Surface - Underground
-    Walls (Unassigned, id 353689)  ||  Analytical Wall Surface (Unassigned, id 1289794)  ||  Appliance
-    - Gasket (Miscellaneous, id 470604)  ||  Appliance - Stainless Steel (Metal, id 470591)  ||  Appliance
-    - Steel - Black (Unassigned, id 470611)  ||  Area Loads (Unassigned, id 1268598)  ||  Asphalt
-    Shingle (Generic, id 24245)  ||  Asphalt, Pavement, Light Grey (Generic, id 1182148)  ||  Boundary
-    Condition – Fixed (Miscellaneous, id 945010)  ||  Boundary Condition – Pinned (Miscellaneous,
-    id 945011)  ||  Boundary Condition – Roller (Miscellaneous, id 945012)  ||  Boundary Condition
-    – X-Axis (System, id 945046)  ||  Boundary Condition – Y-Axis (System, id 945044)  ||  Boundary
-    Condition – Z-Axis (System, id 945045)  ||  Boundary Roller (Miscellaneous, id 1432924)  ||  Brick,
-    Common (Masonry, id 18941)  ||  Brick, Soldier Course (Masonry, id 46500)  ||  Cabinets
-    (Miscellaneous, id 449947)  ||  Cabinets - Handles (Metal, id 449951)  ||  Carpet (1)
-    (Carpet, id 24145)  ||  Cementitious Backer Board (Miscellaneous, id 435591)  ||  Cherry
-    (Wood, id 35336)  ||  Clad - White (Wood, id 336821)  ||  CMU, Split Face (Masonry, id
-    435571)  ||  Concrete Masonry Units (Masonry, id 18942)  ||  Concrete, Cast-in-Place gray
-    (Concrete, id 18939)  ||  Concrete, Cast-in-Place, Gray (Concrete, id 1570142)  ||  Concrete,
-    Lightweight (Concrete, id 24202)  ||  Concrete, Precast (Concrete, id 18940)  ||  Copper
-    (Metal, id 164754)  ||  Counter Top (Wood, id 450621)  ||  Damp-proofing (Generic, id
-    18983)  ||  Default (Miscellaneous, id 18435)  ||  Default Floor (Miscellaneous, id 18436)  ||  Default
-    Floor Area Face (System, id 1289786)  ||  Default Form (Generic, id 145691)  ||  Default
-    Light Source (Generic, id 135528)  ||  Default Light Source (System, id 1099173)  ||  Default
-    Mass Exterior Wall (Generic, id 147650)  ||  Default Mass Floor (Miscellaneous, id 79117)  ||  Default
-    Mass Interior Wall (Generic, id 147651)  ||  Default Mass Opening (Generic, id 147653)  ||  Default
-    Mass Roof (Generic, id 147652)  ||  Default Mass Shade (Miscellaneous, id 147655)  ||  Default
-    Mass Skylight (System, id 147656)  ||  Default Mass Zone (Generic, id 147649)  ||  Default
-    Roof (Miscellaneous, id 18437)  ||  Default Wall (Miscellaneous, id 18438)  ||  Door -
-    Frame (Miscellaneous, id 467807)  ||  Earth (Generic, id 18935)  ||  EIFS, Exterior Insulation
-    (Generic, id 18967)  ||  Electrical Analytical Loads (Unassigned, id 521576)  ||  FixedBC
-    (Miscellaneous, id 1431221)  ||  Glass (Glass, id 18439)  ||  Glass (Glass, id 1289797)  ||  Glass
-    - White, High Luminance (Glass, id 465404)  ||  Glass, Clear Glazing (Glass, id 18984)  ||  Glass,
-    White, High Luminance (Glass, id 979709)  ||  Grade 250 (Unassigned, id 1559558)  ||  Grade
-    65 (Unassigned, id 945071)  ||  Grass (Generic, id 1182144)  ||  Gravel (Generic, id 1182145)  ||  Gypsum
-    Wall Board (Generic, id 18986)  ||  Insulation - Duct Wrap (Insulation, id 785344)  ||  Insulation
-    - Fiberglass (Insulation, id 785345)  ||  Insulation - PVC Jacketed Fiberglass (Insulation,
-    id 785346)  ||  Insulation - Rigid Fiber Board (Insulation, id 785347)  ||  Iron, Ductile
-    (Metal, id 164755)  ||  Laminate, Ivory, Matte (Plastic, id 35335)  ||  Lining - Fiberglass
-    Board (Lining, id 785348)  ||  Lining - Textile (Lining, id 785349)  ||  Metal - Aluminium
-    (Metal, id 1443249)  ||  Metal - Paint Finish - Grey (Paint, id 385173)  ||  Metal - Paint
-    Finish - Indian Red, Matte (Paint, id 473423)  ||  Metal - Paint Finish - Ivory, Glossy
-    (Paint, id 465406)  ||  Metal - Painted - Grey (Paint, id 1443244)  ||  Metal - Stainless
-    Steel (Metal, id 459572)  ||  Metal - Stainless Steel,Polished (Metal, id 1494223)  ||  Metal
-    - Steel (Unassigned, id 472710)  ||  Metal Deck (Metal, id 18949)  ||  Metal Door - Brindle
-    (Paint, id 453621)  ||  Metal Door - Red (Paint, id 1448366)  ||  Metal Furring (Metal,
-    id 18954)  ||  Metal Panel (Metal, id 435580)  ||  Metal Stud Layer (Metal, id 18946)  ||  Oak
-    Flooring (Wood, id 18959)  ||  Parking Stripe (Paint, id 36879)  ||  Phase - Demo (System,
-    id 22806)  ||  Phase - Exist (System, id 22807)  ||  Phase - New (System, id 29224)  ||  Phase
-    - Temporary (System, id 22808)  ||  Phase-Demo (Unassigned, id 1289789)  ||  Phase-Exist
-    (Unassigned, id 1289790)  ||  Phase-Temp (Unassigned, id 1289791)  ||  Pine (Wood, id
-    435538)  ||  Pinned (Miscellaneous, id 1432131)  ||  Plastic, Opaque Black (Plastic, id
-    464672)  ||  Plywood, Sheathing (Wood, id 18957)  ||  Poche (System, id 1099171)  ||  Poche
-    (System, id 78544)  ||  Polyvinyl Chloride - Rigid (Plastic, id 785405)  ||  Polyvinyl
-    Chloride, Rigid (Plastic, id 134488)  ||  Rebar - ASTM A615M - Grade 420 - Billet Steel
-    (Metal, id 1551215)  ||  Rebar, ASTM A615, Grade 60 (Metal, id 945070)  ||  Rigid insulation
-    (Generic, id 18977)  ||  Roofing, EPDM Membrane (Generic, id 24244)  ||  Sand (Generic,
-    id 1570138)  ||  Siding, Clapboard (Wood, id 435560)  ||  Softwood, Lumber (Wood, id 18960)  ||  Stainless
-    Steel (Metal, id 164756)  ||  Steel (Metal, id 1099148)  ||  Steel ASTM A36 (Metal, id
-    1106079)  ||  Steel ASTM A992 (Metal, id 128891)  ||  Steel, 45-345 (Metal, id 1537425)  ||  Steel,
-    Carbon (Metal, id 164753)  ||  Steel, Chrome Plated (Metal, id 35341)  ||  Steel, Paint
-    Finish, Dark Gray (Metal, id 593446)  ||  Steel, Paint Finish, Dark Gray, Matte (Metal,
-    id 466339)  ||  Steel, Paint Finish, Ivory, Glossy (Metal, id 1086926)  ||  Steel, Polished
-    (Metal, id 450622)  ||  Structure, Steel Bar Joist Layer (Metal, id 24217)  ||  Structure,
-    Wood Joist/Rafter Layer (Wood, id 24146)  ||  Structure, Wood Joist/Rafter Layer, Batt
-    Insulation (Wood, id 24243)  ||  System-Zones (Unassigned, id 352677)  ||  Textile - Slate
-    Blue (Fabric, id 464671)  ||  Tile, Mosaic, Gray (Generic, id 18989)  ||  Trim (Wood,
-    id 467259)  ||  Vapor Retarder (Generic, id 18982)  ||  Vinyl Composition Tile (Generic,
-    id 24184)  ||  Water (Liquid, id 785510)  ||  Wood - Birch (Wood, id 385171)  ||  Wood
-    - Stained (Wood, id 336822)  ||  Wood Door Panel - Birch (Wood, id 1443250)  ||  Wood
-    Planks (Wood, id 1182147)  ||  Wood Shake (Wood, id 435539)  ||  XDirection (System, id
-    1433728)  ||  YDirection (System, id 1433726)  ||  ZDirection (System, id 1433727), missing
-    0 item(s), onlyMissing false, textures , withAllTabs false, withAssets false, withLibraryAppearances
+  model: Heron Reads Test (3,263 elements), Revit 2024, session 22684
+  positive_case: 'run as it would normally be run. returned ambiguous 1 item(s) [352514],
+    ambiguousNames 1 item(s) [Heron A], findings 3 item(s) [1 material(s) match ''Heron A''
+    in this project - ''Heron Reads..., 1 material(s) carry TWO OR MORE parameters called
+    ''Keywords''..., Listed used or not - unused ones: FIND_PURGEABLE_ELEMENTS wi...], libraryAppearances
+    , materialClasses Unassigned 1, materialCount 1, materialIds 1 item(s) [352514], materialList
+    Heron A (Unassigned, id 352514); identity keywords NOT READ - 2 parameters share that
+    name; graphics shading 0,0,0 at 0% transparency; surface none 0,0,0 / none 0,0,0; cut
+    none 0,0,0 / none 0,0,0; appearance NONE - draws flat grey in Realistic and renders, missing
+    0 item(s), onlyMissing false, textures , withAllTabs true, withAssets false, withLibraryAppearances
     false, withTextures false. inputs came withAssets not given - false (optional); withAllTabs
-    not given - false (optional); withLibraryAppearances not given - false (optional); namePattern
-    not given - "all", the card''s own default (optional); libraryPattern as given; withTextures
-    not given - false (optional); onlyMissing not given - false (optional). on Test for Issue'
-  negative_case: 'run with libraryPattern=zzqx-no-such-asset, namePattern=ZZZ* instead - chosen
-    because it should not contain what this fragment reports. returned findings 4 item(s)
-    [No material matches ''ZZZ*'' in this project - ''Test for Issue..., Listed used or not
-    - unused ones: FIND_PURGEABLE_ELEMENTS wi..., 0 appearance asset(s) in Revit''s appearance
-    library on this ..., ...], libraryAppearances , materialClasses , materialCount 0, materialIds
-    0 item(s), materialList , missing 0 item(s), onlyMissing false, textures , withAllTabs
-    false, withAssets false, withLibraryAppearances false, withTextures false. inputs came
-    withAssets not given - false (optional); withAllTabs not given - false (optional); withLibraryAppearances
-    not given - false (optional); namePattern as given; libraryPattern as given; withTextures
-    not given - false (optional); onlyMissing not given - false (optional). on Test for Issue'
+    as given; withLibraryAppearances not given - false (optional); namePattern as given; libraryPattern
+    not given - "all", the card''s own default (optional); withTextures not given - false
+    (optional); onlyMissing not given - false (optional). on Heron Reads Test'
+  negative_case: 'run with namePattern=ZZZ*, withAllTabs=True instead - chosen because it
+    should not contain what this fragment reports. returned ambiguous 0 item(s), ambiguousNames
+    0 item(s), findings 2 item(s) [No material matches ''ZZZ*'' in this project - ''Heron
+    Reads Te..., Listed used or not - unused ones: FIND_PURGEABLE_ELEMENTS wi...], libraryAppearances
+    , materialClasses , materialCount 0, materialIds 0 item(s), materialList , missing 0 item(s),
+    onlyMissing false, textures , withAllTabs true, withAssets false, withLibraryAppearances
+    false, withTextures false. inputs came withAssets not given - false (optional); withAllTabs
+    as given; withLibraryAppearances not given - false (optional); namePattern as given; libraryPattern
+    not given - "all", the card''s own default (optional); withTextures not given - false
+    (optional); onlyMissing not given - false (optional). on Heron Reads Test'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 4f1d27fed036bafc
+  fingerprint: 0e11b3cb8bc59153
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

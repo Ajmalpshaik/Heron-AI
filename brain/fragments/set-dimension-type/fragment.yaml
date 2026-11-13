@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -114,6 +114,77 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-13'
+  by: Ajmal PS
+  model: P1102 MEP (21,454 elements), Revit 2020, session 41776
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8, api RuntimeAssembly,
+    asked 2.5mm - Arial, changedTypeId 1 item(s) [id 1020320], describe Func`2, dimTypes 12
+    item(s) [Diagonal - 2.5mm Arial, Diameter, Diameter Dimension Style, ...], dimensions
+    1180 item(s) [Alignment, Alignment, Alignment, ...], findings 2 item(s) [Copied "Linear
+    Dimension Style: 2.5mm - Arial" as "Linear Di..., 0 dimension(s) are on "Linear Dimension
+    Style: Heron Dim Tes...], forgeType (null), formatText Func`2, fullName Func`2, invariant
+    CultureInfo, labelOf Func`3, loose Func`2, newName Heron Dim Test, noSymbol UnitSymbolType,
+    parameterOf Func`3, putSymbol Action`2, putUnit Action`2, refused (null), roundingOf Func`2,
+    roundingText Func`2, said Text Size=3, settings 16 item(s) [(Line Weight, Autodesk.Revit.DB.BuiltInParameter[],
+    integer,..., (Tick Mark Line Weight, Autodesk.Revit.DB.BuiltInParameter[]..., (Color,
+    Autodesk.Revit.DB.BuiltInParameter[], color, System...., ...], shown Func`3, space Autodesk.Revit.DB.,
+    specOf Func`2, specOfType (null), squash Func`2, start DimensionType, statics BindingFlags,
+    storageFor Func`2, symbolName Func`2, symbolOf Func`2, typeAfter Linear Dimension Style:
+    Heron Dim Test | style Linear | Line Weight 1 | Tick Mark Line Weight 3 | Color 0,0,0
+    | Dimension Line Extension 2 mm | Witness Line Gap to Element 2 mm | Witness Line Extension
+    2 mm | Tick Mark Diagonal - 1.5mm | Text Size 3 mm | Text Offset 0.5 mm | Text Font Arial
+    | Text Background Transparent | Width Factor 1 | Bold no | Italic no | Underline no |
+    Units Format Use project settings, typeBefore Linear Dimension Style: 2.5mm - Arial |
+    style Linear | Line Weight 1 | Tick Mark Line Weight 3 | Color 0,0,0 | Dimension Line
+    Extension 2 mm | Witness Line Gap to Element 2 mm | Witness Line Extension 2 mm | Tick
+    Mark Diagonal - 1.5mm | Text Size 2.5 mm | Text Offset 0.5 mm | Text Font Arial | Text
+    Background Transparent | Width Factor 1 | Bold no | Italic no | Underline no | Units Format
+    Use project settings, typeList Angular Dimension Style: Diagonal - 2.5mm Arial, Diameter
+    Dimension Style: Diameter, Diameter Dimension Style: Diameter Dimension Style, Linear
+    Dimension Style: 2.5mm - Arial, Linear Dimension Style: Linear - 3/32" Arial, Linear Dimension
+    Style: Linear Dimension Style, Linear Dimension Style: Linear Dimension Style, Linear
+    Dimension Style: Linear Dimension Style, Radial Dimension Style: Arrow - 2.5mm Arial,
+    Spot Coordinates: Horizontal, Spot Elevations: No Symbol (Project), Spot Slopes: Sloped,
+    unitName Func`2, unitOf Func`2, usedBy 0 dimension(s) are on "Linear Dimension Style:
+    Heron Dim Test", validSymbols Func`2, validUnits Func`2, wanted 1 item(s) [((Text Size,
+    Autodesk.Revit.DB.BuiltInParameter[], mm, Syste...]. inputs came dimensionTypeName as
+    given; changes as given; duplicateAs as given. on P1102 MEP'
+  negative_case: 'run with dimensionTypeName=Zz No Such, changes=Text Size=3, duplicateAs=Heron
+    Dim Test instead - chosen because it should not contain what this fragment reports - run
+    inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned MmPerFoot 304.8, api RuntimeAssembly, asked Zz No Such, changedTypeId (null),
+    describe Func`2, dimTypes 12 item(s) [Diagonal - 2.5mm Arial, Diameter, Diameter Dimension
+    Style, ...], dimensions 1180 item(s) [Alignment, Alignment, Alignment, ...], findings
+    1 item(s) [No dimension type is named "Zz No Such". The dimension types...], forgeType
+    (null), formatText Func`2, fullName Func`2, invariant CultureInfo, labelOf Func`3, loose
+    Func`2, newName Heron Dim Test, noSymbol UnitSymbolType, parameterOf Func`3, putSymbol
+    Action`2, putUnit Action`2, refused No dimension type is named "Zz No Such". The dimension
+    types here are: Angular Dimension Style: Diagonal - 2.5mm Arial, Diameter Dimension Style:
+    Diameter, Diameter Dimension Style: Diameter Dimension Style, Linear Dimension Style:
+    2.5mm - Arial, Linear Dimension Style: Linear - 3/32" Arial, Linear Dimension Style: Linear
+    Dimension Style, Linear Dimension Style: Linear Dimension Style, Linear Dimension Style:
+    Linear Dimension Style, Radial Dimension Style: Arrow - 2.5mm Arial, Spot Coordinates:
+    Horizontal, Spot Elevations: No Symbol (Project), Spot Slopes: Sloped. NOTHING WAS CHANGED.,
+    roundingOf Func`2, roundingText Func`2, said Text Size=3, settings 16 item(s) [(Line Weight,
+    Autodesk.Revit.DB.BuiltInParameter[], integer,..., (Tick Mark Line Weight, Autodesk.Revit.DB.BuiltInParameter[]...,
+    (Color, Autodesk.Revit.DB.BuiltInParameter[], color, System...., ...], shown Func`3, space
+    Autodesk.Revit.DB., specOf Func`2, specOfType (null), squash Func`2, start (null), statics
+    BindingFlags, storageFor Func`2, symbolName Func`2, symbolOf Func`2, typeAfter , typeBefore
+    , typeList Angular Dimension Style: Diagonal - 2.5mm Arial, Diameter Dimension Style:
+    Diameter, Diameter Dimension Style: Diameter Dimension Style, Linear Dimension Style:
+    2.5mm - Arial, Linear Dimension Style: Linear - 3/32" Arial, Linear Dimension Style: Linear
+    Dimension Style, Linear Dimension Style: Linear Dimension Style, Linear Dimension Style:
+    Linear Dimension Style, Radial Dimension Style: Arrow - 2.5mm Arial, Spot Coordinates:
+    Horizontal, Spot Elevations: No Symbol (Project), Spot Slopes: Sloped, unitName Func`2,
+    unitOf Func`2, usedBy , validSymbols Func`2, validUnits Func`2, wanted 0 item(s). inputs
+    came dimensionTypeName as given; changes as given; duplicateAs as given. on P1102 MEP'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 6287fce236a4c0ec
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

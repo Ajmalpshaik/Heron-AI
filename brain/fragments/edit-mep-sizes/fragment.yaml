@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -134,6 +134,69 @@ contract:
       type: IList<string>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-13'
+  by: Ajmal PS
+  model: P1102 MEP (21,454 elements), Revit 2020, session 41776
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned added 1, adding true, after Round
+    duct sizes (75): 75, 90, 100, 110, 125, 140, 150, 160, 175, 190, 200, 210, 225, 240, 250,
+    260, 275, 290, 300, 310, 325, 340, 350, 360, 375, 390, 400, 425, 450, 475, 500, 550, 575,
+    600, 625, 650, 675, 700, 725, 750, 775, 800, 825, 850, 875, 900, 950, 975, 1000, 1025,
+    1050, 1100, 1150, 1200, 1250, 1300, 1350, 1400, 1450, 1500, 1550, 1600, 1650, 1700, 1750,
+    1800, 1850, 1900, 1950, 2000, 2050, 2100, 2150, 2200, 2250 mm, asked 1 item(s) [3.36286089238845],
+    before Round duct sizes (74): 75, 90, 100, 110, 125, 140, 150, 160, 175, 190, 200, 210,
+    225, 240, 250, 260, 275, 290, 300, 310, 325, 340, 350, 360, 375, 390, 400, 425, 450, 475,
+    500, 550, 575, 600, 625, 650, 675, 700, 725, 750, 775, 800, 825, 850, 875, 900, 950, 975,
+    1000, 1050, 1100, 1150, 1200, 1250, 1300, 1350, 1400, 1450, 1500, 1550, 1600, 1650, 1700,
+    1750, 1800, 1850, 1900, 1950, 2000, 2050, 2100, 2150, 2200, 2250 mm, bend 0, bendRadiusMm
+    0, conduitSettings (null), current Func`1, ductSettings DuctSizeSettings, findings 3 item(s)
+    [Round duct sizes: 1 size(s) added, 0 removed, 0 skipped, 0 r..., Before - Round duct
+    sizes (74): 75, 90, 100, 110, 125, 140, ..., After - Round duct sizes (75): 75, 90, 100,
+    110, 125, 140, 1...], held0 74 item(s) [0.246062992125984, 0.295275590551181, 0.328083989501312,
+    ...], inUse Func`2, inner 0, insideMm 0, invariant CultureInfo, kind round, label Round
+    duct sizes, lengthOf Func`3, listWord round, mm Func`2, nearWords Func`3, oneSizeOnly
+    false, outer 0, outsideMm 0, pick Func`3, place the round duct size list, proceed true,
+    refused 0 item(s), removed 0, removing false, same Func`3, segment (null), shape DuctShape,
+    skipped 0 item(s), standardName , tolerance 3.28083989501312E-05, traySizes (null), verb
+    add, wanted 1 item(s) [3.36286089238845], wantedName , words Func`2. inputs came sizeList
+    as given; action as given; sizes as given; name not given - "none", the card''s own default
+    (optional); outsideMm not given - "0", the card''s own default (optional); insideMm not
+    given - "0", the card''s own default (optional); bendRadiusMm not given - "0", the card''s
+    own default (optional). on P1102 MEP'
+  negative_case: 'run with sizeList=round, action=add, sizes=1000 instead - chosen because
+    it should not contain what this fragment reports - run inside a transaction, and Revit
+    reported the transaction group ROLLED BACK afterwards. returned added 0, adding true,
+    after Round duct sizes (74): 75, 90, 100, 110, 125, 140, 150, 160, 175, 190, 200, 210,
+    225, 240, 250, 260, 275, 290, 300, 310, 325, 340, 350, 360, 375, 390, 400, 425, 450, 475,
+    500, 550, 575, 600, 625, 650, 675, 700, 725, 750, 775, 800, 825, 850, 875, 900, 950, 975,
+    1000, 1050, 1100, 1150, 1200, 1250, 1300, 1350, 1400, 1450, 1500, 1550, 1600, 1650, 1700,
+    1750, 1800, 1850, 1900, 1950, 2000, 2050, 2100, 2150, 2200, 2250 mm, asked 0 item(s),
+    before Round duct sizes (74): 75, 90, 100, 110, 125, 140, 150, 160, 175, 190, 200, 210,
+    225, 240, 250, 260, 275, 290, 300, 310, 325, 340, 350, 360, 375, 390, 400, 425, 450, 475,
+    500, 550, 575, 600, 625, 650, 675, 700, 725, 750, 775, 800, 825, 850, 875, 900, 950, 975,
+    1000, 1050, 1100, 1150, 1200, 1250, 1300, 1350, 1400, 1450, 1500, 1550, 1600, 1650, 1700,
+    1750, 1800, 1850, 1900, 1950, 2000, 2050, 2100, 2150, 2200, 2250 mm, bend 0, bendRadiusMm
+    0, conduitSettings (null), current Func`1, ductSettings DuctSizeSettings, findings 3 item(s)
+    [Round duct sizes: 0 size(s) added, 0 removed, 1 skipped, 0 r..., Before - Round duct
+    sizes (74): 75, 90, 100, 110, 125, 140, ..., After - Round duct sizes (74): 75, 90, 100,
+    110, 125, 140, 1...], held0 74 item(s) [0.246062992125984, 0.295275590551181, 0.328083989501312,
+    ...], inUse Func`2, inner 0, insideMm 0, invariant CultureInfo, kind round, label Round
+    duct sizes, lengthOf Func`3, listWord round, mm Func`2, nearWords Func`3, oneSizeOnly
+    false, outer 0, outsideMm 0, pick Func`3, place the round duct size list, proceed true,
+    refused 0 item(s), removed 0, removing false, same Func`3, segment (null), shape DuctShape,
+    skipped 1 item(s) [1000 mm is already in the round duct size list - left as it ...], standardName
+    , tolerance 3.28083989501312E-05, traySizes (null), verb add, wanted 1 item(s) [3.28083989501312],
+    wantedName , words Func`2. inputs came sizeList as given; action as given; sizes as given;
+    name not given - "none", the card''s own default (optional); outsideMm not given - "0",
+    the card''s own default (optional); insideMm not given - "0", the card''s own default
+    (optional); bendRadiusMm not given - "0", the card''s own default (optional). on P1102
+    MEP'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: cdec835a9fdba9e9
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -120,3 +120,5 @@ URL on the seven, Type Comments blank on all nine - nothing kept.
 
 **Still not known:** question 2 (whether a type switch deletes anything) - this family has no sketch
 dimension to lose, so it cannot answer it.
+
+**Signed 2026-11-13, as Ajmal PS, on the owner's word** (*"You can sign"*): `set-parameter-values-by-id` version 8 - `accept` on NG5's draft (Revit 2020, *Heron Many Types Project 2020*), the status flipped to PROVEN. Second route NOT ESTABLISHED (NG8).

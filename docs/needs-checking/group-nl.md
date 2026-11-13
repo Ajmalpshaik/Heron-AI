@@ -111,3 +111,5 @@ run now refuse that before anything is sent ([row 5b-1556](../fragment-issues/se
 `CREATE_ASSEMBLY_VIEWS` (DRAFT) was arranged that way in `tools/jobs/p1102-round9-2026-11-02.yaml` - a
 record of 2026-11-02, left as it was, whose dry run now reads `REFUSED` for that entry; its proof needs
 an assembly made and KEPT first, and NL10 leaves one.
+
+**Signed 2026-11-13, as Ajmal PS, on the owner's word** (*"You can sign"*): `set-routing-preference` (NL1, draft c38324d745fc332d) and `create-assembly` (NL9, draft 027246ab0f2d12d1) - `accept` on each, the status flipped to PROVEN. `ADD_PROJECT_PARAMETER` was signed earlier the same day. NL4a's kept half and NL8 stay NOT RUN.

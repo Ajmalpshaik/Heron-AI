@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -103,6 +103,62 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-13'
+  by: Ajmal PS
+  model: P1102 STR (9,179 elements), Revit 2020, session 41776
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8, SquareMetresPerSquareFoot
+    0.09290304, arcs 0, arrayCurves CurveArray, callName pre-2022, corners 4 item(s) [(656.167979003,
+    656.167979003, 0.000000000), (672.572178478, 656.167979003, 0.000000000), (672.572178478,
+    669.291338583, 0.000000000), ...], created 1 item(s) [id 273523], findings 2 item(s) [Made
+    through the pre-2022 call. 4 edge(s), 0 of them arcs, It is one slab: nothing has been
+    cut through it and nothing ...], floorTypes 11 item(s) [Generic 300mm, Standard Timber-Wood
+    Finish, Beam and Block 200mm, ...], foundationCategory 1 item(s) [id -2001300], foundationTypes
+    4 item(s) [150mm Foundation Slab, 200mm Foundation Slab, 250mm Foundation Slab, ...],
+    invariant CultureInfo, listOnly false, loopCurves 4 item(s) [Autodesk.Revit.DB.Line, Autodesk.Revit.DB.Line,
+    Autodesk.Revit.DB.Line, ...], mm Func`2, namedBy Func`2, numbers Func`2, pointOf Func`3,
+    problem (null), refused (null), report Foundation slab made (273523), type "Foundation
+    Slab: 150mm Foundation Slab", on "Sub Level", in Structural Foundations: Area 20 m2, Thickness
+    150 mm; its top is 0 mm and its bottom -150 mm from the level, said 150mm Foundation Slab,
+    shortest 0.00256026455729167, slab Floor, through 4 item(s) [(null), (null), (null), ...],
+    typeChoices the model''s foundation slab types are "Foundation Slab: 150mm Foundation
+    Slab" (150 mm), "Foundation Slab: 200mm Foundation Slab" (200 mm), "Foundation Slab: 250mm
+    Foundation Slab" (250 mm), "Foundation Slab: 300mm Foundation Slab" (300 mm), typeLabel
+    Func`2, typeNames 4 item(s) ["Foundation Slab: 150mm Foundation Slab" (150 mm), "Foundation
+    Slab: 200mm Foundation Slab" (200 mm), "Foundation Slab: 250mm Foundation Slab" (250 mm),
+    ...], typeThickness Func`2, useType FloorType. inputs came level as given; foundationType
+    as given; boundary as given. on P1102 STR'
+  negative_case: 'run with level=Sub Level, foundationType=Zz No Such Slab, boundary=200000,200000,0;
+    205000,200000,0; 205000,204000,0; 200000,204000,0 instead - chosen because it should not
+    contain what this fragment reports - run inside a transaction, and Revit reported the
+    transaction group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8, SquareMetresPerSquareFoot
+    0.09290304, arcs 0, arrayCurves CurveArray, callName pre-2022, corners 0 item(s), created
+    (null), findings 1 item(s) [No foundation slab type called "Zz No Such Slab" - the model...],
+    floorTypes 11 item(s) [Generic 300mm, Standard Timber-Wood Finish, Beam and Block 200mm,
+    ...], foundationCategory 1 item(s) [id -2001300], foundationTypes 4 item(s) [150mm Foundation
+    Slab, 200mm Foundation Slab, 250mm Foundation Slab, ...], invariant CultureInfo, listOnly
+    false, loopCurves 0 item(s), mm Func`2, namedBy Func`2, numbers Func`2, pointOf Func`3,
+    problem No foundation slab type called "Zz No Such Slab" - the model''s foundation slab
+    types are "Foundation Slab: 150mm Foundation Slab" (150 mm), "Foundation Slab: 200mm Foundation
+    Slab" (200 mm), "Foundation Slab: 250mm Foundation Slab" (250 mm), "Foundation Slab: 300mm
+    Foundation Slab" (300 mm), refused No foundation slab type called "Zz No Such Slab" -
+    the model''s foundation slab types are "Foundation Slab: 150mm Foundation Slab" (150 mm),
+    "Foundation Slab: 200mm Foundation Slab" (200 mm), "Foundation Slab: 250mm Foundation
+    Slab" (250 mm), "Foundation Slab: 300mm Foundation Slab" (300 mm). Nothing was created.,
+    report , said Zz No Such Slab, shortest 0.00256026455729167, slab (null), through 1 item(s)
+    [(null)], typeChoices the model''s foundation slab types are "Foundation Slab: 150mm Foundation
+    Slab" (150 mm), "Foundation Slab: 200mm Foundation Slab" (200 mm), "Foundation Slab: 250mm
+    Foundation Slab" (250 mm), "Foundation Slab: 300mm Foundation Slab" (300 mm), typeLabel
+    Func`2, typeNames 4 item(s) ["Foundation Slab: 150mm Foundation Slab" (150 mm), "Foundation
+    Slab: 200mm Foundation Slab" (200 mm), "Foundation Slab: 250mm Foundation Slab" (250 mm),
+    ...], typeThickness Func`2, useType (null). inputs came level as given; foundationType
+    as given; boundary as given. on P1102 STR'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 73976176efe77eff
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
