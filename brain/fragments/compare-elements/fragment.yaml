@@ -9,7 +9,7 @@ semantic-identity: "what is actually different between these two elements"
 kind: action
 domain: revit.qa
 capability: COMPARE_ELEMENTS
-version: 2
+version: 3
 source: OFFICIAL
 risk: READ
 
@@ -26,6 +26,17 @@ risk: READ
 # Every other row is exactly version 1's. Written here and not in
 # `purpose`: the purpose is routing text. A read: it still answers through
 # revit_read while DRAFT, and says DRAFT (D-117 item 4).
+#
+# VERSION 3 (2026-11-13) - BUILT-IN TWINS THAT AGREE ARE ONE READING.
+# FRAGMENT-ISSUES row 5b-1631, found by NK8 on Revit 2024: Revit gives every
+# element two built-in parameters named "Category" (ELEM_CATEGORY_PARAM and
+# ELEM_CATEGORY_PARAM_MT), so version 2 said "'Category' - NOT READ" - and
+# "'Category [type]'" - on every element in every model, beside the arranged
+# Comments line, and never compared Category at all. Where EVERY parameter
+# carrying the name is built-in and all of them read the same, that one value
+# is compared like any other; a shared or project parameter among them, or
+# built-ins that read differently, stays NOT READ as version 2 says. Still
+# DRAFT; COMPILED, NOT RUN IN ANY REVIT (NEEDS-CHECKING Group NX).
 
 purpose: >
   Given two or more elements, reports only the parameters whose values DIFFER
@@ -85,7 +96,9 @@ contract:
       type: int
     - name: ambiguous
       # VERSION 2. The compared elements that carry TWO OR MORE parameters by
-      # one name, on themselves or on their type. That name is not read:
+      # one name, on themselves or on their type - since version 3, NOT when
+      # every one of them is built-in and all read the same, which is one
+      # reading (row 5b-1631). That name is not read:
       # Revit's lookup would pick one at random, so its row is neither
       # identical nor differing, and `findings` says which name (D-54 s3,
       # FRAGMENT-ISSUES 5b-203). Turned down, never found (D-52).
