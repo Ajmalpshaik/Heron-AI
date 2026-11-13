@@ -29,4 +29,4 @@ Revit.** The proof is on scratch families made for it, never on the owner's `GM_
 | **CN6** | A material in A sharing a name with one in B, a different colour | **Not run.** the material listed in `materialsChanged` as before -> after (the 2026-09-16 Copper case) |
 | **CN7** | a SHARED nested family, reloaded into a host | **Not run.** `OnSharedFamilyFound` reached (`FamilySource.Family`), the file's version taken |
 | **CN8** | the same into a PROJECT, then on Revit 2020 and 2027 | **Not run.** the same answers |
-| **CN9** | the signature | **Owed** - on the owner's word only |
+| ~~**CN9**~~ | the signature | **Owed** - on the owner's word only **Struck 2026-11-13:** signed - `LOAD_FAMILY` PROVEN at version 3, `proof:` dated 2026-10-07 by Ajmal PS, fingerprint `c8b1a12395f8b156`, in its `fragment.yaml`. That signature is what this row asked for; it does not stand for any other row of this group. |

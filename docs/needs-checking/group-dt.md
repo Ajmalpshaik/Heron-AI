@@ -53,7 +53,7 @@ connected, and `< /dev/null` on every line.
 | **DT8** | `REPORT_COLOR_FILL_SCHEME`'s checks: delete the legend by hand, give two rows one colour | the missing legend and the shared colour each named in `findings` |
 | **DT9** | **Revit 2021** - no Revit 2021 is on this PC | the plain refusal, as on 2020. Compiled only |
 | **DT10** | **After the merge**, with the main checkout fast-forwarded - the shared store then rewrites the changed card's row and adds the new one by itself (`heron_scope.refresh`, row 5b-406): `heron_lookup` "colour the rooms by name" with Revit 2020 connected | `APPLY_COLOR_FILL_SCHEME`, no longer filtered out; "which colour scheme does this view use" -> `REPORT_COLOR_FILL_SCHEME` |
-| **DT11** | The signatures, on the owner's word only, after DT1 to DT8 | `python brain/heron_validate.py accept <fragment> --by "Ajmal PS"` for each |
+| ~~**DT11**~~ | The signatures, on the owner's word only, after DT1 to DT8 | `python brain/heron_validate.py accept <fragment> --by "Ajmal PS"` for each **Struck 2026-11-13:** signed - `APPLY_COLOR_FILL_SCHEME` PROVEN at version 2, `proof:` dated 2026-10-23 by Ajmal PS, fingerprint `aef426ae07d5f1af`; `REPORT_COLOR_FILL_SCHEME` PROVEN at version 1, `proof:` dated 2026-10-22 by Ajmal PS, fingerprint `71e437ef293bb6c9`, in its `fragment.yaml`. That signature is what this row asked for; it does not stand for any other row of this group. |
 
 **Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
 written: `APPLY_COLOR_FILL_SCHEME` reads PROVEN on its card, at version 2 - its `proof` block is signed by Ajmal PS,
