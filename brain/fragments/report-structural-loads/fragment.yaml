@@ -45,7 +45,7 @@ semantic-identity: "which load cases, load combinations, load natures, loads and
 kind: action
 domain: revit.elements
 capability: REPORT_STRUCTURAL_LOADS
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -90,12 +90,17 @@ contract:
       role: result
       type: int
     - name: caseCount
-      # Load cases in the model.
-      role: result
+      # Load cases in the MODEL - counted whatever was handed in, so never
+      # something the selection FOUND. ACCOUNTING since version 2 (row
+      # 5b-1639): 133 columns that carry no load answered `loadCount 0` and
+      # `caseCount 3` (DL1, LL1, SNOW1), and the negative could never come
+      # back empty. `loadCount` and `boundaryCount` say what was found (D-52).
+      role: accounting
       type: int
     - name: combinationCount
-      # Load combinations in the model (2026-11-02).
-      role: result
+      # Load combinations in the MODEL (2026-11-02) - model-wide like
+      # `caseCount`, and ACCOUNTING for the same reason since version 2.
+      role: accounting
       type: int
     - name: boundaryCount
       # Boundary conditions listed.
