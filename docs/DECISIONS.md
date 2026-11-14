@@ -19,7 +19,7 @@
 >
 > This log is append-only. A decision that is later reversed gets a **new entry** that supersedes
 > the old one — the original stays, so the reasoning history is never lost.
-> This mirrors Golden Rule 4: never destroy a working record.
+> The rule is this log's own: never destroy a working record.
 
 ---
 
