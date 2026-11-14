@@ -99,3 +99,11 @@ back): `place-structural-loads`, `place-boundary-conditions`, `create-opening`, 
 After PR #870 merged (0b4ea659) and `main` came in, Group NX's Revit 2020 rows ran (NX1 to NX5 and NX6's 2020 half,
 all PASS) and the six repaired cards were signed, with `place-accessory-on-run`, `convert-mep-placeholders` and
 `update-saved-set` proved the same hour.
+Later the same day, with the owner at Revit one step at a time: NP1, NP2, NP4, NP6 and NP7 passed, NP5 half
+([row 5b-1645](../fragment-issues/row-5b-1645.md)), NP8 NOT RUN, NX4's Demand Factors figure read (10000 VA). Then
+eleven more cards proved on Revit 2020 and signed on his *"Yes, sign them"* - the four Admin settings cards
+(mechanical, structural, reinforcement, energy - each rollback read back), `report-model-geometry`,
+`create-toposurface`, `renumber-sequential`, `link-files`, `import-image`, `edit-mep-system` and
+`create-paths-of-travel`. Not signable: `load-keynote-file` ([5b-1647](../fragment-issues/row-5b-1647.md)) and
+`create-extrusion-roof` ([5b-1648](../fragment-issues/row-5b-1648.md)); `delete these two walls` routed to
+`DISALLOW_JOIN` first ([5b-1646](../fragment-issues/row-5b-1646.md)).
