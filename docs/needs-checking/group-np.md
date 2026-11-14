@@ -112,3 +112,15 @@ use by another chat: the column reads the session lease, not the model hold
 ([row 5b-1645](../fragment-issues/row-5b-1645.md)). The hold itself held - this chat's `READ_SELECTION` was
 refused *"Model 'P1102 MEP' is in use by another chat"* - and the second chat's next read was answered, not
 cut off.
+
+**NP4 and NP7, the same sitting, after the Claude app was restarted** (this chat on the code it has; Revit 2020
+session 26612; *P1102 MEP*, the scratch copy, not saved).
+
+| # | Result | What was seen |
+|---|---|---|
+| NP4 | **PASS** | Ask to Keep ON, the ON line read first; `revit_change CREATE_LEVELS names=NP On, elevations=9000`: Revit's box *"Keep what Heron just did? 'create-levels' ran in P1102 MEP. Revit counts 1 element added ..."*; the owner pressed **Discard** - `outcome: ROLLED BACK`, *"The modeller chose Discard in Revit, so NOTHING WAS KEPT ... there is no new undo entry"*, and `revit_levels` afterwards listed the four levels only. Ask to Keep off (*Stop asking*), the off line read; `NP Off` at 9500: `outcome: KEPT`, **no box** (the owner), and the top of Revit's Undo list read *"Heron: create-levels"* (the owner) |
+| NP7 | **PASS** | Ask to Keep ON. (a) Two basic walls, 573595 and 573320, by `FILTER_ELEMENTS_BY_ID`, then `DELETE_ELEMENTS`: Revit's own box *"Delete 459 elements from P1102 MEP?"* - Walls 2, Doors 9 and Automatic Sketch Dimensions 37 going with the walls, Mechanical Equipment 1, Automatic Sketch Dimensions 410; the owner pressed **Delete**; `outcome: KEPT`, one undo step, and **no Keep or Discard box after it** (the owner). (b) `revit_preview_move ducts 200`: *"This would move 730 ducts up 200 mm in P1102 MEP"*; on the owner's yes, `revit_apply_move`: *"Moved 682 ducts up 200 mm ... 33 did NOT move at all ... inside a group ... 15 moved, but not the full distance"*, one undo step *"Heron: move ducts up 200 mm"*, **no box of any kind** (the owner) |
+
+Asked by phrase, *"delete these two walls"* looked up `DISALLOW_JOIN` first and `DELETE_ELEMENTS` third
+([row 5b-1646](../fragment-issues/row-5b-1646.md)); the delete above was asked by capability. **Left in Group NP:**
+NP3 with two Revits at once, and NP8.
