@@ -53,3 +53,39 @@ scratch files (`%TEMP%\heron-work\nk`: *Heron Reads Test*, *Heron Flag Test*) an
 
 Signatures for what the sitting drafted, on the owner's *"sign"*; decisions D-153 and D-154 read to him one at a
 time; the owner's word on rows 5b-1635 and 5b-1641; PRs merged on his word.
+
+## Update - 2026-11-14 evening: what is left, ready for ONE sitting
+
+**Done since this plan was written** (each in its group's run record): Part 1's rows NX1-NX5, NX6's 2020 half,
+NX4's dialog figure, NP1, NP2, NP4, NP5 (half - row 5b-1645), NP6, NP7, NP8 (NOT RUN, said why), and about
+forty more DRAFT cards proved on Revit 2020 and signed on the owner's word. **Prepared without Revit:** the
+add-in rebuilt from this branch (main's PR #868 brought the Activity pane, D-163, and the pipe hardening, D-162)
+and **deployed to Revit 2024** - its next start asks *Security - Unsigned Add-In*, the owner's to answer; the
+same build for Revit 2020 is in `revit\Heron.Revit.Addin\bin\x64\Debug\2020`, to deploy
+(`tools\deploy-addin.ps1 -RevitVersion 2020`) once Revit 2020 is closed. `P1102 MEP NR.rvt`, a fresh copy of
+the MEP sample, is in `%TEMP%\heron-work\prove-1102` for Group NR.
+
+**The order that works, because of what each part needs:**
+
+| Step | Revit | What | The owner's hands |
+|---|---|---|---|
+| 1 | 2024 (2020 closed) | Start Revit 2024; answer *Security - Unsigned Add-In* with **Always Load**; press Heron > AI Bridge > Heron, or say "you press it" | the security answer |
+| 2 | 2024 | `defect-repairs-nx-revit2024-2026-11-14.yaml` - NX6, NX7, NX9, NX10 - then NX4 on 2024, NX7's second half and NX8 by hand; NI5, NI6 | none |
+| 3 | 2024 | [Group NW](../../needs-checking/group-nw.md) NW1-NW16 - the new add-in: an empty keep, a late answer, stopping a job, the Activity pane, the pipe | a few clicks in the Activity pane, as each row says |
+| 4 | 2024 | NK8 (a) one **Delete**; DQ3d one **Keep**; NK9 by eye | Delete, Keep, look |
+| 5 | 2024 | Group NH - `PICK_ON_SCREEN`: a click in Revit for each row | a click each row |
+| 6 | 2024 | Group NJ - parameters to a spreadsheet and back, Ask to Keep ON | Keep or Discard |
+| 7 | 2020 (2024 closed) | deploy the 2020 add-in, start Revit 2020 on `P1102 MEP NR.rvt` | the security answer |
+| 8 | 2020 | Group NR in **new chats**, Ask to Keep ON - after step 2 has signed `reset-graphic-overrides` (NR6 uses it); P1102 ARCH linked into the NR copy for NR7-NR11 | Discard at each box unless the row says Keep |
+
+**Group NR, the sentences to type** - each in a NEW chat, Ask to Keep ON, on `P1102 MEP NR`:
+
+| Row | Open first | Type in the new chat |
+|---|---|---|
+| NR1 | a duct plan at 1:100 | *tag everything in this view for issue* - then answer: Ducts and Air Terminals, the default tags, no leader, 2 mm overlap, 2 mm gap |
+| NR4 | a duct plan with three systems | *give every system its own colour and put the same on the other drawings* - answer: System Classification, prefix `NR - `, Heron's colours, one other plan |
+| NR7 | the plan of Level 1, ARCH linked, Room Bounding off | *set up the spaces and zones from the architect's model* |
+| NR11 | after renaming, deleting and adding a room in ARCH and reloading the link | *the architect's rooms have changed - bring the spaces up to date* |
+| NR12 | an untagged duct plan, Ask to Keep **off** | *tag everything in this view for issue* - ducts only, the default tag |
+
+NR2, NR3, NR5, NR6, NR8, NR9 and NR10 are calls the session makes on the same plans, as the rows say.
