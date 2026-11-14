@@ -89,3 +89,8 @@ the MEP sample, is in `%TEMP%\heron-work\prove-1102` for Group NR.
 | NR12 | an untagged duct plan, Ask to Keep **off** | *tag everything in this view for issue* - ducts only, the default tag |
 
 NR2, NR3, NR5, NR6, NR8, NR9 and NR10 are calls the session makes on the same plans, as the rows say.
+
+**The owner's order, 2026-11-14 (it replaces the table's order above):** Revit 2020 FIRST - step 7, then step 8
+for NR1-NR5 and NR7-NR12; then Revit 2024 - steps 1 to 6; then **NR6 last**, back on Revit 2020, once step 2 has
+signed `reset-graphic-overrides`. Before step 7 the owner closes his own Revit 2020 work, so the 2020 add-in can
+be deployed; the session links `P1102 ARCH.rvt` into `P1102 MEP NR.rvt` (`LINK_FILES`, now PROVEN) before NR7.
