@@ -144,3 +144,31 @@ median size, so step 4 should not be told to hand both categories in one call un
 | *Ask to Keep* back on | his screenshot; `revit_health`: *"Ask to Keep is ON in this Revit right now"* |
 
 **NR12: PASS.**
+
+**NR7, the same sitting** - on a host made for it, because *P1102 MEP NR* already holds 89 spaces and 53 zones. The
+session made **NR Spaces Host** with `CREATE_FAMILY_DOCUMENT` from Revit 2020's `US Metric\Mechanical-Default_Metric.rte`,
+saved straight to `%TEMP%\heron-work\prove-1102\NR Spaces Host.rvt` on the owner's yes, opened it (`ACTIVATE_DOCUMENT`,
+`revit_use_this_model`), linked `P1102 ARCH.rvt` origin to origin (`LINK_FILES`, kept), read the link's five levels
+(`REPORT_LEVEL_ELEVATIONS includeLinks=true`, a DRAFT read: 0, 3800, 7600, 11400, 12000 mm), made *02 - Floor*, *03 -
+Floor* and *Roof* at 3800, 7600 and 11400 (`CREATE_LEVELS`, kept; the template's *Level 2* at 4000 left) and floor plans
+for the two new floors (`CREATE_PLAN_VIEW`, kept). The testing chat, not a new one; `heron_method hvac-spaces-and-zones`
+read first; Ask to Keep ON, the owner pressing Keep. Midway the owner gave a standing word for this scratch host -
+*"whatever you need to test and do for testing you can do it"* - which stood for the yes of steps 5 and the volume switch.
+
+| Step | What was seen |
+|---|---|
+| 0 `REPORT_OPEN_DOCUMENTS` (DRAFT read) | both projects with a file; *NR Spaces Host* written 2 minutes before |
+| 1 `LIST_LINKED_MODELS`, `revit_rooms`, `revit_phases` | *"P1102 ARCH.rvt - loaded, placed 1 time"*; no rooms, no spaces; phases *Existing*, *New Construction* |
+| 3 the yes, by name | the chat asked *"May I set the link P1102 ARCH.rvt to Room Bounding ON?"*; the owner: *"Yes, set it"* |
+| 3 `SET_LINK_ROOM_BOUNDING linkName=P1102 ARCH.rvt roomBounding=on` | kept; *"P1102 ARCH.rvt: Room Bounding is now ON, read back"*, `changed 1` |
+| 4 `SYNC_SPACES_WITH_LINKED_ROOMS updateNames=false`, phase left empty | kept; `created 91`, each line *"room 101 \"Vest.\": space made on Level 1"* and so on - 31 on Level 1, 33 on *02 - Floor*, 27 on *03 - Floor*; `notPlaced 0`, `orphans 0`, **no line says NO AREA** |
+| 5 the counts, then `SET_ROOM_LIMITS` level by level, `limitOffset=-300` | 31, 33 and 27 said before; each kept: *"31 set to stop at '02 - Floor' -300 mm, a top at 3500 mm"*, *"33 ... '03 - Floor' ... 7300 mm"*, *"27 ... 'Roof' ... 11100 mm"*; `refused 0`, `topBelowFloor 0` |
+| 6 `CREATE_HVAC_ZONE`, one a level | kept; *NR Zone L1* `added 31`, *L2* 33, *L3* 27; `movedFromAnotherZone` read out every time - each space *"LEFT zone 'Default'"*; `refused` holds two lines each time, both information (*"TAKEN OUT of another zone"*, *"AREA reads zero until Revit recomputes it"*), no space turned away |
+| 7 `TAG_ELEMENTS_IN_VIEW` on *1 - Mech*, *02 - Floor HVAC Plan*, *03 - Floor HVAC Plan* | kept; `tagged` 31, 33, 27, *"Space Tags: M_Space Tag: Space Tag (the project's default)"*, `notEnclosed 0`, `otherLevel 0` |
+| 8 `REPORT_AREA_VOLUME_COMPUTATIONS` | **"Areas and Volumes"** - the template does not start on *Areas only* ([row 5b-1653](../fragment-issues/row-5b-1653.md)); 91 of 91 spaces with a volume |
+| 8 `REPORT_ROOM_SPACE_DATA` after a Spaces filter | 91 spaces, each with the architect's number and name, an area and a volume; `unplaced 0`, `unenclosed 0`, `volumeNotComputed 0`. Lobby 102: 3521.8 sq ft (327 m²) and 40441 cu ft (1145 m³) - 3.5 m, the top step 5 set |
+| The *Areas only* half, by the card not by hand | `SET_AREA_VOLUME_COMPUTATIONS settings=Volume Computations=Areas only`, kept: *"Volumes now: ... 0 of 91 placed space(s)"*; the read then *"Areas only - Revit computes NO volumes, so a room or space volume reads as not computed"* - the chat said every volume reads nothing because of the setting, not the spaces. Set back to *Areas and Volumes*, kept: 91 of 91 again |
+| `revit_rooms` | *"91 MEP space(s) ... 0 unplaced 0 not enclosed"* |
+
+**NR7: PASS**, with row 5b-1653 (the method's sentence about the template, and the row's own premise). NR7's spaces,
+zones and tags are left in *NR Spaces Host* for NR10.
