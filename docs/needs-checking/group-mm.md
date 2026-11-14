@@ -70,3 +70,13 @@ below with `HERON_CLIENT_ID=ajmal-pc`, `--session <process id>` when two Revits 
 | **MM6** | *CREATE_ENERGY_MODEL - D-30 pair, NEGATIVE FIRST.* The job file's third job; then by hand in a copy, the positive KEPT once and run again | Negative (the family): refused, nothing made. Positive: an energy model id, analyticalSpaces 1 or more, surfaces 6 or more. The second run: **RECORD** rebuilt in place, replaced, or a second model beside the first (row 5b-1451) |
 | **MM7** | *IMPORT_GBXML - D-30 pair, NEGATIVE FIRST.* The job file's fourth job, the two paths written out in full | Negative (`not-gbxml.xml`): Revit refuses, nothing kept. Positive (`heron-mm.xml`): imported lists the new elements, counted by category. **RECORD first whether Revit ran the import inside the host's transaction at all** (row 5b-1452) |
 | **MM8** | *The second route.* Mechanical Settings > Duct Settings, Analyze > Energy Settings, Analyze > Create Energy Model and Insert > Import gbXML by hand on copies of the same saved files | The same values, the same counts, the same categories; one Ctrl+Z takes each Heron run back as one entry |
+
+### Run record - 2026-11-14 night, Revit 2024 (session 3592), the owner asleep
+
+`tools/jobs/structural-energy-settings-reads-revit2024-2026-11-14.yaml`, its second job, on *Heron MG Analytical*
+(Heron-made, metric structural analysis template) in place of *Heron MM Energy* and *Heron Flag Test* in place of
+*Heron MM Family*: `PASS`, draft written (gap *no second route*).
+
+| # | Result | What was seen |
+|---|---|---|
+| MM4 | **PASS, one reading owed** | Positive `settingsRead 19`: *"Energy Settings - building type office; ground plane "Level 1"; project phase "New Construction"; analysis mode conceptual masses and building elements; ... sliver space tolerance 304.8 mm; analytical grid cell size 914.4 mm; core offset 4572 mm; divide perimeter zones yes; target percentage glazing 0 %; energy model no ..."* and *"This model holds no energy analytical model"*. Negative, the family: `settingsRead 0`, *"The document in front is a family. Energy Settings are a project's, so nothing was read."* **The glazing figure:** the card reads `PercentageGlazing` as a fraction (`CheckRangeOfPercentageGlazing(50.0)` false; Revit's note: *"not between 0.00 and 0.95"*) and prints it times 100 - so *0 %* is what this template holds. Whether Analyze > Energy Settings shows 0 % here is the owner's eye (row 5b-1450) |
