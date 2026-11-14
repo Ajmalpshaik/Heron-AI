@@ -920,9 +920,13 @@ def _note(tool, started, seconds, reply=None, error=None, outcome=None):
 
 
 def _companion_module():
-    """mcp/companion, imported on first use - it is not on the server's path."""
-    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                    "..", "companion"))
+    """mcp/companion, imported on first use - it is not on the server's path.
+    Put on the path ONCE: this runs for every tool call a chat makes, and it
+    added the folder again each time until row 5b-427."""
+    folder = os.path.normpath(os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "..", "companion"))
+    if folder not in sys.path:
+        sys.path.insert(0, folder)
     import heron_companion as companion_page
     return companion_page
 

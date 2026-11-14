@@ -1552,6 +1552,27 @@ def the_undo_tool(stage, cases, replies):
           "model by path and title - found %r" % (asked,))
 
 
+def companion_path_once():
+    """Row 5b-427: _companion_module ran for every tool call and put the
+    Companion's folder on sys.path again each time. Needs no SDK."""
+    print()
+    print("The Companion's folder goes on the import path once (row 5b-427)")
+    try:
+        import heron_server_core as core
+    except Exception as exc:                     # noqa: BLE001
+        check(False, "heron_server_core imports (%s: %s)" % (type(exc).__name__, exc))
+        return
+    folder = os.path.normpath(os.path.join(ROOT, "mcp", "companion"))
+    copies = lambda: sum(1 for p in sys.path
+                         if os.path.normpath(os.path.abspath(p)) == folder)
+    core._companion_module()
+    first = copies()
+    for _ in range(5):
+        core._companion_module()
+    check(first == 1, "the first call puts the folder on the path once (%d)" % first)
+    check(copies() == 1, "and five more calls add no copy (%d)" % copies())
+
+
 def the_chat_is_told():
     """Section 8, and it runs first: it needs no SDK and no server."""
     print()
@@ -1627,6 +1648,7 @@ def main():
     print("How a call through a door ended, in one fixed word (row 5b-1159)")
     print("=" * 66)
     the_chat_is_told()
+    companion_path_once()
     version, broken = sdk_version()
     if version is None:
         print()
