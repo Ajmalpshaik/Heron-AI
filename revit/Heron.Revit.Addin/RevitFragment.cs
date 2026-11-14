@@ -660,6 +660,10 @@ namespace Heron.Revit.Addin
             // the box, and the verdict says so (D-126). And whether the
             // modeller's own selection is as they left it after a Discard.
             var nothingToAsk = false;
+
+            // D-160: a keep Revit counted NOTHING in - rolled back instead of
+            // kept, so no empty entry is left in the modeller's undo list.
+            var keptNothing = false;
             var selectionRestored = true;
 
             IList<HeronScriptHost.Variable> state = null;
@@ -1042,6 +1046,23 @@ namespace Heron.Revit.Addin
                         else nothingToAsk = true;
                     }
 
+                    // D-160: A KEEP THAT CHANGED NOTHING LEAVES NOTHING. When
+                    // Revit's own report arrived, was read whole, and counted no
+                    // element added, changed or deleted - setup steps included -
+                    // assimilating would leave an empty "Heron: <name>" in the
+                    // undo list, and a modeller who presses Ctrl+Z for it undoes
+                    // whatever they did BEFORE this (row 117's hazard). So it is
+                    // rolled back, and the verdict says so. Never for a publish:
+                    // what it sent out is outside the model and Revit's count.
+                    // A report that saw no event at all keeps as before - silence
+                    // is not "nothing changed" (HeronChangeReport.Witnessed).
+                    if (apply && !sendsOut && described != null && described.Witnessed
+                        && described.Total == 0)
+                    {
+                        apply = false;
+                        keptNothing = true;
+                    }
+
                     // AND AGAIN AFTER THE BOX: showing the change on screen
                     // commits a transaction of its own, and a Revit dialog met
                     // there stops the job exactly as one met in the fragment
@@ -1084,7 +1105,7 @@ namespace Heron.Revit.Addin
                         // the model the rollback put back. Only when the rollback
                         // HELD: a value read from a model still holding part of the
                         // change is not a "before", and is left unread.
-                        if (answered == null && rolledBack != null && rolledBack.Held)
+                        if (answered == null && !keptNothing && rolledBack != null && rolledBack.Held)
                             readBefore = RevitReadBack.Read(target, changed.Changed,
                                                             HeronReadBack.MostRead,
                                                             RevitReadBack.Keys(readAfter));
@@ -1115,7 +1136,7 @@ namespace Heron.Revit.Addin
             var verdict = WithVerdict(answer, apply, name, rolledBack, keptNote, said,
                                       nothingToAsk,
                                       answered != null && answered != Keep && answered != RestOfJob,
-                                      selectionRestored, keptUnderGrant, described);
+                                      selectionRestored, keptUnderGrant, keptNothing, described);
 
             // D-157: WHETHER HERON CAN STILL UNDO WHAT IT JUST KEPT, as the
             // guard holds it now - a field, for the chat's one line.
@@ -1125,7 +1146,7 @@ namespace Heron.Revit.Addin
             // was asked about. Never on a Discard: what it would have changed is
             // not what the modeller is looking at.
             string readMode = apply ? HeronReadBack.Selection
-                            : answered == null ? HeronReadBack.DryRun : null;
+                            : answered == null && !keptNothing ? HeronReadBack.DryRun : null;
             if (readMode != null && changedIds != null)
                 verdict = WithReadBack(verdict, HeronReadBack.Compare(readMode, changedIds,
                                                                       readBefore, readAfter));
@@ -1234,11 +1255,6 @@ namespace Heron.Revit.Addin
             HeronApplication.RepaintAskToKeep();
         }
 
-        /// <summary>
-        /// A change kept under D-138's grant, on the reply: nobody was asked,
-        /// and under which grant it was kept. The verdict's own first sentence
-        /// says the same in words.
-        /// </summary>
         /// <summary>The most ids sent for one list named in `sendIds` (D-158).</summary>
         internal const int IdsSentPerList = 5000;
 
@@ -1341,6 +1357,11 @@ namespace Heron.Revit.Addin
             return text;
         }
 
+        /// <summary>
+        /// A change kept under D-138's grant, on the reply: nobody was asked,
+        /// and under which grant it was kept. The verdict's own first sentence
+        /// says the same in words.
+        /// </summary>
         private static string WithGrant(string answer, string grantedAt)
         {
             if (string.IsNullOrEmpty(answer) || !answer.EndsWith("}", StringComparison.Ordinal))
@@ -3300,11 +3321,25 @@ namespace Heron.Revit.Addin
         /// "renamed 47 views" and finding 47 unrenamed views would be right to
         /// distrust every number Heron has ever given them.
         /// </summary>
+        /// <summary>
+        /// D-160's verdict: a keep Revit counted no change in, rolled back so no
+        /// empty entry is left in the undo list. Said whole, every time.
+        /// </summary>
+        internal static string NothingChangedSentence(string name)
+        {
+            return "NOTHING CHANGED, SO NOTHING WAS KEPT. '" + name + "' ran, and Revit counted no "
+                 + "element added, changed or deleted, so the empty change was rolled back rather "
+                 + "than kept: there is NO new entry in Revit's undo list, and Ctrl+Z would undo "
+                 + "whatever was done before this. If the model should have changed, the "
+                 + "fragment's own results above say why it did not.";
+        }
+
         private static string WithVerdict(string answer, bool applied, string name,
                                           HeronRollbackWitness.Outcome rolledBack,
                                           string keptNote, HeronFailureNote said,
                                           bool nothingToAsk, bool discardedByModeller,
                                           bool selectionRestored, string keptUnderGrant,
+                                          bool keptNothing,
                                           HeronChangeReport.Described changed)
         {
             if (string.IsNullOrEmpty(answer) || !answer.EndsWith("}", StringComparison.Ordinal))
@@ -3435,6 +3470,14 @@ namespace Heron.Revit.Addin
                         + (rolledBack != null && rolledBack.Standing > 0
                             ? " " + rolledBack.SomeStanding() + " still in it." : "");
                 kind = "discarded";
+            }
+            else if (held && keptNothing)
+            {
+                // D-160: ASKED TO KEEP, AND THERE WAS NOTHING TO KEEP. Not the
+                // plain rollback's "send it again with apply" - it was sent with
+                // apply, and sending it again would change nothing again.
+                verdict = NothingChangedSentence(name);
+                kind = "unchanged";
             }
             else if (held)
             {

@@ -497,7 +497,8 @@ def server(home):
             def checklists():
                 return Q
         names = {"brain": brain, "NotBound": fake.NotBound, "revit_read": fake.revit_read,
-                 "DASHBOARD_SELECT_MOST": 500, "_companion_module": lambda: fake.companion}
+                 "DASHBOARD_SELECT_MOST": 500, "CHECKLIST_SELECT_MOST": 5000,
+                 "_companion_module": lambda: fake.companion}
         for name in ("binding", "bridge", "pinned", "_revit_lock", "_fragment_for", "_moved_since",
                      "_pin_identity", "_through", "_ctx"):
             names[name] = getattr(fake, name)
@@ -537,9 +538,12 @@ def server(home):
     check(second["state"] == "fail" and second["idsComplete"] and second["select"] == "Select in Revit"
           and sorted(second["ids"]) == ["70", "71", "72", "73"],
           "a dictionary keyed by id arrives whole: Select is offered")
-    names["DASHBOARD_SELECT_MOST"] = 2
+    # NEVER "THE FIRST N OF M" (row 5b-1621): past what Select sends, no Select.
+    names["CHECKLIST_SELECT_MOST"] = 2
     names["_checklist_select_labels"](answer)
-    check(answer["rows"][1]["select"] == "Select the first 2 of 4", "past the cap the button says the first N of M")
+    check(answer["rows"][1]["select"] == "",
+          "past what Select sends there is no Select, never a partial one - found %r"
+          % answer["rows"][1]["select"])
     moving = _FakeServer(fake.replies)
     moving.changes = iter([5, 6])
     answer = lifted(moving)["_run_checklist"](checklist)
@@ -951,6 +955,125 @@ def whole_ids():
           "the checklist's read names its check's ids output, and its answer carries the lists")
 
 
+def second_review(home):
+    """The review of #866 ran these against a stand-in and saw them (rows
+    5b-1621 to 5b-1624). Each reads what the code does, so the code before
+    the repair fails it by assertion, never by a crash."""
+    print("10. the second review of #866: Select, order, delete, the poll")
+    # 5b-1621. Select sends EVERY failing id - 600 of 600, never 500 of 600.
+    sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+    import heron_tools as TOOLS
+    text = TOOLS.server_text()
+    start = text.index("\nDASHBOARD_SHOWS = ")
+    end = text.index("\ndef _dashboard_refresh(")
+    sent = []
+
+    def revit_read(capability, values, *rest, **kw):
+        sent.append((capability, values))
+        return "read"
+
+    def revit_show(capability, values, expect_from, *rest, **kw):
+        sent.append((capability, expect_from))
+        return "selected"
+
+    def through(tool, reply_out=None, origin="chat"):
+        def call(*a, **kw):
+            said = tool(*a, **kw)
+            reply_out["ended"] = "ok"
+            return said
+        return call
+    names = {"time": __import__("time"), "_revit_lock": threading.Lock(), "_moved_since": lambda identity: False,
+             "_note": lambda *a, **kw: None, "_through": through, "revit_read": revit_read,
+             "revit_show": revit_show, "revit_isolate_temporary": None, "revit_reset_temporary": None}
+    exec(compile(text[start:end], "heron_mcp_server.py", "exec"), names)
+    many = [str(1000 + i) for i in range(600)]
+    got = names["_checklist_show"]("select", many, ["Tower", "C:/Tower.rvt", "11"])
+    filtered = [v for c, v in sent if c == "FILTER_ELEMENTS_BY_ID"]
+    check(got.get("ok") and filtered and filtered[0].count(",") + 1 == 600,
+          "Select sends every one of 600 failing ids, never the first 500 - found %r ids"
+          % (filtered[0].count(",") + 1 if filtered else 0))
+    check("first" not in (got.get("said") or ""), "and never says it selected only the first")
+    cap = names.get("CHECKLIST_SELECT_MOST")
+    del sent[:]
+    if cap:
+        too_many = names["_checklist_show"]("select", [str(i) for i in range(1, cap + 2)], None)
+        check(too_many["ok"] is False and not sent and "never selected" in too_many["said"],
+              "a list longer than Select sends is refused whole, nothing sent")
+    raw = io.open(os.path.join(ROOT, "revit", "Heron.Revit.Addin", "RevitFragment.cs"),
+                  encoding="utf-8").read()
+    sent_per_list = re.search(r"const int IdsSentPerList = (\d+);", raw)
+    # 5b-1625. The grant's summary sits on WithGrant, not on IdsSentPerList.
+    lines = raw.replace("\r\n", "\n").split("\n")
+    above = [i for i, line in enumerate(lines) if "const int IdsSentPerList" in line]
+    grant = [i for i, line in enumerate(lines) if "private static string WithGrant(" in line]
+    check(above and "A change kept under D-138's grant" not in "\n".join(lines[max(0, above[0] - 8):above[0]])
+          and grant and "A change kept under D-138's grant" in "\n".join(lines[max(0, grant[0] - 6):grant[0]]),
+          "the summary of WithGrant sits on WithGrant, not stranded above IdsSentPerList")
+    check(sent_per_list is not None and cap == int(sent_per_list.group(1)),
+          "the checklist's Select sends as many as the add-in sends of one list (IdsSentPerList) "
+          "- found %r and %r" % (cap, sent_per_list.group(1) if sent_per_list else None))
+
+    # 5b-1622. Ordered by when they were kept, whatever the PC's clock said.
+    tower = ["Tower", "C:/jobs/Tower.rvt", "4242"]
+
+    def run(state, now):
+        row = {"sentence": "nothing is left unplaced", "capability": "SELECT_UNENCLOSED_ROOMS",
+               "rule": "unplaced == 0", "values": [], "state": state, "ids": [],
+               "idsComplete": False, "value": 0 if state == "pass" else 2, "shown": "0",
+               "selection": []}
+        return Q.history({"name": "Clock", "document": "Tower", "identity": list(tower),
+                          "rows": [row], "said": "Clock."}, home, now=now)
+    run("pass", "2026-10-25T01-10-00")
+    run("fail", "2026-10-25T01-50-00")
+    run("pass", "2026-10-25T01-05-00")       # the clock went back an hour
+    got = run("pass", "2026-10-25T01-20-00")
+    check(got["rows"][0].get("changeLabel") == "" and got["history"]["counts"]["fixed"] == 0,
+          "after the clock went back, a pass is compared with the pass just before it, never "
+          "called FIXED against an older failure - found %r" % got["rows"][0].get("changeLabel"))
+
+    # 5b-1623. Deleting a checklist deletes the runs kept of it.
+    doomed = good()
+    doomed["name"] = "Deleted with its runs"
+    Q.save(doomed, CONTRACTS, home=home)
+    Q.history({"name": "Deleted with its runs", "document": "Tower", "identity": list(tower),
+               "rows": [{"sentence": "s", "capability": "C", "rule": "x == 0", "values": [],
+                         "state": "pass", "ids": [], "value": 0, "shown": "0"}], "said": "."},
+              home, now="2026-11-13T10-00-00")
+    check(kept_paths("Deleted with its runs", home), "a finished run of it is kept")
+    Q.delete("Deleted with its runs", home)
+    check(not os.path.isdir(Q.runs_folder("Deleted with its runs", home)),
+          "deleting the checklist deletes the runs kept of it - model path, sentences and ids")
+
+    # 5b-1624. The poll leaves out the ids of a finished run the page holds.
+    sys.path.insert(0, os.path.join(ROOT, "mcp", "companion"))
+    try:
+        import heron_companion as HC
+    except ImportError as why:
+        check(False, "the Companion could not be imported to check its poll: %s" % why)
+        return
+    panel = HC.ChecklistPanel()
+    panel.hold({"run": "r1", "running": False,
+                "rows": [{"n": 1, "state": "fail", "ids": ["7", "8"], "idsComplete": True}]})
+    takes = panel.current.__code__.co_argcount
+    held = panel.current("r1")["result"] if takes > 1 else panel.current()["result"]
+    check("ids" not in held["rows"][0] and held.get("idsHeld"),
+          "a page holding run r1's ids is not sent them again on every poll")
+    other = panel.current("r0")["result"] if takes > 1 else {"rows": [{}]}
+    check(other["rows"][0].get("ids") == ["7", "8"] and not other.get("idsHeld"),
+          "a page holding another run's ids gets this run's whole")
+    check(panel.current()["result"]["rows"][0].get("ids") == ["7", "8"],
+          "a page holding none gets them whole")
+    check(panel._held["rows"][0].get("ids") == ["7", "8"], "and the held run keeps its own ids")
+    panel.hold({"run": "r2", "running": True,
+                "rows": [{"n": 1, "state": "fail", "ids": ["9"], "idsComplete": True}]})
+    running = panel.current("r2")["result"] if takes > 1 else {"rows": [{}]}
+    check(running["rows"][0].get("ids") == ["9"], "a run still running is sent whole")
+    page = io.open(os.path.join(ROOT, "mcp", "companion", "static", "companion.js"),
+                   encoding="utf-8").read()
+    check('"/api/checklist" + have' in page and "R.idsHeld" in page,
+          "the page names the run it holds, and puts its own ids back")
+
+
 def at_least(text, needle):
     return needle in (text or "")
 
@@ -972,6 +1095,7 @@ def main():
         whole_ids()
         labels_and_history(home)
         comparison_truth(home)
+        second_review(home)
     finally:
         if kept_data is None:
             os.environ.pop("HERON_DATA", None)

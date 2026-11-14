@@ -115,6 +115,7 @@ import os
 import re
 import sys
 import time
+import uuid
 
 # The bridge client is the layer below this one. It stays dependency-free on
 # purpose, so `doctor` keeps working on a machine where nothing else does.
@@ -127,6 +128,8 @@ from heron_write import (BadDistance, describe_vertical,   # noqa: E402
                          parse_millimetres, reported_elsewhere, skipped_sentence,
                          undo_line, undo_sent_elsewhere)
 from heron_failure import analyse, explain          # noqa: E402
+from heron_failure import RUNNING as RUNNING_OUTCOME   # noqa: E402
+from heron_failure import UNKNOWN as UNKNOWN_OUTCOME   # noqa: E402
 import heron_tools as tools                         # noqa: E402
 import heron_config as configuration                # noqa: E402
 import heron_health as health                       # noqa: E402
@@ -1835,6 +1838,10 @@ def revit_change(capability: str = "", values: str = "",
         # switch is read inside the add-in and nothing sent from here can skip
         # it.
         "apply": "true",
+        # D-161: THIS REQUEST'S OWN NAME, written into the run record the
+        # add-in keeps when the job ends - so an answer lost on the way back
+        # can still be read, by heron_run_record request=<it>.
+        "requestId": _new_request_id(),
     }
     # A DRY RUN SENDS NO `apply` AT ALL, never "false": absent is the word
     # the add-in reads as run-and-roll-back (RevitFragment.Run), and a field
@@ -1899,7 +1906,8 @@ def revit_change(capability: str = "", values: str = "",
     if failure is not None:
         return (_ended(_failure_ended(failure), explain(failure))
                 + _what_to_type(failure, capability)
-                + (elsewhere if failure.code == "write_disabled" else ""))
+                + (elsewhere if failure.code == "write_disabled" else "")
+                + _late_answer(failure, args.get("requestId")))
 
     # WHAT CAME FROM THE MODEL IS DATA, AT THIS DOOR AS AT THE OTHER TWO
     # (heron_run_records.as_data, row 5b-1596). From here on every text in the
@@ -2146,6 +2154,26 @@ def revit_change(capability: str = "", values: str = "",
 
 #: What this chat has already printed in the current batch - see heron_run_records.Batch.
 _BATCH = runs.Batch()
+
+
+def _new_request_id():
+    """D-161: a change request's own name - random, sixteen characters. One
+    function, so a suite that calls a door twice can pin it."""
+    return uuid.uuid4().hex[:16]
+
+
+def _late_answer(failure, request_id):
+    """
+    D-161: where a lost answer can still be read - or "" when the answer was
+    not lost. Said only when the outcome is UNKNOWN (the request left and its
+    answer did not come back) or Revit is still RUNNING it: Revit finishes the
+    job anyway and keeps its record under this request's name.
+    """
+    if not request_id or failure is None or failure.outcome not in (UNKNOWN_OUTCOME, RUNNING_OUTCOME):
+        return ""
+    return ("\n\nIf Revit finishes this job, its answer is kept on this PC: "
+            "heron_run_record request=%s reads it. Ask that before trying the change again."
+            % request_id)
 
 
 def _never_saved_line(reply):
@@ -4217,12 +4245,20 @@ def revit_model_dashboard(parameters: str = "", board: str = "", view3d: bool = 
 DASHBOARD_SHOWS = ("select", "isolate", "reset")
 
 
-#: The most ids one Select in Revit sends - FILTER_ELEMENTS_BY_ID's request
-#: is kept to this many. The QA Checklist says "the first N of M" from it.
+#: The most ids one Model Dashboard Select in Revit sends - its
+#: FILTER_ELEMENTS_BY_ID request is kept to this many.
 DASHBOARD_SELECT_MOST = 500
 
+#: THE QA CHECKLIST'S SELECT SENDS EVERY FAILING ID (D-158, row 5b-1621): as
+#: many as the add-in sends of one list, its IdsSentPerList. A list longer
+#: than that never arrives whole, so it is offered no Select at all - part of
+#: what failed is never selected. A list that long is far inside the
+#: bridge's mebibyte a request (BridgeServer.MaxRequestChars). Pinned to the
+#: add-in's own number by tests/test_checklists.py.
+CHECKLIST_SELECT_MOST = 5000
 
-def _dashboard_show(action, ids, identity=None, moved_said=None):
+
+def _dashboard_show(action, ids, identity=None, moved_said=None, most=DASHBOARD_SELECT_MOST):
     """
     A dashboard row's Select in Revit, Isolate in view, or Reset isolate -
     pressed on the page. Nothing in the model changes:
@@ -4236,11 +4272,12 @@ def _dashboard_show(action, ids, identity=None, moved_said=None):
 
     Under the lock every tool call holds, and only on the model the
     dashboard was read from - `moved_said` is the refusal when it is not,
-    for a caller with its own words (the QA Checklist). Returns {"ok", "said"}.
+    for a caller with its own words (the QA Checklist), and `most` the most
+    ids it sends (CHECKLIST_SELECT_MOST for the checklist). Returns {"ok", "said"}.
     """
     started, clock = time.strftime("%H:%M:%S"), time.time()
     tool = "companion_dashboard_" + action
-    ids = [str(i) for i in (ids or []) if str(i).isdigit()][:DASHBOARD_SELECT_MOST]
+    ids = [str(i) for i in (ids or []) if str(i).isdigit()][:most]
     if action not in DASHBOARD_SHOWS or (action != "reset" and not ids):
         said = "Nothing was sent to Revit: the row has no element ids."
         _note(tool, started, 0, reply=said, outcome="refused")
@@ -4435,16 +4472,21 @@ CHECKLIST_MOVED = ("The checklist was run on another model or another Revit, so 
                    "sent. Press Run again on the model in front, then try again.")
 
 
+#: What the QA Checklist's Select says for a list longer than it sends.
+CHECKLIST_TOO_MANY = ("Nothing was sent to Revit: this check found %d failing elements, more than "
+                      "the %d one Select sends, and part of what failed is never selected. Copy the "
+                      "ids for Select by ID, or narrow the check.")
+
+
 def _checklist_show(action, ids, identity=None):
     """The QA Checklist's Select in Revit: _dashboard_show itself - the same
     reads, lock, pin and declared row - with the checklist's own refusal, and
-    the answer saying when only the first DASHBOARD_SELECT_MOST were sent."""
-    got = _dashboard_show(action, ids, identity, moved_said=CHECKLIST_MOVED)
-    if got.get("ok") and len(ids or []) > DASHBOARD_SELECT_MOST:
-        got = dict(got, said="Selected the first %d of the %d failing elements - Revit is sent at "
-                             "most %d at once.\n%s" % (DASHBOARD_SELECT_MOST, len(ids),
-                                                        DASHBOARD_SELECT_MOST, got.get("said") or ""))
-    return got
+    EVERY failing id, up to CHECKLIST_SELECT_MOST (row 5b-1621). More than
+    that is refused whole, never selected in part."""
+    if len(ids or []) > CHECKLIST_SELECT_MOST:
+        return {"ok": False, "said": CHECKLIST_TOO_MANY % (len(ids), CHECKLIST_SELECT_MOST)}
+    return _dashboard_show(action, ids, identity, moved_said=CHECKLIST_MOVED,
+                           most=CHECKLIST_SELECT_MOST)
 
 
 def _dashboard_refresh(parameters="", board=""):
@@ -6120,7 +6162,8 @@ def heron_gaps(days: int = 0) -> str:
 
 
 @server.tool()
-def heron_run_record(run: str = "", offset: int = 0, limit: int = 40) -> str:
+def heron_run_record(run: str = "", offset: int = 0, limit: int = 40,
+                     request: str = "") -> str:
     """
     Read back what a change did in full - every element id it added, modified
     or deleted, and every value it left - a page at a time.
@@ -6129,12 +6172,21 @@ def heron_run_record(run: str = "", offset: int = 0, limit: int = 40) -> str:
     naming the run, e.g. run=wf-20261009-133432-0042-a1b2. Pass that run here.
     `offset` and `limit` page through it (limit at most 200); a page that has
     more ends by naming the next offset. Leave `run` empty to list the newest
-    records on this PC.
+    records on this PC. `request` finds the record of a change whose answer
+    was lost, by the name its reply gave.
 
     Reads Heron's own files on this PC - never the model, never Revit - so it
     needs no Changes switch and Revit need not be running. Records are pruned
     after runs.retainDays (14 by default).
     """
+    # D-161: A LOST ANSWER, FOUND BY THE REQUEST'S OWN NAME.
+    if (request or "").strip() and not (run or "").strip():
+        run = runs.record_for(request.strip()) or ""
+        if not run:
+            return ("No record answers request %s yet. Revit may still be working on it, or "
+                    "it ended before it changed anything a record holds. Look at the model, "
+                    "and ask again in a minute before trying the change again."
+                    % request.strip())
     if not (run or "").strip():
         found = runs.recent()
         if not found:
@@ -6534,14 +6586,13 @@ def _run_checklist(checklist, origin="chat", ctx=None, progress=None):
 
 
 def _checklist_select_labels(answer):
-    """Each row's Select in Revit label, from the ids the dashboard's route
-    will send - all of them, or the first DASHBOARD_SELECT_MOST of N."""
+    """Each row's Select in Revit label: offered only when every failing id
+    arrived and Select sends them all - never "the first N of M", a partial
+    Select (row 5b-1621)."""
     for row in answer.get("rows") or []:
         ids = row.get("ids") or []
-        if not (row.get("idsComplete") and ids):
+        if not (row.get("idsComplete") and ids) or len(ids) > CHECKLIST_SELECT_MOST:
             row["select"] = ""
-        elif len(ids) > DASHBOARD_SELECT_MOST:
-            row["select"] = "Select the first %d of %d" % (DASHBOARD_SELECT_MOST, len(ids))
         else:
             row["select"] = "Select in Revit"
 
@@ -6618,7 +6669,8 @@ def heron_checklist(action: str = "list", name: str = "", checks: str = "",
                     "%s=%s" % (v["name"], v["value"]) for v in c.get("values") or []) or "none")
                 for i, c in enumerate(checklist.get("checks") or [], 1)])
         if act == "delete":
-            return "Deleted the checklist '%s'." % store.delete(name)
+            return ("Deleted the checklist '%s', and the runs kept of it to compare with."
+                    % store.delete(name))
         if act == "run":
             checklist = store.find(name)
             # ONE RUN AT A TIME, CHAT AND PAGE TOGETHER: the page's busy flag
