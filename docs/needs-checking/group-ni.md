@@ -69,3 +69,13 @@ Branch `claude/pc-proofs-2026-11-12` (main at 10334996 and this sitting's record
 | NI4, newer half | **NOT RUN** | needs a Revit 2023 or newer connected at the same time; one Revit at a time on this PC |
 
 The scratch folder is left as it is: deleting it waits for the owner's word.
+
+### Run record - 2026-11-14 night, Revit 2024 (session 3592), the owner asleep
+
+Revit 2024, add-in 0.2.0.0, `HERON_CLIENT_ID=heron-batch-prove`, stdin closed. `draw-mep-schematic` read PROVEN, not stale.
+
+| # | Result | What was seen |
+|---|---|---|
+| NI5 | **NOT RUN - memory** | Revit 2024 at 6.5 GB private with 0.7 GB of the PC's memory available; *Snowdon HVAC - schematic proof* opens with its six Snowdon links beside it in `%TEMP%\heron-work\draw-mep-schematic` (about 300 MB of files), which this PC cannot take tonight. Owed on a Revit with only that model open |
+| NI6 | **PASS** | `try-once draw-mep-schematic --in "Snowdon HVAC - schematic proof"`: *"draw-mep-schematic is PROVEN, not DRAFT. A tool that has been proved has nothing to try - it runs through revit_change like any other. Nothing was sent to Revit."* - not *"Which DRAFT fragment?"*; exit 2. `try-once draw-mep-schematic --in`: *"--in needs the title of an open document after it"*, exit 2. The add-in log took no line from either |
+| NI4, newer half | **NOT RUN** | still needs a Revit 2023 or newer connected beside Revit 2020 |
