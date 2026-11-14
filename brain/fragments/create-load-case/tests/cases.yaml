@@ -25,6 +25,20 @@ positive:
     expect: >
       added 1; "Crane 1" with that number, nature Live, category Live
 
+  # VERSION 2, added 2026-11-13 (row 5b-1637). NOT RUN - NEEDS-CHECKING
+  # Group NX. Version 1 printed "category ?" on every line here.
+  - given: >
+      on P1102 STR (Revit 2020, %TEMP%\heron-work\prove-1102), name "Heron
+      LC1", category "dead", nature and number left out
+    expect: >
+      added 1; findings "Made the load case 3 "Heron LC1" - nature Dead,
+      category Dead Loads (or the name Analyze > Load Cases gives it) - its
+      nature and its category read back from the model as asked"; every line
+      of before and after names a category - "1 "DL1" - nature Dead, category
+      Dead Loads", LL1 Live, SNOW1 Snow - and NONE reads "category ?". A
+      category Revit still names none for must be said to be "set but not
+      confirmed", never "read back"
+
 negative:
   - given: >
       name "dl1" - DL1 in other capitals - category "dead"

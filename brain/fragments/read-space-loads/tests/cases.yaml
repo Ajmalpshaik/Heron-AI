@@ -55,12 +55,26 @@ negative:
   - given: ANY space with a known load, checked against what Revit shows on screen
     expect: >
       THE SAME NUMBER - and this is the FIRST case to run against a real model.
-      The airflow conversion is exact arithmetic and provable on paper. THE LOAD
-      CONVERSION IS ASSUMED: Revit's internal HVAC power unit is taken to be
-      BTU/s and converted at 1055.05585262 W, and reflection over the assembly
-      shows a property type, never a unit. If that is wrong every load is out by
-      a constant factor - each number looks plausible, every comparison between
-      spaces still works, and only somebody sizing a real chiller finds out
+      The airflow conversion is exact arithmetic and provable on paper. The
+      load conversion was ASSUMED to be BTU/s at 1055.05585262 W until version
+      4, and that was wrong by a constant factor (row 5b-1628) - each number
+      looked plausible, every comparison between spaces still worked. Since
+      version 4 it is internal x 0.3048^2, checked against UnitUtils
+
+  # VERSION 4, added 2026-11-13 (row 5b-1628). NOT RUN - NEEDS-CHECKING Group
+  # NX. Version 3 answered "heating 34069580 W (entered), cooling 56782633 W
+  # (entered)" here.
+  - given: >
+      NK3's arrangement again - Space 1 of the scratch project "Heron Reads
+      Test" (Revit 2024) with Design Heating Load 3000 W, Design Cooling Load
+      5000 W and Specified Supply Airflow 250 L/s typed - and the same three
+      figures typed on one Space of P1102 MEP (Revit 2020)
+    expect: >
+      "heating 3000 W (entered), cooling 5000 W (entered), supply 250 L/s
+      (entered)" on BOTH releases - the figures the Properties palette shows -
+      and NO finding that Revit's load unit disagrees with Heron's. A figure
+      about 11,356 times too large, or 10.76 times off either way, is the
+      defect come back
 
   - given: a space with nothing run against it
     expect: >

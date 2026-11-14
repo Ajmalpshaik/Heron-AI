@@ -9,7 +9,7 @@ semantic-identity: "what parameters this open family has, and what the current t
 kind: action
 domain: revit.families
 capability: REPORT_FAMILY_PARAMETERS
-version: 2
+version: 3
 source: OFFICIAL
 risk: READ
 
@@ -27,6 +27,17 @@ risk: READ
 # for a FORMULA-driven tick box; where it gives none the row still reads
 # <blank>. A read: it still answers through revit_read while DRAFT, and says
 # DRAFT (D-117 item 4).
+#
+# VERSION 3 (2026-11-13) - EVERY WHOLE NUMBER READS ITS NUMBER. FRAGMENT-ISSUES
+# row 5b-1629, found by NK4 on Revit 2024: an Integer "Count" holding 1 printed
+# "Count [Integer/type] = <blank>", because in the Family Editor Revit's own
+# string for a plain whole number is empty too, and version 2 kept it. Where
+# Revit's string is empty and the parameter stores a whole number, the stored
+# number is printed - Yes or No for a tick box, as version 2, and the number
+# itself otherwise ("Count ... = 1"). Only a whole number Revit holds NO value
+# for stays <blank>. Version 2's sentence above, "a whole number that is not a
+# Yes/No keeps Revit's string, blank included", is what this version changes.
+# Still DRAFT; COMPILED, NOT RUN IN ANY REVIT (NEEDS-CHECKING Group NX).
 
 purpose: >
   Lists the parameters of the family open for editing - name, storage type,

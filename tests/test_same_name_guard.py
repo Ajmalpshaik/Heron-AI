@@ -59,6 +59,18 @@ WHAT IT CHECKS, AS TEXT
      check 1 has nothing to hold there: this one asks that each element is
      counted with `GetParameters(label).Count > 1`, counted into `twice` and
      passed over, BEFORE the parameter is read off it with `parameterOn`.
+  7. D-164'S ONE EXCEPTION, AND ONLY WHERE IT IS LISTED. The owner decided on
+     2026-11-14 that a name every one of whose carriers is a Revit built-in,
+     all reading the same, is ONE reading rather than a name matched twice -
+     Revit gives every element two built-ins called "Category" (row 5b-1631).
+     A card in TWINS reads such a name through the helper it names, and this
+     check holds that helper: it returns null unless every carrier's
+     `BuiltInParameter` is not `INVALID` and the readings `Distinct` to exactly
+     one; and every call to it is asked only of a name counted twice - `V > 1
+     ? helper(...) : null`, V being the count check 5 found. The refusal after
+     it is still check 5's, unchanged. A card not in TWINS that reads a
+     doubled name before its refusal is not caught here by shape; adding one
+     to TWINS is a change of its own, proved, as D-164 item 4 says.
 
 WHAT IT CANNOT DO
 Run a fragment. Whether Revit really hands back two parameters for a name, and
@@ -160,6 +172,13 @@ REFUSED = (
     "report-material-takeoff",
     "check-sheet-sets-by-parameter",
 )
+
+# D-164 (2026-11-14): the readers that take its one exception, each with the
+# helper that holds it - a name every carrier of which is a built-in, all
+# reading the same, is one reading. Check 7 reads the helper and its calls.
+TWINS = {
+    "compare-elements": "builtInTwinsAgree",
+}
 
 # Readers that report the refused elements as a count of their own.
 COUNTED = {
@@ -505,6 +524,72 @@ def the_per_value_road():
               "not be named" % (PER_VALUE, release))
 
 
+def twins_problems(code, helper):
+    """What check 7 finds wrong with D-164's helper and its calls, in comment-free code."""
+    problems = []
+    defined = re.search(r"Func<[^;=]*>\s+%s\s*=\s*\(\s*\w+\s*,\s*\w+\s*\)\s*=>" % re.escape(helper), code)
+    if defined is None:
+        return ["no `Func<...> %s = (holder, name) =>` - the reading D-164 allows has no helper "
+                "of its own to hold" % helper]
+    start = skip_space(code, defined.end())
+    end = statement_end(code, start)
+    body = LITERAL.sub('""', code[start:end])
+    # EVERY CARRIER BUILT-IN: a shared or project parameter among them keeps the refusal.
+    every_built_in = (
+        re.search(r"==\s*BuiltInParameter\s*\.\s*INVALID\s*\)\s*return\s+null\s*;", body) is not None
+        or re.search(r"\.All\([^;]*!=\s*BuiltInParameter\s*\.\s*INVALID", body) is not None)
+    if not every_built_in:
+        problems.append("%s does not return null when a carrier's BuiltInParameter is INVALID - a "
+                        "shared or project parameter beside a built-in one would be read" % helper)
+    # ALL READING THE SAME: one distinct reading, never the first of several.
+    if not (re.search(r"\.Distinct\(", body) and re.search(r"\.Count\s*==\s*1\b", body)):
+        problems.append("%s does not ask that the readings Distinct to exactly one - two built-ins "
+                        "that read differently would give the first" % helper)
+    if re.search(r"\.LookupParameter\(", body):
+        problems.append("%s calls LookupParameter - the first match, which D-54 item 3 refuses"
+                        % helper)
+    # ASKED ONLY OF A NAME COUNTED TWICE, the count being the count.
+    # The definition reads `helper = (`, so `helper(` with nothing between is a call.
+    calls = [m for m in re.finditer(r"\b%s\s*\(" % re.escape(helper), code)
+             if not (start <= m.start() < end)]
+    if not calls:
+        problems.append("%s is never called - D-164's reading is not reached" % helper)
+    for call in calls:
+        before = code[max(0, call.start() - 200):call.start()]
+        guard = re.search(r"\b(\w+)\s*(?:>\s*1|>=\s*2)\s*\?\s*$", before)
+        if guard is None:
+            problems.append("a call to %s is not written `V > 1 ? %s(...) : null` - D-164's reading "
+                            "would be asked of a name that is not doubled" % (helper, helper))
+            continue
+        var = guard.group(1)
+        counted = re.search(r"\b%s\s*=\s*\w+\s*\.\s*GetParameters\(\s*[^()]+?\s*\)\s*\.\s*Count\s*;"
+                            % re.escape(var), code[:call.start()])
+        if counted is None:
+            problems.append("the call to %s is guarded by `%s > 1`, and `%s` is not a "
+                            "`GetParameters(...).Count` - the guard tests something other than the "
+                            "count" % (helper, var, var))
+    return problems
+
+
+def the_twins():
+    print("7. D-164's one exception: built-in on every carrier, one reading, asked only of a "
+          "name counted twice - and only in the cards listed")
+    for name, helper in sorted(TWINS.items()):
+        card = os.path.join(FRAGMENTS, name, "fragment.yaml")
+        check(os.path.isfile(card) and "D-164" in read(card),
+              "%s: fragment.yaml does not cite D-164, the decision its exception rests on" % name)
+        paths = impl_files(name)
+        check(len(paths) > 0, "%s: no impl/*/fragment.cs to read" % name)
+        for path in paths:
+            code = without_comments(read(path))
+            release = os.path.basename(os.path.dirname(path))
+            problems = twins_problems(code, helper)
+            for problem in problems:
+                check(False, "%s (%s): %s (D-164)" % (name, release, problem))
+            if not problems:
+                check(True, "%s (%s): D-164's reading is held" % (name, release))
+
+
 def main():
     the_guard()
     the_card()
@@ -512,6 +597,7 @@ def main():
     the_count()
     the_refusal()
     the_per_value_road()
+    the_twins()
     if failures:
         print("\n%d check(s) failed, %d passed" % (len(failures), passes[0]))
         return 1

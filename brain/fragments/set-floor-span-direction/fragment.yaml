@@ -58,7 +58,7 @@ semantic-identity: "set the span direction of these structural floors - an angle
 kind: action
 domain: revit.elements
 capability: SET_FLOOR_SPAN_DIRECTION
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -100,8 +100,14 @@ contract:
       type: IList<ElementId>
     - name: spanDegrees
       # The span direction asked for, in degrees from the model's X axis,
-      # 0 up to 180 - what every changed floor reads back. 0 when refused.
-      role: result
+      # 0 up to 180 - worked out from the angle and the element given BEFORE
+      # any floor is touched, so it is filled whether or not a floor changed;
+      # 0 when refused. What every changed floor reads back is in `report`.
+      # ACCOUNTING, NOT A RESULT (version 2, row 5b-1638): 133 columns handed
+      # in answered `changed 0` and `spanDegrees 90`, and 0 is a real span
+      # (along the model's X axis), so this value can never say whether
+      # anything was found. `changed` and `changedIds` say that (D-52).
+      role: accounting
       type: double
     - name: alreadyThere
       # Floors already spanning that way - nothing to do. Evidence it looked,

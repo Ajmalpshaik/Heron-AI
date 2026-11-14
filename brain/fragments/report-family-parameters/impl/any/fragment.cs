@@ -28,9 +28,15 @@
 // and(Thread Size > 7.5 mm, ...))", and a visibility flag could not be read
 // back at all. Where Revit's string is empty and the parameter IS a Yes/No,
 // the stored whole number is read instead: 0 is No, anything else Yes. A
-// tick box Revit holds no value for stays <blank>, and so does every other
-// whole number - what a Yes/No is, is asked of the parameter, never guessed
-// from an empty string.
+// tick box Revit holds no value for stays <blank> - what a Yes/No is, is asked
+// of the parameter, never guessed from an empty string.
+//
+// EVERY OTHER WHOLE NUMBER READS ITS NUMBER (version 3, FRAGMENT-ISSUES
+// 5b-1629). Version 2 kept Revit's empty string for a plain Integer, so
+// "Count [Integer/type] = <blank>" was printed for a Count holding 1 -
+// measured 2026-11-13, Revit 2024, beside Flag = Yes read right. Where the
+// string is empty and the parameter stores a whole number, the stored number
+// is printed; only one Revit holds no value for stays <blank>.
 
 // A TICK BOX IS FOUND BY WHAT IT IS - the library's version-safe check
 // (IMPORT_PARAMETER_VALUES, CREATE_SHEETS_FROM_TABLE): SpecTypeId.Boolean.
@@ -171,12 +177,18 @@ else
                     {
                         value = current.AsValueString(parameter) ?? "";
 
-                        // A Yes/No: Revit's string is empty, the stored whole
-                        // number is the tick (5b-351).
-                        if (value.Length == 0 && isYesNo(parameter))
+                        // A WHOLE NUMBER WHOSE STRING IS EMPTY: the stored
+                        // number is read - a Yes/No as its tick (5b-351), any
+                        // other whole number as itself (version 3, 5b-1629:
+                        // "Count" holding 1 printed <blank>). One Revit holds
+                        // no value for stays <blank>.
+                        if (value.Length == 0 && parameter.StorageType == StorageType.Integer)
                         {
-                            var ticked = current.AsInteger(parameter);
-                            if (ticked.HasValue) value = ticked.Value != 0 ? "Yes" : "No";
+                            var stored = current.AsInteger(parameter);
+                            if (stored.HasValue)
+                                value = isYesNo(parameter)
+                                    ? (stored.Value != 0 ? "Yes" : "No")
+                                    : stored.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
                         }
                     }
                 }

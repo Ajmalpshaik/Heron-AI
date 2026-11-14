@@ -10,7 +10,7 @@
 
 | # | What | Who |
 |---|---|---|
-| 0a | PR #870 merged, then `main` merged into this branch - the batches below test #870's repairs, and without the merge they would test the old code | the session (merge on the owner's word, given 2026-11-14) |
+| 0a | **DONE 2026-11-14** - PR #870 merged (0b4ea659), then `main` merged into this branch - the batches below test #870's repairs, and without the merge they would test the old code | the session (merge on the owner's word, given 2026-11-14) |
 | 0b | Restart the Claude app, so this chat's Heron runs the code it has now (`revit_health` says the chat's code is old; until the restart Heron keeps no change asked in a chat - NP4, NJ, NR and the outcome rows need it) | owner |
 | 0c | One Revit at a time (16 GB): Revit 2020 first, closed before Revit 2024 starts | owner |
 
@@ -22,7 +22,7 @@ same step as any press).
 
 | Order | Rows | What | Owner's hands |
 |---|---|---|---|
-| 1 | NX1-NX5 (Group NX, on `main` with PR #870) | `python tools/batch-prove.py tools/jobs/defect-repairs-nx-revit2020-2026-11-14.yaml --session <pid>`, then NX5 (b), NX6's 2020 half and NX4's demand-factor reading by hand | none |
+| 1 | [NX1-NX5](../../needs-checking/group-nx.md) | `python tools/batch-prove.py tools/jobs/defect-repairs-nx-revit2020-2026-11-14.yaml --session <pid>`, then NX5 (b), NX6's 2020 half and NX4's demand-factor reading by hand | none |
 | 2 | further DRAFT cards on P1102 MEP / STR | rolled-back proofs, one card at a time, as on 2026-11-13 | none |
 | 3 | [NP1, NP2](../../needs-checking/group-np.md) | Ask to Keep ON, then off with *Stop asking* - `revit_health` read after each | **two clicks** in Heron > AI Bridge > Settings |
 | 4 | NP4 | Ask to Keep ON: a level *NP On* asked in the chat - **press Discard**; Ask to Keep off: a level *NP Off*, kept | **two clicks + Discard** |
@@ -41,7 +41,7 @@ scratch files (`%TEMP%\heron-work\nk`: *Heron Reads Test*, *Heron Flag Test*) an
 
 | Order | Rows | What | Owner's hands |
 |---|---|---|---|
-| 1 | NX6-NX10 (Group NX) | `python tools/batch-prove.py tools/jobs/defect-repairs-nx-revit2024-2026-11-14.yaml --session <pid>`, then NX4 on 2024, NX7's second half and NX8 by hand | none |
+| 1 | [NX6-NX10](../../needs-checking/group-nx.md) | `python tools/batch-prove.py tools/jobs/defect-repairs-nx-revit2024-2026-11-14.yaml --session <pid>`, then NX4 on 2024, NX7's second half and NX8 by hand | none |
 | 2 | [NI5, NI6](../../needs-checking/group-ni.md) | on *Snowdon HVAC - schematic proof* | none |
 | 3 | [NK8 (a)](../../needs-checking/group-nk.md) | the doubled "Keywords" project parameter deleted - **Delete box** | **one Delete** |
 | 4 | [DQ3d](../../needs-checking/group-dq.md) | one division KEPT through `try-once` | **Keep** |

@@ -19,11 +19,19 @@
 // voltage type has is refused with the voltages the model has, so it is added
 // first, as its own change.
 //
-// UNITS. Volts in. Revit keeps a voltage in internal units, one volt being
-// 1 / (0.3048 * 0.3048) of them - the factor SET_FAMILY_CONNECTOR_ROLES writes
-// connector voltages with - checked against Revit's own UnitUtils on the
-// release that runs (DisplayUnitType in 2020, UnitTypeId from 2021). If the
-// two disagree nothing is written.
+// UNITS - VOLTS IN, VOLTS TO THE API, AND READ BACK (version 2, FRAGMENT-ISSUES
+// 5b-1636). Autodesk's reference says of VoltageType.ActualValue, MinValue and
+// MaxValue, in the same words on every release 2020 to 2027, "the unit is
+// volt", and of VoltageType.SetVoltageValue "all of the unit are volt"; Revit
+// 2020 measured it - the type named "120" gave ActualValue 120. Version 1
+// multiplied by Revit's internal volt factor, 1 / (0.3048 * 0.3048) - right
+// for a connector's voltage PARAMETER, wrong here - so a distribution system
+// on the model's own 208 V and 120 V was refused ("No voltage type of 208 V")
+// and a 230 V type would have been made at about 2476. Now a voltage is
+// matched, and written, in volts. AddVoltageType's own entry names no unit,
+// so what it made is READ BACK: a new type that does not read the volts
+// asked is removed again in the same undo entry and the answer says what
+// Revit read - nothing is kept on a unit nobody confirmed.
 //
 // RELEASES. ElectricalSetting.GetElectricalSettings, VoltageTypes,
 // DistributionSysTypes, AddVoltageType(string, double, double, double) and
@@ -51,33 +59,21 @@ var wantName = (name ?? "").Trim();
 // `absent: none` arrives as the text "none" when left out (FRAGMENT-ISSUES row 5b-1432).
 if (string.Equals(wantName, "none", StringComparison.OrdinalIgnoreCase)) wantName = "";
 
-// ---- The unit, checked against Revit's own ---------------------------------
-var perVolt = 1.0 / (0.3048 * 0.3048);
-double revitsPerVolt = perVolt;
-try
-{
-#if REVIT2020
-    revitsPerVolt = UnitUtils.ConvertToInternalUnits(1.0, DisplayUnitType.DUT_VOLTS);
-#else
-    revitsPerVolt = UnitUtils.ConvertToInternalUnits(1.0, UnitTypeId.Volts);
-#endif
-}
-catch (Exception) { }
-
 ElectricalSetting settings = null;
 try { settings = ElectricalSetting.GetElectricalSettings(doc); }
 catch (Exception ex) { refused.Add("Electrical Settings could not be read: " + ex.Message); }
 
-Func<VoltageType, string> voltageLine = v => quoted(v.Name) + " " + num(v.ActualValue / perVolt) + " V (min "
-    + num(v.MinValue / perVolt) + ", max " + num(v.MaxValue / perVolt) + ")";
+// Volts as they come (version 2) - see UNITS in the header.
+Func<VoltageType, string> voltageLine = v => quoted(v.Name) + " " + num(v.ActualValue) + " V (min "
+    + num(v.MinValue) + ", max " + num(v.MaxValue) + ")";
 Func<DistributionSysType, string> systemLine = d =>
     quoted(d.Name) + " " + (d.ElectricalPhase == ElectricalPhase.ThreePhase ? "3-phase" : "1-phase")
     + (d.ElectricalPhase != ElectricalPhase.ThreePhase ? ""
         : d.ElectricalPhaseConfiguration == ElectricalPhaseConfiguration.Wye ? " wye"
         : d.ElectricalPhaseConfiguration == ElectricalPhaseConfiguration.Delta ? " delta" : "")
     + " " + d.NumWires + "-wire, line to line "
-    + (d.VoltageLineToLine == null ? "none" : num(d.VoltageLineToLine.ActualValue / perVolt) + " V")
-    + ", line to ground " + (d.VoltageLineToGround == null ? "none" : num(d.VoltageLineToGround.ActualValue / perVolt) + " V");
+    + (d.VoltageLineToLine == null ? "none" : num(d.VoltageLineToLine.ActualValue) + " V")
+    + ", line to ground " + (d.VoltageLineToGround == null ? "none" : num(d.VoltageLineToGround.ActualValue) + " V");
 
 var voltages = new List<VoltageType>();
 var systems = new List<DistributionSysType>();
@@ -103,9 +99,6 @@ if (!isVoltage && !isDistribution)
     refused.Add("\"" + (add ?? "") + "\" is not something this adds - voltage or distribution. Nothing was guessed.");
 if (settings == null && refused.Count == 0)
     refused.Add("This model has no Electrical Settings" + (doc.IsFamilyDocument ? " - it is a family; open a project." : "."));
-if (Math.Abs(revitsPerVolt - perVolt) > 1e-9 * perVolt)
-    refused.Add("Revit makes one volt " + revitsPerVolt.ToString(invariant) + " internal units, and Heron would have written "
-        + perVolt.ToString(invariant) + " - so nothing is written until that is looked at.");
 if (double.IsNaN(volts) || volts <= 0)
     refused.Add("volts must be a voltage above 0 - " + (isDistribution ? "the line-to-line voltage" : "the voltage's actual value") + ".");
 
@@ -119,7 +112,8 @@ Func<IEnumerable<string>, string, string> nameTaken = (existing, wanted) =>
         if (string.Equals(n, wanted, StringComparison.OrdinalIgnoreCase)) return n;
     return null;
 };
-Func<double, double, bool> sameVolts = (a, b) => Math.Abs(a - b) < 0.005 * perVolt;
+// Two voltages in volts are the same to a two-hundredth of a volt.
+Func<double, double, bool> sameVolts = (a, b) => Math.Abs(a - b) < 0.005;
 
 if (refused.Count == 0 && isVoltage)
 {
@@ -130,7 +124,7 @@ if (refused.Count == 0 && isVoltage)
             + num(volts) + " V.");
     var newName = wantName.Length > 0 ? wantName : num(volts) + " V";
     var taken = nameTaken(voltages.Select(v => v.Name), newName);
-    var same = voltages.Where(v => sameVolts(v.ActualValue, volts * perVolt)).ToList();
+    var same = voltages.Where(v => sameVolts(v.ActualValue, volts)).ToList();
     if (refused.Count == 0 && taken != null)
         skipped.Add("A voltage type is already named " + quoted(taken) + " - left as it is, nothing added. Give another name to add one.");
     else if (refused.Count == 0 && wantName.Length == 0 && same.Count > 0)
@@ -140,11 +134,24 @@ if (refused.Count == 0 && isVoltage)
     {
         try
         {
-            var made = settings.AddVoltageType(newName, volts * perVolt, min * perVolt, max * perVolt);
-            if (made != null)
+            var made = settings.AddVoltageType(newName, volts, min, max);
+            if (made != null && !(sameVolts(made.ActualValue, volts) && sameVolts(made.MinValue, min) && sameVolts(made.MaxValue, max)))
+            {
+                // READ BACK OTHERWISE - taken out again, never kept (version 2).
+                var readBack = voltageLine(made);
+                string removal = null;
+                try { settings.RemoveVoltageType(made); }
+                catch (Exception ex) { removal = ex.Message; }
+                refused.Add("Revit read the new voltage type back as " + readBack + ", not " + num(volts) + " V (min " + num(min)
+                    + ", max " + num(max) + ") - "
+                    + (removal == null ? "it was removed again and nothing was kept"
+                        : "and Revit would not remove it again (" + removal + "), so press Discard or Undo")
+                    + ". Which unit AddVoltageType takes is FRAGMENT-ISSUES 5b-1636.");
+            }
+            else if (made != null)
             {
                 added++;
-                findings.Add("Added voltage type " + voltageLine(made) + ".");
+                findings.Add("Added voltage type " + voltageLine(made) + ", read back as asked.");
                 if (same.Count > 0)
                     findings.Add("Another voltage type has the same " + num(volts) + " V: " + string.Join(", ", same.Select(v => quoted(v.Name))) + ".");
             }
@@ -181,7 +188,7 @@ if (refused.Count == 0 && isDistribution)
     // The voltages, found by value among the model's voltage types.
     Func<double, string, VoltageType> voltageOf = (v, role) =>
     {
-        var hits = voltages.Where(t => sameVolts(t.ActualValue, v * perVolt)).ToList();
+        var hits = voltages.Where(t => sameVolts(t.ActualValue, v)).ToList();
         if (hits.Count == 1) return hits[0];
         if (hits.Count == 0)
             refused.Add("No voltage type of " + num(v) + " V for the " + role + " voltage. The model's voltage types are: "
