@@ -1198,8 +1198,8 @@ def main(argv):
         if indexed is not None:
             print("Searchable text and embeddings rebuilt for %d." % indexed)
         print()
-        print("That is the whole recovery story: these files are DERIVED.")
-        print("Delete every one of them and this command puts them back.")
+        print("The global store is DERIVED from the cards: delete it and this puts it back.")
+        print("No other store is rebuilt here - a project's .hvac.json and .fire.json are data.")
         return 0
 
     print("Knowledge lives in %s" % base)
