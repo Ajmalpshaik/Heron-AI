@@ -157,6 +157,32 @@ def main():
           "AND THE GUARD CATCHES IT - it counts with the wider pattern")
 
     print()
+    print("7. One reader of a row's needs, shared with check-gaps.py (row 5b-1173)")
+    spec4 = importlib.util.spec_from_file_location(
+        "check_gaps_for_needs", os.path.join(ROOT, "tools", "check-gaps.py"))
+    gaps = importlib.util.module_from_spec(spec4)
+    spec4.loader.exec_module(gaps)
+    shown = {"revit": "a real Revit", "windows": "Windows", "other": "a real Revit",
+             "network": "a network that can reach a model host"}
+    cases = (
+        ("Group AO - tag-rooms", "| **AO7** | Windows, which nothing has tried: the same "
+         "call with a window type - M_Fixed | refused |", "other"),
+        ("Group K - the agent spine", "| **K2** | On the PC: `python tests/test_secrets.py`, "
+         "and read the line | the case line |", "windows"),
+        ("Group A - does it build", "| **A20** | On the PC, in a real chat with Heron "
+         "connected and a model open: ask the six requests | each answered |", "revit"),
+        ("Group K - the agent spine", "| **K3** | On a machine with a network, once one "
+         "model adapter exists | it answers |", "network"),
+    )
+    for heading, line, want in cases:
+        item = re.search(r"\*\*([A-Z]+\d+)\*\*", line).group(1)
+        got = QUEUE.classify(heading + " " + line)
+        check(got == want, "owner-queue files %s under %s (%s)" % (item, want, got))
+        said = gaps.need_of(heading + " " + line) if hasattr(gaps, "need_of") else None
+        check(said == shown[want],
+              "and check-gaps under the same need, %r (%r)" % (shown[want], said))
+
+    print()
     if FAILURES:
         print("FAILED  %d check(s)" % len(FAILURES))
         for line in FAILURES:
