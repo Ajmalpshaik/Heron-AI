@@ -232,6 +232,7 @@ an edit.
 | [D-161](#d-161--a-change-whose-answer-was-lost-can-still-be-read-by-the-requests-own-name) | A change whose answer was lost can still be read, by the request's own name | ✅ Accepted · 2026-11-12 |
 | [D-162](#d-162--the-pipe-to-revit-refuses-another-computer-the-chat-checks-who-serves-it-and-the-tokens-file-is-this-users-alone) | The pipe to Revit refuses another computer, the chat checks who serves it, and the token's file is this user's alone | ✅ Accepted · 2026-11-12 |
 | [D-163](#d-163--herons-recent-changes-are-docked-in-revit-with-select-zoom-and-undo-reached-through-the-one-dispatcher) | Heron's recent changes are docked in Revit, with Select, Zoom and Undo, reached through the one dispatcher | ✅ Accepted · 2026-11-12 |
+| [D-164](#d-164--two-built-in-parameters-of-one-name-that-read-the-same-value-are-one-reading-not-a-name-matched-twice) | Two built-in parameters of one name that read the same value are one reading, not a name matched twice | ✅ Accepted · 2026-11-14 |
 
 ## Format
 
@@ -624,6 +625,7 @@ What this makes easy. What this makes hard. What it locks in.
 
 **Status:** Accepted · **Date:** 2026-09-08 · **Found during:** the owner asking to prove a lot of fragments in one day
 **Affects:** [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs) `BindNeeds`/`FromRequest`, [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py) `pull_values`/`caller_values`, [D-28](DECISIONS.md), [D-29](DECISIONS.md)
+**Superseded in part by:** [D-164](#d-164--two-built-in-parameters-of-one-name-that-read-the-same-value-are-one-reading-not-a-name-matched-twice), accepted 2026-11-14 - item 3 for a parameter name every one of whose carriers is a Revit built-in and all of which read the same: one reading, not refused
 
 **Full record:** [`decisions/D-54.md`](decisions/D-54.md)
 
@@ -1430,3 +1432,11 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`HeronActivityPane.cs`](../revit/Heron.Revit.Addin/HeronActivityPane.cs) · [`RevitShowElements.cs`](../revit/Heron.Revit.Addin/RevitShowElements.cs)
 
 **Full record:** [`decisions/D-163.md`](decisions/D-163.md)
+
+## D-164 — Two built-in parameters of one name that read the same value are one reading, not a name matched twice
+
+**Status:** Accepted · **Date:** 2026-11-14 · **Accepted:** Ajmal PS, 2026-11-14, in conversation: *"Yes, allow it"* - his answer to *"May two built-in parameters with one name and the same value count as one reading?"*, asked after CI failed the first repair of row 5b-1631
+**Supersedes in part:** [D-54](#d-54--the-callers-half-arrives-as-text-and-revit-is-what-turns-it-into-a-view) item 3 - *"a name that matches twice is refused, never chosen from"* - only for a parameter name every one of whose carriers is a Revit built-in and all of which read the same · **Keeps:** D-54 item 3 for every other name matched twice · [D-52](#d-52--a-count-of-what-was-turned-down-is-not-a-count-of-what-was-found) · [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs)
+**Affects:** [`compare-elements`](../brain/fragments/compare-elements/impl/any/fragment.cs) (version 3, `builtInTwinsAgree`) · [`test_same_name_guard.py`](../tests/test_same_name_guard.py) (check 7) · [FRAGMENT-ISSUES row 5b-1631](fragment-issues/row-5b-1631.md)
+
+**Full record:** [`decisions/D-164.md`](decisions/D-164.md)

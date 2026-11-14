@@ -48,6 +48,19 @@
 // which name, in the words every reader of row 5b-203 uses. AND IT FAILS
 // CLOSED: where Revit will not say how many parameters carry the name, none
 // is picked either - the row is said as not read, never looked up anyway.
+//
+// EXCEPT WHERE EVERY ONE OF THEM IS BUILT-IN AND THEY READ THE SAME (version
+// 3, D-164, FRAGMENT-ISSUES 5b-1631). Revit gives every element two built-in
+// parameters named "Category" - ELEM_CATEGORY_PARAM and ELEM_CATEGORY_PARAM_MT
+// - so version 2 said "'Category' - NOT READ" on every element in every model
+// (Revit 2024, 2026-11-13), while Category itself was never compared. Two
+// parameters of one name that are BOTH Revit's own and give the SAME value are
+// one reading, not a doubt: whichever Revit meets first, the answer is the
+// same. That value is compared as any other. A shared or project parameter
+// among them, or built-ins that read differently, stays NOT READ exactly as
+// version 2 says it. The reading is its own step, `builtInTwinsAgree`, asked
+// before the refusal and only of a name counted twice; the refusal itself
+// fills in no value (tests/test_same_name_guard.py checks 5 and 7).
 
 var differing = new Dictionary<string, IList<string>>();
 int identicalCount = 0;
@@ -94,6 +107,28 @@ Func<Parameter, string> readValue = p =>
     }
 
     return string.IsNullOrEmpty(text) ? Empty : text;
+};
+
+// D-164: THE ONE READING OF A NAME EVERY CARRIER OF WHICH IS BUILT-IN AND ALL
+// OF WHICH READ THE SAME - null otherwise, and on anything Revit refuses, so
+// the name is refused as D-54 item 3 says. A shared or project parameter is an
+// InternalDefinition too, with BuiltInParameter INVALID, so one among them
+// keeps the refusal.
+Func<Element, string, string> builtInTwinsAgree = (holder, name) =>
+{
+    try
+    {
+        var carrying = holder.GetParameters(name);
+        if (carrying == null || carrying.Count < 2) return null;
+        foreach (var q in carrying)
+        {
+            var definition = q == null ? null : q.Definition as InternalDefinition;
+            if (definition == null || definition.BuiltInParameter == BuiltInParameter.INVALID) return null;
+        }
+        var readings = carrying.Select(q => readValue(q)).Distinct(StringComparer.Ordinal).ToList();
+        return readings.Count == 1 ? readings[0] : null;
+    }
+    catch { return null; }
 };
 
 if (!tooFewToCompare)
@@ -146,6 +181,13 @@ if (!tooFewToCompare)
             {
                 var sameName = -1;
                 try { sameName = source.GetParameters(lookFor).Count; } catch { }
+
+                // BUILT-IN TWINS THAT AGREE ARE ONE READING (D-164, version 3,
+                // 5b-1631) - asked only of a name counted twice, before the
+                // refusal below, which is unchanged. null for anything else.
+                var agreed = sameName > 1 ? builtInTwinsAgree(source, lookFor) : null;
+                if (agreed != null) { row.Add(agreed); continue; }
+
                 if (sameName > 1) { twiceOn.Add(element.Id); continue; }
                 if (sameName < 0) { uncountedOn.Add(element.Id); continue; }
 
