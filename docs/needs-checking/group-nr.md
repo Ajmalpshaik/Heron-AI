@@ -54,3 +54,23 @@ in a row is changed to make it pass.
 NR6, `hvac-spaces-and-zones` on NR7 to NR11, and NR12 for all three - NR10's 2027 half and NR9 where a second phase is at hand,
 otherwise NOT RUN, and say so. **Nothing in a card is edited from this group without a recorded run**; what
 NR9 shows goes to row 5b-1589, and what NR7 shows to row 5b-1125.
+
+### Run record - 2026-11-14, NR4 on the laptop, Revit 2020
+
+Revit 2020, session 30228, the add-in rebuilt from this branch (main at 0b4ea659 merged; PR #868's Activity pane
+and pipe hardening in it) and deployed that day; the model **P1102 MEP NR**, a fresh copy of Revit 2020's
+`rme_advanced_sample_project.rvt` under `%TEMP%\heron-work\prove-1102`. Ask to Keep ON, the owner at Revit
+pressing Keep. **Asked in the testing chat, not a new one**: the method was read with `heron_method` and followed
+step by step, so what a fresh chat would ask on its own is NOT measured here; every call and answer is.
+
+| Step | What was seen |
+|---|---|
+| 1 `REPORT_VIEW_FILTERS`, Level 1 HVAC Duct Plan | *"View 'Level 1 HVAC Duct Plan' (FloorPlan) carries no filters"*, `templateOwned false`, the project's 21 filters each said with the views that use it |
+| 2 `REPORT_FILTERABLE_PARAMETERS`, Ducts and Duct Fittings | *System Classification* in `commonParameters`; `unfilterableCategories` none |
+| 3 `FILTER_ELEMENTS_BY_CATEGORY` | 540 on the plan - Ducts 258, Duct Fittings 282 |
+| 4 `CREATE_VIEW_FILTER perValue=true`, *System Classification*, prefix, the plan | the owner pressed **Keep**; 4 filters, one a value - Exhaust Air 235,60,60 (109 elements in the model), Return Air 147,235,60 (327), Supply Air 60,235,235 (936), Undefined 147,60,235 (294) - each with its rule, count and colour in `readBack`; `alreadyExists` none. **The names read `NR -Supply Air`, not `NR - Supply Air`:** the prefix was sent unquoted and `revit_change` trims a value's end unless it is in double quotes, as its own description says - the session's slip, not the card's |
+| 5 `TEST_VIEW_FILTER_MATCH`, *NR -Supply Air* | *"Of 540 tested: 291 MATCH, 249 fail the rule, and 0 are OUT OF SCOPE"* |
+| 6 `COPY_VIEW_FILTERS` to Level 2 HVAC Duct Plan, `onlyFilterNamed=` empty | the owner pressed **Keep**; `filtersApplied 4`, `viewsChanged 1`, `blockedByTemplate` none |
+| The owner looked | both plans show the ducts in the four colours - his screenshots |
+
+**NR4: PASS**, with the naming slip above.
