@@ -69,3 +69,25 @@ NX6's 2024 half and NX7 to NX10 wait for Revit 2024. Drafts written for all six 
 the Revit 2020 run; NX6's 2024 half is still owed, as are NX7 to NX10 and NX4's dialog figure.
 
 **NX4's dialog, read 2026-11-14 by the owner on P1102 MEP:** Manage > MEP Settings > Demand Factors > Receptacles, *By load, Incrementally for each range*: *Greater Than 0 VA, Less Than or Equal To 10000 VA - 100.00%; 10000 VA - unlimited - 50.00%*. **The first reading, "10 kVA if internal units", is the dialog's** - a demand factor's load figures come through the API in Revit's internal units, unlike `VoltageType.ActualValue` (volts, NX4/NX5). That settles the unit for `report-electrical-settings`' demand line and for `add-load-classification`.
+
+### Run record - 2026-11-14 night, Revit 2024 (session 3592), the owner asleep
+
+Revit 2024 on the owner's laptop, add-in 0.2.0.0, *Ask to Keep* off. Group NK's scratch files under
+`%TEMP%\heron-work\nk` - *Heron Reads Test*, *Heron Flag Test* and the *Snowdon Towers Sample Architectural* copy -
+opened by Heron (`ACTIVATE_DOCUMENT`). The batch `tools/jobs/defect-repairs-nx-revit2024-2026-11-14.yaml` -
+`4 job(s): 3 PASS, 1 ALREADY` - then the same file with `--release 2024` for `read-space-loads`, which is PROVEN on
+2020: `1 PASS`. Every line read against the row. The batch's own five-minute wait between jobs is
+[row 5b-1656](../fragment-issues/row-5b-1656.md).
+
+| # | Result | What was seen |
+|---|---|---|
+| NX6, 2024 half | **PASS** | `--release 2024`, draft `read-space-loads@2024`: *"Space 1 - heating 3000 W (entered), cooling 5000 W (entered), supply 250 L/s (entered)"* - never 34069580 W - and no *"internal load unit"* finding anywhere in the record. Space 2: *"NO LOAD READABLE"* (unbounded). Negative the five walls: `heatingW`, `coolingW`, `airflowLs` empty, all five in `notSpaces` |
+| NX7 | **PASS** | Positive *Heron Flag Test*: *"Count [Integer/type] = 1  \|\|  Derived [Integer/type] = No (formula: not(Flag))  \|\|  Flag [Integer/type] = Yes"*; negative the project, `notAFamily` true, `parameterCount 0`. Then `set-family-type-values` (PROVEN) kept in the scratch family, `typeName=Type 1`, `values=Count=0`: *"Read back: Count = 0 (was 1)"*; the card again: *"Count [Integer/type] = 0"* - never No |
+| NX8 | **PASS** | W1 352517 `detail-level=Fine`, W2 352545 `projection-line-pattern=Dash`, W4 352563 `cut-line-weight=5`, W5 352571 `surface-foreground-visible=false`, each kept with `override-graphics-in-view`; `read-graphic-overrides` then read *"detail level Fine"*, *"line pattern Dash"*, *"cut line weight 5"*, *"surface pattern switched off"* beside W3's *"surface pattern Diagonal crosshatch"* - `withOverride 5`. This card through `validate --write`, one wall at a time, rolled back: W1, W2, W4 and W5 each `cleared 1`, `hadNothing 0` - **never `cleared 0`**. Negative W5 before its override (for W1, W2, W4) and the generic model 353482 (for W5): `cleared 0`, `hadNothing 1`. The draft is W1's run; the other three are kept as `%TEMP%\heron-work\nx8\reset-<id>.json`. **Not seen:** `read-graphic-overrides` finding none of the four after a KEPT reset - a DRAFT is kept only through `try-once`, whose Keep is the owner's |
+| NX9 | **PASS** | Five walls: `differing 11`, `identicalCount 56`, and ONE finding - *"5 element(s) carry TWO OR MORE parameters called 'Comments' - NOT READ"*. No finding names `Category` or `Category [type]`, so D-164 holds on 2024. Negative two room tags: `differing 0`, no finding. The record keeps the count, not the 11 names |
+| NX10 | **PASS** | *"Copied "Handrail - Pipe" as "Heron Guard"; top rail Circular - 1 1/2" at 1000 mm, handrail none, read back as asked. \| 0 railing(s) are of this type and changed with it."* - `changedTypeId 1 item(s) [id 2492786]`, verdict PASS, not POSITIVE UNREADABLE. Negative `ZZZ No Such Railing`: refused with the list, `changedTypeId (null)` |
+| NX4, 2024 | **NOT RUN as written** | *Heron Reads Test* holds one voltage only - *"Voltages (1): "Default" 0 V (min 0, max 0)"* and *"Distribution systems (1): "Default" 1-phase 2-wire, line to line none, line to ground none"* - so no figure can be set beside a dialog's. To be run on a scratch project from the 2024 metric Electrical template, which has voltages |
+
+Drafts waiting for the owner's "sign": `report-family-parameters`, `compare-elements`, `set-railing-type`,
+`reset-graphic-overrides` (each gap *no second route*), and `read-space-loads@2024` (`accept --release 2024`).
+*Heron Reads Test* now holds, unsaved: the four new overrides in `Level 1`; *Heron Flag Test*: Count 0.
