@@ -2684,12 +2684,30 @@ function renderChecklist(C) {
   if ((C.lists || []).length) box.append(qaLists(C));
 }
 
+// THE FAILING IDS COME ONCE PER FINISHED RUN (row 5b-1624). The page keeps
+// the ids of the run it shows and names that run's token on the poll; Heron
+// then leaves them out and says so (idsHeld), and the page puts its own back.
+let qaIds = null;
+
+function qaKeepIds(R) {
+  if (!R || !R.run) return;
+  if (R.idsHeld) {
+    if (qaIds && qaIds.run === R.run) (R.rows || []).forEach(r => { r.ids = qaIds.rows[r.n] || []; });
+    return;
+  }
+  const rows = {};
+  (R.rows || []).forEach(r => { if ((r.ids || []).length) rows[r.n] = r.ids; });
+  qaIds = { run: R.run, done: !R.running, rows: rows };
+}
+
 async function checklist_() {
   try {
-    const res = await fetch("/api/checklist", { headers: HEADER, credentials: "same-origin" });
+    const have = qaIds && qaIds.done ? "?have=" + encodeURIComponent(qaIds.run) : "";
+    const res = await fetch("/api/checklist" + have, { headers: HEADER, credentials: "same-origin" });
     if (!res.ok) return;
     const C = (await res.json()).checklist;
     const R = C && C.result;
+    qaKeepIds(R);
     const key = C ? JSON.stringify([(C.lists || []).map(l => [l.name, l.checks, l.description]), C.broken, C.busy,
                                     C.busyWith, R ? [R.run, R.at, R.name, R.running, (R.rows || []).length] : null]) : "none";
     if (key === qaShown) return;

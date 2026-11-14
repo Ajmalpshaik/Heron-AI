@@ -55,6 +55,7 @@ import json
 import math
 import os
 import re
+import shutil
 import sys
 import time
 import uuid
@@ -542,9 +543,20 @@ def find(name, home=None):
 
 
 def delete(name, home=None):
-    """Remove one saved checklist. Returns its name as it was saved."""
+    """Remove one saved checklist AND THE RUNS KEPT OF IT (row 5b-1623) - each
+    holds the model's full path, the check sentences and the failing ids, and
+    a list saved again under the same name would be compared with the old
+    one's runs. Returns its name as it was saved. A runs folder that cannot be
+    removed is said, never hidden: the list is gone, the runs are not."""
     checklist = find(name, home)
     os.remove(_path(name, home))
+    runs = runs_folder(name, home)
+    if runs and os.path.isdir(runs):
+        try:
+            shutil.rmtree(runs)
+        except OSError as why:
+            raise ChecklistError("The checklist '%s' was deleted, but the runs kept of it could "
+                                 "not be removed from %s: %s" % (checklist["name"], runs, why))
     return checklist["name"]
 
 
@@ -921,8 +933,36 @@ def _kept_row(row):
             "selection": bool(row.get("selection"))}
 
 
+#: "n000012-2026-11-12T14-05-09-<run>.json": the number a run was kept under,
+#: then the PC's local time it was kept, for a person to read.
+_NUMBERED = re.compile(r"^n(\d+)-")
+
+
+def _order(file_name):
+    """Where a kept run sorts among a model's others: BY THE NUMBER IT WAS KEPT
+    UNDER, never by the time in its name (row 5b-1622). The PC's clock goes
+    back at the end of summer time, or when it is corrected, and a run kept
+    after that would sort before the one kept just before it - and be
+    compared with the wrong run. A run kept before the number was added has
+    none, and sorts by its name before every numbered one: it is older."""
+    numbered = _NUMBERED.match(file_name)
+    if numbered:
+        return (1, int(numbered.group(1)), file_name)
+    return (0, 0, file_name)
+
+
+def _next_number(where):
+    """One more than the highest number kept in this model's folder."""
+    numbers = [_order(n)[1] for n in os.listdir(where) if n.endswith(".json")]
+    return max(numbers + [0]) + 1
+
+
 def _stamp_shown(file_name):
-    """"2026-11-12T14-05-09-<run>.json" -> "2026-11-12 14:05"."""
+    """"n000012-2026-11-12T14-05-09-<run>.json" (or, kept by an earlier Heron,
+    "2026-11-12T14-05-09-<run>.json") -> "2026-11-12 14:05"."""
+    numbered = _NUMBERED.match(file_name)
+    if numbered:
+        file_name = file_name[numbered.end():]
     return file_name[:10] + " " + file_name[11:16].replace("-", ":")
 
 
@@ -946,7 +986,7 @@ def previous(answer, home=None):
         if os.path.isdir(where):
             candidates += [(n, os.path.join(where, n)) for n in os.listdir(where)
                            if n.endswith(".json") and os.path.isfile(os.path.join(where, n))]
-    for name, path in sorted(candidates, reverse=True):
+    for name, path in sorted(candidates, key=lambda c: _order(c[0]), reverse=True):
         try:
             with io.open(path, "r", encoding="utf-8") as fh:
                 kept = json.load(fh)
@@ -1068,9 +1108,12 @@ def keep_run(answer, home=None, now=None):
             # "2026-11-12T14-05-09" in the file name, "2026-11-12 14:05" to read.
             "at": stamp[:10] + " " + stamp[11:16].replace("-", ":"),
             "rows": [_kept_row(r) for r in answer.get("rows") or []]}
-    path = os.path.join(where, stamp + "-" + (answer.get("run") or new_token()) + ".json")
+    # NUMBERED, SO THE ORDER IS THE ORDER THEY WERE KEPT IN - whatever the
+    # PC's clock said (row 5b-1622). The time stays in the name to be read.
+    path = os.path.join(where, "n%06d-%s-%s.json" % (_next_number(where), stamp,
+                                                      answer.get("run") or new_token()))
     COMMANDS.write_whole(path, kept)
-    names = sorted(n for n in os.listdir(where) if n.endswith(".json"))
+    names = sorted((n for n in os.listdir(where) if n.endswith(".json")), key=_order)
     for old in names[:-RUNS_KEPT]:
         try:
             os.remove(os.path.join(where, old))

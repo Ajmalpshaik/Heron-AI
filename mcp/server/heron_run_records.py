@@ -116,6 +116,37 @@ def read(run, folder=None):
     return record, None
 
 
+#: How many of the newest records a lookup by request id reads, at most.
+REQUEST_SEARCH = 200
+
+
+def record_for(request_id, folder=None):
+    """
+    The run id of the record that answers `request_id`, or None - D-161.
+
+    A change's answer can be lost after its request left: the chat stops
+    waiting, Revit finishes anyway, and the add-in writes the record. The
+    chat named the request (revit_change's `requestId`), so this finds it by
+    that name among the newest REQUEST_SEARCH records - never raises.
+    """
+    wanted = str(request_id or "").strip()
+    if not wanted:
+        return None
+    folder = folder or bridge.RUNS_DIR
+    try:
+        names = sorted((n for n in os.listdir(folder)
+                        if n.endswith(EXTENSION) and is_run_id(n[:-len(EXTENSION)])),
+                       reverse=True)[:REQUEST_SEARCH]
+    except OSError:
+        return None
+    for name in names:
+        run = name[:-len(EXTENSION)]
+        record, _ = read(run, folder)
+        if isinstance(record, dict) and record.get("requestId") == wanted:
+            return run
+    return None
+
+
 def recent(folder=None, limit=10):
     """
     The newest records first, as small dicts - for a call that names no run.
@@ -254,6 +285,10 @@ def _ended(reply):
         return "KEPT"
     if kind == "rolledBack":
         return "rolled back, nothing kept"
+    if kind == "unchanged":
+        # D-160: asked to keep, and Revit counted nothing changed - rolled back
+        # so no empty entry was left in the undo list.
+        return "nothing changed, nothing kept - no undo entry"
     if kind == "discarded":
         # D-126's Discard. Whether its rollback held is the verdict's to say,
         # in the modeller's words - this line only names who decided.

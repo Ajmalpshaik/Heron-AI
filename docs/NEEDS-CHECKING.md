@@ -1522,6 +1522,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-nv.md`](needs-checking/group-nv.md)
 
+## Group NW - an empty keep left out of the undo list, late answers and stopping a job, the activity pane, and the pipe hardened (2026-11-12)
+
+**Its own file:** [`needs-checking/group-nw.md`](needs-checking/group-nw.md)
+
 ## Group NX - the defects found proving on 2026-11-13, repaired in code and not yet run (2026-11-13)
 
 **Its own file:** [`needs-checking/group-nx.md`](needs-checking/group-nx.md)

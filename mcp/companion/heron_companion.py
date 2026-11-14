@@ -1597,7 +1597,13 @@ class ChecklistPanel(object):
                 held["stopped"] = "The run stopped: %s." % why
                 held["said"] = "%s %s" % (held.get("said") or "", held["stopped"])
 
-    def current(self):
+    def current(self, have=None):
+        """What the page polls. `have` is the run token whose failing ids the
+        page already holds, from a FINISHED run: THE IDS ARE THEN LEFT OUT
+        (row 5b-1624) - up to IdsSentPerList a row and MAX_CHECKS rows, sent
+        on every poll though only Copy IDs and the count use them - and
+        `idsHeld` says so. A running run, another run, or no `have` sends
+        them whole, so the page always has the ids of the run it shows."""
         hook = self.list_hook
         listed = {}
         if hook is not None:
@@ -1610,6 +1616,10 @@ class ChecklistPanel(object):
             busy = self._busy
         if held is not None:
             held.pop("identity", None)
+            if have and held.get("run") == have and not held.get("running"):
+                held["rows"] = [{k: v for k, v in row.items() if k != "ids"}
+                                for row in held.get("rows") or [] if isinstance(row, dict)]
+                held["idsHeld"] = True
         return {"connected": hook is not None, "lists": listed.get("lists") or [],
                 "broken": listed.get("broken") or [], "noHome": bool(listed.get("noHome")),
                 "said": listed.get("said") or "", "result": held, "busy": bool(busy),
@@ -2199,7 +2209,10 @@ class _Handler(http.server.BaseHTTPRequestHandler):
             why = self._api_ok()
             if why:
                 return self._refuse(403, why)
-            return self._json(200, {"ok": True, "checklist": CHECKLIST_PANEL.current()})
+            query = self.path.split("?", 1)[1] if "?" in self.path else ""
+            have = [v for k, _, v in (p.partition("=") for p in query.split("&")) if k == "have"]
+            have = have[0] if have and re.match(r"^[A-Za-z0-9_-]{1,64}$", have[0]) else None
+            return self._json(200, {"ok": True, "checklist": CHECKLIST_PANEL.current(have)})
         if path.startswith("/report/"):
             return self._report_file(path)
         return self._refuse(404, "not found")

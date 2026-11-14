@@ -311,6 +311,13 @@ namespace Heron.Revit.Addin
                 case "undo_check":
                     return RevitUndo.Last(app, request, true, Gate("undo_guarded"));
 
+                // D-163: the Activity pane's Select and Zoom - selection and the
+                // view only, no transaction. RevitShowElements says why each part.
+                case "show_elements":
+                    return RevitShowElements.Show(app, Json.ReadString(request, "ids"),
+                        string.Equals(Json.ReadString(request, "zoom"), "true", StringComparison.Ordinal),
+                        Json.ReadString(request, "document"));
+
                 // THE WRITE PATH FOR FRAGMENTS. It stays in RevitFragment
                 // rather than moving to RevitWrite.cs, and that is the one
                 // place this repository's "all writes in one file" rule is
