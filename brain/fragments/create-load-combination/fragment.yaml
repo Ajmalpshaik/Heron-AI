@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -113,6 +113,42 @@ contract:
       type: IList<string>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-13'
+  by: Ajmal PS
+  model: P1102 STR (9,179 elements), Revit 2020, session 41776
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned added 1, after 1 item(s) ["Heron
+    C1" - Serviceability, Combination: 1.2 x "DL1" + 1.6 ...], before 0 item(s), caseList
+    "DL1", "LL1", "SNOW1", cases 3 item(s) [DL1, LL1, SNOW1], combinationLine Func`2, entries
+    1 item(s) [Heron C1=1.2 DL1 + 1.6 LL1], existing 0 item(s), findings 3 item(s) [Made the
+    load combination "Heron C1" - Serviceability, Combi..., No state was asked for "Heron
+    C1", so Revit''s own default wa..., No type was asked for "Heron C1", so Revit''s own
+    default was...], invariant CultureInfo, leftOut Func`2, nameOf Func`2, namesTaken 1 item(s)
+    [Heron C1], num Func`2, ok true, quoted Func`2, readCombinations Func`1, refused 0 item(s),
+    skipped 0 item(s), squash Func`2, term Regex, usageIds 0 item(s), usageList none, usagesHad
+    0 item(s), wantState (null), wantType (null). inputs came combinations as given; state
+    not given - "none", the card''s own default (optional); combinationType not given - "none",
+    the card''s own default (optional); usage not given - "none", the card''s own default
+    (optional). on P1102 STR'
+  negative_case: 'run with combinations=Heron C1=1.2 DL1 + 1.6 Zz No Such instead - chosen
+    because it should not contain what this fragment reports - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned added 0, after 0
+    item(s), before 0 item(s), caseList "DL1", "LL1", "SNOW1", cases 3 item(s) [DL1, LL1,
+    SNOW1], combinationLine Func`2, entries 1 item(s) [Heron C1=1.2 DL1 + 1.6 Zz No Such],
+    existing 0 item(s), findings 1 item(s) [Nothing was added - the load combinations are
+    as they were.], invariant CultureInfo, leftOut Func`2, nameOf Func`2, namesTaken 0 item(s),
+    num Func`2, ok true, quoted Func`2, readCombinations Func`1, refused 1 item(s) ["Heron
+    C1" was not made: no load case is called "Zz No Such"...], skipped 0 item(s), squash Func`2,
+    term Regex, usageIds 0 item(s), usageList none, usagesHad 0 item(s), wantState (null),
+    wantType (null). inputs came combinations as given; state not given - "none", the card''s
+    own default (optional); combinationType not given - "none", the card''s own default (optional);
+    usage not given - "none", the card''s own default (optional). on P1102 STR'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 7d6bfebd7b240947
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

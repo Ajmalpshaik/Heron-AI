@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -122,6 +122,56 @@ contract:
       type: IList<string>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-13'
+  by: Ajmal PS
+  model: P1102 MEP (21,454 elements), Revit 2020, session 41776
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned after 7 item(s) ["Branch Panel"
+    (branch panel, default), "Branch Panel 1" (branch panel, default), "Branch Panel 2" (branch
+    panel, default), ...], anyCapitals Func`2, before 6 item(s) ["Branch Panel" (branch panel,
+    default), "Branch Panel 1" (branch panel, default), "Branch Panel 2" (branch panel, default),
+    ...], changed 1, elements 0 item(s), exactly Func`2, findings 3 item(s) [1 panel schedule
+    template made., Copying "Branch Panel" carried its name over as "Branch Pane..., Made
+    "Heron Branch", a branch panel panel schedule template ...], first make, kindOf Func`2,
+    mode make, notFound Func`3, quoted Func`2, readTemplates Func`1, refused 0 item(s), report
+    Panel schedule templates before (6): "Branch Panel" (branch panel, default); "Branch Panel
+    1" (branch panel, default); "Branch Panel 2" (branch panel, default); "Data Panel" (data
+    panel, default); "Pre2011 Branch Template" (branch panel); "Switchboard" (switchboard,
+    default) | after (7): "Branch Panel" (branch panel, default); "Branch Panel 1" (branch
+    panel, default); "Branch Panel 2" (branch panel, default); "Data Panel" (data panel, default);
+    "Heron Branch" (branch panel); "Pre2011 Branch Template" (branch panel); "Switchboard"
+    (switchboard, default), said make, skipped 0 item(s), templateLine Func`2, templateNames
+    Func`1, templates 7 item(s) [Branch Panel, Branch Panel 1, Branch Panel 2, ...], wanted
+    Heron Branch. inputs came elements not given - none (optional); action as given; templateName
+    as given; fromTemplate as given; panelName not given - "none", the card''s own default
+    (optional). on P1102 MEP'
+  negative_case: 'run with action=make, templateName=Heron Branch, fromTemplate=Zz No Such
+    instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    after 6 item(s) ["Branch Panel" (branch panel, default), "Branch Panel 1" (branch panel,
+    default), "Branch Panel 2" (branch panel, default), ...], anyCapitals Func`2, before 6
+    item(s) ["Branch Panel" (branch panel, default), "Branch Panel 1" (branch panel, default),
+    "Branch Panel 2" (branch panel, default), ...], changed 0, elements 0 item(s), exactly
+    Func`2, findings 2 item(s) [No panel schedule template made., No panel schedule template
+    is named "Zz No Such" (to copy fr...], first make, kindOf Func`2, mode make, notFound
+    Func`3, quoted Func`2, readTemplates Func`1, refused 1 item(s) [No panel schedule template
+    is named "Zz No Such" (to copy fr...], report Panel schedule templates before (6): "Branch
+    Panel" (branch panel, default); "Branch Panel 1" (branch panel, default); "Branch Panel
+    2" (branch panel, default); "Data Panel" (data panel, default); "Pre2011 Branch Template"
+    (branch panel); "Switchboard" (switchboard, default) | after (6): "Branch Panel" (branch
+    panel, default); "Branch Panel 1" (branch panel, default); "Branch Panel 2" (branch panel,
+    default); "Data Panel" (data panel, default); "Pre2011 Branch Template" (branch panel);
+    "Switchboard" (switchboard, default), said make, skipped 0 item(s), templateLine Func`2,
+    templateNames Func`1, templates 6 item(s) [Branch Panel, Branch Panel 1, Branch Panel
+    2, ...], wanted Heron Branch. inputs came elements not given - none (optional); action
+    as given; templateName as given; fromTemplate as given; panelName not given - "none",
+    the card''s own default (optional). on P1102 MEP'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 1cac8fdfc1be3843
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

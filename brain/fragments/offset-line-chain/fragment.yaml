@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -115,6 +115,51 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-13'
+  by: Ajmal PS
+  model: P1102 MEP (21,454 elements), Revit 2020, session 41776
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-category, set-selection with this phase''s own values - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    MillimetresPerFoot 304.8, Touch 0.001, chainNumber 2, chains 2 item(s) [System.Collections.Generic.List`1[System.Int32],
+    System.Collections.Generic.List`1[System.Int32]], curves 2 item(s) [Autodesk.Revit.DB.Line,
+    Autodesk.Revit.DB.Line], direction Func`2, distance 300, endOf Func`3, feet 0.984251968503937,
+    findings 3 item(s) [Chain 1 (1 wall, first id 573595): offset 300 mm towards (0,..., Chain
+    2 (1 wall, first id 573610): offset 300 mm towards (0,..., READ BACK: every piece is where
+    it was set, ends within 0.3 ...], flips 2 item(s) [System.Collections.Generic.List`1[System.Boolean],
+    System.Collections.Generic.List`1[System.Boolean]], ids 2 item(s) [573595, 573610], invariant
+    CultureInfo, isWall 2 item(s) [True, True], mm Func`2, modeWord copy, normals 2 item(s)
+    [(0.000000000, 0.000000000, 1.000000000), (0.000000000, 0.000000000, 1.000000000)], notOffset
+    0 item(s), offsetCount 2, ownerViews 2 item(s) [-1, -1], refused 0 item(s), report Copied
+    2 of 2 line(s) and wall(s) 300 mm, in 2 chain(s), corners kept joined., results 2 item(s)
+    [1020748, 1020758], settled 2 item(s) [[1020748, Autodesk.Revit.DB.Line], [1020758, Autodesk.Revit.DB.Line]],
+    startOf Func`3, stop , together Func`3, towardsPoint (null), towardsText , used 2 item(s)
+    [True, True]. inputs came elements from the selection (2); distance as given; mode as
+    given; towards not given - "none", the card''s own default (optional). on P1102 MEP'
+  negative_case: run with distance=300, mode=copy arranged with categories=Ducts, inViewOnly=Callout
+    of Level 1 HVAC WSHP TYP instead - chosen because it should not contain what this fragment
+    reports - the arrangement was re-made first by running filter-elements-by-category, set-selection
+    with this phase's own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8, Touch 0.001, chainNumber
+    0, chains 0 item(s), curves 0 item(s), direction Func`2, distance 300, endOf Func`3, feet
+    0.984251968503937, findings 2 item(s) [10 element(s) are not model lines, detail lines
+    or walls and..., None of the 10 element(s) handed in is a model line, a detai...], flips
+    0 item(s), ids 0 item(s), invariant CultureInfo, isWall 0 item(s), mm Func`2, modeWord
+    copy, normals 0 item(s), notOffset 10 item(s) [404243, 411658, 411660, ...], offsetCount
+    0, ownerViews 0 item(s), refused 1 item(s) [None of the 10 element(s) handed in is a model
+    line, a detai...], report None of the 10 element(s) handed in is a model line, a detail
+    line or a wall with a location line. Nothing was offset., results 0 item(s), settled 0
+    item(s), startOf Func`3, stop None of the 10 element(s) handed in is a model line, a detail
+    line or a wall with a location line. Nothing was offset., together Func`3, towardsPoint
+    (null), towardsText , used 0 item(s). inputs came elements from the selection (10); distance
+    as given; mode as given; towards not given - "none", the card's own default (optional).
+    on P1102 MEP
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 63e574276ea83a28
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

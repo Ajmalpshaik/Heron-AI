@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -88,6 +88,35 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-13'
+  by: Ajmal PS
+  model: P1102 MEP (21,454 elements), Revit 2020, session 41776
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned built A shaft from "Level 1" (94
+    mm) to "Level 2" (3800 mm), 3706 mm tall; its outline 4 corners, X 200000 to 201200, Y
+    200000 to 200800 mm - 1200 x 800 mm, 0.96 m2 - read back., created 1 item(s) [id 1020370],
+    findings 2 item(s) [A shaft from "Level 1" (94 mm) to "Level 2" (3800 mm), 3706 ..., No
+    floor, roof or ceiling lies in the shaft's reach yet - it...], invariant CultureInfo,
+    mm Func`2, oneMillimetre 0.00328083989501312, openingId 263c8f72-5d54-476e-a2e8-a644dfeaa545-000f91d2,
+    problems 0 item(s), refused (null), slabsCut 0 item(s). inputs came baseLevel as given;
+    topLevel as given; corners as given (4). on P1102 MEP
+  negative_case: run with baseLevel=Level 1, topLevel=Zz Level, corners=200000,200000,0; 201200,200000,0;
+    201200,200800,0; 200000,200800,0 instead - chosen because it should not contain what this
+    fragment reports - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned built , created (null), findings 1 item(s) [Nothing was
+    cut. No level is called "Zz Level" for the top -...], invariant CultureInfo, mm Func`2,
+    oneMillimetre 0.00328083989501312, openingId , problems 1 item(s) [No level is called
+    "Zz Level" for the top - the name has to ...], refused Nothing was cut. No level is called
+    "Zz Level" for the top - the name has to match the Project Browser exactly. The levels
+    here are "Level 1" (94 mm), "Level 2" (3800 mm), "Outcome Test" (6000 mm), "Level 3" (7300
+    mm), "Roof Level" (10900 mm)., slabsCut 0 item(s). inputs came baseLevel as given; topLevel
+    as given; corners as given (4). on P1102 MEP
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 94fa1023a6783a4c
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -95,6 +95,51 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-14'
+  by: Ajmal PS
+  model: P1102 STR (9,179 elements), Revit 2020, session 17824
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8, all 1
+    item(s) [Line 1 (from 200000,200000 to 210000,200000): truss made (27...], allTypes 3
+    item(s) [Standard, Standard, M_Pratt Flat Truss - Short], at Func`2, baseNumbers 1 item(s)
+    [1], bases 1 item(s) [Autodesk.Revit.DB.Line], created 1 item(s) [272932], findings 2
+    item(s) [1 truss(es) made, 0 line(s) skipped, 0 line(s) Revit would n..., Each truss is
+    laid on "02 - Floor" at its project elevation,...], invariant CultureInfo, lines 1 item(s)
+    [Line 1 (from 200000,200000 to 210000,200000): truss made (27...], listOnly false, mm
+    Func`2, problem (null), problems 0 item(s), refused (null), report Line 1 (from 200000,200000
+    to 210000,200000): truss made (272932), type "M_Howe Flat Truss: Standard", 10000 mm long,
+    on "02 - Floor", 19 member(s), said M_Howe Flat Truss: Standard, sameLine Func`4, shortest
+    0.00256026455729167, skipped 0 item(s), standing 2 item(s) [Autodesk.Revit.DB.Line, Autodesk.Revit.DB.Line],
+    standingIds 2 item(s) [132598, 133226], typeChoices the model''s truss types are "M_Howe
+    Flat Truss: Standard", "M_Pratt Flat Truss: Standard", "M_Pratt Flat Truss: M_Pratt Flat
+    Truss - Short", typeLabel Func`2, typeNames 3 item(s) ["M_Howe Flat Truss: Standard",
+    "M_Pratt Flat Truss: Standard", "M_Pratt Flat Truss: M_Pratt Flat Truss - Short"], useType
+    TrussType, z 12.4671916010537. inputs came level as given; trussType as given; curves
+    as given (1). on P1102 STR'
+  negative_case: 'run with level=02 - Floor, trussType=Zz No Such Truss, curves=200000,200000,0;
+    210000,200000,0 instead - chosen because it should not contain what this fragment reports
+    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned MillimetresPerFoot 304.8, all 0 item(s), allTypes 3 item(s) [Standard, Standard,
+    M_Pratt Flat Truss - Short], at Func`2, baseNumbers 0 item(s), bases 0 item(s), created
+    0 item(s), findings 1 item(s) [No truss type called "Zz No Such Truss" - the model''s
+    truss ...], invariant CultureInfo, lines 0 item(s), listOnly false, mm Func`2, problem
+    No truss type called "Zz No Such Truss" - the model''s truss types are "M_Howe Flat Truss:
+    Standard", "M_Pratt Flat Truss: Standard", "M_Pratt Flat Truss: M_Pratt Flat Truss - Short",
+    problems 0 item(s), refused No truss type called "Zz No Such Truss" - the model''s truss
+    types are "M_Howe Flat Truss: Standard", "M_Pratt Flat Truss: Standard", "M_Pratt Flat
+    Truss: M_Pratt Flat Truss - Short". Nothing was created., report , said Zz No Such Truss,
+    sameLine Func`4, shortest 0.00256026455729167, skipped 0 item(s), standing 0 item(s),
+    standingIds 0 item(s), typeChoices the model''s truss types are "M_Howe Flat Truss: Standard",
+    "M_Pratt Flat Truss: Standard", "M_Pratt Flat Truss: M_Pratt Flat Truss - Short", typeLabel
+    Func`2, typeNames 3 item(s) ["M_Howe Flat Truss: Standard", "M_Pratt Flat Truss: Standard",
+    "M_Pratt Flat Truss: M_Pratt Flat Truss - Short"], useType (null), z 12.4671916010537.
+    inputs came level as given; trussType as given; curves as given (1). on P1102 STR'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 5d6a22b8eec3935d
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

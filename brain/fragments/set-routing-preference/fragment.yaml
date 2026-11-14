@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -161,36 +161,43 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-09-15'
+  date: '2026-11-13'
   by: Ajmal PS
-  model: Project1 (3,287 elements), Revit 2020, session 23804
+  model: P1102 MEP (21,446 elements), Revit 2020, session 4504
   positive_case: 'run as it would normally be run - the arrangement was re-made first by running
     select-types, set-selection with this phase''s own values - run inside a transaction,
     and Revit reported the transaction group ROLLED BACK afterwards. returned alreadyCorrect
-    0 item(s), findings 3 item(s) [1 rule(s) changed across 1 type(s) examined; 0 already
-    corre..., ''TRG_Pipe_Copper'' Segments rule 0: ''Copper - A'' -> ''Copper -..., Editing
-    a type changes EVERY element of that type, not only ...], groupsByName 8 entry(ies), nearMisses
-    0 item(s), notRoutable 0 item(s), proceed true, ruleIndex 0, rulesChanged 1, seenTypes
-    HashSet`1, typesToChange 1 item(s) [TRG_Pipe_Copper], typesTouched 1, unverified 0 item(s),
-    wantedGroup RoutingPreferenceRuleGroupType, wantedGroupName Segments, wantedName Copper
-    - B, wantedPart PipeSegment. inputs came elements from set-selection (1); group as given;
-    partName as given; ruleIndex as given. on Project1'
-  negative_case: run with categories=Pipes, familyNameContains=, typeNameContains=TRG, group=Segments,
-    partName=ZZZNOTASEGMENT, ruleIndex=0 instead - chosen because it should not contain what
-    this fragment reports - the arrangement was re-made first by running select-types, set-selection
-    with this phase's own values - run inside a transaction, and Revit reported the transaction
-    group ROLLED BACK afterwards. returned alreadyCorrect 0 item(s), findings 2 item(s) [0
-    rule(s) changed across 0 type(s) examined; 0 already corre..., No Segments part is called
-    'ZZZNOTASEGMENT' in this project....], groupsByName 8 entry(ies), nearMisses 0 item(s),
-    notRoutable 0 item(s), proceed false, ruleIndex 0, rulesChanged 0, seenTypes HashSet`1,
-    typesToChange 0 item(s), typesTouched 0, unverified 0 item(s), wantedGroup RoutingPreferenceRuleGroupType,
-    wantedGroupName Segments, wantedName ZZZNOTASEGMENT, wantedPart (null). inputs came elements
-    from set-selection (1); group as given; partName as given; ruleIndex as given. on Project1
+    0 item(s), ductFittings 1 item(s) [id -2008010], findings 3 item(s) [1 rule(s) changed
+    across 1 type(s) examined; 0 already corre..., ''Mitered Elbows / Tees'' Elbows rule 0:
+    ''M_Rectangular Duct E..., Editing a type changes EVERY element of that type, not only
+    ...], groupsByName 8 entry(ies), isFitting Func`2, leftOff Func`2, listLimit 12, listParts
+    Func`2, namesPart Func`4, nearMisses 0 item(s), notRoutable 0 item(s), partLabel Func`2,
+    partsNamed Func`4, pipeFittings 1 item(s) [id -2008049], proceed true, ruleIndex 0, rulesChanged
+    1, seenTypes HashSet`1, swapHeld Func`4, typesToChange 1 item(s) [Mitered Elbows / Tees],
+    typesTouched 1, unverified 0 item(s), wantedGroup RoutingPreferenceRuleGroupType, wantedGroupName
+    Elbows, wantedName M_Rectangular Elbow - Radius: 1.5 W, wantedPart FamilySymbol. inputs
+    came elements from the selection (1); group as given; partName as given; ruleIndex as
+    given. on P1102 MEP'
+  negative_case: 'run with group=Elbows, partName=Standard, ruleIndex=0 arranged with categories=Ducts,
+    familyNameContains=Rectangular Duct, typeNameContains=Mitered Elbows / Tees instead -
+    chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running select-types, set-selection with this phase''s own values - run
+    inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned alreadyCorrect 0 item(s), ductFittings 1 item(s) [id -2008010], findings 2 item(s)
+    [0 rule(s) changed across 0 type(s) examined; 0 already corre..., ''Standard'' is the
+    type name of 84 loaded families, so it doe...], groupsByName 8 entry(ies), isFitting Func`2,
+    leftOff Func`2, listLimit 12, listParts Func`2, namesPart Func`4, nearMisses 12 item(s)
+    [M_Bend - PVC - Sch 40 - DWV: Standard, M_Cap - Generic: Standard, M_Coupling - Generic:
+    Standard, ...], notRoutable 0 item(s), partLabel Func`2, partsNamed Func`4, pipeFittings
+    1 item(s) [id -2008049], proceed false, ruleIndex 0, rulesChanged 0, seenTypes HashSet`1,
+    swapHeld Func`4, typesToChange 0 item(s), typesTouched 0, unverified 0 item(s), wantedGroup
+    RoutingPreferenceRuleGroupType, wantedGroupName Elbows, wantedName Standard, wantedPart
+    (null). inputs came elements from the selection (1); group as given; partName as given;
+    ruleIndex as given. on P1102 MEP'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 867eb91d6ac24368
-
+  fingerprint: c38324d745fc332d
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

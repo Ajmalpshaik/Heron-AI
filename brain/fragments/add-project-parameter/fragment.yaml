@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -146,36 +146,36 @@ contract:
       type: bool
 
 proof:
-  date: '2026-11-02'
+  date: '2026-11-13'
   by: Ajmal PS
-  model: P1102 MEP, Revit 2020, session 59096 - the count is NOT recorded because 1,501 elements
-    was measured on HeronNewFam_P1102, the document in front, and this ran against another
-    one (row 15)
+  model: Heron Reads Test (3,257 elements), Revit 2024, session 22684
   positive_case: run as it would normally be run - run inside a transaction, and Revit reported
     the transaction group ROLLED BACK afterwards. returned bindMethod Func`2, bound true,
-    boundCategories 1 item(s) [Ducts], categoriesNotBound 0 item(s), dataGroup Func`2, dbNamespace
-    Autodesk.Revit.DB, findings 3 item(s) ['HERON_P1102_TAG' is bound as an INSTANCE parameter
-    to 1 cat..., The definition already existed in group 'HERON' and was reus..., Revit's
-    shared parameter file setting was put back to 'D:\04...], flags BindingFlags, instanceBinding
-    true, optionsCtor RuntimeConstructorInfo, revitAssembly RuntimeAssembly, sharedParameterFileRestored
-    true, textSpec Func`2. inputs came sharedParameterFile as given; groupName as given; parameterName
-    as given; categories as given (1); instanceBinding as given. on P1102 MEP
-  negative_case: run with sharedParameterFile=C:/Users/ajmal/AppData/Local/Temp/heron-work/prove-1102/heron-p1102-shared.txt,
-    groupName=HERON, parameterName=HERON_P1102_TAG, categories=Cameras, instanceBinding=true
+    boundCategories 1 item(s) [Ducts], categoriesNotBound 0 item(s), createFile false, createMissing
+    false, dataGroup Func`2, dbNamespace Autodesk.Revit.DB, findings 3 item(s) ['HERON_P1102_TAG'
+    is bound as an INSTANCE parameter to 1 cat..., The definition already existed in group
+    'HERON' and was reus..., Revit's shared parameter file setting was put back to none, ...],
+    flags BindingFlags, instanceBinding true, optionsCtor RuntimeConstructorInfo, revitAssembly
+    RuntimeAssembly, sharedParameterFileRestored true, textSpec Func`2. inputs came sharedParameterFile
+    as given; groupName as given; parameterName as given; categories as given (1); instanceBinding
+    as given; createMissing not given - false (optional); createFile not given - false (optional).
+    on Heron Reads Test
+  negative_case: run with categories=Ducts, createMissing=True, groupName=HERON, instanceBinding=True,
+    parameterName=HERON_P1102_TAG, sharedParameterFile=C:/Users/ajmal/AppData/Local/Temp/heron-work/prove-1102/heron-p1102-shraed.txt
     instead - chosen because it should not contain what this fragment reports - run inside
     a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
-    bindMethod Func`2, bound false, boundCategories 0 item(s), categoriesNotBound 1 item(s)
-    [Cameras (Revit does not let a project parameter be bound to ...], dataGroup Func`2, dbNamespace
-    Autodesk.Revit.DB, findings 1 item(s) [None of the categories asked for can carry a project
-    paramet...], flags BindingFlags, instanceBinding true, optionsCtor RuntimeConstructorInfo,
-    revitAssembly RuntimeAssembly, sharedParameterFileRestored true, textSpec Func`2. inputs
-    came sharedParameterFile as given; groupName as given; parameterName as given; categories
-    as given (1); instanceBinding as given. on P1102 MEP
+    bindMethod Func`2, bound false, boundCategories 0 item(s), categoriesNotBound 0 item(s),
+    createFile false, createMissing true, dataGroup Func`2, dbNamespace Autodesk.Revit.DB,
+    findings 1 item(s) [There is no shared parameter file at 'C:/Users/ajmal/AppData...],
+    flags BindingFlags, instanceBinding true, optionsCtor RuntimeConstructorInfo, revitAssembly
+    RuntimeAssembly, sharedParameterFileRestored true, textSpec Func`2. inputs came sharedParameterFile
+    as given; groupName as given; parameterName as given; categories as given (1); instanceBinding
+    as given; createMissing as given; createFile not given - false (optional). on Heron Reads
+    Test
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: cab1655dfb349e02
-
+  fingerprint: e7048aa7a2d7148e
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

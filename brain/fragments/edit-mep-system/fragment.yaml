@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -193,6 +193,48 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-14'
+  by: Ajmal PS
+  model: P1102 MEP (21,438 elements), Revit 2020, session 26612
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-id, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned action add,
+    allCircuits 189 item(s) [1, 2, 3, ...], baseOf Func`2, changed 1, circuitSaid false, devices
+    1 item(s) [Standard], ductAndPipeSystems 54 item(s) [Mechanical Supply Air 1, Mechanical
+    Supply Air 2, Mechanical Supply Air 3, ...], findings 0 item(s), half system, isNone Func`2,
+    lines 1 item(s) [system "Mechanical Return Air 1" (Return Air): 4 element(s) ...], membersOf
+    Func`2, mode add, nameOf Func`2, onCircuits 964 entry(ies), onSystems 271 entry(ies),
+    pickedCircuits 0 item(s), pickedSystems 0 item(s), problems 0 item(s), refused (null),
+    report system "Mechanical Return Air 1" (Return Air): 4 element(s) before, 5 after - 1
+    added: Air Terminals 411656 (Mark 79)., same Func`3, squash Func`2, systemIds 1 item(s)
+    [800849], systemSaid true. inputs came elements from the selection (1); edit as given;
+    systemName as given; circuitNumber not given - "none", the card''s own default (optional);
+    circuitPanel not given - "none", the card''s own default (optional); panel not given -
+    "none", the card''s own default (optional). on P1102 MEP'
+  negative_case: 'run with edit=add, systemName=Mechanical Supply Air 1 arranged with elementIds=411656
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running filter-elements-by-id, set-selection with this phase''s own
+    values - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned action add, allCircuits 189 item(s) [1, 2, 3, ...], baseOf Func`2,
+    changed 0, circuitSaid false, devices 1 item(s) [Standard], ductAndPipeSystems 54 item(s)
+    [Mechanical Supply Air 1, Mechanical Supply Air 2, Mechanical Supply Air 3, ...], findings
+    1 item(s) [Not one element selected could join system "Mechanical Suppl...], half system,
+    isNone Func`2, lines 0 item(s), membersOf Func`2, mode add, nameOf Func`2, onCircuits
+    964 entry(ies), onSystems 271 entry(ies), pickedCircuits 0 item(s), pickedSystems 0 item(s),
+    problems 0 item(s), refused Not one element selected could join system "Mechanical Supply
+    Air 1" (Supply Air), so NOTHING WAS CHANGED. Air Terminals 411656 (Mark 79) was left:
+    its free connector is of the ReturnAir kind, and system "Mechanical Supply Air 1" (Supply
+    Air) is SupplyAir., report Nothing was changed., same Func`3, squash Func`2, systemIds
+    0 item(s), systemSaid true. inputs came elements from the selection (1); edit as given;
+    systemName as given; circuitNumber not given - "none", the card''s own default (optional);
+    circuitPanel not given - "none", the card''s own default (optional); panel not given -
+    "none", the card''s own default (optional). on P1102 MEP'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 0ac66d2f3cca0458
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

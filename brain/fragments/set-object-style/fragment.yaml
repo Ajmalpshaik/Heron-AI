@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -154,6 +154,45 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-13'
+  by: Ajmal PS
+  model: P1102 MEP (21,454 elements), Revit 2020, session 41776
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned after Ducts: projection weight
+    6, cut weight - (not cut), line colour 0,0,0, line pattern Solid, material none, arrow
+    -1, askedCategory Ducts, askedRow Ducts, askedSomething true, askedSub , before Ducts:
+    projection weight 5, cut weight - (not cut), line colour 0,0,0, line pattern Solid, material
+    none, changed 1, colourText keep, cutWeight 0, describe Func`2, distance Func`3, findings
+    1 item(s) [Object Styles changed for Ducts (1 setting(s)), for the whol...], kept Func`2,
+    label Ducts, lines Category, materialText keep, namedColours 11 entry(ies), nearest Func`4,
+    parent Category, patternText keep, plain Func`2, projectionWeight 6, refused (null), row
+    Category, solid 1 item(s) [id -3000010], wantedColour (null), wantedMaterial (null), wantedPattern
+    (null). inputs came category as given; projectionWeight as given; cutWeight not given
+    - "0", the card''s own default (optional); colour not given - "keep", the card''s own
+    default (optional); pattern not given - "keep", the card''s own default (optional); material
+    not given - "keep", the card''s own default (optional). on P1102 MEP'
+  negative_case: 'run with category=Zz No Such, projectionWeight=6 instead - chosen because
+    it should not contain what this fragment reports - run inside a transaction, and Revit
+    reported the transaction group ROLLED BACK afterwards. returned after , arrow -1, askedCategory
+    Zz No Such, askedRow Zz No Such, askedSomething true, askedSub , before , changed 0, colourText
+    keep, cutWeight 0, describe Func`2, distance Func`3, findings 1 item(s) [This model has
+    no category named "Zz No Such", so NOTHING WA...], kept Func`2, label Zz No Such, lines
+    Category, materialText keep, namedColours 11 entry(ies), nearest Func`4, parent (null),
+    patternText keep, plain Func`2, projectionWeight 6, refused This model has no category
+    named "Zz No Such", so NOTHING WAS CHANGED. The nearest it has: "Zone Tags", "Callouts",
+    "Doors", "Flex Ducts", "Floors", "Furniture", "Lines", "Roofs". Names are as this Revit
+    shows them in Object Styles - LIST_CATEGORIES lists them all., row (null), solid 1 item(s)
+    [id -3000010], wantedColour (null), wantedMaterial (null), wantedPattern (null). inputs
+    came category as given; projectionWeight as given; cutWeight not given - "0", the card''s
+    own default (optional); colour not given - "keep", the card''s own default (optional);
+    pattern not given - "keep", the card''s own default (optional); material not given - "keep",
+    the card''s own default (optional). on P1102 MEP'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 3248cb0f532a57df
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

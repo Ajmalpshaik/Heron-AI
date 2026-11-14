@@ -51,3 +51,21 @@ at READ that lists the connected release in its place, and dry-run until it says
 **Then** the group closes on NI1 to NI6, with NI7 closing when row 5b-1510 does - there is no card to sign:
 these are tools, not fragments. A row that fails reopens its FRAGMENT-ISSUES row; nothing in a row changes
 to make it pass.
+
+### Run record - 2026-11-13, NI1 to NI4 on the laptop, Revit 2020
+
+Branch `claude/pc-proofs-2026-11-12` (main at 10334996 and this sitting's records). Revit 2020, session
+41776, the add-in built from 10334996; the model **P1102 MEP**, the saved scratch copy of Revit 2020's
+`rme_advanced_sample_project.rvt`. `report-analytical-model` read `revit: ["2023" ... "2027"]` and DRAFT;
+`report-level-elevations` DRAFT, all eight releases - both as the rows assume. Every line with
+`HERON_CLIENT_ID=ajmal-pc`, stdin closed. The job file and every output are in `%TEMP%\heron-work\ni`.
+
+| # | Result | What was seen |
+|---|---|---|
+| NI1 | **PASS** | `report-analytical-model  REFUSED  ... does not claim Revit 2020, the release connected - its revit: is 2023, 2024, 2025, 2026, 2027. No fragment was sent to Revit ...`; `report-level-elevations` WOULD RUN; exit 1. The `mode:` line: *no fragment is run ... a connected Revit is asked only whether it is there (a ping)*; the closing lines: *each Revit it lists ... was asked one thing, once: whether it is there*. The add-in log gained no line during the run; a chat that asked `READ_SELECTION` straight afterwards was answered, not told the Revit was in use |
+| NI2 | **PASS** | `--only report-analytical-model`, no `--dry-run`: REFUSED in 3 seconds, no `compile_failed` in the output, exit 1, `git status` nothing new under `brain/proof-drafts/`, the add-in log no new line |
+| NI3 | **PASS** | `validate report-analytical-model --session 41776`: the same refusal and nothing before it - no `active:` line, no `compile_failed`; `ERRORLEVEL` 2 |
+| NI4 | **PASS** - Revit 2020 half | `validate --out ...\ni\levels.json --negative-set categoryName=Sheets ... report-level-elevations`: `active: P1102 MEP (21,453 elements), Revit 2020, session 41776`, positive ok, negative ok, exit 0, nothing said about releases, the record in the scratch folder. Also printed: *IGNORED 'categoryName' - not a value this fragment declares* - the row's negative value is not one this card takes, so its negative leg ran with no input of its own; the record is evidence for nothing, as the row says |
+| NI4, newer half | **NOT RUN** | needs a Revit 2023 or newer connected at the same time; one Revit at a time on this PC |
+
+The scratch folder is left as it is: deleting it waits for the owner's word.

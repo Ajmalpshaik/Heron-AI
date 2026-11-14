@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -141,6 +141,45 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-14'
+  by: Ajmal PS
+  model: P1102 MEP (21,438 elements), Revit 2020, session 26612
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8, at XYZ,
+    corner BoxPlacement, culture CultureInfo, existing (null), extension .png, file C:/Users/ajmal/AppData/Local/Temp/heron-work/gp2020/heron-test-image.png,
+    findings 2 item(s) [1 image imported and placed in "Level 1 HVAC Plan", read bac..., Imported
+    "heron-test-image.png" (image 1022095) into "Level ...], imageInstanceId 1 item(s) [id
+    1022096], imageTypeId 1 item(s) [id 1022095], isPdf false, lines 1 item(s) [Imported "heron-test-image.png"
+    (image 1022095) into "Level ...], mm Func`2, page 1, refused (null), report Imported "heron-test-image.png"
+    (image 1022095) into "Level 1 HVAC Plan" as placed image 1022096: 1129 x 1129 mm, centre
+    at 0,0 mm in the view, drawn in the background., resolution 0, reusedType false, target
+    ViewPlan, viewWords Func`2. inputs came path as given; view as given; page not given -
+    "1", the card''s own default (optional); resolution not given - "0", the card''s own default
+    (optional); point not given - "0,0", the card''s own default (optional); anchor not given
+    - "centre", the card''s own default (optional). on P1102 MEP'
+  negative_case: run with path=C:/Users/ajmal/AppData/Local/Temp/heron-work/gp2020/zz-no-such-image.png,
+    view=Level 1 HVAC Plan instead - chosen because it should not contain what this fragment
+    reports - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned MillimetresPerFoot 304.8, at XYZ, corner BoxPlacement, culture CultureInfo,
+    existing (null), extension .png, file C:/Users/ajmal/AppData/Local/Temp/heron-work/gp2020/zz-no-such-image.png,
+    findings 1 item(s) [There is no file at "C:/Users/ajmal/AppData/Local/Temp/heron...],
+    imageInstanceId (null), imageTypeId (null), isPdf false, lines 1 item(s) [There is no
+    file at "C:/Users/ajmal/AppData/Local/Temp/heron...], mm Func`2, page 1, refused There
+    is no file at "C:/Users/ajmal/AppData/Local/Temp/heron-work/gp2020/zz-no-such-image.png"
+    on the PC Revit runs on - the path is read there, not where the chat is. NOTHING WAS IMPORTED.,
+    report There is no file at "C:/Users/ajmal/AppData/Local/Temp/heron-work/gp2020/zz-no-such-image.png"
+    on the PC Revit runs on - the path is read there, not where the chat is. NOTHING WAS IMPORTED.,
+    resolution 0, reusedType false, target ViewPlan, viewWords Func`2. inputs came path as
+    given; view as given; page not given - "1", the card's own default (optional); resolution
+    not given - "0", the card's own default (optional); point not given - "0,0", the card's
+    own default (optional); anchor not given - "centre", the card's own default (optional).
+    on P1102 MEP
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 60d11e947fac05ac
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -132,6 +132,61 @@ contract:
       type: IList<string>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-14'
+  by: Ajmal PS
+  model: P1102 STR (9,179 elements), Revit 2020, session 17824
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-id, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned analyticalOf
+    Func`2, axis XYZ, caseList "DL1", "LL1", "SNOW1", cases 3 item(s) [DL1, LL1, SNOW1], curveOf
+    Func`2, d down, describe Func`2, e0 , end (null), existing 0 item(s), findings 0 item(s),
+    firstForce Func`2, force Func`2, forceVector XYZ, freePoints 0 item(s), fromInternal Func`2,
+    hosts 3 item(s) [400 x 800mm, 400 x 800mm, 400 x 800mm], invariant CultureInfo, isArea
+    false, isLine true, isPoint false, k line, keep Action`2, lines 3 item(s) [272537  Line
+    load (-9202, 29994, 3800) mm to (-9202, 22679, ..., 272538  Line load (-9202, 22679, 3800)
+    mm to (-9202, 19427, ..., 272539  Line load (-9202, 19427, 3800) mm to (-9202, 13128,
+    ...], mm Func`2, noAnalytical 0 item(s), num Func`2, ok true, placed 3, placedIds 3 item(s)
+    [272537, 272538, 272539], pointsText , pt Func`2, quoted Func`2, refused 0 item(s), repeatOf
+    Func`3, report 272537  Line load (-9202, 29994, 3800) mm to (-9202, 22679, 3800) mm: uniform
+    (0, 0, -5) kN/m; load case "DL1"; on Structural Framing "400 x 800mm" (124559) through
+    analytical 176131; oriented to Project - read back from the model
+
+    272538  Line load (-9202, 22679, 3800) mm to (-9202, 19427, 3800) mm: uniform (0, 0, -5)
+    kN/m; load case "DL1"; on Structural Framing "400 x 800mm" (124565) through analytical
+    176132; oriented to Project - read back from the model
+
+    272539  Line load (-9202, 19427, 3800) mm to (-9202, 13128, 3800) mm: uniform (0, 0, -5)
+    kN/m; load case "DL1"; on Structural Framing "400 x 800mm" (124568) through analytical
+    176133; oriented to Project - read back from the model, skipped 0 item(s), theCase LoadCase,
+    toInternal Func`2, unit DisplayUnitType, unitWord kN/m, value 5, wantCase DL1. inputs
+    came elements from the selection (3); kind as given; loadCase as given; value as given;
+    direction not given - "down", the card''s own default (optional); at not given - "none",
+    the card''s own default (optional); points not given - "none", the card''s own default
+    (optional). on P1102 STR'
+  negative_case: 'run with kind=line, loadCase=Zz No Such, value=5 arranged with elementIds=124559,124565,124568
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running filter-elements-by-id, set-selection with this phase''s own
+    values - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned analyticalOf Func`2, axis XYZ, caseList "DL1", "LL1", "SNOW1", cases
+    3 item(s) [DL1, LL1, SNOW1], curveOf Func`2, d down, describe Func`2, e0 , end (null),
+    existing 0 item(s), findings 1 item(s) [No load was placed - the model''s loads are as
+    they were.], firstForce Func`2, force Func`2, forceVector XYZ, freePoints 0 item(s), fromInternal
+    Func`2, hosts 3 item(s) [400 x 800mm, 400 x 800mm, 400 x 800mm], invariant CultureInfo,
+    isArea false, isLine true, isPoint false, k line, keep Action`2, lines 0 item(s), mm Func`2,
+    noAnalytical 0 item(s), num Func`2, ok false, placed 0, placedIds 0 item(s), pointsText
+    , pt Func`2, quoted Func`2, refused 1 item(s) ["Zz No Such" is not a load case in this
+    model: "DL1", "LL1",...], repeatOf Func`3, report , skipped 0 item(s), theCase (null),
+    toInternal Func`2, unit DisplayUnitType, unitWord kN/m, value 5, wantCase Zz No Such.
+    inputs came elements from the selection (3); kind as given; loadCase as given; value as
+    given; direction not given - "down", the card''s own default (optional); at not given
+    - "none", the card''s own default (optional); points not given - "none", the card''s own
+    default (optional). on P1102 STR'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 2163f5abc82fe679
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

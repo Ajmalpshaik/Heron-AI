@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -118,6 +118,69 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-14'
+  by: Ajmal PS
+  model: P1102 MEP (21,438 elements), Revit 2020, session 26612
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned MetresPerFoot 0.3048, MillimetresPerFoot
+    304.8, at Func`2, created 21 item(s) [1022445, 1022446, 1022447, ...], culture CultureInfo,
+    doorList Func`1, doorName , doors 27 item(s) [88.5 x 2.26, 88.5 x 2.26, 88.5 x 2.26, ...],
+    exit XYZ, exitPointText -9000,13000, exitWords the point -9000,13000 mm, findings 1 item(s)
+    [Lengths are measured along each path''s own lines, in metres....], level Level, markOf
+    Func`2, mm Func`2, notFound 1 item(s) [room 12 "Elevator 12": Revit found no path - status
+    NoPathOf...], parsePoints Func`2, refused (null), report Drew 21 of 22 path(s) of travel
+    in "Level 1 HVAC Plan" to the point -9000,13000 mm, the longest 70.61 m: room 1 "CH/PH
+    Stock 1": path 1022445, 25.75 m, from -8411,-9761 mm to -9000,13000 mm  ||  room 2 "CH/PH
+    I 2": path 1022446, 18.31 m, from -9324,-528 mm to -9000,13000 mm  ||  room 3 "Stock 3":
+    path 1022447, 13.32 m, from -4797,5192 mm to -9000,13000 mm  ||  room 4 "Workshop 4":
+    path 1022448, 2.53 m, from -9324,10493 mm to -9000,13000 mm  ||  room 6 "Leader 6": path
+    1022449, 25.29 m, from -361,-9353 mm to -9000,13000 mm  ||  room 8 "Leader 8": path 1022450,
+    27.58 m, from 2679,-9353 mm to -9000,13000 mm  ||  room 9 "WC H 9": path 1022451, 28.77
+    m, from 5786,-9761 mm to -9000,13000 mm  ||  room 10 "WC D 10": path 1022452, 31.56 m,
+    from 8066,-9761 mm to -9000,13000 mm  ||  room 20 "MZR 20": path 1022453, 37.46 m, from
+    -4988,36302 mm to -9000,13000 mm  ||  room 21 "Archive 21": path 1022454, 40.13 m, from
+    7119,37637 mm to -9000,13000 mm  ||  room 23 "WC 23": path 1022455, 39.18 m, from 10190,33342
+    mm to -9000,13000 mm  ||  room 25 "Washing Room 25": path 1022456, 46.35 m, from 11625,39089
+    mm to -9000,13000 mm  ||  room 26 "Cleaning 26": path 1022457, 42.46 m, from 13016,35266
+    mm to -9000,13000 mm  ||  room 27 "Cleaning 27": path 1022458, 45.81 m, from 16668,35266
+    mm to -9000,13000 mm  ||  room 28 "Technology 28": path 1022459, 49.78 m, from 19259,36417
+    mm to -9000,13000 mm  ||  room 30 "Washing Room 30": path 1022460, 51.20 m, from 18164,39089
+    mm to -9000,13000 mm  ||  room 50 "Cafeteria 50": path 1022461, 18.34 m, from 7131,6953
+    mm to -9000,13000 mm  ||  room 51 "WF 51": path 1022462, 27.28 m, from -5754,28514 mm
+    to -9000,13000 mm  ||  room 92 "Stair 92": path 1022463, 70.61 m, from 51656,-6808 mm
+    to -9000,13000 mm  ||  room 93 "Stair 93": path 1022464, 21.77 m, from -2988,-6852 mm
+    to -9000,13000 mm  ||  room 94 "Stair 94": path 1022465, 52.14 m, from 22570,34709 mm
+    to -9000,13000 mm  ||  NO PATH: room 12 "Elevator 12": Revit found no path - status NoPathOfTravel,
+    rows 21 item(s) [room 1 "CH/PH Stock 1": path 1022445, 25.75 m, from -8411,-9..., room
+    2 "CH/PH I 2": path 1022446, 18.31 m, from -9324,-528 m..., room 3 "Stock 3": path 1022447,
+    13.32 m, from -4797,5192 mm ..., ...], startWords 22 item(s) [room 1 "CH/PH Stock 1",
+    room 2 "CH/PH I 2", room 3 "Stock 3", ...], starts 22 item(s) [(-27.595685643, -32.024941049,
+    0.308962391), (-30.592137510, -1.732774440, 0.308962391), (-15.739341782, 17.033190300,
+    0.308962391), ...], target ViewPlan, viewWords Func`2, z 0.308962391333159. inputs came
+    view as given; rooms as given; fromPoints as given; toDoor as given; toPoint as given.
+    on P1102 MEP'
+  negative_case: 'run with view=Level 1 HVAC Plan, rooms=Zz No Such Room, fromPoints=, toDoor=,
+    toPoint=-9000,13000 instead - chosen because it should not contain what this fragment
+    reports - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned MetresPerFoot 0.3048, MillimetresPerFoot 304.8, at Func`2, created
+    0 item(s), culture CultureInfo, doorList Func`1, doorName , doors 27 item(s) [88.5 x 2.26,
+    88.5 x 2.26, 88.5 x 2.26, ...], exit XYZ, exitPointText -9000,13000, exitWords the point
+    -9000,13000 mm, findings 0 item(s), level Level, markOf Func`2, mm Func`2, notFound 0
+    item(s), parsePoints Func`2, refused No placed room on level "Level 1" is numbered or
+    named "Zz No Such Room". NOTHING WAS DRAWN. Rooms there: 1 "CH/PH Stock 1", 2 "CH/PH I
+    2", 3 "Stock 3", 4 "Workshop 4", 6 "Leader 6", 8 "Leader 8", 9 "WC H 9", 10 "WC D 10",
+    12 "Elevator 12", 20 "MZR 20", 21 "Archive 21", 23 "WC 23", 25 "Washing Room 25", 26 "Cleaning
+    26", 27 "Cleaning 27", 28 "Technology 28", 30 "Washing Room 30", 50 "Cafeteria 50", 51
+    "WF 51", 92 "Stair 92", 93 "Stair 93", 94 "Stair 94"., report , rows 0 item(s), startWords
+    0 item(s), starts 0 item(s), target ViewPlan, viewWords Func`2, z 0.308962391333159. inputs
+    came view as given; rooms as given; fromPoints as given; toDoor as given; toPoint as given.
+    on P1102 MEP'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: b86edc67cacc4f5f
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

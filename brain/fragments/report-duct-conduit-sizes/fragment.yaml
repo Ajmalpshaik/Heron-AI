@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -89,6 +89,38 @@ contract:
       type: IList<string>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-13'
+  by: Ajmal PS
+  model: P1102 MEP, Revit 2020, session 41776 - the count is NOT recorded because 2,944 elements
+    was measured on Heron Many Types Project 2020, the document in front, and this ran against
+    another one (row 15)
+  positive_case: 'run as it would normally be run. returned asked round, ductSettings DuctSizeSettings,
+    every false, findings 2 item(s) [1 size list(s) read, 74 size(s) in them - only the lists
+    ask..., Round duct sizes (74): 75, 90, 100, 110, 125, 140, 150, 160,...], invariant CultureInfo,
+    lines 1 item(s) [Round duct sizes (74): 75, 90, 100, 110, 125, 140, 150, 160,...], mm
+    Func`2, names 0 item(s), needle , plain Func`2, report Round duct sizes (74): 75, 90,
+    100, 110, 125, 140, 150, 160, 175, 190, 200, 210, 225, 240, 250, 260, 275, 290, 300, 310,
+    325, 340, 350, 360, 375, 390, 400, 425, 450, 475, 500, 550, 575, 600, 625, 650, 675, 700,
+    725, 750, 775, 800, 825, 850, 875, 900, 950, 975, 1000, 1050, 1100, 1150, 1200, 1250,
+    1300, 1350, 1400, 1450, 1500, 1550, 1600, 1650, 1700, 1750, 1800, 1850, 1900, 1950, 2000,
+    2050, 2100, 2150, 2200, 2250 mm, shapes 1 item(s) [[Round, Round duct]], sizeCount 74,
+    tables 1, unknownWords 0 item(s), wantConduit false, wantOval false, wantRect false, wantRound
+    true, wantTray false. inputs came show as given; standard not given - "none", the card''s
+    own default (optional). on P1102 MEP'
+  negative_case: run with show=conduit, standard=Zz No Such Standard instead - chosen because
+    it should not contain what this fragment reports. returned asked conduit, ductSettings
+    (null), every false, findings 2 item(s) [0 size list(s) read, 0 size(s) in them - only
+    the lists aske..., No conduit standard has a name containing "Zz No Such Standa...], invariant
+    CultureInfo, lines 0 item(s), mm Func`2, names 0 item(s), needle Zz No Such Standard,
+    plain Func`2, report , shapes 0 item(s), sizeCount 0, tables 0, unknownWords 0 item(s),
+    wantConduit true, wantOval false, wantRect false, wantRound false, wantTray false. inputs
+    came show as given; standard as given. on P1102 MEP
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 660e768c8555362e
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

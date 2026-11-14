@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -81,6 +81,35 @@ contract:
       type: int
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-13'
+  by: Ajmal PS
+  model: P1102 MEP (21,454 elements), Revit 2020, session 41776
+  positive_case: 'run with show=duct - the first of 3 tracked inputs. returned culture CultureInfo,
+    density Func`2, ductSettings Duct Settings - duct use annotation scale for single line
+    fittings yes; duct fitting annotation size 3 mm; air density 1.2026 kg/m3; air dynamic
+    viscosity 0.00053 Pa-s; rectangular duct size separator "x"; rectangular duct size suffix
+    ""; round duct size prefix ""; round duct size suffix "ø"; oval duct size separator "/";
+    oval duct size suffix ""; duct connector separator "-"; duct flat on top "FOT"; duct flat
+    on bottom "FOB"; duct set up from center "SU"; duct set down from center "SD"; duct set
+    up from bottom "BU"; duct set down from bottom "BD"; duct centerline "="; duct rise/drop
+    annotation size 3 mm, findings 1 item(s) [Not read here: the rise/drop symbols (Revit
+    holds them on ea...], mm Func`2, pipeSettings , readDuct true, readPipe false, settingsRead
+    19, text Func`2, viscosity Func`2, wanted duct, yesNo Func`2. inputs came show as given.
+    on P1102 MEP'
+  negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). report-mechanical-settings\
+    \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
+    \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
+    \ about a set it was not given - is caught here by the answer following the input exactly\
+    \ across 3 different inputs:\n\n      show=duct -> settingsRead 19\n      show=pipe ->\
+    \ settingsRead 12\n      show=all -> settingsRead 31\n\n    Different inputs, exact matches\
+    \ every time. A fragment falling back to the active view, the whole model, or a previous\
+    \ run could not do that."
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 2fa4583da7b3c469
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

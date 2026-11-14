@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -121,6 +121,46 @@ contract:
       type: IList<string>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-13'
+  by: Ajmal PS
+  model: P1102 MEP (21,454 elements), Revit 2020, session 41776
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned added 1, after 3 item(s) ["Heron
+    THHN" (id 1020281) Copper, 60, THWN, max size 2000, n..., "THWN" (id 55171) Copper, 60,
+    THWN, max size 2000, neutral m..., "XHHW" (id 261496) Copper, 60, XHHW, max size 2000,
+    neutral ...], baseType WireType, before 2 item(s) ["THWN" (id 55171) Copper, 60, THWN,
+    max size 2000, neutral m..., "XHHW" (id 261496) Copper, 60, XHHW, max size 2000, neutral
+    ...], copiedSize 2000, exact Func`4, findings 2 item(s) [Added 1 wire type. Wire types:
+    2 before, 3 after., Added wire type "Heron THHN" (id 1020281) Copper, 60, THWN, ...],
+    given Func`2, invariant CultureInfo, line Func`2, made WireType, num Func`2, quoted Func`2,
+    readWires Action, refused 0 item(s), settings ElectricalSetting, skipped 0 item(s), taken
+    (null), wantBase , wantInsulation THWN, wantMaterial Copper, wantName Heron THHN, wantRating
+    60, wantSize , wires 3 item(s) [WireType, THWN, XHHW]. inputs came name as given; material
+    as given; temperatureRating as given; insulation as given; maxSize not given - "none",
+    the card''s own default (optional); basedOn not given - "none", the card''s own default
+    (optional). on P1102 MEP'
+  negative_case: 'run with name=Heron THHN, material=Zz Metal, temperatureRating=60, insulation=THWN
+    instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    added 0, after 2 item(s) ["THWN" (id 55171) Copper, 60, THWN, max size 2000, neutral m...,
+    "XHHW" (id 261496) Copper, 60, XHHW, max size 2000, neutral ...], baseType WireType, before
+    2 item(s) ["THWN" (id 55171) Copper, 60, THWN, max size 2000, neutral m..., "XHHW" (id
+    261496) Copper, 60, XHHW, max size 2000, neutral ...], copiedSize , exact Func`4, findings
+    2 item(s) [Added nothing - refused. Wire types: 2 before, 2 after., No conductor material
+    is named "Zz Metal". The ones here are...], given Func`2, invariant CultureInfo, line
+    Func`2, made (null), num Func`2, quoted Func`2, readWires Action, refused 1 item(s) [No
+    conductor material is named "Zz Metal". The ones here are...], settings ElectricalSetting,
+    skipped 0 item(s), taken (null), wantBase , wantInsulation THWN, wantMaterial Zz Metal,
+    wantName Heron THHN, wantRating 60, wantSize , wires 2 item(s) [THWN, XHHW]. inputs came
+    name as given; material as given; temperatureRating as given; insulation as given; maxSize
+    not given - "none", the card''s own default (optional); basedOn not given - "none", the
+    card''s own default (optional). on P1102 MEP'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 6e554e8338b52564
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

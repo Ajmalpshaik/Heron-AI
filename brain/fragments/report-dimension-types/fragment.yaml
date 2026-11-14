@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -78,6 +78,88 @@ contract:
       type: int
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-13'
+  by: Ajmal PS
+  model: P1102 MEP (21,454 elements), Revit 2020, session 41776
+  positive_case: 'run as it would normally be run. returned MmPerFoot 304.8, allTypes 12 item(s)
+    [Arrow - 2.5mm Arial, Linear Dimension Style, Linear Dimension Style, ...], api RuntimeAssembly,
+    asked all, askedStyle linear, chosen 5 item(s) [2.5mm - Arial, Linear - 3/32" Arial, Linear
+    Dimension Style, ...], dimTypes 12 item(s) [Diagonal - 2.5mm Arial, Diameter, Diameter
+    Dimension Style, ...], dimensionCount 1180, dimensionTypes Linear Dimension Style: 2.5mm
+    - Arial | style Linear | Line Weight 1 | Tick Mark Line Weight 3 | Color 0,0,0 | Dimension
+    Line Extension 2 mm | Witness Line Control Fixed to Dimension Line | Witness Line Gap
+    to Element 2 mm | Witness Line Extension 2 mm | Tick Mark Diagonal - 1.5mm | Text Size
+    2.5 mm | Text Offset 0.5 mm | Text Font Arial | Text Background Transparent | Width Factor
+    1 | Bold no | Italic no | Underline no | Units Format Use project settings (Millimeters,
+    0 decimal places, no symbol) | used by 11 dimension(s)  ||  Linear Dimension Style: Linear
+    - 3/32" Arial | style Linear | Line Weight 1 | Tick Mark Line Weight 5 | Color 0,0,0 |
+    Dimension Line Extension 2.381 mm | Witness Line Control Gap to Element | Witness Line
+    Gap to Element 1.588 mm | Witness Line Extension 2.381 mm | Tick Mark Diagonal 1/8" |
+    Text Size 2.381 mm | Text Offset 1.588 mm | Text Font Arial | Text Background Opaque |
+    Width Factor 1 | Bold no | Italic no | Underline no | Units Format Use project settings
+    (Millimeters, 0 decimal places, no symbol) | used by 3 dimension(s)  ||  Linear Dimension
+    Style: Linear Dimension Style | style Linear | Line Weight 1 | Tick Mark Line Weight 0
+    | Color 59,115,255 | Dimension Line Extension 0 mm | Witness Line Control Gap to Element
+    | Witness Line Gap to Element 1.587 mm | Witness Line Extension 2.381 mm | Tick Mark Arrowhead
+    | Text Size 2.381 mm | Text Offset 0.794 mm | Text Font Arial | Text Background Opaque
+    | Width Factor 1 | Bold no | Italic no | Underline no | Units Format Use project settings
+    (Millimeters, 0 decimal places, no symbol) | used by 1061 dimension(s)  ||  Linear Dimension
+    Style: Linear Dimension Style | style Linear | Line Weight 1 | Tick Mark Line Weight 0
+    | Color 59,115,255 | Dimension Line Extension 0 mm | Witness Line Control Gap to Element
+    | Witness Line Gap to Element 1.587 mm | Witness Line Extension 2.381 mm | Tick Mark Arrowhead
+    | Text Size 2.381 mm | Text Offset 0.794 mm | Text Font Arial | Text Background Opaque
+    | Width Factor 1 | Bold no | Italic no | Underline no | Units Format Use project settings
+    (Millimeters, 0 decimal places, no symbol) | used by 105 dimension(s)  ||  Linear Dimension
+    Style: Linear Dimension Style | style Linear | Line Weight 1 | Tick Mark Line Weight 0
+    | Color 59,115,255 | Dimension Line Extension 0 mm | Witness Line Control Gap to Element
+    | Witness Line Gap to Element 1.5 mm | Witness Line Extension 2.4 mm | Tick Mark Arrowhead
+    | Text Size 6.35 mm | Text Offset 1.5 mm | Text Font Arial | Text Background Opaque |
+    Width Factor 1 | Bold no | Italic no | Underline no | Units Format Millimeters, 0 decimal
+    places, no symbol | used by 0 dimension(s), dimensions 1180 item(s) [Alignment, Alignment,
+    Alignment, ...], findings 1 item(s) [5 dimension type(s) listed of 12 in this project;
+    1180 dimen...], forgeType (null), formatText Func`2, fullName Func`2, hidden 0, invariant
+    CultureInfo, labelOf Func`3, lines 5 item(s) [Linear Dimension Style: 2.5mm - Arial |
+    style Linear | Line ..., Linear Dimension Style: Linear - 3/32" Arial | style Linear ...,
+    Linear Dimension Style: Linear Dimension Style | style Linea..., ...], parameterOf Func`3,
+    projectFormat Func`2, roundingText Func`2, settings 16 item(s) [(Line Weight, Autodesk.Revit.DB.BuiltInParameter[],
+    integer), (Tick Mark Line Weight, Autodesk.Revit.DB.BuiltInParameter[]..., (Color, Autodesk.Revit.DB.BuiltInParameter[],
+    color), ...], shown Func`3, space Autodesk.Revit.DB., specOf Func`2, specOfType (null),
+    squash Func`2, statics BindingFlags, symbolName Func`2, symbolOf Func`2, typeCount 5,
+    typeList Angular Dimension Style: Diagonal - 2.5mm Arial, Diameter Dimension Style: Diameter,
+    Diameter Dimension Style: Diameter Dimension Style, Linear Dimension Style: 2.5mm - Arial,
+    Linear Dimension Style: Linear - 3/32" Arial, Linear Dimension Style: Linear Dimension
+    Style, Linear Dimension Style: Linear Dimension Style, Linear Dimension Style: Linear
+    Dimension Style, Radial Dimension Style: Arrow - 2.5mm Arial, Spot Coordinates: Horizontal,
+    Spot Elevations: No Symbol (Project), Spot Slopes: Sloped, unitName Func`2, unitOf Func`2,
+    unitsText Func`2. inputs came dimensionTypeName not given - "all", the card''s own default
+    (optional); style as given. on P1102 MEP'
+  negative_case: 'run with dimensionTypeName=Zz No Such Type instead - chosen because it should
+    not contain what this fragment reports. returned MmPerFoot 304.8, allTypes 12 item(s)
+    [Arrow - 2.5mm Arial, Linear Dimension Style, Linear Dimension Style, ...], api RuntimeAssembly,
+    asked Zz No Such Type, askedStyle all, chosen 0 item(s), dimTypes 12 item(s) [Diagonal
+    - 2.5mm Arial, Diameter, Diameter Dimension Style, ...], dimensionCount 1180, dimensionTypes
+    , dimensions 1180 item(s) [Alignment, Alignment, Alignment, ...], findings 2 item(s) [No
+    dimension type is named "Zz No Such Type". The dimension ..., 0 dimension type(s) listed
+    of 12 in this project; 1180 dimen...], forgeType (null), formatText Func`2, fullName Func`2,
+    hidden 0, invariant CultureInfo, labelOf Func`3, lines 0 item(s), parameterOf Func`3,
+    projectFormat Func`2, roundingText Func`2, settings 16 item(s) [(Line Weight, Autodesk.Revit.DB.BuiltInParameter[],
+    integer), (Tick Mark Line Weight, Autodesk.Revit.DB.BuiltInParameter[]..., (Color, Autodesk.Revit.DB.BuiltInParameter[],
+    color), ...], shown Func`3, space Autodesk.Revit.DB., specOf Func`2, specOfType (null),
+    squash Func`2, statics BindingFlags, symbolName Func`2, symbolOf Func`2, typeCount 0,
+    typeList Angular Dimension Style: Diagonal - 2.5mm Arial, Diameter Dimension Style: Diameter,
+    Diameter Dimension Style: Diameter Dimension Style, Linear Dimension Style: 2.5mm - Arial,
+    Linear Dimension Style: Linear - 3/32" Arial, Linear Dimension Style: Linear Dimension
+    Style, Linear Dimension Style: Linear Dimension Style, Linear Dimension Style: Linear
+    Dimension Style, Radial Dimension Style: Arrow - 2.5mm Arial, Spot Coordinates: Horizontal,
+    Spot Elevations: No Symbol (Project), Spot Slopes: Sloped, unitName Func`2, unitOf Func`2,
+    unitsText Func`2. inputs came dimensionTypeName as given; style not given - "all", the
+    card''s own default (optional). on P1102 MEP'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 7f76f56c07db8039
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

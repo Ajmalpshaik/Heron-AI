@@ -30,6 +30,7 @@ this folder exists to remove.
 
 | Date | Sitting |
 |---|---|
+| 2026-11-13 | [THE OWNER'S PC PROVES WHAT #855 BUILT, AND THE PROVING FINDS NEW DEFECTS ON THE WAY](2026-11-13-the-owner-s-pc-proves-what-855-built-and-the-proving-finds-new.md) |
 | 2026-11-12 | [EVERY REPLY SAYS HOW IT ENDED IN ONE WORD, PROVEN TOOLS THAT ANSWERED WRONGLY ARE REPAIRED AND DRAFT AGAIN, AND A DEFECT ROW GETS A FILE OF ITS OWN](2026-11-12-every-reply-says-how-it-ended-in-one-word-proven-tools-that.md) |
 | 2026-11-11 | [A CLICK IN REVIT ANSWERS THE CHAT, FIVE EVERYDAY JOBS GET A METHOD, AND A CLOUD CHAT NOBODY SET UP GETS A LIBRARY](2026-11-11-a-click-in-revit-answers-the-chat-five-everyday-jobs-get-a.md) |
 | 2026-10-29 | [THE ROUTING GUARDS PASS ON THE OWNER'S BACKEND, BY CARD WORDS ALONE](2026-10-29-the-routing-guards-pass-on-the-owner-s-backend-by-card-words.md) |

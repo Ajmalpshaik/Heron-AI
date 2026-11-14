@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -99,6 +99,38 @@ contract:
     - name: refused
       role: accounting
       type: string
+
+proof:
+  date: '2026-11-13'
+  by: Ajmal PS
+  model: P1102 MEP (21,457 elements), Revit 2020, session 41776
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-id, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned copies 2 item(s)
+    [1021413, 1021416], count 2, invariant CultureInfo, mmPerFoot 304.8, notRemade 0 item(s),
+    perCopy copy 1, 300 mm to the right: pipes 1021413; no fitting || copy 2, 600 mm to the
+    right: pipes 1021416; no fitting, problems 0 item(s), refused (null), spacingMm 300, summary
+    2 parallel copies of a 1-piece pipe run, 300 mm apart centre to centre, to the right:
+    2 pipe(s), 0 elbow(s) and 0 union(s) or transition(s) made. Read from the run''s start
+    at 40184, -4383, 3046 mm - say the other side if the copies went the wrong way. The original
+    was not touched. Each copy''s ends are left OPEN, and insulation, lining and any hand-picked
+    fitting type are the pipe type''s own, not copied.. inputs came elements from the selection
+    (1); count as given; spacingMm as given; side as given. on P1102 MEP'
+  negative_case: 'run with count=2, spacingMm=300, side=right arranged with elementIds=404243
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running filter-elements-by-id, set-selection with this phase''s own
+    values - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned copies 0 item(s), count 2, invariant CultureInfo, mmPerFoot 304.8,
+    notRemade 0 item(s), perCopy (null), problems 1 item(s) [ducts are not copied by this
+    - it makes parallel PIPES and C...], refused 1 problem(s), so no copy was made and the
+    run was not touched: ducts are not copied by this - it makes parallel PIPES and CONDUITS,
+    as Revit''s Parallel Pipes and Parallel Conduits do, and Revit has no parallel ducts;
+    the duct pieces handed in: 404243, spacingMm 300, summary (null). inputs came elements
+    from the selection (1); count as given; spacingMm as given; side as given. on P1102 MEP'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 2d4cad3b5be44b88
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
