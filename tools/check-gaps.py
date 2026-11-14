@@ -531,6 +531,17 @@ def check_register():
     left = [r for r in rows if not r[0]]
     print("  %d row(s), %d done, %d left" % (len(rows), len(done), len(left)))
 
+    # EACH ROW READ WITH ITS GROUP'S HEADING, as owner-queue.py reads it - the
+    # heading often says what the whole group needs (row 5b-1173).
+    heading_of, line_of, heading = {}, {}, ""
+    for line in text.split("\n"):
+        g = re.match(r"^## (Group [A-Z]+.*)$", line)
+        if g:
+            heading = g.group(1)
+        m = re.match(r"^\|\s*\*\*([A-Z]+\d+[a-z]?)\*\*", line)
+        if m:
+            heading_of[m.group(1)], line_of[m.group(1)] = heading, line
+
     for _s, item, _e, body in left:
         group = re.match("[A-Z]+", item).group(0)
         if group == "R":
@@ -546,7 +557,8 @@ def check_register():
                     "a network that can reach a model host")
         else:
             check = body.split("|")[0].strip()
-            waiting("%s - %s" % (item, check[:60]), need_of(check))
+            waiting("%s - %s" % (item, check[:60]),
+                    need_of(heading_of.get(item, "") + " " + line_of[item]))
 
 
 # WHAT A ROW SAYS IT NEEDS, read from its own check cell, before Revit is
@@ -554,21 +566,23 @@ def check_register():
 # huggingface.co, or a network, and AK1 is the cloud environment's settings -
 # all three printed under "needs a real Revit", in a cloud session that could
 # have run two of them. A list of ids is how they were missed; the words are
-# already in every row.
-NEEDS_FROM_WORDS = (
-    (re.compile(r"huggingface\.co|a machine with a network|a network that can reach", re.I),
-     "a network that can reach a model host"),
-    (re.compile(r"cloud session|Setup script box|cloud environment", re.I),
-     "a cloud session, after the owner sets its environment"),
-)
+# already in every row. Those words live in needs-checking-register.py's
+# need_of() since row 5b-1173, read by owner-queue.py as well.
 
 
-def need_of(check):
-    """What one open row waits on, from the words of its check cell."""
-    for words, need in NEEDS_FROM_WORDS:
-        if words.search(check):
-            return need
-    return "a real Revit"
+def need_of(text):
+    """What one open row waits on - read by the register's one reader of a
+    row's needs, which owner-queue.py asks too (row 5b-1173). A row that says
+    nothing is a real Revit's, as this tool has always shown it: the register
+    is what no Revit has proved."""
+    return NEED_SHOWN.get(NCR.need_of(text), "a real Revit")
+
+
+NEED_SHOWN = {
+    "network": "a network that can reach a model host",
+    "cloud": "a cloud session, after the owner sets its environment",
+    "windows": "Windows",
+}
 
 
 def main():

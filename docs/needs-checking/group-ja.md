@@ -29,11 +29,11 @@ PROVEN tools, a 3 mm ring on *Casing Right* (X 147 to 150) and one on *Casing Le
 
 | # | Run | Look for |
 |---|---|---|
-| **JA0** | *Negative FIRST.* `sizeParameters=Ring Width, Ring Height` (640, 440 - the ring's outside) | Refused - *"The opening of the ring face on "Casing Right" is 600 x 400 mm ..."* - `sizedBy` empty, nothing kept |
-| **JA1** | *The port.* `sizeParameters=Width, Height` | `connector` *"duct connector, Supply Air, rectangular 600 x 400 mm, at X 150, Y 0, Z 0, pointing right (+X) ... centred in the ring face's opening and sized by it"* |
-| **JA2** | *The flex.* JA1 kept on the owner's word, then *Length* 400, *Width* 1000, *Height* 250 through `SET_FAMILY_TYPE_VALUES` and the connector read | At X 200, Y 0, Z 0, 1000 x 250 mm; put back to 300 / 600 / 400 |
-| **JA3** | *A face of one loop is unchanged.* `facePlane` naming a plain box's face, as version 4's proof | The same answer as version 4, no word of an opening |
-| **JA4** | The signature, on the owner's word only, after JA0 to JA3 | `python brain/heron_validate.py accept add-family-connector --by "Ajmal PS"` |
+| ~~**JA0**~~ | *Negative FIRST.* `sizeParameters=Ring Width, Ring Height` (640, 440 - the ring's outside) | Refused - *"The opening of the ring face on "Casing Right" is 600 x 400 mm ..."* - `sizedBy` empty, nothing kept **Struck 2026-11-13:** PASSED - the verdict is in this file's *Results - 2026-10-24, the owner's laptop: Revit 2020, session 94928*, which records it run and passed. |
+| ~~**JA1**~~ | *The port.* `sizeParameters=Width, Height` | `connector` *"duct connector, Supply Air, rectangular 600 x 400 mm, at X 150, Y 0, Z 0, pointing right (+X) ... centred in the ring face's opening and sized by it"* **Struck 2026-11-13:** PASSED - the verdict is in this file's *Results - 2026-10-24, the owner's laptop: Revit 2020, session 94928*, which records it run and passed. |
+| ~~**JA2**~~ | *The flex.* JA1 kept on the owner's word, then *Length* 400, *Width* 1000, *Height* 250 through `SET_FAMILY_TYPE_VALUES` and the connector read | At X 200, Y 0, Z 0, 1000 x 250 mm; put back to 300 / 600 / 400 **Struck 2026-11-13:** PASSED - the verdict is in this file's *Results - 2026-10-24, the owner's laptop: Revit 2020, session 94928*, which records it run and passed. |
+| ~~**JA3**~~ | *A face of one loop is unchanged.* `facePlane` naming a plain box's face, as version 4's proof | The same answer as version 4, no word of an opening **Struck 2026-11-13:** PASSED - the verdict is in this file's *Results - 2026-10-24, the owner's laptop: Revit 2020, session 94928*, which records it run and passed. |
+| ~~**JA4**~~ | The signature, on the owner's word only, after JA0 to JA3 | `python brain/heron_validate.py accept add-family-connector --by "Ajmal PS"` **Struck 2026-11-13:** signed - `ADD_FAMILY_CONNECTOR` PROVEN at version 5, `proof:` dated 2026-10-24 by Ajmal PS, fingerprint `43d83188366b7b85`, in its `fragment.yaml`. That signature is what this row asked for; it does not stand for any other row of this group. |
 
 A row that fails stays open; nothing in a row changes to make it pass.
 

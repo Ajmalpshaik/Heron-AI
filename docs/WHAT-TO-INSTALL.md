@@ -420,7 +420,7 @@ After the first download, the search add-ons read their files from your own PC.
   *tells* rather than installs. Python itself stays yours to install: [Q-39](open-questions/answered.md)'s
   words, pulling a runtime onto somebody's machine unasked is what a careful user and a corporate laptop
   are both right to refuse. Whether a release should ever bundle Python is still open
-  ([Q-38](open-questions/from-master-specification-part-2.md#q-38--what-is-the-exact-install-command-new)).
+  ([Q-38](open-questions/from-master-specification-part-2.md#-q-38--what-is-the-exact-install-command-new)).
 - **Whether the re-ranker should read standards documents only**, and not tool cards, is a code change
   nobody has made.
 - **Why it misreads tools is not settled.** It is given a one-line description of each tool and not the

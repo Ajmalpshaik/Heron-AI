@@ -106,6 +106,28 @@ def row(path, blob, verdict="clean", note="", when="2026-09-20", who="test",
     return cells if scope is None else cells + [scope]
 
 
+def no_git():
+    """Row 5b-1541: on a machine with no git the tool died in a traceback,
+    exit 1. Run as a modeller's PC runs it, with nothing on PATH."""
+    import subprocess
+    print()
+    print("no git on PATH - one line, and the could-not exit, not a traceback")
+    empty = tempfile.mkdtemp(prefix="heron-ledger-nopath-")
+    env = dict(os.environ, PATH=empty)
+    try:
+        ran = subprocess.run([sys.executable, os.path.join(ROOT, "tools", "review-ledger.py")],
+                             cwd=ROOT, env=env, stdin=subprocess.DEVNULL,
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                             universal_newlines=True, timeout=120)
+    finally:
+        os.rmdir(empty)
+    check(ran.returncode == RL.COULD_NOT,
+          "it exits %d, could not look (exit %d)" % (RL.COULD_NOT, ran.returncode))
+    check("Traceback" not in ran.stderr, "with no traceback (%r)" % ran.stderr[-120:])
+    check("could not look" in ran.stdout and len(ran.stdout.strip().splitlines()) == 1,
+          "and says so in one line (%r)" % ran.stdout.strip()[:120])
+
+
 def main():
     scratch = tempfile.mkdtemp(prefix="heron-ledger-")
     RL.LEDGER = os.path.join(scratch, "REVIEW-LEDGER.tsv")
@@ -261,6 +283,8 @@ def main():
         os.rmdir(scratch)
     except OSError:
         pass
+
+    no_git()
 
     print()
     if FAILURES:

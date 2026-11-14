@@ -249,7 +249,7 @@ retired.** It was the note's only home and a work note is deleted at the end of 
 here rather than going with it.
 
 [D-24](../DECISIONS.md) already says **local by default, cloud opt-in per scope** — and
-[Q-11](tier-2.md#q-11--local-or-cloud-embeddings) is where that was settled. **This is the sharper question
+[Q-11](tier-2.md#-q-11--local-or-cloud-embeddings) is where that was settled. **This is the sharper question
 that survived it:** there is **no opt-in path and no per-scope setting**, so the choice D-24 describes
 cannot currently be made at all. That is `R-30`.
 

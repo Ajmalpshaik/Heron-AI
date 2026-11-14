@@ -457,9 +457,9 @@ Heron's own, from an idea.
 | `mcp-server-patterns` | A how-to for the Node/TypeScript MCP SDK | **Not taken.** Heron's server is Python, `mcp/server/heron_mcp_server.py` |
 | `recursive-decision-ledger` | Repeated rollouts with an append-only ledger, for trading and search | **Not taken** - another trade. Its one sentence that travels, *"recursive confidence is not approval"*, Heron holds as `write.enabled` ([D-19](DECISIONS.md)) and Revit's Keep or Discard box ([D-126](DECISIONS.md)) |
 
-**Found in passing, recorded and not fixed:** the decision log's preamble says its append-only rule
+**Found in passing, recorded, and fixed 2026-11-14:** the decision log's preamble said its append-only rule
 *"mirrors Golden Rule 4: never destroy a working record"*, and Golden Rule 4 is the Revit-version rule
-([row 5b-1220](fragment-issues/section-5b-rows-401-425.md)).
+([row 5b-1220](fragment-issues/section-5b-rows-401-425.md)). It now calls the rule the log's own.
 
 **Decision: unchanged in shape, and one check built.** One question is left for the owner: whether to
 measure how often a chat follows Heron's own instructions - by running the host on made-up requests, which

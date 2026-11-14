@@ -80,7 +80,7 @@ machine. Cloud as opt-in.
 re-indexing: a per-call cost makes rebuilding the index something to avoid, and an index nobody rebuilds
 quietly stops matching what is on disk.
 
-**This does not answer [Q-12](#q-12--what-is-the-data-confidentiality-position) and must not be read as
+**This does not answer [Q-12](#-q-12--what-is-the-data-confidentiality-position) and must not be read as
 answering it.** Asked directly on 2026-08-28, Ajmal's reply — *"now we are in Claude, am I right, so make
 it in this; when we are on the PC I will pull that there and we will test everything"* — was about where
 the **work** happens, not about what **project content** may leave a machine. That is a contractual

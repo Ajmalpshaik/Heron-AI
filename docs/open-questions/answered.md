@@ -47,7 +47,7 @@ instead of one, and put a language boundary where no process boundary exists.
 Both can be bundled into a single executable later, so bundling does not favour either.
 
 → **Python.** [D-06](../DECISIONS.md) stands, and installation lists Python as a prerequisite rather than
-discovering it on someone else's machine. Bundling stays open under [Q-38](from-master-specification-part-2.md#q-38--what-is-the-exact-install-command-new).
+discovering it on someone else's machine. Bundling stays open under [Q-38](from-master-specification-part-2.md#-q-38--what-is-the-exact-install-command-new).
 
 **And it does not need administrator rights**, which was the real worry. Verified on the development
 machine: its Python is a Microsoft Store build living in `AppData\Local`, and the `mcp` package sits in

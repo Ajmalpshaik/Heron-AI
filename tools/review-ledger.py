@@ -17,7 +17,8 @@ Which files have been READ, word by word, and which have not.
     python tools/review-ledger.py --stale                  # marks that no longer apply
     python tools/review-ledger.py --history PATH           # what this file has been through
 
-Always exits 0. This reports; it does not gate.
+Exits 0 whatever it finds - this reports; it does not gate - and 2 when it
+could not look: no git on this machine, or a mark it declined to write.
 
 WHY THIS EXISTS
 ---------------
@@ -129,17 +130,25 @@ def out(s=""):
     sys.stdout.write(s + "\n")
 
 
+class NoGit(Exception):
+    """git is not on this machine. main() says so in one line and exits
+    COULD_NOT - it was a traceback and exit 1 until row 5b-1541."""
+
+
 def git(args, stdin_text=None):
     """Run git in the repo and return stdout. stdin is ALWAYS closed - an open
     stdin is how a script like this hangs for two minutes per call."""
-    p = subprocess.run(
-        ["git"] + args,
-        cwd=ROOT,
-        input=("" if stdin_text is None else stdin_text),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        universal_newlines=True,
-    )
+    try:
+        p = subprocess.run(
+            ["git"] + args,
+            cwd=ROOT,
+            input=("" if stdin_text is None else stdin_text),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+        )
+    except FileNotFoundError:
+        raise NoGit()
     if p.returncode != 0:
         out("git %s failed: %s" % (" ".join(args), p.stderr.strip()))
         return ""
@@ -556,7 +565,15 @@ def main():
     ap.add_argument("--stale", action="store_true", help="marks that no longer apply")
     ap.add_argument("--history", metavar="PATH", help="what one file has been through")
     a = ap.parse_args()
+    try:
+        return run(a)
+    except NoGit:
+        out("review-ledger: could not look - git was not found, and every "
+            "row is checked against git's own hash of the file.")
+        return COULD_NOT
 
+
+def run(a):
     if a.mark:
         return cmd_mark(a.mark[0], a.mark[1], a.note, a.part)
     if a.history:

@@ -30,12 +30,12 @@ back, with `basePlane=Ref. Level` and `topPlane=Head Top`. A flex is the same wi
 
 | # | Run | Look for |
 |---|---|---|
-| **IZ0** | *Negative FIRST.* `parameterName=Zero Flats`, `sides=6` | Refused before anything is made - *"... holds 0 mm in type "Test" - no size yet ..."*; `size` empty, `acrossFlatsMm` 0, nothing in the family |
+| ~~**IZ0**~~ | *Negative FIRST.* `parameterName=Zero Flats`, `sides=6` | Refused before anything is made - *"... holds 0 mm in type "Test" - no size yet ..."*; `size` empty, `acrossFlatsMm` 0, nothing in the family **Struck 2026-11-13:** PASSED - the verdict is in this file's *Results - 2026-10-24, the owner's laptop: Revit 2020, session 83568*, which records it run and passed. |
 | **IZ1** | *The hexagon.* `parameterName=Head Across Flats`, `sides=6` | `size` *"6 sides, 18 mm across the flats and 20.78 mm across the corners, 7.5 mm high, centred at X 0, Y 0, from Z 0 to 7.5"*; 7 locks (six sides and the top); two centre planes made and pinned, the front-back pair on Center (Front/Back) |
-| **IZ2** | *The flex.* IZ1 as setup, `trials=Head Across Flats=46 \| Head Across Flats=10` | The prism MEASURED 53.12 x 46 and 11.55 x 10 mm, centred at X 0, Y 0, and put back to 20.78 x 18 |
-| **IZ3** | *Other even counts.* `sides=8`, then `sides=4`; the octagon flexed as IZ2 | Octagon 18 across the flats and 19.48 across the corners, 9 locks, flexing to 46 x 46 and 10 x 10; square 18 x 18, 5 locks, no centre plane made |
-| **IZ4** | *An odd count.* `sides=5` | Refused - *"an EVEN number of sides, 4 to 12 ..."* - nothing made |
-| **IZ5** | The signature, on the owner's word only, after IZ0 to IZ4 | `python brain/heron_validate.py accept extrude-polygon-between-planes --by "Ajmal PS"` |
+| ~~**IZ2**~~ | *The flex.* IZ1 as setup, `trials=Head Across Flats=46 \| Head Across Flats=10` | The prism MEASURED 53.12 x 46 and 11.55 x 10 mm, centred at X 0, Y 0, and put back to 20.78 x 18 **Struck 2026-11-13:** PASSED - the verdict is in this file's *Results - 2026-10-24, the owner's laptop: Revit 2020, session 83568*, which records it run and passed. |
+| ~~**IZ3**~~ | *Other even counts.* `sides=8`, then `sides=4`; the octagon flexed as IZ2 | Octagon 18 across the flats and 19.48 across the corners, 9 locks, flexing to 46 x 46 and 10 x 10; square 18 x 18, 5 locks, no centre plane made **Struck 2026-11-13:** PASSED - the verdict is in this file's *Results - 2026-10-24, the owner's laptop: Revit 2020, session 83568*, which records it run and passed. |
+| ~~**IZ4**~~ | *An odd count.* `sides=5` | Refused - *"an EVEN number of sides, 4 to 12 ..."* - nothing made **Struck 2026-11-13:** PASSED - the verdict is in this file's *Results - 2026-10-24, the owner's laptop: Revit 2020, session 83568*, which records it run and passed. |
+| ~~**IZ5**~~ | The signature, on the owner's word only, after IZ0 to IZ4 | `python brain/heron_validate.py accept extrude-polygon-between-planes --by "Ajmal PS"` **Struck 2026-11-13:** signed - `EXTRUDE_POLYGON_BETWEEN_PLANES` PROVEN at version 1, `proof:` dated 2026-10-24 by Ajmal PS, fingerprint `506b8485027c7bb2`, in its `fragment.yaml`. That signature is what this row asked for; it does not stand for any other row of this group. |
 
 A row that fails stays open; nothing in a row changes to make it pass.
 

@@ -133,16 +133,11 @@ def classify(text):
     needs and beats an incidental mention of a model host further down it -
     A14 says "On the PC: python tests/test_context.py" and was filed under
     NETWORK until this order was fixed."""
-    t = text.lower()
-    if "revit" in t and "no revit" not in t:
-        return "revit"
-    if "on the pc" in t or "owner's pc" in t or "windows" in t or "setup.ps1" in t:
-        return "windows"
-    if "huggingface" in t or "sentence-transformers" in t or "reach a model" in t:
-        return "network"
-    if "document" in t and ("numbered" in t or "clause" in t):
-        return "document"
-    return "other"
+    # ONE READER OF A ROW'S NEEDS, shared with check-gaps.py (row 5b-1173).
+    # A cloud session's row has no bucket of its own here, and stays where an
+    # unstated one goes - read the row.
+    need = NCR.need_of(text)
+    return need if need in ("revit", "windows", "network", "document") else "other"
 
 
 def open_questions():
@@ -198,6 +193,8 @@ def needs_checking():
         cells = [c.strip() for c in line.split("|")]
         what = cells[2] if len(cells) > 2 else ""
         what = re.sub(r"[`*~]", "", what)
+        # The group's heading and the whole row - check-gaps.py reads the
+        # same text, so the two cannot file one row two ways (row 5b-1173).
         out.append((m.group(2), what[:110], classify(group + " " + line), "NEEDS-CHECKING.md"))
 
     # PROVE THE PATTERN SAW WHAT IS THERE. Counted independently of the

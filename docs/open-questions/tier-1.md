@@ -39,7 +39,7 @@ local-only guarantee for a configuration promise. And one language means **one c
 fragments go through `check-compile.py` and `check-api-surface.py`; Python fragments would go through
 neither.
 
-**This closes [Q-37](from-master-specification-part-2.md#q-37--can-pyrevit-routes-bind-a-per-process-port-new-from-research) as not
+**This closes [Q-37](from-master-specification-part-2.md#-q-37--can-pyrevit-routes-bind-a-per-process-port-new-from-research) as not
 applicable** — Heron does not use Routes.
 
 ---

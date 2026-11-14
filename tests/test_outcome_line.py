@@ -1557,6 +1557,40 @@ def the_undo_tool(stage, cases, replies):
           "model by path and title - found %r" % (asked,))
 
 
+def companion_path_once():
+    """Row 5b-427: _companion_module ran for every tool call and put the
+    Companion's folder on sys.path again each time. Needs no SDK: the one
+    function is read out of heron_server_core.py's source and run alone,
+    because importing that module needs the SDK, which CI has not got."""
+    import ast
+    print()
+    print("The Companion's folder goes on the import path once (row 5b-427)")
+    path = os.path.join(ROOT, "mcp", "server", "heron_server_core.py")
+    found = [node for node in ast.parse(io.open(path, encoding="utf-8").read()).body
+             if isinstance(node, ast.FunctionDef) and node.name == "_companion_module"]
+    check(len(found) == 1, "heron_server_core.py defines _companion_module")
+    if not found:
+        return
+    space = {"os": os, "sys": sys, "__file__": path}
+    exec(compile(ast.Module(body=found, type_ignores=[]), path, "exec"), space)
+    folder = os.path.normpath(os.path.join(ROOT, "mcp", "companion"))
+    copies = lambda: sum(1 for p in sys.path
+                         if os.path.normpath(os.path.abspath(p)) == folder)
+
+    def call():
+        try:
+            space["_companion_module"]()
+        except ImportError:
+            pass        # the path is put first; the import is not what is counted
+
+    call()
+    first = copies()
+    for _ in range(5):
+        call()
+    check(first == 1, "the first call puts the folder on the path once (%d)" % first)
+    check(copies() == 1, "and five more calls add no copy (%d)" % copies())
+
+
 def the_chat_is_told():
     """Section 8, and it runs first: it needs no SDK and no server."""
     print()
@@ -1632,6 +1666,7 @@ def main():
     print("How a call through a door ended, in one fixed word (row 5b-1159)")
     print("=" * 66)
     the_chat_is_told()
+    companion_path_once()
     version, broken = sdk_version()
     if version is None:
         print()
