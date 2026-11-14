@@ -69,6 +69,9 @@ WHAT THIS PROVES
      next row is above every such file on every branch; two branches that
      each wrote the same file are HELD TWICE; and one saved in this checkout
      and not committed is taken.
+ 15. ONE PIECE OF WORK SEEN TWICE (row 5b-1590): a worktree on its own
+     branch, cut from a pushed branch that adds a row, is not HELD TWICE for
+     that row; the same worktree with other words under that number is.
 
 WHAT IT DOES NOT PROVE. That the real registers keep the shapes it reads.
 Running the tool on this repository and reading the ids it names is that
@@ -815,6 +818,36 @@ def section_14(home):
           "a row's own file saved in this checkout and not committed is taken too (got %s)" % one.get("next"))
 
 
+def section_15(home):
+    os.makedirs(home)
+    origin, seed, work = world(home)
+    rows_file = "docs/fragment-issues/section-5b-rows-026-050.md"
+    rows = MAIN[rows_file]
+    line = "| **45** | the session's own row | open |\n"
+
+    print("\n15. one piece of work seen twice is not HELD TWICE (row 5b-1590)")
+    branch(seed, "claude/session", {rows_file: rows + line}, "the session takes 45")
+    git(work, "fetch", "-q", "origin")
+    helper = os.path.join(home, "helper")
+    git(work, "worktree", "add", "-q", "-b", "worktree-agent-1", helper,
+        "origin/claude/session")
+    got = ask(work, gh=FakeGh(missing=True))
+    held = got.get("registers", {}).get("5b", {}).get("held_twice", {})
+    holds = got.get("registers", {}).get("5b", {}).get("holds", {})
+    check(any("5b-45" in ids for name, ids in holds.items() if "helper" in name),
+          "the helper's worktree is read and holds 45: %s" % holds)
+    check("5b-45" not in held,
+          "a worktree cut from the branch that adds 45, the row untouched, is "
+          "that branch's work for 45, not a second holder: %s" % held.get("5b-45"))
+
+    write(helper, {rows_file: rows + "| **45** | the helper's own words | open |\n"})
+    got = ask(work, gh=FakeGh(missing=True))
+    held = got.get("registers", {}).get("5b", {}).get("held_twice", {})
+    check(len(held.get("5b-45", [])) == 2,
+          "and the same worktree with other words under 45 is HELD TWICE: %s"
+          % held.get("5b-45"))
+
+
 def main():
     print("tools/next-id.py")
     section_1()
@@ -828,6 +861,7 @@ def main():
         section_12(os.path.join(home, "trees"))
         section_13(os.path.join(home, "squash"))
         section_14(os.path.join(home, "own"))
+        section_15(os.path.join(home, "one-work"))
     finally:
         shutil.rmtree(home, ignore_errors=True)
     print("\n%s" % ("%d FAILED" % len(FAILURES) if FAILURES else "all passed"))
