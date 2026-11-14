@@ -212,3 +212,19 @@ them each time. Run records and drafts kept at `%TEMP%\heron-work\proofs-2026-10
 |---|---|---|
 | **BA13** | Revit 2020, read only: `LIST_REVISIONS` on a project where a SHEET carries a revision - BL001A is fair, nothing is written | each revision's sheet line - *"N sheet(s): ..."* and what it prints on each - as the sheets' revision schedules show. 2026-10-17's run had no revision on a sheet; the sheet half was last seen on Revit 2024, 2026-09-13 |
 | ~~**BA14**~~ | Signing, after reading both drafts: `python brain/heron_validate.py accept edit-revision --by "Ajmal PS"` and `... accept list-revisions --by "Ajmal PS"`, from the checkout that holds them | proof blocks written; `heron-status: PROVEN` is a separate yes. BA12 - the one undo entry of a KEPT call - is still owed and needs a kept run, which a DRAFT gets only through `try-once` on a saved model. **DONE 2026-10-17: both signed by Ajmal PS and PROVEN** (`edit-revision` `d3169656228813bf`, `list-revisions` `bb5283ef92b73801`); BA12 now needs only a kept `revit_change` call, as the tool is PROVEN - **Struck 2026-10-18:** done, as it says; BA12 is still owed in its own row. |
+
+### Run record - 2026-11-14 night, Revit 2024 (session 3592), `delete-revision-numbering-sequence`
+
+Revit 2024, the owner asleep. On the scratch *Heron JX Ducts* (Heron-made from Revit 2024's
+`Mechanical-Default_Metric.rte`, `%TEMP%\heron-work\mg`): `CREATE_REVISION_NUMBERING_SEQUENCE` (PROVEN) kept a sequence
+*Heron Custom* - *"Read back: 'Heron Custom': numeric, minimum digits 2, starting number 1, prefix 'H' ... Used by no
+revision yet"*. Then `validate delete-revision-numbering-sequence --write`, rolled back, the negative a `confirm` that
+does not name it (the template's *Numeric* is used by no revision here, so it could not be the refused one):
+
+| Leg | What was seen |
+|---|---|
+| Positive, `name=Heron Custom confirm=Heron Custom` | `deleted true`, *"Numbering sequences now: 'Numeric' (numeric), 'Custom' (alphanumeric)."* |
+| Negative, `confirm=Heron Customs` | `deleted false`, *"Deleting the numbering sequence 'Heron Custom' needs the owner's yes for THIS sequence: pass confirm=Heron Custom only after he has agreed. confirm='Heron Customs' does not name it. Nothing was deleted."*, the three sequences listed |
+
+**PASS** - draft written, gap *no second route*; not signed. No Delete box: the run was rolled back, and the add-in
+asks before a delete only when it is kept. *Heron JX Ducts* holds, kept: *Heron Custom*.
