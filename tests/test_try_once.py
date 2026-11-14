@@ -449,6 +449,9 @@ def test_validate_kept(draft, once_path, workspace):
           "(%d sent)" % len(writes))
     check(writes and "apply" not in writes[0][1],
           "and the negative is rolled back - no apply")
+    check(writes and writes[0][2].get("idempotent") is False,
+          "and it is sent NOT safe to repeat, so a lost answer is never sent "
+          "again (row 5b-1166) - %r" % (writes[0][2].get("idempotent") if writes else None))
     phases = dict((p.get("phase"), p) for p in (record or {}).get("phases", []))
     check(phases.get("positive", {}).get("kept") is True
           and phases.get("positive", {}).get("provides") == {"renamed": 3},

@@ -3189,8 +3189,12 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
         # run looks exactly like a fragment that decided not to act. That is
         # what this line looked like for one commit, and it read as intermittent
         # worksharing behaviour rather than as a wrong operation name.
+        # NOT SAFE TO ASK TWICE when it writes (row 5b-1166): request() sends
+        # an idempotent request again when its answer is lost, and a PUBLISH
+        # fragment's export is a file the group's rollback does not take back.
         reply = bridge.request(write_op if writing else "run_fragment_read",
-                               op_args=args, response_timeout=heron_config.fragment_timeout())
+                               op_args=args, response_timeout=heron_config.fragment_timeout(),
+                               idempotent=not writing)
         if reply is None:
             record = {"phase": phase, "ok": False, "error": "no_reply",
                       "message": "Revit did not answer", "arranged": arranged}
