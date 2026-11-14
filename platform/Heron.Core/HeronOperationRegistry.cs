@@ -229,6 +229,12 @@ namespace Heron.Core
                 // than posting. The old name is declared nowhere.
                 { "undo_guarded",       HeronRisk.Modify },
 
+                // EXECUTE - the Activity pane's Select and Zoom (D-163): the
+                // selection and the view, by element id, in the model the change
+                // was made in. FIXED CODE IN THE ADD-IN, no transaction, so it
+                // runs with Changes OFF, like select_by_category.
+                { "show_elements",      HeronRisk.Execute },
+
                 // ANALYZE - runs a fragment's own C# against the model and
                 // reports what it left behind. It is here rather than at
                 // Modify for a structural reason: the executor opens NO

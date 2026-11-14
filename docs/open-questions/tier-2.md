@@ -1601,7 +1601,7 @@ present behaviour is the one fact that decides it, and that needs the PC.
 
 ---
 
-### 🔵 Q-90 — A QA check with 501 to 5,000 failing elements: should Select in Revit select them in batches, refuse, or stay as built - "the first 500 of N"? *(found 2026-11-12 in review of #866)*
+### ✅ Q-90 — A QA check with 501 to 5,000 failing elements: should Select in Revit select them in batches, refuse, or stay as built - "the first 500 of N"? → **Every one, in one press** *(found 2026-11-12 in review of #866, answered 2026-11-13)*
 
 **What was found.** [D-158](../decisions/D-158.md) sends a check's failing ids whole - up to the add-in's
 `IdsSentPerList`, 5,000 - so that *Select in Revit* takes every one. But Select goes through the Model
@@ -1624,6 +1624,6 @@ button do?**
 **Nothing is recommended.** Shape 1 is what D-158 promised; its speed is the one fact that decides it, and
 that needs the PC.
 
-**Ajmal PS decides.** Until he does, the button says *the first 500 of N*, as built.
+**ANSWERED 2026-11-13 by Ajmal PS** - *"fix them"*, to the offer *Select for the full list*: every failing id is sent in **one** press, up to the add-in's `IdsSentPerList`, and past that no Select at all - shape 1 without the batches, which `SET_SELECTION` cannot add to. *The first N of M* is gone ([row 5b-1621](../fragment-issues/row-5b-1621.md)). **Still open on the PC:** the speed - [Group NV](../needs-checking/group-nv.md) NV14. A press too slow to use reopens this question.
 
 ---

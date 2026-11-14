@@ -168,6 +168,42 @@ namespace Heron.Bridge
             // discovery file and concludes no bridge is running, which is a
             // wrong answer rather than a missing one. See HeronAtomicWrite.
             HeronAtomicWrite.WriteAllText(DiscoveryFilePath, json.ToString());
+            OnlyThisUser(DiscoveryFilePath);
+        }
+
+        /// <summary>
+        /// THE FILE HOLDING THE TOKEN IS THIS USER'S ALONE - D-162. It sits in
+        /// %LOCALAPPDATA%, which a profile already keeps to its user; this says
+        /// so on the file itself rather than trusting the folder, with the
+        /// folder's rules no longer inherited. Best effort, on Windows only: a
+        /// file whose rules could not be set is still a working bridge, and
+        /// every request still has to carry the token.
+        /// </summary>
+        private static void OnlyThisUser(string path)
+        {
+            try
+            {
+#if !(NET472 || NET48)
+                if (!OperatingSystem.IsWindows()) return;
+#endif
+                var user = System.Security.Principal.WindowsIdentity.GetCurrent().User;
+                if (user == null) return;
+                var rules = new System.Security.AccessControl.FileSecurity();
+                rules.SetAccessRuleProtection(true, false);
+                rules.AddAccessRule(new System.Security.AccessControl.FileSystemAccessRule(
+                    user, System.Security.AccessControl.FileSystemRights.FullControl,
+                    System.Security.AccessControl.AccessControlType.Allow));
+#if NET472 || NET48
+                File.SetAccessControl(path, rules);
+#else
+                new FileInfo(path).SetAccessControl(rules);
+#endif
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.WriteLine("Heron: the bridge file's access could not be "
+                                                   + "narrowed to this user: " + ex.Message);
+            }
         }
 
         /// <summary>
