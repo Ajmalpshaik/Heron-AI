@@ -84,3 +84,27 @@ step by step, so what a fresh chat would ask on its own is NOT measured here; ev
 | (c) | **PASS** | *Level 3 HVAC Plan* given the template *Mechanical Plan* through `APPLY_VIEW_TEMPLATE` (kept) - *HVAC Duct Plan* was tried first and holds no filters, `templateOwned false`. Then `templateOwned true` with *"The view template 'Mechanical Plan' owns the filters on 'Level 3 HVAC Plan'"*; `COPY_VIEW_FILTERS` with `onlyFilterNamed=` empty: `blockedByTemplate` *"... governed by template 'Mechanical Plan' - copy onto that template instead"*, `filtersApplied 0`. The lookup did not offer `APPLY_VIEW_TEMPLATE` ([row 5b-1649](../fragment-issues/row-5b-1649.md)) |
 | (d) | **Learned, as asked** | `CREATE_VIEW_FILTER` on that plan with prefix *"NR2 - "* made four filters ON it and read their colours back, with no word about the template ([row 5b-1650](../fragment-issues/row-5b-1650.md)). The owner's Ctrl+Z took it back - 25 filters in the project, the plan's five again |
 | (e) | **PASS** | `COPY_VIEW_FILTERS` to *Level 1 HVAC Plan* with `onlyFilterNamed` left out: refused before anything was sent - *"'onlyFilterNamed (string)' is a value the CALLER supplies"* |
+
+**NR1, the same sitting** (Revit 2020, session 30228, *P1102 MEP NR*, Ask to Keep ON, the owner pressing Keep).
+**Asked in the testing chat, not a new one**, and the plan was NOT arranged as the row says - no ducts tagged by
+hand, no pair of tags dragged together: the method was read with `heron_method` `annotate-a-view` and followed
+step by step on *Level 1 HVAC Duct Plan* as it stood. The answers were the row's - Ducts and Air Terminals, the
+project's default tags, no leader, 2 mm overlap, 2 mm gap. The row gives no `maxPasses` and no tag size; the session
+sent `maxPasses=10` and `fallbackTagWidthMm=1200`, `fallbackTagHeightMm=400` (12 by 4 mm on the paper), used only
+when every tag has a leader - none had.
+
+| Step | What was seen |
+|---|---|
+| 1 `FILTER_ELEMENTS_BY_CATEGORY` + `FIND_UNTAGGED_ELEMENTS` | 363 on the plan (*Ducts 258, Air Terminals 105*); `elements 363`, `alreadyTagged 0` - said before anything was tagged |
+| 2 `TAG_ELEMENTS_IN_VIEW`, `leader=none` | the owner pressed **Keep**; `tagged 349` (*Duct Tags 244, Air Terminal Tags 105*), `alreadyTagged 0`, `notTagged 0`, `verticalSkipped 14`, `scale 100`; `tagTypesUsed` one line a category, each *"(the project's default)"* |
+| 3 `FIND_OVERLAPPING_TAGS`, `minOverlapMm=2` | `pairs 77` - *"185 annotation element(s) compared"* |
+| 4 Duct Tags filter (111), `ARRANGE_TAGS` **`minGapMm=200`** - 2 mm times the scale, as the method says | **Keep**; `moved 75`, `stillOverlapping 50`, `bothHadToMove 55`, `gap` 0.656 ft (200 mm) |
+| 4 Air Terminal Tags filter (105), the same call | **Keep**; `moved 54`, `stillOverlapping 29`, `bothHadToMove 31` |
+| 3 again | `pairs 42`; 40 of them a diffuser tag over a duct tag - two categories, which no call of step 4 compares ([row 5b-1652](../fragment-issues/row-5b-1652.md)) |
+| 7 the filter, `FIND_UNTAGGED_ELEMENTS`, `REPORT_TAGS_AND_TARGETS` | *Ducts 557, Air Terminals 105* - not 258 - with the model's element count unchanged; `elements 467`, `alreadyTagged 195`; `tagCount 195`, `orphanTags 0`, `linkedTags 0`. Read twice, the same ([row 5b-1651](../fragment-issues/row-5b-1651.md)) |
+| The owner looked | no Temporary Hide/Isolate border; most ducts in his zoomed screenshot carry a tag, some tags still overlap; the whole-plan screenshot too small to count by |
+
+**NR1: FAIL as written** - the second overlap read answers `pairs 42`, not 0. What the row asked the chat to do it
+did: the counts said before tagging, `alreadyTagged 0`, one line a tag category, and the gap sent as 200 and said
+so. The plan's count changing under it (row 5b-1651) is unexplained. The NR1 entries are left in Revit's undo list,
+not undone: NR2 runs on the plan NR1 tagged.
