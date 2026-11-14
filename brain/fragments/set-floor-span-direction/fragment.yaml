@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -139,6 +139,51 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-14'
+  by: Ajmal PS
+  model: P1102 STR (9,179 elements), Revit 2020, session 26612
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-category, set-selection with this phase''s own values - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    DegreesPerRadian 57.2957795130823, SameAxisRadians 0.000174532925199433, alongText , alreadyThere
+    0 item(s), angleText 90, askedDegrees 90, baseName the model''s X axis, baseRadians 0,
+    byId Func`3, changed 5, changedIds 5 item(s) [133345, 134840, 139467, ...], culture CultureInfo,
+    degreesText Func`2, findings 6 item(s) [5 floor(s) set to span 90 deg from the model''s
+    X axis and re..., 133345 (Generic Concrete 300mm): span 0 deg -> 90 deg (Span ..., 134840
+    (160mm Concrete With 50mm Metal Deck): span 0 deg -> ..., ...], given Func`2, lines 5
+    item(s) [133345 (Generic Concrete 300mm): span 0 deg -> 90 deg (Span ..., 134840 (160mm
+    Concrete With 50mm Metal Deck): span 0 deg -> ..., 139467 (Generic 300mm): span 0 deg
+    -> 90 deg (Span Direction..., ...], notChanged 0 item(s), notFloors 0 item(s), notStructural
+    0 item(s), numberStyle NumberStyles, refused , report 133345 (Generic Concrete 300mm):
+    span 0 deg -> 90 deg (Span Direction parameter: 90.00°); its 1 span direction symbol(s)
+    turn with it. | 134840 (160mm Concrete With 50mm Metal Deck): span 0 deg -> 90 deg (Span
+    Direction parameter: 90.00°); its 1 span direction symbol(s) turn with it. | 139467 (Generic
+    300mm): span 0 deg -> 90 deg (Span Direction parameter: 90.00°). | 151849 (Generic Concrete
+    300mm): span 0 deg -> 90 deg (Span Direction parameter: 90.00°); its 1 span direction
+    symbol(s) turn with it. | 152157 (Concrete Deck - Tapered Insulation): span 0 deg -> 90
+    deg (Span Direction parameter: 90.00°); its 1 span direction symbol(s) turn with it.,
+    sameAxis Func`3, spanDegrees 90, targetRadians 1.5707963267949. inputs came elements from
+    the selection (5); angleDegrees as given; along not given - "none", the card''s own default
+    (optional). on P1102 STR'
+  negative_case: run with angleDegrees=90 arranged with categories=Structural Columns, inViewOnly=02
+    - Floor instead - chosen because it should not contain what this fragment reports - the
+    arrangement was re-made first by running filter-elements-by-category, set-selection with
+    this phase's own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned DegreesPerRadian 57.2957795130823, SameAxisRadians
+    0.000174532925199433, alongText , alreadyThere 0 item(s), angleText 90, askedDegrees 90,
+    baseName the model's X axis, baseRadians 0, byId Func`3, changed 0, changedIds 0 item(s),
+    culture CultureInfo, degreesText Func`2, findings 1 item(s) [0 floor(s) set to span 90
+    deg from the model's X axis and re...], given Func`2, lines 0 item(s), notChanged 0 item(s),
+    notFloors 133 item(s) [122477, 122478, 122479, ...], notStructural 0 item(s), numberStyle
+    NumberStyles, refused , report , sameAxis Func`3, spanDegrees 90, targetRadians 1.5707963267949.
+    inputs came elements from the selection (133); angleDegrees as given; along not given
+    - "none", the card's own default (optional). on P1102 STR
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: c1dba59fd1ad2c8f
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

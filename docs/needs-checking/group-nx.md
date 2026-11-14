@@ -62,3 +62,8 @@ against the row, because the runner reads no sentence.
 | NX6, 2020 half | **PASS** | By hand, `validate` on Space 379575 (*"28 Technology"*, `Level 1 HVAC Zone Plan`), whose Properties read Design Heating Load 792 W, Design Cooling Load 1294 W, Specified Supply Airflow 90.6 L/s: *"heating 792 W (entered), cooling 1294 W (entered), supply 90.6 L/s (entered)"*, no unit finding. Negative wall 573595: nothing read, in `notSpaces` |
 
 NX6's 2024 half and NX7 to NX10 wait for Revit 2024. Drafts written for all six cards, gap *no second route*; not signed.
+
+**Signed 2026-11-14, as Ajmal PS, on the owner's word** (*"Yes, sign them"*): `set-floor-span-direction`,
+`report-structural-loads`, `create-load-case`, `report-electrical-settings`, `add-electrical-distribution` and
+`read-space-loads` - `accept` on each NX draft above, the status flipped to PROVEN. `read-space-loads`'s proof is
+the Revit 2020 run; NX6's 2024 half is still owed, as are NX7 to NX10 and NX4's dialog figure.

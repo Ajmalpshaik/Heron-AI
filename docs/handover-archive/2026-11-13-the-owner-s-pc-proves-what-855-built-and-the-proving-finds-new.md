@@ -96,3 +96,6 @@ back): `place-structural-loads`, `place-boundary-conditions`, `create-opening`, 
 `edit-rebar-numbering` and `place-rebar-couplers` proved and signed on the owner's *"you can sign"*.
 `place-column-rebar` is not: hooked ties are refused by Revit ([row 5b-1644](../fragment-issues/row-5b-1644.md)).
 `main` (#868) was merged into the branch; the balance-of-work file was regenerated to resolve it.
+After PR #870 merged (0b4ea659) and `main` came in, Group NX's Revit 2020 rows ran (NX1 to NX5 and NX6's 2020 half,
+all PASS) and the six repaired cards were signed, with `place-accessory-on-run`, `convert-mep-placeholders` and
+`update-saved-set` proved the same hour.
