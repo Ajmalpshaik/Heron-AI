@@ -47,3 +47,23 @@ and its Revit-free half runs here; none of it has run in Revit.**
 | **NW14** | Press **Undo** on it | Revit's undo list loses that `Heron:` entry; the status line says Undo was sent. Pressing Undo again is refused |
 | **NW15** | *The negative:* switch to another model, press **Select** on the change | Refused - the change was made in the other model. Nothing is selected in this one |
 | **NW16** | Press **Select** while Revit is busy (a command running) | The pane does not freeze; the status line says Revit is busy |
+
+### Run record - 2026-11-14 night, Revit 2024 (session 3592), the owner asleep
+
+Revit 2024, add-in 0.2.0.0 from `main`, *Ask to Keep* off, the scratch *Heron Reads Test*
+(`%TEMP%\heron-work\nk`). Asked through the chat's own `revit_change`, as a modeller's chat would. Revit's Undo list
+read by UI Automation - the drop-down opened, its items read, closed again; no item pressed.
+
+| # | Result | What was seen |
+|---|---|---|
+| NW1 | **FAIL as written** | `FIND_VIEWS viewType=FloorPlan` (3), then `EDIT_TEXT_VALUES field=Name mode=replace text=ZZQ replacement=X`: *"outcome: KEPT"*, *"changed: not counted - Revit reported no change event for this job"*, `changed 0`, `notMatched 3`. **Not** *NOTHING CHANGED, SO NOTHING WAS KEPT*. The undo list, though, has **no** `Heron: edit-text-values` entry - the half about Revit's list holds. [Row 5b-1657](../fragment-issues/row-5b-1657.md) |
+| NW2 | **PASS** | The same with `text=Level replacement=Floor`: `changed: 2 modified (Views 2)`, `changed [312, 695]`, Site in `notMatched`; the undo list's top entry *"Heron: edit-text-values"*, one entry |
+| NW3 | **Noted, as the row asks** | The log: *"Undo guard: kept, 0 element(s) counted in 'Heron Reads Test': onTop -> nothing, job 'edit-text-values'"* - while the reply says *not counted*: Revit 2024 raises no change event for a rename that matches nothing, and the empty keep was kept as before |
+| NW4-NW6 | **NOT RUN - needs a Revit restart** | The add-in reads `revit.operationTimeoutSeconds` once, when the dispatcher is made (`RevitDispatcher.cs` line 160), not per call - so a lowered timeout reaches Revit only after a restart, and Revit is not restarted while the owner is away. For his hands, with the setting put back to 60 afterwards |
+| NW7 | **PASS** | Every chat call of the night answered - `revit_health`, `revit_show`, `revit_views`, `revit_read`, `revit_change` - and the log holds no refusal of the server's process |
+| NW8 | **PASS, by another route** | The row's `Get-Acl \.\pipe\heron.2024.3592` fails on Windows PowerShell 5.1 - *"Cannot find path ... because it does not exist"* - with the pipe listed in `\.\pipe\`. Read instead through `NamedPipeClientStream` opened with `ReadData, ReadPermissions` and `GetAccessControl()`: *"NT AUTHORITY\NETWORK \| Deny \| FullControl"* and *"Ajmal_PS\ajmal \| Allow \| CreateNewInstance, ReadWrite, Synchronize"*, owner this user |
+| NW9 | **PASS** | `Get-Acl` on `%LOCALAPPDATA%\Heron\bridges\3592.json`: *"AJMAL_PS\ajmal Allow FullControl"*, one rule, `AreAccessRulesProtected` True |
+| NW10 | **NOT RUN** | No second PC |
+| NW11-NW16 | **NEEDS THE OWNER'S HANDS** | The Activity pane's buttons - for the morning |
+
+*Heron Reads Test* now holds, unsaved: the floor plans *Floor 1* and *Floor 2* (were Level 1 and Level 2).
