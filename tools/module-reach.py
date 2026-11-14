@@ -88,6 +88,14 @@ SKIP_DIRS = {"__pycache__", "bin", "obj", ".vs", ".git", "node_modules"}
 # holding a `.git` of its own, wherever a harness puts one.
 
 
+def skill_folder(dirpath):
+    """True for `.claude/skills/<name>`, whose `bin/` holds the skill's hooks -
+    not .NET build output, which is what `bin` in SKIP_DIRS is there for. The
+    walk skipped every hook in this repository until row 5b-1540."""
+    parts = os.path.relpath(dirpath, ROOT).replace(os.sep, "/").split("/")
+    return len(parts) == 3 and parts[:2] == [".claude", "skills"]
+
+
 def brain_modules():
     """Every importable module in brain/, by the name an import would use."""
     out = {}
@@ -108,7 +116,8 @@ def importers_of(names):
             continue
         for dirpath, dirnames, files in os.walk(base):
             dirnames[:] = CHECKOUT.own(
-                dirpath, [d for d in dirnames if d not in SKIP_DIRS])
+                dirpath, [d for d in dirnames if d not in SKIP_DIRS
+                          or (d == "bin" and skill_folder(dirpath))])
             for fn in files:
                 if not fn.endswith(".py"):
                     continue
