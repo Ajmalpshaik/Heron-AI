@@ -68,3 +68,24 @@ it. The job file is
 | **MI4** | *Node - D-30 positive and negative, THE NEGATIVE FIRST.* The job file's third job, `--write`, rolled back | Negative, `switchboard`: nothing added, the kinds named. Positive: TX-1 a transformer in the Power Distribution System view |
 | **MI5** | *Connect, and never disconnect.* By hand with `validate --write`, kept in order and rolled back at the end: `Utility` power source; `TX-1` transformer upstream `Utility`; `MDB` bus upstream `TX-1`; `TX-1` upstream `MDB`; `MDB` upstream `the transformer node`; the area-based load from MI3 upstream `MDB` | TX-1 under Utility and MDB under TX-1 in the view; TX-1 to MDB *already fed from "Utility" - Heron never disconnects*; `the transformer node` lists the nodes; the area-based load under MDB. **RECORD the total load each node reads** |
 | **MI6** | *The second route.* Revit's own Wiring Types Add, Area Based Load tools and Power Distribution System by hand on copies of the same saved file | The same wire type, type, load and connections as the reports gave; Undo takes each run back as one entry |
+
+### Run record - 2026-11-14 night, Revit 2024 (session 3592), the owner asleep
+
+**MI1 - arranged by Heron.** `CREATE_FAMILY_DOCUMENT` from Revit 2024's `English\Electrical-Default_Metric.rte`
+to `%TEMP%\heron-work\electrical-mi\electrical-mi.rvt`; `CREATE_WALL` x2 on Level 1 (a 10 x 5 m box of
+`Generic - 200mm` and a wall across it at x = 5000); `PLACE_ROOMS placeKind=spaces` at 2500,2500 and 7500,2500 -
+spaces 809148 and 809149, bounded, 248 sq ft each. `REPORT_ELECTRICAL_SETTINGS`: wire types *"THWN" Copper, 60,
+THWN* and *"XHHW" Copper, 60, XHHW* (not the *"90 C"* the 2026-11-02 job file guessed); area-based load types
+*General Lighting* 10 W/m2 and *General Power* 50 W/m2; no node. Plan of Level 1: *1 - Power*. The job file with
+these names is `tools/jobs/electrical-mi-revit2024-2026-11-14.yaml` - `2 job(s): 1 PASS, 1 POSITIVE EMPTY`.
+
+| # | Result | What was seen |
+|---|---|---|
+| MI2 | **NOT RUN - already PROVEN** | `add-wire-type` was signed 2026-11-13 |
+| MI3 | **POSITIVE EMPTY - the arrangement cannot work** | Positive, the two spaces: `typesAdded 1` (*"Added "Office lighting" ... 25 W/m2, 25 VA/m2, power factor 1, load classification "Lighting""* - 25, not 2.3 or 269), but *"Revit made 0 there, the whole level at once"* and each space *"has no electrical load area inside it"* - `areasAssigned 0`. Negative, the five walls: each *"is not a space or an electrical load area - left out"*. Three rolled-back probes found why: on Revit 2024 load areas are made only in regions closed by **Area Based Load Boundary** lines - [row 5b-1659](../fragment-issues/row-5b-1659.md). For the owner's hands: draw those lines round each room, then run MI3 again |
+| MI4 | **PASS** | Positive: *"Added "TX-1" (transformer, id 809154), fed from nothing, feeds 0, total load 0 VA"*, `added 1`. Negative `switchboard`: *""switchboard" is not a kind of node - powerSource, bus, transformer, transferSwitch or equipmentLoad. Never guessed."*, `added 0`. Draft written, gap *no second route* |
+| MI5 | **NEEDS THE OWNER** | The connections need nodes KEPT first, and a DRAFT card's change is kept only through `try-once`, whose Keep is his |
+| MI6 | **NEEDS THE OWNER** | Revit's own dialogs, by hand |
+
+NX4's Revit 2024 half ran on this model too - see [Group NX](group-nx.md). *electrical-mi* holds, kept: the
+five walls and two spaces; nothing else.
