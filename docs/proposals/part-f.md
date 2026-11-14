@@ -95,7 +95,7 @@ server will not import, and [`test_bridge_roundtrip.py`](../../tests/test_bridge
 `COULD_NOT_RUN = 3` when its test host is missing. Measured on 2026-09-21 with the SDK made unimportable:
 both exit 3 and the evidence record's tests gate reads PASS - [`tools/README.md`](../../tools/README.md)'s
 `check-change.py` section and [row 5b-60](../fragment-issues/section-5b-rows-051-075.md). Nothing above was edited;
-[F8](#f8-f5s-closing-claim-is-now-false-and-the-reason-is-worth-more-than-the-fix) stays as written.
+[F8](#-f8-f5s-closing-claim-is-now-false-and-the-reason-is-worth-more-than-the-fix) stays as written.
 
 ### 🟡 F6. `check-dependencies.py` is documented nowhere
 
@@ -139,7 +139,7 @@ a note is for. It is a small, self-contained batch of its own.
 
 ### 🔵 F8. F5's closing claim is now false, and the reason is worth more than the fix
 
-[F5](#f5-two-suites-exit-1-when-a-dependency-is-missing-and-one-of-them-is-the-only-thing-check-gaps-calls-unfinished)
+[F5](#-f5-two-suites-exit-1-when-a-dependency-is-missing-and-one-of-them-is-the-only-thing-check-gaps-calls-unfinished)
 says `test_served_claims.py` *"is the entire unfinished list on a plain container."* On the owner's
 **Windows** checkout on 2026-09-12, `check-gaps.py` named **three** unfinished suites and
 `test_served_claims` was **not among them** — `test_ingest`, `test_reachable` and

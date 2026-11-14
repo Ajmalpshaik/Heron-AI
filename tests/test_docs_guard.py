@@ -189,6 +189,19 @@ def fingerprint(where):
     return prints
 
 
+def guard_function(name):
+    """One function of check-docs.py, or None. Read from its source, because
+    importing the guard runs the whole check."""
+    import ast
+    source = io.open(os.path.join(ROOT, GUARD), encoding="utf-8").read()
+    for node in ast.parse(source).body:
+        if isinstance(node, ast.FunctionDef) and node.name == name:
+            space = {"re": re}
+            exec(compile(ast.Module(body=[node], type_ignores=[]), GUARD, "exec"), space)
+            return space[name]
+    return None
+
+
 def main():
     print("THE DOCUMENTATION GUARD, AND WHAT IT CAN SEE")
     print("=" * 72)
@@ -203,6 +216,18 @@ def main():
           "and every one of them is a real row in docs/28")
     check("HERON-DOC-RDM-007" in ids and "HERON-DOC-ARC-006" in ids,
           "including the two D-77 folded in")
+
+    print("\n1b. a heading's anchor is GitHub's, emoji and all (row 5b-1170)")
+    anchor_of = guard_function("anchor_of")
+    check(anchor_of is not None, "check-docs.py defines anchor_of")
+    if anchor_of:
+        check(anchor_of(u"\U0001F7E0 Q-12 — What is it") == "-q-12--what-is-it",
+              "a heading that starts with an emoji keeps the hyphen its space "
+              "leaves, as GitHub does: %r" % anchor_of(u"\U0001F7E0 Q-12 — What is it"))
+        check(anchor_of("Plain - heading") == "plain---heading",
+              "a dash between spaces is three hyphens, not collapsed")
+        check(anchor_of("Trailing space ") == "trailing-space",
+              "and the heading's own ends are trimmed first")
 
     home = tempfile.mkdtemp(prefix="heron-docs-guard-")
     tree = os.path.join(home, "repo")

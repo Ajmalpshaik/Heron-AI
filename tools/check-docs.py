@@ -71,8 +71,13 @@ def anchor_of(text):
     " - " produce two hyphens, and getting it wrong condemns every link in the
     repository that points at a heading with a dash in it.
     """
-    slug = re.sub(r'[^\w\s-]', '', text.lower())
-    return slug.strip().replace(' ', '-')
+    slug = re.sub(r'[^\w\s-]', '', text.strip().lower())
+    # NOT STRIPPED AGAIN after the characters go. GitHub keeps the space an
+    # emoji leaves as a hyphen: "### 🟠 Q-12 — x" is "#-q-12--x" there, and
+    # was "#q-12--x" here until row 5b-1170, so a link to it passed this check
+    # and landed at the top of the page. The heading's own ends are trimmed
+    # first, as GitHub reads the heading's text without them.
+    return slug.replace(' ', '-')
 
 
 def anchors_in(path):
