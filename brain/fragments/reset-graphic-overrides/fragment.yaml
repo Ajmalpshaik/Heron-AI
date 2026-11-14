@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,23 @@ semantic-identity: "clear the per-element graphic overrides on these, in this vi
 kind: action
 domain: revit.views
 capability: RESET_GRAPHIC_OVERRIDES
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 2 (2026-11-13) - EVERY OVERRIDE COUNTS AS ONE, and back to DRAFT.
+# FRAGMENT-ISSUES row 5b-1630: version 1 asked only halftone, transparency,
+# the two line colours and the two line weights whether an element had an
+# override, so on Revit 2024 (2026-11-13, "Heron Reads Test") three walls
+# overridden only by a detail level, a projection line pattern and a surface
+# pattern switched off were cleared and answered "cleared 0". Version 2 asks
+# every setting the Override Graphics box holds - the list READ_GRAPHIC_
+# OVERRIDES reads since its row 5b-154 - so the split between `cleared` and
+# `hadNothing` says what it is for. The clear itself is unchanged. Version 1
+# was PROVEN on 2026-09-10 (the proof block below, kept as the record of what
+# it proved); its C# moved, so it is DRAFT again until NEEDS-CHECKING Group
+# NX is run (D-30) - on the owner's word of 2026-11-11 that a fragment found
+# wrong may be changed even though it is proven.
 
 purpose: >
   Clears the per-element colour, fill, halftone and line overrides on the given

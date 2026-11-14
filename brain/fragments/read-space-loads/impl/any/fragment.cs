@@ -21,24 +21,29 @@
 //
 // READ ONLY. Opens no transaction and needs none.
 //
-// TWO CONVERSIONS, AND ONLY ONE OF THEM IS PROVABLE HERE.
+// TWO CONVERSIONS, BOTH EXACT ARITHMETIC.
 //
 //   AIRFLOW  ft3/s to L/s. 1 ft = 0.3048 m EXACTLY by the definition of the
 //            international inch, so 1 ft3 = 0.3048^3 m3 = 0.028316846592 m3 =
 //            28.316846592 L. Exact, checkable on paper, same class as D-20's
 //            304.8, and nothing for a unit API rewrite to reach.
 //
-//   LOAD     ASSUMED to be British thermal units per second and converted at
-//            1055.05585262 W - the IT definition of the BTU. THIS IS NOT
-//            PROVEN. Revit's internal HVAC power unit has to be established
-//            against a real Revit, and reflection over the assembly shows a
-//            property type, never a unit.
-//
-// >> IF THAT ASSUMPTION IS WRONG, EVERY LOAD IS OUT BY A CONSTANT FACTOR, which
-// >> is the most dangerous shape a unit error takes: each number looks
-// >> plausible on its own, every comparison between spaces still works, and
-// >> only somebody sizing a real chiller finds out. FIRST THING TO CHECK
-// >> against a model: one space's load here, against what Revit puts on screen.
+//   LOAD     Revit's internal power unit is kg ft2 / s3 - the watt with the
+//            metre made a foot - so 1 W = 1 / 0.3048^2 internal units and
+//            watts = internal x 0.3048^2 = internal x 0.09290304, exactly
+//            (version 4, FRAGMENT-ISSUES 5b-1628). Measured 2026-11-13, Revit
+//            2024: a Design Heating Load of 3000 W is held as 32291.73, and
+//            UnitUtils.ConvertToInternalUnits(3000, UnitTypeId.Watts) gave the
+//            same. VERSIONS 1 TO 3 ASSUMED BTU PER SECOND and multiplied by
+//            1055.05585262, so that 3000 W read 34069580 W - out by a constant
+//            factor of about 11,356, the most dangerous shape a unit error
+//            takes: each number looked plausible beside the others. The factor
+//            is checked against Revit's own UnitUtils on the release that runs
+//            (DisplayUnitType in 2020, UnitTypeId from 2021), as the electrical
+//            cards check their volt; if the two disagree, Revit's own is used
+//            and the disagreement is named. STILL THE FIRST THING TO CHECK
+//            against a model: one space's load here, against what Revit puts
+//            on screen.
 //
 // DESIGN AND CALCULATED ARE BOTH READ, AND WHICH ONE IS REPORTED IS SAID. The
 // calculated figure comes from the heating and cooling analysis; the design
@@ -96,8 +101,26 @@ Func<Func<double>, double?> figure = read =>
 // Exact. See above.
 var litresPerCubicFoot = 28.316846592;
 
-// ASSUMED. See above, and check it first.
-var wattsPerInternalLoad = 1055.05585262;
+// Exact, and checked against Revit's own (version 4). See above.
+var wattsPerInternalLoad = 0.3048 * 0.3048;
+double revitsWattsPerInternalLoad = wattsPerInternalLoad;
+try
+{
+#if REVIT2020
+    revitsWattsPerInternalLoad = UnitUtils.ConvertFromInternalUnits(1.0, DisplayUnitType.DUT_WATTS);
+#else
+    revitsWattsPerInternalLoad = UnitUtils.ConvertFromInternalUnits(1.0, UnitTypeId.Watts);
+#endif
+}
+catch (Exception) { revitsWattsPerInternalLoad = wattsPerInternalLoad; }
+if (Math.Abs(revitsWattsPerInternalLoad - wattsPerInternalLoad) > 1e-9 * wattsPerInternalLoad)
+{
+    var invariantCulture = System.Globalization.CultureInfo.InvariantCulture;
+    findings.Add("Revit makes one internal load unit " + revitsWattsPerInternalLoad.ToString(invariantCulture)
+        + " W where Heron expected " + wattsPerInternalLoad.ToString(invariantCulture)
+        + " - the loads below use Revit's own.");
+    wattsPerInternalLoad = revitsWattsPerInternalLoad;
+}
 
 foreach (var element in elements)
 {

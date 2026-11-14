@@ -32,15 +32,20 @@ positive:
       Yes
 
 negative:
-  # Row 5b-351, added 2026-11-11 with version 2. NOT RUN - Group NK, NK4.
+  # Row 5b-351, added 2026-11-11 with version 2; RUN 2026-11-13 by NK4 (Revit
+  # 2024, "Heron Flag Test"): Count printed <blank>, row 5b-1629. CHANGED with
+  # version 3 - its old second half, "a whole number Revit gives no string for
+  # still reads <blank>", was version 2's rule, and is the defect: in the
+  # Family Editor Revit gives NO string for a plain Integer, Count included.
+  # NOT RUN on version 3 - NEEDS-CHECKING Group NX.
   - given: >
-      the same family, with an Integer parameter `Count` set to 1 and a
-      Number of Poles or other whole-number parameter Revit shows no string
-      for
+      the same family, with an Integer parameter `Count` set to 1 - and,
+      untouched, the family's other whole-number parameters
     expect: >
-      `Count` reads "1" as Revit shows it - NOT "Yes" - and a whole number
-      Revit gives no string for still reads <blank>. Only a Yes/No is read as
-      Yes or No
+      "Count [Integer/type] = 1" - NOT "Yes", NOT <blank> - beside Flag Yes
+      and Derived No (formula: not(Flag)) read as before. Set Count to 0 and
+      ask again: "Count ... = 0", never "No". Only a Yes/No is read as Yes or
+      No; a whole number Revit holds no value for at all still reads <blank>
 
   - given: a PROJECT document in front instead of a family
     expect: >

@@ -46,11 +46,24 @@ semantic-identity: "which voltages, distribution systems, wire types, load class
 # SET_CIRCUIT_NAMING_SCHEME. The card still claims 2020: there the list says
 # schemes arrived in 2021, and every other list reads as before.
 #
+# VERSION 2 (2026-11-13) - A VOLTAGE TYPE'S VALUES ARE VOLTS. FRAGMENT-ISSUES
+# row 5b-1636: version 1 divided VoltageType.ActualValue, MinValue and
+# MaxValue by Revit's internal volt factor, 1 / 0.3048^2, so on Revit 2020
+# (P1102 MEP, 2026-11-13) the type named "120" read "11.15 V (min 10.22, max
+# 12.08)". Autodesk's reference says of all three, in the same words on every
+# release 2020 to 2027, "the unit is volt", and 2020 measured it: they are
+# printed as they come, and a distribution system's two voltages with them.
+# NOT ESTABLISHED, so BOTH are printed: whether a demand factor's load figures
+# (MinRange, MaxRange, AdditionalLoad) are internal units or volt-amperes -
+# the reference gives no unit and no model has measured one. Each is printed
+# both ways, with a finding saying so, never one of them guessed. COMPILED,
+# NOT RUN IN ANY REVIT (NEEDS-CHECKING Group NX).
+#
 # READ ONLY - opens no transaction and needs none.
 kind: action
 domain: revit.mep
 capability: REPORT_ELECTRICAL_SETTINGS
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -148,11 +161,15 @@ compatibility-note: >
   and absent in 2020 (#if !REVIT2020, 2026-11-02). ElectricalLoadClassification.Abbreviation is 2021 on (#if
   !REVIT2020). WireType.WireMaterial, Insulation and TemperatureRating are
   objects to 2025 and ElementIds from 2026, and MaxSize a WireSize to 2025 and
-  a string from 2026 (#if REVIT2026_OR_GREATER). Volts and volt-amperes are
-  internal units / (1 / 0.3048^2), the factor SET_FAMILY_CONNECTOR_ROLES uses,
-  checked against UnitUtils on the release that runs - DisplayUnitType.DUT_VOLTS
-  in 2020, UnitTypeId.Volts from 2021. An ElementId is compared with ==, never
-  read as a number.
+  a string from 2026 (#if REVIT2026_OR_GREATER). VoltageType.ActualValue,
+  MinValue and MaxValue are volts on every release - "the unit is volt" in the
+  reference 2020 to 2027 - and are printed as they come (version 2). A demand
+  factor's load figures carry no unit in the reference and are printed two
+  ways: as internal units / (1 / 0.3048^2), the factor SET_FAMILY_CONNECTOR_ROLES
+  uses for a connector's voltage PARAMETER, checked against UnitUtils on the
+  release that runs - DisplayUnitType.DUT_VOLTS in 2020, UnitTypeId.Volts from
+  2021 - and as volt-amperes. An ElementId is compared with ==, never read as a
+  number.
 
 # ROUTING (2026-11-01) - the same rows are in ADD_ELECTRICAL_DISTRIBUTION and
 # ADD_LOAD_CLASSIFICATION; the panel schedule template rows (2026-11-02) in

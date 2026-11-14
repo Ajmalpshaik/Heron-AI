@@ -13,6 +13,19 @@ positive:
       the view is back as it started. This is the pair working: without it a
       grayout is a one-way door
 
+  # VERSION 2, added 2026-11-13 (row 5b-1630). NOT RUN - NEEDS-CHECKING
+  # Group NX. Version 1 answered "cleared 0" for W1, W2 and W5 below.
+  - given: >
+      four walls in "FloorPlan: Level 1" of the scratch project "Heron Reads
+      Test" (Revit 2024), each given ONE override by OVERRIDE_GRAPHICS_IN_VIEW
+      - W1 detail-level Fine, W2 projection-line-pattern Dash, W4
+      cut-line-weight 5, W5 surface-foreground-visible false - and read back
+      by READ_GRAPHIC_OVERRIDES; then this card on each wall in turn
+    expect: >
+      "cleared 1" and "hadNothing 0" for EACH of the four - never "cleared 0"
+      for a wall whose override it removed; READ_GRAPHIC_OVERRIDES afterwards
+      finds none of the four overridden
+
 negative:
   - given: >
       elements that never had an override
