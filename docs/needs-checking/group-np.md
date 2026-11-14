@@ -124,3 +124,9 @@ session 26612; *P1102 MEP*, the scratch copy, not saved).
 Asked by phrase, *"delete these two walls"* looked up `DISALLOW_JOIN` first and `DELETE_ELEMENTS` third
 ([row 5b-1646](../fragment-issues/row-5b-1646.md)); the delete above was asked by capability. **Left in Group NP:**
 NP3 with two Revits at once, and NP8.
+
+**NP8, the same sitting - NOT RUN.** No way was found on the PC to make one connected Revit's `info` answer
+unusable for a single check while it stays listed - short of editing the add-in, blocking its pipe, or
+stopping Revit mid-answer, none of which is a fair arrangement on the owner's own Revit while he works in it.
+`tests/test_mcp_serves.py` holds the sentence *"Ask to Keep: Heron could not read which way the switch is set
+from this Revit just now"* against a stand-in, as the row says.
