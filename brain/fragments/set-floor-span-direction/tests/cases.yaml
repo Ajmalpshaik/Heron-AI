@@ -53,6 +53,16 @@ negative:
       anywhere. This is the leg D-30 exists for: a fragment that set whatever
       it was handed shows here. THE FIRST CASE TO RUN
 
+  - given: >
+      VERSION 2 (row 5b-1638) - no floor at all, angleDegrees 90: on P1102
+      STR (Revit 2020), the 133 structural columns on "02 - Floor"
+    expect: >
+      changed 0, changedIds empty, the 133 in notFloors - and spanDegrees
+      still 90, the angle asked for, which is ACCOUNTING since version 2 and
+      is not judged. `heron_validate draft` must NOT write "the negative case
+      returned content instead of nothing" for it: version 1 declared it a
+      result and its negative could never come back empty
+
   - given: N2 alone, angleDegrees 90
     expect: >
       changed 0, N2 in notStructural, nothing changed - the floor whose

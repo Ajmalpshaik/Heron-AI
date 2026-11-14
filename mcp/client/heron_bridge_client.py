@@ -403,6 +403,49 @@ def newest_log():
     return max(files, key=os.path.getmtime) if files else None
 
 
+def server_pid(handle):
+    """
+    The process id serving this pipe handle, or None when it cannot be asked -
+    off Windows, or when Windows would not say (D-162). Never raises.
+    """
+    if os.name != "nt":
+        return None
+    try:
+        import ctypes
+        import msvcrt
+        from ctypes import wintypes
+        raw = msvcrt.get_osfhandle(handle.fileno())
+        pid = wintypes.ULONG(0)
+        ok = ctypes.windll.kernel32.GetNamedPipeServerProcessId(wintypes.HANDLE(raw),
+                                                               ctypes.byref(pid))
+        return int(pid.value) if ok and pid.value else None
+    except Exception:                                    # noqa: BLE001 - "could not ask"
+        return None
+
+
+def server_mismatch(expected_pid, served_by):
+    """
+    Why a pipe must not be used, or None - D-162.
+
+    THE PIPE MUST BE SERVED BY THE REVIT THE DISCOVERY FILE NAMED. Its name is
+    known to every process of this user, so another one could create it first
+    and be handed the requests - and the token - meant for Revit. A pid that
+    could not be read on either side is NOT a mismatch: this only refuses on
+    evidence, never on a question Windows did not answer.
+    """
+    if expected_pid is None or served_by is None:
+        return None
+    try:
+        if int(expected_pid) == int(served_by):
+            return None
+    except (TypeError, ValueError):
+        return None
+    return ("The pipe Heron opened for Revit (process %s) is served by process %s, which is not "
+            "that Revit - so NOTHING was sent, and the session's token was not given to it. "
+            "Close what else may be using Heron's pipe, or restart Revit, and ask again."
+            % (expected_pid, served_by))
+
+
 class Bridge(object):
     """One connected Revit session."""
 
@@ -455,9 +498,18 @@ class Bridge(object):
     def _connect(self, timeout):
         """Open the pipe, retrying while the bridge finishes standing up."""
         deadline = time.time() + timeout
+        self._wrong_server = None     # this connect's own finding, never an older one
         while True:
             try:
-                return open(self.pipe_path, "r+b", buffering=0)
+                opened = open(self.pipe_path, "r+b", buffering=0)
+                # D-162: BEFORE ANYTHING IS WRITTEN - the token included - the
+                # pipe must be served by the Revit this session names.
+                wrong = server_mismatch(self.pid, server_pid(opened))
+                if wrong:
+                    opened.close()
+                    self._wrong_server = wrong
+                    return None
+                return opened
             except OSError:
                 if time.time() >= deadline:
                     return None
@@ -587,6 +639,9 @@ class Bridge(object):
             handle = getattr(self, "_handle", None)
             if handle is None:
                 handle = self._connect(timeout)
+                if handle is None and getattr(self, "_wrong_server", None):
+                    # D-162: opened, refused, nothing sent - not worth a retry.
+                    return {"ok": False, "error": "wrong_server", "message": self._wrong_server}
                 if handle is None:
                     continue          # never opened; nothing was sent
                 self._handle = handle

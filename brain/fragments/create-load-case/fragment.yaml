@@ -27,11 +27,23 @@ semantic-identity: "add a load case - by name, with its category and load nature
 # which; none of that name, refused with the natures listed. A nature named
 # differing only in capitals is named, never taken.
 #
+# VERSION 2 (2026-11-13) - THE CATEGORY IS READ BACK, OR SAID NOT TO BE.
+# FRAGMENT-ISSUES row 5b-1637: version 1 read each case's category through the
+# LOAD_CASE_SUBCATEGORY parameter's string, which on Revit 2020 (P1102 STR,
+# 2026-11-13) printed "category ?" for every case - the new one too, under
+# "read back from the model". Version 2 reads LoadCase.SubcategoryId - the id
+# of a subcategory of Structural Load Cases, Autodesk's reference on every
+# release 2020 to 2027 - and names it by that category's own Name. The new
+# case's nature and category are each compared with what was asked, and the
+# answer says "read back ... as asked" only when both were; a category Revit
+# names none for is said to be set and not confirmed. COMPILED, NOT RUN IN ANY
+# REVIT (NEEDS-CHECKING Group NX).
+#
 # ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 kind: action
 domain: revit.elements
 capability: CREATE_LOAD_CASE
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 

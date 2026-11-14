@@ -27,6 +27,18 @@ positive:
       Mark in `differing` and `ambiguous` EMPTY - the count must not turn
       down a name that occurs once
 
+  # Row 5b-1631, added 2026-11-13 with version 3. NOT RUN - NEEDS-CHECKING
+  # Group NX. Version 2 answered THREE findings here - 'Category', 'Comments'
+  # and 'Category [type]' - and the five walls in `ambiguous` for all three.
+  - given: >
+      NK8's five walls in the scratch project "Heron Reads Test" (Revit
+      2024), "Comments" bound to Walls a second time as a project parameter
+    expect: >
+      ONE finding, for 'Comments' - NOT READ, as version 2. No line for
+      'Category' or 'Category [type]': each is ONE reading (two built-ins,
+      the same category) and counted in identicalCount, never in `differing`.
+      The five walls in `ambiguous` for Comments alone
+
 negative:
   - given: two ducts drawn at the same size, whose internal feet differ in noise
     expect: >
@@ -65,6 +77,14 @@ negative:
       identicalCount: either answer would
       be read from whichever parameter Revit returned first (row 5b-203).
       Every name the walls carry once is compared as before
+
+  # Row 5b-1631, added 2026-11-13 with version 3. NOT RUN - Group NX.
+  - given: >
+      NK8's negative - the two room tags in "Heron Reads Test" (Revit 2024)
+    expect: >
+      differing EMPTY, `ambiguous` EMPTY and NO finding - version 2 put both
+      tags in `ambiguous` with 'Category' and 'Category [type]' NOT READ,
+      though neither name was ever in doubt
 
 second_route:
   - >

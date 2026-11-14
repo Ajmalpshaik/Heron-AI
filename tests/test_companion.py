@@ -1849,7 +1849,7 @@ def test_checklist_panel(tmp):
     source = io.open(SOURCE, encoding="utf-8").read()
     i = source.index('if path == "/api/checklist":')
     j = source.index('if path in ("/api/checklist/run", "/api/checklist/show"):')
-    check(source.index("why = self._api_ok()", i) < source.index("CHECKLIST_PANEL.current()", i)
+    check(source.index("why = self._api_ok()", i) < source.index("CHECKLIST_PANEL.current(", i)
           and source.index("why = self._api_ok()", j) < source.index("CHECKLIST_PANEL.run(", j)
           and source.index("why = self._api_ok()", j) < source.index("CHECKLIST_PANEL.show(", j),
           "every QA Checklist route is behind _api_ok like every other route")
@@ -1857,7 +1857,7 @@ def test_checklist_panel(tmp):
     check("CHECKLIST_PANEL.list_hook = _checklist_list" in server
           and "CHECKLIST_PANEL.run_hook = _checklist_run_page" in server
           and "CHECKLIST_PANEL.show_hook = _checklist_show" in server
-          and "_dashboard_show(action, ids, identity, moved_said=CHECKLIST_MOVED)" in server,
+          and "_dashboard_show(action, ids, identity, moved_said=CHECKLIST_MOVED," in server,
           "the server sets the hooks, and Select is the Model Dashboard's own _dashboard_show, in "
           "the checklist's own words")
     page_run = server[server.index("def _checklist_run_page("):]

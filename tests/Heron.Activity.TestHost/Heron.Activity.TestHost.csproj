@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Proves what the Activity pane lists (D-163) WITHOUT Revit or WPF.
+
+    HeronActivity.cs touches no Autodesk type and no window - it reads the
+    run records the dispatcher keeps and makes the rows and the requests the
+    pane's buttons send - so it is linked here BY SOURCE with the bridge's
+    Json.cs, as Heron.ChangeReport.TestHost links its rule. The pane itself,
+    and the show_elements operation, are the half that needs Revit, and
+    NEEDS-CHECKING says what they owe.
+
+        Run it with `dotnet run`, pointed at this folder, passing
+        -p:RevitVersion=2024. (XML comments cannot carry a double
+        hyphen, so the flag is spelled out rather than shown.)
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>$(HeronTfm)</TargetFramework>
+    <RootNamespace>Heron.Activity.TestHost</RootNamespace>
+    <AssemblyName>Heron.Activity.TestHost</AssemblyName>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\revit\Heron.Revit.Addin\HeronActivity.cs"
+             Link="HeronActivity.cs" />
+    <Compile Include="..\..\revit\Heron.Bridge\Json.cs"
+             Link="Json.cs" />
+  </ItemGroup>
+
+</Project>

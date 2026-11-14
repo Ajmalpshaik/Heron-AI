@@ -9,7 +9,7 @@ semantic-identity: "the heating and cooling load and the airflow on these spaces
 kind: filter
 domain: revit.mep
 capability: READ_SPACE_LOADS
-version: 3
+version: 4
 source: OFFICIAL
 risk: READ
 
@@ -28,6 +28,18 @@ risk: READ
 # figure Revit refused. A space with nothing readable at all is in `noLoad`
 # with version 2's sentence, unchanged. A read: it still answers through
 # revit_read while DRAFT, and says DRAFT (D-117 item 4).
+#
+# VERSION 4 (2026-11-13) - A LOAD IS internal x 0.3048^2 WATTS. FRAGMENT-ISSUES
+# row 5b-1628, found by NK3 on Revit 2024 ("Heron Reads Test", Space 1): a
+# Design Heating Load of 3000 W read "34069580 W (entered)", because versions
+# 1 to 3 took Revit's internal load unit for BTU per second and multiplied by
+# 1055.05585262. Revit held it as 32291.73 = 3000 x 10.7639104, and its own
+# UnitUtils agreed: the internal power unit is kg ft2 / s3, so watts =
+# internal x 0.09290304 exactly. That factor, checked against UnitUtils on the
+# release that runs (DisplayUnitType in 2020, UnitTypeId from 2021 - Revit's
+# own used and named if they disagree), replaces the assumption. The airflow
+# was right and is unchanged. Still DRAFT; COMPILED, NOT RUN IN ANY REVIT
+# (NEEDS-CHECKING Group NX).
 
 purpose: >
   Reports each MEP Space's heating load, cooling load and supply airflow, and
@@ -192,13 +204,14 @@ compatibility-note: >
 #            international inch, so 1 ft3 = 28.316846592 L exactly. That is the
 #            same class of conversion as D-20's 304.8 and needs no model.
 #
-#   LOAD     is NOT. Revit's internal unit for an HVAC load is a power, and
-#            which power unit it is has to be established against a real Revit -
-#            the factor used here assumes British thermal units per second and
-#            converts at 1055.05585262 W, which is the IT definition. If that
-#            assumption is wrong every load is out by a constant factor, which
-#            is the most dangerous shape of error: every number looks plausible
-#            and every comparison between them still works.
+#   LOAD     was NOT, until version 4. Versions 1 to 3 assumed British thermal
+#            units per second and converted at 1055.05585262 W - and that WAS
+#            wrong, by a constant factor of about 11,356 (row 5b-1628, measured
+#            on Revit 2024): the most dangerous shape of error, every number
+#            plausible and every comparison between them still working.
+#            Revit's internal power unit is kg ft2 / s3, so watts = internal x
+#            0.3048^2 exactly - the same class of arithmetic as the airflow -
+#            and version 4 checks it against UnitUtils on the release that runs.
 #
 # SO THE FIRST THING TO CHECK AGAINST A REAL MODEL IS ONE KNOWN LOAD, against
 # what Revit shows on screen for the same space. It is written into the test

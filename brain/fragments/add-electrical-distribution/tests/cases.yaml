@@ -39,6 +39,28 @@ positive:
       line to line 400 V, line to ground 230 V"; the Distribution Systems
       dialog shows it with those voltages
 
+  # VERSION 2, added 2026-11-13 (row 5b-1636). NOT RUN - NEEDS-CHECKING
+  # Group NX. Version 1 REFUSED the first - "No voltage type of 208 V ...
+  # "208" 19.32 V" - and made the second at about 2476.
+  - given: >
+      on P1102 MEP (Revit 2020, rme_advanced_sample_project, a saved copy
+      under %TEMP%\heron-work\prove-1102), ROLLED BACK: add distribution,
+      volts 208, lineToGroundVolts 120, phases 3, configuration wye, wires 4,
+      name "Heron 208/120"
+    expect: >
+      added 1, made on the model's own "208" and "120" voltage types - after
+      holds "\"Heron 208/120\" 3-phase wye 4-wire, line to line 208 V, line
+      to ground 120 V"; NEVER "No voltage type of 208 V"
+  - given: >
+      the same model, ROLLED BACK: add voltage, volts 230, name left out
+    expect: >
+      added 1; findings "Added voltage type \"230 V\" 230 V (min 230, max
+      230), read back as asked"; Manage > MEP Settings > Electrical Settings
+      > Voltage Definitions shows 230 V. If Revit reads it back as anything
+      else it is REFUSED and removed - "Revit read the new voltage type back
+      as ..." - and that sentence's figure settles AddVoltageType's unit:
+      record it in the group
+
 negative:
   - given: >
       add voltage, volts 999, name - the exact name of a voltage type the

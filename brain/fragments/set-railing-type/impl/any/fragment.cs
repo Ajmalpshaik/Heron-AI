@@ -1,7 +1,7 @@
 // NOT STANDALONE. Assumes `doc`, `railingTypeName`, `duplicateAs`,
 // `topRailTypeName`, `topRailHeightMm`, `handrailTypeName`,
 // `handrailHeightMm` and `handrailSide` are in scope; leaves `railingType`,
-// `report` and `findings` behind.
+// `changedTypeId`, `report` and `findings` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). One call is one undo entry.
 //
@@ -36,9 +36,19 @@
 // neither is read. With one, the side and the height are read each on its
 // own: a read Revit still refuses is said in the report for that one alone,
 // and counts as NOT AS ASKED only when that one was asked for.
+//
+// VERSION 3 (2026-11-13, row 5b-1633) - A RESULT A RUNNER CAN READ. The only
+// result was `railingType`, a RailingType object, which no runner can read as
+// found or not found, so a run that did exactly what it was asked was
+// POSITIVE UNREADABLE. `changedTypeId` is the id of the type changed - the
+// copy, or the type named - and ONLY when every value asked READ BACK AS
+// ASKED; InvalidElementId when refused, or when anything read back otherwise
+// (the report then says NOT AS ASKED). The same shape as SET_TEXT_TYPE's and
+// SET_DIMENSION_TYPE's `changedTypeId`. Nothing it does to the model changed.
 
 const double MmPerFoot = 304.8;
 RailingType railingType = null;
+var changedTypeId = ElementId.InvalidElementId;
 var lines = new List<string>();
 var findings = new List<string>();
 string refusal = null;
@@ -122,11 +132,13 @@ if (refusal == null)
         if (sharing > 0) lines.Add("The handrail height is the handrail type \"" + handType.Name + "\"'s, and " + sharing + " other railing type(s) share it and changed with it.");
         var users = new FilteredElementCollector(doc).OfClass(typeof(Railing)).Count(e => e.GetTypeId() == railingType.Id);
         lines.Add(users + " railing(s) are of this type and changed with it.");
+        if (wrong.Count == 0) changedTypeId = railingType.Id;
     }
     catch (Exception ex)
     {
         refusal = "Revit refused - " + ex.Message + ". Anything set before the refusal is in this call's one undo entry.";
         railingType = null;
+        changedTypeId = ElementId.InvalidElementId;
     }
 }
 

@@ -41,23 +41,45 @@ else
         // to undo". Both leave the element looking the same; only one of them
         // means the user's selection matched what they had changed.
         //
-        // THERE IS NO "HAS ANY OVERRIDE" QUESTION IN THE API, so this asks the
-        // properties that a grayout or a colour job actually sets. It is a
-        // heuristic and it is named as one: an override consisting only of
-        // something not listed here would read as nothing. That is a wrong
-        // COUNT, never a wrong action - the clear below runs either way.
+        // THERE IS NO "HAS ANY OVERRIDE" QUESTION IN THE API, so this asks
+        // EVERY setting the Override Graphics box holds - the same list
+        // READ_GRAPHIC_OVERRIDES reads since its row 5b-154 (version 2 here,
+        // row 5b-1630). Version 1 asked only halftone, transparency, the two
+        // line colours and the two line weights, so a wall overridden only by
+        // a detail level, a line pattern or a surface pattern switched off was
+        // cleared and then counted in `hadNothing` - measured 2026-11-13,
+        // Revit 2024: "cleared 0" for three walls whose overrides it removed.
+        // That was a wrong COUNT, never a wrong action - the clear below runs
+        // either way. A pattern's Visible flag reads TRUE on an element with
+        // nothing overridden, so only FALSE counts as set.
         //
         // The first draft of this line called `IsEmpty`, which does not exist.
         // It compiled in nobody's head and failed on all eight releases at once,
         // which is what tools/check-fragments-compile.py is for.
         var existing = view.GetElementOverrides(element.Id);
+        Func<Color, bool> colourSet = c => c != null && c.IsValid;
         var hadSomething = existing != null &&
                            (existing.Halftone ||
                             existing.Transparency > 0 ||
-                            existing.ProjectionLineColor.IsValid ||
-                            existing.CutLineColor.IsValid ||
+                            existing.DetailLevel != ViewDetailLevel.Undefined ||
+                            colourSet(existing.ProjectionLineColor) ||
+                            colourSet(existing.CutLineColor) ||
                             existing.ProjectionLineWeight > 0 ||
-                            existing.CutLineWeight > 0);
+                            existing.CutLineWeight > 0 ||
+                            existing.ProjectionLinePatternId != ElementId.InvalidElementId ||
+                            existing.CutLinePatternId != ElementId.InvalidElementId ||
+                            colourSet(existing.SurfaceForegroundPatternColor) ||
+                            existing.SurfaceForegroundPatternId != ElementId.InvalidElementId ||
+                            colourSet(existing.SurfaceBackgroundPatternColor) ||
+                            existing.SurfaceBackgroundPatternId != ElementId.InvalidElementId ||
+                            colourSet(existing.CutForegroundPatternColor) ||
+                            existing.CutForegroundPatternId != ElementId.InvalidElementId ||
+                            colourSet(existing.CutBackgroundPatternColor) ||
+                            existing.CutBackgroundPatternId != ElementId.InvalidElementId ||
+                            !existing.IsSurfaceForegroundPatternVisible ||
+                            !existing.IsSurfaceBackgroundPatternVisible ||
+                            !existing.IsCutForegroundPatternVisible ||
+                            !existing.IsCutBackgroundPatternVisible);
 
         view.SetElementOverrides(element.Id, empty);
 

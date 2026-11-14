@@ -164,6 +164,14 @@ event handler where they will crash.
 Registered in `OnStartup` and never after — Revit will not accept one later. Same threading rule: a
 dockable pane is modeless.
 
+**A pane button that must reach Revit goes through the ONE dispatcher, from a background thread**
+([D-163](../../../docs/decisions/D-163.md), the Activity pane): `HeronApplication.DispatchFromPane` hands
+the request to `RevitDispatcher.Dispatch`, which queues it and raises the one `ExternalEvent` - the same
+gate, model hold and audit trail a chat's request meets. Called from `Task.Run`, never from the click
+handler: `Dispatch` waits for Revit's thread, which is the click's own thread, so waiting there waits for
+itself. The answer comes back with the pane's `Dispatcher.BeginInvoke`. A pane that needs no Revit work -
+the Commands pane - starts a process instead and never dispatches at all.
+
 ## Colours, font and icons - the brand
 
 **Every colour, the font and every icon come from [`docs/brand/README.md`](../../../docs/brand/README.md)**
@@ -176,8 +184,9 @@ ask the owner and add it to the table first.
 - **Windows take their colours from `HeronWindowStyle`,** and `HeronWindowStyle` takes them from the
   table. A window that builds its own `Color.FromRgb` is the drift D-149 was written to stop.
 - **The ribbon holds three things ([D-150](../../../docs/decisions/D-150.md)):** the Heron button, whose
-  menu has Bridge Status, Free this model and Commands (the saved-commands pane,
-  [D-151](../../../docs/decisions/D-151.md), Proposed) as text rows; Settings, the window that holds
+  menu has Bridge Status, Free this model, Commands (the saved-commands pane,
+  [D-151](../../../docs/decisions/D-151.md), Proposed) and Activity (Heron's recent changes,
+  [D-163](../../../docs/decisions/D-163.md)) as text rows; Settings, the window that holds
   Changes, Admin, Publish, Ask to Keep and - since D-150 was amended on 2026-11-08 - the Companion's
   on/off, each state as its own button; and Companion, one push button. A new switch goes in Settings,
   not on the ribbon. Hover texts are one short sentence.
