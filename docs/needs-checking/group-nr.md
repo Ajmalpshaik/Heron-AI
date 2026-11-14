@@ -192,3 +192,17 @@ linked origin to origin, levels at 3800, 7600 and 11400) - the owner's standing 
 | (b) | **PASS** | `P1102 STR.rvt` linked as a second Revit link (kept), `linkName` empty: *"2 linked models are loaded - P1102 ARCH.rvt : 1 : location <Not Shared>, P1102 STR.rvt : 2 : location <Not Shared> - and nothing says which holds the rooms, so NOTHING WAS MADE. Name the link."* |
 | (c) | **PASS** | the ARCH link copied 100 m east (`COPY_ELEMENTS` on the link instance from `FILTER_ELEMENTS_BY_ID`, kept), `linkName=P1102 ARCH.rvt`: *"2 loaded links answer to \"P1102 ARCH.rvt\" - P1102 ARCH.rvt : 1 : location <Not Shared>, P1102 ARCH.rvt : 3 : location <Not Shared> - so NOTHING WAS MADE. Give the whole name."*; sent again with `"P1102 ARCH.rvt : 1 : location <Not Shared>"` it ran: *"0 space(s) made, 0 renamed, 91 already matching"* |
 | (d) | **PASS** | Host 2, the link's Room Bounding read OFF (`SET_LINK_ROOM_BOUNDING roomBounding=off`: *"1 already were"*, no box), then the sync with the name given, kept: `created 91` and a line for each - *"space 918709 reads back with NO AREA - placed where nothing bounds it. Its link may not be Room Bounding in this model"* - 91 of them; Revit's 91 *"Space is not in a properly enclosed region"* warnings dismissed and said. The owner's Ctrl+Z took it back; `revit_rooms` then read no spaces |
+
+**NR9, the same sitting**, on *NR Spaces Host 2* (two phases from the template: *Existing*, *New Construction*; the
+link's rooms in its own last phase). The link was made Room Bounding first (`SET_LINK_ROOM_BOUNDING`, kept).
+
+| Step | What was seen |
+|---|---|
+| `SYNC_SPACES_WITH_LINKED_ROOMS phaseName=Existing`, the first phase | kept; `created 91`, `wantedPhase Existing`, every line *"space made on ..."*, no NO AREA line, no word of the phase |
+| The same call again | `alreadyMatching 91`, `created 0` - no box, no undo entry (*"Revit reported nothing added, changed or deleted"*) |
+| `revit_rooms` | *"91 MEP space(s) ... 0 unplaced 0 not enclosed"* |
+| `READ_ELEMENT_PARAMETERS parameterName=Phase`, three of the spaces | **`New Construction`** each - not the phase asked ([row 5b-1655](../fragment-issues/row-5b-1655.md)) |
+
+**NR9: FAIL** - the second run did answer `alreadyMatching` equal to the rooms, the case the row says would prove row
+5b-1589 wrong, but only because the first run put its spaces in the LAST phase, not the first: 5b-1589's own case
+was never reached, so it is not corrected here. The owner's Ctrl+Z takes back the first run; the second made nothing.
