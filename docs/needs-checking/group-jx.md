@@ -74,3 +74,21 @@ fittings"* reach that card ranked, no longer this one); and *"remove these fitti
 insulation, not the fittings. A DRAFT is refused by `revit_change` ([D-117](../DECISIONS.md)), and either
 would be asked in Revit's Delete box first. `DELETE_ELEMENTS` and `SET_MEP_INSULATION` are PROVEN; the
 edit to each is outside `impl/`, so no fingerprint moved.
+
+### Run record - 2026-11-14 night, Revit 2024 (session 3592), the owner asleep
+
+Not on *Snowdon-scratch_ajmal.al*: the owner's word for the night was to draw what a test needs on a fresh scratch
+model. *Heron JX Ducts* (`%TEMP%\heron-work\mg`), made by Heron with `CREATE_FAMILY_DOCUMENT` from Revit 2024's
+`English\Mechanical-Default_Metric.rte`; four 600x400 *Rectangular Duct: Radius Elbows / Taps* on *Supply Air*,
+Level 1 at 2700 mm, 4000 mm each, drawn and kept with `CREATE_MEP_RUNS` (`runsDrawn 4`, *"4 sized as asked"*) -
+925621, 925623, 925625, 925627; `SET_MEP_INSULATION` *Duct Wrap* 25 mm kept on 925621 and 925623 (`insulated 2`).
+
+| # | Result | What was seen |
+|---|---|---|
+| JX0, JX1 | **Arranged and read** | `SELECT_BY_INSULATION categories=Ducts wantInsulated=true`: *"2 of 4 scanned element(s) are INSULATED"* |
+| JX2 | **PASS** | `validate remove-mep-insulation --write`, rolled back, 925621 and 925623: `removed 2`, *"Ducts "Radius Elbows / Taps" (id 925621): 1 insulation element(s) removed"* and the same for 925623; *"The ducts and pipes themselves are untouched, and so is any lining"* |
+| JX3 | **PASS** | Negative 925625 and 925627: `removed 0`, *"had no insulation - nothing removed"* for each, refused *"None of the 2 ... had insulation on it - nothing was removed"*. After the rolled-back run `SELECT_BY_INSULATION` still reads *"2 of 4 scanned element(s) are INSULATED"* |
+| JX4 | **NOT RUN** | No fittings in this arrangement |
+
+Draft written (`remove-mep-insulation`, gap *no second route*); not signed. No Delete box: the add-in asks before a
+delete only when the change is kept (`DeleteGate`, `apply \|\| asking`), and this run was rolled back.
