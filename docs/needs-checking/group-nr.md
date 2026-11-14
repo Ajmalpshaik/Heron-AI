@@ -74,3 +74,13 @@ step by step, so what a fresh chat would ask on its own is NOT measured here; ev
 | The owner looked | both plans show the ducts in the four colours - his screenshots |
 
 **NR4: PASS**, with the naming slip above.
+
+**NR5, the same sitting** (the testing chat; Ask to Keep ON):
+
+| Part | Result | What was seen |
+|---|---|---|
+| (a) | **PASS** | NR4's call again: `alreadyExists` the four, *"left exactly as they were, not overwritten"*, nothing made, no box (Revit counted nothing) |
+| (b) | **PASS** | the same with `colour=255,0,0`: refused, *"one colour for all of them is refused - leave the colour out; nothing was made"* |
+| (c) | **PASS** | *Level 3 HVAC Plan* given the template *Mechanical Plan* through `APPLY_VIEW_TEMPLATE` (kept) - *HVAC Duct Plan* was tried first and holds no filters, `templateOwned false`. Then `templateOwned true` with *"The view template 'Mechanical Plan' owns the filters on 'Level 3 HVAC Plan'"*; `COPY_VIEW_FILTERS` with `onlyFilterNamed=` empty: `blockedByTemplate` *"... governed by template 'Mechanical Plan' - copy onto that template instead"*, `filtersApplied 0`. The lookup did not offer `APPLY_VIEW_TEMPLATE` ([row 5b-1649](../fragment-issues/row-5b-1649.md)) |
+| (d) | **Learned, as asked** | `CREATE_VIEW_FILTER` on that plan with prefix *"NR2 - "* made four filters ON it and read their colours back, with no word about the template ([row 5b-1650](../fragment-issues/row-5b-1650.md)). The owner's Ctrl+Z took it back - 25 filters in the project, the plan's five again |
+| (e) | **PASS** | `COPY_VIEW_FILTERS` to *Level 1 HVAC Plan* with `onlyFilterNamed` left out: refused before anything was sent - *"'onlyFilterNamed (string)' is a value the CALLER supplies"* |
