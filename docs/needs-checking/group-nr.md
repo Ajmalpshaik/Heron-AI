@@ -131,3 +131,16 @@ pipe tags; the question the row asks is the same.
 
 **NR3: Learned, as asked** - a two-category filter binds and `ARRANGE_TAGS` takes it, but it spaces every tag by one
 median size, so step 4 should not be told to hand both categories in one call until that is settled (row 5b-1652).
+
+**NR12, the same sitting** (the testing chat, not a new one), *Level 2 HVAC Duct Plan* of *P1102 MEP NR*.
+
+| Step | What was seen |
+|---|---|
+| The owner turned *Ask to Keep* off | `revit_health`, under Revit 2020 session 30228: *"Ask to Keep is off in this Revit right now: a change made through revit_change is kept at once, with no Keep or Discard box, as one entry in Revit's Undo list"*; his Settings screenshot the same |
+| Before the tag call | the chat told the owner the tags would be kept at once, with no box |
+| Filter (Ducts, 249) + `FIND_UNTAGGED_ELEMENTS` | `elements 243`, `alreadyTagged 6` |
+| `TAG_ELEMENTS_IN_VIEW`, `leader=none` | `outcome: KEPT`, `changed: 223 added (Duct Tags 223)`, `tagged 223`, `verticalSkipped 20`, *"Duct Tags: M_Bottom Elevation Duct Tag ... (the project's default)"*; the answer carries no *"You were asked in Revit"* line. **The owner: no box came.** The plan read 229 duct tags, the model 22,039 elements |
+| The owner's one Ctrl+Z | the plan read 6 duct tags again and the model 21,816 - one Undo took every tag. The chat made no second change |
+| *Ask to Keep* back on | his screenshot; `revit_health`: *"Ask to Keep is ON in this Revit right now"* |
+
+**NR12: PASS.**
