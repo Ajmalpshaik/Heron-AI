@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -104,6 +104,37 @@ contract:
       type: IList<string>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-14'
+  by: Ajmal PS
+  model: electrical-mi (3,311 elements), Revit 2024, session 3592
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned added 1, after 1 item(s) ["TX-1"
+    (transformer, id 809154), fed from nothing, feeds 0, ...], before 0 item(s), connected
+    0, didRead true, findings 2 item(s) [Nodes added 1, connections made 0. Nodes and area-based
+    load..., Added "TX-1" (transformer, id 809154), fed from nothing, fee...], given Func`2,
+    invariant CultureInfo, kind ElectricalAnalyticalNodeType, kindWords Func`2, listNow Func`1,
+    load (null), loadLine Func`2, loads 0 item(s), nameOf Func`2, node ElectricalAnalyticalNode,
+    nodeLine Func`2, nodeList Func`1, nodes 1 item(s) [ElectricalAnalyticalNode], num Func`2,
+    quoted Func`2, readModel Action, refused 0 item(s), skipped 0 item(s), wantKind transformer,
+    wantName TX-1, wantUp . inputs came name as given; nodeType as given; upstream not given
+    - "none", the card's own default (optional). on electrical-mi
+  negative_case: run with name=TX-1, nodeType=switchboard instead - chosen because it should
+    not contain what this fragment reports - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned added 0, after 0 item(s), before
+    0 item(s), connected 0, didRead false, findings 2 item(s) [Nodes added 0, connections
+    made 0; refused. Nodes and area-b..., "switchboard" is not a kind of node - powerSource,
+    bus, tran...], given Func`2, invariant CultureInfo, kind (null), kindWords Func`2, listNow
+    Func`1, load (null), loadLine Func`2, loads 0 item(s), nameOf Func`2, node (null), nodeLine
+    Func`2, nodeList Func`1, nodes 0 item(s), num Func`2, quoted Func`2, readModel Action,
+    refused 1 item(s) ["switchboard" is not a kind of node - powerSource, bus, tran...], skipped
+    0 item(s), wantKind switchboard, wantName TX-1, wantUp . inputs came name as given; nodeType
+    as given; upstream not given - "none", the card's own default (optional). on electrical-mi
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 5302616dc25e4953
 
 revit: ["2023", "2024", "2025", "2026", "2027"]
 runtime: [net48, net8.0-windows, net10.0-windows]

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -109,42 +109,36 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-09-16'
+  date: '2026-11-14'
   by: Ajmal PS
-  model: TRG_Cap_Copper (1,519 elements), Revit 2020, session 8084
-  positive_case: 'run as it would normally be run. returned currentTypeName Standard, findings
-    2 item(s) [family ''TRG_Cap_Copper''; 23 parameter(s) reported of 23, val..., 1 material
-    parameter(s): Material [type] = TCM_MAT_Copper], materialParameters Material [type] =
-    TCM_MAT_Copper, materialRows 1 item(s) [Material [type] = TCM_MAT_Copper], needle , notAFamily
-    false, parameterCount 23, parameterList ClassificationCode [String/instance] = [Uniclass
-    2015] Pr_65_52_63 : Pipes and fittings (formula: "[Uniclass 2015] Pr_65_52_63 : Pipes
-    and fittings")  ||  Default Elevation [Double/type] = 0.0  ||  Loss Method [Integer/type]
-    = <blank>  ||  K Coefficient Table [String/type] = <blank>  ||  K Coefficient [Double/type]
-    = <blank>  ||  Material [ElementId/type] = TCM_MAT_Copper  ||  Use Annotation Scale [Integer/type]
-    = <blank>  ||  Nominal radius [Double/instance] = 7.5 mm  ||  Nominal diameter [Double/instance]
-    = 15.0 mm (formula: Nominal radius * 2)  ||  Height [Double/instance] = 17.5 mm (formula:
-    size_lookup(Sheet, "Hgt", 0.28 * Nominal diameter + 45.4 mm, Nominal diameter))  ||  External
-    diameter fitting [Double/instance] = 22.0 mm (formula: size_lookup(Sheet, "FOD", Nominal
-    diameter + 10.4 mm, Nominal diameter))  ||  Keynote [String/type] = <blank>  ||  Model
-    [String/type] = <blank>  ||  Manufacturer [String/type] = <blank>  ||  Type Comments [String/type]
-    = PFT  ||  Type Image [ElementId/type] = <none>  ||  URL [String/type] = <blank>  ||  Description
-    [String/type] = Cap in copper  ||  Assembly Code [String/type] = <blank>  ||  Cost [Double/type]
-    = <blank>  ||  Sheet [String/type] = Calotta rame  ||  External Radius Fitting [Double/instance]
-    = 11.0 mm (formula: External diameter fitting / 2)  ||  IsCustom [Integer/type] = <blank>,
-    rows 23 item(s) [ClassificationCode [String/instance] = [Uniclass 2015] Pr_65..., Default
-    Elevation [Double/type] = 0.0, Loss Method [Integer/type] = <blank>, ...], scanned 23.
-    inputs came nameContains as given. on TRG_Cap_Copper'
-  negative_case: run with nameContains=ZZZNOTAPARAMETER instead - chosen because it should
-    not contain what this fragment reports. returned currentTypeName Standard, findings 2
-    item(s) [family 'TRG_Cap_Copper'; 0 parameter(s) reported of 23, valu..., NO material
-    parameter was found. This family does not take i...], materialParameters , materialRows
-    0 item(s), needle ZZZNOTAPARAMETER, notAFamily false, parameterCount 0, parameterList
-    , rows 0 item(s), scanned 23. inputs came nameContains as given. on TRG_Cap_Copper
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Heron Flag Test, Heron Reads Test - active
+    was Heron Reads Test, Revit 2024, session 3592'
+  positive_case: 'run as it would normally be run. returned currentTypeName Type 1, findings
+    2 item(s) [family ''Heron Flag Test''; 16 parameter(s) reported of 16, va..., NO material
+    parameter was found. This family does not take i...], isYesNo Func`2, materialParameters
+    , materialRows 0 item(s), needle , notAFamily false, parameterCount 16, parameterList
+    Default Elevation [Double/type] = 0.0  ||  Count [Integer/type] = 1  ||  Derived [Integer/type]
+    = No (formula: not(Flag))  ||  Flag [Integer/type] = Yes  ||  Plain [Integer/type] = No  ||  Type
+    Image [ElementId/type] = <none>  ||  Keynote [String/type] = <blank>  ||  Model [String/type]
+    = <blank>  ||  Manufacturer [String/type] = <blank>  ||  Type Comments [String/type] =
+    <blank>  ||  URL [String/type] = <blank>  ||  Description [String/type] = <blank>  ||  Assembly
+    Code [String/type] = <blank>  ||  Cost [Double/type] = <blank>  ||  Type IFC Predefined
+    Type [String/type] = <blank>  ||  Export Type to IFC As [String/type] = <blank>, rows
+    16 item(s) [Default Elevation [Double/type] = 0.0, Count [Integer/type] = 1, Derived [Integer/type]
+    = No (formula: not(Flag)), ...], scanned 16, yesNoProperty RuntimePropertyInfo, yesNoSpec
+    ForgeTypeId, yesNoSpecs RuntimeType. inputs came nameContains as given. on Heron Flag
+    Test'
+  negative_case: run against 'Heron Reads Test' with nameContains= instead - chosen because
+    it should not contain what this fragment reports. returned currentTypeName , findings
+    2 item(s) [NOT a family document; 0 parameter(s) reported of 0, values ..., The document
+    in front is a project, not a family being edite...], isYesNo Func`2, materialParameters
+    , materialRows 0 item(s), needle , notAFamily true, parameterCount 0, parameterList ,
+    rows 0 item(s), scanned 0, yesNoProperty RuntimePropertyInfo, yesNoSpec ForgeTypeId, yesNoSpecs
+    RuntimeType. inputs came nameContains as given. on Heron Reads Test
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: b72f94d245ec65e0
-
+  fingerprint: 503e6d702756de38
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
