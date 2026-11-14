@@ -206,3 +206,24 @@ link's rooms in its own last phase). The link was made Room Bounding first (`SET
 **NR9: FAIL** - the second run did answer `alreadyMatching` equal to the rooms, the case the row says would prove row
 5b-1589 wrong, but only because the first run put its spaces in the LAST phase, not the first: 5b-1589's own case
 was never reached, so it is not corrected here. The owner's Ctrl+Z takes back the first run; the second made nothing.
+
+**NR11, the same sitting**, on *NR Spaces Host 2* with NR9's 91 spaces in place (they read back in the last phase,
+row 5b-1655, so they stand for an ordinary first sync). The architect's model was NOT changed in place: the session
+copied `P1102 ARCH.rvt` on disk to `P1102 ARCH NR11.rvt`, linked the copy (kept), made it Room Bounding (kept) and read
+the baseline - `SYNC_SPACES_WITH_LINKED_ROOMS linkName=P1102 ARCH NR11.rvt`: *"91 already matching"*. The owner unloaded
+the link by hand; the session opened the copy (`ACTIVATE_DOCUMENT`, refused while the link was loaded and answered
+*"NOT activated"* with no reason), renamed room 101 *Vest.* to *Vestibule* (`SET_PARAMETER_VALUES_BY_ID`, kept, read
+back *Vestibule*), deleted room 128 *Storage* (`DELETE_ELEMENTS` after `SELECT_BY_PARAMETER_VALUE` - **the owner pressed
+Delete**; its tag went with it) and placed rooms in every enclosed area of the *Roof* level (`PLACE_ROOMS`, kept) -
+**four**, not the one the row says - then saved and closed the copy from the host (`SAVE_DOCUMENT closeWindow=true`) and
+the owner reloaded the link by hand. The testing chat, not a new one; the owner's standing word for testing stood for
+the rename's yes after the chat had asked it by name.
+
+| Step | What was seen |
+|---|---|
+| First call, `updateNames=false` | kept; *"4 space(s) made, 0 renamed, 89 already matching, 0 room(s) not placed, 1 space(s) with no linked room under them (listed, never deleted)"*; *"room 101 \"Vestibule\": space 918894 reads 101 \"Vest.\" - DIFFERS, left as it is (updateNames is false)"*; four *"room 213 \"Room\": space made on Roof"* lines (213, 215, 236, 237); *"ORPHAN spaces, no linked room under them: 918903"* |
+| The chat | read the DIFFERS line out and asked *"May I rename space 101 from \"Vest.\" to \"Vestibule\"?"* before the second call |
+| Second call, `updateNames=true` | kept; *"room 101 \"Vestibule\": space 918894 was 101 \"Vest.\", renamed to match"*, `renamed 1`, `created 0`, the orphan listed again |
+| `revit_rooms` | *"95 MEP space(s) ... 0 unplaced 0 not enclosed"* - 91 and the four new; no space deleted by either run. *Host 2* holds no zone but Revit's *Default*, so "put in no zone" here means Revit's own default zone |
+
+**NR11: PASS** (four rooms added where the row says one; `created` counted each).
