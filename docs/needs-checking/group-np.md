@@ -104,3 +104,11 @@ was restarted between the readings.
 | NP1 | **PASS** | Switch ON: one line under that Revit - *"Ask to Keep is ON in this Revit right now: a change made through revit_change is shown in Revit's Keep or Discard box and kept only on Keep. Different for: a job the modeller chose in that box to keep the rest of, and a change Revit counted nothing in (both kept unasked); a delete (asked in its own Delete box instead); an export, save or sync ...; a dry run ...; and revit_apply_move ..."* |
 | NP2 | **PASS** | Switch off, the owner answering *Stop asking* in the box *"Stop asking Keep or Discard? Changes from a chat are kept at once"*: *"Ask to Keep is off in this Revit right now: a change made through revit_change is kept at once, with no Keep or Discard box, as one entry in Revit's Undo list ..."*. Turned ON again: the ON line again. No restart of Revit or the chat |
 | NP6 | **PASS** | The line said **ON**, as Revit's own Settings showed. The Claude app's private copy, `%LOCALAPPDATA%\Packages\AnthropicPBC.Claude_fnn82j28hfe8t\LocalCache\Roaming\Heron\config\heron.config`, holds `write.askBeforeKeeping = false`, dated 2026-10-23 - and from this chat's shell `%APPDATA%\Heron\config\heron.config` reads that same copy, so the shell cannot see the file Revit wrote. Both values recorded; Q-70 not settled by it |
+
+**NP5, the same sitting - FAIL on one sentence, PASS on the rest.** A second chat (`np5-second`) read the
+selection on *P1102 MEP*, and the add-in logged *"Model hold: 'P1102 MEP' is now held by chat np5-seco."* This
+chat's `revit_health` then carried the Ask to Keep ON line for that Revit - and called it *"(free)"*, not in
+use by another chat: the column reads the session lease, not the model hold
+([row 5b-1645](../fragment-issues/row-5b-1645.md)). The hold itself held - this chat's `READ_SELECTION` was
+refused *"Model 'P1102 MEP' is in use by another chat"* - and the second chat's next read was answered, not
+cut off.
