@@ -1559,21 +1559,34 @@ def the_undo_tool(stage, cases, replies):
 
 def companion_path_once():
     """Row 5b-427: _companion_module ran for every tool call and put the
-    Companion's folder on sys.path again each time. Needs no SDK."""
+    Companion's folder on sys.path again each time. Needs no SDK: the one
+    function is read out of heron_server_core.py's source and run alone,
+    because importing that module needs the SDK, which CI has not got."""
+    import ast
     print()
     print("The Companion's folder goes on the import path once (row 5b-427)")
-    try:
-        import heron_server_core as core
-    except Exception as exc:                     # noqa: BLE001
-        check(False, "heron_server_core imports (%s: %s)" % (type(exc).__name__, exc))
+    path = os.path.join(ROOT, "mcp", "server", "heron_server_core.py")
+    found = [node for node in ast.parse(io.open(path, encoding="utf-8").read()).body
+             if isinstance(node, ast.FunctionDef) and node.name == "_companion_module"]
+    check(len(found) == 1, "heron_server_core.py defines _companion_module")
+    if not found:
         return
+    space = {"os": os, "sys": sys, "__file__": path}
+    exec(compile(ast.Module(body=found, type_ignores=[]), path, "exec"), space)
     folder = os.path.normpath(os.path.join(ROOT, "mcp", "companion"))
     copies = lambda: sum(1 for p in sys.path
                          if os.path.normpath(os.path.abspath(p)) == folder)
-    core._companion_module()
+
+    def call():
+        try:
+            space["_companion_module"]()
+        except ImportError:
+            pass        # the path is put first; the import is not what is counted
+
+    call()
     first = copies()
     for _ in range(5):
-        core._companion_module()
+        call()
     check(first == 1, "the first call puts the folder on the path once (%d)" % first)
     check(copies() == 1, "and five more calls add no copy (%d)" % copies())
 
