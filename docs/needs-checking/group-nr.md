@@ -172,3 +172,11 @@ read first; Ask to Keep ON, the owner pressing Keep. Midway the owner gave a sta
 
 **NR7: PASS**, with row 5b-1653 (the method's sentence about the template, and the row's own premise). NR7's spaces,
 zones and tags are left in *NR Spaces Host* for NR10.
+
+**NR10, the same sitting**, on NR7's zones in *NR Spaces Host* (Revit 2020; no Revit 2027 at hand).
+
+| Part | Result | What was seen |
+|---|---|---|
+| (a) | **PASS** | Vest. 101 and Lobby 102 (both in *NR Zone L1*) from `FILTER_ELEMENTS_BY_ID`, then `CREATE_HVAC_ZONE zoneName=NR10 Moved`, kept: `added 2`, `movedFromAnotherZone` *"Vest. 101 (id 918729) LEFT zone 'NR Zone L1'"* and the same for Lobby 102; Revit's before and after: *"Zone \"NR Zone L1\" -> \"NR10 Moved\""* for each - the first zone lost them. Read through Heron, not the System Browser |
+| (b) | **FAIL as written** | Stair 201, then `CREATE_HVAC_ZONE zoneName=NR Zone L2` (taken), kept: `added 1`, *"Stair 201 ... LEFT zone 'NR Zone L2'"* - nothing added to the zone that had the name - but **the new zone carries the same name**: the zones read *Default, NR Zone L1, NR Zone L2, NR Zone L3, NR10 Moved, NR Zone L2*, and `refused` has no line about it - only *"Elements have duplicate \"Name\" values"*, a warning Heron dismissed ([row 5b-1654](../fragment-issues/row-5b-1654.md)) |
+| Undo | done | the owner's two Ctrl+Z; the zones read the four of NR7 again |
