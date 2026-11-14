@@ -108,3 +108,26 @@ when every tag has a leader - none had.
 did: the counts said before tagging, `alreadyTagged 0`, one line a tag category, and the gap sent as 200 and said
 so. The plan's count changing under it (row 5b-1651) is unexplained. The NR1 entries are left in Revit's undo list,
 not undone: NR2 runs on the plan NR1 tagged.
+
+**NR2, the same sitting**, on the plan NR1 tagged, nothing of NR1 undone. By the time it ran, the plan read through
+Heron was back to *Ducts 258* (row 5b-1651: it flips).
+
+| Part | Result | What was seen |
+|---|---|---|
+| (a) | **PASS** | the filter (363) then `FIND_UNTAGGED_ELEMENTS`: `alreadyTagged 349`, `elements 14` - the 14 risers NR1's tag call left bare on purpose (`verticalSkipped`), nothing else |
+| After (a), not predicted | **Written down** | `TAG_ELEMENTS_IN_VIEW` with `expect_from` naming (a): `tagged 0`, `verticalSkipped 14`, `notTagged 0`; *"Revit reported nothing added, changed or deleted in the model, so the modeller was not asked"* - no box, no undo entry |
+| (b) | **PASS** | the filter again, then the tag call handed the whole set: `tagged 0`, `alreadyTagged 349`, `skipped 349`, `verticalSkipped 14` - no second tag on any duct, no box |
+| (c) | **NOT RUN as written** | *P1102 MEP NR* has *M_Flex Duct Tag Round* loaded, so the premise - no Flex Duct tag family - is not met there. The session sent the call without first reading which tag families are loaded: on *Level 2 HVAC Duct Plan* it answered `tagged 54` with *"Flex Duct Tags: M_Flex Duct Tag Round (the project's default)"*, and the owner kept it at the box before reading the ask to Discard; his Ctrl+Z took it back (*Flex Duct Tags: 0* read after). The session's slip, not the card's. Owed: a project without a flex duct tag |
+| (d) | **PASS - row 5b-240 seen** | Duct Tags filter (244 this time - NR1 had 111), `ARRANGE_TAGS minGapMm=2`, kept: `moved 91`, `stillOverlapping 54`, `gap` 0.00656 ft - 2 mm in the model, 0.02 mm on the 1:100 sheet: boxes moved until they just clear. The overlap read straight after compared all *349* and answered `pairs 110` - the true count NR1's 42 had been read over part of (row 5b-1651) |
+
+**NR3, the same sitting** - on this plan's duct tags and diffuser tags, not duct and pipe tags: a duct plan carries no
+pipe tags; the question the row asks is the same.
+
+| Step | What was seen |
+|---|---|
+| `FILTER_ELEMENTS_BY_CATEGORY categories=Duct Tags, Air Terminal Tags` | binds: 349 (*Duct Tags 244, Air Terminal Tags 105*) |
+| `ARRANGE_TAGS` with `expect_from` naming it, `minGapMm=200`, `maxPasses=10` | takes it; kept; `moved 317` (*Duct Tags 215, Air Terminal Tags 102*), `stillOverlapping 249`, `bothHadToMove 279` - **with one tag size for all**, `halfWidth` 3.27 ft and `halfHeight` 0.67 ft, the duct tag's (row 5b-1652) |
+| `FIND_OVERLAPPING_TAGS` | `pairs 34`, over *186* of the 349 tags (row 5b-1651) |
+
+**NR3: Learned, as asked** - a two-category filter binds and `ARRANGE_TAGS` takes it, but it spaces every tag by one
+median size, so step 4 should not be told to hand both categories in one call until that is settled (row 5b-1652).
