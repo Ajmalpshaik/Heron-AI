@@ -48,17 +48,6 @@
 // which name, in the words every reader of row 5b-203 uses. AND IT FAILS
 // CLOSED: where Revit will not say how many parameters carry the name, none
 // is picked either - the row is said as not read, never looked up anyway.
-//
-// EXCEPT WHERE EVERY ONE OF THEM IS BUILT-IN AND THEY READ THE SAME (version
-// 3, FRAGMENT-ISSUES 5b-1631). Revit gives every element two built-in
-// parameters named "Category" - ELEM_CATEGORY_PARAM and ELEM_CATEGORY_PARAM_MT
-// - so version 2 said "'Category' - NOT READ" on every element in every model
-// (Revit 2024, 2026-11-13), while Category itself was never compared. Two
-// parameters of one name that are BOTH Revit's own and give the SAME value are
-// one reading, not a doubt: whichever Revit meets first, the answer is the
-// same. That value is compared as any other. A shared or project parameter
-// among them, or built-ins that read differently, stays NOT READ exactly as
-// version 2 says it.
 
 var differing = new Dictionary<string, IList<string>>();
 int identicalCount = 0;
@@ -157,29 +146,7 @@ if (!tooFewToCompare)
             {
                 var sameName = -1;
                 try { sameName = source.GetParameters(lookFor).Count; } catch { }
-                if (sameName > 1)
-                {
-                    // BUILT-IN TWINS THAT AGREE ARE ONE READING (version 3,
-                    // 5b-1631) - see the header. Anything else stays NOT READ.
-                    string agreed = null;
-                    try
-                    {
-                        var carrying = source.GetParameters(lookFor);
-                        var allBuiltIn = carrying.All(q => q != null
-                            && q.Definition is InternalDefinition
-                            && ((InternalDefinition)q.Definition).BuiltInParameter != BuiltInParameter.INVALID);
-                        if (allBuiltIn)
-                        {
-                            var readings = carrying.Select(q => readValue(q)).Distinct(StringComparer.Ordinal).ToList();
-                            if (readings.Count == 1) agreed = readings[0];
-                        }
-                    }
-                    catch { agreed = null; }
-
-                    if (agreed == null) { twiceOn.Add(element.Id); continue; }
-                    row.Add(agreed);
-                    continue;
-                }
+                if (sameName > 1) { twiceOn.Add(element.Id); continue; }
                 if (sameName < 0) { uncountedOn.Add(element.Id); continue; }
 
                 try { found = source.LookupParameter(lookFor); } catch { }
