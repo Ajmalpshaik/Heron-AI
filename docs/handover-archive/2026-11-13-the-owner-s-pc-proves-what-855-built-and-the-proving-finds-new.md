@@ -90,3 +90,9 @@ own file carries its dated run record, and each defect is a file of its own unde
   `%TEMP%\heron-work\many-types-2020`. Nothing was deleted, as the owner asked.
 - **#867's rule still stands until the owner says otherwise:** no `revit_undo_last`, no `revit_change` dry run,
   no Groups NS to NV.
+
+**Continued the next morning, 2026-11-14** (Revit 2020 restarted, session 17824, *P1102 STR*, every run rolled
+back): `place-structural-loads`, `place-boundary-conditions`, `create-opening`, `attach-columns`, `create-truss`,
+`edit-rebar-numbering` and `place-rebar-couplers` proved and signed on the owner's *"you can sign"*.
+`place-column-rebar` is not: hooked ties are refused by Revit ([row 5b-1644](../fragment-issues/row-5b-1644.md)).
+`main` (#868) was merged into the branch; the balance-of-work file was regenerated to resolve it.

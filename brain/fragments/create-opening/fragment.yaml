@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -141,28 +141,34 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-18'
+  date: '2026-11-14'
   by: Ajmal PS
-  model: Project2 (3,035 elements), Revit 2020, session 13520
+  model: P1102 STR (9,179 elements), Revit 2020, session 17824
   positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase's own values - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned created 1 item(s)
-    [id 345729], findings 1 item(s) [Opening cut through Floors, vertical to the face. The
-    host i...], perpendicularFace false. inputs came host as given; boundary as given (4);
-    perpendicularFace as given. on Project2
-  negative_case: 'run with boundary=1000,3500,0; 2000,3500,0; 2000,4500,0; 1000,4500,0, categoryName=Text
-    Notes, host=selected, inViewOnly=FloorPlan: Level 1, perpendicularFace=False instead -
-    chosen because it should not contain what this fragment reports - the arrangement was
-    re-made first by running select-by-category-name, set-selection with this phase''s own
-    values - run inside a transaction, and Revit reported the transaction group ROLLED BACK
-    afterwards. returned created (null), findings 1 item(s) [Opening failed: The hostElement
-    is not a floor, ceiling or r...], perpendicularFace false. inputs came host as given;
-    boundary as given (4); perpendicularFace as given. on Project2'
+    filter-elements-by-id, set-selection with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned built An opening
+    through Structural Framing, vertical to the face., created 1 item(s) [id 272608], findings
+    1 item(s) [Opening cut through Structural Framing, vertical to the face...], openingId
+    41c16617-a24b-4ed3-b55b-58bf57411e75-000428e0, perpendicularFace false, refused (null),
+    shapeGiven false, shapeSaid none, wallGiven false, wallSaid none. inputs came host as
+    given; boundary as given (4); perpendicularFace as given; shape not given - "none", the
+    card's own default (optional); wallOpening not given - "none", the card's own default
+    (optional). on P1102 STR
+  negative_case: run with host=selected, boundary=-9302,26100,3800; -9102,26100,3800, perpendicularFace=false
+    arranged with elementIds=124559 instead - chosen because it should not contain what this
+    fragment reports - the arrangement was re-made first by running filter-elements-by-id,
+    set-selection with this phase's own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned built , created (null), findings
+    1 item(s) [An opening needs at least three boundary points and 2 were g...], openingId
+    , perpendicularFace false, refused An opening needs at least three boundary points and
+    2 were given, shapeGiven false, shapeSaid none, wallGiven false, wallSaid none. inputs
+    came host as given; boundary as given (2); perpendicularFace as given; shape not given
+    - "none", the card's own default (optional); wallOpening not given - "none", the card's
+    own default (optional). on P1102 STR
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 17b632e5c2aacd76
-
+  fingerprint: 569a860d57eedde3
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
