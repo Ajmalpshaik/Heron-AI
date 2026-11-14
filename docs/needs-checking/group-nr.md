@@ -180,3 +180,15 @@ zones and tags are left in *NR Spaces Host* for NR10.
 | (a) | **PASS** | Vest. 101 and Lobby 102 (both in *NR Zone L1*) from `FILTER_ELEMENTS_BY_ID`, then `CREATE_HVAC_ZONE zoneName=NR10 Moved`, kept: `added 2`, `movedFromAnotherZone` *"Vest. 101 (id 918729) LEFT zone 'NR Zone L1'"* and the same for Lobby 102; Revit's before and after: *"Zone \"NR Zone L1\" -> \"NR10 Moved\""* for each - the first zone lost them. Read through Heron, not the System Browser |
 | (b) | **FAIL as written** | Stair 201, then `CREATE_HVAC_ZONE zoneName=NR Zone L2` (taken), kept: `added 1`, *"Stair 201 ... LEFT zone 'NR Zone L2'"* - nothing added to the zone that had the name - but **the new zone carries the same name**: the zones read *Default, NR Zone L1, NR Zone L2, NR Zone L3, NR10 Moved, NR Zone L2*, and `refused` has no line about it - only *"Elements have duplicate \"Name\" values"*, a warning Heron dismissed ([row 5b-1654](../fragment-issues/row-5b-1654.md)) |
 | Undo | done | the owner's two Ctrl+Z; the zones read the four of NR7 again |
+
+**NR8, the same sitting.** (a) to (c) on *NR Spaces Host* (NR7's host, its spaces in place - each of the three is
+refused before anything is made, so the spaces do not change what it tests); (d) on a second fresh host, **NR Spaces
+Host 2**, made the same way as the first (`CREATE_FAMILY_DOCUMENT`, saved to `%TEMP%\heron-work\prove-1102`, ARCH
+linked origin to origin, levels at 3800, 7600 and 11400) - the owner's standing word for testing on these hosts.
+
+| Part | Result | What was seen |
+|---|---|---|
+| (a) | **PASS** | `linkName=No Such Link`: *"No loaded link is named \"No Such Link\", so NOTHING WAS MADE. Loaded: P1102 ARCH.rvt : 1 : location <Not Shared>."* - no box. Its `outcome:` line reads KEPT for a refusal, as row 5b-1635 records |
+| (b) | **PASS** | `P1102 STR.rvt` linked as a second Revit link (kept), `linkName` empty: *"2 linked models are loaded - P1102 ARCH.rvt : 1 : location <Not Shared>, P1102 STR.rvt : 2 : location <Not Shared> - and nothing says which holds the rooms, so NOTHING WAS MADE. Name the link."* |
+| (c) | **PASS** | the ARCH link copied 100 m east (`COPY_ELEMENTS` on the link instance from `FILTER_ELEMENTS_BY_ID`, kept), `linkName=P1102 ARCH.rvt`: *"2 loaded links answer to \"P1102 ARCH.rvt\" - P1102 ARCH.rvt : 1 : location <Not Shared>, P1102 ARCH.rvt : 3 : location <Not Shared> - so NOTHING WAS MADE. Give the whole name."*; sent again with `"P1102 ARCH.rvt : 1 : location <Not Shared>"` it ran: *"0 space(s) made, 0 renamed, 91 already matching"* |
+| (d) | **PASS** | Host 2, the link's Room Bounding read OFF (`SET_LINK_ROOM_BOUNDING roomBounding=off`: *"1 already were"*, no box), then the sync with the name given, kept: `created 91` and a line for each - *"space 918709 reads back with NO AREA - placed where nothing bounds it. Its link may not be Room Bounding in this model"* - 91 of them; Revit's 91 *"Space is not in a properly enclosed region"* warnings dismissed and said. The owner's Ctrl+Z took it back; `revit_rooms` then read no spaces |
