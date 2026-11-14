@@ -89,3 +89,5 @@ these names is `tools/jobs/electrical-mi-revit2024-2026-11-14.yaml` - `2 job(s):
 
 NX4's Revit 2024 half ran on this model too - see [Group NX](group-nx.md). *electrical-mi* holds, kept: the
 five walls and two spaces; nothing else.
+
+**Signed 2026-11-15, as Ajmal PS, on the owner's word** (*"Yes, sign all ten"*), commit 6c3c49d3 - `add-electrical-analytical-node` PROVEN (MI4).

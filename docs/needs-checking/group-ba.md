@@ -228,3 +228,5 @@ does not name it (the template's *Numeric* is used by no revision here, so it co
 
 **PASS** - draft written, gap *no second route*; not signed. No Delete box: the run was rolled back, and the add-in
 asks before a delete only when it is kept. *Heron JX Ducts* holds, kept: *Heron Custom*.
+
+**Signed 2026-11-15, as Ajmal PS, on the owner's word** (*"Yes, sign all ten"*), commit 6c3c49d3 - `delete-revision-numbering-sequence` PROVEN.

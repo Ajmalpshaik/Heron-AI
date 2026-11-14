@@ -92,3 +92,5 @@ Level 1 at 2700 mm, 4000 mm each, drawn and kept with `CREATE_MEP_RUNS` (`runsDr
 
 Draft written (`remove-mep-insulation`, gap *no second route*); not signed. No Delete box: the add-in asks before a
 delete only when the change is kept (`DeleteGate`, `apply \|\| asking`), and this run was rolled back.
+
+**Signed 2026-11-15, as Ajmal PS, on the owner's word** (*"Yes, sign all ten"*), commit 6c3c49d3 - `remove-mep-insulation` PROVEN (JX2, JX3).

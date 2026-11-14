@@ -91,3 +91,5 @@ opened by Heron (`ACTIVATE_DOCUMENT`). The batch `tools/jobs/defect-repairs-nx-r
 Drafts waiting for the owner's "sign": `report-family-parameters`, `compare-elements`, `set-railing-type`,
 `reset-graphic-overrides` (each gap *no second route*), and `read-space-loads@2024` (`accept --release 2024`).
 *Heron Reads Test* now holds, unsaved: the four new overrides in `Level 1`; *Heron Flag Test*: Count 0.
+
+**Signed 2026-11-15, as Ajmal PS, on the owner's word** (*"Yes, sign all ten"*), commit 6c3c49d3 - `report-family-parameters`, `compare-elements`, `set-railing-type` and `reset-graphic-overrides` PROVEN; `read-space-loads` accepted for Revit 2024 (`accept --release 2024`).

@@ -202,3 +202,5 @@ Revit opened with). Closed and saved: *electrical-mi*, *Heron MG Analytical*, *S
 | M7 | MI5, MG4's link, MG5, LI3 - each needs a DRAFT card's change KEPT, which is his `try-once` Keep |
 | M8 | NI5 on a Revit with only *Snowdon HVAC - schematic proof* open; then Revit 2020's C1-C3 |
 | M9 | Decisions: whether an un-witnessed empty keep should read as nothing changed (5b-1657, D-160) |
+
+**M1 done 2026-11-15:** all ten signed on his "Yes, sign all ten" (commit 6c3c49d3) - nine cards PROVEN, `read-space-loads` accepted on 2024.

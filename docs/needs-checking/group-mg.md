@@ -85,3 +85,5 @@ until they are made and tied (MG4, MG5). The job file for this model is
 | MG4 (link), MG5, MG6 | **NEEDS THE OWNER** | Each needs analytical members or nodes KEPT first - the owner's Keep on `try-once` - or Revit 2022/2023/2027 |
 
 *Heron MG Analytical* holds, kept: C1, C2, B1, S1 and the two walls; no analytical element.
+
+**Signed 2026-11-15, as Ajmal PS, on the owner's word** (*"Yes, sign all ten"*), commit 6c3c49d3 - `create-analytical-elements` PROVEN (MG2).
