@@ -94,3 +94,63 @@ NR2, NR3, NR5, NR6, NR8, NR9 and NR10 are calls the session makes on the same pl
 for NR1-NR5 and NR7-NR12; then Revit 2024 - steps 1 to 6; then **NR6 last**, back on Revit 2020, once step 2 has
 signed `reset-graphic-overrides`. Before step 7 the owner closes his own Revit 2020 work, so the 2020 add-in can
 be deployed; the session links `P1102 ARCH.rvt` into `P1102 MEP NR.rvt` (`LINK_FILES`, now PROVEN) before NR7.
+
+## Update - 2026-11-14 night: the run book for everything left, so the session can run it alone
+
+**Done on Revit 2020 since the evening update** (each in its group's run record): Group NR's NR1 to NR5 and NR7 to
+NR12 - NR7 to NR11 on two scratch hosts the session made, *NR Spaces Host* and *NR Spaces Host 2*, and NR11 on a copy
+of the architect's file, `P1102 ARCH NR11.rvt`; rows 5b-1651 to 5b-1655. **Left on Revit 2020:** NR6 (after NX8 signs
+`reset-graphic-overrides` on 2024), NR2 (c) (a project with flex ducts and no flex duct tag), NM3 (two Revit 2020s
+at once - NOT RUN on 16 GB unless the owner allows it).
+
+**The owner's word, 2026-11-14:** prepare everything left so that, when he says go, the session runs it on its own.
+Every model below is a SAVED SCRATCH COPY under `%TEMP%\heron-work`; each is closed WITHOUT saving at the end, so a
+change kept during a run needs no undo. The rules that stand: no `revit_undo_last`, no dry run, no Groups NS-NV until
+the owner says #867 is merged; a delete only in Revit's own Delete box; nothing saved, synced or exported unasked
+beyond the scratch files named here; signatures only on his "sign".
+
+### The owner's hands - once at the start of Revit 2024 (about 3 minutes)
+
+| # | Step |
+|---|---|
+| H1 | Close Revit 2020 - **No** to saving *NR Spaces Host 2* |
+| H2 | Start Revit 2024; *Security - Unsigned Add-In*: **Always Load** (the add-in from this branch is deployed) |
+| H3 | Open `%TEMP%\heron-work\nk\Heron Reads Test.rvt` (Heron opens the rest itself with `ACTIVATE_DOCUMENT`) |
+| H4 | Heron > Settings: **Ask to Keep OFF** for the alone part (A1-A8); press Heron > AI Bridge > Heron, or say "you press it" |
+| H5 | One answer: may the session press Revit's Keep / Discard boxes and click in Revit itself (the computer-use tool, one approval for Revit)? **Yes** moves the B rows into the alone part; **no** keeps them for the hands block |
+
+### A - the session alone, Revit 2024, Ask to Keep off (no box opens; nothing needs undoing)
+
+| # | Rows | How |
+|---|---|---|
+| A1 | open *Heron Flag Test.rfa* and `nk\Snowdon Towers Sample Architectural.rvt` | `ACTIVATE_DOCUMENT`, then back to *Heron Reads Test* |
+| A2 | [NX6, NX7 first half, NX9, NX10](../../needs-checking/group-nx.md) | `python tools/batch-prove.py tools/jobs/defect-repairs-nx-revit2024-2026-11-14.yaml --session <pid>` - every run rolled back |
+| A3 | NX4 on 2024 | `fragment report-electrical-settings --in "Heron Reads Test"`, read only |
+| A4 | NX7 second half | `SET_FAMILY_TYPE_VALUES` Count = 0 in *Heron Flag Test* (kept - scratch), then `report-family-parameters` again |
+| A5 | NX8 | four walls given ONE override each with `OVERRIDE_GRAPHICS_IN_VIEW` (kept), `READ_GRAPHIC_OVERRIDES`, `reset-graphic-overrides` on each through `validate` (rolled back) - its D-30 pair - and the negative wall |
+| A6 | [NI5, NI6](../../needs-checking/group-ni.md) | open `draw-mep-schematic\Snowdon HVAC - schematic proof.rvt`; the two CLI commands as the rows give them - rolled back, no box |
+| A7 | [NW1-NW3, NW7-NW9](../../needs-checking/group-nw.md) | the empty rename and the two-view rename asked as a chat would (`revit_change`), the add-in log read; `Get-Acl` on the pipe and the bridge's `.json`. NW10 NOT RUN - no second PC |
+| A8 | NW4-NW6 | only if `revit.operationTimeoutSeconds` is read per call (the add-in log says); otherwise moved to the hands block - the setting is put back to 60 afterwards |
+| A9 | sign? | the drafts A2-A6 leave are listed for the owner's "sign" - nothing is signed without it |
+
+### B - Keep, Discard, Delete or a click in Revit: the computer-use tool on his H5 yes, else his hands
+
+| # | Rows | What the box or click is |
+|---|---|---|
+| B1 | [NJ1-NJ12](../../needs-checking/group-nj.md) on `nk\Snowdon Towers Sample Architectural.rvt` | Ask to Keep ON; Discard at each box unless the row keeps; NJ7 opens the CSV in Notepad; NJ12 with Ask to Keep off. NJ9 NOT RUN (no workshared central, no second user) |
+| B2 | [NW11-NW16](../../needs-checking/group-nw.md) | the Activity pane's Select, Zoom and Undo buttons |
+| B3 | [DQ3d](../../needs-checking/group-dq.md) | one Keep on `dqdr\Heron Repairs Test.rvt`, Parts shown |
+| B4 | [NH0-NH11](../../needs-checking/group-nh.md) | a new *Heron Pick Test* (Heron makes it with `CREATE_FAMILY_DOCUMENT` from the 2024 metric architectural template and draws the 5000 mm model line) - then a click in the view for every row, Esc for NH2, the slow clicks of NH8 and NH9 |
+| B5 | [NK8 (a)](../../needs-checking/group-nk.md) | the doubled *Keywords* parameter deleted - **Revit's Delete box is his alone** unless he says the session may press it, for that one delete |
+| B6 | NK9 | **his eye**: the seven second routes the row lists |
+
+### Revit 2020 at the end (Revit 2024 closed first; the 2020 add-in is deployed)
+
+| # | Rows | How |
+|---|---|---|
+| C1 | NR6 | after A5 has signed `reset-graphic-overrides`: `cp "P1102 MEP.rvt" "P1102 MEP NR6.rvt"` under `prove-1102`, opened by Heron; a plan showing insulated ducts; ONE duct overridden first (`OVERRIDE_GRAPHICS_IN_VIEW`, a card for the row's "by hand" - said in the record); `COLOR_BY_PARAMETER`, then the two resets, each as the row gives it |
+| C2 | NR2 (c) | a new project from `US Metric\DefaultMetric.rte` (Heron makes and saves it, `prove-1102\NR2c Host.rvt`); flex ducts copied in from *P1102 MEP NR6* (`COPY_ELEMENTS_BETWEEN_DOCUMENTS`); the filter, then `TAG_ELEMENTS_IN_VIEW` - `notTagged` and `notTaggedWhy` if no flex duct tag is loaded; if the template has one, NOT RUN again and why |
+| C3 | close | every scratch project closed without saving - his clicks (Heron cannot close without saving) |
+
+**After the runs:** the signatures, on his "sign"; D-153 and D-154 read to him one at a time; his word on rows 5b-1635
+and 5b-1641; PR #869 merged on his word. This update is retired when A to C are recorded.
