@@ -67,3 +67,5 @@ NX6's 2024 half and NX7 to NX10 wait for Revit 2024. Drafts written for all six 
 `report-structural-loads`, `create-load-case`, `report-electrical-settings`, `add-electrical-distribution` and
 `read-space-loads` - `accept` on each NX draft above, the status flipped to PROVEN. `read-space-loads`'s proof is
 the Revit 2020 run; NX6's 2024 half is still owed, as are NX7 to NX10 and NX4's dialog figure.
+
+**NX4's dialog, read 2026-11-14 by the owner on P1102 MEP:** Manage > MEP Settings > Demand Factors > Receptacles, *By load, Incrementally for each range*: *Greater Than 0 VA, Less Than or Equal To 10000 VA - 100.00%; 10000 VA - unlimited - 50.00%*. **The first reading, "10 kVA if internal units", is the dialog's** - a demand factor's load figures come through the API in Revit's internal units, unlike `VoltageType.ActualValue` (volts, NX4/NX5). That settles the unit for `report-electrical-settings`' demand line and for `add-load-classification`.

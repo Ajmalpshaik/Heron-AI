@@ -92,3 +92,15 @@ deployed `Heron.Revit.Addin.dll`: 2026-11-10 08:10 for the older, 2026-11-13 18:
 
 The newer add-in's first start stopped at Revit's *Security - Unsigned Add-In* box; the owner answered it.
 Revits 2024, 2026 and 2027 were built from the same commit and **not** deployed in this run.
+
+### Run record - 2026-11-14, NP1, NP2 and NP6, Revit 2020 on the laptop
+
+Revit 2020, session 26612, the add-in deployed on 2026-11-13 (built from 10334996). The owner turned the switch
+himself in *Heron > AI Bridge > Settings*, one step at a time; `revit_health` was read after each step. Nothing
+was restarted between the readings.
+
+| # | Result | What was seen |
+|---|---|---|
+| NP1 | **PASS** | Switch ON: one line under that Revit - *"Ask to Keep is ON in this Revit right now: a change made through revit_change is shown in Revit's Keep or Discard box and kept only on Keep. Different for: a job the modeller chose in that box to keep the rest of, and a change Revit counted nothing in (both kept unasked); a delete (asked in its own Delete box instead); an export, save or sync ...; a dry run ...; and revit_apply_move ..."* |
+| NP2 | **PASS** | Switch off, the owner answering *Stop asking* in the box *"Stop asking Keep or Discard? Changes from a chat are kept at once"*: *"Ask to Keep is off in this Revit right now: a change made through revit_change is kept at once, with no Keep or Discard box, as one entry in Revit's Undo list ..."*. Turned ON again: the ON line again. No restart of Revit or the chat |
+| NP6 | **PASS** | The line said **ON**, as Revit's own Settings showed. The Claude app's private copy, `%LOCALAPPDATA%\Packages\AnthropicPBC.Claude_fnn82j28hfe8t\LocalCache\Roaming\Heron\config\heron.config`, holds `write.askBeforeKeeping = false`, dated 2026-10-23 - and from this chat's shell `%APPDATA%\Heron\config\heron.config` reads that same copy, so the shell cannot see the file Revit wrote. Both values recorded; Q-70 not settled by it |
