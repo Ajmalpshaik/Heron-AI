@@ -204,3 +204,5 @@ Revit opened with). Closed and saved: *electrical-mi*, *Heron MG Analytical*, *S
 | M9 | Decisions: whether an un-witnessed empty keep should read as nothing changed (5b-1657, D-160) |
 
 **M1 done 2026-11-15:** all ten signed on his "Yes, sign all ten" (commit 6c3c49d3) - nine cards PROVEN, `read-space-loads` accepted on 2024.
+
+**M9 and the questions after the runs, answered 2026-11-15** - each put to him alone, in plain words: [D-153](../../decisions/D-153.md) and [D-154](../../decisions/D-154.md) ACCEPTED (*"Yes, accept it"* each); [row 5b-1657](../../fragment-issues/row-5b-1657.md) - an empty keep reads as nothing changed; [row 5b-1635](../../fragment-issues/row-5b-1635.md) - a card's own refusal reads REFUSED; [row 5b-1641](../../fragment-issues/row-5b-1641.md) - wording B, *"revit_change with previewOnly=true"*. The three rows stay OPEN until their repairs are made. **His hold of 2026-11-12 is lifted** - *"Yes, lift the hold"*, told that #867 merged on 2026-11-12: `revit_undo_last`, `revit_change` with `dry_run`, and Groups NS, NT, NU and NV may be run again, on scratch models and under every other rule of the sitting.
