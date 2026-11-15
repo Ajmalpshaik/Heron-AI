@@ -20,8 +20,9 @@ WHAT IT PROVES
      chooses nothing and is refused.
 
   3. A NAME IS REFUSED, NEVER CLEANED UP - and the suite MEASURES what
-     cleaning up costs, by running heron_scope and watching three
-     project names arrive at one file. PROPOSALS F14.
+     cleaning up cost, by running heron_scope on three project names that
+     clean up alike: one file until 2026-11-15, three since heron_scope
+     added a code of the exact key. PROPOSALS F14.
 
   4. AN ANSWER IS CHECKED, NOT TRUSTED. The one question this tier may
      put is put only for an unknown kind, and its answer goes through
@@ -115,8 +116,11 @@ def main():
           "which the agent cites as the reason")
 
     print("\n3. A name is refused, never cleaned up - and here is the cost")
-    # MEASURED, not described. heron_scope reduces a project key to a safe
-    # filename, and three different projects arrive at one file.
+    # MEASURED, not described. heron_scope reduced a project key to a safe
+    # filename, and three different projects arrived at one file. Since
+    # 2026-11-15 it keeps the reduction for a person to read and adds a code
+    # of the exact key (PROPOSALS F14), so the three are three files - and
+    # this agent's own rule, below, stands on its own.
     was = os.environ.get("HERON_KNOWLEDGE")
     os.environ["HERON_KNOWLEDGE"] = os.path.join(ROOT, ".cache-test-placement")
     landed = set()
@@ -129,9 +133,10 @@ def main():
             os.environ.pop("HERON_KNOWLEDGE", None)
         else:
             os.environ["HERON_KNOWLEDGE"] = was
-    check(len(landed) == 1,
-          "heron_scope sends 'Tower B', 'Tower/B' and 'Tower-B' to ONE "
-          "file: %s" % os.path.basename(sorted(landed)[0]))
+    check(len(landed) == 3,
+          "heron_scope sends 'Tower B', 'Tower/B' and 'Tower-B' to THREE "
+          "files, not one: %s"
+          % ", ".join(sorted(os.path.basename(p) for p in landed)))
     check("one client" in io.open(os.path.join(ROOT, "brain",
                                                "heron_scope.py"),
                                   encoding="utf-8").read(),

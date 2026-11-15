@@ -63,7 +63,10 @@ hyphens and never collides - but nothing enforces that, and
 `heron_conflict.py`'s own usage line reads `--project "Tower B"`.
 Recorded as PROPOSALS F14 and not fixed here: changing the rule moves
 where existing knowledge lives, which is a migration and the owner's
-call.
+call. It was made on 2026-11-15: heron_scope keeps the reduction for a
+person to read and adds a code of the exact key, so those three are
+three files now, and a store named the old way is reported and moved
+only by a command a person runs. The measurement above is how it was.
 
 What this agent takes from it: **a name that would have to be rewritten
 to be usable is refused.** Silently rewriting a name is how two things
@@ -179,8 +182,9 @@ def place(artefact, project=None, asked=None):
             return {"placed": False, "refused": "NAME_IS_NOT_A_PLACE",
                     "why": "the project %r carries %s. This is the one "
                            "PROPOSALS F14 measured: 'Tower B', 'Tower/B' "
-                           "and 'Tower-B' all reach ONE file today, which "
-                           "is one client's work in another's store."
+                           "and 'Tower-B' all reached ONE file until "
+                           "2026-11-15, which is one client's work in "
+                           "another's store."
                            % (project, "nothing usable" if bad == "blank"
                               else "'%s'" % bad)}
         where = "%s/%s/%s" % (KINDS["project"], named, folder)

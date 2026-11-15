@@ -32,6 +32,11 @@ WHAT IT PROVES
   8. Opening a store to read it writes nothing - not even the meta rows it
      re-wrote on every open until 2026-10-17, which moved the file's md5 on
      every lookup with no row changed (FRAGMENT-ISSUES row 116).
+  9. One project key, one store (PROPOSALS F14, 2026-11-15): 'Tower B',
+     'Tower/B' and 'Tower-B' are three files, the same key is the same
+     file, the other scopes keep their names, a store named the old way is
+     reported and left byte for byte, and only --move-project-store moves
+     it - a backup first.
 
 WHAT IT DOES NOT PROVE. That any of this is wired to a real Revit document. The
 resolver is handed the same facts the bridge would report; nothing here has
@@ -1081,6 +1086,195 @@ def drifting(S, F):
         shutil.rmtree(work, ignore_errors=True)
 
 
+def _bytes(path):
+    with open(path, "rb") as handle:
+        return handle.read()
+
+
+def one_key_one_store(S, home):
+    """Section 9 - PROPOSALS F14, decided 2026-11-15.
+
+    Every check here ASKS for the names the change adds rather than calling
+    them, so against the code before it each one FAILS rather than raising
+    (.claude/skills/heron-ship/SKILL.md section 2a).
+    """
+    import glob
+    import hashlib
+
+    print()
+    print("9. One project key, one store - and a store named the old way is "
+          "reported, never taken (PROPOSALS F14)")
+
+    name_of = getattr(S, "store_name", None)
+    check(name_of is not None, "heron_scope has a word for a project "
+          "store's name: store_name()")
+
+    def stem(key):
+        return os.path.basename(S.scope_path(S.PROJECT, key))[:-3]
+
+    keys = ("Tower B", "Tower/B", "Tower-B")
+    paths = set(S.scope_path(S.PROJECT, k) for k in keys)
+    check(len(paths) == 3,
+          "'Tower B', 'Tower/B' and 'Tower-B' are three stores, not one: %s"
+          % ", ".join(sorted(os.path.basename(p) for p in paths)))
+    check(S.scope_path(S.PROJECT, "Tower B") ==
+          S.scope_path(S.PROJECT, "Tower B"),
+          "and the same key asked twice is the same store")
+    # THE RULE, WRITTEN OUT ONCE MORE HERE AND COMPARED - so a change to how
+    # the name is made, which would strand every store on every PC, cannot
+    # pass as a refactor. SHA-256 of the exact key's UTF-8 is the same in
+    # every process, on every OS and every Python.
+    for key in keys + ("tower b", "3f2504e0-4f89-11d3-9a0c-0305e82c3301"):
+        code = hashlib.sha256(key.encode("utf-8")).hexdigest()[:12]
+        slug = "".join(c if (c.isascii() and (c.isalnum() or c in "._-"))
+                       else "-" for c in key)[:64]
+        check(stem(key) == "%s~%s" % (slug, code),
+              "%r is named by a readable slug and a code of the exact key: %s"
+              % (key, stem(key)))
+    check(stem("Tower B").lower() != stem("tower b").lower(),
+          "two keys that differ only in case differ by more than case, so a "
+          "Windows or macOS folder cannot fold them into one file")
+    check(all(stem(k).isascii() for k in keys + ("Turm ü",)),
+          "and the name is ASCII, which no file system spells differently")
+    for scope in S.SCOPES:
+        if scope == S.PROJECT:
+            continue
+        check(S.scope_path(scope) == os.path.join(home, "%s.db" % scope),
+              "the %s store's name is unchanged: %s.db" % (scope, scope))
+
+    print()
+    print("  ..a store named the old way is reported and left exactly as it is")
+    projects = os.path.join(home, "projects")
+    if not os.path.isdir(projects):
+        os.makedirs(projects)
+    old = os.path.join(projects, "Tower-B.db")
+    raw = sqlite3.connect(old)
+    raw.execute("CREATE TABLE documents (id TEXT)")
+    raw.execute("INSERT INTO documents VALUES ('a clause somebody ingested')")
+    raw.commit()
+    raw.close()
+    with open(old, "rb") as handle:
+        before = handle.read()
+    mark = os.stat(old).st_mtime_ns
+
+    said = io.StringIO()
+    was_err, sys.stderr = sys.stderr, said
+    try:
+        store = S.open_scope(S.PROJECT, "Tower B")
+        try:
+            left = getattr(store, "left_behind", None)
+            opened = store.path
+        finally:
+            store.close()
+        again = S.open_scope(S.PROJECT, "Tower/B")
+        try:
+            also = getattr(again, "left_behind", None)
+        finally:
+            again.close()
+    finally:
+        sys.stderr = was_err
+    told = said.getvalue()
+    with open(old, "rb") as handle:
+        after = handle.read()
+    check(opened != old, "'Tower B' opens a store of its own, not Tower-B.db")
+    check(after == before and os.stat(old).st_mtime_ns == mark,
+          "and Tower-B.db is left byte for byte as it was - not opened, "
+          "moved or written")
+    check(left == old, "the store says which old file it left: %s" % left)
+    check(also == old,
+          "and 'Tower/B' is told about the same file - the old naming sent "
+          "both there, so neither is handed it")
+    check(old in told and "another project" in told,
+          "the report names the file and that it may hold another "
+          "project's knowledge")
+    check("--move-project-store" in told and "--to-key" in told,
+          "and how to move it")
+
+    print()
+    print("  ..only the command moves it, a backup first")
+    move = getattr(S, "move_project_store", None)
+    check(move is not None, "heron_scope has a command for the move: "
+          "move_project_store()")
+    if move is not None:
+        for slug, key, why in (
+                ("Tower-B", "Tower A", "a key the old naming never sent there"),
+                ("Tower-B", "", "no key at all"),
+                ("Tower-A", "Tower A", "a file that is not there"),
+                ("../Tower-B", "Tower B", "a path, not a name"),
+                (stem("Tower B"), "Tower B", "a name of the new kind")):
+            try:
+                move(slug, key)
+                refused = None
+            except ValueError as exc:
+                refused = str(exc)
+            check(refused is not None, "refused: %s (%s)" % (why, slug))
+        check(_bytes(old) == before and not glob.glob(old + ".*"),
+              "and no refusal touched the file or took a backup")
+
+        # A store under the new name that already lists a document is
+        # never set aside under the old one's.
+        held = S.scope_path(S.PROJECT, "Tower B")
+        raw = sqlite3.connect(held)
+        raw.execute("CREATE TABLE IF NOT EXISTS documents (id TEXT)")
+        raw.execute("INSERT INTO documents VALUES ('ingested since')")
+        raw.commit()
+        raw.close()
+        try:
+            move("Tower-B", "Tower B")
+            refused = None
+        except ValueError as exc:
+            refused = str(exc)
+        check(refused is not None and "document" in (refused or ""),
+              "refused while the new name's store already lists a document")
+        raw = sqlite3.connect(held)
+        raw.execute("DELETE FROM documents")
+        raw.commit()
+        raw.close()
+
+    out = io.StringIO()
+    was_out, sys.stdout = sys.stdout, out
+    try:
+        code = S.main(["--move-project-store", "Tower-B",
+                       "--to-key", "Tower B"])
+    finally:
+        sys.stdout = was_out
+    new = S.scope_path(S.PROJECT, "Tower B")
+    backups = sorted(glob.glob(old + ".*.backup"))
+    aside = sorted(glob.glob(new + ".*.backup"))
+    check(code == 0, "the command ran: exit %s" % code)
+    check(len(backups) == 1 and _bytes(backups[0]) == before,
+          "a timestamped copy of the old file was taken first: %s"
+          % (os.path.basename(backups[0]) if backups else "none"))
+    check(not os.path.exists(old) and os.path.isfile(new)
+          and _bytes(new) == before,
+          "and then the old file was moved to the key's own name")
+    check(len(aside) == 1,
+          "the empty store the open above made there was set aside, not "
+          "deleted")
+    said = io.StringIO()
+    was_err, sys.stderr = sys.stderr, said
+    try:
+        store = S.open_scope(S.PROJECT, "Tower B")
+        try:
+            left = getattr(store, "left_behind", "unasked")
+            rows = store.execute("SELECT COUNT(*) AS n FROM documents"
+                                 ).fetchone()["n"]
+        finally:
+            store.close()
+    finally:
+        sys.stderr = was_err
+    check(left is None and rows == 1 and not said.getvalue(),
+          "'Tower B' now opens what was moved, and nothing is reported")
+    out = io.StringIO()
+    was_out, sys.stdout = sys.stdout, out
+    try:
+        code = S.main(["--move-project-store", "Tower-B"])
+    finally:
+        sys.stdout = was_out
+    check(code == 2 and "--to-key" in out.getvalue(),
+          "and the command without --to-key is a usage error, exit 2")
+
+
 def main():
     home = tempfile.mkdtemp(prefix="heron-kn-")
     os.environ["HERON_KNOWLEDGE"] = home
@@ -1169,7 +1363,10 @@ def main():
             wanted=S.PROJECT)
         check((scope, key) == (S.PROJECT, "abcd-1234"),
               "given a key, it resolves to that project")
-        check(S.read_labels().get("abcd-1234") == "Tower A",
+        # Under the store's own name, which is what existing() reads back
+        # (store_name() since PROPOSALS F14; the reduction alone before it).
+        named = getattr(S, "store_name", S._safe_key)("abcd-1234")
+        check(S.read_labels().get(named) == "Tower A",
               "the human label is remembered separately from the key")
 
         print()
@@ -1321,6 +1518,8 @@ def main():
         raw.close()
         check(healed == str(S.SCHEMA_VERSION),
               "and a meta value that DIFFERS is still written on open")
+
+        one_key_one_store(S, home)
 
     finally:
         shutil.rmtree(home, ignore_errors=True)

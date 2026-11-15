@@ -19,8 +19,10 @@ WHAT IT PROVES
      second copy that would drift.
 
   3. ONE STORE PER SCOPE, PHYSICALLY - two scopes that would share a file
-     are refused BEFORE anything reaches disk, including two project keys
-     that sanitise to the same name.
+     are refused BEFORE anything reaches disk. Two project keys that
+     sanitised to the same name did until 2026-11-15; since then
+     heron_scope gives them two files (PROPOSALS F14), so the refusal is
+     reached here through a path planted to collide.
 
   4. THE PROJECT SCOPE NEEDS A PROJECT AND NOTHING DEFAULTS IT, and a
      project key on a scope that has no projects is refused too.
@@ -130,10 +132,30 @@ def main():
 
     print()
     print("3. One store per scope, physically")
-    answer = ask([{"scope": "project", "project": "Tower B"},
-                  {"scope": "project", "project": "Tower-B"}])
+    alike = [{"scope": "project", "project": "Tower B"},
+             {"scope": "project", "project": "Tower-B"}]
+    answer = ask(alike)
+    check(answer.get("refused") is None
+          and len(set(e["path"] for e in answer.get("create") or [])) == 2,
+          "two project keys that sanitise to one name are two stores since "
+          "2026-11-15 - heron_scope adds a code of the exact key (PROPOSALS "
+          "F14)")
+    # THE GUARD IS STILL THE GUARD. heron_scope no longer hands two keys one
+    # file, so one is planted: the plan must refuse a collision whoever
+    # makes it, before anything reaches disk.
+    real = SCOPE.scope_path
+
+    def one_file(scope, project_key=None):
+        return real(scope, "one-file" if scope == SCOPE.PROJECT
+                    else project_key)
+
+    SCOPE.scope_path = one_file
+    try:
+        answer = ask(alike)
+    finally:
+        SCOPE.scope_path = real
     check(answer.get("refused") == "TWO_SCOPES_ONE_STORE",
-          "two project keys that sanitise to one filename are refused")
+          "two project keys that DO share a filename - planted - are refused")
     check(answer["path"].endswith(".db"), "naming the file they would share")
     check("Golden Rule 5" in answer["why"] and "D-23" in answer["why"],
           "citing the rule that makes separation physical")
