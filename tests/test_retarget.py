@@ -116,9 +116,13 @@ def main():
                       for one in found)
         for wanted in ("brain/heron_fragment.py.REVIT_VERSIONS",
                        "brain/heron_dotnet.py.RELEASES",
-                       "brain/heron_dotnet.py.NEEDS_WINDOWS_DESKTOP",
-                       "tools/check-api-surface.py.ALL_VERSIONS"):
+                       "brain/heron_dotnet.py.NEEDS_WINDOWS_DESKTOP"):
             check(wanted in symbols, "%s is found" % wanted)
+        # Until 2026-11-15 check-api-surface typed its own list and this
+        # wanted it found. PROPOSALS F2 bound it to heron_dotnet.RELEASES,
+        # so there is no copy left there to edit for a new release.
+        check("tools/check-api-surface.py.ALL_VERSIONS" not in symbols,
+              "and check-api-surface.py holds no copy of its own (F2)")
         check(len([one for one in found if one["isSource"]]) == 1,
               "exactly one source, and the rest mirror it")
 
