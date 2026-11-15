@@ -69,6 +69,55 @@ namespace Heron.Revit.Addin
         public const string TooLate = "late";
 
         /// <summary>
+        /// Nobody answered by the deadline, and the box closed by itself -
+        /// FRAGMENT-ISSUES 5b-1700. Until then the box stayed open after the
+        /// deadline, deciding nothing, and Revit refused every later request
+        /// as busy until a person came back and closed it.
+        /// </summary>
+        public const string TimedOut = "timed_out";
+
+        /// <summary>The window class every Windows task dialog has, the delete box's among them.</summary>
+        public const string DialogClass = "#32770";
+
+        /// <summary>
+        /// The name an element with no category is listed under: "(no
+        /// category)" followed by Revit's own name for its kind - a Sketch, a
+        /// SketchPlane - so the box says what sort of thing goes
+        /// (FRAGMENT-ISSUES 5b-1700). Seen 2026-11-11 on Revit 2024: a type
+        /// change listed 16 elements as "(no category)" and nothing else, and
+        /// the modeller could not judge the delete. A kind that cannot be read
+        /// is the old word alone.
+        /// </summary>
+        public static string WithoutCategory(string revitKind)
+        {
+            var kind = (revitKind ?? "").Trim();
+            return kind.Length == 0 ? NoCategory : NoCategory + " " + kind;
+        }
+
+        /// <summary>
+        /// Is this window the delete box asking about `total` elements? Its
+        /// class and its title, each exactly - the one test of which window the
+        /// box's own closer may close (5b-1700). A title that only contains the
+        /// words is not it.
+        /// </summary>
+        public static bool IsTheBox(string windowClass, string windowTitle, int total)
+        {
+            return string.Equals(windowClass, DialogClass, StringComparison.Ordinal)
+                && string.Equals(windowTitle, Title(total), StringComparison.Ordinal);
+        }
+
+        /// <summary>
+        /// How long the box stays up before it closes by itself: the time left
+        /// to answer. Null - it never closes by itself - when no deadline is
+        /// known, or none is left (then the box is not shown at all).
+        /// </summary>
+        public static TimeSpan? CloseAfter(TimeSpan? window)
+        {
+            if (!window.HasValue || window.Value <= TimeSpan.Zero) return null;
+            return window.Value;
+        }
+
+        /// <summary>
         /// One element that goes: its id as text, its category's name (null
         /// for none), and the category of the element it goes WITH, when
         /// Revit removes it only because that one goes - null when it is
@@ -212,7 +261,8 @@ namespace Heron.Revit.Addin
             if (!string.IsNullOrEmpty(answerBy))
             {
                 text += " Answer by " + answerBy + ": after that nothing is deleted, whatever "
-                      + "you press.";
+                      + "you press. At " + answerBy + " this box closes by itself, deleting "
+                      + "nothing, so Revit is free for the next request.";
             }
             return text;
         }
@@ -336,6 +386,9 @@ namespace Heron.Revit.Addin
             if (answer == TooLate)
                 return asked + "pressed Delete only after Heron had stopped waiting for the answer, "
                      + "which deletes nothing.";
+            if (answer == TimedOut)
+                return asked + "did not answer in time, so the box closed by itself, which deletes "
+                     + "nothing.";
             return asked + "closed the box, which deletes nothing.";
         }
 
