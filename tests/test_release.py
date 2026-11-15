@@ -123,8 +123,15 @@ def main():
           "cleaned version can reach an answer")
     register = io.open(os.path.join(ROOT, "docs", "28-agent-registry.md"),
                        encoding="utf-8").read()
-    check("Strips project identifiers" in register,
-          "while docs/28's row still says 'Strips project identifiers'")
+    # Until 2026-11-15 this checked the row STILL said it. PROPOSALS F20's
+    # sweep struck the words that day, so the check holds the fix.
+    check("~~Strips project identifiers,~~" in register
+          and "Strips nothing" in register,
+          "docs/28's row strikes 'Strips project identifiers' and says it "
+          "strips nothing (F20)")
+    check(not any("row for this agent says 'strips" in line
+                  for line in passed["unjudged"]),
+          "and no answer still says the row strips")
     check("F20" in whole, "the agent records that as PROPOSALS F20")
     check(any("D-26's RULE RATHER THAN AN OVERSIGHT" in line
               for line in passed["unjudged"]),
