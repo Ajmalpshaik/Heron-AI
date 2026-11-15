@@ -387,7 +387,7 @@ change to the rule the owner set, so it is not one an agent may assume.
 
 ### ✅ F13. A project folder and a workspace folder with the same name get different classes — DECIDED 2026-11-15 (owner's delegation)
 
-**Decided: Match class words at the top level of the workspace only - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** One folder gets one answer, whether a tool holds its name or its whole path. **Work:** owed: the matcher and the agents that use it.
+**Decided: Match class words at the top level of the workspace only - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** One folder gets one answer, whether a tool holds its name or its whole path. **Work:** done 2026-11-15 in `brain/heron_paths.py`'s `classify()`: a relative path is decided by its first folder, a full path by the folder after its last `Heron` or `.heron` folder, and a full path with neither keeps the old every-word reading, data first. **What it changes:** a data word deeper down no longer decides - `Cache/projects-thumbnails` is derived and `Core/memory.dll` product, where both read as data before. [`tests/test_paths.py`](../../tests/test_paths.py) section 4b holds seven shapes, and two FAILED on the old code; every suite that uses the classifier passes.
 
 **Found by:** the same build. **Status:** open, and narrower than F11.
 

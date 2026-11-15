@@ -154,6 +154,19 @@ def main():
           "'brainstorm' is not the Brain folder")
 
     print()
+    print("4b. Only the workspace's top level decides (PROPOSALS F13)")
+    for path, klass in (("Cache/projects-thumbnails", PATHS.DERIVED),
+                        ("Core/memory.dll", PATHS.PRODUCT),
+                        ("Projects/Tower A/Brain", PATHS.DATA),
+                        ("Projects/Tower A/Cache", PATHS.DATA),
+                        ("/srv/share/Heron/index/Heron-AI-ab12", PATHS.DERIVED),
+                        ("C:\\Users\\x\\AppData\\Roaming\\Heron\\Core\\a.dll", PATHS.PRODUCT),
+                        ("~/.heron/Brain/global.db", PATHS.DATA)):
+        got = PATHS.classify(path)["class"]
+        check(got == klass, "'%s' is %s, decided by its top-level folder (%s)"
+              % (path, klass, got))
+
+    print()
     print("5. Every operation's row is that agent's own rule")
     check(sorted(PATHS.OPERATIONS) == ["backup", "cleanup", "product-update",
                                        "repair", "uninstall"],
