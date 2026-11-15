@@ -829,7 +829,7 @@ checking against `DECISIONS.md`, because that phrase is exactly what stops a rea
 
 ### ✅ F22. One permission ladder, four copies in `brain/` alone — DECIDED 2026-11-15 (owner's delegation)
 
-**Decided: One brain module owns the permission ladder - heron_capability.py - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** The newest agent already reads that module's copy; the order of the levels is the security property. **Work:** owed: the other three copies made to import it.
+**Decided: One brain module owns the permission ladder - heron_capability.py - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** The newest agent already reads that module's copy; the order of the levels is the security property. **Work:** done 2026-11-15 - `heron_events.RISK_ORDER` and `heron_hr.RISK_LADDER` are `heron_capability.RISK_ORDER` by identity, and `heron_skill.validate()` reads it in place of its inline tuple; [`tests/test_composition.py`](../../tests/test_composition.py) section 1 holds all three and failed on the old files. `mcp/server/heron_tools.py`'s integer copy stays, as D-48 requires.
 
 **Found by:** building `HERON-SKL-CMP-005`, which needed the ladder and refused to add a fifth.
 **Status:** open. Measured, not read.

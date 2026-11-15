@@ -56,6 +56,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 
 import heron_fragment as FRAG                                 # noqa: E402
+import heron_capability as CAP                               # noqa: E402
 
 SKILLS_DIR = os.path.join(ROOT, "brain", "skills")
 
@@ -203,9 +204,8 @@ def validate(skill):
         problems.append("%s: heron-status %r is not a lifecycle state"
                         % (where, skill.status))
 
-    if skill.data.get("risk") and skill.data["risk"] not in (
-            "READ", "ANALYZE", "SUGGEST", "EXECUTE", "MODIFY", "PUBLISH",
-            "ADMIN"):
+    # heron_capability's ladder, not a typed copy (PROPOSALS F22).
+    if skill.data.get("risk") and skill.data["risk"] not in CAP.RISK_ORDER:
         problems.append("%s: risk %r is not a permission level"
                         % (where, skill.data["risk"]))
 

@@ -117,11 +117,14 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# docs/12's risk ladder, worst last. The boundary that matters sits between
-# EXECUTE and MODIFY. Declared here because a floor needs an order; which
-# tool sits where arrives with the table, from a caller that may read it.
-RISK_LADDER = ("READ", "ANALYZE", "SUGGEST", "EXECUTE", "MODIFY", "PUBLISH",
-               "ADMIN")
+# docs/12's risk ladder, worst last - heron_capability's, bound by identity
+# (PROPOSALS F22): this file typed its own copy until 2026-11-15. The
+# boundary that matters sits between EXECUTE and MODIFY. A floor needs an
+# order; which tool sits where arrives with the table, from a caller that
+# may read it.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import heron_capability as CAP                                 # noqa: E402
+RISK_LADDER = CAP.RISK_ORDER
 
 # What HR is not allowed to be told. The value is where it does live.
 NOT_HRS = {
