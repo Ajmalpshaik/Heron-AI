@@ -187,6 +187,32 @@ proof:
     whether one exists here has not been settled, and a declared absence is not the same as
     none
   fingerprint: f29a1cdad0341759
+  releases:
+  - release: '2024'
+    date: '2026-11-14'
+    by: Ajmal PS
+    model: Heron Reads Test (3,267 elements), Revit 2024, session 3592
+    positive_case: run as it would normally be run - the arrangement was re-made first by running
+      filter-elements-by-category, set-selection with this phase's own values. returned actualExhaustLs
+      2 entry(ies), actualReturnLs 2 entry(ies), actualSupplyLs 2 entry(ies), airflowLs 1 entry(ies),
+      calculatedSupplyLs 0 entry(ies), coolingW 1 entry(ies), figure Func`2, findings 2 item(s)
+      [1 Space 1  - heating 3000 W (entered), cooling 5000 W (enter..., 2 Space 2  - NO LOAD
+      READABLE. Revit refused the figures, wh...], flowOf Func`3, heatingW 1 entry(ies), litresPerCubicFoot
+      28.316846592, noDesignFigure 1 item(s) [352643], noLoad 1 item(s) [352643], notSpaces
+      0 item(s), revitsWattsPerInternalLoad 0.09290304, specifiedExhaustLs 2 entry(ies), specifiedReturnLs
+      2 entry(ies), specifiedSupplyLs 2 entry(ies), unplaced 0 item(s), wattsPerInternalLoad
+      0.09290304. inputs came elements from the selection (2). on Heron Reads Test
+    negative_case: 'run with category=Walls, inViewOnly=FloorPlan: Level 1 instead - chosen
+      because it should not contain what this fragment reports - the arrangement was re-made
+      first by running filter-elements-by-category, set-selection with this phase''s own values.
+      returned actualExhaustLs 0 entry(ies), actualReturnLs 0 entry(ies), actualSupplyLs 0 entry(ies),
+      airflowLs 0 entry(ies), calculatedSupplyLs 0 entry(ies), coolingW 0 entry(ies), figure
+      Func`2, findings 0 item(s), flowOf Func`3, heatingW 0 entry(ies), litresPerCubicFoot 28.316846592,
+      noDesignFigure 0 item(s), noLoad 0 item(s), notSpaces 5 item(s) [352517, 352545, 352555,
+      ...], revitsWattsPerInternalLoad 0.09290304, specifiedExhaustLs 0 entry(ies), specifiedReturnLs
+      0 entry(ies), specifiedSupplyLs 0 entry(ies), unplaced 0 item(s), wattsPerInternalLoad
+      0.09290304. inputs came elements from the selection (5). on Heron Reads Test'
+    fingerprint: f29a1cdad0341759
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

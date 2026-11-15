@@ -154,3 +154,53 @@ beyond the scratch files named here; signatures only on his "sign".
 
 **After the runs:** the signatures, on his "sign"; D-153 and D-154 read to him one at a time; his word on rows 5b-1635
 and 5b-1641; PR #869 merged on his word. This update is retired when A to C are recorded.
+
+## Update - 2026-11-14 night: what the session did alone on Revit 2024, and the morning list
+
+Revit 2024, session 3592, add-in 0.2.0.0 from `main` e6c7cb28, *Ask to Keep* off; the owner asleep from about 22:15.
+Branch `claude/pc-proofs-2024-2026-11-14`. Every result is in its group's run record and every defect in a file of
+its own; this section only points at them.
+
+**Done alone.** Part A of the run book: [NX](../../needs-checking/group-nx.md) NX4 (on a Heron-made electrical
+project), NX6's 2024 half, NX7, NX8, NX9, NX10 - all PASS; [NW](../../needs-checking/group-nw.md) NW2, NW7, NW8, NW9
+PASS, NW1 FAIL as written; [NI](../../needs-checking/group-ni.md) NI6 PASS. Then on fresh scratch projects Heron made
+itself (`CREATE_FAMILY_DOCUMENT` from the 2024 metric templates, under `%TEMP%\heron-work`):
+[MI](../../needs-checking/group-mi.md) MI4 PASS, [LI](../../needs-checking/group-li.md),
+[MG](../../needs-checking/group-mg.md) MG2 and MG4's panel PASS, [MF](../../needs-checking/group-mf.md) MF2 recorded,
+[MM](../../needs-checking/group-mm.md) MM4 PASS, [JX](../../needs-checking/group-jx.md) JX2 and JX3 PASS, and
+`delete-revision-numbering-sequence` in [BA](../../needs-checking/group-ba.md) PASS.
+
+**New defects, each its own file:** [5b-1656](../../fragment-issues/row-5b-1656.md) (batch-prove's hand-back locks
+its own next job out - export `HERON_CLIENT_ID=heron-batch-prove` until it is repaired),
+[5b-1657](../../fragment-issues/row-5b-1657.md) (an empty keep reads KEPT), [5b-1658](../../fragment-issues/row-5b-1658.md)
+(columns and floors routed away on the re-ranker), [5b-1659](../../fragment-issues/row-5b-1659.md) (load areas need
+Area Based Load Boundary lines), [5b-1660](../../fragment-issues/row-5b-1660.md) (the naming card's *circuit
+number*), [5b-1661](../../fragment-issues/row-5b-1661.md) (`join-geometry` joins what does not touch),
+[5b-1662](../../fragment-issues/row-5b-1662.md) (a refused call still takes the lease).
+
+**Why the night stopped early.** Revit's private memory grew from 6.3 GB to 14.1 GB - every new card compiled stays
+loaded until Revit restarts - with under 500 MB of the PC's memory free; Revit 2020 put up its *Virtual Memory -
+High Usage* box near 16 GB, and the owner's word was not to close Revit. Once, Revit's own *Project Not Saved
+Recently* box blocked every call for about ten minutes; it was answered without saving (the file's time did not move),
+not by the session. A saved model is left in front to keep it away.
+
+**Open in Revit 2024 now** (none of it the owner's work): *Heron JX Ducts* (saved, in front), *Heron Reads Test*
+(unsaved: four overrides in Level 1, floor plans renamed *Floor 1* and *Floor 2* - **close without saving**, the job
+files name *Level 1*), *Heron Flag Test* (unsaved: Count 0 - close without saving), *Project1* (the blank project
+Revit opened with). Closed and saved: *electrical-mi*, *Heron MG Analytical*, *Snowdon Towers Sample Architectural*.
+
+### The morning list - the owner's hands, one at a time
+
+| # | Step |
+|---|---|
+| M1 | Read the drafts, then say "sign" or not: `report-family-parameters`, `compare-elements`, `set-railing-type`, `reset-graphic-overrides`, `read-space-loads@2024` (`accept --release 2024`), `add-electrical-analytical-node`, `create-analytical-elements`, `report-energy-settings`, `remove-mep-insulation`, `delete-revision-numbering-sequence` - each with one gap, *no second route* |
+| M2 | Two figures by eye: Analyze > Energy Settings in *Heron MG Analytical* - is Target Percentage Glazing 0 %? (MM4); Manage > Structural Settings there - cutbacks 2.5 / 2.5 / 1.5 mm? (MF2) |
+| M3 | Restart Revit 2024 when convenient (memory), with the security box his |
+| M4 | NW4-NW6: `revit.operationTimeoutSeconds` 10, restart Revit, then the rows; put it back to 60 |
+| M5 | MI3: in *electrical-mi*, Analyze > Area Based Load Boundary round each room; then MI3 again |
+| M6 | The B part of this run book (NJ, NW11-NW16, DQ3d, NH, NK8 (a), NK9) - Keep, Discard, clicks; the H5 question still unanswered |
+| M7 | MI5, MG4's link, MG5, LI3 - each needs a DRAFT card's change KEPT, which is his `try-once` Keep |
+| M8 | NI5 on a Revit with only *Snowdon HVAC - schematic proof* open; then Revit 2020's C1-C3 |
+| M9 | Decisions: whether an un-witnessed empty keep should read as nothing changed (5b-1657, D-160) |
+
+**M1 done 2026-11-15:** all ten signed on his "Yes, sign all ten" (commit 6c3c49d3) - nine cards PROVEN, `read-space-loads` accepted on 2024.

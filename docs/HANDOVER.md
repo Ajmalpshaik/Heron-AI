@@ -407,6 +407,7 @@ not here — [`tools/archive-handover.py`](../tools/archive-handover.py) moves a
 
 | Date | Sitting |
 |---|---|
+| 2026-11-14 | [A NIGHT ON REVIT 2024 ALONE: SCRATCH MODELS HERON MADE, TEN DRAFTS AND SEVEN DEFECTS](handover-archive/2026-11-14-a-night-on-revit-2024-alone-scratch-models-heron-made-and-seven-defects.md) |
 | 2026-11-13 | [THE OWNER'S PC PROVES WHAT #855 BUILT, AND THE PROVING FINDS NEW DEFECTS ON THE WAY](handover-archive/2026-11-13-the-owner-s-pc-proves-what-855-built-and-the-proving-finds-new.md) |
 | 2026-11-12 | [EVERY REPLY SAYS HOW IT ENDED IN ONE WORD, PROVEN TOOLS THAT ANSWERED WRONGLY ARE REPAIRED AND DRAFT AGAIN, AND A DEFECT ROW GETS A FILE OF ITS OWN](handover-archive/2026-11-12-every-reply-says-how-it-ended-in-one-word-proven-tools-that.md) |
 | 2026-11-11 | [A CLICK IN REVIT ANSWERS THE CHAT, FIVE EVERYDAY JOBS GET A METHOD, AND A CLOUD CHAT NOBODY SET UP GETS A LIBRARY](handover-archive/2026-11-11-a-click-in-revit-answers-the-chat-five-everyday-jobs-get-a.md) |
@@ -418,7 +419,6 @@ not here — [`tools/archive-handover.py`](../tools/archive-handover.py) moves a
 | 2026-10-05 | [THE FIRE WATER AND THE SPACING, ON THE SPRINKLER PANEL](handover-archive/2026-10-05-the-fire-water-and-the-spacing-on-the-sprinkler-panel.md) |
 | 2026-10-04 | [A SPRINKLER SYSTEM'S HYDRAULICS NOW COME FROM THE MODEL](handover-archive/2026-10-04-a-sprinkler-system-s-hydraulics-now-come-from-the-model.md) |
 | 2026-10-02 | [HERON'S FIRE ENGINE NOW READS EN 12845, FM GLOBAL AND BS 5839](handover-archive/2026-10-02-heron-s-fire-engine-now-reads-en-12845-fm-global-and-bs-5839.md) |
-| 2026-10-02 | [HERON CAN NOW WORK OUT A SPRINKLER SYSTEM, NOT ONLY PLACE ITS HEADS](handover-archive/2026-10-02-heron-can-now-work-out-a-sprinkler-system-not-only-place-its-heads.md) |
 
 ## The session archive — what happened before today
 

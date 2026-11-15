@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -106,6 +106,41 @@ contract:
       type: IList<string>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-14'
+  by: Ajmal PS
+  model: Heron MG Analytical (3,562 elements), Revit 2024, session 3592
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned at 2 item(s) [(0.000000000, 0.000000000,
+    9.842519685), (19.685039370, 0.000000000, 9.842519685)], created 1, createdIds 1 item(s)
+    [421980], describe Func`2, elements 0 item(s), findings 1 item(s) [Drew analytical member
+    421980 from (0, 0, 3000) mm to (6000,...], given 2 item(s) [(0.000000000, 0.000000000,
+    0.000000000), (19.685039370, 0.000000000, 0.000000000)], invariant CultureInfo, isLink
+    false, isMember true, isPanel false, k member, levelName Level 2, levels 2 item(s) [Level
+    1, Level 2], lift 9.84251968503937, made AnalyticalMember, mm Func`2, ok true, onLevel
+    Level, picked 0 item(s), pt Func`2, quoted Func`2, refused 0 item(s), report analytical
+    member 421980 from (0, 0, 3000) mm to (6000, 0, 3000) mm, 6000 mm long, heights measured
+    from "Level 2" at 3000 mm - read back from the model, typeName . inputs came elements
+    not given - none (optional); kind as given; points as given (2); level as given; type
+    not given - "none", the card's own default (optional). on Heron MG Analytical
+  negative_case: 'run with kind=member, level=Level 9, points=0,0,0; 6000,0,0 instead - chosen
+    because it should not contain what this fragment reports - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned at 2 item(s) [(0.000000000,
+    0.000000000, 0.000000000), (19.685039370, 0.000000000, 0.000000000)], created 0, createdIds
+    0 item(s), describe Func`2, elements 0 item(s), findings 1 item(s) [No analytical element
+    was drawn - the model is as it was.], given 2 item(s) [(0.000000000, 0.000000000, 0.000000000),
+    (19.685039370, 0.000000000, 0.000000000)], invariant CultureInfo, isLink false, isMember
+    true, isPanel false, k member, levelName Level 9, levels 2 item(s) [Level 1, Level 2],
+    lift 0, made (null), mm Func`2, ok false, onLevel (null), picked 0 item(s), pt Func`2,
+    quoted Func`2, refused 1 item(s) [There is no level called "Level 9". The levels are:
+    "Level 1...], report , typeName . inputs came elements not given - none (optional); kind
+    as given; points as given (2); level as given; type not given - "none", the card''s own
+    default (optional). on Heron MG Analytical'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 5712b3bd9af77b99
 
 revit: ["2023", "2024", "2025", "2026", "2027"]
 runtime: [net48, net8.0-windows, net10.0-windows]
