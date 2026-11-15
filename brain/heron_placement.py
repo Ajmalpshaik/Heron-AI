@@ -28,11 +28,15 @@ name is refused - never cleaned up and used anyway.
     kind        fragment   -> Fragments
     name        anything with / \\ or .. in it  -> NAME_IS_NOT_A_PLACE
 
-THE EIGHT KINDS ARE docs/06 s2's DATA ROW, AND NOTHING ELSE
+THE EIGHT KINDS ARE docs/06 s2's DATA ROW, LESS TWO, AND NOTHING ELSE
 -------------------------------------------------------------
 Brain, Skills, Fragments, Memory, Projects, Company, Logs, Backup. One
 kind each, read from HERON-WSP-PTH-007's own table so the two cannot
-drift apart. Two things follow from the list being exactly that row:
+drift apart. The row's other two, Configuration and Community (classed
+data on 2026-11-15, PROPOSALS F11), are never placed into: Configuration
+is written by HERON-INS-CFG-006 alone - it holds the security policy - and
+Community by the import a modeller chooses. Two things follow from the
+list being that row:
 
   nothing Heron makes is placed in PRODUCT. Core, Agents, Revit, MCP
   and Packages are what the installer shipped, and docs/07 s7 rule 6

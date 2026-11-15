@@ -83,9 +83,15 @@ def main():
                   PATHS.PRODUCT: product}[klass]
         target.update(words)
     placed = set(folder.lower() for folder in PLC.KINDS.values())
-    check(placed == data_row,
-          "the eight folders ARE the %d data words, read from the path "
-          "table" % len(data_row))
+    # Configuration and Community are data since PROPOSALS F11 (2026-11-15)
+    # and are never placed into: Configuration is HERON-INS-CFG-006's alone,
+    # Community the import's.
+    never = {"configuration", "community"}
+    check(placed == data_row - never and never <= data_row,
+          "the eight folders ARE the %d data words less Configuration and "
+          "Community, read from the path table" % len(data_row))
+    check("Configuration" in PLC.__doc__ and "never placed into" in PLC.__doc__,
+          "and the module says why those two are left out")
     check(not (placed & product),
           "none of them is product - an update replaces product wholesale "
           "and the artefact would be gone without a word")

@@ -28,10 +28,11 @@ covers fourteen of them.** Five appear in the tree and in no class:
 That is not cosmetic. The class is the only thing that decides whether a
 product update may replace a folder wholesale (docs/07 s7 rule 6),
 whether a cleanup may delete it outright, and whether a backup covers it.
-`Configuration` is the one to look at first: if it is product, an update
-replaces a practice's settings and their security policy with the
-shipped defaults, and nothing in the specification currently says it is
-not. Recorded as PROPOSALS F11.
+`Configuration` was the one to look at first: had it read as product, an
+update would replace a practice's settings and security policy with the
+shipped defaults. Recorded as PROPOSALS F11, and since 2026-11-15 all five
+have a class in docs/06 s2 - Configuration and Community data, RAG
+derived, Tests and Documentation product - so this list is empty.
 
 SO AN UNCLASSIFIED FOLDER IS CREATED, AND NEVER WRITTEN INTO
 --------------------------------------------------------------

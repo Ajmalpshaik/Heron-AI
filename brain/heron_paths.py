@@ -156,10 +156,18 @@ UNKNOWN = "unknown"
 # docs/06 s2's own three lists. DATA is tested first: see the docstring.
 FOLDERS = (
     (DATA, ("brain", "skills", "fragments", "memory", "projects", "company",
-            "logs", "backup")),
-    (DERIVED, ("cache", "index", "indexes", "vector")),
-    (PRODUCT, ("core", "agents", "revit", "mcp", "packages")),
+            "logs", "backup", "configuration", "community")),
+    (DERIVED, ("cache", "index", "indexes", "vector", "rag")),
+    (PRODUCT, ("core", "agents", "revit", "mcp", "packages", "tests",
+               "documentation")),
 )
+# THE FIVE docs/06 s2 DREW AND NEVER CLASSED, classed on 2026-11-15 (PROPOSALS
+# F11, decided on the owner's delegation): Configuration is DATA - it holds
+# the practice's security policy and company standards (docs/21 s9), so no
+# update replaces it and a backup covers it; Community is DATA - a modeller
+# installed it, nothing ships it; RAG is DERIVED - docs/07 s8's "the vector
+# index is the easy case - it is derived"; Tests and Documentation are
+# PRODUCT, replaced with Heron.
 
 # NAMED BY docs/06 s2 AND GIVEN NO CLASS BY IT. Not an oversight here: the
 # document's own table stops at fourteen of the nineteen it draws, and
@@ -167,7 +175,7 @@ FOLDERS = (
 # They are listed so the refusal can say WHICH kind of unknown it is -
 # "docs/06 does not name it" and "docs/06 names it and does not classify
 # it" send a reader to two different places.
-UNCLASSIFIED = ("community", "configuration", "documentation", "rag", "tests")
+UNCLASSIFIED = ()   # empty since PROPOSALS F11, 2026-11-15 - see FOLDERS
 
 MEANING = {
     PRODUCT: "replaced wholesale on update; the user never edits it. "
