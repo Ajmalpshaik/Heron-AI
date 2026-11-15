@@ -28,7 +28,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"$([ -f \"$CLAUDE_PROJECT_DIR/.claude/skills/heron-guard/bin/heron_guard.py\" ] && printf %s \"$CLAUDE_PROJECT_DIR\" || git rev-parse --show-toplevel)/.claude/skills/heron-guard/bin/heron_guard.py\"",
+            "command": "f=\"$([ -f \"$CLAUDE_PROJECT_DIR/.claude/skills/heron-guard/bin/heron_guard.py\" ] && printf %s \"$CLAUDE_PROJECT_DIR\" || git rev-parse --show-toplevel 2>/dev/null)/.claude/skills/heron-guard/bin/heron_guard.py\"; if [ -f \"$f\" ]; then python \"$f\"; else echo \"Heron's boundary guard refused this edit: its script, .claude/skills/heron-guard/bin/heron_guard.py, was not found here, and the guard fails closed. Open the session in the Heron folder.\" >&2; exit 2; fi",
             "timeout": 30,
             "statusMessage": "Checking the adapter boundary..."
           }

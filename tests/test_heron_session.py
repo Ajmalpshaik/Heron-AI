@@ -887,15 +887,20 @@ def run_all(home):
                   "outside any git repository, with no script to find, the "
                   "advice hook is silent and exits 0: %s"
                   % wired.rsplit("/", 1)[-1].rstrip('"'))
-        # The guard is deny-tier, and is left failing closed there on
-        # purpose: with no script to run, a refusal is the boundary holding.
-        # Whether that should change is the owner's call - OPEN-QUESTIONS
-        # Q-80. This pins today's answer, so a change to it is deliberate.
+        # The guard is deny-tier, and fails closed there on purpose: with no
+        # script to run, a refusal is the boundary holding. OPEN-QUESTIONS
+        # Q-80, decided 2026-11-15: keep refusing, and say why in plain words
+        # rather than python's "can't open file".
         got = run_wired(guard[0], forbidden, plain, **nowhere) if guard \
             else None
-        check(got is not None and got.returncode != 0,
-              "and the guard, in the same place, still does NOT exit 0 - it "
-              "fails closed until the owner decides Q-80")
+        check(got is not None and got.returncode == 2,
+              "and the guard, in the same place, still refuses - exit 2, "
+              "which blocks whatever the host makes of stdout")
+        check(got is not None and "was not found" in got.stderr
+              and "Open the session in the Heron folder" in got.stderr
+              and "can't open file" not in got.stderr,
+              "and says why in plain words (Q-80): %r"
+              % (got.stderr.strip()[:120] if got else None))
     else:
         print("  note  the commands were not run with another folder in "
               "$CLAUDE_PROJECT_DIR: no bash here, or Windows - a real session "
