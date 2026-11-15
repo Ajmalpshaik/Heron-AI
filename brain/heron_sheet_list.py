@@ -19,6 +19,11 @@ dependency and adding one needs a decision, so an .xlsx is read as what it
 is - a zip of XML parts (the workbook, its sheet list, the shared strings, the
 styles that say which numbers are dates, and the sheet itself).
 
+THE READING IS SHARED. read_grid() below is the one gate - which files are
+opened, and the grid they hold - and both read() here and
+brain/heron_sheet_compare.py (OPEN-QUESTIONS Q-87) stand on it, so a rule
+about what may be opened is written once.
+
 ONLY FOUR KINDS OF FILE ARE OPENED: .xlsx, .xlsm, .csv and .tsv, by their
 name. Anything else - an old .xls, an .xlsb, an .ods, a file with no
 extension at all (.env, id_rsa) - is refused in words before a byte of it is
@@ -276,7 +281,8 @@ def _part(book, name):
     except KeyError:
         return None
     if info.file_size > MOST_PART_BYTES:
-        raise _Refused("its part %s is %d MB unpacked - more than %d MB is not a sheet register"
+        raise _Refused("its part %s is %d MB unpacked - more than the %d MB Heron reads from one "
+                       "spreadsheet"
                        % (name, info.file_size // (1024 * 1024), MOST_PART_BYTES // (1024 * 1024)))
     return book.read(name)
 
@@ -359,9 +365,9 @@ def _styles(book, styles_path):
     return found
 
 
-def _sheet_rows(data, shared, styles, date1904, header_row):
+def _sheet_rows(data, shared, styles, date1904, header_row, most_rows=MOST_ROWS):
     """Each row of a worksheet part, parsed row by row and cleared once read.
-    Stops once MOST_ROWS + 1 rows with anything in them follow the header -
+    Stops once most_rows + 1 rows with anything in them follow the header -
     the caller refuses that many - so a long sheet costs no more than that."""
     rows = []
     after_header = 0
@@ -442,14 +448,14 @@ def _sheet_rows(data, shared, styles, date1904, header_row):
             row.clear()
             if number > header_row and any((t or "").strip() for t in cells.values()):
                 after_header += 1
-                if after_header > MOST_ROWS:
+                if after_header > most_rows:
                     break
     except ET.ParseError as why:
         raise _Refused("its sheet is not readable XML (%s)" % why)
     return rows
 
 
-def read_xlsx(path, sheet=None, header_row=1):
+def read_xlsx(path, sheet=None, header_row=1, most_rows=MOST_ROWS):
     """(sheet name, every sheet's name, [_Row], notes) - or raises _Refused."""
     try:
         book = zipfile.ZipFile(path)
@@ -518,7 +524,7 @@ def read_xlsx(path, sheet=None, header_row=1):
         if data is None:
             raise _Refused("its sheet \"%s\" is missing from the file" % chosen[0])
 
-    rows = _sheet_rows(data, shared, styles, date1904, header_row)
+    rows = _sheet_rows(data, shared, styles, date1904, header_row, most_rows)
     return chosen[0], names, rows, notes
 
 
@@ -526,13 +532,13 @@ def read_xlsx(path, sheet=None, header_row=1):
 # .csv
 # ---------------------------------------------------------------------------
 
-def read_csv(path, header_row=1, tab=False):
+def read_csv(path, header_row=1, tab=False, most_rows=MOST_ROWS):
     """([_Row], notes). The delimiter is the one that gives the HEADER ROW
     the most columns - not physical line 1, which may be a title."""
     with io.open(path, "rb") as handle:
         raw = handle.read(MOST_PART_BYTES + 1)
     if len(raw) > MOST_PART_BYTES:
-        raise _Refused("it is larger than %d MB - not a sheet register"
+        raise _Refused("it is larger than the %d MB Heron reads from one spreadsheet"
                        % (MOST_PART_BYTES // (1024 * 1024)))
     if raw.startswith(b"PK") or raw.startswith(b"\xd0\xcf\x11\xe0"):
         raise _Refused("it is a workbook, not text, whatever its name says. " + SAVE_AS)
@@ -578,7 +584,7 @@ def read_csv(path, header_row=1, tab=False):
             rows.append(_Row(number, fields))
             if number > header_row and any((f or "").strip() for f in fields):
                 after_header += 1
-                if after_header > MOST_ROWS:
+                if after_header > most_rows:
                     break
     except csv.Error as why:
         raise _Refused("it is not a readable CSV (%s)" % why)
@@ -589,24 +595,25 @@ def read_csv(path, header_row=1, tab=False):
 # the register
 # ---------------------------------------------------------------------------
 
-def read(path, sheet=None, header_row=1):
+def read_grid(path, sheet=None, header_row=1, what="a sheet register", most_rows=MOST_ROWS):
     """
-    The sheet register in a .xlsx, .xlsm, .csv or .tsv:
+    The rows of a .xlsx, .xlsm, .csv or .tsv as they were read, before
+    anything is made of them - THE ONE GATE every reader of a modeller's
+    spreadsheet passes: which kinds of file are opened, by name and by what
+    they hold, and every refusal in words. read() below stands on it, and so
+    does brain/heron_sheet_compare.py (OPEN-QUESTIONS Q-87):
 
         {"ok": True, "file", "kind": "xlsx"|"csv", "sheet", "sheets",
-         "headerRow", "columns": [{"letter", "header", "role"}],
-         "parameters": [header, ...], "titleBlockColumn": bool,
-         "rows": [{"row", "number", "name", "titleBlock", "values": {}}],
-         "problems": [...], "skipped": [...], "notes": [...]}
+         "headerRow", "grid": [_Row], "notes": [...], "refused": None}
 
-    or {"ok": False, "refused": "why, in words", ...}. Reads only.
+    or {"ok": False, "refused": "why, in words", ...}. `what` names the table
+    in a refusal; reading stops once more than `most_rows` rows follow the
+    header, and the caller decides what that many means. Reads only.
     """
     path = (path or "").strip().strip('"').strip("'")
     path = os.path.expandvars(os.path.expanduser(path))
     answer = {"ok": False, "file": path, "kind": None, "sheet": None, "sheets": [],
-              "headerRow": header_row, "columns": [], "parameters": [],
-              "titleBlockColumn": False, "rows": [], "problems": [], "skipped": [],
-              "notes": [], "refused": None}
+              "headerRow": header_row, "grid": [], "notes": [], "refused": None}
     shown = os.path.basename(path) or path
 
     def refuse(why):
@@ -622,8 +629,8 @@ def read(path, sheet=None, header_row=1):
         return refuse("it is %s, which Heron cannot read without a new dependency. %s"
                       % (REFUSED_KINDS[extension], SAVE_AS))
     if extension not in WORKBOOK_KINDS + DELIMITED_KINDS:
-        return refuse("Heron reads a sheet register from .xlsx, .xlsm, .csv or .tsv only, and "
-                      "this %s. %s" % ("has no file extension" if not extension
+        return refuse("Heron reads %s from .xlsx, .xlsm, .csv or .tsv only, and "
+                      "this %s. %s" % (what, "has no file extension" if not extension
                                        else "is a '%s' file" % extension, SAVE_AS))
     if not os.path.isfile(path):
         return refuse("there is no file at %s" % path)
@@ -643,18 +650,52 @@ def read(path, sheet=None, header_row=1):
                           "whatever its name says. " + SAVE_AS)
         if extension in WORKBOOK_KINDS:
             answer["kind"] = "xlsx"
-            answer["sheet"], answer["sheets"], grid, notes = read_xlsx(path, sheet, header_row)
+            answer["sheet"], answer["sheets"], grid, notes = read_xlsx(path, sheet, header_row,
+                                                                       most_rows)
         else:
             answer["kind"] = "csv"
             if sheet:
                 answer["notes"].append("a CSV has one sheet, so \"%s\" was not needed" % sheet)
-            grid, notes = read_csv(path, header_row, tab=(extension == ".tsv"))
+            grid, notes = read_csv(path, header_row, tab=(extension == ".tsv"),
+                                   most_rows=most_rows)
     except _Refused as why:
         return refuse(str(why))
     except (IOError, OSError) as why:
         return refuse("it could not be opened (%s) - is it open in Excel with a lock, or on a "
                       "drive that is not connected?" % why)
     answer["notes"].extend(notes)
+    answer["grid"] = grid
+    answer["ok"] = True
+    return answer
+
+
+def read(path, sheet=None, header_row=1):
+    """
+    The sheet register in a .xlsx, .xlsm, .csv or .tsv:
+
+        {"ok": True, "file", "kind": "xlsx"|"csv", "sheet", "sheets",
+         "headerRow", "columns": [{"letter", "header", "role"}],
+         "parameters": [header, ...], "titleBlockColumn": bool,
+         "rows": [{"row", "number", "name", "titleBlock", "values": {}}],
+         "problems": [...], "skipped": [...], "notes": [...]}
+
+    or {"ok": False, "refused": "why, in words", ...}. Reads only.
+    """
+    table = read_grid(path, sheet, header_row)
+    answer = {"ok": False, "file": table["file"], "kind": table["kind"], "sheet": table["sheet"],
+              "sheets": table["sheets"], "headerRow": table["headerRow"], "columns": [],
+              "parameters": [], "titleBlockColumn": False, "rows": [], "problems": [],
+              "skipped": [], "notes": list(table["notes"]), "refused": table["refused"]}
+    shown = os.path.basename(answer["file"]) or answer["file"]
+
+    def refuse(why):
+        answer["refused"] = "'%s' was not read: %s" % (shown, why)
+        return answer
+
+    if not table["ok"]:
+        return answer
+    header_row = table["headerRow"]
+    grid = table["grid"]
 
     by_number = dict((row.number, row) for row in grid)
     header_cells = by_number[header_row].cells if header_row in by_number else []
