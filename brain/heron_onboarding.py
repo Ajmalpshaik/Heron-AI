@@ -52,8 +52,9 @@ through unchanged rather than reworded here.
 
 IT CHOOSES WHAT TO SAY, NOT HOW TO SAY IT
 -------------------------------------------
-The register marks this row T2. D-01 gives the wording and the level to
-the host (HERON-ORC-PER-003, HERON-ORC-SUM-006), so this agent returns
+The register marks this row T2. D-01 gives the wording to the host
+(HERON-ORC-SUM-006), in the one plain voice D-27 left when it retired
+HERON-ORC-PER-003 and its level per user (PROPOSALS F19), so this agent returns
 the TOPICS - what is worth showing, in order, with what each rests on -
 and the host writes the sentences a person reads. That is why nothing
 here calls a model: the one scoped call that makes this T2 belongs to the
@@ -155,8 +156,9 @@ def guide(install=None, already_guided=False, degraded=None):
                % (len(topics), len(left_out)),
         "unjudged": [
             "THIS IS WHAT TO SAY, NOT HOW TO SAY IT. D-01 gives the wording "
-            "and the level to the host (HERON-ORC-PER-003, "
-            "HERON-ORC-SUM-006), which is why nothing here calls a model - "
+            "to the host (HERON-ORC-SUM-006), in one plain voice - D-27 "
+            "retired the per-user level - which is why nothing here calls "
+            "a model - "
             "the one scoped call that makes this row T2 is the host's, and "
             "duplicating it would be two agents phrasing one greeting.",
             "WHETHER THIS INSTALL WAS ALREADY GUIDED WAS HANDED IN. It is a "
