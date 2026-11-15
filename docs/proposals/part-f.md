@@ -12,7 +12,9 @@ Three of these are questions about Heron's own tooling rather than about the spe
 here rather than in [OPEN-QUESTIONS.md](../OPEN-QUESTIONS.md) because none of them blocks anything, and
 [work-notes/README](../work-notes/README.md) puts a reviewed suggestion here.
 
-### 🟡 F1. Should the runtime capability snapshot become an MCP tool?
+### ✅ F1. Should the runtime capability snapshot become an MCP tool? — DECIDED 2026-11-15 (owner's delegation)
+
+**Decided: Yes - a read-only tool that names why Heron cannot do something - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** It reads Heron's own library and sends nothing to Revit, and turns 'I cannot' into the real reason. **Work:** owed: the tool and its suite.
 
 [`mcp/server/heron_runtime.py`](../../mcp/server/heron_runtime.py) turns the five different reasons
 `heron_capability.resolve()` returns `None` into six verdicts that mean six different things —
@@ -30,7 +32,9 @@ it, not a wiring job. `check-reachable.py` reports the function with this reason
 caller already has, and sends nothing to Revit — which puts it beside `heron_capabilities` rather than
 anywhere near the write path.
 
-### 🔵 F2. `ALL_VERSIONS` is declared twice
+### ✅ F2. `ALL_VERSIONS` is declared twice — DECIDED 2026-11-15 (owner's delegation)
+
+**Decided: Yes - the remaining checker reads the one shared release list - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** Two copies of the supported releases can drift apart. **Work:** done 2026-11-15 - `check-api-surface.py` reads `heron_dotnet.RELEASES`, held by `tests/test_check_api_surface.py` section 2b. **Left as found:** `brain/heron_fragment.py`'s `REVIT_VERSIONS` is a third typed copy, the fragments' side.
 
 [`check-compile.py`](../../tools/check-compile.py) and [`check-api-surface.py`](../../tools/check-api-surface.py)
 each own a copy of the supported release list. [`check-package.py`](../../tools/check-package.py) imports
@@ -54,7 +58,9 @@ decision — worth doing in one pass by somebody reading them, not as a side eff
 
 **The gate is in `check-docs.py`, not `gates.yml`.** The `gh` token here carries `repo` but not `workflow`, so no session can push a change to that workflow file — a gate nobody can install is not a gate. Worth revisiting whenever that scope is granted.
 
-### 🔵 F4. Two documents are numbered 34, and one of them is a plan
+### ✅ F4. Two documents are numbered 34, and one of them is a plan — DECIDED 2026-11-15 (owner's delegation)
+
+**Decided: Move the finished plan to the work-notes folder - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** Heron's own rule puts a plan whose work is done there, and its reasoning stays readable until the note is emptied into a permanent home. **Work:** owed: the move and every link to it.
 
 [`34-patterns-adapted.md`](../34-patterns-adapted.md) and
 [`34-project-perfection-and-continuous-upgrade-plan.md`](../34-project-perfection-and-continuous-upgrade-plan.md)
@@ -95,9 +101,11 @@ server will not import, and [`test_bridge_roundtrip.py`](../../tests/test_bridge
 `COULD_NOT_RUN = 3` when its test host is missing. Measured on 2026-09-21 with the SDK made unimportable:
 both exit 3 and the evidence record's tests gate reads PASS - [`tools/README.md`](../../tools/README.md)'s
 `check-change.py` section and [row 5b-60](../fragment-issues/section-5b-rows-051-075.md). Nothing above was edited;
-[F8](#-f8-f5s-closing-claim-is-now-false-and-the-reason-is-worth-more-than-the-fix) stays as written.
+[F8](#-f8-f5s-closing-claim-is-now-false-and-the-reason-is-worth-more-than-the-fix--decided-2026-11-15-owners-delegation) stays as written.
 
-### 🟡 F6. `check-dependencies.py` is documented nowhere
+### ✅ F6. `check-dependencies.py` is documented nowhere — DECIDED 2026-11-15 (owner's delegation)
+
+**Decided: Keep it out of CI, and say why - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** It reports on the machine, not on the change: a runner with every package installed would always pass it. **Work:** done in this change.
 
 `tools/check-dependencies.py` and `tests/test_dependencies.py` arrived on `main` in #124, with
 `requirements.txt` and `requirements-optional.txt`. The tool is good and it closes a real gap — the
@@ -116,7 +124,9 @@ It is also **not in `.github/workflows/gates.yml`**. That may be deliberate — 
 *machine*, not on the change, and CI's machine is not anybody's — but it is worth deciding rather than
 leaving unstated.
 
-### 🟡 F7. `sqlite_vec` is the one optional package that degrades with NOTHING SAID
+### ✅ F7. `sqlite_vec` is the one optional package that degrades with NOTHING SAID — DECIDED 2026-11-15 (owner's delegation)
+
+**Decided: Yes - the fallback says the slower search is in use - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** Heron's rule is to fall back quietly but say so, and this was the one optional package that said nothing. **Work:** owed, with [row 5b-1171](../fragment-issues/section-5b-rows-401-425.md): `_try_vec_extension` has no caller, so sqlite-vec is never loaded even when installed - a line saying it is *missing* would mislead. The line says vectors are compared in Python until it is wired, or D-23's words are brought to what runs.
 
 **Carried in from `docs/work-notes/plans/rag/03-working-note.md` as `W-10` when that note was retired,
 2026-09-12.** It was the only record of it.
@@ -137,7 +147,9 @@ front of me was the only gap.** Recorded rather than fixed then because it was a
 batch that had no business growing; recorded rather than fixed **now** because it is not what retiring
 a note is for. It is a small, self-contained batch of its own.
 
-### 🔵 F8. F5's closing claim is now false, and the reason is worth more than the fix
+### ✅ F8. F5's closing claim is now false, and the reason is worth more than the fix — DECIDED 2026-11-15 (owner's delegation)
+
+**Decided: Yes - the correction is accepted as the record - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** F5 is closed, and its claim is not to be read as true on every machine. **Work:** done in this change.
 
 [F5](#-f5-two-suites-exit-1-when-a-dependency-is-missing-and-one-of-them-is-the-only-thing-check-gaps-calls-unfinished)
 says `test_served_claims.py` *"is the entire unfinished list on a plain container."* On the owner's
@@ -154,7 +166,9 @@ section of [`brain/retrieval-history.md`](../../brain/retrieval-history.md). **T
 not read as current**, and so that the first attribution is not read as the final one: *three suites
 fail on Windows* was the obvious reading and it was wrong about a third of itself.
 
-### 🟠 F9. Every fragment claims the top of the trust ladder, and nothing reads it
+### ✅ F9. Every fragment claims the top of the trust ladder, and nothing reads it — DECIDED 2026-11-15 (owner's delegation)
+
+**Decided: Check the trust label's value, and add an approval record to every fragment, as D-35 asks - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** It costs nothing while every fragment is written here, and D-35 already asks for the record; it is cheaper before a fragment arrives from outside. **Work:** owed: the check and the records.
 
 **Found 2026-09-14 while building [`HERON-INS-SUP-013`](../../brain/heron_supply.py), the Supply Chain
 Security Agent** — by checking what the field it was about actually does today, rather than assuming the
@@ -195,7 +209,9 @@ fragment written in this repository is entitled to claim about itself are three 
 `HERON-INS-SUP-013` is built to take the answer — it compares a package's claim against a register from
 outside it and refuses `SELF_DECLARED_TRUST` — and needs that register to exist.
 
-### 🟡 F10. Two files claim one agent id, and nothing has ever reported it
+### ✅ F10. Two files claim one agent id, and nothing has ever reported it — DECIDED 2026-11-15 (owner's delegation)
+
+**Decided: One agent in two files, correctly - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** The register's row for HERON-FRG-VAL-001 lists metadata and validation among its duties - the format checker and the evidence gatherer are its two halves. **Work:** nothing to change.
 
 **Found 2026-09-15 by `HERON-WSP-REG-012` on its first run against the real repository** — not by a
 fixture, and not by reading. Both of these carry `Heron-Agent: HERON-FRG-VAL-001`:
@@ -266,7 +282,9 @@ question for the owner is not *"why are there duplicates"* but *"should a header
 agent and which files merely implement part of it"*. That is one field, or a convention, and it is a
 different decision from the one this row first asked for.
 
-### 🟠 F11. docs/06 §2 draws nineteen folders and classifies fourteen
+### ✅ F11. docs/06 §2 draws nineteen folders and classifies fourteen — DECIDED 2026-11-15 (owner's delegation)
+
+**Decided: Yes - each of the five folders gets a class on record, Configuration first - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** Configuration holds the practice's security policy and company standards; updates, cleanups and backups need to know how to treat it. **Work:** owed: the classes and the four agents that act on folders.
 
 **Found 2026-09-15 by `HERON-WSP-CRE-002`**, which reads the tree out of that section rather than
 carrying a copy — so the first thing it did was ask each folder what class it was in.
@@ -314,7 +332,9 @@ it also means a backup does not cover them and a cleanup leaves rubbish behind.
 
 ---
 
-### 🟠 F12. "Template" means two opposite things, and one of them is never allowed to leave
+### ✅ F12. "Template" means two opposite things, and one of them is never allowed to leave — DECIDED 2026-11-15 (owner's delegation)
+
+**Decided: Project templates are lists of folder names, never .rte or .rft files - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** It keeps the owner's no-upload rule for Revit files unchanged. **Work:** owed: the one line in the main specification.
 
 **Found by:** building `HERON-WSP-TPL-006`, the Template Agent, 2026-09-15.
 **Status:** open. The agent takes the narrow reading and says so in its own answer.
@@ -365,7 +385,9 @@ change to the rule the owner set, so it is not one an agent may assume.
 
 ---
 
-### 🟡 F13. A project folder and a workspace folder with the same name get different classes
+### ✅ F13. A project folder and a workspace folder with the same name get different classes — DECIDED 2026-11-15 (owner's delegation)
+
+**Decided: Match class words at the top level of the workspace only - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** One folder gets one answer, whether a tool holds its name or its whole path. **Work:** owed: the matcher and the agents that use it.
 
 **Found by:** the same build. **Status:** open, and narrower than F11.
 
@@ -392,7 +414,9 @@ agents do to a folder, so it is the owner's call — the same reason F11 is stil
 
 ---
 
-### 🔴 F14. Three different projects write to one knowledge file, and the code says why that is a breach
+### ✅ F14. Three different projects write to one knowledge file, and the code says why that is a breach — DECIDED 2026-11-15 (owner's delegation)
+
+**Decided: Turn each project key into a unique code, with a planned, backed-up move of existing files - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** Writing one client's knowledge into another's file is a breach, and only this prevents it rather than catching it afterwards. **Work:** owed: the coding and the move.
 
 **Found by:** building `HERON-WSP-PLC-005`, the File Placement Agent, 2026-09-15.
 **Status:** open. **Measured, not read** — the numbers below come from running the code.
@@ -525,7 +549,9 @@ and never claims to have checked the parts.
 
 ---
 
-### 🟠 F16. The register asks for a synonym table and D-34 forbids one
+### ✅ F16. The register asks for a synonym table and D-34 forbids one — DECIDED 2026-11-15 (owner's delegation)
+
+**Decided: Yes - the Keyword agent's row says its entries are recorded by a person, never inferred - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** The next person building from that row alone would build the synonym table D-34 forbids. **Work:** already done - docs/28's row for `HERON-NAM-KEY-005` says it since 2026-10-18.
 
 **Found by:** building `HERON-NAM-KEY-005`, the Keyword Agent, 2026-09-15.
 **Status:** open, but **the agent is built** — D-34's own consequences settle it, and the resolution is
@@ -603,7 +629,9 @@ Taxonomy is 6 of 7**, and the seventh is `NAM-GEN-001`, blocked on **F15** above
 
 ---
 
-### 🟡 F18. "Registers them with the Tool Registry" — a discovered tool must not enter a fixed table
+### ✅ F18. "Registers them with the Tool Registry" — a discovered tool must not enter a fixed table — DECIDED 2026-11-15 (owner's delegation)
+
+**Decided: Yes - the row says found tools are presented for a person to declare, never written into the table - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** Read literally, 'registers them' would let another server's description add to Heron's risk table, which Golden Rule 19 forbids. **Work:** already done - docs/28's row for `HERON-MCP-DIS-012` says it since 2026-10-18.
 
 **Found by:** building `HERON-MCP-DIS-012`, the MCP Discovery Agent, 2026-09-15.
 **Status:** open, and **the agent is built** on the narrow reading. The word is worth one clause in
@@ -650,7 +678,9 @@ from that row alone will write the append.
 
 ---
 
-### 🟠 F19. D-27 abolished persona, and three places still hand work to it
+### ✅ F19. D-27 abolished persona, and three places still hand work to it — DECIDED 2026-11-15 (owner's delegation)
+
+**Decided: Retire the Persona agent and rewrite the places that still use it - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** D-27 removed persona; Heron has one plain voice. **Work:** owed: the documents, docs/22 section 3's security note among them.
 
 **Found by:** building `HERON-USR-PRO-001`, the User Profile Agent, 2026-09-15.
 **Status:** open. The agent implements what survives D-27 and does **not** implement the dead clause.
@@ -706,7 +736,9 @@ all. Both are the owner's, and they are one paragraph apart from being settled.
 
 ---
 
-### 🟠 F20. "Strips project identifiers" is the framing D-26 narrowed away from
+### ✅ F20. "Strips project identifiers" is the framing D-26 narrowed away from — DECIDED 2026-11-15 (owner's delegation)
+
+**Decided: Check the whole agent list against the decisions - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** This was the third agent-list row found written against a replaced decision; one sweep is cheaper than three more finds. **Work:** owed: the sweep.
 
 **Found by:** building `HERON-RPT-RED-003`, the Report Redaction & Release Agent, 2026-09-15.
 **Status:** open. The agent implements D-26 and does **not** strip.
@@ -754,7 +786,9 @@ owner's call, not three more clauses.
 
 ---
 
-### 🟡 F21. `docs/09 §94` still carries the promotion gate D-30 replaced, and still calls it open
+### ✅ F21. `docs/09 §94` still carries the promotion gate D-30 replaced, and still calls it open — DECIDED 2026-11-15 (owner's delegation)
+
+**Decided: Fix the section, and check every other 'tracked as Q-n' note - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** D-30 replaced the count with one recorded proof, and the same stale pattern may sit wherever a document points at a question. **Work:** the section is done in this change; owed: the other notes.
 
 **Found by:** building `HERON-LRN-PRO-004`, the Learning Promotion Agent, 2026-09-15.
 **Status:** open. The agent follows D-30.
@@ -793,7 +827,9 @@ checking against `DECISIONS.md`, because that phrase is exactly what stops a rea
 
 ---
 
-### 🟡 F22. One permission ladder, four copies in `brain/` alone
+### ✅ F22. One permission ladder, four copies in `brain/` alone — DECIDED 2026-11-15 (owner's delegation)
+
+**Decided: One brain module owns the permission ladder - heron_capability.py - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** The newest agent already reads that module's copy; the order of the levels is the security property. **Work:** owed: the other three copies made to import it.
 
 **Found by:** building `HERON-SKL-CMP-005`, which needed the ladder and refused to add a fifth.
 **Status:** open. Measured, not read.

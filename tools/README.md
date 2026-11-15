@@ -1876,6 +1876,8 @@ independent review of the housekeeping work counted the sections against `ls too
 at the top of this file is about a number going stale; this is the same failure with the number removed
 — a tool nobody could find from the one document that lists them.
 
+**Not in CI, on purpose ([PROPOSALS F6](../docs/PROPOSALS.md), decided 2026-11-15 on the owner's delegation).** It reports on the machine, not on the change: a runner with every package installed passes it whatever a change does, so it is run on a PC, after a fresh clone or a change to either requirements file.
+
 **Exits 1 only when a REQUIRED package is missing.** A missing optional one exits 0, because that is
 what optional means and a checker that failed on it would be arguing with R-42's silent degradation.
 
