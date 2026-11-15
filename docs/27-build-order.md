@@ -554,7 +554,7 @@ exists"*, and only this table tells them apart.
 step that exists — which is how three of them came to.
 
 **It has happened again, in source headers rather than fragments: `Heron-Step: 18`.** It first appeared
-on 2026-09-12 in [docs/34](34-project-perfection-and-continuous-upgrade-plan.md), and since then heads
+on 2026-09-12 in [docs/34](work-notes/plans/project-perfection-and-continuous-upgrade-plan-2026-09-12.md) - the upgrade plan, a work note since 2026-11-15 - and since then heads
 tools, tests and documents written after that day; no section of this file defines it. Count where it is
 used with:
 

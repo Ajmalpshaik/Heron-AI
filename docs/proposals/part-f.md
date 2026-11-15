@@ -60,10 +60,10 @@ decision — worth doing in one pass by somebody reading them, not as a side eff
 
 ### ✅ F4. Two documents are numbered 34, and one of them is a plan — DECIDED 2026-11-15 (owner's delegation)
 
-**Decided: Move the finished plan to the work-notes folder - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** Heron's own rule puts a plan whose work is done there, and its reasoning stays readable until the note is emptied into a permanent home. **Work:** owed: the move and every link to it.
+**Decided: Move the finished plan to the work-notes folder - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** Heron's own rule puts a plan whose work is done there, and its reasoning stays readable until the note is emptied into a permanent home. **Work:** done 2026-11-15. The plan is [`work-notes/plans/project-perfection-and-continuous-upgrade-plan-2026-09-12.md`](../work-notes/plans/project-perfection-and-continuous-upgrade-plan-2026-09-12.md), beside its execution record, moved with `git mv` so its history follows; its banner says where it came from and when it retires, and its own links were re-pointed. Every link to the old path was re-pointed - in [docs/README](../README.md), where it left the numbered list for *Working documents*, 27, 35, this section, and two work notes - and [the work notes' table](../work-notes/README.md) lists it. `git grep 34-project-perfection` now finds only plain-text history, and `docs/34` is the patterns document's alone.
 
 [`34-patterns-adapted.md`](../34-patterns-adapted.md) and
-[`34-project-perfection-and-continuous-upgrade-plan.md`](../34-project-perfection-and-continuous-upgrade-plan.md)
+[`34-project-perfection-and-continuous-upgrade-plan.md`](../work-notes/plans/project-perfection-and-continuous-upgrade-plan-2026-09-12.md)
 share a number, and `check-docs.py` does not object because nothing derives the numbering. Two things
 are tangled here and they should be untangled together rather than one at a time:
 
