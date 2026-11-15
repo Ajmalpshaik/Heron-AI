@@ -1,6 +1,15 @@
 // NOT STANDALONE. Assumes `doc`, `filePath` and `pathType` are in scope;
-// leaves `loadResult`, `fileBefore`, `fileAfter`, `entriesBefore`,
-// `entriesAfter`, `refused` and `findings` behind.
+// leaves `loadedFile`, `loadResult`, `fileBefore`, `fileAfter`,
+// `entriesBefore`, `entriesAfter`, `refused` and `findings` behind.
+//
+// VERSION 2, 2026-11-15 - row 5b-1647. Version 1's only result, `loadResult`,
+// was a sentence filled either way - "loaded" or "nothing loaded - There is
+// no file at ..." - so its D-30 negative could never come back empty, though
+// the card did the right thing both times (Revit 2020, P1102 MEP). The RESULT
+// is now `loadedFile`: the keynote file Revit holds after a load or reload it
+// reported as done, read back - EMPTY whenever nothing was loaded. The
+// sentence stays, as accounting. Row 5b-1738: the path typed and the path
+// Revit reads back are compared as full paths, not as strings.
 //
 // ASSUMES AN OPEN TRANSACTION and opens none (Golden Rule 16). Revit REQUIRES
 // one here: KeyBasedTreeEntryTable.LoadFrom and Reload both throw
@@ -29,6 +38,7 @@
 var findings = new List<string>();
 var refused = new List<string>();
 var loadResult = "";
+var loadedFile = "";
 var fileBefore = "";
 var fileAfter = "";
 var entriesBefore = 0;
@@ -220,9 +230,21 @@ if (table != null)
     entriesAfter = countEntries();
 }
 if (loadResult == "" && refused.Count > 0) loadResult = "nothing loaded - " + refused[0];
+// THE RESULT: the file read back, and only when Revit reported the load or
+// reload as done - Success, or ResourceAlreadyCurrent on a reload of the file
+// already there. A refusal or a failed load leaves it EMPTY (row 5b-1647).
+var loadDone = refused.Count == 0 && (loadResult == "loaded" || loadResult == "reloaded" || loadResult.StartsWith("already current"));
+if (loadDone) loadedFile = fileAfter;
 
 findings.Insert(0, "Keynote file before: " + (fileBefore == "" ? "none" : fileBefore) + ", " + entriesBefore + " entries. After: "
     + (fileAfter == "" ? "none" : fileAfter) + ", " + entriesAfter + " entries. " + loadResult + ".");
-if (wanted != "" && fileAfter != "" && loadResult.StartsWith("loaded")
-    && currentAbsolute != "" && !string.Equals(currentAbsolute, wanted, StringComparison.OrdinalIgnoreCase))
+// THE SAME FILE BY FULL PATH, NOT BY SPELLING (row 5b-1738): C:/A/b.txt and
+// C:\A\b.txt are one file, and Revit reads a path back with backslashes.
+Func<string, string> fullPath = path =>
+{
+    try { return System.IO.Path.GetFullPath(path).TrimEnd('\\', '/'); }
+    catch { return (path ?? "").Replace('/', '\\').TrimEnd('\\'); }
+};
+if (wanted != "" && fileAfter != "" && loadResult == "loaded"
+    && currentAbsolute != "" && !string.Equals(fullPath(currentAbsolute), fullPath(wanted), StringComparison.OrdinalIgnoreCase))
     findings.Add("Revit reports the file as " + currentAbsolute + ", not the path typed (" + wanted + ") - check it in Keynoting Settings.");

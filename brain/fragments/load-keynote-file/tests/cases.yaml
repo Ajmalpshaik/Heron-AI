@@ -1,13 +1,17 @@
 # LOAD_KEYNOTE_FILE - built 2026-11-02 in a cloud session with no Revit.
 # NOT RUN. Arranged as docs/needs-checking/group-lz.md says: two keynote text
 # files saved beside the scratch model, and filePath and pathType typed.
+# VERSION 2 (2026-11-15, row 5b-1647): the result is `loadedFile` - the file
+# read back after a load Revit reported done - and it is EMPTY in every
+# negative below. `loadResult` is the sentence, filled either way.
 positive:
   - given: >
       the scratch model with Revit's default keynote file loaded (Absolute);
       filePath the full path of keynotes-b.txt (four entries, written for the
       test), pathType empty
     expect: >
-      loadResult "loaded"; fileBefore the default file and its entry count,
+      loadedFile equal to fileAfter, naming keynotes-b.txt; loadResult
+      "loaded"; fileBefore the default file and its entry count,
       fileAfter keynotes-b.txt "(Absolute)", "Revit: Loaded", entriesAfter 4.
       Annotate > Keynoting Settings shows keynotes-b.txt, LOOKED AT
 
@@ -24,17 +28,26 @@ positive:
       loadResult "loaded"; fileAfter "keynotes-b.txt (Relative)", entriesAfter
       4 - the path type as asked, read back
 
+  - given: >
+      filePath the full path of keynotes-b.txt typed with FORWARD slashes
+      (C:/Users/.../keynotes-b.txt)
+    expect: >
+      loadResult "loaded" and NO line "Revit reports the file as ..., not the
+      path typed" - the same file, spelled with the other slash (row 5b-1738)
+
 negative:
   - given: >
       THE FIRST CASE TO RUN. filePath the full path of a file that does not
       exist (keynotes-missing.txt), pathType empty
     expect: >
-      refused "There is no file at ... that this PC can see"; fileAfter equal
+      loadedFile EMPTY - the D-30 negative; refused "There is no file at ...
+      that this PC can see"; loadResult "nothing loaded - ..."; fileAfter equal
       to fileBefore and entriesAfter equal to entriesBefore - the table
-      untouched. A changed file here would mean the path was guessed
+      untouched. A changed file here would mean the path was guessed. Version
+      1 filled its result here (row 5b-1647)
 
   - given: filePath "Keynotes.txt" - a file name with no folder
-    expect: refused "not a full path"; nothing changed
+    expect: refused "not a full path"; loadedFile empty; nothing changed
 
   - given: >
       filePath the full path of keynotes-bad.txt - a file whose lines have no
@@ -45,7 +58,9 @@ negative:
       Revit chose; never "loaded" with entries that were left out unsaid
 
   - given: pathType sideways
-    expect: refused before anything changes, naming absolute and relative
+    expect: >
+      refused before anything changes, naming absolute and relative;
+      loadedFile empty
 
 second_route: >
   Revit itself: Annotate > Keynote > Keynoting Settings shows the file, its

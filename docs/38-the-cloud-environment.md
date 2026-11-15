@@ -50,7 +50,7 @@ no Windows profile and no HERON_KNOWLEDGE, so there is nowhere to keep knowledge
 reason, so this is the supported path rather than a workaround.
 
 > **Since 2026-11-11 the `heron` server itself is the exception**
-> ([D-153](decisions/D-153.md), Proposed; [row 5b-1508](fragment-issues/section-5b-rows-401-425.md)). A
+> ([D-153](decisions/D-153.md), Accepted 2026-11-15; [row 5b-1508](fragment-issues/section-5b-rows-401-425.md)). A
 > cloud chat started outside this environment - from a phone - has no `HERON_KNOWLEDGE`, and every library
 > tool there answered only *"Heron has nowhere to keep what it knows"*. Run off Windows with no folder named,
 > the server now keeps its index in a folder of its own, `<machine-local>/Heron/index/<checkout>` -
