@@ -179,7 +179,7 @@ weighed and set aside, on the record, in [42 §2](42-fire-protection-design.md).
 | `HERON-RAG-VEC-009` | Vector Search Agent | Searches the vector index | T1 | READ | — |
 | `HERON-RAG-IDX-010` | Index Manager Agent | Maintains indexes and their metadata | T1 | MODIFY | — |
 | `HERON-RAG-RIX-011` | Re-index Agent | Re-indexes on change, by content hash not mtime | T1 | MODIFY | — |
-| `HERON-RAG-DUP-012` | Duplicate Detection Agent | Finds duplicate knowledge at write time, not only at read time | T1 | READ | — |
+| `HERON-RAG-DUP-012` | Ingest Duplicate Detection Agent | Finds duplicate knowledge at write time, not only at read time. **Renamed 2026-11-15** from *Duplicate Detection Agent*, the name `HERON-IMP-DUP-007` carries for another job ([Q-76](open-questions/tier-2.md), on the owner's delegation, not yet read back to him) | T1 | READ | — |
 | `HERON-RAG-VAL-013` | Knowledge Validation Agent | Checks retrieved knowledge before it is used | T2 | READ | — |
 | `HERON-RAG-CIT-014` | Citation / Source Agent | Tracks provenance. **No source, no claim** | T1 | READ | — |
 | `HERON-RAG-CNF-015` | **Knowledge Conflict Agent** | Two sources disagree — compares version, source, trust, project context, test history. Asks the user when unsure ↗ | T2 | SUGGEST | — |
@@ -330,7 +330,7 @@ fragment-side one.
 | `HERON-DEV-EXP-021` | **Experiment Agent** | The scientist. Designs and runs a **comparison** where the right answer is not known yet — is v2 actually better than v1, does this approach beat that one, is the change worth keeping. Reports a verdict with evidence, not an opinion ↗ | T3 | READ | — |
 | `HERON-DEV-QA-016` | QA Agent | Final gate before approval. Never the implementer | T2 | — | — |
 | `HERON-DEV-DOC-017` | Documentation Agent | Generates docs from registries and metadata | T1 | — | — |
-| `HERON-DEV-REL-018` | Release Agent | Packages and releases | T1 | PUBLISH | — |
+| `HERON-DEV-REL-018` | Release Packaging Agent | Packages and releases. **Renamed 2026-11-15** from *Release Agent*, the name `HERON-GIT-REL-007` carries for tagging and publishing ([Q-76](open-questions/tier-2.md), on the owner's delegation, not yet read back to him) | T1 | PUBLISH | — |
 
 ## 10. Agent Lifecycle & HR — 17
 
