@@ -1530,6 +1530,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-nx.md`](needs-checking/group-nx.md)
 
+## Group NY - the delete box that names and closes, OPEN_FAMILY_FOR_EDITING's route, and the Glass a family load reports (2026-11-15)
+
+**Its own file:** [`needs-checking/group-ny.md`](needs-checking/group-ny.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
