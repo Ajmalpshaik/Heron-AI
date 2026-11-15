@@ -135,6 +135,7 @@ import heron_config as configuration                # noqa: E402
 import heron_health as health                       # noqa: E402
 import heron_brain as brain                         # noqa: E402
 import heron_run_records as runs                    # noqa: E402
+import heron_runtime as runtime                     # noqa: E402
 
 import heron_server_core as core                           # noqa: E402
 
@@ -5374,6 +5375,181 @@ def heron_resolve(capability: str) -> str:
     lines.append("")
     lines.append(_doors_in_short() if _said_before("doors") else _cannot_run())
     lines.append(_not_proven(short=_said_before("proved")))
+    return "\n".join(lines)
+
+
+# WHY HERON CANNOT DO SOMETHING - PROPOSALS F1, decided 2026-11-15 on the
+# owner's delegation and not read back to him. heron_runtime.snapshot tells
+# six reasons apart where heron_capability.resolve() has one None; nothing
+# served it, because offering it changed the risk table in heron_tools.py
+# (docs/12 s71). heron_why is that row: READ, no bridge operation.
+#
+# IT ASKS REVIT NOTHING, AND THAT IS WHY ITS FACTS ARE THE WEAKER ONES. The
+# release and whether a Revit is there come from the address book - the note
+# each Revit writes when its Heron button is pressed - never from
+# bridge.discover(), which PINGS every entry to learn whether it answers;
+# the switches come from Heron's settings file on this PC, which on some PCs
+# is not the copy Revit reads (Q-70). The answer names where each fact came
+# from, so it is never read as Revit's own word: revit_health asks Revit.
+
+
+def _announced():
+    """
+    Every Revit whose Heron button is on, as the address book says - and
+    nothing asked of any of them: no pipe opened, no ping sent.
+
+    bridge.discover() reads the same folder and then talks to each entry; this
+    stops before that. An entry is left out when its process is known to be
+    gone, by the test discover() uses, or when it speaks a protocol this
+    client does not - Heron would refuse to talk to it. "Cannot tell" is
+    never "gone", discover()'s own rule. Nothing is deleted: pruning a dead
+    entry is discover()'s, and an address book is the add-in's.
+    """
+    import json
+    found = []
+    try:
+        names = sorted(os.listdir(bridge.DISCOVERY_DIR))
+    except OSError:
+        return found
+    for name in names:
+        if not name.endswith(".json"):
+            continue
+        path = os.path.join(bridge.DISCOVERY_DIR, name)
+        try:
+            with io.open(path, "r", encoding="utf-8") as fh:
+                record = json.load(fh)
+        except (OSError, ValueError):
+            continue
+        if not isinstance(record, dict):
+            continue
+        one = bridge.Bridge(record, path)
+        if one.protocol_version != bridge.PROTOCOL_VERSION:
+            continue
+        if bridge.bridge_process_is_running(one.pid) is False:
+            continue
+        found.append(one)
+    return found
+
+
+def _why_facts(asked):
+    """
+    What heron_why judges by, each read without asking Revit anything:
+    {"release", "how", "bridge", "switches", "announced"}.
+
+    `asked` is the release the chat named, or None for the Revit this chat
+    would use - the session layer's own rule (heron_session.version_for_filter)
+    over the address book, with this chat's choice. `switches` is None off
+    Windows (D-132): no switch of the owner's is on this machine to read.
+    """
+    if core.LIBRARY_ONLY:
+        return {"release": asked, "how": "as asked" if asked else NO_REVIT_HERE,
+                "bridge": "none", "switches": None, "announced": []}
+    announced = _announced()
+    if asked:
+        release, how = asked, "as asked"
+    else:
+        release, how = session.version_for_filter(announced, binding.pid,
+                                                  binding.was_chosen)
+    there = release is not None and any(str(b.revit_version) == str(release)
+                                        for b in announced)
+    settings = configuration.load()
+    return {"release": release, "how": how,
+            "bridge": "connected" if there else "none",
+            "switches": {
+                "write_enabled": configuration.writing_enabled(settings),
+                "admin_enabled": configuration.truthy(settings, "admin.enabled"),
+                "publish_enabled": configuration.truthy(settings, "publish.enabled")},
+            "announced": announced}
+
+
+def _why_release_line(facts):
+    """Where heron_why's release came from, in one line."""
+    release, how = facts["release"], facts["how"]
+    if core.LIBRARY_ONLY:
+        return ("Revit %s, as asked - %s" % (release, NO_REVIT_HERE) if release
+                else "not known - %s" % NO_REVIT_HERE)
+    if how == "as asked":
+        return ("Revit %s, as asked; %s Revit %s has its Heron button on"
+                % (release, "a" if facts["bridge"] == "connected" else "no",
+                   release))
+    if release is None:
+        return "not known - %s" % how
+    return "Revit %s - %s" % (release, how)
+
+
+@server.tool()
+def heron_why(capability: str, release: str = "") -> str:
+    """
+    Why Heron cannot do one named capability right now - or that nothing
+    stands in the way - and what the modeller can do about it.
+
+    Use it when the modeller asks "why can't you ...", or after a refusal, to
+    give the real reason instead of "I cannot": nothing in Heron's library
+    does it; not on this Revit release; which release is not known; the
+    owner's Changes, Admin or Publish switch is off; or no Revit has its
+    Heron button pressed.
+
+    `capability` is a capability name, as heron_lookup names one. `release`
+    is a Revit release such as "2024", to ask about that one; empty means the
+    Revit this chat would use, when Heron can tell. Reads Heron's library, its
+    settings file on this PC and the note Revit leaves when the Heron button
+    is pressed. It sends nothing to Revit and changes nothing.
+    """
+    name = (capability or "").strip().upper()
+    if not name:
+        return ("Name the capability to ask about, as heron_lookup names one - "
+                "SET_SELECTION, for example. Nothing was sent to Revit.")
+    try:
+        rows = brain.providers(name)
+    except brain.BrainUnavailable as why:
+        return str(why)
+
+    facts = _why_facts((release or "").strip() or None)
+    switches = facts["switches"]
+    if switches is None:
+        # NO REVIT HERE, AND SO NO SWITCH OF THE OWNER'S TO READ. Nothing is
+        # judged blocked by one; the answer names the switches it would need
+        # on his PC instead.
+        snap = runtime.snapshot([name], {name: rows}, release=facts["release"],
+                                bridge=facts["bridge"],
+                                ceiling=runtime.RISK_ORDER[-1])
+    else:
+        snap = runtime.snapshot([name], {name: rows}, release=facts["release"],
+                                bridge=facts["bridge"], **switches)
+    cap = snap.capabilities[0]
+    said, can_do = runtime.in_revit_words(
+        cap, rows, release=facts["release"], how=facts["how"],
+        no_revit_here=core.LIBRARY_ONLY,
+        write_enabled=bool(switches and switches["write_enabled"]))
+
+    lines = [said, "", "What you can do: " + can_do]
+    if rows:
+        status, risk, door, held = _how_it_runs(name, cap.risk)
+        lines.extend(["",
+                      "  status    %s" % status,
+                      "  risk      %s" % risk,
+                      "  run with  %s" % (door or "not said - its risk could "
+                                                  "not be read")])
+        if held:
+            lines.append("  Not proved yet: revit_change keeps a change only "
+                         "from a capability whose proof stands (D-117), so it "
+                         "refuses this one until it is proved, whatever else "
+                         "above is true.")
+
+    lines.extend(["", "What Heron went by - it asked Revit nothing:",
+                  "  release   %s" % _why_release_line(facts)])
+    if switches is not None:
+        lines.append("  switches  Changes %s, Admin %s, Publish %s - Heron's "
+                     "settings file on this PC; Revit reads its own"
+                     % tuple("on" if switches[k] else "off" for k in
+                             ("write_enabled", "admin_enabled", "publish_enabled")))
+    if facts["announced"]:
+        lines.append("  Revit     %s with the Heron button on, from the note "
+                     "each leaves - revit_health asks whether it answers"
+                     % ", ".join("%s (session %s)" % (b.revit_version, b.pid)
+                                 for b in facts["announced"]))
+    lines.append("  reason    %s" % cap.verdict)
+    lines.append("Nothing was sent to Revit.")
     return "\n".join(lines)
 
 

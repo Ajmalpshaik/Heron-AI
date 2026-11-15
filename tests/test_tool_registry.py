@@ -277,6 +277,21 @@ def library():
     check(not any(name.startswith("revit_") for name in listed),
           "and no revit_ tool is on it")
 
+    # PROPOSALS F1, decided 2026-11-15 on the owner's delegation: the runtime
+    # snapshot, served as heron_why. Its row is the declaration F1 said needed
+    # a human - READ, no bridge operation - and the decision put it beside
+    # heron_capabilities, so it is served with no Revit as well.
+    check(tools.TOOLS.get("heron_why") == (tools.READ, None),
+          "heron_why is declared READ with no operation - it sends nothing to "
+          "Revit (PROPOSALS F1) - found %r" % (tools.TOOLS.get("heron_why"),))
+    check("heron_why" in listed,
+          "and it is served with no Revit, beside heron_capabilities")
+    check(tools.annotations("heron_why")
+          == {"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True},
+          "and a host is told it is read-only, not destructive and safe to ask again")
+    check("heron_why" in tools.descriptions(),
+          "and the server source registers it as a tool")
+
     agent = os.path.join(ROOT, ".claude", "agents", "heron-fragment-author.md")
     given = []
     with io.open(agent, encoding="utf-8") as fh:

@@ -244,6 +244,12 @@ TOOLS = {
     # A job's whole method - a skill's ordered steps - so a chat is handed
     # how a family is built instead of reading the skill file off disk.
     "heron_method":             (READ,    None),
+    # WHY Heron cannot do one capability (PROPOSALS F1, decided 2026-11-15 on
+    # the owner's delegation, not read back): heron_runtime's verdict in
+    # Revit words. READ and no operation for the reason of the four above -
+    # and it does not even ping: it reads the library, this PC's settings
+    # file and the address book Revit writes, and sends nothing to Revit.
+    "heron_why":                (READ,    None),
 
     # The Context Manager (docs/19 s1-s2). READ and no operation for the same
     # reason as the three above: it assembles what an agent would be GIVEN and
@@ -531,8 +537,14 @@ ALWAYS_LOADED = ("heron_lookup", "heron_method", "revit_read", "revit_change",
 #
 # The five the owner said yes to, by name. A tool joins only by a decision:
 # the next one that sends nothing to Revit is not added because it could be.
+#
+# heron_why joined on 2026-11-15 by PROPOSALS F1's decision - taken on the
+# owner's delegation and not read back to him, so his word overrules it -
+# which put it "beside heron_capabilities". Off Windows its answer is the one
+# a cloud session most needs: no Revit on this machine, and what it would
+# take on the modeller's PC.
 LIBRARY = ("heron_capabilities", "heron_lookup", "heron_method",
-           "heron_resolve", "heron_standards")
+           "heron_resolve", "heron_standards", "heron_why")
 
 
 # THE TOOLS WHOSE EVERY ANSWER SAYS HOW THE CALL ENDED, IN ONE FIXED WORD

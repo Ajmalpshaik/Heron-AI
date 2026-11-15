@@ -717,6 +717,30 @@ def resolve(capability, revit=None):
         }
 
 
+def providers(capability):
+    """
+    Every fragment that provides `capability`, on EVERY release, as the rows
+    heron_runtime.snapshot takes - {"id", "risk", "status", "revit": [...]}
+    - most trusted first, or [] when nothing does.
+
+    heron_why's read (PROPOSALS F1). NOT resolve() above, for two reasons.
+    resolve() filters by one release, and the snapshot has to see every
+    release to tell "not on yours" from "not at all"; and resolve() WRITES -
+    a want for a capability nobody provides (D-63) and an audit line (D-62).
+    This records neither. The store is opened as every library read opens
+    it: derived, and brought up to the cards when they have moved (Golden
+    Rule 11) - which is no record of anybody asking.
+    """
+    _S, CAP, _SK, _SE, _E, _R = _brain()
+    with _Open() as store:
+        got = CAP.resolve(store, capability)
+        if got is None:
+            return []
+        return [{"id": r["id"], "risk": r["risk"], "status": r["status"],
+                 "revit": [v for v in (r["revit"] or "").split(",") if v]}
+                for r in got.rows]
+
+
 # ---------------------------------------------------------------------------
 # The user's own sentence, resolved to a capability
 # ---------------------------------------------------------------------------
