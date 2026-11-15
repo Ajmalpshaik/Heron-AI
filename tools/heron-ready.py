@@ -395,6 +395,10 @@ def knowledge_store(check_only):
     if not HAVE_YAML[0]:
         say(NOTE, "not built - it needs PyYAML, above")
         return
+    # HOW VECTORS ARE COMPARED, said as the encoder is (PROPOSALS F7): always
+    # in Python today, installed or not - row 5b-1171.
+    import heron_embed as EMBED
+    say(NOTE, "search: " + EMBED.comparison()[1])
     try:
         import heron_brain as BRAIN
         import heron_scope as SCOPE
