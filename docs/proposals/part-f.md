@@ -168,7 +168,7 @@ fail on Windows* was the obvious reading and it was wrong about a third of itsel
 
 ### ✅ F9. Every fragment claims the top of the trust ladder, and nothing reads it — DECIDED 2026-11-15 (owner's delegation)
 
-**Decided: Check the trust label's value, and add an approval record to every fragment, as D-35 asks - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** It costs nothing while every fragment is written here, and D-35 already asks for the record; it is cheaper before a fragment arrives from outside. **Work:** owed: the check and the records.
+**Decided: Check the trust label's value, and add an approval record to every fragment, as D-35 asks - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** It costs nothing while every fragment is written here, and D-35 already asks for the record; it is cheaper before a fragment arrives from outside. **Work:** the check done 2026-11-15 - `heron_fragment.validate()` refuses a top-level `source` word that is not on the ladder, and the ladder is bound to `heron_supply.TRUST`, one copy, not two; [`tests/test_fragment_store.py`](../../tests/test_fragment_store.py) and [`tests/test_supply.py`](../../tests/test_supply.py) section 8 hold it, and both failed on the old code. **Still owed:** the approval record. Writing one into every card from here would name an approver nobody was - the self-declared trust this proposal is about - so it waits until someone other than the author has approved a card.
 
 **Found 2026-09-14 while building [`HERON-INS-SUP-013`](../../brain/heron_supply.py), the Supply Chain
 Security Agent** — by checking what the field it was about actually does today, rather than assuming the
@@ -185,7 +185,7 @@ ls -d brain/fragments/*/ | wc -l                                      # fragment
 grep -n 'EXPERIMENTAL\|VERIFIED\|OFFICIAL' brain/heron_fragment.py   # what reads it
 ```
 
-The third command prints nothing. **`heron_fragment.py` requires the field and never validates its
+The third command printed nothing until 2026-11-15. **`heron_fragment.py` required the field and never validated its
 value.** The `SOURCES` tuple it does check — `("fragment", "ambient", "request")` — belongs to
 `contract.needs[].source`, a different field with the same name one level down. The one trust word the
 loader does contain, `PROVEN`, is there as a [docs/24](../24-trust-model.md) lifecycle *status*, which
