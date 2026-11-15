@@ -19,8 +19,9 @@ See docs/29-metadata-standard.md
 **The three plan notes that drove this work were deleted on 2026-09-12**, once every phase was built
 and their durable half had moved: `heron-improvement-gate-master-plan.md`,
 `external-repo-adoption-plan.md` and `project-perfection-and-continuous-upgrade-plan.md`. The last of
-those was a condensed re-issue of [34 — Project Perfection](../../34-project-perfection-and-continuous-upgrade-plan.md),
-which stays in `docs/` for its reasoning and now carries a banner saying it has been executed — a plan
+those was a condensed re-issue of [34 — Project Perfection](project-perfection-and-continuous-upgrade-plan-2026-09-12.md),
+which stays in `docs/` for its reasoning (beside this record since 2026-11-15, [PROPOSALS F4](../../PROPOSALS.md))
+and now carries a banner saying it has been executed — a plan
 whose work is done and which still reads as an instruction is the thing
 [AGENTS.md](../../../AGENTS.md) warns about.
 
@@ -139,7 +140,7 @@ The rule applied throughout: **do not build what a tool here already owns.**
 
 Re-opened at implementation time, source inspected rather than READMEs, as the now-retired
 external-repository adoption note required, and as
-[34's mandatory research rule](../../34-project-perfection-and-continuous-upgrade-plan.md) still does.
+[34's mandatory research rule](project-perfection-and-continuous-upgrade-plan-2026-09-12.md) still does.
 
 | Repository | Licence at the paths read | Files actually read |
 |---|---|---|

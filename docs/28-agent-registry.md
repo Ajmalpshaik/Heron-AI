@@ -54,7 +54,7 @@ table - it prints the numbers, which are not typed here.
 |---|---|---|---|---|---|
 | `HERON-ORC-MAIN-001` | Orchestrator | Understands the request, selects capability and agents, builds and runs the workflow, returns the result. **Provided by the host** ([D-01](DECISIONS.md), [D-80](DECISIONS.md)) — Claude Code is the agent host, so this is language work it already does. Not unbuilt; the register shows it under HOST, never under LEFT | T2 | — | 3 |
 | `HERON-ORC-INT-002` | Intent Agent | Classifies what the user is asking for — command, question, debugging, development. **Provided by the host** ([D-01](DECISIONS.md), [D-80](DECISIONS.md)) — Claude Code is the agent host, so this is language work it already does. Not unbuilt; the register shows it under HOST, never under LEFT | T2 | READ | 4 |
-| `HERON-ORC-PER-003` | Communication / Persona Agent | ~~Detects role and technical level;~~ chooses wording. BIM language out, not API calls. **Nothing detects role or technical level:** [D-27](DECISIONS.md) settled one voice, plain BIM language, with the answer's *shape* read from the request's shape, and the one place wording may change is Developer Mode, which is granted ([22 §2–§3](22-users-modes-and-extensibility.md)); the struck clause is [PROPOSALS F19](PROPOSALS.md). **Provided by the host** ([D-01](DECISIONS.md), [D-80](DECISIONS.md)) — Claude Code is the agent host, so this is language work it already does. Not unbuilt; the register shows it under HOST, never under LEFT | T2 | READ | 4 |
+| `HERON-ORC-PER-003` | Communication / Persona Agent | **RETIRED 2026-11-15 by [D-27](DECISIONS.md)**, as [PROPOSALS F19](PROPOSALS.md) decided on the owner's delegation, not yet read back to him: there is no persona, so no agent chooses a voice. The row stays, as every retired agent's does (`HERON-AHR-RET-010`: archive, never delete). The reply in Heron's one voice is the host's, as `HERON-ORC-SUM-006` is, which is why the register still counts this row under HOST. As written: ~~Detects role and technical level;~~ chooses wording. BIM language out, not API calls. **Nothing detects role or technical level:** [D-27](DECISIONS.md) settled one voice, plain BIM language, with the answer's *shape* read from the request's shape, and the one place wording may change is Developer Mode, which is granted ([22 §2–§3](22-users-modes-and-extensibility.md)); the struck clause is [PROPOSALS F19](PROPOSALS.md). **Provided by the host** ([D-01](DECISIONS.md), [D-80](DECISIONS.md)) — Claude Code is the agent host, so this is language work it already does. Not unbuilt; the register shows it under HOST, never under LEFT | T2 | READ | 4 |
 | `HERON-ORC-FAIL-004` | Failure Analysis Agent | Determines *why* something failed and routes it. Never blind-retries. **T1, not T2** — Heron's failures are its own bounded set of codes, so the classification is a table, and the one answer that must never be wrong is one a model should not be asked for ([D-21](DECISIONS.md)) | T1 | READ | 6 |
 | `HERON-ORC-SUM-006` | **User Result Agent** | Compresses the whole internal chain — 12 agents, 37 tool calls, 4 retrievals, 3 tests — into what the user actually needs to read. *"Done. Selected all ducts, moved them 200 mm up, verified in Revit."* This is what makes simple-outside / complex-inside real ↗. **Provided by the host** ([D-01](DECISIONS.md), [D-80](DECISIONS.md)) — Claude Code is the agent host, so this is language work it already does. Not unbuilt; the register shows it under HOST, never under LEFT | T2 | READ | 4 |
 | `HERON-ORC-FIX-005` | Fix Agent | Applies a targeted repair chosen by failure analysis | T3 | MODIFY | — |
@@ -179,7 +179,7 @@ weighed and set aside, on the record, in [42 §2](42-fire-protection-design.md).
 | `HERON-RAG-VEC-009` | Vector Search Agent | Searches the vector index | T1 | READ | — |
 | `HERON-RAG-IDX-010` | Index Manager Agent | Maintains indexes and their metadata | T1 | MODIFY | — |
 | `HERON-RAG-RIX-011` | Re-index Agent | Re-indexes on change, by content hash not mtime | T1 | MODIFY | — |
-| `HERON-RAG-DUP-012` | Duplicate Detection Agent | Finds duplicate knowledge at write time, not only at read time | T1 | READ | — |
+| `HERON-RAG-DUP-012` | Ingest Duplicate Detection Agent | Finds duplicate knowledge at write time, not only at read time. **Renamed 2026-11-15** from *Duplicate Detection Agent*, the name `HERON-IMP-DUP-007` carries for another job ([Q-76](open-questions/tier-2.md), on the owner's delegation, not yet read back to him) | T1 | READ | — |
 | `HERON-RAG-VAL-013` | Knowledge Validation Agent | Checks retrieved knowledge before it is used | T2 | READ | — |
 | `HERON-RAG-CIT-014` | Citation / Source Agent | Tracks provenance. **No source, no claim** | T1 | READ | — |
 | `HERON-RAG-CNF-015` | **Knowledge Conflict Agent** | Two sources disagree — compares version, source, trust, project context, test history. Asks the user when unsure ↗ | T2 | SUGGEST | — |
@@ -330,7 +330,7 @@ fragment-side one.
 | `HERON-DEV-EXP-021` | **Experiment Agent** | The scientist. Designs and runs a **comparison** where the right answer is not known yet — is v2 actually better than v1, does this approach beat that one, is the change worth keeping. Reports a verdict with evidence, not an opinion ↗ | T3 | READ | — |
 | `HERON-DEV-QA-016` | QA Agent | Final gate before approval. Never the implementer | T2 | — | — |
 | `HERON-DEV-DOC-017` | Documentation Agent | Generates docs from registries and metadata | T1 | — | — |
-| `HERON-DEV-REL-018` | Release Agent | Packages and releases | T1 | PUBLISH | — |
+| `HERON-DEV-REL-018` | Release Packaging Agent | Packages and releases. **Renamed 2026-11-15** from *Release Agent*, the name `HERON-GIT-REL-007` carries for tagging and publishing ([Q-76](open-questions/tier-2.md), on the owner's delegation, not yet read back to him) | T1 | PUBLISH | — |
 
 ## 10. Agent Lifecycle & HR — 17
 
@@ -813,7 +813,7 @@ is a separate agent with its own gate rather than a step inside rendering.
 
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
-| `HERON-RPT-CMP-001` | **Report Composition Agent** | Decides *what goes in* and at what depth for this reader — a modeller wants the 47 failures, a BIM manager wants the trend. Judgement, so a model call ↗. **As built (2026-10-18):** [`heron_compose.py`](../brain/heron_compose.py) follows [D-27](DECISIONS.md) instead - the shape of the answer comes from the shape of the **request** (a count, a breakdown, a narrowed set, a finished job, a comparison), not from the reader, and it calls no model ([PROPOSALS F19](PROPOSALS.md)). The tier in this row is the register's, and changing it is the owner's | T2 | READ | — |
+| `HERON-RPT-CMP-001` | **Report Composition Agent** | Decides *what goes in* and at what depth ~~for this reader — a modeller wants the 47 failures, a BIM manager wants the trend~~ **for this request** ([D-27](DECISIONS.md); rewritten 2026-11-15, [PROPOSALS F19](PROPOSALS.md)). Judgement, so a model call ↗. **As built (2026-10-18):** [`heron_compose.py`](../brain/heron_compose.py) follows [D-27](DECISIONS.md) instead - the shape of the answer comes from the shape of the **request** (a count, a breakdown, a narrowed set, a finished job, a comparison), not from the reader, and it calls no model ([PROPOSALS F19](PROPOSALS.md)). The tier in this row is the register's, and changing it is the owner's | T2 | READ | — |
 | `HERON-RPT-RND-002` | **Report Rendering Agent** | Deterministic templates → page, PDF, schedule, CSV, image. **No model call** — data in, document out, same input same output ↗ | T1 | READ | — |
 | `HERON-RPT-VAL-004` | **Report Validation Agent** | Does the report say what the data says. Counts match the query, nothing dropped silently, every figure traceable to its source. A report claiming 47 failures when there are 52 is worse than no report ↗ | T2 | READ | — |
 | `HERON-RPT-RED-003` | **Report Redaction & Release Agent** | The gate before a report can be shared or leave the machine. ~~Strips project identifiers,~~ enforces scope, blocks confidential-project egress. **A report is an egress surface** ↗. **As built (2026-10-18):** it strips nothing - [D-26](DECISIONS.md) puts project names among what is fine in the conversation - and **refuses** instead: a Revit file attached, a credential in the text, more than one project, or a project that has not said it may leave ([`heron_release.py`](../brain/heron_release.py), [PROPOSALS F20](PROPOSALS.md)) | T1 | PUBLISH | — |
@@ -836,10 +836,13 @@ Four of five. The split holds.
 An inline widget — a preview panel, a picker, a progress display — is the *same work* as a report at a
 different size. Same risk, same consumers, same tier, same failure mode as rendering. The only distinct
 decision is *"should this be shown visually or said in a sentence?"* — and that is presentation, which
-already belongs to the **Communication / Persona Agent** (`HERON-ORC-PER-003`).
+~~already belongs to the **Communication / Persona Agent** (`HERON-ORC-PER-003`)~~ **is the host's, with
+the answer's shape read from the request's ([D-27](DECISIONS.md)); `HERON-ORC-PER-003` is retired
+([PROPOSALS F19](PROPOSALS.md), 2026-11-15)**.
 
 Adding a widget agent would create exactly the near-duplicate the Fragment Merge Agent exists to
-prevent. The Persona Agent decides the format; the Rendering Agent produces it.
+prevent. ~~The Persona Agent decides the format;~~ **The request's shape decides the format;** the
+Rendering Agent produces it.
 
 ---
 

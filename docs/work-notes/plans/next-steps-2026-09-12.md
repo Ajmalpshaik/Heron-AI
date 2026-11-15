@@ -181,6 +181,10 @@ about.
 `34-patterns-adapted.md` and `34-project-perfection-and-continuous-upgrade-plan.md`. Renumbering one
 touches every link that names it, so `tools/check-docs.py` is the check that it was done completely.
 
+**Done 2026-11-15** ([PROPOSALS F4](../../PROPOSALS.md)): the plan moved to
+[the work notes](project-perfection-and-continuous-upgrade-plan-2026-09-12.md), and `docs/34` is the
+patterns document's alone.
+
 ---
 
 ## What is waiting on the owner, in one table

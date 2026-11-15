@@ -7,7 +7,13 @@ Heron-Layer:  brain
 See docs/29-metadata-standard.md
 -->
 
-# 34 — Project Perfection and Continuous Upgrade Plan
+# Project Perfection and Continuous Upgrade Plan
+
+> **Moved 2026-11-15** from `docs/34-project-perfection-and-continuous-upgrade-plan.md`, where it shared
+> its number with [34 — The Patterns, Adapted](../../34-patterns-adapted.md), to the work notes, because a
+> plan whose work is done belongs here ([PROPOSALS F4](../../PROPOSALS.md), decided on the owner's
+> delegation and not yet read back to him). It is kept for its reasoning - the fullest written statement of
+> how Heron studies an outside project - and retires once that part has a permanent home.
 
 > **Next-work note.** This document defines how Heron AI should study proven external repositories, extract only useful engineering principles, and turn them into Heron-native improvements without copying another project’s architecture or code.
 >
@@ -16,38 +22,38 @@ See docs/29-metadata-standard.md
 > ### ✅ EXECUTED — 2026-09-12. Do not run this again without reading what it produced.
 >
 > Everything below was carried out. The **Improvement Gate** exists:
-> [`check-change.py`](../tools/check-change.py) (intent against diff),
-> [`change-evidence.py`](../tools/change-evidence.py) (before and after, and the keep/revert ruling),
-> [`check-package.py`](../tools/check-package.py) (the delivery questions),
-> [`heron_runtime.py`](../mcp/server/heron_runtime.py) (what Heron can do right now, and why not), and
-> the Python half of the layering table in [`check-structure.py`](../tools/check-structure.py).
+> [`check-change.py`](../../../tools/check-change.py) (intent against diff),
+> [`change-evidence.py`](../../../tools/change-evidence.py) (before and after, and the keep/revert ruling),
+> [`check-package.py`](../../../tools/check-package.py) (the delivery questions),
+> [`heron_runtime.py`](../../../mcp/server/heron_runtime.py) (what Heron can do right now, and why not), and
+> the Python half of the layering table in [`check-structure.py`](../../../tools/check-structure.py).
 >
-> **Where its durable output went:** [D-68](DECISIONS.md) and [D-69](DECISIONS.md) ·
-> [34 §2.15–2.19](34-patterns-adapted.md) for the external patterns and the licence of each path read ·
-> [13 §3a](13-testing-and-quality.md) for the offline-versus-real-Revit line ·
-> [04 §6b](04-heron-mcp.md) for the capability-verdict rule · [PROPOSALS Part F](PROPOSALS.md) for what
+> **Where its durable output went:** [D-68](../../DECISIONS.md) and [D-69](../../DECISIONS.md) ·
+> [34 §2.15–2.19](../../34-patterns-adapted.md) for the external patterns and the licence of each path read ·
+> [13 §3a](../../13-testing-and-quality.md) for the offline-versus-real-Revit line ·
+> [04 §6b](../../04-heron-mcp.md) for the capability-verdict rule · [PROPOSALS Part F](../../PROPOSALS.md) for what
 > was left open. The three work notes that drove the execution retired with it.
 >
 > **This document is kept for its reasoning, not as an instruction.** The research rule in §"Mandatory
 > research rule during implementation" still stands for the *next* piece of work — it was followed for
 > this one, and the exact files and licences read are recorded in
-> [34 §2.15–2.19](34-patterns-adapted.md).
+> [34 §2.15–2.19](../../34-patterns-adapted.md).
 
 ### At a glance — what the plan asked for, and what exists now
 
-Read from the note above and the records it names. Each tool is in [`tools/README.md`](../tools/README.md)
+Read from the note above and the records it names. Each tool is in [`tools/README.md`](../../../tools/README.md)
 or beside the server; run it rather than trust this table.
 
 | The plan asked for | What exists now | Its record |
 |---|---|---|
-| Did scope grow beyond the task? (§5 Phase F, §9) | [`check-change.py`](../tools/check-change.py) - the diff judged against a one-line intent, an area and a risk | [D-68](DECISIONS.md), [34 §2.15–2.16](34-patterns-adapted.md) |
-| Baseline, one change, keep or revert (§5 Phase B, §8, §12 Stage 1) | [`change-evidence.py`](../tools/change-evidence.py) - before and after, ruled KEEP, REVERT or NO CHANGE MEASURED | [D-68](DECISIONS.md) |
-| Architecture-boundary checks (§9) | [`check-structure.py`](../tools/check-structure.py) - the layering table now read for Python as well as C# | [D-69](DECISIONS.md) |
-| Packaging and install checks (§2.3, §9) | [`check-package.py`](../tools/check-package.py) - the manifest Revit reads first; it says on every run what it cannot answer | [34 §2.17](34-patterns-adapted.md) |
-| Runtime and capability information, not guessed (§2.3) | [`heron_runtime.py`](../mcp/server/heron_runtime.py) - what Heron can do right now, and why not | [04 §6b](04-heron-mcp.md) |
-| Mock mode, never a faked Revit proof (§2.3) | a rule, not code: the offline-versus-real-Revit line | [13 §3a](13-testing-and-quality.md), [34 §2.18](34-patterns-adapted.md) |
-| Licence and provenance checks (§9) | [`check-licence.py`](../tools/check-licence.py) - it predates this plan | [D-66](DECISIONS.md) |
-| What was left open | - | [PROPOSALS Part F](PROPOSALS.md) |
+| Did scope grow beyond the task? (§5 Phase F, §9) | [`check-change.py`](../../../tools/check-change.py) - the diff judged against a one-line intent, an area and a risk | [D-68](../../DECISIONS.md), [34 §2.15–2.16](../../34-patterns-adapted.md) |
+| Baseline, one change, keep or revert (§5 Phase B, §8, §12 Stage 1) | [`change-evidence.py`](../../../tools/change-evidence.py) - before and after, ruled KEEP, REVERT or NO CHANGE MEASURED | [D-68](../../DECISIONS.md) |
+| Architecture-boundary checks (§9) | [`check-structure.py`](../../../tools/check-structure.py) - the layering table now read for Python as well as C# | [D-69](../../DECISIONS.md) |
+| Packaging and install checks (§2.3, §9) | [`check-package.py`](../../../tools/check-package.py) - the manifest Revit reads first; it says on every run what it cannot answer | [34 §2.17](../../34-patterns-adapted.md) |
+| Runtime and capability information, not guessed (§2.3) | [`heron_runtime.py`](../../../mcp/server/heron_runtime.py) - what Heron can do right now, and why not | [04 §6b](../../04-heron-mcp.md) |
+| Mock mode, never a faked Revit proof (§2.3) | a rule, not code: the offline-versus-real-Revit line | [13 §3a](../../13-testing-and-quality.md), [34 §2.18](../../34-patterns-adapted.md) |
+| Licence and provenance checks (§9) | [`check-licence.py`](../../../tools/check-licence.py) - it predates this plan | [D-66](../../DECISIONS.md) |
+| What was left open | - | [PROPOSALS Part F](../../PROPOSALS.md) |
 
 ---
 
