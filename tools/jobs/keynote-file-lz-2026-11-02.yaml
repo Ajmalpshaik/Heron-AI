@@ -3,6 +3,20 @@
 # of its own when #794 proved that one), built 2026-11-02 in a cloud session
 # with no Revit. NOT RUN.
 #
+# RE-ARRANGED 2026-11-15 for one sitting on Revit 2024, then 2020 (field report
+# #854; docs/needs-checking/group-lz.md, "The sitting"). load-keynote-file is
+# version 2 and judged on `loadedFile`, empty on a refusal (row 5b-1647);
+# report-keynote-file is version 2 and its negative is an unsaved family,
+# "Family1" - keynote-lz-b names a file too, so it could never be the empty
+# half (row 5b-1737). Both pinned to "keynote-lz" so nothing lands on another
+# open model.
+#
+#     python tools/batch-prove.py tools/jobs/keynote-file-lz-2026-11-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/keynote-file-lz-2026-11-02.yaml --session <2024 pid>
+#     python tools/batch-prove.py tools/jobs/keynote-file-lz-2026-11-02.yaml --release 2020 --session <2020 pid>
+#
+# The first two lines below are the 2026-11-02 ones and still work.
+#
 #     python tools/batch-prove.py tools/jobs/keynote-file-lz-2026-11-02.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/keynote-file-lz-2026-11-02.yaml
 #
@@ -26,19 +40,21 @@ model: "a scratch project from Revit's default architectural template, the defau
 jobs:
   - fragment: report-keynote-file
     in: "keynote-lz"
-    negative-in: "keynote-lz-b"
+    negative-in: "Family1"
     expect: keynoteFile
     note: >
-      LZ2. Negative - THE FIRST CASE TO RUN: "keynote-lz-b" - keynoteFile
-      names keynotes-b.txt and NOT the default file, tableEntries 4; a reader
-      answering a default path would name the default file here. Positive:
-      "keynote-lz" - keynoteFile the default keynote file's path, "path type
-      Absolute", "Revit: Loaded"; tableEntries the count Keynoting Settings >
-      View lists.
+      LZ2. Negative - THE FIRST CASE TO RUN: "Family1", an unsaved Generic
+      Model family - keynoteFile empty, tableEntries 0, "... is a family - the
+      keynote file is a project setting, so nothing was read". Positive:
+      "keynote-lz" - keynoteFile the default keynote file's path, its path
+      type and "Revit: Loaded"; tableEntries the count Keynoting Settings >
+      View lists. Then by hand, a second check: keynote-lz-b names
+      keynotes-b.txt, not the default file.
 
   - fragment: load-keynote-file
     write: true
-    expect: loadResult
+    in: "keynote-lz"
+    expect: loadedFile
     set:
       filePath: "C:\\Users\\YOU\\AppData\\Local\\Temp\\heron-work\\keynotes-b.txt"
       pathType: ""
@@ -46,8 +62,8 @@ jobs:
       filePath: "C:\\Users\\YOU\\AppData\\Local\\Temp\\heron-work\\keynotes-missing.txt"
       pathType: ""
     note: >
-      LZ3. Negative - THE FIRST CASE TO RUN: keynotes-missing.txt - refused
-      "There is no file at ... that this PC can see", fileAfter equal to
-      fileBefore, entriesAfter equal to entriesBefore. Positive:
-      keynotes-b.txt - loadResult "loaded", fileAfter "...keynotes-b.txt
-      (Absolute), Revit: Loaded", entriesAfter 4.
+      LZ3. Negative - THE FIRST CASE TO RUN: keynotes-missing.txt - loadedFile
+      empty, refused "There is no file at ... that this PC can see", fileAfter
+      equal to fileBefore, entriesAfter equal to entriesBefore. Positive:
+      keynotes-b.txt - loadedFile and fileAfter "...keynotes-b.txt
+      (Absolute), Revit: Loaded", loadResult "loaded", entriesAfter 4.

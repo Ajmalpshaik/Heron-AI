@@ -45,10 +45,19 @@ semantic-identity: "load or reload the keynote file the keynote tags read from, 
 # requires one: LoadFrom and Reload throw ModificationOutsideTransactionException
 # without it (RevitAPI.xml, 2020 to 2027) - so Heron's transaction group, which
 # stopped Reload Latest (row 5b-1423), is no obstacle here.
+#
+# VERSION 2, 2026-11-15 - row 5b-1647, found proving version 1 on the owner's
+# PC (Revit 2020, P1102 MEP, rolled back): the load and the refusal were both
+# right, and the draft still read "the negative case returned content",
+# because the only `role: result`, `loadResult`, was a sentence filled either
+# way. The result is now `loadedFile`, empty unless Revit reported the load
+# done; `loadResult` stays as accounting. Row 5b-1738: the "not the path
+# typed" line compares full paths, not spellings. Never proven, so no proof is
+# made stale; field report #854 (Revit 2024) asked for it proved.
 kind: action
 domain: revit.annotation
 capability: LOAD_KEYNOTE_FILE
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -75,10 +84,18 @@ contract:
       type: string
       source: request
   provides:
+    - name: loadedFile
+      # VERSION 2 - THE RESULT. The keynote file Revit holds after a load or
+      # reload it reported as done (Success, or already current on a reload),
+      # READ BACK as `fileAfter` is. EMPTY when nothing was loaded - a
+      # refusal or a failed load - which is the D-30 negative (row 5b-1647).
+      role: result
+      type: string
     - name: loadResult
       # Revit's own result in words: loaded, reloaded, already current, or
-      # FAILED with Revit's reason - or why nothing was loaded.
-      role: result
+      # FAILED with Revit's reason - or why nothing was loaded. Filled either
+      # way, so it describes the run (D-52) - a result until version 2.
+      role: accounting
       type: string
     - name: fileBefore
       # The keynote file before: path as saved, path type, where it resolves,
@@ -149,7 +166,11 @@ compatibility-note: >
 #   "reload the links"                         -> RELOAD_LINKS
 #   "load this family"                         -> LOAD_FAMILY
 
+# 2026-11-15, field report #854 / #853 D1 - the modeller's ask in her words.
+# On origin/main at aaac505 it reached REPORT_KEYNOTE_FILE, a read (hybrid,
+# a scratch store, Revit 2024).
 utterances:
   - load the keynote file C:\Standards\Keynotes.txt
   - reload the keynote file
   - change the keynote file to the office standard on the server
+  - load the project keynote file

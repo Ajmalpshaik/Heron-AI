@@ -17,11 +17,24 @@
 //
 // THE PATH IS REPORTED AS SAVED, NEVER REPLACED. A file Revit cannot find is
 // named with "Revit: NotFound", never swapped for one that exists.
+//
+// VERSION 2, 2026-11-15 - row 5b-1737. A FAMILY IS NOT A PROJECT: the keynote
+// file is a project setting (Annotate > Keynoting Settings), so a family
+// document is answered in words and nothing is read - `keynoteFile` empty,
+// `tableEntries` 0 - as REPORT_PROJECT_INFORMATION answers one for Project
+// Information. It is also D-30's empty half: a project nearly always names some file.
 
 var findings = new List<string>();
 var keynoteFile = "";
 var tableEntries = 0;
 
+var isFamily = false;
+try { isFamily = doc.IsFamilyDocument; } catch { }
+if (isFamily)
+{
+    findings.Add("The document in front, \"" + doc.Title + "\", is a family - the keynote file is a project setting, so nothing was read.");
+}
+else
 try
 {
     var table = KeynoteTable.GetKeynoteTable(doc);
@@ -83,5 +96,6 @@ catch (Exception ex)
     findings.Add("The keynote table could not be read: " + ex.Message);
 }
 
+if (!isFamily)
 findings.Add("Keynote file: " + (keynoteFile == "" ? "none named in Keynoting Settings" : keynoteFile)
     + "; " + tableEntries + " entr" + (tableEntries == 1 ? "y" : "ies") + " in the loaded table.");
