@@ -1,0 +1,59 @@
+# NEEDS-CHECKING Group MI on Revit 2024 - ADD_AREA_BASED_LOAD and
+# ADD_ELECTRICAL_ANALYTICAL_NODE (both DRAFT). Written 2026-11-14 night from
+# tools/jobs/electrical-wire-type-area-load-nodes-mi-2026-11-02.yaml, whose
+# names were written before MI1 had run; this file carries what MI1 read.
+#
+#     python tools/batch-prove.py tools/jobs/electrical-mi-revit2024-2026-11-14.yaml --dry-run
+#     HERON_CLIENT_ID=heron-batch-prove python tools/batch-prove.py tools/jobs/electrical-mi-revit2024-2026-11-14.yaml --unattended --session <pid>
+#
+# THE MODEL (group-mi.md, MI1): "electrical-mi", made by Heron with
+# CREATE_FAMILY_DOCUMENT from Revit 2024's English\Electrical-Default_Metric.rte
+# and saved under %TEMP%\heron-work\electrical-mi - never a working model. On
+# Level 1, five Generic - 200mm walls (a 10 x 5 m box and a wall across it at
+# x = 5000) and a space in each half, 809148 and 809149, both bounded. The
+# template's plan of Level 1 is "1 - Power". Its wire types are "THWN" and
+# "XHHW", both Copper, rating 60 - not the "90 C" the older file guessed -
+# and ADD_WIRE_TYPE is PROVEN, so it is not here.
+#
+# Every write is ROLLED BACK. Each negative is a different value or
+# selection, never an empty one.
+model: "electrical-mi scratch project (Revit 2024 metric Electrical template), two spaces on Level 1"
+jobs:
+  - fragment: add-area-based-load
+    expect: areasAssigned
+    in: "electrical-mi"
+    write: true
+    setup: [select-by-category-name, set-selection]
+    set:
+      categoryName: "Spaces"
+      inViewOnly: "FloorPlan: 1 - Power"
+      loadType: "Office lighting"
+      density: "25"
+      loadClassification: "Lighting"
+    negative-set:
+      categoryName: "Walls"
+      inViewOnly: "FloorPlan: 1 - Power"
+      loadType: "Office lighting"
+      density: "25"
+      loadClassification: "Lighting"
+    note: >
+      MI3. Negative, the five walls: loadsAdded 0 and areasAssigned 0, each
+      wall skipped as not a space or load area (the type itself IS made,
+      typesAdded 1, and rolled back). Positive: typesAdded 1, loadsAdded 1,
+      areasAssigned 2; Level 1's load areas made by Revit and said so; the
+      type at 25 W/m2 - not 2.3 and not 269.
+
+  - fragment: add-electrical-analytical-node
+    expect: added
+    in: "electrical-mi"
+    write: true
+    setup: []
+    set:
+      name: "TX-1"
+      nodeType: "transformer"
+    negative-set:
+      name: "TX-1"
+      nodeType: "switchboard"
+    note: >
+      MI4. Negative: "switchboard" is none of the five kinds - added 0, the
+      kinds named. Positive: added 1, "TX-1" a transformer, fed from nothing.

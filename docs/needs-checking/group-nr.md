@@ -54,3 +54,176 @@ in a row is changed to make it pass.
 NR6, `hvac-spaces-and-zones` on NR7 to NR11, and NR12 for all three - NR10's 2027 half and NR9 where a second phase is at hand,
 otherwise NOT RUN, and say so. **Nothing in a card is edited from this group without a recorded run**; what
 NR9 shows goes to row 5b-1589, and what NR7 shows to row 5b-1125.
+
+### Run record - 2026-11-14, NR4 on the laptop, Revit 2020
+
+Revit 2020, session 30228, the add-in rebuilt from this branch (main at 0b4ea659 merged; PR #868's Activity pane
+and pipe hardening in it) and deployed that day; the model **P1102 MEP NR**, a fresh copy of Revit 2020's
+`rme_advanced_sample_project.rvt` under `%TEMP%\heron-work\prove-1102`. Ask to Keep ON, the owner at Revit
+pressing Keep. **Asked in the testing chat, not a new one**: the method was read with `heron_method` and followed
+step by step, so what a fresh chat would ask on its own is NOT measured here; every call and answer is.
+
+| Step | What was seen |
+|---|---|
+| 1 `REPORT_VIEW_FILTERS`, Level 1 HVAC Duct Plan | *"View 'Level 1 HVAC Duct Plan' (FloorPlan) carries no filters"*, `templateOwned false`, the project's 21 filters each said with the views that use it |
+| 2 `REPORT_FILTERABLE_PARAMETERS`, Ducts and Duct Fittings | *System Classification* in `commonParameters`; `unfilterableCategories` none |
+| 3 `FILTER_ELEMENTS_BY_CATEGORY` | 540 on the plan - Ducts 258, Duct Fittings 282 |
+| 4 `CREATE_VIEW_FILTER perValue=true`, *System Classification*, prefix, the plan | the owner pressed **Keep**; 4 filters, one a value - Exhaust Air 235,60,60 (109 elements in the model), Return Air 147,235,60 (327), Supply Air 60,235,235 (936), Undefined 147,60,235 (294) - each with its rule, count and colour in `readBack`; `alreadyExists` none. **The names read `NR -Supply Air`, not `NR - Supply Air`:** the prefix was sent unquoted and `revit_change` trims a value's end unless it is in double quotes, as its own description says - the session's slip, not the card's |
+| 5 `TEST_VIEW_FILTER_MATCH`, *NR -Supply Air* | *"Of 540 tested: 291 MATCH, 249 fail the rule, and 0 are OUT OF SCOPE"* |
+| 6 `COPY_VIEW_FILTERS` to Level 2 HVAC Duct Plan, `onlyFilterNamed=` empty | the owner pressed **Keep**; `filtersApplied 4`, `viewsChanged 1`, `blockedByTemplate` none |
+| The owner looked | both plans show the ducts in the four colours - his screenshots |
+
+**NR4: PASS**, with the naming slip above.
+
+**NR5, the same sitting** (the testing chat; Ask to Keep ON):
+
+| Part | Result | What was seen |
+|---|---|---|
+| (a) | **PASS** | NR4's call again: `alreadyExists` the four, *"left exactly as they were, not overwritten"*, nothing made, no box (Revit counted nothing) |
+| (b) | **PASS** | the same with `colour=255,0,0`: refused, *"one colour for all of them is refused - leave the colour out; nothing was made"* |
+| (c) | **PASS** | *Level 3 HVAC Plan* given the template *Mechanical Plan* through `APPLY_VIEW_TEMPLATE` (kept) - *HVAC Duct Plan* was tried first and holds no filters, `templateOwned false`. Then `templateOwned true` with *"The view template 'Mechanical Plan' owns the filters on 'Level 3 HVAC Plan'"*; `COPY_VIEW_FILTERS` with `onlyFilterNamed=` empty: `blockedByTemplate` *"... governed by template 'Mechanical Plan' - copy onto that template instead"*, `filtersApplied 0`. The lookup did not offer `APPLY_VIEW_TEMPLATE` ([row 5b-1649](../fragment-issues/row-5b-1649.md)) |
+| (d) | **Learned, as asked** | `CREATE_VIEW_FILTER` on that plan with prefix *"NR2 - "* made four filters ON it and read their colours back, with no word about the template ([row 5b-1650](../fragment-issues/row-5b-1650.md)). The owner's Ctrl+Z took it back - 25 filters in the project, the plan's five again |
+| (e) | **PASS** | `COPY_VIEW_FILTERS` to *Level 1 HVAC Plan* with `onlyFilterNamed` left out: refused before anything was sent - *"'onlyFilterNamed (string)' is a value the CALLER supplies"* |
+
+**NR1, the same sitting** (Revit 2020, session 30228, *P1102 MEP NR*, Ask to Keep ON, the owner pressing Keep).
+**Asked in the testing chat, not a new one**, and the plan was NOT arranged as the row says - no ducts tagged by
+hand, no pair of tags dragged together: the method was read with `heron_method` `annotate-a-view` and followed
+step by step on *Level 1 HVAC Duct Plan* as it stood. The answers were the row's - Ducts and Air Terminals, the
+project's default tags, no leader, 2 mm overlap, 2 mm gap. The row gives no `maxPasses` and no tag size; the session
+sent `maxPasses=10` and `fallbackTagWidthMm=1200`, `fallbackTagHeightMm=400` (12 by 4 mm on the paper), used only
+when every tag has a leader - none had.
+
+| Step | What was seen |
+|---|---|
+| 1 `FILTER_ELEMENTS_BY_CATEGORY` + `FIND_UNTAGGED_ELEMENTS` | 363 on the plan (*Ducts 258, Air Terminals 105*); `elements 363`, `alreadyTagged 0` - said before anything was tagged |
+| 2 `TAG_ELEMENTS_IN_VIEW`, `leader=none` | the owner pressed **Keep**; `tagged 349` (*Duct Tags 244, Air Terminal Tags 105*), `alreadyTagged 0`, `notTagged 0`, `verticalSkipped 14`, `scale 100`; `tagTypesUsed` one line a category, each *"(the project's default)"* |
+| 3 `FIND_OVERLAPPING_TAGS`, `minOverlapMm=2` | `pairs 77` - *"185 annotation element(s) compared"* |
+| 4 Duct Tags filter (111), `ARRANGE_TAGS` **`minGapMm=200`** - 2 mm times the scale, as the method says | **Keep**; `moved 75`, `stillOverlapping 50`, `bothHadToMove 55`, `gap` 0.656 ft (200 mm) |
+| 4 Air Terminal Tags filter (105), the same call | **Keep**; `moved 54`, `stillOverlapping 29`, `bothHadToMove 31` |
+| 3 again | `pairs 42`; 40 of them a diffuser tag over a duct tag - two categories, which no call of step 4 compares ([row 5b-1652](../fragment-issues/row-5b-1652.md)) |
+| 7 the filter, `FIND_UNTAGGED_ELEMENTS`, `REPORT_TAGS_AND_TARGETS` | *Ducts 557, Air Terminals 105* - not 258 - with the model's element count unchanged; `elements 467`, `alreadyTagged 195`; `tagCount 195`, `orphanTags 0`, `linkedTags 0`. Read twice, the same ([row 5b-1651](../fragment-issues/row-5b-1651.md)) |
+| The owner looked | no Temporary Hide/Isolate border; most ducts in his zoomed screenshot carry a tag, some tags still overlap; the whole-plan screenshot too small to count by |
+
+**NR1: FAIL as written** - the second overlap read answers `pairs 42`, not 0. What the row asked the chat to do it
+did: the counts said before tagging, `alreadyTagged 0`, one line a tag category, and the gap sent as 200 and said
+so. The plan's count changing under it (row 5b-1651) is unexplained. The NR1 entries are left in Revit's undo list,
+not undone: NR2 runs on the plan NR1 tagged.
+
+**NR2, the same sitting**, on the plan NR1 tagged, nothing of NR1 undone. By the time it ran, the plan read through
+Heron was back to *Ducts 258* (row 5b-1651: it flips).
+
+| Part | Result | What was seen |
+|---|---|---|
+| (a) | **PASS** | the filter (363) then `FIND_UNTAGGED_ELEMENTS`: `alreadyTagged 349`, `elements 14` - the 14 risers NR1's tag call left bare on purpose (`verticalSkipped`), nothing else |
+| After (a), not predicted | **Written down** | `TAG_ELEMENTS_IN_VIEW` with `expect_from` naming (a): `tagged 0`, `verticalSkipped 14`, `notTagged 0`; *"Revit reported nothing added, changed or deleted in the model, so the modeller was not asked"* - no box, no undo entry |
+| (b) | **PASS** | the filter again, then the tag call handed the whole set: `tagged 0`, `alreadyTagged 349`, `skipped 349`, `verticalSkipped 14` - no second tag on any duct, no box |
+| (c) | **NOT RUN as written** | *P1102 MEP NR* has *M_Flex Duct Tag Round* loaded, so the premise - no Flex Duct tag family - is not met there. The session sent the call without first reading which tag families are loaded: on *Level 2 HVAC Duct Plan* it answered `tagged 54` with *"Flex Duct Tags: M_Flex Duct Tag Round (the project's default)"*, and the owner kept it at the box before reading the ask to Discard; his Ctrl+Z took it back (*Flex Duct Tags: 0* read after). The session's slip, not the card's. Owed: a project without a flex duct tag |
+| (d) | **PASS - row 5b-240 seen** | Duct Tags filter (244 this time - NR1 had 111), `ARRANGE_TAGS minGapMm=2`, kept: `moved 91`, `stillOverlapping 54`, `gap` 0.00656 ft - 2 mm in the model, 0.02 mm on the 1:100 sheet: boxes moved until they just clear. The overlap read straight after compared all *349* and answered `pairs 110` - the true count NR1's 42 had been read over part of (row 5b-1651) |
+
+**NR3, the same sitting** - on this plan's duct tags and diffuser tags, not duct and pipe tags: a duct plan carries no
+pipe tags; the question the row asks is the same.
+
+| Step | What was seen |
+|---|---|
+| `FILTER_ELEMENTS_BY_CATEGORY categories=Duct Tags, Air Terminal Tags` | binds: 349 (*Duct Tags 244, Air Terminal Tags 105*) |
+| `ARRANGE_TAGS` with `expect_from` naming it, `minGapMm=200`, `maxPasses=10` | takes it; kept; `moved 317` (*Duct Tags 215, Air Terminal Tags 102*), `stillOverlapping 249`, `bothHadToMove 279` - **with one tag size for all**, `halfWidth` 3.27 ft and `halfHeight` 0.67 ft, the duct tag's (row 5b-1652) |
+| `FIND_OVERLAPPING_TAGS` | `pairs 34`, over *186* of the 349 tags (row 5b-1651) |
+
+**NR3: Learned, as asked** - a two-category filter binds and `ARRANGE_TAGS` takes it, but it spaces every tag by one
+median size, so step 4 should not be told to hand both categories in one call until that is settled (row 5b-1652).
+
+**NR12, the same sitting** (the testing chat, not a new one), *Level 2 HVAC Duct Plan* of *P1102 MEP NR*.
+
+| Step | What was seen |
+|---|---|
+| The owner turned *Ask to Keep* off | `revit_health`, under Revit 2020 session 30228: *"Ask to Keep is off in this Revit right now: a change made through revit_change is kept at once, with no Keep or Discard box, as one entry in Revit's Undo list"*; his Settings screenshot the same |
+| Before the tag call | the chat told the owner the tags would be kept at once, with no box |
+| Filter (Ducts, 249) + `FIND_UNTAGGED_ELEMENTS` | `elements 243`, `alreadyTagged 6` |
+| `TAG_ELEMENTS_IN_VIEW`, `leader=none` | `outcome: KEPT`, `changed: 223 added (Duct Tags 223)`, `tagged 223`, `verticalSkipped 20`, *"Duct Tags: M_Bottom Elevation Duct Tag ... (the project's default)"*; the answer carries no *"You were asked in Revit"* line. **The owner: no box came.** The plan read 229 duct tags, the model 22,039 elements |
+| The owner's one Ctrl+Z | the plan read 6 duct tags again and the model 21,816 - one Undo took every tag. The chat made no second change |
+| *Ask to Keep* back on | his screenshot; `revit_health`: *"Ask to Keep is ON in this Revit right now"* |
+
+**NR12: PASS.**
+
+**NR7, the same sitting** - on a host made for it, because *P1102 MEP NR* already holds 89 spaces and 53 zones. The
+session made **NR Spaces Host** with `CREATE_FAMILY_DOCUMENT` from Revit 2020's `US Metric\Mechanical-Default_Metric.rte`,
+saved straight to `%TEMP%\heron-work\prove-1102\NR Spaces Host.rvt` on the owner's yes, opened it (`ACTIVATE_DOCUMENT`,
+`revit_use_this_model`), linked `P1102 ARCH.rvt` origin to origin (`LINK_FILES`, kept), read the link's five levels
+(`REPORT_LEVEL_ELEVATIONS includeLinks=true`, a DRAFT read: 0, 3800, 7600, 11400, 12000 mm), made *02 - Floor*, *03 -
+Floor* and *Roof* at 3800, 7600 and 11400 (`CREATE_LEVELS`, kept; the template's *Level 2* at 4000 left) and floor plans
+for the two new floors (`CREATE_PLAN_VIEW`, kept). The testing chat, not a new one; `heron_method hvac-spaces-and-zones`
+read first; Ask to Keep ON, the owner pressing Keep. Midway the owner gave a standing word for this scratch host -
+*"whatever you need to test and do for testing you can do it"* - which stood for the yes of steps 5 and the volume switch.
+
+| Step | What was seen |
+|---|---|
+| 0 `REPORT_OPEN_DOCUMENTS` (DRAFT read) | both projects with a file; *NR Spaces Host* written 2 minutes before |
+| 1 `LIST_LINKED_MODELS`, `revit_rooms`, `revit_phases` | *"P1102 ARCH.rvt - loaded, placed 1 time"*; no rooms, no spaces; phases *Existing*, *New Construction* |
+| 3 the yes, by name | the chat asked *"May I set the link P1102 ARCH.rvt to Room Bounding ON?"*; the owner: *"Yes, set it"* |
+| 3 `SET_LINK_ROOM_BOUNDING linkName=P1102 ARCH.rvt roomBounding=on` | kept; *"P1102 ARCH.rvt: Room Bounding is now ON, read back"*, `changed 1` |
+| 4 `SYNC_SPACES_WITH_LINKED_ROOMS updateNames=false`, phase left empty | kept; `created 91`, each line *"room 101 \"Vest.\": space made on Level 1"* and so on - 31 on Level 1, 33 on *02 - Floor*, 27 on *03 - Floor*; `notPlaced 0`, `orphans 0`, **no line says NO AREA** |
+| 5 the counts, then `SET_ROOM_LIMITS` level by level, `limitOffset=-300` | 31, 33 and 27 said before; each kept: *"31 set to stop at '02 - Floor' -300 mm, a top at 3500 mm"*, *"33 ... '03 - Floor' ... 7300 mm"*, *"27 ... 'Roof' ... 11100 mm"*; `refused 0`, `topBelowFloor 0` |
+| 6 `CREATE_HVAC_ZONE`, one a level | kept; *NR Zone L1* `added 31`, *L2* 33, *L3* 27; `movedFromAnotherZone` read out every time - each space *"LEFT zone 'Default'"*; `refused` holds two lines each time, both information (*"TAKEN OUT of another zone"*, *"AREA reads zero until Revit recomputes it"*), no space turned away |
+| 7 `TAG_ELEMENTS_IN_VIEW` on *1 - Mech*, *02 - Floor HVAC Plan*, *03 - Floor HVAC Plan* | kept; `tagged` 31, 33, 27, *"Space Tags: M_Space Tag: Space Tag (the project's default)"*, `notEnclosed 0`, `otherLevel 0` |
+| 8 `REPORT_AREA_VOLUME_COMPUTATIONS` | **"Areas and Volumes"** - the template does not start on *Areas only* ([row 5b-1653](../fragment-issues/row-5b-1653.md)); 91 of 91 spaces with a volume |
+| 8 `REPORT_ROOM_SPACE_DATA` after a Spaces filter | 91 spaces, each with the architect's number and name, an area and a volume; `unplaced 0`, `unenclosed 0`, `volumeNotComputed 0`. Lobby 102: 3521.8 sq ft (327 m²) and 40441 cu ft (1145 m³) - 3.5 m, the top step 5 set |
+| The *Areas only* half, by the card not by hand | `SET_AREA_VOLUME_COMPUTATIONS settings=Volume Computations=Areas only`, kept: *"Volumes now: ... 0 of 91 placed space(s)"*; the read then *"Areas only - Revit computes NO volumes, so a room or space volume reads as not computed"* - the chat said every volume reads nothing because of the setting, not the spaces. Set back to *Areas and Volumes*, kept: 91 of 91 again |
+| `revit_rooms` | *"91 MEP space(s) ... 0 unplaced 0 not enclosed"* |
+
+**NR7: PASS**, with row 5b-1653 (the method's sentence about the template, and the row's own premise). NR7's spaces,
+zones and tags are left in *NR Spaces Host* for NR10.
+
+**NR10, the same sitting**, on NR7's zones in *NR Spaces Host* (Revit 2020; no Revit 2027 at hand).
+
+| Part | Result | What was seen |
+|---|---|---|
+| (a) | **PASS** | Vest. 101 and Lobby 102 (both in *NR Zone L1*) from `FILTER_ELEMENTS_BY_ID`, then `CREATE_HVAC_ZONE zoneName=NR10 Moved`, kept: `added 2`, `movedFromAnotherZone` *"Vest. 101 (id 918729) LEFT zone 'NR Zone L1'"* and the same for Lobby 102; Revit's before and after: *"Zone \"NR Zone L1\" -> \"NR10 Moved\""* for each - the first zone lost them. Read through Heron, not the System Browser |
+| (b) | **FAIL as written** | Stair 201, then `CREATE_HVAC_ZONE zoneName=NR Zone L2` (taken), kept: `added 1`, *"Stair 201 ... LEFT zone 'NR Zone L2'"* - nothing added to the zone that had the name - but **the new zone carries the same name**: the zones read *Default, NR Zone L1, NR Zone L2, NR Zone L3, NR10 Moved, NR Zone L2*, and `refused` has no line about it - only *"Elements have duplicate \"Name\" values"*, a warning Heron dismissed ([row 5b-1654](../fragment-issues/row-5b-1654.md)) |
+| Undo | done | the owner's two Ctrl+Z; the zones read the four of NR7 again |
+
+**NR8, the same sitting.** (a) to (c) on *NR Spaces Host* (NR7's host, its spaces in place - each of the three is
+refused before anything is made, so the spaces do not change what it tests); (d) on a second fresh host, **NR Spaces
+Host 2**, made the same way as the first (`CREATE_FAMILY_DOCUMENT`, saved to `%TEMP%\heron-work\prove-1102`, ARCH
+linked origin to origin, levels at 3800, 7600 and 11400) - the owner's standing word for testing on these hosts.
+
+| Part | Result | What was seen |
+|---|---|---|
+| (a) | **PASS** | `linkName=No Such Link`: *"No loaded link is named \"No Such Link\", so NOTHING WAS MADE. Loaded: P1102 ARCH.rvt : 1 : location <Not Shared>."* - no box. Its `outcome:` line reads KEPT for a refusal, as row 5b-1635 records |
+| (b) | **PASS** | `P1102 STR.rvt` linked as a second Revit link (kept), `linkName` empty: *"2 linked models are loaded - P1102 ARCH.rvt : 1 : location <Not Shared>, P1102 STR.rvt : 2 : location <Not Shared> - and nothing says which holds the rooms, so NOTHING WAS MADE. Name the link."* |
+| (c) | **PASS** | the ARCH link copied 100 m east (`COPY_ELEMENTS` on the link instance from `FILTER_ELEMENTS_BY_ID`, kept), `linkName=P1102 ARCH.rvt`: *"2 loaded links answer to \"P1102 ARCH.rvt\" - P1102 ARCH.rvt : 1 : location <Not Shared>, P1102 ARCH.rvt : 3 : location <Not Shared> - so NOTHING WAS MADE. Give the whole name."*; sent again with `"P1102 ARCH.rvt : 1 : location <Not Shared>"` it ran: *"0 space(s) made, 0 renamed, 91 already matching"* |
+| (d) | **PASS** | Host 2, the link's Room Bounding read OFF (`SET_LINK_ROOM_BOUNDING roomBounding=off`: *"1 already were"*, no box), then the sync with the name given, kept: `created 91` and a line for each - *"space 918709 reads back with NO AREA - placed where nothing bounds it. Its link may not be Room Bounding in this model"* - 91 of them; Revit's 91 *"Space is not in a properly enclosed region"* warnings dismissed and said. The owner's Ctrl+Z took it back; `revit_rooms` then read no spaces |
+
+**NR9, the same sitting**, on *NR Spaces Host 2* (two phases from the template: *Existing*, *New Construction*; the
+link's rooms in its own last phase). The link was made Room Bounding first (`SET_LINK_ROOM_BOUNDING`, kept).
+
+| Step | What was seen |
+|---|---|
+| `SYNC_SPACES_WITH_LINKED_ROOMS phaseName=Existing`, the first phase | kept; `created 91`, `wantedPhase Existing`, every line *"space made on ..."*, no NO AREA line, no word of the phase |
+| The same call again | `alreadyMatching 91`, `created 0` - no box, no undo entry (*"Revit reported nothing added, changed or deleted"*) |
+| `revit_rooms` | *"91 MEP space(s) ... 0 unplaced 0 not enclosed"* |
+| `READ_ELEMENT_PARAMETERS parameterName=Phase`, three of the spaces | **`New Construction`** each - not the phase asked ([row 5b-1655](../fragment-issues/row-5b-1655.md)) |
+
+**NR9: FAIL** - the second run did answer `alreadyMatching` equal to the rooms, the case the row says would prove row
+5b-1589 wrong, but only because the first run put its spaces in the LAST phase, not the first: 5b-1589's own case
+was never reached, so it is not corrected here. The owner's Ctrl+Z takes back the first run; the second made nothing.
+
+**NR11, the same sitting**, on *NR Spaces Host 2* with NR9's 91 spaces in place (they read back in the last phase,
+row 5b-1655, so they stand for an ordinary first sync). The architect's model was NOT changed in place: the session
+copied `P1102 ARCH.rvt` on disk to `P1102 ARCH NR11.rvt`, linked the copy (kept), made it Room Bounding (kept) and read
+the baseline - `SYNC_SPACES_WITH_LINKED_ROOMS linkName=P1102 ARCH NR11.rvt`: *"91 already matching"*. The owner unloaded
+the link by hand; the session opened the copy (`ACTIVATE_DOCUMENT`, refused while the link was loaded and answered
+*"NOT activated"* with no reason), renamed room 101 *Vest.* to *Vestibule* (`SET_PARAMETER_VALUES_BY_ID`, kept, read
+back *Vestibule*), deleted room 128 *Storage* (`DELETE_ELEMENTS` after `SELECT_BY_PARAMETER_VALUE` - **the owner pressed
+Delete**; its tag went with it) and placed rooms in every enclosed area of the *Roof* level (`PLACE_ROOMS`, kept) -
+**four**, not the one the row says - then saved and closed the copy from the host (`SAVE_DOCUMENT closeWindow=true`) and
+the owner reloaded the link by hand. The testing chat, not a new one; the owner's standing word for testing stood for
+the rename's yes after the chat had asked it by name.
+
+| Step | What was seen |
+|---|---|
+| First call, `updateNames=false` | kept; *"4 space(s) made, 0 renamed, 89 already matching, 0 room(s) not placed, 1 space(s) with no linked room under them (listed, never deleted)"*; *"room 101 \"Vestibule\": space 918894 reads 101 \"Vest.\" - DIFFERS, left as it is (updateNames is false)"*; four *"room 213 \"Room\": space made on Roof"* lines (213, 215, 236, 237); *"ORPHAN spaces, no linked room under them: 918903"* |
+| The chat | read the DIFFERS line out and asked *"May I rename space 101 from \"Vest.\" to \"Vestibule\"?"* before the second call |
+| Second call, `updateNames=true` | kept; *"room 101 \"Vestibule\": space 918894 was 101 \"Vest.\", renamed to match"*, `renamed 1`, `created 0`, the orphan listed again |
+| `revit_rooms` | *"95 MEP space(s) ... 0 unplaced 0 not enclosed"* - 91 and the four new; no space deleted by either run. *Host 2* holds no zone but Revit's *Default*, so "put in no zone" here means Revit's own default zone |
+
+**NR11: PASS** (four rooms added where the row says one; `created` counted each).

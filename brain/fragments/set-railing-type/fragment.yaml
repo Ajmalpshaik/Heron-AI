@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -108,6 +108,57 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-14'
+  by: Ajmal PS
+  model: Snowdon Towers Sample Architectural, Revit 2024, session 3592 - the count is NOT
+    recorded because 3,267 elements was measured on Heron Reads Test, the document in front,
+    and this ran against another one (row 15)
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8, byName Func`3,
+    changedTypeId 1 item(s) [id 2492786], findings 2 item(s) [Copied "Handrail - Pipe" as
+    "Heron Guard"; top rail Circular..., 0 railing(s) are of this type and changed with it.],
+    handWanted , handrail (null), handrailHeightMm 0, lines 2 item(s) [Copied "Handrail -
+    Pipe" as "Heron Guard"; top rail Circular..., 0 railing(s) are of this type and changed
+    with it.], namesOf Func`2, newName Heron Guard, railingType RailingType, refusal (null),
+    report Copied "Handrail - Pipe" as "Heron Guard"; top rail Circular - 1 1/2" at 1000 mm,
+    handrail none, read back as asked. | 0 railing(s) are of this type and changed with it.,
+    side , start RailingType, topRail (null), topRailHeightMm 1000, topWanted . inputs came
+    railingTypeName as given; duplicateAs as given; topRailTypeName as given; topRailHeightMm
+    as given; handrailTypeName as given; handrailHeightMm as given; handrailSide as given.
+    on Snowdon Towers Sample Architectural
+  negative_case: 'run with duplicateAs=Heron Guard, handrailHeightMm=0, handrailSide=, handrailTypeName=,
+    railingTypeName=ZZZ No Such Railing, topRailHeightMm=1000, topRailTypeName= instead -
+    chosen because it should not contain what this fragment reports - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8,
+    byName Func`3, changedTypeId (null), findings 1 item(s) [No railing type is named "ZZZ
+    No Such Railing" - there are: ...], handWanted , handrail (null), handrailHeightMm 0,
+    lines 1 item(s) [No railing type is named "ZZZ No Such Railing" - there are: ...], namesOf
+    Func`2, newName Heron Guard, railingType (null), refusal No railing type is named "ZZZ
+    No Such Railing" - there are: Handrail - Pipe, Glass Panel - Bottom Fill, _IBC_Glass Panel-Plate
+    Stringer, Railing 1, _IBC-Pipe-Plate Stringer (Extension Top and Bottom), Pipe-Wall Mount,
+    _IBC-Pipe-Plate Stringer (Extension Top), _IBC-Pipe-Plate Stringer (Extension Bottom),
+    _IBC-Pipe-Plate Stringer (Extension None), Handrail - Balcony, Balustrade_23 w Piers w
+    End Post, Balustrade_23 w Piers, Pipe-Spiral, Glass Panel - Bottom Fill (Extension Top
+    and Bottom), Glass Panel - Bottom Fill (Extension Bottom), Glass Panel - Bottom Fill (Extension
+    Top), _IBC-Pipe-Plate Stringer (Guardrail), Tree Guard, Handrail - Glass Panel w Brackets,
+    Gate, Handrail - Simple, Road Striping. NOTHING WAS CHANGED., report No railing type is
+    named "ZZZ No Such Railing" - there are: Handrail - Pipe, Glass Panel - Bottom Fill, _IBC_Glass
+    Panel-Plate Stringer, Railing 1, _IBC-Pipe-Plate Stringer (Extension Top and Bottom),
+    Pipe-Wall Mount, _IBC-Pipe-Plate Stringer (Extension Top), _IBC-Pipe-Plate Stringer (Extension
+    Bottom), _IBC-Pipe-Plate Stringer (Extension None), Handrail - Balcony, Balustrade_23
+    w Piers w End Post, Balustrade_23 w Piers, Pipe-Spiral, Glass Panel - Bottom Fill (Extension
+    Top and Bottom), Glass Panel - Bottom Fill (Extension Bottom), Glass Panel - Bottom Fill
+    (Extension Top), _IBC-Pipe-Plate Stringer (Guardrail), Tree Guard, Handrail - Glass Panel
+    w Brackets, Gate, Handrail - Simple, Road Striping. NOTHING WAS CHANGED., side , start
+    (null), topRail (null), topRailHeightMm 1000, topWanted . inputs came railingTypeName
+    as given; duplicateAs as given; topRailTypeName as given; topRailHeightMm as given; handrailTypeName
+    as given; handrailHeightMm as given; handrailSide as given. on Snowdon Towers Sample Architectural'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: bf7efd5291f634f7
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

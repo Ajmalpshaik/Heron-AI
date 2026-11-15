@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -88,6 +88,40 @@ contract:
       type: IList<string>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-13'
+  by: Ajmal PS
+  model: P1102 MEP (21,454 elements), Revit 2020, session 41776
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-category, set-selection with this phase''s own values - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    alreadyRight 0 item(s), changed 35, corners 35 item(s) [wall ''STB 30.0 Rot'' (id 573298)
+    with wall ''Standard'' (id 573..., wall ''STB 30.0'' (id 573299) with wall ''MW 17.5''
+    (id 573602),..., wall ''STB 20.0'' (id 573325) with wall ''STB 30.0'' (id 573662)...,
+    ...], describe Func`2, findings 2 item(s) [35 corner(s) made Miter and read back; 0 already
+    Miter; 1 re..., wall ''STB 20.0'' (id 573592): meets none of the other walls h...], handedIn
+    HashSet`1, known true, refused 1 item(s) [wall ''STB 20.0'' (id 573592): meets none of
+    the other walls h...], say Func`2, walls 28 item(s) [STB 30.0 Rot, STB 30.0, STB 20.0,
+    ...], wanted JoinType, word miter. inputs came elements from the selection (28); joinType
+    as given. on P1102 MEP'
+  negative_case: 'run with joinType=miter arranged with categories=Ducts, inViewOnly=Level
+    1 HVAC Duct Plan_A instead - chosen because it should not contain what this fragment reports
+    - the arrangement was re-made first by running filter-elements-by-category, set-selection
+    with this phase''s own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned alreadyRight 0 item(s), changed 0, corners 0 item(s),
+    describe Func`2, findings 84 item(s) [0 corner(s) made Miter and read back; 0 already
+    Miter; 83 re..., 0 wall(s) handed in. Select the walls on BOTH sides of the c..., Ducts
+    ''Mitered Elbows / Taps'' (id 392168): not a wall drawn ..., ...], handedIn HashSet`1,
+    known true, refused 83 item(s) [0 wall(s) handed in. Select the walls on BOTH sides of
+    the c..., Ducts ''Mitered Elbows / Taps'' (id 392168): not a wall drawn ..., Ducts ''Mitered
+    Elbows / Taps'' (id 392170): not a wall drawn ..., ...], say Func`2, walls 0 item(s),
+    wanted JoinType, word miter. inputs came elements from the selection (82); joinType as
+    given. on P1102 MEP'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 4f322814ccf8c793
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

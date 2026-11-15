@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -127,6 +127,59 @@ contract:
       type: IList<ElementId>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-14'
+  by: Ajmal PS
+  model: P1102 STR (9,179 elements), Revit 2020, session 26612
+  positive_case: "run as it would normally be run - the arrangement was re-made first by running\
+    \ filter-elements-by-category, set-selection with this phase's own values. returned allLoads\
+    \ 5 item(s) [Area Load 1, Area Load 1, Area Load 1, ...], analyticalOf Func`2, asked loads,\
+    \ at Func`2, boundaryCount 0, caseCount 3, cases 3 item(s) [DL1, LL1, SNOW1], combinationCount\
+    \ 0, combinationsHad 0 item(s), describe Func`2, every false, findings 1 item(s) [Read\
+    \ only - nothing in the model changed.], hostText Func`2, hosts HashSet`1, invariant CultureInfo,\
+    \ isZero Func`2, kN Func`2, kNm Func`2, kNmPerM Func`2, kNperM Func`2, kPa Func`2, lines\
+    \ 6 item(s) [Loads (5) on the 5 element(s) handed in:,   186960  Area load of 71.06 m2:\
+    \ (0, 0, -1) kPa; load case \"...,   186962  Area load of 1554.652 m2: (0, 0, -2) kPa;\
+    \ load cas..., ...], loadCount 5, m2 Func`2, mm Func`2, names 3 item(s) [\"DL1\", \"LL1\"\
+    , \"SNOW1\"], narrowed true, noAnalytical 0 item(s), num Func`2, onlyCase (null), physicalOf\
+    \ Func`2, report Loads (5) on the 5 element(s) handed in:\n  186960  Area load of 71.06\
+    \ m2: (0, 0, -1) kPa; load case \"LL1\"; on Floors \"160mm Concrete With 50mm Metal Deck\"\
+    \ (134840) through analytical 176058; oriented to HostLocalCoordinateSystem\n  186962\
+    \  Area load of 1554.652 m2: (0, 0, -2) kPa; load case \"LL1\"; on Floors \"Generic Concrete\
+    \ 300mm\" (133345) through analytical 176057; oriented to HostLocalCoordinateSystem\n\
+    \  186998  Area load of 1549.606 m2: (0, 0, -2) kPa; load case \"LL1\"; on Floors \"Generic\
+    \ Concrete 300mm\" (151849) through analytical 176060; oriented to HostLocalCoordinateSystem\n\
+    \  187001  Area load of 1622.01 m2: (0, 0, -2) kPa; load case \"LL1\"; on Floors \"Concrete\
+    \ Deck - Tapered Insulation\" (152157) through analytical 176061; oriented to HostLocalCoordinateSystem\n\
+    \  187003  Area load of 71.06 m2: (0, 0, -1.5) kPa; load case \"SNOW1\"; on Floors \"\
+    160mm Concrete With 50mm Metal Deck\" (134840) through analytical 176058; oriented to\
+    \ HostLocalCoordinateSystem, selected 5 item(s) [Generic Concrete 300mm, 160mm Concrete\
+    \ With 50mm Metal Deck, Generic 300mm, ...], unknownWords 0 item(s), vec Func`4, wantBoundary\
+    \ false, wantCaseName , wantCases false, wantCombinations false, wantLoads true, wantNatures\
+    \ false. inputs came elements from the selection (5); show as given; loadCase not given\
+    \ - \"none\", the card's own default (optional). on P1102 STR"
+  negative_case: 'run with show=loads arranged with categories=Structural Columns, inViewOnly=02
+    - Floor instead - chosen because it should not contain what this fragment reports - the
+    arrangement was re-made first by running filter-elements-by-category, set-selection with
+    this phase''s own values. returned allLoads 5 item(s) [Area Load 1, Area Load 1, Area
+    Load 1, ...], analyticalOf Func`2, asked loads, at Func`2, boundaryCount 0, caseCount
+    3, cases 3 item(s) [DL1, LL1, SNOW1], combinationCount 0, combinationsHad 0 item(s), describe
+    Func`2, every false, findings 2 item(s) [No load is hosted on the analytical element(s)
+    of what was h..., Read only - nothing in the model changed.], hostText Func`2, hosts HashSet`1,
+    invariant CultureInfo, isZero Func`2, kN Func`2, kNm Func`2, kNmPerM Func`2, kNperM Func`2,
+    kPa Func`2, lines 1 item(s) [Loads (0) on the 133 element(s) handed in: none], loadCount
+    0, m2 Func`2, mm Func`2, names 3 item(s) ["DL1", "LL1", "SNOW1"], narrowed true, noAnalytical
+    0 item(s), num Func`2, onlyCase (null), physicalOf Func`2, report Loads (0) on the 133
+    element(s) handed in: none, selected 133 item(s) [450mm, 450mm, 450mm, ...], unknownWords
+    0 item(s), vec Func`4, wantBoundary false, wantCaseName , wantCases false, wantCombinations
+    false, wantLoads true, wantNatures false. inputs came elements from the selection (133);
+    show as given; loadCase not given - "none", the card''s own default (optional). on P1102
+    STR'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 36cec010fad5a415
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

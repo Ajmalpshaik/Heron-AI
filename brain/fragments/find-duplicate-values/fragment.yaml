@@ -1,6 +1,6 @@
 heron-agent: HERON-QA-BIM-011
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -83,25 +83,25 @@ contract:
       type: IList<ElementId>
 
 proof:
-  date: '2026-09-08'
+  date: '2026-11-13'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 32312
-  positive_case: run as it would normally be run. returned blank 0 item(s), duplicated 307
-    item(s) [1395899, 1396201, 1396211, ...], findings 3 item(s) ['Supply Air' is on 189 elements
-    - 1395899, 1396201, 1396211,..., 'Return Air' is on 49 elements - 1395935, 1395946, 1427952,
-    ..., 'Exhaust Air' is on 69 elements - 1396156, 1396164, 1422868,...], noSuchParameter
-    0 item(s), seen 3 entry(ies). inputs came elements from the selection (307); parameterName
-    as given. on Snowdon-scratch_ajmal.al
-  negative_case: run with parameterName=ZZZNOTHINGHERE instead - chosen because it should
-    not contain what this fragment reports. returned blank 0 item(s), duplicated 0 item(s),
-    findings 1 item(s) [307 element(s) do not carry a parameter called 'ZZZNOTHINGHE...],
-    noSuchParameter 307 item(s) [1395899, 1395935, 1395946, ...], seen 0 entry(ies). inputs
-    came elements from the selection (307); parameterName as given. on Snowdon-scratch_ajmal.al
+  model: Heron Reads Test (3,263 elements), Revit 2024, session 22684
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-category, set-selection with this phase's own values. returned ambiguous
+    0 item(s), blank 0 item(s), duplicated 2 item(s) [352517, 352545], findings 1 item(s)
+    ['A' is on 2 elements - 352517, 352545], noSuchParameter 0 item(s), seen 4 entry(ies).
+    inputs came elements from the selection (5); parameterName as given. on Heron Reads Test
+  negative_case: 'run with category=Walls, inViewOnly=FloorPlan: Level 1, parameterName=Comments
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running filter-elements-by-category, set-selection with this phase''s
+    own values. returned ambiguous 5 item(s) [352517, 352545, 352555, ...], blank 0 item(s),
+    duplicated 0 item(s), findings 1 item(s) [5 element(s) carry TWO OR MORE parameters called
+    ''Comments'' ...], noSuchParameter 0 item(s), seen 0 entry(ies). inputs came elements
+    from the selection (5); parameterName as given. on Heron Reads Test'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 7531964fe612807d
-
+  fingerprint: 591c268529a8d52a
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

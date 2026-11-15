@@ -74,3 +74,59 @@ pulling, so the chat runs the new server. The switch is turned in Revit - *Heron
 
 **Then** the group closes on NP1 to NP8. A row that fails reopens the change; nothing in a row changes to
 make it pass. NP6 can only be run on a PC with a packaged Claude app; on any other it is **NOT RUN**, said so.
+
+### Run record - 2026-11-13, NP3, Revit 2020 on the laptop
+
+**Arranged differently from the row, and said so.** NP3 asks for two Revits connected at once. This PC holds
+one Revit at a time (16 GB; the owner's rule for this sitting), so NP3 ran as **two halves on one release**,
+the older add-in first and the newer one after it, each on the saved scratch copy *P1102 MEP*
+(`%TEMP%\heron-work\prove-1102`). The add-in reports `0.2.0.0` in both, so the builds are told apart by the
+deployed `Heron.Revit.Addin.dll`: 2026-11-10 08:10 for the older, 2026-11-13 18:48:25 (+03:00) for the newer
+(built from `main` at 10334996, deployed to Revit 2020 only with `tools/deploy-addin.ps1 -RevitVersion 2020`).
+
+| Half | Revit, session, add-in | `revit_health` said under that Revit | Result |
+|---|---|---|---|
+| Older | Revit 2020, session 4504, add-in of 2026-11-10 | `Ask to Keep: this Revit's Heron does not say which way the switch is set - its Heron add-in is older than this chat's and does not report it. Look in Revit, under Heron > AI Bridge > Settings.` Neither ON nor off | **PASS** |
+| Newer | Revit 2020, session 41776, add-in of 2026-11-13 | `Ask to Keep is off in this Revit right now: a change made through revit_change is kept at once, with no Keep or Discard box, as one entry in Revit's Undo list.` - then the three kinds of change that are different (delete, export/save/sync, dry run). The owner's switch was off; not turned for this row | **PASS** |
+| Both at once | two Revits listed in one answer, each with its own line | - | **NOT RUN** - one Revit at a time on this PC. `tests/test_mcp_serves.py` holds the two lines side by side against stand-ins |
+
+The newer add-in's first start stopped at Revit's *Security - Unsigned Add-In* box; the owner answered it.
+Revits 2024, 2026 and 2027 were built from the same commit and **not** deployed in this run.
+
+### Run record - 2026-11-14, NP1, NP2 and NP6, Revit 2020 on the laptop
+
+Revit 2020, session 26612, the add-in deployed on 2026-11-13 (built from 10334996). The owner turned the switch
+himself in *Heron > AI Bridge > Settings*, one step at a time; `revit_health` was read after each step. Nothing
+was restarted between the readings.
+
+| # | Result | What was seen |
+|---|---|---|
+| NP1 | **PASS** | Switch ON: one line under that Revit - *"Ask to Keep is ON in this Revit right now: a change made through revit_change is shown in Revit's Keep or Discard box and kept only on Keep. Different for: a job the modeller chose in that box to keep the rest of, and a change Revit counted nothing in (both kept unasked); a delete (asked in its own Delete box instead); an export, save or sync ...; a dry run ...; and revit_apply_move ..."* |
+| NP2 | **PASS** | Switch off, the owner answering *Stop asking* in the box *"Stop asking Keep or Discard? Changes from a chat are kept at once"*: *"Ask to Keep is off in this Revit right now: a change made through revit_change is kept at once, with no Keep or Discard box, as one entry in Revit's Undo list ..."*. Turned ON again: the ON line again. No restart of Revit or the chat |
+| NP6 | **PASS** | The line said **ON**, as Revit's own Settings showed. The Claude app's private copy, `%LOCALAPPDATA%\Packages\AnthropicPBC.Claude_fnn82j28hfe8t\LocalCache\Roaming\Heron\config\heron.config`, holds `write.askBeforeKeeping = false`, dated 2026-10-23 - and from this chat's shell `%APPDATA%\Heron\config\heron.config` reads that same copy, so the shell cannot see the file Revit wrote. Both values recorded; Q-70 not settled by it |
+
+**NP5, the same sitting - FAIL on one sentence, PASS on the rest.** A second chat (`np5-second`) read the
+selection on *P1102 MEP*, and the add-in logged *"Model hold: 'P1102 MEP' is now held by chat np5-seco."* This
+chat's `revit_health` then carried the Ask to Keep ON line for that Revit - and called it *"(free)"*, not in
+use by another chat: the column reads the session lease, not the model hold
+([row 5b-1645](../fragment-issues/row-5b-1645.md)). The hold itself held - this chat's `READ_SELECTION` was
+refused *"Model 'P1102 MEP' is in use by another chat"* - and the second chat's next read was answered, not
+cut off.
+
+**NP4 and NP7, the same sitting, after the Claude app was restarted** (this chat on the code it has; Revit 2020
+session 26612; *P1102 MEP*, the scratch copy, not saved).
+
+| # | Result | What was seen |
+|---|---|---|
+| NP4 | **PASS** | Ask to Keep ON, the ON line read first; `revit_change CREATE_LEVELS names=NP On, elevations=9000`: Revit's box *"Keep what Heron just did? 'create-levels' ran in P1102 MEP. Revit counts 1 element added ..."*; the owner pressed **Discard** - `outcome: ROLLED BACK`, *"The modeller chose Discard in Revit, so NOTHING WAS KEPT ... there is no new undo entry"*, and `revit_levels` afterwards listed the four levels only. Ask to Keep off (*Stop asking*), the off line read; `NP Off` at 9500: `outcome: KEPT`, **no box** (the owner), and the top of Revit's Undo list read *"Heron: create-levels"* (the owner) |
+| NP7 | **PASS** | Ask to Keep ON. (a) Two basic walls, 573595 and 573320, by `FILTER_ELEMENTS_BY_ID`, then `DELETE_ELEMENTS`: Revit's own box *"Delete 459 elements from P1102 MEP?"* - Walls 2, Doors 9 and Automatic Sketch Dimensions 37 going with the walls, Mechanical Equipment 1, Automatic Sketch Dimensions 410; the owner pressed **Delete**; `outcome: KEPT`, one undo step, and **no Keep or Discard box after it** (the owner). (b) `revit_preview_move ducts 200`: *"This would move 730 ducts up 200 mm in P1102 MEP"*; on the owner's yes, `revit_apply_move`: *"Moved 682 ducts up 200 mm ... 33 did NOT move at all ... inside a group ... 15 moved, but not the full distance"*, one undo step *"Heron: move ducts up 200 mm"*, **no box of any kind** (the owner) |
+
+Asked by phrase, *"delete these two walls"* looked up `DISALLOW_JOIN` first and `DELETE_ELEMENTS` third
+([row 5b-1646](../fragment-issues/row-5b-1646.md)); the delete above was asked by capability. **Left in Group NP:**
+NP3 with two Revits at once, and NP8.
+
+**NP8, the same sitting - NOT RUN.** No way was found on the PC to make one connected Revit's `info` answer
+unusable for a single check while it stays listed - short of editing the add-in, blocking its pipe, or
+stopping Revit mid-answer, none of which is a fair arrangement on the owner's own Revit while he works in it.
+`tests/test_mcp_serves.py` holds the sentence *"Ask to Keep: Heron could not read which way the switch is set
+from this Revit just now"* against a stand-in, as the row says.

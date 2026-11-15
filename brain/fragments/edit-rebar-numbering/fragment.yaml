@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -134,6 +134,57 @@ contract:
       type: IList<string>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-14'
+  by: Ajmal PS
+  model: P1102 STR (9,179 elements), Revit 2020, session 17824
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-id, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned NoPartition
+    (none), act move, actions 7 item(s) [start, compact, renumber, ...], after 2 item(s) [rebar
+    partition (no partition name): 1-2, 5, rebar partition "Heron P1": 1-2], before 2 item(s)
+    [rebar partition (no partition name): 1-5, rebar partition "Heron P1": no numbers (not
+    in the model)], changed 3, findings 5 item(s) [3 element(s) moved to partition "Heron
+    P1" and numbered ther..., before: rebar partition (no partition name): 1-5, before: rebar
+    partition "Heron P1": no numbers (not in the m..., ...], fromNumber 0, hasPartition Func`2,
+    inUse Func`4, kind 0, kindCategories 3 item(s) [OST_Rebar, OST_Coupler, OST_FabricReinforcement],
+    kindNames 3 item(s) [rebar, rebar coupler, fabric sheet], kindTypes 3 item(s) [Autodesk.Revit.DB.NumberingSchemaType,
+    Autodesk.Revit.DB.NumberingSchemaType, Autodesk.Revit.DB.NumberingSchemaType], kindWord
+    rebar, label Func`2, membersOfKind Func`2, named Heron P1, numberOf Func`3, numbersText
+    Func`3, ownedIn Func`3, partitionOf Func`2, plan 0 item(s), refused 0 item(s), schemas
+    3 item(s) [NumberingSchema, NumberingSchema, NumberingSchema], shown Func`2, skipped 0
+    item(s), snapshot Func`1, startAt 0, target , text Func`2, toNumber 0. inputs came elements
+    from the selection (3); action as given; partition as given; toPartition not given - "(none)",
+    the card''s own default (optional); startAt not given - "0", the card''s own default (optional);
+    fromNumber not given - "0", the card''s own default (optional); toNumber not given - "0",
+    the card''s own default (optional); reinforcement not given - "rebar", the card''s own
+    default (optional). on P1102 STR'
+  negative_case: run with action=move, partition=Heron P1 arranged with elementIds=122477,122478,122479
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running filter-elements-by-id, set-selection with this phase's own
+    values - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned NoPartition (none), act move, actions 7 item(s) [start, compact,
+    renumber, ...], after 0 item(s), before 0 item(s), changed 0, findings 1 item(s) [NOTHING
+    WAS RENUMBERED. Structural Columns '450mm' (id 12247...], fromNumber 0, hasPartition Func`2,
+    inUse Func`4, kind 0, kindCategories 3 item(s) [OST_Rebar, OST_Coupler, OST_FabricReinforcement],
+    kindNames 3 item(s) [rebar, rebar coupler, fabric sheet], kindTypes 3 item(s) [Autodesk.Revit.DB.NumberingSchemaType,
+    Autodesk.Revit.DB.NumberingSchemaType, Autodesk.Revit.DB.NumberingSchemaType], kindWord
+    rebar, label Func`2, membersOfKind Func`2, named Heron P1, numberOf Func`3, numbersText
+    Func`3, ownedIn Func`3, partitionOf Func`2, plan 0 item(s), refused 3 item(s) [Structural
+    Columns '450mm' (id 122477) - not a numbered bar,..., Structural Columns '450mm' (id 122478)
+    - not a numbered bar,..., Structural Columns '450mm' (id 122479) - not a numbered bar,...],
+    schemas 3 item(s) [NumberingSchema, NumberingSchema, NumberingSchema], shown Func`2, skipped
+    0 item(s), snapshot Func`1, startAt 0, target , text Func`2, toNumber 0. inputs came elements
+    from the selection (3); action as given; partition as given; toPartition not given - "(none)",
+    the card's own default (optional); startAt not given - "0", the card's own default (optional);
+    fromNumber not given - "0", the card's own default (optional); toNumber not given - "0",
+    the card's own default (optional); reinforcement not given - "rebar", the card's own default
+    (optional). on P1102 STR
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: adf1eca9bc531209
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

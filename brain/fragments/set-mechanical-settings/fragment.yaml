@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -123,6 +123,90 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-14'
+  by: Ajmal PS
+  model: P1102 MEP (21,438 elements), Revit 2020, session 26612
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned add Action`7, after Duct Settings
+    - duct use annotation scale for single line fittings yes; duct fitting annotation size
+    3 mm; air density 1.2026 kg/m3; air dynamic viscosity 0.00053 Pa-s; rectangular duct size
+    separator "x"; rectangular duct size suffix ""; round duct size prefix ""; round duct
+    size suffix "ø"; oval duct size separator "/"; oval duct size suffix ""; duct connector
+    separator "+"; duct flat on top "FOT"; duct flat on bottom "FOB"; duct set up from center
+    "SU"; duct set down from center "SD"; duct set up from bottom "BU"; duct set down from
+    bottom "BD"; duct centerline "="; duct rise/drop annotation size 3 mm | Pipe Settings
+    - pipe use annotation scale for single line fittings yes; pipe fitting annotation size
+    3 mm; pipe size prefix ""; pipe size suffix "ø"; pipe connector separator "-"; pipe flat
+    on top "FOT"; pipe flat on bottom "FOB"; pipe set up from center "SU"; pipe set down from
+    center "SD"; pipe set up from bottom "BU"; pipe set down from bottom "BD"; pipe centerline
+    "=", before Duct Settings - duct use annotation scale for single line fittings yes; duct
+    fitting annotation size 3 mm; air density 1.2026 kg/m3; air dynamic viscosity 0.00053
+    Pa-s; rectangular duct size separator "x"; rectangular duct size suffix ""; round duct
+    size prefix ""; round duct size suffix "ø"; oval duct size separator "/"; oval duct size
+    suffix ""; duct connector separator "-"; duct flat on top "FOT"; duct flat on bottom "FOB";
+    duct set up from center "SU"; duct set down from center "SD"; duct set up from bottom
+    "BU"; duct set down from bottom "BD"; duct centerline "="; duct rise/drop annotation size
+    3 mm | Pipe Settings - pipe use annotation scale for single line fittings yes; pipe fitting
+    annotation size 3 mm; pipe size prefix ""; pipe size suffix "ø"; pipe connector separator
+    "-"; pipe flat on top "FOT"; pipe flat on bottom "FOB"; pipe set up from center "SU";
+    pipe set down from center "SD"; pipe set up from bottom "BU"; pipe set down from bottom
+    "BD"; pipe centerline "=", changed 1, culture CultureInfo, densityIn Func`2, densityOut
+    Func`2, describe Func`1, ds DuctSettings, entries 31 item(s) [(duct use annotation scale
+    for single line fittings, duct, u..., (duct fitting annotation size, duct, fitting annotation
+    size..., (air density, duct, , density, System.String[], System.Func`..., ...], findings
+    1 item(s) [Mechanical Settings changed for the whole model (1 setting(s...], key Func`2,
+    mm Func`2, nameList duct use annotation scale for single line fittings, duct fitting annotation
+    size, air density, air dynamic viscosity, rectangular duct size separator, rectangular
+    duct size suffix, round duct size prefix, round duct size suffix, oval duct size separator,
+    oval duct size suffix, duct connector separator, duct flat on top, duct flat on bottom,
+    duct set up from center, duct set down from center, duct set up from bottom, duct set
+    down from bottom, duct centerline, duct rise/drop annotation size, pipe use annotation
+    scale for single line fittings, pipe fitting annotation size, pipe size prefix, pipe size
+    suffix, pipe connector separator, pipe flat on top, pipe flat on bottom, pipe set up from
+    center, pipe set down from center, pipe set up from bottom, pipe set down from bottom,
+    pipe centerline, none 0 item(s), parseNumber Func`3, parseYes Func`2, plans 1 item(s)
+    [(duct connector separator, text, +, System.Func`1[System.Obj...], problems 0 item(s),
+    ps PipeSettings, refused (null), show Func`3, systems HashSet`1, viscosityIn Func`2, viscosityOut
+    Func`2, which , wk . inputs came settings as given; system not given - "none", the card's
+    own default (optional). on P1102 MEP
+  negative_case: run with settings=zz no such setting=1 instead - chosen because it should
+    not contain what this fragment reports - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned add Action`7, after , before ,
+    changed 0, culture CultureInfo, densityIn Func`2, densityOut Func`2, describe Func`1,
+    ds DuctSettings, entries 31 item(s) [(duct use annotation scale for single line fittings,
+    duct, u..., (duct fitting annotation size, duct, fitting annotation size..., (air density,
+    duct, , density, System.String[], System.Func`..., ...], findings 1 item(s) ["zz no such
+    setting" is not a setting this card reaches; it ...], key Func`2, mm Func`2, nameList
+    duct use annotation scale for single line fittings, duct fitting annotation size, air
+    density, air dynamic viscosity, rectangular duct size separator, rectangular duct size
+    suffix, round duct size prefix, round duct size suffix, oval duct size separator, oval
+    duct size suffix, duct connector separator, duct flat on top, duct flat on bottom, duct
+    set up from center, duct set down from center, duct set up from bottom, duct set down
+    from bottom, duct centerline, duct rise/drop annotation size, pipe use annotation scale
+    for single line fittings, pipe fitting annotation size, pipe size prefix, pipe size suffix,
+    pipe connector separator, pipe flat on top, pipe flat on bottom, pipe set up from center,
+    pipe set down from center, pipe set up from bottom, pipe set down from bottom, pipe centerline,
+    none 0 item(s), parseNumber Func`3, parseYes Func`2, plans 0 item(s), problems 1 item(s)
+    ["zz no such setting" is not a setting this card reaches; it ...], ps PipeSettings, refused
+    "zz no such setting" is not a setting this card reaches; it takes duct use annotation
+    scale for single line fittings, duct fitting annotation size, air density, air dynamic
+    viscosity, rectangular duct size separator, rectangular duct size suffix, round duct size
+    prefix, round duct size suffix, oval duct size separator, oval duct size suffix, duct
+    connector separator, duct flat on top, duct flat on bottom, duct set up from center, duct
+    set down from center, duct set up from bottom, duct set down from bottom, duct centerline,
+    duct rise/drop annotation size, pipe use annotation scale for single line fittings, pipe
+    fitting annotation size, pipe size prefix, pipe size suffix, pipe connector separator,
+    pipe flat on top, pipe flat on bottom, pipe set up from center, pipe set down from center,
+    pipe set up from bottom, pipe set down from bottom, pipe centerline. NOTHING WAS CHANGED.,
+    show Func`3, systems HashSet`1, viscosityIn Func`2, viscosityOut Func`2, which , wk .
+    inputs came settings as given; system not given - "none", the card's own default (optional).
+    on P1102 MEP
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 5ed6ca6ccbdfcfb4
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

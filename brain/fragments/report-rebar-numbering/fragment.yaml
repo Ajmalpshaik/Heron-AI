@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -97,6 +97,50 @@ contract:
       type: IList<string>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-13'
+  by: Ajmal PS
+  model: P1102 STR (9,179 elements), Revit 2020, session 41776
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-category, set-selection with this phase''s own values. returned everyName
+    1 item(s) [(no partition name) (rebar)], everyPartition true, findings 13 item(s) [1 partition(s)
+    read, 11 numbered element(s) in them. Change ..., Rebar partition (no partition name):
+    numbers 1-5 (lowest 1, ..., Structural Rebar ''16M : Shape M_T1'' (id 153781) - partition
+    ..., ...], hasPartition Func`2, isWorkshared false, kindCategories 3 item(s) [OST_Rebar,
+    OST_Coupler, OST_FabricReinforcement], kindNames 3 item(s) [Rebar, Rebar coupler, Fabric
+    sheet], kindTypes 3 item(s) [Autodesk.Revit.DB.NumberingSchemaType, Autodesk.Revit.DB.NumberingSchemaType,
+    Autodesk.Revit.DB.NumberingSchemaType], label Func`2, lines 1 item(s) [Rebar partition
+    (no partition name): numbers 1-5 (lowest 1, ...], matchedWanted true, numberedElements
+    11, ownedByOthers 0 item(s), parameterById Func`3, partitionNames 1 item(s) [(no partition
+    name) (rebar)], partitionOf Func`2, partitions 1, rangesText Func`2, report Rebar partition
+    (no partition name): numbers 1-5 (lowest 1, highest 5, no gaps); 11 element(s) carry them,
+    schemaNumberParameter 3 entry(ies), selected 11 item(s) [Structural Rebar ''16M : Shape
+    M_T1'' (id 153781) - partition ..., Structural Rebar ''16M : Shape M_00'' (id 153882)
+    - partition ..., Structural Rebar ''16M : Shape M_00'' (id 153976) - partition ..., ...],
+    shown Func`2, text Func`2, wanted all. inputs came elements from the selection (11); partition
+    not given - "all", the card''s own default (optional). on P1102 STR'
+  negative_case: 'run with partition=Zz No Such arranged with categories=Structural Rebar
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running filter-elements-by-category, set-selection with this phase''s
+    own values. returned everyName 1 item(s) [(no partition name) (rebar)], everyPartition
+    false, findings 12 item(s) [No partition is named "Zz No Such" in this model. Its partit...,
+    Structural Rebar ''16M : Shape M_T1'' (id 153781) - partition ..., Structural Rebar ''16M
+    : Shape M_00'' (id 153882) - partition ..., ...], hasPartition Func`2, isWorkshared false,
+    kindCategories 3 item(s) [OST_Rebar, OST_Coupler, OST_FabricReinforcement], kindNames
+    3 item(s) [Rebar, Rebar coupler, Fabric sheet], kindTypes 3 item(s) [Autodesk.Revit.DB.NumberingSchemaType,
+    Autodesk.Revit.DB.NumberingSchemaType, Autodesk.Revit.DB.NumberingSchemaType], label Func`2,
+    lines 0 item(s), matchedWanted false, numberedElements 0, ownedByOthers 0 item(s), parameterById
+    Func`3, partitionNames 0 item(s), partitionOf Func`2, partitions 0, rangesText Func`2,
+    report , schemaNumberParameter 3 entry(ies), selected 11 item(s) [Structural Rebar ''16M
+    : Shape M_T1'' (id 153781) - partition ..., Structural Rebar ''16M : Shape M_00'' (id
+    153882) - partition ..., Structural Rebar ''16M : Shape M_00'' (id 153976) - partition
+    ..., ...], shown Func`2, text Func`2, wanted Zz No Such. inputs came elements from the
+    selection (11); partition as given. on P1102 STR'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: f9463bf93249055a
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

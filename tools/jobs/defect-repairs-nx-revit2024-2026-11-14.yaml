@@ -1,0 +1,66 @@
+# Group NX on Revit 2024 - the rows of docs/needs-checking/group-nx.md that run on the owner's
+# Revit 2024 and that a batch can arrange, as one batch. Written 2026-11-14 from those rows and
+# from the arrangements the NK and DR job files used, NOT RUN when written.
+#
+#     python tools/batch-prove.py tools/jobs/defect-repairs-nx-revit2024-2026-11-14.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/defect-repairs-nx-revit2024-2026-11-14.yaml --session <pid>
+#
+# THE MODELS: Group NK's scratch files under %TEMP%\heron-work\nk - "Heron Reads Test" (project),
+# "Heron Flag Test" (family) - and the scratch copy of "Snowdon Towers Sample Architectural" that
+# DR6 used, ALL open in one Revit 2024. Never a working project.
+#
+# EVERY RUN IS ROLLED BACK. Read each printed line against the row's "Look for".
+#
+# NOT IN THIS BATCH, by hand:
+#   NX4 on 2024   report-electrical-settings on "Heron Reads Test" (the same lines as the 2020 batch)
+#   NX7 (second)  report-family-parameters after Count is set to 0 in Family Types
+#   NX8           reset-graphic-overrides - four walls each given ONE override first, as NK7 did
+
+model: "Heron Reads Test, Heron Flag Test and the Snowdon Towers scratch copy, Revit 2024"
+
+defaults:
+  in: "Heron Reads Test"
+  setup: [filter-elements-by-category, set-selection]
+
+jobs:
+  - fragment: read-space-loads
+    expect: coolingW
+    set: {category: "Spaces", inViewOnly: "FloorPlan: Level 1"}
+    negative-set: {category: "Walls", inViewOnly: "FloorPlan: Level 1"}
+    note: >
+      NX6, row 5b-1628. Positive "Space 1 - heating 3000 W (entered), cooling 5000 W (entered),
+      supply 250 L/s (entered)" - the figures Properties shows; NEVER 34069580 W. No finding that
+      "Revit makes one internal load unit ... where Heron expected". Negative: the walls, nothing
+      in heatingW, coolingW or airflowLs.
+
+  - fragment: report-family-parameters
+    in: "Heron Flag Test"
+    setup: []
+    expect: parameterCount
+    set: {nameContains: ""}
+    negative-in: "Heron Reads Test"
+    negative-set: {nameContains: ""}
+    note: >
+      NX7, row 5b-1629. "Count [Integer/type] = 1" - not <blank>, not Yes - beside "Flag ... = Yes"
+      and "Derived ... = No (formula: not(Flag))". Negative: the project, notAFamily true.
+
+  - fragment: compare-elements
+    expect: differing
+    set: {category: "Walls", inViewOnly: "FloorPlan: Level 1"}
+    negative-set: {category: "Room Tags", inViewOnly: "FloorPlan: Level 1"}
+    note: >
+      NX9, row 5b-1631, under D-164. Positive ONE finding, for 'Comments' (NOT READ, a project
+      parameter beside the built-in); NO line for 'Category' or 'Category [type]'. If 'Category'
+      still reads NOT READ, the two built-ins read differently here: write down what each reads.
+
+  - fragment: set-railing-type
+    in: "Snowdon Towers Sample Architectural"
+    setup: []
+    write: true
+    set: {railingTypeName: "Handrail - Pipe", duplicateAs: "Heron Guard", topRailTypeName: "", topRailHeightMm: 1000, handrailTypeName: "", handrailHeightMm: 0, handrailSide: ""}
+    negative-set: {railingTypeName: "ZZZ No Such Railing", duplicateAs: "Heron Guard", topRailTypeName: "", topRailHeightMm: 1000, handrailTypeName: "", handrailHeightMm: 0, handrailSide: ""}
+    note: >
+      NX10, row 5b-1633. NO expect line on purpose: the runner judges changedTypeId - "1 item(s)
+      [id N]", N the new "Heron Guard" - and the verdict must NOT be POSITIVE UNREADABLE. The
+      report ends "read back as asked. | 0 railing(s) are of this type and changed with it."
+      Negative refused by name, changedTypeId (null).

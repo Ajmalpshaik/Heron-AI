@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -73,6 +73,32 @@ contract:
       type: int
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-14'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Heron MG Analytical, Heron Flag Test - active
+    was Heron MG Analytical, Revit 2024, session 3592'
+  positive_case: 'run as it would normally be run. returned culture CultureInfo, energyModelExists
+    false, energySettings Energy Settings - building type office; ground plane "Level 1";
+    project phase "New Construction"; analysis mode conceptual masses and building elements;
+    export category rooms; export complexity simple with shading surfaces; include thermal
+    properties no; building envelope use function parameter; building construction class none
+    construction; service type vav single duct; report type standard report; use current view
+    only no; sliver space tolerance 304.8 mm; analytical grid cell size 914.4 mm; core offset
+    4572 mm; divide perimeter zones yes; target percentage glazing 0 %; energy model no; use
+    heating credits no, findings 2 item(s) [This model holds no energy analytical model (Analyze
+    > Creat..., Not read here: the location, the building operating schedule...], mm Func`2,
+    nameOf Func`2, settingsRead 19, words Func`2, yesNo Func`2. on Heron MG Analytical'
+  negative_case: 'run against ''Heron Flag Test'' instead - chosen because it should not contain
+    what this fragment reports. returned culture CultureInfo, energyModelExists false, energySettings
+    , findings 2 item(s) [The document in front is a family. Energy Settings are a pro...,
+    Not read here: the location, the building operating schedule...], mm Func`2, nameOf Func`2,
+    settingsRead 0, words Func`2, yesNo Func`2. on Heron Flag Test'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: a461938388aab5f0
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

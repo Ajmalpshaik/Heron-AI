@@ -42,3 +42,54 @@ before signing: the runner cannot read a sentence.
 | **NX8** | *`reset-graphic-overrides` v2, [row 5b-1630](../fragment-issues/row-5b-1630.md) - was PROVEN, DRAFT again. Revit 2024, "Heron Reads Test", `FloorPlan: Level 1`.* As NK7 did, give each wall ONE override with `override-graphics-in-view`: W1 `detail-level=Fine`, W2 `projection-line-pattern=Dash`, W4 `cut-line-weight=5`, W5 `surface-foreground-visible=false`; read them with `read-graphic-overrides`; then this card on each wall in turn. Negative: a wall with no override | Each of W1, W2, W4 and W5: `cleared` 1, `hadNothing` 0 - **never `cleared 0`** for a wall whose override it removed - and `read-graphic-overrides` afterwards finds none of the four overridden. Negative `cleared` 0, `hadNothing` 1 |
 | **NX9** | *`compare-elements` v3, [row 5b-1631](../fragment-issues/row-5b-1631.md), under [D-164](../decisions/D-164.md). Revit 2024, "Heron Reads Test".* NK8's case: positive the five walls ("Comments" bound to Walls a second time); negative the two room tags | Positive **ONE** finding, for *'Comments'* - NOT READ, a project parameter beside the built-in; **no** line for *'Category'* or *'Category [type]'*, which are compared now and counted in `identicalCount`. Negative `differing` empty, `ambiguous` empty and no finding. **If 'Category' still reads NOT READ**, the two built-ins read differently on this release: D-164 fails closed - write down what each reads |
 | **NX10** | *`set-railing-type` v3, [row 5b-1633](../fragment-issues/row-5b-1633.md). Revit 2024, the Snowdon Towers scratch copy.* DR6a's job again - `railingTypeName=Handrail - Pipe`, `duplicateAs=Heron Guard`, `topRailHeightMm=1000` - with **no** `expect:` line. Negative `railingTypeName=ZZZ No Such Railing` | `batch-prove` judges `changedTypeId` - *"1 item(s) [id N]"*, N the new "Heron Guard" - and the verdict is **not** `POSITIVE UNREADABLE`; the report ends *"read back as asked. \| 0 railing(s) are of this type and changed with it."* as DR6a's did. Negative refused by name, `changedTypeId` `(null)` |
+
+### Run record - 2026-11-14, the Revit 2020 rows, on the laptop
+
+Branch `claude/pc-proofs-2026-11-12` with `main` at 0b4ea659 (PR #870) merged in. Revit 2020, session 26612,
+the add-in built from 10334996 (no add-in code moved since). The models are the saved scratch copies
+*P1102 STR* and *P1102 MEP* under `%TEMP%\heron-work\prove-1102`, open beside the owner's own *Project2*,
+which nothing touched. Every run rolled back. The batch was
+`tools/jobs/defect-repairs-nx-revit2020-2026-11-14.yaml` - `5 job(s): 5 PASS` - and each line was then read
+against the row, because the runner reads no sentence.
+
+| # | Result | What was seen |
+|---|---|---|
+| NX1 | **PASS** | Positive `changed 5`; negative the 133 columns, `changed 0`. The draft carries one gap, *no second route*, and **no** *"the negative case returned content"* - row 5b-1638's repair holds |
+| NX2 | **PASS** | Positive `loadCount 5`; negative `loadCount 0`. No *"returned content"* gap - row 5b-1639's repair holds |
+| NX3 | **PASS** | Positive `added 1`: *"Made the load case 3 "Heron LC1" - nature Dead, category Dead Loads - its nature and its category read back from the model as asked"*; every line of `before` and `after` names its category - *"1 "DL1" ... category Dead Loads, 2 "LL1" ... category Live Loads, 4 "SNOW1" ... category Snow Loads"*, none `?`. Negative `dl1`: `added 0`, skipped as DL1. **`LoadCase.SubcategoryId` reads on Revit 2020** - the fact [row 5b-1640](../fragment-issues/row-5b-1640.md) waited on |
+| NX4 | **PASS**, one reading owed | *"Voltages (5): "120" 120 V (min 110, max 130), in use; "208" 208 V (min 200, max 220) ... "480" 480 V (min 460, max 490)"* and *"line to line "208" 208 V, line to ground "120" 120 V"* - never 11.15. Negative `ZZZ`: `voltageTypes 0`. `show=demand`: one factor by load, *"Receptacles" ... (0 kVA if internal units, 0 kVA if volt-amperes) to (10 kVA if internal units, 107.64 kVA if volt-amperes): 100%, ... and over: 50%"*. **Which of 10 and 107.64 the Demand Factors dialog shows is NEEDS THE OWNER'S EYE** (Manage > MEP Settings > Demand Factors > Receptacles); not guessed |
+| NX5 | **PASS** | (a) `added 1`: *"Added distribution system "Heron 208/120" 3-phase wye 4-wire, line to line 208 V, line to ground 120 V"* on the model's own types, and *"Another distribution system has the same phases, wires and voltages: "120/208 Wye""*. (b), by hand: *"Added voltage type "230 V" 230 V (min 230, max 230), read back as asked"* - **`AddVoltageType` takes volts on Revit 2020**. Negative a voltage named "120": `added 0`, skipped by name |
+| NX6, 2020 half | **PASS** | By hand, `validate` on Space 379575 (*"28 Technology"*, `Level 1 HVAC Zone Plan`), whose Properties read Design Heating Load 792 W, Design Cooling Load 1294 W, Specified Supply Airflow 90.6 L/s: *"heating 792 W (entered), cooling 1294 W (entered), supply 90.6 L/s (entered)"*, no unit finding. Negative wall 573595: nothing read, in `notSpaces` |
+
+NX6's 2024 half and NX7 to NX10 wait for Revit 2024. Drafts written for all six cards, gap *no second route*; not signed.
+
+**Signed 2026-11-14, as Ajmal PS, on the owner's word** (*"Yes, sign them"*): `set-floor-span-direction`,
+`report-structural-loads`, `create-load-case`, `report-electrical-settings`, `add-electrical-distribution` and
+`read-space-loads` - `accept` on each NX draft above, the status flipped to PROVEN. `read-space-loads`'s proof is
+the Revit 2020 run; NX6's 2024 half is still owed, as are NX7 to NX10 and NX4's dialog figure.
+
+**NX4's dialog, read 2026-11-14 by the owner on P1102 MEP:** Manage > MEP Settings > Demand Factors > Receptacles, *By load, Incrementally for each range*: *Greater Than 0 VA, Less Than or Equal To 10000 VA - 100.00%; 10000 VA - unlimited - 50.00%*. **The first reading, "10 kVA if internal units", is the dialog's** - a demand factor's load figures come through the API in Revit's internal units, unlike `VoltageType.ActualValue` (volts, NX4/NX5). That settles the unit for `report-electrical-settings`' demand line and for `add-load-classification`.
+
+### Run record - 2026-11-14 night, Revit 2024 (session 3592), the owner asleep
+
+Revit 2024 on the owner's laptop, add-in 0.2.0.0, *Ask to Keep* off. Group NK's scratch files under
+`%TEMP%\heron-work\nk` - *Heron Reads Test*, *Heron Flag Test* and the *Snowdon Towers Sample Architectural* copy -
+opened by Heron (`ACTIVATE_DOCUMENT`). The batch `tools/jobs/defect-repairs-nx-revit2024-2026-11-14.yaml` -
+`4 job(s): 3 PASS, 1 ALREADY` - then the same file with `--release 2024` for `read-space-loads`, which is PROVEN on
+2020: `1 PASS`. Every line read against the row. The batch's own five-minute wait between jobs is
+[row 5b-1656](../fragment-issues/row-5b-1656.md).
+
+| # | Result | What was seen |
+|---|---|---|
+| NX6, 2024 half | **PASS** | `--release 2024`, draft `read-space-loads@2024`: *"Space 1 - heating 3000 W (entered), cooling 5000 W (entered), supply 250 L/s (entered)"* - never 34069580 W - and no *"internal load unit"* finding anywhere in the record. Space 2: *"NO LOAD READABLE"* (unbounded). Negative the five walls: `heatingW`, `coolingW`, `airflowLs` empty, all five in `notSpaces` |
+| NX7 | **PASS** | Positive *Heron Flag Test*: *"Count [Integer/type] = 1  \|\|  Derived [Integer/type] = No (formula: not(Flag))  \|\|  Flag [Integer/type] = Yes"*; negative the project, `notAFamily` true, `parameterCount 0`. Then `set-family-type-values` (PROVEN) kept in the scratch family, `typeName=Type 1`, `values=Count=0`: *"Read back: Count = 0 (was 1)"*; the card again: *"Count [Integer/type] = 0"* - never No |
+| NX8 | **PASS** | W1 352517 `detail-level=Fine`, W2 352545 `projection-line-pattern=Dash`, W4 352563 `cut-line-weight=5`, W5 352571 `surface-foreground-visible=false`, each kept with `override-graphics-in-view`; `read-graphic-overrides` then read *"detail level Fine"*, *"line pattern Dash"*, *"cut line weight 5"*, *"surface pattern switched off"* beside W3's *"surface pattern Diagonal crosshatch"* - `withOverride 5`. This card through `validate --write`, one wall at a time, rolled back: W1, W2, W4 and W5 each `cleared 1`, `hadNothing 0` - **never `cleared 0`**. Negative W5 before its override (for W1, W2, W4) and the generic model 353482 (for W5): `cleared 0`, `hadNothing 1`. The draft is W1's run; the other three are kept as `%TEMP%\heron-work\nx8\reset-<id>.json`. **Not seen:** `read-graphic-overrides` finding none of the four after a KEPT reset - a DRAFT is kept only through `try-once`, whose Keep is the owner's |
+| NX9 | **PASS** | Five walls: `differing 11`, `identicalCount 56`, and ONE finding - *"5 element(s) carry TWO OR MORE parameters called 'Comments' - NOT READ"*. No finding names `Category` or `Category [type]`, so D-164 holds on 2024. Negative two room tags: `differing 0`, no finding. The record keeps the count, not the 11 names |
+| NX10 | **PASS** | *"Copied "Handrail - Pipe" as "Heron Guard"; top rail Circular - 1 1/2" at 1000 mm, handrail none, read back as asked. \| 0 railing(s) are of this type and changed with it."* - `changedTypeId 1 item(s) [id 2492786]`, verdict PASS, not POSITIVE UNREADABLE. Negative `ZZZ No Such Railing`: refused with the list, `changedTypeId (null)` |
+| NX4, 2024 | **NOT RUN as written** | *Heron Reads Test* holds one voltage only - *"Voltages (1): "Default" 0 V (min 0, max 0)"* and *"Distribution systems (1): "Default" 1-phase 2-wire, line to line none, line to ground none"* - so no figure can be set beside a dialog's. To be run on a scratch project from the 2024 metric Electrical template, which has voltages |
+
+Drafts waiting for the owner's "sign": `report-family-parameters`, `compare-elements`, `set-railing-type`,
+`reset-graphic-overrides` (each gap *no second route*), and `read-space-loads@2024` (`accept --release 2024`).
+*Heron Reads Test* now holds, unsaved: the four new overrides in `Level 1`; *Heron Flag Test*: Count 0.
+
+**Signed 2026-11-15, as Ajmal PS, on the owner's word** (*"Yes, sign all ten"*), commit 6c3c49d3 - `report-family-parameters`, `compare-elements`, `set-railing-type` and `reset-graphic-overrides` PROVEN; `read-space-loads` accepted for Revit 2024 (`accept --release 2024`).

@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -89,6 +89,40 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-14'
+  by: Ajmal PS
+  model: P1102 MEP, Revit 2020, session 26612 - the count is NOT recorded because 9,179 elements
+    was measured on P1102 STR, the document in front, and this ran against another one (row
+    15)
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-id, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned convert Action`2,
+    converted 1 item(s) [1021201], ductIds 1 item(s) [1021196], failedIds HashSet`1, findings
+    0 item(s), fittingsMade 0 item(s), given 1, invariant CultureInfo, label 1 entry(ies),
+    lengthOf Func`2, lines 1 item(s) [duct id 1021201 5000 mm], mm Func`2, named Func`2, notConverted
+    0 item(s), notPlaceholders 0 item(s), pipeIds 0 item(s), placeholderState Func`2, placeholdersGiven
+    1, report 1 placeholder(s) sent to Revit''s convert (1 duct, 0 pipe); 1 real duct(s) or
+    pipe(s) now stand: duct id 1021201 5000 mm. 0 not converted. 0 left alone as not placeholders,
+    returned 1 item(s) [1021201], seen HashSet`1. inputs came elements from the selection
+    (1). on P1102 MEP'
+  negative_case: 'run arranged with elementIds=404243 instead - chosen because it should not
+    contain what this fragment reports - the arrangement was re-made first by running filter-elements-by-id,
+    set-selection with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned convert Action`2, converted 0 item(s),
+    ductIds 0 item(s), failedIds HashSet`1, findings 0 item(s), fittingsMade 0 item(s), given
+    1, invariant CultureInfo, label 0 entry(ies), lengthOf Func`2, lines 0 item(s), mm Func`2,
+    named Func`2, notConverted 0 item(s), notPlaceholders 1 item(s) [Ducts ''Mitered Elbows
+    / Taps'' (id 404243): already a real du...], pipeIds 0 item(s), placeholderState Func`2,
+    placeholdersGiven 0, report None of the 1 element(s) given is a duct or pipe placeholder
+    - Ducts ''Mitered Elbows / Taps'' (id 404243): already a real duct, not a placeholder
+    - left as it is. Nothing was converted, returned 0 item(s), seen HashSet`1. inputs came
+    elements from the selection (1). on P1102 MEP'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: bf42d1497efb4f67
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

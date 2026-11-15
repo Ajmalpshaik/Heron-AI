@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -117,6 +117,41 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-13'
+  by: Ajmal PS
+  model: P1102 MEP (21,454 elements), Revit 2020, session 41776
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned count 0, created 1 item(s) [1020283],
+    culture CultureInfo, datumList Func`1, findings 2 item(s) [Made 1 of 1 reference plane(s)
+    in "Callout of Level 1 HVAC W..., Their lines run the length of the grid; SET_REFERENCE_PLANE_...],
+    grid Grid, grids 22 item(s) [A, B, D, ...], label Func`2, level (null), levels 5 item(s)
+    [Level 1, Level 2, Outcome Test, ...], mm Func`2, ownName Func`2, problems 0 item(s),
+    refused (null), report Made 1 of 1 reference plane(s) in "Callout of Level 1 HVAC WSHP
+    TYP" from grid 1, each read back: "Heron RP" 600 mm east of grid 1, skipped 0 item(s),
+    spacingMm 0, target ViewPlan, tolerance 3.28083989501312E-05, wanted 1 item(s) [[Heron
+    RP, 600]]. inputs came view as given; datum as given; planes as given; spacingMm not given
+    - "0", the card''s own default (optional); count not given - "0", the card''s own default
+    (optional). on P1102 MEP'
+  negative_case: 'run with view=Callout of Level 1 HVAC WSHP TYP, datum=Zz, planes=Heron RP=600
+    instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    count 0, created 0 item(s), culture CultureInfo, datumList Func`1, findings 1 item(s)
+    [No grid or level in this project is named "Zz". NOTHING WAS ...], grid (null), grids
+    22 item(s) [A, B, D, ...], label Func`2, level (null), levels 5 item(s) [Level 1, Level
+    2, Outcome Test, ...], mm Func`2, ownName Func`2, problems 0 item(s), refused No grid
+    or level in this project is named "Zz". NOTHING WAS MADE. Grids in this project: 1, 1.1,
+    10, 2, 3, 4, 5, 6, 7, 8, 9, A, B, C, D, E, F, F.1, G, H, J, K. Levels: Level 1, Level
+    2, Outcome Test, Level 3, Roof Level., report , skipped 0 item(s), spacingMm 0, target
+    ViewPlan, tolerance 3.28083989501312E-05, wanted 1 item(s) [[Heron RP, 600]]. inputs came
+    view as given; datum as given; planes as given; spacingMm not given - "0", the card''s
+    own default (optional); count not given - "0", the card''s own default (optional). on
+    P1102 MEP'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 038a30649561955a
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

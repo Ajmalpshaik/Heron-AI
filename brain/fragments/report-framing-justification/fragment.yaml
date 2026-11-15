@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -60,6 +60,34 @@ contract:
       type: IList<string>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-13'
+  by: Ajmal PS
+  model: P1102 STR (9,179 elements), Revit 2020, session 41776
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-id, set-selection with this phase''s own values. returned describe
+    Func`2, findings 4 item(s) [3 beam(s) or brace(s) read; 0 handed in that are not structu...,
+    Structural Framing ''400 x 800mm'' (id 124559): yz Justificati..., Structural Framing
+    ''400 x 800mm'' (id 124565): yz Justificati..., ...], framingCategory 1 item(s) [id -2001320],
+    justifications 3 item(s) [Structural Framing ''400 x 800mm'' (id 124559): yz Justificati...,
+    Structural Framing ''400 x 800mm'' (id 124565): yz Justificati..., Structural Framing
+    ''400 x 800mm'' (id 124568): yz Justificati...], mm Func`2, notFraming 0 item(s), read
+    Func`4. inputs came elements from the selection (3). on P1102 STR'
+  negative_case: 'run arranged with elementIds=122477,122478,122479 instead - chosen because
+    it should not contain what this fragment reports - the arrangement was re-made first by
+    running filter-elements-by-id, set-selection with this phase''s own values. returned describe
+    Func`2, findings 4 item(s) [0 beam(s) or brace(s) read; 3 handed in that are not structu...,
+    Structural Columns ''450mm'' (id 122477): not structural frami..., Structural Columns
+    ''450mm'' (id 122478): not structural frami..., ...], framingCategory 1 item(s) [id -2001320],
+    justifications 0 item(s), mm Func`2, notFraming 3 item(s) [Structural Columns ''450mm''
+    (id 122477): not structural frami..., Structural Columns ''450mm'' (id 122478): not structural
+    frami..., Structural Columns ''450mm'' (id 122479): not structural frami...], read Func`4.
+    inputs came elements from the selection (3). on P1102 STR'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 0bc47b1cc610d7d9
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

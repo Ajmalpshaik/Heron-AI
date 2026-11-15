@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -79,6 +79,31 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: IList<ElementId>
+
+proof:
+  date: '2026-11-14'
+  by: Ajmal PS
+  model: P1102 MEP, Revit 2020, session 26612 - the count is NOT recorded because 9,179 elements
+    was measured on P1102 STR, the document in front, and this ran against another one (row
+    15)
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-id, set-selection with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned along 0.5, freeConnectorsOf
+    Func`2, leftSevered 0 item(s), notARun 0 item(s), placed 1 item(s) [1021195], positionAlong
+    0.5, refused 0 item(s). inputs came elements from the selection (1); accessorySymbol as
+    given; positionAlong as given. on P1102 MEP
+  negative_case: 'run with accessorySymbol=M_Gate Valve - 50-300 mm: 100 mm, positionAlong=0.5
+    arranged with elementIds=573595 instead - chosen because it should not contain what this
+    fragment reports - the arrangement was re-made first by running filter-elements-by-id,
+    set-selection with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned along 0.5, freeConnectorsOf Func`2,
+    leftSevered 0 item(s), notARun 1 item(s) [573595], placed 0 item(s), positionAlong 0.5,
+    refused 0 item(s). inputs came elements from the selection (1); accessorySymbol as given;
+    positionAlong as given. on P1102 MEP'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 563e7f520e80a583
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

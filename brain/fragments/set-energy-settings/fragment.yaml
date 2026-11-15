@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -112,6 +112,66 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-14'
+  by: Ajmal PS
+  model: P1102 MEP (21,438 elements), Revit 2020, session 26612
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned add Action`6, after Energy Settings
+    - building type office; ground plane "Level 2"; project phase "New Construction"; analysis
+    mode conceptual masses and building elements; export category spaces; export complexity
+    simple with shading surfaces; include thermal properties no; building envelope use function
+    parameter; building construction class none construction; service type active chilled
+    beams; report type standard report; sliver space tolerance 304.8 mm; analytical grid cell
+    size 914.4 mm; core offset 4572 mm; divide perimeter zones yes; target percentage glazing
+    0 %; energy model no; use heating credits no, before Energy Settings - building type office;
+    ground plane "Level 1"; project phase "New Construction"; analysis mode conceptual masses
+    and building elements; export category spaces; export complexity simple with shading surfaces;
+    include thermal properties no; building envelope use function parameter; building construction
+    class none construction; service type active chilled beams; report type standard report;
+    sliver space tolerance 304.8 mm; analytical grid cell size 914.4 mm; core offset 4572
+    mm; divide perimeter zones yes; target percentage glazing 0 %; energy model no; use heating
+    credits no, categoryWord Func`2, changed 1, checkedBy Func`4, culture CultureInfo, describe
+    Func`1, energyModel false, entries 18 item(s) [(building type, System.String[], System.Func`1[System.Object...,
+    (ground plane, System.String[], System.Func`1[System.Object]..., (project phase, System.String[],
+    System.Func`1[System.Object..., ...], enumParser Func`4, es EnergyDataSettings, findings
+    1 item(s) [Energy Settings changed for the whole model (1 setting(s)): ...], glazingAsPercent
+    false, key Func`2, mm Func`2, nameList building type, ground plane, project phase, analysis
+    mode, export category, export complexity, include thermal properties, building envelope,
+    building construction class, service type, report type, sliver space tolerance, analytical
+    grid cell size, core offset, divide perimeter zones, target percentage glazing, energy
+    model, use heating credits, nameOf Func`2, noNames 0 item(s), number Func`2, ok Func`3,
+    parseMm Func`2, parseYes Func`2, percent Func`2, plans 1 item(s) [(ground plane, 378118,
+    System.Func`1[System.Object], System....], problems 0 item(s), refused (null), roomsId
+    1 item(s) [id -2000160], spacesId 1 item(s) [id -2003600], words Func`2, yesNo Func`2.
+    inputs came settings as given. on P1102 MEP'
+  negative_case: run with settings=zz no such setting=1 instead - chosen because it should
+    not contain what this fragment reports - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned add Action`6, after , before ,
+    categoryWord Func`2, changed 0, checkedBy Func`4, culture CultureInfo, describe Func`1,
+    energyModel false, entries 18 item(s) [(building type, System.String[], System.Func`1[System.Object...,
+    (ground plane, System.String[], System.Func`1[System.Object]..., (project phase, System.String[],
+    System.Func`1[System.Object..., ...], enumParser Func`4, es EnergyDataSettings, findings
+    1 item(s) ["zz no such setting" is not a setting this card reaches; it ...], glazingAsPercent
+    false, key Func`2, mm Func`2, nameList building type, ground plane, project phase, analysis
+    mode, export category, export complexity, include thermal properties, building envelope,
+    building construction class, service type, report type, sliver space tolerance, analytical
+    grid cell size, core offset, divide perimeter zones, target percentage glazing, energy
+    model, use heating credits, nameOf Func`2, noNames 0 item(s), number Func`2, ok Func`3,
+    parseMm Func`2, parseYes Func`2, percent Func`2, plans 0 item(s), problems 1 item(s) ["zz
+    no such setting" is not a setting this card reaches; it ...], refused "zz no such setting"
+    is not a setting this card reaches; it takes building type, ground plane, project phase,
+    analysis mode, export category, export complexity, include thermal properties, building
+    envelope, building construction class, service type, report type, sliver space tolerance,
+    analytical grid cell size, core offset, divide perimeter zones, target percentage glazing,
+    energy model, use heating credits. NOTHING WAS CHANGED., roomsId 1 item(s) [id -2000160],
+    spacesId 1 item(s) [id -2003600], words Func`2, yesNo Func`2. inputs came settings as
+    given. on P1102 MEP
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 0fc50dac0479768c
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -140,6 +140,49 @@ contract:
       type: IList<string>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-14'
+  by: Ajmal PS
+  model: P1102 MEP, Revit 2020, session 26612 - the count is NOT recorded because 9,179 elements
+    was measured on P1102 STR, the document in front, and this ran against another one (row
+    15)
+  positive_case: 'run as it would normally be run. returned asked voltages; distribution,
+    bothReadings Func`2, circuitNamingSchemes 0, demandFactors 0, distributionSystems 3, every
+    false, factorNames 12 entry(ies), factorRows 0 item(s), findings 3 item(s) [5 voltage(s),
+    3 distribution system(s), 0 wire type(s), 0 lo..., Voltages (5): "120" 120 V (min 110,
+    max 130), in use; "208" ..., Distribution systems (3): "120/208 Wye" 3-phase wye 4-wire,
+    ...], invariant CultureInfo, lines 2 item(s) [Voltages (5): "120" 120 V (min 110, max
+    130), in use; "208" ..., Distribution systems (3): "120/208 Wye" 3-phase wye 4-wire, ...],
+    loadClassifications 0, loadFiguresPrinted 0, names 8 item(s) ["120" (voltage), "208" (voltage),
+    "240" (voltage), ...], needle , num Func`2, panelScheduleTemplates 0, perVolt 10.7639104167097,
+    quoted Func`2, report Voltages (5): "120" 120 V (min 110, max 130), in use; "208" 208
+    V (min 200, max 220), in use; "240" 240 V (min 220, max 250), in use; "277" 277 V (min
+    260, max 280), in use; "480" 480 V (min 460, max 490), in use | Distribution systems (3):
+    "120/208 Wye" 3-phase wye 4-wire, line to line "208" 208 V, line to ground "120" 120 V,
+    in use; "120/240 Single" 1-phase 3-wire, line to line "240" 240 V, line to ground "120"
+    120 V; "480/277 Wye" 3-phase wye 4-wire, line to line "480" 480 V, line to ground "277"
+    277 V, in use, revitsPerVolt 10.7639104167097, settings ElectricalSetting, total 8, unknownWords
+    0 item(s), voltageTypes 5, wantDemand false, wantDistribution true, wantLoads false, wantNaming
+    false, wantTemplates false, wantVoltages true, wantWires false, wanted Func`2, wireTypes
+    0. inputs came show as given; nameContains not given - "none", the card''s own default
+    (optional). on P1102 MEP'
+  negative_case: 'run with nameContains=ZZZ, show=voltages instead - chosen because it should
+    not contain what this fragment reports. returned asked voltages, bothReadings Func`2,
+    circuitNamingSchemes 0, demandFactors 0, distributionSystems 0, every false, factorNames
+    12 entry(ies), factorRows 0 item(s), findings 3 item(s) [Matching "ZZZ": 0 voltage(s),
+    0 distribution system(s), 0 wi..., Nothing in the lists read has a name containing "ZZZ"
+    - leav..., Voltages (0): none], invariant CultureInfo, lines 1 item(s) [Voltages (0):
+    none], loadClassifications 0, loadFiguresPrinted 0, names 0 item(s), needle ZZZ, num Func`2,
+    panelScheduleTemplates 0, perVolt 10.7639104167097, quoted Func`2, report Voltages (0):
+    none, revitsPerVolt 10.7639104167097, settings ElectricalSetting, total 0, unknownWords
+    0 item(s), voltageTypes 0, wantDemand false, wantDistribution false, wantLoads false,
+    wantNaming false, wantTemplates false, wantVoltages true, wantWires false, wanted Func`2,
+    wireTypes 0. inputs came show as given; nameContains as given. on P1102 MEP'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: fa5b7af8cbb1d2ae
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

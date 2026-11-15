@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -52,6 +52,29 @@ contract:
       type: int
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-13'
+  by: Ajmal PS
+  model: P1102 MEP (21,454 elements), Revit 2020, session 41776
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-category, set-selection with this phase's own values. returned describe
+    Func`2, findings 1 item(s) [4 corner(s) read across 2 wall(s); 0 wall end(s) meet nothin...],
+    freeEnds 0, joins 4 item(s) [wall 'Lamelle 11.5' (id 573595), start, with wall 'STB 20.0'...,
+    wall 'Lamelle 11.5' (id 573595), end, with wall 'STB 30.0' (..., wall 'Standard' (id 573610),
+    start, with wall 'Standard' (id..., ...], say Func`2. inputs came elements from the selection
+    (2). on P1102 MEP
+  negative_case: run arranged with categories=Ducts, inViewOnly=Callout of Level 1 HVAC WSHP
+    TYP instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running filter-elements-by-category, set-selection with this phase's
+    own values. returned describe Func`2, findings 2 item(s) [0 corner(s) read across 0 wall(s);
+    0 wall end(s) meet nothin..., 10 element(s) handed in are not walls drawn along a line
+    and...], freeEnds 0, joins 0 item(s), say Func`2. inputs came elements from the selection
+    (10). on P1102 MEP
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: bb827055c0618051
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

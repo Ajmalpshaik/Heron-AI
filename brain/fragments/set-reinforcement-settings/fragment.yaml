@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -117,6 +117,66 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-14'
+  by: Ajmal PS
+  model: P1102 STR, Revit 2020, session 26612 - the count is NOT recorded because 21,438 elements
+    was measured on P1102 MEP, the document in front, and this ran against another one (row
+    15)
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned after include hooks in rebar shape
+    definition yes; include end treatments in rebar shape definition no; host structural rebar
+    no; rebar presentation in view show middle; rebar presentation in section show all; varying
+    length number suffix '1'; rebar total length rounding 0 mm nearest, segment length rounding
+    0 mm nearest; fabric total length rounding 0 mm nearest, segment length rounding 0 mm
+    nearest, before include hooks in rebar shape definition yes; include end treatments in
+    rebar shape definition no; host structural rebar no; rebar presentation in view show all;
+    rebar presentation in section show all; varying length number suffix '1'; rebar total
+    length rounding 0 mm nearest, segment length rounding 0 mm nearest; fabric total length
+    rounding 0 mm nearest, segment length rounding 0 mm nearest, changed 1, describe Func`2,
+    dropped HashSet`1, findings 1 item(s) [Reinforcement Settings changed for the whole model
+    (1 settin...], fromMm Func`3, key Func`2, methodText Func`2, modeText Func`2, nameList
+    include hooks in rebar shape definition, include end treatments in rebar shape definition,
+    host structural rebar, rebar presentation in view, rebar presentation in section, varying
+    length number suffix, rebar total length rounding, rebar segment length rounding, rebar
+    rounding, rebar total length rounding method, rebar segment length rounding method, rebar
+    rounding method, fabric total length rounding, fabric segment length rounding, fabric
+    rounding, fabric total length rounding method, fabric segment length rounding method,
+    fabric rounding method, names 18 item(s) [(include hooks in rebar shape definition, yes,
+    System.String..., (include end treatments in rebar shape definition, yes, Syst..., (host
+    structural rebar, yes, System.String[]), ...], parseMm Func`2, parseYes Func`2, plan Action`5,
+    plans 1 item(s) [(rebar presentation in view, show middle, System.Func`2[Auto...], problems
+    0 item(s), refused (null), roundingMm Func`3, rs ReinforcementSettings, yesNo Func`2.
+    inputs came settings as given. on P1102 STR
+  negative_case: run with settings=zz no such setting=1 instead - chosen because it should
+    not contain what this fragment reports - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned after , before , changed 0, describe
+    Func`2, dropped HashSet`1, findings 1 item(s) ["zz no such setting" is not a setting this
+    card reaches; it ...], fromMm Func`3, key Func`2, methodText Func`2, modeText Func`2,
+    nameList include hooks in rebar shape definition, include end treatments in rebar shape
+    definition, host structural rebar, rebar presentation in view, rebar presentation in section,
+    varying length number suffix, rebar total length rounding, rebar segment length rounding,
+    rebar rounding, rebar total length rounding method, rebar segment length rounding method,
+    rebar rounding method, fabric total length rounding, fabric segment length rounding, fabric
+    rounding, fabric total length rounding method, fabric segment length rounding method,
+    fabric rounding method, names 18 item(s) [(include hooks in rebar shape definition, yes,
+    System.String..., (include end treatments in rebar shape definition, yes, Syst..., (host
+    structural rebar, yes, System.String[]), ...], parseMm Func`2, parseYes Func`2, plan Action`5,
+    plans 0 item(s), problems 1 item(s) ["zz no such setting" is not a setting this card reaches;
+    it ...], refused "zz no such setting" is not a setting this card reaches; it takes include
+    hooks in rebar shape definition, include end treatments in rebar shape definition, host
+    structural rebar, rebar presentation in view, rebar presentation in section, varying length
+    number suffix, rebar total length rounding, rebar segment length rounding, rebar rounding,
+    rebar total length rounding method, rebar segment length rounding method, rebar rounding
+    method, fabric total length rounding, fabric segment length rounding, fabric rounding,
+    fabric total length rounding method, fabric segment length rounding method, fabric rounding
+    method. NOTHING WAS CHANGED., roundingMm Func`3, rs ReinforcementSettings, yesNo Func`2.
+    inputs came settings as given. on P1102 STR
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 0635623da031ea58
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

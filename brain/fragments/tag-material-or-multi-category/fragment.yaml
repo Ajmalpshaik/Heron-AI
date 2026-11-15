@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -128,6 +128,46 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-13'
+  by: Ajmal PS
+  model: P1102 MEP (21,457 elements), Revit 2020, session 41776
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-category, set-selection with this phase''s own values - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    addLeader false, alreadyTaggedHere 0 item(s), chosenType FamilySymbol, findings 2 item(s)
+    [10 multi-category tag(s) placed in "Callout of Level 1 HVAC ..., The tags read: Ducts
+    Mitered Elbows / Taps: "(blank)"; Ducts...], forMaterial false, isNamed Func`3, listOf
+    Func`2, materialTagTypes 0 item(s), materialTagsCategory 1 item(s) [id -2005027], mismatched
+    0 item(s), multiTagTypes 1 item(s) [M_Multi Category Tag], multiTagsCategory 1 item(s)
+    [id -2005022], newTags 10 item(s) [1021357, 1021358, 1021359, ...], notPlaced 0 item(s),
+    notTaggable 0 item(s), refused , tagTargets Func`2, tagged 10, typeLabel Func`2, typeText
+    M_Multi Category Tag, typesLoaded 2 item(s) [Material tag types: none loaded, Multi-category
+    tag types: ''M_Multi Category Tag: M_Multi Cat...], typesOf Func`2, viewTakesTags true.
+    inputs came view as given; elements from the selection (10); tagType as given; addLeader
+    not given - false (optional). on P1102 MEP'
+  negative_case: 'run with view=Callout of Level 1 HVAC WSHP TYP, tagType=Zz No Such Tag arranged
+    with categories=Ducts, inViewOnly=Callout of Level 1 HVAC WSHP TYP instead - chosen because
+    it should not contain what this fragment reports - the arrangement was re-made first by
+    running filter-elements-by-category, set-selection with this phase''s own values - run
+    inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned addLeader false, alreadyTaggedHere 0 item(s), chosenType (null), findings 1 item(s)
+    [No material or multi-category tag type is called ''Zz No Such...], forMaterial false,
+    isNamed Func`3, listOf Func`2, materialTagTypes 0 item(s), materialTagsCategory 1 item(s)
+    [id -2005027], mismatched 0 item(s), multiTagTypes 1 item(s) [M_Multi Category Tag], multiTagsCategory
+    1 item(s) [id -2005022], newTags 0 item(s), notPlaced 0 item(s), notTaggable 0 item(s),
+    refused No material or multi-category tag type is called ''Zz No Such Tag'' - the name
+    has to match the Project Browser, capitals included. The loaded ones are in typesLoaded.
+    Nothing was placed., tagTargets Func`2, tagged 0, typeLabel Func`2, typeText Zz No Such
+    Tag, typesLoaded 2 item(s) [Material tag types: none loaded, Multi-category tag types:
+    ''M_Multi Category Tag: M_Multi Cat...], typesOf Func`2, viewTakesTags true. inputs came
+    view as given; elements from the selection (10); tagType as given; addLeader not given
+    - false (optional). on P1102 MEP'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 5ea8a7b571c26e9f
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

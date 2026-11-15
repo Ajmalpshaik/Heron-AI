@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -95,6 +95,38 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-14'
+  by: Ajmal PS
+  model: P1102 STR, Revit 2020, session 26612 - the count is NOT recorded because 21,438 elements
+    was measured on P1102 MEP, the document in front, and this ran against another one (row
+    15)
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8, SquareMetresPerSquareFoot
+    0.09290304, areaOf Func`3, corners (null), culture CultureInfo, findings 1 item(s) [Made
+    a toposurface from 4 point(s), read back with 4.], given Func`2, how toposurface, num
+    Func`2, numberStyle NumberStyles, outline Func`3, quoted Func`2, read Func`3, refused
+    (null), release 2020, report 1 item(s) [toposurface 272554: 4 point(s), 4 on its edge,
+    heights 0 to ...], resultIds 1 item(s) [272554], surfaceLine Func`2, surfaces 0 item(s).
+    inputs came mode as given; pointsMm as given; level not given - "none", the card''s own
+    default (optional); typeName not given - "none", the card''s own default (optional); host
+    not given - "none", the card''s own default (optional). on P1102 STR'
+  negative_case: run with mode=toposurface, pointsMm=200000,200000,0; 210000,200000,0 instead
+    - chosen because it should not contain what this fragment reports - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8,
+    SquareMetresPerSquareFoot 0.09290304, areaOf Func`3, corners (null), culture CultureInfo,
+    findings 1 item(s) [A toposurface needs three points or more; 2 given. NOTHING W...],
+    given Func`2, how toposurface, num Func`2, numberStyle NumberStyles, outline Func`3, quoted
+    Func`2, read Func`3, refused A toposurface needs three points or more; 2 given. NOTHING
+    WAS MADE., release 2020, report 0 item(s), resultIds 0 item(s), surfaceLine Func`2, surfaces
+    0 item(s). inputs came mode as given; pointsMm as given; level not given - "none", the
+    card's own default (optional); typeName not given - "none", the card's own default (optional);
+    host not given - "none", the card's own default (optional). on P1102 STR
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 32b4de6a9990148c
 
 revit: ["2020", "2021", "2022", "2023"]
 runtime: [net48]

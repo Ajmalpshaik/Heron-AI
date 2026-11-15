@@ -1,0 +1,60 @@
+# NEEDS-CHECKING Group MG on Revit 2024 - CREATE_ANALYTICAL_ELEMENTS and
+# ADJUST_ANALYTICAL_ELEMENTS (both DRAFT). Written 2026-11-14 night from
+# tools/jobs/analytical-elements-mg-2026-11-02.yaml for the model Heron made:
+# the template's plans are Structural Plans, so the views read
+# "EngineeringPlan: Level 2", not "FloorPlan: Level 2".
+#
+#     python tools/batch-prove.py tools/jobs/analytical-elements-mg-revit2024-2026-11-14.yaml --dry-run
+#     HERON_CLIENT_ID=heron-batch-prove python tools/batch-prove.py tools/jobs/analytical-elements-mg-revit2024-2026-11-14.yaml --unattended --session <pid>
+#
+# THE MODEL (group-mg.md, MG1): "Heron MG Analytical", made by Heron with
+# CREATE_FAMILY_DOCUMENT from Revit 2024's English\Structural Analysis-DefaultMetric.rte
+# and saved under %TEMP%\heron-work\mg - never a working model. Level 1 at 0,
+# Level 2 at 3000. Columns C1 421963 at (0, 0) and C2 421964 at (6000, 0),
+# M_Concrete-Rectangular-Column 300 x 450mm, Level 1 to Level 2; beam B1 421966,
+# M_Concrete-Rectangular Beam 300 x 600mm, (0,0)-(6000,0) on Level 2; floor S1
+# 421972, Insitu Concrete 225mm, 8000..14000 x 0..4000 on Level 2; Generic -
+# 200mm walls, Structural off, (0,6000)-(6000,6000) on Level 1 and on Level 2 (A1).
+# REPORT_ANALYTICAL_MODEL reads 0 members and 0 panels: from Revit 2023 a
+# physical element gets no analytical element by itself.
+#
+# Every write is ROLLED BACK.
+model: "Heron MG Analytical scratch project (Revit 2024 metric structural analysis template), C1, C2, B1, S1, A1"
+defaults:
+  write: true
+  in: "Heron MG Analytical"
+jobs:
+  - fragment: create-analytical-elements
+    expect: created
+    set:
+      kind: "member"
+      points: "0,0,0; 6000,0,0"
+      level: "Level 2"
+    negative-set:
+      kind: "member"
+      points: "0,0,0; 6000,0,0"
+      level: "Level 9"
+    note: >
+      MG2. Negative: Level 9 is not there - created 0, refused with every
+      level and its elevation. Positive: created 1, a member from (0, 0, 3000)
+      to (6000, 0, 3000) mm, 6000 mm long.
+  - fragment: adjust-analytical-elements
+    expect: adjusted
+    setup:
+      - select-by-category-name
+      - set-selection
+    setup-set:
+      categoryName: Structural Framing
+      inViewOnly: "EngineeringPlan: Level 2"
+    negative-setup-set:
+      categoryName: Walls
+      inViewOnly: "EngineeringPlan: Level 2"
+    set:
+      offset: "0,0,-200"
+    negative-set:
+      offset: "0,0,-200"
+    note: >
+      MG3. Negative: the wall A1 - adjusted 0, A1 in noAnalytical. Positive B1:
+      on Revit 2024 B1 has NO analytical member (see the model note), so B1 is
+      expected in noAnalytical too - POSITIVE EMPTY is the arrangement, not the
+      card, until a member is made for B1 and tied to it (MG4, MG5).

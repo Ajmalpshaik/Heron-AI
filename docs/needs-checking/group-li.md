@@ -67,3 +67,16 @@ two Revits are connected, and `< /dev/null`.
 | **LI4** | *Never guessed.* `action` make with `parts` "panel; colour"; with `parts` left out; `action` use with `schemeName` ZZNOSCHEME | Refused, naming the parts Heron knows; refused - never guessed; refused, naming the model's schemes. `changed` 0 for each |
 | **LI5** | *The read.* The job file's second job; then `show` naming on Group KU's Revit 2020 project | Negative, ZZNOSCHEME: `circuitNamingSchemes` 0 and *Nothing in the lists read has a name containing "ZZNOSCHEME"*. Positive: every scheme LI1 wrote down, in order, the project's marked. 2020: `circuitNamingSchemes` 0 and the line saying schemes arrived in 2021 |
 | **LI6** | *Revit 2026 or 2027.* LI2 and LI3's first case again on a project from that release's template | The same answers |
+
+### Run record - 2026-11-14 night, Revit 2024 (session 3592), the owner asleep
+
+On the scratch *electrical-mi* of [Group MI](group-mi.md) (Heron-made from Revit 2024's metric Electrical template)
+instead of a separate *electrical-settings-li*: the same template. `tools/jobs/set-circuit-naming-scheme-li-2026-11-02.yaml`
+with `in: "electrical-mi"` - `1 POSITIVE EMPTY, 1 ALREADY` (`report-electrical-settings` is PROVEN).
+
+| # | Result | What was seen |
+|---|---|---|
+| LI1 | **Read** | `show=naming`: *"Circuit naming schemes (0): none. The project uses none Heron could read."* A rolled-back probe agrees: no `CircuitNamingScheme` element, the project's scheme id -1. So there is no *Standard* to be the negative |
+| LI2 | **FAIL** | Both legs *"Revit does not accept Panel + Circuit Number as the parts of a circuit naming scheme. Nothing was made."* - Revit's `IsValidCombinedParameters` refuses `RBS_ELEC_CIRCUIT_NUMBER`, the card's *circuit number*, and accepts `RBS_ELEC_CIRCUIT_NAMING_INDEX` - [row 5b-1660](../fragment-issues/row-5b-1660.md). With `parts=panel; load name` instead (rolled back, kept apart as evidence, not the draft): *"Made the circuit naming scheme "Panel-Load": Panel "-" + Load Name"*, `changed 1` |
+| LI4 | **PASS, one case** | `action=use schemeName=ZZNOSCHEME`: *"No circuit naming scheme is named "ZZNOSCHEME". The model's schemes are: none."*, `changed 0` |
+| LI3, LI5, LI6 | **NOT RUN** | LI3 needs a scheme kept (`try-once`, his Keep); LI5's card is PROVEN; LI6 needs Revit 2026 or 2027 |

@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -107,6 +107,54 @@ contract:
       type: IList<string>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-14'
+  by: Ajmal PS
+  model: P1102 STR (9,179 elements), Revit 2020, session 17824
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-id, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned analyticalOf
+    Func`2, curveOf Func`2, describe Func`2, e0 base, endIndex 0, existing 7 item(s) [Boundary
+    Conditions, Boundary Conditions, Boundary Conditions, ...], f pinned, findings 0 item(s),
+    hosts 3 item(s) [450mm, 450mm, 450mm], invariant CultureInfo, isArea false, isFixed false,
+    isLine false, isMember Func`2, isPanel Func`2, isPinned true, isPoint true, isRoller false,
+    k point, lines 3 item(s) [272558  Point at (-9202, 29994, 0) mm, Revit shows it as Pin...,
+    272560  Point at (-9202, 22679, 0) mm, Revit shows it as Pin..., 272562  Point at (-9202,
+    19427, 0) mm, Revit shows it as Pin...], mm Func`2, noAnalytical 0 item(s), ok true, placed
+    3, placedIds 3 item(s) [272558, 272560, 272562], pt Func`2, quoted Func`2, readBack Func`2,
+    refused 0 item(s), report 272558  Point at (-9202, 29994, 0) mm, Revit shows it as Pinned;
+    asked Pinned; on Structural Columns "450mm" (122477) through analytical 176062 - read
+    back from the model
+
+    272560  Point at (-9202, 22679, 0) mm, Revit shows it as Pinned; asked Pinned; on Structural
+    Columns "450mm" (122478) through analytical 176063 - read back from the model
+
+    272562  Point at (-9202, 19427, 0) mm, Revit shows it as Pinned; asked Pinned; on Structural
+    Columns "450mm" (122479) through analytical 176064 - read back from the model, rot TranslationRotationValue,
+    skipped 0 item(s), tXY TranslationRotationValue, tZ TranslationRotationValue, wantType
+    BoundaryConditionsType. inputs came elements from the selection (3); kind as given; fixity
+    as given; at as given. on P1102 STR'
+  negative_case: 'run with kind=point, fixity=pinned, at=base arranged with elementIds=157002,157117,157195
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running filter-elements-by-id, set-selection with this phase''s own
+    values - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned analyticalOf Func`2, curveOf Func`2, describe Func`2, e0 base, endIndex
+    0, existing 7 item(s) [Boundary Conditions, Boundary Conditions, Boundary Conditions,
+    ...], f pinned, findings 2 item(s) [3 element(s) have no analytical element, so no boundary
+    cond..., No boundary condition was placed - the model''s supports are ...], hosts 3 item(s)
+    [13M : Shape M_00, 13M : Shape Rebar Shape 1, 13M : Shape Rebar Shape 1], invariant CultureInfo,
+    isArea false, isFixed false, isLine false, isMember Func`2, isPanel Func`2, isPinned true,
+    isPoint true, isRoller false, k point, lines 0 item(s), mm Func`2, noAnalytical 3 item(s)
+    [157002, 157117, 157195], ok true, placed 0, placedIds 0 item(s), pt Func`2, quoted Func`2,
+    readBack Func`2, refused 0 item(s), report , rot TranslationRotationValue, skipped 0 item(s),
+    tXY TranslationRotationValue, tZ TranslationRotationValue, wantType BoundaryConditionsType.
+    inputs came elements from the selection (3); kind as given; fixity as given; at as given.
+    on P1102 STR'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: de49a96b093675cb
 
 revit: ["2020", "2021", "2022", "2027"]
 runtime: [net472, net48, net10.0-windows]

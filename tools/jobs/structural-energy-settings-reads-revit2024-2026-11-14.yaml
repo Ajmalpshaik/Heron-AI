@@ -1,0 +1,32 @@
+# REPORT_STRUCTURAL_SETTINGS (Group MF, MF2) and REPORT_ENERGY_SETTINGS (Group
+# MM, MM4), both DRAFT reads, on Revit 2024. Written 2026-11-14 night from
+# structural-settings-mf-2026-11-02.yaml and mechanical-energy-gbxml-mm-2026-11-02.yaml,
+# pointed at the scratch files open that night instead of the "Heron MF ..." and
+# "Heron MM ..." files those name: the same kinds of document.
+#
+#     python tools/batch-prove.py tools/jobs/structural-energy-settings-reads-revit2024-2026-11-14.yaml --dry-run
+#     HERON_CLIENT_ID=heron-batch-prove python tools/batch-prove.py tools/jobs/structural-energy-settings-reads-revit2024-2026-11-14.yaml --unattended --session <pid>
+#
+# THE MODELS: "Heron MG Analytical" (Heron-made from Revit 2024's metric
+# structural analysis template, %TEMP%\heron-work\mg) is the project; "Heron
+# Flag Test" (Group NK's scratch family, %TEMP%\heron-work\nk) is the negative:
+# both settings belong to a project, never to a family.
+model: "Heron MG Analytical (project) and Heron Flag Test (family), Revit 2024"
+jobs:
+  - fragment: report-structural-settings
+    in: "Heron MG Analytical"
+    negative-in: "Heron Flag Test"
+    expect: settingsRead
+    note: >
+      MF2. Positive: structuralSettings opens "Structural Settings - Symbolic
+      cutback distance ...", reinforcementSettings opens "Reinforcement
+      Settings - General ...". Negative, the family: settingsRead 0 and both
+      strings empty expected - RECORD what Revit gives.
+  - fragment: report-energy-settings
+    in: "Heron MG Analytical"
+    negative-in: "Heron Flag Test"
+    expect: settingsRead
+    note: >
+      MM4. Positive: energySettings opens "Energy Settings - building type
+      ...". Negative, the family: settingsRead 0, energySettings empty, a
+      finding that Energy Settings are a project's.

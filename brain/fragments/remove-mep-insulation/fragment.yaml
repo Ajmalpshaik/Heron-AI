@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -81,6 +81,46 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-14'
+  by: Ajmal PS
+  model: Heron JX Ducts (3,420 elements), Revit 2024, session 3592
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-id, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned all 2 item(s)
+    [Ducts "Radius Elbows / Taps" (id 925621): 1 insulation eleme..., Ducts "Radius Elbows
+    / Taps" (id 925623): 1 insulation eleme...], alsoWentTotal 0, bare 0 item(s), describe
+    Func`2, findings 2 item(s) [2 insulation element(s) removed from 2 of 2 duct, pipe, fitt...,
+    The ducts and pipes themselves are untouched, and so is any ...], hosts 2 item(s) [925621,
+    925623], insulable 8 item(s) [-2008000, -2008010, -2008016, ...], isInsulation Func`2,
+    lines 2 item(s) [Ducts "Radius Elbows / Taps" (id 925621): 1 insulation eleme..., Ducts
+    "Radius Elbows / Taps" (id 925623): 1 insulation eleme...], lining 0 item(s), notInsulable
+    0 item(s), pickedDirectly 0, problems 0 item(s), refused (null), removed 2, report Ducts
+    "Radius Elbows / Taps" (id 925621): 1 insulation element(s) removed
+
+    Ducts "Radius Elbows / Taps" (id 925623): 1 insulation element(s) removed. inputs came
+    elements from the selection (2). on Heron JX Ducts'
+  negative_case: 'run with elementIds=925625, 925627 instead - chosen because it should not
+    contain what this fragment reports - the arrangement was re-made first by running filter-elements-by-id,
+    set-selection with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned all 2 item(s) [Ducts "Radius Elbows
+    / Taps" (id 925625): had no insulation ..., Ducts "Radius Elbows / Taps" (id 925627):
+    had no insulation ...], alsoWentTotal 0, bare 2 item(s) [Ducts "Radius Elbows / Taps"
+    (id 925625), Ducts "Radius Elbows / Taps" (id 925627)], describe Func`2, findings 1 item(s)
+    [0 insulation element(s) removed from 0 of 2 duct, pipe, fitt...], hosts 2 item(s) [925625,
+    925627], insulable 8 item(s) [-2008000, -2008010, -2008016, ...], isInsulation Func`2,
+    lines 0 item(s), lining 0 item(s), notInsulable 0 item(s), pickedDirectly 0, problems
+    0 item(s), refused None of the 2 duct, pipe, fitting, accessory or flex element(s) selected
+    had insulation on it - nothing was removed, removed 0, report Ducts "Radius Elbows / Taps"
+    (id 925625): had no insulation - nothing removed
+
+    Ducts "Radius Elbows / Taps" (id 925627): had no insulation - nothing removed. inputs
+    came elements from the selection (2). on Heron JX Ducts'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: b732679e45c60ed7
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

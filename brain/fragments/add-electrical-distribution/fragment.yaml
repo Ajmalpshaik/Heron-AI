@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -152,6 +152,54 @@ contract:
       type: IList<string>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-14'
+  by: Ajmal PS
+  model: P1102 MEP, Revit 2020, session 26612 - the count is NOT recorded because 9,179 elements
+    was measured on P1102 STR, the document in front, and this ran against another one (row
+    15)
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned added 1, after 4 item(s) ["120/208
+    Wye" 3-phase wye 4-wire, line to line 208 V, line t..., "120/240 Single" 1-phase 3-wire,
+    line to line 240 V, line to..., "480/277 Wye" 3-phase wye 4-wire, line to line 480 V,
+    line t..., ...], before 3 item(s) ["120/208 Wye" 3-phase wye 4-wire, line to line 208
+    V, line t..., "120/240 Single" 1-phase 3-wire, line to line 240 V, line to..., "480/277
+    Wye" 3-phase wye 4-wire, line to line 480 V, line t...], findings 3 item(s) [Added 1 distribution
+    system. Distribution systems: 3 before,..., Added distribution system "Heron 208/120"
+    3-phase wye 4-wire..., Another distribution system has the same phases, wires and v...],
+    invariant CultureInfo, isDistribution true, isVoltage false, lineToGroundVolts 120, listNow
+    Func`1, maxVolts 0, minVolts 0, nameTaken Func`3, num Func`2, phases 3, quoted Func`2,
+    readLists Action, refused 0 item(s), sameVolts Func`3, settings ElectricalSetting, skipped
+    0 item(s), systemLine Func`2, systems 4 item(s) [120/208 Wye, 120/240 Single, 480/277
+    Wye, ...], voltageLine Func`2, voltages 5 item(s) [120, 208, 240, ...], volts 208, wantName
+    Heron 208/120, what distribution, wires 4. inputs came add as given; volts as given; name
+    as given; minVolts not given - "0", the card''s own default (optional); maxVolts not given
+    - "0", the card''s own default (optional); lineToGroundVolts as given; phases as given;
+    configuration as given; wires as given. on P1102 MEP'
+  negative_case: run with add=voltage, name=120, volts=999 instead - chosen because it should
+    not contain what this fragment reports - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned added 0, after 5 item(s) ["120"
+    120 V (min 110, max 130), "208" 208 V (min 200, max 220), "240" 240 V (min 220, max 250),
+    ...], before 5 item(s) ["120" 120 V (min 110, max 130), "208" 208 V (min 200, max 220),
+    "240" 240 V (min 220, max 250), ...], findings 2 item(s) [Added nothing - voltage type;
+    one already here, skipped. Vol..., A voltage type is already named "120" - left as it
+    is, nothi...], invariant CultureInfo, isDistribution false, isVoltage true, lineToGroundVolts
+    0, listNow Func`1, maxVolts 0, minVolts 0, nameTaken Func`3, num Func`2, phases 0, quoted
+    Func`2, readLists Action, refused 0 item(s), sameVolts Func`3, settings ElectricalSetting,
+    skipped 1 item(s) [A voltage type is already named "120" - left as it is, nothi...], systemLine
+    Func`2, systems 3 item(s) [120/208 Wye, 120/240 Single, 480/277 Wye], voltageLine Func`2,
+    voltages 5 item(s) [120, 208, 240, ...], volts 999, wantName 120, what voltage, wires
+    0. inputs came add as given; volts as given; name as given; minVolts not given - "0",
+    the card's own default (optional); maxVolts not given - "0", the card's own default (optional);
+    lineToGroundVolts not given - "0", the card's own default (optional); phases not given
+    - "0", the card's own default (optional); configuration not given - "none", the card's
+    own default (optional); wires not given - "0", the card's own default (optional). on P1102
+    MEP
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: bc680bfa0c7a1f7e
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

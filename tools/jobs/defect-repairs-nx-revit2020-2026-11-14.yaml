@@ -1,0 +1,82 @@
+# Group NX on Revit 2020 - the five rows of docs/needs-checking/group-nx.md that run on the
+# owner's Revit 2020, as one batch. Written 2026-11-14 from those rows, NOT RUN when written.
+#
+#     python tools/batch-prove.py tools/jobs/defect-repairs-nx-revit2020-2026-11-14.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/defect-repairs-nx-revit2020-2026-11-14.yaml --session <pid>
+#
+# THE MODELS: the saved scratch copies under %TEMP%\heron-work\prove-1102, BOTH open in one Revit
+# 2020 - "P1102 STR" (Revit 2020's rst_advanced_sample_project) and "P1102 MEP" (its
+# rme_advanced_sample_project). Never a working project. The arrangements are the ones the
+# 2026-11-13 runs used, recorded in rows 5b-1636 to 5b-1639.
+#
+# EVERY RUN IS ROLLED BACK. Each job's `note` says what the row asks to be READ - the runner judges
+# that a result moved off zero, not what the sentence says, so read each line it prints.
+#
+# NOT IN THIS BATCH, by hand after it (each row says how):
+#   NX5 (b)  add-electrical-distribution add=voltage volts=230 - a second positive, rolled back
+#   NX6      read-space-loads on P1102 MEP - a Space whose Properties shows design loads
+#   NX4      show=demand, if either model has a demand factor BY LOAD - which unit the dialog shows
+
+model: "P1102 STR and P1102 MEP, the saved scratch copies under %TEMP%\\heron-work\\prove-1102, Revit 2020"
+
+defaults:
+  setup: []
+
+jobs:
+  - fragment: set-floor-span-direction
+    in: "P1102 STR"
+    write: true
+    expect: changed
+    setup: [filter-elements-by-category, set-selection]
+    setup-set: {categories: "Floors"}
+    negative-setup-set: {categories: "Structural Columns", inViewOnly: "02 - Floor"}
+    set: {angleDegrees: "90"}
+    negative-set: {angleDegrees: "90"}
+    note: >
+      NX1, row 5b-1638. Positive: the 5 floors, changed 5, each "span ... -> 90 deg". Negative:
+      the 133 columns, changed 0, all in notFloors - spanDegrees still 90, accounting now, and
+      the draft must write NO "the negative case returned content" gap.
+
+  - fragment: report-structural-loads
+    in: "P1102 STR"
+    expect: loadCount
+    setup: [filter-elements-by-category, set-selection]
+    setup-set: {categories: "Floors"}
+    negative-setup-set: {categories: "Structural Columns", inViewOnly: "02 - Floor"}
+    set: {show: "loads"}
+    negative-set: {show: "loads"}
+    note: >
+      NX2, row 5b-1639. Positive loadCount 5 (the area loads, -1 and -2 kPa). Negative loadCount 0,
+      boundaryCount 0 - caseCount 3 is accounting now, and no "returned content" gap.
+
+  - fragment: create-load-case
+    in: "P1102 STR"
+    write: true
+    expect: added
+    set: {name: "Heron LC1", category: "dead"}
+    negative-set: {name: "dl1", category: "dead"}
+    note: >
+      NX3, row 5b-1637. Positive added 1, "nature Dead, category Dead Loads ... read back", and
+      EVERY line of before and after names a category - none "category ?". If one reads
+      "? (Revit named none)", SubcategoryId does not read on 2020: write it down (it answers row
+      5b-1640 too). Negative added 0, dl1 skipped as DL1's name.
+
+  - fragment: report-electrical-settings
+    in: "P1102 MEP"
+    expect: voltageTypes
+    set: {show: "voltages; distribution"}
+    negative-set: {show: "voltages", nameContains: "ZZZ"}
+    note: >
+      NX4, row 5b-1636. Positive "120" 120 V (min 110, max 130) ... "480" 480 V, and "line to
+      line "208" 208 V, line to ground "120" 120 V" - NEVER 11.15 for 120. Negative voltageTypes 0.
+
+  - fragment: add-electrical-distribution
+    in: "P1102 MEP"
+    write: true
+    expect: added
+    set: {add: "distribution", volts: 208, lineToGroundVolts: 120, phases: 3, configuration: "wye", wires: 4, name: "Heron 208/120"}
+    negative-set: {add: "voltage", volts: 999, name: "120"}
+    note: >
+      NX5 (a), row 5b-1636. Positive added 1 on the model's own "208" and "120" - "3-phase wye
+      4-wire, line to line 208 V, line to ground 120 V"; NEVER "No voltage type of 208 V".
+      Negative: a voltage named "120", which the model has - added 0, skipped by name.

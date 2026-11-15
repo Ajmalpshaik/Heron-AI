@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -108,32 +108,35 @@ contract:
       type: int
 
 proof:
-  date: '2026-11-02'
+  date: '2026-11-13'
   by: Ajmal PS
-  model: Snowdon Towers Sample Architectural (34,509 elements), Revit 2024, session 57392
+  model: Snowdon Towers Sample Architectural, Revit 2024, session 22684 - the count is NOT
+    recorded because 3,263 elements was measured on Heron Reads Test, the document in front,
+    and this ran against another one (row 15)
   positive_case: 'run as it would normally be run - the arrangement was re-made first by running
     manage-sheet-sets with this phase''s own values - run inside a transaction, and Revit
-    reported the transaction group ROLLED BACK afterwards. returned blank 0, byValue 2 entry(ies),
-    carriers 55, findings 1 item(s) [2 value(s) of ''Drawn By'' in Snowdon Towers Sample Architectu...],
-    inStep 2, label Func`2, missingSets , outOfStep 0, prefix , refused , report APF -> set
-    ''APF'': in step, 48 sheets and views || Author -> set ''Author'': in step, 7 sheets and
-    views, valueOf Func`2, wanted Drawn By. inputs came parameterName as given; setPrefix
-    as given. on Snowdon Towers Sample Architectural'
+    reported the transaction group ROLLED BACK afterwards. returned ambiguous 0 item(s), ambiguousLabels
+    0 item(s), blank 0, byValue 2 entry(ies), carriers 55, findings 1 item(s) [2 value(s)
+    of ''Drawn By'' in Snowdon Towers Sample Architectu...], inStep 2, label Func`2, missingSets
+    , notReadIds HashSet`1, outOfStep 0, prefix , refused , report APF -> set ''APF'': in
+    step, 48 sheets and views || Author -> set ''Author'': in step, 7 sheets and views, unconfirmed
+    0, uncounted 0 item(s), valueOf Func`2, wanted Drawn By. inputs came parameterName as
+    given; setPrefix as given. on Snowdon Towers Sample Architectural'
   negative_case: run with mode=by-parameter, parameterName=ZZZ NO SUCH PARAMETER, setPrefix=none,
     values=all instead - chosen because it should not contain what this fragment reports -
     the arrangement was re-made first by running manage-sheet-sets with this phase's own values
     - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
-    returned blank 0, byValue 0 entry(ies), carriers 0, findings 1 item(s) [No sheet or view
-    in Snowdon Towers Sample Architectural has ...], inStep 0, label Func`2, missingSets ,
-    outOfStep 0, prefix , refused No sheet or view in Snowdon Towers Sample Architectural
-    has a parameter called 'ZZZ NO SUCH PARAMETER'. Name it exactly as the sheet's Properties
-    show it., report , valueOf Func`2, wanted ZZZ NO SUCH PARAMETER. inputs came parameterName
-    as given; setPrefix as given. on Snowdon Towers Sample Architectural
+    returned ambiguous 0 item(s), ambiguousLabels 0 item(s), blank 0, byValue 0 entry(ies),
+    carriers 0, findings 1 item(s) [No sheet or view in Snowdon Towers Sample Architectural
+    has ...], inStep 0, label Func`2, missingSets , notReadIds HashSet`1, outOfStep 0, prefix
+    , refused No sheet or view in Snowdon Towers Sample Architectural has a parameter called
+    'ZZZ NO SUCH PARAMETER'. Name it exactly as the sheet's Properties show it., report ,
+    unconfirmed 0, uncounted 0 item(s), valueOf Func`2, wanted ZZZ NO SUCH PARAMETER. inputs
+    came parameterName as given; setPrefix as given. on Snowdon Towers Sample Architectural
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: c7076f9b74d705bf
-
+  fingerprint: 75a7793a09e29e2e
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

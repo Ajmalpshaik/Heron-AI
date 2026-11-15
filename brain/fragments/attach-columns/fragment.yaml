@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -126,6 +126,48 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-14'
+  by: Ajmal PS
+  model: P1102 STR (9,179 elements), Revit 2020, session 17824
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-id, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot
+    304.8, TouchFeet 0.0328083989501312, alreadyDone 0 item(s), changed 1, changedIds 1 item(s)
+    [122477], columns 1 item(s) [450mm], detach false, end top, endName Func`2, ends 1 item(s)
+    [1], findings 2 item(s) [1 column(s) attached at the top and read back; 0 already att...,
+    column Structural Columns 122477 "450mm": top attached to Fl...], fit ColumnAttachmentJustification,
+    fitText minimum, left 0 item(s), lines 1 item(s) [column Structural Columns 122477 "450mm":
+    top attached to Fl...], meetInPlan Func`3, name Func`2, offset 0, offsetFeet 0, refusal
+    (null), report column Structural Columns 122477 "450mm": top attached to Floors 133345
+    "Generic Concrete 300mm"., style ColumnAttachmentCutStyle, styleText cut column, targetBoxes
+    1 entry(ies), targets 1 item(s) [Generic Concrete 300mm], tried 1 item(s) [(Autodesk.Revit.DB.FamilyInstance,
+    1, 133345, -1)]. inputs came elements from the selection (2); where as given; detach not
+    given - false (optional); offset not given - "0", the card''s own default (optional);
+    cutStyle not given - "cut column", the card''s own default (optional); justification not
+    given - "minimum", the card''s own default (optional). on P1102 STR'
+  negative_case: 'run with where=top arranged with elementIds=122477,134840 instead - chosen
+    because it should not contain what this fragment reports - the arrangement was re-made
+    first by running filter-elements-by-id, set-selection with this phase''s own values -
+    run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned MillimetresPerFoot 304.8, TouchFeet 0.0328083989501312, alreadyDone 0 item(s),
+    changed 0, changedIds 0 item(s), columns 1 item(s) [450mm], detach false, end top, endName
+    Func`2, ends 1 item(s) [1], findings 2 item(s) [0 column(s) attached at the top and read
+    back; 0 already att..., column Structural Columns 122477 "450mm": none of the select...],
+    fit ColumnAttachmentJustification, fitText minimum, left 1 item(s) [122477], lines 1 item(s)
+    [column Structural Columns 122477 "450mm": none of the select...], meetInPlan Func`3,
+    name Func`2, offset 0, offsetFeet 0, refusal (null), report column Structural Columns
+    122477 "450mm": none of the selected targets is over or under it - left., style ColumnAttachmentCutStyle,
+    styleText cut column, targetBoxes 1 entry(ies), targets 1 item(s) [160mm Concrete With
+    50mm Metal Deck], tried 0 item(s). inputs came elements from the selection (2); where
+    as given; detach not given - false (optional); offset not given - "0", the card''s own
+    default (optional); cutStyle not given - "cut column", the card''s own default (optional);
+    justification not given - "minimum", the card''s own default (optional). on P1102 STR'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 59e0237a86659867
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
