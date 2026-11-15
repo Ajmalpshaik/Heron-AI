@@ -1627,3 +1627,45 @@ that needs the PC.
 **ANSWERED 2026-11-13 by Ajmal PS** - *"fix them"*, to the offer *Select for the full list*: every failing id is sent in **one** press, up to the add-in's `IdsSentPerList`, and past that no Select at all - shape 1 without the batches, which `SET_SELECTION` cannot add to. *The first N of M* is gone ([row 5b-1621](../fragment-issues/row-5b-1621.md)). **Still open on the PC:** the speed - [Group NV](../needs-checking/group-nv.md) NV14. A press too slow to use reopens this question.
 
 ---
+
+### 🔵 Q-91 — On Revit 2020 to 2024 Heron cannot attach a wall to a roof. Should it shape the wall's top to the roof instead - by editing the wall's profile - and if so, on which releases? *(found 2026-11-15 from issue #852)*
+
+**What happened.** On Villa 2, Revit 2024, 2026-11-11, the modeller asked *"attach all walls to the roof"*
+after the main roof was rebuilt: 25 walls stopped at the 2440 plate and left open gable triangles under both
+roofs. `ATTACH_WALLS` is declared for 2025 to 2027 only, so Heron offered nothing that does the job, and the
+modeller ran Attach Top/Base by hand once per roof (issue #852; #853 item A1).
+
+**What was checked, 2026-11-15, off the API reference files** (RevitAPI.xml and RevitAPIUI.xml in the
+Nice3point reference packages 2020.2.90, 2021.1.100, 2022.1.80, 2023.1.90, 2024.0.0 and 2025.4.60), **not
+run in Revit:**
+
+- **No wall attachment before 2025.** The Wall attachment members and `AttachmentLocation` first appear in
+  2025. The wall's *top is attached* parameter exists on every release and is read-only.
+- **No posted command either.** Revit's Attach Top/Base is not in the list of commands an add-in may post,
+  in 2020 or in 2024. *Join/Unjoin Roof* is in it, but it waits for the modeller to pick edges.
+- **A wall's profile can be edited from 2022.** `Wall.CanHaveProfileSketch`, `CreateProfileSketch`,
+  `RemoveProfileSketch` and `SketchId` are in 2022, 2023 and 2024, not in 2020 or 2021. On 2020 and 2021 the
+  only way to a shaped wall is a NEW wall made from a profile, which loses the doors and windows the old one
+  hosted.
+
+So the job cannot be done on 2020 to 2024 as Revit's Attach does it - a wall that follows the roof when the
+roof moves. `heron_lookup` now says so in its first line on those releases (#853 item C6). What is left is
+whether a fallback is worth building ([row 5b-1672](../fragment-issues/row-5b-1672.md)).
+
+**The question, in a modeller's words: on Revit 2024, when the walls must reach the roof, what should Heron
+do?**
+
+1. **Nothing - say it is done by hand,** as it now does. **Cost:** a modeller's Attach Top/Base per roof, and
+   again after every roof rebuild.
+2. **A new tool that edits each wall's profile so its top follows the roof above it, on 2022 to 2024**, and
+   says plainly on 2020 and 2021 that it cannot. **Cost:** a new card at DRAFT and its proof; the wall's top
+   is a sketch, so it does NOT follow the roof when the roof changes, and the modeller has to know that.
+3. **As 2, and on 2020 and 2021 rebuild the wall from a profile.** **Cost:** everything hosted in the wall -
+   doors, windows, sweeps - is deleted or must be re-hosted; a far bigger and riskier tool.
+
+**Nothing is recommended.** Shape 2 closes the gable triangle #852 describes; whether a sketched top that does
+not follow the roof is acceptable to the modeller is the one fact that decides it.
+
+**Ajmal PS decides.** Until he does, Heron says on 2020 to 2024 that this is done by hand in Revit.
+
+---

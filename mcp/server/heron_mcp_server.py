@@ -5014,11 +5014,21 @@ def _other_release_lines(found, indent="  "):
     other = found.get("other_release")
     if not other:
         return []
-    return [indent + "%s matches these words best, but it is declared for "
-            "Revit %s and this is Revit %s, so it is not offered. Check the "
-            "tools below do what the user asked before using one."
-            % (other["capability"], ", ".join(other["revit"]) or "no release",
-               found.get("revit"))]
+    # SAID PLAINLY, AND FIRST (issue #853 item C6, #852). On Villa 2, Revit
+    # 2024, "attach the tops of these walls to the roof" still read as an
+    # ATTACH_COLUMNS job: this line sat under "would need ATTACH_COLUMNS" and
+    # only asked the host to check. It now opens with the release, and says
+    # what to tell the modeller when the tool offered does not do what was
+    # asked. It still decides nothing (D-01): "attach the porch posts to the
+    # roof" names ATTACH_WALLS here too, and ATTACH_COLUMNS IS that job.
+    release = found.get("revit")
+    return [indent + "NOT ON REVIT %s. %s matches these words best, but it is "
+            "declared for Revit %s, so it is not offered on Revit %s. Unless "
+            "the tool offered here does exactly what the user asked, tell "
+            "them plainly that Heron cannot do this on Revit %s and that it "
+            "is done by hand in Revit."
+            % (release, other["capability"],
+               ", ".join(other["revit"]) or "no release", release, release)]
 
 
 def _contract_lines(capability, separator=True, notes=True):
@@ -5429,7 +5439,9 @@ def heron_lookup(request: str, question: bool = False) -> str:
     # THE CAPABILITY IS THE ANSWER. The provider is underneath it as evidence,
     # so a plan is built on the capability and stays true when the fragment
     # behind it is replaced, split or retired.
-    lines = ['"%s"' % request,
+    # The tool for another release goes ABOVE "would need" (issue #853 C6):
+    # under it, the nearest tool for this release read as the answer.
+    lines = ['"%s"' % request] + _other_release_lines(found) + [
              "  would need   %s" % found["capability"],
              "  matched by   %s" % found["route"],
              "  provided by  %s" % found["provider"]]
@@ -5448,7 +5460,6 @@ def heron_lookup(request: str, question: bool = False) -> str:
              % door))
     lines.extend(["", "  %s" % found["note"]])
     lines.extend(asked)
-    lines.extend(_other_release_lines(found))
     # BEFORE EVERYTHING BELOW, because it qualifies all of it: an answer from
     # a store that is not this checkout's library - row 5b-233.
     lines.extend(_drift_lines(found))
