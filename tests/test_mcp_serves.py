@@ -144,6 +144,15 @@ WHAT IT PROVES, when an SDK is installed
      for any of those (row 5b-1506, and row 130's sentence where it had
      been left). That a real server says it off Windows is
      tests/test_mcp_stdio.py's.
+ 20. heron_why NAMES THE REASON (PROPOSALS F1, 2026-11-15), against the real
+     library: nothing provides it; not on Revit 2020; which release is not
+     known; the Changes switch off, and with Changes on the Admin switch;
+     no Revit with the Heron button on; and nothing in the way, with an
+     address-book entry for Revit 2024 - which is left out, and the answer
+     not AVAILABLE, once its process is gone. Off Windows it says no Revit
+     is here and judges no switch. Through all of it discover() is never
+     called and no session is sent a request, the address book is left as
+     it was, and a capability nobody provides is not noted as wanted.
 
 WHAT IT CANNOT DO
   It does not start a transport and it is not Claude Code. It calls the
@@ -342,6 +351,8 @@ async def exercise(server):
     # The arguments, from the generated schema rather than from the signature.
     expected = {
         "heron_resolve": ["capability"],
+        # PROPOSALS F1, 2026-11-15: why Heron cannot do one capability.
+        "heron_why": ["capability", "release"],
         # `question` since 2026-10-17: the host's word that a request is a
         # question, which leaves out every capability that writes (D-128).
         "heron_lookup": ["request", "question"],
@@ -3272,6 +3283,164 @@ async def exercise_resolve_says_why(module):
           "and never that no Revit is connected when that is not what was found")
 
 
+async def exercise_why(module):
+    """
+    Section 20 - heron_why names the reason Heron cannot do a capability, and
+    asks Revit nothing to find it out (PROPOSALS F1, 2026-11-15). Against the
+    real library: CREATE_TOPOSOLID is written for Revit 2024 on and changes
+    the model; ACQUIRE_COORDINATES is an Admin change; SET_SELECTION only
+    changes what is shown, on every release.
+    """
+    import heron_scope as SCOPE
+    server = module.server
+    core = shared(module)
+    bridge = module.bridge
+    print()
+    print("  heron_why names the reason, and asks Revit nothing (PROPOSALS F1)")
+
+    home = tempfile.mkdtemp(prefix="heron-why-")
+    settings = os.path.join(home, "heron.config")
+    had_config = os.environ.get("HERON_CONFIG")
+    os.environ["HERON_CONFIG"] = settings
+
+    def switches(**on):
+        with io.open(settings, "w", encoding="utf-8") as fh:
+            for key in ("write.enabled", "admin.enabled", "publish.enabled"):
+                fh.write("%s = %s\n" % (key, "true" if on.get(key.split(".")[0]) else "false"))
+
+    # EVERY WAY A TOOL ASKS A REVIT, RECORDED: discover() pings every Revit it
+    # lists, and request() is how anything is sent to one. heron_why may use
+    # neither, and the live-Revit guard refuses any pipe besides.
+    asked = []
+    real_discover = bridge.discover
+    real_request = bridge.Bridge.request
+    real_running = bridge.bridge_process_is_running
+    bridge.discover = lambda *a, **k: asked.append("discover") or ([], [], [], [])
+    bridge.Bridge.request = lambda self, *a, **k: asked.append(("request", a)) or None
+    alive = {"pid": True}
+    bridge.bridge_process_is_running = lambda pid: alive["pid"]
+    entry = os.path.join(bridge.DISCOVERY_DIR, "4242.json")
+    real_library_only = core.LIBRARY_ONLY
+    # No Revit chosen by an earlier section, so the one in the address book is
+    # "the only Revit connected" - put back as it was afterwards.
+    bound = (module.binding._pid, module.binding._explicit)
+    module.binding.forget()
+
+    async def why(capability, release=""):
+        arguments = {"capability": capability}
+        if release:
+            arguments["release"] = release
+        try:
+            return text_of(await server.call_tool("heron_why", arguments)) or ""
+        except Exception as exc:                                # noqa: BLE001
+            return "(heron_why could not be called: %s: %s)" % (type(exc).__name__, exc)
+
+    def wanted():
+        store = SCOPE.open_scope(SCOPE.GLOBAL)
+        try:
+            return [r[0] for r in store.execute(
+                "SELECT name FROM capabilities_wanted").fetchall()]
+        except Exception:                                       # noqa: BLE001
+            return []
+        finally:
+            store.close()
+
+    try:
+        switches()
+        nothing = await why("NOTHING_PROVIDES_THIS_F1")
+        check("reason    NO_PROVIDER" in nothing
+              and "no way of doing NOTHING_PROVIDES_THIS_F1" in nothing,
+              "nothing in the library does it: said as a gap, not a fault")
+        check("NOTHING_PROVIDES_THIS_F1" not in wanted(),
+              "and asking why notes nothing as wanted - heron_why records nothing")
+
+        old = await why("CREATE_TOPOSOLID", "2020")
+        check("reason    UNSUPPORTED_RELEASE" in old and "not on Revit 2020" in old
+              and "2024, 2025, 2026, 2027" in old,
+              "not on Revit 2020, and which releases it is written for")
+
+        blind = await why("SET_SELECTION")
+        check("reason    NOT_DETECTED" in blind and "nothing is connected" in blind
+              and "not a no" in blind,
+              "with no release named and no Revit announced, the release is not "
+              "known - and that is not a no")
+
+        closed = await why("CREATE_TOPOSOLID", "2024")
+        check("reason    BLOCKED_BY_TRUST" in closed and "Changes is off" in closed
+              and "Heron's Settings in Revit" in closed,
+              "a change with the Changes switch off: names the switch and where it is")
+
+        switches(write=True)
+        admin = await why("ACQUIRE_COORDINATES", "2024")
+        check("reason    BLOCKED_BY_TRUST" in admin and "Admin is off" in admin
+              and "Changes is off" not in admin,
+              "with Changes on, an Admin change names the Admin switch (D-106)")
+
+        idle = await why("SET_SELECTION", "2024")
+        check("reason    NEEDS_REVIT" in idle and "Heron > AI Bridge > Heron" in idle
+              and "no Revit 2024 has Heron connected" in idle,
+              "no Revit 2024 with the Heron button on: says which button to press")
+
+        with io.open(entry, "w", encoding="utf-8") as fh:
+            json.dump({"pid": 4242, "pipeName": "heron-why-test", "revitVersion": "2024",
+                       "protocolVersion": bridge.PROTOCOL_VERSION, "token": "t"}, fh)
+        ready = await why("SET_SELECTION")
+        check("reason    AVAILABLE" in ready
+              and "Revit 2024 - the only Revit connected" in ready
+              and "2024 (session 4242) with the Heron button on" in ready,
+              "with Revit 2024 in the address book nothing stands in the way, and "
+              "the answer says the release came from that note")
+        held = await why("ADD_AREA_BASED_LOAD")
+        check("reason    AVAILABLE" in held and "Not proved yet" in held
+              and "D-117" in held,
+              "a DRAFT change with nothing else in the way still says revit_change "
+              "keeps nothing unproved (D-117)")
+
+        alive["pid"] = False
+        gone = await why("SET_SELECTION")
+        check("reason    AVAILABLE" not in gone and "reason    NOT_DETECTED" in gone,
+              "an entry whose Revit has closed is left out - not AVAILABLE")
+        check(os.path.isfile(entry),
+              "and the address book is left as it was: pruning is discover()'s")
+        alive["pid"] = True
+
+        core.LIBRARY_ONLY = True
+        away = await why("SET_SELECTION", "2024")
+        check("reason    NEEDS_REVIT" in away
+              and "no Revit on this machine (it is not Windows)" in away
+              and "Windows PC" in away and "switches  " not in away,
+              "off Windows: no Revit here, done on the modeller's Windows PC - and "
+              "no switch is read")
+        change = await why("CREATE_TOPOSOLID", "2024")
+        check("reason    NEEDS_REVIT" in change
+              and "Changes switch must be on there too" in change,
+              "and a change is not judged blocked by a switch this machine does "
+              "not have - it names the one it needs there")
+        core.LIBRARY_ONLY = real_library_only
+
+        check(not asked,
+              "through all of it discover() was never called and no Revit was sent "
+              "a request - found %r" % (asked[:4],))
+        everything = [nothing, old, blind, closed, admin, idle, ready, held, gone,
+                      away, change]
+        check(all(answer.rstrip().endswith("Nothing was sent to Revit.")
+                  for answer in everything),
+              "and every answer says nothing was sent to Revit")
+    finally:
+        core.LIBRARY_ONLY = real_library_only
+        module.binding._pid, module.binding._explicit = bound
+        bridge.discover = real_discover
+        bridge.Bridge.request = real_request
+        bridge.bridge_process_is_running = real_running
+        if os.path.exists(entry):
+            os.remove(entry)
+        if had_config is None:
+            os.environ.pop("HERON_CONFIG", None)
+        else:
+            os.environ["HERON_CONFIG"] = had_config
+        shutil.rmtree(home, ignore_errors=True)
+
+
 async def exercise_running_code(module):
     """
     Section 16: a chat whose server is still running code a pull has since
@@ -3473,6 +3642,7 @@ def main():
         asyncio.run(exercise_lookup_says(server_module))
         asyncio.run(exercise_said_once(server_module))
         asyncio.run(exercise_resolve_says_why(server_module))
+        asyncio.run(exercise_why(server_module))
         asyncio.run(exercise_activity(server_module))
         asyncio.run(exercise_earlier(server_module))
         asyncio.run(exercise_change_report(server_module))

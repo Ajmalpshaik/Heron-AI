@@ -241,8 +241,13 @@ as a finding, and it is what makes a platform feel broken when it is merely unin
 verdicts are decided in follows from that: the certain facts answer first, and a release nobody has
 stated cannot answer before a provider list that genuinely has nothing.
 
-**Nothing offers it as a tool yet**, deliberately — that changes the risk table in §4's sense and is a
-decision with a human in it. [`PROPOSALS.md` F1](PROPOSALS.md).
+**Nothing offered it as a tool until 2026-11-15**, deliberately — that changed the risk table in §4's
+sense and was a decision with a human in it. [`PROPOSALS.md` F1](PROPOSALS.md) was decided that day on
+the owner's delegation, not read back to him: **`heron_why`**, `READ` with no operation, served off Windows
+as well, hands the modeller the reason in Revit words and what to do about it. It asks Revit nothing — the
+release and whether a Revit is there come from the address book Revit writes when the Heron button is
+pressed, never a ping, and the switches from Heron's settings file on this PC — and says where each fact came
+from. Not run in Revit.
 
 ---
 
@@ -507,7 +512,7 @@ Tested without Revit.
 
 | Group | What it is for | Level, from `heron_tools.TOOLS` | What it needs | Main tools |
 |---|---|---|---|---|
-| **Know the job** | which capability fits the words; a job's whole method; standards and clauses | `READ`, and sends nothing to Revit | nothing. The ones named in `heron_tools.LIBRARY` are also served off Windows, and `heron_check` is not one of them ([D-132](DECISIONS.md#d-132--off-windows-the-heron-server-serves-its-library-alone-and-no-revit-tool)) | `heron_lookup`, `heron_method`, `heron_resolve`, `heron_capabilities`, `heron_standards`, `heron_check` |
+| **Know the job** | which capability fits the words; a job's whole method; standards and clauses | `READ`, and sends nothing to Revit | nothing. The ones named in `heron_tools.LIBRARY` are also served off Windows, and `heron_check` is not one of them ([D-132](DECISIONS.md#d-132--off-windows-the-heron-server-serves-its-library-alone-and-no-revit-tool)) | `heron_lookup`, `heron_method`, `heron_resolve`, `heron_capabilities`, `heron_standards`, `heron_check`, `heron_why` - why Heron cannot do one capability, and what the modeller can do (§6b) |
 | **Work it out** | HVAC and fire protection calculations | `READ` for `heron_hvac` and `heron_fire`, arithmetic on the values given; `ANALYZE` for the three that read the model first | nothing, and none of them changes the model. Writing a result back is the Companion page's Apply, at `MODIFY` (`heron_tools.COMPANION_ACTIONS`) | `heron_hvac`, `heron_fire`, `revit_building_loads`, `revit_sprinkler_hydraulics`, `revit_sprinkler_layout` |
 | **Read the model** | answer a question about the model in front | `READ`, `ANALYZE` | a connected Revit; Changes may be off | `revit_read` (door); fixed readers such as `revit_levels`, `revit_views`, `revit_sheets`, `revit_rooms`, `revit_parameters`, `revit_worksets`; `revit_view_image` |
 | **Show on screen** | select, zoom, open a view, isolate for now | `EXECUTE` | a connected Revit; Changes may be off | `revit_show` (door), `revit_select_by_category`, `revit_isolate_temporary`, `revit_reset_temporary` |

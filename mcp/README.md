@@ -116,7 +116,7 @@ the source without looking at the import lines. `tests/test_mcp_serves.py` holds
 | `heron_discovery` | reads what other MCP servers on the PC say about themselves, as claims | its own command line and its tests |
 | `heron_command_run` | runs ONE saved command on ONE named Revit, through `revit_change`'s or `revit_read`'s own body - what Revit's Heron panel starts ([docs/49](../docs/49-saved-commands-and-the-heron-panel.md), [D-151](../docs/decisions/D-151.md), Proposed). Added 2026-11-08; this table did not name it until 2026-11-11 | its own command line, which the add-in's panel starts; `heron_tools` and `brain/heron_commands.py` name it |
 | `heron_workflow` | checkpoints and *Continue* ([docs/23](../docs/23-heron-kernel.md)) | **its tests only**: nothing imports it |
-| `heron_runtime` | what Heron can do right now ([docs/04 §6b](../docs/04-heron-mcp.md)) | **its tests only, on purpose**: no tool offers it ([PROPOSALS F1](../docs/PROPOSALS.md), `tools/check-reachable.py`) |
+| `heron_runtime` | what Heron can do right now, and why not, in Revit words ([docs/04 §6b](../docs/04-heron-mcp.md)) | the server (`heron_why`, since 2026-11-15 - [PROPOSALS F1](../docs/PROPOSALS.md)); until then its tests only, on purpose |
 
 ## Rules for this folder
 
