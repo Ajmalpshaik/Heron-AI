@@ -416,7 +416,7 @@ agents do to a folder, so it is the owner's call — the same reason F11 is stil
 
 ### ✅ F14. Three different projects write to one knowledge file, and the code says why that is a breach — DECIDED 2026-11-15 (owner's delegation)
 
-**Decided: Turn each project key into a unique code, with a planned, backed-up move of existing files - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** Writing one client's knowledge into another's file is a breach, and only this prevents it rather than catching it afterwards. **Work:** owed: the coding and the move.
+**Decided: Turn each project key into a unique code, with a planned, backed-up move of existing files - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** Writing one client's knowledge into another's file is a breach, and only this prevents it rather than catching it afterwards. **Work:** done 2026-11-15 for the stores - see the Work note below; the files kept beside a store are still owed.
 
 **Found by:** building `HERON-WSP-PLC-005`, the File Placement Agent, 2026-09-15.
 **Status:** open. **Measured, not read** — the numbers below come from running the code.
@@ -469,6 +469,31 @@ So the safe case is the intended one and the unsafe case is the documented one.
   collision after it has happened rather than preventing it.
 
 Picking among those is the owner's call, and it is the same shape as D-05: do not extrapolate.
+
+**Work:** 2026-11-15 - **decided by the owner's delegation: each project key becomes a unique code,
+and the files already on disk are moved by plan, with a backup** - the second option, with its
+migration. Built in `brain/heron_scope.py`: `store_name()` names a project store
+`<slug>~<code>.db`, where the slug is `_safe_key()`'s reduction cut to 64 characters, there only for
+a person to read, and the code is the first 12 hex characters of the SHA-256 of the **exact** key.
+So `'Tower B'`, `'Tower/B'` and `'Tower-B'` are three files, the same key is the same file in every
+process and on every OS (the name is ASCII and the code lower-case hex, so a folder that folds case
+cannot fold two codes into one), and `~` is a character the old reduction never writes, so no new
+name can be an old one. `global.db` and every other scope keep their names. A store named the old
+way is **never opened, moved or guessed at**: opening a project whose old-named file is still there
+leaves it byte for byte, and says so - the file, that it may hold another project's knowledge, and
+the command that moves it - once per process on stderr and on the store as `left_behind` and
+`notice`. `python brain/heron_scope.py --move-project-store OLD --to-key "EXACT KEY"` is the only
+thing that moves one: only for a key the old reduction really sent to that file, a copy to
+`<OLD>.db.<stamp>.backup` read back first, the empty store the new name already has set aside as a
+backup rather than deleted, and refused when that store lists an ingested document. Proved by
+`python tests/test_scope_store.py` section 9, seen to fail against the code before this change and
+pass after it; `tests/test_placement.py` section 3 and `tests/test_brain_init.py` section 3, which
+measured the collision, now measure three files. **Not done, and why:** the files kept *beside* a
+store - `.hvac.json`, `.fire.json`, `.loads`, `.sprinkler`, `.sprinkler-layout`, `.dashboard`,
+`.earlier.json` - are still named by `_safe_key()` alone, so two keys that reduce alike still meet
+there. They are keyed by `Document.CreationGUID`, which reduces to itself, and moving them is the
+same planned migration over those names - a change of its own. This section stays open for
+them.
 
 **What the new agent does about it.** `HERON-WSP-PLC-005` takes the opposite rule and states it:
 **a name that would have to be rewritten to be usable is refused, never cleaned up.** A project

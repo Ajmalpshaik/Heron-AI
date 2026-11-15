@@ -10,6 +10,10 @@ One knowledge store per scope, as one file each - Golden Rule 5 made physical.
 
     python brain/heron_scope.py              what exists, and where
     python brain/heron_scope.py --rebuild    re-index every scope from disk
+    python brain/heron_scope.py --move-project-store OLD --to-key "KEY"
+                                             move a project store named the
+                                             way it was before 2026-11-15,
+                                             a backup first (PROPOSALS F14)
 
 Step 8 of docs/27-build-order.md.
 
@@ -51,8 +55,11 @@ import os
 import re
 import sys
 import json
+import shutil
 import hashlib
+import pathlib
 import sqlite3
+import datetime
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
@@ -173,7 +180,49 @@ def scope_path(scope, project_key=None):
             "client's knowledge into another's file, which is a contractual "
             "breach rather than a bug (docs/10 section 2). Ask, then pass it.")
 
-    return os.path.join(base, "projects", "%s.db" % _safe_key(project_key))
+    return os.path.join(base, "projects", "%s.db" % store_name(project_key))
+
+
+# PROPOSALS F14, decided 2026-11-15 by the owner's delegation: each project key
+# becomes a code of its own, and the stores already on disk are moved by plan,
+# with a backup - never by a guess. store_name() is the code; left_behind() and
+# move_project_store() are the plan.
+CODE_MARK = "~"     # a character _safe_key() never writes
+CODE_CHARS = 12     # hex characters of the SHA-256 of the exact key
+SLUG_CHARS = 64     # the readable part, cut short so a path stays short
+
+
+def store_name(project_key):
+    """A project store's file name, without `.db` - one per EXACT key.
+
+    UNTIL 2026-11-15 IT WAS _safe_key() ALONE, which turns every character
+    outside [A-Za-z0-9._-] into a hyphen - so 'Tower B', 'Tower/B' and
+    'Tower-B' were ONE file, and scope_path()'s own refusal calls one client's
+    knowledge in another's file a contractual breach (PROPOSALS F14). Now it
+    is
+
+        <the key reduced by _safe_key(), at most SLUG_CHARS long>
+        ~
+        <the first CODE_CHARS hex characters of the SHA-256 of the key>
+
+    THE SLUG IS FOR A PERSON opening the folder and decides nothing. THE CODE
+    IS THE KEY'S OWN: the SHA-256 of its UTF-8, exactly as given - no case
+    folded, nothing trimmed. Two keys share a store only if they reduce to
+    the same slug AND agree in the first 48 bits of their SHA-256.
+
+    THE SAME FILE IN EVERY PROCESS AND ON EVERY OS. The name is ASCII, so no
+    file system spells it differently, and its code is lower-case hex, so a
+    Windows or macOS folder, which folds case, cannot fold two keys' codes
+    into one. `CON~...db` is not a Windows device name; `CON.db` was.
+
+    `~` IS A CHARACTER _safe_key() NEVER WRITES, so no name of this kind can
+    be a name of the old kind: a store written before 2026-11-15 is never
+    opened as one written since, and left_behind() can say which is which.
+    """
+    exact = str(project_key)
+    code = hashlib.sha256(exact.encode("utf-8", "surrogatepass")).hexdigest()
+    return "%s%s%s" % (_safe_key(exact)[:SLUG_CHARS], CODE_MARK,
+                       code[:CODE_CHARS])
 
 
 def _safe_key(project_key):
@@ -191,8 +240,62 @@ def _safe_key(project_key):
     every model made from one template shared one store (FRAGMENT-ISSUES
     5b-324). What was kept under it is asked about, never used:
     heron_earlier.
+
+    SINCE 2026-11-15 IT IS NOT A STORE'S NAME ON ITS OWN: store_name() adds a
+    code of the exact key, because this reduction sends different keys to
+    one name (PROPOSALS F14). It is still the whole name of the files kept
+    BESIDE a store - .hvac.json, .fire.json, .loads, .sprinkler,
+    .sprinkler-layout, .dashboard, .earlier.json - which were not moved by
+    that change, and of the store the old naming made, which left_behind()
+    looks for.
     """
     return re.sub(r"[^A-Za-z0-9._-]", "-", str(project_key))[:120]
+
+
+def left_behind(project_key):
+    """The store the naming before 2026-11-15 gave this key, while that file
+    is still on disk - or None. Only a look: nothing is opened.
+
+    NOT NECESSARILY THIS KEY'S. That naming sent every key that reduces
+    alike to the one file, so it may hold this project's knowledge,
+    another's, or both - and its meta row names only the last key that
+    opened it. So it is never used, opened, moved or renamed here. It is
+    named, and move_project_store() is how a person who knows whose it is
+    moves it (PROPOSALS F14).
+    """
+    if not project_key:
+        return None
+    base = knowledge_dir()
+    if base is None:
+        return None
+    old = os.path.join(base, "projects", "%s.db" % _safe_key(project_key))
+    return old if os.path.isfile(old) else None
+
+
+def left_behind_notice(project_key, old):
+    """What a person is told about a store left_behind() found - a plain
+    paragraph, shown as it stands."""
+    return (
+        "A project store named the way Heron named them before 2026-11-15 is "
+        "still on disk: %s. That naming turned every character outside "
+        "A-Z, a-z, 0-9, '.', '_' and '-' into a hyphen, so 'Tower B', "
+        "'Tower/B' and 'Tower-B' all wrote to one file - and this one may "
+        "hold another project's knowledge as well as, or instead of, this "
+        "project's (%r). It was left exactly as it is and nothing in it is "
+        "used here; this project's own store is %s. If that file is this "
+        "project's, move it with no Heron chat open - a backup is taken "
+        "first:\n"
+        "  python brain/heron_scope.py --move-project-store \"%s\" "
+        "--to-key \"%s\"\n"
+        "(PROPOSALS F14.)"
+        % (old, str(project_key), os.path.basename(
+            scope_path(PROJECT, project_key)),
+           os.path.basename(old)[:-len(".db")], project_key))
+
+
+# Each old file is reported once per process: a store is opened on every
+# lookup, and a paragraph on every one would stop being read.
+_REPORTED = set()
 
 
 # ---------------------------------------------------------------------------
@@ -213,6 +316,19 @@ class Store(object):
         self.scope = scope
         self.project_key = project_key
         self.path = scope_path(scope, project_key)
+
+        # A STORE THE OLD NAMING MADE IS NAMED, NEVER TAKEN (PROPOSALS F14).
+        # Looked for before the connect below creates this key's own file, and
+        # on every open after it, because the old file is unclaimed knowledge
+        # for as long as it is there - not only on the day the new one is made.
+        self.left_behind = (left_behind(project_key)
+                            if scope == PROJECT else None)
+        self.notice = None
+        if self.left_behind:
+            self.notice = left_behind_notice(project_key, self.left_behind)
+            if self.left_behind not in _REPORTED:
+                _REPORTED.add(self.left_behind)
+                sys.stderr.write(self.notice + "\n")
 
         folder = os.path.dirname(self.path)
         if folder and not os.path.isdir(folder):
@@ -374,7 +490,9 @@ def remember_label(project_key, label):
     if not os.path.isdir(folder):
         os.makedirs(folder)
     known = read_labels()
-    known[_safe_key(project_key)] = label
+    # By the store's own name, which existing() reads back - so two keys that
+    # reduce alike no longer overwrite each other's label either (F14).
+    known[store_name(project_key)] = label
     io.open(path, "w", encoding="utf-8").write(
         json.dumps(known, indent=2, sort_keys=True))
 
@@ -1128,6 +1246,147 @@ def existing():
     return out
 
 
+# ---------------------------------------------------------------------------
+# The planned move - PROPOSALS F14, and nothing moves without it
+# ---------------------------------------------------------------------------
+
+MOVE_FLAG = "--move-project-store"
+TO_KEY_FLAG = "--to-key"
+
+
+def _holds_documents(path):
+    """True when the store at `path` lists an ingested document or a chunk
+    of one - and when that cannot be told: a store that will not open, or
+    is locked, is not an empty one (D-52). Read only, through an address
+    pathlib builds, as heron_earlier reads a store it must not write."""
+    address = pathlib.Path(os.path.abspath(path)).as_uri() + "?mode=ro"
+    try:
+        db = sqlite3.connect(address, uri=True)
+        try:
+            tables = set(row[0] for row in db.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table'"))
+            for table in ("documents", "chunks"):
+                if table in tables and db.execute(
+                        "SELECT 1 FROM %s LIMIT 1" % table).fetchone():
+                    return True
+            return False
+        finally:
+            db.close()
+    except sqlite3.Error:
+        return True
+
+
+def _sha256(path):
+    digest = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for block in iter(lambda: handle.read(1 << 20), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def move_project_store(old_slug, project_key, stamp=None):
+    """Move a project store named the way it was before 2026-11-15 to the
+    name `project_key` has now. Returns {moved_from, moved_to, backup,
+    set_aside}.
+
+    ONLY WHEN A PERSON NAMES BOTH. The old naming sent several keys to one
+    file, so which key owns it is never worked out here (left_behind()). It
+    must be a key that naming really sent to that file - so a typing slip
+    cannot hand Tower A's file to Tower B - and the file must be a name of
+    the old kind, not a store of now.
+
+    IN THIS ORDER, and every refusal comes before the first write, raised
+    as a ValueError whose text is a sentence to show as it stands:
+
+      1. COPY the old file to <OLD>.db.<stamp>.backup beside it, and read
+         the copy back - a copy that is not the same bytes is removed and
+         nothing is moved.
+      2. SET ASIDE a store already under the new name - the empty one
+         opening the project made since 2026-11-15 - by renaming it to
+         <new>.db.<stamp>.backup. Renamed, never deleted. One that lists an
+         ingested document is refused instead: two stores of knowledge are
+         a person's to merge, not this command's.
+      3. MOVE the old file to the new name.
+
+    Refused while a journal sits beside the old file - a write that is
+    under way, or was cut short - and best run with no Heron chat open, so
+    no store is held open while its file moves. Nothing is deleted.
+    """
+    key = "" if project_key is None else str(project_key)
+    slug = str(old_slug or "")
+    if not key.strip():
+        raise ValueError(
+            "Name the project key whose store this is, exactly, with %s. "
+            "The old naming sent several keys to one file, so Heron does "
+            "not work out whose it is." % TO_KEY_FLAG)
+    if (not slug.strip() or slug in (".", "..") or "/" in slug
+            or "\\" in slug or os.sep in slug):
+        raise ValueError(
+            "%r is not the name of a file in the projects folder. Give the "
+            "old store's file name without '.db' - the report that named "
+            "it gives it." % slug)
+    if CODE_MARK in slug:
+        raise ValueError(
+            "%s.db is named the way stores have been named since 2026-11-15 "
+            "(it carries '%s' and a code), so it is already some key's own "
+            "store and is not moved." % (slug, CODE_MARK))
+    if _safe_key(key) != slug:
+        raise ValueError(
+            "The old naming never sent the key %r to %s.db - it sent it to "
+            "%s.db. Only a key that naming put in a file can be given that "
+            "file, so nothing was moved." % (key, slug, _safe_key(key)))
+
+    base = knowledge_dir()
+    if base is None:
+        raise ValueError(
+            "No HERON_DATA, no Windows profile and no HERON_KNOWLEDGE, so "
+            "there is no knowledge folder to move anything in.")
+    old = os.path.join(base, "projects", "%s.db" % slug)
+    if not os.path.isfile(old):
+        raise ValueError("There is no %s in %s, so nothing was moved."
+                         % (os.path.basename(old), os.path.dirname(old)))
+    for journal in ("-journal", "-wal"):
+        if os.path.exists(old + journal):
+            raise ValueError(
+                "%s%s is beside it: a write to that store is under way, or "
+                "was cut short. Close every Heron chat and try again; "
+                "nothing was moved." % (os.path.basename(old), journal))
+
+    new = scope_path(PROJECT, key)
+    if os.path.exists(new) and _holds_documents(new):
+        raise ValueError(
+            "%s, the store %r has had since 2026-11-15, already lists an "
+            "ingested document, or could not be read to tell. Both files "
+            "are kept as they are and nothing was moved: two stores of "
+            "knowledge are a person's to merge." % (os.path.basename(new), key))
+
+    stamp = stamp or datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    backup = "%s.%s.backup" % (old, stamp)
+    aside = "%s.%s.backup" % (new, stamp) if os.path.exists(new) else None
+    for taken in (backup, aside):
+        if taken and os.path.exists(taken):
+            raise ValueError("%s is already there, and a backup is never "
+                             "written over. Nothing was moved; try again in "
+                             "a second." % os.path.basename(taken))
+
+    shutil.copy2(old, backup)
+    if _sha256(backup) != _sha256(old):
+        os.remove(backup)
+        raise ValueError(
+            "The copy of %s did not read back as the same bytes, so it was "
+            "removed and nothing was moved." % os.path.basename(old))
+    if aside:
+        os.rename(new, aside)
+    try:
+        os.rename(old, new)
+    except OSError:
+        if aside:
+            os.rename(aside, new)
+        raise
+    return {"moved_from": old, "moved_to": new, "backup": backup,
+            "set_aside": aside}
+
+
 def main(argv):
     base = knowledge_dir()
     if not base:
@@ -1202,13 +1461,46 @@ def main(argv):
         print("No other store is rebuilt here - a project's .hvac.json and .fire.json are data.")
         return 0
 
+    if argv[:1] == [MOVE_FLAG]:
+        if len(argv) != 4 or argv[2] != TO_KEY_FLAG:
+            print("Usage: python brain/heron_scope.py %s OLD %s \"EXACT KEY\""
+                  % (MOVE_FLAG, TO_KEY_FLAG))
+            print("OLD is the old store's file name without '.db', as the "
+                  "report that named it gives it.")
+            return 2
+        try:
+            done = move_project_store(argv[1], argv[3])
+        except ValueError as exc:
+            print("NOT MOVED. %s" % exc)
+            return 1
+        print("Backed up %s" % done["backup"])
+        if done["set_aside"]:
+            print("Set aside %s - the store opening this project had made "
+                  "since 2026-11-15, renamed, not deleted" % done["set_aside"])
+        print("Moved     %s" % done["moved_from"])
+        print("      to  %s" % done["moved_to"])
+        print("The project %r opens that store from now on. The backup is "
+              "yours to delete once you are sure." % argv[3])
+        return 0
+
     print("Knowledge lives in %s" % base)
     print()
     rows = existing()
     if not rows:
         print("  nothing yet - run --rebuild")
+    named_before = 0
     for scope, label, path, size in rows:
         print("  %-13s %-28s %6d bytes" % (scope, label or SCOPE_MEANING[scope][:28], size))
+        if scope == PROJECT and CODE_MARK not in os.path.basename(path):
+            named_before += 1
+    if named_before:
+        print()
+        print("  %d project store(s) above are named the way they were before "
+              "2026-11-15," % named_before)
+        print("  which sent different project keys to one file. Each is left "
+              "as it is; %s" % MOVE_FLAG)
+        print("  moves one to the key a person names, a backup first "
+              "(PROPOSALS F14).")
     print()
     print("One file per scope, so a cross-scope query is not something anyone")
     print("can write - not something they are asked not to.")
