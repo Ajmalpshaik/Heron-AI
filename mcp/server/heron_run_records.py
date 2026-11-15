@@ -823,7 +823,38 @@ def verdict_line(reply, batch):
     line = _with_asking(_with_asking(line, reply.get("asking")), reply.get("deleteAsking"))
     if nothing_written(reply):
         line = NOTHING_WRITTEN + " " + line
+    problem = reported_problem(reply)
+    if problem:
+        line = (PROBLEM_REPORTED % one_line(problem)) + " " + line
     return line
+
+
+# WHAT A KEPT RUN WHOSE CARD SAYS IT WAS STOPPED IS CALLED (FRAGMENT-ISSUES
+# 5b-1701, issue #853). OPEN_FAMILY_FOR_EDITING on Revit 2024, `villa 2`,
+# 2026-11-11: EditFamily refused - "The document is currently modifiable!" -
+# the card caught it into its `problem` output, as its contract says, and the
+# reply still read "was KEPT". True of the transaction group, and read as the
+# family opened. A card that declares `problem` means by it "what stopped it,
+# empty when nothing did" - every one of them, read 2026-11-15 - so a kept
+# reply with one that is not empty says so FIRST, in the card's own words.
+# The outcome word is left as it is: the group WAS kept.
+PROBLEM_REPORTED = ("STOPPED, BY ITS OWN ACCOUNT - the card reports: \"%s\" The job was kept, "
+                    "but what was asked may not have been done; read the reply before going on.")
+
+
+def reported_problem(reply):
+    """The card's own `problem` sentence on a reply, or None when it is
+    empty, absent or the add-in's word for nothing."""
+    provides = reply.get("provides") if isinstance(reply, dict) else None
+    if not isinstance(provides, dict):
+        return None
+    said = provides.get("problem")
+    if not isinstance(said, str):
+        return None
+    said = said.strip()
+    if not said or said == "(null)":
+        return None
+    return said
 
 
 # WHAT A KEPT RUN THAT WROTE NOTHING IS CALLED (FRAGMENT-ISSUES 5b-1469, issue
