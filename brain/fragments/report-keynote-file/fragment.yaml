@@ -30,7 +30,7 @@ semantic-identity: "which keynote file the project uses - the path Keynoting Set
 kind: action
 domain: revit.annotation
 capability: REPORT_KEYNOTE_FILE
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -49,6 +49,13 @@ risk: READ
 #
 # **THE NUMBERING METHOD IS NOT READ.** Keynoting Settings' By keynote / By
 # sheet has no Revit API member on any release 2020-2027 (row 5b-1420).
+#
+# **A FAMILY IS ANSWERED, NEVER READ** (version 2, 2026-11-15, row 5b-1737):
+# the keynote file is a project setting, so a family document gets one line
+# saying so, `keynoteFile` empty and `tableEntries` 0 - the D-30 negative,
+# since a project nearly always names some keynote file. Version 1's job file ran its
+# negative on a second project that names a file too, which the judge reads
+# as content.
 #
 # `purpose` HOLDS NO CHANGE VERB, so load and reload requests stay with
 # LOAD_KEYNOTE_FILE.

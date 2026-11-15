@@ -14,14 +14,24 @@ positive:
       "Revit: Loaded"; tableEntries the number of lines the dialog's View
       lists - counted by hand, never assumed
 
-negative:
   - given: >
-      "keynote-lz-b", whose Keynoting Settings names keynotes-b.txt. THIS IS
-      THE FIRST CASE TO RUN
+      "keynote-lz-b", whose Keynoting Settings names keynotes-b.txt - a
+      second check, read by a person (row 5b-1737: a project that names a
+      file is never the empty half)
     expect: >
       keynoteFile names keynotes-b.txt and NOT the default file; tableEntries
       4. A reader that answered a default path, or the last file it saw,
       would name the default file here
+
+negative:
+  - given: >
+      VERSION 2. "Family1", a new unsaved Generic Model family open in the
+      same Revit. THIS IS THE FIRST CASE TO RUN
+    expect: >
+      keynoteFile EMPTY, tableEntries 0, and the one finding "The document in
+      front, "Family1", is a family - the keynote file is a project setting,
+      so nothing was read". Version 1's negative ran on keynote-lz-b, which
+      the judge reads as content (row 5b-1737)
 
   - given: >
       the keynote file renamed on disk after the model was saved, the model

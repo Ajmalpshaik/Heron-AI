@@ -62,9 +62,44 @@ never a working model. Every write here is ROLLED BACK unless the modeller keeps
 
 | # | Run | Look for |
 |---|---|---|
-| **LZ1** | *Arrange.* `keynote-lz`: a new project from the default architectural template; Annotate > Keynoting Settings shows Revit's default keynote file, Absolute - write its path and its entry count (View) down. One keynote tag on Level 1. `keynote-lz-b`: the same template, saved beside it, with `keynotes-b.txt` loaded by hand in Keynoting Settings, Absolute. In `%TEMP%\heron-work`, beside the saved model: `keynotes-b.txt`, four lines of key, text and parent separated by tabs; `keynotes-bad.txt`, two lines with no tabs and one key written twice. `keynotes-missing.txt` must not exist. Type the full paths into the job file in place of `YOU` | Keynoting Settings shows the default file; the three paths typed whole |
-| **LZ2** | *The read, D-30 positive and negative, THE NEGATIVE FIRST.* The job file's `report-keynote-file` job | Negative, `keynote-lz-b`: keynoteFile names keynotes-b.txt and **not** the default file, tableEntries 4. Positive, `keynote-lz`: keynoteFile the default file's path, *"path type Absolute"*, *"Revit: Loaded"*; tableEntries the count written down. **If keynoteFile is only a display path with no path type, that is Revit's answer for `GetExternalFileReference` - record it** |
-| **LZ3** | *D-30 positive and negative, THE NEGATIVE FIRST.* The job file's `load-keynote-file` job, `--write`, rolled back | Negative, keynotes-missing.txt: refused *"There is no file at ... that this PC can see"*, fileAfter equal to fileBefore, entriesAfter equal to entriesBefore. Positive, keynotes-b.txt: loadResult *"loaded"*, fileAfter *"...keynotes-b.txt (Absolute), Revit: Loaded"*, entriesAfter 4 |
+| **LZ1** | *Arrange.* `keynote-lz`: a new project from the default architectural template; Annotate > Keynoting Settings shows Revit's default keynote file, Absolute - write its path and its entry count (View) down. One keynote tag on Level 1. `keynote-lz-b`: the same template, saved beside it, with `keynotes-b.txt` loaded by hand in Keynoting Settings, Absolute. In `%TEMP%\heron-work`, beside the saved model: `keynotes-b.txt`, four lines of key, text and parent separated by tabs; `keynotes-bad.txt`, two lines with no tabs and one key written twice. `keynotes-missing.txt` must not exist. **Since 2026-11-15:** also File > New > Family > Generic Model (metric), left unsaved, so its title is `Family1` - LZ2's negative. Type the full paths into the job file in place of `YOU` | Keynoting Settings shows the default file; the three paths typed whole; `keynote-lz`, `keynote-lz-b` and `Family1` open in the one Revit |
+| **LZ2** | *The read, D-30 positive and negative, THE NEGATIVE FIRST.* The job file's `report-keynote-file` job | **Negative since 2026-11-15, `Family1`** ([row 5b-1737](../fragment-issues/row-5b-1737.md)): keynoteFile empty, tableEntries 0, *"... is a family - the keynote file is a project setting, so nothing was read"*. Then by hand, `validate --in keynote-lz-b report-keynote-file`: keynoteFile names keynotes-b.txt and **not** the default file, tableEntries 4 - a second check, never the empty half. Positive, `keynote-lz`: keynoteFile the default file's path, *"path type Absolute"*, *"Revit: Loaded"*; tableEntries the count written down. **If keynoteFile is only a display path with no path type, that is Revit's answer for `GetExternalFileReference` - record it** |
+| **LZ3** | *D-30 positive and negative, THE NEGATIVE FIRST.* The job file's `load-keynote-file` job, `--write`, rolled back - judged on `loadedFile` since version 2 ([row 5b-1647](../fragment-issues/row-5b-1647.md)) | Negative, keynotes-missing.txt: **loadedFile empty**, refused *"There is no file at ... that this PC can see"*, fileAfter equal to fileBefore, entriesAfter equal to entriesBefore. Positive, keynotes-b.txt: loadedFile and fileAfter *"...keynotes-b.txt (Absolute), Revit: Loaded"*, loadResult *"loaded"*, entriesAfter 4. Then once by hand with the path typed in forward slashes: *"loaded"* and **no** *"not the path typed"* line ([row 5b-1738](../fragment-issues/row-5b-1738.md)) |
 | **LZ4** | *The reload and the path type, each rolled back.* `filePath` empty, `pathType` empty, on the default file; then `filePath` keynotes-b.txt, `pathType` relative; then `filePath` empty, `pathType` relative | First: *"reloaded"* or *"already current - Revit changed nothing"* - record which - with fileAfter and entriesAfter as before. Second: fileAfter *"keynotes-b.txt (Relative)"*, entriesAfter 4. Third: the default file again, *"(Relative)"* - or Revit's refusal, if the default file is on another drive from the model |
 | **LZ5** | *The refusals and Revit's own result.* `filePath` `Keynotes.txt` (no folder); `pathType` sideways; `filePath` keynotes-bad.txt; then any load DISCARDED in Revit's Keep or Discard box | *"not a full path"* and the path types named, nothing changed; keynotes-bad.txt: the unreadable lines and the duplicate key named in words, entriesAfter what Revit kept; after Discard, Keynoting Settings shows the file from before |
 | **LZ6** | *Kept once, and the second route.* Through `try-once` on the modeller's yes: keynotes-b.txt loaded; then Annotate > Keynoting Settings by hand | ONE entry in Revit's undo list; the dialog shows keynotes-b.txt, its path type, and View lists the entries counted in entriesAfter |
+
+### The sitting - Revit 2024, then Revit 2020 (re-arranged 2026-11-15, field report #854)
+
+**Why now.** Sruthina's drawing set on Revit 2024 (`villa 2`, [Ajmalpshaik/Heron-AI#854](https://github.com/Ajmalpshaik/Heron-AI/issues/854)
+item 1, [#853](https://github.com/Ajmalpshaik/Heron-AI/issues/853) D1) placed 47 keynote tags and two keynote legends,
+and every one prints blank until a project keynote file is loaded - `LOAD_KEYNOTE_FILE` was refused as DRAFT. **What
+has run so far:** version 1 on Revit 2020, 2026-11-14, `P1102 MEP`, rolled back - the US Metric file loaded (3840
+entries) and a path with no file was refused with the table untouched, but its result was filled both times
+([row 5b-1647](../fragment-issues/row-5b-1647.md)). **What changed, 2026-11-15, in a cloud session with no Revit:**
+`LOAD_KEYNOTE_FILE` version 2 (result `loadedFile`, empty on any refusal or failed load; full-path compare, row
+5b-1738) and `REPORT_KEYNOTE_FILE` version 2 (a family answered, never read - the negative, row 5b-1737). Both still
+DRAFT and never proven, so no proof went stale. Both compile for Revit 2020 to 2027 (`tools/check-fragments-compile.py`,
+2026-11-15). `tests/test_keynote_file_cards.py` holds both repairs and fails on version 1. **Nothing here has run in
+Revit since.**
+
+**One sitting, in this order.** The job file is the same one, re-arranged: `report-keynote-file` and `load-keynote-file`
+are pinned to `keynote-lz`, and the read's negative is `Family1`.
+
+| Step | Revit | Run | Rows |
+|---|---|---|---|
+| 1 | 2024 | Arrange LZ1 in Revit 2024 from its default architectural template (metric). Write down the default keynote file's path, path type and entry count | LZ1 |
+| 2 | 2024 | `python tools/batch-prove.py tools/jobs/keynote-file-lz-2026-11-02.yaml --dry-run`, then the same with `--session <2024 pid>`. Both jobs should read `PASS`. The positive's path type is the one step 1 wrote down - on Revit 2020 the default file read `Content`, not Absolute ([row 5b-1647](../fragment-issues/row-5b-1647.md)) | LZ2, LZ3 |
+| 3 | 2024 | The hand checks: `keynote-lz-b` named by the read; the forward-slash load; then LZ4 and LZ5, each rolled back, and LZ5's Discard | LZ2, LZ3, LZ4, LZ5 |
+| 4 | 2024 | Review both drafts (`python brain/heron_validate.py review <fragment>`) and sign only on the owner's word - `accept` under his own name | - |
+| 5 | 2024 | LZ6 - through `try-once`, on his yes, `keynotes-b.txt` kept once; then Keynoting Settings by hand, the second route | LZ6 |
+| 6 | 2020 | **LZ7.** Only once both are PROVEN on 2024: arrange LZ1 again in Revit 2020 (its template, its default file), then `python tools/batch-prove.py tools/jobs/keynote-file-lz-2026-11-02.yaml --release 2020 --session <2020 pid>` and `accept <fragment> --release 2020` ([D-131](../decisions/D-131.md)) | LZ7 |
+
+| # | Run | Look for |
+|---|---|---|
+| **LZ7** | *Revit 2020, the release entry.* Step 6 above, after LZ2 and LZ3 are signed on 2024 | Both jobs `PASS` on 2020 with the same readings as LZ2 and LZ3; `accept --release 2020` writes one `proof.releases` entry each. A DRAFT here reads `NOT PROVEN` - prove on 2024 first |
+
+**Not for the sitting:** Sruthina's own model and keynote file. The scratch projects are the proof; once
+`LOAD_KEYNOTE_FILE` is PROVEN, loading her project keynote file into `villa 2` is an ordinary chat request, kept or
+discarded by her.
+
