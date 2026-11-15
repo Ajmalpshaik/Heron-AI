@@ -111,4 +111,3 @@ are pinned to `keynote-lz`, and the read's negative is `Family1`.
 **Not for the sitting:** Sruthina's own model and keynote file. The scratch projects are the proof; once
 `LOAD_KEYNOTE_FILE` is PROVEN, loading her project keynote file into `villa 2` is an ordinary chat request, kept or
 discarded by her.
-
