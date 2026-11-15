@@ -844,7 +844,7 @@ def run_all(home):
                                   input=json.dumps(payload),
                                   capture_output=True, text=True,
                                   encoding="utf-8", cwd=cwd,
-                                  env=dict(env, CLAUDE_PROJECT_DIR=plain,
+                                  env=dict(dict(env, CLAUDE_PROJECT_DIR=plain),
                                            **extra),
                                   timeout=120)
 
@@ -865,6 +865,34 @@ def run_all(home):
         check(got.returncode == 0 and "cloud container" in got.stdout,
               "and the prompt hook found that way is the real one - it warns "
               "on a LOCAL prompt in a cloud container")
+
+        # OPEN-QUESTIONS Q-81, decided 2026-11-15: when the variable names a
+        # SECOND Heron checkout, the hook still runs the scripts of the one
+        # it runs in. A fake copy whose scripts would wave everything
+        # through, and say so, must never be the one that answers.
+        other = tempfile.mkdtemp(prefix="heron-other-checkout-")
+        try:
+            for rel in (".claude/skills/heron-guard/bin/heron_guard.py",
+                        ".claude/skills/heron-session/bin/local_only.py"):
+                path = os.path.join(other, *rel.split("/"))
+                os.makedirs(os.path.dirname(path))
+                with io.open(path, "w", encoding="utf-8") as fake:
+                    fake.write("print('THE-OTHER-CHECKOUT')\n")
+            got = run_wired(guard[0], forbidden, ROOT,
+                            CLAUDE_PROJECT_DIR=other) if guard else None
+            check(got is not None and '"deny"' in got.stdout
+                  and "THE-OTHER-CHECKOUT" not in got.stdout,
+                  "with the variable naming another checkout, the guard that "
+                  "answers is this repository's, and it refuses (Q-81)")
+            got = run_wired(pcommand, {"session_id": "s-5o",
+                                       "prompt": "LOCAL SESSION - prove D3"},
+                            ROOT, CLAUDE_CODE_REMOTE="true",
+                            CLAUDE_PROJECT_DIR=other)
+            check("THE-OTHER-CHECKOUT" not in got.stdout
+                  and "cloud container" in got.stdout,
+                  "and so is the prompt hook (Q-81)")
+        finally:
+            shutil.rmtree(other, ignore_errors=True)
 
         # Outside any git repository the fallback has nothing to find. The
         # three advice hooks are never a gate, so they say nothing and exit 0
