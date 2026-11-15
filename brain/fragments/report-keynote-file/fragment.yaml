@@ -118,5 +118,10 @@ compatibility-note: >
 
 # DECLARED 2026-11-02 - the modeller's own question (Group LZ), moved here
 # from REPORT_KEYNOTES with the read.
+# 2026-11-15: the second, declared when LOAD_KEYNOTE_FILE took "load the
+# project keynote file" (#854) and this phrasing, with no question flag, then
+# ranked that write first (a scratch store, Revit 2024; with the flag it
+# reached here either way).
 utterances:
   - which keynote file is this project using
+  - which keynote file does the project use

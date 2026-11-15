@@ -83,6 +83,15 @@ DRAFT and never proven, so no proof went stale. Both compile for Revit 2020 to 2
 2026-11-15). `tests/test_keynote_file_cards.py` holds both repairs and fails on version 1. **Nothing here has run in
 Revit since.**
 
+**Routing, 2026-11-15** (`heron_retrieve.find` on scratch stores of `origin/main` at `aaac505` and of this change,
+Revit 2024, with and without the host's question flag). The field's ask, *"load the project keynote file"*, reached
+`REPORT_KEYNOTE_FILE` - a read - on main; it is declared on `LOAD_KEYNOTE_FILE` now and reaches it by identity, and
+with the question flag it reaches the read. Declaring it moved *"which keynote file does the project use"*, without
+the flag, onto the write; that sentence is declared on `REPORT_KEYNOTE_FILE` now and reaches it by identity both ways.
+The three sentences declared before still reach their cards. **Not changed:** *"what keynote file is loaded"* and
+*"is the keynote file loaded"* reach `LOAD_KEYNOTE_FILE` without the flag and `REPORT_KEYNOTES` with it - the same on
+main.
+
 **One sitting, in this order.** The job file is the same one, re-arranged: `report-keynote-file` and `load-keynote-file`
 are pinned to `keynote-lz`, and the read's negative is `Family1`.
 

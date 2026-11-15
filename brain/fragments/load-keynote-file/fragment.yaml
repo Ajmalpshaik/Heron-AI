@@ -166,7 +166,11 @@ compatibility-note: >
 #   "reload the links"                         -> RELOAD_LINKS
 #   "load this family"                         -> LOAD_FAMILY
 
+# 2026-11-15, field report #854 / #853 D1 - the modeller's ask in her words.
+# On origin/main at aaac505 it reached REPORT_KEYNOTE_FILE, a read (hybrid,
+# a scratch store, Revit 2024).
 utterances:
   - load the keynote file C:\Standards\Keynotes.txt
   - reload the keynote file
   - change the keynote file to the office standard on the server
+  - load the project keynote file

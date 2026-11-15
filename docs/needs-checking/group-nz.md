@@ -34,9 +34,13 @@ refused; whether `get_BoundingBox(legend)` answers right after `Regenerate`, whi
 component's View (Floor Plan, Elevation: Front) is the seed's for every copy - changed in Properties; detail level and
 host length are left as Revit sets them.
 
-**Routing.** The two sentences declared on the card - *"make a symbol legend of the doors and windows"*, *"add the
-plumbing fixtures to the legend"* - are asked back by `tools/check-routing.py` (CI) on a scratch store; measured
-2026-11-15 in the pull request for #854.
+**Routing.** Measured 2026-11-15 on a scratch store of this change, Revit 2024 (`brain/heron_retrieve.py`, no
+re-ranker installed): the two sentences declared on the card - *"make a symbol legend of the doors and windows"*, *"add
+the plumbing fixtures to the legend"* - reach `PLACE_LEGEND_COMPONENTS` by identity, offered and not run because it is
+DRAFT; *"make a legend"* and *"duplicate the legend"* still reach `DUPLICATE_VIEWS`. `tools/check-routing.py` exits 0;
+its keyword-route-alone report now lists *"make a legend"* (`DUPLICATE_VIEWS`' utterance) as answered by this card on
+that route, where `origin/main` did not - identity still serves it to `DUPLICATE_VIEWS`. `tools/check-intrusion.py`
+names neither card.
 
 **The model** - a scratch project from Revit 2024's default architectural template, saved under `%TEMP%\heron-work`,
 never a working model. Every write here is ROLLED BACK unless the modeller keeps it. The job file is
