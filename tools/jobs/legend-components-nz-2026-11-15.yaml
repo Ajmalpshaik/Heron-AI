@@ -1,0 +1,38 @@
+# NEEDS-CHECKING Group NZ - PLACE_LEGEND_COMPONENTS (DRAFT), a symbol legend:
+# one legend component per door or window type, copied from the one the
+# legend holds. Built 2026-11-15 in a cloud session with no Revit, for field
+# report #854 item f (Revit 2024, `villa 2`). NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/legend-components-nz-2026-11-15.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/legend-components-nz-2026-11-15.yaml --session <2024 pid>
+#
+# THE MODEL (docs/needs-checking/group-nz.md, NZ1): "legend-ny", a scratch
+# project from Revit 2024's default architectural template (metric), saved
+# under %TEMP%\heron-work, never a working model: four walls on Level 1, three
+# doors of two types and two windows of one type in them, nothing of Casework.
+# A legend view "Symbol Legend" (View > Legends > Legend, 1:50) holding ONE
+# legend component placed by hand - a door type, Floor Plan.
+#
+# THE ARRANGEMENT. The legend is the model's own view, so no selection.
+# Positive: Doors, Windows. Negative: Casework - nothing of it is placed, so
+# nothing is copied; a different value, not an empty one (fragment-proving,
+# rules 3 and 5). The write is ROLLED BACK.
+model: "legend-ny: a scratch project, doors and windows placed, a legend 'Symbol Legend' with one door legend component placed by hand"
+defaults:
+  write: true
+  in: "legend-ny"
+jobs:
+  - fragment: place-legend-components
+    expect: placed
+    set:
+      view: "Symbol Legend"
+      categories: "Doors, Windows"
+    negative-set:
+      view: "Symbol Legend"
+      categories: "Casework"
+    note: >
+      NZ2. Negative - THE FIRST CASE TO RUN: Casework - placed 0, "No placed
+      type of Casework in this model". Positive: Doors, Windows - placed 2
+      (the second door type and the window type; the first door type is
+      alreadyShown 1), each read back, a column under the one placed by hand
+      with "Family: Type" beside each.

@@ -1,0 +1,138 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-178
+semantic-identity: "fill a legend view with one legend component per door, window or fixture type, in a column with each type's name beside it - a symbol legend"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-11, field report Ajmalpshaik/Heron-AI#854 item f and #853 D2
+# (Revit 2024, model `villa 2`): asked for a symbol legend - a legend view with
+# legend components of the doors, windows and fixtures - and "no capability
+# exists"; a keynote legend and schedules stood in. Row 5b-1735.
+#
+# SEARCHED FIRST, 2026-11-15. No fragment's C# named LEGEND_COMPONENT or the
+# Legend Components category. CREATE_LEGEND_VIEW (DEPRECATED, superseded by
+# DUPLICATE_VIEWS) made a legend by duplicating one, and its own purpose said
+# "there is no way to place a NEW legend component, so building a legend's
+# contents from nothing stays a manual job".
+#
+# LOOK-ALIKES, KEPT SEPARATE:
+#   DUPLICATE_VIEWS (PROVEN)   copies whole views, a legend among them - it
+#                              makes the legend this one fills. Widening it
+#                              would give one card two jobs and stale its proof.
+#   CREATE_SCHEDULE (PROVEN)   a keynote legend is a SCHEDULE of keynotes -
+#                              text in rows, never a symbol.
+#   PLACE_FAMILY_INSTANCES     places model or detail family instances - a
+#     (PROVEN)                 legend component is neither, and Revit's API
+#                              makes one only by copying another.
+#
+# REVIT'S API CANNOT MAKE A LEGEND COMPONENT FROM NOTHING, on any release 2020
+# to 2027: the Legend Components category has no creation method. The way that
+# exists is a copy of one already there (ElementTransformUtils.CopyElement)
+# with its Component parameter (BuiltInParameter.LEGEND_COMPONENT) set to
+# another type. So the legend must hold one placed by hand; with none, the
+# refusal says how to place it.
+kind: action
+domain: revit.views
+capability: PLACE_LEGEND_COMPONENTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Fills a legend view with a symbol legend - one legend component for each
+  door, window, fixture or other type of the categories named, in a column,
+  each with its type's name written beside it - copied from the one legend
+  component the legend already holds. Types the legend already shows are left
+  alone, and every copy is read back.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The LEGEND view, by its name in the Project Browser. Any other kind of
+    # view is refused before anything changes.
+    - name: view
+      type: View
+      source: request
+    # The categories whose types are shown - "Doors, Windows, Plumbing
+    # Fixtures". None named is refused.
+    - name: categories
+      type: IList<BuiltInCategory>
+      source: request
+    # true (the default): only types with at least one instance placed in the
+    # model - what the drawings show. false: every type loaded.
+    - name: onlyUsed
+      type: bool
+      source: request
+      optional: true
+      absent: "true"
+    # PAPER millimetres between one component and the next, and between a
+    # component and its name - times the legend's scale in the model.
+    - name: spacingMm
+      type: double
+      source: request
+      optional: true
+      absent: "10"
+    # true (the default): each type's name, "Family: Type", as a text note in
+    # the model's default text type beside its component.
+    - name: labels
+      type: bool
+      source: request
+      optional: true
+      absent: "true"
+  provides:
+    - name: placed
+      # Legend components made, each read back showing its type (D-52).
+      role: result
+      type: int
+    - name: placedIds
+      role: result
+      type: IList<ElementId>
+    - name: alreadyShown
+      # Types a component in the legend already showed - left alone.
+      role: accounting
+      type: int
+    - name: skipped
+      # Each type not placed, by name, and Revit's reason; its copy deleted.
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why nothing was placed: not a legend, no category, no component placed
+      # by hand to copy, too many types. Never a thing it found (D-52).
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release, no #if. ViewType.Legend,
+  BuiltInCategory.OST_LegendComponents, BuiltInParameter.LEGEND_COMPONENT and
+  LEGEND_COMPONENT_VIEW, ElementTransformUtils.CopyElement / MoveElement,
+  Parameter.Set(ElementId) / AsElementId, ElementType.FamilyName,
+  Document.GetDefaultElementTypeId(ElementTypeGroup.TextNoteType) and
+  TextNote.Create(Document, ElementId, XYZ, string, ElementId) - compiled
+  against the reference assemblies of 2020 to 2027 with
+  tools/check-fragments-compile.py on 2026-11-15. Not seen in Revit: that a
+  copy's Component takes a type of another category than the one placed by
+  hand is Group NZ's NZ3.
+
+# ROUTING
+#
+#   "make a symbol legend of the doors and windows"  -> here
+#   "add the plumbing fixtures to the legend"        -> here
+#   "make a keynote legend"                          -> CREATE_SCHEDULE,
+#                                                       listKind keynote legend
+#   "duplicate the legend"                           -> DUPLICATE_VIEWS
+#   "place this family"                              -> PLACE_FAMILY_INSTANCES
+
+utterances:
+  - make a symbol legend of the doors and windows
+  - add the plumbing fixtures to the legend

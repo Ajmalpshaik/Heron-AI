@@ -1530,6 +1530,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-nx.md`](needs-checking/group-nx.md)
 
+## Group NZ - a symbol legend: one legend component per door, window or fixture type, copied from the one the legend holds, each read back with its name beside it: `PLACE_LEGEND_COMPONENTS` (2026-11-15)
+
+**Its own file:** [`needs-checking/group-nz.md`](needs-checking/group-nz.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
