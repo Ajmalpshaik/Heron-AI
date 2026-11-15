@@ -788,7 +788,7 @@ owner's call, not three more clauses.
 
 ### ✅ F21. `docs/09 §94` still carries the promotion gate D-30 replaced, and still calls it open — DECIDED 2026-11-15 (owner's delegation)
 
-**Decided: Fix the section, and check every other 'tracked as Q-n' note - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** D-30 replaced the count with one recorded proof, and the same stale pattern may sit wherever a document points at a question. **Work:** the section is done in this change; owed: the other notes.
+**Decided: Fix the section, and check every other 'tracked as Q-n' note - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** D-30 replaced the count with one recorded proof, and the same stale pattern may sit wherever a document points at a question. **Work:** done 2026-11-15. The section's line now says Q-9 was settled by D-30. The other notes were checked the same day: `grep -rn 'Tracked as \[Q-' docs/*.md` finds fourteen, and every one points at a question answered or closed, with its answer named on the same line or in a note right under it - nothing else to change.
 
 **Found by:** building `HERON-LRN-PRO-004`, the Learning Promotion Agent, 2026-09-15.
 **Status:** open. The agent follows D-30.
