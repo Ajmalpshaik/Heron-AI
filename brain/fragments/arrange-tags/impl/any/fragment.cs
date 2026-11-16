@@ -8,8 +8,8 @@
 // IndependentTag, so a room tag - a SpatialElementTag - went to `notTags`,
 // was never moved and was not even an obstacle: the commonest clash on a
 // plan, a door tag over a room tag, could not be pushed apart. A
-// SpatialElementTag is now arranged by its TagHeadPosition like the rest, and
-// a leader end that moved with the head is put back. With `roomTagsStayPut`
+// SpatialElementTag is now arranged by its TagHeadPosition like the rest; its
+// leader, if it has one, keeps its own end. With `roomTagsStayPut`
 // true, room, space and area tags stay exactly where they are - counted as
 // fixed obstacles the other tags move away from, in both phases, and named in
 // `keptInPlace`.
@@ -82,7 +82,6 @@ Func<Element, XYZ> headOf = element =>
     return null;
 };
 var fixedTag = new Dictionary<ElementId, bool>();
-var spatialEnds = new Dictionary<ElementId, XYZ>();
 
 // ---- what each tag is, and where it is ----
 var atX = new Dictionary<ElementId, double>();   // along the view's right
@@ -103,8 +102,8 @@ foreach (var anyTag in tags)
     atX[anyTag.Id] = head.DotProduct(right);
     atY[anyTag.Id] = head.DotProduct(up);
 
-    // VERSION 2: a room, space or area tag - straight, its leader end
-    // remembered so a move cannot drag it, and held still when asked.
+    // VERSION 2: a room, space or area tag - straight, and held still when
+    // asked. Only a leaderless one is measured, as for the rest.
     var spatialTag = anyTag as SpatialElementTag;
     if (spatialTag != null)
     {
@@ -113,8 +112,7 @@ foreach (var anyTag in tags)
         straight[anyTag.Id] = true;
         bool spatialLeader = false;
         try { spatialLeader = spatialTag.HasLeader; } catch { }
-        if (spatialLeader) { try { spatialEnds[anyTag.Id] = spatialTag.LeaderEnd; } catch { } }
-        else
+        if (!spatialLeader)
         {
             try
             {
@@ -342,16 +340,6 @@ foreach (var id in working)
     {
         try { spatialToMove.TagHeadPosition = target; }
         catch { refused.Add(id); continue; }
-        XYZ endWas;
-        if (spatialEnds.TryGetValue(id, out endWas))
-        {
-            try
-            {
-                var endNow = spatialToMove.LeaderEnd;
-                if (endNow != null && !endNow.IsAlmostEqualTo(endWas)) spatialToMove.LeaderEnd = endWas;
-            }
-            catch { }
-        }
         XYZ spatialNow = null;
         try { spatialNow = spatialToMove.TagHeadPosition; } catch { }
         if (spatialNow == null || spatialNow.IsAlmostEqualTo(head)) { refused.Add(id); continue; }

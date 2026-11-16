@@ -20,8 +20,8 @@ risk: MODIFY
 # even an obstacle for the tags that were. The commonest clash on a plan, a
 # door tag over a room tag, could not be pushed apart, while
 # FIND_OVERLAPPING_TAGS found it. A SpatialElementTag is now arranged by its
-# TagHeadPosition like the rest, and a leader end the move dragged is put
-# back. `roomTagsStayPut` true holds room, space and area tags exactly where
+# TagHeadPosition like the rest; its leader keeps its own end.
+# `roomTagsStayPut` true holds room, space and area tags exactly where
 # they are, as fixed obstacles the other tags move away from in both phases,
 # named in `keptInPlace`. Every tag still takes one size, the median (row
 # 5b-1652, still open). Version 1 was PROVEN (the proof block below, kept as
