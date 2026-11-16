@@ -652,42 +652,28 @@ def revit_view_image(view: str = "", elements: str = "", width: int = 1280,
                      around: str = "") -> list:
     """
     Take a picture of a Revit view and LOOK at it - to check what you just
-    did, instead of trusting a count.
+    did, instead of trusting a count. Give ONE of:
 
-    Say what to picture in one of two ways:
+    - `view`: a view or sheet name as the Project Browser shows it; empty is
+      the view in front. Pictured as it stands - template, crop, filters -
+      and not changed. Two views of one name are listed "ViewType: Name" to
+      copy. A cropped plan, no annotation crop, maps to model mm (MX19).
+    - `elements`: element ids, comma separated, as Heron prints them -
+      Revit's number, or a form's long id from CREATE_FAMILY_FORMS or
+      REPORT_FAMILY_FORMS. Framed in a temporary isometric 3D view, a section
+      box round them with a margin; levels, grids and links left out, floors,
+      ceilings and roofs over them hidden and named; a family's connectors
+      hidden unless asked for. An id not in the model refuses the picture.
+    - `around`, with a PLAN as `view` (or in front): a region of it - element
+      ids, or a box "x1,y1;x2,y2" in mm from Revit's internal origin (the
+      model-position line's numbers) - pictured from a temporary copy of the
+      plan cropped to it, tags and dimensions kept. Not with `elements`.
 
-    - `view`: a view or sheet name as the Project Browser shows it. Empty
-      means the view in front. It is pictured exactly as it stands - its
-      template, crop and filters - and nothing about it is changed. If two
-      views share the name, the answer lists each as "ViewType: Name" to
-      copy. A cropped plan, no annotation crop, maps to model mm (not yet
-      measured, MX19).
-    - `elements`: element ids, comma separated, as Heron's answers print them
-      - Revit's number, or a form's long id from CREATE_FAMILY_FORMS or
-      REPORT_FAMILY_FORMS; the two may be mixed. Heron
-      frames just those in a temporary isometric 3D view - a section box round
-      them with a margin, model categories only, levels, grids and links left
-      out - and takes the view away again. In a project, floors,
-      ceilings and roofs over them are hidden, and named. In a family its
-      forms are framed too, by their extents; its connectors are hidden
-      unless asked for. An id
-      not in the model or family in front refuses the whole picture, naming
-      it.
+    `width`: 320 to 2400 px (default 1280).
 
-    - `around`, with a PLAN as `view` (or the plan in front): just a region
-      of it - element ids, comma separated, framed with a margin, or a box
-      "x1,y1;x2,y2", two corners in mm from Revit's internal origin (the
-      numbers a plan picture's model-position line gives). The plan is
-      pictured from a temporary copy cropped to the region, its tags and
-      dimensions copied with it, and the copy is taken away again; the plan
-      itself is not changed. Not with `elements`.
-
-    `width`: the picture's width, 320 to 2400 px (default 1280).
-
-    IT CHANGES NOTHING. The temporary view or copy is made inside a group Revit always
-    rolls back - there is no way to keep it - and the picture is written to
-    Heron's own folder, read back and deleted. Nothing is exported
-    anywhere another person reads. revit_views gives a view's name.
+    IT CHANGES NOTHING. A temporary view or copy is made in a group Revit
+    always rolls back, and the picture is written to Heron's own folder, read
+    back and deleted. revit_views gives a view's name.
     """
     if _Image is None:
         return _ended("refused",
