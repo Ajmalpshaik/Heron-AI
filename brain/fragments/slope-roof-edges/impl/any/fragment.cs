@@ -1,5 +1,5 @@
-// NOT STANDALONE. Assumes `doc`, `elements`, `roofShape` and `pitchDegrees`
-// are in scope; leaves `sloped`, `upright`, `differs`, `readBack`,
+// NOT STANDALONE. Assumes `doc`, `elements`, `roofShape`, `pitchDegrees` and
+// `edgeNumbers` are in scope; leaves `sloped`, `upright`, `differs`, `readBack`,
 // `measuredMm`, `refused` and `findings` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). Lengths are internal FEET.
@@ -31,6 +31,14 @@
 //           pair), a curved edge - is REFUSED: choosing the eaves for the
 //           modeller is a design decision, not a default.
 //   HIP     every edge slopes, straight or curved.
+//   EDGES   (version 2, row 5b-1670) the edges the modeller names by number
+//           slope, and every other edge stays upright - any outline, any
+//           number of sides, a lean-to with one. The numbers are the ones the
+//           card's own readBack prints ("edge 1, 6000 mm ..."), counted along
+//           the footprint as Revit returns it. Asked with no numbers, or a
+//           number the roof has not got, it changes nothing and lists every
+//           edge with its number, length and ends, so the next ask can name
+//           them. ONE roof at a time: a number means an edge of one roof.
 //
 // NOTHING IS WRITTEN TO A ROOF UNTIL ITS WHOLE PLAN IS SETTLED. Every refusal
 // Heron makes about a roof is decided before the first of its edges changes,
@@ -66,12 +74,62 @@ var findings = new List<string>();
 var shape = (roofShape ?? "").Trim().ToLowerInvariant();
 var risePerRun = 0.0;
 
-if (shape != "gable" && shape != "hip")
+// VERSION 2: THE EDGE NUMBERS, read once. Empty or "none" is not given. Only
+// `edges` reads them - one number never means two things - so they are
+// refused with gable or hip rather than quietly ignored.
+var numbersText = (edgeNumbers ?? "").Trim();
+var numbersGiven = numbersText.Length > 0
+    && !numbersText.Equals("none", StringComparison.OrdinalIgnoreCase);
+var chosen = new List<int>();
+string badNumber = null;
+if (numbersGiven)
+{
+    foreach (var piece in numbersText.Split(new[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries))
+    {
+        int number;
+        if (!int.TryParse(piece.Trim(), System.Globalization.NumberStyles.Integer,
+                System.Globalization.CultureInfo.InvariantCulture, out number) || number < 1)
+        {
+            badNumber = piece.Trim();
+            break;
+        }
+        if (!chosen.Contains(number)) chosen.Add(number);
+    }
+}
+
+var footprintRoofs = 0;
+if (elements != null)
+    foreach (var element in elements)
+        if (element is FootPrintRoof) footprintRoofs++;
+
+if (shape != "gable" && shape != "hip" && shape != "edges")
 {
     refused = string.Format(
         "'{0}' is not a roof shape this makes. Say gable - the two long sides slope "
-        + "and the two ends stay upright - or hip - every side slopes. Nothing was changed",
+        + "and the two ends stay upright - hip - every side slopes - or edges, with the "
+        + "numbers of the edges to slope. Nothing was changed",
         roofShape);
+}
+else if (shape != "edges" && numbersGiven)
+{
+    refused = string.Format(
+        "Edge numbers ({0}) are read only with the shape edges - a {1} chooses its own "
+        + "edges. Ask for edges with those numbers, or leave the numbers out. Nothing was changed",
+        numbersText, shape);
+}
+else if (shape == "edges" && badNumber != null)
+{
+    refused = string.Format(
+        "'{0}' is not an edge number. Give whole numbers from 1, as readBack lists the "
+        + "edges - \"1, 3\". Nothing was changed",
+        badNumber);
+}
+else if (shape == "edges" && footprintRoofs > 1)
+{
+    refused = string.Format(
+        "{0} footprint roofs are selected, and an edge number belongs to one roof. Select "
+        + "one roof and ask again. Nothing was changed",
+        footprintRoofs);
 }
 else if (double.IsNaN(pitchDegrees) || double.IsInfinity(pitchDegrees) || pitchDegrees <= 0)
 {
@@ -228,6 +286,49 @@ else
                 roles[i] = "eave";
             }
         }
+        else if (shape == "edges")
+        {
+            // VERSION 2. THE EDGES THE MODELLER NAMED, BY NUMBER; THE REST
+            // UPRIGHT. With no number, or one past the last edge, nothing is
+            // changed and every edge is listed so the next ask can name them.
+            var listed = new List<string>();
+            for (var i = 0; i < count; i++)
+            {
+                var start = curves[i].GetEndPoint(0);
+                var end = curves[i].GetEndPoint(1);
+                listed.Add(string.Format(
+                    "edge {0}, {1:F0} mm{2}, from ({3:F0}, {4:F0}) to ({5:F0}, {6:F0}) mm",
+                    i + 1, lengthMm[i], curves[i] is Line ? "" : ", curved",
+                    start.X * MillimetresPerFoot, start.Y * MillimetresPerFoot,
+                    end.X * MillimetresPerFoot, end.Y * MillimetresPerFoot));
+            }
+
+            var pastLast = new List<int>();
+            foreach (var number in chosen)
+                if (number > count) pastLast.Add(number);
+
+            if (chosen.Count == 0)
+            {
+                cannot = string.Format(
+                    "no edge numbers were given, so which edges slope is not known. Its {0} edges "
+                    + "are: {1}. Ask again naming the edges to slope - the rest stay upright",
+                    count, string.Join("; ", listed));
+            }
+            else if (pastLast.Count > 0)
+            {
+                cannot = string.Format(
+                    "it has {0} edges, so there is no edge {1}. Its edges are: {2}",
+                    count, string.Join(", ", pastLast), string.Join("; ", listed));
+            }
+            else
+            {
+                for (var i = 0; i < count; i++)
+                {
+                    slopes[i] = chosen.Contains(i + 1);
+                    roles[i] = slopes[i] ? "eave" : "upright edge";
+                }
+            }
+        }
         else
         {
             // GABLE. Work on the plan: every edge straight, then the SIDES of
@@ -310,7 +411,8 @@ else
                     cannot = string.Format(
                         "its outline has {0} sides, so there is no single pair of long eaves - an "
                         + "L-shaped outline has six. Heron does not choose two edges for you: use hip, "
-                        + "or tick Defines Slope on the two eave lines in Edit Footprint",
+                        + "or edges with the numbers of the eaves to slope (ask for edges with no "
+                        + "numbers and every edge is listed)",
                         sideIds.Count);
                 }
                 else
@@ -567,6 +669,13 @@ else
                 + "See readBack and measuredMm", label, shape, pitchDegrees, roofSloped,
                 shape == "gable" ? string.Format(", {0} end edge(s) upright", roofUpright) : "")
             : string.Format("{0}: {1} edge(s) are NOT what was asked - see differs", label, roofDiffers));
+        // A gable's ends and a chosen-edges roof's other edges are both
+        // counted in `upright`; the sentence above names them for a gable.
+        if (roofDiffers == 0 && shape == "edges")
+            findings[findings.Count - 1] = string.Format(
+                "{0}: edge(s) {1} slope at {2:F2} degrees and the other {3} stand upright, read "
+                + "back from Revit. See readBack and measuredMm",
+                label, string.Join(", ", chosen), pitchDegrees, roofUpright);
     }
 }
 
