@@ -37,8 +37,8 @@ question is write.askBeforeKeeping, read in the add-in - the ribbon's Ask to
 Keep since D-138, OFF by default, whose box can also keep the rest of one job
 without asking, a grant only the modeller's click in Revit gives. Around it stand the
 owner's ribbon switch, one undo entry and the pin. Writing is switched off
-entirely until write.enabled is set - see
-HeronPermissions. Since D-106 a fragment declared PUBLISH or ADMIN goes as its
+entirely until the modeller turns Changes on in Heron's Settings - held in
+Revit's memory since D-166, never in a file - see HeronPermissions. Since D-106 a fragment declared PUBLISH or ADMIN goes as its
 own operation, run_fragment_publish or run_fragment_admin, and the add-in lets
 it through only while the owner's Publish or Admin switch is on as well.
 
@@ -334,20 +334,24 @@ def revit_health() -> str:
     # reads when something IS wrong.
     settings = configuration.load()
 
-    # THE SWITCHES AS EACH REVIT HAS THEM, AND THE FILE IT HAS THEM IN (Q-70,
-    # decided 2026-11-15): from the lease-exempt `info`, so asking claims
-    # nothing. Revit decides every change by its own file, so the write gate
+    # CHANGES, ADMIN AND PUBLISH AS EACH REVIT HOLDS THEM (D-166), AND THE
+    # SETTINGS FILE EACH READS (Q-70, decided 2026-11-15): both from the
+    # lease-exempt `info`, so asking claims nothing. Since D-166 the three
+    # switches are in each Revit's memory and in no file, so the write gate
     # below is what the Revits that said have - Changes on in any of them is
-    # the warning - and this chat's own copy is used only when none said, as
-    # it was before. That copy is also set beside each Revit's answer, to say
-    # when the two differ; on a PC whose Claude app keeps its own copy of the
-    # Heron folder it is not the file Revit reads.
+    # the warning, off in all of them is closed - and, when none said, no
+    # answer at all: never this chat's own copy of the settings file, which
+    # holds no switch. That copy is set beside each Revit's settings file only
+    # to say when the two are not one file - for Ask to Keep and the other
+    # settings D-166 left in it; on a PC whose Claude app keeps its own copy of
+    # the Heron folder it is not the file Revit reads.
+    held = dict((b.pid, bridge.switches_state(b)) for b in live)
     said = dict((b.pid, bridge.settings_state(b)) for b in live)
-    reported = [b for b in live if isinstance(said[b.pid], dict)]
-    writing = configuration.writing_enabled(settings)
+    reported = [b for b in live if isinstance(held[b.pid], dict)]
+    writing = None
     said_by = None
     if reported:
-        changes_on = [b for b in reported if said[b.pid]["changes"]]
+        changes_on = [b for b in reported if held[b.pid]["changes"]]
         writing = bool(changes_on)
         said_by = health.writing_said_by(changes_on or reported, writing)
     here_file = configuration.config_path()
@@ -357,6 +361,8 @@ def revit_health() -> str:
     rollup = health.assess(
         live=live, starting=starting, mismatched=mismatched,
         config_problems=configuration.problems(settings),
+        # Held in each Revit since D-166, so not from this side's file: what
+        # the Revits that answered said, or None when none did.
         writing=writing,
         protocol_version=bridge.PROTOCOL_VERSION,
         versions_agree=not mismatched,
@@ -421,13 +427,19 @@ def revit_health() -> str:
             # which on some PCs is not the one Revit reads (Q-70).
             asks = bridge.ask_to_keep_state(b)
             lines.append("      " + health.ask_to_keep_line(asks))
-            # AND THE FILE THIS REVIT DECIDES BY, ITS SWITCHES, AND - WHEN THIS
-            # CHAT'S OWN COPY DIFFERS - ONE LINE SAYING SO (Q-70). Remembered
-            # for heron_why, which asks Revit nothing (PROPOSALS F1).
+            # AND CHANGES, ADMIN AND PUBLISH, as this Revit holds them (D-166) -
+            # in its memory, set only in its Settings window, so its own word
+            # is the only one there is. From `info` again; claims nothing.
+            lines.append("      " + health.switches_line(held[b.pid]))
+            # AND THE FILE THIS REVIT READS ITS OTHER SETTINGS FROM, AND - WHEN
+            # THIS CHAT'S OWN COPY IS NOT THAT FILE - ONE LINE SAYING SO (Q-70).
+            # Both answers remembered for heron_why, which asks Revit nothing
+            # (PROPOSALS F1).
             lines.extend("      " + line for line in health.settings_lines(
                 said[b.pid], asks, here_file, here_found, here))
-            _settings_heard(b, said[b.pid], health.differs(health.settings_differ(
-                said[b.pid], asks, here_file, here_found, here)))
+            _settings_heard(b, held[b.pid], said[b.pid], health.differs(
+                health.settings_differ(said[b.pid], asks, here_file, here_found,
+                                       here)))
             b.close()
 
         if len(live) > 1 and binding.pid is None:
@@ -2121,6 +2133,13 @@ def revit_change(capability: str = "", values: str = "",
 
     # NO "NOT PROVEN" LINE HERE ANY MORE. It warned after the change was kept;
     # a fragment that is not PROVEN is now refused before it is sent (D-117).
+    #
+    # A PROOF TAKEN ON ANOTHER ADD-IN OR REVIT BUILD IS SAID, NOT REFUSED -
+    # `_build_line`, D-174. The fingerprint gate above is unchanged.
+    build = _build_line(capability, folder, session)
+    if build:
+        lines.append("")
+        lines.append(build)
 
     # A DRY RUN ENDS HERE - BEFORE THE DISCARD'S BRANCH BELOW, WHICH IS FOR A
     # RUN THAT ASKED TO KEEP - AND IT ENDS ONE OF TWO WAYS.
@@ -3094,6 +3113,22 @@ def _proof_line(capability, folder):
             % (capability, status, where, when))
 
 
+def _build_line(capability, folder, session):
+    """
+    One sentence when the proof was taken on another add-in or Revit build
+    than the one that just ran it - or "" for anything else.
+
+    THE WORDS ARE THE BRAIN'S (`heron_brain.proof_build_line`), so they can
+    be held by a suite on a machine with no MCP SDK - CI's tests job has
+    none, on purpose. This door only says which session ran it.
+
+    A FLAG, NOT A REFUSAL - D-174, the owner's answer to Q-92. The D-117 gate
+    refuses on D-30's fingerprint, read from the card alone; a proof on another
+    build is said under the answer and never stops a change being kept.
+    """
+    return brain.proof_build_line(capability, folder, bridge.built_on_of(session))
+
+
 def _shown_elsewhere(root, folder, capability):
     """
     One sentence sending a capability declared EXECUTE or below to revit_show,
@@ -3316,6 +3351,10 @@ def revit_read(capability: str = "", values: str = "",
 
     lines.append("")
     lines.append(_proof_line(capability, folder))
+    # AND WHICH BUILD IT WAS PROVED ON, said only when that has moved.
+    build = _build_line(capability, folder, session)
+    if build:
+        lines.append(build)
     # SAID FROM THE ADD-IN'S COUNT, NOT FROM "NO TRANSACTION" ALONE - row
     # 5b-350 is a read that reported Revit's refusal and left an element. An
     # add-in that counted sends `elementsCounted` (a read that moved the count
@@ -3548,6 +3587,10 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
 
     lines.append("")
     lines.append(_proof_line(capability, folder))
+    # AND WHICH BUILD IT WAS PROVED ON, said only when that has moved.
+    build = _build_line(capability, folder, session)
+    if build:
+        lines.append(build)
     if isinstance(counted, int):
         lines.append("Nothing in the model was changed: Heron counted %s element(s) "
                      "before this ran and the same after it. Only what is shown can "
@@ -5550,7 +5593,7 @@ def _why_facts(asked):
     if core.LIBRARY_ONLY:
         return {"release": asked, "how": "as asked" if asked else NO_REVIT_HERE,
                 "bridge": "none", "switches": None, "announced": [],
-                "heard": None, "here_file": None}
+                "heard": None}
     announced = _announced()
     if asked:
         release, how = asked, "as asked"
@@ -5559,40 +5602,42 @@ def _why_facts(asked):
                                                   binding.was_chosen)
     there = release is not None and any(str(b.revit_version) == str(release)
                                         for b in announced)
-    settings = configuration.load()
-    switches = {
-        "write_enabled": configuration.writing_enabled(settings),
-        "admin_enabled": configuration.truthy(settings, "admin.enabled"),
-        "publish_enabled": configuration.truthy(settings, "publish.enabled")}
-    # WHEN revit_health FOUND THIS REVIT'S FILE IS NOT THIS CHAT'S, WHAT THAT
-    # REVIT SAID IS BELIEVED INSTEAD (Q-70): it decides by its own. Remembered,
-    # never asked - heron_why sends nothing to Revit (PROPOSALS F1) - and the
-    # answer says how old it is. A file revit_health found alike is read here
-    # fresh, as before, so a switch pressed since then is seen.
+    # WHAT THAT REVIT LAST SAID IT HOLDS (D-166, Q-70). Changes, Admin and
+    # Publish are in each Revit's memory since D-166 and in no file, so the
+    # only word there is is the Revit's - remembered by revit_health, never
+    # asked here: heron_why sends nothing to Revit (PROPOSALS F1), and the
+    # answer says how old the word is. With none heard, every switch is
+    # judged off - the way each Revit starts - and the answer says that was
+    # assumed, not said. (Until D-166 this read this PC's heron.config, and a
+    # Revit's word only where revit_health found its file differed.)
     heard = _heard_from(release, announced)
-    if heard is not None and heard["differs"]:
-        switches = {"write_enabled": heard["said"]["changes"],
-                    "admin_enabled": heard["said"]["admin"],
-                    "publish_enabled": heard["said"]["publish"]}
+    held = heard["switches"] if heard is not None else {}
+    switches = {"write_enabled": bool(held.get("changes")),
+                "admin_enabled": bool(held.get("admin")),
+                "publish_enabled": bool(held.get("publish"))}
     return {"release": release, "how": how,
             "bridge": "connected" if there else "none",
             "switches": switches,
-            "announced": announced, "heard": heard,
-            "here_file": configuration.config_path()}
+            "announced": announced, "heard": heard}
 
 
-# WHAT EACH REVIT LAST SAID OF ITS SETTINGS TO THIS CHAT'S revit_health, by
-# session (Q-70), and whether this chat's own copy differed from it then. Read
-# by heron_why alone, which may ask Revit nothing; nothing decides by it, and
-# Revit reads its own file again before every change whatever this holds.
+# WHAT EACH REVIT LAST SAID OF ITS SWITCHES TO THIS CHAT'S revit_health, by
+# session (D-166, Q-70) - Changes, Admin and Publish as it holds them in
+# memory, the settings file it named for the rest, and whether this chat's own
+# copy was not that file. Read by heron_why alone, which may ask Revit
+# nothing; nothing decides by it, and Revit looks at its switches again before
+# every change whatever this holds.
 _SETTINGS_HEARD = {}
 
 
-def _settings_heard(b, said, differs):
-    """Remember what one Revit said (a settings_state dict), or forget an
-    earlier answer when this one said nothing usable."""
-    if isinstance(said, dict):
-        _SETTINGS_HEARD[b.pid] = {"said": said, "differs": bool(differs),
+def _settings_heard(b, held, said, differs):
+    """Remember what one Revit said - its switches (a switches_state dict) and
+    the file it named (a settings_state dict, or None) - or forget an earlier
+    answer when this one said no switches Heron could use."""
+    if isinstance(held, dict):
+        _SETTINGS_HEARD[b.pid] = {"switches": held,
+                                  "file": said if isinstance(said, dict) else None,
+                                  "differs": bool(differs),
                                   "at": time.monotonic(), "pid": b.pid,
                                   "release": b.revit_version}
     else:
@@ -5627,23 +5672,19 @@ def _ago(at):
 
 
 def _why_switches_line(facts):
-    """Which switches heron_why judged by, and whose they were, in one line."""
+    """Which switches heron_why judged by, and whose word they were, in one line."""
     on = facts["switches"]
     named = "Changes %s, Admin %s, Publish %s" % tuple(
         "on" if on[k] else "off" for k in ("write_enabled", "admin_enabled", "publish_enabled"))
-    here = facts["here_file"] or "none on this PC"
     heard = facts["heard"]
     if heard is None:
-        return ("%s - Heron's settings file on this PC, %s; Revit decides by its own, "
-                "and revit_health asks Revit what it has" % (named, here))
+        return ("%s - assumed, not said: no Revit of this release has told this chat's "
+                "revit_health what it holds. Each Revit holds them in memory, off "
+                "whenever it starts (D-166), and revit_health asks it" % named)
     who = "Revit %s (session %s)" % (heard["release"], heard["pid"])
-    if heard["differs"]:
-        return ("%s - as %s said it has them, from %s, when revit_health asked it %s; "
-                "this PC's own settings file, %s, differs, and Revit decides by its own"
-                % (named, who, heard["said"]["file"], _ago(heard["at"]), here))
-    return ("%s - Heron's settings file on this PC, %s; %s named a file of that name, "
-            "with the same switches, when revit_health asked it %s"
-            % (named, here, who, _ago(heard["at"])))
+    return ("%s - as %s said it holds them, when revit_health asked it %s; held in "
+            "its memory (D-166), so a switch pressed since then is not seen here"
+            % (named, who, _ago(heard["at"])))
 
 
 def _why_release_line(facts):
@@ -5675,9 +5716,9 @@ def heron_why(capability: str, release: str = "") -> str:
 
     `capability` is a capability name, as heron_lookup names one. `release`
     is a Revit release such as "2024", to ask about that one; empty means the
-    Revit this chat would use, when Heron can tell. Reads Heron's library, its
-    settings file on this PC - or, when revit_health found Revit's file
-    differs, what that Revit said of its own - and the note Revit leaves when
+    Revit this chat would use, when Heron can tell. Reads Heron's library,
+    what that Revit last told revit_health of its Changes, Admin and Publish
+    switches - held in Revit, never in a file - and the note Revit leaves when
     the Heron button is pressed. It sends nothing to Revit and changes nothing.
     """
     name = (capability or "").strip().upper()
@@ -5708,7 +5749,7 @@ def heron_why(capability: str, release: str = "") -> str:
         no_revit_here=core.LIBRARY_ONLY,
         write_enabled=bool(switches and switches["write_enabled"]),
         said_by=("Revit %s (session %s)" % (heard["release"], heard["pid"])
-                 if heard is not None and heard["differs"] else None))
+                 if heard is not None else None))
 
     lines = [said, "", "What you can do: " + can_do]
     if rows:

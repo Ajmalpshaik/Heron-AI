@@ -204,8 +204,10 @@ namespace Heron.Revit.Addin
                 // ARTICLE 13: the switches again, as the save begins - the
                 // modeller's Keep can come minutes after the gate let the job
                 // in. HeronRunPolicy.Withdrawn's own reason, not WhyNotKept's
-                // sentence: that one says the change was not kept.
-                var off = HeronRunPolicy.Withdrawn(risk, HeronConfig.Load(), HeronStop.IsStopped);
+                // sentence: that one says the change was not kept. As this
+                // Revit holds them in memory since D-166, not from heron.config,
+                // which no longer holds them.
+                var off = HeronRunPolicy.Withdrawn(risk, HeronPermissions.Switches(), HeronStop.IsStopped);
                 if (off != null)
                     block = NotSaved(saveAs, "NOT SAVED. " + Capital(off) + ", so '" + title
                         + "' was not saved. " + ChangeState(kept));

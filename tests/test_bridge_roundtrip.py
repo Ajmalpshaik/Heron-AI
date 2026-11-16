@@ -293,10 +293,11 @@ def ask_to_keep_said(failures):
     """
     `info` says what the owner's Ask to Keep switch is, read at the moment of
     the call (added 2026-11-12, tests/test_ask_to_keep_health.py has the rest).
-    And, since 2026-11-16 (Q-70), the settings file the add-in decides by,
-    whether it was there, and Changes, Admin and Publish as it holds them -
-    flipped under the same running host (tests/test_config_and_health.py has
-    the rest).
+    And, since 2026-11-16 (Q-70), the settings file the add-in reads and
+    whether it was there - and, since D-166, Changes, Admin and Publish as it
+    holds them in memory, which a switch line written into that file under the
+    same running host does NOT move (tests/test_config_and_health.py has the
+    rest).
 
     A HOST OF ITS OWN, WITH A SETTINGS FOLDER OF ITS OWN. The switch is a line
     in the settings file the kernel finds through the operating system's
@@ -344,19 +345,23 @@ def ask_to_keep_said(failures):
             # differently from one that is there and null.
             return reply.get("askToKeep", "missing") if reply.get("ok") else reply
 
-        # AND THE FILE IT DECIDES BY, AND ITS SWITCHES (Q-70, 2026-11-16): the
-        # path the add-in read, whether it was there, and Changes, Admin and
-        # Publish as the gate would read them - before any file exists.
+        # AND THE FILE IT READS, AND ITS SWITCHES (Q-70, D-166, 2026-11-16):
+        # the path the add-in read, whether it was there, and Changes, Admin
+        # and Publish as it holds them - all three off in a fresh host, which
+        # is a Revit that has just started - before any file exists.
+        def held(reply):
+            return dict((k, reply.get(k)) for k in ("changes", "admin", "publish"))
+
         blank = call(handle, "info")
         off = {"changes": False, "admin": False, "publish": False}
         if (blank.get("settingsFile") == settings and blank.get("settingsFileFound") is False
-                and blank.get("switches") == off):
+                and held(blank) == off and "switches" not in blank):
             print("  PASS  no settings file: info names the file it would read, says it "
                   "is not there, and every switch off")
         else:
             failures.append("settings: with no file info said file=%r found=%r switches=%r"
                             % (blank.get("settingsFile"), blank.get("settingsFileFound"),
-                               blank.get("switches")))
+                               held(blank)))
 
         first = said(None)
         if first is False:
@@ -379,28 +384,24 @@ def ask_to_keep_said(failures):
             failures.append("ask to keep: switched off mid-session, info said %r, not false"
                             % (again,))
 
-        # THE SWITCHES, FLIPPED UNDER THE SAME RUNNING HOST: read at the moment
-        # of the call, by the gate's own idea of true - "on" is on, and a word
-        # nobody can read is the default, off.
+        # THE SWITCHES, WRITTEN INTO THE FILE UNDER THE SAME RUNNING HOST -
+        # AND NOT MOVED BY IT (D-166). Until the merge that brought D-166 in,
+        # this flipped Changes and Admin on through the file and held that
+        # the next info said so; since D-166 the three are held in memory and
+        # a line naming one is ignored, so what is held is the opposite: the
+        # file is found and named, and every switch is still off.
         def switches_said(text):
             with open(settings, "w") as fh:
                 fh.write(text)
             reply = call(handle, "info")
-            return (reply.get("settingsFile"), reply.get("settingsFileFound"),
-                    reply.get("switches"))
+            return (reply.get("settingsFile"), reply.get("settingsFileFound"), held(reply))
 
-        on = switches_said("write.enabled = true\nadmin.enabled = on\npublish.enabled = maybe\n")
-        if on == (settings, True, {"changes": True, "admin": True, "publish": False}):
-            print("  PASS  Changes and Admin turned on while the bridge runs: the next info "
-                  "says so, from the file it names")
+        on = switches_said("write.enabled = true\nadmin.enabled = on\npublish.enabled = yes\n")
+        if on == (settings, True, off):
+            print("  PASS  Changes, Admin and Publish written ON into the file while the bridge "
+                  "runs: the next info names the file and says all three still off (D-166)")
         else:
-            failures.append("settings: Changes and Admin on mid-session, info said %r" % (on,))
-        back = switches_said("write.enabled = false\npublish.enabled = true\n")
-        if back == (settings, True, {"changes": False, "admin": False, "publish": True}):
-            print("  PASS  and changed again: the next info says what the file says now")
-        else:
-            failures.append("settings: switches changed again mid-session, info said %r"
-                            % (back,))
+            failures.append("settings: a file turning the switches on moved info: %r" % (on,))
 
         # Asking is still not claiming: three infos later nobody holds it.
         lease = call(handle, "info")

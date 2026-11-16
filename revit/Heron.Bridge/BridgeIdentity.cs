@@ -43,6 +43,27 @@ namespace Heron.Bridge
         public int ProcessId { get; private set; }
         public string RevitVersion { get; private set; }
         public string AddinVersion { get; private set; }
+
+        /// <summary>
+        /// Revit's exact build string - not the release year, which is
+        /// RevitVersion, but the build an update moves (2024.1 to 2024.2 keeps
+        /// "2024" and changes this). Null when the caller did not say.
+        /// </summary>
+        public string RevitBuild { get; private set; }
+
+        /// <summary>
+        /// The first sixteen hex characters of the SHA-256 of the add-in's own
+        /// assembly file. The assembly VERSION is typed by hand and stays the
+        /// same across many builds; the file is what actually ran. Null when
+        /// the file could not be read.
+        ///
+        /// Both are carried into every run record a proof is drafted from, so a
+        /// proof can go stale when either moves (D-30) - see BUILT_ON_FIELDS in
+        /// brain/heron_fragment.py. Fixed for the life of the process, which is
+        /// what makes them address-book facts.
+        /// </summary>
+        public string AddinHash { get; private set; }
+
         public string PipeName { get; private set; }
         public DateTime StartedAtUtc { get; private set; }
 
@@ -100,6 +121,12 @@ namespace Heron.Bridge
         }
 
         public BridgeIdentity(string revitVersion, string addinVersion)
+            : this(revitVersion, addinVersion, null, null)
+        {
+        }
+
+        public BridgeIdentity(string revitVersion, string addinVersion,
+                              string revitBuild, string addinHash)
         {
             if (string.IsNullOrWhiteSpace(revitVersion))
                 throw new ArgumentException("revitVersion is required", "revitVersion");
@@ -107,9 +134,45 @@ namespace Heron.Bridge
             ProcessId = Process.GetCurrentProcess().Id;
             RevitVersion = revitVersion;
             AddinVersion = string.IsNullOrWhiteSpace(addinVersion) ? "0.0.0" : addinVersion;
+            // NEVER A PLACEHOLDER, unlike the version above: a made-up build
+            // would read as a real one, and a proof would go stale - or stay
+            // current - on a value nothing measured. Unknown stays null.
+            RevitBuild = string.IsNullOrWhiteSpace(revitBuild) ? null : revitBuild.Trim();
+            AddinHash = string.IsNullOrWhiteSpace(addinHash) ? null : addinHash.Trim();
             StartedAtUtc = DateTime.UtcNow;
             PipeName = string.Format(
                 CultureInfo.InvariantCulture, "heron.{0}.{1}", revitVersion, ProcessId);
+        }
+
+        /// <summary>
+        /// The first sixteen hex characters of a file's SHA-256, lower case, or
+        /// null when it cannot be read. Sixteen, as a fragment's fingerprint
+        /// is, so the two read alike in a proof.
+        ///
+        /// Opened sharing read, write and delete: the file is the assembly
+        /// Revit has just loaded, and an installer replacing it must never be
+        /// blocked by Heron reading it once at start-up.
+        /// </summary>
+        public static string FileHash(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path)) return null;
+            try
+            {
+                using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read,
+                                                   FileShare.ReadWrite | FileShare.Delete))
+                using (var sha = SHA256.Create())
+                {
+                    var digest = sha.ComputeHash(stream);
+                    var hex = new StringBuilder(16);
+                    for (var i = 0; i < 8; i++)
+                        hex.Append(digest[i].ToString("x2", CultureInfo.InvariantCulture));
+                    return hex.ToString();
+                }
+            }
+            catch (IOException) { return null; }
+            catch (UnauthorizedAccessException) { return null; }
+            catch (NotSupportedException) { return null; }
+            catch (ArgumentException) { return null; }
         }
 
         /// <summary>
@@ -155,6 +218,13 @@ namespace Heron.Bridge
             json.AppendFormat("  \"pipeName\": \"{0}\",\n", Json.Escape(PipeName));
             json.AppendFormat("  \"revitVersion\": \"{0}\",\n", Json.Escape(RevitVersion));
             json.AppendFormat("  \"addinVersion\": \"{0}\",\n", Json.Escape(AddinVersion));
+            // OPTIONAL, so the protocol version stands: a client that does not
+            // know them ignores them, and one that does reads an absent field
+            // as NOT RECORDED. Written only when known - never as "".
+            if (RevitBuild != null)
+                json.AppendFormat("  \"revitBuild\": \"{0}\",\n", Json.Escape(RevitBuild));
+            if (AddinHash != null)
+                json.AppendFormat("  \"addinHash\": \"{0}\",\n", Json.Escape(AddinHash));
             json.AppendFormat(CultureInfo.InvariantCulture, "  \"protocolVersion\": {0},\n", ProtocolVersion);
             json.AppendFormat("  \"token\": \"{0}\",\n", Json.Escape(Token));
             json.AppendFormat("  \"startedAt\": \"{0}\"\n",

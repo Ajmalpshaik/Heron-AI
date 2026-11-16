@@ -652,24 +652,23 @@ namespace Heron.Bridge
             if (op == "info")
             {
                 var holder = HeronLease.Holder;
+                var switches = HeronPermissions.Switches();
 
-                // THE OWNER'S SWITCHES AS THIS REVIT HOLDS THEM, AND THE FILE
-                // IT HOLDS THEM IN (Q-70, decided 2026-11-15). On a PC whose
-                // Claude app keeps its own copy of the Heron folder there are
-                // two heron.config files under one name, and the chat's copy
-                // is not the one Revit decides by. So Revit says its own: ONE
-                // load, read here the way the gate reads it - GetBool on the
-                // gate's own keys, off when unread - so the three cannot
-                // disagree with each other, and the path that load used.
+                // THE FILE THIS REVIT READS ITS SETTINGS FROM (Q-70, decided
+                // 2026-11-15). On a PC whose Claude app keeps its own copy of
+                // the Heron folder there are two heron.config files under one
+                // name, and the chat's copy is not the one this Revit reads.
+                // So Revit names its own, and whether it was there, for the
+                // settings that are still in it - Ask to Keep, the Companion,
+                // the waiting times. NOT Changes, Admin or Publish: since
+                // D-166 they are held in memory, below, and no file decides
+                // them. Q-70 first read those three here from the file too;
+                // D-166 removed that, and the switches below are the memory's.
                 //
                 // READ, NEVER WRITTEN. Nothing here saves, and nothing on a
                 // request is read to choose what is said (Golden Rule 19).
                 // Optional fields, like askToKeep beside them: an older
-                // client ignores them, so the protocol version stands. A file
-                // that could not be read loads as the defaults, and is said
-                // as found with every switch off - what the gate would do at
-                // that instant (row 5b-1586's first item, the same here).
-                var settings = HeronConfig.Load();
+                // client ignores them, so the protocol version stands.
                 var settingsFile = HeronConfig.FilePath;
                 return Json.Ok(
                     Json.Num("pid", _identity.ProcessId),
@@ -712,16 +711,29 @@ namespace Heron.Bridge
                     // it, as a field that could be SENT to skip the question.
                     // This one is only ever answered.
                     Json.Bool("askToKeep", HeronPermissions.AsksBeforeKeeping()),
-                    // Q-70: the file this Revit decides by, whether it was
-                    // there, and Changes, Admin and Publish as it holds them.
-                    // Named for the switches as Revit shows them, never for
-                    // their settings keys, for the reason askToKeep is.
+                    // Q-70: the file this Revit reads its settings from, and
+                    // whether it was there - the settings D-166 left in it.
                     Json.Str("settingsFile", settingsFile),
                     Json.Bool("settingsFileFound", File.Exists(settingsFile)),
-                    "\"switches\": " + Json.Obj(
-                        Json.Bool("changes", settings.GetBool(HeronPermissions.WriteEnabledKey, false)),
-                        Json.Bool("admin", settings.GetBool(HeronPermissions.AdminEnabledKey, false)),
-                        Json.Bool("publish", settings.GetBool(HeronPermissions.PublishEnabledKey, false))));
+                    // CHANGES, ADMIN AND PUBLISH, AS THIS REVIT HOLDS THEM
+                    // (D-166). Held in memory since 2026-11-16, not in
+                    // heron.config, so a chat cannot learn them from the file
+                    // any more - and on a PC whose Claude keeps a private copy
+                    // of the settings folder it never could (Q-70). Said for
+                    // the chat's health report to show, NEVER set from here:
+                    // this file reads no such field off a request, and the
+                    // gate looks at the switches again for itself. Optional
+                    // fields, like askToKeep: a client that does not know them
+                    // ignores them, so the protocol version stands.
+                    Json.Bool("changes", switches.Changes),
+                    Json.Bool("admin", switches.Admin),
+                    Json.Bool("publish", switches.Publish),
+                    // AND WHICH THE ADMINISTRATOR'S CEILING HOLDS OFF (D-166
+                    // layer 3), so a chat can say "ask the PC's administrator"
+                    // rather than "turn it on in Settings", which would not work.
+                    Json.Bool("changesLocked", switches.ChangesLocked),
+                    Json.Bool("adminLocked", switches.AdminLocked),
+                    Json.Bool("publishLocked", switches.PublishLocked));
             }
 
             // HANDING IT BACK, WHICH IS THE HALF THAT WAS MISSING.

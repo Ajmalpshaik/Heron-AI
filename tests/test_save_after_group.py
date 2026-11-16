@@ -206,8 +206,12 @@ def addin_section():
                         ("else if (!kept && !rollbackHeld)",
                          "nothing after a preview whose rollback did not hold"),
                         ("else if (!sendsOut)", "nothing unless the job is a Publish job"),
-                        ("HeronRunPolicy.Withdrawn(risk, HeronConfig.Load()",
-                         "and the switches are read again just before the save")):
+                        # The switches as this Revit holds them (D-166): read
+                        # from heron.config until the merge that brought D-166
+                        # in, which the switches left that day.
+                        ("HeronRunPolicy.Withdrawn(risk, HeronPermissions.Switches()",
+                         "and the switches are read again just before the save, as "
+                         "this Revit holds them")):
         where = at(save_code, guard)
         check(0 <= where < first_save, "%s - checked before any save" % what)
     check(re.search(r"if\s*\(\s*!kept\s*\)", save_code) is None,

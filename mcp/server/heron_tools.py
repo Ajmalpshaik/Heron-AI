@@ -158,8 +158,9 @@ TOOLS = {
     # shape of risk and is why it is stated separately here rather than folded
     # in beside the move.
     #
-    # What stands between it and the model is `write.enabled` - the owner's
-    # ribbon switch - checked by HeronPermissions inside the add-in, not here.
+    # What stands between it and the model is Changes - the owner's switch in
+    # Heron's Settings, held in Revit's memory since D-166 - checked by
+    # HeronPermissions inside the add-in, not here.
     # The gate lives on the far side of the pipe on purpose: a client deciding
     # its own permission is not a permission.
     #

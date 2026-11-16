@@ -2925,7 +2925,7 @@ namespace Heron.Revit.Addin
         private static string WhyNotKept(string name, HeronRisk risk)
         {
             var stopped = HeronStop.IsStopped;
-            var why = HeronRunPolicy.Withdrawn(risk, HeronConfig.Load(), stopped);
+            var why = HeronRunPolicy.Withdrawn(risk, HeronPermissions.Switches(), stopped);
             if (why == null) return null;
             return HeronRunPolicy.WithdrawnRefusal(name, why, stopped && risk >= HeronRisk.Modify, null);
         }

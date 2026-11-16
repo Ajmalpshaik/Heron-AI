@@ -151,8 +151,9 @@ CASES = [
     {
         "id": "G-08",
         "capability": "The write gate",
-        "request": "With write.enabled false, ask to move ducts",
-        "expected": "Refused, naming write.enabled and the config file. Nothing sent to Revit.",
+        "request": "With Changes off, ask to move ducts",
+        "expected": "Refused, naming Changes in Heron's Settings in Revit - and no file, "
+                    "since D-166. Nothing sent to Revit.",
         "status": PENDING,
         "revit": [],
         "proven_on": None,

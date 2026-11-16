@@ -53,11 +53,12 @@ DEFAULTS = {
     # The extra wait for a job that has put a Keep or Discard box up: a DRAFT's
     # one run (D-119), or a keep from a chat while the owner asks (D-126).
     "revit.askTimeoutSeconds": "300",
-    "write.enabled": "false",
-    # The two switches above Changes (D-106): each lets one more level
-    # through, and only while write.enabled is on as well.
-    "admin.enabled": "false",
-    "publish.enabled": "false",
+    # NOT HERE SINCE D-166 (2026-11-16): write.enabled, admin.enabled and
+    # publish.enabled. Changes, Admin and Publish are held in Revit's memory,
+    # set only in Heron's Settings window and off whenever Revit starts, and
+    # this side learns them from the add-in's `info` reply -
+    # heron_bridge_client.switches_state - never from this file. Left out of
+    # the closed set on both sides, so a line naming one is ignored.
     # D-126: Revit asks the modeller Keep or Discard before a change is kept.
     # Off by default since D-138 (the owner, 2026-10-18); the ribbon's Ask to
     # Keep turns it on. Read by the add-in; this side reads it only to know
@@ -320,27 +321,21 @@ def try_once_timeout(values=None):
     return fragment_timeout(values) + ask_timeout(values)
 
 
-def writing_enabled(values=None):
-    """Whether the add-in will permit a change to the model (D-19)."""
-    values = load() if values is None else values
-    return truthy(values, "write.enabled")
-
-
 def switches(values=None):
     """
-    The owner's four switches as THIS SIDE'S copy of the file says them -
-    Changes, Admin, Publish and Ask to Keep - named as `info` names them.
+    The owner's switches as THIS SIDE'S copy of the file says them, named as
+    `info` names them - since D-166 only Ask to Keep. Changes, Admin and
+    Publish left the file that day: Revit holds them in memory, and the add-in
+    says them (heron_bridge_client.switches_state). Q-70 first had all four
+    here; the three are not put back.
 
     FOR COMPARING, NEVER FOR SAYING (Q-70). revit_health states what each
     Revit said of its own, and sets this beside it only to say when the
-    chat's copy differs; on a PC whose Claude app keeps a private copy of
-    the settings folder this is not the file Revit decides by.
+    chat's copy is not the file that Revit reads; on a PC whose Claude app
+    keeps a private copy of the settings folder this is not that file.
     """
     values = load() if values is None else values
-    return {"changes": writing_enabled(values),
-            "admin": truthy(values, "admin.enabled"),
-            "publish": truthy(values, "publish.enabled"),
-            "ask_to_keep": asks_before_keeping(values)}
+    return {"ask_to_keep": asks_before_keeping(values)}
 
 
 def problems(values=None):

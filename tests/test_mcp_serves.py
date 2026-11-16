@@ -79,11 +79,11 @@ WHAT IT PROVES, when an SDK is installed
      "failed" for a lost answer and revit_busy, and "ok" for a good reply
      from a model whose very name says Failed; revit_edit_table hands back
      the label revit_read gave the answer it hands back. AND revit_health
-     STATES EACH REVIT'S OWN SWITCHES (Q-70): four stand-in add-ins - the
-     chat's own file, one name with a differing value, a differing path, an
-     older add-in - each with its line, one more where the chat's copy
-     differs, the write gate Revit's, and the chat's copy used only when no
-     Revit said.
+     STATES EACH REVIT'S OWN SWITCHES AND SETTINGS FILE (Q-70, D-166): four
+     stand-in add-ins - the chat's own file, one name with a differing Ask
+     to Keep, a differing path, an older add-in - each with its lines, one
+     more where the chat's copy is not that file, the write gate Revit's,
+     and a chat's copy saying write.enabled = true moving nothing.
  13. THE SHORT CHANGE REPORT, THROUGH THE REAL TOOL (row 5b-407). Two kept
      changes in one batch: the first prints the KEPT paragraph whole and
      every value, the second the add-in's one sentence - the undo rule
@@ -154,10 +154,11 @@ WHAT IT PROVES, when an SDK is installed
      known; the Changes switch off, and with Changes on the Admin switch;
      no Revit with the Heron button on; and nothing in the way, with an
      address-book entry for Revit 2024 - which is left out, and the answer
-     not AVAILABLE, once its process is gone. Where revit_health found that
-     Revit's settings file is not this PC's, it judges by what that Revit
-     said, and says when (Q-70). Off Windows it says no Revit
-     is here and judges no switch. Through all of it discover() is never
+     not AVAILABLE, once its process is gone. It judges the switches by what
+     that Revit last told revit_health, and says when (Q-70); with no word,
+     as off, the way every Revit starts, and says so - never by this PC's
+     heron.config, which holds no switch since D-166. Off Windows it says no
+     Revit is here and judges no switch. Through all of it discover() is never
      called and no session is sent a request, the address book is left as
      it was, and a capability nobody provides is not noted as wanted.
 
@@ -2319,16 +2320,27 @@ async def exercise_change_report(module):
 
 async def settings_said_by_each_revit(module, server, Says):
     """
-    Section 11, continued - Q-70 (decided 2026-11-15): revit_health states the
-    switches as each Revit has them, from the file it decides by, and says in
-    one line when this chat's own copy differs. Four stand-in add-ins: the SAME
-    FILE as the chat's, the same name with a DIFFERING VALUE (the laptop's
-    case: one name, two files), a DIFFERING PATH, and an OLDER add-in that
-    sends no settings. The lines themselves are tests/test_config_and_health.py's.
+    Section 11, continued - Q-70 (decided 2026-11-15) and D-166: revit_health
+    states Changes, Admin and Publish as each Revit holds them, names the
+    settings file each reads, and says in one line when this chat's own copy is
+    not that file. Four stand-in add-ins: the SAME FILE as the chat's, the same
+    name with a DIFFERING VALUE (the laptop's case: one name, two files), a
+    DIFFERING PATH, and an OLDER add-in that sends neither switches nor a file.
+    The lines themselves are tests/test_config_and_health.py's.
+
+    CHANGED DELIBERATELY IN THE MERGE THAT BROUGHT D-166 IN (2026-11-16). Q-70
+    was built with each Revit's switches read from the file it named, and this
+    section held that - the chat's copy of Changes compared with Revit's, and
+    the chat's copy deciding the write gate where no Revit said. D-166 holds
+    the three in Revit's memory and in no file, so the differing value here is
+    Ask to Keep, the one switch left in the file; the switches are each
+    Revit's `changes`, `admin` and `publish` fields; and a chat's copy that
+    says `write.enabled = true` is shown to change NOTHING - the negative case
+    D-166 asks for, on this side.
     """
     print()
-    print("  revit_health: the switches as each Revit has them, and the chat's copy "
-          "compared (Q-70)")
+    print("  revit_health: the switches as each Revit holds them, its settings file, and "
+          "the chat's copy compared (Q-70, D-166)")
     home = tempfile.mkdtemp(prefix="heron-q70-")
     mine = os.path.join(home, "heron.config")
     elsewhere = "D:\\Elsewhere\\Heron\\config\\heron.config"
@@ -2342,13 +2354,16 @@ async def settings_said_by_each_revit(module, server, Says):
         heard = {}
 
     def chat_copy(changes):
+        # A switch line D-166 makes inert, on purpose: the chat's copy turning
+        # Changes on must move nothing revit_health says.
         with io.open(mine, "w", encoding="utf-8") as fh:
             fh.write("write.enabled = %s\nadmin.enabled = false\npublish.enabled = false\n"
                      "write.askBeforeKeeping = false\n" % ("true" if changes else "false"))
 
-    def told(path, changes=False):
-        return {"askToKeep": False, "settingsFile": path, "settingsFileFound": True,
-                "switches": {"changes": changes, "admin": False, "publish": False}}
+    def told(path, changes=False, asks=False):
+        return {"askToKeep": asks, "settingsFile": path, "settingsFileFound": True,
+                "changes": changes, "admin": False, "publish": False,
+                "changesLocked": False, "adminLocked": False, "publishLocked": False}
 
     async def health_of(*revits):
         module.binding.forget()
@@ -2374,57 +2389,70 @@ async def settings_said_by_each_revit(module, server, Says):
         return listed[found:] if found is not None else ["(session %s is not listed)" % pid]
 
     alike = Says(5101, "2024", told(mine))
-    valued = Says(5102, "2025", told(mine, changes=True))
+    valued = Says(5102, "2025", told(mine, changes=True, asks=True))
     pathed = Says(5103, "2026", told(elsewhere))
     older = Says(5104, "2020", {"askToKeep": False})
     try:
         chat_copy(False)
         said = await health_of(alike, valued, pathed, older)
         same, value, path, old = (under(said, p) for p in (5101, 5102, 5103, 5104))
-        check(len(same) == 2 and "Switches in this Revit: Changes off" in same[1]
-              and mine in same[1],
-              "revit_health: the SAME FILE - this Revit's switches and the file it decides "
-              "by, under its Ask to Keep line, and no second line - found %r" % (same,))
-        check(len(value) == 3 and "Changes on" in value[1] and mine in value[2]
+        check(len(same) == 2 and "Changes off, Admin off, Publish off" in same[1]
+              and "heron.config" not in " ".join(same),
+              "revit_health: the SAME FILE - under its Ask to Keep line, this Revit's "
+              "switches as it holds them, and no line naming a file (D-166) - found %r"
+              % (same,))
+        check(len(value) == 3 and "Changes ON" in value[1] and mine in value[2]
               and "both are named" in value[2]
-              and "Changes (this Revit: on, this chat's: off)" in value[2],
-              "revit_health: a DIFFERING VALUE under one name - Changes as this Revit has "
-              "it, and one line naming the file and the switch that differs - found %r"
+              and "Ask to Keep (this Revit: on, this chat's: off)" in value[2],
+              "revit_health: a DIFFERING VALUE under one name - Ask to Keep, the switch "
+              "D-166 left in the file - and Changes as this Revit holds it - found %r"
               % (value[1:],))
-        check(len(path) == 3 and elsewhere in path[1] and mine in path[2]
-              and elsewhere in path[2],
+        check(len(path) == 3 and mine in path[2] and elsewhere in path[2],
               "revit_health: a DIFFERING PATH - one line naming both files - found %r"
               % (path[1:],))
-        check(len(old) == 2 and "does not report its settings" in old[1]
-              and "Switches in this Revit" not in old[1],
+        check(len(old) == 3 and "does not report them" in old[1]
+              and "does not report its settings file" in old[2],
               "revit_health: an OLDER add-in - its Ask to Keep line as before, and one "
-              "line saying it did not report its settings - found %r" % (old,))
-        check("write.enabled is TRUE (in Revit 2025, session 5102, as that Revit has it)"
-              in said,
+              "line each saying it did not report its switches or its file - found %r"
+              % (old,))
+        check("Changes is ON in Revit 2025, session 5102, as that Revit has it" in said,
               "revit_health: the write gate is Revit's - Changes on in one of them warns, "
-              "naming it, while this chat's own copy says off")
-        check(said.count("Ask to Keep") == 4,
-              "revit_health: Ask to Keep is said once per Revit and never in a switches "
-              "line where it agrees - found %d" % said.count("Ask to Keep"))
+              "naming it")
+        check(said.count("Ask to Keep") == 5,
+              "revit_health: Ask to Keep is said once per Revit, and once more only where "
+              "it differs - found %d" % said.count("Ask to Keep"))
+        files = [line for line in same + value + path
+                 if line.strip().startswith(("Settings file:", "This chat"))]
+        check(len(files) == 2 and not any(
+                  word in line for line in files
+                  for word in ("Changes on", "Changes off", "Changes ON",
+                               "decides every change by")),
+              "revit_health: no settings-file line says a switch or that the file decides "
+              "a change (D-166) - %d such lines" % len(files))
         check(heard.get(5101, {}).get("differs") is False
               and heard.get(5102, {}).get("differs") is True
               and heard.get(5103, {}).get("differs") is True
+              and (heard.get(5102, {}).get("switches") or {}).get("changes") is True
               and 5104 not in heard,
-              "revit_health: what each said is kept for heron_why, with whether this "
-              "chat's copy differed - and nothing for an older add-in")
+              "revit_health: what each said is kept for heron_why - its switches, and "
+              "whether this chat's copy was another file - and nothing for an older add-in")
 
         chat_copy(True)
         reverse = await health_of(alike)
-        check("write.enabled is TRUE" not in reverse
-              and "Changes (this Revit: off, this chat's: on)" in reverse,
-              "revit_health: this chat's copy has Changes on and the Revit has it off - no "
-              "write-gate warning, and the copy's difference is said")
+        # The write gate is HEALTHY, so the rollup folds it into "Every
+        # component healthy." - what is held is that it is NOT the warning.
+        check("Changes is ON" not in reverse and "Heron: HEALTHY" in reverse
+              and "This chat" not in reverse,
+              "revit_health: this chat's copy says write.enabled = true and the Revit holds "
+              "Changes off - closed, by the Revit's word, and the copy's line moves nothing "
+              "(D-166)")
 
         aged = await health_of(older)
-        check("write.enabled is TRUE, so Heron" in aged
-              and "does not report its settings" in aged and "(in Revit" not in aged,
-              "revit_health: with only an older add-in connected the write gate is this "
-              "chat's own copy, as it was, and the Revit's line says it did not report")
+        check("Changes is ON" not in aged and "Heron: HEALTHY" in aged
+              and "does not report its settings file" in aged and "(in Revit" not in aged,
+              "revit_health: with only an older add-in connected, no Revit said, and the "
+              "write gate is not the warning - never this chat's copy, whose "
+              "write.enabled = true moves nothing since D-166")
     finally:
         module.bridge.discover = real_discover
         module.binding.forget()
@@ -3628,6 +3656,12 @@ async def exercise_why(module):
             store.close()
 
     try:
+        # THIS PC'S heron.config, WRITTEN AND IGNORED (D-166). Until the merge
+        # that brought D-166 in, this section turned Changes on by writing
+        # `write.enabled = true` here, and heron_why judged by it. The three
+        # switches are held in each Revit's memory since then, so the file is
+        # written only to show it moves nothing; what a Revit said is put in
+        # place as revit_health leaves it, below. Changed on purpose.
         switches()
         nothing = await why("NOTHING_PROVIDES_THIS_F1")
         check("reason    NO_PROVIDER" in nothing
@@ -3649,14 +3683,16 @@ async def exercise_why(module):
 
         closed = await why("CREATE_TOPOSOLID", "2024")
         check("reason    BLOCKED_BY_TRUST" in closed and "Changes is off" in closed
-              and "Heron's Settings in Revit" in closed,
-              "a change with the Changes switch off: names the switch and where it is")
+              and "Heron's Settings in Revit" in closed
+              and "assumed, not said" in closed,
+              "a change with no Revit's word on Changes: judged off, the way every Revit "
+              "starts, said to be assumed, and names the switch and where it is")
 
         switches(write=True)
-        admin = await why("ACQUIRE_COORDINATES", "2024")
-        check("reason    BLOCKED_BY_TRUST" in admin and "Admin is off" in admin
-              and "Changes is off" not in admin,
-              "with Changes on, an Admin change names the Admin switch (D-106)")
+        inert = await why("CREATE_TOPOSOLID", "2024")
+        check("reason    BLOCKED_BY_TRUST" in inert and "Changes is off" in inert,
+              "this PC's heron.config saying write.enabled = true turns nothing on - "
+              "D-166's negative case, on this side")
 
         idle = await why("SET_SELECTION", "2024")
         check("reason    NEEDS_REVIT" in idle and "Heron > AI Bridge > Heron" in idle
@@ -3672,61 +3708,62 @@ async def exercise_why(module):
               and "2024 (session 4242) with the Heron button on" in ready,
               "with Revit 2024 in the address book nothing stands in the way, and "
               "the answer says the release came from that note")
-        held = await why("ADD_AREA_BASED_LOAD")
-        check("reason    AVAILABLE" in held and "Not proved yet" in held
-              and "D-117" in held,
-              "a DRAFT change with nothing else in the way still says revit_change "
-              "keeps nothing unproved (D-117)")
 
-        # WHAT REVIT SAID, WHEN revit_health FOUND ITS FILE IS NOT THIS PC'S
-        # (Q-70). Remembered by revit_health, never asked here - so the record
-        # is put in place as revit_health leaves it, and `asked` stays empty.
+        # WHAT REVIT SAID (Q-70, D-166). Remembered by revit_health, never
+        # asked here - so the record is put in place as revit_health leaves
+        # it, and `asked` stays empty.
         heard = getattr(module, "_SETTINGS_HEARD", None)
         check(isinstance(heard, dict),
               "heron_why can read what revit_health last heard from each Revit")
         if not isinstance(heard, dict):
             heard = {}
         revit_file = "C:\\Users\\Owner\\AppData\\Roaming\\Heron\\config\\heron.config"
-        believed = refused = fresh = unheard = ""
+        admin = held = believed = refused = unheard = ""
 
-        def heard_from(minutes, differs, changes):
-            heard[4242] = {"said": {"file": revit_file, "found": True, "changes": changes,
-                                    "admin": False, "publish": False},
-                           "differs": differs, "at": module.time.monotonic() - minutes * 60,
+        def heard_from(minutes, changes, admin=False):
+            heard[4242] = {"switches": {"changes": changes, "admin": admin,
+                                        "publish": False, "locked": []},
+                           "file": {"file": revit_file, "found": True},
+                           "differs": False, "at": module.time.monotonic() - minutes * 60,
                            "pid": 4242, "release": "2024"}
 
         try:
             switches()
-            heard_from(3, True, True)
+            heard_from(3, True)
+            admin = await why("ACQUIRE_COORDINATES", "2024")
+            check("reason    BLOCKED_BY_TRUST" in admin and "Admin is off" in admin
+                  and "Changes is off" not in admin,
+                  "with Changes on in Revit 2024, an Admin change names the Admin switch "
+                  "(D-106)")
+            held = await why("ADD_AREA_BASED_LOAD")
+            check("reason    AVAILABLE" in held and "Not proved yet" in held
+                  and "D-117" in held,
+                  "a DRAFT change with nothing else in the way still says revit_change "
+                  "keeps nothing unproved (D-117)")
             believed = await why("CREATE_TOPOSOLID")
             check("reason    BLOCKED_BY_TRUST" not in believed
-                  and "as Revit 2024 (session 4242) said it has them" in believed
-                  and "3 minutes ago" in believed and revit_file in believed
-                  and settings in believed and "differs" in believed,
-                  "this PC's file says Changes off and Revit 2024 said on, its file not "
-                  "this PC's: judged by what Revit said, and when, naming both files")
+                  and "as Revit 2024 (session 4242) said it holds them" in believed
+                  and "3 minutes ago" in believed and settings not in believed,
+                  "this PC's file says nothing of Changes and Revit 2024 said on: judged by "
+                  "what Revit said, and when - and no file is named for a switch")
             switches(write=True)
-            heard_from(3, True, False)
+            heard_from(0, False)
             refused = await why("CREATE_TOPOSOLID")
             check("reason    BLOCKED_BY_TRUST" in refused and "Changes is off" in refused
                   and "Revit 2024 (session 4242) said it has" in refused
-                  and "Revit is right" in refused,
-                  "the reverse - this PC's file on, Revit said off: refused, and the "
-                  "sentence says it was Revit's word, not this PC's file")
-            heard_from(0, False, False)
-            fresh = await why("CREATE_TOPOSOLID")
-            check("reason    BLOCKED_BY_TRUST" not in fresh
-                  and "named a file of that name, with the same switches" in fresh
-                  and "just now" in fresh,
-                  "a Revit whose file revit_health found alike: this PC's file is read "
-                  "fresh, so a switch pressed since is seen")
+                  and "Revit is right" in refused and "just now" in refused,
+                  "the reverse - this PC's file says write.enabled = true, Revit said off: "
+                  "refused, and the sentence says it was Revit's word")
             heard.pop(4242, None)
             unheard = await why("CREATE_TOPOSOLID")
-            check("revit_health asks Revit what it has" in unheard and settings in unheard,
-                  "nothing heard: this PC's file, named, and where to ask Revit")
+            check("reason    BLOCKED_BY_TRUST" in unheard
+                  and "revit_health asks it" in unheard and "assumed, not said" in unheard
+                  and settings not in unheard,
+                  "nothing heard: judged off and said to be assumed, where to ask Revit, and "
+                  "this PC's file not named - it holds no switch (D-166)")
         finally:
             heard.pop(4242, None)
-            switches(write=True)
+            switches()
 
         alive["pid"] = False
         gone = await why("SET_SELECTION")
@@ -3753,8 +3790,8 @@ async def exercise_why(module):
         check(not asked,
               "through all of it discover() was never called and no Revit was sent "
               "a request - found %r" % (asked[:4],))
-        everything = [nothing, old, blind, closed, admin, idle, ready, held, gone,
-                      away, change, believed, refused, fresh, unheard]
+        everything = [nothing, old, blind, closed, inert, admin, idle, ready, held,
+                      gone, away, change, believed, refused, unheard]
         check(all(answer.rstrip().endswith("Nothing was sent to Revit.")
                   for answer in everything),
               "and every answer says nothing was sent to Revit")

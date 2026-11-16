@@ -438,20 +438,22 @@ namespace Heron.Revit.Addin
                 return Json.Error("stopped", HeronStop.Message);
             }
 
-            // 3. THE PERMISSION LEVEL - the three switches, read ONCE.
+            // 3. THE PERMISSION LEVEL - the three switches, looked at ONCE.
             //
-            // One load of heron.config answers whether, why and which switch,
-            // so the owner clicking Admin between two reads cannot produce a
-            // refusal that names a switch he had just turned on. Nothing is
-            // read at all for a level at or below the read-only ceiling,
-            // which is what Allows() has always done.
+            // One snapshot answers whether, why and which switch, so the owner
+            // clicking Admin between two looks cannot produce a refusal that
+            // names a switch he had just turned on. Nothing is looked at for
+            // a level at or below the read-only ceiling, which is what
+            // Allows() has always done. Since D-166 the switches are held in
+            // this Revit's memory, set only from Heron's Settings window, and
+            // heron.config is not read for them at all.
             if (risk > HeronPermissions.ReadOnlyCeiling)
             {
-                var config = HeronConfig.Load();
-                var refusedBy = HeronPermissions.RefusedBy(risk, config);
+                var switches = HeronPermissions.Switches();
+                var refusedBy = HeronPermissions.RefusedBy(risk, switches);
                 if (refusedBy != null)
                 {
-                    var denied = HeronPermissions.Explain(risk, config, HeronConfig.FilePath);
+                    var denied = HeronPermissions.Explain(risk, switches);
 
                     // WHICH SWITCH, IN THE CODE AS WELL AS THE WORDS. The chat
                     // reads the sentence; the banner over Revit has room for

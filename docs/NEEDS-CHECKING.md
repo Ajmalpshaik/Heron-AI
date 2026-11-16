@@ -1542,6 +1542,14 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-oa.md`](needs-checking/group-oa.md)
 
+## Group OB - Changes, Admin and Publish held in Revit, off at every start, and never turned on by a file: D-166 layers 1 and 2 (2026-11-16)
+
+**Its own file:** [`needs-checking/group-ob.md`](needs-checking/group-ob.md)
+
+## Group OF - a proof records which Heron add-in and which Revit build it was taken on, and says so when either moves: `built_on:` (2026-11-16)
+
+**Its own file:** [`needs-checking/group-of.md`](needs-checking/group-of.md)
+
 ## Group OG - a wall's top shaped to the roof above it by editing its profile, on Revit 2022 to 2024, doors and windows kept, a sketch that does not follow the roof: `SHAPE_WALL_TOPS_TO_ROOF` (2026-11-16)
 
 **Its own file:** [`needs-checking/group-og.md`](needs-checking/group-og.md)

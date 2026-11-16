@@ -111,9 +111,9 @@ def assess(live=None, starting=None, mismatched=None, config_problems=None,
     without a config file - which is the only way it was ever going to be
     tested at all on the machine it was written on.
 
-    `writing_said_by` names who said `writing` when a Revit did (Q-70) - the
+    `writing_said_by` names the Revits whose word `writing` is (Q-70) - the
     words writing_said_by() below gives. None leaves the write gate's words
-    exactly as they were: the caller's own settings file.
+    as D-166 has them: "a connected Revit", or no Revit's word at all.
     """
     live = live or []
     starting = starting or []
@@ -183,19 +183,30 @@ def assess(live=None, starting=None, mismatched=None, config_problems=None,
             % ("" if protocol_version is None else " on protocol %s" % protocol_version)))
 
     # --- can Heron change the model right now? ----------------------------
-    said = " (%s)" % writing_said_by if writing_said_by else ""
-    if writing:
+    # SINCE D-166 EACH REVIT HOLDS ITS OWN, so `writing` is what the Revits
+    # that answered said - True if Changes is on in any of them, False if it
+    # is off in all - and None when no Revit said, which is never "off": off
+    # is the default, and a default is not an answer. When the caller names
+    # those Revits (Q-70, writing_said_by below), the line names them too.
+    if writing is True:
         components.append(Component(
             "write gate", WARNING,
-            "write.enabled is TRUE%s, so Heron is permitted to change the model. Its move "
-            "was measured once, in Revit 2024 on free ducts - D3 in NEEDS-CHECKING.md - and "
-            "nothing else it can change has been measured that way; whether writing should "
-            "be on is still the owner's decision (D-19) - set it back to false unless you "
-            "are deliberately testing it" % said))
+            "Changes is ON %s, so Heron is permitted to change its "
+            "model. Its move was measured once, in Revit 2024 on free ducts - D3 in "
+            "NEEDS-CHECKING.md - and nothing else it can change has been measured that "
+            "way; whether writing should be on is still the owner's decision (D-19) - "
+            "turn it off in Heron's Settings unless you are deliberately testing it"
+            % (writing_said_by or "in a connected Revit")))
+    elif writing is False:
+        components.append(Component(
+            "write gate", HEALTHY,
+            "closed%s - Heron cannot change the model"
+            % (" (%s)" % writing_said_by if writing_said_by else "")))
     else:
         components.append(Component(
             "write gate", HEALTHY,
-            "closed%s - Heron cannot change the model" % said))
+            "held in each Revit, off whenever it starts - turned on only in Heron's "
+            "Settings in Revit (D-166); no connected Revit said which way it is set"))
 
     return Health(components)
 
@@ -268,6 +279,45 @@ ASK_TO_KEEP_NOT_READ = (
     "Heron > AI Bridge > Settings.")
 
 
+# What switches_line says for each answer heron_bridge_client.switches_state
+# can give. The word for an older add-in is the client's, held to one spelling.
+SWITCHES_NOT_SENT = "not sent"
+SWITCHES_OLDER = (
+    "Changes, Admin and Publish: this Revit's Heron add-in is older than this chat's "
+    "and does not report them - it still reads them from heron.config. Look in Revit, "
+    "under Heron > AI Bridge > Settings, and update that add-in.")
+SWITCHES_NOT_READ = (
+    "Changes, Admin and Publish: Heron could not read them from this Revit just now. "
+    "Ask again, or look in Revit, under Heron > AI Bridge > Settings.")
+
+
+def switches_line(state):
+    """
+    The line for what one Revit said of Changes, Admin and Publish (D-166) -
+    what heron_bridge_client.switches_state returned. Only the modeller turns
+    one on, in Heron's Settings in Revit, and the line says so: the reader is
+    often the AI, and it must learn where the switch is, not how to flip it.
+    """
+    if isinstance(state, dict) and all(state.get(k) is True or state.get(k) is False
+                                       for k in ("changes", "admin", "publish")):
+        said = ", ".join("%s %s" % (name, "ON" if state[key] else "off")
+                         for name, key in (("Changes", "changes"), ("Admin", "admin"),
+                                           ("Publish", "publish")))
+        line = ("%s in this Revit right now. Only the modeller turns one on, in Heron's "
+                "Settings in Revit (Heron > AI Bridge > Settings), and all three are off "
+                "again whenever Revit starts." % said)
+        locked = [name for name, key in (("Changes", "changes"), ("Admin", "admin"),
+                                         ("Publish", "publish"))
+                  if key in (state.get("locked") or [])]
+        if locked:
+            line += (" Held off on this PC by a Windows policy, so Settings cannot turn "
+                     "them on - only the PC's administrator can lift it: %s." % ", ".join(locked))
+        return line
+    if isinstance(state, str) and state == SWITCHES_NOT_SENT:
+        return SWITCHES_OLDER
+    return SWITCHES_NOT_READ
+
+
 def ask_to_keep_line(asks):
     """
     The line for what one Revit said of its Ask to Keep switch - what
@@ -287,44 +337,45 @@ def ask_to_keep_line(asks):
     return ASK_TO_KEEP_NOT_READ
 
 
-# WHICH SETTINGS FILE A REVIT DECIDES BY, ITS SWITCHES, AND WHETHER THIS CHAT'S
-# COPY SAYS THE SAME - Q-70, decided 2026-11-15 on the owner's delegation.
+# WHICH SETTINGS FILE A REVIT READS, AND WHETHER THIS CHAT'S COPY IS THE SAME -
+# Q-70, decided 2026-11-15 on the owner's delegation, narrowed by D-166.
 #
 # On a PC whose Claude app is a packaged app, Windows keeps a private copy of
 # the Heron folder for the app and everything it starts, so there are two
 # heron.config files: the chat reads the copy, and a Revit the owner started
-# reads the real one. Revit decides every change by its own (HeronPermissions
-# loads it on every call), so it is the one to believe. The add-in's `info`
-# says the file it read and Changes, Admin and Publish as it holds them
-# (heron_bridge_client.settings_state); revit_health prints the first line
-# below under each connected Revit, and a second when this chat's own copy
-# differs - by its name, or by a switch, Ask to Keep included.
+# reads the real one. The add-in's `info` names the file it reads
+# (heron_bridge_client.settings_state), and revit_health prints the line below
+# under a connected Revit only when this chat's own copy is not that file - by
+# its name, by a file found on one side only, or by Ask to Keep.
+#
+# NOT CHANGES, ADMIN OR PUBLISH. Q-70 first stated those three here, on a line
+# printed under every Revit as read from the file it named, and compared the
+# chat's copy of them with Revit's. Since D-166 (2026-11-16) Revit holds them
+# in memory, set only in Heron's Settings and off whenever it starts, and no
+# file decides them - so switches_line above states them, from Revit's own
+# word, no message about them names the file, and nothing here compares or
+# mentions them. What is left in the file - Ask to Keep, the Companion, the
+# waiting times - is what this compares, and with one file there is nothing
+# to say.
 #
 # THE SAME NAME CAN BE TWO FILES. Measured on the owner's laptop on 2026-11-14
 # (NEEDS-CHECKING NP6): from the chat's shell the real path, spelled in full,
 # reads the app's copy. So a name that matches proves nothing on such a PC,
-# and the second line is said too when the names match and a switch does not,
-# or when one side found the file and the other did not.
+# and the second line is said too when the names match and Ask to Keep does
+# not, or when one side found the file and the other did not.
 #
 # NOT A COMPONENT, for ask_to_keep_line's reason: one line per Revit, and no
 # setting is a fault. The rollup's write gate takes Changes from the Revits
-# that said it, and writing_said_by() names them.
+# that said it (switches_line's answer), and writing_said_by() names them.
 SETTINGS_NOT_SENT = "not sent"
 
-# (the key in settings_state's answer, the switch's name as Revit shows it)
-SETTINGS_SWITCHES = (("changes", "Changes"), ("admin", "Admin"),
-                     ("publish", "Publish"))
-
 SETTINGS_OLDER = (
-    "Switches: this Revit's Heron does not report its settings - its Heron add-in "
-    "is older than this chat's, so which settings file it decides by, and its "
-    "Changes, Admin and Publish switches, cannot be said here. Look in Revit, under "
-    "Heron > AI Bridge > Settings.")
+    "Settings file: this Revit's Heron does not report its settings file - its "
+    "Heron add-in is older than this chat's, so whether this chat reads the same "
+    "file cannot be said here.")
 SETTINGS_NOT_READ = (
-    "Switches: Heron could not read this Revit's settings just now - it gave no "
-    "answer Heron could use. Ask again, or look in Revit, under Heron > AI Bridge > "
-    "Settings.")
-
+    "Settings file: Heron could not read which settings file this Revit reads just "
+    "now - it gave no answer Heron could use. Ask again.")
 
 def _on(value):
     return "on" if value else "off"
@@ -343,22 +394,21 @@ def settings_differ(said, asks, here_file, here_found, here):
     How this chat's own copy differs from what one Revit said: None when the
     Revit said nothing usable, else {"named_alike", "found_differs",
     "switches"}, where `switches` lists (name, this Revit's, this chat's) for
-    each that disagrees. Ask to Keep is compared only when `asks` is a real
-    true or false.
+    Ask to Keep when the two disagree - the one switch D-166 left in the file.
+    Ask to Keep is compared only when `asks` is a real true or false.
 
     said        what heron_bridge_client.settings_state returned
     asks        what heron_bridge_client.ask_to_keep_state returned
     here_file   this chat's own settings file, or None when it has none
     here_found  whether that file is there
-    here        heron_config.switches() of this chat's own copy
+    here        heron_config.switches() of this chat's own copy - since D-166
+                only Ask to Keep
     """
     if not isinstance(said, dict):
         return None
     here = here or {}
     named_alike = same_name(said.get("file"), here_file)
-    disagree = [(name, bool(said.get(key)), bool(here.get(key)))
-                for key, name in SETTINGS_SWITCHES
-                if bool(said.get(key)) != bool(here.get(key))]
+    disagree = []
     if isinstance(asks, bool) and asks != bool(here.get("ask_to_keep")):
         disagree.append(("Ask to Keep", asks, bool(here.get("ask_to_keep"))))
     return {"named_alike": named_alike,
@@ -373,7 +423,7 @@ def differs(found):
 
 
 def _disagreement(switches):
-    """"Changes (this Revit: on, this chat's: off) and Admin (...)"."""
+    """"Ask to Keep (this Revit: on, this chat's: off)"."""
     parts = ["%s (this Revit: %s, this chat's: %s)" % (name, _on(revit), _on(chat))
              for name, revit, chat in switches]
     return parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + " and " + parts[-1]
@@ -381,32 +431,29 @@ def _disagreement(switches):
 
 def settings_lines(said, asks, here_file, here_found, here):
     """
-    The line for what one Revit said of its settings, and a second when this
-    chat's own copy differs - each one line, in Revit's words; the arguments
-    are settings_differ's. An older add-in and an answer that could not be
-    read get one line each, and neither claims a switch or a file.
+    The line for one Revit when this chat's own copy is not the settings file
+    that Revit said it reads - one line, in Revit's words - and none when it is;
+    the arguments are settings_differ's. An older add-in and an answer that
+    could not be read get one line each, and neither claims a file.
+
+    NO LINE WHEN THE FILE IS ONE (D-166). Q-70 first printed a line under
+    every Revit - its switches, read just now from the file it named. D-166
+    took the switches out of the file, and switches_line says them; a file
+    line beside it in the ordinary case would be a message beside the switches
+    naming the file, which D-166's refusals and messages never do.
     """
     if isinstance(said, str) and said == SETTINGS_NOT_SENT:
         return [SETTINGS_OLDER]
     if not isinstance(said, dict):
         return [SETTINGS_NOT_READ]
 
-    named = ", ".join("%s %s" % (name, _on(said.get(key)))
-                      for key, name in SETTINGS_SWITCHES)
-    if said.get("found"):
-        first = ("Switches in this Revit: %s - read just now from %s, the file this "
-                 "Revit decides every change by." % (named, said["file"]))
-    else:
-        first = ("Switches in this Revit: %s - each at its default, because this Revit "
-                 "found no settings file at %s." % (named, said["file"]))
-
     found = settings_differ(said, asks, here_file, here_found, here)
     if not differs(found):
-        return [first]
+        return []
 
     chat = here_file or "no settings file of its own"
-    believe = ("This Revit decides by its own file, so the switches above are the ones "
-               "that count.")
+    believe = ("This Revit reads its own file, so its settings are the ones that "
+               "count.")
     if not found["named_alike"]:
         if found["switches"]:
             second = ("This chat's own settings file differs from this Revit's: this chat "
@@ -414,10 +461,10 @@ def settings_lines(said, asks, here_file, here_found, here):
                       % (chat, said["file"], _disagreement(found["switches"]), believe))
         else:
             second = ("This chat reads a different settings file from this Revit's: this "
-                      "chat reads %s, this Revit reads %s. The switches agree just now, but "
-                      "one pressed in this Revit is not seen in this chat's file. %s"
+                      "chat reads %s, this Revit reads %s, so a setting changed in this "
+                      "Revit is not seen in this chat's file. %s"
                       % (chat, said["file"], believe))
-        return [first, second]
+        return [second]
 
     two = ("so this chat's copy and this Revit's are two files - a Claude app that keeps "
            "its own copy of the Heron folder does this")
@@ -428,10 +475,10 @@ def settings_lines(said, asks, here_file, here_found, here):
     else:
         second = ("This chat's own copy of the settings file is not this Revit's, though "
                   "both are named %s: this Revit %s a file there and this chat %s, %s. "
-                  "The switches agree just now. %s"
+                  "%s"
                   % (said["file"], "found" if said.get("found") else "found no",
                      "found one" if here_found else "found none", two, believe))
-    return [first, second]
+    return [second]
 
 
 def writing_said_by(revits, writing):

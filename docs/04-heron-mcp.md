@@ -149,10 +149,12 @@ A DRAFT's one run is always asked. A publish is asked whenever *Ask to Keep* is 
 > `parameters-csv-round-trip`, `cad-to-mep`, `sheets-from-excel`, `reinforce-concrete`; this sentence said
 > *"not reworded yet"* until then - and still say to ask the modeller where the line could not say; any other
 > method that speaks of the switch is found with `grep -l "Ask to Keep" brain/skills/*.yaml`. Its write-gate line was read
-> from the server's own copy of the settings until 2026-11-16; since then ([Q-70](open-questions/tier-2.md), decided 2026-11-15)
-> `info` also carries `settingsFile`, `settingsFileFound` and `switches` (Changes, Admin, Publish), `revit_health`
-> prints them under each Revit with one more line when the chat's own copy differs, and the write gate is Changes as
-> the Revits that said have it - the chat's copy only when none did; not run in Revit, Group NP NP9 to NP14. Held without Revit by
+> from the server's own copy of the settings until 2026-11-16. Since then Changes, Admin and Publish are held in Revit's
+> memory and in no file ([D-166](decisions/D-166.md)): `info` carries them as `changes`, `admin` and `publish`, and,
+> after [Q-70](open-questions/tier-2.md) (decided 2026-11-15), `settingsFile` and `settingsFileFound` for the settings
+> still in the file. `revit_health` prints the switches under each Revit, and one more line only when the chat's own
+> copy is not that file ([row 5b-1836](fragment-issues/row-5b-1836.md)), and the write gate is Changes as the Revits that said have it - no answer when none did, never the chat's
+> copy; not run in Revit, Group NP NP9 to NP14. Held without Revit by
 > [`tests/test_ask_to_keep_health.py`](../tests/test_ask_to_keep_health.py); **built, not yet run in Revit**
 > ([Group NP](needs-checking/group-np.md)).
 
@@ -249,8 +251,9 @@ sense and was a decision with a human in it. [`PROPOSALS.md` F1](PROPOSALS.md) w
 the owner's delegation, not read back to him: **`heron_why`**, `READ` with no operation, served off Windows
 as well, hands the modeller the reason in Revit words and what to do about it. It asks Revit nothing — the
 release and whether a Revit is there come from the address book Revit writes when the Heron button is
-pressed, never a ping, and the switches from Heron's settings file on this PC — and says where each fact came
-from. Not run in Revit.
+pressed, never a ping, and the switches from what that Revit last told `revit_health`, since
+[D-166](decisions/D-166.md) holds them in Revit's memory and in no file (with no word, they are taken as off,
+the way every Revit starts, and it says so) — and says where each fact came from. Not run in Revit.
 
 ---
 

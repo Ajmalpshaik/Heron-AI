@@ -24,13 +24,13 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "Write|Edit|MultiEdit",
+        "matcher": "^(Write|Edit|MultiEdit|Bash|PowerShell)$|^mcp__.+__(write_file|edit_block|start_process|interact_with_process)$",
         "hooks": [
           {
             "type": "command",
             "command": "d=\"$(git rev-parse --show-toplevel 2>/dev/null)\"; [ -f \"$d/.claude/skills/heron-guard/bin/heron_guard.py\" ] || d=\"$CLAUDE_PROJECT_DIR\"; f=\"$d/.claude/skills/heron-guard/bin/heron_guard.py\"; if [ -f \"$f\" ]; then python \"$f\"; else echo \"Heron's boundary guard refused this edit: its script, .claude/skills/heron-guard/bin/heron_guard.py, was not found here, and the guard fails closed. Open the session in the Heron folder.\" >&2; exit 2; fi",
             "timeout": 30,
-            "statusMessage": "Checking the adapter boundary..."
+            "statusMessage": "Checking Heron's guard..."
           }
         ]
       },

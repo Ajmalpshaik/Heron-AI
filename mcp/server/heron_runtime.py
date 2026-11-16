@@ -24,8 +24,8 @@ planner is asking, because it is returned for reasons that are not alike:
 A planner given None can only say "I cannot". A planner given the REASON can
 say which, and the five sentences a modeller needs are different every time:
 "Heron has no fragment for that" is a gap, "not on Revit 2020" is a version
-answer, "press the Heron button" is an instruction, and "write.enabled is
-false" is a setting. Rolling five into one is how a platform comes to answer
+answer, "press the Heron button" is an instruction, and "Changes is off" is
+the modeller's switch. Rolling five into one is how a platform comes to answer
 every question with a shrug.
 
 WHY IT LOOKS LIKE heron_health.py
@@ -72,7 +72,7 @@ NEEDS_REVIT = "NEEDS_REVIT"
 # keep in step, and this repository has said so twice already.
 RISK_ORDER = ["READ", "ANALYZE", "SUGGEST", "EXECUTE", "MODIFY", "PUBLISH", "ADMIN"]
 
-# What the write gate actually gates. write.enabled false does not stop Heron
+# What the write gate actually gates. Changes off does not stop Heron
 # reading, analysing or selecting - it stops it CHANGING the model, and MODIFY
 # is where that line is drawn in heron_tools.py.
 CEILING_WITHOUT_WRITE = "EXECUTE"
@@ -81,10 +81,12 @@ CEILING_WITHOUT_WRITE = "EXECUTE"
 # through and nothing above it: PUBLISH and ADMIN each need the owner's own
 # switch for that level AS WELL, so neither is a higher ceiling - Admin on and
 # Publish off lets an Admin change through and not a Publish one, which no
-# single ceiling can say. Each level's switch, by the settings key the add-in
-# reads (HeronPermissions, mcp/client/heron_config.py).
+# single ceiling can say. Each level's switch, by the name it has in Heron's
+# Settings in Revit: by its settings key until D-166 (2026-11-16), which took
+# the three switches out of heron.config and into Revit's memory, so no
+# refusal names a key or a file any more.
 CEILING_WITH_WRITE = "MODIFY"
-SWITCHED_LEVELS = {"PUBLISH": "publish.enabled", "ADMIN": "admin.enabled"}
+SWITCHED_LEVELS = {"PUBLISH": "Publish", "ADMIN": "Admin"}
 
 
 def _rank(risk):
@@ -235,13 +237,18 @@ def _judge(name, rows, release, bridge, write_enabled, ceiling,
     decided = _worst_provider(rows)
     risk = decided.get("risk")
     if _rank(risk) > _rank(ceiling) and (risk or "").upper() not in above:
-        # WHICH SWITCH, BY ITS KEY. Changes first, because the two above it
-        # do nothing without it; then, with Changes on, the level's own.
+        # WHICH SWITCH, BY ITS NAME IN HERON'S SETTINGS, and that only the
+        # modeller turns it on there (D-166 - never a key, never a file).
+        # Changes first, because the two above it do nothing without it; then,
+        # with Changes on, the level's own.
         switch = ""
         if not write_enabled:
-            switch = " - write.enabled is false"
+            switch = " - Changes"
         elif derived and (risk or "").upper() in SWITCHED_LEVELS:
-            switch = " - %s is false" % SWITCHED_LEVELS[(risk or "").upper()]
+            switch = " - %s" % SWITCHED_LEVELS[(risk or "").upper()]
+        if switch:
+            switch += (" is off, and only the modeller turns it on, in Heron's "
+                       "Settings in Revit")
         return Capability(
             name, BLOCKED_BY_TRUST,
             "%s, and the ceiling here is %s%s" % (risk, ceiling, switch),
@@ -345,9 +352,10 @@ def in_revit_words(cap, rows=None, release=None, how=None, no_revit_here=False,
     no_revit_here  no Revit can be on this machine - it is not Windows (D-132)
     write_enabled  the Changes switch it was judged with
     said_by        the Revit whose word the switches were - "Revit 2024
-                   (session 4242)" - when revit_health found that Revit's
-                   settings file is not this PC's (Q-70); None when they were
-                   this PC's own settings file
+                   (session 4242)" - as revit_health last heard it (Q-70);
+                   None when no Revit has said, and they were judged off, the
+                   way every Revit starts. Since D-166 they are held in Revit's
+                   memory and in no file, so there is no other word to give
     """
     name = cap.name
     written_for = ", ".join(releases_of(rows)) or "no release"
@@ -399,16 +407,18 @@ def in_revit_words(cap, rows=None, release=None, how=None, no_revit_here=False,
                     "No switch of the owner's changes that here.")
         off = "Changes" if not write_enabled else SWITCH_NAMES[level]
         turn_on = " then ".join(needs) if not write_enabled else off
-        # WHOSE WORD THE SWITCH WAS (Q-70). This PC's settings file, unless
-        # revit_health found the Revit's own is not it - then that Revit's,
-        # as it last said it: Revit decides by its own file either way.
+        # WHOSE WORD THE SWITCH WAS (Q-70, D-166). The Revit's own, as
+        # revit_health last heard it, or none at all: since D-166 the switches
+        # are held in Revit's memory, so no file on this PC says them (until
+        # then this sentence named this PC's settings file).
         source = ("That is what %s said it has, the last time revit_health "
-                  "asked it; Revit reads its settings again before every change, "
-                  "so if it answers differently now, Revit is right." % said_by
-                  if said_by else
-                  "That is what Heron's settings file on this PC says; Revit "
-                  "reads its own copy before every change, so if Revit answers "
-                  "differently, Revit is right.")
+                  "asked it; Revit looks at its switches again before every "
+                  "change, so if it answers differently now, Revit is right."
+                  % said_by if said_by else
+                  "No Revit has told this chat which way it is set, so it is "
+                  "taken as off, the way every Revit starts; revit_health asks "
+                  "Revit what it holds, and if Revit answers differently, "
+                  "Revit is right.")
         return ("%s %s, which needs %s on, and %s is off - so Heron refuses it "
                 "before anything reaches Revit."
                 % (name, WHAT_IT_DOES[level], _switch_phrase(needs), off),

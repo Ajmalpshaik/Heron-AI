@@ -1223,6 +1223,40 @@ class Fragment(object):
             return True
         return recorded != self.fingerprint()
 
+    def proof_built_on(self, release):
+        """The `built_on` recorded for one Revit release, or None.
+
+        The proof's own when it names that release, else the `proof.releases`
+        entry's - each release is proved on its own add-in build (2024 and
+        2025 load different assemblies), so a build is only ever compared
+        with a build of the same release.
+        """
+        proof = self.proof if isinstance(self.proof, dict) else {}
+        release = str(release or "").strip()
+        own = built_on_of(proof.get("built_on"))
+        if own and own["revit_release"] == release:
+            return own
+        rows = proof.get("releases")
+        for row in rows if isinstance(rows, list) else []:
+            if not isinstance(row, dict) or str(row.get("release") or "") != release:
+                continue
+            entry = built_on_of(row.get("built_on"))
+            if entry and entry["revit_release"] == release:
+                return entry
+        return None
+
+    def proof_build_state(self, current):
+        """(state, changed, recorded) for the Revit in front - see `build_state`.
+
+        A flag, never a gate: `proof_is_stale` and the D-117 refusal are left
+        exactly as they were. `recorded` is what the proof holds for this
+        release, so a caller can say what it was taken on.
+        """
+        now = built_on_of(current) or {}
+        recorded = self.proof_built_on(now.get("revit_release"))
+        state, changed = build_state(recorded, now)
+        return state, changed, recorded
+
     def __repr__(self):
         return "<Fragment %s (%s) %s>" % (self.id, self.kind, self.status)
 
@@ -1663,6 +1697,130 @@ PROOF_REQUIRED = ("date", "by", "model", "positive_case", "negative_case",
 RELEASE_REQUIRED = ("release", "date", "by", "model", "positive_case",
                     "negative_case", "fingerprint")
 
+# WHICH HERON AND WHICH REVIT THE PROOF WAS TAKEN ON - `built_on:`, beside the
+# fingerprint, on a proof and on an entry of `proof.releases`.
+#
+# The fingerprint says which fragment C# was proved. It cannot say which add-in
+# compiled and ran that C#, or which build of Revit answered it, and either can
+# change while the fragment's own files stand still: a new add-in build, or a
+# Revit update that moves 2024.1 to 2024.2. So the run record carries both from
+# the add-in's own address-book entry, the draft carries them from the record,
+# and a person's signature carries them into the card. Nothing else writes
+# this, and nothing re-stamps it: a proof is re-taken, never re-labelled.
+#
+# OPTIONAL, BECAUSE EVERY PROOF SIGNED BEFORE IT HAS NONE. A proof without it
+# is NOT RECORDED - never stale, never current. Nothing here can tell which
+# build those runs were on, and guessing either way would be the silent pass
+# or the false alarm D-30's fingerprint was built to avoid.
+#
+# NOT PART OF `proof_is_stale`. That question is answered from the fragment's
+# files alone, anywhere, and the D-117 gate refuses on it. Which add-in and
+# which Revit are in front is known only where a Revit is connected, so the
+# comparison takes the build in front as an argument (`build_state`) and its
+# answer is a flag where it is asked, never a refusal - D-174, the owner's
+# answer to Q-92.
+BUILT_ON_FIELDS = ("revit_release", "revit_build", "addin_version", "addin_hash")
+
+# What each field is called in a sentence a modeller reads.
+BUILT_ON_WORDS = {
+    "revit_release": "the Revit release",
+    "revit_build": "Revit's build",
+    "addin_version": "the Heron add-in's version",
+    "addin_hash": "the Heron add-in's file",
+}
+
+BUILD_NOT_RECORDED = "not recorded"
+BUILD_CURRENT = "current"
+BUILD_STALE = "stale"
+# The proof recorded a build, and the Revit in front did not say which it is -
+# an add-in older than this field. Neither current nor stale: not known. The
+# name avoids the capitalised word on purpose: that is a trust level of docs/00d
+# s38, a different ladder, and tests/test_supply.py holds that this loader
+# never says it.
+BUILD_NOT_KNOWN = "unknown"
+
+
+def built_on_of(value):
+    """`built_on` as four stripped strings, or None when it records nothing.
+
+    The one reader of the shape, for a proof, an entry, a run record and the
+    add-in's identity alike, so the four cannot come to spell it differently.
+    A field nobody recorded is "" - never a guess.
+    """
+    if not isinstance(value, dict):
+        return None
+    found = {}
+    for field in BUILT_ON_FIELDS:
+        raw = value.get(field)
+        found[field] = "" if raw is None else str(raw).strip()
+    return found if any(found.values()) else None
+
+
+def built_on_problems(where, value):
+    """Whether a `built_on:` that is there says what it must. None there is fine."""
+    if value is None:
+        return []
+    if not isinstance(value, dict):
+        return ["%s: built_on must be a mapping of %s"
+                % (where, ", ".join(BUILT_ON_FIELDS))]
+    problems = []
+    strange = sorted(str(k) for k in value if k not in BUILT_ON_FIELDS)
+    if strange:
+        problems.append("%s: built_on names %s, which is not one of %s"
+                        % (where, ", ".join(strange), ", ".join(BUILT_ON_FIELDS)))
+    found = built_on_of(value) or {}
+    if not found.get("revit_release"):
+        problems.append(
+            "%s: built_on has no revit_release. A build is compared only "
+            "with a build of the same release, so without it the record "
+            "cannot be read" % where)
+    elif not any(found.get(f) for f in BUILT_ON_FIELDS if f != "revit_release"):
+        problems.append("%s: built_on names a release and no build at all"
+                        % where)
+    return problems
+
+
+def build_state(recorded, current):
+    """(state, changed) - whether a proof's build is the build in front.
+
+    `recorded` is a proof's or an entry's `built_on`; `current` the same four
+    fields for the Revit in front. `changed` lists the fields that differ.
+
+        BUILD_NOT_RECORDED  the proof records no build, or only another
+                            release's - it says nothing about this one
+        BUILD_STALE         the add-in or Revit's build moved since
+        BUILD_NOT_KNOWN       the Revit in front did not say which build it is
+        BUILD_CURRENT       every field the proof recorded is the same
+
+    Only what the proof RECORDED is compared. A field it has no value for
+    cannot have moved, and is not called current either.
+    """
+    recorded = built_on_of(recorded)
+    if recorded is None:
+        return BUILD_NOT_RECORDED, []
+    current = built_on_of(current)
+    if current is None or not current.get("revit_release"):
+        return BUILD_NOT_KNOWN, []
+    if recorded["revit_release"] != current["revit_release"]:
+        return BUILD_NOT_RECORDED, []
+
+    changed, unknown, compared = [], [], 0
+    for field in BUILT_ON_FIELDS:
+        if field == "revit_release" or not recorded[field]:
+            continue
+        compared += 1
+        if not current[field]:
+            unknown.append(field)
+        elif current[field] != recorded[field]:
+            changed.append(field)
+    if changed:
+        return BUILD_STALE, changed
+    if unknown:
+        return BUILD_NOT_KNOWN, []
+    if not compared:
+        return BUILD_NOT_RECORDED, []
+    return BUILD_CURRENT, []
+
 
 def release_problems(frag, proof):
     """Whether `proof.releases`, if there is one, holds entries that are entries.
@@ -1712,6 +1870,8 @@ def release_problems(frag, proof):
             problems.append(
                 "%s: proof.releases %s negative_case is too short to be one"
                 % (where, name))
+        problems.extend(built_on_problems(
+            "%s: proof.releases %s" % (where, name), row.get("built_on")))
     return problems
 
 
@@ -1773,6 +1933,7 @@ def proof_problems(frag):
             "%s: negative_case is too short to be one. It must say what came "
             "back EMPTY and why that is the right answer" % where)
 
+    problems.extend(built_on_problems("%s: proof" % where, proof.get("built_on")))
     problems.extend(release_problems(frag, proof))
     return problems
 

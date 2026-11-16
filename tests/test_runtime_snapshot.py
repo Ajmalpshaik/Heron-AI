@@ -77,18 +77,24 @@ def switches_above_changes():
     """
     print()
     print("The switches above Changes each let their own level through (D-106)")
+    # BY THE SWITCH'S NAME, NOT ITS KEY, SINCE D-166. These named the settings
+    # keys - admin.enabled, publish.enabled, write.enabled - until the merge of
+    # 2026-11-16 that brought D-166 in: the three left heron.config for
+    # Revit's memory, and no refusal names a key or a file any more, only the
+    # switch and Heron's Settings. Changed on purpose, not to get to green.
     alone = switched(write_enabled=True)
     if alone is not None:
         check(verdict(alone, "MOVE_ELEMENTS").verdict == rt.AVAILABLE,
               "Changes on lets a MODIFY capability through")
         check(verdict(alone, "ADD_PROJECT_PARAMETER").verdict == rt.BLOCKED_BY_TRUST
-              and "admin.enabled" in verdict(alone, "ADD_PROJECT_PARAMETER").detail,
-              "and NOT an ADMIN one - it names admin.enabled - found %s: %s"
+              and "Admin is off" in verdict(alone, "ADD_PROJECT_PARAMETER").detail
+              and "Heron's Settings in Revit" in verdict(alone, "ADD_PROJECT_PARAMETER").detail,
+              "and NOT an ADMIN one - it names the Admin switch and Settings - found %s: %s"
               % (verdict(alone, "ADD_PROJECT_PARAMETER").verdict,
                  verdict(alone, "ADD_PROJECT_PARAMETER").detail))
         check(verdict(alone, "EXPORT_TO_IFC").verdict == rt.BLOCKED_BY_TRUST
-              and "publish.enabled" in verdict(alone, "EXPORT_TO_IFC").detail,
-              "nor a PUBLISH one - it names publish.enabled")
+              and "Publish is off" in verdict(alone, "EXPORT_TO_IFC").detail,
+              "nor a PUBLISH one - it names the Publish switch")
     admin = switched(write_enabled=True, admin_enabled=True)
     if admin is not None:
         check(verdict(admin, "ADD_PROJECT_PARAMETER").verdict == rt.AVAILABLE,
@@ -103,8 +109,12 @@ def switches_above_changes():
     without = switched(admin_enabled=True, publish_enabled=True)
     if without is not None:
         check(all(verdict(without, n).verdict == rt.BLOCKED_BY_TRUST
-                  and "write.enabled" in verdict(without, n).detail for n in ABOVE),
-              "and neither does anything with Changes off - each names write.enabled")
+                  and "Changes is off" in verdict(without, n).detail for n in ABOVE),
+              "and neither does anything with Changes off - each names the Changes switch")
+        check(not any(word in verdict(snap, n).detail
+                      for snap in (alone, without) for n in ABOVE
+                      for word in (".enabled", "heron.config")),
+              "and no refusal names a settings key or the file (D-166)")
 
 
 def in_revit_words():
@@ -180,11 +190,14 @@ def in_revit_words():
     check("Changes switch must be on there too" in there[1],
           "and for a change, that the owner's Changes switch is needed there too")
 
-    # WHOSE WORD THE SWITCH WAS (Q-70, decided 2026-11-15). When revit_health
-    # found a Revit's own settings file is not this PC's, heron_why judges by
-    # what that Revit said, and the sentence says so - never "this PC's file".
+    # WHOSE WORD THE SWITCH WAS (Q-70, decided 2026-11-15). heron_why judges by
+    # what a Revit said, and the sentence says so - never "this PC's file".
+    # Since D-166 no file holds the switches, so with no Revit's word they are
+    # taken as off, the way every Revit starts, and said to be taken so: until
+    # the merge that brought D-166 in, the last check here held the sentence
+    # "Heron's settings file on this PC says", which D-166 made untrue.
     print()
-    print("Whose word the switch was: this PC's file, or what a Revit said (Q-70)")
+    print("Whose word the switch was: what a Revit said, or nobody's (Q-70, D-166)")
     blocked = verdict(live, "MOVE_ELEMENTS")
     try:
         heard = words(blocked, [WRITER], release="2024",
@@ -198,9 +211,11 @@ def in_revit_words():
     check("settings file on this PC" not in heard[1],
           "and it does not call that this PC's settings file")
     plain = words(blocked, [WRITER], release="2024")
-    check("Heron's settings file on this PC says" in plain[1]
-          and "Revit is right" in plain[1],
-          "judged by this PC's file, it says so, as it did")
+    check("No Revit has told this chat" in plain[1]
+          and "the way every Revit starts" in plain[1]
+          and "Revit is right" in plain[1] and "settings file" not in plain[1],
+          "with no Revit's word, it says the switch was taken as off, as Revit starts, "
+          "and names no settings file (D-166) - found %r" % (plain[1][:120],))
 
 
 def main():
@@ -219,8 +234,10 @@ def main():
           "a 2027-only provider asked about on 2024 -> UNSUPPORTED_RELEASE")
     check(verdict(live, "MOVE_ELEMENTS").verdict == rt.BLOCKED_BY_TRUST,
           "MODIFY with the write gate closed -> BLOCKED_BY_TRUST, not unavailable")
-    check("write.enabled" in verdict(live, "MOVE_ELEMENTS").detail,
-          "and it names the setting, so the answer is actionable")
+    check("Changes is off" in verdict(live, "MOVE_ELEMENTS").detail
+          and "Heron's Settings in Revit" in verdict(live, "MOVE_ELEMENTS").detail,
+          "and it names the switch and where only the modeller turns it on, so the "
+          "answer is actionable - and names no file (D-166)")
 
     idle = rt.snapshot(ASKED, LIBRARY, release="2024", bridge="none")
     check(verdict(idle, "SET_SELECTION").verdict == rt.NEEDS_REVIT,
