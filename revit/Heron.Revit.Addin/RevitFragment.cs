@@ -438,6 +438,29 @@ namespace Heron.Revit.Addin
             // nothing those paths did not already allow.
             var wantsNoTransaction = DeclaresNeed(needs, NoTransactionNeed);
 
+            // A FRAGMENT THAT WAITS FOR THE MODELLER - Q-86, decided
+            // 2026-11-15. Revit's own pick returns when the modeller clicks or
+            // presses Esc, so the time it takes is theirs, not the fragment's.
+            // A card that declares this need is run as the Keep or Discard box
+            // is waited for: the run clock is held while its code runs and the
+            // dispatcher waits revit.askTimeoutSeconds more (see the read path
+            // below, and RevitDispatcher.AwaitingClick).
+            //
+            // HELD ONLY WHERE NOTHING IN THE MODEL CAN CHANGE. A held clock
+            // does not stop a fragment that loops for ever - a stop asked over
+            // the bridge still does - so a run that can change the model, which
+            // has a group to keep or roll back, is refused before anything runs
+            // and stays on the clock it always had.
+            var waitsForPerson = DeclaresNeed(needs, WaitsForModellerNeed);
+            if (waitsForPerson && writing)
+            {
+                return Json.Error("waits_on_change_path",
+                    "'" + name + "' waits for you to click in Revit, and Heron waits for a "
+                    + "person only on a run that changes nothing in the model - a read, or one "
+                    + "that changes only what is on screen. Nothing was run. Ask for it with "
+                    + "Changes off, through revit_show or revit_read.");
+            }
+
             // NEVER ON THE READ PATH. That path's guarantee is that no
             // transaction is open, so Revit refuses a change - not always
             // completely (row 5b-350), which is why a read is also measured -
@@ -732,7 +755,22 @@ namespace Heron.Revit.Addin
                 // anything or the answer is built, so it cannot be read as a
                 // clean read further down.
                 counted = ReadFootprint.Of(target);
-                threw = RunScript(script, globals, name, out state);
+
+                // THE MODELLER'S TIME IS NOT THE FRAGMENT'S - Q-86. For a card
+                // that declares waitsForModeller the dispatcher is told a person
+                // is being waited for, as it is for the Keep or Discard box, so
+                // it waits revit.askTimeoutSeconds more and says so in words of
+                // its own if even that runs out; and the run clock is held for
+                // the script, so a check after a slow click - or between the
+                // clicks of a slow series - does not stop the job as one that
+                // ran out of time. A stop asked meanwhile still trips it: a
+                // pause holds the time, never the stop (HeronRunClock.Pause).
+                // Any other card runs exactly as before, on its clock.
+                if (waitsForPerson) RevitDispatcher.AwaitingClick();
+                using (waitsForPerson ? HeronRunClock.Pause() : null)
+                {
+                    threw = RunScript(script, globals, name, out state);
+                }
                 var changed = ReadChangedModel(name, target, counted, threw);
                 if (changed != null) return changed;
 
@@ -4276,6 +4314,18 @@ namespace Heron.Revit.Addin
                     continue;
                 }
 
+                // Q-86: the label that says the fragment waits for the
+                // modeller. Bound as a constant for D-125's reason - the
+                // declaration is the point, and Run holds the timers for it.
+                if (name == WaitsForModellerNeed)
+                {
+                    bound.Add(name);
+                    lines.Append("bool ").Append(name).Append(" = true;\n");
+                    how.Add(name + " - Revit waits for the modeller, and Heron holds its timers "
+                            + "for them (Q-86)");
+                    continue;
+                }
+
                 // D-114: the answer to Revit's "Family Already Exists" dialog,
                 // for a fragment that reloads. A factory, so the fragment says
                 // whether parameter values are overwritten - see FamilyReload.
@@ -7578,6 +7628,16 @@ namespace Heron.Revit.Addin
         /// brain/heron_fragment.py's AMBIENT.
         /// </summary>
         private const string NoTransactionNeed = "noTransactionOpen";
+
+        /// <summary>
+        /// The ambient need that says a fragment waits for the modeller -
+        /// Revit's own pick, answered by a click or Esc (Q-86). Run holds the
+        /// run clock and the dispatcher's wait for it on the read and show
+        /// paths and refuses it on a run that can change the model. The same
+        /// name is in brain/heron_fragment.py's AMBIENT and in the bridge
+        /// client's WAITS_FOR_MODELLER_NEED, which the chat's side waits by.
+        /// </summary>
+        private const string WaitsForModellerNeed = "waitsForModeller";
 
         /// <summary>
         /// The ambient need that hands a reloading fragment its answer to

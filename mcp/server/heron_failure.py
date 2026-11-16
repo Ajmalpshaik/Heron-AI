@@ -236,6 +236,12 @@ _KNOWN = {
                           "Revit is still showing the modeller the box asking whether to "
                           "delete these, and Heron stopped waiting - nothing is deleted now, "
                           "whatever they press"),
+    # Q-86: a card that waits for the modeller's click, and Revit is still in
+    # its pick after the longer wait it was given. The pick goes on; a click
+    # made now reaches no chat. Asking again while it waits queues a second.
+    "awaiting_click":    (RUNNING, WAIT,
+                          "Revit is still waiting for the modeller to click or press Esc, "
+                          "and Heron stopped waiting - a click made now reaches no chat"),
     "move_failed":       (ROLLED_BACK, FIX_FIRST,
                           "it ran, failed, and was rolled back completely"),
     "operation_failed":  (ROLLED_BACK, FIX_FIRST,
@@ -285,6 +291,12 @@ _KNOWN = {
     "opens_own_transaction": (REFUSED, STOP,
                           "the fragment opens a Revit transaction of its own where none may "
                           "be opened - nothing ran"),
+    # Q-86: a card that waits for the modeller asked for as a change. Heron
+    # holds its timers for a person only where nothing in the model can
+    # change, so the add-in refuses it before anything runs.
+    "waits_on_change_path": (REFUSED, FIX_FIRST,
+                          "this fragment waits for the modeller to click in Revit, and runs "
+                          "only as a read or a show - nothing ran"),
     "not_implemented":   (REFUSED, STOP,
                           "the operation is declared and not built yet"),
     "worksets_unreadable": (REFUSED, FIX_FIRST,
