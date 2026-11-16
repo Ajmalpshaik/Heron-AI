@@ -347,6 +347,24 @@ namespace Heron.Revit.Addin
             var margin = Math.Max(SmallestMargin, MarginShare * Math.Max(high.X - low.X, high.Y - low.Y));
             var planName = view.Name;
 
+            // WHETHER REVIT WILL COPY IT is a read, asked before any group is
+            // started - so a refusal here has nothing to roll back. With its
+            // detailing first; without, and said, where Revit will not.
+            var how = ViewDuplicateOption.WithDetailing;
+            var detailing = true;
+            if (!view.CanViewBeDuplicated(how))
+            {
+                how = ViewDuplicateOption.Duplicate;
+                detailing = false;
+            }
+            if (!view.CanViewBeDuplicated(how))
+            {
+                return Json.Error("cannot_copy_plan",
+                    "Revit will not copy '" + planName + "', and a region is pictured from a "
+                    + "copy so the plan itself is never changed. Picture the view whole. "
+                    + "Nothing was pictured, and nothing was made.");
+            }
+
             HeronRollbackWitness.Outcome after = null;
             using (var watch = RevitFragment.Watch(doc, Label, Label))
             using (var group = new TransactionGroup(doc, Label))
@@ -356,7 +374,6 @@ namespace Heron.Revit.Addin
                     group.Start();
 
                     View copy;
-                    var detailing = true;
                     using (var transaction = new Transaction(doc, Label))
                     {
                         transaction.Start();
@@ -364,22 +381,6 @@ namespace Heron.Revit.Addin
                         options.SetFailuresPreprocessor(new DismissWarnings());
                         options.SetClearAfterRollback(true);
                         transaction.SetFailureHandlingOptions(options);
-
-                        var how = ViewDuplicateOption.WithDetailing;
-                        if (!view.CanViewBeDuplicated(how))
-                        {
-                            how = ViewDuplicateOption.Duplicate;
-                            detailing = false;
-                        }
-                        if (!view.CanViewBeDuplicated(how))
-                        {
-                            transaction.RollBack();
-                            after = RevitFragment.RollBackAndCheck(group, doc, watch);
-                            return Json.Error("cannot_copy_plan",
-                                "Revit will not copy '" + planName + "', and a region is pictured "
-                                + "from a copy so the plan itself is never changed. Picture the "
-                                + "view whole. " + Undone(after));
-                        }
 
                         copy = doc.GetElement(view.Duplicate(how)) as View;
                         CropTo(copy, low, high, margin);
