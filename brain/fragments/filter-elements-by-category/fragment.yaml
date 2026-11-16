@@ -3,7 +3,7 @@
 # one home and this repository has been bitten by the alternative.
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 7
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -310,50 +310,59 @@ contract:
       # read, and that why something is missing is DIAGNOSE_VISIBILITY's.
       type: IList<string>
 proof:
-  date: '2026-11-02'
+  date: '2026-11-16'
   by: Ajmal PS
-  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
+  model: Heron OC Tags (3,232 elements), Revit 2024, session 18772
   positive_case: run as it would normally be run. returned askedLevel (null), byName , category
-    BuiltInCategory, categoryOf Func`2, elements 10 item(s) [Mitered Elbows / Taps, Mitered
-    Elbows / Taps, Mitered Elbows / Taps, ...], everyCategory false, examined 10, findings
-    3 item(s) [10 element(s), within Ducts, Read through view 'Callout of Level 1 HVAC WSHP
-    TYP'. This i..., Something expected and missing is a question for DIAGNOSE_VI...], found
-    10, hostLevelName (null), inModel 0, includeLinks false, isModelElement Func`2, levelGiven
-    false, levelOf Func`2, levelParameterOrder 5 item(s) [FAMILY_LEVEL_PARAM, SCHEDULE_LEVEL_PARAM,
-    LEVEL_PARAM, ...], linkBlocked , linkDocs 0 item(s), linkPlacements 0 item(s), linkThroughView
-    (null), linkTypes 0 item(s), linkedMatches 1 item(s) [Host model only - links not read],
-    linkedTotal 0, linksSearched 0, matching 10 item(s) [Mitered Elbows / Taps, Mitered Elbows
-    / Taps, Mitered Elbows / Taps, ...], modelOnly false, nameMissed false, namedCategory
-    (null), nearMisses 0 item(s), nestedLinks 0, notShowingIn (null), ofWanted Func`2, perCategory
-    1 entry(ies), resolvedNames 1 item(s) [Ducts], resolvedTo Ducts, safeLevelOf Func`2, scope
-    , within Ducts, showing 0, unresolvedLevel 0, wanted 1 item(s) [OST_DuctCurves], withoutLevel
-    false. inputs came category as given; categories not given - "INVALID", the card's own
-    default (optional); categoryName not given - "none", the card's own default (optional);
-    levelId not given - "none", the card's own default (optional); inViewOnly as given; notShowingIn
-    not given - null (optional); withoutLevel not given - false (optional); includeLinks not
-    given - false (optional). on P1102 MEP
-  negative_case: run with category=Ducts, inViewOnly=Level 1 - Lighting Plan instead - chosen
-    because it should not contain what this fragment reports. returned askedLevel (null),
-    byName , category BuiltInCategory, categoryOf Func`2, elements 0 item(s), everyCategory
-    false, examined 0, findings 3 item(s) [0 element(s), within Ducts, Read through view 'Level
-    1 - Lighting Plan'. This is what th..., Something expected and missing is a question for
-    DIAGNOSE_VI...], found 0, hostLevelName (null), inModel 0, includeLinks false, isModelElement
+    BuiltInCategory, categoryOf Func`2, cutByView true, cutFilter ElementIntersectsSolidFilter,
+    cutNote Only what 'OC Section' CUTS - elements whose solid crosses its cut plane inside
+    its crop (11548 x 5438 mm), the plane through (4056, 1948, 1500) mm; what the section
+    shows beyond the cut, and anything with no solid, is left out. A split section is read
+    on its first plane only, elements 3 item(s) [Generic - 200mm, Generic - 200mm, Generic
+    - 200mm], everyCategory false, examined 3, findings 4 item(s) [3 element(s), within Walls,
+    Only what 'OC Section' CUTS - elements whose solid crosses i..., Read through view 'OC
+    Section'. This is what the view SHOWS,..., ...], found 3, hostLevelName (null), inModel
+    0, includeLinks false, isModelElement Func`2, levelGiven false, levelOf Func`2, levelParameterOrder
+    5 item(s) [FAMILY_LEVEL_PARAM, SCHEDULE_LEVEL_PARAM, LEVEL_PARAM, ...], linkBlocked ,
+    linkDocs 0 item(s), linkPlacements 0 item(s), linkThroughView RuntimeConstructorInfo,
+    linkTypes 0 item(s), linkedMatches 1 item(s) [Host model only - links not read], linkedTotal
+    0, linksSearched 0, matching 3 item(s) [Generic - 200mm, Generic - 200mm, Generic - 200mm],
+    modelOnly false, nameMissed false, namedCategory (null), nearMisses 0 item(s), nestedLinks
+    0, notShowingIn (null), ofWanted Func`2, perCategory 1 entry(ies), resolvedNames 1 item(s)
+    [Walls], resolvedTo Walls, safeLevelOf Func`2, scope , within Walls, showing 0, unresolvedLevel
+    0, wanted 1 item(s) [OST_Walls], withoutLevel false. inputs came category not given -
+    "INVALID", the card's own default (optional); categories as given (1); categoryName not
+    given - "none", the card's own default (optional); levelId not given - "none", the card's
+    own default (optional); inViewOnly as given; notShowingIn not given - null (optional);
+    withoutLevel not given - false (optional); cutByView as given; includeLinks not given
+    - false (optional). on Heron OC Tags
+  negative_case: 'run with categories=Doors, cutByView=true, inViewOnly=Section: OC Section
+    instead - chosen because it should not contain what this fragment reports. returned askedLevel
+    (null), byName , category BuiltInCategory, categoryOf Func`2, cutByView true, cutFilter
+    ElementIntersectsSolidFilter, cutNote Only what ''OC Section'' CUTS - elements whose solid
+    crosses its cut plane inside its crop (11548 x 5438 mm), the plane through (4056, 1948,
+    1500) mm; what the section shows beyond the cut, and anything with no solid, is left out.
+    A split section is read on its first plane only, elements 0 item(s), everyCategory false,
+    examined 0, findings 4 item(s) [0 element(s), within Doors, Only what ''OC Section'' CUTS
+    - elements whose solid crosses i..., Read through view ''OC Section''. This is what the
+    view SHOWS,..., ...], found 0, hostLevelName (null), inModel 0, includeLinks false, isModelElement
     Func`2, levelGiven false, levelOf Func`2, levelParameterOrder 5 item(s) [FAMILY_LEVEL_PARAM,
     SCHEDULE_LEVEL_PARAM, LEVEL_PARAM, ...], linkBlocked , linkDocs 0 item(s), linkPlacements
-    0 item(s), linkThroughView (null), linkTypes 0 item(s), linkedMatches 1 item(s) [Host
-    model only - links not read], linkedTotal 0, linksSearched 0, matching 0 item(s), modelOnly
-    false, nameMissed false, namedCategory (null), nearMisses 0 item(s), nestedLinks 0, notShowingIn
-    (null), ofWanted Func`2, perCategory 1 entry(ies), resolvedNames 1 item(s) [Ducts], resolvedTo
-    Ducts, safeLevelOf Func`2, scope , within Ducts, showing 0, unresolvedLevel 0, wanted
-    1 item(s) [OST_DuctCurves], withoutLevel false. inputs came category as given; categories
-    not given - "INVALID", the card's own default (optional); categoryName not given - "none",
-    the card's own default (optional); levelId not given - "none", the card's own default
-    (optional); inViewOnly as given; notShowingIn not given - null (optional); withoutLevel
-    not given - false (optional); includeLinks not given - false (optional). on P1102 MEP
+    0 item(s), linkThroughView RuntimeConstructorInfo, linkTypes 0 item(s), linkedMatches
+    1 item(s) [Host model only - links not read], linkedTotal 0, linksSearched 0, matching
+    0 item(s), modelOnly false, nameMissed false, namedCategory (null), nearMisses 0 item(s),
+    nestedLinks 0, notShowingIn (null), ofWanted Func`2, perCategory 1 entry(ies), resolvedNames
+    1 item(s) [Doors], resolvedTo Doors, safeLevelOf Func`2, scope , within Doors, showing
+    0, unresolvedLevel 0, wanted 1 item(s) [OST_Doors], withoutLevel false. inputs came category
+    not given - "INVALID", the card''s own default (optional); categories as given (1); categoryName
+    not given - "none", the card''s own default (optional); levelId not given - "none", the
+    card''s own default (optional); inViewOnly as given; notShowingIn not given - null (optional);
+    withoutLevel not given - false (optional); cutByView as given; includeLinks not given
+    - false (optional). on Heron OC Tags'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: c826f2c0535e4652
+  fingerprint: 3a700aa67383b8c9
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

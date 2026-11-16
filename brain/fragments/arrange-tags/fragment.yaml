@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -150,43 +150,46 @@ contract:
       type: IList<ElementId>
 
 proof:
-  date: '2026-09-09'
+  date: '2026-11-16'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 32312
+  model: Heron OC Tags (3,232 elements), Revit 2024, session 18772
   positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase's own values - run inside a transaction
-    and ROLLED BACK, so the model was left exactly as it was. returned MmToFeet 0.00328083989501312,
-    anyLeft true, atX 73 entry(ies), atY 73 entry(ies), bothHadToMove 73 item(s) [1491274,
-    1491277, 1491301, ...], fallbackTagHeightMm 6, fallbackTagWidthMm 20, freeEnds 0 entry(ies),
-    gap 16.4041994750656, halfHeight 0.00984251968503937, halfWidth 0.0328083989501312, heads
-    73 entry(ies), maxPasses 3, measuredFrom 0, measuredHeights 0 item(s), measuredWidths
-    0 item(s), medianOf Func`2, minGapMm 5000, moved 73, needX 16.4698162729659, needY 16.4238845144357,
-    notTags 0 item(s), refused 0 item(s), right XYZ, separate Func`2, stillOverlapping 71
-    item(s) [1491274, 1491277, 1491301, ...], straight 73 entry(ies), tags 73 item(s) [Duct
-    Size Tag, Duct Size Tag, Duct Size Tag, ...], up XYZ, working 73 item(s) [1491274, 1491277,
-    1491289, ...]. inputs came view as given; elements from the selection (73); minGapMm as
-    given; maxPasses as given; fallbackTagWidthMm as given; fallbackTagHeightMm as given.
-    on Snowdon-scratch_ajmal.al
-  negative_case: 'run with categoryName=Duct Tags, inViewOnly=FloorPlan: L3, view=FloorPlan:
-    L3, minGapMm=0, maxPasses=3, fallbackTagWidthMm=20, fallbackTagHeightMm=6 instead - chosen
-    because it should not contain what this fragment reports - the arrangement was re-made
-    first by running select-by-category-name, set-selection with this phase''s own values
-    - run inside a transaction and ROLLED BACK, so the model was left exactly as it was. returned
-    MmToFeet 0.00328083989501312, anyLeft false, atX 73 entry(ies), atY 73 entry(ies), bothHadToMove
-    0 item(s), fallbackTagHeightMm 6, fallbackTagWidthMm 20, freeEnds 0 entry(ies), gap 0,
-    halfHeight 0.00984251968503937, halfWidth 0.0328083989501312, heads 73 entry(ies), maxPasses
-    3, measuredFrom 0, measuredHeights 0 item(s), measuredWidths 0 item(s), medianOf Func`2,
-    minGapMm 0, moved 0, needX 0.0656167979002625, needY 0.0196850393700787, notTags 0 item(s),
-    refused 0 item(s), right XYZ, separate Func`2, stillOverlapping 0 item(s), straight 73
-    entry(ies), tags 73 item(s) [Duct Size Tag, Duct Size Tag, Duct Size Tag, ...], up XYZ,
-    working 73 item(s) [1491274, 1491277, 1491289, ...]. inputs came view as given; elements
-    from the selection (73); minGapMm as given; maxPasses as given; fallbackTagWidthMm as
-    given; fallbackTagHeightMm as given. on Snowdon-scratch_ajmal.al'
+    filter-elements-by-category, set-selection with this phase's own values - run inside a
+    transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    MmToFeet 0.00328083989501312, anyLeft false, atX 5 entry(ies), atY 5 entry(ies), bothHadToMove
+    0 item(s), fallbackTagHeightMm 500, fallbackTagWidthMm 1500, fixedTag 5 entry(ies), freeEnds
+    0 entry(ies), gap 0.656167979002625, halfHeight 0.984251968503941, halfWidth 1.96850393700787,
+    headOf Func`2, heads 5 entry(ies), keptInPlace 0 item(s), maxPasses 10, measuredFrom 5,
+    measuredHeights 5 item(s) [1.96850393700788, 1.96850393700788, 1.96850393700788, ...],
+    measuredWidths 5 item(s) [3.93700787401574, 3.93700787401574, 3.93700787401574, ...],
+    medianOf Func`2, minGapMm 200, moved 2, needX 4.59317585301836, needY 2.62467191601051,
+    notTags 0 item(s), refused 0 item(s), right XYZ, roomTagsStayPut false, separate Func`2,
+    stillOverlapping 0 item(s), straight 5 entry(ies), tags 5 item(s) [M_Door Tag, M_Door
+    Tag, M_Door Tag, ...], up XYZ, working 5 item(s) [352527, 352528, 352529, ...]. inputs
+    came view as given; elements from the selection (5); minGapMm as given; maxPasses as given;
+    fallbackTagWidthMm as given; fallbackTagHeightMm as given; roomTagsStayPut not given -
+    false (optional). on Heron OC Tags
+  negative_case: 'run with fallbackTagHeightMm=500, fallbackTagWidthMm=1500, maxPasses=10,
+    minGapMm=200, view=FloorPlan: Level 1 arranged with categories=Room Tags, inViewOnly=FloorPlan:
+    Level 1 instead - chosen because it should not contain what this fragment reports - the
+    arrangement was re-made first by running filter-elements-by-category, set-selection with
+    this phase''s own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned MmToFeet 0.00328083989501312, anyLeft false, atX
+    2 entry(ies), atY 2 entry(ies), bothHadToMove 0 item(s), fallbackTagHeightMm 500, fallbackTagWidthMm
+    1500, fixedTag 2 entry(ies), freeEnds 0 entry(ies), gap 0.656167979002625, halfHeight
+    2.16473400739881, halfWidth 2.6246719160105, headOf Func`2, heads 2 entry(ies), keptInPlace
+    0 item(s), maxPasses 10, measuredFrom 2, measuredHeights 2 item(s) [4.32946801479761,
+    4.32946801479761], measuredWidths 2 item(s) [5.24934383202099, 5.24934383202099], medianOf
+    Func`2, minGapMm 200, moved 0, needX 5.90551181102362, needY 4.98563599380024, notTags
+    0 item(s), refused 0 item(s), right XYZ, roomTagsStayPut false, separate Func`2, stillOverlapping
+    0 item(s), straight 2 entry(ies), tags 2 item(s) [Room Tag, Room Tag], up XYZ, working
+    2 item(s) [352530, 352531]. inputs came view as given; elements from the selection (2);
+    minGapMm as given; maxPasses as given; fallbackTagWidthMm as given; fallbackTagHeightMm
+    as given; roomTagsStayPut not given - false (optional). on Heron OC Tags'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 4c99d3e3071584b0
-
+  fingerprint: 3f2878c330fb0f4a
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
