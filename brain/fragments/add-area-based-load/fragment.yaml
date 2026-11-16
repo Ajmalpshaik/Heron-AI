@@ -39,7 +39,7 @@ semantic-identity: "add an area-based load type in W/m2 to the electrical analyt
 kind: action
 domain: revit.mep
 capability: ADD_AREA_BASED_LOAD
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -118,7 +118,9 @@ contract:
     - name: refused
       # Why it declined, in Revit words: no type named, a new type with no
       # density, a classification the model has not got, a space with no
-      # load area inside it. Never a thing done (D-52).
+      # load area inside it. Never a thing done (D-52). Since 2026-11-16 that
+      # refusal names Area Based Load Boundary lines: Revit makes load areas
+      # only inside them, never from walls or spaces (row 5b-1659).
       role: accounting
       type: IList<string>
     - name: findings

@@ -17,6 +17,13 @@ namespace Heron.Core
         public string Holder;
         public double SecondsRemaining;
 
+        /// <summary>
+        /// Granted to a caller that did not hold it a moment ago - taken, not
+        /// renewed. A request refused further in (the model hold, D-141) gives
+        /// back only a lease it took this way (row 5b-1662).
+        /// </summary>
+        public bool Fresh;
+
         /// <summary>The refusal, in the user's terms.</summary>
         public string Message;
     }
@@ -146,6 +153,7 @@ namespace Heron.Core
 
                 if (_holder == null || _holder == clientId)
                 {
+                    var fresh = _holder == null;
                     _holder = clientId;
                     _expiresUtc = DateTime.UtcNow + Lifetime;
                     return new LeaseDecision
@@ -153,6 +161,7 @@ namespace Heron.Core
                         Granted = true,
                         Holder = clientId,
                         SecondsRemaining = (_expiresUtc - DateTime.UtcNow).TotalSeconds,
+                        Fresh = fresh,
                     };
                 }
 
