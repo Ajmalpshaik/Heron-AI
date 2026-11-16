@@ -553,25 +553,27 @@ def revit_side():
     except Exception:                                   # noqa: BLE001 - a report, not a gate
         return
     values = CONFIG.load()
-    switches = [("Changes", "write.enabled", "any change to a model or family"),
-                ("Admin", "admin.enabled", "a NEW family file"),
-                ("Publish", "publish.enabled", "saving the family")]
-    for label, key, needed in switches:
-        on = CONFIG.truthy(values, key)
-        say(NOTE, "%-11s is %-3s - needed for %s" % (label, "ON" if on else "off",
-                                                      needed))
+    # CHANGES, ADMIN AND PUBLISH ARE HELD IN REVIT SINCE D-166, off whenever it
+    # starts and turned on only in its Settings window - so this file cannot
+    # say which way they are, and this check does not pretend to.
+    for label, needed in (("Changes", "any change to a model or family"),
+                          ("Admin", "a NEW family file"),
+                          ("Publish", "saving the family")):
+        say(NOTE, "%-11s is off when Revit starts - needed for %s" % (label, needed))
     # ASK TO KEEP (D-138) lets nothing through: it only says whether Revit
-    # asks Keep or Discard first. Off on a new PC, like the three above.
+    # asks Keep or Discard first. Off on a new PC, like the three above, and
+    # still kept in heron.config.
     asks = CONFIG.truthy(values, "write.askBeforeKeeping")
     say(NOTE, "%-11s is %-3s - %s" % (
         "Ask to Keep", "ON" if asks else "off",
         "Revit asks Keep or Discard before a change is kept; the box can keep "
         "the rest of a job" if asks else
         "changes are kept without asking; Ctrl+Z still takes each one back"))
-    print("         These are your switches in Heron's Settings (Heron tab). They "
-          "start off on a")
-    print("         new PC; turn on what the job needs before you ask - a refusal "
-          "costs a turn.")
+    print("         These are your switches in Heron's Settings (Heron tab). Changes, "
+          "Admin and")
+    print("         Publish start off every time Revit starts; turn on what the job "
+          "needs before")
+    print("         you ask - a refusal costs a turn.")
 
 
 def claude_side():
@@ -790,8 +792,8 @@ def write_snapshot(path):
     try:
         import heron_config as CONFIG
         values = CONFIG.load()
-        for key in ("write.enabled", "admin.enabled", "publish.enabled",
-                    "write.askBeforeKeeping", "bridge.autoConnect", "fragments.warmUp"):
+        # Changes, Admin and Publish are not in heron.config since D-166.
+        for key in ("write.askBeforeKeeping", "bridge.autoConnect", "fragments.warmUp"):
             facts["revit"]["switches"][key] = CONFIG.truthy(values, key)
     except Exception:                                   # noqa: BLE001 - a report, not a gate
         pass

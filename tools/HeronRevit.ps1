@@ -77,12 +77,46 @@ function Get-RevitAddinsFolder {
 
         NOT CREATED. A release nobody has installed has no Addins folder, and
         making one would leave a folder behind and answer no question.
+
+        THE ALL-USERS FOLDERS ARE SPELLED ONCE, BELOW, AND ONLY TO BE READ -
+        Get-RevitAllUserAddinsFolders, added 2026-11-16 for the second-copy
+        check (D-167). Heron still never installs there.
     .PARAMETER RevitVersion
         The four-digit release, as a string.
     #>
     param([Parameter(Mandatory = $true)][string] $RevitVersion)
 
     return (Join-Path $env:APPDATA "Autodesk\Revit\Addins\$RevitVersion")
+}
+
+function Get-RevitAllUserAddinsFolders {
+    <#
+    .SYNOPSIS
+        The all-users folders Revit ALSO reads manifests from, for one release -
+        TO BE READ, NEVER WRITTEN.
+    .DESCRIPTION
+        HERON NEVER INSTALLS HERE, and nothing may use this to do so: writing
+        either needs administrator rights, which Heron promises not to need
+        (docs/07 section 5). It exists for one reader, deploy-addin.ps1's
+        second-copy check (D-167): a Heron manifest an administrator put in one
+        of these is a second copy Revit refuses or loads twice, and the
+        modeller is told only that it cannot run the external application.
+
+        BOTH, FOR EVERY RELEASE. Revit 2020 to 2026 read ProgramData; 2027
+        moved the all-users folder to Program Files (the revit-version-support
+        skill). Returning both costs one missing folder, and guessing which a
+        future release reads is the mistake Directory.Build.props refuses.
+
+        NOT CREATED, for the same reason as above.
+    .PARAMETER RevitVersion
+        The four-digit release, as a string.
+    #>
+    param([Parameter(Mandatory = $true)][string] $RevitVersion)
+
+    return @(
+        (Join-Path $env:ProgramData "Autodesk\Revit\Addins\$RevitVersion"),
+        (Join-Path ${env:ProgramFiles} "Autodesk\Revit\Addins\$RevitVersion")
+    )
 }
 
 function Get-RunningRevit {

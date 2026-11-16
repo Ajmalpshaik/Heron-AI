@@ -652,6 +652,7 @@ namespace Heron.Bridge
             if (op == "info")
             {
                 var holder = HeronLease.Holder;
+                var switches = HeronPermissions.Switches();
                 return Json.Ok(
                     Json.Num("pid", _identity.ProcessId),
                     Json.Str("revitVersion", _identity.RevitVersion),
@@ -692,7 +693,26 @@ namespace Heron.Bridge
                     // Python side on the bare name of that key anywhere in
                     // it, as a field that could be SENT to skip the question.
                     // This one is only ever answered.
-                    Json.Bool("askToKeep", HeronPermissions.AsksBeforeKeeping()));
+                    Json.Bool("askToKeep", HeronPermissions.AsksBeforeKeeping()),
+                    // CHANGES, ADMIN AND PUBLISH, AS THIS REVIT HOLDS THEM
+                    // (D-166). Held in memory since 2026-11-16, not in
+                    // heron.config, so a chat cannot learn them from the file
+                    // any more - and on a PC whose Claude keeps a private copy
+                    // of the settings folder it never could (Q-70). Said for
+                    // the chat's health report to show, NEVER set from here:
+                    // this file reads no such field off a request, and the
+                    // gate looks at the switches again for itself. Optional
+                    // fields, like askToKeep: a client that does not know them
+                    // ignores them, so the protocol version stands.
+                    Json.Bool("changes", switches.Changes),
+                    Json.Bool("admin", switches.Admin),
+                    Json.Bool("publish", switches.Publish),
+                    // AND WHICH THE ADMINISTRATOR'S CEILING HOLDS OFF (D-166
+                    // layer 3), so a chat can say "ask the PC's administrator"
+                    // rather than "turn it on in Settings", which would not work.
+                    Json.Bool("changesLocked", switches.ChangesLocked),
+                    Json.Bool("adminLocked", switches.AdminLocked),
+                    Json.Bool("publishLocked", switches.PublishLocked));
             }
 
             // HANDING IT BACK, WHICH IS THE HALF THAT WAS MISSING.
