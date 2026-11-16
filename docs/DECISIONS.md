@@ -244,6 +244,7 @@ an edit.
 | [D-173](#d-173--a-release-is-versioned-and-checksummed-now-and-says-plainly-it-is-unsigned-and-is-signed-before-heron-is-given-to-anyone-outside) | A release is versioned and checksummed now and says plainly it is unsigned, and is signed before Heron is given to anyone outside | ✅ Accepted · 2026-11-16 |
 | [D-174](#d-174--a-proof-taken-on-another-heron-add-in-build-or-another-revit-build-is-said-under-the-answer-and-never-refused) | A proof taken on another Heron add-in build or another Revit build is said under the answer, and never refused | ✅ Accepted · 2026-11-16 |
 | [D-175](#d-175--only-the-chat-that-made-a-heron-change-may-undo-it-the-activity-panes-undo-is-the-modellers-own) | Only the chat that made a Heron change may undo it; the Activity pane's Undo is the modeller's own | ✅ Accepted · 2026-11-16 |
+| [D-176](#d-176--the-activity-panes-select-and-zoom-look-past-a-chats-model-hold-because-they-only-look) | The Activity pane's Select and Zoom look past a chat's model hold, because they only look | ✅ Accepted · 2026-11-16 |
 
 ## Format
 
@@ -1446,6 +1447,7 @@ What this makes easy. What this makes hard. What it locks in.
 ## D-163 — Heron's recent changes are docked in Revit, with Select, Zoom and Undo, reached through the one dispatcher
 
 **Status:** Accepted · **Date:** 2026-11-12 · **Accepted:** Ajmal PS, 2026-11-12, in conversation: item 10 of the plan
+**Superseded in part by:** [D-176](#d-176--the-activity-panes-select-and-zoom-look-past-a-chats-model-hold-because-they-only-look) - item 5's *"it looks at the model hold"*, for Select and Zoom: they look past a chat's hold, because they only look (2026-11-16)
 **Keeps:** [D-09](decisions/D-09.md) · [D-150](decisions/D-150.md) · [D-141](decisions/D-141.md) · [D-157](decisions/D-157.md)
 **Affects:** [`HeronActivityPane.cs`](../revit/Heron.Revit.Addin/HeronActivityPane.cs) · [`RevitShowElements.cs`](../revit/Heron.Revit.Addin/RevitShowElements.cs)
 
@@ -1558,3 +1560,11 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** `revit_undo_last` and the add-in's undo guard · the Activity pane's Undo button
 
 **Full record:** [`decisions/D-175.md`](decisions/D-175.md)
+
+## D-176 — The Activity pane's Select and Zoom look past a chat's model hold, because they only look
+
+**Status:** Accepted · **Date:** 2026-11-16 · **Accepted:** Ajmal PS, 2026-11-16, in conversation: *"Yes, both."*
+**Supersedes in part:** [D-163](decisions/D-163.md) item 5 - *"it looks at the model hold"* - for Select and Zoom only · **Settles:** [row 5b-1825](fragment-issues/row-5b-1825.md)
+**Affects:** the Activity pane's Select and Zoom
+
+**Full record:** [`decisions/D-176.md`](decisions/D-176.md)
