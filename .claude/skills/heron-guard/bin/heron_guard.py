@@ -101,11 +101,38 @@ off is one bad edit away from a repository nobody can work in, and the person
 who needs the hatch is the person whose tooling is already broken. gstack ships
 the same hatch for the same reason.
 
-THIS IS FOR DEVELOPING HERON. IT IS NOT PART OF WHAT A MODELLER INSTALLS.
+A SECOND RULE SINCE 2026-11-16: THE OWNER'S SWITCHES ARE NOT AN AI'S TO FLIP
 --------------------------------------------------------------------------
+D-166 layer 1, accepted by the owner from proposal F45. Changes, Admin and
+Publish are `write.enabled`, `admin.enabled` and `publish.enabled` in
+heron.config, in the modeller's own profile - a file every program running as
+the modeller can write, read fresh on every request, and named by Heron's own
+refusal. So this also refuses, as it is proposed:
+
+  - a write to a file named heron.config, ANYWHERE on disk, whose new text
+    turns one of the three on - the key and one of the four words
+    HeronConfig.GetBool reads as true;
+  - a shell command that names heron.config and does the same, or names a
+    key and the word true (a sed that swaps false for true);
+  - a command that writes Heron's administrator policy in the registry,
+    SOFTWARE\\Policies\\Heron, layer 3's key - and a .reg file naming it.
+
+Reading the file is allowed, and so is turning a switch OFF: that is the safe
+side. The refusal names Settings in Revit and never this file's hatch, because
+the reader of a refusal is the AI it refused.
+
+IT IS A TRIPWIRE, NOT A LOCK. A script that writes the file another way, a
+host that does not load this repository's settings, and an AI that edits
+.claude/settings.json all pass it. D-166 layer 2 is the lock: the switches
+leave heron.config. This stays as the line in the diary that says an AI tried.
+
+THE BOUNDARY RULE IS FOR DEVELOPING HERON; THE SWITCH RULE, FOR ANY SESSION HERE
+-------------------------------------------------------------------------------
 Hooks are the HOST's mechanism and D-01 gives the host orchestration. Nothing
 here reaches a Revit model, a fragment, or a user of the add-in. Somebody
-typing "select all ducts" never meets this file.
+typing "select all ducts" never meets this file - but a Claude Code opened in
+the Heron folder on the modeller's own PC loads it, and the switch rule is for
+that session as much as for a developer's.
 """
 
 import json
@@ -211,6 +238,118 @@ def check(payload, root):
     )
 
 
+# THE SECOND RULE - D-166 LAYER 1. The three keys are HeronPermissions'
+# WriteEnabledKey, AdminEnabledKey and PublishEnabledKey, and the four words are
+# the ones HeronConfig.GetBool and heron_config.TRUE_WORDS read as true.
+# tests/test_heron_guard.py section 9 reads both of those files and fails when
+# these copies drift - the same answer section 6 gives for the namespace.
+SWITCH_KEYS = ("write.enabled", "admin.enabled", "publish.enabled")
+TRUE_WORDS = ("true", "1", "yes", "on")
+CONFIG_NAME = "heron.config"
+
+# The dot may be escaped, as a regular expression in a -replace or a sed has it.
+_KEY = r"(?<![\w.])(?:write|admin|publish)\\?\.enabled(?![\w])"
+_TRUE = r"(?:true|1|yes|on)(?![\w.])"
+_SETS = r"[\"']?\s*[=:]\s*[\"']?\s*"
+
+# A key set to a true word, as a line of the file has it or a script writes it.
+SWITCH_ON = re.compile(_KEY + _SETS + _TRUE, re.I)
+# A key named at all, and a value set to a true word with no key beside it -
+# together they catch an edit or a sed that changes only the value.
+SWITCH_KEY = re.compile(_KEY, re.I)
+SET_TRUE = re.compile(r"[=:]\s*[\"']?\s*" + _TRUE, re.I)
+# No word boundary, on purpose: a replacement written `$1true` or `\1true` has
+# none. It is asked only of a command that names the file AND a key.
+WORD_TRUE = re.compile(r"true", re.I)
+NAMES_CONFIG = re.compile(r"heron\.config", re.I)
+
+# Layer 3's key, and what writes a registry key from a shell. Naming the key
+# alone is not enough - reading it is fine, and so is a document about it.
+POLICY_KEY = re.compile(r"policies[\\/]+heron(?![\w-])", re.I)
+REGISTRY_WRITE = re.compile(
+    r"\breg(?:\.exe)?\s+(?:add|delete|import|copy|restore|load)\b"
+    r"|\b(?:set|new|remove|rename|copy|clear)-itemproperty\b"
+    r"|\b(?:new|remove)-item\b"
+    r"|\.(?:setvalue|createsubkey|deletevalue|deletesubkey(?:tree)?)\s*\("
+    r"|\bsetvalueex?\s*\(|\bcreatekey(?:ex)?\s*\("
+    r"|\bregedit\b", re.I)
+
+SWITCH_REASON = (
+    "D-166: this would turn on Changes, Admin or Publish by %s. Those three "
+    "switches are the modeller's alone. They are turned on in Revit, in Heron's "
+    "Settings (Heron > AI Bridge > Settings), never by editing a file - so ask "
+    "the modeller to turn it on there, and nothing else.\n\n"
+    "Reading heron.config is allowed, and so is setting a switch to false.")
+
+POLICY_REASON = (
+    "D-166: this would change Heron's administrator policy in the Windows "
+    "registry (SOFTWARE\\Policies\\Heron). Only the PC's administrator sets it, "
+    "by hand - ask them. Reading it is allowed.")
+
+
+def target_of(tool_input):
+    """The file a tool would write: `file_path`, or `path` for Desktop Commander's write_file."""
+    for key in ("file_path", "path"):
+        got = tool_input.get(key)
+        if isinstance(got, str) and got.strip():
+            return got
+    return None
+
+
+def name_of(path):
+    """The file's own name, lower-case, whichever way its slashes lean."""
+    return re.split(r"[\\/]", path.strip().rstrip("\\/"))[-1].lower()
+
+
+def replaced_text(tool_input):
+    """The text an edit replaces - Edit's `old_string`, MultiEdit's edits."""
+    parts = []
+    got = tool_input.get("old_string")
+    if isinstance(got, str):
+        parts.append(got)
+    for edit in tool_input.get("edits") or []:
+        if isinstance(edit, dict) and isinstance(edit.get("old_string"), str):
+            parts.append(edit["old_string"])
+    return "\n".join(parts)
+
+
+def command_of(tool_input):
+    """A shell's text: `command` for Bash, PowerShell and start_process, `input` for a running one."""
+    parts = [tool_input.get(key) for key in ("command", "input")]
+    return "\n".join(one for one in parts if isinstance(one, str))
+
+
+def switch_check(payload):
+    """(verdict, reason) for D-166's rule. Allow is ("allow", "")."""
+    tool_input = payload.get("tool_input") or {}
+    if not isinstance(tool_input, dict):
+        return "allow", ""
+
+    target = target_of(tool_input)
+    if target:
+        name = name_of(target)
+        text = proposed_text(tool_input)
+        if name == CONFIG_NAME:
+            changed = replaced_text(tool_input) + "\n" + text
+            if SWITCH_ON.search(text) or (SWITCH_KEY.search(changed)
+                                          and SET_TRUE.search(text)):
+                return "deny", SWITCH_REASON % ("writing Heron's settings "
+                                                "file, %s" % target)
+        elif name.endswith(".reg") and POLICY_KEY.search(text):
+            return "deny", POLICY_REASON
+
+    command = command_of(tool_input)
+    if command:
+        if NAMES_CONFIG.search(command) and (
+                SWITCH_ON.search(command)
+                or (SWITCH_KEY.search(command) and WORD_TRUE.search(command))):
+            return "deny", SWITCH_REASON % "a command that writes Heron's settings file"
+        if POLICY_KEY.search(command) and REGISTRY_WRITE.search(command):
+            return "deny", POLICY_REASON
+
+    return "allow", ""
+
+
 def read_payload():
     """The host's JSON, read as UTF-8 whatever this console's code page is.
 
@@ -257,6 +396,8 @@ def main():
         if isinstance(payload, dict):
             session = payload.get("session_id") or ""
         verdict, reason = check(payload, root)
+        if verdict == "allow":
+            verdict, reason = switch_check(payload)
     except Exception as exc:                      # noqa: BLE001 - trap 2
         # TRAP 2: an unexpected death with nothing on stdout is read as
         # PERMISSION, and this hook is deny-tier. So a failure here refuses

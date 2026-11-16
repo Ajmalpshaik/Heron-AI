@@ -1035,3 +1035,36 @@ library now needs the Publish switch as well as Changes, no batch reaches either
 [`tests/test_admin_publish.py`](../../tests/test_admin_publish.py) names no exception any more.
 
 ---
+
+### ✅ Q-92 — When a proof was taken on another Heron add-in build or another Revit build, should a change from that fragment still be kept, or refused until it is proved again? → **Kept, and said - shape 1** *(found 2026-11-16, asked and answered 2026-11-16)*
+
+**What happened.** A proof now records which add-in and which Revit build it was taken on - `built_on:`,
+beside the fingerprint ([`heron_fragment.py`](../../brain/heron_fragment.py) `BUILT_ON_FIELDS`). When
+either moves, the proof is **stale for that build**: `heron_validate.py draft` says so, and `revit_read`,
+`revit_show` and `revit_change` add one line under the answer. It came from idea #10 of the research note on
+[Ajmalpshaik/Heron-AI#877](https://github.com/Ajmalpshaik/Heron-AI/pull/877).
+
+**What it does not do.** [D-117](../decisions/D-117.md) refuses to keep a change from a fragment whose proof
+no longer describes its CODE - the fingerprint, read from the card alone. A proof on another build is
+**not** refused there: it is a flag. Every proof signed before 2026-11-16 records no build and is NOT
+RECORDED, so today nothing changes for any of them.
+
+**The question, in a modeller's words: after Heron's add-in is updated, should a tool proved on the old
+add-in still change the model from a chat?**
+
+1. **Yes - say it, do not refuse,** as it now does. **Cost:** a change is kept on a build nobody proved it
+   on; the line under the answer is all that says so.
+2. **No - refuse a kept change until it is proved again on the new build.** **Cost:** every add-in
+   update stops every proven change that recorded a build until each is re-proved - a new build hashes
+   differently even when nothing it runs moved.
+3. **Refuse only when Revit's build moved, flag when only the add-in did.** **Cost:** two rules to
+   explain, and an add-in change that does matter is only flagged.
+
+**Nothing is recommended.** Shape 1 is what is built. Shape 2 is what D-30's *"a proof can go stale"* reads
+as at its strictest; how often the add-in is rebuilt decides what it would cost.
+
+**Answer: shape 1 - said under the answer, never refused. See [D-174](../DECISIONS.md).** Ajmal PS,
+2026-11-16, in conversation: *"Keep it a flag, accept Q-92 shape 1"*. D-117's refusal stays on the
+fingerprint alone.
+
+---

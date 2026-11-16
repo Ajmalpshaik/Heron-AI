@@ -24,13 +24,13 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "Write|Edit|MultiEdit",
+        "matcher": "^(Write|Edit|MultiEdit|Bash|PowerShell)$|^mcp__.+__(write_file|edit_block|start_process|interact_with_process)$",
         "hooks": [
           {
             "type": "command",
             "command": "python \"$([ -f \"$CLAUDE_PROJECT_DIR/.claude/skills/heron-guard/bin/heron_guard.py\" ] && printf %s \"$CLAUDE_PROJECT_DIR\" || git rev-parse --show-toplevel)/.claude/skills/heron-guard/bin/heron_guard.py\"",
             "timeout": 30,
-            "statusMessage": "Checking the adapter boundary..."
+            "statusMessage": "Checking Heron's guard..."
           }
         ]
       },

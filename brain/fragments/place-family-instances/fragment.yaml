@@ -450,23 +450,28 @@ compatibility-note: >
 #                                           placing one here leaves it loose
 
 utterances:
+  # THE FIRST EIGHT ARE WHAT THE RE-RANKER READS (D-134). Two column phrases
+  # moved up into them on 2026-11-16 (row 5b-1658): with all eight MEP, the
+  # re-ranker sent "place structural columns at these points from Level 1 to
+  # Level 2" to CREATE_TRUSS, and the lexical and model routes did not.
   - place the air terminals
   - put the sprinklers in
   - add the diffusers
-  - place them on the grid
+  - place structural columns at these points
   - drop a detector at each point
   - insert the family at these locations
+  - add columns on this level
+  - place them on the grid
   - place a diffuser
   - put a damper here
   # VERSION 6 (2026-11-16, rows 5b-1704 and 5b-1706).
   - place the porch posts with their top at the roof level
   - place the beds rotated 90 degrees to face the wall
-  # MOVED 2026-11-01 from PLACE_STRUCTURAL_FAMILY, merged into this card.
-  - place structural columns at these points
+  # MOVED 2026-11-01 from PLACE_STRUCTURAL_FAMILY, merged into this card
+  # (two of its phrases are in the first eight above since 2026-11-16).
   - put a column at each grid intersection
   - place the pad footings
   - place these as structural
-  - add columns on this level
   # ...and its semantic identity, which nothing else declares:
   - put a structural column or a footing at each of these points
   # MOVED 2026-11-01 from PLACE_NESTED_FAMILY, merged into this card.

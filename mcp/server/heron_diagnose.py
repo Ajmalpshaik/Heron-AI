@@ -93,7 +93,8 @@ def _live_picture(components, notes):
     rollup = HEALTH.assess(
         live=live, starting=starting, mismatched=mismatched,
         config_problems=configuration.problems(settings),
-        writing=configuration.writing_enabled(settings),
+        # Held in each Revit since D-166; revit_health asks each one.
+        writing=None,
         protocol_version=bridge.PROTOCOL_VERSION,
         versions_agree=not mismatched,
         discovery_readable=readable)

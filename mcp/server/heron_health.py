@@ -177,18 +177,27 @@ def assess(live=None, starting=None, mismatched=None, config_problems=None,
             % ("" if protocol_version is None else " on protocol %s" % protocol_version)))
 
     # --- can Heron change the model right now? ----------------------------
-    if writing:
+    # SINCE D-166 EACH REVIT HOLDS ITS OWN, so `writing` is what the Revits
+    # that answered said - True if Changes is on in any of them, False if it
+    # is off in all - and None when no Revit said, which is never "off": off
+    # is the default, and a default is not an answer.
+    if writing is True:
         components.append(Component(
             "write gate", WARNING,
-            "write.enabled is TRUE, so Heron is permitted to change the model. Its move "
-            "was measured once, in Revit 2024 on free ducts - D3 in NEEDS-CHECKING.md - and "
-            "nothing else it can change has been measured that way; whether writing should "
-            "be on is still the owner's decision (D-19) - set it back to false unless you "
-            "are deliberately testing it"))
-    else:
+            "Changes is ON in a connected Revit, so Heron is permitted to change its "
+            "model. Its move was measured once, in Revit 2024 on free ducts - D3 in "
+            "NEEDS-CHECKING.md - and nothing else it can change has been measured that "
+            "way; whether writing should be on is still the owner's decision (D-19) - "
+            "turn it off in Heron's Settings unless you are deliberately testing it"))
+    elif writing is False:
         components.append(Component(
             "write gate", HEALTHY,
             "closed - Heron cannot change the model"))
+    else:
+        components.append(Component(
+            "write gate", HEALTHY,
+            "held in each Revit, off whenever it starts - turned on only in Heron's "
+            "Settings in Revit (D-166); no connected Revit said which way it is set"))
 
     return Health(components)
 
@@ -259,6 +268,45 @@ ASK_TO_KEEP_NOT_READ = (
     "Ask to Keep: Heron could not read which way the switch is set from this Revit "
     "just now - it gave no answer Heron could use. Ask again, or look in Revit, under "
     "Heron > AI Bridge > Settings.")
+
+
+# What switches_line says for each answer heron_bridge_client.switches_state
+# can give. The word for an older add-in is the client's, held to one spelling.
+SWITCHES_NOT_SENT = "not sent"
+SWITCHES_OLDER = (
+    "Changes, Admin and Publish: this Revit's Heron add-in is older than this chat's "
+    "and does not report them - it still reads them from heron.config. Look in Revit, "
+    "under Heron > AI Bridge > Settings, and update that add-in.")
+SWITCHES_NOT_READ = (
+    "Changes, Admin and Publish: Heron could not read them from this Revit just now. "
+    "Ask again, or look in Revit, under Heron > AI Bridge > Settings.")
+
+
+def switches_line(state):
+    """
+    The line for what one Revit said of Changes, Admin and Publish (D-166) -
+    what heron_bridge_client.switches_state returned. Only the modeller turns
+    one on, in Heron's Settings in Revit, and the line says so: the reader is
+    often the AI, and it must learn where the switch is, not how to flip it.
+    """
+    if isinstance(state, dict) and all(state.get(k) is True or state.get(k) is False
+                                       for k in ("changes", "admin", "publish")):
+        said = ", ".join("%s %s" % (name, "ON" if state[key] else "off")
+                         for name, key in (("Changes", "changes"), ("Admin", "admin"),
+                                           ("Publish", "publish")))
+        line = ("%s in this Revit right now. Only the modeller turns one on, in Heron's "
+                "Settings in Revit (Heron > AI Bridge > Settings), and all three are off "
+                "again whenever Revit starts." % said)
+        locked = [name for name, key in (("Changes", "changes"), ("Admin", "admin"),
+                                         ("Publish", "publish"))
+                  if key in (state.get("locked") or [])]
+        if locked:
+            line += (" Held off on this PC by a Windows policy, so Settings cannot turn "
+                     "them on - only the PC's administrator can lift it: %s." % ", ".join(locked))
+        return line
+    if isinstance(state, str) and state == SWITCHES_NOT_SENT:
+        return SWITCHES_OLDER
+    return SWITCHES_NOT_READ
 
 
 def ask_to_keep_line(asks):

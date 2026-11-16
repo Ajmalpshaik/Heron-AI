@@ -631,14 +631,16 @@ namespace Heron.Revit.Addin
         /// switches are the gate's own question, asked through
         /// HeronPermissions so the two cannot disagree on what is allowed.
         /// </summary>
-        internal static string Withdrawn(HeronRisk risk, HeronConfig config, bool stopped)
+        internal static string Withdrawn(HeronRisk risk, HeronSwitches switches, bool stopped)
         {
             if (stopped && risk >= HeronRisk.Modify)
                 return "Heron was stopped while it ran";
 
             if (risk <= HeronPermissions.ReadOnlyCeiling) return null;
 
-            var refusedBy = HeronPermissions.RefusedBy(risk, config);
+            // The switches as this Revit holds them now (D-166) - a snapshot
+            // taken after the job, so a switch turned off meanwhile is seen.
+            var refusedBy = HeronPermissions.RefusedBy(risk, switches);
             if (refusedBy == null) return null;
 
             switch (refusedBy)

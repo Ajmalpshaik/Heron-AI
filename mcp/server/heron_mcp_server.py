@@ -37,8 +37,8 @@ question is write.askBeforeKeeping, read in the add-in - the ribbon's Ask to
 Keep since D-138, OFF by default, whose box can also keep the rest of one job
 without asking, a grant only the modeller's click in Revit gives. Around it stand the
 owner's ribbon switch, one undo entry and the pin. Writing is switched off
-entirely until write.enabled is set - see
-HeronPermissions. Since D-106 a fragment declared PUBLISH or ADMIN goes as its
+entirely until the modeller turns Changes on in Heron's Settings - held in
+Revit's memory since D-166, never in a file - see HeronPermissions. Since D-106 a fragment declared PUBLISH or ADMIN goes as its
 own operation, run_fragment_publish or run_fragment_admin, and the add-in lets
 it through only while the owner's Publish or Admin switch is on as well.
 
@@ -326,7 +326,9 @@ def revit_health() -> str:
     rollup = health.assess(
         live=live, starting=starting, mismatched=mismatched,
         config_problems=configuration.problems(settings),
-        writing=configuration.writing_enabled(settings),
+        # Held in each Revit since D-166, so not from this side's file: each
+        # Revit's own line below says which switches it holds on.
+        writing=None,
         protocol_version=bridge.PROTOCOL_VERSION,
         versions_agree=not mismatched)
 
@@ -388,6 +390,10 @@ def revit_health() -> str:
             # default, and never this side's own copy of the settings file,
             # which on some PCs is not the one Revit reads (Q-70).
             lines.append("      " + health.ask_to_keep_line(bridge.ask_to_keep_state(b)))
+            # AND CHANGES, ADMIN AND PUBLISH, as this Revit holds them (D-166) -
+            # in its memory, set only in its Settings window, so its own word
+            # is the only one there is. From `info` again; claims nothing.
+            lines.append("      " + health.switches_line(bridge.switches_state(b)))
             b.close()
 
         if len(live) > 1 and binding.pid is None:
@@ -2057,6 +2063,13 @@ def revit_change(capability: str = "", values: str = "",
 
     # NO "NOT PROVEN" LINE HERE ANY MORE. It warned after the change was kept;
     # a fragment that is not PROVEN is now refused before it is sent (D-117).
+    #
+    # A PROOF TAKEN ON ANOTHER ADD-IN OR REVIT BUILD IS SAID, NOT REFUSED -
+    # `_build_line`, D-174. The fingerprint gate above is unchanged.
+    build = _build_line(capability, folder, session)
+    if build:
+        lines.append("")
+        lines.append(build)
 
     # A DRY RUN ENDS HERE - BEFORE THE DISCARD'S BRANCH BELOW, WHICH IS FOR A
     # RUN THAT ASKED TO KEEP - AND IT ENDS ONE OF TWO WAYS.
@@ -3026,6 +3039,22 @@ def _proof_line(capability, folder):
             % (capability, status, where, when))
 
 
+def _build_line(capability, folder, session):
+    """
+    One sentence when the proof was taken on another add-in or Revit build
+    than the one that just ran it - or "" for anything else.
+
+    THE WORDS ARE THE BRAIN'S (`heron_brain.proof_build_line`), so they can
+    be held by a suite on a machine with no MCP SDK - CI's tests job has
+    none, on purpose. This door only says which session ran it.
+
+    A FLAG, NOT A REFUSAL - D-174, the owner's answer to Q-92. The D-117 gate
+    refuses on D-30's fingerprint, read from the card alone; a proof on another
+    build is said under the answer and never stops a change being kept.
+    """
+    return brain.proof_build_line(capability, folder, bridge.built_on_of(session))
+
+
 def _shown_elsewhere(root, folder, capability):
     """
     One sentence sending a capability declared EXECUTE or below to revit_show,
@@ -3240,6 +3269,10 @@ def revit_read(capability: str = "", values: str = "",
 
     lines.append("")
     lines.append(_proof_line(capability, folder))
+    # AND WHICH BUILD IT WAS PROVED ON, said only when that has moved.
+    build = _build_line(capability, folder, session)
+    if build:
+        lines.append(build)
     # SAID FROM THE ADD-IN'S COUNT, NOT FROM "NO TRANSACTION" ALONE - row
     # 5b-350 is a read that reported Revit's refusal and left an element. An
     # add-in that counted sends `elementsCounted` (a read that moved the count
@@ -3463,6 +3496,10 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
 
     lines.append("")
     lines.append(_proof_line(capability, folder))
+    # AND WHICH BUILD IT WAS PROVED ON, said only when that has moved.
+    build = _build_line(capability, folder, session)
+    if build:
+        lines.append(build)
     if isinstance(counted, int):
         lines.append("Nothing in the model was changed: Heron counted %s element(s) "
                      "before this ran and the same after it. Only what is shown can "
