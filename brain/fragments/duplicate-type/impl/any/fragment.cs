@@ -1,5 +1,20 @@
-// NOT STANDALONE. Assumes `doc`, `elements` and `newTypeName` are in scope;
-// leaves `findings`, `createdTypeId`, `sourceTypeName` and `noType` behind.
+// NOT STANDALONE. Assumes `doc`, `elements`, `newTypeName` and `typeName` are
+// in scope; leaves `findings`, `createdTypeId`, `sourceTypeName` and `noType`
+// behind.
+//
+// VERSION 2 (2026-11-16, FRAGMENT-ISSUES row 5b-1705) - A TYPE IS DUPLICATED
+// FROM THE TYPE ITSELF. Version 1 asked each element handed in for its type,
+// and a TYPE answers that with no type - so a door type picked by SELECT_TYPES
+// landed in `noType`, and each new door size cost a seed instance placed only
+// to be duplicated from (Ajmalpshaik/Heron-AI#853, Revit 2024, item B7). Now:
+//   - an element handed in that IS a type is that type;
+//   - `typeName` names one with nothing selected - "Family: Type" as the
+//     Project Browser shows it ("M_Single-Flush: 0915 x 2134mm"), or a type
+//     name alone when exactly one type in the project has it. Typed wins over
+//     the selection, and the answer says the selection was not used. A name
+//     that matches no type, or a bare name more than one family has, is
+//     refused with what it found - never the first match (D-54).
+// Everything after the source type is found is version 1's, unchanged.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
 //
@@ -27,9 +42,76 @@ var noType = new List<ElementId>();
 
 var sources = new List<ElementType>();
 
-foreach (var element in elements)
+// VERSION 2: the type typed by name, when one is. Everything from here to the
+// last finding sits in one block, so its working values - the name typed, the
+// selection echoed back - are not handed back beside the answer (the lesson of
+// ROTATE_ELEMENTS' row 5b-1708).
+{
+var typedName = (typeName ?? "").Trim();
+var byName = typedName.Length > 0 && !string.Equals(typedName, "none", StringComparison.OrdinalIgnoreCase);
+var handedIn = elements ?? new List<Element>();
+string refusal = null;
+
+if (byName)
+{
+    Func<ElementType, string> familyOf = t =>
+    {
+        try { return t.FamilyName ?? ""; } catch (Exception) { return ""; }
+    };
+    var allTypes = new FilteredElementCollector(doc).WhereElementIsElementType()
+        .OfType<ElementType>().ToList();
+
+    var colon = typedName.IndexOf(':');
+    List<ElementType> hits;
+    if (colon > 0)
+    {
+        var family = typedName.Substring(0, colon).Trim();
+        var type = typedName.Substring(colon + 1).Trim();
+        hits = allTypes.Where(t => string.Equals(familyOf(t), family, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(t.Name ?? "", type, StringComparison.OrdinalIgnoreCase)).ToList();
+        // A type whose own name holds a colon is still found by that whole name.
+        if (hits.Count == 0)
+            hits = allTypes.Where(t => string.Equals(t.Name ?? "", typedName, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+    }
+    else
+    {
+        hits = allTypes.Where(t => string.Equals(t.Name ?? "", typedName, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+    }
+
+    if (hits.Count == 1)
+    {
+        sources.Add(hits[0]);
+        if (handedIn.Count > 0)
+            findings.Add(string.Format("The type was named, so the {0} element(s) selected were not used",
+                handedIn.Count));
+    }
+    else if (hits.Count == 0)
+    {
+        refusal = string.Format("No type in this project is called '{0}'. Name it as the Project Browser "
+            + "shows it, \"Family: Type\" - \"M_Single-Flush: 0915 x 2134mm\". NOTHING was created", typedName);
+    }
+    else
+    {
+        refusal = string.Format("'{0}' is the name of {1} types, so it does not say which one. Name it as "
+            + "\"Family: Type\" - one of: {2}. NOTHING was created", typedName, hits.Count,
+            string.Join(", ", hits.Take(10).Select(t => "'" + familyOf(t) + ": " + t.Name + "'")));
+    }
+}
+
+foreach (var element in (byName ? new List<Element>() : handedIn))
 {
     if (element == null) continue;
+
+    // VERSION 2: a type handed in is the type to duplicate - SELECT_TYPES
+    // hands types, and a type has no type of its own to ask for.
+    var itself = element as ElementType;
+    if (itself != null)
+    {
+        if (!sources.Any(t => t.Id == itself.Id)) sources.Add(itself);
+        continue;
+    }
 
     var typeId = element.GetTypeId();
     if (typeId == ElementId.InvalidElementId) { noType.Add(element.Id); continue; }
@@ -42,9 +124,16 @@ foreach (var element in elements)
     if (!sources.Any(t => t.Id == type.Id)) sources.Add(type);
 }
 
-if (sources.Count == 0)
+if (refusal != null)
 {
-    findings.Add("Nothing in the selection resolves to a type, so there is nothing to duplicate");
+    findings.Add(refusal);
+}
+else if (sources.Count == 0)
+{
+    findings.Add(handedIn.Count == 0
+        ? "Nothing was selected and no type was named, so there is nothing to duplicate. Select an element "
+          + "or a type, or name the type as \"Family: Type\""
+        : "Nothing in the selection resolves to a type, so there is nothing to duplicate");
 }
 else if (sources.Count > 1)
 {
@@ -89,6 +178,8 @@ else
         findings.Add(string.Format("Could not duplicate '{0}' as '{1}': {2}",
             sourceTypeName, newTypeName, ex.Message));
     }
+}
+
 }
 
 if (noType.Count > 0)

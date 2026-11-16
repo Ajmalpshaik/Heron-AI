@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,26 @@ semantic-identity: "make a new type from the type these are using"
 kind: action
 domain: revit.elements
 capability: DUPLICATE_TYPE
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 2 (2026-11-16) - A TYPE IS DUPLICATED FROM THE TYPE ITSELF, with no
+# placed instance needed - and back to DRAFT. FRAGMENT-ISSUES row 5b-1705, from
+# Ajmalpshaik/Heron-AI#853 (Revit 2024, `villa 2`, item B7): each element
+# handed in was asked for its type, and a type answers with none, so a door
+# type picked by SELECT_TYPES landed in `noType` ("Nothing in the selection
+# resolves to a type") and every new door size cost a seed instance and four
+# calls. Now a type handed in is duplicated itself, and `typeName` names one
+# with nothing selected - "Family: Type", or a type name only one type in the
+# project has; typed wins over the selection. A name that matches nothing, or
+# that several types share, is refused with what it found - never the first
+# match (D-54). `elements` is optional for that reason. Everything after the
+# source type is found - one type only, read back, nothing set on it - is
+# version 1's. Version 1 was PROVEN on 2026-09-10 (the proof block below,
+# kept as the record of what it proved); its C# moved, so it is DRAFT again
+# until NEEDS-CHECKING Group OB is run (D-30) - on the owner's word of
+# 2026-11-16 to fix every issue from #852 to #854.
 
 purpose: >
   Duplicates the TYPE behind the elements handed in, under a new name -
@@ -26,6 +43,11 @@ purpose: >
   reports success and half-happened. So the distinct types are counted first,
   and if there is more than one they are NAMED and nothing is created. The user
   then narrows the selection, which is the answer they wanted anyway.
+
+  **A type handed in is the type duplicated** (version 2) - a door type picked
+  in the Project Browser or by SELECT_TYPES, with no door placed - and so is
+  one named as *"Family: Type"*, *"copy M_Single-Flush: 0915 x 2134mm as
+  1000 x 2134mm"*.
 
   **Forty instances of one type give ONE new type, not forty.** The types are
   de-duplicated before anything is created.
@@ -42,11 +64,24 @@ contract:
   needs:
     - name: doc
       type: Document
+    # The selection: placed elements (their type is duplicated) or, since
+    # version 2, TYPES themselves. Optional since version 2, so a type can be
+    # named by `typeName` with nothing selected; nothing selected binds empty.
     - name: elements
       type: IList<Element>
+      optional: true
     - name: newTypeName
       type: string
       source: request
+    # VERSION 2. The type to duplicate, by name: "Family: Type" as the Project
+    # Browser shows it ("M_Single-Flush: 0915 x 2134mm"), or a type name alone
+    # when exactly one type in the project has it. Given, it wins over the
+    # selection and the answer says so. Left out ("none"): the selection.
+    - name: typeName
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     - name: findings
       type: IList<string>
@@ -135,6 +170,10 @@ compatibility-note: >
 #                                        or text type BY NAME and sets its
 #                                        size in the same undo
 utterances:
+  # VERSION 2 (2026-11-16, row 5b-1705): from the type itself.
+  - duplicate this door type without placing one
+  - copy the window type as a new size
+  - make a new door type from the type
   - make a new duct type
   - duplicate this type
   - i need a copy of this type
