@@ -233,7 +233,7 @@ an edit.
 | [D-162](#d-162--the-pipe-to-revit-refuses-another-computer-the-chat-checks-who-serves-it-and-the-tokens-file-is-this-users-alone) | The pipe to Revit refuses another computer, the chat checks who serves it, and the token's file is this user's alone | ✅ Accepted · 2026-11-12 |
 | [D-163](#d-163--herons-recent-changes-are-docked-in-revit-with-select-zoom-and-undo-reached-through-the-one-dispatcher) | Heron's recent changes are docked in Revit, with Select, Zoom and Undo, reached through the one dispatcher | ✅ Accepted · 2026-11-12 |
 | [D-164](#d-164--two-built-in-parameters-of-one-name-that-read-the-same-value-are-one-reading-not-a-name-matched-twice) | Two built-in parameters of one name that read the same value are one reading, not a name matched twice | ✅ Accepted · 2026-11-14 |
-| [D-167](#d-167--article-13-names-the-keep-boxs-job-grant-as-its-one-recorded-exception) | Article 13 names the Keep box's job grant as its one recorded exception | ✅ Accepted · 2026-11-16 |
+| [D-172](#d-172--article-13-names-the-keep-boxs-job-grant-as-its-one-recorded-exception) | Article 13 names the Keep box's job grant as its one recorded exception | ✅ Accepted · 2026-11-16 |
 | [D-168](#d-168--a-release-is-versioned-and-checksummed-now-and-says-plainly-it-is-unsigned-and-is-signed-before-heron-is-given-to-anyone-outside) | A release is versioned and checksummed now and says plainly it is unsigned, and is signed before Heron is given to anyone outside | ✅ Accepted · 2026-11-16 |
 | [D-169](#d-169--the-disclaimer-says-what-the-chat-says-heron-reports-which-checked-values-a-model-meets-cites-its-source-and-certifies-no-compliance) | The DISCLAIMER says what the chat says: Heron reports which checked values a model meets, cites its source, and certifies no compliance | ✅ Accepted · 2026-11-16 |
 | [D-170](#d-170--the-word-sandbox-leaves-article-11-and-golden-rule-18-new-code-runs-watched-not-contained) | The word sandbox leaves Article 11 and Golden Rule 18: new code runs watched, not contained | ✅ Accepted · 2026-11-16 |
@@ -1449,20 +1449,20 @@ What this makes easy. What this makes hard. What it locks in.
 
 **Full record:** [`decisions/D-164.md`](decisions/D-164.md)
 
-## D-167 — Article 13 names the Keep box's job grant as its one recorded exception
+## D-172 — Article 13 names the Keep box's job grant as its one recorded exception
 
 **Status:** Accepted · **Date:** 2026-11-16 · **Accepted:** Ajmal PS, 2026-11-16, in conversation: *"go with you suggetions"* - his answer, in his own words, when [Q-73](open-questions/tier-2.md) was put to him with Claude's suggestion beside it: shape 1, Article 13 names the job grant - D-138's third link - as its one recorded exception · **Answers:** [Q-73](OPEN-QUESTIONS.md)
-**Numbering:** D-167 was the id `tools/next-id.py` printed free on 2026-11-16, with `origin/main` at `2d4bc84c` ending at D-164 and D-165 and D-166 held by the open pull requests #881 and #882. This work was given *D-166 onwards*; D-166 was already held, so it starts here, and the four decisions written from the same answers are D-168 to D-171.
+**Numbering:** D-167 was the id `tools/next-id.py` printed free on 2026-11-16, with `origin/main` at `2d4bc84c` ending at D-164 and D-165 and D-166 held by the open pull requests #881 and #882. This work was given *D-166 onwards*; D-166 was already held, so it starts here, and the four decisions written from the same answers are D-168 to D-171. Renumbered from D-167 to D-172 on 2026-11-16 with `tools/renumber.py`, because claude/dazzling-stonebraker-9281d3 holds D-167 too.
 **Amends:** [Constitution Article 13](../HERON_CONSTITUTION.md) · **Settles:** the choice [D-139](decisions/D-139.md) point 4 left open, *"Constitution Article 13 beside D-138's job grant"*
 **Keeps:** [D-138](decisions/D-138.md) and [D-141](decisions/D-141.md) - the grant as built, unchanged · [D-142](decisions/D-142.md) - a deletion is never kept under it · Articles 7, 9 and 10 · [Golden Rule 9](14-golden-rules.md) - gated in code, at the boundary
 **Affects:** [`HERON_CONSTITUTION.md`](../HERON_CONSTITUTION.md) - Article 13 and the Amendment note · no code
 
-**Full record:** [`decisions/D-167.md`](decisions/D-167.md)
+**Full record:** [`decisions/D-172.md`](decisions/D-172.md)
 
 ## D-168 — A release is versioned and checksummed now and says plainly it is unsigned, and is signed before Heron is given to anyone outside
 
 **Status:** Accepted · **Date:** 2026-11-16 · **Accepted:** Ajmal PS, 2026-11-16, in conversation: *"go with you suggetions"* - his answer, in his own words, when [Q-77](open-questions/tier-2.md) was put to him with Claude's suggestion beside it: shape 1, a decision amends D-91 - releases are versioned and checksummed now and say plainly they are unsigned, and are signed before Heron is given to anyone outside · **Answers:** [Q-77](OPEN-QUESTIONS.md)
-**Numbering:** written from the same answers as [D-167](decisions/D-167.md), whose Numbering line says how the numbers were taken.
+**Numbering:** written from the same answers as [D-172](decisions/D-172.md) (first numbered D-167), whose Numbering line says how the numbers were taken.
 **Supersedes in part:** [D-91](decisions/D-91.md) - *"Files come from a signed GitHub release"*: until signing is built a release is versioned and checksummed and says it is unsigned, and signed stays the bar, due before Heron is given to anyone outside
 **Keeps:** the rest of D-91 - named by version, never a branch, a raw file URL or whatever is newest on main, a download verified before it is used, nothing downloaded executed to decide what to install · [D-93](decisions/D-93.md) · [D-96](decisions/D-96.md) · [Article 15](../HERON_CONSTITUTION.md) - only the owner publishes a release · [Article 17](../HERON_CONSTITUTION.md) - when signing is built, its key lives in the credential store
 **Affects:** D-91's index entry and record · [07 §1a and §3](07-installation-and-update.md) · nothing in [`release.yml`](../.github/workflows/release.yml), which already writes *"Not signed."* into every release's notes, or in [`heron_tag.py`](../brain/heron_tag.py), whose refusal of an unsigned release stays as the bar signing must meet
@@ -1472,7 +1472,7 @@ What this makes easy. What this makes hard. What it locks in.
 ## D-169 — The DISCLAIMER says what the chat says: Heron reports which checked values a model meets, cites its source, and certifies no compliance
 
 **Status:** Accepted · **Date:** 2026-11-16 · **Accepted:** Ajmal PS, 2026-11-16, in conversation: *"go with you suggetions"* - his answer, in his own words, when [Q-79](open-questions/tier-2.md) was put to him with Claude's suggestion beside it: shape 1, the DISCLAIMER takes the chat's words - Heron reports whether the checked values are met, with the source document, and certifies no compliance · **Answers:** [Q-79](OPEN-QUESTIONS.md)
-**Numbering:** written from the same answers as [D-167](decisions/D-167.md), whose Numbering line says how the numbers were taken.
+**Numbering:** written from the same answers as [D-172](decisions/D-172.md) (first numbered D-167), whose Numbering line says how the numbers were taken.
 **Keeps:** [D-36](decisions/D-36.md) - the DISCLAIMER is load-bearing, and changes with the code rather than after it · the instruction every chat reads, [`host.chat.yaml`](../brain/instructions/host.chat.yaml), unchanged
 **Affects:** [`DISCLAIMER.md`](../DISCLAIMER.md), *On standards checking*
 
@@ -1481,7 +1481,7 @@ What this makes easy. What this makes hard. What it locks in.
 ## D-170 — The word sandbox leaves Article 11 and Golden Rule 18: new code runs watched, not contained
 
 **Status:** Accepted · **Date:** 2026-11-16 · **Accepted:** Ajmal PS, 2026-11-16, in conversation: *"go with you suggetions"* - his answer, in his own words, when proposal F23 was put to him with Claude's suggestion beside it: yes, the word *sandbox* in Constitution Article 11 and Golden Rule 18 becomes *watched, not contained* - new code runs under watch, every attempt recorded · **Answers:** [F23 of Part F](proposals/part-f.md) - the F23 on D-84's word, not [`f23.md`](proposals/f23.md), which is the other F23
-**Numbering:** written from the same answers as [D-167](decisions/D-167.md), whose Numbering line says how the numbers were taken.
+**Numbering:** written from the same answers as [D-172](decisions/D-172.md) (first numbered D-167), whose Numbering line says how the numbers were taken.
 **Extends:** [D-84](decisions/D-84.md) - its rename, carried into the two binding places it did not name, so its consequence *"there is now nowhere in the repository that claims otherwise"* holds for the Constitution and the Golden Rules from today
 **Supersedes one sentence of:** [D-119](decisions/D-119.md) - the Article 11 text it wrote, *"that prompt and that one group are its sandbox"*, which now reads *"that prompt and that one group are how it is watched, and watched is not contained"*; what the exception allows does not change
 **Keeps:** what Article 11 and Golden Rule 18 require - untested code never touches a live model, and promotion to live comes after it passes · D-84's decision - keep what exists, build no subprocess · D-119's exception, [D-117](decisions/D-117.md), [D-121](decisions/D-121.md) and [D-122](decisions/D-122.md)
@@ -1492,7 +1492,7 @@ What this makes easy. What this makes hard. What it locks in.
 ## D-171 — Heron may save the model it works in once its Undo entry has closed, only when the modeller asks, and never picks a name itself
 
 **Status:** Accepted · **Date:** 2026-11-16 · **Accepted:** Ajmal PS, 2026-11-16, in conversation: *"go with you suggetions"* - his answer, in his own words, when [Q-69](open-questions/tier-2.md) was put to him with Claude's suggestion beside it: shape 2 - save after the group closes, from the add-in, only when the modeller asks, and Heron never picks a name itself · **Answers:** [Q-69](OPEN-QUESTIONS.md)
-**Numbering:** written from the same answers as [D-167](decisions/D-167.md), whose Numbering line says how the numbers were taken.
+**Numbering:** written from the same answers as [D-172](decisions/D-172.md) (first numbered D-167), whose Numbering line says how the numbers were taken.
 **Supersedes in part:** [D-55](decisions/D-55.md) - a save asked for with a run is made on a preview too, and is not rolled back; the run's changes to the model are rolled back as before, and the reply says the save was made · **Extends:** [D-112](decisions/D-112.md) and [D-114](decisions/D-114.md) - a third thing the add-in does on a fragment's behalf, and the first it does after Heron's group has closed
 **Keeps:** [Article 8](../HERON_CONSTITUTION.md) - one request, one named `TransactionGroup`, one undo entry, and the save is not in it · [Article 10](../HERON_CONSTITUTION.md) - never on Heron's own initiative · Articles 12a and 12b and [Golden Rule 20](14-golden-rules.md) - the pin follows a new title only for this run's own Save As of the pinned model · [D-106](decisions/D-106.md) - behind the Publish switch, as `SAVE_DOCUMENT` is · [D-117](decisions/D-117.md), [D-119](decisions/D-119.md), [D-121](decisions/D-121.md) · [D-126](decisions/D-126.md)
 **Affects, being built in another session from 2026-11-16 and not on this branch:** `SAVE_DOCUMENT` version 3 (FRG-DOC-033) · the add-in's write path after the group closes ([`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs)) · the chat's model pin ([`heron_write.py`](../mcp/server/heron_write.py)) · the methods that ask the modeller to save first and name Q-69

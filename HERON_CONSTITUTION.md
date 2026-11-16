@@ -131,7 +131,7 @@ if the number changed, stop and re-present. A preview accepted for 247 elements 
 **13. Do not bypass security.**
 Request operations through the permission layer. Never call around it, never cache a permission
 decision, never treat one confirmation as covering a later action.
-**One recorded exception, [D-167](docs/DECISIONS.md#d-167--article-13-names-the-keep-boxs-job-grant-as-its-one-recorded-exception):** the Keep or Discard box's third link
+**One recorded exception, [D-172](docs/DECISIONS.md#d-172--article-13-names-the-keep-boxs-job-grant-as-its-one-recorded-exception):** the Keep or Discard box's third link
 ([D-138](docs/DECISIONS.md#d-138--the-keep-or-discard-question-gets-a-switch-on-the-ribbon-and-its-box-can-keep-the-rest-of-one-job-without-asking)) -
 one click there covers that chat's later changes to that model until ten quiet minutes pass. Only that
 click in Revit gives it and only the add-in holds it; it never turns a switch on, and it never covers a
@@ -271,7 +271,7 @@ On 2026-10-18 that switch went onto the ribbon, off by default, and the prompt g
 once for a job —
 [D-138](docs/DECISIONS.md#d-138--the-keep-or-discard-question-gets-a-switch-on-the-ribbon-and-its-box-can-keep-the-rest-of-one-job-without-asking), accepted by the owner.
 On 2026-11-16 **Article 13** gained one recorded exception, that same answer once for a job, which Article 9
-already named — [D-167](docs/DECISIONS.md#d-167--article-13-names-the-keep-boxs-job-grant-as-its-one-recorded-exception) - and **Article 11** and its exception
+already named — [D-172](docs/DECISIONS.md#d-172--article-13-names-the-keep-boxs-job-grant-as-its-one-recorded-exception) - and **Article 11** and its exception
 lost the word *sandbox*: new code runs watched, not contained, and nothing it requires moved —
 [D-170](docs/DECISIONS.md#d-170--the-word-sandbox-leaves-article-11-and-golden-rule-18-new-code-runs-watched-not-contained);
 both accepted by the owner, *"go with you suggetions"*.*
