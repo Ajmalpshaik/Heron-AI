@@ -49,7 +49,8 @@ them.
 THE STORE IS BUILT ONLY WHERE A CHAT'S OWN START-UP WOULD BUILD IT - a private
 store, an install with no git, or the main checkout on branch main
 (heron_brain._store_warm_allowed, rows 131 and 136). From a branch or a
-worktree it says so and leaves the shared store alone.
+worktree it says so and leaves the shared store alone - and so does an install
+on a PC whose developer note names a git checkout (D-167, amended 2026-11-16).
 
 A MICROSOFT STORE CLAUDE KEEPS ITS OWN COPY OF APPDATA (row 5b-417). When the
 Claude app is the Store (MSIX) build, Windows sends every write Claude's
@@ -417,6 +418,18 @@ def knowledge_store(check_only):
         say(NOTE, "could not tell whether this folder may build the shared "
                   "store - %s" % exc)
     if not allowed:
+        # AN INSTALLED HERON ON A DEVELOPER'S PC is neither a branch nor a
+        # worktree, and is told so in its own words (D-167, amended 2026-11-16).
+        developer = None
+        try:
+            developer = SCOPE.steps_aside_for()
+        except Exception:                               # noqa: BLE001 - the general sentence then
+            developer = None
+        if developer:
+            say(NOTE, "left alone - this PC has a Heron developer copy at %s, and "
+                      "the store every chat reads follows that copy" % developer,
+                "Nothing to do: a chat opened in that folder keeps it current.")
+            return
         say(NOTE, "left alone - this folder is a branch or a worktree, and the "
                   "store is shared by every chat on the PC",
             "Run this from the main Heron folder on branch main to build it.")

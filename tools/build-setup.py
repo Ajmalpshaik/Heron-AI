@@ -28,7 +28,8 @@ invented to install it:
                                 --from` reads, every zip checked before use
 
 and platform/Heron.Setup/HeronSetup.iss, which puts that folder in place and
-hands over to heron-install. It decides nothing about what goes where.
+opens HeronInstaller.exe --from its payload (heron-install itself, when run
+silent). It decides nothing about what goes where.
 
 SIGNING IS NOT RUN UNTIL A CERTIFICATE EXISTS (D-167 item 6). With no sign
 command the Setup is built unsigned and its NAME says so, so an unsigned file is

@@ -727,6 +727,108 @@ def shared_dir():
     return os.path.join(home, "knowledge") if home else None
 
 
+# ---------------------------------------------------------------------------
+# A developer's PC - an INSTALLED Heron steps aside for the developer's checkout
+# ---------------------------------------------------------------------------
+#
+# D-167, AMENDED 2026-11-16 ON THE OWNER'S WORD: *"for me only it will from the
+# project"*, then *"Yes, build it"*. The Setup puts an installed Heron - no .git
+# at all - beside a developer's own checkout on the same PC, and an installed
+# Heron counted itself the main checkout: on 2026-11-16 at 10:31 its Python side
+# rebuilt the shared store from the program folder's cards (NEEDS-CHECKING OA2),
+# and every chat on the PC read them. On a modeller's PC that is right - the
+# installed Heron IS their Heron. On a developer's it is a second writer.
+#
+# THE NOTE. Every chat started from a git checkout leaves one line in Heron's
+# data home naming that PC's main checkout - record_developer_checkout(). A
+# modeller's PC never has a checkout, so never has the note. Where the note
+# names a checkout that is still there, an installed Heron treats it exactly as
+# a worktree treats its main checkout (main_checkout() below): the shared store
+# follows that checkout's cards, built only while it is on main, and nothing is
+# written from the installed folder's cards.
+
+DEVELOPER_NOTE = "developer-checkout.json"
+
+
+def developer_note_path():
+    """Where the note is - Heron's data home - or None on a machine with none."""
+    import heron_paths as PATHS
+    home = PATHS.data_home()
+    return os.path.join(home, DEVELOPER_NOTE) if home else None
+
+
+def _is_checkout(folder):
+    """A Heron git checkout: `.git` a FOLDER - never a worktree's file - with
+    the card library in it."""
+    return bool(folder) and os.path.isdir(os.path.join(folder, ".git")) \
+        and os.path.isdir(os.path.join(folder, "brain", "fragments"))
+
+
+def developer_checkout():
+    """The developer checkout the note names, or None.
+
+    None when there is no note, it does not read as one, or the folder it
+    names is no longer a Heron git checkout - a moved or deleted folder is
+    not followed, it is forgotten.
+    """
+    path = developer_note_path()
+    if not path:
+        return None
+    try:
+        with io.open(path, encoding="utf-8") as handle:
+            note = json.loads(handle.read())
+    except (IOError, OSError, ValueError):
+        return None
+    folder = note.get("checkout") if isinstance(note, dict) else None
+    if not isinstance(folder, str) or not _is_checkout(folder):
+        return None
+    return folder
+
+
+def steps_aside_for(root=None):
+    """The developer checkout an INSTALLED Heron at `root` steps aside for, or
+    None. Only a Heron with no `.git` at all steps aside - a checkout or a
+    worktree is the developer's own work - and only for a checkout that is not
+    itself."""
+    root = root or ROOT
+    if os.path.exists(os.path.join(root, ".git")):
+        return None
+    developer = developer_checkout()
+    if developer is None or _same_folder(developer, root):
+        return None
+    return developer
+
+
+def record_developer_checkout(root=None):
+    """Leave the note naming this PC's main checkout. Returns that folder, or
+    None when `root` is not a git checkout (an installed Heron never writes it)
+    or there is nowhere to write. Rewritten only when it names another folder.
+    Never raises: a chat must not stop because this note was not written."""
+    root = root or ROOT
+    try:
+        if not os.path.exists(os.path.join(root, ".git")):
+            return None
+        main = main_checkout(root)
+        if not _is_checkout(main):
+            return None
+        path = developer_note_path()
+        if not path:
+            return None
+        current = developer_checkout()
+        if current is not None and _same_folder(current, main):
+            return main
+        folder = os.path.dirname(path)
+        if not os.path.isdir(folder):
+            os.makedirs(folder)
+        temporary = path + ".writing"
+        with io.open(temporary, "w", encoding="utf-8") as handle:
+            handle.write(json.dumps({"checkout": os.path.abspath(main)}, indent=2))
+        os.replace(temporary, path)
+        return main
+    except (IOError, OSError, ValueError):
+        return None
+
+
 def main_checkout(root=None):
     """The checkout a linked worktree was added from, or None.
 
@@ -734,11 +836,15 @@ def main_checkout(root=None):
     folder under the main repository's .git - and as a FOLDER in the checkout
     it was cloned into. That folder's `commondir` leads back to the main .git,
     whose parent is the main checkout. `root` itself when it is not a linked
-    worktree: the main checkout, or an installed Heron with no .git at all.
+    worktree: the main checkout, or an installed Heron with no .git at all -
+    unless this PC's note names a developer checkout, which the installed
+    Heron then follows as a worktree follows its main (steps_aside_for()).
     None when the pointers lead nowhere - a moved repository, a bare one.
     """
     root = root or ROOT
     pointer = os.path.join(root, ".git")
+    if not os.path.exists(pointer):
+        return steps_aside_for(root) or root
     if not os.path.isfile(pointer):
         return root
     try:
@@ -925,7 +1031,11 @@ def builds_from(path=None, root=None):
       (main's cards, main)            the SHARED store, asked from a linked
                                       worktree whose main checkout is on main.
       (this checkout's cards, None)   the SHARED store, asked from the main
-                                      checkout on main, or an installed Heron.
+                                      checkout on main, or an installed Heron
+                                      on a PC with no developer note - one
+                                      that has it follows the checkout it
+                                      names, as a worktree does (main's cards,
+                                      main), D-167 amended 2026-11-16.
       None                            the SHARED store, when main's cards are
                                       not on disk anywhere: a worktree whose
                                       main checkout cannot be found, or a main
