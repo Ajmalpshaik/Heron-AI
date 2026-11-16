@@ -350,6 +350,13 @@ _KNOWN = {
     "chain_contradiction": (REFUSED, FIX_FIRST,
                           "the request both resets the chain and expects to consume from "
                           "it, so it could only fail"),
+    # Q-89, decided 2026-11-15: what a run that was taken back left - a dry run,
+    # a proof's trial, a Discard - is never handed on. The add-in refuses it
+    # before anything binds, so nothing ran.
+    "chain_taken_back":  (REFUSED, START_OVER,
+                          "what is carried was left by a run that was taken back - a dry "
+                          "run, a proof's trial or a Discard - so it is of a change Revit "
+                          "no longer holds. Nothing was bound and no fragment ran"),
 
     # --- a picture for the chat (capture_view, D-123) ----------------------
     #

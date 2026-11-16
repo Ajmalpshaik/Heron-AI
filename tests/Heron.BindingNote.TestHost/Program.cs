@@ -264,6 +264,7 @@ namespace Heron.BindingNote.TestHost
             Foreign();
             Typed();
             Parts();
+            TakenBack();
 
             Console.WriteLine();
             if (Failures.Count > 0)
@@ -588,6 +589,95 @@ namespace Heron.BindingNote.TestHost
             // A record that is there but blank still refuses - see above.
             Check(!string.IsNullOrEmpty(refuse(new List<string> { "" })),
                   "a recorded document with no name still refuses");
+        }
+
+        /// <summary>
+        /// OPEN-QUESTIONS Q-89, decided 2026-11-15: what a run that was taken
+        /// back left is never handed on. TakenBack says, from how a run ended,
+        /// whether it was - a dry run, a proof's trial, a Discard - and in what
+        /// words; CarriedFromTakenBack is the binder's refusal. Each kind of
+        /// run that was taken back is asked, and each that was not.
+        ///
+        /// By reflection for Foreign's reason: on the code before Q-89 was
+        /// built neither rule exists, and these fail as checks, not as a build
+        /// error.
+        /// </summary>
+        private static void TakenBack()
+        {
+            Console.WriteLine();
+            Console.WriteLine("What a run that was taken back left is never handed on (Q-89)");
+
+            const BindingFlags Rule = BindingFlags.NonPublic | BindingFlags.Static;
+            var howRule = typeof(HeronBindingNote).GetMethod("TakenBack", Rule);
+            var refuseRule = typeof(HeronBindingNote).GetMethod("CarriedFromTakenBack", Rule);
+
+            Check(howRule != null,
+                  "the chain has a rule for whether the run that left it was taken back");
+            Check(refuseRule != null,
+                  "the binder has a refusal for what a run that was taken back left");
+
+            // (writing, kept, asked, keptNothing)
+            Func<bool, bool, bool, bool, string> how = (writing, kept, asked, nothing) =>
+                howRule == null ? "(no rule)"
+                    : (string)howRule.Invoke(null, new object[] { writing, kept, asked, nothing });
+            Func<string, string, string, string> refuse = (wanted, by, words) =>
+                refuseRule == null ? ""
+                    : (string)refuseRule.Invoke(null, new object[]
+                    {
+                        wanted, by, words, "Project1",
+                    }) ?? "";
+
+            // EACH KIND OF RUN THAT WAS TAKEN BACK.
+            var dry = how(true, false, false, false);
+            Check(!string.IsNullOrEmpty(dry) && howRule != null,
+                  "a change sent without apply - a DRY RUN, or a PROOF's trial - is taken back");
+            Check((dry ?? "").IndexOf("dry run", StringComparison.Ordinal) >= 0
+                  && (dry ?? "").IndexOf("proof", StringComparison.Ordinal) >= 0,
+                  "and the words say it was one or the other - got \"" + dry + "\"");
+            var discard = how(true, false, true, false);
+            Check(!string.IsNullOrEmpty(discard) && howRule != null,
+                  "a change the modeller was asked about and did not keep - a DISCARD - is taken back");
+            Check((discard ?? "").IndexOf("Discard", StringComparison.Ordinal) >= 0,
+                  "and the words say the modeller did not keep it - got \"" + discard + "\"");
+
+            // AND EACH THAT WAS NOT, so what it left is still handed on.
+            Check(how(true, true, false, false) == null,
+                  "a change Revit kept is not taken back - what it left is handed on");
+            Check(how(true, true, true, false) == null,
+                  "nor one the modeller kept when asked");
+            Check(how(true, false, false, true) == null,
+                  "nor a keep Revit counted nothing in (D-160) - the model holds what it reported");
+            Check(how(false, false, false, false) == null,
+                  "nor a read, which opens nothing to take back");
+
+            // THE REFUSAL, naming what was taken back and what to run instead.
+            var own = refuse("rename-views", "rename-views", dry ?? "");
+            Check(own.Length > 0,
+                  "an expectation naming the run that was taken back is REFUSED");
+            Check(own.IndexOf("'rename-views'", StringComparison.Ordinal) >= 0
+                  && own.IndexOf("'Project1'", StringComparison.Ordinal) >= 0
+                  && own.IndexOf(dry ?? "(none)", StringComparison.Ordinal) >= 0,
+                  "and it says which run it was, on which model, and how it was taken back - got \""
+                  + own + "\"");
+            Check(own.IndexOf("no longer holds", StringComparison.Ordinal) >= 0,
+                  "and why: it is of a change Revit no longer holds");
+            Check(own.IndexOf("again and keep it", StringComparison.Ordinal) >= 0,
+                  "and what to run instead: that run again, kept");
+            Check(own.IndexOf("NOTHING WAS BOUND", StringComparison.Ordinal) >= 0,
+                  "and that nothing was bound, as the chain's other refusals say");
+
+            var earlier = refuse("find-views", "rename-views", discard ?? "");
+            Check(earlier.IndexOf("'find-views' again, then send this", StringComparison.Ordinal) >= 0
+                  && earlier.IndexOf("again and keep it", StringComparison.Ordinal) < 0,
+                  "an expectation naming an EARLIER run is told to run THAT again - the run "
+                  + "taken back replaced what it left - got \"" + earlier + "\"");
+            Check(refuse("Rename-Views", "rename-views", dry ?? "")
+                      .IndexOf("again and keep it", StringComparison.Ordinal) >= 0,
+                  "and the run is matched however the expectation spells its case, as the binder matches it");
+            Check(refuse("rename-views", null, "").IndexOf("(unknown)", StringComparison.Ordinal) >= 0
+                  && refuse("rename-views", null, "")
+                      .IndexOf("taken back", StringComparison.Ordinal) >= 0,
+                  "a run with no name, or no words, is still refused, and says so");
         }
     }
 }

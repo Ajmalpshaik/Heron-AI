@@ -1162,7 +1162,10 @@ namespace Heron.Revit.Addin
             // counts them; the list is what the record is for.
             Elements = described == null ? null : described.ElementsField();
 
-            Remember(name, state, target, bound, client, globals.__heron, ranWith);
+            // Q-89: WITH HOW IT WAS TAKEN BACK, when it was - a dry run, a
+            // proof's trial, a Discard - so nothing it left is handed on.
+            Remember(name, state, target, bound, client, globals.__heron, ranWith,
+                     HeronBindingNote.TakenBack(writing, apply, answered != null, keptNothing));
             var answer = Report(name, state, target, uidoc, app.ActiveUIDocument, bound,
                                 globals.__heron);
             if (confirmed != null) answer = confirmed.OnReply(answer);   // D-142
@@ -3720,6 +3723,12 @@ namespace Heron.Revit.Addin
             // accept either. docs/36.
             public string Inputs;
 
+            // Q-89: HOW THE RUN THAT LEFT THESE WAS TAKEN BACK - a dry run, a
+            // proof's trial, a Discard (HeronBindingNote.TakenBack) - or null
+            // when what it left stands in the model. While it is set nothing
+            // here is bound, by name or by expectation.
+            public string TakenBack;
+
             public DateTime TouchedUtc;
         }
 
@@ -4020,6 +4029,16 @@ namespace Heron.Revit.Addin
                 wantedInputs = expect.Substring(split + 7).Trim();
             }
 
+            // Q-89: LEFT BY A RUN THAT WAS TAKEN BACK - a dry run, a proof's
+            // trial, a Discard. Asked first: whatever is expected, everything
+            // carried was replaced by that run, and none of it may be bound.
+            if (chain != null && chain.Document == target.Title && chain.TakenBack != null)
+            {
+                return Json.Error("chain_taken_back",
+                    HeronBindingNote.CarriedFromTakenBack(wantedBy, chain.By, chain.TakenBack,
+                                                          target.Title));
+            }
+
             // NOTHING CARRIED AT ALL. Said apart from a mismatch because they
             // are different faults: one is "the producer did not run", the
             // other is "a different producer ran".
@@ -4207,9 +4226,12 @@ namespace Heron.Revit.Addin
             prologue = "";
             binding = null;
 
-            // THIS CHAT'S carried values, and no other chat's.
+            // THIS CHAT'S carried values, and no other chat's - and none a run
+            // that was taken back left (Q-89): an expectation is refused for
+            // them below, and a need is never filled from them by name.
             var chain = ChainFor(client, false);
             var carried = chain != null && chain.Document == target.Title
+                          && chain.TakenBack == null
                 ? chain.Values : null;
 
             // THE EXPECTATION, CHECKED ONCE AND BEFORE ANYTHING BINDS.
@@ -4699,17 +4721,22 @@ namespace Heron.Revit.Addin
                                      Document target, HashSet<string> bound,
                                      string client,
                                      IDictionary<string, object> handedIn,
-                                     string ranWith)
+                                     string ranWith,
+                                     string takenBack = null)
         {
             // A caller that did not say who it is gets no chain - see ChainFor.
             var chain = ChainFor(client, true);
             if (chain == null) return;
 
-            if (chain.Document != target.Title) chain.Clear();
+            // Q-89: AND AFTER A RUN THAT WAS TAKEN BACK THE CHAIN STARTS AFRESH.
+            // Nothing that run left may be bound, and a name it left that this
+            // run does not write again would otherwise outlive the mark.
+            if (chain.Document != target.Title || chain.TakenBack != null) chain.Clear();
 
             chain.Document = target.Title;
             chain.By = name;
             chain.Inputs = ranWith;
+            chain.TakenBack = takenBack;
 
             foreach (var variable in state)
             {

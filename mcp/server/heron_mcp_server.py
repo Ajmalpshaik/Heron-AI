@@ -1847,6 +1847,13 @@ def revit_change(capability: str = "", values: str = "",
     # drop, it was the silence.
     undeclared, takeable = bridge.undeclared_values(_values_array(values), needs)
 
+    # Q-89: NOTHING A RUN THAT WAS TAKEN BACK LEFT IS HANDED ON - refused here,
+    # before a session is bound, when this chat's own runs say so. The add-in
+    # refuses it too (chain_taken_back), for a run only Revit saw end.
+    taken_back = _TAKEN_BACK.refusal(expect_from)
+    if taken_back:
+        return _ended("refused", taken_back)
+
     try:
         session = binding.resolve()
     except NotBound as unbound:
@@ -1942,6 +1949,13 @@ def revit_change(capability: str = "", values: str = "",
     # HOW IT ENDED IS THE ADD-IN'S REPLY, NOT THE WORDS EXPLAIN WRAPS IT IN:
     # a refusal whose message never says "refused" is still one (5b-274).
     failure = analyse(reply, writes=tools.writes("revit_change"))
+
+    # Q-89: AND HOW THIS RUN ENDED, for the next call's expect_from - a dry run
+    # or a Discard is taken back; an answer the add-in refused moved nothing.
+    _TAKEN_BACK.answered(folder, capability, dry_run, reply,
+                         failure is not None
+                         and failure.outcome not in (UNKNOWN_OUTCOME, RUNNING_OUTCOME))
+
     if failure is not None:
         return (_ended(_failure_ended(failure), explain(failure))
                 + _what_to_type(failure, capability)
@@ -2141,19 +2155,19 @@ def revit_change(capability: str = "", values: str = "",
         # remembers what EVERY run left, a rolled-back one included
         # (RevitFragment.Remember), so after this call the chat's carried
         # values are the dry run's: the kept call sent with the same
-        # expect_from would be refused (chain_mismatch), and one naming THIS
-        # capability would bind values of a change Revit no longer holds.
-        # Whether a rolled-back run should replace them at all is not decided
-        # anywhere (OPEN-QUESTIONS Q-89, row 5b-1612); until it is, the reply
-        # says what is true of the add-in as built.
+        # expect_from is refused by the add-in (chain_taken_back - an older
+        # one says chain_mismatch). One naming THIS capability would bind
+        # values of a change Revit no longer holds, and OPEN-QUESTIONS Q-89,
+        # decided 2026-11-15, refuses it: here (_TAKEN_BACK), and in the add-in.
         if expect_from and expect_from.strip():
             closing += (" This dry run used up what '%s' left: run that call again "
                         "before the kept run, and send the same expect_from - sent "
                         "as it is now, the kept run is refused, because what Revit's "
                         "Heron carries was left by this dry run."
                         % runs.one_line(expect_from.strip()))
-        closing += (" Take nothing from this dry run with expect_from: what it left "
-                    "is of a change Revit no longer holds.")
+        closing += (" Nothing this dry run left is handed on: a call whose expect_from "
+                    "names it is refused, because what it left is of a change Revit no "
+                    "longer holds.")
         lines.append(closing)
         _outcome(ROLLED_BACK, says=ROLLED_BACK_AS_ASKED)
         return _ended("ok", "\n".join(lines))
@@ -2193,6 +2207,10 @@ def revit_change(capability: str = "", values: str = "",
 
 #: What this chat has already printed in the current batch - see heron_run_records.Batch.
 _BATCH = runs.Batch()
+
+#: Which of this chat's runs were taken back, so nothing they left is handed on
+#: (Q-89) - see heron_run_records.TakenBack.
+_TAKEN_BACK = runs.TakenBack()
 
 
 def _new_request_id():
@@ -3162,6 +3180,11 @@ def revit_read(capability: str = "", values: str = "",
     # called from the client exactly as revit_change calls it.
     undeclared, takeable = bridge.undeclared_values(_values_array(values), needs)
 
+    # Q-89: NOTHING A RUN THAT WAS TAKEN BACK LEFT IS READ - revit_change's rule.
+    taken_back = _TAKEN_BACK.refusal(expect_from)
+    if taken_back:
+        return _ended("refused", taken_back)
+
     try:
         session = binding.resolve()
     except NotBound as unbound:
@@ -3385,6 +3408,11 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
     # A NAME NOTHING DECLARES IS NAMED, NOT DROPPED IN SILENCE - row 71's rule,
     # called from the client exactly as both other doors call it.
     undeclared, takeable = bridge.undeclared_values(_values_array(values), needs)
+
+    # Q-89: NOTHING A RUN THAT WAS TAKEN BACK LEFT IS SHOWN - revit_change's rule.
+    taken_back = _TAKEN_BACK.refusal(expect_from)
+    if taken_back:
+        return _ended("refused", taken_back)
 
     try:
         session = binding.resolve()
