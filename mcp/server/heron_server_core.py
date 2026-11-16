@@ -448,6 +448,7 @@ _ctx = threading.local()
 # was busy, or another chat held the model - and the add-in answered before
 # anything ran.
 KEPT = "KEPT"
+NOTHING_CHANGED = "NOTHING CHANGED"
 ANSWERED = "ANSWERED"
 NOT_ANSWERED = "NOT ANSWERED"
 REFUSED = "REFUSED"
@@ -463,6 +464,15 @@ OUTCOMES = (
      "A change ran and Revit kept its transaction - the add-in's own verdict, "
      "with nothing beside it saying otherwise. Not a claim that anything "
      "changed: the result lines are that."),
+    (NOTHING_CHANGED,
+     "Revit kept this call's transaction and nothing in the model changed - "
+     "Revit counted no change and every result the capability declares is "
+     "zero; there is nothing to undo",
+     "revit_change only: a change Revit KEPT in which nothing changed by every "
+     "count Heron has - Revit counted no element added, changed or deleted, or "
+     "raised no change event at all with none unreadable, AND every result the "
+     "capability declares read zero. Anything found, made or changed - a "
+     "partial result - stays KEPT (D-168, row 5b-1657)."),
     (ANSWERED,
      "it ran, and what follows is its answer; this door keeps nothing in the "
      "model",
@@ -480,7 +490,9 @@ OUTCOMES = (
      "says or tell the modeller, and never get round it another way",
      "A switch that is off, a capability that is not proved, the wrong door, "
      "the wrong model, a card Heron cannot read - or an answer from another "
-     "model, which Heron would not show."),
+     "model, which Heron would not show. Or the capability itself said no and "
+     "made nothing, in a change Revit kept with no change counted (D-168, row "
+     "5b-1635)."),
     (NOT_RUN,
      "nothing ran in Revit and nothing needs undoing; choose or fix what the "
      "reply names, then ask again",
@@ -553,6 +565,83 @@ def outcome_line(word, says=None):
     (ROLLED_BACK_AS_ASKED is the only one)."""
     said = says or _SAYS_NEXT.get(word)
     return OUTCOME_LINE + word + (_OUTCOME_TAIL + said if said else "")
+
+
+def kept_nothing(reply, provides):
+    """
+    NOTHING_CHANGED or REFUSED for a change the add-in answered `kept` in
+    which nothing changed by every count Heron has - or None, which leaves it
+    KEPT. D-168, on the owner's two answers of 2026-11-15: an empty keep says
+    "nothing changed" (row 5b-1657), and a capability's own refusal that made
+    nothing says REFUSED (row 5b-1635).
+
+    `provides` is the capability's declared results, from its card
+    (heron_brain.fragment_contract). EVERY ONE OF THESE MUST HOLD, or None:
+
+      * Revit's change report is there, none of its events was unreadable,
+        and it counted nothing - no event at all, or a total of 0 - with no
+        element added, modified or deleted beside it. A reply from an add-in
+        that sends no report is not read as empty;
+      * the card declares at least one `role: result`, every one of them came
+        back, and every one reads zero, as heron_validate.looks_empty reads a
+        proof's negative leg. A card that declares no result says nothing a
+        zero could be read off;
+      * nothing could not be read: an import or a value Heron cannot judge
+        leaves it KEPT.
+
+    So a partial result - eleven pairs joined, the twelfth refused - is KEPT.
+    Then REFUSED when the card's own `refused` holds something, and
+    NOTHING_CHANGED when it does not.
+    """
+    if not isinstance(reply, dict) or not isinstance(provides, list):
+        return None
+    changes = reply.get("changes")
+    if not isinstance(changes, dict):
+        return None
+
+    def number(value):
+        try:
+            return float(value or 0)
+        except (TypeError, ValueError):
+            return None
+
+    if number(changes.get("unreadable")) != 0:
+        return None
+    if changes.get("witnessed") and number(changes.get("total")) != 0:
+        return None
+    if not changes.get("witnessed") and number(changes.get("events")) != 0:
+        return None
+    for key in ("elementsAdded", "elementsModified", "elementsDeleted"):
+        if key in reply and number(reply.get(key)) != 0:
+            return None
+
+    declared = [d for d in provides if isinstance(d, dict) and d.get("name")]
+    roles = dict((d["name"], d.get("role")) for d in declared)
+    results = set(n for n, role in roles.items() if role == "result")
+    values = reply.get("provides")
+    if not results or not isinstance(values, dict) or not results <= set(values):
+        return None
+    strings = set(d["name"] for d in declared if d.get("role") == "result"
+                  and str(d.get("type") or "").strip().lower() == "string")
+    try:
+        import heron_validate as HV
+    except Exception:                                   # noqa: BLE001 - KEPT stands
+        return None
+    try:
+        if not HV.looks_empty({"provides": dict((n, values[n]) for n in results)},
+                              roles, results, strings):
+            return None
+        refused = values.get("refused") if "refused" in roles else None
+        if refused is None:
+            return NOTHING_CHANGED
+        as_text = str(dict((d["name"], d.get("type")) for d in declared).get("refused")
+                      or "").strip().lower() == "string"
+        said = (HV._as_found(refused) if as_text else HV._as_count(refused))
+    except Exception:                                   # noqa: BLE001 - KEPT stands
+        return None
+    if said is None:
+        return None
+    return REFUSED if said else NOTHING_CHANGED
 
 
 def outcome_of(text):

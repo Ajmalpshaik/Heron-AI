@@ -180,8 +180,8 @@ DOORS = ("revit_change", "revit_read", "revit_show")
 # asks of a tool that joins. Section 9 walks them.
 UNDO_TOOL = "revit_undo_last"
 SAYS = DOORS + (UNDO_TOOL,)
-WORDS = ("KEPT", "ANSWERED", "NOT ANSWERED", "REFUSED", "NOT RUN", "ROLLED BACK",
-         "STILL RUNNING", "OUTCOME UNKNOWN")
+WORDS = ("KEPT", "NOTHING CHANGED", "ANSWERED", "NOT ANSWERED", "REFUSED", "NOT RUN",
+         "ROLLED BACK", "STILL RUNNING", "OUTCOME UNKNOWN")
 
 
 def check(condition, description):
@@ -461,12 +461,66 @@ def build_cases(module, core):
                     or tools.disk_refusal("revit_show", capability, code))
 
     change, _f = first_with("MODIFY", "PROVEN", stands)
+
+    # D-168: A PROVEN CHANGE THAT DECLARES A RESULT AND A `refused`, needing no
+    # value the call must carry - CREATE_LEVELS is one - so the door sends it
+    # and the outcome is read off what came back.
+    contract_of = getattr(brain, "fragment_contract", None)
+
+    def declares_refusals(folder, capability):
+        if not stands(folder, capability) or contract_of is None:
+            return False
+        held = contract_of(folder) or {}
+        names = dict((d.get("name"), d) for d in held.get("provides") or []
+                     if isinstance(d, dict))
+        return (not held.get("required") and "refused" in names
+                and any(d.get("role") == "result" for d in names.values()))
+
+    nothing, nothing_folder = first_with("MODIFY", "PROVEN", declares_refusals)
+    declared = ((contract_of(nothing_folder) or {}).get("provides") or []
+                if nothing_folder and contract_of else [])
+
+    def value(kind, found):
+        kind = str(kind or "")
+        if kind.startswith("IList"):
+            return "2 item(s) [101, 102]" if found else "0 item(s)"
+        if kind.startswith("IDictionary"):
+            return "2 entry(ies)" if found else "0 entry(ies)"
+        if kind == "string":
+            return "made two" if found else ""
+        if kind in ("int", "long", "double"):
+            return "2" if found else "0"
+        if kind == "bool":
+            return "False"
+        return "101" if found else "(null)"
+
+    def kept_with(results, refused, changes):
+        given = {}
+        for d in declared:
+            name = d.get("name")
+            if name == "refused":
+                given[name] = ((("1 item(s) [Outcome Test]" if str(d.get("type")).startswith("IList")
+                                 else "1 name(s) already taken, so NO LEVEL WAS CREATED")
+                                if refused else value(d.get("type"), False)))
+            elif d.get("role") == "result":
+                given[name] = value(d.get("type"), results)
+            else:
+                given[name] = value(d.get("type"), False)
+        reply = dict(KEPT, provides=given)
+        if changes is not None:
+            reply["changes"] = changes
+        return reply
+
+    UNSEEN = {"events": 0, "unreadable": 0, "witnessed": False, "total": 0}
+    COUNTED = {"events": 3, "unreadable": 0, "witnessed": True, "total": 2}
+    UNREAD = {"events": 2, "unreadable": 1, "witnessed": False, "total": 0}
     draft, _f = first_with("MODIFY", "DRAFT")
     read, _f = first_with("READ", "PROVEN")
     show, _f = first_with("EXECUTE", "PROVEN", shows)
     if show is None:
         show, _f = first_with("EXECUTE", "DRAFT", shows)
-    picked = {"change": change, "draft": draft, "read": read, "show": show}
+    picked = {"change": change, "draft": draft, "read": read, "show": show,
+              "nothing": nothing}
 
     # FOR THE DRY RUN (D-155): a PROVEN job above MODIFY, and a PROVEN
     # EXECUTE one the show door turns away for writing a file (row 5b-591).
@@ -528,6 +582,17 @@ def build_cases(module, core):
              kind="kept"),
         Case("a change the modeller was asked about and KEPT", C, "KEPT",
              {"capability": change}, ASKED_KEPT),
+        # ---- D-168: a keep that changed nothing, by every count -------------
+        Case("a keep the capability itself refused, nothing made", C, "REFUSED",
+             {"capability": nothing}, kept_with(False, True, UNSEEN)),
+        Case("a keep that changed nothing by Revit's count and the card's", C,
+             "NOTHING CHANGED", {"capability": nothing}, kept_with(False, False, UNSEEN)),
+        Case("a keep that did part of the job and refused the rest", C, "KEPT",
+             {"capability": nothing}, kept_with(True, True, UNSEEN)),
+        Case("a keep Revit counted changes in, the card's results zero", C, "KEPT",
+             {"capability": nothing}, kept_with(False, True, COUNTED)),
+        Case("a keep whose change events could not all be read", C, "KEPT",
+             {"capability": nothing}, kept_with(False, True, UNREAD)),
         Case("a change the modeller DISCARDED, the rollback confirmed", C,
              "ROLLED BACK", {"capability": change}, DISCARDED, kind="rollback"),
         Case("a Discard whose rollback Revit did not confirm", C,
@@ -854,7 +919,7 @@ def the_vocabulary(core, registry):
     rows = list(table or ())
     words = [row[0] for row in rows]
     check(sorted(words) == sorted(WORDS),
-          "it holds exactly the eight words a host is told - found %r" % (words,))
+          "it holds exactly the nine words a host is told - found %r" % (words,))
     check(len(set(words)) == len(words), "each once")
     check(all(len(row) == 3 and (row[2] or "").strip() for row in rows),
           "and each with a plain sentence saying what it means")
@@ -887,6 +952,21 @@ def the_vocabulary(core, registry):
           "found %r" % (meant.get("ROLLED BACK") or ""))
     check("REFUSED" in (meant.get("NOT RUN") or ""),
           "the table says in one sentence how NOT RUN differs from REFUSED")
+    # D-168, rows 5b-1657 and 5b-1635: a keep that changed nothing by every
+    # count Heron has says so, and never promises an undo step.
+    nothing_says = told.get("NOTHING CHANGED") or ""
+    check("nothing" in nothing_says and "undo" in nothing_says
+          and "reply" not in nothing_says,
+          "NOTHING CHANGED says nothing changed and that there is nothing to undo, "
+          "leaning on no sentence of the reply - found %r" % nothing_says)
+    check("KEPT" in (meant.get("NOTHING CHANGED") or "")
+          and "result" in (meant.get("NOTHING CHANGED") or ""),
+          "and its meaning says how it differs from KEPT - every result the "
+          "capability declares read zero")
+    refused_meant = meant.get("REFUSED") or ""
+    check("made nothing" in refused_meant,
+          "REFUSED's meaning now names a capability's own refusal that made "
+          "nothing (row 5b-1635) - found %r" % refused_meant)
     running = told.get("STILL RUNNING") or ""
     check("again" in running and "id" in running,
           "STILL RUNNING says not to send it again, and that no id follows a "
@@ -957,8 +1037,11 @@ def never_more_than_known(stage, core, cases, replies):
                   for c in lost),
           "and never KEPT, REFUSED, ANSWERED or NOT RUN")
     only_kept = [c.name for c in cases if stated(replies[c]) == "KEPT"]
+    # BY THE REPLY'S OWN VERDICT, not by which fixture it is: D-168's keeps are
+    # built from the card they run, and the ones that changed something are KEPT.
     check(sorted(only_kept) == sorted(c.name for c in cases
-                                      if (c.reply is KEPT or c.reply is ASKED_KEPT)
+                                      if isinstance(c.reply, dict)
+                                      and c.reply.get("verdictKind") == "kept"
                                       and c.word == "KEPT"),
           "KEPT is said only of a reply whose own verdict is `kept` - found %r"
           % (only_kept,))
@@ -1430,6 +1513,9 @@ def nothing_else_moved(stage, cases, replies, picked):
         return items[-1]["seq"] if items else 0
 
     wanted = {"a change Revit kept": "ok",
+              "a keep the capability itself refused, nothing made": "refused",
+              "a keep that changed nothing by Revit's count and the card's": "ok",
+              "a keep that did part of the job and refused the rest": "ok",
               "the Changes switch off (write_disabled)": "refused",
               "a change the modeller DISCARDED, the rollback confirmed": "refused",
               "the fragment threw and the job was rolled back": "failed",
@@ -1678,12 +1764,13 @@ def main():
         picked, cases = build_cases(module, core)
         print()
         print("  the cards the doors are asked for, read from the library:")
-        for role in ("change", "draft", "read", "show", "outward", "on disk"):
+        for role in ("change", "draft", "read", "show", "outward", "on disk", "nothing"):
             print("    %-7s %s" % (role, picked[role]))
         check(all(picked.values()),
               "the library has a PROVEN change whose proof stands, a DRAFT change, "
               "a PROVEN read, something revit_show runs, a PROVEN Publish or Admin "
-              "job and a PROVEN EXECUTE job that writes a file")
+              "job, a PROVEN EXECUTE job that writes a file, and a PROVEN change "
+              "that declares a result and a `refused` and needs no value")
         if not all(picked.values()):
             return 1
 

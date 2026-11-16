@@ -233,6 +233,7 @@ an edit.
 | [D-162](#d-162--the-pipe-to-revit-refuses-another-computer-the-chat-checks-who-serves-it-and-the-tokens-file-is-this-users-alone) | The pipe to Revit refuses another computer, the chat checks who serves it, and the token's file is this user's alone | ✅ Accepted · 2026-11-12 |
 | [D-163](#d-163--herons-recent-changes-are-docked-in-revit-with-select-zoom-and-undo-reached-through-the-one-dispatcher) | Heron's recent changes are docked in Revit, with Select, Zoom and Undo, reached through the one dispatcher | ✅ Accepted · 2026-11-12 |
 | [D-164](#d-164--two-built-in-parameters-of-one-name-that-read-the-same-value-are-one-reading-not-a-name-matched-twice) | Two built-in parameters of one name that read the same value are one reading, not a name matched twice | ✅ Accepted · 2026-11-14 |
+| [D-168](#d-168--a-change-revit-kept-in-which-nothing-changed-by-every-count-says-nothing-changed-and-refused-when-the-capability-itself-said-no) | A change Revit kept in which nothing changed by every count says NOTHING CHANGED, and REFUSED when the capability itself said no | ✅ Accepted · 2026-11-16 |
 
 ## Format
 
@@ -1440,3 +1441,11 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`compare-elements`](../brain/fragments/compare-elements/impl/any/fragment.cs) (version 3, `builtInTwinsAgree`) · [`test_same_name_guard.py`](../tests/test_same_name_guard.py) (check 7) · [FRAGMENT-ISSUES row 5b-1631](fragment-issues/row-5b-1631.md)
 
 **Full record:** [`decisions/D-164.md`](decisions/D-164.md)
+
+## D-168 — A change Revit kept in which nothing changed by every count says NOTHING CHANGED, and REFUSED when the capability itself said no
+
+**Status:** Accepted · **Date:** 2026-11-16 · **Accepted:** Ajmal PS, 2026-11-15, in conversation, two answers each put to him alone in plain words: *"Yes, say nothing changed"* (row 5b-1657 - views renamed from a text no view had, nothing changed, the answer read KEPT) and *"Yes, say REFUSED"* (row 5b-1635 - a level name already taken, the card said no and made nothing, the answer read KEPT). Items 2 to 4 are how those two answers are carried out, written when they were built on 2026-11-16
+**Extends:** [D-160](#d-160--a-keep-that-changed-nothing-is-rolled-back-so-no-empty-entry-is-left-in-the-undo-list) - a keep Revit WITNESSED counting zero is rolled back; this is the keep Revit raised no event for · **Keeps:** the outcome table of [docs/04 §8.12](04-heron-mcp.md) and [row 5b-1159](fragment-issues/section-5b-rows-401-425.md) - one word per ending, never more than is known · [D-52](#d-52--a-count-of-what-was-turned-down-is-not-a-count-of-what-was-found) - what was turned down is not what was found
+**Affects:** [`heron_server_core.py`](../mcp/server/heron_server_core.py) (`NOTHING_CHANGED`, `OUTCOMES`, `kept_nothing`) · [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (`revit_change`) · [docs/04 §8.12](04-heron-mcp.md) · [`test_outcome_line.py`](../tests/test_outcome_line.py) · rows [5b-1635](fragment-issues/row-5b-1635.md) and [5b-1657](fragment-issues/row-5b-1657.md)
+
+**Full record:** [`decisions/D-168.md`](decisions/D-168.md)
