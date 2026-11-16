@@ -6654,16 +6654,20 @@ def heron_checklist(action: str = "list", name: str = "", checks: str = "",
     number" on one output it declares - "failures == 0", "ids": the output
     holding failing element ids, or ""}. Optional, in their words: "severity"
     high, medium or low; "clause", the BEP or standard it comes from; "advice",
-    how to fix. Turn each sentence into a check with heron_lookup; ask, never
+    how to fix. Optional, from the card: "missing", the output counting
+    elements it could not read, and "applicable", the one counting elements
+    looked at. Turn each sentence into a check with heron_lookup; ask, never
     guess. replace=true only when they said so.
 
     "list" names them; "show" gives one's checks; "delete" removes one when
     asked; "starter" saves Heron's example under `name`, only when asked.
 
     "run" runs `name` check by check through revit_read: PASS meets the value
-    checked, FAIL does not, NOT RUN says why and is never a pass; each says
-    NEW, STILL OPEN or FIXED against the last run on that model. Never call
-    the model compliant. Results also go on the Companion's QA Checklist.
+    checked, FAIL does not, NO DATA could not decide - data missing - and NOT
+    RUN says why; neither of the last two is ever a pass. Give the Coverage
+    line with the counts. Each says NEW, STILL OPEN or FIXED against the last
+    run on that model. Never call the model compliant. Results also go on the
+    Companion's QA Checklist.
     """
     try:
         store = brain.checklists()
@@ -6709,7 +6713,9 @@ def heron_checklist(action: str = "list", name: str = "", checks: str = "",
             said = store.text(answer)
             if _checklist_on_page(answer):
                 said += "\nThe results are on the QA Checklist page of the Heron Companion."
-            ran = answer["counts"]["pass"] + answer["counts"]["fail"]
+            # A NO DATA check read the model and answered "could not decide"
+            # (D-165) - an answer, so it counts as run; only NOT RUN does not.
+            ran = answer["counts"]["pass"] + answer["counts"]["fail"] + answer["counts"]["missing"]
             return _ended("failed" if answer.get("failed") else "ok" if ran else "refused", said)
         if act not in ("save", "starter"):
             return _ended("refused", "action must be list, show, save, starter, run or delete - "

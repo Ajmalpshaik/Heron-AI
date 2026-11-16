@@ -233,6 +233,7 @@ an edit.
 | [D-162](#d-162--the-pipe-to-revit-refuses-another-computer-the-chat-checks-who-serves-it-and-the-tokens-file-is-this-users-alone) | The pipe to Revit refuses another computer, the chat checks who serves it, and the token's file is this user's alone | ✅ Accepted · 2026-11-12 |
 | [D-163](#d-163--herons-recent-changes-are-docked-in-revit-with-select-zoom-and-undo-reached-through-the-one-dispatcher) | Heron's recent changes are docked in Revit, with Select, Zoom and Undo, reached through the one dispatcher | ✅ Accepted · 2026-11-12 |
 | [D-164](#d-164--two-built-in-parameters-of-one-name-that-read-the-same-value-are-one-reading-not-a-name-matched-twice) | Two built-in parameters of one name that read the same value are one reading, not a name matched twice | ✅ Accepted · 2026-11-14 |
+| [D-165](#d-165--a-qa-check-never-passes-on-missing-data-a-fourth-answer-no-data-and-a-coverage-line-beside-every-pass-count) | A QA check never passes on missing data: a fourth answer, NO DATA, and a coverage line beside every pass count | ✅ Accepted · 2026-11-16 |
 | [D-168](#d-168--a-change-revit-kept-in-which-nothing-changed-by-every-count-says-nothing-changed-and-refused-when-the-capability-itself-said-no) | A change Revit kept in which nothing changed by every count says NOTHING CHANGED, and REFUSED when the capability itself said no | ✅ Accepted · 2026-11-16 |
 
 ## Format
@@ -1441,6 +1442,14 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`compare-elements`](../brain/fragments/compare-elements/impl/any/fragment.cs) (version 3, `builtInTwinsAgree`) · [`test_same_name_guard.py`](../tests/test_same_name_guard.py) (check 7) · [FRAGMENT-ISSUES row 5b-1631](fragment-issues/row-5b-1631.md)
 
 **Full record:** [`decisions/D-164.md`](decisions/D-164.md)
+
+## D-165 — A QA check never passes on missing data: a fourth answer, NO DATA, and a coverage line beside every pass count
+
+**Status:** Accepted · **Date:** 2026-11-16 · **Accepted:** Ajmal PS, 2026-11-16, in conversation: *"accept D-165 as written"*
+**Keeps:** [D-152](decisions/D-152.md) · [D-159](decisions/D-159.md) · [D-01](decisions/D-01.md) · [D-149](decisions/D-149.md)
+**Affects:** [`heron_checklists.py`](../brain/heron_checklists.py) (`judge`, `run_coverage`) · [`companion.js`](../mcp/companion/static/companion.js) (`qaResult`)
+
+**Full record:** [`decisions/D-165.md`](decisions/D-165.md)
 
 ## D-168 — A change Revit kept in which nothing changed by every count says NOTHING CHANGED, and REFUSED when the capability itself said no
 
