@@ -97,5 +97,7 @@ or no Inno Setup), never a pass. Without `--dist` it first runs `tools/build-rel
 
 The runs are [NEEDS-CHECKING Group OA](../../docs/needs-checking/group-oa.md): the owner's PC, Revit 2020,
 2024, 2026 and 2027; 2021, 2022, 2023 and 2025 NOT RUN - no such Revit there. **OA1 to OA10 ran on
-2026-11-16 on the Setup's own pages**, before its face became Heron's window; the window's route is rows
-OA12 onward, owed on his PC.
+2026-11-16 on the Setup's own pages**, before its face became Heron's window. **The window's route ran the
+same afternoon on his PC - PASS:** OA12, OA16 and OA17, the install and uninstall halves of OA13 and OA18,
+and OA20 - the developer guard held and the shared store was not touched. Still owed: Revit loading this
+build, the Claude tick on a PC with no checkout, and the silent run (OA19).
