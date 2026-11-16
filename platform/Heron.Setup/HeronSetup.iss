@@ -266,8 +266,11 @@ begin
 
   if RunHeronInstall('--uninstall --list', Said) <> 0 then
   begin
-    SuppressibleMsgBox('Heron could not say what it would remove, so nothing was removed:' +
-                       #13#10 + #13#10 + Said, mbError, MB_OK, IDOK);
+    { NO LINE MAY START WITH #13 - Inno Setup's preprocessor reads a line
+      beginning with # as one of its own directives (found by its compiler,
+      2026-11-16: "Unknown preprocessor directive"). }
+    SuppressibleMsgBox('Heron could not say what it would remove, so nothing was removed:' + #13#10 + #13#10 + Said,
+                       mbError, MB_OK, IDOK);
     Result := False;
     exit;
   end;
