@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SCH-026
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -85,6 +85,34 @@ contract:
       # said no. Never a thing it FOUND (D-52).
       role: accounting
       type: string
+
+proof:
+  date: '2026-11-16'
+  by: Ajmal PS
+  model: rig (3,341 elements), Revit 2024, session 8292
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    find-views with this phase's own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned added 2, addedKeys 'RIG Finish
+    A' on 'RIG Room Key' (row 2); 'RIG Finish B' on 'RIG Room Key' (row 3), alreadyThere 0
+    item(s), refused (null), scheduleBehind Func`2. inputs came elements from find-views (1);
+    keyNames as given (2). on rig
+  negative_case: 'run with keyNames=RIG Finish A, RIG Finish B, nameContains=RIG Wall List,
+    viewType=Schedule instead - chosen because it should not contain what this fragment reports
+    - the arrangement was re-made first by running find-views with this phase''s own values
+    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned added 0, addedKeys , alreadyThere 0 item(s), refused NO KEY WAS ADDED: ''RIG
+    Wall List'' is a schedule of elements, not a key schedule - its rows are the model and
+    none can be inserted; it was not touched, scheduleBehind Func`2. inputs came elements
+    from find-views (1); keyNames as given (2). on rig'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.2.0.0
+    addin_hash: 80819edd3983a0d5
+  fingerprint: 8ebde52ff9554912
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

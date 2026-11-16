@@ -120,3 +120,9 @@ of the 13 GB limit.
 | trace-connectivity, refresh-view, report-browser-organization, report-project-units, report-open-documents, create-energy-model | D-53 tracking by `validate`, one at a time - not a batch |
 | report-structural-settings | Never empty: [Group MF](group-mf.md) MF2 read NEG NOT EMPTY on 2026-11-14, and its tracking negative (MF5) needs two ADMIN cards |
 | place-column-rebar, set-mep-justification, create-extrusion-roof, run-systems-analysis, measure-available-fall, measure-distance, describe-blank-parameters, show-analysis-heatmap, place-span-direction-symbols, create-property-line, create-arc-length-dimension, create-radial-dimension, run-heating-cooling-loads | An open row (5b-1644, 5b-1397/1409, 5b-1648, 5b-1460), an input shape no job can type, a contract `accept` cannot judge, or a `revit:` list without 2024 |
+
+**Signed 2026-11-17, as Ajmal PS, on the owner's word** (*"Yes, sign all 14"*): `report-analytical-model`,
+`set-circuit-naming-scheme`, `list-images`, `reload-images`, `report-paths-of-travel`, `create-shaped-stairs`,
+`tag-areas`, `dimension-views-by-rules`, `tag-views-by-rules`, `join-geometry`, `merge-parts`,
+`create-assembly-views`, `place-stair-tread-numbers` and `add-key-schedule-rows` - `accept` on each draft, none
+refused, and each card's status flipped DRAFT to PROVEN. OI10 and OI16-OI18 stay owed.
