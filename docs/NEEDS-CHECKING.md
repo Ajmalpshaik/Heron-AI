@@ -1546,6 +1546,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ob.md`](needs-checking/group-ob.md)
 
+## Group OF - a proof records which Heron add-in and which Revit build it was taken on, and says so when either moves: `built_on:` (2026-11-16)
+
+**Its own file:** [`needs-checking/group-of.md`](needs-checking/group-of.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

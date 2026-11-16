@@ -206,9 +206,15 @@ namespace Heron.Revit.Addin
 
                 var revitVersion = application.ControlledApplication.VersionNumber;
                 var addinVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+                // WHICH BUILD, NOT ONLY WHICH RELEASE - Revit's own build string
+                // and a hash of this assembly's file. A proof drafted from a run
+                // records both, and goes stale when either moves (D-30). Read
+                // once: neither can change while this process lives.
+                var revitBuild = application.ControlledApplication.VersionBuild;
+                var addinHash = BridgeIdentity.FileHash(Assembly.GetExecutingAssembly().Location);
 
                 Bridge = new BridgeServer(
-                    new BridgeIdentity(revitVersion, addinVersion), Log);
+                    new BridgeIdentity(revitVersion, addinVersion, revitBuild, addinHash), Log);
 
                 // Revit's thread, so the banner captures the right
                 // dispatcher. On by default: a frozen Revit with no
@@ -313,8 +319,9 @@ namespace Heron.Revit.Addin
                     StartFragmentWarmUp();
 
                 Log(string.Format(
-                    "Heron loaded. Revit {0}, add-in {1}, pid {2}.",
-                    revitVersion, addinVersion, Process.GetCurrentProcess().Id));
+                    "Heron loaded. Revit {0} build {1}, add-in {2} file {3}, pid {4}.",
+                    revitVersion, revitBuild ?? "(not reported)", addinVersion,
+                    addinHash ?? "(not read)", Process.GetCurrentProcess().Id));
 
                 // Connecting is explicit by default - a Revit that was never
                 // connected is invisible to every chat, and that is a safety
