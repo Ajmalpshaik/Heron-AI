@@ -21,6 +21,13 @@ So this stands up a real HTTP server on a real port and lets the adapter talk
 to it: real sockets, real status codes, real JSON, real timeouts. Everything
 between `urllib` and `judge()` is exercised rather than assumed.
 
+`judge()` IS THE ADAPTER'S OWN SINCE 2026-11-16 (row 5b-1747). It was
+heron_availability's until HERON-KRN-MAV-017 was cut to its register row -
+reachability is the host's (D-65) - and it moved, logic unchanged, into
+heron_provider.py beside probe(). Only the name it is reached by changed
+here; every check below is the one it was. counts_as_evidence() stays the
+availability agent's, and is still asked of the adapter's real results.
+
 WHAT THIS STILL DOES NOT PROVE, AND K3 KEEPS IT
 -------------------------------------------------
 **A real Ollama's field names.** The stub answers what Ollama's API documents;
@@ -36,7 +43,7 @@ WHAT IT PROVES
      machine, where nothing is listening. A real result, not a fixture.
 
   3. A 401 IS AUTH, NOT DOWN. Retrying an auth failure for ever is the exact
-     failure heron_availability's four states exist to prevent.
+     failure judge()'s four states exist to prevent.
 
   4. `auth` IS ABSENT WHEN NOTHING ASKED, and judge() refuses to read that as
      a yes. The adapter must not fill it in to be polite.
@@ -139,8 +146,8 @@ def main():
     base, stop = serve("ok")
     try:
         result = PROV.probe(base)
-        state, why = AVAIL.judge(result)
-        check(state == AVAIL.OK, "a reachable provider is judged OK: %s" % why)
+        state, why = PROV.judge(result)
+        check(state == PROV.OK, "a reachable provider is judged OK: %s" % why)
         check(result.get("auth") is True,
               "auth is True because a real request came back 2xx - the "
               "question WAS asked")
@@ -159,8 +166,8 @@ def main():
     # a real machine, which is the first non-fixture result these three agents
     # have ever been given.
     dead = PROV.probe("http://127.0.0.1:1", timeout=2.0)
-    state, why = AVAIL.judge(dead)
-    check(state == AVAIL.UNREACHABLE,
+    state, why = PROV.judge(dead)
+    check(state == PROV.UNREACHABLE,
           "nothing listening is judged UNREACHABLE: %s" % why)
     check(dead.get("reachable") is False, "and the probe said so itself")
 
@@ -168,8 +175,8 @@ def main():
     base, stop = serve("auth")
     try:
         refused = PROV.probe(base)
-        state, why = AVAIL.judge(refused)
-        check(state == AVAIL.AUTH, "judged AUTH: %s" % why)
+        state, why = PROV.judge(refused)
+        check(state == PROV.AUTH, "judged AUTH: %s" % why)
         check(refused.get("reachable") is True,
               "and reachable stays TRUE - something is there and it said no. "
               "Calling it unreachable would retry a refusal for ever")
@@ -179,16 +186,16 @@ def main():
     print("\n4. auth absent when nothing asked, and judge() will not assume")
     check("auth" not in dead,
           "the unreachable probe does not claim auth either way")
-    state, why = AVAIL.judge({"reachable": True, "latency_ms": 1})
-    check(state == AVAIL.AUTH and "nobody asked" in why,
+    state, why = PROV.judge({"reachable": True, "latency_ms": 1})
+    check(state == PROV.AUTH and "nobody asked" in why,
           "and a probe that never asked is refused, not waved through")
 
     print("\n5. a slow provider is SLOW, not down")
     base, stop = serve("slow")
     try:
         late = PROV.probe(base)
-        state, why = AVAIL.judge(late, slow_ms=100)
-        check(state == AVAIL.SLOW, "judged SLOW against a 100 ms ceiling: %s" % why)
+        state, why = PROV.judge(late, slow_ms=100)
+        check(state == PROV.SLOW, "judged SLOW against a 100 ms ceiling: %s" % why)
         check(late.get("reachable") is True,
               "and it is still reachable - it answered, it was just late")
     finally:
@@ -263,8 +270,8 @@ def main():
     base, stop = serve("teapot")
     try:
         odd = PROV.probe(base)
-        state, why = AVAIL.judge(odd)
-        check(state == AVAIL.PROBE_FAILED,
+        state, why = PROV.judge(odd)
+        check(state == PROV.PROBE_FAILED,
               "an answer that is neither refusal nor result is PROBE_FAILED - "
               "nothing is known either way: %s" % why[:50])
     finally:
