@@ -9,9 +9,31 @@ semantic-identity: "the tags are printing on top of each other in this view"
 kind: filter
 domain: revit.views
 capability: FIND_OVERLAPPING_TAGS
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
+
+# VERSION 2 (2026-11-16) - TAGS OVER THE DRAWING TOO, and back to DRAFT.
+# FRAGMENT-ISSUES row 5b-1731 (Sruthina, Revit 2024, model `villa 2`,
+# Ajmalpshaik/Heron-AI#854 item b): "0 clash(es)" on a plan where nearly every
+# door and window tag sat on the cut wall - version 1 compared annotation with
+# annotation only, and its answer did not say so. WIDENED HERE RATHER THAN A
+# CARD OF ITS OWN: the row left the owner that choice, and the job is the same
+# one - what prints on top of what in this view - so a second card would split
+# one question in two. Each tag's paper box is now also compared with the
+# WALLS a plan shows (a band the wall's width wide about its centre, never in a
+# section, where the location line is not where the cut is drawn), MODEL AND
+# DETAIL LINES (a line crossing the box), and the FIGURE of each DIMENSION (the
+# point it is placed at, inside the box - never the dimension's whole-string
+# box, which is why version 1 left them out). A tag's own element is never its
+# clash. A door or window opening is inside a wall's band, and a wall shown
+# below the plan's cut is compared too - a tag across either is counted.
+# Counted in `overModel`, the ids in `overlapping`; `annotationOnly`
+# true is version 1 exactly. The first finding names what was compared, every
+# time. Version 1 was PROVEN (the proof block below, kept as the record of
+# what it proved); its C# moved, so it is DRAFT again until NEEDS-CHECKING
+# Group OC is run (D-30) - on the owner's word of 2026-11-11 that a fragment
+# found wrong may be changed even though it is proven.
 
 purpose: >
   Finds annotation that PRINTS ON TOP OF other annotation in one view - tag over
@@ -41,11 +63,11 @@ purpose: >
   opposite error costs a reissued drawing; this one costs thirty seconds of
   looking.
 
-  **Dimensions are not compared, on purpose.** A dimension's box is the whole
-  string, witness lines and all, so it appears to overlap almost everything
-  inside its own extent - included, it produces hundreds of rows that are all
-  the same non-finding. A dimension genuinely clashing with a tag is found by
-  eye on the sheet, not here.
+  **Tags over the drawing are found too (version 2)** - a door or window tag
+  sitting on the wall poche in a plan, a tag a model or detail line runs
+  through, a tag over a dimension's figure. A dimension is judged by where its
+  figure sits, never by its box, which is the whole string, witness lines and
+  all, and would overlap almost everything inside its own extent.
 
 contract:
   needs:
@@ -57,6 +79,14 @@ contract:
     - name: minOverlapMm
       type: double
       source: request
+    - name: annotationOnly
+      # VERSION 2. True compares annotation with annotation only - version 1
+      # exactly. Left out it is false (the add-in binds an absent optional
+      # bool false), and each tag is also compared with walls in a plan,
+      # lines and dimension figures.
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: findings
       type: IList<string>
@@ -66,6 +96,12 @@ contract:
     - name: pairs
       role: result
       type: int
+    - name: overModel
+      # VERSION 2 (row 5b-1731). Tags over a wall's poche in a plan, crossed
+      # by a model or detail line, or over a dimension's figure - each once
+      # per thing it is over. A thing it found, so a result.
+      role: result
+      type: int
     - name: noBox
       # Tags with no bounding box, so it could not be tested for overlap. The
       # evidence it looked, never a thing it found (D-52).
@@ -73,24 +109,25 @@ contract:
       type: int
 
 proof:
-  date: '2026-09-08'
+  date: '2026-11-16'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 1680
-  positive_case: run as it would normally be run. returned findings 7 item(s) [View 'L3' at
-    1:96 - 108 annotation element(s) compared, 6 cl..., tag 'Mechanical Equipment Tag' over
-    tag 'Flex Duct Tag Round..., tag 'Duct Size Tag' over tag 'Space Tag'  - 2.4 mm on paper,
-    ...], minOverlapMm 1, mmPerFoot 304.8, noBox 0, overlapping 12 item(s) [1491352, 1491622,
-    1491493, ...], pairs 6. inputs came view as given; minOverlapMm as given. on Snowdon-scratch_ajmal.al
-  negative_case: run with view=How to use this project 1, minOverlapMm=1 instead - chosen
-    because it should not contain what this fragment reports. returned findings 1 item(s)
-    [View 'How to use this project 1' at 1:1 - 7 annotation eleme...], minOverlapMm 1, mmPerFoot
-    304.8, noBox 0, overlapping 0 item(s), pairs 0. inputs came view as given; minOverlapMm
-    as given. on Snowdon-scratch_ajmal.al
+  model: Heron OC Tags (3,232 elements), Revit 2024, session 18772
+  positive_case: run as it would normally be run. returned annotationOnly false, findings
+    4 item(s) [View 'Level 1' at 1:100 - 6 annotation element(s) compared w..., tag 'M_Door
+    Tag' over tag 'Room Tag'  - 6.0 mm on paper, tag 'M_Door Tag' over wall 'Generic - 200mm'
+    (id 352516) - a..., ...], minOverlapMm 1, mmPerFoot 304.8, noBox 0, overModel 2, overlapping
+    4 item(s) [352527, 352530, 352528, ...], pairs 1. inputs came view as given; minOverlapMm
+    as given; annotationOnly not given - false (optional). on Heron OC Tags
+  negative_case: 'run with minOverlapMm=1, view=FloorPlan: Level 2 instead - chosen because
+    it should not contain what this fragment reports. returned annotationOnly false, findings
+    1 item(s) [View ''Level 2'' at 1:100 - 0 annotation element(s) compared w...], minOverlapMm
+    1, mmPerFoot 304.8, noBox 0, overModel 0, overlapping 0 item(s), pairs 0. inputs came
+    view as given; minOverlapMm as given; annotationOnly not given - false (optional). on
+    Heron OC Tags'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 3fc6142d24e54307
-
+  fingerprint: 2bb2e62dea0bd506
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -104,8 +141,10 @@ compatibility-note: >
   which of them is an `IndependentTag` subclass has moved between releases and
   a category sweep is the same on all of them.
 
-# WHAT IT CANNOT SEE. Annotation overlapping a MODEL line, a hatch or a linked
-# view's graphics is not found - this compares annotation against annotation.
+# WHAT IT CANNOT SEE. Version 1's note said a MODEL line was not found; since
+# version 2 lines, walls in a plan and dimension figures are. A hatch, a
+# filled region, a linked view's graphics and model elements other than walls
+# are still not compared.
 # And a view placed on two sheets prints at whatever each viewport carries; the
 # VIEW's own scale is used here, which is the usual case and not always the one.
 
@@ -151,3 +190,6 @@ utterances:
   # identity is 'the tags are printing on top of each other in this view', so
   # the ownership was never in doubt; the words simply were not declared.
   - are any of these tags overlapping
+  # ADDED 2026-11-16, version 2 (row 5b-1731) - the field's own question,
+  # which no card answered before.
+  - are any tags sitting on the walls

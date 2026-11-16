@@ -45,7 +45,24 @@ positive:
       `site` reading Doha, Qatar, about 25.3 N 51.5 E, UTC+03:00, and "true
       north 30 East of project north", with the angle Revit stores beside it
 
+  # Version 5, added 2026-11-16 - row 5b-1733. FAILS on version 4. NOT RUN.
+  - given: one door tag and one room tag in a plan on Heron's scratch project (Group OC)
+    expect: >
+      two lines reading "TAG HEAD AT (x, y, z) mm", each matching where the
+      tag's text sits in Revit, and `withoutLocation` 0. Version 4 answered
+      "no position and no bounding box" for both
+  - given: a text note in the same plan
+    expect: >
+      "the CENTRE OF ITS BOX IN ITS OWN VIEW" naming the plan - never "no
+      position and no bounding box"
+
 negative:
+  # Version 5 - model elements are read exactly as version 4 read them.
+  - given: the wall W1 on the same scratch project
+    expect: >
+      "RUNS from (0, 0, 0) to (8000, 0, 0) mm" - never TAG HEAD AT; the tag
+      branch takes tags only
+
   # Version 4. TRACKING (D-53): the site cannot come back empty, so it must
   # follow the model when the model is changed under it.
   - given: >

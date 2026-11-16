@@ -9,9 +9,22 @@ semantic-identity: "where the project is on the earth - its latitude, longitude,
 kind: action
 domain: revit.geometry
 capability: REPORT_LOCATION
-version: 4
+version: 5
 source: OFFICIAL
 risk: READ
+
+# VERSION 5 (2026-11-16) - A TAG IS WHERE ITS HEAD IS, and back to DRAFT.
+# FRAGMENT-ISSUES row 5b-1733 (Sruthina, Revit 2024, model `villa 2`,
+# Ajmalpshaik/Heron-AI#854 item d): a tag has no Location and an annotation
+# has no model box, so every tag answered "no position and no bounding box".
+# An IndependentTag or a room, space or area tag is now reported by its
+# TagHeadPosition - "TAG HEAD AT" - with its free leader end where it has one,
+# and any other annotation by the centre of its box in its OWN view
+# (OwnerViewId), named as that. Model elements are read as version 4 read
+# them. Version 4 was PROVEN (the proof block below, kept as the record of
+# what it proved); its C# moved, so it is DRAFT again until NEEDS-CHECKING
+# Group OC is run (D-30) - on the owner's word of 2026-11-11 that a fragment
+# found wrong may be changed even though it is proven.
 
 # HOW IT ANSWERS, VERSION BY VERSION - comments, not `purpose`, because
 # `purpose` is searched (FRAGMENT-ISSUES rows 5b-356 and 5b-476). Until
@@ -151,43 +164,44 @@ contract:
       type: string
 
 proof:
-  date: '2026-10-18'
+  date: '2026-11-16'
   by: Ajmal PS
-  model: Project1 (3,067 elements), Revit 2020, session 2648
-  positive_case: 'run with categoryName=Walls - the first of 3 tracked inputs - the arrangement
-    was re-made first by running select-by-category-name, set-selection with this phase''s
-    own values. returned MillimetresPerFoot 304.8, RevitOriginLimitFeet 105600, Tolerance
-    0.00164041994750656, asMm Func`2, asShared Func`2, farthest 38.2608392050217, farthestWhat
-    id 345433, findings 4 item(s) [6 element(s): 0 at a point, 6 running between two, 0 reporte...,
-    An element that RUNS has no single position. Both ends are g..., These are measured from
-    the project''s INTERNAL origin (the d..., ...], locations 6 item(s) [id 345432: RUNS from
-    (0, 0, 0) mm to (10000, 0, 0) mm, id 345433: RUNS from (10000, 0, 0) mm to (10000, 6000,
-    0) mm, id 345434: RUNS from (10000, 6000, 0) mm to (0, 6000, 0) mm, ...], measure Action`2,
-    projectBase BasePoint, sharedCoordinates false, sharedPart Func`2, sharedWhyNot , site
-    SITE  ||  project location ''Internal'' (the active one)  ||  place name ''Boston, MA''  ||  latitude
-    42.358662° N, longitude 71.056740° W  ||  time zone UTC-05:00, daylight saving not used  ||  weather
+  model: Heron OC Tags (3,232 elements), Revit 2024, session 18772
+  positive_case: 'run with categories=Walls - the first of 3 tracked inputs - the arrangement
+    was re-made first by running filter-elements-by-category with this phase''s own values.
+    returned MillimetresPerFoot 304.8, RevitOriginLimitFeet 105600, Tolerance 0.00164041994750656,
+    asMm Func`2, asShared Func`2, farthest 39.5065438936755, farthestWhat id 352519, findings
+    4 item(s) [6 element(s): 0 at a point, 6 running between two, 0 tag(s) ..., An element
+    that RUNS has no single position. Both ends are g..., These are measured from the project''s
+    INTERNAL origin (the d..., ...], locations 6 item(s) [id 352514: RUNS from (0, 0, 0) mm
+    to (8000, 0, 0) mm, id 352515: RUNS from (8000, 0, 0) mm to (8000, 5000, 0) mm, id 352516:
+    RUNS from (8000, 5000, 0) mm to (0, 5000, 0) mm, ...], measure Action`2, projectBase BasePoint,
+    sharedCoordinates false, sharedPart Func`2, sharedWhyNot , site SITE  ||  project location
+    ''Default Site'' (the active one)  ||  place name ''Boston, MA''  ||  latitude 42.358662°
+    N, longitude 71.056740° W  ||  time zone UTC-05:00, daylight saving not used  ||  weather
     station ''53159_2004'', site elevation 4.877 m  ||  true north 0° - project north is true
     north (Revit''s stored angle 0 degrees)  ||  project base point (0, 0, 0) mm from the
     internal origin (0.0 m away), shared E 0, N 0, elev 0 mm  ||  survey point (0, 0, 0) mm
     from the internal origin (0.0 m away), shared E 0, N 0, elev 0 mm, survey BasePoint, toShared
     Transform, trueNorthDegrees 0, wantShared false, withoutLocation 0. inputs came elements
-    from the selection (6); sharedCoordinates as given. on Project1'
+    from filter-elements-by-category (6); sharedCoordinates as given. on Heron OC Tags'
   negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). report-location\
     \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
     \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
     \ about a set it was not given - is caught here by the answer following the input exactly\
-    \ across 3 different inputs:\n\n      categoryName=Walls -> locations 6 item(s) [id 345432:\
-    \ RUNS from (0, 0, 0) mm to (10000, 0, 0) mm, id 345433: RUNS from (10000, 0, 0) mm to\
-    \ (10000, 6000, 0) mm, id 345434: RUNS from (10000, 6000, 0) mm to (0, 6000, 0) mm, ...]\n\
-    \      categoryName=Floors -> locations 1 item(s) [id 345449: no position of its own -\
-    \ the CENTRE OF ITS BOUNDI...]\n      categoryName=Rooms -> locations 2 item(s) [id 345437:\
-    \ AT (2500, 3000, 0) mm, id 345439: AT (7500, 3000, 0) mm]\n\n    Different inputs, exact\
-    \ matches every time. A fragment falling back to the active view, the whole model, or\
-    \ a previous run could not do that."
+    \ across 3 different inputs:\n\n      categories=Walls -> locations 6 item(s) [id 352514:\
+    \ RUNS from (0, 0, 0) mm to (8000, 0, 0) mm, id 352515: RUNS from (8000, 0, 0) mm to (8000,\
+    \ 5000, 0) mm, id 352516: RUNS from (8000, 5000, 0) mm to (0, 5000, 0) mm, ...]\n    \
+    \  categories=Door Tags -> locations 3 item(s) [id 352527: TAG HEAD AT (3000, 2500, 0)\
+    \ mm, id 352528: TAG HEAD AT (7000, 5000, 0) mm, id 352529: TAG HEAD AT (4000, 8550, 0)\
+    \ mm]\n      categories=Text Notes -> locations 1 item(s) [id 352533: no position of its\
+    \ own - the CENTRE OF ITS BOX IN...]\n\n    Different inputs, exact matches every time.\
+    \ A fragment falling back to the active view, the whole model, or a previous run could\
+    \ not do that."
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: b0cec95b3cc00b8b
+  fingerprint: 96606e05f71fcfab
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

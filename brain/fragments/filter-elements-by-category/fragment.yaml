@@ -14,6 +14,28 @@ semantic-identity: "all elements of one category in the active document"
 kind: filter
 domain: revit.elements
 capability: FILTER_ELEMENTS_BY_CATEGORY
+# VERSION 7 (2026-11-16) - ONLY WHAT THIS SECTION CUTS, and back to DRAFT.
+# FRAGMENT-ISSUES row 5b-1736 (Sruthina, Revit 2024, model `villa 2`,
+# Ajmalpshaik/Heron-AI#854 item g): `inViewOnly` on a section hands on every
+# element the section SHOWS, beyond the cut as well as cut, so
+# TAG_ELEMENTS_IN_VIEW tagged both and the cut ones were found by hand.
+# `cutByView` true, with `inViewOnly` naming a SECTION view, keeps only the
+# elements whose solid crosses the cut plane inside the crop - a slab a few
+# millimetres thick on the crop box's near face (Max.Z, the cut as
+# CREATE_SECTION_VIEW builds one; MOVE_VIEW_CUT_PLANE reads View.Origin, and
+# the disagreement is row 5b-1801, NOT CHECKED in Revit), read with
+# ElementIntersectsSolidFilter over what the view shows. Any other view - a
+# detail view may look down from a plan - or none is refused before anything
+# is read; a split section is read on its first plane only, and links are not
+# read for it.
+# WIDENED HERE, NOT A CARD OF ITS OWN: the row left the owner that choice; this
+# is a selection, and the selector every tagging chain already takes, so
+# TAG_ELEMENTS_IN_VIEW is unchanged and takes it as any selection. Version 6
+# was PROVEN (the proof block below, kept as the record of what it proved);
+# its C# moved, so it is DRAFT again until NEEDS-CHECKING Group OC is run
+# (D-30) - on the owner's word of 2026-11-11 that a fragment found wrong may
+# be changed even though it is proven.
+#
 # VERSION 3 (2026-10-06, FRAGMENT-ISSUES 5b-335): a level parameter that holds
 # no level is passed over and the next one asked, where version 2 answered
 # with the first one an element HAD. Three work plane-based diffusers with
@@ -64,7 +86,7 @@ capability: FILTER_ELEMENTS_BY_CATEGORY
 # 3's proof below was still the record and still did not describe the code; the
 # card stayed DRAFT at the time, until version 6 is proved on a real model
 # (D-30).
-version: 6
+version: 7
 source: OFFICIAL
 risk: READ
 
@@ -187,6 +209,14 @@ contract:
       type: bool
       source: request
       optional: true
+    - name: cutByView
+      # VERSION 7 (row 5b-1736). True, with `inViewOnly` naming a SECTION
+      # view: only the elements the section CUTS, not those it shows beyond
+      # the cut. Left out it binds false - what versions 1 to 6 did.
+      # Without a section in `inViewOnly` it is refused.
+      type: bool
+      source: request
+      optional: true
     - name: includeLinks
       # D-59. THE MODELLER DECIDES, JOB BY JOB, and absent means host only -
       # which is what this fragment did before and what its proof measured.
@@ -280,50 +310,59 @@ contract:
       # read, and that why something is missing is DIAGNOSE_VISIBILITY's.
       type: IList<string>
 proof:
-  date: '2026-11-02'
+  date: '2026-11-16'
   by: Ajmal PS
-  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
+  model: Heron OC Tags (3,232 elements), Revit 2024, session 18772
   positive_case: run as it would normally be run. returned askedLevel (null), byName , category
-    BuiltInCategory, categoryOf Func`2, elements 10 item(s) [Mitered Elbows / Taps, Mitered
-    Elbows / Taps, Mitered Elbows / Taps, ...], everyCategory false, examined 10, findings
-    3 item(s) [10 element(s), within Ducts, Read through view 'Callout of Level 1 HVAC WSHP
-    TYP'. This i..., Something expected and missing is a question for DIAGNOSE_VI...], found
-    10, hostLevelName (null), inModel 0, includeLinks false, isModelElement Func`2, levelGiven
-    false, levelOf Func`2, levelParameterOrder 5 item(s) [FAMILY_LEVEL_PARAM, SCHEDULE_LEVEL_PARAM,
-    LEVEL_PARAM, ...], linkBlocked , linkDocs 0 item(s), linkPlacements 0 item(s), linkThroughView
-    (null), linkTypes 0 item(s), linkedMatches 1 item(s) [Host model only - links not read],
-    linkedTotal 0, linksSearched 0, matching 10 item(s) [Mitered Elbows / Taps, Mitered Elbows
-    / Taps, Mitered Elbows / Taps, ...], modelOnly false, nameMissed false, namedCategory
-    (null), nearMisses 0 item(s), nestedLinks 0, notShowingIn (null), ofWanted Func`2, perCategory
-    1 entry(ies), resolvedNames 1 item(s) [Ducts], resolvedTo Ducts, safeLevelOf Func`2, scope
-    , within Ducts, showing 0, unresolvedLevel 0, wanted 1 item(s) [OST_DuctCurves], withoutLevel
-    false. inputs came category as given; categories not given - "INVALID", the card's own
-    default (optional); categoryName not given - "none", the card's own default (optional);
-    levelId not given - "none", the card's own default (optional); inViewOnly as given; notShowingIn
-    not given - null (optional); withoutLevel not given - false (optional); includeLinks not
-    given - false (optional). on P1102 MEP
-  negative_case: run with category=Ducts, inViewOnly=Level 1 - Lighting Plan instead - chosen
-    because it should not contain what this fragment reports. returned askedLevel (null),
-    byName , category BuiltInCategory, categoryOf Func`2, elements 0 item(s), everyCategory
-    false, examined 0, findings 3 item(s) [0 element(s), within Ducts, Read through view 'Level
-    1 - Lighting Plan'. This is what th..., Something expected and missing is a question for
-    DIAGNOSE_VI...], found 0, hostLevelName (null), inModel 0, includeLinks false, isModelElement
+    BuiltInCategory, categoryOf Func`2, cutByView true, cutFilter ElementIntersectsSolidFilter,
+    cutNote Only what 'OC Section' CUTS - elements whose solid crosses its cut plane inside
+    its crop (11548 x 5438 mm), the plane through (4056, 1948, 1500) mm; what the section
+    shows beyond the cut, and anything with no solid, is left out. A split section is read
+    on its first plane only, elements 3 item(s) [Generic - 200mm, Generic - 200mm, Generic
+    - 200mm], everyCategory false, examined 3, findings 4 item(s) [3 element(s), within Walls,
+    Only what 'OC Section' CUTS - elements whose solid crosses i..., Read through view 'OC
+    Section'. This is what the view SHOWS,..., ...], found 3, hostLevelName (null), inModel
+    0, includeLinks false, isModelElement Func`2, levelGiven false, levelOf Func`2, levelParameterOrder
+    5 item(s) [FAMILY_LEVEL_PARAM, SCHEDULE_LEVEL_PARAM, LEVEL_PARAM, ...], linkBlocked ,
+    linkDocs 0 item(s), linkPlacements 0 item(s), linkThroughView RuntimeConstructorInfo,
+    linkTypes 0 item(s), linkedMatches 1 item(s) [Host model only - links not read], linkedTotal
+    0, linksSearched 0, matching 3 item(s) [Generic - 200mm, Generic - 200mm, Generic - 200mm],
+    modelOnly false, nameMissed false, namedCategory (null), nearMisses 0 item(s), nestedLinks
+    0, notShowingIn (null), ofWanted Func`2, perCategory 1 entry(ies), resolvedNames 1 item(s)
+    [Walls], resolvedTo Walls, safeLevelOf Func`2, scope , within Walls, showing 0, unresolvedLevel
+    0, wanted 1 item(s) [OST_Walls], withoutLevel false. inputs came category not given -
+    "INVALID", the card's own default (optional); categories as given (1); categoryName not
+    given - "none", the card's own default (optional); levelId not given - "none", the card's
+    own default (optional); inViewOnly as given; notShowingIn not given - null (optional);
+    withoutLevel not given - false (optional); cutByView as given; includeLinks not given
+    - false (optional). on Heron OC Tags
+  negative_case: 'run with categories=Doors, cutByView=true, inViewOnly=Section: OC Section
+    instead - chosen because it should not contain what this fragment reports. returned askedLevel
+    (null), byName , category BuiltInCategory, categoryOf Func`2, cutByView true, cutFilter
+    ElementIntersectsSolidFilter, cutNote Only what ''OC Section'' CUTS - elements whose solid
+    crosses its cut plane inside its crop (11548 x 5438 mm), the plane through (4056, 1948,
+    1500) mm; what the section shows beyond the cut, and anything with no solid, is left out.
+    A split section is read on its first plane only, elements 0 item(s), everyCategory false,
+    examined 0, findings 4 item(s) [0 element(s), within Doors, Only what ''OC Section'' CUTS
+    - elements whose solid crosses i..., Read through view ''OC Section''. This is what the
+    view SHOWS,..., ...], found 0, hostLevelName (null), inModel 0, includeLinks false, isModelElement
     Func`2, levelGiven false, levelOf Func`2, levelParameterOrder 5 item(s) [FAMILY_LEVEL_PARAM,
     SCHEDULE_LEVEL_PARAM, LEVEL_PARAM, ...], linkBlocked , linkDocs 0 item(s), linkPlacements
-    0 item(s), linkThroughView (null), linkTypes 0 item(s), linkedMatches 1 item(s) [Host
-    model only - links not read], linkedTotal 0, linksSearched 0, matching 0 item(s), modelOnly
-    false, nameMissed false, namedCategory (null), nearMisses 0 item(s), nestedLinks 0, notShowingIn
-    (null), ofWanted Func`2, perCategory 1 entry(ies), resolvedNames 1 item(s) [Ducts], resolvedTo
-    Ducts, safeLevelOf Func`2, scope , within Ducts, showing 0, unresolvedLevel 0, wanted
-    1 item(s) [OST_DuctCurves], withoutLevel false. inputs came category as given; categories
-    not given - "INVALID", the card's own default (optional); categoryName not given - "none",
-    the card's own default (optional); levelId not given - "none", the card's own default
-    (optional); inViewOnly as given; notShowingIn not given - null (optional); withoutLevel
-    not given - false (optional); includeLinks not given - false (optional). on P1102 MEP
+    0 item(s), linkThroughView RuntimeConstructorInfo, linkTypes 0 item(s), linkedMatches
+    1 item(s) [Host model only - links not read], linkedTotal 0, linksSearched 0, matching
+    0 item(s), modelOnly false, nameMissed false, namedCategory (null), nearMisses 0 item(s),
+    nestedLinks 0, notShowingIn (null), ofWanted Func`2, perCategory 1 entry(ies), resolvedNames
+    1 item(s) [Doors], resolvedTo Doors, safeLevelOf Func`2, scope , within Doors, showing
+    0, unresolvedLevel 0, wanted 1 item(s) [OST_Doors], withoutLevel false. inputs came category
+    not given - "INVALID", the card''s own default (optional); categories as given (1); categoryName
+    not given - "none", the card''s own default (optional); levelId not given - "none", the
+    card''s own default (optional); inViewOnly as given; notShowingIn not given - null (optional);
+    withoutLevel not given - false (optional); cutByView as given; includeLinks not given
+    - false (optional). on Heron OC Tags'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: c826f2c0535e4652
+  fingerprint: 3a700aa67383b8c9
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -488,6 +527,8 @@ compatibility-note: >
 # level, which SELECT_BY_LEVEL refused in a sentence, is refused here too.
 
 utterances:
+  # ADDED 2026-11-16, version 7 (row 5b-1736) - the field's own question.
+  - select only what this section cuts
   # ADDED 2026-11-07, issue #799 routing table (Villa 1, Revit 2024): "select
   # all windows and doors in the model" ranked SELECT_BY_DESIGN_OPTION first;
   # this card, with categories Windows, Doors, did the job.

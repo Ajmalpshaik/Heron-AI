@@ -1546,6 +1546,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ob.md`](needs-checking/group-ob.md)
 
+## Group OC - tags, move and schedules from the villa 2 field reports, repaired in code and not yet run: rows 5b-1707, 5b-1730, 5b-1731, 5b-1732, 5b-1733 and 5b-1736 (2026-11-16)
+
+**Its own file:** [`needs-checking/group-oc.md`](needs-checking/group-oc.md)
+
 ## Group OF - a proof records which Heron add-in and which Revit build it was taken on, and says so when either moves: `built_on:` (2026-11-16)
 
 **Its own file:** [`needs-checking/group-of.md`](needs-checking/group-of.md)

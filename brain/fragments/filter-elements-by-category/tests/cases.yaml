@@ -159,7 +159,23 @@ positive:
       Version 5 REFUSED this call ("Nothing was named to look for"), and
       SELECT_WITHOUT_LEVEL answered it with the views and sheets in
 
+  # VERSION 7 (2026-11-16) - row 5b-1736. FAILS on version 6, which has no
+  # cutByView. NOT RUN. Arranged on Heron's own scratch project (Group OC).
+  - given: >
+      a section cut through one wall and one door, with a second wall seen
+      beyond the cut; categories=Walls, Doors, inViewOnly=that section,
+      cutByView=true
+    expect: >
+      found 2 - the cut wall and the door - the wall beyond the cut NOT in
+      `elements`, and a finding beginning "Only what '<section>' CUTS". The
+      same call without cutByView finds 3
+
 negative:
+  # VERSION 7.
+  - given: the same section, categories=Walls, Doors, cutByView=true, after the section line is moved clear of every wall and door
+    expect: found 0 - a section that cuts nothing hands on nothing, however much it shows beyond
+  - given: cutByView=true with inViewOnly a floor plan, a detail view, and no view at all
+    expect: refused before anything is read, naming why - a plan's cut is its view range
   - given: >
       VERSION 4 REVIEW FIX. categoryName "Duct Accessory" - singular, which no
       category is called
