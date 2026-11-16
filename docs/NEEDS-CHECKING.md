@@ -1538,9 +1538,13 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-nz.md`](needs-checking/group-nz.md)
 
-## Group OA - Changes, Admin and Publish held in Revit, off at every start, and never turned on by a file: D-166 layers 1 and 2 (2026-11-16)
+## Group OA - the Setup a modeller downloads: one file, per user, every Revit year present, uninstall from Installed apps (2026-11-16)
 
 **Its own file:** [`needs-checking/group-oa.md`](needs-checking/group-oa.md)
+
+## Group OB - Changes, Admin and Publish held in Revit, off at every start, and never turned on by a file: D-166 layers 1 and 2 (2026-11-16)
+
+**Its own file:** [`needs-checking/group-ob.md`](needs-checking/group-ob.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 

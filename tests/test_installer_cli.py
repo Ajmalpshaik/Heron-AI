@@ -18,8 +18,12 @@ shape of the file around it, which no run can show:
     the source is judged BEFORE anything on this PC is touched - so a
       hostile address is refused on a machine with no Revit, and no
       PowerShell has run by the time it is
-    it NEVER removes - R-21 makes unticking mean uninstall, and there is
-      no unticking on a command line, so Install is called and never Apply
+    it never removes A SELECTION - R-21 makes unticking mean uninstall, and
+      there is no unticking on a command line, so an install calls Install,
+      never Apply. THE ONE REMOVAL IS EVERYTHING, --uninstall (D-167): Apply
+      and the screen's ToRemove appear in that one method and nowhere else,
+      with no product chosen and nothing ticked, and every flag that would
+      choose is refused beside it
     it holds no rules - the greying, the plan and the engine are all
       somewhere a test can reach
     it names no product and no Revit release, so adding either stays a
@@ -110,18 +114,35 @@ def main():
           "and the line is read before either, so a typo never reaches the gate")
 
     print()
-    print("  it installs, and it never removes - R-21")
+    print("  it installs, and it never removes a selection - R-21; the one removal is everything - D-167")
     # Unticking uninstalls, and unticking is a gesture a person makes in a
     # window having been asked to confirm. A product left out of --products
     # was not unticked; it was not mentioned.
-    check(".Remove(" not in code(ENTRY),
+    #
+    # D-167 (2026-11-16) gave this door ONE removal: --uninstall, every product
+    # off every release it is on - what a Windows Uninstall means, so there is
+    # nothing to have been left out. These checks were "never Apply, never
+    # ToRemove" until then; they now hold the narrower rule, and still fail if
+    # a removal appears anywhere else or ever chooses what to take.
+    plain = code(ENTRY)
+    check(".Remove(" not in plain,
           "the door never calls Remove")
     check("engine.Install(" in entry,
-          "it calls Install, which is the overload that hands Apply no removals")
-    check("engine.Apply(" not in code(ENTRY),
-          "and never Apply, which is the one that takes a removal list")
-    check("ToRemove" not in code(ENTRY) and "WhatWillBeRemoved" not in code(ENTRY),
-          "and it never asks the screen what would be removed")
+          "an install calls Install, which is the overload that hands Apply no removals")
+    found = re.search(r"private static int Uninstall\(.*?(?=\n        (?:///|private static))", plain, re.S)
+    uninstall = found.group(0) if found else ""
+    outside = plain.replace(uninstall, "") if uninstall else plain
+    check(bool(uninstall), "there is one Uninstall method")
+    check(plain.count("engine.Apply(") == 1 and "engine.Apply(" in uninstall,
+          "Apply - the overload that takes a removal list - is called once, inside Uninstall")
+    check("engine.Apply(manifest, new string[0], releases, removals)" in uninstall,
+          "  and is handed NO products, so it installs nothing while it removes")
+    check(plain.count("ToRemove(") == 1 and "screen.ToRemove(new string[0])" in uninstall,
+          "the screen is asked what would be removed once, inside Uninstall, with NOTHING ticked")
+    check("ToRemove" not in outside and "engine.Apply(" not in outside,
+          "  and nowhere else in the door")
+    check("--uninstall takes every Heron product off every Revit it is on, so it" in args,
+          "Arguments refuses --uninstall beside any flag that would choose")
 
     print()
     print("  it holds no rules")

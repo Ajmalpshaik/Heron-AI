@@ -235,6 +235,7 @@ an edit.
 | [D-164](#d-164--two-built-in-parameters-of-one-name-that-read-the-same-value-are-one-reading-not-a-name-matched-twice) | Two built-in parameters of one name that read the same value are one reading, not a name matched twice | ✅ Accepted · 2026-11-14 |
 | [D-165](#d-165--a-qa-check-never-passes-on-missing-data-a-fourth-answer-no-data-and-a-coverage-line-beside-every-pass-count) | A QA check never passes on missing data: a fourth answer, NO DATA, and a coverage line beside every pass count | ✅ Accepted · 2026-11-16 |
 | [D-166](#d-166--changes-admin-and-publish-are-turned-on-only-by-a-click-in-revit-held-in-its-memory-never-read-from-a-file) | Changes, Admin and Publish are turned on only by a click in Revit, held in its memory, never read from a file | • Accepted · built 2026-11-16, all three layers, not yet run in Revit |
+| [D-167](#d-167--a-modeller-installs-heron-with-one-setup-file-which-puts-heron-in-place-and-hands-over-to-the-installer-engine) | A modeller installs Heron with one Setup file, which puts Heron in place and hands over to the installer engine | ✅ Accepted · 2026-11-16 |
 | [D-168](#d-168--a-change-revit-kept-in-which-nothing-changed-by-every-count-says-nothing-changed-and-refused-when-the-capability-itself-said-no) | A change Revit kept in which nothing changed by every count says NOTHING CHANGED, and REFUSED when the capability itself said no | ✅ Accepted · 2026-11-16 |
 
 ## Format
@@ -883,6 +884,7 @@ What this makes easy. What this makes hard. What it locks in.
 ## D-96 — A downloaded Heron is installed by the installer, and only by the installer
 
 **Status:** Accepted · **Date:** 2026-09-21 · **Source:** Ajmal PS, 2026-09-21 · **Promoted from:** [NEEDS-CHECKING `AA9`](NEEDS-CHECKING.md)
+**Superseded in part by:** [D-167](#d-167--a-modeller-installs-heron-with-one-setup-file-which-puts-heron-in-place-and-hands-over-to-the-installer-engine), accepted 2026-11-16 - which FILE a modeller starts: the Setup, `HeronSetup-<version>.exe`, which runs the same engine; `deploy-addin.ps1` as the one copy engine and `-ExecutionPolicy Bypass` are unchanged
 
 **Full record:** [`decisions/D-96.md`](decisions/D-96.md)
 
@@ -1462,6 +1464,15 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`HeronConfig.cs`](../platform/Heron.Core/HeronConfig.cs) · [`HeronPermissions.cs`](../platform/Heron.Core/HeronPermissions.cs) · [`Commands.cs`](../revit/Heron.Revit.Addin/Commands.cs) · [`HeronSettingsWindow.cs`](../revit/Heron.Revit.Addin/HeronSettingsWindow.cs) · [`HeronApplication.cs`](../revit/Heron.Revit.Addin/HeronApplication.cs) · [`heron_config.py`](../mcp/client/heron_config.py) · [`heron-ready.py`](../tools/heron-ready.py) · `.claude/skills/heron-guard/bin/heron_guard.py` and [its skill](../.claude/skills/heron-guard/SKILL.md) · [`.claude/settings.json`](../.claude/settings.json)
 
 **Full record:** [`decisions/D-166.md`](decisions/D-166.md)
+
+## D-167 — A modeller installs Heron with one Setup file, which puts Heron in place and hands over to the installer engine
+
+**Status:** Accepted · **Date:** 2026-11-16 · **Accepted:** Ajmal PS, 2026-11-16, in conversation: *"do it the best am not sure for this and you anre my sesior programer or manager or what eve"* - his answer to *"Wrap the installer Heron already has, or grow it into the Setup?"*. **The choices below were made by the session on that word**; each is his to reverse, and none spends money
+**Supersedes in part:** [D-96](#d-96--a-downloaded-heron-is-installed-by-the-installer-and-only-by-the-installer) - which FILE a modeller starts: the Setup, which runs the same engine D-96 named · **Keeps:** D-96 for everything else · [D-91](#d-91--product-files-come-from-a-signed-versioned-github-release) · [D-93](#d-93--the-product-list-is-a-manifest-read-as-data-never-a-list-written-into-the-installer) · [D-94](#d-94--install-replaces-there-is-no-separate-upgrade-path) · [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit)
+**Leaves open:** [Q-77](open-questions/tier-2.md) - what makes signing due, and the certificate
+**Affects:** [`platform/Heron.Setup/`](../platform/Heron.Setup/README.md) · [`tools/build-setup.py`](../tools/build-setup.py) · `heron-install --uninstall` and `--add-to-claude` · [`tools/deploy-addin.ps1`](../tools/deploy-addin.ps1)
+
+**Full record:** [`decisions/D-167.md`](decisions/D-167.md)
 
 ## D-168 — A change Revit kept in which nothing changed by every count says NOTHING CHANGED, and REFUSED when the capability itself said no
 
