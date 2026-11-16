@@ -10,6 +10,13 @@ positive:
   - given: the same 4, offset 0
     expect: moved = 4 and nothing reported blocked - asking for nothing is not a failure
 
+  # VERSION 3 (2026-11-16) - row 5b-1733. FAILS on version 2. NOT RUN.
+  - given: one door tag (IndependentTag) and one room tag in a plan, offset 1000,0,0
+    expect: >
+      moved 2, movedIds both, `unverified` empty - each tag's head read
+      before and after. Version 2 answered "0 moved the whole offset ... 2
+      could not be read back" (row 5b-1733)
+
 negative:
   - given: >
       2 of the 4 ducts put inside a REVIT GROUP, the same 200 mm up
@@ -53,6 +60,20 @@ negative:
     expect: both moved there, both in movedIds
   - given: toPoint and a non-zero offset together
     expect: refused - two answers to where - nothing moved
+
+  # VERSION 3 (2026-11-16) - rows 5b-1707 and 5b-1733. Each FAILS on version 2.
+  # NOT RUN. Arranged on Heron's own scratch project (NEEDS-CHECKING Group OC).
+  - given: >
+      one wall and the id of a wall TYPE (or a family, or any element with no
+      category), typed as ids, offset 1000,0,0
+    expect: >
+      REFUSED before anything moves - moved 0, the type's id in
+      `notModelElements`, and the wall still where it was. Version 2 moved the
+      wall and put the type in `unverified` (row 5b-1707)
+  - given: the same wall alone, offset 1000,0,0
+    expect: >
+      moved 1, `notModelElements` empty - the refusal is for the wrong id,
+      not for typed ids as such
 
 second_route:
   - a tape measure in Revit on ONE element, which is the only check that catches feet-for-millimetres

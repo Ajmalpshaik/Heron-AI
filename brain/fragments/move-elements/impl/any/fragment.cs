@@ -1,7 +1,26 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `offset`, `toPoint` and
 // `stackOnOnePoint` are in scope, and leaves `moved`, `partly`, `blocked`,
-// `unverified`, `movedIds`, `notAtPoint`, `noLocationPoint` and `findings`
-// behind.
+// `unverified`, `movedIds`, `notAtPoint`, `noLocationPoint`,
+// `notModelElements` and `findings` behind.
+//
+// VERSION 3 (2026-11-16) - TWO FIELD DEFECTS FROM ISSUE #853, villa 2,
+// Revit 2024:
+//
+//   A TYPE, A FAMILY OR AN ELEMENT WITH NO CATEGORY IS REFUSED BEFORE
+//   ANYTHING MOVES (row 5b-1707). The add-in binds a typed id against types
+//   and non-types alike, so `1609101` typed for `1594101` bound a
+//   `(no category)` "Bench" and version 2 "moved" it into `unverified`. Such
+//   a thing is never what "move these" means - it has no place in the model
+//   to move from - so one of them in the list is a wrong id, and the whole
+//   call stops with its id named in `notModelElements`. Refused in THIS card,
+//   not in the binder: the binder serves every card that takes typed ids, and
+//   some take types on purpose.
+//
+//   A TAG IS READ BY ITS HEAD (row 5b-1733). A tag has no Location and an
+//   annotation has no model box, so every tag moved by version 2 came back
+//   "could not be read back". `probe` now reads `TagHeadPosition` first for
+//   an IndependentTag or a room, space or area tag (SpatialElementTag), so a
+//   moved tag is checked like any other element.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). `offset` is in internal FEET,
 // converted by the add-in; `toPoint` is MILLIMETRES, converted below (D-71).
@@ -67,6 +86,13 @@ Func<Element, XYZ> probe = e =>
 {
     if (e == null) return null;
 
+    // VERSION 3 (row 5b-1733): a tag's position is its HEAD - it has no
+    // Location, and an annotation has no box outside its own view.
+    var independentTag = e as IndependentTag;
+    if (independentTag != null) { try { return independentTag.TagHeadPosition; } catch { return null; } }
+    var spatialTag = e as SpatialElementTag;
+    if (spatialTag != null) { try { return spatialTag.TagHeadPosition; } catch { return null; } }
+
     var point = e.Location as LocationPoint;
     if (point != null) return point.Point;
 
@@ -101,6 +127,15 @@ var movedIds = new List<ElementId>();
 var notAtPoint = new List<ElementId>();
 var noLocationPoint = new List<ElementId>();
 var findings = new List<string>();
+// VERSION 3 (row 5b-1707). What was handed in that is not an element of the
+// model - a type, a family, or anything with no category.
+var notModelElements = new List<ElementId>();
+foreach (var element in elements)
+{
+    if (element == null) continue;
+    if (element is ElementType || element is Family || element.Category == null)
+        notModelElements.Add(element.Id);
+}
 
 // THE POINT, IF ONE WAS ASKED FOR - three real numbers in millimetres inside
 // 100 km, the add-in's own bound for a point, to feet.
@@ -108,7 +143,15 @@ var pointWord = (toPoint ?? "").Trim();
 var toAPoint = pointWord.Length > 0 && !string.Equals(pointWord, "none", StringComparison.OrdinalIgnoreCase);
 XYZ target = null;
 string stop = null;
-if (toAPoint)
+if (notModelElements.Count > 0)
+{
+    var named = notModelElements.Take(10).Select(id => id.ToString()).ToArray();
+    stop = string.Format("{0} of the {1} element(s) handed in are not elements of the model - a type, a family "
+        + "or something with no category (id {2}{3}) - so an id is probably mistyped. Nothing was moved. Check "
+        + "the ids, or select the elements in Revit and ask again", notModelElements.Count, elements.Count,
+        string.Join(", ", named), notModelElements.Count > named.Length ? ", ..." : "");
+}
+else if (toAPoint)
 {
     var parts = pointWord.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
     var values = new double[3];
@@ -129,7 +172,12 @@ if (toAPoint)
         target = new XYZ(values[0] / 304.8, values[1] / 304.8, values[2] / 304.8);
 }
 
-if (stop != null || toAPoint)
+if (notModelElements.Count > 0)
+{
+    // VERSION 3 (row 5b-1707): refused before anything moved.
+    findings.Add(stop);
+}
+else if (stop != null || toAPoint)
 {
     // ------------------------------------------------------------------
     // VERSION 2: TO A POINT.

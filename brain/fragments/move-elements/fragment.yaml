@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,33 @@ semantic-identity: "shift these elements by one offset, and check that they actu
 kind: action
 domain: revit.geometry
 capability: MOVE_ELEMENTS
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 3 (2026-11-16) - TWO FIELD DEFECTS, and back to DRAFT. Both from
+# Sruthina's report on Revit 2024, model `villa 2` (Ajmalpshaik/Heron-AI#853,
+# #854).
+#
+# FRAGMENT-ISSUES row 5b-1707: `1609101` typed for `1594101` bound a
+# `(no category)` "Bench", and version 2 ran on it and called it unverified.
+# Version 3 refuses the WHOLE call, before anything moves, when any element
+# handed in is a type, a family or has no category, and names each in
+# `notModelElements`. Fixed here and not in the add-in's id binder - the
+# house's smallest safe change: the binder serves every card that takes typed
+# ids, some take types on purpose (DUPLICATE_TYPE, the type-parameter writers),
+# and this card is the one the defect was met on.
+#
+# Row 5b-1733: a tag has no Location and no model box, so a moved tag always
+# came back "could not be read back". Version 3 reads an IndependentTag's or a
+# room, space or area tag's TagHeadPosition before and after, so a tag moved
+# by an offset is checked like anything else. MOVE_ANNOTATION is still the
+# card for a tag put AT a point or lined up.
+#
+# Version 2 was PROVEN on 2026-11-02 (the proof block below, kept as the record
+# of what it proved); its C# moved, so it is DRAFT again until NEEDS-CHECKING
+# Group OC is run (D-30) - on the owner's word of 2026-11-11 that a fragment
+# found wrong may be changed even though it is proven.
 
 # VERSION 2 (2026-11-01) - MOVE_ELEMENTS_TO_POINT WAS MERGED INTO THIS CARD on
 # the owner's instruction ("make sure there is no duplicate tools"), and is
@@ -54,6 +78,10 @@ purpose: >
   offset out from its own location point; one positioned by a curve is
   counted, never moved, and several to one point are refused unless the
   caller says so.
+
+  Version 3 refuses a type, a family or an element with no category - a
+  mistyped id - before anything moves, and reads a tag by its head, so a moved
+  tag is checked rather than left "could not be read back".
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so a bulk
   move is one undo entry.
@@ -121,6 +149,13 @@ contract:
       # VERSION 2, to a point. Positioned by a curve rather than a point, so
       # "put it at this coordinate" has no single meaning - given and
       # unusable, never moved (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: notModelElements
+      # VERSION 3 (row 5b-1707). What was handed in that is not an element of
+      # the model - a type, a family, or something with no category. Any one
+      # refuses the whole call before anything moves; evidence of a wrong id,
+      # never a thing it moved (D-52).
       role: accounting
       type: IList<ElementId>
     - name: findings
