@@ -76,7 +76,8 @@ def version():
     UpdateCheck.HighestVersion reads, so the Setup and the update check never
     disagree about which Heron this is.
     """
-    data = json.load(io.open(MANIFEST, encoding="utf-8-sig"))
+    with io.open(MANIFEST, encoding="utf-8-sig") as fh:
+        data = json.load(fh)
     best, best_parts = None, None
     for product in data.get("products", []):
         text = product.get("version") or ""
