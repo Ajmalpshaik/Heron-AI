@@ -94,8 +94,19 @@ namespace Heron.Revit.Addin
             string holdKey = null;
             if (op != "undo_from_pane")
             {
-                var held = HoldModel(app, request, out holdKey);
-                if (held != null) return held;
+                // AND THE PANE'S SELECT AND ZOOM LOOK PAST IT TOO - D-176, row
+                // 5b-1825. They change the selection and the view, never the
+                // model, and a chat's quiet minutes after its change refused
+                // them exactly when the modeller looks at it. Only for the
+                // pane's own job (its in-process mark, never the request's
+                // text) and only for that operation: a chat sending it over
+                // the pipe still meets the hold, and so does everything that
+                // changes the model. Nothing is looked at or claimed for them.
+                if (!HeronModelHold.LooksPastHolds(op, RevitDispatcher.RunningFromPane))
+                {
+                    var held = HoldModel(app, request, out holdKey);
+                    if (held != null) return held;
+                }
             }
 
             try

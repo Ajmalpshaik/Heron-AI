@@ -99,6 +99,32 @@ namespace Heron.Revit.Addin
             return TimeSpan.FromMinutes(Math.Max(1, minutes));
         }
 
+        /// <summary>The Activity pane's Select and Zoom (D-163), the one operation D-176 is about.</summary>
+        public const string PaneShowOperation = "show_elements";
+
+        /// <summary>
+        /// Whether a request looks past every chat's hold - D-176, row 5b-1825.
+        /// TRUE FOR ONE THING: the Activity pane's Select or Zoom, sent by the
+        /// pane's own door. They change the selection and the view, never the
+        /// model, and they are the modeller's own clicks in Revit - so a chat's
+        /// three quiet minutes after its change no longer refuse them, exactly
+        /// when the modeller looks at that change. They are not held for the
+        /// pane either: no hold is looked at, claimed or renewed.
+        ///
+        /// BOTH HALVES OR NOTHING. `fromPane` is the job's own mark, set only by
+        /// RevitDispatcher.DispatchFromPane in-process and read off the job
+        /// Revit's thread is running (RevitDispatcher.RunningFromPane) - never
+        /// anything in the request's text. So a chat that sends the same
+        /// operation over the pipe still meets the hold, and nothing the pane
+        /// sends that is not Select or Zoom gets past it. The pane's Undo has
+        /// its own rule (D-175) and is not this one; every request that changes
+        /// the model meets the hold as before.
+        /// </summary>
+        public static bool LooksPastHolds(string operation, bool fromPane)
+        {
+            return fromPane && string.Equals(operation, PaneShowOperation, StringComparison.Ordinal);
+        }
+
         /// <summary>
         /// Claims the model for this chat, or renews its hold - asked once per
         /// request, before it runs.
