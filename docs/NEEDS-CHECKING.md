@@ -1550,6 +1550,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-of.md`](needs-checking/group-of.md)
 
+## Group OH - a built-in parameter by Revit's name for it, an architectural column's top and a turn when placing, a type duplicated from itself, and a rotation said in degrees (2026-11-16)
+
+**Its own file:** [`needs-checking/group-oh.md`](needs-checking/group-oh.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

@@ -289,22 +289,72 @@ var unticked = new[] { "no", "false", "off", "0", "unticked" };
 // says so - never a guess (D-54 s3). REPORT_PARAMETER_INVENTORY prints every
 // parameter's GUID. A name found as it is spelt is found that way first, so
 // every name that worked before reaches exactly what it reached.
+//
+// VERSION 9 (2026-11-16, FRAGMENT-ISSUES 5b-1703): A BUILT-IN PARAMETER NAMED
+// BY REVIT'S OWN NAME FOR IT. The GUID form reaches shared parameters alone,
+// and two BUILT-IN parameters can carry one name too: an architectural column
+// (M_Rectangular Column, Revit 2024, `villa 2`, Ajmalpshaik/Heron-AI#853 item
+// B2) has two writable "Top Level", so its top level could not be set at all.
+// "Top Level {FAMILY_TOP_LEVEL_PARAM}" now means the ONE parameter in the
+// element's own parameter set that IS that built-in, and only while it is
+// called that - the GUID form's rule. A word in the braces that is neither a
+// GUID nor a name Revit gives a built-in finds nothing, as before; the
+// refusal for two writable parameters names each one in the form that
+// reaches it (`namedAs`). A name found as it is spelt is still found that way
+// first.
 Func<Element, string, IList<Parameter>> parametersCalled = (element, parameterName) =>
 {
     var found = element.GetParameters(parameterName);
     if (found.Count > 0) return found;
     var text = (parameterName ?? "").Trim();
     var open = text.LastIndexOf('{');
-    Guid guid;
-    if (open < 0 || !text.EndsWith("}")
-        || !Guid.TryParse(text.Substring(open + 1, text.Length - open - 2), out guid))
-        return found;
+    if (open < 0 || !text.EndsWith("}")) return found;
+    var inBraces = text.Substring(open + 1, text.Length - open - 2).Trim();
     var called = text.Substring(0, open).Trim();
-    var byGuid = new List<Parameter>();
-    var one = element.get_Parameter(guid);
-    if (one != null && (called.Length == 0 || (one.Definition != null && one.Definition.Name == called)))
-        byGuid.Add(one);
-    return byGuid;
+    Guid guid;
+    if (Guid.TryParse(inBraces, out guid))
+    {
+        var byGuid = new List<Parameter>();
+        var one = element.get_Parameter(guid);
+        if (one != null && (called.Length == 0 || (one.Definition != null && one.Definition.Name == called)))
+            byGuid.Add(one);
+        return byGuid;
+    }
+    // VERSION 9: a built-in, by the name Revit's API gives it - letters first,
+    // so a number in braces never reads as one.
+    BuiltInParameter builtIn;
+    if (inBraces.Length == 0 || !char.IsLetter(inBraces[0])
+        || !Enum.TryParse(inBraces, false, out builtIn) || !Enum.IsDefined(typeof(BuiltInParameter), builtIn)
+        || builtIn == BuiltInParameter.INVALID)
+        return found;
+    var byBuiltIn = new List<Parameter>();
+    foreach (Parameter one in element.Parameters)
+    {
+        var definition = one.Definition as InternalDefinition;
+        if (definition == null || definition.BuiltInParameter != builtIn) continue;
+        if (called.Length == 0 || definition.Name == called) byBuiltIn.Add(one);
+    }
+    return byBuiltIn.Count == 1 ? byBuiltIn : new List<Parameter>();
+};
+
+// VERSION 9: how to name each writable parameter of one name so that only it
+// is reached - a built-in by Revit's name for it, a shared one by its GUID. A
+// project parameter has no second name: renaming it is the way out.
+Func<Element, string, string> namedAs = (element, name) =>
+{
+    var ways = new List<string>();
+    foreach (var one in element.GetParameters(name))
+    {
+        if (one.IsReadOnly) continue;
+        var definition = one.Definition as InternalDefinition;
+        if (definition != null && definition.BuiltInParameter != BuiltInParameter.INVALID)
+            ways.Add("'" + name + " {" + definition.BuiltInParameter + "}'");
+        else if (one.IsShared)
+            ways.Add("'" + name + " {" + one.GUID + "}'");
+        else
+            ways.Add("(a project parameter, which has no other name - rename it in Manage > Project Parameters)");
+    }
+    return ways.Count == 0 ? "'" + name + " {its GUID}'" : string.Join(" or ", ways.Distinct().ToArray());
 };
 
 Func<Element, string, Parameter> theOne = (element, parameterName) =>
@@ -1290,7 +1340,7 @@ foreach (var raw in (keyed ? "" : (rows ?? "")).Split(';'))
         if (matches.Count == 0) why = "it no longer has a parameter called " + name;
         else if (target == null)
             why = "two parameters on it are called " + name + " and more than one can be written"
-                + " - name the one meant as '" + name + " {its GUID}'";
+                + " - name the one meant as " + namedAs(element, name);
         else if (target.IsReadOnly) why = name + " is read-only";
         else if (target.StorageType == StorageType.None)
             why = name + " holds a reference to another element, which cannot be typed as text";
@@ -1651,7 +1701,7 @@ if (keyed)
         if (matches.Count == 0) return "it has no parameter called " + name;
         if (target == null)
             return "two parameters on it are called " + name + " and more than one can be written"
-                 + " - name the one meant as '" + name + " {its GUID}'";
+                 + " - name the one meant as " + namedAs(element, name);
         if (target.IsReadOnly) return name + " is read-only";
         if (target.StorageType == StorageType.None)
             return name + " holds a reference to another element, which cannot be typed as text";
