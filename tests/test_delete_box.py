@@ -269,6 +269,33 @@ def wiring():
     check('"awaiting_delete_answer"' in read(DISPATCHER),
           "a caller that stops waiting on the delete box is told nothing is deleted")
 
+    print("\n9. what has no category is named by its kind, and the box closes at its deadline (5b-1700)")
+    # Issue #853 item C1, Revit 2024: the box listed 16 elements as
+    # "(no category)" and nothing else, and stayed open after its deadline,
+    # so every request after it was refused as "Revit is busy".
+    check("ListedAs(target, id)" in ask and "ListedAs(target, root)" in ask
+          and "CategoryName(target, id), withWhat" not in ask,
+          "every element the box lists, and what it goes with, is listed through ListedAs")
+    listed = NOTE_SUITE.body_of(gate_code, "private static string ListedAs(") or ""
+    check("HeronDeleteQuestion.WithoutCategory(" in listed and "GetType().Name" in listed,
+          "and one with no category is listed as (no category) and Revit's name for its kind")
+    check(re.search(r"using\s*\(\s*var closer\s*=\s*BoxCloser\.Start\(\s*HeronDeleteQuestion\.CloseAfter\(window\),"
+                    r"\s*going\.Count\)\)\s*using\s*\(\s*HeronDialogWatch\.HeronAsks\(\)\s*\)", ask) is not None,
+          "the box is shown with a closer armed for its own deadline, around HeronAsks")
+    check(re.search(r"result\s*=\s*box\.Show\(\);\s*closedByItself\s*=\s*closer\s*!=\s*null\s*&&\s*closer\.Closed;",
+                    ask) is not None,
+          "and whether the closer closed it is read before the closer is disposed")
+    check("HeronDeleteQuestion.TimedOut" in ask
+          and re.search(r"answer\s*==\s*HeronDeleteQuestion\.TooLate\s*\|\|\s*answer\s*==\s*HeronDeleteQuestion\.TimedOut",
+                        ask) is not None,
+          "a box that closed by itself is answered delete_too_late - nothing deleted, never a retry")
+    closer = gate_code[gate_code.find("private sealed class BoxCloser"):] if "private sealed class BoxCloser" in gate_code else ""
+    check("HeronDeleteQuestion.IsTheBox(" in closer and "EnumThreadWindows(_thread" in closer
+          and "PostMessage(window, WmClose" in closer,
+          "the closer posts WM_CLOSE only to the box it was armed for, among the showing thread's windows")
+    check("SendMessage(" not in closer and "DestroyWindow(" not in closer,
+          "and it never destroys a window, or sends one any message of its own but WM_CLOSE")
+
 
 def main():
     timeout()

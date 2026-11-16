@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -45,10 +45,19 @@ semantic-identity: "load or reload the keynote file the keynote tags read from, 
 # requires one: LoadFrom and Reload throw ModificationOutsideTransactionException
 # without it (RevitAPI.xml, 2020 to 2027) - so Heron's transaction group, which
 # stopped Reload Latest (row 5b-1423), is no obstacle here.
+#
+# VERSION 2, 2026-11-15 - row 5b-1647, found proving version 1 on the owner's
+# PC (Revit 2020, P1102 MEP, rolled back): the load and the refusal were both
+# right, and the draft still read "the negative case returned content",
+# because the only `role: result`, `loadResult`, was a sentence filled either
+# way. The result is now `loadedFile`, empty unless Revit reported the load
+# done; `loadResult` stays as accounting. Row 5b-1738: the "not the path
+# typed" line compares full paths, not spellings. Never proven, so no proof is
+# made stale; field report #854 (Revit 2024) asked for it proved.
 kind: action
 domain: revit.annotation
 capability: LOAD_KEYNOTE_FILE
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -75,10 +84,18 @@ contract:
       type: string
       source: request
   provides:
+    - name: loadedFile
+      # VERSION 2 - THE RESULT. The keynote file Revit holds after a load or
+      # reload it reported as done (Success, or already current on a reload),
+      # READ BACK as `fileAfter` is. EMPTY when nothing was loaded - a
+      # refusal or a failed load - which is the D-30 negative (row 5b-1647).
+      role: result
+      type: string
     - name: loadResult
       # Revit's own result in words: loaded, reloaded, already current, or
-      # FAILED with Revit's reason - or why nothing was loaded.
-      role: result
+      # FAILED with Revit's reason - or why nothing was loaded. Filled either
+      # way, so it describes the run (D-52) - a result until version 2.
+      role: accounting
       type: string
     - name: fileBefore
       # The keynote file before: path as saved, path type, where it resolves,
@@ -104,6 +121,43 @@ contract:
       type: IList<string>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-16'
+  by: Ajmal PS
+  model: keynote-lz (3,203 elements), Revit 2024, session 18288
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned asked (null), countEntries Func`1,
+    currentAbsolute C:\Users\ajmal\AppData\Local\Temp\heron-work\keynotes-b.txt, currentType
+    Absolute, describe Func`1, entriesAfter 4, entriesBefore 3840, fileAfter C:\Users\ajmal\AppData\Local\Temp\heron-work\keynotes-b.txt
+    (Absolute), Revit: Loaded, fileBefore RevitKeynotes_Metric.txt (Content), resolving to
+    C:\ProgramData\Autodesk\RVT 2024\Libraries\English\US\RevitKeynotes_Metric.txt, Revit:
+    Loaded, findings 2 item(s) [Keynote file before: RevitKeynotes_Metric.txt (Content), res...,
+    The keynote file was Content (Revit''s dialog: At Library Loc...], fullPath Func`2, loadDone
+    true, loadResult loaded, loadedFile C:\Users\ajmal\AppData\Local\Temp\heron-work\keynotes-b.txt
+    (Absolute), Revit: Loaded, readable Func`2, refused 0 item(s), table KeynoteTable, wanted
+    C:\Users\ajmal\AppData\Local\Temp\heron-work\keynotes-b.txt, wantedType . inputs came
+    filePath as given; pathType as given. on keynote-lz'
+  negative_case: 'run with filePath=C:\Users\ajmal\AppData\Local\Temp\heron-work\keynotes-missing.txt,
+    pathType= instead - chosen because it should not contain what this fragment reports -
+    run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned asked (null), countEntries Func`1, currentAbsolute C:\ProgramData\Autodesk\RVT
+    2024\Libraries\English\US\RevitKeynotes_Metric.txt, currentType Content, describe Func`1,
+    entriesAfter 3840, entriesBefore 3840, fileAfter RevitKeynotes_Metric.txt (Content), resolving
+    to C:\ProgramData\Autodesk\RVT 2024\Libraries\English\US\RevitKeynotes_Metric.txt, Revit:
+    Loaded, fileBefore RevitKeynotes_Metric.txt (Content), resolving to C:\ProgramData\Autodesk\RVT
+    2024\Libraries\English\US\RevitKeynotes_Metric.txt, Revit: Loaded, findings 1 item(s)
+    [Keynote file before: RevitKeynotes_Metric.txt (Content), res...], fullPath Func`2, loadDone
+    false, loadResult nothing loaded - There is no file at "C:\Users\ajmal\AppData\Local\Temp\heron-work\keynotes-missing.txt"
+    that this PC can see - the keynote file is unchanged. Check the path, the drive letter,
+    or that the server share is reachable., loadedFile , readable Func`2, refused 1 item(s)
+    [There is no file at "C:\Users\ajmal\AppData\Local\Temp\heron...], table KeynoteTable,
+    wanted C:\Users\ajmal\AppData\Local\Temp\heron-work\keynotes-missing.txt, wantedType .
+    inputs came filePath as given; pathType as given. on keynote-lz'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 4c37701bb8d9ff5e
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
@@ -149,7 +203,11 @@ compatibility-note: >
 #   "reload the links"                         -> RELOAD_LINKS
 #   "load this family"                         -> LOAD_FAMILY
 
+# 2026-11-15, field report #854 / #853 D1 - the modeller's ask in her words.
+# On origin/main at aaac505 it reached REPORT_KEYNOTE_FILE, a read (hybrid,
+# a scratch store, Revit 2024).
 utterances:
   - load the keynote file C:\Standards\Keynotes.txt
   - reload the keynote file
   - change the keynote file to the office standard on the server
+  - load the project keynote file

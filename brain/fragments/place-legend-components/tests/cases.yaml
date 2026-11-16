@@ -1,0 +1,45 @@
+# PLACE_LEGEND_COMPONENTS - built 2026-11-15 in a cloud session with no Revit,
+# for field report #854 item f. NOT RUN. Arranged as
+# docs/needs-checking/group-nz.md says: a scratch project with doors and
+# windows placed, and a legend "Symbol Legend" holding ONE legend component
+# placed by hand. Every write is ROLLED BACK unless the modeller keeps it.
+positive:
+  - given: >
+      "Symbol Legend" holding one legend component of a door type, placed by
+      hand; categories Doors, Windows; onlyUsed true; labels true
+    expect: >
+      placed = the door and window types placed in the model, less the one the
+      legend already shows (alreadyShown 1); each copy's Component reads back
+      its type; a column under the first one, each with "Family: Type" beside
+      it - LOOKED AT on the legend
+
+  - given: the same, onlyUsed false
+    expect: >
+      placed = every door and window type loaded, less the one shown - more
+      than with onlyUsed true when a type is loaded but not placed
+
+negative:
+  - given: >
+      THE FIRST CASE TO RUN. "Symbol Legend" as above, categories Casework -
+      a category with nothing placed in the scratch model, onlyUsed true
+    expect: >
+      placed 0, placedIds empty, a finding "No placed type of Casework in this
+      model"; nothing new in the legend
+
+  - given: a legend with NO legend component in it, categories Doors
+    expect: >
+      refused "holds no legend component, and Revit's API cannot place the
+      first one" with how to place one; placed 0
+
+  - given: view a floor plan, not a legend
+    expect: refused "... not a legend"; placed 0
+
+  - given: >
+      the positive run kept, then the same call again
+    expect: >
+      placed 0 - every type already shown is counted in alreadyShown, never
+      placed twice
+
+second_route: >
+  Revit itself: the legend looked at, and each new component's Properties >
+  Component read beside placedIds and the type names written beside them

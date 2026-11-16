@@ -513,6 +513,27 @@ async def exercise(server):
               "and the reply says it in one line: %r" % line[:120])
         check(module._other_release_lines(new) == [],
               "and says nothing when there is nothing to name")
+        # SAID PLAINLY, AND ABOVE "would need" (issue #853 C6): on Villa 2
+        # the line sat under ATTACH_COLUMNS and only asked for a check.
+        check(line.lstrip().startswith("NOT ON REVIT 2024")
+              and "cannot do this on Revit 2024" in line
+              and "by hand in Revit" in line,
+              "it opens with the release and says what to tell the user: %r"
+              % line[:160])
+        real = module._revit_version
+        module._revit_version = lambda: ("2024", "a test's Revit 2024")
+        try:
+            reply = text_of(await server.call_tool(
+                "heron_lookup", {"request": said}))
+        except Exception as exc:                                # noqa: BLE001
+            reply = "(raised %s: %s)" % (type(exc).__name__, exc)
+        finally:
+            module._revit_version = real
+        named = reply.find("NOT ON REVIT 2024")
+        offered = reply.find("would need")
+        check(named != -1 and offered != -1 and named < offered,
+              "and heron_lookup puts it ABOVE the tool it offers - found the "
+              "line at %d, \"would need\" at %d" % (named, offered))
 
     print()
     print("  the HVAC engine, called through the SDK's own dispatch")

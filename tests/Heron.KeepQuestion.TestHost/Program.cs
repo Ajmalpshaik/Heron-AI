@@ -480,6 +480,79 @@ namespace Heron.KeepQuestion.TestHost
             Check(no.Contains("NOTHING WAS DELETED") && no.Contains("send it again only if they ask")
                   && no.Contains("Their own selection was put back"),
                   "a no says nothing was deleted, never to retry, and that their selection is back");
+
+            DeleteBoxNamesAndCloses();
+        }
+
+        /// <summary>
+        /// FRAGMENT-ISSUES 5b-1700, issue #853 item C1: a box that listed 16
+        /// elements as "(no category)" and nothing else, and stayed open after
+        /// its deadline so every later request was refused as busy. Asked by
+        /// REFLECTION, so this host still builds on the code as it stood and
+        /// each check there FAILS rather than the build crashing (heron-ship 2a).
+        /// </summary>
+        private static void DeleteBoxNamesAndCloses()
+        {
+            Console.WriteLine();
+            Console.WriteLine("16. an element with no category is named by its kind, and the box closes at its deadline");
+            var type = typeof(HeronDeleteQuestion);
+            var without = type.GetMethod("WithoutCategory");
+            var isTheBox = type.GetMethod("IsTheBox");
+            var closeAfter = type.GetMethod("CloseAfter");
+            var timedOut = type.GetField("TimedOut");
+            Check(without != null && isTheBox != null && closeAfter != null && timedOut != null,
+                  "HeronDeleteQuestion has WithoutCategory, IsTheBox, CloseAfter and TimedOut");
+
+            if (without != null)
+            {
+                var named = (string)without.Invoke(null, new object[] { "SketchPlane" });
+                Check(named == HeronDeleteQuestion.NoCategory + " SketchPlane",
+                      "no category, kind SketchPlane - listed as \"(no category) SketchPlane\": " + named);
+                Check((string)without.Invoke(null, new object[] { null }) == HeronDeleteQuestion.NoCategory
+                      && (string)without.Invoke(null, new object[] { "  " }) == HeronDeleteQuestion.NoCategory,
+                      "a kind that cannot be read is the old word alone");
+                var mixed = new List<HeronDeleteQuestion.Going>
+                {
+                    new HeronDeleteQuestion.Going("1", named, null),
+                    new HeronDeleteQuestion.Going("2", named, null),
+                    new HeronDeleteQuestion.Going("3", (string)without.Invoke(null, new object[] { "Sketch" }), null),
+                };
+                var lines = HeronDeleteQuestion.Lines(mixed);
+                Check(lines.Count == 2 && lines[0].Contains("(no category) SketchPlane  2")
+                      && lines[1].Contains("(no category) Sketch  1"),
+                      "two kinds with no category are two lines, each counted: " + string.Join(" / ", lines));
+            }
+
+            if (isTheBox != null)
+            {
+                Func<string, string, int, bool> box = (c, t, n) => (bool)isTheBox.Invoke(null, new object[] { c, t, n });
+                Check(box("#32770", "Delete 16 elements?", 16), "the box is the task dialog with its own title");
+                Check(!box("#32770", "Delete 15 elements?", 16) && !box("#32770", "Delete 16 elements? ", 16),
+                      "another count, or a title only like it, is not the box");
+                Check(!box("RevitWindow", "Delete 16 elements?", 16), "nor is a window of another class");
+            }
+
+            if (closeAfter != null)
+            {
+                Func<TimeSpan?, TimeSpan?> after = w => (TimeSpan?)closeAfter.Invoke(null, new object[] { w });
+                Check(after(TimeSpan.FromSeconds(240)) == TimeSpan.FromSeconds(240),
+                      "it closes when the time to answer runs out - no sooner, no later");
+                Check(after(null) == null && after(TimeSpan.Zero) == null && after(TimeSpan.FromSeconds(-1)) == null,
+                      "with no deadline known, or none left, it never closes by itself");
+            }
+
+            if (timedOut != null)
+            {
+                var asked = HeronDeleteQuestion.Asking(16, 0, (string)timedOut.GetValue(null));
+                Check(asked.Contains("closed by itself") && asked.Contains("deletes nothing"),
+                      "the chat is told the box closed by itself and nothing was deleted: " + Short(asked));
+            }
+
+            var content = HeronDeleteQuestion.Content("change these doors", "change-element-type", "villa 2",
+                new List<HeronDeleteQuestion.Going> { new HeronDeleteQuestion.Going("1", null, null) },
+                true, 0, 4, "", "14:32");
+            Check(content.Contains("At 14:32 this box closes by itself, deleting nothing"),
+                  "and the box says it will close by itself, and when");
         }
 
         private static string Short(string text)

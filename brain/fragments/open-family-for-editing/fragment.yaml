@@ -9,7 +9,7 @@ semantic-identity: "put a loaded family in front in Revit, so it can be worked o
 kind: action
 domain: revit.families
 capability: OPEN_FAMILY_FOR_EDITING
-version: 1
+version: 2
 source: OFFICIAL
 risk: EXECUTE
 
@@ -46,10 +46,32 @@ purpose: >
   EditFamily." That is why this is EXECUTE rather than MODIFY: it must be sent
   without the executor opening one.
 
+  **VERSION 2: THE SAME CODE, AND THE SWITCH THAT SAYS WHAT IT NEEDS** -
+  `noTransactionOpen` (D-125), as `OPEN_VIEW` declared it at its version 3.
+  Version 1 declared nothing, so once its own door had gone it had none that
+  could run it: `revit_show` turns it away because it writes a .rfa (row
+  5b-591), and `revit_change` ran it inside a transaction, which EditFamily
+  refused - *"The document is currently modifiable! Close the transaction
+  before calling EditFamily."* - seen on Revit 2024, `villa 2`, 2026-11-11
+  (row 5b-1701, issue #853). With the switch, `revit_change` runs it inside
+  the job's group with no transaction open. `impl/` did not move, so its
+  proof stands. **THAT PROOF WAS NOT TAKEN INSIDE A GROUP**: whether
+  EditFamily and OpenAndActivateDocument run there is NEEDS-CHECKING Group
+  NY's NY3, so a PROVEN line speaks for this code, not yet for that route.
+
 contract:
   needs:
     - name: doc
       type: Document
+    - name: noTransactionOpen
+      # NEVER USED BY THE CODE. Declaring it is the switch that has the add-in
+      # run this with NO transaction open on every path - inside the job's
+      # TransactionGroup on the write path - because EditFamily and
+      # OpenAndActivateDocument refuse inside one (D-125, rows 5b-591 and
+      # 5b-1701). A save of the family EditFamily opened is this job's own to
+      # make at EXECUTE (NEEDS-CHECKING Group EX, the owner's call 2026-10-18).
+      type: bool
+      source: ambient
     - name: uidoc
       type: UIDocument
     - name: familyName

@@ -130,6 +130,17 @@ compatibility-note: >
 # CREATE_FROM_ROOM_BOUNDARIES - none of which attaches a wall either. Handed walls, ATTACH_COLUMNS changes
 # nothing and says none of them is a column. On those releases a wall is
 # attached by hand.
+#
+# NO ROUTE BEFORE 2025, CHECKED AGAIN 2026-11-15 for issue #852 (Villa 2,
+# Revit 2024). Read off RevitAPI.xml and RevitAPIUI.xml in the Nice3point
+# reference packages 2020.2.90, 2021.1.100, 2022.1.80, 2023.1.90, 2024.0.0
+# and 2025.4.60: no Wall attachment member before 2025; the wall's "top is
+# attached" parameter is read-only; and Revit's own Attach Top/Base is not a
+# command an add-in can post (no Attach entry in the posted-command list of
+# 2020 or 2024). So on 2020 to 2024 Heron cannot attach a wall at all, and
+# the lookup now opens its answer with "NOT ON REVIT 2024" above the tool it
+# offers (#853 item C6). The fallback #852 asks for - shaping a wall's top
+# to a gable - is row 5b-1672; the question is Q-91.
 
 utterances:
   # ADDED 2026-11-07, issue #799 routing table: ranked DIMENSION_ELEMENT_FACES
