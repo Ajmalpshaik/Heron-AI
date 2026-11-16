@@ -233,6 +233,7 @@ an edit.
 | [D-162](#d-162--the-pipe-to-revit-refuses-another-computer-the-chat-checks-who-serves-it-and-the-tokens-file-is-this-users-alone) | The pipe to Revit refuses another computer, the chat checks who serves it, and the token's file is this user's alone | ✅ Accepted · 2026-11-12 |
 | [D-163](#d-163--herons-recent-changes-are-docked-in-revit-with-select-zoom-and-undo-reached-through-the-one-dispatcher) | Heron's recent changes are docked in Revit, with Select, Zoom and Undo, reached through the one dispatcher | ✅ Accepted · 2026-11-12 |
 | [D-164](#d-164--two-built-in-parameters-of-one-name-that-read-the-same-value-are-one-reading-not-a-name-matched-twice) | Two built-in parameters of one name that read the same value are one reading, not a name matched twice | ✅ Accepted · 2026-11-14 |
+| [D-165](#d-165--a-modeller-installs-heron-with-one-setup-file-which-puts-heron-in-place-and-hands-over-to-the-installer-engine) | A modeller installs Heron with one Setup file, which puts Heron in place and hands over to the installer engine | ✅ Accepted · 2026-11-16 |
 
 ## Format
 
@@ -879,6 +880,7 @@ What this makes easy. What this makes hard. What it locks in.
 ## D-96 — A downloaded Heron is installed by the installer, and only by the installer
 
 **Status:** Accepted · **Date:** 2026-09-21 · **Source:** Ajmal PS, 2026-09-21 · **Promoted from:** [NEEDS-CHECKING `AA9`](NEEDS-CHECKING.md)
+**Superseded in part by:** [D-165](#d-165--a-modeller-installs-heron-with-one-setup-file-which-puts-heron-in-place-and-hands-over-to-the-installer-engine), accepted 2026-11-16 - which FILE a modeller starts: the Setup, `HeronSetup-<version>.exe`, which runs the same engine; `deploy-addin.ps1` as the one copy engine and `-ExecutionPolicy Bypass` are unchanged
 
 **Full record:** [`decisions/D-96.md`](decisions/D-96.md)
 
@@ -1440,3 +1442,12 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`compare-elements`](../brain/fragments/compare-elements/impl/any/fragment.cs) (version 3, `builtInTwinsAgree`) · [`test_same_name_guard.py`](../tests/test_same_name_guard.py) (check 7) · [FRAGMENT-ISSUES row 5b-1631](fragment-issues/row-5b-1631.md)
 
 **Full record:** [`decisions/D-164.md`](decisions/D-164.md)
+
+## D-165 — A modeller installs Heron with one Setup file, which puts Heron in place and hands over to the installer engine
+
+**Status:** Accepted · **Date:** 2026-11-16 · **Accepted:** Ajmal PS, 2026-11-16, in conversation: *"do it the best am not sure for this and you anre my sesior programer or manager or what eve"* - his answer to *"Wrap the installer Heron already has, or grow it into the Setup?"*. **The choices below were made by the session on that word**; each is his to reverse, and none spends money
+**Supersedes in part:** [D-96](#d-96--a-downloaded-heron-is-installed-by-the-installer-and-only-by-the-installer) - which FILE a modeller starts: the Setup, which runs the same engine D-96 named · **Keeps:** D-96 for everything else · [D-91](#d-91--product-files-come-from-a-signed-versioned-github-release) · [D-93](#d-93--the-product-list-is-a-manifest-read-as-data-never-a-list-written-into-the-installer) · [D-94](#d-94--install-replaces-there-is-no-separate-upgrade-path) · [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit)
+**Leaves open:** [Q-77](open-questions/tier-2.md) - what makes signing due, and the certificate
+**Affects:** [`platform/Heron.Setup/`](../platform/Heron.Setup/README.md) · [`tools/build-setup.py`](../tools/build-setup.py) · `heron-install --uninstall` and `--add-to-claude` · [`tools/deploy-addin.ps1`](../tools/deploy-addin.ps1)
+
+**Full record:** [`decisions/D-165.md`](decisions/D-165.md)

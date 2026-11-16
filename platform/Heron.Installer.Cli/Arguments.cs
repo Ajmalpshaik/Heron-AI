@@ -83,6 +83,27 @@ namespace Heron.Installer.Cli
         public bool NoPython { get; private set; }
 
         /// <summary>
+        /// Take EVERY Heron product off EVERY Revit release it is on - D-165.
+        ///
+        /// ALL OF IT OR NOTHING, never a selection. This door's rule is that it
+        /// never removes (Program's class comment): a product left out of
+        /// --products was not unticked, it was not mentioned. A Windows
+        /// Uninstall, though, means exactly one thing - all of it - and that is
+        /// the only removal this flag can ask for. So it refuses every flag that
+        /// would choose. With --list it prints what would go, in the screen's
+        /// own words, and changes nothing - the Setup's uninstaller shows that
+        /// sentence before anything is removed.
+        /// </summary>
+        public bool Uninstall { get; private set; }
+
+        /// <summary>
+        /// Add Heron to Claude Code for this user, and do nothing else - D-165.
+        /// Never with an install on the same line: the Setup asks it as its own
+        /// question, after the install, and it is refused while Claude is open.
+        /// </summary>
+        public bool AddToClaude { get; private set; }
+
+        /// <summary>
         /// Why the line cannot be acted on, or null when it can.
         ///
         /// Plain English, and it says what to do next - docs/14. "Error" is
@@ -124,6 +145,14 @@ namespace Heron.Installer.Cli
 
                     case "--no-python":
                         read.NoPython = true;
+                        break;
+
+                    case "--uninstall":
+                        read.Uninstall = true;
+                        break;
+
+                    case "--add-to-claude":
+                        read.AddToClaude = true;
                         break;
 
                     case "--source":
@@ -170,6 +199,25 @@ namespace Heron.Installer.Cli
                 read.Problem = "--source and --from ask for two different things at once: " +
                                "one downloads Heron's published release, the other uses files " +
                                "already on this PC. Name one.";
+            }
+
+            // --uninstall CHOOSES NOTHING, and a line that tries to choose is
+            // refused rather than half-honoured - see Uninstall.
+            if (read.Problem == null && read.Uninstall &&
+                (read.Source != null || read.FromFolder != null || products.Count > 0 ||
+                 releases.Count > 0 || read.AddToClaude || read.NoPython))
+            {
+                read.Problem = "--uninstall takes every Heron product off every Revit it is on, so it " +
+                               "cannot be given --source, --from, --products, --releases, --no-python " +
+                               "or --add-to-claude. Use it alone, or with --list to see what would go.";
+            }
+
+            if (read.Problem == null && read.AddToClaude &&
+                (read.Source != null || read.FromFolder != null || products.Count > 0 ||
+                 releases.Count > 0 || read.NoPython || read.ListOnly))
+            {
+                read.Problem = "--add-to-claude adds Heron to Claude Code and installs nothing, so it " +
+                               "is used alone. Install first, then run heron-install --add-to-claude.";
             }
 
             return read;
@@ -251,6 +299,11 @@ namespace Heron.Installer.Cli
                 "  --no-check          Do not check online whether a newer version exists." + n +
                 "  --no-python         Install the add-in only. Leave Heron's Python packages," + n +
                 "                      knowledge store and heron-ready check for later." + n +
+                "  --uninstall         Take EVERY Heron product off EVERY Revit it is on, and" + n +
+                "                      Heron's entry out of Claude Code. Nothing can be left out;" + n +
+                "                      with --list it says what would go and changes nothing." + n +
+                "  --add-to-claude     Add Heron to Claude Code for your user, so /mcp lists it" + n +
+                "                      in any folder. Installs nothing. Close Claude first." + n +
                 "  --help              This." + n +
                 n +
                 "Close Revit before installing. If it is open, heron-install says which" + n +
@@ -270,8 +323,10 @@ namespace Heron.Installer.Cli
                 "reads the version to do that - it never downloads Heron again to find out," + n +
                 "and it never updates anything by itself." + n +
                 n +
-                "It installs. It never removes anything - use the installer window for" + n +
-                "that, where unticking is something a person did on purpose." + n +
+                "It installs, and it never removes one product on its own - use the" + n +
+                "installer window for that, where unticking is something a person did on" + n +
+                "purpose. The one removal it does is everything, with --uninstall - what a" + n +
+                "Windows Uninstall means." + n +
                 n +
                 "When it finishes:" + n +
                 "  0  did what was asked" + n +

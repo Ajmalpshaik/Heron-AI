@@ -1,10 +1,12 @@
 # A signed Windows Setup for modellers - design (written 2026-11-16)
 
-> **Active - DESIGN ONLY, nothing built.** Written for the owner (Ajmal PS) before any code, as the task
-> asked: *"Write the design first, and ask the owner before choosing the signing certificate or the
-> installer tool."* **Three choices are his** and are asked one at a time, in this order: wrap the
-> installer Heron has or replace it (section 5), the tool that makes the Setup (section 6), the
-> certificate (section 7). **Closure:** the Setup installs and uninstalls cleanly on the owner's PC for
+> **Active - BUILT 2026-11-16, not yet run on the owner's PC.** Written for the owner (Ajmal PS) before any
+> code, as the task asked: *"Write the design first, and ask the owner before choosing the signing
+> certificate or the installer tool."* **He handed the three choices to the session the same day** -
+> *"do it the best am not sure for this and you anre my sesior programer or manager or what eve"* - and they
+> are recorded as [D-165](../../decisions/D-165.md): **A, wrap** (section 5), **Inno Setup** (section 6), and
+> **no certificate bought** - the Setup is built ready to sign and signing is NOT RUN (section 7). The runs
+> are [NEEDS-CHECKING Group OA](../../needs-checking/group-oa.md). **Closure:** the Setup installs and uninstalls cleanly on the owner's PC for
 > every Revit year present, the gates pass, every year not present is recorded NOT RUN, and what lasts
 > has moved into [07](../../07-installation-and-update.md), a decision and a NEEDS-CHECKING group; then
 > this note is retired.
@@ -99,7 +101,7 @@ installer; what a modeller still does by hand is **install Python itself** - sec
 | Packaging tool, `signtool`, a code-signing certificate | **none on this PC** - each is a download that needs the owner's typed yes | the same session |
 | .NET SDK | 10.0.401 - builds every Revit year | `dotnet --version` |
 
-## 5. Approaches - THE OWNER'S FIRST CHOICE
+## 5. Approaches - DECIDED: A, wrap (D-165)
 
 | | What it is | Gives | Costs |
 |---|---|---|---|
@@ -111,7 +113,7 @@ installer; what a modeller still does by hand is **install Python itself** - sec
 2026-09-20, the rollback of 2026-09-19, the Store-Claude refusal. A wrapper keeps them; a replacement
 must learn them again.
 
-## 6. The tool that makes the Setup - THE OWNER'S SECOND CHOICE (after section 5)
+## 6. The tool that makes the Setup - DECIDED: Inno Setup (D-165)
 
 Only if A. The facts of each are to be read from the maker's own page at the time, not from memory.
 
@@ -128,7 +130,7 @@ Only if A. The facts of each are to be read from the maker's own page at the tim
 better pick only if contractor IT departments deploying Heron by Intune or SCCM is a near goal, which no
 decision says.
 
-## 7. The certificate - THE OWNER'S THIRD CHOICE (after section 6)
+## 7. The certificate - DECIDED: none bought; built ready to sign, signing NOT RUN (D-165)
 
 A new decision is owed whichever way: [D-96](../../decisions/D-96.md) refused a certificate for its
 yearly cost, [D-38](../../decisions/D-38.md) says nothing is signed, [D-91](../../decisions/D-91.md) says a

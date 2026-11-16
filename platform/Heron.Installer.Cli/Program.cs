@@ -29,14 +29,21 @@ namespace Heron.Installer.Cli
     /// and turning --source into somewhere to fetch from is asking
     /// InstallSource.
     ///
-    /// IT INSTALLS. IT NEVER REMOVES - and that is a safety property rather
-    /// than an omission. R-21 makes unticking mean uninstall, and unticking
+    /// IT INSTALLS. IT NEVER REMOVES A SELECTION - and that is a safety
+    /// property rather than an omission. R-21 makes unticking mean uninstall, and unticking
     /// is a gesture a person makes in a window, having seen what is already
     /// there and been asked to confirm. There is nothing on a command line
     /// that could mean it: a product left out of --products was not unticked,
     /// it was simply not mentioned. So Apply is never handed removals here,
     /// and a caller wanting something gone uses the window, where the
     /// confirmation naming every product and release lives.
+    ///
+    /// THE ONE EXCEPTION IS EVERYTHING - --uninstall, D-165. A Windows
+    /// Uninstall means all of it, so there is nothing to have been left out:
+    /// every product comes off every release it is on, worked out by the
+    /// screen's own ToRemove with nothing ticked, and the flag refuses any
+    /// other flag that would choose. Its --list prints the screen's own
+    /// confirmation sentence, which the Setup's uninstaller shows first.
     ///
     /// NOT RUN. It needs Windows, PowerShell and a Revit; this repository is
     /// developed on Linux. Everything it decides is in Arguments and in the
@@ -151,6 +158,12 @@ namespace Heron.Installer.Cli
                 Console.Error.WriteLine(ClaudeAppCopy.Refusal);
                 return Refused;
             }
+
+            // TWO ACTIONS OF THEIR OWN - D-165. Each is used alone (Arguments
+            // refuses either beside a flag that would install or choose), so
+            // each ends here rather than threading through the install below.
+            if (asked.AddToClaude) return AddToClaude(root);
+            if (asked.Uninstall) return Uninstall(asked, manifest, root);
 
             // ROUTE 2 - HERON'S FILES ALREADY ON THIS PC, AND NO INTERNET.
             //
@@ -330,6 +343,92 @@ namespace Heron.Installer.Cli
 
             if (report.Abandoned) return CouldNotRun;
             return report.Failed > 0 || pythonFailed ? SomethingFailed : Done;
+        }
+
+        /// <summary>
+        /// Heron into Claude Code for this user - ClaudeCodeEntry does it and
+        /// says what came of it; this prints that and picks the exit code.
+        /// Claude being open is "could not run, nothing changed", the house 3.
+        /// </summary>
+        private static int AddToClaude(string root)
+        {
+            var step = ClaudeCodeEntry.Apply(root);
+            Console.Out.WriteLine(step.Said);
+            if (step.ClaudeWasOpen) return CouldNotRun;
+            return step.Added ? Done : Refused;
+        }
+
+        /// <summary>
+        /// --uninstall: every Heron product off every Revit release it is on,
+        /// then Heron's entry out of Claude Code if it points at this folder.
+        ///
+        /// WIRING ONLY, and every decision is somebody else's: WHAT comes off is
+        /// InstallerScreen.ToRemove with nothing ticked - the window's own rule -
+        /// the sentence is InstallerScreen.WhatWillBeRemoved, the waiting for
+        /// Revit and the removing are InstallEngine's, and the Claude entry is
+        /// ClaudeCodeEntry's. Apply is handed NO products, so it installs
+        /// nothing: an empty list is no steps (InstallPlan.Build).
+        /// </summary>
+        private static int Uninstall(Arguments asked, ProductManifest manifest, string root)
+        {
+            var revit = new PowerShellRevitEnvironment(root);
+            var screen = InstallerScreen.Build(manifest,
+                                               revit.InstalledReleases(),
+                                               revit.RunningRevits(),
+                                               new InstalledProductsOnDisk(revit),
+                                               null);
+            var removals = screen.ToRemove(new string[0]);
+            var told = InstallerScreen.WhatWillBeRemoved(removals);
+
+            if (asked.ListOnly)
+            {
+                Console.Out.WriteLine(told ?? "Heron is not installed for any Revit on this PC, so no add-in would be removed.");
+                if (screen.CloseRevitFirst != null)
+                {
+                    Console.Out.WriteLine();
+                    Console.Out.WriteLine(screen.CloseRevitFirst);
+                }
+                Console.Out.WriteLine();
+                Console.Out.WriteLine("--list was asked for, so nothing was changed.");
+                return Done;
+            }
+
+            var report = new InstallReport();
+            if (removals.Count > 0)
+            {
+                Console.Out.WriteLine(told);
+                if (screen.CloseRevitFirst != null) Console.Out.WriteLine(screen.CloseRevitFirst);
+
+                var engine = new InstallEngine(revit, new DeployScriptDeployer(root));
+                engine.Pause = delegate { Thread.Sleep(1000); };
+                var last = "";
+                engine.OnWaiting = delegate (string waiting)
+                {
+                    if (waiting == last) return;
+                    last = waiting;
+                    Console.Out.WriteLine(waiting);
+                };
+                report = engine.Apply(manifest, new string[0], new string[0], removals);
+
+                Console.Out.WriteLine();
+                Console.Out.WriteLine(Told(report, manifest));
+            }
+            else
+            {
+                Console.Out.WriteLine("Heron is not installed for any Revit on this PC, so no add-in was removed.");
+            }
+
+            // AFTER THE ADD-INS, AND ONLY WHEN THEY ALL CAME OFF. An entry left
+            // behind beside an add-in that is still there is a working Heron;
+            // an entry taken away from one is a Heron the chat cannot reach.
+            if (!report.Abandoned && report.Failed == 0)
+            {
+                var claude = ClaudeCodeEntry.Withdraw(root);
+                if (claude != null) Console.Out.WriteLine(claude);
+            }
+
+            if (report.Abandoned) return CouldNotRun;
+            return report.Failed > 0 ? SomethingFailed : Done;
         }
 
         /// <summary>
