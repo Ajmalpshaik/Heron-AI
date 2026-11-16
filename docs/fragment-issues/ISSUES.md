@@ -43,7 +43,7 @@ Every issue has a ready prompt that points here. Its kind is in its title: **Fix
 | [#905](https://github.com/Ajmalpshaik/Heron-AI/issues/905) | Revit run on your PC | links, imports and coordinates | 6 |
 | [#906](https://github.com/Ajmalpshaik/Heron-AI/issues/906) | Revit run on your PC | MEP and energy tools | 7 |
 | [#907](https://github.com/Ajmalpshaik/Heron-AI/issues/907) | Revit run on your PC | parameters, rooms, schedules and tags | 10 |
-| [#908](https://github.com/Ajmalpshaik/Heron-AI/issues/908) | Revit run on your PC | re-sign proofs and check new tools | 8 |
+| [#908](https://github.com/Ajmalpshaik/Heron-AI/issues/908) | Revit run on your PC | re-sign proofs and check new tools | 9 |
 | [#909](https://github.com/Ajmalpshaik/Heron-AI/issues/909) | Revit run on your PC | routing re-checked on your PC's trained model | 5 |
 | [#910](https://github.com/Ajmalpshaik/Heron-AI/issues/910) | Your decision | how the add-in guards changes | 6 |
 | [#911](https://github.com/Ajmalpshaik/Heron-AI/issues/911) | Your decision | dry runs, saving and Sync | 4 |
@@ -52,10 +52,10 @@ Every issue has a ready prompt that points here. Its kind is in its title: **Fix
 | [#914](https://github.com/Ajmalpshaik/Heron-AI/issues/914) | Your decision | proofs, signatures and the reading ledger | 6 |
 | [#915](https://github.com/Ajmalpshaik/Heron-AI/issues/915) | Your decision | decisions and Constitution wording | 7 |
 | [#916](https://github.com/Ajmalpshaik/Heron-AI/issues/916) | Your decision | three NEEDS-CHECKING rows that ask the wrong thing | 3 |
-| [#917](https://github.com/Ajmalpshaik/Heron-AI/issues/917) | Your decision | moving, copying, rotating and two-set checks | 7 |
+| [#917](https://github.com/Ajmalpshaik/Heron-AI/issues/917) | Your decision | moving, copying, rotating and two-set checks | 10 |
 | [#918](https://github.com/Ajmalpshaik/Heron-AI/issues/918) | Your decision | columns and roofs from the villa build | 7 |
-| [#919](https://github.com/Ajmalpshaik/Heron-AI/issues/919) | Your decision | tools Heron does not have yet | 7 |
-| [#920](https://github.com/Ajmalpshaik/Heron-AI/issues/920) | Your decision | family tools | 9 |
+| [#919](https://github.com/Ajmalpshaik/Heron-AI/issues/919) | Your decision | tools Heron does not have yet | 8 |
+| [#920](https://github.com/Ajmalpshaik/Heron-AI/issues/920) | Your decision | family tools | 10 |
 | [#921](https://github.com/Ajmalpshaik/Heron-AI/issues/921) | Your decision | links and linked models | 4 |
 | [#922](https://github.com/Ajmalpshaik/Heron-AI/issues/922) | Your decision | MEP, spaces and loads | 6 |
 | [#923](https://github.com/Ajmalpshaik/Heron-AI/issues/923) | Your decision | rooms and doors | 6 |
@@ -83,15 +83,15 @@ Every issue has a ready prompt that points here. Its kind is in its title: **Fix
 | [#945](https://github.com/Ajmalpshaik/Heron-AI/issues/945) | Code fix | family reports, reload and settings | 6 |
 | [#946](https://github.com/Ajmalpshaik/Heron-AI/issues/946) | Code fix | link tools that report wrong | 6 |
 | [#947](https://github.com/Ajmalpshaik/Heron-AI/issues/947) | Code fix | parameters that share a name | 7 |
-| [#948](https://github.com/Ajmalpshaik/Heron-AI/issues/948) | Code fix | floors, doors, roofs, parts and clearance | 6 |
+| [#948](https://github.com/Ajmalpshaik/Heron-AI/issues/948) | Code fix | floors, doors, roofs, parts and clearance | 7 |
 | [#949](https://github.com/Ajmalpshaik/Heron-AI/issues/949) | Code fix | rebar, materials and structural loads | 5 |
 | [#950](https://github.com/Ajmalpshaik/Heron-AI/issues/950) | Code fix | leftovers from the duplicate merges | 4 |
 | [#951](https://github.com/Ajmalpshaik/Heron-AI/issues/951) | Code fix | view filters, tags, spaces and IFC export input | 7 |
-| [#952](https://github.com/Ajmalpshaik/Heron-AI/issues/952) | Code fix | chat-side outcome words that are wrong | 6 |
+| [#952](https://github.com/Ajmalpshaik/Heron-AI/issues/952) | Code fix | chat-side outcome words that are wrong | 7 |
 | [#953](https://github.com/Ajmalpshaik/Heron-AI/issues/953) | Code fix | MCP server small fixes | 7 |
 | [#954](https://github.com/Ajmalpshaik/Heron-AI/issues/954) | Code fix | plain questions that land on a change (part 1) | 6 |
 | [#955](https://github.com/Ajmalpshaik/Heron-AI/issues/955) | Code fix | plain questions that land on a change (part 2) | 6 |
-| [#956](https://github.com/Ajmalpshaik/Heron-AI/issues/956) | Code fix | requests that miss their tool | 9 |
+| [#956](https://github.com/Ajmalpshaik/Heron-AI/issues/956) | Code fix | requests that miss their tool | 10 |
 | [#957](https://github.com/Ajmalpshaik/Heron-AI/issues/957) | Code fix | lookup search engine | 6 |
 | [#958](https://github.com/Ajmalpshaik/Heron-AI/issues/958) | Code fix | routing tests that fail with the trained model | 3 |
 | [#959](https://github.com/Ajmalpshaik/Heron-AI/issues/959) | Code fix | skills - the runner, skill words and risk | 7 |
@@ -99,7 +99,7 @@ Every issue has a ready prompt that points here. Its kind is in its title: **Fix
 
 ## Row by row
 
-Every row of sections 5 and 5b that `python tools/open-defects.py` listed as open on 2026-11-16. A bare number is a section 5 row.
+Every row of sections 5 and 5b that `python tools/open-defects.py` listed as open on 2026-11-16, and the nine rows (5b-1780 to 5b-1832) that pull requests merged later that day added. A bare number is a section 5 row.
 
 | Row | Issue | Kind | What is wrong |
 |---|---|---|---|
@@ -478,33 +478,42 @@ Every row of sections 5 and 5b that `python tools/open-defects.py` listed as ope
 | [row 5b-1653](row-5b-1653.md) | [#960](https://github.com/Ajmalpshaik/Heron-AI/issues/960) | Code fix | The HVAC spaces method wrongly says new mechanical projects start on Areas only |
 | [row 5b-1654](row-5b-1654.md) | [#943](https://github.com/Ajmalpshaik/Heron-AI/issues/943) | Code fix | Making an HVAC zone with a taken name makes a duplicate and the answer does not say so |
 | [row 5b-1655](row-5b-1655.md) | [#951](https://github.com/Ajmalpshaik/Heron-AI/issues/951) | Code fix | Syncing spaces asked for the first phase makes them in the last phase, and does not say |
-| [row 5b-1670](row-5b-1670.md) | [#918](https://github.com/Ajmalpshaik/Heron-AI/issues/918) | Your decision | The roof slope tool cannot slope only the edges a modeller picks - *in progress in #890* |
+| [row 5b-1670](row-5b-1670.md) | [#918](https://github.com/Ajmalpshaik/Heron-AI/issues/918) | Your decision | The roof slope tool cannot slope only the edges a modeller picks - *done in #890, merged* |
 | [row 5b-1671](row-5b-1671.md) | [#918](https://github.com/Ajmalpshaik/Heron-AI/issues/918) | Your decision | 'Join the main roof to the wing roof' reaches a roof-making tool; Revit has no join API |
-| [row 5b-1672](row-5b-1672.md) | [#918](https://github.com/Ajmalpshaik/Heron-AI/issues/918) | Your decision | No tool shapes a wall top to a gable, so gable triangles stay open on 2020-2024 - *in progress in #871 and #890* |
-| [row 5b-1673](row-5b-1673.md) | [#918](https://github.com/Ajmalpshaik/Heron-AI/issues/918) | Your decision | No tool sets a column's top level without moving it; the words reach an attach tool - *in progress in #890* |
-| [row 5b-1674](row-5b-1674.md) | [#918](https://github.com/Ajmalpshaik/Heron-AI/issues/918) | Your decision | Deleting a roof detaches its walls and Heron's answer does not say so - *in progress in #890* |
+| [row 5b-1672](row-5b-1672.md) | [#918](https://github.com/Ajmalpshaik/Heron-AI/issues/918) | Your decision | No tool shapes a wall top to a gable, so gable triangles stay open on 2020-2024 - *done in #890, merged* |
+| [row 5b-1673](row-5b-1673.md) | [#918](https://github.com/Ajmalpshaik/Heron-AI/issues/918) | Your decision | No tool sets a column's top level without moving it; the words reach an attach tool - *done in #890, merged* |
+| [row 5b-1674](row-5b-1674.md) | [#918](https://github.com/Ajmalpshaik/Heron-AI/issues/918) | Your decision | Deleting a roof detaches its walls and Heron's answer does not say so - *done in #890, merged* |
 | [row 5b-1702](row-5b-1702.md) | [#945](https://github.com/Ajmalpshaik/Heron-AI/issues/945) | Code fix | Loading a family reports that the project's Glass material changed, maybe wrongly |
-| [row 5b-1703](row-5b-1703.md) | [#918](https://github.com/Ajmalpshaik/Heron-AI/issues/918) | Your decision | A column's Top Level cannot be set by name because two parameters share that name - *in progress in #889* |
-| [row 5b-1704](row-5b-1704.md) | [#918](https://github.com/Ajmalpshaik/Heron-AI/issues/918) | Your decision | Placing an architectural column with a top level is refused unless placed as structural - *in progress in #889* |
-| [row 5b-1705](row-5b-1705.md) | [#920](https://github.com/Ajmalpshaik/Heron-AI/issues/920) | Your decision | Duplicate Type works only from a placed element, not from a type itself - *in progress in #889* |
-| [row 5b-1706](row-5b-1706.md) | [#920](https://github.com/Ajmalpshaik/Heron-AI/issues/920) | Your decision | Placing families has no rotation, so each placement needs a separate rotate step - *in progress in #889* |
-| [row 5b-1707](row-5b-1707.md) | [#910](https://github.com/Ajmalpshaik/Heron-AI/issues/910) | Your decision | A mistyped id bound to a non-model element and Move ran on it instead of refusing - *in progress in #887* |
-| [row 5b-1708](row-5b-1708.md) | [#917](https://github.com/Ajmalpshaik/Heron-AI/issues/917) | Your decision | Rotate prints a working value that reads as the opposite turn - *in progress in #889* |
+| [row 5b-1703](row-5b-1703.md) | [#918](https://github.com/Ajmalpshaik/Heron-AI/issues/918) | Your decision | A column's Top Level cannot be set by name because two parameters share that name - *done in #889, merged* |
+| [row 5b-1704](row-5b-1704.md) | [#918](https://github.com/Ajmalpshaik/Heron-AI/issues/918) | Your decision | Placing an architectural column with a top level is refused unless placed as structural - *done in #889, merged* |
+| [row 5b-1705](row-5b-1705.md) | [#920](https://github.com/Ajmalpshaik/Heron-AI/issues/920) | Your decision | Duplicate Type works only from a placed element, not from a type itself - *done in #889, merged* |
+| [row 5b-1706](row-5b-1706.md) | [#920](https://github.com/Ajmalpshaik/Heron-AI/issues/920) | Your decision | Placing families has no rotation, so each placement needs a separate rotate step - *done in #889, merged* |
+| [row 5b-1707](row-5b-1707.md) | [#910](https://github.com/Ajmalpshaik/Heron-AI/issues/910) | Your decision | A mistyped id bound to a non-model element and Move ran on it instead of refusing - *done in #887, merged* |
+| [row 5b-1708](row-5b-1708.md) | [#917](https://github.com/Ajmalpshaik/Heron-AI/issues/917) | Your decision | Rotate prints a working value that reads as the opposite turn - *done in #889, merged* |
 | [row 5b-1709](row-5b-1709.md) | [#960](https://github.com/Ajmalpshaik/Heron-AI/issues/960) | Code fix | A casework family came out 45 mm short and its box reaches where nothing is drawn |
-| [row 5b-1710](row-5b-1710.md) | [#935](https://github.com/Ajmalpshaik/Heron-AI/issues/935) | Code fix | A plan picture shows the whole crop, so a house in a large plan is a small patch - *in progress in #886* |
-| [row 5b-1711](row-5b-1711.md) | [#957](https://github.com/Ajmalpshaik/Heron-AI/issues/957) | Code fix | Every lookup warned the knowledge store did not match the checkout for a whole session - *in progress in #886* |
-| [row 5b-1730](row-5b-1730.md) | [#924](https://github.com/Ajmalpshaik/Heron-AI/issues/924) | Your decision | A keynote legend is reported as having no columns while it has two - *in progress in #887* |
-| [row 5b-1731](row-5b-1731.md) | [#924](https://github.com/Ajmalpshaik/Heron-AI/issues/924) | Your decision | The tag overlap check says clean when tags sit on walls, and does not say it skips walls - *in progress in #887* |
-| [row 5b-1732](row-5b-1732.md) | [#924](https://github.com/Ajmalpshaik/Heron-AI/issues/924) | Your decision | Tag arranging never moves room tags or treats them as obstacles - *in progress in #887* |
-| [row 5b-1733](row-5b-1733.md) | [#924](https://github.com/Ajmalpshaik/Heron-AI/issues/924) | Your decision | Where a tag's head sits cannot be read by Report Location or checked after a move - *in progress in #887* |
-| [row 5b-1736](row-5b-1736.md) | [#919](https://github.com/Ajmalpshaik/Heron-AI/issues/919) | Your decision | No tool selects just the elements a section cuts, so cut ones must be found by hand - *in progress in #887* |
-| [row 5b-1739](row-5b-1739.md) | [#943](https://github.com/Ajmalpshaik/Heron-AI/issues/943) | Code fix | Circuit naming takes a built-in word over a same-named project parameter, silently - *in progress in #895* |
-| [row 5b-1740](row-5b-1740.md) | [#936](https://github.com/Ajmalpshaik/Heron-AI/issues/936) | Code fix | Notes written below a need's name line in a card never reach the chat - *in progress in #895* |
+| [row 5b-1710](row-5b-1710.md) | [#935](https://github.com/Ajmalpshaik/Heron-AI/issues/935) | Code fix | A plan picture shows the whole crop, so a house in a large plan is a small patch - *done in #886, merged* |
+| [row 5b-1711](row-5b-1711.md) | [#957](https://github.com/Ajmalpshaik/Heron-AI/issues/957) | Code fix | Every lookup warned the knowledge store did not match the checkout for a whole session - *done in #886, merged* |
+| [row 5b-1730](row-5b-1730.md) | [#924](https://github.com/Ajmalpshaik/Heron-AI/issues/924) | Your decision | A keynote legend is reported as having no columns while it has two - *done in #887, merged* |
+| [row 5b-1731](row-5b-1731.md) | [#924](https://github.com/Ajmalpshaik/Heron-AI/issues/924) | Your decision | The tag overlap check says clean when tags sit on walls, and does not say it skips walls - *done in #887, merged* |
+| [row 5b-1732](row-5b-1732.md) | [#924](https://github.com/Ajmalpshaik/Heron-AI/issues/924) | Your decision | Tag arranging never moves room tags or treats them as obstacles - *done in #887, merged* |
+| [row 5b-1733](row-5b-1733.md) | [#924](https://github.com/Ajmalpshaik/Heron-AI/issues/924) | Your decision | Where a tag's head sits cannot be read by Report Location or checked after a move - *done in #887, merged* |
+| [row 5b-1736](row-5b-1736.md) | [#919](https://github.com/Ajmalpshaik/Heron-AI/issues/919) | Your decision | No tool selects just the elements a section cuts, so cut ones must be found by hand - *done in #887, merged* |
+| [row 5b-1739](row-5b-1739.md) | [#943](https://github.com/Ajmalpshaik/Heron-AI/issues/943) | Code fix | Circuit naming takes a built-in word over a same-named project parameter, silently - *done in #895, merged* |
+| [row 5b-1740](row-5b-1740.md) | [#936](https://github.com/Ajmalpshaik/Heron-AI/issues/936) | Code fix | Notes written below a need's name line in a card never reach the chat - *done in #895, merged* |
 | [row 5b-1749](row-5b-1749.md) | [#949](https://github.com/Ajmalpshaik/Heron-AI/issues/949) | Code fix | Listing materials with all tabs crashed inside Revit 2024 on a fresh project's Glass |
-| [row 5b-1750](row-5b-1750.md) | [#920](https://github.com/Ajmalpshaik/Heron-AI/issues/920) | Your decision | Open Family for Editing says not opened while the family is open in front - *in progress in #886* |
+| [row 5b-1750](row-5b-1750.md) | [#920](https://github.com/Ajmalpshaik/Heron-AI/issues/920) | Your decision | Open Family for Editing says not opened while the family is open in front |
 | [row 5b-1752](row-5b-1752.md) | [#938](https://github.com/Ajmalpshaik/Heron-AI/issues/938) | Code fix | The Needs-Checking split tool cannot plan a new group because it misreads Group BV |
-| [row 5b-1821](row-5b-1821.md) | [#952](https://github.com/Ajmalpshaik/Heron-AI/issues/952) | Code fix | The run record says KEPT for a change the reply called nothing changed or refused - *in progress in #895* |
+| [row 5b-1821](row-5b-1821.md) | [#952](https://github.com/Ajmalpshaik/Heron-AI/issues/952) | Code fix | The run record says KEPT for a change the reply called nothing changed or refused - *done in #895, merged* |
 | [row 5b-1822](row-5b-1822.md) | [#939](https://github.com/Ajmalpshaik/Heron-AI/issues/939) | Code fix | Change evidence cannot record check-gaps where the suites run over half an hour |
+| [row 5b-1780](row-5b-1780.md) | [#917](https://github.com/Ajmalpshaik/Heron-AI/issues/917) | Your decision | Rotate does not refuse a whole turn typed to seven places (6.2831853) |
+| [row 5b-1800](row-5b-1800.md) | [#917](https://github.com/Ajmalpshaik/Heron-AI/issues/917) | Your decision | Move to a point counts a tag as 'positioned by a curve'; a tag moves by its head |
+| [row 5b-1801](row-5b-1801.md) | [#908](https://github.com/Ajmalpshaik/Heron-AI/issues/908) | Revit run on your PC | Two proven section cards read the cut plane in two different places |
+| [row 5b-1826](row-5b-1826.md) | [#920](https://github.com/Ajmalpshaik/Heron-AI/issues/920) | Your decision | Detail lines cannot name a floor plan when a ceiling plan has the same name |
+| [row 5b-1827](row-5b-1827.md) | [#919](https://github.com/Ajmalpshaik/Heron-AI/issues/919) | Your decision | No tool sets a wall's Location Line, and the refusal gives no reason |
+| [row 5b-1828](row-5b-1828.md) | [#917](https://github.com/Ajmalpshaik/Heron-AI/issues/917) | Your decision | Move moves an elevation marker but cannot read it back, so it reads 'unverified' |
+| [row 5b-1830](row-5b-1830.md) | [#952](https://github.com/Ajmalpshaik/Heron-AI/issues/952) | Code fix | A draft's one kept run that raises the delete box ends 'needs_unbound' and keeps nothing |
+| [row 5b-1831](row-5b-1831.md) | [#948](https://github.com/Ajmalpshaik/Heron-AI/issues/948) | Code fix | Setting four columns' levels would delete 2 elements, and which two is unknown |
+| [row 5b-1832](row-5b-1832.md) | [#956](https://github.com/Ajmalpshaik/Heron-AI/issues/956) | Code fix | 'Attach these walls to the roof' and 'delete this roof' reach the wrong tool on 2024 |
 
 ## Found finished on 2026-11-16 - closed in the register, no issue
 
@@ -529,13 +538,18 @@ Each row's state was corrected that day with the evidence, and its old state kep
 | [row 5b-1568](section-5b-rows-401-425.md) | row 5b-1580 ran the probe on 2026-11-12 on Revit 2024 and recorded it as an API LIMIT - "closed, nothing to build" |
 | [row 5b-1217](section-5b-rows-401-425.md) | The same defect as row 5b-1219, FIXED 2026-10-19: `tests/test_mcp_serves.py` reads the card's own `heron-status` instead of a typed DRAFT. **Its state is left as it was** because open pull request #871 edits that line. |
 
-## Left as they were, for open pull requests
+## Done by pull requests merged on 2026-11-16
 
-These rows still begin `OPEN` here: an open pull request already edits each one, and changing the same line twice would only make a merge conflict. Each is in its issue above, marked *In progress*. (Row 5b-1217 is also edited by #871; it is finished, above, and has no issue.)
+These rows were in progress when the issues were made, and the pull requests below merged the same day. Each is ticked in its issue; the Revit run each still owes is in its NEEDS-CHECKING group, not here.
 
-- **[#871](https://github.com/Ajmalpshaik/Heron-AI/pull/871)** - 5b-427, 5b-1131, 5b-1161, 5b-1166, 5b-1170, 5b-1171, 5b-1172, 5b-1173, 5b-1174, 5b-1178, 5b-1179, 5b-1220, 5b-1525, 5b-1528, 5b-1540, 5b-1541, 5b-1590, 5b-1612, 5b-1672
-- **[#886](https://github.com/Ajmalpshaik/Heron-AI/pull/886)** - 5b-1710, 5b-1711, 5b-1750
+- **[#886](https://github.com/Ajmalpshaik/Heron-AI/pull/886)** - 5b-1710, 5b-1711
 - **[#887](https://github.com/Ajmalpshaik/Heron-AI/pull/887)** - 5b-1707, 5b-1730, 5b-1731, 5b-1732, 5b-1733, 5b-1736
 - **[#889](https://github.com/Ajmalpshaik/Heron-AI/pull/889)** - 5b-1703, 5b-1704, 5b-1705, 5b-1706, 5b-1708
 - **[#890](https://github.com/Ajmalpshaik/Heron-AI/pull/890)** - 5b-1670, 5b-1672, 5b-1673, 5b-1674
 - **[#895](https://github.com/Ajmalpshaik/Heron-AI/pull/895)** - 5b-1739, 5b-1740, 5b-1821
+
+## Left as they were, for open pull requests
+
+These rows still begin `OPEN` here: an open pull request already edits each one, and changing the same line twice would only make a merge conflict. Each is in its issue above, marked *In progress*. (Row 5b-1217 is also edited by #871; it is finished, above, and has no issue. Row 5b-1672 is listed here too, but #890 has done it.)
+
+- **[#871](https://github.com/Ajmalpshaik/Heron-AI/pull/871)** - 5b-427, 5b-1131, 5b-1161, 5b-1166, 5b-1170, 5b-1171, 5b-1172, 5b-1173, 5b-1174, 5b-1178, 5b-1179, 5b-1220, 5b-1525, 5b-1528, 5b-1540, 5b-1541, 5b-1590, 5b-1612, 5b-1672
