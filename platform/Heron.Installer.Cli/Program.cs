@@ -279,7 +279,8 @@ namespace Heron.Installer.Cli
                 return Refused;
             }
 
-            Console.Out.WriteLine(Listing(screen, products, forReleases, files, handover));
+            Console.Out.WriteLine(Listing(screen, products, forReleases, files, handover,
+                                          InstallerScreen.InstallLocation(root)));
 
             // SAID BEFORE IT IS DONE - Q-39 and the Dependency Agent's "confirm,
             // never automatic". The caller reads what the run will install on
@@ -732,7 +733,8 @@ namespace Heron.Installer.Cli
                                       IReadOnlyList<string> products,
                                       IReadOnlyList<string> releases,
                                       IProductFiles files,
-                                      ProductFolder handover)
+                                      ProductFolder handover,
+                                      string location)
         {
             var n = Environment.NewLine;
             var said = "Installing into Revit " + string.Join(", ", Array(releases)) + ":" + n;
@@ -745,7 +747,7 @@ namespace Heron.Installer.Cli
                 said += "  " + name + "  (" + id + ")" + n;
             }
 
-            said += n + "Into " + InstallerScreen.InstallLocation + "  " +
+            said += n + "Into " + location + "  " +
                     InstallerScreen.InstallLocationNote + n;
             if (handover != null)
             {

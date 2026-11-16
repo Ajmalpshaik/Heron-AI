@@ -102,7 +102,7 @@ namespace Heron.Installer.App
                                                installed,
                                                download == null ? localBuilds : null);
 
-            var window = new InstallerWindow(screen, VersionOf(manifest));
+            var window = new InstallerWindow(screen, VersionOf(manifest), InstallerScreen.InstallLocation(root));
             window.InstallPressed += delegate (IReadOnlyList<string> products,
                                                IReadOnlyList<string> releases,
                                                IReadOnlyList<InstallStep> removals)

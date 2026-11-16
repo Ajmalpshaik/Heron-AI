@@ -157,6 +157,85 @@ def shared_temp_folder(environ=None, system=None):
         folder = parent
 
 
+#: The list of folders HeronPaths writes for everything that runs before, or
+#: outside, a Heron assembly (Q-58): platform/heron-folders.json.
+FOLDER_LIST = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+    "platform", "heron-folders.json")
+
+#: The Windows number of each special folder that list may name. They are
+#: .NET's own Environment.SpecialFolder values, which ARE the shell's CSIDLs,
+#: so SHGetFolderPathW answers here what GetFolderPath answers in HeronPaths
+#: and in Get-HeronFolder - never an environment variable, which can name
+#: another folder than the one Windows keeps (row 5b-1746). A name the list
+#: gains and this has not got stops by name; tests/test_heron_folders.py fails
+#: on it first.
+SPECIAL_FOLDERS = {"ApplicationData": 0x1A, "LocalApplicationData": 0x1C,
+                   "CommonApplicationData": 0x23, "ProgramFiles": 0x26}
+
+
+def special_folder(name):
+    """Windows' own folder for a .NET special-folder name, or LookupError.
+
+    .NET Framework's GetFolderPath, which Windows PowerShell 5.1 calls, makes
+    this call and reads a negative answer as no folder; so does this.
+    """
+    if name not in SPECIAL_FOLDERS:
+        raise LookupError("Heron's folder list names '%s', which is not a Windows "
+                          "folder this knows. Fetch the Heron files again." % name)
+    if os.name != "nt":
+        raise LookupError("%s is a Windows folder, and this is not Windows" % name)
+    import ctypes
+    found = ctypes.create_unicode_buffer(260)
+    said = ctypes.windll.shell32.SHGetFolderPathW(None, SPECIAL_FOLDERS[name],
+                                                  None, 0, found)
+    if said < 0 or not found.value:
+        raise LookupError("Windows has no %s folder for this account" % name)
+    return found.value
+
+
+def heron_folder(name, fill=None, list_path=None, special=None):
+    """One folder from the list HeronPaths wrote, platform/heron-folders.json.
+
+    THE PYTHON TWIN OF Get-HeronFolder in tools/HeronRevit.ps1, and like it
+    it builds no Heron path: the entry names a Windows special folder and the
+    parts under it, and `fill` fills the blanks - {"release": "2024"}, or
+    {"release": "*"} for a glob. A value that could step out of its folder is
+    refused. `special` resolves the folder's name; Windows' own answer unless
+    a test hands it another.
+
+    LookupError, saying why in a sentence a person can act on, when the list
+    is not there, has not got the folder, or a blank is left unfilled.
+    """
+    path = list_path or FOLDER_LIST
+    try:
+        with io.open(path, encoding="utf-8") as fh:
+            folders = json.load(fh).get("folders")
+    except (OSError, ValueError, AttributeError):
+        raise LookupError("Heron's folder list at %s cannot be read, so where '%s' is "
+                          "cannot be told. The Heron files are incomplete - fetch them "
+                          "again." % (path, name))
+    entry = folders.get(name) if isinstance(folders, dict) else None
+    if not isinstance(entry, dict):
+        raise LookupError("Heron's folder list at %s has no folder called '%s'. The "
+                          "Heron files do not match each other - fetch them again."
+                          % (path, name))
+    where = (special or special_folder)(str(entry.get("under")))
+    for part in entry.get("parts") or []:
+        text = str(part)
+        for key, value in (fill or {}).items():
+            value = str(value)
+            if re.search(r"[\\/]", value) or value in ("", ".", ".."):
+                raise LookupError("'%s' is not a %s this can put in a folder name"
+                                  % (value, key))
+            text = text.replace("{%s}" % key, value)
+        if "{" in text or "}" in text:
+            raise LookupError("Heron's folder list wants '%s' filled in for '%s' and "
+                              "nothing was given for it" % (text, name))
+        where = ntpath.join(where, text)
+    return where
+
+
 # DERIVED state: machine-local, never roaming (D-17). A roaming discovery
 # file would follow the user to a PC where that process does not exist.
 DISCOVERY_DIR = os.path.join(local_app_data(), "Heron", "bridges")
@@ -3877,8 +3956,14 @@ def cmd_doctor():
             print("  unreadable: %s" % exc)
     else:
         print("  NOT FOUND - the add-in has never started.")
+        # ASKED OF THE LIST HeronPaths WROTE, never spelled here (row 5b-1746).
+        try:
+            manifest = ntpath.join(heron_folder("RevitAddins", {"release": "<version>"}),
+                                   "Heron.addin")
+        except LookupError as exc:
+            manifest = "(not known: %s)" % exc
         print("  That means Revit did not load it. Check that the manifest is at:")
-        print(r"    %APPDATA%\Autodesk\Revit\Addins\<version>\Heron.addin")
+        print("    %s" % manifest)
     print("")
     print("=" * 60)
     print("Paste all of the above when reporting a problem.")

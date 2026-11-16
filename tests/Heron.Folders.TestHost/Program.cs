@@ -20,8 +20,9 @@ namespace Heron.Folders.TestHost
     /// IT ASKS, IT NEVER SPELLS AND NEVER RESOLVES. Each folder below is
     /// HeronPaths' own answer, with the blanks the script fills passed in as if
     /// they were a release and a product folder, and HeronPaths.TryTemplate
-    /// says which Windows special folder it starts at and what lies under it.
-    /// Nothing here names a part of either path or a special folder, and
+    /// says which Windows special folder it starts at and what lies under it -
+    /// or, for Revit's all-user folders, HeronPaths' own declaration does.
+    /// Nothing here names a part of any path or a special folder, and
     /// tools/check-structure.py and the suite fail this file if it does.
     ///
     /// A TEMPLATE, NOT THIS MACHINE'S PATH. The same code run by any user on
@@ -69,6 +70,9 @@ namespace Heron.Folders.TestHost
             json.Append("  ],\n");
             json.Append("  \"folders\": {\n");
 
+            // Each entry: its name in the list, the HeronPaths member it comes
+            // from, the special folder it starts at by name, and the parts.
+            var written = new List<Tuple<string, string, string, string[]>>();
             for (var i = 0; i < asked.Count; i++)
             {
                 string under;
@@ -79,18 +83,58 @@ namespace Heron.Folders.TestHost
                     Console.Error.WriteLine(asked[i][1] + " could not be written down for the install scripts: " + why);
                     return 1;
                 }
+                written.Add(Tuple.Create(asked[i][0], asked[i][1], under, parts));
+            }
 
-                json.Append("    ").Append(Quote(asked[i][0])).Append(": {\n");
-                json.Append("      \"from\": ").Append(Quote(asked[i][1])).Append(",\n");
-                json.Append("      \"under\": ").Append(Quote(under)).Append(",\n");
+            // THE ALL-USER ADDINS FOLDERS, READ AND NEVER WRITTEN (D-167's
+            // second-copy check). DECLARED BY HeronPaths, because one of their
+            // special folders does not exist off Windows and TryTemplate could
+            // not read it back here - RevitAllUserAddinsTemplate says so. Each
+            // is named in the list by the special folder it starts at.
+            string[] allUserRoots;
+            var allUserParts = HeronPaths.RevitAllUserAddinsTemplate(Release, out allUserRoots);
+            var allUserPaths = HeronPaths.RevitAllUserAddins(Release);
+            for (var i = 0; i < allUserRoots.Length; i++)
+            {
+                // AND WHERE THE FOLDER EXISTS, THE PATH HeronPaths RESOLVES IS
+                // READ BACK AND MUST SAY THE SAME - so the declaration and the
+                // resolution cannot drift apart unseen. A relative path is a
+                // special folder this machine has not got, and is not asked.
+                if (System.IO.Path.IsPathRooted(allUserPaths[i]))
+                {
+                    string under;
+                    string[] parts;
+                    string why;
+                    if (!HeronPaths.TryTemplate(allUserPaths[i], out under, out parts, out why))
+                    {
+                        Console.Error.WriteLine("HeronPaths.RevitAllUserAddins could not be read back for the install scripts: " + why);
+                        return 1;
+                    }
+                    if (under != allUserRoots[i] || string.Join("|", parts) != string.Join("|", allUserParts))
+                    {
+                        Console.Error.WriteLine("HeronPaths.RevitAllUserAddins resolves to a folder under " + under
+                            + " and declares one under " + allUserRoots[i] + " - the two must be one folder.");
+                        return 1;
+                    }
+                }
+                written.Add(Tuple.Create("RevitAllUserAddins" + allUserRoots[i], "HeronPaths.RevitAllUserAddins",
+                                         allUserRoots[i], allUserParts));
+            }
+
+            for (var i = 0; i < written.Count; i++)
+            {
+                json.Append("    ").Append(Quote(written[i].Item1)).Append(": {\n");
+                json.Append("      \"from\": ").Append(Quote(written[i].Item2)).Append(",\n");
+                json.Append("      \"under\": ").Append(Quote(written[i].Item3)).Append(",\n");
                 json.Append("      \"parts\": [");
+                var parts = written[i].Item4;
                 for (var p = 0; p < parts.Length; p++)
                 {
                     if (p > 0) json.Append(", ");
                     json.Append(Quote(parts[p]));
                 }
                 json.Append("]\n");
-                json.Append(i + 1 < asked.Count ? "    },\n" : "    }\n");
+                json.Append(i + 1 < written.Count ? "    },\n" : "    }\n");
             }
 
             json.Append("  }\n");
