@@ -9,7 +9,7 @@ semantic-identity: "join these walls and floors together so they cut each other"
 kind: action
 domain: revit.elements
 capability: JOIN_GEOMETRY
-version: 3
+version: 4
 source: OFFICIAL
 risk: MODIFY
 
@@ -76,6 +76,16 @@ risk: MODIFY
 # and never counted; each turned pair saying which now cuts; and "THE
 # OVERLAP HAS MOVED from one takeoff to the other". Its `switched` is
 # `changed` with join switch.
+#
+# VERSION 4 (2026-11-16) - A PAIR THAT DOES NOT TOUCH IS NOT SENT (row
+# 5b-1661). Revit's JoinGeometry accepted two walls and a floor more than two
+# metres apart, marked them joined with its "joined but do not intersect"
+# warning, and AreElementsJoined read true - so `wouldNot`, "elements that do
+# not actually touch", never filled for them. Before a join, a pair whose
+# model boxes do not meet (grown by 1 mm) is named in `wouldNot` and never
+# sent. The weak test on purpose: a wall standing on a slab touches it only
+# at a face and is still sent. A pair whose boxes meet but whose solids do not
+# is still joined and read as joined - the check's limit.
 #
 # `join` IS A WORD SINCE VERSION 3 - true or join, false or unjoin, or switch.
 # true and false read as version 2's bool did; anything else is refused

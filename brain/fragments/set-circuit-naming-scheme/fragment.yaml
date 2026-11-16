@@ -73,9 +73,12 @@ contract:
       source: request
     - name: parts
       # make only: the circuit parameters in order, separated by ; - "panel;
-      # circuit number". Revit's labels, or panel, circuit number, load name,
-      # start slot, or a project parameter of electrical circuits by its exact
-      # name. Left out on make, refused - never guessed.
+      # circuit number". Revit's labels, or panel, circuit number (the circuit
+      # naming index), load name, start slot (the slot index), circuit type,
+      # load classification, poles, rating, frame, voltage, phase, ways - the
+      # parameters Revit takes in a scheme (row 5b-1660) - or a project
+      # parameter of electrical circuits by its exact name. Left out on make,
+      # refused - never guessed.
       type: string
       source: request
       optional: true

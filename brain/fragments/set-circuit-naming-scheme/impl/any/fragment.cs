@@ -50,12 +50,28 @@ var circuitCategory = new ElementId(BuiltInCategory.OST_ElectricalCircuit);
 // ---- The circuit parameters Heron can name, and the words for them ---------
 // Each built-in one by Revit's own label on this PC, plus the short words a
 // modeller says. A project or shared parameter is matched by its name below.
+//
+// ONLY THE PARAMETERS REVIT TAKES IN A SCHEME - row 5b-1660. The list is
+// Revit's own, from the note on CircuitNamingScheme.IsValidCombinedParameters.
+// A circuit's number in a scheme is its NAMING INDEX and its slot is its SLOT
+// INDEX: RBS_ELEC_CIRCUIT_NUMBER and RBS_ELEC_CIRCUIT_START_SLOT, which this
+// list named until 2026-11-16, are refused by Revit there (measured on Revit
+// 2024: panel + circuit number False, panel + naming index True), so the
+// card's own example "panel; circuit number" was never made.
 var known = new List<Tuple<BuiltInParameter, string[]>>
 {
     Tuple.Create(BuiltInParameter.RBS_ELEC_CIRCUIT_PANEL_PARAM, new[] { "panel", "panel name" }),
-    Tuple.Create(BuiltInParameter.RBS_ELEC_CIRCUIT_NUMBER, new[] { "circuit", "circuit number", "number" }),
+    Tuple.Create(BuiltInParameter.RBS_ELEC_CIRCUIT_NAMING_INDEX, new[] { "circuit", "circuit number", "number", "naming index", "circuit naming index" }),
     Tuple.Create(BuiltInParameter.RBS_ELEC_CIRCUIT_NAME, new[] { "load name", "load" }),
-    Tuple.Create(BuiltInParameter.RBS_ELEC_CIRCUIT_START_SLOT, new[] { "start slot", "slot" }),
+    Tuple.Create(BuiltInParameter.RBS_ELEC_CIRCUIT_SLOT_INDEX, new[] { "start slot", "slot", "slot index" }),
+    Tuple.Create(BuiltInParameter.RBS_ELEC_CIRCUIT_TYPE, new[] { "circuit type" }),
+    Tuple.Create(BuiltInParameter.CIRCUIT_LOAD_CLASSIFICATION_ABBREVIATION_PARAM, new[] { "load classification abbreviation", "load classification" }),
+    Tuple.Create(BuiltInParameter.RBS_ELEC_NUMBER_OF_POLES, new[] { "poles", "number of poles" }),
+    Tuple.Create(BuiltInParameter.RBS_ELEC_CIRCUIT_RATING_PARAM, new[] { "rating" }),
+    Tuple.Create(BuiltInParameter.RBS_ELEC_CIRCUIT_FRAME_PARAM, new[] { "frame" }),
+    Tuple.Create(BuiltInParameter.RBS_ELEC_VOLTAGE, new[] { "voltage" }),
+    Tuple.Create(BuiltInParameter.CIRCUIT_PHASE_PARAM, new[] { "phase" }),
+    Tuple.Create(BuiltInParameter.CIRCUIT_WAYS_PARAM, new[] { "ways" }),
 };
 Func<BuiltInParameter, string> label = p =>
 {
