@@ -39,6 +39,15 @@ modeller's; whether the model is right is the engineer's call (the host
 instructions, heron_modelqa's own rule). A check that could not run is NOT
 RUN, with why, and is never counted with the passes.
 
+A CHECK NEVER PASSES ON MISSING DATA (D-165). A check that ran but whose
+output came back absent, empty or not a number is NO DATA - "could not decide,
+data missing" - never a pass and never a fail. So is a check whose rule held
+while the fragment's own count of elements it could not read (the check's
+`missing` output) is above nought, or its count of elements looked at (the
+check's `applicable` output) is nought: a rule met by nothing read is not met.
+Every run says its coverage beside its counts - how many checks were decided,
+of how many, and how many had no data.
+
 WHAT IS NOT CHECKED WHEN SAVED, AND IS ON EVERY RUN: whether the capability is
 PROVEN, which model, whether Revit is there. A proof can go stale between
 saving and running (D-30), so the run asks each time.
@@ -80,12 +89,22 @@ RULE = re.compile(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*(==|!=|<=|>=|<|>)\s*(-?\d+(?:
 
 # Each result's colour, decided here and drawn on the Companion page. THE
 # BRAND'S COLOURS (D-149, docs/brand/README.md): Success, Error, and Warning
-# for a check that did not run - it needs a look, and must never read as a
-# pass.
+# for a check that could not decide or did not run - each needs a look, and
+# must never read as a pass.
+#
+# NO DATA IS ITS OWN ANSWER (D-165), never folded into NOT RUN: NOT RUN means
+# nothing was read; NO DATA means the model was read and the value the rule
+# needs was not there. The modeller fixes the two in different places - the
+# first in Heron or Revit, the second in the model's data.
 STATES = (("pass", "PASS", "#3ecf8e", "meets the value checked"),
           ("fail", "FAIL", "#ff5a4e", "does not meet the value checked"),
+          ("missing", "NO DATA", "#f5a524",
+           "could not decide - data missing; never counted as a pass or a fail"),
           ("not run", "NOT RUN", "#f5a524", "not run - see why; never counted as a pass"))
 LABEL = dict((key, label) for key, label, _c, _m in STATES)
+# What a run's sentence calls each count, in the order STATES gives them.
+COUNTED = (("pass", "meet the value checked"), ("fail", "do not"),
+           ("missing", "could not decide - data missing"), ("not run", "not run"))
 
 # HOW MUCH A FAILURE MATTERS, AND WHERE THE RULE COMES FROM (item 4 of the
 # plan after D-155's comparison). Each is optional and the modeller's own:
@@ -108,7 +127,8 @@ CHANGES = (("new", "NEW", "failed now, and did not last time"),
            ("open", "STILL OPEN", "failed last time too"),
            ("fixed", "FIXED", "failed last time, meets the value checked now"),
            ("", "", "met the value checked both times"),
-           ("unknown", "NOT COMPARED", "not run, now or last time, so nothing can be said of it"))
+           ("unknown", "NOT COMPARED",
+            "not run or no data, now or last time, so nothing can be said of it"))
 CHANGE_LABEL = dict((key, label) for key, label, _m in CHANGES)
 
 # How a declared output type reads as a number - ONLY what the add-in's
@@ -346,7 +366,36 @@ def check_problems(check, contract, where):
                              "output that holds element ids." % (where, ids))
             else:
                 found.append("%s: '%s' is %s, which holds no element ids." % (where, ids, declared[ids]))
+    found.extend(_coverage_problems(check, declared, capability, leaves, where))
     found.extend(_labels_problems(check, where))
+    return found
+
+
+#: A check's two optional COVERAGE outputs (D-165), each one the fragment
+#: declares and that reads as a number: `missing`, how many elements it could
+#: not read the value of - absent, empty or unreadable - and `applicable`, how
+#: many it looked at. Named by the chat from the card, never guessed by Heron:
+#: the cards call them notChecked, unreadable, scanned, elementsRead and more.
+COVERAGE = (("missing", "elements the check could not read the value of"),
+            ("applicable", "elements the check looked at"))
+
+
+def _coverage_problems(check, declared, capability, leaves, where):
+    """Why a check's `missing` or `applicable` output cannot be kept."""
+    found = []
+    for key, what in COVERAGE:
+        name = check.get(key)
+        if name in (None, ""):
+            continue
+        if not isinstance(name, str):
+            found.append("%s: '%s' must name the one output that counts the %s, as text."
+                         % (where, key, what))
+        elif name not in declared:
+            found.append("%s: '%s' is not something %s leaves behind - it leaves: %s."
+                         % (where, name, capability, leaves))
+        elif output_kind(declared[name]) is None:
+            found.append("%s: '%s' is %s, not a number - it must count the %s."
+                         % (where, name, declared[name], what))
     return found
 
 
@@ -435,6 +484,9 @@ def save(checklist, contracts, home=None, replace=False, now=None):
             "output": check["output"], "op": check["op"], "target": check["target"],
             "ids": check.get("ids") or "",
             "idsKind": ids_kind(declared.get(check.get("ids"))) if check.get("ids") else "",
+            # Its coverage outputs, each optional (D-165).
+            "missing": (check.get("missing") or "").strip(),
+            "applicable": (check.get("applicable") or "").strip(),
             # The modeller's own labels, each optional (the plan's item 4).
             "severity": (check.get("severity") or "").strip().lower(),
             "clause": (check.get("clause") or "").strip(),
@@ -470,6 +522,8 @@ def _check_shape(check):
         return "a check's rule compares with no number"
     if not isinstance(check.get("ids", ""), str) or check.get("idsKind", "") not in ("", "list", "keys"):
         return "a check's ids are not named as text"
+    if not all(isinstance(check.get(key, ""), str) for key, _what in COVERAGE):
+        return "a check's missing or applicable output is not named as text"
     selection = check.get("selection", [])
     if not isinstance(selection, list) or not all(isinstance(n, str) for n in selection):
         return "a check's selection is not a list of names"
@@ -575,6 +629,10 @@ def check_line(check):
         extra.append("advice: %s" % check["advice"])
     if check.get("ids"):
         extra.append("failing ids from %s" % check["ids"])
+    if check.get("missing"):
+        extra.append("elements with no data counted in %s" % check["missing"])
+    if check.get("applicable"):
+        extra.append("elements looked at counted in %s" % check["applicable"])
     if check.get("selection"):
         extra.append("reads what is selected in Revit (%s)" % ", ".join(check["selection"]))
     return "%s - %s, %s%s" % (check.get("sentence"), check.get("capability"), rule_text(check),
@@ -687,23 +745,30 @@ def judge(number, check, ran):
            "values": ["%s=%s" % (v.get("name"), v.get("value")) for v in check.get("values") or []
                       if isinstance(v, dict)],
            "severity": check.get("severity") or "", "clause": check.get("clause") or "",
-           "advice": check.get("advice") or "", "change": "", "changeLabel": "", "changeWhy": ""}
+           "advice": check.get("advice") or "", "change": "", "changeLabel": "", "changeWhy": "",
+           # How much of the model the check could decide on (D-165) - each a
+           # count, or None when the check names no such output.
+           "coverage": {"checked": None, "applicable": None, "missing": None}, "coverageShown": ""}
     if not ran.get("ran"):
         row["why"] = ran.get("why") or "It was not run."
         return _labelled(row)
     provides = ran.get("provides") or {}
     output = check.get("output")
     if output not in provides:
-        row["why"] = ("%s did not send back '%s', so the rule could not be judged."
-                      % (check.get("capability"), output))
-        return _labelled(row)
+        return _no_data(row, "%s did not send back '%s', so the rule could not be decided."
+                        % (check.get("capability"), output))
     value = as_number(provides[output])
     if value is None:
-        row["why"] = ("'%s' came back as '%s', not a number, so the rule could not be judged."
-                      % (output, str(provides[output])[:80]))
-        return _labelled(row)
+        return _no_data(row, "'%s' %s, so the rule could not be decided."
+                        % (output, _unreadable(provides[output])))
     row["value"], row["shown"] = value, _shown(value)
+    unread = _coverage(row, check, provides)
     if holds(value, check.get("op"), check.get("target")):
+        # A RULE MET BY NOTHING READ IS NOT MET (D-165). A failure found is
+        # real however much else could not be read, so only a pass is held
+        # back - by the fragment's own count of what it could not read.
+        if unread:
+            return _no_data(row, unread)
         row["state"] = "pass"
         return _labelled(row)
     row["state"] = "fail"
@@ -734,6 +799,75 @@ def _labelled(row):
     return row
 
 
+def _no_data(row, why):
+    """The row as NO DATA - could not decide, data missing - saying why."""
+    row["state"] = "missing"
+    row["why"] = why + " No data is not a pass."
+    return _labelled(row)
+
+
+def _unreadable(sent):
+    """How a value that is no number came back, in a few words."""
+    text = str(sent if sent is not None else "").strip()
+    if not text or text.lower() in ("(null)", "null", "none"):
+        return "came back empty"
+    return "came back as '%s', not a number" % text[:80]
+
+
+def _coverage(row, check, provides):
+    """Fill the row's coverage from the check's `missing` and `applicable`
+    outputs, and return why a pass cannot stand on it - or "" when it can.
+
+    The reason is the fragment's own count: elements it could not read the
+    value of (`missing` above nought), nothing looked at (`applicable` nought),
+    or a coverage output the check names that did not come back as a number -
+    a count that is not there cannot say nothing was missed."""
+    reasons, counts = [], {}
+    for key, what in COVERAGE:
+        name = check.get(key) or ""
+        if not name:
+            continue
+        number = as_number(provides.get(name)) if name in provides else None
+        if number is None:
+            reasons.append("'%s', the count of the %s, %s." % (
+                name, what, "did not come back" if name not in provides else _unreadable(provides[name])))
+            continue
+        counts[key] = number
+    applicable, missing = counts.get("applicable"), counts.get("missing")
+    checked = (applicable - missing) if applicable is not None and missing is not None else None
+    if checked is not None and checked < 0:
+        # More missing than looked at: the two counts disagree, so neither is
+        # taken as the coverage - a figure nothing supports is never shown.
+        reasons.append("'%s' read %s and '%s' read %s - more without data than looked at, so "
+                       "the coverage cannot be told." % (check.get("missing"), _shown(missing),
+                                                         check.get("applicable"), _shown(applicable)))
+        checked = None
+    row["coverage"] = {"checked": checked, "applicable": applicable, "missing": missing}
+    row["coverageShown"] = coverage_text(row["coverage"])
+    if missing is not None and missing > 0:
+        reasons.append("%s element(s)%s had no data to check ('%s')." % (
+            _shown(missing), " of %s looked at" % _shown(applicable) if applicable is not None else "",
+            check.get("missing")))
+    if applicable == 0:
+        reasons.append("nothing was there to check ('%s' read 0)." % check.get("applicable"))
+    return " ".join(r[0].upper() + r[1:] for r in reasons)
+
+
+def coverage_text(coverage):
+    """One check's coverage in Revit words - "checked 6 of 43 elements, 37 with
+    no data" - or "" when the check names no coverage output."""
+    checked, applicable, missing = (coverage.get("checked"), coverage.get("applicable"),
+                                    coverage.get("missing"))
+    if checked is not None:
+        return "checked %s of %s element(s), %s with no data" % (
+            _shown(checked), _shown(applicable), _shown(missing))
+    if applicable is not None:
+        return "%s element(s) looked at" % _shown(applicable)
+    if missing is not None:
+        return "%s element(s) with no data" % _shown(missing)
+    return ""
+
+
 CHANGED_DURING = ("The model changed in Revit while the checklist ran, so its checks did not all "
                   "read the same model. Press Run again for results from one state of it.")
 
@@ -745,17 +879,24 @@ def new_token():
 
 
 def result(checklist, rows, document=None, running=False, token=None, findings=None, stopped=""):
-    """What a run says - the rows, the counts and one sentence - ready to show."""
-    counts = {"pass": 0, "fail": 0, "not run": 0}
+    """What a run says - the rows, the counts, its coverage and one sentence -
+    ready to show."""
+    counts = dict((key, 0) for key, _label, _c, _m in STATES)
     for row in rows:
         counts[row["state"]] += 1
     total = len(checklist.get("checks") or [])
-    said = ("%s%s: %s - %d meet the value checked, %d do not, %d not run."
+    said = ("%s%s: %s - %s."
             % (checklist.get("name"), " on %s" % document if document else "",
                ("%d of %d check(s) so far" % (len(rows), total)) if running
                else "%d check(s)" % total,
-               counts["pass"], counts["fail"], counts["not run"]))
-    if counts["not run"]:
+               ", ".join("%d %s" % (counts[key], words) for key, words in COUNTED)))
+    coverage = run_coverage(counts, total, len(rows), running)
+    said += " " + coverage["said"]
+    if counts["missing"] and counts["not run"]:
+        said += " A check with no data, or not run, is not a pass."
+    elif counts["missing"]:
+        said += " A check with no data is not a pass."
+    elif counts["not run"]:
         said += " A check not run is not a pass."
     if stopped:
         said += " " + stopped
@@ -763,9 +904,24 @@ def result(checklist, rows, document=None, running=False, token=None, findings=N
             "document": document, "at": time.strftime("%H:%M:%S"), "running": bool(running),
             "run": token or new_token(), "findings": list(findings or []), "stopped": stopped or "",
             "rows": rows, "counts": dict(counts, total=total, done=len(rows)), "said": said,
+            "coverage": coverage,
             "states": [{"key": k, "label": label, "colour": c, "means": m} for k, label, c, m in STATES],
             "changes": [{"key": k, "label": label, "means": m} for k, label, m in CHANGES if k],
             "history": None}
+
+
+def run_coverage(counts, total, done=None, running=False):
+    """How much of a checklist a run could decide (D-165) - {"checked", the
+    checks decided, PASS or FAIL; "applicable", every check in the list;
+    "missing", the NO DATA; "notRun"; "said", one line} - shown beside every
+    pass count, so a run that decided little never reads as a clean one."""
+    checked = counts.get("pass", 0) + counts.get("fail", 0)
+    missing, not_run = counts.get("missing", 0), counts.get("not run", 0)
+    said = "Coverage: %d of %d check(s) decided, %d with no data, %d not run%s." % (
+        checked, total, missing, not_run,
+        ", %d still to run" % (total - (done or 0)) if running and total > (done or 0) else "")
+    return {"checked": checked, "applicable": total, "missing": missing, "notRun": not_run,
+            "said": said}
 
 
 def finish(checklist, rows, document, why, token=None, findings=None):
@@ -814,6 +970,8 @@ def text(answer):
     lines = [answer["said"], ""]
     for row in answer["rows"]:
         line = "%-8s %s - %s, read %s" % (row["label"], row["sentence"], row["rule"], row["shown"])
+        if row.get("coverageShown"):
+            line += " (%s)" % row["coverageShown"]
         tags = [t for t in (row.get("changeLabel"),
                             row.get("severity") and "severity " + row["severity"],
                             row.get("clause") and "clause " + row["clause"]) if t]
@@ -871,6 +1029,8 @@ TWINS = ("Not compared: another check in this checklist has the same words, capa
 SELECTION = ("Not compared: this check reads what is selected in Revit, and what was selected "
              "may not be what was selected last time.")
 NOT_RUN = "Not compared: it was not run now or last time."
+NO_DATA = ("Not compared: the data to decide it was missing, now or last time, so whether it "
+           "was fixed or is new cannot be told.")
 UNREADABLE = "Not compared: the run kept at %s could not be read (%s), and it may be the last " \
              "run of this checklist on this model, so nothing is compared across it."
 
@@ -1053,6 +1213,10 @@ def compare(answer, before, why_not=""):
             change, why = "unknown", EDITED
         elif now == "not run" or then.get("state") == "not run":
             change, why = "unknown", NOT_RUN
+        elif now not in ("pass", "fail") or then.get("state") not in ("pass", "fail"):
+            # NO DATA IS NEVER A CHANGE (D-165) - and nor is a state this Heron
+            # does not know, kept by a newer one: only PASS and FAIL compare.
+            change, why = "unknown", NO_DATA
         elif now == "fail" and then.get("state") == "fail":
             change = "open"
             ids, old = row.get("ids") or [], then.get("ids") or []

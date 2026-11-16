@@ -2489,10 +2489,11 @@ function qaCsv(R) {
   // times" are two different things (row 5b-1617), and "Compared with" is the
   // run's own sentence - which run it was compared with, or why it was not.
   const compared = (R.history || {}).said || "";
-  const lines = [["#", "Check", "Capability", "Rule", "Value", "Result", "Since last run", "Compared with",
-                  "Severity", "Clause", "Why", "To fix", "Element ids"].map(cell).join(",")];
+  const lines = [["#", "Check", "Capability", "Rule", "Value", "Result", "Coverage", "Since last run",
+                  "Compared with", "Severity", "Clause", "Why", "To fix", "Element ids"].map(cell).join(",")];
   (R.rows || []).forEach(r => lines.push([r.n, r.sentence, r.capability, r.rule, r.shown, r.label,
-                                           qaSince(r), compared, r.severity || "", r.clause || "",
+                                           r.coverageShown || "", qaSince(r), compared,
+                                           r.severity || "", r.clause || "",
                                            [r.why, r.changeWhy].filter(Boolean).join(" "), r.advice || "",
                                            (r.ids || []).join(";")].map(cell).join(",")));
   const blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
@@ -2549,6 +2550,16 @@ function qaResult(R) {
     chip.append(el("b", null, num((R.counts || {})[s.key] || 0, 0)), el("span", null, " " + s.label));
     sum.append(chip);
   });
+  // COVERAGE BESIDE THE COUNTS (D-165): how many checks the run decided, of
+  // how many - the brain's numbers, so a run that decided little never reads
+  // as a clean one.
+  if (R.coverage) {
+    const cov = el("span", "q-chip");
+    cov.title = R.coverage.said || "";
+    cov.append(el("b", null, num(R.coverage.checked || 0, 0) + " of " + num(R.coverage.applicable || 0, 0)),
+               el("span", null, " decided"));
+    sum.append(cov);
+  }
   sec.append(sum, el("p", "muted small", R.said || ""));
   if (R.running) sec.append(el("p", "q-running", "Running - the rows below are the checks done so far."));
   (R.findings || []).forEach(f => sec.append(el("p", "q-finding", f)));
@@ -2567,6 +2578,7 @@ function qaResult(R) {
     check.append(el("span", null, r.sentence));
     check.append(el("span", "q-cap", r.capability));
     if ((r.selection || []).length) check.append(el("span", "q-cap", "reads the selection in Revit"));
+    if (r.coverageShown) check.append(el("span", "q-cap", "Coverage: " + r.coverageShown));
     if (r.severity) check.append(el("span", "q-cap", "Severity: " + r.severity));
     if (r.clause) check.append(el("span", "q-cap", "Clause: " + r.clause));
     const result = el("td");
