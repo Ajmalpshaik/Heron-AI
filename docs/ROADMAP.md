@@ -277,7 +277,8 @@ been run in Revit ([Group EQ](needs-checking/group-eq.md), [Group GW](needs-chec
   stop went to every connected Revit, and a Revit 2020 whose lease nobody held took the stranger's
   ([Group EZ](needs-checking/group-ez.md), EZ3; [row 5b-1094](fragment-issues/section-5b-rows-401-425.md)).
   `--session` is the fix for the first half, not yet run with two Revits (EZ6); whether a free Revit
-  should take any client's stop is [Q-71](open-questions/tier-2.md)
+  should take any client's stop was [Q-71](open-questions/tier-2.md), decided 2026-11-15 - a stop names
+  the exact Revit session it is for - and built 2026-11-16, not yet run in Revit (EZ7 to EZ9)
   *([21 §4](21-resilience-and-operations.md))*
 - Failure handling that does not retry blindly
 - **Golden Test Library** started — it only has value if it grows from day one *(Part 4 §28)*

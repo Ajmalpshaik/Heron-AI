@@ -240,7 +240,8 @@ CONVERSATION_ID = os.environ.get("HERON_CONVERSATION_ID") or uuid.uuid4().hex
 _ASKED = {}
 
 # Operations that touch no model, so they hold none and need no hand-back.
-_HOLDS_NOTHING = frozenset(("ping", "info", "release", "release_models", "stop"))
+_HOLDS_NOTHING = frozenset(("ping", "info", "release", "release_models", "stop",
+                            "stop_session"))
 
 # The keys the request envelope owns. An operation argument that reuses one of
 # them would overwrite it, and the failure that produces is remote and
@@ -3584,14 +3585,23 @@ def cmd_stop(session=None):
     HERON_CLIENT_ID set the lease is the chat's own, mid-job, and handing it
     back would cut that chat off - so it is left alone.
 
-    ONE REVIT, NAMED WHEN THERE IS A CHOICE. This sent `stop` to every
-    connected Revit until row 5b-1094: on 2026-10-18 a stop meant for Revit
-    2024 was refused there and taken by another chat's idle Revit 2020,
-    which then refused every change until it was restarted. A stop lasts
-    until Revit restarts, so with two connected and no `--session` NOTHING
-    is sent and the Revits are listed - the refusal `fragment` gives.
-    Whether an idle Revit should take a stop from any client id is the
-    add-in's rule, not this one's, and is Q-71.
+    ONE REVIT, ALWAYS NAMED - Q-71, decided 2026-11-15. This sent `stop` to
+    every connected Revit until row 5b-1094: on 2026-10-18 a stop meant for
+    Revit 2024 was refused there and taken by another chat's idle Revit
+    2020, which then refused every change until it was restarted. Then it
+    asked for `--session` only when two were connected. A stop lasts until
+    Revit restarts, and the one Revit connected can be another chat's, idle,
+    so with no `--session` NOTHING is sent and every Revit is listed - one
+    or more - to choose from. A stop is a choice, never a broadcast.
+
+    THE REQUEST NAMES THE REVIT TOO. It is `stop_session`, carrying the
+    session as the add-in names itself - release and process id, "2024/63712"
+    - read from that Revit's own discovery record; the add-in stops only
+    when it is its own, and refuses the old `stop`, which named none. An
+    add-in from before that change stops on `stop` from anyone and does not
+    know `stop_session`, so it answers unknown_op - or, while a job holds
+    its thread, queues it behind that job and is busy - and is NOT stopped.
+    That is said here as what it is: that Revit's Heron is older.
     """
     if refuse_off_windows():
         return 2
@@ -3606,6 +3616,17 @@ def cmd_stop(session=None):
         report_mismatched(mismatched)
         return 1
 
+    if session is None:
+        print("A stop must name the Revit it is for. Connected:")
+        print("")
+        for b in live:
+            print("  --session %-8s Revit %s" % (b.pid, b.revit_version))
+        print("")
+        print("Nothing was sent, so no Revit was stopped. A stop lasts until that")
+        print("Revit is restarted, so it goes only to the one you name, e.g.:")
+        print("  stop --session %s" % live[0].pid)
+        return 2
+
     live, refusal = only_session(live, session)
     if refusal is not None:
         print(refusal)
@@ -3618,12 +3639,23 @@ def cmd_stop(session=None):
     failed = 0
     for index, bridge in enumerate(live):
         # The configured wait, not a literal of its own: the add-in answers
-        # `stop` at once, so a shorter one would buy nothing, and
+        # `stop_session` at once, so a shorter one would buy nothing, and
         # tests/test_config_and_health.py keeps literals to `release`.
-        reply = bridge.request("stop", timeout=2.0)
+        reply = bridge.request("stop_session", timeout=2.0, op_args={
+            "session": "%s/%s" % (bridge.revit_version, bridge.pid)})
         if reply is None:
             failed += 1
             print("%s  no reply" % describe(bridge, index))
+        elif reply.get("error") in ("unknown_op", "revit_busy"):
+            # An add-in from before Q-71's change: it does not know the named
+            # stop, or queued it behind the job its thread is running - an
+            # unknown name is refused only on Revit's thread (row 5b-1742). The
+            # new add-in answers it before the queue, so is never busy for it.
+            failed += 1
+            print("%s  The Heron add-in in Revit %s, session %s is older than this one and "
+                  "does not take a stop that names its Revit. Nothing was stopped. "
+                  "Updating Heron in that Revit adds it."
+                  % (describe(bridge, index), bridge.revit_version, bridge.pid))
         else:
             if not reply.get("ok"):
                 failed += 1

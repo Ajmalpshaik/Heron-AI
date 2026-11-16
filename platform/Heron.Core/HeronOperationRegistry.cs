@@ -166,7 +166,17 @@ namespace Heron.Core
                 // listener thread before anything is queued, so the gate never
                 // sees it - which a Read operation loses nothing by. It can
                 // only stop; nothing over the bridge lets Heron work again.
+                //
+                // A STOP MUST NAME THE EXACT REVIT SESSION IT IS FOR - Q-71,
+                // decided 2026-11-15. `stop_session` carries it and stops only
+                // the Revit it names. `stop` named none, and since 2026-11-16 it
+                // is only ever refused - still declared, so the dispatcher can
+                // refuse it before the queue rather than behind the job a stop
+                // is for. A new name, so an add-in from before it, which stops
+                // on `stop` from anyone, answers unknown_op to the named stop
+                // rather than stopping (row 5b-1604 did the same for undo).
                 { "stop",               HeronRisk.Read },
+                { "stop_session",       HeronRisk.Read },
 
                 // ANALYZE - reads the model and computes over it. preview_move
                 // is here rather than at Modify because it genuinely changes
