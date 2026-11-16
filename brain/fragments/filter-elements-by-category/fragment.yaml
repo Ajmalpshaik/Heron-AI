@@ -3,7 +3,7 @@
 # one home and this repository has been bitten by the alternative.
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 7
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -14,6 +14,24 @@ semantic-identity: "all elements of one category in the active document"
 kind: filter
 domain: revit.elements
 capability: FILTER_ELEMENTS_BY_CATEGORY
+# VERSION 7 (2026-11-16) - ONLY WHAT THIS SECTION CUTS, and back to DRAFT.
+# FRAGMENT-ISSUES row 5b-1736 (Sruthina, Revit 2024, model `villa 2`,
+# Ajmalpshaik/Heron-AI#854 item g): `inViewOnly` on a section hands on every
+# element the section SHOWS, beyond the cut as well as cut, so
+# TAG_ELEMENTS_IN_VIEW tagged both and the cut ones were found by hand.
+# `cutByView` true, with `inViewOnly` naming a section or detail view, keeps
+# only the elements whose solid crosses the cut plane inside the crop - a slab
+# a few millimetres thick on the plane through the view's origin, read with
+# ElementIntersectsSolidFilter over what the view shows. Any other view, or
+# none, is refused before anything is read; links are not read for it.
+# WIDENED HERE, NOT A CARD OF ITS OWN: the row left the owner that choice; this
+# is a selection, and the selector every tagging chain already takes, so
+# TAG_ELEMENTS_IN_VIEW is unchanged and takes it as any selection. Version 6
+# was PROVEN (the proof block below, kept as the record of what it proved);
+# its C# moved, so it is DRAFT again until NEEDS-CHECKING Group OC is run
+# (D-30) - on the owner's word of 2026-11-11 that a fragment found wrong may
+# be changed even though it is proven.
+#
 # VERSION 3 (2026-10-06, FRAGMENT-ISSUES 5b-335): a level parameter that holds
 # no level is passed over and the next one asked, where version 2 answered
 # with the first one an element HAD. Three work plane-based diffusers with
@@ -64,7 +82,7 @@ capability: FILTER_ELEMENTS_BY_CATEGORY
 # 3's proof below was still the record and still did not describe the code; the
 # card stayed DRAFT at the time, until version 6 is proved on a real model
 # (D-30).
-version: 6
+version: 7
 source: OFFICIAL
 risk: READ
 
@@ -184,6 +202,14 @@ contract:
       # category, no level, no view - it is answered, over the MODEL
       # categories only (CategoryType.Model, not a view, material, type,
       # project information or view-specific element); version 5 refused it.
+      type: bool
+      source: request
+      optional: true
+    - name: cutByView
+      # VERSION 7 (row 5b-1736). True, with `inViewOnly` naming a SECTION or
+      # detail view: only the elements the section CUTS, not those it shows
+      # beyond the cut. Left out it binds false - what versions 1 to 6 did.
+      # Without a section in `inViewOnly` it is refused.
       type: bool
       source: request
       optional: true
@@ -488,6 +514,8 @@ compatibility-note: >
 # level, which SELECT_BY_LEVEL refused in a sentence, is refused here too.
 
 utterances:
+  # ADDED 2026-11-16, version 7 (row 5b-1736) - the field's own question.
+  - select only what this section cuts
   # ADDED 2026-11-07, issue #799 routing table (Villa 1, Revit 2024): "select
   # all windows and doors in the model" ranked SELECT_BY_DESIGN_OPTION first;
   # this card, with categories Windows, Doors, did the job.
