@@ -527,6 +527,10 @@ namespace Heron.KeepQuestion.TestHost
             {
                 Func<string, string, int, bool> box = (c, t, n) => (bool)isTheBox.Invoke(null, new object[] { c, t, n });
                 Check(box("#32770", "Delete 16 elements?", 16), "the box is the task dialog with its own title");
+                Check(box("#32770", "Heron AI - Delete 16 elements?", 16),
+                      "and with the add-in's name Revit puts in front (row 5b-1748, Revit 2024 NY2)");
+                Check(!box("#32770", "Heron AI - Delete 15 elements?", 16) && !box("#32770", "Heron AI Delete 16 elements?", 16),
+                      "a prefixed title of another count, or one with no ' - ', is not the box");
                 Check(!box("#32770", "Delete 15 elements?", 16) && !box("#32770", "Delete 16 elements? ", 16),
                       "another count, or a title only like it, is not the box");
                 Check(!box("RevitWindow", "Delete 16 elements?", 16), "nor is a window of another class");
