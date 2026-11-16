@@ -773,7 +773,8 @@ def _store_drift(store, walked=None):
     checkout on main, which _store_warm_allowed() already decides - the
     sentence says to rebuild. Anywhere else a rebuild from here is row 5b-233's
     other half, so it says whose store it is and how to get one of this
-    checkout's own.
+    checkout's own. Since 2026-11-16 each case names the folder and the
+    command that reaches it - _drift_remedy, row 5b-1711.
 
     And a comparison that could not be made is SAID, as `risks_unreadable` is
     (row 35): None would read as "they match".
@@ -794,25 +795,80 @@ def _store_drift(store, walked=None):
     if extra:
         parts.append("%d fragment(s) in it have no card here, so an answer "
                      "naming one cannot run (%s)" % (len(extra), _few(extra)))
+    return ("The knowledge store does not match this checkout: %s - %s."
+            % ("; ".join(parts), _drift_remedy(SCOPE, missing, extra)))
+
+
+#: The way out that is always open, said wherever this checkout's own cards
+#: are wanted and the shared store may not be built from them (row 5b-1711).
+OWN_STORE = ("to look this checkout's own cards up instead, set HERON_KNOWLEDGE to "
+             "an empty folder for this folder's Heron (the env block of its "
+             ".mcp.json) and restart the chat")
+
+
+def _drift_remedy(SCOPE, missing, extra):
+    """What to DO about a drifted store, by who may build it - row 5b-1711.
+
+    Until 2026-11-16 everywhere but a store this checkout may build was told
+    only "rebuild it only from there - or set HERON_KNOWLEDGE", naming no
+    folder and no command, and a modeller on Revit 2024 read that warning on
+    every lookup for a whole session (issue #853). And `--rebuild` from a
+    worktree rebuilds the SHARED store from MAIN's cards (row 5b-404), so it
+    cannot add a card only this checkout has: naming it there would be a
+    command that changes nothing. So each case names what reaches it:
+
+      - this store may be built from here - a private store, or the shared
+        one from the main Heron folder on main: `tools/heron-ready.py`, the
+        command a modeller is given, rebuilds it (and `--rebuild` alone does
+        the same - a private store's folder named, because a shell without
+        this server's HERON_KNOWLEDGE would rebuild the shared one);
+      - the main Heron folder on another branch: back to main, and the next
+        lookup adds what main has (row 5b-406), or a store of its own;
+      - a worktree or another checkout: the main Heron folder BY NAME - it is
+        what the shared store follows - brought up to date on main, and the
+        cards this checkout alone has are its unmerged work; a store of its
+        own looks those up;
+      - a worktree whose main folder cannot be found: a store of its own.
+
+    The facts are asked, never assumed: a question that fails is the safe
+    answer, the private-store remedy is never offered from a shared store.
+    """
     try:
-        here = _store_warm_allowed()
         base, shared = SCOPE.knowledge_dir(), SCOPE.shared_dir()
         private = not shared or not SCOPE._same_folder(base, shared)
-    except Exception:                                  # noqa: BLE001 - the safe answer
-        here, private = False, False
+        source = SCOPE.refreshes_from()
+        here = _store_warm_allowed()
+        on_main = SCOPE.on_main_branch()
+    except Exception as exc:                           # noqa: BLE001 - the safe answer
+        return ("Heron could not tell whose store this is (%s), so it offers no "
+                "rebuild; %s" % (type(exc).__name__, OWN_STORE))
+    if here and private:
+        return ("a rebuild is needed: python brain/heron_scope.py --rebuild with "
+                "HERON_KNOWLEDGE=%s - it is this checkout's own store" % base)
     if here:
-        # A PRIVATE STORE IS NAMED, because `--rebuild` finds its store the
-        # same way this server did, and run from a shell without this
-        # server's HERON_KNOWLEDGE it would rebuild the shared one instead.
-        fix = ("a rebuild is needed: python brain/heron_scope.py --rebuild%s"
-               % (" with HERON_KNOWLEDGE=%s" % base if private else ""))
+        return ("run python tools/heron-ready.py in this Heron folder - it rebuilds the "
+                "store (python brain/heron_scope.py --rebuild does the same) - then ask again")
+    if source is None:
+        return ("this is a worktree whose main Heron folder cannot be found, so the store "
+                "every chat on this PC shares cannot follow it; %s" % OWN_STORE)
+    if source[1] is None and not on_main:
+        return ("this Heron folder is on a branch, not main, and the store every chat on "
+                "this PC shares is built only from main's cards; switch it back (git "
+                "checkout main) and the next lookup adds what main has - or, %s"
+                % OWN_STORE)
+    main = source[1] or "the main Heron folder"
+    if missing and not extra:
+        what = ("a card only here is unmerged work, or that folder is behind main: "
+                "update it on branch main (git pull there) and the next lookup adds "
+                "what was merged")
+    elif extra and not missing:
+        what = ("this checkout is behind that folder: bring it up to date with main "
+                "(git merge origin/main here)")
     else:
-        fix = ("it is the store every chat on this machine shares, which "
-               "follows the main checkout, so rebuild it only from there - or "
-               "set HERON_KNOWLEDGE to an empty folder to look this checkout's "
-               "own cards up")
-    return ("The knowledge store does not match this checkout: %s - %s."
-            % ("; ".join(parts), fix))
+        what = ("bring this checkout and that folder up to date with main (git pull "
+                "there, git merge origin/main here)")
+    return ("the store every chat on this PC shares follows %s, not this checkout; %s - "
+            "or, %s" % (main, what, OWN_STORE))
 
 
 def question_ceiling():

@@ -47,6 +47,11 @@ namespace Heron.Revit.Addin
     ///   box runs the whole width of the model, and framing it would picture
     ///   the building instead of the elements.
     ///
+    ///   A REGION OF A PLAN (row 5b-1710, added 2026-11-16) - `around`: the
+    ///   plan, named or in front, cropped to some elements or to a box in mm,
+    ///   in a temporary COPY of the plan the same rolled-back group takes
+    ///   away. The plan itself is never touched. See OfRegion.
+    ///
     ///   A NAMED PLAN ALSO SAYS WHERE IT SITS (row 5b-1481, added 2026-11-09):
     ///   its scale, whether its crop and annotation crop are on, and the
     ///   crop's four corners in model mm, so the chat can turn a size tag's
@@ -161,14 +166,326 @@ namespace Heron.Revit.Addin
                     + "two. Nothing was pictured.");
             }
 
+            // A REGION OF A PLAN (row 5b-1710) frames the plan, never a 3D
+            // view, so it cannot go with `elementIds` - the plan is `view`.
+            var aroundText = (Json.ReadString(request, "around") ?? "").Trim();
+            if (aroundText.Length > 0 && idText.Length > 0)
+            {
+                return Json.Error("both_given",
+                    "Give `around` OR element ids, not both: `around` crops a plan to some "
+                    + "elements or a box, element ids picture them in a 3D view. Nothing was "
+                    + "pictured.");
+            }
+
             var asked = Json.ReadLong(request, "pixelWidth");
             var width = asked.HasValue ? (int)Math.Max(NarrowestWidth,
                                          Math.Min(WidestWidth, asked.Value)) : DefaultWidth;
             var clamped = asked.HasValue && asked.Value != width;
 
+            if (aroundText.Length > 0)
+                return OfRegion(uiDoc, doc, viewName, aroundText, width, clamped);
             return idText.Length > 0
                 ? OfElements(doc, idText, width, clamped)
                 : OfView(uiDoc, doc, viewName, width, clamped);
+        }
+
+        // ------------------------------------------------- a region of a plan
+
+        /// <summary>
+        /// A plan pictured cropped to a region - row 5b-1710, issue #853: a
+        /// floor plan exported whole is its crop and annotation extent, so a
+        /// house in the middle of a large plan was a small patch, and nothing
+        /// could frame a part of it.
+        ///
+        /// THE REGION IS ONE OF TWO THINGS. Element ids, as OfElements reads
+        /// them - each element's extent IN THE PLAN, and a margin round them
+        /// all - or a box, "x1,y1;x2,y2", two corners in mm from Revit's
+        /// internal origin: the numbers the picture-to-model line gives, so a
+        /// region seen on one picture can be asked for on the next. A
+        /// semicolon is never in a list of ids, so the two cannot be mistaken.
+        ///
+        /// THE PLAN ITSELF IS NEVER TOUCHED. A copy of it is made - with its
+        /// detailing, so tags and dimensions come too, or without where Revit
+        /// will not copy them, and said - and only the COPY is cropped: its
+        /// scope box and crop shape taken off, its crop on, its annotation
+        /// crop off, its crop box set round the region in the box's own axes.
+        /// The copy is made inside the same always-rolled-back group as the
+        /// elements way's 3D view, so it is gone before the answer is sent.
+        /// Never run in Revit: NEEDS-CHECKING Group OD.
+        /// </summary>
+        private static string OfRegion(UIDocument uiDoc, Document doc, string name,
+                                       string aroundText, int width, bool clamped)
+        {
+            if (HeronStop.IsStopped)
+            {
+                return Json.Error("stopped", HeronStop.Message);
+            }
+
+            if (doc.IsReadOnly)
+            {
+                return Json.Error("read_only",
+                    "\"" + doc.Title + "\" is open read-only, and picturing a region needs a "
+                    + "temporary copy of the plan Revit will not make there. Picture the whole "
+                    + "view instead. Nothing was pictured.");
+            }
+
+            string problem = null;
+            var view = name.Length == 0 ? uiDoc.ActiveView : ViewNamed(doc, name, out problem);
+            if (name.Length > 0 && view == null) return problem;
+            if (view == null)
+            {
+                return Json.Error("no_view",
+                    "Revit has no view in front to picture. Name a plan, and try again.");
+            }
+            if (!(view is ViewPlan) || view.IsTemplate)
+            {
+                return Json.Error("not_a_plan",
+                    "'" + view.Name + "' is a " + view.ViewType + ", and a region is pictured "
+                    + "from a floor, ceiling, engineering or area plan. Name a plan, or picture "
+                    + "the view whole without `around`. Nothing was pictured.");
+            }
+
+            XYZ low = null, high = null;
+            var left = new List<string>();
+            var shown = 0;
+            string regionSaid;
+
+            double[] corners;
+            problem = BoxInMm(aroundText, out corners);
+            if (problem != null) return Json.Error("bad_region", problem);
+            if (corners != null)
+            {
+                low = new XYZ(Math.Min(corners[0], corners[2]) / MmPerFoot,
+                              Math.Min(corners[1], corners[3]) / MmPerFoot, 0);
+                high = new XYZ(Math.Max(corners[0], corners[2]) / MmPerFoot,
+                               Math.Max(corners[1], corners[3]) / MmPerFoot, 0);
+                if (high.X - low.X < 1e-6 || high.Y - low.Y < 1e-6)
+                {
+                    return Json.Error("bad_region",
+                        "The box '" + aroundText + "' has no width or no depth - give two "
+                        + "opposite corners. Nothing was pictured.");
+                }
+                regionSaid = "the box " + Mm(corners[0]) + "," + Mm(corners[1]) + " to "
+                           + Mm(corners[2]) + "," + Mm(corners[3]) + " mm";
+            }
+            else
+            {
+                var typed = new List<string>();
+                var unique = new List<string>();
+                problem = SplitIds(aroundText, typed, unique);
+                if (problem != null) return Json.Error("bad_ids", problem);
+
+                // THE BINDER'S OWN READING - digits, each once - matched in one
+                // pass against each element's own id text, as OfElements does,
+                // never built into an ElementId (that constructor changed at
+                // 2024, D-05).
+                var wanted = new Dictionary<string, bool>(StringComparer.Ordinal);
+                foreach (var id in typed) wanted[id] = false;
+                var framed = new List<Element>();
+                if (typed.Count > 0)
+                {
+                    foreach (var element in new FilteredElementCollector(doc).WhereElementIsNotElementType())
+                    {
+                        var key = element.Id.ToString();
+                        if (!wanted.ContainsKey(key) || wanted[key]) continue;
+                        wanted[key] = true;
+                        framed.Add(element);
+                        if (framed.Count == typed.Count) break;
+                    }
+                }
+                var missing = new List<string>();
+                foreach (var id in typed) if (!wanted[id]) missing.Add(id);
+                foreach (var id in unique)
+                {
+                    Element element = null;
+                    try { element = doc.GetElement(id); }
+                    catch (Exception) { element = null; }
+                    if (element == null || element is ElementType) { missing.Add(id); continue; }
+                    if (!framed.Exists(e => e.Id.Equals(element.Id))) framed.Add(element);
+                }
+                if (missing.Count > 0)
+                {
+                    return Json.Error("no_such_elements",
+                        missing.Count + " of the " + (typed.Count + unique.Count) + " id(s) name no "
+                        + "placed element in \"" + doc.Title + "\": "
+                        + string.Join(", ", missing.ToArray()) + ". Nothing was pictured.");
+                }
+
+                // A DATUM OR A LINK RUNS THE WIDTH OF THE BUILDING, so it is
+                // left out of the region and named. Annotation is kept: in a
+                // plan a tag or a dimension is a place, unlike in a 3D view.
+                foreach (var element in framed)
+                {
+                    string why = null;
+                    if (element is RevitLinkInstance) why = "is a linked model";
+                    else if (element.Category != null)
+                    {
+                        foreach (var datum in Datums)
+                            if (element.Category.Id.Equals(new ElementId(datum)))
+                                why = "is a datum (" + element.Category.Name + ")";
+                    }
+                    BoundingBoxXYZ box = null;
+                    if (why == null)
+                    {
+                        box = element.get_BoundingBox(view) ?? element.get_BoundingBox(null);
+                        if (box == null) why = "has no extent in the plan";
+                    }
+                    if (why != null) { left.Add(element.Id + " " + why); continue; }
+                    Grow(box, ref low, ref high);
+                    shown++;
+                }
+                if (shown == 0)
+                {
+                    return Json.Error("nothing_to_frame",
+                        "None of the " + framed.Count + " element(s) gives a region: "
+                        + string.Join("; ", left.ToArray()) + ". Give the ids of elements in "
+                        + "the plan, or a box in mm. Nothing was pictured.");
+                }
+                regionSaid = "round " + shown + " element(s)";
+            }
+
+            var margin = Math.Max(SmallestMargin, MarginShare * Math.Max(high.X - low.X, high.Y - low.Y));
+            var planName = view.Name;
+
+            // WHETHER REVIT WILL COPY IT is a read, asked before any group is
+            // started - so a refusal here has nothing to roll back. With its
+            // detailing first; without, and said, where Revit will not.
+            var how = ViewDuplicateOption.WithDetailing;
+            var detailing = true;
+            if (!view.CanViewBeDuplicated(how))
+            {
+                how = ViewDuplicateOption.Duplicate;
+                detailing = false;
+            }
+            if (!view.CanViewBeDuplicated(how))
+            {
+                return Json.Error("cannot_copy_plan",
+                    "Revit will not copy '" + planName + "', and a region is pictured from a "
+                    + "copy so the plan itself is never changed. Picture the view whole. "
+                    + "Nothing was pictured, and nothing was made.");
+            }
+
+            HeronRollbackWitness.Outcome after = null;
+            using (var watch = RevitFragment.Watch(doc, Label, Label))
+            using (var group = new TransactionGroup(doc, Label))
+            {
+                try
+                {
+                    group.Start();
+
+                    View copy;
+                    using (var transaction = new Transaction(doc, Label))
+                    {
+                        transaction.Start();
+                        var options = transaction.GetFailureHandlingOptions();
+                        options.SetFailuresPreprocessor(new DismissWarnings());
+                        options.SetClearAfterRollback(true);
+                        transaction.SetFailureHandlingOptions(options);
+
+                        copy = doc.GetElement(view.Duplicate(how)) as View;
+                        CropTo(copy, low, high, margin);
+                        doc.Regenerate();
+
+                        if (transaction.Commit() != TransactionStatus.Committed)
+                        {
+                            after = RevitFragment.RollBackAndCheck(group, doc, watch);
+                            return Json.Error("capture_failed",
+                                "Revit would not make the temporary copy of '" + planName + "'. "
+                                + Undone(after));
+                        }
+                    }
+
+                    return Exported(doc, copy, width, clamped, "region",
+                                    string.Join("; ", left.ToArray()), null, shown,
+                                    ref after, group, watch,
+                                    planName, regionSaid, detailing);
+                }
+                catch (Exception ex)
+                {
+                    after = RevitFragment.RollBackAndCheck(group, doc, watch);
+                    return Json.Error("capture_failed",
+                        "Revit could not picture that region of '" + planName + "': " + ex.Message
+                        + ". " + Undone(after));
+                }
+            }
+        }
+
+        /// <summary>
+        /// "x1,y1;x2,y2" read as two corners in mm into CORNERS, null with a
+        /// null answer when TEXT has no semicolon (it is then a list of ids),
+        /// or the refusal when it has one and is not two pairs of numbers.
+        /// </summary>
+        private static string BoxInMm(string text, out double[] corners)
+        {
+            corners = null;
+            if (text.IndexOf(';') < 0) return null;
+            var halves = text.Split(';');
+            var read = new List<double>();
+            foreach (var half in halves)
+            {
+                var pair = half.Split(',');
+                if (halves.Length != 2 || pair.Length != 2)
+                    return "'" + text + "' is not a box. Give two corners in mm from Revit's "
+                         + "internal origin as x1,y1;x2,y2 - or element ids, comma separated. "
+                         + "Nothing was pictured.";
+                foreach (var part in pair)
+                {
+                    double value;
+                    if (!double.TryParse(part.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture,
+                                         out value) || double.IsNaN(value) || double.IsInfinity(value))
+                        return "'" + part.Trim() + "' in the box '" + text + "' is not a number of "
+                             + "mm. Nothing was pictured.";
+                    read.Add(value);
+                }
+            }
+            corners = read.ToArray();
+            return null;
+        }
+
+        /// <summary>
+        /// The COPY's crop set round LOW-HIGH (model feet) and a margin: its
+        /// scope box and crop shape taken off, because either drives the crop
+        /// and refuses a box set by hand; the crop on and the annotation crop
+        /// off, so the picture's edges are the crop's (the one case the
+        /// picture-to-model line maps, row 5b-1481). The box keeps the copy's
+        /// own Transform, and the region is taken into it corner by corner, so
+        /// a plan whose crop is rotated is cropped square to its own picture.
+        /// </summary>
+        private static void CropTo(View copy, XYZ low, XYZ high, double margin)
+        {
+            var scope = copy.get_Parameter(BuiltInParameter.VIEWER_VOLUME_OF_INTEREST_CROP);
+            if (scope != null && !scope.IsReadOnly && scope.AsElementId() != ElementId.InvalidElementId)
+                scope.Set(ElementId.InvalidElementId);
+
+            var shapes = copy.GetCropRegionShapeManager();
+            if (shapes != null)
+            {
+                if (shapes.Split) shapes.RemoveSplit();
+                if (shapes.ShapeSet) shapes.RemoveCropRegionShape();
+            }
+
+            copy.CropBoxActive = true;
+            var annotation = copy.get_Parameter(BuiltInParameter.VIEWER_ANNOTATION_CROP_ACTIVE);
+            if (annotation != null && !annotation.IsReadOnly) annotation.Set(0);
+
+            var current = copy.CropBox;
+            var transform = current.Transform ?? Transform.Identity;
+            var inverse = transform.Inverse;
+            double minX = double.MaxValue, minY = double.MaxValue;
+            double maxX = double.MinValue, maxY = double.MinValue;
+            foreach (var x in new[] { low.X, high.X })
+            foreach (var y in new[] { low.Y, high.Y })
+            {
+                var p = inverse.OfPoint(new XYZ(x, y, transform.Origin.Z));
+                minX = Math.Min(minX, p.X); minY = Math.Min(minY, p.Y);
+                maxX = Math.Max(maxX, p.X); maxY = Math.Max(maxY, p.Y);
+            }
+
+            var box = new BoundingBoxXYZ();
+            box.Transform = transform;
+            box.Min = new XYZ(minX - margin, minY - margin, current.Min.Z);
+            box.Max = new XYZ(maxX + margin, maxY + margin, current.Max.Z);
+            copy.CropBox = box;
         }
 
         // ------------------------------------------------------- a named view
@@ -780,7 +1097,9 @@ namespace Heron.Revit.Addin
                                        string mode, string leftOut, string hidden, int shown,
                                        ref HeronRollbackWitness.Outcome after,
                                        TransactionGroup group,
-                                       HeronRollbackWitness.Watch watch)
+                                       HeronRollbackWitness.Watch watch,
+                                       string regionOf = null, string regionSaid = null,
+                                       bool detailing = true)
         {
             // READ OFF THE VIEW NOW, while it is still in the model. Given
             // element ids, VIEW is the temporary 3D view, and the rollback in
@@ -795,7 +1114,9 @@ namespace Heron.Revit.Addin
             // temporary 3D view of the elements way has none to give (row
             // 5b-1481). Read here, before the export and the rollback, and it
             // only reads: nothing about the view is set.
-            var frame = mode == "view" ? PlanFrame(view) : null;
+            // A REGION's copy is a plan too, cropped with its annotation crop
+            // off, so its frame is read the same way (row 5b-1710).
+            var frame = mode == "view" || mode == "region" ? PlanFrame(view) : null;
 
             var folder = Path.Combine(HeronPaths.Captures, Guid.NewGuid().ToString("N"));
             byte[] picture = null;
@@ -864,6 +1185,12 @@ namespace Heron.Revit.Addin
                 // IN THE FRAME AND NOT IN THE PICTURE - said, so a modeller
                 // checking a clearance is never shown a slab as not there.
                 Json.Str("hiddenAbove", string.IsNullOrEmpty(hidden) ? null : hidden),
+                // A REGION OF A PLAN (row 5b-1710): the plan's own name - `view`
+                // is the temporary copy's - what the region was, and whether
+                // the copy carries the plan's tags and dimensions.
+                Json.Str("regionOf", regionOf),
+                Json.Str("region", regionSaid),
+                mode == "region" ? Json.Bool("detailingCopied", detailing) : null,
                 // A PLAN'S SCALE, CROP AND CORNERS - several fields in one
                 // string, left out (null) for anything but a named plan.
                 frame,

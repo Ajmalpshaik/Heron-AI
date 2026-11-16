@@ -344,8 +344,9 @@ _KNOWN = {
     # Every one of these returns before the TransactionGroup is started, so
     # nothing was made - the temporary 3D view of the elements way included.
     "both_given":        (REFUSED, FIX_FIRST,
-                          "a view name and element ids were both given - one picture is one "
-                          "or the other, and nothing was pictured"),
+                          "a view name and element ids, or a region and element ids, were "
+                          "both given - one picture is one or the other, and nothing was "
+                          "pictured"),
     "no_view":           (REFUSED, FIX_FIRST,
                           "Revit had no view in front to work in, and none was named - "
                           "nothing was done"),
@@ -360,8 +361,18 @@ _KNOWN = {
     "no_such_elements":  (REFUSED, FIX_FIRST,
                           "some of those ids name no placed element in the model in front"),
     "nothing_to_frame":  (REFUSED, FIX_FIRST,
-                          "none of those elements has a 3D extent that is not a datum, a link "
-                          "or annotation"),
+                          "none of those elements has an extent to frame that is not a datum "
+                          "or a link (or, in 3D, annotation)"),
+    # A REGION OF A PLAN - revit_view_image's `around`, row 5b-1710.
+    "not_a_plan":        (REFUSED, FIX_FIRST,
+                          "a region is pictured from a floor, ceiling, engineering or area "
+                          "plan, and that view is not one; nothing was pictured"),
+    "bad_region":        (REFUSED, FIX_FIRST,
+                          "the region could not be read - two corners in mm as x1,y1;x2,y2, "
+                          "or element ids; nothing was pictured"),
+    "cannot_copy_plan":  (REFUSED, FIX_FIRST,
+                          "Revit will not copy that plan, and a region is pictured from a "
+                          "copy so the plan is never changed; picture the view whole"),
     "no_isometric_type": (REFUSED, STOP,
                           "the model has no 3D view type to make a temporary view from"),
     # THESE TWO RAN: the picture was taken, or Revit failed part way, and the

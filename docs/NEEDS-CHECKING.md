@@ -1550,6 +1550,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-oc.md`](needs-checking/group-oc.md)
 
+## Group OD - OPEN_FAMILY_FOR_EDITING reads what is in front, a picture of a region of a plan, and a store warning that names what to do (2026-11-16)
+
+**Its own file:** [`needs-checking/group-od.md`](needs-checking/group-od.md)
+
 ## Group OE - roofs, walls, levels and delete from field reports #852 to #854: slope the edges chosen, a wall's top shaped to the roof, a column's top level, and the walls a delete detaches: `SLOPE_ROOF_EDGES`, `SHAPE_WALL_TOPS_TO_ROOF`, `SET_ELEMENT_LEVEL`, `DELETE_ELEMENTS` (2026-11-16)
 
 **Its own file:** [`needs-checking/group-oe.md`](needs-checking/group-oe.md)
