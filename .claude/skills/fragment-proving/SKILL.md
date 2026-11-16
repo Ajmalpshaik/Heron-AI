@@ -405,7 +405,7 @@ entry. **The rules, all in [`heron_fragment.py`](../../../brain/heron_fragment.p
   leftover, and a draft naming no build re-signs nothing. A draft whose `built_on` is not its run record's
   is refused: it is copied, never typed.
 - **An add-in older than this records no build**, so its runs draft as NOT RECORDED. First check on the
-  owner's PC that a real run record carries all four fields ([NEEDS-CHECKING group OA](../../../docs/needs-checking/group-oa.md)).
+  owner's PC that a real run record carries all four fields ([NEEDS-CHECKING group OF](../../../docs/needs-checking/group-of.md)).
 
 ## Honesty
 
