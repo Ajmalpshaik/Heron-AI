@@ -42,9 +42,17 @@
     Heron.FailureNote.TestHost gives for linking it by source rather than
     referencing Heron.Bridge.
   -->
+  <!--
+    AND D-156's VALUES, linked the same way since 2026-11-16: whether a value
+    the job changed came back after the rollback (NEEDS-CHECKING A16b) is
+    decided on HeronReadBack.Values, paired by each parameter's own id.
+    HeronReadBack.cs names nothing outside System and the bridge's Json.
+  -->
   <ItemGroup>
     <Compile Include="..\..\revit\Heron.Revit.Addin\HeronRollbackWitness.cs"
              Link="HeronRollbackWitness.cs" />
+    <Compile Include="..\..\revit\Heron.Revit.Addin\HeronReadBack.cs"
+             Link="HeronReadBack.cs" />
     <Compile Include="..\..\revit\Heron.Bridge\Json.cs"
              Link="Json.cs" />
   </ItemGroup>

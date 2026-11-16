@@ -1094,7 +1094,8 @@ def test_an_unattended_batch_logs_reports_and_hands_back_each_fragment():
                "night-done": FakeFragment("night-done", [], status="PROVEN")}
     workspace = tempfile.mkdtemp(prefix="heron-batch-night-")
     real = (BP.prove, BP.HF.load_all, BP.free_models, BP.HELD_WAIT)
-    freed, seen = [], []
+    real_client = BP.BRIDGE.CLIENT_ID
+    freed, seen, job_ids, handback_ids = [], [], [], []
     try:
         job_file = os.path.join(workspace, "night.yaml")
         with io.open(job_file, "w", encoding="utf-8") as fh:
@@ -1106,6 +1107,7 @@ def test_an_unattended_batch_logs_reports_and_hands_back_each_fragment():
                    "night-two": [("", BP.POSITIVE_EMPTY, "found 0")]}
 
         def fake(job, lib, env, args, transcript=None):
+            job_ids.append(env.get("HERON_CLIENT_ID"))
             said, verdict, why = answers[job["fragment"]].pop(0)
             if transcript is not None and said:
                 transcript.append(said)
@@ -1116,7 +1118,12 @@ def test_an_unattended_batch_logs_reports_and_hands_back_each_fragment():
 
         BP.prove = fake
         BP.HF.load_all = lambda *a, **k: (dict(library), [])
-        BP.free_models = lambda conversation, session=None: freed.append(conversation)
+        def hand_back(conversation, session=None):
+            freed.append(conversation)
+            handback_ids.append(BP.BRIDGE.CLIENT_ID)
+
+        BP.free_models = hand_back
+        BP.BRIDGE.CLIENT_ID = "a-random-id-from-import"
         BP.HELD_WAIT = 0
         log = os.path.join(workspace, "night.log")
         report = os.path.join(workspace, "findings.json")
@@ -1135,6 +1142,11 @@ def test_an_unattended_batch_logs_reports_and_hands_back_each_fragment():
               "models handed back after each sent fragment and at the end: %d" % len(freed))
         check(seen == [2],
               "the report held the first two fragments before the third ran: %s" % seen)
+        # Row 5b-1656: the hand-back between fragments was sent under the id fixed
+        # at import - a random one - and took the lease the next job needed.
+        check(job_ids and set(handback_ids) == set(job_ids) and len(set(job_ids)) == 1,
+              "the hand-back is sent under the jobs' own client id: jobs %s, hand-back %s"
+              % (sorted(set(job_ids)), sorted(set(handback_ids))))
         findings = json.loads(io.open(report, encoding="utf-8").read())
         check(findings["finished"] and findings["unattended"]
               and [r["verdict"] for r in findings["results"]]
@@ -1142,6 +1154,7 @@ def test_an_unattended_batch_logs_reports_and_hands_back_each_fragment():
               "and the last report is the whole night, marked finished")
     finally:
         BP.prove, BP.HF.load_all, BP.free_models, BP.HELD_WAIT = real
+        BP.BRIDGE.CLIENT_ID = real_client
         shutil.rmtree(workspace)
 
 

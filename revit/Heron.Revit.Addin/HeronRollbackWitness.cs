@@ -40,9 +40,20 @@ namespace Heron.Revit.Addin
     /// Revit's status after the attempt, and section 1c showed that a failed
     /// rollback and a clean one produced identical output. So the elements the
     /// job ADDED are looked for again afterwards: any still standing means the
-    /// rollback did not hold, whatever the status said. It sees additions only
-    /// - a rename that stood is invisible to it - so it can WITHDRAW "nothing
-    /// was kept" and never stands in for one.
+    /// rollback did not hold, whatever the status said.
+    ///
+    /// AND WHAT IT CHANGED, SINCE 2026-11-16 - NEEDS-CHECKING A16b: a rename
+    /// reported rolled back while 8 views still read HERONL2, and an addition
+    /// count could never see it. The elements the job was HANDED and the
+    /// modeller's selection are read before the job starts (ReadBefore), read
+    /// again just before the rollback (ReadDuring) - which says what the job
+    /// changed, value by value - and read a third time after it. A value the
+    /// job changed that does not read as it did before withdraws "nothing was
+    /// kept". The reading is D-156's (HeronReadBack.Values, paired by each
+    /// parameter's own id); only the rule is here. A changed element that is
+    /// not among those read - not handed, not selected, past the limit - is
+    /// not seen, so this too can WITHDRAW "nothing was kept" and never
+    /// stands in for one.
     ///
     /// AN ID THAT COULD NOT BE ASKED ABOUT IS NEITHER. Whether an id resolves
     /// is a question the caller answers with true, false or null, and null is
@@ -51,9 +62,10 @@ namespace Heron.Revit.Addin
     ///
     /// SPLIT OUT OF RevitFragment.cs SO IT CAN BE PROVED WITHOUT REVIT, the
     /// move HeronFailureNote.cs makes: this file names no Autodesk type, so
-    /// tests/Heron.RollbackWitness.TestHost links it by source and there is
-    /// one copy of the rule. RevitFragment's DocumentChanged listener feeds it
-    /// what Revit reports; RevitFragment.RollBackAndCheck asks it what to say.
+    /// tests/Heron.RollbackWitness.TestHost links it by source, with
+    /// HeronReadBack.cs, and there is one copy of the rule. RevitFragment's
+    /// DocumentChanged listener feeds it what Revit reports; RevitReadBack
+    /// reads the values; RevitFragment.RollBackAndCheck asks it what to say.
     /// </summary>
     internal sealed class HeronRollbackWitness
     {
@@ -134,6 +146,35 @@ namespace Heron.Revit.Addin
             private readonly HashSet<string> _addedIds = new HashSet<string>(StringComparer.Ordinal);
             private readonly List<string> _sample = new List<string>();
 
+            // WHAT IT WAS HANDED, AS IT READ BEFORE THE JOB STARTED - see
+            // ReadBefore - and, once ReadDuring has run, which of those the job
+            // changed and how. Null until ReadDuring, so "not looked at" and
+            // "looked at and unchanged" are never the same thing.
+            private readonly List<HeronReadBack.Values> _before = new List<HeronReadBack.Values>();
+            private readonly HashSet<long> _notTheChange = new HashSet<long>();
+            private List<Change> _changed;
+
+            /// <summary>One element the job changed: what it read before, and each value that moved.</summary>
+            internal sealed class Change
+            {
+                internal string UniqueId;
+                internal string Category;
+                internal readonly List<Moved> Values = new List<Moved>();
+            }
+
+            /// <summary>
+            /// One value the job changed: what it is paired by, what it is
+            /// called, and what it read before the job - null when it was not
+            /// there. What the job made it is not kept: the check is whether
+            /// the value came BACK, so only the before is compared.
+            /// </summary>
+            internal sealed class Moved
+            {
+                internal string Key;
+                internal string Name;
+                internal string Was;
+            }
+
             internal Watch(HeronRollbackWitness owner, string document, string job, string label,
                            string keptJob, List<string> keptIds, int keptAdded, string before)
             {
@@ -182,6 +223,105 @@ namespace Heron.Revit.Addin
             {
                 if (string.IsNullOrEmpty(uniqueId) || _sample.Count >= SampleLimit) return;
                 if (!_sample.Contains(uniqueId)) _sample.Add(uniqueId);
+            }
+
+            /// <summary>How many elements were read before the job, at most SampleLimit.</summary>
+            internal int ReadBeforeCount { get { return _before.Count; } }
+
+            /// <summary>
+            /// Of those, how many the job changed, as ReadDuring found - 0 until
+            /// it has run.
+            /// </summary>
+            internal int ChangedCount { get { return _changed == null ? 0 : _changed.Count; } }
+
+            /// <summary>What ReadDuring found, or nothing when it has not run.</summary>
+            internal IList<Change> Changed
+            {
+                get { return (_changed ?? new List<Change>()).AsReadOnly(); }
+            }
+
+            /// <summary>
+            /// The elements this job was handed and the modeller's selection, as
+            /// D-156's reader read them BEFORE the job started - the only time a
+            /// "before" can be read without running anything twice (D-126). Only
+            /// an element whose UniqueId was read can be found again, so one
+            /// without is passed over. `notTheChange` names parameters, by their
+            /// own id, whose value is not the job's change (RevitReadBack's
+            /// NotTheChange). Called once per watch, before the group starts.
+            /// </summary>
+            internal void ReadBefore(IEnumerable<HeronReadBack.Values> before,
+                                     IEnumerable<long> notTheChange)
+            {
+                _before.Clear();
+                _changed = null;
+                _notTheChange.Clear();
+                if (notTheChange != null)
+                    foreach (var id in notTheChange) _notTheChange.Add(id);
+                if (before == null) return;
+
+                var seen = new HashSet<string>(StringComparer.Ordinal);
+                foreach (var was in before)
+                {
+                    if (_before.Count >= SampleLimit) break;
+                    if (was == null || string.IsNullOrEmpty(was.UniqueId) || !seen.Add(was.UniqueId))
+                        continue;
+                    _before.Add(was);
+                }
+            }
+
+            /// <summary>
+            /// The same elements read again with the job's work still in the
+            /// model, just before the rollback: what differs from ReadBefore is
+            /// what the job changed. Once per watch, and never after the first
+            /// rollback - a second look then would read the rolled-back model as
+            /// the job's work. An element that could not be read now is not
+            /// counted as changed: nobody knows whether it was.
+            /// </summary>
+            internal void ReadDuring(Func<string, HeronReadBack.Values> read)
+            {
+                if (_changed != null || Ended != null) return;
+                _changed = new List<Change>();
+                foreach (var was in _before)
+                {
+                    var now = Read(read, was.UniqueId);
+                    if (now == null) continue;
+
+                    var change = new Change
+                    {
+                        UniqueId = was.UniqueId,
+                        Category = now.Category ?? was.Category,
+                    };
+                    foreach (var item in now.Items)
+                    {
+                        if (NotTheChange(item)) continue;
+                        HeronReadBack.Values.Item old;
+                        var had = was.TryGet(item.Key, out old);
+                        if (had && string.Equals(old.Value, item.Value, StringComparison.Ordinal)) continue;
+                        change.Values.Add(new Moved
+                        {
+                            Key = item.Key,
+                            Name = HeronReadBack.Label(item, was, now),
+                            Was = had ? old.Value : null,
+                        });
+                    }
+                    foreach (var item in was.Items)
+                    {
+                        HeronReadBack.Values.Item kept;
+                        if (NotTheChange(item) || now.TryGet(item.Key, out kept)) continue;
+                        change.Values.Add(new Moved
+                        {
+                            Key = item.Key,
+                            Name = HeronReadBack.Label(item, was, now),
+                            Was = item.Value,
+                        });
+                    }
+                    if (change.Values.Count > 0) _changed.Add(change);
+                }
+            }
+
+            private bool NotTheChange(HeronReadBack.Values.Item item)
+            {
+                return item.Parameter && _notTheChange.Contains(item.Id);
             }
 
             /// <summary>What Revit's group-rollback event said it removed.</summary>
@@ -245,10 +385,12 @@ namespace Heron.Revit.Addin
 
         /// <summary>
         /// The job's group has been rolled back and Revit answered `reported`.
-        /// Look for what the job added, and for what the last kept job made.
+        /// Look for what the job added, for what the last kept job made, and -
+        /// with `read` - for the values the job changed (Watch.ReadDuring).
         /// Said once: a second call for the same watch returns the first answer.
         /// </summary>
-        internal Outcome RolledBack(Watch watch, bool reported, Func<string, bool?> resolves)
+        internal Outcome RolledBack(Watch watch, bool reported, Func<string, bool?> resolves,
+                                    Func<string, HeronReadBack.Values> read = null)
         {
             if (watch == null) return new Outcome(reported);
             if (watch.Ended != null) return watch.Ended;
@@ -278,6 +420,35 @@ namespace Heron.Revit.Addin
                 if (there == null) continue;
                 outcome.KeptChecked++;
                 if (there == false) outcome.Lost++;
+            }
+
+            // WHAT THE JOB CHANGED, READ A THIRD TIME. A value it changed that
+            // does not read as it did before the job - the job's own value, or
+            // a third one - did not come back. An element that cannot be read
+            // now is counted in neither: Article 27, as the ids above.
+            outcome.Changed = watch.ChangedCount;
+            foreach (var change in watch.Changed)
+            {
+                var now = Read(read, change.UniqueId);
+                if (now == null) continue;
+                outcome.ChangedChecked++;
+
+                foreach (var moved in change.Values)
+                {
+                    HeronReadBack.Values.Item item;
+                    var value = now.TryGet(moved.Key, out item) ? item.Value : null;
+                    if (string.Equals(value, moved.Was, StringComparison.Ordinal)) continue;
+
+                    if (outcome.ChangedStanding == 0)
+                    {
+                        outcome.StoodIn = change.Category;
+                        outcome.StoodName = moved.Name;
+                        outcome.StoodWas = moved.Was;
+                        outcome.StoodNow = value;
+                    }
+                    outcome.ChangedStanding++;
+                    break;
+                }
             }
 
             // SAID ONCE, THEN FORGOTTEN. What is gone is gone; checking for it
@@ -377,6 +548,14 @@ namespace Heron.Revit.Addin
             catch (Exception) { return null; }
         }
 
+        // AND THE SAME FOR A VALUE: null is "not read", never "unchanged".
+        private static HeronReadBack.Values Read(Func<string, HeronReadBack.Values> read, string uniqueId)
+        {
+            if (read == null || string.IsNullOrEmpty(uniqueId)) return null;
+            try { return read(uniqueId); }
+            catch (Exception) { return null; }
+        }
+
         private void Trim()
         {
             while (_kept.Count > MaxDocuments)
@@ -473,36 +652,125 @@ namespace Heron.Revit.Addin
 
             internal string Before;     // what the start of the job found to say
 
+            internal int Changed;         // elements read before the job that it changed
+            internal int ChangedChecked;  // of those, how many were read again after
+            internal int ChangedStanding; // of those, how many still do not read as before
+
+            // THE FIRST VALUE THAT DID NOT COME BACK, for the sentence: the
+            // element's category, the value's name, and what it read before the
+            // job and reads now - null for a value that was not there.
+            internal string StoodIn;
+            internal string StoodName;
+            internal string StoodWas;
+            internal string StoodNow;
+
             /// <summary>
-            /// Revit confirmed the rollback AND nothing the job added is still
-            /// standing. Only an addition can be counted back, so this is the
-            /// most a rollback can be shown to have done - never more.
+            /// Revit confirmed the rollback, nothing the job added is still
+            /// standing, and every value it changed that was read back reads as
+            /// before. Only what was handed or selected is read back, so this is
+            /// the most a rollback can be shown to have done - never more.
             /// </summary>
-            internal bool Held { get { return Reported && Standing == 0; } }
+            internal bool Held { get { return Reported && Standing == 0 && ChangedStanding == 0; } }
+
+            /// <summary>Anything of the job seen still in the model, added or changed.</summary>
+            internal bool Stands { get { return Standing > 0 || ChangedStanding > 0; } }
 
             /// <summary>
             /// What the rollback left, in one sentence. Said on what was
-            /// checked: the status, and the additions counted back.
+            /// checked: the status, the additions counted back, and the
+            /// changes read back.
             /// </summary>
             internal string ModelSentence()
             {
                 if (Held)
                 {
                     var none = Checked == 0 ? "" : " - and " + NoneStanding();
+                    if (ChangedChecked > 0)
+                        none += (Checked == 0 ? " - and " : ", and ") + ChangedReturned();
                     return "Revit confirmed the rollback, so the model is exactly as it was" + none + ".";
                 }
 
                 if (Reported)
                 {
-                    return "Revit reported the rollback, but " + SomeStanding() + " still in the "
-                         + "model, so THE ROLLBACK DID NOT HOLD. Check what it would have changed "
+                    return "Revit reported the rollback, but " + WhatStands("the model")
+                         + ", so THE ROLLBACK DID NOT HOLD. Check what it would have changed "
                          + "before trusting anything here, and do not save until you have.";
                 }
 
                 return "Revit did NOT confirm the rollback, so THE MODEL MAY STILL HOLD PART OF THIS "
-                     + "JOB" + (Standing > 0 ? " - " + SomeStanding() + " still in it" : "")
+                     + "JOB" + (Stands ? " - " + WhatStands("it") : "")
                      + ". Check what it would have changed before trusting anything here, and do "
                      + "not save until you have.";
+            }
+
+            /// <summary>
+            /// What was seen still in the model, in one clause: the additions
+            /// still standing, the changes still holding, or both. `place` is
+            /// "the model" or "it". "" when nothing was seen.
+            /// </summary>
+            internal string WhatStands(string place)
+            {
+                var added = Standing > 0 ? SomeStanding() + " still in " + place : "";
+                var changed = ChangedStanding > 0 ? ChangedStill() : "";
+                if (added.Length > 0 && changed.Length > 0) return added + ", and " + changed;
+                return added + changed;
+            }
+
+            /// <summary>WhatStands as a sentence of its own, "" when nothing was seen.</summary>
+            internal string StillThere()
+            {
+                var said = WhatStands("it");
+                if (said.Length == 0) return "";
+                return char.ToUpperInvariant(said[0]) + said.Substring(1) + ".";
+            }
+
+            /// <summary>
+            /// "8 of the 11 elements this run changed that Heron read back
+            /// still hold the change (Views: Name reads 'HERONL2', was 'L2')".
+            /// The first value that did not come back is the one quoted.
+            /// </summary>
+            internal string ChangedStill()
+            {
+                string head;
+                if (ChangedStanding >= ChangedChecked)
+                    head = ChangedChecked == 1
+                        ? "the one element this run changed that Heron read back still holds the change"
+                        : (ChangedChecked == 2 ? "both elements" : "all " + Elements(ChangedChecked))
+                          + " this run changed that Heron read back still hold the change";
+                else
+                    head = Number(ChangedStanding) + " of the " + Elements(ChangedChecked)
+                         + " this run changed that Heron read back still "
+                         + (ChangedStanding == 1 ? "holds" : "hold") + " the change";
+
+                var where = string.IsNullOrEmpty(StoodIn) ? "" : StoodIn + ": ";
+                return head + " (" + where + StoodName + " " + NowReads(StoodNow) + ", "
+                     + WasRead(StoodWas) + ")";
+            }
+
+            /// <summary>
+            /// "the 11 elements this run changed that Heron read back read as
+            /// they did before it". Only meaningful when ChangedChecked is above 0.
+            /// </summary>
+            internal string ChangedReturned()
+            {
+                return ChangedChecked == 1
+                    ? "the one element this run changed that Heron read back reads as it did before it"
+                    : "the " + Elements(ChangedChecked) + " this run changed that Heron read back "
+                      + "read as they did before it";
+            }
+
+            private static string NowReads(string value)
+            {
+                if (value == null) return "is not there now";
+                if (value.Length == 0) return "is blank";
+                return "reads '" + HeronReadBack.Cut(value) + "'";
+            }
+
+            private static string WasRead(string value)
+            {
+                if (value == null) return "was not there";
+                if (value.Length == 0) return "was blank";
+                return "was '" + HeronReadBack.Cut(value) + "'";
             }
 
             /// <summary>

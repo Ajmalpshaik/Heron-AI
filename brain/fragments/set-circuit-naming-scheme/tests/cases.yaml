@@ -10,7 +10,11 @@
 # never a working model. By hand before the run: open Manage > MEP Settings >
 # Electrical Settings > Circuit Naming and write down every scheme, its parts,
 # and the one the project uses - "Standard" is assumed below for a scheme the
-# template ships; use whatever name it has. Place one branch panelboard DB-1
+# template ships; use whatever name it has. THE METRIC ELECTRICAL TEMPLATE
+# SHIPS NONE on Revit 2024 (row 5b-1660, "Also seen": the project's scheme id
+# reads -1), so make one named "Standard" first - Revit's dialog, or this
+# card's make with parts "panel; load name" kept - before the first negative.
+# Place one branch panelboard DB-1
 # and one circuit on it, so the circuit's name shows the scheme.
 # REPORT_ELECTRICAL_SETTINGS with show "naming" is run before and after every
 # case - the second route.
@@ -28,9 +32,19 @@ positive:
       separator "-"
     expect: >
       changed 1; after holds "\"Panel-Circuit\": Panel \"-\" + Circuit
-      Number" (Revit's own labels) beside every scheme in before; the Circuit
-      Naming dialog shows it, Panel then Circuit Number with a dash between
-      them
+      Naming Index" (Revit's own labels - version 2 maps "circuit number" to
+      the circuit naming index, the parameter Revit takes in a scheme, row
+      5b-1660) beside every scheme in before; the Circuit Naming dialog shows
+      it, Panel then the circuit's number with a dash between them. Version 1
+      was refused here: "Revit does not accept Panel + Circuit Number"
+
+  - given: >
+      action make, schemeName "Panel-Slot", parts "panel; start slot",
+      separator "-"
+    expect: >
+      changed 1; after holds "\"Panel-Slot\": Panel \"-\" + Slot Index" -
+      start slot is the slot index since version 2 (row 5b-1660); version 1
+      named RBS_ELEC_CIRCUIT_START_SLOT and was refused
 
   - given: >
       after the one above is kept: action use, schemeName "Panel-Circuit"
@@ -44,7 +58,7 @@ positive:
       separator left out
     expect: >
       changed 1; after holds "\"PanelCircuit\": Panel \"\" + Circuit
-      Number" - nothing between the parts - the separator left out is
+      Naming Index" - nothing between the parts - the separator left out is
       never read as a value called "none" (row 5b-1432); a "none" between
       them is the defect
 
