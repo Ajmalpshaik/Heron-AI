@@ -9,6 +9,18 @@ Claude Code, and appears in **Settings > Apps > Installed apps** with **Uninstal
 |---|---|
 | [`HeronSetup.iss`](HeronSetup.iss) | The Inno Setup script. **Decides nothing** about what goes where |
 | [`tools/build-setup.py`](../../tools/build-setup.py) | Stages the folder and runs Inno Setup. The only way the Setup is built |
+| [`make-images.ps1`](make-images.ps1) and `images/` | The Setup's two pictures, made from the brand kit's own files: the logo on Mist with the orange line (Welcome and Finished pages), and the app icon (every other page's corner). Run it again only when a brand file changes |
+
+## It looks like Heron
+
+**The brand ([D-149](../../docs/decisions/D-149.md), [docs/brand](../../docs/brand/README.md)), the same as
+`HeronInstaller.exe`:** every page on Mist (`#F7F5F2`) with Ink (`#0F0F10`) text, the orange Accent
+(`#FD641A`) line under the header where Windows draws a grey one, a Welcome page with the Heron logo, and
+the app icon in each page's corner. The colours are written in the script as `$BBGGRR` beside their brand
+name and hex. **Photographed 2026-11-16** on the owner's PC - the Welcome page and the tasks page, the
+Setup closed before Install. The orange line took three tries: a coloured panel on the window was drawn
+under the page; drawn inside the header it shows. **Not themed:** the buttons stay Windows' own, and the
+font stays Segoe UI - the brand's fallback until Manrope is shipped with its licence.
 
 ## It is a door, not an engine
 

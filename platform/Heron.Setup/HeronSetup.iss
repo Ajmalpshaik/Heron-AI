@@ -76,6 +76,15 @@ UninstallDisplayName=Heron AI
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
+; THE BRAND (D-149, docs/brand/README.md) - the same look as HeronInstaller.exe:
+; the logo on Mist with the orange line, Ink text. Both pictures are made from
+; the brand kit's own files by make-images.ps1, never drawn new. The welcome
+; page is shown so the first thing the Setup says is whose it is.
+DisableWelcomePage=no
+WizardImageFile=images\panel-202x386.png,images\panel-404x772.png
+WizardSmallImageFile=images\icon-55.png,images\icon-110.png
+; Mist, #F7F5F2 - Inno Setup writes a colour as $BBGGRR.
+WizardImageBackColor=$F2F5F7
 ; IT NEVER CLOSES A PROGRAM FOR THE MODELLER. Revit may hold unsaved work;
 ; Claude may be mid-chat. Both are asked to be closed, never closed.
 CloseApplications=no
@@ -132,8 +141,54 @@ Name: "{autoprograms}\Heron AI\Heron Installer"; Filename: "{app}\HeronInstaller
 Type: filesandordirs; Name: "{app}"
 
 [Code]
+const
+  { THE BRAND'S COLOURS, from the table in docs/brand/README.md and nowhere
+    else (D-149). Pascal writes a colour as $BBGGRR, so each is the brand's
+    hex with its pairs reversed. }
+  BrandMist   = $F2F5F7;   { Mist   #F7F5F2 - the light background }
+  BrandInk    = $100F0F;   { Ink    #0F0F10 - text }
+  BrandAccent = $1A64FD;   { Accent #FD641A - the one highlight: the line under the header }
+
 var
   ReportPage: TOutputMsgMemoWizardPage;
+  BrandLine: TBitmapImage;
+
+{ Every page in the brand: Mist behind, Ink text, and the orange line under the
+  header where Windows draws a grey one - HeronInstaller.exe's masthead. }
+procedure ApplyBrand();
+begin
+  WizardForm.Color := BrandMist;
+  WizardForm.MainPanel.Color := BrandMist;
+  WizardForm.InnerPage.Color := BrandMist;
+  WizardForm.WelcomePage.Color := BrandMist;
+  WizardForm.FinishedPage.Color := BrandMist;
+  WizardForm.TasksList.Color := BrandMist;
+
+  WizardForm.PageNameLabel.Font.Color := BrandInk;
+  WizardForm.PageDescriptionLabel.Font.Color := BrandInk;
+  WizardForm.WelcomeLabel1.Font.Color := BrandInk;
+  WizardForm.WelcomeLabel2.Font.Color := BrandInk;
+  WizardForm.FinishedHeadingLabel.Font.Color := BrandInk;
+  WizardForm.FinishedLabel.Font.Color := BrandInk;
+
+  { INSIDE THE HEADER, along its bottom edge - so it shows exactly where the
+    header shows, and never across the Welcome and Finished pictures. A
+    coloured panel on the window itself never showed: the page was drawn
+    over it (photographed twice, 2026-11-16). A picture filled with the
+    Accent cannot be re-themed by Windows. }
+  BrandLine := TBitmapImage.Create(WizardForm);
+  BrandLine.Parent := WizardForm.MainPanel;
+  BrandLine.Left := 0;
+  BrandLine.Width := WizardForm.MainPanel.Width;
+  BrandLine.Height := ScaleY(2);
+  BrandLine.Top := WizardForm.MainPanel.Height - BrandLine.Height;
+  BrandLine.Bitmap.Width := BrandLine.Width;
+  BrandLine.Bitmap.Height := BrandLine.Height;
+  BrandLine.Bitmap.Canvas.Brush.Color := BrandAccent;
+  BrandLine.Bitmap.Canvas.Pen.Color := BrandAccent;
+  BrandLine.Bitmap.Canvas.Rectangle(0, 0, BrandLine.Width, BrandLine.Height);
+  WizardForm.Bevel1.Visible := False;
+end;
 
 { Every Revit running for this user, one line each, or '' when none is.
   WMI, because Inno Setup has no process list of its own. A WMI that cannot be
@@ -205,6 +260,7 @@ end;
 
 procedure InitializeWizard();
 begin
+  ApplyBrand();
   ReportPage := CreateOutputMsgMemoPage(wpInfoAfter,
     'What Heron did',
     'For each Revit on this PC, and Heron''s Python side.',
