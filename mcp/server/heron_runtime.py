@@ -332,7 +332,7 @@ def _switch_phrase(names):
 
 
 def in_revit_words(cap, rows=None, release=None, how=None, no_revit_here=False,
-                   write_enabled=False):
+                   write_enabled=False, said_by=None):
     """
     (what stands in the way, what the modeller can do) for one Capability
     snapshot() judged - two sentences in Revit's words, never a verdict name.
@@ -344,6 +344,10 @@ def in_revit_words(cap, rows=None, release=None, how=None, no_revit_here=False,
                    has been chosen"), or None
     no_revit_here  no Revit can be on this machine - it is not Windows (D-132)
     write_enabled  the Changes switch it was judged with
+    said_by        the Revit whose word the switches were - "Revit 2024
+                   (session 4242)" - when revit_health found that Revit's
+                   settings file is not this PC's (Q-70); None when they were
+                   this PC's own settings file
     """
     name = cap.name
     written_for = ", ".join(releases_of(rows)) or "no release"
@@ -395,13 +399,21 @@ def in_revit_words(cap, rows=None, release=None, how=None, no_revit_here=False,
                     "No switch of the owner's changes that here.")
         off = "Changes" if not write_enabled else SWITCH_NAMES[level]
         turn_on = " then ".join(needs) if not write_enabled else off
+        # WHOSE WORD THE SWITCH WAS (Q-70). This PC's settings file, unless
+        # revit_health found the Revit's own is not it - then that Revit's,
+        # as it last said it: Revit decides by its own file either way.
+        source = ("That is what %s said it has, the last time revit_health "
+                  "asked it; Revit reads its settings again before every change, "
+                  "so if it answers differently now, Revit is right." % said_by
+                  if said_by else
+                  "That is what Heron's settings file on this PC says; Revit "
+                  "reads its own copy before every change, so if Revit answers "
+                  "differently, Revit is right.")
         return ("%s %s, which needs %s on, and %s is off - so Heron refuses it "
                 "before anything reaches Revit."
                 % (name, WHAT_IT_DOES[level], _switch_phrase(needs), off),
-                "The owner turns %s on in Heron's Settings in Revit. That is "
-                "what Heron's settings file on this PC says; Revit reads its own "
-                "copy before every change, so if Revit answers differently, "
-                "Revit is right." % turn_on)
+                "The owner turns %s on in Heron's Settings in Revit. %s"
+                % (turn_on, source))
 
     if cap.verdict == NEEDS_REVIT:
         also = ("; because it %s, %s must be on there too"

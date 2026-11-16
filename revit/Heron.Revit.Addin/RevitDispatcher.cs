@@ -208,6 +208,23 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
+        /// Revit's own thread, from inside a running job: the job runs a card
+        /// that waits for the modeller to click in Revit - Revit's own pick,
+        /// declared on the card as `waitsForModeller` (Q-86, decided
+        /// 2026-11-15). The same longer wait as AwaitingModeller, and the same
+        /// banner stepping aside - it is Topmost over the middle of Revit's
+        /// window, which is where the click is likely to be - and the caller is
+        /// told, if it stops waiting first, in words about the click rather
+        /// than about Keep or Discard.
+        /// </summary>
+        internal static void AwaitingClick()
+        {
+            var job = _running;
+            if (job != null) job.MarkAwaitingClick();
+            AwaitingModeller();
+        }
+
+        /// <summary>
         /// How long the modeller still has to press Delete for it to be kept,
         /// read when the delete box goes up - D-142. Null when no job is
         /// running on this thread, so no deadline is known; zero or less once
@@ -318,7 +335,14 @@ namespace Heron.Revit.Addin
             // while its first waits on the job (the bridge client's `stop`,
             // with that chat's HERON_CLIENT_ID). Another chat is refused
             // `session_in_use` before it gets here, as for anything else.
-            if (op == "stop") return AnswerStop();
+            //
+            // AND IT MUST NAME THIS REVIT - Q-71, decided 2026-11-15. A Revit
+            // nobody holds grants the lease to any client id, so a stop that
+            // names nothing stopped another chat's idle Revit until it was
+            // restarted (row 5b-1094). `stop_session` carries the session it
+            // is for; `stop`, the old name, names none and is refused here,
+            // before the queue, so its refusal never waits behind a job.
+            if (op == "stop" || op == "stop_session") return AnswerStop(op, request);
 
             var raiser = _event;
             if (raiser == null)
@@ -415,7 +439,9 @@ namespace Heron.Revit.Addin
             // THE MODELLER IS NOT A TIMEOUT (D-119). A job that put a Keep or
             // Discard box up is waiting for a person, so it gets the ask
             // timeout on top - asked AFTER the first wait ran out, because the
-            // box can go up at any moment of it.
+            // box can go up at any moment of it. So does a job running a card
+            // that waits for a click (Q-86, AwaitingClick): the same person,
+            // the same wait.
             var finished = job.WaitForFinish(_operationTimeout)
                 || (job.AskedModeller && job.WaitForFinish(_askTimeout));
 
@@ -431,6 +457,21 @@ namespace Heron.Revit.Addin
                     "Revit is still showing you the box asking whether to delete these elements, " +
                     "and Heron has stopped waiting for the answer. NOTHING IS DELETED now, whatever " +
                     "you press there. Close the box, and ask again if you still want them deleted.");
+            }
+
+            if (!finished && job.AwaitingClick)
+            {
+                // REVIT IS STILL IN ITS PICK, waiting for a click or Esc (Q-86),
+                // and the caller stops waiting. The pick goes on: a click made
+                // now reaches the tool, and its answer reaches nobody, so the
+                // modeller is told to end it rather than to make it. Not Keep
+                // or Discard's words - no box is open, and nothing is kept.
+                RecordRefusal(job.WorkflowId, request, "awaiting_click");
+                return Json.Error("awaiting_click",
+                    "Revit is still waiting for you to click in Revit, and Heron has stopped " +
+                    "waiting for the click, so a click made now reaches no chat. Press Esc in " +
+                    "Revit to end the wait, and ask again once you are ready at Revit. Do not " +
+                    "ask again while Revit is still waiting.");
             }
 
             if (!finished && job.AskedModeller)
@@ -487,9 +528,49 @@ namespace Heron.Revit.Addin
         ///
         /// RECORDED, like every refusal, because "who stopped Heron, and was
         /// anything running" is a question the trail will be asked.
+        ///
+        /// IT STOPS ONLY THE REVIT IT NAMES - Q-71, decided 2026-11-15 on the
+        /// owner's delegation. A stop lasts until Revit restarts (D-130), so
+        /// one that named nothing was a broadcast: on 2026-10-18 a stop meant
+        /// for one Revit stopped another chat's idle one (row 5b-1094). So the
+        /// request is `stop_session`, carrying the session as this add-in names
+        /// itself - release and process id, `_session` - compared exactly. A
+        /// `stop` (the name before, which carried none), a `stop_session` that
+        /// names no session and one that names another Revit are each refused
+        /// with nothing stopped, recorded, and the refusal names this Revit so
+        /// the caller can choose it. A NEW NAME rather than a field added to
+        /// `stop`: an add-in from before this stops on `stop` whatever else
+        /// the request carries, and answers unknown_op to a name it does not
+        /// know - so it fails safe, as `undo_guarded` did (row 5b-1604).
         /// </summary>
-        private string AnswerStop()
+        private string AnswerStop(string op, string request)
         {
+            var named = op == "stop_session" ? Json.ReadString(request, "session") : null;
+            if (string.IsNullOrEmpty(named) || !string.Equals(named, _session, StringComparison.Ordinal))
+            {
+                var parts = (_session ?? "").Split('/');
+                var self = parts.Length == 2
+                    ? "Revit " + parts[0] + ", session " + parts[1]
+                    : "session " + _session;
+
+                if (string.IsNullOrEmpty(named))
+                {
+                    RecordRefusal(HeronIdentity.NewWorkflowId(), request, "stop_unnamed");
+                    _log("A stop over the bridge was refused: it named no Revit session.");
+                    return Json.Error("stop_unnamed",
+                        "This stop does not name the Revit it is for. Nothing was stopped, and Heron " +
+                        "here works as before. A stop lasts until Revit is restarted, so it must name " +
+                        "the one it is for: this is " + self + ".");
+                }
+
+                RecordRefusal(HeronIdentity.NewWorkflowId(), request, "stop_wrong_session");
+                _log("A stop over the bridge was refused: it named session " + named +
+                     ", not this one, " + _session + ".");
+                return Json.Error("stop_wrong_session",
+                    "This stop is for session " + named + ", and this is " + self + ". " +
+                    "Nothing was stopped here, and Heron here works as before.");
+            }
+
             var changed = HeronStop.Stop();
             var running = Volatile.Read(ref _jobsInRevit) > 0;
 
@@ -953,11 +1034,16 @@ namespace Heron.Revit.Addin
                 case "reset_temporary":
                     return "Resetting the temporary hide/isolate";
 
-                case "undo_guarded":
-                    return "Sending Undo for Heron's last change";
+                case "undo_own":
+                    return "Sending Undo for this chat's last change";
 
+                case "undo_own_check":
+                    return "Checking whether this chat can undo its last change";
+
+                // Q-88: refused at once, nothing sent (RevitUndo.OlderChat).
+                case "undo_guarded":
                 case "undo_check":
-                    return "Checking whether Heron can undo its last change";
+                    return "Answering an Undo from an older chat - nothing is sent";
 
                 case "show_elements":
                     return "Showing a change's elements";
@@ -1144,6 +1230,7 @@ namespace Heron.Revit.Addin
             private int _bannerEnded;
             private int _askedModeller;
             private int _askedToDelete;
+            private int _awaitingClick;
             private int _callerGone;
             private long _answerBy;
 
@@ -1219,6 +1306,11 @@ namespace Heron.Revit.Addin
             public void MarkAskedToDelete() { Interlocked.Exchange(ref _askedToDelete, 1); }
 
             public bool AskedToDelete { get { return Volatile.Read(ref _askedToDelete) == 1; } }
+
+            /// <summary>Q-86: the wait is Revit's pick, for a click, not a box.</summary>
+            public void MarkAwaitingClick() { Interlocked.Exchange(ref _awaitingClick, 1); }
+
+            public bool AwaitingClick { get { return Volatile.Read(ref _awaitingClick) == 1; } }
 
             /// <summary>
             /// The Stopwatch moment after which a Delete is not kept - set once,

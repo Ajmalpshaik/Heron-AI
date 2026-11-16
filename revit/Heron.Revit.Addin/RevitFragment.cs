@@ -438,6 +438,29 @@ namespace Heron.Revit.Addin
             // nothing those paths did not already allow.
             var wantsNoTransaction = DeclaresNeed(needs, NoTransactionNeed);
 
+            // A FRAGMENT THAT WAITS FOR THE MODELLER - Q-86, decided
+            // 2026-11-15. Revit's own pick returns when the modeller clicks or
+            // presses Esc, so the time it takes is theirs, not the fragment's.
+            // A card that declares this need is run as the Keep or Discard box
+            // is waited for: the run clock is held while its code runs and the
+            // dispatcher waits revit.askTimeoutSeconds more (see the read path
+            // below, and RevitDispatcher.AwaitingClick).
+            //
+            // HELD ONLY WHERE NOTHING IN THE MODEL CAN CHANGE. A held clock
+            // does not stop a fragment that loops for ever - a stop asked over
+            // the bridge still does - so a run that can change the model, which
+            // has a group to keep or roll back, is refused before anything runs
+            // and stays on the clock it always had.
+            var waitsForPerson = DeclaresNeed(needs, WaitsForModellerNeed);
+            if (waitsForPerson && writing)
+            {
+                return Json.Error("waits_on_change_path",
+                    "'" + name + "' waits for you to click in Revit, and Heron waits for a "
+                    + "person only on a run that changes nothing in the model - a read, or one "
+                    + "that changes only what is on screen. Nothing was run. Ask for it with "
+                    + "Changes off, through revit_show or revit_read.");
+            }
+
             // NEVER ON THE READ PATH. That path's guarantee is that no
             // transaction is open, so Revit refuses a change - not always
             // completely (row 5b-350), which is why a read is also measured -
@@ -737,7 +760,22 @@ namespace Heron.Revit.Addin
                 // anything or the answer is built, so it cannot be read as a
                 // clean read further down.
                 counted = ReadFootprint.Of(target);
-                threw = RunScript(script, globals, name, out state);
+
+                // THE MODELLER'S TIME IS NOT THE FRAGMENT'S - Q-86. For a card
+                // that declares waitsForModeller the dispatcher is told a person
+                // is being waited for, as it is for the Keep or Discard box, so
+                // it waits revit.askTimeoutSeconds more and says so in words of
+                // its own if even that runs out; and the run clock is held for
+                // the script, so a check after a slow click - or between the
+                // clicks of a slow series - does not stop the job as one that
+                // ran out of time. A stop asked meanwhile still trips it: a
+                // pause holds the time, never the stop (HeronRunClock.Pause).
+                // Any other card runs exactly as before, on its clock.
+                if (waitsForPerson) RevitDispatcher.AwaitingClick();
+                using (waitsForPerson ? HeronRunClock.Pause() : null)
+                {
+                    threw = RunScript(script, globals, name, out state);
+                }
                 var changed = ReadChangedModel(name, target, counted, threw);
                 if (changed != null) return changed;
 
@@ -791,6 +829,22 @@ namespace Heron.Revit.Addin
                     readBefore = RevitReadBack.Read(target, RevitReadBack.SelectedIn(app, target),
                                                     HeronReadBack.MostRead);
 
+                // THE ROLLBACK CHECK'S "BEFORE" - NEEDS-CHECKING A16b. What the
+                // fragment was handed, then the selection, read with D-156's
+                // reader on EVERY write, kept or not: a rollback can only be
+                // shown to have put a value back if the value was read before
+                // the job touched it. Handed first because A16b's views came
+                // from a chain with nothing selected. With write setup steps the
+                // needs are not bound yet (bindAfterSetup), so only the
+                // selection is read. Read once, outside D-142's second run, like
+                // readBefore. See HeronRollbackWitness.ReadBefore.
+                var witnessBefore = RevitReadBack.Read(target,
+                    RevitReadBack.HandedTo(bindAfterSetup ? null : globals.__heron.Values,
+                                           RevitReadBack.SelectedIn(app, target),
+                                           HeronReadBack.MostRead),
+                    HeronReadBack.MostRead);
+                var notTheChange = RevitReadBack.NotTheChange();
+
                 // WHERE A CONFIRMED DELETE IS RUN AGAIN - D-142. The whole run,
                 // setup steps and all, is what was measured and shown, so the
                 // whole run is what is made again, from its own new group: one
@@ -805,6 +859,7 @@ namespace Heron.Revit.Addin
                 using (var group = new TransactionGroup(target, label))
                 using (var changed = new RevitChangedSet(app.Application, target, label))
                 {
+                    watch.ReadBefore(witnessBefore.Values, notTheChange);
                     group.Start();
 
                     // WHAT REVIT SAYS THIS RUN TOUCHED, for D-126's question and
@@ -1099,7 +1154,10 @@ namespace Heron.Revit.Addin
                                    // (D-157): a job it counted nothing in left no
                                    // entry to undo.
                                    described == null ? 0 : described.Total,
-                                   described != null && described.Unreadable == 0);
+                                   described != null && described.Unreadable == 0,
+                                   // AND THE CHAT THAT KEPT IT (Q-88): only that
+                                   // chat is sent Undo for it.
+                                   client);
                     else
                     {
                         rolledBack = RollBackAndCheck(group, target, watch);
@@ -1133,7 +1191,10 @@ namespace Heron.Revit.Addin
             // counts them; the list is what the record is for.
             Elements = described == null ? null : described.ElementsField();
 
-            Remember(name, state, target, bound, client, globals.__heron, ranWith);
+            // Q-89: WITH HOW IT WAS TAKEN BACK, when it was - a dry run, a
+            // proof's trial, a Discard - so nothing it left is handed on.
+            Remember(name, state, target, bound, client, globals.__heron, ranWith,
+                     HeronBindingNote.TakenBack(writing, apply, answered != null, keptNothing));
             var answer = Report(name, state, target, uidoc, app.ActiveUIDocument, bound,
                                 globals.__heron);
             if (confirmed != null) answer = confirmed.OnReply(answer);   // D-142
@@ -2624,6 +2685,9 @@ namespace Heron.Revit.Addin
         /// disagree (HeronRollbackWitness has the reasoning):
         ///
         ///   what THIS job added    any still standing, and it did not hold
+        ///   what THIS job changed  of what it was handed or selected, any
+        ///                          value not reading as it did before the job,
+        ///                          and it did not hold (A16b)
         ///   what the LAST KEPT     any gone, and this rollback took earlier
         ///   job made               committed work with it - said once, then
         ///                          forgotten
@@ -2636,11 +2700,24 @@ namespace Heron.Revit.Addin
                                                                       Document doc,
                                                                       HeronRollbackWitness.Watch watch)
         {
+            // WHAT THE JOB CHANGED, read while its work is still in the model -
+            // the elements read before it started, read again (A16b). Nothing
+            // to read for a watch given no "before", which is every watch
+            // outside this file's write path.
+            try
+            {
+                if (watch != null && watch.ReadBeforeCount > 0) watch.ReadDuring(Reader(doc));
+            }
+            catch (Exception ex)
+            {
+                HeronApplication.Log("Rollback check could not read the change: " + ex.Message);
+            }
+
             var reported = SafeRollBack(group);
             HeronRollbackWitness.Outcome after;
             try
             {
-                after = Witness.RolledBack(watch, reported, Resolver(doc));
+                after = Witness.RolledBack(watch, reported, Resolver(doc), Reader(doc));
             }
             catch (Exception ex)
             {
@@ -2677,10 +2754,14 @@ namespace Heron.Revit.Addin
         /// with no transaction (`noTransactionOpen`), or a MODIFY that changed
         /// nothing. Telling the guard "kept" for those made the next Undo take
         /// whatever the modeller did before it.
+        ///
+        /// `chat` IS THE CHAT WHOSE REQUEST KEPT IT (Q-88) - the request's
+        /// conversation, through HeronConversation.ChatOf. Only that chat is
+        /// sent Undo for it; every other is refused, and Ctrl+Z still works.
         /// </summary>
         internal static string KeepAndWatch(TransactionGroup group, Document doc,
                                             HeronRollbackWitness.Watch watch,
-                                            int counted, bool read)
+                                            int counted, bool read, string chat)
         {
             if (group.Assimilate() != TransactionStatus.Committed)
             {
@@ -2700,7 +2781,7 @@ namespace Heron.Revit.Addin
             {
                 var key = watch == null || watch.Document == null ? WitnessKey(doc) : watch.Document;
                 Undo.Kept(key, watch == null ? null : watch.Job, watch == null ? null : watch.Label,
-                          DateTime.Now, counted, read);
+                          DateTime.Now, counted, read, chat);
             }
             catch (Exception ex)
             {
@@ -3376,8 +3457,10 @@ namespace Heron.Revit.Addin
             // status was the only evidence until the rollback check: what the
             // run added is now counted back too (HeronRollbackWitness), and an
             // element still in the model withdraws the sentence whatever the
-            // status said. It sees additions only, so it never ADDS certainty
-            // the status did not give - it can only take it away.
+            // status said. AND SINCE 2026-11-16 A VALUE IT CHANGED that does not
+            // read as before does the same (A16b) - of what it was handed or
+            // selected, and nothing else. Both are partial, so they never ADD
+            // certainty the status did not give - they can only take it away.
             var held = rolledBack != null && rolledBack.Held;
             string verdict;
             string kind;
@@ -3483,11 +3566,12 @@ namespace Heron.Revit.Addin
                 // THE MODELLER'S DISCARD IS NOT A ROLLBACK TO TRY AGAIN, and the
                 // plain rollback's "send it again with apply" would invite one
                 // (Article 25). Its own sentence, with Revit's rollback status.
-                // "NOTHING WAS KEPT" ONLY WHEN IT HELD - Revit's status and
-                // nothing the run added still standing - like every rollback.
+                // "NOTHING WAS KEPT" ONLY WHEN IT HELD - Revit's status,
+                // nothing the run added still standing and nothing it changed
+                // still holding, as far as read - like every rollback.
                 verdict = HeronKeepQuestion.Discarded(name, held, selectionRestored)
-                        + (rolledBack != null && rolledBack.Standing > 0
-                            ? " " + rolledBack.SomeStanding() + " still in it." : "");
+                        + (rolledBack != null && rolledBack.Stands
+                            ? " " + rolledBack.StillThere() : "");
                 kind = "discarded";
             }
             else if (held && keptNothing)
@@ -3503,6 +3587,7 @@ namespace Heron.Revit.Addin
                 verdict = "NOTHING WAS KEPT. '" + name + "' ran for real and Revit reported the "
                         + "transaction group rolled back afterwards"
                         + (rolledBack.Checked > 0 ? ", and " + rolledBack.NoneStanding() : "")
+                        + (rolledBack.ChangedChecked > 0 ? ", and " + rolledBack.ChangedReturned() : "")
                         + ", so the counts above are what it actually did rather than a guess. "
                         + "Send it again with apply to keep it.";
                 kind = "rolledBack";
@@ -3513,7 +3598,7 @@ namespace Heron.Revit.Addin
                 // act rather than reconstructed a day later from the model.
                 verdict = "THE ROLLBACK DID NOT HOLD. '" + name + "' ran for real and Revit "
                         + "reported the transaction group rolled back, but "
-                        + rolledBack.SomeStanding() + " still in the model - so THE MODEL STILL "
+                        + rolledBack.WhatStands("the model") + " - so THE MODEL STILL "
                         + "HOLDS PART OF THIS CHANGE. Check the thing that was written before "
                         + "trusting anything here, and do not save until you have.";
                 kind = "notHeld";
@@ -3525,8 +3610,8 @@ namespace Heron.Revit.Addin
                         + "transaction group as rolled back - so THE MODEL MAY STILL HOLD THIS "
                         + "CHANGE. Check the thing that was written before trusting anything "
                         + "here, and do not save until you have."
-                        + (rolledBack != null && rolledBack.Standing > 0
-                            ? " " + rolledBack.SomeStanding() + " still in it." : "");
+                        + (rolledBack != null && rolledBack.Stands
+                            ? " " + rolledBack.StillThere() : "");
                 kind = "notConfirmed";
             }
 
@@ -3588,7 +3673,8 @@ namespace Heron.Revit.Addin
             }
 
             // `rolledBack` MEANS THE ROLLBACK HELD AS FAR AS IT WAS CHECKED -
-            // Revit's status AND nothing the run added still standing - so the
+            // Revit's status AND nothing the run added still standing AND no
+            // value it changed still holding, as far as read - so the
             // client's ROLLED BACK label and a proof record's "rolled back"
             // can never sit above a verdict saying it did not hold. Revit's
             // status alone is `rollbackReported`, and the counts behind both
@@ -3604,7 +3690,13 @@ namespace Heron.Revit.Addin
                     Json.Num("eventNamed", rolledBack.EventNamed),
                     Json.Str("keptJob", rolledBack.KeptJob),
                     Json.Num("keptChecked", rolledBack.KeptChecked),
-                    Json.Num("keptLost", rolledBack.Lost));
+                    Json.Num("keptLost", rolledBack.Lost),
+                    // A16b: of the elements read before the job, how many it
+                    // changed, how many were read again after the rollback,
+                    // and how many of those still did not read as before.
+                    Json.Num("changed", rolledBack.Changed),
+                    Json.Num("changedChecked", rolledBack.ChangedChecked),
+                    Json.Num("changedStanding", rolledBack.ChangedStanding));
             }
 
             return answer.Substring(0, answer.Length - 1)
@@ -3701,6 +3793,12 @@ namespace Heron.Revit.Addin
             // accept either. docs/36.
             public string Inputs;
 
+            // Q-89: HOW THE RUN THAT LEFT THESE WAS TAKEN BACK - a dry run, a
+            // proof's trial, a Discard (HeronBindingNote.TakenBack) - or null
+            // when what it left stands in the model. While it is set nothing
+            // here is bound, by name or by expectation.
+            public string TakenBack;
+
             public DateTime TouchedUtc;
         }
 
@@ -3778,6 +3876,16 @@ namespace Heron.Revit.Addin
                 try { return doc.GetElement(uniqueId) != null; }
                 catch { return null; }
             };
+        }
+
+        /// <summary>
+        /// "What does this element read now?" for HeronRollbackWitness - D-156's
+        /// reader, by UniqueId, or null when it could not be read. Used at once
+        /// and never stored, like Resolver.
+        /// </summary>
+        private static Func<string, HeronReadBack.Values> Reader(Document doc)
+        {
+            return uniqueId => RevitReadBack.One(doc, uniqueId);
         }
 
         /// <summary>
@@ -3911,7 +4019,7 @@ namespace Heron.Revit.Addin
         /// group neither kept nor rolled back - with the undo guard told
         /// first (D-157, row 5b-1607): what is on the undo list now is not
         /// something Heron can vouch for, so an older keep is no longer
-        /// offered to `undo_guarded`. The reply itself is handed back unchanged.
+        /// offered to `undo_own`. The reply itself is handed back unchanged.
         /// </summary>
         private static string LeftOpen(Document target, string name, string reply)
         {
@@ -3999,6 +4107,16 @@ namespace Heron.Revit.Addin
             {
                 wantedBy = expect.Substring(0, split).Trim();
                 wantedInputs = expect.Substring(split + 7).Trim();
+            }
+
+            // Q-89: LEFT BY A RUN THAT WAS TAKEN BACK - a dry run, a proof's
+            // trial, a Discard. Asked first: whatever is expected, everything
+            // carried was replaced by that run, and none of it may be bound.
+            if (chain != null && chain.Document == target.Title && chain.TakenBack != null)
+            {
+                return Json.Error("chain_taken_back",
+                    HeronBindingNote.CarriedFromTakenBack(wantedBy, chain.By, chain.TakenBack,
+                                                          target.Title));
             }
 
             // NOTHING CARRIED AT ALL. Said apart from a mismatch because they
@@ -4188,9 +4306,12 @@ namespace Heron.Revit.Addin
             prologue = "";
             binding = null;
 
-            // THIS CHAT'S carried values, and no other chat's.
+            // THIS CHAT'S carried values, and no other chat's - and none a run
+            // that was taken back left (Q-89): an expectation is refused for
+            // them below, and a need is never filled from them by name.
             var chain = ChainFor(client, false);
             var carried = chain != null && chain.Document == target.Title
+                          && chain.TakenBack == null
                 ? chain.Values : null;
 
             // THE EXPECTATION, CHECKED ONCE AND BEFORE ANYTHING BINDS.
@@ -4292,6 +4413,18 @@ namespace Heron.Revit.Addin
                     bound.Add(name);
                     lines.Append("bool ").Append(name).Append(" = true;\n");
                     how.Add(name + " - run with no transaction open (D-125)");
+                    continue;
+                }
+
+                // Q-86: the label that says the fragment waits for the
+                // modeller. Bound as a constant for D-125's reason - the
+                // declaration is the point, and Run holds the timers for it.
+                if (name == WaitsForModellerNeed)
+                {
+                    bound.Add(name);
+                    lines.Append("bool ").Append(name).Append(" = true;\n");
+                    how.Add(name + " - Revit waits for the modeller, and Heron holds its timers "
+                            + "for them (Q-86)");
                     continue;
                 }
 
@@ -4693,17 +4826,22 @@ namespace Heron.Revit.Addin
                                      Document target, HashSet<string> bound,
                                      string client,
                                      IDictionary<string, object> handedIn,
-                                     string ranWith)
+                                     string ranWith,
+                                     string takenBack = null)
         {
             // A caller that did not say who it is gets no chain - see ChainFor.
             var chain = ChainFor(client, true);
             if (chain == null) return;
 
-            if (chain.Document != target.Title) chain.Clear();
+            // Q-89: AND AFTER A RUN THAT WAS TAKEN BACK THE CHAIN STARTS AFRESH.
+            // Nothing that run left may be bound, and a name it left that this
+            // run does not write again would otherwise outlive the mark.
+            if (chain.Document != target.Title || chain.TakenBack != null) chain.Clear();
 
             chain.Document = target.Title;
             chain.By = name;
             chain.Inputs = ranWith;
+            chain.TakenBack = takenBack;
 
             foreach (var variable in state)
             {
@@ -7622,6 +7760,16 @@ namespace Heron.Revit.Addin
         /// brain/heron_fragment.py's AMBIENT.
         /// </summary>
         private const string NoTransactionNeed = "noTransactionOpen";
+
+        /// <summary>
+        /// The ambient need that says a fragment waits for the modeller -
+        /// Revit's own pick, answered by a click or Esc (Q-86). Run holds the
+        /// run clock and the dispatcher's wait for it on the read and show
+        /// paths and refuses it on a run that can change the model. The same
+        /// name is in brain/heron_fragment.py's AMBIENT and in the bridge
+        /// client's WAITS_FOR_MODELLER_NEED, which the chat's side waits by.
+        /// </summary>
+        private const string WaitsForModellerNeed = "waitsForModeller";
 
         /// <summary>
         /// The ambient need that hands a reloading fragment its answer to

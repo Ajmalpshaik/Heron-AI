@@ -46,6 +46,8 @@ question and the owner's. A warning a reader can disprove in a minute
 discredits the half that still matters.
 """
 
+import ntpath
+
 HEALTHY = "HEALTHY"
 WARNING = "WARNING"
 DEGRADED = "DEGRADED"
@@ -100,7 +102,7 @@ class Health(object):
 
 def assess(live=None, starting=None, mismatched=None, config_problems=None,
            writing=False, protocol_version=None, versions_agree=True,
-           discovery_readable=True):
+           discovery_readable=True, writing_said_by=None):
     """
     Build the picture from facts already gathered elsewhere.
 
@@ -108,6 +110,10 @@ def assess(live=None, starting=None, mismatched=None, config_problems=None,
     one reason: it makes this testable without Revit, without a bridge and
     without a config file - which is the only way it was ever going to be
     tested at all on the machine it was written on.
+
+    `writing_said_by` names who said `writing` when a Revit did (Q-70) - the
+    words writing_said_by() below gives. None leaves the write gate's words
+    exactly as they were: the caller's own settings file.
     """
     live = live or []
     starting = starting or []
@@ -177,18 +183,19 @@ def assess(live=None, starting=None, mismatched=None, config_problems=None,
             % ("" if protocol_version is None else " on protocol %s" % protocol_version)))
 
     # --- can Heron change the model right now? ----------------------------
+    said = " (%s)" % writing_said_by if writing_said_by else ""
     if writing:
         components.append(Component(
             "write gate", WARNING,
-            "write.enabled is TRUE, so Heron is permitted to change the model. Its move "
+            "write.enabled is TRUE%s, so Heron is permitted to change the model. Its move "
             "was measured once, in Revit 2024 on free ducts - D3 in NEEDS-CHECKING.md - and "
             "nothing else it can change has been measured that way; whether writing should "
             "be on is still the owner's decision (D-19) - set it back to false unless you "
-            "are deliberately testing it"))
+            "are deliberately testing it" % said))
     else:
         components.append(Component(
             "write gate", HEALTHY,
-            "closed - Heron cannot change the model"))
+            "closed%s - Heron cannot change the model" % said))
 
     return Health(components)
 
@@ -278,3 +285,162 @@ def ask_to_keep_line(asks):
     if isinstance(asks, str) and asks == ASK_TO_KEEP_NOT_SENT:
         return ASK_TO_KEEP_OLDER
     return ASK_TO_KEEP_NOT_READ
+
+
+# WHICH SETTINGS FILE A REVIT DECIDES BY, ITS SWITCHES, AND WHETHER THIS CHAT'S
+# COPY SAYS THE SAME - Q-70, decided 2026-11-15 on the owner's delegation.
+#
+# On a PC whose Claude app is a packaged app, Windows keeps a private copy of
+# the Heron folder for the app and everything it starts, so there are two
+# heron.config files: the chat reads the copy, and a Revit the owner started
+# reads the real one. Revit decides every change by its own (HeronPermissions
+# loads it on every call), so it is the one to believe. The add-in's `info`
+# says the file it read and Changes, Admin and Publish as it holds them
+# (heron_bridge_client.settings_state); revit_health prints the first line
+# below under each connected Revit, and a second when this chat's own copy
+# differs - by its name, or by a switch, Ask to Keep included.
+#
+# THE SAME NAME CAN BE TWO FILES. Measured on the owner's laptop on 2026-11-14
+# (NEEDS-CHECKING NP6): from the chat's shell the real path, spelled in full,
+# reads the app's copy. So a name that matches proves nothing on such a PC,
+# and the second line is said too when the names match and a switch does not,
+# or when one side found the file and the other did not.
+#
+# NOT A COMPONENT, for ask_to_keep_line's reason: one line per Revit, and no
+# setting is a fault. The rollup's write gate takes Changes from the Revits
+# that said it, and writing_said_by() names them.
+SETTINGS_NOT_SENT = "not sent"
+
+# (the key in settings_state's answer, the switch's name as Revit shows it)
+SETTINGS_SWITCHES = (("changes", "Changes"), ("admin", "Admin"),
+                     ("publish", "Publish"))
+
+SETTINGS_OLDER = (
+    "Switches: this Revit's Heron does not report its settings - its Heron add-in "
+    "is older than this chat's, so which settings file it decides by, and its "
+    "Changes, Admin and Publish switches, cannot be said here. Look in Revit, under "
+    "Heron > AI Bridge > Settings.")
+SETTINGS_NOT_READ = (
+    "Switches: Heron could not read this Revit's settings just now - it gave no "
+    "answer Heron could use. Ask again, or look in Revit, under Heron > AI Bridge > "
+    "Settings.")
+
+
+def _on(value):
+    return "on" if value else "off"
+
+
+def same_name(one, other):
+    """Whether two settings files are named alike, by Windows' rule - case and
+    separators aside. NOT whether they are one file: see above."""
+    if not one or not other:
+        return False
+    return ntpath.normcase(ntpath.normpath(one)) == ntpath.normcase(ntpath.normpath(other))
+
+
+def settings_differ(said, asks, here_file, here_found, here):
+    """
+    How this chat's own copy differs from what one Revit said: None when the
+    Revit said nothing usable, else {"named_alike", "found_differs",
+    "switches"}, where `switches` lists (name, this Revit's, this chat's) for
+    each that disagrees. Ask to Keep is compared only when `asks` is a real
+    true or false.
+
+    said        what heron_bridge_client.settings_state returned
+    asks        what heron_bridge_client.ask_to_keep_state returned
+    here_file   this chat's own settings file, or None when it has none
+    here_found  whether that file is there
+    here        heron_config.switches() of this chat's own copy
+    """
+    if not isinstance(said, dict):
+        return None
+    here = here or {}
+    named_alike = same_name(said.get("file"), here_file)
+    disagree = [(name, bool(said.get(key)), bool(here.get(key)))
+                for key, name in SETTINGS_SWITCHES
+                if bool(said.get(key)) != bool(here.get(key))]
+    if isinstance(asks, bool) and asks != bool(here.get("ask_to_keep")):
+        disagree.append(("Ask to Keep", asks, bool(here.get("ask_to_keep"))))
+    return {"named_alike": named_alike,
+            "found_differs": named_alike and bool(said.get("found")) != bool(here_found),
+            "switches": disagree}
+
+
+def differs(found):
+    """Whether settings_differ's answer means this chat's copy is not Revit's."""
+    return bool(found) and (not found["named_alike"] or found["found_differs"]
+                            or bool(found["switches"]))
+
+
+def _disagreement(switches):
+    """"Changes (this Revit: on, this chat's: off) and Admin (...)"."""
+    parts = ["%s (this Revit: %s, this chat's: %s)" % (name, _on(revit), _on(chat))
+             for name, revit, chat in switches]
+    return parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + " and " + parts[-1]
+
+
+def settings_lines(said, asks, here_file, here_found, here):
+    """
+    The line for what one Revit said of its settings, and a second when this
+    chat's own copy differs - each one line, in Revit's words; the arguments
+    are settings_differ's. An older add-in and an answer that could not be
+    read get one line each, and neither claims a switch or a file.
+    """
+    if isinstance(said, str) and said == SETTINGS_NOT_SENT:
+        return [SETTINGS_OLDER]
+    if not isinstance(said, dict):
+        return [SETTINGS_NOT_READ]
+
+    named = ", ".join("%s %s" % (name, _on(said.get(key)))
+                      for key, name in SETTINGS_SWITCHES)
+    if said.get("found"):
+        first = ("Switches in this Revit: %s - read just now from %s, the file this "
+                 "Revit decides every change by." % (named, said["file"]))
+    else:
+        first = ("Switches in this Revit: %s - each at its default, because this Revit "
+                 "found no settings file at %s." % (named, said["file"]))
+
+    found = settings_differ(said, asks, here_file, here_found, here)
+    if not differs(found):
+        return [first]
+
+    chat = here_file or "no settings file of its own"
+    believe = ("This Revit decides by its own file, so the switches above are the ones "
+               "that count.")
+    if not found["named_alike"]:
+        if found["switches"]:
+            second = ("This chat's own settings file differs from this Revit's: this chat "
+                      "reads %s, this Revit reads %s, and they disagree on %s. %s"
+                      % (chat, said["file"], _disagreement(found["switches"]), believe))
+        else:
+            second = ("This chat reads a different settings file from this Revit's: this "
+                      "chat reads %s, this Revit reads %s. The switches agree just now, but "
+                      "one pressed in this Revit is not seen in this chat's file. %s"
+                      % (chat, said["file"], believe))
+        return [first, second]
+
+    two = ("so this chat's copy and this Revit's are two files - a Claude app that keeps "
+           "its own copy of the Heron folder does this")
+    if found["switches"]:
+        second = ("This chat's own copy of the settings file differs from this Revit's, "
+                  "though both are named %s: they disagree on %s, %s. %s"
+                  % (said["file"], _disagreement(found["switches"]), two, believe))
+    else:
+        second = ("This chat's own copy of the settings file is not this Revit's, though "
+                  "both are named %s: this Revit %s a file there and this chat %s, %s. "
+                  "The switches agree just now. %s"
+                  % (said["file"], "found" if said.get("found") else "found no",
+                     "found one" if here_found else "found none", two, believe))
+    return [first, second]
+
+
+def writing_said_by(revits, writing):
+    """
+    Who said the write gate's Changes, for assess(writing_said_by=...).
+    `revits` are the sessions whose word it is - those with Changes on when
+    `writing`, else every one that said - each with .revit_version and .pid.
+    """
+    named = " and ".join("Revit %s, session %s" % (b.revit_version, b.pid) for b in revits)
+    if writing:
+        return "in %s, as %s has it" % (named, "that Revit" if len(revits) == 1 else "each")
+    return "as %s, %s it" % (named, "has" if len(revits) == 1 else "each have")

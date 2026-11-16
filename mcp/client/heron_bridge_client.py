@@ -240,7 +240,8 @@ CONVERSATION_ID = os.environ.get("HERON_CONVERSATION_ID") or uuid.uuid4().hex
 _ASKED = {}
 
 # Operations that touch no model, so they hold none and need no hand-back.
-_HOLDS_NOTHING = frozenset(("ping", "info", "release", "release_models", "stop"))
+_HOLDS_NOTHING = frozenset(("ping", "info", "release", "release_models", "stop",
+                            "stop_session"))
 
 # The keys the request envelope owns. An operation argument that reuses one of
 # them would overwrite it, and the failure that produces is remote and
@@ -879,6 +880,59 @@ def ask_to_keep_state(bridge):
     if said is _FIELD_MISSING:
         return ASK_TO_KEEP_NOT_SENT
     return said if isinstance(said, bool) else None
+
+
+# What settings_state answers for a Revit whose add-in answered `info` well and
+# named no settings file and no switches - an add-in from before 2026-11-16.
+# heron_health holds the same word, for the reason ASK_TO_KEEP_NOT_SENT's
+# comment gives.
+SETTINGS_NOT_SENT = "not sent"
+# The owner's three gate switches, as `info` names them - for the switch as
+# Revit shows it, never for its settings key (Q-70).
+SETTINGS_SWITCHES = ("changes", "admin", "publish")
+
+
+def settings_state(bridge):
+    """
+    The settings file this Revit decides every change by, and its Changes,
+    Admin and Publish switches, as that Revit's add-in read them at the
+    moment of this call (Q-70, decided 2026-11-15). One of THREE answers:
+
+        {"file": path, "found": bool, "changes": bool, "admin": bool,
+         "publish": bool}       what the add-in said; `found` is whether the
+                                file was there - not there, every switch is
+                                at its default
+        SETTINGS_NOT_SENT       `info` answered well and carries neither the
+                                file nor the switches - an older add-in
+        None                    no usable answer: nothing came back, it was
+                                refused, or a field is there and is not what
+                                the add-in sends - never a guess at the rest
+
+    From `info`, lease-exempt, so asking never claims the Revit. Ask to Keep
+    is ask_to_keep_state's, from the same answer, and is not read again here.
+
+    READ OFF A REPLY, NEVER PUT IN A REQUEST, and NEVER THIS SIDE'S OWN COPY
+    of heron.config: on a PC whose Claude app keeps a private copy of the
+    settings folder, that copy is not the file this answer names.
+    """
+    reply = bridge.request("info")
+    if not isinstance(reply, dict) or not reply.get("ok"):
+        return None
+    if "settingsFile" not in reply and "switches" not in reply:
+        return SETTINGS_NOT_SENT
+    path = reply.get("settingsFile")
+    found = reply.get("settingsFileFound")
+    switches = reply.get("switches")
+    if (not isinstance(path, str) or not path.strip() or not isinstance(found, bool)
+            or not isinstance(switches, dict)):
+        return None
+    said = {"file": path, "found": found}
+    for name in SETTINGS_SWITCHES:
+        value = switches.get(name)
+        if not isinstance(value, bool):
+            return None
+        said[name] = value
+    return said
 
 
 def refuse_off_windows():
@@ -1696,6 +1750,26 @@ def setup_order_refusal(steps):
 
 OWN_TRANSACTIONS_NEED = "editScopeFailures"
 
+# THE LABEL A CARD CARRIES WHEN IT WAITS FOR THE MODELLER - Q-86, decided
+# 2026-11-15: Revit's own pick, which returns when they click or press Esc.
+# The add-in's RevitFragment.WaitsForModellerNeed and brain/heron_fragment.py's
+# AMBIENT spell it the same way; tests/test_person_wait.py holds the three.
+WAITS_FOR_MODELLER_NEED = "waitsForModeller"
+
+
+def waits_for_modeller(needs):
+    """Does this card's `contract.needs` say it waits for the modeller?
+
+    NEEDS as `fragment_needs` reads them. The add-in holds its timers for such
+    a run - the run clock, and revit.askTimeoutSeconds more of the
+    dispatcher's wait, as for a Keep or Discard box - so whoever sends it
+    waits that much longer too (`heron_config.fragment_timeout(waiting=...)`).
+    Unreadable needs answer False: the caller refuses those by name anyway,
+    and a guess the other way would only lengthen a wait.
+    """
+    return any(isinstance(need, dict) and need.get("name") == WAITS_FOR_MODELLER_NEED
+               for need in needs or [])
+
 
 def opens_own_transactions(root, name):
     """Does this card declare D-112's switch - that it opens its own transactions?
@@ -2162,10 +2236,12 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None,
         # satisfied (the A20 run, 2026-10-01) - nor when it keeps a change,
         # which request()'s own docstring already says MUST pass False.
         # A RUN THAT KEEPS MAY BE ASKED ABOUT IN REVIT (D-126), so it waits for
-        # the modeller's answer too - see fragment_timeout.
+        # the modeller's answer too - see fragment_timeout. So does a card
+        # that waits for the modeller's click (Q-86): the longer of the two.
+        waited = max(heron_config.fragment_timeout(keeping=writing and apply_it),
+                     heron_config.fragment_timeout(waiting=waits_for_modeller(needs)))
         reply = bridge.request(operation, op_args=args,
-                               response_timeout=heron_config.fragment_timeout(
-                                   keeping=writing and apply_it),
+                               response_timeout=waited,
                                idempotent=not (expect or (writing and apply_it)))
 
         if reply is None:
@@ -2639,7 +2715,8 @@ def cmd_prove(names, in_document=None, values=None, session=None):
 
         reply = bridge.request("run_fragment_read",
                                op_args=args,
-                               response_timeout=heron_config.fragment_timeout())
+                               response_timeout=heron_config.fragment_timeout(
+                                   waiting=waits_for_modeller(needs)))
 
         if reply is None:
             print("%-30s NO REPLY" % name)
@@ -3247,8 +3324,12 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
         # NOT SAFE TO ASK TWICE when it writes (row 5b-1166): request() sends
         # an idempotent request again when its answer is lost, and a PUBLISH
         # fragment's export is a file the group's rollback does not take back.
+        # A CARD THAT WAITS FOR THE MODELLER'S CLICK is waited for as long as
+        # the add-in waits for it (Q-86) - see fragment_timeout.
         reply = bridge.request(write_op if writing else "run_fragment_read",
-                               op_args=args, response_timeout=heron_config.fragment_timeout(),
+                               op_args=args,
+                               response_timeout=heron_config.fragment_timeout(
+                                   waiting=waits_for_modeller(needs)),
                                idempotent=not writing)
         if reply is None:
             record = {"phase": phase, "ok": False, "error": "no_reply",
@@ -3584,14 +3665,23 @@ def cmd_stop(session=None):
     HERON_CLIENT_ID set the lease is the chat's own, mid-job, and handing it
     back would cut that chat off - so it is left alone.
 
-    ONE REVIT, NAMED WHEN THERE IS A CHOICE. This sent `stop` to every
-    connected Revit until row 5b-1094: on 2026-10-18 a stop meant for Revit
-    2024 was refused there and taken by another chat's idle Revit 2020,
-    which then refused every change until it was restarted. A stop lasts
-    until Revit restarts, so with two connected and no `--session` NOTHING
-    is sent and the Revits are listed - the refusal `fragment` gives.
-    Whether an idle Revit should take a stop from any client id is the
-    add-in's rule, not this one's, and is Q-71.
+    ONE REVIT, ALWAYS NAMED - Q-71, decided 2026-11-15. This sent `stop` to
+    every connected Revit until row 5b-1094: on 2026-10-18 a stop meant for
+    Revit 2024 was refused there and taken by another chat's idle Revit
+    2020, which then refused every change until it was restarted. Then it
+    asked for `--session` only when two were connected. A stop lasts until
+    Revit restarts, and the one Revit connected can be another chat's, idle,
+    so with no `--session` NOTHING is sent and every Revit is listed - one
+    or more - to choose from. A stop is a choice, never a broadcast.
+
+    THE REQUEST NAMES THE REVIT TOO. It is `stop_session`, carrying the
+    session as the add-in names itself - release and process id, "2024/63712"
+    - read from that Revit's own discovery record; the add-in stops only
+    when it is its own, and refuses the old `stop`, which named none. An
+    add-in from before that change stops on `stop` from anyone and does not
+    know `stop_session`, so it answers unknown_op - or, while a job holds
+    its thread, queues it behind that job and is busy - and is NOT stopped.
+    That is said here as what it is: that Revit's Heron is older.
     """
     if refuse_off_windows():
         return 2
@@ -3606,6 +3696,17 @@ def cmd_stop(session=None):
         report_mismatched(mismatched)
         return 1
 
+    if session is None:
+        print("A stop must name the Revit it is for. Connected:")
+        print("")
+        for b in live:
+            print("  --session %-8s Revit %s" % (b.pid, b.revit_version))
+        print("")
+        print("Nothing was sent, so no Revit was stopped. A stop lasts until that")
+        print("Revit is restarted, so it goes only to the one you name, e.g.:")
+        print("  stop --session %s" % live[0].pid)
+        return 2
+
     live, refusal = only_session(live, session)
     if refusal is not None:
         print(refusal)
@@ -3618,12 +3719,23 @@ def cmd_stop(session=None):
     failed = 0
     for index, bridge in enumerate(live):
         # The configured wait, not a literal of its own: the add-in answers
-        # `stop` at once, so a shorter one would buy nothing, and
+        # `stop_session` at once, so a shorter one would buy nothing, and
         # tests/test_config_and_health.py keeps literals to `release`.
-        reply = bridge.request("stop", timeout=2.0)
+        reply = bridge.request("stop_session", timeout=2.0, op_args={
+            "session": "%s/%s" % (bridge.revit_version, bridge.pid)})
         if reply is None:
             failed += 1
             print("%s  no reply" % describe(bridge, index))
+        elif reply.get("error") in ("unknown_op", "revit_busy"):
+            # An add-in from before Q-71's change: it does not know the named
+            # stop, or queued it behind the job its thread is running - an
+            # unknown name is refused only on Revit's thread (row 5b-1742). The
+            # new add-in answers it before the queue, so is never busy for it.
+            failed += 1
+            print("%s  The Heron add-in in Revit %s, session %s is older than this one and "
+                  "does not take a stop that names its Revit. Nothing was stopped. "
+                  "Updating Heron in that Revit adds it."
+                  % (describe(bridge, index), bridge.revit_version, bridge.pid))
         else:
             if not reply.get("ok"):
                 failed += 1

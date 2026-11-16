@@ -151,6 +151,17 @@ _KNOWN = {
     "stopped":           (REFUSED, FIX_FIRST,
                           "Heron has been stopped and will not send anything to Revit "
                           "until whoever stopped it lets it work again"),
+    # A STOP MUST NAME THE EXACT REVIT SESSION IT IS FOR (Q-71). The add-in
+    # refuses one that names none - the old `stop` - or names another Revit,
+    # before HeronStop is touched: nothing was stopped and Heron there works
+    # as before. FIX_FIRST: the same stop is refused the same way until it
+    # names that Revit's own session.
+    "stop_unnamed":      (REFUSED, FIX_FIRST,
+                          "the stop did not name the Revit it is for, so nothing was stopped - "
+                          "a stop must name that Revit's own session"),
+    "stop_wrong_session": (REFUSED, FIX_FIRST,
+                          "the stop named another Revit session than the one that answered, so "
+                          "nothing was stopped there"),
 
     # --- the approval was stale, so it was refused before touching anything -
     "no_preview":        (REFUSED, START_OVER, "there was nothing waiting to be approved"),
@@ -236,6 +247,12 @@ _KNOWN = {
                           "Revit is still showing the modeller the box asking whether to "
                           "delete these, and Heron stopped waiting - nothing is deleted now, "
                           "whatever they press"),
+    # Q-86: a card that waits for the modeller's click, and Revit is still in
+    # its pick after the longer wait it was given. The pick goes on; a click
+    # made now reaches no chat. Asking again while it waits queues a second.
+    "awaiting_click":    (RUNNING, WAIT,
+                          "Revit is still waiting for the modeller to click or press Esc, "
+                          "and Heron stopped waiting - a click made now reaches no chat"),
     "move_failed":       (ROLLED_BACK, FIX_FIRST,
                           "it ran, failed, and was rolled back completely"),
     "operation_failed":  (ROLLED_BACK, FIX_FIRST,
@@ -285,6 +302,12 @@ _KNOWN = {
     "opens_own_transaction": (REFUSED, STOP,
                           "the fragment opens a Revit transaction of its own where none may "
                           "be opened - nothing ran"),
+    # Q-86: a card that waits for the modeller asked for as a change. Heron
+    # holds its timers for a person only where nothing in the model can
+    # change, so the add-in refuses it before anything runs.
+    "waits_on_change_path": (REFUSED, FIX_FIRST,
+                          "this fragment waits for the modeller to click in Revit, and runs "
+                          "only as a read or a show - nothing ran"),
     "not_implemented":   (REFUSED, STOP,
                           "the operation is declared and not built yet"),
     "worksets_unreadable": (REFUSED, FIX_FIRST,
@@ -338,6 +361,13 @@ _KNOWN = {
     "chain_contradiction": (REFUSED, FIX_FIRST,
                           "the request both resets the chain and expects to consume from "
                           "it, so it could only fail"),
+    # Q-89, decided 2026-11-15: what a run that was taken back left - a dry run,
+    # a proof's trial, a Discard - is never handed on. The add-in refuses it
+    # before anything binds, so nothing ran.
+    "chain_taken_back":  (REFUSED, START_OVER,
+                          "what is carried was left by a run that was taken back - a dry "
+                          "run, a proof's trial or a Discard - so it is of a change Revit "
+                          "no longer holds. Nothing was bound and no fragment ran"),
 
     # --- a picture for the chat (capture_view, D-123) ----------------------
     #

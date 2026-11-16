@@ -105,7 +105,7 @@ NOT BUILT            Not in the plan yet         marketplace, other platforms, m
 | 3 — The BIM surface | **Built**, not proven | `python tools/agent-count.py` |
 | 4 — Learning and trust | **Built early**, not proven | `python brain/heron_gaps.py` · `python tools/agent-count.py` |
 | 5 — Code generation | **Built early:** the run-time compile; no fragment has reached `PRODUCTION` | [D-28](DECISIONS.md) · the `grep` above |
-| 6 — Platform | **Measured.** v0.1.0 published 2026-10-08, unsigned, for testing — [D-91](DECISIONS.md) says a release is signed, and [Q-77](open-questions/tier-2.md) asks whether a decision should say otherwise until signing is built; the installer, built locally from `main`, run on the owner's laptop on 2026-10-17 and 18 — EP1 fetched the add-in from v0.1.0 | [Group AC](needs-checking/group-ac.md) · [Group EP](needs-checking/group-ep.md) |
+| 6 — Platform | **Measured.** v0.1.0 published 2026-10-08, unsigned, for testing — since [D-173](decisions/D-173.md), the owner's answer to [Q-77](open-questions/tier-2.md) on 2026-11-16, a release is versioned and checksummed, says plainly it is unsigned, and is signed before Heron is given to anyone outside; the installer, built locally from `main`, run on the owner's laptop on 2026-10-17 and 18 — EP1 fetched the add-in from v0.1.0 | [Group AC](needs-checking/group-ac.md) · [Group EP](needs-checking/group-ep.md) |
 | 7 — Scale | **Built in part:** the company standard (`brain/heron_company.py`) and the agent creator (`brain/heron_creator.py`) | `python tools/agent-count.py` |
 | Not in the plan yet | **Not built** | [the table below](#what-is-deliberately-not-in-the-plan-yet) |
 
@@ -277,7 +277,8 @@ been run in Revit ([Group EQ](needs-checking/group-eq.md), [Group GW](needs-chec
   stop went to every connected Revit, and a Revit 2020 whose lease nobody held took the stranger's
   ([Group EZ](needs-checking/group-ez.md), EZ3; [row 5b-1094](fragment-issues/section-5b-rows-401-425.md)).
   `--session` is the fix for the first half, not yet run with two Revits (EZ6); whether a free Revit
-  should take any client's stop is [Q-71](open-questions/tier-2.md)
+  should take any client's stop was [Q-71](open-questions/tier-2.md), decided 2026-11-15 - a stop names
+  the exact Revit session it is for - and built 2026-11-16, not yet run in Revit (EZ7 to EZ9)
   *([21 §4](21-resilience-and-operations.md))*
 - Failure handling that does not retry blindly
 - **Golden Test Library** started — it only has value if it grows from day one *(Part 4 §28)*

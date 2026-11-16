@@ -218,17 +218,21 @@ TOOLS = {
     # takes a change out of the model and needs Changes ON. The add-in posts
     # Undo only while it saw Heron's change land and has seen nothing change
     # that model since - Revit has no API that reads its undo list, so that is
-    # all that is known. With `check_only` it sends `undo_check` instead, which
-    # the add-in declares READ: it posts nothing, and answers with Changes off.
-    # The tool stays MODIFY - its risk is the most it can do.
+    # all that is known. With `check_only` it sends `undo_own_check` instead,
+    # which the add-in declares READ: it posts nothing, and answers with
+    # Changes off. The tool stays MODIFY - its risk is the most it can do.
     #
-    # THE OPERATION IS `undo_guarded`, NOT THE FIRST BUILD'S `undo_last` (row
-    # 5b-1604). A Revit still running that build knows the old name and would
-    # post by its old rule - the shared Project Information id, every keep
-    # counted as on top - whatever else this request carried. It does not
-    # know this one, so it answers `unknown_op`, nothing is posted, and the
-    # chat is told that Revit's Heron is older. One request, no window.
-    "revit_undo_last":          (MODIFY,  "undo_guarded"),
+    # ONLY THE CHAT THAT MADE A CHANGE MAY UNDO IT (Q-88, 2026-11-16). The
+    # add-in records which chat kept each change - the conversation every
+    # request of this server process carries (D-141) - and refuses every other
+    # chat, in the same request that would post. Ctrl+Z in Revit still works.
+    #
+    # THE OPERATION IS `undo_own` - NOT THE FIRST BUILD'S `undo_last` (row
+    # 5b-1604), NOR `undo_guarded`, which an add-in built before Q-88 answers
+    # by posting for whichever chat's change is on top. An add-in that knows
+    # only an older name answers `unknown_op`, nothing is posted, and the chat
+    # is told that Revit's Heron is older. One request, no window.
+    "revit_undo_last":          (MODIFY,  "undo_own"),
 
     # The brain, reachable. These three read what Heron KNOWS - the skills, the
     # capability registry and the fragment library - and none of them sends

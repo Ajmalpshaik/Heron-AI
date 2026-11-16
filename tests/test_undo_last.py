@@ -66,6 +66,19 @@ checks this file already made were wrong, and are changed rather than defended:
   - the rollback witness was held to `return RevitUndo.KeyOf(doc);`, a third
     copy of RevitOperations.DocumentKey. It is held to the one owner.
 
+Q-88, 2026-11-16: ONLY THE CHAT THAT MADE A CHANGE MAY UNDO IT. The keep
+tells the guard which chat kept it - the request's conversation (D-141) - and
+the request that posts asks the guard whose change it is, after the D-157
+rule and before the post: one request, no window. The operation is `undo_own`
+and its check `undo_own_check`; `undo_guarded` and `undo_check` post nothing
+any more - an add-in built before answers them by its older rule, so the chat
+never sends them, and a chat started before is refused by this one. Seen to
+fail on the code as it stood. THE ASSERTIONS THAT PINNED THE REQUEST'S OLD
+MEANING WERE CHANGED, not defended: the keep's signature, its call to the
+guard and its two callers (no chat); `undo_guarded` declared MODIFY and
+routed to RevitUndo.Last; `undo_check` routed there with
+`Gate("undo_guarded")`; and the tool sending `undo_guarded` / `undo_check`.
+
 IT EXITS 3 WHEN .NET IS ABSENT AND THE WIRING PASSED, and that is NOT a pass.
 """
 
@@ -119,15 +132,17 @@ def wiring():
     print("\n1. the keep tells the guard what Revit counted, after Assimilate")
     keep = NOTE.body_of(code, "string KeepAndWatch(")
     check(re.search(r"string KeepAndWatch\(\s*TransactionGroup group,\s*Document doc,\s*"
-                    r"HeronRollbackWitness\.Watch watch,\s*int counted,\s*bool read\)", code)
+                    r"HeronRollbackWitness\.Watch watch,\s*int counted,\s*bool read,\s*"
+                    r"string chat\)", code)
           is not None,
-          "KeepAndWatch is handed what Revit counted in the job, and whether all of it was "
-          "read - a keep cannot be told to the guard without them")
+          "KeepAndWatch is handed what Revit counted in the job, whether all of it was "
+          "read, and the chat that kept it (Q-88) - a keep cannot be told to the guard "
+          "without them")
     check(in_order(keep, "group.Assimilate() != TransactionStatus.Committed",
-                   "Undo.Kept(key,", "DateTime.Now, counted, read)", "Witness.Assimilated("),
-          "the guard is told only once Assimilate committed, WITH the count - a job Revit "
-          "counted nothing in left no undo entry - and before the witness, so a witness "
-          "that throws cannot lose it")
+                   "Undo.Kept(key,", "DateTime.Now, counted, read, chat)", "Witness.Assimilated("),
+          "the guard is told only once Assimilate committed, WITH the count and the chat - a "
+          "job Revit counted nothing in left no undo entry, and only the chat that kept one "
+          "may undo it - and before the witness, so a witness that throws cannot lose it")
     unkept = NOTE.body_of(keep, "if (group.Assimilate() != TransactionStatus.Committed)")
     check("RevitUndo.Doubt(doc," in unkept,
           "a group Revit did not report kept is not left looking as it did: the guard doubts")
@@ -136,17 +151,34 @@ def wiring():
           "and a keep the guard could not be told of makes every model refuse")
     run = NOTE.body_of(code, "public static string Run(")
     check(re.search(r"KeepAndWatch\(\s*group,\s*target,\s*watch,\s*described == null \? 0 : "
-                    r"described\.Total,\s*described != null && described\.Unreadable == 0\)",
-                    run) is not None,
+                    r"described\.Total,\s*described != null && described\.Unreadable == 0,"
+                    r"\s*client\)", run) is not None
+          and in_order(run, "var client = HeronConversation.ChatOf(",
+                       "Json.ReadString(request, HeronConversation.EnvelopeField)",
+                       "KeepAndWatch(group, target, watch,"),
           "a fragment job's keep passes Revit's own count - added, changed and deleted, "
-          "setup steps included - and whether an event went unread")
+          "setup steps included - whether an event went unread, and the request's own "
+          "conversation as the chat that kept it (Q-88)")
     move = NOTE.code_only(NOTE.read(MOVE) or "")
-    check("RevitFragment.KeepAndWatch(group, doc, watch, reallyMoved + partly, true)" in move,
-          "a move's keep passes how many elements were verified to have moved")
+    check("RevitFragment.KeepAndWatch(group, doc, watch, reallyMoved + partly, true, chat)" in move
+          and re.search(r'ExecuteMove\(app,\s*Json\.ReadString\(request,\s*""\),\s*'
+                        r"HeronConversation\.ChatOf\(\s*Json\.ReadString\(request,\s*"
+                        r"HeronConversation\.EnvelopeField\)\)\)", move) is not None
+          and "string ExecuteMove(UIApplication app, string token, string chat)" in move,
+          "a move's keep passes how many elements were verified to have moved, and the "
+          "conversation of the request that moved them")
     loose = [name for name, text in (("RevitFragment.cs", code), ("RevitWrite.cs", move))
              if re.search(r"KeepAndWatch\(\s*\w+,\s*\w+,\s*\w+\s*\)", text)]
     check(not loose, "and no keep anywhere is made without a count%s"
           % ("" if not loose else " - found in " + ", ".join(loose)))
+    chatless = [name for name, text in (("RevitFragment.cs", code), ("RevitWrite.cs", move))
+                for args in re.findall(r"\bKeepAndWatch\(\s*group\s*,(.*?)\);", text, re.S)
+                if args.strip().split(",")[-1].strip() not in ("client", "chat")]
+    found_keeps = sum(len(re.findall(r"\bKeepAndWatch\(\s*group\s*,", text))
+                      for text in (code, move))
+    check(found_keeps == 2 and not chatless,
+          "and no keep anywhere is made without the chat that kept it - %d keep(s) found%s"
+          % (found_keeps, "" if not chatless else ", without one in " + ", ".join(chatless)))
 
     print("\n2. the permanent listener tells it every change, before the witness's early return")
     listener = NOTE.body_of(code, "void OnDocumentChanged(")
@@ -230,12 +262,20 @@ def wiring():
     last = NOTE.body_of(op, "public static string Last(")
     check(in_order(last, "NotThePinned(app, request, doc)",
                    "Guard.Refusal(key, doc.Title, true, canPost)",
+                   "if (refusal == null)",
+                   "refusal = Guard.ChatRefusal(key, doc.Title, HeronConversation.ChatOf(",
+                   "Json.ReadString(request, HeronConversation.EnvelopeField)",
+                   "if (refusal != null) code =",
                    "if (checkOnly) return Checked(",
                    "if (refusal != null) return Json.Error(",
                    "app.PostCommand(undo);",
                    "Guard.SentFor(key, DateTime.Now);"),
-          "the pinned model, then the guard, then the post - and marked sent after it, so a "
-          "second request before Revit reports it is refused")
+          "the pinned model, then the guard, then WHOSE change it is (Q-88) - asked of the "
+          "request that posts, by its own conversation - then the post, and marked sent "
+          "after it, so a second request before Revit reports it is refused")
+    check(last.count("Guard.ChatRefusal(") == 1 and op.count("ChatRefusal(") == 1,
+          "the chat is asked in that one place: one request, nothing checked in one and "
+          "posted in another")
     pinned = NOTE.body_of(op, "static string NotThePinned(")
     check(in_order(pinned, "string.IsNullOrEmpty(wantedPath) && string.IsNullOrEmpty(wanted)",
                    "return", "RevitOperations.HoldTarget(app, request)",
@@ -310,18 +350,41 @@ def wiring():
 
     print("\n7. it is MODIFY, its check is READ, both routed, and the rule names nothing of Revit's")
     registry = NOTE.read(REGISTRY) or ""
-    check(re.search(r'\{\s*"undo_guarded",\s*HeronRisk\.Modify\s*\}', registry) is not None,
-          "undo_guarded is declared MODIFY, so it needs Changes ON like any change")
-    check(re.search(r'\{\s*"undo_check",\s*HeronRisk\.Read\s*\}', registry) is not None,
-          "undo_check is declared READ: it sends nothing, so it answers with Changes off")
-    check(re.search(r'case "undo_guarded":\s*return RevitUndo\.Last\(app, request, false, null\);',
+    check(re.search(r'\{\s*"undo_own",\s*HeronRisk\.Modify\s*\}', registry) is not None,
+          "undo_own is declared MODIFY, so it needs Changes ON like any change")
+    check(re.search(r'\{\s*"undo_own_check",\s*HeronRisk\.Read\s*\}', registry) is not None,
+          "undo_own_check is declared READ: it sends nothing, so it answers with Changes off")
+    check(re.search(r'case "undo_own":\s*return RevitUndo\.Last\(app, request, false, null\);',
                     raw_operations) is not None,
-          "undo_guarded is routed to RevitUndo.Last with the whole request - the pinned "
-          "model is named in it")
-    check(re.search(r'case "undo_check":\s*return RevitUndo\.Last\(app, request, true, '
-                    r'Gate\("undo_guarded"\)\);', raw_operations) is not None,
-          "undo_check to the same code with nothing sent, told what the switches would "
+          "undo_own is routed to RevitUndo.Last with the whole request - the pinned model "
+          "is named in it, and the chat is its conversation")
+    check(re.search(r'case "undo_own_check":\s*return RevitUndo\.Last\(app, request, true, '
+                    r'Gate\("undo_own"\)\);', raw_operations) is not None,
+          "undo_own_check to the same code with nothing sent, told what the switches would "
           "answer the real one")
+    # Q-88: THE NAMES A CHAT STARTED BEFORE STILL SENDS POST NOTHING. An add-in
+    # built before answers `undo_guarded` by posting for whichever chat's change
+    # is on top, so the chat never sends it; this add-in answers it - and
+    # `undo_check` - with a refusal, at READ, so no Changes switch stands
+    # between that chat and the reason.
+    older = NOTE.body_of(op, "static string OlderChat(")
+    check(re.search(r'\{\s*"undo_guarded",\s*HeronRisk\.Read\s*\}', registry) is not None
+          and re.search(r'\{\s*"undo_check",\s*HeronRisk\.Read\s*\}', registry) is not None
+          and re.search(r'case "undo_guarded":\s*return RevitUndo\.OlderChat\(false\);',
+                        raw_operations) is not None
+          and re.search(r'case "undo_check":\s*return RevitUndo\.OlderChat\(true\);',
+                        raw_operations) is not None
+          and operations.count("RevitUndo.Last(") == 2,
+          "undo_guarded and undo_check, the names a chat started before Q-88 sends, are READ "
+          "and answered by OlderChat - never by RevitUndo.Last, which can post")
+    raw_older = NOTE.body_of(raw_op, "static string OlderChat(")
+    check(bool(older) and "PostCommand" not in older and "Guard." not in older
+          and 'Json.Error("undo_refused"' in raw_older
+          and "Nothing was sent to Revit and nothing was undone." in raw_older
+          and "Ctrl+Z in Revit still undoes" in raw_older,
+          "and OlderChat posts nothing, asks the guard nothing, and refuses as undo_refused - "
+          "which that chat's Heron already reads as a refusal - saying nothing was sent and "
+          "that Ctrl+Z still works")
     # THE FIRST BUILD'S NAME ANSWERS NOTHING (row 5b-1604, the second review).
     # That build posts on the shared id and counts every keep as on top; a
     # Revit still running it knows `undo_last`. So the repaired pair never
@@ -331,11 +394,11 @@ def wiring():
     check(re.search(r'\{\s*"undo_last"\s*,', registry) is None
           and 'case "undo_last":' not in raw_operations,
           "the first build's operation name, undo_last, is declared and routed nowhere")
-    check('"revit_undo_last":          (MODIFY,  "undo_guarded")' in tools_text
-          and re.search(r'session\.request\(\s*"undo_last"', server_text) is None
-          and '"undo_check" if check_only else "undo_guarded"' in server_text,
-          "and the chat's tool sends undo_guarded, never undo_last - an add-in without the "
-          "repair answers that it has no such operation, and nothing is posted")
+    check('"revit_undo_last":          (MODIFY,  "undo_own")' in tools_text
+          and re.search(r'session\.request\(\s*"undo_(last|guarded|check)"', server_text) is None
+          and '"undo_own_check" if check_only else "undo_own"' in server_text,
+          "and the chat's tool sends undo_own, never undo_guarded or undo_last - an add-in "
+          "built before Q-88 answers that it has no such operation, and nothing is posted")
     with_state = NOTE.body_of(code, "string WithUndoState(")
     check("WithUndoState(verdict, target)" in run and "RevitUndo.StateOf(doc)" in with_state,
           "a kept reply carries what the guard holds straight after the keep")

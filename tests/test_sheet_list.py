@@ -339,11 +339,9 @@ def section_answer(folder):
     check("sheetNumbers=M-101, M-102, 105" in draft and "FIND_SHEETS through revit_read" in draft,
           "the numbers for FIND_SHEETS, the read that says which are already used")
     proven = L.chat_answer(got, status="PROVEN")
-    # The owner chose this wording on 2026-11-15 ("Wording B", row 5b-1641):
-    # the words the sheets-from-excel and cad-to-mep methods already use.
     check("revit_change with previewOnly=true first" in proven and "try-once" not in proven
           and proven.count(value) == 1,
-          "once PROVEN: revit_change with previewOnly=true, previewing first, the value once")
+          "once PROVEN: revit_change, previewing first, the value once")
     check(L.chat_answer({"ok": False, "refused": "'x' was not read: because"}) == "'x' was not read: because",
           "a refusal is said as it is")
 

@@ -78,7 +78,12 @@ WHAT IT PROVES, when an SDK is installed
      several Revits connected and for the add-in's no_document and the pin,
      "failed" for a lost answer and revit_busy, and "ok" for a good reply
      from a model whose very name says Failed; revit_edit_table hands back
-     the label revit_read gave the answer it hands back.
+     the label revit_read gave the answer it hands back. AND revit_health
+     STATES EACH REVIT'S OWN SWITCHES (Q-70): four stand-in add-ins - the
+     chat's own file, one name with a differing value, a differing path, an
+     older add-in - each with its line, one more where the chat's copy
+     differs, the write gate Revit's, and the chat's copy used only when no
+     Revit said.
  13. THE SHORT CHANGE REPORT, THROUGH THE REAL TOOL (row 5b-407). Two kept
      changes in one batch: the first prints the KEPT paragraph whole and
      every value, the second the add-in's one sentence - the undo rule
@@ -149,7 +154,9 @@ WHAT IT PROVES, when an SDK is installed
      known; the Changes switch off, and with Changes on the Admin switch;
      no Revit with the Heron button on; and nothing in the way, with an
      address-book entry for Revit 2024 - which is left out, and the answer
-     not AVAILABLE, once its process is gone. Off Windows it says no Revit
+     not AVAILABLE, once its process is gone. Where revit_health found that
+     Revit's settings file is not this PC's, it judges by what that Revit
+     said, and says when (Q-70). Off Windows it says no Revit
      is here and judges no switch. Through all of it discover() is never
      called and no session is sent a request, the address book is left as
      it was, and a capability nobody provides is not noted as wanted.
@@ -1141,13 +1148,14 @@ async def exercise_show(module):
                        "said": "Revit's own Undo was sent for 'rename-views-by-level'."}
         said = await call("revit_undo_last", {})
         op, args, idempotent = revit.asked[-1] if revit.asked else (None, {}, None)
-        # THE OPERATION WAS `undo_last` UNTIL THE SECOND REVIEW OF 2026-11-12. The
-        # first build of this tool knows that name and posts by its old rule,
-        # so the repaired tool never sends it (exercise_undo, the first-build
-        # stand-in). What is held here is unchanged: the pin, sent once.
-        check(op == "undo_guarded" and args.get("expectProject") == "key-1"
+        # THE OPERATION WAS `undo_last` UNTIL THE SECOND REVIEW OF 2026-11-12,
+        # AND `undo_guarded` UNTIL Q-88 (2026-11-16). An add-in built before
+        # each knows the older name and posts by its older rule, so the tool
+        # never sends it (exercise_undo, the stand-ins for both). What is held
+        # here is unchanged: the pin, sent once.
+        check(op == "undo_own" and args.get("expectProject") == "key-1"
               and idempotent is False,
-              "revit_undo_last sends undo_guarded with the pin, never safe to resend - found "
+              "revit_undo_last sends undo_own with the pin, never safe to resend - found "
               "%r %r %r" % (op, args, idempotent))
         check("Undo was sent for 'rename-views-by-level'" in said,
               "and says, in the add-in's words, that Undo was SENT")
@@ -1177,7 +1185,14 @@ async def exercise_undo(module):
       - an Undo an older add-in posted in ANOTHER model is said to have been
         SENT, and where - never "Nothing has been sent to Revit";
       - with no pin nothing is sent at all;
-      - check_only sends `undo_check`, never `undo_last`;
+      - check_only sends `undo_own_check`, never `undo_check` or `undo_last`;
+      - ONLY THE CHAT THAT MADE A CHANGE MAY UNDO IT (Q-88, 2026-11-16): the
+        add-in decides it by the conversation the bridge puts on every
+        request, so the tool sends `undo_own` and no argument names a chat;
+        against a stand-in add-in that keeps Q-88's rule, this chat's own
+        change is undone and another chat's is refused with nothing sent; and
+        an add-in built before Q-88 - which posts on `undo_guarded` for
+        whichever chat's change is on top - is never asked to post;
       - and a KEPT change ends on one line saying whether Heron can still undo
         it, from the add-in's own field - nothing when there is none.
     """
@@ -1216,13 +1231,20 @@ async def exercise_undo(module):
         pin()
         said = await call("revit_undo_last", {})
         op, args, idempotent = revit.asked[-1] if revit.asked else (None, {}, None)
-        check(op == "undo_guarded" and idempotent is False
+        check(op == "undo_own" and idempotent is False
               and args.get("document") == "Project1"
               and args.get("documentPath") == "C:/jobs/Project1.rvt"
               and args.get("expectProject") == "key-1",
-              "it sends undo_guarded and names the pinned model as a kept change does - its "
+              "it sends undo_own and names the pinned model as a kept change does - its "
               "path and title, not the template's shared id alone - never safe to resend: found %r %r"
               % (op, sorted(args)))
+        # WHICH CHAT is the envelope's, never an argument: the bridge puts the
+        # conversation on every request of this process and refuses an
+        # argument that would set it (RESERVED_KEYS, D-141).
+        check(not any(word in args for word in ("conversation", "chat", "client"))
+              and "conversation" in getattr(module.bridge, "RESERVED_KEYS", ()),
+              "and no argument names the chat - the add-in reads it from the request's own "
+              "conversation, which no argument can set: found %r" % sorted(args))
         check(word(said) == "STILL RUNNING"
               and said.startswith("Revit's own Undo was sent for 'rename-views-by-level'")
               and "Heron has seen nothing change this model since" in said,
@@ -1299,6 +1321,121 @@ async def exercise_undo(module):
               "a check there says the same, and sends nothing either")
         pin()
 
+        # A REVIT RUNNING AN ADD-IN BUILT BEFORE Q-88 (2026-11-16). It knows
+        # `undo_guarded` and `undo_check`, records no chat with a keep, and
+        # posts for Heron's last change in the model WHICHEVER chat kept it.
+        # It must never be asked to post: it does not know `undo_own`.
+        class BeforeQ88(StandIn):
+            posted = 0
+
+            def request(self, op, op_args=None, idempotent=True, **_ignored):
+                self.asked.append((op, dict(op_args or {}), idempotent))
+                if op == "undo_guarded":
+                    BeforeQ88.posted += 1
+                    return dict(sent)
+                if op == "undo_check":
+                    return dict(model, ok=True, checked=True, sent=False, wouldSend=True,
+                                said="Yes - Undo would be sent now, for 'another-chats-job'.")
+                return {"ok": False, "error": "unknown_op",
+                        "message": "Heron has no operation called '%s'. It has: ping, info, "
+                                   "undo_check, undo_guarded." % op}
+
+        before_q88 = BeforeQ88(None)
+        module.binding.resolve = lambda: before_q88
+        try:
+            pin()
+            said = await call("revit_undo_last", {})
+            checked = await call("revit_undo_last", {"check_only": True})
+        finally:
+            module.binding.resolve = lambda: revit
+        asked_old = [op for op, _a, _i in before_q88.asked]
+        check(BeforeQ88.posted == 0 and "undo_guarded" not in asked_old
+              and "undo_check" not in asked_old,
+              "a Revit whose add-in was built before Q-88 is never asked to post - undo_guarded, "
+              "which it answers by undoing whichever chat's change is on top, is not sent: "
+              "asked %r" % asked_old)
+        check(word(said) == "NOT RUN" and "is older than this chat's Heron" in said
+              and "cannot safely send Undo" in said and "Nothing was sent to Revit" in said
+              and "Ctrl+Z" in said and "no operation called" not in said,
+              "and the chat is told, in Revit's words, that Revit's Heron is older, that nothing "
+              "was sent, and that Ctrl+Z still works - found %r" % said[:160])
+        check(word(checked) == "NOT RUN" and "cannot check this" in checked
+              and "Yes - Undo would be sent" not in checked,
+              "a check there is not answered by the older rule either - never a 'yes' for "
+              "another chat's change: found %r" % checked[:120])
+        pin()
+
+        # TWO CHATS, ONE MODEL (Q-88): a stand-in add-in with the rule this
+        # change built - it records the chat a keep came from, the
+        # conversation the bridge puts on every request of a process, and
+        # sends Undo only for the chat that kept the model's last change.
+        this_chat = getattr(module.bridge, "CONVERSATION_ID", None)
+        other_chat = "f0e1d2c3b4a5968778695a4b3c2d1e0f"
+        check(bool(this_chat) and this_chat != other_chat,
+              "this chat's server has a conversation of its own to be told apart by")
+        refused_other = ("Heron's last change in \"Project1\", 'rename-views-by-level' at "
+                         "14:32, was made in another chat, not this one, and only the chat "
+                         "that made a change sends Undo for it. Nothing was sent to Revit and "
+                         "nothing was undone. Ctrl+Z in Revit still undoes it - or ask in the "
+                         "chat that made it.")
+
+        class TwoChats(StandIn):
+            def __init__(self):
+                StandIn.__init__(self, None)
+                self.kept_by = None
+                self.posted = 0
+
+            def request(self, op, op_args=None, idempotent=True, **_ignored):
+                self.asked.append((op, dict(op_args or {}), idempotent))
+                if op not in ("undo_own", "undo_own_check"):
+                    return {"ok": False, "error": "unknown_op",
+                            "message": "Heron has no operation called '%s'." % op}
+                mine = self.kept_by is not None and self.kept_by == this_chat
+                if op == "undo_own_check":
+                    return dict(model, ok=True, checked=True, sent=False, wouldSend=mine,
+                                said=("Yes - Undo would be sent now, for "
+                                      "'rename-views-by-level'." if mine else
+                                      "No - Undo would not be sent now. " + refused_other)
+                                     + " This was only a check: nothing was sent to Revit.")
+                if not mine:
+                    return {"ok": False, "error": "undo_refused", "message": refused_other}
+                self.posted += 1
+                return dict(sent)
+
+        chats = TwoChats()
+        module.binding.resolve = lambda: chats
+        try:
+            pin()
+            chats.kept_by = other_chat          # the other chat kept the last change
+            refused = await call("revit_undo_last", {})
+            checked_other = await call("revit_undo_last", {"check_only": True})
+            chats.kept_by = this_chat           # this chat kept it
+            own = await call("revit_undo_last", {})
+        finally:
+            module.binding.resolve = lambda: revit
+        check(word(refused) == "REFUSED"
+              and "was made in another chat, not this one" in refused
+              and "Nothing was sent to Revit and nothing was undone" in refused
+              and "Ctrl+Z in Revit still undoes it" in refused
+              and "WAS SENT" not in refused,
+              "another chat's change: REFUSED, nothing sent, in the add-in's words - this chat "
+              "did not make Heron's last change in that model, and Ctrl+Z still undoes it: "
+              "found %r" % refused[:200])
+        check(word(checked_other) == "ANSWERED"
+              and checked_other.startswith("No - Undo would not be sent now.")
+              and "made in another chat" in checked_other,
+              "and a check says no, for that reason, with nothing sent - found %r"
+              % checked_other[:120])
+        check(chats.posted == 1 and word(own) == "STILL RUNNING"
+              and own.startswith("Revit's own Undo was sent for 'rename-views-by-level'"),
+              "this chat's own change: Undo SENT, once - STILL RUNNING, in the add-in's words: "
+              "found %r (posted %d)" % (own[:120], chats.posted))
+        check([op for op, _a, _i in chats.asked] == ["undo_own", "undo_own_check", "undo_own"],
+              "one request each, and nothing checked first and posted second - the add-in "
+              "decides whose change it is in the request that posts: asked %r"
+              % [op for op, _a, _i in chats.asked])
+        pin()
+
         # TWO PROJECTS FROM ONE TEMPLATE share the Project Information id, so
         # `projectKey` cannot tell them apart (row 5b-324). An add-in that
         # checked only that id posted Undo in the wrong one.
@@ -1348,11 +1485,12 @@ async def exercise_undo(module):
         before = len(revit.asked)
         said = await call("revit_undo_last", {"check_only": True})
         asked = revit.asked[before:]
-        check([op for op, _a, _i in asked] == ["undo_check"]
+        check([op for op, _a, _i in asked] == ["undo_own_check"]
               and asked[0][1].get("claim") == "no"
               and asked[0][1].get("documentPath") == "C:/jobs/Project1.rvt",
-              "check_only sends undo_check once - never undo_last - names the pinned model, "
-              "and claims no model: found %r" % [(op, sorted(a)) for op, a, _i in asked])
+              "check_only sends undo_own_check once - never undo_check or undo_last - names the "
+              "pinned model, and claims no model: found %r"
+              % [(op, sorted(a)) for op, a, _i in asked])
         check(word(said) == "ANSWERED" and said.startswith("Yes - Undo would be sent now")
               and "nothing was sent to Revit" in said,
               "and answers yes, for which change, and that nothing was sent - found %r"
@@ -2179,6 +2317,127 @@ async def exercise_change_report(module):
     check("not a run id" in refused, "and an id that is a path is refused, not opened")
 
 
+async def settings_said_by_each_revit(module, server, Says):
+    """
+    Section 11, continued - Q-70 (decided 2026-11-15): revit_health states the
+    switches as each Revit has them, from the file it decides by, and says in
+    one line when this chat's own copy differs. Four stand-in add-ins: the SAME
+    FILE as the chat's, the same name with a DIFFERING VALUE (the laptop's
+    case: one name, two files), a DIFFERING PATH, and an OLDER add-in that
+    sends no settings. The lines themselves are tests/test_config_and_health.py's.
+    """
+    print()
+    print("  revit_health: the switches as each Revit has them, and the chat's copy "
+          "compared (Q-70)")
+    home = tempfile.mkdtemp(prefix="heron-q70-")
+    mine = os.path.join(home, "heron.config")
+    elsewhere = "D:\\Elsewhere\\Heron\\config\\heron.config"
+    had_config = os.environ.get("HERON_CONFIG")
+    os.environ["HERON_CONFIG"] = mine
+    real_discover = module.bridge.discover
+    heard = getattr(module, "_SETTINGS_HEARD", None)
+    check(isinstance(heard, dict),
+          "revit_health: the server keeps what each Revit last said, for heron_why")
+    if not isinstance(heard, dict):
+        heard = {}
+
+    def chat_copy(changes):
+        with io.open(mine, "w", encoding="utf-8") as fh:
+            fh.write("write.enabled = %s\nadmin.enabled = false\npublish.enabled = false\n"
+                     "write.askBeforeKeeping = false\n" % ("true" if changes else "false"))
+
+    def told(path, changes=False):
+        return {"askToKeep": False, "settingsFile": path, "settingsFileFound": True,
+                "switches": {"changes": changes, "admin": False, "publish": False}}
+
+    async def health_of(*revits):
+        module.binding.forget()
+        module.pinned.forget()
+        module.bridge.discover = lambda: (list(revits), [], [], [])
+        try:
+            return text_of(await server.call_tool("revit_health", {})) or ""
+        except Exception as exc:                                # noqa: BLE001
+            return "(revit_health could not be called: %s: %s)" % (type(exc).__name__, exc)
+        finally:
+            module.bridge.discover = real_discover
+
+    def under(said, pid):
+        """Every line under the numbered line naming this session, up to the next
+        numbered line or a blank one."""
+        listed, found = said.splitlines(), None
+        for at, line in enumerate(listed):
+            ends = not line.strip() or (line.lstrip()[:1].isdigit() and ")" in line[:8])
+            if found is not None and ends:
+                return listed[found:at]
+            if found is None and "session %s" % pid in line and line.lstrip()[:1].isdigit():
+                found = at + 1
+        return listed[found:] if found is not None else ["(session %s is not listed)" % pid]
+
+    alike = Says(5101, "2024", told(mine))
+    valued = Says(5102, "2025", told(mine, changes=True))
+    pathed = Says(5103, "2026", told(elsewhere))
+    older = Says(5104, "2020", {"askToKeep": False})
+    try:
+        chat_copy(False)
+        said = await health_of(alike, valued, pathed, older)
+        same, value, path, old = (under(said, p) for p in (5101, 5102, 5103, 5104))
+        check(len(same) == 2 and "Switches in this Revit: Changes off" in same[1]
+              and mine in same[1],
+              "revit_health: the SAME FILE - this Revit's switches and the file it decides "
+              "by, under its Ask to Keep line, and no second line - found %r" % (same,))
+        check(len(value) == 3 and "Changes on" in value[1] and mine in value[2]
+              and "both are named" in value[2]
+              and "Changes (this Revit: on, this chat's: off)" in value[2],
+              "revit_health: a DIFFERING VALUE under one name - Changes as this Revit has "
+              "it, and one line naming the file and the switch that differs - found %r"
+              % (value[1:],))
+        check(len(path) == 3 and elsewhere in path[1] and mine in path[2]
+              and elsewhere in path[2],
+              "revit_health: a DIFFERING PATH - one line naming both files - found %r"
+              % (path[1:],))
+        check(len(old) == 2 and "does not report its settings" in old[1]
+              and "Switches in this Revit" not in old[1],
+              "revit_health: an OLDER add-in - its Ask to Keep line as before, and one "
+              "line saying it did not report its settings - found %r" % (old,))
+        check("write.enabled is TRUE (in Revit 2025, session 5102, as that Revit has it)"
+              in said,
+              "revit_health: the write gate is Revit's - Changes on in one of them warns, "
+              "naming it, while this chat's own copy says off")
+        check(said.count("Ask to Keep") == 4,
+              "revit_health: Ask to Keep is said once per Revit and never in a switches "
+              "line where it agrees - found %d" % said.count("Ask to Keep"))
+        check(heard.get(5101, {}).get("differs") is False
+              and heard.get(5102, {}).get("differs") is True
+              and heard.get(5103, {}).get("differs") is True
+              and 5104 not in heard,
+              "revit_health: what each said is kept for heron_why, with whether this "
+              "chat's copy differed - and nothing for an older add-in")
+
+        chat_copy(True)
+        reverse = await health_of(alike)
+        check("write.enabled is TRUE" not in reverse
+              and "Changes (this Revit: off, this chat's: on)" in reverse,
+              "revit_health: this chat's copy has Changes on and the Revit has it off - no "
+              "write-gate warning, and the copy's difference is said")
+
+        aged = await health_of(older)
+        check("write.enabled is TRUE, so Heron" in aged
+              and "does not report its settings" in aged and "(in Revit" not in aged,
+              "revit_health: with only an older add-in connected the write gate is this "
+              "chat's own copy, as it was, and the Revit's line says it did not report")
+    finally:
+        module.bridge.discover = real_discover
+        module.binding.forget()
+        module.pinned.forget()
+        for pid in (5101, 5102, 5103, 5104):
+            heard.pop(pid, None)
+        if had_config is None:
+            os.environ.pop("HERON_CONFIG", None)
+        else:
+            os.environ["HERON_CONFIG"] = had_config
+        shutil.rmtree(home, ignore_errors=True)
+
+
 async def exercise_single_purpose(module, server, newest):
     """
     Section 11, continued: the SINGLE-PURPOSE tools say how they ended too
@@ -2394,6 +2653,8 @@ async def exercise_single_purpose(module, server, newest):
           and "Ask to Keep" in said and "outcome" not in structured,
           "revit_health: the structured content is the same reply whole, those lines "
           "included, and still carries no `outcome` - it is not a door")
+
+    await settings_said_by_each_revit(module, server, Says)
 
     revit = StandIn(None)
     module.binding.resolve = lambda: revit
@@ -3417,6 +3678,56 @@ async def exercise_why(module):
               "a DRAFT change with nothing else in the way still says revit_change "
               "keeps nothing unproved (D-117)")
 
+        # WHAT REVIT SAID, WHEN revit_health FOUND ITS FILE IS NOT THIS PC'S
+        # (Q-70). Remembered by revit_health, never asked here - so the record
+        # is put in place as revit_health leaves it, and `asked` stays empty.
+        heard = getattr(module, "_SETTINGS_HEARD", None)
+        check(isinstance(heard, dict),
+              "heron_why can read what revit_health last heard from each Revit")
+        if not isinstance(heard, dict):
+            heard = {}
+        revit_file = "C:\\Users\\Owner\\AppData\\Roaming\\Heron\\config\\heron.config"
+        believed = refused = fresh = unheard = ""
+
+        def heard_from(minutes, differs, changes):
+            heard[4242] = {"said": {"file": revit_file, "found": True, "changes": changes,
+                                    "admin": False, "publish": False},
+                           "differs": differs, "at": module.time.monotonic() - minutes * 60,
+                           "pid": 4242, "release": "2024"}
+
+        try:
+            switches()
+            heard_from(3, True, True)
+            believed = await why("CREATE_TOPOSOLID")
+            check("reason    BLOCKED_BY_TRUST" not in believed
+                  and "as Revit 2024 (session 4242) said it has them" in believed
+                  and "3 minutes ago" in believed and revit_file in believed
+                  and settings in believed and "differs" in believed,
+                  "this PC's file says Changes off and Revit 2024 said on, its file not "
+                  "this PC's: judged by what Revit said, and when, naming both files")
+            switches(write=True)
+            heard_from(3, True, False)
+            refused = await why("CREATE_TOPOSOLID")
+            check("reason    BLOCKED_BY_TRUST" in refused and "Changes is off" in refused
+                  and "Revit 2024 (session 4242) said it has" in refused
+                  and "Revit is right" in refused,
+                  "the reverse - this PC's file on, Revit said off: refused, and the "
+                  "sentence says it was Revit's word, not this PC's file")
+            heard_from(0, False, False)
+            fresh = await why("CREATE_TOPOSOLID")
+            check("reason    BLOCKED_BY_TRUST" not in fresh
+                  and "named a file of that name, with the same switches" in fresh
+                  and "just now" in fresh,
+                  "a Revit whose file revit_health found alike: this PC's file is read "
+                  "fresh, so a switch pressed since is seen")
+            heard.pop(4242, None)
+            unheard = await why("CREATE_TOPOSOLID")
+            check("revit_health asks Revit what it has" in unheard and settings in unheard,
+                  "nothing heard: this PC's file, named, and where to ask Revit")
+        finally:
+            heard.pop(4242, None)
+            switches(write=True)
+
         alive["pid"] = False
         gone = await why("SET_SELECTION")
         check("reason    AVAILABLE" not in gone and "reason    NOT_DETECTED" in gone,
@@ -3443,7 +3754,7 @@ async def exercise_why(module):
               "through all of it discover() was never called and no Revit was sent "
               "a request - found %r" % (asked[:4],))
         everything = [nothing, old, blind, closed, admin, idle, ready, held, gone,
-                      away, change]
+                      away, change, believed, refused, fresh, unheard]
         check(all(answer.rstrip().endswith("Nothing was sent to Revit.")
                   for answer in everything),
               "and every answer says nothing was sent to Revit")

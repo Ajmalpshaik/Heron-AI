@@ -49,3 +49,14 @@ Revit.** Same scratch project, saved to a folder of its own.
 | **NV15** | Arrange **more than `IdsSentPerList` (5,000)** failing elements on one check; run | The row says Heron received 5,000 of N and offers **no** Select. *The negative:* NV14's count - a button is offered |
 | **NV16** | NV1, NV2 and NV5 on a **Revit 2024 or later** model, whose element ids are 64-bit | Select takes every id; the second run compares as on an earlier release |
 | **NV17** | Run; **delete** some of a failing row's elements; press **Select in Revit** on that row without running again; then run again | Select picks only elements still in the model, says nothing that claims the deleted ones, and Revit shows no error; the next run says **STILL OPEN** with *N no longer failing* - never *fixed* |
+
+[D-165](../decisions/D-165.md) adds the fourth answer, **NO DATA** - *could not decide, data missing* - and
+the coverage line beside every run's counts. **It runs without Revit** (`tests/test_checklist_no_data.py`,
+whose checks were seen to fail on the code before the change). **None of it has run in Revit.** Same
+scratch project.
+
+| ID | Do this | Pass looks like |
+|---|---|---|
+| **NV18** | Run the starter checklist | The line under the counts reads *Coverage: N of N check(s) decided, 0 with no data, 0 not run*, in the chat and on the Companion page, and the page shows *N of N decided* beside the counts |
+| **NV19** | Save a check whose card counts the elements it could not read - `python brain/heron_checklists.py --fragments` lists each card's number outputs - naming that output as `missing`; arrange the model so the rule holds and some elements cannot be read; run | That row is **NO DATA**, never PASS, saying how many elements had no data, and the coverage line counts it under *with no data*. *The negative:* the same check with every element readable - **PASS**, with *checked N of N element(s), 0 with no data* when `applicable` is named too |
+| **NV20** | Run NV19's checklist twice, the second time with every element readable | The second run's row is **NOT COMPARED** - *the data to decide it was missing, now or last time* - never **FIXED** |

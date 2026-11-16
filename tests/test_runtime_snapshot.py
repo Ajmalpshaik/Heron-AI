@@ -180,6 +180,28 @@ def in_revit_words():
     check("Changes switch must be on there too" in there[1],
           "and for a change, that the owner's Changes switch is needed there too")
 
+    # WHOSE WORD THE SWITCH WAS (Q-70, decided 2026-11-15). When revit_health
+    # found a Revit's own settings file is not this PC's, heron_why judges by
+    # what that Revit said, and the sentence says so - never "this PC's file".
+    print()
+    print("Whose word the switch was: this PC's file, or what a Revit said (Q-70)")
+    blocked = verdict(live, "MOVE_ELEMENTS")
+    try:
+        heard = words(blocked, [WRITER], release="2024",
+                      said_by="Revit 2024 (session 4242)")
+    except TypeError as why:
+        heard = ("", "(in_revit_words cannot be told whose word it was: %s)" % why)
+    check("Revit 2024 (session 4242) said it has" in heard[1]
+          and "revit_health" in heard[1] and "Revit is right" in heard[1],
+          "judged by what a Revit said, the sentence names that Revit and when it "
+          "was heard, and that Revit is right - found %r" % (heard[1][:120],))
+    check("settings file on this PC" not in heard[1],
+          "and it does not call that this PC's settings file")
+    plain = words(blocked, [WRITER], release="2024")
+    check("Heron's settings file on this PC says" in plain[1]
+          and "Revit is right" in plain[1],
+          "judged by this PC's file, it says so, as it did")
+
 
 def main():
     print("Everything known: a permitted capability with a Revit to run it in")

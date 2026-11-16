@@ -293,6 +293,10 @@ def ask_to_keep_said(failures):
     """
     `info` says what the owner's Ask to Keep switch is, read at the moment of
     the call (added 2026-11-12, tests/test_ask_to_keep_health.py has the rest).
+    And, since 2026-11-16 (Q-70), the settings file the add-in decides by,
+    whether it was there, and Changes, Admin and Publish as it holds them -
+    flipped under the same running host (tests/test_config_and_health.py has
+    the rest).
 
     A HOST OF ITS OWN, WITH A SETTINGS FOLDER OF ITS OWN. The switch is a line
     in the settings file the kernel finds through the operating system's
@@ -340,6 +344,20 @@ def ask_to_keep_said(failures):
             # differently from one that is there and null.
             return reply.get("askToKeep", "missing") if reply.get("ok") else reply
 
+        # AND THE FILE IT DECIDES BY, AND ITS SWITCHES (Q-70, 2026-11-16): the
+        # path the add-in read, whether it was there, and Changes, Admin and
+        # Publish as the gate would read them - before any file exists.
+        blank = call(handle, "info")
+        off = {"changes": False, "admin": False, "publish": False}
+        if (blank.get("settingsFile") == settings and blank.get("settingsFileFound") is False
+                and blank.get("switches") == off):
+            print("  PASS  no settings file: info names the file it would read, says it "
+                  "is not there, and every switch off")
+        else:
+            failures.append("settings: with no file info said file=%r found=%r switches=%r"
+                            % (blank.get("settingsFile"), blank.get("settingsFileFound"),
+                               blank.get("switches")))
+
         first = said(None)
         if first is False:
             print("  PASS  no settings file: info says false - off, the default")
@@ -354,11 +372,35 @@ def ask_to_keep_said(failures):
         else:
             failures.append("ask to keep: switched on mid-session, info said %r, not true" % (on,))
 
-        off = said("false")
-        if off is False:
+        again = said("false")
+        if again is False:
             print("  PASS  switched off again: the next info says false")
         else:
-            failures.append("ask to keep: switched off mid-session, info said %r, not false" % (off,))
+            failures.append("ask to keep: switched off mid-session, info said %r, not false"
+                            % (again,))
+
+        # THE SWITCHES, FLIPPED UNDER THE SAME RUNNING HOST: read at the moment
+        # of the call, by the gate's own idea of true - "on" is on, and a word
+        # nobody can read is the default, off.
+        def switches_said(text):
+            with open(settings, "w") as fh:
+                fh.write(text)
+            reply = call(handle, "info")
+            return (reply.get("settingsFile"), reply.get("settingsFileFound"),
+                    reply.get("switches"))
+
+        on = switches_said("write.enabled = true\nadmin.enabled = on\npublish.enabled = maybe\n")
+        if on == (settings, True, {"changes": True, "admin": True, "publish": False}):
+            print("  PASS  Changes and Admin turned on while the bridge runs: the next info "
+                  "says so, from the file it names")
+        else:
+            failures.append("settings: Changes and Admin on mid-session, info said %r" % (on,))
+        back = switches_said("write.enabled = false\npublish.enabled = true\n")
+        if back == (settings, True, {"changes": False, "admin": False, "publish": True}):
+            print("  PASS  and changed again: the next info says what the file says now")
+        else:
+            failures.append("settings: switches changed again mid-session, info said %r"
+                            % (back,))
 
         # Asking is still not claiming: three infos later nobody holds it.
         lease = call(handle, "info")
@@ -691,6 +733,38 @@ def main():
             print("  PASS  chat A was never cut off")
         else:
             failures.append("first client stopped working: %r" % reply)
+
+        # --- A CALL THE MODEL HOLD REFUSES GIVES BACK A LEASE IT ONLY JUST TOOK ---
+        # Row 5b-1662: the lease is claimed when a request arrives and the model
+        # hold (D-141) is asked after it, so a chat call refused "Model ... is in
+        # use by another chat. Nothing was sent to the model" still left the
+        # Revit leased to that chat for five minutes - and the conversation that
+        # held the model was locked out of the Revit by a call that never ran.
+        # test_model_in_use is this host's stand-in for that refusal.
+        call(handle, "release", client=CLIENT)
+        reply = call(handle, "test_model_in_use", client=OTHER_CLIENT)
+        if reply.get("ok") is False and reply.get("error") == "model_in_use":
+            print("  PASS  the host's model hold refuses chat B, as the add-in's does")
+        else:
+            failures.append("test_model_in_use returned %r" % reply)
+        reply = call(handle, "info", client=CLIENT)
+        if reply.get("inUse") is False:
+            print("  PASS  and the lease chat B took for that call is given back")
+        else:
+            failures.append("a call the model hold refused kept the lease: inUse=%r mine=%r"
+                            % (reply.get("inUse"), reply.get("mine")))
+        reply = call(handle, "no_such_operation", client=CLIENT)
+        if reply.get("ok") is False and reply.get("error") == "unknown_op":
+            print("  PASS  so chat A gets the Revit at once, not five minutes later")
+        else:
+            failures.append("chat A after chat B's refused call returned %r" % reply)
+        # A lease the caller ALREADY held is its own, and a refusal does not take it.
+        call(handle, "test_model_in_use", client=CLIENT)
+        reply = call(handle, "no_such_operation", client=OTHER_CLIENT)
+        if reply.get("ok") is False and reply.get("error") == "session_in_use":
+            print("  PASS  a lease held before the refused call is kept")
+        else:
+            failures.append("a renewed lease was dropped by a model-hold refusal: %r" % reply)
 
         # An unauthenticated caller must not even learn which operations exist.
         reply = send_raw(handle, '{"op": "no_such_operation", "token": "wrong"}')

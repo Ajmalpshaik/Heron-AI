@@ -99,3 +99,32 @@ Keep box; B is a rolled-back run from the command line (`--write`, no `--apply`)
 | EO7 | 2027 | EO1: B after the kept level - silent, `keptJob create-level`, `keptChecked 1`, `keptLost 0`. EO2: his Undo, then B - *"was undone in Revit before this run started"*. 2020 not run | **PASS** on 2027 |
 | EO8 | 2024 | **Not runnable as written:** after EO2's B, Revit's Redo was empty - a rolled-back Heron run empties the modeller's Redo list | answered: **a preview takes Redo away** |
 | EO9 | 2024 | `revit_view_image` with A's duct: `capture_failed` - [5b-1090](../fragment-issues/section-5b-rows-401-425.md) | **FAIL** |
+
+### A change that did not come back - 2026-11-16, for A16b
+
+[A16b](group-a.md) is a rename reported rolled back while 8 views still read `HERONL2`, and nothing above could
+see it: every row here counts what a job **added**. Since 2026-11-16 the fragment write path also reads back
+what a job **changed**. Before the job starts, the elements it was handed (a chain, ids in the request) and the
+modeller's selection are read with D-156's reader - up to 50. They are read again just before the rollback,
+which says what the job changed, value by value, and a third time after it. A value the job changed that does
+not read as it did before withdraws *"nothing was kept"*: the verdict says **THE ROLLBACK DID NOT HOLD** -
+*"... all 8 elements this run changed that Heron read back still hold the change (Views: Name reads 'HERONL2',
+was 'L2')"* - `rolledBack` is false, and `rollbackCheck` carries `changed`, `changedChecked` and
+`changedStanding`. An element that cannot be read after the rollback is counted in neither. *Edited by* is
+not counted as the change: whether a rollback gives a borrowed element back has not been seen in Revit.
+
+The rule is in [`HeronRollbackWitness.cs`](../../revit/Heron.Revit.Addin/HeronRollbackWitness.cs) and the host
+runs it - a rename that stood, a parameter that stood, a clean rollback, an element that could not be read.
+**None of it has run in Revit.** What it does not see: a changed element neither handed nor selected, more than
+50, a job with write setup steps (only the selection is read then), a delete that stood, and the move and the
+picture (`RevitWrite.cs`, `RevitCapture.cs`), which read nothing before.
+
+**LOCAL, on the owner's Windows PC, after the add-in is rebuilt and deployed and Revit restarted.** A scratch
+copy, never a working model - EO10 may leave it renamed, which is what A16b did.
+
+| # | Run | Look for |
+|---|---|---|
+| **EO10** | **A16b again, the way it happened.** In a scratch copy with floor plans named `L...`: `python mcp/client/heron_bridge_client.py validate edit-text-values --write --setup find-views --keep-chain --set viewType=FloorPlan --set nameContains= --set field=Name --set mode=replace --set text=L --set replacement=HERONL` - **no `--apply`**, so nothing is kept. Then `find-views` again from a separate call, and read each name | **The reply agrees with the names, whichever way it went.** Names back as before: `rolledBack` true, `changedStanding` 0, and the verdict says the N elements this run changed *"read as they did before it"*. Any still `HERON...`: **THE ROLLBACK DID NOT HOLD**, `rolledBack` false, and `changedStanding` equals how many `find-views` reads as `HERON...`. **FAIL:** a verdict that says it held while a name reads `HERON...` (A16b again, unseen), or one that says it did not hold while every name is back (a false alarm). A16b was intermittent, so run it ten times as A16b asks and record each |
+| **EO11** | **The same rename, Discarded.** *Ask to Keep* on, the same `edit-text-values` through the chat's `revit_change` on views selected in the Project Browser, and press **Discard** | The Discard verdict, and if any name stood, the sentence *"... still hold the change (Views: Name reads ..."* after it. Then the names, read as in EO10. Whether a Project Browser selection reaches `Selection.GetElementIds` at all is part of the answer - if `changed` is 0 on the reply while views were renamed, it did not |
+| **EO12** | **The negative: a clean rollback on a workshared model must not cry wolf.** A local copy of a workshared scratch model, `write-element-parameters` (`Comments` = `X`) on 3 selected ducts, `--write`, no `--apply` | `rolledBack` true, `changedStanding` 0, no *"did not hold"*. Then read *Edited by* on the 3 ducts: record whether they are still borrowed after the rollback - that is what decides whether *Edited by* has to stay out of the check |
+| **EO13** | EO10 once on Revit 2020 and once on 2027 | The same answers. Every member it calls compiles for 2020 to 2027 (`tools/check-compile.py`, 2026-11-16); that is the API surface agreeing, nothing more |

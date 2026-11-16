@@ -811,6 +811,120 @@ class Batch(object):
                       if name in before and before[name] == now[name])
 
 
+# HOW A RUN OF THIS CHAT WAS TAKEN BACK - TakenBack's kinds, each with what it
+# says happened and what to run instead.
+TAKEN_DRY_RUN = "dry run"
+TAKEN_DISCARDED = "discarded"
+TAKEN_ROLLED_BACK = "rolled back"
+TAKEN_UNSETTLED = "unsettled"
+
+_TAKEN_BACK_SAYS = {
+    TAKEN_DRY_RUN: (
+        "was last run in this chat as a dry run (D-155), which Revit rolls back",
+        "If the user wants it kept, call revit_change for it without dry_run - only when "
+        "they say to - and name that run in expect_from."),
+    TAKEN_DISCARDED: (
+        "was last run in this chat as a change the modeller did not keep in Revit (Discard)",
+        "That was the modeller's answer: run it again only when they ask, and name that "
+        "run in expect_from once Revit has kept it."),
+    TAKEN_ROLLED_BACK: (
+        "was last run in this chat as a change Revit's Heron rolled back",
+        "Run it again and keep it, then name that run in expect_from."),
+    TAKEN_UNSETTLED: (
+        "was last sent in this chat after a run of it that was taken back, and how that "
+        "second run ended never came back here - so what Revit's Heron carries may still "
+        "be the run that was taken back",
+        "Ask heron_run_record how it ended and look at the model, then run it again and "
+        "name that run in expect_from."),
+}
+
+
+class TakenBack(object):
+    """
+    OPEN-QUESTIONS Q-89, decided 2026-11-15: as built - every run replaces what
+    the chat carries for `expect_from` - and Heron ALSO REFUSES ANY ATTEMPT TO
+    USE WHAT A RUN THAT WAS TAKEN BACK LEFT: a dry run (D-155), a change the
+    modeller discarded in Revit (D-126). Elements Revit no longer has are never
+    handed on to a real change.
+
+    ONE PER SERVER PROCESS, WHICH IS ONE CHAT - Batch's rule, and the add-in's:
+    its carried values are keyed by the same conversation (D-141). So this
+    knows every run of this chat, and nothing of anyone else's.
+
+    WHAT IT KNOWS AND THE ADD-IN DOES NOT is what this chat ASKED for and how
+    each run ended in words - and that lets a refusal be said here, before a
+    session is bound, with nothing sent to Revit. The add-in refuses the same
+    expectation itself (`chain_taken_back`), from what it saw: that covers a
+    server older than this, and a run this chat never heard the end of. Two
+    halves, and either one alone refuses.
+
+    BY HOW EACH CALL ENDED, NEVER BY WHAT IT ASKED ALONE:
+      * a dry run is marked whatever came back - one whose answer was lost
+        may still have run, and what it left would be carried;
+      * a change the modeller did not keep is marked, and one the add-in
+        rolled back;
+      * a kept change, a keep Revit counted nothing in (D-160), and an
+        answer too old to name a verdict leave what it left to be handed on;
+      * an answer the add-in refused or failed before it ran (`unchanged`)
+        moves nothing - what it carries did not move either;
+      * a lost answer to a change of something already marked leaves it
+        marked, saying so (TAKEN_UNSETTLED): what is carried may still be the run
+        that was taken back.
+    """
+
+    def __init__(self):
+        self._runs = {}
+        self._lock = threading.Lock()
+
+    def answered(self, folder, capability, dry_run, reply, unchanged):
+        """Note how one revit_change call for `folder` ended. `unchanged` is
+        True when the add-in answered with a refusal or failure of its own,
+        before anything it carries for this chat could move."""
+        key = str(folder or "").strip().lower()
+        if not key or unchanged:
+            return
+        with self._lock:
+            if dry_run:
+                self._runs[key] = (folder, capability, TAKEN_DRY_RUN)
+                return
+            if not (isinstance(reply, dict) and reply.get("ok") is True):
+                if key in self._runs:
+                    self._runs[key] = (folder, capability, TAKEN_UNSETTLED)
+                return
+            kind = reply.get("verdictKind")
+            if kind == "discarded" or (reply.get("asked") and not reply.get("kept")):
+                self._runs[key] = (folder, capability, TAKEN_DISCARDED)
+            elif kind == "rolledBack":
+                self._runs[key] = (folder, capability, TAKEN_ROLLED_BACK)
+            else:
+                self._runs.pop(key, None)
+
+    def refusal(self, expect_from):
+        """
+        The sentence refusing an `expect_from` that names a run of this chat
+        that was taken back - or None, and it is sent as before. The producer
+        is what comes before " where ", matched however its case is spelled,
+        by folder or by capability: the add-in matches the folder the same way.
+        """
+        text = str(expect_from or "").strip()
+        split = text.lower().find(" where ")
+        named = (text[:split] if split >= 0 else text).strip().lower()
+        if not named:
+            return None
+        with self._lock:
+            found = [run for key, run in self._runs.items()
+                     if named in (key, str(run[1] or "").strip().lower())]
+        if not found:
+            return None
+        folder, capability, kind = found[0]
+        what, instead = _TAKEN_BACK_SAYS[kind]
+        return ("Nothing has been sent to Revit: expect_from names '%s', and %s %s. What a "
+                "run that was taken back left - the ids of anything it made among it - is "
+                "of a change Revit no longer holds, and Heron never hands it on (Q-89). %s "
+                "To act on what an earlier call found, run that call again and name it "
+                "instead." % (one_line(text), capability or folder, what, instead))
+
+
 def verdict_line(reply, batch):
     """The verdict to print for one reply: the add-in's paragraph, or its sentence."""
     verdict = reply.get("verdict") if isinstance(reply, dict) else None

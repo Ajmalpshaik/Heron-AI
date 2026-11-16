@@ -26,6 +26,16 @@ by reasoning about them, and both invisible to a compiler:
    answer". The check below asserts the ordering holds at every value, not just
    the default.
 
+AND ONE SETTINGS FILE IS SOMETIMES TWO (Q-70, decided 2026-11-15). On a PC
+whose Claude app keeps its own copy of the Heron folder the chat reads the copy
+and a Revit the owner started reads the real file, which is the one it decides
+by. So the add-in's `info` says the file it read and its Changes, Admin and
+Publish switches, and revit_health states them and says when the chat's copy
+differs. The last section holds the add-in's words as text, the client's
+reader, the lines and the write gate's source with stand-in answers - the same
+file, a differing value, a differing path, an older add-in; the real tool is
+tests/test_mcp_serves.py's and the real pipe tests/test_bridge_roundtrip.py's.
+
     python tests/test_config_and_health.py
 """
 
@@ -124,6 +134,226 @@ def host_configs():
             if entry in text:
                 found.append((os.path.relpath(path, ROOT), text))
     return sorted(found)
+
+
+BRIDGE_CS = os.path.join(ROOT, "revit", "Heron.Bridge", "BridgeServer.cs")
+PERMISSIONS_CS = os.path.join(ROOT, "platform", "Heron.Core", "HeronPermissions.cs")
+
+# A stand-in add-in's answers, typed here on purpose: the other side of the
+# comparison, so the code under test cannot agree with itself.
+REVIT_FILE = "C:\\Users\\Owner\\AppData\\Roaming\\Heron\\config\\heron.config"
+OTHER_FILE = "D:\\Somewhere else\\Heron\\config\\heron.config"
+
+
+def _info_block():
+    """BridgeServer's `info` block, `//` comment lines left out, or ""."""
+    text = io.open(BRIDGE_CS, encoding="utf-8").read()
+    at = text.find('if (op == "info")')
+    start = text.find("{", at) if at >= 0 else -1
+    if start < 0:
+        return ""
+    depth = 0
+    for index in range(start, len(text)):
+        if text[index] == "{":
+            depth += 1
+        elif text[index] == "}":
+            depth -= 1
+            if depth == 0:
+                block = text[start:index + 1]
+                return "\n".join(line for line in block.split("\n")
+                                 if not line.strip().startswith("//"))
+    return ""
+
+
+class _Answers(object):
+    """A connected Revit whose `info` answers with one payload."""
+
+    def __init__(self, payload, pid=4242, release="2024"):
+        self.payload, self.pid, self.revit_version = payload, pid, release
+        self.asked = []
+
+    def request(self, op, **_kwargs):
+        self.asked.append(op)
+        return self.payload
+
+
+def settings_said_by_revit():
+    """
+    Q-70: Revit says the settings file it decides by and its switches, and the
+    connection check states them as Revit has them and says when the chat's
+    copy differs. Each piece is asked for before it is called, so on the code
+    as it stood this section FAILS check by check rather than stopping.
+    """
+    import heron_bridge_client as bridge
+
+    print()
+    print("Q-70 - Revit says its own settings file and switches, and the chat's copy "
+          "is only compared")
+    info = _info_block()
+    check(bool(info), "BridgeServer answers `info` in a block of its own")
+    check('Json.Str("settingsFile", settingsFile)' in info
+          and "var settingsFile = HeronConfig.FilePath;" in info,
+          "`info` names the settings file the add-in reads - HeronConfig.FilePath")
+    check('Json.Bool("settingsFileFound", File.Exists(settingsFile))' in info,
+          "and says whether that file was there")
+    gate = {}
+    for word, key in (("changes", "WriteEnabledKey"), ("admin", "AdminEnabledKey"),
+                      ("publish", "PublishEnabledKey")):
+        gate[word] = ('Json.Bool("%s", settings.GetBool(HeronPermissions.%s, false))'
+                      % (word, key)) in info
+    check('"\\"switches\\": " + Json.Obj(' in info and all(gate.values()),
+          "and Changes, Admin and Publish in one `switches` object, each read on the "
+          "gate's own key and off when unread - %s" % gate)
+    permissions = io.open(PERMISSIONS_CS, encoding="utf-8").read()
+    check(all(("config.GetBool(%s, false)" % key) in permissions
+              for key in ("WriteEnabledKey", "PublishEnabledKey", "AdminEnabledKey")),
+          "which is how the gate itself reads each of the three (HeronPermissions.Allows)")
+    check(info.count("HeronConfig.Load()") == 1,
+          "from ONE load of the settings, fresh on every `info`, so the three cannot "
+          "disagree with each other")
+    check(".Save(" not in info and "SetSwitch" not in info and ".Set(" not in info
+          and "Json.Read" not in info.replace('Json.ReadString(request, "client")', ""),
+          "and only read: nothing in `info` saves a setting, and nothing on the request "
+          "chooses what is said")
+
+    state = getattr(bridge, "settings_state", None)
+    check(state is not None, "the client can ask a Revit for its settings")
+    if state is None:
+        def state(_session):                    # so the checks below RUN and FAIL
+            return "(the client has no such reader)"
+    not_sent = getattr(bridge, "SETTINGS_NOT_SENT", None)
+    check(isinstance(not_sent, str) and not_sent == getattr(hp, "SETTINGS_NOT_SENT", None),
+          "the client and heron_health have ONE word for an add-in that sent no settings")
+    if not isinstance(not_sent, str):
+        not_sent = "(the client has no such word)"
+    full = {"ok": True, "askToKeep": True, "settingsFile": REVIT_FILE,
+            "settingsFileFound": True,
+            "switches": {"changes": True, "admin": False, "publish": True}}
+    one = _Answers(full)
+    got = state(one)
+    check(got == {"file": REVIT_FILE, "found": True, "changes": True, "admin": False,
+                  "publish": True},
+          "a newer add-in's answer is read whole - its file, whether it was there, and "
+          "the three switches: %r" % (got,))
+    check(one.asked == ["info"], "asked through `info` alone, which claims nothing")
+    older = state(_Answers({"ok": True, "askToKeep": False, "activeModel": "Project1"}))
+    check(older == not_sent,
+          "an older add-in - a good answer with neither field - is NOT SENT, never a "
+          "guess: %r" % (older,))
+    bad = [name for name, reply in (
+        ("nothing back", None),
+        ("a refusal", {"ok": False, "error": "unauthorized", "settingsFile": REVIT_FILE}),
+        ("a file that is not text", dict(full, settingsFile=7)),
+        ("an empty file name", dict(full, settingsFile=" ")),
+        ("no word on whether it was there", dict((k, v) for k, v in full.items()
+                                                 if k != "settingsFileFound")),
+        ("switches that are not an object", dict(full, switches=[True])),
+        ("a switch that is text", dict(full, switches={"changes": "true", "admin": False,
+                                                       "publish": False})),
+        ("a switch missing", dict(full, switches={"changes": True, "admin": False})),
+        ("a file and no switches", dict((k, v) for k, v in full.items() if k != "switches")))
+        if state(_Answers(reply)) is not None]
+    check(not bad, "an answer that could not be read is None - never NOT SENT, never "
+          "half-read: %s" % (bad or "none"))
+
+    switches = getattr(cfg, "switches", None)
+    check(switches is not None, "heron_config reads the chat's own four switches in one place")
+    if switches is None:
+        def switches(_values=None):
+            return {}
+    mine = switches(dict(cfg.DEFAULTS, **{"write.enabled": "on", "publish.enabled": "1",
+                                          "write.askBeforeKeeping": "yes"}))
+    check(mine == {"changes": True, "admin": False, "publish": True, "ask_to_keep": True},
+          "Changes, Admin, Publish and Ask to Keep, by the add-in's own idea of true: %r"
+          % (mine,))
+
+    lines = getattr(hp, "settings_lines", None)
+    check(lines is not None, "heron_health has the lines for what a Revit said")
+    if lines is None:
+        def lines(*_args):
+            return []
+    here_off = {"changes": False, "admin": False, "publish": False, "ask_to_keep": False}
+
+    def said(path=REVIT_FILE, found=True, **on):
+        return dict({"file": path, "found": found, "changes": False, "admin": False,
+                     "publish": False}, **on)
+
+    same = lines(said(), False, REVIT_FILE.lower(), True, here_off)
+    check(len(same) == 1 and REVIT_FILE in same[0] and "Changes off" in same[0]
+          and "Admin off" in same[0] and "Publish off" in same[0]
+          and "decides every change by" in same[0],
+          "the SAME FILE: one line - this Revit's switches and the file it decides by, "
+          "and nothing else (a name in another case is the same name) - %r" % (same,))
+    value = lines(said(changes=True), True, REVIT_FILE, True, here_off)
+    check(len(value) == 2 and "Changes on" in value[0],
+          "a DIFFERING VALUE: the switches as Revit has them - Changes on - and a second "
+          "line - %r" % (value,))
+    second = value[1] if len(value) == 2 else ""
+    check(REVIT_FILE in second and "both are named" in second
+          and "Changes (this Revit: on, this chat's: off)" in second
+          and "Ask to Keep (this Revit: on, this chat's: off)" in second
+          and "Admin (" not in second and "two files" in second,
+          "and the second names the file, every switch that differs - Ask to Keep "
+          "included - and none that does not, and says one name is two files here")
+    check("decides by its own file" in second and "\n" not in second,
+          "in one line, saying Revit's own file is the one that counts")
+    path = lines(said(path=OTHER_FILE), False, REVIT_FILE, True, here_off)
+    check(len(path) == 2 and OTHER_FILE in path[0] and REVIT_FILE in path[1]
+          and OTHER_FILE in path[1] and "agree just now" in path[1],
+          "a DIFFERING PATH: both files named, and that the switches agree just now - %r"
+          % (path,))
+    both = lines(said(path=OTHER_FILE, admin=True), False, REVIT_FILE, True, here_off)
+    check(len(both) == 2 and "Admin (this Revit: on, this chat's: off)" in both[1]
+          and REVIT_FILE in both[1] and OTHER_FILE in both[1],
+          "a differing path and a differing value: both files and the switch")
+    found = lines(said(), False, REVIT_FILE, False, here_off)
+    check(len(found) == 2 and "found none" in found[1],
+          "one name, and only this Revit found a file there: two files, said so")
+    defaults = lines(said(found=False), False, REVIT_FILE, False, here_off)
+    check(len(defaults) == 1 and "default" in defaults[0] and "found no settings file"
+          in defaults[0],
+          "no file on either side: each switch at its default, and nothing differs")
+    unasked = lines(said(), getattr(bridge, "ASK_TO_KEEP_NOT_SENT", "not sent"),
+                    REVIT_FILE, True, dict(here_off, ask_to_keep=True))
+    check(len(unasked) == 1,
+          "Ask to Keep is compared only when this Revit said it - %r" % (unasked,))
+    old = lines(not_sent, False, REVIT_FILE, True, here_off)
+    unread = lines(None, None, REVIT_FILE, True, here_off)
+    check(len(old) == 1 and "does not report its settings" in old[0]
+          and "older" in old[0],
+          "an OLDER ADD-IN: one line, that this Revit did not report its settings - %r"
+          % (old,))
+    check(len(unread) == 1 and "could not read" in unread[0] and "older" not in unread[0],
+          "no usable answer: one line saying that, not blamed on an older add-in")
+    claims = [name for name, words in (("older", old), ("unread", unread))
+              for w in (" on,", " off,", REVIT_FILE, "decides every change by")
+              if any(w in x for x in words)]
+    check(not claims, "and neither claims a switch or a file: %s" % (claims or "none"))
+    check(not any("Ask to Keep" in x for x in same + path + old + unread),
+          "none of them names Ask to Keep unless it differs - its own line says it")
+
+    by = getattr(hp, "writing_said_by", None)
+    check(by is not None, "heron_health names who said the write gate's Changes")
+    named = by([one], True) if by else ""
+    try:
+        hot = hp.assess(live=[1], writing=True, writing_said_by=named)
+        cold = hp.assess(live=[1], writing=False,
+                         writing_said_by=by([one], False) if by else "")
+    except TypeError as why:
+        hot = cold = None
+        check(False, "assess takes who said the write gate - %s" % why)
+    if hot is not None:
+        gate_hot = [c for c in hot.components if c.name == "write gate"][0]
+        gate_cold = [c for c in cold.components if c.name == "write gate"][0]
+        check(gate_hot.state == hp.WARNING and "Revit 2024, session 4242" in gate_hot.detail
+              and gate_hot.detail.startswith("write.enabled is TRUE (in Revit 2024"),
+              "the write gate says whose Changes it is: %r" % gate_hot.detail[:80])
+        check(gate_cold.state == hp.HEALTHY and "Revit 2024, session 4242" in gate_cold.detail,
+              "closed, it says whose too: %r" % gate_cold.detail)
+    plain = [c for c in hp.assess(live=[1], writing=False).components
+             if c.name == "write gate"][0]
+    check(plain.detail == "closed - Heron cannot change the model",
+          "and with no Revit's word the words are exactly as they were")
 
 
 def main():
@@ -391,6 +621,8 @@ def main():
     fine.components = [c for c in fine.components if c.state == hp.HEALTHY]
     check("Every component healthy." in fine.describe(),
           "nothing to report reads as one line, not a wall of green")
+
+    settings_said_by_revit()
 
     print()
     if FAILURES:

@@ -1,0 +1,49 @@
+# NEEDS-CHECKING Group OG - SHAPE_WALL_TOPS_TO_ROOF (DRAFT), a wall's top
+# shaped to the roof above it by editing its profile, on Revit 2022 to 2024.
+# Built 2026-11-16 in a cloud session with no Revit, for field report #852
+# (Revit 2024, `villa 2`) and Q-91's shape 2. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/wall-tops-to-roof-of-2026-11-16.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/wall-tops-to-roof-of-2026-11-16.yaml --session <2024 pid>
+#
+# THE MODEL (docs/needs-checking/group-og.md, OG1): "of-gable", a scratch
+# project from Revit 2024's default architectural template (metric), saved
+# under %TEMP%\heron-work, never a working model. On Level 1, four
+# `Generic - 200mm` walls on their centrelines (0,0) - (8000,0) - (8000,6000)
+# - (0,6000) - back, unconnected height 2440, ONE DOOR in the west wall
+# (x = 0); a roof by footprint on Level 1, base offset 2440, 600 overhang,
+# Defines Slope on the north and south edges only at 30 degrees - a gable
+# roof, ridge east-west, the east and west walls at the plate with the
+# triangle open above them. Apart from it, a fifth wall (14000,0) - (18000,0),
+# height 2440, with nothing over it.
+#
+# THE ARRANGEMENT. select-in-region picks ONE wall each time, by a box round
+# it, walls only - so the door is not handed in, and the binding note should
+# read `elements from the selection (1)` (fragment-proving, rule 5).
+# Positive: the west wall, under the gable, with its door. Negative: the
+# fifth wall, which no roof is over - a different selection, not an empty one
+# (rules 3 and 5). The write is ROLLED BACK.
+model: "of-gable: a scratch project, a gable roof over four walls with a door in the west wall, and a fifth wall with nothing over it"
+defaults:
+  write: true
+  in: "of-gable"
+  setup: [select-in-region, set-selection]
+jobs:
+  - fragment: shape-wall-tops-to-roof
+    expect: shaped
+    set:
+      minMm: "-500,500,-100"
+      maxMm: "500,5500,3500"
+      exact: "false"
+      categories: Walls
+    negative-set:
+      minMm: "13500,-500,-100"
+      maxMm: "18500,500,3500"
+      exact: "false"
+      categories: Walls
+    note: >
+      OG2. Negative - THE FIRST CASE TO RUN: the fifth wall - shaped 0,
+      noRoof naming it, nothing changed. Positive: the west wall - shaped 1,
+      keptInserts 1 (its door read back still in it), a finding naming the
+      roof and the highest point above the base, and the sentence that the
+      top is a sketch that does NOT follow the roof if the roof changes.

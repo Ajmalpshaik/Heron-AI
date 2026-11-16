@@ -244,9 +244,18 @@ def response_timeout(values=None):
 FRAGMENT_FLOOR_S = 180.0
 
 
-def fragment_timeout(values=None, keeping=False):
+def fragment_timeout(values=None, keeping=False, waiting=False):
     """
     How long to wait for a FRAGMENT to come back. Never below the add-in's.
+
+    `waiting` IS A CARD THAT WAITS FOR THE MODELLER - one whose contract
+    declares `waitsForModeller` (Q-86, decided 2026-11-15; the bridge
+    client's `waits_for_modeller` reads it). The add-in holds its timers for
+    such a run as it does for the Keep or Discard box and waits
+    revit.askTimeoutSeconds more, so this side adds it too - once, whether
+    or not the run also keeps, because one job has one longer wait. Without
+    it this side gave up at its floor while Revit still waited for the
+    click, and a click made then reached nobody.
 
     `keeping` IS A RUN SENT WITH apply - one the add-in may stop and ASK the
     modeller about (D-126). A job that puts the Keep or Discard box up is
@@ -287,7 +296,7 @@ def fragment_timeout(values=None, keeping=False):
     """
     values = load() if values is None else values
     waited = max(FRAGMENT_FLOOR_S, response_timeout(values))
-    if keeping:
+    if keeping or waiting:
         waited += ask_timeout(values)
     return waited
 
@@ -315,6 +324,23 @@ def writing_enabled(values=None):
     """Whether the add-in will permit a change to the model (D-19)."""
     values = load() if values is None else values
     return truthy(values, "write.enabled")
+
+
+def switches(values=None):
+    """
+    The owner's four switches as THIS SIDE'S copy of the file says them -
+    Changes, Admin, Publish and Ask to Keep - named as `info` names them.
+
+    FOR COMPARING, NEVER FOR SAYING (Q-70). revit_health states what each
+    Revit said of its own, and sets this beside it only to say when the
+    chat's copy differs; on a PC whose Claude app keeps a private copy of
+    the settings folder this is not the file Revit decides by.
+    """
+    values = load() if values is None else values
+    return {"changes": writing_enabled(values),
+            "admin": truthy(values, "admin.enabled"),
+            "publish": truthy(values, "publish.enabled"),
+            "ask_to_keep": asks_before_keeping(values)}
 
 
 def problems(values=None):

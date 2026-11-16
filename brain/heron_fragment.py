@@ -161,6 +161,13 @@ AMBIENT = {
     # one. The add-in binds it true, and lets it through on the read and show
     # paths, where editScopeFailures is refused.
     "noTransactionOpen": "bool",
+    # Q-86, decided 2026-11-15. Declaring it says the fragment WAITS FOR THE
+    # MODELLER - Revit's own pick, which returns when they click or press Esc.
+    # The add-in binds it true and, on the read and show paths, holds its
+    # timers for the run as it does for a Keep or Discard box: the run clock
+    # is paused and the dispatcher waits revit.askTimeoutSeconds more. A run
+    # that can change the model is refused. The chat's side waits as long.
+    "waitsForModeller": "bool",
     # D-114. Revit overwrites a loaded family only when LoadFamily is handed
     # an IFamilyLoadOptions, which needs a class a fragment cannot declare -
     # so the add-in supplies a factory; its bool is overwriteParameterValues.

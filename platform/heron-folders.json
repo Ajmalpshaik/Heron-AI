@@ -1,0 +1,23 @@
+{
+  "about": [
+    "The folders the install scripts need, written by the add-in's own path code",
+    "(platform/Heron.Core/HeronPaths.cs) through tests/Heron.Folders.TestHost - Q-58.",
+    "NEVER EDITED BY HAND. Regenerate it: python tools/heron-folders.py --write",
+    "tests/test_heron_folders.py fails when it and the code disagree.",
+    "Each folder starts at the Windows special folder named by 'under' - the name",
+    "HeronPaths and PowerShell both hand to Windows - then 'parts' in order, with",
+    "{release} and {folder} filled in by the script. tools/HeronRevit.ps1 reads it."
+  ],
+  "folders": {
+    "InstallBackup": {
+      "from": "HeronPaths.InstallBackup",
+      "under": "LocalApplicationData",
+      "parts": ["Heron", "install-backup", "{release}", "{folder}"]
+    },
+    "RevitAddins": {
+      "from": "HeronPaths.RevitAddins",
+      "under": "ApplicationData",
+      "parts": ["Autodesk", "Revit", "Addins", "{release}"]
+    }
+  }
+}

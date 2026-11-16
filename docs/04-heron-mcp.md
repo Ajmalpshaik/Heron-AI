@@ -148,8 +148,11 @@ A DRAFT's one run is always asked. A publish is asked whenever *Ask to Keep* is 
 > budget (§8.8). Four methods in `brain/skills/` send the chat there since the same day -
 > `parameters-csv-round-trip`, `cad-to-mep`, `sheets-from-excel`, `reinforce-concrete`; this sentence said
 > *"not reworded yet"* until then - and still say to ask the modeller where the line could not say; any other
-> method that speaks of the switch is found with `grep -l "Ask to Keep" brain/skills/*.yaml`. Its write-gate line is still read
-> from the server's own copy of the settings ([Q-70](open-questions/tier-2.md), open). Held without Revit by
+> method that speaks of the switch is found with `grep -l "Ask to Keep" brain/skills/*.yaml`. Its write-gate line was read
+> from the server's own copy of the settings until 2026-11-16; since then ([Q-70](open-questions/tier-2.md), decided 2026-11-15)
+> `info` also carries `settingsFile`, `settingsFileFound` and `switches` (Changes, Admin, Publish), `revit_health`
+> prints them under each Revit with one more line when the chat's own copy differs, and the write gate is Changes as
+> the Revits that said have it - the chat's copy only when none did; not run in Revit, Group NP NP9 to NP14. Held without Revit by
 > [`tests/test_ask_to_keep_health.py`](../tests/test_ask_to_keep_health.py); **built, not yet run in Revit**
 > ([Group NP](needs-checking/group-np.md)).
 
@@ -488,8 +491,12 @@ it back* (D-55's preview): nothing is kept, Revit asks no Keep or Discard, and n
   user says to; that run is asked about in Revit or kept at once as *Ask to Keep* says, and its own
   counts are the ones that describe it.
 - **A dry run replaces what the chat had carried** for `expect_from`, as every run does. Its reply says
-  the earlier call must be run again before the kept run, and that nothing may be taken from a dry run;
-  whether a rolled-back run should replace it at all is [Q-89](open-questions/tier-2.md)
+  the earlier call must be run again before the kept run. **And nothing a run that was taken back left
+  is handed on** ([Q-89](open-questions/tier-2.md), decided 2026-11-15, built 2026-11-16, **not run in
+  Revit**): a call at any of the three doors whose `expect_from` names this chat's dry run, or a change
+  the modeller discarded, is refused before anything is sent, saying what was taken back and what to run
+  instead (`heron_run_records.TakenBack`); and the add-in refuses the same expectation itself,
+  `chain_taken_back`, for a run only Revit saw end or a server older than the rule
   ([row 5b-1612](fragment-issues/row-5b-1612.md)).
 
 **And a write's reply carries a read-back** ([D-156](decisions/D-156.md)): under the counts, each changed
@@ -1247,9 +1254,10 @@ has met a real Revit**: which reply the add-in sends for each ending is the C#'s
   run it yet, so nothing was run ..."*. A read goes on. After the wait jobs run again, but until
   Revit reports an undo in that model a change kept there ends *"Heron cannot take this back
   itself: revit_undo_last would refuse - an Undo Heron sent earlier has not been seen to run; it may
-  still run and take this change ..."*. **The posting operation is `undo_guarded`**, not the first
-  build's `undo_last`: a Revit still running that build answers `unknown_op`, and the chat is told
-  its Heron is older and that nothing was sent. Not run in Revit
+  still run and take this change ..."*. **The posting operation is `undo_own` since 2026-11-16**
+  ([Q-88](open-questions/tier-2.md): only the chat that made a change may undo it), not the first
+  build's `undo_last` nor `undo_guarded`: a Revit still running an add-in built before answers
+  `unknown_op`, and the chat is told its Heron is older and that nothing was sent. Not run in Revit
   ([Group NU](needs-checking/group-nu.md)).
 - **Which of the two a host shows its model** — the text or the structured content — is still not
   measured (§8.8). Both carry the word.
