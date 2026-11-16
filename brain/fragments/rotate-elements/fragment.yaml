@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "turn these elements about a vertical axis, and check they re
 kind: action
 domain: revit.geometry
 capability: ROTATE_ELEMENTS
-version: 3
+version: 4
 source: OFFICIAL
 risk: MODIFY
 
@@ -47,6 +47,22 @@ risk: MODIFY
 # three numbers is refused and nothing turned. The least change: no binder
 # change, one contract type, one parse the card already had for `axisLine`.
 # Still DRAFT at the time (D-30); version 1's proof was still the record.
+
+# VERSION 4 (2026-11-16) - THE FINDINGS SAY THE TURN, AND THE WORKING VALUE
+# STOPS READING AS ONE - and back to DRAFT. FRAGMENT-ISSUES row 5b-1708, from
+# Ajmalpshaik/Heron-AI#853 (Revit 2024, `villa 2`, item C3): asked for
+# -1.5707963 radians the reply printed "normalised 1.5707963", which reads as a
+# +90 degree turn; REPORT_LOCATION read 270 degrees afterwards, so the element
+# had turned clockwise as asked. `normalised` was the remainder after whole
+# turns, used only to test for a turn of nothing, and every variable a card
+# leaves is printed. It lives inside the test now (`isNoTurn`, printed as code
+# and not as an answer), `full` with it, and `findings` says the turn itself:
+# "Asked to turn 90 degrees clockwise seen from above, about ...: 6 turned,
+# ...". What is turned,
+# how it is turned and how it is checked are unchanged. Version 3 was PROVEN on
+# 2026-11-02 (the proof block below, kept as the record of what it proved); its
+# C# moved, so it is DRAFT again until NEEDS-CHECKING Group OB is run (D-30) -
+# on the owner's word of 2026-11-16 to fix every issue from #852 to #854.
 
 purpose: >
   Turns every element about a vertical axis - a mis-oriented piece of equipment
