@@ -1,0 +1,65 @@
+# Needs checking — Group OH
+
+> One group of [the register](../NEEDS-CHECKING.md), in its own file so that it can be read alone. **The
+> register's rules, and every group's place in it, are on that page.** A new row for this group goes in
+> this file. [`tools/needs-checking-register.py`](../../tools/needs-checking-register.py) reads it back
+> into the register for every tool that reads it, so a row here is seen exactly as it was seen there.
+
+## Group OH - a built-in parameter by Revit's name for it, an architectural column's top and a turn when placing, a type duplicated from itself, and a rotation said in degrees (2026-11-16)
+
+From Sruthina's field report Ajmalpshaik/Heron-AI#853 (Revit 2024, `villa 2`, 2026-11-11). On the owner's
+word of 2026-11-16 to fix every issue from #852 to #854, five PROVEN cards were repaired in a cloud
+container, **each at a new version and back to DRAFT, its old proof kept as the record**:
+
+| Card | Version | Row | Rows here |
+|---|---|---|---|
+| `write-element-parameters` | 7 | [5b-1703](../fragment-issues/row-5b-1703.md) | OH1 |
+| `set-parameter-values-by-id` | 9 | [5b-1703](../fragment-issues/row-5b-1703.md) | OH2 |
+| `place-family-instances` | 6 | [5b-1704](../fragment-issues/row-5b-1704.md), [5b-1706](../fragment-issues/row-5b-1706.md) | OH3, OH4 |
+| `duplicate-type` | 2 | [5b-1705](../fragment-issues/row-5b-1705.md) | OH5, OH6 |
+| `rotate-elements` | 4 | [5b-1708](../fragment-issues/row-5b-1708.md) | OH7 |
+
+Every card compiles on every release it claims (2020 to 2027, `tools/check-fragments-compile.py`, the
+cloud container's .NET SDK). **None of it has run in Revit.** No add-in code changed, so nothing needs
+rebuilding: the cards travel as source from the checkout. The batch is
+[`tools/jobs/field-853-repairs-oh-2026-11-16.yaml`](../../tools/jobs/field-853-repairs-oh-2026-11-16.yaml)
+(OH1, OH2, OH3, OH5, OH7); OH4 and OH6 are hand runs, because a batch writes one proof draft per card and a
+second job would overwrite the first. **Revit 2024 first**, the release the report came from.
+
+**The model: "Heron OB Test", a scratch project Heron makes itself - never a working model. Every run
+below ROLLS BACK; only OH0 is kept.**
+
+| ID | Do this | Pass looks like |
+|---|---|---|
+| **OH0** | *Arrange, Revit 2024.* (1) `create-family-document` with `templatePath` Revit 2024's own `English\DefaultMetric.rte` (Options > File Locations names its folder) and `savePath` `%TEMP%\heron-work\ob\Heron OB Test.rvt` - an ADMIN card, so the owner's **Admin** switch on for that one call and off after. (2) **From a checkout of `origin/main`**, where `place-family-instances` (v5) and `write-element-parameters` (v6) are still PROVEN - on this branch they are DRAFT and `--apply` refuses them - with `--write --apply`, kept: `create-levels` `names=Heron OB Roof`, `elevations=6000`; `place-family-instances` `symbol=M_Rectangular Column: 457 x 475mm`, `points=0,0,0`, `level=Level 1`; `write-element-parameters` on that column (`filter-elements-by-category category=Columns`, `set-selection`) `parameterName=Mark`, `value=OB-POST`. Save. Then back to this branch | Levels Level 1, Level 2 and Heron OB Roof (6000 mm); ONE column, Columns category, Mark OB-POST, its top as Revit placed it; the template's M_Single-Flush with a type "0915 x 2134mm" and no door placed. **If the template's type names differ**, write down what Revit shows and type those in the job file - the dry run does not catch a wrong name. **Write down the column's Properties: which parameters read "Top Level"** - two writable ones is row 5b-1703's premise |
+| **OH1** | *`write-element-parameters` v7, row 5b-1703 - batch.* The column; `parameterName=Top Level {FAMILY_TOP_LEVEL_PARAM}`, `value=Heron OB Roof`. Negative: `parameterName=Top Level` | Positive `written` 1, `ambiguous` empty - the column's Top Level reads Heron OB Roof in the rolled-back run's read-back. Negative `written` 0, the column in `ambiguous`, and a finding *"1 element(s) carry more than one parameter called 'Top Level' ... Name the one meant: 'Top Level {FAMILY_TOP_LEVEL_PARAM}'; 'Top Level {...}'"* - **write down the second one's name**: row 5b-1703 left it unread. **If the negative writes**, the column does not carry two writable "Top Level" on this release, and the row's premise is the finding |
+| **OH2** | *`set-parameter-values-by-id` v9, row 5b-1703 - batch.* `rows=key=Mark\|in=Columns;OB-POST\|Top Level {FAMILY_TOP_LEVEL_PARAM}=Heron OB Roof`. Negative: the same row with `Top Level` and no braces | Positive `written` 1. Negative `written` 0, refused *"two parameters on it are called Top Level and more than one can be written - name the one meant as 'Top Level {FAMILY_TOP_LEVEL_PARAM}' or ..."* - **never** *"{its GUID}"* for a built-in |
+| **OH3** | *`place-family-instances` v6, rows 5b-1704 and 5b-1706 - batch.* `symbol=M_Rectangular Column: 457 x 475mm`, `points=6000,0,0; 9000,0,0`, `level=Level 1`, **no `structuralType`**, `topLevelName=Heron OB Roof`, `topOffset=-150`, `rotationDegrees=90`. Negative: `rotationDegrees=ninety` | Positive `placed` 2, both **non-structural**; `tops` *"point 1 (6000, 0) - top asked 'Heron OB Roof' + -150 mm = 5850 mm, reads 'Heron OB Roof' + offset = 5850 mm, its geometry reaches ..."* and the same for point 2; findings *"Each one turned 90 degrees anticlockwise seen from above, about its own insertion point - read back on all 2"*. Version 5 refused the top (*"A top level is set only on columns"*) and had no rotation. Negative refused *"'ninety' is not a rotation"*, `placed` 0. **If the positive is refused "Revit put ... above 'Level 1' where 0 mm above it was asked"**, an architectural column's own level does not stand at its base (its Base Offset is where v6 writes the height): write down both figures |
+| **OH4** | *The same card, by hand.* Refusals read by hand, so **no proof draft**: `--out` goes to the scratch folder, never `brain/proof-drafts/runs/`, where OH3's real draft for this card sits. (a) `validate place-family-instances --in "Heron OB Test" --out "%TEMP%\heron-work\ob\ob4a.json" --write --set "symbol=M_Rectangular Column: 457 x 475mm" --set points=6000,0,0 --set "level=Level 1" --set "topLevelName=Level 1"`, and as its negative the same with `--negative-set "topLevelName=ZZZ No Level"`. (b) `rotationDegrees=-90` on one point (`--out` the scratch folder, as (a)). (d) **a column off the level, version 6's Base Offset**: `points=0,3000,500`, `level=Level 1`, no top (c) a non-column type - `symbol=M_Single-Flush: 0915 x 2134mm`, which the refusal stops before any placement, so it needs no wall - with `topLevelName=Heron OB Roof` | (a) both refused before anything is placed - *"The top level 'Level 1' ... is not above the base level"* and *"No level is named 'ZZZ No Level' exactly"* - `placed` 0. (b) *"Each one turned 90 degrees clockwise seen from above"*; in the rolled-back run's read-back, its width and depth swapped on plan, as OH3's 90 anticlockwise also swaps them - a square type would hide this, and 457 x 475mm is not square. (d) `placed` 1, `readBack` *"... standing 500 mm above it - ... Base Offset 500 mm"* - version 5 refused it *"carries no Elevation from Level to correct that with"*. (c) refused *"A top level is set only on columns - a Structural Columns family asked as a column, or a Columns family - and this was ..."*, `placed` 0 |
+| **OH5** | *`duplicate-type` v2, row 5b-1705 - batch.* `select-types` `categories=Doors`, `familyNameContains=M_Single-Flush`, `typeNameContains=0915 x 2134mm`, kept on the chain; `newTypeName=Heron OB Door 1000`. Negative: the same chain with `typeName=M_Single-Flush: ZZZ No Such Type` | Positive `createdTypeId` the new type, findings *"'0915 x 2134mm' duplicated as 'Heron OB Door 1000'"*, **`noType` empty** - where version 1 said *"Nothing in the selection resolves to a type"*. No door was ever placed. Negative refused *"No type in this project is called 'M_Single-Flush: ZZZ No Such Type'"*, `createdTypeId` (null). **If the positive is refused "sits on N different types"**, `typeNameContains` matched more than one size: narrow it |
+| **OH6** | *The same card, by hand - a type NAMED, nothing selected.* Clear the selection in Revit. `validate duplicate-type --in "Heron OB Test" --out brain/proof-drafts/runs/duplicate-type-ob6.json --write --set "typeName=M_Single-Flush: 0915 x 2134mm" --set "newTypeName=Heron OB Door 1100" --negative-set "typeName=ZZZ No Such Type" --negative-set "newTypeName=Heron OB Door Z"`. Then once with the column selected and the same `typeName` | Positive the new type made from that one, read back by name; version 1 had no `typeName` and was refused for want of a selection. Negative refused *"No type in this project is called 'ZZZ No Such Type'"*. With the column selected: the door type is still the one duplicated, and findings say *"The type was named, so the 1 element(s) selected were not used"* |
+| **OH7** | *`rotate-elements` v4, row 5b-1708 - batch.* The arranged column, `angleRadians=-1.5707963`, pivot left out. Negative: `angleRadians=6.283185307179586`, a whole turn in full - 6.2831853 is not refused, [row 5b-1780](../fragment-issues/row-5b-1780.md) | Positive `rotated` 1, findings *"Asked to turn 90 degrees clockwise seen from above, about a vertical axis through each one's own point: 1 turned, 0 accepted the call and did not move ..."*, and **no line named `normalised` or `full`** anywhere in the reply - version 3 printed *"normalised 1.5707963"*. Negative refused *"The angle is zero, or a whole turn"*, `rotated` 0 |
+
+Recorded, not repaired, while writing this group: [row 5b-1780](../fragment-issues/row-5b-1780.md) (a whole turn typed short is turned, not refused).
+
+**Read what each verdict quotes before signing: the runner cannot read a sentence**, and OH1, OH2 and OH7's
+negatives are judged only on their counts.
+
+### Results, 2026-11-16 - Revit 2024
+
+**Arranged:** `Heron OB Test.rvt` made by Heron from `English\DefaultMetric.rte` (OH0, `CREATE_FAMILY_DOCUMENT`,
+`CREATE_LEVELS` *Heron OB Roof* 6000, a column placed and marked `OB-POST`), saved under `%TEMP%\heron-work\ob`.
+The job file ran from this branch (`batch-prove`, session 29520, every run rolled back); the five run records
+are in `brain/proof-drafts/runs/`, and each quotation below is read from them.
+
+| Row | Result |
+|---|---|
+| OH1, run 2026-11-16 | **PASS** - positive `written 1`, `refused` empty; negative `written 0` with the finding *"1 element(s) carry more than one parameter called 'Top Level', so which one is meant would be a guess and nothing on them was touched. Name the one meant: 'Top Level {SCHEDULE_TOP_LEVEL_PARAM}'; 'Top Level {FAMILY_TOP_LEVEL_PARAM}' ..."*. |
+| OH2, run 2026-11-16 | **PASS** - positive `written 1`; negative `written 0`, `refused` *"OB-POST: two parameters on it are called Top Level and more ..."*. |
+| OH3, run 2026-11-16 | **PASS** - `placed 2` (352519, 352520), `tops` *"point 1 (6000, 0) - top asked 'Heron OB Roof' + -150 mm = 58..."* and point 2 the same, *"Top asked for: 'Heron OB Roof' + -150 mm. Read back as asked on all 2"*, *"Each one turned 90 degrees anticlockwise seen from above, about its own insertion point - read back on all 2"*; negative *"'ninety' is not a rotation ... Nothing was placed"*, `placed 0`. Group OE met version 5's refusal of an architectural column's top on main the same day (OE1 step 5) - row 5b-1704, repaired here. |
+| OH4, run 2026-11-16 | **NOT RUN** - the by-hand refusals were skipped in the sitting. |
+| OH5, run 2026-11-16 | **PASS** - `createdTypeId [id 352522]`, *"'0915 x 2134mm' duplicated as 'Heron OB Door 1000'. It is an EXACT copy ..."*; negative `createdTypeId` null, *"No type in this project is called 'M_Single-Flush: ZZZ No Such Type' ... NOTHING was created"*. |
+| OH6, run 2026-11-16 | **NOT RUN** - skipped in the sitting. |
+| OH7, run 2026-11-16 | **PASS** - `rotated 1`, *"Asked to turn 90 degrees clockwise seen from above ... 1 turned"*; negative `rotated 0`, *"The angle is zero, or a whole turn, so nothing would move ..."*. |
+
+**For signing:** five cards with a PASS draft. OH4 and OH6 are by-hand evidence the owner may ask for first.

@@ -530,6 +530,13 @@ def build_cases(module, core):
     on_disk, _f = first_with("EXECUTE", "PROVEN",
                              lambda folder, capability: stands(folder, capability)
                              and not shows(folder, capability))
+    # A DRAFT ONE WHEN NO PROVEN CARD WRITES A FILE, as `show` above falls
+    # back: revit_change asks the dry-run rule BEFORE the PROVEN rule, so the
+    # refusal is the same either way. OPEN_FAMILY_FOR_EDITING was the only
+    # PROVEN one until it went back to DRAFT at version 3 (row 5b-1820).
+    if on_disk is None:
+        on_disk, _f = first_with("EXECUTE", "DRAFT",
+                                 lambda folder, capability: not shows(folder, capability))
     picked["outward"], picked["on disk"] = outward, on_disk
 
     ranked = {"capability": read, "risk": "READ", "route": "ranked",
@@ -1645,6 +1652,47 @@ def the_undo_tool(stage, cases, replies):
           "model by path and title - found %r" % (asked,))
 
 
+def the_record_says_it_too(module, cases, picked):
+    """
+    ROW 5b-1821: a run record read back with heron_run_record says the word
+    its door said. D-168 reads a kept reply with the card's declared results
+    at the door; the record's opening line said KEPT from verdictKind alone.
+    The three D-168 replies above are written as records naming the card the
+    door was asked for, in this suite's own runs folder, and read back.
+    """
+    import json
+    import heron_bridge_client as bridge
+    print()
+    print("A run record read back says the word its door said (row 5b-1821)")
+    folder, _status = module._fragment_for(picked["nothing"])
+    wanted = {"a keep the capability itself refused, nothing made": "REFUSED",
+              "a keep that changed nothing by Revit's count and the card's": "NOTHING CHANGED",
+              "a keep that did part of the job and refused the rest": "KEPT"}
+    replies = dict((case.name, case.reply) for case in cases if case.name in wanted)
+    check(len(replies) == len(wanted), "the three D-168 replies are among the cases")
+
+    def record(run, fragment, reply):
+        with io.open(os.path.join(bridge.RUNS_DIR, run + ".json"), "w", encoding="utf-8") as fh:
+            json.dump({"fragment": fragment, "document": "Outcome Test", "reply": reply}, fh)
+        return module.heron_run_record(run=run).splitlines()[0]
+
+    for number, name in enumerate(sorted(replies)):
+        word = wanted[name]
+        head = record("wf-20261116-000000-%04d-abcd" % (number + 1), folder, replies[name])
+        check(head.endswith("- KEPT.") if word == "KEPT"
+              else (word in head and "KEPT" not in head),
+              "%s: the record's opening line says %s - %r" % (name, word, head))
+    nothing_made = replies.get("a keep that changed nothing by Revit's count and the card's")
+    for fragment in ("no-such-card-anywhere", "../" + str(folder)):
+        head = record("wf-20261116-000001-0009-abcd", fragment, nothing_made)
+        check(head.endswith("- KEPT."),
+              "a record naming %r - no card, or not a folder name - keeps KEPT, the old word"
+              % fragment)
+    listed = module.heron_run_record()
+    check("NOTHING CHANGED" in listed and "REFUSED" in listed,
+          "and the list of newest records says the same words")
+
+
 def the_chat_is_told():
     """Section 8, and it runs first: it needs no SDK and no server."""
     print()
@@ -1789,6 +1837,7 @@ def main():
         asyncio.run(through_the_sdk(stage, cases, picked))
         nothing_else_moved(stage, cases, replies, picked)
         the_undo_tool(stage, cases, replies)
+        the_record_says_it_too(module, cases, picked)
 
         guard.stop()
         print()

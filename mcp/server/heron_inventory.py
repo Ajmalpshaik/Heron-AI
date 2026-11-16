@@ -621,38 +621,59 @@ def _picture_to_model(reply, picture):
                formula(x0, right[0], down[0]), formula(y0, right[1], down[1])))
 
 
+#: `around` with `elements` - refused before Revit is asked (row 5b-1710).
+REGION_WITH_ELEMENTS = (
+    "Give `around` OR `elements`, not both: `around` pictures a region of a plan, "
+    "`elements` pictures elements in a temporary 3D view. Nothing has been sent to Revit.")
+
+#: The add-in answered a region request with the whole view - it is older than
+#: this server and reads no `around` (row 5b-1710).
+REGION_NOT_READ = (
+    "! NOT THE REGION: the add-in in Revit is older than this server and read no `around`, "
+    "so this is %r WHOLE. Restart Revit once Heron is updated, then ask again.")
+
+
+def region_line(reply, where):
+    """The first line of a region picture (row 5b-1710): which plan, what
+    region, how wide, and whether the plan's tags and dimensions came with it.
+    `view` is the temporary copy's own name, so the plan is `regionOf`."""
+    said = ("A picture of a region of %r (%s) in %s - %s - %s px wide, from a temporary "
+            "copy of the plan cropped to it."
+            % (reply.get("regionOf") or reply.get("view"), reply.get("viewType"), where,
+               reply.get("region") or "the region asked for", reply.get("pixelWidth")))
+    if reply.get("detailingCopied") is False:
+        said += (" Revit would not copy the plan with its detailing, so its tags, "
+                 "dimensions and text are NOT in this picture.")
+    return said
+
+
 @server.tool()
-def revit_view_image(view: str = "", elements: str = "", width: int = 1280) -> list:
+def revit_view_image(view: str = "", elements: str = "", width: int = 1280,
+                     around: str = "") -> list:
     """
     Take a picture of a Revit view and LOOK at it - to check what you just
-    did, instead of trusting a count.
+    did, instead of trusting a count. Give ONE of:
 
-    Say what to picture in one of two ways:
+    - `view`: a view or sheet name as the Project Browser shows it; empty is
+      the view in front. Pictured as it stands - template, crop, filters -
+      and not changed. Two views of one name are listed "ViewType: Name" to
+      copy. A cropped plan, no annotation crop, maps to model mm (MX19).
+    - `elements`: element ids, comma separated, as Heron prints them -
+      Revit's number, or a form's long id from CREATE_FAMILY_FORMS or
+      REPORT_FAMILY_FORMS. Framed in a temporary isometric 3D view, a section
+      box round them with a margin; levels, grids and links left out, floors,
+      ceilings and roofs over them hidden and named; a family's connectors
+      hidden unless asked for. An id not in the model refuses the picture.
+    - `around`, with a PLAN as `view` (or in front): a region of it - element
+      ids, or a box "x1,y1;x2,y2" in mm from Revit's internal origin (the
+      model-position line's numbers) - pictured from a temporary copy of the
+      plan cropped to it, tags and dimensions kept. Not with `elements`.
 
-    - `view`: a view or sheet name as the Project Browser shows it. Empty
-      means the view in front. It is pictured exactly as it stands - its
-      template, crop and filters - and nothing about it is changed. If two
-      views share the name, the answer lists each as "ViewType: Name" to
-      copy. A cropped plan, no annotation crop, maps to model mm (not yet
-      measured, MX19).
-    - `elements`: element ids, comma separated, as Heron's answers print them
-      - Revit's number, or a form's long id from CREATE_FAMILY_FORMS or
-      REPORT_FAMILY_FORMS; the two may be mixed. Heron
-      frames just those in a temporary isometric 3D view - a section box round
-      them with a margin, model categories only, levels, grids and links left
-      out - and takes the view away again. In a project, floors,
-      ceilings and roofs over them are hidden, and named. In a family its
-      forms are framed too, by their extents; its connectors are hidden
-      unless asked for. An id
-      not in the model or family in front refuses the whole picture, naming
-      it.
+    `width`: 320 to 2400 px (default 1280).
 
-    `width`: the picture's width, 320 to 2400 px (default 1280).
-
-    IT CHANGES NOTHING. The temporary view is made inside a group Revit always
-    rolls back - there is no way to keep it - and the picture is written to
-    Heron's own folder, read back and deleted. Nothing is exported
-    anywhere another person reads. revit_views gives a view's name.
+    IT CHANGES NOTHING. A temporary view or copy is made in a group Revit
+    always rolls back, and the picture is written to Heron's own folder, read
+    back and deleted. revit_views gives a view's name.
     """
     if _Image is None:
         return _ended("refused",
@@ -660,6 +681,12 @@ def revit_view_image(view: str = "", elements: str = "", width: int = 1280) -> l
                       "chat. Update it, in the Heron folder, with:  %s - then restart the "
                       "chat. Nothing has been sent to Revit."
                       % install_line("pip install --user --upgrade mcp"))
+
+    # A REGION IS OF A PLAN, AND ELEMENTS ARE A 3D VIEW (row 5b-1710): the
+    # two cannot be one picture, so the pair is refused before Revit is asked.
+    region = (around or "").strip()
+    if region and (elements or "").strip():
+        return _ended("refused", REGION_WITH_ELEMENTS)
 
     try:
         session = binding.resolve()
@@ -673,6 +700,7 @@ def revit_view_image(view: str = "", elements: str = "", width: int = 1280) -> l
                             op_args={"view": (view or "").strip(),
                                      "elementIds": (elements or "").strip(),
                                      "pixelWidth": width,
+                                     "around": region,
                                      "expectProject": pinned.project_information_id or ""})
     session.close()
     _ended_by_reply("revit_view_image", reply)
@@ -699,7 +727,17 @@ def revit_view_image(view: str = "", elements: str = "", width: int = 1280) -> l
                 "look at. Ask again; if it repeats, the add-in may be older than this "
                 "server." % where)
 
-    if reply.get("mode") == "elements":
+    if region and reply.get("mode") != "region":
+        # AN ADD-IN OLDER THAN THIS SERVER reads no `around` and pictures the
+        # view whole: said first, so the chat never reads it as the region.
+        lines = [REGION_NOT_READ % (reply.get("view"),)]
+        lines.append("A picture of %r (%s) in %s, %s px wide."
+                     % (reply.get("view"), reply.get("viewType"), where, reply.get("pixelWidth")))
+    elif reply.get("mode") == "region":
+        lines = [region_line(reply, where)]
+        if reply.get("leftOut"):
+            lines.append("Left out of the region: %s." % reply.get("leftOut"))
+    elif reply.get("mode") == "elements":
         lines = ["A picture of %d element(s) in %s, in a temporary 3D view, %s px wide."
                  % (reply.get("shown", 0), where, reply.get("pixelWidth"))]
         if reply.get("leftOut"):
@@ -732,6 +770,9 @@ def revit_view_image(view: str = "", elements: str = "", width: int = 1280) -> l
         lines.append("! %s" % note)
     elif reply.get("mode") == "elements":
         lines.append("The temporary view is gone - Revit rolled it back. Nothing was changed.")
+    elif reply.get("mode") == "region":
+        lines.append("The temporary copy of the plan is gone - Revit rolled it back. The plan "
+                     "itself was not changed.")
     else:
         lines.append("Nothing was changed.")
     if note and not (reply.get("keptLost") and reply.get("rolledBack") is not False):

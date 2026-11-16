@@ -1546,9 +1546,25 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ob.md`](needs-checking/group-ob.md)
 
+## Group OC - tags, move and schedules from the villa 2 field reports, repaired in code and not yet run: rows 5b-1707, 5b-1730, 5b-1731, 5b-1732, 5b-1733 and 5b-1736 (2026-11-16)
+
+**Its own file:** [`needs-checking/group-oc.md`](needs-checking/group-oc.md)
+
+## Group OD - OPEN_FAMILY_FOR_EDITING reads what is in front, a picture of a region of a plan, and a store warning that names what to do (2026-11-16)
+
+**Its own file:** [`needs-checking/group-od.md`](needs-checking/group-od.md)
+
+## Group OE - roofs, walls, levels and delete from field reports #852 to #854: slope the edges chosen, a wall's top shaped to the roof, a column's top level, and the walls a delete detaches: `SLOPE_ROOF_EDGES`, `SHAPE_WALL_TOPS_TO_ROOF`, `SET_ELEMENT_LEVEL`, `DELETE_ELEMENTS` (2026-11-16)
+
+**Its own file:** [`needs-checking/group-oe.md`](needs-checking/group-oe.md)
+
 ## Group OF - a proof records which Heron add-in and which Revit build it was taken on, and says so when either moves: `built_on:` (2026-11-16)
 
 **Its own file:** [`needs-checking/group-of.md`](needs-checking/group-of.md)
+
+## Group OH - a built-in parameter by Revit's name for it, an architectural column's top and a turn when placing, a type duplicated from itself, and a rotation said in degrees (2026-11-16)
+
+**Its own file:** [`needs-checking/group-oh.md`](needs-checking/group-oh.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 

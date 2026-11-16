@@ -284,6 +284,52 @@ def lock_on_windows():
           "and so does the repair of a broken import: %s" % pip_lines(out))
 
 
+def store_rebuilt(store):
+    """Section 3a. Row 5b-1711, issue #853: a modeller's every lookup warned
+    that the store did not hold three cards, for a whole session, and this
+    tool said "ready" over it - opening a store adds no card. A row taken out
+    of a store this folder may build must be put back by the tool, said, and
+    the store then match."""
+    import sqlite3
+    dbs = [name for name in os.listdir(store) if name.endswith(".db")]
+    held = None
+    for name in dbs:
+        db = sqlite3.connect(os.path.join(store, name))
+        try:
+            tables = [row[0] for row in db.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'")]
+            if "fragments" not in tables:
+                continue
+            row = db.execute("SELECT id, folder FROM fragments ORDER BY id LIMIT 1").fetchone()
+            if row is None:
+                continue
+            held = (name, row[0], row[1])
+            db.execute("DELETE FROM fragments WHERE id = ?", (row[0],))
+            db.commit()
+            break
+        finally:
+            db.close()
+    check(held is not None, "a row could be taken out of the store built above")
+    if held is None:
+        return
+    card = (held[2] or "").replace("\\", "/").rstrip("/").rsplit("/", 1)[-1]
+
+    code, out = run(store)
+    check("rebuilt, because 1 card(s) here not in it: %s" % card in out,
+          "the tool says it rebuilt the store, and names the card that had no row: %s"
+          % ([line.strip() for line in out.splitlines() if "tool cards" in line] or "none"))
+    db = sqlite3.connect(os.path.join(store, held[0]))
+    try:
+        back = db.execute("SELECT COUNT(*) FROM fragments WHERE id = ?", (held[1],)).fetchone()[0]
+    finally:
+        db.close()
+    check(back == 1, "and the row is back in the store (%s)" % held[1])
+
+    code, out = run(store)
+    check("tool cards ready" in out and "rebuilt" not in out,
+          "a second run, on a store that now matches, rebuilds nothing")
+
+
 def main():
     if not os.path.exists(TOOL):
         check(False, "tools/heron-ready.py exists")
@@ -348,6 +394,12 @@ def main():
         check(any(name.endswith(".db") for name in os.listdir(store)),
               "and the store is on disk in the folder it was given: %s"
               % ", ".join(sorted(os.listdir(store))))
+        check("rebuilt" not in out,
+              "a store built from this folder's cards is not rebuilt again")
+
+        print()
+        print("3a. A store that does not hold this folder's cards is REBUILT (row 5b-1711)")
+        store_rebuilt(store)
 
         print()
         print("4. A snapshot says what a PC has - and carries no secret")

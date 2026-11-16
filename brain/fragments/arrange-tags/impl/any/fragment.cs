@@ -1,7 +1,18 @@
 // NOT STANDALONE. Assumes `doc`, `view`, `elements`, `minGapMm`, `maxPasses`,
-// `fallbackTagWidthMm` and `fallbackTagHeightMm` are in scope, and leaves
-// `moved`, `measuredFrom`, `bothHadToMove`, `stillOverlapping`, `notTags` and
-// `refused` behind.
+// `fallbackTagWidthMm`, `fallbackTagHeightMm` and `roomTagsStayPut` are in
+// scope, and leaves `moved`, `measuredFrom`, `bothHadToMove`,
+// `stillOverlapping`, `notTags`, `refused` and `keptInPlace` behind.
+//
+// VERSION 2 (2026-11-16) - ROOM, SPACE AND AREA TAGS TOO (row 5b-1732, issue
+// #854 item c, villa 2 on Revit 2024). Version 1 kept an element only as an
+// IndependentTag, so a room tag - a SpatialElementTag - went to `notTags`,
+// was never moved and was not even an obstacle: the commonest clash on a
+// plan, a door tag over a room tag, could not be pushed apart. A
+// SpatialElementTag is now arranged by its TagHeadPosition like the rest; its
+// leader, if it has one, is not written to. With `roomTagsStayPut`
+// true, room, space and area tags stay exactly where they are - counted as
+// fixed obstacles the other tags move away from, in both phases, and named in
+// `keptInPlace`.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). One tidy-up, one undo.
 //
@@ -45,19 +56,32 @@ var bothHadToMove = new List<ElementId>();
 var stillOverlapping = new List<ElementId>();
 var notTags = new List<ElementId>();
 var refused = new List<ElementId>();
+// VERSION 2 (row 5b-1732): room, space and area tags held still on request.
+var keptInPlace = new List<ElementId>();
 
 double gap = minGapMm * MmToFeet;
 
 var right = view.RightDirection;
 var up = view.UpDirection;
 
-var tags = new List<IndependentTag>();
+// VERSION 2: an IndependentTag OR a room, space or area tag.
+var tags = new List<Element>();
 foreach (var element in elements)
 {
-    var tag = element as IndependentTag;
-    if (tag == null) { if (element != null) notTags.Add(element.Id); continue; }
-    tags.Add(tag);
+    if (element == null) continue;
+    if (element is IndependentTag || element is SpatialElementTag) tags.Add(element);
+    else notTags.Add(element.Id);
 }
+
+Func<Element, XYZ> headOf = element =>
+{
+    var independent = element as IndependentTag;
+    if (independent != null) { try { return independent.TagHeadPosition; } catch { return null; } }
+    var spatial = element as SpatialElementTag;
+    if (spatial != null) { try { return spatial.TagHeadPosition; } catch { return null; } }
+    return null;
+};
+var fixedTag = new Dictionary<ElementId, bool>();
 
 // ---- what each tag is, and where it is ----
 var atX = new Dictionary<ElementId, double>();   // along the view's right
@@ -69,15 +93,48 @@ var freeEnds = new Dictionary<ElementId, XYZ>();
 var measuredWidths = new List<double>();
 var measuredHeights = new List<double>();
 
-foreach (var tag in tags)
+foreach (var anyTag in tags)
 {
-    XYZ head = null;
-    try { head = tag.TagHeadPosition; } catch { }
-    if (head == null) { refused.Add(tag.Id); continue; }
+    XYZ head = headOf(anyTag);
+    if (head == null) { refused.Add(anyTag.Id); continue; }
 
-    heads[tag.Id] = head;
-    atX[tag.Id] = head.DotProduct(right);
-    atY[tag.Id] = head.DotProduct(up);
+    heads[anyTag.Id] = head;
+    atX[anyTag.Id] = head.DotProduct(right);
+    atY[anyTag.Id] = head.DotProduct(up);
+
+    // VERSION 2: a room, space or area tag - straight, and held still when
+    // asked. Only a leaderless one is measured, as for the rest.
+    var spatialTag = anyTag as SpatialElementTag;
+    if (spatialTag != null)
+    {
+        fixedTag[anyTag.Id] = roomTagsStayPut;
+        if (roomTagsStayPut) keptInPlace.Add(anyTag.Id);
+        straight[anyTag.Id] = true;
+        bool spatialLeader = false;
+        try { spatialLeader = spatialTag.HasLeader; } catch { }
+        if (!spatialLeader)
+        {
+            try
+            {
+                var spatialBox = spatialTag.get_BoundingBox(view);
+                if (spatialBox != null)
+                {
+                    var spatialSize = spatialBox.Max - spatialBox.Min;
+                    double spatialWidth = Math.Abs(spatialSize.DotProduct(right));
+                    double spatialHeight = Math.Abs(spatialSize.DotProduct(up));
+                    if (spatialWidth > 0 && spatialHeight > 0)
+                    {
+                        measuredWidths.Add(spatialWidth);
+                        measuredHeights.Add(spatialHeight);
+                    }
+                }
+            }
+            catch { }
+        }
+        continue;
+    }
+    fixedTag[anyTag.Id] = false;
+    var tag = (IndependentTag)anyTag;
 
     bool hasLeader = false;
     try { hasLeader = tag.HasLeader; } catch { }
@@ -212,6 +269,11 @@ Func<bool, int> separate = allowBothToMove =>
 
                 if (allowBothToMove) { oneCanMove = true; twoCanMove = true; }
 
+                // VERSION 2: a tag held still never moves, in either phase.
+                if (fixedTag[one]) oneCanMove = false;
+                if (fixedTag[two]) twoCanMove = false;
+                if (!oneCanMove && !twoCanMove) continue;
+
                 double shareOne, shareTwo;
                 if (oneCanMove && twoCanMove) { shareOne = push / 2.0; shareTwo = push / 2.0; }
                 else if (oneCanMove) { shareOne = push; shareTwo = 0; }
@@ -231,7 +293,7 @@ Func<bool, int> separate = allowBothToMove =>
                 anyMovedThisPass = true;
                 pairsTouched++;
 
-                if (allowBothToMove)
+                if (allowBothToMove && oneCanMove && twoCanMove)
                 {
                     if (!bothHadToMove.Contains(one)) bothHadToMove.Add(one);
                     if (!bothHadToMove.Contains(two)) bothHadToMove.Add(two);
@@ -270,10 +332,23 @@ foreach (var id in working)
     double alongUp = atY[id] - head.DotProduct(up);
     if (Math.Abs(alongRight) < 1e-9 && Math.Abs(alongUp) < 1e-9) continue;
 
+    XYZ target = head + right * alongRight + up * alongUp;
+
+    // VERSION 2: a room, space or area tag, by its head.
+    var spatialToMove = doc.GetElement(id) as SpatialElementTag;
+    if (spatialToMove != null)
+    {
+        try { spatialToMove.TagHeadPosition = target; }
+        catch { refused.Add(id); continue; }
+        XYZ spatialNow = null;
+        try { spatialNow = spatialToMove.TagHeadPosition; } catch { }
+        if (spatialNow == null || spatialNow.IsAlmostEqualTo(head)) { refused.Add(id); continue; }
+        moved++;
+        continue;
+    }
+
     var tag = doc.GetElement(id) as IndependentTag;
     if (tag == null) { refused.Add(id); continue; }
-
-    XYZ target = head + right * alongRight + up * alongUp;
 
     try { tag.TagHeadPosition = target; }
     catch { refused.Add(id); continue; }

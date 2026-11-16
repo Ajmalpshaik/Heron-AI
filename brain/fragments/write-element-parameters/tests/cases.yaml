@@ -53,6 +53,17 @@ positive:
   - given: an element whose parameter is already empty, clear true
     expect: in `alreadyEmpty`, not counted as cleared
 
+  # VERSION 7 (2026-11-16, FRAGMENT-ISSUES row 5b-1703). NOT RUN. On a scratch
+  # project Heron makes from English DefaultMetric.rte: one M_Rectangular
+  # Column (Columns, architectural) placed on Level 1, top as placed. FAILS on
+  # version 6, which refused it into `ambiguous`.
+  - given: >
+      that column, parameterName "Top Level {FAMILY_TOP_LEVEL_PARAM}",
+      value "Level 2"
+    expect: >
+      written 1, `ambiguous` empty; Properties shows Top Level = Level 2. The
+      other parameter called Top Level is untouched
+
 negative:
   - given: 4 elements that do not have the named parameter at all
     expect: >
@@ -142,6 +153,20 @@ negative:
 
   - given: an element deleted between the query and the call, clear true or a write
     expect: counted in a finding and passed over, the rest of the batch done - no throw
+
+  # VERSION 7 (2026-11-16, row 5b-1703). NOT RUN.
+  - given: the same column, parameterName "Top Level" (no braces), value "Level 2"
+    expect: >
+      written 0, the column in `ambiguous`, and a finding naming how each is
+      reached - "'Top Level {FAMILY_TOP_LEVEL_PARAM}'; 'Top Level {...}'".
+      Version 6 put it in `ambiguous` and said nothing. Write down the second
+      name: it is the one row 5b-1703 left unread
+  - given: the same column, parameterName "Comments {FAMILY_TOP_LEVEL_PARAM}", value "Level 2"
+    expect: written 0, the column in `absent` - the built-in is not called Comments
+  - given: the same column, parameterName "Top Level {NOT_A_BUILT_IN}", value "Level 2"
+    expect: >
+      written 0, in `absent`, and a finding that '{NOT_A_BUILT_IN}' is not a
+      name Revit gives a built-in, so the whole text was looked up
 
 second_route:
   - a Revit schedule of the same parameter, read after the write

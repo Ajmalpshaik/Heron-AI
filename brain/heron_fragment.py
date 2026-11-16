@@ -807,7 +807,7 @@ NO_HINT_ON_PURPOSE = {
 
 
 def need_notes(path):
-    """What each need's own author wrote above it in `contract.needs`, by name.
+    """What each need's own author wrote above or below its name in `contract.needs`, by name.
 
     A TYPE HINT CANNOT CARRY A SYNTAX, AND THE CARD ALREADY DOES. how_to_type
     says how to write a `double` or a list; it has nothing to say about a
@@ -822,9 +822,10 @@ def need_notes(path):
     syntax - the file-reading AGENTS.md forbids for a Revit job, about a minute
     and a half of one family. FRAGMENT-ISSUES 5b-397.
 
-    So the comment lines directly above each `- name:` inside `contract.needs`
-    are returned joined, keyed by that name. A need with no comment above it
-    is simply absent. Read as TEXT for the same reason
+    So the comment lines directly above each `- name:` inside `contract.needs`,
+    then those directly below it before the need's next key (5b-1740), are
+    returned joined, keyed by that name. A need with no comment there is
+    simply absent. Read as TEXT for the same reason
     heron_bridge_client.fragment_needs is: a comment is not data to a YAML
     parser. Anything unreadable gives {} - a note missing is the state before
     this existed, never a wrong note.
@@ -835,7 +836,14 @@ def need_notes(path):
     except (OSError, UnicodeDecodeError):
         return {}
 
+    # AND THE COMMENT LINES DIRECTLY BELOW `- name:`, before that need's next
+    # key - row 5b-1740. 99 cards write a need's note there, between its name
+    # and its `type:` (251 needs, measured 2026-11-16 over the library; none
+    # writes one in both places), and none of them was served. Below the name
+    # and above its next key can belong to no other need, so it is that need's,
+    # after any note above it. The rule below `type:` is unchanged.
     notes, pending = {}, []
+    under, dash = None, 0               # the need whose `- name:` was the last line, and its dash's indent
     in_contract = in_needs = False
     for raw in lines:
         line = raw.rstrip()
@@ -861,12 +869,23 @@ def need_notes(path):
         if not in_needs:
             continue
         if comment:
-            pending.append(stripped.lstrip("#").strip())
+            said = stripped.lstrip("#").strip()
+            # Below the name only when indented past its dash - a comment at
+            # the dash's own indent opens the next need's note, as before.
+            if under is not None and indent > dash:
+                if said:
+                    notes[under] = (notes[under] + " " + said) if notes.get(under) else said
+            else:
+                under = None
+                pending.append(said)
             continue
+        under = None
         if stripped.startswith("- "):
             key, _sep, value = stripped[2:].partition(":")
-            if key.strip() == "name" and any(pending):
-                notes[value.strip().strip("\"'")] = " ".join(p for p in pending if p)
+            if key.strip() == "name":
+                under, dash = value.strip().strip("\"'"), indent
+                if any(pending):
+                    notes[under] = " ".join(p for p in pending if p)
         # A key line ends the comment run: a comment BELOW `type:` belongs to
         # the next need, never to the one it sits inside.
         pending = []

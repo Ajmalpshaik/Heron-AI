@@ -123,6 +123,35 @@ positive:
   - given: the same on Revit 2024 with a LEVEL-BASED nested family, level "Ref. Level"
     expect: placed on the level "Ref. Level", read back at the point
 
+  # VERSION 6 (2026-11-16, FRAGMENT-ISSUES rows 5b-1704 and 5b-1706). NOT RUN.
+  # On a scratch project Heron makes from English DefaultMetric.rte, whose
+  # M_Rectangular Column is a COLUMNS (architectural) family. Each FAILS on
+  # version 5.
+  - given: >
+      one point on Level 1 at z 0, M_Rectangular Column (its first type), no
+      structuralType, topLevelName "Level 2", topOffset -150
+    expect: >
+      placed 1, NON-STRUCTURAL, and `tops` "point 1 ... top asked 'Level 2' +
+      -150 mm = N mm, reads 'Level 2' + offset = N mm" - its Top Level reads
+      Level 2 and Top Offset -150 in Properties. Version 5 refused it "A top
+      level is set only on columns ... Nothing was placed" (row 5b-1704)
+  - given: >
+      the same column at two points on Level 1, rotationDegrees 90
+    expect: >
+      placed 2, `findings` "Each one turned 90 degrees anticlockwise seen from
+      above, about its own insertion point - read back on all 2", each still at
+      its own point. Version 5 had no rotationDegrees: the add-in bound it to
+      nothing and the column faced the model's X (row 5b-1706)
+  - given: the same, rotationDegrees -90
+    expect: '"turned 90 degrees clockwise seen from above" - the sign is the direction'
+  - given: >
+      M_Rectangular Column at 0,3000,500 on Level 1 (500 mm above it), no top
+    expect: >
+      placed 1, `readBack` "... standing 500 mm above it - ... Base Offset 500
+      mm". An architectural column carries no Elevation from Level, which is
+      where version 5 wrote the height, so version 5 refused it "carries no
+      Elevation from Level to correct that with"
+
 negative:
   - given: an empty point list
     expect: >
@@ -206,6 +235,19 @@ negative:
     expect: refused - a nested component is non-structural - and nothing placed
   - given: a project in front, workPlane "Ref. Level"
     expect: refused - workPlane is a nested family's - and nothing placed
+
+  # VERSION 6 (2026-11-16, rows 5b-1704 and 5b-1706). NOT RUN.
+  - given: >
+      a non-column family (a loaded furniture or generic model type) with
+      topLevelName "Level 2"
+    expect: >
+      refused before anything is placed - "A top level is set only on columns -
+      a Structural Columns family asked as a column, or a Columns family ..."
+      - placed 0
+  - given: M_Rectangular Column, rotationDegrees "ninety"
+    expect: refused "'ninety' is not a rotation ... Nothing was placed" - placed 0
+  - given: M_Rectangular Column, topLevelName "Level 1" - the base level itself
+    expect: refused - the top is not above the base - placed 0
 
 second_route:
   - a schedule of that family, counted against the number asked for

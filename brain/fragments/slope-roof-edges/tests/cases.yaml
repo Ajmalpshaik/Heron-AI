@@ -65,6 +65,38 @@ positive:
       the same answer. One path serves every release; this is the release at
       the other end of the range
 
+  # VERSION 2 - THE `edges` SHAPE (row 5b-1670). Every case below FAILS on
+  # version 1, which refused roofShape edges by name ("'edges' is not a roof
+  # shape this makes") and had no edgeNumbers at all. NEEDS-CHECKING Group OE.
+
+  - given: >
+      VERSION 2. A flat 7-sided roof made by CREATE_FLOOR with a roof type on
+      Level 2 - boundary "0,0,0; 12000,0,0; 12000,4000,0; 9000,7000,0;
+      3000,7000,0; 0,4000,0; 0,2000,0" - selected; roofShape edges,
+      pitchDegrees 30, edgeNumbers left out
+    expect: >
+      NOTHING changed: sloped 0, readBack empty, refused saying no edge numbers
+      were given and listing all 7 edges as "edge N, L mm, from (x, y) to
+      (x, y) mm". This is the listing the next ask reads its numbers from. On
+      version 1: refused, 'edges' is not a roof shape
+
+  - given: >
+      VERSION 2. The same roof, roofShape edges, pitchDegrees 30, edgeNumbers
+      the two edges the listing above gives as the 12000 mm side and the
+      6000 mm side opposite it
+    expect: >
+      sloped 2, upright 5, differs empty, refused empty. readBack names those
+      two edges "eave: Defines Slope on at 30.00 degrees (Revit holds a rise of
+      0.5774 per 1 of run), was off" and the other five "upright edge: Defines
+      Slope off". measuredMm shows the highest point well above the 400 mm it
+      was - a ridge between the two eaves. In a 3D view: two slopes and five
+      upright ends, no shape-edit seams. On version 1: refused, nothing sloped
+
+  - given: VERSION 2. The 10000 x 6000 rectangle, roofShape edges, edgeNumbers "1", pitchDegrees 15
+    expect: >
+      a lean-to: sloped 1, upright 3, the one edge at 15.00 degrees. On version
+      1 there was no way to slope one edge
+
 negative:
   - given: >
       the same arrangement and the SAME request - roofShape gable, pitchDegrees
@@ -105,6 +137,26 @@ negative:
     expect: >
       refused as an extrusion roof whose slope comes from its profile; sloped 0
       and the roof unchanged
+
+  # VERSION 2 negatives (row 5b-1670) - each a roof it must NOT touch.
+
+  - given: VERSION 2. The 7-sided roof, roofShape edges, edgeNumbers "9", pitchDegrees 30
+    expect: >
+      refused "it has 7 edges, so there is no edge 9" with the 7 edges listed;
+      sloped 0, readBack empty, the roof still flat
+
+  - given: VERSION 2. The 10000 x 6000 rectangle, roofShape gable, edgeNumbers "1, 3", pitchDegrees 30
+    expect: >
+      refused - edge numbers are read only with the shape edges - before any
+      roof is looked at; sloped 0. One number never means two things
+
+  - given: VERSION 2. The rectangle and the 7-sided roof BOTH selected, roofShape edges, edgeNumbers "1"
+    expect: >
+      refused - 2 footprint roofs are selected and an edge number belongs to
+      one roof; sloped 0 on both
+
+  - given: VERSION 2. The rectangle, roofShape edges, edgeNumbers "two", pitchDegrees 30
+    expect: refused - 'two' is not an edge number; sloped 0
 
 second_route:
   - >

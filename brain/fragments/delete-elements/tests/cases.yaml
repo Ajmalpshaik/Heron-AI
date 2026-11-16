@@ -26,5 +26,36 @@ negative:
       it is in refused, NOT counted as deleted. An empty return is a silent
       no-op, the same shape as the move that returned normally and moved nothing
 
+  # VERSION 2 - THE WALLS A DELETE DETACHES (row 5b-1674). Every case below
+  # FAILS on version 1, which had no `attachedBefore`, `detachedWalls` or
+  # `wallsNote` and said nothing about a wall that was changed, not deleted.
+  # NEEDS-CHECKING Group OE.
+
+  - given: >
+      VERSION 2. Four walls, Level 1 to 2440 mm unconnected, their tops
+      ATTACHED by hand (Attach Top/Base, Revit 2024) to a flat roof above them;
+      the roof selected and deleted
+    expect: >
+      deleted holds the roof (and nothing else), attachedBefore names the four
+      walls "top attached", detachedWalls holds those four ids, and wallsNote
+      says 4 walls are DETACHED now and that on Revit 2024 Heron cannot attach
+      a wall again. In a section, after Keep, the walls stop at 2440 mm. On
+      version 1: deleted 1, alsoWent 0, and nothing about the walls
+
+  - given: >
+      VERSION 2. A floor with NO wall attached to it, walls standing under it at
+      their own height; the floor deleted
+    expect: >
+      deleted holds the floor, attachedBefore empty, detachedWalls empty,
+      wallsNote empty - a wall that was never attached is not named. The
+      tracking case: the same delete, a different answer
+
+  - given: >
+      VERSION 2. Two flat roofs side by side, walls attached under each; ONE
+      roof deleted
+    expect: >
+      only the walls under the deleted roof are in detachedWalls; the walls
+      under the other roof are not in attachedBefore at all, and stay attached
+
 second_route:
   - Revit's own undo stack: one Ctrl+Z must put back exactly what `deleted` listed
