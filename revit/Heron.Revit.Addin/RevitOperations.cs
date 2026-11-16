@@ -419,11 +419,15 @@ namespace Heron.Revit.Addin
             //    what IS available comes from the registry rather than being
             //    typed here - a hand-written copy of a table eventually
             //    disagrees with it.
+            //
+            //    THE SECOND OF TWO since row 5b-1742: RevitDispatcher.Dispatch
+            //    refuses an undeclared name first, on the pipe's thread before
+            //    the queue, so a busy Revit no longer answers it revit_busy.
+            //    This stays for any door that reaches Run another way, and both
+            //    say it in the registry's one set of words.
             if (!HeronOperationRegistry.IsDeclared(op))
             {
-                return Json.Error("unknown_op",
-                    "Heron has no operation called '" + (op ?? "(none)") + "'. " +
-                    "It has: " + HeronOperationRegistry.Describe() + ".");
+                return Json.Error("unknown_op", HeronOperationRegistry.Unknown(op));
             }
 
             var risk = HeronOperationRegistry.RiskOf(op);

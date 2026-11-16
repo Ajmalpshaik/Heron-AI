@@ -8,6 +8,7 @@
 using System;
 using System.IO;
 using System.Threading;
+using Heron.Core;
 
 namespace Heron.Bridge.TestHost
 {
@@ -54,9 +55,17 @@ namespace Heron.Bridge.TestHost
                     if (Json.ReadString(request, "op") == "test_model_in_use")
                         return Json.Error("model_in_use",
                             "Model 'Test' is in use by another chat. Nothing was sent to the model.");
+                    // "test_awaiting_modeller" stands in for a job that puts a
+                    // Keep or Discard box up and waits `ms` for the modeller -
+                    // row 5b-1745: it holds the lease for the request's own
+                    // client, as the add-in's AwaitingModeller does, and lets
+                    // it go as the job ends, as Execute does.
+                    if (Json.ReadString(request, "op") == "test_awaiting_modeller")
+                        return AwaitingModeller(request);
                     if (Json.ReadString(request, "op") != "test_wait")
                         return Json.Error("unknown_op",
-                            "No handler for that here. This host answers ping, info, test_wait and test_model_in_use.");
+                            "No handler for that here. This host answers ping, info, test_wait, " +
+                            "test_model_in_use and test_awaiting_modeller.");
                     int ms;
                     int.TryParse(Json.ReadString(request, "ms"), out ms);
                     Thread.Sleep(Math.Max(0, Math.Min(ms, 10000)));
@@ -111,6 +120,36 @@ namespace Heron.Bridge.TestHost
             }
 
             return 0;
+        }
+
+        /// <summary>
+        /// The stand-in for a job waiting on the modeller: the lease held for
+        /// the request's client for `ms`, then let go. `held` says whether a
+        /// hold was taken.
+        ///
+        /// BY REFLECTION, so this host still builds against a lease from before
+        /// row 5b-1745, which has no hold - and tests/test_bridge_roundtrip.py
+        /// then fails as checks, not as a host that will not build.
+        /// </summary>
+        private static string AwaitingModeller(string request)
+        {
+            var hold = typeof(HeronLease).GetMethod("Hold", new[] { typeof(string) });
+            var end = typeof(HeronLease).GetMethod("EndHold", new[] { typeof(long) });
+            var ticket = hold == null
+                ? 0L
+                : (long)hold.Invoke(null, new object[] { Json.ReadString(request, "client") });
+
+            int ms;
+            int.TryParse(Json.ReadString(request, "ms"), out ms);
+            try
+            {
+                Thread.Sleep(Math.Max(0, Math.Min(ms, 10000)));
+            }
+            finally
+            {
+                if (ticket != 0 && end != null) end.Invoke(null, new object[] { ticket });
+            }
+            return Json.Ok(Json.Bool("held", ticket != 0), Json.Num("waitedMs", ms));
         }
     }
 }

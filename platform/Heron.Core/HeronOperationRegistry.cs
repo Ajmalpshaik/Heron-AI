@@ -409,5 +409,22 @@ namespace Heron.Core
             foreach (var op in Operations) parts.Add(op);
             return string.Join(", ", parts.ToArray());
         }
+
+        /// <summary>
+        /// The refusal of an operation this table does not declare - the
+        /// sentence `unknown_op` carries, written once.
+        ///
+        /// ONE COPY, TWO PLACES THAT SAY IT (row 5b-1742). The add-in's
+        /// dispatcher refuses an undeclared name on the pipe's thread, before
+        /// the queue, and the gate on Revit's thread refuses it again for any
+        /// other door. A busy Revit and an idle one must not answer the same
+        /// name in two ways, so both read it from here. Plain text: the caller
+        /// wraps it, as it wraps every refusal.
+        /// </summary>
+        public static string Unknown(string op)
+        {
+            return "Heron has no operation called '" + (op ?? "(none)") + "'. " +
+                   "It has: " + Describe() + ".";
+        }
     }
 }
