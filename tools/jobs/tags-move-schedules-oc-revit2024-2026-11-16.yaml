@@ -1,0 +1,100 @@
+# NEEDS-CHECKING Group OC on Revit 2024 - the tag, move and schedule cards repaired from
+# Sruthina's villa 2 field reports (Ajmalpshaik/Heron-AI#853, #854). Written 2026-11-16 in a cloud
+# session with no Revit, from docs/needs-checking/group-oc.md. NOT RUN.
+#
+#   move-elements                MOVE_ELEMENTS                v3  rows 5b-1707, 5b-1733  OC1+OC2, one job
+#   create-schedule              CREATE_SCHEDULE              v4  row 5b-1730            OC4
+#   find-overlapping-tags        FIND_OVERLAPPING_TAGS        v2  row 5b-1731            OC5
+#   arrange-tags                 ARRANGE_TAGS                 v2  row 5b-1732            OC6
+#   filter-elements-by-category  FILTER_ELEMENTS_BY_CATEGORY  v7  row 5b-1736            OC7
+#
+# By hand, not here: OC1's W6-alone half, OC3 (report-location v5 - tracking, the site is never empty), OC6's
+# roomTagsStayPut half, and OC8 (tag-elements-in-view on OC7's selection).
+#
+#     python tools/batch-prove.py tools/jobs/tags-move-schedules-oc-revit2024-2026-11-16.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/tags-move-schedules-oc-revit2024-2026-11-16.yaml --session <pid>
+#
+# THE MODEL: "Heron OC Tags", which Heron builds from Revit 2024's English\DefaultMetric.rte with its
+# own PROVEN cards (group-oc.md, OC0) and saves under %TEMP%\heron-work\oc - never a working project.
+# Six Generic - 200mm walls on Level 1 (W1-W5 two rooms, W6 apart), doors D1 in W1 and D2 in W3, Room 1
+# and Room 2, a tag on each door and room in FloorPlan: Level 1 - D1's tag ON Room 1's tag, D2's on W3 -
+# a detail line through Room 2's tag, a dimension, a text note, and a section across W5.
+#
+# BEFORE RUNNING, from OC0: put W6's id for 0000001, Generic - 200mm's TYPE id for 0000002, the four
+# tags' ids (D1's, D2's, Room 1's, Room 2's) for 0000003 to 0000006, and the section's own name for
+# "Section: OC Section" - the name CREATE_SECTION_VIEW gave it.
+#
+# EVERY RUN IS ROLLED BACK. RUN OC7 (the first job) FIRST: every other job selects through
+# filter-elements-by-category, DRAFT until OC7 is signed. Read each printed line against the row - the
+# runner cannot read a sentence.
+
+model: "Heron OC Tags - a scratch project Heron built from Revit 2024's English DefaultMetric.rte (group-oc.md, OC0)"
+
+defaults:
+  in: "Heron OC Tags"
+
+jobs:
+  - fragment: filter-elements-by-category
+    expect: found
+    setup: []
+    set: {categories: "Walls", inViewOnly: "Section: OC Section", cutByView: "true"}
+    negative-set: {categories: "Doors", inViewOnly: "Section: OC Section", cutByView: "true"}
+    note: >
+      OC7, row 5b-1736. Positive: W5 found, and W2, W4 where the crop reaches - the walls the
+      section line crosses - with "Only what '<section>' CUTS"; NEVER W1, W3 or W6, parallel to the
+      cut. Negative: found 0 - the doors are in W1 and W3. If W5 is not found the cut plane is not at
+      View.Origin: write down the crop box's Min.Z and Max.Z. Version 6 has no cutByView.
+
+  - fragment: move-elements
+    write: true
+    keep-chain: true
+    expect: moved
+    setup: [filter-elements-by-id]
+    setup-set: {elementIds: "0000003, 0000004, 0000005, 0000006"}
+    negative-setup-set: {elementIds: "0000001, 0000002"}
+    set: {offset: "1000,0,0"}
+    negative-set: {offset: "1000,0,0"}
+    note: >
+      OC1 and OC2 in ONE job - a card has one proof, and two jobs would write one run file twice.
+      Positive (OC2, row 5b-1733): the four TAGS by id - moved 4, unverified empty, "4 moved the
+      whole offset ... 0 could not be read back". Version 2: moved 0, all four unverified (POSITIVE
+      EMPTY). Negative (OC1, row 5b-1707): W6 AND the wall type - moved 0, the type in
+      notModelElements, "1 of the 2 element(s) handed in are not elements of the model ... Nothing
+      was moved" - W6 NOT moved. Version 2 moved W6 (NEG NOT EMPTY). OC1's other half, W6 alone
+      moved 1, is by hand.
+
+  - fragment: create-schedule
+    write: true
+    expect: madeAs
+    setup: []
+    set: {listKind: "keynote legend", fieldNames: "Key Value, Keynote Text", scheduleName: "OC Keynotes"}
+    negative-set: {listKind: "keynote legend", fieldNames: "Key Value, Keynote Text", scheduleName: "OC Keynotes", category: "Walls"}
+    note: >
+      OC4, row 5b-1730. Positive: madeAs "... with 2 column(s)", missingFields EMPTY, "'Key Value'
+      is already a column" and the same for Keynote Text, and NO "created with NO columns" line -
+      version 3 filled madeAs too, so READ THE FINDINGS. Negative: refused naming Keynote Tags,
+      created (null), madeAs empty.
+
+  - fragment: find-overlapping-tags
+    expect: overModel
+    setup: []
+    set: {view: "FloorPlan: Level 1", minOverlapMm: 1}
+    negative-set: {view: "FloorPlan: Level 2", minOverlapMm: 1}
+    note: >
+      OC5, row 5b-1731. Positive: overModel 2 or more - D2's tag "over wall ... (id W3) - on its
+      poche", Room 2's tag "crossed by a line", the dimension figure if it sits under a tag - and
+      pairs 1 (D1's tag over Room 1's). A ROOM tag reported over a wall is the band too wide.
+      Negative: Level 2 holds nothing - overModel 0, pairs 0. Version 1 has no overModel.
+
+  - fragment: arrange-tags
+    write: true
+    expect: moved
+    setup: [filter-elements-by-category, set-selection]
+    setup-set: {categories: "Door Tags, Room Tags", inViewOnly: "FloorPlan: Level 1"}
+    negative-setup-set: {categories: "Room Tags", inViewOnly: "FloorPlan: Level 1"}
+    set: {view: "FloorPlan: Level 1", minGapMm: 200, maxPasses: 10, fallbackTagWidthMm: 1500, fallbackTagHeightMm: 500}
+    negative-set: {view: "FloorPlan: Level 1", minGapMm: 200, maxPasses: 10, fallbackTagWidthMm: 1500, fallbackTagHeightMm: 500}
+    note: >
+      OC6, row 5b-1732. Positive: D1's tag and Room 1's pushed apart - moved 1 or 2, notTags EMPTY,
+      stillOverlapping empty. Version 1 put the room tags in notTags and moved nothing (POSITIVE
+      EMPTY). Negative: the two room tags alone, in two rooms - moved 0.

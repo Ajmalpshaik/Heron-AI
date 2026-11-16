@@ -1538,6 +1538,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-nz.md`](needs-checking/group-nz.md)
 
+## Group OC - tags, move and schedules from the villa 2 field reports, repaired in code and not yet run: rows 5b-1707, 5b-1730, 5b-1731, 5b-1732, 5b-1733 and 5b-1736 (2026-11-16)
+
+**Its own file:** [`needs-checking/group-oc.md`](needs-checking/group-oc.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
