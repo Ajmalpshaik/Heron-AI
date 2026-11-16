@@ -491,3 +491,33 @@ def writing_said_by(revits, writing):
     if writing:
         return "in %s, as %s has it" % (named, "that Revit" if len(revits) == 1 else "each")
     return "as %s, %s it" % (named, "has" if len(revits) == 1 else "each have")
+
+
+# ONE RULE FOR THE WRITE GATE, FOR revit_health AND heron_diagnose - row
+# 5b-1744. The diagnosis read its write gate from this chat's own copy of
+# heron.config while revit_health took each Revit's word, so the two could
+# give opposite words in one chat; since D-166 no file holds Changes at all -
+# each Revit holds its own, in memory, set only in its Settings window. The
+# rule was revit_health's own, written inline; both call it here now, and
+# neither decides any of it itself.
+def write_gate(live, held):
+    """
+    (writing, writing_said_by) for assess(), from what the connected Revits
+    said of Changes, Admin and Publish - `held` is {pid: what
+    heron_bridge_client.switches_state returned}:
+
+        Changes ON in any Revit that said   (True, those Revits named)
+        off in every Revit that said        (False, every one that said named)
+        no Revit said - none connected, an
+        older add-in, an answer not read    (None, None): not known
+
+    NEVER FROM A FILE (D-166), and never "off" for a Revit that said nothing:
+    off is the default, and a default is not an answer.
+    """
+    held = held or {}
+    reported = [b for b in live or [] if isinstance(held.get(b.pid), dict)]
+    if not reported:
+        return None, None
+    changes_on = [b for b in reported if held[b.pid].get("changes") is True]
+    writing = bool(changes_on)
+    return writing, writing_said_by(changes_on or reported, writing)

@@ -40,7 +40,10 @@ WHAT IT PROVES, when an SDK is installed
   5. The three brain tools ANSWER when called through the SDK's own dispatch,
      not by importing the function underneath it - and heron_lookup's reply
      says when the store holds a fragment with no card in this checkout
-     (row 5b-233).
+     (row 5b-233). A card for another release is named, never offered - and
+     where a card for THIS release does that card's job, the one its own
+     words reach, that card is offered in its place and nothing is said to
+     be done by hand (row 5b-1823).
   6. Both refusals survive that round trip: every brain answer still says it
      CANNOT RUN what it resolved, and that nothing underneath is PROVEN. Those
      two sentences are the whole reason the brain tools are safe to expose,
@@ -83,7 +86,9 @@ WHAT IT PROVES, when an SDK is installed
      stand-in add-ins - the chat's own file, one name with a differing Ask
      to Keep, a differing path, an older add-in - each with its lines, one
      more where the chat's copy is not that file, the write gate Revit's,
-     and a chat's copy saying write.enabled = true moving nothing.
+     and a chat's copy saying write.enabled = true moving nothing. AND
+     heron_diagnose SAYS THE SAME over those stand-ins (row 5b-1744): the
+     same write gate, and the Ask to Keep and switches lines under each.
  13. THE SHORT CHANGE REPORT, THROUGH THE REAL TOOL (row 5b-407). Two kept
      changes in one batch: the first prints the KEPT paragraph whole and
      every value, the second the add-in's one sentence - the undo rule
@@ -314,6 +319,93 @@ def images_of(result):
     return found
 
 
+async def walled_job_done_here(server, BRAIN):
+    """
+    Row 5b-1823. The line named only the walled card these words reach first,
+    so on Revit 2025 and 2026 "edit the wall profile to follow the gable" -
+    SHAPE_WALL_TOPS_TO_ROOF's own words, a card declared for 2022 to 2024 -
+    was told "Heron cannot do this ... done by hand", while ATTACH_WALLS does
+    that job there. Now the card for this release that the walled card's own
+    words reach, declared for none of its releases, is OFFERED in its place,
+    and the line is said only when there is none: on Revit 2021, where
+    neither card is declared, it stands. Asked in the card's own utterance,
+    read off its file, so a reworded card fails here rather than passing.
+    """
+    print()
+    print("  a walled card whose job a card for this release does: that card is offered "
+          "(row 5b-1823)")
+    shape = os.path.join(ROOT, "brain", "fragments", "shape-wall-tops-to-roof",
+                         "fragment.yaml")
+    gable = "edit the wall profile to follow the gable"
+    declared = False
+    if os.path.isfile(shape):
+        with open(shape, encoding="utf-8") as handle:
+            declared = re.search(r"^\s*-\s*%s\s*$" % re.escape(gable), handle.read(),
+                                 re.MULTILINE) is not None
+    check(declared, "SHAPE_WALL_TOPS_TO_ROOF declares %r, to ask with" % gable)
+    if not declared:
+        return
+    module = sys.modules["heron_mcp_server"]
+    for release in ("2025", "2026"):
+        found = BRAIN.lookup(gable, revit=release)
+        here = found.get("done_here_by") or {}
+        walled = here.get("instead_of") or {}
+        check(found.get("capability") == "ATTACH_WALLS"
+              and found.get("other_release") is None,
+              "on Revit %s ATTACH_WALLS is offered, and nothing is named as another "
+              "release's - found %s, named %r" % (release, found.get("capability"),
+                                                  (found.get("other_release") or {})
+                                                  .get("capability")))
+        check(here.get("capability") == "ATTACH_WALLS"
+              and walled.get("capability") == "SHAPE_WALL_TOPS_TO_ROOF"
+              and walled.get("revit") == ["2022", "2023", "2024"]
+              and release in (here.get("revit") or [])
+              and bool(here.get("words")),
+              "and the answer says it stands in for SHAPE_WALL_TOPS_TO_ROOF, which its "
+              "own words reach - found %r" % (here,))
+        line = " ".join(module._other_release_lines(found))
+        check(line.lstrip().startswith("ON REVIT %s THIS IS ATTACH_WALLS" % release)
+              and "SHAPE_WALL_TOPS_TO_ROOF" in line and "2022, 2023, 2024" in line
+              and here.get("words", "(none)") in line
+              and "NOT ON REVIT" not in line and "by hand" not in line
+              and "cannot do this" not in line,
+              "and its line offers ATTACH_WALLS, naming the card it stands in for and "
+              "its words, and says nothing is done by hand: %r" % line[:200])
+
+    # WHERE NO CARD FOR THE RELEASE DOES THE JOB THE LINE STANDS. Revit 2021:
+    # SHAPE_WALL_TOPS_TO_ROOF is 2022 on and ATTACH_WALLS 2025 on.
+    old = BRAIN.lookup(gable, revit="2021")
+    named = (old.get("other_release") or {}).get("capability")
+    check(named == "SHAPE_WALL_TOPS_TO_ROOF" and not old.get("done_here_by")
+          and old.get("capability") != "ATTACH_WALLS",
+          "on Revit 2021 nothing is offered in its place and the card is named as "
+          "another release's - found %s, named %s, %r"
+          % (old.get("capability"), named, old.get("done_here_by")))
+    line = " ".join(module._other_release_lines(old))
+    check(line.lstrip().startswith("NOT ON REVIT 2021") and "by hand in Revit" in line,
+          "and the line says it is done by hand there, as before: %r" % line[:100])
+    exact = BRAIN.lookup(gable, revit="2024")
+    check(exact.get("capability") == "SHAPE_WALL_TOPS_TO_ROOF"
+          and not exact.get("done_here_by") and not exact.get("other_release"),
+          "on Revit 2024, a release it is declared for, it answers its own words with "
+          "nothing beside it - found %s" % exact.get("capability"))
+
+    real = module._revit_version
+    module._revit_version = lambda: ("2025", "a test's Revit 2025")
+    try:
+        reply = text_of(await server.call_tool("heron_lookup", {"request": gable})) or ""
+    except Exception as exc:                                    # noqa: BLE001
+        reply = "(raised %s: %s)" % (type(exc).__name__, exc)
+    finally:
+        module._revit_version = real
+    said = reply.find("ON REVIT 2025 THIS IS ATTACH_WALLS")
+    offered = reply.find("would need   ATTACH_WALLS")
+    check(said != -1 and offered != -1 and said < offered and "NOT ON REVIT" not in reply,
+          "and heron_lookup on Revit 2025 says it above \"would need ATTACH_WALLS\", with "
+          "no \"NOT ON REVIT\" line - found the line at %d, the offer at %d"
+          % (said, offered))
+
+
 async def exercise(server):
     tools = await server.list_tools()
     served = {t.name: t for t in tools}
@@ -542,6 +634,8 @@ async def exercise(server):
         check(named != -1 and offered != -1 and named < offered,
               "and heron_lookup puts it ABOVE the tool it offers - found the "
               "line at %d, \"would need\" at %d" % (named, offered))
+
+    await walled_job_done_here(server, BRAIN)
 
     print()
     print("  the HVAC engine, called through the SDK's own dispatch")
@@ -2376,6 +2470,16 @@ async def settings_said_by_each_revit(module, server, Says):
         finally:
             module.bridge.discover = real_discover
 
+    async def diagnose_of(*revits):
+        """heron_diagnose through the SDK, over these stand-ins (row 5b-1744)."""
+        module.bridge.discover = lambda: (list(revits), [], [], [])
+        try:
+            return text_of(await server.call_tool("heron_diagnose", {})) or ""
+        except Exception as exc:                                # noqa: BLE001
+            return "(heron_diagnose could not be called: %s: %s)" % (type(exc).__name__, exc)
+        finally:
+            module.bridge.discover = real_discover
+
     def under(said, pid):
         """Every line under the numbered line naming this session, up to the next
         numbered line or a blank one."""
@@ -2453,6 +2557,38 @@ async def settings_said_by_each_revit(module, server, Says):
               "revit_health: with only an older add-in connected, no Revit said, and the "
               "write gate is not the warning - never this chat's copy, whose "
               "write.enabled = true moves nothing since D-166")
+
+        # AND heron_diagnose SAYS THE SAME (row 5b-1744). Its write gate was
+        # this chat's own copy, then - once D-166 took the switches out of
+        # every file - no answer at all, while revit_health said what each
+        # Revit holds. The same stand-ins, through the real tool: the same
+        # write gate, and the Ask to Keep and switches lines revit_health
+        # printed under each Revit, in the same words. It compares no file.
+        chat_copy(False)
+        said = await health_of(alike, valued, pathed, older)
+        told_by = await diagnose_of(alike, valued, pathed, older)
+        printed = [line.strip() for pid in (5101, 5102, 5103, 5104)
+                   for line in under(said, pid)[:2]]
+        missing = [line[:60] for line in printed if line not in told_by]
+        check("Changes is ON in Revit 2025, session 5102, as that Revit has it" in told_by,
+              "heron_diagnose: the write gate is the Revits' too - Changes on in one of "
+              "them warns, naming it, as revit_health does")
+        check(len(printed) == 8 and not missing,
+              "heron_diagnose: the Ask to Keep and switches lines revit_health printed "
+              "under each of the four Revits, in the same words - missing %s" % (missing,))
+        check(mine not in told_by and "This chat" not in told_by,
+              "heron_diagnose: and it names no settings file and compares none with this "
+              "chat's copy (D-166)")
+        chat_copy(True)
+        reverse = await diagnose_of(alike)
+        check("Changes is ON" not in reverse
+              and "closed (as Revit 2024, session 5101, has it)" in reverse,
+              "heron_diagnose: this chat's copy says write.enabled = true and the Revit "
+              "holds Changes off - closed, by the Revit's word")
+        aged = await diagnose_of(older)
+        check("Changes is ON" not in aged and "no connected Revit said" in aged,
+              "heron_diagnose: only an older add-in connected - not known, never this "
+              "chat's copy")
     finally:
         module.bridge.discover = real_discover
         module.binding.forget()
