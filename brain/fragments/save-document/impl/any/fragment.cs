@@ -1,6 +1,7 @@
 // NOT STANDALONE. Assumes `doc`, `uidoc`, `documentPath`, `saveAsPath`,
-// `replaceFile`, `closeWindow` and `saveWhenKept` are in scope; leaves `saved`,
-// `savedTo`, `closed`, `saveAsked`, `saveAskedTo`, `refused` and `findings`.
+// `replaceFile`, `closeWindow`, `saveWhenKept` and `saveOtherWhenKept` are in
+// scope; leaves `saveAsked`, `saveAskedTo`, `closeAsked`, `refused` and
+// `findings`.
 //
 // VERSION 3, 2026-11-16 - AND THE DOCUMENT HERON WORKS IN, SAVED BY THE ADD-IN
 // ONCE ITS UNDO ENTRY HAS CLOSED. OPEN-QUESTIONS Q-69, answered by Ajmal PS that
@@ -18,9 +19,13 @@
 // unsaved (row 5b-513).
 //
 // VERSION 2, 2026-10-07 - IT SAVES ANOTHER OPEN DOCUMENT, NAMED BY ITS FILE.
-// Unchanged in version 3, and still done HERE, inside the run - so a preview
-// of it saves that other document, as its proof records, and so does a Discard
-// (row 5b-1824).
+// Since 2026-11-16 (row 5b-1824) that save is the ADD-IN'S TOO, after the
+// group, through `saveOtherWhenKept` - the document's file, and whether to
+// close its window once it is saved. Until then it was done here, inside the
+// run, before Revit's Keep or Discard box, so a Discard still wrote that file
+// and closed its window, against D-171 point 5. Now this fragment writes and
+// closes NOTHING itself: a preview still saves that document, as version 2's
+// proof records (D-171 point 6), and a Discard saves nothing.
 // Version 1 saved `doc`, the document Heron runs in, and that can never work:
 // Revit's Document.Save and SaveAs "may not be called unless all transactions,
 // sub-transactions, and transaction groups that were opened by the API code
@@ -45,16 +50,14 @@
 // closed via Revit's UI." And no posted command closes one document:
 // PostableCommand.Close is "Close Revit" - the whole application - and is
 // never used here. So with closeWindow=true, a document behind the one in
-// front is closed after its save; the one in front is saved and left open,
-// and the reply says the window is the modeller's to close. Nothing unsaved is
-// ever closed: Close(false) would discard it. The document Heron works in is
-// never closed by Heron.
+// front is closed by the add-in after its save; the one in front is saved and
+// left open, and the reply says the window is the modeller's to close. Nothing
+// unsaved is ever closed: Close(false) would discard it. The document Heron
+// works in is never closed by Heron.
 
-var saved = false;
-string savedTo = null;
-var closed = false;
 var saveAsked = false;
 string saveAskedTo = null;
+var closeAsked = false;
 string refused = null;
 var findings = new List<string>();
 
@@ -266,40 +269,15 @@ if (refused == null && thisOne)
 }
 else if (refused == null)
 {
-    savedTo = found.PathName;
+    // ANOTHER OPEN DOCUMENT - version 2's job, a nested family's own window.
+    // Checked here, so a refusal is the run's own answer; saved, and its
+    // window closed, by the add-in once this change's Undo entry has closed
+    // (row 5b-1824) - after a Keep or a preview, never after a Discard. The
+    // add-in checks every rule again before it saves or closes anything.
+    var file = found.PathName;
+    var title = found.Title;
+    var unsaved = found.IsModified;
 
-    if (!found.IsModified)
-    {
-        // Nothing to write. Not a refusal: the file already holds what is open,
-        // which is the state a save exists to reach.
-        findings.Add(string.Format("'{0}' had no unsaved changes - the file at {1} already "
-            + "holds what is open, so nothing was written", found.Title, savedTo));
-    }
-    else
-    {
-        try
-        {
-            found.Save(new SaveOptions());
-            saved = true;
-            findings.Add(string.Format(
-                "'{0}' saved to {1}. This cannot be undone{2}",
-                found.Title, savedTo,
-                found.IsWorkshared
-                    ? ". IT IS WORKSHARED AND NOTHING WENT TO CENTRAL - this wrote "
-                      + "the local file only, and nobody else on the job can see it. "
-                      + "SYNC_WITH_CENTRAL is the other job"
-                    : ""));
-        }
-        catch (Exception ex)
-        {
-            refused = string.Format("Revit refused to save '{0}': {1}", found.Title,
-                ex.Message);
-        }
-    }
-}
-
-if (refused == null && closeWindow && !thisOne)
-{
     Document inFront = null;
     try
     {
@@ -307,57 +285,45 @@ if (refused == null && closeWindow && !thisOne)
         inFront = active == null ? null : active.Document;
     }
     catch (Exception) { inFront = null; }
+    var front = inFront != null && inFront.Equals(found);
+    var close = closeWindow && !front;
 
-    var title = found.Title;
-    if (inFront != null && inFront.Equals(found))
+    if (unsaved || close)
     {
-        findings.Add(string.Format("'{0}' is the window in front, and Revit lets no tool "
-            + "close that one - it is SAVED, so close its window by hand and nothing is lost. "
-            + "To have it closed for you, bring another document to the front first "
-            + "(ACTIVATE_DOCUMENT) and run this again", title));
+        saveOtherWhenKept(file, close);
+        saveAsked = unsaved;
+        saveAskedTo = unsaved ? file : null;
+        closeAsked = close;
     }
-    else if (found.IsModified)
+
+    if (unsaved)
     {
-        // Only reachable if the save above was skipped or did not take; closing
-        // now would throw away work.
-        findings.Add(string.Format("'{0}' still has unsaved changes, so it was NOT closed - "
-            + "closing would lose them", title));
+        findings.Add(string.Format("'{0}' is another open document, so Heron saves it to {1}{2} "
+            + "once this change's Undo entry has closed - after a Keep, and after a preview "
+            + "too, which rolls the change back and still saves; never after a Discard. A save "
+            + "cannot be undone{3}", title, file, close ? ", then closes its window," : "",
+            found.IsWorkshared
+                ? ". IT IS WORKSHARED AND NOTHING GOES TO CENTRAL - the save writes the "
+                  + "local file only, and nobody else on the job can see it. "
+                  + "SYNC_WITH_CENTRAL is the other job"
+                : ""));
     }
     else
     {
-        try
-        {
-            closed = found.Close(false);
-            if (!closed)
-                findings.Add(string.Format("Revit did not close '{0}' - another add-in may "
-                    + "have cancelled it. Its file is saved; close it by hand", title));
-        }
-        catch (Exception ex)
-        {
-            findings.Add(string.Format("Revit would not close '{0}': {1}. Its file is "
-                + "saved; close it by hand", title, ex.Message));
-        }
+        // Nothing to write. Not a refusal: the file already holds what is open,
+        // which is the state a save exists to reach.
+        findings.Add(string.Format("'{0}' had no unsaved changes - the file at {1} already "
+            + "holds what is open, so nothing will be written{2}", title, file,
+            close ? ". Heron closes its window once this change's Undo entry has closed - "
+                    + "after a Keep or a preview, never after a Discard" : ""));
+    }
 
-        if (closed)
-        {
-            // READ BACK, not assumed: the document must be gone from what is open.
-            var key = canonical(savedTo);
-            foreach (Document open in doc.Application.Documents)
-            {
-                if (open == null || open.IsLinked) continue;
-                var here = "";
-                try { here = open.PathName; }
-                catch (Exception) { here = ""; }
-                if (here.Length > 0
-                    && string.Equals(canonical(here), key, StringComparison.OrdinalIgnoreCase))
-                {
-                    closed = false;
-                }
-            }
-            findings.Add(closed
-                ? string.Format("'{0}' is closed.", title)
-                : string.Format("Revit said '{0}' closed, but it is still open.", title));
-        }
+    if (closeWindow && front)
+    {
+        findings.Add(string.Format("'{0}' is the window in front, and Revit lets no tool "
+            + "close that one - once it is saved, close its window by hand and nothing is "
+            + "lost. To have it closed for you, bring another document to the front first "
+            + "(ACTIVATE_DOCUMENT) and run this again", title));
     }
 }
 

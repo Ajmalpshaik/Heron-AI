@@ -28,6 +28,17 @@ risk: PUBLISH
 # answered "okkey" on 2026-11-16 - only when the save was asked for, the reply
 # saying a save cannot be undone - so version 3 can be tried now, rolled
 # back, on a scratch model. Nothing of version 3 has run in Revit.
+#
+# ROW 5b-1824 (2026-11-16, still version 3, still DRAFT): ANOTHER OPEN
+# DOCUMENT'S SAVE MOVED AFTER THE GROUP TOO. Version 2's save of another
+# document - and the close of its window - ran inside the run, before Revit's
+# Keep or Discard box, so a Discard still wrote that file, against D-171 point
+# 5. The run now hands it to the add-in through a fourth new input, the ambient
+# `saveOtherWhenKept`, and writes and closes nothing itself; `saved`, `savedTo`
+# and `closed` went with it, `closeAsked` came. Same version: no rule of the
+# fragment library ties a version to a contract, and version 3 has never run in
+# Revit - its C# moved once already after it was written - the preview's save,
+# the same day - with no new version.
 
 purpose: >
   Saves an open document - a family built in its own window, a tyre for a car -
@@ -49,8 +60,12 @@ purpose: >
   there only with `replaceFile=true`, and the chat follows the model to its
   new name. Heron never closes that model's window.
 
-  **ANOTHER OPEN DOCUMENT IS SAVED INSIDE THE RUN**, as version 2 did - so a
-  Discard of it still writes its file (row 5b-1824).
+  **ANOTHER OPEN DOCUMENT IS SAVED THE SAME WAY, AFTER THE GROUP** (row
+  5b-1824): the card asks the add-in through `saveOtherWhenKept`, and the
+  add-in saves it to its own file and then closes its window when asked - after
+  a Keep, and after a preview; **a Discard saves and closes nothing**. Until
+  2026-11-16 this card saved it inside the run, before the Keep or Discard box.
+  The card itself writes and closes nothing.
 
   **A LOCAL SAVE OF A WORKSHARED MODEL IS NOT A SYNC.** It reaches nobody
   else on the job, so it says so - `SYNC_WITH_CENTRAL` is the other job. The
@@ -70,9 +85,10 @@ contract:
     - name: uidoc
       type: UIDocument
     # The full path of the OPEN document to save - the .rfa or .rvt it was
-    # opened from. Another open document is saved now; the document Heron is
-    # working in is saved by the add-in once the group has closed, after a
-    # Keep or a preview (version 3, D-171). Left out only for a Save As
+    # opened from. Either document is saved by the add-in once the group has
+    # closed, after a Keep or a preview, never after a Discard - the one Heron
+    # is working in through saveWhenKept (version 3, D-171), another through
+    # saveOtherWhenKept (row 5b-1824). Left out only for a Save As
     # (saveAsPath).
     - name: documentPath
       type: string
@@ -106,31 +122,38 @@ contract:
     - name: saveWhenKept
       type: Action<string, bool>
       source: ambient
+    # Row 5b-1824: the add-in's save of ANOTHER open document, by the same
+    # rule and also once the group has closed - its file, and the bool is
+    # closeWindow: close its window once it is saved. Until 2026-11-16 the
+    # card saved it inside the run, before the Keep or Discard box.
+    - name: saveOtherWhenKept
+      type: Action<string, bool>
+      source: ambient
   provides:
-    - name: saved
-      # True only when something was WRITTEN. A document with no unsaved
-      # changes is left alone and says so in `findings`.
-      role: result
-      type: bool
-    - name: savedTo
-      role: result
-      type: string
-    - name: closed
-      # Read back: true only when the document is no longer open afterwards.
-      role: result
-      type: bool
+    # `saved`, `savedTo` and `closed` were version 2's results, and went on
+    # 2026-11-16 (row 5b-1824): the run writes and closes nothing itself, so
+    # it has nothing of its own to report. The reply's `save` block says what
+    # the add-in saved and closed.
     - name: saveAsked
-      # VERSION 3. True when the run asked the add-in to save the document
-      # Heron works in once its Undo entry closes. Asking is not saving: the
-      # reply's `save` block says whether the add-in did - after a Keep or a
-      # preview, never after a Discard.
+      # True when the run asked the add-in to save a document once its Undo
+      # entry closes - the one Heron works in, or another open one with
+      # unsaved changes. Asking is not saving: the reply's `save` block says
+      # whether the add-in did - after a Keep or a preview, never after a
+      # Discard.
       role: result
       type: bool
     - name: saveAskedTo
-      # VERSION 3. The file that save goes to: the model's own, or the Save As
-      # path given, spelt in full.
+      # The file that save goes to: the model's own, the Save As path given,
+      # or the other document's, spelt in full.
       role: result
       type: string
+    - name: closeAsked
+      # Row 5b-1824. True when the run asked the add-in to close another
+      # document's window after its save - never the window in front, never
+      # the model Heron works in. The `save` block's `closed` says whether it
+      # closed.
+      role: result
+      type: bool
     - name: refused
       # Why it declined, in the user's words - evidence it looked and said no.
       # Never a thing it DID (D-52).
@@ -144,9 +167,10 @@ contract:
 # was never run in Revit, and could not have saved (row 5b-365). The proof
 # below is version 2's, kept as its record: its negative case - the document
 # Heron works in, refused - is the case version 3 now saves, after the group.
-# Version 3 is proved by NEEDS-CHECKING Group EN EN6 to EN10, as previews on a
-# scratch model - a preview saves too (D-171) - and its save after a Keep is
-# looked at once it is PROVEN, since D-117 refuses a DRAFT kept for real.
+# Version 3 is proved by NEEDS-CHECKING Group EN EN6 to EN10, and EN11 and
+# EN12 for another document's save after the group (row 5b-1824), as previews
+# on a scratch model - a preview saves too (D-171) - and its save after a Keep
+# is looked at once it is PROVEN, since D-117 refuses a DRAFT kept for real.
 
 proof:
   date: '2026-10-07'
@@ -196,7 +220,11 @@ compatibility-note: >
   `ModelPathUtils.ConvertModelPathToUserVisiblePath`, present 2020 through 2027,
   and saves nothing of the document Heron works in: the add-in does, once the
   group has closed, with `Document.Save(SaveOptions)` or
-  `Document.SaveAs(string, SaveAsOptions)` (`RevitFragmentSave.cs`).
+  `Document.SaveAs(string, SaveAsOptions)` (`RevitFragmentSave.cs`). Since
+  2026-11-16 (row 5b-1824) the card saves and closes nothing at all: another
+  open document's `Document.Save(SaveOptions)` and `Document.Close(bool)` -
+  the same members, found in every release 2020 to 2027 by
+  `tools/check-api-surface.py` that day - are the add-in's too, after the group.
 
 # ROUTING - repeated in SYNC_WITH_CENTRAL and ACTIVATE_DOCUMENT.
 #

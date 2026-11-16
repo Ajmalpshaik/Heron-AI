@@ -12,7 +12,8 @@ The add-in and the brain name the SAME ambient needs. Runs without Revit.
 An ambient need is an object the add-in hands a fragment because a fragment
 cannot build it - D-112's `editScopeFailures`, D-114's `familyLoadOptions`,
 and Q-69's `saveWhenKept` (2026-11-16), the save the add-in does after the
-group closes.
+group closes - and `saveOtherWhenKept` (row 5b-1824, the same day), the same
+save of ANOTHER open document and the close of its window.
 Each name lives in two places: a constant in RevitFragment.cs, which binds it,
 and AMBIENT in brain/heron_fragment.py, which tells every Python tool the need
 is the host's and not a value to ask the caller for. Spelt differently, the
@@ -40,7 +41,7 @@ LOAD_FAMILY = os.path.join(ROOT, "brain", "fragments", "load-family")
 # The add-in's constants for the ambient needs it binds by name. `doc`, `uidoc`
 # and `app` are fields on the globals object and need no constant.
 CONSTANTS = ("EditScopeNeed", "FamilyLoadNeed", "NoTransactionNeed", "WaitsForModellerNeed",
-             "SaveWhenKeptNeed")
+             "SaveWhenKeptNeed", "SaveOtherWhenKeptNeed")
 
 # Q-69 (2026-11-16): the card that asks the add-in for a save after the group.
 SAVE_DOCUMENT = os.path.join(ROOT, "brain", "fragments", "save-document")
@@ -100,6 +101,24 @@ def run():
     save_card = yaml.safe_load(io.open(os.path.join(SAVE_DOCUMENT, "fragment.yaml"),
                                        encoding="utf-8").read())
     save_needs = {n["name"]: n for n in save_card["contract"]["needs"]}
+
+    # ROW 5b-1824: ANOTHER OPEN DOCUMENT is saved after the group too, through
+    # a second ambient need - held to the same two rules as the first.
+    other = names.get("SaveOtherWhenKeptNeed")
+    if other and other in heron_fragment.AMBIENT:
+        declared = heron_fragment.AMBIENT[other]
+        if ('lines.Append("%s ")' % declared) not in text:
+            failures.append("the add-in's prologue for '%s' is not typed %s, which is "
+                            "what AMBIENT declares" % (other, declared))
+    asked_other = save_needs.get(other or "saveOtherWhenKept")
+    if asked_other is None:
+        failures.append("save-document does not declare the saveOtherWhenKept need, so "
+                        "another open document can only be saved inside the run - "
+                        "before Revit's Keep or Discard box")
+    elif heron_fragment.need_source(asked_other) != "ambient" \
+            or asked_other.get("type") != heron_fragment.AMBIENT.get("saveOtherWhenKept"):
+        failures.append("save-document's saveOtherWhenKept is not read as the ambient "
+                        "need AMBIENT declares")
     asked = save_needs.get(save or "saveWhenKept")
     if asked is None:
         failures.append("save-document does not declare the saveWhenKept need, so it "
