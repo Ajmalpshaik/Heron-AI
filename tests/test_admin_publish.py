@@ -430,16 +430,30 @@ def main():
     also = getattr(TOOLS, "ALSO_REACHES", None)
 
     # ------------------------------------------------------------------
-    print("1. The two settings exist, on both sides, and both default OFF")
+    print("1. Admin and Publish are NOT settings since D-166 - held in Revit, off at start")
+    # Until 2026-11-16 this section asserted the opposite: that both were
+    # declared on both sides, so that a line in heron.config was honoured.
+    # D-166 took Changes, Admin and Publish out of the file - an AI with file
+    # access could turn them on - and HeronPermissions holds them in memory.
     cs = read(CONFIG_CS)
-    for key in ("admin.enabled", "publish.enabled"):
-        check('{ "%s", "false" }' % key in cs,
-              "HeronConfig declares %s, defaulting to false" % key)
-        check(CONFIG.DEFAULTS.get(key) == "false",
-              "and the Python mirror declares it the same")
-    check(CONFIG.truthy(CONFIG.load(), "admin.enabled") is False
-          and CONFIG.truthy(CONFIG.load(), "publish.enabled") is False,
-          "with no settings file, both read as off")
+    for key in ("write.enabled", "admin.enabled", "publish.enabled"):
+        check('{ "%s",' % key not in cs,
+              "HeronConfig does NOT declare %s, so Load() ignores it in a file" % key)
+        check(key not in CONFIG.DEFAULTS,
+              "and nor does the Python mirror")
+    planted = os.path.join(tempfile.mkdtemp(prefix="heron-d166-"), "heron.config")
+    io.open(planted, "w", encoding="utf-8").write(
+        u"admin.enabled = true\npublish.enabled = true\n")
+    check(not any(key in CONFIG.load(planted)
+                  for key in ("admin.enabled", "publish.enabled")),
+          "a settings file that says both are on is read as saying nothing about them")
+    permissions = read(os.path.join(ROOT, "platform", "Heron.Core", "HeronPermissions.cs"))
+    check("private static bool _admin;" in permissions
+          and "private static bool _publish;" in permissions
+          and "lock (SwitchLock) _admin = enabled;" in permissions
+          and "lock (SwitchLock) _publish = enabled;" in permissions,
+          "the two switches are fields of HeronPermissions, set only by their setters - "
+          "false when Revit starts, as a static bool is")
 
     # ------------------------------------------------------------------
     print()
@@ -470,8 +484,10 @@ def main():
           "one TransactionGroup, kept only on apply")
     gate = operations[operations.find("private static string Gate("):]
     gate = gate[:gate.find("\n        /// <summary>")]
-    check(gate.count("HeronConfig.Load()") == 1,
-          "the gate reads heron.config ONCE for the verdict, the words and the switch")
+    check(gate.count("HeronPermissions.Switches()") == 1
+          and "HeronConfig.Load()" not in gate,
+          "the gate looks at the switches ONCE for the verdict, the words and the "
+          "switch - and reads no settings file for them (D-166)")
     for key, code in (("AdminEnabledKey", "admin_disabled"),
                       ("PublishEnabledKey", "publish_disabled")):
         check(re.search(r"case HeronPermissions\.%s:\s*return Json\.Error\(\"%s\""

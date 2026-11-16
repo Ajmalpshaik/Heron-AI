@@ -24,9 +24,11 @@ in this repository was protecting any of them:
                       makes it evidence, HeronAudit never prunes it, and it is
                       NOT in git. Lose it and the Capability Gap report has
                       nothing to read and no way to get it back.
-    config/           the settings, including write.enabled - the switch D-19
-                      puts writing behind, which HeronPermissions reads before
-                      it will allow MODIFY or above.
+    config/           the settings. Until D-166 (2026-11-16) they included
+                      write.enabled - the switch D-19 puts writing behind - so
+                      a restore could bring an old "on" back. Since then
+                      Changes, Admin and Publish are held in Revit's memory and
+                      are not in this file, and a restore cannot turn one on.
 
                       This line cited "docs/12 section 9" until 2026-09-19.
                       There is no section 9 in docs/12 - it has six - and that

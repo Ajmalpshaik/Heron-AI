@@ -148,6 +148,10 @@
 
 **Its own file:** [`proposals/f44.md`](proposals/f44.md)
 
+## F45 — an AI that can write files can turn on Changes, Admin and Publish, because each is one line in a text file
+
+**Its own file:** [`proposals/f45.md`](proposals/f45.md)
+
 ## 2026-09-19 — what is left after twenty-three gaps were closed, and the two that never can be
 
 **Its own file:** [`proposals/2026-09-19-what-is-left-after-twenty-three.md`](proposals/2026-09-19-what-is-left-after-twenty-three.md)

@@ -133,7 +133,8 @@ namespace Heron.Revit.Addin
             _problem.Visibility = Visibility.Collapsed;
 
             var note = HeronWindowStyle.Body(
-                "Admin and Publish work only while Changes is on.",
+                "Admin and Publish work only while Changes is on. All three are off "
+                + "whenever Revit starts.",
                 HeronWindowStyle.TextMuted, 12);
             note.Margin = new Thickness(HeronWindowStyle.Gutter + 2, 12, HeronWindowStyle.Gutter, 0);
 
