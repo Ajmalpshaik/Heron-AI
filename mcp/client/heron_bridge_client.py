@@ -881,6 +881,59 @@ def ask_to_keep_state(bridge):
     return said if isinstance(said, bool) else None
 
 
+# What settings_state answers for a Revit whose add-in answered `info` well and
+# named no settings file and no switches - an add-in from before 2026-11-16.
+# heron_health holds the same word, for the reason ASK_TO_KEEP_NOT_SENT's
+# comment gives.
+SETTINGS_NOT_SENT = "not sent"
+# The owner's three gate switches, as `info` names them - for the switch as
+# Revit shows it, never for its settings key (Q-70).
+SETTINGS_SWITCHES = ("changes", "admin", "publish")
+
+
+def settings_state(bridge):
+    """
+    The settings file this Revit decides every change by, and its Changes,
+    Admin and Publish switches, as that Revit's add-in read them at the
+    moment of this call (Q-70, decided 2026-11-15). One of THREE answers:
+
+        {"file": path, "found": bool, "changes": bool, "admin": bool,
+         "publish": bool}       what the add-in said; `found` is whether the
+                                file was there - not there, every switch is
+                                at its default
+        SETTINGS_NOT_SENT       `info` answered well and carries neither the
+                                file nor the switches - an older add-in
+        None                    no usable answer: nothing came back, it was
+                                refused, or a field is there and is not what
+                                the add-in sends - never a guess at the rest
+
+    From `info`, lease-exempt, so asking never claims the Revit. Ask to Keep
+    is ask_to_keep_state's, from the same answer, and is not read again here.
+
+    READ OFF A REPLY, NEVER PUT IN A REQUEST, and NEVER THIS SIDE'S OWN COPY
+    of heron.config: on a PC whose Claude app keeps a private copy of the
+    settings folder, that copy is not the file this answer names.
+    """
+    reply = bridge.request("info")
+    if not isinstance(reply, dict) or not reply.get("ok"):
+        return None
+    if "settingsFile" not in reply and "switches" not in reply:
+        return SETTINGS_NOT_SENT
+    path = reply.get("settingsFile")
+    found = reply.get("settingsFileFound")
+    switches = reply.get("switches")
+    if (not isinstance(path, str) or not path.strip() or not isinstance(found, bool)
+            or not isinstance(switches, dict)):
+        return None
+    said = {"file": path, "found": found}
+    for name in SETTINGS_SWITCHES:
+        value = switches.get(name)
+        if not isinstance(value, bool):
+            return None
+        said[name] = value
+    return said
+
+
 def refuse_off_windows():
     """
     True when this machine cannot reach a bridge, having said so.

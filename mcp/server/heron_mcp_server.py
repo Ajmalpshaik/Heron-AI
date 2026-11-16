@@ -323,12 +323,34 @@ def revit_health() -> str:
     # unchanged - it was proven in Steps 3 and 5 and is what a person actually
     # reads when something IS wrong.
     settings = configuration.load()
+
+    # THE SWITCHES AS EACH REVIT HAS THEM, AND THE FILE IT HAS THEM IN (Q-70,
+    # decided 2026-11-15): from the lease-exempt `info`, so asking claims
+    # nothing. Revit decides every change by its own file, so the write gate
+    # below is what the Revits that said have - Changes on in any of them is
+    # the warning - and this chat's own copy is used only when none said, as
+    # it was before. That copy is also set beside each Revit's answer, to say
+    # when the two differ; on a PC whose Claude app keeps its own copy of the
+    # Heron folder it is not the file Revit reads.
+    said = dict((b.pid, bridge.settings_state(b)) for b in live)
+    reported = [b for b in live if isinstance(said[b.pid], dict)]
+    writing = configuration.writing_enabled(settings)
+    said_by = None
+    if reported:
+        changes_on = [b for b in reported if said[b.pid]["changes"]]
+        writing = bool(changes_on)
+        said_by = health.writing_said_by(changes_on or reported, writing)
+    here_file = configuration.config_path()
+    here_found = bool(here_file) and os.path.isfile(here_file)
+    here = configuration.switches(settings)
+
     rollup = health.assess(
         live=live, starting=starting, mismatched=mismatched,
         config_problems=configuration.problems(settings),
-        writing=configuration.writing_enabled(settings),
+        writing=writing,
         protocol_version=bridge.PROTOCOL_VERSION,
-        versions_agree=not mismatched)
+        versions_agree=not mismatched,
+        writing_said_by=said_by)
 
     lines = [rollup.describe(), ""]
 
@@ -387,7 +409,15 @@ def revit_health() -> str:
             # read says that instead, and blames no add-in. Never the
             # default, and never this side's own copy of the settings file,
             # which on some PCs is not the one Revit reads (Q-70).
-            lines.append("      " + health.ask_to_keep_line(bridge.ask_to_keep_state(b)))
+            asks = bridge.ask_to_keep_state(b)
+            lines.append("      " + health.ask_to_keep_line(asks))
+            # AND THE FILE THIS REVIT DECIDES BY, ITS SWITCHES, AND - WHEN THIS
+            # CHAT'S OWN COPY DIFFERS - ONE LINE SAYING SO (Q-70). Remembered
+            # for heron_why, which asks Revit nothing (PROPOSALS F1).
+            lines.extend("      " + line for line in health.settings_lines(
+                said[b.pid], asks, here_file, here_found, here))
+            _settings_heard(b, said[b.pid], health.differs(health.settings_differ(
+                said[b.pid], asks, here_file, here_found, here)))
             b.close()
 
         if len(live) > 1 and binding.pid is None:
@@ -5453,7 +5483,8 @@ def _why_facts(asked):
     """
     if core.LIBRARY_ONLY:
         return {"release": asked, "how": "as asked" if asked else NO_REVIT_HERE,
-                "bridge": "none", "switches": None, "announced": []}
+                "bridge": "none", "switches": None, "announced": [],
+                "heard": None, "here_file": None}
     announced = _announced()
     if asked:
         release, how = asked, "as asked"
@@ -5463,13 +5494,90 @@ def _why_facts(asked):
     there = release is not None and any(str(b.revit_version) == str(release)
                                         for b in announced)
     settings = configuration.load()
+    switches = {
+        "write_enabled": configuration.writing_enabled(settings),
+        "admin_enabled": configuration.truthy(settings, "admin.enabled"),
+        "publish_enabled": configuration.truthy(settings, "publish.enabled")}
+    # WHEN revit_health FOUND THIS REVIT'S FILE IS NOT THIS CHAT'S, WHAT THAT
+    # REVIT SAID IS BELIEVED INSTEAD (Q-70): it decides by its own. Remembered,
+    # never asked - heron_why sends nothing to Revit (PROPOSALS F1) - and the
+    # answer says how old it is. A file revit_health found alike is read here
+    # fresh, as before, so a switch pressed since then is seen.
+    heard = _heard_from(release, announced)
+    if heard is not None and heard["differs"]:
+        switches = {"write_enabled": heard["said"]["changes"],
+                    "admin_enabled": heard["said"]["admin"],
+                    "publish_enabled": heard["said"]["publish"]}
     return {"release": release, "how": how,
             "bridge": "connected" if there else "none",
-            "switches": {
-                "write_enabled": configuration.writing_enabled(settings),
-                "admin_enabled": configuration.truthy(settings, "admin.enabled"),
-                "publish_enabled": configuration.truthy(settings, "publish.enabled")},
-            "announced": announced}
+            "switches": switches,
+            "announced": announced, "heard": heard,
+            "here_file": configuration.config_path()}
+
+
+# WHAT EACH REVIT LAST SAID OF ITS SETTINGS TO THIS CHAT'S revit_health, by
+# session (Q-70), and whether this chat's own copy differed from it then. Read
+# by heron_why alone, which may ask Revit nothing; nothing decides by it, and
+# Revit reads its own file again before every change whatever this holds.
+_SETTINGS_HEARD = {}
+
+
+def _settings_heard(b, said, differs):
+    """Remember what one Revit said (a settings_state dict), or forget an
+    earlier answer when this one said nothing usable."""
+    if isinstance(said, dict):
+        _SETTINGS_HEARD[b.pid] = {"said": said, "differs": bool(differs),
+                                  "at": time.monotonic(), "pid": b.pid,
+                                  "release": b.revit_version}
+    else:
+        _SETTINGS_HEARD.pop(b.pid, None)
+
+
+def _heard_from(release, announced):
+    """What revit_health last heard from the one announced Revit of this
+    release - this chat's, when it is one of them - or None: never a guess
+    between two."""
+    if release is None:
+        return None
+    there = [b for b in announced if str(b.revit_version) == str(release)]
+    there = [b for b in there if b.pid == binding.pid] or there
+    if len(there) != 1:
+        return None
+    heard = _SETTINGS_HEARD.get(there[0].pid)
+    if heard is None or str(heard["release"]) != str(release):
+        return None
+    return heard
+
+
+def _ago(at):
+    """How long ago a time.monotonic() reading was, in words."""
+    minutes = int(max(0.0, time.monotonic() - at) // 60)
+    if minutes < 1:
+        return "just now"
+    if minutes < 60:
+        return "%d minute%s ago" % (minutes, "" if minutes == 1 else "s")
+    hours = minutes // 60
+    return "%d hour%s ago" % (hours, "" if hours == 1 else "s")
+
+
+def _why_switches_line(facts):
+    """Which switches heron_why judged by, and whose they were, in one line."""
+    on = facts["switches"]
+    named = "Changes %s, Admin %s, Publish %s" % tuple(
+        "on" if on[k] else "off" for k in ("write_enabled", "admin_enabled", "publish_enabled"))
+    here = facts["here_file"] or "none on this PC"
+    heard = facts["heard"]
+    if heard is None:
+        return ("%s - Heron's settings file on this PC, %s; Revit decides by its own, "
+                "and revit_health asks Revit what it has" % (named, here))
+    who = "Revit %s (session %s)" % (heard["release"], heard["pid"])
+    if heard["differs"]:
+        return ("%s - as %s said it has them, from %s, when revit_health asked it %s; "
+                "this PC's own settings file, %s, differs, and Revit decides by its own"
+                % (named, who, heard["said"]["file"], _ago(heard["at"]), here))
+    return ("%s - Heron's settings file on this PC, %s; %s named a file of that name, "
+            "with the same switches, when revit_health asked it %s"
+            % (named, here, who, _ago(heard["at"])))
 
 
 def _why_release_line(facts):
@@ -5502,8 +5610,9 @@ def heron_why(capability: str, release: str = "") -> str:
     `capability` is a capability name, as heron_lookup names one. `release`
     is a Revit release such as "2024", to ask about that one; empty means the
     Revit this chat would use, when Heron can tell. Reads Heron's library, its
-    settings file on this PC and the note Revit leaves when the Heron button
-    is pressed. It sends nothing to Revit and changes nothing.
+    settings file on this PC - or, when revit_health found Revit's file
+    differs, what that Revit said of its own - and the note Revit leaves when
+    the Heron button is pressed. It sends nothing to Revit and changes nothing.
     """
     name = (capability or "").strip().upper()
     if not name:
@@ -5527,10 +5636,13 @@ def heron_why(capability: str, release: str = "") -> str:
         snap = runtime.snapshot([name], {name: rows}, release=facts["release"],
                                 bridge=facts["bridge"], **switches)
     cap = snap.capabilities[0]
+    heard = facts["heard"]
     said, can_do = runtime.in_revit_words(
         cap, rows, release=facts["release"], how=facts["how"],
         no_revit_here=core.LIBRARY_ONLY,
-        write_enabled=bool(switches and switches["write_enabled"]))
+        write_enabled=bool(switches and switches["write_enabled"]),
+        said_by=("Revit %s (session %s)" % (heard["release"], heard["pid"])
+                 if heard is not None and heard["differs"] else None))
 
     lines = [said, "", "What you can do: " + can_do]
     if rows:
@@ -5549,10 +5661,7 @@ def heron_why(capability: str, release: str = "") -> str:
     lines.extend(["", "What Heron went by - it asked Revit nothing:",
                   "  release   %s" % _why_release_line(facts)])
     if switches is not None:
-        lines.append("  switches  Changes %s, Admin %s, Publish %s - Heron's "
-                     "settings file on this PC; Revit reads its own"
-                     % tuple("on" if switches[k] else "off" for k in
-                             ("write_enabled", "admin_enabled", "publish_enabled")))
+        lines.append("  switches  " + _why_switches_line(facts))
     if facts["announced"]:
         lines.append("  Revit     %s with the Heron button on, from the note "
                      "each leaves - revit_health asks whether it answers"

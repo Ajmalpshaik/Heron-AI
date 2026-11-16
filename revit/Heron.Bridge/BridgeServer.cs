@@ -652,6 +652,25 @@ namespace Heron.Bridge
             if (op == "info")
             {
                 var holder = HeronLease.Holder;
+
+                // THE OWNER'S SWITCHES AS THIS REVIT HOLDS THEM, AND THE FILE
+                // IT HOLDS THEM IN (Q-70, decided 2026-11-15). On a PC whose
+                // Claude app keeps its own copy of the Heron folder there are
+                // two heron.config files under one name, and the chat's copy
+                // is not the one Revit decides by. So Revit says its own: ONE
+                // load, read here the way the gate reads it - GetBool on the
+                // gate's own keys, off when unread - so the three cannot
+                // disagree with each other, and the path that load used.
+                //
+                // READ, NEVER WRITTEN. Nothing here saves, and nothing on a
+                // request is read to choose what is said (Golden Rule 19).
+                // Optional fields, like askToKeep beside them: an older
+                // client ignores them, so the protocol version stands. A file
+                // that could not be read loads as the defaults, and is said
+                // as found with every switch off - what the gate would do at
+                // that instant (row 5b-1586's first item, the same here).
+                var settings = HeronConfig.Load();
+                var settingsFile = HeronConfig.FilePath;
                 return Json.Ok(
                     Json.Num("pid", _identity.ProcessId),
                     Json.Str("revitVersion", _identity.RevitVersion),
@@ -692,7 +711,17 @@ namespace Heron.Bridge
                     // Python side on the bare name of that key anywhere in
                     // it, as a field that could be SENT to skip the question.
                     // This one is only ever answered.
-                    Json.Bool("askToKeep", HeronPermissions.AsksBeforeKeeping()));
+                    Json.Bool("askToKeep", HeronPermissions.AsksBeforeKeeping()),
+                    // Q-70: the file this Revit decides by, whether it was
+                    // there, and Changes, Admin and Publish as it holds them.
+                    // Named for the switches as Revit shows them, never for
+                    // their settings keys, for the reason askToKeep is.
+                    Json.Str("settingsFile", settingsFile),
+                    Json.Bool("settingsFileFound", File.Exists(settingsFile)),
+                    "\"switches\": " + Json.Obj(
+                        Json.Bool("changes", settings.GetBool(HeronPermissions.WriteEnabledKey, false)),
+                        Json.Bool("admin", settings.GetBool(HeronPermissions.AdminEnabledKey, false)),
+                        Json.Bool("publish", settings.GetBool(HeronPermissions.PublishEnabledKey, false))));
             }
 
             // HANDING IT BACK, WHICH IS THE HALF THAT WAS MISSING.

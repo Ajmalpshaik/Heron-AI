@@ -317,6 +317,23 @@ def writing_enabled(values=None):
     return truthy(values, "write.enabled")
 
 
+def switches(values=None):
+    """
+    The owner's four switches as THIS SIDE'S copy of the file says them -
+    Changes, Admin, Publish and Ask to Keep - named as `info` names them.
+
+    FOR COMPARING, NEVER FOR SAYING (Q-70). revit_health states what each
+    Revit said of its own, and sets this beside it only to say when the
+    chat's copy differs; on a PC whose Claude app keeps a private copy of
+    the settings folder this is not the file Revit decides by.
+    """
+    values = load() if values is None else values
+    return {"changes": writing_enabled(values),
+            "admin": truthy(values, "admin.enabled"),
+            "publish": truthy(values, "publish.enabled"),
+            "ask_to_keep": asks_before_keeping(values)}
+
+
 def problems(values=None):
     """
     Anything wrong with the settings, in the user's terms. Empty when fine.

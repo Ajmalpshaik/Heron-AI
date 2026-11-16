@@ -148,8 +148,11 @@ A DRAFT's one run is always asked. A publish is asked whenever *Ask to Keep* is 
 > budget (§8.8). Four methods in `brain/skills/` send the chat there since the same day -
 > `parameters-csv-round-trip`, `cad-to-mep`, `sheets-from-excel`, `reinforce-concrete`; this sentence said
 > *"not reworded yet"* until then - and still say to ask the modeller where the line could not say; any other
-> method that speaks of the switch is found with `grep -l "Ask to Keep" brain/skills/*.yaml`. Its write-gate line is still read
-> from the server's own copy of the settings ([Q-70](open-questions/tier-2.md), open). Held without Revit by
+> method that speaks of the switch is found with `grep -l "Ask to Keep" brain/skills/*.yaml`. Its write-gate line was read
+> from the server's own copy of the settings until 2026-11-16; since then ([Q-70](open-questions/tier-2.md), decided 2026-11-15)
+> `info` also carries `settingsFile`, `settingsFileFound` and `switches` (Changes, Admin, Publish), `revit_health`
+> prints them under each Revit with one more line when the chat's own copy differs, and the write gate is Changes as
+> the Revits that said have it - the chat's copy only when none did; not run in Revit, Group NP NP9 to NP14. Held without Revit by
 > [`tests/test_ask_to_keep_health.py`](../tests/test_ask_to_keep_health.py); **built, not yet run in Revit**
 > ([Group NP](needs-checking/group-np.md)).
 
