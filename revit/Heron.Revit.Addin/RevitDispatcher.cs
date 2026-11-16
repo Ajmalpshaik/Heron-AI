@@ -79,6 +79,38 @@ namespace Heron.Revit.Addin
         private static RevitJob _running;
 
         /// <summary>
+        /// The workflow id of the job Revit's thread is running now - the id
+        /// its run record carries - or null anywhere else. Read by the keep,
+        /// so the undo guard knows WHICH RUN kept a change, and the Activity
+        /// pane's Undo is sent only for the run its button sits beside (row
+        /// 5b-1741). Null is no run, and the pane is refused for it.
+        /// </summary>
+        internal static string RunningWorkflow
+        {
+            get
+            {
+                var job = _running;
+                return job == null ? null : job.WorkflowId;
+            }
+        }
+
+        /// <summary>
+        /// Whether the job Revit's thread is running now came in by the
+        /// Activity pane's own door (DispatchFromPane) - false for a job the
+        /// pipe queued, and false anywhere no job is running, so whatever asks
+        /// it fails closed. The one operation only the pane may ask for, its
+        /// Undo button (row 5b-1741), is answered only when this is true.
+        /// </summary>
+        internal static bool RunningFromPane
+        {
+            get
+            {
+                var job = _running;
+                return job != null && job.FromPane;
+            }
+        }
+
+        /// <summary>
         /// The banner of the job running now, for the same reason as _running:
         /// AwaitingModeller has to move it out of the way of the box, and the
         /// box's code is never handed the dispatcher (D-126).
@@ -309,11 +341,55 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
+        /// Set by DispatchFromPane on ITS OWN calling thread, for the length of
+        /// one call into Dispatch, and taken by Dispatch as it starts - so the
+        /// job Dispatch queues on that thread is the pane's (row 5b-1741).
+        /// [ThreadStatic] ON PURPOSE: a bridge listener thread never sets it,
+        /// so no request off the pipe can be marked the pane's, whatever it says.
+        /// </summary>
+        [ThreadStatic]
+        private static bool _paneDoor;
+
+        /// <summary>
+        /// THE ACTIVITY PANE'S DOOR (D-163) - Dispatch itself, so the same
+        /// queue, event, gate and audit trail, called in-process by the pane from
+        /// a background thread and by nothing else: HeronApplication hands it to
+        /// the pane, and the bridge is given Dispatch.
+        ///
+        /// A JOB QUEUED THROUGH HERE IS MARKED THE PANE'S, and the mark is the
+        /// job's - handed to its constructor, never read from the request's text.
+        /// So the one operation only the pane may ask for, the modeller's own
+        /// Undo (`undo_from_pane`, row 5b-1741), cannot be asked for over the
+        /// pipe by any request, whatever it carries: a chat's, an older client's
+        /// with no conversation, or one written by hand.
+        /// </summary>
+        internal string DispatchFromPane(string request)
+        {
+            _paneDoor = true;
+            try
+            {
+                return Dispatch(request);
+            }
+            finally
+            {
+                _paneDoor = false;
+            }
+        }
+
+        /// <summary>
         /// Called on a bridge listener thread. Hands the work to Revit and
         /// waits for it, without ever touching the Revit API here.
+        ///
+        /// THE PIPE'S DOOR, AND THE PANE'S THROUGH DispatchFromPane: a job
+        /// queued here is the pane's only when that door marked this thread.
         /// </summary>
         public string Dispatch(string request)
         {
+            // WHICH DOOR - taken once, at the start, and cleared, so it is this
+            // one request's and never a later one's on the same thread.
+            var fromPane = _paneDoor;
+            _paneDoor = false;
+
             var op = Json.ReadString(request, "op");
 
             // THE STOP IS ANSWERED HERE, BEFORE THE QUEUE - D-129. It exists
@@ -351,7 +427,7 @@ namespace Heron.Revit.Addin
                     "Heron has not finished starting. Try again in a moment.");
             }
 
-            var job = new RevitJob(request, HeronIdentity.NewWorkflowId());
+            var job = new RevitJob(request, HeronIdentity.NewWorkflowId(), fromPane);
 
             // D-142: THE LAST MOMENT A "DELETE" CAN STILL BE KEPT - the ask
             // timeout from now. This caller waits at least the operation
@@ -651,6 +727,10 @@ namespace Heron.Revit.Addin
                             // So AwaitingModeller can find this job - see _running.
                             _running = job;
                             _runningBanner = _banner;
+                            // WHICH DOOR IT CAME IN BY is the job's, read off
+                            // _running (RunningFromPane) and never off its text:
+                            // only the pane's may ask for the pane's own Undo
+                            // (row 5b-1741).
                             response = RevitOperations.Run(app, job.Request);
                         }
                         catch (Exception ex)
@@ -1045,6 +1125,11 @@ namespace Heron.Revit.Addin
                 case "undo_check":
                     return "Answering an Undo from an older chat - nothing is sent";
 
+                // Row 5b-1741: the Activity pane's own Undo button, the
+                // modeller's click - or, off the pipe, refused at once.
+                case "undo_from_pane":
+                    return "Sending Undo for Heron's last change, from the Activity pane";
+
                 case "show_elements":
                     return "Showing a change's elements";
 
@@ -1166,6 +1251,7 @@ namespace Heron.Revit.Addin
                 case "unknown_op":      return "Heron does not know that job";
                 case "undo_refused":    return "Undo not sent - nothing was undone";
                 case "undo_pending":    return "Waiting for Revit's Undo - nothing was run";
+                case "pane_only":       return "Only the Activity pane sends that - nothing was undone";
                 case "not_implemented": return "Heron has no handler for that yet";
                 case "no_source":       return "No job was sent";
                 case "needs_unbound":   return "Nothing to work on - check the selection";
@@ -1234,13 +1320,20 @@ namespace Heron.Revit.Addin
             private int _callerGone;
             private long _answerBy;
 
-            public RevitJob(string request, string workflowId)
+            public RevitJob(string request, string workflowId, bool fromPane)
             {
                 Request = request;
                 WorkflowId = workflowId;
+                FromPane = fromPane;
             }
 
             public string Request { get; private set; }
+
+            /// <summary>
+            /// Queued by the Activity pane's own door, DispatchFromPane - set
+            /// here and nowhere else, so nothing a request says can set it.
+            /// </summary>
+            public bool FromPane { get; private set; }
 
             /// <summary>Follows this request through every layer that touches it.</summary>
             public string WorkflowId { get; private set; }

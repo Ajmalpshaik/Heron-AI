@@ -21,6 +21,13 @@ namespace Heron.Revit.Addin
     /// whose request kept it - the request's conversation, the one D-141
     /// keys the model hold on - and `ChatRefusal` refuses every other.
     ///
+    /// AND WHICH RUN KEPT IT (row 5b-1741, the owner's answer of 2026-11-16):
+    /// the Activity pane's Undo is the modeller's own click, like Ctrl+Z, so
+    /// it asks no chat - but its button sits beside ONE change, the run
+    /// record of one job, so `PaneRefusal` refuses unless Heron's last kept
+    /// change here is that run. The run is the dispatcher's workflow id, the
+    /// id that record carries.
+    ///
     /// WHY IT HAS TO BE WATCHED. Revit's Undo takes the TOP of the list, and
     /// Revit has no API that names an entry and undoes that one, or that reads
     /// the list at all (proposal F29, measured). The list belongs to the
@@ -130,6 +137,7 @@ namespace Heron.Revit.Addin
             internal string Job;        // the fragment's name, for the sentence
             internal string Label;      // its undo entry, "Heron: <name>"
             internal string Chat;       // the conversation whose request kept it (Q-88)
+            internal string Run;        // the workflow id of the job that kept it (row 5b-1741)
             internal DateTime KeptAt;   // local time, for "at 14:32"
             internal string State;
             internal string CoveredBy;  // the first transaction seen after it
@@ -202,9 +210,14 @@ namespace Heron.Revit.Addin
         /// or the one-request key an older client is given. Only that chat is
         /// sent Undo for it; null or empty is nobody's, and every chat is
         /// refused (ChatRefusal).
+        ///
+        /// `run` IS THE JOB THAT KEPT IT - the dispatcher's workflow id, which
+        /// the job's run record carries and the Activity pane shows (row
+        /// 5b-1741). Only that run is offered to the pane's Undo; null or
+        /// empty is no run the pane can name, and it is refused (PaneRefusal).
         /// </summary>
         internal void Kept(string document, string job, string label, DateTime keptAt,
-                           int counted, bool read, string chat)
+                           int counted, bool read, string chat, string run)
         {
             if (string.IsNullOrEmpty(document) || string.IsNullOrEmpty(label))
             {
@@ -214,7 +227,7 @@ namespace Heron.Revit.Addin
             }
 
             var before = Of(document);
-            var entry = new Entry { Job = job, Label = label, Chat = chat, KeptAt = keptAt,
+            var entry = new Entry { Job = job, Label = label, Chat = chat, Run = run, KeptAt = keptAt,
                                     Touched = ++_clock };
 
             // THE NAMES OF THE KEEPS BEFORE IT, while Revit's list can still
@@ -630,6 +643,49 @@ namespace Heron.Revit.Addin
                  + "- or ask in the chat that made it.";
         }
 
+        /// <summary>
+        /// Why the Activity pane must NOT send Undo for the change it shows -
+        /// kept in `run`, named `pressed` - or null when Heron's last kept
+        /// change in this model is that run (row 5b-1741).
+        ///
+        /// NO CHAT IS ASKED. The pane's Undo is the modeller's own click in
+        /// Revit, like Ctrl+Z - the owner's answer of 2026-11-16 - so whichever
+        /// chat kept the change, the pane may undo it. What a CHAT may undo is
+        /// ChatRefusal's, and unchanged (Q-88).
+        ///
+        /// BUT ONLY THE CHANGE THE BUTTON SITS BESIDE. Revit's Undo takes
+        /// Heron's last change in the model on screen; a button beside another
+        /// change - an older one, one kept in another Revit, one followed by a
+        /// keep the pane lists no record for - would take a change the modeller
+        /// did not press. So the run is compared exactly: nothing recorded,
+        /// nothing pressed, or any difference refuses. ASKED AFTER Refusal, as
+        /// ChatRefusal is, so it can only ever refuse more.
+        /// </summary>
+        internal string PaneRefusal(string document, string title, string run, string pressed)
+        {
+            var entry = Of(document);
+            if (entry != null && !string.IsNullOrEmpty(entry.Run) && !string.IsNullOrEmpty(run)
+                && string.Equals(entry.Run, run, StringComparison.Ordinal))
+                return null;
+
+            const string NothingSent = " Nothing was sent to Revit and nothing was undone.";
+            var model = string.IsNullOrEmpty(title) ? "this model" : "\"" + title + "\"";
+            var change = string.IsNullOrEmpty(pressed) ? "The change you pressed Undo on"
+                                                       : "The change you pressed Undo on, '" + pressed + "',";
+            if (entry == null)
+            {
+                // Refusal says this first; said here too, so this never lets
+                // an Undo through on its own.
+                return change + " is not one Heron has kept in " + model + " since Revit started, "
+                     + "so Heron does not send Undo for it." + NothingSent + " Ctrl+Z in Revit "
+                     + "undoes the last change, whoever made it.";
+            }
+            return change + " is not Heron's last change there: Heron's last change in " + model
+                 + " is '" + entry.Job + "' at " + At(entry.KeptAt) + ", and Revit's Undo would take "
+                 + "that one, so Heron does not send it." + NothingSent
+                 + " Use the arrow beside Revit's Undo button to see the list and choose.";
+        }
+
         /// <summary>The sentence for an Undo just sent - what Revit will do, and how to take it back.</summary>
         internal string SentSentence(string document)
         {
@@ -744,6 +800,9 @@ namespace Heron.Revit.Addin
                           // WHICH CHAT KEPT IT (Q-88), as the log names a chat
                           // everywhere else - for a run with two chats to read.
                           + ", chat " + HeronConversation.Short(after.Chat)
+                          // AND WHICH RUN (row 5b-1741), the id the Activity
+                          // pane's row carries - for a pane's Undo to be read.
+                          + (string.IsNullOrEmpty(after.Run) ? "" : ", run " + after.Run)
                           + (after.State == Unsure ? " - " + after.Why : "")));
             }
             catch (Exception)

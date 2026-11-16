@@ -398,9 +398,16 @@ def main():
     # be asked to post by its older rule. No older name is kept beside it as
     # a writer - undo_guarded is READ now, and posts nothing: a second MODIFY
     # name fails this line.
-    check(cs_writers == ["move_elements", "run_fragment_write", "undo_own"],
-          "the MODIFY operations are exactly move_elements, run_fragment_write and undo_own "
-          "- found: %s" % (cs_writers or "none"))
+    #
+    # undo_from_pane since row 5b-1741 (2026-11-16), typed here as this line
+    # asks: the Activity pane's Undo button, the owner's answer of that day -
+    # the modeller's own click, like Ctrl+Z, for any chat's change, by D-157's
+    # rule. It is no chat's writer: it is answered only for a job the pane's
+    # in-process door queued, refused off the pipe, and no tool sends it - so
+    # the writing TOOLS above stay three.
+    check(cs_writers == ["move_elements", "run_fragment_write", "undo_from_pane", "undo_own"],
+          "the MODIFY operations are exactly move_elements, run_fragment_write, undo_from_pane "
+          "and undo_own - found: %s" % (cs_writers or "none"))
 
     # AND ABOVE MODIFY, TYPED HERE FOR THE SAME REASON (D-106, 2026-09-28).
     # Until that day nothing was declared above Modify at all. Each of these

@@ -37,6 +37,13 @@ namespace Heron.UndoGuard.TestHost
     /// change may have Undo sent for it. Every keep above is made by one chat
     /// (`Mine`); on a guard that records no chat they fall back to the keep it
     /// had, and section 16 fails by assertion rather than by a compile error.
+    ///
+    /// SECTION 17 IS THE ACTIVITY PANE'S UNDO (row 5b-1741, the owner's answer
+    /// of 2026-11-16): the modeller's own click in Revit, so ANY chat's change
+    /// - but only the change the pane shows, by the run it was kept in, and
+    /// only by D-157's rule. The keep that records the run and the pane's
+    /// question are asked for by name, as section 16's were: on the guard
+    /// before, every scenario runs and fails on its own assertion.
     /// </summary>
     internal static class Program
     {
@@ -102,6 +109,13 @@ namespace Heron.UndoGuard.TestHost
         private static void KeepBy(HeronUndoGuard guard, string model, string job, string label,
                                    DateTime at, int counted, bool read, string chat)
         {
+            // Since row 5b-1741 the keep records the run it was kept in too;
+            // a keep with none is still a keep, by every rule before it.
+            if (Find("Kept", 8) != null)
+            {
+                Ask(guard, "Kept", model, job, label, at, counted, read, chat, null);
+                return;
+            }
             if (Find("Kept", 7) != null)
             {
                 Ask(guard, "Kept", model, job, label, at, counted, read, chat);
@@ -112,6 +126,38 @@ namespace Heron.UndoGuard.TestHost
                 Find("Kept", 6).Invoke(guard, new object[] { model, job, label, at, counted, read });
             else
                 Find("Kept", 4).Invoke(guard, new object[] { model, job, label, at });
+        }
+
+        /// <summary>
+        /// A keep by one chat in one run - the dispatcher's workflow id, the
+        /// one the run record the Activity pane reads carries (row 5b-1741).
+        /// On a guard that records no run, the keep it had, and noted absent.
+        /// </summary>
+        private static void KeepRun(HeronUndoGuard guard, string model, string job, string label,
+                                    DateTime at, int counted, bool read, string chat, string run)
+        {
+            if (Find("Kept", 8) != null)
+            {
+                Ask(guard, "Kept", model, job, label, at, counted, read, chat, run);
+                return;
+            }
+            Ask(guard, "Kept", model, job, label, at, counted, read, chat, run);     // noted as absent
+            KeepBy(guard, model, job, label, at, counted, read, chat);
+        }
+
+        /// <summary>
+        /// The Activity pane's question (row 5b-1741): may Undo be sent for the
+        /// change the pane shows - kept in `run` - in "Tower"? Null on a guard
+        /// that cannot say, which every check below reads as a failure.
+        /// </summary>
+        private static string PaneRefusal(HeronUndoGuard guard, string run, string pressed)
+        {
+            return Ask(guard, "PaneRefusal", Model, "Tower", run, pressed) as string;
+        }
+
+        private static bool CanAskPane()
+        {
+            return Find("PaneRefusal", 4) != null;
         }
 
         /// <summary>Whose change it is (Q-88), asked for "Tower" by `chat`; null on a guard that cannot say.</summary>
@@ -632,6 +678,67 @@ namespace Heron.UndoGuard.TestHost
             Check(Says(string.Join("\n", chats.ToArray()), "job 'rename-views-by-level', chat a1b2c3d4"),
                   "the add-in's log names the chat that kept it, as it names a chat elsewhere - for "
                   + "a run with two chats to read");
+
+            Console.WriteLine();
+            Console.WriteLine("17. the Activity pane's Undo: the modeller's own click, any chat's change, "
+                              + "only the change it shows (row 5b-1741)");
+            const string Run = "wf-20261116-143200-0007-abcd";
+            const string Older = "wf-20261116-140000-0003-0f0f";
+            guard = new HeronUndoGuard();
+            KeepRun(guard, Model, "rename-views-by-level", Label, At, 3, true, Theirs, Run);
+            Check(CanAskPane() && Refusal(guard) == null && PaneRefusal(guard, Run, "rename-views-by-level") == null,
+                  "another chat kept Heron's last change here, and nothing since: the pane may send "
+                  + "Undo for it - no chat is asked, it is the modeller's own button");
+            Check(ChatRefusal(guard, Mine) != null && ChatRefusal(guard, Theirs) == null,
+                  "and what a CHAT may undo is unchanged (Q-88): only the chat that kept it");
+            Check(CanAskPane() && guard.Of(Model) != null && guard.Of(Model).State == HeronUndoGuard.OnTop
+                  && PaneRefusal(guard, Run, "rename-views-by-level") == null,
+                  "asking changed nothing: Heron's change is still on top, and the pane still may");
+            var stale = PaneRefusal(guard, Older, "create-sheets");
+            Check(Says(stale, "'create-sheets'") && Says(stale, "Heron's last change in \"Tower\" is "
+                               + "'rename-views-by-level' at 14:32")
+                  && Says(stale, "Nothing was sent to Revit and nothing was undone"),
+                  "the pane showing ANOTHER change than Heron's last one here is refused, both named, "
+                  + "nothing sent - Revit's Undo would take the last one, not the one pressed - found: "
+                  + (stale ?? "nothing"));
+            Check(CanAskPane() && PaneRefusal(guard, null, "x") != null && PaneRefusal(guard, "", "x") != null
+                  && PaneRefusal(guard, Run.ToUpperInvariant(), "x") != null
+                  && PaneRefusal(guard, Run.Substring(0, 12), "x") != null,
+                  "the run is compared exactly - none, another case or its first characters are refused");
+            guard = new HeronUndoGuard();
+            KeepRun(guard, Model, "rename-views-by-level", Label, At, 3, true, Mine, null);
+            Check(CanAskPane() && PaneRefusal(guard, Run, "rename-views-by-level") != null
+                  && PaneRefusal(guard, null, "rename-views-by-level") != null,
+                  "a keep that recorded no run is not the pane's to undo, whatever the pane names");
+            Check(CanAskPane() && Says(PaneRefusal(new HeronUndoGuard(), Run, "rename-views-by-level"),
+                                       "Nothing was sent to Revit"),
+                  "and with nothing kept at all it refuses too - it never lets an Undo through on its own");
+            guard = new HeronUndoGuard();
+            KeepRun(guard, Model, "rename-views-by-level", Label, At, 3, true, Theirs, Run);
+            guard.Committed(Model, Names("Move"), false);
+            var mine = Refusal(guard);
+            Check(CanAskPane() && PaneRefusal(guard, Run, "rename-views-by-level") == null
+                  && Says(mine, "'Move' was done after it") && Says(mine, "Nothing was undone"),
+                  "the modeller's own edit on top: D-157's rule refuses the pane exactly as it refuses "
+                  + "a chat - the pane's change is still the one it shows, and nothing is sent");
+            guard = new HeronUndoGuard();
+            KeepRun(guard, Model, "rename-views-by-level", Label, At, 3, true, Theirs, Run);
+            Send(guard, Model, At.AddMinutes(1));
+            Check(CanAskPane() && Says(Refusal(guard), "Undo was already sent"),
+                  "pressed twice before Revit reports the first: the second is refused");
+            guard.UndoneIn(Model, Names(Label));
+            Check(Says(Refusal(guard), "has already been undone"),
+                  "Revit reported it undone: pressed again, refused - the next undo is Ctrl+Z's");
+            guard.RedoneIn(Model, Names(Label));
+            Check(CanAskPane() && Refusal(guard) == null && PaneRefusal(guard, Run, "rename-views-by-level") == null,
+                  "Ctrl+Y (Redo) put it back on top: the pane may undo it again");
+            guard = new HeronUndoGuard();
+            KeepRun(guard, Model, "rename-views-by-level", Label, At, 3, true, Theirs, Run);
+            KeepRun(guard, Model, "create-sheets", "Heron: create-sheets", At.AddMinutes(4), 2, true, Mine,
+                    "wf-20261116-143600-0008-beef");
+            Check(Says(PaneRefusal(guard, Run, "rename-views-by-level"), "'create-sheets' at 14:36"),
+                  "a later keep in this model is Heron's last change now: the row the pane showed "
+                  + "before it is refused, naming the later one");
 
             Console.WriteLine();
             foreach (var missing in Absent)
