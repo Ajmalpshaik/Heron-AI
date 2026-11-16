@@ -24,7 +24,15 @@
 # later, and a source build needs a compiler a modeller has not got. PyJWT is
 # 2.15.1, moved from 2.14.0 on 2026-10-17 on the owner's word by
 # `tools/lock-python.py --upgrade pyjwt`: its --audit had found PYSEC-2026-4141
-# and PYSEC-2026-4183 on 2.14.0, both fixed in 2.15.0. No other version moved.
+# and PYSEC-2026-4183 on 2.14.0, both fixed in 2.15.0. opentelemetry-api is
+# 1.45.2, moved from 1.44.0 on 2026-11-16 on the owner's word: GitHub's
+# Dependabot found GHSA-xcq7-p3pf-p88h (fixed in 1.45.1) and
+# GHSA-mf5v-w3w3-f6cg (fixed in 1.45.2) on 1.44.0. Heron's own code does not
+# import it; mcp does. Its three lines were written by hand to what the recipe
+# writes, because uv was not on the PC that moved it: mcp 2.2.0 takes any
+# opentelemetry-api from 1.28.0, 1.45.2 needs only typing-extensions 4.5.0 or
+# later (pinned below), and both hashes are PyPI's own for its one wheel and
+# its one source archive. No other version moved.
 #
 # WHAT WAS RUN ON IT, 2026-10-17, all on Linux, and all again after PyJWT moved:
 #   - installed with --require-hashes into a fresh virtual environment
@@ -35,6 +43,10 @@
 #     for Python 3.11, 3.12, 3.13 and 3.14: all 30 packages arrived as Windows
 #     wheels whose hashes matched, so no PC compiles anything;
 #   - `tools/lock-python.py --audit`: no known advisory on any pinned version.
+# NOT RUN FOR opentelemetry-api 1.45.2: the Linux fresh-environment install and
+# the four `pip download` runs above. Its wheel is py3-none-any - pure Python,
+# one file for every Python and every platform - so Python 3.11 to 3.14 is
+# inferred from that, not measured.
 # ON A WINDOWS CI RUNNER, since 2026-10-17: .github/workflows/windows.yml runs
 # the command above on Python 3.12 and 3.13, with no source build, then
 # tests/test_mcp_serves.py PASSES there, on every change to this file.
@@ -243,9 +255,9 @@ mcp==2.2.0 \
 mcp-types==2.2.0 \
     --hash=sha256:d3ed53703ddd10d9c6399f29d322bb66f3f67ab41348ac8556ba23e07fedefad \
     --hash=sha256:ea476b73ee86709ab5abc9452385ed36cc05907e582355622e294595c9a04f13
-opentelemetry-api==1.44.0 \
-    --hash=sha256:67647e5e9566edcf421166fdf022b3537f818635daa852b289e34604dc6fb33a \
-    --hash=sha256:94b98c893a91b88657eaac1e3ba89618cdb85be6918196705354f34728b2cdef
+opentelemetry-api==1.45.2 \
+    --hash=sha256:2cbd737377e710ee740d261c94e93fa0f08e6d037c18f17513cc0a2d94479a34 \
+    --hash=sha256:d7b0008e21e5fd61cbe7a7f34ca3b6905a78ab677d9bc395e299359c75cda6b4
 pycparser==3.0 \
     --hash=sha256:600f49d217304a5902ac3c37e1281c9fe94e4d0489de643a9504c5cdfdfc6b29 \
     --hash=sha256:b727414169a36b7d524c1c3e31839a521725078d7b2ff038656844266160a992
