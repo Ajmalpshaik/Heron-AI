@@ -82,6 +82,17 @@ WHAT IT PROVES
      older one; and a dry run that came back from another model is not left
      with the add-in's "Send it again with apply" as its last word.
 
+  3f. NOTHING A RUN THAT WAS TAKEN BACK LEFT IS HANDED ON (OPEN-QUESTIONS
+     Q-89, decided 2026-11-15). A call through any of the three doors whose
+     `expect_from` names this chat's dry run - however it is spelled, held,
+     not held, unconfirmed or lost - or a change the modeller discarded, is
+     REFUSED with nothing sent to Revit, saying what was taken back and what
+     to run instead. A kept run hands on, after a dry run as before one; so
+     does a keep Revit counted nothing in (D-160), and a kept run's values
+     outlive a dry run the add-in refused. A kept call lost after a dry run
+     stays refused. The add-in's own `chain_taken_back`, for what only Revit
+     saw, is REFUSED at every door.
+
   4. EVERY PATH, EXACTLY ONE LINE, IN ONE PLACE. Each case above and each
      further return of the three doors that could be forced: one line that
      starts `outcome: `, the SECOND line of the reply, its word in the table.
@@ -380,6 +391,10 @@ class Stage(object):
         runs = getattr(module, "runs", None)
         if runs is not None:
             module._BATCH = runs.Batch()
+            # Q-89: and which of this chat's runs were taken back - none, at
+            # the start of a case. Absent on the code before it was built.
+            if getattr(runs, "TakenBack", None) is not None:
+                module._TAKEN_BACK = runs.TakenBack()
         # D-161: a change names each request at random; pinned here like every
         # other state a call starts from, so two calls of one case differ only
         # in which face of the door was called.
@@ -1214,6 +1229,154 @@ def the_dry_runs_small_print(stage, picked):
           "send nothing again - found %r" % elsewhere[:200])
 
 
+def nothing_taken_back_is_handed_on(stage, picked):
+    """OPEN-QUESTIONS Q-89, decided 2026-11-15: a call whose expect_from names a
+    run of this chat that was taken back - a dry run, a Discard - is refused
+    with nothing sent to Revit, at every door; a run that was kept still hands
+    on. Each sequence starts clean and runs its calls one after another, so
+    what an earlier call left is what the next one meets."""
+    print()
+    print("3f. Nothing a run that was taken back left is handed on (Q-89)")
+    module = stage.module
+    change, read, show = picked["change"], picked["read"], picked["show"]
+    folder = (module._fragment_for(change) or (None,))[0] or ""
+    check(bool(folder), "the change's own folder is the name expect_from gives it - %r"
+          % folder)
+
+    def call(door, reply, **arguments):
+        """One call against `reply`, leaving this chat's earlier runs as they stand."""
+        stage.revit.reply = reply
+        stage.revit.asked[:] = []
+        had, sys.stderr = sys.stderr, io.StringIO()
+        try:
+            return getattr(module, door)(**arguments)
+        except Exception as exc:                                # noqa: BLE001
+            return "(%s raised %s: %s)" % (door, type(exc).__name__, exc)
+        finally:
+            sys.stderr = had
+
+    def unsent(said):
+        """Refused by Heron, and nothing reached the stand-in Revit."""
+        return (stated(said) == "REFUSED" and not stage.revit.asked
+                and "Nothing has been sent to Revit" in said and "Q-89" in said)
+
+    def handed_on(expected):
+        """The request reached Revit carrying the expectation, and no reset."""
+        return any(args.get("expectChain") == expected and "chain" not in args
+                   for _op, args, _idem in stage.revit.asked)
+
+    # A DRY RUN, THEN EACH DOOR NAMING IT.
+    stage.fresh(dict(DRY_HELD), MODEL)
+    dry = call("revit_change", dict(DRY_HELD), capability=change, dry_run=True)
+    closing = dry.split("This was a dry run")[-1]
+    check("expect_from" in closing and "refused" in closing,
+          "the dry run's own reply says a call naming it in expect_from is refused - "
+          "found %r" % closing[-220:])
+    after = call("revit_change", dict(KEPT), capability=change, expect_from=folder)
+    check(unsent(after),
+          "revit_change naming a DRY RUN in expect_from is REFUSED, and nothing is sent "
+          "to Revit - found %r, %d request(s)" % (after[:240], len(stage.revit.asked)))
+    check("dry run" in after and "no longer holds" in after and "without dry_run" in after
+          and "only when they say to" in after,
+          "and it says what was taken back, why nothing it left is handed on, and what to "
+          "run instead - the change without dry_run, only on the user's word")
+    for door, capability, reply in (("revit_read", read, dict(READ_OK)),
+                                    ("revit_show", show, dict(READ_OK))):
+        said = call(door, reply, capability=capability, expect_from=folder)
+        check(unsent(said),
+              "%s naming the dry run in expect_from is REFUSED, nothing sent - found %r"
+              % (door, said[:200]))
+    for spelled in (folder.upper() + " where view=Level 1", change):
+        said = call("revit_change", dict(KEPT), capability=change, expect_from=spelled)
+        check(unsent(said),
+              "and so it is spelled %r - capitals, a `where`, or the capability's own "
+              "name" % spelled)
+
+    # A KEPT RUN OF IT AFTER THE DRY RUN HANDS ON AGAIN.
+    call("revit_change", dict(KEPT), capability=change)
+    then = call("revit_change", dict(KEPT), capability=change, expect_from=folder)
+    check(stated(then) == "KEPT" and handed_on(folder),
+          "once the change has been KEPT, expect_from naming it is sent again, as "
+          "expectChain - a kept run still hands on - found %r" % then[:160])
+
+    # NEVER TAKEN BACK: a kept change hands on from the first.
+    stage.fresh(dict(KEPT), MODEL)
+    call("revit_change", dict(KEPT), capability=change)
+    kept = call("revit_change", dict(KEPT), capability=change, expect_from=folder)
+    check(handed_on(folder), "a kept change, with no dry run before it, hands on as before")
+
+    # A DISCARD.
+    stage.fresh(dict(DISCARDED), MODEL)
+    call("revit_change", dict(DISCARDED), capability=change)
+    after = call("revit_change", dict(KEPT), capability=change, expect_from=folder)
+    check(unsent(after) and "Discard" in after and "modeller" in after,
+          "a change the modeller DISCARDED in Revit: naming it is refused, nothing sent, "
+          "and the reply says it was their answer - found %r" % after[:240])
+
+    # A DRY RUN WHOSE ROLLBACK DID NOT HOLD, WAS NOT CONFIRMED, OR WHOSE ANSWER
+    # WAS LOST: still a dry run, and what it may have left is not handed on.
+    for label, reply in (("did not hold", dict(DRY_NOT_HELD)),
+                         ("was not confirmed", dict(DRY_NOT_CONFIRMED)),
+                         ("came back lost", error("unknown_outcome")),
+                         ("never came back", None)):
+        stage.fresh(reply, MODEL)
+        call("revit_change", reply, capability=change, dry_run=True)
+        said = call("revit_change", dict(KEPT), capability=change, expect_from=folder)
+        check(unsent(said), "a dry run whose rollback %s: naming it is still refused" % label)
+
+    # A DRY RUN THE ADD-IN REFUSED BEFORE IT RAN MOVED NOTHING: what a kept run
+    # left before it is still handed on.
+    stage.fresh(dict(KEPT), MODEL)
+    call("revit_change", dict(KEPT), capability=change)
+    call("revit_change", error("write_disabled"), capability=change, dry_run=True)
+    said = call("revit_change", dict(KEPT), capability=change, expect_from=folder)
+    check(handed_on(folder),
+          "a dry run the add-in REFUSED (Changes off) left what was carried alone, so "
+          "the kept run before it still hands on - found %r" % said[:160])
+
+    # D-160: A KEEP REVIT COUNTED NOTHING IN is rolled back so no empty undo
+    # entry is left - and the model holds what it reported, so it hands on.
+    unchanged = dict(KEPT, applied=False, rolledBack=True, verdictKind="unchanged",
+                     verdictShort=None, verdict="CHECKED, NOTHING WRITTEN.")
+    stage.fresh(unchanged, MODEL)
+    call("revit_change", unchanged, capability=change)
+    call("revit_change", dict(KEPT), capability=change, expect_from=folder)
+    check(handed_on(folder),
+          "a keep Revit counted nothing in (D-160) is not taken back - it hands on")
+
+    # A KEPT CALL WHOSE ANSWER WAS LOST, AFTER A DRY RUN: what is carried may
+    # still be the dry run's, so it stays refused, saying why.
+    stage.fresh(dict(DRY_HELD), MODEL)
+    call("revit_change", dict(DRY_HELD), capability=change, dry_run=True)
+    call("revit_change", error("unknown_outcome"), capability=change)
+    said = call("revit_change", dict(KEPT), capability=change, expect_from=folder)
+    check(unsent(said) and "never came back" in said and "heron_run_record" in said,
+          "a kept call whose answer was lost after a dry run: still refused, saying what "
+          "is carried may still be the dry run's, and where to look - found %r" % said[:260])
+
+    # WHAT ONLY THE ADD-IN SAW: an earlier call the dry run used up is the
+    # add-in's to refuse, and its refusal is a REFUSAL at every door.
+    stage.fresh(dict(DRY_HELD), MODEL)
+    call("revit_change", dict(DRY_HELD), capability=change, dry_run=True,
+         expect_from="find-views")
+    call("revit_change", dict(KEPT), capability=change, expect_from="find-views")
+    check(handed_on("find-views"),
+          "an expect_from naming the call a dry run used up is sent: the add-in holds "
+          "what replaced it, and refuses it there")
+    told = ("This request expects values left by 'find-views', and what is carried for "
+            "this chat on 'Project1' was left by '%s', a run sent without apply - a dry "
+            "run or a proof's trial - and rolled back. NOTHING WAS BOUND and no fragment "
+            "ran." % folder)
+    for door, capability in (("revit_change", change), ("revit_read", read),
+                             ("revit_show", show)):
+        stage.fresh(error("chain_taken_back", told), MODEL)
+        said = call(door, error("chain_taken_back", told), capability=capability,
+                    expect_from="find-views")
+        check(stated(said) == "REFUSED" and "NOTHING WAS BOUND" in said,
+              "%s: the add-in's chain_taken_back is REFUSED, never OUTCOME UNKNOWN, and "
+              "its own words are the reply - found %r" % (door, stated(said)))
+
+
 def every_path_one_line(cases, replies, core):
     print()
     print("4. Every path: exactly one line, the second, its word in the table")
@@ -1730,6 +1893,7 @@ def main():
         a_dry_run_says_what_the_add_in_said(stage, cases, replies, picked)
         model_text_is_data(stage, picked)
         the_dry_runs_small_print(stage, picked)
+        nothing_taken_back_is_handed_on(stage, picked)
         every_path_one_line(cases, replies, core)
         additive(stage, cases, replies, core)
         asyncio.run(through_the_sdk(stage, cases, picked))

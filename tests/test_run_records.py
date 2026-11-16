@@ -47,6 +47,12 @@ WHAT IT PROVES
      verdict exactly, and a reply with no `asking` prints as before.
   7. THE TOOL IS DECLARED READ AND CALLS NO OPERATION, and revit_change uses
      these and nothing of its own.
+  9. NOTHING A RUN THAT WAS TAKEN BACK LEFT IS HANDED ON (Q-89). TakenBack
+     refuses an expect_from naming this chat's dry run - whatever came back -
+     or a change the modeller discarded, however it is spelled, and nothing
+     else; a kept change hands on, after a dry run too, and so does a keep
+     Revit counted nothing in. An answer the add-in refused moves nothing; a
+     kept call lost after a dry run stays refused and says why.
 
 MEASURED AGAINST THE CODE AS IT STOOD: with no heron_run_records.py and no
 heron_run_record, section 1 fails cleanly and every later section says it
@@ -694,6 +700,78 @@ def model_text(runs):
           "name and an id-labelled one print bare")
 
 
+def taken_back(runs):
+    """OPEN-QUESTIONS Q-89, decided 2026-11-15: nothing a run that was taken back
+    left is handed on. TakenBack is the server's half - which of this chat's
+    runs were taken back, by how each call ended - asked here without the SDK,
+    which the doors' own suite (tests/test_outcome_line.py, 3f) needs."""
+    print("\n9. what a run that was taken back left is never handed on (Q-89)")
+    made = getattr(runs, "TakenBack", None)
+    check(made is not None, "heron_run_records has TakenBack")
+    if made is None:
+        class made(object):                     # so the checks below RUN and FAIL
+            def answered(self, *_given):
+                pass
+
+            def refusal(self, _expect_from):
+                return None
+
+    kept = {"ok": True, "verdictKind": "kept", "applied": True, "rolledBack": False}
+    held = {"ok": True, "verdictKind": "rolledBack", "applied": False, "rolledBack": True}
+    discarded = dict(held, verdictKind="discarded", asked=True, kept=False)
+    unchanged = dict(held, verdictKind="unchanged")
+    lost = {"ok": False, "error": "unknown_outcome"}
+
+    def after(*calls):
+        """A fresh chat's record after these (dry_run, reply, unchanged) calls."""
+        record = made()
+        for dry, reply, still in calls:
+            record.answered("rename-views", "RENAME_VIEWS", dry, reply, still)
+        return record
+
+    said = after((True, held, False)).refusal("rename-views") or ""
+    check("Nothing has been sent to Revit" in said and "dry run" in said
+          and "no longer holds" in said and "without dry_run" in said,
+          "a DRY RUN named in expect_from is refused, saying what was taken back and what "
+          "to run instead - found %r" % said[:160])
+    record = after((True, held, False))
+    check(all(record.refusal(spelled)
+              for spelled in ("RENAME-VIEWS", "rename-views where view=Level 1",
+                              "rename_views", " Rename-Views ")),
+          "however it is spelled: capitals, a `where`, the capability's own name")
+    check(record.refusal("find-views") is None and record.refusal("") is None,
+          "and nothing else is refused: another run, or no expectation at all")
+    for label, reply in (("held", held), ("was answered KEPT", kept),
+                         ("came back lost", lost), ("never came back", None)):
+        check(after((True, reply, False)).refusal("rename-views"),
+              "a dry run that %s is still a dry run" % label)
+    said = after((False, discarded, False)).refusal("rename-views") or ""
+    check("Discard" in said and "modeller" in said,
+          "a change the modeller DISCARDED is refused, saying it was their answer")
+    check(after((False, {"ok": True, "asked": True, "kept": False}, False))
+          .refusal("rename-views"),
+          "and so is one an add-in too old to name its verdict says was asked and not kept")
+    check(after((False, held, False)).refusal("rename-views"),
+          "and a change the add-in rolled back")
+
+    check(after((False, kept, False)).refusal("rename-views") is None,
+          "a KEPT change hands on")
+    check(after((True, held, False), (False, kept, False)).refusal("rename-views") is None,
+          "and a kept run after a dry run hands on again")
+    check(after((False, unchanged, False)).refusal("rename-views") is None,
+          "a keep Revit counted nothing in (D-160) hands on - the model holds what it said")
+    check(after((False, kept, False), (True, {"ok": False, "error": "write_disabled"},
+                                       True)).refusal("rename-views") is None,
+          "a dry run the add-in refused before it ran moves nothing: the kept run stands")
+    check(after((True, held, False), (False, kept, True)).refusal("rename-views"),
+          "and a kept call the add-in refused leaves the dry run where it was")
+    said = after((True, held, False), (False, lost, False)).refusal("rename-views") or ""
+    check("never came back" in said and "heron_run_record" in said,
+          "a kept call whose answer was lost after a dry run stays refused, and says why")
+    check(after((False, lost, False)).refusal("rename-views") is None,
+          "while one lost with nothing taken back before it is sent as before")
+
+
 def main():
     runs = load()
     if runs is None:
@@ -712,6 +790,7 @@ def main():
         asked(runs)
         declared(runs)
         model_text(runs)
+        taken_back(runs)
     finally:
         shutil.rmtree(folder, ignore_errors=True)
 

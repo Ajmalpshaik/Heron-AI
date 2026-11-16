@@ -488,8 +488,12 @@ it back* (D-55's preview): nothing is kept, Revit asks no Keep or Discard, and n
   user says to; that run is asked about in Revit or kept at once as *Ask to Keep* says, and its own
   counts are the ones that describe it.
 - **A dry run replaces what the chat had carried** for `expect_from`, as every run does. Its reply says
-  the earlier call must be run again before the kept run, and that nothing may be taken from a dry run;
-  whether a rolled-back run should replace it at all is [Q-89](open-questions/tier-2.md)
+  the earlier call must be run again before the kept run. **And nothing a run that was taken back left
+  is handed on** ([Q-89](open-questions/tier-2.md), decided 2026-11-15, built 2026-11-16, **not run in
+  Revit**): a call at any of the three doors whose `expect_from` names this chat's dry run, or a change
+  the modeller discarded, is refused before anything is sent, saying what was taken back and what to run
+  instead (`heron_run_records.TakenBack`); and the add-in refuses the same expectation itself,
+  `chain_taken_back`, for a run only Revit saw end or a server older than the rule
   ([row 5b-1612](fragment-issues/row-5b-1612.md)).
 
 **And a write's reply carries a read-back** ([D-156](decisions/D-156.md)): under the counts, each changed
