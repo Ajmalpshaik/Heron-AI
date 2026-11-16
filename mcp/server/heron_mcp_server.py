@@ -3038,36 +3038,15 @@ def _build_line(capability, folder, session):
     One sentence when the proof was taken on another add-in or Revit build
     than the one that just ran it - or "" for anything else.
 
-    SAID ONLY WHEN IT IS TRUE AND NEW. A proof signed before proofs carried a
-    build says nothing about one ("not recorded"), an add-in too old to say
-    which build it is says nothing either ("unknown"), and a proof whose code
-    moved is already called unproven by `_proof_line`. None of those is called
-    stale here, and none is called current.
+    THE WORDS ARE THE BRAIN'S (`heron_brain.proof_build_line`), so they can
+    be held by a suite on a machine with no MCP SDK - CI's tests job has
+    none, on purpose. This door only says which session ran it.
 
     A FLAG, NOT A REFUSAL - D-174, the owner's answer to Q-92. The D-117 gate
     refuses on D-30's fingerprint, read from the card alone; a proof on another
     build is said under the answer and never stops a change being kept.
     """
-    found = brain.proof_status(folder)
-    if not found or found["status"] not in ("PROVEN", "PRODUCTION") or found["stale"]:
-        return ""
-    built_on = getattr(session, "built_on", None)
-    if not callable(built_on):
-        return ""
-    build = brain.proof_build(folder, built_on())
-    if not build or build["state"] != "stale":
-        return ""
-    words = {"revit_build": "Revit's build", "addin_version": "the Heron add-in's version",
-             "addin_hash": "the Heron add-in's file"}
-    recorded = build["recorded"] or {}
-    return ("  '%s' was proved on Revit %s build %s with Heron add-in %s - %s "
-            "changed since, so that proof has not been checked on this build. "
-            "Check this answer against the model before relying on it, until it "
-            "is proved again on this build (D-30)."
-            % (capability, recorded.get("revit_release") or "?",
-               recorded.get("revit_build") or "(not recorded)",
-               recorded.get("addin_version") or "(not recorded)",
-               " and ".join(words.get(f, f) for f in build["changed"])))
+    return brain.proof_build_line(capability, folder, bridge.built_on_of(session))
 
 
 def _shown_elsewhere(root, folder, capability):

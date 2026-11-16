@@ -2846,6 +2846,43 @@ def proof_build(folder, current):
     return {"state": state, "changed": list(changed), "recorded": recorded}
 
 
+# What each changed field is called in the line under an answer.
+_BUILD_WORDS = {"revit_build": "Revit's build",
+                "addin_version": "the Heron add-in's version",
+                "addin_hash": "the Heron add-in's file"}
+
+
+def proof_build_line(capability, folder, current):
+    """
+    One sentence for under an answer when the proof was taken on another
+    add-in or Revit build than `current` - or "" for anything else.
+
+    SAID ONLY WHEN IT IS TRUE AND NEW. A proof signed before proofs carried a
+    build says nothing about one ("not recorded"), an add-in too old to say
+    which build it is says nothing either ("unknown"), and a proof whose code
+    moved is already called unproven by the server's `_proof_line`. None of
+    those is called stale here, and none is called current.
+
+    A FLAG, NEVER A REFUSAL (D-174). `current` is the session's `built_on`;
+    {} from a session that cannot say reads as nothing to compare.
+    """
+    found = proof_status(folder)
+    if not found or found["status"] not in ("PROVEN", "PRODUCTION") or found["stale"]:
+        return ""
+    build = proof_build(folder, current or {})
+    if not build or build["state"] != "stale":
+        return ""
+    recorded = build["recorded"] or {}
+    return ("  '%s' was proved on Revit %s build %s with Heron add-in %s - %s "
+            "changed since, so that proof has not been checked on this build. "
+            "Check this answer against the model before relying on it, until it "
+            "is proved again on this build (D-30)."
+            % (capability, recorded.get("revit_release") or "?",
+               recorded.get("revit_build") or "(not recorded)",
+               recorded.get("addin_version") or "(not recorded)",
+               " and ".join(_BUILD_WORDS.get(f, f) for f in build["changed"])))
+
+
 def model_dashboard_demo():
     """The Model Dashboard's DEMO - an invented model, for trying the panel with
     no Revit (docs/40 s21.12). Never kept, never compared; the panel refuses

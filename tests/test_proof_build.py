@@ -493,14 +493,6 @@ def test_the_client_reads_what_the_addin_writes():
 # 6. The line under an answer
 # ---------------------------------------------------------------------------
 
-class _Session(object):
-    def __init__(self, built):
-        self._built = built
-
-    def built_on(self):
-        return dict(self._built)
-
-
 def test_the_line_under_an_answer():
     print("6. The line under an answer says a proof taken on another build")
     try:
@@ -509,35 +501,55 @@ def test_the_line_under_an_answer():
         WAITING.append("heron_brain could not be imported here: %s" % exc)
         print("  NOT RUN  heron_brain could not be imported: %s" % exc)
         return
+    line_of = getattr(BRAIN, "proof_build_line", None)
+    check(line_of is not None, "the brain has the line for a proof's build")
+    build_b = with_(BUILD_A, addin_hash="b" * 16)
+    said = {}
     with Workspace() as ws:
         ws.fragment(built_on=BUILD_A)
         ws.fragment(slug="old")
+        ws.fragment(slug="draft", status="DRAFT", built_on=BUILD_A)
+        moved = ws.fragment(slug="moved", built_on=BUILD_A)
+        with io.open(os.path.join(moved.folder, "impl", "any", "fragment.cs"), "a",
+                     encoding="utf-8") as fh:
+            fh.write(u"// the code moved after the proof\n")
         real_root = BRAIN.ROOT
         BRAIN.ROOT = ws.root
         try:
-            moved = BRAIN.proof_build("sample", with_(BUILD_A, addin_hash="b" * 16))
+            stale = BRAIN.proof_build("sample", build_b)
             same = BRAIN.proof_build("sample", BUILD_A)
             old = BRAIN.proof_build("old", BUILD_A)
+            # D-174: SAID, NEVER REFUSED. The D-117 gate is asked with the
+            # status the brain reads from the card.
+            found = BRAIN.proof_status("sample")
+            if line_of is not None:
+                for name, slug, current in (
+                        ("stale", "sample", build_b),
+                        ("current", "sample", BUILD_A),
+                        ("old", "old", build_b),
+                        ("unknown", "sample", {"revit_release": "2024"}),
+                        ("silent", "sample", {}),
+                        ("draft", "draft", build_b),
+                        ("code moved", "moved", build_b)):
+                    said[name] = line_of("SAMPLE_BUILD_CAPABILITY", slug, current)
         finally:
             BRAIN.ROOT = real_root
-    check(moved and moved["state"] == STALE and moved["changed"] == ["addin_hash"],
-          "the brain answers STALE for another add-in file: %r" % (moved,))
+    check(stale and stale["state"] == STALE and stale["changed"] == ["addin_hash"],
+          "the brain answers STALE for another add-in file: %r" % (stale,))
     check(same and same["state"] == CURRENT, "CURRENT for the same build")
     check(old and old["state"] == NOT_RECORDED, "NOT RECORDED for an old proof")
-
-    # D-174: SAID, NEVER REFUSED. The D-117 gate is asked with the status the
-    # brain reads from the card, and a build that moved does not make it stale.
-    with Workspace() as ws:
-        ws.fragment(built_on=BUILD_A)
-        real_root = BRAIN.ROOT
-        BRAIN.ROOT = ws.root
-        try:
-            found = BRAIN.proof_status("sample")
-        finally:
-            BRAIN.ROOT = real_root
     check(found and found["stale"] is False
           and BRIDGE.unproven_refusal("SAMPLE_BUILD_CAPABILITY", found) is None,
           "a proof stale only for another build is not refused by D-117's gate (D-174)")
+
+    text = said.get("stale") or ""
+    check("add-in's file" in text and "20230308_1635(x64)" in text and "D-30" in text,
+          "a stale proof is said, naming what changed and what it was taken on: %s" % text)
+    for name in ("current", "old", "unknown", "silent", "draft"):
+        check(name in said and said[name] == "",
+              "a %s proof adds no line: %r" % (name, said.get(name)))
+    check("code moved" in said and said["code moved"] == "",
+          "a proof whose code moved is left to the line that already says so")
 
     with io.open(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py"),
                  encoding="utf-8") as fh:
@@ -548,74 +560,10 @@ def test_the_line_under_an_answer():
         body = server[start:end if end > 0 else len(server)]
         check(start >= 0 and "_build_line(capability, folder, session)" in body,
               "%s says it under its answer" % door)
-
-    line = _server_build_line()
-    if line is None:
-        return
-    status = {"status": "PROVEN", "stale": False, "proof": True}
-    for name, build, said in (
-            ("stale", {"state": STALE, "changed": ["addin_hash"], "recorded": BUILD_A}, True),
-            ("old", {"state": NOT_RECORDED, "changed": [], "recorded": None}, False),
-            ("unknown", {"state": UNKNOWN, "changed": [], "recorded": BUILD_A}, False),
-            ("current", {"state": CURRENT, "changed": [], "recorded": BUILD_A}, False)):
-        text = line(status, build)
-        if said:
-            check("add-in's file" in text and "20230308_1635(x64)" in text
-                  and "D-30" in text,
-                  "a %s proof is said, naming what changed and what it was taken on: %s"
-                  % (name, text))
-        else:
-            check(text == "", "a %s proof adds no line: %r" % (name, text))
-    check(line(dict(status, stale=True), {"state": STALE, "changed": ["addin_hash"],
-                                          "recorded": BUILD_A}) == "",
-          "a proof whose code moved is left to the line that already says so")
-
-
-def _server_build_line():
-    """The server's `_build_line`, with the brain stood in - or None, waiting."""
-    try:
-        import mcp  # noqa: F401
-    except BaseException as exc:                            # noqa: BLE001 - see heron-ship 4
-        WAITING.append("the MCP SDK is not importable here (%s)" % exc)
-        print("  NOT RUN  the server's line needs the MCP SDK: pip install --user mcp")
-        return None
-    home = tempfile.mkdtemp(prefix="heron-built-on-server-")
-    had = os.environ.get("HERON_KNOWLEDGE")
-    os.environ["HERON_KNOWLEDGE"] = home
-    real_discovery = BRIDGE.DISCOVERY_DIR
-    BRIDGE.DISCOVERY_DIR = os.path.join(home, "bridges")
-    os.makedirs(BRIDGE.DISCOVERY_DIR)
-    try:
-        import heron_mcp_server as SERVER
-    except Exception as exc:                                # noqa: BLE001
-        check(False, "the server could not be imported: %s: %s" % (type(exc).__name__, exc))
-        return None
-    finally:
-        BRIDGE.DISCOVERY_DIR = real_discovery
-        if had is None:
-            os.environ.pop("HERON_KNOWLEDGE", None)
-        else:
-            os.environ["HERON_KNOWLEDGE"] = had
-        shutil.rmtree(home, ignore_errors=True)
-
-    method = getattr(SERVER, "_build_line", None)
-    check(method is not None, "the server has a line for a proof's build")
-    if method is None:
-        return None
-
-    def line(status, build):
-        real_status = SERVER.brain.proof_status
-        real_build = getattr(SERVER.brain, "proof_build", None)
-        SERVER.brain.proof_status = lambda folder: status
-        SERVER.brain.proof_build = lambda folder, current: build
-        try:
-            return method("SAMPLE_BUILD_CAPABILITY", "sample",
-                          _Session(with_(BUILD_A, addin_hash="b" * 16)))
-        finally:
-            SERVER.brain.proof_status = real_status
-            if real_build is not None:
-                SERVER.brain.proof_build = real_build
-    return line
+    start = server.find("def _build_line(")
+    body = server[start:server.find("\ndef ", start + 1)] if start >= 0 else ""
+    check("brain.proof_build_line(" in body and "bridge.built_on_of(session)" in body,
+          "and the server's line is the brain's, for the session that ran it")
 
 
 def main():
