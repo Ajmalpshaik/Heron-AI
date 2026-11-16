@@ -30,6 +30,21 @@ positive:
   - given: the same 4, pivot "itself"
     expect: the same answer as left out
 
+  # VERSION 4 (2026-11-16, FRAGMENT-ISSUES row 5b-1708). NOT RUN. Each FAILS
+  # on version 3, which printed "normalised" and said no angle in `findings`.
+  - given: one free-standing door or column, angleRadians -1.5707963, pivot left out
+    expect: >
+      rotated 1, and `findings` reads "Asked to turn 90 degrees clockwise seen
+      from above, about a vertical axis through each one's own point: 1
+      turned, ...". NO line
+      named `normalised` and none named `full` in the reply - version 3 printed
+      "normalised 1.5707963", which read as a +90 degree turn. Read the
+      element's rotation back: 270 degrees, as REPORT_LOCATION read on 2026-11-11
+  - given: the same element, angleRadians 1.5707963
+    expect: >
+      `findings` reads "Asked to turn 90 degrees anticlockwise seen from above" - the
+      sign of the angle is the direction in the sentence
+
 negative:
   - given: 2 of the terminals put inside a REVIT GROUP
     expect: >
@@ -75,6 +90,12 @@ negative:
     expect: >
       refused in `findings` - a pivot is three numbers in millimetres or none
       - rotated 0, nothing attempted, nothing in blocked or refused
+
+  # VERSION 4 (2026-11-16, row 5b-1708). NOT RUN.
+  - given: the same element, angleRadians 6.283185307179586 (a whole turn, to the tolerance the card tests - row 5b-1780)
+    expect: >
+      refused - "The angle is zero, or a whole turn" - rotated 0, nothing
+      attempted, and no `normalised` line in the reply (version 3 printed one)
 
 second_route:
   - the element's own Rotation in Revit's properties palette, read after

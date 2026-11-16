@@ -1,7 +1,7 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `newLevel`, `topLevelId`,
 // `keepWallBase` and `allowUnconnectedToBecomeBound` are in scope; leaves
 // `moved`, `alreadyThere`, `heightChanged`, `refused`, `unconnectedTop`,
-// `notAWall`, `notApplicable` and `problem` behind.
+// `notAWall`, `notApplicable`, `problem` and `columnReport` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
 //
@@ -50,6 +50,27 @@
 //   thrown top offset. Now every value written to an element is read first,
 //   and a failure writes them all back before the element is refused; if even
 //   that leaves it somewhere else, it is in `heightChanged` too.
+//
+// VERSION 3 (2026-11-16, row 5b-1673) - COLUMNS, BOTH ENDS, THE WALL'S RULE.
+//
+//   A COLUMN HAS A BASE LEVEL AND A TOP LEVEL, like a wall, and version 2 had
+//   no parameter it knew for either: a column was refused, or named in
+//   `notAWall` while its top was left as it was. Now an architectural or a
+//   structural column - known by the built-in column Base Level and Top Level
+//   parameters, never by a name (an architectural column carries two
+//   parameters both called "Top Level", #853 item B2) - goes the way a wall
+//   does: its base to `newLevel` unless `keepWallBase`, its top to
+//   `topLevelId` when one is given, each offset re-solved so the column does
+//   not move, and a failure part-way put back.
+//
+//   A COLUMN WHOSE TOP OR BASE IS ATTACHED to a roof, floor or beam has that
+//   end set by what it is attached to, not by its level and offset, so the
+//   end is not re-hosted: the column is refused and `columnReport` says
+//   which end and to what. A column with no top level has no height to keep,
+//   so its top is named in `unconnectedTop` and left alone.
+//
+//   `columnReport` says, column by column, what each end was and is now - or
+//   why it was left - in plain words.
 
 var moved = 0;
 var alreadyThere = 0;
@@ -59,6 +80,7 @@ var unconnectedTop = new List<ElementId>();
 var notAWall = new List<ElementId>();
 string notApplicable = null;
 string problem = null;
+var columnReport = "";
 
 var levelParameters = new BuiltInParameter[]
 {
@@ -270,6 +292,167 @@ else
             continue;
         }
 
+        // ---- A COLUMN (version 3, row 5b-1673) --------------------------------
+        // Known by the built-in column Base Level and Top Level, the test
+        // COPY_ELEMENTS uses, never by a parameter found by name.
+        var columnInstance = element as FamilyInstance;
+        var columnBase = columnInstance != null
+            ? columnInstance.get_Parameter(BuiltInParameter.FAMILY_BASE_LEVEL_PARAM) : null;
+        var columnTop = columnInstance != null
+            ? columnInstance.get_Parameter(BuiltInParameter.FAMILY_TOP_LEVEL_PARAM) : null;
+        if (columnBase != null && columnTop != null
+            && columnBase.StorageType == StorageType.ElementId
+            && columnTop.StorageType == StorageType.ElementId)
+        {
+            var label = string.Format("column {0}", element.Id);
+            Action<string> say = text =>
+                columnReport += (columnReport.Length == 0 ? "" : " | ") + label + ": " + text;
+
+            Func<ElementId, string> levelName = id =>
+            {
+                var level = id == null || id == ElementId.InvalidElementId ? null : doc.GetElement(id) as Level;
+                return level == null ? "no level" : "'" + level.Name + "'";
+            };
+
+            var wasBaseLevel = columnBase.AsElementId();
+            var wasTopLevel = columnTop.AsElementId();
+            var baseOffsetParameter = columnInstance.get_Parameter(BuiltInParameter.FAMILY_BASE_LEVEL_OFFSET_PARAM);
+            var topOffsetParameter = columnInstance.get_Parameter(BuiltInParameter.FAMILY_TOP_LEVEL_OFFSET_PARAM);
+            var wasColumnBaseOffset = baseOffsetParameter != null ? baseOffsetParameter.AsDouble() : 0;
+            var wasColumnTopOffset = topOffsetParameter != null ? topOffsetParameter.AsDouble() : 0;
+
+            bool columnTopUnconnected = wasTopLevel == ElementId.InvalidElementId
+                || !(doc.GetElement(wasTopLevel) is Level);
+            var wasColumnBase = elevationOf(wasBaseLevel) + wasColumnBaseOffset;
+            var wasColumnTop = elevationOf(wasTopLevel) + wasColumnTopOffset;
+
+            bool columnDoBase = !keepWallBase && wasBaseLevel != newLevel.Id;
+            bool columnDoTop = wantTop && wasTopLevel != topLevelId;
+
+            if (columnDoTop && columnTopUnconnected)
+            {
+                // No top level means no top height to hold - the flag that
+                // lets a wall's typed height become level-bound does not
+                // reach a column.
+                unconnectedTop.Add(element.Id);
+                say("it has no top level, so there is no top height to keep - its top was left alone");
+                columnDoTop = false;
+            }
+
+            if (!columnDoBase && !columnDoTop)
+            {
+                if (keepWallBase && !wantTop) wallsWithNothingAsked++;
+                else if (!unconnectedTop.Contains(element.Id))
+                {
+                    alreadyThere++;
+                    say("already on the levels asked for");
+                }
+                continue;
+            }
+
+            // AN ATTACHED END IS SET BY WHAT IT IS ATTACHED TO. Re-hosting it
+            // would write an offset Revit then overrides, so it is refused.
+            string attachedTo = null;
+            for (var end = 0; end < 2 && attachedTo == null; end++)
+            {
+                if (end == 0 && !columnDoBase) continue;
+                if (end == 1 && !columnDoTop) continue;
+                ColumnAttachment attachment = null;
+                try { attachment = ColumnAttachment.GetColumnAttachment(columnInstance, end); } catch { attachment = null; }
+                if (attachment == null) continue;
+                var target = doc.GetElement(attachment.TargetId);
+                attachedTo = string.Format("its {0} is attached to {1} {2}, which sets that end - "
+                    + "detach it (ATTACH_COLUMNS, detach) and ask again",
+                    end == 0 ? "base" : "top",
+                    target != null && target.Category != null ? target.Category.Name : "element",
+                    attachment.TargetId);
+            }
+            if (attachedTo != null)
+            {
+                refused.Add(element.Id);
+                say(attachedTo + ". Nothing on it was changed");
+                continue;
+            }
+
+            if ((columnDoBase && (columnBase.IsReadOnly || baseOffsetParameter == null || baseOffsetParameter.IsReadOnly))
+                || (columnDoTop && (columnTop.IsReadOnly || topOffsetParameter == null || topOffsetParameter.IsReadOnly)))
+            {
+                refused.Add(element.Id);
+                say("Revit holds the level or offset it would need as read-only. Nothing on it was changed");
+                continue;
+            }
+
+            bool columnBaseWritten = false, columnTopWritten = false, columnFailed = false;
+            string columnError = null;
+
+            // THE TOP FIRST WHEN IT RISES, THE BASE FIRST OTHERWISE, so the
+            // column's two levels never cross on the way: a base set above an
+            // old top, or a top set below an old base, is a column Revit may
+            // refuse. Each offset is re-solved at once, so the column does not
+            // move between the two.
+            var topFirst = columnDoTop && newTop != null && newTop.Elevation > elevationOf(wasTopLevel);
+            for (var step = 0; step < 2 && !columnFailed; step++)
+            {
+                var doingTop = topFirst ? step == 0 : step == 1;
+                try
+                {
+                    if (doingTop && columnDoTop)
+                    {
+                        columnTopWritten = true;
+                        columnTop.Set(topLevelId);
+                        topOffsetParameter.Set(wasColumnTop - newTop.Elevation);
+                    }
+                    else if (!doingTop && columnDoBase)
+                    {
+                        columnBaseWritten = true;
+                        columnBase.Set(newLevel.Id);
+                        baseOffsetParameter.Set(wasColumnBase - newLevel.Elevation);
+                    }
+                }
+                catch (Exception notTaken)
+                {
+                    columnFailed = true;
+                    columnError = notTaken.Message;
+                }
+            }
+
+            Func<bool> columnMoved = () =>
+                Math.Abs(elevationOf(columnBase.AsElementId())
+                         + (baseOffsetParameter != null ? baseOffsetParameter.AsDouble() : 0) - wasColumnBase) > SameHeight
+                || (!columnTopUnconnected
+                    && Math.Abs(elevationOf(columnTop.AsElementId())
+                                + (topOffsetParameter != null ? topOffsetParameter.AsDouble() : 0) - wasColumnTop) > SameHeight);
+
+            if (columnFailed)
+            {
+                // PUT BACK, IN REVERSE, ONLY WHAT WAS WRITTEN - the wall's rule.
+                if (columnTopWritten)
+                {
+                    try { columnTop.Set(wasTopLevel); } catch { }
+                    try { topOffsetParameter.Set(wasColumnTopOffset); } catch { }
+                }
+                if (columnBaseWritten)
+                {
+                    try { columnBase.Set(wasBaseLevel); } catch { }
+                    try { baseOffsetParameter.Set(wasColumnBaseOffset); } catch { }
+                }
+                refused.Add(element.Id);
+                if (columnMoved()) heightChanged.Add(element.Id);
+                say("Revit would not take it - " + columnError + ". What was written was put back");
+                continue;
+            }
+
+            moved++;
+            if (columnMoved()) heightChanged.Add(element.Id);
+            say(string.Format("base {0} to {1}, top {2} to {3}; base {4:F0} mm and top {5:F0} mm {6}",
+                levelName(wasBaseLevel), levelName(columnBase.AsElementId()),
+                levelName(wasTopLevel), levelName(columnTop.AsElementId()),
+                (elevationOf(columnBase.AsElementId()) + baseOffsetParameter.AsDouble()) * 304.8,
+                (elevationOf(columnTop.AsElementId()) + topOffsetParameter.AsDouble()) * 304.8,
+                heightChanged.Contains(element.Id) ? "- AND IT MOVED, see heightChanged" : "where they were"));
+            continue;
+        }
+
         // ---- NOT A WALL -------------------------------------------------------
         if (wallOnly)
         {
@@ -369,16 +552,16 @@ else
     if (notAWall.Count > 0)
     {
         notApplicable = keepWallBase
-            ? string.Format("{0} element(s) are not walls, so they were LEFT ALONE: the walls' base "
-                + "was kept and a top level applies to walls only.", notAWall.Count)
-            : string.Format("{0} element(s) are not walls, so the top level does not apply to them; "
-                + "each was moved to {1} like any other element, its height held.",
+            ? string.Format("{0} element(s) are not walls or columns, so they were LEFT ALONE: the "
+                + "base was kept and a top level applies to walls and columns only.", notAWall.Count)
+            : string.Format("{0} element(s) are not walls or columns, so the top level does not apply "
+                + "to them; each was moved to {1} like any other element, its height held.",
                 notAWall.Count, newLevel.Name);
     }
 
     if (wallsWithNothingAsked > 0)
     {
-        problem = string.Format("{0} wall(s) were left alone: the walls' base was kept and no top "
-            + "level was given, so nothing was asked of them.", wallsWithNothingAsked);
+        problem = string.Format("{0} wall(s) or column(s) were left alone: the base was kept and no "
+            + "top level was given, so nothing was asked of them.", wallsWithNothingAsked);
     }
 }

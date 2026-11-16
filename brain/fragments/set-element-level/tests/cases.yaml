@@ -80,6 +80,40 @@ negative:
       spot elevation. Version 1 left it on the new level with the old offset,
       moved by the difference between the levels, reported only as refused
 
+  # VERSION 3 - COLUMNS (row 5b-1673). Every case below FAILS on version 2,
+  # which applied topLevelId to walls only: a column was named in `notAWall`
+  # and its Top Level left as it was. NEEDS-CHECKING Group OE.
+
+  - given: >
+      VERSION 3. Two ARCHITECTURAL columns (M_Rectangular Column) and two
+      STRUCTURAL columns (M_Concrete-Rectangular-Column), each Level 1 to
+      Level 2 with offsets 0, on a scratch project with Level 1 at 0, Level 2
+      at 3000 and Level 3 at 6000; newLevel Level 1, keepWallBase true,
+      topLevelId Level 3
+    expect: >
+      moved 4, heightChanged empty, notAWall empty. Each column's Top Level
+      reads Level 3 and its Top Offset -3000 mm; its Base Level and Base Offset
+      untouched; in a section every column top still at 3000 mm. columnReport
+      names all four, "base 'Level 1' to 'Level 1', top 'Level 2' to 'Level 3';
+      base 0 mm and top 3000 mm where they were". On version 2: moved 0, all
+      four in notAWall, Top Level still Level 2
+
+  - given: >
+      VERSION 3. The same four columns, newLevel Level 2, topLevelId Level 3,
+      keepWallBase left out - both ends
+    expect: >
+      moved 4; Base Level Level 2 with Base Offset -3000 mm, Top Level Level 3
+      with Top Offset -3000 mm; the columns not moved. On version 2 the top
+      stayed Level 2
+
+  - given: >
+      VERSION 3. One structural column whose top is ATTACHED to a floor above
+      it (ATTACH_COLUMNS, kept), topLevelId Level 3, keepWallBase true
+    expect: >
+      that column in `refused`, columnReport saying "its top is attached to
+      Floors <id>, which sets that end", and nothing on it changed; the other
+      columns re-hosted as above
+
 second_route:
   - A spot elevation on the element before and after; and a schedule grouped by Level for the data side
   - >
@@ -87,3 +121,6 @@ second_route:
     and after, or the wall's Base Constraint, Base Offset, Top Constraint and
     Top Offset in the Properties palette - the four together are the elevations
     this fragment promises not to change
+  - >
+    VERSION 3: a section through the columns before and after, or each column's
+    Base Level, Base Offset, Top Level and Top Offset in the Properties palette

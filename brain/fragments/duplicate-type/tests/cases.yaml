@@ -10,6 +10,23 @@ positive:
       the same behaviour as the duct type. Duplicate is a base ElementType
       method, so a system type and a loadable family type go the same way
 
+  # VERSION 2 (2026-11-16, FRAGMENT-ISSUES row 5b-1705). NOT RUN. Each FAILS
+  # on version 1, which asked a type for its type and put it in `noType`.
+  - given: >
+      a scratch project from English DefaultMetric.rte, NOTHING placed, the
+      M_Single-Flush door type "0915 x 2134mm" selected as a TYPE (SELECT_TYPES),
+      newTypeName "Heron OB Door 1000"
+    expect: >
+      createdTypeId the new type, findings "'0915 x 2134mm' duplicated as
+      'Heron OB Door 1000'", `noType` EMPTY - version 1 answered "Nothing in the
+      selection resolves to a type" and created nothing
+  - given: >
+      the same project, nothing selected, typeName "M_Single-Flush: 0915 x 2134mm",
+      newTypeName "Heron OB Door 1100"
+    expect: >
+      the new type made from that one, read back by name. Version 1 had no
+      typeName and refused the call for want of a selection
+
 negative:
   - given: a selection sitting on THREE different duct types, one newTypeName
     expect: >
@@ -30,6 +47,18 @@ negative:
 
   - given: an element handed in with no resolvable type, mixed with ducts
     expect: reported in `noType`, and the duct type still duplicated
+
+  # VERSION 2 (2026-11-16, row 5b-1705). NOT RUN.
+  - given: >
+      nothing selected, typeName "M_Single-Flush: ZZZ No Such Type",
+      newTypeName "Heron OB Door Z"
+    expect: >
+      refused - "No type in this project is called ..." - createdTypeId (null),
+      nothing in the Project Browser
+  - given: nothing selected, typeName a type name two families share
+    expect: >
+      refused, the matching types listed as "Family: Type", nothing created -
+      never the first match
 
 second_route:
   - Revit's own right-click, Duplicate on the type in the project browser, and the two results compared

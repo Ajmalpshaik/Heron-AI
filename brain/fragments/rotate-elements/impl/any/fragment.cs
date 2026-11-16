@@ -5,6 +5,11 @@
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). The angle is in RADIANS;
 // `pivot` and `axisLine` are MILLIMETRES, converted below (D-71).
 //
+// VERSION 4 (2026-11-16) - THE FINDINGS SAY THE TURN, in degrees and which
+// way, and the working remainder no longer prints as if it were the turn
+// (FRAGMENT-ISSUES row 5b-1708). Nothing about what is turned or how it is
+// checked changed.
+//
 // VERSION 3 (2026-11-01, the review of the merges) - THE PIVOT MAY BE LEFT OUT,
 // AS THE PURPOSE ALWAYS SAID. `pivot` was a point the add-in converted, and an
 // absent point is refused before this runs - so "each about its own point",
@@ -101,9 +106,42 @@ Func<Element, string> orientationOf = e =>
 };
 
 // A whole turn changes nothing, and neither does no turn at all.
-var full = 2.0 * Math.PI;
-var normalised = Math.Abs(angleRadians % full);
-var askedForNothing = normalised < 1e-9 || Math.Abs(normalised - full) < 1e-9;
+//
+// VERSION 4 (2026-11-16, FRAGMENT-ISSUES row 5b-1708) - THE WORKING VALUE IS
+// KEPT INSIDE THE TEST. Every variable this script leaves at its top is handed
+// back and printed, so version 3's `normalised` - the size of the turn left
+// after whole turns, used only for this test - printed "normalised 1.5707963"
+// for a turn asked as -1.5707963 and read as a +90 degree turn the other way.
+// The element turned as asked. The remainder lives inside this test now, which
+// prints as code and not as an answer, and the findings say the turn itself.
+Func<double, bool> isNoTurn = radians =>
+{
+    var whole = 2.0 * Math.PI;
+    var left = Math.Abs(radians % whole);
+    return left < 1e-9 || Math.Abs(left - whole) < 1e-9;
+};
+var askedForNothing = isNoTurn(angleRadians);
+
+// THE TURN IN WORDS (version 4): its size in degrees and its direction, the
+// way the modeller asked for it. Revit turns a positive angle anticlockwise
+// seen from the end of the axis looking back along it - from above, for the
+// vertical axis this card uses when no axis is given. A turn past a whole one
+// says what it comes to.
+Func<double, bool, string> turnInWords = (radians, vertical) =>
+{
+    var degrees = radians * 180.0 / Math.PI;
+    var size = Math.Round(Math.Abs(degrees), 2).ToString("0.##", culture);
+    var way = degrees < 0 ? "clockwise" : "anticlockwise";
+    var seen = vertical ? " seen from above"
+        : " seen from the axis's second point looking back to its first";
+    var text = size + " degrees " + way + seen;
+    if (Math.Abs(degrees) > 360.0 + 1e-6)
+    {
+        var rest = Math.Round(Math.Abs(degrees) % 360.0, 2).ToString("0.##", culture);
+        text += " (" + rest + " degrees past whole turns, which is where it ends up)";
+    }
+    return text;
+};
 
 // A POINT IN MILLIMETRES, to feet - the axis's ends and, since version 3, the
 // pivot. Null for anything that is not three finite numbers within 100 km.
@@ -239,12 +277,18 @@ else
         }
     }
 
+    // VERSION 4: the sentence says the turn asked - "Asked to turn 90 degrees
+    // clockwise seen from above, about ...: 6 turned" - in degrees and the way
+    // it goes, never left to a working value; and when nothing turned it does
+    // not read as a turn made.
     findings.Add(string.Format(
-        "{0} turned about {1}, {2} accepted the call and did not move (a group member, or held by a "
-        + "constraint), {3} Revit would not turn at all (pinned), {4} could not be checked{5}",
+        "Asked to turn {6}, about {1}: {0} turned, {2} accepted the call and did not move (a group "
+        + "member, or held by a constraint), {3} Revit would not turn at all (pinned), {4} could not be "
+        + "checked{5}",
         rotated,
         given != null ? "the axis given" : pivotPoint != null ? "a vertical axis through the pivot"
             : "a vertical axis through each one's own point",
         blocked.Count, refused.Count, unverified.Count,
-        given != null && pivotPoint != null ? ". The pivot is not used when an axis is given" : ""));
+        given != null && pivotPoint != null ? ". The pivot is not used when an axis is given" : "",
+        turnInWords(angleRadians, given == null)));
 }

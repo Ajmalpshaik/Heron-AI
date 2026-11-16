@@ -1,0 +1,79 @@
+# THE PROOF PLAN, written 2026-11-16 and NOT RUN. Nothing here has touched a
+# model (D-30). NEEDS-CHECKING Group OE, Revit 2024 first.
+#
+# THE SCRATCH PROJECT IS BUILT, NOT FOUND (group-oe.md, OE1): from Revit's
+# English\DefaultMetric.rte with CREATE_FAMILY_DOCUMENT; Level 1 at 0 and
+# Level 2 at 2440; four Generic - 200mm walls on Level 1 round
+# 0,0 - 10000,0 - 10000,6000 - 0,6000, 2440 mm high (CREATE_WALL); a roof on
+# Level 2 over 10000 x 6000 with 600 mm overhangs (CREATE_FLOOR with a roof
+# type, boundary "-600,-600,0; 10600,-600,0; 10600,6600,0; -600,6600,0"),
+# sloped as a gable at 30 degrees with SLOPE_ROOF_EDGES (the two 11200 mm
+# sides). Kept and saved. The two 6000 mm walls are the gable ends.
+#
+# ARITHMETIC FOR THE READER, not a claim about Revit: the ridge sits 3600 mm
+# from either eave line of the roof (half of 7200), 3000 mm in from each long
+# wall's outer face; tan 30 is 0.5774; so the underside at the ridge is about
+# 3000 x 0.5774 = 1732 mm above where it meets the wall line at the eave,
+# give or take the roof's thickness measured plumb. Roughly a ridge 1.7 m
+# above the plate is what a right answer looks like.
+
+positive:
+  - given: >
+      the two 6000 mm gable-end walls selected, nothing else; the roof found
+      by itself
+    expect: >
+      shaped 2, shapedIds the two walls, refused empty. report names the roof
+      and gives each wall THREE points - its start, the ridge about halfway
+      (3000 mm along) and its end - with the ridge about 1.7 m above the two
+      ends (see the arithmetic). findings says the top is a sketch that will
+      NOT follow the roof if it moves. In a 3D view, after Keep, the gable
+      triangles are closed and nothing pokes through the roof; Edit Profile on
+      one wall shows a five-sided outline
+
+  - given: the same two walls AND the roof selected
+    expect: the same answer - a roof in the selection is the one followed
+
+  - given: >
+      one of the 10000 mm eave walls selected
+    expect: >
+      shaped 1 with TWO points, both at the same height: the roof's underside
+      where it crosses the wall's OUTER face - the lower of its two faces, the
+      roof rising inwards - so the top is level across the wall and never
+      pokes through. Under a 600 mm overhang at 30 degrees that is a few
+      hundred millimetres above the 2440 plate - how many depends on where
+      Revit takes the slope from, so read it, do not expect a number. A wall
+      under an eave gets a level top at the underside, not a slope
+
+negative:
+  - given: >
+      a wall with nothing above it - a fifth Generic - 200mm wall drawn at
+      20000,0 - 25000,0, well clear of the roof
+    expect: >
+      shaped 0, noRoof that wall, refused saying there is no roof above it
+      0 mm from its start; the wall has no profile sketch afterwards. The D-30 negative: a wall it must NOT touch
+
+  - given: a curved wall (an arc wall made by hand, or CREATE_WALL with an arc) under the roof
+    expect: >
+      shaped 0; refused quoting Revit's own words for why the wall cannot have
+      a profile sketch (the API says such a wall is "not a straight wall"); the
+      wall unchanged
+
+  - given: one of the gable walls after a kept run, selected again
+    expect: >
+      refused - it already has an edited profile, and Heron does not redraw a
+      profile somebody drew; shaped 0
+
+  - given: a floor or a door selected with no wall
+    expect: refused - not a wall or a roof - and "No wall was handed in to shape"; shaped 0
+
+  - given: the positive's two walls on Revit 2021 (or 2020)
+    expect: >
+      the card is not offered on that release at all - the lookup's release
+      wall leaves it out, as it does ATTACH_WALLS on 2024
+
+second_route:
+  - >
+    By hand on the same wall: Edit Profile, read the corner heights off the
+    sketch with an aligned dimension, then compare with report's points - to
+    the millimetre. And in a section through the gable, the wall's top and the
+    roof's underside meet with no gap and no overlap

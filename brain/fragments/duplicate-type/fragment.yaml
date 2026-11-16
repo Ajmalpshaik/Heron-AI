@@ -9,9 +9,26 @@ semantic-identity: "make a new type from the type these are using"
 kind: action
 domain: revit.elements
 capability: DUPLICATE_TYPE
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 2 (2026-11-16) - A TYPE IS DUPLICATED FROM THE TYPE ITSELF, with no
+# placed instance needed - and back to DRAFT. FRAGMENT-ISSUES row 5b-1705, from
+# Ajmalpshaik/Heron-AI#853 (Revit 2024, `villa 2`, item B7): each element
+# handed in was asked for its type, and a type answers with none, so a door
+# type picked by SELECT_TYPES landed in `noType` ("Nothing in the selection
+# resolves to a type") and every new door size cost a seed instance and four
+# calls. Now a type handed in is duplicated itself, and `typeName` names one
+# with nothing selected - "Family: Type", or a type name only one type in the
+# project has; typed wins over the selection. A name that matches nothing, or
+# that several types share, is refused with what it found - never the first
+# match (D-54). `elements` is optional for that reason. Everything after the
+# source type is found - one type only, read back, nothing set on it - is
+# version 1's. Version 1 was PROVEN on 2026-09-10 (the proof block below,
+# kept as the record of what it proved); its C# moved, so it is DRAFT again
+# until NEEDS-CHECKING Group OH is run (D-30) - on the owner's word of
+# 2026-11-16 to fix every issue from #852 to #854.
 
 purpose: >
   Duplicates the TYPE behind the elements handed in, under a new name -
@@ -26,6 +43,11 @@ purpose: >
   reports success and half-happened. So the distinct types are counted first,
   and if there is more than one they are NAMED and nothing is created. The user
   then narrows the selection, which is the answer they wanted anyway.
+
+  **A type handed in is the type duplicated** (version 2) - a door type picked
+  in the Project Browser or by SELECT_TYPES, with no door placed - and so is
+  one named as *"Family: Type"*, *"copy M_Single-Flush: 0915 x 2134mm as
+  1000 x 2134mm"*.
 
   **Forty instances of one type give ONE new type, not forty.** The types are
   de-duplicated before anything is created.
@@ -42,11 +64,24 @@ contract:
   needs:
     - name: doc
       type: Document
+    # The selection: placed elements (their type is duplicated) or, since
+    # version 2, TYPES themselves. Optional since version 2, so a type can be
+    # named by `typeName` with nothing selected; nothing selected binds empty.
     - name: elements
       type: IList<Element>
+      optional: true
     - name: newTypeName
       type: string
       source: request
+    # VERSION 2. The type to duplicate, by name: "Family: Type" as the Project
+    # Browser shows it ("M_Single-Flush: 0915 x 2134mm"), or a type name alone
+    # when exactly one type in the project has it. Given, it wins over the
+    # selection and the answer says so. Left out ("none"): the selection.
+    - name: typeName
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     - name: findings
       type: IList<string>
@@ -65,29 +100,28 @@ contract:
       type: IList<ElementId>
 
 proof:
-  date: '2026-09-10'
+  date: '2026-11-16'
   by: Ajmal PS
-  model: Project1 work_ajmal.al (3,445 elements), Revit 2024, session 24688
+  model: Heron OB Test (3,205 elements), Revit 2024, session 29520
   positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase's own values - run inside a transaction,
+    select-types with this phase's own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned createdTypeId 1 item(s) [id 352522],
+    findings 1 item(s) ['0915 x 2134mm' duplicated as 'Heron OB Door 1000'. It is an...],
+    noType 0 item(s), sourceTypeName 0915 x 2134mm, sources 1 item(s) [0915 x 2134mm]. inputs
+    came elements from select-types (1); newTypeName as given; typeName not given - "none",
+    the card's own default (optional). on Heron OB Test
+  negative_case: 'run with categories=Doors, familyNameContains=M_Single-Flush, newTypeName=Heron
+    OB Door Z, typeName=M_Single-Flush: ZZZ No Such Type, typeNameContains=0915 x 2134mm instead
+    - chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running select-types with this phase''s own values - run inside a transaction,
     and Revit reported the transaction group ROLLED BACK afterwards. returned createdTypeId
-    1 item(s) [id 1542959], findings 1 item(s) ['Tees' duplicated as 'HERON DUP Z1'. It is
-    an EXACT copy - s...], noType 0 item(s), sourceTypeName Tees, sources 1 item(s) [Tees].
-    inputs came elements from the selection (22); newTypeName as given. on Snowdon-scratch_ajmal.al
-  negative_case: 'run with categoryName=Spaces, inViewOnly=FloorPlan: M1, newTypeName=HERON
-    DUP Z2 instead - chosen because it should not contain what this fragment reports - the
-    arrangement was re-made first by running select-by-category-name, set-selection with this
-    phase''s own values - run inside a transaction, and Revit reported the transaction group
-    ROLLED BACK afterwards. returned createdTypeId (null), findings 2 item(s) [Nothing in
-    the selection resolves to a type, so there is not..., 5 element(s) in the selection have
-    no type that could be res...], noType 5 item(s) [1411634, 1411663, 1411726, ...], sourceTypeName
-    , sources 0 item(s). inputs came elements from the selection (5); newTypeName as given.
-    on Snowdon-scratch_ajmal.al'
+    (null), findings 1 item(s) [No type in this project is called ''M_Single-Flush: ZZZ No
+    Su...], noType 0 item(s), sourceTypeName , sources 0 item(s). inputs came elements from
+    select-types (1); newTypeName as given; typeName as given. on Heron OB Test'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 6f5918fd9071deae
-
+  fingerprint: dcb12052a1542fbd
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -135,6 +169,10 @@ compatibility-note: >
 #                                        or text type BY NAME and sets its
 #                                        size in the same undo
 utterances:
+  # VERSION 2 (2026-11-16, row 5b-1705): from the type itself.
+  - duplicate this door type without placing one
+  - copy the window type as a new size
+  - make a new door type from the type
   - make a new duct type
   - duplicate this type
   - i need a copy of this type

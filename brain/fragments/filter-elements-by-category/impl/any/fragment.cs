@@ -1,9 +1,27 @@
 // NOT STANDALONE. Assumes `doc`, `category`, `categories`, `categoryName`,
-// `levelId`, `inViewOnly`, `notShowingIn`, `withoutLevel` and `includeLinks`
-// are already in scope, and leaves `elements`, `unresolvedLevel`,
+// `levelId`, `inViewOnly`, `notShowingIn`, `withoutLevel`, `includeLinks` and
+// `cutByView` are already in scope, and leaves `elements`, `unresolvedLevel`,
 // `linksSearched`, `linkedMatches`, `perCategory`, `found`, `resolvedTo`,
 // `nearMisses`, `examined`, `inModel`, `showing` and `findings` in scope for
 // whatever is composed after it.
+//
+// VERSION 7 (2026-11-16) - ONLY WHAT THIS SECTION CUTS (row 5b-1736, issue
+// #854 item g, villa 2 on Revit 2024). `inViewOnly` on a section is every
+// element the section shows - beyond the cut as well as cut - so tagging "the
+// elements this section cuts" meant finding them by hand. `cutByView` true,
+// with `inViewOnly` naming a section or detail view, keeps only the elements
+// whose solid crosses the section's cut plane inside its crop: a slab a few
+// millimetres thick on the crop box's NEAR face (Max.Z in its own axes - the
+// cut, as CREATE_SECTION_VIEW builds a section; MOVE_VIEW_CUT_PLANE reads the
+// cut at View.Origin instead, and the two are recorded as row 5b-1801, NOT
+// CHECKED in Revit), the crop's width and height, read with
+// ElementIntersectsSolidFilter over what the view shows. An element seen
+// beyond the cut is left out; one with no solid (annotation, a detail item)
+// is never cut. A section view only - a detail view may look down from a
+// plan, and a plan's cut is its view range, which this does not read - and a
+// split section's jogged parts are not read: the one plane is its first. Links
+// are not read for it. Widened here, not in a card of its own: it is a
+// selection, and this is the selector every chain already uses.
 //
 // VERSION 6 (2026-11-01, the review of the merges) - "WHAT HAS NO LEVEL" WITH
 // NO CATEGORY IS ANSWERED AGAIN, OVER THE MODEL CATEGORIES ONLY. Version 5
@@ -260,6 +278,50 @@ foreach (var asked in new[] { inViewOnly, notShowingIn })
             + "applied to.");
 }
 
+// VERSION 7 (row 5b-1736): WHAT THIS SECTION CUTS - a thin slab on the cut
+// plane, the crop's width and height. Refused before anything is read
+// unless `inViewOnly` names a section or detail view.
+ElementIntersectsSolidFilter cutFilter = null;
+var cutNote = "";
+if (cutByView)
+{
+    if (inViewOnly == null)
+        throw new InvalidOperationException("cutByView asks for what a SECTION cuts, and no "
+            + "section was named - give the section with inViewOnly. NOTHING was read.");
+    if (!(inViewOnly is ViewSection) || inViewOnly.ViewType != ViewType.Section)
+        throw new InvalidOperationException("'" + inViewOnly.Name + "' is a " + inViewOnly.ViewType
+            + " view, not a section, so NOTHING was read. cutByView reads a section's cut "
+            + "plane; a plan's cut is its view range, which this does not read.");
+
+    var crop = inViewOnly.CropBox;
+    var toModel = crop.Transform;
+    // The cut is the crop box's near face, square to the view's direction
+    // (row 5b-1801 records the other reading, View.Origin).
+    var planeZ = crop.Max.Z;
+    var halfThickness = 2.5 / 304.8;
+    var corners = new[]
+    {
+        toModel.OfPoint(new XYZ(crop.Min.X, crop.Min.Y, planeZ - halfThickness)),
+        toModel.OfPoint(new XYZ(crop.Max.X, crop.Min.Y, planeZ - halfThickness)),
+        toModel.OfPoint(new XYZ(crop.Max.X, crop.Max.Y, planeZ - halfThickness)),
+        toModel.OfPoint(new XYZ(crop.Min.X, crop.Max.Y, planeZ - halfThickness)),
+    };
+    var outline = new CurveLoop();
+    for (var c = 0; c < 4; c++) outline.Append(Line.CreateBound(corners[c], corners[(c + 1) % 4]));
+    var slab = GeometryCreationUtilities.CreateExtrusionGeometry(new List<CurveLoop> { outline },
+        toModel.BasisZ, 2.0 * halfThickness);
+    cutFilter = new ElementIntersectsSolidFilter(slab);
+    var cropOn = true;
+    try { cropOn = inViewOnly.CropBoxActive; } catch (Exception) { }
+    cutNote = string.Format("Only what '{0}' CUTS - elements whose solid crosses its cut plane inside "
+        + "its crop ({1:0} x {2:0} mm{3}), the plane through {4} mm; what the section shows beyond the cut, "
+        + "and anything with no solid, is left out. A split section is read on its first plane only",
+        inViewOnly.Name, (crop.Max.X - crop.Min.X) * 304.8, (crop.Max.Y - crop.Min.Y) * 304.8,
+        cropOn ? "" : ", the crop box is switched off and its extent was used",
+        string.Format("({0:0}, {1:0}, {2:0})", toModel.OfPoint(new XYZ(0, 0, planeZ)).X * 304.8,
+            toModel.OfPoint(new XYZ(0, 0, planeZ)).Y * 304.8, toModel.OfPoint(new XYZ(0, 0, planeZ)).Z * 304.8));
+}
+
 // A LEVEL ID THAT IS NOT A LEVEL (SELECT_BY_LEVEL): refused with the reason,
 // never the plausible zero every comparison against it would give.
 Level askedLevel = null;
@@ -417,11 +479,13 @@ else if (notShowingIn != null)
 }
 else
 {
-    matching = ofWanted(inViewOnly != null
+    var collected = ofWanted(inViewOnly != null
             ? new FilteredElementCollector(doc, inViewOnly.Id)
             : new FilteredElementCollector(doc))
-        .WhereElementIsNotElementType()
-        .ToElements();
+        .WhereElementIsNotElementType();
+    // VERSION 7: only what the section cuts.
+    if (cutFilter != null) collected = collected.WherePasses(cutFilter);
+    matching = collected.ToElements();
 }
 
 // VERSION 6: with no category and withoutLevel, the model elements only.
@@ -500,6 +564,8 @@ else
     if (levelGiven && everyCategory)
         findings.Add("This walked the whole model. A category list bounds it, and is cheaper by "
             + "the size of the model");
+
+    if (cutFilter != null) findings.Add(cutNote);
 
     if (inViewOnly != null)
     {
@@ -597,6 +663,12 @@ else if (linkDocs.Count > 0 && notShowingIn != null)
     // draw of a link is a per-placement question this does not answer.
     linkBlocked = "Links NOT read: what a view does NOT show is answered for this model only - "
         + "ask without notShowingIn to count the links";
+}
+else if (linkDocs.Count > 0 && cutFilter != null)
+{
+    // VERSION 7: a link's solids sit in the link's own coordinates.
+    linkBlocked = "Links NOT read: what a section cuts is answered for this model only - ask "
+        + "without cutByView to count the links";
 }
 else if (linkDocs.Count > 0 && levelId != ElementId.InvalidElementId && hostLevelName == null)
 {

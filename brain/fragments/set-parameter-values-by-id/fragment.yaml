@@ -186,7 +186,29 @@ capability: SET_PARAMETER_VALUES_BY_ID
 #   Widened, not made new: the duplicate check of 2026-11-11 found this card and
 # WRITE_ELEMENT_PARAMETERS an OVERLAP and said several pairs at once belong
 # here (all or nothing), not there. DRAFT until NEEDS-CHECKING Group NG.
-version: 8
+#
+# VERSION 9 (2026-11-16, FRAGMENT-ISSUES 5b-1703) - A BUILT-IN PARAMETER NAMED
+# BY REVIT'S OWN NAME FOR IT, and back to DRAFT. Reported by Sruthina in
+# Ajmalpshaik/Heron-AI#853 (Revit 2024, `villa 2`, item B2): an architectural
+# column, M_Rectangular Column, carries two writable "Top Level", so this card
+# refused it and said to name the one meant "as 'Top Level {its GUID}'" - and
+# a GUID reaches shared parameters alone, so the porch posts' top level could
+# not be set at all. A name written "Top Level {FAMILY_TOP_LEVEL_PARAM}" now
+# means the ONE parameter in the element's own set that IS that built-in, and
+# only while it is called what comes before the braces (left empty, the
+# built-in alone) - version 6's rule for a GUID, applied to a built-in, and
+# never a guess (D-54 s3). A word in the braces that is neither a GUID nor a
+# built-in's name finds nothing, as before. The refusal for two writable
+# parameters of one name now names each in the form that reaches it -
+# "'Top Level {FAMILY_TOP_LEVEL_PARAM}' or 'Top Level {...}'" - and says a
+# project parameter has no second name. A name found as it is spelt is found
+# that way first, so every name that worked before reaches what it reached.
+# Version 8 was PROVEN on 2026-11-13 (the proof block below, kept as the record
+# of what it proved); its C# moved, so it is DRAFT again until NEEDS-CHECKING
+# Group OH is run (D-30) - on the owner's word of 2026-11-16 to fix every
+# issue from #852 to #854. Kept out of the purpose and the identity line, for
+# the reason version 3 gives.
+version: 9
 source: OFFICIAL
 risk: MODIFY
 
@@ -384,82 +406,65 @@ contract:
 
 # VERSION 8 (row 5b-1504) changed impl/ again: the proof below describes none of
 # versions 4 to 8, and the card is DRAFT until Group NG proves version 8.
+# (Group NG did, 2026-11-13: the proof block below is version 8's. VERSION 9,
+# row 5b-1703, changed impl/ once more, so it is the record now; DRAFT until
+# Group OH.)
 # VERSION 3's PROOF, KEPT AS A RECORD. Version 4 changed impl/ (rows 5b-1259,
 # 5b-1260), so its fingerprint no longer described the code and the card was
 # DRAFT at the time, until NEEDS-CHECKING Group HZ proves version 4 (D-30). A
 # row that names neither a type nor an element reference still takes the road
 # this proof ran.
 proof:
-  date: '2026-11-13'
+  date: '2026-11-16'
   by: Ajmal PS
-  model: Heron Many Types Project 2020 (2,944 elements), Revit 2020, session 41776
+  model: Heron OB Test (3,205 elements), Revit 2024, session 29520
   positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
     the transaction group ROLLED BACK afterwards. returned applied false, backslash \, blankCellsSkipped
     0, cellsCleared 0, csvMode false, csvStale 0 item(s), esc Func`2, faceKeeper (null), findings
-    1 item(s) [''*'' named 7 type(s) in Air Terminals types with Family Name ...], groupLocked
-    Func`3, isYesNo Func`2, keyed true, levelAsks Func`3, materialSpec (null), materialSpecProperty
-    (null), namedElements (null), parametersCalled Func`3, plan 0 item(s), quote ", readBack
-    0 item(s), readValue Func`2, referenceByName Func`3, refused 0 item(s), resultJson {"format":
-    2, "applied": true, "written": 7, "key": "Type Name", "types": true, "in": ["Air Terminals"],
-    "where": [{"name": "Family Name", "value": "Heron Many Types 2020"}], "problem": null,
-    "stale": [], "refused": [], "readBack": [{"key": "*", "id": "346225", "name": "Manufacturer",
-    "asked": "", "value": "", "raw": ""}, {"key": "*", "id": "346225", "name": "URL", "asked":
-    "", "value": "", "raw": ""}, {"key": "*", "id": "346225", "name": "Model_Number", "asked":
-    "", "value": "", "raw": ""}, {"key": "*", "id": "346227", "name": "Manufacturer", "asked":
-    "", "value": "", "raw": ""}, {"key": "*", "id": "346227", "name": "URL", "asked": "",
-    "value": "", "raw": ""}, {"key": "*", "id": "346227", "name": "Model_Number", "asked":
-    "", "value": "", "raw": ""}, {"key": "*", "id": "346229", "name": "Manufacturer", "asked":
-    "", "value": "", "raw": ""}, {"key": "*", "id": "346229", "name": "URL", "asked": "",
-    "value": "", "raw": ""}, {"key": "*", "id": "346229", "name": "Model_Number", "asked":
-    "", "value": "", "raw": ""}, {"key": "*", "id": "346231", "name": "Manufacturer", "asked":
-    "", "value": "", "raw": ""}, {"key": "*", "id": "346231", "name": "URL", "asked": "",
-    "value": "", "raw": ""}, {"key": "*", "id": "346231", "name": "Model_Number", "asked":
-    "", "value": "", "raw": ""}, {"key": "*", "id": "346233", "name": "Manufacturer", "asked":
-    "", "value": "", "raw": ""}, {"key": "*", "id": "346233", "name": "URL", "asked": "",
-    "value": "", "raw": ""}, {"key": "*", "id": "346233", "name": "Model_Number", "asked":
-    "", "value": "", "raw": ""}, {"key": "*", "id": "346235", "name": "Manufacturer", "asked":
-    "", "value": "", "raw": ""}, {"key": "*", "id": "346235", "name": "URL", "asked": "",
-    "value": "", "raw": ""}, {"key": "*", "id": "346235", "name": "Model_Number", "asked":
-    "", "value": "", "raw": ""}, {"key": "*", "id": "346237", "name": "Manufacturer", "asked":
-    "", "value": "", "raw": ""}, {"key": "*", "id": "346237", "name": "URL", "asked": "",
-    "value": "", "raw": ""}, {"key": "*", "id": "346237", "name": "Model_Number", "asked":
-    "", "value": "", "raw": ""}]}, rowFindings , rowsGiven true, rowsMatched 0, rowsUnmatched
+    0 item(s), groupLocked Func`3, isYesNo Func`2, keyed true, levelAsks Func`3, materialSpec
+    ForgeTypeId, materialSpecProperty RuntimePropertyInfo, namedAs Func`3, namedElements 704
+    item(s) [(material, , Default, 23), (material, , Default Wall, 24), (material, , Default
+    Roof, 25), ...], parametersCalled Func`3, plan 0 item(s), quote ", readBack 0 item(s),
+    readValue Func`2, referenceByName Func`3, refused 0 item(s), resultJson {"format": 2,
+    "applied": true, "written": 1, "key": "Mark", "types": false, "in": ["Columns"], "where":
+    [], "problem": null, "stale": [], "refused": [], "readBack": [{"key": "OB-POST", "id":
+    "352515", "name": "Top Level {FAMILY_TOP_LEVEL_PARAM}", "asked": "Heron OB Roof", "value":
+    "Heron OB Roof", "raw": "352514"}]}, rowFindings , rowsGiven true, rowsMatched 0, rowsUnmatched
     0, same Func`2, stale 0 item(s), staleJson 0 item(s), storedValue Func`2, theOne Func`3,
     ticked 5 item(s) [yes, true, on, ...], unchanged Func`3, unticked 5 item(s) [no, false,
-    off, ...], valuesRejected 0, written 7, yesNoProperty (null), yesNoSpec (null), yesNoSpecs
-    (null). inputs came rows as given; csvPath not given - "none", the card''s own default
-    (optional); blankCells not given - "none", the card''s own default (optional); keepFace
-    not given - "none", the card''s own default (optional); renameViews not given - "none",
-    the card''s own default (optional). on Heron Many Types Project 2020'
-  negative_case: 'run with rows=key=Type Name|in=Air Terminals|types=yes;*|Model_Number=X
-    instead - chosen because it should not contain what this fragment reports - run inside
-    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
-    applied false, backslash \, blankCellsSkipped 0, cellsCleared 0, csvMode false, csvStale
-    0 item(s), esc Func`2, faceKeeper (null), findings 1 item(s) [1 row(s) not written, 0
-    written - refused says why, by key.], groupLocked Func`3, isYesNo Func`2, keyed true,
-    levelAsks Func`3, materialSpec (null), materialSpecProperty (null), namedElements (null),
-    parametersCalled Func`3, plan 0 item(s), quote ", readBack 0 item(s), readValue Func`2,
-    referenceByName Func`3, refused 1 item(s) [*: the pattern names 9 type(s) and 2 cannot
-    take these value...], resultJson {"format": 2, "applied": false, "written": 0, "key":
-    "Type Name", "types": true, "in": ["Air Terminals"], "where": [], "problem": null, "stale":
-    [], "refused": [{"key": "*", "why": "the pattern names 9 type(s) and 2 cannot take these
-    values - ''Heron Two Types 2020: Small'' (id 347041): it has no parameter called Model_Number;
-    ''Heron Two Types 2020: Large'' (id 347043): it has no parameter called Model_Number -
-    so NONE of the 9 is written"}], "readBack": []}, rowFindings *: the pattern names 9 type(s)
-    and 2 cannot take these values - ''Heron Two Types 2020: Small'' (id 347041): it has no
-    parameter called Model_Number; ''Heron Two Types 2020: Large'' (id 347043): it has no
-    parameter called Model_Number - so NONE of the 9 is written, rowsGiven true, rowsMatched
-    0, rowsUnmatched 0, same Func`2, stale 0 item(s), staleJson 0 item(s), storedValue Func`2,
-    theOne Func`3, ticked 5 item(s) [yes, true, on, ...], unchanged Func`3, unticked 5 item(s)
-    [no, false, off, ...], valuesRejected 0, written 0, yesNoProperty (null), yesNoSpec (null),
-    yesNoSpecs (null). inputs came rows as given; csvPath not given - "none", the card''s
+    off, ...], valuesRejected 0, written 1, yesNoProperty RuntimePropertyInfo, yesNoSpec ForgeTypeId,
+    yesNoSpecs RuntimeType. inputs came rows as given; csvPath not given - "none", the card''s
     own default (optional); blankCells not given - "none", the card''s own default (optional);
     keepFace not given - "none", the card''s own default (optional); renameViews not given
-    - "none", the card''s own default (optional). on Heron Many Types Project 2020'
+    - "none", the card''s own default (optional). on Heron OB Test'
+  negative_case: 'run with rows=key=Mark|in=Columns;OB-POST|Top Level=Heron OB Roof instead
+    - chosen because it should not contain what this fragment reports - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned applied false,
+    backslash \, blankCellsSkipped 0, cellsCleared 0, csvMode false, csvStale 0 item(s), esc
+    Func`2, faceKeeper (null), findings 1 item(s) [1 row(s) not written, 0 written - refused
+    says why, by key.], groupLocked Func`3, isYesNo Func`2, keyed true, levelAsks Func`3,
+    materialSpec ForgeTypeId, materialSpecProperty RuntimePropertyInfo, namedAs Func`3, namedElements
+    (null), parametersCalled Func`3, plan 0 item(s), quote ", readBack 0 item(s), readValue
+    Func`2, referenceByName Func`3, refused 1 item(s) [OB-POST: two parameters on it are called
+    Top Level and more ...], resultJson {"format": 2, "applied": false, "written": 0, "key":
+    "Mark", "types": false, "in": ["Columns"], "where": [], "problem": null, "stale": [],
+    "refused": [{"key": "OB-POST", "why": "two parameters on it are called Top Level and more
+    than one can be written - name the one meant as ''Top Level {SCHEDULE_TOP_LEVEL_PARAM}''
+    or ''Top Level {FAMILY_TOP_LEVEL_PARAM}'' - not written (id 352515)"}], "readBack": []},
+    rowFindings OB-POST: two parameters on it are called Top Level and more than one can be
+    written - name the one meant as ''Top Level {SCHEDULE_TOP_LEVEL_PARAM}'' or ''Top Level
+    {FAMILY_TOP_LEVEL_PARAM}'' - not written (id 352515), rowsGiven true, rowsMatched 0, rowsUnmatched
+    0, same Func`2, stale 0 item(s), staleJson 0 item(s), storedValue Func`2, theOne Func`3,
+    ticked 5 item(s) [yes, true, on, ...], unchanged Func`3, unticked 5 item(s) [no, false,
+    off, ...], valuesRejected 0, written 0, yesNoProperty RuntimePropertyInfo, yesNoSpec ForgeTypeId,
+    yesNoSpecs RuntimeType. inputs came rows as given; csvPath not given - "none", the card''s
+    own default (optional); blankCells not given - "none", the card''s own default (optional);
+    keepFace not given - "none", the card''s own default (optional); renameViews not given
+    - "none", the card''s own default (optional). on Heron OB Test'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 41c5ce1ea458fce0
+  fingerprint: 45d022c73894e037
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -473,6 +478,13 @@ compatibility-note: >
   FilteredElementCollector.OfCategoryId, WhereElementIsNotElementType and
   SubTransaction - all present from 2020 to 2027 - and still never builds an
   ElementId from a number: a key is matched as the text a parameter shows.
+
+  Version 9 names a built-in by Revit's
+  name for it through `Enum.TryParse` and `Enum.IsDefined` on
+  `BuiltInParameter`, and finds it by `InternalDefinition.BuiltInParameter`
+  in `Element.Parameters` - all unchanged 2020 to 2027. A built-in's NAME is
+  read on the running release, so one Autodesk renamed matches there under
+  its new name only. Compiled against all eight releases on 2026-11-16.
 
   Since row 5b-1259 an element reference takes a name. `Parameter.Set(ElementId)`,
   `AsElementId`, `ElementType.FamilyName`, `FilteredElementCollector.OfClass`

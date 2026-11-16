@@ -55,6 +55,15 @@
 // true north is. It works when both base points sit on the internal origin,
 // where the transform check above cannot tell its two directions apart. The
 // angle Revit stores is printed beside it, so the two can be compared.
+//
+// VERSION 5 (2026-11-16) - A TAG IS WHERE ITS HEAD IS (row 5b-1733, issue
+// #854 item d, villa 2 on Revit 2024). A tag has no Location, and an
+// annotation's box exists only in its own view, so every tag fell through to
+// "no position and no bounding box". An IndependentTag or a room, space or
+// area tag (SpatialElementTag) is now reported by its TagHeadPosition - TAG
+// HEAD AT - with its free leader end beside it where it has one; any other
+// annotation by the centre of its box IN ITS OWN VIEW (OwnerViewId), named as
+// that. The model elements are read exactly as version 4 read them.
 
 const double MillimetresPerFoot = 304.8;
 // Revit's own documented limit for model geometry from the internal origin:
@@ -172,10 +181,49 @@ else
     var points = 0;
     var runs = 0;
     var boxes = 0;
+    // VERSION 5 (row 5b-1733).
+    var tagHeads = 0;
 
     foreach (var element in elements)
     {
         if (element == null) continue;
+
+        // VERSION 5: A TAG BY ITS HEAD, before anything else - whatever
+        // Location a tag may carry, the head is where its text sits.
+        XYZ head = null;
+        XYZ leaderEnd = null;
+        var independentTag = element as IndependentTag;
+        var spatialTag = element as SpatialElementTag;
+        if (independentTag != null)
+        {
+            try { head = independentTag.TagHeadPosition; } catch { head = null; }
+            try
+            {
+                if (independentTag.HasLeader && independentTag.LeaderEndCondition == LeaderEndCondition.Free)
+                {
+#if REVIT2020 || REVIT2021
+                    leaderEnd = independentTag.LeaderEnd;
+#else
+                    var references = independentTag.GetTaggedReferences();
+                    if (references != null && references.Count > 0) leaderEnd = independentTag.GetLeaderEnd(references[0]);
+#endif
+                }
+            }
+            catch { leaderEnd = null; }
+        }
+        else if (spatialTag != null)
+        {
+            try { head = spatialTag.TagHeadPosition; } catch { head = null; }
+            try { if (spatialTag.HasLeader) leaderEnd = spatialTag.LeaderEnd; } catch { leaderEnd = null; }
+        }
+        if (head != null)
+        {
+            tagHeads++;
+            measure(element.Id, head);
+            locations.Add(string.Format("id {0}: TAG HEAD AT {1}{2}{3}", element.Id, asMm(head), sharedPart(head),
+                leaderEnd == null ? "" : ", leader ends at " + asMm(leaderEnd) + sharedPart(leaderEnd)));
+            continue;
+        }
 
         var atPoint = element.Location as LocationPoint;
         if (atPoint != null)
@@ -232,13 +280,33 @@ else
             continue;
         }
 
+        // VERSION 5: AN ANNOTATION HAS A BOX ONLY IN ITS OWN VIEW.
+        View ownView = null;
+        try
+        {
+            if (element.OwnerViewId != null && element.OwnerViewId != ElementId.InvalidElementId)
+                ownView = doc.GetElement(element.OwnerViewId) as View;
+        }
+        catch { ownView = null; }
+        BoundingBoxXYZ viewBox = null;
+        if (ownView != null) { try { viewBox = element.get_BoundingBox(ownView); } catch { viewBox = null; } }
+        if (viewBox != null)
+        {
+            boxes++;
+            var centre = (viewBox.Min + viewBox.Max) / 2.0;
+            measure(element.Id, centre);
+            locations.Add(string.Format("id {0}: no position of its own - the CENTRE OF ITS BOX IN ITS OWN "
+                + "VIEW '{1}' is {2}{3}", element.Id, ownView.Name, asMm(centre), sharedPart(centre)));
+            continue;
+        }
+
         withoutLocation++;
         locations.Add(string.Format("id {0}: no position and no bounding box", element.Id));
     }
 
-    findings.Add(string.Format("{0} element(s): {1} at a point, {2} running between two, {3} reported "
-        + "by the centre of a bounding box, and {4} with no position at all",
-        elements.Count, points, runs, boxes, withoutLocation));
+    findings.Add(string.Format("{0} element(s): {1} at a point, {2} running between two, {5} tag(s) by "
+        + "their head, {3} reported by the centre of a bounding box, and {4} with no position at all",
+        elements.Count, points, runs, boxes, withoutLocation, tagHeads));
 
     if (runs > 0)
         findings.Add("An element that RUNS has no single position. Both ends are given because the "

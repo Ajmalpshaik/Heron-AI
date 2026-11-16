@@ -5,17 +5,31 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-ELE-071
-semantic-identity: "slope the edges of this roof to make it a gable or a hip"
+semantic-identity: "slope the edges of this roof to make it a gable, a hip, or slope only the edges chosen"
 kind: action
 domain: revit.elements
 capability: SLOPE_ROOF_EDGES
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
+# VERSION 2 (2026-11-16) - THE EDGES THE MODELLER CHOOSES, and back to DRAFT.
+# FRAGMENT-ISSUES row 5b-1670 (issue #852, #853 items A3 and B1, Villa 2,
+# Revit 2024): a main roof clipped to the wing in a valley has a 7-sided
+# footprint, so version 1's gable refused it and hip sloped every edge; the
+# modeller made it flat and shape-edited the ridge, and Revit warned about the
+# roof's thickness. Version 2 adds a third shape, `edges`: the edges named by
+# their number in this card's own readBack slope at the pitch given, every
+# other edge stands upright, and all are read back as before. Asked with no
+# numbers it changes nothing and lists every edge with its number, length and
+# ends. Gable and hip are unchanged. Version 1 was PROVEN on 2026-10-18 (the
+# proof block below, kept as the record of what it proved); its C# moved, so
+# it is DRAFT again until NEEDS-CHECKING Group OE is run (D-30).
+
 purpose: >
   Slopes the edges of a footprint roof that is already in the model, so a flat
-  roof becomes a GABLE or a HIP at the pitch the modeller gives. It acts on the
+  roof becomes a GABLE or a HIP at the pitch the modeller gives - or, since
+  version 2, slopes only the EDGES the modeller names. It acts on the
   roof SELECTED in Revit - one CREATE_FLOOR made with a roof type, or one drawn by hand through
   Architecture > Roof by Footprint, which is the same kind of element. Several
   roofs may be selected; each is judged, sloped and read back on its own.
@@ -47,6 +61,14 @@ purpose: >
   the modeller.
 
   **HIP: EVERY EDGE SLOPES**, straight or curved, whatever the outline.
+
+  **EDGES: ONLY THE EDGES NAMED SLOPE** (version 2), on any outline - a roof
+  clipped to a valley, a lean-to with one sloping edge. Each edge is named by
+  its number as readBack lists it; every edge not named stands upright. Asked
+  with no numbers, or a number the roof has not got, nothing is changed and
+  every edge is listed with its number, its length and its two ends, so the
+  next ask can name them. One roof at a time: an edge number belongs to one
+  roof. Numbers given with gable or hip are refused, never ignored.
 
   **ONE OUTLINE PER ROOF.** A footprint with a second loop - an opening, or a
   second roof area drawn in the same sketch - is refused for both shapes, since
@@ -83,8 +105,8 @@ contract:
     # a cast the prologue cannot make, so the selection is the route to use.
     - name: elements
       type: IList<Element>
-    # `gable` or `hip`, and nothing else is read. A shape is a design decision,
-    # so there is no default.
+    # `gable`, `hip` or `edges` (version 2), and nothing else is read. A shape
+    # is a design decision, so there is no default.
     - name: roofShape
       type: string
       source: request
@@ -93,6 +115,15 @@ contract:
     - name: pitchDegrees
       type: double
       source: request
+    # VERSION 2. The edges to slope with roofShape `edges`, by their number as
+    # readBack lists them - "1, 3". Every other edge stands upright. Left out
+    # with `edges`, nothing is changed and every edge is listed with its
+    # number; given with gable or hip, refused.
+    - name: edgeNumbers
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     - name: sloped
       # Edges Revit HOLDS as defining slope at the pitch asked for, read back
@@ -100,8 +131,8 @@ contract:
       role: result
       type: int
     - name: upright
-      # Gable ends Revit holds with Defines Slope off, read back. Always 0 for
-      # a hip, which has no ends.
+      # Gable ends - or, with `edges`, every edge not named - Revit holds with
+      # Defines Slope off, read back. Always 0 for a hip, which has no ends.
       role: result
       type: int
     - name: differs
@@ -135,43 +166,43 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-18'
+  date: '2026-11-16'
   by: Ajmal PS
-  model: Project1 (3,067 elements), Revit 2020, session 2648
+  model: Heron OE Roofs (3,331 elements), Revit 2024, session 18772
   positive_case: 'run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase''s own values - run inside a transaction,
+    select-in-region, set-selection with this phase''s own values - run inside a transaction,
     and Revit reported the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot
-    304.8, SteepestPitchDegrees 80, differs 0 item(s), findings 1 item(s) [Roof 345861 ''Generic
-    - 400mm'' is a hip at 30.00 degrees, rea...], measuredMm Roof 345861 ''Generic - 400mm'':
-    its highest point is now 2194 mm above its lowest, where it was 400 mm before - top at
-    6194 mm, bottom at 4000 mm, level ''Level 2'' sits at 4000 mm, pitchDegrees 30, readBack
-    Roof 345861 ''Generic - 400mm'': edge 1, 6000 mm, eave: Defines Slope on at 30.00 degrees
-    (Revit holds a rise of 0.5774 per 1 of run), was off; edge 2, 10000 mm, eave: Defines
-    Slope on at 30.00 degrees (Revit holds a rise of 0.5774 per 1 of run), was off; edge 3,
-    6000 mm, eave: Defines Slope on at 30.00 degrees (Revit holds a rise of 0.5774 per 1 of
-    run), was off; edge 4, 10000 mm, eave: Defines Slope on at 30.00 degrees (Revit holds
-    a rise of 0.5774 per 1 of run), was off, refused , risePerRun 0.577350269189626, shape
-    hip, sloped 4, upright 0. inputs came elements from the selection (1); roofShape as given;
-    pitchDegrees as given. on Project1'
-  negative_case: run with categoryName=Walls, inViewOnly=Heron 3D, pitchDegrees=30, roofShape=hip
-    instead - chosen because it should not contain what this fragment reports - the arrangement
-    was re-made first by running select-by-category-name, set-selection with this phase's
-    own values - run inside a transaction, and Revit reported the transaction group ROLLED
-    BACK afterwards. returned MillimetresPerFoot 304.8, SteepestPitchDegrees 80, differs 0
-    item(s), findings 1 item(s) [Nothing was changed - see refused for why], measuredMm ,
-    pitchDegrees 30, readBack , refused Walls 345432 'Generic - 200mm' is not a roof. Nothing
-    on it was changed | Walls 345433 'Generic - 200mm' is not a roof. Nothing on it was changed
-    | Walls 345434 'Generic - 200mm' is not a roof. Nothing on it was changed | Walls 345435
-    'Generic - 200mm' is not a roof. Nothing on it was changed | Walls 345436 'Generic - 200mm'
-    is not a roof. Nothing on it was changed | Walls 345557 'Generic - 200mm' is not a roof.
-    Nothing on it was changed, risePerRun 0.577350269189626, shape hip, sloped 0, upright
-    0. inputs came elements from the selection (6); roofShape as given; pitchDegrees as given.
-    on Project1
+    304.8, SteepestPitchDegrees 80, badNumber (null), chosen 1 item(s) [1], differs 0 item(s),
+    findings 1 item(s) [Roof 352549 ''Generic - 400mm'': edge(s) 1 slope at 15.00 degr...],
+    footprintRoofs 1, measuredMm Roof 352549 ''Generic - 400mm'': its highest point is now
+    3094 mm above its lowest, where it was 400 mm before - top at 5534 mm, bottom at 2440
+    mm, level ''OE Plate'' sits at 2440 mm, numbersGiven true, numbersText 1, pitchDegrees
+    15, readBack Roof 352549 ''Generic - 400mm'': edge 1, 6000 mm, eave: Defines Slope on
+    at 15.00 degrees (Revit holds a rise of 0.2679 per 1 of run), was off; edge 2, 10000 mm,
+    upright edge: Defines Slope off, was off; edge 3, 6000 mm, upright edge: Defines Slope
+    off, was off; edge 4, 10000 mm, upright edge: Defines Slope off, was off, refused , risePerRun
+    0.267949192431123, shape edges, sloped 1, upright 3. inputs came elements from the selection
+    (1); roofShape as given; pitchDegrees as given; edgeNumbers as given. on Heron OE Roofs'
+  negative_case: 'run with categories=Roofs, edgeNumbers=9, exact=false, includeLinks=false,
+    maxMm=13000,8000,7000, minMm=-1000,-1000,-1000, pitchDegrees=15, roofShape=edges instead
+    - chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running select-in-region, set-selection with this phase''s own values
+    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned MillimetresPerFoot 304.8, SteepestPitchDegrees 80, badNumber (null), chosen 1
+    item(s) [9], differs 0 item(s), findings 1 item(s) [Nothing was changed - see refused
+    for why], footprintRoofs 1, measuredMm , numbersGiven true, numbersText 9, pitchDegrees
+    15, readBack , refused Roof 352518 ''Generic - 400mm'': it has 7 edges, so there is no
+    edge 9. Its edges are: edge 1, 4000 mm, from (12000, 0) to (12000, 4000) mm; edge 2, 4243
+    mm, from (12000, 4000) to (9000, 7000) mm; edge 3, 6000 mm, from (9000, 7000) to (3000,
+    7000) mm; edge 4, 4243 mm, from (3000, 7000) to (0, 4000) mm; edge 5, 2000 mm, from (0,
+    4000) to (0, 2000) mm; edge 6, 2000 mm, from (0, 2000) to (0, 0) mm; edge 7, 12000 mm,
+    from (0, 0) to (12000, 0) mm. Nothing on it was changed, risePerRun 0.267949192431123,
+    shape edges, sloped 0, upright 0. inputs came elements from the selection (1); roofShape
+    as given; pitchDegrees as given; edgeNumbers as given. on Heron OE Roofs'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: a304d479e038bf2c
-
+  fingerprint: fbd4e4a9596f7d33
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -223,10 +254,17 @@ compatibility-note: >
 #                                           roof a gable
 #   "give it a fall of 1 in 100"         -> SET_MEP_SLOPE - a pipe or a duct,
 #                                           never a roof
-#   "slope just this one edge", a lean-to -> NOT HERE. Gable and hip only; an
+#   "slope just this one edge", a lean-to -> here since version 2, roofShape
+#                                           edges with that edge's number. An
 #                                           edge number is something only a
-#                                           Heron reply can show, and Revit's own
-#                                           screen names none
+#                                           Heron reply can show - Revit's own
+#                                           screen names none - so `edges` with
+#                                           no numbers lists them first
+#   "slope these edges of the roof",
+#   "make only these roof edges define slope"
+#                                        -> here, edges (row 5b-1670; both
+#                                           measured to reach this card on
+#                                           2026-11-15)
 
 utterances:
   - slope this roof
@@ -234,3 +272,6 @@ utterances:
   - make this a hip roof
   - slope the edges of this roof
   - make it a gable roof at 30 degrees
+  # VERSION 2, row 5b-1670.
+  - slope only these edges of the roof
+  - make only these roof edges define slope
