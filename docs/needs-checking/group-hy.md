@@ -8,6 +8,8 @@
 
 ## Group HY - rebar: thirteen DRAFT tools that place and read reinforcement (2026-10-19)
 
+**Tracked as GitHub issue [#1000](https://github.com/Ajmalpshaik/Heron-AI/issues/1000) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 From [row 5b-1257](../fragment-issues/section-5b-rows-401-425.md). A comparison of Revit jobs Heron could
 not do found reinforcement missing entirely - [39 §5](../39-three-downloaded-skill-sets.md) had listed it
 as unbuilt since 2026-09-24. Thirteen fragments and one method were written for it on 2026-10-19:

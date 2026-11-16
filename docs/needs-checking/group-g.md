@@ -9,6 +9,8 @@
 
 ## Group G — hard to force, do last
 
+**Tracked as GitHub issue [#969](https://github.com/Ajmalpshaik/Heron-AI/issues/969) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Not blocking. Listed so they are not mistaken for tested.
 
 | ID | Do this | Pass looks like |

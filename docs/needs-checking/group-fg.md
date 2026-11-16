@@ -8,6 +8,8 @@
 
 ## Group FG - which sheets a view is on, each box on the paper, and boxes off the title block or over each other: `LIST_VIEWS_ON_SHEET` version 2 (2026-10-17)
 
+**Tracked as GitHub issue [#987](https://github.com/Ajmalpshaik/Heron-AI/issues/987) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 [FRAGMENT-ISSUES row 5b-560](../fragment-issues/section-5b-rows-401-425.md). `LIST_VIEWS_ON_SHEET` (FRG-SHT-027)
 was widened, not replaced: every sheet (`sheetNumber` left out or `all`), one view by name across sheets
 (`viewName`), each viewport's and schedule's box corner to corner in millimetres with its viewport type, and two

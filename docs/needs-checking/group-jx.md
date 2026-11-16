@@ -7,6 +7,8 @@
 
 ## Group JX - insulation taken off ducts, pipes and their fittings: `REMOVE_MEP_INSULATION` (2026-11-01)
 
+**Tracked as GitHub issue [#1002](https://github.com/Ajmalpshaik/Heron-AI/issues/1002) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"remove the insulation from these ducts"*, *"take the insulation off
 these pipes and fittings"*, *"strip lagging from this run"*. Nothing in Heron removed insulation -
 `SET_MEP_INSULATION` deletes the old layer only to put a new one on, and takes ducts and pipes alone;

@@ -7,6 +7,8 @@
 
 ## Group KR - change Revit's rebar numbers: `EDIT_REBAR_NUMBERING` (2026-11-01)
 
+**Tracked as GitHub issue [#1000](https://github.com/Ajmalpshaik/Heron-AI/issues/1000) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"renumber the rebar in partition P1"*, *"move these bars to partition
 Level 3 slab"*, *"start rebar numbering at 100 in this partition"*, *"compact the rebar numbers"* - Revit's
 Structure > Reinforcement > Reinforcement Numbers dialog. No card changed Revit's rebar numbering.

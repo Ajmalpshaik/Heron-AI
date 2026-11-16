@@ -8,6 +8,8 @@
 
 ## Group EY - the family method looks at what it built: `revit_show` and `revit_view_image` in a family, and `family-creation` step 13 (2026-10-17)
 
+**Tracked as GitHub issue [#978](https://github.com/Ajmalpshaik/Heron-AI/issues/978) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Found on 2026-10-14 building two fixed monitor families on Revit 2020. Both were checked by
 `REPORT_FAMILY_FORMS`, every size as planned, and then by a desktop screen grab of the Revit window taken
 outside Heron - which showed the 55 inch family half off the screen, because the 3D view had never been

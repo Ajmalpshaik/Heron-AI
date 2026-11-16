@@ -7,6 +7,8 @@
 
 ## Group NH - the modeller clicks in Revit to answer the chat: `PICK_ON_SCREEN` (2026-11-11)
 
+**Tracked as GitHub issue [#992](https://github.com/Ajmalpshaik/Heron-AI/issues/992) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Found missing on 2026-11-11: the owner wants to work by chat with very few clicks in Revit, and nothing in Heron
 let the modeller click to answer the chat - a point had to be typed as three millimetre numbers
 ([D-67](../decisions/D-67.md)). `PICK_ON_SCREEN` is new, DRAFT, and asks for one point for each call. Why it

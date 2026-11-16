@@ -7,6 +7,8 @@
 
 ## Group NI - three repairs to the proving tools that only a PC with Revit can watch: a card refused on a release its own list leaves out, the client's output on Windows, and two suites that reach the live Revit (2026-11-11)
 
+**Tracked as GitHub issue [#973](https://github.com/Ajmalpshaik/Heron-AI/issues/973) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Three [FRAGMENT-ISSUES](../FRAGMENT-ISSUES.md) rows were repaired or recorded on 2026-11-11 in a cloud
 container, where there is no Windows and no Revit. Each is held by a suite on a stand-in; **none of the
 rows below has run**, and each says what the suite cannot see.

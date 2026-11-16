@@ -7,6 +7,8 @@
 
 ## Group MK - Insert > Point Cloud and Manage Images > Reload - link a point cloud, and reload images from their files or Reload From another file: `LINK_FILES` widened, `RELOAD_IMAGES` (2026-11-02)
 
+**Tracked as GitHub issue [#991](https://github.com/Ajmalpshaik/Heron-AI/issues/991) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for as two gaps on Revit's ribbon: *"Link point cloud and link IFC"* (Insert tab) and *"Reload images (Manage
 Images > Reload)"*. No card did either: a grep of every fragment's C# that day for `PointCloudType`,
 `PointCloudInstance`, `CreateFromIFC` and `ImageType` `Reload`, `ReloadFrom` and `CanReload` found none, and

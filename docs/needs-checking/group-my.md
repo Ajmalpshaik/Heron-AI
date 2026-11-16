@@ -7,6 +7,8 @@
 
 ## Group MY - the sheets of a spreadsheet sheet register made in one call, on their title block, with Drawn By, Checked By and the other columns filled in: `CREATE_SHEETS_FROM_TABLE`, the `heron_sheet_list` tool and the `sheets-from-excel` method (2026-11-09)
 
+**Tracked as GitHub issue [#988](https://github.com/Ajmalpshaik/Heron-AI/issues/988) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 The owner's ask: [docs/48](../48-studying-bimlogiq.md) section 5 item 7, *"Sheets from Excel - read the sheet
 list from a spreadsheet, preview, create"*, started 2026-11-09 (*"start item 7"*). What the modeller gets: *"make
 the sheets from this Excel: C:\\...\\sheet list.xlsx"* (or .csv) - a preview, then the sheets in one call and one

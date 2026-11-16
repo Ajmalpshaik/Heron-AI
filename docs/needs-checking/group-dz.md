@@ -8,6 +8,8 @@
 
 ## Group DZ - Object Styles read back: `LIST_CATEGORIES` version 2, each category's and subcategory's line colour, weights and pattern (2026-10-14)
 
+**Tracked as GitHub issue [#989](https://github.com/Ajmalpshaik/Heron-AI/issues/989) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **What changed.** `LIST_CATEGORIES` (FRG-DOC-031, a READ) reports, besides version 1's names, bindable count and
 sub-category total, `objectStyles`: one row per line for every category - and, in a family open in the Family
 Editor, the family's own category and every subcategory of it first - with its projection line colour, projection

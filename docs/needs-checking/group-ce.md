@@ -7,6 +7,8 @@
 
 ## Group CE - sprinkler hydraulics from the model: the network read, the K-factors, and the solve (2026-10-04)
 
+**Tracked as GitHub issue [#1004](https://github.com/Ajmalpshaik/Heron-AI/issues/1004) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **Built 2026-10-04 from [docs/46](../46-sprinkler-hydraulics-from-the-model.md) and
 [its plan](../work-notes/plans/sprinkler-panel-2026-10-04.md). REPORT_SPRINKLER_NETWORK is DRAFT and
 compiles on Revit 2020, 2024 and 2027; nothing below has run in Revit.** The read's arrangement is in

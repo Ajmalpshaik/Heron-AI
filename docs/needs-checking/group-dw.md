@@ -8,6 +8,8 @@
 
 ## Group DW - a different value on each element, matched by any parameter value: `SET_PARAMETER_VALUES_BY_ID` version 2 takes a room's Number, a sheet's Sheet Number or a Mark as the key (2026-10-13)
 
+**Tracked as GitHub issue [#982](https://github.com/Ajmalpshaik/Heron-AI/issues/982) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 [FRAGMENT-ISSUES row 5b-459](../fragment-issues/section-5b-rows-401-425.md). Giving 13 rooms 13 names took 26
 calls, a find and a write per room, because a reply cannot carry element ids. `SET_PARAMETER_VALUES_BY_ID`
 (FRG-PAR-027) was widened rather than a card added: a first row `key=<parameter>|in=<categories>` in the `rows`

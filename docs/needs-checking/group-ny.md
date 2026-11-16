@@ -7,6 +7,8 @@
 
 ## Group NY - the delete box that names and closes, OPEN_FAMILY_FOR_EDITING's route, and the Glass a family load reports (2026-11-15)
 
+**Tracked as GitHub issue [#974](https://github.com/Ajmalpshaik/Heron-AI/issues/974) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 From Sruthina's field report Ajmalpshaik/Heron-AI#853 (Revit 2024, `villa 2`, 2026-11-11). Rows
 [5b-1700](../fragment-issues/row-5b-1700.md) and [5b-1701](../fragment-issues/row-5b-1701.md) were
 repaired in a cloud container on 2026-11-15 - the add-in built, the server's half tested - and **none of

@@ -7,6 +7,8 @@
 
 ## Group CP - nested families: a read run that left an element, formula Yes/No values, hidden bodies in a box, and how a work-plane family stands (2026-10-07)
 
+**Tracked as GitHub issue [#980](https://github.com/Ajmalpshaik/Heron-AI/issues/980) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Four things seen on 2026-10-06/07 building the nested `GM_PipeSupport_*` families for Rejin's pipe support
 on Revit 2024 (session 51820). The drivers and full call logs are in `Desktop/For Rejin/Pipe Support/build/`
 and `build/log/` on the owner's PC. Nothing here is fixed; each row is the run that would settle it.

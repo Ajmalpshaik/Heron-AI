@@ -7,6 +7,8 @@
 
 ## Group MO - Modify > Offset, Insert > Insert from File, Analyze > Systems Analysis and Manage > Coordinates > Publish Coordinates - offset a chain of lines as a copy or a move with its corners joined, insert drafting views, legends or 2D elements from a file that is not open, start Revit's Systems Analysis, and publish this model's coordinates into a link: `OFFSET_LINE_CHAIN`, `INSERT_VIEWS_FROM_FILE`, `RUN_SYSTEMS_ANALYSIS`, `PUBLISH_COORDINATES` (2026-11-03)
 
+**Tracked as GitHub issue [#992](https://github.com/Ajmalpshaik/Heron-AI/issues/992) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for as the last four gaps on Revit's ribbon: *"Offset (Modify > Offset) for a chain of lines. Offset selected
 model/detail lines or a chain by a distance, copy or move"*, *"Insert views from file (Insert > Insert from File >
 Insert Views from File / Insert 2D Elements from File)"*, *"Systems Analysis (Analyze > Systems Analysis)"* and

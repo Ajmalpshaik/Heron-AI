@@ -7,6 +7,8 @@
 
 ## Group KC - a truss along typed lines: `CREATE_TRUSS` (2026-11-01)
 
+**Tracked as GitHub issue [#997](https://github.com/Ajmalpshaik/Heron-AI/issues/997) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"place a Howe truss between these two points on Level 2"*, *"add a
 truss along grid C from A to F"*, *"put a roof truss of type Pratt 12m here"* - Revit's Structure > Truss.
 Nothing in Heron made one: `PLACE_LINE_BASED_FAMILY` lays a beam or a brace along a line and

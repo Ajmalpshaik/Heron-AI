@@ -9,6 +9,8 @@
 
 ## Group BT - an HVAC answer asks a project's standards once, and keeps them for that project only (2026-10-02)
 
+**Tracked as GitHub issue [#1004](https://github.com/Ajmalpshaik/Heron-AI/issues/1004) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **The owner's PC, any Revit release, two models.** [D-111](../decisions/D-111.md): `heron_hvac` asks a
 project's governing standards once and keeps them in `%APPDATA%\Heron\knowledge\projects\<key>.hvac.json`,
 named by the Project Information UniqueId the open model reports. **What is already known, and it is NOT

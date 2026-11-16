@@ -8,6 +8,8 @@
 
 ## Group JM - a curtain system laid on the faces of a mass: `CREATE_CURTAIN_SYSTEM` version 1 (2026-10-28)
 
+**Tracked as GitHub issue [#994](https://github.com/Ajmalpshaik/Heron-AI/issues/994) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 A new card, [`create-curtain-system`](../../brain/fragments/create-curtain-system/fragment.yaml) (FRG-ELE-127),
 written in a cloud session for the modeller's *"put a curtain system on the faces of this mass"*, *"make a
 facade on the mass faces"* and *"curtain system by face on the side faces of mass Tower A"*. Nothing in the

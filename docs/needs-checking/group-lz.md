@@ -7,6 +7,8 @@
 
 ## Group LZ - Annotate > Keynoting Settings - load the keynote file the modeller names by its full path, or reload the one loaded, absolute or relative, with Revit's load result and the file and entry count read back - and the keynote file named by a read of its own: `LOAD_KEYNOTE_FILE`, `REPORT_KEYNOTE_FILE` (2026-11-02)
 
+**Tracked as GitHub issue [#988](https://github.com/Ajmalpshaik/Heron-AI/issues/988) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"load the keynote file C:\Standards\Keynotes.txt"*, *"reload the keynote
 file"*, *"which keynote file is this project using"*, *"change the keynote file to the office standard on the
 server"* and *"set keynote numbering to by sheet"*. No card did it: of every fragment's C# none called

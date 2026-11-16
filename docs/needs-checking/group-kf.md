@@ -7,6 +7,8 @@
 
 ## Group KF - one fabric sheet at a point in a slab or wall: `PLACE_FABRIC_SHEET` (2026-11-01)
 
+**Tracked as GitHub issue [#1000](https://github.com/Ajmalpshaik/Heron-AI/issues/1000) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"place one fabric sheet on this slab at this point"*, *"put a single
 mesh sheet here"*, *"add a B503 sheet to this wall"* - Revit's Structure > Reinforcement > Fabric Sheet.
 Nothing in Heron placed one sheet: `PLACE_FABRIC_REINFORCEMENT` is Revit's Fabric Area, sheets over a

@@ -7,6 +7,8 @@
 
 ## Group CF - Area and Volume Computations: the whole dialog read, and set behind the Admin switch (2026-10-06)
 
+**Tracked as GitHub issue [#995](https://github.com/Ajmalpshaik/Heron-AI/issues/995) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **NOTHING HERE HAS RUN IN REVIT.** Both tools were written on 2026-10-06 after a lookup found nothing
 that reads or sets the dialog - the model *Heron loads test* needed Areas and Volumes before its Spaces
 had volumes, and the owner set it by hand (row 5b-327). They compile on every release 2020 to 2027 and

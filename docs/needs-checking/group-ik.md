@@ -8,6 +8,8 @@
 
 ## Group IK - a lighting fixture's light source, all of it Heron's: every family type, the Light Source tick, position and aim, a wattage, loss factor, dimming and filter (2026-10-21)
 
+**Tracked as GitHub issue [#981](https://github.com/Ajmalpshaik/Heron-AI/issues/981) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 From rows [5b-1297, 5b-1298 and 5b-1299](../fragment-issues/section-5b-rows-401-425.md). On 2026-10-21 the
 owner, building the pendant LED family *TRG_Lighting Fixture_LED Pendant_CoreLine WT120C* on Revit 2020 with
 a Standard and an Emergency type, found `SET_FAMILY_LIGHT_SOURCE` reaching one type of two and failing when

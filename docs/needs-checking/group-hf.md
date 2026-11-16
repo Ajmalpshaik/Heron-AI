@@ -8,6 +8,8 @@
 
 ## Group HF - Heron's data out of a Store Claude's copy, and the Companion's note where Revit looks: D-135 on a real PC (2026-10-18)
 
+**Tracked as GitHub issue [#971](https://github.com/Ajmalpshaik/Heron-AI/issues/971) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Found from [Q-63](../open-questions/tier-2.md) and rows [5b-416, 5b-418 and 5b-419](../fragment-issues/section-5b-rows-401-425.md);
 decided and built as [D-135](../decisions/D-135.md). **What changed.** On Windows Heron's Python side keeps its
 knowledge store, every project's memory and the brain's audit in `%USERPROFILE%\.heron` (`HERON_DATA`

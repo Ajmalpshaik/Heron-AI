@@ -9,6 +9,8 @@
 
 ## Group AH - the MCP server's read-only door, its rules and its labels (package C2, 2026-09-23)
 
+**Tracked as GitHub issue [#970](https://github.com/Ajmalpshaik/Heron-AI/issues/970) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Built in a cloud session with no Revit: `revit_read`, the server's instructions (`host.chat`) and the
 safety labels on every tool ([04 §8](../04-heron-mcp.md)), and the owner's answer to D1 recorded as
 [D-99](../DECISIONS.md#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so) - so there is **no preview row here**: `revit_change` keeps changing at once, by

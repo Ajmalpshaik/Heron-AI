@@ -7,6 +7,8 @@
 
 ## Group LH - a panel schedule template made, or a panel's schedule switched to one: `SET_PANEL_SCHEDULE_TEMPLATE` (2026-11-02)
 
+**Tracked as GitHub issue [#1003](https://github.com/Ajmalpshaik/Heron-AI/issues/1003) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"what panel schedule templates are in this model"*, *"make a new panel
 schedule template from Branch Panel called DB Standard"* and *"set panel DB-1 to use the DB Standard
 template"* - Revit's Manage > Panel Schedule Templates, and Change Template on an open panel schedule. No card

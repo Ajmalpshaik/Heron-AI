@@ -257,9 +257,9 @@ prototype of the Fragment Creation Agent while writing house-rule skills.
    `check-obstructions` already handle links — follow them. Links only when asked, and say how many were
    read ([D-59](../../../DECISIONS.md)).
 2. **"Changed in central?" as a column** in the element-ownership report fragments (the write pre-check
-   half is C3's).
+   half is C3's). *(Tracked as GitHub issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005) since 2026-11-16 (WN-5).)*
 3. **Placeholder sheets** — a new fragment on `ViewSheet.CreatePlaceholder`; and first record that
-   `create-sheet-list`'s card says `CREATE_SHEET` makes placeholders, which it does not (reported).
+   `create-sheet-list`'s card says `CREATE_SHEET` makes placeholders, which it does not (reported). *(Tracked as GitHub issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005) since 2026-11-16 (WN-6).)*
 
 **On the PC:** a model with a linked architectural model, a workshared central, and the new fragment proved.
 

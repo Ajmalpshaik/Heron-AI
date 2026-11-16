@@ -7,6 +7,8 @@
 
 ## Group MJ - Massing & Site before toposolids and the property line - make a toposurface from survey points, add a building pad at a level or a subregion on a toposurface, and draw a property line through points or from a table of distances and bearings: `CREATE_TOPOSURFACE`, `CREATE_PROPERTY_LINE` (2026-11-02)
 
+**Tracked as GitHub issue [#997](https://github.com/Ajmalpshaik/Heron-AI/issues/997) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"make a toposurface from these points"*, *"add a building pad at Level 0 inside
 these corners"*, *"add a subregion for the car park on the toposurface"*, *"draw the property line through these
 points"* and *"add a property line from this bearing table"* - Revit's Massing & Site tab: the toposurface, its building

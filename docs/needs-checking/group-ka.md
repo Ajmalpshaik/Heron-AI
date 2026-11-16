@@ -8,6 +8,8 @@
 
 ## Group KA - the saved export setups and View/Sheet Sets: `LIST_EXPORT_SETUPS`, `MANAGE_EXPORT_SETUPS`, `SET_EXPORT_SETUP_OPTIONS`, `CHECK_SHEET_SETS_BY_PARAMETER`, and `MANAGE_SHEET_SETS` with nothing selected, its copy mode and its by-parameter mode (2026-11-01)
 
+**Tracked as GitHub issue [#987](https://github.com/Ajmalpshaik/Heron-AI/issues/987) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for by Ajmal PS on 2026-11-01, after Heron could not rename the DWG/DXF export setup *Setup 1* to
 *Tags Export* on a job model ([FRAGMENT-ISSUES row 5b-1360](../fragment-issues/section-5b-rows-401-425.md)).
 The research - which setups the Revit API reaches, on which release, and every option inside each - is

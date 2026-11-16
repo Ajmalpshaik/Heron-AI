@@ -1,6 +1,6 @@
 # Revit MCP landscape: others caught up on undo, not on proof
 
-2026-11-15. Active — a one-session research note. Retire it (delete it) once the owner has read it and anything worth keeping has moved into docs/26 or a register.
+2026-11-15. Active — a one-session research note. Retire it (delete it) once the owner has read it and anything worth keeping has moved into docs/26 or a register. *(Tracked as GitHub issue [#1008](https://github.com/Ajmalpshaik/Heron-AI/issues/1008) since 2026-11-16 (WN-36).)*
 
 Method: the search run of 2026-11-15 found 548 GitHub repositories. 82 were studied file by file (cloned and read), plus pyRevit's own documentation and one helper add-in. The other 466 were swept by README and file list (358 Revit-related, 50 other BIM tools, 58 not BIM at all), and 22 of those were cloned to check one idea in code. Nothing from any repo was built, installed or run. The GitHub API and several vendor pages (help.autodesk.com, aecpilot.com, nonica.io and others) were blocked in this session, so star counts come from the search run's listing or from github.com pages read the same day, and every Autodesk, price and product fact comes from search-engine summaries. Those need confirming on the vendor's own page; section "Autodesk and the paid tools" marks them. This note updates [docs/26](../../26-prior-art-revit-mcp.md) (2026-08-27, re-checked 2026-09-22).
 
@@ -22,6 +22,8 @@ Method: the search run of 2026-11-15 found 548 GitHub repositories. 82 were stud
 ---
 
 ## The best parts out there that Heron does not have
+
+*Tracked as GitHub issue [#1007](https://github.com/Ajmalpshaik/Heron-AI/issues/1007) since 2026-11-16 (WN-30) - work it there.*
 
 House rule ([docs/31](../../31-studying-the-existing-libraries.md), D-25): every idea below is re-authored in Heron's own words and code. No code, wording, names or branding come across, whatever the licence. MIT and Apache sources are credited when an idea is used; GPL, AGPL, no-licence and noncommercial sources give the idea only.
 
@@ -735,9 +737,9 @@ The other 340 Revit repos. No new idea for Heron in these: mostly copies of an u
 
 What follows it, in order:
 
-1. Make the Delete box count what Revit really deletes: run the delete, collect every id that went, roll back - and confirm the roll back with the check above.
+1. Make the Delete box count what Revit really deletes: run the delete, collect every id that went, roll back - and confirm the roll back with the check above. *(Tracked as GitHub issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005) since 2026-11-16 (WN-9).)*
 2. Point the same read-back at Keep: `verify: passed / failed / skipped` beside `outcome:` on every change.
-3. Tie each approval (Delete box, apply-move, a DRAFT's one run, Admin and Publish) to the exact request and the model's state: one use, a few minutes.
+3. Tie each approval (Delete box, apply-move, a DRAFT's one run, Admin and Publish) to the exact request and the model's state: one use, a few minutes. *(Tracked as GitHub issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005) since 2026-11-16 (WN-10).)*
 4. Owner decision, recorded as a decision: where `write.enabled`, Admin and Publish may live, so that an AI with file access cannot switch them on.
 5. Add the add-in build's hash and the exact Revit build to every proof record.
 

@@ -8,6 +8,8 @@
 
 ## Group IW - a night with nobody at the keyboard: `batch-prove --unattended` waits out a held Revit and closes only Revit's memory warning (2026-10-23)
 
+**Tracked as GitHub issue [#973](https://github.com/Ajmalpshaik/Heron-AI/issues/973) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 On 2026-10-21 and again on 2026-10-22 a session proving fragments while the owner slept wrote the same
 private wrapper round [`tools/batch-prove.py`](../../tools/batch-prove.py). What it did is the tool's own now,
 as `--unattended` ([`tools/README.md`](../../tools/README.md#batch-provepy--many-fragments-proved-in-one-pass-and-neither-half-taken-on-trust)):

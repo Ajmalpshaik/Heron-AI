@@ -7,6 +7,8 @@
 
 ## Group CC - building loads from the model: the take-off, the loads written back, and their read-back (2026-10-04)
 
+**Tracked as GitHub issue [#1004](https://github.com/Ajmalpshaik/Heron-AI/issues/1004) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **`report-space-envelope` (FRG-MEP-058) version 1, DRAFT, and the building loads feature around it**
 ([docs/44](../44-building-loads-from-the-model.md)). Built 2026-10-04: the take-off reader, the
 building runner in `brain/`, the Companion's Loads panel, the load calculation sheet, and Finalize.

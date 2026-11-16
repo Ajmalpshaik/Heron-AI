@@ -8,6 +8,8 @@
 
 ## Group EA - the saved View/Sheet Sets read back: `LIST_SHEET_SETS`, every set's sheets and views, and the empty ones (2026-10-14)
 
+**Tracked as GitHub issue [#988](https://github.com/Ajmalpshaik/Heron-AI/issues/988) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked by Ajmal PS on 2026-10-14 - *"how many sets are there"* - on his Revit 2020 job model
 4355-BHVD-3D-21S10-BL001A, where Heron had nothing that read a saved set. [Row 5b-465](../fragment-issues/section-5b-rows-401-425.md)
 has the measurements.

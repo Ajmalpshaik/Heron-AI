@@ -7,6 +7,8 @@
 
 ## Group CJ - the project's site, True North and units: set behind the Admin switch, and read (2026-10-06)
 
+**Tracked as GitHub issue [#996](https://github.com/Ajmalpshaik/Heron-AI/issues/996) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **Four tools, built 2026-10-06 for the setup a building-loads run reads** ([row
 5b-322](../fragment-issues/section-5b-rows-301-325.md)): `set-project-location` and `set-project-units`
 (both **ADMIN**, [D-106](../decisions/D-106.md)), `report-project-units`, and `report-location`

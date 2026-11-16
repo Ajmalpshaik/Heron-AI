@@ -8,6 +8,8 @@
 
 ## Group EJ - Heron says it is still waiting for Revit: MCP progress notes during a long tool call (2026-10-17)
 
+**Tracked as GitHub issue [#968](https://github.com/Ajmalpshaik/Heron-AI/issues/968) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Until 2026-10-17 a Heron tool waiting on Revit said nothing until Revit answered. A slow fragment, a family
 build or a modeller answering a prompt in Revit can take minutes, and in that time the chat could not tell
 a wait from a hang. [docs/04 §7.1](../04-heron-mcp.md#71-the-first-half-is-built--heron-says-it-is-still-waiting-2026-10-17)

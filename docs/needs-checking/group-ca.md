@@ -7,6 +7,8 @@
 
 ## Group CA - family parameters switched between type and instance, in the order their formulas allow (2026-10-04)
 
+**Tracked as GitHub issue [#977](https://github.com/Ajmalpshaik/Heron-AI/issues/977) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **The owner's PC, Revit 2024, on an UNSAVED scratch family made for the purpose - never on a saved family
 of his.** Asked for on 2026-10-04, when his PPR gate valve would not resize to its pipe because its sizes
 are type parameters (row [5b-308](../fragment-issues/section-5b-rows-301-325.md)):

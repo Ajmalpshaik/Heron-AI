@@ -7,6 +7,8 @@
 
 ## Group MN - Structure > Rebar Shape, Annotate > Symbol > Area, Path and Fabric Reinforcement Symbols, and Architecture > Stair > Create Sketch - make a rebar shape from its segments and bends, put Revit's reinforcement symbols on area and path reinforcement and fabric sheets, and sketch a stair from its boundaries and riser lines: `CREATE_REBAR_SHAPE`, `PLACE_REINFORCEMENT_SYMBOLS`, `CREATE_SHAPED_STAIRS` widened (2026-11-02)
 
+**Tracked as GitHub issue [#1000](https://github.com/Ajmalpshaik/Heron-AI/issues/1000) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for as three gaps on Revit's ribbon: *"Create a rebar shape (Structure > Reinforcement > Rebar Shape / Rebar
 Shape Browser) - a new RebarShape from a list of segment lengths/angles"*, *"Path and fabric reinforcement
 symbols/tags (Annotate > Symbol > Path Reinforcement Symbol, Fabric Reinforcement Symbol, and the span symbol for

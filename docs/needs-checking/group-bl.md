@@ -9,6 +9,8 @@
 
 ## Group BL - family forms: an extrusion of any shape, a revolve, a blend, a sweep and a swept blend, solid or void (2026-10-01)
 
+**Tracked as GitHub issue [#976](https://github.com/Ajmalpshaik/Heron-AI/issues/976) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **The owner's PC, Revit 2024 first, then 2020.** Five new tools, written on 2026-10-01 when the owner asked for
 every modelling form a family is built from - "extrude, revolve, all" - so that a family can be built from a
 sketch or a picture of the thing:

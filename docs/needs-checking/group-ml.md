@@ -7,6 +7,8 @@
 
 ## Group ML - Modify > Justification, Annotate > Tread Number and Manage > Project Parameters > Remove - set and read where beams and braces sit on their line, place tread or riser numbers on a stair run, and remove a project parameter: `SET_FRAMING_JUSTIFICATION`, `REPORT_FRAMING_JUSTIFICATION`, `PLACE_STAIR_TREAD_NUMBERS`, `REMOVE_PROJECT_PARAMETER` (2026-11-02)
 
+**Tracked as GitHub issue [#998](https://github.com/Ajmalpshaik/Heron-AI/issues/998) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for as three gaps on Revit's ribbon: *"beam / brace justification - set and read the structural framing
 yz-justification, y/z offsets and start/end level offsets"*, *"stair tread/riser numbers - place tread or riser
 numbers on a stair run in a view"* and *"remove a project parameter - Manage > Project Parameters > Remove"*. No

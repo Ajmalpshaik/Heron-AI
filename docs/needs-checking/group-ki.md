@@ -7,6 +7,8 @@
 
 ## Group KI - material tags and multi-category tags: `TAG_MATERIAL_OR_MULTI_CATEGORY` (2026-11-01)
 
+**Tracked as GitHub issue [#984](https://github.com/Ajmalpshaik/Heron-AI/issues/984) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"add material tags to these walls"*, *"tag the materials of this
 floor"*, *"multi-category tag these elements"*, *"tag these with the multi-category tag"* - Revit's
 Annotate > Material Tag and Multi-Category Tag. Nothing in Heron placed either on purpose.

@@ -9,6 +9,8 @@
 
 ## Group AL - duct routing in three calls: draw every run, fit every joint, join (2026-09-24)
 
+**Tracked as GitHub issue [#1001](https://github.com/Ajmalpshaik/Heron-AI/issues/1001) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **The owner's PC, Revit 2024 first, then 2020.** Two fragments were written on 2026-09-23 while
 routing supply duct in Project1 with the owner watching, and the skill that uses them the next day:
 

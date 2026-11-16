@@ -8,6 +8,8 @@
 
 ## Group AP - what three downloaded skill sets raised: a pitched roof, a name two parameters share, and two claims to settle (2026-09-24)
 
+**Tracked as GitHub issue [#993](https://github.com/Ajmalpshaik/Heron-AI/issues/993) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **The owner's PC, Revit 2024 first, on a scratch model - never his own design.** Every row comes out of
 [39](../39-three-downloaded-skill-sets.md), which studied three sets of skill files the owner downloaded,
 and each row says which of its findings it settles:

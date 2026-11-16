@@ -7,6 +7,8 @@
 
 ## Group CZ - a revision for each date typed on the sheets, put on the sheets that carry it, in one call (2026-10-11)
 
+**Tracked as GitHub issue [#988](https://github.com/Ajmalpshaik/Heron-AI/issues/988) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 On 2026-10-10 a modeller in Revit 2020, with model *4355-BHVD-3D-50C10-BL001A* (19 sheets) open, had
 `LIST_DATES_ON_SHEETS` list the dates typed on the sheets - 7 dates on 15 sheets - and then said *"now do
 one thing with this date - create revisions, the revision description is IFI - issued for

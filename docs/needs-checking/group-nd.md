@@ -7,6 +7,8 @@
 
 ## Group ND - a family's 2D side read back - lines, regions, nested families, and what is locked, labelled and linked to each: `REPORT_FAMILY_FORMS` version 5 (2026-11-11)
 
+**Tracked as GitHub issue [#979](https://github.com/Ajmalpshaik/Heron-AI/issues/979) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked 2026-11-11 by the audit of every capability a family's 2D side needs
 ([work note](../work-notes/investigations/2026-11-11-family-2d-capabilities.md)): after a flow arrow is placed,
 locked and stretched in a diffuser family, nothing in Heron read back what was locked to what. **Widened, not

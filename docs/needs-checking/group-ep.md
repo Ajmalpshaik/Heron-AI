@@ -8,6 +8,8 @@
 
 ## Group EP - one install does everything: Heron's Python side after the add-in, and the Store-Claude refusal (2026-10-17)
 
+**Tracked as GitHub issue [#972](https://github.com/Ajmalpshaik/Heron-AI/issues/972) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 The owner asked on 2026-10-17 for an installer that does the whole job in one run, so a new PC stops
 needing two pip commands and `tools/heron-ready.py` by hand - the half of the seven-minute first chat on
 the new laptop ([row 5b-378](../fragment-issues/section-5b-rows-376-400.md)) that Heron can close.

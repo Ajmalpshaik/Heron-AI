@@ -8,6 +8,8 @@
 
 ## Group IF - cinematic camera shots: `FRAME_ELEMENTS_IN_CAMERA` version 3 (2026-10-20)
 
+**Tracked as GitHub issue [#990](https://github.com/Ajmalpshaik/Heron-AI/issues/990) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 From [row 5b-1287](../fragment-issues/section-5b-rows-401-425.md). On the night of 2026-10-20, with the framing
 camera's version 2 signed ([Group IB](group-ib.md), [row 5b-1281](../fragment-issues/section-5b-rows-401-425.md)),
 the owner asked for more than a camera that fits: *"I need this building left side like in a cinematic camera

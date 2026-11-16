@@ -8,6 +8,8 @@
 
 ## Group DX - copying a storey onto other levels: `COPY_ELEMENTS` version 2, Paste Aligned to Selected Levels with a turn per level (2026-10-14)
 
+**Tracked as GitHub issue [#993](https://github.com/Ajmalpshaik/Heron-AI/issues/993) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **What changed.** `COPY_ELEMENTS` (FRG-GEO-005) takes `toLevels`, `turnDegrees` and `turnCentreMm` as well as
 its offset, and copies what it is given onto each level named - each copy belonging to its level at its
 original's offset, each level's copy turned one more step about the plan point

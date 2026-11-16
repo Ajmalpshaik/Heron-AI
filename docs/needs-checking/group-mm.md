@@ -7,6 +7,8 @@
 
 ## Group MM - Manage > Mechanical Settings, Analyze > Energy Settings and Create Energy Model, and Insert > Import gbXML - read and change the duct and pipe settings and the energy settings for the whole model, build the energy analytical model, and import a gbXML file: `REPORT_MECHANICAL_SETTINGS`, `SET_MECHANICAL_SETTINGS`, `REPORT_ENERGY_SETTINGS`, `SET_ENERGY_SETTINGS`, `CREATE_ENERGY_MODEL`, `IMPORT_GBXML` (2026-11-02)
 
+**Tracked as GitHub issue [#1004](https://github.com/Ajmalpshaik/Heron-AI/issues/1004) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for as three gaps on Revit's ribbon: *"Mechanical Settings: duct (and pipe) settings - read and set
 DuctSettings values: connector separator, flat-on-top/bottom annotations, duct fitting annotation size, air
 density/viscosity, rise/drop symbols"*, *"Energy settings (Analyze > Energy Settings) - read and set

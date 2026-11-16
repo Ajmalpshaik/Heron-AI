@@ -7,6 +7,8 @@
 
 ## Group CH - PLACE_HOSTED_FAMILY version 4: a family into the roof, floor or ceiling at each point, and a window that faces out (2026-10-06)
 
+**Tracked as GitHub issue [#981](https://github.com/Ajmalpshaik/Heron-AI/issues/981) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **Built 2026-10-06 (PR #423) on rows [5b-325](../fragment-issues/section-5b-rows-301-325.md), [5b-326](../fragment-issues/section-5b-rows-326-350.md) and [5b-293](../fragment-issues/section-5b-rows-276-300.md).
 [`place-hosted-family`](../../brain/fragments/place-hosted-family/fragment.yaml) is DRAFT, version 4, and
 compiles on Revit 2020 to 2027.** It reads the family's own Host setting - Wall, Floor, Ceiling or Roof -

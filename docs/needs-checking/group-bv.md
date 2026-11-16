@@ -9,6 +9,8 @@
 
 ## Group BV - every other kind of family: the template report, hosted, line-based, pattern-based, adaptive, profile and detail families, a Family Type parameter, flip controls, filled regions, a type catalog, a connector's primary flag and links, and a light source (2026-10-02)
 
+**Tracked as GitHub issue [#977](https://github.com/Ajmalpshaik/Heron-AI/issues/977) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **The owner's PC, Revit 2024 first, then 2020.** Eleven new tools and one widened, asked for by the owner on
 2026-10-01 - *"line based family, ceiling based, patterns, floor based, wall based, all kind ... do the deep
 research"* - with seven new skills and the research in

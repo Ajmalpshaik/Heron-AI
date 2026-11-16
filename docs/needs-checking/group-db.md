@@ -9,6 +9,8 @@
 
 ## Group DB - a family's OmniClass Number read, set, cleared and checked against Revit's own list (2026-10-11)
 
+**Tracked as GitHub issue [#980](https://github.com/Ajmalpshaik/Heron-AI/issues/980) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 On 2026-10-10 a DN50 PN16 gate valve family (Pipe Accessories, Revit 2024) was built through Heron, and
 the modeller set its OmniClass Number by hand: `SET_FAMILY_SETTINGS` refused it and no lookup found
 anything ([row 5b-422](../fragment-issues/section-5b-rows-401-425.md)). The owner's rules for the repair:

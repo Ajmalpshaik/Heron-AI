@@ -9,6 +9,8 @@
 
 ## Group EX - the run guard: a running job cannot save, sync, export or print what its operation does not allow (2026-10-17)
 
+**Tracked as GitHub issue [#969](https://github.com/Ajmalpshaik/Heron-AI/issues/969) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Constitution Article 10 - *"Never synchronise, publish or share on your own initiative ... Neither is any
 export to a shared location"* - and Golden Rule 17 were sentences with nothing in code behind them. The
 add-in listened to `ViewActivated`, `DocumentClosing`, `Idling` and `DocumentClosed`, so a MODIFY fragment

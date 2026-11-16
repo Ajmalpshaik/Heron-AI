@@ -8,6 +8,8 @@
 
 ## Group FE - change a value and keep a face where it is: `SET_PARAMETER_VALUES_BY_ID` version 3, `keepFace` (2026-10-17)
 
+**Tracked as GitHub issue [#982](https://github.com/Ajmalpshaik/Heron-AI/issues/982) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 [Row 5b-610](../fragment-issues/section-5b-rows-401-425.md). `SET_PARAMETER_VALUES_BY_ID` (FRG-PAR-027) was
 PROVEN at version 2 and is **DRAFT at version 3**; version 2's proof is kept on the card as a record. Version 3
 adds one optional input, `keepFace`: `outside` - the face looking out of the building - or `left`, `right`,

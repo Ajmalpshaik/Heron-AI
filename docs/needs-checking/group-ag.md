@@ -9,6 +9,8 @@
 
 ## Group AG - the background Model Auditor, `heron-model-auditor` ([PR #298](https://github.com/Ajmalpshaik/Heron-AI/pull/298))
 
+**Tracked as GitHub issue [#975](https://github.com/Ajmalpshaik/Heron-AI/issues/975) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Heron's first background agent: `.claude/agents/heron-model-auditor.md`, which audits the open model with the read-only Heron tools its `tools:` line names - 18 when it ran, and three more since 2026-09-23, when package C2 added `revit_read`, `heron_lookup` and `heron_resolve` (Group AH). **Run once, not proven.** On 2026-09-22 it ran on **Project4**, Revit 2024, session 37184. Its report matched direct reads, including two areas read only after the run: views (12 views, 13 templates) and rooms (4, with 0 unplaced and 0 not enclosed). It declined a request to select all the walls. Its own list of callable tools showed only its 18 read tools. The model had 3,276 elements before and after. The evidence is in the PR.
 
 *Placed 2026-09-23 by the register split, from the session that ran it. Its ids were first AC1 to AC3, which Stage 5's rows further down already used - AE and AF are taken as well, by the `heron-install` rows - so it was renumbered AG1 to AG3 the same day. FRAGMENT-ISSUES row 5b-156.*

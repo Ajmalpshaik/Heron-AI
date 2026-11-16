@@ -7,6 +7,8 @@
 
 ## Group BX - a stair between two levels, and the opening over it, through Revit's stair edit mode (2026-10-03)
 
+**Tracked as GitHub issue [#997](https://github.com/Ajmalpshaik/Heron-AI/issues/997) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **The owner's PC, Revit 2024, on a SAVED COPY of Project2.** Asked for in the school chat on 2026-10-03 -
 *"make the stair also"* - when no tool in the library could make a stair:
 

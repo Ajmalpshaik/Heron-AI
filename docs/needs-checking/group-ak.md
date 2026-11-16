@@ -9,6 +9,8 @@
 
 ## Group AK - the cloud setup script, pasted into the environment again (2026-09-23)
 
+**Tracked as GitHub issue [#972](https://github.com/Ajmalpshaik/Heron-AI/issues/972) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **Not the owner's PC and not Revit: the Heron cloud environment's settings, at claude.ai/code or in the
 desktop app.** [`tools/cloud-setup.sh`](../../tools/cloud-setup.sh) is not run from a checkout. It is
 pasted into the environment's **Setup script** box ([38 §1](../38-the-cloud-environment.md)), so a fix

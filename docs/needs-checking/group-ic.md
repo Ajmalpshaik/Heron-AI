@@ -8,6 +8,8 @@
 
 ## Group IC - the visualiser: a whole look in one call, what a look would do, and the method a visualisation artist follows (2026-10-20)
 
+**Tracked as GitHub issue [#990](https://github.com/Ajmalpshaik/Heron-AI/issues/990) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 From [rows 5b-1269 and 5b-1270](../fragment-issues/section-5b-rows-401-425.md). On 2026-10-20, after four
 Heron-built duct heaters were placed in Project1 (Revit 2020), the owner asked for a render; the material
 tools ([Group IA](group-ia.md)) and the rendering tools ([Group IB](group-ib.md)) were built that day, and

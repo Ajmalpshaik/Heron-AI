@@ -7,6 +7,8 @@
 
 ## Group KU - which voltages, distribution systems, load classifications and demand factors a model has: `REPORT_ELECTRICAL_SETTINGS` (2026-11-01)
 
+**Tracked as GitHub issue [#1003](https://github.com/Ajmalpshaik/Heron-AI/issues/1003) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"what voltages and distribution systems are set up in this model"* and
 *"list the load classifications and demand factors"* - Revit's Manage > MEP Settings > Electrical Settings
 (Voltage Definitions, Distribution Systems, Wiring Types), Load Classifications and Demand Factors. No card

@@ -7,6 +7,8 @@
 
 ## Group LG - a PDF page or a picture imported into a view: `IMPORT_IMAGE` (2026-11-02)
 
+**Tracked as GitHub issue [#992](https://github.com/Ajmalpshaik/Heron-AI/issues/992) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"import this PDF page into the current view"*, *"place the site plan image
 C:\Drawings\site.png on Level 1"* and *"bring in page 3 of the architect's PDF as an underlay"* - Revit's
 Insert > Import PDF and Insert > Import Image. No card made an image: a grep of every fragment's C# that day

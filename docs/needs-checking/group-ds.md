@@ -8,6 +8,8 @@
 
 ## Group DS - widenings of DRAFT cards: grid intersections, unenclosed areas, face hosting found by a ray and on links, tray and conduit connectors, material assets, CAD coordinates, distances within a radius, filters of several rules, and ordering by position (2026-10-13)
 
+**Tracked as GitHub issue [#993](https://github.com/Ajmalpshaik/Heron-AI/issues/993) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 The gap fill's first batch of widenings ([`work-notes/plans/gap-fill-2026-10-12.md`](../work-notes/plans/gap-fill-2026-10-12.md)):
 jobs Heron did in part, finished by widening a card that was DRAFT already - so no PROVEN card's proof went stale.
 

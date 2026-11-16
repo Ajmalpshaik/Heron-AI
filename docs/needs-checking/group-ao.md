@@ -8,6 +8,8 @@
 
 ## Group AO - `tag-rooms`, `place-hosted-family` version 2 and `set-room-limits`: room tags on a plan's rooms, doors into the wall found at each point, and room tops tied to a level (2026-09-24)
 
+**Tracked as GitHub issue [#995](https://github.com/Ajmalpshaik/Heron-AI/issues/995) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **Three fragments from one sitting on 2026-09-24, in Project1 on Revit 2024, and all three are DRAFT.**
 Each compiles on every release from 2020 to 2027. The first two have run in a chat on a working model,
 and **a chat run is not a proof**: no negative case was run and no fingerprint was taken

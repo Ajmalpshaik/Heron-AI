@@ -8,6 +8,8 @@
 
 ## Group BB - `write-element-parameters` version 4: a Yes/No parameter ticked or unticked (2026-09-27)
 
+**Tracked as GitHub issue [#982](https://github.com/Ajmalpshaik/Heron-AI/issues/982) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **One fragment edited, not added, and it is DRAFT.**
 [`write-element-parameters`](../../brain/fragments/write-element-parameters/fragment.yaml) -
 WRITE_ELEMENT_PARAMETERS, FRG-PAR-003 - refused every Yes/No parameter until version 4: on 2026-09-27, in

@@ -8,6 +8,8 @@
 
 ## Group ET - Revit asks Keep or Discard before a change from a chat is kept: D-126 (2026-10-17)
 
+**Tracked as GitHub issue [#970](https://github.com/Ajmalpshaik/Heron-AI/issues/970) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 [D-126](../DECISIONS.md#d-126--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept)
 (accepted by the owner 2026-10-17) supersedes D-99. `revit_change` still runs its change inside one
 `TransactionGroup`; then, with the group open, Revit selects and isolates what it touched and a dialog asks

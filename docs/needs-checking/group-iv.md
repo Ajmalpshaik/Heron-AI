@@ -8,6 +8,8 @@
 
 ## Group IV - a family's connectors hidden from a picture of its forms: `revit_view_image` with `elements` in a family (2026-10-22)
 
+**Tracked as GitHub issue [#990](https://github.com/Ajmalpshaik/Heron-AI/issues/990) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 From [row 5b-1327](../fragment-issues/section-5b-rows-401-425.md). On Revit 2020, in a scratch copy of the
 owner's 24 Inch CCTV monitor family, every picture of forms by id carried two large green circles with cross
 lines and two small blue markers at the same pixels whatever was framed, and the picture was fitted to them -

@@ -8,6 +8,8 @@
 
 ## Group EU - Heron says when its own code changed under a chat, and changes nothing until the chat is reopened (2026-10-17)
 
+**Tracked as GitHub issue [#970](https://github.com/Ajmalpshaik/Heron-AI/issues/970) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 The MCP server is one long-running process per chat, so a `git pull` changes its files and not the code it
 runs. On 2026-09-07 that had `revit_apply_move` answering *"There is nothing waiting to be approved"* from
 code a fix had already replaced, and [B8](group-b.md) had to be proved from a fresh process. Nothing in the

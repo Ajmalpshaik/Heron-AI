@@ -7,6 +7,8 @@
 
 ## Group LQ - parallel copies of a pipe or conduit run, side by side or above or below it, with the elbows re-made: `CREATE_PARALLEL_RUNS` (2026-11-02)
 
+**Tracked as GitHub issue [#1001](https://github.com/Ajmalpshaik/Heron-AI/issues/1001) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"add 3 parallel pipes to this run at 150 mm spacing"*, *"copy this conduit
 run 4 times side by side at 50 mm"* and *"run two parallel pipes above this one at 200 mm"* - Revit's Systems >
 Parallel Pipes and Parallel Conduits. Revit has no API call for either. heron-duplicate-checker's method, run

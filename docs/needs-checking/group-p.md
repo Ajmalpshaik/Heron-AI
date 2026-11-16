@@ -9,6 +9,8 @@
 
 ## Group P — parameters, and the two ways the answer is confidently wrong (needs Revit and a real model)
 
+**Tracked as GitHub issue [#983](https://github.com/Ajmalpshaik/Heron-AI/issues/983) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 `HERON-REVIT-PAR-011` — [`revit/Heron.Revit.Addin/RevitParameters.cs`](../../revit/Heron.Revit.Addin/RevitParameters.cs).
 Compiles on 2020–2027, 0 errors, 2026-09-16. **Proved 2026-09-19 and signed** ([`brain/agent-proofs/HERON-REVIT-PAR-011.yaml`](../../brain/agent-proofs/HERON-REVIT-PAR-011.yaml)) - so it is no longer NEVER RUN. It went signed, then WITHDRAWN, then signed again the same day: the first proof rested on two models and claimed no empty input existed, which [U5](../NEEDS-CHECKING.md#) disproved. The one that stands varies `category` across Ducts, Pipes and Air Terminals, and the last of those IS the empty case. That proof is D-53 tracking and it is NOT these rows: the cases below are still unchecked, and tracking says the answer follows the model, not that any one of them is right. Read-only — no parameter is written, and no
 transaction is opened.

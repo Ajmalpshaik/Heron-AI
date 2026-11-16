@@ -7,6 +7,8 @@
 
 ## Group OH - a built-in parameter by Revit's name for it, an architectural column's top and a turn when placing, a type duplicated from itself, and a rotation said in degrees (2026-11-16)
 
+**Tracked as GitHub issue [#974](https://github.com/Ajmalpshaik/Heron-AI/issues/974) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 From Sruthina's field report Ajmalpshaik/Heron-AI#853 (Revit 2024, `villa 2`, 2026-11-11). On the owner's
 word of 2026-11-16 to fix every issue from #852 to #854, five PROVEN cards were repaired in a cloud
 container, **each at a new version and back to DRAFT, its old proof kept as the record**:

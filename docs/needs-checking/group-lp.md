@@ -7,6 +7,8 @@
 
 ## Group LP - a rigid duct turned into flex between the same two fittings, and Connect Into with a fixture's right connector: `CONVERT_TO_FLEX_DUCT`, `CONNECT_INTO_MAIN` (2026-11-02)
 
+**Tracked as GitHub issue [#1001](https://github.com/Ajmalpshaik/Heron-AI/issues/1001) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"convert this last duct run to the diffuser into flex duct"*, *"change these
 short ducts to flex"*, *"connect this diffuser into the main duct"*, *"connect this sink into the waste pipe"* and
 *"tap this equipment into the main"* - Revit's Systems > Convert to Flex Duct and Connect Into. Revit has no API

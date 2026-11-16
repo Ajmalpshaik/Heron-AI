@@ -8,6 +8,8 @@
 
 ## Group IS - a revolve's radius labelled on Revit 2020, both references checked before Revit is asked: `LABEL_FAMILY_RADIUS` version 5 (2026-10-22)
 
+**Tracked as GitHub issue [#979](https://github.com/Ajmalpshaik/Heron-AI/issues/979) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 From row [5b-1318](../fragment-issues/section-5b-rows-401-425.md). Seen on Revit 2020 (session 78736) on
 2026-10-22 in the owner's nested floor drain families: `LABEL_FAMILY_RADIUS` version 4, PROVEN on Revit 2024,
 threw Revit's own *Invalid number of references* three times on its revolve route - a trap's two outlet sockets

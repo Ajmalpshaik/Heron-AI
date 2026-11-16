@@ -7,6 +7,8 @@
 
 ## Group NB - a nested DETAIL ITEM locked to named planes in the plan it is drawn in: `LOCK_NESTED_FAMILY_TO_PLANES` version 3, now version 4 (2026-11-11)
 
+**Tracked as GitHub issue [#979](https://github.com/Ajmalpshaik/Heron-AI/issues/979) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 On 2026-11-11 (Revit 2020) four nested `Diffuser Flow Arrow_DRAFT` detail items in the owner's square diffuser
 family, placed with `PLACE_FAMILY_INSTANCES` on "Ref. Level" and turned with `ROTATE_ELEMENTS`, refused every
 lock with "The nested family has no extent to read back" - Revit gives a view-based instance no box outside a

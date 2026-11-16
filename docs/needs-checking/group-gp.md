@@ -8,6 +8,8 @@
 
 ## Group GP - copies that stay on their workset: `COPY_ELEMENTS` version 3, the workset chosen and read back (2026-10-17)
 
+**Tracked as GitHub issue [#996](https://github.com/Ajmalpshaik/Heron-AI/issues/996) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Found 2026-10-15 on a real BIM 360 project in Revit 2020: builders-work openings copied from instances on
 `BHVD_BW_WALL_OPENING` landed on the ACTIVE workset, because that is where Revit puts every copy, and had to be
 moved with `SET_ELEMENT_WORKSET` afterwards. [Row 5b-860](../fragment-issues/section-5b-rows-401-425.md).
