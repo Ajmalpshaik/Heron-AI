@@ -4,6 +4,11 @@
 //
 // ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 //
+// VERSION 2 (2026-11-16) - THE PARAMETERS REVIT TAKES IN A SCHEME (row
+// 5b-1660): "circuit number" is the circuit naming index and "start slot" the
+// slot index, and the other parameters Revit's note lists are named; see the
+// word list below.
+//
 // WHAT IT DOES. Two things from Revit's Manage > MEP Settings > Electrical
 // Settings > Circuit Naming, one at a time - `action` says which:
 //   make - a new circuit naming scheme (`schemeName`) from circuit parameters

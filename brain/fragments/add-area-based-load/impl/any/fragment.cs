@@ -24,7 +24,11 @@
 // lies inside the space (Space.IsPointInSpace, at the space's mid height).
 // When the space's level and phase have NO load areas at all, they are made
 // for that level and phase - what Revit's own command does, the whole level
-// at once - and the count is reported. When the level has load areas but
+// at once - and the count is reported. REVIT MAKES THEM ONLY INSIDE REGIONS
+// CLOSED BY AREA BASED LOAD BOUNDARY LINES, never from walls or spaces
+// (measured on Revit 2024, row 5b-1659); VERSION 2 (2026-11-16) says so in the
+// finding when it made 0 and in each space's refusal, and does nothing else
+// differently. When the level has load areas but
 // none at a space, that space is refused and named: more are never added
 // beside the ones the modeller has.
 //

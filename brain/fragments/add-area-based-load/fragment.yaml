@@ -39,7 +39,7 @@ semantic-identity: "add an area-based load type in W/m2 to the electrical analyt
 kind: action
 domain: revit.mep
 capability: ADD_AREA_BASED_LOAD
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 

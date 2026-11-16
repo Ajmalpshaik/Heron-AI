@@ -63,7 +63,8 @@ risk: MODIFY
 # keeping one list under a name the caller gives - recorded for the owner.
 #
 # Version 1's proof below no longer describes the code (impl/ changed) and is
-# kept as the record; DRAFT until version 2 is proved on a real model (D-30).
+# kept as the record; DRAFT until the current version (4 since 2026-11-16) is
+# proved on a real model (D-30).
 #
 # VERSION 3 (2026-11-01) - SWITCH_JOIN_ORDER WAS MERGED INTO THIS CARD on the
 # owner's instruction ("make sure there is no duplicate tools"; "in every
@@ -170,7 +171,9 @@ contract:
     - name: wouldNot
       # Pairs Revit will not join - elements that do not actually touch, and
       # categories it refuses. COUNTED, NOT THROWN, so a batch does not lose
-      # the eleven that worked because the twelfth would not (D-52).
+      # the eleven that worked because the twelfth would not (D-52). Since
+      # version 4 also a pair whose boxes do not meet, NEVER SENT to Revit
+      # (row 5b-1661).
       role: accounting
       type: IList<string>
     - name: refused

@@ -31,6 +31,12 @@ semantic-identity: "make a new circuit naming scheme from circuit parameters, or
 # panel's circuit naming was its own parameter and there was no scheme to
 # make or set. The card claims 2021 to 2027 and nothing else.
 #
+# VERSION 2 (2026-11-16) - THE PARAMETERS REVIT TAKES (row 5b-1660). Version 1
+# mapped "circuit number" to RBS_ELEC_CIRCUIT_NUMBER and "start slot" to
+# RBS_ELEC_CIRCUIT_START_SLOT, which Revit refuses in a scheme, so its own
+# example was never made. They are the circuit naming index and the slot
+# index now, beside the other parameters Revit's note lists.
+#
 # NEVER GUESSED (D-33). A scheme name not there exactly is refused with the
 # schemes listed; one differing in capitals is named, never taken. A part
 # Heron cannot name as a circuit parameter is refused with the words it
@@ -45,7 +51,7 @@ semantic-identity: "make a new circuit naming scheme from circuit parameters, or
 kind: action
 domain: revit.mep
 capability: SET_CIRCUIT_NAMING_SCHEME
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -136,8 +142,13 @@ compatibility-note: >
   signatures and absent in 2020 - read with tools/api-surface --members on
   2026-11-02. TableCellCombinedParameterData.Create, ParamId, CategoryId,
   Prefix, Suffix and Separator, LabelUtils.GetLabelFor(BuiltInParameter), and
-  RBS_ELEC_CIRCUIT_PANEL_PARAM, RBS_ELEC_CIRCUIT_NUMBER, RBS_ELEC_CIRCUIT_NAME
-  and RBS_ELEC_CIRCUIT_START_SLOT are 2020 to 2027. A part's Separator is drawn
+  the twelve parameters the card names since version 2 (row 5b-1660) -
+  RBS_ELEC_CIRCUIT_PANEL_PARAM, RBS_ELEC_CIRCUIT_NAMING_INDEX,
+  RBS_ELEC_CIRCUIT_NAME, RBS_ELEC_CIRCUIT_SLOT_INDEX, RBS_ELEC_CIRCUIT_TYPE,
+  CIRCUIT_LOAD_CLASSIFICATION_ABBREVIATION_PARAM, RBS_ELEC_NUMBER_OF_POLES,
+  RBS_ELEC_CIRCUIT_RATING_PARAM, RBS_ELEC_CIRCUIT_FRAME_PARAM, RBS_ELEC_VOLTAGE,
+  CIRCUIT_PHASE_PARAM and CIRCUIT_WAYS_PARAM - compile 2021 to 2027
+  (tools/check-fragments-compile.py, 2026-11-16). A part's Separator is drawn
   after it, as ADD_SCHEDULE_COMBINED_FIELD measured in Revit 2020 for a
   schedule's combined parameters; that a circuit naming scheme draws it the
   same way has not been seen in Revit. An ElementId is compared with ==, never
