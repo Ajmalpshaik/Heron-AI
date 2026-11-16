@@ -1,0 +1,115 @@
+# NEEDS-CHECKING Group OB - five cards repaired in code on 2026-11-16 for
+# Sruthina's field report Ajmalpshaik/Heron-AI#853 (Revit 2024, `villa 2`),
+# each a PROVEN card sent back to DRAFT at a new version:
+#
+#   write-element-parameters    WRITE_ELEMENT_PARAMETERS    version 7  row 5b-1703  OB1
+#   set-parameter-values-by-id  SET_PARAMETER_VALUES_BY_ID  version 9  row 5b-1703  OB2
+#   place-family-instances      PLACE_FAMILY_INSTANCES      version 6  rows 5b-1704, 5b-1706  OB3 (OB4 by hand)
+#   duplicate-type              DUPLICATE_TYPE              version 2  row 5b-1705  OB5 (OB6 by hand)
+#   rotate-elements             ROTATE_ELEMENTS             version 4  row 5b-1708  OB7
+#
+#     python tools/batch-prove.py tools/jobs/field-853-repairs-ob-2026-11-16.yaml --dry-run
+#     HERON_CLIENT_ID=heron-batch-prove python tools/batch-prove.py tools/jobs/field-853-repairs-ob-2026-11-16.yaml --session <pid>
+#
+# NOTHING HERE HAS RUN. Written 2026-11-16 in a cloud session with no Revit:
+# every card compiles on 2020 to 2027, and a compile is not a proof.
+#
+# THE MODEL - OB0 in docs/needs-checking/group-ob.md: "Heron OB Test", a NEW
+# project Heron makes on REVIT 2024 FIRST from English\DefaultMetric.rte with
+# CREATE_FAMILY_DOCUMENT (Admin switch on for that one call), saved under
+# %TEMP%\heron-work\ob - never a working model. The template already loads
+# M_Rectangular Column (a COLUMNS family - architectural) and M_Single-Flush.
+# Then, KEPT, from a checkout of origin/MAIN - where PLACE_FAMILY_INSTANCES
+# and WRITE_ELEMENT_PARAMETERS are still PROVEN, so `--apply` is allowed; on
+# this branch they are DRAFT and `--apply` refuses them:
+#   - CREATE_LEVELS "Heron OB Roof" at 6000 mm;
+#   - PLACE_FAMILY_INSTANCES (v5) ONE "M_Rectangular Column: 457 x 475mm" at
+#     0,0,0 on Level 1, top as Revit places it;
+#   - WRITE_ELEMENT_PARAMETERS (v6) Mark "OB-POST" on that column.
+# The type names are the ones recorded from that template before
+# (group-nk.md, row 5b-1259's note); if Revit shows others, type what it
+# shows here. THE DRY RUN DOES NOT CATCH A WRONG TYPE NAME.
+#
+# `write: true` runs each leg inside a transaction group and ROLLS IT BACK.
+# The runner reads no sentence: read each verdict's quoted findings against
+# the group's row before signing.
+
+model: "Heron OB Test (a new scratch project from Revit 2024 English DefaultMetric.rte, OB0's arrangement)"
+
+defaults:
+  setup: []
+  write: true
+  in: "Heron OB Test"
+
+jobs:
+  # OB1 - row 5b-1703. The negative is the refusal itself, on the same column.
+  - fragment: write-element-parameters
+    setup: [filter-elements-by-category, set-selection]
+    expect: written
+    set: {category: "Columns", parameterName: "Top Level {FAMILY_TOP_LEVEL_PARAM}", value: "Heron OB Roof"}
+    negative-set: {category: "Columns", parameterName: "Top Level", value: "Heron OB Roof"}
+    note: >
+      Positive written 1, the column's Top Level "Heron OB Roof". Negative
+      written 0, the column in `ambiguous`, and a finding naming each "Top
+      Level" as it is reached - write down the second built-in's name; row
+      5b-1703 left it unread.
+
+  # OB2 - row 5b-1703.
+  - fragment: set-parameter-values-by-id
+    expect: written
+    set: {rows: "key=Mark|in=Columns;OB-POST|Top Level {FAMILY_TOP_LEVEL_PARAM}=Heron OB Roof"}
+    negative-set: {rows: "key=Mark|in=Columns;OB-POST|Top Level=Heron OB Roof"}
+    note: >
+      Positive written 1. Negative written 0, refused "two parameters on it
+      are called Top Level and more than one can be written - name the one
+      meant as 'Top Level {FAMILY_TOP_LEVEL_PARAM}' or ..." - never
+      "{its GUID}" for a built-in.
+
+  # OB3 - rows 5b-1704 and 5b-1706, ONE job: a batch writes one proof draft
+  # per card, so a second job on this card would overwrite the first. An
+  # architectural column with a top AND a turn, no structuralType. OB4's other
+  # negative (a top on the base level) is a hand run - group-ob.md.
+  - fragment: place-family-instances
+    expect: placed
+    set: {symbol: "M_Rectangular Column: 457 x 475mm", points: "6000,0,0; 9000,0,0", level: "Level 1", topLevelName: "Heron OB Roof", topOffset: "-150", rotationDegrees: "90"}
+    negative-set: {symbol: "M_Rectangular Column: 457 x 475mm", points: "6000,0,0; 9000,0,0", level: "Level 1", topLevelName: "Heron OB Roof", topOffset: "-150", rotationDegrees: "ninety"}
+    note: >
+      Positive placed 2; `tops` "point 1 ... top asked 'Heron OB Roof' + -150
+      mm = 5850 mm, reads 'Heron OB Roof' + offset = 5850 mm" and the same for
+      point 2; findings "Each one turned 90 degrees anticlockwise seen from
+      above, about its own insertion point - read back on all 2". Version 5
+      refused the top ("A top level is set only on columns") and had no
+      rotation. Negative refused "'ninety' is not a rotation", placed 0.
+
+  # OB5 - row 5b-1705. A TYPE handed in, no instance of it placed.
+  - fragment: duplicate-type
+    setup: [select-types]
+    keep-chain: true
+    expect: createdTypeId
+    set: {categories: "Doors", familyNameContains: "M_Single-Flush", typeNameContains: "0915 x 2134mm", newTypeName: "Heron OB Door 1000"}
+    negative-set: {categories: "Doors", familyNameContains: "M_Single-Flush", typeNameContains: "0915 x 2134mm", newTypeName: "Heron OB Door Z", typeName: "M_Single-Flush: ZZZ No Such Type"}
+    note: >
+      Positive createdTypeId the new type, findings "'0915 x 2134mm'
+      duplicated as 'Heron OB Door 1000'", `noType` EMPTY - version 1 put the
+      type in `noType`. Negative: the typed name wins over the chain and
+      matches no type - refused, createdTypeId (null). If select-types also
+      found 0864 or other sizes, the positive is refused "sits on N different
+      types": narrow typeNameContains.
+
+  # OB6 (a type named, nothing selected) is a HAND run - a second job on
+  # duplicate-type would overwrite OB5's proof draft. group-ob.md gives it.
+
+  # OB7 - row 5b-1708. The arranged column, turned clockwise.
+  - fragment: rotate-elements
+    setup: [filter-elements-by-category, set-selection]
+    expect: rotated
+    set: {category: "Columns", angleRadians: -1.5707963}
+    negative-set: {category: "Columns", angleRadians: 6.283185307179586}
+    note: >
+      Positive rotated 1, findings "Asked to turn 90 degrees clockwise seen
+      from above, about a vertical axis through each one's own point: 1
+      turned, ..." and NO
+      line `normalised` or `full` in the reply. Negative refused "The angle
+      is zero, or a whole turn", rotated 0. 2 pi typed to 7 digits
+      (6.2831853) is NOT refused - the card tests to 1e-9 rad - so the
+      negative types it in full (row 5b-1780).
