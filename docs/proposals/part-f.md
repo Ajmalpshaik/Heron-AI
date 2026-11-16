@@ -416,7 +416,7 @@ agents do to a folder, so it is the owner's call — the same reason F11 is stil
 
 ### ✅ F14. Three different projects write to one knowledge file, and the code says why that is a breach — DECIDED 2026-11-15 (owner's delegation)
 
-**Decided: Turn each project key into a unique code, with a planned, backed-up move of existing files - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** Writing one client's knowledge into another's file is a breach, and only this prevents it rather than catching it afterwards. **Work:** done 2026-11-15 for the stores - see the Work note below; the files kept beside a store are still owed.
+**Decided: Turn each project key into a unique code, with a planned, backed-up move of existing files - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** Writing one client's knowledge into another's file is a breach, and only this prevents it rather than catching it afterwards. **Work:** done 2026-11-15 for the stores - see the Work note below; the files kept beside a store were settled 2026-11-16 without a move (the note's last paragraph).
 
 **Found by:** building `HERON-WSP-PLC-005`, the File Placement Agent, 2026-09-15.
 **Status:** open. **Measured, not read** — the numbers below come from running the code.
@@ -492,8 +492,7 @@ measured the collision, now measure three files. **Not done, and why:** the file
 store - `.hvac.json`, `.fire.json`, `.loads`, `.sprinkler`, `.sprinkler-layout`, `.dashboard`,
 `.earlier.json` - are still named by `_safe_key()` alone, so two keys that reduce alike still meet
 there. They are keyed by `Document.CreationGUID`, which reduces to itself, and moving them is the
-same planned migration over those names - a change of its own. This section stays open for
-them.
+same planned migration over those names - a change of its own. **Settled 2026-11-16, with no move:** every key those files are named by is `DocumentPin.project_key`, which is the model's `CreationGUID` or `None` (nothing kept, Revit 2020 to 2023 and an add-in older than D-113) - never a path or a title - and a GUID is hex and hyphens, which `_safe_key()` leaves exactly as it is, so two models cannot meet in one of them. Renaming them would only make the files already on the owner's PC unfindable. [`tests/test_scope_store.py`](../../tests/test_scope_store.py) section 10 holds both halves, and fails if a path or a title ever becomes a project key - seen to, by making `project_key` return the path.
 
 **What the new agent does about it.** `HERON-WSP-PLC-005` takes the opposite rule and states it:
 **a name that would have to be rewritten to be usable is refused, never cleaned up.** A project

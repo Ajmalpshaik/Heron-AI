@@ -1091,6 +1091,41 @@ def _bytes(path):
         return handle.read()
 
 
+def files_beside_a_store(S):
+    """Section 10 - PROPOSALS F14's files beside a store, 2026-11-16.
+
+    The sidecars (.hvac.json, .fire.json, .loads, .sprinkler,
+    .sprinkler-layout, .dashboard, .earlier.json) are still named by
+    _safe_key() alone, and that is safe ONLY because the key they are given
+    is a model's CreationGUID - hex and hyphens, which _safe_key() leaves
+    exactly as it is - or None, when nothing is kept. If DocumentPin ever
+    hands out a path or a title as a project key, two models could meet in
+    one sidecar again, and this section is what says so.
+    """
+    import uuid
+    print()
+    print("10. The files beside a store are named by a key that cannot "
+          "collide (PROPOSALS F14)")
+    guids = [str(uuid.uuid4()) for _ in range(500)]
+    check(all(S._safe_key(g) == g for g in guids),
+          "_safe_key() leaves every CreationGUID exactly as it is, so two "
+          "models' sidecars never share a name")
+    sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+    import heron_write as WRITE
+    pin = WRITE.DocumentPin()
+    pin.repin({"creationGuid": guids[0], "documentPath": r"C:\a\Tower B.rvt",
+               "document": "Tower B", "projectKey": "x"})
+    check(pin.project_key == guids[0],
+          "a pinned model's project key is its CreationGUID")
+    for reply in ({"documentPath": r"C:\a\Tower B.rvt", "document": "Tower B"},
+                  {"document": "Tower/B"}):
+        pin = WRITE.DocumentPin()
+        pin.repin(reply)
+        check(pin.project_key is None,
+              "and with no CreationGUID (%s) it is None - nothing kept, never "
+              "a path or a title" % ", ".join(sorted(reply)))
+
+
 def one_key_one_store(S, home):
     """Section 9 - PROPOSALS F14, decided 2026-11-15.
 
@@ -1520,6 +1555,7 @@ def main():
               "and a meta value that DIFFERS is still written on open")
 
         one_key_one_store(S, home)
+        files_beside_a_store(S)
 
     finally:
         shutil.rmtree(home, ignore_errors=True)
