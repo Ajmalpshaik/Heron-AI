@@ -281,11 +281,17 @@ compatibility-note: >
 #   "make a 600 thick raft under the building" -> CREATE_FOUNDATION_SLAB
 #   "pour a mat foundation inside these walls" -> CREATE_FOUNDATION_SLAB
 utterances:
+  # Row 5b-1658, 2026-11-16: a floor named BY ITS LEVEL reached no backend's
+  # answer - "make a floor on Level 2" went to SET_MASS_FLOOR_USAGE or
+  # CREATE_AREA_PLAN - so two phrases about a floor on a level and from points
+  # are in the first eight, which the re-ranker reads (D-134).
   - make a floor slab over this area
   - add a slab here
   - create the floor
+  - make a structural floor on this level
   - draw the slab for this area
   - model the floor
+  - create a floor from these boundary points
   - draw a slab with an arc edge
   # MOVED 2026-11-01 from CREATE_CEILING, merged into this card.
   - make a ceiling over this area
