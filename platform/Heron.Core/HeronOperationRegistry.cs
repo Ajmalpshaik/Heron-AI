@@ -252,6 +252,20 @@ namespace Heron.Core
                 { "undo_check",         HeronRisk.Read },
                 { "undo_guarded",       HeronRisk.Read },
 
+                // MODIFY - THE ACTIVITY PANE'S UNDO BUTTON (row 5b-1741, the
+                // owner's answer of 2026-11-16): Revit's own Undo, posted by
+                // D-157's rule exactly - only while Heron saw its last kept change
+                // land in the model on screen and has seen nothing since - for
+                // the change the button sits beside, WHICHEVER CHAT MADE IT: it is
+                // the modeller's own click in Revit, like Ctrl+Z, so no chat is
+                // asked. It changes the model, so it needs Changes ON, as D-163
+                // said, and the stop blocks it. ANSWERED ONLY FOR A JOB THE PANE'S
+                // IN-PROCESS DOOR QUEUED (RevitDispatcher.DispatchFromPane): over
+                // the pipe it is refused before the gate, so no chat can use it
+                // round Q-88. Its own name, never the first build's `undo_last`,
+                // which that build's Revit still answers by its older rule.
+                { "undo_from_pane",     HeronRisk.Modify },
+
                 // EXECUTE - the Activity pane's Select and Zoom (D-163): the
                 // selection and the view, by element id, in the model the change
                 // was made in. FIXED CODE IN THE ADD-IN, no transaction, so it

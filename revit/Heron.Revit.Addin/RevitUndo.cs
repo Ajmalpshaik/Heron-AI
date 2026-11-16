@@ -28,13 +28,24 @@ namespace Heron.Revit.Addin
     /// in this one call: no check-then-post, so no window between the two.
     /// Ctrl+Z in Revit is the modeller's and is never refused.
     ///
+    /// AND SO IS THE ACTIVITY PANE'S UNDO BUTTON (row 5b-1741, the owner's
+    /// answer of 2026-11-16): `undo_from_pane`, FromPane, the modeller's own
+    /// click in Revit - any chat's change, by D-157's rule, for the change the
+    /// button sits beside. It is answered only for a job the pane's in-process
+    /// door queued (RevitDispatcher.DispatchFromPane); off the pipe it is
+    /// refused (NotFromPane), so no chat can use it round Q-88. Both doors post
+    /// through the one Post.
+    ///
     /// THE OPERATION WAS `undo_last` IN THE FIRST BUILD, THEN `undo_guarded`
     /// (row 5b-1604, the second review), AND IS `undo_own` SINCE 2026-11-16.
     /// Each time what the request means changed, so the name did: an add-in
     /// built before the change knows only an older name, so it answers that
     /// it has no such operation and nothing is posted by its older rule -
     /// which would send Undo for whichever chat's change is on top. Nothing
-    /// answers `undo_last`. `undo_guarded` and `undo_check` are answered, by a
+    /// answers `undo_last` - the pane's button sent it, unanswered, until row
+    /// 5b-1741 gave the pane a name of its own; the first build's Revit still
+    /// knows `undo_last`, so it stays unanswered here and never means the
+    /// pane's rule. `undo_guarded` and `undo_check` are answered, by a
     /// refusal with nothing posted (OlderChat): only a chat started before
     /// this change still sends them, and it cannot say whose change it asks for.
     ///
@@ -432,6 +443,97 @@ namespace Heron.Revit.Addin
             if (checkOnly) return Checked(doc, key, refusal);
             if (refusal != null) return Json.Error(code, refusal);
 
+            return Post(app, doc, key, undo);
+        }
+
+        /// <summary>
+        /// `undo_from_pane` - THE ACTIVITY PANE'S UNDO BUTTON (row 5b-1741),
+        /// reached only through the pane's own in-process door: RevitOperations
+        /// answers it for no job the pipe queued.
+        ///
+        /// THE MODELLER'S OWN CLICK, LIKE CTRL+Z - the owner's answer of
+        /// 2026-11-16: it undoes Heron's last change in the model on screen,
+        /// whichever chat made it. So NO CHAT IS ASKED: not Q-88's ChatRefusal,
+        /// which stays a chat's rule, and not the model's hold (D-141), which
+        /// keeps two chats apart. Everything else is D-157's, asked exactly as a
+        /// chat's Undo asks it: Revit's own Undo, posted only while Heron saw its
+        /// last kept change land and has seen nothing change the model since.
+        ///
+        /// AND ONLY THE CHANGE THE BUTTON SITS BESIDE. The request names the
+        /// row's model and the run it was kept in: the model on screen must be
+        /// that model - Revit's Undo acts on the one on screen - and Heron's last
+        /// change there must be that run (HeronUndoGuard.PaneRefusal), or the
+        /// Undo would take a change the modeller did not press. Every refusal
+        /// posts nothing and says so.
+        /// </summary>
+        public static string FromPane(UIApplication app, string request)
+        {
+            var front = app == null ? null : app.ActiveUIDocument;
+            var doc = front == null ? null : front.Document;
+            if (doc == null)
+            {
+                return Json.Error("no_document",
+                    "No model is open in Revit, so there is nothing to undo. Nothing was sent to Revit "
+                    + "and nothing was undone.");
+            }
+
+            // THE ROW'S MODEL, ON SCREEN - by its title, as the run record names
+            // it and as Select and Zoom compare it (RevitShowElements). Two open
+            // models sharing a title are told apart below, by the run.
+            var document = Json.ReadString(request, "document");
+            if (string.IsNullOrEmpty(document)
+                || !string.Equals(doc.Title, document, StringComparison.Ordinal))
+            {
+                return Json.Error("wrong_document",
+                    (string.IsNullOrEmpty(document)
+                        ? "This change's record does not say which model it was made in"
+                        : "This change was made in \"" + document + "\"")
+                    + ", and the model on screen in Revit is \"" + doc.Title + "\". Revit's Undo acts "
+                    + "on the model on screen. Nothing was sent to Revit and nothing was undone."
+                    + (string.IsNullOrEmpty(document) ? ""
+                        : " Bring \"" + document + "\" to the front and press Undo again."));
+            }
+
+            var key = RevitOperations.DocumentKey(doc);
+            var undo = RevitCommandId.LookupPostableCommandId(PostableCommand.Undo);
+            bool canPost;
+            try { canPost = undo != null && app.CanPostCommand(undo); }
+            catch (Exception) { canPost = false; }
+
+            // D-157, AS FOR A CHAT; THEN THE PANE'S OWN QUESTION, which can only
+            // refuse more. No chat's.
+            var refusal = Guard.Refusal(key, doc.Title, true, canPost);
+            if (refusal == null)
+                refusal = Guard.PaneRefusal(key, doc.Title, Json.ReadString(request, "run"),
+                                            Json.ReadString(request, "fragment"));
+            if (refusal != null) return Json.Error("undo_refused", refusal);
+
+            return Post(app, doc, key, undo);
+        }
+
+        /// <summary>
+        /// `undo_from_pane` asked for by a job the pipe queued - a chat's, an
+        /// older client's, or one written by hand. Refused, NOTHING POSTED and
+        /// the guard not asked: only the pane's own button sends it, and a chat
+        /// that could would undo another chat's change round Q-88.
+        /// </summary>
+        internal static string NotFromPane()
+        {
+            return Json.Error("pane_only",
+                "Only the Undo button on Heron's Activity pane in Revit sends this - it is the "
+                + "modeller's own click there. Nothing was sent to Revit and nothing was undone. A "
+                + "chat undoes only a change it made itself, and Ctrl+Z in Revit undoes the last "
+                + "change, whoever made it.");
+        }
+
+        /// <summary>
+        /// THE ONE POST, for every door that may send Undo - a chat's `undo_own`
+        /// and the pane's `undo_from_pane` - each having asked every question
+        /// it must before it calls this. Revit's Undo command, posted; the
+        /// guard told it was sent; the dispatcher told to stop draining.
+        /// </summary>
+        private static string Post(UIApplication app, Document doc, string key, RevitCommandId undo)
+        {
             var said = Guard.SentSentence(key);
             var entry = Guard.Of(key);
             try

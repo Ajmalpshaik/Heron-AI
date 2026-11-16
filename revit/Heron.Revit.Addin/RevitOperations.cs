@@ -41,6 +41,22 @@ namespace Heron.Revit.Addin
         {
             var op = Json.ReadString(request, "op");
 
+            // ================= THE PANE'S OWN UNDO - ROW 5b-1741 =================
+            // The Activity pane's Undo button is the modeller's own click in
+            // Revit, and undoes Heron's last change whichever chat made it (the
+            // owner's answer, 2026-11-16). Asked for by anything else - any job
+            // the pipe queued, whatever its request carries - it is refused here,
+            // before the gate: nothing is posted, and a chat is not told to turn
+            // Changes on for a request refused either way. Without this a chat
+            // could send it and undo another chat's change round Q-88.
+            //
+            // WHICH DOOR IS THE JOB'S, never the request's text: only the pane's
+            // door (RevitDispatcher.DispatchFromPane) marks one, the mark is
+            // handed to the job as it is queued, and it is read off the job
+            // Revit's thread is running (RevitDispatcher.RunningFromPane) - false
+            // for anything that is not that job, so this fails closed.
+            if (op == "undo_from_pane" && !RevitDispatcher.RunningFromPane) return RevitUndo.NotFromPane();
+
             // ================= THE GATE =================
             // Every operation, one place, BEFORE any routing. This is what
             // makes docs/12 section 71 true - "risk level is declared in the
@@ -69,9 +85,18 @@ namespace Heron.Revit.Addin
             // never claims the model it frees.
             if (op == "release_models") return ReleaseModels(app, request);
 
-            string holdKey;
-            var held = HoldModel(app, request, out holdKey);
-            if (held != null) return held;
+            // THE PANE'S UNDO LOOKS AT NO CHAT'S HOLD. The hold keeps two CHATS
+            // apart (D-141); the pane's Undo is the modeller's own click, like
+            // Ctrl+Z, which no hold refuses - and refusing it for the hold's
+            // quiet time after a chat's change would refuse it exactly when the
+            // modeller presses it (row 5b-1741). It claims nothing either: the
+            // hold is neither looked at nor taken. D-157's guard still decides.
+            string holdKey = null;
+            if (op != "undo_from_pane")
+            {
+                var held = HoldModel(app, request, out holdKey);
+                if (held != null) return held;
+            }
 
             try
             {
@@ -321,6 +346,14 @@ namespace Heron.Revit.Addin
                     return RevitUndo.OlderChat(false);
                 case "undo_check":
                     return RevitUndo.OlderChat(true);
+
+                // ROW 5b-1741: THE ACTIVITY PANE'S UNDO BUTTON - D-157's rule,
+                // any chat's change, for the change the button sits beside.
+                // Only for the pane's own job, asked again here where it is
+                // routed, so no path round the refusal above reaches the post.
+                case "undo_from_pane":
+                    return RevitDispatcher.RunningFromPane
+                        ? RevitUndo.FromPane(app, request) : RevitUndo.NotFromPane();
 
                 // D-163: the Activity pane's Select and Zoom - selection and the
                 // view only, no transaction. RevitShowElements says why each part.

@@ -232,6 +232,15 @@ _KNOWN = {
     "undo_pending":      (NEVER_RAN, FIX_FIRST,
                           "Heron has not yet seen Revit run the Undo it sent a moment "
                           "ago, so nothing was run - look at the model and ask again"),
+    # Row 5b-1741: the Activity pane's own Undo, asked for by a request off the
+    # pipe. The add-in answers it only for a job the pane's in-process door
+    # queued, so every other is refused before the gate - nothing ran, and no
+    # chat's request can ever be let through: STOP, never a retry and never a
+    # way round. No chat's Heron sends it; this row is for one that tries.
+    "pane_only":         (NEVER_RAN, STOP,
+                          "only the Undo button on Heron's Activity pane in Revit sends that, "
+                          "so nothing was sent to Revit and nothing was undone - a chat undoes "
+                          "only a change it made itself"),
 
     # --- it ran ------------------------------------------------------------
     "still_running":     (RUNNING, WAIT,

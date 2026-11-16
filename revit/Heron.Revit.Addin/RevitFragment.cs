@@ -2739,6 +2739,11 @@ namespace Heron.Revit.Addin
         /// `chat` IS THE CHAT WHOSE REQUEST KEPT IT (Q-88) - the request's
         /// conversation, through HeronConversation.ChatOf. Only that chat is
         /// sent Undo for it; every other is refused, and Ctrl+Z still works.
+        ///
+        /// AND THE RUN THAT KEPT IT, for the Activity pane's Undo (row
+        /// 5b-1741): the workflow id of the job Revit's thread is running, the
+        /// id its run record carries - read here, where every keep is made, so
+        /// neither caller has to pass it.
         /// </summary>
         internal static string KeepAndWatch(TransactionGroup group, Document doc,
                                             HeronRollbackWitness.Watch watch,
@@ -2762,7 +2767,7 @@ namespace Heron.Revit.Addin
             {
                 var key = watch == null || watch.Document == null ? WitnessKey(doc) : watch.Document;
                 Undo.Kept(key, watch == null ? null : watch.Job, watch == null ? null : watch.Label,
-                          DateTime.Now, counted, read, chat);
+                          DateTime.Now, counted, read, chat, RevitDispatcher.RunningWorkflow);
             }
             catch (Exception ex)
             {
