@@ -1538,6 +1538,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-nz.md`](needs-checking/group-nz.md)
 
+## Group OA - the Setup a modeller downloads: one file, per user, every Revit year present, uninstall from Installed apps (2026-11-16)
+
+**Its own file:** [`needs-checking/group-oa.md`](needs-checking/group-oa.md)
+
 ## Group OF - a proof records which Heron add-in and which Revit build it was taken on, and says so when either moves: `built_on:` (2026-11-16)
 
 **Its own file:** [`needs-checking/group-of.md`](needs-checking/group-of.md)
