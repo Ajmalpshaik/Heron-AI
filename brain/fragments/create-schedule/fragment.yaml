@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SCH-026
 heron-step: 15
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,6 +9,20 @@ semantic-identity: "make a real schedule view of this category with these fields
 kind: action
 domain: revit.schedules
 capability: CREATE_SCHEDULE
+# VERSION 4 (2026-11-16) - A COLUMN REVIT ADDED ITSELF IS A COLUMN, and back
+# to DRAFT. FRAGMENT-ISSUES row 5b-1730 (Sruthina, Revit 2024, model `villa 2`,
+# Ajmalpshaik/Heron-AI#854 item a): a keynote legend asked with Key Value and
+# Keynote Text answered "'Key Value' could not be added - already included"
+# and "created with NO columns" while `madeAs` read back 2 columns - Revit's
+# CreateKeynoteLegend adds both itself, and the warning counted only the
+# fields this card added. Version 4 says a field the definition already holds
+# is "already a column" (never in `missingFields`), and judges "NO columns" by
+# the definition's own count after the add - the count `madeAs` reads.
+# Version 3 was PROVEN (the proof block below, kept as the record of what it
+# proved); its C# moved, so it is DRAFT again until NEEDS-CHECKING Group OC is
+# run (D-30) - on the owner's word of 2026-11-11 that a fragment found wrong
+# may be changed even though it is proven.
+#
 # VERSION 3 (2026-11-01, on the owner's word in the brief of that day's
 # session - FRAGMENT-ISSUES row 5b-1367, renumbered from 5b-1363 when main
 # took that number). Ajmal PS made a duct length schedule through Heron on his
@@ -41,7 +55,7 @@ capability: CREATE_SCHEDULE
 # settings of a schedule that exists, and are SET_SCHEDULE_OPTIONS'
 # (FRG-VIEW-155). Keys added to a key schedule are ADD_KEY_SCHEDULE_ROWS'
 # (FRG-VIEW-158): this makes the table, with no rows.
-version: 3
+version: 4
 source: OFFICIAL
 risk: MODIFY
 

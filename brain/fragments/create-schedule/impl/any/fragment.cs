@@ -21,6 +21,16 @@
 // and can have the fourth added; no schedule at all is a re-run. The refusal
 // is reserved for the cases where there is nothing to make.
 //
+// VERSION 4 (2026-11-16) - A COLUMN REVIT ADDED ITSELF IS A COLUMN (row
+// 5b-1730, issue #854 item a, villa 2 on Revit 2024). Revit's keynote legend
+// comes with Key Value and Keynote Text already in it, so asking for them
+// failed "already included", and the warning counted only what THIS card
+// added: "created with NO columns" one line above a read-back of 2. Now a
+// field the definition already holds - before the add, or after an add that
+// threw - is said to be a column already and is never put in
+// `missingFields`, and "NO columns" is judged by the definition's own column
+// count after the fields are added, the count `madeAs` reads.
+//
 // THE SCHEDULABLE FIELD LIST IS ASKED FOR ONCE. It is derived from the category
 // and every parameter bound to it, so it is not cheap, and asking per requested
 // field would multiply that by the number of columns.
@@ -380,9 +390,42 @@ if (schedule != null)
         availableNames.Add(fieldName);
     }
 
+    // VERSION 4 (row 5b-1730): the columns the definition already holds -
+    // a keynote legend's Key Value and Keynote Text are Revit's own.
+    Func<string, ScheduleField> columnNamed = wantedName =>
+    {
+        try
+        {
+            for (var i = 0; i < definition.GetFieldCount(); i++)
+            {
+                var existing = definition.GetField(i);
+                string existingName = null;
+                try { existingName = existing.GetName(); } catch { }
+                if (!string.IsNullOrEmpty(existingName) && sameText(existingName, wantedName)) return existing;
+            }
+        }
+        catch { }
+        return null;
+    };
+
+    // VERSION 4: "NO columns" is the definition's own count, never only
+    // what this card added.
+    Func<ScheduleDefinition, int> columnCount = d =>
+    {
+        try { return d.GetFieldCount(); } catch { return -1; }
+    };
+
     ScheduleField sortField = null;
     foreach (var key in wanted)
     {
+        var already = columnNamed(key);
+        if (already != null)
+        {
+            findings.Add(string.Format("'{0}' is already a column - Revit puts it in a {1} itself", key, kindWord));
+            if (sortWanted.Length > 0 && sameText(key, sortWanted)) sortField = already;
+            continue;
+        }
+
         SchedulableField match;
         if (!available.TryGetValue(key, out match))
         {
@@ -400,6 +443,15 @@ if (schedule != null)
         }
         catch (Exception ex)
         {
+            // VERSION 4: an add refused because the column is there already
+            // is not a missing column.
+            var thereAfterAll = columnNamed(key);
+            if (thereAfterAll != null)
+            {
+                findings.Add(string.Format("'{0}' is already a column - Revit puts it in a {1} itself", key, kindWord));
+                if (sortWanted.Length > 0 && sameText(key, sortWanted)) sortField = thereAfterAll;
+                continue;
+            }
             missingFields.Add(key);
             findings.Add(string.Format("'{0}' could not be added - {1}", key, ex.Message));
         }
@@ -439,7 +491,7 @@ if (schedule != null)
             keyOk ? "" : string.Format(", and the key parameter could not be named '{0}' - it "
                 + "stays whatever Revit called it, which is 'Key Name' on every one of them", keyName)));
     }
-    else if (fieldsAdded.Count == 0)
+    else if (columnCount(definition) == 0)
     {
         findings.Add(string.Format("the {0} was created with NO columns - it will print as an empty box",
             kindWord));
