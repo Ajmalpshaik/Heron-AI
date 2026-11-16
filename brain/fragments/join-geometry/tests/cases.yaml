@@ -10,6 +10,15 @@ positive:
       `changed` is 0 and all twelve are in `alreadyRight`. A second run
       reporting twelve joins again would be counting work it did not do
 
+  # VERSION 4 (2026-11-16) - the guard on the box test (row 5b-1661).
+  - given: >
+      a wall standing on a floor - its base on the floor's top face, touching
+      only at that face - the floor the target, join true
+    expect: >
+      the wall is SENT and joined, changed 1, not named in `wouldNot`. A box
+      test that refused a pair touching only at a face would be refusing too
+      much; this is the case that catches it
+
 negative:
   - given: join false on a set that is joined
     expect: >
@@ -20,6 +29,17 @@ negative:
     expect: >
       named in `wouldNot` with the reason, and the rest of the batch still done.
       Refusing to join is a normal outcome here, not an error
+
+  # VERSION 4 (2026-11-16) - row 5b-1661's own pair, FAILS ON VERSION 3.
+  - given: >
+      two walls along (0, 6000)-(6000, 6000), one on Level 1 and one on Level
+      2, and as the target a floor on Level 2 at 8000..14000 x 0..4000 - no
+      wall within two metres of it - join true
+    expect: >
+      changed 0; both walls in `wouldNot` - "does not touch ... so it was not
+      sent"; AreElementsJoined false for each pair afterwards; no QUANTITIES
+      finding. Version 3 said "2 joined" here: Revit's JoinGeometry accepted
+      the pair with its "joined but do not intersect" warning
 
   - given: the target element also present inside `elements`
     expect: >
