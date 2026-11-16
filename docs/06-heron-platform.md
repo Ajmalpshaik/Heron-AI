@@ -204,7 +204,7 @@ Proposed hard boundaries, to be treated as non-negotiable:
 
 1. **Agent creation is always a proposal.** `PROPOSED` is the only status the system may assign to itself.
 2. **A human approves the `PROPOSED → APPROVED` transition.** Always. This is the one place where "the user does BIM work, Heron does everything else" is deliberately broken, and it should be.
-3. **New agents run in a sandbox first** — a detached copy of a model, never the live document.
+3. **New agents run watched, against a detached copy, first** — a detached copy of a model, never the live document; every attempt recorded, nothing contained ([D-170](decisions/D-170.md), 2026-11-16; this point read *"New agents run in a sandbox first"* until then, the word D-84 and D-170 took out of the places that bind).
 4. **`ACTIVE` requires a passing test suite** the agent did not write for itself.
 5. **Self-modification of Core is forbidden.** Heron may propose changes to its own core; it may not apply them.
 
