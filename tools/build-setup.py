@@ -55,6 +55,7 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 import zipfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -131,20 +132,22 @@ def sha256(path):
     return digest.hexdigest()
 
 
-def stage(dist, out):
+def stage(dist, stage_root):
     """
-    The folder the Setup carries, built fresh under out/setup-stage. Returns its
+    The folder the Setup carries, built fresh under `stage_root`. Returns its
     path. Refuses a dist folder whose build did not finish: checksums.txt is
     written last (build-release-assets.py), so a folder without it is not one.
+
+    STAGED IN A TEMPORARY FOLDER, NEVER INSIDE THE REPOSITORY. A whole copy of
+    Heron left in dist/setup-stage was read by tools/check-docs.py as 2,915
+    broken links and by check-structure.py as code in an undeclared part
+    (2026-11-16) - dist/ is ignored by git, not by the gates.
     """
     for need in (WORKSPACE, CHECKSUMS):
         if not os.path.isfile(os.path.join(dist, need)):
             raise IOError("%s holds no %s, so its build did not finish. Run "
                           "python tools/build-release-assets.py --out %s first." % (dist, need, dist))
 
-    stage_root = os.path.join(out, "setup-stage")
-    if os.path.isdir(stage_root):
-        shutil.rmtree(stage_root)
     heron = os.path.join(stage_root, "Heron AI")
     payload = os.path.join(heron, "payload")
     os.makedirs(payload)
@@ -216,8 +219,17 @@ def main():
             print("The assets did not all build, so no Setup was made.")
             return 1
 
+    stage_root = tempfile.mkdtemp(prefix="heron-setup-stage-")
     try:
-        heron = stage(dist, out)
+        return make(args, dist, out, ver, name, iscc, stage_root)
+    finally:
+        shutil.rmtree(stage_root, ignore_errors=True)
+
+
+def make(args, dist, out, ver, name, iscc, stage_root):
+    """Stage, run Inno Setup, and say what was made. The exit code."""
+    try:
+        heron = stage(dist, stage_root)
     except (IOError, OSError, ValueError) as e:
         print(str(e))
         return 1

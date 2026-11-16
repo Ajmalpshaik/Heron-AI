@@ -18,8 +18,8 @@ open, the checksum of every payload, the second-copy check and the put-back of `
 Heron's Python side. The Setup copies the folder, runs
 
 ```text
-heron-install --from "<Heron folder>\payload" --no-check
-heron-install --add-to-claude            only when its tick is turned on - it starts OFF
+heron-install --from "<Heron folder>\payload" --no-check      plus --no-python when that tick is off
+heron-install --add-to-claude            when its tick is on - both ticks start ON
 ```
 
 and shows what they said, word for word. Its uninstaller runs `heron-install --uninstall --list`, shows

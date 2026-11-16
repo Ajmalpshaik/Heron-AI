@@ -90,10 +90,19 @@ SignedUninstaller=yes
 ConfirmUninstall=Remove Heron AI from this PC?%n%nYour own Heron data is not touched - settings, the audit log and anything Heron has learned all stay where they are.
 
 [Tasks]
-; LEFT OFF BY DEFAULT. On, EVERY Claude chat in EVERY folder starts Heron's
-; server - and docs/WHAT-TO-INSTALL measured 2.0 to 2.3 GB per open chat on a
-; 16 GB laptop. Opening the Heron folder in Claude keeps working without it.
-Name: "claude"; Description: "Also add Heron to Claude Code for my user, so every chat in any folder can use it (close Claude first; each open chat then runs Heron)"; Flags: unchecked
+; BOTH ON BY DEFAULT - the owner's word, 2026-11-16: a new modeller must never
+; have to find Heron's program folder, which sits under the hidden AppData.
+;
+; python: Heron's Python side - the pinned packages, the knowledge store and a
+; readiness check (PythonSetup). Off passes --no-python: for a PC whose Python
+; somebody else manages, and for the owner's own test, where building the store
+; from this folder would change what every other chat on the PC reads.
+Name: "python"; Description: "Set up Heron's Python side - its packages, its search index and a readiness check (needs Python 3.11 to 3.14)"
+; claude: Heron's one user-scope entry in Claude Code, so a chat in ANY folder
+; can use it. Each open chat then starts Heron's server: docs/WHAT-TO-INSTALL
+; measured 2.0 to 2.3 GB per chat on a 16 GB laptop WITH the optional search
+; add-ons, which this Setup does not install - a plain install is not measured.
+Name: "claude"; Description: "Add Heron to Claude Code for my user, so every chat in any folder can use it (close Claude first - each open chat then runs Heron in the background)"
 
 [Files]
 Source: "{#Stage}\*"; DestDir: "{app}"; Excludes: "HeronInstaller.exe,heron-install.exe"; Flags: recursesubdirs createallsubdirs ignoreversion
@@ -221,18 +230,25 @@ end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
 var
-  Said, ClaudeSaid, Verdict, Report: String;
+  Said, ClaudeSaid, Verdict, Report, Params: String;
   Code: Integer;
 begin
   if CurStep <> ssPostInstall then exit;
 
   WizardForm.StatusLabel.Caption :=
-    'Installing Heron into each Revit, then Heron''s Python side. This can take a few minutes.';
+    'Installing Heron into each Revit. This can take a few minutes.';
 
-  { --no-check: the Setup carries its own payload and needs no network. }
-  Code := RunHeronInstall('--from "' + ExpandConstant('{app}\payload') + '" --no-check', Said);
+  { --no-check: the Setup carries its own payload and needs no network.
+    --no-python when its tick was turned off - heron-install's own flag. }
+  Params := '--from "' + ExpandConstant('{app}\payload') + '" --no-check';
+  if not WizardIsTaskSelected('python') then
+    Params := Params + ' --no-python';
+  Code := RunHeronInstall(Params, Said);
   case Code of
-    0: Verdict := 'Heron is installed. Start Revit and look for the Heron tab.';
+    0: if WizardIsTaskSelected('python') then
+         Verdict := 'Heron is installed. Start Revit and look for the Heron tab.'
+       else
+         Verdict := 'Heron''s add-in is installed. Its Python side was left out, as asked - run this Setup again with that tick on to add it.';
     3: Verdict := 'Heron was NOT installed: a Revit stayed open. Close it and run this Setup again.';
   else
     Verdict := 'Something did not install - Heron''s report below says what, and what to do.';
