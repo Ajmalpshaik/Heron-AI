@@ -6,7 +6,7 @@
 # Heron-Layer:  tool
 # See docs/29-metadata-standard.md
 
-"""
+r"""
 Build Heron's Setup for modellers - one file, per user (D-165).
 
     python tools/build-setup.py                    build every asset, then the Setup
