@@ -44,7 +44,7 @@ purpose: >
   new name. Heron never closes that model's window.
 
   **ANOTHER OPEN DOCUMENT IS SAVED INSIDE THE RUN**, as version 2 did - so a
-  preview of it still writes its file (row 5b-1749).
+  preview of it still writes its file (row 5b-1824).
 
   **A LOCAL SAVE OF A WORKSHARED MODEL IS NOT A SYNC.** It reaches nobody
   else on the job, so it says so - `SYNC_WITH_CENTRAL` is the other job. The

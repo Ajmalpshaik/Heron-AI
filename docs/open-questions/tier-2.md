@@ -730,7 +730,7 @@ EN9's `replaceFile` need the owner's word on a route first**: D-117 refuses `--a
 a DRAFT, `try-once` takes only MODIFY, and a preview no longer saves - point 2 as the question foresaw.
 **Not decided here:** the new decision the question names for the act after the group - the answer is the
 other helper's to record; whether a save of ANOTHER open document should wait for a Keep too, and Revit's
-Keep or Discard box telling a publish its save is "done already" ([row 5b-1749](../fragment-issues/row-5b-1749.md));
+Keep or Discard box telling a publish its save is "done already" ([row 5b-1824](../fragment-issues/row-5b-1824.md));
 and the methods' *"Heron cannot save the model it works in"* lines, true while the card is DRAFT, which
 change the day it is PROVEN.
 
