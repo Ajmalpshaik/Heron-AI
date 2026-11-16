@@ -286,7 +286,148 @@ function Save-PreviousInstall {
     if (Test-Path $backupDir) { Remove-Item $backupDir -Recurse -Force }
     Move-Item $staging -Destination $backupDir -Force
 
+    # Restore-PreviousInstall reads this: a backup made by THIS run is the one
+    # a half-finished replace may put back. One left by an earlier run is not.
+    $script:keptPrevious = $true
+
     Write-Host "  kept the install being replaced in $backupDir"
+}
+
+$script:keptPrevious = $false
+
+function Restore-PreviousInstall {
+    <#
+    .SYNOPSIS
+        After a replace that did not finish, put back what Save-PreviousInstall
+        kept a moment ago, by itself - D-167. Returns one sentence saying what
+        is in the folder now.
+
+    .NOTES
+        -Rollback is for an install that FINISHED and turned out bad. This is
+        for one that stopped half-way: a file still open, a full disk, a copy
+        that died. Until 2026-11-16 that case stopped and printed the
+        -Rollback line, leaving a modeller with half an add-in until somebody
+        typed it - and the Setup's modeller never opens a terminal.
+
+        NOTHING HERE THROWS. It runs inside the catch of a deploy that already
+        failed, and a second exception would hide the first one's sentence,
+        which is the one that says what went wrong.
+    #>
+    if ($script:keptPrevious -and (Test-Path $backupRecord)) {
+        # FILE BY FILE, AND A FILE STILL THERE AND UNCHANGED IS LEFT ALONE.
+        # The commonest way here is a delete that stopped on a file something
+        # holds open - Revit, or another program - and that file IS the old
+        # install's own copy, so it needs nothing. Copying over it fails, and
+        # a folder-wide Copy-Item stops at that failure even when told to
+        # carry on: measured 2026-11-16 in a scratch folder, it left 17 of 29
+        # files. So each file is compared, and only a missing or different one
+        # is copied, each in its own try.
+        $notBack = @()
+        $sourceRoot = (Resolve-Path $backupAddinDir).Path
+        foreach ($kept in @(Get-ChildItem $backupAddinDir -Recurse -File -ErrorAction SilentlyContinue)) {
+            $rel  = $kept.FullName.Substring($sourceRoot.Length).TrimStart('\')
+            $dest = Join-Path $addinDir $rel
+            try {
+                if ((Test-Path $dest) -and
+                    ((Get-FileHash $dest -Algorithm SHA256).Hash -eq (Get-FileHash $kept.FullName -Algorithm SHA256).Hash)) {
+                    continue
+                }
+                New-Item -ItemType Directory -Force -Path (Split-Path -Parent $dest) | Out-Null
+                Copy-Item $kept.FullName -Destination $dest -Force
+            }
+            catch {
+                $notBack += $rel
+            }
+        }
+        if (Test-Path $backupManifest) {
+            try { Copy-Item $backupManifest -Destination $manifest -Force }
+            catch { $notBack += $productAddin }
+        }
+
+        # READ BACK, NOT ASSUMED - the same rule as every other path here: the
+        # assembly against the hash recorded when it was kept, and the count.
+        $was = Get-Content $backupRecord -Raw -ErrorAction SilentlyContinue | ConvertFrom-Json
+        $dll = Join-Path $addinDir $productAssembly
+        $count = @(Get-ChildItem $addinDir -Recurse -File -ErrorAction SilentlyContinue).Count
+        $same = $was -and $was.sha256 -and (Test-Path $dll) -and
+                ((Get-FileHash $dll -Algorithm SHA256).Hash -eq $was.sha256) -and
+                ($null -eq $was.fileCount -or $count -eq [int]$was.fileCount)
+        if ($same -and (Test-Path $manifest) -and $notBack.Count -eq 0) {
+            return "The install that was there before has been put back by itself: $count file(s), and its assembly reads the same as when it was kept."
+        }
+        return "Putting back the install that was there before did not finish either ($($notBack.Count) file(s) not put back), so do not start Revit $RevitVersion yet. It is still kept in $backupDir; close whatever has the files open, then put it back with:`n  .\tools\deploy-addin.ps1 -RevitVersion $RevitVersion -Product $Product -Rollback"
+    }
+
+    # NOTHING WAS INSTALLED BEFORE, so there is nothing to put back - only half
+    # an add-in to take away, so that Revit does not find it and fail to load it.
+    Remove-Item -Path $addinDir -Recurse -Force -ErrorAction SilentlyContinue
+    if (Test-Path $manifest) { Remove-Item $manifest -Force -ErrorAction SilentlyContinue }
+    if ((Test-Path $addinDir) -or (Test-Path $manifest)) {
+        return "Nothing was installed for Revit $RevitVersion before, and the half-copied files could not all be taken away: $addinDir. Close whatever has them open, then delete that folder and $manifest."
+    }
+    return "Nothing was installed for Revit $RevitVersion before, and the half-copied files have been taken away."
+}
+
+function Get-AddinEntries {
+    <#
+    .SYNOPSIS
+        Each add-in one manifest declares: its id, and the assembly it loads.
+        A file that is not readable XML gives nothing - Revit would refuse it
+        anyway, and judging another vendor's file is not this script's job.
+    #>
+    param([string] $Path)
+
+    $raw = Get-Content -Path $Path -Raw -ErrorAction SilentlyContinue
+    $xml = $raw -as [xml]
+    if (-not $xml) { return @() }
+
+    $found = @()
+    foreach ($node in @($xml.SelectNodes("//AddIn"))) {
+        $id = $node.SelectSingleNode("AddInId")
+        if (-not $id) { $id = $node.SelectSingleNode("ClientId") }
+        $asm = $node.SelectSingleNode("Assembly")
+        $found += [pscustomobject]@{
+            Id       = if ($id)  { $id.InnerText.Trim().Trim('{', '}') } else { "" }
+            Assembly = if ($asm) { $asm.InnerText.Trim() }               else { "" }
+        }
+    }
+    return $found
+}
+
+function Find-OtherCopy {
+    <#
+    .SYNOPSIS
+        Every OTHER manifest Revit reads for this release that loads this
+        product - by its add-in id or by its assembly's name - D-167.
+
+    .NOTES
+        EVERY FOLDER REVIT READS FOR THIS RELEASE. Per user is where Heron
+        goes; the all-users ones come from HeronRevit.ps1, which spells every
+        Revit path once - Get-RevitAllUserAddinsFolders, read and never written.
+        A second Heron in any of them is one Revit refuses, or loads twice, and
+        the modeller is told only that it cannot run the external application.
+
+        Heron's OTHER products are not copies: each has its own id and its own
+        assembly, so neither test matches them.
+    #>
+    param([string[]] $OurIds)
+
+    $folders = @($target) + @(Get-RevitAllUserAddinsFolders -RevitVersion $RevitVersion)
+
+    $others = @()
+    foreach ($folder in $folders) {
+        if (-not (Test-Path $folder)) { continue }
+        foreach ($file in @(Get-ChildItem -Path $folder -Filter *.addin -File -ErrorAction SilentlyContinue)) {
+            if ($file.FullName -ieq $manifest) { continue }
+            foreach ($entry in (Get-AddinEntries -Path $file.FullName)) {
+                $sameId  = $entry.Id -and ($OurIds -contains $entry.Id)
+                $leaf    = if ($entry.Assembly) { Split-Path -Leaf $entry.Assembly } else { "" }
+                $sameDll = $leaf -ieq $productAssembly
+                if ($sameId -or $sameDll) { $others += $file.FullName; break }
+            }
+        }
+    }
+    return $others
 }
 
 if ($Rollback) {
@@ -661,6 +802,35 @@ Write-Host "  built for $(Get-RuntimeName $wantedTfm), which is what Revit $Revi
 # comment further down still records the day that bit.
 $isDotNet = $wantedTfm.StartsWith(".NETCoreApp")
 
+# Point the manifest at the deployed assembly - WHICH MANIFEST, worked out here,
+# before anything is replaced, because the second-copy check below reads its id.
+#
+# A HANDED-IN FOLDER BRINGS ITS OWN MANIFEST - row 5b-371. Every product copies
+# its .addin into its build output, so a release asset carries it beside the
+# assembly. A PC that unzipped heron-project.zip has no revit\ folder at all,
+# and reading the manifest only from there refused every download with "the
+# Heron files are incomplete" - after the assemblies had been copied. The copy
+# in the folder is also the one built with what is being installed. A local
+# build still reads the source tree's, exactly as before.
+$manifestSource = Join-Path $repoRoot "revit\$productProject\$productAddin"
+if ($FromFolder) {
+    $handedIn = Join-Path $buildOut $productAddin
+    if (Test-Path $handedIn) { $manifestSource = $handedIn }
+}
+if (-not (Test-Path $manifestSource)) {
+    throw "$manifestSource is missing, so Revit would have a DLL it never looks at. The Heron files are incomplete - fetch them again."
+}
+
+# A SECOND COPY OF THIS ADD-IN, refused before anything is replaced - D-167.
+# Two manifests loading one add-in is a state Revit settles by refusing one, or
+# by loading both, and it names neither. Asked here, after every other check has
+# passed and before the backup, so a refusal changes nothing at all.
+$ourIds = @(Get-AddinEntries -Path $manifestSource | ForEach-Object { $_.Id } | Where-Object { $_ })
+$otherCopies = @(Find-OtherCopy -OurIds $ourIds)
+if ($otherCopies.Count -gt 0) {
+    throw "Revit $RevitVersion already has another manifest that loads '$productName': $($otherCopies -join '; '). Two copies of one add-in make Revit refuse one of them or load both, and it says neither. Remove that manifest and the folder it points to - an all-users one needs whoever installed it - then run this again. Nothing was changed."
+}
+
 # The last moment at which the install being replaced still exists. Every
 # check above has passed by now, so this copies only when a deploy is really
 # about to happen - a run that threw on the wrong build flavour leaves the
@@ -684,9 +854,15 @@ Save-PreviousInstall
 #
 # IF THE DELETE DOES NOT FULLY SUCCEED, STOP - R-38b. A clean refusal is
 # recoverable, and Save-PreviousInstall has already run, so the previous
-# install is in the backup folder and -Rollback can put it back. A half
-# removed install is what is NOT recoverable, so nothing is copied after a
-# delete that did not finish.
+# install is in the backup folder. A half removed install is what is NOT
+# recoverable, so nothing is copied after a delete that did not finish.
+#
+# AND SINCE 2026-11-16 THE BACKUP GOES BACK BY ITSELF - D-167. Everything from
+# here to the manifest is one replace: a throw anywhere inside it lands in the
+# catch at the end, which puts back what Save-PreviousInstall kept (or, on a
+# first install, takes the half-copied files away) and then throws the
+# original sentence with what is there now added to it.
+try {
 if (Test-Path $addinDir) {
     # Never anything but this product's own folder under this release's Addins
     # directory. A path that is not exactly that is a bug in the product list,
@@ -700,7 +876,7 @@ if (Test-Path $addinDir) {
 
     if (Test-Path $addinDir) {
         $left = @(Get-ChildItem $addinDir -Recurse -File -ErrorAction SilentlyContinue)
-        throw "Could not fully remove the previous install of '$productName' at $addinDir - $($left.Count) file(s) are still there. Something has them open. NOTHING FURTHER WAS CHANGED, and the install being replaced is in $backupDir; put it back with:`n  .\tools\deploy-addin.ps1 -RevitVersion $RevitVersion -Product $Product -Rollback"
+        throw "Could not fully remove the previous install of '$productName' at $addinDir - $($left.Count) file(s) are still there. Something has them open. NOTHING FURTHER WAS CHANGED."
     }
 }
 
@@ -795,24 +971,9 @@ if ($isDotNet -and -not (Test-Path $deployedDeps)) {
     throw "Deployment finished but $deployedDeps is not there, and Revit $RevitVersion needs it. Do not start Revit against this folder."
 }
 
-# Point the manifest at the deployed assembly.
+# Point the manifest at the deployed assembly - $manifestSource was worked out
+# before the backup, above, because the second-copy check reads its id.
 #
-# A HANDED-IN FOLDER BRINGS ITS OWN MANIFEST - row 5b-371. Every product copies
-# its .addin into its build output, so a release asset carries it beside the
-# assembly. A PC that unzipped heron-project.zip has no revit\ folder at all,
-# and reading the manifest only from there refused every download with "the
-# Heron files are incomplete" - after the assemblies had been copied. The copy
-# in the folder is also the one built with what is being installed. A local
-# build still reads the source tree's, exactly as before.
-$manifestSource = Join-Path $repoRoot "revit\$productProject\$productAddin"
-if ($FromFolder) {
-    $handedIn = Join-Path $buildOut $productAddin
-    if (Test-Path $handedIn) { $manifestSource = $handedIn }
-}
-if (-not (Test-Path $manifestSource)) {
-    throw "$manifestSource is missing, so Revit would have a DLL it never looks at. The Heron files are incomplete - fetch them again."
-}
-
 # Point the shipped manifest at where the assembly actually landed. The file
 # in the repository names the DLL; the deployed one names the path under the
 # release folder.
@@ -841,6 +1002,17 @@ $manifestXml.Replace($needle, $replacement) | Set-Content -Path $manifest -Encod
 # rather than copied, so it should carry no marker - cleared anyway, because
 # the cost is nothing and the failure it prevents is unreadable.
 Unblock-File -Path $manifest -ErrorAction SilentlyContinue
+}
+catch {
+    # The replace above did not finish - put things back first, then say both:
+    # what went wrong, and what is in the folder now. D-167.
+    $why = $_.Exception.Message
+    # Restore-PreviousInstall catches what it can; this catches what it
+    # cannot, so the first sentence - what went wrong - is never lost.
+    try { $now = Restore-PreviousInstall }
+    catch { $now = "Putting back the install that was there before failed too ($($_.Exception.Message)). It is kept in $backupDir; put it back with:`n  .\tools\deploy-addin.ps1 -RevitVersion $RevitVersion -Product $Product -Rollback" }
+    throw "$why`n$now"
+}
 
 Write-Host ""
 Write-Host "Deployed to $addinDir"

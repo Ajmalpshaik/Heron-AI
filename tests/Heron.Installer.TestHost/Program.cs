@@ -1216,6 +1216,11 @@ namespace Heron.Installer.TestHost
             // look, plus the real runner started on this machine.
             PythonSetupChecks.Run(Check, Names);
 
+            // ================================================== THE SETUP
+            // D-167: Heron's entry in Claude Code's settings, and the two
+            // command-line actions the Setup calls - SetupChecks.
+            SetupChecks.Run(Check, Names);
+
             Console.WriteLine();
             Console.WriteLine("The install location is per user, and says why that matters");
             Check(Names(InstallerScreen.InstallLocation, "APPDATA"),
