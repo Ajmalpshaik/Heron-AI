@@ -141,7 +141,14 @@ namespace Heron.Installer.App
             // installed Heron a modeller keeps; a checkout or an unzipped folder
             // opened by hand is somebody working on Heron, whose chats already
             // reach it through the folder's own .mcp.json.
-            var window = new InstallerWindow(screen, VersionOf(manifest), handover != null);
+            //
+            // AND NOT ON A DEVELOPER'S PC - DeveloperCopy, D-167 amended
+            // 2026-11-16. There the installed Heron steps aside: no Claude tick,
+            // and a line before Install saying what it does to Revit.
+            var developer = DeveloperCopy.StepsAsideFor(root);
+            var window = new InstallerWindow(screen, VersionOf(manifest),
+                                             handover != null && developer == null,
+                                             developer == null ? null : DeveloperCopy.Warning(developer));
             window.InstallPressed += delegate (IReadOnlyList<string> products,
                                                IReadOnlyList<string> releases,
                                                IReadOnlyList<InstallStep> removals)

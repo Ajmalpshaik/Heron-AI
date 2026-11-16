@@ -57,6 +57,19 @@ itself and never closes Revit.
 **The window's Remove Heron** takes Heron out of Revit and only that. Installed by the Setup, the folder
 and the Claude Code entry come out through Installed apps, and the window says so after a removal.
 
+## On a developer's PC it steps aside
+
+**The owner's word, 2026-11-16: *"for me only it will from the project"*** (D-167, amended a second time).
+A PC whose Heron chats run from a git checkout has `%USERPROFILE%\.heron\developer-checkout.json`, naming
+that checkout - every such chat leaves it. A modeller's PC never has it. Where it names a checkout still
+on disk, the installed Heron:
+
+- **follows that checkout's search store** like a worktree does, and never rebuilds it from its own files;
+- **leaves the Commands panel's runner note** to the checkout's chats;
+- **is not added to Claude Code** - the window shows no such tick, and `--add-to-claude` says why;
+- **warns before Install** that its add-in takes the checkout's place in Revit until the developer
+  deploys from their folder again - Revit loads one Heron per year, whichever went in last.
+
 ## What it never does
 
 - **Write `heron.config`.** Changes, Admin, Publish and Ask to Keep stay as they are - off on a new PC.

@@ -82,7 +82,8 @@ namespace Heron.Installer.App
         /// <summary>Whether "Add Heron to Claude Code" is offered and ticked.</summary>
         public bool AddToClaude { get { return _claude != null && _claude.IsChecked == true; } }
 
-        public InstallerWindow(InstallerScreen screen, string version, bool offerClaude)
+        public InstallerWindow(InstallerScreen screen, string version, bool offerClaude,
+                               string developerWarning)
         {
             if (screen == null) throw new ArgumentNullException("screen");
             _screen = screen;
@@ -141,6 +142,12 @@ namespace Heron.Installer.App
                 _claude.ToolTip = ClaudeCodeEntry.WhatTheTickDoes;
                 page.Children.Add(_claude);
             }
+
+            // A DEVELOPER'S PC - the line is DeveloperCopy's, and Program says
+            // whether there is one. Drawn before Install, because pressing it
+            // replaces the developer's add-in in Revit.
+            if (developerWarning != null)
+                page.Children.Add(Notice(developerWarning));
 
             // BEFORE Install, never after it fails - Stage 4 item 6. Kept, so
             // it can be drawn again once what is open has changed - 5b-1068.

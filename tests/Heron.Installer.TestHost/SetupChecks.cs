@@ -100,6 +100,54 @@ namespace Heron.Installer.TestHost
             check(ClaudeCodeEntry.ClientIdIn(null) == null && ClaudeCodeEntry.ClientIdIn("not json") == null,
                   "  and no file, or a damaged one, gives none rather than a guess");
 
+            // A DEVELOPER'S PC - D-167, amended 2026-11-16: "for me only it will
+            // from the project". The note is the Python side's; this reads it
+            // by the same rule, against folders made here and nowhere else.
+            Console.WriteLine();
+            Console.WriteLine("D-167 - ON A DEVELOPER'S PC THE INSTALLED HERON STEPS ASIDE");
+            var dev = Path.Combine(Path.GetTempPath(), "heron-dev-" + Guid.NewGuid().ToString("N"));
+            try
+            {
+                var home = Path.Combine(dev, "home");
+                var checkout = Path.Combine(dev, "Heron Ai");
+                var installed = Path.Combine(dev, "Programs", "Heron AI");
+                var worktree = Path.Combine(dev, "worktree");
+                Directory.CreateDirectory(home);
+                Directory.CreateDirectory(Path.Combine(checkout, ".git"));
+                Directory.CreateDirectory(Path.Combine(checkout, "brain", "fragments"));
+                Directory.CreateDirectory(installed);
+                Directory.CreateDirectory(worktree);
+                File.WriteAllText(Path.Combine(worktree, ".git"), "gitdir: ../Heron Ai/.git/worktrees/w");
+                var note = Path.Combine(home, DeveloperCopy.NoteName);
+
+                check(DeveloperCopy.StepsAsideFor(installed, home) == null,
+                      "no note - a modeller's PC - and the installed Heron is their Heron");
+                File.WriteAllText(note, new JsonObject { ["checkout"] = checkout }.ToJsonString());
+                check(DeveloperCopy.StepsAsideFor(installed, home) == checkout,
+                      "a note naming a git checkout, and the installed Heron steps aside for it");
+                check(DeveloperCopy.StepsAsideFor(checkout, home) == null,
+                      "  but never the checkout itself");
+                check(DeveloperCopy.StepsAsideFor(worktree, home) == null,
+                      "  and never a worktree - that is the developer's own work");
+                File.WriteAllText(note, new JsonObject { ["checkout"] = Path.Combine(dev, "moved") }.ToJsonString());
+                check(DeveloperCopy.StepsAsideFor(installed, home) == null,
+                      "a note naming a folder that is gone is forgotten, not followed");
+                File.WriteAllText(note, new JsonObject { ["checkout"] = installed }.ToJsonString());
+                check(DeveloperCopy.StepsAsideFor(installed, home) == null,
+                      "  and so is one naming a folder that is not a git checkout");
+                File.WriteAllText(note, "{ \"checkout\": ");
+                check(DeveloperCopy.StepsAsideFor(installed, home) == null,
+                      "  and one that does not read as JSON");
+                check(names(DeveloperCopy.Warning(checkout), new[] { checkout, "Revit", "deploy", "Claude Code" }),
+                      "the window's line names the checkout, Revit, deploying again and Claude Code");
+                check(names(DeveloperCopy.NotAddedToClaude(checkout), new[] { "NOT added", checkout, "Nothing was changed" }),
+                      "  and Claude's refusal names the checkout and that nothing changed");
+            }
+            finally
+            {
+                try { Directory.Delete(dev, true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+            }
+
             // THE WORDS BESIDE THE WINDOW'S TICK - D-167, appended 2026-11-16.
             // Ticking is the asking, so the line itself names what a modeller
             // must do first, and the hover names what it writes and how it

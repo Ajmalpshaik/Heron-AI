@@ -422,6 +422,27 @@ def main():
     check("handover != null)" in entry_code,
           "and it is offered only on the Setup's route")
 
+    # A DEVELOPER'S PC - D-167, amended 2026-11-16: "for me only it will from
+    # the project". The rule is DeveloperCopy's, run against folders in the
+    # TestHost; what is held here is that the window and Claude's entry ask it.
+    check("var developer = DeveloperCopy.StepsAsideFor(root);" in entry_code
+          and "handover != null && developer == null" in entry_code,
+          "on a developer's PC the Claude tick is not offered at all")
+    check("DeveloperCopy.Warning(developer)" in entry_code
+          and "if (developerWarning != null)" in window_code
+          and window_code.index("if (developerWarning != null)")
+          < window_code.index('Content = "Install"'),
+          "and the window says, BEFORE Install, that the add-in takes the "
+          "developer's place in Revit until they deploy again")
+    claude_source = code_of(read(os.path.join(ROOT, "platform", "Heron.Installer",
+                                              "ClaudeCodeEntry.cs")))
+    apply_at = claude_source.find("public static ClaudeStep Apply(")
+    aside_at = claude_source.find("DeveloperCopy.StepsAsideFor(heronFolder)", apply_at)
+    running_at = claude_source.find("RunningClaudes() > 0", apply_at)
+    check(-1 not in (apply_at, aside_at, running_at) and aside_at < running_at,
+          "and adding Heron to Claude Code asks it FIRST, so the silent Setup "
+          "and heron-install --add-to-claude refuse there too")
+
     setup_script = os.path.join(ROOT, "platform", "Heron.Setup", "HeronSetup.iss")
     iss = read(setup_script) if os.path.exists(setup_script) else ""
     # Comments out: an .iss line starting with ; is a comment, and so is a

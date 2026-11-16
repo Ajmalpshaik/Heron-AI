@@ -6934,9 +6934,25 @@ if __name__ == "__main__":
     # from, for Revit's Heron panel, which starts the saved-command runner
     # with exactly these. Not off Windows - there is no panel there. Never
     # fatal: write_runner_note swallows its own faults.
+    #
+    # AND THE DEVELOPER NOTE (D-167, amended 2026-11-16): a chat from a git
+    # checkout names this PC's developer checkout, and an INSTALLED Heron on
+    # that PC steps aside - it leaves the runner note to the developer's own
+    # chats, so the panel never starts the installed copy's runner there.
+    # TWO TRIES, NOT ONE: the developer note needs the brain, the runner note
+    # only the standard library - a missing PyYAML must not take the panel away.
     if not core.LIBRARY_ONLY:
+        aside = None
         try:
-            brain.commands().write_runner_note(sys.executable, _repo_root())
+            _recorded, aside = brain.developer_copy(_repo_root())
+        except brain.BrainUnavailable as why:
+            sys.stderr.write("Heron could not tell whether this PC has a developer copy: %s\n" % why)
+        try:
+            if aside is None:
+                brain.commands().write_runner_note(sys.executable, _repo_root())
+            else:
+                sys.stderr.write("Heron is an installed copy on a PC with a developer copy at %s: "
+                                 "the shared store and the Commands panel follow that copy.\n" % aside)
         except brain.BrainUnavailable as why:
             sys.stderr.write("Heron saved commands are unavailable: %s\n" % why)
 

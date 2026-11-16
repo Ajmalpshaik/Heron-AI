@@ -233,6 +233,14 @@ namespace Heron.Installer
         /// <summary>Add Heron to Claude Code, and say what came of it.</summary>
         public static ClaudeStep Apply(string heronFolder)
         {
+            // A DEVELOPER'S PC FIRST - DeveloperCopy, D-167 amended 2026-11-16.
+            // An installed Heron there never becomes Claude Code's Heron: the
+            // developer's chats start their own checkout's. Asked before
+            // anything else, so nothing is read or written.
+            var developer = DeveloperCopy.StepsAsideFor(heronFolder);
+            if (developer != null)
+                return new ClaudeStep { Said = DeveloperCopy.NotAddedToClaude(developer) };
+
             if (RunningClaudes() > 0)
             {
                 return new ClaudeStep
