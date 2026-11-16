@@ -9,8 +9,9 @@
 
 > **The first release, [v0.1.0](https://github.com/Ajmalpshaik/Heron-AI/releases/tag/v0.1.0), was
 > published on 2026-10-08**, on the owner's word, so a new teammate could install Heron. It is an early,
-> **unsigned** build — [D-91](DECISIONS.md) says a release is signed, and whether a decision should say
-> releases stay unsigned until signing is built is [Q-77](open-questions/tier-2.md), still open — and the
+> **unsigned** build — since [D-168](decisions/D-168.md), the owner's answer to [Q-77](open-questions/tier-2.md)
+> on 2026-11-16, a release is versioned and checksummed, says plainly that it is unsigned, and is signed
+> before Heron is given to anyone outside — and the
 > [main README](../README.md) still asks modellers not to install Heron until it is announced.
 >
 > **The installer is in that release, never in the code.** Searching the code will not find
@@ -345,6 +346,20 @@ session, put it under `env` in Claude Code's `settings.json` — for 30 minutes:
 
 **Not known yet:** whether Claude Code sends the `progressToken` that Heron waits for before it sends a
 note. Its docs do not say, and Heron sends nothing without one. EJ1 is the run that answers it.
+
+## 5b. The chat's own setting for modelling work - recommended, not yet timed
+
+**Recommended, on the owner's answer of 2026-11-16 ([Q-61](open-questions/tier-2.md)):** for a chat that
+builds and changes Revit models through Heron, set Claude's **effort to high, not xhigh**, and turn
+**fast mode on where your Claude app offers it**. Both are Claude's own settings, chosen in the app or in
+Claude Code: Heron does not set them, and `heron-ready --snapshot` does not record them.
+
+**This is NOT yet timed.** The one measured run - two family builds on the laptop on 2026-10-09,
+[row 5b-378](fragment-issues/section-5b-rows-376-400.md) - ran at effort xhigh on every request, and about
+93% of its time was the chat's own turns, extended thinking alone about 609 s, while Revit's own time was
+17.2 s in all. The effort level is the setting that can move that share. How far it moves, and whether a
+family built at high comes out the same as one built at xhigh, has not been measured: that is
+[NEEDS-CHECKING HF8](needs-checking/group-hf.md).
 
 ## 6. Where everything lives on your PC
 

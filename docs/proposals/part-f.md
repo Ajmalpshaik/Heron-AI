@@ -893,7 +893,9 @@ module's object, by identity.
 
 ---
 
-### 🟡 F23. D-84 took a word out of two places; it is still in the three that bind
+### ✅ F23. D-84 took a word out of two places; it is still in the three that bind — ANSWERED 2026-11-16 by the owner
+
+**Answer: Yes - the word *sandbox* in Article 11, in its D-119 exception and in Golden Rule 18 becomes *watched, not contained*: new code runs under watch, every attempt recorded - 2026-11-16, the owner's answer, read back: Ajmal PS was shown this proposal with Claude's suggestion and answered in his own words, *"go with you suggetions"*.** Recorded as [D-170](../decisions/D-170.md). **Work:** done 2026-11-16 - [Article 11](../../HERON_CONSTITUTION.md) takes the draft below word for word, its D-119 exception reads *"that prompt and that one group are how it is watched, and watched is not contained"*, and [Golden Rule 18](../14-golden-rules.md) takes its draft; the README's row had already lost the word (#663). Nothing about the behaviour changed. One design note still says it, and does not bind: [docs/06](../06-heron-platform.md)'s *Proposed hard boundaries*, point 3 - [row 5b-1751](../fragment-issues/row-5b-1751.md).
 
 **Found by:** reading `HERON_CONSTITUTION.md` word by word on 2026-09-21.
 **Status:** open. One decision, three sentences, no code changes.

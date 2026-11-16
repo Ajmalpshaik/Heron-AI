@@ -993,7 +993,7 @@ Only after successful validation does content enter the production architecture.
 > it (step 14), while this section validates before placing. Today's pipeline writes nothing, so the
 > difference has not yet had an effect.
 >
-> **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)): of the two orders, this section's - validate, then place - is the one the accepted rules hold: [Golden Rule 6](14-golden-rules.md) (experimental knowledge stays apart from production), [Article 4](../HERON_CONSTITUTION.md) (validate before promotion), [Article 11](../HERON_CONSTITUTION.md) (newly imported code runs in a sandbox or on a detached copy first). The pipeline reading Part 1's order is code, and does not decide it.
+> **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)): of the two orders, this section's - validate, then place - is the one the accepted rules hold: [Golden Rule 6](14-golden-rules.md) (experimental knowledge stays apart from production), [Article 4](../HERON_CONSTITUTION.md) (validate before promotion), [Article 11](../HERON_CONSTITUTION.md) (newly imported code runs watched, or on a detached copy, first - *in a sandbox* until [D-170](DECISIONS.md#d-170--the-word-sandbox-leaves-article-11-and-golden-rule-18-new-code-runs-watched-not-contained), 2026-11-16, which changed the word and not the rule). The pipeline reading Part 1's order is code, and does not decide it.
 
 ## 36. File Naming Intelligence
 
