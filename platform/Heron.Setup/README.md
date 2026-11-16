@@ -44,7 +44,7 @@ checked zips - and nothing is downloaded.
 
 **Run silent** (`/SILENT`, `/VERYSILENT`, for a managed PC) nobody can press Install, so the Setup runs
 `heron-install --from "<Heron folder>\payload" --no-check`, then `heron-install --add-to-claude`, and keeps
-what they said as `setup-report.txt` in the folder.
+what they said as `setup-report.txt` in the folder. **NOT RUN on the real Setup** - row OA19.
 
 Its uninstaller runs `heron-install --uninstall --list`, shows that sentence naming every product and
 release, and on **Yes** runs `heron-install --uninstall`, before Windows removes the folder.
