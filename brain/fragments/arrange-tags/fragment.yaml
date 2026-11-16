@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,25 @@ semantic-identity: "the tags are sitting on top of each other, spread them out"
 kind: action
 domain: revit.annotation
 capability: ARRANGE_TAGS
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 2 (2026-11-16) - ROOM, SPACE AND AREA TAGS TOO, and back to DRAFT.
+# FRAGMENT-ISSUES row 5b-1732 (Sruthina, Revit 2024, model `villa 2`,
+# Ajmalpshaik/Heron-AI#854 item c): version 1 kept only IndependentTag, so
+# every room tag (a SpatialElementTag) went to `notTags` - never moved, and not
+# even an obstacle for the tags that were. The commonest clash on a plan, a
+# door tag over a room tag, could not be pushed apart, while
+# FIND_OVERLAPPING_TAGS found it. A SpatialElementTag is now arranged by its
+# TagHeadPosition like the rest, and a leader end the move dragged is put
+# back. `roomTagsStayPut` true holds room, space and area tags exactly where
+# they are, as fixed obstacles the other tags move away from in both phases,
+# named in `keptInPlace`. Every tag still takes one size, the median (row
+# 5b-1652, still open). Version 1 was PROVEN (the proof block below, kept as
+# the record of what it proved); its C# moved, so it is DRAFT again until
+# NEEDS-CHECKING Group OC is run (D-30) - on the owner's word of 2026-11-11
+# that a fragment found wrong may be changed even though it is proven.
 
 purpose: >
   Pushes overlapping tags apart until nothing sits on top of anything else,
@@ -50,6 +66,11 @@ purpose: >
   every arrow off the thing it was pointing at. Free ends are read before the
   move and written back after.
 
+  **ROOM, SPACE AND AREA TAGS ARE ARRANGED TOO (version 2)**, by their head,
+  so a door tag over a room tag is pushed apart. Asked to keep room tags
+  still, they stay exactly where they are and the other tags move away from
+  them.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -78,6 +99,13 @@ contract:
     - name: fallbackTagHeightMm
       type: double
       source: request
+    # VERSION 2. True holds room, space and area tags still - fixed obstacles
+    # the other tags move away from. Left out it is false (an absent optional
+    # bool binds false) and they are arranged like the rest.
+    - name: roomTagsStayPut
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: moved
       role: result
@@ -110,6 +138,12 @@ contract:
       # Why it declined, in the user's words - the evidence it looked and
       # said no. Never a thing it FOUND, so it must not count toward
       # "did this come back empty" (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: keptInPlace
+      # VERSION 2. Room, space and area tags held still because
+      # roomTagsStayPut was true - what it was told not to move, never a
+      # thing it moved (D-52).
       role: accounting
       type: IList<ElementId>
 
