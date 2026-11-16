@@ -224,6 +224,23 @@ def _store_warm_allowed():
     return _brain()[0].rebuild_refusal() is None
 
 
+def developer_copy(root):
+    """At a chat's start: (recorded, steps_aside) - D-167, amended 2026-11-16.
+
+    From a git checkout, the note naming this PC's developer checkout is left
+    (heron_scope.record_developer_checkout) and `recorded` is that folder. From
+    an INSTALLED Heron on a PC whose note names a developer checkout,
+    `steps_aside` is that folder, and the chat leaves the shared things - the
+    store, the Commands panel's runner note - to it. Both None on a modeller's
+    PC. Never raises past BrainUnavailable.
+    """
+    scope = _brain()[0]
+    aside = scope.steps_aside_for(root)
+    if aside is not None:
+        return None, aside
+    return scope.record_developer_checkout(root), None
+
+
 def carry_home():
     """Carry Heron's data into its home, once on this PC (D-135). Never raises.
 
