@@ -753,6 +753,23 @@ def draft_from_record(frag, record):
                       "as none")
         gaps.append("no second route was run")
 
+    proof_draft = {
+        "date": record.get("date") or "",
+        # EMPTY ON PURPOSE. See this function's docstring.
+        "by": "",
+        "model": record.get("model") or NOT_ESTABLISHED,
+        "positive_case": positive_text,
+        "negative_case": negative_text,
+        "second_route": cross_text,
+    }
+    # WHICH ADD-IN AND WHICH REVIT, from the record and nowhere else. A record
+    # that names neither - an add-in or client older than the field - leaves
+    # the key out, and the draft's `build` line says so: never filled in.
+    built = recorded_build(record)
+    if built:
+        proof_draft["built_on"] = built
+    proof_draft["fingerprint"] = frag.fingerprint()
+
     return {
         "fragment": frag.slug,
         "capability": frag.data.get("capability"),
@@ -760,17 +777,56 @@ def draft_from_record(frag, record):
         "drafted_from": record.get("run_record") or "(unnamed run record)",
         "confirmed": False,
         "gaps": gaps,
-        "proof-draft": {
-            "date": record.get("date") or "",
-            # EMPTY ON PURPOSE. See this function's docstring.
-            "by": "",
-            "model": record.get("model") or NOT_ESTABLISHED,
-            "positive_case": positive_text,
-            "negative_case": negative_text,
-            "second_route": cross_text,
-            "fingerprint": frag.fingerprint(),
-        },
+        "build": build_note(frag, built),
+        "proof-draft": proof_draft,
     }
+
+
+def recorded_build(record):
+    """The run record's `built_on`, with only the fields it holds, or None."""
+    built = HF.built_on_of((record or {}).get("built_on"))
+    if not built:
+        return None
+    return dict((field, built[field]) for field in HF.BUILT_ON_FIELDS if built[field])
+
+
+def describe_build(built):
+    """One build in words: the add-in's version and file, Revit's release and build."""
+    built = HF.built_on_of(built) or {}
+    addin = "add-in %s" % (built.get("addin_version") or "(version not recorded)")
+    if built.get("addin_hash"):
+        addin += " (file %s)" % built["addin_hash"]
+    revit = "Revit %s" % (built.get("revit_release") or "(release not recorded)")
+    revit += " build %s" % (built.get("revit_build") or "(not recorded)")
+    return "%s, %s" % (addin, revit)
+
+
+def build_note(frag, built):
+    """What this run's build is, against what the card already records. One line.
+
+    A new draft is where a new run meets an old proof, so this is where a
+    build that moved under a proof is first said. It never blocks anything:
+    D-30's gaps are the evidence, and a build is a fact about where it ran.
+    """
+    if not built:
+        return ("NOT RECORDED - the run record names no add-in build and no "
+                "Revit build, so a proof signed from it will not say which "
+                "Heron or which Revit it was taken on. Run it again with an "
+                "add-in and client that record them")
+    here = describe_build(built)
+    if frag.status not in HF.NEEDS_PROOF or not isinstance(frag.proof, dict):
+        return "taken on %s" % here
+    state, changed, recorded = frag.proof_build_state(built)
+    if state == HF.BUILD_STALE:
+        return ("taken on %s. The proof on the card was taken on %s - %s "
+                "changed since, so that proof is stale for this build"
+                % (here, describe_build(recorded),
+                   ", ".join(HF.BUILT_ON_WORDS[f] for f in changed)))
+    if state == HF.BUILD_CURRENT:
+        return ("taken on %s - the same build the proof on the card was taken on"
+                % here)
+    return ("taken on %s. The proof on the card records no build for Revit %s"
+            % (here, built.get("revit_release") or "(unknown)"))
 
 
 def describe_phase(phase):
@@ -1440,15 +1496,18 @@ def release_draft(frag, record, release):
             release, why if why else "the run record says it ran on Revit %s" % named))
     draft["gaps"] = gaps
     draft["release"] = release
-    draft["proof-draft"] = {
+    entry = {
         "release": release,
         "date": proof["date"],
         "by": "",
         "model": proof["model"],
         "positive_case": proof["positive_case"],
         "negative_case": proof["negative_case"],
-        "fingerprint": proof["fingerprint"],
     }
+    if proof.get("built_on"):
+        entry["built_on"] = proof["built_on"]
+    entry["fingerprint"] = proof["fingerprint"]
+    draft["proof-draft"] = entry
     return draft
 
 
@@ -1637,15 +1696,25 @@ def accept_release(slug, release, by, library=None):
         return 2, ("'%s' does not claim Revit %s - its `revit:` is %s"
                    % (slug, release, ", ".join(frag.supported)))
     fresh, _stale = MX.proven_releases(frag)
-    if release in fresh:
+    key = proof_key(slug, release=release)
+    draft = read_draft(key)
+    # An ENTRY whose build moved - the draft ran on another add-in or Revit
+    # build than the entry records, or the entry records none - may be
+    # replaced, as a stale one is. The proof's own release is plain `accept`'s.
+    moved = False
+    if release in fresh and fresh[release] != "proof" and draft is not None:
+        state, _changed, _recorded = frag.proof_build_state(
+            (draft.get("proof-draft") or {}).get("built_on"))
+        moved = (HF.built_on_of((draft.get("proof-draft") or {}).get("built_on"))
+                 is not None
+                 and state in (HF.BUILD_STALE, HF.BUILD_NOT_RECORDED))
+    if release in fresh and not moved:
         return 2, ("Revit %s is already recorded on '%s', by %s, and it still "
                    "matches the code. Signing it again would overwrite a good "
                    "record with the same thing" % (
                        release, slug, "its proof" if fresh[release] == "proof"
                        else "an entry of proof.releases"))
 
-    key = proof_key(slug, release=release)
-    draft = read_draft(key)
     if draft is None:
         return 2, ("no draft for '%s' on Revit %s in brain/proof-drafts/ - run it "
                    "there, then `draft %s --release %s --from %s`"
@@ -1680,12 +1749,15 @@ def accept_release(slug, release, by, library=None):
                    "release - `--session <pid>` names which Revit"
                    % (why or "the run record says it ran on Revit %s" % named,
                       release))
-    problem = _record_refusal(frag, record_path)
+    problem = (_build_record_refusal(entry, record_path)
+               or _record_refusal(frag, record_path))
     if problem:
         return 2, problem
 
     entry["by"] = by.strip()
     ordered = dict((k, entry[k]) for k in HF.RELEASE_REQUIRED)
+    if entry.get("built_on"):
+        ordered["built_on"] = entry["built_on"]
     rows = [row for row in MX.release_entries(frag)
             if str(row.get("release")) != release]
     code, problem = _write_into_proof(frag, "releases", rows + [ordered])
@@ -1798,7 +1870,14 @@ def _evidence_refusal(slug, frag, proof):
     # fragment whose code has moved under it has a proof that no longer
     # describes what runs, and re-proving it is exactly what D-30 asks for - so
     # that case falls through to the fingerprint check below and is allowed.
-    if frag.status in ("PROVEN", "PRODUCTION") and not frag.proof_is_stale():
+    #
+    # A BUILD THE CARD DOES NOT HOLD IS THE SAME EXCEPTION, ONE LAYER OUT. A
+    # draft run on another add-in build or another Revit build of the proof's
+    # own release - or on one the card records none for - is evidence about a
+    # build the proof does not describe, so it may be signed in its place. A
+    # draft naming no build gets nothing from this: a leftover stays refused.
+    if (frag.status in ("PROVEN", "PRODUCTION") and not frag.proof_is_stale()
+            and not _build_moved(frag, proof.get("built_on"))):
         return ("'%s' is already %s, and its recorded proof still matches the "
                 "current code. Signing it again would overwrite a good proof "
                 "with the same thing and change nothing. The draft left in "
@@ -1812,7 +1891,52 @@ def _evidence_refusal(slug, frag, proof):
     if stale:
         return stale
 
-    return _record_refusal(frag, os.path.join(DRAFTS_DIR, "runs", slug + ".json"))
+    record_path = os.path.join(DRAFTS_DIR, "runs", slug + ".json")
+    built = _build_record_refusal(proof, record_path)
+    if built:
+        return built
+    return _record_refusal(frag, record_path)
+
+
+def _build_moved(frag, built):
+    """True when a draft's `built_on` is a build the card's proof does not hold.
+
+    Only for the release the proof itself was taken on: a draft on another
+    release is `accept --release`'s, and this must not let a plain `accept`
+    replace a 2024 proof with a 2025 one.
+    """
+    built = HF.built_on_of(built)
+    if not built or not built["revit_release"]:
+        return False
+    own, _why = MX.proof_release(frag)
+    if own != built["revit_release"]:
+        return False
+    state, _changed, _recorded = frag.proof_build_state(built)
+    return state in (HF.BUILD_STALE, HF.BUILD_NOT_RECORDED)
+
+
+def _build_record_refusal(proof, record_path):
+    """Why the draft's `built_on` is not its run record's, or None.
+
+    A draft's build is copied from its record and from nowhere else, so a
+    difference means one of the two was edited by hand - and a build typed
+    into a draft is a claim about where it ran that no run made. No record is
+    `_record_refusal`'s to say; this only reads one that is there.
+    """
+    try:
+        with io.open(record_path, "r", encoding="utf-8") as fh:
+            record = json.load(fh)
+    except (ValueError, OSError):
+        return None
+    drafted = HF.built_on_of(proof.get("built_on"))
+    ran = HF.built_on_of(recorded_build(record))
+    if drafted == ran:
+        return None
+    return ("the draft says it was taken on %s and its run record says %s. A "
+            "draft's build is copied from its run record and nothing else - "
+            "draft it again from the record"
+            % (describe_build(drafted) if drafted else "no build",
+               describe_build(ran) if ran else "no build"))
 
 
 def _stale_draft_refusal(frag, proof):
@@ -2314,6 +2438,8 @@ def main(argv=None):
         print("Drafted %s" % HF.repo_relative(path, ROOT))
         for gap in draft["gaps"]:
             print("  gap: %s" % gap)
+        if draft.get("build"):
+            print("  build: %s" % draft["build"])
         print("")
         print("Nothing has been promoted. Read it, then:")
         print("  python brain/heron_validate.py accept %s %s--by \"Your Name\""

@@ -384,6 +384,29 @@ the Project Browser, the Properties palette - has no recorded run, so it cannot 
 **Where it shows:** `python brain/heron_matrix.py --fragments` marks `P` on the proof's release and on each
 fresh entry's, and nowhere else - never from `revit:`, and only where a compiler has also agreed.
 
+## Which add-in and which Revit build a proof was taken on - `built_on:`
+
+The fingerprint says which C# was proved. It cannot say which Heron add-in ran it, or which build of Revit
+answered - and either can change while the fragment stands still. So a run record now carries
+**`built_on:`** - `revit_release`, `revit_build` (Revit's `VersionBuild`), `addin_version` and
+`addin_hash` (the first 16 hex of the add-in DLL's SHA-256) - read from the add-in's own address-book
+entry. `draft` copies it into the proof, `accept` writes it with your name, and `accept --release` into the
+entry. **The rules, all in [`heron_fragment.py`](../../../brain/heron_fragment.py)'s `build_state`:**
+
+- **A proof without it is NOT RECORDED** - every proof signed before it. Never stale, never current, and
+  **nothing re-stamps one**: a proof gets a build only by being run and signed again.
+- **Another add-in file or another Revit build of the same release is STALE for that build.** `draft` says
+  so on its `build:` line, and `revit_read`, `revit_show` and `revit_change` add one line under the answer.
+  A build is only compared with a build of the same release - another release is D-131's question.
+- **A flag, not a gate.** `proof_is_stale` and the D-117 refusal still read the fingerprint alone, so a new
+  add-in build refuses nothing. Whether it should is the owner's to decide.
+- **Re-proving on the new build is plain `accept`** - it signs a run on another build of the proof's own
+  release in place of the old proof. A draft on the build the proof already records is still refused as a
+  leftover, and a draft naming no build re-signs nothing. A draft whose `built_on` is not its run record's
+  is refused: it is copied, never typed.
+- **An add-in older than this records no build**, so its runs draft as NOT RECORDED. First check on the
+  owner's PC that a real run record carries all four fields ([NEEDS-CHECKING group OA](../../../docs/needs-checking/group-oa.md)).
+
 ## Honesty
 
 - **A pass here is not a proof.** It means the evidence held. The signature is still owed, and it is a

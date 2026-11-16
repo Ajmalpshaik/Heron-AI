@@ -2818,6 +2818,34 @@ def proof_status(folder):
     }
 
 
+def proof_build(folder, current):
+    """
+    Whether one fragment's proof was taken on the build in front - or None.
+
+        {"state": "stale", "changed": ["addin_hash"],
+         "recorded": {"revit_release": "2024", "addin_hash": "...", ...}}
+
+    `current` is the session's `built_on` (heron_bridge_client.Bridge.built_on).
+    `state` is heron_fragment's: "not recorded" for every proof signed before
+    a proof carried its build, "stale", "unknown" or "current".
+
+    A SEPARATE QUESTION FROM `proof_status`, ON PURPOSE. `stale` there is
+    D-30's fingerprint and the D-117 gate refuses on it; this one is asked
+    only after a run, against the Revit that ran it, and its answer is a line
+    in the reply - never a refusal. None when the card cannot be read.
+    """
+    try:
+        import heron_fragment as FRAGMENT
+    except ImportError:
+        return None
+    try:
+        frag = FRAGMENT.load(os.path.join(ROOT, "brain", "fragments", folder))
+    except (ValueError, OSError):
+        return None
+    state, changed, recorded = frag.proof_build_state(current)
+    return {"state": state, "changed": list(changed), "recorded": recorded}
+
+
 def model_dashboard_demo():
     """The Model Dashboard's DEMO - an invented model, for trying the panel with
     no Revit (docs/40 s21.12). Never kept, never compared; the panel refuses

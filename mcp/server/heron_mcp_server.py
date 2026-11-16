@@ -2056,6 +2056,13 @@ def revit_change(capability: str = "", values: str = "",
 
     # NO "NOT PROVEN" LINE HERE ANY MORE. It warned after the change was kept;
     # a fragment that is not PROVEN is now refused before it is sent (D-117).
+    #
+    # A PROOF TAKEN ON ANOTHER ADD-IN OR REVIT BUILD IS SAID, NOT REFUSED -
+    # `_build_line`. The fingerprint gate above is unchanged.
+    build = _build_line(capability, folder, session)
+    if build:
+        lines.append("")
+        lines.append(build)
 
     # A DRY RUN ENDS HERE - BEFORE THE DISCARD'S BRANCH BELOW, WHICH IS FOR A
     # RUN THAT ASKED TO KEEP - AND IT ENDS ONE OF TWO WAYS.
@@ -3017,6 +3024,43 @@ def _proof_line(capability, folder):
             % (capability, status, where, when))
 
 
+def _build_line(capability, folder, session):
+    """
+    One sentence when the proof was taken on another add-in or Revit build
+    than the one that just ran it - or "" for anything else.
+
+    SAID ONLY WHEN IT IS TRUE AND NEW. A proof signed before proofs carried a
+    build says nothing about one ("not recorded"), an add-in too old to say
+    which build it is says nothing either ("unknown"), and a proof whose code
+    moved is already called unproven by `_proof_line`. None of those is called
+    stale here, and none is called current.
+
+    A FLAG, NOT A REFUSAL. The D-117 gate refuses on D-30's fingerprint, read
+    from the card alone; whether a proof on another build should also stop a
+    change being kept is the owner's to decide, and it is not decided here.
+    """
+    found = brain.proof_status(folder)
+    if not found or found["status"] not in ("PROVEN", "PRODUCTION") or found["stale"]:
+        return ""
+    built_on = getattr(session, "built_on", None)
+    if not callable(built_on):
+        return ""
+    build = brain.proof_build(folder, built_on())
+    if not build or build["state"] != "stale":
+        return ""
+    words = {"revit_build": "Revit's build", "addin_version": "the Heron add-in's version",
+             "addin_hash": "the Heron add-in's file"}
+    recorded = build["recorded"] or {}
+    return ("  '%s' was proved on Revit %s build %s with Heron add-in %s - %s "
+            "changed since, so that proof has not been checked on this build. "
+            "Check this answer against the model before relying on it, until it "
+            "is proved again on this build (D-30)."
+            % (capability, recorded.get("revit_release") or "?",
+               recorded.get("revit_build") or "(not recorded)",
+               recorded.get("addin_version") or "(not recorded)",
+               " and ".join(words.get(f, f) for f in build["changed"])))
+
+
 def _shown_elsewhere(root, folder, capability):
     """
     One sentence sending a capability declared EXECUTE or below to revit_show,
@@ -3231,6 +3275,10 @@ def revit_read(capability: str = "", values: str = "",
 
     lines.append("")
     lines.append(_proof_line(capability, folder))
+    # AND WHICH BUILD IT WAS PROVED ON, said only when that has moved.
+    build = _build_line(capability, folder, session)
+    if build:
+        lines.append(build)
     # SAID FROM THE ADD-IN'S COUNT, NOT FROM "NO TRANSACTION" ALONE - row
     # 5b-350 is a read that reported Revit's refusal and left an element. An
     # add-in that counted sends `elementsCounted` (a read that moved the count
@@ -3454,6 +3502,10 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
 
     lines.append("")
     lines.append(_proof_line(capability, folder))
+    # AND WHICH BUILD IT WAS PROVED ON, said only when that has moved.
+    build = _build_line(capability, folder, session)
+    if build:
+        lines.append(build)
     if isinstance(counted, int):
         lines.append("Nothing in the model was changed: Heron counted %s element(s) "
                      "before this ran and the same after it. Only what is shown can "
