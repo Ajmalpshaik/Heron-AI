@@ -2212,6 +2212,12 @@ long state. The first version of this tool read only the opening, and on 2026-09
 59 rows carrying those words further down — two of them saying NOT YET RUN IN REVIT.
 *"Proved, awaiting signature"* stays. So does anything the rule does not recognise.
 
+**Since 2026-11-16 a row moved to a GitHub issue moves too**, though it is still owed: its state begins
+`MOVED TO ISSUE #N`, the issue is where it is worked and ticked
+([`docs/fragment-issues/ISSUES.md`](../docs/fragment-issues/ISSUES.md)), its line keeps the issue's link and
+date, and `open-defects.py` counts it as moved. Only its long text leaves the register - on the owner's word,
+*"move to archive OK"*.
+
 **It refuses rather than guesses, and it borrows `open-defects.py`'s own row pattern, cell splitter and section
 headings** instead of keeping its own — two tools that each decided those would sooner or later disagree
 about a row. Before a byte is written it runs `open-defects.py` **on the rewritten text** and requires the same
