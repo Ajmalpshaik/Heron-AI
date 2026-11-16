@@ -388,7 +388,8 @@ def main():
         writer = verdicts_for(tool, work, "silent")[12]
         check("NO TRANSACTION OPEN" in reader[1],
               "a READ is answered by the executor opening none")
-        check("write.enabled" in writer[1] and "D-55" in writer[1],
+        check("Changes switch" in writer[1] and "D-166" in writer[1]
+              and "D-55" in writer[1],
               "a MODIFY is answered by the gate, the default and the rollback "
               "- not by pretending Revit refuses it")
         check(reader[1] != writer[1],

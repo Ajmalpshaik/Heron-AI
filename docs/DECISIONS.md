@@ -234,7 +234,10 @@ an edit.
 | [D-163](#d-163--herons-recent-changes-are-docked-in-revit-with-select-zoom-and-undo-reached-through-the-one-dispatcher) | Heron's recent changes are docked in Revit, with Select, Zoom and Undo, reached through the one dispatcher | ✅ Accepted · 2026-11-12 |
 | [D-164](#d-164--two-built-in-parameters-of-one-name-that-read-the-same-value-are-one-reading-not-a-name-matched-twice) | Two built-in parameters of one name that read the same value are one reading, not a name matched twice | ✅ Accepted · 2026-11-14 |
 | [D-165](#d-165--a-qa-check-never-passes-on-missing-data-a-fourth-answer-no-data-and-a-coverage-line-beside-every-pass-count) | A QA check never passes on missing data: a fourth answer, NO DATA, and a coverage line beside every pass count | ✅ Accepted · 2026-11-16 |
+| [D-166](#d-166--changes-admin-and-publish-are-turned-on-only-by-a-click-in-revit-held-in-its-memory-never-read-from-a-file) | Changes, Admin and Publish are turned on only by a click in Revit, held in its memory, never read from a file | • Accepted · built 2026-11-16, all three layers, not yet run in Revit |
+| [D-167](#d-167--a-modeller-installs-heron-with-one-setup-file-which-puts-heron-in-place-and-hands-over-to-the-installer-engine) | A modeller installs Heron with one Setup file, which puts Heron in place and hands over to the installer engine | ✅ Accepted · 2026-11-16 |
 | [D-168](#d-168--a-change-revit-kept-in-which-nothing-changed-by-every-count-says-nothing-changed-and-refused-when-the-capability-itself-said-no) | A change Revit kept in which nothing changed by every count says NOTHING CHANGED, and REFUSED when the capability itself said no | ✅ Accepted · 2026-11-16 |
+| [D-174](#d-174--a-proof-taken-on-another-heron-add-in-build-or-another-revit-build-is-said-under-the-answer-and-never-refused) | A proof taken on another Heron add-in build or another Revit build is said under the answer, and never refused | ✅ Accepted · 2026-11-16 |
 
 ## Format
 
@@ -400,6 +403,7 @@ What this makes easy. What this makes hard. What it locks in.
 ## D-19 — Writing is off by default until the write path has met a real Revit
 
 **Status:** Accepted · ✔ **read back 2026-09-06** · **Date:** 2026-08-27 · **Found during:** Step 6 implementation
+**Superseded in part by:** [D-166](#d-166--changes-admin-and-publish-are-turned-on-only-by-a-click-in-revit-held-in-its-memory-never-read-from-a-file), accepted 2026-11-16, not built yet - Changes is no longer *"set in the user's config"*: it is held in Revit's memory, set only from Heron's Settings window, and off every time Revit starts
 
 **Full record:** [`decisions/D-19.md`](decisions/D-19.md)
 
@@ -881,6 +885,7 @@ What this makes easy. What this makes hard. What it locks in.
 ## D-96 — A downloaded Heron is installed by the installer, and only by the installer
 
 **Status:** Accepted · **Date:** 2026-09-21 · **Source:** Ajmal PS, 2026-09-21 · **Promoted from:** [NEEDS-CHECKING `AA9`](NEEDS-CHECKING.md)
+**Superseded in part by:** [D-167](#d-167--a-modeller-installs-heron-with-one-setup-file-which-puts-heron-in-place-and-hands-over-to-the-installer-engine), accepted 2026-11-16 - which FILE a modeller starts: the Setup, `HeronSetup-<version>.exe`, which runs the same engine; `deploy-addin.ps1` as the one copy engine and `-ExecutionPolicy Bypass` are unchanged
 
 **Full record:** [`decisions/D-96.md`](decisions/D-96.md)
 
@@ -964,6 +969,7 @@ What this makes easy. What this makes hard. What it locks in.
 **Status:** Accepted · **Date:** 2026-09-28 · **Source:** Ajmal PS, 2026-09-28, after Heron refused ADD_PROJECT_PARAMETER when he asked for two project parameters
 **Supersedes:** the rule that Publish and Admin are *"not reachable in Phase 0 or Phase 1 at all"* - it lived in `HeronPermissions.Allows()` and the client's `risk_refusal`, never in a decision - and so the row *"Publish and Admin refused"* in [D-99](#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so)'s table, which now reads *refused unless the owner's switch for that level is on* · **Keeps:** [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit), [D-99](#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so), [Constitution Articles 7 and 10](../HERON_CONSTITUTION.md), [Golden Rule 19](14-golden-rules.md)
 **Affects:** [`HeronPermissions.cs`](../platform/Heron.Core/HeronPermissions.cs), [`HeronConfig.cs`](../platform/Heron.Core/HeronConfig.cs), [`HeronOperationRegistry.cs`](../platform/Heron.Core/HeronOperationRegistry.cs), [`RevitOperations.cs`](../revit/Heron.Revit.Addin/RevitOperations.cs), [`HeronApplication.cs`](../revit/Heron.Revit.Addin/HeronApplication.cs), [`Commands.cs`](../revit/Heron.Revit.Addin/Commands.cs), [`HeronSwitchWindow.cs`](../revit/Heron.Revit.Addin/HeronSwitchWindow.cs), [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py), [`heron_tools.py`](../mcp/server/heron_tools.py)
+**Superseded in part by:** [D-166](#d-166--changes-admin-and-publish-are-turned-on-only-by-a-click-in-revit-held-in-its-memory-never-read-from-a-file), accepted 2026-11-16, not built yet - items 1, 2 and 5: Admin and Publish are no longer settings in `heron.config` read from that file; each is held in Revit's memory, set only from Settings, and off every time Revit starts
 
 **Full record:** [`decisions/D-106.md`](decisions/D-106.md)
 
@@ -1324,6 +1330,7 @@ What this makes easy. What this makes hard. What it locks in.
 **Status:** Accepted · **Date:** 2026-11-07 · **Accepted:** Ajmal PS, 2026-11-07, in conversation: the switches *"inside that settings window"*, each state *"change it to button"*, hover texts *"very simple, understandable"*, then *"you can continue the work and build it"*
 **Amends:** where D-106's, D-138's and D-141's buttons are drawn - not what they do
 **Affects:** [`HeronApplication.cs`](../revit/Heron.Revit.Addin/HeronApplication.cs) (`BuildRibbon`) · [`HeronSettingsWindow.cs`](../revit/Heron.Revit.Addin/HeronSettingsWindow.cs) · [`Commands.cs`](../revit/Heron.Revit.Addin/Commands.cs) (`SettingsCommand`) · the refusal sentences, which now name Settings
+**Superseded in part by:** [D-166](#d-166--changes-admin-and-publish-are-turned-on-only-by-a-click-in-revit-held-in-its-memory-never-read-from-a-file), accepted 2026-11-16, not built yet - item 3 for the Changes, Admin and Publish rows: pressing one no longer writes `heron.config`; it sets the switch held in Revit. Ask to Keep and the Companion rows are unchanged
 
 **Full record:** [`decisions/D-150.md`](decisions/D-150.md)
 
@@ -1451,6 +1458,23 @@ What this makes easy. What this makes hard. What it locks in.
 
 **Full record:** [`decisions/D-165.md`](decisions/D-165.md)
 
+## D-166 — Changes, Admin and Publish are turned on only by a click in Revit, held in its memory, never read from a file
+
+**Status:** Accepted · built 2026-11-16, all three layers, not yet run in Revit · **Date:** 2026-11-16 · **Accepted:** Ajmal PS, 2026-11-16, in conversation: *"accept F45, both layers and reset at Revit start"* - his answer to F45's two questions, read as all of F45: the task that asked for it named two layers, the heron-guard hook and the OS-level one, and the reset at Revit start is the third, the one between them · **Source:** [F45](proposals/f45.md)
+**Supersedes in part:** [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit) - that Changes is *"set in the user's config"*: it is held in Revit instead, and off at every start · [D-106](#d-106--admin-and-publish-each-get-a-switch-of-their-own-and-only-the-owner-turns-them-on) items 1, 2 and 5 - that Admin and Publish are each *"a setting in `heron.config`"*, read from that file · [D-150](#d-150--herons-four-switches-move-from-the-ribbon-into-a-settings-window-and-the-ribbon-keeps-heron-settings-and-companion) item 3 - *"the same setting in `heron.config`"*, for those three rows · **Keeps:** [D-126](#d-126--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept) and [D-138](#d-138--the-keep-or-discard-question-gets-a-switch-on-the-ribbon-and-its-box-can-keep-the-rest-of-one-job-without-asking) - Ask to Keep stays in `heron.config` · [D-117](#d-117--a-change-is-kept-only-from-a-fragment-whose-proof-still-stands) · [D-162](#d-162--the-pipe-to-revit-refuses-another-computer-the-chat-checks-who-serves-it-and-the-tokens-file-is-this-users-alone) · [Golden Rule 19](14-golden-rules.md) · [Constitution Article 7](../HERON_CONSTITUTION.md)
+**Affects:** [`HeronConfig.cs`](../platform/Heron.Core/HeronConfig.cs) · [`HeronPermissions.cs`](../platform/Heron.Core/HeronPermissions.cs) · [`Commands.cs`](../revit/Heron.Revit.Addin/Commands.cs) · [`HeronSettingsWindow.cs`](../revit/Heron.Revit.Addin/HeronSettingsWindow.cs) · [`HeronApplication.cs`](../revit/Heron.Revit.Addin/HeronApplication.cs) · [`heron_config.py`](../mcp/client/heron_config.py) · [`heron-ready.py`](../tools/heron-ready.py) · `.claude/skills/heron-guard/bin/heron_guard.py` and [its skill](../.claude/skills/heron-guard/SKILL.md) · [`.claude/settings.json`](../.claude/settings.json)
+
+**Full record:** [`decisions/D-166.md`](decisions/D-166.md)
+
+## D-167 — A modeller installs Heron with one Setup file, which puts Heron in place and hands over to the installer engine
+
+**Status:** Accepted · **Date:** 2026-11-16 · **Accepted:** Ajmal PS, 2026-11-16, in conversation: *"do it the best am not sure for this and you anre my sesior programer or manager or what eve"* - his answer to *"Wrap the installer Heron already has, or grow it into the Setup?"*. **The choices below were made by the session on that word**; each is his to reverse, and none spends money
+**Supersedes in part:** [D-96](#d-96--a-downloaded-heron-is-installed-by-the-installer-and-only-by-the-installer) - which FILE a modeller starts: the Setup, which runs the same engine D-96 named · **Keeps:** D-96 for everything else · [D-91](#d-91--product-files-come-from-a-signed-versioned-github-release) · [D-93](#d-93--the-product-list-is-a-manifest-read-as-data-never-a-list-written-into-the-installer) · [D-94](#d-94--install-replaces-there-is-no-separate-upgrade-path) · [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit)
+**Leaves open:** [Q-77](open-questions/tier-2.md) - what makes signing due, and the certificate
+**Affects:** [`platform/Heron.Setup/`](../platform/Heron.Setup/README.md) · [`tools/build-setup.py`](../tools/build-setup.py) · `heron-install --uninstall` and `--add-to-claude` · [`tools/deploy-addin.ps1`](../tools/deploy-addin.ps1)
+
+**Full record:** [`decisions/D-167.md`](decisions/D-167.md)
+
 ## D-168 — A change Revit kept in which nothing changed by every count says NOTHING CHANGED, and REFUSED when the capability itself said no
 
 **Status:** Accepted · **Date:** 2026-11-16 · **Accepted:** Ajmal PS, 2026-11-15, in conversation, two answers each put to him alone in plain words: *"Yes, say nothing changed"* (row 5b-1657 - views renamed from a text no view had, nothing changed, the answer read KEPT) and *"Yes, say REFUSED"* (row 5b-1635 - a level name already taken, the card said no and made nothing, the answer read KEPT). Items 2 and 4 are how those two answers are carried out, written when they were built on 2026-11-16. Item 3 - a partial result stays KEPT - he decided himself on 2026-11-16: *"Yes, keep KEPT"*, his answer to *"If a tool did part of the job and refused the rest, should the answer still say KEPT?"*
@@ -1458,3 +1482,11 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`heron_server_core.py`](../mcp/server/heron_server_core.py) (`NOTHING_CHANGED`, `OUTCOMES`, `kept_nothing`) · [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (`revit_change`) · [docs/04 §8.12](04-heron-mcp.md) · [`test_outcome_line.py`](../tests/test_outcome_line.py) · rows [5b-1635](fragment-issues/row-5b-1635.md) and [5b-1657](fragment-issues/row-5b-1657.md)
 
 **Full record:** [`decisions/D-168.md`](decisions/D-168.md)
+
+## D-174 — A proof taken on another Heron add-in build or another Revit build is said under the answer, and never refused
+
+**Status:** Accepted · **Date:** 2026-11-16 · **Accepted:** Ajmal PS, 2026-11-16, in conversation: *"Keep it a flag, accept Q-92 shape 1"* · **Answers:** [Q-92](open-questions/tier-3.md)
+**Keeps:** [D-117](#d-117--a-change-is-kept-only-from-a-fragment-whose-proof-still-stands) - a change is refused on D-30's fingerprint alone, read from the card · [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs) - a proof going stale is made visible · [D-131](#d-131--a-proof-on-another-revit-release-is-an-entry-of-proofreleases-and-a-second-route-on-a-proven-fragment-is-written-by-accept-signed) - another release is its own entry
+**Affects:** [`heron_fragment.py`](../brain/heron_fragment.py) (`BUILT_ON_FIELDS`, `build_state`, `proof_build_state`) · [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (`_build_line`) · [`heron_brain.py`](../mcp/server/heron_brain.py) (`proof_build`) · [`fragment-proving`](../.claude/skills/fragment-proving/SKILL.md) · [NEEDS-CHECKING Group OF](needs-checking/group-of.md)
+
+**Full record:** [`decisions/D-174.md`](decisions/D-174.md)

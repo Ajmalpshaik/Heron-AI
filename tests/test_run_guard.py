@@ -315,9 +315,12 @@ def executor():
     check("RollBackAndCheck(" in before[recheck:] if recheck >= 0 else False,
           "and a refusal there rolls the group back through the one rollback helper")
     asked = block(code, "static string WhyNotKept(")
-    check("HeronRunPolicy.Withdrawn(" in asked and "HeronConfig.Load()" in asked
+    # FRESH, FROM WHERE THE SWITCHES ARE HELD. heron.config until D-166; the
+    # switches this Revit holds in memory since 2026-11-16 - a snapshot taken
+    # here, never one carried from the gate.
+    check("HeronRunPolicy.Withdrawn(" in asked and "HeronPermissions.Switches()" in asked
           and "HeronStop.IsStopped" in asked,
-          "and that reads heron.config FRESH and asks the stop again - Article 13, "
+          "and that takes the switches FRESH and asks the stop again - Article 13, "
           "never a cached permission")
     check(code.count("group.Assimilate()") == 1 and code.count("KeepAndWatch(group") == 1,
           "and there is one place a group is kept, so nothing skips the check")

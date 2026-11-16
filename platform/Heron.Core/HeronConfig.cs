@@ -81,25 +81,19 @@ namespace Heron.Core
                 // so the ordering above still holds.
                 { "revit.askTimeoutSeconds", "300" },
 
-                // MUST be declared here, not only read by HeronPermissions.
-                // Load() adopts a file value ONLY for a key in this table, so
-                // an undeclared key is silently ignored - and a setting that
-                // is silently ignored while a refusal tells the user to set it
-                // is the most opaque failure this file can produce. Off by
-                // default (D-19); it is turned on deliberately or not at all.
-                { "write.enabled", "false" },
-
-                // THE TWO SWITCHES ABOVE CHANGES (D-106). Admin lets through a
-                // fragment declared risk ADMIN - project parameters, worksets,
-                // global parameters, a new family file - and Publish one
-                // declared PUBLISH - export, print, save, sync with central.
-                // Off by default, like write.enabled, and for the same reason:
-                // each is turned on by the owner in Heron's Settings or not at
-                // all. Neither does anything while write.enabled is false.
-                // Declared here for the reason write.enabled's comment gives:
-                // a key missing from this table is silently ignored.
-                { "admin.enabled", "false" },
-                { "publish.enabled", "false" },
+                // CHANGES, ADMIN AND PUBLISH ARE NOT IN THIS TABLE, SINCE
+                // D-166 (2026-11-16). They were write.enabled, admin.enabled
+                // and publish.enabled, three lines of this file - a file every
+                // program running as the modeller can write, read fresh on
+                // every request, and named by Heron's own refusal. An AI with
+                // file access could turn writing on, and was told how.
+                //
+                // Now HeronPermissions holds them in Revit's memory, set only
+                // by a click in Heron's Settings window and off every time
+                // Revit starts. Leaving them out of this table is the lock:
+                // Load() adopts a value only for a key declared here, so a
+                // line naming one of them is ignored like any other unknown
+                // key, and the next Save() drops it from the file.
 
                 // REVIT ASKS BEFORE A CHANGE FROM A CHAT IS KEPT (D-126): the
                 // changed elements are shown and a dialog asks Keep or Discard.

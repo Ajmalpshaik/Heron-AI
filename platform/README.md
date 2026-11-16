@@ -88,7 +88,7 @@ One file per class (`ls platform/Heron.Core/*.cs`), each the Kernel half of an a
 | Class | Does | Step |
 |---|---|---|
 | [`HeronPaths.cs`](Heron.Core/HeronPaths.cs) | **The Path Manager** — the single place that knows where anything lives. Product, data and derived are separate in code, and `IsSafeToDelete` says yes only inside the derived folders - never for product or data. The Companion's notes are under the user's temporary folder, stepped out of the GUID-named one Revit runs with ([D-135](../docs/DECISIONS.md), [D-136](../docs/DECISIONS.md)) | 1 |
-| [`HeronConfig.cs`](Heron.Core/HeronConfig.cs) | The Configuration Manager. `Load` and `Save`, and deliberately **no** `ApplyFromRequest`. Holds the switches of Heron's Settings window ([D-150](../docs/decisions/D-150.md); on the ribbon until 2026-11-07) as settings - `write.enabled` (Changes), `admin.enabled` (Admin), `publish.enabled` (Publish) and `write.askBeforeKeeping` (Ask to Keep), all `false` by default, and `companion.enabled` (Companion), `true` by default | 1 |
+| [`HeronConfig.cs`](Heron.Core/HeronConfig.cs) | The Configuration Manager. `Load` and `Save`, and deliberately **no** `ApplyFromRequest`. Holds two of the switches of Heron's Settings window ([D-150](../docs/decisions/D-150.md); on the ribbon until 2026-11-07) as settings - `write.askBeforeKeeping` (Ask to Keep), `false` by default, and `companion.enabled` (Companion), `true` by default. **Changes, Admin and Publish are not here since [D-166](../docs/decisions/D-166.md)**: `HeronPermissions` holds them in memory, off whenever Revit starts, and a line naming one in the file is ignored | 1 |
 | [`HeronIdentity.cs`](Heron.Core/HeronIdentity.cs) | Stable identity for the things Heron must be able to name twice | 1 |
 | [`HeronOperationRegistry.cs`](Heron.Core/HeronOperationRegistry.cs) | The Tool Registry — every operation Heron will run, and the risk level of each | 3 |
 | [`HeronAppend.cs`](Heron.Core/HeronAppend.cs) | One line onto the end of a file another Revit process may be appending to at the same moment — or a plain answer that it could not be done. Used by the audit trail and the add-in log | 1 |
@@ -184,6 +184,17 @@ PC, 2026-10-08 ([Group AC](../docs/needs-checking/group-ac.md)), and the one ins
 [`EP`](../docs/needs-checking/group-ep.md), 2026-10-17 and 2026-10-18, on the owner's laptop. **Its own rows are still owed** - Group `AE` in
 [`docs/needs-checking/group-ae.md`](../docs/needs-checking/group-ae.md): `--list`, the wait while Revit
 is open, and the refused sources.
+
+### `Heron.Setup` — BUILT 2026-11-16, NOT RUN
+
+**The Setup a modeller downloads** - one file, `HeronSetup-<version>.exe`, per user, no administrator
+([D-167](../docs/decisions/D-167.md)). Not a C# project: an Inno Setup script, built by
+[`tools/build-setup.py`](../tools/build-setup.py). **It decides nothing**: it puts the Heron folder in
+`%LOCALAPPDATA%\Programs\Heron AI` and runs `heron-install --from` its own payload, then
+`heron-install --add-to-claude` if asked; its uninstaller runs `heron-install --uninstall`. What it adds
+to the engine is [`ClaudeCodeEntry.cs`](Heron.Installer/ClaudeCodeEntry.cs) - Heron's one entry in Claude
+Code's user settings - and the two flags in [`Arguments.cs`](Heron.Installer.Cli/Arguments.cs). Its runs are
+[Group OA](../docs/needs-checking/group-oa.md). [Its own README](Heron.Setup/README.md).
 
 ## What will be here
 

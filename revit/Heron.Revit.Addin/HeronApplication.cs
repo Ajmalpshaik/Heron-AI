@@ -192,6 +192,10 @@ namespace Heron.Revit.Addin
                 // FRAGMENT-ISSUES section 5b, row 5.
                 HeronAudit.ReportLoss = Log;
 
+                // THE ADMINISTRATOR'S CEILING - D-166 layer 3. The kernel asks
+                // this on every decision; with no policy key it holds nothing.
+                HeronPermissions.Policy = HeronMachinePolicy.Read;
+
                 var config = HeronConfig.Load();
                 PruneLogs(config.GetInt("log.retainDays", 14));
 
@@ -202,9 +206,15 @@ namespace Heron.Revit.Addin
 
                 var revitVersion = application.ControlledApplication.VersionNumber;
                 var addinVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+                // WHICH BUILD, NOT ONLY WHICH RELEASE - Revit's own build string
+                // and a hash of this assembly's file. A proof drafted from a run
+                // records both, and goes stale when either moves (D-30). Read
+                // once: neither can change while this process lives.
+                var revitBuild = application.ControlledApplication.VersionBuild;
+                var addinHash = BridgeIdentity.FileHash(Assembly.GetExecutingAssembly().Location);
 
                 Bridge = new BridgeServer(
-                    new BridgeIdentity(revitVersion, addinVersion), Log);
+                    new BridgeIdentity(revitVersion, addinVersion, revitBuild, addinHash), Log);
 
                 // Revit's thread, so the banner captures the right
                 // dispatcher. On by default: a frozen Revit with no
@@ -309,8 +319,9 @@ namespace Heron.Revit.Addin
                     StartFragmentWarmUp();
 
                 Log(string.Format(
-                    "Heron loaded. Revit {0}, add-in {1}, pid {2}.",
-                    revitVersion, addinVersion, Process.GetCurrentProcess().Id));
+                    "Heron loaded. Revit {0} build {1}, add-in {2} file {3}, pid {4}.",
+                    revitVersion, revitBuild ?? "(not reported)", addinVersion,
+                    addinHash ?? "(not read)", Process.GetCurrentProcess().Id));
 
                 // Connecting is explicit by default - a Revit that was never
                 // connected is invisible to every chat, and that is a safety
@@ -901,6 +912,54 @@ namespace Heron.Revit.Addin
             }
             catch (IOException) { }
             catch (UnauthorizedAccessException) { }
+        }
+    }
+
+    /// <summary>
+    /// THE ADMINISTRATOR'S CEILING, READ - D-166 layer 3.
+    ///
+    /// HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Heron, which only an administrator
+    /// can write: a program running as the modeller cannot, and the Windows
+    /// administrator prompt sits on a screen another program cannot press. So
+    /// this is the one place a switch can be held off that an AI running as
+    /// the modeller cannot reach - unless it runs as administrator itself.
+    ///
+    ///     AllowChanges, AllowAdmin, AllowPublish   DWORD
+    ///         0            that switch cannot be turned on on this PC
+    ///         1, missing   the modeller may turn it on in Settings
+    ///         any other kind of value                treated as 0 - closed
+    ///
+    /// No key is no ceiling, so nothing changes on a PC until somebody sets
+    /// it. Read on every decision, like the switches; a registry fault is
+    /// answered Unreadable, which holds all three off.
+    /// </summary>
+    internal static class HeronMachinePolicy
+    {
+        internal const string KeyPath = @"SOFTWARE\Policies\Heron";
+
+        internal static HeronPolicy Read()
+        {
+            try
+            {
+                using (var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(KeyPath, false))
+                {
+                    if (key == null) return HeronPolicy.NoCeiling;
+                    return HeronPolicy.Of(Allowed(key, "AllowChanges"),
+                                          Allowed(key, "AllowAdmin"),
+                                          Allowed(key, "AllowPublish"));
+                }
+            }
+            catch (System.Security.SecurityException) { return HeronPolicy.Unreadable; }
+            catch (UnauthorizedAccessException) { return HeronPolicy.Unreadable; }
+            catch (IOException) { return HeronPolicy.Unreadable; }
+        }
+
+        private static bool Allowed(Microsoft.Win32.RegistryKey key, string name)
+        {
+            var value = key.GetValue(name);
+            if (value == null) return true;
+            if (value is int) return (int)value != 0;
+            return false;
         }
     }
 }
