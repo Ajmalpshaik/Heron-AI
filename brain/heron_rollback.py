@@ -1,12 +1,25 @@
 # -*- coding: utf-8 -*-
 # Heron-Agent:  HERON-REVIT-RBK-036
 # Heron-Step:   6
-# Heron-Status: DRAFT
+# Heron-Status: DEPRECATED
 # Heron-Since:  0.1.0
 # Heron-Layer:  brain
 # See docs/29-metadata-standard.md
 
 """
+RETIRED 2026-11-16 on the owner's word - kept as a record, never deleted,
+and reached by nothing. Asked that day whether this old "undo everything
+this session" helper should be marked retired, kept as a record and not
+deleted, Ajmal PS answered "Yes, both." It is superseded by `revit_undo_last`
+(D-157): Heron takes back one change only, its own last kept one, with
+Revit's own Undo while that change is still on top of the undo list - and
+only from the chat that made it (D-175). A whole session, newest first, is
+the alternative D-157 rejected: every undo past the first lands on an entry
+nothing can vouch for. No tool serves this module and nothing imports it;
+tests/test_rollback.py runs it, and proves that. Its register row is
+docs/28's HERON-REVIT-RBK-036, RETIRED 2026-11-16 by D-157 (row 5b-1747).
+Everything below is the module as it stood, its words unchanged.
+
 Session rollback - the panic button, and the one thing Revit will not let
 it do.
 
