@@ -26,7 +26,9 @@ risk: READ
 # DETAIL LINES (a line crossing the box), and the FIGURE of each DIMENSION (the
 # point it is placed at, inside the box - never the dimension's whole-string
 # box, which is why version 1 left them out). A tag's own element is never its
-# clash. Counted in `overModel`, the ids in `overlapping`; `annotationOnly`
+# clash. A door or window opening is inside a wall's band, and a wall shown
+# below the plan's cut is compared too - a tag across either is counted.
+# Counted in `overModel`, the ids in `overlapping`; `annotationOnly`
 # true is version 1 exactly. The first finding names what was compared, every
 # time. Version 1 was PROVEN (the proof block below, kept as the record of
 # what it proved); its C# moved, so it is DRAFT again until NEEDS-CHECKING

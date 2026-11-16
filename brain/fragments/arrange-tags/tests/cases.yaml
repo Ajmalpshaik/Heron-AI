@@ -36,6 +36,14 @@ positive:
       `keptInPlace`, and the door tag moved clear of it
 
 negative:
+  # VERSION 2 - room tags alone, each in its own room, nothing clashing.
+  - given: the two room tags of that plan alone
+    expect: moved 0, `notTags` empty - they are tags now, and nothing clashes
+  - given: a room tag WITH a leader, clashing with a door tag
+    expect: >
+      the room tag's head moved and its leader end still in its room - look
+      at the plan; what Revit does with that end is not checked in code
+
   - given: a set where EVERY tag has a leader, so nothing can be measured
     expect: >
       `measuredFrom` = 0 and the caller's stated size used. A size somebody

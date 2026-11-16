@@ -29,8 +29,11 @@ risk: MODIFY
 # Row 5b-1733: a tag has no Location and no model box, so a moved tag always
 # came back "could not be read back". Version 3 reads an IndependentTag's or a
 # room, space or area tag's TagHeadPosition before and after, so a tag moved
-# by an offset is checked like anything else. MOVE_ANNOTATION is still the
-# card for a tag put AT a point or lined up.
+# by an offset is checked like anything else. A tag handed in WITH the
+# element it tags can travel twice - carried, and moved - so one that moved
+# further than the offset is `unverified`, said in its own finding, never
+# `partly`. MOVE_ANNOTATION is still the card for a tag put AT a point or
+# lined up.
 #
 # Version 2 was PROVEN on 2026-11-02 (the proof block below, kept as the record
 # of what it proved); its C# moved, so it is DRAFT again until NEEDS-CHECKING

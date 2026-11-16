@@ -276,6 +276,7 @@ doc.Regenerate();
 // A move of nothing is a move nobody can measure: asked for zero, every element
 // is already where it should be, and comparing would report them all blocked.
 var askedForNothing = offset.GetLength() < tolerance;
+var overshot = 0;
 
 foreach (var element in attempted)
 {
@@ -290,10 +291,18 @@ foreach (var element in attempted)
     }
 
     if (now.DistanceTo(was) < tolerance) blocked.Add(element.Id);
+    // VERSION 3: FURTHER than asked is not "part of it". A tag handed in with
+    // its own element can travel with that element AND by itself - the move
+    // is real and its end is not the one asked for, so it is not confirmed.
+    else if (now.DistanceTo(was) > offset.GetLength() + tolerance) { unverified.Add(element.Id); overshot++; }
     else if (now.DistanceTo(was + offset) > tolerance) partly++;
     else { moved++; movedIds.Add(element.Id); }
 }
 
 findings.Add(string.Format("{0} moved the whole offset, {1} part of it, {2} did not move, {3} could not "
-    + "be read back", moved, partly, blocked.Count, unverified.Count));
+    + "be read back", moved, partly, blocked.Count, unverified.Count - overshot));
+if (overshot > 0)
+    findings.Add(string.Format("{0} moved FURTHER than the offset - usually a tag handed in with the element "
+        + "it tags, which carried it as well. Each is in `unverified`; move the elements without their "
+        + "tags, or the tags alone with MOVE_ANNOTATION", overshot));
 }

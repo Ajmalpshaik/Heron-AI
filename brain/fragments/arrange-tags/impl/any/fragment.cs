@@ -9,7 +9,7 @@
 // was never moved and was not even an obstacle: the commonest clash on a
 // plan, a door tag over a room tag, could not be pushed apart. A
 // SpatialElementTag is now arranged by its TagHeadPosition like the rest; its
-// leader, if it has one, keeps its own end. With `roomTagsStayPut`
+// leader, if it has one, is not written to. With `roomTagsStayPut`
 // true, room, space and area tags stay exactly where they are - counted as
 // fixed obstacles the other tags move away from, in both phases, and named in
 // `keptInPlace`.

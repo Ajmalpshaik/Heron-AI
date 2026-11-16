@@ -74,6 +74,15 @@ negative:
     expect: >
       moved 1, `notModelElements` empty - the refusal is for the wrong id,
       not for typed ids as such
+  - given: a door and its own tag in one call, offset 1000,0,0
+    expect: >
+      the door moved 1; the tag, if Revit carried it with the door as well,
+      in `unverified` with a finding that it moved FURTHER than the offset -
+      never counted in `partly`. Version 2 hid it as could-not-be-read-back
+  - given: an elevation marker by id, offset 1000,0,0
+    expect: >
+      moved, not refused - if it is refused as having no category, the
+      no-category rule is too wide: write down what its Category reads
 
 second_route:
   - a tape measure in Revit on ONE element, which is the only check that catches feet-for-millimetres

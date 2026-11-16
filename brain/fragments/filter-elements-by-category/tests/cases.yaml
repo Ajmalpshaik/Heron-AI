@@ -174,7 +174,7 @@ negative:
   # VERSION 7.
   - given: the same section, categories=Walls, Doors, cutByView=true, after the section line is moved clear of every wall and door
     expect: found 0 - a section that cuts nothing hands on nothing, however much it shows beyond
-  - given: cutByView=true with inViewOnly a floor plan, and again with no view
+  - given: cutByView=true with inViewOnly a floor plan, a detail view, and no view at all
     expect: refused before anything is read, naming why - a plan's cut is its view range
   - given: >
       VERSION 4 REVIEW FIX. categoryName "Duct Accessory" - singular, which no

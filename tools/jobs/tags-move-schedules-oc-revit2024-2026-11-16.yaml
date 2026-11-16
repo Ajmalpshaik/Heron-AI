@@ -16,13 +16,14 @@
 #
 # THE MODEL: "Heron OC Tags", which Heron builds from Revit 2024's English\DefaultMetric.rte with its
 # own PROVEN cards (group-oc.md, OC0) and saves under %TEMP%\heron-work\oc - never a working project.
-# Six Generic - 200mm walls on Level 1 (W1-W5 two rooms, W6 apart), doors D1 in W1 and D2 in W3, Room 1
-# and Room 2, a tag on each door and room in FloorPlan: Level 1 - D1's tag ON Room 1's tag, D2's on W3 -
-# a detail line through Room 2's tag, a dimension, a text note, and a section across W5.
+# Six Generic - 200mm walls on Level 1 (W1-W5 two rooms, W6 apart), doors D1 in W1, D2 in W3 and D3 in
+# W6, Room 1 and Room 2, a tag on each door and room in FloorPlan: Level 1 - D1's tag ON Room 1's tag,
+# D2's on W3, D3's 50 mm clear of W6 - a detail line through Room 2's tag, a dimension, a text note, and
+# a section drawn by hand across the plan at y = 2500.
 #
 # BEFORE RUNNING, from OC0: put W6's id for 0000001, Generic - 200mm's TYPE id for 0000002, the four
 # tags' ids (D1's, D2's, Room 1's, Room 2's) for 0000003 to 0000006, and the section's own name for
-# "Section: OC Section" - the name CREATE_SECTION_VIEW gave it.
+# "Section: OC Section" - OC0 draws the section by hand and names it OC Section.
 #
 # EVERY RUN IS ROLLED BACK. RUN OC7 (the first job) FIRST: every other job selects through
 # filter-elements-by-category, DRAFT until OC7 is signed. Read each printed line against the row - the
@@ -41,9 +42,10 @@ jobs:
     negative-set: {categories: "Doors", inViewOnly: "Section: OC Section", cutByView: "true"}
     note: >
       OC7, row 5b-1736. Positive: W5 found, and W2, W4 where the crop reaches - the walls the
-      section line crosses - with "Only what '<section>' CUTS"; NEVER W1, W3 or W6, parallel to the
-      cut. Negative: found 0 - the doors are in W1 and W3. If W5 is not found the cut plane is not at
-      View.Origin: write down the crop box's Min.Z and Max.Z. Version 6 has no cutByView.
+      section line crosses - with "Only what 'OC Section' CUTS ... the plane through (x, 2500, z)";
+      NEVER W1, W3 or W6, parallel to the cut. If that y is not 2500 the card reads the cut where
+      Revit does not draw it (row 5b-1801). Negative: found 0 - the doors are in W1, W3 and W6.
+      Version 6 has no cutByView.
 
   - fragment: move-elements
     write: true
@@ -60,15 +62,15 @@ jobs:
       whole offset ... 0 could not be read back". Version 2: moved 0, all four unverified (POSITIVE
       EMPTY). Negative (OC1, row 5b-1707): W6 AND the wall type - moved 0, the type in
       notModelElements, "1 of the 2 element(s) handed in are not elements of the model ... Nothing
-      was moved" - W6 NOT moved. Version 2 moved W6 (NEG NOT EMPTY). OC1's other half, W6 alone
-      moved 1, is by hand.
+      was moved" - W6 NOT moved. Version 2 moved W6 (NEG NOT EMPTY). By hand: W6 alone moved 1; a
+      door with its own tag; an elevation marker.
 
   - fragment: create-schedule
     write: true
     expect: madeAs
     setup: []
     set: {listKind: "keynote legend", fieldNames: "Key Value, Keynote Text", scheduleName: "OC Keynotes"}
-    negative-set: {listKind: "keynote legend", fieldNames: "Key Value, Keynote Text", scheduleName: "OC Keynotes", category: "Walls"}
+    negative-set: {listKind: "keynote legend", fieldNames: "Key Value, Keynote Text", scheduleName: "OC Keynotes", categoryId: "Walls"}
     note: >
       OC4, row 5b-1730. Positive: madeAs "... with 2 column(s)", missingFields EMPTY, "'Key Value'
       is already a column" and the same for Keynote Text, and NO "created with NO columns" line -

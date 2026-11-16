@@ -11,11 +11,15 @@
 // elements this section cuts" meant finding them by hand. `cutByView` true,
 // with `inViewOnly` naming a section or detail view, keeps only the elements
 // whose solid crosses the section's cut plane inside its crop: a slab a few
-// millimetres thick on the plane through the view's origin, the crop's width
-// and height, read with ElementIntersectsSolidFilter over what the view
-// shows. An element seen beyond the cut is left out; one with no solid
-// (annotation, a detail item) is never cut. Any other view, or no view, is
-// refused - a plan's cut is its view range, which this does not read. Links
+// millimetres thick on the crop box's NEAR face (Max.Z in its own axes - the
+// cut, as CREATE_SECTION_VIEW builds a section; MOVE_VIEW_CUT_PLANE reads the
+// cut at View.Origin instead, and the two are recorded as row 5b-1801, NOT
+// CHECKED in Revit), the crop's width and height, read with
+// ElementIntersectsSolidFilter over what the view shows. An element seen
+// beyond the cut is left out; one with no solid (annotation, a detail item)
+// is never cut. A section view only - a detail view may look down from a
+// plan, and a plan's cut is its view range, which this does not read - and a
+// split section's jogged parts are not read: the one plane is its first. Links
 // are not read for it. Widened here, not in a card of its own: it is a
 // selection, and this is the selector every chain already uses.
 //
@@ -284,18 +288,16 @@ if (cutByView)
     if (inViewOnly == null)
         throw new InvalidOperationException("cutByView asks for what a SECTION cuts, and no "
             + "section was named - give the section with inViewOnly. NOTHING was read.");
-    if (!(inViewOnly is ViewSection)
-        || (inViewOnly.ViewType != ViewType.Section && inViewOnly.ViewType != ViewType.Detail))
+    if (!(inViewOnly is ViewSection) || inViewOnly.ViewType != ViewType.Section)
         throw new InvalidOperationException("'" + inViewOnly.Name + "' is a " + inViewOnly.ViewType
             + " view, not a section, so NOTHING was read. cutByView reads a section's cut "
             + "plane; a plan's cut is its view range, which this does not read.");
 
     var crop = inViewOnly.CropBox;
     var toModel = crop.Transform;
-    // The cut plane passes through the view's origin, square to its
-    // direction; kept inside the crop's depth if the two ever disagree.
-    var planeZ = toModel.Inverse.OfPoint(inViewOnly.Origin).Z;
-    if (planeZ < crop.Min.Z || planeZ > crop.Max.Z) planeZ = crop.Max.Z;
+    // The cut is the crop box's near face, square to the view's direction
+    // (row 5b-1801 records the other reading, View.Origin).
+    var planeZ = crop.Max.Z;
     var halfThickness = 2.5 / 304.8;
     var corners = new[]
     {
@@ -312,9 +314,12 @@ if (cutByView)
     var cropOn = true;
     try { cropOn = inViewOnly.CropBoxActive; } catch (Exception) { }
     cutNote = string.Format("Only what '{0}' CUTS - elements whose solid crosses its cut plane inside "
-        + "its crop ({1:0} x {2:0} mm{3}); what the section shows beyond the cut, and anything with no "
-        + "solid, is left out", inViewOnly.Name, (crop.Max.X - crop.Min.X) * 304.8,
-        (crop.Max.Y - crop.Min.Y) * 304.8, cropOn ? "" : ", the crop box is switched off and its extent was used");
+        + "its crop ({1:0} x {2:0} mm{3}), the plane through {4} mm; what the section shows beyond the cut, "
+        + "and anything with no solid, is left out. A split section is read on its first plane only",
+        inViewOnly.Name, (crop.Max.X - crop.Min.X) * 304.8, (crop.Max.Y - crop.Min.Y) * 304.8,
+        cropOn ? "" : ", the crop box is switched off and its extent was used",
+        string.Format("({0:0}, {1:0}, {2:0})", toModel.OfPoint(new XYZ(0, 0, planeZ)).X * 304.8,
+            toModel.OfPoint(new XYZ(0, 0, planeZ)).Y * 304.8, toModel.OfPoint(new XYZ(0, 0, planeZ)).Z * 304.8));
 }
 
 // A LEVEL ID THAT IS NOT A LEVEL (SELECT_BY_LEVEL): refused with the reason,

@@ -337,8 +337,8 @@ else
                     if (!hit) continue;
                     overModel++;
                     flagged.Add(kept[k].Id);
-                    findings.Add(string.Format("tag '{0}' over wall '{1}' (id {2}) - on its poche", label(kept[k]),
-                        wallName, wall.Id));
+                    findings.Add(string.Format("tag '{0}' over wall '{1}' (id {2}) - across the wall's thickness "
+                        + "in plan, a door or window opening in it included", label(kept[k]), wallName, wall.Id));
                 }
             }
         }

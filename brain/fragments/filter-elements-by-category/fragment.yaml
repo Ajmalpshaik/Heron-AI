@@ -19,11 +19,15 @@ capability: FILTER_ELEMENTS_BY_CATEGORY
 # Ajmalpshaik/Heron-AI#854 item g): `inViewOnly` on a section hands on every
 # element the section SHOWS, beyond the cut as well as cut, so
 # TAG_ELEMENTS_IN_VIEW tagged both and the cut ones were found by hand.
-# `cutByView` true, with `inViewOnly` naming a section or detail view, keeps
-# only the elements whose solid crosses the cut plane inside the crop - a slab
-# a few millimetres thick on the plane through the view's origin, read with
-# ElementIntersectsSolidFilter over what the view shows. Any other view, or
-# none, is refused before anything is read; links are not read for it.
+# `cutByView` true, with `inViewOnly` naming a SECTION view, keeps only the
+# elements whose solid crosses the cut plane inside the crop - a slab a few
+# millimetres thick on the crop box's near face (Max.Z, the cut as
+# CREATE_SECTION_VIEW builds one; MOVE_VIEW_CUT_PLANE reads View.Origin, and
+# the disagreement is row 5b-1801, NOT CHECKED in Revit), read with
+# ElementIntersectsSolidFilter over what the view shows. Any other view - a
+# detail view may look down from a plan - or none is refused before anything
+# is read; a split section is read on its first plane only, and links are not
+# read for it.
 # WIDENED HERE, NOT A CARD OF ITS OWN: the row left the owner that choice; this
 # is a selection, and the selector every tagging chain already takes, so
 # TAG_ELEMENTS_IN_VIEW is unchanged and takes it as any selection. Version 6
@@ -206,9 +210,9 @@ contract:
       source: request
       optional: true
     - name: cutByView
-      # VERSION 7 (row 5b-1736). True, with `inViewOnly` naming a SECTION or
-      # detail view: only the elements the section CUTS, not those it shows
-      # beyond the cut. Left out it binds false - what versions 1 to 6 did.
+      # VERSION 7 (row 5b-1736). True, with `inViewOnly` naming a SECTION
+      # view: only the elements the section CUTS, not those it shows beyond
+      # the cut. Left out it binds false - what versions 1 to 6 did.
       # Without a section in `inViewOnly` it is refused.
       type: bool
       source: request

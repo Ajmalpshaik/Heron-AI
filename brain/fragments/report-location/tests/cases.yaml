@@ -57,6 +57,12 @@ positive:
       position and no bounding box"
 
 negative:
+  # Version 5 - model elements are read exactly as version 4 read them.
+  - given: the wall W1 on the same scratch project
+    expect: >
+      "RUNS from (0, 0, 0) to (8000, 0, 0) mm" - never TAG HEAD AT; the tag
+      branch takes tags only
+
   # Version 4. TRACKING (D-53): the site cannot come back empty, so it must
   # follow the model when the model is changed under it.
   - given: >

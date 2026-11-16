@@ -421,7 +421,10 @@ if (schedule != null)
         var already = columnNamed(key);
         if (already != null)
         {
-            findings.Add(string.Format("'{0}' is already a column - Revit puts it in a {1} itself", key, kindWord));
+            var askedTwice = fieldsAdded.Any(f => sameText(f, key));
+            findings.Add(askedTwice
+                ? string.Format("'{0}' was asked for twice - it is one column", key)
+                : string.Format("'{0}' is already a column - Revit puts it in a {1} itself", key, kindWord));
             if (sortWanted.Length > 0 && sameText(key, sortWanted)) sortField = already;
             continue;
         }
