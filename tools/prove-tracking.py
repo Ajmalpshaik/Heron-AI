@@ -462,6 +462,10 @@ def live_runner(frag, session=None, in_document=None, client_id=None):
             pass
         bridge.close()
 
+    # Which add-in and which Revit build answered - read now, while the bridge
+    # is open, and written into the record beside `model:` (D-30).
+    runner.built_on = CLIENT.built_on_of(bridge)
+
     return runner, close, where
 
 
@@ -623,6 +627,7 @@ def main(argv=None):
         "fragment": frag.slug,
         "date": __import__("time").strftime("%Y-%m-%d"),
         "model": where,
+        "built_on": getattr(runner, "built_on", None) or {},
         "tracking": rows,
         "phases": [],
     }

@@ -2057,6 +2057,13 @@ def revit_change(capability: str = "", values: str = "",
 
     # NO "NOT PROVEN" LINE HERE ANY MORE. It warned after the change was kept;
     # a fragment that is not PROVEN is now refused before it is sent (D-117).
+    #
+    # A PROOF TAKEN ON ANOTHER ADD-IN OR REVIT BUILD IS SAID, NOT REFUSED -
+    # `_build_line`, D-174. The fingerprint gate above is unchanged.
+    build = _build_line(capability, folder, session)
+    if build:
+        lines.append("")
+        lines.append(build)
 
     # A DRY RUN ENDS HERE - BEFORE THE DISCARD'S BRANCH BELOW, WHICH IS FOR A
     # RUN THAT ASKED TO KEEP - AND IT ENDS ONE OF TWO WAYS.
@@ -3026,6 +3033,22 @@ def _proof_line(capability, folder):
             % (capability, status, where, when))
 
 
+def _build_line(capability, folder, session):
+    """
+    One sentence when the proof was taken on another add-in or Revit build
+    than the one that just ran it - or "" for anything else.
+
+    THE WORDS ARE THE BRAIN'S (`heron_brain.proof_build_line`), so they can
+    be held by a suite on a machine with no MCP SDK - CI's tests job has
+    none, on purpose. This door only says which session ran it.
+
+    A FLAG, NOT A REFUSAL - D-174, the owner's answer to Q-92. The D-117 gate
+    refuses on D-30's fingerprint, read from the card alone; a proof on another
+    build is said under the answer and never stops a change being kept.
+    """
+    return brain.proof_build_line(capability, folder, bridge.built_on_of(session))
+
+
 def _shown_elsewhere(root, folder, capability):
     """
     One sentence sending a capability declared EXECUTE or below to revit_show,
@@ -3240,6 +3263,10 @@ def revit_read(capability: str = "", values: str = "",
 
     lines.append("")
     lines.append(_proof_line(capability, folder))
+    # AND WHICH BUILD IT WAS PROVED ON, said only when that has moved.
+    build = _build_line(capability, folder, session)
+    if build:
+        lines.append(build)
     # SAID FROM THE ADD-IN'S COUNT, NOT FROM "NO TRANSACTION" ALONE - row
     # 5b-350 is a read that reported Revit's refusal and left an element. An
     # add-in that counted sends `elementsCounted` (a read that moved the count
@@ -3463,6 +3490,10 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
 
     lines.append("")
     lines.append(_proof_line(capability, folder))
+    # AND WHICH BUILD IT WAS PROVED ON, said only when that has moved.
+    build = _build_line(capability, folder, session)
+    if build:
+        lines.append(build)
     if isinstance(counted, int):
         lines.append("Nothing in the model was changed: Heron counted %s element(s) "
                      "before this ran and the same after it. Only what is shown can "
