@@ -392,12 +392,14 @@ def main():
 
     cs_writers = sorted(op for op, level in declared_cs.items() if level == "MODIFY")
     # undo_last since D-157, for the reason revit_undo_last is typed above -
-    # and undo_guarded since the review of 2026-11-12: the same operation under
-    # a name the FIRST build of it does not know, so a Revit still running
-    # that build cannot be asked to post by its old rule. The old name is not
-    # kept beside it: a second MODIFY name fails this line.
-    check(cs_writers == ["move_elements", "run_fragment_write", "undo_guarded"],
-          "the MODIFY operations are exactly move_elements, run_fragment_write and undo_guarded "
+    # undo_guarded since the review of 2026-11-12, and undo_own since Q-88
+    # (2026-11-16): each time the same operation under a name the add-in
+    # built before does not know, so a Revit still running that build cannot
+    # be asked to post by its older rule. No older name is kept beside it as
+    # a writer - undo_guarded is READ now, and posts nothing: a second MODIFY
+    # name fails this line.
+    check(cs_writers == ["move_elements", "run_fragment_write", "undo_own"],
+          "the MODIFY operations are exactly move_elements, run_fragment_write and undo_own "
           "- found: %s" % (cs_writers or "none"))
 
     # AND ABOVE MODIFY, TYPED HERE FOR THE SAME REASON (D-106, 2026-09-28).

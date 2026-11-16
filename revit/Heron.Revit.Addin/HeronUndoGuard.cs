@@ -13,8 +13,13 @@ namespace Heron.Revit.Addin
 {
     /// <summary>
     /// Whether Heron has seen anything change a model since its last kept
-    /// change there - the bookkeeping behind `undo_guarded` (D-157), with nothing
+    /// change there - the bookkeeping behind `undo_own` (D-157), with nothing
     /// Revit-shaped in it.
+    ///
+    /// AND WHICH CHAT KEPT IT (Q-88, decided 2026-11-15): only the chat that
+    /// made a change may have Undo sent for it. The keep records the chat
+    /// whose request kept it - the request's conversation, the one D-141
+    /// keys the model hold on - and `ChatRefusal` refuses every other.
     ///
     /// WHY IT HAS TO BE WATCHED. Revit's Undo takes the TOP of the list, and
     /// Revit has no API that names an entry and undoes that one, or that reads
@@ -30,10 +35,11 @@ namespace Heron.Revit.Addin
     /// and from RevitUndo:
     ///
     ///   Kept       a write job was assimilated, with what Revit counted in
-    ///              it. One or more elements: its entry landed. NONE - a job
-    ///              that opened no transaction, or one Revit counted nothing
-    ///              in - left no entry Heron can vouch for, so there is
-    ///              nothing of Heron's to undo (row 5b-1603). It is still
+    ///              it and the chat that kept it. One or more elements: its
+    ///              entry landed. NONE - a job that opened no transaction, or
+    ///              one Revit counted nothing in - left no entry Heron can
+    ///              vouch for, so there is nothing of Heron's to undo (row
+    ///              5b-1603). It is still
     ///              Heron's LAST job, so an older keep is no longer offered:
     ///              whether an empty group leaves an entry is not measured
     ///              (NEEDS-CHECKING Group NU), and "undo that" after it does
@@ -112,7 +118,7 @@ namespace Heron.Revit.Addin
 
         /// <summary>
         /// Why a job kept while an Undo is outstanding is not vouched for -
-        /// said by `undo_guarded`'s refusal and on that job's kept reply.
+        /// said by `undo_own`'s refusal and on that job's kept reply.
         /// </summary>
         internal const string OutstandingWhy =
             "an Undo Heron sent earlier has not been seen to run; it may still run and take "
@@ -123,6 +129,7 @@ namespace Heron.Revit.Addin
         {
             internal string Job;        // the fragment's name, for the sentence
             internal string Label;      // its undo entry, "Heron: <name>"
+            internal string Chat;       // the conversation whose request kept it (Q-88)
             internal DateTime KeptAt;   // local time, for "at 14:32"
             internal string State;
             internal string CoveredBy;  // the first transaction seen after it
@@ -190,9 +197,14 @@ namespace Heron.Revit.Addin
         /// with no transaction (`noTransactionOpen`: open a view), or a MODIFY
         /// that changed nothing, leaves no entry in Revit's undo list - and the
         /// next Undo would take whatever the modeller did before it.
+        ///
+        /// `chat` IS THE CHAT WHOSE REQUEST KEPT IT (Q-88) - its conversation,
+        /// or the one-request key an older client is given. Only that chat is
+        /// sent Undo for it; null or empty is nobody's, and every chat is
+        /// refused (ChatRefusal).
         /// </summary>
         internal void Kept(string document, string job, string label, DateTime keptAt,
-                           int counted, bool read)
+                           int counted, bool read, string chat)
         {
             if (string.IsNullOrEmpty(document) || string.IsNullOrEmpty(label))
             {
@@ -202,7 +214,8 @@ namespace Heron.Revit.Addin
             }
 
             var before = Of(document);
-            var entry = new Entry { Job = job, Label = label, KeptAt = keptAt, Touched = ++_clock };
+            var entry = new Entry { Job = job, Label = label, Chat = chat, KeptAt = keptAt,
+                                    Touched = ++_clock };
 
             // THE NAMES OF THE KEEPS BEFORE IT, while Revit's list can still
             // hold them. A second keep under one name makes an undo or a redo
@@ -490,7 +503,7 @@ namespace Heron.Revit.Addin
         /// brings another model to the front would send it there.
         ///
         /// IT ONLY ANSWERS. Nothing is changed by asking, so a check
-        /// (`undo_check`) and the hold can both ask it. Past SentWait it
+        /// (`undo_own_check`) and the hold can both ask it. Past SentWait it
         /// answers null and jobs run again - the Undo is still outstanding,
         /// and what that means is `Kept`'s and `Refusal`'s to say.
         /// </summary>
@@ -583,6 +596,40 @@ namespace Heron.Revit.Addin
             return null;
         }
 
+        /// <summary>
+        /// Why Undo must NOT be sent for `chat` - Heron's last change in this
+        /// model was kept by another chat - or null when `chat` kept it (Q-88).
+        ///
+        /// ASKED AFTER Refusal, AND ONLY WHEN IT SAID YES, so every other
+        /// reason is said in its own words and this one can only ever refuse
+        /// more. The chat the keep recorded and the chat asking are compared
+        /// exactly: nothing recorded, nothing asking, or any difference
+        /// refuses. Revit's own Ctrl+Z is not Heron's to refuse, and the
+        /// sentence says it still works.
+        /// </summary>
+        internal string ChatRefusal(string document, string title, string chat)
+        {
+            var entry = Of(document);
+            if (entry != null && !string.IsNullOrEmpty(entry.Chat) && !string.IsNullOrEmpty(chat)
+                && string.Equals(entry.Chat, chat, StringComparison.Ordinal))
+                return null;
+
+            const string NothingSent = " Nothing was sent to Revit and nothing was undone.";
+            var model = string.IsNullOrEmpty(title) ? "this model" : "\"" + title + "\"";
+            if (entry == null)
+            {
+                // Refusal says this first; said here too, so this never lets
+                // an Undo through on its own.
+                return "Heron has kept no change in " + model + " that this chat made, so there "
+                     + "is nothing of this chat's to undo." + NothingSent + " Ctrl+Z in Revit "
+                     + "undoes the last change, whoever made it.";
+            }
+            return "Heron's last change in " + model + ", '" + entry.Job + "' at " + At(entry.KeptAt)
+                 + ", was made in another chat, not this one, and only the chat that made a "
+                 + "change sends Undo for it." + NothingSent + " Ctrl+Z in Revit still undoes it "
+                 + "- or ask in the chat that made it.";
+        }
+
         /// <summary>The sentence for an Undo just sent - what Revit will do, and how to take it back.</summary>
         internal string SentSentence(string document)
         {
@@ -594,7 +641,7 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
-        /// A check's answer (`undo_check`): whether Undo would be sent now and
+        /// A check's answer (`undo_own_check`): whether Undo would be sent now and
         /// for which job, or the exact refusal - and that nothing was sent.
         /// </summary>
         internal string CheckSentence(string document, string refusal)
@@ -694,6 +741,9 @@ namespace Heron.Revit.Addin
                                   + (after.Redoable ? "" : ", not redoable") + ")"
                                 : "")
                           + ", job '" + after.Job + "'"
+                          // WHICH CHAT KEPT IT (Q-88), as the log names a chat
+                          // everywhere else - for a run with two chats to read.
+                          + ", chat " + HeronConversation.Short(after.Chat)
                           + (after.State == Unsure ? " - " + after.Why : "")));
             }
             catch (Exception)

@@ -32,12 +32,21 @@ namespace Heron.UndoGuard.TestHost
     /// old guard each scenario still RUNS and fails on its own assertion,
     /// where a direct call would have been one compile error for all of them
     /// (heron-ship 2a).
+    ///
+    /// SECTION 16 IS Q-88 (2026-11-16): only the chat that kept Heron's last
+    /// change may have Undo sent for it. Every keep above is made by one chat
+    /// (`Mine`); on a guard that records no chat they fall back to the keep it
+    /// had, and section 16 fails by assertion rather than by a compile error.
     /// </summary>
     internal static class Program
     {
         private const string Model = "guid|C:/models/Tower.rvt|Tower";
         private const string Other = "guid2|C:/models/Podium.rvt|Podium";
         private const string Label = "Heron: rename-views-by-level";
+
+        // Two chats' conversations, as the bridge client makes them (D-141).
+        private const string Mine = "a1b2c3d4e5f60718293a4b5c6d7e8f90";
+        private const string Theirs = "f0e1d2c3b4a5968778695a4b3c2d1e0f";
 
         private static readonly DateTime At = new DateTime(2026, 11, 12, 14, 32, 0);
 
@@ -79,16 +88,36 @@ namespace Heron.UndoGuard.TestHost
             return null;
         }
 
-        /// <summary>A keep, with what Revit counted in it - or, on the old guard, the keep it had.</summary>
+        /// <summary>A keep by this chat, with what Revit counted in it.</summary>
         private static void Keep(HeronUndoGuard guard, string model, string job, string label,
                                  DateTime at, int counted, bool read)
         {
-            if (Find("Kept", 6) != null) Ask(guard, "Kept", model, job, label, at, counted, read);
-            else
+            KeepBy(guard, model, job, label, at, counted, read, Mine);
+        }
+
+        /// <summary>
+        /// A keep by one chat (Q-88) - or, on a guard from before, the keep it
+        /// had: with what Revit counted, else without.
+        /// </summary>
+        private static void KeepBy(HeronUndoGuard guard, string model, string job, string label,
+                                   DateTime at, int counted, bool read, string chat)
+        {
+            if (Find("Kept", 7) != null)
             {
-                Ask(guard, "Kept", model, job, label, at, counted, read);    // noted as absent
-                Find("Kept", 4).Invoke(guard, new object[] { model, job, label, at });
+                Ask(guard, "Kept", model, job, label, at, counted, read, chat);
+                return;
             }
+            Ask(guard, "Kept", model, job, label, at, counted, read, chat);     // noted as absent
+            if (Find("Kept", 6) != null)
+                Find("Kept", 6).Invoke(guard, new object[] { model, job, label, at, counted, read });
+            else
+                Find("Kept", 4).Invoke(guard, new object[] { model, job, label, at });
+        }
+
+        /// <summary>Whose change it is (Q-88), asked for "Tower" by `chat`; null on a guard that cannot say.</summary>
+        private static string ChatRefusal(HeronUndoGuard guard, string chat)
+        {
+            return Ask(guard, "ChatRefusal", Model, "Tower", chat) as string;
         }
 
         private static void Send(HeronUndoGuard guard, string model, DateTime now)
@@ -543,6 +572,66 @@ namespace Heron.UndoGuard.TestHost
             Check(Says(guard.Refusal("guid|C:/models/Tower-B.rvt|Tower-B", "Tower-B", true, true),
                        "it may still run and take this change"),
                   "a save under a new name does not: the Undo still out goes with the model");
+
+            Console.WriteLine();
+            Console.WriteLine("16. only the chat that kept Heron's last change may have Undo sent for it (Q-88)");
+            guard = new HeronUndoGuard();
+            KeepBy(guard, Model, "rename-views-by-level", Label, At, 3, true, Mine);
+            Check(Find("ChatRefusal", 3) != null && Refusal(guard) == null
+                  && ChatRefusal(guard, Mine) == null,
+                  "this chat kept it, and nothing since: Undo may be sent - for this chat");
+            var theirs = ChatRefusal(guard, Theirs);
+            Check(Says(theirs, "Heron's last change in \"Tower\", 'rename-views-by-level' at 14:32, "
+                               + "was made in another chat, not this one")
+                  && Says(theirs, "Nothing was sent to Revit and nothing was undone")
+                  && Says(theirs, "Ctrl+Z in Revit still undoes it"),
+                  "ANOTHER chat asking is refused: the change named, nothing sent, and Ctrl+Z "
+                  + "said to undo it still - found: " + (theirs ?? "nothing"));
+            Check(guard.Of(Model) != null && guard.Of(Model).State == HeronUndoGuard.OnTop
+                  && Refusal(guard) == null && ChatRefusal(guard, Mine) == null,
+                  "and asking changed nothing: the chat that kept it still may");
+            Check(ChatRefusal(guard, null) != null && ChatRefusal(guard, "") != null,
+                  "a request that names no chat is refused - it cannot be shown to be the one "
+                  + "that kept it");
+            Check(ChatRefusal(guard, Mine.ToUpperInvariant()) != null
+                  && ChatRefusal(guard, Mine.Substring(0, 8)) != null,
+                  "the chat is compared exactly - never by case, never by its first characters");
+            guard = new HeronUndoGuard();
+            KeepBy(guard, Model, "rename-views-by-level", Label, At, 3, true, null);
+            Check(ChatRefusal(guard, Mine) != null && ChatRefusal(guard, null) != null,
+                  "a keep that recorded no chat is nobody's: every chat is refused, even one that "
+                  + "names none");
+            guard = new HeronUndoGuard();
+            KeepBy(guard, Model, "rename-views-by-level", Label, At, 3, true, Mine);
+            KeepBy(guard, Model, "create-sheets", "Heron: create-sheets", At.AddMinutes(4), 2, true, Theirs);
+            Check(Says(ChatRefusal(guard, Mine), "'create-sheets' at 14:36, was made in another chat")
+                  && ChatRefusal(guard, Theirs) == null && Refusal(guard) == null,
+                  "another chat kept a change after this one's: that is Heron's last change, so "
+                  + "this chat is refused and the other is not");
+            guard = new HeronUndoGuard();
+            KeepBy(guard, Model, "rename-views-by-level", Label, At, 3, true, Mine);
+            KeepBy(guard, Other, "create-sheets", "Heron: create-sheets", At, 2, true, Theirs);
+            Check(ChatRefusal(guard, Mine) == null
+                  && Ask(guard, "ChatRefusal", Other, "Podium", Mine) != null,
+                  "another chat's keep in ANOTHER model changes nothing here - each model's last "
+                  + "change is the chat's that kept it");
+            Check(Says(Ask(new HeronUndoGuard(), "ChatRefusal", Model, "Tower", Mine) as string,
+                       "Nothing was sent to Revit"),
+                  "and with nothing kept at all it refuses too - it never lets an Undo through "
+                  + "on its own");
+            var chats = new List<string>();
+            HeronUndoGuard told = null;
+            try
+            {
+                told = (HeronUndoGuard)Activator.CreateInstance(
+                    typeof(HeronUndoGuard), Members, null,
+                    new object[] { (Action<string>)chats.Add }, null);
+            }
+            catch (MissingMethodException) { told = null; }
+            if (told != null) KeepBy(told, Model, "rename-views-by-level", Label, At, 3, true, Mine);
+            Check(Says(string.Join("\n", chats.ToArray()), "job 'rename-views-by-level', chat a1b2c3d4"),
+                  "the add-in's log names the chat that kept it, as it names a chat elsewhere - for "
+                  + "a run with two chats to read");
 
             Console.WriteLine();
             foreach (var missing in Absent)

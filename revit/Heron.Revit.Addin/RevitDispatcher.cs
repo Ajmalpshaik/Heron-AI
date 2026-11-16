@@ -987,11 +987,16 @@ namespace Heron.Revit.Addin
                 case "reset_temporary":
                     return "Resetting the temporary hide/isolate";
 
-                case "undo_guarded":
-                    return "Sending Undo for Heron's last change";
+                case "undo_own":
+                    return "Sending Undo for this chat's last change";
 
+                case "undo_own_check":
+                    return "Checking whether this chat can undo its last change";
+
+                // Q-88: refused at once, nothing sent (RevitUndo.OlderChat).
+                case "undo_guarded":
                 case "undo_check":
-                    return "Checking whether Heron can undo its last change";
+                    return "Answering an Undo from an older chat - nothing is sent";
 
                 case "show_elements":
                     return "Showing a change's elements";
