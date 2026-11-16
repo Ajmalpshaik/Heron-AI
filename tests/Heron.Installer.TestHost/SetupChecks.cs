@@ -100,6 +100,20 @@ namespace Heron.Installer.TestHost
             check(ClaudeCodeEntry.ClientIdIn(null) == null && ClaudeCodeEntry.ClientIdIn("not json") == null,
                   "  and no file, or a damaged one, gives none rather than a guess");
 
+            // THE WORDS BESIDE THE WINDOW'S TICK - D-167, appended 2026-11-16.
+            // Ticking is the asking, so the line itself names what a modeller
+            // must do first, and the hover names what it writes and how it
+            // comes out again.
+            Console.WriteLine();
+            Console.WriteLine("  the window's Claude tick says what it needs, and the hover what it does");
+            check(names(ClaudeCodeEntry.TickWords, new[] { "Claude Code", "any folder", "Close Claude first" }),
+                  "the tick's own line names Claude Code, any folder, and closing Claude first");
+            check(ClaudeCodeEntry.TickWords.Length <= 90,
+                  "  and it is short - one line in a 620-wide window, the owner's 'make it simple'");
+            check(names(ClaudeCodeEntry.WhatTheTickDoes,
+                        new[] { ".claude.json", "Claude must be closed", "changes nothing", "Installed apps" }),
+                  "  and the hover names the file, the closed Claude, the no-change refusal and the way out");
+
             Console.WriteLine();
             Console.WriteLine("D-167 - --uninstall CHOOSES NOTHING, AND --add-to-claude INSTALLS NOTHING");
             var un = Heron.Installer.Cli.Arguments.Read(new[] { "--uninstall" });

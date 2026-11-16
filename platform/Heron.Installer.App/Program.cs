@@ -62,6 +62,34 @@ namespace Heron.Installer.App
                 return 1;
             }
 
+            // OPENED BY THE SETUP - D-167, appended 2026-11-16. The Setup puts
+            // Heron's folder in place with every product's zip under payload\,
+            // then opens this window with `--from` that folder, so the window a
+            // modeller sees is this one and nothing is downloaded. The branch
+            // is heron-install's own --from, line for line: the same refusal
+            // by name, and the same ProductFolder checking every zip's
+            // checksum. AFTER the Store-Claude refusal above, because the work
+            // folder ProductFolder unpacks into is a write.
+            ProductFolder handover = null;
+            if (args.Length > 0)
+            {
+                if (args.Length != 2 || args[0] != "--from")
+                {
+                    MessageBox.Show("Heron Installer takes one choice: --from and a Heron folder, " +
+                                    "as the Setup opens it. Nothing was changed.",
+                                    "Heron Installer", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return 1;
+                }
+                var notAFolder = ProductFolder.WhyNotAHeronFolder(args[1]);
+                if (notAFolder != null)
+                {
+                    MessageBox.Show(notAFolder, "Heron Installer",
+                                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return 1;
+                }
+                handover = new ProductFolder(args[1], Workspace());
+            }
+
             var revit = new PowerShellRevitEnvironment(root);
             var installed = new InstalledProductsOnDisk(revit);
 
@@ -84,13 +112,20 @@ namespace Heron.Installer.App
             var localBuilds = new BuildsOnDisk(root, localDeployer.Configuration);
 
             var releases = revit.InstalledReleases();
-            var download = InstallerScreen.AnythingBuilt(manifest, releases, localBuilds)
-                ? null
-                : Downloader(manifest, root);
 
-            var deployer = download == null
+            // THE SETUP'S FOLDER IS THE FILES, WHEN THERE IS ONE - nothing is
+            // looked for on the disk and nothing is downloaded.
+            IProductFiles files = handover;
+            if (files == null)
+            {
+                files = InstallerScreen.AnythingBuilt(manifest, releases, localBuilds)
+                    ? null
+                    : Downloader(manifest, root);
+            }
+
+            var deployer = files == null
                 ? localDeployer
-                : new DeployScriptDeployer(root, localDeployer.Configuration, download);
+                : new DeployScriptDeployer(root, localDeployer.Configuration, files);
 
             // AND THE GREYING FOLLOWS THE ROUTE. A release with no local build
             // is greyed only when there is nothing to download either -
@@ -100,17 +135,38 @@ namespace Heron.Installer.App
                                                releases,
                                                revit.RunningRevits(),
                                                installed,
-                                               download == null ? localBuilds : null);
+                                               files == null ? localBuilds : null);
 
-            var window = new InstallerWindow(screen, VersionOf(manifest));
+            // THE CLAUDE TICK IS OFFERED ONLY BY THE SETUP'S ROUTE. That is the
+            // installed Heron a modeller keeps; a checkout or an unzipped folder
+            // opened by hand is somebody working on Heron, whose chats already
+            // reach it through the folder's own .mcp.json.
+            var window = new InstallerWindow(screen, VersionOf(manifest), handover != null);
             window.InstallPressed += delegate (IReadOnlyList<string> products,
                                                IReadOnlyList<string> releases,
                                                IReadOnlyList<InstallStep> removals)
             {
-                Install(window, screen, manifest, root, revit, deployer, products, releases, removals);
+                // READ HERE, ON THE WINDOW'S THREAD - a tick box asked from the
+                // worker below throws.
+                var python = window.SetUpAiSide;
+                var claude = window.AddToClaude;
+                Install(window, screen, manifest, root, revit, deployer,
+                        products, releases, removals, python, claude, handover != null);
             };
 
             return new Application().Run(window);
+        }
+
+        /// <summary>
+        /// Where the Setup's zips are unpacked and checked, under the user's own
+        /// temp - heron-install's Workspace, for the same reason: the folder the
+        /// exe sits in is not somewhere to unpack into.
+        /// </summary>
+        private static string Workspace()
+        {
+            var work = Path.Combine(Path.GetTempPath(), "Heron", "download");
+            Directory.CreateDirectory(work);
+            return work;
         }
 
         /// <summary>
@@ -126,7 +182,10 @@ namespace Heron.Installer.App
                                     IProductDeployer deployer,
                                     IReadOnlyList<string> products,
                                     IReadOnlyList<string> releases,
-                                    IReadOnlyList<InstallStep> removals)
+                                    IReadOnlyList<InstallStep> removals,
+                                    bool pythonTicked,
+                                    bool claudeTicked,
+                                    bool fromSetup)
         {
             var engine = new InstallEngine(revit, deployer);
             engine.Pause = delegate { Thread.Sleep(1000); };
@@ -145,8 +204,16 @@ namespace Heron.Installer.App
                 // the knowledge store take minutes, and the window says each
                 // step as it starts. What runs and what it says is
                 // PythonSetup's; this only carries it to the screen.
+                // UNTICKED IS heron-install's --no-python: the add-in goes in and
+                // the Python side is left alone, said so in the report.
                 IReadOnlyList<string> python = new string[0];
-                if (PythonSetup.ShouldRun(report, manifest))
+                var pythonWanted = PythonSetup.ShouldRun(report, manifest);
+                if (pythonWanted && !pythonTicked)
+                {
+                    python = new[] { "Heron's AI side was left out, as asked. " +
+                                     "Open this window again with that tick on to add it." };
+                }
+                else if (pythonWanted)
                 {
                     var setup = new PythonSetup(root, new ProcessProgramRunner());
                     setup.OnStep = delegate (string step)
@@ -158,6 +225,29 @@ namespace Heron.Installer.App
 
                 ShowWhatIsOpen(window, screen, revit);
                 window.Dispatcher.Invoke(delegate { window.Report(report, python); });
+
+                // HERON INTO CLAUDE CODE, LAST, AND ONLY AFTER AN INSTALL THAT
+                // WORKED - heron-install --add-to-claude's step. An entry beside
+                // an add-in that failed is a chat pointed at a Heron that is not
+                // there. What it writes and what it says are ClaudeCodeEntry's.
+                if (claudeTicked && products.Count > 0 && !report.Abandoned && report.Failed == 0)
+                {
+                    var step = ClaudeCodeEntry.Apply(root);
+                    window.Dispatcher.Invoke(delegate { window.AlsoSay(step.Said); });
+                }
+
+                // REMOVE HERON TAKES IT OUT OF REVIT, AND ONLY THAT - the
+                // button's own words. Installed by the Setup, the rest of it -
+                // the program folder and its Claude Code entry - has one door
+                // out, Installed apps, which takes everything (D-167 item 2).
+                if (fromSetup && products.Count == 0 && report.Removed > 0)
+                {
+                    window.Dispatcher.Invoke(delegate
+                    {
+                        window.AlsoSay("Heron's program folder, and its entry in Claude Code if it has one, " +
+                                       "stay until you remove Heron AI in Settings > Apps > Installed apps.");
+                    });
+                }
             });
             worker.IsBackground = true;
             worker.Start();

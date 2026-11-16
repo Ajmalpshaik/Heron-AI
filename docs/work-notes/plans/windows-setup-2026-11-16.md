@@ -1,6 +1,6 @@
 # A signed Windows Setup for modellers - design (written 2026-11-16)
 
-> **Active - BUILT 2026-11-16, and run on the owner's PC the same day: installed into Revit 2020, 2024, 2026 and 2027, Revit 2020 loaded it, uninstalled cleanly, his own installs put back identical (Group OA rows OA2 to OA10). Owed: Revit 2024, 2026 and 2027 starting it, the Claude Code sitting, signing.** Written for the owner (Ajmal PS) before any
+> **Active - BUILT 2026-11-16, and run on the owner's PC the same day: installed into Revit 2020, 2024, 2026 and 2027, Revit 2020 loaded it, uninstalled cleanly, his own installs put back identical (Group OA rows OA2 to OA10). Owed: Revit 2024, 2026 and 2027 starting it, the Claude Code sitting, signing. Amended the same day on the owner's word: the Setup's face is now Heron's own branded window, its two ticks inside it ([D-167, amended](../../decisions/D-167.md)) - built and photographed, owed on his PC as rows OA12 to OA18.** Written for the owner (Ajmal PS) before any
 > code, as the task asked: *"Write the design first, and ask the owner before choosing the signing
 > certificate or the installer tool."* **He handed the three choices to the session the same day** -
 > *"do it the best am not sure for this and you anre my sesior programer or manager or what eve"* - and they

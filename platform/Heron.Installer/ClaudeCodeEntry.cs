@@ -68,6 +68,23 @@ namespace Heron.Installer
         public static readonly string ServerScript = Path.Combine("mcp", "server", "heron_mcp_server.py");
 
         /// <summary>
+        /// The words beside the window's tick that asks for this - short, as the
+        /// owner asked of that window on 2026-11-07, with the whole of it in
+        /// WhatTheTickDoes on hover. HERE, not in the window, so the sentence is
+        /// in the library its tests run against (D-167, appended 2026-11-16).
+        /// </summary>
+        public const string TickWords =
+            "Add Heron to Claude Code, so a chat in any folder can use it. Close Claude first.";
+
+        /// <summary>The whole of what that tick does, shown on hover.</summary>
+        public const string WhatTheTickDoes =
+            "Adds Heron's one entry to Claude Code's settings for your Windows user (~/.claude.json), " +
+            "so a chat opened in ANY folder can use Heron. Claude must be closed while it is written, " +
+            "because Claude rewrites that file itself while it runs - if it is open, Heron says so and " +
+            "changes nothing. Each open chat then runs Heron in the background. Removing Heron AI in " +
+            "Settings > Apps > Installed apps takes the entry out again.";
+
+        /// <summary>
         /// Add or replace Heron's entry. Null, with `why` set, when it must not.
         ///
         /// `heronFolder` is the installed Heron folder, absolute - a user-scope

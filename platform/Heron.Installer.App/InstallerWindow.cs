@@ -73,7 +73,16 @@ namespace Heron.Installer.App
         public event Action<IReadOnlyList<string>, IReadOnlyList<string>,
                             IReadOnlyList<InstallStep>> InstallPressed;
 
-        public InstallerWindow(InstallerScreen screen, string version)
+        private readonly CheckBox _python;
+        private readonly CheckBox _claude;    // null unless offered - see the constructor
+
+        /// <summary>Whether "Set up Heron's AI side" is ticked. Read on the window's thread.</summary>
+        public bool SetUpAiSide { get { return _python.IsChecked == true; } }
+
+        /// <summary>Whether "Add Heron to Claude Code" is offered and ticked.</summary>
+        public bool AddToClaude { get { return _claude != null && _claude.IsChecked == true; } }
+
+        public InstallerWindow(InstallerScreen screen, string version, bool offerClaude)
         {
             if (screen == null) throw new ArgumentNullException("screen");
             _screen = screen;
@@ -111,11 +120,27 @@ namespace Heron.Installer.App
             // 2026-11-07, "make it simple". The short line still says what
             // Install also does and what it needs, so pressing Install after
             // reading it is still the asking (Q-39).
+            //
+            // A TICK SINCE 2026-11-16 (D-167, appended): the Setup opens this
+            // window, and the Setup's two ticks came with it, both ON - the
+            // owner's word. Unticked is heron-install's --no-python. What the
+            // tick means is still the sentence on hover, PythonSetup's own; the
+            // window only says whether it was ticked, and Program decides.
             page.Children.Add(Heading("Heron's AI side"));
-            var aiSide = Quiet("Also sets up Heron's AI. Needs Python 3." + PythonSetup.OldestMinor +
-                               " to 3." + PythonSetup.NewestMinor + " and the internet once.");
-            aiSide.ToolTip = PythonSetup.WhatInstallAlsoDoes;
-            page.Children.Add(aiSide);
+            _python = Tick("Set up Heron's AI side too. Needs Python 3." + PythonSetup.OldestMinor +
+                           " to 3." + PythonSetup.NewestMinor + " and the internet once.");
+            _python.ToolTip = PythonSetup.WhatInstallAlsoDoes;
+            page.Children.Add(_python);
+
+            // HERON INTO CLAUDE CODE - only when the Setup opened this window
+            // (Program says which). The words are ClaudeCodeEntry's, the doing
+            // is Program's, after an install that worked.
+            if (offerClaude)
+            {
+                _claude = Tick(ClaudeCodeEntry.TickWords);
+                _claude.ToolTip = ClaudeCodeEntry.WhatTheTickDoes;
+                page.Children.Add(_claude);
+            }
 
             // BEFORE Install, never after it fails - Stage 4 item 6. Kept, so
             // it can be drawn again once what is open has changed - 5b-1068.
@@ -215,6 +240,19 @@ namespace Heron.Installer.App
         public void RedrawCloseRevitFirst()
         {
             _closeRevitFirst.Text = _screen.CloseRevitFirst ?? "";
+        }
+
+        /// <summary>
+        /// One more line under the report - what adding Heron to Claude Code
+        /// came to, said after the report because it runs after it. The words
+        /// are the caller's; the window adds nothing to them.
+        /// </summary>
+        public void AlsoSay(string line)
+        {
+            if (string.IsNullOrEmpty(line)) return;
+            _report.Text = string.IsNullOrEmpty(_report.Text)
+                ? line
+                : _report.Text + Environment.NewLine + Environment.NewLine + line;
         }
 
         /// <summary>
@@ -710,6 +748,23 @@ namespace Heron.Installer.App
                 Margin = new Thickness(12, 1, 0, 1),
                 TextWrapping = TextWrapping.Wrap,
             };
+        }
+
+        /// <summary>
+        /// A tick box that starts ticked, its words in a TextBlock that WRAPS -
+        /// a bare string in a CheckBox clips without an ellipsis in this fixed
+        /// 620-wide window, which is how AB1 lost a row's last word.
+        /// </summary>
+        private static CheckBox Tick(string words)
+        {
+            var tick = new CheckBox
+            {
+                Content = new TextBlock { Text = words, TextWrapping = TextWrapping.Wrap },
+                IsChecked = true,
+                Margin = new Thickness(12, 3, 0, 3),
+            };
+            ToolTipService.SetShowDuration(tick, 30000);
+            return tick;
         }
 
         private static TextBlock Small(string text, double indent)

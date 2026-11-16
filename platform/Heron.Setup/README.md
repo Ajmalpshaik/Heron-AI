@@ -1,46 +1,61 @@
 # platform/Heron.Setup — the Setup a modeller downloads
 
 **One file, `HeronSetup-<version>.exe`, for this Windows user, with no administrator rights**
-([D-167](../../docs/decisions/D-167.md)). Double-clicked, it puts Heron in `%LOCALAPPDATA%\Programs\Heron AI`,
-installs the add-in for every Revit year on the PC, sets up Heron's Python side, offers to add Heron to
-Claude Code, and appears in **Settings > Apps > Installed apps** with **Uninstall**.
+([D-167](../../docs/decisions/D-167.md)). Double-clicked, it puts Heron in `%LOCALAPPDATA%\Programs\Heron AI`
+and opens **Heron's own branded installer window**, which installs the add-in for every Revit year on the
+PC, sets up Heron's Python side and adds Heron to Claude Code - two ticks, both on. Heron appears in
+**Settings > Apps > Installed apps** with **Uninstall**.
 
 | | |
 |---|---|
 | [`HeronSetup.iss`](HeronSetup.iss) | The Inno Setup script. **Decides nothing** about what goes where |
 | [`tools/build-setup.py`](../../tools/build-setup.py) | Stages the folder and runs Inno Setup. The only way the Setup is built |
-| [`make-images.ps1`](make-images.ps1) and `images/` | The Setup's two pictures, made from the brand kit's own files: the logo on Mist with the orange line (Welcome and Finished pages), and the app icon (every other page's corner). Run it again only when a brand file changes |
+| [`make-images.ps1`](make-images.ps1) and `images/` | The Setup's two pictures, made from the brand kit's own files: the logo on Mist with the orange line, and the app icon in the copying page's corner. Run it again only when a brand file changes |
 
-## It looks like Heron
+## Its face is Heron's own window
 
-**The brand ([D-149](../../docs/decisions/D-149.md), [docs/brand](../../docs/brand/README.md)), the same as
-`HeronInstaller.exe`:** every page on Mist (`#F7F5F2`) with Ink (`#0F0F10`) text, the orange Accent
-(`#FD641A`) line under the header where Windows draws a grey one, a Welcome page with the Heron logo, and
-the app icon in each page's corner. The colours are written in the script as `$BBGGRR` beside their brand
-name and hex. **Photographed 2026-11-16** on the owner's PC - the Welcome page and the tasks page, the
-Setup closed before Install. The orange line took three tries: a coloured panel on the window was drawn
-under the page; drawn inside the header it shows. **Not themed:** the buttons stay Windows' own, and the
-font stays Segoe UI - the brand's fallback until Manrope is shipped with its licence.
+**Since 2026-11-16, the owner's *"Yes, do that"* (D-167, amended):** the Setup has **no pages of its
+own**. It shows one short copying page while it puts the folder in place, then opens
+
+```text
+"<Heron folder>\HeronInstaller.exe" --from "<Heron folder>\payload"
+```
+
+and closes. That window is the branded one ([D-149](../../docs/decisions/D-149.md),
+[docs/brand](../../docs/brand/README.md)) - the Heron logo over the orange line, Mist and Ink, the orange
+Install button - and it asks everything: the Revit years found, then two ticks, both on:
+
+- **Set up Heron's AI side too** - unticked is `heron-install --no-python`;
+- **Add Heron to Claude Code** - offered only when the Setup opened the window, done last, and only after
+  an install that failed nowhere. Claude must be closed; if it is open the window says so and changes
+  nothing.
+
+The Start-menu shortcut *Heron AI > Heron Installer* opens the same window the same way. The copying page
+keeps the brand too: Mist, Ink text, the heron in the corner and the orange line under the header, the
+colours written in the script as `$BBGGRR` beside their brand name and hex.
 
 ## It is a door, not an engine
 
 Everything an install DOES is the engine's, the same one the window and `heron-install` use
 ([`platform/README.md`](../README.md)): which products and which Revit years, the wait while Revit is
 open, the checksum of every payload, the second-copy check and the put-back of `tools/deploy-addin.ps1`,
-Heron's Python side. The Setup copies the folder, runs
+Heron's Python side. The window's `--from` is heron-install's own - the same refusal by name, the same
+checked zips - and nothing is downloaded.
 
-```text
-heron-install --from "<Heron folder>\payload" --no-check      plus --no-python when that tick is off
-heron-install --add-to-claude            when its tick is on - both ticks start ON
-```
+**Run silent** (`/SILENT`, `/VERYSILENT`, for a managed PC) nobody can press Install, so the Setup runs
+`heron-install --from "<Heron folder>\payload" --no-check`, then `heron-install --add-to-claude`, and keeps
+what they said as `setup-report.txt` in the folder.
 
-and shows what they said, word for word. Its uninstaller runs `heron-install --uninstall --list`, shows
-that sentence naming every product and release, and on **Yes** runs `heron-install --uninstall`, before
-Windows removes the folder.
+Its uninstaller runs `heron-install --uninstall --list`, shows that sentence naming every product and
+release, and on **Yes** runs `heron-install --uninstall`, before Windows removes the folder.
 
-**Two checks look like rules and are only doors:** *close Revit first* is asked before Install is
-pressed, so a modeller does not watch a window that waits (the engine still waits by itself, and never
-closes Revit); and the uninstaller refuses while Revit is open, for the same reason.
+**Two checks look like rules and are only doors:** the uninstaller refuses while Revit is open, and both
+the Setup and the uninstaller refuse while a Heron Installer is open from the folder - its exe is in the
+folder they replace or remove. *Close Revit first* is the window's own line, and the engine waits by
+itself and never closes Revit.
+
+**The window's Remove Heron** takes Heron out of Revit and only that. Installed by the Setup, the folder
+and the Claude Code entry come out through Installed apps, and the window says so after a removal.
 
 ## What it never does
 
@@ -67,5 +82,7 @@ or no Inno Setup), never a pass. Without `--dist` it first runs `tools/build-rel
 
 ## What has run
 
-**Nothing yet, on 2026-11-16.** The runs are [NEEDS-CHECKING Group OA](../../docs/needs-checking/group-oa.md):
-the owner's PC, Revit 2020, 2024, 2026 and 2027; 2021, 2022, 2023 and 2025 NOT RUN - no such Revit there.
+The runs are [NEEDS-CHECKING Group OA](../../docs/needs-checking/group-oa.md): the owner's PC, Revit 2020,
+2024, 2026 and 2027; 2021, 2022, 2023 and 2025 NOT RUN - no such Revit there. **OA1 to OA10 ran on
+2026-11-16 on the Setup's own pages**, before its face became Heron's window; the window's route is rows
+OA12 onward, owed on his PC.
