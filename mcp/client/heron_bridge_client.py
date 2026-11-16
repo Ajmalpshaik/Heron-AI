@@ -881,6 +881,41 @@ def ask_to_keep_state(bridge):
     return said if isinstance(said, bool) else None
 
 
+# The three switches, as `info` names them since D-166, and what
+# switches_state answers for an add-in from before that, which names none.
+SWITCH_FIELDS = ("changes", "admin", "publish")
+SWITCHES_NOT_SENT = "not sent"
+
+
+def switches_state(bridge):
+    """
+    Changes, Admin and Publish as this Revit holds them now - D-166. One of
+    three answers, the same shape as ask_to_keep_state:
+
+        {"changes": bool, "admin": bool, "publish": bool}
+        SWITCHES_NOT_SENT    `info` answered well and names none of them -
+                             an add-in from before 2026-11-16, which still
+                             reads them from heron.config
+        None                 no usable answer, or a field that is not a JSON
+                             true or false
+
+    Since D-166 the three are held in the add-in's memory, set only in Heron's
+    Settings window, so the add-in's word is the ONLY place to learn them -
+    this side's copy of heron.config no longer holds them at all. From `info`,
+    lease-exempt, so asking never claims the Revit. Read off a reply, never put
+    in a request: no request sets a switch, and the add-in reads no such field.
+    """
+    reply = bridge.request("info")
+    if not isinstance(reply, dict) or not reply.get("ok"):
+        return None
+    said = [reply.get(field, _FIELD_MISSING) for field in SWITCH_FIELDS]
+    if all(one is _FIELD_MISSING for one in said):
+        return SWITCHES_NOT_SENT
+    if not all(isinstance(one, bool) for one in said):
+        return None
+    return dict(zip(SWITCH_FIELDS, said))
+
+
 def refuse_off_windows():
     """
     True when this machine cannot reach a bridge, having said so.

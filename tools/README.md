@@ -721,8 +721,10 @@ python tools/heron-backup.py restore <name> --confirm
 When this was written on 2026-09-08, `%APPDATA%\Heron` held four files and **a grep for `backup` across
 every `.py`, `.cs` and `.ps1` in this repository returned nothing.** The audit trail is Heron's only record of what it has ever done,
 [`HeronAudit`](../platform/Heron.Core/HeronAudit.cs) never prunes it, and it is not in git — so losing
-it loses the whole history with no way back. The config holds `write.enabled`, which
-[docs/12 §9](../docs/12-security-and-permissions.md) calls a security boundary.
+it loses the whole history with no way back. The config held `write.enabled` until
+[D-166](../docs/decisions/D-166.md) took Changes, Admin and Publish out of it - so a restore can no
+longer turn writing on - and [docs/21 §9](../docs/21-resilience-and-operations.md) calls configuration
+a security boundary.
 
 **It excludes rather than includes.** [docs/21 §8](../docs/21-resilience-and-operations.md) says not to
 back up the derived index, so `knowledge/*.db` is skipped with that reason recorded in the manifest.

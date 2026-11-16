@@ -138,18 +138,18 @@ namespace Heron.Revit.Addin
     /// Turns Heron's ability to change the model on, or off. One button,
     /// both ways - the same shape as ConnectCommand, for the same reason.
     ///
-    /// This writes the SAME setting D-19 defined (write.enabled) and changes
-    /// nothing about how it is enforced: HeronPermissions.Allows still reads
-    /// the file fresh on every call, and the default is still false. What it
-    /// changes is that the state is now VISIBLE - a session somebody left
-    /// writable no longer looks identical to a safe one.
+    /// It sets the switch D-19 defined. Until D-166 that was write.enabled in
+    /// heron.config, which any program running as the modeller could edit;
+    /// since 2026-11-16 it is held in this Revit's memory by HeronPermissions,
+    /// set only here, and off again whenever Revit starts. The state is
+    /// VISIBLE - a session somebody left writable does not look identical to
+    /// a safe one.
     ///
     /// Turning it ON asks first. Turning it OFF never does: making the safe
     /// direction slower is how people learn to click through warnings, and
     /// there is nothing to confirm about becoming read-only.
     ///
-    /// NO TRANSACTION, and it touches no element. It edits a file in the
-    /// user's own data folder.
+    /// NO TRANSACTION, and it touches no element, and since D-166 no file.
     /// </summary>
     [Transaction(TransactionMode.Manual)]
     [Regeneration(RegenerationOption.Manual)]
@@ -207,9 +207,10 @@ namespace Heron.Revit.Addin
                 catch { /* the icon is the lesser problem; report the real one */ }
 
                 HeronApplication.Log("Write toggle failed: " + ex);
-                message = "Could not change whether Heron may edit models. The setting is in "
-                        + HeronConfig.FilePath + " and can be changed there instead. Revit said: "
-                        + ex.Message;
+                // NO FILE IS NAMED (D-166): there is none to change instead,
+                // and naming one is how an AI was once told to turn this on.
+                message = "Could not change whether Heron may edit models, so it is as it "
+                        + "was. Revit said: " + ex.Message;
                 return Result.Failed;
             }
         }
@@ -239,7 +240,7 @@ namespace Heron.Revit.Addin
                     "Heron will be able to move, edit and create elements when you ask it to. "
                     + "Every change is one Ctrl+Z, and Ask to Keep in Heron's Settings shows each "
                     + "change first for Keep or Discard when it is on.\n\n"
-                    + "This stays on until you turn it off, including after Revit restarts. "
+                    + "This stays on until you turn it off or close Revit - it is off again every time Revit starts. "
                     + "Heron's Settings window shows which state you are in.",
                 CommonButtons = TaskDialogCommonButtons.None,
                 AllowCancellation = true
@@ -312,8 +313,7 @@ namespace Heron.Revit.Addin
 
                 HeronApplication.Log(name + " toggle failed: " + ex);
                 message = "Could not change Heron's " + name + " switch, so it is as it was. " +
-                          "The setting is in " + HeronConfig.FilePath + " and can be changed " +
-                          "there instead. Revit said: " + ex.Message;
+                          "Revit said: " + ex.Message;
                 return Result.Failed;
             }
         }
@@ -343,7 +343,7 @@ namespace Heron.Revit.Addin
             var content = asked.What;
             if (!string.IsNullOrEmpty(asked.Caution)) content += "\n\n" + asked.Caution;
             if (!string.IsNullOrEmpty(asked.ChangesOff)) content += "\n\n" + asked.ChangesOff;
-            content += "\n\nThis stays on until you turn it off, including after Revit restarts. " +
+            content += "\n\nThis stays on until you turn it off or close Revit - it is off again every time Revit starts. " +
                        "Heron's Settings window shows which state " + asked.Name + " is in.";
 
             var ask = new TaskDialog("Heron - " + asked.Name)
@@ -727,10 +727,10 @@ namespace Heron.Revit.Addin
             {
                 LogFolder = HeronPaths.Logs,
 
-                // Read fresh, never remembered. This is the same file the
-                // permission gate reads on every single call (D-19), so
-                // caching it here would be a second answer to a question that
-                // is only allowed one.
+                // Read fresh, never remembered. This is the same switch the
+                // permission gate looks at on every single call (D-19, held in
+                // memory since D-166), so caching it here would be a second
+                // answer to a question that is only allowed one.
                 WriteEnabled = HeronPermissions.WriteEnabled(),
             };
 
@@ -928,7 +928,9 @@ namespace Heron.Revit.Addin
             }
             TaskDialog.Show("Heron - Settings",
                 "The Settings window could not open.\n\n" + lines + "\n" +
-                "The switches are also in " + HeronConfig.FilePath + ".");
+                "Changes, Admin and Publish are held in this Revit only, and are off " +
+                "again whenever Revit starts. Ask to Keep and the Companion are also in " +
+                HeronConfig.FilePath + ".");
         }
     }
 

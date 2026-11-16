@@ -145,9 +145,34 @@ def main():
     print("BUG 1 - every key the C# reads is declared, or it is silently ignored")
     read = csharp_keys_read()
     check(len(read) > 0, "found %d config key(s) being read in the C#" % len(read))
-    for key in sorted(read):
+    # THE THREE SWITCHES ARE NAMES, NOT KEYS, SINCE D-166. HeronPermissions
+    # still spells them as constants - RefusedBy answers with them - but holds
+    # the switches in memory and reads none of them from heron.config. So the
+    # rule for these three is the OPPOSITE of every other key's: never
+    # declared, and never handed to a Get on any config.
+    held = {"write.enabled", "admin.enabled", "publish.enabled"}
+    for key in sorted(read - held):
         check(key in declared,
               "'%s' is read AND declared - an undeclared key is dropped by Load()" % key)
+    check(held <= read,
+          "HeronPermissions still names the three switches: %s" % sorted(held))
+    for key in sorted(held):
+        check(key not in declared and key not in cfg.DEFAULTS,
+              "'%s' is declared on NEITHER side - a line naming it in heron.config "
+              "is ignored, which is D-166's lock" % key)
+    fed = []
+    for root in CS_DIRS:
+        for dirpath, _, filenames in os.walk(root):
+            for name in filenames:
+                if name.endswith(".cs"):
+                    text = io.open(os.path.join(dirpath, name), encoding="utf-8").read()
+                    fed += re.findall(r'\.Get(?:Int|Bool)?\(\s*(?:HeronPermissions\.)?'
+                                      r'(WriteEnabledKey|AdminEnabledKey|PublishEnabledKey'
+                                      r'|"write\.enabled"|"admin\.enabled"'
+                                      r'|"publish\.enabled")', text)
+    check(fed == [],
+          "and no C# reads one of them from a config - not by name, not by constant%s"
+          % ("" if not fed else ": " + ", ".join(fed)))
 
     print()
     print("BUG 2 - the client's deadline is always beyond the add-in's")
@@ -241,13 +266,17 @@ def main():
     tmp = os.path.join(tempfile.gettempdir(), "heron-test.config")
     io.open(tmp, "w", encoding="utf-8").write(
         u"# a comment\n"
-        u"write.enabled = true\n"
+        u"write.enabled = true\n"            # D-166: not a setting - ignored
+        u"bridge.autoConnect = true\n"
         u"revit.operationTimeoutSeconds=45\n"
         u"write.enabledd = true\n"          # typo - must be ignored
         u"nonsense\n"                        # no '=' - must be ignored
         u"totally.made.up = 99\n")
     loaded = cfg.load(tmp)
-    check(cfg.writing_enabled(loaded), "a declared key is read from the file")
+    check(cfg.truthy(loaded, "bridge.autoConnect"), "a declared key is read from the file")
+    check("write.enabled" not in loaded,
+          "and a switch line is NOT adopted - Changes is held in Revit since D-166, "
+          "so the file cannot turn it on")
     check(cfg.operation_timeout(loaded) == 45.0, "and so is a numeric one")
     check("write.enabledd" not in loaded, "a typo'd key is NOT adopted")
     check("totally.made.up" not in loaded, "an undeclared key is NOT adopted")
@@ -265,9 +294,9 @@ def main():
                           ("false", False), ("0", False), ("no", False), ("off", False),
                           ("", False), ("maybe", False)):
         values = dict(cfg.DEFAULTS)
-        values["write.enabled"] = raw
-        check(cfg.writing_enabled(values) is expected,
-              "write.enabled=%r is %s" % (raw, expected))
+        values["bridge.autoConnect"] = raw
+        check(cfg.truthy(values, "bridge.autoConnect") is expected,
+              "bridge.autoConnect=%r is %s" % (raw, expected))
 
     print()
     print("ONE SETTINGS FILE, TWO READERS, ONE VOCABULARY")
@@ -295,10 +324,11 @@ def main():
 
     print()
     print("A value nobody can parse is the DEFAULT, in both directions")
-    # write.enabled defaults to false and ui.activityBanner to true, so one
-    # key proves nothing about the other - the bug being guarded against is
-    # exactly an unrecognised value collapsing to false.
-    for key, expected in (("write.enabled", False), ("ui.activityBanner", True)):
+    # bridge.autoConnect defaults to false and ui.activityBanner to true, so
+    # one key proves nothing about the other - the bug being guarded against
+    # is exactly an unrecognised value collapsing to false. (write.enabled was
+    # the false one until D-166 took it out of the file.)
+    for key, expected in (("bridge.autoConnect", False), ("ui.activityBanner", True)):
         for raw in ("maybe", "enabled", "2", ""):
             values = dict(cfg.DEFAULTS)
             values[key] = raw
@@ -384,6 +414,47 @@ def main():
     check(len(set(pinned.values())) <= 1,
           "and every one pins the same id: %s"
           % (sorted(set(pinned.values())) or "none found"))
+
+    print()
+    print("Health: since D-166 nobody's file says whether writing is on")
+    unknown = hp.assess(live=[1], writing=None)
+    gate = [c for c in unknown.components if c.name == "write gate"][0]
+    check(gate.state == hp.HEALTHY and "Heron's Settings in Revit" in gate.detail
+          and "off whenever it starts" in gate.detail,
+          "no Revit said: the gate is described as held in each Revit and set in its "
+          "Settings - never reported as off, which would be a default, not an answer")
+
+    print()
+    print("Health: each Revit says which switches it holds (D-166)")
+    import heron_bridge_client as client
+
+    class Said(object):
+        def __init__(self, reply):
+            self.reply = reply
+
+        def request(self, op):
+            return self.reply if op == "info" else None
+
+    both = client.switches_state(Said({"ok": True, "changes": True, "admin": False,
+                                       "publish": False, "askToKeep": False}))
+    check(both == {"changes": True, "admin": False, "publish": False},
+          "an add-in that says them is read as said: %s" % (both,))
+    line = hp.switches_line(both)
+    check("Changes ON, Admin off, Publish off" in line
+          and "Only the modeller turns one on" in line
+          and "heron.config" not in line,
+          "and the line says them, says only the modeller turns one on in Settings, and "
+          "names no file: %s" % line)
+    older = client.switches_state(Said({"ok": True, "askToKeep": False}))
+    check(older == client.SWITCHES_NOT_SENT == hp.SWITCHES_NOT_SENT
+          and hp.switches_line(older) == hp.SWITCHES_OLDER,
+          "an add-in from before D-166 sends none, and is named older - one word, "
+          "one spelling on both sides")
+    for reply in (None, {"ok": False}, {"ok": True, "changes": 1, "admin": 0,
+                                        "publish": 0}, "nonsense"):
+        got = client.switches_state(Said(reply))
+        check(got is None and hp.switches_line(got) == hp.SWITCHES_NOT_READ,
+              "no usable answer is 'could not read', never off: %r" % (reply,))
 
     print()
     print("Health: a healthy system says so briefly")

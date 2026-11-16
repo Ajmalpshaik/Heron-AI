@@ -692,7 +692,20 @@ namespace Heron.Bridge
                     // Python side on the bare name of that key anywhere in
                     // it, as a field that could be SENT to skip the question.
                     // This one is only ever answered.
-                    Json.Bool("askToKeep", HeronPermissions.AsksBeforeKeeping()));
+                    Json.Bool("askToKeep", HeronPermissions.AsksBeforeKeeping()),
+                    // CHANGES, ADMIN AND PUBLISH, AS THIS REVIT HOLDS THEM
+                    // (D-166). Held in memory since 2026-11-16, not in
+                    // heron.config, so a chat cannot learn them from the file
+                    // any more - and on a PC whose Claude keeps a private copy
+                    // of the settings folder it never could (Q-70). Said for
+                    // the chat's health report to show, NEVER set from here:
+                    // this file reads no such field off a request, and the
+                    // gate looks at the switches again for itself. Optional
+                    // fields, like askToKeep: a client that does not know them
+                    // ignores them, so the protocol version stands.
+                    Json.Bool("changes", HeronPermissions.WriteEnabled()),
+                    Json.Bool("admin", HeronPermissions.AdminEnabled()),
+                    Json.Bool("publish", HeronPermissions.PublishEnabled()));
             }
 
             // HANDING IT BACK, WHICH IS THE HALF THAT WAS MISSING.

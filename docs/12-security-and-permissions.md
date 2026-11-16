@@ -120,16 +120,24 @@ lists every tool with its level.
 | `PUBLISH` | an export, a print, a save, a sync with central, a change of worksharing ownership | **Changes and Publish** | `revit_change`, sent as `run_fragment_publish` |
 | `ADMIN` | a project, shared or global parameter, a workset, the project's units, location or coordinates, a new project or family file | **Changes and Admin** | `revit_change`, sent as `run_fragment_admin` |
 
+> **Since [D-166](decisions/D-166.md) (2026-11-16), Changes, Admin and Publish are not in `heron.config`.**
+> `HeronPermissions` holds them in this Revit's memory, set only by pressing ON in Heron's Settings window,
+> and all three are **off whenever Revit starts**; each Revit holds its own, and its `info` reply says which
+> are on. A line naming one in `heron.config` is ignored, like any key Heron does not declare, and no
+> refusal names the file any more - only Settings. Ask to Keep is still in `heron.config`. Layer 1 of
+> D-166, the heron-guard hook, refuses a write or command that would turn one on in the file. **Not yet
+> run in Revit** - [Group OA](needs-checking/group-oa.md).
+
 **The four switches.** Each is a row of Heron's Settings window - *Heron > AI Bridge > Settings* on
 Revit's ribbon - with its state as the button; until 2026-11-07 each was a button on the ribbon itself
 ([D-150](decisions/D-150.md)). The add-in reads them fresh on every call. Nothing in a request can set them ([Golden Rule 19](14-golden-rules.md)).
 
-| Button | Setting in `heron.config` | Default in `HeronConfig.cs` | What it does | Decision |
+| Button | Held in | Default | What it does | Decision |
 |---|---|---|---|---|
-| **Changes** | `write.enabled` | off | lets `MODIFY` through, and must be on under Publish and Admin | [D-19](DECISIONS.md#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit) |
-| **Publish** | `publish.enabled` | off | lets `PUBLISH` through, only while Changes is on | [D-106](DECISIONS.md#d-106--admin-and-publish-each-get-a-switch-of-their-own-and-only-the-owner-turns-them-on) |
-| **Admin** | `admin.enabled` | off | lets `ADMIN` through, only while Changes is on | D-106 |
-| **Ask to Keep** | `write.askBeforeKeeping` | off | lets nothing through. While on, Revit shows a change and asks Keep or Discard before keeping it | [D-126](DECISIONS.md#d-126--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept), [D-138](DECISIONS.md#d-138--the-keep-or-discard-question-gets-a-switch-on-the-ribbon-and-its-box-can-keep-the-rest-of-one-job-without-asking) |
+| **Changes** | this Revit's memory since D-166 - `write.enabled` in `heron.config` until then | off at every Revit start | lets `MODIFY` through, and must be on under Publish and Admin | [D-19](DECISIONS.md#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit) |
+| **Publish** | this Revit's memory since D-166 - `publish.enabled` until then | off at every Revit start | lets `PUBLISH` through, only while Changes is on | [D-106](DECISIONS.md#d-106--admin-and-publish-each-get-a-switch-of-their-own-and-only-the-owner-turns-them-on) |
+| **Admin** | this Revit's memory since D-166 - `admin.enabled` until then | off at every Revit start | lets `ADMIN` through, only while Changes is on | D-106 |
+| **Ask to Keep** | `write.askBeforeKeeping` in `heron.config` | off | lets nothing through. While on, Revit shows a change and asks Keep or Discard before keeping it | [D-126](DECISIONS.md#d-126--revit-asks-the-modeller-keep-or-discard-before-a-change-from-a-chat-is-kept), [D-138](DECISIONS.md#d-138--the-keep-or-discard-question-gets-a-switch-on-the-ribbon-and-its-box-can-keep-the-rest-of-one-job-without-asking) |
 
 **What has met Revit.** On 2026-10-18, on Revit 2024.3 and the scratch model *Heron Safety 2024*, the
 owner turned Changes, Admin and Publish off on the ribbon. A `create-duct` then came back

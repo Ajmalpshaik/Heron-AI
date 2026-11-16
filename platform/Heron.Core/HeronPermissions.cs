@@ -65,9 +65,9 @@ namespace Heron.Core
     /// this paragraph is withdrawn with it - a paragraph whose removal is
     /// conditional on a measurement is a paragraph that goes stale the day
     /// the measurement lands, which is exactly what happened here. Turning
-    /// writing on is a deliberate act by someone who has read it:
-    ///
-    ///     write.enabled = true      in %APPDATA%\Heron\config\heron.config
+    /// writing on is a deliberate act by the modeller: Changes, in Heron's
+    /// Settings window in Revit. It was a line in heron.config until D-166,
+    /// and that is what the next paragraph but two is about.
     ///
     /// WHAT IS STILL NOT PROVEN IS THE DISTANCE. D3 in NEEDS-CHECKING: move
     /// them, then MEASURE one. Nobody has put a tape on what it did, and
@@ -82,13 +82,11 @@ namespace Heron.Core
     /// rule, and on 2026-09-28 it refused ADD_PROJECT_PARAMETER (risk ADMIN)
     /// when the owner asked for two project parameters. He decided that both
     /// levels become reachable, and ONLY through a switch he turns on himself
-    /// in Revit, exactly as Changes is turned on:
+    /// in Revit, exactly as Changes is turned on: Admin lets an Admin
+    /// operation through, and Publish a Publish one.
     ///
-    ///     admin.enabled   = true    lets an Admin operation through
-    ///     publish.enabled = true    lets a Publish operation through
-    ///
-    /// Both default to false, both are read fresh on every call, and NEITHER
-    /// DOES ANYTHING ON ITS OWN: each needs write.enabled as well, because
+    /// Both are off by default, both are read fresh on every call, and NEITHER
+    /// DOES ANYTHING ON ITS OWN: each needs Changes as well, because
     /// Changes is the switch that says Heron may touch this model at all, and
     /// the two above it only widen what that means. They are independent of
     /// each other - Admin on says nothing about Publish.
@@ -97,6 +95,34 @@ namespace Heron.Core
     /// workset changes and anything touching a link still need the owner's
     /// explicit yes in the chat for that specific change. No switch here can
     /// say yes on his behalf, and none of these three tries to.
+    ///
+    /// THE THREE SWITCHES ARE HELD HERE, IN MEMORY, SINCE D-166 (2026-11-16).
+    ///
+    /// They were write.enabled, admin.enabled and publish.enabled in
+    /// heron.config - in the modeller's own profile, writable by every program
+    /// running as the modeller, read fresh on every request, and named by the
+    /// refusal below as the way to turn writing on. An AI host with file
+    /// access could do exactly that, and Heron's own words told it how
+    /// (proposal F45). Now:
+    ///
+    ///   - each is a field of THIS class, in the Revit process, set only by
+    ///     SetWriteEnabled, SetAdminEnabled and SetPublishEnabled - which only
+    ///     the Settings window's own commands call, after a person pressed ON
+    ///     and answered the question;
+    ///   - all three are OFF whenever Revit starts, because a static field
+    ///     starts false - the owner's choice, D-166 item 2;
+    ///   - each Revit holds its own: Changes on in 2024 is not on in 2027;
+    ///   - no request sets one, and no file does. HeronConfig does not declare
+    ///     the three keys, so a line naming one is ignored as unknown;
+    ///   - no refusal names a file, only Settings.
+    ///
+    /// WHAT THIS DOES NOT STOP, from D-166: a program that drives Revit's own
+    /// screen as the modeller presses the button as a person would, and a
+    /// program that writes into Revit's memory on purpose.
+    ///
+    /// Ask to Keep is NOT one of them. It lets nothing through, its risky
+    /// side is OFF - the default - and it stays in heron.config, as D-126 and
+    /// D-138 have it.
     /// </summary>
     public static class HeronPermissions
     {
@@ -107,20 +133,36 @@ namespace Heron.Core
         /// </summary>
         public const HeronRisk ReadOnlyCeiling = HeronRisk.Execute;
 
-        /// <summary>Config key that lifts the ceiling to Modify.</summary>
+        /// <summary>
+        /// The name of the switch that lifts the ceiling to Modify - Changes.
+        ///
+        /// A NAME, NO LONGER A SETTINGS KEY, since D-166: RefusedBy answers
+        /// with it, and the gate and the run guard turn it into
+        /// write_disabled and its sentence. It keeps the spelling it had in
+        /// heron.config so that every reader of RefusedBy still matches.
+        /// </summary>
         public const string WriteEnabledKey = "write.enabled";
 
         /// <summary>
-        /// Config key that lets an Admin operation through - D-106. Only
-        /// while write.enabled is on as well.
+        /// The name of the switch that lets an Admin operation through -
+        /// D-106. Only while Changes is on as well. A name, as above.
         /// </summary>
         public const string AdminEnabledKey = "admin.enabled";
 
         /// <summary>
-        /// Config key that lets a Publish operation through - D-106. Only
-        /// while write.enabled is on as well.
+        /// The name of the switch that lets a Publish operation through -
+        /// D-106. Only while Changes is on as well. A name, as above.
         /// </summary>
         public const string PublishEnabledKey = "publish.enabled";
+
+        // THE THREE SWITCHES THEMSELVES - D-166. False when Revit starts,
+        // because that is what a static bool starts as, and that IS the rule.
+        // One lock, so a snapshot is never half of one click and half of the
+        // next.
+        private static readonly object SwitchLock = new object();
+        private static bool _changes;
+        private static bool _admin;
+        private static bool _publish;
 
         /// <summary>
         /// Config key for D-126: Revit asks the modeller Keep or Discard before
@@ -139,50 +181,56 @@ namespace Heron.Core
         public const string NoSwitch = "(no switch)";
 
         /// <summary>
-        /// Whether an operation at this risk level may proceed.
+        /// What the three switches say now, as one snapshot - D-166.
         ///
-        /// Reads the config FRESH each time rather than caching. A user who
-        /// turns writing off mid-session has done so for a reason, and a
-        /// cached "true" from before they changed their mind is the worst
-        /// possible way to discover the value was read once at startup.
+        /// Read fresh each time rather than cached by the caller. A modeller
+        /// who turns writing off mid-session has done so for a reason, and a
+        /// "true" kept from before they changed their mind is the worst way
+        /// to discover it was read once.
         /// </summary>
+        public static HeronSwitches Switches()
+        {
+            lock (SwitchLock) return HeronSwitches.Of(_changes, _admin, _publish);
+        }
+
+        /// <summary>Whether an operation at this risk level may proceed.</summary>
         public static bool Allows(HeronRisk risk)
         {
             if (risk <= ReadOnlyCeiling) return true;
-            return Allows(risk, HeronConfig.Load());
+            return Allows(risk, Switches());
         }
 
         /// <summary>
-        /// The same answer, from a config the caller has already read.
+        /// The same answer, from a snapshot the caller has already taken.
         ///
-        /// HERE SO THAT ONE DECISION IS MADE FROM ONE READ. The gate in the
+        /// HERE SO THAT ONE DECISION IS MADE FROM ONE LOOK. The gate in the
         /// add-in needs the verdict, the words and which switch refused, and
-        /// three loads of the file would let the owner's click land between
-        /// them - a refusal naming a switch he had just turned on. It is also
-        /// what lets tests/Heron.Kernel.TestHost run every combination of the
-        /// three switches without touching anybody's real heron.config.
+        /// three looks would let the modeller's click land between them - a
+        /// refusal naming a switch they had just turned on. It is also what
+        /// lets tests/Heron.Kernel.TestHost run every combination of the
+        /// three switches without touching the ones this process holds.
         ///
-        /// FAILS CLOSED: no config refuses everything above the ceiling, and
-        /// a level with no switch of its own is refused whatever is on.
+        /// FAILS CLOSED: no snapshot refuses everything above the ceiling,
+        /// and a level with no switch of its own is refused whatever is on.
         /// </summary>
-        public static bool Allows(HeronRisk risk, HeronConfig config)
+        public static bool Allows(HeronRisk risk, HeronSwitches switches)
         {
             if (risk <= ReadOnlyCeiling) return true;
-            if (config == null) return false;
+            if (switches == null) return false;
 
             // CHANGES FIRST, FOR EVERYTHING ABOVE THE CEILING. Admin and
             // Publish widen what a writable Heron may do; they never make a
             // read-only one writable (D-106).
-            if (!config.GetBool(WriteEnabledKey, false)) return false;
+            if (!switches.Changes) return false;
 
             switch (risk)
             {
                 case HeronRisk.Modify:
                     return true;
                 case HeronRisk.Publish:
-                    return config.GetBool(PublishEnabledKey, false);
+                    return switches.Publish;
                 case HeronRisk.Admin:
-                    return config.GetBool(AdminEnabledKey, false);
+                    return switches.Admin;
                 default:
                     // A level above Admin, added later, is refused here until
                     // somebody decides which switch opens it - so adding one
@@ -204,18 +252,18 @@ namespace Heron.Core
         /// only when the level's own switch is on and Changes is what is left.
         /// Explain says both either way.
         /// </summary>
-        public static string RefusedBy(HeronRisk risk, HeronConfig config)
+        public static string RefusedBy(HeronRisk risk, HeronSwitches switches)
         {
-            if (Allows(risk, config)) return null;
+            if (Allows(risk, switches)) return null;
 
             switch (risk)
             {
                 case HeronRisk.Modify:
                     return WriteEnabledKey;
                 case HeronRisk.Publish:
-                    return IsOn(config, PublishEnabledKey) ? WriteEnabledKey : PublishEnabledKey;
+                    return switches != null && switches.Publish ? WriteEnabledKey : PublishEnabledKey;
                 case HeronRisk.Admin:
-                    return IsOn(config, AdminEnabledKey) ? WriteEnabledKey : AdminEnabledKey;
+                    return switches != null && switches.Admin ? WriteEnabledKey : AdminEnabledKey;
                 default:
                     return NoSwitch;
             }
@@ -231,25 +279,26 @@ namespace Heron.Core
         public static string Explain(HeronRisk risk)
         {
             if (risk <= ReadOnlyCeiling) return null;
-            return Explain(risk, HeronConfig.Load(), HeronConfig.FilePath);
+            return Explain(risk, Switches());
         }
 
         /// <summary>
-        /// The same words, from a config the caller has already read, naming
-        /// the settings file it was given. Null when the level is allowed.
+        /// The same words, from a snapshot the caller has already taken. Null
+        /// when the level is allowed.
         ///
-        /// THE PATH IS PASSED IN rather than read here because asking
-        /// HeronConfig.FilePath creates the settings folder when it is not
-        /// there - and a test that creates something in the owner's own data
-        /// folder has changed his installation to check it. The add-in passes
-        /// the real path; the kernel test host passes a stand-in.
+        /// NO FILE IS NAMED, SINCE D-166. These words said "or set
+        /// write.enabled = true in" heron.config's path, and the reader of a
+        /// refusal is as often the AI that was refused as the modeller - so
+        /// Heron's own refusal was the instruction to turn writing on behind
+        /// the modeller's back. They name Settings, and say only the modeller
+        /// can do it there.
         /// </summary>
-        public static string Explain(HeronRisk risk, HeronConfig config, string configPath)
+        public static string Explain(HeronRisk risk, HeronSwitches switches)
         {
-            var refusedBy = RefusedBy(risk, config);
+            var refusedBy = RefusedBy(risk, switches);
             if (refusedBy == null) return null;
 
-            if (risk == HeronRisk.Modify) return ExplainChanges(configPath);
+            if (risk == HeronRisk.Modify) return ExplainChanges();
 
             if (refusedBy == NoSwitch)
             {
@@ -259,7 +308,6 @@ namespace Heron.Core
             }
 
             var name = SwitchName(risk);
-            var key = risk == HeronRisk.Admin ? AdminEnabledKey : PublishEnabledKey;
             var what = risk == HeronRisk.Admin
                 // Plain words for what an ADMIN fragment in this library does.
                 // The cards decide which fragment is which; this only says the
@@ -274,34 +322,40 @@ namespace Heron.Core
             {
                 return name + " is on, but Changes is off, and " + name + " only works " +
                        "while Changes is on as well - so nothing was sent to Revit. To " +
-                       "allow it, turn on Changes in Heron's Settings (Heron > AI Bridge > " +
-                       "Settings), or set " + WriteEnabledKey + " = true in " +
-                       configPath + ". It takes effect straight away.";
+                       "allow it, the modeller turns on Changes in Heron's Settings in Revit " +
+                       "(Heron > AI Bridge > Settings). " + OnlyThere + " It takes effect " +
+                       "straight away.";
             }
 
             // ITS OWN SWITCH IS OFF. Say whether Changes is off too, so one
             // refusal is enough to get both switches right.
-            var changesOff = !IsOn(config, WriteEnabledKey);
+            var changesOff = switches == null || !switches.Changes;
             var way = changesOff
-                ? "turn on both Changes and " + name + " in Heron's Settings " +
-                  "(Heron > AI Bridge > Settings), or set " + WriteEnabledKey + " = true and " + key +
-                  " = true in " + configPath + ". " + name + " only works while Changes " +
-                  "is on as well."
-                : "turn on " + name + " in Heron's Settings (Heron > AI Bridge > " +
-                  "Settings), or set " + key + " = true in " + configPath + ".";
+                ? "the modeller turns on both Changes and " + name + " in Heron's Settings " +
+                  "in Revit (Heron > AI Bridge > Settings). " + name + " only works while " +
+                  "Changes is on as well."
+                : "the modeller turns on " + name + " in Heron's Settings in Revit " +
+                  "(Heron > AI Bridge > Settings).";
 
             return "That would " + what + ". Heron's " + name + " switch is off, so " +
-                   "nothing was sent to Revit. " + name + " is off by default and stays off " +
-                   "until you turn it on - it is your decision, not Heron's. To allow it, " +
-                   way + " It takes effect straight away, and turning " + name + " off " +
-                   "again stops it just as quickly.";
+                   "nothing was sent to Revit. " + name + " is off whenever Revit starts and " +
+                   "stays off until the modeller turns it on - it is their decision, not " +
+                   "Heron's. To allow it, " + way + " " + OnlyThere + " It takes effect " +
+                   "straight away, and turning " + name + " off again stops it just as quickly.";
         }
 
         /// <summary>
-        /// The refusal for a MODIFY operation with Changes off - the words
-        /// this class has always given, unchanged by D-106.
+        /// What every refusal says about who may turn a switch on - D-166.
+        /// Said to the AI as much as to the modeller, because the AI reads it.
         /// </summary>
-        private static string ExplainChanges(string configPath)
+        private const string OnlyThere =
+            "Only the modeller can, there: no file, setting or request turns it on.";
+
+        /// <summary>
+        /// The refusal for a MODIFY operation with Changes off - the words
+        /// this class has always given, with D-166's place to turn it on.
+        /// </summary>
+        private static string ExplainChanges()
         {
             // THE REASON HAD GONE STALE IN THE TEXT A USER READS. It said the
             // write path "has never been run against a real model", which was
@@ -327,11 +381,14 @@ namespace Heron.Core
                    // Since D-150 (2026-11-07) the switches live in Heron's Settings
                    // window, and the sentence names Changes there - which also settles
                    // 5b-4's "padlock or Changes": the padlock left the ribbon.
-                   "turn on Changes in Heron's Settings (Heron > AI Bridge > Settings), or set " +
-                   WriteEnabledKey + " = true in " + configPath +
-                   ". It takes effect straight away - Allows() reads that file fresh every " +
-                   "time, so there is nothing to restart. Setting it back to false stops " +
-                   "Heron changing anything again, just as immediately.";
+                   //
+                   // AND SINCE D-166 (2026-11-16) IT NAMES NOTHING ELSE. It went on
+                   // "or set write.enabled = true in" heron.config's path - which the
+                   // AI reading this refusal could do without the modeller.
+                   "the modeller turns on Changes in Heron's Settings in Revit (Heron > AI " +
+                   "Bridge > Settings). " + OnlyThere + " It takes effect straight away, and " +
+                   "it is off again whenever Revit starts. Turning it off stops Heron " +
+                   "changing anything again, just as immediately.";
         }
 
         /// <summary>
@@ -344,23 +401,17 @@ namespace Heron.Core
             return risk == HeronRisk.Admin ? "Admin" : "Publish";
         }
 
-        private static bool IsOn(HeronConfig config, string key)
-        {
-            return config != null && config.GetBool(key, false);
-        }
-
         /// <summary>
         /// Whether writing is currently switched on.
         ///
         /// Allows() answers "may THIS risk proceed", which is the question a
         /// caller has. This answers "what does the switch say", which is the
         /// question a user interface has - a button showing the state must
-        /// show the setting itself, not the verdict for some particular risk.
-        /// Read fresh, for the same reason Allows() is.
+        /// show the switch itself, not the verdict for some particular risk.
         /// </summary>
         public static bool WriteEnabled()
         {
-            return HeronConfig.Load().GetBool(WriteEnabledKey, false);
+            return Switches().Changes;
         }
 
         /// <summary>
@@ -371,13 +422,13 @@ namespace Heron.Core
         /// </summary>
         public static bool AdminEnabled()
         {
-            return HeronConfig.Load().GetBool(AdminEnabledKey, false);
+            return Switches().Admin;
         }
 
         /// <summary>Whether the Publish switch is on, read fresh. See AdminEnabled.</summary>
         public static bool PublishEnabled()
         {
-            return HeronConfig.Load().GetBool(PublishEnabledKey, false);
+            return Switches().Publish;
         }
 
         /// <summary>
@@ -407,14 +458,16 @@ namespace Heron.Core
         /// definition of this setting, and the day the two disagree the
         /// button reports a state the permission gate does not honour.
         ///
-        /// HeronConfig.Save is ADMIN-level and documented as only ever
-        /// reached from a deliberate human action. That is what this is: a
-        /// person pressing a button. Nothing automatic may call it - Heron
-        /// must never grant itself permission to write.
+        /// ONLY A PERSON PRESSING ON IN HERON'S SETTINGS REACHES IT, having
+        /// answered the question. Nothing automatic may call it, and nothing
+        /// on the wire does - Heron must never grant itself permission to
+        /// write. Since D-166 it writes no file: the switch is held here, for
+        /// the life of this Revit.
         /// </summary>
         public static bool SetWriteEnabled(bool enabled)
         {
-            return SetSwitch(WriteEnabledKey, enabled);
+            lock (SwitchLock) _changes = enabled;
+            return enabled;
         }
 
         /// <summary>
@@ -423,7 +476,8 @@ namespace Heron.Core
         /// </summary>
         public static bool SetAdminEnabled(bool enabled)
         {
-            return SetSwitch(AdminEnabledKey, enabled);
+            lock (SwitchLock) _admin = enabled;
+            return enabled;
         }
 
         /// <summary>
@@ -432,7 +486,8 @@ namespace Heron.Core
         /// </summary>
         public static bool SetPublishEnabled(bool enabled)
         {
-            return SetSwitch(PublishEnabledKey, enabled);
+            lock (SwitchLock) _publish = enabled;
+            return enabled;
         }
 
         /// <summary>
@@ -451,9 +506,10 @@ namespace Heron.Core
         }
 
         /// <summary>
-        /// The one place a switch is written. Every setter and one spelling
-        /// of true and false, so the file cannot hold "True" from one button
-        /// and "on" from another.
+        /// The one place a switch is written to heron.config - Ask to Keep's,
+        /// the only one left there since D-166 - with one spelling of true
+        /// and false, so the file cannot hold "True" from one button and "on"
+        /// from another.
         /// </summary>
         private static bool SetSwitch(string key, bool enabled)
         {
@@ -461,6 +517,39 @@ namespace Heron.Core
             config.Set(key, enabled ? "true" : "false");
             config.Save();
             return enabled;
+        }
+    }
+
+    /// <summary>
+    /// What Changes, Admin and Publish say at one moment - D-166.
+    ///
+    /// Immutable, so a decision made from one cannot change half way through.
+    /// HeronPermissions.Switches() gives the live one; Of() builds any other,
+    /// which is how a test runs every combination without touching the
+    /// switches this process holds.
+    /// </summary>
+    public sealed class HeronSwitches
+    {
+        private HeronSwitches(bool changes, bool admin, bool publish)
+        {
+            Changes = changes;
+            Admin = admin;
+            Publish = publish;
+        }
+
+        /// <summary>Changes - write.enabled until D-166. Lets Modify through.</summary>
+        public bool Changes { get; private set; }
+
+        /// <summary>Admin - D-106. Lets Admin through, with Changes.</summary>
+        public bool Admin { get; private set; }
+
+        /// <summary>Publish - D-106. Lets Publish through, with Changes.</summary>
+        public bool Publish { get; private set; }
+
+        /// <summary>A snapshot of these three values.</summary>
+        public static HeronSwitches Of(bool changes, bool admin, bool publish)
+        {
+            return new HeronSwitches(changes, admin, publish);
         }
     }
 }

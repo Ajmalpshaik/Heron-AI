@@ -53,11 +53,12 @@ DEFAULTS = {
     # The extra wait for a job that has put a Keep or Discard box up: a DRAFT's
     # one run (D-119), or a keep from a chat while the owner asks (D-126).
     "revit.askTimeoutSeconds": "300",
-    "write.enabled": "false",
-    # The two switches above Changes (D-106): each lets one more level
-    # through, and only while write.enabled is on as well.
-    "admin.enabled": "false",
-    "publish.enabled": "false",
+    # NOT HERE SINCE D-166 (2026-11-16): write.enabled, admin.enabled and
+    # publish.enabled. Changes, Admin and Publish are held in Revit's memory,
+    # set only in Heron's Settings window and off whenever Revit starts, and
+    # this side learns them from the add-in's `info` reply -
+    # heron_bridge_client.switches_state - never from this file. Left out of
+    # the closed set on both sides, so a line naming one is ignored.
     # D-126: Revit asks the modeller Keep or Discard before a change is kept.
     # Off by default since D-138 (the owner, 2026-10-18); the ribbon's Ask to
     # Keep turns it on. Read by the add-in; this side reads it only to know
@@ -309,12 +310,6 @@ def try_once_timeout(values=None):
     """
     values = load() if values is None else values
     return fragment_timeout(values) + ask_timeout(values)
-
-
-def writing_enabled(values=None):
-    """Whether the add-in will permit a change to the model (D-19)."""
-    values = load() if values is None else values
-    return truthy(values, "write.enabled")
 
 
 def problems(values=None):
