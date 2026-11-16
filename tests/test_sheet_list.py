@@ -339,7 +339,7 @@ def section_answer(folder):
     check("sheetNumbers=M-101, M-102, 105" in draft and "FIND_SHEETS through revit_read" in draft,
           "the numbers for FIND_SHEETS, the read that says which are already used")
     proven = L.chat_answer(got, status="PROVEN")
-    check("through revit_change, previewOnly=true first" in proven and "try-once" not in proven
+    check("revit_change with previewOnly=true first" in proven and "try-once" not in proven
           and proven.count(value) == 1,
           "once PROVEN: revit_change, previewing first, the value once")
     check(L.chat_answer({"ok": False, "refused": "'x' was not read: because"}) == "'x' was not read: because",

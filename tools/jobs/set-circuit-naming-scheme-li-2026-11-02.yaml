@@ -44,7 +44,10 @@ jobs:
       after the same list and Standard's parts unchanged. Positive - changed
       1, after holds "\"Panel-Circuit\": Panel \"-\" + Circuit Number" beside
       every scheme in before. The use cases are row LI3, run with
-      `validate --write`.
+      `validate --write`. SINCE VERSION 2 (2026-11-16, row 5b-1660) circuit
+      number is the circuit naming index, so the positive reads "Panel \"-\" +
+      Circuit Naming Index" - version 1 was refused by Revit here. The metric
+      Electrical template ships no scheme named Standard: make one first.
 
   - fragment: report-electrical-settings
     expect: circuitNamingSchemes

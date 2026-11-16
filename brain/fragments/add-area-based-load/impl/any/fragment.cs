@@ -24,7 +24,11 @@
 // lies inside the space (Space.IsPointInSpace, at the space's mid height).
 // When the space's level and phase have NO load areas at all, they are made
 // for that level and phase - what Revit's own command does, the whole level
-// at once - and the count is reported. When the level has load areas but
+// at once - and the count is reported. REVIT MAKES THEM ONLY INSIDE REGIONS
+// CLOSED BY AREA BASED LOAD BOUNDARY LINES, never from walls or spaces
+// (measured on Revit 2024, row 5b-1659); VERSION 2 (2026-11-16) says so in the
+// finding when it made 0 and in each space's refusal, and does nothing else
+// differently. When the level has load areas but
 // none at a space, that space is refused and named: more are never added
 // beside the ones the modeller has.
 //
@@ -233,8 +237,16 @@ if (refused.Count == 0 && useType != null && picked.Count > 0)
             try
             {
                 var made = ElectricalLoadAreaData.CreateElectricalLoadAreas(doc, space.LevelId, phaseId);
+                var madeCount = made == null ? 0 : made.Count;
+                // ROW 5b-1659: Revit makes load areas only inside regions closed
+                // by Area Based Load Boundary lines - never from a level's walls
+                // or spaces (measured on Revit 2024: 0 with walls, spaces and
+                // rooms; 1 inside a drawn boundary). A 0 says where they come from.
                 findings.Add("Level " + quoted(nameOf(space.LevelId)) + " had no electrical load areas in phase " + quoted(nameOf(phaseId))
-                    + " - Revit made " + (made == null ? 0 : made.Count) + " there, the whole level at once.");
+                    + " - Revit made " + madeCount + " there, the whole level at once."
+                    + (madeCount == 0
+                        ? " Revit makes them only inside regions closed by Area Based Load Boundary lines (Analyze > Area Based Load Boundary), not from walls or spaces."
+                        : ""));
             }
             catch (Exception ex) { refused.Add("Revit would not make electrical load areas on " + quoted(nameOf(space.LevelId)) + ": " + ex.Message); continue; }
             onLevel = loadAreasOn(space.LevelId, phaseId);
@@ -248,7 +260,7 @@ if (refused.Count == 0 && useType != null && picked.Count > 0)
             if (lp == null) continue;
             if (space.IsPointInSpace(new XYZ(lp.Point.X, lp.Point.Y, z))) { at = a; break; }
         }
-        if (at == null) refused.Add("Space " + label + " has no electrical load area inside it - place one there in Revit; Heron adds none beside the ones the level has.");
+        if (at == null) refused.Add("Space " + label + " has no electrical load area inside it - draw Area Based Load Boundary lines round it in Revit (Analyze > Area Based Load Boundary), the only place Revit makes one, then place the load area there; Heron adds none beside the ones the level has.");
         else wanted.Add(Tuple.Create(space.LevelId, phaseId, at, label));
     }
 

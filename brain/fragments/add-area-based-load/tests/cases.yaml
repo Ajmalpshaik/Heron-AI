@@ -7,7 +7,11 @@
 # use), new from Revit's metric ELECTRICAL template, saved under
 # %TEMP%\heron-work, never a working model. Draw four walls making two rooms
 # on Level 1 and place a space in each (Analyze > Space). Leave Level 2 with no
-# spaces. Before the run, open the Project Browser's Area Based Load Types
+# spaces. THEN DRAW AREA BASED LOAD BOUNDARY LINES round each room (Analyze >
+# Area Based Load Boundary): Revit makes electrical load areas only inside
+# those lines, never from walls or spaces - measured on Revit 2024, row
+# 5b-1659, where walls and spaces alone made 0 and the positive below could
+# never fill. Before the run, open the Project Browser's Area Based Load Types
 # (Analyze > Area Based Load) and write down what the template has - the
 # second route. A view of Level 1 is in front.
 #
@@ -58,6 +62,16 @@ negative:
     expect: >
       loadsAdded 0, areasAssigned 0; skipped "... is not a space or an
       electrical load area - left out" for each wall
+
+  - given: >
+      on Level 2 with a space placed and NO Area Based Load Boundary lines
+      round it: that space selected, loadType "Office lighting"
+    expect: >
+      every count 0; findings "Level \"Level 2\" had no electrical load areas
+      ... Revit made 0 there ... Revit makes them only inside regions closed by
+      Area Based Load Boundary lines"; refused "Space ... has no electrical
+      load area inside it - draw Area Based Load Boundary lines round it ...".
+      Version 1 said "place one there in Revit" (row 5b-1659)
 
 second_route:
   - >
