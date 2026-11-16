@@ -147,9 +147,10 @@ def record_for(request_id, folder=None):
     return None
 
 
-def recent(folder=None, limit=10):
+def recent(folder=None, limit=10, judge=None):
     """
     The newest records first, as small dicts - for a call that names no run.
+    `word` is the door's D-168 word for a kept one, or None (row 5b-1821).
 
     Newest by the id itself: a workflow id starts with its UTC time, so the
     order is the order the jobs ran, and no file's clock is trusted for it.
@@ -175,6 +176,7 @@ def recent(folder=None, limit=10):
             "document": record.get("document"),
             "at": record.get("at"),
             "kind": reply.get("verdictKind"),
+            "word": judged(record, judge),
             "total": changes.get("total"),
         })
     return found
@@ -235,14 +237,15 @@ def entries(record):
     return lines
 
 
-def page(record, run, offset=0, limit=DEFAULT_LIMIT):
+def page(record, run, offset=0, limit=DEFAULT_LIMIT, judge=None):
     """
     One page of a record, as the text the chat is given.
 
     The header is on every page - which job, which model, when, how it ended,
     what it changed - so a page read on its own still says what it is a page
     of. Offset and limit are clamped rather than refused: a page past the end
-    says so and names the last offset that has anything.
+    says so and names the last offset that has anything. `judge` is the
+    server's D-168 reading of a kept record (NOTHING_ENDED, row 5b-1821).
     """
     try:
         offset = max(0, int(offset or 0))
@@ -261,7 +264,7 @@ def page(record, run, offset=0, limit=DEFAULT_LIMIT):
     lines = ["Run %s: %s in %s, %s - %s." % (
         run, record.get("fragment") or reply.get("ran") or "?",
         record.get("document") or reply.get("document") or "?",
-        record.get("at") or "?", _ended(reply))]
+        record.get("at") or "?", _ended(reply, judged(record, judge)))]
     lines.extend(change_lines(reply))
     lines.append("")
     if not shown:
@@ -279,10 +282,37 @@ def page(record, run, offset=0, limit=DEFAULT_LIMIT):
     return "\n".join(lines)
 
 
-def _ended(reply):
+# WHAT A KEPT RUN THAT CHANGED NOTHING IS CALLED IN ITS RECORD - row 5b-1821.
+# D-168 reads a `kept` reply with the card's declared results at the door, and
+# the outcome line says NOTHING CHANGED or REFUSED; the record's opening line
+# said KEPT for the same call, from verdictKind alone. The reading is the
+# server's - kept_nothing needs the card, which this file never loads - and it
+# is handed in as `judge(record)`, called only for a `kept` record. A word not
+# in this table, or no judge, leaves KEPT: the rule fails closed, as D-168's
+# does. The card is read as it is NOW, so a record of a card retired or
+# renamed since reads KEPT.
+NOTHING_ENDED = {
+    "NOTHING CHANGED": ("NOTHING CHANGED - kept, and Revit counted no change and every result "
+                        "the capability declares is empty, so there is nothing to undo"),
+    "REFUSED": "REFUSED by the capability itself - it made nothing, so there is nothing to undo",
+}
+
+
+def judged(record, judge):
+    """The door's word for a kept record (NOTHING_ENDED's key), or None."""
+    if judge is None or not isinstance(record, dict):
+        return None
+    reply = record.get("reply") if isinstance(record.get("reply"), dict) else {}
+    if reply.get("verdictKind") != "kept":
+        return None
+    word = judge(record)
+    return word if word in NOTHING_ENDED else None
+
+
+def _ended(reply, word=None):
     kind = reply.get("verdictKind")
     if kind == "kept":
-        return "KEPT"
+        return NOTHING_ENDED.get(word, "KEPT")
     if kind == "rolledBack":
         return "rolled back, nothing kept"
     if kind == "unchanged":

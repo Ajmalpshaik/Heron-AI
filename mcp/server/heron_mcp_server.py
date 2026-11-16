@@ -6239,7 +6239,7 @@ def heron_run_record(run: str = "", offset: int = 0, limit: int = 40,
                     "and ask again in a minute before trying the change again."
                     % request.strip())
     if not (run or "").strip():
-        found = runs.recent()
+        found = runs.recent(judge=_record_word)
         if not found:
             return ("There are no run records on this PC yet. One is written for "
                     "every change revit_change makes, by an add-in new enough to "
@@ -6250,7 +6250,7 @@ def heron_run_record(run: str = "", offset: int = 0, limit: int = 40,
             lines.append("  %s  %-28s %s, %s change(s), %s"
                          % (one["run"], one["fragment"] or "?", one["document"] or "?",
                             "?" if one["total"] is None else one["total"],
-                            one["kind"] or "outcome not recorded"))
+                            one["word"] or one["kind"] or "outcome not recorded"))
         lines.append("")
         lines.append("Read one with heron_run_record run=<the id>.")
         return "\n".join(lines)
@@ -6258,7 +6258,24 @@ def heron_run_record(run: str = "", offset: int = 0, limit: int = 40,
     record, why = runs.read(run.strip())
     if record is None:
         return why
-    return runs.page(record, run.strip(), offset, limit)
+    return runs.page(record, run.strip(), offset, limit, judge=_record_word)
+
+
+def _record_word(record):
+    """
+    NOTHING CHANGED or REFUSED for a record of a kept change, read as the door
+    read its reply (D-168) - or None, which leaves the record's KEPT. Row
+    5b-1821: the record said KEPT for a call whose outcome line had not.
+
+    The card is the one the record names (`fragment`, the add-in's request
+    name - the card's folder), read as it is now. A name that is not a plain
+    folder name, or a card no longer there, is None.
+    """
+    folder = str(record.get("fragment") or "")
+    if not re.fullmatch(r"[a-z0-9][a-z0-9-]*", folder):
+        return None
+    reply = record.get("reply") if isinstance(record.get("reply"), dict) else {}
+    return kept_nothing(reply, (brain.fragment_contract(folder) or {}).get("provides"))
 
 
 @server.tool()
