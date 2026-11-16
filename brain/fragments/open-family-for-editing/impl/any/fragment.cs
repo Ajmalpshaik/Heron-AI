@@ -21,10 +21,11 @@
 // assumed, and nothing here claims the model changed.
 //
 // VERSION 3: WHAT IS IN FRONT IS READ, NOT TAKEN FROM REVIT'S ANSWER (row
-// 5b-1750). OpenAndActivateDocument threw inside the job's group on Revit
-// 2024 while the family window opened all the same, so after a throw the
-// document in front is read back. `opened` is true only when that document
-// is the .rfa just written; `problem` is kept for a real failure.
+// 5b-1820, repairing row 5b-1750). OpenAndActivateDocument threw inside the
+// job's group on Revit 2024 while the family window opened all the same, so
+// after a throw the document in front is read back. `opened` is true only when that document
+// is the .rfa just written and no window on that file was open before the
+// run; `problem` is kept for a real failure.
 
 var findings = new List<string>();
 var opened = false;
@@ -115,34 +116,70 @@ else
                 if (written)
                 {
                     var uiapp = uidoc.Application;
+
+                    Func<string, string> full = p =>
+                    {
+                        try { return System.IO.Path.GetFullPath(p ?? "").TrimEnd('\\', '/'); }
+                        catch (Exception) { return (p ?? "").Trim(); }
+                    };
+                    var target = full(path);
+
+                    // Is a family window ON THIS FILE open in Revit - in front or
+                    // not? Every read of a document is guarded: after "An internal
+                    // error has occurred." an object may no longer be valid.
+                    Func<Document, bool> isThisFile = d =>
+                    {
+                        try
+                        {
+                            return d != null && d.IsFamilyDocument
+                                && string.Equals(full(d.PathName), target,
+                                                 StringComparison.OrdinalIgnoreCase);
+                        }
+                        catch (Exception) { return false; }
+                    };
+                    Func<bool> openAnywhere = () =>
+                    {
+                        try
+                        {
+                            foreach (Document open in uiapp.Application.Documents)
+                                if (isThisFile(open)) return true;
+                        }
+                        catch (Exception) { }
+                        return false;
+                    };
+
+                    // A WINDOW ON THIS PATH ALREADY OPEN, from an earlier run into
+                    // the same folder, has the same PathName as the file just
+                    // written - so it is noted BEFORE Revit is asked, and the
+                    // read-back below never counts it as this run's window
+                    // (review of row 5b-1820's repair).
+                    var openBefore = openAnywhere();
+
                     string refusal = null;
+                    var handedBack = false;
                     try
                     {
                         var openedUi = uiapp.OpenAndActivateDocument(path);
-                        opened = openedUi != null;
+                        handedBack = openedUi != null;
+                        opened = handedBack;
                         if (openedUi != null && openedUi.Document != null)
                             activeAfter = openedUi.Document.Title;
                     }
                     catch (Exception error) { refusal = error.Message; }
 
                     // REVIT'S ANSWER IS NOT THE LAST WORD ON WHAT IS IN FRONT -
-                    // row 5b-1750. On Revit 2024, 2026-11-16, called inside the
-                    // job's group, OpenAndActivateDocument threw "An internal
-                    // error has occurred." and the family window WAS open and in
-                    // front: Revit's title bar named it, and the next call was
-                    // pinned to it. So after a throw, or no window handed back,
-                    // the document in front is READ, and it counts as opened
-                    // only when it is a family whose file is the one just
-                    // written - never a family of the same name from elsewhere.
+                    // row 5b-1820, repairing row 5b-1750. On Revit 2024,
+                    // 2026-11-16, called inside the job's group,
+                    // OpenAndActivateDocument threw "An internal error has
+                    // occurred." and the family window WAS open and in front:
+                    // Revit's title bar named it, and the next call was pinned to
+                    // it. So after a throw, or no window handed back, the
+                    // document in front is READ, and it counts as opened only
+                    // when it is a family whose FILE is the one just written -
+                    // never a family of the same name from elsewhere, and never
+                    // a window on that file that was open before this run.
                     if (!opened)
                     {
-                        Func<string, string> full = p =>
-                        {
-                            try { return System.IO.Path.GetFullPath(p ?? "").TrimEnd('\\', '/'); }
-                            catch (Exception) { return (p ?? "").Trim(); }
-                        };
-                        var target = full(path);
-
                         Document inFront = null;
                         try
                         {
@@ -151,43 +188,31 @@ else
                         }
                         catch (Exception) { inFront = null; }
 
-                        if (inFront != null && inFront.IsFamilyDocument
-                            && string.Equals(full(inFront.PathName), target,
-                                             StringComparison.OrdinalIgnoreCase))
+                        var frontName = "";
+                        try { frontName = inFront == null ? "" : (inFront.Title ?? ""); }
+                        catch (Exception) { frontName = ""; }
+
+                        var said = refusal ?? "Revit handed back no window";
+                        if (isThisFile(inFront) && !openBefore)
                         {
                             opened = true;
-                            activeAfter = inFront.Title;
-                            if (refusal != null)
-                                findings.Add(string.Format("Revit answered \"{0}\" while opening "
-                                    + "it, but the window in front IS {1} - read back after "
-                                    + "the error, so it is reported as opened.", refusal, path));
+                            activeAfter = frontName;
+                            findings.Add(string.Format("Revit answered \"{0}\" while opening "
+                                + "it, but the window in front IS {1} - read back after "
+                                + "that, so it is reported as opened.", said, path));
                         }
                         else
                         {
-                            // OPEN BUT NOT IN FRONT is said apart, because the
-                            // next fragment writes to whatever IS in front.
-                            var behind = false;
-                            try
-                            {
-                                foreach (Document open in uiapp.Application.Documents)
-                                {
-                                    if (open != null && open.IsFamilyDocument
-                                        && string.Equals(full(open.PathName), target,
-                                                         StringComparison.OrdinalIgnoreCase))
-                                    { behind = true; break; }
-                                }
-                            }
-                            catch (Exception) { behind = false; }
-
-                            var frontName = "";
-                            try { frontName = inFront == null ? "" : inFront.Title; }
-                            catch (Exception) { frontName = ""; }
-
-                            var said = refusal ?? "Revit handed back no window";
                             problem = (problem.Length > 0 ? problem + " | " : "") + said;
                             findings.Add(string.Format("{0} was written but Revit would not open it: "
                                 + "{1}", path, said));
-                            if (behind)
+                            if (openBefore)
+                                findings.Add("A window on that same file was ALREADY open in Revit "
+                                    + "before this run, so whatever is in front now is not "
+                                    + "counted as opened by it. Close that window and ask again.");
+                            else if (openAnywhere())
+                                // OPEN BUT NOT IN FRONT is said apart, because the
+                                // next fragment writes to whatever IS in front.
                                 findings.Add(string.Format("It IS open in Revit, but not in front - "
                                     + "the window in front is '{0}'. Click the family's window "
                                     + "before anything is written to it.",

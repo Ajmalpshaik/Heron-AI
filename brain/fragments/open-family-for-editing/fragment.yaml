@@ -60,7 +60,7 @@ purpose: >
   NY's NY3, so a PROVEN line speaks for this code, not yet for that route.
 
   **VERSION 3 (2026-11-16): WHAT IS IN FRONT IS READ BACK, NOT TAKEN FROM
-  REVIT'S ANSWER** (row 5b-1750, issue #853). NY3 answered on Revit 2024,
+  REVIT'S ANSWER** (row 5b-1820, repairing row 5b-1750 - issue #853). NY3 answered on Revit 2024,
   `ny-scratch`, through `revit_change`: OpenAndActivateDocument, called
   inside the job's group, threw "An internal error has occurred." - and the
   family window WAS open and in front (Revit's title bar read
@@ -69,7 +69,9 @@ purpose: >
   `problem`, so the chat said STOPPED over a family that had opened. Now,
   after a throw or no window handed back, the document in front is read:
   it counts as `opened` only when it is a family document whose file is the
-  .rfa just written, and Revit's words go into `findings`, not `problem`. A
+  .rfa just written and no window on that file was open before the run -
+  a window left from an earlier run into the same folder has the same path -
+  and Revit's words go into `findings`, not `problem`. A
   family open but NOT in front is said apart, and stays `opened false` with
   its `problem` - the next fragment writes to whatever is in front. `impl/`
   moved, so the card is DRAFT again; the proof below is version 1's record,
@@ -114,7 +116,10 @@ contract:
       role: result
       type: string
     - name: problem
-      # Revit's own words when anything refused, empty when nothing did.
+      # Revit's own words when anything refused, empty when nothing did -
+      # and, since version 3, empty when the family ended up in front from the
+      # file just written although Revit threw on the way (row 5b-1820): its
+      # words are then in findings, and the card did what it was asked.
       role: accounting
       type: string
     - name: findings
