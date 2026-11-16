@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -62,7 +62,27 @@ capability: PLACE_FAMILY_INSTANCES
 # where each of its inputs and outputs is now. DRAFT at the time, until
 # version 5 is proved on a real model (D-30); version 4 was never proved
 # either.
-version: 5
+#
+# VERSION 6 (2026-11-16) - AN ARCHITECTURAL COLUMN TAKES A TOP LEVEL, AND A
+# ROTATION IN THE SAME JOB - and back to DRAFT. Both from Ajmalpshaik/Heron-AI
+# #853 (Revit 2024, `villa 2`). FRAGMENT-ISSUES row 5b-1704 (item B3): a
+# column was the Structural Columns category alone, so `topLevelName` on
+# *M_Rectangular Column* (Columns) was refused - or, to get one, it was placed
+# as `structuralType=column`, a structural column. A Columns-category family
+# now takes `topLevelName` and `topOffset` placed non-structurally, with no
+# structural type said: the same built-in Top Level and Top Offset, judged
+# before anything is placed and read back in `tops`; its height above the
+# level is its Base Offset. Row 5b-1706 (item B8): there was no rotation, so
+# furniture placed to face a wall took a ROTATE_ELEMENTS call per group - two
+# undo entries for one placement. `rotationDegrees` turns every instance
+# placed about a vertical axis through its own insertion point, positive
+# anticlockwise seen from above, and reads each one's facing back; one that
+# did not turn by the angle asked undoes the layout (Article 8). Refused for a
+# nested placement in a family. Version 5 was PROVEN on 2026-11-02 (the proof
+# block below, kept as the record of what it proved); its C# moved, so it is
+# DRAFT again until NEEDS-CHECKING Group OB is run (D-30) - on the owner's word
+# of 2026-11-16 to fix every issue from #852 to #854.
+version: 6
 source: OFFICIAL
 risk: MODIFY
 
@@ -181,7 +201,8 @@ contract:
       absent: none
     # VERSION 4. A column's top level, by its whole name exactly. Left out
     # ("none"): the top as Revit placed it, and the answer says so. Columns
-    # only.
+    # only - a Structural Columns family asked as a column or, since version
+    # 6, a Columns (architectural) family with no structural type said.
     - name: topLevelName
       type: string
       source: request
@@ -200,6 +221,16 @@ contract:
     # `level`, "Ref. Level". Every point must lie on it. Refused in a project,
     # where a family goes on its level.
     - name: workPlane
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 6 (row 5b-1706). Degrees to turn every instance placed, about a
+    # vertical axis through its own insertion point - positive anticlockwise
+    # seen from above, negative clockwise, as Revit's Rotate turns. Left out
+    # ("none"): as Revit places it, version 5 exactly. Read back by each
+    # one's facing. Refused in the family being edited.
+    - name: rotationDegrees
       type: string
       source: request
       optional: true
@@ -417,6 +448,9 @@ utterances:
   - insert the family at these locations
   - place a diffuser
   - put a damper here
+  # VERSION 6 (2026-11-16, rows 5b-1704 and 5b-1706).
+  - place the porch posts with their top at the roof level
+  - place the beds rotated 90 degrees to face the wall
   # MOVED 2026-11-01 from PLACE_STRUCTURAL_FAMILY, merged into this card.
   - place structural columns at these points
   - put a column at each grid intersection
