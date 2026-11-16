@@ -84,9 +84,11 @@ A change under a PROVEN card's `impl/` makes its proof stale, so none of these w
 
 | Widen | So that it | Why it matters for a facade |
 |---|---|---|
-| `report-curtain-wall-type` | also reads a **curtain system type** - its Grid 1 and Grid 2 layout, spacing and mullions | *"which mullions are on this curtain system"* reaches the mullion setter, a write, when it is not asked as a question (Group JP, row JP17) |
+| `report-curtain-wall-type` | also reads a **curtain system type** - its Grid 1 and Grid 2 layout, spacing and mullions | *"which mullions are on this curtain system"* reaches the mullion setter, a write, when it is not asked as a question (Group JP, row JP17) *(tracked as GitHub issue [#1012](https://github.com/Ajmalpshaik/Heron-AI/issues/1012) since 2026-11-16 (WN-67))* |
 
 ## Still NOT YET after it
+
+*Tracked as GitHub issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005) since 2026-11-16 (WN-11) - work it there.*
 
 Said by the `facade` method when asked, never worked round:
 
@@ -102,7 +104,7 @@ Said by the `facade` method when asked, never worked round:
 ## Retiring this note
 
 When Groups JI to JM, and JP, are proved, or the owner drops one, this note is deleted. Its durable parts are
-already where they live: the cards, the `facade` method and the groups.
+already where they live: the cards, the `facade` method and the groups. *(Tracked as GitHub issue [#1008](https://github.com/Ajmalpshaik/Heron-AI/issues/1008) since 2026-11-16 (WN-35).)*
 
 **Read 2026-11-11 - close to it, and the call is the owner's.** The cards those groups name say `PROVEN`
 (above). What is left before the file can go: whether a `PROVEN` card with no results in its group counts

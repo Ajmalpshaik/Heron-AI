@@ -8,6 +8,8 @@
 
 ## Group IL - a label's or text note's TYPE read and changed in millimetres, copied and switched: `REPORT_TEXT_TYPES` and `SET_TEXT_TYPE` (2026-10-21)
 
+**Tracked as GitHub issue [#985](https://github.com/Ajmalpshaik/Heron-AI/issues/985) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 From [row 5b-1300](../fragment-issues/section-5b-rows-401-425.md). On 2026-10-21 the owner, building the pipe
 tag family *TRG_Pipe_Tag* on Revit 2020, wanted his labels' text changed - 2.5 to 5 mm, font, bold - and the
 same for text notes. Nothing in Heron read or changed a text type. Built the same day, in the cloud, with no

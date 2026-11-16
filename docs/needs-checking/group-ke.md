@@ -7,6 +7,8 @@
 
 ## Group KE - rebar couplers on bar ends or between two bars: `PLACE_REBAR_COUPLERS` (2026-11-01)
 
+**Tracked as GitHub issue [#1000](https://github.com/Ajmalpshaik/Heron-AI/issues/1000) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"put a coupler at the ends of these bars"*, *"join these two bars
 with a coupler"*, *"add couplers to the top end of the column bars"* - Revit's
 Structure > Reinforcement > Rebar Coupler. Nothing in Heron placed a coupler: `PLACE_BEAM_REBAR`, `PLACE_COLUMN_REBAR` and

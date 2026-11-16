@@ -7,6 +7,8 @@
 
 ## Group OE - roofs, walls, levels and delete from field reports #852 to #854: slope the edges chosen, a wall's top shaped to the roof, a column's top level, and the walls a delete detaches: `SLOPE_ROOF_EDGES`, `SHAPE_WALL_TOPS_TO_ROOF`, `SET_ELEMENT_LEVEL`, `DELETE_ELEMENTS` (2026-11-16)
 
+**Tracked as GitHub issue [#974](https://github.com/Ajmalpshaik/Heron-AI/issues/974) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 From Sruthina's field reports Ajmalpshaik/Heron-AI#852, #853 and #854 (Revit 2024, `villa 2`,
 2026-11-11), on the owner's ask of 2026-11-16 to fix every issue recorded from them. Written in a cloud
 container: every card here **compiles for every release it claims** (`tools/check-fragments-compile.py`,

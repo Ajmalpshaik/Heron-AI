@@ -7,6 +7,8 @@
 
 ## Group MS - saved commands and the Heron panel: a kept job saved from the chat and run again from a panel docked in Revit (2026-11-08)
 
+**Tracked as GitHub issue [#970](https://github.com/Ajmalpshaik/Heron-AI/issues/970) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **What was built** ([D-151](../decisions/D-151.md), proposed; [docs/49](../49-saved-commands-and-the-heron-panel.md)):
 the chat's `heron_commands` saves a job as a named command; **Commands** in the Heron button's menu opens a
 docked panel listing them; Run starts `mcp/server/heron_command_run.py`, which runs the command through

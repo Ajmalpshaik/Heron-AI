@@ -8,6 +8,8 @@
 
 ## Group DQ - structural coping, beam systems and supports, analytical model, areas, railings, parts, toposolids, carbon, CAD import, library search, family preview, geometry, beam openings (2026-10-12)
 
+**Tracked as GitHub issue [#997](https://github.com/Ajmalpshaik/Heron-AI/issues/997) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 The seventh batch of the gap fill ([`work-notes/plans/gap-fill-2026-10-12.md`](../work-notes/plans/gap-fill-2026-10-12.md)).
 
 **What was built - nineteen new capabilities and one widening.** Structural: `COPE_FRAMING`, `CREATE_BEAM_SYSTEM`,

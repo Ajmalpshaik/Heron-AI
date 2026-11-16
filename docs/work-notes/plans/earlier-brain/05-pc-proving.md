@@ -40,7 +40,7 @@ start package by package, as each one merges.
 
 | Package | Prove this | On |
 |---|---|---|
-| PR #299 | With Changes **ON**, ask a chat to sync with central. **It must be refused, and nothing sent.** Then an ordinary change still works | any model — the refusal happens before Revit is called |
+| PR #299 | With Changes **ON**, ask a chat to sync with central. **It must be refused, and nothing sent.** Then an ordinary change still works | any model — the refusal happens before Revit is called *(tracked as GitHub issue [#1014](https://github.com/Ajmalpshaik/Heron-AI/issues/1014) since 2026-11-16 (WN-76))* |
 | C1 | A new session on Windows prints the status line; a new session refuses an edit that would put Revit code outside `revit/` | no model needed |
 | C2 | With Changes **OFF**, a read question answered through the new read-only door; the rules visible in a fresh chat; if D1 was *preview*, a preview and then an apply, with the count re-checked | a named model |
 | C3 | A fragment that raises a Revit **warning** — dismissed and counted; one that raises an **error** — rolled back, **nothing deleted**; an element that has changed in central is skipped with the reason | a **detached copy** first ([Golden Rule 18](../../../14-golden-rules.md)); a workshared central for the last one |

@@ -7,6 +7,8 @@
 
 ## Group NX - the defects found proving on 2026-11-13, repaired in code and not yet run (2026-11-13)
 
+**Tracked as GitHub issue [#974](https://github.com/Ajmalpshaik/Heron-AI/issues/974) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 The proving sitting of 2026-11-13 on the owner's PC (Revit 2020 and 2024, branch
 `claude/pc-proofs-2026-11-12`) recorded each defect it found as a row of its own and repaired none. The
 same day, on the owner's word that whatever can be done without him and without Revit should be done,

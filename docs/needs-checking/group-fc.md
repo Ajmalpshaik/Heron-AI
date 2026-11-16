@@ -8,6 +8,8 @@
 
 ## Group FC - put one view where another is, on every sheet it is on: `PLACE_VIEW_ON_SHEET` version 2 (2026-10-17)
 
+**Tracked as GitHub issue [#987](https://github.com/Ajmalpshaik/Heron-AI/issues/987) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Found on a real project in Revit 2020: a shop-drawing legend NOTES sits on four sheets, and at the as-built
 issue its copy AS-BUILT NOTES has to go exactly where NOTES is, on every one. Heron had no tool for it.
 [FRAGMENT-ISSUES row 5b-540](../fragment-issues/section-5b-rows-401-425.md).

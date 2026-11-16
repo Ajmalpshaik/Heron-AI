@@ -8,6 +8,8 @@
 
 ## Group DV - door tags in a plan, a sub-category switched in a view, and which side of a wall its dimensions go (2026-10-13)
 
+**Tracked as GitHub issue [#989](https://github.com/Ajmalpshaik/Heron-AI/issues/989) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Three widenings found making the futuristic house's drawing set in Project2 (Revit 2020.2), all three run on
 Revit 2020.2 in Project1 (session 18392, an unsaved scratch project - Project2 was closed without saving at
 14:42), on a duplicate plan, `Tool Test - 6e9a05`, with a negative case each.

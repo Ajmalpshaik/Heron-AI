@@ -8,6 +8,8 @@
 
 ## Group IQ - model text that lands where asked (`ADD_FAMILY_MODEL_TEXT` version 2), and a sprinkler layout that says why it asks (2026-10-22)
 
+**Tracked as GitHub issue [#978](https://github.com/Ajmalpshaik/Heron-AI/issues/978) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 From rows [5b-1315 and 5b-1316](../fragment-issues/section-5b-rows-401-425.md). Both were seen on Revit 2020
 (session 40628) on 2026-10-22, in a chat building families and laying out sprinklers: a transformer family's
 numbers *1* and *2* stood 2.5 m in front of their plates, and a sprinkler layout on four Spaces could not go on

@@ -9,6 +9,8 @@
 
 ## Group U — a review found six things in Group T's own work, and all six held
 
+**Tracked as GitHub issue [#973](https://github.com/Ajmalpshaik/Heron-AI/issues/973) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Codex reviewed [PR #189](https://github.com/Ajmalpshaik/Heron-AI/pull/189) on 2026-09-19 and left six
 comments. **Every one was checked against the code and every one was right.** Four are fixed below;
 two are open and one of those is the reason two signatures were withdrawn the same day.

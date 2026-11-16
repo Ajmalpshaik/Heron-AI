@@ -7,6 +7,8 @@
 
 ## Group MD - Manage > Transfer Project Standards - fill patterns, line patterns, text, dimension, wall, floor, roof, ceiling, filled region, grid and level types from another open project, this project's kept where a name is already here: `TRANSFER_PROJECT_STANDARDS` (2026-11-02)
 
+**Tracked as GitHub issue [#996](https://github.com/Ajmalpshaik/Heron-AI/issues/996) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"transfer the fill patterns from the template project"*, *"copy the
 text types and dimension types from Office Standard.rvt"*, *"bring the line styles and object styles over
 from the other open project"*, *"transfer project standards: wall types and materials from the

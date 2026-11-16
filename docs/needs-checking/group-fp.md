@@ -8,6 +8,8 @@
 
 ## Group FP - a family placed at the height asked when its insertion point is not its own level: PLACE_FAMILY_INSTANCES version 3 (2026-10-17)
 
+**Tracked as GitHub issue [#981](https://github.com/Ajmalpshaik/Heron-AI/issues/981) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 [Row 5b-590](../fragment-issues/section-5b-rows-401-425.md): on a real project in Revit 2020,
 [`PLACE_FAMILY_INSTANCES`](../../brain/fragments/place-family-instances/fragment.yaml) version 2 refused two
 `TRG_GEN_CutOut_Rectangular_HVAC` cut-outs asked 2152 and 2127 mm above their level - *"2014.5 mm above"* -

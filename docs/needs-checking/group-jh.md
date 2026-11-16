@@ -8,6 +8,8 @@
 
 ## Group JH - a duct or pipe fitting built by the method end to end, and the four fitting facts the research left UNSURE: `mep-fitting-family-creation` deepened (2026-10-28)
 
+**Tracked as GitHub issue [#981](https://github.com/Ajmalpshaik/Heron-AI/issues/981) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 The owner asked on 2026-10-28 for Heron to be *"very advanced in fittings creation"*. Every tool a fitting
 needs was already there and most were PROVEN; the method was thin. It was rewritten
 ([`mep-fitting-family-creation`](../../brain/skills/mep-fitting-family-creation.yaml)) from a research pass

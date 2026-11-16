@@ -9,6 +9,8 @@
 
 ## Group BP - one form's Visible, angles and extrusion ends linked to parameters; Is Reference and Defines Origin on planes (2026-10-01)
 
+**Tracked as GitHub issue [#976](https://github.com/Ajmalpshaik/Heron-AI/issues/976) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **The owner's PC, Revit 2024 first, then 2020.** Two new tools, added the same day as Groups BL to BO,
 because the `family-creation` skill's own NOT YET line named Is Reference, and a part that some types
 leave out, a bend whose angle the types choose, and a depth that follows a parameter had no way to be

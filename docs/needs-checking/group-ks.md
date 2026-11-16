@@ -7,6 +7,8 @@
 
 ## Group KS - one multi-rebar annotation across bars in a view: `PLACE_MULTI_REBAR_ANNOTATION` (2026-11-01)
 
+**Tracked as GitHub issue [#1000](https://github.com/Ajmalpshaik/Heron-AI/issues/1000) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"add a multi-rebar annotation to these bars"*, *"put a multi-rebar tag
 with a dimension line on this rebar set"*, *"annotate these bars with one tag and a dimension"* - Revit's
 Annotate > Multi-Rebar, Aligned and Linear. Nothing in Heron placed one: no card calls

@@ -9,6 +9,8 @@
 
 ## Group L — linked models (needs Revit and a model that links something)
 
+**Tracked as GitHub issue [#991](https://github.com/Ajmalpshaik/Heron-AI/issues/991) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 `HERON-REVIT-LNK-015` — [`revit/Heron.Revit.Addin/RevitLinks.cs`](../../revit/Heron.Revit.Addin/RevitLinks.cs).
 Compiles on 2020–2027, 0 warnings, 2026-09-15. **Never run.** Read-only, so nothing here can damage a
 model — but every claim below is a claim about an API surface, not about behaviour.

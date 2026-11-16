@@ -7,6 +7,8 @@
 
 ## Group JZ - a wall foundation put under each selected wall: `CREATE_WALL_FOUNDATION` (2026-11-01)
 
+**Tracked as GitHub issue [#997](https://github.com/Ajmalpshaik/Heron-AI/issues/997) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"put a wall footing under these walls"*, *"add a strip foundation
 under the external walls"*, *"wall foundation under all the structural walls on Level 0"* - Revit's
 Structure > Foundation > Wall. Nothing in Heron made one: `PLACE_STRUCTURAL_FAMILY` places an isolated

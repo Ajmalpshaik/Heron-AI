@@ -9,6 +9,8 @@
 
 ## Group BF - the Admin and Publish switches: refused by name while off, a project parameter bound with Admin on, refused again once it is off (2026-09-28)
 
+**Tracked as GitHub issue [#970](https://github.com/Ajmalpshaik/Heron-AI/issues/970) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **Built 2026-09-28 in a cloud session with no Revit, and none of it has run in Revit.**
 [D-106](../DECISIONS.md) put two switches beside Changes on the ribbon, **Admin** and **Publish**, each off
 until the owner turns it on, each asking before it goes on and never on the way off, and each working

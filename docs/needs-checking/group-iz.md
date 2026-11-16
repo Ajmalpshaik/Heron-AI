@@ -8,6 +8,8 @@
 
 ## Group IZ - a hexagon whose size across the flats follows a parameter: `EXTRUDE_POLYGON_BETWEEN_PLANES` version 1 (2026-10-24)
 
+**Tracked as GitHub issue [#1015](https://github.com/Ajmalpshaik/Heron-AI/issues/1015) since 2026-11-16** - its checks have run and held, and the ids not yet struck are listed there, to strike once open pull request #871 has merged. Every result stays in this file.
+
 A new card, [`extrude-polygon-between-planes`](../../brain/fragments/extrude-polygon-between-planes/fragment.yaml),
 written for the owner's fastener library: a bolt head and a nut are hexagons, and until this card the only
 parametric hexagon Heron could make was one fixed hexagon per size, switched by type through a Yes/No

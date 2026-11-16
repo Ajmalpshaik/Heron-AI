@@ -7,6 +7,8 @@
 
 ## Group KL - the span direction of structural floors: `SET_FLOOR_SPAN_DIRECTION` (2026-11-01)
 
+**Tracked as GitHub issue [#998](https://github.com/Ajmalpshaik/Heron-AI/issues/998) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"set the span direction of this slab to run along grid 1"*, *"change
 the floor span to 90 degrees"* - the span direction of a structural floor (Revit's Structure > Span
 Direction). Nothing in Heron set it. `brain/heron_retrieve.py`, Revit 2024, sent the first sentence to

@@ -7,6 +7,8 @@
 
 ## Group MV - QA checklists: checks in the modeller's words saved from the chat, run in one go from the chat and from the Companion's QA Checklist page (2026-11-08)
 
+**Tracked as GitHub issue [#975](https://github.com/Ajmalpshaik/Heron-AI/issues/975) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **What was built** ([D-152](../decisions/D-152.md), proposed; [docs/50](../50-qa-checklists.md)): the chat's
 `heron_checklist` saves a checklist - each check one capability that only reads, with a pass rule on one
 output - and runs it check by check through `revit_read`'s own body; the Companion has a **QA Checklist**

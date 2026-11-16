@@ -7,6 +7,8 @@
 
 ## Group NQ - an arc's or a circle's CENTRE locked to named planes in a 2D family: `LOCK_FAMILY_LINES_TO_PLANES` version 3 (2026-11-12)
 
+**Tracked as GitHub issue [#1015](https://github.com/Ajmalpshaik/Heron-AI/issues/1015) since 2026-11-16** - its checks have run and held, and the ids not yet struck are listed there, to strike once open pull request #871 has merged. Every result stays in this file.
+
 Built 2026-11-12 on the owner's word ("make the arc centre lock tool") - the gap table's row 3e
 ([2026-11-11-family-2d-capabilities](../work-notes/investigations/2026-11-11-family-2d-capabilities.md)). Widened, not
 made new: locking a 2D line to planes is this card's job, and `LOCK_FORM_SKETCH_TO_PLANES` (PROVEN) locks a FORM's

@@ -8,6 +8,8 @@
 
 ## Group JJ - one curtain wall's own grid lines, added by position or in equal panels: `ADD_CURTAIN_GRID_LINES` version 1 (2026-10-28)
 
+**Tracked as GitHub issue [#994](https://github.com/Ajmalpshaik/Heron-AI/issues/994) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 A new card, [`add-curtain-grid-lines`](../../brain/fragments/add-curtain-grid-lines/fragment.yaml) (FRG-ELE-129),
 written in a cloud session for the modeller's *"divide this curtain wall into six panels"*, *"add a grid line
 at 1200 from the bottom of this curtain wall"*, *"add vertical grid lines at 900 and 2700 on just this

@@ -8,6 +8,8 @@
 
 ## Group EQ - "2020 → latest" backed by evidence: the add-in loaded on every release, and a core set proved on each (2026-10-17)
 
+**Tracked as GitHub issue [#973](https://github.com/Ajmalpshaik/Heron-AI/issues/973) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Heron claims every release from 2020 to 2027. The evidence is much narrower, and it is derived, not typed:
 
 ```bash

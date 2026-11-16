@@ -9,6 +9,8 @@
 
 ## Group AJ - Revit traps seen elsewhere, written into the fragments they affect (earlier-brain plan, package C4)
 
+**Tracked as GitHub issue [#1001](https://github.com/Ajmalpshaik/Heron-AI/issues/1001) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Nine traps another tool met on real models, mostly on Revit 2020, that Heron's fragments can meet too. **Every one is OBSERVED ELSEWHERE AND NOT YET PROVEN HERE.** A row below is the check that turns it into Heron's own evidence - or shows it does not happen on the release Heron runs, which is worth the same. Each fragment named carries a note on its card saying so. Written 2026-09-23 on a machine with no Revit: **nothing below has run.** Every row needs Revit on the owner's PC and a **detached copy** of a model ([Golden Rule 18](../14-golden-rules.md)).
 
 **Five fragments went back from `PROVEN` to `DRAFT`** because their code changed - `find-dead-ends`, `find-system-islands`, `color-by-parameter`, `override-graphics-in-view` and `dimension-grids-and-levels`. Each keeps its old proof as the record of what was run and needs a new one on a named model ([D-30](../DECISIONS.md)); AJ6, AJ7 and AJ8 say what to arrange. `connect-air-terminals`, `auto-size-pipe` and `find-clashes` changed too, and were `DRAFT` already. The defects behind them are FRAGMENT-ISSUES rows 5b-173 to 5b-181.

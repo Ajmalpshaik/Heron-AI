@@ -9,6 +9,8 @@
 
 ## Group H — the lease (needs TWO chats and one Revit)
 
+**Tracked as GitHub issue [#971](https://github.com/Ajmalpshaik/Heron-AI/issues/971) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Changes behaviour proven in Step 1, so it is the group most likely to surprise you.
 
 **Do `A4` first.** The round-trip test already covers the refusal, the `ping`/`info` exemption, the

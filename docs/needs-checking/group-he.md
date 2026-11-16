@@ -8,6 +8,8 @@
 
 ## Group HE - a new text note of several paragraphs, numbered, lettered or bulleted: `CREATE_TEXT_NOTE` version 2 (2026-10-17)
 
+**Tracked as GitHub issue [#985](https://github.com/Ajmalpshaik/Heron-AI/issues/985) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Found from [row 5b-520](../fragment-issues/section-5b-rows-401-425.md): `EDIT_TEXT_VALUES` version 4 learned to
 keep a note's 1-2-3 numbering, but the tool that MAKES a note could still make only one paragraph with no
 list - a chat's values arrive one per line, so a paragraph break could not even be typed. A GENERAL NOTES

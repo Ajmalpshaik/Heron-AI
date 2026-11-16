@@ -7,6 +7,8 @@
 
 ## Group LD - which steel connections and connection types a model has: `REPORT_STRUCTURAL_CONNECTIONS` (2026-11-01)
 
+**Tracked as GitHub issue [#999](https://github.com/Ajmalpshaik/Heron-AI/issues/999) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"what steel connections are in this model"* and *"list the connection
 types loaded"* - Revit's Steel > Connection (Structure > Connection on 2020) - beside *"add a base plate
 connection to these column bases"*, *"put a shear plate connection between this beam and column"*

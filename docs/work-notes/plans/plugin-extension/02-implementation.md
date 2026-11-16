@@ -982,7 +982,7 @@ stage.
    too ([R-26](01-requirements.md)).
 3. Publish as a GitHub release with the manifest and every product asset.
 4. **Test on a real locked-down machine**, not a developer PC. A developer PC is the one machine that
-   proves nothing about this.
+   proves nothing about this. *(Tracked as GitHub issue [#1014](https://github.com/Ajmalpshaik/Heron-AI/issues/1014) since 2026-11-16 (WN-77).)*
 5. Write the install instructions in the README — one documented command or one documented download.
    **Never "paste this link and let the AI run it"**; `docs/07 §1a` refuses that, and so does
    [Golden Rule 19](../../../14-golden-rules.md).
@@ -1088,4 +1088,4 @@ Update this table as stages complete. **Do not mark a stage done without its evi
 | 6 | Routes 1 and 2 | **BUILT, NOT PROVEN** 2026-09-22 | **Both** routes have a door — `heron-install`, with `--source` and `--from`. [Q-PE-16](03-open-questions.md) and [Q-PE-12](03-open-questions.md) both answered, and the update check with them. **Nothing had been installed into a Revit then.** Since: `heron-install --from` put the AI Bridge into Revit 2027 on 2026-10-08, *"1 installed, 0 failed"*, and Revit 2027 loaded that build; on 2026-10-10 it installed from the published release with no `--from` ([Group AC](../../../needs-checking/group-ac.md)); and plain `heron-install` passed on the owner's laptop on 2026-10-17 ([Group EP](../../../needs-checking/group-ep.md) EP3). `AE1`-`AE6` are still owed as written. [Stage 6](#stage-6--routes-1-and-2-onto-the-same-engine) · `AE1`-`AE6` |
 | 7 | Uninstall / update / rollback | **BUILT, NOT PROVEN** 2026-09-22 | Item 5 is **NOT MET** and says why, [Q-PE-15](03-open-questions.md). **Nothing has been deleted from a real Addins folder.** [Stage 7](#stage-7--uninstall-update-and-a-rollback-that-has-been-tested) · `AD1`-`AD4` |
 | 8 | Sign and ship | NOT STARTED | — |
-| 9 | The Settings panel | NOT STARTED | — |
+| 9 | The Settings panel | NOT STARTED | — *(tracked as GitHub issue [#1011](https://github.com/Ajmalpshaik/Heron-AI/issues/1011) since 2026-11-16 (WN-46))* |

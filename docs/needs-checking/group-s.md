@@ -9,6 +9,8 @@
 
 ## Group S — groups and assemblies, and the edit that lands in twelve places (needs Revit)
 
+**Tracked as GitHub issue [#995](https://github.com/Ajmalpshaik/Heron-AI/issues/995) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 `HERON-REVIT-GRP-033` — [`revit/Heron.Revit.Addin/RevitGroups.cs`](../../revit/Heron.Revit.Addin/RevitGroups.cs).
 Compiles on 2020–2027, 0 errors, 2026-09-16. **Tracked against two models 2026-09-19 and signed** ([`brain/agent-proofs/HERON-REVIT-GRP-033.yaml`](../../brain/agent-proofs/HERON-REVIT-GRP-033.yaml)) - so it is no longer NEVER RUN. That proof is D-53 tracking and it is NOT these rows: the cases below are still unchecked, and tracking says the answer follows the model, not that any one of them is right. Read-only — nothing is grouped, ungrouped
 or edited, and no transaction is opened.

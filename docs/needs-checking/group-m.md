@@ -9,6 +9,8 @@
 
 ## Group M — phases and design options (needs Revit and a real job file)
 
+**Tracked as GitHub issue [#995](https://github.com/Ajmalpshaik/Heron-AI/issues/995) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 `HERON-REVIT-PHS-032` — [`revit/Heron.Revit.Addin/RevitPhases.cs`](../../revit/Heron.Revit.Addin/RevitPhases.cs).
 Compiles on 2020–2027, 0 warnings, 2026-09-15. **Tracked against two models 2026-09-19 and signed** ([`brain/agent-proofs/HERON-REVIT-PHS-032.yaml`](../../brain/agent-proofs/HERON-REVIT-PHS-032.yaml)) - so it is no longer NEVER RUN. That proof is D-53 tracking and it is NOT these rows: the cases below are still unchecked, and tracking says the answer follows the model, not that any one of them is right. Read-only — nothing here sets a view's
 phase or activates an option, because both change what everybody else on the job sees in that view.

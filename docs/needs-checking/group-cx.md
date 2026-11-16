@@ -7,6 +7,8 @@
 
 ## Group CX - every material a project or family holds, listed by name, class and id (2026-10-09)
 
+**Tracked as GitHub issue [#996](https://github.com/Ajmalpshaik/Heron-AI/issues/996) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 On 2026-10-09 a modeller with a Duct Accessories family open in Revit 2024 asked *"list the materials
 in this family"* and was handed `TRANSFER_MATERIALS_BETWEEN_DOCUMENTS` - a write - on the lexical
 backend, and `FIND_UNUSED_MATERIALS`, which lists only what nothing uses, on the trained one

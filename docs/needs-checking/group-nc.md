@@ -7,6 +7,8 @@
 
 ## Group NC - a 2D family's lines and filled region edges locked to named planes, along and by their ends: `LOCK_FAMILY_LINES_TO_PLANES` (2026-11-11)
 
+**Tracked as GitHub issue [#979](https://github.com/Ajmalpshaik/Heron-AI/issues/979) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked 2026-11-11 for the owner's KDF square diffuser (Revit 2020): its plan flow arrows are a nested detail item
 fixed at 600 mm, where Autodesk's sample supply diffuser carries arrows that grow with its size. Nothing in Heron
 locked a line's END to a plane crossing it, or a filled region's edges at all, so a slanted arrow-head edge could

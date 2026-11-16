@@ -8,6 +8,8 @@
 
 ## Group GC - one family swapped for another, whatever each one's hosting: the method `replace-in-place-family` widened (2026-10-17)
 
+**Tracked as GitHub issue [#980](https://github.com/Ajmalpshaik/Heron-AI/issues/980) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **What was wrong.** The method [`replace-in-place-family`](../../brain/skills/replace-in-place-family.yaml)
 swapped only IN-PLACE families. On 2026-10-15, on Revit 2020, 13 builders-work openings
 (`TCM_GEN_CutOut_Rectangular_NEW` and `TCM_GEN_CutOut_Cirular_NEW`, Generic Models hosted on a face of the

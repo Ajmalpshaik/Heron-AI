@@ -7,6 +7,8 @@
 
 ## Group OC - tags, move and schedules from the villa 2 field reports, repaired in code and not yet run: rows 5b-1707, 5b-1730, 5b-1731, 5b-1732, 5b-1733 and 5b-1736 (2026-11-16)
 
+**Tracked as GitHub issue [#974](https://github.com/Ajmalpshaik/Heron-AI/issues/974) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Sruthina's field reports on Revit 2024, model `villa 2` - Ajmalpshaik/Heron-AI#853 and #854 - recorded six
 defects in the tag, move and schedule cards. On 2026-11-16, on the owner's word *"fix all issues"* and his word
 of 2026-11-11 that a fragment found wrong may be changed even though it is proven, each was repaired in code

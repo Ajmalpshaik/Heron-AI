@@ -8,6 +8,8 @@
 
 ## Group DE - a family parameter replaced in place by the office's shared parameter (2026-10-12)
 
+**Tracked as GitHub issue [#983](https://github.com/Ajmalpshaik/Heron-AI/issues/983) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 On Revit 2020 the owner asked for the size parameters of "TRG_Mechanical Equipment_Split Air
 Conditioner Outdoor Unit_Wall Mounted" - Width, Depth, Height and Wall Clearance, family parameters
 labelling dimensions - to become his shared parameters Unit_Width, Unit_Thickness, Unit_Height and

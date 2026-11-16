@@ -9,6 +9,8 @@
 
 ## Group F — Steps 1-5 are no longer proven on this build
 
+**Tracked as GitHub issue [#968](https://github.com/Ajmalpshaik/Heron-AI/issues/968) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **This group got more important on 2026-08-28, and it is not a leftover any more.**
 
 Steps 1, 4 and 5 were proven in real Revit — but against a build that no longer exists. Step 6 modified

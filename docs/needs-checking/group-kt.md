@@ -7,6 +7,8 @@
 
 ## Group KT - spot coordinates in a view: `ADD_SPOT_COORDINATES` (2026-11-01)
 
+**Tracked as GitHub issue [#985](https://github.com/Ajmalpshaik/Heron-AI/issues/985) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"add spot coordinates to these column corners"*, *"put a spot
 coordinate on this point"*, *"show the north/east coordinates of these grid intersections"* - Revit's
 Annotate > Spot Coordinate. Nothing in Heron placed one: `REPORT_SPOT_DIMENSIONS` reads them,

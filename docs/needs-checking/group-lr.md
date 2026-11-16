@@ -7,6 +7,8 @@
 
 ## Group LR - dimension types read, and one changed or copied under a new name - text size, font, tick mark, units format, colour: `REPORT_DIMENSION_TYPES`, `SET_DIMENSION_TYPE` (2026-11-02)
 
+**Tracked as GitHub issue [#985](https://github.com/Ajmalpshaik/Heron-AI/issues/985) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"what dimension types are in this project"*, *"make a new linear dimension
 type called 2.5mm Arial from Linear - 3mm Arial"*, *"set the text size of dimension type X to 2.5 mm"*, *"change
 the tick mark of dimension type X to Diagonal 3mm"* and *"set dimension type X units to millimetres with no

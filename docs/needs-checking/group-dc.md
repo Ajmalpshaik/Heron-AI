@@ -8,6 +8,8 @@
 
 ## Group DC - 3D model text placed in a family, on a named plane, one undo entry (2026-10-12)
 
+**Tracked as GitHub issue [#978](https://github.com/Ajmalpshaik/Heron-AI/issues/978) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 On 2026-10-12 a modeller built three fixed-size electrical families through Heron's family-creation
 method on Revit 2020 - a fire alarm control panel, a three-phase rotary isolator and an LV switchboard.
 `heron_lookup("add model text to a family")` fell through to `ADD_FAMILY_PARAMETERS`: no tool placed

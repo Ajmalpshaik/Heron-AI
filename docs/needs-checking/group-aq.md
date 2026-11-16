@@ -8,6 +8,8 @@
 
 ## Group AQ - `set-air-terminal-flow`: each air terminal's design flow, written through the parameter its duct connector names (2026-09-25)
 
+**Tracked as GitHub issue [#1004](https://github.com/Ajmalpshaik/Heron-AI/issues/1004) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **One fragment from one sitting on 2026-09-25, in Project1 on Revit 2024, and it is DRAFT.**
 [`set-air-terminal-flow`](../../brain/fragments/set-air-terminal-flow/fragment.yaml) - SET_AIR_TERMINAL_FLOW,
 FRG-MEP-054 - sets each air terminal's design flow, in litres per second, from a file of `Id,Flow` rows. It

@@ -7,6 +7,8 @@
 
 ## Group NN - a reference plane at an angle: `CREATE_REFERENCE_PLANES` version 2 (2026-11-12)
 
+**Tracked as GitHub issue [#979](https://github.com/Ajmalpshaik/Heron-AI/issues/979) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Built 2026-11-12 while proving `LABEL_FAMILY_DIMENSION` v3 (Group NE): its angle rows need two sloped planes, no Heron
 tool drew one, and the owner asked that the missing tool be built and proved in the same scratch family. Widened,
 not made new - the same job, a named reference plane. Why, and what is not known, is

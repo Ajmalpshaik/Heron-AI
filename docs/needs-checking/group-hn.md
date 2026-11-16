@@ -8,6 +8,8 @@
 
 ## Group HN - when the file on disk was last saved: `REPORT_OPEN_DOCUMENTS` version 3 (2026-10-19)
 
+**Tracked as GitHub issue [#970](https://github.com/Ajmalpshaik/Heron-AI/issues/970) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Found on 2026-10-19 building a 40-floor tower through Heron on Revit 2020. The owner pressed Ctrl+S
 twice, but the keys went to the Claude window, so the .rvt on disk stayed from before the build for
 about 25 minutes - 10:42, while 124 changes went in after 10:45. `REPORT_OPEN_DOCUMENTS` said only

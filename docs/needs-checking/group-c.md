@@ -9,6 +9,8 @@
 
 ## Group C — the gate, before anything can move
 
+**Tracked as GitHub issue [#970](https://github.com/Ajmalpshaik/Heron-AI/issues/970) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **Do not skip to D.** C3 is what proves the write path cannot fire by accident; testing the move before
 it is pointless, because a passing move tells you nothing about whether the gate works.
 

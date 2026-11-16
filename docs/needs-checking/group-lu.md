@@ -7,6 +7,8 @@
 
 ## Group LU - Revit's heating and cooling loads, run on the model with its own Energy Settings, a loads report made and each space's calculated loads read back: `RUN_HEATING_COOLING_LOADS` (2026-11-02)
 
+**Tracked as GitHub issue [#1004](https://github.com/Ajmalpshaik/Heron-AI/issues/1004) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"run the heating and cooling loads"*, *"calculate the HVAC loads for this
 model"* and *"run the loads analysis and show the cooling load per space"* - Revit's Analyze > Heating and Cooling
 Loads. heron-duplicate-checker's method, run before writing: `brain/heron_merge.py` found no shared signature with

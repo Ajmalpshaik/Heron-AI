@@ -8,6 +8,8 @@
 
 ## Group EL - a Revit dialog met inside a job is answered, never waited on: `HeronDialogWatch` (2026-10-17)
 
+**Tracked as GitHub issue [#968](https://github.com/Ajmalpshaik/Heron-AI/issues/968) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Found on 2026-10-03 loading `Catch_Basin new.rfa` into Family1 on Revit 2024: Revit opened its modal *"saved
 in a later version of Revit and cannot be retrieved in this version"* dialog inside `LOAD_FAMILY`, and the
 chat read `unknown_outcome`, then `revit_busy`, then `still_running` for over 90 s until somebody closed it

@@ -8,6 +8,8 @@
 
 ## Group HT - FLIP_ELEMENTS v2: a flipped door's From and To Room follow its swing (2026-10-19)
 
+**Tracked as GitHub issue [#995](https://github.com/Ajmalpshaik/Heron-AI/issues/995) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 From [row 5b-1242](../fragment-issues/section-5b-rows-401-425.md). On Revit 2020, in the owner's
 'Kerala house design', five doors flipped with `FLIP_ELEMENTS flipFacing=true` swung into the right
 rooms, but `get_ToRoom` still named the hall: Revit does not swap From and To Room on a facing flip.

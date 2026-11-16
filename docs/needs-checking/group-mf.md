@@ -7,6 +7,8 @@
 
 ## Group MF - Manage > Structural Settings and Structure > Reinforcement Settings - read both dialogs, and change either for the whole model, read back before and after: `REPORT_STRUCTURAL_SETTINGS`, `SET_STRUCTURAL_SETTINGS`, `SET_REINFORCEMENT_SETTINGS` (2026-11-02)
 
+**Tracked as GitHub issue [#999](https://github.com/Ajmalpshaik/Heron-AI/issues/999) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"what are the structural settings"*, *"set the beam symbolic cutback
 distance to 50 mm"*, *"set the brace symbol to show above and below"*, *"change the column connection symbol
 plan offset"*, *"what are the reinforcement settings"*, *"turn on rebar shape defines hooks"*, *"set the rebar

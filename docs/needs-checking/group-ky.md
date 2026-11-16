@@ -7,6 +7,8 @@
 
 ## Group KY - add or remove sizes in a duct size list, a pipe segment, a conduit standard or the cable tray sizes: `EDIT_MEP_SIZES` (2026-11-01)
 
+**Tracked as GitHub issue [#1002](https://github.com/Ajmalpshaik/Heron-AI/issues/1002) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"add 315 mm to the round duct sizes"*, *"add DN 65 to the steel pipe
 segment"*, *"remove 125 mm from the duct sizes"* and *"add a 32 mm conduit size"* - Revit's Manage > MEP
 Settings > Mechanical Settings > Duct Settings and Pipe Settings > Segments and Sizes, and Electrical

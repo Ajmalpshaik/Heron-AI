@@ -8,6 +8,8 @@
 
 ## Group FY - every column of a schedule in one call, and a heading turned back to horizontal: `SET_SCHEDULE_APPEARANCE` version 3 (2026-10-17)
 
+**Tracked as GitHub issue [#986](https://github.com/Ajmalpshaik/Heron-AI/issues/986) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Found on 2026-10-15 on a real project, Revit 2020 (never written to for proving). Ajmal PS asked *"make
 all the fields formatting horizontal and centre"* on a schedule: it took one call per field - one undo
 entry per column - and no call could turn a heading back to horizontal, because `headingSideways` false

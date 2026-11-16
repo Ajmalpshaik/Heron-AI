@@ -9,6 +9,8 @@
 
 ## Group BU - a fire protection answer keeps a project's standards in its own fire record, and its figures need a person with the standards (2026-10-02)
 
+**Tracked as GitHub issue [#1004](https://github.com/Ajmalpshaik/Heron-AI/issues/1004) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **The owner's PC, any Revit release, two models - and copies of NFPA 13, BS EN 12845, FM Global data
 sheet 3-26 and BS 5839-1 for BU2 and BU4 to BU8.** [`heron_fire`](../../brain/heron_fire.py)
 asks a project's sprinkler standard and its approving authority once ([D-111](../decisions/D-111.md)) and

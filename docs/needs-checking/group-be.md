@@ -8,6 +8,8 @@
 
 ## Group BE - D-59's first batch: eleven reading tools look inside linked models when asked (2026-09-28)
 
+**Tracked as GitHub issue [#991](https://github.com/Ajmalpshaik/Heron-AI/issues/991) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **[D-59](../decisions/D-59.md) built for the eleven reading fragments the owner runs most, ranked from the
 September audit log on his PC.** Each takes `includeLinks` - absent means this model only, exactly what its
 proof measured - and reports `linksSearched`, the number of linked FILES actually read, and

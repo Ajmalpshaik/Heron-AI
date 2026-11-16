@@ -7,6 +7,8 @@
 
 ## Group NG - one value, blank or filled, into MANY types in ONE call: `SET_FAMILY_TYPE_VALUES` version 5 in a family, `SET_PARAMETER_VALUES_BY_ID` version 8 in a project (2026-11-11)
 
+**Tracked as GitHub issue [#983](https://github.com/Ajmalpshaik/Heron-AI/issues/983) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 On 2026-11-11 (Revit 2020) the owner cleared brand data - Manufacturer, Model, URL, Model_Number,
 Family_Source - from three air terminal families of seven types each. Every type took its own
 `SET_FAMILY_TYPE_VALUES` call, and each raised a "delete 1 element" question: making a type current

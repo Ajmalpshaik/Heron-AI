@@ -7,6 +7,8 @@
 
 ## Group KN - the active workset: `SET_ACTIVE_WORKSET` (2026-11-01)
 
+**Tracked as GitHub issue [#996](https://github.com/Ajmalpshaik/Heron-AI/issues/996) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"make Mechanical the active workset"*, *"set the active workset to
 Shared Levels and Grids"*, *"switch to the Architecture workset"* - Revit's Collaborate > Active Workset,
 and the Active Workset box on the status bar. Nothing in Heron left it set: `COPY_ELEMENTS` sets it for

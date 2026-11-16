@@ -9,6 +9,8 @@
 
 ## Group BQ - plan symbols drawn as symbolic lines, and one form repeated in a row with its count a parameter (2026-10-01)
 
+**Tracked as GitHub issue [#976](https://github.com/Ajmalpshaik/Heron-AI/issues/976) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **The owner's PC, Revit 2024 first, then 2020.** Two new tools, added the same day as Groups BL to BP, because
 a family read from a picture of a grille or a fan needs a part repeated in a row and a symbol in plan, and the
 library could make neither:

@@ -8,6 +8,8 @@
 
 ## Group DJ - every size_lookup in a family checked against the tables it names (2026-10-12)
 
+**Tracked as GitHub issue [#980](https://github.com/Ajmalpshaik/Heron-AI/issues/980) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 A `size_lookup` that cannot find its table, or its column, answers with its default and Revit says
 nothing - the family builds at the default size. Heron could read a table
 ([`REPORT_FAMILY_SIZE_TABLE`](../../brain/fragments/report-family-size-table/fragment.yaml)) but not

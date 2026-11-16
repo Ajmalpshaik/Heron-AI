@@ -8,6 +8,8 @@
 
 ## Group EO - a rollback that takes the last kept job's work is said, and a rollback whose additions still stand is not called complete (2026-10-17)
 
+**Tracked as GitHub issue [#969](https://github.com/Ajmalpshaik/Heron-AI/issues/969) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 A fragment's preview is the run itself, rolled back ([D-55](../DECISIONS.md)), so Heron rolls back far more
 than it keeps. [Section 1c](../fragment-issues/section-1c.md) holds three rollbacks that did not hold while
 the reply said they had, and nothing checked whether a rollback had also taken the elements the **last kept**

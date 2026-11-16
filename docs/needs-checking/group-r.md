@@ -9,6 +9,8 @@
 
 ## Group R — read the decisions back (no Revit needed)
 
+**Tracked as GitHub issue [#975](https://github.com/Ajmalpshaik/Heron-AI/issues/975) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **Not a test — a conversation**, and the only item in this file that is not about code behaving. It is
 here because this file is what gets opened at the PC, and a review nobody is reminded of does not happen.
 

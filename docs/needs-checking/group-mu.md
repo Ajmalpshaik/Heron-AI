@@ -7,6 +7,8 @@
 
 ## Group MU - dimensioning the MEP runs of many plans in one pass by a rule per category, each run measured to the nearest grid, wall, column or run: `DIMENSION_VIEWS_BY_RULES` (2026-11-08)
 
+**Tracked as GitHub issue [#985](https://github.com/Ajmalpshaik/Heron-AI/issues/985) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 The owner's ask: [docs/48](../48-studying-bimlogiq.md) section 5 item 3, *"Dimension template for MEP runs -
 categories, which faces, spacing, string placement, per view"*, and his own add-in's Auto MEP Dimension tool,
 studied for its lessons only - no code, name or wording taken ([D-25](../DECISIONS.md),

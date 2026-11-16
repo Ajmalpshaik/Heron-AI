@@ -8,6 +8,8 @@
 
 ## Group AW - `revit_sheets` counts schedules: a sheet carrying only a schedule is not empty (2026-09-27)
 
+**Tracked as GitHub issue [#987](https://github.com/Ajmalpshaik/Heron-AI/issues/987) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **The owner's PC, Revit 2024, after the add-in is redeployed and Revit restarted.** Until then Revit runs
 the old add-in and none of this can be seen. [Row 5b-238](../FRAGMENT-ISSUES.md#): the Sheet Agent
 ([`RevitSheets.cs`](../../revit/Heron.Revit.Addin/RevitSheets.cs), HERON-REVIT-SHT-029) counted only the

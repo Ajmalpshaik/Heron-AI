@@ -8,6 +8,8 @@
 
 ## Group AU - `center-viewports-on-sheets`: each sheet's viewport moved to the centre of its title block (2026-09-27)
 
+**Tracked as GitHub issue [#987](https://github.com/Ajmalpshaik/Heron-AI/issues/987) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **One fragment from one sitting on 2026-09-27, in Project1 on Revit 2024, and it is DRAFT.**
 [`center-viewports-on-sheets`](../../brain/fragments/center-viewports-on-sheets/fragment.yaml) -
 CENTER_VIEWPORTS_ON_SHEETS, FRG-SHT-020 - moves the one viewport on each sheet handed in so that its box's centre

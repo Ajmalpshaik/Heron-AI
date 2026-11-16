@@ -7,6 +7,8 @@
 
 ## Group LY - Modify > Wall Joins - butt, miter or square off where the walls handed in meet, each corner read back - the read of the join type at each wall end, and structural framing's start / end extension and join cutback by the end: `SET_WALL_JOIN_TYPE`, `REPORT_WALL_JOIN_TYPE`, `SET_FRAMING_END_EXTENSION` (2026-11-02)
 
+**Tracked as GitHub issue [#993](https://github.com/Ajmalpshaik/Heron-AI/issues/993) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"make this wall corner a miter join"*, *"change these wall joins to butt"*,
 *"square off the wall join here"*, *"what join type is at this wall corner"*, *"set the beam end extension to 150
 mm"* and *"cut back these beams 50 mm at the column"*. No card did it: of every fragment's C# none called

@@ -9,6 +9,8 @@
 
 ## Group Z - the renamed ribbon and the Bridge Status window, 2026-09-20
 
+**Tracked as GitHub issue [#971](https://github.com/Ajmalpshaik/Heron-AI/issues/971) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 [D-85](../DECISIONS.md) renamed two ribbon labels and the Bridge Status dialog became a window.
 **All of it compiles on all eight releases with 0 warnings, and none of it has been seen in Revit** -
 the ribbon is built at `OnStartup`, so every row here needs the add-in deployed and Revit restarted.

@@ -117,7 +117,7 @@ beyond the scratch files named here; signatures only on his "sign".
 | H2 | Start Revit 2024; *Security - Unsigned Add-In*: **Always Load** (the add-in from this branch is deployed) |
 | H3 | Open `%TEMP%\heron-work\nk\Heron Reads Test.rvt` (Heron opens the rest itself with `ACTIVATE_DOCUMENT`) |
 | H4 | Heron > Settings: **Ask to Keep OFF** for the alone part (A1-A8); press Heron > AI Bridge > Heron, or say "you press it" |
-| H5 | One answer: may the session press Revit's Keep / Discard boxes and click in Revit itself (the computer-use tool, one approval for Revit)? **Yes** moves the B rows into the alone part; **no** keeps them for the hands block |
+| H5 | One answer: may the session press Revit's Keep / Discard boxes and click in Revit itself (the computer-use tool, one approval for Revit)? **Yes** moves the B rows into the alone part; **no** keeps them for the hands block *(tracked as GitHub issue [#1012](https://github.com/Ajmalpshaik/Heron-AI/issues/1012) since 2026-11-16 (WN-69))* |
 
 ### A - the session alone, Revit 2024, Ask to Keep off (no box opens; nothing needs undoing)
 

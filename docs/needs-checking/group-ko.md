@@ -7,6 +7,8 @@
 
 ## Group KO - which workset is active: `REPORT_ACTIVE_WORKSET` (2026-11-01)
 
+**Tracked as GitHub issue [#996](https://github.com/Ajmalpshaik/Heron-AI/issues/996) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"which workset is active"*, *"what is the active workset"*, *"am I on
 the right workset"* - the Active Workset box on Revit's status bar. No card reported it:
 [row 5b-1370](../fragment-issues/section-5b-rows-401-425.md) recorded the first sentence reaching

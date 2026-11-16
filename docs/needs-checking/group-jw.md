@@ -7,6 +7,8 @@
 
 ## Group JW - a duct or piping system that already exists, edited: `EDIT_MEP_SYSTEM` (2026-11-01)
 
+**Tracked as GitHub issue [#1001](https://github.com/Ajmalpshaik/Heron-AI/issues/1001) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"add these diffusers to Supply Air 2"*, *"take this terminal out of
 the system"*, *"add these sprinklers to the FP system"*, *"remove this pipe run from Domestic Cold Water
 1"*. Nothing in Heron edited a system that exists - `CREATE_MEP_SYSTEM` makes a new one from elements on

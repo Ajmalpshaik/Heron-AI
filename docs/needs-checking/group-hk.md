@@ -8,6 +8,8 @@
 
 ## Group HK - one model, one chat at a time, and Free this model: D-141 (2026-10-18)
 
+**Tracked as GitHub issue [#971](https://github.com/Ajmalpshaik/Heron-AI/issues/971) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 [D-141](../decisions/D-141.md) (the owner's design, 2026-10-18) from
 [row 5b-1150](../fragment-issues/section-5b-rows-401-425.md). **What changed.** Every request carries
 the chat's own `conversation` id beside the person's `client` id, which the D-22 lease still uses. A model

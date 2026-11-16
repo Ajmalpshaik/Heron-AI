@@ -7,6 +7,8 @@
 
 ## Group MX - the lines on named layers of a CAD drawing drawn as real ducts or pipes with their fittings, sized from tags read off a picture: `DRAW_MEP_FROM_CAD` and the `cad-to-mep` method (2026-11-09)
 
+**Tracked as GitHub issue [#1001](https://github.com/Ajmalpshaik/Heron-AI/issues/1001) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 The owner's ask: [docs/48](../48-studying-bimlogiq.md) section 5 item 6, *"CAD lines to ducts and pipes - read
 the CAD layer, ask size and type, draw the run"*, and his words of 2026-11-09: *"NOT ONLY FROM THE LAYERS. IF I
 SAY UNDERSTAND FROM THE CAD, IT WILL TAKE THE SCREENSHOT AND IT WILL UNDERSTAND LIKE THAT ALSO"*. Made NEW, at

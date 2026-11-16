@@ -7,6 +7,8 @@
 
 ## Group LF - which images and PDF pages a model holds: `LIST_IMAGES` (2026-11-02)
 
+**Tracked as GitHub issue [#992](https://github.com/Ajmalpshaik/Heron-AI/issues/992) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"what images are loaded in this model"* - Revit's Manage > Manage Images -
 beside *"import this PDF page into the current view"*, *"place the site plan image C:\Drawings\site.png on
 Level 1"* and *"bring in page 3 of the architect's PDF as an underlay"* ([Group LG](group-lg.md)). No card

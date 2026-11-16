@@ -9,6 +9,8 @@
 
 ## Group AM - `report-connectors` in a chat: every connector in full, its system, and what a reply did not send (2026-09-23)
 
+**Tracked as GitHub issue [#1002](https://github.com/Ajmalpshaik/Heron-AI/issues/1002) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **The fragment went back from `PROVEN` to `DRAFT`** because its code changed: every connector line now carries its duct or pipe system type after the domain - `DomainHvac SupplyAir` - and `connectorSummary` carries the whole answer as one string, because through a chat its three dictionaries arrived as counts and the connectors never arrived at all ([FRAGMENT-ISSUES 5b-195](../fragment-issues/section-5b-rows-176-200.md)). The old proof - Snowdon Towers Sample HVAC, 2026-09-07 - is kept as the record of what ran and has to be replaced on a named model ([D-30](../DECISIONS.md)). A chat reply also names, on one `NOT SENT:` line, every dictionary that held something it did not send. Written 2026-09-23 on the owner's PC without driving Revit: **nothing below has run.**
 
 | # | Check | Expected |

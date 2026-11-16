@@ -42,6 +42,8 @@ grep -c '^### Q-DE' docs/work-notes/plans/plugin-extension/07-debugging-engine.m
 
 ### Q-PE-1 — What is "Heron Tools"? — ~~half answered 2026-09-21~~, content still open
 
+*Tracked as GitHub issue [#1011](https://github.com/Ajmalpshaik/Heron-AI/issues/1011) since 2026-11-16 (WN-47) - work it there.*
+
 **ANSWERED, the part that decides the build.** Owner, 2026-09-21: *"If they select the tools, it will
 install all tools along with the Heron panel … For the Heron tab specifically, they can choose either
 or both options: all tools and the AI connector."*
@@ -84,6 +86,8 @@ Recorded in [S3](00-structure.md), [R-33](01-requirements.md) and [R-34](01-requ
 
 ### Q-PE-3 — What panels go in Heron Doc?
 
+*Tracked as GitHub issue [#1011](https://github.com/Ajmalpshaik/Heron-AI/issues/1011) since 2026-11-16 (WN-48) - work it there.*
+
 **Waiting on:** the owner.
 
 **Starting point, from what is already `PROVEN`** (measured 2026-09-20 — derive again with the command
@@ -104,6 +108,8 @@ actually flows on a sheet-production day.
 ---
 
 ### Q-PE-4 — What panels go in Heron MEP?
+
+*Tracked as GitHub issue [#1011](https://github.com/Ajmalpshaik/Heron-AI/issues/1011) since 2026-11-16 (WN-49) - work it there.*
 
 **Waiting on:** the owner.
 
@@ -202,6 +208,8 @@ prerequisite is not an installer.
 
 ### Q-PE-8 — Do products share one version number, or carry their own?
 
+*Tracked as GitHub issue [#1011](https://github.com/Ajmalpshaik/Heron-AI/issues/1011) since 2026-11-16 (WN-50) - work it there.*
+
 **Waiting on:** the owner.
 
 | One version for everything | A version per product |
@@ -214,6 +222,8 @@ prerequisite is not an installer.
 merging.
 
 ### Q-PE-9 — Generate the `.addin` manifest at install time, or keep patching a shipped one?
+
+*Tracked as GitHub issue [#1011](https://github.com/Ajmalpshaik/Heron-AI/issues/1011) since 2026-11-16 (WN-51) - work it there.*
 
 **Waiting on:** the owner. **Raised 2026-09-21 from [L6](04-lessons-from-aj-tools.md).**
 
@@ -456,6 +466,8 @@ rather than a stage.
 ---
 
 ### Q-PE-15 — R-27 wants an audit line from a thing that may not reference the audit log
+
+*Tracked as GitHub issue [#1011](https://github.com/Ajmalpshaik/Heron-AI/issues/1011) since 2026-11-16 (WN-52) - work it there.*
 
 **Waiting on:** the owner. **Raised 2026-09-22**, building Stage 7.
 

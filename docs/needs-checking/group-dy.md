@@ -8,6 +8,8 @@
 
 ## Group DY - a family's own subcategory given a colour, a weight and a pattern: `CREATE_LINE_STYLE` version 2, `familyCategory` (2026-10-14)
 
+**Tracked as GitHub issue [#989](https://github.com/Ajmalpshaik/Heron-AI/issues/989) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **What changed.** `CREATE_LINE_STYLE` (FRG-VIEW-126) takes an optional `familyCategory`. True, in a family open in
 the Family Editor, it makes or changes a subcategory of the family's own category - Manage > Object Styles there,
 the Annotation Objects or Model Objects tab - with the colour, projection weight and pattern a line style takes,

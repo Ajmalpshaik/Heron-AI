@@ -9,6 +9,8 @@
 
 ## Group X — the SKILLS, and the one thing only the PC can answer — 2026-09-19
 
+**Tracked as GitHub issue [#975](https://github.com/Ajmalpshaik/Heron-AI/issues/975) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **THIS WAS WRITTEN AS GROUP V, THEN W, AND IS X. THE REASON IS THE ROW BELOW IT.** A brief asked
 for a "Group V" on 2026-09-19 when none existed — the thirteen it was after are
 **[Group I2](group-i.md#i2--the-model-has-not-got-it-13)** — so this session took the free letter. Another

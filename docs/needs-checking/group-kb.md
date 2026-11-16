@@ -7,6 +7,8 @@
 
 ## Group KB - a foundation slab from typed corners: `CREATE_FOUNDATION_SLAB` (2026-11-01)
 
+**Tracked as GitHub issue [#997](https://github.com/Ajmalpshaik/Heron-AI/issues/997) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"make a 600 thick raft under the building"*, *"add a foundation slab
 on Level 0 from these corners"*, *"pour a mat foundation inside these walls"* - Revit's Structure >
 Foundation > Slab. Nothing in Heron made one: `CREATE_FLOOR` makes an ordinary floor,

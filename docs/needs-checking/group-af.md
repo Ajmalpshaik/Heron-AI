@@ -9,6 +9,8 @@
 
 ## 2026-09-22 — ONE DOWNLOAD, BOTH DOORS, AND AN UPDATE CHECK THAT ONLY CHECKS
 
+**Tracked as GitHub issue [#972](https://github.com/Ajmalpshaik/Heron-AI/issues/972) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **The owner answered four questions with one shape** and asked for it built:
 
 > *"If someone downloads it, they need to have everything… just click the installer and it installs.

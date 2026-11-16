@@ -8,6 +8,8 @@
 
 ## Group DK - walls, grids, lines and reference planes a fraction of a degree off an axis turned onto it (2026-10-12)
 
+**Tracked as GitHub issue [#993](https://github.com/Ajmalpshaik/Heron-AI/issues/993) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 The second batch of the gap fill ([`work-notes/plans/gap-fill-2026-10-12.md`](../work-notes/plans/gap-fill-2026-10-12.md)).
 Revit's "slightly off axis" warning comes on walls, grids, lines, reference planes, room separation, area
 boundary and sketch lines. Here it is one job, because it is: a straight line a fraction of a degree off an

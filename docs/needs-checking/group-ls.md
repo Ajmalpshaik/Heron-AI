@@ -7,6 +7,8 @@
 
 ## Group LS - an L-shaped, U-shaped or spiral stair by component placed from a point, and a landing added between two runs of a stair already made: `CREATE_SHAPED_STAIRS`, `ADD_STAIRS_LANDING` (2026-11-02)
 
+**Tracked as GitHub issue [#997](https://github.com/Ajmalpshaik/Heron-AI/issues/997) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"make an L-shaped stair from Level 1 to Level 2 turning left at the landing"*,
 *"add a U-shaped stair with a 1200 landing here"*, *"place a spiral stair of 1500 radius from Level 0 to Level 1"*
 and *"add a landing between these two runs"* - Revit's Stair by Component, its L, U and spiral runs and its
