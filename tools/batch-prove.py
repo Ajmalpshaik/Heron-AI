@@ -1371,6 +1371,11 @@ def main(argv=None):
     # Pinning it makes fourteen jobs one conversation with Revit.
     env = dict(os.environ)
     env.setdefault("HERON_CLIENT_ID", args.client_id)
+    # AND THIS PROCESS SENDS UNDER IT TOO - row 5b-1656. The hand-back between
+    # fragments (free_models) goes through this process's own BRIDGE, whose
+    # CLIENT_ID was fixed at import - a random id when nothing was exported - so
+    # it claimed the free lease and locked the next job out for five minutes.
+    BRIDGE.CLIENT_ID = env["HERON_CLIENT_ID"]
 
     # AND ONE CONVERSATION FOR THE WHOLE BATCH - D-141. Each job is its own
     # process, and each process makes a conversation of its own, so without

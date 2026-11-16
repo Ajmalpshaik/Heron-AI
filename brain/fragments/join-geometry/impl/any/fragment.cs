@@ -1,6 +1,11 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `target` and `join` are in scope;
 // leaves `changed`, `alreadyRight`, `wouldNot`, `refused` and `findings` behind.
 //
+// VERSION 4 (2026-11-16) - A PAIR THAT DOES NOT TOUCH IS NOT SENT (row
+// 5b-1661). Revit joined two walls to a floor more than two metres away and
+// AreElementsJoined read true, so the card said "2 joined". A pair whose boxes
+// do not meet now goes to `wouldNot` before Revit is asked; see the loop.
+//
 // VERSION 3 (2026-11-01) - SWITCH_JOIN_ORDER MERGED IN, on the owner's
 // instruction ("make sure there is no duplicate tools"). A third mode beside
 // join and unjoin, on the same target-and-elements shape:
@@ -161,6 +166,19 @@ else if (switching)
 }
 else
 {
+    // VERSION 4: whether two elements' model boxes meet, grown by 1 mm. A box
+    // Revit cannot give is never a reason to refuse - the pair is sent as before.
+    Func<Element, Element, bool> boxesMeet = (a, b) =>
+    {
+        var boxA = a.get_BoundingBox(null);
+        var boxB = b.get_BoundingBox(null);
+        if (boxA == null || boxB == null) return true;
+        var grow = 1.0 / 304.8;
+        return boxA.Min.X <= boxB.Max.X + grow && boxB.Min.X <= boxA.Max.X + grow
+            && boxA.Min.Y <= boxB.Max.Y + grow && boxB.Min.Y <= boxA.Max.Y + grow
+            && boxA.Min.Z <= boxB.Max.Z + grow && boxB.Min.Z <= boxA.Max.Z + grow;
+    };
+
     var position = 0;
     foreach (var element in elements)
     {
@@ -187,6 +205,25 @@ else
             if (joined == joinWanted)
             {
                 alreadyRight.Add(element.Id);
+                continue;
+            }
+
+            // VERSION 4 - DO THE TWO TOUCH AT ALL (row 5b-1661). Revit's
+            // JoinGeometry accepts a pair that does not touch: it marks them
+            // joined, posts "Highlighted elements are joined but do not
+            // intersect", and AreElementsJoined then reads true - so two walls
+            // two metres from a floor read "2 joined" (Revit 2024, 2026-11-14).
+            // Two elements whose boxes do not meet, even grown by a millimetre,
+            // cannot touch, so that pair is never sent. A box test is the weak
+            // test on purpose: it never refuses a pair that touches - a wall
+            // standing on a slab meets it only at a face, which an interference
+            // test misses. Its limit, said here: a pair whose boxes meet but
+            // whose solids do not is still sent, and still read as joined.
+            if (joinWanted && !boxesMeet(element, target))
+            {
+                wouldNot.Add(string.Format("{0}: does not touch '{1}' anywhere - Revit would only mark the "
+                    + "pair joined without joining anything, so it was not sent",
+                    element.Id, target.Name ?? target.Id.ToString()));
                 continue;
             }
 
