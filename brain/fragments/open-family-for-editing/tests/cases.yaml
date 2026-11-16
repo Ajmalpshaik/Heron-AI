@@ -16,7 +16,30 @@ positive:
       the .rfa overwritten rather than refused - SaveAsOptions sets
       OverwriteExistingFile, so running twice is not a failure
 
+  # VERSION 3, row 5b-1750 - FAILS ON VERSION 2, which reported opened false
+  # and Revit's "An internal error has occurred." as its problem here.
+  - given: >
+      run through revit_change on Revit 2024, inside the job's group, where
+      OpenAndActivateDocument throws although the family window opens
+    expect: >
+      opened true, activeAfter the family's name, problem EMPTY - so the
+      chat's verdict does not start "STOPPED, BY ITS OWN ACCOUNT" - and
+      Revit's own words in findings beside "the window in front IS" the .rfa
+      just written. LOOK AT REVIT: the family window in front
+
 negative:
+  # VERSION 3, row 5b-1750: the read-back must never take a window that is
+  # not the file just written.
+  - given: >
+      the family already open and in front from an EARLIER run's .rfa in
+      another folder, then run again with saveFolder a second folder, the
+      project in front - Revit may refuse a second family document of the
+      same name, and the window in front is then the earlier file
+    expect: >
+      opened false and Revit's own words as the problem - the window in
+      front is a family of that name, but not the file this run wrote. A
+      read-back by NAME would say opened true here; by path it must not
+
   - given: familyName naming a family that is not loaded
     expect: >
       opened false, activeAfter unchanged, and NOTHING written to disk. The

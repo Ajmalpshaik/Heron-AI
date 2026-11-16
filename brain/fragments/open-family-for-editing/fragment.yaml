@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "put a loaded family in front in Revit, so it can be worked o
 kind: action
 domain: revit.families
 capability: OPEN_FAMILY_FOR_EDITING
-version: 2
+version: 3
 source: OFFICIAL
 risk: EXECUTE
 
@@ -58,6 +58,22 @@ purpose: >
   proof stands. **THAT PROOF WAS NOT TAKEN INSIDE A GROUP**: whether
   EditFamily and OpenAndActivateDocument run there is NEEDS-CHECKING Group
   NY's NY3, so a PROVEN line speaks for this code, not yet for that route.
+
+  **VERSION 3 (2026-11-16): WHAT IS IN FRONT IS READ BACK, NOT TAKEN FROM
+  REVIT'S ANSWER** (row 5b-1750, issue #853). NY3 answered on Revit 2024,
+  `ny-scratch`, through `revit_change`: OpenAndActivateDocument, called
+  inside the job's group, threw "An internal error has occurred." - and the
+  family window WAS open and in front (Revit's title bar read
+  "M_Single-Flush - Floor Plan: Ground floor", and the next call was pinned
+  to it). Version 2 reported `opened false` and that sentence as its
+  `problem`, so the chat said STOPPED over a family that had opened. Now,
+  after a throw or no window handed back, the document in front is read:
+  it counts as `opened` only when it is a family document whose file is the
+  .rfa just written, and Revit's words go into `findings`, not `problem`. A
+  family open but NOT in front is said apart, and stays `opened false` with
+  its `problem` - the next fragment writes to whatever is in front. `impl/`
+  moved, so the card is DRAFT again; the proof below is version 1's record,
+  kept, and NEEDS-CHECKING Group OD proves this one.
 
 contract:
   needs:

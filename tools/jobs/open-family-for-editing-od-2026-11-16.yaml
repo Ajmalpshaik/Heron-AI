@@ -1,0 +1,37 @@
+# NEEDS-CHECKING Group OD - OPEN_FAMILY_FOR_EDITING version 3, repaired
+# 2026-11-16 in a cloud session with no Revit (row 5b-1820, repairing row
+# 5b-1750). NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/open-family-for-editing-od-2026-11-16.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/open-family-for-editing-od-2026-11-16.yaml
+#
+# THE MODEL is Heron's own scratch project, OD0: made from
+# English\DefaultMetric.rte on Revit 2024 and saved, so M_Single-Flush is
+# loaded by the template. Never a working model.
+#
+# THE FOLDER C:/Users/Public/heron-work/od MUST EXIST (OD0 makes it). The
+# card writes M_Single-Flush.rfa there - a rolled-back run does not unwrite a
+# file - and opens it, so the positive LEAVES A FAMILY WINDOW OPEN. Close it
+# without saving, and put the project back in front, before the negative.
+#
+# THIS IS validate --write, NOT revit_change. Row 5b-1750 met the throw
+# through revit_change; OD1 is the row that answers it. This job is the D-30
+# record: a family opened, and a name that names nothing opening nothing.
+
+model: od-scratch.rvt, Heron's scratch project from DefaultMetric.rte (OD0), Revit 2024
+
+jobs:
+  - fragment: open-family-for-editing
+    expect: opened
+    set:
+      familyName: M_Single-Flush
+      saveFolder: C:/Users/Public/heron-work/od
+    negative-set:
+      familyName: ZZZNOTAFAMILY
+      saveFolder: C:/Users/Public/heron-work/od
+    note: >
+      OD1 and OD2. Positive - opened true, activeAfter M_Single-Flush, savedTo
+      C:/Users/Public/heron-work/od\M_Single-Flush.rfa, problem EMPTY; if
+      Revit threw, a finding "Revit answered ... but the window in front IS".
+      Negative - opened false, activeAfter empty, "No loaded family is called
+      'ZZZNOTAFAMILY'.", nothing new written in the folder.

@@ -1538,6 +1538,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-nz.md`](needs-checking/group-nz.md)
 
+## Group OD - OPEN_FAMILY_FOR_EDITING reads what is in front, a picture of a region of a plan, and a store warning that names what to do (2026-11-16)
+
+**Its own file:** [`needs-checking/group-od.md`](needs-checking/group-od.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

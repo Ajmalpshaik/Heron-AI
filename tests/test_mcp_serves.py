@@ -361,7 +361,8 @@ async def exercise(server):
         "revit_building_loads": ["inputs", "expect_from", "include_links"],
         "revit_sprinkler_hydraulics": ["system", "inputs", "expect_from"],
         "revit_sprinkler_layout": ["spaces", "inputs"],
-        "revit_view_image": ["elements", "view", "width"],
+        # `around` since row 5b-1710: a region of a plan.
+        "revit_view_image": ["around", "elements", "view", "width"],
     }
     for name, args in sorted(expected.items()):
         if name not in served:
@@ -2734,6 +2735,46 @@ async def exercise_view_image(module):
               and "401 (Floors); 402 (Ceilings)" in said and "still in the model" in said,
               "a floor and a ceiling hidden over the elements are named, and said to "
               "be still in the model")
+
+        # A REGION OF A PLAN (row 5b-1710, issue #853): `around` travels to
+        # the add-in as typed, the words name the PLAN - never the temporary
+        # copy's name - and the region, and say the copy is gone.
+        asked_before = len(revit.asked)
+        revit.reply = dict(PICTURE_REPLY, mode="region", view="Ground floor Copy 1",
+                           regionOf="Ground floor", region="round 2 element(s)",
+                           detailingCopied=True, shown=2, leftOut="311 is a datum (Grids)")
+        said, images = await call({"view": "Ground floor", "around": " 310, 311, 312 "})
+        sent = revit.asked[-1][1] if len(revit.asked) > asked_before else {}
+        check(sent.get("around") == "310, 311, 312" and sent.get("view") == "Ground floor"
+              and sent.get("elementIds") == "",
+              "a region's `around` goes to the add-in trimmed, with the plan and no ids "
+              "- found %r" % (sent,))
+        first = (said.splitlines() or [""])[0]
+        check(len(images) == 1 and "region of 'Ground floor'" in first
+              and "round 2 element(s)" in first and "Copy 1" not in first,
+              "a region picture names the plan and the region, never the copy: %r" % first)
+        check("Left out of the region: 311 is a datum" in said
+              and "temporary copy of the plan is gone" in said
+              and "plan itself was not changed" in said,
+              "and says what was left out and that the copy is gone, the plan unchanged")
+        revit.reply = dict(PICTURE_REPLY, mode="region", view="Ground floor Copy 1",
+                           regionOf="Ground floor", region="the box 0,0 to 9000,6000 mm",
+                           detailingCopied=False, shown=0)
+        said, images = await call({"around": "0,0;9000,6000"})
+        check("the box 0,0 to 9000,6000 mm" in said and "NOT in this picture" in said,
+              "a box region is named, and a copy without its tags and dimensions says so")
+        # AN ADD-IN OLDER THAN THIS SERVER pictures the view whole: said first.
+        revit.reply = dict(PICTURE_REPLY)
+        said, images = await call({"view": "Level 1", "around": "310"})
+        check(said.startswith("! NOT THE REGION") and "'Level 1' WHOLE" in said,
+              "a region answered by an add-in that read no `around` is said to be the "
+              "WHOLE view, first: %r" % (said.splitlines() or [""])[0])
+        # THE NEGATIVE: a region and elements together are refused before Revit.
+        asked_before = len(revit.asked)
+        said, images = await call({"around": "310", "elements": "312"})
+        check(not images and len(revit.asked) == asked_before
+              and "OR `elements`, not both" in said,
+              "`around` with `elements` is refused before Revit is asked, with no image")
 
         revit.reply = dict(PICTURE_REPLY, mode="elements", rolledBack=False, shown=1)
         said, images = await call({"elements": "310"})
