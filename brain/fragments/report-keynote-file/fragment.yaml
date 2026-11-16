@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -86,6 +86,23 @@ contract:
       # the entry count; a line when the model has no keynote table or it
       # could not be read.
       type: IList<string>
+
+proof:
+  date: '2026-11-16'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: keynote-lz, Family1 - active was keynote-lz,
+    Revit 2024, session 18288'
+  positive_case: 'run as it would normally be run. returned findings 1 item(s) [Keynote file:
+    RevitKeynotes_Metric.txt | path type Content |...], isFamily false, keynoteFile RevitKeynotes_Metric.txt
+    | path type Content | resolves to C:\ProgramData\Autodesk\RVT 2024\Libraries\English\US\RevitKeynotes_Metric.txt
+    | Revit: Loaded, tableEntries 3840. on keynote-lz'
+  negative_case: run against 'Family1' instead - chosen because it should not contain what
+    this fragment reports. returned findings 1 item(s) [The document in front, "Family1",
+    is a family - the keynote ...], isFamily true, keynoteFile , tableEntries 0. on Family1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 034b55db45bd74d6
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
