@@ -702,6 +702,38 @@ model, a file on a network folder), what the add-in's dialog watch does with one
 **Ajmal PS decides.** Until he does, nothing Heron does at runtime changes: `SAVE_DOCUMENT` still refuses
 the model it works in, and the methods ask the modeller to save first.
 
+**Work:** built 2026-11-16, Shape 2 - compiled for Revit 2020 to 2027 and tested in a cloud container,
+**NOT RUN IN REVIT.** `SAVE_DOCUMENT` version 3 asks for a save of the document Heron works in through a new
+ambient need, `saveWhenKept` - null for its own file, or the full path the modeller typed for a Save As of
+a model never saved, and `replaceFile` (off unless typed) to replace a file already there - and refuses
+before asking: a model that has a file is saved to it, never under a new name; a relative path, a folder
+that does not exist, the wrong extension, a file open in Revit or a workshared model for a Save As; the
+central model opened directly for a Save. The add-in saves in the same request, after the group's block
+has closed and the reply is built ([`RevitFragmentSave.cs`](../../revit/Heron.Revit.Addin/RevitFragmentSave.cs),
+called at the end of `RevitFragment.Run`), and the reply's `save` block says what it did. The three points, as
+built: **(1)** the act after the group is the save alone, of what the fragment asked, behind the Publish
+switch read again as it saves, and said on the reply; **(2)** only a group Revit reports kept is saved - a
+preview, a proof's rolled-back run, a Discard or a closed box saves nothing and says so, so D-55 needs no
+new sentence; **(3)** the reply names the model as the change was made and the `save` block its new title
+and file, and the chat's pin follows a Save As only when that block says this run did it, of the pinned
+model ([`heron_write.py`](../../mcp/server/heron_write.py) `DocumentPin.follow_save_as`, `after_save`;
+`revit_change` calls it once the pin has passed the reply). Every save that was done says it cannot be
+undone; a workshared local copy says nothing went to central; nothing here calls Synchronize with Central
+(Article 10). No new switch: the Publish switch the question names. **Tests:** `tests/test_save_after_group.py`
+(new), `tests/test_document_pin.py` (a Save As section) and `tests/test_fragment_ambient.py` (the new need) -
+40, 6 and 3 checks failed on the code before the change, all pass after it. **The card is DRAFT** - its C#
+moved, so version 2's proof is kept as its record and no longer stands (D-30), and a kept change from it is
+refused (D-117); `family-creation` step 11 f and `mass-family-creation` step 7 now say the modeller saves
+by hand until it is PROVEN again. **Owed: [NEEDS-CHECKING Group EN](../needs-checking/group-en.md) EN6 to
+EN10, on a real Revit.** EN7, EN9's refusals and EN10 run today, rolled back. **The kept runs EN6, EN8 and
+EN9's `replaceFile` need the owner's word on a route first**: D-117 refuses `--apply` and `revit_change` for
+a DRAFT, `try-once` takes only MODIFY, and a preview no longer saves - point 2 as the question foresaw.
+**Not decided here:** the new decision the question names for the act after the group - the answer is the
+other helper's to record; whether a save of ANOTHER open document should wait for a Keep too, and Revit's
+Keep or Discard box telling a publish its save is "done already" ([row 5b-1749](../fragment-issues/row-5b-1749.md));
+and the methods' *"Heron cannot save the model it works in"* lines, true while the card is DRAFT, which
+change the day it is PROVEN.
+
 ---
 
 ### ✅ Q-70 — On a PC whose Claude app keeps its own copy of `%APPDATA%\Heron`, which `heron.config` should Heron believe, and should it say when the two differ? *(found 2026-10-17)* → **decided 2026-11-15 on the owner's delegation**

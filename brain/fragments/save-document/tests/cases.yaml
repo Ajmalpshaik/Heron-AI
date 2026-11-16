@@ -23,12 +23,53 @@ positive:
       the window in front and that the file is saved - the window still open,
       Revit itself still running
 
-negative:
-  - given: documentPath = the file of the document Heron is working in
+  # VERSION 3 (Q-69) - THE DOCUMENT HERON WORKS IN. A SCRATCH project, never a
+  # working model. Its save is the ADD-IN's, after the group; read it off the
+  # reply's `save` block AND off the disk - the file's time - never off saveAsked.
+  - given: >
+      a saved scratch project with one unsaved change, Heron working in it,
+      documentPath = its own file, the change KEPT (revit_change once proved,
+      Ask to Keep off - or Keep pressed)
     expect: >
-      refused, naming it and saying Revit will not save a document while
-      Heron's Undo entry is open in it; the file's timestamp unchanged. This is
-      what version 1 did every time (row 5b-365)
+      saveAsked true, saveAskedTo its file; the reply's save block done true,
+      saying a save cannot be undone; the file's time on disk moves and the
+      title bar loses its unsaved mark. One Undo entry, and Ctrl+Z does not
+      put the file back
+
+  - given: >
+      a NEVER-saved scratch project, Heron working in it, saveAsPath = a new
+      full .rvt path under %TEMP%\heron-work, the change KEPT
+    expect: >
+      the file exists at that path; Revit's title is the new name; the save
+      block names the new title and file; and the chat's NEXT change goes into
+      the same model with no "use this model" - on Revit 2020, where the model
+      has no CreationGUID, and on 2024
+
+negative:
+  - given: >
+      documentPath = the file of the document Heron is working in, with one
+      unsaved change, run WITHOUT keeping it - a proof's rolled-back run, a
+      preview, or Discard pressed
+    expect: >
+      saveAsked true, and the reply's save block done false, saying the run was
+      rolled back (or Discard was pressed) and the model was NOT saved; the
+      file's time on disk UNCHANGED. Version 1 saved here every time and could
+      not; version 2 refused; version 3 saves only a KEPT change (Q-69 point 2)
+
+  - given: >
+      saveAsPath = a path where a file is already, replaceFile not given
+    expect: >
+      refused, naming the file and saying Heron replaces one only when told to;
+      saveAsked false, the file untouched. With replaceFile=true the same run
+      kept replaces it, and the save block says it REPLACED it
+
+  - given: saveAsPath for a model that already HAS a file, or a relative path, or a .txt
+    expect: >
+      refused, naming its file - it is saved there, never under a new name - or
+      why the path is not one a project is saved as; nothing asked, nothing written
+
+  - given: the CENTRAL model of a workshared project opened directly, documentPath its file
+    expect: refused - saving it writes the file the whole job works from; nothing synced
 
   - given: a path no open document was opened from
     expect: refused, the path said back and the open titles listed; nothing written, nothing closed

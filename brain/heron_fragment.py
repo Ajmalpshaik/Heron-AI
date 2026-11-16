@@ -165,6 +165,12 @@ AMBIENT = {
     # an IFamilyLoadOptions, which needs a class a fragment cannot declare -
     # so the add-in supplies a factory; its bool is overwriteParameterValues.
     "familyLoadOptions": "Func<bool, IFamilyLoadOptions>",
+    # Q-69, answered 2026-11-16. Revit saves nothing while Heron's group is
+    # open, so a fragment asks the ADD-IN to save the document it works in
+    # once the group has closed, and only if it was kept: null for its own
+    # file, or the full path the modeller typed for a Save As; the bool says
+    # a file already there may be replaced.
+    "saveWhenKept": "Action<string, bool>",
 }
 
 # WHERE A NEEDED NAME CAN COME FROM. Found the same way AMBIENT was - by writing

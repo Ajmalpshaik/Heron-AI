@@ -656,6 +656,105 @@ class DocumentPin(object):
         self._title = reply.get("document") if reply else None
         return self._title
 
+    def follow_save_as(self, reply):
+        """
+        Move the pin to the model's new name after a Save As THIS RUN DID of
+        the pinned model, and return that name - or None, and the pin stays.
+
+        OPEN-QUESTIONS Q-69, the owner's third point (answered 2026-11-16). A
+        Save As renames the model. On Revit 2020 to 2023 - no CreationGUID -
+        and for every family, a model never saved is pinned by its TITLE alone,
+        so the reply after the save would read as ANOTHER model, and every call
+        after it would be refused until the modeller said "use this model".
+
+        SO IT FOLLOWS ONLY WHAT THE REPLY SAYS THIS RUN DID. The add-in builds
+        the reply's identity before it saves - the model as the change was made
+        - and puts the save's own result in `save`: kind "saveAs", done, and
+        the new `document`, `documentPath` and `creationGuid`. The pin moves
+        only when that reply names the PINNED model, on the strongest field
+        both carry, and the save says it was done. A title match is enough
+        here, though it is never enough to name a store: the request was AIMED
+        at the pinned title, and the add-in refuses a title two open models
+        share rather than pick one. Anything else - a plain Save, a Save As not
+        done, a reply about another model, nothing pinned yet - moves nothing.
+
+        It is `repin`, called by the one thing allowed to stand in for the
+        user's word here: the add-in's report of the act the user asked for.
+        """
+        save = reply.get("save") if isinstance(reply, dict) else None
+        if not isinstance(save, dict) or save.get("kind") != "saveAs" \
+                or save.get("done") is not True:
+            return None
+        if self._key is None:
+            return None
+        before = self.identity_of(reply)
+        field = self._common(before)
+        if field is None or self._seen.get(field) != before.get(field):
+            return None
+        was_id, now_id = self._seen.get("projectKey"), before.get("projectKey")
+        if was_id and now_id and was_id != now_id:
+            return None
+        title, path = save.get("document"), save.get("documentPath")
+        if not title or not path:
+            return None
+        moved = dict(self._seen)
+        moved["document"] = str(title)
+        moved["documentPath"] = str(path)
+        if save.get("creationGuid"):
+            moved["creationGuid"] = str(save["creationGuid"])
+        return self.repin(moved)
+
+
+def after_save(pin, reply):
+    """
+    (reply, lines): what a change's reply says its SAVE did, and the reply as
+    the rest of revit_change should read it - Q-69, answered 2026-11-16.
+
+    THE WORDS ARE THE ADD-IN'S (`save.said`), as the verdict is: it is the one
+    side that saw whether Revit saved. One line is added here only when the
+    add-in sent none, and then only what is true of every save it reports done
+    - that it cannot be undone.
+
+    AFTER A SAVE AS THIS RUN DID, the pin follows the model to its new name
+    (DocumentPin.follow_save_as), and the reply handed back names the model by
+    that name and file - so nothing after this reads a model just saved as one
+    that has never been. When the pin cannot follow, it stays, and the line
+    says how the modeller moves the chat. No save in the reply: the reply
+    unchanged and no lines.
+    """
+    save = reply.get("save") if isinstance(reply, dict) else None
+    if not isinstance(save, dict):
+        return reply, []
+
+    lines = [""]
+    said = save.get("said")
+    if said:
+        lines.append(str(said))
+    elif save.get("done") is True:
+        lines.append("SAVED. A save cannot be undone: Ctrl+Z takes back the change, never the "
+                     "save.")
+    else:
+        lines.append("NOT SAVED. Revit's Heron did not say why.")
+
+    if save.get("kind") == "saveAs" and save.get("done") is True:
+        moved = pin.follow_save_as(reply)
+        if moved:
+            reply = dict(reply)
+            for field in ("document", "documentPath", "creationGuid"):
+                if save.get(field):
+                    reply[field] = save[field]
+            lines.append("This chat now works on %s, at %s: the Save As was this run's, of the "
+                         "model this chat was pointed at, so Heron followed it - the same model "
+                         "under its new name, not a different one (Q-69)."
+                         % (moved, save.get("documentPath")))
+        else:
+            lines.append("This chat is still pointed at %s: Heron could not show that the model "
+                         "saved as %s is the one this chat works on, so it did not follow the "
+                         "new name. Say 'use this model' to move this chat onto it deliberately."
+                         % (pin.title or "the model it was working on",
+                            save.get("document") or "the new file"))
+    return reply, lines
+
 
 # ---------------------------------------------------------------- approval
 

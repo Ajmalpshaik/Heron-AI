@@ -10,7 +10,9 @@
 The add-in and the brain name the SAME ambient needs. Runs without Revit.
 
 An ambient need is an object the add-in hands a fragment because a fragment
-cannot build it - D-112's `editScopeFailures`, D-114's `familyLoadOptions`.
+cannot build it - D-112's `editScopeFailures`, D-114's `familyLoadOptions`,
+and Q-69's `saveWhenKept` (2026-11-16), the save the add-in does after the
+group closes.
 Each name lives in two places: a constant in RevitFragment.cs, which binds it,
 and AMBIENT in brain/heron_fragment.py, which tells every Python tool the need
 is the host's and not a value to ask the caller for. Spelt differently, the
@@ -37,7 +39,10 @@ LOAD_FAMILY = os.path.join(ROOT, "brain", "fragments", "load-family")
 
 # The add-in's constants for the ambient needs it binds by name. `doc`, `uidoc`
 # and `app` are fields on the globals object and need no constant.
-CONSTANTS = ("EditScopeNeed", "FamilyLoadNeed", "NoTransactionNeed")
+CONSTANTS = ("EditScopeNeed", "FamilyLoadNeed", "NoTransactionNeed", "SaveWhenKeptNeed")
+
+# Q-69 (2026-11-16): the card that asks the add-in for a save after the group.
+SAVE_DOCUMENT = os.path.join(ROOT, "brain", "fragments", "save-document")
 
 
 def executor_names():
@@ -81,6 +86,33 @@ def run():
             failures.append("the add-in's prologue for '%s' is not typed %s, which is "
                             "what AMBIENT declares" % (family, declared))
 
+    # Q-69: THE SAVE THE ADD-IN DOES AFTER THE GROUP, asked for through an
+    # ambient need. Its prologue type must be AMBIENT's, and the card that
+    # asks for it must declare it as AMBIENT says - spelt differently, the
+    # fragment compiles green and the add-in reports the need never supplied.
+    save = names.get("SaveWhenKeptNeed")
+    if save and save in heron_fragment.AMBIENT:
+        declared = heron_fragment.AMBIENT[save]
+        if ('lines.Append("%s ")' % declared) not in text:
+            failures.append("the add-in's prologue for '%s' is not typed %s, which is "
+                            "what AMBIENT declares" % (save, declared))
+    save_card = yaml.safe_load(io.open(os.path.join(SAVE_DOCUMENT, "fragment.yaml"),
+                                       encoding="utf-8").read())
+    save_needs = {n["name"]: n for n in save_card["contract"]["needs"]}
+    asked = save_needs.get(save or "saveWhenKept")
+    if asked is None:
+        failures.append("save-document does not declare the saveWhenKept need, so it "
+                        "has no way to ask the add-in for a save after the group")
+    elif heron_fragment.need_source(asked) != "ambient":
+        failures.append("save-document's saveWhenKept is not read as ambient - a "
+                        "caller would be asked for it as a value")
+    # ARTICLE 7 AND Q-69: replacing a file is only ever asked for.
+    replace = save_needs.get("replaceFile")
+    if replace is None or not heron_fragment.need_may_be_absent(replace) \
+            or replace.get("type") != "bool":
+        failures.append("save-document's replaceFile is not an optional bool, so a "
+                        "Save As could replace a file nobody said to replace")
+
     manifest = yaml.safe_load(io.open(os.path.join(LOAD_FAMILY, "fragment.yaml"),
                                       encoding="utf-8").read())
     needs = {n["name"]: n for n in manifest["contract"]["needs"]}
@@ -116,7 +148,8 @@ def run():
         for line in failures:
             print("  FAIL  " + line)
         return 1
-    print("  PASS  both sides name the same ambient needs; LOAD_FAMILY reloads only when asked")
+    print("  PASS  both sides name the same ambient needs; LOAD_FAMILY reloads only when "
+          "asked; SAVE_DOCUMENT replaces a file only when asked")
     return 0
 
 

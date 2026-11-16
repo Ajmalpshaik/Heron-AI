@@ -1,26 +1,41 @@
-// NOT STANDALONE. Assumes `doc`, `uidoc`, `documentPath` and `closeWindow` are
-// in scope; leaves `saved`, `savedTo`, `closed`, `refused` and `findings`.
+// NOT STANDALONE. Assumes `doc`, `uidoc`, `documentPath`, `saveAsPath`,
+// `replaceFile`, `closeWindow` and `saveWhenKept` are in scope; leaves `saved`,
+// `savedTo`, `closed`, `saveAsked`, `saveAskedTo`, `refused` and `findings`.
+//
+// VERSION 3, 2026-11-16 - AND THE DOCUMENT HERON WORKS IN, SAVED BY THE ADD-IN
+// ONCE ITS UNDO ENTRY HAS CLOSED. OPEN-QUESTIONS Q-69, answered by Ajmal PS that
+// day: save after the group closes, from the add-in, only when the modeller
+// asks; Heron never picks a name. Revit saves nothing while Heron's group is
+// open in a document, so this fragment never saves `doc` itself: it checks the
+// request and hands it to `saveWhenKept` - null for the model's own file, or
+// the full path the modeller typed for a Save As of a model NEVER saved - and
+// the add-in saves after the group, ONLY IF THE CHANGE WAS KEPT. A preview, a
+// Discard or a proof's rolled-back run saves nothing; the reply's `save` block
+// says what the add-in did. A model that has a file is saved to it, never
+// under a new name; a file already at a Save As path is replaced only with
+// replaceFile=true. Two whole builds were lost unsaved (row 5b-513).
 //
 // VERSION 2, 2026-10-07 - IT SAVES ANOTHER OPEN DOCUMENT, NAMED BY ITS FILE.
+// Unchanged in version 3, and still done HERE, inside the run - so a preview
+// of it saves that other document, as its proof records (row 5b-1749).
 // Version 1 saved `doc`, the document Heron runs in, and that can never work:
 // Revit's Document.Save and SaveAs "may not be called unless all transactions,
 // sub-transactions, and transaction groups that were opened by the API code
 // were closed" (RevitAPI.xml, 2020 to 2027), and a PUBLISH run is the write
-// path - one TransactionGroup, open in `doc`, for the whole run. So the
-// document saved here is any OTHER open one, found by its path, and `doc` is
-// refused by name with the reason. The job it exists for: a nested family
-// built in its own window - a tyre for a car - saved so its host can load it.
+// path - one TransactionGroup, open in `doc`, for the whole run. The job it
+// exists for: a nested family built in its own window - a tyre for a car -
+// saved so its host can load it.
 //
 // PUBLISH RISK, AND NOT UNDOABLE. A save commits whatever is in that document
 // right now, including a change somebody was about to undo.
 //
 // A LOCAL SAVE IS NOT A SYNC. On a workshared model this writes the local file
 // and reaches nobody. That is the confusion worth preventing, so it is said in
-// the findings every time.
+// the findings every time. The CENTRAL model opened directly is refused.
 //
-// IT NEVER CHOOSES A FILENAME. Only a document that already has a file is
-// found, and it is saved to that file - SaveAs can overwrite another model, and
-// inventing a path is exactly how that happens.
+// IT NEVER CHOOSES A FILENAME. Another document is found by the file it was
+// opened from and saved to it; the document Heron works in is saved to its own
+// file, or - never saved - to the path the modeller typed, word for word.
 //
 // CLOSING IS ASKED FOR, AND ONLY A WINDOW THAT IS NOT IN FRONT CAN BE CLOSED.
 // Document.Close "cannot close the currently active document. It can only be
@@ -29,15 +44,19 @@
 // never used here. So with closeWindow=true, a document behind the one in
 // front is closed after its save; the one in front is saved and left open,
 // and the reply says the window is the modeller's to close. Nothing unsaved is
-// ever closed: Close(false) would discard it.
+// ever closed: Close(false) would discard it. The document Heron works in is
+// never closed by Heron.
 
 var saved = false;
 string savedTo = null;
 var closed = false;
+var saveAsked = false;
+string saveAskedTo = null;
 string refused = null;
 var findings = new List<string>();
 
 var wanted = (documentPath ?? "").Trim().Trim('"');
+var saveAs = (saveAsPath ?? "").Trim().Trim('"').Trim();
 
 // One spelling of a path, so "D:\a\b.rfa" and "d:/a/b.rfa" are the same file.
 Func<string, string> canonical = delegate (string p)
@@ -48,16 +67,25 @@ Func<string, string> canonical = delegate (string p)
 };
 
 Document found = null;
+var thisOne = false;
 var openTitles = new List<string>();
 
 if (doc == null)
 {
     refused = "No document was given";
 }
-else if (wanted.Length == 0)
+else if (wanted.Length == 0 && saveAs.Length == 0)
 {
     refused = "No file was named. Name the open document to save by its full file path - "
-        + "the .rfa or .rvt it was opened from";
+        + "the .rfa or .rvt it was opened from - or, for the model Heron works in when it "
+        + "has never been saved, the full path to save it as (saveAsPath). Heron never "
+        + "chooses a name";
+}
+else if (wanted.Length == 0)
+{
+    // A Save As names no open document: it is of the one Heron works in.
+    found = doc;
+    thisOne = true;
 }
 else
 {
@@ -80,15 +108,19 @@ else
     {
         refused = string.Format("No document open in this Revit is saved at '{0}', so there "
             + "is nothing to save. Open: {1}. A document that was never saved has no file "
-            + "and cannot be named here", wanted,
+            + "and cannot be named here - for the model Heron works in, give the path to "
+            + "save it as (saveAsPath)", wanted,
             openTitles.Count == 0 ? "(none)" : string.Join(", ", openTitles));
     }
     else if (found.Equals(doc))
     {
-        refused = string.Format("'{0}' is the document Heron is working in, and Revit will "
-            + "not save a document while Heron's Undo entry is open in it. Switch Heron to "
-            + "another open document and name this file again - or save it with Ctrl+S",
-            found.Title);
+        thisOne = true;
+    }
+    else if (saveAs.Length > 0)
+    {
+        refused = string.Format("A path to save as is only for the model Heron works in, "
+            + "when it has never been saved. '{0}' is another open document and is saved to "
+            + "its own file - leave saveAsPath out", found.Title);
     }
     else if (found.IsReadOnly)
     {
@@ -96,7 +128,140 @@ else
     }
 }
 
-if (refused == null)
+if (refused == null && thisOne)
+{
+    // VERSION 3: THE DOCUMENT HERON WORKS IN. Checked here, so a refusal is the
+    // run's own answer - on a preview too - and asked of the add-in only when
+    // nothing stands in the way. The add-in checks again before it saves.
+    var title = doc.Title;
+    var file = "";
+    try { file = doc.PathName ?? ""; }
+    catch (Exception) { file = ""; }
+
+    if (doc.IsReadOnly)
+    {
+        refused = string.Format("'{0}' is open read-only and cannot be saved", title);
+    }
+    else if (saveAs.Length == 0)
+    {
+        // A SAVE TO ITS OWN FILE - it was found by that file, so it has one.
+        string central = null;
+        if (doc.IsWorkshared)
+        {
+            try
+            {
+                var centralPath = doc.GetWorksharingCentralModelPath();
+                central = centralPath == null
+                    ? "" : ModelPathUtils.ConvertModelPathToUserVisiblePath(centralPath) ?? "";
+            }
+            catch (Exception) { central = null; }
+        }
+
+        if (doc.IsWorkshared && central == null)
+        {
+            refused = string.Format("'{0}' is workshared and Heron could not tell whether it "
+                + "is the central model itself, so it will not save it", title);
+        }
+        else if (doc.IsWorkshared && central.Length > 0
+                 && string.Equals(canonical(central), canonical(file),
+                                  StringComparison.OrdinalIgnoreCase))
+        {
+            refused = string.Format("'{0}' is the CENTRAL model itself, opened directly: "
+                + "saving it writes the file everybody on the job works from. Open a local "
+                + "copy, or Synchronize with Central yourself - Heron never syncs", title);
+        }
+        else if (!doc.IsModified)
+        {
+            // Nothing to write. Not a refusal: the file already holds what is open.
+            findings.Add(string.Format("'{0}' had no unsaved changes - the file at {1} already "
+                + "holds what is open, so nothing will be written", title, file));
+        }
+        else
+        {
+            saveWhenKept(null, false);
+            saveAsked = true;
+            saveAskedTo = file;
+            findings.Add(string.Format("'{0}' is the model Heron works in, so Heron saves it to "
+                + "{1} once this change's Undo entry has closed - ONLY IF THE CHANGE IS KEPT. A "
+                + "preview, a Discard or a rolled-back run saves nothing. A save cannot be "
+                + "undone{2}", title, file,
+                doc.IsWorkshared
+                    ? ". IT IS WORKSHARED AND NOTHING GOES TO CENTRAL - the save writes the "
+                      + "local copy only. SYNC_WITH_CENTRAL is the other job"
+                    : ""));
+        }
+    }
+    else
+    {
+        // A SAVE AS - only of a model that has NEVER been saved, only to the
+        // full path the modeller typed, and never over a file unless they said.
+        var family = doc.IsFamilyDocument;
+        var extension = family ? ".rfa" : ".rvt";
+        var rooted = saveAs.StartsWith(@"\\", StringComparison.Ordinal)
+            || (saveAs.Length >= 3 && char.IsLetter(saveAs[0]) && saveAs[1] == ':'
+                && (saveAs[2] == '\\' || saveAs[2] == '/'));
+        var full = rooted ? canonical(saveAs) : "";
+        var folder = "";
+        try { folder = full.Length == 0 ? "" : System.IO.Path.GetDirectoryName(full) ?? ""; }
+        catch (Exception) { folder = ""; }
+        string openThere = null;
+        if (full.Length > 0)
+        {
+            foreach (Document open in doc.Application.Documents)
+            {
+                if (open == null || open.IsLinked) continue;
+                var here = "";
+                try { here = open.PathName ?? ""; }
+                catch (Exception) { here = ""; }
+                if (here.Length > 0 && string.Equals(canonical(here), full,
+                                                      StringComparison.OrdinalIgnoreCase))
+                    openThere = open.Title;
+            }
+        }
+
+        if (file.Length > 0)
+            refused = string.Format("'{0}' already has a file at {1}, and Heron saves it there "
+                + "- never under a new name. Leave saveAsPath out and name that file", title, file);
+        else if (doc.IsWorkshared)
+            refused = string.Format("'{0}' is workshared, and a Save As makes or moves a "
+                + "central model - that is the modeller's to do, with File > Save As", title);
+        else if (!rooted)
+            refused = string.Format("'{0}' is not a full path - it needs the drive or the "
+                + "network share as well as the folder and the name. Heron never chooses a "
+                + "folder or a name", saveAs);
+        else if (!string.Equals(System.IO.Path.GetExtension(full), extension,
+                                StringComparison.OrdinalIgnoreCase))
+            refused = string.Format("A {0} is saved as a {1} file, and '{2}' is not one",
+                family ? "family" : "project", extension, saveAs);
+        else if (folder.Length == 0 || !System.IO.Directory.Exists(folder))
+            refused = string.Format("The folder {0} does not exist, and Heron makes no folder",
+                folder.Length == 0 ? "of '" + saveAs + "'" : folder);
+        else if (openThere != null)
+            refused = string.Format("{0} is the file of '{1}', open in this Revit", full, openThere);
+        else if (System.IO.File.Exists(full) && !replaceFile)
+            refused = string.Format("A file is already at {0}, and Heron replaces a file only "
+                + "when the modeller says to replace it (replaceFile=true)", full);
+        else
+        {
+            saveWhenKept(saveAs, replaceFile);
+            saveAsked = true;
+            saveAskedTo = full;
+            findings.Add(string.Format("'{0}' has never been saved, so Heron saves it as {1} - "
+                + "the path given, not one Heron chose - once this change's Undo entry has "
+                + "closed, ONLY IF THE CHANGE IS KEPT. A preview, a Discard or a rolled-back "
+                + "run saves nothing. Revit then names it by that file. A save cannot be "
+                + "undone{2}", title, full,
+                System.IO.File.Exists(full) ? ". It REPLACES the file there, as asked" : ""));
+        }
+    }
+
+    if (refused == null && closeWindow)
+    {
+        findings.Add(string.Format("'{0}' is the model Heron works in, and Heron never closes "
+            + "that window - close it yourself once the save is done", title));
+    }
+}
+else if (refused == null)
 {
     savedTo = found.PathName;
 
@@ -130,7 +295,7 @@ if (refused == null)
     }
 }
 
-if (refused == null && closeWindow)
+if (refused == null && closeWindow && !thisOne)
 {
     Document inFront = null;
     try
