@@ -294,22 +294,33 @@ namespace Heron.Revit.Addin
 
                 // D-157: REVIT'S OWN UNDO, sent only while Heron saw its last
                 // kept change land and has seen nothing change the model
-                // since. No transaction: a command is posted, and Revit runs
-                // it after this returns. The whole request goes: the pinned
-                // model is named in it as a kept change names it.
+                // since - and, Q-88, only for the chat that kept it. No
+                // transaction: a command is posted, and Revit runs it after
+                // this returns. The whole request goes: the pinned model is
+                // named in it as a kept change names it, and the chat is its
+                // conversation.
                 //
-                // NOT `undo_last`, the first build's name for it: a Revit
-                // still running that build must not be able to take this
-                // request and post by its old rule (see RevitUndo).
-                case "undo_guarded":
+                // NOT `undo_last` OR `undo_guarded`, the older names for it: a
+                // Revit still running an add-in built before the change must
+                // not be able to take this request and post by its older rule
+                // (see RevitUndo).
+                case "undo_own":
                     return RevitUndo.Last(app, request, false, null);
 
                 // THE SAME QUESTIONS, AND NOTHING SENT. Declared Read, so it
                 // answers with Changes off - and says what the switches would
                 // say to the real one, which is why the gate is asked here
-                // for `undo_guarded` by name.
+                // for `undo_own` by name.
+                case "undo_own_check":
+                    return RevitUndo.Last(app, request, true, Gate("undo_own"));
+
+                // Q-88: WHAT A CHAT STARTED BEFORE IT STILL SENDS. It cannot
+                // say whose change it asks for, so it is refused with nothing
+                // posted, in words it already reads as a refusal.
+                case "undo_guarded":
+                    return RevitUndo.OlderChat(false);
                 case "undo_check":
-                    return RevitUndo.Last(app, request, true, Gate("undo_guarded"));
+                    return RevitUndo.OlderChat(true);
 
                 // D-163: the Activity pane's Select and Zoom - selection and the
                 // view only, no transaction. RevitShowElements says why each part.

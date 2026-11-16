@@ -1141,13 +1141,14 @@ async def exercise_show(module):
                        "said": "Revit's own Undo was sent for 'rename-views-by-level'."}
         said = await call("revit_undo_last", {})
         op, args, idempotent = revit.asked[-1] if revit.asked else (None, {}, None)
-        # THE OPERATION WAS `undo_last` UNTIL THE SECOND REVIEW OF 2026-11-12. The
-        # first build of this tool knows that name and posts by its old rule,
-        # so the repaired tool never sends it (exercise_undo, the first-build
-        # stand-in). What is held here is unchanged: the pin, sent once.
-        check(op == "undo_guarded" and args.get("expectProject") == "key-1"
+        # THE OPERATION WAS `undo_last` UNTIL THE SECOND REVIEW OF 2026-11-12,
+        # AND `undo_guarded` UNTIL Q-88 (2026-11-16). An add-in built before
+        # each knows the older name and posts by its older rule, so the tool
+        # never sends it (exercise_undo, the stand-ins for both). What is held
+        # here is unchanged: the pin, sent once.
+        check(op == "undo_own" and args.get("expectProject") == "key-1"
               and idempotent is False,
-              "revit_undo_last sends undo_guarded with the pin, never safe to resend - found "
+              "revit_undo_last sends undo_own with the pin, never safe to resend - found "
               "%r %r %r" % (op, args, idempotent))
         check("Undo was sent for 'rename-views-by-level'" in said,
               "and says, in the add-in's words, that Undo was SENT")
@@ -1177,7 +1178,14 @@ async def exercise_undo(module):
       - an Undo an older add-in posted in ANOTHER model is said to have been
         SENT, and where - never "Nothing has been sent to Revit";
       - with no pin nothing is sent at all;
-      - check_only sends `undo_check`, never `undo_last`;
+      - check_only sends `undo_own_check`, never `undo_check` or `undo_last`;
+      - ONLY THE CHAT THAT MADE A CHANGE MAY UNDO IT (Q-88, 2026-11-16): the
+        add-in decides it by the conversation the bridge puts on every
+        request, so the tool sends `undo_own` and no argument names a chat;
+        against a stand-in add-in that keeps Q-88's rule, this chat's own
+        change is undone and another chat's is refused with nothing sent; and
+        an add-in built before Q-88 - which posts on `undo_guarded` for
+        whichever chat's change is on top - is never asked to post;
       - and a KEPT change ends on one line saying whether Heron can still undo
         it, from the add-in's own field - nothing when there is none.
     """
@@ -1216,13 +1224,20 @@ async def exercise_undo(module):
         pin()
         said = await call("revit_undo_last", {})
         op, args, idempotent = revit.asked[-1] if revit.asked else (None, {}, None)
-        check(op == "undo_guarded" and idempotent is False
+        check(op == "undo_own" and idempotent is False
               and args.get("document") == "Project1"
               and args.get("documentPath") == "C:/jobs/Project1.rvt"
               and args.get("expectProject") == "key-1",
-              "it sends undo_guarded and names the pinned model as a kept change does - its "
+              "it sends undo_own and names the pinned model as a kept change does - its "
               "path and title, not the template's shared id alone - never safe to resend: found %r %r"
               % (op, sorted(args)))
+        # WHICH CHAT is the envelope's, never an argument: the bridge puts the
+        # conversation on every request of this process and refuses an
+        # argument that would set it (RESERVED_KEYS, D-141).
+        check(not any(word in args for word in ("conversation", "chat", "client"))
+              and "conversation" in getattr(module.bridge, "RESERVED_KEYS", ()),
+              "and no argument names the chat - the add-in reads it from the request's own "
+              "conversation, which no argument can set: found %r" % sorted(args))
         check(word(said) == "STILL RUNNING"
               and said.startswith("Revit's own Undo was sent for 'rename-views-by-level'")
               and "Heron has seen nothing change this model since" in said,
@@ -1299,6 +1314,121 @@ async def exercise_undo(module):
               "a check there says the same, and sends nothing either")
         pin()
 
+        # A REVIT RUNNING AN ADD-IN BUILT BEFORE Q-88 (2026-11-16). It knows
+        # `undo_guarded` and `undo_check`, records no chat with a keep, and
+        # posts for Heron's last change in the model WHICHEVER chat kept it.
+        # It must never be asked to post: it does not know `undo_own`.
+        class BeforeQ88(StandIn):
+            posted = 0
+
+            def request(self, op, op_args=None, idempotent=True, **_ignored):
+                self.asked.append((op, dict(op_args or {}), idempotent))
+                if op == "undo_guarded":
+                    BeforeQ88.posted += 1
+                    return dict(sent)
+                if op == "undo_check":
+                    return dict(model, ok=True, checked=True, sent=False, wouldSend=True,
+                                said="Yes - Undo would be sent now, for 'another-chats-job'.")
+                return {"ok": False, "error": "unknown_op",
+                        "message": "Heron has no operation called '%s'. It has: ping, info, "
+                                   "undo_check, undo_guarded." % op}
+
+        before_q88 = BeforeQ88(None)
+        module.binding.resolve = lambda: before_q88
+        try:
+            pin()
+            said = await call("revit_undo_last", {})
+            checked = await call("revit_undo_last", {"check_only": True})
+        finally:
+            module.binding.resolve = lambda: revit
+        asked_old = [op for op, _a, _i in before_q88.asked]
+        check(BeforeQ88.posted == 0 and "undo_guarded" not in asked_old
+              and "undo_check" not in asked_old,
+              "a Revit whose add-in was built before Q-88 is never asked to post - undo_guarded, "
+              "which it answers by undoing whichever chat's change is on top, is not sent: "
+              "asked %r" % asked_old)
+        check(word(said) == "NOT RUN" and "is older than this chat's Heron" in said
+              and "cannot safely send Undo" in said and "Nothing was sent to Revit" in said
+              and "Ctrl+Z" in said and "no operation called" not in said,
+              "and the chat is told, in Revit's words, that Revit's Heron is older, that nothing "
+              "was sent, and that Ctrl+Z still works - found %r" % said[:160])
+        check(word(checked) == "NOT RUN" and "cannot check this" in checked
+              and "Yes - Undo would be sent" not in checked,
+              "a check there is not answered by the older rule either - never a 'yes' for "
+              "another chat's change: found %r" % checked[:120])
+        pin()
+
+        # TWO CHATS, ONE MODEL (Q-88): a stand-in add-in with the rule this
+        # change built - it records the chat a keep came from, the
+        # conversation the bridge puts on every request of a process, and
+        # sends Undo only for the chat that kept the model's last change.
+        this_chat = getattr(module.bridge, "CONVERSATION_ID", None)
+        other_chat = "f0e1d2c3b4a5968778695a4b3c2d1e0f"
+        check(bool(this_chat) and this_chat != other_chat,
+              "this chat's server has a conversation of its own to be told apart by")
+        refused_other = ("Heron's last change in \"Project1\", 'rename-views-by-level' at "
+                         "14:32, was made in another chat, not this one, and only the chat "
+                         "that made a change sends Undo for it. Nothing was sent to Revit and "
+                         "nothing was undone. Ctrl+Z in Revit still undoes it - or ask in the "
+                         "chat that made it.")
+
+        class TwoChats(StandIn):
+            def __init__(self):
+                StandIn.__init__(self, None)
+                self.kept_by = None
+                self.posted = 0
+
+            def request(self, op, op_args=None, idempotent=True, **_ignored):
+                self.asked.append((op, dict(op_args or {}), idempotent))
+                if op not in ("undo_own", "undo_own_check"):
+                    return {"ok": False, "error": "unknown_op",
+                            "message": "Heron has no operation called '%s'." % op}
+                mine = self.kept_by is not None and self.kept_by == this_chat
+                if op == "undo_own_check":
+                    return dict(model, ok=True, checked=True, sent=False, wouldSend=mine,
+                                said=("Yes - Undo would be sent now, for "
+                                      "'rename-views-by-level'." if mine else
+                                      "No - Undo would not be sent now. " + refused_other)
+                                     + " This was only a check: nothing was sent to Revit.")
+                if not mine:
+                    return {"ok": False, "error": "undo_refused", "message": refused_other}
+                self.posted += 1
+                return dict(sent)
+
+        chats = TwoChats()
+        module.binding.resolve = lambda: chats
+        try:
+            pin()
+            chats.kept_by = other_chat          # the other chat kept the last change
+            refused = await call("revit_undo_last", {})
+            checked_other = await call("revit_undo_last", {"check_only": True})
+            chats.kept_by = this_chat           # this chat kept it
+            own = await call("revit_undo_last", {})
+        finally:
+            module.binding.resolve = lambda: revit
+        check(word(refused) == "REFUSED"
+              and "was made in another chat, not this one" in refused
+              and "Nothing was sent to Revit and nothing was undone" in refused
+              and "Ctrl+Z in Revit still undoes it" in refused
+              and "WAS SENT" not in refused,
+              "another chat's change: REFUSED, nothing sent, in the add-in's words - this chat "
+              "did not make Heron's last change in that model, and Ctrl+Z still undoes it: "
+              "found %r" % refused[:200])
+        check(word(checked_other) == "ANSWERED"
+              and checked_other.startswith("No - Undo would not be sent now.")
+              and "made in another chat" in checked_other,
+              "and a check says no, for that reason, with nothing sent - found %r"
+              % checked_other[:120])
+        check(chats.posted == 1 and word(own) == "STILL RUNNING"
+              and own.startswith("Revit's own Undo was sent for 'rename-views-by-level'"),
+              "this chat's own change: Undo SENT, once - STILL RUNNING, in the add-in's words: "
+              "found %r (posted %d)" % (own[:120], chats.posted))
+        check([op for op, _a, _i in chats.asked] == ["undo_own", "undo_own_check", "undo_own"],
+              "one request each, and nothing checked first and posted second - the add-in "
+              "decides whose change it is in the request that posts: asked %r"
+              % [op for op, _a, _i in chats.asked])
+        pin()
+
         # TWO PROJECTS FROM ONE TEMPLATE share the Project Information id, so
         # `projectKey` cannot tell them apart (row 5b-324). An add-in that
         # checked only that id posted Undo in the wrong one.
@@ -1348,11 +1478,12 @@ async def exercise_undo(module):
         before = len(revit.asked)
         said = await call("revit_undo_last", {"check_only": True})
         asked = revit.asked[before:]
-        check([op for op, _a, _i in asked] == ["undo_check"]
+        check([op for op, _a, _i in asked] == ["undo_own_check"]
               and asked[0][1].get("claim") == "no"
               and asked[0][1].get("documentPath") == "C:/jobs/Project1.rvt",
-              "check_only sends undo_check once - never undo_last - names the pinned model, "
-              "and claims no model: found %r" % [(op, sorted(a)) for op, a, _i in asked])
+              "check_only sends undo_own_check once - never undo_check or undo_last - names the "
+              "pinned model, and claims no model: found %r"
+              % [(op, sorted(a)) for op, a, _i in asked])
         check(word(said) == "ANSWERED" and said.startswith("Yes - Undo would be sent now")
               and "nothing was sent to Revit" in said,
               "and answers yes, for which change, and that nothing was sent - found %r"

@@ -1247,9 +1247,10 @@ has met a real Revit**: which reply the add-in sends for each ending is the C#'s
   run it yet, so nothing was run ..."*. A read goes on. After the wait jobs run again, but until
   Revit reports an undo in that model a change kept there ends *"Heron cannot take this back
   itself: revit_undo_last would refuse - an Undo Heron sent earlier has not been seen to run; it may
-  still run and take this change ..."*. **The posting operation is `undo_guarded`**, not the first
-  build's `undo_last`: a Revit still running that build answers `unknown_op`, and the chat is told
-  its Heron is older and that nothing was sent. Not run in Revit
+  still run and take this change ..."*. **The posting operation is `undo_own` since 2026-11-16**
+  ([Q-88](open-questions/tier-2.md): only the chat that made a change may undo it), not the first
+  build's `undo_last` nor `undo_guarded`: a Revit still running an add-in built before answers
+  `unknown_op`, and the chat is told its Heron is older and that nothing was sent. Not run in Revit
   ([Group NU](needs-checking/group-nu.md)).
 - **Which of the two a host shows its model** — the text or the structured content — is still not
   measured (§8.8). Both carry the word.

@@ -1094,7 +1094,10 @@ namespace Heron.Revit.Addin
                                    // (D-157): a job it counted nothing in left no
                                    // entry to undo.
                                    described == null ? 0 : described.Total,
-                                   described != null && described.Unreadable == 0);
+                                   described != null && described.Unreadable == 0,
+                                   // AND THE CHAT THAT KEPT IT (Q-88): only that
+                                   // chat is sent Undo for it.
+                                   client);
                     else
                     {
                         rolledBack = RollBackAndCheck(group, target, watch);
@@ -2658,10 +2661,14 @@ namespace Heron.Revit.Addin
         /// with no transaction (`noTransactionOpen`), or a MODIFY that changed
         /// nothing. Telling the guard "kept" for those made the next Undo take
         /// whatever the modeller did before it.
+        ///
+        /// `chat` IS THE CHAT WHOSE REQUEST KEPT IT (Q-88) - the request's
+        /// conversation, through HeronConversation.ChatOf. Only that chat is
+        /// sent Undo for it; every other is refused, and Ctrl+Z still works.
         /// </summary>
         internal static string KeepAndWatch(TransactionGroup group, Document doc,
                                             HeronRollbackWitness.Watch watch,
-                                            int counted, bool read)
+                                            int counted, bool read, string chat)
         {
             if (group.Assimilate() != TransactionStatus.Committed)
             {
@@ -2681,7 +2688,7 @@ namespace Heron.Revit.Addin
             {
                 var key = watch == null || watch.Document == null ? WitnessKey(doc) : watch.Document;
                 Undo.Kept(key, watch == null ? null : watch.Job, watch == null ? null : watch.Label,
-                          DateTime.Now, counted, read);
+                          DateTime.Now, counted, read, chat);
             }
             catch (Exception ex)
             {
@@ -3892,7 +3899,7 @@ namespace Heron.Revit.Addin
         /// group neither kept nor rolled back - with the undo guard told
         /// first (D-157, row 5b-1607): what is on the undo list now is not
         /// something Heron can vouch for, so an older keep is no longer
-        /// offered to `undo_guarded`. The reply itself is handed back unchanged.
+        /// offered to `undo_own`. The reply itself is handed back unchanged.
         /// </summary>
         private static string LeftOpen(Document target, string name, string reply)
         {

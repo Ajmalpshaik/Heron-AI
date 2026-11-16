@@ -3608,6 +3608,8 @@ def revit_undo_last(check_only: bool = False) -> str:
     """
     Undo Heron's LAST kept change in the model this chat works on - Revit's
     own Undo, exactly as Ctrl+Z, never a second change made to reverse the first.
+    Only the chat that made a change may undo it: when Heron's last change in
+    that model was made in another chat, it is refused and nothing is sent.
 
     Use ONLY when the user asks to undo or take back what Heron just did.
     Revit's Undo takes whatever was done last, so it is sent only while Heron
@@ -3629,12 +3631,11 @@ def revit_undo_last(check_only: bool = False) -> str:
         _outcome(NOT_RUN)
         return _ended("refused", str(unbound))
 
-    # NO PIN, NO UNDO. The guard in the add-in remembers a MODEL's last kept
-    # change, not whose it was: a chat that has worked in no model has no
-    # change of its own there, and the one it would take is another chat's.
-    # D-157 refuses when "the pinned model is not that one" and is silent on
-    # a chat with no pin at all - so this refuses, and the question is
-    # recorded (OPEN-QUESTIONS). Before anything is sent.
+    # NO PIN, NO UNDO. A chat that has worked in no model has no change of
+    # its own there, so it is refused before anything is sent - as it was
+    # before Q-88 was decided. A pinned chat is answered by the add-in, which
+    # records which chat kept a model's last change and refuses every other
+    # (Q-88, 2026-11-16) in the request that would post.
     if not pinned.is_pinned:
         return _ended("refused",
                       "This chat has not worked in a model yet, so there is no change of "
@@ -3660,11 +3661,13 @@ def revit_undo_last(check_only: bool = False) -> str:
     # be asked again.
     # FROM HERE THE REQUEST HAS LEFT (`_after_it_left`).
     _sent()
-    # `undo_guarded`, NEVER `undo_last`: the first build of this tool answers
-    # that name by posting on its old rule (heron_tools.TOOLS says why). An
-    # add-in without the repair knows neither name here, and is never asked
-    # to post.
-    reply = session.request("undo_check" if check_only else "undo_guarded",
+    # `undo_own`, NEVER `undo_guarded` OR `undo_last`: an add-in built before
+    # Q-88 answers those by posting for whichever chat's change is on top,
+    # and the first build on a weaker rule still (heron_tools.TOOLS says
+    # why). One built before knows neither name here, answers `unknown_op`,
+    # and is never asked to post. WHICH CHAT is the conversation the bridge
+    # puts on every request of this process (D-141): no argument carries it.
+    reply = session.request("undo_own_check" if check_only else "undo_own",
                             op_args=args, idempotent=bool(check_only))
     session.close()
 
@@ -3675,10 +3678,10 @@ def revit_undo_last(check_only: bool = False) -> str:
         # busy or the model held NOT RUN, an answer lost OUTCOME UNKNOWN.
         label = _failure_ended(failure)
         if failure.code == "unknown_op":
-            # AN ADD-IN WITHOUT THE REPAIR - from before D-157, or its first
-            # build - ANSWERS "Heron has no operation called ..." and lists
-            # the ones it has, said to a modeller raw until 2026-11-12. In
-            # Revit's words: that Revit's Heron is older than this chat's,
+            # AN ADD-IN BUILT BEFORE - from before D-157, its first build, or
+            # before Q-88 - ANSWERS "Heron has no operation called ..." and
+            # lists the ones it has, said to a modeller raw until 2026-11-12.
+            # In Revit's words: that Revit's Heron is older than this chat's,
             # and nothing was sent.
             return _ended(label,
                           "The Heron add-in in %s is older than this chat's Heron and "

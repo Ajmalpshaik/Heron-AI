@@ -113,7 +113,8 @@ WHAT IT PROVES
   9. revit_undo_last SAYS A WORD TOO (D-157, 2026-11-12) - the one tool on
      the list that is not a door. Revit's Undo SENT is STILL RUNNING, never
      KEPT and never ANSWERED: Revit runs it after the reply. A check
-     (`check_only`) is ANSWERED and sends `undo_check`, never `undo_last`.
+     (`check_only`) is ANSWERED and sends `undo_own_check`, never `undo_check`
+     or `undo_last`; the real one sends `undo_own` (Q-88, 2026-11-16).
      Each refusal is REFUSED, a chat pinned to no model among them, with
      nothing sent; no session and an older add-in are NOT RUN; no answer, an
      answer lost, and an Undo sent in a model this chat does not work on are
@@ -784,6 +785,17 @@ def build_cases(module, core):
              pin=MODEL, kind="undo check"),
         Case("the guard's refusal: something was done after it (undo_refused)", U,
              "REFUSED", {}, error("undo_refused"), pin=MODEL, kind="undo refused"),
+        # Q-88: Heron's last change in that model was made in another chat -
+        # the add-in's undo_refused, with its own sentence, and nothing sent.
+        Case("another chat made Heron's last change there (undo_refused)", U,
+             "REFUSED", {}, {"ok": False, "error": "undo_refused",
+                             "message": "Heron's last change in \"Tower\", 'rename-views' at "
+                                        "14:32, was made in another chat, not this one, and "
+                                        "only the chat that made a change sends Undo for it. "
+                                        "Nothing was sent to Revit and nothing was undone. "
+                                        "Ctrl+Z in Revit still undoes it - or ask in the chat "
+                                        "that made it."},
+             pin=MODEL, kind="undo refused"),
         Case("the Changes switch off, at revit_undo_last", U, "REFUSED", {},
              error("write_disabled"), pin=MODEL, kind="undo refused"),
         Case("the add-in's wrong-model refusal, at revit_undo_last", U, "REFUSED", {},
@@ -1546,15 +1558,16 @@ def the_undo_tool(stage, cases, replies):
         # not crash) - nothing was asked, and the check below says so.
         pass
     asked =[(op, idempotent) for op, _args, idempotent in stage.revit.asked]
-    check(asked == [("undo_check", True)],
-          "a check sends undo_check, once, and never a posting operation - found %r"
+    check(asked == [("undo_own_check", True)],
+          "a check sends undo_own_check, once, and never a posting operation - found %r"
           % (asked,))
     stage.fresh(dict(UNDO_SENT), MODEL)
     module.revit_undo_last()
     asked = [(op, idempotent, sorted(args)) for op, args, idempotent in stage.revit.asked]
-    check(asked == [("undo_guarded", False, ["document", "documentPath", "expectProject"])],
-          "the real one sends undo_guarded once, never safe to resend, naming the pinned "
-          "model by path and title - found %r" % (asked,))
+    check(asked == [("undo_own", False, ["document", "documentPath", "expectProject"])],
+          "the real one sends undo_own once, never safe to resend, naming the pinned "
+          "model by path and title - and no argument naming the chat, which is the "
+          "request's own conversation (Q-88) - found %r" % (asked,))
 
 
 def companion_path_once():

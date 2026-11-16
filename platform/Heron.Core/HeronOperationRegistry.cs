@@ -206,28 +206,41 @@ namespace Heron.Core
                 { "isolate_temporary",  HeronRisk.Execute },
                 { "reset_temporary",    HeronRisk.Execute },
 
-                // READ - what `undo_guarded` would answer now, and NOTHING SENT
+                // READ - what `undo_own` would answer now, and NOTHING SENT
                 // (D-157's check). It posts no command and opens no
                 // transaction: it asks the same guard the same questions and
                 // says yes, for which job, or the exact refusal. Read, as
                 // check_export is: asking whether a thing WOULD be done needs
                 // none of the level doing it needs. Its own name, because the
                 // risk is looked up by name and one name means one thing.
-                { "undo_check",         HeronRisk.Read },
+                { "undo_own_check",     HeronRisk.Read },
 
                 // MODIFY - Revit's own Undo, posted (D-157). It changes the
                 // model - it takes Heron's last kept change back - so it needs
                 // Changes ON like any change. FIXED CODE IN THE ADD-IN: the
                 // command is posted only while HeronUndoGuard saw Heron's own
-                // change land - Revit counted elements in it - and has seen
-                // nothing reported in that model since. Revit has no API that
-                // reads its undo list, so that is the whole of what is known.
+                // change land - Revit counted elements in it - has seen
+                // nothing reported in that model since, and the chat asking is
+                // the chat that kept it (Q-88). Revit has no API that reads
+                // its undo list, so that is the whole of what is known.
                 //
-                // ITS NAME WAS `undo_last` IN THE FIRST BUILD, which posted by
-                // a weaker rule. A new name, so that build - still running in
-                // some Revit - answers that it has no such operation rather
-                // than posting. The old name is declared nowhere.
-                { "undo_guarded",       HeronRisk.Modify },
+                // ITS NAME WAS `undo_last` IN THE FIRST BUILD AND `undo_guarded`
+                // UNTIL 2026-11-16, each posting by a weaker rule. A new name
+                // each time, so an add-in built before - still running in some
+                // Revit - answers that it has no such operation rather than
+                // posting. `undo_last` is declared nowhere.
+                { "undo_own",           HeronRisk.Modify },
+
+                // READ - THE NAMES A CHAT STARTED BEFORE Q-88 STILL SENDS, and
+                // they post nothing any more: both are answered by a refusal
+                // (RevitUndo.OlderChat), because such a chat cannot say whose
+                // change it asks for. Read, because nothing on their path
+                // reads or changes the model - and so that a chat with Changes
+                // off is told why at once, rather than to turn Changes on for a
+                // request that is refused either way. `undo_guarded` is no
+                // longer a MODIFY name: one name, one thing.
+                { "undo_check",         HeronRisk.Read },
+                { "undo_guarded",       HeronRisk.Read },
 
                 // EXECUTE - the Activity pane's Select and Zoom (D-163): the
                 // selection and the view, by element id, in the model the change
