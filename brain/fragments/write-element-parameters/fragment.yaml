@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "write one parameter value onto these elements"
 kind: action
 domain: revit.parameters
 capability: WRITE_ELEMENT_PARAMETERS
-version: 6
+version: 7
 source: OFFICIAL
 risk: MODIFY
 
@@ -82,6 +82,25 @@ purpose: >
 # or the element is in `snapped`. Every other storage type is version 4's road.
 # Version 4's proof below no longer described the code: DRAFT at the time,
 # until Group HZ.
+#
+# VERSION 7 (2026-11-16, FRAGMENT-ISSUES 5b-1703) - A BUILT-IN PARAMETER NAMED
+# BY REVIT'S OWN NAME FOR IT, and back to DRAFT. Reported by Sruthina in
+# Ajmalpshaik/Heron-AI#853 (Revit 2024, `villa 2`, item B2): an architectural
+# column, M_Rectangular Column, carries two writable "Top Level", so version 3's
+# rule (5b-203) refused every post into `ambiguous`, and nothing could set a
+# column's top level after it was placed. `parameterName` written
+# "Top Level {FAMILY_TOP_LEVEL_PARAM}" now means the ONE parameter in the
+# element's own parameter set that IS that built-in, and only while it is
+# called "Top Level" - matched, never guessed (D-54 s3); left empty before the
+# braces, the built-in alone. A word in the braces that is no built-in's name
+# is looked up as the whole name, as version 6 did, and `findings` says so.
+# `ambiguous` now has a finding of its own naming how each clashing parameter
+# is reached - a built-in by its Revit name, a shared one by its GUID through
+# SET_PARAMETER_VALUES_BY_ID, a project parameter only by renaming it.
+# Version 6 was PROVEN on 2026-11-02 (the proof block below, kept as the record
+# of what it proved); its C# moved, so it is DRAFT again until NEEDS-CHECKING
+# Group OB is run (D-30) - on the owner's word of 2026-11-16 to fix every
+# issue from #852 to #854. Kept out of the purpose: it is searched.
 contract:
   needs:
     # Needed for the ONE regeneration that makes the snap visible. Without it
@@ -227,6 +246,13 @@ compatibility-note: >
   `DisplayUnitType` became `ForgeTypeId` in 2021, and `ParameterType` became
   `GetDataType()` in 2022. The write itself touches none of them, so there is
   no `#if` and no version branch to keep in step.
+
+  Version 7 names a built-in by Revit's
+  name for it through `Enum.TryParse` and `Enum.IsDefined` on
+  `BuiltInParameter`, and finds it by `InternalDefinition.BuiltInParameter`
+  in `Element.Parameters` - all unchanged 2020 to 2027. A built-in's NAME is
+  read on the running release, so one Autodesk renamed matches there under
+  its new name only. Compiled against all eight releases on 2026-11-16.
 
   Since version 4 one question does cross that line: is this parameter a
   Yes/No? It is asked by REFLECTION, not by `#if` - `Definition.GetDataType()`

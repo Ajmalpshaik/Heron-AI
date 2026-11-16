@@ -3,6 +3,9 @@
 // `readOnly`, `absent`, `ambiguous`, `refused`, `alreadyThat`, `findings`,
 // `cleared` and `alreadyEmpty` behind.
 //
+// VERSION 7 (2026-11-16, FRAGMENT-ISSUES 5b-1703) - A BUILT-IN PARAMETER BY
+// REVIT'S OWN NAME FOR IT. See "TWO PARAMETERS CAN ANSWER TO ONE NAME" below.
+//
 // VERSION 6 (2026-11-01) - REMOVE_PARAMETER_VALUE MERGED IN: `clear` true
 // empties the parameter instead of writing a value. See "CLEARING" below.
 //
@@ -116,6 +119,103 @@ var ambiguous = new List<ElementId>();
 var refused = new List<ElementId>();
 var alreadyThat = new List<ElementId>();
 var findings = new List<string>();
+
+// ===========================================================================
+// A BUILT-IN NAMED BY REVIT'S OWN NAME FOR IT (version 7, row 5b-1703).
+// ===========================================================================
+//
+// Two writable parameters can carry one name, and version 3 refuses both (the
+// rule under "TWO PARAMETERS" below). When both are BUILT-IN there was no way
+// past it: an architectural column, M_Rectangular Column, carries two
+// writable "Top Level", so a porch post's top level could not be set by name
+// on Revit 2024 (`villa 2`, Ajmalpshaik/Heron-AI#853 item B2). Written
+// "Top Level {FAMILY_TOP_LEVEL_PARAM}", the name means the ONE parameter in the
+// element's own parameter set that IS that built-in, and only while it is
+// called "Top Level" - matched, never guessed (D-54 s3). Left before the
+// braces empty, the built-in alone. A word in the braces that is no name Revit
+// gives a built-in is looked up as the whole name, as version 6 did, and the
+// finding says so when that found nothing. The refusal for two of one name
+// says how each is named.
+//
+// A NAME AS IT IS SPELT IS STILL FOUND THAT WAY FIRST, so every name that
+// worked before reaches what it reached - SET_PARAMETER_VALUES_BY_ID's rule.
+// The working values live inside the closure below, so none of them prints as
+// an answer (the lesson of ROTATE_ELEMENTS' row 5b-1708): what is left at the
+// top is three functions.
+Func<Element, Parameter> parameterOn = null;
+Action<Element> noteClash = null;
+Func<string> clashFinding = null;
+Func<bool, string> bracesFinding = null;
+((Action)(() =>
+{
+    var builtIn = BuiltInParameter.INVALID;
+    var called = "";
+    var inBraces = "";
+    var text = (parameterName ?? "").Trim();
+    var open = text.LastIndexOf('{');
+    if (open >= 0 && text.EndsWith("}"))
+    {
+        inBraces = text.Substring(open + 1, text.Length - open - 2).Trim();
+        BuiltInParameter parsed;
+        if (inBraces.Length > 0 && char.IsLetter(inBraces[0])
+            && Enum.TryParse(inBraces, false, out parsed) && Enum.IsDefined(typeof(BuiltInParameter), parsed)
+            && parsed != BuiltInParameter.INVALID)
+        {
+            builtIn = parsed;
+            called = text.Substring(0, open).Trim();
+        }
+    }
+
+    parameterOn = e =>
+    {
+        if (e == null) return null;
+        var whole = e.LookupParameter(parameterName);
+        if (whole != null || builtIn == BuiltInParameter.INVALID) return whole;
+        Parameter only = null;
+        foreach (Parameter one in e.Parameters)
+        {
+            var definition = one.Definition as InternalDefinition;
+            if (definition == null || definition.BuiltInParameter != builtIn) continue;
+            if (called.Length > 0 && definition.Name != called) continue;
+            if (only != null) return null;   // two would be a guess (D-54 s3)
+            only = one;
+        }
+        return only;
+    };
+
+    // How each parameter of the clashing name can be named so only it is reached.
+    var ways = new List<string>();
+    noteClash = e =>
+    {
+        foreach (var one in e.GetParameters(parameterName))
+        {
+            var definition = one.Definition as InternalDefinition;
+            string way;
+            if (definition != null && definition.BuiltInParameter != BuiltInParameter.INVALID)
+                way = "'" + parameterName + " {" + definition.BuiltInParameter + "}'"
+                    + (one.IsReadOnly ? " (read-only)" : "");
+            else if (one.IsShared)
+                way = "a shared parameter, GUID " + one.GUID + " - SET_PARAMETER_VALUES_BY_ID reaches it as '"
+                    + parameterName + " {" + one.GUID + "}'";
+            else
+                way = "a project parameter, which has no other name - rename it in Manage > Project Parameters";
+            if (!ways.Contains(way)) ways.Add(way);
+        }
+    };
+    clashFinding = () => string.Join("; ", ways.Take(6));
+
+    // Braces that named no built-in, said only when the name then found nothing.
+    bracesFinding = anyAbsent =>
+    {
+        if (!anyAbsent || inBraces.Length == 0 || builtIn != BuiltInParameter.INVALID) return null;
+        Guid guid;
+        return Guid.TryParse(inBraces, out guid)
+            ? "'{" + inBraces + "}' is a GUID. This card names a parameter by its name or a built-in by Revit's "
+              + "name for it; a shared parameter by its GUID is SET_PARAMETER_VALUES_BY_ID's"
+            : "'{" + inBraces + "}' is not a name Revit gives a built-in parameter, so '" + text
+              + "' was looked up as a whole name";
+    };
+}))();
 
 // ===========================================================================
 // CLEARING (version 6, from REMOVE_PARAMETER_VALUE).
@@ -360,10 +460,12 @@ foreach (var element in elements)
     if (element.GetParameters(parameterName).Count > 1)
     {
         ambiguous.Add(element.Id);
+        // VERSION 7: say how each can be named, so the refusal is a way out.
+        noteClash(element);
         continue;
     }
 
-    var parameter = element.LookupParameter(parameterName);
+    var parameter = parameterOn(element);
 
     if (clear)
     {
@@ -372,7 +474,7 @@ foreach (var element in elements)
             // On the TYPE rather than the instance - a different, wider act.
             Element elementType = null;
             try { elementType = doc.GetElement(element.GetTypeId()); } catch { elementType = null; }
-            if (elementType != null && elementType.LookupParameter(parameterName) != null)
+            if (elementType != null && parameterOn(elementType) != null)
             {
                 clearOnType++;
                 refused.Add(element.Id);
@@ -529,7 +631,7 @@ if (pending.Count > 0 || pendingReference.Count > 0)
     // Version 5: the id Revit holds now must be the one the name resolved to.
     for (var i = 0; i < pendingReference.Count; i++)
     {
-        var parameter = pendingReference[i].LookupParameter(parameterName);
+        var parameter = parameterOn(pendingReference[i]);
         if (parameter == null) unverified.Add(pendingReference[i].Id);
         else if (askedReference[i].Equals(parameter.AsElementId())) written++;
         else snapped.Add(pendingReference[i].Id);
@@ -537,7 +639,7 @@ if (pending.Count > 0 || pendingReference.Count > 0)
 
     for (var i = 0; i < pending.Count; i++)
     {
-        var parameter = pending[i].LookupParameter(parameterName);
+        var parameter = parameterOn(pending[i]);
 
         if (parameter == null)
         {
@@ -554,6 +656,18 @@ if (pending.Count > 0 || pendingReference.Count > 0)
         if (Math.Abs(stored - want) <= Math.Abs(want) * 1e-9 + 1e-12) written++;
         else snapped.Add(pending[i].Id);
     }
+}
+
+// VERSION 7: two parameters of one name - which, and how to name each.
+if (ambiguous.Count > 0)
+{
+    findings.Add(string.Format("{0} element(s) carry more than one parameter called '{1}', so which one is "
+        + "meant would be a guess and nothing on them was touched. Name the one meant: {2}",
+        ambiguous.Count, parameterName, clashFinding()));
+}
+{
+    var braces = bracesFinding(absent.Count > 0);
+    if (braces != null) findings.Add(braces);
 }
 
 if (notAYesNoWord > 0)

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -186,7 +186,29 @@ capability: SET_PARAMETER_VALUES_BY_ID
 #   Widened, not made new: the duplicate check of 2026-11-11 found this card and
 # WRITE_ELEMENT_PARAMETERS an OVERLAP and said several pairs at once belong
 # here (all or nothing), not there. DRAFT until NEEDS-CHECKING Group NG.
-version: 8
+#
+# VERSION 9 (2026-11-16, FRAGMENT-ISSUES 5b-1703) - A BUILT-IN PARAMETER NAMED
+# BY REVIT'S OWN NAME FOR IT, and back to DRAFT. Reported by Sruthina in
+# Ajmalpshaik/Heron-AI#853 (Revit 2024, `villa 2`, item B2): an architectural
+# column, M_Rectangular Column, carries two writable "Top Level", so this card
+# refused it and said to name the one meant "as 'Top Level {its GUID}'" - and
+# a GUID reaches shared parameters alone, so the porch posts' top level could
+# not be set at all. A name written "Top Level {FAMILY_TOP_LEVEL_PARAM}" now
+# means the ONE parameter in the element's own set that IS that built-in, and
+# only while it is called what comes before the braces (left empty, the
+# built-in alone) - version 6's rule for a GUID, applied to a built-in, and
+# never a guess (D-54 s3). A word in the braces that is neither a GUID nor a
+# built-in's name finds nothing, as before. The refusal for two writable
+# parameters of one name now names each in the form that reaches it -
+# "'Top Level {FAMILY_TOP_LEVEL_PARAM}' or 'Top Level {...}'" - and says a
+# project parameter has no second name. A name found as it is spelt is found
+# that way first, so every name that worked before reaches what it reached.
+# Version 8 was PROVEN on 2026-11-13 (the proof block below, kept as the record
+# of what it proved); its C# moved, so it is DRAFT again until NEEDS-CHECKING
+# Group OB is run (D-30) - on the owner's word of 2026-11-16 to fix every
+# issue from #852 to #854. Kept out of the purpose and the identity line, for
+# the reason version 3 gives.
+version: 9
 source: OFFICIAL
 risk: MODIFY
 
@@ -384,6 +406,9 @@ contract:
 
 # VERSION 8 (row 5b-1504) changed impl/ again: the proof below describes none of
 # versions 4 to 8, and the card is DRAFT until Group NG proves version 8.
+# (Group NG did, 2026-11-13: the proof block below is version 8's. VERSION 9,
+# row 5b-1703, changed impl/ once more, so it is the record now; DRAFT until
+# Group OB.)
 # VERSION 3's PROOF, KEPT AS A RECORD. Version 4 changed impl/ (rows 5b-1259,
 # 5b-1260), so its fingerprint no longer described the code and the card was
 # DRAFT at the time, until NEEDS-CHECKING Group HZ proves version 4 (D-30). A
@@ -473,6 +498,13 @@ compatibility-note: >
   FilteredElementCollector.OfCategoryId, WhereElementIsNotElementType and
   SubTransaction - all present from 2020 to 2027 - and still never builds an
   ElementId from a number: a key is matched as the text a parameter shows.
+
+  Version 9 names a built-in by Revit's
+  name for it through `Enum.TryParse` and `Enum.IsDefined` on
+  `BuiltInParameter`, and finds it by `InternalDefinition.BuiltInParameter`
+  in `Element.Parameters` - all unchanged 2020 to 2027. A built-in's NAME is
+  read on the running release, so one Autodesk renamed matches there under
+  its new name only. Compiled against all eight releases on 2026-11-16.
 
   Since row 5b-1259 an element reference takes a name. `Parameter.Set(ElementId)`,
   `AsElementId`, `ElementType.FamilyName`, `FilteredElementCollector.OfClass`

@@ -226,3 +226,27 @@ negative_pattern:
 
   - given: a * row and an exact row naming one of the same types
     expect: both refused - another row's key names it too
+
+# VERSION 9 (2026-11-16, row 5b-1703) - a BUILT-IN parameter named by Revit's
+# own name for it, "<name> {<BuiltInParameter>}". NEEDS-CHECKING Group OB.
+# Arranged on a scratch project Heron makes from English DefaultMetric.rte:
+# one M_Rectangular Column (an ARCHITECTURAL column, Columns) placed on
+# Level 1 with Mark OB-POST. Each FAILS on version 8, which read a GUID only.
+positive_by_builtin:
+  - given: key=Mark|in=Columns;OB-POST|Top Level {FAMILY_TOP_LEVEL_PARAM}=Level 2
+    expect: >
+      written 1; the column's Top Level reads Level 2 in Properties, and the
+      other parameter called Top Level is untouched. Version 8 refused it -
+      two writable "Top Level", "name the one meant as 'Top Level {its GUID}'"
+      - and no GUID reaches a built-in
+negative_by_builtin:
+  - given: key=Mark|in=Columns;OB-POST|Top Level=Level 2 (no braces)
+    expect: >
+      written 0; refused says two parameters on it are called Top Level and
+      names each as it can be reached - "'Top Level {FAMILY_TOP_LEVEL_PARAM}'
+      or 'Top Level {...}'" - never "{its GUID}" for a built-in. Write down the
+      second built-in's name: row 5b-1703 left it unread
+  - given: key=Mark|in=Columns;OB-POST|Comments {FAMILY_TOP_LEVEL_PARAM}=x (the built-in under another name)
+    expect: written 0; refused says it has no parameter called that; nothing written
+  - given: key=Mark|in=Columns;OB-POST|Top Level {NOT_A_BUILT_IN}=Level 2
+    expect: written 0; it has no parameter called that; nothing written
