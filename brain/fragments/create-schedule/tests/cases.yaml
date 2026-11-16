@@ -30,6 +30,13 @@ positive:
   - given: category Areas, areaScheme "Gross Building"
     expect: an area schedule of the Gross Building scheme, madeAs naming the scheme
 
+  # VERSION 4 (2026-11-16) - row 5b-1730. FAILS on version 3. NOT RUN.
+  - given: listKind=keynote legend, fieldNames=Key Value, Keynote Text, on Heron's scratch project (Group OC)
+    expect: >
+      created, `madeAs` "... with 2 column(s)", `missingFields` EMPTY, the
+      findings saying each is "already a column", and NO "created with NO
+      columns" line. Version 3 put both in `missingFields` and said NO columns
+
 negative:
   - given: a field name the category does not have
     expect: >
@@ -127,6 +134,12 @@ negative:
 
   - given: listKind "pie chart"
     expect: refused, naming every kind this makes; nothing made
+
+  # VERSION 4 - the warning must still fire when it is true.
+  - given: listKind=sheets, fieldNames=none
+    expect: >
+      created with "created with NO columns - it will print as an empty box"
+      - Revit adds no field to a sheet list itself, so 0 is the real count
 
 second_route:
   - Revit's own View > Schedules > Schedule/Quantities with the same category and fields, compared column for column

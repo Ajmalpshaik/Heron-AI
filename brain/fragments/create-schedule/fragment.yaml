@@ -9,6 +9,20 @@ semantic-identity: "make a real schedule view of this category with these fields
 kind: action
 domain: revit.schedules
 capability: CREATE_SCHEDULE
+# VERSION 4 (2026-11-16) - A COLUMN REVIT ADDED ITSELF IS A COLUMN, and back
+# to DRAFT. FRAGMENT-ISSUES row 5b-1730 (Sruthina, Revit 2024, model `villa 2`,
+# Ajmalpshaik/Heron-AI#854 item a): a keynote legend asked with Key Value and
+# Keynote Text answered "'Key Value' could not be added - already included"
+# and "created with NO columns" while `madeAs` read back 2 columns - Revit's
+# CreateKeynoteLegend adds both itself, and the warning counted only the
+# fields this card added. Version 4 says a field the definition already holds
+# is "already a column" (never in `missingFields`), and judges "NO columns" by
+# the definition's own count after the add - the count `madeAs` reads.
+# Version 3 was PROVEN (the proof block below, kept as the record of what it
+# proved); its C# moved, so it is DRAFT again until NEEDS-CHECKING Group OC is
+# run (D-30) - on the owner's word of 2026-11-11 that a fragment found wrong
+# may be changed even though it is proven.
+#
 # VERSION 3 (2026-11-01, on the owner's word in the brief of that day's
 # session - FRAGMENT-ISSUES row 5b-1367, renumbered from 5b-1363 when main
 # took that number). Ajmal PS made a duct length schedule through Heron on his
@@ -41,7 +55,7 @@ capability: CREATE_SCHEDULE
 # settings of a schedule that exists, and are SET_SCHEDULE_OPTIONS'
 # (FRG-VIEW-155). Keys added to a key schedule are ADD_KEY_SCHEDULE_ROWS'
 # (FRG-VIEW-158): this makes the table, with no rows.
-version: 3
+version: 4
 source: OFFICIAL
 risk: MODIFY
 
@@ -176,44 +190,42 @@ contract:
       type: string
 
 proof:
-  date: '2026-11-02'
+  date: '2026-11-16'
   by: Ajmal PS
-  model: P1102 MEP (21,446 elements), Revit 2020, session 33624
+  model: Heron OC Tags (3,232 elements), Revit 2024, session 18772
   positive_case: run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned categoryGiven true, categoryName
-    'Ducts', created 1 item(s) [id 1020292], familyId (null), familyWord , fieldsAdded 2 item(s)
-    [Family and Type, Length], findings 0 item(s), isCategory Func`2, keyName , kind schedule,
-    kindText schedule, kindWord schedule, madeAs 'HERON TEST SCHEDULE' - asked as a schedule;
-    Revit reads it back as a schedule of 'Ducts', with 2 column(s), missingFields 0 item(s),
-    name HERON TEST SCHEDULE, refused (null), revitSaid (null), sameText Func`3, schedule
-    ViewSchedule, schemeId (null), schemeWord , sortWanted , wanted 2 item(s) [Family and
-    Type, Length]. inputs came categoryId as given; fieldNames as given (2); scheduleName
-    as given; listKind not given - "schedule", the card's own default (optional); sortByField
-    not given - "none", the card's own default (optional); keyParameterName not given - "none",
-    the card's own default (optional); areaScheme not given - "none", the card's own default
-    (optional); noteBlockFamily not given - "none", the card's own default (optional). on
-    P1102 MEP
-  negative_case: "run with categoryId=Views, fieldNames=Family and Type,Length, scheduleName=HERON\
-    \ TEST SCHEDULE 2 instead - chosen because it should not contain what this fragment reports\
-    \ - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.\
-    \ returned categoryGiven true, categoryName 'Views', created (null), familyId (null),\
-    \ familyWord , fieldsAdded 0 item(s), findings 0 item(s), isCategory Func`2, keyName ,\
-    \ kind schedule, kindText schedule, kindWord schedule, madeAs , missingFields 0 item(s),\
-    \ name HERON TEST SCHEDULE 2, refused Revit declined to create a schedule for that category\
-    \ - not every category can be scheduled. Revit said: categoryId is not a valid category\
-    \ for a regular schedule.  Parameter name: categoryId, revitSaid categoryId is not a valid\
-    \ category for a regular schedule.\r\nParameter name: categoryId, sameText Func`3, schedule\
-    \ (null), schemeId (null), schemeWord , sortWanted , wanted 2 item(s) [Family and Type,\
-    \ Length]. inputs came categoryId as given; fieldNames as given (2); scheduleName as given;\
-    \ listKind not given - \"schedule\", the card's own default (optional); sortByField not\
-    \ given - \"none\", the card's own default (optional); keyParameterName not given - \"\
-    none\", the card's own default (optional); areaScheme not given - \"none\", the card's\
-    \ own default (optional); noteBlockFamily not given - \"none\", the card's own default\
-    \ (optional). on P1102 MEP"
+    the transaction group ROLLED BACK afterwards. returned categoryGiven false, categoryName
+    that category, created 1 item(s) [id 352738], familyId (null), familyWord , fieldsAdded
+    0 item(s), findings 2 item(s) ['Key Value' is already a column - Revit puts it in a keynote...,
+    'Keynote Text' is already a column - Revit puts it in a keyn...], isCategory Func`2, keyName
+    , kind keynotes, kindText keynote legend, kindWord keynote legend, madeAs 'OC Keynotes'
+    - asked as a keynote legend; Revit reads it back as a schedule of 'Keynote Tags', with
+    2 column(s), missingFields 0 item(s), name OC Keynotes, refused (null), revitSaid (null),
+    sameText Func`3, schedule ViewSchedule, schemeId (null), schemeWord , sortWanted , wanted
+    2 item(s) [Key Value, Keynote Text]. inputs came categoryId not given - "none", the card's
+    own default (optional); fieldNames as given (2); scheduleName as given; listKind as given;
+    sortByField not given - "none", the card's own default (optional); keyParameterName not
+    given - "none", the card's own default (optional); areaScheme not given - "none", the
+    card's own default (optional); noteBlockFamily not given - "none", the card's own default
+    (optional). on Heron OC Tags
+  negative_case: run with categoryId=Walls, fieldNames=Key Value, Keynote Text, listKind=keynote
+    legend, scheduleName=OC Keynotes instead - chosen because it should not contain what this
+    fragment reports - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned categoryGiven true, categoryName 'Walls', created (null),
+    familyId (null), familyWord , fieldsAdded 0 item(s), findings 0 item(s), isCategory Func`2,
+    keyName , kind keynotes, kindText keynote legend, kindWord keynote legend, madeAs , missingFields
+    0 item(s), name OC Keynotes, refused a keynote legend lists Keynote Tags, and the category
+    given was 'Walls'. Send Keynote Tags, or no category, with this kind. NOTHING WAS CREATED,
+    revitSaid (null), sameText Func`3, schedule (null), schemeId (null), schemeWord , sortWanted
+    , wanted 2 item(s) [Key Value, Keynote Text]. inputs came categoryId as given; fieldNames
+    as given (2); scheduleName as given; listKind as given; sortByField not given - "none",
+    the card's own default (optional); keyParameterName not given - "none", the card's own
+    default (optional); areaScheme not given - "none", the card's own default (optional);
+    noteBlockFamily not given - "none", the card's own default (optional). on Heron OC Tags
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: ac04fe709ac7d4cc
+  fingerprint: 595d5f90bd22e06b
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
