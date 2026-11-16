@@ -49,3 +49,22 @@ and OD3 - and [`tools/jobs/open-family-for-editing-od-2026-11-16.yaml`](../../to
 is OD1 and OD2 as a batch-prove job, for the D-30 record. **That job runs through `validate --write`,
 not `revit_change`**: if its positive passes without the throw, OD1 by `revit_change` is still the row
 that answers row 5b-1750. Accepting the draft is the owner's signature.
+
+### Results, 2026-11-16 - Revit 2024, sessions 18772 and 48700
+
+**Arranged (OD0):** `od-scratch.rvt` made by Heron from `English\DefaultMetric.rte`, four walls 352514-352517 round
+6000 x 4000, folders `C:\Users\Public\heron-work\od` and `od-2` made. **The job file had no `write: true`**, so
+its first run went as a read and the run guard refused the Save As - corrected in this file; the run below used
+the corrected copy. OD4-OD7 ran on this branch's add-in, built and deployed to Revit 2024 (DLL hash
+`aa99b0d0ae8487f8`, equal to the build), Revit restarted.
+
+| Row | Result |
+|---|---|
+| OD1, run 2026-11-16 | **PASS** - `opened true`, `activeAfter M_Single-Flush`, `savedTo C:/Users/Public/heron-work/od\M_Single-Flush.rfa`, `problem` empty; and **the read-back line appeared**: *"Revit answered "An internal error has occurred." while opening it, but the window in front IS ..."* - Revit still throws, the card now tells the truth. |
+| OD2, run 2026-11-16 | **PASS** - `opened false`, *"No loaded family is called 'ZZZNOTAFAMILY'."*, nothing written, `activeAfter` empty. |
+| OD3, run 2026-11-16 | **Safe, by another route** - with OD1's family window still open, both `saveFolder=...od-2` and the same folder were stopped by **Heron's run guard** (*"a Save As of 'M_Single-Flush'"* / *"a save of 'M_Single-Flush'"* - saving an open document is a Publish job), never `opened true` on the earlier window. Revit's own words: none, the guard stopped first. |
+| OD4, run 2026-11-16 | **PASS** - *"A picture of a region of 'Level 1' (FloorPlan) ... round 2 element(s) ... from a temporary copy of the plan cropped to it"*, the model-position line (corners -720,4720 to 6720,-720), *"The temporary copy of the plan is gone ... The plan itself was not changed."* Read through the API after: no `Level 1 Copy 1`, the plan's crop off, crop region hidden, annotation crop off, as before, and the document unmodified. `view` had to be *FloorPlan: Level 1* - the template's ceiling plan is also *Level 1*. |
+| OD5, run 2026-11-16 | **PASS** - *"... the box -500,-500 to 1500,1500 mm ..."*, the plan unchanged. |
+| OD6, run 2026-11-16 | **PASS** - the elevation *North*: *"'North' is a Elevation, and a region is pictured from a floor, ceiling, engineering or area plan ... Nothing was pictured."*; `around=999999999`: *"1 of the 1 id(s) name no placed element ... Nothing was pictured."* (The template has no 3D view.) |
+| OD7, run 2026-11-16 | **PASS** - the whole plan, no *"region"* in the first line, *"Nothing was changed."* |
+| OD8, OD9 | **NOT RUN** - they test this branch's Python on the PC's main Heron folder on main, so they wait until it is merged. |

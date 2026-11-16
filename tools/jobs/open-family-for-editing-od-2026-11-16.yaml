@@ -22,6 +22,7 @@ model: od-scratch.rvt, Heron's scratch project from DefaultMetric.rte (OD0), Rev
 
 jobs:
   - fragment: open-family-for-editing
+    write: true
     expect: opened
     set:
       familyName: M_Single-Flush
