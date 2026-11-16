@@ -11,9 +11,8 @@
 > has moved into [07](../../07-installation-and-update.md), a decision and a NEEDS-CHECKING group; then
 > this note is retired.
 >
-> **Source of the idea:** idea 12 of the research note on PR #877 (branch `claude/great-hopper-4uqtlb`,
-> `docs/work-notes/investigations/2026-11-15-revit-mcp-landscape.md`), not yet on `main` - so it is named
-> here, not linked. The behaviours below are taken from that note's list, never from another project's
+> **Source of the idea:** idea 12 of [the research note of 2026-11-15](../investigations/2026-11-15-revit-mcp-landscape.md)
+> (PR #877, merged the same day this note was written). The behaviours below are taken from that note's list, never from another project's
 > script ([31](../../31-studying-the-existing-libraries.md), [D-25](../../DECISIONS.md)).
 
 ## 1. What it is for
