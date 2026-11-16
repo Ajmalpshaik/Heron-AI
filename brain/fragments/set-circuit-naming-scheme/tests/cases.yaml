@@ -16,6 +16,9 @@
 # card's make with parts "panel; load name" kept - before the first negative.
 # Place one branch panelboard DB-1
 # and one circuit on it, so the circuit's name shows the scheme.
+# FOR VERSION 3's CASES (row 5b-1739), by hand in Manage > Project Parameters:
+# a text project parameter "Phase" bound to Electrical Circuits, and a shared
+# or project parameter "Voltage" bound to Electrical Equipment ONLY.
 # REPORT_ELECTRICAL_SETTINGS with show "naming" is run before and after every
 # case - the second route.
 #
@@ -62,7 +65,56 @@ positive:
       never read as a value called "none" (row 5b-1432); a "none" between
       them is the defect
 
+  - given: >
+      the "Phase" project parameter of electrical circuits in place: action
+      make, schemeName "Panel-Phase", parts "panel; revit: phase", separator
+      "-"
+    expect: >
+      changed 1; after holds "\"Panel-Phase\": Panel \"-\" + " and Revit's
+      own label for CIRCUIT_PHASE_PARAM - "revit:" takes Revit's parameter
+      only (version 3, row 5b-1739)
+
+  - given: >
+      the same: action make, schemeName "Panel-ProjectPhase", parts "panel;
+      project: Phase", separator "-"
+    expect: >
+      changed 1 and after holds "\"Panel-ProjectPhase\": Panel \"-\" + Phase
+      (project parameter)" - version 3 says a project parameter is one - OR
+      refused "Revit does not accept Panel + Phase (project parameter) ..." if
+      Revit takes no project parameter in a scheme. Either is
+      Revit's answer and is recorded as it comes; a scheme holding Revit's own
+      phase here is the defect
+
+  - given: >
+      the "Voltage" parameter bound to Electrical Equipment only: action make,
+      schemeName "Panel-Voltage", parts "panel; voltage", separator "-"
+    expect: >
+      changed 1; Revit's own Voltage taken, NOT refused - a parameter not
+      bound to Electrical Circuits is never counted as a second "voltage"
+      (version 3's guard)
+
+  - given: >
+      the "Phase" project parameter of electrical circuits in place, and a
+      shared "Phase" bound to Electrical Equipment only beside it: action
+      make, schemeName "Panel-Bound-Phase", parts "panel; project: Phase"
+    expect: >
+      the circuit one taken - the same answer as "Panel-ProjectPhase" above,
+      never "2 project parameters are named" - "project:" takes only a
+      parameter bound to Electrical Circuits (version 3, the review of row
+      5b-1739)
+
 negative:
+  - given: >
+      the "Phase" project parameter of electrical circuits in place: action
+      make, schemeName "Panel-Phase-Asked", parts "panel; phase", separator
+      "-" - a name of its own, so a kept positive can never stop it early
+    expect: >
+      changed 0; refused "\"phase\" names both Revit's own ... and the
+      project parameter \"Phase\" of electrical circuits - which one is never
+      guessed. Write \"revit: phase\" for Revit's, or \"project: Phase\" for
+      the project parameter." Version 2 made the scheme with Revit's phase
+      and said nothing (row 5b-1739)
+
   - given: >
       action make, schemeName "Standard" - a name the model already has -
       parts "panel; circuit number", separator "-"

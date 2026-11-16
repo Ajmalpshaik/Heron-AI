@@ -4,6 +4,13 @@
 //
 // ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 //
+// VERSION 3 (2026-11-16) - A WORD THAT NAMES TWO PARAMETERS IS ASKED, NEVER
+// GUESSED (row 5b-1739). Version 2 took Revit's own parameter for "phase",
+// "voltage", "rating" and the rest without a word, even where the model has a
+// project parameter of electrical circuits by that name. Now that word is
+// refused with both named, and "revit: phase" or "project: Phase" says which;
+// see the word loop.
+//
 // VERSION 2 (2026-11-16) - THE PARAMETERS REVIT TAKES IN A SCHEME (row
 // 5b-1660): "circuit number" is the circuit naming index and "start slot" the
 // slot index, and the other parameters Revit's note lists are named; see the
@@ -88,7 +95,9 @@ Func<ElementId, string> paramName = id =>
     foreach (var k in known)
         if (new ElementId(k.Item1) == id) return label(k.Item1);
     var e = doc.GetElement(id);
-    return e != null ? e.Name : "a parameter Heron does not name (id " + id + ")";
+    // VERSION 3: a project parameter is SAID to be one, so a scheme holding a
+    // project "Phase" never reads like one holding Revit's own (row 5b-1739).
+    return e != null ? e.Name + " (project parameter)" : "a parameter Heron does not name (id " + id + ")";
 };
 
 // ---- The model's schemes, read fresh whenever asked ------------------------
@@ -167,7 +176,8 @@ if (mode == "make")
     var words = partsText.Split(new[] { ';', ',', '+' }, StringSplitOptions.RemoveEmptyEntries)
         .Select(w => w.Trim()).Where(w => w.Length > 0).ToList();
     var knownWords = string.Join(", ", known.Select(k => quoted(label(k.Item1)) + " (" + string.Join(", ", k.Item2) + ")"))
-        + ", or a project parameter of electrical circuits by its name";
+        + ", or a project parameter of electrical circuits by its name - \"revit: \" or \"project: \" before a "
+        + "word says which, where both are named that";
 
     if (taken != null || !CircuitNamingScheme.IsNameUnique(doc, wanted))
         skipped.Add("A circuit naming scheme is already named " + quoted(taken != null ? taken.Name : wanted)
@@ -180,14 +190,109 @@ if (mode == "make")
         // Each word to a parameter: a built-in one by its label or a short word,
         // else a project parameter by its exact name.
         var parameterElements = new FilteredElementCollector(doc).OfClass(typeof(ParameterElement)).ToElements();
-        var ids = new List<ElementId>();
-        foreach (var w in words)
+
+        // VERSION 3 - row 5b-1739. The project parameters BOUND TO ELECTRICAL
+        // CIRCUITS, by name: only one of those can be what a word meant beside
+        // Revit's own parameter. A shared "Voltage" on equipment is common and
+        // is not a circuit parameter, so it is never counted against "voltage".
+        // Each is kept with its parameter element's id, so "project: Voltage"
+        // takes THAT one - never an equipment family's shared "Voltage" of the
+        // same name, which would make the way out a second refusal.
+        var circuitBound = new List<Tuple<string, ElementId>>();
+        var bindings = doc.ParameterBindings.ForwardIterator();
+        while (bindings.MoveNext())
         {
+            var definition = bindings.Key;
+            var binding = bindings.Current as ElementBinding;
+            if (definition == null || binding == null || binding.Categories == null) continue;
+            var inside = definition as InternalDefinition;
+            foreach (Category c in binding.Categories)
+                if (c != null && c.Id == circuitCategory)
+                {
+                    circuitBound.Add(Tuple.Create(definition.Name, inside != null ? inside.Id : ElementId.InvalidElementId));
+                    break;
+                }
+        }
+
+        var ids = new List<ElementId>();
+        foreach (var typed in words)
+        {
+            // "revit: phase" takes Revit's own only, "project: Phase" a project
+            // parameter only. Any other word before a colon is part of the word.
+            var w = typed;
+            string only = null;
+            var colon = typed.IndexOf(':');
+            if (colon > 0)
+            {
+                var head = typed.Substring(0, colon).Trim().ToLowerInvariant();
+                if (head == "revit" || head == "project")
+                {
+                    only = head;
+                    w = typed.Substring(colon + 1).Trim();
+                }
+            }
+            if (w.Length == 0)
+            {
+                refused.Add("Nothing follows " + quoted(typed.Trim()) + " - name the parameter after it.");
+                continue;
+            }
+
             ElementId id = null;
-            foreach (var k in known)
-                if (string.Equals(label(k.Item1), w, StringComparison.OrdinalIgnoreCase)
-                    || k.Item2.Any(a => string.Equals(a, w, StringComparison.OrdinalIgnoreCase)))
-                { id = new ElementId(k.Item1); break; }
+            Tuple<BuiltInParameter, string[]> builtIn = null;
+            if (only != "project")
+                foreach (var k in known)
+                    if (string.Equals(label(k.Item1), w, StringComparison.OrdinalIgnoreCase)
+                        || k.Item2.Any(a => string.Equals(a, w, StringComparison.OrdinalIgnoreCase)))
+                    { id = new ElementId(k.Item1); builtIn = k; break; }
+
+            // TWO PARAMETERS ANSWER TO THIS WORD - asked, never guessed (D-33).
+            // Capitals are ignored here, where a project parameter is TAKEN only by
+            // its exact name: "phase" beside a project parameter "Phase" is still
+            // a word two parameters answer to.
+            if (builtIn != null && only == null)
+            {
+                var same = circuitBound.Select(b => b.Item1)
+                    .FirstOrDefault(n => string.Equals(n, w, StringComparison.OrdinalIgnoreCase));
+                if (same != null)
+                {
+                    refused.Add(quoted(w) + " names both Revit's own " + quoted(label(builtIn.Item1))
+                        + " and the project parameter " + quoted(same) + " of electrical circuits - which one is never "
+                        + "guessed. Write " + quoted("revit: " + w) + " for Revit's, or " + quoted("project: " + same)
+                        + " for the project parameter.");
+                    continue;
+                }
+            }
+            if (id == null && only == "revit")
+            {
+                refused.Add(quoted(w) + " is not one of Revit's circuit parameters Heron names. The parts Heron knows: "
+                    + knownWords + ".");
+                continue;
+            }
+
+            // "project:" TAKES ONLY A PARAMETER BOUND TO ELECTRICAL CIRCUITS, by
+            // its exact name - the list the question above was asked from.
+            if (only == "project")
+            {
+                var bound = circuitBound.Where(b => string.Equals(b.Item1, w, StringComparison.Ordinal)).ToList();
+                if (bound.Count == 1 && bound[0].Item2 != ElementId.InvalidElementId) id = bound[0].Item2;
+                else if (bound.Count > 1)
+                {
+                    refused.Add(bound.Count + " project parameters of electrical circuits are named " + quoted(w)
+                        + " - which one is never guessed.");
+                    continue;
+                }
+                else
+                {
+                    var near = circuitBound.Select(b => b.Item1)
+                        .FirstOrDefault(n => string.Equals(n, w, StringComparison.OrdinalIgnoreCase));
+                    var elsewhere = parameterElements.Any(p => string.Equals(p.Name, w, StringComparison.Ordinal));
+                    refused.Add("No project parameter of electrical circuits is named " + quoted(w)
+                        + (near != null ? " - " + quoted(near) + " differs only in capitals and is not taken"
+                           : elsewhere ? " - a parameter of that name is in the model, but not bound to Electrical Circuits" : "")
+                        + ". Nothing was made.");
+                    continue;
+                }
+            }
             if (id == null)
             {
                 var hits = parameterElements.Where(p => string.Equals(p.Name, w, StringComparison.Ordinal)).ToList();
