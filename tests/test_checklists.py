@@ -22,7 +22,7 @@ WHAT IT PROVES
   2. IT IS KEPT WHOLE under the commands' data home, found by its name, never
      silently replaced, and a broken file is named rather than hidden.
   3. THE PASS RULE reads the add-in's own shapes - a number, "N item(s)",
-     "N entry(ies)", true/false - and "(null)" or text is NOT RUN, not 0.
+     "N entry(ies)", true/false - and "(null)" or text is NO DATA (D-165), not 0.
   4. A RUN asks once per check, in order; a check not run says why and is
      never counted as a pass; the failing ids are offered only when every one
      of them arrived.
@@ -266,7 +266,7 @@ def rules():
                          ("0 item(s)", 0), ("7 entry(ies)", 7), ("true", 1), ("false", 0), (4, 4)):
         check(Q.as_number(sent) == number, "%r reads as %r" % (sent, number))
     for sent in ("(null)", "", "Level 1", "NaN", None, "ElementId"):
-        check(Q.as_number(sent) is None, "%r is no number - the check is NOT RUN, never 0" % (sent,))
+        check(Q.as_number(sent) is None, "%r is no number - the check is NO DATA, never 0" % (sent,))
     check(Q.parse_rule("failures <= 3") == ("failures", "<=", 3)
           and Q.parse_rule(" x>=1.5 ") == ("x", ">=", 1.5), "a rule is read in three parts")
     check(all(Q.holds(v, op, 2) == want for v, op, want in
@@ -334,11 +334,13 @@ def running(home):
     check(rows[0]["ids"] == ["501", "502"] and rows[0]["idsComplete"], "a failing check carries its ids")
     check(rows[2]["why"].startswith("CHECK_PIPES is DRAFT") and rows[2]["value"] is None,
           "a check not run says why, with no value")
-    check(answer["counts"] == {"pass": 1, "fail": 1, "not run": 1, "total": 3, "done": 3},
+    check(answer["counts"] == {"pass": 1, "fail": 1, "missing": 0, "not run": 1, "total": 3, "done": 3},
           "NOT RUN is its own count, never added to the passes")
-    check("1 meet the value checked, 1 do not, 1 not run" in answer["said"]
-          and "A check not run is not a pass" in answer["said"] and "Tower MEP" in answer["said"],
-          "the sentence counts each, names the model and says a not-run is not a pass")
+    check("1 meet the value checked, 1 do not, 0 could not decide - data missing, 1 not run"
+          in answer["said"] and "A check not run is not a pass" in answer["said"]
+          and "Tower MEP" in answer["said"]
+          and "Coverage: 2 of 3 check(s) decided, 0 with no data, 1 not run." in answer["said"],
+          "the sentence counts each, names the model, gives its coverage and says a not-run is not a pass")
     check(len(steps) == 2 and steps[0]["running"] and steps[0]["counts"]["done"] == 1,
           "the page is told after each check but the last, marked running")
     partial = Q.judge(1, dict(checklist["checks"][0]),
@@ -354,10 +356,14 @@ def running(home):
           and "Heron received" not in full["why"],
           "with every id sent (D-158) all 40 are offered for Select, and nothing is said missing")
     gone = Q.judge(1, dict(checklist["checks"][0]), {"ran": True, "provides": {"findings": "0 item(s)"}})
-    check(gone["state"] == "not run" and "did not send back 'failures'" in gone["why"],
-          "an output that did not come back is NOT RUN, never a pass")
+    # D-165: the model WAS read, so these are NO DATA - could not decide, data
+    # missing - never NOT RUN, and never a pass or a fail.
+    check(gone["state"] == "missing" and gone["label"] == "NO DATA"
+          and "did not send back 'failures'" in gone["why"] and "No data is not a pass" in gone["why"],
+          "an output that did not come back is NO DATA, never a pass")
     null = Q.judge(1, dict(checklist["checks"][0]), {"ran": True, "provides": {"failures": "(null)"}})
-    check(null["state"] == "not run", "an output that came back as nothing is NOT RUN")
+    check(null["state"] == "missing" and "came back empty" in null["why"],
+          "an output that came back as nothing is NO DATA")
     check(answer["run"] and all(st["run"] == answer["run"] for st in steps),
           "every step of one run carries the same token, for the page's Select")
     calls = []
@@ -392,10 +398,10 @@ def wording(answer):
     words += [p for p in Q.problems(bad_with(rule="report == 0", ids="elements"), CONTRACTS)]
     hits = [m.group(0) for text in words for m in BANNED.finditer(text)]
     check(not hits, "never compliant, clean or healthy%s" % (" - found %s" % hits if hits else ""))
-    check([s[0] for s in Q.STATES] == ["pass", "fail", "not run"]
+    check([s[0] for s in Q.STATES] == ["pass", "fail", "missing", "not run"]
           and dict((s[0], s[2]) for s in Q.STATES) == {"pass": "#3ecf8e", "fail": "#ff5a4e",
-                                                       "not run": "#f5a524"},
-          "the states are the brand's Success, Error and Warning (D-149)")
+                                                       "missing": "#f5a524", "not run": "#f5a524"},
+          "the states are the brand's Success, Error and Warning (D-149) - NO DATA (D-165) a Warning")
     brand = io.open(os.path.join(ROOT, "docs", "brand", "README.md"), encoding="utf-8").read().upper()
     check(all(("`%s`" % s[2].upper()) in brand for s in Q.STATES), "each colour is in docs/brand's table")
 
