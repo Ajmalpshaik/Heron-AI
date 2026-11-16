@@ -47,7 +47,14 @@ namespace Heron.Kernel.TestHost
     ///
     ///   HeronAudit, HeronLease, HeronOperationRegistry
     ///     already have suites that name them. Row 7 counted them; they are
-    ///     not this host's job.
+    ///     not this host's job - with the two exceptions below.
+    ///
+    /// HeronLease's RULE is run here since 2026-11-16, in section 11, for the
+    /// one question tests/test_bridge_roundtrip.py cannot answer through the
+    /// pipe: that a lease held while a job waits for the modeller outlasts
+    /// its lifetime (row 5b-1745). That takes minutes of real time, so it is
+    /// asked of HeronLeaseState on a clock passed in - never of the one lease
+    /// a process has, and never reading heron.config.
     ///
     /// HeronPermissions WAS on that list, and came off it on 2026-09-28 with
     /// D-106. Its suites read it as TEXT, which was enough while it had one
@@ -61,7 +68,8 @@ namespace Heron.Kernel.TestHost
     /// for one question its text suites cannot answer: whether the show door
     /// and the temporary isolate really pass the gate with every switch off.
     /// That is the registry's level and section 8's rule together, and only
-    /// running both says it.
+    /// running both says it. Section 12 (2026-11-16) runs the one sentence
+    /// both of the add-in's refusals of an undeclared name read (row 5b-1742).
     /// </summary>
     internal static class Program
     {
@@ -91,6 +99,8 @@ namespace Heron.Kernel.TestHost
             Permissions();
             ShowDoor();
             SourceScan();
+            LeaseHeld();
+            Undeclared();
 
             Console.WriteLine();
             if (Failures.Count > 0)
@@ -1155,6 +1165,222 @@ namespace Heron.Kernel.TestHost
             Check(looked > 0 && opening.Count == 0,
                   "every one of the " + looked + " READ to EXECUTE fragment sources opens no "
                   + "transaction of its own" + (opening.Count == 0 ? "" : " - " + string.Join(", ", opening)));
+        }
+
+        // ------------------------------------------------------------------
+        // HeronLease - held while a job waits for the modeller, row 5b-1745.
+        // ------------------------------------------------------------------
+        /// <summary>
+        /// The bridge claims the lease as a request ARRIVES and nothing renewed
+        /// it while the job ran, so a Keep or Discard box, the delete box or a
+        /// pick left open past bridge.leaseMinutes let a chat with another
+        /// client id take the Revit mid-wait. The add-in now holds the lease for
+        /// the job's own client while it waits. This runs the RULE, on a clock
+        /// of its own: HeronLeaseState, never the one lease this process has
+        /// and never heron.config.
+        ///
+        /// By reflection, for the binding note host's reason: on the code before
+        /// the row the rule has no clock to pass and no hold, and these fail as
+        /// checks, not as a build error.
+        /// </summary>
+        private static void LeaseHeld()
+        {
+            Console.WriteLine();
+            Console.WriteLine("11. HeronLease - held while a job waits for the modeller, and only then (row 5b-1745)");
+
+            var type = typeof(HeronLease).Assembly.GetType("Heron.Core.HeronLeaseState");
+            Check(type != null, "the lease's rule can be run on a clock passed in (HeronLeaseState)");
+            var facadeHold = typeof(HeronLease).GetMethod("Hold", new[] { typeof(string) });
+            var facadeEnd = typeof(HeronLease).GetMethod("EndHold", new[] { typeof(long) });
+            Check(facadeHold != null && facadeEnd != null,
+                  "and the add-in's one lease can be held and let go (HeronLease.Hold, EndHold)");
+            if (facadeEnd != null)
+            {
+                Check(Equals(facadeEnd.Invoke(null, new object[] { 0L }), false),
+                      "letting go of no hold changes nothing");
+            }
+            if (type == null) return;
+
+            var claimRule = type.GetMethod("Claim", new[] { typeof(string), typeof(DateTime), typeof(TimeSpan) });
+            var holderRule = type.GetMethod("Holder", new[] { typeof(DateTime) });
+            var leftRule = type.GetMethod("SecondsRemaining", new[] { typeof(DateTime), typeof(TimeSpan) });
+            var releaseRule = type.GetMethod("Release", new[] { typeof(string), typeof(DateTime) });
+            var clearRule = type.GetMethod("Clear", Type.EmptyTypes);
+            var holdRule = type.GetMethod("Hold", new[] { typeof(string), typeof(DateTime) });
+            var endRule = type.GetMethod("EndHold", new[] { typeof(long), typeof(DateTime), typeof(TimeSpan) });
+            Check(claimRule != null && holderRule != null && leftRule != null
+                  && releaseRule != null && clearRule != null,
+                  "it claims, names its holder, says the time left, releases and clears");
+            Check(holdRule != null && endRule != null,
+                  "and a job waiting for the modeller can hold it and end the hold");
+            if (claimRule == null || holderRule == null || leftRule == null || releaseRule == null
+                || clearRule == null || holdRule == null || endRule == null) return;
+
+            // The installed numbers: a five-minute lease, and the longest the
+            // dispatcher waits for a job that asked - busy 10 + operation 60 +
+            // ask 300 seconds.
+            var life = TimeSpan.FromMinutes(5);
+            var longest = TimeSpan.FromSeconds(10 + 60 + 300);
+            var t0 = new DateTime(2026, 11, 16, 9, 0, 0, DateTimeKind.Utc);
+            Func<TimeSpan, DateTime> at = offset => t0 + offset;
+            Func<double, TimeSpan> s = seconds => TimeSpan.FromSeconds(seconds);
+
+            Func<object> fresh = () => Activator.CreateInstance(type);
+            Func<object, string, DateTime, LeaseDecision> claim =
+                (lease, who, when) => (LeaseDecision)claimRule.Invoke(lease, new object[] { who, when, life });
+            Func<object, DateTime, string> holder =
+                (lease, when) => (string)holderRule.Invoke(lease, new object[] { when });
+            Func<object, DateTime, double> left =
+                (lease, when) => (double)leftRule.Invoke(lease, new object[] { when, life });
+            Func<object, string, DateTime, bool> release =
+                (lease, who, when) => (bool)releaseRule.Invoke(lease, new object[] { who, when });
+            Func<object, string, DateTime, long> hold =
+                (lease, who, when) => (long)holdRule.Invoke(lease, new object[] { who, when });
+            Func<object, long, DateTime, bool> end =
+                (lease, ticket, when) => (bool)endRule.Invoke(lease, new object[] { ticket, when, life });
+
+            // THE DEFECT'S SHAPE, with no hold: claimed as the request arrives,
+            // lapsed five minutes later - while the dispatcher still waits.
+            var plain = fresh();
+            Check(claim(plain, "chat-a", t0).Granted && claim(plain, "chat-a", t0).Fresh == false,
+                  "a lease claimed and renewed at once is granted, and the renewal is not fresh");
+            Check(holder(plain, at(s(299))) == "chat-a" && holder(plain, at(life + s(1))) == null,
+                  "with no hold it lapses a lifetime after it was claimed - inside the dispatcher's "
+                  + longest.TotalSeconds + " s wait for a job that asked");
+            var other = claim(plain, "chat-b", at(life + s(2)));
+            Check(other.Granted && other.Fresh,
+                  "and a chat with another client id then takes it - row 5b-1745 as it stood");
+
+            // HELD FOR THE WAIT: claimed at t0, the box up at 70 s.
+            var waited = fresh();
+            claim(waited, "chat-a", t0);
+            var ticket = hold(waited, "chat-a", at(s(70)));
+            Check(ticket != 0, "a job of the holder's that waits for the modeller holds its lease");
+            Check(holder(waited, at(longest)) == "chat-a",
+                  "it is still the holder's at the end of the dispatcher's longest wait ("
+                  + longest.TotalSeconds + " s), past the lease's own " + life.TotalSeconds + " s");
+            var refused = claim(waited, "chat-b", at(longest));
+            Check(!refused.Granted && refused.Holder == "chat-a",
+                  "another chat is refused while it waits, not handed the Revit mid-wait");
+            Check(refused.Message != null && refused.Message.StartsWith(
+                      "This Revit is in use by another chat, so Heron has refused rather than taking it "
+                      + "over mid-job. Nothing was sent to Revit.", StringComparison.Ordinal)
+                  && refused.Message.Contains("waiting for an answer in Revit"),
+                  "in the lease's own first sentence, and told the other chat's job waits for an "
+                  + "answer in Revit - not a time that has already run out");
+            Check(left(waited, at(longest)) == life.TotalSeconds,
+                  "while held it says the least it can still last - a whole lifetime after the wait");
+            Check(holder(waited, at(TimeSpan.FromHours(2))) == "chat-a",
+                  "a box left open two hours holds it as long - Revit's thread can do nothing else then");
+
+            var endedAt = at(TimeSpan.FromHours(2) + s(5));
+            Check(end(waited, ticket, endedAt), "the job ends and the hold is let go");
+            Check(Math.Abs(left(waited, endedAt) - life.TotalSeconds) < 0.001,
+                  "and the lease's clock starts again from that moment, as a request starts it");
+            Check(holder(waited, endedAt + life - s(1)) == "chat-a"
+                  && holder(waited, endedAt + life + s(1)) == null,
+                  "then it lapses a lifetime later, exactly as after any request");
+            Check(!end(waited, ticket, endedAt + s(2)), "a hold already let go is let go once");
+
+            // NEVER TAKES A LEASE.
+            var free = fresh();
+            Check(hold(free, "chat-a", t0) == 0 && holder(free, at(s(1))) == null,
+                  "a hold on a free Revit holds nothing and takes nothing");
+            Check(hold(free, null, t0) == 0 && hold(free, "", t0) == 0,
+                  "and a job with no client id holds nothing - the Activity pane's carries none");
+            claim(free, "chat-b", at(s(10)));
+            Check(hold(free, "chat-a", at(s(20))) == 0,
+                  "a job cannot hold another client's lease");
+            Check(holder(free, at(s(10) + life + s(1))) == null,
+                  "and that lease lapses on its own time, untouched");
+
+            // THE HOLDER'S OWN REQUESTS RENEW IT AS EVER, AND DO NOT END THE HOLD.
+            var renewing = fresh();
+            claim(renewing, "chat-a", t0);
+            var renewed = hold(renewing, "chat-a", at(s(5)));
+            var again = claim(renewing, "chat-a", at(s(400)));
+            Check(again.Granted && !again.Fresh,
+                  "the holder's own request during the wait - a stop from a second pipe - is granted");
+            Check(holder(renewing, at(s(400) + life + s(10))) == "chat-a",
+                  "and does not end the hold: still the holder's past that request's own lifetime");
+            end(renewing, renewed, at(s(1000)));
+            Check(holder(renewing, at(s(1000) + life + s(1))) == null,
+                  "until the job ends, and a lifetime after that it lapses");
+
+            // RELEASED AND CLEARED EXACTLY AS TODAY - a hold ends with the lease.
+            var released = fresh();
+            claim(released, "chat-a", t0);
+            var dropped = hold(released, "chat-a", at(s(10)));
+            Check(release(released, "chat-a", at(s(20))) && holder(released, at(s(21))) == null,
+                  "the holder's release still gives it up at once, a hold or not");
+            var taker = claim(released, "chat-b", at(s(30)));
+            Check(taker.Granted && taker.Fresh, "and another chat may take it then, as before");
+            Check(!end(released, dropped, at(s(40))),
+                  "the job's hold ends nothing once its lease was released");
+            Check(holder(released, at(s(30) + life - s(1))) == "chat-b"
+                  && holder(released, at(s(30) + life + s(1))) == null,
+                  "and never lengthens the next holder's lease");
+            claim(released, "chat-a", at(s(30) + life + s(2)));
+            Check(!end(released, dropped, at(s(30) + life + s(3))),
+                  "nor the same client's next lease, taken afresh");
+
+            var cleared = fresh();
+            claim(cleared, "chat-a", t0);
+            var wiped = hold(cleared, "chat-a", at(s(10)));
+            clearRule.Invoke(cleared, new object[0]);
+            Check(holder(cleared, at(s(11))) == null,
+                  "the ribbon's disconnect clears it at once, a hold included");
+            Check(!end(cleared, wiped, at(s(12))) && holder(cleared, at(s(13))) == null,
+                  "and the job's hold, ended afterwards, brings nothing back");
+
+            // NOT HELD, THE REFUSAL IS THE ONE IT ALWAYS WAS.
+            var ordinary = fresh();
+            claim(ordinary, "chat-a", t0);
+            var plainRefusal = claim(ordinary, "chat-b", at(s(60)));
+            Check(!plainRefusal.Granted && plainRefusal.Message != null
+                  && plainRefusal.Message.Contains("It frees up after about 4 minute(s) without activity there")
+                  && !plainRefusal.Message.Contains("waiting for an answer"),
+                  "with no job waiting, another chat's refusal reads as it always did");
+        }
+
+        // ------------------------------------------------------------------
+        // HeronOperationRegistry.Unknown - one sentence, two refusals, 5b-1742.
+        // ------------------------------------------------------------------
+        /// <summary>
+        /// The add-in refuses an operation it does not declare twice over: the
+        /// dispatcher on the pipe's thread, before the queue, and the gate on
+        /// Revit's thread for any other door. Both read this one sentence, so a
+        /// busy Revit and an idle one say it the same way. By reflection: on
+        /// the code before the row there is no such sentence to ask for.
+        /// </summary>
+        private static void Undeclared()
+        {
+            Console.WriteLine();
+            Console.WriteLine("12. An operation the add-in does not declare is refused in one set of words (row 5b-1742)");
+
+            var unknown = typeof(HeronOperationRegistry).GetMethod("Unknown", new[] { typeof(string) });
+            Check(unknown != null, "the tool registry writes the refusal itself (HeronOperationRegistry.Unknown)");
+            if (unknown == null) return;
+
+            var said = (string)unknown.Invoke(null, new object[] { "no_such_operation" });
+            Check(said == "Heron has no operation called 'no_such_operation'. It has: "
+                          + HeronOperationRegistry.Describe() + ".",
+                  "it is the gate's sentence as it always read - the operation named, then every "
+                  + "declared one");
+            var missing = new List<string>();
+            foreach (var op in HeronOperationRegistry.Operations)
+                if (said == null || !said.Contains(op)) missing.Add(op);
+            Check(missing.Count == 0, "every declared operation is named in it"
+                                      + (missing.Count == 0 ? "" : " - not " + string.Join(", ", missing)));
+            Check(((string)unknown.Invoke(null, new object[] { null })).Contains("'(none)'"),
+                  "a request with no operation is named (none)");
+            Check(!HeronOperationRegistry.IsDeclared("undo_last") && !HeronOperationRegistry.IsDeclared(null)
+                  && !HeronOperationRegistry.IsDeclared(""),
+                  "a name nobody declared - undo_last, retired - and none at all are undeclared, so the "
+                  + "dispatcher refuses them before the queue");
+            Check(HeronOperationRegistry.IsDeclared("stop_session") && HeronOperationRegistry.IsDeclared("undo_own")
+                  && HeronOperationRegistry.IsDeclared("run_fragment_write"),
+                  "while every name this add-in runs is declared, so its path is the one it always was");
         }
     }
 }

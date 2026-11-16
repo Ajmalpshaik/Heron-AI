@@ -47,12 +47,23 @@ WHAT IT HOLDS
      guard.py); this suite checks that case is still there.
   5. THE TWO NEW ANSWERS ARE CLASSIFIED: `awaiting_click` is still running
      (wait, never ask again), `waits_on_change_path` is refused.
+  6. THE LEASE IS HELD FOR THE WAIT, as text - row 5b-1745. The bridge claims
+     the lease as a request arrives and nothing renewed it while the job ran,
+     so a box or a pick left open past `bridge.leaseMinutes` let a chat with
+     another client id take the Revit mid-wait. AwaitingModeller - which the
+     delete box and the pick both go through - now holds the lease for the
+     job's own client, and Execute lets it go as the job ends, before the
+     guard is disarmed. The rule itself is RUN by tests/Heron.Kernel.TestHost
+     (section 11, on a clock of its own) and through the pipe by
+     tests/test_bridge_roundtrip.py; this holds the wiring, which needs
+     Revit's assembly to build.
 
 WHAT IT CANNOT DO
 -----------------
 Run Revit's pick. Whether a click after a minute really reaches the card, and
 a slow series of clicks really comes back as points, is NEEDS-CHECKING Group
-NH, rows NH12 to NH14.
+NH, rows NH12 to NH14. Whether a second chat is refused while a real box is
+up past five minutes is Group H, row H11.
 """
 
 import io
@@ -347,6 +358,54 @@ def addin_section():
           "job's (tests/test_stack_guard.py)")
 
 
+def lease_section():
+    print()
+    print("6. The lease is held for the job's own client while it waits, and let go as it ends "
+          "(row 5b-1745)")
+    dispatcher = read(DISPATCHER_CS)
+    modeller = body_of(dispatcher, "internal static void AwaitingModeller()", "\n        }")
+    marked = modeller.find("job.MarkAskedModeller();")
+    held = modeller.find("job.HoldLease();")
+    check(marked >= 0 and held > marked,
+          "AwaitingModeller holds the running job's lease as it marks the job - the Keep or "
+          "Discard box's wait")
+    delete = body_of(dispatcher, "internal static void AwaitingDeleteAnswer()", "\n        }")
+    click = body_of(dispatcher, "internal static void AwaitingClick()", "\n        }")
+    check("AwaitingModeller();" in delete and "AwaitingModeller();" in click,
+          "and the delete box and the pick go through it, so all three waits hold it")
+
+    hold = body_of(dispatcher, "public void HoldLease()", "\n            }")
+    check('HeronLease.Hold(Json.ReadString(Request, "client"))' in hold,
+          "held for the job's OWN client - the request's `client`, the id the bridge claimed "
+          "the lease by")
+    bridge = read(os.path.join(ROOT, "revit", "Heron.Bridge", "BridgeServer.cs"))
+    check('HeronLease.Claim(Json.ReadString(request, "client"))' in bridge,
+          "which is still claimed once as the request arrives, as before - who may take a "
+          "lease is unchanged")
+    check(bridge.count("HeronLease.Hold(") == 0 and bridge.count("HeronLease.EndHold(") == 0,
+          "and the bridge itself never holds one - only a job Revit is running does")
+
+    execute = body_of(dispatcher, "public void Execute(UIApplication app)", "private void RaiseForTheRest()")
+    cleared = execute.find("_running = null;")
+    ended = execute.find("job.EndLeaseHold();")
+    disarmed = execute.find("guarded = HeronRunGuard.Disarm(app);")
+    check(cleared >= 0 and ended > cleared and disarmed > ended,
+          "Execute lets it go as the job returns, in the finally around Run, before the run guard "
+          "is disarmed - whichever way Run ended")
+    end = body_of(dispatcher, "public void EndLeaseHold()", "\n            }")
+    check("Interlocked.Exchange(ref _leaseHold, 0)" in end and "HeronLease.EndHold(hold)" in end,
+          "once, and only a hold that was taken")
+
+    lease = read(os.path.join(ROOT, "platform", "Heron.Core", "HeronLease.cs"))
+    facade_end = body_of(lease, "public static bool EndHold(long hold)", "\n        }")
+    check("catch (Exception)" in facade_end and "DefaultMinutes" in facade_end,
+          "letting go never throws - a hold left standing would be a lease that never lapses")
+    rule_hold = body_of(lease, "public long Hold(string clientId, DateTime nowUtc)", "\n        }")
+    check(bool(rule_hold) and re.search(r"_holder\s*=(?!=)", rule_hold) is None
+          and "_term++" not in rule_hold,
+          "and a hold never takes a lease - only one its client holds already")
+
+
 def failure_section():
     print()
     print("5. The two new answers are classified, never the fail-closed unknown")
@@ -372,6 +431,7 @@ def main():
     server_section()
     addin_section()
     failure_section()
+    lease_section()
     print()
     if FAILURES:
         print("FAILED - %d check(s)" % len(FAILURES))

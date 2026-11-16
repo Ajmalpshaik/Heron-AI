@@ -213,11 +213,24 @@ namespace Heron.Revit.Addin
         ///
         /// It only ever LENGTHENS a wait, and only for the job running now.
         /// It cannot shorten one, start one, or answer the box.
+        ///
+        /// AND THE LEASE IS HELD FOR THE JOB'S OWN CLIENT until the job ends -
+        /// row 5b-1745. The bridge claims it once, as the request arrives, and
+        /// this wait can outlast it (bridge.leaseMinutes, 5 as installed,
+        /// against up to busy + operation + ask timeouts, over six minutes), so
+        /// a chat with another client id could take this Revit while the box
+        /// was up. Held only if that client holds it now - HeronLease.Hold
+        /// takes nothing - and ended in Execute as the job returns, after
+        /// which the lease runs on and ends exactly as it always has.
         /// </summary>
         internal static void AwaitingModeller()
         {
             var job = _running;
-            if (job != null) job.MarkAskedModeller();
+            if (job != null)
+            {
+                job.MarkAskedModeller();
+                job.HoldLease();
+            }
 
             // AND THE BANNER STEPS ASIDE (D-126). It is Topmost, so it would
             // sit over the box it is waiting on; Execute brings it back the
@@ -398,11 +411,13 @@ namespace Heron.Revit.Addin
             // never touches the Revit API and never waits: it sets the flag
             // the running fragment's next check reads, and answers.
             //
-            // A SECOND PLACE OUTSIDE THE GATE, and the only one. Gate runs on
-            // Revit's thread inside Execute, so nothing answered here reaches
-            // it - the same bypass BridgeServer's ping, info and release have.
-            // It is safe for the reason theirs is: `stop` is declared Read,
-            // changes no model, and the gate would have let it through.
+            // A SECOND PLACE OUTSIDE THE GATE, and the only one that RUNS
+            // anything. Gate runs on Revit's thread inside Execute, so nothing
+            // answered here reaches it - the same bypass BridgeServer's ping,
+            // info and release have. It is safe for the reason theirs is:
+            // `stop` is declared Read, changes no model, and the gate would have
+            // let it through. (The refusal of an undeclared name below runs
+            // nothing: it is the gate's own first answer, given early.)
             // tests/test_tool_registry.py names what Dispatch answers itself
             // and fails on a second name, so adding one is a conversation.
             //
@@ -419,6 +434,29 @@ namespace Heron.Revit.Addin
             // is for; `stop`, the old name, names none and is refused here,
             // before the queue, so its refusal never waits behind a job.
             if (op == "stop" || op == "stop_session") return AnswerStop(op, request);
+
+            // AN OPERATION THIS ADD-IN DOES NOT KNOW IS REFUSED HERE, BEFORE THE
+            // BANNER AND THE QUEUE - row 5b-1742. It used to be refused only by
+            // the gate, inside Execute, on Revit's thread: so while a job held
+            // that thread it waited behind it, the banner went up for it, and
+            // the answer was revit_busy - "a dialog may be open" - where an
+            // idle Revit answered unknown_op. A name a newer client sends to
+            // this add-in is the case that matters: it is told the truth at
+            // once, whatever Revit is doing.
+            //
+            // FROM THE TOOL REGISTRY ALONE. It is plain data in Heron.Core,
+            // safe on this thread; no Revit API is touched here and nothing is
+            // queued. The words are the gate's own, from one place
+            // (HeronOperationRegistry.Unknown), so a busy Revit and an idle one
+            // cannot say it two ways. NOT A WAY ROUND THE GATE: it only ever
+            // refuses, and the gate refuses the same name - its check stays, the
+            // second of two, for a door that reaches Run some other way. A
+            // DECLARED operation goes on exactly as before.
+            if (!HeronOperationRegistry.IsDeclared(op))
+            {
+                RecordRefusal(HeronIdentity.NewWorkflowId(), request, "unknown_op");
+                return Json.Error("unknown_op", HeronOperationRegistry.Unknown(op));
+            }
 
             var raiser = _event;
             if (raiser == null)
@@ -756,6 +794,14 @@ namespace Heron.Revit.Addin
                             // The box is answered or the job is over: the
                             // banner comes back to say how it ended (D-126).
                             if (job.AskedModeller) _banner.StepAside(false);
+
+                            // AND THE LEASE IT HELD FOR THE WAIT IS LET GO
+                            // (row 5b-1745): its clock starts again from now,
+                            // as after any request. Before the guard is
+                            // disarmed, and it never throws, so a hold can
+                            // never be left standing - a lease that would
+                            // then never lapse.
+                            job.EndLeaseHold();
 
                             // Closes what the job left open in the background
                             // before it lets go - after every path out of Run,
@@ -1319,6 +1365,7 @@ namespace Heron.Revit.Addin
             private int _awaitingClick;
             private int _callerGone;
             private long _answerBy;
+            private long _leaseHold;
 
             public RevitJob(string request, string workflowId, bool fromPane)
             {
@@ -1404,6 +1451,27 @@ namespace Heron.Revit.Addin
             public void MarkAwaitingClick() { Interlocked.Exchange(ref _awaitingClick, 1); }
 
             public bool AwaitingClick { get { return Volatile.Read(ref _awaitingClick) == 1; } }
+
+            /// <summary>
+            /// Row 5b-1745, on Revit's thread: the job waits for the modeller,
+            /// so the lease of the client that sent it is held until the job
+            /// ends - its `client`, the id the bridge claimed it by. Once per
+            /// job; a job whose client holds no lease (the Activity pane's,
+            /// which carries none, or a lease already lapsed or another's)
+            /// holds nothing, and is asked again at its next wait.
+            /// </summary>
+            public void HoldLease()
+            {
+                if (Interlocked.Read(ref _leaseHold) != 0) return;
+                Interlocked.Exchange(ref _leaseHold, HeronLease.Hold(Json.ReadString(Request, "client")));
+            }
+
+            /// <summary>The job is over: let the hold go, once. Never throws.</summary>
+            public void EndLeaseHold()
+            {
+                var hold = Interlocked.Exchange(ref _leaseHold, 0);
+                if (hold != 0) HeronLease.EndHold(hold);
+            }
 
             /// <summary>
             /// The Stopwatch moment after which a Delete is not kept - set once,

@@ -46,6 +46,13 @@ Revit words. Seen to fail on the code as it stood. ONE ASSERTION THAT PINNED
 THE OLD DOOR WAS CHANGED, not defended: DispatchFromPane was held to
 `dispatcher.Dispatch(request)`, the pipe's own door; it is now held to the
 dispatcher's pane door, which shares Dispatch's queue, event and gate.
+
+SELECT AND ZOOM, ROW 5b-1825 (D-176, 2026-11-16). They were refused for a
+chat's model-hold quiet minutes after its change, exactly when the modeller
+looks at it. They now look past the hold - for the pane's own job and that
+operation only. Section 3a holds the wiring; the rule is run by
+tests/Heron.ModelHold.TestHost, section 10. Both seen to fail on the code as
+it stood.
 """
 
 import io
@@ -258,6 +265,48 @@ def pane_undo():
           "and no chat's Heron ever sends it - the MCP side names it nowhere")
 
 
+def pane_looks():
+    """
+    D-176, row 5b-1825: the pane's Select and Zoom look past a chat's model hold.
+
+    A chat holds a model for its quiet minutes after its last request there
+    (D-141), and the pane's requests carry no conversation, so Select and Zoom
+    pressed on a change a chat had just kept were refused "in use by another
+    chat" - exactly when the modeller looks at it. The owner, 2026-11-16: "Yes,
+    both." They change the selection and the view, never the model.
+
+    The rule is RUN by tests/Heron.ModelHold.TestHost, section 10; this holds
+    where Run asks it, and that it is asked with the job's own pane mark and
+    never anything in the request's text.
+    """
+    print("\n3a. the pane's Select and Zoom look past a chat's hold - D-176, row 5b-1825")
+    operations = literal("RevitOperations.cs")
+    run = NOTE.body_of(operations, "public static string Run(UIApplication app, string request)")
+    check(in_order(run, "var gate = Gate(op);", 'if (op != "undo_from_pane")',
+                   "if (!HeronModelHold.LooksPastHolds(op, RevitDispatcher.RunningFromPane))",
+                   "HoldModel(app, request, out holdKey)", "RevitUndo.Waiting(app, request, op)",
+                   "return Route(app, request, op);"),
+          "Run asks the hold's rule before the hold, with the operation and the job's own pane "
+          "mark - after the gate, and before the wait for an Undo and the route")
+    at = run.find("HeronModelHold.LooksPastHolds(")
+    asked = run[at:run.find(")", at) + 2] if at >= 0 and run.find(")", at) >= 0 else ""
+    check(bool(asked) and "request" not in asked and "Json." not in asked,
+          "nothing in the request's text decides it: the operation by name, the door off the job")
+    hold = literal("HeronModelHold.cs")
+    rule_text = NOTE.body_of(hold, "public static bool LooksPastHolds(string operation, bool fromPane)")
+    check(re.search(r"return\s+fromPane\s*&&\s*string\.Equals\(\s*operation\s*,\s*PaneShowOperation\s*,"
+                    r"\s*StringComparison\.Ordinal\s*\)\s*;", rule_text) is not None
+          and 'public const string PaneShowOperation = "show_elements";' in hold,
+          "BOTH halves or nothing: the pane's own door AND show_elements, exactly")
+    registry = NOTE.read(os.path.join(ROOT, "platform", "Heron.Core", "HeronOperationRegistry.cs")) or ""
+    check(re.search(r'\{\s*"show_elements",\s*HeronRisk\.Execute\s*\}', registry) is not None,
+          "and show_elements is EXECUTE - the selection and the view, never the model")
+    rule_code = literal("HeronActivity.cs")
+    show = NOTE.body_of(rule_code, "static string ShowRequest(Row row, bool zoom)")
+    check('Json.Str("op", "show_elements")' in show and 'Json.Str("claim", "no")' in show,
+          "the pane still sends Select and Zoom as a look that claims nothing (D-163 item 5 kept)")
+
+
 def rule():
     print("\n4. what the pane lists, built and run without Revit")
     tfm = NOTE._tfm()
@@ -309,6 +358,7 @@ def rule():
 def main():
     wiring()
     pane_undo()
+    pane_looks()
     host = rule()
     print()
     if FAILURES:
