@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -126,26 +126,28 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-09-16'
+  date: '2026-11-16'
   by: Ajmal PS
-  model: PIPE (3,332 elements), Revit 2020, session 8084
-  positive_case: 'run as it would normally be run. returned activeAfter TRG_Cap_Copper, findings
-    3 item(s) [opened in Revit; in front now: TRG_Cap_Copper, ''TRG_Cap_Copper'' is now the
-    document in front, opened from C..., THE PROJECT HAS NOT CHANGED. This is a copy on disk
-    that sta...], folder C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/da8dd1fb-1d3e-4581-9a66-290b5cf512a8/scratchpad/rfa,
-    opened true, problem , savedTo C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/da8dd1fb-1d3e-4581-9a66-290b5cf512a8/scratchpad/rfa\TRG_Cap_Copper.rfa,
-    wanted TRG_Cap_Copper. inputs came familyName as given; saveFolder as given. on PIPE'
-  negative_case: 'run with familyName=ZZZNOTAFAMILY, saveFolder=C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/da8dd1fb-1d3e-4581-9a66-290b5cf512a8/scratchpad/rfa
-    instead - chosen because it should not contain what this fragment reports. returned activeAfter
-    , findings 2 item(s) [NOT opened; in front now: <unchanged>, No loaded family is called
-    ''ZZZNOTAFAMILY''.], folder C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/da8dd1fb-1d3e-4581-9a66-290b5cf512a8/scratchpad/rfa,
-    opened false, problem , savedTo , wanted ZZZNOTAFAMILY. inputs came familyName as given;
-    saveFolder as given. on TRG_Cap_Copper'
+  model: od-scratch (3,207 elements), Revit 2024, session 18772
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned activeAfter M_Single-Flush, findings
+    4 item(s) [opened in Revit; in front now: M_Single-Flush, Revit answered "An internal
+    error has occurred." while openi..., ''M_Single-Flush'' is now the document in front,
+    opened from C..., ...], folder C:/Users/Public/heron-work/od, noTransactionOpen true,
+    opened true, problem , savedTo C:/Users/Public/heron-work/od\M_Single-Flush.rfa, wanted
+    M_Single-Flush. inputs came noTransactionOpen - run with no transaction open (D-125);
+    familyName as given; saveFolder as given. on od-scratch'
+  negative_case: 'run with familyName=ZZZNOTAFAMILY, saveFolder=C:/Users/Public/heron-work/od
+    instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    activeAfter , findings 2 item(s) [NOT opened; in front now: <unchanged>, No loaded family
+    is called ''ZZZNOTAFAMILY''.], folder C:/Users/Public/heron-work/od, noTransactionOpen
+    true, opened false, problem , savedTo , wanted ZZZNOTAFAMILY. inputs came noTransactionOpen
+    - run with no transaction open (D-125); familyName as given; saveFolder as given. on od-scratch'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 91705aa131c3a37d
-
+  fingerprint: f6e750e5899c3e5a
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
