@@ -48,9 +48,15 @@ namespace Heron.Bridge.TestHost
                 // bridge says with no handler at all.
                 bridge.RequestHandler = request =>
                 {
+                    // "test_model_in_use" stands in for the add-in's model hold
+                    // (D-141) refusing a call after the bridge took the lease -
+                    // row 5b-1662.
+                    if (Json.ReadString(request, "op") == "test_model_in_use")
+                        return Json.Error("model_in_use",
+                            "Model 'Test' is in use by another chat. Nothing was sent to the model.");
                     if (Json.ReadString(request, "op") != "test_wait")
                         return Json.Error("unknown_op",
-                            "No handler for that here. This host answers ping, info and test_wait.");
+                            "No handler for that here. This host answers ping, info, test_wait and test_model_in_use.");
                     int ms;
                     int.TryParse(Json.ReadString(request, "ms"), out ms);
                     Thread.Sleep(Math.Max(0, Math.Min(ms, 10000)));

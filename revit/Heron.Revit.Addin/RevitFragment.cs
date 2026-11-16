@@ -786,6 +786,22 @@ namespace Heron.Revit.Addin
                     readBefore = RevitReadBack.Read(target, RevitReadBack.SelectedIn(app, target),
                                                     HeronReadBack.MostRead);
 
+                // THE ROLLBACK CHECK'S "BEFORE" - NEEDS-CHECKING A16b. What the
+                // fragment was handed, then the selection, read with D-156's
+                // reader on EVERY write, kept or not: a rollback can only be
+                // shown to have put a value back if the value was read before
+                // the job touched it. Handed first because A16b's views came
+                // from a chain with nothing selected. With write setup steps the
+                // needs are not bound yet (bindAfterSetup), so only the
+                // selection is read. Read once, outside D-142's second run, like
+                // readBefore. See HeronRollbackWitness.ReadBefore.
+                var witnessBefore = RevitReadBack.Read(target,
+                    RevitReadBack.HandedTo(bindAfterSetup ? null : globals.__heron.Values,
+                                           RevitReadBack.SelectedIn(app, target),
+                                           HeronReadBack.MostRead),
+                    HeronReadBack.MostRead);
+                var notTheChange = RevitReadBack.NotTheChange();
+
                 // WHERE A CONFIRMED DELETE IS RUN AGAIN - D-142. The whole run,
                 // setup steps and all, is what was measured and shown, so the
                 // whole run is what is made again, from its own new group: one
@@ -800,6 +816,7 @@ namespace Heron.Revit.Addin
                 using (var group = new TransactionGroup(target, label))
                 using (var changed = new RevitChangedSet(app.Application, target, label))
                 {
+                    watch.ReadBefore(witnessBefore.Values, notTheChange);
                     group.Start();
 
                     // WHAT REVIT SAYS THIS RUN TOUCHED, for D-126's question and
@@ -2605,6 +2622,9 @@ namespace Heron.Revit.Addin
         /// disagree (HeronRollbackWitness has the reasoning):
         ///
         ///   what THIS job added    any still standing, and it did not hold
+        ///   what THIS job changed  of what it was handed or selected, any
+        ///                          value not reading as it did before the job,
+        ///                          and it did not hold (A16b)
         ///   what the LAST KEPT     any gone, and this rollback took earlier
         ///   job made               committed work with it - said once, then
         ///                          forgotten
@@ -2617,11 +2637,24 @@ namespace Heron.Revit.Addin
                                                                       Document doc,
                                                                       HeronRollbackWitness.Watch watch)
         {
+            // WHAT THE JOB CHANGED, read while its work is still in the model -
+            // the elements read before it started, read again (A16b). Nothing
+            // to read for a watch given no "before", which is every watch
+            // outside this file's write path.
+            try
+            {
+                if (watch != null && watch.ReadBeforeCount > 0) watch.ReadDuring(Reader(doc));
+            }
+            catch (Exception ex)
+            {
+                HeronApplication.Log("Rollback check could not read the change: " + ex.Message);
+            }
+
             var reported = SafeRollBack(group);
             HeronRollbackWitness.Outcome after;
             try
             {
-                after = Witness.RolledBack(watch, reported, Resolver(doc));
+                after = Witness.RolledBack(watch, reported, Resolver(doc), Reader(doc));
             }
             catch (Exception ex)
             {
@@ -3357,8 +3390,10 @@ namespace Heron.Revit.Addin
             // status was the only evidence until the rollback check: what the
             // run added is now counted back too (HeronRollbackWitness), and an
             // element still in the model withdraws the sentence whatever the
-            // status said. It sees additions only, so it never ADDS certainty
-            // the status did not give - it can only take it away.
+            // status said. AND SINCE 2026-11-16 A VALUE IT CHANGED that does not
+            // read as before does the same (A16b) - of what it was handed or
+            // selected, and nothing else. Both are partial, so they never ADD
+            // certainty the status did not give - they can only take it away.
             var held = rolledBack != null && rolledBack.Held;
             string verdict;
             string kind;
@@ -3464,11 +3499,12 @@ namespace Heron.Revit.Addin
                 // THE MODELLER'S DISCARD IS NOT A ROLLBACK TO TRY AGAIN, and the
                 // plain rollback's "send it again with apply" would invite one
                 // (Article 25). Its own sentence, with Revit's rollback status.
-                // "NOTHING WAS KEPT" ONLY WHEN IT HELD - Revit's status and
-                // nothing the run added still standing - like every rollback.
+                // "NOTHING WAS KEPT" ONLY WHEN IT HELD - Revit's status,
+                // nothing the run added still standing and nothing it changed
+                // still holding, as far as read - like every rollback.
                 verdict = HeronKeepQuestion.Discarded(name, held, selectionRestored)
-                        + (rolledBack != null && rolledBack.Standing > 0
-                            ? " " + rolledBack.SomeStanding() + " still in it." : "");
+                        + (rolledBack != null && rolledBack.Stands
+                            ? " " + rolledBack.StillThere() : "");
                 kind = "discarded";
             }
             else if (held && keptNothing)
@@ -3484,6 +3520,7 @@ namespace Heron.Revit.Addin
                 verdict = "NOTHING WAS KEPT. '" + name + "' ran for real and Revit reported the "
                         + "transaction group rolled back afterwards"
                         + (rolledBack.Checked > 0 ? ", and " + rolledBack.NoneStanding() : "")
+                        + (rolledBack.ChangedChecked > 0 ? ", and " + rolledBack.ChangedReturned() : "")
                         + ", so the counts above are what it actually did rather than a guess. "
                         + "Send it again with apply to keep it.";
                 kind = "rolledBack";
@@ -3494,7 +3531,7 @@ namespace Heron.Revit.Addin
                 // act rather than reconstructed a day later from the model.
                 verdict = "THE ROLLBACK DID NOT HOLD. '" + name + "' ran for real and Revit "
                         + "reported the transaction group rolled back, but "
-                        + rolledBack.SomeStanding() + " still in the model - so THE MODEL STILL "
+                        + rolledBack.WhatStands("the model") + " - so THE MODEL STILL "
                         + "HOLDS PART OF THIS CHANGE. Check the thing that was written before "
                         + "trusting anything here, and do not save until you have.";
                 kind = "notHeld";
@@ -3506,8 +3543,8 @@ namespace Heron.Revit.Addin
                         + "transaction group as rolled back - so THE MODEL MAY STILL HOLD THIS "
                         + "CHANGE. Check the thing that was written before trusting anything "
                         + "here, and do not save until you have."
-                        + (rolledBack != null && rolledBack.Standing > 0
-                            ? " " + rolledBack.SomeStanding() + " still in it." : "");
+                        + (rolledBack != null && rolledBack.Stands
+                            ? " " + rolledBack.StillThere() : "");
                 kind = "notConfirmed";
             }
 
@@ -3569,7 +3606,8 @@ namespace Heron.Revit.Addin
             }
 
             // `rolledBack` MEANS THE ROLLBACK HELD AS FAR AS IT WAS CHECKED -
-            // Revit's status AND nothing the run added still standing - so the
+            // Revit's status AND nothing the run added still standing AND no
+            // value it changed still holding, as far as read - so the
             // client's ROLLED BACK label and a proof record's "rolled back"
             // can never sit above a verdict saying it did not hold. Revit's
             // status alone is `rollbackReported`, and the counts behind both
@@ -3585,7 +3623,13 @@ namespace Heron.Revit.Addin
                     Json.Num("eventNamed", rolledBack.EventNamed),
                     Json.Str("keptJob", rolledBack.KeptJob),
                     Json.Num("keptChecked", rolledBack.KeptChecked),
-                    Json.Num("keptLost", rolledBack.Lost));
+                    Json.Num("keptLost", rolledBack.Lost),
+                    // A16b: of the elements read before the job, how many it
+                    // changed, how many were read again after the rollback,
+                    // and how many of those still did not read as before.
+                    Json.Num("changed", rolledBack.Changed),
+                    Json.Num("changedChecked", rolledBack.ChangedChecked),
+                    Json.Num("changedStanding", rolledBack.ChangedStanding));
             }
 
             return answer.Substring(0, answer.Length - 1)
@@ -3759,6 +3803,16 @@ namespace Heron.Revit.Addin
                 try { return doc.GetElement(uniqueId) != null; }
                 catch { return null; }
             };
+        }
+
+        /// <summary>
+        /// "What does this element read now?" for HeronRollbackWitness - D-156's
+        /// reader, by UniqueId, or null when it could not be read. Used at once
+        /// and never stored, like Resolver.
+        /// </summary>
+        private static Func<string, HeronReadBack.Values> Reader(Document doc)
+        {
+            return uniqueId => RevitReadBack.One(doc, uniqueId);
         }
 
         /// <summary>

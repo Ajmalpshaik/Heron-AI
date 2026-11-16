@@ -907,7 +907,7 @@ def chat_answer(register, status=None, most_shown=40):
             out.append("The list is %d characters as one value - more than one call carries "
                        "(%d). Split the file into parts and read each." % (len(value), MOST_VALUE_CHARS))
             return "\n".join(out)
-        out.append("CREATE_SHEETS_FROM_TABLE through revit_change, previewOnly=true first (which "
+        out.append("CREATE_SHEETS_FROM_TABLE: revit_change with previewOnly=true first (which "
                    "numbers are used, which columns match no parameter), then without it:")
         out.append("sheets=" + value)
         return "\n".join(out)

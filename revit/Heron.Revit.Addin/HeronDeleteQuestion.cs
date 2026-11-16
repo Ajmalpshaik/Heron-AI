@@ -99,11 +99,20 @@ namespace Heron.Revit.Addin
         /// class and its title, each exactly - the one test of which window the
         /// box's own closer may close (5b-1700). A title that only contains the
         /// words is not it.
+        ///
+        /// REVIT PUTS THE ADD-IN'S NAME IN FRONT - row 5b-1748. Seen on Revit
+        /// 2024, 2026-11-16 (NEEDS-CHECKING NY2): the window was titled
+        /// "Heron AI - Delete 8 elements?", never "Delete 8 elements?", so the
+        /// exact test never matched and the box stayed open past its deadline.
+        /// The title alone, or any prefix ending " - " before it, is the box.
         /// </summary>
         public static bool IsTheBox(string windowClass, string windowTitle, int total)
         {
-            return string.Equals(windowClass, DialogClass, StringComparison.Ordinal)
-                && string.Equals(windowTitle, Title(total), StringComparison.Ordinal);
+            if (!string.Equals(windowClass, DialogClass, StringComparison.Ordinal) || windowTitle == null)
+                return false;
+            var own = Title(total);
+            return string.Equals(windowTitle, own, StringComparison.Ordinal)
+                || windowTitle.EndsWith(" - " + own, StringComparison.Ordinal);
         }
 
         /// <summary>

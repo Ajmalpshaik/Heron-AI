@@ -28,15 +28,20 @@ See docs/29-metadata-standard.md
    |---|---|---|---|---|---|
    | 1 | every linked model is loaded | `notLoaded == 0` | 0 | **PASS** | |
    | 2 | no room is left unenclosed | `unenclosed == 0` | 2 | **FAIL** | unenclosed read 2; the rule is unenclosed == 0. **Select in Revit** |
-   | 3 | every duct is on a system | ... | - | **NOT RUN** | DUCT_CHECK is DRAFT - no recorded proof stands behind it |
+   | 3 | every sleeve is sized | `failures == 0` | 0 | **NO DATA** | 37 element(s) of 43 looked at had no data to check ('unreadable') |
+   | 4 | every duct is on a system | ... | - | **NOT RUN** | DUCT_CHECK is DRAFT - no recorded proof stands behind it |
 
-   *(An invented example.)* Then the counts: how many meet the value checked, how many do not, how many
-   were not run.
+   *(An invented example.)* Then the counts - how many meet the value checked, how many do not, how many
+   could not be decided for missing data, how many were not run - and **beside them the coverage**:
+   *"Coverage: 2 of 4 check(s) decided, 1 with no data, 1 not run."*
 
 **The words are fixed.** PASS means *the model meets the value checked* - the modeller's own rule, nothing
 more. Heron never calls a model compliant: whether it is right is the engineer's call (the host
 instructions, and `heron_modelqa`'s own rule). **A NOT RUN is never counted as a pass** and always says
-why. **A run changes nothing**: every check is a read with no transaction open, so there is no undo entry,
+why. **A NO DATA - *could not decide, data missing* ([D-165](decisions/D-165.md)) - is never a pass and
+never a fail**: the model was read, and the value the rule needs was absent, empty or not a number, or the
+fragment's own count of elements it could not read was above nought. NOT RUN is fixed in Heron or Revit;
+NO DATA in the model's data. **A run changes nothing**: every check is a read with no transaction open, so there is no undo entry,
 and nothing reaches Keep or Discard.
 
 Heron also has a **starter** - housekeeping checks (links loaded, referenced files found, rooms placed,
@@ -63,6 +68,15 @@ A **check** is the modeller's sentence, **one** capability, its values, and a **
 fragment declares - the output, one of `== != < <= > >=`, and a number. `ids`, when given, is the output that
 holds the failing elements' ids, for **Select in Revit**.
 
+**Two coverage outputs, each optional** ([D-165](decisions/D-165.md)), named by the chat from the card -
+never guessed, because the cards call them `notChecked`, `unreadable`, `withoutParameter`, `scanned`,
+`elementsRead` and more: `missing`, the output that counts the elements the check could not read the value
+of, and `applicable`, the one that counts the elements it looked at. Each must be an output the card
+declares that reads as a number. **A rule that holds is NO DATA, not PASS,** while `missing` reads above
+nought, while `applicable` reads nought, or while either named output does not come back as a number - a
+rule met by nothing read is not met. **A FAIL stays a FAIL**: a failure found is real however much else
+could not be read. Either way the row says its coverage - *checked 6 of 43 element(s), 37 with no data*.
+
 **The chat turns a sentence into a check** - Heron never classifies intent ([D-01](DECISIONS.md)). Heron
 checks only what is saved, against each fragment's own card, and refuses the whole checklist naming every
 problem:
@@ -76,6 +90,7 @@ problem:
 | A rule on an output the card does not declare | It would never come back; the refusal lists what the fragment does leave |
 | A rule on text, a point, one element, a `float`, a `HashSet` or an `ISet` | `RevitFragment.Describe` sends none of them as a number - a float and a HashSet arrive as their type names - so the check could never run |
 | An `ids` output that holds elements, not ids | The add-in sends an element list's **names**, never its ids |
+| A `missing` or `applicable` output the card does not declare, or that is not a number | It could never say how many elements were read ([D-165](decisions/D-165.md)) |
 | More than `MAX_CHECKS` checks | A run is one read per check (`brain/heron_checklists.py`) |
 
 **Three labels, each optional and the modeller's own** ([D-159](decisions/D-159.md)): `severity` - high,
@@ -147,7 +162,8 @@ heron_checklist run  /  Companion QA Checklist: Run
             still the model the first check read?  (_moved_since)
             revit_read's own body, via _through   -- no transaction, the pin, the count
             the pin's refusal stands               (pinned.check)
-        the output read off the reply  ->  PASS / FAIL / NOT RUN
+        the output read off the reply  ->  PASS / FAIL / NO DATA   (NOT RUN when nothing was read)
+  the counts, and beside them the coverage: checks decided, of how many, with no data, not run
 ```
 
 - **One read per check, one check at a time.** The lock every tool call holds is taken for each check's read
@@ -214,9 +230,11 @@ List, show, save and delete touch only the modeller's own files.
 | | |
 |---|---|
 | **PASS** | `tests/test_checklists.py` - the store, every save refusal, the rule on the add-in's own shapes, a run with NOT RUN never a pass, the wording, the server's run against a stand-in server, and the starter against today's cards; runs everywhere (that last part needs PyYAML, as CI has) |
+| **PASS** | `tests/test_checklist_no_data.py` - [D-165](decisions/D-165.md): a run with all its data, one with some missing and one with all missing; NO DATA never counted as a pass or a fail; a rule met on 6 of 43 elements is NO DATA while a FAIL stays a FAIL; the coverage outputs refused when saved and when read; NO DATA never a change since the last run. Its checks were seen to fail on the code before the change |
 | **PASS** | `tests/test_checklist_tool.py` - the MCP tool through the real cards and a stand-in Revit: one `run_fragment_read` per check and no write, PASS and FAIL off the reply, nothing sent with no Revit; needs the MCP SDK, so CI lists it as not runnable |
 | **PASS** | `tests/test_companion.py`'s QA Checklist group - data and hooks only, one run at a time, Select with the panel's ids by the dashboard's route, every route behind the pairing on a real server |
 | **NEEDS REAL REVIT** | [group MV](needs-checking/group-mv.md) - a starter run on a real model, a FAIL with Select, a DRAFT check NOT RUN, a run with Revit closed, the page's Run beside a chat |
+| **NEEDS REAL REVIT** | [group NV](needs-checking/group-nv.md) NV18 to NV20 - NO DATA and the coverage line on a real model ([D-165](decisions/D-165.md)) |
 
 ## 7. Not built - each waits on the owner
 
