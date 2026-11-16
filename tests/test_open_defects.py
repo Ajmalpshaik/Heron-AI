@@ -307,6 +307,22 @@ def main():
     print("\n8. and a number is used twice wherever its two rows are kept (5b-1585)")
     across_layouts()
 
+    # A ROW MOVED TO A GITHUB ISSUE (2026-11-16, the owner's word) leaves the
+    # open list and is counted as moved, never as finished: its state begins
+    # MOVED TO ISSUE #N and the old state is kept after "Was:".
+    print("\n9. a row moved to a GitHub issue is not open, and is counted as moved")
+    moved_word = getattr(OD, "MOVED", None)
+    check(moved_word is not None, "the tool has a word for a row moved to an issue")
+    if moved_word is None:
+        moved_word = re.compile(r"^moved to issue\b", re.I)
+    moved_line = ("| **5** | **A defect.** | **MOVED TO ISSUE [#898](https://github.com/o/r/issues/898)"
+                  " 2026-11-16** - tracked there. Was: OPEN - recorded, not repaired. |")
+    open_line = "| **6** | **A defect.** | OPEN - recorded, not repaired. |"
+    check(not state_of(moved_line).lower().startswith("open"),
+          "a moved row's state does not begin with OPEN, so the open list leaves it out")
+    check(bool(moved_word.match(state_of(moved_line))), "and the tool counts it as moved")
+    check(not moved_word.match(state_of(open_line)), "an open row is not counted as moved")
+
     print()
     if FAILURES:
         print("FAILED  %d check(s)" % len(FAILURES))
