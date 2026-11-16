@@ -178,6 +178,11 @@ AMBIENT = {
     # Discard: null for its own file, or the full path the modeller typed for
     # a Save As; the bool says a file already there may be replaced.
     "saveWhenKept": "Action<string, bool>",
+    # Row 5b-1824, 2026-11-16. The same, for ANOTHER open document: its file,
+    # and whether its window is closed once it is saved - by the add-in after
+    # the group, by the same rule, where until then the fragment saved it
+    # inside the run, before Revit's Keep or Discard box.
+    "saveOtherWhenKept": "Action<string, bool>",
 }
 
 # WHERE A NEEDED NAME CAN COME FROM. Found the same way AMBIENT was - by writing

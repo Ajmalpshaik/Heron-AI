@@ -746,11 +746,13 @@ longer stands (D-30), and a kept change from it is refused (D-117); `family-crea
 `mass-family-creation` step 7 say the modeller saves by hand until it is PROVEN again. **Owed:
 [NEEDS-CHECKING Group EN](../needs-checking/group-en.md) EN6 to EN10, on a real Revit - EN6, EN8, EN9 and
 EN10 run TODAY as previews on a scratch model**, with the Publish switch on, and are the proof's route; EN7's
-Discard and the chat halves of EN6 and EN8 wait for the card to be PROVEN. **Not decided here:** whether a
-Discard must also stop version 2's save of ANOTHER open document, which is made before the box, and Revit's
-Keep or Discard box telling a publish its save is "done already"
-([row 5b-1824](../fragment-issues/row-5b-1824.md)); and the methods' *"Heron cannot save the model it works
-in"* lines, true while the card is DRAFT, which change the day it is PROVEN.
+Discard and the chat halves of EN6 and EN8 wait for the card to be PROVEN. **Fixed in code the same day, under
+D-171 point 5 ([row 5b-1824](../fragment-issues/row-5b-1824.md)), not run in Revit:** version 2's save of ANOTHER
+open document, which was made before the box, is the add-in's after the group too (`saveOtherWhenKept`,
+`SaveOtherNow`) - a Discard saves and closes nothing - and Revit's Keep or Discard box tells a publish whose
+save waits for Keep that nothing is saved yet, not that it is "done already"; Group EN EN11 to EN13 are owed.
+**Not decided here:** the methods' *"Heron cannot save the model it works in"* lines, true while the card is
+DRAFT, which change the day it is PROVEN.
 
 ---
 

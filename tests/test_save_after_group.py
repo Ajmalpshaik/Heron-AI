@@ -28,6 +28,14 @@ save itself, once the group has closed, and only when:
     answered before the save, so a save follows only a Keep (D-171 point 5);
   * the job is a Publish job and the switches still say so when it saves.
 
+ANOTHER OPEN DOCUMENT - version 2's job, a nested family's own window - goes the
+same way since 2026-11-16 (row 5b-1824): the fragment asks through a second
+ambient need, `saveOtherWhenKept`, and the add-in saves it and closes its window
+after the group, by the same rules. Until then it was saved inside the run,
+before Revit's Keep or Discard box, so a Discard still wrote that file. And the
+box tells a publish whose save waits for Keep that nothing is saved yet - not
+that its save "is done already".
+
 A Save As renames the model, and on Revit 2020 to 2023 - no CreationGUID - and
 for every family the pin holds only its title. So the reply names the model as
 the change was made, and the chat's pin follows the new name ONLY because the
@@ -154,6 +162,38 @@ def card_section():
           and "preview too, which rolls the change back and still saves" in source,
           "the fragment tells the modeller a preview still saves - not that it saves nothing")
 
+    # ROW 5b-1824: ANOTHER OPEN DOCUMENT IS SAVED AFTER THE GROUP TOO. Version
+    # 2's `found.Save(...)` ran inside the run, before Revit's Keep or Discard
+    # box, so a Discard still wrote that file and closed its window. Now the
+    # run writes and closes NOTHING itself, so whatever the modeller answers
+    # reaches only the add-in's act after the group.
+    other = needs.get("saveOtherWhenKept")
+    check(other is not None and other.get("source") == "ambient"
+          and other.get("type") == "Action<string, bool>",
+          "it declares the ambient need the add-in saves ANOTHER open document "
+          "through - its file, and whether to close its window - typed as bound")
+    check("saveOtherWhenKept(" in bare,
+          "and asks for that save through it rather than making it")
+    check(re.search(r"\.\s*Save\s*\(", bare) is None,
+          "the fragment saves NO document itself - not even another one - so a "
+          "Discard has nothing of its to take back (D-171 point 5)")
+    check(re.search(r"\.\s*Close\s*\(", bare) is None,
+          "nor closes any window inside the run: the close follows the save, after "
+          "the group")
+    close_asked = provides.get("closeAsked") or {}
+    check(close_asked.get("role") == "result" and close_asked.get("type") == "bool",
+          "closeAsked is a result: what the run asked the add-in to close")
+    for gone in ("saved", "savedTo", "closed"):
+        check(gone not in provides,
+              "'%s' is no longer a result: the run writes and closes nothing, so it "
+              "has nothing of its own to report - the reply's save block does" % gone)
+    check("and so does a Discard" not in source and "SAVED INSIDE THE RUN" not in yaml_text,
+          "neither the C# nor the card says another document is still saved inside "
+          "the run")
+    check("kind saveOther" in cases and "window left open" in cases,
+          "its cases look for another document's save in the reply's save block, and a "
+          "Discard's negative leaves that window open")
+
 
 def addin_section():
     print()
@@ -247,6 +287,89 @@ def addin_section():
     check('Json.Str("creationGuid"' in save and 'Json.Str("documentPath"' in save,
           "a Save As reports the model's new identity, for the pin to follow")
 
+    other_section(run, run_code, save, save_code)
+
+
+def other_section(run, run_code, save, save_code):
+    """Row 5b-1824: ANOTHER open document, saved after the group by the same
+    rules - and Revit's Keep or Discard box saying so."""
+    print()
+    print("Another open document - after the group too (row 5b-1824)")
+    check('const string SaveOtherWhenKeptNeed = "saveOtherWhenKept";' in run,
+          "RevitFragment.cs names the second ambient need beside the first")
+    other_at = at(run, "if (name == SaveOtherWhenKeptNeed)")
+    branch = run[other_at:other_at + 1600] if other_at >= 0 else ""
+    check("needs_write_path" in branch,
+          "it is refused on the read path - a read has no group to close")
+    check("SaveAsk.BindOther(" in branch
+          and 'lines.Append("Action<string, bool> ")' in branch,
+          "and bound to the add-in's own record of the ask, typed as the card declares it")
+
+    # ONE DISPATCH AFTER EVERY GUARD - so a Discard, a closed box, a run Revit
+    # did not report kept, a rollback that did not hold, a run that is not a
+    # Publish job and a withdrawn switch stop BOTH saves, and a preview that
+    # asked for one makes either.
+    dispatch = re.search(
+        r"block\s*=\s*ask\.Other\s*\?\s*SaveOtherNow\(\s*app\s*,\s*target\s*,\s*ask\s*,\s*kept\s*\)"
+        r"\s*:\s*saveAs\s*\?\s*SaveAsNow\(\s*target\s*,\s*ask\s*,\s*kept\s*\)"
+        r"\s*:\s*SaveNow\(\s*target\s*,\s*kept\s*\)\s*;", save_code)
+    check(dispatch is not None,
+          "the save of another document is reached by the same one line as the save "
+          "of the model Heron works in")
+    where = dispatch.start() if dispatch else -1
+    for guard, what in (("if (answered != null && answered != Keep && answered != RestOfJob)",
+                         "a Discard or a closed box"),
+                        ("else if (tried && !kept)", "a run Revit did not report kept"),
+                        ("else if (!kept && !rollbackHeld)", "a preview whose rollback did not hold"),
+                        ("else if (!sendsOut)", "a run that is not a Publish job"),
+                        ("HeronRunPolicy.Withdrawn(risk, HeronConfig.Load()", "a switch turned off")):
+        check(0 <= at(save_code, guard) < where,
+              "%s saves NEITHER document - its guard comes before that line" % what)
+
+    start = at(save_code, "private static string SaveOtherNow(")
+    body = save_code[start:] if start >= 0 else ""
+    nxt = re.search(r"\n\s*(?:private|internal) static ", body[10:])
+    body = body[:nxt.start() + 10] if nxt else body
+    check(bool(body), "SaveOtherNow is there")
+    save_in = at(body, ".Save(new SaveOptions())")
+    close_in = at(body, ".Close(false)")
+    check(0 <= save_in < close_in,
+          "it saves first and closes the window only after - the close version 2's "
+          "closeWindow asked for, kept in one call")
+    check(0 <= at(body, "ActiveUIDocument") < close_in,
+          "it never closes the window in front - Revit lets no tool close that one")
+    check(0 <= at(body, "IsModified") < close_in,
+          "nor a document that still has unsaved changes - Close(false) would lose them")
+    check(0 <= at(body, "OpenToSave(") < save_in,
+          "it asks first whether the document can be saved at all - read-only, or a "
+          "transaction open in it")
+    elsewhere = save_code[:start] + save_code[start + len(body):] if start >= 0 else ""
+    check(start >= 0 and re.search(r"\.\s*Close\s*\(", elsewhere) is None,
+          "and nothing else in the add-in's save closes a window")
+    check('Json.Str("kind", "saveOther")' in save,
+          "its save block is its own kind, so the chat's pin never follows it")
+    check('Json.Bool("closeAsked"' in save and 'Json.Bool("closed"' in save,
+          "and says whether a close was asked and whether the window is closed")
+    check("Its window was left open" in save,
+          "a save not done of a window asked closed says the window was left open")
+    check("Heron saves one document per run" in save
+          and "throw new InvalidOperationException(" in save,
+          "a run that asks for two saves is stopped in the run - so the box and the "
+          "save block never speak for one of two")
+
+    # THE BOX (D-126) IS ASKED INSIDE THE GROUP, before either save, and says
+    # what waits for Keep: never "done already" for a save that has not
+    # happened. Its words are HeronKeepQuestion's, proved by
+    # tests/Heron.KeepQuestion.TestHost through tests/test_keep_question.py.
+    waits_at = at(run_code, "var waitsForKeep = SaveWaitsForKeep(globals.__heron, target);")
+    ask_at = at(run_code, "answered = AskTheModeller(")
+    check(0 <= waits_at < ask_at,
+          "Run reads what the fragment asked to be saved before the box is shown")
+    call = run_code[ask_at:ask_at + 300] if ask_at >= 0 else ""
+    check("waitsForKeep" in call, "and hands it to the box")
+    check("HeronKeepQuestion.WaitsForKeep(" in save_code,
+          "the sentence comes from HeronKeepQuestion, which the host proves")
+
 
 def server_section():
     print()
@@ -308,6 +431,21 @@ def server_section():
     check(pin.title == "Tower" and any("use this model" in line for line in lines),
           "a Save As the pin cannot place leaves it where it was, and says how to move")
 
+    # ROW 5b-1824: another open document's save is said in the add-in's words
+    # and never moves the pin - the chat still works on the model it was in.
+    pin = DocumentPin()
+    pin.check({"ok": True, "document": "HeronNest_Car", "documentPath": r"C:\w\HeronNest_Car.rfa"})
+    part = ("SAVED. 'HeronNest_Hub' was saved to C:\\w\\HeronNest_Hub.rfa once Heron's Undo "
+            "entry had closed. A SAVE CANNOT BE UNDONE. Its window is closed.")
+    nested = {"ok": True, "document": "HeronNest_Car", "documentPath": r"C:\w\HeronNest_Car.rfa",
+              "save": {"asked": True, "kind": "saveOther", "done": True, "closed": True,
+                       "savedDocument": "HeronNest_Hub", "said": part}}
+    reply, lines = after(pin, nested)
+    check(any(part in line for line in lines) and pin.title == "HeronNest_Car"
+          and reply.get("document") == "HeronNest_Car",
+          "another document's save is said in the add-in's words, and the chat stays on "
+          "the model it works in")
+
     server = TOOLS.server_text()
     start = server.find("def revit_change(")
     body = server[start:server.find("@server.tool()", start)] if start >= 0 else ""
@@ -367,8 +505,9 @@ def main():
             print("  - %s" % failure)
         return 1
     print("PASSED - a save follows a Keep or a preview that asked for one, after the "
-          "group, to a file the modeller named; a Discard saves nothing; a Save As keeps "
-          "the chat on the model.")
+          "group, to a file the modeller named - of the model Heron works in or of another "
+          "open document; a Discard saves neither; the box says what waits for Keep; a "
+          "Save As keeps the chat on the model.")
     return 0
 
 

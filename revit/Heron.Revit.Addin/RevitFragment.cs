@@ -1101,8 +1101,13 @@ namespace Heron.Revit.Addin
                     Func<bool> putBack = null;
                     if (asking || askToKeep)
                     {
+                        // ROW 5b-1824: WHAT WAITS FOR KEEP - the save the run asked
+                        // for, made after the group and only after a Keep - so the
+                        // box never tells a publish that save is done already.
+                        var waitsForKeep = SaveWaitsForKeep(globals.__heron, target);
                         answered = AskTheModeller(app, target, name, asking, sendsOut, changed,
-                                                  offerRest, askedAgain, out refreshed, out putBack);
+                                                  offerRest, askedAgain, waitsForKeep,
+                                                  out refreshed, out putBack);
                         if (answered != null) apply = answered == Keep || answered == RestOfJob;
                         else nothingToAsk = true;
                     }
@@ -1228,9 +1233,11 @@ namespace Heron.Revit.Addin
             // the change was made. After a group Revit reports KEPT, and after a
             // preview whose rollback HELD - the change undone, the save not, and
             // the reply says both. Never after a Discard: a save follows only a
-            // Keep. Its own block on the reply says what it did; the two lines
+            // Keep. The same for ANOTHER open document and the close of its
+            // window (row 5b-1824), which the fragment no longer does in the
+            // run. Its own block on the reply says what it did; the two lines
             // below only add fields to it.
-            verdict = SaveAfterTheGroup(verdict, globals.__heron, target, name, risk,
+            verdict = SaveAfterTheGroup(verdict, globals.__heron, app, target, name, risk,
                                         sendsOut, apply, groupKept,
                                         rolledBack != null && rolledBack.Held, answered);
             if (keptUnderGrant != null) return WithGrant(verdict, keptUnderGrant);
@@ -1570,12 +1577,16 @@ namespace Heron.Revit.Addin
         /// of this job without asking" - answered RestOfJob, which keeps like
         /// Keep and lets Run give the grant. Never for a DRAFT's one run or a
         /// publish. `askedAgain`, when a grant was in play, is said in the box.
+        /// `waitsForKeep` is SaveWaitsForKeep's sentence for a save the run
+        /// asked to be made after the box, or null - a publish is told that
+        /// Keep makes it and Discard does not, never that it is done already
+        /// (row 5b-1824).
         /// </summary>
         private static string AskTheModeller(UIApplication app, Document target, string name,
                                              bool neverProved, bool sendsOut,
                                              RevitChangedSet changed, bool offerRest,
-                                             string askedAgain, out bool refreshed,
-                                             out Func<bool> putBack)
+                                             string askedAgain, string waitsForKeep,
+                                             out bool refreshed, out Func<bool> putBack)
         {
             refreshed = false;
 
@@ -1679,7 +1690,7 @@ namespace Heron.Revit.Addin
                         HeronKeepQuestion.OnScreen(added.Count, altered.Count, inFront,
                                                    addedShown, alteredShown,
                                                    isolatedIn != null, cameraBack != null),
-                        sendsOut, neverProved, refreshed)
+                        sendsOut, neverProved, refreshed, waitsForKeep)
                         + (string.IsNullOrEmpty(askedAgain) ? "" : "\n\n" + askedAgain),
                     AllowCancellation = true,
                     CommonButtons = TaskDialogCommonButtons.None,
@@ -4473,6 +4484,29 @@ namespace Heron.Revit.Addin
                          .Append("\"];\n");
                     how.Add(name + " - Heron saves this model once its Undo entry has closed, "
                             + "after a Keep or a preview, never after a Discard (Q-69, D-171)");
+                    continue;
+                }
+
+                // Row 5b-1824: the same, for ANOTHER open document - its file,
+                // and whether its window is closed once it is saved. Refused on
+                // the read path for the same reason.
+                if (name == SaveOtherWhenKeptNeed)
+                {
+                    if (reading)
+                    {
+                        return Json.Error("needs_write_path",
+                            "This fragment asks Heron to save another open document once its Undo "
+                            + "entry has closed, so it runs only as a change - never as a read. "
+                            + "Nothing was run and nothing was saved.");
+                    }
+                    bound.Add(name);
+                    globals.__heron[name] = SaveAsk.BindOther(globals.__heron);
+                    lines.Append("Action<string, bool> ").Append(name)
+                         .Append(" = (Action<string, bool>)__heron[\"").Append(name)
+                         .Append("\"];\n");
+                    how.Add(name + " - Heron saves that document once this run's Undo entry has "
+                            + "closed, and closes its window when asked - after a Keep or a "
+                            + "preview, never after a Discard (D-171, row 5b-1824)");
                     continue;
                 }
 
@@ -7796,6 +7830,16 @@ namespace Heron.Revit.Addin
         /// brain/heron_fragment.py's AMBIENT.
         /// </summary>
         private const string SaveWhenKeptNeed = "saveWhenKept";
+
+        /// <summary>
+        /// Its twin for ANOTHER open document - row 5b-1824, 2026-11-16: the
+        /// fragment hands the add-in that document's file and whether to close
+        /// its window, and the add-in saves it after the group by the same rule
+        /// as the first (D-171 point 5), where until then the fragment saved it
+        /// inside the run, before Revit's Keep or Discard box. The same name is
+        /// in brain/heron_fragment.py's AMBIENT.
+        /// </summary>
+        private const string SaveOtherWhenKeptNeed = "saveOtherWhenKept";
 
         /// <summary>True when the contract sent with the request declares this need.</summary>
         private static bool DeclaresNeed(IList<Dictionary<string, string>> needs, string wanted)
