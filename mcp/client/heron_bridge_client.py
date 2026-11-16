@@ -446,6 +446,17 @@ def server_mismatch(expected_pid, served_by):
             % (expected_pid, served_by))
 
 
+def built_on_of(bridge):
+    """A session's `built_on` - or {} from one that cannot say which build it is.
+
+    Asked, not assumed: a run record is written from whatever session object
+    ran it, and one with no `built_on` (a stand-in, an older wrapper) has no
+    build to give. {} reads as NOT RECORDED downstream, never as a build.
+    """
+    method = getattr(bridge, "built_on", None)
+    return dict(method() or {}) if callable(method) else {}
+
+
 class Bridge(object):
     """One connected Revit session."""
 
@@ -454,6 +465,11 @@ class Bridge(object):
         self.pipe_name = record.get("pipeName")
         self.revit_version = record.get("revitVersion")
         self.addin_version = record.get("addinVersion")
+        # WHICH BUILD, beside which release - Revit's exact build string and
+        # a hash of the add-in's own file. An older add-in writes neither, so
+        # both are None there and a run record says NOT RECORDED, never a guess.
+        self.revit_build = record.get("revitBuild")
+        self.addin_hash = record.get("addinHash")
         self.protocol_version = record.get("protocolVersion")
         self.started_at = record.get("startedAt")
         # Minted when a session connects and gone when it disconnects, so a
@@ -466,6 +482,24 @@ class Bridge(object):
     @property
     def pipe_path(self):
         return r"\\.\pipe" + "\\" + self.pipe_name
+
+    def built_on(self):
+        """Which Heron and which Revit this session is - a run record's `built_on`.
+
+        Only the fields this add-in said, as written in its address-book
+        entry; a field it did not say is left out, never filled in. The
+        brain's `heron_fragment.built_on_of` reads the same four names - this
+        client is stdlib only and cannot import it, so tests/test_proof_build.py
+        holds the two together.
+        """
+        found = {}
+        for field, value in (("revit_release", self.revit_version),
+                             ("revit_build", self.revit_build),
+                             ("addin_version", self.addin_version),
+                             ("addin_hash", self.addin_hash)):
+            if value is not None and str(value).strip():
+                found[field] = str(value).strip()
+        return found
 
     def release(self):
         """
@@ -879,6 +913,46 @@ def ask_to_keep_state(bridge):
     if said is _FIELD_MISSING:
         return ASK_TO_KEEP_NOT_SENT
     return said if isinstance(said, bool) else None
+
+
+# The three switches, as `info` names them since D-166, and what
+# switches_state answers for an add-in from before that, which names none.
+SWITCH_FIELDS = ("changes", "admin", "publish")
+SWITCHES_NOT_SENT = "not sent"
+
+
+def switches_state(bridge):
+    """
+    Changes, Admin and Publish as this Revit holds them now - D-166. One of
+    three answers, the same shape as ask_to_keep_state:
+
+        {"changes": bool, "admin": bool, "publish": bool}
+        SWITCHES_NOT_SENT    `info` answered well and names none of them -
+                             an add-in from before 2026-11-16, which still
+                             reads them from heron.config
+        None                 no usable answer, or a field that is not a JSON
+                             true or false
+
+    Since D-166 the three are held in the add-in's memory, set only in Heron's
+    Settings window, so the add-in's word is the ONLY place to learn them -
+    this side's copy of heron.config no longer holds them at all. From `info`,
+    lease-exempt, so asking never claims the Revit. Read off a reply, never put
+    in a request: no request sets a switch, and the add-in reads no such field.
+    """
+    reply = bridge.request("info")
+    if not isinstance(reply, dict) or not reply.get("ok"):
+        return None
+    said = [reply.get(field, _FIELD_MISSING) for field in SWITCH_FIELDS]
+    if all(one is _FIELD_MISSING for one in said):
+        return SWITCHES_NOT_SENT
+    if not all(isinstance(one, bool) for one in said):
+        return None
+    state = dict(zip(SWITCH_FIELDS, said))
+    # WHICH THE ADMINISTRATOR'S CEILING HOLDS OFF (D-166 layer 3), when the
+    # add-in says - a JSON true only; anything else is not a lock it claimed.
+    state["locked"] = [field for field in SWITCH_FIELDS
+                       if reply.get(field + "Locked") is True]
+    return state
 
 
 def refuse_off_windows():
@@ -2416,6 +2490,7 @@ def cmd_try_once(name, values=None, session=None, in_document=None):
                            response_timeout=heron_config.try_once_timeout(),
                            idempotent=False)
     revit_version, pid = bridge.revit_version, bridge.pid
+    built_on = built_on_of(bridge)
     bridge.release()
     bridge.close()
 
@@ -2467,6 +2542,9 @@ def cmd_try_once(name, values=None, session=None, in_document=None):
         "fragment": name,
         "date": today,
         "model": "%s, Revit %s, session %s" % (reply.get("document"), revit_version, pid),
+        # Which add-in ran it, on which build of Revit - carried into the
+        # proof by `heron_validate.py draft`, as the record's other fields are.
+        "built_on": built_on,
         "source_hash": version,
         "kept": kept,
         "answer": answer,
@@ -3042,6 +3120,7 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
     # phases have reported, by which point `bridge` is released and closed -
     # reading these off it there would be reading a closed object.
     revit_version, pid = bridge.revit_version, bridge.pid
+    built_on = built_on_of(bridge)
 
     # PROVISIONAL, AND REPLACED BELOW ONCE THE PHASES HAVE REPORTED. Printed
     # here because a person watching the run wants to know what is in front
@@ -3490,6 +3569,10 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
         "fragment": name,
         "date": time.strftime("%Y-%m-%d"),
         "model": model,
+        # WHICH ADD-IN RAN IT, ON WHICH BUILD OF REVIT - the add-in's own
+        # address-book entry, so a proof drafted from this record can go
+        # stale when either moves, as it does when the C# does (D-30).
+        "built_on": built_on,
         "phases": phases,
     }
     if tracking:

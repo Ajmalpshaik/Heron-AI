@@ -314,13 +314,11 @@ namespace Heron.RunGuard.TestHost
             Check(other.Contains("a project setup change"), "an Admin job is called a project setup change");
         }
 
-        private static HeronConfig Switches(bool changes, bool admin, bool publish)
+        // A snapshot of the three switches - held in Revit's memory since
+        // D-166, no longer three lines of heron.config.
+        private static HeronSwitches Switches(bool changes, bool admin, bool publish)
         {
-            var config = new HeronConfig();
-            config.Set(HeronPermissions.WriteEnabledKey, changes ? "true" : "false");
-            config.Set(HeronPermissions.AdminEnabledKey, admin ? "true" : "false");
-            config.Set(HeronPermissions.PublishEnabledKey, publish ? "true" : "false");
-            return config;
+            return HeronSwitches.Of(changes, admin, publish);
         }
 
         private static void Withdrawn()

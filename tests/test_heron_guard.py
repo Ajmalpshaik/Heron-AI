@@ -43,11 +43,19 @@ WHAT THIS PROVES, and every one of these is a way a hook becomes decoration:
   7. EVERY DECISION IS WRITTEN DOWN, AND THE DIARY CANNOT CHANGE ONE. A deny,
      an allow and a crash are one line each in the hooks' diary; a diary that
      cannot be written leaves every decision exactly as it was.
+  8. THE SECOND RULE, D-166 LAYER 1 (section 9). A write or a command that
+     would turn on Changes, Admin or Publish in heron.config is refused, and so
+     is one that writes the registry policy; reading the file, and turning a
+     switch OFF, are not. Its keys and true words are copies of the C# and of
+     heron_config.py, and are held to them here.
 
 WHAT IT DOES NOT PROVE. That the host actually runs the hook. That needs a
 host - one real session on the owner's PC refusing a forbidden edit is the
 proof still owed - and this runs the command the host would run, the same
-limit tests/test_mcp_serves.py has against the MCP SDK.
+limit tests/test_mcp_serves.py has against the MCP SDK. One host has been
+seen: on 2026-11-16 a cloud session on Linux ran it on a real Bash call and a
+real Write, each turning Changes on in a scratch heron.config, and refused
+both (the heron-guard skill records it). The owner's Windows PC is still owed.
 """
 
 import atexit
@@ -277,11 +285,28 @@ def main():
     check(len(wired) == 1,
           "settings.json wires the guard exactly once, on PreToolUse")
     matcher, entry = wired[0] if wired else ("", {})
-    # A matcher of letters, digits and '|' is a list of exact tool names to
-    # the host, not a regular expression - so this is the whole list.
-    check(sorted(matcher.split("|")) == ["Edit", "MultiEdit", "Write"],
-          "for exactly the three tools that can put text in a file: %s"
-          % matcher)
+    # SINCE D-166 THE MATCHER IS A REGULAR EXPRESSION: the switch rule reads
+    # shell commands and Desktop Commander's file tools as well as the three
+    # editors. It was the exact list Write|Edit|MultiEdit until 2026-11-16.
+    # Anchored, so it means the same whether the host searches or matches.
+    try:
+        probe = re.compile(matcher)
+    except re.error:
+        probe = None
+    meant = ["Write", "Edit", "MultiEdit", "Bash", "PowerShell"] + [
+        "mcp__plugin_desktop-commander_desktop-commander__" + tool
+        for tool in ("write_file", "edit_block", "start_process",
+                     "interact_with_process")]
+    not_meant = ["Read", "Glob", "Grep", "NotebookEdit", "BashOutput",
+                 "WebFetch", "mcp__github__get_file_contents",
+                 "mcp__heron__heron_lookup",
+                 "mcp__plugin_desktop-commander_desktop-commander__read_file"]
+    check(probe is not None and all(probe.search(n) for n in meant),
+          "for the three editors, the two shells and the MCP tools that write "
+          "files or run commands: %s" % matcher)
+    check(probe is not None and not any(probe.search(n) for n in not_meant),
+          "and for nothing that only reads - Read, Grep, a fetch, an MCP "
+          "reader, and BashOutput, which only a loose pattern would catch")
     command = entry.get("command", "")
     check(entry.get("type") == "command" and "$CLAUDE_PROJECT_DIR" in command
           and ".claude/skills/heron-guard/bin/heron_guard.py" in command,
@@ -315,6 +340,19 @@ def main():
         check(verdict_of(got.stdout.strip()) == "deny",
               "the exact command settings.json gives, run under bash, REFUSES "
               "the forbidden edit")
+        switch_on = ("echo '%s = true' >> \"$APPDATA/Heron/config/%s\""
+                     % ("write" + ".enabled", "heron" + ".config"))
+        got = subprocess.run(
+            ["bash", "-c", command],
+            input=json.dumps({"tool_name": "Bash",
+                              "tool_input": {"command": switch_on}}),
+            capture_output=True, text=True,
+            env=dict(os.environ, CLAUDE_PROJECT_DIR=ROOT,
+                     LOCALAPPDATA=QUIET, XDG_DATA_HOME=QUIET,
+                     HERON_KNOWLEDGE=""))
+        check(verdict_of(got.stdout.strip()) == "deny",
+              "and the same command REFUSES a shell line turning Changes on "
+              "in heron.config - D-166's rule rides the same wiring")
     else:
         print("  note  the settings command was not run: no bash here, or "
               "Windows - a real session on the PC proves that half")
@@ -363,6 +401,158 @@ def main():
               "a diary that cannot be written is a missing line - the deny "
               "is still a deny and the allow still silent, never a crash "
               "that trap 2 would turn into a refusal")
+    finally:
+        shutil.rmtree(home, ignore_errors=True)
+
+    print()
+    print("9. D-166: the owner's switches are not an AI's to flip")
+    print("-" * 70)
+    import heron_guard as GUARD
+    cfg = r"C:\Users\m\AppData\Roaming\Heron\config\heron.config"
+    refused = [
+        ("Write turning Changes on in heron.config",
+         {"tool_name": "Write", "tool_input": {
+             "file_path": cfg, "content": "write.enabled = true\n"}}),
+        ("Write in any case, Admin set ON",
+         {"tool_name": "Write", "tool_input": {
+             "file_path": "/x/HERON.CONFIG", "content": "Admin.Enabled=ON"}}),
+        ("Edit setting Publish to yes",
+         {"tool_name": "Edit", "tool_input": {
+             "file_path": cfg, "old_string": "publish.enabled = false",
+             "new_string": "publish.enabled = yes"}}),
+        ("Edit changing only the value, the key in the text it replaces",
+         {"tool_name": "Edit", "tool_input": {
+             "file_path": cfg, "old_string": "= false\nadmin.enabled = false",
+             "new_string": "= true\nadmin.enabled = false"}}),
+        ("MultiEdit setting Changes to 1",
+         {"tool_name": "MultiEdit", "tool_input": {
+             "file_path": cfg, "edits": [{"old_string": "write.enabled = false",
+                                          "new_string": "write.enabled = 1"}]}}),
+        ("Desktop Commander's write_file appending to it",
+         {"tool_name": "mcp__dc__write_file", "tool_input": {
+             "path": cfg, "content": "write.enabled = true", "mode": "append"}}),
+        ("a shell appending the line",
+         {"tool_name": "Bash", "tool_input": {
+             "command": "echo 'write.enabled = true' >> "
+                        "\"$APPDATA/Heron/config/heron.config\""}}),
+        ("a sed swapping false for true on a key's line",
+         {"tool_name": "Bash", "tool_input": {
+             "command": "sed -i '/admin.enabled/s/false/true/' "
+                        "~/AppData/Roaming/Heron/config/heron.config"}}),
+        ("a PowerShell -replace with an escaped dot and $1true",
+         {"tool_name": "PowerShell", "tool_input": {
+             "command": "(Get-Content $f) -replace "
+                        "'(write\\.enabled\\s*=\\s*)false','$1true' | "
+                        "Set-Content $env:APPDATA\\Heron\\config\\heron.config"}}),
+        ("Desktop Commander's start_process doing the same",
+         {"tool_name": "mcp__dc__start_process", "tool_input": {
+             "command": "echo publish.enabled=on >> heron.config",
+             "timeout_ms": 1000}}),
+        ("reg add on the policy key",
+         {"tool_name": "Bash", "tool_input": {
+             "command": "reg add HKLM\\SOFTWARE\\Policies\\Heron /v AllowChanges "
+                        "/t REG_DWORD /d 1 /f"}}),
+        ("Set-ItemProperty on the policy key",
+         {"tool_name": "PowerShell", "tool_input": {
+             "command": "Set-ItemProperty -Path HKLM:\\SOFTWARE\\Policies\\Heron "
+                        "-Name AllowAdmin -Value 1"}}),
+        ("a .reg file naming the policy key",
+         {"tool_name": "Write", "tool_input": {
+             "file_path": "C:/t/allow.reg",
+             "content": "[HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Heron]\n"
+                        "\"AllowChanges\"=dword:00000001"}}),
+    ]
+    for what, payload in refused:
+        out, code = run(payload)
+        check(verdict_of(out) == "deny" and code == 0, "REFUSED: %s" % what)
+
+    allowed = [
+        ("reading heron.config with cat",
+         {"tool_name": "Bash", "tool_input": {
+             "command": "cat \"$APPDATA/Heron/config/heron.config\""}}),
+        ("grepping it for a key",
+         {"tool_name": "Bash", "tool_input": {
+             "command": "grep -n write.enabled "
+                        "~/AppData/Roaming/Heron/config/heron.config"}}),
+        ("turning switches OFF - the safe side",
+         {"tool_name": "Write", "tool_input": {
+             "file_path": cfg,
+             "content": "write.enabled = false\nadmin.enabled = false\n"}}),
+        ("Ask to Keep and the Companion - not the three switches",
+         {"tool_name": "Write", "tool_input": {
+             "file_path": cfg,
+             "content": "write.askBeforeKeeping = true\n"
+                        "companion.enabled = false\n"}}),
+        ("a test file carrying the line as a fixture",
+         {"tool_name": "Write", "tool_input": {
+             "file_path": os.path.join(ROOT, "tests", "test_x.py"),
+             "content": "FIXTURE = 'write.enabled = true'"}}),
+        ("a document naming the policy key",
+         {"tool_name": "Write", "tool_input": {
+             "file_path": os.path.join(ROOT, "docs", "x.md"),
+             "content": "HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Heron "
+                        "AllowChanges"}}),
+        ("reading the policy key",
+         {"tool_name": "Bash", "tool_input": {
+             "command": "reg query HKLM\\SOFTWARE\\Policies\\Heron"}}),
+        ("the line written to a file that is not heron.config",
+         {"tool_name": "Bash", "tool_input": {
+             "command": "echo 'write.enabled = true' > notes.txt"}}),
+        ("a command with nothing to do with either",
+         {"tool_name": "Bash", "tool_input": {
+             "command": "python tests/test_admin_publish.py"}}),
+    ]
+    for what, payload in allowed:
+        out, _ = run(payload)
+        check(out == "", "allowed: %s" % what)
+
+    out, _ = run(refused[0][1])
+    reason = (json.loads(out)["hookSpecificOutput"]["permissionDecisionReason"]
+              if out else "")
+    check("D-166" in reason and "Heron > AI Bridge > Settings" in reason,
+          "the refusal names D-166 and Settings in Revit - the one way on")
+    check("HERON_GUARD" not in reason,
+          "and NOT the hatch: the reader of a refusal is the AI it refused")
+    out, _ = run(refused[0][1], env={"HERON_GUARD": "off"})
+    check(out == "",
+          "the hatch still works for the person - HERON_GUARD=off allows it")
+
+    # The copies, held to what they copy.
+    perms = io.open(os.path.join(ROOT, "platform", "Heron.Core",
+                                 "HeronPermissions.cs"), encoding="utf-8").read()
+    keys = tuple(re.search(r'%s\s*=\s*"([^"]+)"' % name, perms).group(1)
+                 for name in ("WriteEnabledKey", "AdminEnabledKey",
+                              "PublishEnabledKey")
+                 if re.search(r'%s\s*=\s*"([^"]+)"' % name, perms))
+    check(keys == GUARD.SWITCH_KEYS,
+          "its three keys are HeronPermissions' three: %s" % (keys,))
+    check(all(GUARD.SWITCH_KEY.search(k) for k in GUARD.SWITCH_KEYS)
+          and not any(GUARD.SWITCH_KEY.search(k) for k in (
+              "write.askBeforeKeeping", "companion.enabled",
+              "bridge.autoConnect", "fragments.warmUp")),
+          "and its pattern names those three and none of the other settings")
+    sys.path.insert(0, os.path.join(ROOT, "mcp", "client"))
+    import heron_config as CONFIG
+    check(tuple(CONFIG.TRUE_WORDS) == GUARD.TRUE_WORDS,
+          "its true words are heron_config's, which "
+          "tests/test_config_and_health.py holds to HeronConfig.GetBool: %s"
+          % (GUARD.TRUE_WORDS,))
+
+    home = tempfile.mkdtemp(prefix="heron-guard-diary-")
+    try:
+        steer = {"LOCALAPPDATA": home, "XDG_DATA_HOME": home,
+                 "HERON_KNOWLEDGE": ""}
+        run(dict(refused[6][1], session_id="g-9"), env=steer)
+        diary = os.path.join(home, "Heron", "logs", "heron-hooks.jsonl")
+        lines = []
+        if os.path.isfile(diary):
+            lines = [json.loads(l) for l in io.open(diary, encoding="utf-8")
+                     if l.strip()]
+        check(len(lines) == 1 and lines[0].get("decision") == "deny"
+              and lines[0].get("said", "").startswith("D-166")
+              and lines[0].get("session") == "g-9",
+              "and every such refusal is a diary line, so tools/hook-report.py "
+              "can show whether an AI ever tried")
     finally:
         shutil.rmtree(home, ignore_errors=True)
 

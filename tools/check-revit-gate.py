@@ -525,7 +525,8 @@ def ask(fid, name, doc, raw, code):
         say(BY_DESIGN,
             "declared %s, so YES - by design, and that is the point of the "
             "declaration. What stands in front of it is not this fragment: "
-            "`write.enabled` defaults to false (D-19), the permission gate is "
+            "the Changes switch is off whenever Revit starts and only the "
+            "modeller turns it on, in Revit (D-19, D-166), the permission gate is "
             "in the add-in where nothing on the Python side can talk past it, "
             "and without an explicit `apply` the run happens and is ROLLED "
             "BACK - D-55 makes the preview the run itself, so a caller who "
