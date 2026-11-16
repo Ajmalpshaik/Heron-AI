@@ -1,34 +1,63 @@
 heron-agent: HERON-REVIT-DOC-004
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-DOC-033
-semantic-identity: "save another open document to its own file, and close its window"
+semantic-identity: "save an open document to its own file, and close its window - the model Heron is changing too, once its change is kept"
 kind: action
 domain: revit.document
 capability: SAVE_DOCUMENT
-version: 2
+version: 3
 source: OFFICIAL
 risk: PUBLISH
+
+# VERSION 3 (2026-11-16) - THE MODEL HERON WORKS IN IS SAVED TOO, BY THE ADD-IN
+# AFTER ITS UNDO ENTRY HAS CLOSED, and back to DRAFT. OPEN-QUESTIONS Q-69,
+# answered by Ajmal PS that day in his own words, "go with you suggetions":
+# Shape 2 - save after the group closes, from the add-in, only when the
+# modeller asks; Heron never picks a name. Version 2 was PROVEN on 2026-10-07
+# (the proof block below, kept as the record of what it proved - the save of
+# ANOTHER open document, and the refusal of the one Heron works in, which
+# version 3 now saves); its C# moved, so it is DRAFT again until NEEDS-CHECKING
+# Group EN is run (D-30, D-117). Rows 5b-365 and 5b-513. Three new inputs:
+# `saveAsPath`, `replaceFile`, and the ambient `saveWhenKept`; `documentPath`
+# may now be left out, for a Save As. Recorded as D-171. A PREVIEW SAVES TOO:
+# asked whether a preview of "save my model" should really save, the owner
+# answered "okkey" on 2026-11-16 - only when the save was asked for, the reply
+# saying a save cannot be undone - so version 3 can be tried now, rolled
+# back, on a scratch model. Nothing of version 3 has run in Revit.
 
 purpose: >
   Saves an open document - a family built in its own window, a tyre for a car -
   to the file it was opened from, named by that file's path, and closes its
-  window when asked, so the family it belongs in can load it.
+  window when asked, so the family it belongs in can load it. Since version 3
+  it also saves the model Heron is changing: to its own file, or - never saved
+  yet - as the full path the modeller typed.
 
-  **IT SAVES A DOCUMENT OTHER THAN THE ONE HERON IS WORKING IN.** Revit will not
-  save a document while Heron's Undo entry is open in it, and Heron's entry is
-  open in the document it works in for the whole run - so that one is refused
-  by name, with the reason. Version 1 saved exactly that one, and could never
-  have worked (row 5b-365).
+  **THE MODEL HERON IS CHANGING IS SAVED BY THE ADD-IN, ONCE HERON'S UNDO
+  ENTRY HAS CLOSED** (version 3, Q-69, D-171). Revit will not save a document
+  while Heron's Undo entry is open in it, so this card never saves that one
+  itself - version 1 tried to, which Revit always refuses (row 5b-365). It
+  asks the add-in through `saveWhenKept`, and the reply's `save` block says
+  what the add-in wrote. **A kept change is saved, and so is a preview**: the
+  preview's change is rolled back and its save is NOT - the reply says both,
+  and that a save cannot be undone. **A Discard saves nothing**: the box is
+  answered before the save, so a save follows only a Keep. A model that has a
+  file keeps its name; a new one goes only to the path given, replacing a file
+  there only with `replaceFile=true`, and the chat follows the model to its
+  new name. Heron never closes that model's window.
+
+  **ANOTHER OPEN DOCUMENT IS SAVED INSIDE THE RUN**, as version 2 did - so a
+  Discard of it still writes its file (row 5b-1824).
 
   **A LOCAL SAVE OF A WORKSHARED MODEL IS NOT A SYNC.** It reaches nobody
-  else on the job, so it says so - `SYNC_WITH_CENTRAL` is the other job.
+  else on the job, so it says so - `SYNC_WITH_CENTRAL` is the other job. The
+  CENTRAL model opened directly is refused, and nothing here synchronises.
 
   **IT IS `PUBLISH` RISK AND IT IS NOT UNDOABLE.** It never chooses a file name:
-  a document with no file is not found here at all.
+  another document with no file is not found here at all.
 
   **ONLY A WINDOW THAT IS NOT IN FRONT CAN BE CLOSED.** Revit lets no tool close
   the window in front, so that one is saved and left open for the modeller to
@@ -41,16 +70,42 @@ contract:
     - name: uidoc
       type: UIDocument
     # The full path of the OPEN document to save - the .rfa or .rvt it was
-    # opened from. Never the document Heron is working in: Revit refuses that.
+    # opened from. Another open document is saved now; the document Heron is
+    # working in is saved by the add-in once the group has closed, after a
+    # Keep or a preview (version 3, D-171). Left out only for a Save As
+    # (saveAsPath).
     - name: documentPath
       type: string
       source: request
+      optional: true
+    # VERSION 3. The full .rvt (or .rfa for a family) path THE MODELLER TYPED,
+    # for a Save As of the model Heron works in when it has NEVER been saved.
+    # Never a path Heron makes up; refused for a model that has a file.
+    - name: saveAsPath
+      type: string
+      source: request
+      optional: true
+    # VERSION 3. Off unless typed: replace a file already at saveAsPath -
+    # Revit's own SaveAsOptions default is not to. Say true only when the
+    # modeller said to replace it.
+    - name: replaceFile
+      type: bool
+      source: request
+      optional: true
     # Off unless typed: after the save, close that document's window - only
-    # when it is NOT the window in front, which Revit lets no tool close.
+    # when it is NOT the window in front, which Revit lets no tool close, and
+    # never the window of the model Heron works in.
     - name: closeWindow
       type: bool
       source: request
       optional: true
+    # VERSION 3, Q-69: the add-in's save of the document Heron works in, done
+    # once the group has closed - after a Keep or a preview, never after a
+    # Discard (D-171) - null for its own file, or the Save As path; the bool
+    # is replaceFile.
+    - name: saveWhenKept
+      type: Action<string, bool>
+      source: ambient
   provides:
     - name: saved
       # True only when something was WRITTEN. A document with no unsaved
@@ -64,6 +119,18 @@ contract:
       # Read back: true only when the document is no longer open afterwards.
       role: result
       type: bool
+    - name: saveAsked
+      # VERSION 3. True when the run asked the add-in to save the document
+      # Heron works in once its Undo entry closes. Asking is not saving: the
+      # reply's `save` block says whether the add-in did - after a Keep or a
+      # preview, never after a Discard.
+      role: result
+      type: bool
+    - name: saveAskedTo
+      # VERSION 3. The file that save goes to: the model's own, or the Save As
+      # path given, spelt in full.
+      role: result
+      type: string
     - name: refused
       # Why it declined, in the user's words - evidence it looked and said no.
       # Never a thing it DID (D-52).
@@ -74,7 +141,12 @@ contract:
 
 # VERSION 2 PROVED 2026-10-07 on scratch families HeronNest_Car / HeronNest_Hub
 # (Revit 2024), signed by Ajmal PS on his word - NEEDS-CHECKING CS2. Version 1
-# was never run in Revit, and could not have saved (row 5b-365).
+# was never run in Revit, and could not have saved (row 5b-365). The proof
+# below is version 2's, kept as its record: its negative case - the document
+# Heron works in, refused - is the case version 3 now saves, after the group.
+# Version 3 is proved by NEEDS-CHECKING Group EN EN6 to EN10, as previews on a
+# scratch model - a preview saves too (D-171) - and its save after a Keep is
+# looked at once it is PROVEN, since D-117 refuses a DRAFT kept for real.
 
 proof:
   date: '2026-10-07'
@@ -119,18 +191,27 @@ compatibility-note: >
   Revit" - the application - which is why no posted command is used to close a
   window. `SaveAs` is deliberately not called here at all.
 
+  Version 3 calls `Document.IsFamilyDocument`,
+  `Document.GetWorksharingCentralModelPath()` and
+  `ModelPathUtils.ConvertModelPathToUserVisiblePath`, present 2020 through 2027,
+  and saves nothing of the document Heron works in: the add-in does, once the
+  group has closed, with `Document.Save(SaveOptions)` or
+  `Document.SaveAs(string, SaveAsOptions)` (`RevitFragmentSave.cs`).
+
 # ROUTING - repeated in SYNC_WITH_CENTRAL and ACTIVATE_DOCUMENT.
 #
 #   "save the tyre family and close it" -> here, with its file and closeWindow
-#   "save the model"        -> here only for a model Heron is NOT working in;
-#                              the one it works in is refused, with Ctrl+S named
+#   "save the model"        -> here, with the model's file - the one Heron works
+#                              in is saved by the add-in once its Undo entry
+#                              has closed (version 3). Never saved yet:
+#                              saveAsPath, the full path the modeller typed
 #   "sync to central"       -> SYNC_WITH_CENTRAL - and on a workshared model a
 #                              save is NOT that, which is the confusion worth
 #                              preventing
 #   "go back to the car"    -> ACTIVATE_DOCUMENT, with the car's file
-#   "save it somewhere else"-> NOT HERE, and nothing does it. SaveAs can
-#                              overwrite another model and no fragment invents a
-#                              path
+#   "save it somewhere else"-> NOT HERE for a model that has a file, and nothing
+#                              does it. SaveAs can overwrite another model and
+#                              no fragment invents a path
 
 utterances:
   - save the model

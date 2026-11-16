@@ -708,6 +708,50 @@ model, a file on a network folder), what the add-in's dialog watch does with one
 **Ajmal PS decides.** Until he does, nothing Heron does at runtime changes: `SAVE_DOCUMENT` still refuses
 the model it works in, and the methods ask the modeller to save first.
 
+**Work:** built 2026-11-16, Shape 2 - compiled for Revit 2020 to 2027 and tested in a cloud container,
+**NOT RUN IN REVIT.** `SAVE_DOCUMENT` version 3 asks for a save of the document Heron works in through a new
+ambient need, `saveWhenKept` - null for its own file, or the full path the modeller typed for a Save As of
+a model never saved, and `replaceFile` (off unless typed) to replace a file already there - and refuses
+before asking: a model that has a file is saved to it, never under a new name; a relative path, a folder
+that does not exist, the wrong extension, a file open in Revit or a workshared model for a Save As; the
+central model opened directly for a Save. The add-in saves in the same request, after the group's block
+has closed and the reply is built ([`RevitFragmentSave.cs`](../../revit/Heron.Revit.Addin/RevitFragmentSave.cs),
+called at the end of `RevitFragment.Run`), and the reply's `save` block says what it did. **The preview
+point, asked again in plain words the same day** - should a preview of *"save my model"* really save? - was
+put to the owner as *"Yes, preview saves - only when you asked to save; the save tool can be tested now on a
+scratch model; the reply says a save cannot be undone"*, and **Ajmal PS answered *"okkey"* (2026-11-16)** -
+[D-171](../decisions/D-171.md) point 6, whose note under D-55 in the decision log already says a save asked
+for with a run is not rolled back (D-144: the old record keeps every word). The three points, as built:
+**(1)** the act after the group is the save alone, of what the fragment asked, behind the Publish switch read
+again as it saves, and said on the reply; **(2)** a group Revit reports kept is followed by the save, and so
+is a preview - a run nobody was asked about, rolled back, whose rollback Revit reports held: its change is
+undone, its save is not, and the reply opens *"THE CHANGE WAS ROLLED BACK ... AND THE SAVE WAS DONE"* and
+says a save cannot be undone. A **Discard** or a closed box saves nothing - D-171 point 5, the box is answered
+before the save, so a save follows only a Keep - and nor does a run whose rollback did not hold or one Revit
+did not report kept. A preview with no save asked for saves nothing and carries no `save` block. **(3)** the
+reply names the model as the change was made and the `save` block its new title and file, and the chat's pin
+follows a Save As only when that block says this run did it, of the pinned model
+([`heron_write.py`](../../mcp/server/heron_write.py) `DocumentPin.follow_save_as`, `after_save`; `revit_change`
+calls it once the pin has passed the reply). The proving client prints the `save` block under the verdict and
+writes it into a `validate` phase's record ([`heron_bridge_client.py`](../../mcp/client/heron_bridge_client.py)
+`save_sentence`), so a preview's ROLLED BACK is never read as nothing written to disk. Every save that was
+done says it cannot be undone; a workshared local copy says nothing went to central; nothing here calls
+Synchronize with Central (Article 10). No new switch: the Publish switch the question names. A chat's
+`dry_run` of a Publish card is still refused before anything is sent (`heron_tools.dry_run_refusal`), so the
+preview that saves is the proving client's. **Tests:** `tests/test_save_after_group.py` (new),
+`tests/test_document_pin.py` (a Save As section) and `tests/test_fragment_ambient.py` (the new need) - 40, 6
+and 3 checks failed on the code before the first build; the preview rule's 18 checks failed on the first
+build; all pass now. **The card is DRAFT** - its C# moved, so version 2's proof is kept as its record and no
+longer stands (D-30), and a kept change from it is refused (D-117); `family-creation` step 11 f and
+`mass-family-creation` step 7 say the modeller saves by hand until it is PROVEN again. **Owed:
+[NEEDS-CHECKING Group EN](../needs-checking/group-en.md) EN6 to EN10, on a real Revit - EN6, EN8, EN9 and
+EN10 run TODAY as previews on a scratch model**, with the Publish switch on, and are the proof's route; EN7's
+Discard and the chat halves of EN6 and EN8 wait for the card to be PROVEN. **Not decided here:** whether a
+Discard must also stop version 2's save of ANOTHER open document, which is made before the box, and Revit's
+Keep or Discard box telling a publish its save is "done already"
+([row 5b-1824](../fragment-issues/row-5b-1824.md)); and the methods' *"Heron cannot save the model it works
+in"* lines, true while the card is DRAFT, which change the day it is PROVEN.
+
 ---
 
 ### ✅ Q-70 — On a PC whose Claude app keeps its own copy of `%APPDATA%\Heron`, which `heron.config` should Heron believe, and should it say when the two differ? *(found 2026-10-17)* → **decided 2026-11-15 on the owner's delegation**

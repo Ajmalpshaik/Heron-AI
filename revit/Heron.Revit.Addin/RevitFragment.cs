@@ -687,6 +687,12 @@ namespace Heron.Revit.Addin
             // D-160: a keep Revit counted NOTHING in - rolled back instead of
             // kept, so no empty entry is left in the modeller's undo list.
             var keptNothing = false;
+
+            // Q-69: whether Revit reports the group KEPT - read from its
+            // status once it is assimilated, never from `apply`. With the
+            // rollback's own outcome, what the save after the group stands on
+            // (RevitFragmentSave.cs, D-171).
+            var groupKept = false;
             var selectionRestored = true;
 
             IList<HeronScriptHost.Variable> state = null;
@@ -1169,6 +1175,10 @@ namespace Heron.Revit.Addin
                                                             RevitReadBack.Keys(readAfter));
                     }
 
+                    // Q-69: KEPT, AS REVIT SAYS IT - read here, while the group
+                    // still exists to be asked.
+                    groupKept = apply && group.GetStatus() == TransactionStatus.Committed;
+
                     // D-138: THE GRANT IS GIVEN HERE AND NOWHERE ELSE - after the
                     // modeller pressed the third link in Revit and this change
                     // was kept. Nothing in the request can reach this line.
@@ -1211,6 +1221,18 @@ namespace Heron.Revit.Addin
             if (readMode != null && changedIds != null)
                 verdict = WithReadBack(verdict, HeronReadBack.Compare(readMode, changedIds,
                                                                       readBefore, readAfter));
+
+            // Q-69, D-171: THE SAVE THE FRAGMENT ASKED FOR, done here - after
+            // the group's block has closed and the reply above is built, so
+            // nothing of Heron's is open in the model and the reply names it as
+            // the change was made. After a group Revit reports KEPT, and after a
+            // preview whose rollback HELD - the change undone, the save not, and
+            // the reply says both. Never after a Discard: a save follows only a
+            // Keep. Its own block on the reply says what it did; the two lines
+            // below only add fields to it.
+            verdict = SaveAfterTheGroup(verdict, globals.__heron, target, name, risk,
+                                        sendsOut, apply, groupKept,
+                                        rolledBack != null && rolledBack.Held, answered);
             if (keptUnderGrant != null) return WithGrant(verdict, keptUnderGrant);
             return answered != null ? WithAnswer(verdict, answered, refreshed) : verdict;
         }
@@ -4421,6 +4443,31 @@ namespace Heron.Revit.Addin
                          .Append(" = (Func<bool, IFamilyLoadOptions>)__heron[\"").Append(name)
                          .Append("\"];\n");
                     how.Add(name + " - Heron's answer to Revit's Family Already Exists dialog");
+                    continue;
+                }
+
+                // Q-69: the fragment's way to ask for a save of the document
+                // it works in. The add-in does it after the group has closed -
+                // after a Keep, or a preview whose rollback held, never after a
+                // Discard (D-171) - see RevitFragmentSave.cs. NEVER ON THE READ
+                // PATH: a read has no group to close, so nothing there says the
+                // run was a preview or a Keep.
+                if (name == SaveWhenKeptNeed)
+                {
+                    if (reading)
+                    {
+                        return Json.Error("needs_write_path",
+                            "This fragment asks Heron to save the model once its Undo entry has "
+                            + "closed, so it runs only as a change - never as a read. Nothing was "
+                            + "run and nothing was saved.");
+                    }
+                    bound.Add(name);
+                    globals.__heron[name] = SaveAsk.Bind(globals.__heron);
+                    lines.Append("Action<string, bool> ").Append(name)
+                         .Append(" = (Action<string, bool>)__heron[\"").Append(name)
+                         .Append("\"];\n");
+                    how.Add(name + " - Heron saves this model once its Undo entry has closed, "
+                            + "after a Keep or a preview, never after a Discard (Q-69, D-171)");
                     continue;
                 }
 
@@ -7733,6 +7780,17 @@ namespace Heron.Revit.Addin
         /// brain/heron_fragment.py's AMBIENT.
         /// </summary>
         private const string FamilyLoadNeed = "familyLoadOptions";
+
+        /// <summary>
+        /// The ambient need through which a fragment asks the ADD-IN to save
+        /// the document it works in once Heron's group has closed - after a
+        /// Keep or a preview, never after a Discard - OPEN-QUESTIONS Q-69 and
+        /// D-171, 2026-11-16. The name says "when kept" for what it was first
+        /// built as; a preview saves too since the owner's "okkey" that day.
+        /// See RevitFragmentSave.cs. The same name is in
+        /// brain/heron_fragment.py's AMBIENT.
+        /// </summary>
+        private const string SaveWhenKeptNeed = "saveWhenKept";
 
         /// <summary>True when the contract sent with the request declares this need.</summary>
         private static bool DeclaresNeed(IList<Dictionary<string, string>> needs, string wanted)

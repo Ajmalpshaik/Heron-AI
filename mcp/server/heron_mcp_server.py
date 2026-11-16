@@ -127,6 +127,7 @@ from heron_session import NotBound                  # noqa: E402
 from heron_write import (BadDistance, describe_vertical,   # noqa: E402
                          parse_millimetres, reported_elsewhere, skipped_sentence,
                          undo_line, undo_sent_elsewhere)
+from heron_write import after_save                  # noqa: E402 - Q-69
 from heron_failure import analyse, explain          # noqa: E402
 from heron_failure import RUNNING as RUNNING_OUTCOME   # noqa: E402
 from heron_failure import UNKNOWN as UNKNOWN_OUTCOME   # noqa: E402
@@ -2003,6 +2004,12 @@ def revit_change(capability: str = "", values: str = "",
                             "callers, not to a chat.")
         return wrong_model
 
+    # Q-69: WHAT THE SAVE AFTER THE GROUP DID, and a Save As this run did of
+    # the pinned model followed by the pin, deliberately - only now, once the
+    # pin has passed the reply, and before anything reads whether the model has
+    # a file. heron_write.after_save says why.
+    reply, saved = after_save(pinned, reply)
+
     # THIS CALL'S PLACE IN THE BATCH, decided once the answer is in hand.
     _BATCH.turn(started, time.monotonic())
 
@@ -2107,6 +2114,10 @@ def revit_change(capability: str = "", values: str = "",
         lines.append("")
         lines.append(str(reply["verdict"]) if dry_run
                      else runs.verdict_line(reply, _BATCH))
+
+    # Q-69: AND WHAT THE SAVE DID, under the verdict - kept or not, in the
+    # add-in's own words, a Discard's included.
+    lines.extend(saved)
 
     # NO "NOT PROVEN" LINE HERE ANY MORE. It warned after the change was kept;
     # a fragment that is not PROVEN is now refused before it is sent (D-117).
