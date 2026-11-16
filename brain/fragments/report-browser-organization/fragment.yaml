@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -46,6 +46,50 @@ contract:
       type: int
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-16'
+  by: Ajmal PS
+  model: night-scratch (3,213 elements), Revit 2024, session 8292
+  positive_case: 'run with numbers=HZ-T1 - the first of 3 tracked inputs - the arrangement
+    was re-made first by running create-sheets with this phase''s own values - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    describe Action`3, findings 1 item(s) [Every view and sheet shows in the Project Browser.],
+    forSheets BrowserOrganization, forViews BrowserOrganization, hiddenByFilter 0, lines 2
+    item(s) [Views: organised by "all" | folders Family and Type | sorted..., Sheets: organised
+    by "all" | folders (none - a flat list) | ...], organization Views: organised by "all"
+    | folders Family and Type | sorted by View Name Ascending | 0 hidden by its filter, 10
+    shown
+
+    Sheets: organised by "all" | folders (none - a flat list) | sorted by Sheet Number Ascending
+    | 0 hidden by its filter, 1 shown, parameterName Func`3, sheets 1 item(s) [ViewSheet],
+    views 10 item(s) [Level 1, Level 1, Level 2, ...]. on night-scratch'
+  negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). report-browser-organization\
+    \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
+    \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
+    \ about a set it was not given - is caught here by the answer following the input exactly\
+    \ across 3 different inputs:\n\n      numbers=HZ-T1 -> organization Views: organised by\
+    \ \"all\" | folders Family and Type | sorted by View Name Ascending | 0 hidden by its\
+    \ filter, 10 shown\nSheets: organised by \"all\" | folders (none - a flat list) | sorted\
+    \ by Sheet Number Ascending | 0 hidden by its filter, 1 shown\n      numbers=HZ-T1,HZ-T2\
+    \ -> organization Views: organised by \"all\" | folders Family and Type | sorted by View\
+    \ Name Ascending | 0 hidden by its filter, 10 shown\nSheets: organised by \"all\" | folders\
+    \ (none - a flat list) | sorted by Sheet Number Ascending | 0 hidden by its filter, 2\
+    \ shown\n      numbers=HZ-T1,HZ-T2,HZ-T3 -> organization Views: organised by \"all\" |\
+    \ folders Family and Type | sorted by View Name Ascending | 0 hidden by its filter, 10\
+    \ shown\nSheets: organised by \"all\" | folders (none - a flat list) | sorted by Sheet\
+    \ Number Ascending | 0 hidden by its filter, 3 shown\n\n    Different inputs, exact matches\
+    \ every time. A fragment falling back to the active view, the whole model, or a previous\
+    \ run could not do that."
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.2.0.0
+    addin_hash: 80819edd3983a0d5
+  fingerprint: ea110d666d92692f
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

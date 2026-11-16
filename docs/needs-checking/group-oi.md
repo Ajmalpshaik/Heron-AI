@@ -135,3 +135,7 @@ of the 13 GB limit.
 `tag-areas`, `dimension-views-by-rules`, `tag-views-by-rules`, `join-geometry`, `merge-parts`,
 `create-assembly-views`, `place-stair-tread-numbers` and `add-key-schedule-rows` - `accept` on each draft, none
 refused, and each card's status flipped DRAFT to PROVEN. OI10 and OI16-OI18 stay owed.
+
+**Signed 2026-11-17, as Ajmal PS, on the owner's word** (*"Yes, sign both"*): `report-browser-organization`
+(OI19) and `trace-connectivity` (OI20) - `accept` on each tracking draft, none refused, each status flipped
+DRAFT to PROVEN.
