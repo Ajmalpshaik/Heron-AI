@@ -44,3 +44,22 @@ Recorded, not repaired, while writing this group: [row 5b-1780](../fragment-issu
 
 **Read what each verdict quotes before signing: the runner cannot read a sentence**, and OB1, OB2 and OB7's
 negatives are judged only on their counts.
+
+### Results, 2026-11-16 - Revit 2024
+
+**Arranged:** `Heron OB Test.rvt` made by Heron from `English\DefaultMetric.rte` (OB0, `CREATE_FAMILY_DOCUMENT`,
+`CREATE_LEVELS` *Heron OB Roof* 6000, a column placed and marked `OB-POST`), saved under `%TEMP%\heron-work\ob`.
+The job file ran from this branch (`batch-prove`, every run rolled back); the five drafts are in
+`brain/proof-drafts/runs/`.
+
+| Row | Result |
+|---|---|
+| OB1, run 2026-11-16 | **PASS** - `written 1`; the negative wrote nothing. |
+| OB2, run 2026-11-16 | **PASS** - `written 1`; the negative wrote nothing. |
+| OB3, run 2026-11-16 | **PASS** - `placed 2` non-structural architectural columns with their top on *Heron OB Roof* - 150 mm, read back, turned 90 degrees; negative *"'ninety' is not a rotation"*. An architectural column's second *Top Level* parameter is `SCHEDULE_TOP_LEVEL_PARAM`. Group OE met the same refusal on main's version 5 the same day (OE1 step 5) - row 5b-1704, repaired here. |
+| OB4, run 2026-11-16 | **NOT RUN** - the by-hand refusals were skipped in the sitting. |
+| OB5, run 2026-11-16 | **PASS** - `createdTypeId` set; the negative made none. |
+| OB6, run 2026-11-16 | **NOT RUN** - skipped in the sitting. |
+| OB7, run 2026-11-16 | **PASS** - `rotated 1`; the negative rotated nothing. |
+
+**For signing:** five cards with a PASS draft. OB4 and OB6 are by-hand evidence the owner may ask for first.
