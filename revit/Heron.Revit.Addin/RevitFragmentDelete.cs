@@ -47,7 +47,12 @@ namespace Heron.Revit.Addin
     ///
     /// NO ANSWER IN TIME DELETES NOTHING. Esc, the close button and Don't
     /// delete are no; a Delete pressed after RevitDispatcher.TimeToAnswer ran
-    /// out is no too, and the box says by when.
+    /// out is no too, and the box says by when. At that moment the box closes
+    /// by itself (BoxCloser, 5b-1700), so a box nobody is there to answer no
+    /// longer keeps Revit busy for every request after it.
+    ///
+    /// AN ELEMENT WITH NO CATEGORY IS NAMED BY ITS KIND (ListedAs, 5b-1700):
+    /// "(no category) SketchPlane", not "(no category)" alone.
     /// </summary>
     internal static partial class RevitFragment
     {
@@ -198,8 +203,8 @@ namespace Heron.Revit.Addin
             foreach (var id in going)
             {
                 ElementId root;
-                var withWhat = with.TryGetValue(id, out root) ? CategoryName(target, root) : null;
-                rows.Add(new HeronDeleteQuestion.Going(id.ToString(), CategoryName(target, id), withWhat));
+                var withWhat = with.TryGetValue(id, out root) ? ListedAs(target, root) : null;
+                rows.Add(new HeronDeleteQuestion.Going(id.ToString(), ListedAs(target, id), withWhat));
             }
 
             UIDocument front = null;
@@ -262,6 +267,7 @@ namespace Heron.Revit.Addin
             RevitDispatcher.AwaitingDeleteAnswer();
 
             var result = TaskDialogResult.Cancel;
+            var closedByItself = false;
             var clock = Stopwatch.StartNew();
             try
             {
@@ -287,9 +293,15 @@ namespace Heron.Revit.Addin
                 // Revit's setter refuses a button the box does not have yet.
                 box.DefaultButton = TaskDialogResult.CommandLink2;
 
+                // IT CLOSES BY ITSELF AT ITS DEADLINE - 5b-1700. A Delete after
+                // it is not kept anyway; left open, the box only kept Revit
+                // busy, and every request after it was refused until a person
+                // came back to close it.
+                using (var closer = BoxCloser.Start(HeronDeleteQuestion.CloseAfter(window), going.Count))
                 using (HeronDialogWatch.HeronAsks())
                 {
                     result = box.Show();
+                    closedByItself = closer != null && closer.Closed;
                 }
             }
             catch (Exception ex)
@@ -306,7 +318,9 @@ namespace Heron.Revit.Addin
                     : HeronDeleteQuestion.Deleted)
                 : result == TaskDialogResult.CommandLink2
                     ? HeronDeleteQuestion.DontDelete
-                    : HeronDeleteQuestion.Closed;
+                    : closedByItself
+                        ? HeronDeleteQuestion.TimedOut
+                        : HeronDeleteQuestion.Closed;
 
             var restored = putBack();
             HeronApplication.Log("Delete box: '" + shown + "' would delete " + going.Count
@@ -328,7 +342,7 @@ namespace Heron.Revit.Addin
             // EACH CODE WRITTEN OUT, as every refusal in the add-in is, so the
             // failure table's check can find what the add-in produces.
             var declined = HeronDeleteQuestion.Declined(asking, name, measured.Account(), restored);
-            var refusal = answer == HeronDeleteQuestion.TooLate
+            var refusal = answer == HeronDeleteQuestion.TooLate || answer == HeronDeleteQuestion.TimedOut
                 ? Json.Error("delete_too_late", declined)
                 : Json.Error("delete_declined", declined);
             return DeleteFields(refusal, going.Count, onScreen, answer, asking);
@@ -398,6 +412,128 @@ namespace Heron.Revit.Addin
             {
                 return null;
             }
+        }
+
+        /// <summary>
+        /// What the box lists an element under: its category's name, or for
+        /// one with none, "(no category)" and Revit's own name for its kind -
+        /// FRAGMENT-ISSUES 5b-1700. Read after the rollback, when every one of
+        /// them is back in the model. Never throws.
+        /// </summary>
+        private static string ListedAs(Document doc, ElementId id)
+        {
+            var category = CategoryName(doc, id);
+            if (category != null) return category;
+            string kind = null;
+            try
+            {
+                var element = doc.GetElement(id);
+                if (element != null) kind = element.GetType().Name;
+            }
+            catch (Exception)
+            {
+                kind = null;
+            }
+            return HeronDeleteQuestion.WithoutCategory(kind);
+        }
+
+        /// <summary>
+        /// Closes the delete box when its time to answer runs out - 5b-1700.
+        /// A thread-pool timer, because Revit's own thread is inside the box
+        /// until it closes; at the deadline it finds the box among the windows
+        /// of the thread that showed it - by its class and its exact title,
+        /// HeronDeleteQuestion.IsTheBox - and posts it WM_CLOSE, which the box
+        /// takes as Esc (AllowCancellation) and so as no. Nothing else is
+        /// touched, and a box already answered is simply not found. Dispose it
+        /// once the box has its answer.
+        ///
+        /// NOT YET RUN IN REVIT (NEEDS-CHECKING Group NY, NY2): whether Revit's
+        /// task dialog closes on WM_CLOSE is the part a real Revit must show.
+        /// If it does not, the box stays open exactly as it did before this.
+        /// </summary>
+        private sealed class BoxCloser : IDisposable
+        {
+            private const uint WmClose = 0x0010;
+            private readonly System.Threading.Timer _timer;
+            private readonly uint _thread;
+            private readonly int _total;
+            private int _closed;
+
+            private BoxCloser(TimeSpan after, int total)
+            {
+                _thread = GetCurrentThreadId();
+                _total = total;
+                _timer = new System.Threading.Timer(delegate { CloseTheBox(); }, null, after,
+                                                    System.Threading.Timeout.InfiniteTimeSpan);
+            }
+
+            /// <summary>A closer for the box about to be shown, or null when it has no deadline.</summary>
+            internal static BoxCloser Start(TimeSpan? after, int total)
+            {
+                return after.HasValue ? new BoxCloser(after.Value, total) : null;
+            }
+
+            /// <summary>Did it close the box?</summary>
+            internal bool Closed
+            {
+                get { return System.Threading.Interlocked.CompareExchange(ref _closed, 0, 0) == 1; }
+            }
+
+            public void Dispose()
+            {
+                _timer.Dispose();
+            }
+
+            private void CloseTheBox()
+            {
+                try
+                {
+                    EnumThreadWindows(_thread, delegate (IntPtr window, IntPtr unused)
+                    {
+                        if (!IsWindowVisible(window)) return true;
+                        var kind = new System.Text.StringBuilder(64);
+                        GetClassName(window, kind, kind.Capacity);
+                        if (!string.Equals(kind.ToString(), HeronDeleteQuestion.DialogClass,
+                                           StringComparison.Ordinal)) return true;
+                        var title = new System.Text.StringBuilder(256);
+                        GetWindowText(window, title, title.Capacity);
+                        if (!HeronDeleteQuestion.IsTheBox(kind.ToString(), title.ToString(), _total))
+                            return true;
+                        if (PostMessage(window, WmClose, IntPtr.Zero, IntPtr.Zero))
+                            System.Threading.Interlocked.Exchange(ref _closed, 1);
+                        return false;
+                    }, IntPtr.Zero);
+                }
+                catch (Exception ex)
+                {
+                    // A thread-pool thread: nothing may escape it. The box then
+                    // stays open, as it did before this closer existed.
+                    HeronApplication.Log("Could not close the delete box at its deadline: " + ex.Message);
+                }
+            }
+
+            private delegate bool EnumWindowsProc(IntPtr window, IntPtr lParam);
+
+            [System.Runtime.InteropServices.DllImport("kernel32.dll")]
+            private static extern uint GetCurrentThreadId();
+
+            [System.Runtime.InteropServices.DllImport("user32.dll")]
+            [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+            private static extern bool EnumThreadWindows(uint threadId, EnumWindowsProc callback, IntPtr lParam);
+
+            [System.Runtime.InteropServices.DllImport("user32.dll")]
+            [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+            private static extern bool IsWindowVisible(IntPtr window);
+
+            [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+            private static extern int GetClassName(IntPtr window, System.Text.StringBuilder name, int size);
+
+            [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+            private static extern int GetWindowText(IntPtr window, System.Text.StringBuilder text, int size);
+
+            [System.Runtime.InteropServices.DllImport("user32.dll")]
+            [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+            private static extern bool PostMessage(IntPtr window, uint message, IntPtr wParam, IntPtr lParam);
         }
 
         /// <summary>Is the element in the model now? Never throws.</summary>

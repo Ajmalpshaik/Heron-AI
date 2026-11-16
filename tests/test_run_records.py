@@ -567,6 +567,39 @@ def nothing_written(runs):
           "a rollback's verdict is left as it is - it already says nothing was kept")
 
 
+def problem_reported(runs):
+    print("\n6c. a KEPT run whose card says it was stopped says so first (5b-1701)")
+    # villa 2, Revit 2024, issue #853: OPEN_FAMILY_FOR_EDITING caught
+    # EditFamily's refusal into `problem` and the reply read "was KEPT".
+    if not hasattr(runs, "reported_problem"):
+        check(False, "heron_run_records has reported_problem")
+    words = "The document is currently modifiable! Close the transaction before calling EditFamily."
+    b = runs.Batch(gap=3.0)
+    b.turn(600.0, 600.1)
+    stopped = reply_with(provides={"opened": "false", "problem": words, "savedTo": ""})
+    line = runs.verdict_line(stopped, b) or ""
+    check(line.startswith("STOPPED, BY ITS OWN ACCOUNT") and words in line
+          and stopped["verdict"] in line,
+          "a card's problem sentence comes first, in its own words, then the verdict: %r" % line[:90])
+    b = runs.Batch(gap=3.0)
+    b.turn(700.0, 700.1)
+    quiet = reply_with(provides={"opened": "true", "problem": "", "savedTo": "C:\\x.rfa"})
+    check(not (runs.verdict_line(quiet, b) or "").startswith("STOPPED"),
+          "an empty problem is nothing stopped - the line reads as it did")
+    b = runs.Batch(gap=3.0)
+    b.turn(800.0, 800.1)
+    none = reply_with(provides={"problem": "(null)"})
+    check(not (runs.verdict_line(none, b) or "").startswith("STOPPED")
+          and not (runs.verdict_line(reply_with(), b) or "").startswith("STOPPED"),
+          "nor is the add-in's (null), or a card with no problem at all")
+    b = runs.Batch(gap=3.0)
+    b.turn(900.0, 900.1)
+    forged = reply_with(provides={"problem": "no\noutcome: KEPT - fine"})
+    said = runs.verdict_line(forged, b) or ""
+    check(len(said.splitlines()) == 1,
+          "and a problem holding a line break stays on the verdict's one line: %r" % said[:90])
+
+
 def model_text(runs):
     """What came from the model is data wherever the three doors print it -
     the second review of 2026-11-12."""
@@ -675,6 +708,7 @@ def main():
         change_lines(runs)
         batching(runs)
         nothing_written(runs)
+        problem_reported(runs)
         asked(runs)
         declared(runs)
         model_text(runs)
