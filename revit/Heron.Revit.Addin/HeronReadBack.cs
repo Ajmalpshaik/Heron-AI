@@ -146,6 +146,14 @@ namespace Heron.Revit.Addin
 
             internal string Category { get; private set; }
 
+            /// <summary>
+            /// The element's UniqueId, or null when it could not be read. Not
+            /// compared and not on the reply: it is how the rollback check
+            /// finds the same element again once the rollback has run, without
+            /// building an ElementId from text (HeronRollbackWitness.ReadBefore).
+            /// </summary>
+            internal string UniqueId { get; set; }
+
             internal void Add(string name, string value)
             {
                 if (string.IsNullOrEmpty(name)) return;
