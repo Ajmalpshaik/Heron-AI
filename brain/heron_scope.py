@@ -913,7 +913,11 @@ def builds_from(path=None, root=None):
       (main's cards, main)            the SHARED store, asked from a linked
                                       worktree whose main checkout is on main.
       (this checkout's cards, None)   the SHARED store, asked from the main
-                                      checkout on main, or an installed Heron.
+                                      checkout on main, or an installed Heron
+                                      on a PC with no developer note - one
+                                      that has it follows the checkout it
+                                      names, as a worktree does (main's cards,
+                                      main), D-167 amended 2026-11-16.
       None                            the SHARED store, when main's cards are
                                       not on disk anywhere: a worktree whose
                                       main checkout cannot be found, or a main
