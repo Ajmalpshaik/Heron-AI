@@ -303,17 +303,41 @@ else
                 var line = centre as Line;
                 if (line != null)
                 {
-                    // Revit keeps the location line, which may be a face;
-                    // the poche is centred on the wall's middle.
+                    // The poche is centred on the wall's middle, and the
+                    // location curve is NOT always on the Location Line: one
+                    // changed in Properties after the wall was drawn leaves
+                    // the curve where it was (Group OC, OC5, Revit 2024,
+                    // 2026-11-16 - Finish Face: Interior, curve still on the
+                    // centre, so shifting by the parameter put the band 100 mm
+                    // outside the wall). So the middle is read from the wall's
+                    // own EXTERIOR side face; the parameter is the fallback
+                    // only when no planar side face can be read.
                     try
                     {
-                        var structure = wall.WallType.GetCompoundStructure();
-                        var keyParameter = wall.get_Parameter(BuiltInParameter.WALL_KEY_REF_PARAM);
-                        if (structure != null && keyParameter != null)
+                        double? toExterior = null;
+                        foreach (var reference in HostObjectUtils.GetSideFaces(wall, ShellLayerType.Exterior))
                         {
-                            var shift = structure.GetOffsetForLocationLine((WallLocationLine)keyParameter.AsInteger());
-                            if (Math.Abs(shift) > 1e-9)
-                                centre = centre.CreateTransformed(Transform.CreateTranslation(wall.Orientation * -shift));
+                            var face = wall.GetGeometryObjectFromReference(reference) as PlanarFace;
+                            if (face == null) continue;
+                            toExterior = (face.Origin - line.GetEndPoint(0)).DotProduct(wall.Orientation);
+                            break;
+                        }
+                        if (toExterior.HasValue)
+                        {
+                            var toMiddle = toExterior.Value - half;
+                            if (Math.Abs(toMiddle) > 1e-9)
+                                centre = centre.CreateTransformed(Transform.CreateTranslation(wall.Orientation * toMiddle));
+                        }
+                        else
+                        {
+                            var structure = wall.WallType.GetCompoundStructure();
+                            var keyParameter = wall.get_Parameter(BuiltInParameter.WALL_KEY_REF_PARAM);
+                            if (structure != null && keyParameter != null)
+                            {
+                                var shift = structure.GetOffsetForLocationLine((WallLocationLine)keyParameter.AsInteger());
+                                if (Math.Abs(shift) > 1e-9)
+                                    centre = centre.CreateTransformed(Transform.CreateTranslation(wall.Orientation * -shift));
+                            }
                         }
                     }
                     catch { centre = located.Curve; }

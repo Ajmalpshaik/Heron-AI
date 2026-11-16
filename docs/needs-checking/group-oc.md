@@ -55,3 +55,29 @@ where OC0 left them. Read what the verdict quotes before signing: the runner can
 `US Metric\DefaultMetric.rte` - the releases that read a tag's leader through `LeaderEnd` rather than
 `GetLeaderEnd`, and `TaggedLocalElementId` rather than `GetTaggedLocalElementIds`. A proof on 2024 is evidence
 about 2024 only ([D-131](../decisions/D-131.md)): a 2020 run is `batch-prove --release 2020` once the cards are PROVEN.
+
+### Results, 2026-11-16 - Revit 2024, session 18772
+
+**Arranged (OC0):** `Heron OC Tags.rvt` built by Heron with main's PROVEN cards (`bb3235af`), lost once unsaved
+and rebuilt. Walls 352514-352519 (W6 = 352519, *Generic - 200mm* type 398), doors 352520/352522/352523, rooms
+352524/352526, door tags 352527 (D1, moved onto Room 1's tag at 2000,2500), 352528 (D2, on W3), 352529 (D3,
+moved to 50 mm clear of W6's interior face: box top 8850, face 8900), room tags 352530/352531, dimension 352532,
+text note 352533. **Three steps were not Heron's:** the detail line - `DRAW_FAMILY_DETAIL_LINES` refused
+*"FloorPlan: Level 1"*, so the ceiling plan was renamed *Level 1 RCP* and the line drawn (row 5b-1826); W6's
+Location Line - no card sets it, `WRITE_ELEMENT_PARAMETERS` refused without a reason (row 5b-1827), the owner
+set it by hand, as **Finish Face: Interior**, not Exterior - still a location line off the centre; the section
+*OC Section*, by hand as written. The owner also drew a second detail line (352661). The job ran from this
+branch with the ids filled in a copy under `%TEMP%`.
+
+| Row | Result |
+|---|---|
+| OC1, run 2026-11-16 | **PASS** - negative `moved 0`, `notModelElements [398]`, *"1 of the 2 element(s) handed in are not elements of the model ... (id 398) ... Nothing was moved"*; W6 not moved. By hand: W6 alone `moved 1`, `movedIds [352519]`. |
+| OC2, run 2026-11-16 | **PASS** - `moved 4`, `unverified` empty, *"4 moved the whole offset, 0 part of it, 0 did not move, 0 could not be read back"*. By hand: D1 and its tag - the door `moved`, the tag `unverified` with *"moved FURTHER than the offset"*, never `partly`. The elevation marker 8142: **not refused**, but `unverified` *"could not be read back"* - [row 5b-1828](../fragment-issues/row-5b-1828.md). |
+| OC3, run 2026-11-16 | **PASS** - tag heads *"TAG HEAD AT (2000, 2500, 0)"* (D1, on Room 1's) and *(6000, 5000, 0)*, room tags at their heads, the text note *"the CENTRE OF ITS BOX"*, `withoutLocation 0`, W1 *RUNS from (0, 0, 0) to (8000, 0, 0)*. OC2's positive **kept** with `try-once` on the owner's Keep: `moved 4`; the door tags then *(3000, 2500, 0)* and *(7000, 5000, 0)*, W1 unchanged. Tracking (D-53): *Walls* 6, *Door Tags* 3, *Text Notes* 1 - the record in `brain/proof-drafts/runs/report-location.json`. |
+| OC4, run 2026-11-16 | **PASS** - `madeAs` *"... with 2 column(s)"*, `missingFields` empty, both *"is already a column"* lines, no *"created with NO columns"*; negative refused naming Keynote Tags. By hand: `listKind=sheets` *"created with NO columns"*. |
+| OC5, run 2026-11-16 | **FAIL on version 2 as written, repaired here, then PASS.** The batch passed (`overModel 2`, `pairs 1`: D1's tag over Room 1's, D2's over W3 352516, Room 2's crossed by line 352688; Level 2 0/0) - **but the sign case failed**: D3's tag moved 100 mm onto W6 (box 8350-8950, W6's poche 8900-9100) was NOT reported, at `minOverlapMm` 1 or 0.1. Read through the API: W6's Location Line *Finish Face: Interior*, yet its `LocationCurve` still at y 9000 (the centre) and its faces at 8900 and 9100 - a Location Line changed in Properties after the wall was drawn **leaves the curve where it was**, so shifting the band by `GetOffsetForLocationLine` put it at 9000-9200, outside the wall. **Repaired** (still version 2, never proven): the band's middle is read from the wall's own exterior side face, the parameter only as a fallback; compiled for 2020, 2024 and 2027. Re-run: 50 mm clear **not** reported, 50 mm onto **reported** *"over wall 'Generic - 200mm' (id 352519)"*, and the batch PASS again on the repaired code. |
+| OC6, run 2026-11-16 | **PASS** - `moved 2`, `notTags` empty, `stillOverlapping` empty; negative `moved 0`. By hand, `roomTagsStayPut=true`: `moved 1`, `keptInPlace [352530, 352531]`. |
+| OC7, run 2026-11-16 | **PASS** - `found 3` (W2, W4, W5: only walls across the cut can cross it), *"Only what 'OC Section' CUTS ... the plane through (4056, 1948, 1500) mm"*; negative doors `found 0`. **Row 5b-1801's two readings agree**: the section's `View.Origin` read through the API is (4056, 1948, 1500) - the line was drawn at y about 1948, not 2500. By hand: `cutByView=true` on *FloorPlan: Level 1* refused *"... is a FloorPlan view, not a section, so NOTHING was read"*, and with no view refused; without `cutByView` the section shows 5 walls. A detail view: NOT RUN. |
+| OC8, run 2026-11-16 | **Done** - `tag-elements-in-view` on OC7's selection in *Section: OC Section*: `tagged 3`, as many as OC7 found. |
+
+**Not run:** Revit 2020 (OC1, OC2, OC4, OC7).
