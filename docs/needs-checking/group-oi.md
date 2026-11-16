@@ -10,8 +10,8 @@
 The owner's night rules ([fragment-proving skill, *A night run*](../../.claude/skills/fragment-proving/SKILL.md))
 on the 84 DRAFT cards of main f86a5843 - 524 PROVEN, 6 STALE by `check-signatures.py`. Each card was read
 against its own register rows first; the ones a fresh project can be given in a rolled-back run are the
-ten below (OI1-OI10), and eight more ran on a kept rig (OI11-OI18). **Fourteen PASS; nothing signed; the
-only thing kept is the rig, in its own scratch file.**
+ten below (OI1-OI10), and eight more ran on a kept rig (OI11-OI18). **Fourteen PASS and two tracked (OI19, OI20) - all sixteen
+signed by the owner the same night, below; the only thing kept is the rig, in its own scratch file.**
 
 **The PC, every row:** Revit 2024.3 (build 24.3.60.12), session 8292, add-in 0.2.0.0 file
 `80819edd3983a0d5` (main f86a5843); Ask to Keep OFF, Changes / Admin / Publish ON (pressed by the owner
@@ -117,11 +117,11 @@ of the 13 GB limit.
 | check-rebar-against-spec, create-rebar-shape, place-fabric-reinforcement, place-fabric-sheet, place-multi-rebar-annotation, place-rebar, place-reinforcement-symbols, place-structural-connections, report-structural-connections | Rebar and connection content the structural template carries and DefaultMetric does not |
 | add-stairs-landing, convert-cad-to-directshape | A set-up step cannot hand on what they need (only `create-wall` hands its elements on, a read step after a change step is refused - row 5b-917, stair creators are refused as set-up steps - row 5b-1556), and the rig above had no landing-less two-run stair or CAD with solids. cut-geometry, report-geometry-cuts and refit-room-elevations: OI16-OI18 |
 | report-active-workset, set-active-workset, create-workset-3d-views, report-element-ownership (STALE), report-linked-view-usage, reload-links (STALE), repoint-view-reference, insert-views-from-file, add-family-type-parameter | A workshared model, a link, reference views, a second saved project, a family document - none on the night's model |
-| trace-connectivity, refresh-view, report-browser-organization, report-project-units, report-open-documents, create-energy-model | D-53 tracking by `validate`, one at a time - not a batch |
+| refresh-view, report-project-units, report-open-documents, create-energy-model | D-53 tracking by `validate`, one at a time - not a batch |
 | report-structural-settings | Never empty: [Group MF](group-mf.md) MF2 read NEG NOT EMPTY on 2026-11-14, and its tracking negative (MF5) needs two ADMIN cards |
 | place-column-rebar, set-mep-justification, create-extrusion-roof, run-systems-analysis, measure-available-fall, measure-distance, describe-blank-parameters, show-analysis-heatmap, place-span-direction-symbols, create-property-line, create-arc-length-dimension, create-radial-dimension, run-heating-cooling-loads | An open row (5b-1644, 5b-1397/1409, 5b-1648, 5b-1460), an input shape no job can type, a contract `accept` cannot judge, or a `revit:` list without 2024 |
 
-### Two cards that cannot come back empty, proved by tracking (D-53), after midnight
+### Two cards that cannot come back empty, proved by tracking (D-53), later the same night
 
 `validate --write --vary`, one at a time, on `night-scratch`, rolled back; Revit 2024 at 11.55-12.26 GB.
 
@@ -130,12 +130,12 @@ of the 13 GB limit.
 | OI19 | `report-browser-organization` | **TRACKED** - set-up `create-sheets` (`titleBlockName=none`), `--vary "numbers=HZ-T1\|HZ-T1,HZ-T2\|HZ-T1,HZ-T2,HZ-T3"`, field `organization`: the Sheets line read *"0 hidden by its filter, 1 shown"*, then *"2 shown"*, then *"3 shown"*; the Views line stayed *"10 shown"*. Draft written. **The owner's call:** whether following the sheet count is enough for a card about the browser's organisation - its own positive, a filter that hides views, no card can make |
 | OI20 | `trace-connectivity` | **TRACKED** - set-up `create-mep-runs`, `--vary` one Supply Air run of 1, 2 and 3 ducts, field `islandSizes`: *"1 entry(ies)"*, *"2 entry(ies)"*, *"3 entry(ies)"*, bound *"elements from create-mep-runs (1)"*, *(2)*, *(3)*. Draft written. **The owner's call:** with no duct fitting in the template the ducts stay unjoined, so each is its own island - it follows the pieces, not a connected run |
 
-**Signed 2026-11-17, as Ajmal PS, on the owner's word** (*"Yes, sign all 14"*): `report-analytical-model`,
+**Signed 2026-11-16, as Ajmal PS, on the owner's word** (*"Yes, sign all 14"*): `report-analytical-model`,
 `set-circuit-naming-scheme`, `list-images`, `reload-images`, `report-paths-of-travel`, `create-shaped-stairs`,
 `tag-areas`, `dimension-views-by-rules`, `tag-views-by-rules`, `join-geometry`, `merge-parts`,
 `create-assembly-views`, `place-stair-tread-numbers` and `add-key-schedule-rows` - `accept` on each draft, none
 refused, and each card's status flipped DRAFT to PROVEN. OI10 and OI16-OI18 stay owed.
 
-**Signed 2026-11-17, as Ajmal PS, on the owner's word** (*"Yes, sign both"*): `report-browser-organization`
+**Signed 2026-11-16, as Ajmal PS, on the owner's word** (*"Yes, sign both"*): `report-browser-organization`
 (OI19) and `trace-connectivity` (OI20) - `accept` on each tracking draft, none refused, each status flipped
 DRAFT to PROVEN.
