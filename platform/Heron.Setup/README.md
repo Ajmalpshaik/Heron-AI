@@ -1,7 +1,7 @@
 # platform/Heron.Setup — the Setup a modeller downloads
 
 **One file, `HeronSetup-<version>.exe`, for this Windows user, with no administrator rights**
-([D-165](../../docs/decisions/D-165.md)). Double-clicked, it puts Heron in `%LOCALAPPDATA%\Programs\Heron AI`,
+([D-167](../../docs/decisions/D-167.md)). Double-clicked, it puts Heron in `%LOCALAPPDATA%\Programs\Heron AI`,
 installs the add-in for every Revit year on the PC, sets up Heron's Python side, offers to add Heron to
 Claude Code, and appears in **Settings > Apps > Installed apps** with **Uninstall**.
 
@@ -42,7 +42,7 @@ closes Revit); and the uninstaller refuses while Revit is open, for the same rea
 - **Install Python** ([Q-39](../../docs/open-questions/answered.md)). Without it, the report names the
   one `winget` line.
 - **Call itself signed when it is not.** With no sign command, `build-setup.py` names the file
-  `HeronSetup-<version>-unsigned.exe`. Signing is NOT RUN until a certificate exists - D-165 item 6.
+  `HeronSetup-<version>-unsigned.exe`. Signing is NOT RUN until a certificate exists - D-167 item 6.
 
 ## Building it
 

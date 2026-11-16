@@ -5,7 +5,7 @@
 ; Heron-Layer:  platform
 ; See docs/29-metadata-standard.md
 ;
-; HERON'S SETUP FOR MODELLERS - D-165. One file, for this Windows user, and it
+; HERON'S SETUP FOR MODELLERS - D-167. One file, for this Windows user, and it
 ; never asks for administrator rights.
 ;
 ; IT DECIDES NOTHING ABOUT WHAT GOES WHERE. It puts the Heron folder in place
@@ -23,7 +23,7 @@
 ;     and release before anything goes, and heron-install does the removing.
 ;
 ; BUILT BY tools/build-setup.py, NEVER BY HAND: it stages the folder and passes
-; the defines below. Signing is NOT RUN until a certificate exists (D-165 item
+; the defines below. Signing is NOT RUN until a certificate exists (D-167 item
 ; 6): with no sign command the build makes an unsigned Setup and names it so.
 
 #ifndef Stage

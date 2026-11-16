@@ -188,7 +188,7 @@ is open, and the refused sources.
 ### `Heron.Setup` — BUILT 2026-11-16, NOT RUN
 
 **The Setup a modeller downloads** - one file, `HeronSetup-<version>.exe`, per user, no administrator
-([D-165](../docs/decisions/D-165.md)). Not a C# project: an Inno Setup script, built by
+([D-167](../docs/decisions/D-167.md)). Not a C# project: an Inno Setup script, built by
 [`tools/build-setup.py`](../tools/build-setup.py). **It decides nothing**: it puts the Heron folder in
 `%LOCALAPPDATA%\Programs\Heron AI` and runs `heron-install --from` its own payload, then
 `heron-install --add-to-claude` if asked; its uninstaller runs `heron-install --uninstall`. What it adds

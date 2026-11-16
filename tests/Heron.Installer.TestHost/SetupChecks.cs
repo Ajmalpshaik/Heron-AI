@@ -13,7 +13,7 @@ using Heron.Installer;
 namespace Heron.Installer.TestHost
 {
     /// <summary>
-    /// What the Setup of D-165 added to the engine and the command line, against
+    /// What the Setup of D-167 added to the engine and the command line, against
     /// text and a temporary folder - no Claude, no Revit.
     ///
     /// WHAT THIS PROVES: Heron's entry in Claude Code's settings is added with
@@ -35,7 +35,7 @@ namespace Heron.Installer.TestHost
             var script = Path.Combine(heron, "mcp", "server", "heron_mcp_server.py");
 
             Console.WriteLine();
-            Console.WriteLine("D-165 - HERON IN CLAUDE CODE'S SETTINGS, ONE KEY AND NOTHING ELSE");
+            Console.WriteLine("D-167 - HERON IN CLAUDE CODE'S SETTINGS, ONE KEY AND NOTHING ELSE");
 
             const string Theirs = "{\n  \"numStartups\": 41,\n  \"projects\": { \"D:/work\": { \"allowedTools\": [] } },\n" +
                                   "  \"mcpServers\": { \"github\": { \"type\": \"http\", \"url\": \"https://example.test/mcp\" } }\n}";
@@ -101,7 +101,7 @@ namespace Heron.Installer.TestHost
                   "  and no file, or a damaged one, gives none rather than a guess");
 
             Console.WriteLine();
-            Console.WriteLine("D-165 - --uninstall CHOOSES NOTHING, AND --add-to-claude INSTALLS NOTHING");
+            Console.WriteLine("D-167 - --uninstall CHOOSES NOTHING, AND --add-to-claude INSTALLS NOTHING");
             var un = Heron.Installer.Cli.Arguments.Read(new[] { "--uninstall" });
             check(un.Problem == null && un.Uninstall, "--uninstall alone is read");
             var unList = Heron.Installer.Cli.Arguments.Read(new[] { "--uninstall", "--list" });

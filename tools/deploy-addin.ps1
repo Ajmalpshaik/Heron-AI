@@ -282,7 +282,7 @@ function Restore-PreviousInstall {
     <#
     .SYNOPSIS
         After a replace that did not finish, put back what Save-PreviousInstall
-        kept a moment ago, by itself - D-165. Returns one sentence saying what
+        kept a moment ago, by itself - D-167. Returns one sentence saying what
         is in the folder now.
 
     .NOTES
@@ -381,7 +381,7 @@ function Find-OtherCopy {
     <#
     .SYNOPSIS
         Every OTHER manifest Revit reads for this release that loads this
-        product - by its add-in id or by its assembly's name - D-165.
+        product - by its add-in id or by its assembly's name - D-167.
 
     .NOTES
         EVERY FOLDER REVIT READS FOR THIS RELEASE. Per user is where Heron
@@ -804,7 +804,7 @@ if (-not (Test-Path $manifestSource)) {
     throw "$manifestSource is missing, so Revit would have a DLL it never looks at. The Heron files are incomplete - fetch them again."
 }
 
-# A SECOND COPY OF THIS ADD-IN, refused before anything is replaced - D-165.
+# A SECOND COPY OF THIS ADD-IN, refused before anything is replaced - D-167.
 # Two manifests loading one add-in is a state Revit settles by refusing one, or
 # by loading both, and it names neither. Asked here, after every other check has
 # passed and before the backup, so a refusal changes nothing at all.
@@ -840,7 +840,7 @@ Save-PreviousInstall
 # install is in the backup folder. A half removed install is what is NOT
 # recoverable, so nothing is copied after a delete that did not finish.
 #
-# AND SINCE 2026-11-16 THE BACKUP GOES BACK BY ITSELF - D-165. Everything from
+# AND SINCE 2026-11-16 THE BACKUP GOES BACK BY ITSELF - D-167. Everything from
 # here to the manifest is one replace: a throw anywhere inside it lands in the
 # catch at the end, which puts back what Save-PreviousInstall kept (or, on a
 # first install, takes the half-copied files away) and then throws the
@@ -988,7 +988,7 @@ Unblock-File -Path $manifest -ErrorAction SilentlyContinue
 }
 catch {
     # The replace above did not finish - put things back first, then say both:
-    # what went wrong, and what is in the folder now. D-165.
+    # what went wrong, and what is in the folder now. D-167.
     $why = $_.Exception.Message
     # Restore-PreviousInstall catches what it can; this catches what it
     # cannot, so the first sentence - what went wrong - is never lost.

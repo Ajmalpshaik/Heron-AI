@@ -7,7 +7,7 @@
 # See docs/29-metadata-standard.md
 
 r"""
-Build Heron's Setup for modellers - one file, per user (D-165).
+Build Heron's Setup for modellers - one file, per user (D-167).
 
     python tools/build-setup.py                    build every asset, then the Setup
     python tools/build-setup.py --dist dist        use assets already built there
@@ -30,7 +30,7 @@ invented to install it:
 and platform/Heron.Setup/HeronSetup.iss, which puts that folder in place and
 hands over to heron-install. It decides nothing about what goes where.
 
-SIGNING IS NOT RUN UNTIL A CERTIFICATE EXISTS (D-165 item 6). With no sign
+SIGNING IS NOT RUN UNTIL A CERTIFICATE EXISTS (D-167 item 6). With no sign
 command the Setup is built unsigned and its NAME says so, so an unsigned file is
 never mistaken for a signed one. A sign command is an Inno Setup sign tool line
 with $f where the file goes - whichever service signs it, the build only passes

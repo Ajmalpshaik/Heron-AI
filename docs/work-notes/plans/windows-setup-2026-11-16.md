@@ -4,7 +4,7 @@
 > code, as the task asked: *"Write the design first, and ask the owner before choosing the signing
 > certificate or the installer tool."* **He handed the three choices to the session the same day** -
 > *"do it the best am not sure for this and you anre my sesior programer or manager or what eve"* - and they
-> are recorded as [D-165](../../decisions/D-165.md): **A, wrap** (section 5), **Inno Setup** (section 6), and
+> are recorded as [D-167](../../decisions/D-167.md): **A, wrap** (section 5), **Inno Setup** (section 6), and
 > **no certificate bought** - the Setup is built ready to sign and signing is NOT RUN (section 7). The runs
 > are [NEEDS-CHECKING Group OA](../../needs-checking/group-oa.md). **Closure:** the Setup installs and uninstalls cleanly on the owner's PC for
 > every Revit year present, the gates pass, every year not present is recorded NOT RUN, and what lasts
@@ -101,7 +101,7 @@ installer; what a modeller still does by hand is **install Python itself** - sec
 | Packaging tool, `signtool`, a code-signing certificate | **none on this PC** - each is a download that needs the owner's typed yes | the same session |
 | .NET SDK | 10.0.401 - builds every Revit year | `dotnet --version` |
 
-## 5. Approaches - DECIDED: A, wrap (D-165)
+## 5. Approaches - DECIDED: A, wrap (D-167)
 
 | | What it is | Gives | Costs |
 |---|---|---|---|
@@ -113,7 +113,7 @@ installer; what a modeller still does by hand is **install Python itself** - sec
 2026-09-20, the rollback of 2026-09-19, the Store-Claude refusal. A wrapper keeps them; a replacement
 must learn them again.
 
-## 6. The tool that makes the Setup - DECIDED: Inno Setup (D-165)
+## 6. The tool that makes the Setup - DECIDED: Inno Setup (D-167)
 
 Only if A. The facts of each are to be read from the maker's own page at the time, not from memory.
 
@@ -130,7 +130,7 @@ Only if A. The facts of each are to be read from the maker's own page at the tim
 better pick only if contractor IT departments deploying Heron by Intune or SCCM is a near goal, which no
 decision says.
 
-## 7. The certificate - DECIDED: none bought; built ready to sign, signing NOT RUN (D-165)
+## 7. The certificate - DECIDED: none bought; built ready to sign, signing NOT RUN (D-167)
 
 A new decision is owed whichever way: [D-96](../../decisions/D-96.md) refused a certificate for its
 yearly cost, [D-38](../../decisions/D-38.md) says nothing is signed, [D-91](../../decisions/D-91.md) says a
@@ -175,8 +175,8 @@ product per Revit year for every year Heron builds, `checksums.txt`. The Setup c
 7. Verify: each year's runtime and file hashes read back, `heron-ready --check` READY, a report per year.
 8. **Claude Code - asked, a tick on the tasks page, ON by default** (first written on, turned off for the
    memory each open chat costs, then back on by the owner's word on 2026-11-16 - a new modeller must never
-   have to find the hidden program folder; D-165 item 5). Beside it, a tick for Heron's Python side, also on
-   (D-165 item 5a). The Claude step runs only when no Claude is
+   have to find the hidden program folder; D-167 item 5). Beside it, a tick for Heron's Python side, also on
+   (D-167 item 5a). The Claude step runs only when no Claude is
    running; `~/.claude.json` copied aside first; one entry, `heron`, at user scope, with the absolute path
    to the server and a `HERON_CLIENT_ID` made from the PC and user name; read back; no other key touched.
    **Where Claude Code keeps a user-scope server is to be read from its current documentation at build

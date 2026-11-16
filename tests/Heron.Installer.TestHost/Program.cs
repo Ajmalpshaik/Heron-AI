@@ -1217,7 +1217,7 @@ namespace Heron.Installer.TestHost
             PythonSetupChecks.Run(Check, Names);
 
             // ================================================== THE SETUP
-            // D-165: Heron's entry in Claude Code's settings, and the two
+            // D-167: Heron's entry in Claude Code's settings, and the two
             // command-line actions the Setup calls - SetupChecks.
             SetupChecks.Run(Check, Names);
 

@@ -38,7 +38,7 @@ namespace Heron.Installer.Cli
     /// and a caller wanting something gone uses the window, where the
     /// confirmation naming every product and release lives.
     ///
-    /// THE ONE EXCEPTION IS EVERYTHING - --uninstall, D-165. A Windows
+    /// THE ONE EXCEPTION IS EVERYTHING - --uninstall, D-167. A Windows
     /// Uninstall means all of it, so there is nothing to have been left out:
     /// every product comes off every release it is on, worked out by the
     /// screen's own ToRemove with nothing ticked, and the flag refuses any
@@ -159,7 +159,7 @@ namespace Heron.Installer.Cli
                 return Refused;
             }
 
-            // TWO ACTIONS OF THEIR OWN - D-165. Each is used alone (Arguments
+            // TWO ACTIONS OF THEIR OWN - D-167. Each is used alone (Arguments
             // refuses either beside a flag that would install or choose), so
             // each ends here rather than threading through the install below.
             if (asked.AddToClaude) return AddToClaude(root);

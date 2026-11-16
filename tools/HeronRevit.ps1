@@ -80,7 +80,7 @@ function Get-RevitAddinsFolder {
 
         THE ALL-USERS FOLDERS ARE SPELLED ONCE, BELOW, AND ONLY TO BE READ -
         Get-RevitAllUserAddinsFolders, added 2026-11-16 for the second-copy
-        check (D-165). Heron still never installs there.
+        check (D-167). Heron still never installs there.
     .PARAMETER RevitVersion
         The four-digit release, as a string.
     #>
@@ -98,7 +98,7 @@ function Get-RevitAllUserAddinsFolders {
         HERON NEVER INSTALLS HERE, and nothing may use this to do so: writing
         either needs administrator rights, which Heron promises not to need
         (docs/07 section 5). It exists for one reader, deploy-addin.ps1's
-        second-copy check (D-165): a Heron manifest an administrator put in one
+        second-copy check (D-167): a Heron manifest an administrator put in one
         of these is a second copy Revit refuses or loads twice, and the
         modeller is told only that it cannot run the external application.
 

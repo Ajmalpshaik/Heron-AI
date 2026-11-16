@@ -28,7 +28,7 @@ namespace Heron.Installer
     }
 
     /// <summary>
-    /// Heron's one entry in Claude Code's own settings - D-165, item 5.
+    /// Heron's one entry in Claude Code's own settings - D-167, item 5.
     ///
     /// WHY IT EXISTS. Until 2026-11-16 a modeller reached Heron by opening the
     /// Heron folder in Claude Code, whose `.mcp.json` starts it. That ties every

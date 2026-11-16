@@ -83,7 +83,7 @@ namespace Heron.Installer.Cli
         public bool NoPython { get; private set; }
 
         /// <summary>
-        /// Take EVERY Heron product off EVERY Revit release it is on - D-165.
+        /// Take EVERY Heron product off EVERY Revit release it is on - D-167.
         ///
         /// ALL OF IT OR NOTHING, never a selection. This door's rule is that it
         /// never removes (Program's class comment): a product left out of
@@ -97,7 +97,7 @@ namespace Heron.Installer.Cli
         public bool Uninstall { get; private set; }
 
         /// <summary>
-        /// Add Heron to Claude Code for this user, and do nothing else - D-165.
+        /// Add Heron to Claude Code for this user, and do nothing else - D-167.
         /// Never with an install on the same line: the Setup asks it as its own
         /// question, after the install, and it is refused while Claude is open.
         /// </summary>
