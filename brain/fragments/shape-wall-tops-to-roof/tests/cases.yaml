@@ -1,6 +1,6 @@
 # SHAPE_WALL_TOPS_TO_ROOF - built 2026-11-16 in a cloud session with no
 # Revit, for field report #852 and Q-91's shape 2. NOT RUN. Arranged as
-# docs/needs-checking/group-of.md says: a scratch project on Revit 2024 with
+# docs/needs-checking/group-og.md says: a scratch project on Revit 2024 with
 # a gable roof over four walls, a door in one gable wall, and one wall with
 # nothing over it. Every write is ROLLED BACK unless the modeller keeps it.
 #

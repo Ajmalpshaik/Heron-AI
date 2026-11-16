@@ -1,11 +1,11 @@
-# Needs checking — Group OF
+# Needs checking — Group OG
 
 > One group of [the register](../NEEDS-CHECKING.md), in its own file so that it can be read alone. **The
 > register's rules, and every group's place in it, are on that page.** A new row for this group goes in
 > this file. [`tools/needs-checking-register.py`](../../tools/needs-checking-register.py) reads it back
 > into the register for every tool that reads it, so a row here is seen exactly as it was seen there.
 
-## Group OF - a wall's top shaped to the roof above it by editing its profile, on Revit 2022 to 2024, doors and windows kept, a sketch that does not follow the roof: `SHAPE_WALL_TOPS_TO_ROOF` (2026-11-16)
+## Group OG - a wall's top shaped to the roof above it by editing its profile, on Revit 2022 to 2024, doors and windows kept, a sketch that does not follow the roof: `SHAPE_WALL_TOPS_TO_ROOF` (2026-11-16)
 
 Asked for in the field: Sruthina's house shell on Revit 2024, model `villa 2`, 2026-11-11 - *"Attach all walls to the
 roof."* - after the main roof was rebuilt; 25 walls stopped at the 2440 plate and left open gable triangles, and
@@ -37,7 +37,7 @@ the wall for real, so this card is not offered there.
 
 **What is done and what is not.** Compiles on 2022, 2023 and 2024 (`tools/check-fragments-compile.py`, 2026-11-16, a
 Linux container). **Nothing has run in Revit.** DRAFT. **Only Revit can settle:** that a `SketchEditScope` starts and
-commits inside the add-in's open group, as a `StairsEditScope` does (OF3); that the plane `CreateProfileSketch` gives
+commits inside the add-in's open group, as a `StairsEditScope` does (OG3); that the plane `CreateProfileSketch` gives
 is upright along the wall, which the card checks and refuses otherwise; that a door keeps its host through the new
 profile; whether Revit snaps or rejects an outline with many short lines along a curved roof. **Not done:** a roof that
 slopes across the wall (an eave wall) gives a flat top at the lower face, leaving a small wedge Revit's Attach would
@@ -50,7 +50,7 @@ installed): *"attach all walls to the roof"* and *"attach the tops of these wall
 line; on 2021 the answer opens *"NOT ON REVIT 2021. ATTACH_WALLS matches these words best ... tell them plainly that
 Heron cannot do this on Revit 2021 and that it is done by hand in Revit."* `tools/check-routing.py` exits 0. On 2025
 and 2026 *"edit the wall profile to follow the gable"* is answered *"NOT ON REVIT 2025 ... done by hand"* though
-`ATTACH_WALLS` does that job there - [row 5b-1822](../fragment-issues/row-5b-1822.md), recorded, not repaired.
+`ATTACH_WALLS` does that job there - [row 5b-1823](../fragment-issues/row-5b-1823.md), recorded, not repaired.
 
 **The model** - `of-gable`, a scratch project from Revit 2024's default architectural template (metric), saved under
 `%TEMP%\heron-work`, never a working model. Every write here is ROLLED BACK unless the modeller keeps it. The job file
@@ -60,9 +60,9 @@ id>` when two Revits are connected, and `< /dev/null`.
 
 | # | Run | Look for |
 |---|---|---|
-| **OF1** | *Arrange, Revit 2024.* `of-gable`: on Level 1, four `Generic - 200mm` walls on their centrelines from (0,0) to (8000,0) to (8000,6000) to (0,6000) and back, unconnected height 2440; a single door in the WEST wall (x = 0); a roof by footprint on Level 1, base offset 2440, picked on the four walls with a 600 overhang, Defines Slope ticked on the NORTH and SOUTH edges only at 30 degrees - a gable roof whose ridge runs east-west, the east and west walls standing at the plate with the triangle open above them. Apart from it, a fifth wall from (14000,0) to (18000,0), height 2440, nothing over it. Save | A section across x = 0 shows the open triangle over the west wall; the fifth wall has nothing above it |
-| **OF2** | *D-30 positive and negative, THE NEGATIVE FIRST.* The job file, `--write`, rolled back | Negative, the fifth wall: shaped 0, `noRoof` naming it, nothing changed. Positive, the west wall: shaped 1, `keptInserts` 1 (the door), a finding naming the roof and the highest point above the base - at the ridge (y = 3000), some 3000 x tan 30 = 1730 mm above the 2440 plate, give or take where Revit puts the roof's base; read it against a section through the wall - and the sentence that the top is a sketch that does NOT follow the roof |
-| **OF3** | *The edit mode inside Heron's group.* The positive's answer, and Revit's undo list after it rolled back | No *"Revit will not open the profile ... for editing"*, no *"transaction is open around this fragment (D-112)"*; after the rollback, Edit Profile on the west wall shows the plain rectangle again. **Either answer is Revit's: record it** - a refusal here means the card's D-112 route does not reach a sketch, and it is changed before it is proved |
-| **OF4** | *The refusals.* On `of-gable`: the positive kept once through `try-once` and the same call again; then `redraw=true`; the south wall attached by hand (Attach Top/Base to the roof) and handed in | The second call shaped 0, *"its profile is already edited ... Ask again with redraw"*; with `redraw` shaped 1 and the door still in it; the attached wall *"its top is already attached in Revit"* |
-| **OF5** | *Release 2021, refused in words.* A chat connected to Revit 2021 (or 2020) asks *"attach all walls to the roof"*; then `python mcp/client/heron_bridge_client.py validate shape-wall-tops-to-roof ...` with that Revit connected | The lookup's answer opens *"NOT ON REVIT 2021"* and says Heron cannot do this on Revit 2021 and it is done by hand; the client refuses *"shape-wall-tops-to-roof does not claim Revit 2021 ... No fragment was sent to Revit"* |
-| **OF6** | *Kept once, and the second route.* Through `try-once` on the modeller's yes, the west wall | ONE entry in Revit's undo list; a section through the west wall: the top runs up under the roof, the door where it was; Edit Profile shows the outline drawn |
+| **OG1** | *Arrange, Revit 2024.* `of-gable`: on Level 1, four `Generic - 200mm` walls on their centrelines from (0,0) to (8000,0) to (8000,6000) to (0,6000) and back, unconnected height 2440; a single door in the WEST wall (x = 0); a roof by footprint on Level 1, base offset 2440, picked on the four walls with a 600 overhang, Defines Slope ticked on the NORTH and SOUTH edges only at 30 degrees - a gable roof whose ridge runs east-west, the east and west walls standing at the plate with the triangle open above them. Apart from it, a fifth wall from (14000,0) to (18000,0), height 2440, nothing over it. Save | A section across x = 0 shows the open triangle over the west wall; the fifth wall has nothing above it |
+| **OG2** | *D-30 positive and negative, THE NEGATIVE FIRST.* The job file, `--write`, rolled back | Negative, the fifth wall: shaped 0, `noRoof` naming it, nothing changed. Positive, the west wall: shaped 1, `keptInserts` 1 (the door), a finding naming the roof and the highest point above the base - at the ridge (y = 3000), some 3000 x tan 30 = 1730 mm above the 2440 plate, give or take where Revit puts the roof's base; read it against a section through the wall - and the sentence that the top is a sketch that does NOT follow the roof |
+| **OG3** | *The edit mode inside Heron's group.* The positive's answer, and Revit's undo list after it rolled back | No *"Revit will not open the profile ... for editing"*, no *"transaction is open around this fragment (D-112)"*; after the rollback, Edit Profile on the west wall shows the plain rectangle again. **Either answer is Revit's: record it** - a refusal here means the card's D-112 route does not reach a sketch, and it is changed before it is proved |
+| **OG4** | *The refusals.* On `of-gable`: the positive kept once through `try-once` and the same call again; then `redraw=true`; the south wall attached by hand (Attach Top/Base to the roof) and handed in | The second call shaped 0, *"its profile is already edited ... Ask again with redraw"*; with `redraw` shaped 1 and the door still in it; the attached wall *"its top is already attached in Revit"* |
+| **OG5** | *Release 2021, refused in words.* A chat connected to Revit 2021 (or 2020) asks *"attach all walls to the roof"*; then `python mcp/client/heron_bridge_client.py validate shape-wall-tops-to-roof ...` with that Revit connected | The lookup's answer opens *"NOT ON REVIT 2021"* and says Heron cannot do this on Revit 2021 and it is done by hand; the client refuses *"shape-wall-tops-to-roof does not claim Revit 2021 ... No fragment was sent to Revit"* |
+| **OG6** | *Kept once, and the second route.* Through `try-once` on the modeller's yes, the west wall | ONE entry in Revit's undo list; a section through the west wall: the top runs up under the roof, the door where it was; Edit Profile shows the outline drawn |

@@ -9,7 +9,7 @@
 
 > **The first release, [v0.1.0](https://github.com/Ajmalpshaik/Heron-AI/releases/tag/v0.1.0), was
 > published on 2026-10-08**, on the owner's word, so a new teammate could install Heron. It is an early,
-> **unsigned** build — since [D-168](decisions/D-168.md), the owner's answer to [Q-77](open-questions/tier-2.md)
+> **unsigned** build — since [D-173](decisions/D-173.md), the owner's answer to [Q-77](open-questions/tier-2.md)
 > on 2026-11-16, a release is versioned and checksummed, says plainly that it is unsigned, and is signed
 > before Heron is given to anyone outside — and the
 > [main README](../README.md) still asks modellers not to install Heron until it is announced.

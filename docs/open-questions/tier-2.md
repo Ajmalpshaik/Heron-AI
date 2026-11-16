@@ -1133,7 +1133,7 @@ repeated name stay in the register.
 
 ### ✅ Q-77 — D-91 says Heron's release is signed, and v0.1.0 went out unsigned. Should a decision say releases are unsigned until signing is built, and what makes signing due? *(found 2026-10-18 checking the specification for D-139)* → **answered 2026-11-16 by the owner**
 
-**Answer: Shape 1 - a decision amends D-91: releases are versioned and checksummed now and say plainly they are unsigned, and are signed before Heron is given to anyone outside - 2026-11-16, the owner's answer, read back: Ajmal PS was shown this question with Claude's suggestion and answered in his own words, *"go with you suggetions"*.** Recorded as [D-168](../decisions/D-168.md); D-91's index entry and record say it was superseded in part. **Why:** It writes down what the owner had already chosen twice - to publish v0.1.0, and to leave signing last - keeps *signed* as the bar, and moves the only record of the choice out of a work note that will be deleted. **Work:** done 2026-11-16, as documents; no code changes - `release.yml` already writes *"Not signed."* on every release. **Owed** before Heron is given to anyone outside: the signing itself, Stage 8.
+**Answer: Shape 1 - a decision amends D-91: releases are versioned and checksummed now and say plainly they are unsigned, and are signed before Heron is given to anyone outside - 2026-11-16, the owner's answer, read back: Ajmal PS was shown this question with Claude's suggestion and answered in his own words, *"go with you suggetions"*.** Recorded as [D-173](../decisions/D-173.md); D-91's index entry and record say it was superseded in part. **Why:** It writes down what the owner had already chosen twice - to publish v0.1.0, and to leave signing last - keeps *signed* as the bar, and moves the only record of the choice out of a work note that will be deleted. **Work:** done 2026-11-16, as documents; no code changes - `release.yml` already writes *"Not signed."* on every release. **Owed** before Heron is given to anyone outside: the signing itself, Stage 8.
 
 **What was found**, checking the specification for [D-139](../decisions/D-139.md), whose context cites
 [D-91](../decisions/D-91.md) as the rule a modeller's PC installs from.
@@ -1674,7 +1674,7 @@ that needs the PC.
 
 ### ✅ Q-91 — On Revit 2020 to 2024 Heron cannot attach a wall to a roof. Should it shape the wall's top to the roof instead - by editing the wall's profile - and if so, on which releases? *(found 2026-11-15 from issue #852)* → **answered 2026-11-16 by the owner**
 
-**Answer: Shape 2 - a new tool that edits each wall's profile so its top follows the roof above it, on Revit 2022 to 2024; on 2020 and 2021 it says plainly that it cannot; and it says the top is a sketch that does not follow later roof changes - 2026-11-16, the owner's answer, read back: Ajmal PS was shown this question with Claude's suggestion and answered in his own words, *"go with you suggetions"*.** **Why:** It closes the open gable triangles #852 describes on the releases whose API can edit a wall's profile, and saying plainly what the sketch does not do is what makes a top that does not follow the roof something the modeller can choose knowingly. **Work:** built 2026-11-16 at DRAFT - see the Work note at the end of this section - and its proof is owed (Group OF). No decision record: a new card starts at DRAFT and is proved like any other (Article 20, [D-30](../decisions/D-30.md)), and nothing Heron allows or refuses changes. Until it is built and proved, Heron says on 2020 to 2024 that this is done by hand in Revit.
+**Answer: Shape 2 - a new tool that edits each wall's profile so its top follows the roof above it, on Revit 2022 to 2024; on 2020 and 2021 it says plainly that it cannot; and it says the top is a sketch that does not follow later roof changes - 2026-11-16, the owner's answer, read back: Ajmal PS was shown this question with Claude's suggestion and answered in his own words, *"go with you suggetions"*.** **Why:** It closes the open gable triangles #852 describes on the releases whose API can edit a wall's profile, and saying plainly what the sketch does not do is what makes a top that does not follow the roof something the modeller can choose knowingly. **Work:** built 2026-11-16 at DRAFT - see the Work note at the end of this section - and its proof is owed (Group OG). No decision record: a new card starts at DRAFT and is proved like any other (Article 20, [D-30](../decisions/D-30.md)), and nothing Heron allows or refuses changes. Until it is built and proved, Heron says on 2020 to 2024 that this is done by hand in Revit.
 
 **What happened.** On Villa 2, Revit 2024, 2026-11-11, the modeller asked *"attach all walls to the roof"*
 after the main roof was rebuilt: 25 walls stopped at the 2440 plate and left open gable triangles under both
@@ -1722,9 +1722,9 @@ and windows are read back still in it. It leaves and names a wall with no roof o
 profile, one already attached, and one already shaped unless `redraw` is asked, and every answer that shapes a wall
 says its top is a sketch that does NOT follow the roof when the roof changes. On 2020 and 2021 the lookup says plainly
 that Heron cannot do this; from 2025 the same words reach `ATTACH_WALLS` (measured 2026-11-16 on a scratch store).
-Compiles on 2022 to 2024; nothing has run in Revit. **Owed:** [Group OF](../needs-checking/group-of.md) on Revit 2024 -
-the negative and the positive with its door kept (OF2), the sketch edit mode inside Heron's group (OF3), the release-2021
-refusal in words (OF5) - then the modeller's one try. A lookup wording it exposed on 2025 on is
-[row 5b-1822](../fragment-issues/row-5b-1822.md).
+Compiles on 2022 to 2024; nothing has run in Revit. **Owed:** [Group OG](../needs-checking/group-og.md) on Revit 2024 -
+the negative and the positive with its door kept (OG2), the sketch edit mode inside Heron's group (OG3), the release-2021
+refusal in words (OG5) - then the modeller's one try. A lookup wording it exposed on 2025 on is
+[row 5b-1823](../fragment-issues/row-5b-1823.md).
 
 ---

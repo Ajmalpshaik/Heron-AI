@@ -138,7 +138,7 @@ compatibility-note: >
   2024: not 2020 or 2021, where the profile members are not, and not 2025 on,
   where ATTACH_WALLS attaches the wall for real. Not seen in Revit: that a
   SketchEditScope starts and commits inside the add-in's open group, as a
-  StairsEditScope does (Group OF, OF3).
+  StairsEditScope does (Group OG, OG3).
 
 # ROUTING (2026-11-16) - the same rows are in ATTACH_WALLS.
 #

@@ -1,4 +1,4 @@
-# NEEDS-CHECKING Group OF - SHAPE_WALL_TOPS_TO_ROOF (DRAFT), a wall's top
+# NEEDS-CHECKING Group OG - SHAPE_WALL_TOPS_TO_ROOF (DRAFT), a wall's top
 # shaped to the roof above it by editing its profile, on Revit 2022 to 2024.
 # Built 2026-11-16 in a cloud session with no Revit, for field report #852
 # (Revit 2024, `villa 2`) and Q-91's shape 2. NOT RUN.
@@ -6,7 +6,7 @@
 #     python tools/batch-prove.py tools/jobs/wall-tops-to-roof-of-2026-11-16.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/wall-tops-to-roof-of-2026-11-16.yaml --session <2024 pid>
 #
-# THE MODEL (docs/needs-checking/group-of.md, OF1): "of-gable", a scratch
+# THE MODEL (docs/needs-checking/group-og.md, OG1): "of-gable", a scratch
 # project from Revit 2024's default architectural template (metric), saved
 # under %TEMP%\heron-work, never a working model. On Level 1, four
 # `Generic - 200mm` walls on their centrelines (0,0) - (8000,0) - (8000,6000)
@@ -42,7 +42,7 @@ jobs:
       exact: "false"
       categories: Walls
     note: >
-      OF2. Negative - THE FIRST CASE TO RUN: the fifth wall - shaped 0,
+      OG2. Negative - THE FIRST CASE TO RUN: the fifth wall - shaped 0,
       noRoof naming it, nothing changed. Positive: the west wall - shaped 1,
       keptInserts 1 (its door read back still in it), a finding naming the
       roof and the highest point above the base, and the sentence that the

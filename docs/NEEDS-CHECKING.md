@@ -1538,9 +1538,9 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-nz.md`](needs-checking/group-nz.md)
 
-## Group OF - a wall's top shaped to the roof above it by editing its profile, on Revit 2022 to 2024, doors and windows kept, a sketch that does not follow the roof: `SHAPE_WALL_TOPS_TO_ROOF` (2026-11-16)
+## Group OG - a wall's top shaped to the roof above it by editing its profile, on Revit 2022 to 2024, doors and windows kept, a sketch that does not follow the roof: `SHAPE_WALL_TOPS_TO_ROOF` (2026-11-16)
 
-**Its own file:** [`needs-checking/group-of.md`](needs-checking/group-of.md)
+**Its own file:** [`needs-checking/group-og.md`](needs-checking/group-og.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 

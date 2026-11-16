@@ -162,7 +162,7 @@ an edit.
 | [D-88](#d-88--one-product-is-one-addin-manifest-plus-one-dll-each-with-its-own-addinid) | One product is one .addin manifest plus one DLL, each with its own AddInId | ✅ Accepted · 2026-09-21 |
 | [D-89](#d-89--custom-install-is-at-tab-level-and-the-heron-tab-is-the-one-exception) | Custom Install is at tab level, and the Heron tab is the one exception | ✅ Accepted · 2026-09-21 |
 | [D-90](#d-90--install-stays-per-user-and-never-asks-for-administrator-rights) | Install stays per-user and never asks for administrator rights | ✅ Accepted · 2026-09-21 |
-| [D-91](#d-91--product-files-come-from-a-signed-versioned-github-release) | Product files come from a signed, versioned GitHub release | ✅ Accepted · 2026-09-21 · *signed* superseded in part by D-168 · 2026-11-16 |
+| [D-91](#d-91--product-files-come-from-a-signed-versioned-github-release) | Product files come from a signed, versioned GitHub release | ✅ Accepted · 2026-09-21 · *signed* superseded in part by D-173 · 2026-11-16 |
 | [D-92](#d-92--a-ribbon-button-is-a-front-door-onto-a-proven-fragment-not-new-logic) | A ribbon button is a front door onto a proven fragment, not new logic | ✅ Accepted · 2026-09-21 |
 | [D-93](#d-93--the-product-list-is-a-manifest-read-as-data-never-a-list-written-into-the-installer) | The product list is a manifest read as data, never a list written into the installer | ✅ Accepted · 2026-09-21 |
 | [D-94](#d-94--install-replaces-there-is-no-separate-upgrade-path) | Install replaces; there is no separate upgrade path | ✅ Accepted · 2026-09-21 |
@@ -234,7 +234,7 @@ an edit.
 | [D-163](#d-163--herons-recent-changes-are-docked-in-revit-with-select-zoom-and-undo-reached-through-the-one-dispatcher) | Heron's recent changes are docked in Revit, with Select, Zoom and Undo, reached through the one dispatcher | ✅ Accepted · 2026-11-12 |
 | [D-164](#d-164--two-built-in-parameters-of-one-name-that-read-the-same-value-are-one-reading-not-a-name-matched-twice) | Two built-in parameters of one name that read the same value are one reading, not a name matched twice | ✅ Accepted · 2026-11-14 |
 | [D-165](#d-165--a-qa-check-never-passes-on-missing-data-a-fourth-answer-no-data-and-a-coverage-line-beside-every-pass-count) | A QA check never passes on missing data: a fourth answer, NO DATA, and a coverage line beside every pass count | ✅ Accepted · 2026-11-16 |
-| [D-168](#d-168--a-release-is-versioned-and-checksummed-now-and-says-plainly-it-is-unsigned-and-is-signed-before-heron-is-given-to-anyone-outside) | A release is versioned and checksummed now and says plainly it is unsigned, and is signed before Heron is given to anyone outside | ✅ Accepted · 2026-11-16 |
+| [D-173](#d-173--a-release-is-versioned-and-checksummed-now-and-says-plainly-it-is-unsigned-and-is-signed-before-heron-is-given-to-anyone-outside) | A release is versioned and checksummed now and says plainly it is unsigned, and is signed before Heron is given to anyone outside | ✅ Accepted · 2026-11-16 |
 | [D-169](#d-169--the-disclaimer-says-what-the-chat-says-heron-reports-which-checked-values-a-model-meets-cites-its-source-and-certifies-no-compliance) | The DISCLAIMER says what the chat says: Heron reports which checked values a model meets, cites its source, and certifies no compliance | ✅ Accepted · 2026-11-16 |
 | [D-170](#d-170--the-word-sandbox-leaves-article-11-and-golden-rule-18-new-code-runs-watched-not-contained) | The word sandbox leaves Article 11 and Golden Rule 18: new code runs watched, not contained | ✅ Accepted · 2026-11-16 |
 | [D-171](#d-171--heron-may-save-the-model-it-works-in-once-its-undo-entry-has-closed-only-when-the-modeller-asks-and-never-picks-a-name-itself) | Heron may save the model it works in once its Undo entry has closed, only when the modeller asks, and never picks a name itself | ✅ Accepted · 2026-11-16 |
@@ -856,7 +856,7 @@ What this makes easy. What this makes hard. What it locks in.
 ## D-91 — Product files come from a signed, versioned GitHub release
 
 **Status:** Accepted · **Date:** 2026-09-21 · **Source:** Ajmal PS, 2026-09-20; [`docs/07 §1a`](07-installation-and-update.md) · **Promoted from:** [S5](work-notes/plans/plugin-extension/00-structure.md)
-**Superseded in part by:** [D-168](#d-168--a-release-is-versioned-and-checksummed-now-and-says-plainly-it-is-unsigned-and-is-signed-before-heron-is-given-to-anyone-outside), accepted by the owner 2026-11-16 - amended: *signed* is the bar and not yet the fact; until signing is built a release is versioned and checksummed and says plainly it is unsigned, and it is signed before Heron is given to anyone outside
+**Superseded in part by:** [D-173](#d-173--a-release-is-versioned-and-checksummed-now-and-says-plainly-it-is-unsigned-and-is-signed-before-heron-is-given-to-anyone-outside), accepted by the owner 2026-11-16 - amended: *signed* is the bar and not yet the fact; until signing is built a release is versioned and checksummed and says plainly it is unsigned, and it is signed before Heron is given to anyone outside
 
 **Full record:** [`decisions/D-91.md`](decisions/D-91.md)
 
@@ -1458,15 +1458,15 @@ What this makes easy. What this makes hard. What it locks in.
 
 **Full record:** [`decisions/D-165.md`](decisions/D-165.md)
 
-## D-168 — A release is versioned and checksummed now and says plainly it is unsigned, and is signed before Heron is given to anyone outside
+## D-173 — A release is versioned and checksummed now and says plainly it is unsigned, and is signed before Heron is given to anyone outside
 
 **Status:** Accepted · **Date:** 2026-11-16 · **Accepted:** Ajmal PS, 2026-11-16, in conversation: *"go with you suggetions"* - his answer, in his own words, when [Q-77](open-questions/tier-2.md) was put to him with Claude's suggestion beside it: shape 1, a decision amends D-91 - releases are versioned and checksummed now and say plainly they are unsigned, and are signed before Heron is given to anyone outside · **Answers:** [Q-77](OPEN-QUESTIONS.md)
-**Numbering:** written from the same answers as [D-172](decisions/D-172.md) (first numbered D-167), whose Numbering line says how the numbers were taken.
+**Numbering:** written from the same answers as [D-172](decisions/D-172.md) (first numbered D-167), whose Numbering line says how the numbers were taken. Renumbered from D-168 to D-173 on 2026-11-16 with `tools/renumber.py`, because claude/outcome-words-2026-11-16 holds D-168 too.
 **Supersedes in part:** [D-91](decisions/D-91.md) - *"Files come from a signed GitHub release"*: until signing is built a release is versioned and checksummed and says it is unsigned, and signed stays the bar, due before Heron is given to anyone outside
 **Keeps:** the rest of D-91 - named by version, never a branch, a raw file URL or whatever is newest on main, a download verified before it is used, nothing downloaded executed to decide what to install · [D-93](decisions/D-93.md) · [D-96](decisions/D-96.md) · [Article 15](../HERON_CONSTITUTION.md) - only the owner publishes a release · [Article 17](../HERON_CONSTITUTION.md) - when signing is built, its key lives in the credential store
 **Affects:** D-91's index entry and record · [07 §1a and §3](07-installation-and-update.md) · nothing in [`release.yml`](../.github/workflows/release.yml), which already writes *"Not signed."* into every release's notes, or in [`heron_tag.py`](../brain/heron_tag.py), whose refusal of an unsigned release stays as the bar signing must meet
 
-**Full record:** [`decisions/D-168.md`](decisions/D-168.md)
+**Full record:** [`decisions/D-173.md`](decisions/D-173.md)
 
 ## D-169 — The DISCLAIMER says what the chat says: Heron reports which checked values a model meets, cites its source, and certifies no compliance
 

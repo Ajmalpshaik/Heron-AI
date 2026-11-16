@@ -159,7 +159,7 @@ release artefact** — not whatever the default branch happens to say today.
 > (`ReleaseAssets.cs`).
 >
 > **Since 2026-11-16 that is the rule on the record, not an exception**:
-> [D-168](decisions/D-168.md), the owner's answer to [Q-77](open-questions/tier-2.md), supersedes D-91 in
+> [D-173](decisions/D-173.md), the owner's answer to [Q-77](open-questions/tier-2.md), supersedes D-91 in
 > part - a release is versioned and checksummed now, says plainly it is unsigned, and is signed before
 > Heron is given to anyone outside. *Signed* above stays the bar.
 
@@ -280,7 +280,7 @@ per product per Revit release when a `v*` tag is pushed, through `tools/build-re
 `HeronInstaller.exe` copies the right one ([D-96](DECISIONS.md)). The first release,
 [v0.1.0](https://github.com/Ajmalpshaik/Heron-AI/releases/tag/v0.1.0) of 2026-10-08, was built and
 uploaded by that workflow. **It is not signed**: signing is Stage 8, left until Heron is finished on the
-owner's word - and due, since [D-168](decisions/D-168.md) (2026-11-16), before Heron is given to anyone
+owner's word - and due, since [D-173](decisions/D-173.md) (2026-11-16), before Heron is given to anyone
 outside.
 
 ---
