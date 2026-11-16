@@ -1,21 +1,35 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-ELE-071
-semantic-identity: "slope the edges of this roof to make it a gable or a hip"
+semantic-identity: "slope the edges of this roof to make it a gable, a hip, or slope only the edges chosen"
 kind: action
 domain: revit.elements
 capability: SLOPE_ROOF_EDGES
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
+# VERSION 2 (2026-11-16) - THE EDGES THE MODELLER CHOOSES, and back to DRAFT.
+# FRAGMENT-ISSUES row 5b-1670 (issue #852, #853 items A3 and B1, Villa 2,
+# Revit 2024): a main roof clipped to the wing in a valley has a 7-sided
+# footprint, so version 1's gable refused it and hip sloped every edge; the
+# modeller made it flat and shape-edited the ridge, and Revit warned about the
+# roof's thickness. Version 2 adds a third shape, `edges`: the edges named by
+# their number in this card's own readBack slope at the pitch given, every
+# other edge stands upright, and all are read back as before. Asked with no
+# numbers it changes nothing and lists every edge with its number, length and
+# ends. Gable and hip are unchanged. Version 1 was PROVEN on 2026-10-18 (the
+# proof block below, kept as the record of what it proved); its C# moved, so
+# it is DRAFT again until NEEDS-CHECKING Group OA is run (D-30).
+
 purpose: >
   Slopes the edges of a footprint roof that is already in the model, so a flat
-  roof becomes a GABLE or a HIP at the pitch the modeller gives. It acts on the
+  roof becomes a GABLE or a HIP at the pitch the modeller gives - or, since
+  version 2, slopes only the EDGES the modeller names. It acts on the
   roof SELECTED in Revit - one CREATE_FLOOR made with a roof type, or one drawn by hand through
   Architecture > Roof by Footprint, which is the same kind of element. Several
   roofs may be selected; each is judged, sloped and read back on its own.
@@ -47,6 +61,14 @@ purpose: >
   the modeller.
 
   **HIP: EVERY EDGE SLOPES**, straight or curved, whatever the outline.
+
+  **EDGES: ONLY THE EDGES NAMED SLOPE** (version 2), on any outline - a roof
+  clipped to a valley, a lean-to with one sloping edge. Each edge is named by
+  its number as readBack lists it; every edge not named stands upright. Asked
+  with no numbers, or a number the roof has not got, nothing is changed and
+  every edge is listed with its number, its length and its two ends, so the
+  next ask can name them. One roof at a time: an edge number belongs to one
+  roof. Numbers given with gable or hip are refused, never ignored.
 
   **ONE OUTLINE PER ROOF.** A footprint with a second loop - an opening, or a
   second roof area drawn in the same sketch - is refused for both shapes, since
@@ -83,8 +105,8 @@ contract:
     # a cast the prologue cannot make, so the selection is the route to use.
     - name: elements
       type: IList<Element>
-    # `gable` or `hip`, and nothing else is read. A shape is a design decision,
-    # so there is no default.
+    # `gable`, `hip` or `edges` (version 2), and nothing else is read. A shape
+    # is a design decision, so there is no default.
     - name: roofShape
       type: string
       source: request
@@ -93,6 +115,15 @@ contract:
     - name: pitchDegrees
       type: double
       source: request
+    # VERSION 2. The edges to slope with roofShape `edges`, by their number as
+    # readBack lists them - "1, 3". Every other edge stands upright. Left out
+    # with `edges`, nothing is changed and every edge is listed with its
+    # number; given with gable or hip, refused.
+    - name: edgeNumbers
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     - name: sloped
       # Edges Revit HOLDS as defining slope at the pitch asked for, read back
@@ -100,8 +131,8 @@ contract:
       role: result
       type: int
     - name: upright
-      # Gable ends Revit holds with Defines Slope off, read back. Always 0 for
-      # a hip, which has no ends.
+      # Gable ends - or, with `edges`, every edge not named - Revit holds with
+      # Defines Slope off, read back. Always 0 for a hip, which has no ends.
       role: result
       type: int
     - name: differs
@@ -223,10 +254,17 @@ compatibility-note: >
 #                                           roof a gable
 #   "give it a fall of 1 in 100"         -> SET_MEP_SLOPE - a pipe or a duct,
 #                                           never a roof
-#   "slope just this one edge", a lean-to -> NOT HERE. Gable and hip only; an
+#   "slope just this one edge", a lean-to -> here since version 2, roofShape
+#                                           edges with that edge's number. An
 #                                           edge number is something only a
-#                                           Heron reply can show, and Revit's own
-#                                           screen names none
+#                                           Heron reply can show - Revit's own
+#                                           screen names none - so `edges` with
+#                                           no numbers lists them first
+#   "slope these edges of the roof",
+#   "make only these roof edges define slope"
+#                                        -> here, edges (row 5b-1670; both
+#                                           measured to reach this card on
+#                                           2026-11-15)
 
 utterances:
   - slope this roof
@@ -234,3 +272,6 @@ utterances:
   - make this a hip roof
   - slope the edges of this roof
   - make it a gable roof at 30 degrees
+  # VERSION 2, row 5b-1670.
+  - slope only these edges of the roof
+  - make only these roof edges define slope

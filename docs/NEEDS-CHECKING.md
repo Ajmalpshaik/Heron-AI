@@ -1538,6 +1538,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-nz.md`](needs-checking/group-nz.md)
 
+## Group OA - roofs, walls, levels and delete from field reports #852 to #854: slope the edges chosen, a wall's top shaped to the roof, a column's top level, and the walls a delete detaches: `SLOPE_ROOF_EDGES`, `SHAPE_WALL_TOPS_TO_ROOF`, `SET_ELEMENT_LEVEL`, `DELETE_ELEMENTS` (2026-11-16)
+
+**Its own file:** [`needs-checking/group-oa.md`](needs-checking/group-oa.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

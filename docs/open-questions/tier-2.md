@@ -1628,7 +1628,7 @@ that needs the PC.
 
 ---
 
-### 🔵 Q-91 — On Revit 2020 to 2024 Heron cannot attach a wall to a roof. Should it shape the wall's top to the roof instead - by editing the wall's profile - and if so, on which releases? *(found 2026-11-15 from issue #852)*
+### ✅ Q-91 — On Revit 2020 to 2024 Heron cannot attach a wall to a roof. Should it shape the wall's top to the roof instead - by editing the wall's profile - and if so, on which releases? → **Option 2: a new tool that edits the wall's profile, on 2022 on** *(found 2026-11-15 from issue #852, answered 2026-11-16)*
 
 **What happened.** On Villa 2, Revit 2024, 2026-11-11, the modeller asked *"attach all walls to the roof"*
 after the main roof was rebuilt: 25 walls stopped at the 2440 plate and left open gable triangles under both
@@ -1667,5 +1667,16 @@ do?**
 not follow the roof is acceptable to the modeller is the one fact that decides it.
 
 **Ajmal PS decides.** Until he does, Heron says on 2020 to 2024 that this is done by hand in Revit.
+
+**ANSWERED 2026-11-16 by Ajmal PS** - his ask to *"fix all issues"* recorded from #852, #853 and #854, which
+the coordinating session's brief turned into option 2 for this one: a NEW card at DRAFT,
+[`SHAPE_WALL_TOPS_TO_ROOF`](../../brain/fragments/shape-wall-tops-to-roof/fragment.yaml), declared 2022 to
+2027, that gives each wall a profile sketch whose top follows the underside of the roof above it, refuses a
+wall that cannot have one with Revit's own words, and says in every answer that the top will NOT follow the
+roof if it moves ([row 5b-1672](../fragment-issues/row-5b-1672.md)). On 2020 and 2021 the card is not
+offered - the API has no profile sketch there - and option 3 (rebuild the wall) was not built. On 2025 on,
+`ATTACH_WALLS` stays the tool for *"attach"*, because there the wall follows the roof. **Still open on the
+PC:** whether a sketched top that does not follow is what the modeller wants - [Group
+OA](../needs-checking/group-oa.md) OA4 and OA5, and a modeller's word after it.
 
 ---

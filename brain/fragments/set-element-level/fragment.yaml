@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,23 @@ semantic-identity: "reassign these to a different level without moving them"
 kind: action
 domain: revit.elements
 capability: SET_ELEMENT_LEVEL
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 3 (2026-11-16) - COLUMNS, BOTH ENDS, and back to DRAFT.
+# FRAGMENT-ISSUES row 5b-1673 (#853 item C6, Villa 2, Revit 2024): "set the
+# top level of these columns" reached ATTACH_COLUMNS, and no tool set a
+# column's top level without moving it - version 2 applied `topLevelId` to
+# walls only and named a column in `notAWall`. Version 3 gives an
+# architectural or structural column the wall's rule: its base to `newLevel`
+# unless `keepWallBase`, its top to `topLevelId`, each offset re-solved so
+# the column does not move, a failure part-way put back, through the built-in
+# column level and offset parameters, never by name. An end attached to a
+# roof, floor or beam is refused, naming what holds it. Walls, MEP and family
+# instances are unchanged. Version 2 was PROVEN on 2026-11-02 (the proof
+# block below, kept as the record of what it proved); its C# moved, so it is
+# DRAFT again until NEEDS-CHECKING Group OA is run (D-30).
 
 purpose: >
   Moves elements onto a different level **while keeping them physically where
@@ -37,9 +51,15 @@ purpose: >
   `unconnectedTop` and skipped unless `allowUnconnectedToBecomeBound` says so.
   A top level id that is not a level refuses the whole call, and what is not a
   wall is named in `notAWall`. A write that fails part-way is put back, never
-  left half-set. This is version 2; version 1's proof no longer describes the
-  code and is kept as a record, and the fragment is DRAFT until it is proved
-  again.
+  left half-set.
+
+  **COLUMNS TOO, BOTH ENDS** (version 3). An architectural or structural
+  column takes the wall's rule: its base to the level given unless
+  `keepWallBase`, its top to `topLevelId`, each offset re-solved so the
+  column stays where it is. An end attached to a roof, floor or beam is set by
+  what it is attached to, so that column is refused with the reason; one with
+  no top level has its top named in `unconnectedTop`. `columnReport` says
+  what each column's two ends were and are now.
 
   **Reassigning and moving are opposite intentions said the same way.** *"Put
   these on Level 2"* can mean re-label them or physically raise them.
@@ -59,19 +79,21 @@ contract:
     - name: newLevel
       type: Level
       source: request
-    # Version 2, from SET_WALL_CONSTRAINTS. A WALL'S TOP level, its top offset
-    # re-solved so the wall does not move. Left out, or none, leaves every
-    # wall's top alone. Applies to walls only. A level name is looked up as a
-    # level; an id that is not a level refuses the whole call.
+    # Version 2, from SET_WALL_CONSTRAINTS. A WALL'S TOP level - and since
+    # version 3 a COLUMN'S - its top offset re-solved so it does not move.
+    # Left out, or none, leaves every top alone. Applies to walls and columns
+    # only. A level name is looked up as a level; an id that is not a level
+    # refuses the whole call.
     - name: topLevelId
       type: ElementId
       source: request
       optional: true
       absent: none
-    # Version 2. True leaves every wall's BASE as it is, so a call can tie the
-    # tops alone - on walls whose bases differ, which one `newLevel` cannot
-    # say. Then whatever is not a wall is left alone too, and named in
-    # `notAWall`. Left out, false.
+    # Version 2. True leaves every wall's BASE as it is - and since version 3
+    # every column's - so a call can tie the tops alone, on walls or columns
+    # whose bases differ, which one `newLevel` cannot say. Then whatever is
+    # not a wall or a column is left alone too, and named in `notAWall`. Left
+    # out, false.
     #
     # WHY A SWITCH AND NOT A SEPARATE BASE LEVEL: an optional id left out and
     # one given as none bind to the same value, so a `baseLevelId` could not
@@ -119,9 +141,10 @@ contract:
       role: accounting
       type: IList<ElementId>
     - name: notAWall
-      # Version 2. Handed in but not walls, while a top level was asked for or
-      # the walls' base kept - the wall part did not apply to them. A count of
-      # what it was GIVEN, never a thing it found (D-52).
+      # Version 2. Handed in but not walls - nor, since version 3, columns -
+      # while a top level was asked for or the base kept: the wall part did not
+      # apply to them. A count of what it was GIVEN, never a thing it found
+      # (D-52).
       role: accounting
       type: IList<ElementId>
     - name: notApplicable
@@ -134,6 +157,14 @@ contract:
       # Version 2. The sentence saying what stopped the whole call - a top
       # level id that is not a level - or that walls were left alone because
       # nothing was asked of them. Null when nothing did (D-52).
+      role: accounting
+      type: string
+    - name: columnReport
+      # Version 3. Column by column, " | " between them: each end's level
+      # before and after with the base and top heights it holds, or why the
+      # column was left - an end attached to a roof, floor or beam, a level
+      # Revit holds read-only, a top with no level. Empty with no column. It
+      # describes what `moved` and `refused` count (D-52).
       role: accounting
       type: string
 
@@ -178,8 +209,13 @@ compatibility-note: >
   `INSTANCE_FREE_HOST_OFFSET_PARAM` built-in parameters and `Level.Elevation`
   are unchanged 2020 to 2027, and so are the wall's `WALL_BASE_CONSTRAINT`,
   `WALL_BASE_OFFSET`, `WALL_HEIGHT_TYPE`, `WALL_TOP_OFFSET` and
-  `WALL_USER_HEIGHT_PARAM` (version 2), reached by BuiltInParameter rather
-  than by name so nothing depends on Revit's language. Levels are compared as
+  `WALL_USER_HEIGHT_PARAM` (version 2), and the column's
+  `FAMILY_BASE_LEVEL_PARAM`, `FAMILY_TOP_LEVEL_PARAM`,
+  `FAMILY_BASE_LEVEL_OFFSET_PARAM` and `FAMILY_TOP_LEVEL_OFFSET_PARAM` with
+  `ColumnAttachment.GetColumnAttachment` (version 3, the members
+  COPY_ELEMENTS and ATTACH_COLUMNS already compile on all eight), reached by
+  BuiltInParameter rather than by name so nothing depends on Revit's
+  language. Levels are compared as
   ElementId against ElementId, never as numbers. Everything here is a ratio or a difference of two
   internal lengths, so no unit conversion is involved at all.
 
@@ -246,6 +282,15 @@ compatibility-note: >
 #   "build a wall here"                  -> CREATE_WALL
 #   "the corners are cleaning up wrong"  -> DISALLOW_JOIN
 #   "attach these walls to the roof"     -> ATTACH_WALLS (2025 on)
+#
+# ROUTING (version 3, row 5b-1673) - the column rows.
+#
+#   "set the top level of these columns" -> here, topLevelId - and
+#                                           keepWallBase to leave the base
+#   "put these columns on level 2 without moving them" -> here
+#   "attach these columns to the roof"   -> ATTACH_COLUMNS - an attachment to
+#                                           an element, which follows it; this
+#                                           sets a level and offset
 #   "what is attached to this element"   -> REPORT_ELEMENT_DEPENDENCIES
 #   "which level are these walls on"     -> READ_ELEMENT_PARAMETERS, Level. A
 #                                           question, and this one changes it
@@ -279,3 +324,7 @@ utterances:
   - put these walls on level 3
   - the walls are attached to the wrong level
   - tie the wall tops to the level above
+  # VERSION 3, row 5b-1673.
+  - set the top level of these columns
+  - change the top level of these columns without moving them
+  - put these columns on a different level without moving them

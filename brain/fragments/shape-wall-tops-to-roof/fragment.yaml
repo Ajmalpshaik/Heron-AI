@@ -1,0 +1,147 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-170
+semantic-identity: "edit the profile of these walls so their tops follow the underside of the roof above, closing the gable"
+kind: action
+domain: revit.elements
+capability: SHAPE_WALL_TOPS_TO_ROOF
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+# WHY IT EXISTS - comments, not `purpose`, because `purpose` is searched and
+# long text pulls other sentences here.
+#
+# FRAGMENT-ISSUES row 5b-1672, Q-91 (issue #852, ask 2; Villa 2, Revit 2024,
+# 2026-11-11): 25 walls stopped at the 2440 plate under two gable roofs and
+# left the gable triangles open. ATTACH_WALLS is declared 2025 on - Revit
+# opened wall attachment to code only then - so on 2020 to 2024 nothing in
+# Heron could close them. The owner asked on 2026-11-16 for every recorded
+# issue from #852 to #854 to be fixed, which answers Q-91 with its option 2:
+# a new tool that edits each wall's PROFILE so its top follows the roof, on
+# the releases whose API has a wall profile sketch.
+#
+# NOT ATTACH_WALLS and NOT CREATE_WALL. ATTACH_WALLS ties a wall to a roof so
+# it follows it (2025 on, Wall.AddAttachment); this draws the wall's outline
+# once, and it does not follow. CREATE_WALL makes walls from a line and a
+# height; this reshapes walls already there, keeping what they host.
+#
+# REVIT 2022 ON. Wall.CanHaveProfileSketch, CreateProfileSketch,
+# RemoveProfileSketch, SketchId and SketchEditScope are in RevitAPI.xml
+# 2022.1.80 to 2024.0.0 and NOT in 2020.2.90 or 2021.1.100 (read 2026-11-15
+# for Q-91). On 2020 and 2021 the only shaped wall is a new one made from a
+# profile, which loses what the old wall hosted - Q-91's option 3, not built.
+#
+# IT RUNS IN REVIT'S EDIT MODE, so it declares `editScopeFailures` (D-112):
+# the add-in runs it inside Heron's group with no transaction open, and it
+# opens its own. Still one undo; still rolled back on a preview.
+#
+# ASSUMES NO OPEN TRANSACTION - the opposite of Golden Rule 16's usual shape,
+# for the reason above.
+purpose: >
+  Edits the profile of the walls selected so each wall's top follows the
+  underside of the roof above it - Edit Profile, done for the modeller - and
+  closes the open triangle under a gable. The roof's underside is measured
+  every 50 mm along the wall on both its faces, and the lower kept, so the top
+  never pokes through the roof; a ridge between two measurements is put where
+  the slopes meet. The wall's bottom and ends stay as they were.
+
+  **THE TOP IS A SKETCH AND DOES NOT FOLLOW THE ROOF.** If the roof moves or
+  is rebuilt, the wall keeps the old outline - unlike Attach Top/Base. Every
+  answer says so. From Revit 2025, ATTACH_WALLS attaches the wall instead.
+
+  **REFUSED WITH THE REASON, and nothing on that wall changed:** a wall Revit
+  says cannot have a profile sketch - in Revit's own words; a wall that
+  already has an edited profile; a wall in a group; a wall the roof does not
+  cover along its whole length. A roof in the selection is the one followed;
+  with none, each wall finds the roof above it.
+
+  **READ BACK.** The profile Revit holds after its edit mode closes must have
+  a corner at every point of the roof's underside, to 1 mm; if not, the
+  profile is removed again and the wall is as it was.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: editScopeFailures
+      type: IFailuresPreprocessor
+      source: ambient
+    # The walls to shape, FROM THE SELECTION - and, to name which roof they
+    # follow, that roof too. Anything else is named in `refused` and left
+    # alone.
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: shaped
+      # Walls whose profile Revit holds with the new top, read back after the
+      # edit mode closed. Counted off the read-back, never off the write.
+      role: result
+      type: int
+    - name: shapedIds
+      role: result
+      type: IList<ElementId>
+    - name: noRoof
+      # Walls the roof does not cover along their whole length, named and
+      # left alone (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: report
+      # ONE STRING, wall by wall: the roof followed, every point of the new
+      # top - how far along and how high - and the highest point against the
+      # old top. The evidence, as a string because a reply cuts a list
+      # (D-52).
+      role: accounting
+      type: string
+    - name: refused
+      # Why each thing it was handed was left alone, in plain words, " | "
+      # between them - Revit's own words where Revit refused (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  Declared 2022 to 2027 because the wall profile sketch is in the API from
+  2022 only: Wall.CanHaveProfileSketch, CreateProfileSketch,
+  RemoveProfileSketch and SketchId, SketchEditScope with Start(ElementId),
+  and Sketch.GetAllElements are all marked "since 2022" in RevitAPI.xml
+  2024.3.60, and Q-91 found none of them in 2020.2.90 or 2021.1.100.
+  EditScope's IsPermitted, IsActive, Commit and Cancel,
+  Solid.IntersectWithCurve (2013), HostObjectUtils.GetSideFaces,
+  Document.Create.NewModelCurve and Sketch.Profile are older. No ElementId is
+  built from a number. One path for every release it claims. MEASURED
+  2026-11-16 with tools/check-fragments-compile.py: compiled against 2021's
+  reference assemblies (the card's release list widened for that one run) it
+  fails on exactly SketchId, CanHaveProfileSketch, CreateProfileSketch,
+  RemoveProfileSketch, SketchEditScope and Sketch.GetAllElements; it compiles
+  on 2022 to 2027.
+
+# ROUTING - the same rows are in ATTACH_WALLS where they meet.
+#
+#   "make the wall tops follow the roof", "close the gable above these walls",
+#   "edit the wall profile to follow the gable"
+#                                        -> here, Revit 2022 on
+#   "attach these walls to the roof"     -> ATTACH_WALLS (2025 on) - the wall
+#                                           then FOLLOWS the roof. On 2025 on
+#                                           that is the better tool; this one
+#                                           draws an outline once
+#   "set the wall top to level 2"        -> SET_ELEMENT_LEVEL, topLevelId
+#   "build a wall here"                  -> CREATE_WALL
+#   "reset the wall profile"             -> NOT HERE, and nowhere yet: by hand
+#                                           in Revit, Reset Profile
+#   "slope this roof"                    -> SLOPE_ROOF_EDGES
+
+utterances:
+  - make the tops of these walls follow the roof above
+  - close the gable triangle above these walls
+  - edit the wall profile to follow the gable
+  - shape the wall tops to the underside of the roof
