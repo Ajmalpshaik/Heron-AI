@@ -68,6 +68,418 @@ namespace Heron.RollbackWitness.TestHost
         private static string Uid(int n) { return "uid-" + n; }
         private static string Id(int n) { return n.ToString(); }
 
+        // ------------------------------------------------------------ values
+
+        // PARAMETER IDS MADE UP FOR THE TEST, not Revit's: what is checked is
+        // that the two reads are paired by id, whatever the ids are. Two
+        // parameters share the name "Mark" on purpose (D-156's pairing rule).
+        private const long CommentsId = 5001;
+        private const long MarkId = 5002;
+        private const long EditedById = 5003;
+        private const long OtherMarkId = 5004;
+
+        /// <summary>One element's values, as the reader would find them.</summary>
+        private sealed class Thing
+        {
+            internal string Category;
+            internal string Name;
+            internal string Comments = "";
+            internal string Mark = "A";          // null: the parameter is not there
+            internal string OtherMark = "A";
+            internal string EditedBy = "";
+        }
+
+        /// <summary>
+        /// A model of values: what each UniqueId reads now, and which cannot be
+        /// read (null) or throw when read. Read is the reader RevitFragment
+        /// hands the witness, in miniature.
+        /// </summary>
+        private sealed class Values
+        {
+            internal readonly Dictionary<string, Thing> Things = new Dictionary<string, Thing>(StringComparer.Ordinal);
+            internal readonly HashSet<string> Unreadable = new HashSet<string>(StringComparer.Ordinal);
+            internal readonly HashSet<string> Throws = new HashSet<string>(StringComparer.Ordinal);
+
+            internal Thing Put(string uid, string category, string name)
+            {
+                var thing = new Thing { Category = category, Name = name };
+                Things[uid] = thing;
+                return thing;
+            }
+
+            internal Func<string, HeronReadBack.Values> Read
+            {
+                get
+                {
+                    return uid =>
+                    {
+                        if (Throws.Contains(uid)) throw new InvalidOperationException("cannot be read");
+                        Thing thing;
+                        if (Unreadable.Contains(uid) || !Things.TryGetValue(uid, out thing)) return null;
+                        var values = new HeronReadBack.Values(thing.Category) { UniqueId = uid };
+                        values.Add("Name", thing.Name);
+                        var parameters = new List<HeronReadBack.ParameterRead>
+                        {
+                            new HeronReadBack.ParameterRead(CommentsId, "Comments", thing.Comments),
+                            new HeronReadBack.ParameterRead(EditedById, "Edited by", thing.EditedBy),
+                            new HeronReadBack.ParameterRead(OtherMarkId, "Mark", thing.OtherMark),
+                        };
+                        if (thing.Mark != null)
+                            parameters.Add(new HeronReadBack.ParameterRead(MarkId, "Mark", thing.Mark));
+                        values.AddById(parameters);
+                        return values;
+                    };
+                }
+            }
+
+            /// <summary>Every element read, as RevitFragment reads them before the job.</summary>
+            internal List<HeronReadBack.Values> ReadAll()
+            {
+                var read = new List<HeronReadBack.Values>();
+                foreach (var uid in Things.Keys)
+                {
+                    var one = Read(uid);
+                    if (one != null) read.Add(one);
+                }
+                return read;
+            }
+
+            /// <summary>What each element reads now, to put back - a clean rollback.</summary>
+            internal Dictionary<string, Thing> Copy()
+            {
+                var copy = new Dictionary<string, Thing>(StringComparer.Ordinal);
+                foreach (var pair in Things)
+                {
+                    var t = pair.Value;
+                    copy[pair.Key] = new Thing
+                    {
+                        Category = t.Category, Name = t.Name, Comments = t.Comments,
+                        Mark = t.Mark, OtherMark = t.OtherMark, EditedBy = t.EditedBy
+                    };
+                }
+                return copy;
+            }
+
+            internal void PutBack(Dictionary<string, Thing> copy, params string[] only)
+            {
+                foreach (var uid in only) Things[uid] = copy[uid];
+            }
+        }
+
+        /// <summary>Eleven floor plans, as A16b's job found them: eight with an L in the name.</summary>
+        private static Values ElevenPlans()
+        {
+            var values = new Values();
+            var names = new[] { "L2", "L1 - Block 35", "L1 - Block 37", "L3", "L4", "L5", "L6", "L7",
+                                "Parking", "Site", "Roof" };
+            for (var n = 0; n < names.Length; n++) values.Put(Uid(100 + n), "Views", names[n]);
+            return values;
+        }
+
+        /// <summary>The job's rename: "L" becomes "HERONL" wherever it appears.</summary>
+        private static void Rename(Values values)
+        {
+            foreach (var thing in values.Things.Values)
+                if (thing.Name.Contains("L")) thing.Name = thing.Name.Replace("L", "HERONL");
+        }
+
+        /// <summary>
+        /// What a modified element that survives a rollback looks like to the
+        /// check, and that one that did not survive, or could not be read, is
+        /// never called either. NEEDS-CHECKING A16b, the shape it was seen in.
+        /// </summary>
+        private static void Changes()
+        {
+            Console.WriteLine();
+            Console.WriteLine("A value a job changed that a rollback did not put back is said");
+            HeronRollbackWitness.Outcome outcome;
+            var none = new long[0];
+
+            // 16. A RENAME THAT STOOD - A16b's own shape: Revit reported the
+            // group rolled back, nothing was added, and 8 views still read
+            // HERONL... The addition count alone called this clean.
+            var witness = new HeronRollbackWitness();
+            var model = new Model();
+            var values = ElevenPlans();
+            using (var job = Job(witness, model, "rename-elements"))
+            {
+                job.ReadBefore(values.ReadAll(), none);
+                Check(job.ReadBeforeCount == 11, "the 11 views handed to the job are read before it (" + job.ReadBeforeCount + ")");
+                Rename(values);
+                job.ReadDuring(values.Read);
+                Check(job.ChangedCount == 8, "and the 8 it renamed are what it changed (" + job.ChangedCount + ")");
+                outcome = witness.RolledBack(job, true, model.Resolves, values.Read);   // the names stay
+            }
+            Check(outcome.Reported && !outcome.Held && outcome.Stands && outcome.Standing == 0,
+                  "Revit's \"rolled back\" with no addition standing is NOT a rollback that held");
+            Check(outcome.Changed == 8 && outcome.ChangedChecked == 8 && outcome.ChangedStanding == 8,
+                  "all 8 renamed views were read back and all 8 still hold the change");
+            Check(outcome.ModelSentence() == "Revit reported the rollback, but all 8 elements this run changed "
+                      + "that Heron read back still hold the change (Views: Name reads 'HERONL2', was 'L2'), so "
+                      + "THE ROLLBACK DID NOT HOLD. Check what it would have changed before trusting anything "
+                      + "here, and do not save until you have.",
+                  "and it says so in Revit words: \"" + outcome.ModelSentence() + "\"");
+            Check(outcome.Unsaid() == outcome.ModelSentence() && outcome.Account() == outcome.ModelSentence(),
+                  "a refusal that said nothing about the model now carries it");
+            Check(outcome.StillThere().StartsWith("All 8 elements this run changed", StringComparison.Ordinal),
+                  "and the Discard's sentence starts as a sentence: \"" + outcome.StillThere() + "\"");
+
+            // 17. SOME CAME BACK: only the ones that did not are counted.
+            witness = new HeronRollbackWitness();
+            values = ElevenPlans();
+            var was = values.Copy();
+            using (var job = Job(witness, model, "rename-elements"))
+            {
+                job.ReadBefore(values.ReadAll(), none);
+                Rename(values);
+                job.ReadDuring(values.Read);
+                values.PutBack(was, Uid(101), Uid(102), Uid(103), Uid(104), Uid(105));
+                outcome = witness.RolledBack(job, true, model.Resolves, values.Read);
+            }
+            Check(!outcome.Held && outcome.ChangedChecked == 8 && outcome.ChangedStanding == 3,
+                  "5 of 8 put back leaves 3 still changed (" + outcome.ChangedStanding + ")");
+            Check(outcome.ChangedStill() == "3 of the 8 elements this run changed that Heron read back still "
+                      + "hold the change (Views: Name reads 'HERONL2', was 'L2')",
+                  "\"" + outcome.ChangedStill() + "\"");
+
+            // 18. A PARAMETER THAT STOOD: Comments on three ducts, two put back.
+            witness = new HeronRollbackWitness();
+            values = new Values();
+            for (var n = 0; n < 3; n++) values.Put(Uid(200 + n), "Ducts", "Rectangular Duct");
+            was = values.Copy();
+            using (var job = Job(witness, model, "write-element-parameters"))
+            {
+                job.ReadBefore(values.ReadAll(), none);
+                foreach (var thing in values.Things.Values) thing.Comments = "X";
+                job.ReadDuring(values.Read);
+                values.PutBack(was, Uid(201), Uid(202));
+                outcome = witness.RolledBack(job, true, model.Resolves, values.Read);
+            }
+            Check(!outcome.Held && outcome.ChangedChecked == 3 && outcome.ChangedStanding == 1,
+                  "a parameter value left behind withdraws the rollback");
+            Check(outcome.ChangedStill() == "1 of the 3 elements this run changed that Heron read back still "
+                      + "holds the change (Ducts: Comments reads 'X', was blank)",
+                  "\"" + outcome.ChangedStill() + "\"");
+
+            // 19. TWO PARAMETERS CALLED Mark ARE TOLD APART BY ID - the one that
+            // stood is named, and the one the job never touched is not checked.
+            witness = new HeronRollbackWitness();
+            values = new Values();
+            values.Put(Uid(300), "Doors", "Single-Flush");
+            using (var job = Job(witness, model, "write-element-parameters"))
+            {
+                job.ReadBefore(values.ReadAll(), none);
+                values.Things[Uid(300)].Mark = "B";
+                job.ReadDuring(values.Read);
+                outcome = witness.RolledBack(job, true, model.Resolves, values.Read);
+            }
+            Check(!outcome.Held && outcome.StoodName == "Mark (id " + MarkId + ")"
+                  && outcome.StoodWas == "A" && outcome.StoodNow == "B",
+                  "the Mark that stood is named by its own id: \"" + outcome.ChangedStill() + "\"");
+
+            // 20. A CLEAN ROLLBACK: everything read back as before, and the
+            // sentence says what was looked at.
+            witness = new HeronRollbackWitness();
+            model = new Model();
+            values = ElevenPlans();
+            was = values.Copy();
+            using (var job = Job(witness, model, "rename-elements"))
+            {
+                job.ReadBefore(values.ReadAll(), none);
+                Rename(values);
+                model.Add(job, 10, 2);
+                job.ReadDuring(values.Read);
+                values.PutBack(was, new List<string>(was.Keys).ToArray());
+                model.Remove(10, 2);
+                outcome = witness.RolledBack(job, true, model.Resolves, values.Read);
+            }
+            Check(outcome.Held && !outcome.Stands && outcome.ChangedChecked == 8 && outcome.ChangedStanding == 0,
+                  "a rename put back by the rollback holds");
+            Check(outcome.ModelSentence() == "Revit confirmed the rollback, so the model is exactly as it was"
+                      + " - and none of the 2 elements this run added is still in the model, and the 8 elements "
+                      + "this run changed that Heron read back read as they did before it.",
+                  "and says only what it checked: \"" + outcome.ModelSentence() + "\"");
+            Check(outcome.Unsaid() == "" && outcome.Also() == "",
+                  "a clean refusal is unchanged by it");
+
+            // 21. AN ELEMENT THAT COULD NOT BE READ IS NEITHER - not standing,
+            // not put back (Article 27). One cannot be read after, one throws,
+            // one cannot be read during the job and so is not counted changed.
+            witness = new HeronRollbackWitness();
+            values = new Values();
+            for (var n = 0; n < 4; n++) values.Put(Uid(400 + n), "Views", "L" + n);
+            was = values.Copy();
+            using (var job = Job(witness, model, "rename-elements"))
+            {
+                job.ReadBefore(values.ReadAll(), none);
+                Rename(values);
+                values.Unreadable.Add(Uid(403));
+                job.ReadDuring(values.Read);
+                Check(job.ChangedCount == 3, "one that cannot be read during the job is not counted changed");
+                values.Unreadable.Remove(Uid(403));
+                values.Unreadable.Add(Uid(400));
+                values.Throws.Add(Uid(401));
+                values.PutBack(was, Uid(402));
+                outcome = witness.RolledBack(job, true, model.Resolves, values.Read);
+            }
+            Check(outcome.Held && outcome.Changed == 3 && outcome.ChangedChecked == 1
+                  && outcome.ChangedStanding == 0,
+                  "one unread and one that threw count as neither; the one read back held ("
+                  + outcome.ChangedChecked + " checked)");
+            Check(outcome.ModelSentence() == "Revit confirmed the rollback, so the model is exactly as it was"
+                      + " - and the one element this run changed that Heron read back reads as it did before it.",
+                  "\"" + outcome.ModelSentence() + "\"");
+            witness = new HeronRollbackWitness();
+            values = ElevenPlans();
+            using (var job = Job(witness, model, "rename-elements"))
+            {
+                job.ReadBefore(values.ReadAll(), none);
+                Rename(values);
+                job.ReadDuring(values.Read);
+                foreach (var uid in values.Things.Keys) values.Unreadable.Add(uid);
+                outcome = witness.RolledBack(job, true, model.Resolves, values.Read);
+            }
+            Check(outcome.Held && outcome.ChangedChecked == 0
+                  && outcome.ModelSentence() == "Revit confirmed the rollback, so the model is exactly as it was.",
+                  "none read back says nothing about them, either way");
+
+            // 22. "Edited by" IS NOT THE CHANGE: a borrow alone is not counted.
+            witness = new HeronRollbackWitness();
+            values = new Values();
+            values.Put(Uid(500), "Ducts", "Rectangular Duct");
+            using (var job = Job(witness, model, "write-element-parameters"))
+            {
+                job.ReadBefore(values.ReadAll(), new[] { EditedById });
+                values.Things[Uid(500)].EditedBy = "modeller";
+                job.ReadDuring(values.Read);
+                Check(job.ChangedCount == 0, "a value named as not the change is not counted changed");
+                outcome = witness.RolledBack(job, true, model.Resolves, values.Read);
+            }
+            Check(outcome.Held && outcome.Changed == 0, "so a borrow that outlives the rollback is no alarm");
+
+            // 23. A THIRD VALUE, A PARAMETER ADDED, A PARAMETER REMOVED - each
+            // is a value that did not come back.
+            witness = new HeronRollbackWitness();
+            values = new Values();
+            values.Put(Uid(600), "Views", "L2");
+            values.Put(Uid(601), "Views", "L3").Mark = null;
+            values.Put(Uid(602), "Views", "L4");
+            using (var job = Job(witness, model, "rename-elements"))
+            {
+                job.ReadBefore(values.ReadAll(), none);
+                values.Things[Uid(600)].Name = "HERONL2";
+                values.Things[Uid(601)].Mark = "M1";
+                values.Things[Uid(602)].Mark = null;
+                job.ReadDuring(values.Read);
+                values.Things[Uid(600)].Name = "XL2";
+                outcome = witness.RolledBack(job, true, model.Resolves, values.Read);
+            }
+            Check(!outcome.Held && outcome.ChangedStanding == 3 && outcome.StoodNow == "XL2",
+                  "a value that came back as neither before nor the job's still counts: \"" + outcome.ChangedStill() + "\"");
+            witness = new HeronRollbackWitness();
+            values = new Values();
+            values.Put(Uid(601), "Views", "L3").Mark = null;
+            using (var job = Job(witness, model, "j"))
+            {
+                job.ReadBefore(values.ReadAll(), none);
+                values.Things[Uid(601)].Mark = "M1";
+                job.ReadDuring(values.Read);
+                outcome = witness.RolledBack(job, true, model.Resolves, values.Read);
+            }
+            Check(outcome.ChangedStill().EndsWith("(Views: Mark (id " + MarkId + ") reads 'M1', was not there)", StringComparison.Ordinal),
+                  "\"" + outcome.ChangedStill() + "\"");
+            witness = new HeronRollbackWitness();
+            values = new Values();
+            values.Put(Uid(602), "Views", "L4");
+            using (var job = Job(witness, model, "j"))
+            {
+                job.ReadBefore(values.ReadAll(), none);
+                values.Things[Uid(602)].Mark = null;
+                job.ReadDuring(values.Read);
+                outcome = witness.RolledBack(job, true, model.Resolves, values.Read);
+            }
+            Check(outcome.ChangedStill().EndsWith("(Views: Mark (id " + MarkId + ") is not there now, was 'A')", StringComparison.Ordinal),
+                  "\"" + outcome.ChangedStill() + "\"");
+
+            // 24. ADDED AND CHANGED BOTH STANDING, and a rollback Revit never
+            // confirmed: one clause each, in both sentences.
+            witness = new HeronRollbackWitness();
+            model = new Model();
+            values = new Values();
+            values.Put(Uid(700), "Views", "L2");
+            using (var job = Job(witness, model, "rename-elements"))
+            {
+                job.ReadBefore(values.ReadAll(), none);
+                values.Things[Uid(700)].Name = "HERONL2";
+                model.Add(job, 10, 2);
+                job.ReadDuring(values.Read);
+                model.Remove(10, 1);
+                outcome = witness.RolledBack(job, true, model.Resolves, values.Read);
+            }
+            Check(outcome.ModelSentence().StartsWith("Revit reported the rollback, but 1 of the 2 elements this "
+                      + "run added is still in the model, and the one element this run changed that Heron read "
+                      + "back still holds the change (Views: Name reads 'HERONL2', was 'L2'), so THE ROLLBACK "
+                      + "DID NOT HOLD.", StringComparison.Ordinal),
+                  "\"" + outcome.ModelSentence() + "\"");
+            witness = new HeronRollbackWitness();
+            values = new Values();
+            values.Put(Uid(700), "Views", "L2");
+            values.Put(Uid(701), "Views", "L3");
+            using (var job = Job(witness, model, "rename-elements"))
+            {
+                job.ReadBefore(values.ReadAll(), none);
+                Rename(values);
+                job.ReadDuring(values.Read);
+                outcome = witness.RolledBack(job, false, model.Resolves, values.Read);
+            }
+            Check(outcome.ModelSentence().StartsWith("Revit did NOT confirm the rollback, so THE MODEL MAY STILL "
+                      + "HOLD PART OF THIS JOB - both elements this run changed that Heron read back still hold "
+                      + "the change (Views: Name reads 'HERONL2', was 'L2').", StringComparison.Ordinal),
+                  "\"" + outcome.ModelSentence() + "\"");
+
+            // 25. ONCE, AND NEVER AFTER THE ROLLBACK: a second look would read
+            // the rolled-back model as the job's work. And a caller that hands
+            // no reader - RevitWrite, RevitCapture - says what it always said.
+            witness = new HeronRollbackWitness();
+            values = ElevenPlans();
+            was = values.Copy();
+            using (var job = Job(witness, model, "rename-elements"))
+            {
+                job.ReadBefore(values.ReadAll(), none);
+                Rename(values);
+                job.ReadDuring(values.Read);
+                values.PutBack(was, new List<string>(was.Keys).ToArray());
+                job.ReadDuring(values.Read);
+                Check(job.ChangedCount == 8, "a second ReadDuring changes nothing");
+                outcome = witness.RolledBack(job, true, model.Resolves, values.Read);
+                Rename(values);
+                job.ReadDuring(values.Read);
+                Check(ReferenceEquals(witness.RolledBack(job, true, model.Resolves, values.Read), outcome)
+                      && outcome.Held,
+                      "and the first answer stands");
+            }
+            witness = new HeronRollbackWitness();
+            values = ElevenPlans();
+            using (var job = Job(witness, model, "rename-elements"))
+            {
+                job.ReadBefore(values.ReadAll(), none);
+                Rename(values);
+                job.ReadDuring(values.Read);
+                outcome = witness.RolledBack(job, true, model.Resolves);
+            }
+            Check(outcome.Held && outcome.ChangedChecked == 0
+                  && outcome.ModelSentence() == "Revit confirmed the rollback, so the model is exactly as it was.",
+                  "no reader after the rollback reads as unchecked, never as held or stood");
+            witness = new HeronRollbackWitness();
+            using (var job = Job(witness, model, "rename-elements"))
+            {
+                var nameless = new HeronReadBack.Values("Views");
+                nameless.Add("Name", "L2");
+                job.ReadBefore(new[] { nameless, null }, null);
+                Check(job.ReadBeforeCount == 0, "an element whose UniqueId was not read cannot be found again, so is not kept");
+            }
+        }
+
         private static HeronRollbackWitness.Watch Job(HeronRollbackWitness witness, Model model,
                                                       string name)
         {
@@ -457,6 +869,8 @@ namespace Heron.RollbackWitness.TestHost
             Check(HeronRollbackWitness.Told(null, loss) == null && HeronRollbackWitness.Told("", loss) == "",
                   "and no reply is never invented into one");
 
+            Changes();
+
             Console.WriteLine();
             if (Failures.Count > 0)
             {
@@ -465,7 +879,8 @@ namespace Heron.RollbackWitness.TestHost
             }
             Console.WriteLine("PASSED - " + _checks + " checks. A loss during a rollback is said once,");
             Console.WriteLine("what the modeller removed is never blamed on one, and a rollback whose");
-            Console.WriteLine("additions still stand is never called complete.");
+            Console.WriteLine("additions still stand, or whose changes did not come back, is never");
+            Console.WriteLine("called complete.");
             return 0;
         }
     }
