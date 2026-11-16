@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -144,37 +144,37 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-11-02'
+  date: '2026-11-16'
   by: Ajmal PS
-  model: P1102 MEP (21,446 elements), Revit 2020, session 59096
+  model: Heron OB Test (3,205 elements), Revit 2024, session 29520
   positive_case: run as it would normally be run - the arrangement was re-made first by running
     filter-elements-by-category, set-selection with this phase's own values - run inside a
     transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
-    aboutALine false, angleRadians 0.5, askedForNothing false, at Func`2, axisText none, blocked
-    0 item(s), culture CultureInfo, eachAboutItself false, findings 1 item(s) [6 turned about
-    a vertical axis through the pivot, 0 accepted...], full 6.28318530717959, given (null),
-    normalised 0.5, orientationOf Func`2, pivotPoint XYZ, pivotText 0,0,0, pointMm Func`2,
-    refused 0 item(s), rotated 6, rotatedIds 6 item(s) [579452, 579920, 579921, ...], stop
-    (null), unverified 0 item(s). inputs came elements from the selection (6); angleRadians
-    as given; pivot as given; axisLine not given - "none", the card's own default (optional).
-    on P1102 MEP
-  negative_case: run with angleRadians=0, category=Mass, pivot=0,0,0 instead - chosen because
-    it should not contain what this fragment reports - the arrangement was re-made first by
-    running filter-elements-by-category, set-selection with this phase's own values - run
-    inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
-    returned aboutALine false, angleRadians 0, askedForNothing true, at Func`2, axisText none,
-    blocked 0 item(s), culture CultureInfo, eachAboutItself false, findings 1 item(s) [The
-    angle is zero, or a whole turn, so nothing would move. N...], full 6.28318530717959, given
-    (null), normalised 0, orientationOf Func`2, pivotPoint XYZ, pivotText 0,0,0, pointMm Func`2,
+    aboutALine false, angleRadians -1.5707963, askedForNothing false, at Func`2, axisText
+    none, blocked 0 item(s), culture CultureInfo, eachAboutItself true, findings 1 item(s)
+    [Asked to turn 90 degrees clockwise seen from above, about a ...], given (null), isNoTurn
+    Func`2, orientationOf Func`2, pivotPoint (null), pivotText none, pointMm Func`2, refused
+    0 item(s), rotated 1, rotatedIds 1 item(s) [352515], stop (null), turnInWords Func`3,
+    unverified 0 item(s). inputs came elements from the selection (1); angleRadians as given;
+    pivot not given - "none", the card's own default (optional); axisLine not given - "none",
+    the card's own default (optional). on Heron OB Test
+  negative_case: run with angleRadians=6.283185307179586, category=Columns instead - chosen
+    because it should not contain what this fragment reports - the arrangement was re-made
+    first by running filter-elements-by-category, set-selection with this phase's own values
+    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned aboutALine false, angleRadians 6.28318530717959, askedForNothing true, at Func`2,
+    axisText none, blocked 0 item(s), culture CultureInfo, eachAboutItself true, findings
+    1 item(s) [The angle is zero, or a whole turn, so nothing would move. N...], given (null),
+    isNoTurn Func`2, orientationOf Func`2, pivotPoint (null), pivotText none, pointMm Func`2,
     refused 0 item(s), rotated 0, rotatedIds 0 item(s), stop The angle is zero, or a whole
     turn, so nothing would move. Nothing was attempted, which is not the same as nothing being
-    turnable, unverified 0 item(s). inputs came elements from the selection (6); angleRadians
-    as given; pivot as given; axisLine not given - "none", the card's own default (optional).
-    on P1102 MEP
+    turnable, turnInWords Func`3, unverified 0 item(s). inputs came elements from the selection
+    (1); angleRadians as given; pivot not given - "none", the card's own default (optional);
+    axisLine not given - "none", the card's own default (optional). on Heron OB Test
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: f7f094e308d5a5a9
+  fingerprint: 2a76228a9a712022
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
