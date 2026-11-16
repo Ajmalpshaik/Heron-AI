@@ -154,9 +154,9 @@ function Get-RevitAddinsFolder {
         NOT CREATED. A release nobody has installed has no Addins folder, and
         making one would leave a folder behind and answer no question.
 
-        THE ALL-USERS FOLDERS ARE SPELLED ONCE, BELOW, AND ONLY TO BE READ -
-        Get-RevitAllUserAddinsFolders, added 2026-11-16 for the second-copy
-        check (D-167). Heron still never installs there.
+        THE ALL-USERS FOLDERS ARE ASKED OF THE SAME LIST, BELOW, AND ONLY TO BE
+        READ - Get-RevitAllUserAddinsFolders, added 2026-11-16 for the
+        second-copy check (D-167). Heron still never installs there.
     .PARAMETER RevitVersion
         The four-digit release, as a string.
     #>
@@ -183,6 +183,12 @@ function Get-RevitAllUserAddinsFolders {
         skill). Returning both costs one missing folder, and guessing which a
         future release reads is the mistake Directory.Build.props refuses.
 
+        ASKED, NOT SPELLED, since 2026-11-16: HeronPaths.RevitAllUserAddins owns
+        both, and its list names each by the special folder it starts at
+        (Get-HeronFolder, Q-58). This function spelled them from ProgramData and
+        ProgramFiles until then; tests/test_heron_folders.py fails when a name
+        asked here is not in the list, or the list has one not asked here.
+
         NOT CREATED, for the same reason as above.
     .PARAMETER RevitVersion
         The four-digit release, as a string.
@@ -190,8 +196,8 @@ function Get-RevitAllUserAddinsFolders {
     param([Parameter(Mandatory = $true)][string] $RevitVersion)
 
     return @(
-        (Join-Path $env:ProgramData "Autodesk\Revit\Addins\$RevitVersion"),
-        (Join-Path ${env:ProgramFiles} "Autodesk\Revit\Addins\$RevitVersion")
+        (Get-HeronFolder -Name RevitAllUserAddinsCommonApplicationData -Fill @{ release = $RevitVersion }),
+        (Get-HeronFolder -Name RevitAllUserAddinsProgramFiles -Fill @{ release = $RevitVersion })
     )
 }
 

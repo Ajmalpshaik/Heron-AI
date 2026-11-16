@@ -1223,13 +1223,23 @@ namespace Heron.Installer.TestHost
 
             Console.WriteLine();
             Console.WriteLine("The install location is per user, and says why that matters");
-            Check(Names(InstallerScreen.InstallLocation, "APPDATA"),
-                  "it is under %APPDATA%");
-            Check(!Names(InstallerScreen.InstallLocation, "ProgramData")
-                  && !Names(InstallerScreen.InstallLocation, "Program Files"),
+            // READ FROM THE LIST HeronPaths WRITES, never spelled in the
+            // installer (row 5b-1746) - the real list, in the Heron folder
+            // tests/test_installer_engine.py runs this from.
+            var shown = InstallerScreen.InstallLocation(Environment.CurrentDirectory);
+            Check(Names(shown, "ApplicationData", "Addins", "<release>")
+                  && !Names(shown, "%"),
+                  "it is under the user's own ApplicationData folder, in the list's words (" + shown + ")");
+            Check(!Names(shown, "CommonApplicationData") && !Names(shown, "ProgramFiles")
+                  && !Names(shown, "ProgramData") && !Names(shown, "Program Files"),
                   "and nowhere that needs an administrator");
             Check(Names(InstallerScreen.InstallLocationNote, "no administrator"),
                   "and the window says so, which is the promise being kept");
+            var noList = Path.Combine(Path.GetTempPath(), "heron-nolist-" + Guid.NewGuid().ToString("N"));
+            var lost = InstallerScreen.InstallLocation(noList);
+            Check(Names(lost, "folder list", "not there", "Fetch the Heron files again")
+                  && !Names(lost, "ApplicationData"),
+                  "and with no list it says so, and guesses no folder");
 
             Console.WriteLine();
             Console.WriteLine("ROUTE 2 - A FOLDER ON THIS PC, CHECKED EXACTLY LIKE A DOWNLOAD");

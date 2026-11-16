@@ -465,14 +465,34 @@ def compiled(check_only):
 # What this cannot change, only read or tell
 # ---------------------------------------------------------------------------
 
+def _revit_addins_any_release():
+    """Revit's per-user Addins folder with every release as `*`, for a glob.
+
+    From platform/heron-folders.json through heron_bridge_client.heron_folder,
+    the list's one Python reader; LookupError says why when it cannot be told.
+    """
+    try:
+        import heron_bridge_client as BRIDGE
+    except ImportError as exc:
+        raise LookupError("mcp/client/heron_bridge_client.py, which reads the "
+                          "list, did not load (%s)" % exc)
+    return BRIDGE.heron_folder("RevitAddins", {"release": "*"})
+
+
 def revit_side():
     head("7. Revit (read only - nothing here is changed)")
-    appdata = os.environ.get("APPDATA")
-    if not appdata:
-        say(NOTE, "no %APPDATA% on this machine, so Revit is not here to check")
+    if os.name != "nt":
+        say(NOTE, "this is not Windows, so Revit is not here to check")
+        return
+    # THE FOLDER IS ASKED OF THE LIST HeronPaths WROTE, as the install scripts
+    # ask it, never built here from APPDATA (row 5b-1746).
+    try:
+        addins = _revit_addins_any_release()
+    except LookupError as exc:
+        say(FIX, "where Revit reads add-ins could not be told - %s" % exc)
         return
     found = sorted(os.path.basename(os.path.dirname(p)) for p in glob.glob(
-        os.path.join(appdata, "Autodesk", "Revit", "Addins", "*", "Heron.addin")))
+        os.path.join(addins, "Heron.addin")))
     if found:
         say(OK, "the Heron add-in is installed for Revit %s" % ", ".join(found))
     else:
@@ -679,7 +699,6 @@ def write_snapshot(path):
     """
     import json
     print("Heron - writing what this PC has to %s" % path)
-    appdata = os.environ.get("APPDATA")
     hub = os.path.join(os.environ.get("HF_HOME") or os.path.join(
         os.path.expanduser("~"), ".cache", "huggingface"), "hub")
     facts = {
@@ -714,10 +733,13 @@ def write_snapshot(path):
                                     "files": _files(where) if where else []}
     except Exception as exc:                            # noqa: BLE001 - recorded as the fact
         facts["knowledge_store"] = {"error": "%s: %s" % (type(exc).__name__, exc)}
-    if appdata:
-        facts["revit"]["addin_releases"] = sorted(
-            os.path.basename(os.path.dirname(p)) for p in glob.glob(os.path.join(
-                appdata, "Autodesk", "Revit", "Addins", "*", "Heron.addin")))
+    if os.name == "nt":
+        try:
+            facts["revit"]["addin_releases"] = sorted(
+                os.path.basename(os.path.dirname(p)) for p in glob.glob(os.path.join(
+                    _revit_addins_any_release(), "Heron.addin")))
+        except LookupError as exc:                      # recorded as the fact
+            facts["revit"]["addin_releases"] = "LookupError: %s" % exc
     try:
         import heron_config as CONFIG
         values = CONFIG.load()

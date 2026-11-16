@@ -18,6 +18,16 @@
       "from": "HeronPaths.RevitAddins",
       "under": "ApplicationData",
       "parts": ["Autodesk", "Revit", "Addins", "{release}"]
+    },
+    "RevitAllUserAddinsCommonApplicationData": {
+      "from": "HeronPaths.RevitAllUserAddins",
+      "under": "CommonApplicationData",
+      "parts": ["Autodesk", "Revit", "Addins", "{release}"]
+    },
+    "RevitAllUserAddinsProgramFiles": {
+      "from": "HeronPaths.RevitAllUserAddins",
+      "under": "ProgramFiles",
+      "parts": ["Autodesk", "Revit", "Addins", "{release}"]
     }
   }
 }

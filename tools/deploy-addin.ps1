@@ -402,8 +402,9 @@ function Find-OtherCopy {
 
     .NOTES
         EVERY FOLDER REVIT READS FOR THIS RELEASE. Per user is where Heron
-        goes; the all-users ones come from HeronRevit.ps1, which spells every
-        Revit path once - Get-RevitAllUserAddinsFolders, read and never written.
+        goes; the all-users ones come from HeronRevit.ps1, which asks the list
+        HeronPaths wrote for every Revit path - Get-RevitAllUserAddinsFolders,
+        read and never written.
         A second Heron in any of them is one Revit refuses, or loads twice, and
         the modeller is told only that it cannot run the external application.
 

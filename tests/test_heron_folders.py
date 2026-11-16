@@ -24,7 +24,9 @@ install script reads, and a check compares the written list with the code.**
 This is that check, and the claims it holds:
 
   1. `HeronPaths` owns both folders, and the generator ASKS it - the host
-     links `HeronPaths.cs` itself and spells no part of either path.
+     links `HeronPaths.cs` itself and spells no part of either path. Since
+     2026-11-16 it also owns Revit's ALL-USER Addins folders, which the
+     second-copy check reads and Heron never writes (D-167).
   2. `platform/heron-folders.json` is exactly what the code says today. A
      hand edit fails; a regeneration passes. It names a Windows special
      folder and the parts under it, never one machine's own path.
@@ -109,6 +111,13 @@ def ps_code(text):
                      if not line.lstrip().startswith("#"))
 
 
+def py_code(text):
+    """The Python with its docstrings and `#` lines taken out, as ps_code."""
+    text = re.sub(r'"""[\s\S]*?"""|\'\'\'[\s\S]*?\'\'\'', "", text or "")
+    return "\n".join(line for line in text.split("\n")
+                     if not line.lstrip().startswith("#"))
+
+
 def load_tool():
     """tools/heron-folders.py as a module, or None when it is not there."""
     if not os.path.isfile(TOOL):
@@ -132,6 +141,12 @@ def the_code_owns_both():
     check("public static string InstallBackup(string" in code,
           "HeronPaths has InstallBackup(release, folder) - the install a "
           "deploy last replaced")
+    raw = read(PATHS_CS) or ""
+    at = raw.find("public static string[] RevitAllUserAddins(string")
+    check(at != -1, "HeronPaths has RevitAllUserAddins(release) - Revit's all-user "
+                    "Addins folders")
+    check(at != -1 and "HERON NEVER INSTALLS HERE" in raw[max(0, at - 2500):at],
+          "and its own comment says Heron never installs there - read only")
 
     proj = read(HOST_PROJ)
     check(proj is not None, "the generator's host project is there")
@@ -145,6 +160,9 @@ def the_code_owns_both():
     host = cs_code(read(HOST_CODE))
     check("HeronPaths.RevitAddins(" in host and "HeronPaths.InstallBackup(" in host,
           "the host asks HeronPaths for both folders")
+    check("HeronPaths.RevitAllUserAddinsTemplate(" in host
+          and "HeronPaths.RevitAllUserAddins(" in host,
+          "and for the all-user ones, declared and resolved, to compare the two")
     # A PATH PART, alone or between separators - not a key like "RevitAddins"
     # or a file name like "Heron.Core/HeronPaths.cs", which name no folder.
     part = r"(autodesk|revit|addins|install-backup|heron)"
@@ -307,6 +325,20 @@ def the_scripts_read_it():
     check("Get-HeronFolder -Name RevitAddins" in addins,
           "Get-RevitAddinsFolder asks the list rather than spelling the folder")
 
+    # EVERY ALL-USER FOLDER THE LIST HAS, AND NO OTHER. A third one HeronPaths
+    # declares later and the script never asks would be a folder Revit reads
+    # and the second-copy check does not (D-167).
+    alluser = code[code.find("function Get-RevitAllUserAddinsFolders"):] \
+        if "function Get-RevitAllUserAddinsFolders" in code else ""
+    alluser = alluser[:alluser.find("\nfunction ", 1)] if "\nfunction " in alluser[1:] else alluser
+    asked_all = sorted(re.findall(r"Get-HeronFolder\s+-Name\s+(\w+)", alluser))
+    listed_all = sorted(name for name, entry in folders.items()
+                        if isinstance(entry, dict)
+                        and entry.get("from") == "HeronPaths.RevitAllUserAddins")
+    check(listed_all and asked_all == listed_all,
+          "Get-RevitAllUserAddinsFolders asks the list for every all-user folder "
+          "in it, and no other (%s)" % ", ".join(asked_all or ["none"]))
+
     deploy = ps_code(read(DEPLOY_PS))
     check(re.search(r"\$backupDir\s*=\s*Get-HeronFolder -Name InstallBackup", deploy) is not None,
           "deploy-addin.ps1 takes the backup folder from the list")
@@ -393,6 +425,18 @@ def the_list_travels():
           "the backup is in Heron's own machine-local folder, never Autodesk's")
     check(placeholders(backup.get("parts", [])) == ["folder", "release"],
           "one backup per release per product")
+    # REVIT'S ALL-USER FOLDERS, BOTH, for every release: ProgramData's for
+    # 2020 to 2026 and Program Files' from 2027 (the revit-version-support
+    # skill) - the per-user folder's own parts under another special folder.
+    allusers = sorted((entry.get("under"), entry.get("parts"))
+                      for entry in folders.values()
+                      if isinstance(entry, dict)
+                      and entry.get("from") == "HeronPaths.RevitAllUserAddins")
+    check([under for under, _ in allusers] == ["CommonApplicationData", "ProgramFiles"],
+          "Revit's all-user folders are ProgramData's (2020 to 2026) and Program "
+          "Files' (2027 on), both kept (%s)" % ", ".join(u for u, _ in allusers))
+    check(allusers and all(parts == revit.get("parts") for _, parts in allusers),
+          "and each has the per-user folder's parts - one per release")
 
     spec = importlib.util.spec_from_file_location("bra_for_folders", RELEASE)
     bra = importlib.util.module_from_spec(spec)
@@ -407,6 +451,105 @@ def the_list_travels():
     print()
 
 
+# --------------------------------------------------------------------- 5
+#: Heron's own code - the parts tools/check-structure.py walks, and tools/.
+CODE_PARTS = ("brain", "mcp", "platform", "revit", "tools")
+SKIP_DIRS = {"bin", "obj", "build", ".vs", "__pycache__", "node_modules"}
+CLIENT = os.path.join(ROOT, "mcp", "client")
+
+
+def everything_else_asks():
+    """Row 5b-1746: the Python and C# that show or look for the folder."""
+    print("5. the Python and the C# ask the list too - row 5b-1746")
+    # NO .py OR .cs OF HERON'S SPELLS EITHER FOLDER, HeronPaths.cs apart: it
+    # is the owner. tools/heron-ready.py built the Addins folder from APPDATA,
+    # the installer showed it as a literal, the bridge client printed it -
+    # until 2026-11-16. Comments are history, and are not asked.
+    words = re.compile(r"(?i)Revit\\+Addins|Revit/Addins"
+                       r"|[\"']Revit[\"']\s*,\s*[\"']Addins[\"']|install-backup")
+    spelled = []
+    for part in CODE_PARTS:
+        for dirpath, dirnames, filenames in os.walk(os.path.join(ROOT, part)):
+            dirnames[:] = sorted(d for d in dirnames if d not in SKIP_DIRS)
+            for name in sorted(filenames):
+                if not name.endswith((".py", ".cs")):
+                    continue
+                path = os.path.join(dirpath, name)
+                if os.path.abspath(path) == os.path.abspath(PATHS_CS):
+                    continue
+                text = read(path)
+                code = cs_code(text) if name.endswith(".cs") else py_code(text)
+                for line in code.split("\n"):
+                    if words.search(line):
+                        spelled.append("%s: %s" % (os.path.relpath(path, ROOT).replace(os.sep, "/"),
+                                                   line.strip()[:120]))
+    check(not spelled,
+          "no .py or .cs file but HeronPaths.cs spells either folder in its CODE%s"
+          % ("" if not spelled else " - %d line(s):\n          %s"
+             % (len(spelled), "\n          ".join(spelled))))
+
+    # THE PYTHON'S ONE READER, heron_bridge_client.heron_folder, asked here
+    # with a stand-in for Windows' answer - the joining, the blanks and the
+    # stops are Python and run anywhere. Windows' own answer is AB11's.
+    if CLIENT not in sys.path:
+        sys.path.insert(0, CLIENT)
+    try:
+        import heron_bridge_client as BRIDGE
+    except Exception as exc:                                  # noqa: BLE001
+        check(False, "mcp/client/heron_bridge_client.py loads (%s)" % exc)
+        print()
+        return
+    reader = getattr(BRIDGE, "heron_folder", None)
+    check(callable(reader), "the bridge client has heron_folder(), the list's Python reader")
+    if not callable(reader):
+        print()
+        return
+    committed = read(LIST)
+    unders = sorted(set(e.get("under") for e in
+                        (json.loads(committed).get("folders", {}).values() if committed else [])
+                        if isinstance(e, dict)))
+    known = sorted(getattr(BRIDGE, "SPECIAL_FOLDERS", {}))
+    check(unders and set(unders) <= set(known),
+          "it knows every special folder the list names (%s of %s)" % (unders, known))
+    fake = lambda name: "C:\\Stand-in\\" + name                # noqa: E731
+    got = None
+    try:
+        got = reader("RevitAddins", {"release": "2024"}, special=fake)
+    except LookupError as exc:
+        got = "LookupError: %s" % exc
+    revit = (json.loads(committed).get("folders", {}).get("RevitAddins", {})
+             if committed else {})
+    want = "\\".join(["C:\\Stand-in\\" + str(revit.get("under"))]
+                     + [p.replace("{release}", "2024") for p in revit.get("parts", [])])
+    check(got == want, "it joins the list's parts under the folder Windows names (%s)" % got)
+
+    def stops(*args, **kwargs):
+        try:
+            reader(*args, special=fake, **kwargs)
+        except LookupError as exc:
+            return str(exc)
+        return None
+    check(stops("RevitAddins", {"release": ".."}) is not None,
+          "and refuses a blank that would step out of its folder")
+    check("filled in" in (stops("RevitAddins") or ""),
+          "and stops, by name, on a blank left unfilled")
+    missing = os.path.join(tempfile.gettempdir(), "heron-no-such-folder-list.json")
+    check("fetch them again" in (stops("RevitAddins", {"release": "2024"},
+                                       list_path=missing) or ""),
+          "and on a missing list, saying what to do about it")
+    check("NoSuchFolder" in (stops("NoSuchFolder") or ""),
+          "and on a folder the list has not got, by name")
+    if os.name != "nt":
+        try:
+            reader("RevitAddins", {"release": "2024"})
+            off = None
+        except LookupError as exc:
+            off = str(exc)
+        check(off is not None and "not Windows" in off,
+              "and off Windows Windows' own answer is refused by name, never guessed")
+    print()
+
+
 def main():
     tool = None
     try:
@@ -418,6 +561,7 @@ def main():
     ran = the_list_is_the_code(tool)
     the_scripts_read_it()
     the_list_travels()
+    everything_else_asks()
 
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))

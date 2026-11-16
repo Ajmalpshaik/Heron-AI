@@ -217,7 +217,91 @@ namespace Heron.Core
         {
             return Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "Autodesk", "Revit", "Addins", release);
+                Path.Combine(AddinsParts(release)));
+        }
+
+        /// <summary>
+        /// The parts every Revit Addins folder has under its special folder, for
+        /// one release: Autodesk\Revit\Addins\&lt;release&gt;. The per-user folder
+        /// and the all-user ones differ only in the special folder they start at,
+        /// so the parts are written once.
+        /// </summary>
+        private static string[] AddinsParts(string release)
+        {
+            return new[] { "Autodesk", "Revit", "Addins", release };
+        }
+
+        /// <summary>
+        /// The special folders Revit's ALL-USER Addins folders start at, the
+        /// oldest release's first: CommonApplicationData (C:\ProgramData) for
+        /// Revit 2020 to 2026, and ProgramFiles from 2027, which moved it (the
+        /// revit-version-support skill). DECLARED rather than only resolved -
+        /// RevitAllUserAddinsTemplate says why.
+        /// </summary>
+        private static readonly Environment.SpecialFolder[] AllUserAddinsRoots =
+        {
+            Environment.SpecialFolder.CommonApplicationData,
+            Environment.SpecialFolder.ProgramFiles,
+        };
+
+        /// <summary>
+        /// NONE OF HERON'S THREE KINDS - the all-user folders Revit ALSO reads
+        /// add-in manifests from, for one release, TO BE READ AND NEVER WRITTEN:
+        /// CommonApplicationData\Autodesk\Revit\Addins\&lt;release&gt; (Revit 2020
+        /// to 2026) and ProgramFiles\Autodesk\Revit\Addins\&lt;release&gt; (2027 on).
+        ///
+        /// HERON NEVER INSTALLS HERE, and nothing may use this to do so: writing
+        /// either needs administrator rights, which Heron promises not to need
+        /// (docs/07 section 5) - RevitAddins above is where Heron goes. These are
+        /// for one reader, tools/deploy-addin.ps1's second-copy check (D-167): a
+        /// Heron manifest an administrator put in one of them is a second copy
+        /// Revit refuses or loads twice. IsSafeToDelete never says yes to them.
+        ///
+        /// BOTH, FOR EVERY RELEASE. Which one a release reads is not guessed:
+        /// returning both costs one missing folder. Through the same written list
+        /// as RevitAddins (Q-58); tools/HeronRevit.ps1's
+        /// Get-RevitAllUserAddinsFolders asks it for each.
+        ///
+        /// NOT CREATED, for the same reason as RevitAddins.
+        /// </summary>
+        public static string[] RevitAllUserAddins(string release)
+        {
+            var found = new string[AllUserAddinsRoots.Length];
+            for (var i = 0; i < found.Length; i++)
+            {
+                found[i] = Path.Combine(
+                    Environment.GetFolderPath(AllUserAddinsRoots[i]),
+                    Path.Combine(AddinsParts(release)));
+            }
+            return found;
+        }
+
+        /// <summary>
+        /// RevitAllUserAddins written down for the install scripts' list WITHOUT
+        /// resolving it: the parts under each folder, returned, and the special
+        /// folder each starts at, by name, in roots - in RevitAllUserAddins'
+        /// order.
+        ///
+        /// WHY NOT TryTemplate, as RevitAddins is written down. TryTemplate reads
+        /// a folder back from the path this class built, so it can name a special
+        /// folder only where that folder exists. The generator makes ApplicationData
+        /// and LocalApplicationData exist off Windows by asking as a scratch user
+        /// whose home has both. It cannot do that here: off Windows .NET answers
+        /// ProgramFiles with "" - measured with the .NET 10 SDK on Linux on
+        /// 2026-11-16, DoNotVerify included - and reads no home or variable for
+        /// it, as it does for ApplicationData, so the path built from it is
+        /// relative and has no root to read back; and
+        /// CommonApplicationData is a fixed /usr/share, not the user's. So these
+        /// two are declared, RevitAllUserAddins resolves the declaration, and the
+        /// list is written from it. Where a root does exist, the generator also
+        /// reads the resolved path back with TryTemplate and stops if the two
+        /// differ - both on Windows, CommonApplicationData alone off it.
+        /// </summary>
+        public static string[] RevitAllUserAddinsTemplate(string release, out string[] roots)
+        {
+            roots = new string[AllUserAddinsRoots.Length];
+            for (var i = 0; i < roots.Length; i++) roots[i] = AllUserAddinsRoots[i].ToString();
+            return AddinsParts(release);
         }
 
         /// <summary>
@@ -243,15 +327,17 @@ namespace Heron.Core
         }
 
         /// <summary>
-        /// The special folders Data, Derived and RevitAddins start at - the
-        /// roots TryTemplate can name. One that this class starts a folder at
-        /// is added here in the same change, or that folder cannot be written
-        /// down for the install scripts and the generator says so.
+        /// The special folders Data, Derived, RevitAddins and RevitAllUserAddins
+        /// start at - the roots TryTemplate can name. One that this class starts
+        /// a folder at is added here in the same change, or that folder cannot be
+        /// written down for the install scripts and the generator says so.
         /// </summary>
         private static readonly Environment.SpecialFolder[] TemplateRoots =
         {
             Environment.SpecialFolder.ApplicationData,
             Environment.SpecialFolder.LocalApplicationData,
+            Environment.SpecialFolder.CommonApplicationData,
+            Environment.SpecialFolder.ProgramFiles,
         };
 
         /// <summary>
