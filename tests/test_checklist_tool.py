@@ -142,8 +142,9 @@ def tool(home):
         check(re.search(r"FAIL\s+no room is left unenclosed", said) is not None
               and "311, 312" in said and said.count("PASS") == 4,
               "four PASS and the failing check with its ids, read off the reply")
-        check("4 meet the value checked, 1 do not, 0 not run" in said and "Project1" in said,
-              "the counts, on the model it read")
+        check("4 meet the value checked, 1 do not, 0 could not decide - data missing, 0 not run" in said
+              and "Project1" in said and "Coverage: 5 of 5 check(s) decided, 0 with no data, 0 not run." in said,
+              "the counts and the coverage, on the model it read")
         check("first kept run of this checklist on this model" in said,
               "the first run on a model says there is nothing to compare with yet")
         again = body("run", name="Before issue")
@@ -241,7 +242,9 @@ def tool(home):
         S.pinned.forget()
         revit.asked[:] = []
         said = body("run", name="Before issue")
-        check(not revit.asked and "0 meet the value checked, 0 do not, 5 not run" in said
+        check(not revit.asked
+              and "0 meet the value checked, 0 do not, 0 could not decide - data missing, 5 not run" in said
+              and "Coverage: 0 of 5 check(s) decided, 0 with no data, 5 not run." in said
               and "A check not run is not a pass" in said,
               "with no Revit nothing is sent, and every check is NOT RUN - never a pass")
     finally:

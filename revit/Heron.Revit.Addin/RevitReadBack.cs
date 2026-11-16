@@ -99,6 +99,104 @@ namespace Heron.Revit.Addin
             return read == null ? null : new HashSet<string>(read.Keys, StringComparer.Ordinal);
         }
 
+        /// <summary>
+        /// The elements a fragment was HANDED, then the modeller's selection -
+        /// the rollback check's "before" (HeronRollbackWitness.ReadBefore), up
+        /// to `most` of them, each once.
+        ///
+        /// HANDED MEANS BOUND TO ITS NEEDS: every Element and ElementId among
+        /// `bound`, alone or in a list, in the order they were bound. That is
+        /// where a proof's elements come from - a chain from the step before,
+        /// or ids in the request - and NEEDS-CHECKING A16b's eight views came
+        /// from a chain with nothing selected, so the selection alone would
+        /// have read none of them. Anything else bound (a number, a text, a
+        /// preprocessor) is not an element and is passed over. A list is read
+        /// only as far as `most`, so a fragment handed ten thousand elements
+        /// costs `most` of them.
+        /// </summary>
+        internal static List<ElementId> HandedTo(IEnumerable<object> bound,
+                                                 ICollection<ElementId> selected, int most)
+        {
+            var ids = new List<ElementId>();
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            Action<object> take = one =>
+            {
+                if (ids.Count >= most) return;
+                ElementId id = null;
+                try
+                {
+                    var element = one as Element;
+                    id = element != null ? element.Id : one as ElementId;
+                }
+                catch (Exception) { id = null; }
+                if (id == null || id == ElementId.InvalidElementId) return;
+                if (seen.Add(id.ToString())) ids.Add(id);
+            };
+
+            if (bound != null)
+            {
+                foreach (var value in bound)
+                {
+                    if (ids.Count >= most) break;
+                    if (value == null || value is string) continue;
+                    if (value is Element || value is ElementId) { take(value); continue; }
+                    var many = value as System.Collections.IEnumerable;
+                    if (many == null) continue;
+                    try
+                    {
+                        foreach (var item in many)
+                        {
+                            if (ids.Count >= most) break;
+                            if (item is Element || item is ElementId) take(item);
+                        }
+                    }
+                    catch (Exception) { }
+                }
+            }
+            if (selected != null)
+                foreach (var id in selected) take(id);
+            return ids;
+        }
+
+        /// <summary>
+        /// One element read again by its UniqueId, or null when it does not
+        /// resolve or cannot be read - the rollback check's second and third
+        /// look. Null is "not read", never "unchanged".
+        /// </summary>
+        internal static HeronReadBack.Values One(Document document, string uniqueId)
+        {
+            if (document == null || string.IsNullOrEmpty(uniqueId)) return null;
+            try
+            {
+                var element = document.GetElement(uniqueId);
+                return element == null ? null : Of(document, element);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Parameters the rollback check does not count as the job's change,
+        /// by their own id: "Edited by", worksharing's record of who has
+        /// borrowed the element. Editing an element borrows it, and whether a
+        /// rollback gives it back has not been seen in Revit - a borrow is not a
+        /// change to the model, so it must not withdraw "nothing was kept" on a
+        /// workshared model. Empty when the id cannot be read.
+        /// </summary>
+        internal static ICollection<long> NotTheChange()
+        {
+            var ids = new HashSet<long>();
+            try
+            {
+                var editedBy = Number(new ElementId(BuiltInParameter.EDITED_BY));
+                if (editedBy != HeronReadBack.NoId) ids.Add(editedBy);
+            }
+            catch (Exception) { }
+            return ids;
+        }
+
         private static HeronReadBack.Values Of(Document document, Element element)
         {
             string category = null;
@@ -106,6 +204,9 @@ namespace Heron.Revit.Addin
             catch (Exception) { category = null; }
 
             var values = new HeronReadBack.Values(category);
+
+            try { values.UniqueId = element.UniqueId; }
+            catch (Exception) { values.UniqueId = null; }
 
             try { values.Add("Name", element.Name); }
             catch (Exception) { }

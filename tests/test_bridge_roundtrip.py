@@ -734,6 +734,38 @@ def main():
         else:
             failures.append("first client stopped working: %r" % reply)
 
+        # --- A CALL THE MODEL HOLD REFUSES GIVES BACK A LEASE IT ONLY JUST TOOK ---
+        # Row 5b-1662: the lease is claimed when a request arrives and the model
+        # hold (D-141) is asked after it, so a chat call refused "Model ... is in
+        # use by another chat. Nothing was sent to the model" still left the
+        # Revit leased to that chat for five minutes - and the conversation that
+        # held the model was locked out of the Revit by a call that never ran.
+        # test_model_in_use is this host's stand-in for that refusal.
+        call(handle, "release", client=CLIENT)
+        reply = call(handle, "test_model_in_use", client=OTHER_CLIENT)
+        if reply.get("ok") is False and reply.get("error") == "model_in_use":
+            print("  PASS  the host's model hold refuses chat B, as the add-in's does")
+        else:
+            failures.append("test_model_in_use returned %r" % reply)
+        reply = call(handle, "info", client=CLIENT)
+        if reply.get("inUse") is False:
+            print("  PASS  and the lease chat B took for that call is given back")
+        else:
+            failures.append("a call the model hold refused kept the lease: inUse=%r mine=%r"
+                            % (reply.get("inUse"), reply.get("mine")))
+        reply = call(handle, "no_such_operation", client=CLIENT)
+        if reply.get("ok") is False and reply.get("error") == "unknown_op":
+            print("  PASS  so chat A gets the Revit at once, not five minutes later")
+        else:
+            failures.append("chat A after chat B's refused call returned %r" % reply)
+        # A lease the caller ALREADY held is its own, and a refusal does not take it.
+        call(handle, "test_model_in_use", client=CLIENT)
+        reply = call(handle, "no_such_operation", client=OTHER_CLIENT)
+        if reply.get("ok") is False and reply.get("error") == "session_in_use":
+            print("  PASS  a lease held before the refused call is kept")
+        else:
+            failures.append("a renewed lease was dropped by a model-hold refusal: %r" % reply)
+
         # An unauthenticated caller must not even learn which operations exist.
         reply = send_raw(handle, '{"op": "no_such_operation", "token": "wrong"}')
         if reply.get("error") == "unauthorized":

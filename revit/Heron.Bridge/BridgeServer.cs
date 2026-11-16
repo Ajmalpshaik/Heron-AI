@@ -786,7 +786,22 @@ namespace Heron.Bridge
             }
 
             var handler = RequestHandler;
-            if (handler != null) return handler(request);
+            if (handler != null)
+            {
+                var answer = handler(request);
+
+                // A CALL THE MODEL HOLD REFUSED NEVER RAN, SO IT KEEPS NO LEASE
+                // IT ONLY JUST TOOK - row 5b-1662. The lease is claimed above,
+                // before the add-in asks whether another conversation holds the
+                // model (D-141), so a chat call refused "Nothing was sent to the
+                // model" left this Revit leased to that chat for five minutes,
+                // and the conversation holding the model was locked out of the
+                // Revit by a call that never ran. A lease the caller already
+                // held before this request is its own, and is kept.
+                if (lease.Fresh && Json.ReadString(answer, "error") == "model_in_use")
+                    HeronLease.Release(lease.Holder);
+                return answer;
+            }
 
             return Json.Error("unknown_op",
                 "No handler for '" + (op ?? "(none)") + "'. This bridge supports ping and info " +

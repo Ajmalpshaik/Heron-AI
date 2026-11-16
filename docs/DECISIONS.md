@@ -233,11 +233,12 @@ an edit.
 | [D-162](#d-162--the-pipe-to-revit-refuses-another-computer-the-chat-checks-who-serves-it-and-the-tokens-file-is-this-users-alone) | The pipe to Revit refuses another computer, the chat checks who serves it, and the token's file is this user's alone | ✅ Accepted · 2026-11-12 |
 | [D-163](#d-163--herons-recent-changes-are-docked-in-revit-with-select-zoom-and-undo-reached-through-the-one-dispatcher) | Heron's recent changes are docked in Revit, with Select, Zoom and Undo, reached through the one dispatcher | ✅ Accepted · 2026-11-12 |
 | [D-164](#d-164--two-built-in-parameters-of-one-name-that-read-the-same-value-are-one-reading-not-a-name-matched-twice) | Two built-in parameters of one name that read the same value are one reading, not a name matched twice | ✅ Accepted · 2026-11-14 |
-| [D-172](#d-172--article-13-names-the-keep-boxs-job-grant-as-its-one-recorded-exception) | Article 13 names the Keep box's job grant as its one recorded exception | ✅ Accepted · 2026-11-16 |
+| [D-165](#d-165--a-qa-check-never-passes-on-missing-data-a-fourth-answer-no-data-and-a-coverage-line-beside-every-pass-count) | A QA check never passes on missing data: a fourth answer, NO DATA, and a coverage line beside every pass count | ✅ Accepted · 2026-11-16 |
 | [D-168](#d-168--a-release-is-versioned-and-checksummed-now-and-says-plainly-it-is-unsigned-and-is-signed-before-heron-is-given-to-anyone-outside) | A release is versioned and checksummed now and says plainly it is unsigned, and is signed before Heron is given to anyone outside | ✅ Accepted · 2026-11-16 |
 | [D-169](#d-169--the-disclaimer-says-what-the-chat-says-heron-reports-which-checked-values-a-model-meets-cites-its-source-and-certifies-no-compliance) | The DISCLAIMER says what the chat says: Heron reports which checked values a model meets, cites its source, and certifies no compliance | ✅ Accepted · 2026-11-16 |
 | [D-170](#d-170--the-word-sandbox-leaves-article-11-and-golden-rule-18-new-code-runs-watched-not-contained) | The word sandbox leaves Article 11 and Golden Rule 18: new code runs watched, not contained | ✅ Accepted · 2026-11-16 |
 | [D-171](#d-171--heron-may-save-the-model-it-works-in-once-its-undo-entry-has-closed-only-when-the-modeller-asks-and-never-picks-a-name-itself) | Heron may save the model it works in once its Undo entry has closed, only when the modeller asks, and never picks a name itself | ✅ Accepted · 2026-11-16 |
+| [D-172](#d-172--article-13-names-the-keep-boxs-job-grant-as-its-one-recorded-exception) | Article 13 names the Keep box's job grant as its one recorded exception | ✅ Accepted · 2026-11-16 |
 
 ## Format
 
@@ -1449,15 +1450,13 @@ What this makes easy. What this makes hard. What it locks in.
 
 **Full record:** [`decisions/D-164.md`](decisions/D-164.md)
 
-## D-172 — Article 13 names the Keep box's job grant as its one recorded exception
+## D-165 — A QA check never passes on missing data: a fourth answer, NO DATA, and a coverage line beside every pass count
 
-**Status:** Accepted · **Date:** 2026-11-16 · **Accepted:** Ajmal PS, 2026-11-16, in conversation: *"go with you suggetions"* - his answer, in his own words, when [Q-73](open-questions/tier-2.md) was put to him with Claude's suggestion beside it: shape 1, Article 13 names the job grant - D-138's third link - as its one recorded exception · **Answers:** [Q-73](OPEN-QUESTIONS.md)
-**Numbering:** D-167 was the id `tools/next-id.py` printed free on 2026-11-16, with `origin/main` at `2d4bc84c` ending at D-164 and D-165 and D-166 held by the open pull requests #881 and #882. This work was given *D-166 onwards*; D-166 was already held, so it starts here, and the four decisions written from the same answers are D-168 to D-171. Renumbered from D-167 to D-172 on 2026-11-16 with `tools/renumber.py`, because claude/dazzling-stonebraker-9281d3 holds D-167 too.
-**Amends:** [Constitution Article 13](../HERON_CONSTITUTION.md) · **Settles:** the choice [D-139](decisions/D-139.md) point 4 left open, *"Constitution Article 13 beside D-138's job grant"*
-**Keeps:** [D-138](decisions/D-138.md) and [D-141](decisions/D-141.md) - the grant as built, unchanged · [D-142](decisions/D-142.md) - a deletion is never kept under it · Articles 7, 9 and 10 · [Golden Rule 9](14-golden-rules.md) - gated in code, at the boundary
-**Affects:** [`HERON_CONSTITUTION.md`](../HERON_CONSTITUTION.md) - Article 13 and the Amendment note · no code
+**Status:** Accepted · **Date:** 2026-11-16 · **Accepted:** Ajmal PS, 2026-11-16, in conversation: *"accept D-165 as written"*
+**Keeps:** [D-152](decisions/D-152.md) · [D-159](decisions/D-159.md) · [D-01](decisions/D-01.md) · [D-149](decisions/D-149.md)
+**Affects:** [`heron_checklists.py`](../brain/heron_checklists.py) (`judge`, `run_coverage`) · [`companion.js`](../mcp/companion/static/companion.js) (`qaResult`)
 
-**Full record:** [`decisions/D-172.md`](decisions/D-172.md)
+**Full record:** [`decisions/D-165.md`](decisions/D-165.md)
 
 ## D-168 — A release is versioned and checksummed now and says plainly it is unsigned, and is signed before Heron is given to anyone outside
 
@@ -1498,3 +1497,13 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects, being built in another session from 2026-11-16 and not on this branch:** `SAVE_DOCUMENT` version 3 (FRG-DOC-033) · the add-in's write path after the group closes ([`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs)) · the chat's model pin ([`heron_write.py`](../mcp/server/heron_write.py)) · the methods that ask the modeller to save first and name Q-69
 
 **Full record:** [`decisions/D-171.md`](decisions/D-171.md)
+
+## D-172 — Article 13 names the Keep box's job grant as its one recorded exception
+
+**Status:** Accepted · **Date:** 2026-11-16 · **Accepted:** Ajmal PS, 2026-11-16, in conversation: *"go with you suggetions"* - his answer, in his own words, when [Q-73](open-questions/tier-2.md) was put to him with Claude's suggestion beside it: shape 1, Article 13 names the job grant - D-138's third link - as its one recorded exception · **Answers:** [Q-73](OPEN-QUESTIONS.md)
+**Numbering:** D-167 was the id `tools/next-id.py` printed free on 2026-11-16, with `origin/main` at `2d4bc84c` ending at D-164 and D-165 and D-166 held by the open pull requests #881 and #882. This work was given *D-166 onwards*; D-166 was already held, so it starts here, and the four decisions written from the same answers are D-168 to D-171. Renumbered from D-167 to D-172 on 2026-11-16 with `tools/renumber.py`, because claude/dazzling-stonebraker-9281d3 holds D-167 too.
+**Amends:** [Constitution Article 13](../HERON_CONSTITUTION.md) · **Settles:** the choice [D-139](decisions/D-139.md) point 4 left open, *"Constitution Article 13 beside D-138's job grant"*
+**Keeps:** [D-138](decisions/D-138.md) and [D-141](decisions/D-141.md) - the grant as built, unchanged · [D-142](decisions/D-142.md) - a deletion is never kept under it · Articles 7, 9 and 10 · [Golden Rule 9](14-golden-rules.md) - gated in code, at the boundary
+**Affects:** [`HERON_CONSTITUTION.md`](../HERON_CONSTITUTION.md) - Article 13 and the Amendment note · no code
+
+**Full record:** [`decisions/D-172.md`](decisions/D-172.md)
