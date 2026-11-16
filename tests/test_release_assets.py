@@ -331,6 +331,13 @@ def main():
                            "requirements-optional.txt"):
                 check(needed in names, "it carries %s" % needed)
 
+            # AND THE FOLDER LIST THOSE TWO SCRIPTS READ - Q-58, 2026-11-16.
+            # HeronPaths writes the Addins and backup folders down for them,
+            # and they stop by name without it, so a download missing it is
+            # an install that cannot start on the PC it was made for.
+            check("platform/heron-folders.json" in names,
+                  "it carries platform/heron-folders.json, which those scripts read")
+
             # AND WHAT THE ONE-STEP INSTALL RUNS FROM IT - 2026-10-17.
             # PythonSetup refuses a folder missing either, by name, so a
             # release without them is an installer whose second half can only

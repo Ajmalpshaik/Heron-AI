@@ -69,9 +69,10 @@ namespace Heron.Installer
         /// HeronPaths may build a Heron path, and tools/check-structure.py
         /// refuses a special folder resolved anywhere else. Heron.Core
         /// follows the Revit release and this assembly does not, so the
-        /// answer comes from tools\HeronRevit.ps1 - which has to know the
-        /// path anyway, because it runs before any Heron assembly exists on
-        /// the machine. Q-58 is the open question about those two rules.
+        /// answer comes from tools\HeronRevit.ps1, which runs before any Heron
+        /// assembly exists on the machine and reads the folder from
+        /// platform\heron-folders.json - written by HeronPaths.RevitAddins,
+        /// its one owner (Q-58, decided 2026-11-15).
         /// </summary>
         string AddinsFolder(string release);
     }

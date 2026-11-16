@@ -318,11 +318,20 @@ namespace Heron.Installer
             // The Addins folder is asked for HERE rather than built in C#:
             // this assembly may not resolve a special folder, and that script
             // has to know the path anyway. See IRevitEnvironment.AddinsFolder.
+            //
+            // GUARDED ONE RELEASE AT A TIME since 2026-11-16 (Q-58). The
+            // script reads the folder from platform\heron-folders.json and
+            // stops when that file is missing; unguarded, that one stop sank
+            // the whole answer, and a lost answer reads as "no Revit here" and
+            // as a Revit of unknown release being open, which blocks every
+            // install for the wrong reason. Caught, the folder is not found
+            // out - null, which reads as not installed - and the deploy itself
+            // then stops with the list's own sentence, before changing anything.
             var command =
                 ". '" + script.Replace("'", "''") + "'; " +
                 "$found = @(Get-InstalledRevit); " +
                 "$where = @{}; " +
-                "foreach ($r in $found) { $where[$r] = (Get-RevitAddinsFolder -RevitVersion $r) }; " +
+                "foreach ($r in $found) { try { $where[$r] = (Get-RevitAddinsFolder -RevitVersion $r) } catch { } }; " +
                 "@{ installed = $found; running = @(Get-RunningRevit); addins = $where } " +
                 "| ConvertTo-Json -Depth 4 -Compress";
 
@@ -408,9 +417,12 @@ namespace Heron.Installer
     /// IT DOES NOT BUILD THE PATH. HeronPaths.RevitAddins does, because
     /// platform/README.md rule 3 says nothing else may - and this file tried
     /// to on 2026-09-21 and tools/check-structure.py refused it, which is the
-    /// rule working rather than a rule being quoted.
-    /// tools\deploy-addin.ps1 still spells the same path in PowerShell,
-    /// which a .ps1 cannot avoid; that is Q-58 and is recorded, not closed.
+    /// rule working rather than a rule being quoted. The folder reaches here
+    /// through IRevitEnvironment.AddinsFolder, which asks tools\HeronRevit.ps1,
+    /// which reads platform\heron-folders.json - the list HeronPaths writes
+    /// for the scripts (Q-58, decided 2026-11-15; built 2026-11-16).
+    /// HeronPaths.RevitAddins was named here before it existed: until then
+    /// the scripts spelled the folder themselves.
     ///
     /// NOT RUN on Windows. The path is built from APPDATA, which resolves
     /// anywhere, but nobody has yet looked at whether it matches what Revit
