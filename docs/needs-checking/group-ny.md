@@ -40,3 +40,11 @@ main, because the chat's server ran an older checkout. NY1 and NY2 were triggere
 | **NY3** | **Negative PASS**: `ZZZNOTAFAMILY` - `opened false`, *"No loaded family is called 'ZZZNOTAFAMILY'."*, ran with no transaction open. **Positive half held**: no *"document is currently modifiable"*; the .rfa was written and the family opened in front. **But reported wrongly** - `opened false`, *"An internal error has occurred."* - [row 5b-1750](../fragment-issues/row-5b-1750.md) |
 | **NY4** | **Shown through NY3's run**: the verdict began *"STOPPED, BY ITS OWN ACCOUNT - the card reports: "An internal error has occurred.""* before the KEPT sentence. NY4's own arrangement did not run: with the family still open from NY3 the Save As was refused by the run guard as a Publish job, correctly |
 | **NY5** | **Not reproduced.** Glass read through the API before and after each load: `0,128,192`, transparency 90%, both times; Glass, Clear Glazing `0,128,192` / 75%; Default Light Source `255,255,0` / 75%; Poche `0,0,255` / 0%. Load 1 `Family1.rfa` (an empty Generic Model): `materialsChanged` 0. Load 2, a copy of a TRG split AC indoor unit: 19 materials added, `materialsChanged` 0. Neither family carries a Glass of its own, so row 5b-1702 stays open: it needs a family with its own Glass, like the field's. **Also found:** `LIST_MATERIALS withAllTabs=true` threw inside Revit - [row 5b-1749](../fragment-issues/row-5b-1749.md) |
+
+**NY2 re-run, 2026-11-16, Revit 2024 (session 33560), with row 5b-1748's repair deployed** (this branch's
+build, hashed equal to the DLL installed). `DELETE_ELEMENTS` on a fresh 4 x 3 m floor in `ny-scratch`: the
+box *"Heron AI - Delete 8 elements?"* listed the same four lines and said *"At 10:05 this box closes by
+itself"*. Nobody touched it. **It closed by itself at 10:05:14** - the add-in logged *"the modeller answered
+timed_out"*, the chat was told *"did not answer in time, so the box closed by itself, which deletes
+nothing"*, `outcome: ROLLED BACK` - and **the next request ran at once**, not `revit_busy`. The floor read back
+afterwards. **NY2: PASS.**
