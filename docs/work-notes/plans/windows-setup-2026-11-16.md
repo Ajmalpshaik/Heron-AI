@@ -173,7 +173,9 @@ product per Revit year for every year Heron builds, `checksums.txt`. The Setup c
    is refused with the path named; nothing for it is changed.
 6. **New in `deploy-addin.ps1`:** a copy that fails half-way puts the backup back by itself, then says so.
 7. Verify: each year's runtime and file hashes read back, `heron-ready --check` READY, a report per year.
-8. **Claude Code - asked, a tick on the last page, ticked by default (my call):** only when no Claude is
+8. **Claude Code - asked, a tick on the tasks page, OFF by default** (first written *ticked by default*;
+   turned off before anything ran, because each open chat then starts Heron - 2.0 to 2.3 GB each on a
+   16 GB laptop, WHAT-TO-INSTALL section 2): only when no Claude is
    running; `~/.claude.json` copied aside first; one entry, `heron`, at user scope, with the absolute path
    to the server and a `HERON_CLIENT_ID` made from the PC and user name; read back; no other key touched.
    **Where Claude Code keeps a user-scope server is to be read from its current documentation at build

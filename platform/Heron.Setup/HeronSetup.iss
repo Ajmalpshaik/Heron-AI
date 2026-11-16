@@ -90,12 +90,28 @@ SignedUninstaller=yes
 ConfirmUninstall=Remove Heron AI from this PC?%n%nYour own Heron data is not touched - settings, the audit log and anything Heron has learned all stay where they are.
 
 [Tasks]
-Name: "claude"; Description: "Add Heron to Claude Code for my user, so /mcp lists it in any folder (close Claude first)"
+; LEFT OFF BY DEFAULT. On, EVERY Claude chat in EVERY folder starts Heron's
+; server - and docs/WHAT-TO-INSTALL measured 2.0 to 2.3 GB per open chat on a
+; 16 GB laptop. Opening the Heron folder in Claude keeps working without it.
+Name: "claude"; Description: "Also add Heron to Claude Code for my user, so every chat in any folder can use it (close Claude first; each open chat then runs Heron)"; Flags: unchecked
 
 [Files]
 Source: "{#Stage}\*"; DestDir: "{app}"; Excludes: "HeronInstaller.exe,heron-install.exe"; Flags: recursesubdirs createallsubdirs ignoreversion
 Source: "{#Stage}\HeronInstaller.exe"; DestDir: "{app}"; Flags: ignoreversion {#SignFlag}
 Source: "{#Stage}\heron-install.exe"; DestDir: "{app}"; Flags: ignoreversion {#SignFlag}
+
+[InstallDelete]
+; INSTALL REPLACES (D-94). Inno Setup copies over a folder and leaves every file
+; the new version dropped - a retired fragment would stay in brain\ and keep
+; being read. So Heron's own folders go first and come back whole. Nothing of
+; the user's lives in any of them: their data is %USERPROFILE%\.heron and
+; %APPDATA%\Heron (D-135), never the program folder.
+Type: filesandordirs; Name: "{app}\brain"
+Type: filesandordirs; Name: "{app}\mcp"
+Type: filesandordirs; Name: "{app}\docs"
+Type: filesandordirs; Name: "{app}\platform"
+Type: filesandordirs; Name: "{app}\tools"
+Type: filesandordirs; Name: "{app}\payload"
 
 [Icons]
 Name: "{autoprograms}\Heron AI\Heron Installer"; Filename: "{app}\HeronInstaller.exe"; WorkingDir: "{app}"

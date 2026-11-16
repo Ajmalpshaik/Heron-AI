@@ -19,7 +19,7 @@ Heron's Python side. The Setup copies the folder, runs
 
 ```text
 heron-install --from "<Heron folder>\payload" --no-check
-heron-install --add-to-claude            only when its tick is left on
+heron-install --add-to-claude            only when its tick is turned on - it starts OFF
 ```
 
 and shows what they said, word for word. Its uninstaller runs `heron-install --uninstall --list`, shows
@@ -35,6 +35,10 @@ closes Revit); and the uninstaller refuses while Revit is open, for the same rea
 - **Write `heron.config`.** Changes, Admin, Publish and Ask to Keep stay as they are - off on a new PC.
 - **Touch the user's data** - `%APPDATA%\Heron`, `%USERPROFILE%\.heron` - on install or uninstall.
 - **Close Revit or Claude**, or ask for administrator rights.
+- **Leave a file the new version dropped.** An update first deletes Heron's own folders in the
+  program folder (`[InstallDelete]`), then copies them whole - D-94, install replaces. A fragment
+  somebody made on this PC INSIDE Heron's program folder goes with them, exactly as it would on
+  unzipping a new release; nothing of the user's own data is kept there.
 - **Install Python** ([Q-39](../../docs/open-questions/answered.md)). Without it, the report names the
   one `winget` line.
 - **Call itself signed when it is not.** With no sign command, `build-setup.py` names the file

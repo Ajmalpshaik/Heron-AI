@@ -372,22 +372,21 @@ namespace Heron.Installer.Cli
         private static int Uninstall(Arguments asked, ProductManifest manifest, string root)
         {
             var revit = new PowerShellRevitEnvironment(root);
+            var releases = revit.InstalledReleases();
             var screen = InstallerScreen.Build(manifest,
-                                               revit.InstalledReleases(),
+                                               releases,
                                                revit.RunningRevits(),
                                                new InstalledProductsOnDisk(revit),
                                                null);
             var removals = screen.ToRemove(new string[0]);
             var told = InstallerScreen.WhatWillBeRemoved(removals);
 
+            // THE SCREEN'S "Close Revit first" LINE IS NOT PRINTED HERE: it is
+            // worded for installing, and an uninstall that meets an open Revit
+            // is told so by the engine's own waiting line, naming the release.
             if (asked.ListOnly)
             {
                 Console.Out.WriteLine(told ?? "Heron is not installed for any Revit on this PC, so no add-in would be removed.");
-                if (screen.CloseRevitFirst != null)
-                {
-                    Console.Out.WriteLine();
-                    Console.Out.WriteLine(screen.CloseRevitFirst);
-                }
                 Console.Out.WriteLine();
                 Console.Out.WriteLine("--list was asked for, so nothing was changed.");
                 return Done;
@@ -397,7 +396,6 @@ namespace Heron.Installer.Cli
             if (removals.Count > 0)
             {
                 Console.Out.WriteLine(told);
-                if (screen.CloseRevitFirst != null) Console.Out.WriteLine(screen.CloseRevitFirst);
 
                 var engine = new InstallEngine(revit, new DeployScriptDeployer(root));
                 engine.Pause = delegate { Thread.Sleep(1000); };
@@ -408,10 +406,13 @@ namespace Heron.Installer.Cli
                     last = waiting;
                     Console.Out.WriteLine(waiting);
                 };
-                report = engine.Apply(manifest, new string[0], new string[0], removals);
+                // EVERY RELEASE FOUND IS PASSED, with no products: the plan then
+                // has no steps AND no "not ticked" lines - an uninstall ticks
+                // nothing, so a release left unticked is not news.
+                report = engine.Apply(manifest, new string[0], releases, removals);
 
                 Console.Out.WriteLine();
-                Console.Out.WriteLine(Told(report, manifest));
+                Console.Out.WriteLine(ToldRemoved(report));
             }
             else
             {
@@ -809,6 +810,36 @@ namespace Heron.Installer.Cli
                     : "Start Revit and look for " + tabs + ".");
             }
 
+            return said;
+        }
+
+        /// <summary>
+        /// The report of an uninstall - what came off, from which release, and
+        /// what did not. Told() is worded for installing ("installed",
+        /// "skipped ... not ticked"), and an uninstall read through it said
+        /// "0 installed" over a run that removed everything (scratch-folder run,
+        /// 2026-11-16).
+        /// </summary>
+        private static string ToldRemoved(InstallReport report)
+        {
+            var n = Environment.NewLine;
+            if (report.Abandoned) return "Nothing was removed. " + report.AbandonedBecause;
+
+            var said = "";
+            foreach (var result in report.Results)
+            {
+                if (result.Succeeded) continue;
+                said += "FAILED  " + result.ProductName + " - still in Revit " + result.Release +
+                        n + "        " + result.Message + n;
+            }
+            foreach (var result in report.Results)
+            {
+                if (!result.Succeeded) continue;
+                said += "removed " + result.ProductName + " from Revit " + result.Release + n;
+            }
+
+            said += n + report.Removed + " removed, " + report.Failed + " failed.";
+            if (report.Removed > 0) said += n + "Restart any Revit that was open, to unload it.";
             return said;
         }
 
