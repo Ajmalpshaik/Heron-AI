@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -121,6 +121,43 @@ contract:
       type: IList<string>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-16'
+  by: Ajmal PS
+  model: keynote-lz (3,203 elements), Revit 2024, session 18288
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned asked (null), countEntries Func`1,
+    currentAbsolute C:\Users\ajmal\AppData\Local\Temp\heron-work\keynotes-b.txt, currentType
+    Absolute, describe Func`1, entriesAfter 4, entriesBefore 3840, fileAfter C:\Users\ajmal\AppData\Local\Temp\heron-work\keynotes-b.txt
+    (Absolute), Revit: Loaded, fileBefore RevitKeynotes_Metric.txt (Content), resolving to
+    C:\ProgramData\Autodesk\RVT 2024\Libraries\English\US\RevitKeynotes_Metric.txt, Revit:
+    Loaded, findings 2 item(s) [Keynote file before: RevitKeynotes_Metric.txt (Content), res...,
+    The keynote file was Content (Revit''s dialog: At Library Loc...], fullPath Func`2, loadDone
+    true, loadResult loaded, loadedFile C:\Users\ajmal\AppData\Local\Temp\heron-work\keynotes-b.txt
+    (Absolute), Revit: Loaded, readable Func`2, refused 0 item(s), table KeynoteTable, wanted
+    C:\Users\ajmal\AppData\Local\Temp\heron-work\keynotes-b.txt, wantedType . inputs came
+    filePath as given; pathType as given. on keynote-lz'
+  negative_case: 'run with filePath=C:\Users\ajmal\AppData\Local\Temp\heron-work\keynotes-missing.txt,
+    pathType= instead - chosen because it should not contain what this fragment reports -
+    run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned asked (null), countEntries Func`1, currentAbsolute C:\ProgramData\Autodesk\RVT
+    2024\Libraries\English\US\RevitKeynotes_Metric.txt, currentType Content, describe Func`1,
+    entriesAfter 3840, entriesBefore 3840, fileAfter RevitKeynotes_Metric.txt (Content), resolving
+    to C:\ProgramData\Autodesk\RVT 2024\Libraries\English\US\RevitKeynotes_Metric.txt, Revit:
+    Loaded, fileBefore RevitKeynotes_Metric.txt (Content), resolving to C:\ProgramData\Autodesk\RVT
+    2024\Libraries\English\US\RevitKeynotes_Metric.txt, Revit: Loaded, findings 1 item(s)
+    [Keynote file before: RevitKeynotes_Metric.txt (Content), res...], fullPath Func`2, loadDone
+    false, loadResult nothing loaded - There is no file at "C:\Users\ajmal\AppData\Local\Temp\heron-work\keynotes-missing.txt"
+    that this PC can see - the keynote file is unchanged. Check the path, the drive letter,
+    or that the server share is reachable., loadedFile , readable Func`2, refused 1 item(s)
+    [There is no file at "C:\Users\ajmal\AppData\Local\Temp\heron...], table KeynoteTable,
+    wanted C:\Users\ajmal\AppData\Local\Temp\heron-work\keynotes-missing.txt, wantedType .
+    inputs came filePath as given; pathType as given. on keynote-lz'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 4c37701bb8d9ff5e
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

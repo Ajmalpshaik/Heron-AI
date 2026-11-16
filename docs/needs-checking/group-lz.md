@@ -111,3 +111,29 @@ are pinned to `keynote-lz`, and the read's negative is `Family1`.
 **Not for the sitting:** Sruthina's own model and keynote file. The scratch projects are the proof; once
 `LOAD_KEYNOTE_FILE` is PROVEN, loading her project keynote file into `villa 2` is an ordinary chat request, kept or
 discarded by her.
+
+### Results, 2026-11-16 - Revit 2024, steps 1, 2 and 4 of the sitting
+
+**Arranged (LZ1), Revit 2024, session 18288:** `keynote-lz.rvt` made from `English\DefaultMetric.rte` and
+`Family1.rfa` from `Metric Generic Model.rft`, both with `CREATE_FAMILY_DOCUMENT` and opened with
+`ACTIVATE_DOCUMENT`, saved under `%TEMP%\heron-work`; `keynotes-b.txt` (four lines) and `keynotes-bad.txt`
+written beside them; `keynotes-missing.txt` absent. The default keynote file: `RevitKeynotes_Metric.txt`, path
+type **Content** (not Absolute, as on Revit 2020), 3840 entries. No keynote tag was placed and `keynote-lz-b`
+was not made - neither job reads them.
+
+**Step 2:** `batch-prove.py` on the job file with the user's path typed in place of `YOU`, `--session 18288`:
+**2 PASS.**
+
+- **LZ2, `REPORT_KEYNOTE_FILE`:** negative `Family1` - keynoteFile empty, tableEntries 0, *"... is a family -
+  the keynote file is a project setting, so nothing was read"*. Positive `keynote-lz` - *"RevitKeynotes_Metric.txt
+  | path type Content | resolves to C:\ProgramData\Autodesk\RVT 2024\Libraries\English\US\RevitKeynotes_Metric.txt
+  | Revit: Loaded"*, tableEntries 3840.
+- **LZ3, `LOAD_KEYNOTE_FILE`, rolled back:** negative `keynotes-missing.txt` - loadedFile empty, refused *"There
+  is no file at ... that this PC can see - the keynote file is unchanged"*, entries 3840 before and after.
+  Positive `keynotes-b.txt` - loadedFile *"...keynotes-b.txt (Absolute), Revit: Loaded"*, loadResult
+  *"loaded"*, entries 3840 -> 4.
+
+**Step 4: both signed by Ajmal PS on his word, 2026-11-16, and PROVEN.** Each draft's one gap: no second route.
+
+**Not run:** step 3's hand checks (the forward-slash load, LZ4's reload and path types, LZ5's refusals and
+Discard), step 5 (LZ6, kept once and Keynoting Settings by hand - the second route) and step 6 (LZ7, Revit 2020).
