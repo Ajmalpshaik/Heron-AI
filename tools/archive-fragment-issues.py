@@ -65,6 +65,14 @@ register was found to use. Words the same read found used only to DESCRIBE -
 "what to do", "deferred", "follow-up" - are left out, and each was checked
 against the rows before it was.
 
+SINCE 2026-11-16 A ROW MOVED TO A GITHUB ISSUE MOVES TOO, though what it
+names is still owed. On the owner's word that day - "if you create the issue
+so you can remove from that dot MD files ... move to archive OK" - every open
+row was given an issue, and its state begins MOVED TO ISSUE #N; the issue is
+where it is worked and ticked (docs/fragment-issues/ISSUES.md). Its line here
+keeps that link and its date, and open-defects.py counts it as moved, so the
+row is not lost: only its long text leaves the register a session has to read.
+
 Everything else stays in the register IN FULL. A state that says PROVED, or
 METHOD ESTABLISHED, or anything this list does not name, is left alone:
 guessing that a row is finished is how a register loses a row it still owes.
@@ -170,6 +178,10 @@ STILL_OWED = ("STILL OPEN", "STAYS OPEN", "REMAINS OPEN", "LEFT OPEN",
               "OUTSTANDING", "WAITING ON", "WAITING FOR", "AWAITING",
               "PENDING", "TODO", "NEEDS REAL REVIT", "NEEDS A REAL REVIT")
 
+# The opening of a row tracked as a GitHub issue since 2026-11-16 - the same
+# words open-defects.py's MOVED reads.
+MOVED_TO_ISSUE = "MOVED TO ISSUE"
+
 # A prefix rather than a word, so REOPENED, REOPENS and RE-OPENED all count.
 REOPENED = ("REOPEN", "RE-OPEN")
 
@@ -243,10 +255,19 @@ def _has_word(text, word):
     return False
 
 
+def is_moved(cell):
+    """A row tracked as a GitHub issue - its state begins MOVED TO ISSUE."""
+    return state_text(cell).upper().startswith(MOVED_TO_ISSUE)
+
+
 def held_because(cell):
     """None when a row may move; otherwise why it stays, in words."""
     if is_open(cell):
         return "open"
+    if is_moved(cell):
+        # Still owed - and owed on GitHub, where its issue ticks it. See the
+        # docstring: the line keeps the issue's link, so nothing is lost.
+        return None
     upper = state_text(cell).replace(CURLY_APOSTROPHE, "'").upper()
     if not upper.startswith(CLOSING):
         return "its state does not begin with a closing word"
@@ -344,8 +365,12 @@ def title_of(defect):
 
 
 def lead_of(state):
-    """The opening of the state - enough to carry its closing word and date."""
+    """The opening of the state - enough to carry its closing word and date.
+    A row moved to a GitHub issue keeps the issue's link in it: that link is
+    where the row is worked now."""
     head = _bold_head(state)
+    if head is not None and is_moved(state):
+        return "**" + _pipes(_ticks(" ".join(head.split()))) + "**"
     if head is not None:
         inner = _plain(head)
         if inner and len(inner) <= LEAD_LIMIT:
@@ -480,7 +505,8 @@ def _one_row(p, lines, i, label, existing):
     split = OD.CELL.split(stub)
     if (not again or int(again.group(1)) != number or len(split) != 5
             or is_open(split[3])
-            or not state_text(split[3]).upper().startswith(CLOSING)):
+            or is_moved(split[3]) != is_moved(cells[3])
+            or not (is_moved(split[3]) or state_text(split[3]).upper().startswith(CLOSING))):
         p.problems.append(
             "row %s: its one-line form would not read back as the same closed "
             "row. That is a fault in this tool, not in the register." % ident)
