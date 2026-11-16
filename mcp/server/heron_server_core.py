@@ -465,9 +465,9 @@ OUTCOMES = (
      "with nothing beside it saying otherwise. Not a claim that anything "
      "changed: the result lines are that."),
     (NOTHING_CHANGED,
-     "Revit kept this call's transaction and nothing in the model changed - "
-     "Revit counted no change and every result the capability declares is "
-     "zero; there is nothing to undo",
+     "Revit kept this call's transaction, reported no change in it, and every "
+     "result the capability declares is zero - so nothing was changed and "
+     "there is nothing to undo",
      "revit_change only: a change Revit KEPT in which nothing changed by every "
      "count Heron has - Revit counted no element added, changed or deleted, or "
      "raised no change event at all with none unreadable, AND every result the "
@@ -596,7 +596,10 @@ def kept_nothing(reply, provides):
     if not isinstance(reply, dict) or not isinstance(provides, list):
         return None
     changes = reply.get("changes")
-    if not isinstance(changes, dict):
+    # A REPORT, NOT AN EMPTY OBJECT: `events` and `witnessed` are what say
+    # Revit was listened to at all. A `changes` without them is not read as
+    # nothing changed (the review of PR #888).
+    if not isinstance(changes, dict) or "events" not in changes or "witnessed" not in changes:
         return None
 
     def number(value):

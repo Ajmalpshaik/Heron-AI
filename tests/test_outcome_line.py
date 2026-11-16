@@ -593,6 +593,8 @@ def build_cases(module, core):
              {"capability": nothing}, kept_with(False, True, COUNTED)),
         Case("a keep whose change events could not all be read", C, "KEPT",
              {"capability": nothing}, kept_with(False, True, UNREAD)),
+        Case("a keep whose change report is an empty object", C, "KEPT",
+             {"capability": nothing}, kept_with(False, False, {})),
         Case("a change the modeller DISCARDED, the rollback confirmed", C,
              "ROLLED BACK", {"capability": change}, DISCARDED, kind="rollback"),
         Case("a Discard whose rollback Revit did not confirm", C,
