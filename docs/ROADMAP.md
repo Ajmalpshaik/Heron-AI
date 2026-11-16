@@ -105,7 +105,7 @@ NOT BUILT            Not in the plan yet         marketplace, other platforms, m
 | 3 — The BIM surface | **Built**, not proven | `python tools/agent-count.py` |
 | 4 — Learning and trust | **Built early**, not proven | `python brain/heron_gaps.py` · `python tools/agent-count.py` |
 | 5 — Code generation | **Built early:** the run-time compile; no fragment has reached `PRODUCTION` | [D-28](DECISIONS.md) · the `grep` above |
-| 6 — Platform | **Measured.** v0.1.0 published 2026-10-08, unsigned, for testing — [D-91](DECISIONS.md) says a release is signed, and [Q-77](open-questions/tier-2.md) asks whether a decision should say otherwise until signing is built; the installer, built locally from `main`, run on the owner's laptop on 2026-10-17 and 18 — EP1 fetched the add-in from v0.1.0 | [Group AC](needs-checking/group-ac.md) · [Group EP](needs-checking/group-ep.md) |
+| 6 — Platform | **Measured.** v0.1.0 published 2026-10-08, unsigned, for testing — since [D-168](decisions/D-168.md), the owner's answer to [Q-77](open-questions/tier-2.md) on 2026-11-16, a release is versioned and checksummed, says plainly it is unsigned, and is signed before Heron is given to anyone outside; the installer, built locally from `main`, run on the owner's laptop on 2026-10-17 and 18 — EP1 fetched the add-in from v0.1.0 | [Group AC](needs-checking/group-ac.md) · [Group EP](needs-checking/group-ep.md) |
 | 7 — Scale | **Built in part:** the company standard (`brain/heron_company.py`) and the agent creator (`brain/heron_creator.py`) | `python tools/agent-count.py` |
 | Not in the plan yet | **Not built** | [the table below](#what-is-deliberately-not-in-the-plan-yet) |
 

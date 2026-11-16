@@ -254,7 +254,9 @@ than closed whichever way makes a task easier.
 
 ---
 
-### 🔵 Q-60 — May Heron write a one-time id into a Revit 2020 to 2023 model, so that its answers can be kept? *(found 2026-10-06)*
+### ✅ Q-60 — May Heron write a one-time id into a Revit 2020 to 2023 model, so that its answers can be kept? *(found 2026-10-06)* → **answered 2026-11-16 by the owner**
+
+**Answer: No - Heron writes nothing into a Revit 2020 to 2023 model, and those releases keep nothing between answers, as today - 2026-11-16, the owner's answer, read back: Ajmal PS was shown this question with Claude's suggestion and answered in his own words, *"go with you suggetions"*.** **Why:** The id would be a change to the owner's model, copied with it into the next job and handed by a template to every project made from it; Revit 2024 and later have the model's own id ([D-113](../decisions/D-113.md)). **Work:** none - nothing changes. On 2020 to 2023 the standards and the load questions are still asked each time, and every answer already says so. No decision record: no behaviour moves.
 
 Since [D-113](../decisions/D-113.md) a project's kept answers - its governing standards, its load runs, its
 sprinkler runs - are filed under the model's own id, `Document.CreationGUID`, which arrived at **Revit 2024**.
@@ -276,7 +278,9 @@ answers. Until he does, they keep nothing.
 
 ---
 
-### 🟡 Q-61 — Which model, effort level and fast-mode setting should a modeller's chat run, and are the office PC and the new laptop set the same today? *(found 2026-10-10)*
+### ✅ Q-61 — Which model, effort level and fast-mode setting should a modeller's chat run, and are the office PC and the new laptop set the same today? *(found 2026-10-10)* → **answered 2026-11-16 by the owner**
+
+**Answer: Heron's install notes recommend one setting for modelling work - effort high, not xhigh, and fast mode on where it is offered - and say plainly it is not yet timed - 2026-11-16, the owner's answer, read back: Ajmal PS was shown this question with Claude's suggestion and answered in his own words, *"go with you suggetions"*.** **Why:** The one measured run, [row 5b-378](../fragment-issues/section-5b-rows-376-400.md), was at effort xhigh, and about 93% of its two family builds was the chat's own turns - extended thinking alone about 609 s; the effort level is the setting that can move that share, and only a timing can say how far. **Work:** done 2026-11-16 - [WHAT-TO-INSTALL §5b](../WHAT-TO-INSTALL.md#5b-the-chats-own-setting-for-modelling-work---recommended-not-yet-timed) gives the setting and says it is not timed. **Owed:** the timing, [NEEDS-CHECKING Group HF](../needs-checking/group-hf.md) HF8, on the laptop. Not part of this answer, and not done: `heron-ready --snapshot` recording the setting, the change to the snapshot code this question names as one agreed on its own. No decision record: it is advice in the install notes, and nothing Heron does changes.
 
 [FRAGMENT-ISSUES 5b-378](../fragment-issues/section-5b-rows-376-400.md) timed two family builds on the
 new laptop on 2026-10-09: 367 s and 792 s, of which Revit's own time was 17.2 s in all and the model's
@@ -610,7 +614,9 @@ Windows and holds all of it.
 
 ---
 
-### 🟡 Q-69 — May Heron save the model it is working in - Save, or Save As to a path the modeller gives - once its Undo entry has closed? *(found 2026-10-17)*
+### ✅ Q-69 — May Heron save the model it is working in - Save, or Save As to a path the modeller gives - once its Undo entry has closed? *(found 2026-10-17)* → **answered 2026-11-16 by the owner**
+
+**Answer: Shape 2 - the add-in saves after Heron's group has closed, only when the modeller asks, and Heron never picks a name itself - 2026-11-16, the owner's answer, read back: Ajmal PS was shown this question with Claude's suggestion and answered in his own words, *"go with you suggetions"*.** Recorded as [D-171](../decisions/D-171.md), which also carries the two choices shape 2 is written with below - a preview saves too, and the pin follows a rename only for this run's own Save As. **Why:** It is the one shape that lets Heron save the model it works in while Article 8's one undo entry stays as it is, and both lost builds were lost to a model nobody had saved. **Work:** owed: being built - `SAVE_DOCUMENT` version 3, the add-in's save after the group and the pin's rename, in another session from 2026-11-16; then proved on a scratch model, with [Group EN](../needs-checking/group-en.md) EN4 and EN5 measured. Until it is, nothing at runtime changes.
 
 **What happened.** Twice in two days a whole build was lost because the model had never been saved and
 Revit was closed - a house with 9 sheets and a 32-floor tower, on 2026-10-13 and 2026-10-14
@@ -921,7 +927,9 @@ choice is open.
 
 ---
 
-### 🟡 Q-73 — Constitution Article 13 says one confirmation never covers a later action, and D-138's Keep box can keep the rest of a job after one click. Should Article 13 name that as its exception? *(found 2026-10-18 checking the specification for D-139)*
+### ✅ Q-73 — Constitution Article 13 says one confirmation never covers a later action, and D-138's Keep box can keep the rest of a job after one click. Should Article 13 name that as its exception? *(found 2026-10-18 checking the specification for D-139)* → **answered 2026-11-16 by the owner**
+
+**Answer: Shape 1 - Article 13 names the job grant, D-138's third link, as its one recorded exception: one chat, one model, until ten quiet minutes pass - 2026-11-16, the owner's answer, read back: Ajmal PS was shown this question with Claude's suggestion and answered in his own words, *"go with you suggetions"*.** Recorded as [D-167](../decisions/D-167.md). **Why:** He chose the grant, Article 9 already names it, and an Article changes by a decision in its own words - so one sentence makes the two Articles agree. **Work:** done 2026-11-16 - [Article 13](../../HERON_CONSTITUTION.md) carries the sentence and the Constitution's Amendment note names it. No code changed.
 
 **What was found**, checking the specification for [D-139](../decisions/D-139.md), whose item 4 names this
 as a choice left open.
@@ -1123,7 +1131,9 @@ repeated name stay in the register.
 
 ---
 
-### 🟡 Q-77 — D-91 says Heron's release is signed, and v0.1.0 went out unsigned. Should a decision say releases are unsigned until signing is built, and what makes signing due? *(found 2026-10-18 checking the specification for D-139)*
+### ✅ Q-77 — D-91 says Heron's release is signed, and v0.1.0 went out unsigned. Should a decision say releases are unsigned until signing is built, and what makes signing due? *(found 2026-10-18 checking the specification for D-139)* → **answered 2026-11-16 by the owner**
+
+**Answer: Shape 1 - a decision amends D-91: releases are versioned and checksummed now and say plainly they are unsigned, and are signed before Heron is given to anyone outside - 2026-11-16, the owner's answer, read back: Ajmal PS was shown this question with Claude's suggestion and answered in his own words, *"go with you suggetions"*.** Recorded as [D-168](../decisions/D-168.md); D-91's index entry and record say it was superseded in part. **Why:** It writes down what the owner had already chosen twice - to publish v0.1.0, and to leave signing last - keeps *signed* as the bar, and moves the only record of the choice out of a work note that will be deleted. **Work:** done 2026-11-16, as documents; no code changes - `release.yml` already writes *"Not signed."* on every release. **Owed** before Heron is given to anyone outside: the signing itself, Stage 8.
 
 **What was found**, checking the specification for [D-139](../decisions/D-139.md), whose context cites
 [D-91](../decisions/D-91.md) as the rule a modeller's PC installs from.
@@ -1209,7 +1219,9 @@ keeps its words with a note.
 
 ---
 
-### 🔵 Q-79 — DISCLAIMER says Heron *"reports compliance with a standard"*, and the chat is told never to call a model compliant. Should the DISCLAIMER say what the chat says? *(found 2026-10-18 in the second documentation pass)*
+### ✅ Q-79 — DISCLAIMER says Heron *"reports compliance with a standard"*, and the chat is told never to call a model compliant. Should the DISCLAIMER say what the chat says? *(found 2026-10-18 in the second documentation pass)* → **answered 2026-11-16 by the owner**
+
+**Answer: Shape 1 - the DISCLAIMER takes the chat's words: Heron reports whether the checked values are met, with the source document, and certifies no compliance - 2026-11-16, the owner's answer, read back: Ajmal PS was shown this question with Claude's suggestion and answered in his own words, *"go with you suggetions"*.** Recorded as [D-169](../decisions/D-169.md). **Why:** It is the stricter wording, what the chat already says, and what an engineer or an authority expects of a tool: values met, not compliance granted. **Work:** done 2026-11-16 - [DISCLAIMER](../../DISCLAIMER.md) *On standards checking* reworded, with a line saying what it said before.
 
 **What was found.**
 
@@ -1660,7 +1672,9 @@ that needs the PC.
 
 ---
 
-### 🔵 Q-91 — On Revit 2020 to 2024 Heron cannot attach a wall to a roof. Should it shape the wall's top to the roof instead - by editing the wall's profile - and if so, on which releases? *(found 2026-11-15 from issue #852)*
+### ✅ Q-91 — On Revit 2020 to 2024 Heron cannot attach a wall to a roof. Should it shape the wall's top to the roof instead - by editing the wall's profile - and if so, on which releases? *(found 2026-11-15 from issue #852)* → **answered 2026-11-16 by the owner**
+
+**Answer: Shape 2 - a new tool that edits each wall's profile so its top follows the roof above it, on Revit 2022 to 2024; on 2020 and 2021 it says plainly that it cannot; and it says the top is a sketch that does not follow later roof changes - 2026-11-16, the owner's answer, read back: Ajmal PS was shown this question with Claude's suggestion and answered in his own words, *"go with you suggetions"*.** **Why:** It closes the open gable triangles #852 describes on the releases whose API can edit a wall's profile, and saying plainly what the sketch does not do is what makes a top that does not follow the roof something the modeller can choose knowingly. **Work:** owed: being built - a new card at DRAFT, in another session from 2026-11-16, then its proof. No decision record: a new card starts at DRAFT and is proved like any other (Article 20, [D-30](../decisions/D-30.md)), and nothing Heron allows or refuses changes. Until it is built and proved, Heron says on 2020 to 2024 that this is done by hand in Revit.
 
 **What happened.** On Villa 2, Revit 2024, 2026-11-11, the modeller asked *"attach all walls to the roof"*
 after the main roof was rebuilt: 25 walls stopped at the 2440 plate and left open gable triangles under both

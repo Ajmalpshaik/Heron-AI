@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-RM-028
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,6 +12,20 @@ capability: CREATE_FROM_ROOM_BOUNDARIES
 version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# BACK TO DRAFT 2026-11-16, ON THE OWNER'S ANSWER (FRAGMENT-ISSUES row
+# 5b-1643). Signed PROVEN on 2026-10-21 on a FLOOR case - wantFinish false,
+# finishWalls 0 - so the proof below never made a wall finish, the one thing
+# version 2 added. Asked whether the card goes back to DRAFT until Group HX
+# is run, Ajmal PS answered "go with you suggetions" to the suggestion that it
+# does. The proof block is kept as the record: its fingerprint still matches
+# impl/, and `proof-held:` says why it is not used, so check-signatures reads
+# it as held rather than as a forgotten promotion.
+proof-held: >
+  Back to DRAFT on 2026-11-16, on the owner's answer to row 5b-1643: the
+  2026-10-21 proof ran a floor and made no wall finish, the one thing version 2
+  added. NEEDS-CHECKING Group HX's HX1 to HX3, then a new proof whose positive
+  case makes wall finishes, before it is PROVEN again.
 
 # VERSION 2 (2026-10-19, row 5b-1255). A WALL TYPE LINES THE ROOM'S WALLS.
 # Floors and ceilings by room were here and proven; wall finishes by room - a
@@ -215,6 +229,8 @@ contract:
 
 # WRITTEN ABOVE AN EARLIER PROOF, since replaced by the `proof:` block below -
 # read that block's own date and fingerprint, not this comment, for what ran.
+# THE BLOCK BELOW IS HELD, NOT USED, SINCE 2026-11-16 (`proof-held:` above):
+# it is a floor case, and the card is DRAFT until Group HX proves version 2.
 # VERSION 1's PROOF, kept as the record. It describes floors and ceilings only,
 # before wall finishes (row 5b-1255), and is STALE by D-30's fingerprint, so
 # version 2 was DRAFT at the time and a change kept from it was refused (D-117)

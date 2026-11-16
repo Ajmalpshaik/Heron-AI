@@ -120,9 +120,11 @@ purpose: >
      finds a point inside an L-shaped room.
   8. FLOORS AND CEILINGS FROM THE ROOM BOUNDARIES, when asked for.
      FILTER_ELEMENTS_BY_CATEGORY for that level's rooms, then
-     CREATE_FROM_ROOM_BOUNDARIES (PROVEN, version 2), expect_from naming the
-     filter. The hostType decides what is made - a floor type makes floors,
-     a ceiling type makes ceilings - so floors and ceilings are two calls.
+     CREATE_FROM_ROOM_BOUNDARIES (DRAFT since 2026-11-16, until NEEDS-CHECKING
+     Group HX proves version 2 - FRAGMENT-ISSUES row 5b-1643 - so its change
+     is not kept from a chat; say so), expect_from naming the filter. The
+     hostType decides what is made - a floor type makes floors, a ceiling
+     type makes ceilings - so floors and ceilings are two calls.
      heightAboveLevel is the ceiling's height in millimetres; `rooms` narrows
      to the numbers or names given. Each room's own boundary is the outline,
      its holes included. `unenclosed` names every room nothing was built on,
