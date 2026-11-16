@@ -22,8 +22,10 @@ save itself, once the group has closed, and only when:
 
   * the fragment ASKED for it - SAVE_DOCUMENT version 3, through the ambient
     need `saveWhenKept`, given the model's own file or a path the modeller typed;
-  * the group was KEPT. A preview, a Discard or a proof's rolled-back run never
-    saves: a save cannot be rolled back (D-55, the owner's point 2);
+  * the group was KEPT, or the run was a PREVIEW whose rollback held - the change
+    undone, the save not, and the reply says both (D-171, superseding D-55 in
+    part; the owner's "okkey" of 2026-11-16). A DISCARD saves nothing: the box is
+    answered before the save, so a save follows only a Keep (D-171 point 5);
   * the job is a Publish job and the switches still say so when it saves.
 
 A Save As renames the model, and on Revit 2020 to 2023 - no CreationGUID - and
@@ -144,8 +146,13 @@ def card_section():
                                  "one" % maker.rstrip("("))
     check("saveWhenKept(saveAs" in bare,
           "a Save As goes to the path the modeller typed, handed over as it came")
-    check("rolled back" in cases and "NOT saved" in cases,
-          "its cases say a rolled-back run saves nothing")
+    check("PREVIEW" in cases and "the save was done" in cases,
+          "its cases run as previews, and a preview's save is looked for (D-171)")
+    check("DISCARD" in cases and "NOT saved" in cases,
+          "and a Discard is a negative: nothing saved")
+    check("rolled-back run saves nothing" not in source
+          and "preview too, which rolls the change back and still saves" in source,
+          "the fragment tells the modeller a preview still saves - not that it saves nothing")
 
 
 def addin_section():
@@ -186,14 +193,36 @@ def addin_section():
     first_save = min([i for i in (at(save_code, ".Save("), at(save_code, ".SaveAs("))
                       if i >= 0] or [-1])
     check(first_save >= 0, "the add-in's code saves through Document.Save or SaveAs")
+    # D-171, read back to the owner on 2026-11-16 ("okkey"): A PREVIEW SAVES
+    # TOO - only when a save was asked for - and a DISCARD saves nothing,
+    # because the box is answered before the save (point 5).
     for guard, what in (("if (ask == null || !ask.Asked) return reply;",
-                         "nothing at all unless the fragment asked"),
-                        ("if (!kept)", "nothing unless the group was kept"),
-                        ("if (!sendsOut)", "nothing unless the job is a Publish job"),
+                         "nothing at all unless the fragment asked - a preview with no "
+                         "save asked for saves nothing"),
+                        ("if (answered != null && answered != Keep && answered != RestOfJob)",
+                         "nothing after a Discard or a closed box - a save follows only a Keep"),
+                        ("else if (tried && !kept)",
+                         "nothing when Heron asked to keep and Revit did not report it kept"),
+                        ("else if (!kept && !rollbackHeld)",
+                         "nothing after a preview whose rollback did not hold"),
+                        ("else if (!sendsOut)", "nothing unless the job is a Publish job"),
                         ("HeronRunPolicy.Withdrawn(risk, HeronConfig.Load()",
                          "and the switches are read again just before the save")):
         where = at(save_code, guard)
         check(0 <= where < first_save, "%s - checked before any save" % what)
+    check(re.search(r"if\s*\(\s*!kept\s*\)", save_code) is None,
+          "and NO guard refuses a run only for being rolled back: a preview that "
+          "asked for a save saves (D-171 point 6)")
+    check("SaveNow(target, kept)" in save_code and "SaveAsNow(target, ask, kept)" in save_code,
+          "the save is told whether the change was kept, so a preview says so")
+    call = run_code[call_at:call_at + 400] if call_at >= 0 else ""
+    check("rolledBack != null && rolledBack.Held" in call,
+          "Run hands it whether Revit reported the rollback held - read, not assumed")
+    check("THE CHANGE WAS ROLLED BACK" in save and "AND THE SAVE WAS DONE" in save,
+          "a preview that saved says the change was rolled back and the save was done")
+    check('Json.Bool("preview", !kept)' in save,
+          "and marks the save block a preview's")
+    check("a save follows only a Keep" in save, "a Discard says a save follows only a Keep")
     check(re.search(r"SynchronizeWithCentral\s*\(", save_code) is None,
           "the add-in's save never synchronises (Article 10)")
     sets = re.findall(r"OverwriteExistingFile\s*=\s*([^;]+);", save_code)
@@ -211,7 +240,8 @@ def addin_section():
           "a Save As refuses a workshared model and one that already has a file")
     check("cannot be undone" in save.lower() or "CANNOT BE UNDONE" in save,
           "a save that was done says it cannot be undone")
-    check("never saves" in save, "a rolled-back run says it never saves")
+    check("never saves" not in save,
+          "and nothing says a rolled-back run never saves - the rule before D-171")
     check("NOTHING WENT TO CENTRAL" in save,
           "a workshared local save says nothing went to central")
     check('Json.Str("creationGuid"' in save and 'Json.Str("documentPath"' in save,
@@ -249,6 +279,13 @@ def server_section():
     _, lines = after(pin, discarded)
     check(any("NOT SAVED" in line for line in lines), "a Discard says nothing was saved")
 
+    preview = dict(plain, save={"asked": True, "kind": "save", "done": True, "preview": True})
+    _, lines = after(pin, preview)
+    check(any("ROLLED BACK" in line and "SAVE WAS DONE" in line
+              and "cannot be undone" in line for line in lines),
+          "a preview's save reported without its sentence still says the change was "
+          "rolled back, the save done, and that it cannot be undone (D-171)")
+
     unsaved = {"ok": True, "document": "Project1", "documentPath": None}
     pin = DocumentPin()
     pin.check(unsaved)
@@ -283,19 +320,55 @@ def server_section():
     check("lines.extend(saved)" in body, "and prints what the save did")
 
 
+def client_section():
+    print()
+    print("The proving client - where a preview is run today (D-171)")
+    sys.path.insert(0, os.path.join(ROOT, "mcp", "client"))
+    try:
+        import heron_bridge_client as CLIENT
+    except Exception as error:                          # noqa: BLE001 - reported
+        check(False, "heron_bridge_client imports (%s)" % error)
+        return
+    sentence = getattr(CLIENT, "save_sentence", None)
+    check(sentence is not None, "the client has a way to say what a save did at all")
+    if sentence is None:
+        sentence = lambda reply: None                   # so the checks below RUN and FAIL
+    said = ("THE CHANGE WAS ROLLED BACK - this run was a preview - AND THE SAVE WAS DONE: ... "
+            "A SAVE CANNOT BE UNDONE.")
+    line = sentence({"ok": True, "rolledBack": True,
+                     "save": {"asked": True, "done": True, "preview": True, "said": said}}) or ""
+    check(line.startswith("SAVED") and said in line,
+          "a preview that saved is printed SAVED, in the add-in's words, so ROLLED BACK "
+          "is never read as nothing written to disk")
+    check(sentence({"ok": True, "rolledBack": True}) is None,
+          "and a run that asked for no save prints nothing about one")
+    check((sentence({"save": {"done": False, "said": "NOT SAVED. You pressed Discard."}})
+           or "").startswith("NOT SAVED"),
+          "a save not done is printed NOT SAVED")
+    client = read(os.path.join(ROOT, "mcp", "client", "heron_bridge_client.py"))
+    fragment_at = client.find("def cmd_fragment(")
+    fragment_body = client[fragment_at:client.find("\ndef ", fragment_at + 10)]
+    check("print_save(reply)" in fragment_body,
+          "`fragment` prints it under the verdict")
+    check('told += " - and the save asked for with it: %s" % said' in client,
+          "and a `validate` phase writes it into the run record a proof is drafted from")
+
+
 def main():
     print("Q-69 - Heron saves the model it works in, after the group")
     card_section()
     addin_section()
     server_section()
+    client_section()
     print()
     if FAILURES:
         print("FAILED - %d check(s)" % len(FAILURES))
         for failure in FAILURES:
             print("  - %s" % failure)
         return 1
-    print("PASSED - a save follows a kept change, after the group, to a file the "
-          "modeller named; a preview saves nothing; a Save As keeps the chat on the model.")
+    print("PASSED - a save follows a Keep or a preview that asked for one, after the "
+          "group, to a file the modeller named; a Discard saves nothing; a Save As keeps "
+          "the chat on the model.")
     return 0
 
 

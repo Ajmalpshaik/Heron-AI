@@ -2300,6 +2300,11 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None,
                 print("    ASKED  %s" % reply.get("deleteAsking"))
             print("    %s  %s" % (state, verdict))
 
+        # D-171: A SAVE ASKED FOR WITH THE RUN IS MADE ON A PREVIEW TOO, and is
+        # not rolled back - so it is printed under the verdict, and ROLLED BACK
+        # is never read as "nothing changed on disk". The add-in's own words.
+        print_save(reply)
+
         provides = reply.get("provides") or {}
         if not provides:
             print("    left nothing behind")
@@ -2311,6 +2316,24 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None,
         bridge.release()
         bridge.close()
     return 1 if failures else 0
+
+
+def save_sentence(reply):
+    """What the save after the group did, as one line - or None when the run
+    asked for none (Q-69, D-171). SAVED or NOT SAVED, then the add-in's own
+    sentence, which says whether the change itself was kept or rolled back."""
+    save = reply.get("save") if isinstance(reply, dict) else None
+    if not isinstance(save, dict):
+        return None
+    return "%s  %s" % ("SAVED" if save.get("done") is True else "NOT SAVED",
+                       save.get("said") or "Revit's Heron did not say more")
+
+
+def print_save(reply):
+    """`save_sentence`, printed under a verdict when there is one."""
+    said = save_sentence(reply)
+    if said:
+        print("    %s" % said)
 
 
 def print_items(name, reply):
@@ -3377,6 +3400,12 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
                     told += (" - run inside a transaction with a rollback requested. "
                              "Whether it held was NOT checked: this add-in build does not "
                              "report the outcome, and nothing here re-read the model")
+                # D-171: A SAVE ASKED FOR WITH THE RUN IS MADE ON A PREVIEW TOO,
+                # and a rollback does not take it back - so the record says
+                # what the save did, in the add-in's words (Q-69).
+                said = save_sentence(reply)
+                if said:
+                    told += " - and the save asked for with it: %s" % said
             record = {"phase": phase, "ok": True,
                       "provides": reply.get("provides") or {},
                       "providesItems": reply.get("providesItems") or {},

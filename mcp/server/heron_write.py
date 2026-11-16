@@ -708,7 +708,9 @@ class DocumentPin(object):
 def after_save(pin, reply):
     """
     (reply, lines): what a change's reply says its SAVE did, and the reply as
-    the rest of revit_change should read it - Q-69, answered 2026-11-16.
+    the rest of revit_change should read it - Q-69, answered 2026-11-16, and
+    D-171: a save follows a Keep and a preview, never a Discard, and on a
+    preview the change is rolled back while the save is not.
 
     THE WORDS ARE THE ADD-IN'S (`save.said`), as the verdict is: it is the one
     side that saw whether Revit saved. One line is added here only when the
@@ -730,6 +732,11 @@ def after_save(pin, reply):
     said = save.get("said")
     if said:
         lines.append(str(said))
+    elif save.get("done") is True and save.get("preview") is True:
+        # D-171: A PREVIEW SAVES TOO, and the reply must never let "rolled back"
+        # be read as "nothing changed on disk".
+        lines.append("THE CHANGE WAS ROLLED BACK, AND THE SAVE WAS DONE - the model was saved "
+                     "as it is now, without the change. A save cannot be undone.")
     elif save.get("done") is True:
         lines.append("SAVED. A save cannot be undone: Ctrl+Z takes back the change, never the "
                      "save.")

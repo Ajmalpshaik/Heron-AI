@@ -19,7 +19,8 @@ namespace Heron.Revit.Addin
     /// Heron's one Undo entry has closed - OPEN-QUESTIONS Q-69, Shape 2,
     /// accepted by Ajmal PS on 2026-11-16 in his own words, "go with you
     /// suggetions": save after the group closes, from the add-in, only when
-    /// the modeller asks; Heron never picks a name itself.
+    /// the modeller asks; Heron never picks a name itself. Recorded as D-171,
+    /// and its preview point read back to him the same day: "okkey".
     ///
     /// WHY THE ADD-IN AND NOT THE FRAGMENT. Revit's Document.Save and SaveAs
     /// "may not be called unless all transactions, sub-transactions, and
@@ -40,10 +41,17 @@ namespace Heron.Revit.Addin
     ///      the full path the modeller typed. The reply's `save` block says
     ///      what was done, and the group itself does not change: one request,
     ///      one group, one Undo entry, and the save is not in it.
-    ///   2. A preview (D-55) never saves. Only a group Revit reports KEPT is
-    ///      followed by a save; a preview, a proof's rolled-back run, a Discard
-    ///      or a closed box saves nothing, and the reply says so. A save cannot
-    ///      be rolled back, so a run that is rolled back must leave nothing.
+    ///   2. A preview saves too (D-171 point 6, superseding D-55 in part). A
+    ///      group Revit reports KEPT is followed by the save, and so is a run
+    ///      nobody was asked about that was rolled back and whose rollback
+    ///      HELD - a preview, a proof's trial run: the change is undone, the
+    ///      save is not, and the reply says both in as many words. It is the
+    ///      one way the route can be proved while D-117 refuses a DRAFT kept
+    ///      for real. A DISCARD, or a closed box, saves nothing: Revit's Keep
+    ///      or Discard box is answered inside the group, before the save, so a
+    ///      save there follows only a Keep (D-171 point 5). Nor does a run
+    ///      whose rollback did not hold, or one Revit did not report kept.
+    ///      The owner read this back on 2026-11-16 and answered "okkey".
     ///   3. A Save As renames the model. The reply names it as the change was
     ///      made (Run builds it before calling here) and this block names its
     ///      new title and file, so the chat's pin follows deliberately
@@ -115,21 +123,34 @@ namespace Heron.Revit.Addin
 
         /// <summary>
         /// The reply, with a `save` block when the fragment asked for a save
-        /// - and the save done, when the group was kept and every condition
-        /// still holds. The reply unchanged when nothing was asked.
+        /// - and the save done, after a kept change or a preview, when every
+        /// condition still holds. The reply unchanged when nothing was asked.
         ///
         /// CALLED ONCE BY Run, AT ITS END - after the group's block has closed
         /// and the reply is built; only the modeller's answer or D-138's grant
         /// is added to it after this, as fields. `kept` is Revit's own status for the
         /// group (groupKept), `tried` whether Heron asked Revit to keep it
-        /// (`apply` as the run ended), `sendsOut` whether this job is
+        /// (`apply` as the run ended), `rollbackHeld` whether Revit reported
+        /// the group's rollback held, `sendsOut` whether this job is
         /// run_fragment_publish, `answered` the modeller's answer to the box
         /// or null when nobody was asked.
+        ///
+        /// THE RULE, D-171, IN ORDER:
+        ///   asked for no save                        - nothing, and no block
+        ///   the modeller did not keep it (Discard,
+        ///   a closed box, any answer but Keep)       - NOT saved (point 5)
+        ///   Heron asked to keep, Revit did not say   - NOT saved
+        ///   kept nothing although Keep was pressed   - NOT saved
+        ///   rolled back, nobody asked, rollback held - SAVED: a preview (point 6)
+        ///   rolled back and the rollback did not hold- NOT saved
+        ///   kept                                     - SAVED
+        /// and in every SAVED case only for a Publish job whose switches still
+        /// stand, to the model's own file or the path given.
         /// </summary>
         private static string SaveAfterTheGroup(string reply, IDictionary<string, object> heron,
                                                 Document target, string name, HeronRisk risk,
                                                 bool sendsOut, bool tried, bool kept,
-                                                string answered)
+                                                bool rollbackHeld, string answered)
         {
             var ask = SaveAsk.Of(heron);
             if (ask == null || !ask.Asked) return reply;
@@ -140,7 +161,13 @@ namespace Heron.Revit.Addin
             var title = TitleOf(target);
             string block;
 
-            if (tried && !kept)
+            if (answered != null && answered != Keep && answered != RestOfJob)
+            {
+                // D-171 POINT 5: the box is answered inside the group, before
+                // the save, so a save follows only a Keep.
+                block = NotSaved(saveAs, NotKeptSentence(title, answered));
+            }
+            else if (tried && !kept)
             {
                 // Neither kept nor rolled back, as far as Revit said - the
                 // verdict says what that means for the model. Nothing is saved
@@ -148,9 +175,21 @@ namespace Heron.Revit.Addin
                 block = NotSaved(saveAs, "NOT SAVED. Revit did not report Heron's change kept, so '"
                     + title + "' was not saved - read the verdict above before trusting the model.");
             }
-            else if (!kept)
+            else if (!kept && answered != null)
             {
-                block = NotSaved(saveAs, NotKeptSentence(title, answered));
+                // Keep pressed, and Revit counted nothing to keep (D-160).
+                block = NotSaved(saveAs, "NOT SAVED. Nothing of the change was kept, so '" + title
+                    + "' was not saved.");
+            }
+            else if (!kept && !rollbackHeld)
+            {
+                // A PREVIEW SAVES ONLY A MODEL ITS ROLLBACK PUT BACK. Saving one
+                // that may still hold part of the change would write that part
+                // to disk, where no Undo reaches.
+                block = NotSaved(saveAs, "NOT SAVED. This run was rolled back and Revit did not "
+                    + "report that the rollback held, so the model may still hold part of the "
+                    + "change - Heron saved nothing on top of it. '" + title + "' is as it was on "
+                    + "disk. Look at the model before saving it yourself.");
             }
             else if (!sendsOut)
             {
@@ -158,52 +197,68 @@ namespace Heron.Revit.Addin
                 // an open model under any other (HeronRunPolicy). Said rather
                 // than tried.
                 block = NotSaved(saveAs, "NOT SAVED. A save is a Publish job, and this one did not "
-                    + "run as one, so '" + title + "' was not saved. The change itself was kept - "
-                    + "one Ctrl+Z in Revit undoes it.");
+                    + "run as one, so '" + title + "' was not saved. " + ChangeState(kept));
             }
             else
             {
                 // ARTICLE 13: the switches again, as the save begins - the
                 // modeller's Keep can come minutes after the gate let the job
                 // in. HeronRunPolicy.Withdrawn's own reason, not WhyNotKept's
-                // sentence: that one says the change was not kept, and by now
-                // it was.
+                // sentence: that one says the change was not kept.
                 var off = HeronRunPolicy.Withdrawn(risk, HeronConfig.Load(), HeronStop.IsStopped);
                 if (off != null)
                     block = NotSaved(saveAs, "NOT SAVED. " + Capital(off) + ", so '" + title
-                        + "' was not saved. The change itself was kept - one Ctrl+Z in Revit "
-                        + "undoes it.");
+                        + "' was not saved. " + ChangeState(kept));
                 else if (target == null)
                     block = NotSaved(saveAs, "NOT SAVED. Heron could not reach the model to save it.");
                 else
-                    block = saveAs ? SaveAsNow(target, ask) : SaveNow(target);
+                    block = saveAs ? SaveAsNow(target, ask, kept) : SaveNow(target, kept);
             }
 
             return reply.Substring(0, reply.Length - 1) + ",\"save\":" + block + "}";
         }
 
-        /// <summary>Why a run that was not kept saved nothing, in the modeller's words.</summary>
+        /// <summary>Why a run the modeller did not keep saved nothing, in their words.</summary>
         private static string NotKeptSentence(string title, string answered)
         {
             if (answered == Discard || answered == Closed)
             {
                 return "NOT SAVED. You did not keep the change in Revit ("
                     + (answered == Discard ? "you pressed Discard" : "the box was closed")
-                    + "), so nothing was kept and '" + title + "' was not saved.";
+                    + "), so nothing was kept and '" + title + "' was not saved - a save follows "
+                    + "only a Keep.";
             }
-            if (answered != null && answered != Keep && answered != RestOfJob)
-            {
-                return "NOT SAVED. The change was not kept in Revit, so '" + title
-                    + "' was not saved.";
-            }
-            return "NOT SAVED. This run was rolled back - a preview, a proof's trial run, or a run "
-                + "sent without asking to keep it - and a run that is rolled back never saves: a "
-                + "save cannot be rolled back (Q-69). '" + title + "' is as it was, on screen and "
-                + "on disk. Ask for the change to be kept and the save follows it.";
+            return "NOT SAVED. The change was not kept in Revit, so '" + title
+                + "' was not saved - a save follows only a Keep.";
         }
 
-        /// <summary>A save of the model to its own file, done now.</summary>
-        private static string SaveNow(Document target)
+        /// <summary>What happened to the change itself, said beside a save not done.</summary>
+        private static string ChangeState(bool kept)
+        {
+            return kept
+                ? "The change itself was kept - one Ctrl+Z in Revit undoes it."
+                : "The change itself was rolled back, as a preview is.";
+        }
+
+        /// <summary>
+        /// The opening of a done save's sentence on a PREVIEW, or "" after a
+        /// kept change: the change is undone and the save is not, and the
+        /// reply says both before anything else (D-171).
+        /// </summary>
+        private static string PreviewOpening(bool kept)
+        {
+            return kept
+                ? ""
+                : "THE CHANGE WAS ROLLED BACK - this run was a preview - AND THE SAVE WAS DONE: "
+                  + "what was saved is the model as it is now, without Heron's change. ";
+        }
+
+        /// <summary>
+        /// A save of the model to its own file, done now - after a kept change,
+        /// or after a preview (`kept` false), which saves the model as its
+        /// rollback left it.
+        /// </summary>
+        private static string SaveNow(Document target, bool kept)
         {
             var title = TitleOf(target);
             var path = PathOf(target);
@@ -223,10 +278,10 @@ namespace Heron.Revit.Addin
             {
                 return Json.Obj(Json.Bool("asked", true), Json.Str("kind", "save"),
                     Json.Bool("done", false), Json.Bool("nothingToSave", true),
-                    Json.Str("savedTo", path),
+                    Json.Bool("preview", !kept), Json.Str("savedTo", path),
                     Json.Str("said", "NOTHING TO SAVE. '" + title + "' had no unsaved changes, "
                         + "so its file at " + path + " already holds what is open, and nothing "
-                        + "was written."));
+                        + "was written. " + ChangeState(kept)));
             }
 
             var workshared = false;
@@ -239,8 +294,7 @@ namespace Heron.Revit.Addin
             catch (Exception ex)
             {
                 return NotSaved(false, "NOT SAVED. Revit refused to save '" + title + "': "
-                    + ex.Message + " The change itself was kept - one Ctrl+Z in Revit undoes it - "
-                    + "and the file on disk is as it was.");
+                    + ex.Message + " " + ChangeState(kept) + " The file on disk is as it was.");
             }
 
             // READ BACK, not assumed: a saved model has nothing unsaved.
@@ -248,12 +302,13 @@ namespace Heron.Revit.Addin
             try { still = target.IsModified; } catch (Exception) { still = true; }
 
             var said = still
-                ? "Revit returned from the save of '" + title + "' without an error, and the model "
-                  + "still reads as having unsaved changes - look at the file's time on disk before "
-                  + "trusting it. A save cannot be undone."
-                : "SAVED. '" + title + "' was saved to " + path + " once Heron's Undo entry had "
-                  + "closed. A SAVE CANNOT BE UNDONE: Ctrl+Z takes back the change, never the save, "
-                  + "and the file on disk holds it now.";
+                ? PreviewOpening(kept) + "Revit returned from the save of '" + title + "' without "
+                  + "an error, and the model still reads as having unsaved changes - look at the "
+                  + "file's time on disk before trusting it. A save cannot be undone."
+                : PreviewOpening(kept) + "SAVED. '" + title + "' was saved to " + path + " once "
+                  + "Heron's Undo entry had closed. A SAVE CANNOT BE UNDONE: "
+                  + (kept ? "Ctrl+Z takes back the change, never the save, and " : "")
+                  + "the file on disk holds it now.";
             if (workshared)
             {
                 said += " IT IS WORKSHARED AND NOTHING WENT TO CENTRAL - this wrote your local "
@@ -262,16 +317,16 @@ namespace Heron.Revit.Addin
             }
 
             return Json.Obj(Json.Bool("asked", true), Json.Str("kind", "save"),
-                Json.Bool("done", !still), Json.Str("savedTo", path),
+                Json.Bool("done", !still), Json.Bool("preview", !kept), Json.Str("savedTo", path),
                 Json.Bool("localOnly", workshared), Json.Str("said", said));
         }
 
         /// <summary>
         /// A Save As of a model that has NEVER been saved, to the full path
-        /// the modeller gave, done now. A model that has a file is saved to
-        /// it, never under a new name.
+        /// the modeller gave, done now - after a kept change or a preview. A
+        /// model that has a file is saved to it, never under a new name.
         /// </summary>
-        private static string SaveAsNow(Document target, SaveAsk ask)
+        private static string SaveAsNow(Document target, SaveAsk ask, bool kept)
         {
             var was = TitleOf(target);
             var had = PathOf(target);
@@ -307,8 +362,7 @@ namespace Heron.Revit.Addin
             catch (Exception ex)
             {
                 return NotSaved(true, "NOT SAVED. Revit refused to save '" + was + "' as " + full
-                    + ": " + ex.Message + " The change itself was kept - one Ctrl+Z in Revit undoes "
-                    + "it - and nothing was written.");
+                    + ": " + ex.Message + " " + ChangeState(kept) + " Nothing was written.");
             }
 
             // READ BACK: the model now names the file it was saved to, and
@@ -320,17 +374,19 @@ namespace Heron.Revit.Addin
             try { guid = RevitOperations.CreationGuid(target); } catch (Exception) { guid = null; }
 
             var said = landed
-                ? "SAVED AS. '" + was + "' was saved as " + full + " once Heron's Undo entry had "
-                  + "closed, and in Revit it is now '" + title + "'. The name is the path you "
-                  + "gave; Heron chose none."
+                ? PreviewOpening(kept) + "SAVED AS. '" + was + "' was saved as " + full
+                  + " once Heron's Undo entry had closed, and in Revit it is now '" + title
+                  + "'. The name is the path you gave; Heron chose none."
                   + (ask.Replace ? " It REPLACED the file that was there, as you said to." : "")
-                  + " A SAVE CANNOT BE UNDONE: Ctrl+Z takes back the change, never the save."
-                : "Revit returned from the Save As of '" + was + "' to " + full + " without an "
-                  + "error, but the model does not name that file now (" + (now.Length == 0
-                      ? "it has none" : now) + ") - look on disk before trusting it.";
+                  + " A SAVE CANNOT BE UNDONE"
+                  + (kept ? ": Ctrl+Z takes back the change, never the save." : ".")
+                : PreviewOpening(kept) + "Revit returned from the Save As of '" + was + "' to "
+                  + full + " without an error, but the model does not name that file now ("
+                  + (now.Length == 0 ? "it has none" : now) + ") - look on disk before trusting it.";
 
             return Json.Obj(Json.Bool("asked", true), Json.Str("kind", "saveAs"),
-                Json.Bool("done", landed), Json.Str("savedTo", landed ? full : null),
+                Json.Bool("done", landed), Json.Bool("preview", !kept),
+                Json.Str("savedTo", landed ? full : null),
                 Json.Bool("replaced", landed && ask.Replace),
                 Json.Str("wasDocument", was),
                 Json.Str("document", title),

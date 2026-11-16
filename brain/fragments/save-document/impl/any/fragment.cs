@@ -9,15 +9,18 @@
 // open in a document, so this fragment never saves `doc` itself: it checks the
 // request and hands it to `saveWhenKept` - null for the model's own file, or
 // the full path the modeller typed for a Save As of a model NEVER saved - and
-// the add-in saves after the group, ONLY IF THE CHANGE WAS KEPT. A preview, a
-// Discard or a proof's rolled-back run saves nothing; the reply's `save` block
-// says what the add-in did. A model that has a file is saved to it, never
-// under a new name; a file already at a Save As path is replaced only with
-// replaceFile=true. Two whole builds were lost unsaved (row 5b-513).
+// the add-in saves after the group: after a Keep, AND AFTER A PREVIEW - the
+// change rolled back, the save made and not rolled back (D-171, the owner's
+// "okkey" the same day) - but NEVER AFTER A DISCARD, since a save follows only
+// a Keep. The reply's `save` block says what the add-in did. A model that has
+// a file is saved to it, never under a new name; a file already at a Save As
+// path is replaced only with replaceFile=true. Two whole builds were lost
+// unsaved (row 5b-513).
 //
 // VERSION 2, 2026-10-07 - IT SAVES ANOTHER OPEN DOCUMENT, NAMED BY ITS FILE.
 // Unchanged in version 3, and still done HERE, inside the run - so a preview
-// of it saves that other document, as its proof records (row 5b-1824).
+// of it saves that other document, as its proof records, and so does a Discard
+// (row 5b-1824).
 // Version 1 saved `doc`, the document Heron runs in, and that can never work:
 // Revit's Document.Save and SaveAs "may not be called unless all transactions,
 // sub-transactions, and transaction groups that were opened by the API code
@@ -182,9 +185,9 @@ if (refused == null && thisOne)
             saveAsked = true;
             saveAskedTo = file;
             findings.Add(string.Format("'{0}' is the model Heron works in, so Heron saves it to "
-                + "{1} once this change's Undo entry has closed - ONLY IF THE CHANGE IS KEPT. A "
-                + "preview, a Discard or a rolled-back run saves nothing. A save cannot be "
-                + "undone{2}", title, file,
+                + "{1} once this change's Undo entry has closed - after a Keep, and after a "
+                + "preview too, which rolls the change back and still saves; never after a "
+                + "Discard. A save cannot be undone{2}", title, file,
                 doc.IsWorkshared
                     ? ". IT IS WORKSHARED AND NOTHING GOES TO CENTRAL - the save writes the "
                       + "local copy only. SYNC_WITH_CENTRAL is the other job"
@@ -248,9 +251,9 @@ if (refused == null && thisOne)
             saveAskedTo = full;
             findings.Add(string.Format("'{0}' has never been saved, so Heron saves it as {1} - "
                 + "the path given, not one Heron chose - once this change's Undo entry has "
-                + "closed, ONLY IF THE CHANGE IS KEPT. A preview, a Discard or a rolled-back "
-                + "run saves nothing. Revit then names it by that file. A save cannot be "
-                + "undone{2}", title, full,
+                + "closed: after a Keep, and after a preview too, which rolls the change back "
+                + "and still saves; never after a Discard. Revit then names it by that file. A "
+                + "save cannot be undone{2}", title, full,
                 System.IO.File.Exists(full) ? ". It REPLACES the file there, as asked" : ""));
         }
     }

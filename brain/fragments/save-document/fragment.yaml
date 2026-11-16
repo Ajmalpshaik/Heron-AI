@@ -23,7 +23,11 @@ risk: PUBLISH
 # version 3 now saves); its C# moved, so it is DRAFT again until NEEDS-CHECKING
 # Group EN is run (D-30, D-117). Rows 5b-365 and 5b-513. Three new inputs:
 # `saveAsPath`, `replaceFile`, and the ambient `saveWhenKept`; `documentPath`
-# may now be left out, for a Save As. Nothing of version 3 has run in Revit.
+# may now be left out, for a Save As. Recorded as D-171. A PREVIEW SAVES TOO:
+# asked whether a preview of "save my model" should really save, the owner
+# answered "okkey" on 2026-11-16 - only when the save was asked for, the reply
+# saying a save cannot be undone - so version 3 can be tried now, rolled
+# back, on a scratch model. Nothing of version 3 has run in Revit.
 
 purpose: >
   Saves an open document - a family built in its own window, a tyre for a car -
@@ -33,18 +37,20 @@ purpose: >
   yet - as the full path the modeller typed.
 
   **THE MODEL HERON IS CHANGING IS SAVED BY THE ADD-IN, ONCE HERON'S UNDO
-  ENTRY HAS CLOSED, AND ONLY WHEN THE CHANGE IS KEPT** (version 3, Q-69).
-  Revit will not save a document while Heron's Undo entry is open in it, so
-  this card never saves that one itself - version 1 tried to, which Revit
-  always refuses (row 5b-365). It asks the add-in through `saveWhenKept`, and
-  the reply's `save` block says what the add-in wrote. A preview, a Discard or a
-  proof's rolled-back run leaves the file as it was. A model that has a file
-  keeps its name; a new one goes only to the path given, replacing a file
+  ENTRY HAS CLOSED** (version 3, Q-69, D-171). Revit will not save a document
+  while Heron's Undo entry is open in it, so this card never saves that one
+  itself - version 1 tried to, which Revit always refuses (row 5b-365). It
+  asks the add-in through `saveWhenKept`, and the reply's `save` block says
+  what the add-in wrote. **A kept change is saved, and so is a preview**: the
+  preview's change is rolled back and its save is NOT - the reply says both,
+  and that a save cannot be undone. **A Discard saves nothing**: the box is
+  answered before the save, so a save follows only a Keep. A model that has a
+  file keeps its name; a new one goes only to the path given, replacing a file
   there only with `replaceFile=true`, and the chat follows the model to its
   new name. Heron never closes that model's window.
 
   **ANOTHER OPEN DOCUMENT IS SAVED INSIDE THE RUN**, as version 2 did - so a
-  preview of it still writes its file (row 5b-1824).
+  Discard of it still writes its file (row 5b-1824).
 
   **A LOCAL SAVE OF A WORKSHARED MODEL IS NOT A SYNC.** It reaches nobody
   else on the job, so it says so - `SYNC_WITH_CENTRAL` is the other job. The
@@ -65,8 +71,9 @@ contract:
       type: UIDocument
     # The full path of the OPEN document to save - the .rfa or .rvt it was
     # opened from. Another open document is saved now; the document Heron is
-    # working in is saved by the add-in once the change is kept (version 3).
-    # Left out only for a Save As (saveAsPath).
+    # working in is saved by the add-in once the group has closed, after a
+    # Keep or a preview (version 3, D-171). Left out only for a Save As
+    # (saveAsPath).
     - name: documentPath
       type: string
       source: request
@@ -93,8 +100,9 @@ contract:
       source: request
       optional: true
     # VERSION 3, Q-69: the add-in's save of the document Heron works in, done
-    # once the group has closed and only if the change was kept - null for its
-    # own file, or the Save As path; the bool is replaceFile.
+    # once the group has closed - after a Keep or a preview, never after a
+    # Discard (D-171) - null for its own file, or the Save As path; the bool
+    # is replaceFile.
     - name: saveWhenKept
       type: Action<string, bool>
       source: ambient
@@ -114,7 +122,8 @@ contract:
     - name: saveAsked
       # VERSION 3. True when the run asked the add-in to save the document
       # Heron works in once its Undo entry closes. Asking is not saving: the
-      # reply's `save` block says whether the add-in did - never on a preview.
+      # reply's `save` block says whether the add-in did - after a Keep or a
+      # preview, never after a Discard.
       role: result
       type: bool
     - name: saveAskedTo
@@ -134,10 +143,10 @@ contract:
 # (Revit 2024), signed by Ajmal PS on his word - NEEDS-CHECKING CS2. Version 1
 # was never run in Revit, and could not have saved (row 5b-365). The proof
 # below is version 2's, kept as its record: its negative case - the document
-# Heron works in, refused - is the case version 3 now saves, after the group,
-# when the change is kept. Version 3 is proved by NEEDS-CHECKING Group EN EN6
-# to EN10, and its kept save needs a route D-117 does not yet give a DRAFT
-# (OPEN-QUESTIONS Q-69's Work note).
+# Heron works in, refused - is the case version 3 now saves, after the group.
+# Version 3 is proved by NEEDS-CHECKING Group EN EN6 to EN10, as previews on a
+# scratch model - a preview saves too (D-171) - and its save after a Keep is
+# looked at once it is PROVEN, since D-117 refuses a DRAFT kept for real.
 
 proof:
   date: '2026-10-07'
@@ -193,9 +202,9 @@ compatibility-note: >
 #
 #   "save the tyre family and close it" -> here, with its file and closeWindow
 #   "save the model"        -> here, with the model's file - the one Heron works
-#                              in is saved by the add-in once the change is
-#                              kept (version 3). Never saved yet: saveAsPath,
-#                              the full path the modeller typed
+#                              in is saved by the add-in once its Undo entry
+#                              has closed (version 3). Never saved yet:
+#                              saveAsPath, the full path the modeller typed
 #   "sync to central"       -> SYNC_WITH_CENTRAL - and on a workshared model a
 #                              save is NOT that, which is the confusion worth
 #                              preventing

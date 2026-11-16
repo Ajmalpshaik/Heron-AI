@@ -23,45 +23,59 @@ positive:
       the window in front and that the file is saved - the window still open,
       Revit itself still running
 
-  # VERSION 3 (Q-69) - THE DOCUMENT HERON WORKS IN. A SCRATCH project, never a
-  # working model. Its save is the ADD-IN's, after the group; read it off the
-  # reply's `save` block AND off the disk - the file's time - never off saveAsked.
+  # VERSION 3 (Q-69, D-171) - THE DOCUMENT HERON WORKS IN. A SCRATCH project,
+  # never a working model. Its save is the ADD-IN's, after the group; read it
+  # off the reply's `save` block AND off the disk - the file's time - never off
+  # saveAsked. A PREVIEW SAVES TOO (D-171, the owner's "okkey" of 2026-11-16),
+  # which is how these run before the card is proved.
   - given: >
-      a saved scratch project with one unsaved change, Heron working in it,
-      documentPath = its own file, the change KEPT (revit_change once proved,
-      Ask to Keep off - or Keep pressed)
+      a saved scratch project with one wall drawn since its last save, Heron
+      working in it, documentPath = its own file, run as a PREVIEW - the
+      proving client without --apply, rolled back
     expect: >
-      saveAsked true, saveAskedTo its file; the reply's save block done true,
-      saying a save cannot be undone; the file's time on disk moves and the
-      title bar loses its unsaved mark. One Undo entry, and Ctrl+Z does not
-      put the file back
+      saveAsked true, saveAskedTo its file; the verdict ROLLED BACK and the
+      save block done true, preview true, its words saying the change was
+      rolled back AND the save was done, and that a save cannot be undone; the
+      file's time on disk moves to now. Reopened, the file holds the wall drawn
+      by hand - the model as the rollback left it - and nothing of Heron's run
 
   - given: >
       a NEVER-saved scratch project, Heron working in it, saveAsPath = a new
-      full .rvt path under %TEMP%\heron-work, the change KEPT
+      full .rvt path under %TEMP%\heron-work, run as a PREVIEW
     expect: >
       the file exists at that path; Revit's title is the new name; the save
-      block names the new title and file; and the chat's NEXT change goes into
-      the same model with no "use this model" - on Revit 2020, where the model
-      has no CreationGUID, and on 2024
+      block names the new title and file. Through a chat once proved: the
+      chat's NEXT change goes into the same model with no "use this model" -
+      on Revit 2020, where the model has no CreationGUID, and on 2024
+
+  - given: the first case KEPT (revit_change once proved, Ask to Keep off - or Keep pressed)
+    expect: >
+      the save block done true, preview false; one Undo entry, and Ctrl+Z
+      takes the change back while the file keeps it
 
 negative:
   - given: >
       documentPath = the file of the document Heron is working in, with one
-      unsaved change, run WITHOUT keeping it - a proof's rolled-back run, a
-      preview, or Discard pressed
+      unsaved change, kept through the Keep or Discard box and DISCARD pressed
+      (or the box closed) - once the card is proved, Ask to Keep on
     expect: >
-      saveAsked true, and the reply's save block done false, saying the run was
-      rolled back (or Discard was pressed) and the model was NOT saved; the
-      file's time on disk UNCHANGED. Version 1 saved here every time and could
-      not; version 2 refused; version 3 saves only a KEPT change (Q-69 point 2)
+      saveAsked true, and the reply's save block done false, saying Discard was
+      pressed and the model was NOT saved - a save follows only a Keep (D-171
+      point 5); the file's time on disk UNCHANGED
+
+  - given: >
+      a preview of a run whose request was refused - the model has no unsaved
+      changes, or the Save As path is refused - so nothing was asked
+    expect: >
+      saveAsked false, no save block at all, the file's time on disk UNCHANGED:
+      a preview saves only when a save was asked for
 
   - given: >
       saveAsPath = a path where a file is already, replaceFile not given
     expect: >
       refused, naming the file and saying Heron replaces one only when told to;
-      saveAsked false, the file untouched. With replaceFile=true the same run
-      kept replaces it, and the save block says it REPLACED it
+      saveAsked false, the file untouched. With replaceFile=true the same run -
+      a preview does it - replaces it, and the save block says it REPLACED it
 
   - given: saveAsPath for a model that already HAS a file, or a relative path, or a .txt
     expect: >
