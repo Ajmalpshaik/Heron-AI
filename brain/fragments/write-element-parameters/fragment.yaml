@@ -99,7 +99,7 @@ purpose: >
 # SET_PARAMETER_VALUES_BY_ID, a project parameter only by renaming it.
 # Version 6 was PROVEN on 2026-11-02 (the proof block below, kept as the record
 # of what it proved); its C# moved, so it is DRAFT again until NEEDS-CHECKING
-# Group OB is run (D-30) - on the owner's word of 2026-11-16 to fix every
+# Group OH is run (D-30) - on the owner's word of 2026-11-16 to fix every
 # issue from #852 to #854. Kept out of the purpose: it is searched.
 contract:
   needs:

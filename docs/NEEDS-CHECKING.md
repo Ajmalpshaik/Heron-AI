@@ -1538,9 +1538,9 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-nz.md`](needs-checking/group-nz.md)
 
-## Group OB - a built-in parameter by Revit's name for it, an architectural column's top and a turn when placing, a type duplicated from itself, and a rotation said in degrees (2026-11-16)
+## Group OH - a built-in parameter by Revit's name for it, an architectural column's top and a turn when placing, a type duplicated from itself, and a rotation said in degrees (2026-11-16)
 
-**Its own file:** [`needs-checking/group-ob.md`](needs-checking/group-ob.md)
+**Its own file:** [`needs-checking/group-oh.md`](needs-checking/group-oh.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 

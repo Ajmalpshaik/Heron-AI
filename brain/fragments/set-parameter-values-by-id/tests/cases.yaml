@@ -228,7 +228,7 @@ negative_pattern:
     expect: both refused - another row's key names it too
 
 # VERSION 9 (2026-11-16, row 5b-1703) - a BUILT-IN parameter named by Revit's
-# own name for it, "<name> {<BuiltInParameter>}". NEEDS-CHECKING Group OB.
+# own name for it, "<name> {<BuiltInParameter>}". NEEDS-CHECKING Group OH.
 # Arranged on a scratch project Heron makes from English DefaultMetric.rte:
 # one M_Rectangular Column (an ARCHITECTURAL column, Columns) placed on
 # Level 1 with Mark OB-POST. Each FAILS on version 8, which read a GUID only.

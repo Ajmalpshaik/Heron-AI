@@ -1,20 +1,20 @@
-# NEEDS-CHECKING Group OB - five cards repaired in code on 2026-11-16 for
+# NEEDS-CHECKING Group OH - five cards repaired in code on 2026-11-16 for
 # Sruthina's field report Ajmalpshaik/Heron-AI#853 (Revit 2024, `villa 2`),
 # each a PROVEN card sent back to DRAFT at a new version:
 #
-#   write-element-parameters    WRITE_ELEMENT_PARAMETERS    version 7  row 5b-1703  OB1
-#   set-parameter-values-by-id  SET_PARAMETER_VALUES_BY_ID  version 9  row 5b-1703  OB2
-#   place-family-instances      PLACE_FAMILY_INSTANCES      version 6  rows 5b-1704, 5b-1706  OB3 (OB4 by hand)
-#   duplicate-type              DUPLICATE_TYPE              version 2  row 5b-1705  OB5 (OB6 by hand)
-#   rotate-elements             ROTATE_ELEMENTS             version 4  row 5b-1708  OB7
+#   write-element-parameters    WRITE_ELEMENT_PARAMETERS    version 7  row 5b-1703  OH1
+#   set-parameter-values-by-id  SET_PARAMETER_VALUES_BY_ID  version 9  row 5b-1703  OH2
+#   place-family-instances      PLACE_FAMILY_INSTANCES      version 6  rows 5b-1704, 5b-1706  OH3 (OH4 by hand)
+#   duplicate-type              DUPLICATE_TYPE              version 2  row 5b-1705  OH5 (OH6 by hand)
+#   rotate-elements             ROTATE_ELEMENTS             version 4  row 5b-1708  OH7
 #
-#     python tools/batch-prove.py tools/jobs/field-853-repairs-ob-2026-11-16.yaml --dry-run
-#     HERON_CLIENT_ID=heron-batch-prove python tools/batch-prove.py tools/jobs/field-853-repairs-ob-2026-11-16.yaml --session <pid>
+#     python tools/batch-prove.py tools/jobs/field-853-repairs-oh-2026-11-16.yaml --dry-run
+#     HERON_CLIENT_ID=heron-batch-prove python tools/batch-prove.py tools/jobs/field-853-repairs-oh-2026-11-16.yaml --session <pid>
 #
 # NOTHING HERE HAS RUN. Written 2026-11-16 in a cloud session with no Revit:
 # every card compiles on 2020 to 2027, and a compile is not a proof.
 #
-# THE MODEL - OB0 in docs/needs-checking/group-ob.md: "Heron OB Test", a NEW
+# THE MODEL - OH0 in docs/needs-checking/group-oh.md: "Heron OB Test", a NEW
 # project Heron makes on REVIT 2024 FIRST from English\DefaultMetric.rte with
 # CREATE_FAMILY_DOCUMENT (Admin switch on for that one call), saved under
 # %TEMP%\heron-work\ob - never a working model. The template already loads
@@ -34,7 +34,7 @@
 # The runner reads no sentence: read each verdict's quoted findings against
 # the group's row before signing.
 
-model: "Heron OB Test (a new scratch project from Revit 2024 English DefaultMetric.rte, OB0's arrangement)"
+model: "Heron OB Test (a new scratch project from Revit 2024 English DefaultMetric.rte, OH0's arrangement)"
 
 defaults:
   setup: []
@@ -42,7 +42,7 @@ defaults:
   in: "Heron OB Test"
 
 jobs:
-  # OB1 - row 5b-1703. The negative is the refusal itself, on the same column.
+  # OH1 - row 5b-1703. The negative is the refusal itself, on the same column.
   - fragment: write-element-parameters
     setup: [filter-elements-by-category, set-selection]
     expect: written
@@ -54,7 +54,7 @@ jobs:
       Level" as it is reached - write down the second built-in's name; row
       5b-1703 left it unread.
 
-  # OB2 - row 5b-1703.
+  # OH2 - row 5b-1703.
   - fragment: set-parameter-values-by-id
     expect: written
     set: {rows: "key=Mark|in=Columns;OB-POST|Top Level {FAMILY_TOP_LEVEL_PARAM}=Heron OB Roof"}
@@ -65,10 +65,10 @@ jobs:
       meant as 'Top Level {FAMILY_TOP_LEVEL_PARAM}' or ..." - never
       "{its GUID}" for a built-in.
 
-  # OB3 - rows 5b-1704 and 5b-1706, ONE job: a batch writes one proof draft
+  # OH3 - rows 5b-1704 and 5b-1706, ONE job: a batch writes one proof draft
   # per card, so a second job on this card would overwrite the first. An
-  # architectural column with a top AND a turn, no structuralType. OB4's other
-  # negative (a top on the base level) is a hand run - group-ob.md.
+  # architectural column with a top AND a turn, no structuralType. OH4's other
+  # negative (a top on the base level) is a hand run - group-oh.md.
   - fragment: place-family-instances
     expect: placed
     set: {symbol: "M_Rectangular Column: 457 x 475mm", points: "6000,0,0; 9000,0,0", level: "Level 1", topLevelName: "Heron OB Roof", topOffset: "-150", rotationDegrees: "90"}
@@ -81,7 +81,7 @@ jobs:
       refused the top ("A top level is set only on columns") and had no
       rotation. Negative refused "'ninety' is not a rotation", placed 0.
 
-  # OB5 - row 5b-1705. A TYPE handed in, no instance of it placed.
+  # OH5 - row 5b-1705. A TYPE handed in, no instance of it placed.
   - fragment: duplicate-type
     setup: [select-types]
     keep-chain: true
@@ -96,10 +96,10 @@ jobs:
       found 0864 or other sizes, the positive is refused "sits on N different
       types": narrow typeNameContains.
 
-  # OB6 (a type named, nothing selected) is a HAND run - a second job on
-  # duplicate-type would overwrite OB5's proof draft. group-ob.md gives it.
+  # OH6 (a type named, nothing selected) is a HAND run - a second job on
+  # duplicate-type would overwrite OH5's proof draft. group-oh.md gives it.
 
-  # OB7 - row 5b-1708. The arranged column, turned clockwise.
+  # OH7 - row 5b-1708. The arranged column, turned clockwise.
   - fragment: rotate-elements
     setup: [filter-elements-by-category, set-selection]
     expect: rotated
