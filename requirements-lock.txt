@@ -28,11 +28,13 @@
 # 1.45.2, moved from 1.44.0 on 2026-11-16 on the owner's word: GitHub's
 # Dependabot found GHSA-xcq7-p3pf-p88h (fixed in 1.45.1) and
 # GHSA-mf5v-w3w3-f6cg (fixed in 1.45.2) on 1.44.0. Heron's own code does not
-# import it; mcp does. Its three lines were written by hand to what the recipe
-# writes, because uv was not on the PC that moved it: mcp 2.2.0 takes any
-# opentelemetry-api from 1.28.0, 1.45.2 needs only typing-extensions 4.5.0 or
-# later (pinned below), and both hashes are PyPI's own for its one wheel and
-# its one source archive. No other version moved.
+# import it; mcp does. `tools/lock-python.py --upgrade opentelemetry-api`
+# moved it, run with uv 0.9.7 - the copy the Claude desktop app carries - on
+# the owner's Windows PC: from 1.44.0 it wrote the lines below, the same bytes
+# as the hashes first typed from PyPI's own, and with every version held it
+# wrote this file again unchanged. mcp 2.2.0 takes any opentelemetry-api from
+# 1.28.0, and 1.45.2 needs only typing-extensions 4.5.0 or later (pinned
+# below). No other version moved.
 #
 # WHAT WAS RUN ON IT, 2026-10-17, all on Linux, and all again after PyJWT moved:
 #   - installed with --require-hashes into a fresh virtual environment
@@ -43,10 +45,12 @@
 #     for Python 3.11, 3.12, 3.13 and 3.14: all 30 packages arrived as Windows
 #     wheels whose hashes matched, so no PC compiles anything;
 #   - `tools/lock-python.py --audit`: no known advisory on any pinned version.
-# NOT RUN FOR opentelemetry-api 1.45.2: the Linux fresh-environment install and
-# the four `pip download` runs above. Its wheel is py3-none-any - pure Python,
-# one file for every Python and every platform - so Python 3.11 to 3.14 is
-# inferred from that, not measured.
+# FOR opentelemetry-api 1.45.2 the Windows CI runner below installed it and
+# tests/test_mcp_serves.py PASSED on Python 3.12 and 3.13 (pull request #897).
+# NOT RUN for it: the Linux fresh-environment install, the four `pip download`
+# runs and `--audit` above - pip-audit is not on that PC. Its wheel is
+# py3-none-any - pure Python, one file for every Python and every platform - so
+# Python 3.11 and 3.14 are inferred from that, not measured.
 # ON A WINDOWS CI RUNNER, since 2026-10-17: .github/workflows/windows.yml runs
 # the command above on Python 3.12 and 3.13, with no source build, then
 # tests/test_mcp_serves.py PASSES there, on every change to this file.
