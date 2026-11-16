@@ -52,3 +52,30 @@ detach are attached by hand there. On Revit 2025 or later, `ATTACH_WALLS` (PROVE
 
 **After OE2 to OE9 pass:** `python brain/heron_validate.py draft <fragment> --from <run record>` for each,
 then the owner signs each with `accept ... --by "Ajmal PS"`, and only then is the pull request merged.
+
+### Results, 2026-11-16 - Revit 2024, session 18772
+
+**Arranged (OE1):** `Heron OE Roofs.rvt` built by Heron with main's PROVEN cards (`bb3235af`) and saved under
+`%TEMP%\heron-work\oa`: levels OE Plate 352514 and OE Upper 352515; roofs R7 352518, R1 352549, zone W's roof
+352566 (made a 30-degree gable by `SLOPE_ROOF_EDGES` v1: 2 sloped, 2 upright), RD 352583; floors FD 352613 and
+352621 on OE Upper; zone W walls 352598-352601 and the free wall 352602; zone D walls 352603-352606 under RD and
+352607-352610 under FD; architectural columns 352632/352633 and structural (UC305x305x97, the template's own)
+352627/352628/352629, the last attached to 352621 by `ATTACH_COLUMNS`. **Step 5's architectural columns** were
+refused a top level as *"non-structural"* on main's `PLACE_FAMILY_INSTANCES` v5 and placed with
+`structuralType=column` - row 5b-1704, which PR #889 repairs. **Step 9 by hand**: the owner attached the four
+zone D walls to RD (read back `WALL_TOP_IS_ATTACHED` 1, tops at 2440). The job ran from this branch.
+
+| Row | Result |
+|---|---|
+| OE2, run 2026-11-16 | **PASS** - R1: `sloped 1`, `upright 3`, `differs` empty; `readBack` edge 1 *"eave: Defines Slope on at 15.00 degrees"*, the others *"upright edge"*; `measuredMm` 3094 where it was 400. Negative R7: *"it has 7 edges, so there is no edge 9"* and **Revit's order**: edge 1 the 4000 mm side at x 12000, 2 and 4 the 4243 mm diagonals, 3 the 6000 mm side at y 7000, 5 and 6 the two 2000 mm halves at x 0, **7 the 12000 mm side at y 0** - not the boundary's order. |
+| OE3, run 2026-11-16 | **PASS (rolled back, through `validate --write`)** - R7 `edges` 30 degrees, `edgeNumbers=3, 7`: `sloped 2`, `upright 5`, `measuredMm` 2483, no warning printed. `gable` refused *"its outline has 6 sides ... use hip, or edges"*. The 3D look (seams) NOT RUN. |
+| OE4, run 2026-11-16 | **PASS** - `shaped 2`; each end wall three points *0 mm along at 2787 mm; 3000 mm along at 4518 mm; 6000 mm along at 2787 mm* - the ridge 1731 mm above the ends; *"THE TOP IS A SKETCH"*. Negative: the free wall `noRoof`, *"there is no roof above it 0 mm from its start"*. No edit-scope refusal. |
+| OE5, run 2026-11-16 | **PASS where run** - `try-once`, the owner pressed **Keep**: `shaped 2`, read back through the API as **five-sided profiles** matching `report` to the millimetre (*50000,6000,2787 - 50000,3000,4518 - 50000,0,2787* and the mirror). Then zone W's roof moved up 500 by `MOVE_ELEMENTS`: **the wall tops stayed at 4518** - the warning is true. *Again* on one wall: NOT RUN (that run lost its chain - the runner's mistake, not the card's). The curved wall: NOT RUN. Q-91: not asked. |
+| OE6, run 2026-11-16 | **PASS** - `moved 4`, `heightChanged` empty, `columnReport` *"base 'Level 1' to 'Level 1', top 'OE Plate' to 'OE Upper'; base 0 mm and top 2440 mm where they were"*; negative, column 352629 refused *"its top is attached to Floors 352621, which sets that end"*. |
+| OE7, run 2026-11-16 | **NOT RUN, and a finding** - the kept run came back `needs_unbound` after Heron's delete box asked to delete **2 elements** (rows [5b-1830](../fragment-issues/row-5b-1830.md) and [5b-1831](../fragment-issues/row-5b-1831.md)); the model read back unchanged. The two *Top Level* parameters were read before: `FAMILY_TOP_LEVEL_PARAM` and `SCHEDULE_TOP_LEVEL_PARAM`. |
+| OE8, run 2026-11-16 | **PASS as the row reads it** (verdict `NEG NOT EMPTY` by design) - RD: `detachedWalls` the four zone D walls, `attachedBefore` *"... (top attached)"* for each, `wallsNote` *"4 wall(s) were attached to what was deleted and are DETACHED now ... On Revit 2024 Heron cannot attach a wall again"*. FD: `detachedWalls`, `attachedBefore`, `wallsNote` empty. |
+| OE9, run 2026-11-16 | **Tracking PASS** - `detachedWalls` 4, 0, 4 for *Roofs*, *Floors*, *Roofs, Floors* in zone D's box; `deleted` counts every dependent too (17, 8, 25), not 1, 1, 2 as the row guessed. The kept delete: NOT RUN - row 5b-1830. |
+| OE10, run 2026-11-16 | **3 of 5 on Revit 2024** - [row 5b-1832](../fragment-issues/row-5b-1832.md): *"attach these walls to the roof above"* -> `ATTACH_COLUMNS` (with the ATTACH_WALLS line), *"delete this roof"* -> `REMOVE_MASS_FLOORS`. 2026: NOT RUN. |
+
+**For signing:** `slope-roof-edges`, `shape-wall-tops-to-roof` (kept positive) and `delete-elements` (tracking).
+**Held:** `set-element-level`, until row 5b-1831 names the two elements.
