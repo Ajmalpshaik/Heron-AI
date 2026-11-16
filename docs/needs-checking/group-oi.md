@@ -121,6 +121,15 @@ of the 13 GB limit.
 | report-structural-settings | Never empty: [Group MF](group-mf.md) MF2 read NEG NOT EMPTY on 2026-11-14, and its tracking negative (MF5) needs two ADMIN cards |
 | place-column-rebar, set-mep-justification, create-extrusion-roof, run-systems-analysis, measure-available-fall, measure-distance, describe-blank-parameters, show-analysis-heatmap, place-span-direction-symbols, create-property-line, create-arc-length-dimension, create-radial-dimension, run-heating-cooling-loads | An open row (5b-1644, 5b-1397/1409, 5b-1648, 5b-1460), an input shape no job can type, a contract `accept` cannot judge, or a `revit:` list without 2024 |
 
+### Two cards that cannot come back empty, proved by tracking (D-53), after midnight
+
+`validate --write --vary`, one at a time, on `night-scratch`, rolled back; Revit 2024 at 11.55-12.26 GB.
+
+| Row | Card | Result |
+|---|---|---|
+| OI19 | `report-browser-organization` | **TRACKED** - set-up `create-sheets` (`titleBlockName=none`), `--vary "numbers=HZ-T1\|HZ-T1,HZ-T2\|HZ-T1,HZ-T2,HZ-T3"`, field `organization`: the Sheets line read *"0 hidden by its filter, 1 shown"*, then *"2 shown"*, then *"3 shown"*; the Views line stayed *"10 shown"*. Draft written. **The owner's call:** whether following the sheet count is enough for a card about the browser's organisation - its own positive, a filter that hides views, no card can make |
+| OI20 | `trace-connectivity` | **TRACKED** - set-up `create-mep-runs`, `--vary` one Supply Air run of 1, 2 and 3 ducts, field `islandSizes`: *"1 entry(ies)"*, *"2 entry(ies)"*, *"3 entry(ies)"*, bound *"elements from create-mep-runs (1)"*, *(2)*, *(3)*. Draft written. **The owner's call:** with no duct fitting in the template the ducts stay unjoined, so each is its own island - it follows the pieces, not a connected run |
+
 **Signed 2026-11-17, as Ajmal PS, on the owner's word** (*"Yes, sign all 14"*): `report-analytical-model`,
 `set-circuit-naming-scheme`, `list-images`, `reload-images`, `report-paths-of-travel`, `create-shaped-stairs`,
 `tag-areas`, `dimension-views-by-rules`, `tag-views-by-rules`, `join-geometry`, `merge-parts`,
