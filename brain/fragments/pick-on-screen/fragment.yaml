@@ -38,16 +38,25 @@ semantic-identity: "ask the modeller to click a point in the open Revit view and
 # than its budget over the first click would have the job stopped at the
 # second pass, reported as "a loop that never ends" with the point they
 # clicked dropped - untrue of a person. With no loop there is no second
-# pass. Several points are several calls until Q-86 is decided.
+# pass. Several points are several calls. Since Q-86's hold (2026-11-16)
+# the run clock is paused for this card's code, so a loop of clicks would
+# no longer be stopped on time - but that is a change to the code, and it
+# is not made here.
 #
-# THE WAIT IS A PERSON'S, AND THE ADD-IN DOES NOT KNOW THAT YET (Q-86).
-# Read from the code on 2026-11-11, not yet seen in Revit: the dispatcher
-# waits revit.operationTimeoutSeconds (60 as installed) for a job it has
-# started, then answers that Revit is still working and stops listening - a
-# click after that reaches nobody and no answer follows. Its longer wait for
-# a Keep or Discard box (revit.askTimeoutSeconds) cannot be asked for from a
-# fragment. The card does not work round it: `purpose` says it to the chat,
-# and `waitedSeconds` says how long Revit waited.
+# THE WAIT IS A PERSON'S, AND THE CARD SAYS SO (Q-86, decided 2026-11-15).
+# Until 2026-11-16 nothing told the add-in: the dispatcher waited
+# revit.operationTimeoutSeconds (60 as installed) for the job, then answered
+# that Revit was still working and stopped listening, so a click after that
+# reached nobody. The need `waitsForModeller` below is the label: for a card
+# that carries it the add-in holds its timers as it does for a Keep or
+# Discard box - the run clock is paused for the card's code and the
+# dispatcher waits revit.askTimeoutSeconds more (300 as installed) - and the
+# chat's side waits as long. Past even that, the chat is told `awaiting_click`
+# in words of its own: press Esc, and ask again. Built 2026-11-16, not yet run
+# in Revit (Group NH, NH12 to NH14). An add-in built before then does not know
+# the need and refuses the card before anything is asked in Revit.
+# `waitedSeconds` says how long Revit waited. The comment in impl/any/fragment.cs
+# still describes the wait as it stood before; the code there is unchanged.
 #
 # WHAT IT REFUSES, NOTHING ASKED IN REVIT: a model that is not the one in
 # front; a schedule, report or browser in front. A view with no work plane
@@ -70,16 +79,20 @@ purpose: >
   Waits for the modeller to click one point in the Revit view in front and
   hands it back in millimetres, written the way a point is typed everywhere
   else in this library, so the next step can take it as it is. Esc cancels.
-  Changes nothing in the model. One point for each time it is asked. The
-  modeller has to click within about a minute of being asked: a later click
-  is lost and no answer comes back, so when Revit is reported as still
-  working on this, tell the modeller the click was not received and ask
-  again once they are ready at Revit.
+  Changes nothing in the model. One point for each time it is asked. Revit
+  waits for the click for several minutes; tell the modeller before asking,
+  and if Heron reports it stopped waiting for the click, tell them to press
+  Esc in Revit and ask again once they are ready at Revit.
 
 contract:
   needs:
     - name: uidoc
       type: UIDocument
+    - name: waitsForModeller
+      # Q-86: the label that says this card waits for a person - the add-in
+      # holds its timers for the run and the chat's side waits as long. Bound
+      # true by the add-in; the code never reads it.
+      type: bool
   provides:
     - name: pointMm
       # "x, y, z" in millimetres from the model's internal origin - D-67's

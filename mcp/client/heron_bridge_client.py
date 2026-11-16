@@ -1696,6 +1696,26 @@ def setup_order_refusal(steps):
 
 OWN_TRANSACTIONS_NEED = "editScopeFailures"
 
+# THE LABEL A CARD CARRIES WHEN IT WAITS FOR THE MODELLER - Q-86, decided
+# 2026-11-15: Revit's own pick, which returns when they click or press Esc.
+# The add-in's RevitFragment.WaitsForModellerNeed and brain/heron_fragment.py's
+# AMBIENT spell it the same way; tests/test_person_wait.py holds the three.
+WAITS_FOR_MODELLER_NEED = "waitsForModeller"
+
+
+def waits_for_modeller(needs):
+    """Does this card's `contract.needs` say it waits for the modeller?
+
+    NEEDS as `fragment_needs` reads them. The add-in holds its timers for such
+    a run - the run clock, and revit.askTimeoutSeconds more of the
+    dispatcher's wait, as for a Keep or Discard box - so whoever sends it
+    waits that much longer too (`heron_config.fragment_timeout(waiting=...)`).
+    Unreadable needs answer False: the caller refuses those by name anyway,
+    and a guess the other way would only lengthen a wait.
+    """
+    return any(isinstance(need, dict) and need.get("name") == WAITS_FOR_MODELLER_NEED
+               for need in needs or [])
+
 
 def opens_own_transactions(root, name):
     """Does this card declare D-112's switch - that it opens its own transactions?
@@ -2162,10 +2182,12 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None,
         # satisfied (the A20 run, 2026-10-01) - nor when it keeps a change,
         # which request()'s own docstring already says MUST pass False.
         # A RUN THAT KEEPS MAY BE ASKED ABOUT IN REVIT (D-126), so it waits for
-        # the modeller's answer too - see fragment_timeout.
+        # the modeller's answer too - see fragment_timeout. So does a card
+        # that waits for the modeller's click (Q-86): the longer of the two.
+        waited = max(heron_config.fragment_timeout(keeping=writing and apply_it),
+                     heron_config.fragment_timeout(waiting=waits_for_modeller(needs)))
         reply = bridge.request(operation, op_args=args,
-                               response_timeout=heron_config.fragment_timeout(
-                                   keeping=writing and apply_it),
+                               response_timeout=waited,
                                idempotent=not (expect or (writing and apply_it)))
 
         if reply is None:
@@ -2639,7 +2661,8 @@ def cmd_prove(names, in_document=None, values=None, session=None):
 
         reply = bridge.request("run_fragment_read",
                                op_args=args,
-                               response_timeout=heron_config.fragment_timeout())
+                               response_timeout=heron_config.fragment_timeout(
+                                   waiting=waits_for_modeller(needs)))
 
         if reply is None:
             print("%-30s NO REPLY" % name)
@@ -3247,8 +3270,12 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
         # NOT SAFE TO ASK TWICE when it writes (row 5b-1166): request() sends
         # an idempotent request again when its answer is lost, and a PUBLISH
         # fragment's export is a file the group's rollback does not take back.
+        # A CARD THAT WAITS FOR THE MODELLER'S CLICK is waited for as long as
+        # the add-in waits for it (Q-86) - see fragment_timeout.
         reply = bridge.request(write_op if writing else "run_fragment_read",
-                               op_args=args, response_timeout=heron_config.fragment_timeout(),
+                               op_args=args,
+                               response_timeout=heron_config.fragment_timeout(
+                                   waiting=waits_for_modeller(needs)),
                                idempotent=not writing)
         if reply is None:
             record = {"phase": phase, "ok": False, "error": "no_reply",

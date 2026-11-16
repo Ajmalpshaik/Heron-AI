@@ -208,6 +208,23 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
+        /// Revit's own thread, from inside a running job: the job runs a card
+        /// that waits for the modeller to click in Revit - Revit's own pick,
+        /// declared on the card as `waitsForModeller` (Q-86, decided
+        /// 2026-11-15). The same longer wait as AwaitingModeller, and the same
+        /// banner stepping aside - it is Topmost over the middle of Revit's
+        /// window, which is where the click is likely to be - and the caller is
+        /// told, if it stops waiting first, in words about the click rather
+        /// than about Keep or Discard.
+        /// </summary>
+        internal static void AwaitingClick()
+        {
+            var job = _running;
+            if (job != null) job.MarkAwaitingClick();
+            AwaitingModeller();
+        }
+
+        /// <summary>
         /// How long the modeller still has to press Delete for it to be kept,
         /// read when the delete box goes up - D-142. Null when no job is
         /// running on this thread, so no deadline is known; zero or less once
@@ -415,7 +432,9 @@ namespace Heron.Revit.Addin
             // THE MODELLER IS NOT A TIMEOUT (D-119). A job that put a Keep or
             // Discard box up is waiting for a person, so it gets the ask
             // timeout on top - asked AFTER the first wait ran out, because the
-            // box can go up at any moment of it.
+            // box can go up at any moment of it. So does a job running a card
+            // that waits for a click (Q-86, AwaitingClick): the same person,
+            // the same wait.
             var finished = job.WaitForFinish(_operationTimeout)
                 || (job.AskedModeller && job.WaitForFinish(_askTimeout));
 
@@ -431,6 +450,21 @@ namespace Heron.Revit.Addin
                     "Revit is still showing you the box asking whether to delete these elements, " +
                     "and Heron has stopped waiting for the answer. NOTHING IS DELETED now, whatever " +
                     "you press there. Close the box, and ask again if you still want them deleted.");
+            }
+
+            if (!finished && job.AwaitingClick)
+            {
+                // REVIT IS STILL IN ITS PICK, waiting for a click or Esc (Q-86),
+                // and the caller stops waiting. The pick goes on: a click made
+                // now reaches the tool, and its answer reaches nobody, so the
+                // modeller is told to end it rather than to make it. Not Keep
+                // or Discard's words - no box is open, and nothing is kept.
+                RecordRefusal(job.WorkflowId, request, "awaiting_click");
+                return Json.Error("awaiting_click",
+                    "Revit is still waiting for you to click in Revit, and Heron has stopped " +
+                    "waiting for the click, so a click made now reaches no chat. Press Esc in " +
+                    "Revit to end the wait, and ask again once you are ready at Revit. Do not " +
+                    "ask again while Revit is still waiting.");
             }
 
             if (!finished && job.AskedModeller)
@@ -1144,6 +1178,7 @@ namespace Heron.Revit.Addin
             private int _bannerEnded;
             private int _askedModeller;
             private int _askedToDelete;
+            private int _awaitingClick;
             private int _callerGone;
             private long _answerBy;
 
@@ -1219,6 +1254,11 @@ namespace Heron.Revit.Addin
             public void MarkAskedToDelete() { Interlocked.Exchange(ref _askedToDelete, 1); }
 
             public bool AskedToDelete { get { return Volatile.Read(ref _askedToDelete) == 1; } }
+
+            /// <summary>Q-86: the wait is Revit's pick, for a click, not a box.</summary>
+            public void MarkAwaitingClick() { Interlocked.Exchange(ref _awaitingClick, 1); }
+
+            public bool AwaitingClick { get { return Volatile.Read(ref _awaitingClick) == 1; } }
 
             /// <summary>
             /// The Stopwatch moment after which a Delete is not kept - set once,

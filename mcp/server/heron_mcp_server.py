@@ -220,6 +220,12 @@ def _through(tool, reply_out=None, origin="chat"):
 WAITING_ON_REVIT = ("Waiting for Revit - %d s so far. The modeller may be "
                     "answering a prompt in Revit.")
 
+# AND WHAT IT IS TOLD FOR A CARD THAT WAITS FOR THE MODELLER'S CLICK - one
+# whose contract declares `waitsForModeller` (Q-86). That wait is a person's,
+# known before it starts, so it is said as one.
+WAITING_FOR_CLICK = ("Waiting for you to click in Revit - %d s so far. Revit's "
+                     "status bar says what to click; Esc cancels.")
+
 
 def _progress_token(ctx):
     """
@@ -245,10 +251,11 @@ def _progress_token(ctx):
     return None if isinstance(token, bool) else token
 
 
-def _waiting(ctx):
+def _waiting(ctx, for_click=False):
     """
     The `on_wait` a tool hands the bridge client, or None when the host gave
-    no progressToken.
+    no progressToken. `for_click` - the card waits for the modeller's click
+    (Q-86) - says WAITING_FOR_CLICK instead of WAITING_ON_REVIT.
 
     The client calls it from the thread the tool runs on - SDK 2.x runs a
     plain tool on a worker thread - so the notification is sent on the event
@@ -266,11 +273,12 @@ def _waiting(ctx):
     if _progress_token(ctx) is None:
         return None
     began = time.monotonic()
+    words = WAITING_FOR_CLICK if for_click else WAITING_ON_REVIT
 
     def note(_read_waited):
         waited = time.monotonic() - began
         anyio.from_thread.run(ctx.report_progress, round(waited, 1), None,
-                              WAITING_ON_REVIT % waited)
+                              words % waited)
     return note
 
 
@@ -3164,10 +3172,13 @@ def revit_read(capability: str = "", values: str = "",
     # comes back as unknown_outcome instead of being asked for again. The
     # FRAGMENT timeout, because a fragment's first run in a session includes
     # compiling it.
+    # A CARD THAT WAITS FOR THE MODELLER'S CLICK (Q-86) is waited for as long
+    # as the add-in waits for it, and the host is told it is a click.
+    waits = bridge.waits_for_modeller(needs)
     _sent()
     reply = session.request("run_fragment_read", op_args=args,
-                            response_timeout=configuration.fragment_timeout(),
-                            idempotent=not consumes, on_wait=_waiting(ctx))
+                            response_timeout=configuration.fragment_timeout(waiting=waits),
+                            idempotent=not consumes, on_wait=_waiting(ctx, waits))
     session.close()
     _ctx_reply(reply)
 
@@ -3370,10 +3381,14 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
     # elements again, or zooming to them again, leaves the screen as it was.
     # A consuming run replaces the chain, so a resend would be refused on
     # expect_from - revit_read's reason, and its rule.
+    # A CARD THAT WAITS FOR THE MODELLER'S CLICK (Q-86) - PICK_ON_SCREEN - is
+    # waited for as long as the add-in waits for it, and the host is told it
+    # is a click it waits for, not Revit.
+    waits = bridge.waits_for_modeller(needs)
     _sent()
     reply = session.request("run_fragment_show", op_args=args,
-                            response_timeout=configuration.fragment_timeout(),
-                            idempotent=not consumes, on_wait=_waiting(ctx))
+                            response_timeout=configuration.fragment_timeout(waiting=waits),
+                            idempotent=not consumes, on_wait=_waiting(ctx, waits))
     session.close()
     _ctx_reply(reply)
 
