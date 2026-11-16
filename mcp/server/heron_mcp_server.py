@@ -161,8 +161,9 @@ from heron_server_core import (                             # noqa: E402
 # says where the label it gives `_ended` is not a word by itself. The table,
 # and the line a reply carries the word on, are the core's.
 from heron_server_core import (                             # noqa: E402
-    ANSWERED, _change_outcome, _failure_outcome, KEPT, NOT_RUN, _outcome,
-    ROLLED_BACK, ROLLED_BACK_AS_ASKED, _sent, STILL_RUNNING, UNKNOWN)
+    ANSWERED, _change_outcome, _failure_outcome, KEPT, kept_nothing, NOT_RUN,
+    _outcome, REFUSED, ROLLED_BACK, ROLLED_BACK_AS_ASKED, _sent, STILL_RUNNING,
+    UNKNOWN)
 
 import anyio.from_thread                                   # noqa: E402 - the SDK's own dependency
 
@@ -2139,6 +2140,13 @@ def revit_change(capability: str = "", values: str = "",
     # that names no verdict leaves that unknown, and the line says unknown.
     ended = _change_outcome(reply)
 
+    # AND A KEEP THAT CHANGED NOTHING BY EVERY COUNT SAYS SO (D-168): NOTHING
+    # CHANGED, or REFUSED when the capability itself said no and made
+    # nothing - read off Revit's change report and the card's own declared
+    # results. Anything found, made or changed stays KEPT.
+    if ended == KEPT:
+        ended = kept_nothing(reply, (brain.fragment_contract(folder) or {}).get("provides")) or KEPT
+
     # WHETHER HERON CAN STILL UNDO IT, on a change that WAS kept (D-157): one
     # line, last, from what the add-in's undo guard held straight after the
     # keep (`undoState`). An add-in from before the field sends none, and
@@ -2149,7 +2157,8 @@ def revit_change(capability: str = "", values: str = "",
         lines.append(can_undo)
 
     _outcome(ended)
-    return _ended("ok", "\n".join(lines))
+    # The activity list's label follows: a card's own refusal is "refused".
+    return _ended("refused" if ended == REFUSED else "ok", "\n".join(lines))
 
 
 #: What this chat has already printed in the current batch - see heron_run_records.Batch.
