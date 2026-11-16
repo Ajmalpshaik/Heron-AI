@@ -29,7 +29,7 @@ negative:
   # VERSION 2 - THE WALLS A DELETE DETACHES (row 5b-1674). Every case below
   # FAILS on version 1, which had no `attachedBefore`, `detachedWalls` or
   # `wallsNote` and said nothing about a wall that was changed, not deleted.
-  # NEEDS-CHECKING Group OA.
+  # NEEDS-CHECKING Group OE.
 
   - given: >
       VERSION 2. Four walls, Level 1 to 2440 mm unconnected, their tops

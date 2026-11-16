@@ -25,7 +25,7 @@ risk: MODIFY
 # roof, floor or beam is refused, naming what holds it. Walls, MEP and family
 # instances are unchanged. Version 2 was PROVEN on 2026-11-02 (the proof
 # block below, kept as the record of what it proved); its C# moved, so it is
-# DRAFT again until NEEDS-CHECKING Group OA is run (D-30).
+# DRAFT again until NEEDS-CHECKING Group OE is run (D-30).
 
 purpose: >
   Moves elements onto a different level **while keeping them physically where

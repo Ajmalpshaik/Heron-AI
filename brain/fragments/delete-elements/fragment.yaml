@@ -25,7 +25,7 @@ risk: MODIFY
 # `detachedWalls`, and `wallsNote` says so in plain words, with Heron's limit
 # on 2020 to 2024. The delete itself is unchanged. Version 1 was PROVEN on
 # 2026-09-13 (the proof block below, kept as the record of what it proved);
-# its C# moved, so it is DRAFT again until NEEDS-CHECKING Group OA is run
+# its C# moved, so it is DRAFT again until NEEDS-CHECKING Group OE is run
 # (D-30).
 
 purpose: >

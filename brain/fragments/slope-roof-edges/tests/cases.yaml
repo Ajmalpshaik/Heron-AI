@@ -67,7 +67,7 @@ positive:
 
   # VERSION 2 - THE `edges` SHAPE (row 5b-1670). Every case below FAILS on
   # version 1, which refused roofShape edges by name ("'edges' is not a roof
-  # shape this makes") and had no edgeNumbers at all. NEEDS-CHECKING Group OA.
+  # shape this makes") and had no edgeNumbers at all. NEEDS-CHECKING Group OE.
 
   - given: >
       VERSION 2. A flat 7-sided roof made by CREATE_FLOOR with a roof type on

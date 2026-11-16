@@ -82,7 +82,7 @@ negative:
 
   # VERSION 3 - COLUMNS (row 5b-1673). Every case below FAILS on version 2,
   # which applied topLevelId to walls only: a column was named in `notAWall`
-  # and its Top Level left as it was. NEEDS-CHECKING Group OA.
+  # and its Top Level left as it was. NEEDS-CHECKING Group OE.
 
   - given: >
       VERSION 3. Two ARCHITECTURAL columns (M_Rectangular Column) and two

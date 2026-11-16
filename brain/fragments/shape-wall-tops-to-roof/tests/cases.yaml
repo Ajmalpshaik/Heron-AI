@@ -1,7 +1,7 @@
 # THE PROOF PLAN, written 2026-11-16 and NOT RUN. Nothing here has touched a
-# model (D-30). NEEDS-CHECKING Group OA, Revit 2024 first.
+# model (D-30). NEEDS-CHECKING Group OE, Revit 2024 first.
 #
-# THE SCRATCH PROJECT IS BUILT, NOT FOUND (group-oa.md, OA1): from Revit's
+# THE SCRATCH PROJECT IS BUILT, NOT FOUND (group-oe.md, OE1): from Revit's
 # English\DefaultMetric.rte with CREATE_FAMILY_DOCUMENT; Level 1 at 0 and
 # Level 2 at 2440; four Generic - 200mm walls on Level 1 round
 # 0,0 - 10000,0 - 10000,6000 - 0,6000, 2440 mm high (CREATE_WALL); a roof on

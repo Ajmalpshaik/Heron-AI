@@ -1677,6 +1677,6 @@ roof if it moves ([row 5b-1672](../fragment-issues/row-5b-1672.md)). On 2020 and
 offered - the API has no profile sketch there - and option 3 (rebuild the wall) was not built. On 2025 on,
 `ATTACH_WALLS` stays the tool for *"attach"*, because there the wall follows the roof. **Still open on the
 PC:** whether a sketched top that does not follow is what the modeller wants - [Group
-OA](../needs-checking/group-oa.md) OA4 and OA5, and a modeller's word after it.
+OE](../needs-checking/group-oe.md) OE4 and OE5, and a modeller's word after it.
 
 ---

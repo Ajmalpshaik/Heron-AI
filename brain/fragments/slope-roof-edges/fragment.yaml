@@ -24,7 +24,7 @@ risk: MODIFY
 # numbers it changes nothing and lists every edge with its number, length and
 # ends. Gable and hip are unchanged. Version 1 was PROVEN on 2026-10-18 (the
 # proof block below, kept as the record of what it proved); its C# moved, so
-# it is DRAFT again until NEEDS-CHECKING Group OA is run (D-30).
+# it is DRAFT again until NEEDS-CHECKING Group OE is run (D-30).
 
 purpose: >
   Slopes the edges of a footprint roof that is already in the model, so a flat
