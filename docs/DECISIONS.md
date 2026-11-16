@@ -239,6 +239,7 @@ an edit.
 | [D-170](#d-170--the-word-sandbox-leaves-article-11-and-golden-rule-18-new-code-runs-watched-not-contained) | The word sandbox leaves Article 11 and Golden Rule 18: new code runs watched, not contained | ✅ Accepted · 2026-11-16 |
 | [D-171](#d-171--heron-may-save-the-model-it-works-in-once-its-undo-entry-has-closed-only-when-the-modeller-asks-and-never-picks-a-name-itself) | Heron may save the model it works in once its Undo entry has closed, only when the modeller asks, and never picks a name itself | ✅ Accepted · 2026-11-16 |
 | [D-172](#d-172--article-13-names-the-keep-boxs-job-grant-as-its-one-recorded-exception) | Article 13 names the Keep box's job grant as its one recorded exception | ✅ Accepted · 2026-11-16 |
+| [D-174](#d-174--only-the-chat-that-made-a-heron-change-may-undo-it-the-activity-panes-undo-is-the-modellers-own) | Only the chat that made a Heron change may undo it; the Activity pane's Undo is the modeller's own | ✅ Accepted · 2026-11-16 |
 
 ## Format
 
@@ -1507,3 +1508,11 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`HERON_CONSTITUTION.md`](../HERON_CONSTITUTION.md) - Article 13 and the Amendment note · no code
 
 **Full record:** [`decisions/D-172.md`](decisions/D-172.md)
+
+## D-174 — Only the chat that made a Heron change may undo it; the Activity pane's Undo is the modeller's own
+
+**Status:** Accepted · **Date:** 2026-11-16 · **Accepted:** Ajmal PS, 2026-11-16, in conversation: *"own only"*
+**Settles:** [Q-88](open-questions/tier-2.md) · what [row 5b-1741](fragment-issues/row-5b-1741.md) asked of the pane · **Refines:** [D-157](decisions/D-157.md)
+**Affects:** `revit_undo_last` and the add-in's undo guard · the Activity pane's Undo button
+
+**Full record:** [`decisions/D-174.md`](decisions/D-174.md)
