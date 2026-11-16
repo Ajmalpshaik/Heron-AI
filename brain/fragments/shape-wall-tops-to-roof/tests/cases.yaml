@@ -1,0 +1,57 @@
+# SHAPE_WALL_TOPS_TO_ROOF - built 2026-11-16 in a cloud session with no
+# Revit, for field report #852 and Q-91's shape 2. NOT RUN. Arranged as
+# docs/needs-checking/group-of.md says: a scratch project on Revit 2024 with
+# a gable roof over four walls, a door in one gable wall, and one wall with
+# nothing over it. Every write is ROLLED BACK unless the modeller keeps it.
+#
+# D-30: the negative case is what catches "succeeded and did nothing" - and
+# here also "succeeded and shaped a wall no roof is over".
+
+positive:
+  - given: >
+      the gable wall under the pitched roof, standing at the plate with the
+      open triangle above it, a door placed in it; redraw not said
+    expect: >
+      shaped 1, shapedIds the wall; keptInserts 1 - the door read back still
+      in the wall; a finding that its top now follows the roof with its
+      highest point above the base, and the sentence that the top is a sketch
+      that does NOT follow the roof if the roof changes. LOOKED AT in a
+      section through the gable: the triangle is closed, the door where it was
+
+  - given: the same wall again, with the positive kept, redraw not said
+    expect: >
+      shaped 0; leftAsTheyWere names it - "its profile is already edited ...
+      Ask again with redraw"
+
+  - given: the same wall, kept, the roof's slope then changed in Revit, redraw true
+    expect: >
+      shaped 1 - the top drawn to the changed roof; the door still in it
+
+negative:
+  - given: >
+      THE FIRST CASE TO RUN. The wall standing apart with no roof over it -
+      a different selection, not an empty one
+    expect: >
+      shaped 0, shapedIds empty, noRoof naming the wall; nothing changed in
+      the model
+
+  - given: a wall whose top is attached by hand in Revit (Attach Top/Base)
+    expect: >
+      shaped 0; leftAsTheyWere "its top is already attached in Revit ... left
+      as it is"
+
+  - given: a curved wall under the roof
+    expect: >
+      shaped 0; leftAsTheyWere "Revit cannot edit this wall's profile - it is
+      curved, tapered, a curtain wall ..."
+
+  - given: >
+      Revit 2021 - not a run of this card, which is not declared there: the
+      modeller's words "attach all walls to the roof" asked of the lookup
+    expect: >
+      nothing offered that changes a wall; the answer opens "NOT ON REVIT
+      2021" and says Heron cannot do this on Revit 2021 and it is done by hand
+
+second_route:
+  - a section through the gable wall - the top runs up under the roof; Edit Profile on the wall shows the outline drawn
+  - one Ctrl+Z takes back every wall shaped, in a single step (Golden Rule 16)

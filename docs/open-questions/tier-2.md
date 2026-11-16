@@ -1700,4 +1700,17 @@ not follow the roof is acceptable to the modeller is the one fact that decides i
 
 **Ajmal PS decides.** Until he does, Heron says on 2020 to 2024 that this is done by hand in Revit.
 
+**Work:** built 2026-11-16, at **DRAFT** - [`SHAPE_WALL_TOPS_TO_ROOF`](../../brain/fragments/shape-wall-tops-to-roof/fragment.yaml)
+(FRG-ELE-170), declared for Revit 2022, 2023 and 2024 only. For each wall handed in it finds the roof above that wall,
+gives the wall a profile sketch and draws its top to the roof's underside in Revit's sketch edit mode, inside the one
+named transaction group the add-in opens ([D-112](../DECISIONS.md)); the wall is edited, never rebuilt, and its doors
+and windows are read back still in it. It leaves and names a wall with no roof over it, one Revit cannot give a
+profile, one already attached, and one already shaped unless `redraw` is asked, and every answer that shapes a wall
+says its top is a sketch that does NOT follow the roof when the roof changes. On 2020 and 2021 the lookup says plainly
+that Heron cannot do this; from 2025 the same words reach `ATTACH_WALLS` (measured 2026-11-16 on a scratch store).
+Compiles on 2022 to 2024; nothing has run in Revit. **Owed:** [Group OF](../needs-checking/group-of.md) on Revit 2024 -
+the negative and the positive with its door kept (OF2), the sketch edit mode inside Heron's group (OF3), the release-2021
+refusal in words (OF5) - then the modeller's one try. A lookup wording it exposed on 2025 on is
+[row 5b-1822](../fragment-issues/row-5b-1822.md).
+
 ---
