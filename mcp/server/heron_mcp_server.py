@@ -161,8 +161,9 @@ from heron_server_core import (                             # noqa: E402
 # says where the label it gives `_ended` is not a word by itself. The table,
 # and the line a reply carries the word on, are the core's.
 from heron_server_core import (                             # noqa: E402
-    ANSWERED, _change_outcome, _failure_outcome, KEPT, NOT_RUN, _outcome,
-    ROLLED_BACK, ROLLED_BACK_AS_ASKED, _sent, STILL_RUNNING, UNKNOWN)
+    ANSWERED, _change_outcome, _failure_outcome, KEPT, kept_nothing, NOT_RUN,
+    _outcome, REFUSED, ROLLED_BACK, ROLLED_BACK_AS_ASKED, _sent, STILL_RUNNING,
+    UNKNOWN)
 
 import anyio.from_thread                                   # noqa: E402 - the SDK's own dependency
 
@@ -2139,6 +2140,13 @@ def revit_change(capability: str = "", values: str = "",
     # that names no verdict leaves that unknown, and the line says unknown.
     ended = _change_outcome(reply)
 
+    # AND A KEEP THAT CHANGED NOTHING BY EVERY COUNT SAYS SO (D-168): NOTHING
+    # CHANGED, or REFUSED when the capability itself said no and made
+    # nothing - read off Revit's change report and the card's own declared
+    # results. Anything found, made or changed stays KEPT.
+    if ended == KEPT:
+        ended = kept_nothing(reply, (brain.fragment_contract(folder) or {}).get("provides")) or KEPT
+
     # WHETHER HERON CAN STILL UNDO IT, on a change that WAS kept (D-157): one
     # line, last, from what the add-in's undo guard held straight after the
     # keep (`undoState`). An add-in from before the field sends none, and
@@ -2149,7 +2157,8 @@ def revit_change(capability: str = "", values: str = "",
         lines.append(can_undo)
 
     _outcome(ended)
-    return _ended("ok", "\n".join(lines))
+    # The activity list's label follows: a card's own refusal is "refused".
+    return _ended("refused" if ended == REFUSED else "ok", "\n".join(lines))
 
 
 #: What this chat has already printed in the current batch - see heron_run_records.Batch.
@@ -6645,16 +6654,20 @@ def heron_checklist(action: str = "list", name: str = "", checks: str = "",
     number" on one output it declares - "failures == 0", "ids": the output
     holding failing element ids, or ""}. Optional, in their words: "severity"
     high, medium or low; "clause", the BEP or standard it comes from; "advice",
-    how to fix. Turn each sentence into a check with heron_lookup; ask, never
+    how to fix. Optional, from the card: "missing", the output counting
+    elements it could not read, and "applicable", the one counting elements
+    looked at. Turn each sentence into a check with heron_lookup; ask, never
     guess. replace=true only when they said so.
 
     "list" names them; "show" gives one's checks; "delete" removes one when
     asked; "starter" saves Heron's example under `name`, only when asked.
 
     "run" runs `name` check by check through revit_read: PASS meets the value
-    checked, FAIL does not, NOT RUN says why and is never a pass; each says
-    NEW, STILL OPEN or FIXED against the last run on that model. Never call
-    the model compliant. Results also go on the Companion's QA Checklist.
+    checked, FAIL does not, NO DATA could not decide - data missing - and NOT
+    RUN says why; neither of the last two is ever a pass. Give the Coverage
+    line with the counts. Each says NEW, STILL OPEN or FIXED against the last
+    run on that model. Never call the model compliant. Results also go on the
+    Companion's QA Checklist.
     """
     try:
         store = brain.checklists()
@@ -6700,7 +6713,9 @@ def heron_checklist(action: str = "list", name: str = "", checks: str = "",
             said = store.text(answer)
             if _checklist_on_page(answer):
                 said += "\nThe results are on the QA Checklist page of the Heron Companion."
-            ran = answer["counts"]["pass"] + answer["counts"]["fail"]
+            # A NO DATA check read the model and answered "could not decide"
+            # (D-165) - an answer, so it counts as run; only NOT RUN does not.
+            ran = answer["counts"]["pass"] + answer["counts"]["fail"] + answer["counts"]["missing"]
             return _ended("failed" if answer.get("failed") else "ok" if ran else "refused", said)
         if act not in ("save", "starter"):
             return _ended("refused", "action must be list, show, save, starter, run or delete - "
