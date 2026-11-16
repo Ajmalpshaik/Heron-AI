@@ -347,13 +347,9 @@ def revit_health() -> str:
     # the Heron folder it is not the file Revit reads.
     held = dict((b.pid, bridge.switches_state(b)) for b in live)
     said = dict((b.pid, bridge.settings_state(b)) for b in live)
-    reported = [b for b in live if isinstance(held[b.pid], dict)]
-    writing = None
-    said_by = None
-    if reported:
-        changes_on = [b for b in reported if held[b.pid]["changes"]]
-        writing = bool(changes_on)
-        said_by = health.writing_said_by(changes_on or reported, writing)
+    # heron_health.write_gate is that rule, and heron_diagnose's too (row
+    # 5b-1744), so the two cannot give opposite write-gate words in one chat.
+    writing, said_by = health.write_gate(live, held)
     here_file = configuration.config_path()
     here_found = bool(here_file) and os.path.isfile(here_file)
     here = configuration.switches(settings)
@@ -5150,7 +5146,24 @@ def _other_release_lines(found, indent="  "):
     """The one line naming the tool these words reach first when the version
     wall left it out - heron_brain.lookup's `other_release`, issue #799 item
     2. Named so the nearest tool for THIS release is not read as the answer;
-    never offered, so nothing here can run it. Nothing when there is none."""
+    never offered, so nothing here can run it. Nothing when there is none.
+
+    AND WHEN A CARD FOR THIS RELEASE DOES THAT CARD'S JOB, THE LINE OFFERS
+    IT INSTEAD (row 5b-1823): heron_brain.lookup's `done_here_by`, which is
+    then the answer. On Revit 2025 "edit the wall profile to follow the
+    gable" was told it is done by hand, naming SHAPE_WALL_TOPS_TO_ROOF
+    (2022 to 2024), while ATTACH_WALLS does that job there."""
+    instead = found.get("done_here_by")
+    if instead:
+        release, walled = found.get("revit"), instead.get("instead_of") or {}
+        return [indent + "ON REVIT %s THIS IS %s. %s matches these words best, but it is "
+                "declared for Revit %s, so it is not offered on Revit %s; its own words "
+                "\"%s\" reach %s, declared for Revit %s, so %s is offered in its place. "
+                "Offer it to the user for this."
+                % (release, instead["capability"], walled.get("capability"),
+                   ", ".join(walled.get("revit") or []) or "no release", release,
+                   instead["words"], instead["capability"],
+                   ", ".join(instead["revit"]) or "no release", instead["capability"])]
     other = found.get("other_release")
     if not other:
         return []

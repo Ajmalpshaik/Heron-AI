@@ -49,8 +49,10 @@ installed): *"attach all walls to the roof"* and *"attach the tops of these wall
 `SHAPE_WALL_TOPS_TO_ROOF` by identity on Revit 2022 and 2024, and `ATTACH_WALLS` on 2025 and 2026 with no other-release
 line; on 2021 the answer opens *"NOT ON REVIT 2021. ATTACH_WALLS matches these words best ... tell them plainly that
 Heron cannot do this on Revit 2021 and that it is done by hand in Revit."* `tools/check-routing.py` exits 0. On 2025
-and 2026 *"edit the wall profile to follow the gable"* is answered *"NOT ON REVIT 2025 ... done by hand"* though
-`ATTACH_WALLS` does that job there - [row 5b-1823](../fragment-issues/row-5b-1823.md), recorded, not repaired.
+and 2026 *"edit the wall profile to follow the gable"* was answered *"NOT ON REVIT 2025 ... done by hand"* though
+`ATTACH_WALLS` does that job there - [row 5b-1823](../fragment-issues/row-5b-1823.md). Repaired in code the same day,
+in the lookup and not in either card: `ATTACH_WALLS` is offered there in its place, under *"ON REVIT 2025 THIS IS
+ATTACH_WALLS"*; on 2020 and 2021, where neither card is declared, the line stands.
 
 **The model** - `of-gable`, a scratch project from Revit 2024's default architectural template (metric), saved under
 `%TEMP%\heron-work`, never a working model. Every write here is ROLLED BACK unless the modeller keeps it. The job file

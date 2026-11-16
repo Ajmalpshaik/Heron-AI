@@ -35,7 +35,9 @@ D-166: Revit says them from its memory. The last section holds the add-in's
 words as text, the client's reader, the lines and the write gate's source with
 stand-in answers - the same file, a differing value, a differing path, an
 older add-in; the real tool is tests/test_mcp_serves.py's and the real pipe
-tests/test_bridge_roundtrip.py's.
+tests/test_bridge_roundtrip.py's. And the write gate is ONE rule,
+heron_health.write_gate, which revit_health and heron_diagnose both call
+(row 5b-1744): until then the diagnosis decided it by a rule of its own.
 
     python tests/test_config_and_health.py
 """
@@ -369,6 +371,66 @@ def settings_said_by_revit():
              if c.name == "write gate"][0]
     check(plain.detail == "closed - Heron cannot change the model",
           "and with no Revit named the words are exactly as they were")
+
+
+def one_write_gate_rule():
+    """
+    Row 5b-1744, under D-166: heron_diagnose's write gate was the chat's own
+    copy of heron.config, then - once D-166 took the switches out of every
+    file - no answer at all, while revit_health said what each Revit holds.
+    ONE rule now, heron_health.write_gate - revit_health's own, lifted out of
+    its body - over what each connected Revit said; both doors call it,
+    neither decides any of it itself, and neither reads a switch from a file.
+    Asked for before it is called, so on the code as it stood this FAILS
+    check by check rather than stopping.
+    """
+    print()
+    print("Row 5b-1744 - one rule for the write gate, from what each Revit said (D-166)")
+    gate = getattr(hp, "write_gate", None)
+    check(callable(gate), "heron_health has the one rule for the write gate")
+    if not callable(gate):
+        def gate(_live, _held):                 # so the checks below RUN and FAIL
+            return "(no such rule)", None
+    one = _Answers({}, pid=4242, release="2024")
+    two = _Answers({}, pid=4343, release="2025")
+    on = {"changes": True, "admin": False, "publish": False, "locked": []}
+    off = dict(on, changes=False)
+    by = hp.writing_said_by
+    for live, held, want, what in (
+            ([], {}, (None, None), "no Revit connected: not known, nobody named"),
+            ([one], {4242: hp.SWITCHES_NOT_SENT}, (None, None),
+             "an add-in from before D-166 that says nothing: not known, never off"),
+            ([one], {4242: None}, (None, None), "an answer that could not be read: not known"),
+            ([one, two], {4242: off, 4343: on}, (True, by([two], True)),
+             "Changes ON in one Revit: the warning, naming that one alone"),
+            ([one, two], {4242: on, 4343: None}, (True, by([one], True)),
+             "ON in one, the other unread: still the warning"),
+            ([one, two], {4242: off, 4343: off}, (False, by([one, two], False)),
+             "off in every Revit: closed, naming both"),
+            ([one, two], {4242: off, 4343: hp.SWITCHES_NOT_SENT}, (False, by([one], False)),
+             "off in one, the other said nothing: closed as the one that said has it, "
+             "and the other not named")):
+        got = gate(live, held)
+        check(got == want, "%s - %r" % (what, got))
+
+    server = TOOLS.server_text()
+    health = server[server.find("def revit_health("):]
+    health = health[:health.find("\n@server.tool()")]
+    with io.open(os.path.join(ROOT, "mcp", "server", "heron_diagnose.py"),
+                 encoding="utf-8") as handle:
+        diagnose = handle.read()
+    check("health.write_gate(" in health and "changes_on" not in health,
+          "revit_health takes its write gate from that rule, and decides none of it itself")
+    check("HEALTH.write_gate(" in diagnose and "writing=None" not in diagnose
+          and "HEALTH.switches_line(" in diagnose and "HEALTH.ask_to_keep_line(" in diagnose,
+          "heron_diagnose takes its write gate from the same rule - no longer no answer "
+          "while revit_health has one - and says each Revit's switches in its lines")
+    read = [word for word in ("writing_enabled", "write.enabled", "admin.enabled",
+                              "publish.enabled", "configuration.switches(",
+                              "settings_state", "settings_lines")
+            if word in diagnose]
+    check(not read, "and the diagnosis reads no switch from a file, and compares none "
+          "with this chat's copy (D-166): %s" % (read or "none"))
 
 
 def main():
@@ -718,6 +780,7 @@ def main():
           "nothing to report reads as one line, not a wall of green")
 
     settings_said_by_revit()
+    one_write_gate_rule()
 
     print()
     if FAILURES:
