@@ -66,8 +66,10 @@ def main():
           "a 2027-only provider asked about on 2024 -> UNSUPPORTED_RELEASE")
     check(verdict(live, "MOVE_ELEMENTS").verdict == rt.BLOCKED_BY_TRUST,
           "MODIFY with the write gate closed -> BLOCKED_BY_TRUST, not unavailable")
-    check("write.enabled" in verdict(live, "MOVE_ELEMENTS").detail,
-          "and it names the setting, so the answer is actionable")
+    check("Changes is off" in verdict(live, "MOVE_ELEMENTS").detail
+          and "Heron's Settings in Revit" in verdict(live, "MOVE_ELEMENTS").detail,
+          "and it names the switch and where only the modeller turns it on, so the "
+          "answer is actionable - and names no file (D-166)")
 
     idle = rt.snapshot(ASKED, LIBRARY, release="2024", bridge="none")
     check(verdict(idle, "SET_SELECTION").verdict == rt.NEEDS_REVIT,

@@ -206,6 +206,39 @@ the carried chain belongs to a conversation, and a series with it set is not han
 
 ## A night run, with nobody at the keyboard
 
+**The owner is asleep and can press nothing in Revit, so anything that waits for a press stops the
+night until morning.** His rules for a night (Ajmal PS, 2026-11-14, repeated 2026-11-16) are below,
+each with what it prevents. **Run to the last job.** What cannot be done without his hands goes on the
+morning list - it never becomes a wait.
+
+| | Rule | What it prevents |
+|---|---|---|
+| 1 | **Prove on the rolled-back path only** - `batch-prove --unattended` below, or `validate` without `--apply`. Never keep a change through the chat to prove something | The Delete box ([D-142](../../../docs/DECISIONS.md)) is raised only for a run that would KEEP - `apply`, or a DRAFT's one run - and it is raised **by measurement**: whatever Revit deleted counts, a wall's doors and a duct's fittings deleted along with what was asked included. A rolled-back proof is never asked, so even a `delete-*` card can be proved at night |
+| 2 | **Delete nothing to tidy up, and never close a changed model unsaved.** A scratch family or project is the session's to save and to close, unasked (his word, 2026-11-16): save it with `save-document`, with `closeWindow` to close it too. Where that tool cannot, leave it open for the morning | Closing a changed document makes Revit ask *Save changes?*, which waits like any box. `save-document` is PUBLISH (his Publish switch), saves only a document that already has a file and is not the one Heron is working in, and closes only a window that is not in front ([its card](../../../brain/fragments/save-document/fragment.yaml)). A kept delete raises the box; unanswered, it closes after `revit.askTimeoutSeconds` (300 s unless `heron.config` says otherwise) as *no* - minutes lost, nothing done. Heron's add-in log, 2026-11-16 in `ny-scratch`: three Delete boxes answered `late`, `closed`, `timed_out`. Side effects count: `set-element-level` raised one that day for 2 elements |
+| 3 | **Make what the proof needs, inside the rolled-back run.** No duct in the model: put a create card in the row's `setup:`, then prove the duct card on what it made. Never ask him to draw it. Only where `setup:` cannot carry it, make it once through the chat on the scratch model, somewhere nothing else stands | A positive case the model cannot fill (§2 above, *Ask for what the model has*). A set-up step that changes the model runs inside the fragment's own transaction group, so it is rolled back with it and never asked; it takes the run's own values, none of its own, and a read step typed after it is refused ([row 5b-917](../../../docs/fragment-issues/section-5b-rows-401-425.md)). **A kept create can raise the Delete box too:** on 2026-11-15 `create-wall` did for 7 elements and `place-hosted-family` for 18 - if it does, rule 7 |
+| 4 | **Select with Heron's own selection cards**, never by asking for a pick | A pick needs his hands; a card selects the same set on every run |
+| 5 | **A DRAFT helper is proved the same night.** Give it a job row of its own, then name it in the other row's `setup:` - two drafts for him to sign in the morning | `batch-prove` refuses a set-up step only by its risk (above MODIFY); a DRAFT set-up step has not yet been seen through it in a real Revit. Keeping a DRAFT's one run through the chat is always asked ([D-119](../../../docs/DECISIONS.md)), Ask to Keep on or off - that is morning work |
+| 6 | **On a scratch model, do not ask him in chat** - it is a model to throw away. A real job model (`4355-*`, or any he names) is never a night's model | His words, 2026-11-16: whatever the test needs on a scratch model, do it |
+| 7 | **A box comes up anyway:** write `NOT RUN - needs his hands`, with the job and the box's title, on the morning list and go to the next job. Never wait on it, retry it or press it, and never widen the closer's list below | One box holding the rest of the night |
+| 8 | **One small model open at a time, and SAVED** - a scratch model under `%TEMP%\heron-work`. Never a large model, never many; close each when its work is done | His PC has 16 GB. A model saved recently keeps Revit's *Project Not Saved Recently* box away, and that box blocks every call ([2026-11-14 night](../../../docs/handover-archive/2026-11-14-a-night-on-revit-2024-alone-scratch-models-heron-made-and-seven-defects.md)) |
+| 9 | **One door all night** - the chat or the command line, never both, with `HERON_CLIENT_ID` set on every command | Each door takes Revit's five-minute lease - on the 2026-11-14 night even a call Heron refused took it - and the other door is locked out until it lapses ([row 5b-1662](../../../docs/fragment-issues/row-5b-1662.md)) |
+
+**Before he sleeps, ask him for these, once:** *Ask to Keep* OFF on the ribbon; *Publish* ON if the
+night will save a scratch model (rule 2); one small, saved scratch model open; and which Revit to use,
+for `--session`.
+
+**Memory is the one limit these rules do not remove.** Every NEW card compiled stays loaded in Revit:
+on the 2026-11-14 night Revit 2024 went from 6.3 GB to 14.1 GB in under two hours, and the run stopped
+there on purpose. **Plan a night as a budget of new compiles, not of hours** - a card already compiled
+costs little to run again. Watch Revit's memory; at about 13 GB stop and put what is left on the
+morning list. **Do not close Revit** to free it: Heron's bridge then needs him to connect it again.
+
+**In the morning, hand him three things:** the morning list (every `NOT RUN` and why); the report; and
+the sign list - read every positive case on it first for *"NOTHING WAS"*, *"Revit refused"*,
+*"could not"* and *"threw"*, because a result that says so is not a pass however the verdict reads.
+
+### The command
+
 **Never write a wrapper round `batch-prove` for this - use `--unattended`.** A session wrote the same one
 on 2026-10-21 and again on 2026-10-22; what it did is the tool's own now.
 

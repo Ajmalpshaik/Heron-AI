@@ -24,8 +24,8 @@ planner is asking, because it is returned for reasons that are not alike:
 A planner given None can only say "I cannot". A planner given the REASON can
 say which, and the five sentences a modeller needs are different every time:
 "Heron has no fragment for that" is a gap, "not on Revit 2020" is a version
-answer, "press the Heron button" is an instruction, and "write.enabled is
-false" is a setting. Rolling five into one is how a platform comes to answer
+answer, "press the Heron button" is an instruction, and "Changes is off" is
+the modeller's switch. Rolling five into one is how a platform comes to answer
 every question with a shrug.
 
 WHY IT LOOKS LIKE heron_health.py
@@ -57,7 +57,7 @@ NEEDS_REVIT = "NEEDS_REVIT"
 # keep in step, and this repository has said so twice already.
 RISK_ORDER = ["READ", "ANALYZE", "SUGGEST", "EXECUTE", "MODIFY", "PUBLISH", "ADMIN"]
 
-# What the write gate actually gates. write.enabled false does not stop Heron
+# What the write gate actually gates. Changes off does not stop Heron
 # reading, analysing or selecting - it stops it CHANGING the model, and MODIFY
 # is where that line is drawn in heron_tools.py.
 CEILING_WITHOUT_WRITE = "EXECUTE"
@@ -202,7 +202,8 @@ def _judge(name, rows, release, bridge, write_enabled, ceiling):
             name, BLOCKED_BY_TRUST,
             "%s, and the ceiling here is %s%s"
             % (risk, ceiling,
-               " - write.enabled is false" if not write_enabled else ""),
+               " - Changes is off, and only the modeller turns it on, in Heron's "
+               "Settings in Revit" if not write_enabled else ""),
             risk=risk, provider=decided.get("id"))
 
     if bridge != "connected":
