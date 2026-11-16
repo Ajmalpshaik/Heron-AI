@@ -1566,6 +1566,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-oh.md`](needs-checking/group-oh.md)
 
+## Group OI - a night on Revit 2024 with the owner asleep: DRAFT cards proved on a scratch project, everything they need made inside the rolled-back run (2026-11-16)
+
+**Its own file:** [`needs-checking/group-oi.md`](needs-checking/group-oi.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
