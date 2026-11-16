@@ -9,18 +9,22 @@
 ; never asks for administrator rights.
 ;
 ; IT DECIDES NOTHING ABOUT WHAT GOES WHERE. It puts the Heron folder in place
-; and hands over to heron-install, the engine every other door uses (D-93, D-94,
-; D-96): which products, which Revit years, the wait while Revit is open, the
-; checksum of every payload, the second-copy check, putting the old install back
-; when a copy fails half-way, Heron's Python side. A rule written in this file
-; would be a rule outside everything that tests it - so the two things below
-; that look like rules are only doors:
+; and hands over to the engine every other door uses (D-93, D-94, D-96): which
+; products, which Revit years, the wait while Revit is open, the checksum of
+; every payload, the second-copy check, putting the old install back when a copy
+; fails half-way, Heron's Python side. A rule written in this file would be a
+; rule outside everything that tests it.
 ;
-;   - "close Revit first" is asked before Install is pressed, so a modeller is
-;     not left watching a window that waits; heron-install still waits by
-;     itself if a Revit opens in between, and never closes one;
+; ITS FACE IS HERON'S OWN WINDOW - the owner's word, 2026-11-16 (D-167,
+; appended). The Setup copies the folder, opens HeronInstaller.exe with --from
+; its payload, and closes; that branded window asks everything - the Revit
+; years, the two ticks - and installs. Run SILENT (/VERYSILENT, for a managed
+; PC), no window can be asked, so heron-install does the same install itself.
+;
 ;   - the uninstaller shows heron-install's own sentence naming every product
-;     and release before anything goes, and heron-install does the removing.
+;     and release before anything goes, and heron-install does the removing;
+;   - a Heron Installer window left open from the folder stops both Setup and
+;     uninstall before a file is touched - its exe is in that folder.
 ;
 ; BUILT BY tools/build-setup.py, NEVER BY HAND: it stages the folder and passes
 ; the defines below. Signing is NOT RUN until a certificate exists (D-167 item
@@ -76,11 +80,14 @@ UninstallDisplayName=Heron AI
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
-; THE BRAND (D-149, docs/brand/README.md) - the same look as HeronInstaller.exe:
-; the logo on Mist with the orange line, Ink text. Both pictures are made from
-; the brand kit's own files by make-images.ps1, never drawn new. The welcome
-; page is shown so the first thing the Setup says is whose it is.
-DisableWelcomePage=no
+; NO PAGES OF ITS OWN - the face is HeronInstaller.exe (above). Only the short
+; copying page shows, then the Setup closes and the window opens.
+DisableWelcomePage=yes
+DisableReadyPage=yes
+DisableFinishedPage=yes
+; THE BRAND (D-149, docs/brand/README.md) on what is left - the copying page:
+; Mist, Ink text, the heron in the header, the orange line under it. Both
+; pictures are made from the brand kit's own files by make-images.ps1.
 WizardImageFile=images\panel-202x386.png,images\panel-404x772.png
 WizardSmallImageFile=images\icon-55.png,images\icon-110.png
 ; Mist, #F7F5F2 - Inno Setup writes a colour as $BBGGRR.
@@ -98,20 +105,11 @@ SignedUninstaller=yes
 [Messages]
 ConfirmUninstall=Remove Heron AI from this PC?%n%nYour own Heron data is not touched - settings, the audit log and anything Heron has learned all stay where they are.
 
-[Tasks]
-; BOTH ON BY DEFAULT - the owner's word, 2026-11-16: a new modeller must never
-; have to find Heron's program folder, which sits under the hidden AppData.
-;
-; python: Heron's Python side - the pinned packages, the knowledge store and a
-; readiness check (PythonSetup). Off passes --no-python: for a PC whose Python
-; somebody else manages, and for the owner's own test, where building the store
-; from this folder would change what every other chat on the PC reads.
-Name: "python"; Description: "Set up Heron's Python side - its packages, its search index and a readiness check (needs Python 3.11 to 3.14)"
-; claude: Heron's one user-scope entry in Claude Code, so a chat in ANY folder
-; can use it. Each open chat then starts Heron's server: docs/WHAT-TO-INSTALL
-; measured 2.0 to 2.3 GB per chat on a 16 GB laptop WITH the optional search
-; add-ons, which this Setup does not install - a plain install is not measured.
-Name: "claude"; Description: "Add Heron to Claude Code for my user, so every chat in any folder can use it (close Claude first - each open chat then runs Heron in the background)"
+; THE TWO TICKS ARE IN HERON'S WINDOW NOW (D-167 items 5 and 5a, appended
+; 2026-11-16) - "Set up Heron's AI side" and "Add Heron to Claude Code", both
+; on. Each open chat then starts Heron's server: docs/WHAT-TO-INSTALL measured
+; 2.0 to 2.3 GB per chat on a 16 GB laptop WITH the optional search add-ons,
+; which this Setup does not install - a plain install is not measured.
 
 [Files]
 Source: "{#Stage}\*"; DestDir: "{app}"; Excludes: "HeronInstaller.exe,heron-install.exe"; Flags: recursesubdirs createallsubdirs ignoreversion
@@ -132,7 +130,14 @@ Type: filesandordirs; Name: "{app}\tools"
 Type: filesandordirs; Name: "{app}\payload"
 
 [Icons]
-Name: "{autoprograms}\Heron AI\Heron Installer"; Filename: "{app}\HeronInstaller.exe"; WorkingDir: "{app}"
+; WITH --from, like the Setup opens it: without it the window would look for
+; builds, find none, and take the download route this Setup exists to avoid.
+Name: "{autoprograms}\Heron AI\Heron Installer"; Filename: "{app}\HeronInstaller.exe"; Parameters: "--from ""{app}\payload"""; WorkingDir: "{app}"
+
+[Run]
+; THE FACE (above): Heron's own window, opened as the Setup closes. Not when
+; silent - nobody is there to press Install; CurStepChanged installs instead.
+Filename: "{app}\HeronInstaller.exe"; Parameters: "--from ""{app}\payload"""; WorkingDir: "{app}"; Flags: nowait; Check: not WizardSilent
 
 [UninstallDelete]
 ; What Heron itself wrote INSIDE its program folder after install - compiled
@@ -150,8 +155,8 @@ const
   BrandAccent = $1A64FD;   { Accent #FD641A - the one highlight: the line under the header }
 
 var
-  ReportPage: TOutputMsgMemoWizardPage;
   BrandLine: TBitmapImage;
+  ReadyPassed: Boolean;
 
 { Every page in the brand: Mist behind, Ink text, and the orange line under the
   header where Windows draws a grey one - HeronInstaller.exe's masthead. }
@@ -258,65 +263,112 @@ begin
   Result := Code;
 end;
 
+{ Every Heron Installer or heron-install running FROM Folder, one line each,
+  or '' when none is. Their exes are in that folder, so replacing or removing
+  it while one runs fails half-way on a locked file. WMI, as RunningRevits. }
+function OpenFromFolder(const Folder: String): String;
+var
+  Locator, Service, Items, Item: Variant;
+  I: Integer;
+  Where, Path: String;
+begin
+  Result := '';
+  Where := Lowercase(AddBackslash(Folder));
+  try
+    Locator := CreateOleObject('WbemScripting.SWbemLocator');
+    Service := Locator.ConnectServer('.', 'root\CIMV2');
+    Items := Service.ExecQuery('SELECT ExecutablePath FROM Win32_Process WHERE Name = ''HeronInstaller.exe'' OR Name = ''heron-install.exe''');
+    for I := 0 to Items.Count - 1 do
+    begin
+      Item := Items.ItemIndex(I);
+      if not VarIsNull(Item.ExecutablePath) then
+      begin
+        Path := Item.ExecutablePath;
+        if Pos(Where, Lowercase(Path)) = 1 then
+          Result := Result + #13#10 + '    ' + Path;
+      end;
+    end;
+  except
+    Result := '';
+  end;
+end;
+
+function CloseHeronFirst(const Open: String): String;
+begin
+  Result := 'Close the Heron Installer window first. It runs from Heron''s folder, ' +
+            'which this would replace or remove.' + #13#10 + #13#10 +
+            'Open now:' + Open + #13#10 + #13#10 +
+            'Close it, then try again. Nothing was changed.';
+end;
+
 procedure InitializeWizard();
 begin
   ApplyBrand();
-  ReportPage := CreateOutputMsgMemoPage(wpInfoAfter,
-    'What Heron did',
-    'For each Revit on this PC, and Heron''s Python side.',
-    'Heron''s own report, word for word. It is also kept as setup-report.txt in Heron''s folder.',
-    '');
 end;
 
-function NextButtonClick(CurPageID: Integer): Boolean;
+{ NO READY PAGE - one Install button, and it is Heron's window's. Inno Setup
+  IGNORES DisableReadyPage when Ready would be the first page shown (its own
+  help, read 2026-11-16), and with no pages of its own it is. Neither skipping
+  it in ShouldSkipPage nor pressing Next from CurPageChanged moved it -
+  measured the same day with a throwaway Setup into a scratch folder: it sat on
+  Ready for 25 seconds. Pressed 50 ms after it is shown, by a one-shot timer,
+  it went on to copying and closed by itself. ONCE only. With a Heron Installer
+  open from the folder it stopped on the Preparing page with CloseHeronFirst's
+  words and only Cancel to press, nothing copied (the same test). }
+function SetTimer(hWnd: LongWord; nIDEvent, uElapse: LongWord; lpTimerFunc: LongWord): LongWord;
+  external 'SetTimer@user32.dll stdcall';
+function KillTimer(hWnd: LongWord; uIDEvent: LongWord): BOOL;
+  external 'KillTimer@user32.dll stdcall';
+
+var
+  ReadyTimer: LongWord;
+
+procedure PressInstall(Wnd: LongWord; Msg: LongWord; IdEvent: LongWord; Time: LongWord);
+begin
+  KillTimer(0, ReadyTimer);
+  if WizardForm.CurPageID = wpReady then
+    WizardForm.NextButton.OnClick(WizardForm.NextButton);
+end;
+
+procedure CurPageChanged(CurPageID: Integer);
+begin
+  if (CurPageID = wpReady) and not ReadyPassed then
+  begin
+    ReadyPassed := True;
+    ReadyTimer := SetTimer(0, 0, 50, CreateCallback(@PressInstall));
+  end;
+end;
+
+{ Before a file is copied. The wizard has no pages of its own, so this is the
+  one place left to stop - and what it returns is shown, and nothing copied. }
+function PrepareToInstall(var NeedsRestart: Boolean): String;
 var
   Open: String;
 begin
-  Result := True;
-  if CurPageID = wpReady then
-  begin
-    Open := RunningRevits();
-    if Open <> '' then
-    begin
-      MsgBox(CloseRevitFirst(Open), mbInformation, MB_OK);
-      Result := False;
-    end;
-  end;
+  Result := '';
+  Open := OpenFromFolder(ExpandConstant('{app}'));
+  if Open <> '' then Result := CloseHeronFirst(Open);
 end;
 
+{ SILENT ONLY. A Setup run with /SILENT or /VERYSILENT has nobody to press
+  Install in Heron's window, so heron-install does the same install itself,
+  both ticks' work included, and its report is kept as setup-report.txt in
+  Heron's folder. --no-check: the Setup carries its own payload. }
 procedure CurStepChanged(CurStep: TSetupStep);
 var
-  Said, ClaudeSaid, Verdict, Report, Params: String;
+  Said, ClaudeSaid, Report: String;
   Code: Integer;
 begin
   if CurStep <> ssPostInstall then exit;
+  if not WizardSilent then exit;
 
-  WizardForm.StatusLabel.Caption :=
-    'Installing Heron into each Revit. This can take a few minutes.';
-
-  { --no-check: the Setup carries its own payload and needs no network.
-    --no-python when its tick was turned off - heron-install's own flag. }
-  Params := '--from "' + ExpandConstant('{app}\payload') + '" --no-check';
-  if not WizardIsTaskSelected('python') then
-    Params := Params + ' --no-python';
-  Code := RunHeronInstall(Params, Said);
-  case Code of
-    0: if WizardIsTaskSelected('python') then
-         Verdict := 'Heron is installed. Start Revit and look for the Heron tab.'
-       else
-         Verdict := 'Heron''s add-in is installed. Its Python side was left out, as asked - run this Setup again with that tick on to add it.';
-    3: Verdict := 'Heron was NOT installed: a Revit stayed open. Close it and run this Setup again.';
-  else
-    Verdict := 'Something did not install - Heron''s report below says what, and what to do.';
-  end;
-
+  Code := RunHeronInstall('--from "' + ExpandConstant('{app}\payload') + '" --no-check', Said);
   ClaudeSaid := '';
-  if WizardIsTaskSelected('claude') then
+  if Code = 0 then
     RunHeronInstall('--add-to-claude', ClaudeSaid);
 
-  Report := Verdict + #13#10 + #13#10 + Said;
+  Report := 'heron-install exit code ' + IntToStr(Code) + #13#10 + #13#10 + Said;
   if ClaudeSaid <> '' then Report := Report + #13#10 + 'Claude Code:' + #13#10 + ClaudeSaid;
-  ReportPage.RichEditViewer.Lines.Text := Report;
   SaveStringToFile(ExpandConstant('{app}\setup-report.txt'), Report, False);
 end;
 
@@ -332,6 +384,14 @@ begin
   if Open <> '' then
   begin
     SuppressibleMsgBox(CloseRevitFirst(Open), mbInformation, MB_OK, IDOK);
+    Result := False;
+    exit;
+  end;
+
+  Open := OpenFromFolder(ExpandConstant('{app}'));
+  if Open <> '' then
+  begin
+    SuppressibleMsgBox(CloseHeronFirst(Open), mbInformation, MB_OK, IDOK);
     Result := False;
     exit;
   end;

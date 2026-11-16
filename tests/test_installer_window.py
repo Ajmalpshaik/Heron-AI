@@ -380,6 +380,115 @@ def main():
           "opened from inside the Store Claude it refuses before anything runs - Q-63")
 
     print()
+    print("THE SETUP OPENS THIS WINDOW - D-167, appended 2026-11-16")
+    # The owner's word: one installer, and its face is this window. The Setup
+    # copies Heron's folder and opens this exe with --from its payload; the
+    # Setup's two ticks moved in here, both on. What is held below is the
+    # wiring - each piece of WHAT is done is ClaudeCodeEntry's, ProductFolder's
+    # or PythonSetup's, tested in the TestHost.
+    inside = entry_code.find("ClaudeAppCopy.Inside(")
+    refuse = entry_code.find("ProductFolder.WhyNotAHeronFolder(")
+    folder = entry_code.find("new ProductFolder(")
+    check(-1 not in (inside, refuse, folder) and inside < refuse < folder,
+          "--from is refused BY NAME before it is used, and only after the "
+          "Store-Claude refusal - its work folder is a write")
+    check("files == null ? localBuilds : null" in entry_code,
+          "and with the Setup's folder nothing is looked for on the disk")
+    install_at = entry_code.find("private static void Install(")
+    reads = entry_code.find("window.SetUpAiSide")
+    check(reads != -1 and install_at != -1 and reads < install_at
+          and "window.AddToClaude" in entry_code[:install_at],
+          "both ticks are read in the press, on the window's thread - a tick "
+          "box asked from the worker throws")
+    check("pythonWanted && !pythonTicked" in entry_code,
+          "unticked, the Python side is left out and the report says so")
+    report_at = entry_code.find("window.Report(report, python)")
+    apply_claude = entry_code.find("ClaudeCodeEntry.Apply(root)")
+    check(report_at != -1 and apply_claude > report_at,
+          "Heron goes into Claude Code LAST, after the report")
+    guard = entry_code.rfind("if (", 0, apply_claude if apply_claude != -1 else 0)
+    check(guard != -1 and "claudeTicked" in entry_code[guard:apply_claude]
+          and "report.Failed == 0" in entry_code[guard:apply_claude]
+          and "!report.Abandoned" in entry_code[guard:apply_claude],
+          "and only when ticked and the add-in half failed nowhere - an entry "
+          "beside a failed add-in points a chat at a Heron that is not there")
+    check("ClaudeCodeEntry.Apply" not in window_code
+          and "ClaudeCodeEntry.TickWords" in window_code
+          and "ClaudeCodeEntry.WhatTheTickDoes" in window_code,
+          "the window only shows ClaudeCodeEntry's words - it never writes")
+    check("_claude != null && _claude.IsChecked == true" in window_code
+          and "if (offerClaude)" in window_code,
+          "the Claude tick is drawn only when offered, and unoffered is NO")
+    check("handover != null)" in entry_code,
+          "and it is offered only on the Setup's route")
+
+    # A DEVELOPER'S PC - D-167, amended 2026-11-16: "for me only it will from
+    # the project". The rule is DeveloperCopy's, run against folders in the
+    # TestHost; what is held here is that the window and Claude's entry ask it.
+    check("var developer = DeveloperCopy.StepsAsideFor(root);" in entry_code
+          and "handover != null && developer == null" in entry_code,
+          "on a developer's PC the Claude tick is not offered at all")
+    check("DeveloperCopy.Warning(developer)" in entry_code
+          and "if (developerWarning != null)" in window_code
+          and window_code.index("if (developerWarning != null)")
+          < window_code.index('Content = "Install"'),
+          "and the window says, BEFORE Install, that the add-in takes the "
+          "developer's place in Revit until they deploy again")
+    claude_source = code_of(read(os.path.join(ROOT, "platform", "Heron.Installer",
+                                              "ClaudeCodeEntry.cs")))
+    apply_at = claude_source.find("public static ClaudeStep Apply(")
+    aside_at = claude_source.find("DeveloperCopy.StepsAsideFor(heronFolder)", apply_at)
+    running_at = claude_source.find("RunningClaudes() > 0", apply_at)
+    check(-1 not in (apply_at, aside_at, running_at) and aside_at < running_at,
+          "and adding Heron to Claude Code asks it FIRST, so the silent Setup "
+          "and heron-install --add-to-claude refuse there too")
+
+    setup_script = os.path.join(ROOT, "platform", "Heron.Setup", "HeronSetup.iss")
+    iss = read(setup_script) if os.path.exists(setup_script) else ""
+    # Comments out: an .iss line starting with ; is a comment, and so is a
+    # "{ ... }" block in [Code] - neither may pass a check. Every such block in
+    # this file opens with a brace and a space; a constant like {app} has none.
+    iss_code = re.sub(r"\{ .*?\}", "", "\n".join(
+        line for line in iss.split("\n") if not line.lstrip().startswith(";")), flags=re.S)
+    check(iss != "", "the Setup's script is there")
+    run_at = iss.find("\n[Run]")
+    run_section = iss[run_at:iss.find("\n[", run_at + 1)] if run_at != -1 else ""
+    check(re.search(r'^Filename: "\{app\}\\HeronInstaller\.exe"; '
+                    r'Parameters: "--from ""\{app\}\\payload""";.*'
+                    r'Flags: nowait; Check: not WizardSilent$', run_section, re.M) is not None,
+          "the Setup opens THIS window with --from its payload, and not when silent")
+    check(re.search(r'^Name: "\{autoprograms\}\\Heron AI\\Heron Installer"; '
+                    r'Filename: "\{app\}\\HeronInstaller\.exe"; '
+                    r'Parameters: "--from ""\{app\}\\payload"""', iss, re.M) is not None,
+          "and the Start-menu shortcut opens it the same way, or it would "
+          "take the download route")
+    check("[Tasks]" not in iss_code and "WizardIsTaskSelected" not in iss_code,
+          "the Setup has no ticks of its own left - they are in the window")
+    for page in ("DisableWelcomePage=yes", "DisableReadyPage=yes", "DisableFinishedPage=yes"):
+        check(page in iss, "and no page of its own: %s" % page)
+    # DisableReadyPage IS IGNORED when Ready would be the first page (Inno
+    # Setup's help), and here it would be - measured 2026-11-16 with a
+    # throwaway Setup: it sat on Ready. Only a one-shot timer press moved it,
+    # so a second Install button never appears beside the window's.
+    changed = iss_code.find("procedure CurPageChanged(")
+    check(changed != -1
+          and "CreateCallback(@PressInstall)" in iss_code[changed:changed + 400]
+          and "not ReadyPassed" in iss_code[changed:changed + 400]
+          and "WizardForm.CurPageID = wpReady" in iss_code,
+          "and its Ready page is pressed past ONCE, by a timer - DisableReadyPage "
+          "alone is ignored when Ready is the first page")
+    prepare = iss_code.find("function PrepareToInstall(")
+    uninstall = iss_code.find("function InitializeUninstall(")
+    check(prepare != -1 and "OpenFromFolder(ExpandConstant('{app}'))" in iss[iss.find("function PrepareToInstall("):]
+          and uninstall != -1
+          and "OpenFromFolder(ExpandConstant('{app}'))" in iss[iss.find("function InitializeUninstall("):],
+          "a Heron window left open from the folder stops the Setup AND the "
+          "uninstall before a file is touched - its exe is in that folder")
+    curstep = iss.find("procedure CurStepChanged(")
+    check(curstep != -1 and "if not WizardSilent then exit;" in iss[curstep:curstep + 600],
+          "and heron-install installs by itself ONLY when the Setup runs silent")
+
+    print()
     print("It is a window and nothing else")
     check("<UseWPF>true</UseWPF>" in proj, "WPF")
     check("net8.0-windows" in proj, "on net8.0-windows, which WPF needs")
