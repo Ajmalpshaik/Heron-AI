@@ -10,7 +10,8 @@
 The owner's night rules ([fragment-proving skill, *A night run*](../../.claude/skills/fragment-proving/SKILL.md))
 on the 84 DRAFT cards of main f86a5843 - 524 PROVEN, 6 STALE by `check-signatures.py`. Each card was read
 against its own register rows first; the ones a fresh project can be given in a rolled-back run are the
-ten below. **Nothing was kept, nothing signed.**
+ten below (OI1-OI10), and eight more ran on a kept rig (OI11-OI18). **Fourteen PASS; nothing signed; the
+only thing kept is the rig, in its own scratch file.**
 
 **The PC, every row:** Revit 2024.3 (build 24.3.60.12), session 8292, add-in 0.2.0.0 file
 `80819edd3983a0d5` (main f86a5843); Ask to Keep OFF, Changes / Admin / Publish ON (pressed by the owner
@@ -54,10 +55,51 @@ back to back.
 *no second route was run*. Six of the nine name an `expect:` in the job; `accept` judges on the
 contract alone, so a refusal at signing is possible and is the signal, not a fault of the night.
 
-**Seen tonight, for other rows:** five batches ran back to back, each handing the models back, and no
+### The rig - eight more cards on a KEPT arrangement (2026-11-16, ~21:00-21:30)
+
+The cards a set-up step cannot arrange (the morning list below, row *cut-geometry ...*) were arranged on
+**`rig`**, a second file copy of `ny-scratch.rvt`, opened by `activate-document`. Twelve elements were KEPT
+in it by PROVEN cards - `fragment --in rig <card> --write --apply`, Ask to Keep off,
+`HERON_CONVERSATION_ID=rig-1116` for the series - **and no box came up**:
+
+| # | Card | Kept |
+|---|---|---|
+| 1 | `create-wall` | room box: 4 walls `Generic - 200mm`, x 30000-34000, y 30000-33000, base offset -100, 3000 high |
+| 2 | `create-wall` | 2 walls end to end along y 37000, x 30000-34000 |
+| 3-4 | `select-in-region` (read, 2) -> `create-parts --expect-from select-in-region` | `madeFrom 2`, parts 352524, 352525 |
+| 5 | `create-floor` `Floor: Generic 150mm` | S2 (352528) under the room box |
+| 6 | `create-floor` | S1 (352544), 2 x 2 m at x 30000-32000, y 41000-43000 |
+| 7 | `place-rooms` at 32000,31500 | room 352550, `unbounded 0` |
+| 8 | `create-room-elevations` at 32000,31500, 4 slots | marker and Elevation 1 - a to d |
+| 9 | `place-line-based-family` `UB-Universal Beams: UB305x165x40` | two beams crossing at 41000,30000 (352589, 352591) |
+| 10-11 | `select-in-region` (read, 1) -> `create-assembly` | "RIG Assembly", member 352544 |
+| 12 | `create-schedule` | key schedule "RIG Room Key" (352597) |
+| 13 | `create-schedule` | "RIG Wall List" of walls (352605) |
+| 14 | `create-stairs` straight, 1500 wide, x 47000-48600 | stair 352613: 22 risers, 1 run, 0 landings, 2 railings |
+
+**Saved from behind:** `activate-document` night-scratch, `save-document` (Publish) `rig.rvt` - *"'rig' saved
+to ...rig.rvt. This cannot be undone"*, the file's time and size changed (21:20:29, 5,804,032 bytes) - then
+`rig` in front again. The same loop had been tried first on one kept grid line at 20:50. **Jobs:**
+[`tools/jobs/night-rig-oi-2026-11-16.yaml`](../../tools/jobs/night-rig-oi-2026-11-16.yaml), all rolled back.
+Afterwards `rig` was saved and closed by `save-document` with `closeWindow` (*"'rig' is closed."*).
+
+| Row | Card | Result |
+|---|---|---|
+| OI11 | `join-geometry` v4 (STALE) | **PASS** - S2 the target, 8 elements bound: `changed 4`, *"4 joined with 'Generic 150mm'. 0 were already joined"*; negative S1 the target: `changed 0`, *"0 joined with 'Generic 150mm'"* - **row 5b-1661's own check, seen in Revit: a floor 4 m from every wall joins nothing** |
+| OI12 | `merge-parts` | **PASS** - *"2 part(s) merged into one"*; negative (walls, no part) *"Two parts or more are needed to merge. NOTHING WAS MERGED."* |
+| OI13 | `create-assembly-views` | **PASS** - RIG Assembly, `created` 1 entry; negative (floors, no assembly) `created` 0 |
+| OI14 | `place-stair-tread-numbers` | **PASS** - *"1 run(s) numbered in 'Level 1'"*, `placedIds` 352770; negative (the 2 railings) `placed 0`, *"Railings '1100mm' (id 352621): not a stair or a stair run"* |
+| OI15 | `add-key-schedule-rows` | **PASS** - RIG Room Key, `added 2`; negative *"NO KEY WAS ADDED: 'RIG Wall List' is a schedule of elements"* |
+| OI16 | `cut-geometry` | **POSITIVE EMPTY - the arrangement:** *"Structural Framing UB305x165x40 (id 352589) cannot cut anything: it is not a family with a void that cuts when loaded, and Revit does not allow it in a cut between solids. NOTHING WAS CHANGED"* - Revit's rule (Group LW's LW2 warned of it); owed on a pair Revit lets cut |
+| OI17 | `report-geometry-cuts` | **POSITIVE EMPTY** - rests on OI16: *"0 cut(s) across 2 element(s)"*. **But the DRAFT `cut-geometry` ran as its set-up step inside batch-prove** - bound *"elements from cut-geometry (2)"* - the first time that path was seen in a real Revit |
+| OI18 | `refit-room-elevations` | **POSITIVE EMPTY - cause not established:** `roomNumbers ""`: *"0 interior elevation(s) refitted to their room and read back."*, *"No elevation marker stands inside any room."* - though the marker was made at 32000,31500, the room's own point, inside walls standing from -100. Whether the card's room lookup or the arrangement is short is not known; a question for the morning, not yet a row |
+
+**Seen tonight, for other rows:** seven batches ran back to back, each handing the models back, and no
 job was locked out by the one before - real-Revit evidence for [row 5b-1656](../fragment-issues/row-5b-1656.md).
-**Not seen:** a DRAFT card as a set-up step inside batch-prove, and the "Virtual Memory - High Usage"
-closer ([Group IW](group-iw.md)) - Revit never went busy.
+**Seen once:** a DRAFT card as a set-up step inside batch-prove (OI17). **Not seen:** the "Virtual Memory -
+High Usage" closer ([Group IW](group-iw.md)) - Revit never went busy. **Memory:** Revit 2024's private bytes
+rose from 1.97 GB at the start to 11.6 GB after the rig's jobs; the night stopped new compiles there, short
+of the 13 GB limit.
 
 **Not run tonight, and why** (the morning list):
 
@@ -70,7 +112,7 @@ closer ([Group IW](group-iw.md)) - Revit never went busy.
 | pick-on-screen, place-legend-components, set-design-option, add-area-based-load, adjust- / associate-analytical-elements | The owner's hands: a pick, a hand-placed legend component, a design option, Area Based Load Boundary lines, a kept DRAFT |
 | six fabrication cards, connect-into-main, place-flow-arrows, draw-mep-from-cad, import-gbxml | Content a DefaultMetric project cannot be given by a set-up step: a fabrication configuration, tap fittings, a flow arrow family, a test DWG, a gbXML file |
 | check-rebar-against-spec, create-rebar-shape, place-fabric-reinforcement, place-fabric-sheet, place-multi-rebar-annotation, place-rebar, place-reinforcement-symbols, place-structural-connections, report-structural-connections | Rebar and connection content the structural template carries and DefaultMetric does not |
-| cut-geometry, join-geometry (STALE), report-geometry-cuts, merge-parts, add-stairs-landing, place-stair-tread-numbers, create-assembly-views, refit-room-elevations, add-key-schedule-rows, convert-cad-to-directshape | A set-up step cannot hand on what they need: only `create-wall` hands its elements on, a read step after a change step is refused (row 5b-917), stair and assembly creators are refused as set-up steps (row 5b-1556) - a KEPT rig on a saved scratch would open them |
+| add-stairs-landing, convert-cad-to-directshape | A set-up step cannot hand on what they need (only `create-wall` hands its elements on, a read step after a change step is refused - row 5b-917, stair creators are refused as set-up steps - row 5b-1556), and the rig above had no landing-less two-run stair or CAD with solids. cut-geometry, report-geometry-cuts and refit-room-elevations: OI16-OI18 |
 | report-active-workset, set-active-workset, create-workset-3d-views, report-element-ownership (STALE), report-linked-view-usage, reload-links (STALE), repoint-view-reference, insert-views-from-file, add-family-type-parameter | A workshared model, a link, reference views, a second saved project, a family document - none on the night's model |
 | trace-connectivity, refresh-view, report-browser-organization, report-project-units, report-open-documents, create-energy-model | D-53 tracking by `validate`, one at a time - not a batch |
 | place-column-rebar, set-mep-justification, create-extrusion-roof, run-systems-analysis, measure-available-fall, measure-distance, describe-blank-parameters, show-analysis-heatmap, place-span-direction-symbols, create-property-line, create-arc-length-dimension, create-radial-dimension, run-heating-cooling-loads | An open row (5b-1644, 5b-1397/1409, 5b-1648, 5b-1460), an input shape no job can type, a contract `accept` cannot judge, or a `revit:` list without 2024 |
