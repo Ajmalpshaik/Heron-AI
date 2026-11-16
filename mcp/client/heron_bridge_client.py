@@ -913,7 +913,12 @@ def switches_state(bridge):
         return SWITCHES_NOT_SENT
     if not all(isinstance(one, bool) for one in said):
         return None
-    return dict(zip(SWITCH_FIELDS, said))
+    state = dict(zip(SWITCH_FIELDS, said))
+    # WHICH THE ADMINISTRATOR'S CEILING HOLDS OFF (D-166 layer 3), when the
+    # add-in says - a JSON true only; anything else is not a lock it claimed.
+    state["locked"] = [field for field in SWITCH_FIELDS
+                       if reply.get(field + "Locked") is True]
+    return state
 
 
 def refuse_off_windows():

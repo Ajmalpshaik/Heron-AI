@@ -192,6 +192,10 @@ namespace Heron.Revit.Addin
                 // FRAGMENT-ISSUES section 5b, row 5.
                 HeronAudit.ReportLoss = Log;
 
+                // THE ADMINISTRATOR'S CEILING - D-166 layer 3. The kernel asks
+                // this on every decision; with no policy key it holds nothing.
+                HeronPermissions.Policy = HeronMachinePolicy.Read;
+
                 var config = HeronConfig.Load();
                 PruneLogs(config.GetInt("log.retainDays", 14));
 
@@ -901,6 +905,54 @@ namespace Heron.Revit.Addin
             }
             catch (IOException) { }
             catch (UnauthorizedAccessException) { }
+        }
+    }
+
+    /// <summary>
+    /// THE ADMINISTRATOR'S CEILING, READ - D-166 layer 3.
+    ///
+    /// HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Heron, which only an administrator
+    /// can write: a program running as the modeller cannot, and the Windows
+    /// administrator prompt sits on a screen another program cannot press. So
+    /// this is the one place a switch can be held off that an AI running as
+    /// the modeller cannot reach - unless it runs as administrator itself.
+    ///
+    ///     AllowChanges, AllowAdmin, AllowPublish   DWORD
+    ///         0            that switch cannot be turned on on this PC
+    ///         1, missing   the modeller may turn it on in Settings
+    ///         any other kind of value                treated as 0 - closed
+    ///
+    /// No key is no ceiling, so nothing changes on a PC until somebody sets
+    /// it. Read on every decision, like the switches; a registry fault is
+    /// answered Unreadable, which holds all three off.
+    /// </summary>
+    internal static class HeronMachinePolicy
+    {
+        internal const string KeyPath = @"SOFTWARE\Policies\Heron";
+
+        internal static HeronPolicy Read()
+        {
+            try
+            {
+                using (var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(KeyPath, false))
+                {
+                    if (key == null) return HeronPolicy.NoCeiling;
+                    return HeronPolicy.Of(Allowed(key, "AllowChanges"),
+                                          Allowed(key, "AllowAdmin"),
+                                          Allowed(key, "AllowPublish"));
+                }
+            }
+            catch (System.Security.SecurityException) { return HeronPolicy.Unreadable; }
+            catch (UnauthorizedAccessException) { return HeronPolicy.Unreadable; }
+            catch (IOException) { return HeronPolicy.Unreadable; }
+        }
+
+        private static bool Allowed(Microsoft.Win32.RegistryKey key, string name)
+        {
+            var value = key.GetValue(name);
+            if (value == null) return true;
+            if (value is int) return (int)value != 0;
+            return false;
         }
     }
 }

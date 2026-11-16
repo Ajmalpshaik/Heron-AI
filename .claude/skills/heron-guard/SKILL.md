@@ -73,7 +73,7 @@ modeller can write, read fresh on every request. So the hook also refuses:
 | A write to a file named `heron.config`, **anywhere on disk**, that sets one of the three keys to a true word - `true`, `1`, `yes`, `on`, the words `HeronConfig.GetBool` reads | Reading it - `cat`, `grep`, `Get-Content`, the Read tool |
 | An Edit that changes only the value, with the key in the text it replaces | Setting a switch to **false** - the safe side |
 | A command that names `heron.config` and sets a key on, or names a key and the word *true* - a `sed` or a `-replace` that swaps false for true | `write.askBeforeKeeping`, `companion.enabled` and every other setting |
-| A command that writes `SOFTWARE\Policies\Heron` - `reg add`, `Set-ItemProperty` and the like - and a `.reg` file naming that key | Reading the key; a document or test that names it |
+| A command that writes `SOFTWARE\Policies\Heron` - `reg add`, `Set-ItemProperty` and the like - and a `.reg` file naming that key | Reading the key; a document or test that names it, **written with the editor** - a shell heredoc carrying a `reg add` line for a document is refused like the command itself, as this session found on 2026-11-16 |
 
 **The refusal sends the AI to the modeller** - *turn it on in Heron's Settings (Heron > AI Bridge >
 Settings)* - and never names `HERON_GUARD=off`, because the reader of a refusal is the AI it refused. The

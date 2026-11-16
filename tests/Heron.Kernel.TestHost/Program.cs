@@ -785,6 +785,64 @@ namespace Heron.Kernel.TestHost
                   "set in memory, the switches are what Allows() decides by, and set "
                   + "off they are off again - the snapshot taken between did not move");
 
+            // THE ADMINISTRATOR'S CEILING - D-166 layer 3. Set here as the add-in
+            // sets it from the registry; restored however this ends.
+            var policyWas = HeronPermissions.Policy;
+            try
+            {
+                HeronPermissions.Policy = () => HeronPolicy.Of(false, true, true);
+                var taken = HeronPermissions.SetWriteEnabled(true);
+                var held = HeronPermissions.Switches();
+                var heldSaid = HeronPermissions.Explain(HeronRisk.Modify) ?? "";
+                Check(!taken && !held.Changes && held.ChangesLocked && !held.AdminLocked
+                      && !HeronPermissions.Allows(HeronRisk.Modify)
+                      && HeronPermissions.Allows(HeronRisk.Execute),
+                      "a ceiling holding Changes off: ON is not taken, Modify is refused, "
+                      + "and reading still works");
+                Check(heldSaid.Contains("held off on this PC by a Windows policy")
+                      && heldSaid.Contains("only the PC's administrator can lift it")
+                      && !heldSaid.Contains("heron.config"),
+                      "and the refusal says who can lift it, not Settings and no file: \""
+                      + heldSaid + "\"");
+
+                HeronPermissions.Policy = () => HeronPolicy.NoCeiling;
+                HeronPermissions.SetWriteEnabled(true);
+                HeronPermissions.Policy = () => HeronPolicy.Of(false, true, true);
+                var downOnce = HeronPermissions.Switches();
+                HeronPermissions.Policy = () => HeronPolicy.NoCeiling;
+                var liftedAgain = HeronPermissions.Switches();
+                Check(!downOnce.Changes && !liftedAgain.Changes,
+                      "a ceiling that comes down turns the switch off for good - lifting it "
+                      + "again turns nothing on; only a press in Settings does");
+
+                HeronPermissions.Policy = () => HeronPolicy.Of(true, false, true);
+                HeronPermissions.SetWriteEnabled(true);
+                var adminTaken = HeronPermissions.SetAdminEnabled(true);
+                var adminSaidHeld = HeronPermissions.Explain(HeronRisk.Admin) ?? "";
+                Check(!adminTaken && HeronPermissions.Allows(HeronRisk.Modify)
+                      && !HeronPermissions.Allows(HeronRisk.Admin)
+                      && adminSaidHeld.Contains("Admin switch is held off on this PC"),
+                      "Admin alone held off: Changes still works, Admin is refused by name");
+
+                HeronPermissions.Policy = () => { throw new InvalidOperationException("unreadable"); };
+                var thrown = HeronPermissions.Switches();
+                HeronPermissions.Policy = () => null;
+                var nothing = HeronPermissions.Switches();
+                Check(thrown.ChangesLocked && thrown.AdminLocked && thrown.PublishLocked
+                      && nothing.ChangesLocked && !HeronPermissions.Allows(HeronRisk.Modify),
+                      "a policy that throws or answers nothing holds all three off - it "
+                      + "fails CLOSED");
+            }
+            finally
+            {
+                HeronPermissions.Policy = policyWas;
+                HeronPermissions.SetWriteEnabled(false);
+                HeronPermissions.SetAdminEnabled(false);
+                HeronPermissions.SetPublishEnabled(false);
+            }
+            Check(!HeronPermissions.Switches().ChangesLocked,
+                  "and with no ceiling set, nothing is held off - a PC with no policy key");
+
             var levels = new[]
             {
                 HeronRisk.Read, HeronRisk.Analyze, HeronRisk.Suggest, HeronRisk.Execute,

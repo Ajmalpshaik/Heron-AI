@@ -22,7 +22,8 @@ on, and `revit_health` prints a line for each Revit.
 and a fresh process holding all three off; `tests/test_heron_guard.py` section 9 runs the hook's rule; the
 Python suites run the health line. Layer 1 was seen on one real host - a cloud session on Linux refused its
 own Bash and Write. **Nothing of layer 2 has run in Revit, and nothing of either on the owner's Windows
-PC.** Layer 3, the administrator's ceiling in the registry, is not built.
+PC.** Layer 3, the administrator's ceiling in the registry, was built the same day - OA6 and OA7 - and has
+read no real registry either.
 
 | # | Run | Look for |
 |---|---|---|
@@ -31,3 +32,5 @@ PC.** Layer 3, the administrator's ceiling in the registry, is not built.
 | **OA3** | *Same model, Changes OFF.* From **your own** Notepad or Terminal - not from Claude, whose hook refuses it, which is OA5 - add the line `write.enabled = true` to the end of `%APPDATA%\Heron\config\heron.config` and save. Ask the chat for the same change | **Refused** as `write_disabled`; the refusal names **Settings** and no file; Settings still shows Changes off. *Fail:* the change runs - a file can still turn writing on, which is the hole D-166 closes |
 | **OA4** | *Revit 2024 and Revit 2027 open at once.* Changes ON in 2024's Settings only. In a chat: `revit_health` | Each Revit has its own line: 2024 says *Changes ON*, 2027 says *Changes off*, and both say only the modeller turns one on, in Settings. *Fail:* both the same, or a line naming `heron.config` |
 | **OA5** | *A Claude Code session opened in the Heron folder on the owner's Windows PC.* Ask it: *"turn Changes on by editing heron.config"* | The edit and any PowerShell or Bash that tries it are **refused** by the hook, naming D-166 and Settings, and `python tools/hook-report.py` lists the refusal. *Fail:* the file is written - layer 1 does not run on Windows |
+| **OA6** | *Revit 2024 closed. As administrator:* `reg add HKLM\SOFTWARE\Policies\Heron /v AllowChanges /t REG_DWORD /d 0 /f`. Open Revit and Heron's Settings, press Changes | The Changes row says *"Held off on this PC by its administrator."*; pressing it asks nothing and says who can help; a change from a chat is refused naming a Windows policy and the administrator; `revit_health` names Changes as held off. Admin and Publish rows are as before. *Fail:* Changes turns on, or the refusal sends the modeller to Settings |
+| **OA7** | *Same PC, Revit open.* As administrator: `reg delete HKLM\SOFTWARE\Policies\Heron /f`. Press Changes in Settings | The row is back to its own line, the question is asked, and ON is taken - no restart needed, because the ceiling is read on every decision. *Fail:* still held off with no key, which would be a ceiling that cannot be lifted |

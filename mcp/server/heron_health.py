@@ -294,9 +294,16 @@ def switches_line(state):
         said = ", ".join("%s %s" % (name, "ON" if state[key] else "off")
                          for name, key in (("Changes", "changes"), ("Admin", "admin"),
                                            ("Publish", "publish")))
-        return ("%s in this Revit right now. Only the modeller turns one on, in Heron's "
+        line = ("%s in this Revit right now. Only the modeller turns one on, in Heron's "
                 "Settings in Revit (Heron > AI Bridge > Settings), and all three are off "
                 "again whenever Revit starts." % said)
+        locked = [name for name, key in (("Changes", "changes"), ("Admin", "admin"),
+                                         ("Publish", "publish"))
+                  if key in (state.get("locked") or [])]
+        if locked:
+            line += (" Held off on this PC by a Windows policy, so Settings cannot turn "
+                     "them on - only the PC's administrator can lift it: %s." % ", ".join(locked))
+        return line
     if isinstance(state, str) and state == SWITCHES_NOT_SENT:
         return SWITCHES_OLDER
     return SWITCHES_NOT_READ

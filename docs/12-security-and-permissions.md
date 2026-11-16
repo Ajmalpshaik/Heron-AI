@@ -125,8 +125,11 @@ lists every tool with its level.
 > and all three are **off whenever Revit starts**; each Revit holds its own, and its `info` reply says which
 > are on. A line naming one in `heron.config` is ignored, like any key Heron does not declare, and no
 > refusal names the file any more - only Settings. Ask to Keep is still in `heron.config`. Layer 1 of
-> D-166, the heron-guard hook, refuses a write or command that would turn one on in the file. **Not yet
-> run in Revit** - [Group OA](needs-checking/group-oa.md).
+> D-166, the heron-guard hook, refuses a write or command that would turn one on in the file. Layer 3 is
+> an administrator's ceiling: `HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Heron`, DWORDs `AllowChanges`,
+> `AllowAdmin` and `AllowPublish` - 0 holds that switch off on this PC, 1 or missing lets the modeller turn
+> it on, no key is no ceiling, and a key Heron cannot read holds all three off. **Not yet run in Revit** -
+> [Group OA](needs-checking/group-oa.md).
 
 **The four switches.** Each is a row of Heron's Settings window - *Heron > AI Bridge > Settings* on
 Revit's ribbon - with its state as the button; until 2026-11-07 each was a button on the ribbon itself

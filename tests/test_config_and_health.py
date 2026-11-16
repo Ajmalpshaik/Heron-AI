@@ -437,7 +437,7 @@ def main():
 
     both = client.switches_state(Said({"ok": True, "changes": True, "admin": False,
                                        "publish": False, "askToKeep": False}))
-    check(both == {"changes": True, "admin": False, "publish": False},
+    check(both == {"changes": True, "admin": False, "publish": False, "locked": []},
           "an add-in that says them is read as said: %s" % (both,))
     line = hp.switches_line(both)
     check("Changes ON, Admin off, Publish off" in line
@@ -445,6 +445,15 @@ def main():
           and "heron.config" not in line,
           "and the line says them, says only the modeller turns one on in Settings, and "
           "names no file: %s" % line)
+    held = client.switches_state(Said({"ok": True, "changes": False, "admin": False,
+                                       "publish": False, "changesLocked": True,
+                                       "adminLocked": False, "publishLocked": 1}))
+    check(held is not None and held.get("locked") == ["changes"],
+          "a switch the administrator's ceiling holds off is read as locked - a JSON true "
+          "only: %s" % (held,))
+    check("Held off on this PC by a Windows policy" in hp.switches_line(held)
+          and "only the PC's administrator can lift it: Changes" in hp.switches_line(held),
+          "and the line says Settings cannot help and who can (D-166 layer 3)")
     older = client.switches_state(Said({"ok": True, "askToKeep": False}))
     check(older == client.SWITCHES_NOT_SENT == hp.SWITCHES_NOT_SENT
           and hp.switches_line(older) == hp.SWITCHES_OLDER,

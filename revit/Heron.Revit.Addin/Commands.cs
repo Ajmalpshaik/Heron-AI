@@ -161,6 +161,15 @@ namespace Heron.Revit.Addin
             {
                 var enabled = HeronPermissions.WriteEnabled();
 
+                // HELD OFF BY THE ADMINISTRATOR'S CEILING (D-166 layer 3): no
+                // question is asked, because no answer could turn it on.
+                if (!enabled && HeronPermissions.Switches().ChangesLocked)
+                {
+                    TaskDialog.Show("Heron - Changes", HeronSwitchToggle.HeldOffMessage("Changes"));
+                    HeronApplication.Log("Write toggle: held off by the PC's policy. Still off.");
+                    return Result.Cancelled;
+                }
+
                 if (!enabled)
                 {
                     // The one dialog this command is allowed: a confirmation
@@ -283,6 +292,17 @@ namespace Heron.Revit.Addin
             {
                 var enabled = read();
 
+                // HELD OFF BY THE ADMINISTRATOR'S CEILING (D-166 layer 3).
+                var snapshot = HeronPermissions.Switches();
+                var heldOff = name == "Admin" ? snapshot.AdminLocked
+                            : name == "Publish" ? snapshot.PublishLocked : false;
+                if (!enabled && heldOff)
+                {
+                    TaskDialog.Show("Heron - " + name, HeldOffMessage(name));
+                    HeronApplication.Log(name + " toggle: held off by the PC's policy. Still off.");
+                    return Result.Cancelled;
+                }
+
                 if (!enabled)
                 {
                     // Built at the moment of asking, so the line about
@@ -317,6 +337,20 @@ namespace Heron.Revit.Addin
                 return Result.Failed;
             }
         }
+
+        /// <summary>
+        /// What a switch held off by the administrator's ceiling says when it
+        /// is pressed - D-166 layer 3. Names who can help, not a file.
+        /// </summary>
+        internal static string HeldOffMessage(string name)
+        {
+            return "Heron's " + name + " switch is held off on this PC by a Windows policy - one " +
+                   "its administrator set, or one Heron could not read. It cannot be turned on " +
+                   "here while that policy stands; ask whoever looks after this PC.";
+        }
+
+        /// <summary>The Settings row's line for a switch the ceiling holds off.</summary>
+        internal const string HeldOffLine = "Held off on this PC by its administrator.";
 
         /// <summary>
         /// Changes is off right now: turning this switch on alone will let
@@ -835,7 +869,9 @@ namespace Heron.Revit.Addin
                 new HeronSetting
                 {
                     Name = "Changes",
-                    Line = () => "Heron can change your model when you ask.",
+                    Line = () => HeronPermissions.Switches().ChangesLocked
+                        ? HeronSwitchToggle.HeldOffLine
+                        : "Heron can change your model when you ask.",
                     IsOn = HeronPermissions.WriteEnabled,
                     OnIsRisky = true,
                     Icon = () => HeronPermissions.WriteEnabled()
@@ -845,7 +881,9 @@ namespace Heron.Revit.Addin
                 new HeronSetting
                 {
                     Name = "Admin",
-                    Line = () => "Heron can add parameters, worksets and new families.",
+                    Line = () => HeronPermissions.Switches().AdminLocked
+                        ? HeronSwitchToggle.HeldOffLine
+                        : "Heron can add parameters, worksets and new families.",
                     IsOn = HeronPermissions.AdminEnabled,
                     OnIsRisky = true,
                     Icon = () => HeronPermissions.AdminEnabled()
@@ -855,7 +893,9 @@ namespace Heron.Revit.Addin
                 new HeronSetting
                 {
                     Name = "Publish",
-                    Line = () => "Heron can export, print, save and sync with central.",
+                    Line = () => HeronPermissions.Switches().PublishLocked
+                        ? HeronSwitchToggle.HeldOffLine
+                        : "Heron can export, print, save and sync with central.",
                     IsOn = HeronPermissions.PublishEnabled,
                     OnIsRisky = true,
                     Icon = () => HeronPermissions.PublishEnabled()

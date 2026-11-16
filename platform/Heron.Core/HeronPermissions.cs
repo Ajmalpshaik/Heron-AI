@@ -165,6 +165,42 @@ namespace Heron.Core
         private static bool _publish;
 
         /// <summary>
+        /// THE ADMINISTRATOR'S CEILING - D-166 layer 3. Who may turn each
+        /// switch on at all on this PC, as the add-in reads it from
+        /// HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Heron, which only an
+        /// administrator can write. A switch the ceiling holds off cannot be
+        /// turned on in Settings, and is off whatever was pressed before.
+        ///
+        /// A HOOK, NOT A REGISTRY READ, because this kernel depends on
+        /// nothing - the same shape as HeronAudit.ReportLoss. The add-in sets
+        /// it at start-up; the kernel test host sets its own. Unset, there is
+        /// no ceiling, which is what a PC with no policy key has.
+        ///
+        /// FAILS CLOSED: a reader that throws, or answers nothing, holds all
+        /// three off. Code sets this, never a request and never a file.
+        /// </summary>
+        public static Func<HeronPolicy> Policy = () => HeronPolicy.NoCeiling;
+
+        /// <summary>The ceiling as it stands now, read fresh - closed when it cannot be read.</summary>
+        public static HeronPolicy CurrentPolicy()
+        {
+            var reader = Policy;
+            if (reader == null) return HeronPolicy.NoCeiling;
+            try
+            {
+                return reader() ?? HeronPolicy.Unreadable;
+            }
+            catch (Exception)
+            {
+                // A ceiling nobody can read is not a ceiling that is up. The
+                // registry's own faults are caught where it is read; anything
+                // left is unexpected, and an unexpected answer about who may
+                // change the model is answered no.
+                return HeronPolicy.Unreadable;
+            }
+        }
+
+        /// <summary>
         /// Config key for D-126: Revit asks the modeller Keep or Discard before
         /// a change from a chat is kept. It lets nothing through - it only
         /// decides whether a change Changes already allowed is asked about.
@@ -190,7 +226,20 @@ namespace Heron.Core
         /// </summary>
         public static HeronSwitches Switches()
         {
-            lock (SwitchLock) return HeronSwitches.Of(_changes, _admin, _publish);
+            var policy = CurrentPolicy();
+            lock (SwitchLock)
+            {
+                // A CEILING THAT COMES DOWN TURNS THE SWITCH OFF FOR GOOD. Held
+                // on and then held off by the ceiling, the switch is cleared
+                // here - so lifting the ceiling again turns nothing on. Only
+                // a person pressing ON in Settings ever does that.
+                if (!policy.AllowsChanges) _changes = false;
+                if (!policy.AllowsAdmin) _admin = false;
+                if (!policy.AllowsPublish) _publish = false;
+                return HeronSwitches.Of(_changes, _admin, _publish,
+                                        !policy.AllowsChanges, !policy.AllowsAdmin,
+                                        !policy.AllowsPublish);
+            }
         }
 
         /// <summary>Whether an operation at this risk level may proceed.</summary>
@@ -298,7 +347,12 @@ namespace Heron.Core
             var refusedBy = RefusedBy(risk, switches);
             if (refusedBy == null) return null;
 
-            if (risk == HeronRisk.Modify) return ExplainChanges();
+            if (risk == HeronRisk.Modify)
+            {
+                return switches != null && switches.ChangesLocked
+                    ? HeldOff("Changes", "change the model")
+                    : ExplainChanges();
+            }
 
             if (refusedBy == NoSwitch)
             {
@@ -308,6 +362,8 @@ namespace Heron.Core
             }
 
             var name = SwitchName(risk);
+            var ownLocked = switches != null
+                            && (risk == HeronRisk.Admin ? switches.AdminLocked : switches.PublishLocked);
             var what = risk == HeronRisk.Admin
                 // Plain words for what an ADMIN fragment in this library does.
                 // The cards decide which fragment is which; this only says the
@@ -316,6 +372,13 @@ namespace Heron.Core
                   "parameter, a workset, or a new family file"
                 : "send something out of the model or save it - an export, a print, " +
                   "a save, or a sync with central";
+
+            // HELD OFF BY THE ADMINISTRATOR'S CEILING - D-166 layer 3. Said
+            // before anything else, because no press in Settings can help.
+            if (refusedBy == WriteEnabledKey && switches != null && switches.ChangesLocked)
+                return HeldOff("Changes", what);
+            if (refusedBy != WriteEnabledKey && ownLocked)
+                return HeldOff(name, what);
 
             // ITS OWN SWITCH IS ON, AND CHANGES IS WHAT IS LEFT.
             if (refusedBy == WriteEnabledKey)
@@ -342,6 +405,19 @@ namespace Heron.Core
                    "stays off until the modeller turns it on - it is their decision, not " +
                    "Heron's. To allow it, " + way + " " + OnlyThere + " It takes effect " +
                    "straight away, and turning " + name + " off again stops it just as quickly.";
+        }
+
+        /// <summary>
+        /// The refusal for a switch the administrator's ceiling holds off -
+        /// D-166 layer 3. Settings cannot help, so it does not send anybody
+        /// there; it says who can.
+        /// </summary>
+        private static string HeldOff(string name, string what)
+        {
+            return "That would " + what + ". Heron's " + name + " switch is held off on this " +
+                   "PC by a Windows policy - one its administrator set, or one Heron could not " +
+                   "read - so nothing was sent to Revit. Heron's Settings cannot turn it on while " +
+                   "that policy stands; only the PC's administrator can lift it.";
         }
 
         /// <summary>
@@ -466,6 +542,8 @@ namespace Heron.Core
         /// </summary>
         public static bool SetWriteEnabled(bool enabled)
         {
+            // Held off by the administrator's ceiling, ON is not taken.
+            if (enabled && !CurrentPolicy().AllowsChanges) enabled = false;
             lock (SwitchLock) _changes = enabled;
             return enabled;
         }
@@ -476,6 +554,7 @@ namespace Heron.Core
         /// </summary>
         public static bool SetAdminEnabled(bool enabled)
         {
+            if (enabled && !CurrentPolicy().AllowsAdmin) enabled = false;
             lock (SwitchLock) _admin = enabled;
             return enabled;
         }
@@ -486,6 +565,7 @@ namespace Heron.Core
         /// </summary>
         public static bool SetPublishEnabled(bool enabled)
         {
+            if (enabled && !CurrentPolicy().AllowsPublish) enabled = false;
             lock (SwitchLock) _publish = enabled;
             return enabled;
         }
@@ -530,12 +610,25 @@ namespace Heron.Core
     /// </summary>
     public sealed class HeronSwitches
     {
-        private HeronSwitches(bool changes, bool admin, bool publish)
+        private HeronSwitches(bool changes, bool admin, bool publish,
+                              bool changesLocked, bool adminLocked, bool publishLocked)
         {
             Changes = changes;
             Admin = admin;
             Publish = publish;
+            ChangesLocked = changesLocked;
+            AdminLocked = adminLocked;
+            PublishLocked = publishLocked;
         }
+
+        /// <summary>Changes is held off by the administrator's ceiling - D-166 layer 3.</summary>
+        public bool ChangesLocked { get; private set; }
+
+        /// <summary>Admin is held off by the administrator's ceiling.</summary>
+        public bool AdminLocked { get; private set; }
+
+        /// <summary>Publish is held off by the administrator's ceiling.</summary>
+        public bool PublishLocked { get; private set; }
 
         /// <summary>Changes - write.enabled until D-166. Lets Modify through.</summary>
         public bool Changes { get; private set; }
@@ -549,7 +642,57 @@ namespace Heron.Core
         /// <summary>A snapshot of these three values.</summary>
         public static HeronSwitches Of(bool changes, bool admin, bool publish)
         {
-            return new HeronSwitches(changes, admin, publish);
+            return new HeronSwitches(changes, admin, publish, false, false, false);
+        }
+
+        /// <summary>A snapshot that also says which switches the ceiling holds off.</summary>
+        public static HeronSwitches Of(bool changes, bool admin, bool publish,
+                                       bool changesLocked, bool adminLocked, bool publishLocked)
+        {
+            return new HeronSwitches(changes && !changesLocked, admin && !adminLocked,
+                                     publish && !publishLocked,
+                                     changesLocked, adminLocked, publishLocked);
+        }
+    }
+
+    /// <summary>
+    /// Which switches may be turned on at all on this PC - D-166 layer 3, the
+    /// administrator's ceiling. Read by the add-in from
+    /// HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Heron: AllowChanges, AllowAdmin and
+    /// AllowPublish, each a DWORD - 0 holds that switch off, 1 or missing lets
+    /// the modeller turn it on. No key at all is no ceiling.
+    ///
+    /// It can only keep a switch OFF. It cannot say a person turned one on;
+    /// that is still the Settings window, and only there.
+    /// </summary>
+    public sealed class HeronPolicy
+    {
+        private HeronPolicy(bool changes, bool admin, bool publish)
+        {
+            AllowsChanges = changes;
+            AllowsAdmin = admin;
+            AllowsPublish = publish;
+        }
+
+        /// <summary>The modeller may turn Changes on here.</summary>
+        public bool AllowsChanges { get; private set; }
+
+        /// <summary>The modeller may turn Admin on here.</summary>
+        public bool AllowsAdmin { get; private set; }
+
+        /// <summary>The modeller may turn Publish on here.</summary>
+        public bool AllowsPublish { get; private set; }
+
+        /// <summary>No policy key: nothing is held off.</summary>
+        public static readonly HeronPolicy NoCeiling = new HeronPolicy(true, true, true);
+
+        /// <summary>A policy that could not be read: everything is held off - closed.</summary>
+        public static readonly HeronPolicy Unreadable = new HeronPolicy(false, false, false);
+
+        /// <summary>A ceiling of these three values.</summary>
+        public static HeronPolicy Of(bool allowChanges, bool allowAdmin, bool allowPublish)
+        {
+            return new HeronPolicy(allowChanges, allowAdmin, allowPublish);
         }
     }
 }
