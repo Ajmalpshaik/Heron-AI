@@ -141,6 +141,15 @@ SETTLED = re.compile(r"(?<!NOT )(?<!not )(?<!NEVER )(?<!never )"
 # that cannot see one of its own open rows is the failure it exists to prevent.
 CELL = re.compile(r"(?<!\\)\|")
 
+# A ROW MOVED TO A GITHUB ISSUE IS STILL OWED, ONLY TRACKED ELSEWHERE. On
+# 2026-11-16, on the owner's word, every open row of sections 5 and 5b was
+# grouped into GitHub issues and its state cell made to begin "MOVED TO ISSUE
+# #N" - so it leaves the OPEN list above, which is what he asked for, and its
+# full text stays here. A count of zero open would then read as nothing left
+# to do, so the moved rows are counted on a line of their own and the map is
+# named: docs/fragment-issues/ISSUES.md.
+MOVED = re.compile(r"^moved to issue\b", re.I)
+
 
 def rows(start=None, ends=None, label="5"):
     """Every (id, state) pair in one section, in the order they are written.
@@ -251,6 +260,10 @@ def report(label, found, show_all):
     out("  still OPEN          : %d\n" % len(is_open))
     out("  ids                 : %s\n"
         % ", ".join(ident(label, n) for n, _ in is_open))
+    moved = [n for n, s in found if MOVED.match(s)]
+    if moved:
+        out("  moved to an issue   : %d - open on GitHub, mapped in"
+            " docs/fragment-issues/ISSUES.md\n" % len(moved))
     out("\n")
     if arguing:
         out("  ROWS THAT ARGUE WITH THEMSELVES - the state begins with OPEN\n"
@@ -267,13 +280,14 @@ def main():
     show_all = "--all" in sys.argv
     out = sys.stdout.write
 
-    total, seen, all_rows, all_ids = 0, 0, 0, []
+    total, seen, all_rows, all_ids, moved = 0, 0, 0, [], 0
     for label, start, ends in SECTIONS:
         found = rows(start, ends, label)
         if found is None:
             continue          # rows() has already said which heading moved
         seen += 1
         section_open, section_rows, section_ids = report(label, found, show_all)
+        moved += sum(1 for _n, s in found if MOVED.match(s))
         total += section_open
         all_rows += section_rows
         all_ids.extend(section_ids)
@@ -293,7 +307,11 @@ def main():
     # Reported by a Codex review on PR #219.
     out("  TOTAL rows, all sections  : %d\n" % all_rows)
     out("  TOTAL ids, all sections   : %s\n" % (", ".join(all_ids) or "(none)"))
-    out("  OPEN across both sections : %d\n\n" % total)
+    out("  OPEN across both sections : %d\n" % total)
+    out("  MOVED TO A GITHUB ISSUE   : %d\n\n" % moved)
+    if moved:
+        out("A moved row is still owed: it is open as a GitHub issue, and\n"
+            "docs/fragment-issues/ISSUES.md says which. Its text stays here.\n\n")
     out("Read the ids, not the count. A row can say OPEN after a later row\n"
         "has closed it - four did on 2026-09-16 - and no pattern sees that.\n")
     return 0
