@@ -1,5 +1,32 @@
-// NOT STANDALONE. Assumes `doc`, `view` and `minOverlapMm` are in scope; leaves
-// `findings`, `overlapping`, `pairs` and `noBox` behind.
+// NOT STANDALONE. Assumes `doc`, `view`, `minOverlapMm` and `annotationOnly`
+// are in scope; leaves `findings`, `overlapping`, `pairs`, `overModel` and
+// `noBox` behind.
+//
+// VERSION 2 (2026-11-16) - TAGS OVER THE DRAWING TOO (row 5b-1731, issue #854
+// item b, villa 2 on Revit 2024). Version 1 compared annotation with
+// annotation only and its answer did not say so: "0 clash(es)" on a plan where
+// nearly every door and window tag sat on the cut wall. Widened here rather
+// than in a card of its own - it is the same question, "what is printing on
+// top of what". Each TAG's paper box is now also compared with:
+//
+//   WALLS, IN A PLAN. The poche is a band the wall's width wide about its
+//   centre line, worked out from the location line Revit keeps (a straight
+//   wall's location-line offset is taken off; a curved one is given a band
+//   wide enough for any location line, and the answer says so). Only in a
+//   plan, where the cut is the plan's own - in a section a wall's location
+//   line is not where its cut is drawn, so walls are not compared there and
+//   the answer says that too. A tag's OWN element is never its clash: a wall
+//   tag sits on its wall.
+//   LINES - model and detail lines (category Lines) the view shows: a tag
+//   box a line crosses.
+//   DIMENSIONS - the point each dimension's figure is placed at, inside a tag
+//   box. Never the dimension's own box: that is the whole string, witness
+//   lines and all, which is why version 1 left dimensions out.
+//
+// `minOverlapMm` still judges annotation against annotation. Against the
+// drawing a tag counts when it touches at all - a box on the poche is the
+// complaint, however little. `annotationOnly` true is version 1 exactly.
+// The first finding names what was compared, every time.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -35,6 +62,8 @@ var findings = new List<string>();
 var overlapping = new List<ElementId>();
 var pairs = 0;
 var noBox = 0;
+// VERSION 2 (row 5b-1731): tag-over-drawing clashes - walls, lines, dimensions.
+var overModel = 0;
 
 var mmPerFoot = 304.8;
 
@@ -171,12 +200,231 @@ else
         }
     }
 
+    // ------------------------------------------------------------------
+    // VERSION 2 (row 5b-1731): each TAG against the drawing under it.
+    // ------------------------------------------------------------------
+    var compared = "annotation against annotation only - walls, lines and dimensions were not compared "
+        + "(annotationOnly)";
+    if (!annotationOnly)
+    {
+        // Paper-plane geometry, in model feet along the view's right and up.
+        Func<double, double, double, double, double, double, double> pointToSegment = (px, py, ax, ay, bx, by) =>
+        {
+            var dx = bx - ax; var dy = by - ay;
+            var lengthSquared = dx * dx + dy * dy;
+            var t = lengthSquared < 1e-18 ? 0.0 : ((px - ax) * dx + (py - ay) * dy) / lengthSquared;
+            if (t < 0) t = 0; else if (t > 1) t = 1;
+            var cx = ax + t * dx - px; var cy = ay + t * dy - py;
+            return Math.Sqrt(cx * cx + cy * cy);
+        };
+        Func<double, double, double, double, double, double, double> side = (ax, ay, bx, by, cx, cy) =>
+            (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
+        Func<double, double, double, double, double, double, double, double, bool> segmentsCross =
+            (ax, ay, bx, by, cx, cy, ex, ey) =>
+        {
+            var d1 = side(cx, cy, ex, ey, ax, ay); var d2 = side(cx, cy, ex, ey, bx, by);
+            var d3 = side(ax, ay, bx, by, cx, cy); var d4 = side(ax, ay, bx, by, ex, ey);
+            return ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0));
+        };
+        // The distance on paper from a segment to tag box k; 0 when they meet.
+        Func<int, double, double, double, double, double> segmentToBox = (k, ax, ay, bx, by) =>
+        {
+            Func<double, double, bool> inside = (x, y) => x >= uMin[k] && x <= uMax[k] && y >= vMin[k] && y <= vMax[k];
+            if (inside(ax, ay) || inside(bx, by)) return 0.0;
+            var cu = new[] { uMin[k], uMax[k], uMax[k], uMin[k] };
+            var cv = new[] { vMin[k], vMin[k], vMax[k], vMax[k] };
+            for (var e = 0; e < 4; e++)
+                if (segmentsCross(ax, ay, bx, by, cu[e], cv[e], cu[(e + 1) % 4], cv[(e + 1) % 4])) return 0.0;
+            var best = double.MaxValue;
+            for (var e = 0; e < 4; e++) best = Math.Min(best, pointToSegment(cu[e], cv[e], ax, ay, bx, by));
+            Func<double, double, double> toBox = (x, y) =>
+            {
+                var ox = Math.Max(Math.Max(uMin[k] - x, 0.0), x - uMax[k]);
+                var oy = Math.Max(Math.Max(vMin[k] - y, 0.0), y - vMax[k]);
+                return Math.Sqrt(ox * ox + oy * oy);
+            };
+            best = Math.Min(best, Math.Min(toBox(ax, ay), toBox(bx, by)));
+            return best;
+        };
+        Func<Curve, List<double[]>> onPaper = curve =>
+        {
+            var points = new List<double[]>();
+            if (curve == null) return points;
+            IList<XYZ> along = null;
+            try { along = curve.Tessellate(); } catch { along = null; }
+            if (along == null) return points;
+            foreach (var p in along) points.Add(new[] { p.DotProduct(right), p.DotProduct(up) });
+            return points;
+        };
+        // What a tag points at - its own element is never its clash.
+        Func<Element, HashSet<ElementId>> taggedBy = e =>
+        {
+            var ids = new HashSet<ElementId>();
+            var tag = e as IndependentTag;
+            if (tag == null) return ids;
+            try
+            {
+#if REVIT2020 || REVIT2021
+                var one = tag.TaggedLocalElementId;
+                if (one != null && one != ElementId.InvalidElementId) ids.Add(one);
+#else
+                foreach (var id in tag.GetTaggedLocalElementIds()) ids.Add(id);
+#endif
+            }
+            catch { }
+            return ids;
+        };
+
+        var tagIndex = new List<int>();
+        for (var k = 0; k < kept.Count; k++) if (keptKind[k] == "tag") tagIndex.Add(k);
+        var tagged = new Dictionary<int, HashSet<ElementId>>();
+        foreach (var k in tagIndex) tagged[k] = taggedBy(kept[k]);
+
+        var isPlan = view is ViewPlan;
+        var walls = 0; var lines = 0; var dimensions = 0;
+        var curvedWalls = 0;
+
+        // WALLS - in a plan only.
+        if (isPlan)
+        {
+            foreach (var wallElement in new FilteredElementCollector(doc, view.Id).OfClass(typeof(Wall)).ToList())
+            {
+                var wall = wallElement as Wall;
+                if (wall == null) continue;
+                var located = wall.Location as LocationCurve;
+                if (located == null || located.Curve == null) continue;
+                double width = 0;
+                try { width = wall.Width; } catch { width = 0; }
+                if (width <= 0) continue;
+                walls++;
+
+                var centre = located.Curve;
+                var half = width / 2.0;
+                var line = centre as Line;
+                if (line != null)
+                {
+                    // Revit keeps the location line, which may be a face;
+                    // the poche is centred on the wall's middle.
+                    try
+                    {
+                        var structure = wall.WallType.GetCompoundStructure();
+                        var keyParameter = wall.get_Parameter(BuiltInParameter.WALL_KEY_REF_PARAM);
+                        if (structure != null && keyParameter != null)
+                        {
+                            var shift = structure.GetOffsetForLocationLine((WallLocationLine)keyParameter.AsInteger());
+                            if (Math.Abs(shift) > 1e-9)
+                                centre = centre.CreateTransformed(Transform.CreateTranslation(wall.Orientation * -shift));
+                        }
+                    }
+                    catch { centre = located.Curve; }
+                }
+                else
+                {
+                    // A curved wall: a band wide enough for any location line.
+                    curvedWalls++;
+                    half = width;
+                }
+
+                var path = onPaper(centre);
+                var wallType = doc.GetElement(wall.GetTypeId());
+                var wallName = wallType == null ? "wall" : wallType.Name;
+                foreach (var k in tagIndex)
+                {
+                    if (tagged[k].Contains(wall.Id)) continue;
+                    var hit = false;
+                    for (var p = 0; p + 1 < path.Count && !hit; p++)
+                        hit = segmentToBox(k, path[p][0], path[p][1], path[p + 1][0], path[p + 1][1]) < half;
+                    if (!hit) continue;
+                    overModel++;
+                    flagged.Add(kept[k].Id);
+                    findings.Add(string.Format("tag '{0}' over wall '{1}' (id {2}) - on its poche", label(kept[k]),
+                        wallName, wall.Id));
+                }
+            }
+        }
+
+        // LINES - model and detail lines the view shows.
+        try
+        {
+            foreach (var lineElement in new FilteredElementCollector(doc, view.Id)
+                .OfCategory(BuiltInCategory.OST_Lines).WhereElementIsNotElementType().ToList())
+            {
+                var curveElement = lineElement as CurveElement;
+                if (curveElement == null) continue;
+                lines++;
+                var path = onPaper(curveElement.GeometryCurve);
+                var style = "";
+                try { style = curveElement.LineStyle == null ? "" : curveElement.LineStyle.Name; } catch { }
+                foreach (var k in tagIndex)
+                {
+                    if (tagged[k].Contains(curveElement.Id)) continue;
+                    var hit = false;
+                    for (var p = 0; p + 1 < path.Count && !hit; p++)
+                        hit = segmentToBox(k, path[p][0], path[p][1], path[p + 1][0], path[p + 1][1]) <= 0.0;
+                    if (!hit) continue;
+                    overModel++;
+                    flagged.Add(kept[k].Id);
+                    findings.Add(string.Format("tag '{0}' crossed by a line '{1}' (id {2})", label(kept[k]), style,
+                        curveElement.Id));
+                }
+            }
+        }
+        catch { }
+
+        // DIMENSIONS - the point each figure sits at.
+        foreach (var dimensionElement in new FilteredElementCollector(doc, view.Id).OfClass(typeof(Dimension)).ToList())
+        {
+            var dimension = dimensionElement as Dimension;
+            if (dimension == null) continue;
+            dimensions++;
+            var figures = new List<XYZ>();
+            try
+            {
+                if (dimension.NumberOfSegments > 1)
+                {
+                    foreach (DimensionSegment segment in dimension.Segments)
+                    {
+                        try { if (segment.TextPosition != null) figures.Add(segment.TextPosition); } catch { }
+                    }
+                }
+                else if (dimension.TextPosition != null) figures.Add(dimension.TextPosition);
+            }
+            catch { }
+            var dimensionType = doc.GetElement(dimension.GetTypeId());
+            var dimensionName = dimensionType == null ? "dimension" : dimensionType.Name;
+            foreach (var k in tagIndex)
+            {
+                var hit = false;
+                foreach (var figure in figures)
+                {
+                    var fu = figure.DotProduct(right); var fv = figure.DotProduct(up);
+                    if (fu >= uMin[k] && fu <= uMax[k] && fv >= vMin[k] && fv <= vMax[k]) { hit = true; break; }
+                }
+                if (!hit) continue;
+                overModel++;
+                flagged.Add(kept[k].Id);
+                findings.Add(string.Format("tag '{0}' over the figure of dimension '{1}' (id {2})", label(kept[k]),
+                    dimensionName, dimension.Id));
+            }
+        }
+
+        compared = string.Format("{0} tag(s) also against {1}{2} line(s) and {3} dimension figure(s){4}",
+            tagIndex.Count,
+            isPlan ? walls + " wall(s), " : "",
+            lines, dimensions,
+            isPlan
+                ? (curvedWalls > 0 ? string.Format(" ({0} curved wall(s) given a band as wide as the wall each side, "
+                    + "so a tag beside one may be counted)", curvedWalls) : "")
+                : " - walls are compared in a plan only, because in this view a wall's location line is not "
+                    + "where its cut is drawn");
+    }
+
     foreach (var id in flagged) overlapping.Add(id);
 
     findings.Insert(0, string.Format(
-        "View '{0}' at 1:{1:0} - {2} annotation element(s) compared, {3} clash(es). Dimensions are not "
-        + "compared, and a box is bigger than the ink, so check the top few on the sheet",
-        view.Name, scale, kept.Count, pairs));
+        "View '{0}' at 1:{1:0} - {2} annotation element(s) compared with each other, {3} clash(es); {4}, "
+        + "{5} clash(es). A box is bigger than the ink, so check the top few on the sheet",
+        view.Name, scale, kept.Count, pairs, compared, overModel));
 
     if (noBox > 0)
         findings.Add(string.Format("{0} annotation element(s) reported no bounding box in this view and "
