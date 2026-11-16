@@ -1,7 +1,30 @@
 // NOT STANDALONE. Assumes `doc`, `symbol`, `points`, `level`,
-// `structuralType`, `topLevelName`, `topOffset` and `workPlane` are in scope,
-// and leaves `placed`, `failed`, `readBack`, `tops`, `instanceId`, `refused`
-// and `findings` behind.
+// `structuralType`, `topLevelName`, `topOffset`, `workPlane` and
+// `rotationDegrees` are in scope, and leaves `placed`, `failed`, `readBack`,
+// `tops`, `instanceId`, `refused` and `findings` behind.
+//
+// VERSION 6 (2026-11-16) - TWO GAPS FROM Ajmalpshaik/Heron-AI#853 (Revit 2024,
+// `villa 2`), both in a project's layout; a nested placement is unchanged.
+//
+//   AN ARCHITECTURAL COLUMN TAKES A TOP LEVEL (FRAGMENT-ISSUES row 5b-1704).
+//   Version 5 knew a column only by the Structural Columns category, so
+//   `topLevelName` on *M_Rectangular Column* (Columns) was refused unless it
+//   was asked as `structuralType=column` - which placed it as a structural
+//   column. A Columns-category family now takes `topLevelName` and
+//   `topOffset` placed non-structurally, with no structural type said: the
+//   same built-in Top Level and Top Offset, the same checks before anything is
+//   placed, the same read-back, and its height above the level is its Base
+//   Offset, as a structural column's is.
+//
+//   A ROTATION IN THE SAME JOB (row 5b-1706). `rotationDegrees` turns every
+//   instance placed about a vertical axis through its own insertion point -
+//   positive anticlockwise seen from above, as Revit's Rotate turns - so
+//   furniture placed to face a wall is one undo entry, not two. Each one's
+//   facing is read before and after, and one that did not turn by the angle
+//   asked undoes the whole layout (Article 8), as every other read-back here
+//   does; the read-back of where each stands runs after the turn, so a turn
+//   that moved one is caught too. Not a number, or given for a nested
+//   placement in a family: refused before anything is placed.
 //
 // VERSION 5 (2026-11-01) - PLACE_NESTED_FAMILY MERGED IN. In the FAMILY being
 // edited, a type of a family loaded into it is placed in it - a nested
@@ -212,9 +235,12 @@ var structural = wanted == StructuralType.Column || wanted == StructuralType.Foo
 var isColumn = false;
 var isFraming = false;
 var isFoundation = false;
+// VERSION 6 (row 5b-1704): an ARCHITECTURAL column - the Columns category.
+var isArchColumn = false;
 if (symbol != null && symbol.Category != null)
 {
     var category = symbol.Category.Id;
+    isArchColumn = category.Equals(new ElementId(BuiltInCategory.OST_Columns));
     isColumn = category.Equals(new ElementId(BuiltInCategory.OST_StructuralColumns));
     isFraming = category.Equals(new ElementId(BuiltInCategory.OST_StructuralFraming));
     isFoundation = category.Equals(new ElementId(BuiltInCategory.OST_StructuralFoundation));
@@ -223,7 +249,9 @@ var familyWords = symbol == null ? "" : string.Format("'{0}: {1}'", symbol.Famil
 var lineTool = "Ask PLACE_LINE_BASED_FAMILY instead, with `curves` as start;end pairs in millimetres "
     + "and a pipe between lines - \"0,0,0; 5000,0,0 | 5000,0,0; 5000,3000,4000\". Nothing was placed";
 
-// THE TOP ASKED FOR - columns only.
+// THE TOP ASKED FOR - columns only: a structural column asked as a column, or
+// (version 6) an architectural column placed non-structurally.
+var takesTop = wanted == StructuralType.Column || (isArchColumn && wanted == StructuralType.NonStructural);
 var topName = notAsked(topLevelName) ? "" : topLevelName.Trim();
 var offsetText = notAsked(topOffset) ? "" : topOffset.Trim();
 Level topLevel = null;
@@ -262,8 +290,9 @@ else if (topName.Length > 0)
                             System.Globalization.CultureInfo.InvariantCulture, out offsetMm))
         refused = "'" + offsetText + "' is not a top offset. Give it in millimetres - 300 or -150 - or leave "
             + "it out for none. Nothing was placed";
-    else if (wanted != StructuralType.Column)
-        refused = "A top level is set only on columns, and this was asked as '"
+    else if (!takesTop)
+        refused = "A top level is set only on columns - a Structural Columns family asked as a column, or a "
+            + "Columns family - and this was " + familyWords + " asked as '"
             + (askedKind == "" ? "non-structural" : structuralType) + "'. Nothing was placed";
     else
     {
@@ -287,8 +316,35 @@ else if (topName.Length > 0)
     }
 }
 
-// ---- VERSION 5: A NESTED COMPONENT, IN THE FAMILY BEING EDITED --------------
+// ---- VERSION 6: A ROTATION, JUDGED BEFORE ANYTHING IS PLACED (row 5b-1706).
 var nestedHere = doc.IsFamilyDocument;
+var rotationText = notAsked(rotationDegrees) ? "" : rotationDegrees.Trim();
+var turnDegrees = 0.0;
+if (refused == null && rotationText.Length > 0)
+{
+    if (!double.TryParse(rotationText, System.Globalization.NumberStyles.Float,
+                         System.Globalization.CultureInfo.InvariantCulture, out turnDegrees)
+        || double.IsNaN(turnDegrees) || double.IsInfinity(turnDegrees))
+    {
+        turnDegrees = 0.0;
+        refused = "'" + rotationText + "' is not a rotation. Give it in degrees - 90, or -45 to turn clockwise "
+            + "seen from above - or leave it out for none. Nothing was placed";
+    }
+    else if (nestedHere)
+        refused = "rotationDegrees turns what a PROJECT's layout places. In the family being edited a nested "
+            + "family's direction is its plane's - leave rotationDegrees out. Nothing was placed";
+}
+// A whole turn, or none, turns nothing and is not attempted. The remainder is
+// kept inside the test, so it is never printed as if it were the turn (the
+// lesson of ROTATE_ELEMENTS' row 5b-1708).
+Func<double, bool> noTurnIn = degrees =>
+{
+    var left = Math.Abs(degrees % 360.0);
+    return left < 1e-6 || Math.Abs(left - 360.0) < 1e-6;
+};
+var turnAsked = refused == null && !noTurnIn(turnDegrees);
+
+// ---- VERSION 5: A NESTED COMPONENT, IN THE FAMILY BEING EDITED --------------
 var planeName = notAsked(workPlane) ? "" : workPlane.Trim();
 if (refused == null && !nestedHere && planeName.Length > 0)
     refused = "workPlane names the plane a NESTED family sits on, in the family being edited. In a project a "
@@ -512,12 +568,15 @@ Func<Element, BuiltInParameter, Parameter> carried = (element, id) =>
 };
 
 // Where each kind keeps its height above the level.
+// VERSION 6: an architectural column keeps it in Base Offset, as a structural
+// column does - it has no Elevation from Level.
+var columnBase = wanted == StructuralType.Column || (isArchColumn && !onLevelPlane);
 var heightId = onLevelPlane && !structural
     ? BuiltInParameter.INSTANCE_FREE_HOST_OFFSET_PARAM
-    : wanted == StructuralType.Column
+    : columnBase
         ? BuiltInParameter.FAMILY_BASE_LEVEL_OFFSET_PARAM
         : BuiltInParameter.INSTANCE_ELEVATION_PARAM;
-var heightWord = wanted == StructuralType.Column ? "Base Offset" : "Elevation from Level";
+var heightWord = columnBase ? "Base Offset" : "Elevation from Level";
 // A structural member goes through Revit's call for a point on a level with
 // its structural type (version 4), never onto the level's plane.
 if (structural) onLevelPlane = false;
@@ -574,6 +633,53 @@ for (var i = 0; i < made.Count; i++)
 
     // The height above the level, which is what both of these parameters hold.
     height.Set(askedAt[i].Z - levelZ);
+}
+
+// VERSION 6: THE TURN ASKED FOR, about a vertical axis through each one's own
+// insertion point, and read back by its facing (row 5b-1706). Revit's rotate
+// returns normally and turns nothing in some cases (ROTATE_ELEMENTS measured
+// it on grouped terminals), so only the facing read back counts.
+var turnedFrom = new List<XYZ>();
+if (turnAsked)
+{
+    var radians = turnDegrees * Math.PI / 180.0;
+    for (var i = 0; i < made.Count; i++)
+    {
+        turnedFrom.Add(made[i].GetTransform().BasisX);
+        var at = made[i].Location as LocationPoint;
+        if (at == null)
+            throw new InvalidOperationException(string.Format("'{0}' at point {1} gives back no insertion point "
+                + "to turn it about, so the turn asked is not guessed. Nothing this layout did is kept", named, i + 1));
+        try
+        {
+            ElementTransformUtils.RotateElement(doc, made[i].Id,
+                Line.CreateBound(at.Point, at.Point + XYZ.BasisZ), radians);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException(string.Format("Revit would not turn '{0}' at point {1}: {2}. "
+                + "Nothing this layout did is kept", named, i + 1, ex.Message));
+        }
+    }
+    doc.Regenerate();
+
+    // The turn each one made, signed about the vertical, against the turn asked
+    // brought into one turn either way.
+    var wantedTurn = Math.Atan2(Math.Sin(radians), Math.Cos(radians));
+    var notTurned = new List<string>();
+    for (var i = 0; i < made.Count; i++)
+    {
+        var was = turnedFrom[i];
+        var now = made[i].GetTransform().BasisX;
+        var turnMade = Math.Atan2(was.X * now.Y - was.Y * now.X, was.X * now.X + was.Y * now.Y);
+        var gap = Math.Abs(Math.Atan2(Math.Sin(turnMade - wantedTurn), Math.Cos(turnMade - wantedTurn)));
+        if (gap > 0.01 * Math.PI / 180.0)
+            notTurned.Add(string.Format("point {0} turned {1:0.##} degrees", i + 1, turnMade * 180.0 / Math.PI));
+    }
+    if (notTurned.Count > 0)
+        throw new InvalidOperationException(string.Format("A turn of {0} degrees was asked and {1} placement(s) "
+            + "read back otherwise: {2}. Nothing this layout did is kept",
+            turnDegrees.ToString("0.##", invariant), notTurned.Count, string.Join("; ", notTurned)));
 }
 
 // VERSION 4: A COLUMN'S TOP - the built-ins only, never a parameter found by
@@ -772,7 +878,13 @@ if (topLevel != null)
 
 findings.Add(string.Format("{0} placed{1} on '{2}', {3} point(s) could not take one", placed.Count,
     askedKind == "" ? "" : " as " + wanted, level.Name, failed));
-if (wanted == StructuralType.Column)
+if (turnAsked && made.Count > 0)
+    findings.Add(string.Format("Each one turned {0} degrees {1} seen from above, about its own insertion point - "
+        + "read back on all {2}", Math.Abs(turnDegrees).ToString("0.##", invariant),
+        turnDegrees < 0 ? "clockwise" : "anticlockwise", made.Count));
+else if (rotationText.Length > 0 && made.Count > 0)
+    findings.Add("A rotation of " + rotationText + " degrees is no turn at all, so none was made");
+if (takesTop)
     findings.Add(topLevel != null
         ? string.Format("Top asked for: '{0}' + {1:0} mm. Read back as asked on all {2}", topLevel.Name,
             offsetFeet * 304.8, made.Count)

@@ -483,6 +483,38 @@ def refreshing(S, F):
         got = refreshes_from(installed)
         check(got is not None and same(got[1], installed),
               "an installed Heron, which has no .git at all, uses its own")
+
+        # A DEVELOPER'S PC - D-167, amended 2026-11-16: "for me only it will
+        # from the project". On 2026-11-16 an installed Heron rebuilt the
+        # shared store from its own cards beside the owner's checkout (OA2).
+        note = os.path.join(os.environ["HERON_DATA"], S.DEVELOPER_NOTE)
+        check(S.record_developer_checkout(installed) is None
+              and not os.path.exists(note),
+              "an installed Heron never leaves the developer note")
+        check(same(S.record_developer_checkout(worktree), main_tree)
+              and same(S.developer_checkout(), main_tree),
+              "a chat from a worktree leaves it, naming the MAIN checkout")
+        got = refreshes_from(installed)
+        check(got is not None and same(got[0], main_cards)
+              and same(got[1], main_tree),
+              "and with it an installed Heron follows that checkout's cards, "
+              "as a worktree does - never its own (%r)" % (got,))
+        check(same(S.steps_aside_for(installed), main_tree)
+              and S.steps_aside_for(worktree) is None
+              and S.steps_aside_for(main_tree) is None,
+              "  it steps aside; a checkout or a worktree never does")
+        check(S.rebuild_refusal(installed) is not None,
+              "  and it may not rebuild the shared store from its own cards: %s"
+              % S.rebuild_refusal(installed))
+        io.open(note, "w", encoding="utf-8").write(
+            u'{"checkout": "%s"}' % os.path.join(fake, "moved").replace(os.sep, "/"))
+        got = refreshes_from(installed)
+        check(S.developer_checkout() is None and got is not None
+              and same(got[1], installed),
+              "a note naming a folder that is gone is forgotten - the "
+              "installed Heron is its own again")
+        os.remove(note)
+
         check(refreshes_from(lost) is None,
               "a worktree whose main checkout cannot be found refreshes "
               "nothing (%r)" % (refreshes_from(lost),))
@@ -607,6 +639,23 @@ def refreshing(S, F):
         at = body.find("SCOPE.refresh(")
         check(0 <= at < body.find("index(store)"),
               "brain/%s refreshes the rows before it indexes" % name)
+
+    # THE DEVELOPER NOTE AT A CHAT'S START - D-167, amended 2026-11-16. Read as
+    # text for the same reason. A chat from a checkout leaves the note, and an
+    # installed Heron on that PC leaves the Commands panel's runner note to the
+    # developer's chats - and the runner note is still written when the brain
+    # cannot load, since it needs only the standard library.
+    entry = io.open(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py"),
+                    encoding="utf-8").read()
+    asked = entry.find("brain.developer_copy(_repo_root())")
+    runner = entry.find("write_runner_note(sys.executable, _repo_root())")
+    check(0 <= asked < runner,
+          "a chat asks about a developer copy before it writes the runner note")
+    between = entry[asked:runner] if 0 <= asked < runner else ""
+    check("if aside is None:" in between
+          and between.count("except brain.BrainUnavailable") == 1,
+          "  and writes that note only when it does not step aside - in its "
+          "own try, so a brain that cannot load never takes the panel away")
 
 
 def _new_card(cards, name, fid, capability, identity, cases=True):
