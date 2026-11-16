@@ -476,6 +476,13 @@ def build_cases(module, core):
     on_disk, _f = first_with("EXECUTE", "PROVEN",
                              lambda folder, capability: stands(folder, capability)
                              and not shows(folder, capability))
+    # A DRAFT ONE WHEN NO PROVEN CARD WRITES A FILE, as `show` above falls
+    # back: revit_change asks the dry-run rule BEFORE the PROVEN rule, so the
+    # refusal is the same either way. OPEN_FAMILY_FOR_EDITING was the only
+    # PROVEN one until it went back to DRAFT at version 3 (row 5b-1820).
+    if on_disk is None:
+        on_disk, _f = first_with("EXECUTE", "DRAFT",
+                                 lambda folder, capability: not shows(folder, capability))
     picked["outward"], picked["on disk"] = outward, on_disk
 
     ranked = {"capability": read, "risk": "READ", "route": "ranked",
