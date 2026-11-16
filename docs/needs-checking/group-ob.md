@@ -49,17 +49,17 @@ negatives are judged only on their counts.
 
 **Arranged:** `Heron OB Test.rvt` made by Heron from `English\DefaultMetric.rte` (OB0, `CREATE_FAMILY_DOCUMENT`,
 `CREATE_LEVELS` *Heron OB Roof* 6000, a column placed and marked `OB-POST`), saved under `%TEMP%\heron-work\ob`.
-The job file ran from this branch (`batch-prove`, every run rolled back); the five drafts are in
-`brain/proof-drafts/runs/`.
+The job file ran from this branch (`batch-prove`, session 29520, every run rolled back); the five run records
+are in `brain/proof-drafts/runs/`, and each quotation below is read from them.
 
 | Row | Result |
 |---|---|
-| OB1, run 2026-11-16 | **PASS** - `written 1`; the negative wrote nothing. |
-| OB2, run 2026-11-16 | **PASS** - `written 1`; the negative wrote nothing. |
-| OB3, run 2026-11-16 | **PASS** - `placed 2` non-structural architectural columns with their top on *Heron OB Roof* - 150 mm, read back, turned 90 degrees; negative *"'ninety' is not a rotation"*. An architectural column's second *Top Level* parameter is `SCHEDULE_TOP_LEVEL_PARAM`. Group OE met the same refusal on main's version 5 the same day (OE1 step 5) - row 5b-1704, repaired here. |
+| OB1, run 2026-11-16 | **PASS** - positive `written 1`, `refused` empty; negative `written 0` with the finding *"1 element(s) carry more than one parameter called 'Top Level', so which one is meant would be a guess and nothing on them was touched. Name the one meant: 'Top Level {SCHEDULE_TOP_LEVEL_PARAM}'; 'Top Level {FAMILY_TOP_LEVEL_PARAM}' ..."*. |
+| OB2, run 2026-11-16 | **PASS** - positive `written 1`; negative `written 0`, `refused` *"OB-POST: two parameters on it are called Top Level and more ..."*. |
+| OB3, run 2026-11-16 | **PASS** - `placed 2` (352519, 352520), `tops` *"point 1 (6000, 0) - top asked 'Heron OB Roof' + -150 mm = 58..."* and point 2 the same, *"Top asked for: 'Heron OB Roof' + -150 mm. Read back as asked on all 2"*, *"Each one turned 90 degrees anticlockwise seen from above, about its own insertion point - read back on all 2"*; negative *"'ninety' is not a rotation ... Nothing was placed"*, `placed 0`. Group OE met version 5's refusal of an architectural column's top on main the same day (OE1 step 5) - row 5b-1704, repaired here. |
 | OB4, run 2026-11-16 | **NOT RUN** - the by-hand refusals were skipped in the sitting. |
-| OB5, run 2026-11-16 | **PASS** - `createdTypeId` set; the negative made none. |
+| OB5, run 2026-11-16 | **PASS** - `createdTypeId [id 352522]`, *"'0915 x 2134mm' duplicated as 'Heron OB Door 1000'. It is an EXACT copy ..."*; negative `createdTypeId` null, *"No type in this project is called 'M_Single-Flush: ZZZ No Such Type' ... NOTHING was created"*. |
 | OB6, run 2026-11-16 | **NOT RUN** - skipped in the sitting. |
-| OB7, run 2026-11-16 | **PASS** - `rotated 1`; the negative rotated nothing. |
+| OB7, run 2026-11-16 | **PASS** - `rotated 1`, *"Asked to turn 90 degrees clockwise seen from above ... 1 turned"*; negative `rotated 0`, *"The angle is zero, or a whole turn, so nothing would move ..."*. |
 
 **For signing:** five cards with a PASS draft. OB4 and OB6 are by-hand evidence the owner may ask for first.
