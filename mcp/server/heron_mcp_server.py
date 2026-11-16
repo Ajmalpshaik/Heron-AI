@@ -2059,7 +2059,7 @@ def revit_change(capability: str = "", values: str = "",
     # a fragment that is not PROVEN is now refused before it is sent (D-117).
     #
     # A PROOF TAKEN ON ANOTHER ADD-IN OR REVIT BUILD IS SAID, NOT REFUSED -
-    # `_build_line`. The fingerprint gate above is unchanged.
+    # `_build_line`, D-174. The fingerprint gate above is unchanged.
     build = _build_line(capability, folder, session)
     if build:
         lines.append("")
@@ -3044,9 +3044,9 @@ def _build_line(capability, folder, session):
     moved is already called unproven by `_proof_line`. None of those is called
     stale here, and none is called current.
 
-    A FLAG, NOT A REFUSAL. The D-117 gate refuses on D-30's fingerprint, read
-    from the card alone; whether a proof on another build should also stop a
-    change being kept is the owner's to decide, and it is not decided here.
+    A FLAG, NOT A REFUSAL - D-174, the owner's answer to Q-92. The D-117 gate
+    refuses on D-30's fingerprint, read from the card alone; a proof on another
+    build is said under the answer and never stops a change being kept.
     """
     found = brain.proof_status(folder)
     if not found or found["status"] not in ("PROVEN", "PRODUCTION") or found["stale"]:

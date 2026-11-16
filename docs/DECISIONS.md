@@ -235,6 +235,7 @@ an edit.
 | [D-164](#d-164--two-built-in-parameters-of-one-name-that-read-the-same-value-are-one-reading-not-a-name-matched-twice) | Two built-in parameters of one name that read the same value are one reading, not a name matched twice | ✅ Accepted · 2026-11-14 |
 | [D-165](#d-165--a-qa-check-never-passes-on-missing-data-a-fourth-answer-no-data-and-a-coverage-line-beside-every-pass-count) | A QA check never passes on missing data: a fourth answer, NO DATA, and a coverage line beside every pass count | ✅ Accepted · 2026-11-16 |
 | [D-168](#d-168--a-change-revit-kept-in-which-nothing-changed-by-every-count-says-nothing-changed-and-refused-when-the-capability-itself-said-no) | A change Revit kept in which nothing changed by every count says NOTHING CHANGED, and REFUSED when the capability itself said no | ✅ Accepted · 2026-11-16 |
+| [D-174](#d-174--a-proof-taken-on-another-heron-add-in-build-or-another-revit-build-is-said-under-the-answer-and-never-refused) | A proof taken on another Heron add-in build or another Revit build is said under the answer, and never refused | ✅ Accepted · 2026-11-16 |
 
 ## Format
 
@@ -1458,3 +1459,11 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`heron_server_core.py`](../mcp/server/heron_server_core.py) (`NOTHING_CHANGED`, `OUTCOMES`, `kept_nothing`) · [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (`revit_change`) · [docs/04 §8.12](04-heron-mcp.md) · [`test_outcome_line.py`](../tests/test_outcome_line.py) · rows [5b-1635](fragment-issues/row-5b-1635.md) and [5b-1657](fragment-issues/row-5b-1657.md)
 
 **Full record:** [`decisions/D-168.md`](decisions/D-168.md)
+
+## D-174 — A proof taken on another Heron add-in build or another Revit build is said under the answer, and never refused
+
+**Status:** Accepted · **Date:** 2026-11-16 · **Accepted:** Ajmal PS, 2026-11-16, in conversation: *"Keep it a flag, accept Q-92 shape 1"* · **Answers:** [Q-92](open-questions/tier-3.md)
+**Keeps:** [D-117](#d-117--a-change-is-kept-only-from-a-fragment-whose-proof-still-stands) - a change is refused on D-30's fingerprint alone, read from the card · [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs) - a proof going stale is made visible · [D-131](#d-131--a-proof-on-another-revit-release-is-an-entry-of-proofreleases-and-a-second-route-on-a-proven-fragment-is-written-by-accept-signed) - another release is its own entry
+**Affects:** [`heron_fragment.py`](../brain/heron_fragment.py) (`BUILT_ON_FIELDS`, `build_state`, `proof_build_state`) · [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (`_build_line`) · [`heron_brain.py`](../mcp/server/heron_brain.py) (`proof_build`) · [`fragment-proving`](../.claude/skills/fragment-proving/SKILL.md) · [NEEDS-CHECKING Group OF](needs-checking/group-of.md)
+
+**Full record:** [`decisions/D-174.md`](decisions/D-174.md)

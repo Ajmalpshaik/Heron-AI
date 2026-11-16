@@ -1036,7 +1036,7 @@ library now needs the Publish switch as well as Changes, no batch reaches either
 
 ---
 
-### 🔵 Q-92 — When a proof was taken on another Heron add-in build or another Revit build, should a change from that fragment still be kept, or refused until it is proved again? *(found 2026-11-16)*
+### ✅ Q-92 — When a proof was taken on another Heron add-in build or another Revit build, should a change from that fragment still be kept, or refused until it is proved again? → **Kept, and said - shape 1** *(found 2026-11-16, asked and answered 2026-11-16)*
 
 **What happened.** A proof now records which add-in and which Revit build it was taken on - `built_on:`,
 beside the fingerprint ([`heron_fragment.py`](../../brain/heron_fragment.py) `BUILT_ON_FIELDS`). When
@@ -1063,6 +1063,8 @@ add-in still change the model from a chat?**
 **Nothing is recommended.** Shape 1 is what is built. Shape 2 is what D-30's *"a proof can go stale"* reads
 as at its strictest; how often the add-in is rebuilt decides what it would cost.
 
-**Ajmal PS decides.** Until he does, a proof on another build is said and not refused.
+**Answer: shape 1 - said under the answer, never refused. See [D-174](../DECISIONS.md).** Ajmal PS,
+2026-11-16, in conversation: *"Keep it a flag, accept Q-92 shape 1"*. D-117's refusal stays on the
+fingerprint alone.
 
 ---

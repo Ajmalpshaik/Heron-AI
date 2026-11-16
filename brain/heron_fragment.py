@@ -1683,7 +1683,8 @@ RELEASE_REQUIRED = ("release", "date", "by", "model", "positive_case",
 # files alone, anywhere, and the D-117 gate refuses on it. Which add-in and
 # which Revit are in front is known only where a Revit is connected, so the
 # comparison takes the build in front as an argument (`build_state`) and its
-# answer is a flag where it is asked, not a refusal.
+# answer is a flag where it is asked, never a refusal - D-174, the owner's
+# answer to Q-92.
 BUILT_ON_FIELDS = ("revit_release", "revit_build", "addin_version", "addin_hash")
 
 # What each field is called in a sentence a modeller reads.

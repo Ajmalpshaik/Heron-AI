@@ -2832,7 +2832,7 @@ def proof_build(folder, current):
     A SEPARATE QUESTION FROM `proof_status`, ON PURPOSE. `stale` there is
     D-30's fingerprint and the D-117 gate refuses on it; this one is asked
     only after a run, against the Revit that ran it, and its answer is a line
-    in the reply - never a refusal. None when the card cannot be read.
+    in the reply - never a refusal (D-174). None when the card cannot be read.
     """
     try:
         import heron_fragment as FRAGMENT

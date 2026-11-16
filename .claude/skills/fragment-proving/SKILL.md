@@ -399,7 +399,7 @@ entry. **The rules, all in [`heron_fragment.py`](../../../brain/heron_fragment.p
   so on its `build:` line, and `revit_read`, `revit_show` and `revit_change` add one line under the answer.
   A build is only compared with a build of the same release - another release is D-131's question.
 - **A flag, not a gate.** `proof_is_stale` and the D-117 refusal still read the fingerprint alone, so a new
-  add-in build refuses nothing. Whether it should is the owner's to decide.
+  add-in build refuses nothing - the owner's answer, [D-174](../../../docs/decisions/D-174.md).
 - **Re-proving on the new build is plain `accept`** - it signs a run on another build of the proof's own
   release in place of the old proof. A draft on the build the proof already records is still refused as a
   leftover, and a draft naming no build re-signs nothing. A draft whose `built_on` is not its run record's

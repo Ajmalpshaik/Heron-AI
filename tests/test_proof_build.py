@@ -525,6 +525,20 @@ def test_the_line_under_an_answer():
     check(same and same["state"] == CURRENT, "CURRENT for the same build")
     check(old and old["state"] == NOT_RECORDED, "NOT RECORDED for an old proof")
 
+    # D-174: SAID, NEVER REFUSED. The D-117 gate is asked with the status the
+    # brain reads from the card, and a build that moved does not make it stale.
+    with Workspace() as ws:
+        ws.fragment(built_on=BUILD_A)
+        real_root = BRAIN.ROOT
+        BRAIN.ROOT = ws.root
+        try:
+            found = BRAIN.proof_status("sample")
+        finally:
+            BRAIN.ROOT = real_root
+    check(found and found["stale"] is False
+          and BRIDGE.unproven_refusal("SAMPLE_BUILD_CAPABILITY", found) is None,
+          "a proof stale only for another build is not refused by D-117's gate (D-174)")
+
     with io.open(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py"),
                  encoding="utf-8") as fh:
         server = fh.read()
