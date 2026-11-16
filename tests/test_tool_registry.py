@@ -582,7 +582,13 @@ def main():
     # exists to stop is the one holding Revit's thread - queued, it would wait
     # behind that very job. Read only Dispatch's own body: the rest of the
     # file names operations to describe and to log, not to answer.
-    OUTSIDE_THE_QUEUE = set(["stop"])
+    #
+    # `stop_session` since Q-71 (decided 2026-11-15, built 2026-11-16): the
+    # stop that names the exact Revit session it is for, under a name an
+    # add-in from before it does not know - so that add-in answers unknown_op
+    # rather than stopping. `stop`, which named none, is answered here too,
+    # and only ever refused: queued, its refusal would wait behind the job.
+    OUTSIDE_THE_QUEUE = set(["stop", "stop_session"])
     answered_first = dispatcher_answers()
     check(answered_first is not None,
           "RevitDispatcher.Dispatch was found, and Execute after it")

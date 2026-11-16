@@ -151,6 +151,17 @@ _KNOWN = {
     "stopped":           (REFUSED, FIX_FIRST,
                           "Heron has been stopped and will not send anything to Revit "
                           "until whoever stopped it lets it work again"),
+    # A STOP MUST NAME THE EXACT REVIT SESSION IT IS FOR (Q-71). The add-in
+    # refuses one that names none - the old `stop` - or names another Revit,
+    # before HeronStop is touched: nothing was stopped and Heron there works
+    # as before. FIX_FIRST: the same stop is refused the same way until it
+    # names that Revit's own session.
+    "stop_unnamed":      (REFUSED, FIX_FIRST,
+                          "the stop did not name the Revit it is for, so nothing was stopped - "
+                          "a stop must name that Revit's own session"),
+    "stop_wrong_session": (REFUSED, FIX_FIRST,
+                          "the stop named another Revit session than the one that answered, so "
+                          "nothing was stopped there"),
 
     # --- the approval was stale, so it was refused before touching anything -
     "no_preview":        (REFUSED, START_OVER, "there was nothing waiting to be approved"),

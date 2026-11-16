@@ -335,7 +335,14 @@ namespace Heron.Revit.Addin
             // while its first waits on the job (the bridge client's `stop`,
             // with that chat's HERON_CLIENT_ID). Another chat is refused
             // `session_in_use` before it gets here, as for anything else.
-            if (op == "stop") return AnswerStop();
+            //
+            // AND IT MUST NAME THIS REVIT - Q-71, decided 2026-11-15. A Revit
+            // nobody holds grants the lease to any client id, so a stop that
+            // names nothing stopped another chat's idle Revit until it was
+            // restarted (row 5b-1094). `stop_session` carries the session it
+            // is for; `stop`, the old name, names none and is refused here,
+            // before the queue, so its refusal never waits behind a job.
+            if (op == "stop" || op == "stop_session") return AnswerStop(op, request);
 
             var raiser = _event;
             if (raiser == null)
@@ -521,9 +528,49 @@ namespace Heron.Revit.Addin
         ///
         /// RECORDED, like every refusal, because "who stopped Heron, and was
         /// anything running" is a question the trail will be asked.
+        ///
+        /// IT STOPS ONLY THE REVIT IT NAMES - Q-71, decided 2026-11-15 on the
+        /// owner's delegation. A stop lasts until Revit restarts (D-130), so
+        /// one that named nothing was a broadcast: on 2026-10-18 a stop meant
+        /// for one Revit stopped another chat's idle one (row 5b-1094). So the
+        /// request is `stop_session`, carrying the session as this add-in names
+        /// itself - release and process id, `_session` - compared exactly. A
+        /// `stop` (the name before, which carried none), a `stop_session` that
+        /// names no session and one that names another Revit are each refused
+        /// with nothing stopped, recorded, and the refusal names this Revit so
+        /// the caller can choose it. A NEW NAME rather than a field added to
+        /// `stop`: an add-in from before this stops on `stop` whatever else
+        /// the request carries, and answers unknown_op to a name it does not
+        /// know - so it fails safe, as `undo_guarded` did (row 5b-1604).
         /// </summary>
-        private string AnswerStop()
+        private string AnswerStop(string op, string request)
         {
+            var named = op == "stop_session" ? Json.ReadString(request, "session") : null;
+            if (string.IsNullOrEmpty(named) || !string.Equals(named, _session, StringComparison.Ordinal))
+            {
+                var parts = (_session ?? "").Split('/');
+                var self = parts.Length == 2
+                    ? "Revit " + parts[0] + ", session " + parts[1]
+                    : "session " + _session;
+
+                if (string.IsNullOrEmpty(named))
+                {
+                    RecordRefusal(HeronIdentity.NewWorkflowId(), request, "stop_unnamed");
+                    _log("A stop over the bridge was refused: it named no Revit session.");
+                    return Json.Error("stop_unnamed",
+                        "This stop does not name the Revit it is for. Nothing was stopped, and Heron " +
+                        "here works as before. A stop lasts until Revit is restarted, so it must name " +
+                        "the one it is for: this is " + self + ".");
+                }
+
+                RecordRefusal(HeronIdentity.NewWorkflowId(), request, "stop_wrong_session");
+                _log("A stop over the bridge was refused: it named session " + named +
+                     ", not this one, " + _session + ".");
+                return Json.Error("stop_wrong_session",
+                    "This stop is for session " + named + ", and this is " + self + ". " +
+                    "Nothing was stopped here, and Heron here works as before.");
+            }
+
             var changed = HeronStop.Stop();
             var running = Volatile.Read(ref _jobsInRevit) > 0;
 
