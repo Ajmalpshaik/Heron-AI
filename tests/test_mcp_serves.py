@@ -346,31 +346,18 @@ async def walled_job_done_here(server, BRAIN):
     if not declared:
         return
     module = sys.modules["heron_mcp_server"]
+    # UNTIL 2026-11-17 this card was the example: a DRAFT declared for 2022 to
+    # 2024, whose words reached ATTACH_WALLS on 2025 and 2026. The owner kept
+    # the card he signed on main at Revit 2022 to 2027 ("Keep 2022-2027",
+    # Q-91, row 5b-1846), so on those releases it now answers its own words,
+    # and the rule below is held by a store of its own instead.
     for release in ("2025", "2026"):
         found = BRAIN.lookup(gable, revit=release)
-        here = found.get("done_here_by") or {}
-        walled = here.get("instead_of") or {}
-        check(found.get("capability") == "ATTACH_WALLS"
-              and found.get("other_release") is None,
-              "on Revit %s ATTACH_WALLS is offered, and nothing is named as another "
-              "release's - found %s, named %r" % (release, found.get("capability"),
-                                                  (found.get("other_release") or {})
-                                                  .get("capability")))
-        check(here.get("capability") == "ATTACH_WALLS"
-              and walled.get("capability") == "SHAPE_WALL_TOPS_TO_ROOF"
-              and walled.get("revit") == ["2022", "2023", "2024"]
-              and release in (here.get("revit") or [])
-              and bool(here.get("words")),
-              "and the answer says it stands in for SHAPE_WALL_TOPS_TO_ROOF, which its "
-              "own words reach - found %r" % (here,))
-        line = " ".join(module._other_release_lines(found))
-        check(line.lstrip().startswith("ON REVIT %s THIS IS ATTACH_WALLS" % release)
-              and "SHAPE_WALL_TOPS_TO_ROOF" in line and "2022, 2023, 2024" in line
-              and here.get("words", "(none)") in line
-              and "NOT ON REVIT" not in line and "by hand" not in line
-              and "cannot do this" not in line,
-              "and its line offers ATTACH_WALLS, naming the card it stands in for and "
-              "its words, and says nothing is done by hand: %r" % line[:200])
+        check(found.get("capability") == "SHAPE_WALL_TOPS_TO_ROOF"
+              and not found.get("other_release") and not found.get("done_here_by"),
+              "on Revit %s, which the owner kept it for, the card answers its own words "
+              "with nothing put in its place - found %s" % (release, found.get("capability")))
+    rule_of_done_here_by(BRAIN)
 
     # WHERE NO CARD FOR THE RELEASE DOES THE JOB THE LINE STANDS. Revit 2021:
     # SHAPE_WALL_TOPS_TO_ROOF is 2022 on and ATTACH_WALLS 2025 on.
@@ -398,12 +385,57 @@ async def walled_job_done_here(server, BRAIN):
         reply = "(raised %s: %s)" % (type(exc).__name__, exc)
     finally:
         module._revit_version = real
-    said = reply.find("ON REVIT 2025 THIS IS ATTACH_WALLS")
-    offered = reply.find("would need   ATTACH_WALLS")
-    check(said != -1 and offered != -1 and said < offered and "NOT ON REVIT" not in reply,
-          "and heron_lookup on Revit 2025 says it above \"would need ATTACH_WALLS\", with "
-          "no \"NOT ON REVIT\" line - found the line at %d, the offer at %d"
-          % (said, offered))
+    check("SHAPE_WALL_TOPS_TO_ROOF" in reply and "NOT ON REVIT" not in reply
+          and "by hand" not in reply,
+          "and heron_lookup on Revit 2025 offers it with no \"NOT ON REVIT\" line: %r"
+          % reply[:160])
+
+
+def rule_of_done_here_by(BRAIN):
+    """
+    Row 5b-1823's rule, on a store of its own - the library no longer has a
+    walled card whose words reach a card for another release (row 5b-1846).
+    A card for this release is put in the walled card's place only when it is
+    declared for NONE of the walled card's releases AND one of the walled
+    card's own phrases reaches it first by both routes.
+    """
+    import sqlite3
+
+    class Hit(object):
+        def __init__(self, fid, keyword_rank=1, vector_rank=1):
+            self.id, self.keyword_rank, self.vector_rank = fid, keyword_rank, vector_rank
+
+    class Retrieve(object):
+        def __init__(self, routes):
+            self.routes = routes
+
+        def retrieve(self, store, phrase, revit=None, limit=1, ceiling=None):
+            return ([self.routes.get(phrase, Hit("W"))], [])
+
+    store = sqlite3.connect(":memory:")
+    store.row_factory = sqlite3.Row      # as the real store reads its rows, by name
+    store.execute("CREATE TABLE identities (fragment_id TEXT, phrase TEXT)")
+    store.executemany("INSERT INTO identities VALUES (?, ?)",
+                      [("W", "shape the wall top"), ("W", "fill the gable")])
+    walled = {"id": "W", "revit": "2022,2023,2024", "semantic_identity": "shape the wall top"}
+    later = {"id": "A", "revit": "2025,2026", "capability": "ATTACH_X", "status": "PROVEN"}
+    shared = {"id": "B", "revit": "2024,2025", "capability": "SHARED_X", "status": "PROVEN"}
+    print()
+    print("  row 5b-1823's rule, on a store of its own")
+    got = BRAIN._done_here_by(Retrieve({"fill the gable": Hit("A")}), store, walled,
+                              [later], None)
+    check(got is not None and got.get("capability") == "ATTACH_X"
+          and got.get("words") == "fill the gable" and got.get("revit") == ["2025", "2026"],
+          "a card for none of its releases, reached first by one of its own phrases by "
+          "both routes, is put in its place, with those words - found %r" % (got,))
+    check(BRAIN._done_here_by(Retrieve({"fill the gable": Hit("B")}), store, walled,
+                              [shared], None) is None,
+          "a card that shares one of its releases is never put in its place")
+    check(BRAIN._done_here_by(Retrieve({"fill the gable": Hit("A", vector_rank=None)}),
+                              store, walled, [later], None) is None,
+          "nor one its words reach by one route only")
+    check(BRAIN._done_here_by(Retrieve({}), store, walled, [later], None) is None,
+          "nor one its words do not reach at all")
 
 
 async def exercise(server):
