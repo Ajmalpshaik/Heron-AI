@@ -130,3 +130,12 @@ copy, never a working model - EO10 may leave it renamed, which is what A16b did.
 | **EO11** | **The same rename, Discarded.** *Ask to Keep* on, the same `edit-text-values` through the chat's `revit_change` on views selected in the Project Browser, and press **Discard** | The Discard verdict, and if any name stood, the sentence *"... still hold the change (Views: Name reads ..."* after it. Then the names, read as in EO10. Whether a Project Browser selection reaches `Selection.GetElementIds` at all is part of the answer - if `changed` is 0 on the reply while views were renamed, it did not |
 | **EO12** | **The negative: a clean rollback on a workshared model must not cry wolf.** A local copy of a workshared scratch model, `write-element-parameters` (`Comments` = `X`) on 3 selected ducts, `--write`, no `--apply` | `rolledBack` true, `changedStanding` 0, no *"did not hold"*. Then read *Edited by* on the 3 ducts: record whether they are still borrowed after the rollback - that is what decides whether *Edited by* has to stay out of the check |
 | **EO13** | EO10 once on Revit 2020 and once on 2027 | The same answers. Every member it calls compiles for 2020 to 2027 (`tools/check-compile.py`, 2026-11-16); that is the API surface agreeing, nothing more |
+
+### 2026-11-16, night - EO10 to EO13 not run
+
+| Row | Result |
+|---|---|
+| EO10 | **NOT RUN - Revit 2024's memory.** By the time this row came up, Revit 2024 (session 8292, the night's proving run and these rows) held 13.5 GB private, past the owner's 13 GB night limit; opening the Snowdon copy (22.8 MB) on top was not risked, and Revit is never closed at night. Owed on a fresh Revit 2024 start |
+| EO11 | **NOT RUN** - the owner presses Discard, with Ask to Keep on |
+| EO12 | **NOT RUN - no workshared scratch model on this PC**; every .rvt under `%TEMP%\heron-work` reads *"Worksharing: Not enabled"*. Making one is his yes and his hands |
+| EO13 | **NOT RUN** - Revit 2020 and Revit 2027 each started, one at a time; his hands |

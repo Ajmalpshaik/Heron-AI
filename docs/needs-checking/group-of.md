@@ -35,3 +35,17 @@ the two new fields, and no proof records a build yet.
 | **OF3** | *The draft says how it compares.* `python brain/heron_validate.py draft <fragment> --from <that record>` | Its `build:` line says the proof on the card records no build for Revit 2024 - every proof signed before this is NOT RECORDED. Nothing is written to the card |
 | **OF4** | *Another release is its own build.* OF1 and OF2 on Revit 2025 | A different `addin_hash` from 2024's - 2025 loads a different DLL - and the 2025 build string |
 | **OF5** | *A new add-in build is said.* On a fragment re-proved with OF2's record and signed (`accept`), change anything in the add-in, rebuild, redeploy, restart Revit, ask the same capability through `revit_read` | One line under the answer: proved with Heron add-in ... - *the Heron add-in's file changed since*. The answer itself is unchanged, and nothing is refused |
+
+### Run 2026-11-16, night, Revit 2024 (session 8292) - OF1 to OF3 run with the owner away; OF4 and OF5 not
+
+Revit 2024.3 started at 19:47 with the add-in deployed at 19:35 from main f86a5843; nothing under `revit/`
+changed on main since, to 90cdea63, so no rebuild was owed. Rows run from the command line, `HERON_CLIENT_ID`
+set, one Revit.
+
+| Row | Result |
+|---|---|
+| OF1 | **NEEDS REVIEW - log and hash agree; Help > About not read.** `addin-20261116.log`: *"2026-11-16 16:47:48Z  Heron loaded. Revit 2024 build 24.3.60.12, add-in 0.2.0.0 file 80819edd3983a0d5, pid 8292."* `Get-FileHash -Algorithm SHA256` of the deployed `Heron.Revit.Addin.dll` (19:35:03): first 16 `80819edd3983a0d5` - equal. The day's two earlier lines, before the deploy, read *"Heron loaded. Revit 2024, add-in 0.2.0.0, pid ..."* with no build and no file. Revit.exe reads FileVersion 24.3.60.12, ProductVersion 20260709_1515(x64); **which of the two About calls the build is for the owner's eyes** - nobody was at the keyboard |
+| OF2 | **PASS** - `validate --session 8292 --in "Heron OC Tags" filter-elements-by-category` (PROVEN READ) on `%TEMP%\heron-work\oc\Heron OC Tags.rvt` in place, the proof's own values (`categories=Walls`, `cutByView=true`, `inViewOnly=Section: OC Section`; negative `categories=Doors`): positive ok, negative ok. The run record's `built_on`: `revit_release 2024`, `revit_build 24.3.60.12`, `addin_version 0.2.0.0`, `addin_hash 80819edd3983a0d5` - all four, the same values as OF1 |
+| OF3 | **PASS** - `heron_validate.py draft filter-elements-by-category --from <OF2's record>`: *"build: taken on add-in 0.2.0.0 (file 80819edd3983a0d5), Revit 2024 build 24.3.60.12. The proof on the card records no build for Revit 2024"*. `git diff` on the card: nothing written. The draft is NOT signed - OF5's signature is the owner's |
+| OF4 | **NOT RUN - Revit 2025 is not installed** on this PC (2020, 2024, 2026 and 2027 are). The owner's choice: run it on 2027 or 2026 as "not 2025 as written", or leave it |
+| OF5 | **NOT RUN - needs the owner:** his signature on OF3's draft (it replaces his 2026-11-16 proof of `filter-elements-by-category`), a throwaway add-in change deployed for Revit 2024 only, and a Revit restart |
