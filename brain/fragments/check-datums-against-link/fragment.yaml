@@ -92,13 +92,17 @@ contract:
       absent: "0.01"
   provides:
     - name: report
+      # ACCOUNTING, NOT A RESULT, like aligned, hostOnly and linkOnly: a proof's
+      # negative leg is judged on every result output (looks_empty), and these
+      # all carry values on a run that finds nothing off. The result is
+      # `failures` and `failingIds`.
       # ONE STRING, a header row then one row per datum, joined by new lines:
       # "kind | name | status | offset | angle | reason". Status is one of
       # aligned, off, not checked, host only, link only. Offset in mm (a
       # level's is the link's minus this model's, + when the link's is
       # higher), angle in degrees for straight grids, "-" where there is none.
       # A string because a reply cuts a list to three items.
-      role: result
+      role: accounting
       type: string
     - name: failures
       # Datums that are OFF - compared and outside a tolerance. The number a
@@ -107,7 +111,7 @@ contract:
       type: int
     - name: aligned
       # Datums compared and aligned within both tolerances.
-      role: result
+      role: accounting
       type: int
     - name: compared
       # Pairs actually measured - aligned plus off. 0 means nothing was read,
@@ -123,11 +127,11 @@ contract:
       type: int
     - name: hostOnly
       # This model's datums with no partner in the link, by name or position.
-      role: result
+      role: accounting
       type: int
     - name: linkOnly
       # The link's datums with no partner here, by name or position.
-      role: result
+      role: accounting
       type: int
     - name: failingIds
       # THIS model's datums that are off, as ids - what a QA check selects.

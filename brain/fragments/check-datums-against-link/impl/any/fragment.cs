@@ -306,8 +306,12 @@ Func<Tuple<string, string, Element, string, XYZ, XYZ, double>, Tuple<string, str
     var square = Math.Abs(ux * qy - uy * qx) * MmPerFoot;
     var angle = Math.Atan2(ux * vy - uy * vx, ux * vx + uy * vy) * 180.0 / Math.PI;
     var reversed = false;
-    if (angle > 90.0) { angle -= 180.0; reversed = true; }
-    else if (angle <= -90.0) { angle += 180.0; reversed = true; }
+    // A PERPENDICULAR GRID HAS NO "OPPOSITE WAY": +90 and -90 are the same
+    // line, so either is 90 and never reversed - and a hair off 90 from
+    // rounding is 90 too, so it never prints as -90.
+    if (Math.Abs(Math.Abs(angle) - 90.0) < 1e-9) angle = 90.0;
+    else if (angle > 90.0) { angle -= 180.0; reversed = true; }
+    else if (angle < -90.0) { angle += 180.0; reversed = true; }
     var lineOk = square <= toleranceMm && Math.Abs(angle) <= angleToleranceDeg;
     return Tuple.Create(lineOk ? "aligned" : "off", square, angle, reversed ? "drawn the opposite way" : "");
 };
@@ -347,8 +351,15 @@ for (var i = 0; i < link.Count; i++)
 
 // ---- The rows -------------------------------------------------------------------
 
-Func<double, string> mm = v => double.IsNaN(v) ? "-" : v.ToString("0.00", invariant) + " mm";
-Func<double, string> deg = v => double.IsNaN(v) ? "-" : v.ToString("0.0000", invariant) + " deg";
+// ROUNDED FIRST, AND NEVER "-0.00": on .NET 8 and 10 (Revit 2025 on) a tiny
+// negative value formats as "-0.00", where .NET Framework printed "0.00".
+Func<double, int, double> tidy = (v, places) =>
+{
+    var r = Math.Round(v, places, MidpointRounding.AwayFromZero);
+    return r == 0.0 ? 0.0 : r;
+};
+Func<double, string> mm = v => double.IsNaN(v) ? "-" : tidy(v, 2).ToString("0.00", invariant) + " mm";
+Func<double, string> deg = v => double.IsNaN(v) ? "-" : tidy(v, 4).ToString("0.0000", invariant) + " deg";
 var rows = new List<string>();
 rows.Add("kind | name | status | offset | angle | reason");
 
