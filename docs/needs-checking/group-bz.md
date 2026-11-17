@@ -7,6 +7,8 @@
 
 ## Group BZ - every setting of a family connector already made, Global included, and a list of a family's connectors (2026-10-04)
 
+**Tracked as GitHub issue [#977](https://github.com/Ajmalpshaik/Heron-AI/issues/977) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **The owner's PC, Revit 2024, session 8804, on `TRG_PLMB_VLV_PPR Gate Valve_GV_R0` with his word in
 the chat** (*"you can change it but ... bring back to ... the global"*), every run ROLLED BACK. Read
 before and after: two pipe connectors, both Global, 32 mm driven by Nominal Diameter, Port Left primary,

@@ -7,6 +7,8 @@
 
 ## Group MC - Annotate > Beam Annotations - on each beam in a plan, in one go, a beam tag at its start, middle or end and spot elevations on its top or bottom at its ends, beams already tagged left alone: `ADD_BEAM_ANNOTATIONS` (2026-11-02)
 
+**Tracked as GitHub issue [#984](https://github.com/Ajmalpshaik/Heron-AI/issues/984) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"annotate all the beams in this plan with tags and top-of-steel spot
 elevations"*, *"add beam annotations to these beams - tag at the middle, elevation at both ends"*, *"put
 beam tags at mid-span on every beam in this view"*. Nothing in Heron placed annotations at a position

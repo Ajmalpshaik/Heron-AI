@@ -7,6 +7,8 @@
 
 ## Group LV - Manage > Project Information written - project number, client name, address, building name, status or an added shared parameter, each by its exact name and read back: `SET_PROJECT_INFORMATION` (2026-11-02)
 
+**Tracked as GitHub issue [#983](https://github.com/Ajmalpshaik/Heron-AI/issues/983) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"set the project number to QA-2026-114"*, *"change the client name to
 Ashghal"*, *"fill in the project address and building name"*, *"set the project status to Issued for
 Construction"* and *"set the shared parameter Project Code on project information to PRJ-77"*. No card wrote

@@ -8,6 +8,8 @@
 
 ## Group IY - a simplify counts only the toposolids it changed: `EDIT_TOPOSOLID` version 2 (2026-10-23)
 
+**Tracked as GitHub issue [#997](https://github.com/Ajmalpshaik/Heron-AI/issues/997) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 From [row 5b-1331](../fragment-issues/section-5b-rows-401-425.md). On Revit 2024.3 (session 83588), in *N23
 Snowdon Site 2024* - a copy of Revit 2024's `Snowdon Towers Sample Site.rvt`, 10 toposolids - a rolled-back
 simplify to 50% answered *"10 toposolid(s) edited (simplify) and read back."* and `resultIds` 10, while its own

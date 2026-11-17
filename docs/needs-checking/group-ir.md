@@ -8,6 +8,8 @@
 
 ## Group IR - a connector's tick boxes, above all Allow Slope Adjustments: `SET_FAMILY_CONNECTOR_ROLES` version 4 and `REPORT_FAMILY_CONNECTORS` version 2 (2026-10-22)
 
+**Tracked as GitHub issue [#981](https://github.com/Ajmalpshaik/Heron-AI/issues/981) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 From [row 5b-1317](../fragment-issues/section-5b-rows-401-425.md). On 2026-10-22 the owner built a nested
 floor-drain family through Heron on Revit 2020 - four Sanitary pipe connectors, one DN82 outlet and three
 DN50 inlets - and asked whether to tick *Allow Slope Adjustments* on them. Yes: drain pipes are laid to a

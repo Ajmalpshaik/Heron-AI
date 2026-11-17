@@ -8,6 +8,8 @@
 
 ## Group IH - one schedule filter rule changed, the others kept: `SET_SCHEDULE_FILTERS` and `REPORT_SCHEDULE_DEFINITION` version 2 (2026-10-21)
 
+**Tracked as GitHub issue [#986](https://github.com/Ajmalpshaik/Heron-AI/issues/986) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 From [row 5b-1290](../fragment-issues/section-5b-rows-401-425.md). On 2026-10-21, on project
 4355-BHVD-3D-22S10-BL001A in Revit 2020, a modeller duplicated a motorized fire damper schedule into
 *DUCT HEATER SCHEDULE (FIRST FLOOR)* and *(ROOF FLOOR)*. `REPORT_SCHEDULE_DEFINITION` answered

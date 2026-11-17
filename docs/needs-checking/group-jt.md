@@ -8,6 +8,8 @@
 
 ## Group JT - the whole model counted part by part for the Companion's Model Dashboard: `REPORT_MODEL_DASHBOARD` (2026-11-01)
 
+**Tracked as GitHub issue [#971](https://github.com/Ajmalpshaik/Heron-AI/issues/971) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for by the owner on 2026-11-01: a Model Dashboard panel in the Heron Companion
 ([docs/40](../40-heron-companion.md)), fed by one read of the open model. Nothing in Heron returned the
 whole model at once - `heron_retrieve` for *"model dashboard"*, *"model overview"* and *"model health

@@ -1,0 +1,134 @@
+# NEEDS-CHECKING Group OE - rows OE2, OE4, OE6 and OE8. Written 2026-11-16 in
+# a cloud container. NOT RUN: no Revit has met any of it.
+#
+#     python tools/batch-prove.py tools/jobs/roofs-walls-levels-delete-oe-2026-11-16.yaml --dry-run
+#     HERON_CLIENT_ID=ajmal-pc python tools/batch-prove.py tools/jobs/roofs-walls-levels-delete-oe-2026-11-16.yaml --session <pid> < /dev/null
+#
+# MODIFY: every run here is ROLLED BACK.
+#
+# THE MODEL: "Heron OE Roofs", a SCRATCH project Heron makes from Revit 2024's
+# English\DefaultMetric.rte and saves under %TEMP%\heron-work\oa - never a
+# working model. Built and KEPT before this file runs (group-oe.md, OE1):
+#
+#   Levels   Level 1 (the template's, 0), OE Plate 2440, OE Upper 6000.
+#   Zone S   R7, a flat seven-sided roof on OE Plate round 0..12000 x 0..7000,
+#            and R1, a flat 10000 x 6000 roof on OE Plate at x 20000..30000.
+#   Zone W   four Generic - 200mm walls 2440 high round 40000..50000 x 0..6000
+#            under a gable roof (30 degrees, ridge along x) on OE Plate, and a
+#            free wall 60000,0 - 65000,0 with nothing above it.
+#   Zone C   two architectural columns at x 80000 and 83000 and two structural
+#            at 86000 and 89000, Level 1 to OE Plate; a third structural at
+#            92000 whose top is ATTACHED to a floor on OE Upper.
+#   Zone D   four walls 2000 high round 100000..106000 x 0..4000 whose tops are
+#            attached (by hand on 2024) to the flat roof RD on OE Plate; four
+#            walls round 110000..116000 x 0..4000 under the floor FD, not
+#            attached.
+#
+# Every region below is in mm, z from below Level 1 to above OE Upper.
+
+model: "Heron OE Roofs (scratch, Revit 2024 DefaultMetric.rte, the OE1 rig built and saved), Revit 2024"
+
+defaults:
+  in: "Heron OE Roofs"
+  write: true
+  setup: [select-in-region, set-selection]
+
+jobs:
+  # OE2 - row 5b-1670. Any roof has an edge 1, so the positive needs no
+  # number read off a listing first; the negative names an edge R7 has not got.
+  - fragment: slope-roof-edges
+    expect: sloped
+    set:
+      minMm: "19000,-1000,-1000"
+      maxMm: "31000,7000,7000"
+      exact: "false"
+      categories: Roofs
+      includeLinks: "false"
+      roofShape: edges
+      pitchDegrees: 15
+      edgeNumbers: "1"
+    negative-set:
+      minMm: "-1000,-1000,-1000"
+      maxMm: "13000,8000,7000"
+      exact: "false"
+      categories: Roofs
+      includeLinks: "false"
+      roofShape: edges
+      pitchDegrees: 15
+      edgeNumbers: "9"
+    note: >
+      OE2. Positive R1: sloped 1, upright 3, a lean-to at 15 degrees. Negative
+      R7: sloped 0, refused "it has 7 edges, so there is no edge 9" with every
+      edge listed - write that listing down for OE3.
+
+  # OE4 - row 5b-1672. The box takes the two 6000 mm end walls and not the
+  # long walls: y 500..5500 misses walls that run along y 0 and y 6000.
+  - fragment: shape-wall-tops-to-roof
+    expect: shaped
+    set:
+      minMm: "39500,500,-1000"
+      maxMm: "50500,5500,7000"
+      exact: "false"
+      categories: Walls
+      includeLinks: "false"
+    negative-set:
+      minMm: "59500,-500,-1000"
+      maxMm: "65500,500,7000"
+      exact: "false"
+      categories: Walls
+      includeLinks: "false"
+    note: >
+      OE4. Positive: shaped 2, three points a wall, the ridge about 1.7 m
+      above the ends; findings says the top will NOT follow the roof.
+      Negative, the free wall: shaped 0, noRoof that wall. Runs in Revit's
+      edit mode (editScopeFailures, D-112) - a refusal of the edit scope
+      itself is a finding, write down Revit's words.
+
+  # OE6 - row 5b-1673.
+  - fragment: set-element-level
+    expect: moved
+    set:
+      minMm: "79000,-1000,-1000"
+      maxMm: "90000,1000,7000"
+      exact: "false"
+      categories: "Columns, Structural Columns"
+      includeLinks: "false"
+      newLevel: "Level 1"
+      keepWallBase: "true"
+      topLevelId: "OE Upper"
+    negative-set:
+      minMm: "91500,-500,-1000"
+      maxMm: "92500,500,5000"
+      exact: "false"
+      categories: "Structural Columns"
+      includeLinks: "false"
+      newLevel: "Level 1"
+      keepWallBase: "true"
+      topLevelId: "OE Upper"
+    note: >
+      OE6. Positive: moved 4, heightChanged empty, each column's top OE Upper
+      with its offset re-solved. Negative, the column attached to the floor:
+      moved 0, refused, columnReport naming what holds its top. The negative
+      box stops below OE Upper so the floor's column is the one taken.
+
+  # OE8 - row 5b-1674. READ detachedWalls IN BOTH LEGS: `deleted` is a result
+  # and can never be empty, so the verdict reads NEG NOT EMPTY by design - the
+  # card's second leg is D-53 tracking, OE9.
+  - fragment: delete-elements
+    expect: detachedWalls
+    set:
+      minMm: "99000,-1000,-1000"
+      maxMm: "107000,5000,7000"
+      exact: "false"
+      categories: Roofs
+      includeLinks: "false"
+    negative-set:
+      minMm: "109000,-1000,-1000"
+      maxMm: "117000,5000,7000"
+      exact: "false"
+      categories: Floors
+      includeLinks: "false"
+    note: >
+      OE8. Positive, roof RD: detachedWalls the four zone D walls, wallsNote
+      saying Heron cannot attach them again on 2024. Negative, floor FD:
+      detachedWalls, attachedBefore and wallsNote empty, deleted 1.

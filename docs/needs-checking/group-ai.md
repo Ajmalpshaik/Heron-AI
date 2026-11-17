@@ -9,6 +9,8 @@
 
 ## Group AI - the development hooks, on the owner's PC ([PR #308](https://github.com/Ajmalpshaik/Heron-AI/pull/308))
 
+**Tracked as GitHub issue [#972](https://github.com/Ajmalpshaik/Heron-AI/issues/972) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **No Revit is needed for any of these** - a Windows session with Git Bash, opened in the Heron folder. The
 hooks are wired from [`.claude/settings.json`](../../.claude/settings.json) and are for developing Heron only.
 They were proved on Linux, in the cloud session that built them; the Windows half is what is owed.

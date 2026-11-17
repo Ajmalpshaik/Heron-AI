@@ -79,6 +79,8 @@ and read what the reply says. Record it in [NEEDS-CHECKING.md](../../NEEDS-CHECK
 
 ### A3. One real numbered specification document
 
+*Tracked as GitHub issue [#1009](https://github.com/Ajmalpshaik/Heron-AI/issues/1009) since 2026-11-16 (WN-38) - work it there.*
+
 **This unblocks more than anything else on either track.** Every test document so far was written to be
 easy. One real spec with real clause numbers settles whether the chunker, the citation path and the
 refusal behaviour survive contact with a genuine document — and replaces the invented clause number
@@ -98,6 +100,8 @@ refusal behaviour survive contact with a genuine document — and replaces the i
 Ordered by *what is actually buildable*, not by what is most wanted.
 
 ### B1. The usage counter — R-16 and R-25
+
+*Tracked as GitHub issue [#1009](https://github.com/Ajmalpshaik/Heron-AI/issues/1009) since 2026-11-16 (WN-39) - work it there.*
 
 **The only item on the list that is both unblocked and code.** [D-70](../../DECISIONS.md) settles the
 shape: a clause id and a count, per scope, deletable, never sent. The decision deliberately sets **no

@@ -8,6 +8,8 @@
 
 ## Group JC - Cast Shadows ticked once and copied to other views through a view template: `COPY_GRAPHIC_DISPLAY_OPTIONS` version 1 (2026-10-24)
 
+**Tracked as GitHub issue [#990](https://github.com/Ajmalpshaik/Heron-AI/issues/990) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 A new card, [`copy-graphic-display-options`](../../brain/fragments/copy-graphic-display-options/fragment.yaml),
 written in a cloud session - the dialog and, on the owner's word the same day (*"cover all kind of
 settings, even the sun settings, everything"*), the view's sun settings too - for [row 5b-1336](../fragment-issues/section-5b-rows-401-425.md): the owner asked for a

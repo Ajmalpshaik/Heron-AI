@@ -7,6 +7,8 @@
 
 ## Group LC - fixed, pinned or roller boundary conditions: `PLACE_BOUNDARY_CONDITIONS` (2026-11-01)
 
+**Tracked as GitHub issue [#999](https://github.com/Ajmalpshaik/Heron-AI/issues/999) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"add a pinned boundary condition at these column bases"* - Revit's
 Analyze > Boundary Conditions (point, line, area). No card placed one: a grep of every fragment's C# that day
 for `BoundaryConditions` found nothing. `CHECK_STRUCTURAL_SUPPORTS` finds column bases bearing on nothing,

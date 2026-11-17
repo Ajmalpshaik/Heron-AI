@@ -7,6 +7,8 @@
 
 ## Group CN - reload a family over the loaded one: LOAD_FAMILY version 2 (2026-10-06)
 
+**Tracked as GitHub issue [#980](https://github.com/Ajmalpshaik/Heron-AI/issues/980) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 `LOAD_FAMILY` version 2 reloads a family that is already in the project or family document:
 `reload=true` is Revit's *Overwrite the existing version*, and `reload=true` with `overwriteValues=true` is
 *Overwrite the existing version and its parameter values*. Without `reload` a loaded family is still refused

@@ -7,6 +7,8 @@
 
 ## Group CB - checking an MEP family will connect and resize, in the Family Editor, before it is loaded (2026-10-04)
 
+**Tracked as GitHub issue [#977](https://github.com/Ajmalpshaik/Heron-AI/issues/977) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **`check-family-standards` (FRG-QA-021) version 2, DRAFT.** Built 2026-10-04 after three PPR valves
 built through Heron in Revit 2024 looked finished and were not: the two check valves would not connect
 to a pipe (Work Plane-Based Yes; the inline one also Part Type Normal) and the gate valve would not

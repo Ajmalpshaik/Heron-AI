@@ -1718,9 +1718,9 @@ that needs the PC.
 
 ---
 
-### ✅ Q-91 — On Revit 2020 to 2024 Heron cannot attach a wall to a roof. Should it shape the wall's top to the roof instead - by editing the wall's profile - and if so, on which releases? *(found 2026-11-15 from issue #852)* → **answered 2026-11-16 by the owner**
+### ✅ Q-91 — On Revit 2020 to 2024 Heron cannot attach a wall to a roof. Should it shape the wall's top to the roof instead - by editing the wall's profile - and if so, on which releases? → **Option 2: a new tool that edits the wall's profile, on 2022 on** *(found 2026-11-15 from issue #852, answered 2026-11-16)*
 
-**Answer: Shape 2 - a new tool that edits each wall's profile so its top follows the roof above it, on Revit 2022 to 2024; on 2020 and 2021 it says plainly that it cannot; and it says the top is a sketch that does not follow later roof changes - 2026-11-16, the owner's answer, read back: Ajmal PS was shown this question with Claude's suggestion and answered in his own words, *"go with you suggetions"*.** **Why:** It closes the open gable triangles #852 describes on the releases whose API can edit a wall's profile, and saying plainly what the sketch does not do is what makes a top that does not follow the roof something the modeller can choose knowingly. **Work:** built 2026-11-16 at DRAFT - see the Work note at the end of this section - and its proof is owed (Group OG). No decision record: a new card starts at DRAFT and is proved like any other (Article 20, [D-30](../decisions/D-30.md)), and nothing Heron allows or refuses changes. Until it is built and proved, Heron says on 2020 to 2024 that this is done by hand in Revit.
+**Answer: Shape 2 - a new tool that edits each wall's profile so its top follows the roof above it, on Revit 2022 to 2024; on 2020 and 2021 it says plainly that it cannot; and it says the top is a sketch that does not follow later roof changes - 2026-11-16, the owner's answer, read back: Ajmal PS was shown this question with Claude's suggestion and answered in his own words, *"go with you suggetions"*.** **Why:** It closes the open gable triangles #852 describes on the releases whose API can edit a wall's profile, and saying plainly what the sketch does not do is what makes a top that does not follow the roof something the modeller can choose knowingly. **Work:** built 2026-11-16 at DRAFT - see the Work note at the end of this section - and its proof is owed (Group OG). No decision record: a new card starts at DRAFT and is proved like any other (Article 20, [D-30](../decisions/D-30.md)), and nothing Heron allows or refuses changes. Until it is built and proved, Heron says on 2020 to 2024 that this is done by hand in Revit. *(2026-11-17, when `main` was merged into #871: the card is built and **PROVEN** - main's version, declared 2022 to 2027, signed by Ajmal PS on Revit 2024 on 2026-11-16, [Group OE](../needs-checking/group-oe.md) OE4 and OE5 - and Group OG is superseded by OE. The range this answer reads, 2022 to 2024, and the card's, 2022 to 2027, disagree: both are kept, and Ajmal PS resolves it. See the Work note.)*
 
 **What happened.** On Villa 2, Revit 2024, 2026-11-11, the modeller asked *"attach all walls to the roof"*
 after the main roof was rebuilt: 25 walls stopped at the 2440 plate and left open gable triangles under both
@@ -1759,6 +1759,23 @@ do?**
 not follow the roof is acceptable to the modeller is the one fact that decides it.
 
 **Ajmal PS decides.** Until he does, Heron says on 2020 to 2024 that this is done by hand in Revit.
+
+**ANSWERED 2026-11-16 by Ajmal PS** - his ask to *"fix all issues"* recorded from #852, #853 and #854, which
+the coordinating session's brief turned into option 2 for this one: a NEW card at DRAFT,
+[`SHAPE_WALL_TOPS_TO_ROOF`](../../brain/fragments/shape-wall-tops-to-roof/fragment.yaml), declared 2022 to
+2027, that gives each wall a profile sketch whose top follows the underside of the roof above it, refuses a
+wall that cannot have one with Revit's own words, and says in every answer that the top will NOT follow the
+roof if it moves ([row 5b-1672](../fragment-issues/row-5b-1672.md)). On 2020 and 2021 the card is not
+offered - the API has no profile sketch there - and option 3 (rebuild the wall) was not built. On 2025 on,
+`ATTACH_WALLS` stays the tool for *"attach"*, because there the wall follows the roof. **Still open on the
+PC:** whether a sketched top that does not follow is what the modeller wants - [Group
+OE](../needs-checking/group-oe.md) OE4 and OE5, and a modeller's word after it.
+
+**PROVEN 2026-11-16, and this Work note's draft superseded - written 2026-11-17, when `main` was merged into
+pull request #871.** The card in the library is main's `SHAPE_WALL_TOPS_TO_ROOF`, the paragraph above: declared
+2022 to 2027, signed by Ajmal PS on Revit 2024 (`Heron OE Roofs`, session 18772), proved by [Group
+OE](../needs-checking/group-oe.md) OE4 and OE5. #871's own DRAFT of the same card, described below as it was
+written, was replaced by it, and [Group OG](../needs-checking/group-og.md) is superseded by OE.
 
 **Work:** built 2026-11-16, at **DRAFT** - [`SHAPE_WALL_TOPS_TO_ROOF`](../../brain/fragments/shape-wall-tops-to-roof/fragment.yaml)
 (FRG-ELE-170), declared for Revit 2022, 2023 and 2024 only. For each wall handed in it finds the roof above that wall,

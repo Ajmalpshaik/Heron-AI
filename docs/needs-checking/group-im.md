@@ -8,6 +8,8 @@
 
 ## Group IM - the interior camera inside its room, the close-range picture on the elements' middle, and a sun's time on the site's clock: `FRAME_ELEMENTS_IN_CAMERA` version 4 and `REPORT_RENDER_SETTINGS` version 2 (2026-10-21)
 
+**Tracked as GitHub issue [#990](https://github.com/Ajmalpshaik/Heron-AI/issues/990) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 From rows [5b-1302, 5b-1304, 5b-1305, 5b-1307 and 5b-1308](../fragment-issues/section-5b-rows-401-425.md). On
 2026-10-21, after [Group IF](group-if.md) signed the cinematic camera, the owner made real interior views on
 Revit 2020's sample house and found four faults in the camera and one in the render report. Fixed the same

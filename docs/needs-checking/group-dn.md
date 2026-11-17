@@ -8,6 +8,8 @@
 
 ## Group DN - views and sheets: 3D cameras, cut planes read and moved, browser organisation, templates compared, link display, room elevations refitted, viewport types and title lines, assemblies (2026-10-12)
 
+**Tracked as GitHub issue [#987](https://github.com/Ajmalpshaik/Heron-AI/issues/987) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 The fourth batch of the gap fill ([`work-notes/plans/gap-fill-2026-10-12.md`](../work-notes/plans/gap-fill-2026-10-12.md)).
 
 **What was built - ten new capabilities.** `SET_VIEW_CAMERA` (FRG-VIEW-128) - `CREATE_3D_VIEW` is PROVEN and

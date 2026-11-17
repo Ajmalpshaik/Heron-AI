@@ -8,6 +8,8 @@
 
 ## Group JQ - an adaptive component's points read back with their Orientation: `REPORT_FAMILY_TEMPLATE` version 4 (2026-10-29)
 
+**Tracked as GitHub issue [#994](https://github.com/Ajmalpshaik/Heron-AI/issues/994) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for by the owner on 2026-10-29 (*"build the three widenings too"*), knowing that a change under a PROVEN
 card's `impl/` makes its proof stale. Recorded as waiting in
 [the facade plan](../work-notes/plans/facade-capability.md) and in

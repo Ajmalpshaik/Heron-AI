@@ -7,6 +7,8 @@
 
 ## Group KZ - which load cases, loads and boundary conditions a model has: `REPORT_STRUCTURAL_LOADS` (2026-11-01)
 
+**Tracked as GitHub issue [#998](https://github.com/Ajmalpshaik/Heron-AI/issues/998) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"what load cases are in this model"* and *"list the loads on this
 beam"* - Revit's Analyze > Load Cases, Loads and Boundary Conditions - beside four writes, Groups
 [LA](group-la.md), [LB](group-lb.md) and [LC](group-lc.md). No card read or wrote any of them: a grep of

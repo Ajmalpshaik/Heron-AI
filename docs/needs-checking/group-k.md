@@ -9,6 +9,8 @@
 
 ## Group K — the agent spine, which has only ever run here
 
+**Tracked as GitHub issue [#975](https://github.com/Ajmalpshaik/Heron-AI/issues/975) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **Added 2026-09-14** with the agents of the [seam-first build
 order](../work-notes/plans/agent-build-order-2026-09-13.md) — the agent contract, the kernel seams, the
 agent spine and the factory. **Every assertion in them passed on Linux, in a container, against a

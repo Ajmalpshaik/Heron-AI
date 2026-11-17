@@ -8,6 +8,8 @@
 
 ## Group ES - "show me / zoom to / isolate these" with Changes OFF: `revit_show`, the temporary isolate, and `ZOOM_TO_LINKED_ELEMENTS` (2026-10-17)
 
+**Tracked as GitHub issue [#992](https://github.com/Ajmalpshaik/Heron-AI/issues/992) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **What was wrong.** The add-in has always let EXECUTE through with Changes off -
 `HeronPermissions.ReadOnlyCeiling` is Execute, *"changes what is shown, never what exists"* - and only the
 MCP side held it back: `revit_read`'s ceiling is its own ANALYZE, so `ZOOM_TO_ELEMENTS`, `SET_SELECTION`

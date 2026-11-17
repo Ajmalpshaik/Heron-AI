@@ -7,6 +7,8 @@
 
 ## Group LB - point, line and area loads in a load case: `PLACE_STRUCTURAL_LOADS` (2026-11-01)
 
+**Tracked as GitHub issue [#998](https://github.com/Ajmalpshaik/Heron-AI/issues/998) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"put a 10 kN point load on this beam end"*, *"add a 5 kN/m line load
 along this beam"* and *"add a 2.5 kPa area load on this slab"* - Revit's Analyze > Loads, hosted or free. No
 card placed a load: a grep of every fragment's C# that day for `PointLoad`, `LineLoad` and `AreaLoad` found

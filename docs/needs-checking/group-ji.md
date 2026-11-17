@@ -8,6 +8,8 @@
 
 ## Group JI - curtain panels changed by where they sit on one wall - a row, a column, a floor line: `SET_CURTAIN_PANEL_TYPE` version 1 (2026-10-28)
 
+**Tracked as GitHub issue [#994](https://github.com/Ajmalpshaik/Heron-AI/issues/994) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 A new card, [`set-curtain-panel-type`](../../brain/fragments/set-curtain-panel-type/fragment.yaml),
 written in a cloud session for the modeller's *"change the bottom row of panels on this curtain wall to
 solid panels"*, *"put spandrel panels on every floor line"* and *"change panel type in the second

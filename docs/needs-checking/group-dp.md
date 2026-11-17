@@ -8,6 +8,8 @@
 
 ## Group DP - modelling: walls attached, faces painted, mass floors, wall sweeps, fascias, gutters and slab edges, reference plane lengths, radial grids (2026-10-12)
 
+**Tracked as GitHub issue [#993](https://github.com/Ajmalpshaik/Heron-AI/issues/993) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 The sixth batch of the gap fill ([`work-notes/plans/gap-fill-2026-10-12.md`](../work-notes/plans/gap-fill-2026-10-12.md)).
 
 **What was built - seven new capabilities.** `ATTACH_WALLS` (FRG-ELE-081, Revit 2025 on - the release that

@@ -8,6 +8,8 @@
 
 ## Group EV - what a write changed, counted from Revit's own DocumentChanged, and the run record that keeps every id (2026-10-17)
 
+**Tracked as GitHub issue [#969](https://github.com/Ajmalpshaik/Heron-AI/issues/969) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Two family builds on 2026-10-09 carried 322,725 characters of `revit_change` replies back into the
 chat, about 70% of it repeated: the fragment's helpers and the same KEPT paragraph, word for word
 ([row 5b-407](../fragment-issues/section-5b-rows-401-425.md)). Nothing in Heron tracked a change at all.

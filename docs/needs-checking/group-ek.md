@@ -8,6 +8,8 @@
 
 ## Group EK - up to 50 elements described fully in one read, by typed ids and inside a link: `REPORT_PARAMETER_INVENTORY` version 3 (2026-10-17)
 
+**Tracked as GitHub issue [#982](https://github.com/Ajmalpshaik/Heron-AI/issues/982) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for by the owner on 2026-10-17: one read-only call that describes up to 50 elements fully. Version 2
 ([Group DI](group-di.md)) took only a selection or a chained set, had no cap - 535 elements came back as a
 6.2 MB record (DI3) - and an id from a linked model found nothing.

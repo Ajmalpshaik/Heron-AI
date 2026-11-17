@@ -1,3 +1,9 @@
+# SUPERSEDED 2026-11-17 by Group OE on main, where the card was proved and
+# signed 2026-11-16 - its job file is roofs-walls-levels-delete-oe-2026-11-16.yaml.
+# This file was written for pull request #871's own DRAFT of the card, which
+# main's PROVEN card of the same id replaced; it is kept as the record and is
+# not to be run (docs/needs-checking/group-og.md).
+#
 # NEEDS-CHECKING Group OG - SHAPE_WALL_TOPS_TO_ROOF (DRAFT), a wall's top
 # shaped to the roof above it by editing its profile, on Revit 2022 to 2024.
 # Built 2026-11-16 in a cloud session with no Revit, for field report #852

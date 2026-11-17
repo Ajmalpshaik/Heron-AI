@@ -8,6 +8,8 @@
 
 ## Group JR - how many different panel sizes a curtain wall has, within a tolerance: `REPORT_CURTAIN_ELEMENTS` version 2 (2026-10-29)
 
+**Tracked as GitHub issue [#994](https://github.com/Ajmalpshaik/Heron-AI/issues/994) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Recorded as worth building in [doc 45 §6](../45-five-more-downloaded-skill-files.md) (*"Panel sizes on a
 curtain wall, grouped within the modeller's tolerance"*) and in the
 [facade plan](../work-notes/plans/facade-capability.md), where it waited for the owner's word because it

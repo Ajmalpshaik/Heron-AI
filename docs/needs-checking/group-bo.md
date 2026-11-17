@@ -9,6 +9,8 @@
 
 ## Group BO - one form's material: linked to a family material parameter, or set to a material, one form at a time (2026-10-01)
 
+**Tracked as GitHub issue [#976](https://github.com/Ajmalpshaik/Heron-AI/issues/976) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **The owner's PC, Revit 2024 first, then 2020.** One new tool, added the same day as Groups BL to BN because
 the `family-creation` skill's own NOT YET line named materials, and nothing could give the body and the neck
 of one family different ones: [`set-family-form-material`](../../brain/fragments/set-family-form-material/fragment.yaml)

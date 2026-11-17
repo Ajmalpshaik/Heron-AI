@@ -7,6 +7,8 @@
 
 ## Group LN - a shaft opening cut between two named levels, and a wall's own rectangular opening: `CREATE_SHAFT_OPENING`, `CREATE_OPENING` widened (2026-11-02)
 
+**Tracked as GitHub issue [#996](https://github.com/Ajmalpshaik/Heron-AI/issues/996) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"cut a shaft opening from Level 1 to Roof through all the slabs here"*, *"add a
 shaft for the riser at these corners, base Level 0 top Level 6"* and *"put a 1200 x 800 opening in this wall at 900
 above the floor"* - Revit's Architecture > Opening > Shaft and Opening > Wall. No card cut a shaft: a grep of every

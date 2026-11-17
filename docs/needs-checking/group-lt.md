@@ -7,6 +7,8 @@
 
 ## Group LT - a roof by extrusion, its profile sketched on a named reference plane or along a grid and extruded between a start and an end: `CREATE_EXTRUSION_ROOF` (2026-11-02)
 
+**Tracked as GitHub issue [#993](https://github.com/Ajmalpshaik/Heron-AI/issues/993) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"make an extruded roof along grid A with this profile"*, *"add a curved
 extrusion roof from 0 to 12000 mm, rise 2000"*, *"make a barrel roof over the entrance"* and *"add a gable
 extrusion roof on reference plane North Face"* - Revit's Architecture > Roof > Roof by Extrusion.

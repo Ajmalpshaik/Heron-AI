@@ -7,6 +7,8 @@
 
 ## Group LA - add a structural load case: `CREATE_LOAD_CASE` (2026-11-01)
 
+**Tracked as GitHub issue [#998](https://github.com/Ajmalpshaik/Heron-AI/issues/998) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"add a load case called Wind X"* - Revit's Analyze > Load Cases > Add.
 No card made one: a grep of every fragment's C# that day for `LoadCase.Create` found nothing.
 `ADD_LOAD_CLASSIFICATION` adds an electrical load classification - a different job sharing a word.

@@ -7,6 +7,8 @@
 
 ## Group KX - which sizes the duct, conduit and cable tray size lists hold: `REPORT_DUCT_CONDUIT_SIZES` (2026-11-01)
 
+**Tracked as GitHub issue [#1002](https://github.com/Ajmalpshaik/Heron-AI/issues/1002) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"what duct sizes are available for round ducts"* - Revit's Manage >
 MEP Settings > Mechanical Settings > Duct Settings (Rectangular, Oval, Round) and Electrical Settings >
 Conduit Settings > Size and Cable Tray Settings > Size. No card read them: a grep of `brain/fragments` that

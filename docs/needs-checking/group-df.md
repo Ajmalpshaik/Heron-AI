@@ -8,6 +8,8 @@
 
 ## Group DF - a shared parameter definition created in the shared parameter file first, then added or replaced (2026-10-12)
 
+**Tracked as GitHub issue [#983](https://github.com/Ajmalpshaik/Heron-AI/issues/983) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 On Revit 2020 the owner asked for an outdoor unit family's refrigerant connector sizes - the family
 parameters **Gas Pipe Diameter** (12.7 mm) and **Liquid Pipe Diameter** (6.35 mm) - to become shared
 parameters. His shared parameter file (`D:\04_BIM\06_Shared_Parameters\Shared_Parameters.txt`, UTF-16,

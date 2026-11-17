@@ -28,7 +28,7 @@ evidence, and nothing else does. Phases 2 and 3 are as written here.
 |---|---|---|
 | **1** | **Installation** — the installer, the three routes, the Settings panel | **Planned in this folder.** Nothing built on 2026-09-21; mostly built since - [`02-implementation.md` §4](02-implementation.md#4-progress) |
 | **2** | **AI that fixes and AI that builds** — bring AJ AI's debugging and tool-creation across, then port the AJ Tools tools onto Heron fragments | **Outlined below.** Not planned |
-| **3** | Not told yet | The owner will walk through it. **Some of it reaches back into Phase 2**, so Phase 2 is not designed in detail until Phase 3 is heard |
+| **3** | Not told yet | The owner will walk through it. **Some of it reaches back into Phase 2**, so Phase 2 is not designed in detail until Phase 3 is heard *(tracked as GitHub issue [#1011](https://github.com/Ajmalpshaik/Heron-AI/issues/1011) since 2026-11-16 (WN-53))* |
 
 **Phase 3 reaching back into Phase 2 is the instruction that matters here**, and it is the reason this
 page does not plan Phase 2 further than the owner's own words. Designing Phase 2 fully now would mean

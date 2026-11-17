@@ -9,6 +9,8 @@
 
 ## Group BS - the family's own settings (Work Plane-Based, Shared, Always Vertical) and the office's shared parameters in a family (2026-10-01)
 
+**Tracked as GitHub issue [#977](https://github.com/Ajmalpshaik/Heron-AI/issues/977) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **The owner's PC, Revit 2024 first, then 2020.** Two new tools, asked for by the owner on 2026-10-01 after the
 family stack was reviewed for gaps: [`set-family-settings`](../../brain/fragments/set-family-settings/fragment.yaml)
 - `SET_FAMILY_SETTINGS`, FRG-DOC-036 - because Group BR's own advice is to make a nested family Work

@@ -7,6 +7,8 @@
 
 ## Group JY - lining added to, changed on and taken off ducts and their fittings: `SET_DUCT_LINING` (2026-11-01)
 
+**Tracked as GitHub issue [#1002](https://github.com/Ajmalpshaik/Heron-AI/issues/1002) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"add 25 mm lining to these ducts"*, *"line this supply duct and its
 fittings"*, *"remove the lining from this duct"*, *"change the lining thickness to 50"*. Nothing in Heron
 put lining on, changed it or took it off - `SELECT_BY_INSULATION` and `CHECK_INSULATION_CLEARANCE` only

@@ -8,6 +8,8 @@
 
 ## Group AR - a curtain wall's grid and mullions: set on the type, read back off the wall (2026-09-25)
 
+**Tracked as GitHub issue [#994](https://github.com/Ajmalpshaik/Heron-AI/issues/994) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **The owner's PC, Revit 2024 first, on a TEST COPY of `test projject` - never his own design.** Built
 on 2026-09-25 as the owner's first pick from what [39](../39-three-downloaded-skill-sets.md) §5 found
 missing:

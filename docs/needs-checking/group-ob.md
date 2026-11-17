@@ -10,6 +10,8 @@
 
 ## Group OB - Changes, Admin and Publish held in Revit, off at every start, and never turned on by a file: D-166 layers 1 and 2 (2026-11-16)
 
+**Tracked as GitHub issue [#970](https://github.com/Ajmalpshaik/Heron-AI/issues/970) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 [D-166](../decisions/D-166.md), accepted by the owner from proposal [F45](../proposals/f45.md): an AI with file
 access could turn writing on by adding one line to `%APPDATA%\Heron\config\heron.config`, and Heron's own
 refusal named that line. **Layer 1** - the heron-guard hook refuses a write or a command that would do it.

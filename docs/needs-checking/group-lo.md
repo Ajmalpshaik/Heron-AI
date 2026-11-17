@@ -7,6 +7,8 @@
 
 ## Group LO - MEP fabrication: the configuration and loaded services read, design ducts and pipes converted to fabrication parts of a named service, and Optimize Lengths: `REPORT_FABRICATION_SETUP`, `CONVERT_TO_FABRICATION`, `OPTIMIZE_FABRICATION_LENGTHS` (2026-11-02)
 
+**Tracked as GitHub issue [#1002](https://github.com/Ajmalpshaik/Heron-AI/issues/1002) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"which fabrication configuration and services are loaded"*, *"list the
 fabrication services and their buttons"*, *"convert these ducts to fabrication parts using the Low Pressure
 service"*, *"convert this pipe run to fabrication using service Copper Plumbing"* and *"optimise the lengths of

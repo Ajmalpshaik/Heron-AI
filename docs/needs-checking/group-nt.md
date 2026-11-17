@@ -7,6 +7,8 @@
 
 ## Group NT - a dry run from the chat: `revit_change` with `dry_run` (2026-11-12)
 
+**Tracked as GitHub issue [#969](https://github.com/Ajmalpshaik/Heron-AI/issues/969) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 [D-155](../decisions/D-155.md) lets a chat ask `revit_change` for the run itself, rolled back, with nothing
 kept. The add-in's half is D-55's and is unchanged; what is new is the chat's door sending it. **Tested
 only against a stand-in for Revit** (`tests/test_mcp_serves.py`, section 13), whose new checks were seen to

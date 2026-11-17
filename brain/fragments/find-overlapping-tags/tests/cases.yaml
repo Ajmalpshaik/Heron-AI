@@ -10,7 +10,34 @@ positive:
       MORE clashes than at 1:100, from the same model with nothing moved. That
       difference is the fragment working: the tags did not change, the paper did
 
+  # VERSION 2 (2026-11-16) - row 5b-1731. Each FAILS on version 1. NOT RUN.
+  # Arranged on Heron's own scratch project (NEEDS-CHECKING Group OC).
+  - given: >
+      a plan at 1:100 with a door tag placed on the wall the door sits in, a
+      detail line drawn through a second tag, and a dimension whose figure sits
+      under a third, minOverlapMm 1
+    expect: >
+      `overModel` 3 - one finding each, "over wall", "crossed by a line", "over
+      the figure of dimension" - and the three tag ids in `overlapping`.
+      Version 1 answered 0 clash(es)
+  - given: >
+      a wall whose Location Line is Finish Face: Exterior, with a tag over the
+      middle of its poche
+    expect: >
+      found - the poche is centred on the wall, not on its location line. The
+      sign of that shift is NOT CHECKED in Revit; this case is what checks it
+
 negative:
+  # VERSION 2 - the same plan with every tag moved clear of walls, lines and
+  # dimension figures.
+  - given: the same plan, each tag dragged clear into a room
+    expect: >
+      `overModel` 0, `pairs` 0. A wall tag sitting on its own wall is not
+      counted
+  - given: the first plan with annotationOnly true
+    expect: >
+      `overModel` 0 and the first finding saying walls, lines and dimensions
+      were not compared - version 1's answer, now named as such
   - given: a SECTION view with plenty of annotation and none of it overlapping
     expect: >
       few or no clashes. This is the FIRST case to run. Comparing model X
@@ -32,9 +59,9 @@ negative:
 
   - given: a dimension string running through six tags
     expect: >
-      nothing reported for it. Dimensions are deliberately not collected - a
-      dimension's box is the whole string and it would report a clash against
-      everything inside its own extent
+      nothing reported for the string itself. A dimension's box is never
+      used - it is the whole string and would clash with everything inside its
+      own extent. Since version 2 only its FIGURE inside a tag box counts
 
 second_route:
   - print the sheet to PDF and look at it, which is the only test that actually matters

@@ -7,6 +7,8 @@
 
 ## Group NS - a write's values before and after: `readBack` (2026-11-12)
 
+**Tracked as GitHub issue [#969](https://github.com/Ajmalpshaik/Heron-AI/issues/969) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 [D-156](../decisions/D-156.md) puts each changed element's old and new values on a write's reply. **It
 compiles for 2020 to 2027, every Revit member it calls exists in every release
 (`tools/check-api-surface.py`), and the comparing runs without Revit** (`tests/test_read_back.py`, whose

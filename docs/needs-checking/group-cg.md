@@ -7,6 +7,8 @@
 
 ## Group CG - sprinkler layout from the model: the rooms read, the heads placed, and their height (2026-10-06)
 
+**Tracked as GitHub issue [#1004](https://github.com/Ajmalpshaik/Heron-AI/issues/1004) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **Built 2026-10-06 from [docs/47](../47-sprinkler-layout-from-the-model.md) and
 [its plan](../work-notes/plans/sprinkler-layout-2026-10-06.md). REPORT_SPRINKLER_LAYOUT_SPACES is DRAFT
 and compiles on Revit 2020, 2024 and 2027; nothing below has run in Revit.** The read's arrangement is

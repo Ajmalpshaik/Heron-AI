@@ -8,6 +8,8 @@
 
 ## Group KK - the schedule settings Heron could not set: a column's units, min/max, multiple-values text and font; footers, blank lines, per-level sorting and the grand total title; column order and insert; the schedule's own switches; header groups; more kinds of schedule; key rows; split schedules (2026-11-01)
 
+**Tracked as GitHub issue [#986](https://github.com/Ajmalpshaik/Heron-AI/issues/986) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for by Ajmal PS on 2026-11-01, after Heron could not set the Length column of a duct length schedule to
 metres on his Revit 2020 job model ([FRAGMENT-ISSUES row 5b-1367](../fragment-issues/section-5b-rows-401-425.md)).
 The research - where each setting lives in the Revit API, on which release, and the four settings checked and

@@ -7,6 +7,8 @@
 
 ## Group CQ - deleting a family parameter that labels a dimension: the label taken off first, when asked (2026-10-06)
 
+**Tracked as GitHub issue [#980](https://github.com/Ajmalpshaik/Heron-AI/issues/980) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 `DELETE_FAMILY_PARAMETERS` version 2 takes an optional switch `unlabelFirst`. With it true, a dimension
 labelled with a parameter being deleted no longer blocks it: the label is taken off first
 (`Dimension.FamilyLabel = null`), read back bare and unmoved after Revit regenerates, and then the

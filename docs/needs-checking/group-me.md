@@ -7,6 +7,8 @@
 
 ## Group ME - Analyze > Load Combinations - add load combinations from factored load cases, with their state and type, and list the combinations a model has: `CREATE_LOAD_COMBINATION`, `REPORT_STRUCTURAL_LOADS` widened (2026-11-02)
 
+**Tracked as GitHub issue [#999](https://github.com/Ajmalpshaik/Heron-AI/issues/999) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"add a load combination 1.2DL + 1.6LL"*, *"make a combination ULS1 = 1.4
 Dead"*, *"add the serviceability combination SLS1 = 1.0DL + 1.0LL"* and *"what load combinations are in this
 model"* - Revit's Analyze > Load Combinations. No card made or read one: a grep of every fragment's C# that

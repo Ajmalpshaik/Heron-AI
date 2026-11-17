@@ -8,6 +8,8 @@
 
 ## Group EC - the gap pass of 2026-10-14: what the library could not do, and the tools written for it (2026-10-14)
 
+**Tracked as GitHub issue [#975](https://github.com/Ajmalpshaik/Heron-AI/issues/975) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Written 2026-10-14 by a cloud session asked by the owner to check every fragment for what is missing and
 what overlaps, and then to keep adding what is missing while Revit was not free. The findings are
 [rows 5b-469 to 5b-473](../fragment-issues/section-5b-rows-401-425.md). **Every row below is DRAFT, read

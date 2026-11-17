@@ -7,6 +7,8 @@
 
 ## Group CW - a family's forms picked by id, kind or material, to select or delete (2026-10-08)
 
+**Tracked as GitHub issue [#978](https://github.com/Ajmalpshaik/Heron-AI/issues/978) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 The form tools (`CREATE_FAMILY_EXTRUSION`, `_REVOLUTION`, `_BLEND`, `_SWEEP` and the rest) answer with each
 form's id as `formId`, and on 2026-10-08 the owner, building a family in Revit 2024, needed several of those
 forms SELECTED to delete or edit them - and Heron had no way ([row 5b-370](../fragment-issues/section-5b-rows-351-375.md)).

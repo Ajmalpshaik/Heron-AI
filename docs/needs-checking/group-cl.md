@@ -7,6 +7,8 @@
 
 ## Group CL - family types renamed and deleted in the Family Editor (2026-10-06)
 
+**Tracked as GitHub issue [#980](https://github.com/Ajmalpshaik/Heron-AI/issues/980) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 `SET_FAMILY_TYPE_VALUES` version 3 renames a family's TYPE - `"Type Name=HexNut - ISO 4032"` in its
 `values`, the way the Family Types dialog's Rename sits beside its rows - and deletes one with the
 optional switch `deleteType`. Before it, the type `Standard` in `GM_PipeSupport_HexNut` had to be renamed

@@ -7,6 +7,8 @@
 
 ## Group KW - add a load classification or a demand factor: `ADD_LOAD_CLASSIFICATION` (2026-11-01)
 
+**Tracked as GitHub issue [#1003](https://github.com/Ajmalpshaik/Heron-AI/issues/1003) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"add a load classification called Kitchen Equipment"* and *"add a
 demand factor of 80% over 10 kVA"* - Revit's Manage > MEP Settings > Load Classifications and Demand
 Factors. No card made either: a grep of `brain/fragments` that day for `ElectricalLoadClassification.Create`

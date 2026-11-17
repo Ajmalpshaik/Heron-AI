@@ -9,9 +9,24 @@ semantic-identity: "delete these elements from the model"
 kind: action
 domain: revit.elements
 capability: DELETE_ELEMENTS
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 2 (2026-11-16) - THE WALLS A DELETE DETACHES ARE NAMED, and back to
+# DRAFT. FRAGMENT-ISSUES row 5b-1674 (issue #852, Villa 2, Revit 2024): each
+# roof rebuild left the walls at their plate - Revit said only "Walls 19
+# modified" - and on 2020 to 2024 Heron cannot attach them again. Version 1
+# reported what Document.Delete returned, and a wall that loses its attachment
+# is changed, not deleted, so it was in no answer. Version 2 names, before the
+# delete, every wall whose top or base is attached and whose plan lies under a
+# roof, floor or ceiling being deleted (`attachedBefore`), then rebuilds the
+# model and reads them again: those whose attachment went are in
+# `detachedWalls`, and `wallsNote` says so in plain words, with Heron's limit
+# on 2020 to 2024. The delete itself is unchanged. Version 1 was PROVEN on
+# 2026-09-13 (the proof block below, kept as the record of what it proved);
+# its C# moved, so it is DRAFT again until NEEDS-CHECKING Group OE is run
+# (D-30).
 
 purpose: >
   Deletes elements. The most destructive thing in this library, and the one
@@ -28,6 +43,14 @@ purpose: >
   This is what makes Golden Rule 17's preview possible for deletion: run the
   same call inside a transaction that is rolled back, and the returned set is
   the true blast radius.
+
+  **A WALL ATTACHED TO A ROOF, FLOOR OR CEILING THAT GOES IS DETACHED, AND
+  NAMED** (version 2). It is changed, not deleted, so `deleted` never shows
+  it. So before the delete every wall attached at its top or base and lying
+  in plan under what is deleted is named, and after it each is read again:
+  `detachedWalls` lists those whose attachment went, and `wallsNote` says what
+  that means - on Revit 2020 to 2024 Heron cannot attach a wall again, so it
+  is Attach Top/Base by hand.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -59,32 +82,59 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: IList<ElementId>
+    - name: attachedBefore
+      # Version 2. Read BEFORE the delete: every wall whose top or base is
+      # attached and whose plan extent overlaps a roof, floor or ceiling being
+      # deleted, with which end. A likely list - a wall can be attached to
+      # something else above the same plan - so it describes what
+      # `detachedWalls` was measured on (D-52). Empty when none.
+      role: accounting
+      type: string
+    - name: detachedWalls
+      # Version 2. Walls in `attachedBefore` that are NOT attached at that end
+      # once the model is rebuilt after the delete - measured, never inferred.
+      # The finding version 2 exists to surface: Revit says only "Walls N
+      # modified".
+      role: result
+      type: IList<ElementId>
+    - name: wallsNote
+      # Version 2. The sentence for `detachedWalls`: how many, their ids, and
+      # on Revit 2020 to 2024 that Heron cannot attach them again (D-52).
+      # Empty when none.
+      role: accounting
+      type: string
 
 proof:
-  date: '2026-09-13'
+  date: '2026-11-16'
   by: Ajmal PS
-  model: test projject (3,509 elements), Revit 2024, session 40932
-  positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-by-category-name, set-selection with this phase's own values - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned alsoWent 0,
-    askedFor 6, deleted 6 item(s) [925780, 925782, 925784, ...], refused 0 item(s). inputs
-    came elements from the selection (6). on test projject
+  model: Heron OE Roofs (3,331 elements), Revit 2024, session 18772
+  positive_case: 'run with categories=Roofs - the first of 3 tracked inputs - the arrangement
+    was re-made first by running select-in-region, set-selection with this phase''s own values
+    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned alsoWent 16, askedFor 1, askedIds 1 item(s) [352583], attachedBefore Attached,
+    and in plan under a roof, floor or ceiling being deleted: wall 352603 (top attached),
+    wall 352604 (top attached), wall 352605 (top attached), wall 352606 (top attached), candidates
+    4 item(s) [(Autodesk.Revit.DB.Wall, True, False), (Autodesk.Revit.DB.Wall, True, False),
+    (Autodesk.Revit.DB.Wall, True, False), ...], deleted 17 item(s) [352581, 352582, 352583,
+    ...], detachedWalls 4 item(s) [352603, 352604, 352605, ...], hostBoxes 1 item(s) [Autodesk.Revit.DB.BoundingBoxXYZ],
+    isAttached Func`3, refused 0 item(s), wallsNote 4 wall(s) were attached to what was deleted
+    and are DETACHED now - each wall''s top or base goes back to its own height and level:
+    352603, 352604, 352605, 352606. On Revit 2024 Heron cannot attach a wall again - Attach
+    Top/Base by hand (Modify | Walls) once the new roof, floor or ceiling is in.. inputs came
+    elements from set-selection (1). on Heron OE Roofs'
   negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). delete-elements\
     \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
     \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
     \ about a set it was not given - is caught here by the answer following the input exactly\
-    \ across 4 different inputs:\n\n      2 pipes - a fitting went with them -> deleted 4\
-    \ (asked for 2, alsoWent 2)\n      2 levels - SAME askedFor as the row above, 60 more\
-    \ went -> deleted 62 (asked for 2, alsoWent 60)\n      6 ducts - nothing hung off them\
-    \ -> deleted 6 (asked for 6, alsoWent 0)\n      19 walls - nothing hung off them either\
-    \ -> deleted 19 (asked for 19, alsoWent 0)\n\n    Different inputs, exact matches every\
-    \ time. A fragment falling back to the active view, the whole model, or a previous run\
-    \ could not do that."
+    \ across 3 different inputs:\n\n      categories=Roofs -> detachedWalls 4 item(s) [352603,\
+    \ 352604, 352605, ...]\n      categories=Floors -> detachedWalls 0 item(s)\n      categories=Roofs,\
+    \ Floors -> detachedWalls 4 item(s) [352603, 352604, 352605, ...]\n\n    Different inputs,\
+    \ exact matches every time. A fragment falling back to the active view, the whole model,\
+    \ or a previous run could not do that."
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 41bec93db19aba00
-
+  fingerprint: 90e2d3e949cb830b
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -93,7 +143,12 @@ compatibility-note: >
   One implementation for every release. `Document.Delete(ICollection<ElementId>)`
   returns the ids actually removed on every release 2020 to 2027, and no
   ElementId is built from an integer, so 2024's move to 64-bit ids does not
-  reach this code.
+  reach this code. Version 2's `WALL_TOP_IS_ATTACHED` and
+  `WALL_BOTTOM_IS_ATTACHED` (read-only, on every release), `RoofBase`,
+  `Floor`, `Ceiling`, `Element.get_BoundingBox`, `Document.Regenerate`,
+  `Element.IsValidObject` and `Application.VersionNumber` read the same on
+  2020 to 2027; no wall attachment member (2025 on) is used, so one path
+  serves every release.
 
 # ROUTING - repeated in HIDE_ELEMENTS, which is what is usually meant.
 #
@@ -110,6 +165,11 @@ compatibility-note: >
 #                                       only, never the duct
 #   "undo that"                      -> Revit's own Undo, never a delete written
 #                                       to reverse a create
+#   "delete this roof" with walls attached to it
+#                                    -> here; the walls it detaches are named
+#                                       (version 2, row 5b-1674). Attaching
+#                                       them again is ATTACH_WALLS (2025 on),
+#                                       by hand before
 #   "delete these forms" (ids given) -> REPORT_FAMILY_FORMS first, in a
 #                                       family; its forms then come here
 #                                       with expect_from report-family-forms

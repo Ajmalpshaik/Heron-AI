@@ -8,6 +8,8 @@
 
 ## Group BI - D-59's fourth batch: six coordination checks look inside linked models when asked (2026-09-29)
 
+**Tracked as GitHub issue [#991](https://github.com/Ajmalpshaik/Heron-AI/issues/991) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **The same shape as [Group BH](group-bh.md), on six coordination checks whose other side is usually in the
 architect's or structural link** - `includeLinks` (absent means this model only), `linksSearched` and
 `linkedMatches`. Nothing from a link is selected or carried ([row 75](../FRAGMENT-ISSUES.md)); a tool's

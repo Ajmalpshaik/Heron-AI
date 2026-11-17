@@ -722,6 +722,48 @@ def main():
     check((notes_of(made + ".missing") if notes_of is not None else None) == {},
           "a card that cannot be read gives no notes, never a wrong one")
 
+    # FRAGMENT-ISSUES 5b-1740: 99 cards write a need's note BELOW its name,
+    # before its `type:`, and none of those notes was served.
+    below = os.path.join(os.path.dirname(made), "below.yaml")
+    with io.open(below, "w", encoding="utf-8") as handle:
+        handle.write("contract:\n"
+                     "  needs:\n"
+                     "    - name: action\n"
+                     "      # make | use - which one\n"
+                     "      # and line two\n"
+                     "      type: string\n"
+                     "      # below type: the next need's, never this one's\n"
+                     "    - name: parts\n"
+                     "      type: string\n"
+                     "    # above both\n"
+                     "    - name: both\n"
+                     "      # and below\n"
+                     "      type: string\n"
+                     "    - name: last\n"
+                     "      type: string\n"
+                     "    - name: bare\n"
+                     "    # at the dash's indent: the next need's, never bare's\n"
+                     "    - name: after\n"
+                     "      type: string\n"
+                     "  provides:\n"
+                     "    - name: answer\n"
+                     "      # a provide's note is not a need's\n"
+                     "      type: string\n")
+    got = notes_of(below) if notes_of is not None else {}
+    check(got == {"action": "make | use - which one and line two",
+                  "parts": "below type: the next need's, never this one's",
+                  "both": "above both and below",
+                  "after": "at the dash's indent: the next need's, never bare's"},
+          "a note directly below a need's name is that need's, after any note above it; "
+          "one below its `type:`, or at the dash's own indent, is still the next need's, "
+          "and none is read from `provides`: %r" % (got,))
+    circuit = os.path.join(ROOT, "brain", "fragments", "set-circuit-naming-scheme",
+                           "fragment.yaml")
+    said = notes_of(circuit) if notes_of is not None else {}
+    check("start slot" in said.get("parts", "") and "make | use" in said.get("action", ""),
+          "SET_CIRCUIT_NAMING_SCHEME's `parts` word list, written below its name, is "
+          "served: %r" % said.get("parts", "")[:80])
+
     if space is not None:
         block = contract_lines(space, "CREATE_FAMILY_EXTRUSION")
         joined = "\n".join(block)

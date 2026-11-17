@@ -31,6 +31,12 @@ semantic-identity: "make a new circuit naming scheme from circuit parameters, or
 # panel's circuit naming was its own parameter and there was no scheme to
 # make or set. The card claims 2021 to 2027 and nothing else.
 #
+# VERSION 3 (2026-11-16) - A WORD TWO PARAMETERS ANSWER TO IS ASKED (row
+# 5b-1739). Version 2 took Revit's own parameter for a word such as "phase"
+# or "voltage" without a word, even beside a project parameter of electrical
+# circuits of that name. That word is refused now with both named, and
+# "revit: phase" or "project: Phase" in `parts` says which.
+#
 # VERSION 2 (2026-11-16) - THE PARAMETERS REVIT TAKES (row 5b-1660). Version 1
 # mapped "circuit number" to RBS_ELEC_CIRCUIT_NUMBER and "start slot" to
 # RBS_ELEC_CIRCUIT_START_SLOT, which Revit refuses in a scheme, so its own
@@ -51,7 +57,7 @@ semantic-identity: "make a new circuit naming scheme from circuit parameters, or
 kind: action
 domain: revit.mep
 capability: SET_CIRCUIT_NAMING_SCHEME
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -83,7 +89,11 @@ contract:
       # naming index), load name, start slot (the slot index), circuit type,
       # load classification, poles, rating, frame, voltage, phase, ways - the
       # parameters Revit takes in a scheme (row 5b-1660) - or a project
-      # parameter of electrical circuits by its exact name. Left out on make,
+      # parameter of electrical circuits by its exact name. Where the word is
+      # one of Revit's AND the name of a project parameter bound to Electrical
+      # Circuits (capitals ignored), it is refused and asked: "revit: phase" for
+      # Revit's, "project: Phase" - the exact name, bound to Electrical
+      # Circuits - for the project parameter (row 5b-1739). Left out on make,
       # refused - never guessed.
       type: string
       source: request
@@ -122,8 +132,9 @@ contract:
       type: IList<string>
     - name: refused
       # Why it declined, in Revit words: no name, no parts, a part Heron
-      # cannot name, a scheme the model has not got, Revit's own refusal.
-      # Never a thing done (D-52).
+      # cannot name, a word two parameters answer to or a "revit:"/"project:"
+      # word neither holds (version 3), a scheme the model has not got,
+      # Revit's own refusal. Never a thing done (D-52).
       role: accounting
       type: IList<string>
     - name: findings
@@ -151,8 +162,11 @@ compatibility-note: >
   (tools/check-fragments-compile.py, 2026-11-16). A part's Separator is drawn
   after it, as ADD_SCHEDULE_COMBINED_FIELD measured in Revit 2020 for a
   schedule's combined parameters; that a circuit naming scheme draws it the
-  same way has not been seen in Revit. An ElementId is compared with ==, never
-  read as a number.
+  same way has not been seen in Revit. Version 3 reads Document.ParameterBindings
+  through BindingMap.ForwardIterator - DefinitionBindingMapIterator Key, Current
+  and MoveNext, and ElementBinding.Categories - all 2020 to 2027
+  (tools/api-surface --members, 2026-11-16). An ElementId is compared with ==,
+  never read as a number.
 
 # ROUTING (2026-11-02) - the same rows are in REPORT_ELECTRICAL_SETTINGS.
 #

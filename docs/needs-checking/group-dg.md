@@ -8,6 +8,8 @@
 
 ## Group DG - every tag on an old element made again on the element that replaced it, in every view (2026-10-12)
 
+**Tracked as GitHub issue [#984](https://github.com/Ajmalpshaik/Heron-AI/issues/984) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 On 2026-10-12, on Revit 2020, three in-place split AC outdoor units in project 4355-BHVD-3D-60P00-BL006A
 were replaced by a loadable family. The old units carried 16 tags of *TCM_TG_HVAC Equipment: Equipment
 Tag* across 9 floor plans and sections, all with leaders, and no Heron tool could move them: no Revit

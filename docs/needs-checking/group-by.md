@@ -7,6 +7,8 @@
 
 ## Group BY - deleting family parameters by name, refused while anything still uses them (2026-10-04)
 
+**Tracked as GitHub issue [#977](https://github.com/Ajmalpshaik/Heron-AI/issues/977) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **The owner's PC, Revit 2024, in an UNSAVED scratch family.** Asked for on 2026-10-04 after two leftover
 parameters in a PPR check valve family had to be deleted by hand, because no tool could:
 

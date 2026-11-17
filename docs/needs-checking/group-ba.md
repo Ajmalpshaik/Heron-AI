@@ -8,6 +8,8 @@
 
 ## Group BA - the Sheet Issues/Revisions dialog from chat: every column, Move, Merge, Delete, Numbering and the arc length (2026-09-28)
 
+**Tracked as GitHub issue [#988](https://github.com/Ajmalpshaik/Heron-AI/issues/988) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **Ten fragments, all DRAFT.** On 2026-09-28 the owner checked Manage > Sheet Issues/Revisions in Revit 2024
 control by control and asked for every one from chat. Four existing fragments were widened - each went back
 to DRAFT because its code moved under its proof, and each keeps its old `proof:` block to re-prove from - and

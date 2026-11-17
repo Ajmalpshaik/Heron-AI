@@ -7,6 +7,8 @@
 
 ## Group CS - a nested part made in its own window and brought back into the host family (2026-10-07)
 
+**Tracked as GitHub issue [#980](https://github.com/Ajmalpshaik/Heron-AI/issues/980) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 The owner, 2026-10-07: *"this tire should be separate family ... it will automatically open ... bring to
 that family 1 and it will place"*, and *"I can see the families that nested families that you are creating.
 So I can suggest that this is OK or not."* The `family-creation` skill's step 11 now makes such a part in

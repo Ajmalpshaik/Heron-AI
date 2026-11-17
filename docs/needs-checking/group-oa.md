@@ -7,6 +7,8 @@
 
 ## Group OA - the Setup a modeller downloads: one file, per user, every Revit year present, uninstall from Installed apps (2026-11-16)
 
+**Tracked as GitHub issue [#972](https://github.com/Ajmalpshaik/Heron-AI/issues/972) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 What [D-167](../decisions/D-167.md) built: [`platform/Heron.Setup`](../../platform/Heron.Setup/README.md) and
 [`tools/build-setup.py`](../../tools/build-setup.py), `heron-install --uninstall` and `--add-to-claude`
 ([`ClaudeCodeEntry.cs`](../../platform/Heron.Installer/ClaudeCodeEntry.cs)), and in

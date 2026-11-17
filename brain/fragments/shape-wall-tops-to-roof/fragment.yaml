@@ -1,59 +1,11 @@
-heron-agent: HERON-FRG-CRE-007
+heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-ELE-170
-semantic-identity: "edit these walls' profiles so each top follows the underside of the roof above it - a sketched top that does not move with the roof"
-
-# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
-# 2026-11-11, field report Ajmalpshaik/Heron-AI#852 (Revit 2024, model
-# `villa 2`): the modeller asked "Attach all walls to the roof." after the
-# main roof was rebuilt; 25 walls stopped at the 2440 plate and left open
-# gable triangles under both roofs. ATTACH_WALLS is declared for 2025 on, so
-# nothing in Heron did the job, and the modeller ran Attach Top/Base by hand
-# once per roof. Row 5b-1672; the question was Q-91.
-#
-# THE OWNER'S ANSWER, 2026-11-16 - Ajmal PS, "go with you suggetions", to
-# Q-91's shape 2: a new tool that edits each wall's profile so its top
-# follows the roof above it, on Revit 2022, 2023 and 2024; on 2020 and 2021
-# it says plainly that it cannot; and it says plainly that the top is a
-# sketch that does NOT follow the roof when the roof changes later.
-#
-# SEARCHED FIRST, 2026-11-16. No card edits a wall's profile: no
-# CreateProfileSketch, CanHaveProfileSketch or SketchEditScope on a wall in
-# any card's C# (EDIT_TOPOSOLID reads a toposolid's SketchId; the family cards
-# that name SketchEditScope say it refuses a family document). The
-# duplicate check and the Matcher found nothing to reuse or start from.
-#
-# LOOK-ALIKES, KEPT SEPARATE:
-#   ATTACH_WALLS (PROVEN, 2025 on)  Revit's real Attach Top/Base, a top that
-#                                   follows the roof when it moves. A
-#                                   different call and a different result,
-#                                   on releases this card is not declared for.
-#   CREATE_WALL (PROVEN)            makes walls from a line and a height; it
-#                                   never reshapes one.
-#   SET_ELEMENT_LEVEL               sets a wall's levels and offsets - a flat
-#                                   top at another height.
-#
-# WHY 2022 TO 2024 ONLY. Wall.CanHaveProfileSketch, CreateProfileSketch,
-# RemoveProfileSketch, SketchId, Sketch.GetAllElements and SketchEditScope are
-# in 2022 to 2027 and NOT in 2020 or 2021 (compatibility-note). On 2020 and
-# 2021 the only shaped wall is a NEW one made from a profile, which loses the
-# doors and windows the old one hosted - Q-91's shape 3, not chosen. On 2025
-# on, ATTACH_WALLS does the real attach, so this card is not offered there.
-#
-# OPENS ITS OWN TRANSACTIONS inside the add-in's ONE named group - D-112's
-# `editScopeFailures`, here because a profile is edited only in a
-# SketchEditScope, which Revit's reference says "can only be started when
-# there is no transaction active" (SketchEditScope.Start, RevitAPI.xml 2022
-# to 2024; NOT MEASURED in Revit). Still one undo entry (Golden Rule 16).
-#
-# THE TOP IS A SKETCH, and the answer says so whenever a wall is shaped: it
-# does not follow the roof if the roof is changed. Asked again after a roof
-# change, a wall already shaped is redrawn only with `redraw` true - never by
-# default, because a profile edited by hand would be replaced.
+semantic-identity: "edit the profile of these walls so their tops follow the underside of the roof above, closing the gable"
 kind: action
 domain: revit.elements
 capability: SHAPE_WALL_TOPS_TO_ROOF
@@ -61,110 +13,182 @@ version: 1
 source: OFFICIAL
 risk: MODIFY
 
+# WHY IT EXISTS - comments, not `purpose`, because `purpose` is searched and
+# long text pulls other sentences here.
+#
+# FRAGMENT-ISSUES row 5b-1672, Q-91 (issue #852, ask 2; Villa 2, Revit 2024,
+# 2026-11-11): 25 walls stopped at the 2440 plate under two gable roofs and
+# left the gable triangles open. ATTACH_WALLS is declared 2025 on - Revit
+# opened wall attachment to code only then - so on 2020 to 2024 nothing in
+# Heron could close them. The owner asked on 2026-11-16 for every recorded
+# issue from #852 to #854 to be fixed, which answers Q-91 with its option 2:
+# a new tool that edits each wall's PROFILE so its top follows the roof, on
+# the releases whose API has a wall profile sketch.
+#
+# NOT ATTACH_WALLS and NOT CREATE_WALL. ATTACH_WALLS ties a wall to a roof so
+# it follows it (2025 on, Wall.AddAttachment); this draws the wall's outline
+# once, and it does not follow. CREATE_WALL makes walls from a line and a
+# height; this reshapes walls already there, keeping what they host.
+#
+# REVIT 2022 ON. Wall.CanHaveProfileSketch, CreateProfileSketch,
+# RemoveProfileSketch, SketchId and SketchEditScope are in RevitAPI.xml
+# 2022.1.80 to 2024.0.0 and NOT in 2020.2.90 or 2021.1.100 (read 2026-11-15
+# for Q-91). On 2020 and 2021 the only shaped wall is a new one made from a
+# profile, which loses what the old wall hosted - Q-91's option 3, not built.
+#
+# IT RUNS IN REVIT'S EDIT MODE, so it declares `editScopeFailures` (D-112):
+# the add-in runs it inside Heron's group with no transaction open, and it
+# opens its own. Still one undo; still rolled back on a preview.
+#
+# ASSUMES NO OPEN TRANSACTION - the opposite of Golden Rule 16's usual shape,
+# for the reason above.
 purpose: >
-  On Revit 2022 to 2024, where no add-in can attach a wall, edits the profile
-  of each wall handed in - Edit Profile - so its top follows the underside of
-  the roof above it, closing the gable triangle and keeping its doors and
-  windows. The top is a sketch: it does not follow the roof if the roof
-  changes, so it is asked for again after a roof change.
+  Edits the profile of the walls selected so each wall's top follows the
+  underside of the roof above it - Edit Profile, done for the modeller - and
+  closes the open triangle under a gable. The roof's underside is measured
+  every 50 mm along the wall on both its faces, and the lower kept, so the top
+  never pokes through the roof; a ridge between two measurements is put where
+  the slopes meet. The wall's bottom and ends stay as they were.
+
+  **THE TOP IS A SKETCH AND DOES NOT FOLLOW THE ROOF.** If the roof moves or
+  is rebuilt, the wall keeps the old outline - unlike Attach Top/Base. Every
+  answer says so. From Revit 2025, ATTACH_WALLS attaches the wall instead.
+
+  **REFUSED WITH THE REASON, and nothing on that wall changed:** a wall Revit
+  says cannot have a profile sketch - in Revit's own words; a wall that
+  already has an edited profile; a wall in a group; a wall the roof does not
+  cover along its whole length. A roof in the selection is the one followed;
+  with none, each wall finds the roof above it.
+
+  **READ BACK.** The profile Revit holds after its edit mode closes must have
+  a corner at every point of the roof's underside, to 1 mm; if not, the
+  profile is removed again and the wall is as it was.
 
 contract:
   needs:
     - name: doc
       type: Document
-    # D-112's switch: the add-in runs this with no transaction of its own
-    # open, and hands in the failure discipline every transaction here takes.
     - name: editScopeFailures
       type: IFailuresPreprocessor
       source: ambient
-    # The walls - the selection, or a filter's walls. Anything else is named
-    # and left.
+    # The walls to shape, FROM THE SELECTION - and, to name which roof they
+    # follow, that roof too. Anything else is named in `refused` and left
+    # alone.
     - name: elements
       type: IList<Element>
-    # true draws the top of a wall whose profile is ALREADY edited - by an
-    # earlier run or by hand - to the roof again, replacing its outline: the
-    # run after a roof change. false, or not said, leaves such a wall as it is
-    # and names it. A profile with openings drawn in it is never redrawn.
-    - name: redraw
-      type: bool
-      source: request
-      optional: true
   provides:
     - name: shaped
-      # Walls whose new top was read back off their profile, with every door,
-      # window and opening still in them (D-52).
+      # Walls whose profile Revit holds with the new top, read back after the
+      # edit mode closed. Counted off the read-back, never off the write.
       role: result
       type: int
     - name: shapedIds
       role: result
       type: IList<ElementId>
     - name: noRoof
-      # Walls with no roof over them - left as they were.
+      # Walls the roof does not cover along their whole length, named and
+      # left alone (D-52).
       role: accounting
       type: IList<ElementId>
-    - name: leftAsTheyWere
-      # Every other wall not shaped, with its reason: not a wall, in a group,
-      # owned by somebody else, already attached, a profile Revit will not
-      # edit, already shaped and no redraw, a floor between it and the roof,
-      # a roof too low, a top that already meets the roof.
-      role: accounting
-      type: IList<string>
-    - name: keptInserts
-      # Doors, windows and openings in the shaped walls, every one read back
-      # still in its wall.
-      role: accounting
-      type: int
     - name: report
-      # ONE STRING, wall by wall (D-52).
+      # ONE STRING, wall by wall: the roof followed, every point of the new
+      # top - how far along and how high - and the highest point against the
+      # old top. The evidence, as a string because a reply cuts a list
+      # (D-52).
+      role: accounting
+      type: string
+    - name: refused
+      # Why each thing it was handed was left alone, in plain words, " | "
+      # between them - Revit's own words where Revit refused (D-52).
       role: accounting
       type: string
     - name: findings
       type: IList<string>
 
-revit: ["2022", "2023", "2024"]
-runtime: [net48]
+proof:
+  date: '2026-11-16'
+  by: Ajmal PS
+  model: Heron OE Roofs (3,331 elements), Revit 2024, session 18772
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-in-region, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot
+    304.8, chosenRoofs 0 item(s), discipline Action`1, findings 2 item(s) [2 wall(s) have
+    a profile whose top follows the roof above th..., THE TOP IS A SKETCH: it will NOT follow
+    the roof if the roof...], hitRoof 1 item(s) [id 352566], invariant CultureInfo, labelOf
+    Func`2, lowestTop 0.328083989501312, mm Func`2, noRoof 0 item(s), oneMillimetre 0.00328083989501312,
+    refuse Action`1, refused , report Wall 352599 ''Generic - 200mm'': its top now follows
+    the underside of roof 352566 through 3 point(s) - 0 mm along at 2787 mm; 3000 mm along
+    at 4518 mm; 6000 mm along at 2787 mm; highest 4518 mm, where its top was 2440 mm. Read
+    back from the profile Revit holds | Wall 352601 ''Generic - 200mm'': its top now follows
+    the underside of roof 352566 through 3 point(s) - 0 mm along at 2787 mm; 3000 mm along
+    at 4518 mm; 6000 mm along at 2787 mm; highest 4518 mm, where its top was 2440 mm. Read
+    back from the profile Revit holds, revitSaid Func`1, roofSolids 4 item(s) [(Autodesk.Revit.DB.FootPrintRoof,
+    System.Collections.Generic..., (Autodesk.Revit.DB.FootPrintRoof, System.Collections.Generic...,
+    (Autodesk.Revit.DB.FootPrintRoof, System.Collections.Generic..., ...], roofTop 16.3397020486691,
+    roofs 4 item(s) [Generic - 400mm, Generic - 400mm, Generic - 400mm, ...], shaped 2, shapedIds
+    2 item(s) [352599, 352601], stationStep 0.164041994750656, tell Action`1, undersideAt
+    Func`4, walls 2 item(s) [Generic - 200mm, Generic - 200mm]. inputs came editScopeFailures
+    - Heron''s failure discipline, for the fragment''s own edit mode; elements from the selection
+    (2). on Heron OE Roofs'
+  negative_case: 'run with categories=Walls, exact=false, includeLinks=false, maxMm=65500,500,7000,
+    minMm=59500,-500,-1000 instead - chosen because it should not contain what this fragment
+    reports - the arrangement was re-made first by running select-in-region, set-selection
+    with this phase''s own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8, chosenRoofs 0 item(s),
+    discipline Action`1, findings 1 item(s) [Nothing was changed - see refused for why], hitRoof
+    (null), invariant CultureInfo, labelOf Func`2, lowestTop 0.328083989501312, mm Func`2,
+    noRoof 1 item(s) [352602], oneMillimetre 0.00328083989501312, refuse Action`1, refused
+    Wall 352602 ''Generic - 200mm'': there is no roof above it 0 mm from its start, so its
+    top cannot follow a roof along its whole length. Nothing on it was changed, report , revitSaid
+    Func`1, roofSolids 4 item(s) [(Autodesk.Revit.DB.FootPrintRoof, System.Collections.Generic...,
+    (Autodesk.Revit.DB.FootPrintRoof, System.Collections.Generic..., (Autodesk.Revit.DB.FootPrintRoof,
+    System.Collections.Generic..., ...], roofTop 16.3397020486691, roofs 4 item(s) [Generic
+    - 400mm, Generic - 400mm, Generic - 400mm, ...], shaped 0, shapedIds 0 item(s), stationStep
+    0.164041994750656, tell Action`1, undersideAt Func`4, walls 1 item(s) [Generic - 200mm].
+    inputs came editScopeFailures - Heron''s failure discipline, for the fragment''s own edit
+    mode; elements from the selection (1). on Heron OE Roofs'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 7e909dc85a0ce5b1
+
+revit: ["2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net48, net8.0-windows, net10.0-windows]
 tests: tests/
 
 compatibility-note: >
-  Wall.CanHaveProfileSketch(), CreateProfileSketch(), RemoveProfileSketch()
-  and SketchId, Sketch.GetAllElements(), SketchEditScope (its constructor,
-  Start(ElementId) and IsSketchEditingSupported(ElementId)) and
-  EditScope.IsPermitted are present 2022 to 2027 and absent in 2020 and 2021;
-  EditScope.Commit(IFailuresPreprocessor), Cancel and IsActive,
-  Solid.IntersectWithCurve, HostObjectUtils.GetSideFaces,
-  HostObject.FindInserts, ItemFactoryBase.NewModelCurve(Curve, SketchPlane)
-  and BuiltInParameter.WALL_TOP_IS_ATTACHED are present 2020 to 2027 - read
-  with tools/api-surface --members on 2026-11-16. The card claims 2022 to
-  2024: not 2020 or 2021, where the profile members are not, and not 2025 on,
-  where ATTACH_WALLS attaches the wall for real. Not seen in Revit: that a
-  SketchEditScope starts and commits inside the add-in's open group, as a
-  StairsEditScope does (Group OG, OG3).
+  Declared 2022 to 2027 because the wall profile sketch is in the API from
+  2022 only: Wall.CanHaveProfileSketch, CreateProfileSketch,
+  RemoveProfileSketch and SketchId, SketchEditScope with Start(ElementId),
+  and Sketch.GetAllElements are all marked "since 2022" in RevitAPI.xml
+  2024.3.60, and Q-91 found none of them in 2020.2.90 or 2021.1.100.
+  EditScope's IsPermitted, IsActive, Commit and Cancel,
+  Solid.IntersectWithCurve (2013), HostObjectUtils.GetSideFaces,
+  Document.Create.NewModelCurve and Sketch.Profile are older. No ElementId is
+  built from a number. One path for every release it claims. MEASURED
+  2026-11-16 with tools/check-fragments-compile.py: compiled against 2021's
+  reference assemblies (the card's release list widened for that one run) it
+  fails on exactly SketchId, CanHaveProfileSketch, CreateProfileSketch,
+  RemoveProfileSketch, SketchEditScope and Sketch.GetAllElements; it compiles
+  on 2022 to 2027.
 
-# ROUTING (2026-11-16) - the same rows are in ATTACH_WALLS.
+# ROUTING - the same rows are in ATTACH_WALLS where they meet.
 #
-#   "attach all walls to the roof"                -> here, on Revit 2022 to
-#                                                    2024; ATTACH_WALLS from
-#                                                    2025, neither on 2020
-#                                                    or 2021
-#   "attach the tops of these walls to the roof"  -> here, the same releases
-#   "edit the wall profile to follow the gable"   -> here
-#   "attach these walls to the roof above"        -> ATTACH_WALLS (2025 on)
-#   "attach these columns to the roof"            -> ATTACH_COLUMNS
-#   "set the wall top to level 2"                 -> SET_ELEMENT_LEVEL, topLevelId
-#
-# A CARD FOR ANOTHER RELEASE IS NOT OFFERED, IT IS NAMED. Retrieval's version
-# wall leaves out a card whose `revit:` list lacks the release, the identity
-# route included (heron_retrieve.find), and the lookup then names the card
-# these words reach first with its releases, under "NOT ON REVIT <release>"
-# (heron_brain.lookup's `other_release`, issue #853 item C6). So on 2020 and
-# 2021 these words are answered by a plain "Heron cannot do this on Revit
-# 2021 ... done by hand", and on 2025 on by ATTACH_WALLS.
+#   "make the wall tops follow the roof", "close the gable above these walls",
+#   "edit the wall profile to follow the gable"
+#                                        -> here, Revit 2022 on
+#   "attach these walls to the roof"     -> ATTACH_WALLS (2025 on) - the wall
+#                                           then FOLLOWS the roof. On 2025 on
+#                                           that is the better tool; this one
+#                                           draws an outline once
+#   "set the wall top to level 2"        -> SET_ELEMENT_LEVEL, topLevelId
+#   "build a wall here"                  -> CREATE_WALL
+#   "reset the wall profile"             -> NOT HERE, and nowhere yet: by hand
+#                                           in Revit, Reset Profile
+#   "slope this roof"                    -> SLOPE_ROOF_EDGES
 
 utterances:
-  # The modeller's own words, issue #852, Revit 2024.
-  - attach all walls to the roof
-  # Asked of the lookup in the same session (#853 item C6).
-  - attach the tops of these walls to the roof
-  # #852's ask 2 - "a wall profile edit (sketch the top as a gable)" - as
-  # row 5b-1672 measured it on 2026-11-15.
+  - make the tops of these walls follow the roof above
+  - close the gable triangle above these walls
   - edit the wall profile to follow the gable
+  - shape the wall tops to the underside of the roof

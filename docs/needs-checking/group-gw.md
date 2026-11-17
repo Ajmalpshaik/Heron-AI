@@ -8,6 +8,8 @@
 
 ## Group GW - Heron's own C# compiler on a .NET Revit, whatever another add-in loaded first (2026-10-17)
 
+**Tracked as GitHub issue [#973](https://github.com/Ajmalpshaik/Heron-AI/issues/973) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 On the owner's laptop on 2026-10-17 every fragment failed on Revit 2026.5 - *"Method 'CommonGetSemanticModel'
 ... does not have an implementation"* - because AJ Tools had loaded its Roslyn 4.14 into the load context every
 add-in shares on a .NET Revit, and Heron's 4.8 C# layer bound to it; on 2027.3 Heron compiled on AJ Tools'

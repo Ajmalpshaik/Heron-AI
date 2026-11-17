@@ -9,6 +9,8 @@
 
 ## Group B — does Revit still load
 
+**Tracked as GitHub issue [#971](https://github.com/Ajmalpshaik/Heron-AI/issues/971) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 The panel was rebuilt: Heron and Bridge Status are now one split button, and a ribbon that throws
 during `OnStartup` costs the whole add-in. If Heron disappears entirely, this is why.
 

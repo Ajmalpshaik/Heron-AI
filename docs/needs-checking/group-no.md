@@ -7,6 +7,8 @@
 
 ## Group NO - a family connector's shape changed, and a connector moved onto a reference plane: `SET_FAMILY_CONNECTOR_ROLES` version 5 (2026-11-11)
 
+**Tracked as GitHub issue [#1015](https://github.com/Ajmalpshaik/Heron-AI/issues/1015) since 2026-11-16** - its checks have run and held, and the ids not yet struck are listed there, to strike once open pull request #871 has merged. Every result stays in this file.
+
 Found missing on 2026-11-11 while finishing the owner's diffuser plenum families on Revit 2020: a hand-placed
 duct connector could not be made round, its whole set-up took three or four calls, and it could not sit on a
 reference plane without a solid under it. Both were closed by widening the PROVEN card that edits a connector

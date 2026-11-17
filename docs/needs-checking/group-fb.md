@@ -8,6 +8,8 @@
 
 ## Group FB - the sheets of one revision, latest on the sheet or not, and a typed list of sheet numbers: `FIND_SHEETS_BY_REVISION_OR_NUMBER` (2026-10-17)
 
+**Tracked as GitHub issue [#988](https://github.com/Ajmalpshaik/Heron-AI/issues/988) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Found on 2026-10-14 on a real Revit 2020 job: a sheet set of the 8 sheets carrying revision Seq. 15
 "IAB-ISSUED AS-BUILT" could only be made through `SELECT_BY_PARAMETER_VALUE` on Sheets with *Current
 Revision Description* equal to the description - which picks a sheet only while that revision is the

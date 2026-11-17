@@ -7,6 +7,8 @@
 
 ## Group LI - a circuit naming scheme made, or the project's circuit naming set: `SET_CIRCUIT_NAMING_SCHEME` (2026-11-02)
 
+**Tracked as GitHub issue [#1003](https://github.com/Ajmalpshaik/Heron-AI/issues/1003) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"which circuit naming scheme is the project using"*, *"make a circuit
 naming scheme Panel-Circuit with a dash"* and *"use the Panel-Circuit naming for this project"* - Revit's
 Manage > MEP Settings > Electrical Settings > Circuit Naming. No card made a scheme or set one: a grep of
@@ -84,3 +86,11 @@ with `in: "electrical-mi"` - `1 POSITIVE EMPTY, 1 ALREADY` (`report-electrical-s
 ### 2026-11-16 - set-circuit-naming-scheme version 2 (row 5b-1660)
 
 LI2's positive was written against version 1, which mapped *circuit number* to `RBS_ELEC_CIRCUIT_NUMBER` - a parameter Revit refuses in a naming scheme, so it could never pass (the 2026-11-14 night's FAIL above). Version 2 maps it to `RBS_ELEC_CIRCUIT_NAMING_INDEX` and *start slot* to `RBS_ELEC_CIRCUIT_SLOT_INDEX`, so LI2's positive now reads *"Panel-Circuit": Panel "-" + Circuit Naming Index* in `after`, the dialog showing Panel, a dash, then the circuit's number. LI1's arrangement needs a scheme named **Standard** made first: the metric Electrical template ships none on Revit 2024. The rows above are kept as written; this note is what LI2 is read against from now. NOT RUN on version 2 yet - NEEDS REAL REVIT.
+
+### 2026-11-16 - set-circuit-naming-scheme version 3 (row 5b-1739)
+
+Version 2 took Revit's own parameter for a word such as *phase* or *voltage* without a word, even where the model has a project parameter of electrical circuits by that name. Version 3 refuses that word with both named and asks for *revit: phase* or *project: Phase*; a parameter bound to other categories only is never counted. The cases are in the card's `tests/cases.yaml`. NOT RUN - NEEDS REAL REVIT, and the arrangement needs the modeller's hands: two parameters made in Manage > Project Parameters.
+
+| # | Run | Look for |
+|---|---|---|
+| **LI7** | *Two parameters of one name.* By hand: a text project parameter **Phase** bound to Electrical Circuits, a parameter **Voltage** bound to Electrical Equipment only, and a shared **Phase** bound to Electrical Equipment only. Then `action` make with `parts` "panel; phase" (THE NEGATIVE FIRST), "panel; revit: phase", "panel; project: Phase" and "panel; voltage", each rolled back | "panel; phase": `changed` 0, refused naming both and the two ways to write it. "revit: phase": `changed` 1, Revit's phase. "project: Phase": `changed` 1, `after` reading *Phase (project parameter)* - the circuit one, never *2 project parameters are named* - or Revit's own refusal of it, recorded as it comes. "panel; voltage": `changed` 1, Revit's Voltage, not refused |

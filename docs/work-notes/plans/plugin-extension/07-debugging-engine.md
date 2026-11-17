@@ -135,6 +135,8 @@ one: `heron_regression.py` builds and tests every supported version and **reject
 
 ## 5. What would actually have to be built
 
+*Tracked as GitHub issue [#1011](https://github.com/Ajmalpshaik/Heron-AI/issues/1011) since 2026-11-16 (WN-55) - work it there.*
+
 **Two new agents and one loop.** Everything else is wiring what exists.
 
 | | What | Why it is new |
@@ -239,6 +241,8 @@ isolation before it is allowed near real work.
 shows the owner what changed. That is [Q-DE-1](#q-de-1--may-the-engine-apply-a-fix-to-a-draft-fragment-without-asking--answered-2026-09-21).
 
 ### Q-DE-3 — Where does the user report the error from?
+
+*Tracked as GitHub issue [#1011](https://github.com/Ajmalpshaik/Heron-AI/issues/1011) since 2026-11-16 (WN-54) - work it there.*
 
 The Claude Code chat, a Heron ribbon button, or the Settings panel. Ties to
 [Q-PE-1](03-open-questions.md) and to whatever Phase 3 says about the in-Revit surface.

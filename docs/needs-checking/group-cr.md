@@ -7,6 +7,8 @@
 
 ## Group CR - a connector deleted from the family being edited (2026-10-07)
 
+**Tracked as GitHub issue [#981](https://github.com/Ajmalpshaik/Heron-AI/issues/981) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 `REMOVE_FAMILY_CONNECTOR` (FRG-MEP-061, DRAFT) deletes connectors from the family open in the Family
 Editor, named the way `SET_FAMILY_CONNECTOR_ROLES` names them - the plane the face lies on, an id from
 `REPORT_FAMILY_CONNECTORS`, or `all`. Every name is checked before the first goes; each is read back gone;

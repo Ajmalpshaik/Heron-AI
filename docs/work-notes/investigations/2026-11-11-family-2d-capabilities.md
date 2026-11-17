@@ -110,6 +110,8 @@ card's OLD job and proves the new one, each with a negative case.
 
 ## Existing cards that may already be duplicates (merge candidates)
 
+*Tracked as GitHub issue [#1012](https://github.com/Ajmalpshaik/Heron-AI/issues/1012) since 2026-11-16 (WN-63) - work it there.*
+
 Not merged - each waits for the owner's yes, then goes to `heron-fragment-merger`. From the duplicate
 checker's second pass (2026-11-11, origin/main 1279ce3c): **no two live cards on a family's 2D side do the
 SAME job today.** Three pairs OVERLAP and are candidates, none urgent:

@@ -8,6 +8,8 @@
 
 ## Group JL - a divided surface already there, changed: its grid rotated for a diamond pattern, offset, cut at the levels: `SET_DIVIDED_SURFACE_LAYOUT` version 1 (2026-10-28)
 
+**Tracked as GitHub issue [#994](https://github.com/Ajmalpshaik/Heron-AI/issues/994) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 A new card, [`set-divided-surface-layout`](../../brain/fragments/set-divided-surface-layout/fragment.yaml),
 written in a cloud session from the modeller's own sentences - *"rotate the divided surface grid 45 degrees
 for a diamond pattern"*, *"change the U grid to 20 divisions"*, *"set the V grid to 1500 spacing"*, *"divide

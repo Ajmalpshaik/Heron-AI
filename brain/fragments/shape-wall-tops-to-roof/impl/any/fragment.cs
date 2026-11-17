@@ -1,95 +1,76 @@
-// NOT STANDALONE. Assumes `doc`, `editScopeFailures`, `elements` and `redraw`
-// are in scope; leaves `shaped`, `shapedIds`, `noRoof`, `leftAsTheyWere`,
-// `keptInserts`, `report` and `findings` behind.
+// NOT STANDALONE. Assumes `doc`, `editScopeFailures` and `elements` are in
+// scope; leaves `shaped`, `shapedIds`, `noRoof`, `refused`, `report` and
+// `findings` behind.
 //
-// EACH WALL'S TOP SHAPED TO THE ROOF ABOVE IT, BY EDITING ITS PROFILE - Edit
-// Profile in the ribbon - on Revit 2022 to 2024, where Revit lets no add-in
-// attach a wall (Wall.AddAttachment arrived in 2025; ATTACH_WALLS does the
-// real attach there). The wall is EDITED, never rebuilt: its doors, windows
-// and openings stay in it, and every one is read back afterwards.
+// RUNS WITH NO TRANSACTION OPEN, INSIDE HERON'S GROUP (D-112). A wall's
+// profile is edited only inside a SketchEditScope, and Revit's reference says
+// one "can only be started when there is no transaction active" (RevitAPI.xml
+// 2024, SketchEditScope.Start). So this declares the ambient
+// `editScopeFailures` need, opens its own transactions and its own edit scope,
+// and hands each of them that need - Revit's words still reach the answer, and
+// the group still makes the whole job one undo that rolls back on a preview.
+// Lengths are internal FEET.
 //
-// THE TOP IS A SKETCH. It does not follow the roof when the roof is moved,
-// re-pitched or rebuilt - Revit's Attach Top does, this cannot. Every answer
-// that shapes a wall says so, and a wall already shaped is drawn to the roof
-// again only when `redraw` is true.
+// WHAT IT DOES, WALL BY WALL (row 5b-1672, Q-91, issue #852):
 //
-// ===========================================================================
-// THIS FRAGMENT OPENS ITS OWN TRANSACTIONS, AND ONLY BECAUSE IT HAS TO - D-112.
-// ===========================================================================
+//   1. REFUSED BEFORE ANYTHING IS WRITTEN: not a wall; inside a group; a wall
+//      that already has an edited profile (Heron does not redraw one somebody
+//      drew); and a wall Revit says cannot have a profile sketch - a curved,
+//      tapered or stacked wall, an old curtain wall, an infill - with REVIT'S
+//      OWN WORDS, asked of Revit in a transaction that is rolled back.
 //
-// A wall's profile is edited only inside a SketchEditScope, and Revit's own
-// reference says, on SketchEditScope.Start for 2022 to 2024: "SketchEditScope
-// can only be started when there is no transaction active". NOT MEASURED in
-// Revit - read off RevitAPI.xml. Declaring `editScopeFailures` makes the add-in
-// run this inside its ONE named TransactionGroup with no transaction of its
-// own open, so the whole job is still one undo entry and Discard still takes
-// all of it back. Every transaction here takes `editScopeFailures`, so what
-// Revit says reaches the answer as it would from the add-in's own.
+//   2. THE UNDERSIDE OF THE ROOF ABOVE IT, MEASURED. Every 50 mm along the
+//      wall, on both of its faces (read off the wall, since its location
+//      line may be a face rather than its centre), a vertical line from the wall's base up is
+//      cut with the roof's solids; where it first enters a roof is the
+//      underside there. The lower of the two faces is kept, so the new top is
+//      level across the wall's thickness and never pokes through the roof. A
+//      station with no roof above it refuses the wall - a top that follows a
+//      roof for half its length is not a gable closed.
 //
-// PER WALL, IN ORDER:
-//   1. "Heron: wall profile" - Wall.CreateProfileSketch (a redraw first takes
-//      the old one away with RemoveProfileSketch), committed: Revit's own
-//      remark is that the sketch's loop "cannot be obtained until
-//      regeneration". Its rectangle gives the wall's base, its own top and
-//      the plane the profile is drawn on.
-//   2. A SketchEditScope on that sketch, and inside it "Heron: wall top to
-//      the roof": the rectangle's lines deleted and the new outline drawn on
-//      the sketch's own plane - the bottom and the two ends where they were,
-//      the top following the roof.
+//   3. THE TOP AS A FEW POINTS. Stations on one straight piece of roof are one
+//      line; where the roof's slope changes - a ridge, a valley, an eave - the
+//      two lines either side are met, so a ridge between two stations is put
+//      where it is, not 50 mm short of it.
 //
-// THE ROOF ABOVE IS FOUND PER WALL, never guessed across the building. Along
-// the wall, every 100 mm, a vertical line is cut through every roof whose
-// plan extent overlaps the wall - just inside each of the wall's two faces.
-// A roof counts there when it reaches above the wall's own top less 300 mm,
-// so a lower roof the wall rises past (a lean-to) is not one; its underside
-// there is the wall's new top. The top takes the LOWER of the two faces, so
-// the wall never pokes through the roof; a roof sloping ACROSS the wall (an
-// eave wall) leaves a small wedge on the high face that Revit's Attach would
-// fill. Where no roof is over the wall the top stays where it was. Straight
-// runs between samples become one line, and a ridge between two runs is put
-// where their lines meet, so a planar roof gives an exact gable.
+//   4. THE PROFILE. Wall.CreateProfileSketch makes Revit's own rectangle; its
+//      bottom and ends are read back after a rebuild (the reference: "the loop
+//      of the sketch cannot be obtained until regeneration") and kept. Inside a
+//      SketchEditScope the rectangle's lines are deleted and the new outline
+//      drawn: the same bottom, the same two ends, and the top through the
+//      points of step 3. Every point is put exactly on the sketch's own plane.
 //
-// THE WALL'S OWN BASE AND TOP come from its parameters - base level and base
-// offset, top level and top offset, or its unconnected height - so a wall
-// shaped before is judged by the rectangle Revit gives it back, not by its
-// old gable.
+//   5. READ BACK. The committed sketch is read again: every point of the new
+//      top must be a corner of it, to 1 mm. If not - or Revit refused any
+//      step - the profile sketch is removed again and the wall is as it was.
 //
-// LEFT AS IT WAS, AND NAMED - decided before anything is changed:
-//   not a wall; in a group; owned by somebody else (worksharing); its top
-//   already ATTACHED in Revit (it follows a roof already); Revit says it can
-//   have no profile (curved, tapered, a curtain wall or a panel in one); its
-//   profile already edited and `redraw` not asked; a profile with openings
-//   drawn in it, which a redraw would lose; no roof over it (`noRoof`); a
-//   FLOOR between its top and the roof - a wall is shaped only to the roof
-//   right above it; a roof coming down to less than 300 mm above its base;
-//   its top already meeting the roof.
-//
-// ALL OR NOTHING ONCE THE FIRST WALL IS CHANGED. A Revit refusal after that -
-// a sketch it will not make, an outline it will not keep, a door or window it
-// drops - THROWS, naming the wall, in Revit's words. The add-in rolls a
-// fragment that throws back whole, group and all; nothing is undone by hand.
-//
-// MILLIMETRES become feet by / 304.8 (D-20).
+// THE TOP IS A SKETCH. IT DOES NOT FOLLOW THE ROOF. Revit's Attach Top/Base
+// keeps a wall on the roof when the roof moves; a profile does not, and the
+// answer says so every time. On Revit 2020 and 2021 there is no profile sketch
+// in the API at all, so this card is declared 2022 to 2027 (RevitAPI.xml
+// 2022.1.80 to 2024.0.0: Wall.CanHaveProfileSketch, CreateProfileSketch,
+// RemoveProfileSketch, SketchId and SketchEditScope; none in 2020.2.90 or
+// 2021.1.100). From 2025 ATTACH_WALLS attaches the wall instead, and the
+// answer names it.
 
-const double MmPerFoot = 304.8;
+const double MillimetresPerFoot = 304.8;
+
 var shaped = 0;
 var shapedIds = new List<ElementId>();
 var noRoof = new List<ElementId>();
-var leftAsTheyWere = new List<string>();
-var keptInserts = 0;
-var lines = new List<string>();
+var refused = "";
+var report = "";
 var findings = new List<string>();
 
 var invariant = System.Globalization.CultureInfo.InvariantCulture;
-Func<double, string> mm = feet => Math.Round(feet * MmPerFoot).ToString(invariant);
-var step = 100.0 / MmPerFoot;          // one sample along the wall every 100 mm
-var fitTolerance = 2.0 / MmPerFoot;    // a sample this close to a line is on it
-var sameTop = 3.0 / MmPerFoot;         // a top this close to the roof already meets it
-var shortest = 5.0 / MmPerFoot;        // no line of the new outline shorter than this
-var lowest = 300.0 / MmPerFoot;        // no top lower than this above the wall's base
-var keptNothing = " The call failed, and Heron rolls the whole call back - no wall is changed.";
-var sketchNote = "The top of a shaped wall is a sketch: it does NOT follow the roof if the roof is changed "
-    + "later - ask again after a roof change, with redraw, to draw it to the roof again.";
+Func<double, string> mm = feet => Math.Round(feet * MillimetresPerFoot).ToString(invariant);
+var oneMillimetre = 1.0 / MillimetresPerFoot;
+var stationStep = 50.0 / MillimetresPerFoot;
+// The new top must stand at least this far above the wall's base.
+var lowestTop = 100.0 / MillimetresPerFoot;
+
+Action<string> refuse = text => refused += (refused.Length == 0 ? "" : " | ") + text;
+Action<string> tell = text => report += (report.Length == 0 ? "" : " | ") + text;
 
 Action<Transaction> discipline = t =>
 {
@@ -99,544 +80,581 @@ Action<Transaction> discipline = t =>
     t.SetFailureHandlingOptions(options);
 };
 
-// REVIT'S OWN WORDS FOR A REFUSAL - the failure discipline the add-in hands in
-// says what Revit posted (row 5b-1240); an older add-in answers with its type
-// name, which is not quoted.
+// WHAT REVIT SAID, when the add-in's failure discipline recorded it.
 Func<string> revitSaid = () =>
 {
     var text = editScopeFailures == null ? null : editScopeFailures.ToString();
     return text != null && text.StartsWith("Revit would not let it through", StringComparison.Ordinal)
         ? " - " + text : "";
 };
-Func<Exception, string> words = error => (error.Message ?? "").TrimEnd('.', ' ');
-Func<Element, string> named = e => (e.Category == null ? "element" : e.Category.Name) + " " + e.Id;
 
-// THE WALL'S OWN BASE AND TOP, from its parameters (the header). The box is
-// the fallback when a level cannot be read.
-Func<Wall, BoundingBoxXYZ, double[]> baseAndTop = (w, b) =>
+Func<Element, string> labelOf = element =>
 {
-    var level = doc.GetElement(w.LevelId) as Level;
-    var baseOffset = w.get_Parameter(BuiltInParameter.WALL_BASE_OFFSET);
-    if (level == null || baseOffset == null) return new[] { b.Min.Z, b.Max.Z };
-    var bottom = level.ProjectElevation + baseOffset.AsDouble();
-    var topConstraint = w.get_Parameter(BuiltInParameter.WALL_HEIGHT_TYPE);
-    var topId = topConstraint == null ? ElementId.InvalidElementId : topConstraint.AsElementId();
-    var upTo = topId == null || topId == ElementId.InvalidElementId ? null : doc.GetElement(topId) as Level;
-    if (upTo != null)
-    {
-        var topOffset = w.get_Parameter(BuiltInParameter.WALL_TOP_OFFSET);
-        return new[] { bottom, upTo.ProjectElevation + (topOffset == null ? 0.0 : topOffset.AsDouble()) };
-    }
-    var height = w.get_Parameter(BuiltInParameter.WALL_USER_HEIGHT_PARAM);
-    return new[] { bottom, height == null ? b.Max.Z : bottom + height.AsDouble() };
+    string name = "";
+    try { name = element.Name; } catch { }
+    return string.Format("{0} {1}{2}",
+        element is Wall ? "Wall" : element is RoofBase ? "Roof"
+            : element.Category != null ? element.Category.Name : "Element",
+        element.Id, string.IsNullOrEmpty(name) ? "" : " '" + name + "'");
 };
 
-// ---------------------------------------------------------------------------
-// 0. Every roof and floor once, with its box; solids read when first needed.
-// ---------------------------------------------------------------------------
-var roofs = new List<Tuple<Element, BoundingBoxXYZ>>();
-var floors = new List<Tuple<Element, BoundingBoxXYZ>>();
-foreach (var each in new FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Roofs).WhereElementIsNotElementType())
-{
-    var box = each.get_BoundingBox(null);
-    if (box != null) roofs.Add(Tuple.Create(each, box));
-}
-foreach (var each in new FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Floors).WhereElementIsNotElementType())
-{
-    var box = each.get_BoundingBox(null);
-    if (box != null) floors.Add(Tuple.Create(each, box));
-}
-
-var solidsCache = new Dictionary<ElementId, List<Solid>>();
-Func<Element, List<Solid>> solidsOf = e =>
-{
-    List<Solid> found;
-    if (solidsCache.TryGetValue(e.Id, out found)) return found;
-    found = new List<Solid>();
-    var options = new Options();
-    options.DetailLevel = ViewDetailLevel.Fine;
-    var geometry = e.get_Geometry(options);
-    if (geometry != null)
-        foreach (var item in geometry)
-        {
-            var solid = item as Solid;
-            if (solid != null) { if (solid.Volume > 1e-9) found.Add(solid); continue; }
-            var instance = item as GeometryInstance;
-            if (instance == null) continue;
-            foreach (var inner in instance.GetInstanceGeometry())
-            {
-                var innerSolid = inner as Solid;
-                if (innerSolid != null && innerSolid.Volume > 1e-9) found.Add(innerSolid);
-            }
-        }
-    solidsCache[e.Id] = found;
-    return found;
-};
-
-// The lowest point at which a vertical line from `rayFrom` to `rayTo` at
-// (x, y) is inside one of these elements, counting only a stretch inside that
-// reaches above `reachAbove` - and which element. NaN when there is none.
-var inside = new SolidCurveIntersectionOptions();
-Func<List<Element>, double, double, double, double, double, Tuple<double, Element>> firstHit =
-    (hosts, x, y, rayFrom, rayTo, reachAbove) =>
-{
-    var best = double.NaN;
-    Element which = null;
-    if (rayTo - rayFrom < shortest) return Tuple.Create(best, which);
-    var ray = Line.CreateBound(new XYZ(x, y, rayFrom), new XYZ(x, y, rayTo));
-    foreach (var host in hosts)
-        foreach (var solid in solidsOf(host))
-        {
-            SolidCurveIntersection hit;
-            try { hit = solid.IntersectWithCurve(ray, inside); }
-            catch (Exception) { continue; }
-            if (hit == null) continue;
-            for (var i = 0; i < hit.SegmentCount; i++)
-            {
-                var segment = hit.GetCurveSegment(i);
-                var low = Math.Min(segment.GetEndPoint(0).Z, segment.GetEndPoint(1).Z);
-                var high = Math.Max(segment.GetEndPoint(0).Z, segment.GetEndPoint(1).Z);
-                if (high <= reachAbove) continue;
-                if (double.IsNaN(best) || low < best) { best = low; which = host; }
-            }
-        }
-    return Tuple.Create(best, which);
-};
-
-// ---------------------------------------------------------------------------
-// 1. EVERY WALL READ, AND EVERY REFUSAL DECIDED, BEFORE ANYTHING CHANGES.
-// ---------------------------------------------------------------------------
-// One wall to shape: the wall, its location line's start and direction, the
-// stations along it and the roof's underside at each (NaN where no roof is
-// over it), and the roofs it follows.
-var toShape = new List<Tuple<Wall, XYZ, XYZ, double[], double[], List<Element>>>();
-string refusedAll = null;
-if (editScopeFailures == null)
-    refusedAll = "This needs Heron's add-in to hand it Revit's failure handling (D-112), and none came. NOTHING WAS CHANGED.";
-else if (elements == null || elements.Count == 0)
-    refusedAll = "No walls were handed in. Select the walls, or name them, and ask again. NOTHING WAS CHANGED.";
-else if (roofs.Count == 0)
-    refusedAll = "This model has no roof, so there is nothing to shape a wall to. NOTHING WAS CHANGED.";
-
-if (refusedAll == null)
+// ---- WHAT WAS HANDED IN: walls to shape, and the roofs to follow ---------
+var walls = new List<Wall>();
+var chosenRoofs = new List<RoofBase>();
+if (elements != null)
 {
     foreach (var element in elements)
     {
-        if (element == null || !element.IsValidObject) continue;
-        var wall = element as Wall;
-        if (wall == null) { leftAsTheyWere.Add(named(element) + ": not a wall."); continue; }
-        var who = "wall " + wall.Id;
+        if (element == null) continue;
+        if (element is Wall) walls.Add((Wall)element);
+        else if (element is RoofBase) chosenRoofs.Add((RoofBase)element);
+        else refuse(labelOf(element) + " is not a wall or a roof. Nothing on it was changed");
+    }
+}
 
-        if (wall.GroupId != null && wall.GroupId != ElementId.InvalidElementId)
-        { leftAsTheyWere.Add(who + ": it is in group " + wall.GroupId + " - Edit Group in Revit to shape it."); continue; }
+// A ROOF IN THE SELECTION IS THE ONE TO FOLLOW; with none, every roof in the
+// model is looked at, and each wall finds the one above it.
+var roofs = chosenRoofs.Count > 0
+    ? chosenRoofs
+    : new FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Roofs)
+        .WhereElementIsNotElementType().OfType<RoofBase>().ToList();
 
-        if (doc.IsWorkshared)
+// Each roof's solids, with its plan extent so a station far from it is not cut.
+var roofSolids = new List<Tuple<RoofBase, List<Solid>, BoundingBoxXYZ>>();
+var roofTop = double.MinValue;
+foreach (var roof in roofs)
+{
+    BoundingBoxXYZ box = null;
+    try { box = roof.get_BoundingBox(null); } catch { box = null; }
+    if (box == null) continue;
+    var solids = new List<Solid>();
+    GeometryElement geometry = null;
+    try { geometry = roof.get_Geometry(new Options { DetailLevel = ViewDetailLevel.Fine }); } catch { geometry = null; }
+    if (geometry == null) continue;
+    foreach (var item in geometry)
+    {
+        var solid = item as Solid;
+        if (solid != null && solid.Volume > 0) { solids.Add(solid); continue; }
+        var instance = item as GeometryInstance;
+        if (instance == null) continue;
+        foreach (var inner in instance.GetInstanceGeometry())
         {
-            string owner;
-            if (WorksharingUtils.GetCheckoutStatus(doc, wall.Id, out owner) == CheckoutStatus.OwnedByOtherUser)
-            { leftAsTheyWere.Add(who + ": owned by " + owner + " - left as it is."); continue; }
+            var innerSolid = inner as Solid;
+            if (innerSolid != null && innerSolid.Volume > 0) solids.Add(innerSolid);
+        }
+    }
+    if (solids.Count == 0) continue;
+    roofSolids.Add(Tuple.Create(roof, solids, box));
+    roofTop = Math.Max(roofTop, box.Max.Z);
+}
+
+// THE UNDERSIDE AT ONE POINT ON PLAN: where a vertical line from `fromZ` up
+// first enters a roof. NaN when no roof is above. `hitRoof` says which.
+ElementId hitRoof = ElementId.InvalidElementId;
+Func<double, double, double, double> undersideAt = (x, y, fromZ) =>
+{
+    hitRoof = ElementId.InvalidElementId;
+    var lowest = double.NaN;
+    if (roofTop <= fromZ) return lowest;
+    Line upward;
+    try { upward = Line.CreateBound(new XYZ(x, y, fromZ), new XYZ(x, y, roofTop + 1.0)); }
+    catch { return lowest; }
+    foreach (var entry in roofSolids)
+    {
+        var box = entry.Item3;
+        if (x < box.Min.X || x > box.Max.X || y < box.Min.Y || y > box.Max.Y) continue;
+        foreach (var solid in entry.Item2)
+        {
+            SolidCurveIntersection cut = null;
+            try { cut = solid.IntersectWithCurve(upward, new SolidCurveIntersectionOptions()); } catch { cut = null; }
+            if (cut == null) continue;
+            for (var i = 0; i < cut.SegmentCount; i++)
+            {
+                var piece = cut.GetCurveSegment(i);
+                var z = Math.Min(piece.GetEndPoint(0).Z, piece.GetEndPoint(1).Z);
+                if (double.IsNaN(lowest) || z < lowest)
+                {
+                    lowest = z;
+                    hitRoof = entry.Item1.Id;
+                }
+            }
+        }
+    }
+    return lowest;
+};
+
+if (walls.Count == 0)
+{
+    refuse("No wall was handed in to shape - select the walls under the roof in Revit (and the "
+        + "roof, to name which one) and ask again. Nothing was changed");
+}
+else if (roofSolids.Count == 0)
+{
+    refuse(chosenRoofs.Count > 0
+        ? "The roof selected has no solid to follow. Nothing was changed"
+        : "There is no roof in this model for a wall's top to follow. Nothing was changed");
+}
+else
+{
+    foreach (var wall in walls)
+    {
+        var label = labelOf(wall);
+
+        // ---- 1. REFUSED BEFORE ANYTHING IS WRITTEN ----------------------
+        if (wall.GroupId != null && wall.GroupId != ElementId.InvalidElementId)
+        {
+            refuse(label + " is inside a group. Heron does not change a group member from outside "
+                + "the group - edit the group, or ungroup it, and ask again. Nothing on it was changed");
+            continue;
         }
 
-        var attachedTop = wall.get_Parameter(BuiltInParameter.WALL_TOP_IS_ATTACHED);
-        if (attachedTop != null && attachedTop.AsInteger() == 1)
+        if (wall.SketchId != null && wall.SketchId != ElementId.InvalidElementId)
         {
-            leftAsTheyWere.Add(who + ": its top is already attached in Revit (Attach Top/Base), so it already "
-                + "follows what it is attached to - left as it is. Detach Top in Revit first to shape it instead.");
+            refuse(label + " already has an edited profile, and Heron does not redraw a profile "
+                + "somebody drew. Reset Profile on it in Revit first if it should follow the roof. "
+                + "Nothing on it was changed");
             continue;
         }
 
         if (!wall.CanHaveProfileSketch())
         {
-            leftAsTheyWere.Add(who + ": Revit cannot edit this wall's profile - it is curved, tapered, a curtain "
-                + "wall, or a panel or infill in one.");
-            continue;
-        }
-
-        var hasSketch = wall.SketchId != null && wall.SketchId != ElementId.InvalidElementId;
-        if (hasSketch && !redraw)
-        {
-            leftAsTheyWere.Add(who + ": its profile is already edited - by an earlier run or by hand - so it is left "
-                + "as it is. Ask again with redraw to draw its top to the roof again; that replaces its outline.");
-            continue;
-        }
-        if (hasSketch)
-        {
-            var old = doc.GetElement(wall.SketchId) as Sketch;
-            if (old != null && old.Profile != null && old.Profile.Size > 1)
+            // REVIT'S OWN WORDS: asked of Revit, in a transaction rolled back.
+            string why = null;
+            using (var probe = new Transaction(doc, "Heron: ask Revit about the wall's profile"))
             {
-                leftAsTheyWere.Add(who + ": its profile has " + old.Profile.Size + " outlines - openings drawn in it by "
-                    + "hand - which a redraw would lose, so it is left as it is. Reset Profile in Revit first if they can go.");
-                continue;
+                probe.Start();
+                discipline(probe);
+                try { wall.CreateProfileSketch(); }
+                catch (Exception notAllowed) { why = notAllowed.Message; }
+                probe.RollBack();
             }
+            refuse(label + " cannot have its profile edited - Revit says: \""
+                + (why ?? "this wall does not support a profile sketch") + "\". Nothing on it was changed");
+            continue;
         }
 
-        var location = wall.Location as LocationCurve;
-        var line = location == null ? null : location.Curve as Line;
-        var box = wall.get_BoundingBox(null);
-        if (line == null || box == null)
-        { leftAsTheyWere.Add(who + ": Heron could not read its location line - left as it is."); continue; }
+        var located = wall.Location as LocationCurve;
+        var line = located == null ? null : located.Curve as Line;
+        if (line == null)
+        {
+            refuse(label + " has no straight location line to measure along. Nothing on it was changed");
+            continue;
+        }
+
+        BoundingBoxXYZ wallBox = null;
+        try { wallBox = wall.get_BoundingBox(null); } catch { wallBox = null; }
+        if (wallBox == null)
+        {
+            refuse(label + ": Revit returned no extent for it, so its base is not known. Nothing on it "
+                + "was changed");
+            continue;
+        }
 
         var start = line.GetEndPoint(0);
         var end = line.GetEndPoint(1);
-        var flat = new XYZ(end.X - start.X, end.Y - start.Y, 0);
-        var length = flat.GetLength();
-        if (length < lowest) { leftAsTheyWere.Add(who + ": shorter than 300 mm - left as it is."); continue; }
-        var along = flat.Normalize();
+        var along = new XYZ(end.X - start.X, end.Y - start.Y, 0);
+        var planLength = along.GetLength();
+        if (planLength <= oneMillimetre)
+        {
+            refuse(label + " has no length on plan. Nothing on it was changed");
+            continue;
+        }
+        along = along.Normalize();
         var across = new XYZ(-along.Y, along.X, 0);
 
-        // THE TWO FACES, from Revit's own side faces - wherever the location line is.
-        var offsets = new List<double>();
+        // WHERE THE WALL'S TWO FACES ARE, across its location line. The
+        // location line may be a finish face rather than the centre, so the
+        // faces are read off the wall; only when Revit gives no side face is
+        // half the width either side of the line used.
+        var faceAt = new List<double>();
         foreach (var side in new[] { ShellLayerType.Exterior, ShellLayerType.Interior })
         {
-            IList<Reference> references = null;
-            try { references = HostObjectUtils.GetSideFaces(wall, side); }
-            catch (Exception) { }
-            if (references == null) continue;
-            foreach (var reference in references)
+            try
             {
-                var face = wall.GetGeometryObjectFromReference(reference) as PlanarFace;
-                if (face == null) continue;
-                offsets.Add(new XYZ(face.Origin.X - start.X, face.Origin.Y - start.Y, 0).DotProduct(across));
-                break;
-            }
-        }
-        if (offsets.Count != 2)
-        { leftAsTheyWere.Add(who + ": Heron could not read its two faces - left as it is."); continue; }
-        var faceLow = Math.Min(offsets[0], offsets[1]);
-        var faceHigh = Math.Max(offsets[0], offsets[1]);
-        var inset = Math.Min(5.0 / MmPerFoot, (faceHigh - faceLow) / 4);
-        var faceLines = new[] { faceLow + inset, faceHigh - inset };
-
-        var span = baseAndTop(wall, box);
-        var baseZ = span[0];
-        var topNow = span[1];
-        var rayFrom = baseZ + lowest;
-
-        // The roofs and floors whose plan extent overlaps this wall's.
-        Func<BoundingBoxXYZ, bool> overlaps = b =>
-            b.Min.X < box.Max.X && b.Max.X > box.Min.X && b.Min.Y < box.Max.Y && b.Max.Y > box.Min.Y;
-        var over = roofs.Where(r => overlaps(r.Item2) && r.Item2.Max.Z > topNow - lowest).Select(r => r.Item1).ToList();
-        if (over.Count == 0) { noRoof.Add(wall.Id); continue; }
-        var rayTo = roofs.Where(r => overlaps(r.Item2)).Max(r => r.Item2.Max.Z) + lowest;
-        var between = floors.Where(f => overlaps(f.Item2) && f.Item2.Max.Z > topNow - lowest && f.Item2.Min.Z < rayTo)
-            .Select(f => f.Item1).ToList();
-
-        var count = Math.Max(9, Math.Min(401, (int)Math.Ceiling(length / step) + 1));
-        var stations = new double[count];
-        var undersides = new double[count];
-        var followed = new List<Element>();
-        Element blockedBy = null;
-        var any = false;
-        for (var k = 0; k < count && blockedBy == null; k++)
-        {
-            var s = 1.0 / MmPerFoot + (length - 2.0 / MmPerFoot) * k / (count - 1);
-            stations[k] = s;
-            var lowestHere = double.NaN;
-            var missed = false;
-            foreach (var t in faceLines)
-            {
-                var x = start.X + along.X * s + across.X * t;
-                var y = start.Y + along.Y * s + across.Y * t;
-                var roof = firstHit(over, x, y, rayFrom, rayTo, topNow - lowest);
-                if (double.IsNaN(roof.Item1)) { missed = true; continue; }
-                if (!followed.Contains(roof.Item2)) followed.Add(roof.Item2);
-                if (between.Count > 0)
+                foreach (var reference in HostObjectUtils.GetSideFaces(wall, side))
                 {
-                    var floor = firstHit(between, x, y, topNow - lowest, roof.Item1 - shortest, double.MinValue);
-                    if (!double.IsNaN(floor.Item1)) { blockedBy = floor.Item2; break; }
-                }
-                if (double.IsNaN(lowestHere) || roof.Item1 < lowestHere) lowestHere = roof.Item1;
-            }
-            // A roof over one face only: the top is not raised past where it is.
-            if (missed && !double.IsNaN(lowestHere)) lowestHere = Math.Min(lowestHere, topNow);
-            undersides[k] = lowestHere;
-            if (!double.IsNaN(lowestHere)) any = true;
-        }
-
-        if (blockedBy != null)
-        {
-            leftAsTheyWere.Add(who + ": " + named(blockedBy) + " lies between its top and the roof - Heron shapes a "
-                + "wall only to the roof right above it. Left as it is.");
-            continue;
-        }
-        if (!any) { noRoof.Add(wall.Id); continue; }
-
-        var tooLow = false;
-        var fits = true;
-        for (var k = 0; k < count; k++)
-        {
-            var z = double.IsNaN(undersides[k]) ? topNow : undersides[k];
-            if (z < baseZ + lowest) tooLow = true;
-            if (Math.Abs(z - topNow) > sameTop) fits = false;
-        }
-        if (tooLow)
-        {
-            leftAsTheyWere.Add(who + ": the roof comes down to less than 300 mm above its base, so shaping it "
-                + "there would leave almost no wall - left as it is.");
-            continue;
-        }
-        if (fits && !hasSketch)
-        {
-            leftAsTheyWere.Add(who + ": its top already meets the roof - nothing to shape.");
-            continue;
-        }
-
-        toShape.Add(Tuple.Create(wall, start, along, stations, undersides, followed));
-    }
-}
-
-// ---------------------------------------------------------------------------
-// 2. THE NEW TOP, as points along the wall: straight runs merged, ridges put
-//    where the runs' lines meet, then carried to the profile's own ends.
-// ---------------------------------------------------------------------------
-Func<double[], double[], double, double, List<double[]>> topLine = (s, z, sFrom, sTo) =>
-{
-    var n = s.Length;
-    Func<int, int, bool> straight = (a, b) =>
-    {
-        for (var m = a + 1; m < b; m++)
-        {
-            var onLine = z[a] + (z[b] - z[a]) * (s[m] - s[a]) / (s[b] - s[a]);
-            if (Math.Abs(z[m] - onLine) > fitTolerance) return false;
-        }
-        return true;
-    };
-    var runs = new List<int[]>();
-    var first = 0;
-    while (first < n - 1)
-    {
-        var last = first + 1;
-        while (last + 1 < n && straight(first, last + 1)) last++;
-        runs.Add(new[] { first, last });
-        first = last;
-    }
-    Func<int[], double> slope = r => (z[r[1]] - z[r[0]]) / (s[r[1]] - s[r[0]]);
-
-    var vs = new List<double> { s[runs[0][0]] };
-    var vz = new List<double> { z[runs[0][0]] };
-    for (var r = 0; r < runs.Count; r++)
-    {
-        var a = runs[r][0];
-        var b = runs[r][1];
-        var merged = false;
-        // A RIDGE: a one-step run between two longer ones is where their lines meet.
-        if (b - a == 1 && r > 0 && r < runs.Count - 1)
-        {
-            var p = runs[r - 1];
-            var q = runs[r + 1];
-            if (p[1] - p[0] >= 2 && q[1] - q[0] >= 2)
-            {
-                var m1 = slope(p);
-                var m3 = slope(q);
-                if (Math.Abs(m1 - m3) > 1e-6)
-                {
-                    var meet = (z[q[0]] - z[p[0]] + m1 * s[p[0]] - m3 * s[q[0]]) / (m1 - m3);
-                    if (meet > s[a] - 1e-9 && meet < s[b] + 1e-9)
-                    {
-                        vs[vs.Count - 1] = meet;
-                        vz[vz.Count - 1] = z[p[0]] + m1 * (meet - s[p[0]]);
-                        merged = true;
-                    }
+                    var face = wall.GetGeometryObjectFromReference(reference) as PlanarFace;
+                    if (face == null) continue;
+                    faceAt.Add((face.Origin - start).DotProduct(across));
+                    break;
                 }
             }
+            catch { }
         }
-        if (!merged) { vs.Add(s[b]); vz.Add(z[b]); }
-    }
-
-    // The height at any point along the wall, the end runs carried on past the
-    // first and last samples to the profile's own ends.
-    Func<double, double> at = x =>
-    {
-        var c = vs.Count;
-        if (x <= vs[0]) return vz[0] + (vz[1] - vz[0]) * (x - vs[0]) / (vs[1] - vs[0]);
-        if (x >= vs[c - 1]) return vz[c - 1] + (vz[c - 1] - vz[c - 2]) * (x - vs[c - 1]) / (vs[c - 1] - vs[c - 2]);
-        for (var i = 1; i < c; i++)
-            if (x <= vs[i]) return vz[i - 1] + (vz[i] - vz[i - 1]) * (x - vs[i - 1]) / (vs[i] - vs[i - 1]);
-        return vz[c - 1];
-    };
-
-    var points = new List<double[]> { new[] { sFrom, at(sFrom) } };
-    for (var i = 0; i < vs.Count; i++)
-    {
-        if (vs[i] <= sFrom + shortest || vs[i] >= sTo - shortest) continue;
-        var previous = points[points.Count - 1];
-        if (Math.Abs(vs[i] - previous[0]) < shortest) continue;
-        points.Add(new[] { vs[i], vz[i] });
-    }
-    points.Add(new[] { sTo, at(sTo) });
-    return points;
-};
-
-// ---------------------------------------------------------------------------
-// 3. THE CHANGE, wall by wall. From the first commit on, a refusal THROWS.
-// ---------------------------------------------------------------------------
-var changedAny = false;
-foreach (var job in toShape)
-{
-    var wall = job.Item1;
-    var start = job.Item2;
-    var along = job.Item3;
-    var who = "wall " + wall.Id;
-    string stopped = null;
-
-    var inserts = wall.FindInserts(true, false, true, true).ToList();
-
-    // 3a. A profile sketch - the old one taken away first on a redraw.
-    using (var making = new Transaction(doc, "Heron: wall profile"))
-    {
-        making.Start();
-        discipline(making);
-        try
+        double acrossOne, acrossTwo;
+        if (faceAt.Count == 2 && Math.Abs(faceAt[0] - faceAt[1]) > oneMillimetre)
         {
-            if (wall.SketchId != null && wall.SketchId != ElementId.InvalidElementId)
-            {
-                wall.RemoveProfileSketch();
-                doc.Regenerate();
-            }
-            wall.CreateProfileSketch();
+            // A hair inside each face, so a station is cut with the roof above
+            // the wall and not with the roof's edge beside it.
+            var middle = (faceAt[0] + faceAt[1]) / 2.0;
+            acrossOne = middle + (faceAt[0] - middle) * 0.999;
+            acrossTwo = middle + (faceAt[1] - middle) * 0.999;
         }
-        catch (Exception ex) { stopped = "Revit would not give " + who + " a profile to edit: " + words(ex) + "."; }
-        if (stopped != null) making.RollBack();
-        else if (making.Commit() != TransactionStatus.Committed)
-            stopped = "Revit would not keep the profile it made for " + who + revitSaid() + ".";
-    }
-    if (stopped != null)
-    {
-        if (changedAny) throw new InvalidOperationException(stopped + keptNothing);
-        // Nothing is changed yet: this wall is named and the rest still go ahead.
-        leftAsTheyWere.Add(who + ": " + stopped + " Left as it is.");
-        continue;
-    }
-    changedAny = true;
-
-    // 3b. Its rectangle: the base, its own top and the plane it lies on.
-    var sketch = doc.GetElement(wall.SketchId) as Sketch;
-    if (sketch == null || sketch.Profile == null || sketch.Profile.Size == 0 || sketch.SketchPlane == null)
-        throw new InvalidOperationException("Revit made a profile for " + who + " and it cannot be read back." + keptNothing);
-    var plane = sketch.SketchPlane;
-    var normal = plane.GetPlane().Normal;
-    if (Math.Abs(normal.Z) > 1e-6 || Math.Abs(normal.DotProduct(along)) > 1e-6)
-        throw new InvalidOperationException("The profile Revit made for " + who + " is not upright along the wall, "
-            + "so Heron will not draw on it." + keptNothing);
-
-    double sLow = double.MaxValue, sHigh = double.MinValue, zLow = double.MaxValue, zHigh = double.MinValue;
-    XYZ corner = null;
-    foreach (CurveArray loop in sketch.Profile)
-        foreach (Curve curve in loop)
-            for (var end = 0; end < 2; end++)
-            {
-                var point = curve.GetEndPoint(end);
-                if (corner == null) corner = point;
-                var along0 = new XYZ(point.X - start.X, point.Y - start.Y, 0).DotProduct(along);
-                sLow = Math.Min(sLow, along0); sHigh = Math.Max(sHigh, along0);
-                zLow = Math.Min(zLow, point.Z); zHigh = Math.Max(zHigh, point.Z);
-            }
-    // A point of the plane level with the wall's start, at height 0: every new
-    // point is this moved along the wall and up, so it lies on the sketch's
-    // own plane.
-    var cornerAlong = new XYZ(corner.X - start.X, corner.Y - start.Y, 0).DotProduct(along);
-    var origin = new XYZ(corner.X - along.X * cornerAlong, corner.Y - along.Y * cornerAlong, 0);
-    Func<double, double, XYZ> onPlane = (sAt, zAt) => new XYZ(origin.X + along.X * sAt, origin.Y + along.Y * sAt, zAt);
-
-    var stations = job.Item4;
-    var heights = new double[stations.Length];
-    for (var k = 0; k < stations.Length; k++)
-        heights[k] = double.IsNaN(job.Item5[k]) ? zHigh : job.Item5[k];
-    var top = topLine(stations, heights, sLow, sHigh);
-    if (top.Any(v => v[1] < zLow + lowest))
-        throw new InvalidOperationException("The roof over " + who + " comes down to less than 300 mm above its base "
-            + "at the ends of its profile, so Heron will not draw it." + keptNothing);
-
-    // The new outline, closed: along the bottom, up the far end, back along
-    // the top, down the near end.
-    var outline = new List<XYZ> { onPlane(sLow, zLow), onPlane(sHigh, zLow) };
-    for (var i = top.Count - 1; i >= 0; i--) outline.Add(onPlane(top[i][0], top[i][1]));
-    var curves = new List<Curve>();
-    for (var i = 0; i < outline.Count; i++)
-    {
-        var here = outline[i];
-        var next = outline[(i + 1) % outline.Count];
-        if (here.DistanceTo(next) < shortest) continue;
-        curves.Add(Line.CreateBound(here, next));
-    }
-    var highest = top.Max(v => v[1]);
-
-    // 3c. The outline drawn, inside the sketch's own edit mode.
-    using (var scope = new SketchEditScope(doc, "Heron: wall top to the roof"))
-    {
-        if (!scope.IsPermitted || !scope.IsSketchEditingSupported(sketch.Id))
-            stopped = "Revit will not open the profile of " + who + " for editing at this moment - another edit "
-                + "mode is active, or a transaction is open around this fragment (D-112)";
         else
         {
-            scope.Start(sketch.Id);
-            using (var drawing = new Transaction(doc, "Heron: wall top to the roof"))
-            {
-                drawing.Start();
-                discipline(drawing);
-                try
-                {
-                    foreach (var id in sketch.GetAllElements())
-                        if (doc.GetElement(id) is CurveElement) doc.Delete(id);
-                    foreach (var curve in curves) doc.Create.NewModelCurve(curve, plane);
-                }
-                catch (Exception ex) { stopped = "Revit refused the new top of " + who + ": " + words(ex); }
-                if (stopped != null) drawing.RollBack();
-                else if (drawing.Commit() != TransactionStatus.Committed)
-                    stopped = "Revit would not keep the new top of " + who + revitSaid();
-            }
-            if (stopped == null)
-            {
-                try { scope.Commit(editScopeFailures); }
-                catch (Exception ex) { stopped = "Revit would not close the profile of " + who + ": " + words(ex) + revitSaid(); }
-            }
-            if (stopped != null && scope.IsActive) scope.Cancel();
+            acrossOne = wall.Width / 2.0 * 0.999;
+            acrossTwo = -acrossOne;
         }
-    }
-    if (stopped != null) throw new InvalidOperationException(stopped + "." + keptNothing);
 
-    // 3d. READ BACK: the profile's top, and every door, window and opening.
-    var after = doc.GetElement(wall.SketchId) as Sketch;
-    var readTop = double.MinValue;
-    var loops = 0;
-    if (after != null && after.Profile != null)
-        foreach (CurveArray loop in after.Profile)
+        // THE TOP AT EVERY STATION between two distances along the wall,
+        // lower face kept. `missing` is the first station with no roof.
+        var roofsUsed = new List<ElementId>();
+        Func<double, double, double, List<double[]>> measure = (fromU, toU, baseZ) =>
         {
-            loops++;
-            foreach (Curve curve in loop)
-                readTop = Math.Max(readTop, Math.Max(curve.GetEndPoint(0).Z, curve.GetEndPoint(1).Z));
-        }
-    if (loops != 1 || Math.Abs(readTop - highest) > sameTop)
-        throw new InvalidOperationException("The new top of " + who + " does not read back - its profile's highest "
-            + "point is " + (readTop == double.MinValue ? "not readable" : mm(readTop - zLow) + " mm above its base")
-            + " where " + mm(highest - zLow) + " mm was drawn" + revitSaid() + "." + keptNothing);
-    var lost = new List<string>();
-    foreach (var id in inserts)
-    {
-        var insert = doc.GetElement(id);
-        var hosted = insert as FamilyInstance;
-        if (insert == null || (hosted != null && (hosted.Host == null || hosted.Host.Id != wall.Id)))
-            lost.Add(id.ToString());
-    }
-    if (lost.Count > 0)
-        throw new InvalidOperationException("Revit took " + string.Join(", ", lost) + " out of " + who + " when its "
-            + "top was shaped" + revitSaid() + "." + keptNothing);
+            var stations = new List<double[]>();
+            var count = Math.Max(2, (int)Math.Ceiling((toU - fromU) / stationStep) + 1);
+            for (var k = 0; k < count; k++)
+            {
+                var u = fromU + (toU - fromU) * k / (count - 1);
+                // Half a millimetre inside each end, so the end station is
+                // cut with the roof and not with its edge.
+                var inside = Math.Min(Math.Max(u, fromU + oneMillimetre / 2), toU - oneMillimetre / 2);
+                var x = start.X + along.X * inside;
+                var y = start.Y + along.Y * inside;
+                var zOne = undersideAt(x + across.X * acrossOne, y + across.Y * acrossOne, baseZ + oneMillimetre);
+                var roofOne = hitRoof;
+                var zTwo = undersideAt(x + across.X * acrossTwo, y + across.Y * acrossTwo, baseZ + oneMillimetre);
+                var roofTwo = hitRoof;
+                if (double.IsNaN(zOne) || double.IsNaN(zTwo))
+                {
+                    stations.Add(new[] { u, double.NaN });
+                    continue;
+                }
+                var lower = Math.Min(zOne, zTwo);
+                var holder = zOne <= zTwo ? roofOne : roofTwo;
+                if (!roofsUsed.Contains(holder)) roofsUsed.Add(holder);
+                stations.Add(new[] { u, lower });
+            }
+            return stations;
+        };
 
-    shaped++;
-    shapedIds.Add(wall.Id);
-    keptInserts += inserts.Count;
-    lines.Add(who + ": top now follows " + string.Join(", ", job.Item6.Select(r => named(r)))
-        + " - highest point " + mm(highest - zLow) + " mm above its base, " + (top.Count - 1) + " line(s) along "
-        + "the top; " + inserts.Count + " door(s), window(s) and opening(s) kept in it.");
+        Func<List<double[]>, string> gapIn = stations =>
+        {
+            foreach (var station in stations)
+                if (double.IsNaN(station[1]))
+                    return string.Format("there is no roof above it {0} mm from its start, so its top "
+                        + "cannot follow a roof along its whole length", mm(station[0]));
+            return null;
+        };
+
+        // THE TOP AS A FEW POINTS (step 3): stations on one straight piece of
+        // roof become one line, and a ridge or valley between two stations is
+        // put where the lines either side of it meet.
+        Func<List<double[]>, List<double[]>> simplify = stations =>
+        {
+            var keep = new bool[stations.Count];
+            keep[0] = true;
+            keep[stations.Count - 1] = true;
+            var spans = new Stack<int[]>();
+            spans.Push(new[] { 0, stations.Count - 1 });
+            while (spans.Count > 0)
+            {
+                var span = spans.Pop();
+                var a = stations[span[0]];
+                var b = stations[span[1]];
+                var worst = -1;
+                var worstOff = oneMillimetre;
+                for (var k = span[0] + 1; k < span[1]; k++)
+                {
+                    var t = (stations[k][0] - a[0]) / (b[0] - a[0]);
+                    var off = Math.Abs(stations[k][1] - (a[1] + (b[1] - a[1]) * t));
+                    if (off > worstOff) { worstOff = off; worst = k; }
+                }
+                if (worst < 0) continue;
+                keep[worst] = true;
+                spans.Push(new[] { span[0], worst });
+                spans.Push(new[] { worst, span[1] });
+            }
+
+            var kept = new List<int>();
+            for (var k = 0; k < stations.Count; k++) if (keep[k]) kept.Add(k);
+
+            var points = new List<double[]>();
+            for (var j = 0; j < kept.Count; j++)
+            {
+                var k = kept[j];
+                if (j == 0 || j == kept.Count - 1 || k - 1 < 0 || k + 1 >= stations.Count)
+                {
+                    points.Add(stations[k]);
+                    continue;
+                }
+                // The line to the left through two stations wholly on it, and
+                // the line to the right the same; where they meet is the kink.
+                var leftFar = kept[j - 1] + 1 < k - 1 ? kept[j - 1] + 1 : kept[j - 1];
+                var leftNear = k - 1;
+                var rightNear = k + 1;
+                var rightFar = kept[j + 1] - 1 > k + 1 ? kept[j + 1] - 1 : kept[j + 1];
+                var l1 = stations[leftFar]; var l2 = stations[leftNear];
+                var r1 = stations[rightNear]; var r2 = stations[rightFar];
+                double[] meet = null;
+                if (Math.Abs(l2[0] - l1[0]) > 1e-9 && Math.Abs(r2[0] - r1[0]) > 1e-9)
+                {
+                    var leftSlope = (l2[1] - l1[1]) / (l2[0] - l1[0]);
+                    var rightSlope = (r2[1] - r1[1]) / (r2[0] - r1[0]);
+                    if (Math.Abs(leftSlope - rightSlope) > 1e-9)
+                    {
+                        var u = (r1[1] - l1[1] + leftSlope * l1[0] - rightSlope * r1[0]) / (leftSlope - rightSlope);
+                        if (u >= stations[k - 1][0] && u <= stations[k + 1][0])
+                            meet = new[] { u, l1[1] + leftSlope * (u - l1[0]) };
+                    }
+                }
+                points.Add(meet ?? stations[k]);
+            }
+            return points;
+        };
+
+        // A first look along the location line, read only, so a wall the roof
+        // does not cover is refused before any sketch is made.
+        var firstLook = measure(0.0, planLength, wallBox.Min.Z);
+        var gap = gapIn(firstLook);
+        if (gap != null)
+        {
+            noRoof.Add(wall.Id);
+            refuse(label + ": " + gap + ". Nothing on it was changed");
+            continue;
+        }
+
+        // ---- 4. THE PROFILE ---------------------------------------------
+        string failed = null;
+        var sketchMade = false;
+        ElementId sketchId = ElementId.InvalidElementId;
+
+        using (var make = new Transaction(doc, "Heron: give the wall a profile sketch"))
+        {
+            make.Start();
+            discipline(make);
+            try
+            {
+                wall.CreateProfileSketch();
+                doc.Regenerate();
+            }
+            catch (Exception notMade)
+            {
+                failed = "Revit would not give it a profile sketch - " + notMade.Message;
+            }
+            if (failed != null) make.RollBack();
+            else if (make.Commit() != TransactionStatus.Committed)
+                failed = "Revit would not keep a profile sketch on it" + revitSaid();
+            else
+            {
+                sketchMade = true;
+                sketchId = wall.SketchId;
+            }
+        }
+
+        Sketch sketch = null;
+        Plane plane = null;
+        if (failed == null)
+        {
+            sketch = doc.GetElement(sketchId) as Sketch;
+            if (sketch == null || sketch.SketchPlane == null)
+                failed = "Revit made no profile sketch that can be read";
+            else
+                plane = sketch.SketchPlane.GetPlane();
+        }
+
+        // On the sketch's own plane, so every point drawn lies in it.
+        Func<XYZ, XYZ> onPlane = point =>
+        {
+            var off = (point - plane.Origin).DotProduct(plane.Normal);
+            return point - plane.Normal.Multiply(off);
+        };
+        var origin = plane == null ? start : onPlane(new XYZ(start.X, start.Y, 0));
+        Func<double, double, XYZ> pointAt = (u, z) =>
+            onPlane(new XYZ(origin.X + along.X * u, origin.Y + along.Y * u, z));
+        Func<XYZ, double> uOf = point =>
+            (point.X - origin.X) * along.X + (point.Y - origin.Y) * along.Y;
+
+        // REVIT'S RECTANGLE: its bottom and its two ends are kept.
+        var uLow = double.MaxValue; var uHigh = double.MinValue; var zBottom = double.MaxValue;
+        var zWasTop = double.MinValue;
+        if (failed == null)
+        {
+            foreach (CurveArray loop in sketch.Profile)
+                foreach (Curve curve in loop)
+                    for (var e = 0; e < 2; e++)
+                    {
+                        var point = curve.GetEndPoint(e);
+                        uLow = Math.Min(uLow, uOf(point));
+                        uHigh = Math.Max(uHigh, uOf(point));
+                        zBottom = Math.Min(zBottom, point.Z);
+                        zWasTop = Math.Max(zWasTop, point.Z);
+                    }
+            if (uHigh - uLow <= oneMillimetre)
+                failed = "Revit's profile sketch for it has no length";
+        }
+
+        List<double[]> top = null;
+        if (failed == null)
+        {
+            roofsUsed.Clear();
+            var stations = measure(uLow, uHigh, zBottom);
+            var gapNow = gapIn(stations);
+            if (gapNow != null) failed = gapNow;
+            else
+            {
+                top = simplify(stations);
+                foreach (var point in top)
+                    if (point[1] < zBottom + lowestTop)
+                    {
+                        failed = string.Format("the roof comes down to {0} mm above the wall's base, {1} mm "
+                            + "from its start - lower than a wall top this will draw", mm(point[1] - zBottom),
+                            mm(point[0] - uLow));
+                        break;
+                    }
+            }
+        }
+
+        if (failed == null)
+        {
+            using (var scope = new SketchEditScope(doc, "Heron: shape the wall top to the roof"))
+            {
+                if (!scope.IsPermitted)
+                {
+                    failed = "Revit will not open the wall's profile for editing at this moment - another "
+                        + "edit mode is active, or a transaction is open around this fragment (D-112)";
+                }
+                else
+                {
+                    try
+                    {
+                        scope.Start(sketchId);
+                        using (var draw = new Transaction(doc, "Heron: draw the wall profile"))
+                        {
+                            draw.Start();
+                            discipline(draw);
+                            try
+                            {
+                                var editing = (Sketch)doc.GetElement(sketchId);
+                                var lines = editing.GetAllElements()
+                                    .Where(id => doc.GetElement(id) is CurveElement).ToList();
+                                doc.Delete(lines);
+
+                                // The bottom, the far end up, the top back
+                                // through the roof's points, the near end down.
+                                var outline = new List<XYZ>();
+                                outline.Add(pointAt(uLow, zBottom));
+                                outline.Add(pointAt(uHigh, zBottom));
+                                for (var k = top.Count - 1; k >= 0; k--)
+                                {
+                                    var u = k == top.Count - 1 ? uHigh : k == 0 ? uLow : top[k][0];
+                                    outline.Add(pointAt(u, top[k][1]));
+                                }
+                                for (var k = 0; k < outline.Count; k++)
+                                {
+                                    var from = outline[k];
+                                    var to = outline[(k + 1) % outline.Count];
+                                    if (from.DistanceTo(to) <= oneMillimetre) continue;
+                                    doc.Create.NewModelCurve(Line.CreateBound(from, to), editing.SketchPlane);
+                                }
+                            }
+                            catch (Exception notDrawn)
+                            {
+                                failed = "Revit refused the new profile - " + notDrawn.Message;
+                            }
+                            if (failed != null) draw.RollBack();
+                            else if (draw.Commit() != TransactionStatus.Committed)
+                                failed = "Revit would not keep the new profile" + revitSaid();
+                        }
+
+                        if (failed == null) scope.Commit(editScopeFailures);
+                    }
+                    catch (Exception notEdited)
+                    {
+                        if (failed == null) failed = "Revit would not finish the profile - " + notEdited.Message
+                            + revitSaid();
+                    }
+                    if (scope.IsActive) scope.Cancel();
+                }
+            }
+        }
+
+        // ---- 5. READ BACK -----------------------------------------------
+        var corners = new List<double[]>();
+        if (failed == null)
+        {
+            var after = doc.GetElement(wall.SketchId) as Sketch;
+            if (after == null) failed = "the profile could not be read back after Revit closed it";
+            else
+            {
+                foreach (CurveArray loop in after.Profile)
+                    foreach (Curve curve in loop)
+                        for (var e = 0; e < 2; e++)
+                        {
+                            var point = curve.GetEndPoint(e);
+                            corners.Add(new[] { uOf(point), point.Z });
+                        }
+                for (var k = 0; k < top.Count && failed == null; k++)
+                {
+                    var u = k == top.Count - 1 ? uHigh : k == 0 ? uLow : top[k][0];
+                    var found = false;
+                    foreach (var corner in corners)
+                        if (Math.Abs(corner[0] - u) <= oneMillimetre && Math.Abs(corner[1] - top[k][1]) <= oneMillimetre)
+                        { found = true; break; }
+                    if (!found)
+                        failed = string.Format("read back, the profile has no corner at {0} mm along, {1} mm up, "
+                            + "where the roof's underside is", mm(u - uLow), mm(top[k][1]));
+                }
+            }
+        }
+
+        if (failed != null)
+        {
+            // THE WALL AS IT WAS: a profile sketch this call made is removed.
+            if (sketchMade)
+            {
+                using (var undo = new Transaction(doc, "Heron: remove the wall profile again"))
+                {
+                    undo.Start();
+                    discipline(undo);
+                    try
+                    {
+                        if (wall.IsValidObject && wall.SketchId != ElementId.InvalidElementId)
+                            wall.RemoveProfileSketch();
+                    }
+                    catch (Exception notRemoved)
+                    {
+                        failed += ". ITS PROFILE SKETCH COULD NOT BE REMOVED AGAIN - " + notRemoved.Message
+                            + "; Discard the change";
+                    }
+                    if (undo.Commit() != TransactionStatus.Committed)
+                        failed += ". Revit would not remove its profile sketch again" + revitSaid()
+                            + "; Discard the change";
+                }
+            }
+            refuse(label + ": " + failed + ". Nothing on it was kept");
+            continue;
+        }
+
+        shaped++;
+        shapedIds.Add(wall.Id);
+        var highest = double.MinValue;
+        var described = new List<string>();
+        for (var k = 0; k < top.Count; k++)
+        {
+            var u = k == top.Count - 1 ? uHigh : k == 0 ? uLow : top[k][0];
+            highest = Math.Max(highest, top[k][1]);
+            described.Add(string.Format("{0} mm along at {1} mm", mm(u - uLow), mm(top[k][1])));
+        }
+        tell(string.Format("{0}: its top now follows the underside of {1} through {2} point(s) - {3}; "
+            + "highest {4} mm, where its top was {5} mm. Read back from the profile Revit holds",
+            label,
+            string.Join(", ", roofsUsed.Select(id => "roof " + id).ToArray()),
+            top.Count, string.Join("; ", described), mm(highest), mm(zWasTop)));
+    }
 }
 
-if (refusedAll != null) lines.Add(refusedAll);
-if (noRoof.Count > 0)
-    lines.Add("No roof over: " + string.Join(", ", noRoof.Select(i => "wall " + i)) + " - left as they were.");
-lines.AddRange(leftAsTheyWere);
-
-findings.Add(shaped + " wall(s) shaped so the top follows the roof above, read back; " + noRoof.Count
-    + " with no roof over them; " + leftAsTheyWere.Count + " left as they were.");
-if (shaped > 0) findings.Add(sketchNote);
-var report = string.Join(" | ", lines);
-findings.AddRange(lines);
+if (shaped > 0)
+{
+    int release;
+    int.TryParse(doc.Application.VersionNumber, out release);
+    findings.Add(string.Format("{0} wall(s) have a profile whose top follows the roof above them, read "
+        + "back from Revit - see report", shaped));
+    findings.Add("THE TOP IS A SKETCH: it will NOT follow the roof if the roof moves or changes. Run this "
+        + "again after Reset Profile, or Edit Profile by hand"
+        + (release >= 2025 ? ". On this Revit, ATTACH_WALLS attaches the walls instead, so they follow it" : ""));
+}
+if (refused.Length > 0)
+    findings.Add(shaped == 0
+        ? "Nothing was changed - see refused for why"
+        : "Part of the selection was left alone - see refused for why");

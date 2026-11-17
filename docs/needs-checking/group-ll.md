@@ -7,6 +7,8 @@
 
 ## Group LL - reference planes drawn in a project from a named grid or level: `CREATE_PROJECT_REFERENCE_PLANES` (2026-11-02)
 
+**Tracked as GitHub issue [#992](https://github.com/Ajmalpshaik/Heron-AI/issues/992) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"draw a reference plane along grid B in this plan"*, *"add a reference plane
 named Ceiling Datum 2700 above Level 1"* and *"add reference planes at 600 centres here"* - Revit's Architecture >
 Work Plane > Ref Plane, in a project. No card drew one: a grep of every fragment's C# that day for

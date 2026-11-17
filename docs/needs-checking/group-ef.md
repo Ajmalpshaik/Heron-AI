@@ -8,6 +8,8 @@
 
 ## Group EF - a family instance dimensioned by its own references and faces: `CREATE_LINEAR_DIMENSION` version 3 (2026-10-15)
 
+**Tracked as GitHub issue [#985](https://github.com/Ajmalpshaik/Heron-AI/issues/985) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for on 2026-10-15 on a real project (Revit 2020): a builders-work opening - a Generic Model family -
 dimensioned in a section from its level and its grid, and by its own width and height. The family published
 only CenterLeftRight, CenterFrontBack and nine weak references, and

@@ -51,6 +51,10 @@ store, an install with no git, or the main checkout on branch main
 (heron_brain._store_warm_allowed, rows 131 and 136). From a branch or a
 worktree it says so and leaves the shared store alone - and so does an install
 on a PC whose developer note names a git checkout (D-167, amended 2026-11-16).
+Where it may build it and the store does not hold this folder's cards - a card
+with no row, a row with no card - it REBUILDS it, as `brain/heron_scope.py
+--rebuild` does, and compares again (row 5b-1711): opening a store adds no card,
+so "ready" was said over a store every lookup then warned about.
 
 A MICROSOFT STORE CLAUDE KEEPS ITS OWN COPY OF APPDATA (row 5b-417). When the
 Claude app is the Store (MSIX) build, Windows sends every write Claude's
@@ -448,12 +452,81 @@ def knowledge_store(check_only):
     try:
         with BRAIN._Open() as store:
             count = store.count()
+            missing, extra = store_drift(SCOPE, store)
     except BRAIN.BrainUnavailable as why:
         say(FIX, "it could not be built", str(why).splitlines()[:4])
+        return
+    if missing or extra:
+        # ROW 5b-1711, issue #853: a store that does not hold this folder's
+        # cards warned on every lookup of a whole session, and this step said
+        # "ready" over it - opening a store adds no card and drops no row.
+        # This folder may build it (asked above), so it is rebuilt here, as
+        # `brain/heron_scope.py --rebuild` does, and compared again.
+        drifted = drift_words(missing, extra)
+        code, lines = rebuilt(SCOPE)
+        if code != 0:
+            say(FIX, "it does not match this folder's cards (%s), and the rebuild "
+                "did not run" % drifted, lines[:4])
+            return
+        try:
+            with BRAIN._Open() as store:
+                count = store.count()
+                missing, extra = store_drift(SCOPE, store)
+        except BRAIN.BrainUnavailable as why:
+            say(FIX, "it was rebuilt and then could not be opened", str(why).splitlines()[:4])
+            return
+        skipped = [line for line in lines if line.startswith("skipped:")]
+        if missing or extra:
+            say(FIX, "rebuilt, and it STILL does not match this folder's cards (%s)"
+                % drift_words(missing, extra),
+                skipped[:4] or "A card that does not validate is never given a row: "
+                "python brain/heron_validate.py names why.")
+            return
+        say(OK, "%d tool cards ready in %.1f s, in %s - rebuilt, because %s"
+            % (count, time.time() - started, where, drifted),
+            "Every lookup finds this folder's cards now, and no longer warns.")
         return
     say(OK, "%d tool cards ready in %.1f s, in %s"
         % (count, time.time() - started, where),
         "A chat's first lookup finds it built instead of building it.")
+
+
+def store_drift(SCOPE, store):
+    """(missing, extra) card folders between STORE and this folder's cards -
+    heron_scope.drift - or two empty lists when the comparison cannot be made:
+    a store that cannot be compared is never rebuilt on a guess."""
+    try:
+        return SCOPE.drift(store)
+    except Exception:                                   # noqa: BLE001 - compared or left alone
+        return [], []
+
+
+def drift_words(missing, extra):
+    """The drift said in a few words: how many of each, a few named."""
+    parts = []
+    if missing:
+        parts.append("%d card(s) here not in it: %s" % (len(missing), ", ".join(missing[:3])))
+    if extra:
+        parts.append("%d row(s) with no card here: %s" % (len(extra), ", ".join(extra[:3])))
+    return "; ".join(parts)
+
+
+def rebuilt(SCOPE):
+    """Run `heron_scope.py --rebuild` in this process: (exit code, its lines).
+
+    The command itself, not a copy of it, so the rows, the search index and
+    the embeddings are rebuilt together exactly as the documented recovery
+    does - and its own refusal (exit 2, a shared store it may not build)
+    stands. Its output is kept to report, not printed over this tool's."""
+    import contextlib
+    import io
+    said = io.StringIO()
+    try:
+        with contextlib.redirect_stdout(said):
+            code = SCOPE.main(["--rebuild"])
+    except Exception as exc:                            # noqa: BLE001 - said, not raised
+        return 1, ["%s: %s" % (type(exc).__name__, exc)]
+    return code, [line.strip() for line in said.getvalue().splitlines() if line.strip()]
 
 
 def compiled(check_only):

@@ -7,6 +7,8 @@
 
 ## Group NA - a form's SKETCH locked to named planes - a sweep's path lines, a circle's centre: `LOCK_FORM_SKETCH_TO_PLANES` (2026-11-10)
 
+**Tracked as GitHub issue [#979](https://github.com/Ajmalpshaik/Heron-AI/issues/979) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Two jobs on 2026-11-10 (Revit 2020, session 9912) needed a lock Heron did not have: a square diffuser's cone
 rings as sweeps, whose FACE locks made every size change fail ("Can't create sweep"), and a plenum box's spigot
 circle that kept its labelled size and drifted 75 mm off centre. The owner chose a Heron tool over locking by

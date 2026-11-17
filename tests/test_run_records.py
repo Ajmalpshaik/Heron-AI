@@ -772,6 +772,51 @@ def taken_back(runs):
           "while one lost with nothing taken back before it is sent as before")
 
 
+def judged_words(runs, folder):
+    print("\n10. a kept record that changed nothing says the door's word, not KEPT (row 5b-1821)")
+    kept = {"fragment": "edit-text-values", "reply": reply_with(changes={"total": 0})}
+    asked = []
+
+    def judge_says(word):
+        def judge(record):
+            asked.append(record.get("fragment"))
+            return word
+        return judge
+
+    head = lambda record, judge: runs.page(record, "wf-1", 0, 5, judge=judge).splitlines()[0]
+    check("NOTHING CHANGED" in head(kept, judge_says("NOTHING CHANGED"))
+          and "KEPT" not in head(kept, judge_says("NOTHING CHANGED")),
+          "the door said NOTHING CHANGED, and the record's opening line says it too")
+    check("REFUSED by the capability itself" in head(kept, judge_says("REFUSED")),
+          "the door said REFUSED, and so does the record")
+    check(head(kept, judge_says(None)).endswith("- KEPT."),
+          "a judge that finds something leaves KEPT")
+    check(head(kept, judge_says("DONE")).endswith("- KEPT.")
+          and head(kept, None).endswith("- KEPT."),
+          "and so does a word the record has no sentence for, or no judge at all - it fails "
+          "closed, toward the old word")
+    del asked[:]
+    rolled = {"fragment": "edit-text-values",
+              "reply": reply_with(verdictKind="rolledBack", verdict="rolled back")}
+    check("rolled back" in head(rolled, judge_says("NOTHING CHANGED")) and asked == [],
+          "a record that was not kept is never judged - its word is the add-in's")
+
+    folder = os.path.join(folder, "judged")
+    os.makedirs(folder)
+    for run, record in (("wf-20261116-120000-0001-aaaa", kept),
+                        ("wf-20261116-120001-0002-bbbb", rolled)):
+        with io.open(os.path.join(folder, run + ".json"), "w", encoding="utf-8") as fh:
+            json.dump(record, fh)
+    found = runs.recent(folder, 10, judge=judge_says("NOTHING CHANGED"))
+    words = dict((one["run"], one["word"]) for one in found)
+    check(words.get("wf-20261116-120000-0001-aaaa") == "NOTHING CHANGED"
+          and words.get("wf-20261116-120001-0002-bbbb") is None,
+          "the list of newest records carries the same word for a kept one, and none for "
+          "the rest - %s" % words)
+    check(all(one["word"] is None for one in runs.recent(folder, 10)),
+          "and with no judge, no word")
+
+
 def main():
     runs = load()
     if runs is None:
@@ -791,6 +836,7 @@ def main():
         declared(runs)
         model_text(runs)
         taken_back(runs)
+        judged_words(runs, folder)
     finally:
         shutil.rmtree(folder, ignore_errors=True)
 

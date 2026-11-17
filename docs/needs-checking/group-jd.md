@@ -8,6 +8,8 @@
 
 ## Group JD - every entry reaches the chat, and one subcategory's style copied on its own: `READ_ELEMENT_PARAMETERS` version 6, the add-in's `providesEntries`, `TRANSFER_OBJECT_STYLES_BETWEEN_DOCUMENTS` version 2 (2026-10-28)
 
+**Tracked as GitHub issue [#983](https://github.com/Ajmalpshaik/Heron-AI/issues/983) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 From rows [5b-1341 and 5b-1342](../fragment-issues/section-5b-rows-401-425.md). Both were met on 2026-10-28
 on the owner's laptop, Revit 2020 (session 56456), on a real project, **4355-BHVD-3D-21S10-BL001A**, read only:
 the owner asked for the 38 volume control dampers with their Equipment Tag in one table, and it took some

@@ -8,6 +8,8 @@
 
 ## Group JP - a curtain system type's Grid 1 and Grid 2, and its mullions, set by the curtain wall setters: `SET_CURTAIN_WALL_GRID` version 3, `SET_CURTAIN_WALL_MULLIONS` version 2 (2026-10-29)
 
+**Tracked as GitHub issue [#994](https://github.com/Ajmalpshaik/Heron-AI/issues/994) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 From [the facade plan](../work-notes/plans/facade-capability.md)'s *"Waiting for the owner's word"*: a curtain
 system laid on a mass's faces (`CREATE_CURTAIN_SYSTEM`, Group JM) takes its grid and mullions from its
 **curtain system type**, and nothing in Heron could set one - the [`facade`](../../brain/skills/facade.yaml)

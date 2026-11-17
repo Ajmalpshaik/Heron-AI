@@ -9,7 +9,7 @@
 > | **Adding to it** | A row names the **command**, the **machine it needs**, and what **pass looks like** — including what a FAIL would prove, which is worth the same. **Its ID is bold, and used once in the register** — this page and every group's file — look for the letters in every form, bold, backticks and plain, before a new group takes them: `python tools/needs-checking-register.py | grep` searches all of it. **A results table names the row's ID in plain text, and a row that passed is struck at both ends** — the three readers of the register count by the bold ID, so anything else is a check the owner's queue cannot see, sees twice, or shows him again after it passed. FRAGMENT-ISSUES row 5b-156 |
 > | **Its numbers** | **Do not read the stated totals as today's.** Derive the Group A ids: `grep -oE '\*\*A[0-9]+[a-z]?\*\*|~~\*\*A[0-9]+[a-z]?\*\*~~' docs/needs-checking/group-a.md | grep -oE 'A[0-9]+[a-z]?' | sort -uV` - until 2026-10-18 it read `A[0-9]+`, which cannot see `A16b`: the `R1b` lesson below, again |
 > | **Where each group lives** | Since 2026-09-23 **each group is its own file**, `needs-checking/group-x.md` — [Group A's](needs-checking/group-a.md), for one — and this page keeps the rules and, where each group was, its heading and a line naming its file. **A new row goes in its group's file.** A new group is written here in full, as always, and `python tools/split-needs-checking.py --write` moves it into its own file - write its links relative to `docs/`, and after the split put back any other group file it rewrote, which it can ([row 5b-363](fragment-issues/section-5b-rows-351-375.md)). Every tool reads this page and its groups as ONE text, exactly as it read the single file: `python tools/needs-checking-register.py` prints it |
-> | **Done checks** | A row whose ID is struck through at both ends keeps its line in the register — the struck ID, a title, the opening of its result — and its full text moves to [`needs-checking-archive/`](needs-checking-archive/README.md). **Nothing is deleted, and a struck row that says something is still owed stays in full.** `python tools/archive-needs-checking.py` says what would move - on 2026-11-12 it ends in a traceback instead and moves nothing: [FRAGMENT-ISSUES row 5b-1583](fragment-issues/row-5b-1583.md) |
+> | **Done checks** | A row whose ID is struck through at both ends keeps its line in the register — the struck ID, a title, the opening of its result — and its full text moves to [`needs-checking-archive/`](needs-checking-archive/README.md). **Nothing is deleted, and a struck row that says something is still owed stays in full.** `python tools/archive-needs-checking.py` says what would move - it ended in a traceback from 2026-11-12 until [FRAGMENT-ISSUES row 5b-1583](fragment-issues/row-5b-1583.md) was fixed on 2026-11-16 |
 
 > **Read [FOR-THE-OWNER.md](FOR-THE-OWNER.md) first if you are the owner.** It is the one page that
 > says what is waiting on you, across every register, without holding a list of its own.
@@ -1546,13 +1546,29 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ob.md`](needs-checking/group-ob.md)
 
+## Group OC - tags, move and schedules from the villa 2 field reports, repaired in code and not yet run: rows 5b-1707, 5b-1730, 5b-1731, 5b-1732, 5b-1733 and 5b-1736 (2026-11-16)
+
+**Its own file:** [`needs-checking/group-oc.md`](needs-checking/group-oc.md)
+
+## Group OD - OPEN_FAMILY_FOR_EDITING reads what is in front, a picture of a region of a plan, and a store warning that names what to do (2026-11-16)
+
+**Its own file:** [`needs-checking/group-od.md`](needs-checking/group-od.md)
+
+## Group OE - roofs, walls, levels and delete from field reports #852 to #854: slope the edges chosen, a wall's top shaped to the roof, a column's top level, and the walls a delete detaches: `SLOPE_ROOF_EDGES`, `SHAPE_WALL_TOPS_TO_ROOF`, `SET_ELEMENT_LEVEL`, `DELETE_ELEMENTS` (2026-11-16)
+
+**Its own file:** [`needs-checking/group-oe.md`](needs-checking/group-oe.md)
+
 ## Group OF - a proof records which Heron add-in and which Revit build it was taken on, and says so when either moves: `built_on:` (2026-11-16)
 
 **Its own file:** [`needs-checking/group-of.md`](needs-checking/group-of.md)
 
-## Group OG - a wall's top shaped to the roof above it by editing its profile, on Revit 2022 to 2024, doors and windows kept, a sketch that does not follow the roof: `SHAPE_WALL_TOPS_TO_ROOF` (2026-11-16)
+## Group OG - a wall's top shaped to the roof above it by editing its profile, on Revit 2022 to 2024, doors and windows kept, a sketch that does not follow the roof: `SHAPE_WALL_TOPS_TO_ROOF` (2026-11-16) - SUPERSEDED 2026-11-17 by Group OE
 
 **Its own file:** [`needs-checking/group-og.md`](needs-checking/group-og.md)
+
+## Group OH - a built-in parameter by Revit's name for it, an architectural column's top and a turn when placing, a type duplicated from itself, and a rotation said in degrees (2026-11-16)
+
+**Its own file:** [`needs-checking/group-oh.md`](needs-checking/group-oh.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 

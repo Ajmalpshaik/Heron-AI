@@ -7,6 +7,8 @@
 
 ## Group KV - add a voltage type or a distribution system: `ADD_ELECTRICAL_DISTRIBUTION` (2026-11-01)
 
+**Tracked as GitHub issue [#1003](https://github.com/Ajmalpshaik/Heron-AI/issues/1003) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"add a 230 V voltage type"* and *"add a 400/230 V 3-phase 4-wire
 distribution system"* - Revit's Manage > MEP Settings > Electrical Settings, Voltage Definitions and
 Distribution Systems. No card added either: a grep of `brain/fragments` that day for `AddVoltageType` and

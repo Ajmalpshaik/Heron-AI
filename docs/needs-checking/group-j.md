@@ -9,6 +9,8 @@
 
 ## Group J — the executor's inputs (needs Revit, and something selected)
 
+**Tracked as GitHub issue [#968](https://github.com/Ajmalpshaik/Heron-AI/issues/968) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **SIX OF THE EIGHT ARE DONE, 2026-09-07, and they were run within the hour of the group being written.**
 The executor could supply three names — `doc`, `uidoc`, `app` — so the 328 fragments declaring anything
 else compiled green against a scope the machine could not reproduce. The host now binds every declared

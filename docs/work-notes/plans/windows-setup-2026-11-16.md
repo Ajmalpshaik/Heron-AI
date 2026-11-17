@@ -146,11 +146,11 @@ may buy each to be checked on the seller's page on the day:
 
 **D-96's fear, answered in part:** a signature made with a **timestamp** stays valid after the certificate
 expires, so a lapsed renewal stops *new* signing, not installs already made. Confirm against Microsoft's
-Authenticode documentation when the decision is written.
+Authenticode documentation when the decision is written. *(Tracked as GitHub issue [#1011](https://github.com/Ajmalpshaik/Heron-AI/issues/1011) since 2026-11-16 (WN-57).)*
 
 **Signing covers:** the Setup, its uninstaller, `HeronInstaller.exe`, `heron-install.exe`. Signing Heron's
 own DLLs as well - Revit 2027's journal writes `AddInCodeSigningStatus: Unsigned`
-([07 §10.9](../../07-installation-and-update.md)) - is a separate yes.
+([07 §10.9](../../07-installation-and-update.md)) - is a separate yes. *(Tracked as GitHub issue [#1011](https://github.com/Ajmalpshaik/Heron-AI/issues/1011) since 2026-11-16 (WN-56).)*
 
 ## 8. The design, assuming A - what the builder makes
 

@@ -166,6 +166,8 @@ host needs to know *the shortlist is weak* to decide to ask again.
 
 ### 3.5 ⏸ OWNER'S CALL — the rewrite loop, and its hard cap
 
+*Tracked as GitHub issue [#1009](https://github.com/Ajmalpshaik/Heron-AI/issues/1009) since 2026-11-16 (WN-42) - work it there.*
+
 If the graded results are thin, they **rewrite the query and retrieve again — at most twice.**
 
 The cap is the part worth copying. An agentic loop with no bound is a cost and latency risk, and
@@ -179,6 +181,8 @@ That is [S-1](../plans/rag/00-structure.md)'s shape and it needs the owner's wor
 
 ### 3.6 ⏸ OWNER'S CALL — section-aware chunking, and whether chunks overlap
 
+*Tracked as GitHub issue [#1009](https://github.com/Ajmalpshaik/Heron-AI/issues/1009) since 2026-11-16 (WN-43) - work it there.*
+
 They chunk **by section, with overlap**, and say plainly that this beats naive fixed-size splitting.
 
 The first half confirms [`00-structure.md` §3.3](../plans/rag/00-structure.md), which was already
@@ -188,6 +192,8 @@ and costs storage and duplicate hits. Not decided here.
 ---
 
 ### 3.7 ⏸ OWNER'S CALL — time every stage, not just the whole call
+
+*Tracked as GitHub issue [#1009](https://github.com/Ajmalpshaik/Heron-AI/issues/1009) since 2026-11-16 (WN-44) - work it there.*
 
 They record a span per retrieval stage, and per source, specifically to find which one is slow.
 
@@ -280,7 +286,7 @@ If the owner takes any of them, the durable half moves into
 because that file records those too — and this note is deleted.
 
 **§3.1 was the one to take first, and it was taken.** It turns *no source, no claim* from a rule
-nobody can check into a number measurable offline, with no model, using the standard library.
+nobody can check into a number measurable offline, with no model, using the standard library. *(Tracked as GitHub issue [#1007](https://github.com/Ajmalpshaik/Heron-AI/issues/1007) since 2026-11-16 (WN-27).)*
 
 **Note on [`docs/34`](../../34-patterns-adapted.md).** That file is titled for **the sixteen
 repositories** and its §1 tally describes that one closed programme. This pattern came from a

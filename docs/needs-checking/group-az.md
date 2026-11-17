@@ -8,6 +8,8 @@
 
 ## Group AZ - `create-sheet-list` version 2: a view list as well as a sheet list, and only the placed views (2026-09-27)
 
+**Tracked as GitHub issue [#986](https://github.com/Ajmalpshaik/Heron-AI/issues/986) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **One existing fragment edited, not a new one, on the owner's rule that an existing tool is extended
 rather than a second one added.** [`create-sheet-list`](../../brain/fragments/create-sheet-list/fragment.yaml) -
 CREATE_SHEET_LIST, FRG-SHT-011 - takes a new value, `listKind`. Blank or `sheets` makes the sheet list it

@@ -7,6 +7,8 @@
 
 ## Group MI - Electrical Settings > Wiring Types and the electrical analytical model - add a wire type by its material, rating and insulation, an area-based load type in W/m2 put on the selected spaces, and power distribution nodes connected to the node that feeds them: `ADD_WIRE_TYPE`, `ADD_AREA_BASED_LOAD`, `ADD_ELECTRICAL_ANALYTICAL_NODE` (2026-11-02)
 
+**Tracked as GitHub issue [#1003](https://github.com/Ajmalpshaik/Heron-AI/issues/1003) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"add a wire type called XLPE 4C with copper conductor and 90 degree
 insulation"*, *"what wire types are in this model"*, *"add an area-based load of 25 W/m2 for Office lighting"*,
 *"assign area-based loads to these spaces"*, *"add a power distribution node for transformer TX-1"* and *"connect

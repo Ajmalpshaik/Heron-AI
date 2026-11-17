@@ -21,7 +21,29 @@ positive:
     expect: >
       both moving about half the separation each
 
+  # VERSION 2 (2026-11-16) - row 5b-1732. FAILS on version 1. NOT RUN.
+  # Arranged on Heron's own scratch project (NEEDS-CHECKING Group OC).
+  - given: >
+      a plan with a door tag placed on top of a room tag, both leaderless,
+      both handed in
+    expect: >
+      moved at least 1, `notTags` EMPTY, and FIND_OVERLAPPING_TAGS on the
+      same plan afterwards finding no tag over tag. Version 1 put the room
+      tag in `notTags` and moved nothing
+  - given: the same pair with roomTagsStayPut true
+    expect: >
+      the room tag's head exactly where it was (REPORT_LOCATION), its id in
+      `keptInPlace`, and the door tag moved clear of it
+
 negative:
+  # VERSION 2 - room tags alone, each in its own room, nothing clashing.
+  - given: the two room tags of that plan alone
+    expect: moved 0, `notTags` empty - they are tags now, and nothing clashes
+  - given: a room tag WITH a leader, clashing with a door tag
+    expect: >
+      the room tag's head moved and its leader end still in its room - look
+      at the plan; what Revit does with that end is not checked in code
+
   - given: a set where EVERY tag has a leader, so nothing can be measured
     expect: >
       `measuredFrom` = 0 and the caller's stated size used. A size somebody
@@ -46,7 +68,8 @@ negative:
 
   - given: a text note or a dimension in the set
     expect: >
-      its id in `notTags` and every real tag still arranged
+      its id in `notTags` and every real tag still arranged. Since version 2
+      a room tag is a real tag and is never in `notTags`
 
   - given: tags too crowded for any arrangement to separate
     expect: >

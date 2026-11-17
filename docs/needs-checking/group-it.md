@@ -8,6 +8,8 @@
 
 ## Group IT - a selection that refuses a mode it does not know, takes the whole model when no view is named, and knows a connector by its name: `SELECT_BY_PARAMETER_VALUE` v3, `SELECT_BY_CATEGORIES` v3, `SELECT_OPENINGS` v3, the binder's absent View and category aliases (2026-10-22)
 
+**Tracked as GitHub issue [#992](https://github.com/Ajmalpshaik/Heron-AI/issues/992) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 From rows [5b-1319, 5b-1320 and 5b-1321](../fragment-issues/section-5b-rows-401-425.md). All three were seen on
 Revit 2020 (session 78736) on 2026-10-22, in a chat building a nested floor-drain family: `matchMode=exact`
 widened a selection that fed a delete to two reference planes, the plumbing fixtures could not be asked for

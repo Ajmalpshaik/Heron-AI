@@ -7,6 +7,8 @@
 
 ## Group NW - an empty keep left out of the undo list, late answers and stopping a job, the activity pane, and the pipe hardened (2026-11-12)
 
+**Tracked as GitHub issue [#968](https://github.com/Ajmalpshaik/Heron-AI/issues/968) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Items 8 to 11 of the plan written after the comparison D-155 came from. **Each compiles for 2020 to 2027
 and its Revit-free half runs here; none of it has run in Revit.**
 

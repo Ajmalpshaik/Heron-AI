@@ -8,6 +8,8 @@
 
 ## Group BC - `apply-view-filter` and `report-view-filters` version 2: every control of a view's Filters tab, set and read back per filter (2026-09-28)
 
+**Tracked as GitHub issue [#989](https://github.com/Ajmalpshaik/Heron-AI/issues/989) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **Two existing fragments widened in one sitting on 2026-09-28, and the add-in's override parser with them -
 no new capability, on the owner's rule that an existing tool is edited, never a second one added.**
 [`apply-view-filter`](../../brain/fragments/apply-view-filter/fragment.yaml) - APPLY_VIEW_FILTER,

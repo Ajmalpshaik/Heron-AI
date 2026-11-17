@@ -8,6 +8,8 @@
 
 ## Group II - which shared parameter file Revit is set to, what is in it, and its GUIDs against the family in front: `REPORT_SHARED_PARAMETER_FILE` (2026-10-21)
 
+**Tracked as GitHub issue [#983](https://github.com/Ajmalpshaik/Heron-AI/issues/983) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 From [row 5b-1291](../fragment-issues/section-5b-rows-401-425.md). On 2026-10-21 the owner, adding shared
 parameters from his office file to the family *TRG_Duct Accessory_Electric Duct Heater* so he can tag and
 schedule its size, asked whether Heron can read which shared parameter file Revit is set to. Nothing could:

@@ -8,6 +8,8 @@
 
 ## Group AV - `apply-color-fill-scheme`: a plan's colour scheme and its Color Fill Legend (2026-09-27)
 
+**Tracked as GitHub issue [#990](https://github.com/Ajmalpshaik/Heron-AI/issues/990) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **Revit 2022 or later, on a TEST COPY.** [`APPLY_COLOR_FILL_SCHEME`](../../brain/fragments/apply-color-fill-scheme/fragment.yaml)
 (FRG-VIEW-110, DRAFT) sets a plan's colour scheme for one category - using a scheme that already
 colours by the named parameter as it stands, or COPYING one and changing only the copy - and places

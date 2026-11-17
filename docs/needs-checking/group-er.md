@@ -8,6 +8,8 @@
 
 ## Group ER - a picture of a view, handed to the chat: `capture_view` and `revit_view_image` (2026-10-17)
 
+**Tracked as GitHub issue [#990](https://github.com/Ajmalpshaik/Heron-AI/issues/990) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for by the owner on 2026-10-17: a read-only tool that returns a PNG of a Revit view **into the
 chat**, so the AI can check its own work. [D-123](../DECISIONS.md#d-123--a-picture-of-a-view-taken-for-the-chat-and-deleted-is-analyze-and-not-an-export)
 is the decision, **Accepted** 2026-10-17: the owner answered that a picture is not model data under

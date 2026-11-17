@@ -8,6 +8,8 @@
 
 ## Group EZ - a fragment that never ends: the run clock, and a stop sent over the bridge (2026-10-17)
 
+**Tracked as GitHub issue [#968](https://github.com/Ajmalpshaik/Heron-AI/issues/968) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Until 2026-10-17 a fragment that looped for ever held Revit's thread until Revit was ended: the dispatcher
 stopped waiting after `revit.operationTimeoutSeconds` and could only answer `still_running`, and the stop
 flag that might have helped could be set by nothing ([D-46](../decisions/D-46.md)).

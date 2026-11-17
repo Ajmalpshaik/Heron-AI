@@ -7,6 +7,8 @@
 
 ## Group LE - a steel connection of a named type between beams and columns: `PLACE_STRUCTURAL_CONNECTIONS` (2026-11-01)
 
+**Tracked as GitHub issue [#999](https://github.com/Ajmalpshaik/Heron-AI/issues/999) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"add a base plate connection to these column bases"* and *"put a shear
 plate connection between this beam and column"* - Revit's Steel > Connection (Structure > Connection on 2020).
 No card placed one (a grep of every fragment's C# that day for `StructuralConnection`: nothing).

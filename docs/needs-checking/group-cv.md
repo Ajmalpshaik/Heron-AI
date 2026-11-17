@@ -7,6 +7,8 @@
 
 ## Group CV - one smooth freeform form: a loft through sections, a sweep along a 3D path (2026-10-07)
 
+**Tracked as GitHub issue [#978](https://github.com/Ajmalpshaik/Heron-AI/issues/978) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 `CREATE_FAMILY_FREEFORM_SOLID` (FRG-GEO-058, DRAFT) makes ONE smooth form in the family open in the Family
 Editor where the classic forms cannot: a LOFT through two or more sections placed anywhere and facing any
 way, or a SWEEP of a profile along a path that leaves the plane - a helix, a spline through points, or

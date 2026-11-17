@@ -8,6 +8,8 @@
 
 ## Group JB - a nested part that came in upside down flips its work plane: `FLIP_ELEMENTS` version 3 (2026-10-24)
 
+**Tracked as GitHub issue [#978](https://github.com/Ajmalpshaik/Heron-AI/issues/978) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 From [row 5b-1335](../fragment-issues/section-5b-rows-401-425.md). On Revit 2020 the work-plane-based nested
 family *TRG_Duct Accessory_Damper Quadrant Handle*, placed by `PLACE_NESTED_FAMILY` on a front reference
 plane made by `CREATE_REFERENCE_PLANES` - every plane it makes has normal +Y - came in on the front (-Y)

@@ -13,7 +13,7 @@
 > internet too, not only GitHub — what is it we are going to do. Research and update."*
 > **The rule this obeys:** [**D-25**](../../DECISIONS.md) — **studied and re-authored, never imported.**
 > **Reads with:** [`rag-engineering-practices-2026-09-10.md`](rag-engineering-practices-2026-09-10.md), the
-> first reading, whose four ✅ rows are already taken.
+> first reading, whose four ✅ rows are already taken. *(Tracked as GitHub issue [#1007](https://github.com/Ajmalpshaik/Heron-AI/issues/1007) since 2026-11-16 (WN-28).)*
 
 ---
 

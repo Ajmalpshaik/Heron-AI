@@ -7,6 +7,8 @@
 
 ## Group NP - `revit_health` says, under each connected Revit, whether that Revit will ask Keep or Discard: the add-in's `info` answer now carries the Ask to Keep switch (2026-11-12)
 
+**Tracked as GitHub issue [#968](https://github.com/Ajmalpshaik/Heron-AI/issues/968) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 The owner's *Ask to Keep* switch ([D-126](../decisions/D-126.md), [D-138](../decisions/D-138.md), in Heron's
 Settings window since [D-150](../decisions/D-150.md)) is read inside the add-in at the moment a change is
 kept, and it was sent to nobody. A chat could not say beforehand *"Revit will ask you to Keep or Discard"*

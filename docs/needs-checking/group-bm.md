@@ -9,6 +9,8 @@
 
 ## Group BM - what makes a family's forms parametric and makes a void cut: join and cut, face locks, a round size labelled, visibility, subcategory, and a list of the forms (2026-10-01)
 
+**Tracked as GitHub issue [#976](https://github.com/Ajmalpshaik/Heron-AI/issues/976) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **The owner's PC, Revit 2024 first, then 2020.** Six new tools, the second of the three changes the owner asked
 for on 2026-10-01 - [Group BL](../needs-checking/group-bl.md) built the forms, and these make them behave:
 

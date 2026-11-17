@@ -8,6 +8,8 @@
 
 ## Group IB - rendering: render settings, sun, display options, a framing camera, Revit's Render dialog and the read-back (2026-10-20)
 
+**Tracked as GitHub issue [#990](https://github.com/Ajmalpshaik/Heron-AI/issues/990) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 From [rows 5b-1266 to 5b-1268](../fragment-issues/section-5b-rows-401-425.md). On 2026-10-20, after four
 duct heaters were placed in Project1 (Revit 2020), the owner asked Heron for a render of the 3D view and
 Heron could only switch the view to Realistic and export an image. Seven tools were written and two

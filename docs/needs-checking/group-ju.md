@@ -8,6 +8,8 @@
 
 ## Group JU - the model's 3D geometry as triangles for the Companion's 3D model view: `REPORT_MODEL_GEOMETRY` (2026-11-01)
 
+**Tracked as GitHub issue [#971](https://github.com/Ajmalpshaik/Heron-AI/issues/971) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for by the owner on 2026-11-01: a 3D view of the model in the Heron Companion's Model Dashboard
 ([docs/40](../40-heron-companion.md) section 21.10 to 21.12; the plan's phase 6), drawn by Heron's own
 WebGL renderer. Nothing in Heron handed back geometry a renderer can draw - `heron_retrieve` for *"model

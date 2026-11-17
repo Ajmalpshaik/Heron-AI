@@ -85,6 +85,8 @@ Priorities: **P1** = fix before trusting the affected workflow; **P2** = improve
 
 ### C01 — Preserve room holes or refuse creation (P1)
 
+*Tracked as GitHub issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005) since 2026-11-16 (WN-1) - work it there.*
+
 **Fragment:** `create-from-room-boundaries`  
 **Evidence:** [implementation](../../../brain/fragments/create-from-room-boundaries/impl/any/fragment.cs), legacy floor branch and curve-loop construction.
 
@@ -95,6 +97,8 @@ The legacy floor branch creates from `curveLoops[0]` even when there are holes, 
 **Acceptance:** A room with two shafts preserves both; an invalid inner loop creates nothing for that room; a release without the required geometry support returns a clear refusal. Verify undo behavior with the operation owner.
 
 ### C02 — Make sizing checks actionable before writes (P1)
+
+*Tracked as GitHub issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005) since 2026-11-16 (WN-2) - work it there.*
 
 **Fragments:** `auto-size-mep`, `auto-size-pipe`  
 **Evidence:** [duct sizing](../../../brain/fragments/auto-size-mep/impl/any/fragment.cs), [pipe sizing](../../../brain/fragments/auto-size-pipe/impl/any/fragment.cs).
@@ -155,6 +159,8 @@ One records an unreadable checkout status as owned by an unknown person; the oth
 
 ### C07 — Preserve loop structure in room geometry (P2)
 
+*Tracked as GitHub issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005) since 2026-11-16 (WN-3) - work it there.*
+
 **Fragment:** `read-room-geometry`  
 **Evidence:** [implementation](../../../brain/fragments/read-room-geometry/impl/any/fragment.cs), flat `holes` list.
 
@@ -165,6 +171,8 @@ Outer and inner boundaries are separated, but every inner loop is flattened into
 **Acceptance:** Two separate holes remain two separate loops; curved boundaries stay curved; layout and floor/ceiling consumers preserve excluded areas.
 
 ### C08 — Provide structured connector measurements (P2)
+
+*Tracked as GitHub issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005) since 2026-11-16 (WN-4) - work it there.*
 
 **Fragment:** `report-connectors`  
 **Evidence:** [contract](../../../brain/fragments/report-connectors/fragment.yaml), `connectorFacts: IDictionary<ElementId, IList<string>>`.
@@ -189,7 +197,7 @@ The repository's [fragment guidance](../../09-skills-and-fragments.md) recommend
 
 | ID | Existing area | Proposed boundary | Consumers and decision |
 |---|---|---|---|
-| S01 | `create-from-room-boundaries` | Read/validate grouped room loops separately from host creation | Room-derived floors and ceilings, plus layout geometry. Reuse an improved `read-room-geometry`; do not create another competing reader. |
+| S01 | `create-from-room-boundaries` | Read/validate grouped room loops separately from host creation | Room-derived floors and ceilings, plus layout geometry. Reuse an improved `read-room-geometry`; do not create another competing reader. *(tracked as GitHub issue [#1012](https://github.com/Ajmalpshaik/Heron-AI/issues/1012) since 2026-11-16 (WN-59))* |
 | S02 | `auto-size-mep`, `auto-size-pipe` | Separate automatic validation/calculation internally from applying verified sizes | Authorized bulk sizing and optional preview can reuse calculation; both can use a shared write/read-back mechanism related to `set-mep-size`. Keep their calculations separate. No mandatory user pause between phases; the extraction itself remains pending. |
 | S03 | Ownership readers/reporters | Share status classification, retain lightweight and detailed public contracts | Both existing ownership fragments are consumers. Prefer a shared helper unless standalone composition has a demonstrated need. |
 | S04 | `import-parameter-values` | Parse/resolve/validate before applying writes | Import preview and import execution need the same resolved change list. Put general CSV parsing at the appropriate host/shared layer; it need not be a searchable Revit fragment. |

@@ -8,6 +8,8 @@
 
 ## Group JO - a massing study from block to building: `REPORT_MASSES`, `SET_MASS_FLOOR_USAGE`, `REMOVE_MASS_FLOORS`, `CREATE_WALLS_BY_FACE` and the `massing-study` and `mass-family-creation` methods (2026-10-28)
 
+**Tracked as GitHub issue [#994](https://github.com/Ajmalpshaik/Heron-AI/issues/994) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for by the owner on 2026-10-28: Heron's massing tools brought up to what a massing study needs. Before
 this, Heron could build forms in a mass family and add mass floors in a project
 ([`CREATE_MASS_FLOORS`](../../brain/fragments/create-mass-floors/fragment.yaml)), and nothing else - no tool

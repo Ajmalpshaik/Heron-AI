@@ -9,6 +9,8 @@
 
 ## Group BR - a nested family placed in a family, locked to its planes, and its type's parameters linked (2026-10-01)
 
+**Tracked as GitHub issue [#977](https://github.com/Ajmalpshaik/Heron-AI/issues/977) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **The owner's PC, Revit 2024 first, then 2020.** Three new tools, added the same day as Groups BL to BQ,
 because the `family-creation` skill's own NOT YET line named nested families, and a motor in an air handler or
 a handle on a valve could be neither placed, locked nor sized from the family around it:

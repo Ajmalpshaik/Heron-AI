@@ -8,6 +8,8 @@
 
 ## Group HP - SET_PARAMETER_VALUES_BY_ID v5: a level's name, and Revit's question about its views (2026-10-19)
 
+**Tracked as GitHub issue [#982](https://github.com/Ajmalpshaik/Heron-AI/issues/982) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 From [row 5b-1221](../fragment-issues/section-5b-rows-401-425.md). On Revit 2020, model *Kerala house
 design*, renaming `Level 1` to `Ground Floor` with `SET_PARAMETER_VALUES_BY_ID` met Revit's
 `TaskDialog_Confirm_Level_Rename` (*"Would you like to rename corresponding views?"*); Heron declined it

@@ -7,6 +7,8 @@
 
 ## Group LW - Modify > Cut Geometry and Uncut Geometry in a project - one element cut by a named cutting element, a void family or another solid, each pair read back - and the read of what cuts what: `CUT_GEOMETRY`, `REPORT_GEOMETRY_CUTS` (2026-11-02)
 
+**Tracked as GitHub issue [#996](https://github.com/Ajmalpshaik/Heron-AI/issues/996) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"cut this beam out of the slab"*, *"cut the column with the void family"*,
 *"uncut these two"*, *"make the opening family cut the wall"* and *"which elements is this cutting"*. No card
 did it: of every fragment's C# none called `SolidSolidCutUtils` or `InstanceVoidCutUtils`, and the ribbon

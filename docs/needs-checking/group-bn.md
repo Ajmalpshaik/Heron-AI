@@ -9,6 +9,8 @@
 
 ## Group BN - a family built from a picture: the `family-creation` skill widened to every form, the locks, a round size and voids that cut (2026-10-01)
 
+**Tracked as GitHub issue [#976](https://github.com/Ajmalpshaik/Heron-AI/issues/976) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **The owner's PC, in a chat with Heron connected, Revit 2024 first, then 2020.** The third of the three
 changes the owner asked for on 2026-10-01 - *"maybe I will give only an image"*. No new tool: the
 [`family-creation`](../../brain/skills/family-creation.yaml) skill now lists every form tool from

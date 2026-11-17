@@ -8,6 +8,8 @@
 
 ## Group DI - an element's full parameter record by GUID, with where it stands and its tags (2026-10-12)
 
+**Tracked as GitHub issue [#982](https://github.com/Ajmalpshaik/Heron-AI/issues/982) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 On 2026-10-12, on Revit 2020, project 4355-BHVD-3D-60P00-BL006A carried two shared parameters called
 *Equipment Tag* on the in-place units being swapped - GUID e133774c... filled, cb0704fc... empty - and a
 by-name read showed the empty one. `REPORT_PARAMETER_INVENTORY` version 1 kept one line per name, so it
