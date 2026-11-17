@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -149,6 +149,65 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-17'
+  by: Ajmal PS
+  model: struct-scratch (3,589 elements), Revit 2024, session 34788
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-in-region with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned barList Func`1, barTypeFrom Func`2,
+    barTypes 11 item(s) [13M, 10M, 16M, ...], boxPoints 2 item(s) [(132.217847769, 19.422572178,
+    -0.656167979), (149.934383202, 19.422572178, -0.656167979)], curves 0 item(s), dirText
+    Func`2, findings 1 item(s) [1 rebar placed and read back in Structural Framing ''300 x
+    60...], hasCount false, hasLength true, hasSpacing true, host FamilyInstance, hostName
+    Structural Framing ''300 x 600mm'' (id 422020), hosts 1 item(s) [300 x 600mm], invariant
+    CultureInfo, isNone Func`2, layout maximum spacing, lengthFeet 0.5249343832021, lengthFrom
+    Func`3, mm Func`2, mmPoint Func`2, modelOf Func`2, nominalOf Func`2, normal XYZ, origin
+    XYZ, placed 1 item(s) [422041], positions 1, readBackWrong 0 item(s), refused , report
+    Structural Framing ''300 x 600mm'' (id 422020): rebar 422041, shape ''M_00'', bar type
+    ''16M'', 3 bar(s), maximum spacing, spacing 80 mm, bar plane square to 0, 1, 0, total
+    length 16200 mm; host cover top ''Interior (framing, columns)'' 40 mm, bottom ''Interior
+    (framing, columns)'' 40 mm, other faces ''Interior (framing, columns)'' 40 mm - not changed,
+    shapeAsked RebarShape, shapeList Func`2, shapes 40 item(s) [M_07, M_08, M_10, ...], sketch
+    false, sketchBar Func`5, spacingFeet 0.26246719160105, spread XYZ, squareTo Func`2, styleFloat
+    NumberStyles, through 0 item(s), throughPoints 0 item(s), tiny 0.00328083989501312, type
+    RebarBarType, xBox XYZ, xDir XYZ, yBox XYZ, yDir XYZ. inputs came elements from select-in-region
+    (1); barType as given; shape as given; box as given (2); through not given - new List<XYZ>()
+    (optional); spreadToward as given; spacing as given; count not given - "none", the card''s
+    own default (optional); setLength as given. on struct-scratch'
+  negative_case: run with barType=16M, box=40300,5920,-200; 45700,5920,-200, categories=Structural
+    Framing, exact=False, maxMm=43500,12500,500, minMm=42500,11500,-1000, setLength=160, shape=M_00,
+    spacing=80, spreadToward=0,1,0 instead - chosen because it should not contain what this
+    fragment reports - the arrangement was re-made first by running select-in-region with
+    this phase's own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned barList Func`1, barTypeFrom Func`2, barTypes 11
+    item(s) [13M, 10M, 16M, ...], boxPoints 2 item(s) [(132.217847769, 19.422572178, -0.656167979),
+    (149.934383202, 19.422572178, -0.656167979)], curves 0 item(s), dirText Func`2, findings
+    1 item(s) [Revit says Structural Framing 'UB305x165x40' (id 422023) can...], hasCount
+    false, hasLength true, hasSpacing true, host FamilyInstance, hostName Structural Framing
+    'UB305x165x40' (id 422023), hosts 1 item(s) [UB305x165x40], invariant CultureInfo, isNone
+    Func`2, layout single, lengthFeet 0, lengthFrom Func`3, mm Func`2, mmPoint Func`2, modelOf
+    Func`2, nominalOf Func`2, normal (null), origin (null), placed 0 item(s), positions 1,
+    readBackWrong 0 item(s), refused Revit says Structural Framing 'UB305x165x40' (id 422023)
+    cannot hold rebar - its rebar host check answers no (its structural material reads Steel).
+    Revit puts rebar only in structural concrete walls, floors, foundations, beams and columns.
+    Nothing was placed, report , shapeAsked (null), shapeList Func`2, shapes 40 item(s) [M_07,
+    M_08, M_10, ...], sketch false, sketchBar Func`5, spacingFeet 0, spread (null), squareTo
+    Func`2, styleFloat NumberStyles, through 0 item(s), throughPoints 0 item(s), tiny 0.00328083989501312,
+    type (null), xBox (null), xDir (null), yBox (null), yDir (null). inputs came elements
+    from select-in-region (1); barType as given; shape as given; box as given (2); through
+    not given - new List<XYZ>() (optional); spreadToward as given; spacing as given; count
+    not given - "none", the card's own default (optional); setLength as given. on struct-scratch
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.2.0.0
+    addin_hash: 80819edd3983a0d5
+  fingerprint: be6951374304d1b6
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

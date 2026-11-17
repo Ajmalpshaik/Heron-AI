@@ -177,3 +177,7 @@ gap: no second route. **Not signed** - the owner's word.
 | Row | Card | Result |
 |---|---|---|
 | OI27 | `add-family-type-parameter` | **POSITIVE EMPTY - row 5b-302 (issue #901) again, on Revit 2024.** "HN Nest Host" (a copy of `Family1.rfa`, Generic Model) with "HN Cut Void" nested by `load-family` + `place-family-instances` (*"nested on the level \"Ref. Level\" at 0, 0, 0 mm - read back"*) and a first type made by `set-family-type-values`; `validate --in "HN Nest Host"`, `category=Generic Models`, `elements=HN Cut Void`, negative-in `rig`: *"\"HN Cut Void\" (...-00000e86) has no type or profile Revit lets be linked to a family parameter - only a nested family's copy or a sweep's profile can be."* (before the type was made, also *"The family has no type yet ..."*); negative *"\"rig\", is a project, not a family"*. 5b-302 found Revit 2024's API refusing every carrier; this is the same refusal on a nested Generic Model - its fix (probe 2027/2020, or retire the card) is unchanged |
+
+**Signed 2026-11-17, as Ajmal PS, on the owner's word** (*"Yes, sign all 5"*): `cut-geometry` (OI21),
+`report-geometry-cuts` (OI22), `check-rebar-against-spec` (OI24), `place-rebar` (OI25) and
+`place-multi-rebar-annotation` (OI26) - `accept` on each draft, none refused, each status flipped DRAFT to PROVEN.

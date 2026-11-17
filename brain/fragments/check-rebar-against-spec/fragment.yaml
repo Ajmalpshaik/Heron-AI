@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -216,6 +216,71 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-17'
+  by: Ajmal PS
+  model: struct-scratch (3,589 elements), Revit 2024, session 34788
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-in-region with this phase''s own values. returned barLengthOf Func`4, barList Func`1,
+    barTypes 11 item(s) [13M, 10M, 16M, ...], columnCategory 1 item(s) [id -2001330], coverAllFaces
+    NaN, coverFaces 5 item(s) [CLEAR_COVER_TOP, CLEAR_COVER_BOTTOM, CLEAR_COVER_OTHER, ...],
+    doesNotMeet 0, failedLines 0 item(s), findings 1 item(s) [1 host(s) checked, 0 not a rebar
+    host: 5 check(s) meet the v...], framingCategory 1 item(s) [id -2001320], heightIn Func`3,
+    hookAt Func`3, hostLines 1 item(s) [Structural Framing ''300 x 600mm'' (id 422018) - 3
+    rebar set(s...], invariant CultureInfo, label Func`2, lengthText Func`2, meets 5, mm Func`2,
+    modelOf Func`2, nominalOf Func`2, notChecked 0, notGiven Func`2, notHosts 0 item(s), numberOf
+    Func`2, outsideOf Func`3, param Func`3, positionsOf Func`3, refused , report Structural
+    Framing ''300 x 600mm'' (id 422018) - 3 rebar set(s) (1 stirrup/tie), 0 bar group(s) of
+    area or path reinforcement | bottom bars: read 3 x ''16M'' 15.9 mm; spec 3 x ''16M'' -
+    meets | top bars: read 2 x ''13M'' 12.7 mm; spec 2 x ''13M'' - meets | link bar type:
+    read 31 x ''10M'' (id 422030); spec ''10M'' - meets | link spacing: read widest centre-to-centre
+    197 mm; spec 200 mm max - meets | link hooks: read id 422030 ''Stirrup/Tie - 135 deg.''
+    135 deg / ''Stirrup/Tie - 135 deg.'' 135 deg; spec 135 deg at both ends - meets, required
+    Func`3, solidsOf Func`2, specAnchorage (null), specBar Func`3, specBottom Tuple`3, specCount
+    Func`3, specCover 0 entry(ies), specHookDegrees 135, specLap (null), specLength Func`3,
+    specLinks Func`2, specMain (null), specMaxLength NaN, specSide (null), specTies Tuple`3,
+    specTop Tuple`3, stripMm Func`2, styleFloat NumberStyles, tolerance 0.00164041994750656,
+    widestGapOf Func`2. inputs came elements from select-in-region (1); bottomBars as given;
+    topBars as given; sideBars not given - "not given", the card''s own default (optional);
+    mainBars not given - "not given", the card''s own default (optional); links as given;
+    linkHook as given; cover not given - "not given", the card''s own default (optional);
+    lap not given - "not given", the card''s own default (optional); anchorage not given -
+    "not given", the card''s own default (optional); maxBarLength not given - "not given",
+    the card''s own default (optional). on struct-scratch'
+  negative_case: 'run with bottomBars=3 x 16M, categories=Structural Framing, exact=False,
+    linkHook=135, links=10M @ 200, maxMm=43500,12500,500, minMm=42500,11500,-1000, topBars=2
+    x 13M instead - chosen because it should not contain what this fragment reports - the
+    arrangement was re-made first by running select-in-region with this phase''s own values.
+    returned barLengthOf Func`4, barList Func`1, barTypes 11 item(s) [13M, 10M, 16M, ...],
+    columnCategory 1 item(s) [id -2001330], coverAllFaces NaN, coverFaces 5 item(s) [CLEAR_COVER_TOP,
+    CLEAR_COVER_BOTTOM, CLEAR_COVER_OTHER, ...], doesNotMeet 0, failedLines 0 item(s), findings
+    2 item(s) [0 host(s) checked, 1 not a rebar host: 0 check(s) meet the v..., Structural
+    Framing ''UB305x165x40'' (id 422023) is not a rebar...], framingCategory 1 item(s) [id
+    -2001320], heightIn Func`3, hookAt Func`3, hostLines 0 item(s), invariant CultureInfo,
+    label Func`2, lengthText Func`2, meets 0, mm Func`2, modelOf Func`2, nominalOf Func`2,
+    notChecked 0, notGiven Func`2, notHosts 1 item(s) [Structural Framing ''UB305x165x40''
+    (id 422023) is not a rebar...], numberOf Func`2, outsideOf Func`3, param Func`3, positionsOf
+    Func`3, refused , report , required Func`3, solidsOf Func`2, specAnchorage (null), specBar
+    Func`3, specBottom Tuple`3, specCount Func`3, specCover 0 entry(ies), specHookDegrees
+    135, specLap (null), specLength Func`3, specLinks Func`2, specMain (null), specMaxLength
+    NaN, specSide (null), specTies Tuple`3, specTop Tuple`3, stripMm Func`2, styleFloat NumberStyles,
+    tolerance 0.00164041994750656, widestGapOf Func`2. inputs came elements from select-in-region
+    (1); bottomBars as given; topBars as given; sideBars not given - "not given", the card''s
+    own default (optional); mainBars not given - "not given", the card''s own default (optional);
+    links as given; linkHook as given; cover not given - "not given", the card''s own default
+    (optional); lap not given - "not given", the card''s own default (optional); anchorage
+    not given - "not given", the card''s own default (optional); maxBarLength not given -
+    "not given", the card''s own default (optional). on struct-scratch'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.2.0.0
+    addin_hash: 80819edd3983a0d5
+  fingerprint: 3bcbbf5f79a41602
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
