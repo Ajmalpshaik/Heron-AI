@@ -1790,4 +1790,6 @@ the negative and the positive with its door kept (OG2), the sketch edit mode ins
 refusal in words (OG5) - then the modeller's one try. A lookup wording it exposed on 2025 on is
 [row 5b-1823](../fragment-issues/row-5b-1823.md).
 
+
+**The release range, answered 2026-11-17 by the owner:** asked whether the card should be Revit 2022 to 2024 only, with `ATTACH_WALLS` from 2025 (this question's shape 2, as recorded on this branch), or stay 2022 to 2027 as he signed it on main, Ajmal PS answered *"Keep 2022-2027"*. The profile tool runs on 2025 and later too, beside Revit's real Attach. The two records above that read 2022 to 2024 are kept as written and this note decides between them; row 5b-1846 follows from it.
 ---
