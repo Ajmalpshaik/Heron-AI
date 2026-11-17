@@ -135,6 +135,11 @@ namespace Heron.Core
                 // background thread and touches no model. Off puts the first
                 // fragment's ~4.5 s back on the modeller's first request.
                 { "fragments.warmUp", "true" },
+
+                // FOLDER PATHS HIDDEN FROM THE CHAT (D-180). Off by default.
+                // Read by the MCP server alone - it decides what the chat is
+                // told - and declared here so both sides keep one closed set.
+                { "privacy.hidePaths", "false" },
             };
 
         public static string FilePath { get { return Path.Combine(HeronPaths.Config, FileName); } }

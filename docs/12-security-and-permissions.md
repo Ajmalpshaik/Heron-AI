@@ -335,7 +335,9 @@ Also needed regardless of position:
 
 Tracked as [Q-12](OPEN-QUESTIONS.md), answered on 2026-08-28 as [D-26](DECISIONS.md). The plain
 statement the first bullet asks for is [DISCLAIMER — What Heron sends where](../DISCLAIMER.md); the
-second bullet's redaction is not built, because [Q-40](OPEN-QUESTIONS.md)'s answer was no.
+second bullet's redaction is not built, because [Q-40](OPEN-QUESTIONS.md)'s answer was no. **Proposed 2026-11-17, built and off:**
+[D-180](decisions/D-180.md) - a setting, `privacy.hidePaths`, that hides only the folders above a file's
+name in what the chat is told. It meets Q-40's answer, so it waits for the owner; off, nothing changes.
 
 ---
 

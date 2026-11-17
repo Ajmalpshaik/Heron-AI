@@ -75,6 +75,10 @@ DEFAULTS = {
     # Roslyn compiled once on a background thread while Revit starts, so the
     # first fragment does not pay its start-up (RevitFragment.WarmUp).
     "fragments.warmUp": "true",
+    # D-180: folder paths hidden from what the chat is told - each Windows path
+    # in a reply keeps only its file or folder name. Off by default; read by
+    # the MCP server (heron_server_core._said_hidden), never by the add-in.
+    "privacy.hidePaths": "false",
 }
 
 # How far the client's deadline must sit beyond the add-in's, in seconds.
