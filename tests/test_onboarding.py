@@ -183,8 +183,13 @@ def main():
           "each topic is a subject and what it rests on, not a script")
     note = [line for line in answer["unjudged"] if "NOT HOW TO SAY IT" in line]
     check(note, "the answer says it chose what, not how")
-    check("D-01" in note[0] and "HERON-ORC-PER-003" in note[0],
+    check("D-01" in note[0] and "HERON-ORC-SUM-006" in note[0],
           "naming the decision and the host agent that owns the wording")
+    # Until 2026-11-15 this wanted HERON-ORC-PER-003 named as the owner of
+    # "the wording and the level". D-27 retired that agent and the level with
+    # it (PROPOSALS F19), so the note must no longer hand anything to it.
+    check("HERON-ORC-PER-003" not in note[0] and "the level" not in note[0],
+          "and handing nothing to the retired Persona agent (D-27, F19)")
     check("two agents phrasing one greeting" in note[0],
           "and why duplicating it here would be wrong")
     for word in ("model", "prompt", "completion", "llm"):

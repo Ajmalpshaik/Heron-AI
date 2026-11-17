@@ -133,15 +133,21 @@ namespace Heron.Revit.Addin
         /// <param name="deleted">Elements Revit reported deleted. Only counted -
         /// a deleted element cannot be shown.</param>
         /// <param name="onScreen">What OnScreen said is drawn.</param>
-        /// <param name="sendsOut">Did the run send something out of the model -
-        /// an export, a save, a sync? Discard cannot take that back.</param>
+        /// <param name="sendsOut">Is the run a publish - one that may send
+        /// something out of the model, an export, a save, a sync? What it sent
+        /// while it ran Discard cannot take back.</param>
         /// <param name="neverProved">A DRAFT's one run (D-119)?</param>
         /// <param name="redrawn">Was the view redrawn after the change? When it
         /// was not, what is on screen may not show the change, and the box
         /// says so rather than invite a Keep on an old picture.</param>
+        /// <param name="waitsForKeep">WaitsForKeep's sentence for the save the
+        /// run asked Heron to make AFTER the box - or null when it asked for
+        /// none. Said only for a publish, instead of "done already": that save
+        /// has not happened, Keep makes it and Discard does not (D-171 point 5,
+        /// row 5b-1824).</param>
         public static string Content(string name, string model, int added, int changed,
                                      int deleted, string onScreen, bool sendsOut,
-                                     bool neverProved, bool redrawn)
+                                     bool neverProved, bool redrawn, string waitsForKeep)
         {
             var text = "";
             if (neverProved)
@@ -159,7 +165,17 @@ namespace Heron.Revit.Addin
 
             if (!string.IsNullOrEmpty(onScreen)) text += "\n\n" + onScreen;
 
-            if (sendsOut)
+            // A PUBLISH IS TOLD THE TRUTH FOR ITS OWN CASE (row 5b-1824). A save
+            // the run asked Heron to make after this box has not happened yet,
+            // so it is never called "done already"; anything else a publish
+            // sends out - an export, a sync, another file's save - it sends
+            // while it runs, before this box, and Discard cannot take that
+            // back. SAVE_DOCUMENT writes nothing while it runs.
+            if (sendsOut && !string.IsNullOrEmpty(waitsForKeep))
+            {
+                text += "\n\n" + waitsForKeep;
+            }
+            else if (sendsOut)
             {
                 text += "\n\nWhat it sent out of the model - an exported file, a save, a sync - "
                       + "is done already, and Discard cannot take it back.";
@@ -170,6 +186,33 @@ namespace Heron.Revit.Addin
                   + "while this is open: if this view does not show the change, Discard, open "
                   + "a view that does, and ask again.";
             return text;
+        }
+
+        /// <summary>
+        /// What the run asked Heron to do once the box is answered - SAVE_DOCUMENT's
+        /// save, made by the add-in AFTER the group (D-171): of the model Heron
+        /// works in, or of another open document, whose window it may also close.
+        /// The box is answered before any of it, so Keep makes it and Discard
+        /// does not (D-171 point 5, row 5b-1824). Null when nothing waits.
+        /// </summary>
+        /// <param name="file">The file the save goes to, or whose window closes -
+        /// spelt in full, as the run named it.</param>
+        /// <param name="saves">Does Keep save it?</param>
+        /// <param name="closes">Does Keep then close that document's window?</param>
+        public static string WaitsForKeep(string file, bool saves, bool closes)
+        {
+            if (!saves && !closes) return null;
+            var named = Named(file);
+            if (!saves)
+            {
+                return "Keep keeps the change, then closes the window of " + named
+                     + ", which has nothing unsaved. Discard - or Esc, or closing this box - "
+                     + "closes nothing.";
+            }
+            return "NOTHING IS SAVED YET. Keep keeps the change, then saves " + named
+                 + (closes ? " and closes its window" : "")
+                 + ". A save cannot be undone. Discard - or Esc, or closing this box - saves "
+                 + "nothing" + (closes ? " and closes nothing." : ".");
         }
 
         /// <summary>

@@ -75,7 +75,8 @@ CURRENT_STEP = 6
 HOST_PROVIDED = {
     "HERON-ORC-MAIN-001": "the host plans and sequences the work",
     "HERON-ORC-INT-002":  "the host classifies what is being asked",
-    "HERON-ORC-PER-003":  "the host chooses the wording and the level",
+    "HERON-ORC-PER-003":  "retired by D-27 - the host writes in one plain "
+                          "voice, with no level per user (PROPOSALS F19)",
     "HERON-ORC-SUM-006":  "the host writes the reply the user reads",
     "HERON-DEV-REQ-001":  "the host turns a request into a specification",
     "HERON-DEV-PLN-002":  "the host sequences the work - the same sentence "

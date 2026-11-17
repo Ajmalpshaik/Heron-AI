@@ -32,10 +32,14 @@ namespace Heron.Revit.Addin
     /// WHAT IT LISTS IS THE RUN RECORDS (HeronActivity), read every few
     /// seconds while the pane is shown - never a list of its own.
     ///
-    /// UNDO IS REVIT'S OWN, AND GUARDED. The button sends undo_last (D-157):
-    /// the add-in posts Revit's Undo only while Heron's last kept change is
-    /// still the top of the undo list, and says why not otherwise. It needs
-    /// Changes ON, as it changes the model.
+    /// UNDO IS REVIT'S OWN, AND GUARDED. The button sends undo_from_pane for
+    /// the change on its row (row 5b-1741): the add-in posts Revit's Undo only
+    /// while that change is Heron's last one in the model on screen and still
+    /// the top of the undo list (D-157), and says why not otherwise. It is the
+    /// modeller's own click - the owner's answer of 2026-11-16 - so it undoes
+    /// the change whichever chat made it. It needs Changes ON, as it changes
+    /// the model. The add-in answers it only through this pane's own door
+    /// (HeronApplication.DispatchFromPane), never off the pipe.
     /// </summary>
     internal sealed class HeronActivityPane : IDockablePaneProvider
     {
@@ -175,8 +179,9 @@ namespace Heron.Revit.Addin
             }
             if (undoable)
             {
-                tools.Children.Add(Tool("Undo", "Revit's own Undo for this change - only while it is "
-                    + "still the top of the undo list. Needs Changes on.", HeronActivity.UndoRequest));
+                tools.Children.Add(Tool("Undo", "Revit's own Undo for this change, whichever chat made "
+                    + "it - only while it is still the top of the undo list in the model on screen. "
+                    + "Needs Changes on.", () => HeronActivity.UndoRequest(row)));
             }
             if (tools.Children.Count > 0) box.Children.Add(tools);
 

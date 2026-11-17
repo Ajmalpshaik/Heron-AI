@@ -76,3 +76,13 @@
 **Look for.** **RAN 2026-10-06:** `typesNow "Standard", "T2"` - every run rolled back - **Struck 2026-10-18:** run as looked for, 2026-10-06; signed with CL8 - `set-family-type-values` PROVEN, fingerprint `1281aa005776f57a` in its `fragment.yaml`.
 
 ---
+
+### Row CL8
+
+*Moved from the register on 2026-11-17.*
+
+**Run.** the signature
+
+**Look for.** **DONE 2026-10-06:** `heron_validate.py accept set-family-type-values --by "Ajmal PS"` on the CL1/CL2 record, on the owner's word - PROVEN **Struck 2026-11-13:** passed, as the result written in this row records.
+
+---

@@ -1562,6 +1562,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-of.md`](needs-checking/group-of.md)
 
+## Group OG - a wall's top shaped to the roof above it by editing its profile, on Revit 2022 to 2024, doors and windows kept, a sketch that does not follow the roof: `SHAPE_WALL_TOPS_TO_ROOF` (2026-11-16) - SUPERSEDED 2026-11-17 by Group OE
+
+**Its own file:** [`needs-checking/group-og.md`](needs-checking/group-og.md)
+
 ## Group OH - a built-in parameter by Revit's name for it, an architectural column's top and a turn when placing, a type duplicated from itself, and a rotation said in degrees (2026-11-16)
 
 **Its own file:** [`needs-checking/group-oh.md`](needs-checking/group-oh.md)

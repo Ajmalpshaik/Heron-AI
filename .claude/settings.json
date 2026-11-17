@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "d=\"$CLAUDE_PROJECT_DIR\"; [ -f \"$d/.claude/skills/heron-session/bin/session_line.py\" ] || d=\"$(git rev-parse --show-toplevel 2>/dev/null)\"; [ -f \"$d/.claude/skills/heron-session/bin/session_line.py\" ] || exit 0; python \"$d/.claude/skills/heron-session/bin/session_line.py\"",
+            "command": "d=\"$(git rev-parse --show-toplevel 2>/dev/null)\"; [ -f \"$d/.claude/skills/heron-session/bin/session_line.py\" ] || d=\"$CLAUDE_PROJECT_DIR\"; [ -f \"$d/.claude/skills/heron-session/bin/session_line.py\" ] || exit 0; python \"$d/.claude/skills/heron-session/bin/session_line.py\"",
             "timeout": 15
           }
         ]
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "d=\"$CLAUDE_PROJECT_DIR\"; [ -f \"$d/.claude/skills/heron-session/bin/local_only.py\" ] || d=\"$(git rev-parse --show-toplevel 2>/dev/null)\"; [ -f \"$d/.claude/skills/heron-session/bin/local_only.py\" ] || exit 0; python \"$d/.claude/skills/heron-session/bin/local_only.py\"",
+            "command": "d=\"$(git rev-parse --show-toplevel 2>/dev/null)\"; [ -f \"$d/.claude/skills/heron-session/bin/local_only.py\" ] || d=\"$CLAUDE_PROJECT_DIR\"; [ -f \"$d/.claude/skills/heron-session/bin/local_only.py\" ] || exit 0; python \"$d/.claude/skills/heron-session/bin/local_only.py\"",
             "timeout": 10
           }
         ]
@@ -28,7 +28,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"$([ -f \"$CLAUDE_PROJECT_DIR/.claude/skills/heron-guard/bin/heron_guard.py\" ] && printf %s \"$CLAUDE_PROJECT_DIR\" || git rev-parse --show-toplevel)/.claude/skills/heron-guard/bin/heron_guard.py\"",
+            "command": "d=\"$(git rev-parse --show-toplevel 2>/dev/null)\"; [ -f \"$d/.claude/skills/heron-guard/bin/heron_guard.py\" ] || d=\"$CLAUDE_PROJECT_DIR\"; f=\"$d/.claude/skills/heron-guard/bin/heron_guard.py\"; if [ -f \"$f\" ]; then python \"$f\"; else echo \"Heron's boundary guard refused this edit: its script, .claude/skills/heron-guard/bin/heron_guard.py, was not found here, and the guard fails closed. Open the session in the Heron folder.\" >&2; exit 2; fi",
             "timeout": 30,
             "statusMessage": "Checking Heron's guard..."
           }
@@ -39,7 +39,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "d=\"$CLAUDE_PROJECT_DIR\"; [ -f \"$d/.claude/skills/heron-session/bin/main_moved.py\" ] || d=\"$(git rev-parse --show-toplevel 2>/dev/null)\"; [ -f \"$d/.claude/skills/heron-session/bin/main_moved.py\" ] || exit 0; python \"$d/.claude/skills/heron-session/bin/main_moved.py\"",
+            "command": "d=\"$(git rev-parse --show-toplevel 2>/dev/null)\"; [ -f \"$d/.claude/skills/heron-session/bin/main_moved.py\" ] || d=\"$CLAUDE_PROJECT_DIR\"; [ -f \"$d/.claude/skills/heron-session/bin/main_moved.py\" ] || exit 0; python \"$d/.claude/skills/heron-session/bin/main_moved.py\"",
             "timeout": 60
           }
         ]

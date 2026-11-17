@@ -206,6 +206,47 @@ def register_text(root=ROOT, read=None):
     return NL.join(out).replace(NL, eol)
 
 
+# WHAT A ROW SAYS IT NEEDS - ONE READER, SHARED. owner-queue.py and
+# check-gaps.py each had their own until row 5b-1173, and filed one row under
+# two needs: owner-queue sent AO7, DW4 and EX6 to the PC for the bare word
+# "windows" - Revit's Windows category - and check-gaps sent K2 and A18, which
+# say "On the PC: python tests/...", to a real Revit. Most specific first.
+NETWORK = re.compile(r"huggingface|sentence-transformers|a machine with a network|"
+                     r"a network that can reach|reach a model", re.I)
+CLOUD = re.compile(r"cloud session|setup script box|cloud environment", re.I)
+NO_REVIT = re.compile(r"no revit", re.I)
+# A REVIT IN SO MANY WORDS, which no "no Revit" elsewhere in the row undoes - A20
+# is "On the PC, in a real chat with Heron connected and a model open", EP9 "a PC
+# with Revit" beside a message "naming no Revit as open", EI4 a project "in front".
+MODEL_OPEN = re.compile(r"\bmodel open\b|a real model|\bin front\b|with revit\b|revit open",
+                        re.I)
+# The PC said in so many words - never the bare word "windows", which is as
+# often Revit's category of windows as it is the operating system.
+ON_THE_PC = re.compile(r"\bon the pc\b|owner'?s pc|setup\.ps1|powershell|\bon windows\b|"
+                       r"\bin windows\b|windows explorer|windows pc|not an administrator|"
+                       r"non-administrator", re.I)
+
+
+def need_of(text):
+    """What one open row needs, from its group's heading and its own line:
+    network, cloud, revit, windows, document - or unstated, which each tool
+    shows its own way (owner-queue as UNCLASSIFIED, check-gaps as a Revit)."""
+    if NETWORK.search(text):
+        return "network"
+    lowered = text.lower()
+    if MODEL_OPEN.search(text) or ("revit" in lowered and not NO_REVIT.search(text)):
+        return "revit"
+    # After a Revit, not before: a row that needs one often says what a cloud
+    # session could not do (EI4, EP9).
+    if CLOUD.search(text):
+        return "cloud"
+    if ON_THE_PC.search(text):
+        return "windows"
+    if "document" in lowered and ("numbered" in lowered or "clause" in lowered):
+        return "document"
+    return "unstated"
+
+
 def main():
     for stream in (sys.stdout, sys.stderr):
         try:

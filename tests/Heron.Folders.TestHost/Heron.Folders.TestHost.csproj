@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Writes the folder list the install scripts read - Q-58, decided 2026-11-15.
+
+    platform/README.md rule 3 says HeronPaths is the only thing that builds a
+    Heron path, and the install scripts run before any Heron assembly is on
+    the PC, so they cannot ask it. This asks it for them: it prints
+    platform/heron-folders.json as HeronPaths says it should read, and
+    tools/heron-folders.py writes that file or checks it.
+
+    HeronPaths.cs is linked BY SOURCE - the one file, compiled here - for the
+    reason Heron.CommandStore.TestHost links it: one copy of the rule, and the
+    release-independent question needs nothing else of Heron.Core. It links
+    no other file of Heron's, and tests/test_heron_folders.py fails if it does.
+
+    In tests/ because tests may depend on platform and tools may not
+    (tools/check-structure.py), and because the check is what builds it.
+    tools/check-compile.py builds it on every release like every other host.
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>$(HeronTfm)</TargetFramework>
+    <RootNamespace>Heron.Folders.TestHost</RootNamespace>
+    <AssemblyName>Heron.Folders.TestHost</AssemblyName>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\platform\Heron.Core\HeronPaths.cs" Link="HeronPaths.cs" />
+  </ItemGroup>
+
+</Project>

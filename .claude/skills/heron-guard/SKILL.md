@@ -32,9 +32,10 @@ So [`.claude/settings.json`](../../settings.json) wires it now - for `Write`, `E
 until 2026-11-16, and since D-166 also for `Bash`, `PowerShell` and the MCP tools that write a file or
 run a command (`write_file`, `edit_block`, `start_process`, `interact_with_process`), one anchored
 pattern - as
-`python` on `.claude/skills/heron-guard/bin/heron_guard.py` under `$CLAUDE_PROJECT_DIR` — or, when the
-script is not there, under the repository the hook runs in
-([`heron-session`](../heron-session/SKILL.md) says why) — every session, whether or not anybody reads
+`python` on `.claude/skills/heron-guard/bin/heron_guard.py` in the repository the hook runs in — or, outside
+one, under `$CLAUDE_PROJECT_DIR` (OPEN-QUESTIONS Q-81, 2026-11-15: until then the variable came first, and
+when it named a second checkout that copy's guard ran and let this one's edits through unchecked;
+[`heron-session`](../heron-session/SKILL.md) says more) — every session, whether or not anybody reads
 this page. **The frontmatter declares nothing, on purpose:** the host keeps a
 skill's copy of a hook separate from the settings' copy, so declaring it in both would run it twice.
 [`tests/test_heron_guard.py`](../../../tests/test_heron_guard.py) holds both halves, and runs the exact

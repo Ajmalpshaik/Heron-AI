@@ -223,6 +223,24 @@ def main():
         code, spoke = run({"mcp/server.py": "x = 1\n"})
         check(code == 2, "an empty brain/ exits 2, and it exits %r" % code)
         check("COULD NOT RUN" in spoke, "and says so in those words")
+
+        print()
+        print("6. A skill's hook in its bin/ is an importer; build output is not")
+        # Row 5b-1540: every hook here lives in .claude/skills/<name>/bin/,
+        # and SKIP_DIRS holds `bin` for .NET build output.
+        code, spoke = run({
+            "mcp/server.py": "x = 1\n",
+            "brain/hooked.py": "x = 1\n",
+            ".claude/skills/a-skill/bin/a_hook.py": "import hooked\n",
+            "brain/built.py": "x = 1\n",
+            "tools/thing/bin/generated.py": "import built\n",
+        }, ["--list"])
+        check("hooked" not in listed(spoke, B3),
+              "a module a skill's hook imports is not reached by nothing: %r"
+              % listed(spoke, B3))
+        check("built" in listed(spoke, B3),
+              "and a bin/ anywhere else is still build output, not read: %r"
+              % listed(spoke, B3))
     finally:
         tool.ROOT, tool.BRAIN_DIR, sys.argv = was
         shutil.rmtree(home, ignore_errors=True)

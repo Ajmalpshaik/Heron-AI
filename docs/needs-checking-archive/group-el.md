@@ -16,3 +16,23 @@
 **Look for.** **Either** the reply lists it in `dialogs` with its id and `dialog_refused` (it does raise the event - so any Heron prompt inside a job MUST sit inside `HeronAsks()`), **or** the dialog appears and waits for a click (it does not). Write down which, and the id if one came - **Struck 2026-10-18:** answered on Revit 2024, 2026-10-18 - it raises the event - the results table under *The 2026-10-18 run* below.
 
 ---
+
+### Row EL2
+
+*Moved from the register on 2026-11-17.*
+
+**Run.** Whether `OverrideResult` works for that dialog. Read EL1's `dialogs` entry
+
+**Look for.** `answer` is Cancel or Close - Revit took the override. If it reads *none - Revit would not take an answer*, the dialog stayed open: close it by hand, record that here, and `BasicFileInfo.Extract` before `LoadFamily` (row 300's other fix) becomes the way for this dialog **Struck 2026-11-13:** PASSED - the verdict is in this file's *The 2026-10-18 run*, which records it run and passed.
+
+---
+
+### Row EL5
+
+*Moved from the register on 2026-11-17.*
+
+**Run.** The negative. `LOAD_FAMILY` with a family saved in Revit 2020, and any read such as `revit_health`
+
+**Look for.** Neither reply carries `dialogsAnswered` or `dialogs`, the family loads as before, and the audit lines have no `dialogs` number - a job no dialog interrupted reads exactly as it did. **The D-30 negative** **Struck 2026-11-13:** PASSED - the verdict is in this file's *The 2026-10-18 run*, which records it run and passed.
+
+---

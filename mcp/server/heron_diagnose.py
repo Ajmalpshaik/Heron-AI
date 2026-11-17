@@ -31,7 +31,10 @@ IT COMPOSES, IT DOES NOT REIMPLEMENT
 ------------------------------------
 `heron_health.assess` already builds the live picture and already decides what
 "worst" means; this calls it rather than growing a second opinion about
-whether a bridge is healthy. The knowledge layer answers through the same seam
+whether a bridge is healthy. The same for the write gate: it is decided from
+what each connected Revit says by `heron_health.write_gate`, the rule
+`revit_health` uses, so the two cannot give opposite words in one chat
+(row 5b-1744). The knowledge layer answers through the same seam
 the MCP tools use. The version picture comes from the Compatibility Matrix.
 Nothing here is a fresh judgement about a component that already has one -
 where this file adds a Component of its own, it is for something nobody else
@@ -71,7 +74,20 @@ def _component(name, state, detail):
 
 
 def _live_picture(components, notes):
-    """Config, discovery, the bridge, the versions - via the existing assessor."""
+    """
+    Config, discovery, the bridge, the versions - via the existing assessor.
+    Returns {"rollup": that Health, "switches": [(Revit, its lines)]}.
+
+    THE WRITE GATE IS WHAT EACH CONNECTED REVIT SAYS, BY revit_health's RULE
+    (row 5b-1744, D-166). It was this chat's own copy of heron.config, and
+    then, once D-166 took the switches out of every file, no answer at all -
+    while revit_health said what each Revit holds. So each connected Revit
+    is asked, through the lease-exempt `info` and nothing else, and
+    heron_health.write_gate decides the gate from those answers: not known
+    when none says, never read from a file. Each Revit's Ask to Keep and
+    Changes, Admin and Publish are said in revit_health's own lines, as that
+    Revit reported them. What Revit decides is not touched.
+    """
     try:
         import heron_bridge_client as bridge
         import heron_config as configuration
@@ -90,16 +106,32 @@ def _live_picture(components, notes):
         notes.append("the session list could not be read: %s" % exc)
 
     settings = configuration.load()
+    held, asks = {}, {}
+    for b in live:
+        try:
+            held[b.pid] = bridge.switches_state(b)
+            asks[b.pid] = bridge.ask_to_keep_state(b)
+        finally:
+            closing = getattr(b, "close", None)
+            if callable(closing):
+                closing()
+    # Held in each Revit since D-166, so what the Revits said, by the rule
+    # revit_health uses - never this side's file (row 5b-1744).
+    writing, said_by = HEALTH.write_gate(live, held)
     rollup = HEALTH.assess(
         live=live, starting=starting, mismatched=mismatched,
         config_problems=configuration.problems(settings),
-        # Held in each Revit since D-166; revit_health asks each one.
-        writing=None,
+        writing=writing,
         protocol_version=bridge.PROTOCOL_VERSION,
         versions_agree=not mismatched,
-        discovery_readable=readable)
+        discovery_readable=readable,
+        writing_said_by=said_by)
     components.extend(rollup.components)
-    return rollup
+    switches = [("Revit %s, session %s" % (b.revit_version, b.pid),
+                 [HEALTH.ask_to_keep_line(asks[b.pid]),
+                  HEALTH.switches_line(held[b.pid])])
+                for b in live]
+    return {"rollup": rollup, "switches": switches}
 
 
 def _knowledge(components, notes):
@@ -402,6 +434,17 @@ def describe(found):
         lines.append("Working:")
         for c in sorted(healthy, key=lambda c: c.name):
             lines.append("  %-12s %s" % (c.name, c.detail))
+        lines.append("")
+
+    # EACH CONNECTED REVIT'S SWITCHES, in revit_health's own lines (row
+    # 5b-1744) - the write gate above is decided from what these said.
+    live = found.get("live")
+    switches = live.get("switches") if isinstance(live, dict) else None
+    if switches:
+        lines.append("Switches, as each connected Revit has them:")
+        for revit, said in switches:
+            lines.append("  %s" % revit)
+            lines.extend("    %s" % line for line in said)
         lines.append("")
 
     if found["notes"]:

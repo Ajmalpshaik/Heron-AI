@@ -72,13 +72,16 @@ to the generic execute capability ([D-03](DECISIONS.md)); Admin Mode grants acce
 which is itself a security boundary ([21 §9](21-resilience-and-operations.md)).
 
 That means mode cannot be inferred from conversation. ~~**Persona** may be inferred — it only changes
-wording.~~ **Mode** must be granted. Conflating the two would let a user talk their way into `ADMIN`.
+wording.~~ **Mode** must be granted. ~~Conflating the two would let a user talk their way into `ADMIN`.~~
+**A mode read from what a chat says would let a user talk their way into `ADMIN`.**
 
 > **[D-27](DECISIONS.md#d-27--one-voice-and-the-answers-shape-follows-the-questions-shape), 2026-08-28:**
 > there is no persona to infer (§2), so nothing about the user is inferred at all — which makes the rule
 > above stronger, not weaker: a mode is granted, by a person, and nothing a chat says stands in for that.
 > [`heron_profile.py`](../brain/heron_profile.py) (`HERON-USR-PRO-001`, DRAFT) refuses a fact that was inferred
-> rather than declared, and a mode that no person granted. The struck sentence is recorded as [PROPOSALS F19](PROPOSALS.md).
+> rather than declared, and a mode that no person granted. The struck sentence is recorded as [PROPOSALS F19](PROPOSALS.md),
+> and so is the second one: with no persona left to conflate with a mode, it was rewritten on 2026-11-15,
+> on F19's decision of that day, to say the danger itself.
 
 > **As built (2026-10-18): no modes, and the permission boundary is the add-in's switches** - on the
 > Revit ribbon then, in Heron's Settings window since 2026-11-07 ([D-150](decisions/D-150.md)).

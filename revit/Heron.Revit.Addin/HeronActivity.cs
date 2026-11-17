@@ -175,18 +175,58 @@ namespace Heron.Revit.Addin
                 Json.Str("claim", "no"));
         }
 
-        /// <summary>The request Undo sends - D-157's undo_last, a look at the hold only.</summary>
-        internal static string UndoRequest()
+        /// <summary>
+        /// The request Undo sends for `row` - the add-in's pane-only
+        /// `undo_from_pane` (row 5b-1741), FOR THE CHANGE THE BUTTON SITS
+        /// BESIDE: the run it was kept in, its model and its name.
+        ///
+        /// IT NAMES NO CHAT. The owner's answer of 2026-11-16: the pane's Undo
+        /// is the modeller's own click in Revit, like Ctrl+Z, and undoes Heron's
+        /// last change in the model on screen whichever chat made it. D-157's
+        /// guard still decides, in the add-in, and the add-in answers this only
+        /// when the pane's own door sent it - never off the pipe.
+        ///
+        /// NEVER `undo_last`. The button sent it until row 5b-1741, and nothing
+        /// had answered it since the operation was renamed; the first build's
+        /// Revit still answers it by its older rule, so it means nothing here.
+        /// </summary>
+        internal static string UndoRequest(Row row)
         {
-            return Json.Obj(Json.Str("op", "undo_last"), Json.Str("claim", "no"));
+            return Json.Obj(
+                Json.Str("op", "undo_from_pane"),
+                Json.Str("run", row == null ? null : row.Run),
+                Json.Str("document", row == null ? null : row.Document),
+                Json.Str("fragment", row == null ? null : row.Fragment),
+                // NEVER TAKES THE MODEL FROM A CHAT (D-141).
+                Json.Str("claim", "no"));
         }
 
-        /// <summary>The words a reply ends in on the pane's status line.</summary>
+        /// <summary>
+        /// The words a reply ends in on the pane's status line - the add-in's
+        /// own sentence, in Revit words.
+        ///
+        /// NEVER AN OPERATION'S NAME OR A BARE CODE (row 5b-1741). A refusal
+        /// for an operation the add-in does not know, or has no handler for,
+        /// is worded for a chat - it names the operation and lists the rest -
+        /// and that list is what the broken Undo put on this line. The pane and
+        /// the add-in are one build, so either is a fault in Heron; it is said
+        /// as that. A refusal with no sentence says it in words too.
+        /// </summary>
         internal static string Said(string reply)
         {
             if (string.IsNullOrEmpty(reply)) return "Revit did not answer.";
-            return Json.ReadString(reply, "said") ?? Json.ReadString(reply, "message")
-                   ?? Json.ReadString(reply, "error") ?? "Done.";
+            var error = Json.ReadString(reply, "error");
+            if (error == "unknown_op" || error == "not_implemented")
+            {
+                return "Heron's pane asked for something this Heron does not do - a fault in Heron, "
+                     + "not something you did. Nothing was sent to Revit and nothing was changed.";
+            }
+            var said = Json.ReadString(reply, "said") ?? Json.ReadString(reply, "message");
+            if (!string.IsNullOrEmpty(said)) return said;
+            return error == null
+                ? "Done."
+                : "Heron could not do that, and gave no reason. Nothing more is known here - "
+                  + "look at the model before trying again.";
         }
     }
 }

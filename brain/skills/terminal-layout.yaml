@@ -12,9 +12,18 @@ source: OFFICIAL
 
 risk: MODIFY
 
+# 2026-11-15 (PROPOSALS F42-3, decided on the owner's delegation): it reaches
+# the HVAC engine the way space-airflow does since 2026-10-04 - a skill names
+# CAPABILITIES, and the brain-side calculation is the MCP tool heron_hvac,
+# which the purpose names in words. The capabilities it places with are what
+# `needs` lists.
 purpose: >
   Works out how many air terminals a room needs and places them on a sensible
-  grid.
+  grid. The count and spacing come from the tool heron_hvac's
+  diffuser_layout calculation on the room's airflow and the throw or coverage
+  the modeller confirms for this request - every design value asked, never
+  filled in (D-33) - and diffuser_select where the modeller asks which
+  terminal; then the terminals are placed and their coverage read back.
 
 # The words Ajmal actually says, not the words the technique is named after.
 utterances:

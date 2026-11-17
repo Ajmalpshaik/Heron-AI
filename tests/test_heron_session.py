@@ -844,7 +844,7 @@ def run_all(home):
                                   input=json.dumps(payload),
                                   capture_output=True, text=True,
                                   encoding="utf-8", cwd=cwd,
-                                  env=dict(env, CLAUDE_PROJECT_DIR=plain,
+                                  env=dict(dict(env, CLAUDE_PROJECT_DIR=plain),
                                            **extra),
                                   timeout=120)
 
@@ -865,6 +865,34 @@ def run_all(home):
         check(got.returncode == 0 and "cloud container" in got.stdout,
               "and the prompt hook found that way is the real one - it warns "
               "on a LOCAL prompt in a cloud container")
+
+        # OPEN-QUESTIONS Q-81, decided 2026-11-15: when the variable names a
+        # SECOND Heron checkout, the hook still runs the scripts of the one
+        # it runs in. A fake copy whose scripts would wave everything
+        # through, and say so, must never be the one that answers.
+        other = tempfile.mkdtemp(prefix="heron-other-checkout-")
+        try:
+            for rel in (".claude/skills/heron-guard/bin/heron_guard.py",
+                        ".claude/skills/heron-session/bin/local_only.py"):
+                path = os.path.join(other, *rel.split("/"))
+                os.makedirs(os.path.dirname(path))
+                with io.open(path, "w", encoding="utf-8") as fake:
+                    fake.write("print('THE-OTHER-CHECKOUT')\n")
+            got = run_wired(guard[0], forbidden, ROOT,
+                            CLAUDE_PROJECT_DIR=other) if guard else None
+            check(got is not None and '"deny"' in got.stdout
+                  and "THE-OTHER-CHECKOUT" not in got.stdout,
+                  "with the variable naming another checkout, the guard that "
+                  "answers is this repository's, and it refuses (Q-81)")
+            got = run_wired(pcommand, {"session_id": "s-5o",
+                                       "prompt": "LOCAL SESSION - prove D3"},
+                            ROOT, CLAUDE_CODE_REMOTE="true",
+                            CLAUDE_PROJECT_DIR=other)
+            check("THE-OTHER-CHECKOUT" not in got.stdout
+                  and "cloud container" in got.stdout,
+                  "and so is the prompt hook (Q-81)")
+        finally:
+            shutil.rmtree(other, ignore_errors=True)
 
         # Outside any git repository the fallback has nothing to find. The
         # three advice hooks are never a gate, so they say nothing and exit 0
@@ -887,15 +915,20 @@ def run_all(home):
                   "outside any git repository, with no script to find, the "
                   "advice hook is silent and exits 0: %s"
                   % wired.rsplit("/", 1)[-1].rstrip('"'))
-        # The guard is deny-tier, and is left failing closed there on
-        # purpose: with no script to run, a refusal is the boundary holding.
-        # Whether that should change is the owner's call - OPEN-QUESTIONS
-        # Q-80. This pins today's answer, so a change to it is deliberate.
+        # The guard is deny-tier, and fails closed there on purpose: with no
+        # script to run, a refusal is the boundary holding. OPEN-QUESTIONS
+        # Q-80, decided 2026-11-15: keep refusing, and say why in plain words
+        # rather than python's "can't open file".
         got = run_wired(guard[0], forbidden, plain, **nowhere) if guard \
             else None
-        check(got is not None and got.returncode != 0,
-              "and the guard, in the same place, still does NOT exit 0 - it "
-              "fails closed until the owner decides Q-80")
+        check(got is not None and got.returncode == 2,
+              "and the guard, in the same place, still refuses - exit 2, "
+              "which blocks whatever the host makes of stdout")
+        check(got is not None and "was not found" in got.stderr
+              and "Open the session in the Heron folder" in got.stderr
+              and "can't open file" not in got.stderr,
+              "and says why in plain words (Q-80): %r"
+              % (got.stderr.strip()[:120] if got else None))
     else:
         print("  note  the commands were not run with another folder in "
               "$CLAUDE_PROJECT_DIR: no bash here, or Windows - a real session "

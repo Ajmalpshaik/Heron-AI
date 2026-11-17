@@ -33,7 +33,7 @@ here:
      2  Agent Contract       its interface, validated
      3  Instructions         what it will be told, assembled
      4  Model Router         who would answer, by intent
-     5  Availability         are they there, and is the answer degraded
+     5  Availability         is the answer degraded (who answered: the host)
      6  Budget               may it be afforded, and what did it cost
      7  Event Bus            who hears that it ran
      8  Secret Manager       nothing it says reaches a log with a token in it
@@ -136,19 +136,24 @@ def main():
     carried["adapter"] = routed["adapter"]
 
     print()
-    print("5. Availability - and is the answer degraded")
-    probes = {carried["adapter"]: {"reachable": True, "auth": True,
-                                  "latency_ms": 30, "context_limit": 8000},
-              "the-host": {"reachable": True, "auth": True}}
-    healthy = AVAIL.resolve(router, "CLASSIFY", probes)
-    check(healthy["adapter"] == carried["adapter"],
-          "availability probes the adapter the ROUTER chose, not one of its own")
-    check(AVAIL.counts_as_evidence(healthy), "a healthy first choice is evidence")
+    print("5. Availability - is the answer degraded")
+    # THE HOST SAYS WHICH ANSWERED, AND THIS STEP ONLY MARKS IT (row 5b-1747,
+    # 2026-11-16). It chose the fallback itself, with resolve(), until
+    # HERON-KRN-MAV-017 was cut to its register row: whether a provider is
+    # reachable, and the fallback when it is not, are the host's (D-65). The
+    # seam left to fit is the mark on the adapter the ROUTER chose, and the
+    # evidence rule reading it.
+    healthy = AVAIL.mark({"adapter": carried["adapter"]}, fell_back=False)
+    check(healthy.get("adapter") == carried["adapter"],
+          "the mark rides on the adapter the ROUTER chose, not one of its own")
+    check(AVAIL.counts_as_evidence(healthy), "a first choice is evidence")
 
-    probes[carried["adapter"]] = {"reachable": False}
-    degraded = AVAIL.resolve(router, "CLASSIFY", probes)
-    check(degraded["degraded"] and not AVAIL.counts_as_evidence(degraded),
-          "with it down, the fallback answers and is not evidence")
+    fallback = [name for name, _kind in router.candidates("CLASSIFY", False)
+                if name != carried["adapter"]][0]
+    degraded = AVAIL.mark({"adapter": fallback}, fell_back=True)
+    check(degraded.get("degraded") and not AVAIL.counts_as_evidence(degraded),
+          "when the host says %s answered instead, it is marked degraded and "
+          "is not evidence" % fallback)
     carried["degraded"] = degraded["degraded"]
 
     print()
@@ -160,7 +165,7 @@ def main():
     book.record(BUDGET.SESSION, 1, "calls",
                 reported_by="the %s adapter" % degraded["adapter"])
     check(degraded["adapter"] in book.ledger[-1][3],
-          "and the ledger names the adapter AVAILABILITY settled on")
+          "and the ledger names the adapter the host said answered")
     check(book.remaining(BUDGET.SESSION) == 99,
           "the budget moved by what was reported, not by an estimate")
 

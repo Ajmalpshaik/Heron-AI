@@ -289,10 +289,95 @@ def _started(*args, **popen):
     return proc, pipe_name, token
 
 
+def _read_answer(handle):
+    """The one line a request sent by hand is answered with, or None at end of stream."""
+    line = b""
+    while not line.endswith(b"\n"):
+        chunk = handle.read(1)
+        if not chunk:
+            break
+        line += chunk
+    return json.loads(line.decode("utf-8").strip()) if line.strip() else None
+
+
+def lease_held_while_waiting(pipe_name, failures):
+    """
+    A JOB WAITING FOR THE MODELLER HOLDS ITS CHAT'S LEASE - row 5b-1745.
+
+    The bridge claims the lease as a request ARRIVES, and nothing renewed it
+    while the job ran, so a Keep or Discard box, the delete box or a pick left
+    open past `bridge.leaseMinutes` let a chat with another client id take
+    this Revit mid-wait. The add-in now holds the lease for the job's own
+    client while it waits (RevitDispatcher.AwaitingModeller), and its clock
+    starts again when the job ends. `test_awaiting_modeller` is the host's
+    stand-in for that job, as `test_wait` is for Revit working.
+
+    WHAT THIS CANNOT WAIT FOR: the lease outlasting its own lifetime - five
+    minutes as installed. tests/Heron.Kernel.TestHost runs that, section 11, on
+    a clock of its own. This holds the half only the pipe can show: the one
+    lease this host's bridge has, held and let go through HeronLease, and the
+    other chat told why.
+    """
+    print("A job waiting for the modeller holds its chat's lease (row 5b-1745):")
+    waiting = connect(pipe_name, timeout=3.0)
+    try:
+        call(waiting, "no_such_operation", client=CLIENT)       # chat A holds it, renewed now
+        before = call(waiting, "info", client=CLIENT).get("leaseSecondsRemaining")
+        waiting.write((json.dumps({"op": "test_awaiting_modeller", "ms": "3000", "token": TOKEN,
+                                   "client": CLIENT}) + "\n").encode("utf-8"))
+        time.sleep(0.5)                       # the stand-in job is waiting now
+        other = connect(pipe_name, timeout=3.0)
+        try:
+            reply = call(other, "no_such_operation", client=OTHER_CLIENT)
+            message = reply.get("message") or ""
+            if (reply.get("error") == "session_in_use"
+                    and "waiting for an answer in Revit" in message):
+                print("  PASS  chat B is refused while chat A's job waits, and told it waits "
+                      "for an answer in Revit")
+            else:
+                failures.append("while chat A's job waited for the modeller, chat B got %r" % reply)
+
+            answer = _read_answer(waiting)
+            if answer and answer.get("ok") and answer.get("held") is True:
+                print("  PASS  the waiting job held chat A's lease")
+            else:
+                failures.append("the job waiting for the modeller held no lease: %r" % answer)
+
+            after = call(other, "info", client=CLIENT)
+            remaining = after.get("leaseSecondsRemaining")
+            if (after.get("inUse") is True and after.get("mine") is True
+                    and isinstance(before, int) and isinstance(remaining, int)
+                    and remaining >= before - 1):
+                print("  PASS  and once it ends the lease is chat A's still, its clock started "
+                      "again from the end of the wait (%ss left, %ss before it)"
+                      % (remaining, before))
+            else:
+                failures.append("after the wait the lease said inUse=%r mine=%r with %r s left, "
+                                "against %r s before a 3 s wait - counted from before it"
+                                % (after.get("inUse"), after.get("mine"), remaining, before))
+
+            reply = call(other, "no_such_operation", client=OTHER_CLIENT)
+            message = reply.get("message") or ""
+            if (reply.get("error") == "session_in_use" and "It frees up after about" in message
+                    and "waiting for an answer" not in message):
+                print("  PASS  the hold ended with the job: chat B's refusal reads as it always did")
+            else:
+                failures.append("after the job ended chat B got %r" % reply)
+        finally:
+            other.close()
+    finally:
+        waiting.close()
+
+
 def ask_to_keep_said(failures):
     """
     `info` says what the owner's Ask to Keep switch is, read at the moment of
     the call (added 2026-11-12, tests/test_ask_to_keep_health.py has the rest).
+    And, since 2026-11-16 (Q-70), the settings file the add-in reads and
+    whether it was there - and, since D-166, Changes, Admin and Publish as it
+    holds them in memory, which a switch line written into that file under the
+    same running host does NOT move (tests/test_config_and_health.py has the
+    rest).
 
     A HOST OF ITS OWN, WITH A SETTINGS FOLDER OF ITS OWN. The switch is a line
     in the settings file the kernel finds through the operating system's
@@ -340,6 +425,24 @@ def ask_to_keep_said(failures):
             # differently from one that is there and null.
             return reply.get("askToKeep", "missing") if reply.get("ok") else reply
 
+        # AND THE FILE IT READS, AND ITS SWITCHES (Q-70, D-166, 2026-11-16):
+        # the path the add-in read, whether it was there, and Changes, Admin
+        # and Publish as it holds them - all three off in a fresh host, which
+        # is a Revit that has just started - before any file exists.
+        def held(reply):
+            return dict((k, reply.get(k)) for k in ("changes", "admin", "publish"))
+
+        blank = call(handle, "info")
+        off = {"changes": False, "admin": False, "publish": False}
+        if (blank.get("settingsFile") == settings and blank.get("settingsFileFound") is False
+                and held(blank) == off and "switches" not in blank):
+            print("  PASS  no settings file: info names the file it would read, says it "
+                  "is not there, and every switch off")
+        else:
+            failures.append("settings: with no file info said file=%r found=%r switches=%r"
+                            % (blank.get("settingsFile"), blank.get("settingsFileFound"),
+                               held(blank)))
+
         first = said(None)
         if first is False:
             print("  PASS  no settings file: info says false - off, the default")
@@ -354,11 +457,31 @@ def ask_to_keep_said(failures):
         else:
             failures.append("ask to keep: switched on mid-session, info said %r, not true" % (on,))
 
-        off = said("false")
-        if off is False:
+        again = said("false")
+        if again is False:
             print("  PASS  switched off again: the next info says false")
         else:
-            failures.append("ask to keep: switched off mid-session, info said %r, not false" % (off,))
+            failures.append("ask to keep: switched off mid-session, info said %r, not false"
+                            % (again,))
+
+        # THE SWITCHES, WRITTEN INTO THE FILE UNDER THE SAME RUNNING HOST -
+        # AND NOT MOVED BY IT (D-166). Until the merge that brought D-166 in,
+        # this flipped Changes and Admin on through the file and held that
+        # the next info said so; since D-166 the three are held in memory and
+        # a line naming one is ignored, so what is held is the opposite: the
+        # file is found and named, and every switch is still off.
+        def switches_said(text):
+            with open(settings, "w") as fh:
+                fh.write(text)
+            reply = call(handle, "info")
+            return (reply.get("settingsFile"), reply.get("settingsFileFound"), held(reply))
+
+        on = switches_said("write.enabled = true\nadmin.enabled = on\npublish.enabled = yes\n")
+        if on == (settings, True, off):
+            print("  PASS  Changes, Admin and Publish written ON into the file while the bridge "
+                  "runs: the next info names the file and says all three still off (D-166)")
+        else:
+            failures.append("settings: a file turning the switches on moved info: %r" % (on,))
 
         # Asking is still not claiming: three infos later nobody holds it.
         lease = call(handle, "info")
@@ -798,6 +921,8 @@ def main():
                 print("  PASS  and only then is it dropped")
         finally:
             owed.close()
+
+        lease_held_while_waiting(pipe_name, failures)
 
     except Exception as exc:
         failures.append("%s: %s" % (type(exc).__name__, exc))

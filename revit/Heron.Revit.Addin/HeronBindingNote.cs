@@ -374,6 +374,65 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
+        /// How a run was TAKEN BACK, in the words the chain keeps beside what
+        /// it left - or null when what it left stands in the model.
+        ///
+        /// OPEN-QUESTIONS Q-89, decided 2026-11-15 on the owner's delegation:
+        /// as built - every run replaces what is carried - and Heron also
+        /// refuses any attempt to use what a run that was taken back left.
+        /// Elements Revit no longer has can never be handed on to a real change.
+        ///
+        ///   a read                    null - it opens nothing to take back
+        ///   a change Revit kept       null
+        ///   a keep Revit counted      null - D-160 rolls it back so no empty
+        ///     nothing in                undo entry is left, and the model holds
+        ///                               exactly what the run reported
+        ///   the modeller was asked    a Discard (D-126) - or Escape, or the box
+        ///     and did not keep it       closed, which are the same answer
+        ///   anything else             a run sent without `apply`: a dry run
+        ///                               (D-155) or a proof's trial (D-55)
+        ///
+        /// Nothing here touches an Autodesk type, so it is proved without Revit
+        /// in Heron.BindingNote.TestHost.
+        /// </summary>
+        internal static string TakenBack(bool writing, bool kept, bool asked, bool keptNothing)
+        {
+            if (!writing || kept || keptNothing) return null;
+            return asked
+                ? "a change the modeller did not keep in Revit (Discard)"
+                : "a run sent without apply - a dry run or a proof's trial - and rolled back";
+        }
+
+        /// <summary>
+        /// The refusal for an expectation met by what a run that was taken
+        /// back left (Q-89): what was taken back, and what to run instead.
+        ///
+        /// WHATEVER THE CALLER EXPECTS. When it names the run that was taken
+        /// back, what it wants is of a change Revit no longer holds - the ids
+        /// of anything that run made among it. When it names an earlier run,
+        /// that run's values were replaced by the one taken back, as every run
+        /// replaces them (the half of Q-89 kept as built), so it is run again.
+        /// Both are said under this name rather than as a mismatch, because
+        /// what to do next is the same: run something again, and keep it.
+        /// </summary>
+        internal static string CarriedFromTakenBack(string wanted, string by, string how,
+                                                    string target)
+        {
+            var leftBy = string.IsNullOrEmpty(by) ? "(unknown)" : by;
+            var again = string.Equals(wanted, by, System.StringComparison.OrdinalIgnoreCase)
+                ? "Run '" + wanted + "' again and keep it - only when the modeller says "
+                  + "to - then send this."
+                : "Run '" + wanted + "' again, then send this.";
+
+            return "This request expects values left by '" + wanted + "', and what is "
+                 + "carried for this chat on '" + target + "' was left by '" + leftBy + "', "
+                 + (string.IsNullOrEmpty(how) ? "a run that was taken back" : how) + ". "
+                 + "What a run that was taken back left - the ids of anything it made among "
+                 + "it - is of a change Revit no longer holds, and Heron never hands it on. "
+                 + again + " NOTHING WAS BOUND and no fragment ran.";
+        }
+
+        /// <summary>
         /// The element ids a caller TYPED for `elementIds`, as text, or null
         /// when the text is not a list of ids - a name, the word `selected`,
         /// a blank - and the binder's other rules decide it as before.

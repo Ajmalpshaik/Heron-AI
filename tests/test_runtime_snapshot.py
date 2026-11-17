@@ -50,6 +50,174 @@ def verdict(snap, name):
     return [c for c in snap.capabilities if c.name == name][0]
 
 
+ADMINISTER = {"id": "FRG-PAR-010", "risk": "ADMIN", "revit": ["2024"], "status": "PROVEN"}
+PUBLISHER = {"id": "FRG-EXP-001", "risk": "PUBLISH", "revit": ["2024"], "status": "PROVEN"}
+ABOVE = {"MOVE_ELEMENTS": [WRITER], "ADD_PROJECT_PARAMETER": [ADMINISTER],
+         "EXPORT_TO_IFC": [PUBLISHER]}
+
+
+def switched(**switches):
+    """A snapshot of ABOVE on a connected 2024 with these switches - or None,
+    said as one failure, from a snapshot() that does not take them."""
+    try:
+        return rt.snapshot(sorted(ABOVE), ABOVE, release="2024",
+                           bridge="connected", **switches)
+    except TypeError as why:
+        check(False, "snapshot() takes the Admin and Publish switches - %s" % why)
+        return None
+
+
+def switches_above_changes():
+    """
+    D-106 HAS THREE SWITCHES, AND THE SNAPSHOT KNEW ONE (FRAGMENT-ISSUES row
+    254, item 5). Changes alone gave a ceiling of ADMIN, so an Admin or
+    Publish capability read as permitted with only Changes on - which the
+    add-in refuses. Harmless while nothing called it; heron_why serves it
+    since PROPOSALS F1, 2026-11-15.
+    """
+    print()
+    print("The switches above Changes each let their own level through (D-106)")
+    # BY THE SWITCH'S NAME, NOT ITS KEY, SINCE D-166. These named the settings
+    # keys - admin.enabled, publish.enabled, write.enabled - until the merge of
+    # 2026-11-16 that brought D-166 in: the three left heron.config for
+    # Revit's memory, and no refusal names a key or a file any more, only the
+    # switch and Heron's Settings. Changed on purpose, not to get to green.
+    alone = switched(write_enabled=True)
+    if alone is not None:
+        check(verdict(alone, "MOVE_ELEMENTS").verdict == rt.AVAILABLE,
+              "Changes on lets a MODIFY capability through")
+        check(verdict(alone, "ADD_PROJECT_PARAMETER").verdict == rt.BLOCKED_BY_TRUST
+              and "Admin is off" in verdict(alone, "ADD_PROJECT_PARAMETER").detail
+              and "Heron's Settings in Revit" in verdict(alone, "ADD_PROJECT_PARAMETER").detail,
+              "and NOT an ADMIN one - it names the Admin switch and Settings - found %s: %s"
+              % (verdict(alone, "ADD_PROJECT_PARAMETER").verdict,
+                 verdict(alone, "ADD_PROJECT_PARAMETER").detail))
+        check(verdict(alone, "EXPORT_TO_IFC").verdict == rt.BLOCKED_BY_TRUST
+              and "Publish is off" in verdict(alone, "EXPORT_TO_IFC").detail,
+              "nor a PUBLISH one - it names the Publish switch")
+    admin = switched(write_enabled=True, admin_enabled=True)
+    if admin is not None:
+        check(verdict(admin, "ADD_PROJECT_PARAMETER").verdict == rt.AVAILABLE,
+              "Changes and Admin on let the ADMIN capability through")
+        check(verdict(admin, "EXPORT_TO_IFC").verdict == rt.BLOCKED_BY_TRUST,
+              "and still not the PUBLISH one - Admin is not a higher ceiling")
+    publish = switched(write_enabled=True, publish_enabled=True)
+    if publish is not None:
+        check(verdict(publish, "EXPORT_TO_IFC").verdict == rt.AVAILABLE
+              and verdict(publish, "ADD_PROJECT_PARAMETER").verdict == rt.BLOCKED_BY_TRUST,
+              "Changes and Publish on let PUBLISH through and not ADMIN")
+    without = switched(admin_enabled=True, publish_enabled=True)
+    if without is not None:
+        check(all(verdict(without, n).verdict == rt.BLOCKED_BY_TRUST
+                  and "Changes is off" in verdict(without, n).detail for n in ABOVE),
+              "and neither does anything with Changes off - each names the Changes switch")
+        check(not any(word in verdict(snap, n).detail
+                      for snap in (alone, without) for n in ABOVE
+                      for word in (".enabled", "heron.config")),
+              "and no refusal names a settings key or the file (D-166)")
+
+
+def in_revit_words():
+    """
+    PROPOSALS F1: what heron_why hands a modeller - for each of the six
+    verdicts, the reason in Revit words and what can be done about it. Each
+    sentence is held to the reason it belongs to, and no two are the same.
+    """
+    print()
+    print("Each verdict in Revit words, and what the modeller can do (PROPOSALS F1)")
+    words = getattr(rt, "in_revit_words", None)
+    check(words is not None, "heron_runtime has in_revit_words")
+    if words is None:
+        return
+    how = "2 Revits are connected and none has been chosen"
+    button = "Heron > AI Bridge > Heron"
+    live = rt.snapshot(ASKED, LIBRARY, release="2024", bridge="connected")
+    idle = rt.snapshot(ASKED, LIBRARY, release="2024", bridge="none")
+    blind = rt.snapshot(ASKED, LIBRARY)
+    admin = rt.snapshot(["ADD_PROJECT_PARAMETER"], ABOVE, release="2024",
+                        bridge="connected", write_enabled=True)
+
+    def say(snap, name, **kw):
+        rows = (LIBRARY.get(name) or ABOVE.get(name))
+        return words(verdict(snap, name), rows, **kw)
+
+    cases = [
+        ("NO_PROVIDER", say(live, "NOT_IN_THE_LIBRARY", release="2024"),
+         ["no way of doing NOT_IN_THE_LIBRARY", "nothing in its library",
+          "heron_lookup"]),
+        ("UNSUPPORTED_RELEASE", say(live, "NEW_ONLY", release="2024"),
+         ["not on Revit 2024", "written for Revit 2027 only",
+          "written and checked for Revit 2024"]),
+        ("NOT_DETECTED", say(blind, "SET_SELECTION", how=how),
+         ["cannot tell which Revit release", how, "not a no", "revit_use_session"]),
+        ("BLOCKED_BY_TRUST", say(live, "MOVE_ELEMENTS", release="2024"),
+         ["changes the model", "Changes is off", "Heron's Settings in Revit",
+          "Revit is right"]),
+        ("NEEDS_REVIT", say(idle, "SET_SELECTION", release="2024"),
+         ["no Revit 2024 has Heron connected", button, "revit_health"]),
+        ("AVAILABLE", say(live, "SET_SELECTION", release="2024"),
+         ["Nothing stands in the way of SET_SELECTION on Revit 2024"]),
+    ]
+    for name, (what, can_do), phrases in cases:
+        text = what + " " + can_do
+        missing = [p for p in phrases if p not in text]
+        check(not missing, "%s reads as its own reason - missing %s"
+              % (name, missing or "nothing"))
+        check(not any(v in text for v in (rt.AVAILABLE, rt.NO_PROVIDER,
+                                          rt.UNSUPPORTED_RELEASE, rt.NOT_DETECTED,
+                                          rt.BLOCKED_BY_TRUST, rt.NEEDS_REVIT)),
+              "%s is said in Revit words, never as a verdict's name" % name)
+    check(len(set(what for _n, (what, _d), _p in cases)) == len(cases),
+          "no two of the six reasons are the same sentence")
+
+    upper = words(verdict(admin, "ADD_PROJECT_PARAMETER"),
+                  ABOVE["ADD_PROJECT_PARAMETER"], release="2024", write_enabled=True)
+    check("Admin is off" in upper[0] and "Changes is off" not in upper[0]
+          and "turns Admin on" in upper[1],
+          "with Changes on, an Admin capability names the Admin switch, not "
+          "Changes - found %r" % (upper[0],))
+
+    away = words(verdict(idle, "SET_SELECTION"), [READER], release="2024",
+                 no_revit_here=True)
+    check("no Revit on this machine (it is not Windows)" in away[0]
+          and "Windows PC" in away[1] and button in away[1],
+          "with no Revit on this machine it says so, and that it is done on "
+          "the modeller's Windows PC")
+    far = rt.snapshot(["MOVE_ELEMENTS"], LIBRARY, release="2024", bridge="none",
+                      ceiling=rt.RISK_ORDER[-1])
+    there = words(verdict(far, "MOVE_ELEMENTS"), [WRITER], release="2024",
+                  no_revit_here=True)
+    check("Changes switch must be on there too" in there[1],
+          "and for a change, that the owner's Changes switch is needed there too")
+
+    # WHOSE WORD THE SWITCH WAS (Q-70, decided 2026-11-15). heron_why judges by
+    # what a Revit said, and the sentence says so - never "this PC's file".
+    # Since D-166 no file holds the switches, so with no Revit's word they are
+    # taken as off, the way every Revit starts, and said to be taken so: until
+    # the merge that brought D-166 in, the last check here held the sentence
+    # "Heron's settings file on this PC says", which D-166 made untrue.
+    print()
+    print("Whose word the switch was: what a Revit said, or nobody's (Q-70, D-166)")
+    blocked = verdict(live, "MOVE_ELEMENTS")
+    try:
+        heard = words(blocked, [WRITER], release="2024",
+                      said_by="Revit 2024 (session 4242)")
+    except TypeError as why:
+        heard = ("", "(in_revit_words cannot be told whose word it was: %s)" % why)
+    check("Revit 2024 (session 4242) said it has" in heard[1]
+          and "revit_health" in heard[1] and "Revit is right" in heard[1],
+          "judged by what a Revit said, the sentence names that Revit and when it "
+          "was heard, and that Revit is right - found %r" % (heard[1][:120],))
+    check("settings file on this PC" not in heard[1],
+          "and it does not call that this PC's settings file")
+    plain = words(blocked, [WRITER], release="2024")
+    check("No Revit has told this chat" in plain[1]
+          and "the way every Revit starts" in plain[1]
+          and "Revit is right" in plain[1] and "settings file" not in plain[1],
+          "with no Revit's word, it says the switch was taken as off, as Revit starts, "
+          "and names no settings file (D-166) - found %r" % (plain[1][:120],))
+
+
 def main():
     print("Everything known: a permitted capability with a Revit to run it in")
     live = rt.snapshot(ASKED, LIBRARY, release="2024", bridge="connected")
@@ -126,6 +294,9 @@ def main():
           "an unknown fact reads as 'not detected', never as a default value")
     check(env["risk ceiling"] == rt.CEILING_WITHOUT_WRITE,
           "the ceiling is derived from the write gate, so a caller cannot forget it")
+
+    switches_above_changes()
+    in_revit_words()
 
     print()
     if FAILURES:

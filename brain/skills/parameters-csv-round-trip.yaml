@@ -17,11 +17,14 @@ risk: PUBLISH
 
 purpose: >
   The everyday round trip: chosen parameters of chosen elements go out to a
-  CSV, the modeller edits it in Excel, and the edited file is written back
+  CSV, the modeller edits a copy of it in Excel, Heron compares the copy with
+  the file as exported, and only the cells that changed are written back
   onto the same elements - a different value per element, in ONE call and ONE
-  entry in Revit's undo list. No new capability: the export is
-  EXPORT_PARAMETERS_TO_CSV and the return is SET_PARAMETER_VALUES_BY_ID read
-  from a file (its csvPath).
+  entry in Revit's undo list. No new capability and no new tool: the export
+  is EXPORT_PARAMETERS_TO_CSV, the comparison is a command the modeller runs
+  on their PC, outside Revit (step 4 - OPEN-QUESTIONS Q-87, decided
+  2026-11-15), and the return is SET_PARAMETER_VALUES_BY_ID reading the small
+  file the comparison writes (its csvPath).
 
   The status in brackets after each capability is what that capability's own
   fragment.yaml said on 2026-11-11. The list of capabilities after this method
@@ -39,26 +42,31 @@ purpose: >
   2026-10-21, but under another rule - it wrote every row it could, where
   this one writes all or nothing - so that proof does not describe this
   route. NEEDS REAL REVIT: NEEDS-CHECKING Group NJ, FRAGMENT-ISSUES row
-  5b-1527. The return's card was raised to version 8 on 2026-11-11 (a key
-  with a * names many); while the served list shows it DRAFT, revit_change
-  refuses step 5 and the modeller is told so before the file is made
-  (NEEDS-CHECKING Group NG proves version 8). Say so to the modeller before step 5 on a model that matters, and
-  offer a saved scratch copy first.
+  5b-1527, and for the small file of step 4 brought back, NJ13. The return's
+  card was raised to version 8 on 2026-11-11 (a key with a * names many);
+  while the served list shows it DRAFT, revit_change refuses step 6 and the
+  modeller is told so before the file is made (NEEDS-CHECKING Group NG
+  proves version 8). Say so to the modeller before step 6 on a model that
+  matters, and offer a saved scratch copy first. The comparison of step 4
+  reads two files and nothing else, and was tested off Revit only
+  (tests/test_sheet_compare.py).
 
   THREE THINGS THE MODELLER IS TOLD BEFORE THE FILE IS MADE, because each
   costs a round trip when it is found afterwards:
-  (a) CSV ONLY. The return reads a comma-separated text file. An .xlsx is not
-      read, and neither is a file whose columns Excel separated with
-      semicolons or tabs - it is refused as having no header.
-  (b) EVERY CELL THAT IS NOT BLANK IS WRITTEN, changed or not, and nothing
-      compares the file with the model first (row 5b-1525). A value somebody
-      changed in Revit after the export is put back to the file's old value
-      with no notice. And a number comes back as Revit DISPLAYED it - a
-      length the project shows rounded is written back rounded, in a cell
-      nobody touched.
+  (a) KEEP THE FILE AS EXPORTED. Edit a COPY of it - saved as .xlsx, or as
+      CSV - and leave the export itself untouched beside it: the comparison
+      of step 4 reads both. Without the export as it was written, nothing
+      can say which cells were edited.
+  (b) ONLY THE CELLS THAT DIFFER FROM THE EXPORT GO BACK. The comparison
+      lists them, old value and new, and writes them alone to a small file;
+      a cell left as exported is not written, so a length the project shows
+      rounded stays as the model holds it (row 5b-1525). WHAT IT CANNOT SEE:
+      a value somebody changed in Revit after the export, in a cell the
+      modeller ALSO edited - the new value is written over it. So the file
+      comes back in the same sitting.
   (c) THE FILE IS ALL OR NOTHING, checked inside Revit before anything is
-      written. One row or one column that cannot be used and nothing is
-      written at all; the answer names each and why.
+      written. One row or one column of the small file that cannot be used
+      and nothing is written at all; the answer names each and why.
 
   0. ASK WHAT GOES OUT, ONCE (D-33). Which elements - a category, or what is
      selected - which parameters, and where the file goes: a path the
@@ -81,7 +89,8 @@ purpose: >
      before it is made: one on the TYPE (the return refuses it from an
      instance's row - a type is shared), one that is read-only, and one some
      of the elements do not carry. They may still go out for reading; the
-     modeller deletes those columns before the file comes back (step 3).
+     modeller leaves those columns as exported (step 3), and the comparison
+     then sends nothing from them.
      A TYPE'S VALUE IS A DIFFERENT CHANGE, NEVER SLIPPED IN WITH THIS ONE:
      a row that carries the type's own id writes the type, and every
      element of that type changes, in the whole model and not only among
@@ -108,44 +117,71 @@ purpose: >
      that sentence alone.
   3. THE MODELLER EDITS - OUTSIDE REVIT, AND HERON DOES NOTHING. Say these
      before they open the file, in these words or plainer:
-     - Leave the first column and the header row as they are. A changed id
-       names no element, and one such row stops the whole file.
-     - Delete every column and every row that was not edited - the id
-       column stays. That is the only way to keep (b) above from writing
-       old or rounded values over the model. And bring the file back in the
-       same sitting, before anyone else changes those elements.
-     - Delete the columns step 1 named: a type parameter, a read-only one
-       with values in it, one some rows' elements do not carry (that one
-       stops the file even where its cell is blank).
-     - Do not add rows. A row makes no element; an id that is not in the
-       model stops the file, and so does an id on two rows.
+     - Edit a COPY. Keep the file as exported exactly as it was written,
+       beside it - step 4 compares the two. In Excel, File > Save As under
+       a NEW name BEFORE typing anything - Save alone writes over the
+       export - as an Excel Workbook (.xlsx), or as CSV UTF-8 (Comma
+       delimited).
+     - Leave the first column, ElementId, and the header row as they are.
+       An id or a header changed is named by the comparison and nothing on
+       it is sent - so a change typed there is lost until it is put back.
+     - Leave as exported the columns step 1 named: a type parameter, a
+       read-only one, one some of the elements do not carry. Left alone,
+       nothing from them is sent; edited, the return can refuse the whole
+       file, naming the row.
+     - Do not add rows. A row makes no element; the comparison names a row
+       whose id is not in the export, and a row on an id already used, and
+       sends nothing on either.
      - SORT AND FILTER WHOLE ROWS ONLY. Sorting one column on its own moves
-       every value in it onto another element's id. Nothing detects that:
-       each is a value like any other, and it is written.
+       every value in it onto another element's id. The comparison holds
+       back a column whose changed cells - three or more - are only the
+       export's own values moved between elements, and says so; a sort that
+       also changed some of the values is not caught.
      - A name with an accent, or in Arabic, can be spoiled when Excel OPENS
        the file, before anything is typed: the export writes UTF-8 with no
        mark saying so, and Excel opened by a double-click may read it as
-       something else. Saving as UTF-8 afterwards keeps the damage. Open it
-       through Data > From Text/CSV with the file origin set to UTF-8, and
-       look at such names before editing. Read off the code, not opened in
+       something else. Open it through Data > From Text/CSV with the file
+       origin set to UTF-8, and look at such names before editing. A name
+       spoiled that way is a changed cell to the comparison and is in its
+       list, old and new - read the list. Read off the code, not opened in
        Excel here (row 5b-1528, Group NJ's NJ7).
-     - Save as CSV UTF-8 (Comma delimited). Excel's plain CSV is not UTF-8,
-       and such a name would then be read wrong on the way back as well -
-       also read off the code, not seen in Revit.
-     - Look at what Excel did to the cells: it can turn a Mark 007 into 7,
-       1-2 into a date and a long number into 1.2E+11. Heron cannot tell a
-       value Excel changed from one the modeller typed - it is written.
+     - Excel's doing on the way through: a number it only re-wrote - a Mark
+       007 saved as 7, 0.50 as 0.5, a long number as 1.2E+11 - is the same
+       number to the comparison and is not sent, so the model keeps its own.
+       A date Excel made of 1-2 is not: it is a changed cell like any other,
+       and in the list.
      - A Yes/No comes back as Yes, No, True, False, On, Off, 1 or 0. A
        material or a level is named exactly; a family type as Family: Type.
-  4. ASK WHAT A BLANK CELL MEANS (D-33) - skip or clear. There is no default
-     and Heron never picks: one of the two deletes what somebody typed.
-     skip leaves that element's value as it is. clear empties a TEXT
-     parameter; a blank under a number, a tick box or a reference then stops
-     the run, naming WRITE_ELEMENT_PARAMETERS clear=true as Revit's own
-     clear for those.
-  5. THE RETURN - ONE CALL, ONE UNDO.
-     THE CARD COMPARES NOTHING WITH THE MODEL BEFORE IT WRITES (row
-     5b-1525). revit_change with dry_run=true runs a change and rolls it
+  4. COMPARE - ON THE MODELLER'S PC, OUTSIDE REVIT, NOTHING IN THE MODEL
+     READ OR CHANGED. The modeller runs, in PowerShell in the Heron folder:
+       python brain/heron_sheet_compare.py "<the file as exported>" "<the edited copy>"
+     adding --sheet "<name>" for a workbook whose first sheet is not the one
+     edited. It reads the two files and prints: how many cells changed, on
+     how many elements, with a sample - id, parameter, old value and new;
+     under NOT SENT, cells emptied on purpose, cells held back with why,
+     ids added, typed over or on two rows, and headers renamed or added;
+     and under LEFT AS THEY ARE, numbers only re-written, rows and columns
+     deleted. It writes ONLY the changed cells to a small CSV beside the
+     edited copy - its name ends -changed-cells.csv; --out names another
+     place in the modeller's own work folder, never the Heron folder - and
+     prints that path. Ask the modeller to read out, or paste, what it
+     printed. Everything under NOT SENT is asked about, never guessed
+     (D-33); a change wanted there is made in the copy and the command run
+     again. Nothing changed: no file is written, there is nothing to bring
+     back, and the method stops here. A refusal - the export not given
+     first, no ElementId column - says what to do in its own words.
+  5. BLANKS - skip, always, for the small file. Its blank cells are the
+     ones nobody changed; blankCells=clear would empty every one of them.
+     A cell the modeller emptied ON PURPOSE is listed apart by the
+     comparison, under BLANKED ON PURPOSE, and is not in the small file:
+     emptying a value is a change of its own and a yes of its own (D-33,
+     Article 7), never slipped in. WRITE_ELEMENT_PARAMETERS clear=true is
+     Revit's own clear, for a number, a tick box, a reference or text alike,
+     on the elements named, one parameter at a time.
+  6. THE RETURN - ONE CALL, ONE UNDO - OF THE SMALL FILE, never the edited
+     copy. THE CARD ITSELF COMPARES NOTHING WITH THE MODEL BEFORE IT WRITES
+     (row 5b-1525): step 4 compared the file with the export, not with the
+     model. revit_change with dry_run=true runs a change and rolls it
      back, and its answer shows old -> new values for the elements it
      changed, up to a limit it names when it is reached (D-155, D-156;
      built, not run in Revit - Groups NS, NT) - BUT ONLY FOR A CARD
@@ -174,16 +210,16 @@ purpose: >
      switch and is never turned from a chat.
      THE MODELLER'S YES FOR THIS WRITE COMES BEFORE THE CALL, WHICHEVER
      WAY THE SWITCH STANDS: a bulk parameter write is asked for by name
-     (Article 7). Name the model in front, the file, the columns the
-     modeller says are left in it, and skip or clear. HOW MANY ROWS OR
-     CELLS THAT IS CANNOT BE SAID YET: the export's `rows` was counted
-     before the file was trimmed, and nothing reads the file until Revit
-     does. Say so, and read out rowsMatched and `written` afterwards.
+     (Article 7). Name the model in front, the small file, the columns it
+     holds and how many cells on how many elements - the comparison's
+     count, which `written` should match afterwards - and that blanks are
+     skipped.
      Then SET_PARAMETER_VALUES_BY_ID (its status is in the list served
      after this method - see WHAT HAS RUN)
-     through revit_change, with csvPath and blankCells only: `rows` left
-     out (both given is refused), and no expect_from - the file's rows alone
-     name the elements, and what is selected in Revit is never read.
+     through revit_change, with csvPath the small file's full path and
+     blankCells=skip only: `rows` left out (both given is refused), and no
+     expect_from - the file's rows alone name the elements, and what is
+     selected in Revit is never read.
      WHAT STOPS THE WHOLE FILE, each named in `stale` and `rowFindings`
      with its row: an id that names no element here - an element deleted
      since the export reads the same way, as the wrong model's file; an id
@@ -197,11 +233,16 @@ purpose: >
      name that matches none or two. A value Revit turns down as it is
      written - a tick box given
      another word, a number it cannot read - takes every row back: nothing
-     is kept. Each is fixed IN THE FILE by the modeller and this step is
-     run again; no row is edited or dropped by Heron to get the rest in.
-  6. SAY WHAT CAME BACK, in Revit words. `written` is the number of CELLS
-     written and read back as asked - changed or not - never the number of
-     changes. rowsMatched and rowsUnmatched; blankCellsSkipped and
+     is kept. Each is fixed by the modeller IN THE EDITED COPY, step 4 is
+     run again and this step with the new small file; no row is edited or
+     dropped by Heron to get the rest in. A blank cell of the small file
+     under a parameter its element has not got stops the file too, though
+     it is skipped: the parameter is looked for first (row 5b-1526).
+  7. SAY WHAT CAME BACK, in Revit words. `written` is the number of CELLS
+     written and read back as asked - against the comparison's count, not a
+     count of values the model did not already hold: a cell that differs
+     from the export may equal what Revit holds now. rowsMatched and
+     rowsUnmatched; blankCellsSkipped and
      cellsCleared; valuesRejected - values Revit took and then read back
      different, each named in the findings; resultJson's readBack is what
      Revit holds now for each cell, and for a number that is the value to
@@ -213,9 +254,12 @@ purpose: >
   is never taken (Article 12); what the return answers for one has not been
   seen in Revit (Group NJ). Nothing here synchronises with central.
 
-  NOT HERE: reading an .xlsx - save it as CSV UTF-8. A list of what would
-  change before it changes, or a comparison with the file as exported
-  (OPEN-QUESTIONS Q-87). A type parameter from an instance's row - to change
+  NOT HERE: a value somebody changed in Revit since the export, in a cell the
+  modeller also edited - the comparison reads two files, not the model; a
+  UniqueId column in the export, or a read of the model, would reach it, and
+  is the owner's to decide (OPEN-QUESTIONS Q-87, question c). A chat tool
+  for the comparison - it is a command on the PC, and a tool of its own or a
+  wider heron_sheet_list is the owner's too (Q-87, question b). A type parameter from an instance's row - to change
   a type, the row carries the TYPE's own id, every element of that type in
   the model changes, and it is its own change with its own yes (step 1).
   New elements from rows. A
@@ -253,8 +297,8 @@ utterances:
 # With both out, no sentence on file is offered a different list, on the
 # model backend or the lexical one. So the list served with this method does
 # not carry the inventory's status; step 1 says it, with its date.
-# WRITE_ELEMENT_PARAMETERS is named at step 4 as where a refusal sends the
-# modeller, not as a step of this method.
+# WRITE_ELEMENT_PARAMETERS is named at step 5 as where a cell emptied on
+# purpose is sent, not as a step of this method.
 needs:
   # PUBLISH.
   - EXPORT_PARAMETERS_TO_CSV
@@ -267,8 +311,8 @@ preconditions:
   - a project is open in front, and it is the model the file was exported from - a file is brought back to that model only
   - the modeller has said which elements, which parameters and where the file goes, and none is assumed (D-33)
   - for the export, the modeller asked for THIS export and named the path, and the owner has Changes and the Publish switch on (Article 10, D-106, D-107)
-  - the edited file is saved as a comma-separated CSV in UTF-8, its first column and header row untouched, and every column and row that was not edited deleted from it
-  - what a blank cell means - skip or clear - has been asked and answered; it is never assumed
+  - the file as exported is kept as it was written, a copy of it was edited, and the comparison (python brain/heron_sheet_compare.py) has been run on the two, everything under its NOT SENT asked about; what comes back is the small file it wrote
+  - the small file comes back with blankCells=skip; a cell emptied on purpose is asked about apart, as a change of its own, and never assumed
   - for the return, revit_health has said whether Ask to Keep is on for that Revit - or, where its line could not say, the modeller has - and the modeller has been told that with it off the file is kept at once
   - for the return, the modeller has said yes to this write by name before the call (Article 7), the owner has Changes on, and nobody has changed those elements since the export
 
@@ -288,8 +332,13 @@ note: >
   (an export brought straight back can be refused whole), 5b-1527 (the file
   route of version 7 not yet run in Revit), 5b-1528 (the file's encoding)
   and 5b-1551 (the export calls a blank column a missing parameter). Whether Heron should read the file itself first - an .xlsx, a
-  comparison with the export, a list of what would change - is the owner's:
-  OPEN-QUESTIONS Q-87.
+  comparison with the export, a list of what would change - was OPEN-QUESTIONS
+  Q-87, decided 2026-11-15 on the owner's delegation: it does, outside
+  Revit. Steps 3 to 6 were rewritten for it that day - the hand rules to
+  delete every column and row not edited, and to save as CSV only, were
+  taken out - and the comparison is brain/heron_sheet_compare.py, tested
+  off Revit by tests/test_sheet_compare.py. The small file brought back
+  through the card NEEDS REAL REVIT: Group NJ, NJ13.
 
   DRAFT until the whole order has been run on a saved scratch copy and the
   values read back: NEEDS-CHECKING Group NJ.

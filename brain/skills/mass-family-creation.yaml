@@ -74,7 +74,9 @@ purpose: >
      Material=<it>; its status is in the list served after this method; while it
      is not PROVEN there, a kept change from it is refused, D-117) when the
      study shows blocks by use or by phase.
-  7. INTO THE PROJECT: SAVE_DOCUMENT (PROVEN), then LOAD_FAMILY (PROVEN)
+  7. INTO THE PROJECT: SAVE_DOCUMENT (its status is in the list served after
+     this method - DRAFT again since version 3, 2026-11-16, and while it is,
+     the modeller saves the mass with Ctrl+S), then LOAD_FAMILY (PROVEN)
      into the project and PLACE_FAMILY_INSTANCES (merged 2026-11-01) on the
      ground level at the insertion point; a family changed after it was placed
      is loaded again with reload=true and every instance follows. The

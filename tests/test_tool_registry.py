@@ -23,7 +23,10 @@ import each other, so something has to look at both.
 WHAT IT CANNOT DO: it reads the C# as text, not as a compiled program. It can
 prove the declarations agree and that every declared operation has a handler
 somewhere. It cannot prove the handler does what its risk level claims - that
-takes Revit, and it is NEEDS-CHECKING group C.
+takes Revit, and it is NEEDS-CHECKING group C. Nor that an undeclared name is
+answered `unknown_op` at once while a job holds Revit's thread (row 5b-1742) -
+it reads that Dispatch refuses one before the banner and the queue, and
+NEEDS-CHECKING EZ10 is the run.
 
     python tests/test_tool_registry.py
 """
@@ -53,14 +56,27 @@ HANDLER_FILES = [
 DISPATCHER_CS = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "RevitDispatcher.cs")
 
 
-def dispatcher_answers():
-    """What RevitDispatcher.Dispatch answers itself, or None if it was not found."""
+def dispatcher_body():
+    """RevitDispatcher.Dispatch's own text, up to Execute, or None if it was not found."""
     text = io.open(DISPATCHER_CS, encoding="utf-8").read()
     body = re.search(r"public string Dispatch\(string request\)(.*?)public void Execute\(",
                      text, re.S)
+    return body.group(1) if body else None
+
+
+def dispatcher_answers():
+    """What RevitDispatcher.Dispatch answers itself, or None if it was not found."""
+    body = dispatcher_body()
     if body is None:
         return None
-    return set(re.findall(r'op\s*==\s*"([A-Za-z_][A-Za-z0-9_]*)"', body.group(1)))
+    return set(re.findall(r'op\s*==\s*"([A-Za-z_][A-Za-z0-9_]*)"', body))
+
+
+def position(text, needle, after=0):
+    """Where `needle` is, at or after `after` - or -1. Read with `>= 0` first:
+    `str.find` answers -1 for a needle that is missing, which an `a < b` alone
+    reads as first."""
+    return text.find(needle, after) if text else -1
 
 FAILURES = []
 
@@ -277,6 +293,21 @@ def library():
     check(not any(name.startswith("revit_") for name in listed),
           "and no revit_ tool is on it")
 
+    # PROPOSALS F1, decided 2026-11-15 on the owner's delegation: the runtime
+    # snapshot, served as heron_why. Its row is the declaration F1 said needed
+    # a human - READ, no bridge operation - and the decision put it beside
+    # heron_capabilities, so it is served with no Revit as well.
+    check(tools.TOOLS.get("heron_why") == (tools.READ, None),
+          "heron_why is declared READ with no operation - it sends nothing to "
+          "Revit (PROPOSALS F1) - found %r" % (tools.TOOLS.get("heron_why"),))
+    check("heron_why" in listed,
+          "and it is served with no Revit, beside heron_capabilities")
+    check(tools.annotations("heron_why")
+          == {"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True},
+          "and a host is told it is read-only, not destructive and safe to ask again")
+    check("heron_why" in tools.descriptions(),
+          "and the server source registers it as a tool")
+
     agent = os.path.join(ROOT, ".claude", "agents", "heron-fragment-author.md")
     given = []
     with io.open(agent, encoding="utf-8") as fh:
@@ -290,6 +321,77 @@ def library():
     check(not missing,
           "every Heron tool that agent is given is served with no Revit - "
           "missing: %s" % (", ".join(missing) or "none"))
+
+
+def undeclared_before_the_queue():
+    """
+    An operation the add-in does not declare is refused BEFORE the banner and
+    the queue - row 5b-1742.
+
+    It used to be refused only by the gate, inside Execute, on Revit's thread.
+    So while a job held that thread the request waited behind it, the activity
+    banner went up for it, and the answer was `revit_busy` - "a dialog may be
+    open" - where an idle Revit answered `unknown_op`. Safe, since nothing ran,
+    and wrong about why: the case is a name a newer client sends an older
+    add-in, which is what `undo_guarded` and `stop_session` were named for.
+
+    READ FROM THE SOURCE, because Dispatch cannot be run here - it needs
+    Revit's own assembly to build. The one sentence both refusals read IS run,
+    by tests/Heron.Kernel.TestHost, section 12. What a real Revit says with a
+    job holding its thread is NEEDS-CHECKING EZ10.
+    """
+    print()
+    print("And an operation nobody declared is refused there too - before the banner and "
+          "the queue (row 5b-1742)")
+    body = dispatcher_body() or ""
+    block = re.search(r"if\s*\(\s*!\s*HeronOperationRegistry\.IsDeclared\(\s*op\s*\)\s*\)\s*\{(.*?)\}",
+                      body, re.S)
+    check(block is not None,
+          "Dispatch asks the tool registry whether the operation is declared at all")
+    inside = block.group(1) if block else ""
+    check(re.search(r'return\s+Json\.Error\(\s*"unknown_op"\s*,\s*'
+                    r'HeronOperationRegistry\.Unknown\(\s*op\s*\)\s*\)\s*;', inside) is not None,
+          "and refuses one that is not with unknown_op, in the registry's own words")
+    check(re.search(r'RecordRefusal\([^;]*"unknown_op"\s*\)\s*;', inside) is not None,
+          "recorded in the trail, as every refusal Revit never ran is")
+    called = set(re.findall(r"([A-Za-z_][A-Za-z0-9_.]*)\s*\(", inside))
+    allowed = set(["RecordRefusal", "HeronIdentity.NewWorkflowId", "Json.Error",
+                   "HeronOperationRegistry.Unknown"])
+    check(bool(called) and called <= allowed,
+          "touching nothing but the registry, the reply and the trail - no Revit API off "
+          "Revit's thread - calls: %s" % (", ".join(sorted(called)) or "none"))
+
+    asked = position(body, "HeronOperationRegistry.IsDeclared(op)")
+    stop = position(body, "AnswerStop(")
+    later = [("the ExternalEvent is looked for", "var raiser = _event"),
+             ("a job is made", "new RevitJob("),
+             ("the banner goes up", "_banner.Begin("),
+             ("the job is queued", "_queue.Enqueue("),
+             ("Revit is asked to take it", "raiser.Raise()")]
+    check(asked >= 0 and stop >= 0 and stop < asked,
+          "after the stop is answered, which keeps its own words")
+    for what, needle in later:
+        at = position(body, needle)
+        check(asked >= 0 and at >= 0 and asked < at,
+              "before %s - `%s`" % (what, needle))
+
+    operations = io.open(HANDLER_FILES[0], encoding="utf-8").read()
+    gate = re.search(r"private static string Gate\(string op\)(.*?)\n        \}", operations, re.S)
+    gate_text = gate.group(1) if gate else ""
+    check(re.search(r'Json\.Error\(\s*"unknown_op"\s*,\s*HeronOperationRegistry\.Unknown\(\s*op\s*\)\s*\)',
+                    gate_text) is not None,
+          "the gate on Revit's thread still refuses it - the second of two - in the same words")
+    registry = io.open(REGISTRY_CS, encoding="utf-8").read()
+    sentence = "Heron has no operation called"
+    copies = [os.path.relpath(path, ROOT) for path in
+              [REGISTRY_CS, DISPATCHER_CS] + HANDLER_FILES
+              if sentence in io.open(path, encoding="utf-8").read()]
+    check(copies == [os.path.relpath(REGISTRY_CS, ROOT)],
+          "and the sentence is written once, in the registry - found in: %s"
+          % (", ".join(copies) or "none"))
+    unknown = re.search(r"public static string Unknown\(string op\)(.*?)\n        \}", registry, re.S)
+    check(unknown is not None and "Describe()" in unknown.group(1),
+          "naming what IS declared from the table itself, never a typed list")
 
 
 def main():
@@ -377,13 +479,22 @@ def main():
 
     cs_writers = sorted(op for op, level in declared_cs.items() if level == "MODIFY")
     # undo_last since D-157, for the reason revit_undo_last is typed above -
-    # and undo_guarded since the review of 2026-11-12: the same operation under
-    # a name the FIRST build of it does not know, so a Revit still running
-    # that build cannot be asked to post by its old rule. The old name is not
-    # kept beside it: a second MODIFY name fails this line.
-    check(cs_writers == ["move_elements", "run_fragment_write", "undo_guarded"],
-          "the MODIFY operations are exactly move_elements, run_fragment_write and undo_guarded "
-          "- found: %s" % (cs_writers or "none"))
+    # undo_guarded since the review of 2026-11-12, and undo_own since Q-88
+    # (2026-11-16): each time the same operation under a name the add-in
+    # built before does not know, so a Revit still running that build cannot
+    # be asked to post by its older rule. No older name is kept beside it as
+    # a writer - undo_guarded is READ now, and posts nothing: a second MODIFY
+    # name fails this line.
+    #
+    # undo_from_pane since row 5b-1741 (2026-11-16), typed here as this line
+    # asks: the Activity pane's Undo button, the owner's answer of that day -
+    # the modeller's own click, like Ctrl+Z, for any chat's change, by D-157's
+    # rule. It is no chat's writer: it is answered only for a job the pane's
+    # in-process door queued, refused off the pipe, and no tool sends it - so
+    # the writing TOOLS above stay three.
+    check(cs_writers == ["move_elements", "run_fragment_write", "undo_from_pane", "undo_own"],
+          "the MODIFY operations are exactly move_elements, run_fragment_write, undo_from_pane "
+          "and undo_own - found: %s" % (cs_writers or "none"))
 
     # AND ABOVE MODIFY, TYPED HERE FOR THE SAME REASON (D-106, 2026-09-28).
     # Until that day nothing was declared above Modify at all. Each of these
@@ -565,7 +676,13 @@ def main():
     # exists to stop is the one holding Revit's thread - queued, it would wait
     # behind that very job. Read only Dispatch's own body: the rest of the
     # file names operations to describe and to log, not to answer.
-    OUTSIDE_THE_QUEUE = set(["stop"])
+    #
+    # `stop_session` since Q-71 (decided 2026-11-15, built 2026-11-16): the
+    # stop that names the exact Revit session it is for, under a name an
+    # add-in from before it does not know - so that add-in answers unknown_op
+    # rather than stopping. `stop`, which named none, is answered here too,
+    # and only ever refused: queued, its refusal would wait behind the job.
+    OUTSIDE_THE_QUEUE = set(["stop", "stop_session"])
     answered_first = dispatcher_answers()
     check(answered_first is not None,
           "RevitDispatcher.Dispatch was found, and Execute after it")
@@ -580,6 +697,8 @@ def main():
     check(not (OUTSIDE_THE_QUEUE & answered_in_bridge),
           "and none of them is ALSO answered by BridgeServer - stop comes after the "
           "lease, so only the chat holding this Revit can stop it")
+
+    undeclared_before_the_queue()
 
     labels(declared_cs)
     source_list()

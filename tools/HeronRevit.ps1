@@ -56,6 +56,81 @@ function Get-InstalledRevit {
         Sort-Object)
 }
 
+function Get-HeronFolder {
+    <#
+    .SYNOPSIS
+        One of the folders the install scripts need, read from the list the
+        add-in's own path code wrote: platform\heron-folders.json.
+    .DESCRIPTION
+        NOTHING HERE BUILDS A HERON PATH, and that is Q-58, decided on
+        2026-11-15. platform/README.md rule 3 says HeronPaths is the only thing
+        that may, and a .ps1 cannot call a C# class - it runs before any Heron
+        assembly is on the PC. So HeronPaths writes the folders down
+        (tests/Heron.Folders.TestHost, through tools/heron-folders.py --write)
+        and this reads them. tests/test_heron_folders.py fails when the list
+        and the code disagree, and when a script spells a folder itself.
+
+        Each entry names a Windows special folder and the parts under it. The
+        special folder is resolved with [Environment]::GetFolderPath, the call
+        HeronPaths makes, so the script and the add-in name one folder even
+        where an environment variable says otherwise.
+
+        STOPS, BY NAME, when the list is missing or does not have the folder
+        asked for. Guessing a path instead is the second owner Q-58 removes.
+        Nothing has been changed by then: every caller asks before it copies.
+    .PARAMETER Name
+        The folder's name in the list - RevitAddins, InstallBackup.
+    .PARAMETER Fill
+        The blanks the entry has, by name - @{ release = "2024" }. A value that
+        could step out of its folder is refused.
+    #>
+    param(
+        [Parameter(Mandatory = $true)][string] $Name,
+        [hashtable] $Fill = @{}
+    )
+
+    # Beside the tools folder this file sits in - a checkout and an unzipped
+    # heron-project.zip have the same shape (tools/build-release-assets.py).
+    $listPath = Join-Path (Split-Path -Parent $PSScriptRoot) "platform\heron-folders.json"
+    if (-not (Test-Path $listPath)) {
+        throw "Heron's folder list is not at $listPath, so this cannot tell where '$Name' is, and nothing was changed. The Heron files are incomplete - fetch them again."
+    }
+
+    $list = Get-Content $listPath -Raw | ConvertFrom-Json
+    $entry = $null
+    if ($list.folders) { $entry = $list.folders.PSObject.Properties[$Name] }
+    if (-not $entry) {
+        throw "Heron's folder list at $listPath has no folder called '$Name', so nothing was changed. The Heron files do not match each other - fetch them again."
+    }
+    $entry = $entry.Value
+
+    try {
+        $special = [Environment+SpecialFolder]([string]$entry.under)
+    } catch {
+        throw "Heron's folder list names '$($entry.under)' for '$Name', which is not a Windows folder this PowerShell knows, so nothing was changed. Fetch the Heron files again."
+    }
+    $path = [Environment]::GetFolderPath($special)
+    if (-not $path) {
+        throw "Windows has no $($entry.under) folder for this account, so '$Name' has nowhere to be and nothing was changed. Run this as the person who uses Revit on this PC."
+    }
+
+    foreach ($part in @($entry.parts)) {
+        $filled = [string]$part
+        foreach ($key in $Fill.Keys) {
+            $value = [string]$Fill[$key]
+            if ($value -match '[\\/]' -or $value -eq '..' -or $value -eq '.' -or $value -eq '') {
+                throw "'$value' is not a $key this can put in a folder name, so nothing was changed."
+            }
+            $filled = $filled.Replace("{$key}", $value)
+        }
+        if ($filled -match '[{}]') {
+            throw "Heron's folder list wants '$filled' filled in for '$Name' and nothing was given for it, so nothing was changed."
+        }
+        $path = Join-Path $path $filled
+    }
+    return $path
+}
+
 function Get-RevitAddinsFolder {
     <#
     .SYNOPSIS
@@ -68,25 +143,26 @@ function Get-RevitAddinsFolder {
         all-user location from one to the other - which is why naming them is
         not enough on its own and neither ever appears here.
 
-        THIS IS THE ONLY PLACE THE PATH IS SPELLED. deploy-addin.ps1 used to
-        build it itself and the installer was about to build a third copy in
-        C# on 2026-09-21; tools/check-structure.py refused that one, and this
-        function is where both now come from. The folder belongs to Autodesk
-        rather than to Heron - other vendors' add-ins sit in it - so nothing
-        may ever treat it as Heron's to clear.
+        ONE OWNER, AND SINCE 2026-11-16 IT IS HeronPaths.RevitAddins. This
+        function spelled the path until then - deploy-addin.ps1 had built it
+        itself and the installer was about to build a third copy in C# on
+        2026-09-21, which tools/check-structure.py refused. Both still ask
+        here; this asks the list HeronPaths wrote (Get-HeronFolder, Q-58). The
+        folder belongs to Autodesk rather than to Heron - other vendors'
+        add-ins sit in it - so nothing may ever treat it as Heron's to clear.
 
         NOT CREATED. A release nobody has installed has no Addins folder, and
         making one would leave a folder behind and answer no question.
 
-        THE ALL-USERS FOLDERS ARE SPELLED ONCE, BELOW, AND ONLY TO BE READ -
-        Get-RevitAllUserAddinsFolders, added 2026-11-16 for the second-copy
-        check (D-167). Heron still never installs there.
+        THE ALL-USERS FOLDERS ARE ASKED OF THE SAME LIST, BELOW, AND ONLY TO BE
+        READ - Get-RevitAllUserAddinsFolders, added 2026-11-16 for the
+        second-copy check (D-167). Heron still never installs there.
     .PARAMETER RevitVersion
         The four-digit release, as a string.
     #>
     param([Parameter(Mandatory = $true)][string] $RevitVersion)
 
-    return (Join-Path $env:APPDATA "Autodesk\Revit\Addins\$RevitVersion")
+    return (Get-HeronFolder -Name RevitAddins -Fill @{ release = $RevitVersion })
 }
 
 function Get-RevitAllUserAddinsFolders {
@@ -107,6 +183,12 @@ function Get-RevitAllUserAddinsFolders {
         skill). Returning both costs one missing folder, and guessing which a
         future release reads is the mistake Directory.Build.props refuses.
 
+        ASKED, NOT SPELLED, since 2026-11-16: HeronPaths.RevitAllUserAddins owns
+        both, and its list names each by the special folder it starts at
+        (Get-HeronFolder, Q-58). This function spelled them from ProgramData and
+        ProgramFiles until then; tests/test_heron_folders.py fails when a name
+        asked here is not in the list, or the list has one not asked here.
+
         NOT CREATED, for the same reason as above.
     .PARAMETER RevitVersion
         The four-digit release, as a string.
@@ -114,8 +196,8 @@ function Get-RevitAllUserAddinsFolders {
     param([Parameter(Mandatory = $true)][string] $RevitVersion)
 
     return @(
-        (Join-Path $env:ProgramData "Autodesk\Revit\Addins\$RevitVersion"),
-        (Join-Path ${env:ProgramFiles} "Autodesk\Revit\Addins\$RevitVersion")
+        (Get-HeronFolder -Name RevitAllUserAddinsCommonApplicationData -Fill @{ release = $RevitVersion }),
+        (Get-HeronFolder -Name RevitAllUserAddinsProgramFiles -Fill @{ release = $RevitVersion })
     )
 }
 

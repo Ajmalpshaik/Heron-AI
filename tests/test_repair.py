@@ -93,7 +93,7 @@ def main():
          "cleanup deletes derived"),
         ("Cache/x.db", "Brain/x.db", "derived", "data",
          "come back beside the copy"),
-        ("Documentation/x.md", "Core/x.md", "unknown", "product",
+        ("Telemetry/x.md", "Core/x.md", "unknown", "product",
          "UNKNOWN"),
     ]
     for path, to, was, goes, says in crossings:

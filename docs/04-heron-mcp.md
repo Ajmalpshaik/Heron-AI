@@ -148,8 +148,13 @@ A DRAFT's one run is always asked. A publish is asked whenever *Ask to Keep* is 
 > budget (§8.8). Four methods in `brain/skills/` send the chat there since the same day -
 > `parameters-csv-round-trip`, `cad-to-mep`, `sheets-from-excel`, `reinforce-concrete`; this sentence said
 > *"not reworded yet"* until then - and still say to ask the modeller where the line could not say; any other
-> method that speaks of the switch is found with `grep -l "Ask to Keep" brain/skills/*.yaml`. Its write-gate line is still read
-> from the server's own copy of the settings ([Q-70](open-questions/tier-2.md), open). Held without Revit by
+> method that speaks of the switch is found with `grep -l "Ask to Keep" brain/skills/*.yaml`. Its write-gate line was read
+> from the server's own copy of the settings until 2026-11-16. Since then Changes, Admin and Publish are held in Revit's
+> memory and in no file ([D-166](decisions/D-166.md)): `info` carries them as `changes`, `admin` and `publish`, and,
+> after [Q-70](open-questions/tier-2.md) (decided 2026-11-15), `settingsFile` and `settingsFileFound` for the settings
+> still in the file. `revit_health` prints the switches under each Revit, and one more line only when the chat's own
+> copy is not that file ([row 5b-1836](fragment-issues/row-5b-1836.md)), and the write gate is Changes as the Revits that said have it - no answer when none did, never the chat's
+> copy; not run in Revit, Group NP NP9 to NP14. Held without Revit by
 > [`tests/test_ask_to_keep_health.py`](../tests/test_ask_to_keep_health.py); **built, not yet run in Revit**
 > ([Group NP](needs-checking/group-np.md)).
 
@@ -241,8 +246,14 @@ as a finding, and it is what makes a platform feel broken when it is merely unin
 verdicts are decided in follows from that: the certain facts answer first, and a release nobody has
 stated cannot answer before a provider list that genuinely has nothing.
 
-**Nothing offers it as a tool yet**, deliberately — that changes the risk table in §4's sense and is a
-decision with a human in it. [`PROPOSALS.md` F1](PROPOSALS.md).
+**Nothing offered it as a tool until 2026-11-15**, deliberately — that changed the risk table in §4's
+sense and was a decision with a human in it. [`PROPOSALS.md` F1](PROPOSALS.md) was decided that day on
+the owner's delegation, not read back to him: **`heron_why`**, `READ` with no operation, served off Windows
+as well, hands the modeller the reason in Revit words and what to do about it. It asks Revit nothing — the
+release and whether a Revit is there come from the address book Revit writes when the Heron button is
+pressed, never a ping, and the switches from what that Revit last told `revit_health`, since
+[D-166](decisions/D-166.md) holds them in Revit's memory and in no file (with no word, they are taken as off,
+the way every Revit starts, and it says so) — and says where each fact came from. Not run in Revit.
 
 ---
 
@@ -483,8 +494,12 @@ it back* (D-55's preview): nothing is kept, Revit asks no Keep or Discard, and n
   user says to; that run is asked about in Revit or kept at once as *Ask to Keep* says, and its own
   counts are the ones that describe it.
 - **A dry run replaces what the chat had carried** for `expect_from`, as every run does. Its reply says
-  the earlier call must be run again before the kept run, and that nothing may be taken from a dry run;
-  whether a rolled-back run should replace it at all is [Q-89](open-questions/tier-2.md)
+  the earlier call must be run again before the kept run. **And nothing a run that was taken back left
+  is handed on** ([Q-89](open-questions/tier-2.md), decided 2026-11-15, built 2026-11-16, **not run in
+  Revit**): a call at any of the three doors whose `expect_from` names this chat's dry run, or a change
+  the modeller discarded, is refused before anything is sent, saying what was taken back and what to run
+  instead (`heron_run_records.TakenBack`); and the add-in refuses the same expectation itself,
+  `chain_taken_back`, for a run only Revit saw end or a server older than the rule
   ([row 5b-1612](fragment-issues/row-5b-1612.md)).
 
 **And a write's reply carries a read-back** ([D-156](decisions/D-156.md)): under the counts, each changed
@@ -507,7 +522,7 @@ Tested without Revit.
 
 | Group | What it is for | Level, from `heron_tools.TOOLS` | What it needs | Main tools |
 |---|---|---|---|---|
-| **Know the job** | which capability fits the words; a job's whole method; standards and clauses | `READ`, and sends nothing to Revit | nothing. The ones named in `heron_tools.LIBRARY` are also served off Windows, and `heron_check` is not one of them ([D-132](DECISIONS.md#d-132--off-windows-the-heron-server-serves-its-library-alone-and-no-revit-tool)) | `heron_lookup`, `heron_method`, `heron_resolve`, `heron_capabilities`, `heron_standards`, `heron_check` |
+| **Know the job** | which capability fits the words; a job's whole method; standards and clauses | `READ`, and sends nothing to Revit | nothing. The ones named in `heron_tools.LIBRARY` are also served off Windows, and `heron_check` is not one of them ([D-132](DECISIONS.md#d-132--off-windows-the-heron-server-serves-its-library-alone-and-no-revit-tool)) | `heron_lookup`, `heron_method`, `heron_resolve`, `heron_capabilities`, `heron_standards`, `heron_check`, `heron_why` - why Heron cannot do one capability, and what the modeller can do (§6b) |
 | **Work it out** | HVAC and fire protection calculations | `READ` for `heron_hvac` and `heron_fire`, arithmetic on the values given; `ANALYZE` for the three that read the model first | nothing, and none of them changes the model. Writing a result back is the Companion page's Apply, at `MODIFY` (`heron_tools.COMPANION_ACTIONS`) | `heron_hvac`, `heron_fire`, `revit_building_loads`, `revit_sprinkler_hydraulics`, `revit_sprinkler_layout` |
 | **Read the model** | answer a question about the model in front | `READ`, `ANALYZE` | a connected Revit; Changes may be off | `revit_read` (door); fixed readers such as `revit_levels`, `revit_views`, `revit_sheets`, `revit_rooms`, `revit_parameters`, `revit_worksets`; `revit_view_image` |
 | **Show on screen** | select, zoom, open a view, isolate for now | `EXECUTE` | a connected Revit; Changes may be off | `revit_show` (door), `revit_select_by_category`, `revit_isolate_temporary`, `revit_reset_temporary` |
@@ -1243,9 +1258,10 @@ has met a real Revit**: which reply the add-in sends for each ending is the C#'s
   run it yet, so nothing was run ..."*. A read goes on. After the wait jobs run again, but until
   Revit reports an undo in that model a change kept there ends *"Heron cannot take this back
   itself: revit_undo_last would refuse - an Undo Heron sent earlier has not been seen to run; it may
-  still run and take this change ..."*. **The posting operation is `undo_guarded`**, not the first
-  build's `undo_last`: a Revit still running that build answers `unknown_op`, and the chat is told
-  its Heron is older and that nothing was sent. Not run in Revit
+  still run and take this change ..."*. **The posting operation is `undo_own` since 2026-11-16**
+  ([Q-88](open-questions/tier-2.md): only the chat that made a change may undo it), not the first
+  build's `undo_last` nor `undo_guarded`: a Revit still running an add-in built before answers
+  `unknown_op`, and the chat is told its Heron is older and that nothing was sent. Not run in Revit
   ([Group NU](needs-checking/group-nu.md)).
 - **Which of the two a host shows its model** — the text or the structured content — is still not
   measured (§8.8). Both carry the word.

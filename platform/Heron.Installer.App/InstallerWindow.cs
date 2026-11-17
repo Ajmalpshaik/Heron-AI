@@ -82,8 +82,10 @@ namespace Heron.Installer.App
         /// <summary>Whether "Add Heron to Claude Code" is offered and ticked.</summary>
         public bool AddToClaude { get { return _claude != null && _claude.IsChecked == true; } }
 
-        public InstallerWindow(InstallerScreen screen, string version, bool offerClaude,
-                               string developerWarning)
+        /// <param name="location">Where the files go, as
+        /// InstallerScreen.InstallLocation read it from Heron's folder list.</param>
+        public InstallerWindow(InstallerScreen screen, string version, string location,
+                               bool offerClaude, string developerWarning)
         {
             if (screen == null) throw new ArgumentNullException("screen");
             _screen = screen;
@@ -111,7 +113,7 @@ namespace Heron.Installer.App
             // 2026-11-07, "make it simple".
             page.Children.Add(Heading("Install location"));
             var where = Quiet("For your Windows user only - no administrator needed.");
-            where.ToolTip = InstallerScreen.InstallLocation + "  " + InstallerScreen.InstallLocationNote;
+            where.ToolTip = location + "  " + InstallerScreen.InstallLocationNote;
             page.Children.Add(where);
 
             // WHAT INSTALL ALSO DOES, BEFORE IT IS PRESSED - Q-39. Pressing

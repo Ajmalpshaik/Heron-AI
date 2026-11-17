@@ -7,6 +7,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace Heron.Installer
 {
@@ -177,8 +180,57 @@ namespace Heron.Installer
     /// </summary>
     public sealed class InstallerScreen
     {
-        /// <summary>Where the files go, and the promise that comes with it.</summary>
-        public const string InstallLocation = @"%APPDATA%\Autodesk\Revit\Addins\";
+        /// <summary>
+        /// Where the files go, in the words of the folder list HeronPaths
+        /// writes - platform\heron-folders.json under the Heron folder `root`
+        /// (Q-58): the Windows special folder by name, then the parts under it,
+        /// each blank shown as &lt;release&gt;. InstallLocationNote is the promise
+        /// that comes with it.
+        ///
+        /// READ, NEVER SPELLED (row 5b-1746). Until 2026-11-16 this was a
+        /// literal folder with a percent-wrapped variable in it - a second owner
+        /// of the folder, and a message the add-in conventions forbid. This
+        /// assembly cannot reference Heron.Core (its .csproj says why) and may
+        /// not resolve a special folder (tools/check-structure.py), so it shows
+        /// the list's own words; tools\HeronRevit.ps1 resolves the folder when
+        /// it installs there. A list it cannot read is said so, never guessed past.
+        /// </summary>
+        public static string InstallLocation(string root)
+        {
+            var list = Path.Combine(root ?? "", "platform", "heron-folders.json");
+            string why;
+            try
+            {
+                using (var doc = JsonDocument.Parse(File.ReadAllText(list)))
+                {
+                    JsonElement folders, entry, under, parts;
+                    if (doc.RootElement.ValueKind == JsonValueKind.Object
+                        && doc.RootElement.TryGetProperty("folders", out folders)
+                        && folders.ValueKind == JsonValueKind.Object
+                        && folders.TryGetProperty("RevitAddins", out entry)
+                        && entry.ValueKind == JsonValueKind.Object
+                        && entry.TryGetProperty("under", out under)
+                        && under.ValueKind == JsonValueKind.String
+                        && entry.TryGetProperty("parts", out parts)
+                        && parts.ValueKind == JsonValueKind.Array)
+                    {
+                        var words = under.GetString();
+                        foreach (var part in parts.EnumerateArray())
+                        {
+                            var text = part.ValueKind == JsonValueKind.String ? part.GetString() : "?";
+                            words += "\\" + Regex.Replace(text, @"\{(\w+)\}", "<$1>");
+                        }
+                        return words + "\\";
+                    }
+                    why = "it names no RevitAddins folder";
+                }
+            }
+            catch (IOException) { why = "it is not there"; }
+            catch (UnauthorizedAccessException) { why = "this user may not read it"; }
+            catch (JsonException) { why = "it is not JSON"; }
+            return "Revit's Addins folder for your Windows user - Heron's folder list at " + list +
+                   " cannot say which, because " + why + ". Fetch the Heron files again.";
+        }
 
         public const string InstallLocationNote = "(per user - no administrator needed)";
 

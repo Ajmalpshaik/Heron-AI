@@ -653,6 +653,23 @@ namespace Heron.Bridge
             {
                 var holder = HeronLease.Holder;
                 var switches = HeronPermissions.Switches();
+
+                // THE FILE THIS REVIT READS ITS SETTINGS FROM (Q-70, decided
+                // 2026-11-15). On a PC whose Claude app keeps its own copy of
+                // the Heron folder there are two heron.config files under one
+                // name, and the chat's copy is not the one this Revit reads.
+                // So Revit names its own, and whether it was there, for the
+                // settings that are still in it - Ask to Keep, the Companion,
+                // the waiting times. NOT Changes, Admin or Publish: since
+                // D-166 they are held in memory, below, and no file decides
+                // them. Q-70 first read those three here from the file too;
+                // D-166 removed that, and the switches below are the memory's.
+                //
+                // READ, NEVER WRITTEN. Nothing here saves, and nothing on a
+                // request is read to choose what is said (Golden Rule 19).
+                // Optional fields, like askToKeep beside them: an older
+                // client ignores them, so the protocol version stands.
+                var settingsFile = HeronConfig.FilePath;
                 return Json.Ok(
                     Json.Num("pid", _identity.ProcessId),
                     Json.Str("revitVersion", _identity.RevitVersion),
@@ -694,6 +711,10 @@ namespace Heron.Bridge
                     // it, as a field that could be SENT to skip the question.
                     // This one is only ever answered.
                     Json.Bool("askToKeep", HeronPermissions.AsksBeforeKeeping()),
+                    // Q-70: the file this Revit reads its settings from, and
+                    // whether it was there - the settings D-166 left in it.
+                    Json.Str("settingsFile", settingsFile),
+                    Json.Bool("settingsFileFound", File.Exists(settingsFile)),
                     // CHANGES, ADMIN AND PUBLISH, AS THIS REVIT HOLDS THEM
                     // (D-166). Held in memory since 2026-11-16, not in
                     // heron.config, so a chat cannot learn them from the file

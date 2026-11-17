@@ -166,11 +166,20 @@ dockable pane is modeless.
 
 **A pane button that must reach Revit goes through the ONE dispatcher, from a background thread**
 ([D-163](../../../docs/decisions/D-163.md), the Activity pane): `HeronApplication.DispatchFromPane` hands
-the request to `RevitDispatcher.Dispatch`, which queues it and raises the one `ExternalEvent` - the same
-gate, model hold and audit trail a chat's request meets. Called from `Task.Run`, never from the click
-handler: `Dispatch` waits for Revit's thread, which is the click's own thread, so waiting there waits for
-itself. The answer comes back with the pane's `Dispatcher.BeginInvoke`. A pane that needs no Revit work -
-the Commands pane - starts a process instead and never dispatches at all.
+the request to `RevitDispatcher.DispatchFromPane`, the pane's door - `Dispatch` itself, with the pane's
+mark - which queues it and raises the one `ExternalEvent`: the same gate, model hold and audit trail a
+chat's request meets. Called from `Task.Run`, never from the click handler: the door waits for Revit's thread,
+which is the click's own thread, so waiting there waits for itself. The answer comes back with the
+pane's `Dispatcher.BeginInvoke`. A pane that needs no Revit work - the Commands pane - starts a process
+instead and never dispatches at all.
+
+**Something only the modeller's own click may ask for is answered only for a job the pane's door
+queued** - since [row 5b-1741](../../../docs/fragment-issues/row-5b-1741.md), the Activity pane's Undo
+(`undo_from_pane`). The door marks its own calling thread for that one call, `Dispatch` hands the mark to
+the job it queues, and `RevitOperations.Run` reads it off the running job
+(`RevitDispatcher.RunningFromPane`), never off the request's text - so nothing off the pipe can ask for
+it: a chat's request, an older client's, or one written by hand. Never give the bridge the
+pane's door, and never let a chat-side tool name such an operation.
 
 ## Colours, font and icons - the brand
 

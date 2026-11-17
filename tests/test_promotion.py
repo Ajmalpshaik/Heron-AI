@@ -190,14 +190,21 @@ def main():
           "docs/09 s94 still asks for N successful real executions")
     check("N to be set" in skills and "suggest 10" in skills,
           "with N still to be set, suggesting 10")
-    check("Tracked as [Q-9]" in skills,
-          "and still says tracked as Q-9")
+    # Until 2026-11-15 docs/09 also said "Tracked as [Q-9]" and this checked
+    # it still did. PROPOSALS F21 was done that day: the line now says D-30
+    # settled it, so the check holds the fix rather than the stale line.
+    check("Tracked as [Q-9]" not in skills
+          and "Was tracked as [Q-9]" in skills and "D-30" in skills,
+          "and says Q-9 WAS tracked, and that D-30 answered it (F21)")
     check("Answers:** [Q-9]" in decisions,
           "while D-30 answers Q-9")
     check("F21" in whole, "the agent records that as PROPOSALS F21")
-    check(any("tracked as q-9" in line.lower()
+    check(any("settled by d-30" in line.lower()
               for line in with_proof["unjudged"]),
           "and every answer carries it")
+    check(not any("still says 'tracked as q-9'" in line.lower()
+                  for line in with_proof["unjudged"]),
+          "and no answer still claims docs/09 calls Q-9 open")
 
     print("\n7. Every failure is named and reached")
     for bad in (None, "FRG-SEL-001", []):

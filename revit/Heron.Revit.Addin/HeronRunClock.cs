@@ -233,6 +233,12 @@ namespace Heron.Revit.Addin
         /// Watch(), where no check counts - so it cannot trip the clock however
         /// long the person takes; and the dispatcher's longer wait for it is
         /// D-119's own, through AwaitingModeller. Read, not assumed.
+        ///
+        /// THE FIRST USING BLOCK, 2026-11-16 (Q-86): RevitFragment holds the
+        /// clock for the whole script of a card that declares the ambient need
+        /// `waitsForModeller` - Revit's own pick, answered by a click or Esc -
+        /// on the read and show paths only. The same line tells the dispatcher
+        /// (RevitDispatcher.AwaitingClick), because this pause does not.
         /// </summary>
         public static IDisposable Pause()
         {

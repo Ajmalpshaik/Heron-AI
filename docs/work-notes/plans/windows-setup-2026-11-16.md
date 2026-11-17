@@ -72,7 +72,7 @@ installer; what a modeller still does by hand is **install Python itself** - sec
 
 - **Installing Python.** [Q-39](../../open-questions/answered.md) says Heron never pulls a runtime onto a
   PC unasked; whether a release should ever carry Python is still open in
-  [Q-38](../../open-questions/from-master-specification-part-2.md#q-38--what-is-the-exact-install-command-new).
+  [Q-38](../../open-questions/from-master-specification-part-2.md#-q-38--what-is-the-exact-install-command-new).
   The Setup checks for it and, when it is missing, stops with the one `winget` line - as the installer does.
 - An all-users install, an `.msi` for an IT department, an automatic update ([07 §7](../../07-installation-and-update.md) rule 1), an App Store package ([D-38](../../decisions/D-38.md)).
 

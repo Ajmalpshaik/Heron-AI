@@ -101,6 +101,7 @@ of the others turns a pull request red just the same ([heron-ship](../.claude/sk
 | [`setup.ps1`](setup.ps1) | builds and installs Heron per user for every Revit on this PC | on Windows, from a checkout, Revit closed |
 | [`deploy-addin.ps1`](deploy-addin.ps1) | one built add-in into the user's add-ins folder; `-Remove`, `-Rollback` | when `setup.ps1` is more than you need; Revit closed |
 | [`HeronRevit.ps1`](HeronRevit.ps1) | which Revits are installed, which are open, where each one's add-ins go | never by hand - the install scripts dot-source it |
+| [`heron-folders.py`](heron-folders.py) | `platform/heron-folders.json`, the folders the install scripts read, written from `HeronPaths` and checked against it - exit 1 on a hand edit | after any change to `HeronPaths.cs`: `--write`, then commit; `tests/test_heron_folders.py` runs the check |
 | [`heron-ready.py`](heron-ready.py) | a PC made ready before its first chat: Python, packages, the store, the search model | once per PC, and after an update |
 | [`check-dependencies.py`](check-dependencies.py) | which packages are present and what each buys; exit 1 only for a required one | when Heron seems weaker than it should be |
 | [`lock-python.py`](lock-python.py) | `requirements-lock.txt` regenerated, and its advisories audited | when a pinned version must move; CI's weekly run audits it |
@@ -709,6 +710,34 @@ that costs PyYAML - and this is the tool you run on a bare machine to read the l
 *before* trusting it enough to install anything for it. `heron_relpath` imports nothing but `os`, and
 [`tests/test_relpath.py`](../tests/test_relpath.py) runs this tool with PyYAML blocked
 ([row 5b-152](../docs/FRAGMENT-ISSUES.md)).
+
+## `heron-folders.py` — the folders the install scripts read, written by the add-in's path code
+
+```bash
+python tools/heron-folders.py                    # check platform/heron-folders.json against HeronPaths
+python tools/heron-folders.py --write            # regenerate it, after changing HeronPaths.cs
+python tools/heron-folders.py --against FILE     # check another copy
+```
+
+**[Q-58](../docs/open-questions/tier-2.md), decided 2026-11-15 on the owner's delegation.**
+[`platform/README.md`](../platform/README.md) rule 3 says `HeronPaths` is the only thing that builds a
+Heron path, and the install scripts built two - the Revit Addins folder and the install backup -
+because a `.ps1` cannot call a C# class and runs before any Heron assembly is on the PC. Now
+`HeronPaths.RevitAddins` and `HeronPaths.InstallBackup` own them,
+[`tests/Heron.Folders.TestHost`](../tests/Heron.Folders.TestHost/) compiles `HeronPaths.cs` and prints
+what the list should say, this writes or compares it, and `Get-HeronFolder` in
+[`HeronRevit.ps1`](HeronRevit.ps1) reads it - stopping by name, before anything is changed, when it is
+missing.
+
+**A template, never one machine's path.** Each folder is a Windows special folder by name - the one
+`HeronPaths` asks `Environment.GetFolderPath` for, which PowerShell hands to the same call - and the
+parts under it, with `{release}` and `{folder}` left for the script. Off Windows the host is asked as a
+scratch user, because .NET there answers nothing for a special folder that does not exist yet.
+
+Exit 0 the list matches (or was written); 1 it differs or is missing, with the difference and the
+command that fixes it; **3 NOT RUN** when no .NET SDK and runtime meet, which is not a pass. The
+PowerShell half has not run here - NEEDS-CHECKING
+[AB11](../docs/needs-checking/group-ab.md).
 
 ## `heron-backup.py` — the user's own data, and getting it back
 
@@ -1878,6 +1907,8 @@ python tools/check-dependencies.py
 independent review of the housekeeping work counted the sections against `ls tools/*.py`. The paragraph
 at the top of this file is about a number going stale; this is the same failure with the number removed
 — a tool nobody could find from the one document that lists them.
+
+**Not in CI, on purpose ([PROPOSALS F6](../docs/PROPOSALS.md), decided 2026-11-15 on the owner's delegation).** It reports on the machine, not on the change: a runner with every package installed passes it whatever a change does, so it is run on a PC, after a fresh clone or a change to either requirements file.
 
 **Exits 1 only when a REQUIRED package is missing.** A missing optional one exits 0, because that is
 what optional means and a checker that failed on it would be arguing with R-42's silent degradation.

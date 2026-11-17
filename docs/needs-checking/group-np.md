@@ -77,6 +77,68 @@ pulling, so the chat runs the new server. The switch is turned in Revit - *Heron
 **Then** the group closes on NP1 to NP8. A row that fails reopens the change; nothing in a row changes to
 make it pass. NP6 can only be run on a PC with a packaged Claude app; on any other it is **NOT RUN**, said so.
 
+### Added 2026-11-16 - Q-70: Revit says its own settings file and Changes, Admin and Publish; `revit_health` states them and says when the chat's copy differs
+
+[Q-70](../open-questions/tier-2.md) was decided on 2026-11-15, on the owner's delegation: *Revit reports its own
+switches and settings file; the connection check states them as Revit has them and warns when the chat's copy
+differs.* NP6 above is the reason - the chat's shell reads the Claude app's copy under the same name as the file
+Revit wrote.
+
+**Narrowed the same day by [D-166](../decisions/D-166.md), before any row below had run.** Q-70 was first built with
+the add-in reading Changes, Admin and Publish from the file it named, and with the chat's copy of the three compared
+against Revit's. D-166 holds the three in Revit's memory, off whenever Revit starts and in no file, so when the two
+branches were merged on 2026-11-16 that half was dropped and the rows below were rewritten to what is built - none
+had been run. What is built now:
+
+- The add-in's `info` ([`BridgeServer.cs`](../../revit/Heron.Bridge/BridgeServer.cs)) carries `settingsFile` (the
+  full path the add-in reads) and `settingsFileFound` beside `askToKeep`, and Changes, Admin and Publish as
+  `changes`, `admin` and `publish` from Revit's memory (D-166's fields, with `changesLocked` and the rest). Only
+  read: nothing in `info` saves, and nothing on a request chooses what is said.
+- Under each connected Revit `revit_health` prints its Ask to Keep line and D-166's switches line - *Changes ..,
+  Admin .., Publish .. in this Revit right now* - and **one more line only when the chat's own copy is not the
+  file that Revit reads** - by name, by whether either side found it, or by Ask to Keep, the one switch D-166
+  left in the file ([`heron_health.py`](../../mcp/server/heron_health.py) `settings_lines`). With one file, no
+  line names a file. That line names both files, which Group OB's OB4 may read as a failure:
+  [row 5b-1836](../fragment-issues/row-5b-1836.md), the owner's to say.
+- The rollup's write gate is Changes as the Revits that said have it, naming them; with none, no answer - never the
+  chat's copy, which holds no switch. An older add-in gets one line, *this Revit's Heron does not report its
+  settings file*, beside D-166's line for an add-in that does not report its switches.
+- `heron_why` asks Revit nothing still (PROPOSALS F1): it judges the switches by what that Revit last told
+  `revit_health`, and says how long ago; with no word, as off, the way every Revit starts, and says it assumed so.
+
+**Built, compiled for every supported release, NOT YET RUN IN REVIT.** Held without Revit by
+[`tests/test_config_and_health.py`](../../tests/test_config_and_health.py) (the add-in's words as text, the client's
+reader, the lines - same file, differing Ask to Keep, differing path, older add-in - and the write gate's source),
+[`tests/test_mcp_serves.py`](../../tests/test_mcp_serves.py) (the real tool against four stand-in add-ins, a chat's
+copy saying `write.enabled = true` moving nothing, and `heron_why` judging by what was heard),
+[`tests/test_runtime_snapshot.py`](../../tests/test_runtime_snapshot.py) and
+[`tests/test_bridge_roundtrip.py`](../../tests/test_bridge_roundtrip.py) (the real bridge, a settings file of its
+own, the file named, and the three switches written ON into it under a running host and still said off - Linux
+only). **What it cannot see:** two files under one name that hold the same Ask to Keep - nothing differs, so no
+second line; and the waiting times, which the add-in reads once at start-up and does not report.
+
+**The PC - the laptop, whose Claude app keeps its own copy of `%APPDATA%\Heron`.** The same scratch copy and
+rough-work folder as above. **Run NP12 first**, as NP3: deploy the new add-in to **one** release only
+(`tools/deploy-addin.ps1`), run NP12 on another release still on the add-in from before this change, then deploy
+to the rest. Restart the Claude app after pulling. Switches are turned in Revit, *Heron > AI Bridge > Settings*,
+never by editing either `heron.config`; the app's copy -
+`%LOCALAPPDATA%\Packages\AnthropicPBC.Claude_fnn82j28hfe8t\LocalCache\Roaming\Heron\config\heron.config` on
+2026-11-14 - is only **read**, from outside the app (the owner's own Terminal or Explorer, not the chat's shell,
+which sees the copy under the real name).
+
+| # | Run | Look for |
+|---|---|---|
+| **NP9** | *Positive - Revit's own switches and file, said.* A Revit the owner started himself, the new add-in. In Settings turn **Changes on**, Admin and Publish off. Ask *"is Heron connected?"* | Under that Revit, after its Ask to Keep line: **`Changes ON, Admin off, Publish off in this Revit right now.`** If the chat's copy is the file this Revit reads, nothing more; if not, the NP10 line - record which, and the path it names. The rollup carries **`Changes is ON in Revit <release>, session <pid>, as that Revit has it`**. Turn Changes **off**, ask again with nothing restarted: `Changes off`, and no write-gate warning |
+| **NP10** | *The laptop's case - the chat's copy differs, said in one line.* The same Revit. Read the app's copy's `write.askBeforeKeeping` from outside the app, then turn Ask to Keep in Revit to the **opposite** of what the copy holds. Ask *"is Heron connected?"* | Under that Revit one more line: **`This chat's own copy of the settings file differs from this Revit's, though both are named <path>: they disagree on Ask to Keep (this Revit: .., this chat's: ..)`**, ending that this Revit reads its own file. If the chat's path comes out naming `LocalCache`, the line names both files instead: record which. No such line while the copy differs fails the row, and so does one naming Changes, Admin or Publish |
+| **NP11** | *Negative - one file, nothing more said.* Close that Revit. Start Revit **from the chat's shell** (it reads the app's copy, Q-70's table), press the Heron button, turn Ask to Keep **on** in its Settings. Ask *"is Heron connected?"* | **No settings line at all** under that Revit: this Revit's file is the chat's copy. Read the copy from outside the app: `write.askBeforeKeeping = true`. A line naming a settings file here fails the row. If no Revit can be started from the chat's shell, **NOT RUN**, said so |
+| **NP12** | *An older Heron does not report - run first.* A Revit on the add-in from before this change. Ask *"is Heron connected?"* | Under it, after the Ask to Keep line as NP3 found it: **`Settings file: this Revit's Heron does not report its settings file`**, and that its add-in is older; no file named for it. On an add-in from before D-166 too, D-166's line that it does not report Changes, Admin and Publish, and a write gate that is not the warning - never the chat's copy |
+| **NP13** | *`heron_why` believes Revit, and asks it nothing.* Run straight after NP9, with that Revit still open and Changes on, and no other `revit_health` in between: ask the chat *why can't you create a level?* | The answer's `switches` line: **`Changes on, Admin off, Publish off - as Revit <release> (session <pid>) said it holds them, when revit_health asked it ... ago`**, and the reason is **not** that Changes is off. Turn Changes off, ask `revit_health` once, ask again: the reason is Changes, and the sentence says it was Revit's word. With no `revit_health` since the chat started, the line says the switches were **assumed, not said**. Each ends *Nothing was sent to Revit.* |
+| **NP14** | *Asking reads, and writes nothing.* Note the **Modified** time of Revit's own `heron.config` and of the app's copy (from outside the app). With no switch pressed, ask *"is Heron connected?"* three times | Both times unchanged, and neither file's text changed. Either one moved fails the row |
+
+**Then** the Q-70 rows close on NP9 to NP14 and Q-70's run is done. A row that fails reopens the change; nothing
+in a row changes to make it pass. NP10 and NP11 need a PC with a packaged Claude app; on any other they are
+**NOT RUN**, said so. (NP13 did too until D-166 narrowed it.)
+
 ### Run record - 2026-11-13, NP3, Revit 2020 on the laptop
 
 **Arranged differently from the row, and said so.** NP3 asks for two Revits connected at once. This PC holds

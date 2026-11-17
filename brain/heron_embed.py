@@ -363,6 +363,28 @@ def backend():
                      "word order, but NOT meaning. " + IMPROVED_BY)
 
 
+PYTHON_COMPARISON = "python"
+
+
+def comparison():
+    """(how vectors are compared, why) - said, never assumed (PROPOSALS F7).
+
+    Always Python today: sqlite-vec has no caller (row 5b-1171). The answer
+    says whether it is installed, because the one wrong belief worth
+    preventing is that installing it made search faster.
+    """
+    try:
+        import sqlite_vec  # noqa: F401
+        installed = True
+    except ImportError:
+        installed = False
+    return PYTHON_COMPARISON, (
+        "vectors are compared in Python - same answers, slower. sqlite-vec is "
+        + ("installed but not used: nothing in Heron loads it yet"
+           if installed else "not installed, and would not be used if it were")
+        + " (row 5b-1171).")
+
+
 def vector(text):
     got = model_vector(text)
     return got if got is not None else lexical_vector(text)
@@ -409,11 +431,13 @@ def encoder():
 # Storing vectors, in the scope's own file
 # ---------------------------------------------------------------------------
 #
-# D-23 names sqlite-vec, and it is used when it loads. It does not always load:
-# some Python builds ship with extension loading compiled out, and that is
-# exactly the locked-down machine Heron's install promise is about. So there is
-# a plain fallback that computes the same cosine in Python over the same stored
-# bytes - identical answers, slower, and it needs nothing installed at all.
+# D-23 names sqlite-vec. IT IS NOT WIRED: `_try_vec_extension` below has had no
+# caller since it was written (row 5b-1171), so every vector is compared in
+# Python over the stored bytes, installed or not - identical answers, slower,
+# and nothing to install. `comparison()` says so, and tools/heron-ready.py
+# prints it (PROPOSALS F7), so nobody takes the slow path for the fast one.
+# Where it would load, some Python builds ship with extension loading compiled
+# out - exactly the locked-down machine Heron's install promise is about.
 #
 # Both keep the vectors IN THE SCOPE'S OWN FILE, which is the part that matters:
 # one file per scope stays true either way (Golden Rule 5), and a vector never

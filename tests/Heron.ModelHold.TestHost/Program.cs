@@ -236,6 +236,8 @@ namespace Heron.ModelHold.TestHost
                                                                                StringComparison.Ordinal),
                   "a model with no title is still named in the refusal");
 
+            PaneLooks(chatA, tower, t0, quiet);
+
             Console.WriteLine();
             if (Failures.Count > 0)
             {
@@ -245,6 +247,56 @@ namespace Heron.ModelHold.TestHost
             }
             Console.WriteLine("PASSED - " + _checks + " checks");
             return 0;
+        }
+
+        /// <summary>
+        /// D-176, row 5b-1825: the Activity pane's Select and Zoom look past a
+        /// chat's hold - they change the selection and the view, never the
+        /// model - and nothing else does. The rule takes the operation and the
+        /// job's own pane mark; RevitOperations.Run asks it (read as text by
+        /// tests/test_activity_pane.py).
+        ///
+        /// By reflection, so on the code before the row - no such rule - these
+        /// fail as checks, not as a host that will not build.
+        /// </summary>
+        private static void PaneLooks(string chatA, string tower, DateTime t0, TimeSpan quiet)
+        {
+            Console.WriteLine();
+            Console.WriteLine("10. the pane's Select and Zoom look past a chat's hold, and nothing else does (D-176)");
+
+            var rule = typeof(HeronModelHold).GetMethod("LooksPastHolds",
+                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic
+                | System.Reflection.BindingFlags.Static, null, new[] { typeof(string), typeof(bool) }, null);
+            Check(rule != null, "the hold has a rule for what looks past it (HeronModelHold.LooksPastHolds)");
+            if (rule == null) return;
+            Func<string, bool, bool> looks = (op, fromPane) => (bool)rule.Invoke(null, new object[] { op, fromPane });
+
+            Check(looks("show_elements", true),
+                  "the pane's Select and Zoom - show_elements, from the pane's own door - look past it");
+            Check(!looks("show_elements", false),
+                  "the same operation sent over the pipe by a chat does NOT - it still meets the hold");
+            var others = new[] { "undo_from_pane", "run_fragment_write", "run_fragment_admin",
+                                 "run_fragment_publish", "move_elements", "run_fragment_show",
+                                 "run_fragment_read", "select_by_category", "isolate_temporary",
+                                 "capture_view", "count_elements", "Show_Elements", "show_elements ",
+                                 "", null };
+            var past = new List<string>();
+            foreach (var op in others)
+                if (looks(op, true) || looks(op, false)) past.Add(op ?? "(none)");
+            Check(past.Count == 0,
+                  "nothing else the pane or a chat sends looks past it - a change, the pane's Undo "
+                  + "(D-175's own rule), another look, a near spelling"
+                  + (past.Count == 0 ? "" : " - but: " + string.Join(", ", past)));
+
+            // A LOOK THAT IS LET PAST TAKES NOTHING: Run asks no hold at all for
+            // it, so the chat's hold is what it was, and its quiet time with it.
+            var held = new HeronModelHold();
+            held.Claim(chatA, tower, "Tower", t0, quiet);
+            if (!looks("show_elements", true)) held.Check(null, tower, "Tower", t0.AddMinutes(1), quiet);
+            Check(held.Holder(tower, t0.AddMinutes(1), quiet) == chatA
+                  && held.Holder(tower, t0 + quiet + TimeSpan.FromSeconds(1), quiet) == null,
+                  "and the chat's hold stays the chat's, ending when it always would - the pane "
+                  + "neither takes nor renews it");
         }
     }
 }
