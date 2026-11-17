@@ -25,8 +25,10 @@ WHAT IT HOLDS
   2. THE SETTING   privacy.hidePaths, off unless the modeller turns it on, and
                    declared the same on both sides (Python and C#).
   3. THE PLACE     every tool's answer to the chat passes through one door,
-                   `_recorded`: hidden there when the setting is on, untouched
-                   when it is off - run, through that door, on a stand-in tool.
+                   `_recorded`, which hands it to heron_privacy.said: run
+                   here with the setting on, off and missing, and the door
+                   read as text - the server core needs the MCP SDK, which CI
+                   does not install, so this suite must not import it.
 """
 
 from __future__ import print_function
@@ -43,6 +45,7 @@ sys.path.insert(0, os.path.join(ROOT, "mcp", "client"))
 
 FAILURES = []
 CONFIG_CS = os.path.join(ROOT, "platform", "Heron.Core", "HeronConfig.cs")
+CORE = os.path.join(ROOT, "mcp", "server", "heron_server_core.py")
 
 
 def check(condition, what):
@@ -88,29 +91,40 @@ def setting():
 
 def place():
     print("\n3. the place - every answer's one door")
-    import heron_server_core as C
+    import heron_privacy as P
     folder = tempfile.mkdtemp(prefix="heron-hide-")
     config = os.path.join(folder, "heron.config")
     before = os.environ.get("HERON_CONFIG")
     os.environ["HERON_CONFIG"] = config
+    answer = "The report is at C:\\Projects\\Acme\\report.html"
     try:
-        def heron_capabilities():
-            return "The report is at C:\\Projects\\Acme\\report.html"
-        door = C._recorded(heron_capabilities)
         for value, hidden in (("true", True), ("false", False)):
             with io.open(config, "w", encoding="utf-8") as fh:
                 fh.write(u"privacy.hidePaths = %s\n" % value)
-            got = door()
-            check(("Acme" not in got and "…\\report.html" in got) if hidden else "C:\\Projects\\Acme" in got,
+            got = P.said(answer)
+            check(("Acme" not in got and "\u2026\\report.html" in got) if hidden else got == answer,
                   "privacy.hidePaths = %s: %s - got %r" % (value, "folders hidden" if hidden else "untouched", got))
         os.remove(config)
-        check("C:\\Projects\\Acme" in door(), "no settings file: the default, untouched")
+        check(P.said(answer) == answer, "no settings file: the default, untouched")
+        with io.open(config, "w", encoding="utf-8") as fh:
+            fh.write(u"privacy.hidePaths = true\n")
+        picture = object()
+        check(P.said(picture) is picture, "a reply that is not text - a picture - passes untouched")
     finally:
         if before is None:
             os.environ.pop("HERON_CONFIG", None)
         else:
             os.environ["HERON_CONFIG"] = before
         shutil.rmtree(folder, ignore_errors=True)
+    # READ AS TEXT, because the server core needs the MCP SDK, which CI does
+    # not install: every answer's one door calls it, last, for the host's call.
+    core = io.open(CORE, encoding="utf-8").read()
+    door = core[core.find("def _recorded("):core.find("def _changes_model(")]
+    check("reply = _said_hidden(reply)" in door and door.find("_said_hidden(reply)") > door.find("_said_old_code(reply)"),
+          "_recorded hides paths in every answer to the host, after its other last lines")
+    helper = core[core.find("def _said_hidden("):]
+    helper = helper[:helper.find("\ndef ", 10)]
+    check("privacy.said(reply)" in helper, "through heron_privacy.said - the code this test runs")
 
 
 def main():

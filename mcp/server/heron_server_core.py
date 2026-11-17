@@ -969,13 +969,8 @@ def _said_hidden(reply):
     answer without restarting the chat. heron_config.load never raises; an
     unreadable file is the default, off.
     """
-    if not isinstance(reply, str):
-        return reply
-    import heron_config as configuration
     import heron_privacy as privacy
-    if configuration.truthy(configuration.load(), "privacy.hidePaths"):
-        return privacy.hide_paths(reply)
-    return reply
+    return privacy.said(reply)
 
 
 def _changes_model(tool):

@@ -24,7 +24,8 @@ disk, the Companion's own activity list on this PC, and the logs keep their
 full paths. NOT ANONYMISATION: a file name, an element's parameter value or a
 view's name can still say what a folder would have.
 
-Pure: no Revit, no settings, no network. tests/test_hide_paths.py holds it.
+No Revit, no network; `said` reads the settings file and nothing else.
+tests/test_hide_paths.py holds it, with no MCP SDK needed.
 """
 
 import re
@@ -53,3 +54,17 @@ def hide_paths(text):
     text = _DRIVE.sub(lambda m: HIDDEN + m.group(1), text)
     text = _DRIVE_FORWARD.sub(HIDDEN + "/", text)
     return _SHARE.sub(lambda m: HIDDEN + ("\\\\" if m.group(1) == "\\\\\\\\" else "\\"), text)
+
+
+def said(reply):
+    """`reply` as the chat is told it: every path's folders hidden when the
+    modeller turned privacy.hidePaths on, untouched when it is off or the
+    reply is not text (a picture). Read fresh each time - a change to the
+    settings file applies to the next answer. heron_config.load never raises;
+    an unreadable file is the default, off."""
+    if not isinstance(reply, str):
+        return reply
+    import heron_config as configuration
+    if configuration.truthy(configuration.load(), "privacy.hidePaths"):
+        return hide_paths(reply)
+    return reply
