@@ -1,5 +1,6 @@
 // NOT STANDALONE. Assumes `doc`, `styleName`, `colour`, `weight`,
-// `patternName`, `updateExisting` and `familyCategory` are in scope; leaves
+// `patternName`, `updateExisting`, `familyCategory` and `parentCategory` are
+// in scope; leaves
 // `style`, `madeNew`, `readBack`, `refused` and `findings` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). One call is one undo entry.
@@ -19,6 +20,18 @@
 // and sentences. It is a bool because the add-in binds an absent value only for an
 // optional bool (HeronBindingNote.AbsentValue): a string would have been a new
 // required input for every caller.
+//
+// VERSION 3 - A SUBCATEGORY OF ANY CATEGORY THAT TAKES ONE (2026-11-17).
+// parentCategory names the category the subcategory goes under - "Reference
+// Planes" above all, so a family's planes can be put on a coloured
+// subcategory of their own by SET_FAMILY_PLANE_REFERENCE - as Object Styles
+// shows the name, or Revit's own OST_ name. It works in a project or a family,
+// and only on a category Revit lets take subcategories (CanAddSubcategory).
+// Left out it is "none", and the call is version 2's to the letter. Naming it
+// together with familyCategory true is refused: the two say where the
+// subcategory goes, and only one may. The parent's own name is the category
+// itself, as for familyCategory, so "Reference Planes" with parentCategory
+// "Reference Planes" recolours the category every plain plane is drawn in.
 //
 // EACH OF THE THREE IS OPTIONAL BY VALUE: a colour of "" keeps black (or the
 // existing colour), a weight of 0 keeps 1 (or the existing weight), a pattern
@@ -44,10 +57,55 @@ var name = (styleName ?? "").Trim();
 Category lines = null;
 try { lines = doc.Settings.Categories.get_Item(BuiltInCategory.OST_Lines); } catch { }
 
-// THE PARENT: Lines, as version 1, or the family's own category.
+// THE PARENT: Lines, as version 1, the family's own category, or (version
+// 3) the category parentCategory names.
 Category parent = lines;
 string familyRefusal = null;
-if (familyCategory)
+var askedParent = (parentCategory ?? "").Trim();
+if (string.Equals(askedParent, "none", StringComparison.OrdinalIgnoreCase)) askedParent = "";
+var namedParent = askedParent.Length > 0;
+// From here a family's category and a named one are read alike: a
+// subcategory of a category, not a line style.
+var ownCategory = familyCategory || namedParent;
+if (familyCategory && namedParent)
+{
+    parent = null;
+    familyRefusal = "Both familyCategory and parentCategory \"" + askedParent + "\" say where the subcategory goes, "
+        + "and only one may, so NOTHING WAS CHANGED. Leave familyCategory out to use " + askedParent + ".";
+}
+else if (namedParent)
+{
+    parent = null;
+    var squashed = new string(askedParent.ToLowerInvariant().Where(ch => char.IsLetterOrDigit(ch)).ToArray());
+    var all = new List<Category>();
+    foreach (Category c in doc.Settings.Categories)
+    {
+        if (c != null && !string.IsNullOrEmpty(c.Name)) all.Add(c);
+    }
+    var matches = all.Where(c => string.Equals(c.Name.Trim(), askedParent, StringComparison.OrdinalIgnoreCase)).ToList();
+    if (matches.Count == 1) parent = matches[0];
+    // Revit's own name for it - "OST_CLines" - or Reference Planes in any
+    // spelling, which is asked for by its BuiltInCategory so it never hangs on
+    // whether the category list offers it.
+    BuiltInCategory builtIn;
+    if (parent == null && askedParent.StartsWith("OST_", StringComparison.OrdinalIgnoreCase)
+        && Enum.TryParse(askedParent, true, out builtIn))
+    {
+        try { parent = doc.Settings.Categories.get_Item(builtIn); } catch (Exception) { }
+    }
+    if (parent == null && (squashed == "referenceplanes" || squashed == "referenceplane"))
+    {
+        try { parent = doc.Settings.Categories.get_Item(BuiltInCategory.OST_CLines); } catch (Exception) { }
+    }
+    if (parent == null && matches.Count > 1)
+        familyRefusal = "\"" + askedParent + "\" names " + matches.Count + " categories, so NOTHING WAS CHANGED. Name "
+            + "it by Revit's own OST_ name instead.";
+    else if (parent == null)
+        familyRefusal = "This " + (doc.IsFamilyDocument ? "family" : "model") + " has no category named \""
+            + askedParent + "\", so NOTHING WAS CHANGED. Name it as Object Styles shows it - \"Reference Planes\" - "
+            + "or by Revit's own OST_ name. LIST_CATEGORIES lists them.";
+}
+else if (familyCategory)
 {
     parent = null;
     if (!doc.IsFamilyDocument)
@@ -77,6 +135,7 @@ if (colourText != "")
 
 if (refused == null && name == "")
     refused = familyCategory ? "No subcategory name was given, so NOTHING WAS CHANGED."
+        : namedParent ? "No subcategory name was given, so NOTHING WAS CHANGED."
         : "No style name was given, so NOTHING WAS CHANGED.";
 if (refused == null && familyRefusal != null) refused = familyRefusal;
 if (refused == null && parent == null) refused = "The Lines category could not be read, so NOTHING WAS CHANGED.";
@@ -110,7 +169,7 @@ if (refused == null)
     // DRAW_FAMILY_DETAIL_LINES and SET_FAMILY_FORM_SUBCATEGORY say it - and
     // only when no real subcategory has that name, so one called "None" is
     // still reached.
-    if (sub == null && familyCategory && (string.Equals(name, "none", StringComparison.OrdinalIgnoreCase)
+    if (sub == null && ownCategory && (string.Equals(name, "none", StringComparison.OrdinalIgnoreCase)
         || string.Equals(name, parent.Name, StringComparison.OrdinalIgnoreCase)))
     {
         sub = parent;
@@ -118,22 +177,25 @@ if (refused == null)
     }
     if (sub != null && !updateExisting)
     {
-        if (!familyCategory)
+        if (!ownCategory)
             refused = "A line style named \"" + sub.Name + "\" already exists, so NOTHING WAS CHANGED. Say "
                 + "updateExisting to change its colour, weight and pattern in place.";
         else if (onCategory)
-            refused = "\"" + sub.Name + "\" is the family's own category, which always exists, so NOTHING WAS "
+            refused = "\"" + sub.Name + "\" is " + (namedParent ? "the category " + parent.Name + " itself"
+                : "the family's own category") + ", which always exists, so NOTHING WAS "
                 + "CHANGED. Say updateExisting to change its colour, weight and pattern in place.";
         else
-            refused = "The family's category, " + parent.Name + ", already has a subcategory named \"" + sub.Name
+            refused = (namedParent ? "The category " : "The family's category, ") + parent.Name
+                + (namedParent ? "" : ",") + " already has a subcategory named \"" + sub.Name
                 + "\", so NOTHING WAS CHANGED. Say updateExisting to change its colour, weight and pattern in "
                 + "place - every line on it changes with it.";
         sub = null;
     }
     else if (sub == null)
     {
-        if (familyCategory && !parent.CanAddSubcategory)
-            refused = "The family's category, " + parent.Name + ", takes no subcategories, so \"" + name
+        if (ownCategory && !parent.CanAddSubcategory)
+            refused = (namedParent ? "The category " + parent.Name + " takes" : "The family's category, " + parent.Name
+                + ", takes") + " no subcategories, so \"" + name
                 + "\" cannot be made in it. NOTHING WAS CHANGED.";
         else
         {
@@ -144,7 +206,7 @@ if (refused == null)
             }
             catch (Exception ex)
             {
-                refused = (familyCategory ? "Revit refused the new subcategory of " + parent.Name + ": "
+                refused = (ownCategory ? "Revit refused the new subcategory of " + parent.Name + ": "
                     : "Revit refused the new line style: ") + ex.Message + ". NOTHING WAS CHANGED.";
             }
         }
@@ -174,8 +236,8 @@ if (refused == null && sub != null)
         : (doc.GetElement(pid) == null ? "(none)" : doc.GetElement(pid).Name);
     readBack = "colour " + (c == null || !c.IsValid ? "(none)" : c.Red + "," + c.Green + "," + c.Blue)
         + ", weight " + (w == null ? "(none)" : w.ToString()) + ", pattern " + p;
-    var what = !familyCategory ? "line style \"" + sub.Name + "\""
-        : onCategory ? "the family's own category \"" + sub.Name + "\""
+    var what = !ownCategory ? "line style \"" + sub.Name + "\""
+        : onCategory ? (namedParent ? "the category" : "the family's own category") + " \"" + sub.Name + "\""
         : "subcategory \"" + sub.Name + "\" of " + parent.Name;
     findings.Add((madeNew ? "Made" : "Updated") + " " + what + ": " + readBack + " (read back).");
 
