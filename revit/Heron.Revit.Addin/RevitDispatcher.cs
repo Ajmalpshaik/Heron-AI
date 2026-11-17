@@ -438,12 +438,18 @@ namespace Heron.Revit.Addin
                 // The box is still open in Revit, and it still decides. This
                 // caller stops waiting; whatever the modeller presses stands,
                 // and the banner comes down when they do.
+                //
+                // NOTHING HERE SAYS THE RUN IS NOT RECORDED - it is (issue
+                // #934). When the box is answered the job ends on Revit's
+                // thread and RunRecord writes its record with the request's
+                // name in it (D-161); the server's line under this answer says
+                // where to read it.
                 RecordRefusal(job.WorkflowId, request, "awaiting_modeller");
                 return Json.Error("awaiting_modeller",
                     "Revit is still waiting for you to choose Keep or Discard, and Heron " +
                     "has stopped waiting for the answer. Whatever you press in Revit stands - " +
-                    "Discard puts the model back exactly as it was. This run is not recorded; " +
-                    "do not repeat the request while the box is open.");
+                    "Discard puts the model back exactly as it was. " +
+                    "Do not repeat the request while the box is open.");
             }
 
             if (!finished)
