@@ -46,9 +46,9 @@ a write; claimed in a routing table and not reached 67 before and 67 after. The 
 identity through the host's lookup; *"make a spiral staircase"*, *"add an L shaped stair here"*, *"put a landing
 between the runs"* and *"make the stair turn right at the landing"*, nobody's words, reach them too, and every
 sentence `CREATE_STAIRS` and `CREATE_RAILING` declare still reaches its own card. On `model`, *"put it back"* - a
-sentence already reaching a write its claimant does not name ([row 5b-1375](../fragment-issues/section-5b-rows-401-425.md))
+sentence already reaching a write its claimant does not name ([row 5b-1375](../fragment-issues/section-5b-rows-1351-1375.md))
 - moved from `RESET_GRAPHIC_OVERRIDES` to `PLACE_FAMILY_INSTANCES`, wrong to wrong; recorded as [row
-5b-1405](../fragment-issues/section-5b-rows-401-425.md), not declared, because which card it means is the owner's
+5b-1405](../fragment-issues/section-5b-rows-1401-1425.md), not declared, because which card it means is the owner's
 choice. On the keyword route alone this card now heads *"make an L shaped extrusion"* and *"are these on the right
 level"*, both already lost on that route and both answered by identity at their own cards.
 

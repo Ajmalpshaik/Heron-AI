@@ -11,8 +11,8 @@
 
 On 2026-11-07, on `4355-BHVD-3D-60A10-BL007A` in Revit 2020, the owner renamed views on as-built sheets. Every
 rename landed and was read back, but two tools misreported. `FIND_VIEWS` found 0 for a floor plan that was on a
-sheet ([row 5b-1474](../fragment-issues/section-5b-rows-401-425.md)), and `EDIT_TEXT_VALUES` answered `changed 0`,
-`unverified 4` for four views it had renamed correctly ([row 5b-1475](../fragment-issues/section-5b-rows-401-425.md)).
+sheet ([row 5b-1474](../fragment-issues/section-5b-rows-1451-1475.md)), and `EDIT_TEXT_VALUES` answered `changed 0`,
+`unverified 4` for four views it had renamed correctly ([row 5b-1475](../fragment-issues/section-5b-rows-1451-1475.md)).
 Both were PROVEN and are DRAFT, version raised, until this group proves them. **Never run on the job model** -
 a saved test copy only.
 
@@ -39,7 +39,7 @@ edge spaces. The field run says Revit 2020 does - the four names read back witho
 
 **The wire strip (row 5b-215) is fixed in the same pull request**: a value in double quotes keeps its spaces through `revit_change` and `revit_read`. MR4's quoted run is its first check through a live chat.
 
-**`OPEN_VIEW` and the add-in's view lookup are not this group's.** Both were fixed here first, then by PR #804 the same day ([row 5b-1468](../fragment-issues/section-5b-rows-401-425.md)'s `TypeWordNames`, and `OPEN_VIEW` version 4 for row 5b-1470 (a)) with the same reading plus plurals. At the merge this branch took #804's code for both, so their proof is #804's, and "Floor Plan: name" for any tool is checked there.
+**`OPEN_VIEW` and the add-in's view lookup are not this group's.** Both were fixed here first, then by PR #804 the same day ([row 5b-1468](../fragment-issues/section-5b-rows-1451-1475.md)'s `TypeWordNames`, and `OPEN_VIEW` version 4 for row 5b-1470 (a)) with the same reading plus plurals. At the merge this branch took #804's code for both, so their proof is #804's, and "Floor Plan: name" for any tool is checked there.
 
 ## 2026-11-08 - `EDIT_TEXT_VALUES` v9 PROVEN, by a different case than MR4
 

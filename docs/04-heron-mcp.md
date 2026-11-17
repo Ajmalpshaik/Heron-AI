@@ -295,7 +295,7 @@ is that the host is told, while it blocks, that the wait goes on.
 **And when Heron stops waiting before Revit has finished, the reply says so in a word** - `outcome: STILL
 RUNNING`, with what a chat can do today: not send it again, and ask the modeller what Revit shows
 (§8.12, 2026-11-12). It names no run to follow, because none comes back yet
-([row 5b-1159](fragment-issues/section-5b-rows-401-425.md)).
+([row 5b-1159](fragment-issues/section-5b-rows-1151-1175.md)).
 
 - **The tools that send a fragment carry the SDK's `Context`**: `revit_change`, `revit_read`, `revit_show`
   (§8.9), `revit_building_loads`, `revit_sprinkler_hydraulics`, `revit_sprinkler_layout` and
@@ -457,7 +457,7 @@ own (§8.9).
 **`revit_change` has a floor since 2026-11-11.** A fragment declared `READ` or `ANALYZE` is refused there
 before anything is sent, and the refusal names `revit_read`: until then it ran as a change - behind the
 Changes switch, in a transaction group, in front of the Keep box
-(`heron_tools.below_refusal`, [row 5b-1161](fragment-issues/section-5b-rows-401-425.md)). **`EXECUTE` and
+(`heron_tools.below_refusal`, [row 5b-1161](fragment-issues/section-5b-rows-1151-1175.md)). **`EXECUTE` and
 `SUGGEST` still run through it**, which the table's row does not show: a saved command above `ANALYZE` is
 run that way ([49 §2](49-saved-commands-and-the-heron-panel.md)), and the row stays open for them.
 
@@ -584,7 +584,7 @@ told never to read Heron's folder, so it could follow neither, and paid for each
 Articles as the file has them. The room it made, inside the same word budget, went to one paragraph: a
 reply from `revit_change`, `revit_read` or `revit_show` carries a line starting `outcome:`, and that
 line, not the wording around it, says how the request ended (§8.12,
-[row 5b-1562](fragment-issues/section-5b-rows-401-425.md)).
+[row 5b-1562](fragment-issues/section-5b-rows-1551-1575.md)).
 [`tests/test_outcome_line.py`](../tests/test_outcome_line.py) section 8 holds both halves: the paragraph
 is there, and each Article's words are all there, in order.
 
@@ -790,7 +790,7 @@ being prepared waits for it inside the lock (`_PREPARING`, `mcp/server/heron_bra
 tool call waits behind it. The lever Heron has is fewer calls, not parallel ones: `CREATE_FAMILY_FORMS`
 (DRAFT that day, [Q-62](OPEN-QUESTIONS.md); `PROVEN` since 2026-10-17, below) builds many forms in one. Two small per-call costs the measurement found
 are rows [5b-427 and 5b-428](fragment-issues/section-5b-rows-401-425.md); the sweep's shape note that #472
-left short is [5b-429](fragment-issues/section-5b-rows-401-425.md).
+left short is [5b-429](fragment-issues/section-5b-rows-426-450.md).
 
 **NOT MEASURED:** what the 617 s turn spent its thinking on - the thinking text is not stored - and the
 office PC ([Q-61](OPEN-QUESTIONS.md)).
@@ -819,7 +819,7 @@ A family built by a chat with `CREATE_FAMILY_FORMS` is **NOT RUN**: `revit_chang
 only ([D-117](decisions/D-117.md)) and the card stays DRAFT until its proof is signed, so
 `tools/time-family-build.py` has still not timed a build. The group's results say which add-in each run
 used and why the warm-up's switch was read from the Claude app's own copy of `heron.config`
-([row 5b-1004](fragment-issues/section-5b-rows-401-425.md)).
+([row 5b-1004](fragment-issues/section-5b-rows-1001-1025.md)).
 
 **MEASURED 2026-10-17, LATER THE SAME DAY - a family built by a chat with `CREATE_FAMILY_FORMS`, timed by
 `tools/time-family-build.py`.** Both cards were PROVEN by then ([pull request #624](https://github.com/Ajmalpshaik/Heron-AI/pull/624)).
@@ -842,14 +842,14 @@ over the window from the owner's request to the picture (`--since 2026-10-17T17:
 | Revit's own time | 101.6 s over 18 fragment runs, median 3,044 ms; the 9 first runs in the session 71.4 s |
 | Heron's time around Revit | a median 0.439 s a call (middle half 0.341 to 0.529 s; range 0.314 to 3.475 s, 20 calls) |
 | Heron's server alone | **NOT MEASURED** - the tool's own reason: the server keeps each call's seconds in memory only |
-| forms built, seconds a form | **NOT MEASURED** - the five replies print `formCount` 4, 10, 10, 6 and 14, and the tool reads none of them ([row 5b-1030](fragment-issues/section-5b-rows-401-425.md)) |
+| forms built, seconds a form | **NOT MEASURED** - the five replies print `formCount` 4, 10, 10, 6 and 14, and the tool reads none of them ([row 5b-1030](fragment-issues/section-5b-rows-1026-1050.md)) |
 
 **Most of Revit's own time here was the owner's.** Every kept write showed [D-126](DECISIONS.md)'s *"Keep
 what Heron just did?"* box, and the audit's `ms` runs round the whole job, box included. Revit's journal
 (`journal.0016.txt`) has ten boxes in the window, every one answered *"Keep it"*: 24.8 s and 24.0 s for the
 first two - the materials and the first group, the two runs the audit times at 26,570 and 26,140 ms - and 1.6
 to 6.4 s for the other eight, 80.9 s in all. The tool cannot see a box and counts it as Revit's
-([row 5b-1031](fragment-issues/section-5b-rows-401-425.md)). The 2026-10-09 and 2026-10-11 builds ran before
+([row 5b-1031](fragment-issues/section-5b-rows-1026-1050.md)). The 2026-10-09 and 2026-10-11 builds ran before
 D-126 had a box, so they compare with this one on the model's share and on Heron's time around Revit, not on
 Revit's own time. The transcript and the audit as read are kept at `%TEMP%\heron-work\pump-1017\` on the
 laptop, so the tool can be run on them again once row 5b-1030 is fixed.
@@ -886,7 +886,7 @@ other tool cost; §8.6's *about 9,000 characters* was a sentence.
   answer of 2026-10-17 to the question D-100 settled the other way for the routing score.
 - **The description served is the docstring cleaned, on every Python.** Python 3.12 - the owner's - served
   every line indented four spaces, so the same list cost more on his PC than in a container
-  ([row 5b-491](fragment-issues/section-5b-rows-401-425.md)).
+  ([row 5b-491](fragment-issues/section-5b-rows-476-500.md)).
 - **What left a description is said where it is needed**, and kept as a comment under the docstring,
   which no host is served:
 
@@ -953,7 +953,7 @@ let `EXECUTE` through with Changes off — `HeronPermissions.ReadOnlyCeiling` is
 shown, never what exists"*, and [12 §1](12-security-and-permissions.md) gives `EXECUTE` *"change selection,
 open a view, zoom"* and no confirmation. Only this side held it back: §8.1's door is `ANALYZE`, so an
 `EXECUTE` fragment reached Revit only through `revit_change`, inside the write path's transaction
-([row 5b-497](fragment-issues/section-5b-rows-401-425.md)).
+([row 5b-497](fragment-issues/section-5b-rows-476-500.md)).
 
 - **`revit_show` is the third door.** It sends `run_fragment_show`, declared `EXECUTE` in the add-in and
   routed to the read door's executor with **no transaction open** — so Revit refuses a change to the
@@ -985,7 +985,7 @@ open a view, zoom"* and no confirmation. Only this side held it back: §8.1's do
   `ZOOM_TO_LINKED_ELEMENTS` runs through `revit_show` like any other `EXECUTE` fragment.
 
 **Two things a risk word cannot say, and both doors with the switches off refuse them** (rows
-[5b-591](fragment-issues/section-5b-rows-401-425.md) and [5b-592](fragment-issues/section-5b-rows-401-425.md)):
+[5b-591](fragment-issues/section-5b-rows-576-600.md) and [5b-592](fragment-issues/section-5b-rows-576-600.md)):
 code that writes to disk - `heron_tools.disk_refusal`, at `revit_read` and `revit_show`, before a session
 is bound - and code that opens a transaction of its own, which the add-in refuses on the read and show
 paths and under `noTransactionOpen` (`Heron.Core`'s `HeronSourceScan`). Both read the code with comments
@@ -993,10 +993,10 @@ and strings blanked, and neither sees what is done through reflection.
 
 **Opening a view, and what still needs Changes ([D-125](DECISIONS.md)):** `OPEN_VIEW` declares
 `noTransactionOpen` - *run me with none open* - which the show door lets through, where the edit-scope need
-it declared until then was refused ([row 5b-498](fragment-issues/section-5b-rows-401-425.md)). A fragment
+it declared until then was refused ([row 5b-498](fragment-issues/section-5b-rows-476-500.md)). A fragment
 whose code needs Heron's transaction is declared `MODIFY`, so `ISOLATE_ELEMENTS` goes through `revit_change`
 with Changes on, and the show door's refusal names `revit_isolate_temporary` for Changes off
-([row 5b-499](fragment-issues/section-5b-rows-401-425.md)).
+([row 5b-499](fragment-issues/section-5b-rows-476-500.md)).
 
 `tests/test_read_door.py` section 10 holds the show door over every fragment in the library,
 `tests/Heron.Kernel.TestHost` section 9 runs the gate over every switch combination, and
@@ -1083,26 +1083,26 @@ is proved, what it may do, or which door runs it.
   from 3,113 characters to 2,399 with its three new lines, and a resolve from 2,947 to 1,982.
 - **How many are `PROVEN` is counted over the cards still in the library.** The sentence counted every
   `fragment.yaml`, so its *"the other N are not"* took each retired card for a capability nobody had
-  proved ([row 5b-1521](fragment-issues/section-5b-rows-401-425.md)). Which statuses retire a card is
+  proved ([row 5b-1521](fragment-issues/section-5b-rows-1501-1525.md)). Which statuses retire a card is
   the brain's to say (`heron_brain.retired_statuses`); `tests/test_served_claims.py` holds the sentence
   to the files.
 - **`heron_resolve` says why it has no release to filter by, in the lookup's words.** It was typed
   *"No Revit is connected"* whatever was found - off Windows, where none can be reached
   ([D-132](DECISIONS.md#d-132--off-windows-the-heron-server-serves-its-library-alone-and-no-revit-tool)),
   and with several Revits connected and none chosen
-  ([row 5b-1506](fragment-issues/section-5b-rows-401-425.md)).
+  ([row 5b-1506](fragment-issues/section-5b-rows-1501-1525.md)).
 - **Recorded, not repaired.** The list a door hands back for the user's own words (`request`) still
   names each capability's risk and not its status
-  ([row 5b-1523](fragment-issues/section-5b-rows-401-425.md)). And the first lookup of a server that
+  ([row 5b-1523](fragment-issues/section-5b-rows-1501-1525.md)). And the first lookup of a server that
   has just started ranks nearness as noise while calling it the trained model; asked again, the same
-  words rank properly ([row 5b-1522](fragment-issues/section-5b-rows-401-425.md)).
+  words rank properly ([row 5b-1522](fragment-issues/section-5b-rows-1501-1525.md)).
 
 ### 8.12 How a call ended, in one fixed word — built 2026-11-12
 
 Every reply was prose. How a call ended **was** worked out — `_ended`, `heron_failure`'s outcomes, the
 add-in's own `verdictKind` — and shown to the Companion's activity list alone, so a chat told *kept* from
 *refused* from *nobody knows* by reading sentences
-([row 5b-1159](fragment-issues/section-5b-rows-401-425.md)). It got that wrong more than once: a refusal
+([row 5b-1159](fragment-issues/section-5b-rows-1151-1175.md)). It got that wrong more than once: a refusal
 read as success, and *"never ran"* said of an answer that was lost.
 
 - **The three doors say it on one line** — `revit_change`, `revit_read` and `revit_show` — **and so
@@ -1154,7 +1154,7 @@ read as success, and *"never ran"* said of an answer that was lost.
     `KEPT` too, so the line says *"what, if anything, it changed"* and promises no undo step.
   - `ROLLED BACK` says what is known — **Heron asked Revit to roll the whole job back** — and not that it
     held. An error reply from the add-in carries no field for that
-    ([row 5b-1559](fragment-issues/section-5b-rows-401-425.md) — C#, and a real Revit).
+    ([row 5b-1559](fragment-issues/section-5b-rows-1551-1575.md) — C#, and a real Revit).
   - **A dry run is `ROLLED BACK` only on the add-in's verdict that its rollback held** - the reader a
     Discard's reply goes through (`_change_outcome`). One that did not hold, one Revit did not confirm,
     and a reply that says `kept` to a request sent without `apply` are `OUTCOME UNKNOWN`. Until
@@ -1174,7 +1174,7 @@ read as success, and *"never ran"* said of an answer that was lost.
   - **Every failure code `heron_failure` has no row for is `OUTCOME UNKNOWN`, at every door** — and so is
     nothing coming back at all. On a read the classifier files such a code under `refused`, which answers
     *may this be asked again* and not *did anything run*: `handler_failed` is raised by the bridge after
-    the job may have run ([row 5b-1560](fragment-issues/section-5b-rows-401-425.md)).
+    the job may have run ([row 5b-1560](fragment-issues/section-5b-rows-1551-1575.md)).
   - **A door that breaks after its request has left still answers.** Heron's own code raising once Revit
     has been asked used to reach the host as the SDK's bare *"Error executing tool"* — which says nothing
     of a change that may have been made, and is what a chat sends again. From the line the request leaves
@@ -1202,7 +1202,7 @@ read as success, and *"never ran"* said of an answer that was lost.
   the MCP schema says of the flag only that it lets the model *"see that an error occurred and
   self-correct"* — trying again is the one thing a chat must not be invited to do with an outcome nobody
   knows. What each host does with a flagged result is **not measured**
-  ([row 5b-1561](fragment-issues/section-5b-rows-401-425.md)).
+  ([row 5b-1561](fragment-issues/section-5b-rows-1551-1575.md)).
 
 - **Additive.** Take the line out and the reply is, character for character, what the door's body
   returned. The line is added where every tool call already passes (`_recorded`), so the Companion's page
@@ -1222,14 +1222,14 @@ has met a real Revit**: which reply the add-in sends for each ending is the C#'s
 **Not built, and recorded:**
 
 - **A run that is still going carries no id to follow** — the second half of
-  [row 5b-1159](fragment-issues/section-5b-rows-401-425.md), which needs the add-in to send one and a
+  [row 5b-1159](fragment-issues/section-5b-rows-1151-1175.md), which needs the add-in to send one and a
   real Revit to show it. Until then the line says what a chat can do: not send it again, and ask the
   modeller what Revit shows. A fragment that never ends is stopped by its own run clock
   ([D-129](DECISIONS.md#d-129--a-fragment-that-never-ends-is-stopped-by-a-run-clock-it-carries-and-the-bridge-can-stop-heron-again)).
 - **Only the three doors, and `revit_undo_last`.** Every other tool that says `_ended` —
   `revit_apply_move`, the inventory reads, the Companion's panels — still answers in prose alone: each
   one's "ok" is a different fact, and a tool joins when its returns have been read against the table
-  ([row 5b-1563](fragment-issues/section-5b-rows-401-425.md)). `revit_undo_last` joined that way on
+  ([row 5b-1563](fragment-issues/section-5b-rows-1551-1575.md)). `revit_undo_last` joined that way on
   2026-11-12 ([row 5b-1610](fragment-issues/row-5b-1610.md)): Undo sent is `STILL RUNNING`, never
   `KEPT`; each refusal `REFUSED`, a chat pinned to no model among them; no session, or an add-in
   older than the tool, `NOT RUN`; no answer, or an Undo sent in a model this chat does not work on,

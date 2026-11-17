@@ -42,9 +42,9 @@ once after one regeneration.
 **Routing.** Measured with `tools/check-routing.py` and `heron_retrieve.find` on two scratch stores, before
 and after the card: every sentence it declares reaches it by identity; the question reaches
 `LIST_CATEGORIES` with and without the host's question flag
-([row 5b-1425](../fragment-issues/section-5b-rows-401-425.md), FIXED). *"put it back"* moved from one write
+([row 5b-1425](../fragment-issues/section-5b-rows-1401-1425.md), FIXED). *"put it back"* moved from one write
 it does not name to another, and a made-up paraphrase of a question moved onto this write without the
-flag - [row 5b-1426](../fragment-issues/section-5b-rows-401-425.md), OPEN.
+flag - [row 5b-1426](../fragment-issues/section-5b-rows-1426-1450.md), OPEN.
 
 **The model - a scratch project from the metric architectural template, any release.** Never a working
 model. Every run below is rolled back except MB1's arrangement and MB4's one run. The job file is

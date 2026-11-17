@@ -10,7 +10,7 @@
 
 **Tracked as GitHub issue [#969](https://github.com/Ajmalpshaik/Heron-AI/issues/969) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
-[D-142](../decisions/D-142.md) (the owner's decision, 2026-10-18), from [row 5b-1200](../fragment-issues/section-5b-rows-401-425.md).
+[D-142](../decisions/D-142.md) (the owner's decision, 2026-10-18), from [row 5b-1200](../fragment-issues/section-5b-rows-1176-1200.md).
 (HH to HK were left free when this was written: other sessions were adding groups the same day.)
 **What changed.** A change that would be KEPT - `revit_change`, the words alone, the command line's
 `--write --apply`, a DRAFT's `try-once` - in which Revit counts any element deleted is rolled back, and

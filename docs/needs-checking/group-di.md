@@ -13,7 +13,7 @@
 On 2026-10-12, on Revit 2020, project 4355-BHVD-3D-60P00-BL006A carried two shared parameters called
 *Equipment Tag* on the in-place units being swapped - GUID e133774c... filled, cb0704fc... empty - and a
 by-name read showed the empty one. `REPORT_PARAMETER_INVENTORY` version 1 kept one line per name, so it
-could not show the pair at all. [FRAGMENT-ISSUES row 5b-443](../fragment-issues/section-5b-rows-401-425.md).
+could not show the pair at all. [FRAGMENT-ISSUES row 5b-443](../fragment-issues/section-5b-rows-426-450.md).
 
 **What was built - version 2 of the same capability, not a new one.** Every parameter is listed by what
 it is, a shared one with its GUID; `sameNameTwice` names each name carried twice where one is shared or
@@ -29,9 +29,9 @@ from the same folder.
 
 | # | Run | Look for |
 |---|---|---|
-| ~~**DI1**~~ | ~~Positive: the exhaust fan *TRG_FAN_EXHAUST FAN: AX45 (450mm Long)*, id 7614932, sampleOnly, type parameters, record, tags~~ | **DONE 2026-10-12.** Both *Classification.Uniclass.Pr.Number* on its type, GUID 8212e2e8... `<blank>` and GUID ee217f5d... `Pr_65_67_29_05`; `sameNameTwice` 4 (the two Uniclass pairs, and OmniClass Number and Title - a shared one beside the built-in); `tagsFound` 5, each *TCM_TG_HVAC Equipment: Equipment Tag* with its view, head and leader; location, bounding box and facing (0, 1, 0) |
-| ~~**DI2**~~ | ~~Negative: the louvre *TCM_EAL_T001_ExhaustLouvre: Standard*, id 7701431, the same switches~~ | **DONE 2026-10-12.** `sameNameTwice` 0, `tagsFound` 0, the record still whole. `batch-prove` says NEG NOT EMPTY: the parameter counts are never empty for a real element, so version 1 was proved by tracking (D-53) and the new outputs are read by eye |
-| ~~**DI3**~~ | ~~Before and after: version 1 from a base worktree of origin/main against version 2, same fan, same selection~~ | **DONE 2026-10-12.** 322 parameters against 329 - 156 to 158 on the instance, 166 to 171 on the type. 535 elements in one call came back as a 6.2 MB record, whole |
+| ~~**DI1**~~ | Positive: the exhaust fan TRG_FAN_EXHAUST FAN: AX45 (450mm Long), id 7614932, sampleOnly, type… — [full row](../needs-checking-archive/group-di.md#row-di1) | **DONE 2026-10-12.** |
+| ~~**DI2**~~ | Negative: the louvre TCM_EAL_T001_ExhaustLouvre: Standard, id 7701431, the same switches — [full row](../needs-checking-archive/group-di.md#row-di2) | **DONE 2026-10-12.** |
+| ~~**DI3**~~ | Before and after: version 1 from a base worktree of origin/main against version 2, same fan, same… — [full row](../needs-checking-archive/group-di.md#row-di3) | **DONE 2026-10-12.** |
 | **DI4** | Compare DI1 by hand: the fan's Properties palette, Edit Type, and the five views its tags are in | each value as the palette shows it; the two *Classification.Uniclass.Pr.Number* rows in Edit Type; each tag's head where the view shows it |
 | **DI5** | The signature, on the owner's word only, from this worktree | `python brain/heron_validate.py accept report-parameter-inventory --by "Ajmal PS"`. **The draft quotes `record` whole** - about 50 KB lands in the card's proof block; say whether that is wanted before signing |
 | **DI6** | On **Revit 2024** and **2027**: a model whose element carries a same-name shared pair and a tag | the same answer. The 2022 tag members (`GetTaggedLocalElementIds`, `GetLeaderEnd`) were compiled against, not run |

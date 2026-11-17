@@ -93,7 +93,7 @@ buried - with *Cut with Voids When Loaded* off and then on. *Modify > Geometry >
 the sample floor first and then each void, and a reload: every host floor cut. **So for a FLOOR the answer
 BV12 asks for is: a void does NOT cut the template's host by itself, and a cut made by hand in the Family
 Editor carries into every placement.** Revit's API 2020 to 2027 has no call that makes that cut - read in
-the eight releases' own XML remarks, [row 5b-1324](../fragment-issues/section-5b-rows-401-425.md) and
+the eight releases' own XML remarks, [row 5b-1324](../fragment-issues/section-5b-rows-1301-1325.md) and
 [Q-85](../open-questions/tier-2.md) - so `create-family-host-opening`'s floor refusal stays as it is, and
 [`hosted-family-creation`](../../brain/skills/hosted-family-creation.yaml) step 5 now tells the modeller to
 cut by hand before loading. **Still open in BV12:** the same question for a WALL and a CEILING template,

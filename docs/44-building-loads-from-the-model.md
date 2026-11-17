@@ -41,7 +41,7 @@ builds starts DRAFT ([D-30](DECISIONS.md)).
 > only from a PROVEN fragment since [D-117](decisions/D-117.md). Called in a cloud container, it refused
 > both before anything was sent. Reading, calculating, the take-off check and the report were untouched
 > ([40 §21.9](40-heron-companion.md)). Recorded as
-> [row 5b-1129](fragment-issues/section-5b-rows-401-425.md); the repair was the two proofs.
+> [row 5b-1129](fragment-issues/section-5b-rows-1126-1150.md); the repair was the two proofs.
 >
 > **Read again 2026-11-11, in a cloud container - the two proofs are signed, and Finalize has NOT been run
 > since.** Both cards' `heron-status` lines read PROVEN, `python tools/check-signatures.py` lists neither as

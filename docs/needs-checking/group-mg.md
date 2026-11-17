@@ -44,9 +44,9 @@ utterance and routing-table sentence of a live card and ten probes. Every senten
 reaches its card by identity. *"export the analytical model"* - `REPORT_ANALYTICAL_MODEL`'s own routing
 row - went to `CREATE_ANALYTICAL_ELEMENTS` without the flag once the card landed; it is now declared on
 `REPORT_ANALYTICAL_MODEL` and reaches it again
-([row 5b-1434](../fragment-issues/section-5b-rows-401-425.md), FIXED). Three made-up questions - *"is this beam associated with an analytical member"*, *"what analytical
+([row 5b-1434](../fragment-issues/section-5b-rows-1426-1450.md), FIXED). Three made-up questions - *"is this beam associated with an analytical member"*, *"what analytical
 links are in this model"*, *"where is the analytical line of this beam"* - reach the new writes without the
-flag and `REPORT_ANALYTICAL_MODEL` with it ([row 5b-1435](../fragment-issues/section-5b-rows-401-425.md),
+flag and `REPORT_ANALYTICAL_MODEL` with it ([row 5b-1435](../fragment-issues/section-5b-rows-1426-1450.md),
 OPEN). No other card's declared sentence lost the card it reached, and no routing-table sentence lost the
 card that claims it; *"raise the ducts 200"* now reaches `MOVE_ELEMENTS`, which claims it.
 

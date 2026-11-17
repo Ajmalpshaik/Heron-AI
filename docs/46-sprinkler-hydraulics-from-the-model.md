@@ -291,7 +291,7 @@ that printer - one home). Written by the brain from its own numbers; nothing is 
 *Checked 2026-10-18:* phase 2 is still not built. Were it built today, its value write would be refused
 before anything was sent: `SET_PARAMETER_VALUES_BY_ID` was DRAFT at version 3 that day and `revit_change` keeps
 a change only from a PROVEN fragment ([D-117](decisions/D-117.md); the Loads panel's Finalize meets the
-same, [row 5b-1129](fragment-issues/section-5b-rows-401-425.md)). `SET_MEP_SIZE` is PROVEN.
+same, [row 5b-1129](fragment-issues/section-5b-rows-1126-1150.md)). `SET_MEP_SIZE` is PROVEN.
 
 ---
 

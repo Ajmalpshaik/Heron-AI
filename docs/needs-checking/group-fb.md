@@ -14,7 +14,7 @@ Found on 2026-10-14 on a real Revit 2020 job: a sheet set of the 8 sheets carryi
 "IAB-ISSUED AS-BUILT" could only be made through `SELECT_BY_PARAMETER_VALUE` on Sheets with *Current
 Revision Description* equal to the description - which picks a sheet only while that revision is the
 LATEST on it. `FIND_SHEETS` takes one part of a number or a name, so *"these 8 sheets by number"* had no
-route either. [Row 5b-550](../fragment-issues/section-5b-rows-401-425.md) has the whole of it.
+route either. [Row 5b-550](../fragment-issues/section-5b-rows-526-550.md) has the whole of it.
 
 **What changed.** [`FIND_SHEETS_BY_REVISION_OR_NUMBER`](../../brain/fragments/find-sheets-by-revision-or-number/fragment.yaml)
 (FRG-SHT-033, DRAFT, READ) leaves `elements` - the sheets of one revision found anywhere in each sheet's

@@ -199,7 +199,7 @@ The runtime and the folder come from [`Directory.Build.props`](../Directory.Buil
 | 2023 | `net48` | `bin\x64\<Configuration>\2023\` | NOT RUN - EQ3 | no |
 | 2024 | `net48` | `bin\x64\<Configuration>\2024\` | **yes** - A12, EQ6, and the safety groups run on 2026-10-18 ([Group ET](needs-checking/group-et.md)) | yes |
 | 2025 | `net8.0-windows` | `bin\x64\<Configuration>\2025\` | NOT RUN - EQ4: no PC reached has it | no |
-| 2026 | `net8.0-windows` | `bin\x64\<Configuration>\2026\` | **loads, and no fragment ran** - EQ5, [row 5b-575](fragment-issues/section-5b-rows-401-425.md); the repair is [Group GW](needs-checking/group-gw.md), not yet run on 2026 | no |
+| 2026 | `net8.0-windows` | `bin\x64\<Configuration>\2026\` | **loads, and no fragment ran** - EQ5, [row 5b-575](fragment-issues/section-5b-rows-551-575.md); the repair is [Group GW](needs-checking/group-gw.md), not yet run on 2026 | no |
 | 2027 | `net10.0-windows` | `bin\x64\<Configuration>\2027\` | **yes** - A12, EQ6, and fragments ran in the safety groups of 2026-10-18 (Group ET) | no |
 
 *A signed proof names it* is derived, never typed: the two commands at the top of

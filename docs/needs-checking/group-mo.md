@@ -43,17 +43,17 @@ for MO2-MO7 to show.
 assemblies of all eight with `tools/api-surface --members`; the members are named in each card's
 `compatibility-note`. **Nothing here has run in Revit.** All four are DRAFT. **Only Revit can settle**, and MO2-MO7
 record: what Revit does at the joins of a chain set piece by piece, and which side a chain goes by the sign
-([row 5b-1458](../fragment-issues/section-5b-rows-401-425.md)); whether a **project** file opens inside the host's
+([row 5b-1458](../fragment-issues/section-5b-rows-1451-1475.md)); whether a **project** file opens inside the host's
 transaction as a family did for `UPGRADE_FAMILY_FILES`, what Revit does with a type name already here with no
-handler, and whether a legend's components arrive ([row 5b-1459](../fragment-issues/section-5b-rows-401-425.md));
+handler, and whether a legend's components arrive ([row 5b-1459](../fragment-issues/section-5b-rows-1451-1475.md));
 whether the systems analysis request runs inside a transaction and what becomes of the background run when the
-view is rolled back ([row 5b-1460](../fragment-issues/section-5b-rows-401-425.md)); and whether the published
+view is rolled back ([row 5b-1460](../fragment-issues/section-5b-rows-1451-1475.md)); and whether the published
 position reads back before the link is saved, and what Revit's save question does when the save is Heron's
-([row 5b-1461](../fragment-issues/section-5b-rows-401-425.md)). **Not done:** schedules and sheets from a file;
+([row 5b-1461](../fragment-issues/section-5b-rows-1451-1475.md)). **Not done:** schedules and sheets from a file;
 reading a finished systems analysis report; saving the published position into the linked file - the modeller's,
 in Revit's own dialog.
 
-**Routing.** Measured in [row 5b-1462](../fragment-issues/section-5b-rows-401-425.md).
+**Routing.** Measured in [row 5b-1462](../fragment-issues/section-5b-rows-1451-1475.md).
 
 **The models - scratch, any one release 2021 to 2027** (2020 with its 2020.1 update). Never a working model. Every
 run below is rolled back except MO1's arrangement and the one KEPT run in a copy that MO5 and MO7 name. The job file

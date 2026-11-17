@@ -12,7 +12,7 @@
 **Tracked as GitHub issue [#976](https://github.com/Ajmalpshaik/Heron-AI/issues/976) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
 **The owner's PC, Revit 2024 first, then 2020.** Six new tools, the second of the three changes the owner asked
-for on 2026-10-01 - [Group BL](../needs-checking/group-bl.md) built the forms, and these make them behave:
+for on 2026-10-01 - [Group BL](group-bl.md) built the forms, and these make them behave:
 
 - [`combine-family-forms`](../../brain/fragments/combine-family-forms/fragment.yaml) - `COMBINE_FAMILY_FORMS`, FRG-GEO-043 - join solids, or cut a solid with a void
 - [`lock-form-to-planes`](../../brain/fragments/lock-form-to-planes/fragment.yaml) - `LOCK_FORM_TO_PLANES`, FRG-GEO-044 - align and lock any form's flat faces

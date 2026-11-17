@@ -108,7 +108,7 @@ same folder, or the reading of 145 does not apply.
 | # | Result | What it read |
 |---|---|---|
 | JT0 | PASS | `REPORT_OPEN_DOCUMENTS`: Snowdon active, `Family1` open in the Family Editor |
-| JT1 | PASS, second run | `elementTotal` 4750 = the categories' `instances` 4750 = the levels' 4623 + `noLevel` 127; `notRead` []; `warnings.total` 145, 0 errors, 5 kinds; `links` six rows, each loaded; spaces 67, `notEnclosed` 0. Three of the categories are named *Center line* - [row 5b-1355](../fragment-issues/section-5b-rows-401-425.md) |
+| JT1 | PASS, second run | `elementTotal` 4750 = the categories' `instances` 4750 = the levels' 4623 + `noLevel` 127; `notRead` []; `warnings.total` 145, 0 errors, 5 kinds; `links` six rows, each loaded; spaces 67, `notEnclosed` 0. Three of the categories are named *Center line* - [row 5b-1355](../fragment-issues/section-5b-rows-1351-1375.md) |
 | JT1, first run | NOT JUDGED - arrangement | The links not found, as above: `elementTotal` 4682, `warnings.total` 211. Not a reading of the card |
 | JT2 | PASS | `Family1`: `model` {title `Family1`, `isFamily` true, `isWorkshared` false}; provided `elementTotal` 0, `sectionsNotRead` 15; every other part null, `fill` and `breakdowns` among them; `capped` []; neither 4750 nor 145 anywhere in its JSON |
 | JT3 | NOT RUN | The reply's time was not read |
@@ -125,5 +125,5 @@ on the PC (`brain/proof-drafts/report-model-dashboard.yaml`, not in the reposito
 on *P1102 STR*, negative on *P1102 Light* - with the same code fingerprint `26e34c5fe86c31a2` as the run above
 ([#791](https://github.com/Ajmalpshaik/Heron-AI/pull/791)); the card's `proof:` block holds that run. So the
 *not signed* and *still owed* lines above describe 2026-11-01 and are kept as that day's record. Which of JT10, JT11
-and JT17's schedule half that proof covered is not judged here; its `proof:` block is the record. [Row 5b-1355](../fragment-issues/section-5b-rows-401-425.md)
+and JT17's schedule half that proof covered is not judged here; its `proof:` block is the record. [Row 5b-1355](../fragment-issues/section-5b-rows-1351-1375.md)
 (three categories named *Center line*) is untouched by it and stays OPEN.

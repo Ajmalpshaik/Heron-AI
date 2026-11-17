@@ -14,7 +14,7 @@ Asked 2026-11-11 by the audit of every capability a family's 2D side needs
 locked and stretched in a diffuser family, nothing in Heron read back what was locked to what. **Widened, not
 made new**, on the owner's word - no second tool for the same kind of job: `REPORT_FAMILY_FORMS` (READ) goes from
 version 4 to 5 and back to DRAFT. Why, and what is not known, is
-[FRAGMENT-ISSUES row 5b-1496](../fragment-issues/section-5b-rows-401-425.md).
+[FRAGMENT-ISSUES row 5b-1496](../fragment-issues/section-5b-rows-1476-1500.md).
 
 | What | Where | What it does |
 |---|---|---|

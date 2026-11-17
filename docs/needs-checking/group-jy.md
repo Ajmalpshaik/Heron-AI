@@ -73,7 +73,7 @@ store each, against this tree with and without the card. The four sentences abov
 identity; without it they reached `SET_MEP_INSULATION` (*"add 25 mm lining to these ducts"*, *"change the
 lining thickness to 50"*), `CREATE_DUCT` (*"line this supply duct and its fittings"*) and
 `REMOVE_MEP_INSULATION` (*"remove the lining from this duct"* - the item [Group JX](group-jx.md) and
-[row 5b-1358](../fragment-issues/section-5b-rows-401-425.md) recorded open, closed by this card). Ten
+[row 5b-1358](../fragment-issues/section-5b-rows-1351-1375.md) recorded open, closed by this card). Ten
 undeclared lining phrasings tried beside them - *"add lining"*, *"remove the lining"*, *"change the lining
 type"*, *"make the lining 50 mm"* and six more - reach this card ranked; before it each reached an
 insulation card, `CHANGE_ELEMENT_TYPE`, `READ_ELEMENT_TABLE` or `SET_MEP_SYSTEM_TYPE`. **No sentence that

@@ -1327,7 +1327,7 @@ or the owner reopening "warn, don't re-rank".
 
 ## 2026-10-09 — listing the rooms answered by a change that places them
 
-[Row 5b-426](../docs/fragment-issues/section-5b-rows-401-425.md). Measured on `main` `661384f6` (**480
+[Row 5b-426](../docs/fragment-issues/section-5b-rows-426-450.md). Measured on `main` `661384f6` (**480
 fragments**) and again on `36f02b54` (**481**, after PR #450's `LIST_MATERIALS`), behind the 2024 wall, through `heron_brain.lookup`, on **`lexical`** and **`model`**
 (`model2vec:minishlab/potion-base-8M`, from a venv outside the repository, warmed before the first
 question), no re-ranker, every run on its own scratch store. Repeated with draft PR #463 - which
@@ -1510,7 +1510,7 @@ Measured in a cloud session that reached huggingface.co, on `main` `e309c81` and
 every run on its own scratch store, one at a time. Backends: `lexical` (PyYAML only), `model`
 (model2vec 0.10.0, `minishlab/potion-base-8M`), `model+rerank` (the same with
 `cross-encoder/ms-marco-MiniLM-L-6-v2`, sentence-transformers 6.1.0 - the owner's PC) and
-`lexical+rerank`. [Row 5b-978](../docs/fragment-issues/section-5b-rows-401-425.md) has the frozen
+`lexical+rerank`. [Row 5b-978](../docs/fragment-issues/section-5b-rows-976-1000.md) has the frozen
 sentences, every sentence that moved onto a change, and the costs.
 
 **The change:** the passage the cross-encoder reads for a fragment is its identity, its first eight
@@ -1541,7 +1541,7 @@ owner was shown both and chose eight.
 
 ## 2026-10-17 — eight sentences of 2026-10-14, Revit 2020, and four more plain questions (row 5b-1005)
 
-[Row 5b-1005](../docs/fragment-issues/section-5b-rows-401-425.md). Ajmal PS listed eight sentences measured
+[Row 5b-1005](../docs/fragment-issues/section-5b-rows-1001-1025.md). Ajmal PS listed eight sentences measured
 on 2026-10-14 with the Revit 2020 filter, four of which reached a write or an export. **Re-measured first
 on `main` `c2f2765a`, 571 fragments**, through `heron_brain.lookup` behind the 2020 wall, each backend on
 its own private store: `lexical` (`python -s`, no model2vec) and `model` (model2vec 0.10.0,

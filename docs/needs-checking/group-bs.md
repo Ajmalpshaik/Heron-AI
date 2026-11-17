@@ -37,4 +37,4 @@ proof plan is [`tools/jobs/family-settings-shared-2026-10-01.yaml`](../../tools/
 
 ## The run of 2026-10-18 (Revit 2020, Family4) - `SET_FAMILY_SETTINGS` re-proved and PROVEN
 
-**BS1 in part.** On Family4 (a Duct Accessory damper frame, Revit 2020, session 64176), `validate --write`, rolled back: `Work Plane-Based=yes` - `changed 1`, *Work Plane-Based No -> Yes*; negative `Work Plane-Based=no` on the family already No - `changed 0`, `alreadySet 1`. Signed by Ajmal PS, card PROVEN (row [5b-1105](../fragment-issues/section-5b-rows-401-425.md) for the contract fix the draft needed). `Shared`, BS1's own negative (`maybe`) and BS2-BS5 were NOT RUN.
+**BS1 in part.** On Family4 (a Duct Accessory damper frame, Revit 2020, session 64176), `validate --write`, rolled back: `Work Plane-Based=yes` - `changed 1`, *Work Plane-Based No -> Yes*; negative `Work Plane-Based=no` on the family already No - `changed 0`, `alreadySet 1`. Signed by Ajmal PS, card PROVEN (row [5b-1105](../fragment-issues/section-5b-rows-1101-1125.md) for the contract fix the draft needed). `Shared`, BS1's own negative (`maybe`) and BS2-BS5 were NOT RUN.

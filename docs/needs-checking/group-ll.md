@@ -42,7 +42,7 @@ card, one new contest on the keyword route alone - *"put a ceiling at 2700"*, `C
 identity through `find` and written in both cards. The modeller's work-plane sentences - *set the work plane to
 Level 2*, *show the work plane in this view*, *which work plane is this view on* - reach this card by ranking,
 the question too without the flag; nothing sets, shows or reads a view's work plane yet
-([row 5b-1392](../fragment-issues/section-5b-rows-401-425.md), OPEN).
+([row 5b-1392](../fragment-issues/section-5b-rows-1376-1400.md), OPEN).
 
 **The model - `refplane-ip`**, a scratch project from the default architectural template, saved under
 `%TEMP%\heron-work`, never a working model. Every write here is ROLLED BACK unless the modeller keeps it. The job

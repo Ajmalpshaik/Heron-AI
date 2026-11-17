@@ -15,7 +15,7 @@ in four builders-work plans the owner had tagged ten Generic Model cut-outs that
 asked for dimension chains from a grid to both sides of each. Every word
 [`CREATE_LINEAR_DIMENSION`](../../brain/fragments/create-linear-dimension/fragment.yaml) (FRG-VIEW-101)
 version 3 takes looks only in the host, so none of the cut-outs could be named.
-[Row 5b-486](../fragment-issues/section-5b-rows-401-425.md) has the finding.
+[Row 5b-486](../fragment-issues/section-5b-rows-476-500.md) has the finding.
 
 **What changed.** Version 4 takes one word more in `between`, in front of any other: `link LINK WORD ...` -
 LINK the placed link's id, its unique id or the linked model's name with or without `.rvt` - and the word after

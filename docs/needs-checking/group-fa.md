@@ -10,8 +10,8 @@
 
 **Tracked as GitHub issue [#988](https://github.com/Ajmalpshaik/Heron-AI/issues/988) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
-Three things, from [row 5b-466](../fragment-issues/section-5b-rows-401-425.md) and two findings of
-2026-10-14 on Ajmal PS's Revit 2020 job model 4355-BHVD-3D-21S10-BL001A. [Row 5b-545](../fragment-issues/section-5b-rows-401-425.md)
+Three things, from [row 5b-466](../fragment-issues/section-5b-rows-451-475.md) and two findings of
+2026-10-14 on Ajmal PS's Revit 2020 job model 4355-BHVD-3D-21S10-BL001A. [Row 5b-545](../fragment-issues/section-5b-rows-526-550.md)
 has the measurements. Ajmal PS starting the task on 2026-10-17 was his yes to change the PROVEN
 `MANAGE_SHEET_SETS`.
 

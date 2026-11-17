@@ -12,7 +12,7 @@
 
 To check one subcategory's line colour in a family - Generic Annotations > Signature, before and after
 `CREATE_LINE_STYLE` recoloured it - `LIST_CATEGORIES` version 2 printed every Object Styles row, all 303 of them,
-each time ([FRAGMENT-ISSUES 5b-630](../fragment-issues/section-5b-rows-401-425.md)). (Groups up to FP were taken by other
+each time ([FRAGMENT-ISSUES 5b-630](../fragment-issues/section-5b-rows-626-650.md)). (Groups up to FP were taken by other
 groups, merged or open, when this was written - FE on another branch - and more sessions were running, so this group skipped to FU.)
 
 **What changed.** `LIST_CATEGORIES` (FRG-DOC-031, a READ) takes an optional `categories`: the categories and

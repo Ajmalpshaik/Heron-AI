@@ -16,7 +16,7 @@ orientation as the opening"* - Horizontal for openings in east-west walls, Verti
 north-south wall. [`OFFSET_TAGS_FROM_HOST`](../../brain/fragments/offset-tags-from-host/fragment.yaml)
 (FRG-VIEW-113) moved all five and took the leaders off, but nothing in the library set a tag's orientation -
 only `COPY_TAGS_TO_REPLACEMENTS` copies one - so the owner turned the last tag by hand.
-[Row 5b-484](../fragment-issues/section-5b-rows-401-425.md) has the finding.
+[Row 5b-484](../fragment-issues/section-5b-rows-476-500.md) has the finding.
 
 **What changed.** Version 2 takes five optional switches, and with none of them it is version 1:
 `orientHorizontal`, `orientVertical`, `orientModel` or `orientToHost` - one choice, two at once refused - and

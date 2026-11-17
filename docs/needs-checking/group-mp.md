@@ -12,7 +12,7 @@
 On 2026-11-07, on `4355-BHVD-3D-60A10-BL007A` in Revit 2020, the owner asked for today's revision (Seq. 21,
 07-Nov-2026) to be the last one on four sheets, keeping the Roof Plan sheet on Seq. 20. `SET_SHEET_REVISIONS`
 answered that Seq. 20 was off three sheets while revision clouds kept it on two of them
-([row 5b-1463](../fragment-issues/section-5b-rows-401-425.md)), and no tool could move those clouds, so they
+([row 5b-1463](../fragment-issues/section-5b-rows-1451-1475.md)), and no tool could move those clouds, so they
 were done by hand. This group is the proof owed for the four cards that cover the job.
 
 **Widened, not made new, and why.** The duplicate check (`heron-duplicate-checker`, 2026-11-07) found no SAME JOB
@@ -54,7 +54,7 @@ revision be moved through the API - MP5 shows it.
 **Run on 2026-11-07, every proof rolled back**, on the scrap test copy `Test for Issue` (Revit 2024, session 30316; not the
 job model), arranged as MP1 by proven capabilities and four steps by the owner's hand (the ticks on S1 and S3, the two sheet
 clouds), and read back with `LIST_REVISIONS` and `LIST_REVISION_CLOUDS` before any proof. MP2 and MP3 held at once. MP4, MP5
-and MP6 found [row 5b-1471](../fragment-issues/section-5b-rows-401-425.md) - both change tools read the sheet back before
+and MP6 found [row 5b-1471](../fragment-issues/section-5b-rows-1451-1475.md) - both change tools read the sheet back before
 Revit had rebuilt it - and held after the fix. MP5's issued case: Revit refused both clouds, nothing kept. `LIST_REVISIONS`'
 signable negative ran in a blank family, as version 1's did. **All four signed by Ajmal PS and PROVEN the same day.** On Revit
 2024 only; Revit 2020, the owner's release for this job, is not run (MP0) - a `--release 2020` run, D-131. **MP7 is not run** -
