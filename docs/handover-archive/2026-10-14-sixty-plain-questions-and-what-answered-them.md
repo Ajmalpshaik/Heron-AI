@@ -16,7 +16,7 @@ continued in PR #535, stacked on #534. The owner asked for the work to go on whi
 answered by a tool that changes the model. Sixty everyday questions, written before any card was read
 and asked through `heron_retrieve.find` on private stores: **26 reached a write on `main`**. The full
 list, the read that answers each, and who decides the rest are in
-[row 5b-477](../fragment-issues/section-5b-rows-401-425.md). `tools/check-routing.py` cannot see this:
+[row 5b-477](../fragment-issues/section-5b-rows-476-500.md). `tools/check-routing.py` cannot see this:
 its no-crossing section asks each card's own declared sentences, and identity answers those before any
 ranking runs. **A sweep of paraphrases is the only thing that measures it.**
 

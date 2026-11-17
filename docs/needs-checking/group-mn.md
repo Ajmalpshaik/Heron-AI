@@ -45,13 +45,13 @@ assemblies of all eight with `tools/api-surface --members`; the per-release memb
 symbol's host is `TaggedLocalElementId` on 2020-2021 and `GetTaggedLocalElementIds` from 2022. **Nothing here has
 run in Revit.** All three are DRAFT. **Only Revit can settle**, and MN2-MN6 record: whether Revit's acute and obtuse
 are the angle turned or the angle between the legs, and whether its own shapes measure to the outside of a bend
-([row 5b-1454](../fragment-issues/section-5b-rows-401-425.md)); whether Revit takes each symbol kind's own
+([row 5b-1454](../fragment-issues/section-5b-rows-1451-1475.md)); whether Revit takes each symbol kind's own
 category, and a symbol in a structural plan or a section
-([row 5b-1455](../fragment-issues/section-5b-rows-401-425.md)); and how many risers a sketch of N riser lines
-makes ([row 5b-1456](../fragment-issues/section-5b-rows-401-425.md)). **Not done:** arc, spiral, 180 degree and 3D
+([row 5b-1455](../fragment-issues/section-5b-rows-1451-1475.md)); and how many risers a sketch of N riser lines
+makes ([row 5b-1456](../fragment-issues/section-5b-rows-1451-1475.md)). **Not done:** arc, spiral, 180 degree and 3D
 rebar shapes; symbols on reinforcement in a linked model; arcs in a stair sketch.
 
-**Routing.** Measured through `heron_retrieve.find` on fresh scratch stores of the tree at `9659655` and of this change, Revit 2024, with and without the host's question flag (the `READ` ceiling), over every declared utterance and routing-table sentence of the library and 24 probes. Every sentence the three cards declare reaches its card by identity. *"what shape is this element"* (claimed by `MEASURE_ELEMENT_VOLUME`) moved to `CREATE_REBAR_SHAPE` and *"make the leaders L-shaped"* (claimed by `FORCE_TAG_LEADER_LSHAPE`) to `CREATE_SHAPED_STAIRS`; each is now declared on its owner (card text only - both PROVEN, impl/ and proofs untouched). Four made-up questions and two made-up tag requests reach a new write without the flag, a read with it - [row 5b-1457](../fragment-issues/section-5b-rows-401-425.md), OPEN. `tests/test_routing_phrases.py` fails exactly its known seven, *"put the duct tags above the ducts with a leader"* still reaching `OFFSET_TAGS_FROM_HOST`. `tools/check-routing.py`: no question answered by a write.
+**Routing.** Measured through `heron_retrieve.find` on fresh scratch stores of the tree at `9659655` and of this change, Revit 2024, with and without the host's question flag (the `READ` ceiling), over every declared utterance and routing-table sentence of the library and 24 probes. Every sentence the three cards declare reaches its card by identity. *"what shape is this element"* (claimed by `MEASURE_ELEMENT_VOLUME`) moved to `CREATE_REBAR_SHAPE` and *"make the leaders L-shaped"* (claimed by `FORCE_TAG_LEADER_LSHAPE`) to `CREATE_SHAPED_STAIRS`; each is now declared on its owner (card text only - both PROVEN, impl/ and proofs untouched). Four made-up questions and two made-up tag requests reach a new write without the flag, a read with it - [row 5b-1457](../fragment-issues/section-5b-rows-1451-1475.md), OPEN. `tests/test_routing_phrases.py` fails exactly its known seven, *"put the duct tags above the ducts with a leader"* still reaching `OFFSET_TAGS_FROM_HOST`. `tools/check-routing.py`: no question answered by a write.
 
 **The models - scratch, any one release 2020 to 2027.** Never a working model. Every run below is rolled back
 except MN1's arrangement. The job file is

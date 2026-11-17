@@ -16,7 +16,7 @@ can read) - the host writes back what the spec gives per element type, the model
 cards place it, and the new card checks it. Made NEW, at DRAFT, READ. It overlaps `REPORT_HOST_REBAR` (PROVEN),
 which reads the same sets and compares nothing - not edited; widening a PROVEN card sends it back to DRAFT and
 out of the chat's reach ([D-117](../DECISIONS.md)). The overlap and what is left are
-[FRAGMENT-ISSUES row 5b-1489](../fragment-issues/section-5b-rows-401-425.md).
+[FRAGMENT-ISSUES row 5b-1489](../fragment-issues/section-5b-rows-1476-1500.md).
 
 | What | Where | What it does |
 |---|---|---|

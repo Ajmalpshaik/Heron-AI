@@ -22,7 +22,7 @@ tool. **None of the rows below has run.** Each method stays DRAFT until its own 
 | A filter of tag categories hands `ARRANGE_TAGS` its tags, and a second overlap read comes back clear - with the gap sent in MODEL millimetres, the paper gap times the view's scale ([row 5b-240](../fragment-issues/section-5b-rows-226-250.md), open) | the cards' contracts and proof records - each proof ran one tag category a call - and `ARRANGE_TAGS`' C# | NR1, NR2, NR3 |
 | `CREATE_VIEW_FILTER` with `perValue` puts one filter a value on the view in its own colour, skips a name the project has, and `COPY_VIEW_FILTERS` carries the colours | the card's C# | NR4, NR5 |
 | What a view whose template holds its filters answers | not known - `REPORT_VIEW_FILTERS` stops the method before it | NR5 |
-| Spaces made from a link that is Room Bounding and KEPT read back with an area ([row 5b-1125](../fragment-issues/section-5b-rows-401-425.md): the proof's spaces had none, inside a change that was rolled back) | the card's proof | NR7, NR8 |
+| Spaces made from a link that is Room Bounding and KEPT read back with an area ([row 5b-1125](../fragment-issues/section-5b-rows-1101-1125.md): the proof's spaces had none, inside a change that was rolled back) | the card's proof | NR7, NR8 |
 | With a phase that is not the model's last, a second run does not see the first one's spaces ([row 5b-1589](../fragment-issues/row-5b-1589.md)) | the card's C# and Revit's API reference | NR9 |
 
 **The PC, on the Revit release the owner works in. A SAVED scratch copy of a services model with ducts on at

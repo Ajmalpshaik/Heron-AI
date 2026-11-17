@@ -8,7 +8,7 @@
 
 ## Group IN - a still sun's time through the PC's own time zone: `SET_SUN_SETTINGS` v2, `APPLY_VISUAL_PRESET` v3, `REPORT_VISUAL_PRESET` v3 (2026-10-21)
 
-From [row 5b-1306](../fragment-issues/section-5b-rows-401-425.md). The three tools wrote a Still sun's time through
+From [row 5b-1306](../fragment-issues/section-5b-rows-1301-1325.md). The three tools wrote a Still sun's time through
 the site's time zone, and Revit holds the dialog's clock turned to UTC by the PC's own: on the owner's laptop
 (UTC+3, site Boston) 11:00 asked became 19:00, the sun below the horizon and the render black. Fixed in the code;
 DRAFT until these rows pass and the owner signs.

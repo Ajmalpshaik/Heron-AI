@@ -33,7 +33,8 @@ WHAT IS PROVED
   6. a missing group file, or one that no longer opens with its heading, is
      RegisterBroken - never a shorter register - and the readers say so;
   7. archive-needs-checking.py still moves a done row on the split register:
-     the full row to the archive, its line into its group's file;
+     the full row to the archive, its line into its group's file, and a link
+     in it to a heading in that file still reaching the heading;
   8. it refuses, writing nothing, when another document links to a heading
      that would move;
   9. CRLF in, CRLF out, and still byte for byte;
@@ -111,7 +112,7 @@ def register_text():
         "| # | Check | Result |",
         "|---|---|---|",
         "| **A1** | Build it - see [D-01](DECISIONS.md) | open |",
-        "| ~~**A2**~~ | ~~Done~~ | **PASSED 2026-09-01** - three runs, all green |",
+        "| ~~**A2**~~ | ~~Done~~ | **PASSED 2026-09-01** - three runs, all green, as [the note](#a-deep-note) says |",
         "",
         "### A deep note",
         "",
@@ -309,6 +310,12 @@ def after_write(work, original, root, today):
               "A2's line in group-a.md links to its full text, one folder up")
         check(read(index_of(root)) == before_index, "the page itself is untouched - A2 was never on it")
         check("### Row A2" in read(os.path.join(archive, "group-a.md")), "and the full row is in the archive")
+        # A2 links to a heading in its own group's file. Archived, that link
+        # must reach group-a.md, not the page: on the split register the
+        # page does not hold that heading (found on the real register,
+        # 2026-11-17 - eleven broken links in needs-checking-archive/).
+        check("[the note](../needs-checking/group-a.md#a-deep-note)" in read(os.path.join(archive, "group-a.md")),
+              "a link to a heading in the row's group file still reaches it from the archive")
         check(NCR.register_text(root) == plan.after, "read back, the register is what the archive tool planned")
 
 

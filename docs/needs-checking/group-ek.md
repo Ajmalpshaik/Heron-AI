@@ -13,7 +13,7 @@
 Asked for by the owner on 2026-10-17: one read-only call that describes up to 50 elements fully. Version 2
 ([Group DI](group-di.md)) took only a selection or a chained set, had no cap - 535 elements came back as a
 6.2 MB record (DI3) - and an id from a linked model found nothing.
-[FRAGMENT-ISSUES row 5b-489](../fragment-issues/section-5b-rows-401-425.md).
+[FRAGMENT-ISSUES row 5b-489](../fragment-issues/section-5b-rows-476-500.md).
 
 **What was built - version 3 of the same capability, not a new one.** `elementIds` takes ids as Revit shows
 them, matched as text in the model looked in; an id that names nothing lands in `missing` and the rest are

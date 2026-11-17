@@ -10,7 +10,7 @@
 
 **Tracked as GitHub issue [#982](https://github.com/Ajmalpshaik/Heron-AI/issues/982) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
-[FRAGMENT-ISSUES row 5b-459](../fragment-issues/section-5b-rows-401-425.md). Giving 13 rooms 13 names took 26
+[FRAGMENT-ISSUES row 5b-459](../fragment-issues/section-5b-rows-451-475.md). Giving 13 rooms 13 names took 26
 calls, a find and a write per room, because a reply cannot carry element ids. `SET_PARAMETER_VALUES_BY_ID`
 (FRG-PAR-027) was widened rather than a card added: a first row `key=<parameter>|in=<categories>` in the `rows`
 it already takes, then `<key value>|<parameter>=<value>` per element. No new input. Id rows are version 1's code.
@@ -28,7 +28,7 @@ connected, and `< /dev/null` on every line.
 
 | # | Run | Look for |
 |---|---|---|
-| ~~**DW1**~~ | **DONE 2026-10-13** - signed by Ajmal PS on PR #524's branch, and promoted to PROVEN. ~~The signature, on the owner's word only, from a checkout holding this code (the main checkout once merged): `python brain/heron_validate.py draft set-parameter-values-by-id --from brain/proof-drafts/runs/set-parameter-values-by-id.json`, read it, then `python brain/heron_validate.py accept set-parameter-values-by-id --by "Ajmal PS"`, then `heron-status: PROVEN`~~ | the draft's fingerprint is the card's (`python brain/heron_fragment.py --show FRG-PAR-027`); a later code change makes it stale and the run is made again - **Struck 2026-10-18:** done 2026-10-13, as it says (fingerprint `10df47f9b61a2f16`). The card is DRAFT again at version 3 ([Group FE](group-fe.md)). |
+| ~~**DW1**~~ | DONE 2026-10-13 — [full row](../needs-checking-archive/group-dw.md#row-dw1) | the draft's fingerprint is the card's (python brain/heron_fragment.py --show… |
 | **DW2** | Through `revit_change` once merged and the Claude app restarted (this chat's Heron ran the main checkout's code, so the runs above went through the bridge client from the worktree): `rows=key=Number\|in=Rooms;1\|Name=...` on a test copy | the same answer as the bridge run - `resultJson` format 2, every `readBack` value the name asked |
 | **DW3** | **Sheets**, key `Sheet Number` - a sheet carries two parameters of that name - writing `Sheet Name` on three sheets | each sheet matched once and renamed, read back by `FIND_SHEETS`; a sheet number held by no sheet refused by name |
 | **DW4** | **Doors and Windows together**, `in=Doors,Windows`, key `Mark`, with a door and a window both marked `W1` | the `W1` row refused naming both ids; every other row written |

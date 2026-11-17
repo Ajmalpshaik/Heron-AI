@@ -15,7 +15,7 @@ the sheets from this Excel: C:\\...\\sheet list.xlsx"* (or .csv) - a preview, th
 undo. Made NEW, at DRAFT. It overlaps `CREATE_SHEETS` and `SET_PARAMETER_VALUES_BY_ID` (both PROVEN) - neither
 was edited; widening a PROVEN card sends it back to DRAFT and out of the chat's reach
 ([D-117](../DECISIONS.md)). The overlap and the merge planned once this is proved are
-[FRAGMENT-ISSUES row 5b-1486](../fragment-issues/section-5b-rows-401-425.md).
+[FRAGMENT-ISSUES row 5b-1486](../fragment-issues/section-5b-rows-1476-1500.md).
 
 | What | Where | What it does |
 |---|---|---|

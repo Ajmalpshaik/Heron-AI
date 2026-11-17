@@ -13,7 +13,7 @@ On 2026-11-11 (Revit 2020) four nested `Diffuser Flow Arrow_DRAFT` detail items 
 family, placed with `PLACE_FAMILY_INSTANCES` on "Ref. Level" and turned with `ROTATE_ELEMENTS`, refused every
 lock with "The nested family has no extent to read back" - Revit gives a view-based instance no box outside a
 view - and the owner locked them by hand with Align. The card was widened, so it is DRAFT again at version 3;
-why, and what is not known yet, is [FRAGMENT-ISSUES row 5b-1492](../fragment-issues/section-5b-rows-401-425.md).
+why, and what is not known yet, is [FRAGMENT-ISSUES row 5b-1492](../fragment-issues/section-5b-rows-1476-1500.md).
 
 **Version 4, the same day, after NB1 failed.** NB1's positive (Revit 2020, session 37656, the scratch family below)
 threw the same "The nested family has no extent to read back": version 3 knew a detail item only by its owner
@@ -22,7 +22,7 @@ family - goes down on the level's plane and has NO owner view. Version 4 also kn
 (Detail Items) or its family's View Based placement, and locks one with no owner view in the floor plan of the
 level it sits on (an elevation for one on a vertical plane), saying which in a finding. Everything below now
 tests **version 4**; why, and what is still not known, is
-[row 5b-1494](../fragment-issues/section-5b-rows-401-425.md).
+[row 5b-1494](../fragment-issues/section-5b-rows-1476-1500.md).
 
 **`--negative-set` REPLACES the values, it does not add to them.** Repeat `instance=` in it, or the negative leg
 stops at `needs_request_values` and never runs - which is what happened to NB1's first negative.
@@ -47,8 +47,8 @@ connected, and `< /dev/null`.
 |---|---|---|
 | **NB0** | *Open and arrange, KEEP it.* In the scratch family: planes "Arrow Front" and "Arrow Back" (facing front-back, 390 mm either side of Center (Front/Back)), labelled EQ with a length "Arrow Span" (780); the arrow placed in "Ref. Level" with `PLACE_FAMILY_INSTANCES`, turned 90 degrees with `ROTATE_ELEMENTS`, moved with its tail on "Arrow Front" and its line on Center (Left/Right). Record its id. Save | The title bar names the scratch family; the arrow, selected, shows no padlock |
 | ~~**NB1**~~ | *The D-30 negative FIRST, then the positive.* Rolled back. Negative: `--negative-set "instance=<id>" --negative-set "locks=Center (Front/Back)=Ref. Level"` - `instance` repeated. Positive: `locks=Center (Front/Back)=Center (Left/Right)`. **First run 2026-11-11 on version 3: the positive threw "no extent to read back", the negative did not run (row 5b-1494)** | Negative: refused before anything is locked - the side faces left-right, the level up-down - and **NOT** "no extent to read back". Positive: a finding that the detail item belongs to no view and is locked in "Ref. Level"; one lock, "(in Ref. Level)", the insertion point unmoved - **if Revit refuses to align a detail item's reference in its owner view through the API, that is the first thing this group learns** and the card is changed, not proved **PASSED 2026-11-11 on version 4, Revit 2020 (session 44624) - the run recorded below; the card signed PROVEN that day.** |
-| ~~**NB2**~~ | *A plane it does not lie on.* Rolled back: `instance=<id>`, `locks=Center (Front/Back)=Arrow Back` | Revit's own refusal named with "move the nested family onto the plane first"; the call rolled back, nothing locked **PASSED 2026-11-11 on version 4, Revit 2020 (session 44624) - the run recorded below; the card signed PROVEN that day.** |
-| ~~**NB3**~~ | *FOLLOW, kept.* NB1's positive and a second lock on the arrow's own plane at its tail (`Left`, if the arrow family gives its tail plane Is Reference Left - else run `SET_FAMILY_PLANE_REFERENCE` in it first) to "Arrow Front", through `try-once` (or `revit_change` once PROVEN) and KEEP; `FLEX_FAMILY` "Arrow Span" at 600 and 1,200 | The arrow's insertion point read back 300 and 600 mm from Center (Front/Back) - it followed "Arrow Front"; selected, two closed padlocks **PASSED 2026-11-11 on version 4, Revit 2020 (session 44624) - the run recorded below; the card signed PROVEN that day.** |
+| ~~**NB2**~~ | A plane it does not lie on. Rolled back: `instance=<id>`, `locks=Center (Front/Back)=Arrow Back` — [full row](../needs-checking-archive/group-nb.md#row-nb2) | Revit's own refusal named with "move the nested family onto the plane first"; the call… |
+| ~~**NB3**~~ | FOLLOW, kept. NB1's positive and a second lock on the arrow's own plane at its tail (`Left`, if the… — [full row](../needs-checking-archive/group-nb.md#row-nb3) | The arrow's insertion point read back 300 and 600 mm from Center (Front/Back) - it… |
 | **NB4** | *A model family, unchanged.* Version 2's positive on a nested 3D box (tests/cases.yaml, the first positive), rolled back | Two sides locked in the floor plan, its extent unchanged - the path a model family took before version 3 |
 | **NB5** | *Second route.* By hand on a copy: Align in "Ref. Level", the plane, the arrow's plane, the padlock; flexed side by side with NB3 | The two copies read back the same at every size |
 

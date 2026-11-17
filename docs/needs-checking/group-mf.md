@@ -51,7 +51,7 @@ utterance and routing-table sentence of a live card and fourteen probes (4,459 s
 three cards declare reaches its card by identity; the two questions reach `REPORT_STRUCTURAL_SETTINGS` with
 and without the flag. No other card's declared sentence lost the card it reached. Four made-up question
 probes reach the writes without the flag (the read with it), and *"put it back"* flipped again between two
-cards that do not claim it - [row 5b-1433](../fragment-issues/section-5b-rows-401-425.md), OPEN.
+cards that do not claim it - [row 5b-1433](../fragment-issues/section-5b-rows-1426-1450.md), OPEN.
 
 **The model - a scratch project from the metric structural template, any release.** Never a working model.
 Every run below is rolled back except MF1's arrangement. The job file is

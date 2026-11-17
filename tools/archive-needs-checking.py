@@ -149,6 +149,57 @@ class Plan(object):
         self.files_after = {}     # each group file as written
 
 
+def _anchors(lines):
+    """Every heading's anchor in LINES, by the rule split-needs-checking.py
+    moves anchors by - a heading in a code block is an example, not one."""
+    fenced = NCR.fenced_lines(lines)
+    out = set()
+    for k, line in enumerate(lines):
+        h = SPLIT.AH.HEADING.match(line)
+        if h and k not in fenced:
+            out.add(SPLIT.AH.anchor_of(h.group(1)))
+    return out
+
+
+def anchor_homes(register):
+    """({anchor: group files whose own text holds that heading}, the page's
+    own anchors). On the split register a heading written under a group lives
+    in that group's file, not on the page, so a link the archive writes to it
+    has to name the file. Until 2026-11-17 it named the page - the one text
+    this plans on holds every heading - and eleven links in the archive
+    reached nothing."""
+    folder = os.path.join(os.path.dirname(register), NCR.FOLDER_NAME)
+    homes = {}
+    if os.path.isdir(folder):
+        for name in sorted(os.listdir(folder)):
+            if name.startswith("group-") and name.endswith(".md"):
+                text = AF._read(os.path.join(folder, name)).replace(CR + NL, NL)
+                for anchor in _anchors(text.split(NL)):
+                    homes.setdefault(anchor, set()).add(name)
+    page = AF._read(register).replace(CR + NL, NL) if os.path.exists(register) else ""
+    return homes, _anchors(page.split(NL))
+
+
+def rehome(text, own, homes, page):
+    """TEXT with each link to a heading ON THE PAGE that the page does not
+    hold sent to the group file that holds it - the row's own file first."""
+    prefix = "../" + NCR.INDEX_NAME + "#"
+
+    def swap(match):
+        label, href = match.group(1), match.group(2)
+        if not href.startswith(prefix):
+            return match.group(0)
+        anchor = href[len(prefix):]
+        files = homes.get(anchor, set())
+        if anchor in page or not files:
+            return match.group(0)
+        name = own if own in files else (sorted(files)[0] if len(files) == 1 else None)
+        if name is None:
+            return match.group(0)
+        return "[%s](../%s/%s#%s)" % (label, NCR.FOLDER_NAME, name, anchor)
+    return AF.LINK.sub(swap, text)
+
+
 def plan(register=REGISTER, archive=ARCHIVE, today=None):
     p = Plan(register, archive, today or datetime.date.today().isoformat())
     try:
@@ -166,6 +217,7 @@ def plan(register=REGISTER, archive=ARCHIVE, today=None):
         p.fatal = "NEEDS-CHECKING.md mixes CRLF and LF line endings"
         return p
 
+    homes, page = anchor_homes(register)
     group, existing = None, {}
     for i, line in enumerate(lines):
         g = GROUP.match(line)
@@ -198,7 +250,8 @@ def plan(register=REGISTER, archive=ARCHIVE, today=None):
         parts = []
         for n, cell in enumerate(cells[2:-1]):
             label = labels[n + 1] if n + 1 < len(labels) and labels[n + 1] else "Cell %d" % (n + 2)
-            parts.append("**%s.** %s" % (label.rstrip("."), AF.repoint(cell.strip(), register, archive, ident, trouble)))
+            moved = AF.repoint(cell.strip(), register, archive, ident, trouble)
+            parts.append("**%s.** %s" % (label.rstrip("."), rehome(moved, name, homes, page)))
         if trouble:
             p.held.append((ident, "; ".join(trouble)))
             continue

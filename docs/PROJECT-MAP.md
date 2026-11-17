@@ -386,7 +386,7 @@ rather than one. The compile gate covers **2020–2027**, on every push. The **a
 loaded and had its tab checked on 2020, 2024 and 2027** — [`A12` and `A13`](NEEDS-CHECKING.md),
 2026-09-19, on all three releases installed on the owner's PC. **On 2026-10-17 it loaded on the owner's
 laptop on 2020, 2024, 2026 and 2027**, and on 2026 no fragment could run
-([Group EQ](needs-checking/group-eq.md), [row 5b-575](fragment-issues/section-5b-rows-401-425.md)); the
+([Group EQ](needs-checking/group-eq.md), [row 5b-575](fragment-issues/section-5b-rows-551-575.md)); the
 repair is in code and has not been run in Revit ([Group GW](needs-checking/group-gw.md)). **The Keep or Discard box and the rails
 around it were run on 2024 and 2027** on 2026-10-18 ([Group ET](needs-checking/group-et.md)). **Nearly
 every fragment proof names Revit 2020 or Revit 2024**: a proof is a recorded run against a named model,

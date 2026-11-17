@@ -200,10 +200,10 @@ is not changed.
   A system Revit has not calculated is labelled "not calculated", never 0.
 - **The overlap** with `TRACE_CONNECTIVITY`, `REPORT_MEP_PRESSURE_DROP`, `CREATE_DRAFTING_VIEW`,
   `CREATE_TEXT_NOTE` and `DRAW_FAMILY_DETAIL_LINES` - none edited - and the merge planned once it is proved:
-  [FRAGMENT-ISSUES row 5b-1479](fragment-issues/section-5b-rows-401-425.md).
+  [FRAGMENT-ISSUES row 5b-1479](fragment-issues/section-5b-rows-1476-1500.md).
 - **Before it can be PROVEN:** a read card that finds views must own *"is there already a schematic"* and
   *"show me the schematic"* - today both reach this card on one search backend, and asking to see a
-  schematic must never draw a new one ([row 5b-1479](fragment-issues/section-5b-rows-401-425.md)).
+  schematic must never draw a new one ([row 5b-1479](fragment-issues/section-5b-rows-1476-1500.md)).
 - **What a real Revit must show:** [NEEDS-CHECKING Group MW](needs-checking/group-mw.md) - a duct system, a
   pipe loop, open ends, a system with no flow calculated, a large system and its time, Revit 2020 and 2025/2026.
 
@@ -234,12 +234,12 @@ serves and `heron_lookup` offers for *"CAD lines to ducts and pipes"* or *"under
   crop off adds one line turning a place on the picture (a fraction of its width and height) into model mm, so a tag's own position can be handed in; for any other
   picture it says why not, and the method gives the tag the middle of its run - a hint only has to be nearest its
   own run. Not run in Revit: whether the picture fills the crop edge to edge is NEEDS-CHECKING MX19, and
-  [row 5b-1481](fragment-issues/section-5b-rows-401-425.md) has the detail.
+  [row 5b-1481](fragment-issues/section-5b-rows-1476-1500.md) has the detail.
 - **The overlap** with `EXTRACT_CAD_CURVES`, `CREATE_MEP_RUNS` and `FIT_MEP_JOINTS` (all PROVEN, none edited),
   the routing measured before and after - one question, *"what size are the ducts on this cad drawing"*, moved
   to it from another write, OPEN and a **condition for promotion** - the independent review's findings and what
   was done about each, and the merge planned once it is proved:
-  [row 5b-1481](fragment-issues/section-5b-rows-401-425.md).
+  [row 5b-1481](fragment-issues/section-5b-rows-1476-1500.md).
 - **While it is DRAFT no chat tool runs it** - `revit_read` refuses a MODIFY and `revit_change` a DRAFT (D-117):
   the method's preview is the command line, rolled back, and the draw is the one `try-once` (D-119).
 - **What a real Revit must show:** [NEEDS-CHECKING Group MX](needs-checking/group-mx.md) - a double-line duct
@@ -283,7 +283,7 @@ C:\...\sheet list.xlsx"* (or .csv) - the method [`sheets-from-excel`](../brain/s
   `IMPORT_PARAMETER_VALUES` is not a route (DEPRECATED, merged into `SET_PARAMETER_VALUES_BY_ID`), the routing
   measured before and after - after the independent review's changes no question reaches it on lexical or model;
   the re-ranked backend is still to be asked on the owner's PC - and the merge planned once it is proved:
-  [row 5b-1486](fragment-issues/section-5b-rows-401-425.md).
+  [row 5b-1486](fragment-issues/section-5b-rows-1476-1500.md).
 - **What a real Revit must show:** [NEEDS-CHECKING Group MY](needs-checking/group-my.md) - the D-30 negative (a title
   block that does not exist: nothing made), the preview, title block instance and type columns, Yes/No, dates and
   read-only columns, names Revit refuses, a real register and its time, Revit 2020 and 2025 or later, and the whole
@@ -320,7 +320,7 @@ from a spec's values, so it was **extended, not copied**; one new card checks wh
 - **The overlap** with `REPORT_HOST_REBAR` (PROVEN, not edited - it reads, this compares), the routing measured
   before and after - none of `REPORT_HOST_REBAR`'s sentences moved and no question moved to a write; six questions
   already reaching a write on main are recorded, not fixed - what is left, the owner's choices, and the merge to
-  weigh once both are proved: [row 5b-1489](fragment-issues/section-5b-rows-401-425.md).
+  weigh once both are proved: [row 5b-1489](fragment-issues/section-5b-rows-1476-1500.md).
 - **What a real Revit must show:** [NEEDS-CHECKING Group MZ](needs-checking/group-mz.md) - each bar in its place on
   2020 (the one API question the assemblies cannot answer) and on 2025 or later, the D-30 negative (a spec the beam
   does not hold: nothing meets), refusals, laps, the length into a column, a column, a slab and a footing, the time

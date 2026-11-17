@@ -35,7 +35,7 @@ that Revit are 10.0, not 8.0.
 **On every .NET release (2025 on) all add-ins share Revit's default load context, so an assembly NAME is
 loaded once, by whichever add-in asks first.** On .NET Framework (2020-2024) two versions of one assembly
 load side by side. Measured 2026-10-17
-([row 5b-575](../../../docs/fragment-issues/section-5b-rows-401-425.md)): the owner's AJ Tools add-in
+([row 5b-575](../../../docs/fragment-issues/section-5b-rows-551-575.md)): the owner's AJ Tools add-in
 loaded the C# compiler 4.14 before Heron, Heron's own 4.8 C# layer was then bound to AJ Tools' 4.14 core,
 and every fragment failed on Revit 2026 - while 2020 and 2024 showed the same journal conflict line and
 were unaffected. A dependency another add-in may also ship is a 2025+ hazard, not a 2020-2024 one.
@@ -121,7 +121,7 @@ same suite fails on `DEBUG` or a framework symbol, which the fragment gate defin
 Also removed or deprecated at 2027: AXM import, several `Mechanical.Zone` members, legacy rebar
 creation methods, and several `EnergyDataSettings` properties.
 
-**Rebar, read off the shipped assemblies on 2026-10-19** ([row 5b-1258](../../../docs/fragment-issues/section-5b-rows-401-425.md)):
+**Rebar, read off the shipped assemblies on 2026-10-19** ([row 5b-1258](../../../docs/fragment-issues/section-5b-rows-1251-1275.md)):
 `Rebar.CreateFromCurves` (and `CreateFromCurvesAndShape`) taking two `RebarHookType`s and two
 `RebarHookOrientation`s is obsolete at **2026** and gone at **2027**, with the enum - 2026 on take a
 `BarTerminationsData` and a `RebarTerminationOrientation`. `RebarBarType.BarDiameter` is 2020-2022;
@@ -130,7 +130,7 @@ reinforcement is 2020-2023 only. `FabricSheet.SetUnobscuredInView` starts at **2
 rebar fragment - [`place-column-rebar`](../../../brain/fragments/place-column-rebar/impl/any/fragment.cs)
 and its siblings - carries the two routes in one `makeBar` adapter.
 
-**Rendering, read off the shipped assemblies and `RevitAPI.xml` on 2026-10-20** ([row 5b-1267](../../../docs/fragment-issues/section-5b-rows-401-425.md)):
+**Rendering, read off the shipped assemblies and `RevitAPI.xml` on 2026-10-20** ([row 5b-1267](../../../docs/fragment-issues/section-5b-rows-1251-1275.md)):
 the rendering, sun, Graphic Display Options and posted-command members are alike 2020-2027 - with four
 exceptions. `DisplayStyle` value 9 is `Raytrace` on 2020 only, absent 2021-2023 and `Textures` from 2024,
 so match a style by name. `SunStudyTimeInterval` gains `Seconds15`, `Seconds30`, `Seconds45` and `Minute`

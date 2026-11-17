@@ -16,7 +16,7 @@ studied for its lessons only - no code, name or wording taken ([D-25](../DECISIO
 `CREATE_DIMENSION`, `CREATE_LINEAR_DIMENSION`, `DIMENSION_ELEMENT_FACES`, `DIMENSION_ROOMS` - are PROVEN, and
 widening one would send it back to DRAFT and out of the chat's reach ([D-117](../DECISIONS.md)) until proved
 again. The overlap and the merge planned once this is proved are
-[FRAGMENT-ISSUES row 5b-1478](../fragment-issues/section-5b-rows-401-425.md).
+[FRAGMENT-ISSUES row 5b-1478](../fragment-issues/section-5b-rows-1476-1500.md).
 
 | What | Where | What it does |
 |---|---|---|

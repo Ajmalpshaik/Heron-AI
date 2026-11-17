@@ -41,7 +41,7 @@ curved wall, which is refused until somebody checks. LN2 to LN5 check them.
 (`model` backend, no re-ranker; Revit 2024; with and without the host's question flag). The three sentences reach these
 cards by identity - before, `SELECT_OPENINGS` (a read), `CREATE_STAIRS` and `CREATE_FROM_ROOM_BOUNDARIES`. One sentence
 the shaft card pulled away, *"cut an opening in this slab"* (`CREATE_STAIRS`' row for `CREATE_OPENING`), is declared on
-`CREATE_OPENING` and written in both cards - [row 5b-1393](../fragment-issues/section-5b-rows-401-425.md), FIXED.
+`CREATE_OPENING` and written in both cards - [row 5b-1393](../fragment-issues/section-5b-rows-1376-1400.md), FIXED.
 `tools/check-routing.py` (its own scratch store): no question answered by a write before or after.
 
 **The model - `shaft-ln`**, a scratch project from the default architectural template, saved under

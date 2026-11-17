@@ -45,7 +45,7 @@ sideways pipe connector is still refused.
 change (`model` backend): no question answered by a write; claimed and not reached 67 before and 67 after. Adding
 `CONVERT_TO_FLEX_DUCT` pulled *"run flex to that diffuser"* - `CREATE_DUCT_RUNS`' own routing row - onto the new
 card; it is declared on `CREATE_DUCT_RUNS` (DRAFT, card only) and reaches it again by identity -
-[row 5b-1396](../fragment-issues/section-5b-rows-401-425.md), FIXED. On the keyword route alone one line was added,
+[row 5b-1396](../fragment-issues/section-5b-rows-1376-1400.md), FIXED. On the keyword route alone one line was added,
 *"what level is this equipment on"* (`READ_ELEMENT_LEVEL` second there, neither card of this change first); the
 host's lookup still answers it with `READ_ELEMENT_LEVEL` by identity. The four declared sentences reach their cards
 by identity; *"tap this equipment into the main"* reaches `CONNECT_AIR_TERMINALS` on the hybrid route, as before.

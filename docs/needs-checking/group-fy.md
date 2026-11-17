@@ -14,7 +14,7 @@ Found on 2026-10-15 on a real project, Revit 2020 (never written to for proving)
 all the fields formatting horizontal and centre"* on a schedule: it took one call per field - one undo
 entry per column - and no call could turn a heading back to horizontal, because `headingSideways` false
 meant "leave it" and only Vertical was ever written.
-[Row 5b-620](../fragment-issues/section-5b-rows-401-425.md) has the finding.
+[Row 5b-620](../fragment-issues/section-5b-rows-601-625.md) has the finding.
 
 **What changed.** [`SET_SCHEDULE_APPEARANCE`](../../brain/fragments/set-schedule-appearance/fragment.yaml)
 (FRG-VIEW-061, was PROVEN, now DRAFT, version 3). `fieldName` "all" (also "every", "*", "all fields",

@@ -10,7 +10,7 @@
 
 **Tracked as GitHub issue [#990](https://github.com/Ajmalpshaik/Heron-AI/issues/990) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
-From [row 5b-1314](../fragment-issues/section-5b-rows-401-425.md). `revit_view_image` with `elements` took only
+From [row 5b-1314](../fragment-issues/section-5b-rows-1301-1325.md). `revit_view_image` with `elements` took only
 Revit's numbers, and `CREATE_FAMILY_FORMS`, `REPORT_FAMILY_FORMS` and `SELECT_FAMILY_FORMS` name a form only by
 its UniqueId. `RevitCapture.OfElements` now looks a UniqueId up through `Document.GetElement(string)` beside the
 numbers, and refuses by name every id that resolves to nothing. It compiles on 2020 to 2027 and every Revit
@@ -75,14 +75,14 @@ every document was opened fresh, so an entry left by a picture would have enable
 | IP3 | 2020 | (i) Skylight, the Glass solid's id and the void's (no category - row 5b-1311): *"A picture of 2 element(s)"*; the frame grew to take in the void - the whole skylight, centred on its square of roof. (ii) CCTV copy, two forms at the family's own subcategory by id, `ce590062-ddf7-4c0d-99c8-3603c9951e09-00000a99` (the screen) and `...-00001987` (the box behind it): *"A picture of 2 element(s)"*, the screen in 3D. No *"has no category"* in either | **PASS** |
 | IP4 | 2020 | Project. `392168, 7485c179-9364-48d7-b68b-6736718012c4-0005fbea` (duct 1 by number, duct 2 by UniqueId): *"A picture of 2 element(s)"*. `392168, 7485c179-9364-48d7-b68b-6736718012c4-0005fbe8` (duct 1 both ways): *"A picture of 1 element(s)"* - one rectangular duct running under a strip of the floor slab, two boxes hanging from the run | **PASS** |
 | IP5 | 2020 | Skylight: 9 forms, 1,872 elements, 10 views (1 3D) before IP0 and after IP3 and IO2. Project: 21,317 elements, 140 views (11 3D) before IP1 and after IP4 and IP6. Undo disabled in both afterwards. Every picture's words: *"The temporary view is gone - Revit rolled it back. Nothing was changed."* `%LOCALAPPDATA%\Heron\captures` empty at the end | **PASS** |
-| IP6 | 2020 | Project, ER2's call: `392168,392170,392174,378117`: *"A picture of 3 element(s) in Heron Capture Test ... Left out of the frame: 378117 is a datum (Levels). The temporary view is gone - Revit rolled it back. Nothing was changed."* - ER2's words. **The picture is mostly the top of the floor slab above the ducts**, walls and framing on it; the ducts show only as dark rectangles where the box cuts them. The box is the ducts' own plus at least a foot, and that reaches the slab above - [row 5b-1328](../fragment-issues/section-5b-rows-401-425.md) | words **PASS**; the picture is row 5b-1328 |
+| IP6 | 2020 | Project, ER2's call: `392168,392170,392174,378117`: *"A picture of 3 element(s) in Heron Capture Test ... Left out of the frame: 378117 is a datum (Levels). The temporary view is gone - Revit rolled it back. Nothing was changed."* - ER2's words. **The picture is mostly the top of the floor slab above the ducts**, walls and framing on it; the ducts show only as dark rectangles where the box cuts them. The box is the ducts' own plus at least a foot, and that reaches the slab above - [row 5b-1328](../fragment-issues/section-5b-rows-1326-1350.md) | words **PASS**; the picture is row 5b-1328 |
 | IP7 | 2024, 2027 | Not run. Neither Revit was open, and Heron connects only when the owner presses Heron on the ribbon (`bridge.autoConnect = false`); pressing it by UI Automation was refused by the session's auto mode on 2026-10-17. The add-in carrying this change is deployed on both, stamped `0.1.0+239d0b17` | **NOT RUN** |
 
 **Seen beside the rows.** In the CCTV copy every picture carries large green circles with cross lines and two
 small blue markers, at the same pixels whatever was framed - including the base plate, whose box (Z -1225 to
 -570 mm) cannot hold the family's connectors at Z 54 mm. The skylight, which has no connectors, showed none and
 was framed tight. Most likely the connector symbols, which the temporary view does not hide and its fit takes
-in, so the forms asked for come out small - [row 5b-1327](../fragment-issues/section-5b-rows-401-425.md). And the
+in, so the forms asked for come out small - [row 5b-1327](../fragment-issues/section-5b-rows-1326-1350.md). And the
 frame follows what is asked for: the base plate alone pictured the stand's H base and castors, the screen out of view.
 
 **Left for the owner.** IP7 on Revit 2024 and 2027 - open each on a scratch family and project, press Heron.

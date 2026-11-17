@@ -15,7 +15,7 @@ SAY UNDERSTAND FROM THE CAD, IT WILL TAKE THE SCREENSHOT AND IT WILL UNDERSTAND 
 DRAFT, with a method for the whole job. It overlaps `EXTRACT_CAD_CURVES`, `CREATE_MEP_RUNS` and
 `FIT_MEP_JOINTS` (all PROVEN) - none was edited; widening a PROVEN one would send it back to DRAFT and out of
 the chat's reach ([D-117](../DECISIONS.md)). The overlap, the merge planned once this is proved and the
-picture-to-model question are [FRAGMENT-ISSUES row 5b-1481](../fragment-issues/section-5b-rows-401-425.md).
+picture-to-model question are [FRAGMENT-ISSUES row 5b-1481](../fragment-issues/section-5b-rows-1476-1500.md).
 
 | What | Where | What it does |
 |---|---|---|

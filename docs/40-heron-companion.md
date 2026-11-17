@@ -38,7 +38,7 @@
 > **Read again 2026-11-11, in a cloud container - both proofs are signed, and neither write has been run
 > from the page since.** Both cards' `heron-status` lines read PROVEN and `python tools/check-signatures.py`
 > lists neither as stale, so D-117 no longer refuses the two writes
-> ([row 5b-1129](fragment-issues/section-5b-rows-401-425.md)). That is a refusal gone, not a run: NOT RUN.
+> ([row 5b-1129](fragment-issues/section-5b-rows-1126-1150.md)). That is a refusal gone, not a run: NOT RUN.
 > Whether a writer is PROVEN today is on its card - read it there, never here.
 
 ---
@@ -136,7 +136,7 @@ Companion button (Heron tab, D-109)    reads the note, opens the address - serve
 | **Changes you can adjust** - switched off 2026-10-04, kept (§21.6) | a settings change from the chat; Load filters, Load category colours | the values a change used, as a table; Apply again | **Apply again** - `companion_apply`, `MODIFY` | BK10 PASSED (BK13); the Load buttons ran 2026-09-30 with one filter fault open (§21.4) |
 | **Selected** - switched off 2026-10-04, kept (§21.6) | was always shown, from the live file | the selection by category | No | BK2's positive half PASSED (BK6) |
 | **Model Dashboard** (§21.10 to §21.18) and **QA Checklist** (§21.22, [50](50-qa-checklists.md)) - added 2026-11-01 and 2026-11-08, after this table was read | `revit_model_dashboard` · `heron_checklist`, or the page's own Run | the model counted part by part, a 3D view; saved checks run in one go | Dashboard: **Colour the view** and **Clear colours** only, `MODIFY`; Select and Isolate are on screen only. Checklist: no - it reads | Dashboard: JT22 PART (Revit 2024, 2026-11-01), the rest owed - groups [JT](needs-checking/group-jt.md), [JU](needs-checking/group-ju.md). Checklist: NOT RUN - [group MV](needs-checking/group-mv.md) |
-| *The Companion button* - in Revit, not on the page | the ribbon | opens the address a chat left | No | BK14 and HF4 FAILED 2026-10-18 on D-135's code ([row 5b-1100](fragment-issues/section-5b-rows-401-425.md)); D-136's fix and BK7 NOT RUN |
+| *The Companion button* - in Revit, not on the page | the ribbon | opens the address a chat left | No | BK14 and HF4 FAILED 2026-10-18 on D-135's code ([row 5b-1100](fragment-issues/section-5b-rows-1076-1100.md)); D-136's fix and BK7 NOT RUN |
 
 ---
 
@@ -266,7 +266,7 @@ preview, one-use approval and re-count (`PendingApproval`, `heron_write.py`). Ar
    the work, but the answer is lost** — the client reports `unknown_outcome` and must not retry a
    write (`heron_bridge_client.py`, `request`).
    *As built (2026-10-18): no longer so for an answer in flight.* Since 2026-10-14
-   ([row 5b-458](fragment-issues/section-5b-rows-401-425.md), run on Revit 2020) a connection displaced
+   ([row 5b-458](fragment-issues/section-5b-rows-451-475.md), run on Revit 2020) a connection displaced
    while Revit is still answering keeps its pipe until that answer is written; one only waiting is
    dropped at once, as before, and the bridge holds up to 16 instances (`PipeInstances`). The newest
    connection still takes the session, so §4's reasoning stands.
@@ -1106,7 +1106,7 @@ Loads panel's styles.
 >   Microsoft Store Claude's private copy of AppData cannot hide it; and both halves now step out of
 >   Revit's own GUID-named temporary folder to find that one ([D-136](decisions/D-136.md), #657). The live
 >   file stays in `%LOCALAPPDATA%\Heron\live\` (§6.1). Pressed in Revit 2024 on 2026-10-18 on D-135's code:
->   FAIL ([row 5b-1100](fragment-issues/section-5b-rows-401-425.md)); D-136's fix is NOT RUN IN REVIT -
+>   FAIL ([row 5b-1100](fragment-issues/section-5b-rows-1076-1100.md)); D-136's fix is NOT RUN IN REVIT -
 >   [BK14](needs-checking/group-bk.md), [HF4](needs-checking/group-hf.md).
 
 ### 21.9 What changed under the page on 2026-10-17 and 18, checked 2026-10-18
@@ -1117,7 +1117,7 @@ because each of its writes runs `revit_change`'s own body (`_apply_change`, `_ap
 
 | Since | What it means on the page | Evidence |
 |---|---|---|
-| 2026-10-17, [D-117](decisions/D-117.md) (#547) | A change is kept only from a PROVEN fragment. **The Table's Apply and the Loads panel's Finalize are refused before anything is sent:** `SET_PARAMETER_VALUES_BY_ID` is version 3 and DRAFT since #583 the same day - its proof is owed in [group FE](needs-checking/group-fe.md) - and Finalize's diffusers go through `SET_AIR_TERMINAL_FLOW`, DRAFT with no proof. The Sprinkler Layout's Apply is not affected | `revit_change`, called with each in a cloud container on 2026-10-18, refused it: *"... is DRAFT - no recorded proof stands behind its code ... Nothing was sent to Revit."*; `PLACE_FAMILY_INSTANCES` reads PROVEN (version 3, proof dated 2026-10-17). Recorded as [row 5b-1129](fragment-issues/section-5b-rows-401-425.md), open |
+| 2026-10-17, [D-117](decisions/D-117.md) (#547) | A change is kept only from a PROVEN fragment. **The Table's Apply and the Loads panel's Finalize are refused before anything is sent:** `SET_PARAMETER_VALUES_BY_ID` is version 3 and DRAFT since #583 the same day - its proof is owed in [group FE](needs-checking/group-fe.md) - and Finalize's diffusers go through `SET_AIR_TERMINAL_FLOW`, DRAFT with no proof. The Sprinkler Layout's Apply is not affected | `revit_change`, called with each in a cloud container on 2026-10-18, refused it: *"... is DRAFT - no recorded proof stands behind its code ... Nothing was sent to Revit."*; `PLACE_FAMILY_INSTANCES` reads PROVEN (version 3, proof dated 2026-10-17). Recorded as [row 5b-1129](fragment-issues/section-5b-rows-1126-1150.md), open |
 | 2026-10-18, [D-138](decisions/D-138.md) (#660) | With *Ask to Keep* on - off by default - Revit asks Keep or Discard for a write from the page as for one from the chat ([D-126](decisions/D-126.md)) | the [README](../mcp/companion/README.md)'s *Changes* row; compiled 2020-2027, **NOT RUN IN REVIT** |
 
 Neither is a new defect of the page: the refusal is Article 11 doing its job. The Table and Finalize work
@@ -1131,7 +1131,7 @@ at version 8** since 2026-11-11 - a key with a `*` names many - until
 Table's Apply and Finalize are refused again until then, and neither has been run from the page.
 
 **One thing the chat was told was wrong until 2026-11-11**
-([row 5b-1133](fragment-issues/section-5b-rows-401-425.md)): the `heron_companion` tool's reply said the
+([row 5b-1133](fragment-issues/section-5b-rows-1126-1150.md)): the `heron_companion` tool's reply said the
 page *"shows the model, the view and the selection ... and changes nothing"*. The Selected card is off
 since §21.6, and the page's Apply, Finalize and Place change the model under the same switches as a chat.
 The reply and the tool's description say that now - what changes nothing is opening the page - and

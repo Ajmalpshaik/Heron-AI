@@ -12,7 +12,7 @@
 
 Found 2026-10-15 on a real BIM 360 project in Revit 2020: builders-work openings copied from instances on
 `BHVD_BW_WALL_OPENING` landed on the ACTIVE workset, because that is where Revit puts every copy, and had to be
-moved with `SET_ELEMENT_WORKSET` afterwards. [Row 5b-860](../fragment-issues/section-5b-rows-401-425.md).
+moved with `SET_ELEMENT_WORKSET` afterwards. [Row 5b-860](../fragment-issues/section-5b-rows-851-875.md).
 
 **What changed.** [`COPY_ELEMENTS`](../../brain/fragments/copy-elements/fragment.yaml) (FRG-GEO-005) takes
 `toWorkset`: `source` puts each copy on the workset of the element it is a copy of (its Workset value set
@@ -43,7 +43,7 @@ is moved aside first, because the job writes to that path.
 
 | # | Run | Look for |
 |---|---|---|
-| **GP0** | **First** - the add-in rebuilt and deployed for Revit 2020 with the `absent:` rule ([Group EI](group-ei.md) EI3, [row 5b-488](../fragment-issues/section-5b-rows-401-425.md)), Revit restarted and the Claude app restarted | EI3 passes. **Without it a call that leaves `toWorkset` out is refused** for a missing value - every existing caller of `COPY_ELEMENTS` would stop - so nothing below is run on an add-in older than 2026-10-16 |
+| **GP0** | **First** - the add-in rebuilt and deployed for Revit 2020 with the `absent:` rule ([Group EI](group-ei.md) EI3, [row 5b-488](../fragment-issues/section-5b-rows-476-500.md)), Revit restarted and the Claude app restarted | EI3 passes. **Without it a call that leaves `toWorkset` out is refused** for a missing value - every existing caller of `COPY_ELEMENTS` would stop - so nothing below is run on an add-in older than 2026-10-16 |
 | **GP1** | `python tools/batch-prove.py tools/jobs/copy-elements-v3-worksets-2026-10-17.yaml`, *Heron Copy Worksets WS* in front - `toWorkset=source`, offset 3000,0,0, rolled back. Or the same once with `try-once`, kept on the owner's word ([D-120](../DECISIONS.md)) | **the D-30 positive**: 4 copies; `onWorksets` names the active workset Workset1, reads *"Read back, all 4 copies: Heron Openings 4"* and *"4 of 4 copies whose workset can be set are on the workset asked for"* |
 | **GP2** | The same job's negative leg, *Heron Copy Worksets Plain* in front, the same values | **the D-30 negative**: `copies` 0, `onWorksets` empty, `refused` *"This model is not workshared ... Nothing was copied."*; the plain project still has four walls |
 | **GP3** | Second route, in a scratch copy where GP1 was KEPT (or `try-once` kept): select the four copies and read Workset in the Properties palette; then Visibility/Graphics > Worksets with Heron Openings hidden | the palette says Heron Openings for every copy; with Heron Openings hidden, all eight walls disappear and nothing is left on Workset1 |

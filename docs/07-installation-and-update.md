@@ -614,7 +614,7 @@ rather than *"close Revit first"*.
    loaded and registered all three buttons immediately after it. Anyone grepping a journal for `ERROR`
    will find this first and should not stop there.
    **Not harmless on a .NET Revit (2025 on) when the module named is the C# compiler** - found
-   2026-10-17, [row 5b-575](fragment-issues/section-5b-rows-401-425.md): on Revit 2026 the line read
+   2026-10-17, [row 5b-575](fragment-issues/section-5b-rows-551-575.md): on Revit 2026 the line read
    *"Microsoft.CodeAnalysis of version 4.8.0.0 conflicts with same preloaded module of version 4.14.0.0"*,
    and every fragment then failed to compile. On 2020 and 2024 the same line meant nothing. **Repaired in
    code the same day, not yet run in Revit** ([group GW](needs-checking/group-gw.md)): on 2025 and later
