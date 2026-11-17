@@ -210,6 +210,11 @@ heron_checklist run  /  Companion QA Checklist: Run
   summer time ([row 5b-1622](fragment-issues/row-5b-1622.md)). **Deleting a checklist deletes its kept
   runs** with it ([row 5b-1623](fragment-issues/row-5b-1623.md)).
 - **CSV and Print / PDF** are made on the page from the rows Heron sent; nothing is read again.
+- **An office checklist, extended by a project** ([D-179](decisions/D-179.md)): a project list names
+  the office list it `extends`, and `overrides` change only an office check's severity, its rule's target or
+  whether it runs - each naming the check by its exact words; it may add checks of its own. What it runs
+  is saved whole; at each run the office list is read again, and the run says when it changed, or why it
+  ran the saved copy instead. One level only. Every run carries a **fingerprint** of the checks it used.
 - **A report a coordinator can send** ([D-178](decisions/D-178.md)): `heron_checklist` `run` with
   `report=true` also writes the run to an **Excel workbook** (a Summary sheet and a Checks sheet, one row a
   check) and **one self-contained HTML page** - every result word, coverage, change since the last run,
@@ -240,6 +245,7 @@ List, show, save and delete touch only the modeller's own files.
 | **PASS** | `tests/test_checklist_no_data.py` - [D-165](decisions/D-165.md): a run with all its data, one with some missing and one with all missing; NO DATA never counted as a pass or a fail; a rule met on 6 of 43 elements is NO DATA while a FAIL stays a FAIL; the coverage outputs refused when saved and when read; NO DATA never a change since the last run. Its checks were seen to fail on the code before the change |
 | **PASS** | `tests/test_checklist_tool.py` - the MCP tool through the real cards and a stand-in Revit: one `run_fragment_read` per check and no write, PASS and FAIL off the reply, nothing sent with no Revit; needs the MCP SDK, so CI lists it as not runnable |
 | **PASS** | `tests/test_companion.py`'s QA Checklist group - data and hooks only, one run at a time, Select with the panel's ids by the dashboard's route, every route behind the pairing on a real server |
+| **PASS** | `tests/test_checklist_extends.py` - [D-179](decisions/D-179.md): a project list saved over an office list, every refusal in words with nothing kept, the office list read again at each run - changed, deleted, an override no longer matching - the fingerprint, a hand-edited file of the wrong shape, and the wiring of both runs. Seen to fail before the code was written |
 | **PASS** | `tests/test_checklist_report.py` - [D-178](decisions/D-178.md): a real run's PASS, FAIL, NO DATA and NOT RUN written to the page and the workbook; the modeller's words escaped and never a formula; every part of the workbook well-formed XML; nothing fetched, no script; a second report a new file, the first untouched; and `report` wired to the chat's run. Seen to fail before the code was written |
 | **NEEDS REAL REVIT** | [group MV](needs-checking/group-mv.md) - a starter run on a real model, a FAIL with Select, a DRAFT check NOT RUN, a run with Revit closed, the page's Run beside a chat |
 | **NEEDS REAL REVIT** | [group NV](needs-checking/group-nv.md) NV18 to NV20 - NO DATA and the coverage line on a real model ([D-165](decisions/D-165.md)) |

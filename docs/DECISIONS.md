@@ -240,6 +240,7 @@ an edit.
 | [D-174](#d-174--a-proof-taken-on-another-heron-add-in-build-or-another-revit-build-is-said-under-the-answer-and-never-refused) | A proof taken on another Heron add-in build or another Revit build is said under the answer, and never refused | ✅ Accepted · 2026-11-16 |
 | [D-177](#d-177--an-idea-taken-from-another-project-is-written-in-herons-own-words-and-the-project-and-its-author-are-not-named) | An idea taken from another project is written in Heron's own words, and the project and its author are not named | ✅ Accepted · 2026-11-17 |
 | [D-178](#d-178--a-qa-checklist-run-can-be-written-as-an-excel-workbook-and-an-html-page-each-a-new-file) | A QA checklist run can be written as an Excel workbook and an HTML page, each a new file | ✅ Accepted · 2026-11-17 |
+| [D-179](#d-179--a-project-checklist-can-extend-an-office-checklist-changing-only-severity-target-and-onoff-and-every-run-names-the-checks-it-used) | A project checklist can extend an office checklist, changing only severity, target and on/off, and every run names the checks it used | ✅ Accepted · 2026-11-17 |
 
 ## Format
 
@@ -1509,3 +1510,11 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`heron_checklist_report.py`](../brain/heron_checklist_report.py) · [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (`heron_checklist`, `_checklist_report`) · [docs/50](50-qa-checklists.md)
 
 **Full record:** [`decisions/D-178.md`](decisions/D-178.md)
+
+## D-179 — A project checklist can extend an office checklist, changing only severity, target and on/off, and every run names the checks it used
+
+**Status:** Accepted · **Date:** 2026-11-17 · **Accepted:** Ajmal PS, 2026-11-17, in conversation: *"you can do one by one"*
+**Extends:** [D-152](#d-152--a-qa-checklist-is-saved-checks-in-the-modellers-words-each-one-read-with-a-pass-rule-run-in-one-go-from-the-chat-or-the-companion) - QA checklists
+**Affects:** [`heron_checklists.py`](../brain/heron_checklists.py) (`save`, `_read`, `prepare_run`, `stamp`, `fingerprint`) · [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (`heron_checklist`) · [docs/50](50-qa-checklists.md)
+
+**Full record:** [`decisions/D-179.md`](decisions/D-179.md)

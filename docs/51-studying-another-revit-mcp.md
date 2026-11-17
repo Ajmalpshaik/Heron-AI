@@ -131,7 +131,7 @@ complete product. None of its leads asks Heron to make anything less safe.
 | # | What Heron would build | Why it matters | Heron today | Size |
 |---|---|---|---|---|
 | 1 | **QA reports a coordinator can send.** A checklist run written to Excel and to one self-contained HTML page; then BCF issues with a camera, for Navisworks and ACC | The QA checklist exists; what it produced stopped at CSV and print | **Excel and HTML BUILT 2026-11-17** ([D-178](decisions/D-178.md)), tested without Revit; BCF and pictures not built | M |
-| 2 | **An office checklist with project overrides.** A company base checklist a project list extends, allowed to change only severity, threshold and on/off, with a fingerprint of the resolved list on every report | One office standard, many projects, no silent drift | Saved checklists, no inheritance | S |
+| 2 | **An office checklist with project overrides.** A company base checklist a project list extends, allowed to change only severity, threshold and on/off, with a fingerprint of the resolved list on every report | One office standard, many projects, no silent drift | **BUILT 2026-11-17** ([D-179](decisions/D-179.md)), tested without Revit | S |
 | 3 | **Hide folder paths in replies**, as a setting | A project's folder names can say more than the model | NOT PRESENT | S |
 | 4 | **Group Policy templates for the three ceilings** - ADMX and ADML for `AllowChanges`, `AllowAdmin`, `AllowPublish` | IT sets Heron's ceiling the way it sets everything else | Registry ceilings exist, no template | S |
 | 5 | **Build provenance on every release asset**, beside the checksums | Says who built a download, which a checksum cannot | Checksums only | S |
@@ -139,7 +139,7 @@ complete product. None of its leads asks Heron to make anything less safe.
 | 7 | **Many models overnight, read only.** A separate Revit per model, the year picked from the file, an unknown dialog stops that model and never clicks through, resumes after a restart; one report at the end | "Check every model in this folder" is a weekly coordinator job | NOT PRESENT for project models | L |
 | 8 | **The host AI tested end to end.** Real questions, the tools it should call in order, checked against the model's own answer - calibrated by a deliberately broken answer that must fail | Heron measures its own search; nobody measures the host's choice | `check-routing`, `score-routing` | L |
 
-Items 2 to 5 need no new decision. Items 6, 7 and 8 each want one; item 1's first half has [D-178](decisions/D-178.md).
+Items 3 to 5 need no new decision. Items 6, 7 and 8 each want one. Item 1's first half has [D-178](decisions/D-178.md), item 2 [D-179](decisions/D-179.md).
 
 ---
 

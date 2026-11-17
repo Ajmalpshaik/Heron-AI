@@ -111,6 +111,8 @@ def _summary_lines(answer, now):
              ("NOT RUN", counts.get("not run", 0)),
              ("Coverage", (answer.get("coverage") or {}).get("said", "")),
              ("Since the last run", _history_said(answer)),
+             ("Extends", answer.get("extends") or ""),
+             ("Checks fingerprint", answer.get("fingerprint") or ""),
              ("Stopped", answer.get("stopped") or "")]
     return [(k, v) for k, v in lines if v not in ("", None)]
 
