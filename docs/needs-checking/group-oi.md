@@ -139,3 +139,37 @@ refused, and each card's status flipped DRAFT to PROVEN. OI10 and OI16-OI18 stay
 **Signed 2026-11-16, as Ajmal PS, on the owner's word** (*"Yes, sign both"*): `report-browser-organization`
 (OI19) and `trace-connectivity` (OI20) - `accept` on each tracking draft, none refused, each status flipped
 DRAFT to PROVEN.
+
+### Run 2026-11-17, morning - after the owner restarted Revit 2024 (session 34788)
+
+The night stopped new compiles at 13.5 GB; he restarted Revit 2024 at ~05:12, and the cards the night could not
+arrange were run on three scratch copies, from the read-only plan written overnight. Changes, Admin and
+Publish on, Ask to Keep off (his clicks). Every proof rolled back; the arrangements below were KEPT by PROVEN
+cards (`fragment --in <doc> <card> --write --apply`) in scratch copies and saved from behind by `save-document`.
+No box came up. Revit's private bytes: 1.8 GB at the start, 7.7 GB after.
+
+- **`rig`** (night-1116\rig.rvt): a copy of `%TEMP%\heron-work\Family1.rfa` (an empty Generic Model) became
+  "HN Cut Void" - `set-family-settings` *"read back: Cut with Voids When Loaded No -> Yes"*, `create-family-forms`
+  one VOID extrusion 400 x 400 x 600 and one 50 mm SOLID (the void unattached) - saved and closed, `load-family`
+  into rig, `place-family-instances` at 31000,31000 on Level 1 (353594), through floor S2 (352528).
+- **`mech-scratch`**: a file copy of `mg\Heron JX Ducts.rvt` (Heron's project from the mechanical template,
+  Group JX). Nothing kept.
+- **`struct-scratch`**: a file copy of `mg\Heron MG Analytical.rvt` (the structural template, Group MG):
+  concrete beams 422018 and 422020 (`M_Concrete-Rectangular Beam: 300 x 600mm`), steel beam 422023
+  (`UB-Universal Beams: UB305x165x40`), `place-beam-rebar` on 422018 (*"3 rebar set(s) placed and read back"*,
+  bottom 3 x 16M, top 2 x 13M, stirrups 10M @ 200), `create-section-view` across it - "Section 1".
+
+**Job files:** `tools/jobs/morning-rig-cut-oi-2026-11-17.yaml`, `morning-mech-flex-oi-2026-11-17.yaml`,
+`morning-struct-rebar-oi-2026-11-17.yaml`.
+
+| Row | Card | Result |
+|---|---|---|
+| OI21 | `cut-geometry` (owed since OI16) | **PASS** - cutter the void instance (selected by region), S2 by id: *"1 element(s) cut by Generic Models HN Cut Void (id 353594)"*, *"Floors Generic 150mm (id 352528): cut by Generic Models HN Cut Void (id 353594) (void cut) - read back: cut"*; negative `cut false`: *"0 element(s) uncut ... 1 were already not cut by it and were left alone"* |
+| OI22 | `report-geometry-cuts` (owed since OI17) | **PASS** - `cut-geometry` (DRAFT then) as its last set-up step: *"Floors Generic 150mm (id 352528) is CUT BY Generic Models HN Cut Void"*, *"1 cut(s) across 1 element(s)"*; negative *"0 cut(s) across 1 element(s)"* |
+| OI23 | `convert-to-flex-duct` (row 5b-1842) | **POSITIVE EMPTY** - set-up `create-mep-runs` (three ducts, two corners) -> `fit-mep-joints` (an elbow at each corner), bound *"elements from fit-mep-joints (3)"*: the middle duct *"the new flex duct is not on \"Supply Air\" - put back as it was"*, the outer two *"an end is not joined to anything"*. **The ends now join** - with elbows the flex is no longer refused for open ends; the card's read-back of `RBS_DUCT_SYSTEM_TYPE_PARAM` against the old duct's is what puts it back. Why that value differs is not measured |
+| OI24 | `check-rebar-against-spec` | **PASS** - beam 422018: `meets 5` (bottom 3 x 16M, top 2 x 13M, link type 10M, spacing 200, hook 135); negative the steel beam - not a rebar host, `meets 0`, `doesNotMeet 0` |
+| OI25 | `place-rebar` | **PASS** - beam 422020: `placed 1` (422041), straight 16M, `readBackWrong` empty; negative the steel beam, nothing placed |
+| OI26 | `place-multi-rebar-annotation` | **PASS** - "Section 1", the bars of 422018: `placed 1`. First run named `annotationType` "MRA Rebar Section" and was refused: *"'MRA Rebar Section' is 'M_Structural MRA Rebar Section: MRA Rebar Section' (Structural Rebar Tags), not a multi-rebar annotation type"*, listing *"'Multi-Rebar Annotations: Structural Rebar Section'"* - run again with that name |
+
+Every positive read for *"NOTHING WAS"*, *"Revit refused"*, *"could not"* and *"threw"*: none. Each draft's one
+gap: no second route. **Not signed** - the owner's word.

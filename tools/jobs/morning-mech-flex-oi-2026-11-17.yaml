@@ -1,0 +1,42 @@
+# NEEDS-CHECKING Group OI - OI23: convert-to-flex-duct on a mechanical-template scratch copy, with elbows
+# RUN 2026-11-17 on Revit 2024 (session 34788, add-in 80819edd3983a0d5), every job
+# rolled back; results in docs/needs-checking/group-oi.md. The kept steps that
+# made the model are listed there. HERON_CLIENT_ID set; HERON_CONVERSATION_ID unset.
+#
+#     python tools/batch-prove.py <this file> --dry-run
+#     python tools/batch-prove.py <this file> --unattended --session <pid>
+
+model: mech-scratch
+defaults:
+  in: mech-scratch
+  write: true
+jobs:
+- fragment: convert-to-flex-duct
+  keep-chain: true
+  expect: flexDucts
+  setup:
+  - create-mep-runs
+  - fit-mep-joints
+  set:
+    systemType: Supply Air
+    ductType: 'Rectangular Duct: Radius Elbows / Taps'
+    level: Level 1
+    runs: '400x200: 100000,100000,2700; 104000,100000,2700; 104000,104000,2700; 108000,104000,2700'
+    toleranceMm: 10
+    flexDuctType: Flex - Rectangular
+  negative-set:
+    systemType: Supply Air
+    ductType: 'Rectangular Duct: Radius Elbows / Taps'
+    level: Level 1
+    runs: '400x200: 100000,100000,2700; 104000,100000,2700; 104000,104000,2700; 108000,104000,2700'
+    toleranceMm: 10
+    flexDuctType: Flex - Round
+  note: 'Binding note: elements (3) from the run. Positive: "1 of 3 converted" - the middle duct removed and replaced
+    by a flex duct "400x200 on \"Supply Air\", joined at both ends"; the two outer ducts "an end is not joined to
+    anything". Negative, a VALUE negative on the same arrangement: the round flex type on rectangular ducts - the
+    middle duct "a rectangular duct, and ... is round", 0 converted, removed empty. If fit-mep-joints refuses ("All
+    or nothing ... every failed joint is named"), the arrangement failed, not the card - record it. If the positive
+    again reads "2 end(s) of the new flex duct did not join" WITH an elbow at each end, row 5b-1842 is the card''s
+    - record it on the row.
+
+    '
