@@ -431,7 +431,7 @@ host elements and Generic Model or structural copies. **Two Autodesk pages list 
 family's voids may cut (one adds Casework, Furniture and Specialty Equipment): both recorded, **UNSURE**.
 
 **Measured 2026-10-22 on Revit 2020, a FLOOR-based family** (Metric Plumbing Fixture floor based, a floor
-drain built through Heron - [row 5b-1324](fragment-issues/section-5b-rows-401-425.md)): a void extrusion made
+drain built through Heron - [row 5b-1324](fragment-issues/section-5b-rows-1301-1325.md)): a void extrusion made
 through the API does NOT cut the template's floor by itself, and loaded into a project the family cut no
 floor - the host read six faces and its volume unchanged, the drain's grate stayed buried - with *Cut with
 Voids When Loaded* off and then on. After *Modify > Geometry > Cut* in the Family Editor, the sample floor

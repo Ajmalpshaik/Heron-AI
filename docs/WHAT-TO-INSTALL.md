@@ -195,14 +195,14 @@ every package Claude had installed was in the copy and none was in the real fold
    Claude. Never ask Claude to install them for you: they would land only in its copy again. **Or let
    the installer do it**: double-click `HeronInstaller.exe` in File Explorer, or run `heron-install` from
    your own terminal. Since 2026-10-17 both refuse to run from inside Claude, because an add-in installed
-   from there would land where Revit never looks ([row 5b-495](fragment-issues/section-5b-rows-401-425.md) -
+   from there would land where Revit never looks ([row 5b-495](fragment-issues/section-5b-rows-476-500.md) -
    it refused, as it should, on the owner's laptop on 2026-10-17; whether the add-in really would have
-   missed Revit there is [row 5b-1066](fragment-issues/section-5b-rows-401-425.md)).
+   missed Revit there is [row 5b-1066](fragment-issues/section-5b-rows-1051-1075.md)).
 2. **Install the versions Claude's copy already holds.** `python tools/heron-ready.py`, run in your own
    terminal, prints the `pip install --user` line with each version pinned. A *different* version would
    leave two copies of one package mixed together in Claude's view. Leaving a package out is safe. **The
    installer installs the lock's versions instead** - the two disagree, and which one a PC like this should
-   end up with is Ajmal PS's to settle ([row 5b-1065](fragment-issues/section-5b-rows-401-425.md)).
+   end up with is Ajmal PS's to settle ([row 5b-1065](fragment-issues/section-5b-rows-1051-1075.md)).
 3. **A Reset or uninstall of the Claude app deletes its copy** — the packages Claude installed itself.
    **Heron's own data is no longer in it** ([D-135](decisions/D-135.md), 2026-10-18): the knowledge store,
    each project's memory (load runs, standards, earlier answers) and the brain's record of what each chat
@@ -221,7 +221,7 @@ every package Claude had installed was in the copy and none was in the real fold
    once the add-in is rebuilt from the same change; an add-in installed before it still looks in the old
    folder and will not find the chat ([row 5b-416](fragment-issues/section-5b-rows-401-425.md)). Revit runs with a
    temporary folder of its own inside that one, so the add-in steps out of it to find yours
-   ([row 5b-1100](fragment-issues/section-5b-rows-401-425.md), [D-136](decisions/D-136.md)). **The first try
+   ([row 5b-1100](fragment-issues/section-5b-rows-1076-1100.md), [D-136](decisions/D-136.md)). **The first try
    failed on exactly that** - Revit 2024, 2026-10-18 ([Group HF](needs-checking/group-hf.md), HF4) - and
    D-136 is the fix; **the fix has not been tried in Revit.**
 

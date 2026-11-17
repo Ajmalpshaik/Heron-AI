@@ -83,7 +83,7 @@ published there is nothing to download.
 
 | ID | Do this | Pass looks like |
 |---|---|---|
-| ~~**AC1**~~ | ~~Push a tag and watch the **Release** workflow~~ | **DONE 2026-10-08.** `v0.1.0` pushed at `a88b0bc2`, every CI gate green on that commit; [the Release run](https://github.com/Ajmalpshaik/Heron-AI/actions/runs/37700010195) built a **draft** carrying **27 files** - 24 product zips, `heron-project.zip` with both installers, `heron-products.json` and `checksums.txt` - and the draft's `heron-project.zip` and product list matched their checksums once downloaded. Then **published on the owner's word** - see 2026-10-10 below |
+| ~~**AC1**~~ | Push a tag and watch the Release workflow — [full row](../needs-checking-archive/group-ac.md#row-ac1) | **DONE 2026-10-08.** |
 | **AC2** | On a PC or folder with **no build at all**, run `HeronInstaller.exe`, tick a Revit, press Install | It **downloads** rather than refusing, and the tab appears in that Revit after a restart. This is the first time anything has ever been fetched from a release. Watch for: the window freezing while it downloads — it should not, the engine runs off the window's thread |
 | **AC3** | Corrupt one asset in the release — re-upload a truncated zip — and install again | It **refuses**, says the file *"did not arrive whole"*, and `%APPDATA%\Autodesk\Revit\Addins\<ver>\` is **untouched**. Check the folder afterwards rather than trusting the message |
 | **AC4** | Turn networking **off**, then install | It says it **could not reach the internet**, not "error". Then block `github.com` at the firewall instead and check the message changes to the one about IT and the proxy |

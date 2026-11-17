@@ -10,7 +10,7 @@
 
 **Tracked as GitHub issue [#989](https://github.com/Ajmalpshaik/Heron-AI/issues/989) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
-Found 2026-10-15 on a live project ([row 5b-481](../fragment-issues/section-5b-rows-401-425.md)): the owner
+Found 2026-10-15 on a live project ([row 5b-481](../fragment-issues/section-5b-rows-476-500.md)): the owner
 asked for the filter `OUTSEL_TRG_MECH_Level` (Levels; Type Name does not contain 'TRG_MEC_Level') to become
 `OUTSEL_TRG_MECH_Level_Grid` on Levels and Grids with Type Name does not contain 'TRG_MEC'. No tool could
 rename a filter or change its rule, so it was done by making a second filter and swapping it onto two views.

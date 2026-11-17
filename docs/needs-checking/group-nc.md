@@ -13,7 +13,7 @@ Asked 2026-11-11 for the owner's KDF square diffuser (Revit 2020): its plan flow
 fixed at 600 mm, where Autodesk's sample supply diffuser carries arrows that grow with its size. Nothing in Heron
 locked a line's END to a plane crossing it, or a filled region's edges at all, so a slanted arrow-head edge could
 not follow a Length. Made NEW, at DRAFT - `LOCK_FORM_SKETCH_TO_PLANES` is PROVEN and untouched; why, and what is
-not known, is [FRAGMENT-ISSUES row 5b-1493](../fragment-issues/section-5b-rows-401-425.md).
+not known, is [FRAGMENT-ISSUES row 5b-1493](../fragment-issues/section-5b-rows-1476-1500.md).
 
 | What | Where | What it does |
 |---|---|---|
@@ -56,7 +56,7 @@ not yet saved by the owner). **Version 1: NC1 and NC2 both refused before anythi
 ...-00000814 belongs to a form's sketch" - for a plain detail line. A read-only probe found why: a Detail Item
 family keeps a `Sketch` of its own on "Ref. Level" (id 401, from the template, owned by no form or region) whose
 profile lists every loose detail line, and version 1 counted every sketch. NC1's refusal was for that wrong
-reason, so it tested nothing. [FRAGMENT-ISSUES row 5b-1495](../fragment-issues/section-5b-rows-401-425.md) has
+reason, so it tested nothing. [FRAGMENT-ISSUES row 5b-1495](../fragment-issues/section-5b-rows-1476-1500.md) has
 the cause and the fix.
 
 **Version 2, the same day, the same family, every run rolled back:**

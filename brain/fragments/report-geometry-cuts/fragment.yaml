@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -50,6 +50,35 @@ contract:
       type: int
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-17'
+  by: Ajmal PS
+  model: rig (3,349 elements), Revit 2024, session 34788
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-in-region, set-selection, filter-elements-by-id, cut-geometry with this phase's
+    own values - run inside a transaction, and Revit reported the transaction group ROLLED
+    BACK afterwards. returned cuts 1 item(s) [Floors Generic 150mm (id 352528) is CUT BY Generic
+    Models HN...], describe Func`2, findings 2 item(s) [1 cut(s) across 1 element(s). 0 of
+    them cut nothing and are ..., The element that is CUT loses the cutter's shape from its
+    vo...], withoutCuts 0. inputs came elements from cut-geometry (1). on rig
+  negative_case: run with categories=Generic Models, cut=false, cutter=selected, elementIds=352528,
+    exact=False, maxMm=31100,31100,1500, minMm=30900,30900,-500 instead - chosen because it
+    should not contain what this fragment reports - the arrangement was re-made first by running
+    select-in-region, set-selection, filter-elements-by-id, cut-geometry with this phase's
+    own values - run inside a transaction, and Revit reported the transaction group ROLLED
+    BACK afterwards. returned cuts 0 item(s), describe Func`2, findings 1 item(s) [0 cut(s)
+    across 1 element(s). 1 of them cut nothing and are ...], withoutCuts 1. inputs came elements
+    from cut-geometry (1). on rig
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.2.0.0
+    addin_hash: 80819edd3983a0d5
+  fingerprint: 8246a2f6644c0e43
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

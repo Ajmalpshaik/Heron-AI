@@ -12,7 +12,7 @@
 
 A new card, [`copy-graphic-display-options`](../../brain/fragments/copy-graphic-display-options/fragment.yaml),
 written in a cloud session - the dialog and, on the owner's word the same day (*"cover all kind of
-settings, even the sun settings, everything"*), the view's sun settings too - for [row 5b-1336](../fragment-issues/section-5b-rows-401-425.md): the owner asked for a
+settings, even the sun settings, everything"*), the view's sun settings too - for [row 5b-1336](../fragment-issues/section-5b-rows-1326-1350.md): the owner asked for a
 small shadow in a plan, and `SET_GRAPHIC_DISPLAY_OPTIONS` could set the shadow intensity but not tick
 Cast Shadows.
 
@@ -54,6 +54,6 @@ runs JC1's rolled-back half and JC3.
 | **JC5a** | *The sun left alone.* JC1 with `sunSettings=keep`, and once onto a view whose sun was never touched | `sunCopied` 0 and the target's Sun Settings unchanged; and whether two views share one sun - **not known** |
 | **JC6** | *DefaultMetric's own templates, by eye.* View > View Templates > Manage, each shipped template's Graphic Display Options | Whether any has Cast Shadows on - **not known from the cloud**; if one has, it is a ready source for JC5 |
 | **JC7** | *Routing, on the PC's backend.* "turn on cast shadows in Level 1" with no source named | Whether it should reach this card (which needs a view to copy from) or `SET_GRAPHIC_DISPLAY_OPTIONS` (which says to tick it by hand); on this container's backend it reached this card |
-| ~~**JC8**~~ | The signature, on the owner's word only, after JC0 to JC5a | `python brain/heron_validate.py accept copy-graphic-display-options --by "Ajmal PS"` **Struck 2026-11-13:** signed - `COPY_GRAPHIC_DISPLAY_OPTIONS` PROVEN at version 1, `proof:` dated 2026-11-02 by Ajmal PS, fingerprint `195dfa43901dd7a6`, in its `fragment.yaml`. That signature is what this row asked for; it does not stand for any other row of this group. |
+| ~~**JC8**~~ | The signature, on the owner's word only, after JC0 to JC5a — [full row](../needs-checking-archive/group-jc.md#row-jc8) | `python brain/heron_validate.py accept copy-graphic-display-options --by "Ajmal PS"`… |
 
 A row that fails stays open; nothing in a row changes to make it pass.

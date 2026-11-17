@@ -37,8 +37,8 @@ JT6, a workshared copy - `Project1 work_ajmal.al` or the owner's own local. The 
 
 | # | Run | Look for |
 |---|---|---|
-| ~~**JT0**~~ | *Open.* The Snowdon copy and `Family1` open in Revit 2024, Snowdon in front | Both titles in the Window list **Struck 2026-11-13:** PASSED - the verdict is in this file's *Results - Revit 2024, 2026-11-01*, which records it run and passed. |
-| ~~**JT1**~~ | *The D-30 positive.* The job file's leg on Snowdon | `elementTotal` above 0 and equal to the sum of the categories' `instances`; the levels' `instances` plus `noLevel` equal it too; `notRead` empty; `warnings.total` 145 in 5 kinds, errors first **Struck 2026-11-13:** PASSED - the verdict is in this file's *Results - Revit 2024, 2026-11-01*, which records it run and passed. |
+| ~~**JT0**~~ | Open. The Snowdon copy and `Family1` open in Revit 2024, Snowdon in front — [full row](../needs-checking-archive/group-jt.md#row-jt0) | Both titles in the Window list Struck 2026-11-13: PASSED - the verdict is in this file's… |
+| ~~**JT1**~~ | The D-30 positive. The job file's leg on Snowdon — [full row](../needs-checking-archive/group-jt.md#row-jt1) | `elementTotal` above 0 and equal to the sum of the categories' `instances`; the levels'… |
 | **JT2** | *Its negative - the first case to run.* The job file's leg on `Family1`, Snowdon still open | `elementTotal` 0, `sectionsNotRead` 15 (the job sends `parameters=Mark` and a breakdown, so `fill` and `breakdowns` are the fourteenth and fifteenth); the model block reads `Family1` with `isFamily` true; every other part **null**, never 0 or `[]`; none of Snowdon's numbers anywhere |
 | **JT3** | *How long it takes.* The positive's time on the reply | Recorded. On a model of several hundred thousand elements this is the run to repeat: the add-in stops a fragment at `revit.operationTimeoutSeconds` (60 s by default) |
 | **JT4** | *Each part beside its reader - the second route.* On Snowdon, in the same session: `READ_MODEL_WARNINGS`, `FIND_VIEWS` (placement unplaced, then withoutTemplate true), `FIND_SHEETS`, `LIST_LINKED_MODELS`, `FIND_PURGEABLE_ELEMENTS`, `SELECT_UNENCLOSED_ROOMS` (rooms only, then spaces only) - the readers named here until 2026-11-01, when they were merged into these | Each agrees with its part: `warningCount` = `warnings.total`; the unplaced views = `views.notOnSheets`; the untemplated views = `views.withoutTemplate`; 17 sheets; six link rows; `wholeFamilyUnused` = `families.unused`; `unusedGroupTypeNames` counted = `groups.unusedTypes`; unplaced and unenclosed = the rooms' and spaces' counts. **A disagreement is a FRAGMENT-ISSUES row**, never a rounding |
@@ -108,7 +108,7 @@ same folder, or the reading of 145 does not apply.
 | # | Result | What it read |
 |---|---|---|
 | JT0 | PASS | `REPORT_OPEN_DOCUMENTS`: Snowdon active, `Family1` open in the Family Editor |
-| JT1 | PASS, second run | `elementTotal` 4750 = the categories' `instances` 4750 = the levels' 4623 + `noLevel` 127; `notRead` []; `warnings.total` 145, 0 errors, 5 kinds; `links` six rows, each loaded; spaces 67, `notEnclosed` 0. Three of the categories are named *Center line* - [row 5b-1355](../fragment-issues/section-5b-rows-401-425.md) |
+| JT1 | PASS, second run | `elementTotal` 4750 = the categories' `instances` 4750 = the levels' 4623 + `noLevel` 127; `notRead` []; `warnings.total` 145, 0 errors, 5 kinds; `links` six rows, each loaded; spaces 67, `notEnclosed` 0. Three of the categories are named *Center line* - [row 5b-1355](../fragment-issues/section-5b-rows-1351-1375.md) |
 | JT1, first run | NOT JUDGED - arrangement | The links not found, as above: `elementTotal` 4682, `warnings.total` 211. Not a reading of the card |
 | JT2 | PASS | `Family1`: `model` {title `Family1`, `isFamily` true, `isWorkshared` false}; provided `elementTotal` 0, `sectionsNotRead` 15; every other part null, `fill` and `breakdowns` among them; `capped` []; neither 4750 nor 145 anywhere in its JSON |
 | JT3 | NOT RUN | The reply's time was not read |
@@ -125,5 +125,5 @@ on the PC (`brain/proof-drafts/report-model-dashboard.yaml`, not in the reposito
 on *P1102 STR*, negative on *P1102 Light* - with the same code fingerprint `26e34c5fe86c31a2` as the run above
 ([#791](https://github.com/Ajmalpshaik/Heron-AI/pull/791)); the card's `proof:` block holds that run. So the
 *not signed* and *still owed* lines above describe 2026-11-01 and are kept as that day's record. Which of JT10, JT11
-and JT17's schedule half that proof covered is not judged here; its `proof:` block is the record. [Row 5b-1355](../fragment-issues/section-5b-rows-401-425.md)
+and JT17's schedule half that proof covered is not judged here; its `proof:` block is the record. [Row 5b-1355](../fragment-issues/section-5b-rows-1351-1375.md)
 (three categories named *Center line*) is untouched by it and stays OPEN.

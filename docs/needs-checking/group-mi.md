@@ -51,8 +51,8 @@ requests reach these cards; with it a read. *"what wire types are in this model"
 with and without the flag, before and after. *"what latitude is the site set to"*, claimed by `REPORT_LOCATION`'s
 routing table, moved without the flag from that read to `SET_PROJECT_LOCATION`, an Admin write, and is declared on
 `REPORT_LOCATION`, outside `impl/`, fingerprint unchanged -
-[row 5b-1438](../fragment-issues/section-5b-rows-401-425.md), FIXED. With the flag seven write sentences moved from
-one read to another, and *"put it back"* flipped write to write again ([row 5b-1375](../fragment-issues/section-5b-rows-401-425.md),
+[row 5b-1438](../fragment-issues/section-5b-rows-1426-1450.md), FIXED. With the flag seven write sentences moved from
+one read to another, and *"put it back"* flipped write to write again ([row 5b-1375](../fragment-issues/section-5b-rows-1351-1375.md),
 OPEN) - recorded there, not tuned. `tests/test_routing_phrases.py` fails exactly its known seven.
 
 **The model - `electrical-mi`**, a scratch project from Revit's metric Electrical template on **Revit 2024**,

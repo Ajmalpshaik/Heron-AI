@@ -10,7 +10,7 @@
 
 **Tracked as GitHub issue [#983](https://github.com/Ajmalpshaik/Heron-AI/issues/983) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
-From [row 5b-1344](../fragment-issues/section-5b-rows-401-425.md). On Revit 2020 (session 54600), in a real
+From [row 5b-1344](../fragment-issues/section-5b-rows-1326-1350.md). On Revit 2020 (session 54600), in a real
 BIM 360 project, six volume control dampers each carried TWO writable shared parameters called *Equipment
 Tag*, and `key=Mark|in=Duct Accessories;MOD070|Equipment Tag=VCD042;...` refused every row, because which one
 was meant would be a guess. No Heron tool could name either.
@@ -43,10 +43,10 @@ The job file is [`tools/jobs/set-parameter-values-by-id-jf-2026-10-28.yaml`](../
 |---|---|---|
 | **JF0** | *Open.* The copy open and in front in Revit 2020, nothing else of the owner's in it | The title bar reads *JF Two Tags* |
 | **JF1** | *Arrange, by hand, kept in the copy.* Manage > Shared Parameters, point at `jf-tag-a.txt`; Manage > Project Parameters > Add, Shared parameter, *JF Tag*, Instance, category Walls. The same again with `jf-tag-b.txt`. Put Revit's shared parameter file back to what it was. Give one wall the Mark *JF-WALL* | Project Parameters lists *JF Tag* twice. **If Revit refuses the second one by name, JF1 FAILS as an arrangement** - nothing below can mean anything, and the group needs a different one |
-| ~~**JF2**~~ | *Check the arrangement.* `REPORT_PARAMETER_INVENTORY` on the JF-WALL wall's id, `parameterFilter=jf tag`, `fullRecord=true` | Two *JF Tag*, both String, shared, writable, GUIDs *A* and *B*, both blank; *"A NAME CARRIED TWICE"* names them **Struck 2026-11-13:** PASSED - the verdict is in this file's *Results - Revit 2020, 2026-10-28*, which records it run and passed. |
-| ~~**JF3**~~ | *The positive - the D-30 positive.* `python tools/batch-prove.py tools/jobs/set-parameter-values-by-id-jf-2026-10-28.yaml --session <pid>`, its positive leg: `key=Mark\|in=Walls;JF-WALL\|JF Tag {A}=ONE` | **`written` 1**; readBack name *JF Tag {9a6f71be-...}*, value *ONE*; `refused` empty; rolled back. **FAIL:** version 5's *"two parameters on it are called JF Tag"* **Struck 2026-11-13:** PASSED - the verdict is in this file's *Results - Revit 2020, 2026-10-28*, which records it run and passed. |
-| ~~**JF4**~~ | *The negative - the D-30 negative.* Its negative leg: `key=Mark\|in=Walls;JF-WALL\|JF Tag=ONE`, no GUID | `written` 0; `refused` names JF-WALL - two parameters on it are called JF Tag, and says to name the one meant as *'JF Tag {its GUID}'* **Struck 2026-11-13:** PASSED - the verdict is in this file's *Results - Revit 2020, 2026-10-28*, which records it run and passed. |
-| ~~**JF5**~~ | *Nothing kept.* JF2 again | Both *JF Tag* still blank **Struck 2026-11-13:** PASSED - the verdict is in this file's *Results - Revit 2020, 2026-10-28*, which records it run and passed. |
+| ~~**JF2**~~ | Check the arrangement. REPORT_PARAMETER_INVENTORY on the JF-WALL wall's id, parameterFilter=jf… — [full row](../needs-checking-archive/group-jf.md#row-jf2) | Two JF Tag, both String, shared, writable, GUIDs A and B, both blank; "A NAME CARRIED… |
+| ~~**JF3**~~ | The positive - the D-30 positive. python tools/batch-prove.py… — [full row](../needs-checking-archive/group-jf.md#row-jf3) | **`written` 1** |
+| ~~**JF4**~~ | The negative - the D-30 negative. Its negative leg: `key=Mark\|in=Walls;JF-WALL\|JF Tag=ONE`, no… — [full row](../needs-checking-archive/group-jf.md#row-jf4) | `written` 0; `refused` names JF-WALL - two parameters on it are called JF Tag, and says… |
+| ~~**JF5**~~ | Nothing kept. JF2 again — [full row](../needs-checking-archive/group-jf.md#row-jf5) | Both JF Tag still blank Struck 2026-11-13: PASSED - the verdict is in this file's Results… |
 | **JF6** | *The other one, and the wrong ones - by hand through the bridge client, each `--write` without `--apply` (rolled back).* `JF Tag {B}=TWO`; `Comments {A}=ONE`; `JF Tag {00000000-0000-0000-0000-000000000001}=ONE` | *B* written 1; the other two `written` 0, each refused as *"it has no parameter called ..."* |
 
 **Then sign**, on the owner's word only: `python brain/heron_validate.py accept set-parameter-values-by-id --by

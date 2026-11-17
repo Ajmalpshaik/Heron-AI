@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -132,6 +132,47 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-16'
+  by: Ajmal PS
+  model: night-scratch (3,203 elements), Revit 2024, session 8292
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    create-area-plan, create-room-separation-lines, place-rooms with this phase''s own values
+    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned alreadyTaggedHere 0 item(s), areaTagTypes 1 item(s) [M_Area Tag], areaTagsCategory
+    1 item(s) [id -2005020], chosenType AreaTagType, findings 1 item(s) [1 area tag(s) placed
+    in "Heron Area Plan" (Gross Building) a...], isNamed Func`3, mismatched 0 item(s), newTags
+    1 item(s) [352832], notAreas 0 item(s), notEnclosed 0 item(s), notPlaced 0 item(s), otherLevel
+    0 item(s), otherScheme 0 item(s), plan ViewPlan, refused , tagged 1, typeLabel Func`2,
+    typeText M_Area Tag, typesLoaded 1 item(s) [Area tag types: ''M_Area Tag: M_Area Tag''],
+    unplaced 0 item(s). inputs came view as given; elements from place-rooms as ''created''
+    (1); tagType as given. on night-scratch'
+  negative_case: 'run with areaPlanName=Heron Area Plan, areaSchemeName=Gross Building, level=Level
+    1, lineKind=area, loopsMm=0,0; 8000,0; 8000,6000; 0,6000, placeKind=area, points=4000,3000,0,
+    tagType=Room Tag, view=Heron Area Plan, viewName=Heron Area Plan instead - chosen because
+    it should not contain what this fragment reports - the arrangement was re-made first by
+    running create-area-plan, create-room-separation-lines, place-rooms with this phase''s
+    own values - run inside a transaction, and Revit reported the transaction group ROLLED
+    BACK afterwards. returned alreadyTaggedHere 0 item(s), areaTagTypes 1 item(s) [M_Area
+    Tag], areaTagsCategory 1 item(s) [id -2005020], chosenType (null), findings 1 item(s)
+    [''Room Tag'' is ''M_Room Tag: Room Tag'' (Room Tags), not an are...], isNamed Func`3,
+    mismatched 0 item(s), newTags 0 item(s), notAreas 0 item(s), notEnclosed 0 item(s), notPlaced
+    0 item(s), otherLevel 0 item(s), otherScheme 0 item(s), plan ViewPlan, refused ''Room
+    Tag'' is ''M_Room Tag: Room Tag'' (Room Tags), not an area tag type, so it cannot tag
+    an area. The loaded area tag types are in typesLoaded. Nothing was placed., tagged 0,
+    typeLabel Func`2, typeText Room Tag, typesLoaded 1 item(s) [Area tag types: ''M_Area Tag:
+    M_Area Tag''], unplaced 0 item(s). inputs came view as given; elements from place-rooms
+    as ''created'' (1); tagType as given. on night-scratch'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.2.0.0
+    addin_hash: 80819edd3983a0d5
+  fingerprint: 6b13d9d4ac4711b8
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

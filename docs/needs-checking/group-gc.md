@@ -16,7 +16,7 @@ swapped only IN-PLACE families. On 2026-10-15, on Revit 2020, 13 builders-work o
 linked structural model) were swapped by hand for `TRG_GEN_CutOut_Rectangular_HVAC : 12.5mm Cutout Buffer`,
 a level-based family, in a real project. The first delete silently took 33 tags and dimensions, the copies
 landed on the active workset, and a copy brought its source's Wall Width with it.
-[Row 5b-740](../fragment-issues/section-5b-rows-401-425.md).
+[Row 5b-740](../fragment-issues/section-5b-rows-726-750.md).
 
 **What changed - the same method, widened; no second method.** It now swaps a loadable family too, any
 category, any hosting on either side: it reads what goes with the old ones before anything changes, agrees
@@ -67,6 +67,6 @@ Every change is shown in Revit's Keep or Discard box (D-126); a DRAFT step runs 
 | **GC11** | Step 8, the compare | 0 missing, 0 different, 0 not chosen. **The negative:** leave one copy's `Wall Width` at 300 on purpose - the compare names it as a value nobody chose |
 | **GC12** | Step 9: `COPY_TAGS_TO_REPLACEMENTS` with the old-new pairs | Each tag made on its new one in the same view, type and head; `notReproduced` names any leader that differs; a second run makes none; the old tags still there |
 | **GC13** | Step 10: `REPORT_ELEMENT_DEPENDENCIES` again, the yes question, then `DELETE_ELEMENTS` | The question names the 4 openings, the tags copied, and the 2 dimensions that will go; `deleted` holds nothing the question did not name. **The negative:** answer no - nothing deleted |
-| **GC14** | `PLACE_FAMILY_ON_FACE` with `searchLinks=true` on a face-based new type, at one old one's point, ray towards the linked wall | Write down what Revit does: hosted on the link's face, or refused. Its card says both - version 2 *"a face in a loaded link hosts too"*, an older paragraph *"A REFERENCE INTO A LINKED MODEL IS REFUSED"* ([row 5b-742](../fragment-issues/section-5b-rows-401-425.md)); its code hosts there |
+| **GC14** | `PLACE_FAMILY_ON_FACE` with `searchLinks=true` on a face-based new type, at one old one's point, ray towards the linked wall | Write down what Revit does: hosted on the link's face, or refused. Its card says both - version 2 *"a face in a loaded link hosts too"*, an older paragraph *"A REFERENCE INTO A LINKED MODEL IS REFUSED"* ([row 5b-742](../fragment-issues/section-5b-rows-726-750.md)); its code hosts there |
 | **GC15** | GC3 to GC13 on **Revit 2024** and **2027** | The same answers. 2024 is the first release of 64-bit element ids; the tag members `COPY_TAGS_TO_REPLACEMENTS` uses change at 2022 |
 | **GC16** | The method stays DRAFT until GC3 to GC13 have been watched working through it, on the owner's word | Nothing to sign by tool: a method has no proof block. `python tools/prove-skill.py --skill replace-in-place-family --plan-only` names what still blocks it |

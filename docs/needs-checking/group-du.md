@@ -10,7 +10,7 @@
 
 **Tracked as GitHub issue [#993](https://github.com/Ajmalpshaik/Heron-AI/issues/993) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
-[FRAGMENT-ISSUES row 5b-449](../fragment-issues/section-5b-rows-401-425.md). Heron could not give a layer of a
+[FRAGMENT-ISSUES row 5b-449](../fragment-issues/section-5b-rows-426-450.md). Heron could not give a layer of a
 type a material - the house in Project2 got its colours by painting faces. `SET_COMPOUND_LAYER_WIDTH` (FRG-ELE-070)
 was widened rather than a card added: `material` and `layerFunction` are new values, BLANK for "leave it", and
 `checkOnly` an optional bool. It went from PROVEN to DRAFT, because its code changed.
@@ -27,7 +27,7 @@ connected, and `< /dev/null` on every line.
 
 | # | Run | Look for |
 |---|---|---|
-| ~~**DU1**~~ | The signature, on the owner's word only, from a checkout holding this code (the main checkout once merged): `python brain/heron_validate.py draft set-compound-layer-width --from brain/proof-drafts/runs/set-compound-layer-width.json`, read it, then `python brain/heron_validate.py accept set-compound-layer-width --by "Ajmal PS"`, then `heron-status: PROVEN` | the draft's fingerprint is the card's (`python brain/heron_fragment.py --show FRG-ELE-070`); a later code change makes it stale and the run is made again **Struck 2026-11-13:** signed - `SET_COMPOUND_LAYER_WIDTH` PROVEN at version 3, `proof:` dated 2026-11-07 by Ajmal PS, fingerprint `d6645d22dcc51654`, in its `fragment.yaml`. That signature is what this row asked for; it does not stand for any other row of this group. |
+| ~~**DU1**~~ | The signature, on the owner's word only, from a checkout holding this code (the main checkout once… — [full row](../needs-checking-archive/group-du.md#row-du1) | the draft's fingerprint is the card's (python brain/heron_fragment.py --show… |
 | **DU2** | **Revit 2024**, a duplicated FLOOR type of three or more layers: `layerIndex` -1, `layerFunction` "Finish 1", `material` a name the project holds | the finish layer - not layer 0 unless it is the top - holding the material, read back by `REPORT_COMPOUND_STRUCTURE` (its lines count from 1) |
 | **DU3** | A type with two layers of one function, `layerIndex` -1 and that function; and a curtain wall type | the first refused naming both numbers; the second refused as having no layers. Nothing changed in either |
 | **DU4** | A duplicated type with walls placed, then a material changed | the finding counts the walls placed, and every one of them shows the new material in a shaded view - it is a TYPE change |

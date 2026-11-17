@@ -10,7 +10,7 @@
 
 **Tracked as GitHub issue [#978](https://github.com/Ajmalpshaik/Heron-AI/issues/978) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
-From [row 5b-1335](../fragment-issues/section-5b-rows-401-425.md). On Revit 2020 the work-plane-based nested
+From [row 5b-1335](../fragment-issues/section-5b-rows-1326-1350.md). On Revit 2020 the work-plane-based nested
 family *TRG_Duct Accessory_Damper Quadrant Handle*, placed by `PLACE_NESTED_FAMILY` on a front reference
 plane made by `CREATE_REFERENCE_PLANES` - every plane it makes has normal +Y - came in on the front (-Y)
 side facing inward and upside down. `ROTATE_ELEMENTS_ABOUT_AXIS` was refused by Revit (*"Can't rotate
@@ -43,7 +43,7 @@ before each run. Every row is run once rolled back first.
 | **JB1** | *Positive.* The nested part, `flipWorkPlane=true`, `flipHand=false`, `flipFacing=false` | `flipped` 1, one line in `workPlaneFlips`: *"not flipped -> flipped"*, the facing reversed against its *was*, and the box moved to the front of the plane - Y from about -344 to -300, Z from 0 to 150, against the *was* on the other side. **Read back:** `REPORT_BOUNDING_BOX` on the part agrees with the line, and it stands the right way up in 3D. **FAIL:** the box where it was, or a line saying the flip did NOT take |
 | **JB2** | *Back again.* JB1 kept, then the same call again | `workPlaneFlips` *"flipped -> not flipped"*, the box back to JB0's numbers |
 | **JB3** | *One that cannot.* A family instance whose `CanFlipWorkPlane` reads false - which instance in a family does so on 2020 is not known; a door hosted in a wall of a scratch project is one to try - `flipWorkPlane=true` | Named in `cannotFlipWorkPlane`, its id in `cannotFlip`, `flipped` 0, nothing moved, no exception. If no such instance can be found, say so here; nothing in the row changes to make it pass |
-| ~~**JB4**~~ | The signature, on the owner's word only, after JB0 and JB1 | `python brain/heron_validate.py accept flip-elements --by "Ajmal PS"` **Struck 2026-11-13:** signed - `FLIP_ELEMENTS` PROVEN at version 3, `proof:` dated 2026-11-02 by Ajmal PS, fingerprint `997a071323206d2e`, in its `fragment.yaml`. That signature is what this row asked for; it does not stand for any other row of this group. |
+| ~~**JB4**~~ | The signature, on the owner's word only, after JB0 and JB1 — [full row](../needs-checking-archive/group-jb.md#row-jb4) | `python brain/heron_validate.py accept flip-elements --by "Ajmal PS"` Struck 2026-11-13… |
 
 A row that fails stays open; nothing in a row changes to make it pass. The 44 mm and 150 mm are the scratch
 part's own sizes: if it is built otherwise, JB1's numbers are its sizes, read off JB0's box.

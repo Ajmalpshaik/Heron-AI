@@ -1,0 +1,102 @@
+# NEEDS-CHECKING Group OI - OI24-OI26: rebar cards on a structural-template scratch copy
+# RUN 2026-11-17 on Revit 2024 (session 34788, add-in 80819edd3983a0d5), every job
+# rolled back; results in docs/needs-checking/group-oi.md. The kept steps that
+# made the model are listed there. HERON_CLIENT_ID set; HERON_CONVERSATION_ID unset.
+#
+#     python tools/batch-prove.py <this file> --dry-run
+#     python tools/batch-prove.py <this file> --unattended --session <pid>
+
+model: struct-scratch
+defaults:
+  in: struct-scratch
+  keep-chain: true
+  setup:
+  - select-in-region
+jobs:
+- fragment: check-rebar-against-spec
+  expect: meets
+  set:
+    minMm: 42500,-500,-1000
+    maxMm: 43500,500,500
+    exact: false
+    categories: Structural Framing
+    bottomBars: 3 x 16M
+    topBars: 2 x 13M
+    links: 10M @ 200
+    linkHook: '135'
+  negative-set:
+    minMm: 42500,11500,-1000
+    maxMm: 43500,12500,500
+    exact: false
+    categories: Structural Framing
+    bottomBars: 3 x 16M
+    topBars: 2 x 13M
+    links: 10M @ 200
+    linkHook: '135'
+  note: 'MZ3''s positive on RB1 (kept rebar), MZ5''s negative on RN1. Positive: meets above 0 - bottom 3 x ''16M'',
+    top 2 x ''13M'', link type ''10M'', link spacing 200, link hook 135 - each a "meets" line in report. A DOES
+    NOT MEET line is a finding to read, not a failed arrangement. Negative: RN1 "is not a rebar host - Revit hosts
+    rebar only in concrete ...", meets 0, doesNotMeet 0, notChecked 0. NOT MZ3''s own negative (a spec the bars
+    miss): doesNotMeet is role result, so that negative would read NEG NOT EMPTY here and at accept. Cover, lap,
+    anchorage and maxBarLength are left out - "a value the spec does not give is not checked".
+
+    '
+- fragment: place-rebar
+  write: true
+  expect: placed
+  set:
+    minMm: 42500,5500,-1000
+    maxMm: 43500,6500,500
+    exact: false
+    categories: Structural Framing
+    barType: 16M
+    shape: M_00
+    box: 40300,5920,-200; 45700,5920,-200
+    spreadToward: 0,1,0
+    spacing: '80'
+    setLength: '160'
+  negative-set:
+    minMm: 42500,11500,-1000
+    maxMm: 43500,12500,500
+    exact: false
+    categories: Structural Framing
+    barType: 16M
+    shape: M_00
+    box: 40300,5920,-200; 45700,5920,-200
+    spreadToward: 0,1,0
+    spacing: '80'
+    setLength: '160'
+  note: 'LX2 on a concrete BEAM instead of LX''s wall (RB2 is concrete by its family; a wall type''s material was
+    not read). Positive, RB2: placed 1 - one set of straight 16M bars 5400 mm long, maximum spacing 80 over 160
+    mm toward +y, so 3 bars at y 5920, 6000, 6080 inside RB2''s 5850..6150; RB2''s cover named and "not changed";
+    readBackWrong empty. Negative, RN1 (steel): placed 0, refused "Revit says ... cannot hold rebar ... Nothing
+    was placed". `through` is left out on purpose: an optional point list binds an empty list (HeronBindingNote.AbsentValue).
+    "is bent, and two points only say where a straight bar runs" means M_00 is not the straight shape - take the
+    name C2 read.
+
+    '
+- fragment: place-multi-rebar-annotation
+  write: true
+  expect: placed
+  set:
+    minMm: 42500,-500,-1000
+    maxMm: 43500,500,500
+    exact: false
+    categories: Structural Rebar
+    view: Section 1
+    annotationType: 'Multi-Rebar Annotations: Structural Rebar Section'
+  negative-set:
+    minMm: 42500,-500,-1000
+    maxMm: 43500,500,500
+    exact: false
+    categories: Structural Framing
+    view: Section 1
+    annotationType: 'Multi-Rebar Annotations: Structural Rebar Section'
+  note: 'KS2''s pair, in a section across RB1 (a Section is a view type the card takes). Positive: RB1''s three
+    sets handed in; placed 1, annotationId, dimensionId and tagId real; the bottom set (and any set parallel to
+    it) in dimensioned; the stirrups in notAligned if Revit''s check says so. Negative: RB1 itself - notRebar, placed
+    0, "Nothing was placed.". `view` is the name C9 read (change both places if it is not "Section 1"). If annotationType
+    is refused, the reply lists typesLoaded - take a type meant for bars seen in section, both places. Bars in notVisible
+    mean the section does not show them - the arrangement.
+
+    '

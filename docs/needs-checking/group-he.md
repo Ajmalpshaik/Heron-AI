@@ -10,10 +10,10 @@
 
 **Tracked as GitHub issue [#985](https://github.com/Ajmalpshaik/Heron-AI/issues/985) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
-Found from [row 5b-520](../fragment-issues/section-5b-rows-401-425.md): `EDIT_TEXT_VALUES` version 4 learned to
+Found from [row 5b-520](../fragment-issues/section-5b-rows-501-525.md): `EDIT_TEXT_VALUES` version 4 learned to
 keep a note's 1-2-3 numbering, but the tool that MAKES a note could still make only one paragraph with no
 list - a chat's values arrive one per line, so a paragraph break could not even be typed. A GENERAL NOTES
-block had to be made by hand. [Row 5b-930](../fragment-issues/section-5b-rows-401-425.md) has the finding.
+block had to be made by hand. [Row 5b-930](../fragment-issues/section-5b-rows-926-950.md) has the finding.
 
 **What changed.** [`CREATE_TEXT_NOTE`](../../brain/fragments/create-text-note/fragment.yaml) (FRG-VIEW-022, was
 PROVEN, now DRAFT, version 2). `noteText` takes `\r` for a new paragraph (Enter), `\v` for a soft line break
@@ -62,7 +62,7 @@ marks in SINGLE quotes, so the shell leaves the backslashes alone.
 | **HE9** | *Autodesk's rule behind HE1's negative, by hand, an observation.* In Revit's own text editor, a new two-paragraph note: Bullets on paragraph 1, then Numbers on paragraph 2 | Write down what Revit does - both numbered, both bulleted, or one of each. The refusal rests on SetListType's remarks (*"a list type ... changed ... is propagated to all the paragraphs in that list"*); if Revit keeps one of each, the refusal is wrong and goes to row 5b-930 |
 | **HE10** | HE1, HE4, HE5 and HE7 on **Revit 2024** and **Revit 2027** | The same answers. Compiled for all eight releases here; what Revit DOES was measured on none |
 | **HE11** | *Routing, on the owner's PC.* `heron_lookup` *"make a numbered note"*, *"put a bulleted note on the plan"*, *"turn this note into a numbered list"* | `CREATE_TEXT_NOTE` first for the first two, `EDIT_TEXT_VALUES` for the third (its mode format, #586). Measured in the cloud on the lexical and the trained backend, no re-ranker (row 5b-930); the re-ranked backends were not measured there. Also record what *"create a text note with a numbered list"* reaches: on lexical it went to `EDIT_TEXT_VALUES` because a DRAFT card loses PROVEN's tie-break |
-| ~~**HE12**~~ | The signature, on the owner's word only, after HE1 to HE10 | `python brain/heron_validate.py accept create-text-note --by "Ajmal PS"`; then he says whether the card goes back to PROVEN **Struck 2026-11-13:** signed - `CREATE_TEXT_NOTE` PROVEN at version 2, `proof:` dated 2026-10-18 by Ajmal PS, fingerprint `4038aa74518385c5`, in its `fragment.yaml`. That signature is what this row asked for; it does not stand for any other row of this group. |
+| ~~**HE12**~~ | The signature, on the owner's word only, after HE1 to HE10 — [full row](../needs-checking-archive/group-he.md#row-he12) | `python brain/heron_validate.py accept create-text-note --by "Ajmal PS"`; then he says… |
 
 **Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
 written: `CREATE_TEXT_NOTE` reads PROVEN on its card, at version 2 - its `proof` block is signed by Ajmal PS,

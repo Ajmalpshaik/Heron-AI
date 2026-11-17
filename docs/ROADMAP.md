@@ -99,7 +99,7 @@ NOT BUILT            Not in the plan yet         marketplace, other platforms, m
 | Phase | Where it stands, 2026-10-18 | Evidence |
 |---|---|---|
 | 0 — Prove the bridge | **Proven** in Revit 2020 and 2024 | [HANDOVER §3](HANDOVER.md#3-what-has-been-witnessed-at-a-real-revit) · [00e](00e-field-notes-proven-bridge.md) |
-| 0.5 — The second runtime | **Measured.** Loads on 2020, 2024, 2026 and 2027; on 2026 no fragment could run, and the repair has not been run in Revit | [Group EQ](needs-checking/group-eq.md) · [row 5b-575](fragment-issues/section-5b-rows-401-425.md) · [Group GW](needs-checking/group-gw.md) |
+| 0.5 — The second runtime | **Measured.** Loads on 2020, 2024, 2026 and 2027; on 2026 no fragment could run, and the repair has not been run in Revit | [Group EQ](needs-checking/group-eq.md) · [row 5b-575](fragment-issues/section-5b-rows-551-575.md) · [Group GW](needs-checking/group-gw.md) |
 | 1 — Modify, safely | **Measured.** The move on Revit 2024 (`D1` to `D6`); the Keep or Discard box and the rails on 2024 and 2027, faults logged as rows 5b-1090 to 5b-1095; a failure forced mid-move (`G-12`) not run | [Group D](needs-checking/group-d.md) · [Group ET](needs-checking/group-et.md) · [27 — the Phase 1 gate](27-build-order.md) |
 | 2 — Fragments, capabilities, knowledge | **Built.** The fragment library mostly `PROVEN`, every skill `DRAFT` | `grep -h '^heron-status:' brain/fragments/*/fragment.yaml \| sort \| uniq -c` and the same over `brain/skills/*.yaml` |
 | 3 — The BIM surface | **Built**, not proven | `python tools/agent-count.py` |
@@ -251,7 +251,7 @@ happened.
 This is where the .NET break stops being theoretical, and it is much cheaper to face here than after
 six phases of code assume one runtime. **Half met:** on the owner's laptop on 2026-10-17 Heron loaded on
 Revit 2020, 2024, 2026 and 2027 — `net472`, `net48`, `net8.0` and `net10.0` — but on 2026 no fragment
-could run ([row 5b-575](fragment-issues/section-5b-rows-401-425.md)); the repair is in code and has not
+could run ([row 5b-575](fragment-issues/section-5b-rows-551-575.md)); the repair is in code and has not
 been run in Revit ([Group EQ](needs-checking/group-eq.md), [Group GW](needs-checking/group-gw.md)).
 
 ---
@@ -275,7 +275,7 @@ been run in Revit ([Group EQ](needs-checking/group-eq.md), [Group GW](needs-chec
   ([D-130](DECISIONS.md)). Run once in Revit 2024 on 2026-10-18 on a scratch copy, before `--session`
   existed — a running job stopped and rolled back, and a stranger's stop refused by that Revit; but the
   stop went to every connected Revit, and a Revit 2020 whose lease nobody held took the stranger's
-  ([Group EZ](needs-checking/group-ez.md), EZ3; [row 5b-1094](fragment-issues/section-5b-rows-401-425.md)).
+  ([Group EZ](needs-checking/group-ez.md), EZ3; [row 5b-1094](fragment-issues/section-5b-rows-1076-1100.md)).
   `--session` is the fix for the first half, not yet run with two Revits (EZ6); whether a free Revit
   should take any client's stop was [Q-71](open-questions/tier-2.md), decided 2026-11-15 - a stop names
   the exact Revit session it is for - and built 2026-11-16, not yet run in Revit (EZ7 to EZ9)

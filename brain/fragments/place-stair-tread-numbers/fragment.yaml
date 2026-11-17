@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -140,6 +140,53 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-16'
+  by: Ajmal PS
+  model: rig (3,341 elements), Revit 2024, session 8292
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-category with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned alreadyNumbered
+    0 item(s), clean Func`2, describe Func`2, findings 1 item(s) [1 run(s) numbered in ''Level
+    1''; 0 already numbered there; 0 ...], justifyOptions 4 entry(ies), justifyWord , kind
+    tread, lines 1 item(s) [Runs ''50mm Tread 13mm Riser'' (id 352614) of Stairs ''Stair''
+    (...], placed 1, placedIds 1 item(s) [352770], referenceOptions 6 entry(ies), referenceWord
+    center, refused 0 item(s), report 1 run(s) numbered in ''Level 1''; 0 already numbered
+    there; 0 refused. Runs ''50mm Tread 13mm Riser'' (id 352614) of Stairs ''Stair'' (id 352613):
+    Tread numbers placed in ''Level 1'' (id 352770) - reference center, justify Back, show
+    All., ruleOptions 4 entry(ies), ruleWord , startNumber 0, target ViewPlan. inputs came
+    view as given; elements from filter-elements-by-category (1); numbers not given - "tread",
+    the card''s own default (optional); startNumber not given - "0", the card''s own default
+    (optional); reference not given - "center", the card''s own default (optional); justify
+    not given - "none", the card''s own default (optional); displayRule not given - "none",
+    the card''s own default (optional). on rig'
+  negative_case: 'run with category=Railings, view=FloorPlan: Level 1 instead - chosen because
+    it should not contain what this fragment reports - the arrangement was re-made first by
+    running filter-elements-by-category with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned alreadyNumbered
+    0 item(s), clean Func`2, describe Func`2, findings 1 item(s) [0 run(s) numbered in ''Level
+    1''; 0 already numbered there; 2 ...], justifyOptions 4 entry(ies), justifyWord , kind
+    tread, lines 0 item(s), placed 0, placedIds 0 item(s), referenceOptions 6 entry(ies),
+    referenceWord center, refused 2 item(s) [Railings ''1100mm'' (id 352621): not a stair
+    or a stair run, Railings ''1100mm'' (id 352625): not a stair or a stair run], report 0
+    run(s) numbered in ''Level 1''; 0 already numbered there; 2 refused. Railings ''1100mm''
+    (id 352621): not a stair or a stair run. Railings ''1100mm'' (id 352625): not a stair
+    or a stair run. NOTHING WAS PLACED., ruleOptions 4 entry(ies), ruleWord , startNumber
+    0, target ViewPlan. inputs came view as given; elements from filter-elements-by-category
+    (2); numbers not given - "tread", the card''s own default (optional); startNumber not
+    given - "0", the card''s own default (optional); reference not given - "center", the card''s
+    own default (optional); justify not given - "none", the card''s own default (optional);
+    displayRule not given - "none", the card''s own default (optional). on rig'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.2.0.0
+    addin_hash: 80819edd3983a0d5
+  fingerprint: a75d22c04af5947e
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

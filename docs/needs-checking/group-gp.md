@@ -12,7 +12,7 @@
 
 Found 2026-10-15 on a real BIM 360 project in Revit 2020: builders-work openings copied from instances on
 `BHVD_BW_WALL_OPENING` landed on the ACTIVE workset, because that is where Revit puts every copy, and had to be
-moved with `SET_ELEMENT_WORKSET` afterwards. [Row 5b-860](../fragment-issues/section-5b-rows-401-425.md).
+moved with `SET_ELEMENT_WORKSET` afterwards. [Row 5b-860](../fragment-issues/section-5b-rows-851-875.md).
 
 **What changed.** [`COPY_ELEMENTS`](../../brain/fragments/copy-elements/fragment.yaml) (FRG-GEO-005) takes
 `toWorkset`: `source` puts each copy on the workset of the element it is a copy of (its Workset value set
@@ -43,7 +43,7 @@ is moved aside first, because the job writes to that path.
 
 | # | Run | Look for |
 |---|---|---|
-| **GP0** | **First** - the add-in rebuilt and deployed for Revit 2020 with the `absent:` rule ([Group EI](group-ei.md) EI3, [row 5b-488](../fragment-issues/section-5b-rows-401-425.md)), Revit restarted and the Claude app restarted | EI3 passes. **Without it a call that leaves `toWorkset` out is refused** for a missing value - every existing caller of `COPY_ELEMENTS` would stop - so nothing below is run on an add-in older than 2026-10-16 |
+| **GP0** | **First** - the add-in rebuilt and deployed for Revit 2020 with the `absent:` rule ([Group EI](group-ei.md) EI3, [row 5b-488](../fragment-issues/section-5b-rows-476-500.md)), Revit restarted and the Claude app restarted | EI3 passes. **Without it a call that leaves `toWorkset` out is refused** for a missing value - every existing caller of `COPY_ELEMENTS` would stop - so nothing below is run on an add-in older than 2026-10-16 |
 | **GP1** | `python tools/batch-prove.py tools/jobs/copy-elements-v3-worksets-2026-10-17.yaml`, *Heron Copy Worksets WS* in front - `toWorkset=source`, offset 3000,0,0, rolled back. Or the same once with `try-once`, kept on the owner's word ([D-120](../DECISIONS.md)) | **the D-30 positive**: 4 copies; `onWorksets` names the active workset Workset1, reads *"Read back, all 4 copies: Heron Openings 4"* and *"4 of 4 copies whose workset can be set are on the workset asked for"* |
 | **GP2** | The same job's negative leg, *Heron Copy Worksets Plain* in front, the same values | **the D-30 negative**: `copies` 0, `onWorksets` empty, `refused` *"This model is not workshared ... Nothing was copied."*; the plain project still has four walls |
 | **GP3** | Second route, in a scratch copy where GP1 was KEPT (or `try-once` kept): select the four copies and read Workset in the Properties palette; then Visibility/Graphics > Worksets with Heron Openings hidden | the palette says Heron Openings for every copy; with Heron Openings hidden, all eight walls disappear and nothing is left on Workset1 |
@@ -54,7 +54,7 @@ is moved aside first, because the job writes to that path.
 | **GP8** | After GP0: the GP1 call with **no `toWorkset` at all** | **exactly version 2**: the copies on the active workset Workset1, `onWorksets` empty, `refused` empty, and the binding note *toWorkset not given - "active", the card's own default (optional)* |
 | **GP9** | GP1, GP2 and GP8 once on Revit 2024 and once on 2027 | the same answers - a WorksetId is an int on every release, and 2024's 64-bit ElementId is not involved |
 | **GP10** | Routing, on the owner's PC after the store is rebuilt from `main`: `heron_lookup` *"copy these and keep them on the same workset"* | `COPY_ELEMENTS`, by identity - measured in the cloud on both backends (trained model with and without the re-ranker), never yet on the owner's PC |
-| ~~**GP11**~~ | After GP1 and GP2 pass: read `brain/proof-drafts/copy-elements.yaml`, then `python brain/heron_validate.py accept copy-elements --by "Ajmal PS"` and set `heron-status: PROVEN` | the card PROVEN again with a new fingerprint; `revit_change` keeps changes from it again, and building-shell's typical storey works as before **Struck 2026-11-13:** signed - `COPY_ELEMENTS` PROVEN at version 5, `proof:` dated 2026-11-02 by Ajmal PS, fingerprint `6b974fc7d925b9fc`, in its `fragment.yaml`. That signature is what this row asked for; it does not stand for any other row of this group. |
+| ~~**GP11**~~ | After GP1 and GP2 pass: read brain/proof-drafts/copy-elements.yaml, then python… — [full row](../needs-checking-archive/group-gp.md#row-gp11) | the card PROVEN again with a new fingerprint; `revit_change` keeps changes from it again… |
 | **GP12** | *The first use, on the owner's word, on a project he chooses - never a 4355-\* model:* builders-work openings copied with `toWorkset=source` | every copy on BHVD_BW_WALL_OPENING (or that project's own openings workset), no `SET_ELEMENT_WORKSET` afterwards |
 
 **Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was

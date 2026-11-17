@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -50,6 +50,35 @@ contract:
       type: IList<ElementId>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-16'
+  by: Ajmal PS
+  model: night-scratch (3,203 elements), Revit 2024, session 8292
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    create-analytical-elements with this phase's own values - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned MmPerFoot 304.8,
+    analytical member 352514 | 0,0,4000 to 6000,0,4000 mm | NO PHYSICAL ELEMENT, findings
+    1 item(s) [1 analytical member(s), 0 analytical panel(s); 1 tied to no ...], lines 1 item(s)
+    [member 352514 | 0,0,4000 to 6000,0,4000 mm | NO PHYSICAL ELE...], manager AnalyticalToPhysicalAssociationManager,
+    memberCount 1, mm Func`2, panelCount 0, physical Func`2, unassociated 1 item(s) [352514].
+    on night-scratch
+  negative_case: run with kind=member, level=Level 9, points=0,0,0; 6000,0,0 instead - chosen
+    because it should not contain what this fragment reports - the arrangement was re-made
+    first by running create-analytical-elements with this phase's own values - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    MmPerFoot 304.8, analytical , findings 1 item(s) [0 analytical member(s), 0 analytical
+    panel(s); 0 tied to no ...], lines 0 item(s), manager AnalyticalToPhysicalAssociationManager,
+    memberCount 0, mm Func`2, panelCount 0, physical Func`2, unassociated 0 item(s). on night-scratch
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.2.0.0
+    addin_hash: 80819edd3983a0d5
+  fingerprint: fcf96e492ebaf1d6
 
 revit: ["2023", "2024", "2025", "2026", "2027"]
 runtime: [net48, net8.0-windows, net10.0-windows]

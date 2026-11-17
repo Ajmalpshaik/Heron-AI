@@ -16,7 +16,7 @@ listed them: `FIND_PURGEABLE_ELEMENTS` names only the images it finds **unused**
 naming them, and `READ_RENDERED_IMAGES` reads saved renderings and the image files in a folder, not Manage
 Images - look-alikes, not duplicates. `READ_RENDERED_IMAGES`' routing table sent *"which images are loaded in
 the model"* to `FIND_PURGEABLE_ELEMENTS`, which cannot name a used image; that row now names this card
-([row 5b-1387](../fragment-issues/section-5b-rows-401-425.md)).
+([row 5b-1387](../fragment-issues/section-5b-rows-1376-1400.md)).
 
 | What | Where | What it does |
 |---|---|---|

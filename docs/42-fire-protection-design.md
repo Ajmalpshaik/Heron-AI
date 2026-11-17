@@ -166,7 +166,7 @@ modeller ── Claude Code ── heron_fire (MCP, READ, no bridge operation)
 | Risk | **READ.** Arithmetic over what it is handed - no model, no network. The one thing kept is a project's governing standards once the modeller has said them ([D-111](decisions/D-111.md)), in `projects/<key>.fire.json` beside the HVAC record, never in it |
 | Agent | `HERON-MEP-FPD-002`, the second row of *MEP Design Engineering* |
 | Audit | `design.fire`, one line per call: the calculation and how it ended. **Never the inputs** |
-| Refusals | the HVAC engine's codes, through the same seam: `needs_request_values`, `unusable_request_values`, `unknown_op` - all correct refusals, not gaps. As for HVAC, the agent's contract declares them in capitals, words `run` never returns ([row 5b-1130](fragment-issues/section-5b-rows-401-425.md), open) |
+| Refusals | the HVAC engine's codes, through the same seam: `needs_request_values`, `unusable_request_values`, `unknown_op` - all correct refusals, not gaps. As for HVAC, the agent's contract declares them in capitals, words `run` never returns ([row 5b-1130](fragment-issues/section-5b-rows-1126-1150.md), open) |
 
 ---
 

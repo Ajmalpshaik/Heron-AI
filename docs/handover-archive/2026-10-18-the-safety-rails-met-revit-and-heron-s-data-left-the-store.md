@@ -30,7 +30,7 @@ owner's laptop, on scratch copies, with the owner pressing every box himself.
   **six faults became rows 5b-1090 to 5b-1095** ([section 5b](../fragment-issues/section-5b-rows-401-425.md)).
   Nothing of it ran on Revit 2020.
 - **Heron loads on Revit 2020, 2024, 2026 and 2027** ([Group EQ](../needs-checking/group-eq.md),
-  2026-10-17). On 2026 no fragment could run ([row 5b-575](../fragment-issues/section-5b-rows-401-425.md));
+  2026-10-17). On 2026 no fragment could run ([row 5b-575](../fragment-issues/section-5b-rows-551-575.md));
   the repair is in code and not yet run in Revit ([Group GW](../needs-checking/group-gw.md)).
 - **Signed and `PROVEN` by Ajmal PS:** `create-text-note`, kept once behind the Keep box on Revit 2024
   ([Group EM](../needs-checking/group-em.md), EM1 and EM3, #656); `EDIT_TEXT_VALUES` v5 and
@@ -39,7 +39,7 @@ owner's laptop, on scratch copies, with the owner pressing every box himself.
   READY, and Python 3.10 and 3.15 refused by name ([Group EP](../needs-checking/group-ep.md)).
 - **The data carry of [D-135](../DECISIONS.md) passed; the Companion button failed**, because Revit runs
   with a temporary folder of its own ([Group HF](../needs-checking/group-hf.md),
-  [row 5b-1100](../fragment-issues/section-5b-rows-401-425.md), #654).
+  [row 5b-1100](../fragment-issues/section-5b-rows-1076-1100.md), #654).
 
 **Decided:** [D-135](../DECISIONS.md) — the Python side keeps its data in `%USERPROFILE%\.heron`, out of a
 Store Claude's private copy; [D-136](../DECISIONS.md) — the Companion's folder is found from inside Revit by

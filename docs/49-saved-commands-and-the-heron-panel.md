@@ -92,7 +92,7 @@ Running from the chat needs no tool of its own: `heron_commands show` gives the 
 and the door on its *runs through* line, and the chat calls that door with the inputs put in -
 `revit_read` for a `READ` or `ANALYZE` command, `revit_change` for one above. Since 2026-11-11
 `revit_change` refuses a command that only reads and names `revit_read`
-([row 5b-1161](fragment-issues/section-5b-rows-401-425.md)); this said *"the chat calls `revit_change`"*
+([row 5b-1161](fragment-issues/section-5b-rows-1151-1175.md)); this said *"the chat calls `revit_change`"*
 for every command until then.
 
 ## 5. What is proven, and what is not

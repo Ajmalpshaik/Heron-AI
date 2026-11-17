@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -174,6 +174,68 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-17'
+  by: Ajmal PS
+  model: struct-scratch (3,589 elements), Revit 2024, session 34788
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-in-region with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned DefaultPaperMm 10, MmPerFoot 304.8,
+    addLeader false, along XYZ, alreadyAnnotated 0 item(s), annotationId 1 item(s) [id 422044],
+    annotationTypes 2 item(s) [Structural Rebar, Structural Rebar Section], candidates 3 item(s)
+    [16M : Shape M_00, 13M : Shape M_00, 10M : Shape Rebar Shape 1], categoryName Func`2,
+    chosenType MultiReferenceAnnotationType, dimensionId 1 item(s) [id 422042], dimensioned
+    2 item(s) [422027, 422028], directionText , elementTypeLabel Func`2, findings 4 item(s)
+    [1 multi-rebar annotation(s) placed in "Section 1" as "Multi-..., The dimension line runs
+    along the spread of bar set 422027., 422030: Revit''s check for an Aligned annotation
+    says it neit..., ...], isNamed Func`3, lines 3 item(s) [The dimension line runs along
+    the spread of bar set 422027., 422030: Revit''s check for an Aligned annotation says it
+    neit..., Annotation 422044 placed: dimension 422042 across 2 bar(s), ...], notAligned
+    1 item(s) [422030], notRebar 0 item(s), notVisible 0 item(s), offsetMm 0, optionsFor Func`2,
+    origin XYZ, placed 1, planeNormal XYZ, refused , styleText aligned, styleType DimensionStyleType,
+    styleWord Aligned, tagHead XYZ, tagId 1 item(s) [id 422043], together 2 item(s) [422027,
+    422028], typeLabel Func`2, typeText Multi-Rebar Annotations: Structural Rebar Section,
+    typesLoaded 2 item(s) [''Multi-Rebar Annotations: Structural Rebar'' - reference cate...,
+    ''Multi-Rebar Annotations: Structural Rebar Section'' - refere...], view3D (null), whyRevitRefuses
+    Func`2, whyRevitRefusesAsked Func`2. inputs came view as given; elements from select-in-region
+    (3); annotationType as given; style not given - "aligned", the card''s own default (optional);
+    direction not given - "none", the card''s own default (optional); offsetMm not given -
+    "0", the card''s own default (optional); addLeader not given - false (optional). on struct-scratch'
+  negative_case: 'run with annotationType=Multi-Rebar Annotations: Structural Rebar Section,
+    categories=Structural Framing, exact=False, maxMm=43500,500,500, minMm=42500,-500,-1000,
+    view=Section 1 instead - chosen because it should not contain what this fragment reports
+    - the arrangement was re-made first by running select-in-region with this phase''s own
+    values - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned DefaultPaperMm 10, MmPerFoot 304.8, addLeader false, along (null),
+    alreadyAnnotated 0 item(s), annotationId (null), annotationTypes 2 item(s) [Structural
+    Rebar, Structural Rebar Section], candidates 0 item(s), categoryName Func`2, chosenType
+    MultiReferenceAnnotationType, dimensionId (null), dimensioned 0 item(s), directionText
+    , elementTypeLabel Func`2, findings 3 item(s) [0 multi-rebar annotation(s) placed in "Section
+    1" as "Multi-..., None of the 1 element(s) handed in is a bar drawn in "Sectio..., 422018
+    (Structural Framing): not Structural Rebar, which thi...], isNamed Func`3, lines 1 item(s)
+    [422018 (Structural Framing): not Structural Rebar, which thi...], notAligned 0 item(s),
+    notRebar 1 item(s) [422018], notVisible 0 item(s), offsetMm 0, optionsFor Func`2, origin
+    (null), placed 0, planeNormal (null), refused None of the 1 element(s) handed in is a
+    bar drawn in "Section 1" and not yet annotated there - see the reasons. Nothing was placed.,
+    styleText aligned, styleType DimensionStyleType, styleWord Aligned, tagHead (null), tagId
+    (null), together 0 item(s), typeLabel Func`2, typeText Multi-Rebar Annotations: Structural
+    Rebar Section, typesLoaded 2 item(s) [''Multi-Rebar Annotations: Structural Rebar'' -
+    reference cate..., ''Multi-Rebar Annotations: Structural Rebar Section'' - refere...],
+    view3D (null), whyRevitRefuses Func`2, whyRevitRefusesAsked Func`2. inputs came view as
+    given; elements from select-in-region (1); annotationType as given; style not given -
+    "aligned", the card''s own default (optional); direction not given - "none", the card''s
+    own default (optional); offsetMm not given - "0", the card''s own default (optional);
+    addLeader not given - false (optional). on struct-scratch'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.2.0.0
+    addin_hash: 80819edd3983a0d5
+  fingerprint: c233c6eea654075c
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

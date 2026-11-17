@@ -34,13 +34,13 @@ widening its code would put its proof out of date; `RELOAD_LINKS` (DRAFT) reload
 reference assemblies of all eight releases with `tools/api-surface --members` - the lists are in each card's
 `compatibility-note`. **Revit requires an open transaction for the load:** `LoadFrom` and `Reload` throw
 `ModificationOutsideTransactionException` without one (RevitAPI.xml, 2020 to 2027), so Heron's transaction group,
-which stopped Reload Latest ([row 5b-1423](../fragment-issues/section-5b-rows-401-425.md)), is no obstacle here.
+which stopped Reload Latest ([row 5b-1423](../fragment-issues/section-5b-rows-1401-1425.md)), is no obstacle here.
 **Nothing here has run in Revit.** Both cards are DRAFT. **Only Revit can settle:** whether
 `Element.GetExternalFileReference` answers for the keynote table, or only the resource reference's display path
 does (LZ2); which status `Reload` returns for a file that has not changed - Success or ResourceAlreadyCurrent
 (LZ4); whether a load the transaction group later discards puts the old file back (LZ5). **Not done:** the
 numbering method (By keynote / By sheet) - no Revit API member reaches it on any release, [row
-5b-1420](../fragment-issues/section-5b-rows-401-425.md), OPEN; a keynote file on a keynote server other than
+5b-1420](../fragment-issues/section-5b-rows-1401-1425.md), OPEN; a keynote file on a keynote server other than
 Revit's own (`CreateLocalResource` makes a local reference only); *"the office standard on the server"* names
 no path, and the host asks for it rather than guessing.
 
@@ -53,7 +53,7 @@ identity without the flag (before: `REPORT_KEYNOTES`, and `LOAD_FAMILY` for *"re
 since the read moved reaches `REPORT_KEYNOTE_FILE` - with and without the flag, never `LOAD_KEYNOTE_FILE`
 (`heron_retrieve.find` on a scratch store of the split, 2026-11-02, Revit 2024, 2027 and none named). One
 sentence the new words moved off the card a routing table names is declared on that card, card text only -
-[row 5b-1421](../fragment-issues/section-5b-rows-401-425.md). *"Set keynote numbering to by sheet"* still reaches
+[row 5b-1421](../fragment-issues/section-5b-rows-1401-1425.md). *"Set keynote numbering to by sheet"* still reaches
 `REPORT_KEYNOTES`, after the move too; nothing can do it (row 5b-1420).
 
 **The model** - a scratch project from Revit's default architectural template, saved under `%TEMP%\heron-work`,

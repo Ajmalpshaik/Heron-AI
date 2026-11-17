@@ -144,8 +144,9 @@ CELL = re.compile(r"(?<!\\)\|")
 # A ROW MOVED TO A GITHUB ISSUE IS STILL OWED, ONLY TRACKED ELSEWHERE. On
 # 2026-11-16, on the owner's word, every open row of sections 5 and 5b was
 # grouped into GitHub issues and its state cell made to begin "MOVED TO ISSUE
-# #N" - so it leaves the OPEN list above, which is what he asked for, and its
-# full text stays here. A count of zero open would then read as nothing left
+# #N" - so it leaves the OPEN list above, which is what he asked for. Its line
+# stays here and its full text is in fragment-issues-archive/, moved there by
+# archive-fragment-issues.py like a finished row's. A count of zero open would then read as nothing left
 # to do, so the moved rows are counted on a line of their own and the map is
 # named: docs/fragment-issues/ISSUES.md.
 MOVED = re.compile(r"^moved to issue\b", re.I)
@@ -311,7 +312,8 @@ def main():
     out("  MOVED TO A GITHUB ISSUE   : %d\n\n" % moved)
     if moved:
         out("A moved row is still owed: it is open as a GitHub issue, and\n"
-            "docs/fragment-issues/ISSUES.md says which. Its text stays here.\n\n")
+            "docs/fragment-issues/ISSUES.md says which. Its line stays here;\n"
+            "its full text may be in docs/fragment-issues-archive/.\n\n")
     out("Read the ids, not the count. A row can say OPEN after a later row\n"
         "has closed it - four did on 2026-09-16 - and no pattern sees that.\n")
     return 0

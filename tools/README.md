@@ -771,7 +771,7 @@ Restore refuses without `--confirm`, refuses a backup that fails verification, a
 of whatever it is about to overwrite** — the thing a restore destroys is the only record of the machine
 a second ago.
 
-**Two folders since [D-135](../docs/decisions/D-135.md)** ([row 5b-1069](../docs/fragment-issues/section-5b-rows-401-425.md)).
+**Two folders since [D-135](../docs/decisions/D-135.md)** ([row 5b-1069](../docs/fragment-issues/section-5b-rows-1051-1075.md)).
 With no `HERON_DATA`, one backup holds `%APPDATA%\Heron` — the add-in's settings and trail — under
 `appdata/`, and the home `heron_paths.data_home()` names — the knowledge folder, each project's memory,
 the brain's audit — under `home/`. The manifest records each part's `source`; a restore puts each part
@@ -2406,7 +2406,7 @@ somebody else. A branch with no open pull request is never called TAKEN ON MAIN 
 and was never deleted - so without gh only this checkout is judged, and the report says that too.
 
 **An id main holds in the very words the live work wrote is that work's own, merged** - since 2026-10-17,
-[row 5b-981](../docs/fragment-issues/section-5b-rows-401-425.md). A squash-merge puts a pull request on main as
+[row 5b-981](../docs/fragment-issues/section-5b-rows-976-1000.md). A squash-merge puts a pull request on main as
 one new commit, so the session still on that branch goes on adding its ids against the commit where it left
 main, and was told TAKEN ON MAIN for its own row the moment it merged. So the id's entry at the work is compared
 with main's - a 5b row's whole table line, a group's own file `docs/needs-checking/group-xx.md`, a question's or
@@ -2763,7 +2763,7 @@ provides `formId` builds one a run, one that provides `formCount` builds what it
 reply that does not print it leaves the total NOT MEASURED rather than counting the rows sent. Claude
 Code stores a reply from Heron's server as the JSON text `{"result": "..."}`, so a result that parses as
 an object holding a string under `result` is read as that string - the `formCount` line and the
-hand-back's characters both come from it ([row 5b-1030](../docs/fragment-issues/section-5b-rows-401-425.md)). **Heron's
+hand-back's characters both come from it ([row 5b-1030](../docs/fragment-issues/section-5b-rows-1026-1050.md)). **Heron's
 server alone is always NOT MEASURED:** it keeps each call's seconds in memory only
 (`heron_companion.Activity`).
 

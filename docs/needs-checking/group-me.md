@@ -45,9 +45,9 @@ without the flag and a read with it (`REPORT_STRUCTURAL_LOADS`; *"make a combina
 and without the flag, and so do the probes *"show me the load combinations"* (`REPORT_PANEL_CIRCUITS`
 before), *"which load combinations does this model have"* and *"list the load combinations"*. The first
 draft's purposes pulled the second and third probes to the write without the flag - closed in the same
-change by rewording both purposes, [row 5b-1430](../fragment-issues/section-5b-rows-401-425.md). **Still
+change by rewording both purposes, [row 5b-1430](../fragment-issues/section-5b-rows-1426-1450.md). **Still
 reaching the write without the flag:** the probe *"what combinations are in this model"*, without the word
-"load" - nobody's words, so not declared ([row 5b-1431](../fragment-issues/section-5b-rows-401-425.md)).
+"load" - nobody's words, so not declared ([row 5b-1431](../fragment-issues/section-5b-rows-1426-1450.md)).
 Without the flag no other sentence any card declares or claims moved but *"give me the analytical model for
 the structural engineer"* on 2020, where its claimant `REPORT_ANALYTICAL_MODEL` (2023 on) cannot run -
 `REPORT_STRUCTURAL_LOADS` to `REPORT_STRUCTURAL_CONNECTIONS`, read to read. With the flag three writes' own

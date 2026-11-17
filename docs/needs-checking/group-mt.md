@@ -14,7 +14,7 @@ pass, no overlaps, batch over many views"*, and his word on how - *"upgrade the 
 or if you need to make as new also you can do it"*. Made NEW, at DRAFT, because both cards it overlaps are
 PROVEN and widening either would send it back to DRAFT and out of the chat's reach (D-117) until proved
 again. The overlap and the merge planned once this is proved are
-[FRAGMENT-ISSUES row 5b-1477](../fragment-issues/section-5b-rows-401-425.md).
+[FRAGMENT-ISSUES row 5b-1477](../fragment-issues/section-5b-rows-1476-1500.md).
 
 | What | Where | What it does |
 |---|---|---|

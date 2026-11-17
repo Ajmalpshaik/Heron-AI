@@ -13,7 +13,7 @@
 On 2026-10-13 and 2026-10-14 a house with 9 sheets and a 32-floor tower were built in models that had
 never been saved, and Revit was closed: both were lost. Heron cannot save the model it works in -
 `SAVE_DOCUMENT` refuses it, because Heron's one Undo entry is open in it for the whole run.
-[Row 5b-513](../fragment-issues/section-5b-rows-401-425.md) has the whole of it, and
+[Row 5b-513](../fragment-issues/section-5b-rows-501-525.md) has the whole of it, and
 [OPEN-QUESTIONS Q-69](../open-questions/tier-2.md) the proposal for the owner.
 
 **What changed.** No fragment and nothing in the add-in. `building-shell` and `drawing-set` have a step 0:

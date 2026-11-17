@@ -163,11 +163,11 @@ asked which, one at a time.
 | A wall's profile - an arched head | |
 | A ground surface | Revit 2024 brought in the toposolid in place of the toposurface, so it is two routes across Heron's eight releases |
 | ~~Stairs~~ and railings | **Stairs built as `CREATE_STAIRS`** - recorded 2026-10-04 by [45](45-five-more-downloaded-skill-files.md), which found this line out of date. Railings are still not built. *As built (2026-10-18): railings too - `CREATE_RAILING`, `EDIT_RAILING`, `SET_RAILING_TYPE`, DRAFT (#502)* |
-| Wall foundations, and ~~reinforcement~~ | **Reinforcement built 2026-10-19, DRAFT that day** - thirteen fragments, from `LIST_REBAR_TYPES` to `PLACE_COLUMN_REBAR` and `PLACE_AREA_REINFORCEMENT`, and the method [`reinforce-concrete`](../brain/skills/reinforce-concrete.yaml); not run in Revit ([Group HY](needs-checking/group-hy.md), [row 5b-1257](fragment-issues/section-5b-rows-401-425.md)). Wall (strip) foundations still have no tool |
+| Wall foundations, and ~~reinforcement~~ | **Reinforcement built 2026-10-19, DRAFT that day** - thirteen fragments, from `LIST_REBAR_TYPES` to `PLACE_COLUMN_REBAR` and `PLACE_AREA_REINFORCEMENT`, and the method [`reinforce-concrete`](../brain/skills/reinforce-concrete.yaml); not run in Revit ([Group HY](needs-checking/group-hy.md), [row 5b-1257](fragment-issues/section-5b-rows-1251-1275.md)). Wall (strip) foundations still have no tool |
 | Parts, and making an assembly | |
 | Point clouds | |
 | Masses, and the floors and walls made from one | |
-| ~~Painting one face; the material of one layer of a wall~~ | **Both built.** Painting a face is `PAINT_FACES` (2026-10-13, #502). The material of a layer is `SET_COMPOUND_LAYER_WIDTH` **version 2** (2026-10-13, [5b-449](fragment-issues/section-5b-rows-401-425.md)) - a layer's width, material and function, widened rather than a card added; run on Revit 2020, not signed ([Group DU](needs-checking/group-du.md)). Until then it changed a layer's width and nothing else |
+| ~~Painting one face; the material of one layer of a wall~~ | **Both built.** Painting a face is `PAINT_FACES` (2026-10-13, #502). The material of a layer is `SET_COMPOUND_LAYER_WIDTH` **version 2** (2026-10-13, [5b-449](fragment-issues/section-5b-rows-426-450.md)) - a layer's width, material and function, widened rather than a card added; run on Revit 2020, not signed ([Group DU](needs-checking/group-du.md)). Until then it changed a layer's width and nothing else |
 | ~~A door or a window put into one particular wall~~ | **Built 2026-09-25 as `PLACE_HOSTED_FAMILY` version 2** (#334) - it finds the wall at each point. Not from these notes: [the house plan of 2026-09-22](fragment-issues/a-drawing-set-and-a-house-plan-2026-09-22.md) found it, and [`building-shell`](../brain/skills/building-shell.yaml) now has a door step |
 
 > **As built (2026-10-18):** a gap-filling pass on 2026-10-13 (#502, commit `5cf7a59e`, NEEDS-CHECKING
@@ -180,7 +180,7 @@ asked which, one at a time.
 > mass. Each card's `revit:` and `heron-status:` lines are the current word.
 
 > **As built (2026-10-19):** reinforcement has a route now - the thirteen DRAFT rebar fragments of
-> [row 5b-1257](fragment-issues/section-5b-rows-401-425.md), owed [Group HY](needs-checking/group-hy.md). Still with no route: a
+> [row 5b-1257](fragment-issues/section-5b-rows-1251-1275.md), owed [Group HY](needs-checking/group-hy.md). Still with no route: a
 > wall's profile, wall foundations, point clouds, and walls made from a mass.
 
 > **Read 2026-11-12, off `brain/fragments/`:** three more of those have a card now - wall foundations

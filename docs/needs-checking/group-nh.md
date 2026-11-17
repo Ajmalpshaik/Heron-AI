@@ -13,7 +13,7 @@ Found missing on 2026-11-11: the owner wants to work by chat with very few click
 let the modeller click to answer the chat - a point had to be typed as three millimetre numbers
 ([D-67](../decisions/D-67.md)). `PICK_ON_SCREEN` is new, DRAFT, and asks for one point for each call. Why it
 stops at a point and at one click, and what the add-in does with a click that comes late, is
-[FRAGMENT-ISSUES row 5b-1507](../fragment-issues/section-5b-rows-401-425.md) and
+[FRAGMENT-ISSUES row 5b-1507](../fragment-issues/section-5b-rows-1501-1525.md) and
 [Q-86](../open-questions/tier-2.md).
 
 | What | Where | What it does |

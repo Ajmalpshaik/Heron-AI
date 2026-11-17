@@ -25,8 +25,8 @@ Finding Python and installing the packages each stop the run when they fail; the
 check runs whatever it did. The whole output goes to `%TEMP%\Heron\python-setup.log`. The window says what Install also does before
 it is pressed; `heron-install --no-python` leaves it out. Both doors refuse to run from inside a
 Microsoft Store Claude app's private copy of AppData ([`ClaudeAppCopy`](../../platform/Heron.Installer/ClaudeAppCopy.cs),
-[row 5b-495](../fragment-issues/section-5b-rows-401-425.md)). `heron-project.zip` now carries
-`tools/heron-ready.py` and the lock ([row 5b-494](../fragment-issues/section-5b-rows-401-425.md)).
+[row 5b-495](../fragment-issues/section-5b-rows-476-500.md)). `heron-project.zip` now carries
+`tools/heron-ready.py` and the lock ([row 5b-494](../fragment-issues/section-5b-rows-476-500.md)).
 
 **What is measured and what is not run.** Measured in a Linux container on 2026-10-17: the lock installs
 with `--require-hashes` into a fresh environment and `tests/test_mcp_serves.py` passes there; every
@@ -69,15 +69,15 @@ at all except to see the tab in EP1.
 
 | # | Run | Look for |
 |---|---|---|
-| ~~**EP1**~~ | **RUN 2026-10-17 on the owner's laptop - PASS on every look-for, with all four Revits ticked and the add-in fetched from v0.1.0** - [the run](#the-run-of-2026-10-17-on-the-owners-laptop), below. A PC with Python 3.12 and **none** of Heron's packages (`pip list --user` shows no `mcp`). Close Revit, double-click `HeronInstaller.exe` in the new folder from File Explorer, tick a Revit and the AI Bridge connector, press Install | Before pressing: the *Heron's Python side* paragraph above Install. After: the add-in line per Revit, then each step said in turn while it runs, then four lines ending *heron-ready says READY*; `%TEMP%\Heron\python-setup.log` holds the pip and heron-ready output; `pip list --user` shows `mcp 2.2.0`, `cryptography 50.0.1`, `cffi 2.1.1`, `PyYAML 6.0.3`; `python tools/heron-ready.py --check` in the folder says READY; the Heron tab appears when Revit opens. Write down how long the Python half took - **Struck 2026-10-18:** PASS 2026-10-17, as recorded in this row and in the run below. |
+| ~~**EP1**~~ | RUN 2026-10-17 on the owner's laptop - PASS on every look-for, with all four Revits ticked and the… — [full row](../needs-checking-archive/group-ep.md#row-ep1) | Before pressing: the Heron's Python side paragraph above Install. |
 | **EP2** | **RUN 2026-10-17 - PASS: both shapes through `heron-install`, and the no-Python shape through the window** - [below](#the-run-of-2026-10-17-on-the-owners-laptop). EP1's negative, on a PC or user where `python` answers nothing, or answers the Store shortcut | The add-in still installs; the Python line says no Python answered the plain command `python` (or that it is the Store shortcut) and names `winget install Python.Python.3.12 --scope user`; pip is never run (the log shows only the look); the run reports a failure, and Install can be pressed again |
-| ~~**EP3**~~ | **RUN 2026-10-17 - PASS for plain `heron-install` and for `--no-python`** - [below](#the-run-of-2026-10-17-on-the-owners-laptop). **RUN 2026-10-18 - PASS for Python 3.10 and for 3.15**, python.org's embeddable 3.10.11 and 3.15.0 each put first on PATH for one run, never installed - [the second run](#the-run-of-2026-10-18-on-the-owners-laptop), below. `heron-install` from a terminal opened outside Claude, in the new folder; then `heron-install --no-python`; then on a user whose `python` is 3.10, plain `heron-install`; and once more where `python` is 3.15 | The listing prints what the Python side will do before anything happens; exit 0 and READY; with `--no-python` the add-in only, no Python lines, exit 0; with 3.10, and again with 3.15, the Python line names the version found and the measured range 3.11 to 3.14, exit 2, add-in installed, pip never run - **Struck 2026-10-18:** PASS for all four shapes, 2026-10-17 and 2026-10-18, as recorded in this row and in the runs below. |
-| ~~**EP4**~~ | **RUN 2026-10-17 - PASS, the D-30 negative** - [below](#the-run-of-2026-10-17-on-the-owners-laptop). **The owner's laptop, Store-built Claude.** From Claude's own shell: `heron-install --list`, then `heron-install` | `--list` lists and ends with the refusal; plain `heron-install` exits 1 with *Heron was not installed. This is running inside the Claude app...*, and nothing changed - no new file under `%APPDATA%\Autodesk\Revit\Addins` seen from the owner's own terminal, no new package in the copy's `LocalCache\Roaming\Python` - **the D-30 negative** - **Struck 2026-10-18:** PASS 2026-10-17, as recorded in this row and in the run below. |
-| **EP5** | **RUN 2026-10-17 - PASS from Claude's shell; a NEW chat's `/mcp` is owed to the owner; what section 2a said is [row 5b-1065](../fragment-issues/section-5b-rows-401-425.md)** - [below](#the-run-of-2026-10-17-on-the-owners-laptop). EP4's control on the same laptop: `heron-install` from the owner's own Terminal, outside Claude | Not refused; installs as EP3. Then, in a NEW Claude chat, `/mcp` says heron connected and `python tools/heron-ready.py --check` from Claude's shell says READY - Claude reading what was installed outside, through its overlay. Note what section 2a says about the copy's own packages |
+| ~~**EP3**~~ | RUN 2026-10-17 - PASS for plain `heron-install` and for `--no-python` — [full row](../needs-checking-archive/group-ep.md#row-ep3) | The listing prints what the Python side will do before anything happens; exit 0 and… |
+| ~~**EP4**~~ | RUN 2026-10-17 - PASS, the D-30 negative — [full row](../needs-checking-archive/group-ep.md#row-ep4) | `--list` lists and ends with the refusal; plain `heron-install` exits 1 with Heron was… |
+| **EP5** | **RUN 2026-10-17 - PASS from Claude's shell; a NEW chat's `/mcp` is owed to the owner; what section 2a said is [row 5b-1065](../fragment-issues/section-5b-rows-1051-1075.md)** - [below](#the-run-of-2026-10-17-on-the-owners-laptop). EP4's control on the same laptop: `heron-install` from the owner's own Terminal, outside Claude | Not refused; installs as EP3. Then, in a NEW Claude chat, `/mcp` says heron connected and `python tools/heron-ready.py --check` from Claude's shell says READY - Claude reading what was installed outside, through its overlay. Note what section 2a says about the copy's own packages |
 | **EP6** | **NOT RUN 2026-10-17 - the laptop has no Claude that is not the Store build**, only `AnthropicPBC.Claude_...fnn82j28hfe8t` and the `claude.exe` it carries. **NOT RUN 2026-10-18 - the office PC is retired, and the laptop, the only PC left, runs Claude only as the Store build** - [why, and what would let it run](#2026-10-18-the-office-pc-is-retired), below. Needs a Claude that is not the Store build: on the laptop, Claude Code installed on its own, from its own installer and not the Store app. EP5 on a PC whose Claude is NOT the Store build (the downloaded installer, or Claude Code in a terminal): `heron-install` from Claude's shell | Not refused - there is no copy to be inside - and installs as EP3. The control that shows the refusal is not simply "inside Claude" |
 | **EP7** | **RUN IN PART 2026-10-17 - the suite PASSED from a checkout of the same commit, outside Claude, on Python 3.12; 3.13 NOT RUN, not on the laptop** - [below](#the-run-of-2026-10-17-on-the-owners-laptop). **3.13 still NOT RUN 2026-10-18 - the laptop is now the only PC, and it has no Python 3.13** - [below](#2026-10-18-the-office-pc-is-retired). Until that run this row said to run the suite *in the new folder*, which cannot be followed: `heron-project.zip` carries the lock but no `tests/` folder. *Second route, by hand:* in the new folder, `python -m pip install --user --require-hashes -r requirements-lock.txt`; then, from a checkout of the commit the zip was built from - the release's tag, or for a zip built by hand the commit it was built at (`git worktree add --detach <folder> <commit>`) - `python tests/test_mcp_serves.py`, against the packages pip has just put in the user folder. On Python 3.12, and once on 3.13 | pip installs every line with no source build and no hash refusal; the suite passes on Windows - the measurement the lock's header says is missing |
-| ~~**EP8**~~ | **RUN 2026-10-17 - PASS, on a second run with an empty Revit 2026: the Python half started only after the add-in went in. The first run found [row 5b-1064](../fragment-issues/section-5b-rows-401-425.md), FIXED, and the second [row 5b-1068](../fragment-issues/section-5b-rows-401-425.md), open** - [below](#the-run-of-2026-10-17-on-the-owners-laptop). *Watching, not a proof.* EP1 with Revit open when Install is pressed | The window waits for Revit to close as before; the Python side starts only after the add-in went in, never before - **Struck 2026-10-18:** PASS on the second run, 2026-10-17, as recorded. Row 5b-1068's fix is EP9's, still open. |
-| **EP9** | **NOT RUN - LOCAL: a PC with Revit, the window, and a person to watch.** [Row 5b-1068](../fragment-issues/section-5b-rows-401-425.md)'s fix: tested in a cloud container against a fake Revit and as text, never drawn. Build the installer from this branch. With an empty Revit 2026 open, double-click `HeronInstaller.exe` and read the line above the report; close Revit, press Install, and read the line again once the run reports. Then once more pressing Install while Revit is still open and closing it during the wait, as EP8 did. Then, with two Revits open, open the window, read the line and close the window without installing | Before Install: *"Revit 2026 is open right now. Close Revit before installing..."*. Once the run reports, with Revit closed, both ways: *"Close Revit before installing..."*, naming no Revit as open. With two open: *"Revit 2026 and 2020 **are** open right now"* (the releases in whatever order Windows lists them), never *is* |
+| ~~**EP8**~~ | **RUN 2026-10-17 - PASS, on a second run with an empty Revit 2026: the Python half started only after the add-in went in. The first run found [row 5b-1064](../fragment-issues/section-5b-rows-1051-1075.md), FIXED, and the second [row 5b-1068](../fragment-issues/section-5b-rows-1051-1075.md), open** - [below](#the-run-of-2026-10-17-on-the-owners-laptop). *Watching, not a proof.* EP1 with Revit open when Install is pressed | The window waits for Revit to close as before; the Python side starts only after the add-in went in, never before - **Struck 2026-10-18:** PASS on the second run, 2026-10-17, as recorded. Row 5b-1068's fix is EP9's, still open. |
+| **EP9** | **NOT RUN - LOCAL: a PC with Revit, the window, and a person to watch.** [Row 5b-1068](../fragment-issues/section-5b-rows-1051-1075.md)'s fix: tested in a cloud container against a fake Revit and as text, never drawn. Build the installer from this branch. With an empty Revit 2026 open, double-click `HeronInstaller.exe` and read the line above the report; close Revit, press Install, and read the line again once the run reports. Then once more pressing Install while Revit is still open and closing it during the wait, as EP8 did. Then, with two Revits open, open the window, read the line and close the window without installing | Before Install: *"Revit 2026 is open right now. Close Revit before installing..."*. Once the run reports, with Revit closed, both ways: *"Close Revit before installing..."*, naming no Revit as open. With two open: *"Revit 2026 and 2020 **are** open right now"* (the releases in whatever order Windows lists them), never *is* |
 
 **Not checked by any row:** a PC whose Claude copy already holds Heron's packages at OTHER versions than
 the lock - the install puts the pinned ones in the real folder, and which set Claude then loads through its
@@ -125,7 +125,7 @@ route 2, on Windows, exit 0 in 3.4 s, *"Nothing will be downloaded"*. The logs a
   packages in all - the lock's 30 lines - and `python tools/heron-ready.py --check` in the folder says READY,
   exit 0. **The tab:** Revit 2026.5, started from Explorer at 22:27:29, logged *"Heron loaded. Revit 2026,
   add-in 0.1.0.0, pid 55840"* and, at 22:28:35, *"Connected from the ribbon"* - the owner pressing the Heron
-  tab's button. Its warm-up failure in the same log is [row 5b-575](../fragment-issues/section-5b-rows-401-425.md),
+  tab's button. Its warm-up failure in the same log is [row 5b-575](../fragment-issues/section-5b-rows-551-575.md),
   not this group's.
 - **EP2.** Through `heron-install --releases 2026`, with PATH narrowed for that one run. With only the Store
   shortcut on it: the add-in *"done"*, then *"Heron's Python side was not set up. `python` on this PC is
@@ -157,7 +157,7 @@ route 2, on Windows, exit 0 in 3.4 s, *"Nothing will be downloaded"*. The logs a
   inside the app; `tests/test_mcp_serves.py` PASSED, 51 s. **Section 2a, run outside by the installer itself,
   said** *"install from your own terminal, pinned to the versions in Claude's copy"*, with `mcp==2.3.0` in its
   pip line - while the installer had just put the lock's `mcp` 2.2.0 in the real folder. What Claude then sees
-  of the two sets, file by file, is [row 5b-1065](../fragment-issues/section-5b-rows-401-425.md): the copy's
+  of the two sets, file by file, is [row 5b-1065](../fragment-issues/section-5b-rows-1051-1075.md): the copy's
   file wherever both have one, three stray files from the real folder, and the real folder's version number.
   The *"Not checked by any row"* case above is this laptop, and it is now checked. **Owed:** `/mcp` in a NEW
   chat - the owner's one look.
@@ -173,7 +173,7 @@ route 2, on Windows, exit 0 in 3.4 s, *"Nothing will be downloaded"*. The logs a
   `python-setup.log` kept their times, and no Python process started. That is the half of *"the Python side
   starts only after the add-in went in, never before"* that can be seen without the other. Revit was not
   closed - it held the owner's model - so at 22:42:41 the engine reached its ceiling and gave up, having
-  changed nothing, and ended on the waiting sentence: [row 5b-1064](../fragment-issues/section-5b-rows-401-425.md),
+  changed nothing, and ended on the waiting sentence: [row 5b-1064](../fragment-issues/section-5b-rows-1051-1075.md),
   fixed on this branch.
   **The second run, after the owner had closed his model.** An empty Revit 2026.5 (process 55048, its start
   page) started from Explorer; the window started outside Claude with only Revit 2026 ticked; Install pressed
@@ -185,7 +185,7 @@ route 2, on Windows, exit 0 in 3.4 s, *"Nothing will be downloaded"*. The logs a
   add-in went in. One Python process the watcher logged at 23:38:07.3 was this session's own helper script,
   run just before the watcher; the window's lines and the log place the installer's Python after the add-in.
   The line above the report still said *"Revit 2026 is open right now"* at the end -
-  [row 5b-1068](../fragment-issues/section-5b-rows-401-425.md). Revit 2026 was then given main's build from
+  [row 5b-1068](../fragment-issues/section-5b-rows-1051-1075.md). Revit 2026 was then given main's build from
   `dist` like the other three, so all four end the run on it.
 
 **Found along the way, and not a row of its own.** A Heron folder with nothing built in it fetches the newest
@@ -194,7 +194,7 @@ says only *"Already installed. Pressing Install replaces it"*. On a modeller's P
 where Heron is developed it is a step back, unannounced. Every window run above did this.
 
 **Measured on the way, for Q-63:** from Claude's shell, a write into a folder that already exists on the real
-disk lands on the real disk, not in the copy - [row 5b-1066](../fragment-issues/section-5b-rows-401-425.md).
+disk lands on the real disk, not in the copy - [row 5b-1066](../fragment-issues/section-5b-rows-1051-1075.md).
 
 ### The run of 2026-10-18 on the owner's laptop
 
@@ -242,7 +242,7 @@ folder first on PATH for that one process, so the plain `python` answered from i
   the wait, from 08:21:06 on; none was the installer's - `python-setup.log`, which every run of the Python side
   rewrites, never changed - and this session's evidence run had started running the suites at 08:21:05.
 - **Seen on the way:** the line above the report read *"Revit 2026 and 2020 is open right now"* from the
-  first look to the last, after Revit 2026 had closed too - [row 5b-1068](../fragment-issues/section-5b-rows-401-425.md),
+  first look to the last, after Revit 2026 had closed too - [row 5b-1068](../fragment-issues/section-5b-rows-1051-1075.md),
   whose second wrong this is.
 - **EP6 - NOT RUN**, for the reason in its row. **EP7** - the row's wording fixed; Python 3.13 still not run on
   a person's PC.

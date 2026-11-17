@@ -43,7 +43,7 @@ and after the card: every sentence it declares reaches it by identity on Revit 2
 *"add spot elevations"*, *"add tags to these"* and *"annotate these on the drawing"* still reach
 `ADD_SPOT_ELEVATIONS` and `TAG_ELEMENTS_IN_VIEW` by identity; no question is answered by a write.
 *"put it back"* moved from one write it does not name to another -
-[row 5b-1428](../fragment-issues/section-5b-rows-401-425.md), OPEN. Routing rows naming this card were
+[row 5b-1428](../fragment-issues/section-5b-rows-1426-1450.md), OPEN. Routing rows naming this card were
 added to `ADD_SPOT_ELEVATIONS` and `TAG_ELEMENTS_IN_VIEW` - card text only, outside `impl/`, their proof
 fingerprints unchanged.
 

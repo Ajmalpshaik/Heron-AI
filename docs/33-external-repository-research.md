@@ -459,7 +459,7 @@ Heron's own, from an idea.
 
 **Found in passing, recorded, and fixed 2026-11-14:** the decision log's preamble said its append-only rule
 *"mirrors Golden Rule 4: never destroy a working record"*, and Golden Rule 4 is the Revit-version rule
-([row 5b-1220](fragment-issues/section-5b-rows-401-425.md)). It now calls the rule the log's own.
+([row 5b-1220](fragment-issues/section-5b-rows-1201-1225.md)). It now calls the rule the log's own.
 
 **Decision: unchanged in shape, and one check built.** One question is left for the owner: whether to
 measure how often a chat follows Heron's own instructions - by running the host on made-up requests, which

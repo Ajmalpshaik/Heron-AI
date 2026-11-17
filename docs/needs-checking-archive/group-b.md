@@ -126,3 +126,23 @@
 **Pass looks like.** **PASSED 2026-09-07.** Revit restarted at 18:47:09, ten minutes after the setting was written, so it is a genuine cold read of the value. The count answered normally - **3,435 elements in `Project1 work_ajmal.al`, 339 ms** - and **no card appeared**. Checked by scanning **all 359 captured frames** for the card's own colours: **0 blue, 0 amber, 0 green, 0 red pixels** anywhere in the banner region. The only frames that differed were the ribbon redrawing. Proves both halves: the switch is read, and the banner is not on the answer's path. Setting removed afterwards, so the default `true` applies again
 
 ---
+
+### Row B16
+
+*Moved from the register on 2026-11-17.*
+
+**Do this.** Five reads back to back
+
+**Pass looks like.** **PASS 2026-09-17**, `Snowdon-scratch_ajmal.al`, Revit 2024, session 64384. Six `list-levels` reads with no gap between them, screen sampled at ~22 fps: **881 frames, card present in 71, in ONE unbroken run of 71**. One steady card across all six, and down afterwards - 810 frames with no card. Mid-batch it read *"Running a job: list-levels - 2.9 s"*, so it changed what it said without going away. **A SEPARATE RUN LOOKED LIKE A FAILURE AND WAS NOT**: five reads issued as separate calls seconds apart gave five runs of 26, 25, 25, 24 and 32 frames - the card correctly coming down between genuinely idle gaps. The B16 question needs the jobs truly back to back, or it measures the gaps instead. D-56 has not returned - **Struck 2026-10-18:** passed 2026-09-17, as recorded in this row.
+
+---
+
+### Row B15
+
+*Moved from the register on 2026-11-17.*
+
+**Do this.** Run something slow enough to freeze Revit - a fragment that has to compile, or a large model
+
+**Pass looks like.** **PASS 2026-09-17, on the harness, corroborated in Revit.** `Heron.Banner.TestHost freeze`, built for 2024: banner on **thread 6**, host on thread 1, host BLOCKED 3000 ms. Across six samples taken during the block the card read **1.0, 1.5, 1.9, 2.3, 2.8, 3.2 s** - climbing, monotonic, never backwards - with **sweep changed 5 of 5** and **time changed 5 of 5**. Banner thread did not outlive its owner. Exit 0. **IN REVIT**, a batch against `Snowdon-scratch_ajmal.al` caught the card mid-job reading *"Running a job: list-levels - 2.9 s"*, so the clock runs there too. The 3000 ms hard freeze itself is the harness's, not Revit's - it reproduces the topology (owner window on a blocked thread) and that is what the claim is about **Struck 2026-11-13:** passed, as the result written in this row records.
+
+---

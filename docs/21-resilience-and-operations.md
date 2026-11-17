@@ -255,7 +255,7 @@ after it started. A change was then refused `stopped` while a read still answere
 was refused (EZ3). On Revit 2027.3 the runaway came back `ran_too_long` at 50 s (EZ4, its first half).
 **Found and since fixed:** that run's `stop` went to every connected Revit and stopped another chat's
 Revit 2020. Since then the client sends it to one Revit and needs `--session` when there are two
-([row 5b-1094](fragment-issues/section-5b-rows-401-425.md)). That fix is held by `tests/test_bridge_stop.py`
+([row 5b-1094](fragment-issues/section-5b-rows-1076-1100.md)). That fix is held by `tests/test_bridge_stop.py`
 and has **not** run in Revit (EZ6). **Not run:** the after-restart half of EZ3, and anything on Revit 2020.
 Whether an idle Revit should take a stop from any client id was [Q-71](open-questions/tier-2.md), decided
 2026-11-15: a stop must name the exact Revit session it is for. Since 2026-11-16 the client needs

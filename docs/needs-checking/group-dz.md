@@ -17,7 +17,7 @@ line weight, cut line weight where the category is cut and projection line patte
 as Manage > Object Styles shows them. `familySubcategories` counts the family's own subcategories. An optional
 `everySubcategory` lists every other category's subcategories too; left out it is false, and names, bindable and
 the first finding read exactly as version 1's. Before this nothing read a category's own graphics, so questions
-about them were answered by writes ([FRAGMENT-ISSUES 5b-464](../fragment-issues/section-5b-rows-401-425.md)).
+about them were answered by writes ([FRAGMENT-ISSUES 5b-464](../fragment-issues/section-5b-rows-451-475.md)).
 
 **What is proved and what is not.** **Nothing below has run in Revit.** Measured without Revit on 2026-10-14: every
 fragment compiles on all eight releases, 2020 to 2027; every member version 2 adds was read off
@@ -40,4 +40,4 @@ the branch.
 | **DZ6** | DZ4's top-level rows counted against Object Styles' own tabs in the same project, Model + Annotation + Analytical Model + Imported added up | the same number. A difference is recorded with the tab the extra or missing rows sit on: it means the "internal categories have no row" rule is wrong |
 | **DZ7** | After the merge, on the live Heron: `heron_lookup` with *"what colour are the lines in this family"*, *"what colour is the signature subcategory"*, *"what line weight is the hidden lines subcategory"* and *"list the object styles in this family"* | each answered LIST_CATEGORIES - a READ - not a write |
 | **DZ8** | DZ2 on **Revit 2024** and **2027** | the same answers - compiled on all eight, run on none |
-| ~~**DZ9**~~ | The signature, on the owner's word only, after DZ2 to DZ6 | `python brain/heron_validate.py accept list-categories --by "Ajmal PS"` **Struck 2026-11-13:** signed - `LIST_CATEGORIES` PROVEN at version 3, `proof:` dated 2026-10-21 by Ajmal PS, fingerprint `78427d13fdc895b3`, in its `fragment.yaml`. That signature is what this row asked for; it does not stand for any other row of this group. |
+| ~~**DZ9**~~ | The signature, on the owner's word only, after DZ2 to DZ6 — [full row](../needs-checking-archive/group-dz.md#row-dz9) | `python brain/heron_validate.py accept list-categories --by "Ajmal PS"` Struck… |
