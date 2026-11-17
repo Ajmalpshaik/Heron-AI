@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -95,6 +95,38 @@ contract:
       # return are two (D-52).
       role: accounting
       type: int
+
+proof:
+  date: '2026-11-16'
+  by: Ajmal PS
+  model: night-scratch (3,213 elements), Revit 2024, session 8292
+  positive_case: 'run with runs=400x200: 0,10000,2700; 2000,10000,2700 - the first of 3 tracked
+    inputs - the arrangement was re-made first by running create-mep-runs with this phase''s
+    own values - run inside a transaction, and Revit reported the transaction group ROLLED
+    BACK afterwards. returned MillimetresPerFoot 304.8, islandCount 1, islandOf 1 entry(ies),
+    islandSizes 1 entry(ies), joinedByGeometry 0, managerOf Func`2, openEnds 2, queue 0 item(s),
+    reached 1 item(s) [Duct], seen HashSet`1, sourceless 1 item(s) [0], start (null), tolerance
+    0.00328083989501312. inputs came start not given - null (optional); elements from create-mep-runs
+    (1); tolerance as given. on night-scratch'
+  negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). trace-connectivity\
+    \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
+    \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
+    \ about a set it was not given - is caught here by the answer following the input exactly\
+    \ across 3 different inputs:\n\n      runs=400x200: 0,10000,2700; 2000,10000,2700 -> islandSizes\
+    \ 1 entry(ies)\n      runs=400x200: 0,10000,2700; 2000,10000,2700; 4000,10000,2700 ->\
+    \ islandSizes 2 entry(ies)\n      runs=400x200: 0,10000,2700; 2000,10000,2700; 4000,10000,2700;\
+    \ 6000,10000,2700 -> islandSizes 3 entry(ies)\n\n    Different inputs, exact matches every\
+    \ time. A fragment falling back to the active view, the whole model, or a previous run\
+    \ could not do that."
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.2.0.0
+    addin_hash: 80819edd3983a0d5
+  fingerprint: 42f434769a245837
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

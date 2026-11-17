@@ -1,0 +1,226 @@
+# NEEDS-CHECKING Group OI, rows OI11-OI18 - the night of 2026-11-16, Revit 2024
+# (session 8292, add-in 80819edd3983a0d5): the eight cards a rolled-back run
+# could not arrange on night-scratch, arranged on a KEPT rig. RUN, every job
+# rolled back: five PASS, three POSITIVE EMPTY - results in
+# docs/needs-checking/group-oi.md.
+#
+#     python tools/batch-prove.py tools/jobs/night-rig-oi-2026-11-16.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/night-rig-oi-2026-11-16.yaml --unattended --session <pid>
+#
+# THE MODEL `rig` is a file copy of Heron's DefaultMetric scratch project
+# (%TEMP%/heron-work/ny-scratch.rvt), saved under %TEMP%/heron-work/night-1116,
+# holding twelve elements KEPT by PROVEN cards (fragment --write --apply, Ask to
+# Keep off) and saved by save-document from behind. The kept steps, in order,
+# are under "The rig" in group-oi.md. `rig` must be the document IN FRONT:
+# set-selection writes the active document's selection.
+#
+# ONE VALUE DICT REACHES EVERY READ STEP. select-in-region needs `categories`,
+# and filter-elements-by-category declares `categories` too, so it answers
+# `category` + `categories` together (the union). The card under test refuses
+# the ONE selected element "itself" by id and goes on with the rest. Never
+# `categoryName` beside them: the filter throws "named twice over".
+#
+# HERON_CLIENT_ID set; HERON_CONVERSATION_ID unset. Every count in a job's
+# note was written BEFORE the run, as what was expected; the run's own
+# answers are in group-oi.md.
+
+model: rig
+
+defaults:
+  in: rig
+  # MODIFY cards, and report-geometry-cuts' change step: both legs run inside a
+  # transaction group that is rolled back.
+  write: true
+
+jobs:
+  # FIRST, because report-geometry-cuts below uses this DRAFT as a set-up step
+  # (night rule 5), and its PASS is that job's precondition.
+  - fragment: cut-geometry
+    in: rig
+    keep-chain: true
+    expect: changed
+    setup: [select-in-region, set-selection, filter-elements-by-category]
+    set:
+      minMm: "38000,29700,-1000"
+      maxMm: "38600,30300,1000"
+      exact: false
+      categories: "Structural Framing"
+      cutter: selected
+      cut: "true"
+    negative-set:
+      minMm: "38000,29700,-1000"
+      maxMm: "38600,30300,1000"
+      exact: false
+      categories: "Structural Framing"
+      cutter: selected
+      cut: "false"
+    note: >
+      LW2 moved onto two family instances. RevitAPI.xml 2024: a solid cut needs
+      a GenericForm, GeomCombination or FamilyInstance, so LW's floor was the
+      wrong partner. Set-up: the region touches only B1's west end, so ONE beam
+      is selected (the cutter). Elements are every Structural Framing element -
+      B1 and B2 - with the binding note "elements from filter-elements-by-category
+      (2)". Positive: changed 1, pairs "<B2>: cut by <B1> (solid cut) - read
+      back: cut", B1 in refused as "the cutting element itself". Negative, the
+      same pair with cut "false" - it is not cut, so changed 0 and B2 in
+      alreadyRight (a VALUE negative, because the union always holds both
+      beams). If Revit answers CutNotAppropriateForElements for two UB beams,
+      that is Revit's rule, not a pass - record it (LW2).
+
+  - fragment: report-geometry-cuts
+    in: rig
+    keep-chain: true
+    expect: cuts
+    setup: [select-in-region, set-selection, filter-elements-by-category, cut-geometry]
+    set:
+      minMm: "38000,29700,-1000"
+      maxMm: "38600,30300,1000"
+      exact: false
+      categories: "Structural Framing"
+      cutter: selected
+      cut: "true"
+    negative-set:
+      minMm: "38000,29700,-1000"
+      maxMm: "38600,30300,1000"
+      exact: false
+      categories: "Structural Framing"
+      cutter: selected
+      cut: "false"
+    note: >
+      LW4, with the cut made INSIDE the rolled-back run: no PROVEN card makes a
+      cut, and cut-geometry (DRAFT) cannot be kept. The three reads come first
+      and the change step last (row 5b-917). The cut step takes the PHASE's own
+      values, so there is no setup-set. Elements (kept chain) are B1 and B2.
+      Positive: cuts naming B2 "CUT BY" B1, solid from solid (and B1 as the
+      cutting one). Negative: cut "false" leaves them uncut, so cuts is empty
+      and withoutCuts 2. A set-up DRAFT inside batch-prove has not been seen in
+      Revit before (Group OI). If cut-geometry's own positive above did not
+      cut, this result says nothing about report-geometry-cuts.
+
+  - fragment: join-geometry
+    in: rig
+    keep-chain: true
+    expect: changed
+    setup: [select-in-region, set-selection, filter-elements-by-category]
+    set:
+      minMm: "31000,31000,-1000"
+      maxMm: "33000,32000,1000"
+      exact: false
+      categories: Floors
+      category: Walls
+      target: selected
+      join: "true"
+    negative-set:
+      minMm: "30500,41500,-1000"
+      maxMm: "31500,42500,1000"
+      exact: false
+      categories: Floors
+      category: Walls
+      target: selected
+      join: "true"
+    note: >
+      Row 5b-1661's own pair, for version 4 (STALE proof). Set-up: the region
+      selects ONE floor; elements are every wall and every floor in the model
+      (the union), NY's test floors included. Positive, floor S2 under room box
+      R: W1-W4 stand 100 mm into S2 (Base Offset -100), so changed 4; W5, W6, S1
+      and any NY floor in wouldNot "does not touch ... not sent"; S2 refused as
+      the target itself. Negative, floor S1 (2 m square, about 4 m from every
+      wall): changed 0, every wall and the other floors in wouldNot "does not
+      touch". If the positive reads alreadyRight 4 / changed 0, Revit joined S2
+      to the walls when it was made - the arrangement, not the card.
+
+  - fragment: refit-room-elevations
+    in: rig
+    expect: refitted
+    set:
+      roomNumbers: ""
+      marginMm: 300
+    negative-set:
+      roomNumbers: "999"
+      marginMm: 300
+    note: >
+      DN5's card on the kept room in R and its 4-view marker. Positive:
+      roomNumbers "" (every room, the card's own reading of empty) gives
+      refitted 4, refittedViews 4, each "room <n>, <view>: crop W x H mm, far
+      clip D mm". The template's four exterior markers stand in no room and are
+      passed over. Negative: no room 999, so refitted 0 and "No elevation marker
+      stands inside those rooms." A POSITIVE EMPTY may be the card's room
+      lookup (the marker box's middle, GetRoomAtPoint), not the rig. Where
+      place-rooms gave the number (expected "1"), that is the stronger positive.
+
+  - fragment: merge-parts
+    in: rig
+    keep-chain: true
+    expect: merged
+    setup: [filter-elements-by-category]
+    set:
+      category: Parts
+    negative-set:
+      category: Walls
+    note: >
+      DQ3's merge, on the two parts kept from walls W5 and W6 end to end - not
+      on a division, because RevitAPI.xml says a part that already has
+      associated parts cannot merge. Positive: merged 2, "2 part(s) merged into
+      one, read back.", mergedPart an id. Negative: every wall in the model and
+      no Part among them, so "Two parts or more are needed to merge. NOTHING WAS
+      MERGED.", merged 0, mergedPart (null). "Revit will not merge these parts"
+      in the positive means the two walls' parts are not contiguous - the
+      arrangement, not the card.
+
+  - fragment: create-assembly-views
+    in: rig
+    keep-chain: true
+    expect: created
+    setup: [filter-elements-by-category]
+    set:
+      category: Assemblies
+      withPartList: true
+      withMaterialTakeoff: true
+    negative-set:
+      category: Floors
+      withPartList: true
+      withMaterialTakeoff: true
+    note: >
+      Group I's card on the KEPT "RIG Assembly" (floor S1). Positive: created 1
+      entry - the assembly with its views, part list and material takeoff.
+      Negative: every floor, S1 (an assembly MEMBER), S2 and NY's floors, all
+      notAnAssembly, so created 0 entries. Run only if rig step 11 (create-assembly) was kept.
+
+  - fragment: place-stair-tread-numbers
+    in: rig
+    keep-chain: true
+    expect: placedIds
+    setup: [filter-elements-by-category]
+    set:
+      category: Stairs
+      view: "FloorPlan: Level 1"
+    negative-set:
+      category: Railings
+      view: "FloorPlan: Level 1"
+    note: >
+      ML4 on the kept component stair (one straight run). Positive: placed 1,
+      placedIds 1, report "... Tread numbers placed in 'Level 1' ...", refused
+      empty. Negative: the stair's two railings (Railings reaches
+      OST_StairsRailing, row 5b-444) - placed 0, refused "not a stair or a
+      stair run", report ending "NOTHING WAS PLACED.".
+
+  - fragment: add-key-schedule-rows
+    in: rig
+    keep-chain: true
+    expect: added
+    setup: [find-views]
+    set:
+      viewType: Schedule
+      nameContains: "RIG Room Key"
+      keyNames: "RIG Finish A, RIG Finish B"
+    negative-set:
+      viewType: Schedule
+      nameContains: "RIG Wall List"
+      keyNames: "RIG Finish A, RIG Finish B"
+    note: >
+      KK36 on rig. find-views replaces find-schedules (DEPRECATED, merged into
+      it); viewType Schedule is the only way it returns a schedule. Positive:
+      added 2, addedKeys naming both keys with their rows. "Revit added no key
+      ... rolled back" is a FINDING for row 5b-1367, not a failed arrangement.
+      Negative: "'RIG Wall List' is a schedule of elements, not a key schedule",
+      added 0, addedKeys empty.

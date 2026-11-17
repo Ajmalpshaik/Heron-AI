@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -139,6 +139,47 @@ contract:
       type: IList<string>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-16'
+  by: Ajmal PS
+  model: night-scratch (3,203 elements), Revit 2024, session 8292
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned after 1 item(s) ["Panel-Circuit":
+    Panel "-" + Circuit Naming Index], anyCapitals Func`2, before 0 item(s), changed 1, circuitCategory
+    1 item(s) [id -2008037], exactly Func`2, findings 2 item(s) [1 circuit naming scheme made.,
+    Made the circuit naming scheme "Panel-Circuit": Panel "-" + ...], first make, known 12
+    item(s) [(RBS_ELEC_CIRCUIT_PANEL_PARAM, System.String[]), (RBS_ELEC_CIRCUIT_NAMING_INDEX,
+    System.String[]), (RBS_ELEC_CIRCUIT_NAME, System.String[]), ...], label Func`2, listOf
+    Func`2, mode make, paramName Func`2, partsOf Func`2, projectScheme Func`1, quoted Func`2,
+    readSchemes Func`1, refused 0 item(s), report Circuit naming schemes before (0): none
+    | after (1): "Panel-Circuit": Panel "-" + Circuit Naming Index, said make, schemeNames
+    Func`1, schemes 1 item(s) [CircuitNamingScheme], settings CircuitNamingSchemeSettings,
+    skipped 0 item(s), wanted Panel-Circuit. inputs came action as given; schemeName as given;
+    parts as given; separator as given. on night-scratch'
+  negative_case: 'run with action=make, parts=panel; colour, schemeName=Panel Only, separator=-
+    instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    after 0 item(s), anyCapitals Func`2, before 0 item(s), changed 0, circuitCategory 1 item(s)
+    [id -2008037], exactly Func`2, findings 2 item(s) [No circuit naming scheme made., "colour"
+    is not a circuit parameter Heron can name. The part...], first make, known 12 item(s)
+    [(RBS_ELEC_CIRCUIT_PANEL_PARAM, System.String[]), (RBS_ELEC_CIRCUIT_NAMING_INDEX, System.String[]),
+    (RBS_ELEC_CIRCUIT_NAME, System.String[]), ...], label Func`2, listOf Func`2, mode make,
+    paramName Func`2, partsOf Func`2, projectScheme Func`1, quoted Func`2, readSchemes Func`1,
+    refused 1 item(s) ["colour" is not a circuit parameter Heron can name. The part...], report
+    Circuit naming schemes before (0): none | after (0): none, said make, schemeNames Func`1,
+    schemes 0 item(s), settings CircuitNamingSchemeSettings, skipped 0 item(s), wanted Panel
+    Only. inputs came action as given; schemeName as given; parts as given; separator as given.
+    on night-scratch'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.2.0.0
+    addin_hash: 80819edd3983a0d5
+  fingerprint: 22a219cbe7ab8521
 
 revit: ["2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net48, net8.0-windows, net10.0-windows]
