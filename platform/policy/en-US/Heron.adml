@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Heron - Group Policy language file (en-US) for Heron.admx. -->
+<policyDefinitionResources xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                           revision="1.0" schemaVersion="1.0"
+                           xmlns="http://schemas.microsoft.com/GroupPolicy/2006/07/PolicyDefinitions">
+  <displayName>Heron</displayName>
+  <description>Ceilings for what the Heron add-in for Revit may be switched to do on this computer.</description>
+  <resources>
+    <stringTable>
+      <string id="Heron">Heron</string>
+      <string id="Heron_Help">Heron is an AI assistant add-in for Autodesk Revit. Its Changes, Admin and Publish switches are turned on only by a click in Heron's Settings window in Revit, and are off whenever Revit starts. These policies set a ceiling on each switch for every user of this computer. A ceiling only stops a switch being turned on; it never turns one on.</string>
+      <string id="SUPPORTED_Heron">Heron add-in for Autodesk Revit 2020 and later</string>
+      <string id="AllowChanges">Allow Heron's Changes switch</string>
+      <string id="AllowChanges_Help">Changes lets Heron change the open model when the modeller asks for it in a chat.
+
+Enabled: the modeller may turn Changes on in Heron's Settings window.
+Disabled: Changes cannot be turned on on this computer. Heron can still read the model and answer questions.
+Not configured: no ceiling - the modeller may turn Changes on.
+
+This policy never turns Changes on. Heron starts every Revit session with Changes off.</string>
+      <string id="AllowAdmin">Allow Heron's Admin switch</string>
+      <string id="AllowAdmin_Help">Admin lets Heron change a project-wide setting - project, shared or global parameters, worksets, units, the project's location and coordinates - or make a new project or family file. It works only with Changes on as well.
+
+Enabled: the modeller may turn Admin on in Heron's Settings window.
+Disabled: Admin cannot be turned on on this computer.
+Not configured: no ceiling - the modeller may turn Admin on.
+
+This policy never turns Admin on. Heron starts every Revit session with Admin off.</string>
+      <string id="AllowPublish">Allow Heron's Publish switch</string>
+      <string id="AllowPublish_Help">Publish lets Heron export or print from the model, save it, synchronise it with central, or change worksharing ownership. It works only with Changes on as well.
+
+Enabled: the modeller may turn Publish on in Heron's Settings window.
+Disabled: Publish cannot be turned on on this computer.
+Not configured: no ceiling - the modeller may turn Publish on.
+
+This policy never turns Publish on. Heron starts every Revit session with Publish off.</string>
+    </stringTable>
+  </resources>
+</policyDefinitionResources>

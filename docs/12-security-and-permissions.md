@@ -129,7 +129,8 @@ lists every tool with its level.
 > an administrator's ceiling: `HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Heron`, DWORDs `AllowChanges`,
 > `AllowAdmin` and `AllowPublish` - 0 holds that switch off on this PC, 1 or missing lets the modeller turn
 > it on, no key is no ceiling, and a key Heron cannot read holds all three off. **Not yet run in Revit** -
-> [Group OB](needs-checking/group-ob.md).
+> [Group OB](needs-checking/group-ob.md). IT sets it from Group Policy or Intune with the templates in
+> [`platform/policy/`](../platform/policy/README.md) (built 2026-11-17, not run on a domain).
 
 **The four switches.** Each is a row of Heron's Settings window - *Heron > AI Bridge > Settings* on
 Revit's ribbon - with its state as the button; until 2026-11-07 each was a button on the ribbon itself
