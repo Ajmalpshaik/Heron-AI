@@ -353,6 +353,36 @@ def store_guard(tool):
         shutil.rmtree(top, ignore_errors=True)
 
 
+def _full_row(line):
+    """LINE as the register wrote it in full. A row whose full text was moved
+    to docs/fragment-issues-archive/ keeps only a one-line form here, with a
+    "full row" link; its cells are read back from the archive, word for word,
+    so the yaml is still checked against the row's own words (2026-11-17: the
+    archive moved rows 5b-477 and 5b-478, and this read their one-line form)."""
+    import re
+    # As the joined register writes it (from docs/) or as a rows file does (../).
+    link = re.search(r"\]\((?:\.\./)?fragment-issues-archive/([^)#]+)#(row-[0-9a-z-]+)\)", line)
+    if not link:
+        return line
+    path = os.path.join(ROOT, "docs", "fragment-issues-archive", link.group(1))
+    if not os.path.exists(path):
+        return line
+    with io.open(path, encoding="utf-8") as handle:
+        text = handle.read().replace("\r\n", "\n")
+    heading = "### Row " + link.group(2)[len("row-"):]
+    start = text.find("\n" + heading + "\n")
+    if start < 0:
+        return line
+    block = text[start + 1:].split("\n---\n", 1)[0]
+    cells = dict((part.split(".** ", 1)[0][2:], part.split(".** ", 1)[1])
+                 for part in block.split("\n") if part.startswith("**Defect.** ")
+                 or part.startswith("**State.** "))
+    if "Defect" not in cells or "State" not in cells:
+        return line
+    number = line.split("|")[1]
+    return "|%s| %s | %s |" % (number, cells["Defect"], cells["State"])
+
+
 def _frozen_from_rows():
     """{477: [...], 478: [...], 1005: [...]} - each row's frozen list, split the
     way the yaml was made from it, so the file is checked against the
@@ -370,7 +400,7 @@ def _frozen_from_rows():
     closed = whole.find("\n## ", opened + 1)
     lines = whole[opened:closed if closed > opened else len(whole)].splitlines()
     for n, lead, _size in PLAIN_SOURCES:
-        line = [x for x in lines if x.startswith("| **%d** |" % n)]
+        line = [_full_row(x) for x in lines if x.startswith("| **%d** |" % n)]
         found = re.search(r"\*\*%s\*\* (.*?)\. \|" % re.escape(lead),
                           line[0]) if line else None
         out[n] = ([q.strip().strip("*").strip()
