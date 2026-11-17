@@ -239,6 +239,7 @@ an edit.
 | [D-168](#d-168--a-change-revit-kept-in-which-nothing-changed-by-every-count-says-nothing-changed-and-refused-when-the-capability-itself-said-no) | A change Revit kept in which nothing changed by every count says NOTHING CHANGED, and REFUSED when the capability itself said no | ✅ Accepted · 2026-11-16 |
 | [D-174](#d-174--a-proof-taken-on-another-heron-add-in-build-or-another-revit-build-is-said-under-the-answer-and-never-refused) | A proof taken on another Heron add-in build or another Revit build is said under the answer, and never refused | ✅ Accepted · 2026-11-16 |
 | [D-177](#d-177--an-idea-taken-from-another-project-is-written-in-herons-own-words-and-the-project-and-its-author-are-not-named) | An idea taken from another project is written in Heron's own words, and the project and its author are not named | ✅ Accepted · 2026-11-17 |
+| [D-178](#d-178--a-qa-checklist-run-can-be-written-as-an-excel-workbook-and-an-html-page-each-a-new-file) | A QA checklist run can be written as an Excel workbook and an HTML page, each a new file | ✅ Accepted · 2026-11-17 |
 
 ## Format
 
@@ -1500,3 +1501,11 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [AGENTS.md](../AGENTS.md) ("Never") · [docs/51](51-studying-another-revit-mcp.md)
 
 **Full record:** [`decisions/D-177.md`](decisions/D-177.md)
+
+## D-178 — A QA checklist run can be written as an Excel workbook and an HTML page, each a new file
+
+**Status:** Accepted · **Date:** 2026-11-17 · **Accepted:** Ajmal PS, 2026-11-17, in conversation: *"you can do one by one"*
+**Extends:** [D-152](#d-152--a-qa-checklist-is-saved-checks-in-the-modellers-words-each-one-read-with-a-pass-rule-run-in-one-go-from-the-chat-or-the-companion) - QA checklists
+**Affects:** [`heron_checklist_report.py`](../brain/heron_checklist_report.py) · [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (`heron_checklist`, `_checklist_report`) · [docs/50](50-qa-checklists.md)
+
+**Full record:** [`decisions/D-178.md`](decisions/D-178.md)

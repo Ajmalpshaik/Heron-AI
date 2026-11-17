@@ -210,6 +210,12 @@ heron_checklist run  /  Companion QA Checklist: Run
   summer time ([row 5b-1622](fragment-issues/row-5b-1622.md)). **Deleting a checklist deletes its kept
   runs** with it ([row 5b-1623](fragment-issues/row-5b-1623.md)).
 - **CSV and Print / PDF** are made on the page from the rows Heron sent; nothing is read again.
+- **A report a coordinator can send** ([D-178](decisions/D-178.md)): `heron_checklist` `run` with
+  `report=true` also writes the run to an **Excel workbook** (a Summary sheet and a Checks sheet, one row a
+  check) and **one self-contained HTML page** - every result word, coverage, change since the last run,
+  severity, clause, advice and failing ids - in `<data home>/checklists/reports`, and the reply names both
+  files. Each file is made new and never written over; the page fetches nothing and runs no script; no
+  cell is a formula. Written from the run Heron already has: nothing is read from Revit again.
 
 ## 5. What was built
 
@@ -220,6 +226,7 @@ heron_checklist run  /  Companion QA Checklist: Run
 | A fragment's contract as a checklist reads it | [`heron_brain.py`](../mcp/server/heron_brain.py) (`fragment_contract`, `checklists`) |
 | The chat's tool `heron_checklist` (list, show, save, starter, run, delete), the run, the page's hooks | [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py), [`heron_tools.py`](../mcp/server/heron_tools.py) |
 | The QA Checklist workspace | [`heron_companion.py`](../mcp/companion/heron_companion.py) (`ChecklistPanel`), [`static/`](../mcp/companion/static/) |
+| The report - Excel workbook and HTML page, standard library only ([D-178](decisions/D-178.md)) | [`brain/heron_checklist_report.py`](../brain/heron_checklist_report.py), `_checklist_report` in [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) |
 
 **`heron_checklist` is declared `ANALYZE` with `run_fragment_read`**, not `READ`: its run reaches the model
 through `revit_read`'s body, so it carries that door's level and operation, as `revit_model_dashboard` does.
@@ -233,6 +240,7 @@ List, show, save and delete touch only the modeller's own files.
 | **PASS** | `tests/test_checklist_no_data.py` - [D-165](decisions/D-165.md): a run with all its data, one with some missing and one with all missing; NO DATA never counted as a pass or a fail; a rule met on 6 of 43 elements is NO DATA while a FAIL stays a FAIL; the coverage outputs refused when saved and when read; NO DATA never a change since the last run. Its checks were seen to fail on the code before the change |
 | **PASS** | `tests/test_checklist_tool.py` - the MCP tool through the real cards and a stand-in Revit: one `run_fragment_read` per check and no write, PASS and FAIL off the reply, nothing sent with no Revit; needs the MCP SDK, so CI lists it as not runnable |
 | **PASS** | `tests/test_companion.py`'s QA Checklist group - data and hooks only, one run at a time, Select with the panel's ids by the dashboard's route, every route behind the pairing on a real server |
+| **PASS** | `tests/test_checklist_report.py` - [D-178](decisions/D-178.md): a real run's PASS, FAIL, NO DATA and NOT RUN written to the page and the workbook; the modeller's words escaped and never a formula; every part of the workbook well-formed XML; nothing fetched, no script; a second report a new file, the first untouched; and `report` wired to the chat's run. Seen to fail before the code was written |
 | **NEEDS REAL REVIT** | [group MV](needs-checking/group-mv.md) - a starter run on a real model, a FAIL with Select, a DRAFT check NOT RUN, a run with Revit closed, the page's Run beside a chat |
 | **NEEDS REAL REVIT** | [group NV](needs-checking/group-nv.md) NV18 to NV20 - NO DATA and the coverage line on a real model ([D-165](decisions/D-165.md)) |
 
@@ -248,3 +256,6 @@ List, show, save and delete touch only the modeller's own files.
    say the same.
 6. ~~**Saving a run**~~ **Built 2026-11-12, [D-159](decisions/D-159.md)**: each finished run is kept and
    compared with the last on the same model. Not yet run in Revit ([Group NV](needs-checking/group-nv.md)).
+7. **BCF issues and a picture per failing check in the report** - [D-178](decisions/D-178.md) wrote
+   Excel and HTML only. BCF needs each failing element's position and a camera, read from Revit; a picture
+   needs [D-123](decisions/D-123.md)'s capture, not yet run in Revit.
