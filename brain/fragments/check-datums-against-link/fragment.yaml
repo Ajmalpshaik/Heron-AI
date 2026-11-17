@@ -1,0 +1,218 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-038
+semantic-identity: "whether this model's grids and levels sit where the same grids and levels sit in one linked model, within a tolerance"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-17: asked for in the modeller's words "Before every issue, check our
+# grids and levels line up with the linked architect's (or structural)
+# model" - a setting-out check. heron_lookup on that sentence (question: true)
+# answered LIST_GRIDS, with CHECK_LINK_COORDINATES and REPORT_LEVEL_ELEVATIONS
+# close; none of them measures a linked grid against one of this model's.
+#
+# LOOK-ALIKES AND ONE OVERLAP, read in full on 2026-11-17 (the duplicate
+# checker's method; heron_duplicates.look and the Matcher both found nothing):
+#   LIST_GRIDS              lists each link's grids and which way they run in
+#                           this model's terms. It never sets one against a
+#                           grid here, so it cannot say a grid is 3 mm out.
+#   CHECK_LINK_COORDINATES  whether a link sits where its own SHARED
+#                           COORDINATES say - two probe points, no datum. A link
+#                           can pass that and still have its grid C 40 mm from
+#                           ours, because the two models' grids were drawn apart.
+#   REPORT_LEVEL_ELEVATIONS OVERLAPS THE LEVEL HALF: with includeLinks it puts
+#                           every link's levels beside this model's level of the
+#                           same name and prints the difference. It has no
+#                           tolerance, no verdict, no count or ids a check can
+#                           use, no grids, reads every link rather than one, and
+#                           its job is whether level heights can be trusted in a
+#                           calculation. Widening it with grids would make it
+#                           two jobs. The overlap is recorded here and on that
+#                           card so heron-duplicate-checker can rule on it; this
+#                           card was not merged into it.
+#
+# A MEASURED OFFSET, NOT A VERDICT. "Aligned within 0.5 mm" is what it says.
+# Whether the setting-out is right is the engineer's call.
+#
+# READ ONLY - opens no transaction and needs none.
+kind: action
+domain: revit.qa
+capability: CHECK_DATUMS_AGAINST_LINK
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Checks this model's grids and levels against the grids and levels of one
+  linked model - the architect's or the structural link - and says for each
+  datum whether it is aligned within the tolerance, off and by how much in
+  millimetres and degrees, not checked and why, or only in one of the two
+  models. Grids and levels are matched by name, and a link datum whose name is
+  not found here is matched to one here that lines up, flagged as a name that
+  differs. Counts the datums that are off and hands on their ids to select. It
+  changes nothing.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # Which link placement to check against: its full name as Manage Links
+    # shows it ("Arch.rvt : 1 : location <Not Shared>") or any part of it
+    # ("Arch"). Left out it reads "only" - the one placement this model has;
+    # with two or more it is refused, every placement named. A part that
+    # matches two placements is refused too, never picked.
+    - name: linkName
+      type: string
+      source: request
+      optional: true
+      absent: only
+    # "grids", "levels" or "both". Left out, both.
+    - name: datums
+      type: string
+      source: request
+      optional: true
+      absent: both
+    # How far apart counts as aligned, in mm - a grid's distance square to the
+    # grid here, a level's height, an arc's centre and radius. Left out, 0.5.
+    # 0 or less is refused: nothing meets it.
+    - name: toleranceMm
+      type: double
+      source: request
+      optional: true
+      absent: "0.5"
+    # How far a straight grid may turn and still be aligned, in degrees. Left
+    # out, 0.01 - which moves the far end of a 60 m grid 10.5 mm.
+    - name: angleToleranceDeg
+      type: double
+      source: request
+      optional: true
+      absent: "0.01"
+  provides:
+    - name: report
+      # ONE STRING, a header row then one row per datum, joined by new lines:
+      # "kind | name | status | offset | angle | reason". Status is one of
+      # aligned, off, not checked, host only, link only. Offset in mm (a
+      # level's is the link's minus this model's, + when the link's is
+      # higher), angle in degrees for straight grids, "-" where there is none.
+      # A string because a reply cuts a list to three items.
+      role: result
+      type: string
+    - name: failures
+      # Datums that are OFF - compared and outside a tolerance. The number a
+      # QA check rules on: "failures == 0".
+      role: result
+      type: int
+    - name: aligned
+      # Datums compared and aligned within both tolerances.
+      role: result
+      type: int
+    - name: compared
+      # Pairs actually measured - aligned plus off. 0 means nothing was read,
+      # and a check reading "failures == 0" beside it has met nothing (D-165).
+      # Not "checked": that is a C# keyword.
+      role: accounting
+      type: int
+    - name: notChecked
+      # Pairs that could not be compared - a multi-segment grid, an arc against
+      # a straight grid, a tilted placement - each row saying why. What it was
+      # given and could not measure, never something it found (D-52).
+      role: accounting
+      type: int
+    - name: hostOnly
+      # This model's datums with no partner in the link, by name or position.
+      role: result
+      type: int
+    - name: linkOnly
+      # The link's datums with no partner here, by name or position.
+      role: result
+      type: int
+    - name: failingIds
+      # THIS model's datums that are off, as ids - what a QA check selects.
+      role: result
+      type: IList<ElementId>
+    - name: elements
+      # The same datums as elements, so SET_SELECTION can select them next.
+      # Never a linked element: the chain looks ids up in this model
+      # (FRAGMENT-ISSUES row 75).
+      role: result
+      type: IList<Element>
+    - name: linkUsed
+      # The link placement compared against, by its full name. Empty when
+      # nothing was compared (D-52).
+      role: accounting
+      type: string
+    - name: refused
+      # Why NOTHING was compared - no link, two links and none named, not
+      # loaded, a tolerance nothing meets. Null when the check ran (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. RevitLinkInstance.GetLinkDocument,
+  Instance.GetTotalTransform, RevitLinkType.IsNestedLink, Transform.OfPoint,
+  OfVector and BasisZ, Grid.Curve, MultiSegmentGrid.GetGridIds and the static
+  MultiSegmentGrid.GetMultiSegementGridId (Revit's own spelling), Line.Direction
+  and GetEndPoint, Arc.Center and Radius, and Level.ProjectElevation are each
+  present 2020 to 2027 - read off the shipped assemblies of all eight releases
+  with tools/api-surface --members on 2026-11-17. No ElementId is built from
+  or read as a number, so 2024's 64-bit ids do not reach it. Feet become
+  millimetres by * 304.8, D-20's fixed ratio, so the 2021 units change does
+  not reach it either. Not seen in Revit.
+
+# ROUTING (2026-11-17) - the row for this card's first sentence is in
+# LIST_GRIDS, REPORT_LEVEL_ELEVATIONS, CHECK_LINK_COORDINATES and
+# COPY_ELEMENTS_BETWEEN_DOCUMENTS too.
+#
+#   "check our grids and levels line up with the linked architect's model"
+#                                         -> here
+#   "list the grids"                      -> LIST_GRIDS - the grids themselves,
+#                                            and a link's listed, not measured
+#   "what elevation is each level at"     -> REPORT_LEVEL_ELEVATIONS - the
+#                                            heights; with includeLinks it also
+#                                            prints each linked level's
+#                                            difference by name, with no
+#                                            tolerance. Asked as a pass or fail
+#                                            against one link, it is here
+#   "check the links against our shared coordinates"
+#                                         -> CHECK_LINK_COORDINATES - where the
+#                                            link sits by the survey, not
+#                                            whether its datums meet ours
+#   "acquire coordinates from the architecture link"
+#                                         -> ACQUIRE_COORDINATES, the ADMIN
+#                                            change. Run this read after it to
+#                                            see whether the datums then agree
+#   "bring the grids in from the architect"
+#                                         -> COPY_ELEMENTS_BETWEEN_DOCUMENTS,
+#                                            fromLink - a write, and its own
+#                                            declared sentence. On the ranked
+#                                            routes (tools/check-routing.py,
+#                                            Revit 2024, trained model,
+#                                            2026-11-17) this card came first
+#                                            and that one second; the identity
+#                                            route still sends the exact
+#                                            sentence there. A read ranked over
+#                                            a write cannot change the model
+#   "what levels are in this model"       -> REPORT_LEVEL_ELEVATIONS. Already
+#                                            lost on the ranked routes before
+#                                            this card (REMOVE_MASS_FLOORS, a
+#                                            write, answered); this card answers
+#                                            it there now, a read
+#   "level these up"                      -> ALIGN_ELEMENTS. Already lost
+#                                            before this card (CREATE_LEVELS
+#                                            answered); this card answers it on
+#                                            the ranked routes now
+utterances:
+  # The modeller's own sentence, 2026-11-17, once for each of the two links it
+  # named, and once whole.
+  - check our grids and levels line up with the linked architect's model
+  - check our grids and levels line up with the linked structural model
+  - before every issue check our grids and levels line up with the linked architect's model

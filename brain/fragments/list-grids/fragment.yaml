@@ -156,6 +156,10 @@ compatibility-note: >
 #   "the grid bubbles are on the wrong side" -> SET_DATUM_BUBBLES
 
 #   "make a grid series across the building" -> CREATE_GRIDS - a WRITE
+#   "check our grids and levels line up with the linked architect's model"
+#                               -> CHECK_DATUMS_AGAINST_LINK (2026-11-17). This
+#                                  card lists a link's grids; that one measures
+#                                  each against the grid here of the same name
 utterances:
   - list the grids
   - how many grids
