@@ -238,6 +238,7 @@ an edit.
 | [D-167](#d-167--a-modeller-installs-heron-with-one-setup-file-which-puts-heron-in-place-and-hands-over-to-the-installer-engine) | A modeller installs Heron with one Setup file, which puts Heron in place and hands over to the installer engine | ✅ Accepted · 2026-11-16 |
 | [D-168](#d-168--a-change-revit-kept-in-which-nothing-changed-by-every-count-says-nothing-changed-and-refused-when-the-capability-itself-said-no) | A change Revit kept in which nothing changed by every count says NOTHING CHANGED, and REFUSED when the capability itself said no | ✅ Accepted · 2026-11-16 |
 | [D-174](#d-174--a-proof-taken-on-another-heron-add-in-build-or-another-revit-build-is-said-under-the-answer-and-never-refused) | A proof taken on another Heron add-in build or another Revit build is said under the answer, and never refused | ✅ Accepted · 2026-11-16 |
+| [D-177](#d-177--an-idea-taken-from-another-project-is-written-in-herons-own-words-and-the-project-and-its-author-are-not-named) | An idea taken from another project is written in Heron's own words, and the project and its author are not named | ✅ Accepted · 2026-11-17 |
 
 ## Format
 
@@ -1491,3 +1492,11 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`heron_fragment.py`](../brain/heron_fragment.py) (`BUILT_ON_FIELDS`, `build_state`, `proof_build_state`) · [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (`_build_line`) · [`heron_brain.py`](../mcp/server/heron_brain.py) (`proof_build`) · [`fragment-proving`](../.claude/skills/fragment-proving/SKILL.md) · [NEEDS-CHECKING Group OF](needs-checking/group-of.md)
 
 **Full record:** [`decisions/D-174.md`](decisions/D-174.md)
+
+## D-177 — An idea taken from another project is written in Heron's own words, and the project and its author are not named
+
+**Status:** Accepted · **Date:** 2026-11-17 · **Accepted:** Ajmal PS, 2026-11-17, in conversation: *"we are taking oly thrrtr idea not code so no need to mention there names"*
+**Extends:** [D-25](#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported) - studied and re-authored, never imported
+**Affects:** [AGENTS.md](../AGENTS.md) ("Never") · [docs/51](51-studying-another-revit-mcp.md)
+
+**Full record:** [`decisions/D-177.md`](decisions/D-177.md)
