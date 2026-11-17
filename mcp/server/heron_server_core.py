@@ -955,22 +955,8 @@ def _recorded(fn):
             # run inside another tool answers that tool, not the chat.
             reply = _said_outcome(fn.__name__, reply, said, how)
             reply = _said_old_code(reply)
-            reply = _said_hidden(reply)
         return reply
     return run
-
-
-def _said_hidden(reply):
-    """
-    D-180: the reply with every Windows path's folders hidden, its file or
-    folder name kept, when privacy.hidePaths is on - and untouched when it is
-    off, or when the reply is not text (a picture). Read fresh on each call:
-    the settings file is the modeller's, and a change applies to the next
-    answer without restarting the chat. heron_config.load never raises; an
-    unreadable file is the default, off.
-    """
-    import heron_privacy as privacy
-    return privacy.said(reply)
 
 
 def _changes_model(tool):

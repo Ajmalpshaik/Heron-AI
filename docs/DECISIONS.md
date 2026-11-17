@@ -241,7 +241,7 @@ an edit.
 | [D-177](#d-177--an-idea-taken-from-another-project-is-written-in-herons-own-words-and-the-project-and-its-author-are-not-named) | An idea taken from another project is written in Heron's own words, and the project and its author are not named | ✅ Accepted · 2026-11-17 |
 | [D-178](#d-178--a-qa-checklist-run-can-be-written-as-an-excel-workbook-and-an-html-page-each-a-new-file) | A QA checklist run can be written as an Excel workbook and an HTML page, each a new file | ✅ Accepted · 2026-11-17 |
 | [D-179](#d-179--a-project-checklist-can-extend-an-office-checklist-changing-only-severity-target-and-onoff-and-every-run-names-the-checks-it-used) | A project checklist can extend an office checklist, changing only severity, target and on/off, and every run names the checks it used | ✅ Accepted · 2026-11-17 |
-| [D-180](#d-180--a-setting-hides-folder-paths-from-what-the-chat-is-told-off-unless-turned-on) | A setting hides folder paths from what the chat is told, off unless turned on | ⏳ Proposed · 2026-11-17 - meets Q-40's *no redaction*; the owner decides |
+| [D-180](#d-180--a-setting-hides-folder-paths-from-what-the-chat-is-told-off-unless-turned-on) | A setting hides folder paths from what the chat is told, off unless turned on | ❌ Not accepted · 2026-11-17 - dropped; Q-40 stands |
 
 ## Format
 
@@ -1522,8 +1522,8 @@ What this makes easy. What this makes hard. What it locks in.
 
 ## D-180 — A setting hides folder paths from what the chat is told, off unless turned on
 
-**Status:** Proposed · **Date:** 2026-11-17 · **Asked:** Ajmal PS, 2026-11-17, in conversation: *"you can do one by one"* · **Held at Proposed because it meets** [Q-40](open-questions/from-master-specification-part-2.md)'s *no redaction*
+**Status:** Not accepted - dropped, nothing kept in code · **Date:** 2026-11-17 · **Answered:** Ajmal PS, 2026-11-17, in conversation: *"3 no issue this is only location like that no issue let them go its not taking revit model it self"* · [Q-40](open-questions/from-master-specification-part-2.md) stands as it was
 **Keeps:** [D-26](#d-26--the-model-file-is-never-uploaded) - the model never leaves; work answers may
-**Affects:** [`heron_privacy.py`](../mcp/server/heron_privacy.py) · [`heron_server_core.py`](../mcp/server/heron_server_core.py) (`_said_hidden`) · `privacy.hidePaths` in [`heron_config.py`](../mcp/client/heron_config.py) and [`HeronConfig.cs`](../platform/Heron.Core/HeronConfig.cs)
+**Affects:** nothing - the code was removed
 
 **Full record:** [`decisions/D-180.md`](decisions/D-180.md)
