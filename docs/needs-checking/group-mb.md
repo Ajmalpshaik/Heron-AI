@@ -7,6 +7,8 @@
 
 ## Group MB - Manage > Object Styles - one category's or subcategory's projection and cut line weight, line colour, line pattern and material, for the whole model, read back before and after: `SET_OBJECT_STYLE` (2026-11-02)
 
+**Tracked as GitHub issue [#989](https://github.com/Ajmalpshaik/Heron-AI/issues/989) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"set the projection line weight of Doors to 3"*, *"change the cut line
 colour of Walls to red"*, *"set the line pattern of Ducts to Dash"*, *"set the material of Generic Models to
 Concrete"*, *"make the Hidden Lines subcategory of Ducts lineweight 1"* - and the question *"what are the

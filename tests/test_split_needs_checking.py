@@ -41,7 +41,10 @@ WHAT IS PROVED
      archive-needs-checking.py each read the register through the one reader;
  11. a group file that holds more than one section keeps them all, and a new
      group beside it still moves - byte for byte, the readers the same, no
-     other file rewritten (rows 5b-425 and 5b-493).
+     other file rewritten (rows 5b-425 and 5b-493);
+ 12. two group files that each hold a later section under the SAME heading
+     keep their own copy when the register is laid out again, and it reads
+     back byte for byte (row 5b-1583).
 """
 
 import contextlib
@@ -422,6 +425,36 @@ def run(work):
     check(all(read(os.path.join(folder_of(held), n)) == files_then[n] for n in names),
           "no group file it was not moving is rewritten")
     check(read(index_of(held)).count("## 2026-10-08") == 0, "and the later sections are not copied onto the page")
+
+    print()
+    print("12. Two group files that hold a later section with the SAME heading keep their own")
+    # Row 5b-1583: "## Proven 2026-10-18 (Revit 2020, session 64176 ...)" is
+    # written word for word in six group files. The layout was keyed by the
+    # heading's words alone, so every copy went to whichever file was read
+    # last, the index was laid out with a stub under that heading, and
+    # archive-needs-checking.py ended in RegisterBroken before planning a row.
+    twin = make_root(work, original, "twin")
+    SPLIT.write(SPLIT.plan(index_of(twin), folder_of(twin), "2026-09-23", twin))
+    same = "## Proven 2026-10-18 " + DASH + " the same words in two files"
+    for name, row in (("group-a.md", "| **A9** | Proved in group A | open |"),
+                      ("group-b.md", "| **B9** | Proved in group B | open |")):
+        with io.open(os.path.join(folder_of(twin), name), "a", encoding="utf-8", newline="") as handle:
+            handle.write(NL.join(["", same, "", row, ""]))
+    names = sorted(os.listdir(folder_of(twin)))
+    files_then = dict((n, read(os.path.join(folder_of(twin), n))) for n in names)
+    whole_then = NCR.register_text(twin)
+    index_then = read(index_of(twin))
+    laid = SPLIT.layout_split(index_of(twin), whole_then, "2026-09-30")
+    check(not laid[2], "it lays out with no trouble (%s)" % ("; ".join(laid[2]) or "none"))
+    check(laid[0] == index_then, "the page is laid out as it is - no stub under the shared heading")
+    check(laid[1].get("group-a.md") == files_then["group-a.md"]
+          and laid[1].get("group-b.md") == files_then["group-b.md"],
+          "group A's copy stays in group-a.md and group B's in group-b.md")
+    try:
+        back = NCR.register_text(read=SPLIT._served(laid[0], laid[1]))
+    except NCR.RegisterBroken as broken:
+        back = "RegisterBroken: %s" % broken
+    check(back == whole_then, "read back, it is the register byte for byte")
 
 
 if __name__ == "__main__":

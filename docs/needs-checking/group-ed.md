@@ -8,6 +8,8 @@
 
 ## Group ED - a view's whole Visibility/Graphics read back: `REPORT_CATEGORY_OVERRIDES` and `AUDIT_VIEW_FILTERS` version 2 (2026-10-15)
 
+**Tracked as GitHub issue [#989](https://github.com/Ajmalpshaik/Heron-AI/issues/989) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Found 2026-10-15 when the owner asked Heron to study the Visibility/Graphics of a plan in a real HVAC
 project on Revit 2020 ([row 5b-480](../fragment-issues/section-5b-rows-401-425.md)). Two existing reads
 were widened, each by an **optional bool**, so every caller and job file written before stays as it was:

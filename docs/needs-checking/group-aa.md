@@ -9,6 +9,8 @@
 
 ## Group AA - Stage 2 of the installer plan: can two Heron tabs live in one Revit? 2026-09-21
 
+**Tracked as GitHub issue [#972](https://github.com/Ajmalpshaik/Heron-AI/issues/972) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **This is the question the whole installer plan rests on**, and it is the cheapest possible way to ask
 it - [Stage 2](../work-notes/plans/plugin-extension/02-implementation.md). Two throwaway products were
 built, each with one panel and one button that does nothing:

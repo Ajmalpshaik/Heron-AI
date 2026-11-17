@@ -8,6 +8,8 @@
 
 ## Group BG - D-59's second batch: ten more reading tools look inside linked models when asked (2026-09-28)
 
+**Tracked as GitHub issue [#991](https://github.com/Ajmalpshaik/Heron-AI/issues/991) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **The same shape as [Group BE](group-be.md), on ten more fragments** - `includeLinks` (absent means this model
 only), `linksSearched` (linked FILES read) and `linkedMatches` (what was found there, as text). Nothing from a
 link is selected or carried ([row 75](../FRAGMENT-ISSUES.md)); nested links are counted and not read, on the

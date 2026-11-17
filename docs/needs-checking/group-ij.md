@@ -8,6 +8,8 @@
 
 ## Group IJ - labels in tag, annotation and title block families: `REPORT_FAMILY_LABELS`, `SET_FAMILY_LABEL_LAYOUT`, `COPY_LABELS_FROM_FAMILY` and the `tag-family-creation` method (2026-10-21)
 
+**Tracked as GitHub issue [#984](https://github.com/Ajmalpshaik/Heron-AI/issues/984) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 From [row 5b-1294](../fragment-issues/section-5b-rows-401-425.md). On 2026-10-21 Ajmal PS, building the pipe tag *TRG_Pipe_Tag* on Revit 2020, found Heron could not touch a
 label - every tag and title block went through Edit Label by hand - and asked for labels end to end: made,
 placed, edited, updated, read, with each parameter's sample value, prefix, suffix, spaces, break and unit

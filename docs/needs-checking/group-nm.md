@@ -7,6 +7,8 @@
 
 ## Group NM - two add-in agent proofs read STALE and are run again, and the proof tool now says which file a proof was signed for (2026-11-11)
 
+**Tracked as GitHub issue [#973](https://github.com/Ajmalpshaik/Heron-AI/issues/973) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 On 2026-11-11 every agent in [the register](../28-agent-registry.md) was checked in a cloud container,
 where there is no Windows and no Revit. `python tools/prove-agent.py check` read two of the add-in's
 signed records **STALE** - `HERON-REVIT-SEL-008` and `HERON-REVIT-VIE-013` - and the rest current.

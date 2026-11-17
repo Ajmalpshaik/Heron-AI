@@ -8,6 +8,8 @@
 
 ## Group GH - what each element passes through in the links, and a parameter against its thickness: `FIND_CLASHES` version 3 (2026-10-17)
 
+**Tracked as GitHub issue [#991](https://github.com/Ajmalpshaik/Heron-AI/issues/991) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked 2026-10-15 on a real project ([row 5b-760](../fragment-issues/section-5b-rows-401-425.md)),
 `4355-BHVD-3D-21P60-ST001I`, Revit 2020 - read only, never written to, and not to be used for any row
 here: *"check all the cut-out wall width"*. Eighteen opening families `TRG_GEN_CutOut_Rectangular_HVAC`

@@ -8,6 +8,8 @@
 
 ## Group AT - `set-schedule-field-totals`: "Calculate totals" switched on for a schedule's columns (2026-09-27)
 
+**Tracked as GitHub issue [#986](https://github.com/Ajmalpshaik/Heron-AI/issues/986) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **One fragment from one sitting on 2026-09-27, in Project1 on Revit 2024, and it is DRAFT.**
 [`set-schedule-field-totals`](../../brain/fragments/set-schedule-field-totals/fragment.yaml) -
 SET_SCHEDULE_FIELD_TOTALS, FRG-VIEW-109 - switches on "Calculate totals" for named columns of a schedule, the

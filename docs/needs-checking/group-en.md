@@ -8,6 +8,8 @@
 
 ## Group EN - a big build is saved first: step 0 of `building-shell` and `drawing-set`, the family method's closing line, and the one measurement `Q-69` asks for (2026-10-17)
 
+**Tracked as GitHub issue [#970](https://github.com/Ajmalpshaik/Heron-AI/issues/970) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 On 2026-10-13 and 2026-10-14 a house with 9 sheets and a 32-floor tower were built in models that had
 never been saved, and Revit was closed: both were lost. Heron cannot save the model it works in -
 `SAVE_DOCUMENT` refuses it, because Heron's one Undo entry is open in it for the whole run.

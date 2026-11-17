@@ -9,6 +9,8 @@
 
 ## Group E — the refusals
 
+**Tracked as GitHub issue [#969](https://github.com/Ajmalpshaik/Heron-AI/issues/969) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Each of these is a rail. A rail that has never been tested is decoration.
 
 | ID | Do this | Pass looks like |

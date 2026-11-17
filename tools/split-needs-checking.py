@@ -140,7 +140,7 @@ def held_layout(lines, files):
     them - the register read back holding them twice, and every split was
     refused."""
     spans, _ = NCR.sections(lines)
-    layout, stubs = {}, 0
+    layout, stubs = Layout(), 0
     for start, end in spans:
         name = NCR.stub_of(lines, start, end)
         if not name:
@@ -150,7 +150,21 @@ def held_layout(lines, files):
         held = (files.get(name) or "").replace(CR + NL, NL).split(NL)
         for s, _ in NCR.sections(held)[0][1:]:
             layout[held[s]] = name
+            layout.later.setdefault(name, set()).add(held[s])
     return layout, stubs
+
+
+class Layout(dict):
+    """{heading: file}, and LATER - {file: every heading it holds after its
+    first}. A heading's words alone do not say which file it is in: row
+    5b-1583 found "## Proven 2026-10-18 (Revit 2020, session 64176 ...)" word
+    for word in six group files, and keyed by its words every copy went to
+    the file read last. So split_by() first asks whether the file just above
+    a section holds that heading, and only then what its words map to."""
+
+    def __init__(self, *args, **kwargs):
+        dict.__init__(self, *args, **kwargs)
+        self.later = {}
 
 
 def split_by(text, layout, headers, today, index, folder):
@@ -161,17 +175,22 @@ def split_by(text, layout, headers, today, index, folder):
     fenced = NCR.fenced_lines(lines)
     # Sections side by side that go to one file go as one: the file holds
     # them all, and the index keeps the first heading and its one line.
+    # A later section of the file just above it goes to that file, whatever
+    # else its heading's words map to (row 5b-1583) - see Layout.
+    later = getattr(layout, "later", {})
     runs = []
     for start, end in spans:
-        name = layout.get(lines[start])
+        above = runs[-1][2] if runs else None
+        if above and lines[start] in later.get(above, ()):
+            name = above
+        else:
+            name = layout.get(lines[start])
         if name and runs and runs[-1][2] == name:
             runs[-1] = (runs[-1][0], end, name)
         else:
             runs.append((start, end, name))
-    spans = [(start, end) for start, end, _ in runs]
     moved = {}
-    for start, end in spans:
-        name = layout.get(lines[start])
+    for start, end, name in runs:
         if not name:
             continue
         for k in range(start, end):
@@ -182,8 +201,7 @@ def split_by(text, layout, headers, today, index, folder):
     if first:
         out.append(AH._repoint(NL.join(lines[:first]), None, moved, index, folder, trouble,
                                "the register's opening"))
-    for start, end in spans:
-        name = layout.get(lines[start])
+    for start, end, name in runs:
         if not name:
             out.append(AH._repoint(NL.join(lines[start:end]), None, moved, index, folder, trouble,
                                    lines[start]))

@@ -7,6 +7,8 @@
 
 ## Group MP - Manage > Sheet Issues/Revisions and revision clouds - swap a sheet's last revision, read every cloud, move or delete clouds of one revision on chosen sheets, and check each sheet's revisions: `SET_SHEET_REVISIONS` fixed and widened, `LIST_REVISIONS` widened, `LIST_REVISION_CLOUDS`, `EDIT_REVISION_CLOUDS` (2026-11-07)
 
+**Tracked as GitHub issue [#988](https://github.com/Ajmalpshaik/Heron-AI/issues/988) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 On 2026-11-07, on `4355-BHVD-3D-60A10-BL007A` in Revit 2020, the owner asked for today's revision (Seq. 21,
 07-Nov-2026) to be the last one on four sheets, keeping the Roof Plan sheet on Seq. 20. `SET_SHEET_REVISIONS`
 answered that Seq. 20 was off three sheets while revision clouds kept it on two of them

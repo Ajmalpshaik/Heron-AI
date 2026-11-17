@@ -7,6 +7,8 @@
 
 ## Group OF - a proof records which Heron add-in and which Revit build it was taken on, and says so when either moves: `built_on:` (2026-11-16)
 
+**Tracked as GitHub issue [#973](https://github.com/Ajmalpshaik/Heron-AI/issues/973) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 From idea #10 of the research note on [Ajmalpshaik/Heron-AI#877](https://github.com/Ajmalpshaik/Heron-AI/pull/877):
 the fingerprint says which fragment C# was proved, and nothing said which add-in ran it or which Revit build
 answered. The idea only was taken, re-authored here ([D-25](../DECISIONS.md)).

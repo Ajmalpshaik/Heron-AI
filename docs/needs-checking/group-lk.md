@@ -7,6 +7,8 @@
 
 ## Group LK - path of travel lines drawn from rooms or points to a named exit: `CREATE_PATHS_OF_TRAVEL` (2026-11-02)
 
+**Tracked as GitHub issue [#995](https://github.com/Ajmalpshaik/Heron-AI/issues/995) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"draw the path of travel from this room to the nearest exit"* and *"show the
 egress route from each room on Level 2 to the stair door"* - Revit's Analyze > Route Analysis > Path of Travel.
 No card drew one: a grep of every fragment's C# that day for `PathOfTravel` found none. `FIND_NEAREST_ELEMENTS`

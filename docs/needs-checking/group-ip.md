@@ -8,6 +8,8 @@
 
 ## Group IP - a form pictured by the id the form tools give it: `revit_view_image` with `elements` takes a UniqueId (2026-10-22)
 
+**Tracked as GitHub issue [#990](https://github.com/Ajmalpshaik/Heron-AI/issues/990) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 From [row 5b-1314](../fragment-issues/section-5b-rows-401-425.md). `revit_view_image` with `elements` took only
 Revit's numbers, and `CREATE_FAMILY_FORMS`, `REPORT_FAMILY_FORMS` and `SELECT_FAMILY_FORMS` name a form only by
 its UniqueId. `RevitCapture.OfElements` now looks a UniqueId up through `Document.GetElement(string)` beside the

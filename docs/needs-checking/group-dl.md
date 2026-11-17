@@ -8,6 +8,8 @@
 
 ## Group DL - text note wording, spot and keynote reads, datum elbows, line and fill patterns, line styles, dimensions by value (2026-10-12)
 
+**Tracked as GitHub issue [#985](https://github.com/Ajmalpshaik/Heron-AI/issues/985) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 The third batch of the gap fill ([`work-notes/plans/gap-fill-2026-10-12.md`](../work-notes/plans/gap-fill-2026-10-12.md)),
 the annotation jobs no fragment did.
 

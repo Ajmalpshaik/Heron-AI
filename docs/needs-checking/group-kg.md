@@ -7,6 +7,8 @@
 
 ## Group KG - duct and pipe placeholders, drawn and converted: `CREATE_MEP_PLACEHOLDER`, `CONVERT_MEP_PLACEHOLDERS` (2026-11-01)
 
+**Tracked as GitHub issue [#1001](https://github.com/Ajmalpshaik/Heron-AI/issues/1001) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"draw a duct placeholder from here to here"*, *"rough in the pipe
 route as placeholders"*, *"convert these placeholders to real ducts"*, *"turn the pipe placeholders into
 pipes"* - Revit's Systems > Duct Placeholder and Pipe Placeholder, and Modify > Convert Placeholder.

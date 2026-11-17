@@ -8,6 +8,8 @@
 
 ## Group JS - a phase filter made by name and the phase filters read: `CREATE_PHASE_FILTER`, `REPORT_PHASE_FILTERS` (2026-10-31)
 
+**Tracked as GitHub issue [#995](https://github.com/Ajmalpshaik/Heron-AI/issues/995) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for by the owner on 2026-10-31: a phase filter named *As-Built* in his Revit 2020 project. Nothing in
 Heron made one - `heron_lookup` offered only `SET_VIEW_PHASE`, which puts a filter that exists on views, and
 no fragment called `PhaseFilter.Create`. A **phase** cannot be renamed or made through the API

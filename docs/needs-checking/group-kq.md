@@ -7,6 +7,8 @@
 
 ## Group KQ - which rebar numbers each partition uses: `REPORT_REBAR_NUMBERING` (2026-11-01)
 
+**Tracked as GitHub issue [#1000](https://github.com/Ajmalpshaik/Heron-AI/issues/1000) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"what rebar numbers are in partition B2"* - Revit's rebar numbering,
 Structure > Reinforcement > Reinforcement Numbers, where rebar, couplers and fabric sheets are numbered
 in **partitions** (the Partition parameter on each bar). No card read it: a grep of `brain/fragments` for

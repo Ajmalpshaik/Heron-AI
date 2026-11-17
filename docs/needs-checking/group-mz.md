@@ -7,6 +7,8 @@
 
 ## Group MZ - rebar from a spec: the placed bars checked against the spec's confirmed values, each as meets, does not meet or not checked: `CHECK_REBAR_AGAINST_SPEC` and the `reinforce-concrete` method extended (2026-11-09)
 
+**Tracked as GitHub issue [#1000](https://github.com/Ajmalpshaik/Heron-AI/issues/1000) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 The owner's ask: [docs/48](../48-studying-bimlogiq.md) section 5 item 8, *"Rebar from a spec - read the bar sizes
 and covers from a given spec, then place, then check anchorage and bar length"*, started 2026-11-09 (*"yes start
 item 8"*). What the modeller gets: *"reinforce these beams from this spec"* (pasted text, or a PDF page the chat

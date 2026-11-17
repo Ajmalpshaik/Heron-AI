@@ -7,6 +7,8 @@
 
 ## Group NR - three everyday MEP jobs given a method, none run in Revit: annotate a view, colour a view by system, spaces and zones from the architect's link (2026-11-12)
 
+**Tracked as GitHub issue [#1002](https://github.com/Ajmalpshaik/Heron-AI/issues/1002) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Three jobs a services modeller does every week had every capability and no method, so a chat was handed one
 card at a time and had to work the order out. Each is a method now, written on 2026-11-12 in a cloud
 container from the cards' own contracts and, where a step turns on it, their C#:

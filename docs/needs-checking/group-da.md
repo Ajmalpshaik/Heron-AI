@@ -7,6 +7,8 @@
 
 ## Group DA - many extrusions and revolves in one call, one undo entry (2026-10-11)
 
+**Tracked as GitHub issue [#978](https://github.com/Ajmalpshaik/Heron-AI/issues/978) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 On 2026-10-09 and 10 a duty/standby booster pump set of 107 forms was built through Heron on the owner's
 laptop (Revit 2024). Each form was its own `CREATE_FAMILY_EXTRUSION` or `CREATE_FAMILY_REVOLUTION` call,
 so the build took 11 batches of up to 10 calls, every profile typed out again as tool input (about 112 s

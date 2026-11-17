@@ -7,6 +7,8 @@
 
 ## Group KH - area tags in an area plan: `TAG_AREAS` (2026-11-01)
 
+**Tracked as GitHub issue [#984](https://github.com/Ajmalpshaik/Heron-AI/issues/984) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"tag all the areas in this area plan"*, *"put area tags on these
 areas"* - Revit's Annotate > Area Tag. Nothing in Heron placed an area tag. `brain/heron_retrieve.py` on
 both sentences, Revit 2024, offered `PLACE_AREAS` first, then `CREATE_AREA_PLAN`, `TAG_ROOMS` and

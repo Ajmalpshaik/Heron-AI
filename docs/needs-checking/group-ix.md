@@ -8,6 +8,8 @@
 
 ## Group IX - the floor over the ducts hidden from a picture of them: `revit_view_image` with `elements` in a project (2026-10-23)
 
+**Tracked as GitHub issue [#990](https://github.com/Ajmalpshaik/Heron-AI/issues/990) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 From [row 5b-1328](../fragment-issues/section-5b-rows-401-425.md). On Revit 2020, in *Heron Capture Test* (a copy
 of Revit 2020's `rme_basic_sample_project.rvt`), ER2's call - the three ducts `392168,392170,392174` - pictured
 the top of the slab over them, with walls and framing on it, and the ducts only as dark rectangles where the box

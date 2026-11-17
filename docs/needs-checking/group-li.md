@@ -7,6 +7,8 @@
 
 ## Group LI - a circuit naming scheme made, or the project's circuit naming set: `SET_CIRCUIT_NAMING_SCHEME` (2026-11-02)
 
+**Tracked as GitHub issue [#1003](https://github.com/Ajmalpshaik/Heron-AI/issues/1003) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"which circuit naming scheme is the project using"*, *"make a circuit
 naming scheme Panel-Circuit with a dash"* and *"use the Panel-Circuit naming for this project"* - Revit's
 Manage > MEP Settings > Electrical Settings > Circuit Naming. No card made a scheme or set one: a grep of

@@ -7,6 +7,8 @@
 
 ## Group JV - a circuit that already exists, edited: `EDIT_ELECTRICAL_CIRCUIT` (2026-11-01)
 
+**Tracked as GitHub issue [#1003](https://github.com/Ajmalpshaik/Heron-AI/issues/1003) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"add these lights to circuit 3"*, *"take this socket off its
 circuit"*, *"move these circuits to panel DB-2"*, *"disconnect this circuit from its panel"*. Nothing in
 Heron edited a circuit that exists - `CREATE_ELECTRICAL_CIRCUIT` makes a new one and can pick a panel

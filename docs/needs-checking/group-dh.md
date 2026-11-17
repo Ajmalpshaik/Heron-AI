@@ -8,6 +8,8 @@
 
 ## Group DH - element ids typed back into Heron, through a read that names each one (2026-10-12)
 
+**Tracked as GitHub issue [#992](https://github.com/Ajmalpshaik/Heron-AI/issues/992) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 On Revit 2020, `PLACE_FAMILY_INSTANCES` answered with the ids of three new units - 8453537, 8453556,
 8453557 - and no capability would take them back. To turn and mirror each one, the chat selected it
 with `SELECT_IN_REGION` drawn round a spot only that unit stood in

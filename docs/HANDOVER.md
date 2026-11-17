@@ -65,7 +65,7 @@ the biggest being **62 reading fragments that must be able to look inside linked
 them to** — which in Qatar MEP work is most of the time, because the architecture is a link, the
 structure is a link, and often the MEP you are checking is a link too. Every rule is already checked by
 a gate; none of the edits was guessed, because this container has no Revit and no `dotnet` and writing
-62 collector rewrites nobody could compile would have been worse than leaving a list.
+62 collector rewrites nobody could compile would have been worse than leaving a list. *(Tracked as GitHub issue [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005) since 2026-11-16 (WN-7 and WN-8).)*
 
 **To carry the ROLES work on, say:** *"Read the ROLES track entry in HANDOVER.md."* It is archived at
 [the ROLES track](handover-archive/2026-09-09-the-roles-track-989-provides-declared-and-nothing-reads-a-na.md). That track is
@@ -165,7 +165,7 @@ otherwise, **the row wins**, and what is unfinished is `python tools/check-gaps.
 | Heron's data home, and the Companion button | D-135's carry **PASS**; the Companion button **FAIL** — Revit runs with a temporary folder of its own. The fix is **built-not-run** | [Group HF](needs-checking/group-hf.md) · [row 5b-1100](fragment-issues/section-5b-rows-401-425.md) · [D-136](DECISIONS.md) |
 | Companion, HVAC, fire, loads, sprinklers, families | **built-not-run** — each page's status line says how far. The HVAC Load Calculation sizing added 2026-10-19 has run **neither in Revit nor in the Companion**. **One part has met Revit since:** the Model Dashboard's two reads, on Revit 2024 on 2026-11-01 — JT0, JT1, JT2 and JU1 PASS, JU2 not judged — and `report-model-dashboard` says PROVEN; `report-model-geometry` is **DRAFT**, its signature stale. The 3D view's tools of 2026-11-07 are recorded as **not seen in Revit's browser** ([the dashboard plan](work-notes/plans/companion-model-dashboard-2026-11-01.md)'s own table) | [40](40-heron-companion.md) to [47](47-sprinkler-layout-from-the-model.md) · [44 §13](44-building-loads-from-the-model.md) · [Group JT](needs-checking/group-jt.md) · [Group JU](needs-checking/group-ju.md) |
 | The gates | **PASS** on this checkout today, and **twelve** decide a pull request since `check-secrets` became one; `check-supersessions` runs inside `check-docs` as its section 13 | [D-143](DECISIONS.md) · [D-144](DECISIONS.md) · [`heron-ship`](../.claude/skills/heron-ship/SKILL.md) |
-| The documentation | This table, [`work-notes/BALANCE-OF-WORK.md`](work-notes/BALANCE-OF-WORK.md) (regenerated — read its stamp), the work-notes index and the folder READMEs re-read against the code on 2026-11-11, and on 2026-11-12 the sentences that day's work moved — not the whole of each page; the specification 00 to 00d carries dated *As built* notes and D-139's in-place corrections since 2026-10-18. **On 2026-11-12 the numbered documents were brought up for what is built** (commit `3aac1ca7`): 00e and 01 to 25 read whole against the tree; **the four parts 00 to 00d were not read line by line** - their as-built notes were swept for the switches, the statuses in use and what they name. A second pass the same day left dated notes in documents 38 to 48 (commit `835530f3`). This row said *"nothing since has re-checked them"* until that day; `git log --oneline --since=2026-11-12 -- docs/` lists every document either pass changed, and a document it does not list was not corrected | [D-139](DECISIONS.md) · [`docs/README.md`](README.md) |
+| The documentation | This table, [`work-notes/BALANCE-OF-WORK.md`](work-notes/BALANCE-OF-WORK.md) (regenerated — read its stamp), the work-notes index and the folder READMEs re-read against the code on 2026-11-11, and on 2026-11-12 the sentences that day's work moved — not the whole of each page; the specification 00 to 00d carries dated *As built* notes and D-139's in-place corrections since 2026-10-18. **On 2026-11-12 the numbered documents were brought up for what is built** (commit `3aac1ca7`): 00e and 01 to 25 read whole against the tree; **the four parts 00 to 00d were not read line by line** - their as-built notes were swept for the switches, the statuses in use and what they name. A second pass the same day left dated notes in documents 38 to 48 (commit `835530f3`). This row said *"nothing since has re-checked them"* until that day; `git log --oneline --since=2026-11-12 -- docs/` lists every document either pass changed, and a document it does not list was not corrected | [D-139](DECISIONS.md) · [`docs/README.md`](README.md) *(tracked as GitHub issue [#1007](https://github.com/Ajmalpshaik/Heron-AI/issues/1007) since 2026-11-16 (WN-31))* |
 | The owner's PCs | The office PC is **retired**; the laptop is the only one, and its Claude is the Microsoft Store build | [Group HF](needs-checking/group-hf.md) |
 | Unfinished, and waiting on the owner | Derived, never typed | `python tools/check-gaps.py` · `python tools/owner-queue.py` |
 
@@ -173,7 +173,7 @@ otherwise, **the row wins**, and what is unfinished is `python tools/check-gaps.
 the order is kept** — [§6](#6-the-return-to-the-machine-checklist), [§9](#9-next--read-the-decisions-back-then-prove-what-is-built)
 and [FOR-THE-OWNER](FOR-THE-OWNER.md) point here). Each group's own file is the authority for its rows, and
 `python tools/owner-queue.py` lists every row that needs Revit open; this list is only the order.
-**Nothing in it has run in Revit.**
+**Nothing in it has run in Revit.** *(Tracked as GitHub issue [#1007](https://github.com/Ajmalpshaik/Heron-AI/issues/1007) since 2026-11-16 (WN-32).)*
 
 **Before item 1.** Everything below but item 9 was built on the branch `claude/stoic-planck-folhnp`, pull request
 [#855](https://github.com/Ajmalpshaik/Heron-AI/pull/855), so the Heron folder on the PC has to hold that
@@ -982,7 +982,7 @@ than work:
 **And one question that came out of building, still open and owned by nobody's register:** whether a
 layout that Revit refuses part of should place the rest or roll back entirely. [Golden Rule
 16](14-golden-rules.md) says roll back; a modeller may well want the 37 that worked. See
-`place-family-instances`.
+`place-family-instances`. *(Tracked as GitHub issue [#1012](https://github.com/Ajmalpshaik/Heron-AI/issues/1012) since 2026-11-16 (WN-58).)*
 
 **Two things were answered by NOT answering them**, and both are publication tasks rather than gaps:
 [Q-38](OPEN-QUESTIONS.md) — the public install command — and the Autodesk App Store requirements in

@@ -7,6 +7,8 @@
 
 ## Group CK - a project's answers kept under the model's own id, and the template's id asked about (2026-10-06)
 
+**Tracked as GitHub issue [#996](https://github.com/Ajmalpshaik/Heron-AI/issues/996) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **Built 2026-10-06 for [FRAGMENT-ISSUES 5b-324](../fragment-issues/section-5b-rows-301-325.md) under
 [D-113](../decisions/D-113.md). Tested without Revit - [`test_document_pin.py`](../../tests/test_document_pin.py),
 [`test_earlier_answers.py`](../../tests/test_earlier_answers.py) and the 5b-324 section of

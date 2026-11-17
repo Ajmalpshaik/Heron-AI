@@ -7,6 +7,8 @@
 
 ## Group KM - span direction symbols in a plan, Revit 2025 and later: `PLACE_SPAN_DIRECTION_SYMBOLS` (2026-11-01)
 
+**Tracked as GitHub issue [#998](https://github.com/Ajmalpshaik/Heron-AI/issues/998) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"add span direction symbols to these slabs in this plan"* - Revit's
 Annotate > Symbol > Span Direction. Nothing in Heron drew one. `brain/heron_retrieve.py`, Revit 2024,
 offered `PLACE_AREA_REINFORCEMENT` first. Turning the span itself is [Group KL](group-kl.md).

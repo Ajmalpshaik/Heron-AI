@@ -7,6 +7,8 @@
 
 ## Group MG - Analyze > Analytical Model - draw analytical members, panels and links, move or redraw an analytical line or outline without moving the element, and tie an analytical element to its physical one: `CREATE_ANALYTICAL_ELEMENTS`, `ADJUST_ANALYTICAL_ELEMENTS`, `ASSOCIATE_ANALYTICAL_ELEMENTS` (2026-11-02)
 
+**Tracked as GitHub issue [#999](https://github.com/Ajmalpshaik/Heron-AI/issues/999) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"add an analytical member between these two points"*, *"create an
 analytical panel from these corners on Level 2"*, *"link these two analytical nodes with an analytical
 link"*, *"move the analytical line of this beam 200 mm down"*, *"associate this analytical member with that

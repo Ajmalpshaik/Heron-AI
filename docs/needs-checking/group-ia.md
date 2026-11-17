@@ -8,6 +8,8 @@
 
 ## Group IA - materials: every tab of the Material Browser, material adding, and giving elements a material (2026-10-20)
 
+**Tracked as GitHub issue [#996](https://github.com/Ajmalpshaik/Heron-AI/issues/996) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 From [rows 5b-1263 and 5b-1264](../fragment-issues/section-5b-rows-401-425.md). On 2026-10-20, Revit 2020,
 Project1, a duct heater family whose materials `CREATE_MATERIAL` made drew in colour in a Shaded view and
 **flat dark grey in Realistic** (`EXPORT_VIEW_IMAGE`): a material Heron made had a shading colour and no

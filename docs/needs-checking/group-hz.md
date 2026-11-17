@@ -8,6 +8,8 @@
 
 ## Group HZ - a material, a level or a family type by name, and a type by key: the three parameter writers (2026-10-19)
 
+**Tracked as GitHub issue [#983](https://github.com/Ajmalpshaik/Heron-AI/issues/983) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 From [rows 5b-1259 and 5b-1260](../fragment-issues/section-5b-rows-401-425.md). On Revit 2020 the owner's
 *Kerala house design* could not give its two `M_Round Column` instances a material: every parameter
 writer refused, or passed to `SetValueString`, a parameter that holds another element, and a key row

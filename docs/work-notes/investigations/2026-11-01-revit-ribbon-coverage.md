@@ -22,7 +22,7 @@ settle** - in the [work-notes README](../README.md)'s lifecycle, *knowledge pres
 *retired*:
 
 - *The API cannot do it*, *Still UNSURE* and the four tab-by-tab tables are in no register and no
-  numbered document; this file is their only copy.
+  numbered document; this file is their only copy. *(Tracked as GitHub issue [#1007](https://github.com/Ajmalpshaik/Heron-AI/issues/1007) since 2026-11-16 (WN-29).)*
 - Fragment cards and [Group MO](../../needs-checking/group-mo.md) name this file by its path -
   `grep -rl revit-ribbon-coverage brain docs` lists them. Deleting it needs those lines re-pointed
   first.
@@ -109,6 +109,8 @@ Most used by a modeller first, across all tabs.
 - Radial and arc-length dimensions only from Revit 2025
 
 ## Still UNSURE - research before building
+
+*Tracked as GitHub issue [#1012](https://github.com/Ajmalpshaik/Heron-AI/issues/1012) since 2026-11-16 (WN-68) - work it there.*
 
 Precast split, CAM export and configurations · steel numbering, Connection Automation, steel cut
 types · Generate Layout, Parallel Pipes / Conduits, fabrication multi-point routing, P&ID · Decal,

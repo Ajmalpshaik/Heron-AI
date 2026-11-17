@@ -8,6 +8,8 @@
 
 ## Group FU - one Object Styles row by name: `LIST_CATEGORIES` version 3, `categories` narrows the answer, a missing name gets the nearest names (2026-10-17)
 
+**Tracked as GitHub issue [#989](https://github.com/Ajmalpshaik/Heron-AI/issues/989) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 To check one subcategory's line colour in a family - Generic Annotations > Signature, before and after
 `CREATE_LINE_STYLE` recoloured it - `LIST_CATEGORIES` version 2 printed every Object Styles row, all 303 of them,
 each time ([FRAGMENT-ISSUES 5b-630](../fragment-issues/section-5b-rows-401-425.md)). (Groups up to FP were taken by other

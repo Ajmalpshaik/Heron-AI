@@ -8,6 +8,8 @@
 
 ## Group AX - `create-view-filters-by-rule` and `set-view-filter-categories`: named view filters from a parameter name and a category list, and their categories set afterwards (2026-09-27)
 
+**Tracked as GitHub issue [#989](https://github.com/Ajmalpshaik/Heron-AI/issues/989) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **Two fragments from one sitting on 2026-09-27, in Project1 on Revit 2024, and both are DRAFT.**
 [`create-view-filters-by-rule`](../../brain/fragments/create-view-filters-by-rule/fragment.yaml) -
 CREATE_VIEW_FILTERS_BY_RULE, FRG-VIEW-111 - creates one or more rule-based view filters in the project's

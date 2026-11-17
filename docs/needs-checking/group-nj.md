@@ -7,6 +7,8 @@
 
 ## Group NJ - parameters out to a CSV and back: `SET_PARAMETER_VALUES_BY_ID` from a file has no run in Revit on record, and what was read off the two cards' code (2026-11-11)
 
+**Tracked as GitHub issue [#983](https://github.com/Ajmalpshaik/Heron-AI/issues/983) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 The round trip a modeller runs every week - parameters out to a spreadsheet, edited, brought back - is two
 cards: `EXPORT_PARAMETERS_TO_CSV` writes the file, and `SET_PARAMETER_VALUES_BY_ID` reads it back through
 its `csvPath` since version 7. Both were PROVEN when this was written (read again 2026-11-12: the second is

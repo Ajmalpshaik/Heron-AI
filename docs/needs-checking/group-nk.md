@@ -7,6 +7,8 @@
 
 ## Group NK - PROVEN reads that gave a wrong answer, repaired in code and DRAFT again until each is proved: the cards of rows 5b-1128, 5b-393, 5b-323, 5b-351, 5b-352, 5b-154 and 5b-203 (2026-11-11)
 
+**Tracked as GitHub issue [#974](https://github.com/Ajmalpshaik/Heron-AI/issues/974) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 > **THE ONE THING TO KNOW: until this group is run and signed, the reads in it answer only when the chat
 > NAMES them.** A sentence a modeller types no longer runs one of them by itself; the chat is handed the
 > candidates, calls `revit_read` again with the capability's name, and the answer says DRAFT. The QA

@@ -7,6 +7,8 @@
 
 ## Group NL - cards that were PROVEN, change the model and could report a wrong result as a success, repaired in code and back to DRAFT: `SET_ROUTING_PREFERENCE` version 2, `ADD_PROJECT_PARAMETER` version 3 and `CREATE_ASSEMBLY` version 2 (2026-11-11)
 
+**Tracked as GitHub issue [#974](https://github.com/Ajmalpshaik/Heron-AI/issues/974) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 A triage on 2026-11-11 named PROVEN cards that change the model and can do it wrongly while the answer
 reads as a success. The owner's instruction that day: *"if you are finding any fragment's mistake, even
 though it is proven, you can change that one."* Each card below was repaired in code the same day, in a

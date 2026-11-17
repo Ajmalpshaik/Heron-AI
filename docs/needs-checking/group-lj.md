@@ -7,6 +7,8 @@
 
 ## Group LJ - the path of travel lines in a floor plan and their lengths: `REPORT_PATHS_OF_TRAVEL` (2026-11-02)
 
+**Tracked as GitHub issue [#995](https://github.com/Ajmalpshaik/Heron-AI/issues/995) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"what is the travel distance from room 204 to the exit"* and *"list the path
 of travel lines in this plan and their lengths"* - Revit's Analyze > Route Analysis > Path of Travel - beside
 *"draw the path of travel from this room to the nearest exit"* and *"show the egress route from each room on

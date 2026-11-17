@@ -17,7 +17,7 @@
 > [`02-implementation.md`](02-implementation.md) says *how*, and the working note that carried the
 > live log was **retired 2026-09-12** - its durable half is in the registers, and git history holds
 > the rest; where the work stands is [01 §6](01-requirements.md)'s state column. **Structure decides
-> both**, so it sits ahead of them.
+> both**, so it sits ahead of them. *(Tracked as GitHub issue [#1009](https://github.com/Ajmalpshaik/Heron-AI/issues/1009) since 2026-11-16 (WN-40).)*
 
 ---
 

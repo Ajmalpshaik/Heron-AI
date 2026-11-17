@@ -9,6 +9,8 @@
 
 ## Group AB - Stages 3 and 4 of the installer: the engine, and the window nobody has seen 2026-09-21
 
+**Tracked as GitHub issue [#972](https://github.com/Ajmalpshaik/Heron-AI/issues/972) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **Everything the installer DECIDES is tested. Nothing it DOES has run.** 79 checks pass against a fake
 Revit and a fake disk; all 13 projects compile on all eight releases with 0 warnings. **No file has been
 written, no Revit has been looked for, no PowerShell has executed and no window has been drawn.** A

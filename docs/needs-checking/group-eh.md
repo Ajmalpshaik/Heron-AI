@@ -8,6 +8,8 @@
 
 ## Group EH - a reference inside a loaded link: `CREATE_LINEAR_DIMENSION` version 4 (2026-10-15)
 
+**Tracked as GitHub issue [#985](https://github.com/Ajmalpshaik/Heron-AI/issues/985) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for on 2026-10-15 on a real project (Revit 2020, a BIM 360 model that is never written to for a proof):
 in four builders-work plans the owner had tagged ten Generic Model cut-outs that live in a LINKED model, and
 asked for dimension chains from a grid to both sides of each. Every word

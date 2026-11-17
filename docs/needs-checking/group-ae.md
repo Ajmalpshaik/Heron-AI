@@ -9,6 +9,8 @@
 
 ## 2026-09-22 — THE DOOR EXISTS NOW: `heron-install`
 
+**Tracked as GitHub issue [#972](https://github.com/Ajmalpshaik/Heron-AI/issues/972) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **Q-PE-16 is answered.** The owner chose a command beside the window, having been shown the four
 options: *"if I type the 'heron install' from GitHub like that, it will install from there also. That
 is the second type of installation."*

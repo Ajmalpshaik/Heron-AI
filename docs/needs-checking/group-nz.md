@@ -7,6 +7,8 @@
 
 ## Group NZ - a symbol legend: one legend component per door, window or fixture type, copied from the one the legend holds, each read back with its name beside it: `PLACE_LEGEND_COMPONENTS` (2026-11-15)
 
+**Tracked as GitHub issue [#988](https://github.com/Ajmalpshaik/Heron-AI/issues/988) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the field: Sruthina's drawing set on Revit 2024, model `villa 2`, wanted a symbol legend - a legend view
 of legend components for the doors, windows and fixtures - and *"no capability exists"*; a keynote legend and
 schedules stood in ([Ajmalpshaik/Heron-AI#854](https://github.com/Ajmalpshaik/Heron-AI/issues/854) item f,

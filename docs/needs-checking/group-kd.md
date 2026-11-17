@@ -7,6 +7,8 @@
 
 ## Group KD - columns attached to a selected target: `ATTACH_COLUMNS` (2026-11-01)
 
+**Tracked as GitHub issue [#997](https://github.com/Ajmalpshaik/Heron-AI/issues/997) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"attach these columns to the roof"*, *"attach the column tops to the
 beams above"*, *"attach column base to the footing"*, *"detach these columns"* - Revit's Modify Column >
 Attach Top/Base and Detach Top/Base. Nothing in Heron did it for a column: `ATTACH_WALLS` attaches walls,

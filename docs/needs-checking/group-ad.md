@@ -9,6 +9,8 @@
 
 ## 2026-09-22 — STAGE 7: UNINSTALL IS THE SAME WINDOW, and the dangerous part was not the deleting
 
+**Tracked as GitHub issue [#972](https://github.com/Ajmalpshaik/Heron-AI/issues/972) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 `tools/deploy-addin.ps1 -Remove` already worked and was proven by `AA4`. What this adds is the window
 driving it — and **the safety property without which `R-21` is a disaster.**
 

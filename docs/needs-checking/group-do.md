@@ -8,6 +8,8 @@
 
 ## Group DO - model and file setup: files linked, link paths switched, links' shared coordinates checked, material textures read, unused images found (2026-10-12)
 
+**Tracked as GitHub issue [#991](https://github.com/Ajmalpshaik/Heron-AI/issues/991) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 The fifth batch of the gap fill ([`work-notes/plans/gap-fill-2026-10-12.md`](../work-notes/plans/gap-fill-2026-10-12.md)).
 
 **What was built - five new capabilities.** `LINK_FILES` (FRG-DOC-043): a Revit model or CAD drawings, one,

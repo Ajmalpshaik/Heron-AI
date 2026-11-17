@@ -7,6 +7,8 @@
 
 ## Group MH - MEP fabrication parts changed to another service or size, hung with a named hanger button, and placed one at a time from a named button: `CHANGE_FABRICATION_SERVICE_SIZE`, `ADD_FABRICATION_HANGERS`, `PLACE_FABRICATION_PART` (2026-11-02)
 
+**Tracked as GitHub issue [#1002](https://github.com/Ajmalpshaik/Heron-AI/issues/1002) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"change these fabrication parts to the High Pressure service"*, *"change the
 size of these fabrication ducts to 400x300"*, *"add hangers to these fabrication ducts every 1500 mm using the Rod
 Hanger button"*, *"put a hanger on this fabrication pipe"*, *"place a fabrication straight from the Low Pressure

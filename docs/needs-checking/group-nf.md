@@ -7,6 +7,8 @@
 
 ## Group NF - a family's 2D side through five widened cards: a detail item placed and arrayed in a family view, a symbolic line's detail levels, lines on a subcategory, an arc's radius labelled: `PLACE_DETAIL_COMPONENTS` v2, `ARRAY_FAMILY_FORMS` v4, `SET_FAMILY_FORM_VISIBILITY` v2, `SET_FAMILY_FORM_SUBCATEGORY` v2, `LABEL_FAMILY_RADIUS` v6 (2026-11-11)
 
+**Tracked as GitHub issue [#979](https://github.com/Ajmalpshaik/Heron-AI/issues/979) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked 2026-11-11 by Ajmal PS after his KDF square diffuser family (Revit 2020) stopped three times on its plan
 flow arrows: the whole class of "2D in a family" was audited, and five PROVEN cards were the right owners of the
 missing pieces. He said yes to widening them rather than adding cards ("no duplicate tools"), so each went back to

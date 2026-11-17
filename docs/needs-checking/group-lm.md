@@ -7,6 +7,8 @@
 
 ## Group LM - a view's work plane set to a named level, reference plane or grid, shown or hidden, and read: `SET_VIEW_WORK_PLANE`, `REPORT_VIEW_WORK_PLANE` (2026-11-02)
 
+**Tracked as GitHub issue [#992](https://github.com/Ajmalpshaik/Heron-AI/issues/992) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"set the work plane to Level 2"*, *"set the work plane to reference plane
 Ceiling Datum"*, *"show the work plane in this view"*, *"hide the work plane"* and *"which work plane is this view
 on"* - Revit's Architecture > Work Plane > Set and Show. No card set, showed or read a view's work plane: a grep of

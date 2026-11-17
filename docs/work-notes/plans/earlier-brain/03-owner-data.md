@@ -223,7 +223,7 @@ areas and spaces take no category override at all; sub-categories hold only line
 transparency shows only in shaded, consistent-colour and realistic views. **So never report "all grey with
 solid fill" — report what stuck.**
 
-**Open choices — decision D4, asked one at a time the first time each one matters:**
+**Open choices — decision D4, asked one at a time the first time each one matters:** *(Tracked as GitHub issue [#1012](https://github.com/Ajmalpshaik/Heron-AI/issues/1012) since 2026-11-16 (WN-60).)*
 
 - **Service sub-categories** (rise, drop, centreline and their kind) stayed grey while their parent went
   black. Follow the parent to black, or leave them grey?

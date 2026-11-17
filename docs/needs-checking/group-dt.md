@@ -8,6 +8,8 @@
 
 ## Group DT - colour schemes: APPLY_COLOR_FILL_SCHEME version 2 and REPORT_COLOR_FILL_SCHEME, the read and the check (2026-10-13)
 
+**Tracked as GitHub issue [#987](https://github.com/Ajmalpshaik/Heron-AI/issues/987) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Found while styling the futuristic-house plans in Project2 (Revit 2020.2): Heron could not colour a plan
 by room name, and `heron_lookup` offered three other tools. [Row 5b-447](../FRAGMENT-ISSUES.md) has the
 measurements.

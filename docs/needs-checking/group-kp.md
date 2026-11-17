@@ -7,6 +7,8 @@
 
 ## Group KP - which way a structural floor spans: `REPORT_FLOOR_SPAN_DIRECTION` (2026-11-01)
 
+**Tracked as GitHub issue [#998](https://github.com/Ajmalpshaik/Heron-AI/issues/998) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"what is the span direction of this slab"*, *"which way does this floor
 span"*. No card read a floor's span direction: [row 5b-1369](../fragment-issues/section-5b-rows-401-425.md)
 recorded the first sentence reaching a write without the host's question flag, and a read that does not

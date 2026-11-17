@@ -7,6 +7,8 @@
 
 ## Group CU - a parametric coil spring: swept blend labels, a nested family arrayed up, its last copy locked (2026-10-07)
 
+**Tracked as GitHub issue [#978](https://github.com/Ajmalpshaik/Heron-AI/issues/978) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked by the owner on 2026-10-07: a compression spring for vibration isolators, built the way ThomRVT's
 video *How to create Spring Revit Family (Parametric)* builds it - each half-turn of the coil one swept
 blend, a one-turn family nested in the main one and arrayed up, ground end turns whose profile is a half

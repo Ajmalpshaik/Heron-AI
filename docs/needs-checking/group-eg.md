@@ -8,6 +8,8 @@
 
 ## Group EG - a tag turned as well as moved: `OFFSET_TAGS_FROM_HOST` version 2 (2026-10-15)
 
+**Tracked as GitHub issue [#984](https://github.com/Ajmalpshaik/Heron-AI/issues/984) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for on 2026-10-15 on a real project (Revit 2020, a BIM 360 model that is never written to for a proof):
 the cut-out tags in a builders-work plan were to sit inside the building, with no leader, and *"same
 orientation as the opening"* - Horizontal for openings in east-west walls, Vertical for the one in a

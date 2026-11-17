@@ -7,6 +7,8 @@
 
 ## Group CI - family type values: a material by its name and a URL as text (2026-10-06)
 
+**Tracked as GitHub issue [#980](https://github.com/Ajmalpshaik/Heron-AI/issues/980) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 `SET_FAMILY_TYPE_VALUES` version 2 writes a **material** parameter by the material's name and a **URL**
 (and any parameter Revit keeps as text) as text. Version 1 refused both - seen 2026-10-06 in the family
 `GM_PipeSupport_HexNut` with `Nut Material=TRG_Steel_Galvanised` and `URL=https://ajmalps.com`, which then

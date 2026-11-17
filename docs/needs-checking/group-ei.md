@@ -8,6 +8,8 @@
 
 ## Group EI - the families open in the Family Editor, and a value a card may leave out: `REPORT_OPEN_DOCUMENTS` version 2 and `REPORT_FAMILY_FORMS` version 2 (2026-10-16)
 
+**Tracked as GitHub issue [#968](https://github.com/Ajmalpshaik/Heron-AI/issues/968) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Found on 2026-10-14 building two fixed monitor families on Revit 2020. `REPORT_OPEN_DOCUMENTS` answered
 *"count 0 ... 2 family document(s) are open and are NOT listed above"* while Family1 and Family2 were open
 in the Family Editor, so the chat could not tell the owner whether the 60 inch family had been saved - and

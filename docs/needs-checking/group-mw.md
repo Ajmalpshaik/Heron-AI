@@ -7,6 +7,8 @@
 
 ## Group MW - a duct or pipe system drawn as a single-line schematic on a new drafting view, labelled with Revit's own size, flow and pressure drop: `DRAW_MEP_SCHEMATIC` (2026-11-08)
 
+**Tracked as GitHub issue [#1002](https://github.com/Ajmalpshaik/Heron-AI/issues/1002) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 The owner's ask: [docs/48](../48-studying-bimlogiq.md) section 5 item 5, *"3D to 2D MEP schematic - one system
 traced, drawn as single lines on a drafting view, with sizes, flow and pressure drop"*, and his "yes start item
 5". Made NEW, at DRAFT. It overlaps `TRACE_CONNECTIVITY` (DRAFT), `REPORT_MEP_PRESSURE_DROP`,

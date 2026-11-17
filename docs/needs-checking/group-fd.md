@@ -8,6 +8,8 @@
 
 ## Group FD - a text note's numbering, bullets, indent and bold set through Heron: `EDIT_TEXT_VALUES` mode format, and the read that checks it (2026-10-17)
 
+**Tracked as GitHub issue [#985](https://github.com/Ajmalpshaik/Heron-AI/issues/985) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 [FRAGMENT-ISSUES 5b-737](../fragment-issues/section-5b-rows-401-425.md). `EDIT_TEXT_VALUES` version 5 adds
 mode **format**: on a text note, it sets numbers, bullets, lowercase or uppercase letters or no list, a
 list's start number, an indent, and bold, italic or underline - on every paragraph or on the paragraphs

@@ -7,6 +7,8 @@
 
 ## Group NE - a family's 2D linked to a Yes/No by id, and an angle labelled between two planes: `LINK_FAMILY_PARAMETER` version 4 and `LABEL_FAMILY_DIMENSION` version 3 (2026-11-11)
 
+**Tracked as GitHub issue [#979](https://github.com/Ajmalpshaik/Heron-AI/issues/979) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Found missing on 2026-11-11, when Ajmal PS asked for a family's whole 2D side to be covered while building a
 diffuser family's plan arrows: a symbolic line's, a detail line's, a filled or masking region's or model text's
 Visible could not be linked to a Yes/No family parameter, and no card labelled an ANGLE between two planes. Both

@@ -8,6 +8,8 @@
 
 ## Group DR - dimensions through faces, slab and terrain shape, toposolid tools, railing edits and types, divided surfaces, adaptive placement, copying between documents, purge (2026-10-13)
 
+**Tracked as GitHub issue [#993](https://github.com/Ajmalpshaik/Heron-AI/issues/993) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 The eighth batch of the gap fill ([`work-notes/plans/gap-fill-2026-10-12.md`](../work-notes/plans/gap-fill-2026-10-12.md)),
 the last of its missing jobs.
 

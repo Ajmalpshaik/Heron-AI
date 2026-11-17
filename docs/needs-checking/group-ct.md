@@ -9,6 +9,8 @@
 
 ## Group CT - groups in the family being edited: GROUP_ELEMENTS version 2 (2026-10-07)
 
+**Tracked as GitHub issue [#995](https://github.com/Ajmalpshaik/Heron-AI/issues/995) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 `GROUP_ELEMENTS` (FRG-ELE-012) version 2 groups the selected elements in a project, as version 1 did, OR in
 the family open in the Family Editor, where version 1 was refused every time and never said why
 ([row 5b-362](../fragment-issues/section-5b-rows-351-375.md)). New in it: a `name` value - the group type's

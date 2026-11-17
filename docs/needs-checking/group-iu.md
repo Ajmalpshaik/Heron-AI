@@ -8,6 +8,8 @@
 
 ## Group IU - a dictionary's entries reach the chat (`providesEntries`, `READ_ELEMENT_PARAMETERS` version 5), and the end a flex would move (`LABEL_FAMILY_DIMENSION` version 2) (2026-10-22)
 
+**Tracked as GitHub issue [#983](https://github.com/Ajmalpshaik/Heron-AI/issues/983) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 From rows [5b-1325 and 5b-1326](../fragment-issues/section-5b-rows-401-425.md). Both were seen on Revit 2020
 (session 78736) on 2026-10-22, building a nested floor-drain family: one parameter read on four connectors
 came back as *"values 4 entry(ies)"* and nothing else, and a height labelled from a new, unpinned plane moved

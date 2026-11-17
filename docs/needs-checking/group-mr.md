@@ -7,6 +7,8 @@
 
 ## Group MR - renaming views on as-built sheets: a placed floor plan `FIND_VIEWS` could not find, and a done rename `EDIT_TEXT_VALUES` called unverified - `FIND_VIEWS` v3, `EDIT_TEXT_VALUES` v9, `RENUMBER_SEQUENTIAL` v3, and quoted values keep their spaces (2026-11-07)
 
+**Tracked as GitHub issue [#987](https://github.com/Ajmalpshaik/Heron-AI/issues/987) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 On 2026-11-07, on `4355-BHVD-3D-60A10-BL007A` in Revit 2020, the owner renamed views on as-built sheets. Every
 rename landed and was read back, but two tools misreported. `FIND_VIEWS` found 0 for a floor plan that was on a
 sheet ([row 5b-1474](../fragment-issues/section-5b-rows-401-425.md)), and `EDIT_TEXT_VALUES` answered `changed 0`,

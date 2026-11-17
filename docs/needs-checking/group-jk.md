@@ -8,6 +8,8 @@
 
 ## Group JK - an adaptive component's points turned to the host: `SET_ADAPTIVE_POINT_ORIENTATION` version 1 (2026-10-28)
 
+**Tracked as GitHub issue [#994](https://github.com/Ajmalpshaik/Heron-AI/issues/994) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 A new card, [`set-adaptive-point-orientation`](../../brain/fragments/set-adaptive-point-orientation/fragment.yaml)
 (FRG-GEO-074), written in a cloud session for the gap
 [`adaptive-family-creation`](../../brain/skills/adaptive-family-creation.yaml) named: each placement point's

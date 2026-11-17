@@ -7,6 +7,8 @@
 
 ## Group OD - OPEN_FAMILY_FOR_EDITING reads what is in front, a picture of a region of a plan, and a store warning that names what to do (2026-11-16)
 
+**Tracked as GitHub issue [#974](https://github.com/Ajmalpshaik/Heron-AI/issues/974) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 From Sruthina's field reports Ajmalpshaik/Heron-AI#853 (Revit 2024, `villa 2`) and Group NY's run of
 2026-11-16. Three repairs made in a cloud container with no Revit - every project compiled on 2020 to
 2027, every fragment compiled on every release it claims, the server's halves tested - and **none of it

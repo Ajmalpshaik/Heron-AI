@@ -218,6 +218,8 @@ because it was reached independently.
 
 ### Q-B-1 — Do B3, B4 and B8 become standing rules in Heron, or stay as skills?
 
+*Tracked as GitHub issue [#1012](https://github.com/Ajmalpshaik/Heron-AI/issues/1012) since 2026-11-16 (WN-61) - work it there.*
+
 Three working habits — *a property reports intent not fact*, *never trust your own earlier read*, *plan
 then split then execute* — are true of **every** Revit task, not of one kind of task.
 
@@ -230,6 +232,8 @@ these three belong there is the owner's call — and the argument against is rea
 21 and deliberately few.
 
 ### Q-B-2 — Does Heron keep a glossary of the owner's own words?
+
+*Tracked as GitHub issue [#1012](https://github.com/Ajmalpshaik/Heron-AI/issues/1012) since 2026-11-16 (WN-62) - work it there.*
 
 Skills carry `utterances`; nothing collects his vocabulary in one place.
 [15](../../../15-glossary.md) is Heron's terms, not his.

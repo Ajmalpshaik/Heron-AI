@@ -8,6 +8,8 @@
 
 ## Group BJ - D-59's fifth batch: four ray and reach checks see linked ceilings, walls and structure when asked (2026-09-29)
 
+**Tracked as GitHub issue [#991](https://github.com/Ajmalpshaik/Heron-AI/issues/991) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **The same shape as [Group BI](group-bi.md)** - `includeLinks` (absent means this model only), `linksSearched`
 and `linkedMatches`. A tool's pass/fail lists stay this model's answer and what the links show is TEXT
 ([row 75](../FRAGMENT-ISSUES.md)). Only model elements are read from a link, never its views or sheets. Why

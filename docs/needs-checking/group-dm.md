@@ -8,6 +8,8 @@
 
 ## Group DM - MEP systems made and re-typed, panel circuits read, wires drawn, spaces kept in step with linked rooms (2026-10-12)
 
+**Tracked as GitHub issue [#1001](https://github.com/Ajmalpshaik/Heron-AI/issues/1001) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 On 2026-10-12 the owner asked for the Revit jobs Heron could not do yet to be built the Heron way -
 general, widening an existing fragment where one nearly fits. The plan and its build list are in
 [`work-notes/plans/gap-fill-2026-10-12.md`](../work-notes/plans/gap-fill-2026-10-12.md). This group is

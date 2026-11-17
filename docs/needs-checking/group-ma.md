@@ -7,6 +7,8 @@
 
 ## Group MA - Annotate > Arc Length - an arc length dimension along a curved wall, curved beam or arc line, Revit 2025 and later: `CREATE_ARC_LENGTH_DIMENSION` (2026-11-02)
 
+**Tracked as GitHub issue [#985](https://github.com/Ajmalpshaik/Heron-AI/issues/985) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"add an arc length dimension to this curved wall"*, *"dimension the
 length of this arc"*, *"put an arc length dimension on this curved beam"* - Revit's Annotate > Arc Length.
 Nothing in Heron drew one: `brain/heron_retrieve.py`, Revit 2025, offered `CREATE_ANGULAR_DIMENSION` for

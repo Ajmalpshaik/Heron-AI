@@ -8,6 +8,8 @@
 
 ## Group BK - the Heron Companion, Phase 1: a page beside Revit shows the model, the view and the selection (2026-09-29)
 
+**Tracked as GitHub issue [#971](https://github.com/Ajmalpshaik/Heron-AI/issues/971) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **What was built** ([D-108](../DECISIONS.md), [40 §6](../40-heron-companion.md)): the add-in writes a small file,
 `%LOCALAPPDATA%\Heron\live\pid-N.json`, whenever the model, view or selection changes - only while the Heron
 button is connected - and the chat's `heron_companion` tool opens a page in the browser that reads it. The page

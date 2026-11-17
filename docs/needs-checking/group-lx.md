@@ -7,6 +7,8 @@
 
 ## Group LX - Structure > Rebar in any concrete host - one bar or set of a named shape fitted into a box, or a bar sketched through points, of a named bar type, read back: `PLACE_REBAR` (2026-11-02)
 
+**Tracked as GitHub issue [#1000](https://github.com/Ajmalpshaik/Heron-AI/issues/1000) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words: *"place a T16 bar of shape 21 along this wall at 200 spacing"*, *"draw a
 T12 L-bar in this slab through these points"*, *"add bars of shape 00 in this column face"* and *"sketch a
 rebar along this line in the wall"* - Revit's Structure > Rebar, a standard shape or a sketched one, in any

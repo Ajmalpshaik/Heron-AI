@@ -7,6 +7,8 @@
 
 ## Group NV - a QA check's failing ids whole, and its severity, clause and history (2026-11-12)
 
+**Tracked as GitHub issue [#975](https://github.com/Ajmalpshaik/Heron-AI/issues/975) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 [D-158](../decisions/D-158.md) sends a QA check's failing ids whole, so **Select in Revit** takes every one.
 **It compiles for 2020 to 2027 and runs without Revit** (`tests/test_checklists.py`,
 `tests/test_checklist_tool.py`, whose new checks were seen to fail on the code before the change).

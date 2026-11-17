@@ -7,6 +7,8 @@
 
 ## Group CM - a new family or project from a template, saved where the caller says and opened in a window (2026-10-06)
 
+**Tracked as GitHub issue [#977](https://github.com/Ajmalpshaik/Heron-AI/issues/977) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 `CREATE_FAMILY_DOCUMENT` version 2 saves the new family to the `savePath` the caller names (never over an
 existing file), closes the windowless copy the API makes, and opens the saved file in a Revit window.
 `CREATE_PROJECT_DOCUMENT` (new, FRG-DOC-039) does the same from a project template; its body is the

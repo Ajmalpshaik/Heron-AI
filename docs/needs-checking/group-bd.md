@@ -8,6 +8,8 @@
 
 ## Group BD - `link-family-parameter`: an element already in a family linked to a family parameter, or unlinked, and read back (2026-09-28)
 
+**Tracked as GitHub issue [#976](https://github.com/Ajmalpshaik/Heron-AI/issues/976) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **One new general tool, built on 2026-09-28 because nothing in the library could do the job and widening the
 nearest one would have made it a different job.**
 [`link-family-parameter`](../../brain/fragments/link-family-parameter/fragment.yaml) - LINK_FAMILY_PARAMETER,

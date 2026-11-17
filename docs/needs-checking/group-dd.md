@@ -8,6 +8,8 @@
 
 ## Group DD - an electrical connector's voltage, poles, apparent load and power factor, set or driven by a family parameter (2026-10-12)
 
+**Tracked as GitHub issue [#981](https://github.com/Ajmalpshaik/Heron-AI/issues/981) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 The same three Revit 2020 families as [Group DC](group-dc.md) - a fire alarm control panel, a
 three-phase rotary isolator, an LV switchboard - each got an electrical connector from
 `ADD_FAMILY_CONNECTOR`, and nothing could give it a voltage, a number of poles or a load:

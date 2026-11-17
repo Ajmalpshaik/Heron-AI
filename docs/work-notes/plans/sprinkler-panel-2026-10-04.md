@@ -326,4 +326,4 @@ next to each other - the modeller's ticks are the guard; one area per sprinkler 
 for every head (per head is phase 2); equipment with more than one connector in the system (a pump) is a
 WARN; the fingerprint hashes geometry, sizes and K, never level or Space names; the chart holds few cells,
 so most fitting rows are asked on the first run - the page says that is expected. Only the 2024 reference
-assemblies are in this container, so the compile of other releases may be NOT RUN - said, never claimed.
+assemblies are in this container, so the compile of other releases may be NOT RUN - said, never claimed. *(Tracked as GitHub issue [#1013](https://github.com/Ajmalpshaik/Heron-AI/issues/1013) since 2026-11-16 (WN-74).)*

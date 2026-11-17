@@ -8,6 +8,8 @@
 
 ## Group AN - family creation, from an empty template to a flexed family (2026-09-24)
 
+**Tracked as GitHub issue [#976](https://github.com/Ajmalpshaik/Heron-AI/issues/976) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **The owner's PC, Revit 2024 first, then 2020.** Nine fragments and one skill, written on 2026-09-24
 when the owner asked for his earlier brain's family-creation skill to become part of Heron - package
 C11 of [the earlier-brain plan](../work-notes/plans/earlier-brain/02-work-packages.md), taken ahead of

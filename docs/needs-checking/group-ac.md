@@ -9,6 +9,8 @@
 
 ## 2026-09-21 — STAGE 5 IS BUILT, and nothing has ever been downloaded from GitHub
 
+**Tracked as GitHub issue [#972](https://github.com/Ajmalpshaik/Heron-AI/issues/972) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 The stage said *"the installer reads the manifest from a named release"*. **There were no releases and
 nothing that could make one**, so the sentence described a thing that did not exist. Both halves are
 built now. **No release has been published**, so the word PROVEN is not used here either.

@@ -7,6 +7,8 @@
 
 ## Group CY - every distinct date typed on the sheets, all sheets, nothing selected (2026-10-10)
 
+**Tracked as GitHub issue [#988](https://github.com/Ajmalpshaik/Heron-AI/issues/988) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 On 2026-10-10 a modeller in Revit 2020, with model *4355-BHVD-3D-50C10-BL001A* (19 sheets) open, asked
 to *"check all sheets, take all the text on the sheets, take the dates in that text from all sheets,
 and keep only unique dates"*, and confirmed that only a note typed on the sheet itself counts - not text

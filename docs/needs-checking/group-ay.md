@@ -8,6 +8,8 @@
 
 ## Group AY - `offset-tags-from-host`: every tag moved a set paper distance off its own element (2026-09-27)
 
+**Tracked as GitHub issue [#984](https://github.com/Ajmalpshaik/Heron-AI/issues/984) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **One fragment from one sitting on 2026-09-27, in "heron ai bulding" on Revit 2024, and it is DRAFT.**
 [`offset-tags-from-host`](../../brain/fragments/offset-tags-from-host/fragment.yaml) -
 OFFSET_TAGS_FROM_HOST, FRG-VIEW-113 - moves each tag handed in to so many paper millimetres right and up of
