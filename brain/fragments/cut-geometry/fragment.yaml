@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -106,6 +106,41 @@ contract:
       type: IList<string>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-17'
+  by: Ajmal PS
+  model: rig (3,349 elements), Revit 2024, session 34788
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-in-region, set-selection, filter-elements-by-id with this phase''s own values -
+    run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned alreadyRight 0 item(s), because Func`2, changed 1, cutWanted true, describe Func`2,
+    findings 3 item(s) [1 element(s) cut by Generic Models HN Cut Void (id 353594). ..., Pair:
+    Floors Generic 150mm (id 352528): cut by Generic Model..., QUANTITIES HAVE MOVED. A cut
+    element loses the cutter''s shap...], mode true, pairs 1 item(s) [Floors Generic 150mm
+    (id 352528): cut by Generic Models HN C...], refused 0 item(s), uncutWanted false, wouldNot
+    0 item(s). inputs came elements from filter-elements-by-id (1); cutter as given; cut as
+    given. on rig'
+  negative_case: 'run with categories=Generic Models, cut=false, cutter=selected, elementIds=352528,
+    exact=False, maxMm=31100,31100,1500, minMm=30900,30900,-500 instead - chosen because it
+    should not contain what this fragment reports - the arrangement was re-made first by running
+    select-in-region, set-selection, filter-elements-by-id with this phase''s own values -
+    run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned alreadyRight 1 item(s) [352528], because Func`2, changed 0, cutWanted false,
+    describe Func`2, findings 2 item(s) [0 element(s) uncut from Generic Models HN Cut Void
+    (id 35359..., Pair: Floors Generic 150mm (id 352528): not cut by Generic M...], mode false,
+    pairs 1 item(s) [Floors Generic 150mm (id 352528): not cut by Generic Models ...], refused
+    0 item(s), uncutWanted true, wouldNot 0 item(s). inputs came elements from filter-elements-by-id
+    (1); cutter as given; cut as given. on rig'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.2.0.0
+    addin_hash: 80819edd3983a0d5
+  fingerprint: 2e09b2cfaa588e20
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

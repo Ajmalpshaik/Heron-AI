@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -257,6 +257,79 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-16'
+  by: Ajmal PS
+  model: night-scratch (3,203 elements), Revit 2024, session 8292
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    place-line-based-family with this phase''s own values - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned MmToFeet 0.00328083989501312,
+    alreadyTagged 0 item(s), areasId 1 item(s) [id -2003200], because Action`2, brokenLines
+    false, categoryNamed Func`2, clash Func`4, crowded 0 item(s), derivedTagCategory Func`2,
+    findings 1 item(s) [1 tag(s) placed in 1 view(s) by 1 rule(s): 0 drawn out on a ...],
+    firstRefusal (null), folded Func`2, fromActive false, given 1 item(s) [Level 1], headOf
+    Func`2, headsNotTaken 0, headsUnread 0, hiddenWords 0 item(s), isNamed Func`3, leaderOf
+    Func`2, leaderedJudged 0, leadersDrawn 0, mepTagCategory 17 entry(ies), minGapMm 2, movedNoLeader
+    0, multiTagsId 1 item(s) [id -2005022], newTags 1 item(s) [352866], notTagged 0 item(s),
+    notTaggedWhy 0 item(s), otherPhaseTotal 0, outsideCrop 0 item(s), ownPoint Func`3, paperBox
+    Func`3, perView 1 item(s) ["Level 1": 1 tag(s) placed (0 with a straight leader, 0 crow...],
+    refused , roomTagsId 1 item(s) [id -2000480], roomsId 1 item(s) [id -2000160], ruleCategory
+    1 item(s) [Autodesk.Revit.DB.Category], ruleHow 1 item(s) [the project''s default Structural
+    Framing Tags], ruleKind 1 item(s) [element], ruleLeader 1 item(s) [False], ruleMinFeet
+    1 item(s) [0], ruleNamed 1 item(s) [False], ruleNumber 1, ruleOnMepMap 1 item(s) [False],
+    ruleProblems 0 item(s), ruleTagCategory 1 item(s) [-2005015], ruleText Structural Framing,
+    ruleType 1 item(s) [Boxed], rulesRead 2 item(s) [1 rule(s) read, of 1 separated by semicolons:
+    Structural Fra..., 1. Structural Framing -> ''M_Structural Framing Tag: Boxed'' (...],
+    sharing Func`2, sizesGuessed 0, skipTagged true, spaceTagsId 1 item(s) [id -2000485],
+    spacesId 1 item(s) [id -2003600], tagKinds 7 item(s) [FloorPlan, CeilingPlan, EngineeringPlan,
+    ...], tagTypesUsed 1 item(s) [Structural Framing: M_Structural Framing Tag: Boxed (the
+    pro...], tagged 1, tooShort 0 item(s), typeCorrections 0, typeLabel Func`2, verticalSkipped
+    0 item(s), viewsLeft 0 item(s), whyCount 0 entry(ies), whyOrder 0 item(s), working 1 item(s)
+    [Level 1], zoneTagsId 1 item(s) [id -2008115], zoneTargets Func`2, zonesId 1 item(s) [id
+    -2008107]. inputs came views as given (1); rules as given; minGapMm not given - "2", the
+    card''s own default (optional); skipTagged not given - "true", the card''s own default
+    (optional). on night-scratch'
+  negative_case: 'run with curves=0,0,1000; 6000,0,1000, level=Level 1, rules=Structural Framing
+    | | none | 100000, structuralType=beam, symbol=UB-Universal Beams: UB305x165x40, views=FloorPlan:
+    Level 1 instead - chosen because it should not contain what this fragment reports - the
+    arrangement was re-made first by running place-line-based-family with this phase''s own
+    values - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned MmToFeet 0.00328083989501312, alreadyTagged 0 item(s), areasId 1
+    item(s) [id -2003200], because Action`2, brokenLines false, categoryNamed Func`2, clash
+    Func`4, crowded 0 item(s), derivedTagCategory Func`2, findings 1 item(s) [0 tag(s) placed
+    in 1 view(s) by 1 rule(s): 0 drawn out on a ...], firstRefusal (null), folded Func`2,
+    fromActive false, given 1 item(s) [Level 1], headOf Func`2, headsNotTaken 0, headsUnread
+    0, hiddenWords 0 item(s), isNamed Func`3, leaderOf Func`2, leaderedJudged 0, leadersDrawn
+    0, mepTagCategory 17 entry(ies), minGapMm 2, movedNoLeader 0, multiTagsId 1 item(s) [id
+    -2005022], newTags 0 item(s), notTagged 0 item(s), notTaggedWhy 0 item(s), otherPhaseTotal
+    0, outsideCrop 0 item(s), ownPoint Func`3, paperBox Func`3, perView 1 item(s) ["Level
+    1": 0 tag(s) placed (0 with a straight leader, 0 crow...], refused , roomTagsId 1 item(s)
+    [id -2000480], roomsId 1 item(s) [id -2000160], ruleCategory 1 item(s) [Autodesk.Revit.DB.Category],
+    ruleHow 1 item(s) [the project''s default Structural Framing Tags], ruleKind 1 item(s)
+    [element], ruleLeader 1 item(s) [False], ruleMinFeet 1 item(s) [328.083989501312], ruleNamed
+    1 item(s) [False], ruleNumber 1, ruleOnMepMap 1 item(s) [False], ruleProblems 0 item(s),
+    ruleTagCategory 1 item(s) [-2005015], ruleText Structural Framing | | none | 100000, ruleType
+    1 item(s) [Boxed], rulesRead 2 item(s) [1 rule(s) read, of 1 separated by semicolons:
+    Structural Fra..., 1. Structural Framing -> ''M_Structural Framing Tag: Boxed'' (...],
+    sharing Func`2, sizesGuessed 0, skipTagged true, spaceTagsId 1 item(s) [id -2000485],
+    spacesId 1 item(s) [id -2003600], tagKinds 7 item(s) [FloorPlan, CeilingPlan, EngineeringPlan,
+    ...], tagTypesUsed 1 item(s) [Structural Framing: M_Structural Framing Tag: Boxed (the
+    pro...], tagged 0, tooShort 1 item(s) [352867], typeCorrections 0, typeLabel Func`2, verticalSkipped
+    0 item(s), viewsLeft 0 item(s), whyCount 0 entry(ies), whyOrder 0 item(s), working 1 item(s)
+    [Level 1], zoneTagsId 1 item(s) [id -2008115], zoneTargets Func`2, zonesId 1 item(s) [id
+    -2008107]. inputs came views as given (1); rules as given; minGapMm not given - "2", the
+    card''s own default (optional); skipTagged not given - "true", the card''s own default
+    (optional). on night-scratch'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.2.0.0
+    addin_hash: 80819edd3983a0d5
+  fingerprint: 983fe5b267279d09
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

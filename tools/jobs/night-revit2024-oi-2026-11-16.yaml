@@ -1,0 +1,215 @@
+# NEEDS-CHECKING Group OI - the night of 2026-11-16 on Revit 2024, owner asleep.
+# Ten jobs, every one RUN on Revit 2024.3 (build 24.3.60.12), session 8292,
+# add-in 0.2.0.0 file 80819edd3983a0d5 (main f86a5843), each rolled back:
+# nine PASS, convert-to-flex-duct POSITIVE EMPTY. Results: docs/needs-checking/group-oi.md.
+#
+#     python tools/batch-prove.py tools/jobs/night-revit2024-oi-2026-11-16.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/night-revit2024-oi-2026-11-16.yaml --unattended --session <pid>
+#
+# THE MODEL is "night-scratch": a file copy of %TEMP%\heron-work\ny-scratch.rvt
+# (Heron's scratch project from English\DefaultMetric.rte, Revit 2024 format),
+# saved under %TEMP%\heron-work\night-1116. Never a working model. Everything a
+# job needs is made by its set-up step INSIDE the rolled-back run.
+#
+# THE VALUES HERE ARE THE ONES THAT RAN, including two re-arrangements made
+# during the night: report-paths-of-travel and dimension-views-by-rules name
+# their optional texts as "" because a card's `absent: ""` binds nothing (row
+# 5b-1841), and tag-views-by-rules names its beam type with its family, since
+# two loaded families hold a type called UB305x165x40.
+#
+# list-images and reload-images import
+# C:/Users/ajmal/AppData/Local/Temp/heron-work/gp2020/heron-test-image.png -
+# any small PNG will do; change the path on another PC.
+
+model: night-scratch
+jobs:
+- fragment: report-analytical-model
+  in: night-scratch
+  write: true
+  setup:
+  - create-analytical-elements
+  expect: memberCount
+  set:
+    kind: member
+    points: 0,0,0; 6000,0,0
+    level: Level 2
+  negative-set:
+    kind: member
+    points: 0,0,0; 6000,0,0
+    level: Level 9
+- fragment: set-circuit-naming-scheme
+  in: night-scratch
+  write: true
+  expect: changed
+  set:
+    action: make
+    schemeName: Panel-Circuit
+    parts: panel; circuit number
+    separator: '-'
+  negative-set:
+    action: make
+    schemeName: Panel Only
+    parts: panel; colour
+    separator: '-'
+- fragment: list-images
+  in: night-scratch
+  write: true
+  setup:
+  - import-image
+  expect: imageCount
+  set:
+    path: C:/Users/ajmal/AppData/Local/Temp/heron-work/gp2020/heron-test-image.png
+    view: 'FloorPlan: Level 1'
+  negative-set:
+    path: C:/Users/ajmal/AppData/Local/Temp/heron-work/gp2020/zz-no-such-image.png
+    view: 'FloorPlan: Level 1'
+- fragment: reload-images
+  in: night-scratch
+  write: true
+  setup:
+  - import-image
+  expect: reloaded
+  set:
+    path: C:/Users/ajmal/AppData/Local/Temp/heron-work/gp2020/heron-test-image.png
+    view: 'FloorPlan: Level 1'
+    names: heron-test-image.png
+  negative-set:
+    path: C:/Users/ajmal/AppData/Local/Temp/heron-work/gp2020/heron-test-image.png
+    view: 'FloorPlan: Level 1'
+    names: zz no such image
+- fragment: report-paths-of-travel
+  in: night-scratch
+  write: true
+  setup:
+  - create-paths-of-travel
+  expect: pathCount
+  set:
+    view: 'FloorPlan: Level 1'
+    fromPoints: 20000,20000
+    toPoint: 30000,20000
+    rooms: ''
+    toDoor: ''
+    room: ''
+  negative-set:
+    view: 'FloorPlan: Level 1'
+    toPoint: 30000,20000
+    rooms: ''
+    toDoor: ''
+    room: ''
+    fromPoints: ''
+- fragment: create-shaped-stairs
+  in: night-scratch
+  write: true
+  setup: []
+  expect: created
+  set:
+    shape: sketch
+    baseLevel: Level 1
+    topLevel: Level 2
+    startPoint: 20000,0,0
+    leftBoundary: 0,0,0; 0,7000,0
+    rightBoundary: 1500,0,0; 1500,7000,0
+  negative-set:
+    shape: sketch
+    baseLevel: Level 1
+    topLevel: Level 2
+    startPoint: 20000,0,0
+    leftBoundary: 0,0,0; 0,7000,0
+    rightBoundary: 1500,0,0; 1500,7000,0
+    riserLines: 0,0,0; 1500,0,0 | 0,3500,0; 1500,3500,0 | 0,7000,0; 1500,7000,0
+- fragment: tag-areas
+  in: night-scratch
+  write: true
+  setup:
+  - create-area-plan
+  - create-room-separation-lines
+  - place-rooms
+  expect: tagged
+  set:
+    level: Level 1
+    areaSchemeName: Gross Building
+    viewName: Heron Area Plan
+    lineKind: area
+    areaPlanName: Heron Area Plan
+    loopsMm: 0,0; 8000,0; 8000,6000; 0,6000
+    placeKind: area
+    points: 4000,3000,0
+    view: Heron Area Plan
+    tagType: M_Area Tag
+  negative-set:
+    level: Level 1
+    areaSchemeName: Gross Building
+    viewName: Heron Area Plan
+    lineKind: area
+    areaPlanName: Heron Area Plan
+    loopsMm: 0,0; 8000,0; 8000,6000; 0,6000
+    placeKind: area
+    points: 4000,3000,0
+    view: Heron Area Plan
+    tagType: Room Tag
+- fragment: dimension-views-by-rules
+  in: night-scratch
+  write: true
+  setup:
+  - create-mep-runs
+  expect: newDimensions
+  set:
+    systemType: Supply Air
+    ductType: 'Rectangular Duct: Default'
+    level: Level 1
+    runs: '400x200: 0,0,1000; 6000,0,1000 | 400x200: 0,2000,1000; 6000,2000,1000'
+    views: 'FloorPlan: Level 1'
+    rules: Ducts | same-service | nearest | 3000
+    dimensionType: ''
+  negative-set:
+    systemType: Supply Air
+    ductType: 'Rectangular Duct: Default'
+    level: Level 1
+    runs: '400x200: 0,0,1000; 6000,0,1000 | 400x200: 0,2000,1000; 6000,2000,1000'
+    views: 'FloorPlan: Level 1'
+    rules: Ducts | same-service | nearest | 1
+    dimensionType: ''
+- fragment: tag-views-by-rules
+  in: night-scratch
+  write: true
+  setup:
+  - place-line-based-family
+  expect: newTags
+  set:
+    symbol: 'UB-Universal Beams: UB305x165x40'
+    curves: 0,0,1000; 6000,0,1000
+    level: Level 1
+    structuralType: beam
+    views: 'FloorPlan: Level 1'
+    rules: Structural Framing
+  negative-set:
+    symbol: 'UB-Universal Beams: UB305x165x40'
+    curves: 0,0,1000; 6000,0,1000
+    level: Level 1
+    structuralType: beam
+    views: 'FloorPlan: Level 1'
+    rules: Structural Framing | | none | 100000
+- fragment: convert-to-flex-duct
+  in: night-scratch
+  write: true
+  setup:
+  - create-mep-runs
+  - connect-open-ends
+  keep-chain: true
+  expect: flexDucts
+  set:
+    systemType: Supply Air
+    ductType: 'Rectangular Duct: Default'
+    level: Level 1
+    runs: '400x200: 0,10000,2700; 2000,10000,2700; 3000,10000,2700; 5000,10000,2700'
+    maxGapMm: 5
+    sizeToleranceMm: 1
+    flexDuctType: Flex - Rectangular
+  negative-set:
+    systemType: Supply Air
+    ductType: 'Rectangular Duct: Default'
+    level: Level 1
+    runs: '400x200: 0,10000,2700; 2000,10000,2700; 3000,10000,2700; 5000,10000,2700'
+    maxGapMm: 5
+    sizeToleranceMm: 1
+    flexDuctType: Flex

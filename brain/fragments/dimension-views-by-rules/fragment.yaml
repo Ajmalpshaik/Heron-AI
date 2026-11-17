@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -285,6 +285,92 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-16'
+  by: Ajmal PS
+  model: night-scratch (3,203 elements), Revit 2024, session 8292
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    create-mep-runs with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned DefaultReachMm 3000, MmToFeet 0.00328083989501312,
+    ParallelCos 0.9998, Tolerance 0.00328083989501312, because Action`2, brokenLines false,
+    callProblems 0 item(s), categoryNamed Func`2, chainWord one, chosenType DimensionType,
+    columnIds 2 item(s) [-2000100, -2001330], dimensionTypeUsed ''Diagonal - 2.5mm Arial''
+    (the project''s default linear dimension type), dimensioned 1, edgePoints Func`3, findings
+    2 item(s) [1 run(s) dimensioned with 1 dimension(s) of type ''Diagonal -..., Not read
+    in this version: grids, walls, columns and runs ins...], firstRefusal (null), flexIds
+    2 item(s) [-2008020, -2008050], folded Func`2, fromActive false, given 1 item(s) [Level
+    1], hiddenIn 0 item(s), kindCache 1 entry(ies), kindOf Func`2, linearTypes 12 item(s)
+    [Diagonal - 2.5mm Arial, Linear Dimension Style, Linear Dimension Style, ...], linkedDimensions
+    HashSet`1, loadedWords loaded: ''Diagonal - 2.5mm Arial'', ''Linear Dimension Style'',
+    ''Linear Dimension Style'', ''Diagonal - Centre - 2.5mm Arial'', ''Linear Dimension Style''
+    and 7 more, minRunMm 0, namedByRule Func`4, newDimensions 1 item(s) [352857], offCropPairs
+    0, offsetMm 10, offsetsShortened 0, oneSideOnly 0, perView 1 item(s) ["Level 1": 1 run(s)
+    dimensioned with 1 dimension(s); left: 1...], planKinds 4 item(s) [FloorPlan, CeilingPlan,
+    EngineeringPlan, ...], readMm Func`2, refused , removedOnRegenerate 0, ruleBoth 1 item(s)
+    [False], ruleCategory 1 item(s) [Autodesk.Revit.DB.Category], ruleNumber 1, ruleProblems
+    0 item(s), ruleReachFeet 1 item(s) [9.84251968503937], ruleTargets 1 item(s) [System.Collections.Generic.HashSet`1[System.String]],
+    ruleText Ducts | same-service | nearest | 3000, rulesRead 2 item(s) [1 rule(s) read, of
+    1 separated by semicolons: Ducts., 1. Ducts dimensioned to other ducts (same service);
+    nearest ...], runCategoryIds 4 item(s) [-2008000, -2008044, -2008130, ...], runCategoryOf
+    1 entry(ies), separate false, sharing Func`2, sidesApart 0, skipDimensioned true, skipVertical
+    true, skipped 1 item(s) [352853], skippedWhy 1 item(s) [1 x Ducts: already dimensioned
+    in this view to a same-servic...], typeCorrections 0, typeText , viewWhy (null), viewWhyOrder
+    1 item(s) [Ducts: already dimensioned in this view to a same-service ru...], viewsLeft
+    0 item(s), whyCount 1 entry(ies), whyOrder 1 item(s) [Ducts: already dimensioned in this
+    view to a same-service ru...], working 1 item(s) [Level 1]. inputs came views as given
+    (1); rules as given; dimensionType as given; offsetMm not given - "10", the card''s own
+    default (optional); minRunMm not given - "0", the card''s own default (optional); skipVertical
+    not given - "true", the card''s own default (optional); skipDimensioned not given - "true",
+    the card''s own default (optional); chain not given - "one", the card''s own default (optional).
+    on night-scratch'
+  negative_case: 'run with dimensionType=, ductType=Rectangular Duct: Default, level=Level
+    1, rules=Ducts | same-service | nearest | 1, runs=400x200: 0,0,1000; 6000,0,1000 | 400x200:
+    0,2000,1000; 6000,2000,1000, systemType=Supply Air, views=FloorPlan: Level 1 instead -
+    chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running create-mep-runs with this phase''s own values - run inside a
+    transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    DefaultReachMm 3000, MmToFeet 0.00328083989501312, ParallelCos 0.9998, Tolerance 0.00328083989501312,
+    because Action`2, brokenLines false, callProblems 0 item(s), categoryNamed Func`2, chainWord
+    one, chosenType DimensionType, columnIds 2 item(s) [-2000100, -2001330], dimensionTypeUsed
+    ''Diagonal - 2.5mm Arial'' (the project''s default linear dimension type), dimensioned
+    0, edgePoints Func`3, findings 2 item(s) [0 run(s) dimensioned with 0 dimension(s) of
+    type ''Diagonal -..., Not read in this version: grids, walls, columns and runs ins...],
+    firstRefusal (null), flexIds 2 item(s) [-2008020, -2008050], folded Func`2, fromActive
+    false, given 1 item(s) [Level 1], hiddenIn 0 item(s), kindCache 0 entry(ies), kindOf Func`2,
+    linearTypes 12 item(s) [Diagonal - 2.5mm Arial, Linear Dimension Style, Linear Dimension
+    Style, ...], linkedDimensions HashSet`1, loadedWords loaded: ''Diagonal - 2.5mm Arial'',
+    ''Linear Dimension Style'', ''Linear Dimension Style'', ''Diagonal - Centre - 2.5mm Arial'',
+    ''Linear Dimension Style'' and 7 more, minRunMm 0, namedByRule Func`4, newDimensions 0
+    item(s), offCropPairs 0, offsetMm 10, offsetsShortened 0, oneSideOnly 0, perView 1 item(s)
+    ["Level 1": 0 run(s) dimensioned with 0 dimension(s); left: 2...], planKinds 4 item(s)
+    [FloorPlan, CeilingPlan, EngineeringPlan, ...], readMm Func`2, refused , removedOnRegenerate
+    0, ruleBoth 1 item(s) [False], ruleCategory 1 item(s) [Autodesk.Revit.DB.Category], ruleNumber
+    1, ruleProblems 0 item(s), ruleReachFeet 1 item(s) [0.00328083989501312], ruleTargets
+    1 item(s) [System.Collections.Generic.HashSet`1[System.String]], ruleText Ducts | same-service
+    | nearest | 1, rulesRead 2 item(s) [1 rule(s) read, of 1 separated by semicolons: Ducts.,
+    1. Ducts dimensioned to other ducts (same service); nearest ...], runCategoryIds 4 item(s)
+    [-2008000, -2008044, -2008130, ...], runCategoryOf 0 entry(ies), separate false, sharing
+    Func`2, sidesApart 0, skipDimensioned true, skipVertical true, skipped 2 item(s) [352858,
+    352860], skippedWhy 1 item(s) [2 x Ducts: no same-service run within 1 mm across it on
+    eith...], typeCorrections 0, typeText , viewWhy (null), viewWhyOrder 1 item(s) [Ducts:
+    no same-service run within 1 mm across it on either s...], viewsLeft 0 item(s), whyCount
+    1 entry(ies), whyOrder 1 item(s) [Ducts: no same-service run within 1 mm across it on
+    either s...], working 1 item(s) [Level 1]. inputs came views as given (1); rules as given;
+    dimensionType as given; offsetMm not given - "10", the card''s own default (optional);
+    minRunMm not given - "0", the card''s own default (optional); skipVertical not given -
+    "true", the card''s own default (optional); skipDimensioned not given - "true", the card''s
+    own default (optional); chain not given - "one", the card''s own default (optional). on
+    night-scratch'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.2.0.0
+    addin_hash: 80819edd3983a0d5
+  fingerprint: 50996901a51b4083
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
