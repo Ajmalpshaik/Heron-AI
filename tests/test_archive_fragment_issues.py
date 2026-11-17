@@ -22,6 +22,9 @@ WHAT IS PROVED
   1. a finished row moves: its line stays with the same number, three cells,
      the opening of its state and a link; its full text lands in the file for
      its band of row numbers, word for word, with its links re-pointed;
+  1b. a row MOVED TO a GitHub issue moves too, though it is still owed: the
+     issue holds what is owed, its line keeps the issue's link, and
+     open-defects.py counts it as moved;
   2. what must not move does not, byte for byte - an open row, a PARTLY FIXED
      row, a hedged row, a row that says REOPENED, a PROVED row, a malformed
      row, a row closed in place with NOT FIXED written at the END of its
@@ -77,6 +80,8 @@ def check(ok, said):
         FAILURES.append(said)
 
 
+ISSUE = "https://github.com/Ajmalpshaik/Heron-AI/issues/938"
+
 ROWS_5 = [
     # finished, carrying every kind of link and an escaped pipe in code
     "| **1** | **A FINISHED DEFECT WITH LINKS.** See [the file](../platform/x.cs), "
@@ -109,9 +114,13 @@ ROWS_5 = [
 ROWS_5B = [
     "| **1** | **A READING DEFECT.** In [x.py](../brain/x.py). | FIXED 2026-09-22. Repaired and tested. |",
     "| **2** | **OPEN READING.** Recorded. | OPEN - recorded, not repaired |",
+    # still owed, but tracked on GitHub since 2026-11-16: it moves, and its
+    # line keeps the issue's link (docs/fragment-issues/ISSUES.md)
+    "| **3** | **TRACKED ON GITHUB.** Still owed. | **MOVED TO ISSUE [#938](" + ISSUE + ") 2026-11-16** - "
+    "still open, tracked there; this row is kept whole. Was: **OPEN - recorded, not repaired.** |",
 ]
 
-MOVED = 4        # rows 1, 10, 30 and 5b-1
+MOVED = 5        # rows 1, 10, 30, 5b-1 and 5b-3
 
 
 def register_text():
@@ -221,6 +230,15 @@ def main():
         five_b = row_line(after, OD.SECTION_5B, 1) or ""
         check("reading-defects-5b-001-025.md#row-5b-1" in five_b,
               "row 5b-1 goes to section 5b's own file")
+        tracked = row_line(after, OD.SECTION_5B, 3) or ""
+        check("reading-defects-5b-001-025.md#row-5b-3" in tracked,
+              "row 5b-3, moved to a GitHub issue, moves too - the issue holds what is owed")
+        check(OD.CELL.split(tracked)[3].strip().startswith("**MOVED TO ISSUE [#938](" + ISSUE + ") 2026-11-16**")
+              if len(OD.CELL.split(tracked)) == 5 else False,
+              "and its line keeps the issue's link and date")
+        check(bool(getattr(OD, "MOVED", None)) and OD.MOVED.match(TOOL.state_text(OD.CELL.split(tracked)[3]))
+              if len(OD.CELL.split(tracked)) == 5 else False,
+              "so open-defects.py still counts it as moved to an issue")
 
         band = os.path.join(archive, "proving-defects-001-025.md")
         body = raw(band).decode("utf-8") if os.path.exists(band) else ""
@@ -233,6 +251,9 @@ def main():
         check("(../../tests/t.py)" in body, "links in the state are re-pointed too")
         check("**Defect.** **A FINISHED DEFECT WITH LINKS.** See [the file]" in body,
               "the defect's own words arrive unchanged")
+        band_5b = raw(os.path.join(archive, "reading-defects-5b-001-025.md")).decode("utf-8")
+        check("### Row 5b-3" in band_5b.split(NL) and "Was: **OPEN - recorded, not repaired.**" in band_5b,
+              "row 5b-3's whole state is in the archive, what it was included")
         readme_path = os.path.join(archive, "README.md")
         readme = raw(readme_path).decode("utf-8") if os.path.exists(readme_path) else ""
         check(all(name in readme for name in ("proving-defects-001-025.md",
