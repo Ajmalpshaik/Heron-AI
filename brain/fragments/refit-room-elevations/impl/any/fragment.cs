@@ -21,6 +21,16 @@
 //
 // READ BACK: each view's crop is read again after a regeneration and compared
 // with what was asked.
+//
+// THE MARKER IS FOUND THROUGH A FLOOR PLAN (rows 5b-1843 and 5b-1846). An
+// elevation marker has no box of its own: get_BoundingBox(null) was null for
+// every marker measured, five of them on Revit 2024, so version 1 skipped them
+// all. Its box in a floor plan that shows it is not null, and that box's middle
+// stands in the room. So the marker is read in the floor plans - one plan per
+// level is enough - and the room is asked for at the box's middle, a foot above
+// the box's foot. A marker that shows in the plans of more than one level can
+// stand over a different room on each; it is then refitted only when
+// roomNumbers names one of them, and otherwise named and left as it is.
 
 const double MmPerFoot = 304.8;
 var refitted = 0;
@@ -33,18 +43,62 @@ foreach (var part in (roomNumbers ?? "").Split(','))
     if (part.Trim() != "") wanted.Add(part.Trim());
 var margin = Math.Max(0, marginMm) / MmPerFoot;
 
+var floorPlans = new List<View>();
+foreach (var element in new FilteredElementCollector(doc).OfClass(typeof(ViewPlan)))
+{
+    var plan = element as View;
+    if (plan != null && !plan.IsTemplate && plan.ViewType == ViewType.FloorPlan) floorPlans.Add(plan);
+}
+
 foreach (var element in new FilteredElementCollector(doc).OfClass(typeof(ElevationMarker)))
 {
     var marker = element as ElevationMarker;
     if (marker == null || marker.CurrentViewCount == 0) continue;
-    var box = marker.get_BoundingBox(null);
-    if (box == null) continue;
-    var middle = (box.Min + box.Max) / 2.0;
 
-    Room room = null;
-    try { room = doc.GetRoomAtPoint(new XYZ(middle.X, middle.Y, box.Min.Z + 1.0)); } catch { }
-    if (room == null || room.Area <= 0) continue;
-    if (wanted.Count > 0 && !wanted.Contains(room.Number)) continue;
+    var boxes = new List<BoundingBoxXYZ>();
+    var ownBox = marker.get_BoundingBox(null);
+    if (ownBox != null) boxes.Add(ownBox);
+    else
+    {
+        var levelsRead = new HashSet<ElementId>();
+        foreach (var plan in floorPlans)
+        {
+            var level = plan.GenLevel;
+            if (level != null && levelsRead.Contains(level.Id)) continue;
+            BoundingBoxXYZ inPlan = null;
+            try { inPlan = marker.get_BoundingBox(plan); } catch { }
+            if (inPlan == null) continue;
+            boxes.Add(inPlan);
+            if (level != null) levelsRead.Add(level.Id);
+        }
+    }
+
+    var standsIn = new List<Room>();
+    foreach (var box in boxes)
+    {
+        var middle = (box.Min + box.Max) / 2.0;
+        Room found = null;
+        try { found = doc.GetRoomAtPoint(new XYZ(middle.X, middle.Y, box.Min.Z + 1.0)); } catch { }
+        if (found == null || found.Area <= 0) continue;
+        if (!standsIn.Any(r => r.Id == found.Id)) standsIn.Add(found);
+    }
+    if (wanted.Count > 0) standsIn = standsIn.Where(r => wanted.Contains(r.Number)).ToList();
+    if (standsIn.Count == 0) continue;
+    if (standsIn.Count > 1)
+    {
+        var markerName = "the marker " + marker.Id;
+        for (var i = 0; i < marker.MaximumViewCount; i++)
+        {
+            var carriedId = marker.GetViewId(i);
+            if (carriedId == null || carriedId == ElementId.InvalidElementId) continue;
+            var carried = doc.GetElement(carriedId) as View;
+            if (carried != null) { markerName = "the marker of \"" + carried.Name + "\""; break; }
+        }
+        lines.Add("rooms " + string.Join(", ", standsIn.Select(r => r.Number)) + ": " + markerName
+            + " stands over each of them, in the plans of different levels - not refitted; name the one room to refit it");
+        continue;
+    }
+    var room = standsIn[0];
 
     var extent = room.get_BoundingBox(null);
     if (extent == null) continue;
