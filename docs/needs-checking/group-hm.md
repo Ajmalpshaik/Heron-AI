@@ -10,7 +10,7 @@
 
 **Tracked as GitHub issue [#993](https://github.com/Ajmalpshaik/Heron-AI/issues/993) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
-From [row 5b-1216](../fragment-issues/section-5b-rows-401-425.md). On 2026-10-19 an oval twisting tower
+From [row 5b-1216](../fragment-issues/section-5b-rows-1201-1225.md). On 2026-10-19 an oval twisting tower
 built for the owner in Revit 2020 had to take a 20-sided polygon for its glass, because no Heron tool drew
 an arc wall or an arc slab edge.
 

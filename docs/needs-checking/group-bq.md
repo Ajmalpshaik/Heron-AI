@@ -41,4 +41,4 @@ and both are `DRAFT`. The proof plan is
 
 Each by `validate --write`, both legs rolled back, then signed by Ajmal PS and set PROVEN by him. This group's other rows were NOT RUN that day.
 
-- `array-family-forms` - positive Family3, the airflow arrow `count=3 step=X 20`: 2 copies and the array; negative `step=Y 20`: refused, the row would leave the arrow's plane. Its `labelled` flag is accounting now (row [5b-1107](../fragment-issues/section-5b-rows-401-425.md)).
+- `array-family-forms` - positive Family3, the airflow arrow `count=3 step=X 20`: 2 copies and the array; negative `step=Y 20`: refused, the row would leave the arrow's plane. Its `labelled` flag is accounting now (row [5b-1107](../fragment-issues/section-5b-rows-1101-1125.md)).

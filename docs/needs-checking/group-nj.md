@@ -13,18 +13,18 @@ The round trip a modeller runs every week - parameters out to a spreadsheet, edi
 cards: `EXPORT_PARAMETERS_TO_CSV` writes the file, and `SET_PARAMETER_VALUES_BY_ID` reads it back through
 its `csvPath` since version 7. Both were PROVEN when this was written (read again 2026-11-12: the second is
 at version 8 since 2026-11-11 and DRAFT until [Group NG](group-ng.md) proves it - run NG first). **The file route of the second has no run in a real Revit
-on record** - its proof ran rows by key ([row 5b-1527](../fragment-issues/section-5b-rows-401-425.md)) -
+on record** - its proof ran rows by key ([row 5b-1527](../fragment-issues/section-5b-rows-1526-1550.md)) -
 and the method written for the round trip on 2026-11-11,
 [`parameters-csv-round-trip`](../../brain/skills/parameters-csv-round-trip.yaml), was written in a cloud
 container from the two cards' text and C#. **None of the rows below has run.**
 
 | Row | What it says | Read from | What only Revit can show |
 |---|---|---|---|
-| [5b-1527](../fragment-issues/section-5b-rows-401-425.md) | The file route is PROVEN by a proof that never used it | the card's proof and the job that made it | that a file is read, matched and written as the card says - NJ1, NJ2, NJ8 |
-| [5b-1526](../fragment-issues/section-5b-rows-401-425.md) | A file the export wrote can be refused whole when it comes straight back: a type parameter, a read-only one, a parameter some elements do not carry | both cards' C# | each refusal, in its own words - NJ3, NJ4, NJ5 |
-| [5b-1525](../fragment-issues/section-5b-rows-401-425.md) | Every cell that is not blank is written with nothing compared first: a value changed in Revit since the export is overwritten, and a number comes back as displayed | the return's C# | whether it happens, and by how much - NJ6 |
-| [5b-1528](../fragment-issues/section-5b-rows-401-425.md) | The file's encoding is nobody's: a name with an accent saved by Excel as plain CSV could be written wrong with no refusal | both cards' C# and .NET's documented behaviour | what Excel and Revit really do with it - NJ7 |
-| [5b-1551](../fragment-issues/section-5b-rows-401-425.md) | The export calls a column that is blank on every element a parameter name that does not exist | the export's C# | the sentence, on a real blank column - NJ11 |
+| [5b-1527](../fragment-issues/section-5b-rows-1526-1550.md) | The file route is PROVEN by a proof that never used it | the card's proof and the job that made it | that a file is read, matched and written as the card says - NJ1, NJ2, NJ8 |
+| [5b-1526](../fragment-issues/section-5b-rows-1526-1550.md) | A file the export wrote can be refused whole when it comes straight back: a type parameter, a read-only one, a parameter some elements do not carry | both cards' C# | each refusal, in its own words - NJ3, NJ4, NJ5 |
+| [5b-1525](../fragment-issues/section-5b-rows-1501-1525.md) | Every cell that is not blank is written with nothing compared first: a value changed in Revit since the export is overwritten, and a number comes back as displayed | the return's C# | whether it happens, and by how much - NJ6 |
+| [5b-1528](../fragment-issues/section-5b-rows-1526-1550.md) | The file's encoding is nobody's: a name with an accent saved by Excel as plain CSV could be written wrong with no refusal | both cards' C# and .NET's documented behaviour | what Excel and Revit really do with it - NJ7 |
+| [5b-1551](../fragment-issues/section-5b-rows-1551-1575.md) | The export calls a column that is blank on every element a parameter name that does not exist | the export's C# | the sentence, on a real blank column - NJ11 |
 
 **The PC, Revit 2024 first - the release the card's proof ran on - and Revit 2020 after it where there is
 time. A SAVED scratch copy of a sample model with walls and doors in it - never the owner's own file.** The

@@ -43,10 +43,10 @@ reach `CUT_GEOMETRY` without the flag (before: `COPE_FRAMING`, `COMBINE_FAMILY_F
 `REPORT_DIVIDED_SURFACES`). `tools/check-routing.py` on scratch stores: no question answered by a write before or
 after; claimed and not reached 68 before, 69 with the new cards - *"draw a curved wall through these points"*
 moved off `CREATE_WALL` - and 68 after `CREATE_WALL` declared it, the same lines as before
-([row 5b-1416](../fragment-issues/section-5b-rows-401-425.md)). With the question flag only, six write
+([row 5b-1416](../fragment-issues/section-5b-rows-1401-1425.md)). With the question flag only, six write
 sentences moved between reads to the new read - recorded there, not tuned. *"Which one is cutting"*, a row of
 `JOIN_GEOMETRY`'s table, reached no card it names before or after
-([row 5b-1417](../fragment-issues/section-5b-rows-401-425.md), OPEN).
+([row 5b-1417](../fragment-issues/section-5b-rows-1401-1425.md), OPEN).
 
 **The model** - a scratch project from Revit's default structural template, saved under `%TEMP%\heron-work`,
 never a working model. Every write here is ROLLED BACK unless the modeller keeps it. The job file is

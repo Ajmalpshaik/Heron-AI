@@ -17,11 +17,11 @@ agent again on a real model and signs it. That is this group.
 
 | Row | What changed | Held without Revit by | What that cannot see |
 |---|---|---|---|
-| [5b-1552](../fragment-issues/section-5b-rows-401-425.md) | A new draft is fingerprinted on the file its operation is in; `check` reads a record against the file it was signed for and names, on a `ONE FILE` line, every other file claiming the agent | [`tests/test_prove_agent.py`](../../tests/test_prove_agent.py) section 12, on a scratch tree | a real `track` or `vary` against Revit, and the real add-in files |
-| [5b-1544](../fragment-issues/section-5b-rows-401-425.md) | `python brain/heron_pullrequest.py` and `python brain/heron_scaffold.py` run to the end instead of raising | [`tests/test_pullrequest.py`](../../tests/test_pullrequest.py), [`tests/test_scaffold.py`](../../tests/test_scaffold.py) | Windows - the cp1252 half of the sweep was a stand-in for it |
+| [5b-1552](../fragment-issues/section-5b-rows-1551-1575.md) | A new draft is fingerprinted on the file its operation is in; `check` reads a record against the file it was signed for and names, on a `ONE FILE` line, every other file claiming the agent | [`tests/test_prove_agent.py`](../../tests/test_prove_agent.py) section 12, on a scratch tree | a real `track` or `vary` against Revit, and the real add-in files |
+| [5b-1544](../fragment-issues/section-5b-rows-1526-1550.md) | `python brain/heron_pullrequest.py` and `python brain/heron_scaffold.py` run to the end instead of raising | [`tests/test_pullrequest.py`](../../tests/test_pullrequest.py), [`tests/test_scaffold.py`](../../tests/test_scaffold.py) | Windows - the cp1252 half of the sweep was a stand-in for it |
 
 **The PC, Revit 2020** - the release the fifteen records were signed on, on 2026-10-25. A record names
-its models and sessions and **no release** ([row 5b-1546](../fragment-issues/section-5b-rows-401-425.md)),
+its models and sessions and **no release** ([row 5b-1546](../fragment-issues/section-5b-rows-1526-1550.md)),
 so say the release in the pull request that carries the new records. **SAVED scratch copies of sample
 models, never the owner's own file.** Both agents only read or select; nothing in this group keeps a
 change. Rough work - a redirected output, a copy of a model - goes in `%TEMP%\heron-work\nm`, never

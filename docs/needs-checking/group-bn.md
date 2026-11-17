@@ -14,7 +14,7 @@
 **The owner's PC, in a chat with Heron connected, Revit 2024 first, then 2020.** The third of the three
 changes the owner asked for on 2026-10-01 - *"maybe I will give only an image"*. No new tool: the
 [`family-creation`](../../brain/skills/family-creation.yaml) skill now lists every form tool from
-[Group BL](../needs-checking/group-bl.md) and every tool from [Group BM](../needs-checking/group-bm.md), in the
+[Group BL](group-bl.md) and every tool from [Group BM](group-bm.md), in the
 order a family has to be built, and opens with a step zero - **read the thing first**: what it is, its
 category, the forms it is made of, every size, which sizes vary - said back as one list, with every size
 ASKED for, because a picture gives shape and proportion and never size (D-33).

@@ -394,7 +394,7 @@ preference*. So what every shape needs was built, and nothing that moves DATA:
    those through the overlay, as the add-in's files are read today. That is row 5b-417's cause removed for
    every install from now on; a copy that already holds packages Claude installed is unchanged.
 2. **Both installers refuse to run from inside the app's copy** and name that route
-   ([row 5b-495](../fragment-issues/section-5b-rows-401-425.md)) - an add-in installed from there would
+   ([row 5b-495](../fragment-issues/section-5b-rows-476-500.md)) - an add-in installed from there would
    land where Revit never looks.
 
 That is the one supported route for INSTALLING: from outside Claude, by the installer. DRAFT, not run on
@@ -409,9 +409,9 @@ decision to make it.
 not checked. **One name in both places:** the copy's file wins - every file under `mcp`, `cryptography`,
 `pydantic` and `pydantic_core` present in both read byte for byte as the copy's - while files only the real
 folder has show through, and the version Python reports is the real folder's
-([row 5b-1065](../fragment-issues/section-5b-rows-401-425.md)). **A write from inside into a folder that
+([row 5b-1065](../fragment-issues/section-5b-rows-1051-1075.md)). **A write from inside into a folder that
 already exists on the real disk lands on the real disk**, not in the copy
-([row 5b-1066](../fragment-issues/section-5b-rows-401-425.md)) - so "every write under AppData is sent to
+([row 5b-1066](../fragment-issues/section-5b-rows-1051-1075.md)) - so "every write under AppData is sent to
 the copy", as written above, holds only where the folder did not exist outside. The installer, run outside
 the app, also built a second knowledge store in the real `%APPDATA%\Heron\knowledge` at 22:11; the chats
 still read the copy's.
@@ -432,14 +432,14 @@ real disk from the owner's Terminal panel, then written from inside. **Where a f
 everything new goes to the copy** - a new file, a new folder, an edit to a file both hold, and a
 write-then-rename, even over a file only the real disk held, which leaves a new copy hiding the real one;
 only an append to a file the real disk alone holds reached it. Where the folder exists only on the real disk,
-new files and new folders reach it ([row 5b-1066](../fragment-issues/section-5b-rows-401-425.md)). The profile
+new files and new folders reach it ([row 5b-1066](../fragment-issues/section-5b-rows-1051-1075.md)). The profile
 and the temporary folder were written from inside and seen real from outside. So Heron's Python side now keeps
 its knowledge store, every project's memory and the brain's audit in `%USERPROFILE%\.heron` on Windows
 (`HERON_DATA` overrides), carrying what the copy and `%APPDATA%\Heron` hold into it the first time - copied,
 never moved - and the Companion's notes are in `%TEMP%\Heron\companion` on both sides. The add-in's settings and
 trail stay in `%APPDATA%\Heron`, where Revit writes the real disk. **Still open elsewhere:** which
 `heron.config` to believe is Q-70, below;
-which package versions such a PC should end with is [row 5b-1065](../fragment-issues/section-5b-rows-401-425.md).
+which package versions such a PC should end with is [row 5b-1065](../fragment-issues/section-5b-rows-1051-1075.md).
 Nothing in the copy was removed - that is the owner's to decide.
 
 ---
@@ -612,7 +612,7 @@ Windows and holds all of it.
 
 **What happened.** Twice in two days a whole build was lost because the model had never been saved and
 Revit was closed - a house with 9 sheets and a 32-floor tower, on 2026-10-13 and 2026-10-14
-([row 5b-513](../fragment-issues/section-5b-rows-401-425.md)). Heron could not have saved either.
+([row 5b-513](../fragment-issues/section-5b-rows-501-525.md)). Heron could not have saved either.
 `SAVE_DOCUMENT` version 2 (FRG-DOC-033, PROVEN, PUBLISH) saves only ANOTHER open document that already has
 a file, and refuses the one Heron works in by name ([row 5b-365](../fragment-issues/section-5b-rows-351-375.md)).
 
@@ -666,7 +666,7 @@ that point (line 1009), so a save there could only ever follow a Keep.
    model you did not point it at ... Nothing has been sent to Revit"* (`heron_mcp_server.py` line 1878, in the words of `check` in `heron_write.py`)
    about a model it has just saved. (Since 2026-11-11 that reply says what the add-in reported doing
    in place of *"Nothing has been sent to Revit"* -
-   [row 5b-1135](../fragment-issues/section-5b-rows-401-425.md); the refusal itself is unchanged.)
+   [row 5b-1135](../fragment-issues/section-5b-rows-1126-1150.md); the refusal itself is unchanged.)
    The next call is then aimed at the old title (line 1296) and refused
    until the modeller says *use this model*. Letting the pin follow a rename is a change to that guard.
 
@@ -705,7 +705,7 @@ the model it works in, and the methods ask the modeller to save first.
 ### 🟡 Q-70 — On a PC whose Claude app keeps its own copy of `%APPDATA%\Heron`, which `heron.config` should Heron believe, and should it say when the two differ? *(found 2026-10-17)*
 
 **What was seen**, on the owner's laptop on 2026-10-17, timing the fragment warm-up for
-[Group DA](../needs-checking/group-da.md) ([row 5b-1004](../fragment-issues/section-5b-rows-401-425.md)).
+[Group DA](../needs-checking/group-da.md) ([row 5b-1004](../fragment-issues/section-5b-rows-1001-1025.md)).
 The Claude desktop app there is a packaged Windows app, and it keeps a private copy of `%APPDATA%\Heron` -
 `config\heron.config` included - under its own `LocalCache` folder - the same copy Q-63,
 above, asks about for packages and data. So there are **two settings files on one PC**:
@@ -800,7 +800,7 @@ change from its own file, and `revit_health` still reports the server's.
 
 **What happened.** On 2026-10-18, running [Group EZ](../needs-checking/group-ez.md) EZ3's negative on the
 owner's laptop, `python mcp/client/heron_bridge_client.py stop` was sent with a stranger's
-`HERON_CLIENT_ID` while two Revits were connected ([row 5b-1094](../fragment-issues/section-5b-rows-401-425.md)).
+`HERON_CLIENT_ID` while two Revits were connected ([row 5b-1094](../fragment-issues/section-5b-rows-1076-1100.md)).
 Revit 2024, whose lease the run held, refused it - *"in use by another chat"* - as [D-129](../decisions/D-129.md)
 says it should. Revit 2020, another chat's and idle, took it: *"Heron is stopped. Nothing was running."*
 Heron there refused every change until that Revit was restarted ([D-130](../decisions/D-130.md)).
@@ -1349,7 +1349,7 @@ two voids Heron made through the template's floor cut nothing - not the sample f
 project the family was loaded into, with *Cut with Voids When Loaded* off and then on. Revit's *Modify >
 Geometry > Cut* in the Family Editor, the sample floor first and then each void, and a reload, cut every host
 floor; finding that by hand cost him an hour. Read that day off all eight releases' own XML remarks
-([row 5b-1324](../fragment-issues/section-5b-rows-401-425.md), [docs/43 §7](../43-building-revit-families.md)):
+([row 5b-1324](../fragment-issues/section-5b-rows-1301-1325.md), [docs/43 §7](../43-building-revit-families.md)):
 no public call makes that cut in an ordinary hosted family - `SolidSolidCutUtils` refuses the document and the
 floor in its own exception text, `Document.CombineElements` takes forms only, `JoinGeometryUtils` is not for
 family documents and joins rather than cuts, `InstanceVoidCutUtils` wants a loaded family in a project, and
@@ -1394,7 +1394,7 @@ to cut a floor's or a roof's void by hand. Nothing in shapes 2 or 3 is built.
 **What was found.** The owner wants to work by chat with very few clicks in Revit, and nothing in Heron let the
 modeller click to answer the chat. `PICK_ON_SCREEN` was written for it, at DRAFT: Revit's own pick, one point
 for each call, handed back in millimetres. Reading the add-in before writing it
-([row 5b-1507](../fragment-issues/section-5b-rows-401-425.md) has each one with its evidence), nothing there
+([row 5b-1507](../fragment-issues/section-5b-rows-1501-1525.md) has each one with its evidence), nothing there
 knows that a card can be waiting for a person:
 
 - **The dispatcher gives a started job `revit.operationTimeoutSeconds`** - 60 by default - then tells the chat
@@ -1464,14 +1464,14 @@ both cards' C# for it found that the return is safe in one way and blunt in thre
 file inside Revit before writing anything, and one bad row means nothing is written. Blunt:
 
 - **It reads a CSV only.** An `.xlsx` must be saved as CSV first, and as *CSV UTF-8*, or a name with an accent
-  or in Arabic may be written wrong ([row 5b-1528](../fragment-issues/section-5b-rows-401-425.md)).
+  or in Arabic may be written wrong ([row 5b-1528](../fragment-issues/section-5b-rows-1526-1550.md)).
 - **It writes every cell that is not blank, and shows nothing first.** A value somebody changed in Revit after
   the export is put back to the file's old one with no notice, and a length the project shows rounded is
-  written back rounded in a cell nobody edited ([row 5b-1525](../fragment-issues/section-5b-rows-401-425.md)).
+  written back rounded in a cell nobody edited ([row 5b-1525](../fragment-issues/section-5b-rows-1501-1525.md)).
   The only preview is Revit's Keep or Discard box.
 - **A file the export just wrote can be refused whole** - for a type parameter, a read-only one, or a
   parameter some of the elements have not got
-  ([row 5b-1526](../fragment-issues/section-5b-rows-401-425.md)). And the export writes no UniqueId column, so
+  ([row 5b-1526](../fragment-issues/section-5b-rows-1526-1550.md)). And the export writes no UniqueId column, so
   a file from another model whose ids happen to be in use here is not caught.
 
 Today the method covers this by telling the modeller three things to do by hand: delete every column and row

@@ -9,7 +9,7 @@
 ## Group JA - a duct port on a flange ring, sized by its opening: `ADD_FAMILY_CONNECTOR` version 5 (2026-10-24)
 
 [`add-family-connector`](../../brain/fragments/add-family-connector/fragment.yaml) version 5, written for the
-owner's volume control damper ([row 5b-1334](../fragment-issues/section-5b-rows-401-425.md)): its ends are a
+owner's volume control damper ([row 5b-1334](../fragment-issues/section-5b-rows-1326-1350.md)): its ends are a
 nested casing frame, so no face of the damper's own lies there, a connector cannot go on a reference plane
 through the API, and one on the nested frame's face sat off-centre and did not follow *Length*. A 3 mm ring
 sketched on each end plane is the face; version 5 measures a face whose inner loop holds the connector's

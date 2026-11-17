@@ -10,7 +10,7 @@
 
 **Tracked as GitHub issue [#986](https://github.com/Ajmalpshaik/Heron-AI/issues/986) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
-From [row 5b-1292](../fragment-issues/section-5b-rows-401-425.md). On 2026-10-21, Revit 2020, real project
+From [row 5b-1292](../fragment-issues/section-5b-rows-1276-1300.md). On 2026-10-21, Revit 2020, real project
 4355-BHVD-3D-21S10-BL001A, schedule *'DUCT HEATER SCHEDULE (ROOF FLOOR)'*: Ajmal PS wanted its combined
 **Size** column rebuilt from the shared parameters `Duct_Accessory_Width` and `Duct_Accessory_Height`.
 Heron could only add a new combined column at the end, and that column read **"20001300x"** - the `x` after

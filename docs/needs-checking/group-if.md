@@ -10,8 +10,8 @@
 
 **Tracked as GitHub issue [#990](https://github.com/Ajmalpshaik/Heron-AI/issues/990) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
-From [row 5b-1287](../fragment-issues/section-5b-rows-401-425.md). On the night of 2026-10-20, with the framing
-camera's version 2 signed ([Group IB](group-ib.md), [row 5b-1281](../fragment-issues/section-5b-rows-401-425.md)),
+From [row 5b-1287](../fragment-issues/section-5b-rows-1276-1300.md). On the night of 2026-10-20, with the framing
+camera's version 2 signed ([Group IB](group-ib.md), [row 5b-1281](../fragment-issues/section-5b-rows-1276-1300.md)),
 the owner asked for more than a camera that fits: *"I need this building left side like in a cinematic camera
 look ... different styles, camera angles, camera height ... all kind of camera settings"*. Built the same night:
 
@@ -77,7 +77,7 @@ python mcp/client/heron_bridge_client.py validate export-view-image --allow-publ
 Each row's numbers come from `frame-elements-in-camera` run alone the same way (`validate
 frame-elements-in-camera --write`, rolled back) with the same values. **LOOK AT EVERY PICTURE** against the
 row's "Look for" before the row is called a pass - version 1 was signed on numbers and drew a dot
-([row 5b-1281](../fragment-issues/section-5b-rows-401-425.md)).
+([row 5b-1281](../fragment-issues/section-5b-rows-1276-1300.md)).
 
 | # | Run | Look for |
 |---|---|---|
@@ -115,7 +115,7 @@ in either model changed and no selection shows in the pictures. The pictures are
 `%TEMP%\heron-work\cinematic-id\pictures`, every one looked at.
 
 **The first picture failed, and the card was corrected before these rows were run again -
-[row 5b-1301](../fragment-issues/section-5b-rows-401-425.md).** IF2's building came out a third as wide as it
+[row 5b-1301](../fragment-issues/section-5b-rows-1301-1325.md).** IF2's building came out a third as wide as it
 should: the window was worked out at the crop box's Z top (the far clip over a thousand, 92.9 mm here) and Revit
 draws it 0.1 ft (30.48 mm) in front of the eye. A camera further than the far clip also cut its elements out, and
 the eye height stood on `Foundation`, 800 mm below the ground floor. All three were fixed in the code; the owner

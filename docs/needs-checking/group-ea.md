@@ -11,7 +11,7 @@
 **Tracked as GitHub issue [#988](https://github.com/Ajmalpshaik/Heron-AI/issues/988) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
 Asked by Ajmal PS on 2026-10-14 - *"how many sets are there"* - on his Revit 2020 job model
-4355-BHVD-3D-21S10-BL001A, where Heron had nothing that read a saved set. [Row 5b-465](../fragment-issues/section-5b-rows-401-425.md)
+4355-BHVD-3D-21S10-BL001A, where Heron had nothing that read a saved set. [Row 5b-465](../fragment-issues/section-5b-rows-451-475.md)
 has the measurements.
 
 **What changed.** New: [`LIST_SHEET_SETS`](../../brain/fragments/list-sheet-sets/fragment.yaml) (FRG-SHT-032,
@@ -21,7 +21,7 @@ and an empty set marked EMPTY - with `setCount`, `emptySets` and `findings`. The
 set is not saved in the model and is not counted. `LIST_SHEETS` and `MANAGE_SHEET_SETS` are untouched
 below their routing tables, so both stay PROVEN.
 
-**2026-10-17: both sheet-set cards are version 2** ([Group FA](group-fa.md), [row 5b-545](../fragment-issues/section-5b-rows-401-425.md)).
+**2026-10-17: both sheet-set cards are version 2** ([Group FA](group-fa.md), [row 5b-545](../fragment-issues/section-5b-rows-526-550.md)).
 `MANAGE_SHEET_SETS` is DRAFT again - it adds sheets to and takes them out of an existing set, and puts the
 print range back. This card now also flags two sets holding the same sheets and views, in a new `sameSets`.
 EA1 below proved version 1 and was signed; version 2 makes that proof stale, so the card is DRAFT again on

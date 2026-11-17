@@ -48,7 +48,7 @@ without the host's question flag. The five writes reach their card without the f
 `REPORT_JOINED_ELEMENTS`, `DISALLOW_JOIN`, `CREATE_BEAM_SYSTEM`, `COPE_FRAMING`); *"what join type is at this
 wall corner"* reaches `REPORT_WALL_JOIN_TYPE` with and without it (before: `CREATE_WALL`, and
 `REPORT_JOINED_ELEMENTS` with the flag). Four sentences the new words moved off the card a routing table names,
-and one that already missed it, are declared on that card, card text only - [row 5b-1419](../fragment-issues/section-5b-rows-401-425.md).
+and one that already missed it, are declared on that card, card text only - [row 5b-1419](../fragment-issues/section-5b-rows-1401-1425.md).
 `tools/check-routing.py` on scratch stores: no question answered by a write; claimed and not reached 68 before,
 67 after - the one already missed, now declared. With the question flag only, write sentences on joins moved between reads to
 `REPORT_WALL_JOIN_TYPE` - recorded in row 5b-1419, not tuned.

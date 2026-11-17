@@ -10,7 +10,7 @@
 
 **Tracked as GitHub issue [#987](https://github.com/Ajmalpshaik/Heron-AI/issues/987) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
-From [row 5b-1343](../fragment-issues/section-5b-rows-401-425.md). On Revit 2020 (session 33972), in a real
+From [row 5b-1343](../fragment-issues/section-5b-rows-1326-1350.md). On Revit 2020 (session 33972), in a real
 BIM 360 project, five sheets on one title block family were asked onto a type of another family. Version 1
 threw *"The referenced object is not valid, possibly because it has been deleted from the database"* and
 changed nothing: it walked one list of every title block for each sheet, and on the second sheet it read the

@@ -61,7 +61,7 @@ own file carries its dated run record, and each defect is a file of its own unde
 - **A chat stays pinned to the first model it used** (Article 12b), so `revit_change` in this chat put the
   *Outcome Test* level into *P1102 MEP* while another project was in front. Right by the rule; name the model
   before a kept change in a chat that has read more than one.
-- **`fragment` does not check a card's `revit:` list** ([row 5b-1403](../fragment-issues/section-5b-rows-401-425.md)
+- **`fragment` does not check a card's `revit:` list** ([row 5b-1403](../fragment-issues/section-5b-rows-1401-1425.md)
   says so): `set-circuit-naming-scheme`, 2021 and later, was sent to Revit 2020 and spent a compile to fail. Read
   the card's `revit:` line before a single run.
 - **A bare `|` inside a 5b row's cell turns CI red** in `tests/test_open_defects.py` (row 1634 quoted NG's

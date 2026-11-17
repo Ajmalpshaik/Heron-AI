@@ -12,7 +12,7 @@
 
 A new card, [`copy-graphic-display-options`](../../brain/fragments/copy-graphic-display-options/fragment.yaml),
 written in a cloud session - the dialog and, on the owner's word the same day (*"cover all kind of
-settings, even the sun settings, everything"*), the view's sun settings too - for [row 5b-1336](../fragment-issues/section-5b-rows-401-425.md): the owner asked for a
+settings, even the sun settings, everything"*), the view's sun settings too - for [row 5b-1336](../fragment-issues/section-5b-rows-1326-1350.md): the owner asked for a
 small shadow in a plan, and `SET_GRAPHIC_DISPLAY_OPTIONS` could set the shadow intensity but not tick
 Cast Shadows.
 

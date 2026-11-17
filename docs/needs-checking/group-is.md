@@ -10,7 +10,7 @@
 
 **Tracked as GitHub issue [#979](https://github.com/Ajmalpshaik/Heron-AI/issues/979) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
-From row [5b-1318](../fragment-issues/section-5b-rows-401-425.md). Seen on Revit 2020 (session 78736) on
+From row [5b-1318](../fragment-issues/section-5b-rows-1301-1325.md). Seen on Revit 2020 (session 78736) on
 2026-10-22 in the owner's nested floor drain families: `LABEL_FAMILY_RADIUS` version 4, PROVEN on Revit 2024,
 threw Revit's own *Invalid number of references* three times on its revolve route - a trap's two outlet sockets
 from a made horizontal plane in an elevation, a floor-based host's end disc from a template plane in a plan -
@@ -113,7 +113,7 @@ parameter after the label, regenerates and reads every `GenericForm` - because `
 | IS3 | D: the same sentence from *"Center (Front/Back)"*, 41 mm out | **PASS** (refused) |
 | IS4 | B: the same sentence from *"Center (Left/Right)"*, 60 mm out. Its flex is not run - nothing labelled | **PASS** (refused); flex NOT RUN |
 | IS5 | Not run in this family. Its question - does version 5 refuse on 2024 what version 4 labelled there - was answered on 2026-10-23 above (*IS5-like*, Revit 2024.3, a library revolve: labelled). The change below does not touch that route | from 2026-10-23 |
-| IS6 | E: **labelled** - *"from "Center (Left/Right)" to a new reference plane through the circle's centre, 200 mm out ... reading 200 mm"* - and Ring Radius=400 grew E to X -420..420, **and moved C, D and F 200 mm with the made plane** (C X 940..1060 -> 1140..1260, D 170..172 -> 370..372, F 1990..2010 -> 2190..2210). `FLEX_FAMILY` alone said *"allHeld true"* | **FAIL** - row [5b-1333](../fragment-issues/section-5b-rows-401-425.md) |
+| IS6 | E: **labelled** - *"from "Center (Left/Right)" to a new reference plane through the circle's centre, 200 mm out ... reading 200 mm"* - and Ring Radius=400 grew E to X -420..420, **and moved C, D and F 200 mm with the made plane** (C X 940..1060 -> 1140..1260, D 170..172 -> 370..372, F 1990..2010 -> 2190..2210). `FLEX_FAMILY` alone said *"allHeld true"* | **FAIL** - row [5b-1333](../fragment-issues/section-5b-rows-1326-1350.md) |
 | IS6 again | *After the 5b-1333 change:* *"Nothing was labelled. A ring's distance from the revolve's axis is not labelled by this tool for now ... (row 5b-1333). Label it by hand in Edit Revolve, then change the size once and check that nothing else moved."* | **PASS** (refused) |
 | F, radius | *"The radius of the extrusion's sketched circle (radius 10 mm), labelled "Shaft Radius" inside the form's sketch, reading 10 mm."* Shaft Radius 25, 6 and 400: F's X edge at 2025, 2006, and F X 1600..2400 Y -400..400 - **only F moved** | **PASS** |
 | F, diameter | *"The diameter of the extrusion's sketched circle (radius 10 mm), labelled "Shaft Diameter" ... reading 20 mm."* Shaft Diameter 48, 12 and 400: F's X edge at 2024, 2006, and F X 1800..2200 - **only F moved** | **PASS** |

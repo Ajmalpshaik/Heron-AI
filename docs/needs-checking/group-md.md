@@ -34,7 +34,7 @@ card is DRAFT.
 **Not known from the assemblies, and recorded here rather than guessed** (MD3 and MD4 measure them):
 whether a type copied in that USES a type already named here - a text type's arrowhead, a wall type's
 profile - raises Revit's "Duplicate Types" dialog even when the two are identical. A fragment cannot set
-the handler that would answer it ([row 5b-1429](../fragment-issues/section-5b-rows-401-425.md), OPEN), so
+the handler that would answer it ([row 5b-1429](../fragment-issues/section-5b-rows-1426-1450.md), OPEN), so
 Heron declines it and the whole run is rolled back; the card says so and counts it refused. Also whether
 `FilteredElementCollector.OfClass(typeof(DimensionType))` returns spot dimension types with the linear
 ones, and whether a copied dimension or text type keeps its arrowhead when the source's is not here.

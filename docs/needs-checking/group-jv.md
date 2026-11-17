@@ -16,7 +16,7 @@ only for the circuit it has just made, and `brain/heron_retrieve.py` on each sen
 readers, the create, `CREATE_WIRES` and `DISCONNECT_CONNECTORS`.
 
 **MOVED 2026-11-04 - THESE ROWS NOW PROVE `EDIT_MEP_SYSTEM` VERSION 2.** On the owner's yes to
-[FRAGMENT-ISSUES row 5b-1382](../fragment-issues/section-5b-rows-401-425.md), `EDIT_ELECTRICAL_CIRCUIT`
+[FRAGMENT-ISSUES row 5b-1382](../fragment-issues/section-5b-rows-1376-1400.md), `EDIT_ELECTRICAL_CIRCUIT`
 was merged into [`EDIT_MEP_SYSTEM`](../../brain/fragments/edit-mep-system/fragment.yaml) and is
 DEPRECATED; its circuit half is that card's version 2, with the same inputs (`edit`, `circuitNumber`,
 `circuitPanel`, `panel`) and the same answers, `circuitIds` now `systemIds`. Every command below names
@@ -80,7 +80,7 @@ off its circuit"* - and *"what is on circuit 3"*, a question `SELECT_BY_ELECTRIC
 claims, which reached this write whenever the host did not mark it a question (D-128) - pulled by *"add
 these lights to circuit 3"*. The modeller's own sentences on this card were not weakened to buy them
 back. ~~**JV12** - declare each on the card that answers it.~~ **DONE 2026-11-01**, [row
-5b-1356](../fragment-issues/section-5b-rows-401-425.md): *"circuit these sockets"* declared on
+5b-1356](../fragment-issues/section-5b-rows-1351-1375.md): *"circuit these sockets"* declared on
 `CREATE_ELECTRICAL_CIRCUIT`, *"what is on circuit 3"* on `SELECT_BY_ELECTRICAL_CIRCUIT`, and this card
 named in the routing tables of both and of `REPORT_PANEL_CIRCUITS`. Each sentence now reaches its card
 by identity (scratch store, `model` backend). All three cards are PROVEN; the edit is outside `impl/`, so

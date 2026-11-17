@@ -170,7 +170,7 @@ fails if the window names a product, asks a product anything, or grows an Update
 > [NEEDS-CHECKING](../docs/NEEDS-CHECKING.md)'s answer, not this one's. The one-install lines it gained
 > on 2026-10-17 - the Python half and the Store-Claude refusal - are Group
 > [`EP`](../docs/needs-checking/group-ep.md). **The close-Revit line's fix of 2026-10-18
-> ([row 5b-1068](../docs/fragment-issues/section-5b-rows-401-425.md)) has not been drawn in a window** -
+> ([row 5b-1068](../docs/fragment-issues/section-5b-rows-1051-1075.md)) has not been drawn in a window** -
 > EP9, not run.
 
 ### `Heron.Installer.Cli` — RUN ON THE OWNER'S LAPTOP, NOT EVERY ROW

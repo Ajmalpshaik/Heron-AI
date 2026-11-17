@@ -65,7 +65,7 @@ changed*. A new draft is fingerprinted on the file its operation is in - the dis
 `case "list_views":` hands the work to a class, and the file declaring that class is the one - and
 carries the files it leaves out as a gap. Until 2026-11-11 it was the first file in name order whatever
 the operation, which is how `VIE-013`'s proof of `list_views` came to stand on the picture code
-([row 5b-1552](../../docs/fragment-issues/section-5b-rows-401-425.md)).
+([row 5b-1552](../../docs/fragment-issues/section-5b-rows-1551-1575.md)).
 
 **A stale proof is run again, never edited.** On the PC, with Revit open on a saved scratch copy:
 `track` for an agent that describes a model (two sessions, two different models) or `vary` for one that
@@ -76,7 +76,7 @@ takes an input, then `review`, then `accept --by` with the owner's own name -
 
 **A record names its models and its sessions, and no Revit release.** *"Revit 2020"* for the
 2026-10-25 run is in this page and in that pull request, not in the records themselves
-([row 5b-1546](../../docs/fragment-issues/section-5b-rows-401-425.md)).
+([row 5b-1546](../../docs/fragment-issues/section-5b-rows-1526-1550.md)).
 
 ## What every proof carries
 
