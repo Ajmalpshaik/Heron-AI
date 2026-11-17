@@ -35,7 +35,7 @@ places a spot coordinate in an elevation, a section and a locked 3D view, all of
 
 **Routing.** Measured through `heron_retrieve.find` on two scratch stores, before and after the card,
 with and without the question flag: *"what are the coordinates of this point"* moved onto this write and
-was declared on `REPORT_LOCATION` - [row 5b-1377](../fragment-issues/section-5b-rows-401-425.md), FIXED.
+was declared on `REPORT_LOCATION` - [row 5b-1377](../fragment-issues/section-5b-rows-1376-1400.md), FIXED.
 *"space these round a point"* moved from one write it does not name to another - row 5b-1378, OPEN.
 
 **The model - a scratch project from the metric architectural template in Revit 2024.** Never a working

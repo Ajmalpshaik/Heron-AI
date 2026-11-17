@@ -50,10 +50,10 @@ routing-table sentence of every live card (5,630 sentences). Without the flag th
 before, all six reached `CONVERT_TO_FABRICATION` - and with it a read - `REPORT_FABRICATION_SETUP`, or for the size sentence `REPORT_DUCT_CONDUIT_SIZES`. No other sentence reaches
 the three new cards. *"place the areas"*, claimed for `PLACE_ROOMS` in `CREATE_ROOM_SEPARATION_LINES`' routing
 table, moved to `CREATE_AREA_PLAN` and is declared on `PLACE_ROOMS`, outside `impl/`, fingerprint unchanged -
-[row 5b-1436](../fragment-issues/section-5b-rows-401-425.md), FIXED. Seven other sentences changed answer, none away
+[row 5b-1436](../fragment-issues/section-5b-rows-1426-1450.md), FIXED. Seven other sentences changed answer, none away
 from a card that claims them - recorded there, not tuned. *"put the duct tags above the ducts with a leader"* left `OFFSET_TAGS_FROM_HOST`, which sits at the last nearness place
 the fusion reads; `ADD_FABRICATION_HANGERS`' own identity and purpose were reworded and it is back -
-[row 5b-1437](../fragment-issues/section-5b-rows-401-425.md), FIXED; `tests/test_routing_phrases.py` fails exactly its known seven. `tools/check-routing.py` (its own scratch store, before and
+[row 5b-1437](../fragment-issues/section-5b-rows-1426-1450.md), FIXED; `tests/test_routing_phrases.py` fails exactly its known seven. `tools/check-routing.py` (its own scratch store, before and
 after): no question answered by a write; claimed and not reached 66 and 66.
 
 **The model - `fabrication-mh`**, a scratch project from Revit's metric Mechanical template, saved under

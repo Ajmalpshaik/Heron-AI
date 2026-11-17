@@ -14,7 +14,7 @@ Family_Source - from three air terminal families of seven types each. Every type
 `SET_FAMILY_TYPE_VALUES` call, and each raised a "delete 1 element" question: making a type current
 deletes an automatic sketch dimension, the geometry untouched - 21 questions for one job. He asked for
 one call that writes a value into many types, in a family and in a project. Why, and what is not known
-yet, is [FRAGMENT-ISSUES row 5b-1504](../fragment-issues/section-5b-rows-401-425.md).
+yet, is [FRAGMENT-ISSUES row 5b-1504](../fragment-issues/section-5b-rows-1501-1525.md).
 
 | What | Where | What it does |
 |---|---|---|

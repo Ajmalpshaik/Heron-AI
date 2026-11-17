@@ -35,7 +35,7 @@ wall end reads back the length the card reports or refuses.
 
 **Routing.** Measured with `tools/check-routing.py` and `heron_brain.lookup` on two scratch stores, before
 and after the card: every sentence it declares reaches it. *"put it back"* moved from one write it does
-not name to another - [row 5b-1424](../fragment-issues/section-5b-rows-401-425.md), OPEN, with rows 1375
+not name to another - [row 5b-1424](../fragment-issues/section-5b-rows-1401-1425.md), OPEN, with rows 1375
 and 1405.
 
 **The model - a scratch project from the metric architectural template in Revit 2025 or later.** Never a

@@ -10,7 +10,7 @@
 
 **Tracked as GitHub issue [#995](https://github.com/Ajmalpshaik/Heron-AI/issues/995) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
-From [row 5b-1255](../fragment-issues/section-5b-rows-401-425.md). On 2026-10-19 a comparison of Revit
+From [row 5b-1255](../fragment-issues/section-5b-rows-1251-1275.md). On 2026-10-19 a comparison of Revit
 jobs Heron could not yet do found wall finishes by room missing: floors and ceilings could be built from a
 room's own boundary, and a room's walls could not be lined with plaster, tile or cladding.
 

@@ -12,7 +12,7 @@
 
 Found on a real project in Revit 2020: a shop-drawing legend NOTES sits on four sheets, and at the as-built
 issue its copy AS-BUILT NOTES has to go exactly where NOTES is, on every one. Heron had no tool for it.
-[FRAGMENT-ISSUES row 5b-540](../fragment-issues/section-5b-rows-401-425.md).
+[FRAGMENT-ISSUES row 5b-540](../fragment-issues/section-5b-rows-526-550.md).
 
 **What was built - version 2 of the same capability, not a new one.** `PLACE_VIEW_ON_SHEET` takes a new
 optional `oldViewId`: the one view in `views` goes where the old view sits - on every sheet the old view

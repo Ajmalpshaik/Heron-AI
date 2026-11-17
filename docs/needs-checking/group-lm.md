@@ -14,7 +14,7 @@ Ceiling Datum"*, *"show the work plane in this view"*, *"hide the work plane"* a
 on"* - Revit's Architecture > Work Plane > Set and Show. No card set, showed or read a view's work plane: a grep of
 every fragment's C# that day found `View.SketchPlane`, `SketchPlane.Create` and `View.ShowActiveWorkPlane` /
 `HideActiveWorkPlane` in none, and the questions reached writes without the host's question flag
-([row 5b-1392](../fragment-issues/section-5b-rows-401-425.md)). Checked by the duplicate checker's method:
+([row 5b-1392](../fragment-issues/section-5b-rows-1376-1400.md)). Checked by the duplicate checker's method:
 `CREATE_PROJECT_REFERENCE_PLANES` draws reference planes and sets no work plane, `SET_VIEW_PROPERTIES` sets what the
 Properties palette holds and the work plane is not in it, and `SET_FAMILY_SETTINGS` sets a family's Work
 Plane-Based tick - look-alikes, not duplicates. The question was first written into the view read that already
@@ -43,7 +43,7 @@ are refused here); and what `ShowActiveWorkPlane` does in a view that has none -
 **Routing.** Measured through `heron_retrieve.find` on fresh scratch stores before and after (`model` backend, no
 re-ranker; no filter, Revit 2020, 2024 and 2025, with and without the host's question flag), over every declared
 sentence, every routing-table claim and eight probes; see
-[row 5b-1392](../fragment-issues/section-5b-rows-401-425.md) for what moved.
+[row 5b-1392](../fragment-issues/section-5b-rows-1376-1400.md) for what moved.
 
 **The model - `workplane-ip`**, a scratch project from the default architectural template, saved under
 `%TEMP%\heron-work`, never a working model. Every write here is ROLLED BACK unless the modeller keeps it. The job

@@ -11,7 +11,7 @@
 **Tracked as GitHub issue [#971](https://github.com/Ajmalpshaik/Heron-AI/issues/971) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
 [D-141](../decisions/D-141.md) (the owner's design, 2026-10-18) from
-[row 5b-1150](../fragment-issues/section-5b-rows-401-425.md). **What changed.** Every request carries
+[row 5b-1150](../fragment-issues/section-5b-rows-1126-1150.md). **What changed.** Every request carries
 the chat's own `conversation` id beside the person's `client` id, which the D-22 lease still uses. A model
 a chat's request ran against is **held** for that chat; another chat asking for it - read or change - is
 refused *"Model 'X' is in use by another chat ... Nothing was sent to the model."* before anything runs.

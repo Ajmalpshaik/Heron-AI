@@ -22,13 +22,13 @@ in Revit.** The fixes are in `git log --first-parent origin/main..` on the branc
 - **A door's reply says how the call ended in one fixed word.** `revit_change`, `revit_read` and `revit_show`
   carry a second line, `outcome: WORD - what it means`, and `outcome` in the reply's structured content
   ([04 §8.12](../04-heron-mcp.md); held by [`tests/test_outcome_line.py`](../../tests/test_outcome_line.py), against a
-  stand-in Revit). [Row 5b-1159](../fragment-issues/section-5b-rows-401-425.md) is half closed by it; rows 5b-1559
+  stand-in Revit). [Row 5b-1159](../fragment-issues/section-5b-rows-1151-1175.md) is half closed by it; rows 5b-1559
   to 5b-1563 are what it left, and 5b-1562 is closed.
 - **PROVEN cards that gave a wrong answer were repaired in code, and each is DRAFT again until it is
   proved.** The owner's word on 2026-11-11: *"if you are finding any fragment's mistake, even though it is
   proven, you can change that one."* The reads are [Group NK](../needs-checking/group-nk.md); three that change the model are
   [Group NL](../needs-checking/group-nl.md), `CREATE_ASSEMBLY` rebuilt on two transactions. What being DRAFT costs
-  the reads meanwhile is measured in [row 5b-1554](../fragment-issues/section-5b-rows-401-425.md).
+  the reads meanwhile is measured in [row 5b-1554](../fragment-issues/section-5b-rows-1551-1575.md).
 - **`revit_health` says, under each connected Revit, whether that Revit will ask Keep or Discard** - read
   from the add-in itself; four methods send the chat there ([row 5b-1586](../fragment-issues/row-5b-1586.md),
   [Group NP](../needs-checking/group-np.md)). Compiled for 2020 to 2027; the add-in has to be rebuilt and deployed.

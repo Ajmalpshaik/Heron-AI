@@ -14,7 +14,7 @@
 the Family Editor, it makes or changes a subcategory of the family's own category - Manage > Object Styles there,
 the Annotation Objects or Model Objects tab - with the colour, projection weight and pattern a line style takes,
 `updateExisting` meaning what it meant; the category's own name, or "none", is the category itself. Left out, it
-is a line style under Lines, as version 1 ([FRAGMENT-ISSUES 5b-463](../fragment-issues/section-5b-rows-401-425.md)).
+is a line style under Lines, as version 1 ([FRAGMENT-ISSUES 5b-463](../fragment-issues/section-5b-rows-451-475.md)).
 The first use: the blue of the modeller's signature, drawn by `DRAW_FAMILY_DETAIL_LINES` on Generic Annotations >
 Signature and set by hand on 2026-10-14. `detail-family-creation` step 3 and `family-creation` step 12 now name it.
 

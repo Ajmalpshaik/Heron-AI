@@ -156,7 +156,7 @@ modeller ── Claude Code ── heron_hvac (MCP, READ, no bridge operation)
 | Risk | **READ.** Arithmetic over what it is handed - no model, no network. The one thing kept is a project's governing standards once the modeller has said them ([D-111](decisions/D-111.md)): one small file per project in Heron's own knowledge folder, never the model |
 | Agent | `HERON-MEP-HVD-001`, the first row of a new department, *MEP Design Engineering* - Revit Engineering acts ON a model, this works out what goes INTO one |
 | Audit | `design.hvac`, one line per call: the calculation and how it ended. **Never the inputs** - a people count or a client's design figure is project information, and the trail is never pruned |
-| Refusals | recorded with the codes [`heron_gaps.py`](../brain/heron_gaps.py) classifies: `needs_request_values` (asked), `unusable_request_values` (refused), `unknown_op` (no such calculation) - all three are correct refusals, not gaps. The audit line gets them from `run`'s own `status` - `missing`, `refused`, `unknown` - mapped in `mcp/server/heron_brain.py`; the agent's contract declares them in capitals, words `run` never returns ([row 5b-1130](fragment-issues/section-5b-rows-401-425.md), open) |
+| Refusals | recorded with the codes [`heron_gaps.py`](../brain/heron_gaps.py) classifies: `needs_request_values` (asked), `unusable_request_values` (refused), `unknown_op` (no such calculation) - all three are correct refusals, not gaps. The audit line gets them from `run`'s own `status` - `missing`, `refused`, `unknown` - mapped in `mcp/server/heron_brain.py`; the agent's contract declares them in capitals, words `run` never returns ([row 5b-1130](fragment-issues/section-5b-rows-1126-1150.md), open) |
 
 ---
 

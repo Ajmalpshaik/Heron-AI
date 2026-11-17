@@ -64,7 +64,7 @@ row that fails is recorded here and the card corrected; nothing in a row changes
 owner's PC ranks with `model+rerank`, which is **NOT RUN** here. The three sentences above reach this card
 by identity. *"remove these"*, which `DELETE_ELEMENTS`' routing table claims, reached `REMOVE_TAGS` ranked
 before this card existed and this card once it did; it is declared on `DELETE_ELEMENTS` now and reaches it
-by identity ([row 5b-1358](../fragment-issues/section-5b-rows-401-425.md)). *"remove insulation"*, *"strip
+by identity ([row 5b-1358](../fragment-issues/section-5b-rows-1351-1375.md)). *"remove insulation"*, *"strip
 the insulation"* and *"remove the pipe insulation"* reach this card ranked; without it they reached
 `SET_MEP_INSULATION`, and *"delete the insulation"* `DELETE_ELEMENTS`. **Two sentences nobody has
 declared now reach this card ranked and would do the wrong thing here**, recorded rather than answered by

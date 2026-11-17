@@ -10,7 +10,7 @@
 
 **Tracked as GitHub issue [#993](https://github.com/Ajmalpshaik/Heron-AI/issues/993) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
-[FRAGMENT-ISSUES row 5b-449](../fragment-issues/section-5b-rows-401-425.md). Heron could not give a layer of a
+[FRAGMENT-ISSUES row 5b-449](../fragment-issues/section-5b-rows-426-450.md). Heron could not give a layer of a
 type a material - the house in Project2 got its colours by painting faces. `SET_COMPOUND_LAYER_WIDTH` (FRG-ELE-070)
 was widened rather than a card added: `material` and `layerFunction` are new values, BLANK for "leave it", and
 `checkOnly` an optional bool. It went from PROVEN to DRAFT, because its code changed.

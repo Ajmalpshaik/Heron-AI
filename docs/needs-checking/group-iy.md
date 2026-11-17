@@ -10,7 +10,7 @@
 
 **Tracked as GitHub issue [#997](https://github.com/Ajmalpshaik/Heron-AI/issues/997) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
-From [row 5b-1331](../fragment-issues/section-5b-rows-401-425.md). On Revit 2024.3 (session 83588), in *N23
+From [row 5b-1331](../fragment-issues/section-5b-rows-1326-1350.md). On Revit 2024.3 (session 83588), in *N23
 Snowdon Site 2024* - a copy of Revit 2024's `Snowdon Towers Sample Site.rvt`, 10 toposolids - a rolled-back
 simplify to 50% answered *"10 toposolid(s) edited (simplify) and read back."* and `resultIds` 10, while its own
 report read *"toposolid 1264746: 2399 shape point(s) before, 1293 after."* and, for the other nine, *"0 shape

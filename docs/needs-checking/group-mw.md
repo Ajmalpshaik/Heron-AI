@@ -15,7 +15,7 @@ traced, drawn as single lines on a drafting view, with sizes, flow and pressure 
 `CREATE_DRAFTING_VIEW`, `CREATE_TEXT_NOTE` and `DRAW_FAMILY_DETAIL_LINES` (all PROVEN) - none was edited;
 widening a PROVEN one would send it back to DRAFT and out of the chat's reach ([D-117](../DECISIONS.md)). The
 overlap and the merge planned once this is proved are
-[FRAGMENT-ISSUES row 5b-1479](../fragment-issues/section-5b-rows-401-425.md).
+[FRAGMENT-ISSUES row 5b-1479](../fragment-issues/section-5b-rows-1476-1500.md).
 
 | What | Where | What it does |
 |---|---|---|

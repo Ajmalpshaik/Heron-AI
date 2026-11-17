@@ -14,7 +14,7 @@ Found on 2026-10-19 building a 40-floor tower through Heron on Revit 2020. The o
 twice, but the keys went to the Claude window, so the .rvt on disk stayed from before the build for
 about 25 minutes - 10:42, while 124 changes went in after 10:45. `REPORT_OPEN_DOCUMENTS` said only
 `[unsaved changes]`, which cannot tell five minutes of work from a whole tower, and the file's modified
-time was read by hand. [Row 5b-1218](../fragment-issues/section-5b-rows-401-425.md).
+time was read by hand. [Row 5b-1218](../fragment-issues/section-5b-rows-1201-1225.md).
 
 **What changed.** [`REPORT_OPEN_DOCUMENTS`](../../brain/fragments/report-open-documents/fragment.yaml)
 (FRG-DOC-026, DRAFT) version 3 gives every open project and family that has a file the time its file on

@@ -17,7 +17,7 @@ duct check passes on lexical and on the model again. All of it is card words: ut
 cards (the re-ranker reads a card's first eight, D-134), `REPORT_LOCATION`'s identity,
 `CREATE_FROM_ROOM_BOUNDARIES`' purpose order, and two selection cards' linked-model mechanics moved from
 the purpose into a comment. No code changed and no test was edited; every number, trade and margin is in
-[row 5b-1293](../fragment-issues/section-5b-rows-401-425.md).
+[row 5b-1293](../fragment-issues/section-5b-rows-1276-1300.md).
 
 **MISTAKES worth not repeating.**
 

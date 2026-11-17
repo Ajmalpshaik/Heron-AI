@@ -10,7 +10,7 @@
 
 **Tracked as GitHub issue [#982](https://github.com/Ajmalpshaik/Heron-AI/issues/982) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
-Found 2026-10-14 by reading the code while fixing [row 5b-468](../fragment-issues/section-5b-rows-401-425.md),
+Found 2026-10-14 by reading the code while fixing [row 5b-468](../fragment-issues/section-5b-rows-451-475.md),
 and fixed the same day on the owner's word. Version 1 of
 [`READ_ELEMENT_LEVEL`](../../brain/fragments/read-element-level/fragment.yaml) (FRG-ELE-011) read the offset
 from `RBS_OFFSET_PARAM`, `INSTANCE_FREE_HOST_OFFSET_PARAM` and `INSTANCE_ELEVATION_PARAM`. A wall carries none

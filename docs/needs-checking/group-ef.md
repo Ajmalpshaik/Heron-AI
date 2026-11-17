@@ -15,7 +15,7 @@ dimensioned in a section from its level and its grid, and by its own width and h
 only CenterLeftRight, CenterFrontBack and nine weak references, and
 [`CREATE_LINEAR_DIMENSION`](../../brain/fragments/create-linear-dimension/fragment.yaml) (FRG-VIEW-101)
 version 2 reached grids, levels, named planes, lines and wall faces - none of them. No tool in the library
-could draw it. [Row 5b-482](../fragment-issues/section-5b-rows-401-425.md) has the finding.
+could draw it. [Row 5b-482](../fragment-issues/section-5b-rows-476-500.md) has the finding.
 
 **What changed.** Version 3 takes two words more in `between`, and every version 2 word reads as it did:
 `family ID WHICH` - the instance's own reference, Left to CenterElevation or a reference plane's name, one it

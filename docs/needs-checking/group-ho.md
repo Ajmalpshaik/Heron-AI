@@ -10,7 +10,7 @@
 
 **Tracked as GitHub issue [#997](https://github.com/Ajmalpshaik/Heron-AI/issues/997) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
-From [row 5b-1201](../fragment-issues/section-5b-rows-401-425.md). On Revit 2020.2 a Structural Framing
+From [row 5b-1201](../fragment-issues/section-5b-rows-1201-1225.md). On Revit 2020.2 a Structural Framing
 beam asked of `PLACE_STRUCTURAL_FAMILY` at three points answered placed 3, failed 0, and Revit then
 deleted the geometry of two - zero-length beams kept as a success.
 

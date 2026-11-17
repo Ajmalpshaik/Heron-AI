@@ -58,7 +58,7 @@ runs - expected, NOT RUN. Every line below with `HERON_CLIENT_ID=ajmal-pc`, `--s
 **Then sign**, on the owner's word only: `python brain/heron_validate.py accept edit-mep-system --by
 "Ajmal PS"` once its positive and negative pass - **and, since 2026-11-04, [Group JV](group-jv.md)'s
 rows too**: `EDIT_ELECTRICAL_CIRCUIT` was merged into this card as its version 2, which edits circuits
-as well ([FRAGMENT-ISSUES row 5b-1382](../fragment-issues/section-5b-rows-401-425.md)); the duct and
+as well ([FRAGMENT-ISSUES row 5b-1382](../fragment-issues/section-5b-rows-1376-1400.md)); the duct and
 piping half below is version 1 to the word - and `heron-status` set to PROVEN in the same change. A
 row that fails is recorded here and the card corrected; nothing in a row changes to make it pass.
 
@@ -72,5 +72,5 @@ reached this card when it was written - and a view-filter card before that - so 
 `CREATE_MEP_SYSTEM` now and reaches it by identity. The card's first identity and purpose also took
 *"add a sprinkler"*, *"add an air terminal"* and *"change SUP to SUPPLY"*, and put it first for *"put
 them on the screen"*; they were reworded, and all four reach the cards they reached before
-([row 5b-1359](../fragment-issues/section-5b-rows-401-425.md)). `CREATE_MEP_SYSTEM` and
+([row 5b-1359](../fragment-issues/section-5b-rows-1351-1375.md)). `CREATE_MEP_SYSTEM` and
 `SET_MEP_SYSTEM_TYPE` are PROVEN; the edit is outside `impl/`, so no fingerprint moved.

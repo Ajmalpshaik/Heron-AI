@@ -13,7 +13,7 @@
 > NAMES them.** A sentence a modeller types no longer runs one of them by itself; the chat is handed the
 > candidates, calls `revit_read` again with the capability's name, and the answer says DRAFT. The QA
 > checklists cannot use them at all until then. What that costs, as measured, is
-> [row 5b-1554](../fragment-issues/section-5b-rows-401-425.md) and the section below.
+> [row 5b-1554](../fragment-issues/section-5b-rows-1551-1575.md) and the section below.
 
 A triage on 2026-11-11 found PROVEN cards that only READ and still gave a modeller an answer he would act
 on that was wrong - each with its repair already stated in its [FRAGMENT-ISSUES](../FRAGMENT-ISSUES.md) row,
@@ -71,7 +71,7 @@ no transaction, so a DRAFT read runs when the chat names its capability, and the
 
 | Card | Version | Row | What it answered | What it answers now |
 |---|---|---|---|---|
-| [`measure-ceiling-height`](../../brain/fragments/measure-ceiling-height/fragment.yaml) | 3 | [5b-1128](../fragment-issues/section-5b-rows-401-425.md) | A room left at Revit's default height, under a ceiling above that height, read exactly like a room with no ceiling | The room is listed in `limitBelowCeiling` and said in `findings`, with its own height and the lowest such ceiling's - counting only a ceiling drawn on a level inside the room's own height, so a shaft under the storey above is not told to raise its limit. It is still **not measured** until its Upper Limit is raised |
+| [`measure-ceiling-height`](../../brain/fragments/measure-ceiling-height/fragment.yaml) | 3 | [5b-1128](../fragment-issues/section-5b-rows-1126-1150.md) | A room left at Revit's default height, under a ceiling above that height, read exactly like a room with no ceiling | The room is listed in `limitBelowCeiling` and said in `findings`, with its own height and the lowest such ceiling's - counting only a ceiling drawn on a level inside the room's own height, so a shaft under the storey above is not told to raise its limit. It is still **not measured** until its Upper Limit is raised |
 | [`select-by-material`](../../brain/fragments/select-by-material/fragment.yaml) | 4 | [5b-393](../fragment-issues/section-5b-rows-401-425.md) | With `includePaint`, only what is PAINTED with the material, under a sentence saying *"made of it OR painted with it"* | Both sets are read and joined |
 | [`read-space-loads`](../../brain/fragments/read-space-loads/fragment.yaml) | 3 | [5b-323](../fragment-issues/section-5b-rows-301-325.md) | *"NO LOAD READABLE"* for a Space holding typed design loads, wherever Revit refused the calculated ones | Each figure is read on its own: what was typed is reported, what Revit refused is named |
 | [`report-family-parameters`](../../brain/fragments/report-family-parameters/fragment.yaml) | 2 | [5b-351](../fragment-issues/section-5b-rows-351-375.md) | `<blank>` for a Yes/No | Yes or No, read from the stored tick where Revit's own string is empty |
@@ -94,11 +94,11 @@ the refusal, and to one shape, as text. **Nothing here has run in Revit.** A com
 - `report-bounding-box` reports no combined box of only what shows. And what it now says rests on one thing
   no Revit has shown this card: that Revit's default geometry leaves out a body whose `Visible` is off while
   its box keeps it. NK6 is where that is seen.
-- [Row 5b-1404](../fragment-issues/section-5b-rows-401-425.md) - `list-materials` with `withAllTabs` crashing
+- [Row 5b-1404](../fragment-issues/section-5b-rows-1401-1425.md) - `list-materials` with `withAllTabs` crashing
   inside Revit 2020 - is **not repaired**: it was never traced to a line, so no repair is stated. That is why
   this group runs on Revit 2024.
 - `export-parameters-to-csv` (PUBLISH) and the three MODIFY cards of
-  [row 5b-1534](../fragment-issues/section-5b-rows-401-425.md) still take the first match.
+  [row 5b-1534](../fragment-issues/section-5b-rows-1526-1550.md) still take the first match.
 
 ### The run
 
@@ -161,5 +161,5 @@ draft, and `python brain/heron_validate.py accept <fragment> --by "Your Name"` -
 `accept` writes the proof; `heron-status: PROVEN` is a line a person edits, and
 `python tools/check-signatures.py` says when one is signed and still DRAFT. **A row that fails reopens its
 FRAGMENT-ISSUES row**, with what was passed and what came back, verbatim; nothing in a row is changed to make
-it pass. **When every card of this group is signed, [row 5b-1554](../fragment-issues/section-5b-rows-401-425.md)
+it pass. **When every card of this group is signed, [row 5b-1554](../fragment-issues/section-5b-rows-1551-1575.md)
 closes**, and the cost above ends with it.

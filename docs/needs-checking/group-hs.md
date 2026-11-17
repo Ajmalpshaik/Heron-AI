@@ -11,7 +11,7 @@
 **Tracked as GitHub issue [#997](https://github.com/Ajmalpshaik/Heron-AI/issues/997) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
 From rows [5b-1239, 5b-1240 and 5b-1241](../fragment-issues/section-5b-rows-401-425.md), and
-[5b-446](../fragment-issues/section-5b-rows-401-425.md). Version 3 refused every U stair in the owner's
+[5b-446](../fragment-issues/section-5b-rows-426-450.md). Version 3 refused every U stair in the owner's
 `Kerala house design` (Revit 2020): Revit will not make a `Monolithic Stair` run whose riser is 177.8 mm
 (*"Can't make stairs"*), the refusal never said so, a stringer type was refused as "outside the hall",
 and each refusal was recorded as keeping two elements that did not exist.

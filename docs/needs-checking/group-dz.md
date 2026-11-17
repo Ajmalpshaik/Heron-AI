@@ -17,7 +17,7 @@ line weight, cut line weight where the category is cut and projection line patte
 as Manage > Object Styles shows them. `familySubcategories` counts the family's own subcategories. An optional
 `everySubcategory` lists every other category's subcategories too; left out it is false, and names, bindable and
 the first finding read exactly as version 1's. Before this nothing read a category's own graphics, so questions
-about them were answered by writes ([FRAGMENT-ISSUES 5b-464](../fragment-issues/section-5b-rows-401-425.md)).
+about them were answered by writes ([FRAGMENT-ISSUES 5b-464](../fragment-issues/section-5b-rows-451-475.md)).
 
 **What is proved and what is not.** **Nothing below has run in Revit.** Measured without Revit on 2026-10-14: every
 fragment compiles on all eight releases, 2020 to 2027; every member version 2 adds was read off

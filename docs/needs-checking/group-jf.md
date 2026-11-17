@@ -10,7 +10,7 @@
 
 **Tracked as GitHub issue [#983](https://github.com/Ajmalpshaik/Heron-AI/issues/983) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
-From [row 5b-1344](../fragment-issues/section-5b-rows-401-425.md). On Revit 2020 (session 54600), in a real
+From [row 5b-1344](../fragment-issues/section-5b-rows-1326-1350.md). On Revit 2020 (session 54600), in a real
 BIM 360 project, six volume control dampers each carried TWO writable shared parameters called *Equipment
 Tag*, and `key=Mark|in=Duct Accessories;MOD070|Equipment Tag=VCD042;...` refused every row, because which one
 was meant would be a guess. No Heron tool could name either.

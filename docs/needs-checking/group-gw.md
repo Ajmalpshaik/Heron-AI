@@ -13,7 +13,7 @@
 On the owner's laptop on 2026-10-17 every fragment failed on Revit 2026.5 - *"Method 'CommonGetSemanticModel'
 ... does not have an implementation"* - because AJ Tools had loaded its Roslyn 4.14 into the load context every
 add-in shares on a .NET Revit, and Heron's 4.8 C# layer bound to it; on 2027.3 Heron compiled on AJ Tools'
-compiler by accident ([FRAGMENT-ISSUES 5b-575](../fragment-issues/section-5b-rows-401-425.md),
+compiler by accident ([FRAGMENT-ISSUES 5b-575](../fragment-issues/section-5b-rows-551-575.md),
 [Group EQ](group-eq.md) EQ5 and EQ6). (Groups up to GP were taken on other branches when this was written, and
 other sessions were running, so this group skipped to GW.)
 

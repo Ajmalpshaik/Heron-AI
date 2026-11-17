@@ -10,10 +10,10 @@
 
 **Tracked as GitHub issue [#985](https://github.com/Ajmalpshaik/Heron-AI/issues/985) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
-Found from [row 5b-520](../fragment-issues/section-5b-rows-401-425.md): `EDIT_TEXT_VALUES` version 4 learned to
+Found from [row 5b-520](../fragment-issues/section-5b-rows-501-525.md): `EDIT_TEXT_VALUES` version 4 learned to
 keep a note's 1-2-3 numbering, but the tool that MAKES a note could still make only one paragraph with no
 list - a chat's values arrive one per line, so a paragraph break could not even be typed. A GENERAL NOTES
-block had to be made by hand. [Row 5b-930](../fragment-issues/section-5b-rows-401-425.md) has the finding.
+block had to be made by hand. [Row 5b-930](../fragment-issues/section-5b-rows-926-950.md) has the finding.
 
 **What changed.** [`CREATE_TEXT_NOTE`](../../brain/fragments/create-text-note/fragment.yaml) (FRG-VIEW-022, was
 PROVEN, now DRAFT, version 2). `noteText` takes `\r` for a new paragraph (Enter), `\v` for a soft line break

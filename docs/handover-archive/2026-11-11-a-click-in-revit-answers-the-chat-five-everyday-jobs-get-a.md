@@ -19,13 +19,13 @@ The fixes of the day are in `git log --first-parent d77439ad..` on the branch an
 
 - **`PICK_ON_SCREEN`**, DRAFT: Revit waits for ONE click in the view in front and hands the point back in
   millimetres, so *where* no longer has to be typed as three numbers. It changes nothing in the model
-  ([row 5b-1507](../fragment-issues/section-5b-rows-401-425.md), [Group NH](../needs-checking/group-nh.md)).
+  ([row 5b-1507](../fragment-issues/section-5b-rows-1501-1525.md), [Group NH](../needs-checking/group-nh.md)).
 - **Five methods, all DRAFT:** `issue-drawing-package`, `health-audit-cleanup`, `project-setup`,
   `views-per-level`, `room-setup`. Every capability they name was already in the library; the order was
-  missing ([row 5b-1518](../fragment-issues/section-5b-rows-401-425.md)).
+  missing ([row 5b-1518](../fragment-issues/section-5b-rows-1501-1525.md)).
 - **Off Windows, with no store named, the library-only server makes one of its own** - so `heron_lookup`
   and `heron_method` answer in a cloud chat nobody set up. [D-153](../decisions/D-153.md), **Proposed**
-  ([row 5b-1508](../fragment-issues/section-5b-rows-401-425.md)).
+  ([row 5b-1508](../fragment-issues/section-5b-rows-1501-1525.md)).
 
 **MISTAKES worth not repeating.**
 
@@ -40,7 +40,7 @@ The fixes of the day are in `git log --first-parent d77439ad..` on the branch an
   Measure a new utterance main against branch (`score-routing --sentences`) before it goes on a card.
 - **Looking for a folder before making it.** Two servers started together both saw none; the second's
   error was swallowed and it served its whole life with no store. Make it with `exist_ok` and no look
-  first. `heron_scope.Store` still looks first ([row 5b-1520](../fragment-issues/section-5b-rows-401-425.md)).
+  first. `heron_scope.Store` still looks first ([row 5b-1520](../fragment-issues/section-5b-rows-1501-1525.md)).
 - **An unset shell variable in a redirect.** A log path built on a variable that was empty wrote the gate
   logs to the root of the filesystem - `/gate.check-intrusion.lexical.log` and two more were there on
   2026-11-11. Use `${VAR:?}` in a path, and keep rough work in the scratch folder the session names.
@@ -49,7 +49,7 @@ The fixes of the day are in `git log --first-parent d77439ad..` on the branch an
 
 - **On the owner's PC, Revit open:** [Group NH](../needs-checking/group-nh.md), with somebody at Revit to
   click; [Group NI](../needs-checking/group-ni.md) - NI7 waits on
-  [row 5b-1510](../fragment-issues/section-5b-rows-401-425.md)'s repair;
+  [row 5b-1510](../fragment-issues/section-5b-rows-1501-1525.md)'s repair;
   [Group DQ](../needs-checking/group-dq.md) DQ3a to DQ3d and [Group DR](../needs-checking/group-dr.md) DR6a and
   DR10a to DR10c, the proofs of `DIVIDE_PARTS` version 2, `SET_RAILING_TYPE` version 2 and
   `COPY_ELEMENTS_BETWEEN_DOCUMENTS` version 4. The job files are in `tools/jobs/`, dated 2026-11-11.

@@ -27,7 +27,7 @@ scan of every public member's signature): the only members that take or return a
 `PhaseFilter.Get/SetPhaseStatusPresentation`, `Element.GetPhaseStatus` and `ElementPhaseStatusFilter`, the
 same eight on every release. Nothing carries a status's lines, patterns, halftone or material. So
 *Overridden* can be chosen here, and **what it draws is set by hand**.
-[Row 5b-1350](../fragment-issues/section-5b-rows-401-425.md).
+[Row 5b-1350](../fragment-issues/section-5b-rows-1326-1350.md).
 
 **What is done and what is not.** Both compile for all eight releases (`tools/check-fragments-compile.py`,
 2026-10-31). **Nothing here has run in Revit.** Both cards are DRAFT.

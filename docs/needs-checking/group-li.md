@@ -46,7 +46,7 @@ question flag. The question reaches `REPORT_ELECTRICAL_SETTINGS` with and withou
 (`SELECT_BY_ELECTRICAL_CIRCUIT` before). The two commands reach the write without the flag from 2021 on
 (`EDIT_ELECTRICAL_CIRCUIT`, a write, and `REPORT_PANEL_CIRCUITS` before) and the read with it; behind a 2020
 wall, where no card can make or set a scheme, they reach `EDIT_ELECTRICAL_CIRCUIT` and `REPORT_PANEL_CIRCUITS`
-as before ([row 5b-1389](../fragment-issues/section-5b-rows-401-425.md), OPEN). Without the flag no other sentence moved. With it, write sentences that no read can own -
+as before ([row 5b-1389](../fragment-issues/section-5b-rows-1376-1400.md), OPEN). Without the flag no other sentence moved. With it, write sentences that no read can own -
 `CREATE_MEP_SYSTEM`'s *"put these devices on one circuit"* among them - moved from one read to another; none
 reaches its claimant on either tree. Probes nobody said, so not declared: *what are the circuit naming
 schemes* reaches the write without the flag on 2021 on and the read with it; *name the circuits panel dash

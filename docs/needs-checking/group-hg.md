@@ -11,7 +11,7 @@
 **Tracked as GitHub issue [#970](https://github.com/Ajmalpshaik/Heron-AI/issues/970) since 2026-11-16** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
 [D-138](../decisions/D-138.md) (accepted by the owner 2026-10-18, by asking for it) supersedes
-[D-126](../decisions/D-126.md) item 5 in part, from [row 5b-1101](../fragment-issues/section-5b-rows-401-425.md).
+[D-126](../decisions/D-126.md) item 5 in part, from [row 5b-1101](../fragment-issues/section-5b-rows-1101-1125.md).
 **What changed.** An *Ask to Keep* button beside Changes, Admin and Publish turns Revit's Keep or Discard
 box on and off - it writes `write.askBeforeKeeping`, asks once on the way off and never on the way on,
 and starts ON. While it is on, the box has a third link, *"Keep, and keep the rest of this job without
