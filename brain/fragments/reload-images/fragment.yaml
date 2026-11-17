@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -111,6 +111,47 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-16'
+  by: Ajmal PS
+  model: night-scratch (3,203 elements), Revit 2024, session 8292
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    import-image with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned chosen 1 item(s) [ImageType], findings
+    2 item(s) [1 image(s) reloaded and read back; 0 not reloaded., "heron-test-image.png"
+    (352543): reloaded, "C:/Users/ajmal/A...], images 1 item(s) [ImageType], isPdf false,
+    lines 1 item(s) ["heron-test-image.png" (352543): reloaded, "C:/Users/ajmal/A...], missingNames
+    0 item(s), namesHere Func`1, newFile , page 0, refused (null), reloaded 1, reloadedIds
+    1 item(s) [352543], report "heron-test-image.png" (352543): reloaded, "C:/Users/ajmal/AppData/Local/Temp/heron-work/gp2020/heron-test-image.png"
+    - now Imported, 64 x 64 px (was Imported, 64 x 64 px)., skipped 0 item(s), wanted heron-test-image.png.
+    inputs came names as given; fromPath not given - "none", the card''s own default (optional);
+    page not given - "0", the card''s own default (optional). on night-scratch'
+  negative_case: 'run with names=zz no such image, path=C:/Users/ajmal/AppData/Local/Temp/heron-work/gp2020/heron-test-image.png,
+    view=FloorPlan: Level 1 instead - chosen because it should not contain what this fragment
+    reports - the arrangement was re-made first by running import-image with this phase''s
+    own values - run inside a transaction, and Revit reported the transaction group ROLLED
+    BACK afterwards. returned chosen 0 item(s), findings 3 item(s) [0 image(s) reloaded and
+    read back; 0 not reloaded; 1 name(s)..., None of the names given is an image here. NOTHING
+    WAS RELOAD..., No image is named "zz no such image" in Manage Images. The i...], images
+    1 item(s) [ImageType], isPdf false, lines 2 item(s) [None of the names given is an image
+    here. NOTHING WAS RELOAD..., No image is named "zz no such image" in Manage Images. The
+    i...], missingNames 1 item(s) [zz no such image], namesHere Func`1, newFile , page 0,
+    refused None of the names given is an image here. NOTHING WAS RELOADED., reloaded 0, reloadedIds
+    0 item(s), report None of the names given is an image here. NOTHING WAS RELOADED.  ||  No
+    image is named "zz no such image" in Manage Images. The images here are "heron-test-image.png".,
+    skipped 0 item(s), wanted zz no such image. inputs came names as given; fromPath not given
+    - "none", the card''s own default (optional); page not given - "0", the card''s own default
+    (optional). on night-scratch'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.2.0.0
+    addin_hash: 80819edd3983a0d5
+  fingerprint: d2c1f462336e9e57
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

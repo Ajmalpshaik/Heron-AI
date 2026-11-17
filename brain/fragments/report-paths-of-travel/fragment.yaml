@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -88,6 +88,39 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-16'
+  by: Ajmal PS
+  model: night-scratch (3,203 elements), Revit 2024, session 8292
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    create-paths-of-travel with this phase''s own values - run inside a transaction, and Revit
+    reported the transaction group ROLLED BACK afterwards. returned MetresPerFoot 0.3048,
+    MillimetresPerFoot 304.8, at Func`2, culture CultureInfo, findings 1 item(s) [Lengths
+    are measured along each path''s own lines, in metres....], mm Func`2, pathCount 1, pathIds
+    1 item(s) [352550], refused (null), report 1 path(s) of travel in "Level 1", the longest
+    10.00 m: path 352550: 10.00 m, from 20000,20000 mm in no room to 30000,20000 mm in no
+    room, target ViewPlan, viewWords Func`2. inputs came view as given; room as given. on
+    night-scratch'
+  negative_case: 'run with fromPoints=, room=, rooms=, toDoor=, toPoint=30000,20000, view=FloorPlan:
+    Level 1 instead - chosen because it should not contain what this fragment reports - the
+    arrangement was re-made first by running create-paths-of-travel with this phase''s own
+    values - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned MetresPerFoot 0.3048, MillimetresPerFoot 304.8, at Func`2, culture
+    CultureInfo, findings 1 item(s) [Lengths are measured along each path''s own lines, in
+    metres....], mm Func`2, pathCount 0, pathIds 0 item(s), refused (null), report "Level
+    1" has no path of travel lines. CREATE_PATHS_OF_TRAVEL draws them, from rooms or points
+    to a named exit door or point., target ViewPlan, viewWords Func`2. inputs came view as
+    given; room as given. on night-scratch'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.2.0.0
+    addin_hash: 80819edd3983a0d5
+  fingerprint: f5c60411be35a117
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

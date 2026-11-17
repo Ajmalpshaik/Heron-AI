@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -200,6 +200,89 @@ contract:
       type: IList<ElementId>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-11-16'
+  by: Ajmal PS
+  model: night-scratch (3,203 elements), Revit 2024, session 8292
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned allIds Action`1, along XYZ, boundaryCurves
+    2 item(s) [Autodesk.Revit.DB.Line, Autodesk.Revit.DB.Line], centreRadius 0, chainOf Func`2,
+    chosenType StairsType, created 1 item(s) [id 352552], depth 0, depthOf Func`2, discipline
+    Action`1, findings 2 item(s) [Sketched stair of type ''190mm max riser 250mm going'' (Revit''...,
+    Revit added 2 railings of type ''1100mm'' with the stair], first 22, firstRunRisers 0,
+    fixedRisers false, form sketch, givenRisers 0 item(s), hand , heading , height 13.1233595800525,
+    idsBefore HashSet`1, invariant CultureInfo, invariantFloat NumberStyles, landingCount
+    0, landingDepth 0, landingDepthMm 0, layoutFor Func`2, leftPoints 2 item(s) [(0.000000000,
+    0.000000000, 0.000000000), (0.000000000, 22.965879265, 0.000000000)], lengthOf Func`2,
+    madeNote Sketched stair of type ''190mm max riser 250mm going'' (Revit''s default for
+    new stairs) from ''Level 1'' to ''Level 2'': 22 risers of 181.8 mm (22 by run), 250 mm
+    treads, 1500 mm run width, 0 landing(s), 22 riser line(s) spread evenly along the boundaries.
+    Plan extent X 19950..21550, Y 0..7012.5 mm, mm Func`2, onBase Func`2, pathCurves 21 item(s)
+    [Autodesk.Revit.DB.Line, Autodesk.Revit.DB.Line, Autodesk.Revit.DB.Line, ...], pointAlong
+    Func`3, radius 0, railingNote Revit added 2 railings of type ''1100mm'' with the stair,
+    railings 2 item(s) [352740, 352744], readRiserLines Func`1, rectangle Func`6, refused
+    (null), revitSaid Func`1, rightPoints 2 item(s) [(4.921259843, 0.000000000, 0.000000000),
+    (4.921259843, 22.965879265, 0.000000000)], riser 0.596516344547841, riserCurves 22 item(s)
+    [Autodesk.Revit.DB.Line, Autodesk.Revit.DB.Line, Autodesk.Revit.DB.Line, ...], riserHeightMm
+    181.8, riserNote (null), riserRetried false, riserText , risers 22, runCount 1, runWidth
+    0, second 0, side XYZ, sketchFor Func`2, sketchGiven true, sketchLeft 2 item(s) [(65.616797900,
+    0.000000000, 0.000000000), (65.616797900, 22.965879265, 0.000000000)], sketchRefusal Func`1,
+    sketchRight 2 item(s) [(70.538057743, 0.000000000, 0.000000000), (70.538057743, 22.965879265,
+    0.000000000)], sketchWidth 4.92125984251969, tolerance 0.0164041994750656, total 22, tread
+    0.820209973753281, treadDepthMm 250, typeNames 6 item(s) [190mm max riser 250mm going,
+    Industrial and Assembly, Part M (Disabled), ...], usedDefault true, wantedType none, width
+    0. inputs came editScopeFailures - Heron''s failure discipline, for the fragment''s own
+    edit mode; baseLevel as given; topLevel as given; stairType not given - "none", the card''s
+    own default (optional); shape as given; startPoint as given; direction not given - "none",
+    the card''s own default (optional); turn not given - "none", the card''s own default (optional);
+    runWidth not given - "0", the card''s own default (optional); landingDepth not given -
+    "0", the card''s own default (optional); radius not given - "0", the card''s own default
+    (optional); firstRunRisers not given - "0", the card''s own default (optional); leftBoundary
+    as given (2); rightBoundary as given (2); riserLines not given - "none", the card''s own
+    default (optional). on night-scratch'
+  negative_case: run with baseLevel=Level 1, leftBoundary=0,0,0; 0,7000,0, rightBoundary=1500,0,0;
+    1500,7000,0, riserLines=0,0,0; 1500,0,0 | 0,3500,0; 1500,3500,0 | 0,7000,0; 1500,7000,0,
+    shape=sketch, startPoint=20000,0,0, topLevel=Level 2 instead - chosen because it should
+    not contain what this fragment reports - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned allIds Action`1, along XYZ, boundaryCurves
+    0 item(s), centreRadius 0, chainOf Func`2, chosenType StairsType, created (null), depth
+    0, depthOf Func`2, discipline Action`1, findings 1 item(s) [Nothing was made. 3 riser
+    lines make risers of 1333.3 mm, ov...], first 0, firstRunRisers 0, fixedRisers true, form
+    sketch, givenRisers 3 item(s) [Autodesk.Revit.DB.Line, Autodesk.Revit.DB.Line, Autodesk.Revit.DB.Line],
+    hand , heading , height 13.1233595800525, idsBefore HashSet`1, invariant CultureInfo,
+    invariantFloat NumberStyles, landingCount 0, landingDepth 0, landingDepthMm 0, layoutFor
+    Func`2, leftPoints 2 item(s) [(0.000000000, 0.000000000, 0.000000000), (0.000000000, 22.965879265,
+    0.000000000)], lengthOf Func`2, madeNote (null), mm Func`2, onBase Func`2, pathCurves
+    0 item(s), pointAlong Func`3, radius 0, railingNote (null), railings 0 item(s), readRiserLines
+    Func`1, rectangle Func`6, refused 3 riser lines make risers of 1333.3 mm, over the Maximum
+    Riser Height of '190mm max riser 250mm going' (190 mm) - 'Level 2' needs 22 or more, revitSaid
+    Func`1, rightPoints 2 item(s) [(4.921259843, 0.000000000, 0.000000000), (4.921259843,
+    22.965879265, 0.000000000)], riser 0, riserCurves 0 item(s), riserHeightMm 0, riserNote
+    (null), riserRetried false, riserText 0,0,0; 1500,0,0 | 0,3500,0; 1500,3500,0 | 0,7000,0;
+    1500,7000,0, risers 0, runCount 0, runWidth 0, second 0, side XYZ, sketchFor Func`2, sketchGiven
+    true, sketchLeft 2 item(s) [(65.616797900, 0.000000000, 0.000000000), (65.616797900, 22.965879265,
+    0.000000000)], sketchRefusal Func`1, sketchRight 2 item(s) [(70.538057743, 0.000000000,
+    0.000000000), (70.538057743, 22.965879265, 0.000000000)], sketchWidth 0, tolerance 0.0164041994750656,
+    total 0, tread 0.820209973753281, treadDepthMm 0, typeNames 6 item(s) [190mm max riser
+    250mm going, Industrial and Assembly, Part M (Disabled), ...], usedDefault true, wantedType
+    none, width 0. inputs came editScopeFailures - Heron's failure discipline, for the fragment's
+    own edit mode; baseLevel as given; topLevel as given; stairType not given - "none", the
+    card's own default (optional); shape as given; startPoint as given; direction not given
+    - "none", the card's own default (optional); turn not given - "none", the card's own default
+    (optional); runWidth not given - "0", the card's own default (optional); landingDepth
+    not given - "0", the card's own default (optional); radius not given - "0", the card's
+    own default (optional); firstRunRisers not given - "0", the card's own default (optional);
+    leftBoundary as given (2); rightBoundary as given (2); riserLines as given. on night-scratch
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  built_on:
+    revit_release: '2024'
+    revit_build: 24.3.60.12
+    addin_version: 0.2.0.0
+    addin_hash: 80819edd3983a0d5
+  fingerprint: 4735e47d5dc7b0e0
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
