@@ -245,9 +245,18 @@ def response_timeout(values=None):
 FRAGMENT_FLOOR_S = 180.0
 
 
-def fragment_timeout(values=None, keeping=False):
+def fragment_timeout(values=None, keeping=False, waiting=False):
     """
     How long to wait for a FRAGMENT to come back. Never below the add-in's.
+
+    `waiting` IS A CARD THAT WAITS FOR THE MODELLER - one whose contract
+    declares `waitsForModeller` (Q-86, decided 2026-11-15; the bridge
+    client's `waits_for_modeller` reads it). The add-in holds its timers for
+    such a run as it does for the Keep or Discard box and waits
+    revit.askTimeoutSeconds more, so this side adds it too - once, whether
+    or not the run also keeps, because one job has one longer wait. Without
+    it this side gave up at its floor while Revit still waited for the
+    click, and a click made then reached nobody.
 
     `keeping` IS A RUN SENT WITH apply - one the add-in may stop and ASK the
     modeller about (D-126). A job that puts the Keep or Discard box up is
@@ -288,7 +297,7 @@ def fragment_timeout(values=None, keeping=False):
     """
     values = load() if values is None else values
     waited = max(FRAGMENT_FLOOR_S, response_timeout(values))
-    if keeping:
+    if keeping or waiting:
         waited += ask_timeout(values)
     return waited
 
@@ -310,6 +319,23 @@ def try_once_timeout(values=None):
     """
     values = load() if values is None else values
     return fragment_timeout(values) + ask_timeout(values)
+
+
+def switches(values=None):
+    """
+    The owner's switches as THIS SIDE'S copy of the file says them, named as
+    `info` names them - since D-166 only Ask to Keep. Changes, Admin and
+    Publish left the file that day: Revit holds them in memory, and the add-in
+    says them (heron_bridge_client.switches_state). Q-70 first had all four
+    here; the three are not put back.
+
+    FOR COMPARING, NEVER FOR SAYING (Q-70). revit_health states what each
+    Revit said of its own, and sets this beside it only to say when the
+    chat's copy is not the file that Revit reads; on a PC whose Claude app
+    keeps a private copy of the settings folder this is not that file.
+    """
+    values = load() if values is None else values
+    return {"ask_to_keep": asks_before_keeping(values)}
 
 
 def problems(values=None):

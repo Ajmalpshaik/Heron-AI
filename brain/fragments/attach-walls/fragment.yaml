@@ -122,6 +122,10 @@ compatibility-note: >
 #   "set the wall top to level 2"             -> SET_ELEMENT_LEVEL, topLevelId
 #   "attach these columns to the roof"        -> ATTACH_COLUMNS - columns,
 #                                                with the target selected
+#   "attach all walls to the roof"            -> SHAPE_WALL_TOPS_TO_ROOF on
+#                                                Revit 2022 to 2024, a profile
+#                                                edited to the roof; here from
+#                                                2025 (measured 2026-11-16)
 #
 # ON 2020 TO 2024 THIS CARD IS NOT OFFERED, so its sentences rank another
 # card there. Measured 2026-11-01 (brain/heron_retrieve.py, scratch store,
@@ -141,6 +145,16 @@ compatibility-note: >
 # the lookup now opens its answer with "NOT ON REVIT 2024" above the tool it
 # offers (#853 item C6). The fallback #852 asks for - shaping a wall's top
 # to a gable - is row 5b-1672; the question is Q-91.
+#
+# Q-91 ANSWERED 2026-11-16 (Ajmal PS, shape 2): SHAPE_WALL_TOPS_TO_ROOF,
+# DRAFT, declared 2022 to 2024 only, edits each wall's profile so its top
+# follows the roof above it - a sketch that does NOT follow the roof when it
+# changes, which its answer says. Not a widening of this card: a different
+# call and result, on releases this card cannot run on. Measured 2026-11-16
+# (heron_brain.lookup, scratch store, model backend): "attach all walls to
+# the roof" reaches it by identity on 2022 and 2024 and this card on 2025
+# and 2026; on 2021 the answer opens "NOT ON REVIT 2021" and names this
+# card, so a wall there is still attached by hand.
 
 utterances:
   # ADDED 2026-11-07, issue #799 routing table: ranked DIMENSION_ELEMENT_FACES

@@ -69,6 +69,10 @@ except ImportError:                                          # pragma: no cover
 # afford this module's PyYAML can ask it too, instead of writing a copy.
 import heron_relpath as RELPATH
 
+# For TRUST_LADDER and nothing else. heron_supply imports nothing but `os` and
+# `sys`, and it already owns docs/00d s38's ladder - one copy, not two.
+import heron_supply as SUPPLY
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FRAGMENTS_DIR = os.path.join(ROOT, "brain", "fragments")
 
@@ -157,10 +161,28 @@ AMBIENT = {
     # one. The add-in binds it true, and lets it through on the read and show
     # paths, where editScopeFailures is refused.
     "noTransactionOpen": "bool",
+    # Q-86, decided 2026-11-15. Declaring it says the fragment WAITS FOR THE
+    # MODELLER - Revit's own pick, which returns when they click or press Esc.
+    # The add-in binds it true and, on the read and show paths, holds its
+    # timers for the run as it does for a Keep or Discard box: the run clock
+    # is paused and the dispatcher waits revit.askTimeoutSeconds more. A run
+    # that can change the model is refused. The chat's side waits as long.
+    "waitsForModeller": "bool",
     # D-114. Revit overwrites a loaded family only when LoadFamily is handed
     # an IFamilyLoadOptions, which needs a class a fragment cannot declare -
     # so the add-in supplies a factory; its bool is overwriteParameterValues.
     "familyLoadOptions": "Func<bool, IFamilyLoadOptions>",
+    # Q-69 and D-171, 2026-11-16. Revit saves nothing while Heron's group is
+    # open, so a fragment asks the ADD-IN to save the document it works in
+    # once the group has closed - after a Keep, or a preview, never after a
+    # Discard: null for its own file, or the full path the modeller typed for
+    # a Save As; the bool says a file already there may be replaced.
+    "saveWhenKept": "Action<string, bool>",
+    # Row 5b-1824, 2026-11-16. The same, for ANOTHER open document: its file,
+    # and whether its window is closed once it is saved - by the add-in after
+    # the group, by the same rule, where until then the fragment saved it
+    # inside the run, before Revit's Keep or Discard box.
+    "saveOtherWhenKept": "Action<string, bool>",
 }
 
 # WHERE A NEEDED NAME CAN COME FROM. Found the same way AMBIENT was - by writing
@@ -179,6 +201,12 @@ AMBIENT = {
 # that only a human can supply. A contract model that cannot say "this comes
 # from the question" makes every parameterised fragment look broken.
 SOURCES = ("fragment", "ambient", "request")
+
+# THE OTHER `source`: a card's own top-level trust word, lowest first, from
+# docs/00d s38. A different field from the contract's `source` above, which
+# shares the name one level down (PROPOSALS F9). Bound to the supply agent's,
+# so the loader and the gate can never hold two different ladders.
+TRUST_LADDER = SUPPLY.TRUST
 
 # WHAT A PROVIDED NAME IS FOR. A fragment returns two different kinds of thing
 # and only it knows which is which:
@@ -1568,6 +1596,17 @@ def validate(frag):
     if frag.status and frag.status not in STATUSES:
         problems.append("%s: status %r is not a lifecycle state (%s)"
                         % (where, frag.status, ", ".join(STATUSES)))
+
+    # THE TRUST WORD IS CHECKED, not only required (PROPOSALS F9, decided
+    # 2026-11-15 on the owner's delegation). Until then `source:` was a word
+    # a card wrote about itself that nothing read. It must be a rung of
+    # docs/00d s38's ladder; who approved a card is the other half of F9 -
+    # an approval record, still owed, because inventing an approver for
+    # every card would be the self-declared trust this check refuses.
+    trust = frag.data.get("source")
+    if trust and trust not in TRUST_LADDER:
+        problems.append("%s: source %r is not a trust level (%s)"
+                        % (where, trust, " -> ".join(TRUST_LADDER)))
 
     # THE DECLARED CASES. Read here because `validate` is what
     # `python brain/heron_fragment.py` and tools/check-gaps.py run, so this is

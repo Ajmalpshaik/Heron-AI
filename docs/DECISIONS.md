@@ -19,7 +19,7 @@
 >
 > This log is append-only. A decision that is later reversed gets a **new entry** that supersedes
 > the old one — the original stays, so the reasoning history is never lost.
-> This mirrors Golden Rule 4: never destroy a working record.
+> The rule is this log's own: never destroy a working record.
 
 ---
 
@@ -126,7 +126,7 @@ an edit.
 | [D-52](#d-52--a-count-of-what-was-turned-down-is-not-a-count-of-what-was-found) | A count of what was turned down is not a count of what was found | ✅ Accepted · 2026-09-07 |
 | [D-53](#d-53--a-fragment-that-cannot-come-back-empty-is-proved-by-tracking-instead) | A fragment that cannot come back empty is proved by TRACKING instead | ✅ Accepted · 2026-09-07 |
 | [D-54](#d-54--the-callers-half-arrives-as-text-and-revit-is-what-turns-it-into-a-view) | The caller's half arrives as text, and Revit is what turns it into a view | ✅ Accepted · 2026-09-08 |
-| [D-55](#d-55--a-fragments-preview-is-the-run-itself-rolled-back) | A fragment's preview is the run itself, rolled back | ✅ Accepted · 2026-09-08 |
+| [D-55](#d-55--a-fragments-preview-is-the-run-itself-rolled-back) | A fragment's preview is the run itself, rolled back | ✅ Accepted · 2026-09-08 · a save made on a preview superseded in part by D-171 · 2026-11-16 |
 | [D-56](#d-56--the-banner-counts-in-flight-off-the-dispatcher-because-an-end-can-arrive-before-its-own-begin) | The banner counts in flight off the dispatcher, because an End can arrive before its own Begin | ✅ Accepted · 2026-09-08 |
 | [D-57](#d-57--the-master-architecture-document-is-a-research-brief-not-a-fifth-part-of-the-specification) | The Master Architecture document is a research brief, not a fifth part of the specification | ✅ Accepted · 2026-09-09 |
 | [D-58](#d-58--heron-measures-what-it-can-see-and-the-cost-meter-belongs-to-the-host) | Heron measures what it can see, and the cost meter belongs to the host | ✅ Accepted · 2026-09-09 |
@@ -162,7 +162,7 @@ an edit.
 | [D-88](#d-88--one-product-is-one-addin-manifest-plus-one-dll-each-with-its-own-addinid) | One product is one .addin manifest plus one DLL, each with its own AddInId | ✅ Accepted · 2026-09-21 |
 | [D-89](#d-89--custom-install-is-at-tab-level-and-the-heron-tab-is-the-one-exception) | Custom Install is at tab level, and the Heron tab is the one exception | ✅ Accepted · 2026-09-21 |
 | [D-90](#d-90--install-stays-per-user-and-never-asks-for-administrator-rights) | Install stays per-user and never asks for administrator rights | ✅ Accepted · 2026-09-21 |
-| [D-91](#d-91--product-files-come-from-a-signed-versioned-github-release) | Product files come from a signed, versioned GitHub release | ✅ Accepted · 2026-09-21 |
+| [D-91](#d-91--product-files-come-from-a-signed-versioned-github-release) | Product files come from a signed, versioned GitHub release | ✅ Accepted · 2026-09-21 · *signed* superseded in part by D-173 · 2026-11-16 |
 | [D-92](#d-92--a-ribbon-button-is-a-front-door-onto-a-proven-fragment-not-new-logic) | A ribbon button is a front door onto a proven fragment, not new logic | ✅ Accepted · 2026-09-21 |
 | [D-93](#d-93--the-product-list-is-a-manifest-read-as-data-never-a-list-written-into-the-installer) | The product list is a manifest read as data, never a list written into the installer | ✅ Accepted · 2026-09-21 |
 | [D-94](#d-94--install-replaces-there-is-no-separate-upgrade-path) | Install replaces; there is no separate upgrade path | ✅ Accepted · 2026-09-21 |
@@ -190,7 +190,7 @@ an edit.
 | [D-116](#d-116--a-list-of-family-forms-built-in-one-call-undoes-as-one-and-cuts-stay-a-separate-call) | A list of family forms built in one call undoes as one, and cuts stay a separate call | ✅ Accepted · 2026-10-17 |
 | [D-117](#d-117--a-change-is-kept-only-from-a-fragment-whose-proof-still-stands) | A change is kept only from a fragment whose proof still stands | ✅ Accepted · 2026-10-17 |
 | [D-118](#d-118--a-tool-description-over-its-budget-stops-a-pull-request) | A tool description over its budget stops a pull request | ✅ Accepted · 2026-10-17 |
-| [D-119](#d-119--a-draft-fragment-may-run-once-on-the-model-in-front-behind-a-keep-or-discard-prompt-in-revit-and-article-11-says-so) | A DRAFT fragment may run once on the model in front, behind a Keep or Discard prompt in Revit, and Article 11 says so | ✅ Accepted · 2026-10-17 |
+| [D-119](#d-119--a-draft-fragment-may-run-once-on-the-model-in-front-behind-a-keep-or-discard-prompt-in-revit-and-article-11-says-so) | A DRAFT fragment may run once on the model in front, behind a Keep or Discard prompt in Revit, and Article 11 says so | ✅ Accepted · 2026-10-17 · one word of its Article 11 text superseded in part by D-170 · 2026-11-16 |
 | [D-120](#d-120--a-run-the-modeller-kept-after-checking-it-is-the-positive-case-of-a-proof-and-the-negative-case-is-still-its-own-rolled-back-run) | A run the modeller kept after checking it is the positive case of a proof, and the negative case is still its own rolled-back run | ✅ Accepted · 2026-10-17 |
 | [D-121](#d-121--d-84s-cost-is-read-again-a-never-proved-fragment-runs-only-on-a-saved-model-with-nothing-unsaved) | D-84's cost is read again: a never-proved fragment runs only on a saved model with nothing unsaved | ✅ Accepted · 2026-10-17 |
 | [D-122](#d-122--under-article-19-the-modeller-judges-a-drafts-one-run-and-the-agent-that-wrote-it-only-starts-it) | Under Article 19 the modeller judges a DRAFT's one run, and the agent that wrote it only starts it | ✅ Accepted · 2026-10-17 |
@@ -237,7 +237,14 @@ an edit.
 | [D-166](#d-166--changes-admin-and-publish-are-turned-on-only-by-a-click-in-revit-held-in-its-memory-never-read-from-a-file) | Changes, Admin and Publish are turned on only by a click in Revit, held in its memory, never read from a file | • Accepted · built 2026-11-16, all three layers, not yet run in Revit |
 | [D-167](#d-167--a-modeller-installs-heron-with-one-setup-file-which-puts-heron-in-place-and-hands-over-to-the-installer-engine) | A modeller installs Heron with one Setup file, which puts Heron in place and hands over to the installer engine | ✅ Accepted · 2026-11-16 |
 | [D-168](#d-168--a-change-revit-kept-in-which-nothing-changed-by-every-count-says-nothing-changed-and-refused-when-the-capability-itself-said-no) | A change Revit kept in which nothing changed by every count says NOTHING CHANGED, and REFUSED when the capability itself said no | ✅ Accepted · 2026-11-16 |
+| [D-169](#d-169--the-disclaimer-says-what-the-chat-says-heron-reports-which-checked-values-a-model-meets-cites-its-source-and-certifies-no-compliance) | The DISCLAIMER says what the chat says: Heron reports which checked values a model meets, cites its source, and certifies no compliance | ✅ Accepted · 2026-11-16 |
+| [D-170](#d-170--the-word-sandbox-leaves-article-11-and-golden-rule-18-new-code-runs-watched-not-contained) | The word sandbox leaves Article 11 and Golden Rule 18: new code runs watched, not contained | ✅ Accepted · 2026-11-16 |
+| [D-171](#d-171--heron-may-save-the-model-it-works-in-once-its-undo-entry-has-closed-only-when-the-modeller-asks-and-never-picks-a-name-itself) | Heron may save the model it works in once its Undo entry has closed, only when the modeller asks, and never picks a name itself | ✅ Accepted · 2026-11-16 |
+| [D-172](#d-172--article-13-names-the-keep-boxs-job-grant-as-its-one-recorded-exception) | Article 13 names the Keep box's job grant as its one recorded exception | ✅ Accepted · 2026-11-16 |
+| [D-173](#d-173--a-release-is-versioned-and-checksummed-now-and-says-plainly-it-is-unsigned-and-is-signed-before-heron-is-given-to-anyone-outside) | A release is versioned and checksummed now and says plainly it is unsigned, and is signed before Heron is given to anyone outside | ✅ Accepted · 2026-11-16 |
 | [D-174](#d-174--a-proof-taken-on-another-heron-add-in-build-or-another-revit-build-is-said-under-the-answer-and-never-refused) | A proof taken on another Heron add-in build or another Revit build is said under the answer, and never refused | ✅ Accepted · 2026-11-16 |
+| [D-175](#d-175--only-the-chat-that-made-a-heron-change-may-undo-it-the-activity-panes-undo-is-the-modellers-own) | Only the chat that made a Heron change may undo it; the Activity pane's Undo is the modeller's own | ✅ Accepted · 2026-11-16 |
+| [D-176](#d-176--the-activity-panes-select-and-zoom-look-past-a-chats-model-hold-because-they-only-look) | The Activity pane's Select and Zoom look past a chat's model hold, because they only look | ✅ Accepted · 2026-11-16 |
 | [D-177](#d-177--an-idea-taken-from-another-project-is-written-in-herons-own-words-and-the-project-and-its-author-are-not-named) | An idea taken from another project is written in Heron's own words, and the project and its author are not named | ✅ Accepted · 2026-11-17 |
 | [D-178](#d-178--a-qa-checklist-run-can-be-written-as-an-excel-workbook-and-an-html-page-each-a-new-file) | A QA checklist run can be written as an Excel workbook and an HTML page, each a new file | ✅ Accepted · 2026-11-17 |
 | [D-179](#d-179--a-project-checklist-can-extend-an-office-checklist-changing-only-severity-target-and-onoff-and-every-run-names-the-checks-it-used) | A project checklist can extend an office checklist, changing only severity, target and on/off, and every run names the checks it used | ✅ Accepted · 2026-11-17 |
@@ -643,6 +650,7 @@ What this makes easy. What this makes hard. What it locks in.
 
 **Status:** Accepted · **Date:** 2026-09-08 · **Found during:** the owner asking why he had to click something a fragment already does
 **Affects:** [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs) `Run(app, request, writing)`, [`HeronOperationRegistry`](../platform/Heron.Core/HeronOperationRegistry.cs), [D-19](DECISIONS.md), [Golden Rule 16](14-golden-rules.md), [Golden Rule 19](14-golden-rules.md)
+**Superseded in part by:** [D-171](#d-171--heron-may-save-the-model-it-works-in-once-its-undo-entry-has-closed-only-when-the-modeller-asks-and-never-picks-a-name-itself), accepted by the owner 2026-11-16 - a save asked for with a run is made on a preview too and is not rolled back; the run's changes to the model are still rolled back, and the reply says the save was made
 
 **Full record:** [`decisions/D-55.md`](decisions/D-55.md)
 
@@ -859,6 +867,7 @@ What this makes easy. What this makes hard. What it locks in.
 ## D-91 — Product files come from a signed, versioned GitHub release
 
 **Status:** Accepted · **Date:** 2026-09-21 · **Source:** Ajmal PS, 2026-09-20; [`docs/07 §1a`](07-installation-and-update.md) · **Promoted from:** [S5](work-notes/plans/plugin-extension/00-structure.md)
+**Superseded in part by:** [D-173](#d-173--a-release-is-versioned-and-checksummed-now-and-says-plainly-it-is-unsigned-and-is-signed-before-heron-is-given-to-anyone-outside), accepted by the owner 2026-11-16 - amended: *signed* is the bar and not yet the fact; until signing is built a release is versioned and checksummed and says plainly it is unsigned, and it is signed before Heron is given to anyone outside
 
 **Full record:** [`decisions/D-91.md`](decisions/D-91.md)
 
@@ -1085,6 +1094,7 @@ What this makes easy. What this makes hard. What it locks in.
 **Amends, once accepted:** [Constitution Article 11](../HERON_CONSTITUTION.md) · **Breaks, on the record:** [Golden Rule 18](14-golden-rules.md) · **Keeps:** [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit), [D-55](#d-55--a-fragments-preview-is-the-run-itself-rolled-back), [D-99](#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so), Article 8
 **Beside:** [D-117](#d-117--a-change-is-kept-only-from-a-fragment-whose-proof-still-stands), accepted the same day - it refuses a DRAFT's kept change on `revit_change` and `fragment --write --apply`; this decision's `try-once` is the one way a DRAFT's change is kept, and it goes through neither
 **Affects:** [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs), [`RevitDispatcher.cs`](../revit/Heron.Revit.Addin/RevitDispatcher.cs), [`HeronConfig.cs`](../platform/Heron.Core/HeronConfig.cs), [`heron_config.py`](../mcp/client/heron_config.py), [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py) (`try-once`), [`heron-fragment-author`](../.claude/agents/heron-fragment-author.md)
+**Superseded in part by:** [D-170](#d-170--the-word-sandbox-leaves-article-11-and-golden-rule-18-new-code-runs-watched-not-contained), accepted by the owner 2026-11-16 - one word of the Article 11 text it wrote: *"that prompt and that one group are its sandbox"* reads *"that prompt and that one group are how it is watched, and watched is not contained"*; what the exception allows does not change
 
 **Full record:** [`decisions/D-119.md`](decisions/D-119.md)
 
@@ -1441,6 +1451,7 @@ What this makes easy. What this makes hard. What it locks in.
 ## D-163 — Heron's recent changes are docked in Revit, with Select, Zoom and Undo, reached through the one dispatcher
 
 **Status:** Accepted · **Date:** 2026-11-12 · **Accepted:** Ajmal PS, 2026-11-12, in conversation: item 10 of the plan
+**Superseded in part by:** [D-176](#d-176--the-activity-panes-select-and-zoom-look-past-a-chats-model-hold-because-they-only-look) - item 5's *"it looks at the model hold"*, for Select and Zoom: they look past a chat's hold, because they only look (2026-11-16)
 **Keeps:** [D-09](decisions/D-09.md) · [D-150](decisions/D-150.md) · [D-141](decisions/D-141.md) · [D-157](decisions/D-157.md)
 **Affects:** [`HeronActivityPane.cs`](../revit/Heron.Revit.Addin/HeronActivityPane.cs) · [`RevitShowElements.cs`](../revit/Heron.Revit.Addin/RevitShowElements.cs)
 
@@ -1488,6 +1499,56 @@ What this makes easy. What this makes hard. What it locks in.
 
 **Full record:** [`decisions/D-168.md`](decisions/D-168.md)
 
+## D-169 — The DISCLAIMER says what the chat says: Heron reports which checked values a model meets, cites its source, and certifies no compliance
+
+**Status:** Accepted · **Date:** 2026-11-16 · **Accepted:** Ajmal PS, 2026-11-16, in conversation: *"go with you suggetions"* - his answer, in his own words, when [Q-79](open-questions/tier-2.md) was put to him with Claude's suggestion beside it: shape 1, the DISCLAIMER takes the chat's words - Heron reports whether the checked values are met, with the source document, and certifies no compliance · **Answers:** [Q-79](OPEN-QUESTIONS.md)
+**Numbering:** written from the same answers as [D-172](decisions/D-172.md) (first numbered D-167), whose Numbering line says how the numbers were taken.
+**Keeps:** [D-36](decisions/D-36.md) - the DISCLAIMER is load-bearing, and changes with the code rather than after it · the instruction every chat reads, [`host.chat.yaml`](../brain/instructions/host.chat.yaml), unchanged
+**Affects:** [`DISCLAIMER.md`](../DISCLAIMER.md), *On standards checking*
+
+**Full record:** [`decisions/D-169.md`](decisions/D-169.md)
+
+## D-170 — The word sandbox leaves Article 11 and Golden Rule 18: new code runs watched, not contained
+
+**Status:** Accepted · **Date:** 2026-11-16 · **Accepted:** Ajmal PS, 2026-11-16, in conversation: *"go with you suggetions"* - his answer, in his own words, when proposal F23 was put to him with Claude's suggestion beside it: yes, the word *sandbox* in Constitution Article 11 and Golden Rule 18 becomes *watched, not contained* - new code runs under watch, every attempt recorded · **Answers:** [F23 of Part F](proposals/part-f.md) - the F23 on D-84's word, not [`f23.md`](proposals/f23.md), which is the other F23
+**Numbering:** written from the same answers as [D-172](decisions/D-172.md) (first numbered D-167), whose Numbering line says how the numbers were taken.
+**Extends:** [D-84](decisions/D-84.md) - its rename, carried into the two binding places it did not name, so its consequence *"there is now nowhere in the repository that claims otherwise"* holds for the Constitution and the Golden Rules from today
+**Supersedes one sentence of:** [D-119](decisions/D-119.md) - the Article 11 text it wrote, *"that prompt and that one group are its sandbox"*, which now reads *"that prompt and that one group are how it is watched, and watched is not contained"*; what the exception allows does not change
+**Keeps:** what Article 11 and Golden Rule 18 require - untested code never touches a live model, and promotion to live comes after it passes · D-84's decision - keep what exists, build no subprocess · D-119's exception, [D-117](decisions/D-117.md), [D-121](decisions/D-121.md) and [D-122](decisions/D-122.md)
+**Affects:** [`HERON_CONSTITUTION.md`](../HERON_CONSTITUTION.md) - Article 11 and the Amendment note · [Golden Rule 18](14-golden-rules.md) · the note under [Part 2 §35](00b-master-specification-agent-os.md) that reads Article 11's words · not Part 4 §10, point 4
+
+**Full record:** [`decisions/D-170.md`](decisions/D-170.md)
+
+## D-171 — Heron may save the model it works in once its Undo entry has closed, only when the modeller asks, and never picks a name itself
+
+**Status:** Accepted · **Date:** 2026-11-16 · **Accepted:** Ajmal PS, 2026-11-16, in conversation: *"go with you suggetions"* - his answer, in his own words, when [Q-69](open-questions/tier-2.md) was put to him with Claude's suggestion beside it: shape 2 - save after the group closes, from the add-in, only when the modeller asks, and Heron never picks a name itself · **Answers:** [Q-69](OPEN-QUESTIONS.md)
+**Numbering:** written from the same answers as [D-172](decisions/D-172.md) (first numbered D-167), whose Numbering line says how the numbers were taken.
+**Supersedes in part:** [D-55](decisions/D-55.md) - a save asked for with a run is made on a preview too, and is not rolled back; the run's changes to the model are rolled back as before, and the reply says the save was made · **Extends:** [D-112](decisions/D-112.md) and [D-114](decisions/D-114.md) - a third thing the add-in does on a fragment's behalf, and the first it does after Heron's group has closed
+**Keeps:** [Article 8](../HERON_CONSTITUTION.md) - one request, one named `TransactionGroup`, one undo entry, and the save is not in it · [Article 10](../HERON_CONSTITUTION.md) - never on Heron's own initiative · Articles 12a and 12b and [Golden Rule 20](14-golden-rules.md) - the pin follows a new title only for this run's own Save As of the pinned model · [D-106](decisions/D-106.md) - behind the Publish switch, as `SAVE_DOCUMENT` is · [D-117](decisions/D-117.md), [D-119](decisions/D-119.md), [D-121](decisions/D-121.md) · [D-126](decisions/D-126.md)
+**Affects, being built in another session from 2026-11-16 and not on this branch:** `SAVE_DOCUMENT` version 3 (FRG-DOC-033) · the add-in's write path after the group closes ([`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs)) · the chat's model pin ([`heron_write.py`](../mcp/server/heron_write.py)) · the methods that ask the modeller to save first and name Q-69
+
+**Full record:** [`decisions/D-171.md`](decisions/D-171.md)
+
+## D-172 — Article 13 names the Keep box's job grant as its one recorded exception
+
+**Status:** Accepted · **Date:** 2026-11-16 · **Accepted:** Ajmal PS, 2026-11-16, in conversation: *"go with you suggetions"* - his answer, in his own words, when [Q-73](open-questions/tier-2.md) was put to him with Claude's suggestion beside it: shape 1, Article 13 names the job grant - D-138's third link - as its one recorded exception · **Answers:** [Q-73](OPEN-QUESTIONS.md)
+**Numbering:** D-167 was the id `tools/next-id.py` printed free on 2026-11-16, with `origin/main` at `2d4bc84c` ending at D-164 and D-165 and D-166 held by the open pull requests #881 and #882. This work was given *D-166 onwards*; D-166 was already held, so it starts here, and the four decisions written from the same answers are D-168 to D-171. Renumbered from D-167 to D-172 on 2026-11-16 with `tools/renumber.py`, because claude/dazzling-stonebraker-9281d3 holds D-167 too.
+**Amends:** [Constitution Article 13](../HERON_CONSTITUTION.md) · **Settles:** the choice [D-139](decisions/D-139.md) point 4 left open, *"Constitution Article 13 beside D-138's job grant"*
+**Keeps:** [D-138](decisions/D-138.md) and [D-141](decisions/D-141.md) - the grant as built, unchanged · [D-142](decisions/D-142.md) - a deletion is never kept under it · Articles 7, 9 and 10 · [Golden Rule 9](14-golden-rules.md) - gated in code, at the boundary
+**Affects:** [`HERON_CONSTITUTION.md`](../HERON_CONSTITUTION.md) - Article 13 and the Amendment note · no code
+
+**Full record:** [`decisions/D-172.md`](decisions/D-172.md)
+
+## D-173 — A release is versioned and checksummed now and says plainly it is unsigned, and is signed before Heron is given to anyone outside
+
+**Status:** Accepted · **Date:** 2026-11-16 · **Accepted:** Ajmal PS, 2026-11-16, in conversation: *"go with you suggetions"* - his answer, in his own words, when [Q-77](open-questions/tier-2.md) was put to him with Claude's suggestion beside it: shape 1, a decision amends D-91 - releases are versioned and checksummed now and say plainly they are unsigned, and are signed before Heron is given to anyone outside · **Answers:** [Q-77](OPEN-QUESTIONS.md)
+**Numbering:** written from the same answers as [D-172](decisions/D-172.md) (first numbered D-167), whose Numbering line says how the numbers were taken. Renumbered from D-168 to D-173 on 2026-11-16 with `tools/renumber.py`, because claude/outcome-words-2026-11-16 holds D-168 too.
+**Supersedes in part:** [D-91](decisions/D-91.md) - *"Files come from a signed GitHub release"*: until signing is built a release is versioned and checksummed and says it is unsigned, and signed stays the bar, due before Heron is given to anyone outside
+**Keeps:** the rest of D-91 - named by version, never a branch, a raw file URL or whatever is newest on main, a download verified before it is used, nothing downloaded executed to decide what to install · [D-93](decisions/D-93.md) · [D-96](decisions/D-96.md) · [Article 15](../HERON_CONSTITUTION.md) - only the owner publishes a release · [Article 17](../HERON_CONSTITUTION.md) - when signing is built, its key lives in the credential store
+**Affects:** D-91's index entry and record · [07 §1a and §3](07-installation-and-update.md) · nothing in [`release.yml`](../.github/workflows/release.yml), which already writes *"Not signed."* into every release's notes, or in [`heron_tag.py`](../brain/heron_tag.py), whose refusal of an unsigned release stays as the bar signing must meet
+
+**Full record:** [`decisions/D-173.md`](decisions/D-173.md)
+
 ## D-174 — A proof taken on another Heron add-in build or another Revit build is said under the answer, and never refused
 
 **Status:** Accepted · **Date:** 2026-11-16 · **Accepted:** Ajmal PS, 2026-11-16, in conversation: *"Keep it a flag, accept Q-92 shape 1"* · **Answers:** [Q-92](open-questions/tier-3.md)
@@ -1495,6 +1556,23 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`heron_fragment.py`](../brain/heron_fragment.py) (`BUILT_ON_FIELDS`, `build_state`, `proof_build_state`) · [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (`_build_line`) · [`heron_brain.py`](../mcp/server/heron_brain.py) (`proof_build`) · [`fragment-proving`](../.claude/skills/fragment-proving/SKILL.md) · [NEEDS-CHECKING Group OF](needs-checking/group-of.md)
 
 **Full record:** [`decisions/D-174.md`](decisions/D-174.md)
+
+## D-175 — Only the chat that made a Heron change may undo it; the Activity pane's Undo is the modeller's own
+
+**Status:** Accepted · **Date:** 2026-11-16 · **Accepted:** Ajmal PS, 2026-11-16, in conversation: *"own only"*
+**Numbering:** written as D-174; renumbered D-175 on 2026-11-16 with `tools/renumber.py`, because claude/relaxed-hawking-me9yne holds D-174 too.
+**Settles:** [Q-88](open-questions/tier-2.md) · what [row 5b-1741](fragment-issues/row-5b-1741.md) asked of the pane · **Refines:** [D-157](decisions/D-157.md)
+**Affects:** `revit_undo_last` and the add-in's undo guard · the Activity pane's Undo button
+
+**Full record:** [`decisions/D-175.md`](decisions/D-175.md)
+
+## D-176 — The Activity pane's Select and Zoom look past a chat's model hold, because they only look
+
+**Status:** Accepted · **Date:** 2026-11-16 · **Accepted:** Ajmal PS, 2026-11-16, in conversation: *"Yes, both."*
+**Supersedes in part:** [D-163](decisions/D-163.md) item 5 - *"it looks at the model hold"* - for Select and Zoom only · **Settles:** [row 5b-1825](fragment-issues/row-5b-1825.md)
+**Affects:** the Activity pane's Select and Zoom
+
+**Full record:** [`decisions/D-176.md`](decisions/D-176.md)
 
 ## D-177 — An idea taken from another project is written in Heron's own words, and the project and its author are not named
 

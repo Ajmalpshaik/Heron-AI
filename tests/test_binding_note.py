@@ -90,6 +90,17 @@ the fragment as it stood before the review (measured 2026-11-12; a block with
 no such rule still builds, and the part alone stands in). `routing_part` reads
 that Commit stands under that rule and nowhere else, and that a put-back is
 read again and throws when it does not read as before.
+
+AND WHAT A RUN THAT WAS TAKEN BACK LEFT, 2026-11-16 - OPEN-QUESTIONS Q-89.
+The host's last section asks `HeronBindingNote.TakenBack` of each kind of run
+that was taken back - a dry run or a proof's trial (sent without apply), a
+Discard - and of each that was not - a kept change, a keep Revit counted
+nothing in (D-160), a read - and reads `CarriedFromTakenBack`, the binder's
+refusal, for what it names and what it says to run instead. By reflection, so
+on the code as it stood both rules are missing and the section's checks fail
+rather than the build. That RevitFragment.cs asks both, where, is
+tests/test_chain_expectation.py's to read; none of it has run in Revit
+(NEEDS-CHECKING Group NT).
 """
 
 import io

@@ -156,10 +156,18 @@ UNKNOWN = "unknown"
 # docs/06 s2's own three lists. DATA is tested first: see the docstring.
 FOLDERS = (
     (DATA, ("brain", "skills", "fragments", "memory", "projects", "company",
-            "logs", "backup")),
-    (DERIVED, ("cache", "index", "indexes", "vector")),
-    (PRODUCT, ("core", "agents", "revit", "mcp", "packages")),
+            "logs", "backup", "configuration", "community")),
+    (DERIVED, ("cache", "index", "indexes", "vector", "rag")),
+    (PRODUCT, ("core", "agents", "revit", "mcp", "packages", "tests",
+               "documentation")),
 )
+# THE FIVE docs/06 s2 DREW AND NEVER CLASSED, classed on 2026-11-15 (PROPOSALS
+# F11, decided on the owner's delegation): Configuration is DATA - it holds
+# the practice's security policy and company standards (docs/21 s9), so no
+# update replaces it and a backup covers it; Community is DATA - a modeller
+# installed it, nothing ships it; RAG is DERIVED - docs/07 s8's "the vector
+# index is the easy case - it is derived"; Tests and Documentation are
+# PRODUCT, replaced with Heron.
 
 # NAMED BY docs/06 s2 AND GIVEN NO CLASS BY IT. Not an oversight here: the
 # document's own table stops at fourteen of the nineteen it draws, and
@@ -167,7 +175,7 @@ FOLDERS = (
 # They are listed so the refusal can say WHICH kind of unknown it is -
 # "docs/06 does not name it" and "docs/06 names it and does not classify
 # it" send a reader to two different places.
-UNCLASSIFIED = ("community", "configuration", "documentation", "rag", "tests")
+UNCLASSIFIED = ()   # empty since PROPOSALS F11, 2026-11-15 - see FOLDERS
 
 MEANING = {
     PRODUCT: "replaced wholesale on update; the user never edits it. "
@@ -240,12 +248,33 @@ def classify(path):
     if not name:
         return {"class": UNKNOWN, "matched": None,
                 "why": "nothing was named, so nothing can be classified."}
-    # Tokenised on every separator a real name uses, so this answers for a
-    # PATH ("Brain/global.db") and for a component NAME ("Brain agents")
-    # alike - HERON-OPS-UPD-010 asks with the second kind.
-    for character in ("\\", "-", "_", " ", ".", ","):
-        name = name.replace(character, "/")
-    words_here = [piece for piece in name.split("/") if piece]
+    # ONLY THE TOP LEVEL OF THE WORKSPACE DECIDES (PROPOSALS F13, decided
+    # 2026-11-15). A path is read as relative to the workspace, and only its
+    # first folder is matched: "Projects/Tower A/Cache" is the project's
+    # data, as "Projects/Tower A/Brain" is, and a word deeper down never
+    # decides - until then the first class word ANYWHERE in the path did.
+    # A bare name is a top-level name. A FULL path is read from Heron's own
+    # folder down: the folder after its last `Heron` (or `.heron`) folder is
+    # the top level - "<local>/Heron/index/<checkout>" is derived. A full
+    # path with no Heron folder in it has no top level to find, so every
+    # word in it is read, as before 2026-11-15 - data first, which is never
+    # removed.
+    pieces = [piece for piece in name.replace("\\", "/").split("/") if piece]
+    full = name.replace("\\", "/").startswith(("/", "~")) or (
+        len(pieces[0]) == 2 and pieces[0].endswith(":"))
+    marks = [at for at, piece in enumerate(pieces) if piece in ("heron", HOME_FOLDER)]
+    if full and marks and marks[-1] + 1 < len(pieces):
+        top = pieces[marks[-1] + 1]
+    elif full:
+        top = "/".join(pieces)
+    else:
+        top = pieces[0]
+    # That folder's name is tokenised on every separator a real name uses,
+    # so this answers for a PATH ("Brain/global.db") and for a component
+    # NAME ("Brain agents") alike - HERON-OPS-UPD-010 asks with the second.
+    for character in ("-", "_", " ", ".", ","):
+        top = top.replace(character, "/")
+    words_here = [piece for piece in top.split("/") if piece]
     for klass, words in FOLDERS:
         for word in words:
             if word in words_here:

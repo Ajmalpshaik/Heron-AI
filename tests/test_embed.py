@@ -27,6 +27,7 @@ WHAT IT ASSERTS AS A LIMIT, RATHER THAN HIDING
      recorded here as Step 11's acceptance criterion, not smoothed over.
 """
 
+import io
 import os
 import shutil
 import subprocess
@@ -65,6 +66,19 @@ def main():
     try:
         name, why = E.backend()
         print("Backend in use: %s - %s" % (name, why))
+
+        print()
+        print("0. How vectors are compared is said, not assumed (PROPOSALS F7, row 5b-1171)")
+        said = getattr(E, "comparison", None)
+        check(callable(said), "heron_embed.comparison() exists")
+        how, words = said() if callable(said) else (None, "")
+        check(how == "python" and "sqlite-vec" in words and "5b-1171" in words,
+              "it says vectors are compared in Python and names sqlite-vec and "
+              "row 5b-1171: %r" % (words[:90],))
+        ready = io.open(os.path.join(ROOT, "tools", "heron-ready.py"),
+                        encoding="utf-8").read()
+        check("EMBED.comparison()" in ready,
+              "and tools/heron-ready.py prints it")
 
         print()
         print("1. The same text embeds the same way in a DIFFERENT process")

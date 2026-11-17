@@ -3,32 +3,110 @@
 # saved under a scratch folder, never on a modeller's own file.
 
 positive:
+  # ANOTHER OPEN DOCUMENT (version 2's job). Since 2026-11-16 its save - and
+  # the close of its window - is the ADD-IN'S, after the group, as the model
+  # Heron works in is (row 5b-1824): read it off the reply's `save` block, kind
+  # saveOther, AND off the disk, never off saveAsked. Run as PREVIEWS - the
+  # proving client without --apply, rolled back - which save too (D-171).
   - given: >
       Heron working in one scratch family (the HOST), a second scratch family
       (the NESTED part) open BEHIND it with one form added since it was saved,
-      documentPath = the nested family's file
+      documentPath = the nested family's file, run as a PREVIEW
     expect: >
-      saved true, savedTo its file - and the proof is NOT read off the report:
-      the file's timestamp on disk moves, and the form survives a close and
-      reopen. The host is untouched
+      saveAsked true, saveAskedTo its file, closeAsked false; the verdict
+      ROLLED BACK and the save block kind saveOther, done true, preview true,
+      saying the change was rolled back and the save was done - and the proof
+      is NOT read off the report: the file's timestamp on disk moves, and the
+      form survives a close and reopen. The host is untouched
 
   - given: the same, with closeWindow=true
     expect: >
-      saved true AND closed true, the nested family gone from what is open
-      (REPORT_OPEN_DOCUMENTS), the host still open and in front
+      closeAsked true, and the save block done true AND closed true, saying its
+      window is closed; the nested family gone from what is open
+      (REPORT_OPEN_DOCUMENTS) only once the reply has come, the host still open
+      and in front
 
   - given: the nested family IN FRONT, Heron working in the host behind it, closeWindow=true
     expect: >
-      saved true, closed FALSE, and the finding saying Revit lets no tool close
-      the window in front and that the file is saved - the window still open,
-      Revit itself still running
+      saveAsked true, closeAsked FALSE, and the finding saying Revit lets no
+      tool close the window in front; the save block done true, closed false -
+      the window still open, Revit itself still running
+
+  # VERSION 3 (Q-69, D-171) - THE DOCUMENT HERON WORKS IN. A SCRATCH project,
+  # never a working model. Its save is the ADD-IN's, after the group; read it
+  # off the reply's `save` block AND off the disk - the file's time - never off
+  # saveAsked. A PREVIEW SAVES TOO (D-171, the owner's "okkey" of 2026-11-16),
+  # which is how these run before the card is proved.
+  - given: >
+      a saved scratch project with one wall drawn since its last save, Heron
+      working in it, documentPath = its own file, run as a PREVIEW - the
+      proving client without --apply, rolled back
+    expect: >
+      saveAsked true, saveAskedTo its file; the verdict ROLLED BACK and the
+      save block done true, preview true, its words saying the change was
+      rolled back AND the save was done, and that a save cannot be undone; the
+      file's time on disk moves to now. Reopened, the file holds the wall drawn
+      by hand - the model as the rollback left it - and nothing of Heron's run
+
+  - given: >
+      a NEVER-saved scratch project, Heron working in it, saveAsPath = a new
+      full .rvt path under %TEMP%\heron-work, run as a PREVIEW
+    expect: >
+      the file exists at that path; Revit's title is the new name; the save
+      block names the new title and file. Through a chat once proved: the
+      chat's NEXT change goes into the same model with no "use this model" -
+      on Revit 2020, where the model has no CreationGUID, and on 2024
+
+  - given: the first case KEPT (revit_change once proved, Ask to Keep off - or Keep pressed)
+    expect: >
+      the save block done true, preview false; one Undo entry, and Ctrl+Z
+      takes the change back while the file keeps it
 
 negative:
-  - given: documentPath = the file of the document Heron is working in
+  - given: >
+      documentPath = the file of the document Heron is working in, with one
+      unsaved change, kept through the Keep or Discard box and DISCARD pressed
+      (or the box closed) - once the card is proved, Ask to Keep on
     expect: >
-      refused, naming it and saying Revit will not save a document while
-      Heron's Undo entry is open in it; the file's timestamp unchanged. This is
-      what version 1 did every time (row 5b-365)
+      saveAsked true, and the reply's save block done false, saying Discard was
+      pressed and the model was NOT saved - a save follows only a Keep (D-171
+      point 5); the file's time on disk UNCHANGED
+
+  - given: >
+      the first positive case's nested family, one unsaved form, closeWindow=true,
+      kept through the Keep or Discard box and DISCARD pressed (or the box
+      closed) - once the card is proved, Ask to Keep on (row 5b-1824). Revit's
+      box is shown only for a run that changes the model, and this card alone
+      changes nothing - so this waits for a run that does both (row 5b-1834)
+    expect: >
+      saveAsked true, closeAsked true; the box said NOTHING IS SAVED YET and
+      that Keep saves that file and closes its window - never that a save "is
+      done already"; the reply's save block kind saveOther, done false, closed
+      false, saying Discard was pressed, the document was NOT saved and its
+      window left open; the file's time on disk UNCHANGED and the nested family
+      still open with its unsaved form
+
+  - given: >
+      a preview of a run whose request was refused - the model has no unsaved
+      changes, or the Save As path is refused - so nothing was asked
+    expect: >
+      saveAsked false, no save block at all, the file's time on disk UNCHANGED:
+      a preview saves only when a save was asked for
+
+  - given: >
+      saveAsPath = a path where a file is already, replaceFile not given
+    expect: >
+      refused, naming the file and saying Heron replaces one only when told to;
+      saveAsked false, the file untouched. With replaceFile=true the same run -
+      a preview does it - replaces it, and the save block says it REPLACED it
+
+  - given: saveAsPath for a model that already HAS a file, or a relative path, or a .txt
+    expect: >
+      refused, naming its file - it is saved there, never under a new name - or
+      why the path is not one a project is saved as; nothing asked, nothing written
+
+  - given: the CENTRAL model of a workshared project opened directly, documentPath its file
+    expect: refused - saving it writes the file the whole job works from; nothing synced
 
   - given: a path no open document was opened from
     expect: refused, the path said back and the open titles listed; nothing written, nothing closed
@@ -36,13 +114,15 @@ negative:
   - given: >
       a family open behind with NO unsaved changes, closeWindow=true
     expect: >
-      saved false (nothing to write), closed true - a window with nothing
-      unsaved is closed without a save
+      saveAsked false (nothing to write), closeAsked true; the save block
+      nothingToSave true and closed true - a window with nothing unsaved is
+      closed without a save, after the group
 
   - given: a workshared local model, not the one Heron works in
     expect: >
-      saved, AND the finding saying IN WORDS that nothing went to central. A
-      second user reloading latest must NOT see the change
+      the save block done true, AND its words and the finding saying IN WORDS
+      that nothing went to central. A second user reloading latest must NOT see
+      the change
 
   - given: a document open read-only
     expect: refused by name

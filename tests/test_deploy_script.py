@@ -453,8 +453,21 @@ def main():
 
     print()
     print("One backup per product, which is a path CHANGE and is recorded")
-    check("$backupDir      = Join-Path $env:LOCALAPPDATA "
-          "\"Heron\\install-backup\\$RevitVersion\\$productFolder\"" in text,
+    # THE CLAIM IS UNCHANGED; WHERE IT IS SPELLED MOVED - Q-58, 2026-11-16.
+    # This pinned `Join-Path $env:LOCALAPPDATA "Heron\install-backup\
+    # $RevitVersion\$productFolder"` until the folder became HeronPaths'
+    # (InstallBackup), written to platform/heron-folders.json and read here.
+    # So the product is asked of both halves: this line fills the product
+    # folder in, and the list the code wrote has a blank for it.
+    folders = {}
+    try:
+        folders = json.load(io.open(os.path.join(ROOT, "platform", "heron-folders.json"),
+                                    encoding="utf-8")).get("folders", {})
+    except (IOError, OSError, ValueError):
+        folders = {}
+    check("$backupDir      = Get-HeronFolder -Name InstallBackup -Fill "
+          "@{ release = $RevitVersion; folder = $productFolder }" in text
+          and "{folder}" in (folders.get("InstallBackup") or {}).get("parts", []),
           "the backup folder now carries the product")
     check("CHANGE OF PATH" in text,
           "and the script says so, so a rollback that cannot find an old "

@@ -55,10 +55,10 @@ says in as many words that a proof without it is not one.
 docs/09 s94 STILL CARRIES THE GATE D-30 REPLACED
 --------------------------------------------------
 Its proposed table reads "VALIDATED -> PROVEN: N successful real
-executions... (N to be set - suggest 10)" and closes "Tracked as Q-9 for
-the value of N and who may approve". Q-9 is answered - by D-30, which
-rejected the count and named who approves. Recorded as PROPOSALS F21.
-This agent follows D-30.
+executions... (N to be set - suggest 10)". Q-9 is answered - by D-30,
+which rejected the count and named who approves. Recorded as PROPOSALS
+F21, and since 2026-11-15 the line under the table says Q-9 was settled
+by D-30. This agent follows D-30.
 
 NOTHING IS EVER DELETED
 -------------------------
@@ -238,10 +238,10 @@ def _unjudged(runs, second):
                 "NO SECOND ROUTE WAS OFFERED. D-30 asks for one where one "
                 "exists, so its absence is not a refusal - but a reader "
                 "judging this proof has one fewer thing to judge it by."),
-        "docs/09 s94's TABLE STILL ASKS FOR N SUCCESSFUL EXECUTIONS AND "
-        "STILL SAYS 'TRACKED AS Q-9'. Q-9 is answered - by D-30, which "
-        "rejected the count and named who approves. This agent follows "
-        "D-30. PROPOSALS F21.",
+        "docs/09 s94's TABLE STILL ASKS FOR N SUCCESSFUL EXECUTIONS. The "
+        "line under it says Q-9 was settled by D-30, which rejected the "
+        "count and named who approves. This agent follows D-30. "
+        "PROPOSALS F21.",
     ]
 
 

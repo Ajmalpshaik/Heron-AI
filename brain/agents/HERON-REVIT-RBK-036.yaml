@@ -5,6 +5,11 @@
 # agent MODIFY and calls it the panic button. THIS FILE IS THE PLANNER: it
 # reverses nothing and posts nothing. Posting the undos has to happen inside
 # Revit in an API context, and that half does not exist yet (PROPOSALS F29).
+#
+# RETIRED 2026-11-16 by D-157, on the owner's word (row 5b-1747): the module's
+# header says DEPRECATED, and `revit_undo_last` supersedes it - one change,
+# Heron's own last kept one. This contract is kept unchanged as the record of
+# what the retired agent took and gave; nothing calls it.
 
 agent: HERON-REVIT-RBK-036
 version: 1.0.0

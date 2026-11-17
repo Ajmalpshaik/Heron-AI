@@ -44,9 +44,16 @@ Heron
 
 | Class | Contents | Lifecycle |
 |---|---|---|
-| **Product** | Core, Agents, Revit, MCP, Packages | Replaced wholesale on update. User never edits. |
-| **Data** | Brain, Skills, Fragments, Memory, Projects, Company, Logs, Backup | Belongs to the user. Must survive every update, uninstall and reinstall. |
-| **Derived** | Cache, vector indexes | Safe to delete at any time. Rebuildable. |
+| **Product** | Core, Agents, Revit, MCP, Packages, Tests, Documentation | Replaced wholesale on update. User never edits. |
+| **Data** | Brain, Skills, Fragments, Memory, Projects, Company, Logs, Backup, Configuration, Community | Belongs to the user. Must survive every update, uninstall and reinstall. |
+| **Derived** | Cache, vector indexes, RAG | Safe to delete at any time. Rebuildable. |
+
+> **The last five words of these rows were added 2026-11-15** ([PROPOSALS F11](PROPOSALS.md), decided on
+> the owner's delegation): the tree above draws RAG, Community, Configuration, Tests and Documentation, and
+> this table gave them no class. Configuration holds the practice's security policy and company standards
+> ([21 §9](21-resilience-and-operations.md)), so no update may replace it; Community is what a modeller chose
+> to install; RAG is the vector index ([07 §8](07-installation-and-update.md)); Tests and Documentation ship
+> with Heron.
 
 If these three sit in one tree, the first update that "cleans and reinstalls" destroys the user's accumulated knowledge — the very thing the platform exists to build. Recommendation: product under an install location, data under the user profile (or a user-chosen workspace), derived under a cache location, and the update system physically unable to write to the data class.
 
@@ -197,7 +204,7 @@ Proposed hard boundaries, to be treated as non-negotiable:
 
 1. **Agent creation is always a proposal.** `PROPOSED` is the only status the system may assign to itself.
 2. **A human approves the `PROPOSED → APPROVED` transition.** Always. This is the one place where "the user does BIM work, Heron does everything else" is deliberately broken, and it should be.
-3. **New agents run in a sandbox first** — a detached copy of a model, never the live document.
+3. **New agents run watched, against a detached copy, first** — a detached copy of a model, never the live document; every attempt recorded, nothing contained ([D-170](decisions/D-170.md), 2026-11-16; this point read *"New agents run in a sandbox first"* until then, the word D-84 and D-170 took out of the places that bind).
 4. **`ACTIVE` requires a passing test suite** the agent did not write for itself.
 5. **Self-modification of Core is forbidden.** Heron may propose changes to its own core; it may not apply them.
 

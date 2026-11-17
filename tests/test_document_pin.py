@@ -405,6 +405,83 @@ def main():
     check(pin.project_key == LOADS_TEST["creationGuid"],
           "and its answers stay where they were kept")
 
+    # --- Q-69: A SAVE AS THIS RUN DID MOVES THE PIN, DELIBERATELY -----------
+    # The owner's answer of 2026-11-16 (Shape 2): the add-in saves the model a
+    # change was kept in, after the group closes, and a Save As goes only to a
+    # path the modeller typed. On Revit 2020 to 2023 - no CreationGUID - and
+    # for every family, a never-saved model is pinned by its TITLE alone, so
+    # the new name would read as another model. The reply's own identity is
+    # the model as the change was made (the add-in builds it before the save),
+    # and its `save` block says what the save did; the pin follows ONLY that.
+    print()
+    print("A Save As this run did of the pinned model moves the pin (Q-69)")
+    follow = getattr(DocumentPin, "follow_save_as", None)
+    check(follow is not None, "DocumentPin has a way to follow a Save As at all")
+    if follow is None:
+        follow = lambda pin, reply: None     # so the checks below RUN and FAIL
+    unsaved_2020 = {"document": "Project1", "documentPath": None,
+                    "projectKey": UID}
+    after = {"document": "Shell A", "documentPath": r"C:\jobs\Shell A.rvt"}
+    saved_as = dict(unsaved_2020, save=dict(after, asked=True, kind="saveAs",
+                                            done=True))
+    pin = DocumentPin()
+    pin.check(unsaved_2020)
+    check(pin.check(saved_as) is None,
+          "the reply of the run that did the Save As is not refused - it names "
+          "the model as the change was made, before its save")
+    check(follow(pin, saved_as) == "Shell A",
+          "and the pin follows the Save As, to the new title")
+    check(pin.document_path == r"C:\jobs\Shell A.rvt",
+          "and to the file the modeller gave, which the next request is aimed at")
+    check(pin.project_information_id == UID,
+          "keeping the Project Information id the add-in's guard compares - a "
+          "Save As does not change it")
+    check(pin.check({"document": "Shell A", "documentPath": r"C:\jobs\Shell A.rvt",
+                     "projectKey": UID}) is None,
+          "so the next reply, under the new name, is the same model - on a "
+          "release with no CreationGUID, where the title was all the pin had")
+    check(pin.check({"document": "Project1", "projectKey": UID}) is not None,
+          "while a model still called Project1 is now a different one")
+
+    for label, reply in (
+            ("a Save, not a Save As", dict(unsaved_2020, save=dict(
+                after, asked=True, kind="save", done=True))),
+            ("a Save As that was NOT done - a Discard, a preview",
+             dict(unsaved_2020, save=dict(after, asked=True, kind="saveAs",
+                                          done=False))),
+            ("no save at all", dict(unsaved_2020)),
+            ("a Save As with no new path on it", dict(unsaved_2020, save={
+                "asked": True, "kind": "saveAs", "done": True,
+                "document": "Shell A"}))):
+        pin = DocumentPin()
+        pin.check(unsaved_2020)
+        check(follow(pin, reply) is None and pin.title == "Project1",
+              "the pin does NOT move for %s" % label)
+
+    pin = DocumentPin()
+    pin.check({"document": "Tower", "documentPath": r"C:\a\Tower.rvt"})
+    other = {"document": "Annexe", "documentPath": None,
+             "save": dict(after, asked=True, kind="saveAs", done=True)}
+    check(follow(pin, other) is None and pin.title == "Tower",
+          "nor for a Save As of ANOTHER model - the reply has to name the "
+          "pinned one before the pin may follow its new name")
+
+    pin = DocumentPin()
+    check(follow(pin, saved_as) is None and not pin.is_pinned,
+          "and a pin that holds nothing yet is not set by the save block - "
+          "check() pins on first sight, from the reply's own identity")
+
+    pin = DocumentPin()
+    pin.check(LOADS_TEST)
+    moved = dict(LOADS_TEST, save={"asked": True, "kind": "saveAs", "done": True,
+                                   "document": "Heron loads test v3",
+                                   "documentPath": r"C:\jobs\Heron loads test v3.rvt",
+                                   "creationGuid": LOADS_TEST["creationGuid"]})
+    check(follow(pin, moved) == "Heron loads test v3"
+          and pin.project_key == LOADS_TEST["creationGuid"],
+          "on Revit 2024 and later it follows too, and the model's own id - and "
+          "the knowledge kept under it - stays")
+
     print()
     print("A title match still never names a store")
     pin = DocumentPin()

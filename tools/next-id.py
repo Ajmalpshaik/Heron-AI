@@ -745,6 +745,35 @@ def answer(root, remote="origin", base="main", fetched=True, gh=run_gh, github=N
     }
     main_holder = next(one for one in holders if one.name == base_name)
     main_ids = main_holder.ids
+
+    def one_work(a, b, reg, i):
+        """A and B are ONE piece of work for id I when the id came from history
+        they share and both hold it in the same words - a worktree cut from a
+        branch that adds a row, the row untouched (row 5b-1590). The same words
+        alone are not enough: two branches can each write the same stub file."""
+        if a.owner == b.owner:
+            return True
+        words = entries_of(a)[reg.key].get(i)
+        if not words or words != entries_of(b)[reg.key].get(i):
+            return False
+        shared = merge_base(root, a.commit, b.commit) if a.commit and b.commit else None
+        return bool(shared) and i in ids_of(shared)[reg.key]
+
+    def held_twice(reg, adders):
+        """Each id more than one piece of work adds, with every holder named."""
+        held = {}
+        for i, ones in adders.items():
+            works = []
+            for one in ones:
+                for work in works:
+                    if one_work(work[0], one, reg, i):
+                        work.append(one)
+                        break
+                else:
+                    works.append([one])
+            if len(works) > 1:
+                held[i] = ones
+        return held
     for reg in REGISTERS:
         on_main = main_ids[reg.key]
         if not on_main:
@@ -790,8 +819,8 @@ def answer(root, remote="origin", base="main", fetched=True, gh=run_gh, github=N
             # Two pieces of work adding the same id: one of them renames
             # before it merges, and the sooner it knows the cheaper that is.
             "held_twice": {reg.show(i): [one.name for one in ones] for i, ones in
-                           sorted(adders.items(), key=lambda kv: reg.order(kv[0]))
-                           if len({one.owner for one in ones}) > 1},
+                           sorted(held_twice(reg, adders).items(),
+                                  key=lambda kv: reg.order(kv[0]))},
             # Live work adding an id main has taken since it left main.
             "taken_on_main": {reg.show(i): names for i, names in
                               sorted(taken.items(), key=lambda kv: reg.order(kv[0]))},

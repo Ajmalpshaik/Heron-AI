@@ -149,7 +149,9 @@ From 2026-09-23 a change the user asked for in a chat, through `revit_change`, w
 > recorded above.
 
 ### 18. Generated code never touches a live model on its first run.
-New code runs in a sandbox or against a detached copy. Promotion to live comes after it passes.
+New code runs watched, not contained — or against a detached copy. Promotion to live comes after it passes.
+
+*The word:* until 2026-11-16 this read *"New code runs in a sandbox or against a detached copy"*. Nothing contains new code - [D-84](DECISIONS.md#d-84--the-sandbox-is-renamed-not-rebuilt) chose to keep what exists and build no subprocess - so the word changed and the rule did not: [D-170](DECISIONS.md#d-170--the-word-sandbox-leaves-article-11-and-golden-rule-18-new-code-runs-watched-not-contained), accepted by the owner.
 
 *Why:* the gap between "the AI wrote plausible code" and "the code is correct" is exactly where models get damaged. Shadow Mode ([18 §4](18-agent-operating-system.md)) produces the evidence; this rule sets the boundary.
 

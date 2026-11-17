@@ -887,13 +887,17 @@ namespace Heron.Revit.Addin
         /// - the same queue, event, gate and hold a chat's request goes through.
         /// Called from a background thread only: Dispatch waits for Revit's
         /// thread. Null-safe while the add-in is starting or stopping.
+        ///
+        /// BY THE PANE'S OWN DOOR, which marks the job the pane's (row 5b-1741):
+        /// the pane's Undo button is answered only for such a job. This is
+        /// handed to the pane and to nothing else; the bridge is given Dispatch.
         /// </summary>
         internal static string DispatchFromPane(string request)
         {
             var dispatcher = Dispatcher;
             if (dispatcher == null)
                 return Json.Error("not_ready", "Heron has not finished starting. Try again in a moment.");
-            return dispatcher.Dispatch(request);
+            return dispatcher.DispatchFromPane(request);
         }
 
         internal static void Log(string message)

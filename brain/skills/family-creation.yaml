@@ -353,6 +353,10 @@ purpose: >
       f. SAVE_DOCUMENT aimed at the host, documentPath the part's file,
          closeWindow=true - saved, its window closed. LOAD_FAMILY refuses a
          part still open with unsaved work: a load reads the file.
+         SAVE_DOCUMENT is DRAFT again since version 3 (2026-11-16, Q-69), so a
+         kept change from it is refused (D-117): until its status in the list
+         served after this method says PROVEN, the modeller saves the part with
+         Ctrl+S in its window and closes it, and REPORT_OPEN_DOCUMENTS confirms.
       g. LOAD_FAMILY into the host, PLACE_FAMILY_INSTANCES at each point, then
          count the host's elements of that category against the number
          placed - a stray copy is found by the count (row 5b-350).
@@ -438,10 +442,12 @@ purpose: >
   The family is saved by the modeller (Ctrl+S): Revit will not save the
   document open in its window while Heron holds it. A nested part made in
   step 11 is the exception - SAVE_DOCUMENT saves it while Heron works in the
-  host. A big build in a family that has never been saved is saved FIRST,
-  as step 0 asks, never only at the end: closed with no file, it is lost
-  with every form in it, and Heron cannot save it for the modeller until
-  OPEN-QUESTIONS Q-69 is answered. Every save the modeller makes is checked
+  host, once it is PROVEN again (step f). A big build in a family that has
+  never been saved is saved FIRST, as step 0 asks, never only at the end:
+  closed with no file, it is lost with every form in it. Q-69 was answered
+  on 2026-11-16 and SAVE_DOCUMENT version 3 can save the family Heron works
+  in once a change is kept - but it is DRAFT, so until it is proved the
+  modeller saves it. Every save the modeller makes is checked
   as step 0 checks it - REPORT_OPEN_DOCUMENTS' `fileTimes` and
   `staleFileCount` - never taken from "I pressed Ctrl+S".
 

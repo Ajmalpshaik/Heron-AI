@@ -164,15 +164,16 @@ against [`HeronRunClock.cs`](../revit/Heron.Revit.Addin/HeronRunClock.cs),
 
 **What there is, against requirement 1.** There is no Emergency Stop button on the ribbon
 ([D-46](DECISIONS.md)), no file-based kill switch, and no MCP tool. The one way to set the stop is
-`python mcp/client/heron_bridge_client.py stop`. It must be run with the client id of the chat that holds
-that Revit (`HERON_CLIENT_ID`), and it needs `--session <pid>` when more than one Revit is connected. Two
+`python mcp/client/heron_bridge_client.py stop --session <pid>`. It must be run with the client id of the chat
+that holds that Revit (`HERON_CLIENT_ID`), and it must name the Revit with `--session <pid>`, one Revit
+connected or two ([Q-71](open-questions/tier-2.md), built 2026-11-16). Two
 things stop a stuck fragment, and both act at the fragment's next check. That check is a call
 `HeronStackGuard` puts at the top of every loop and every method in fragment code.
 
 ```mermaid
 %%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
-    CMD(["<b>stop</b> · heron_bridge_client.py<br/>--session N when two are connected"])
+    CMD(["<b>stop</b> · heron_bridge_client.py<br/>--session N, always · Q-71"])
     FLAG["<b>Heron is stopped</b><br/>answered at once, before the queue"]
     F(["A fragment runs<br/>on Revit's own thread"])
     CK{"Next loop or call:<br/>the run clock checks"}
@@ -212,10 +213,11 @@ A fragment runs on Revit's own thread. At every loop and every call it asks the 
   a stop arrived  -> the whole job is rolled back -> stopped_mid_run
                      Heron then stays stopped until Revit is restarted (D-130)
 
-The stop: python mcp/client/heron_bridge_client.py stop [--session N]
+The stop: python mcp/client/heron_bridge_client.py stop --session N
   answered on a bridge thread before the queue, so it reaches a Revit whose thread is held
   only the chat that holds that Revit can stop it (its HERON_CLIENT_ID); another is refused
-  with two Revits connected and no --session, nothing is sent and both are listed
+  with no --session nothing is sent, one Revit connected or two, and each is listed
+  the add-in stops only the session the request names (stop_session, Q-71); the old stop is refused
 
 What no check can reach: one long Revit command (Regenerate, LoadFamily, an export).
   It finishes first. After revit.operationTimeoutSeconds the chat is told still_running.
@@ -255,8 +257,10 @@ was refused (EZ3). On Revit 2027.3 the runaway came back `ran_too_long` at 50 s 
 Revit 2020. Since then the client sends it to one Revit and needs `--session` when there are two
 ([row 5b-1094](fragment-issues/section-5b-rows-1076-1100.md)). That fix is held by `tests/test_bridge_stop.py`
 and has **not** run in Revit (EZ6). **Not run:** the after-restart half of EZ3, and anything on Revit 2020.
-Whether an idle Revit should take a stop from any client id is
-[Q-71](open-questions/tier-2.md).
+Whether an idle Revit should take a stop from any client id was [Q-71](open-questions/tier-2.md), decided
+2026-11-15: a stop must name the exact Revit session it is for. Since 2026-11-16 the client needs
+`--session` always and the add-in stops only the session the request names, refusing the old `stop` -
+compiled for every release and held by `tests/test_bridge_stop.py`, **not** run in Revit (EZ7 to EZ9).
 
 **[NOTE]** Worth pairing with the **panic button** proposed in [PROPOSALS B3](PROPOSALS.md) —
 *"undo everything Heron did today"*. Emergency Stop halts what is running; the panic button reverses

@@ -93,7 +93,7 @@ namespace Heron.KeepQuestion.TestHost
             Console.WriteLine();
             Console.WriteLine("4. the box's words");
             var said = HeronKeepQuestion.Content("CREATE_LEVEL", "Project1", 1, 2, 0,
-                HeronKeepQuestion.OnScreen(1, 2, true, true, true, true, false), false, false, true);
+                HeronKeepQuestion.OnScreen(1, 2, true, true, true, true, false), false, false, true, null);
             Check(said.Contains("'CREATE_LEVEL' ran in Project1"), "it names what ran, and where");
             Check(said.Contains("1 element added, 2 elements changed and no elements deleted"),
                   "it gives Revit's counts, singular and plural right");
@@ -109,20 +109,63 @@ namespace Heron.KeepQuestion.TestHost
                   "a keep from a chat warns about neither an export nor a DRAFT's redraw");
 
             var tried = HeronKeepQuestion.Content("NEW_TOOL", "Project1", 1, 0, 0,
-                HeronKeepQuestion.OnScreen(1, 0, true, true, false, true, false), false, true, true);
+                HeronKeepQuestion.OnScreen(1, 0, true, true, false, true, false), false, true, true, null);
             Check(tried.StartsWith("Heron ran it once, for real, on this model, and the view now shows the result."),
                   "a DRAFT's one run says it ran once, for real, and the view shows the result");
             var unseen = HeronKeepQuestion.Content("NEW_TOOL", "Project1", 1, 0, 0,
-                HeronKeepQuestion.OnScreen(1, 0, true, true, false, true, false), false, true, false);
+                HeronKeepQuestion.OnScreen(1, 0, true, true, false, true, false), false, true, false, null);
             Check(unseen.Contains("COULD NOT REDRAW THE VIEW") && unseen.Contains("Discard unless you can see it"),
                   "and when the view could not be redrawn it says so, rather than invite a Keep on an old picture");
 
             var publish = HeronKeepQuestion.Content("EXPORT_VIEWS_TO_DWG", "Project1", 0, 1, 0,
-                HeronKeepQuestion.OnScreen(0, 1, true, false, true, false, false), true, false, true);
+                HeronKeepQuestion.OnScreen(0, 1, true, false, true, false, false), true, false, true,
+                null);
             Check(publish.Contains("is done already, and Discard cannot take it back"),
-                  "a publish says an export, a save or a sync is not undone by Discard");
+                  "a publish that asked Heron to save nothing after the box says what it sent "
+                  + "out - an export, a save, a sync made while it ran - is not undone by Discard");
             Check(publish.Contains("The changed elements are selected in the active view."),
                   "selected and not isolated is said as just selected");
+
+            // ROW 5b-1824: A SAVE THAT WAITS FOR KEEP IS NOT "DONE ALREADY".
+            // SAVE_DOCUMENT asks the add-in to save after the group - the
+            // model Heron works in, or another open document and its window -
+            // and the box is answered before that save (D-171 point 5).
+            var hub = @"C:\work\HeronNest_Hub.rfa";
+            var saveAndClose = HeronKeepQuestion.WaitsForKeep(hub, true, true);
+            var waiting = HeronKeepQuestion.Content("SAVE_DOCUMENT", "HeronNest_Car", 1, 0, 0,
+                HeronKeepQuestion.OnScreen(1, 0, true, true, false, true, false), true, false, true,
+                saveAndClose);
+            Check(!waiting.Contains("done already") && !waiting.Contains("cannot take it back"),
+                  "a publish whose save waits for Keep never says its save is done already");
+            Check(waiting.Contains("NOTHING IS SAVED YET")
+                  && waiting.Contains("Keep keeps the change, then saves " + hub
+                                      + " and closes its window"),
+                  "it says nothing is saved yet, and that Keep saves that file and closes its window");
+            Check(waiting.Contains("A save cannot be undone") && waiting.Contains("saves nothing"),
+                  "and that a save cannot be undone, and Discard saves nothing");
+            Check(waiting.Contains("Nothing is kept until you choose Keep"),
+                  "and the box's own last paragraph is still there");
+
+            var own = HeronKeepQuestion.WaitsForKeep(@"C:\jobs\Project1.rvt", true, false);
+            Check(own != null && own.Contains("then saves C:\\jobs\\Project1.rvt")
+                  && !own.Contains("window"),
+                  "the model Heron works in: Keep saves its file, and no window is named");
+            var closeOnly = HeronKeepQuestion.WaitsForKeep(hub, false, true);
+            Check(closeOnly != null && closeOnly.Contains("then closes the window of " + hub)
+                  && !closeOnly.Contains("saves " + hub) && closeOnly.Contains("closes nothing"),
+                  "a document with nothing unsaved: Keep closes its window, saving nothing, and "
+                  + "Discard closes nothing");
+            Check(HeronKeepQuestion.WaitsForKeep(hub, false, false) == null,
+                  "nothing waits for Keep - nothing is said, and the box says what a publish "
+                  + "sent out");
+            var chatKeep = HeronKeepQuestion.Content("CREATE_LEVEL", "Project1", 1, 0, 0,
+                HeronKeepQuestion.OnScreen(1, 0, true, true, false, true, false), false, false, true,
+                saveAndClose);
+            Check(!chatKeep.Contains("NOTHING IS SAVED YET") && !chatKeep.Contains("done already"),
+                  "a keep that is not a publish says nothing about a save - only a publish saves");
+            Check(HeronKeepQuestion.Content("SAVE_DOCUMENT", null, 0, 0, 0, null, true, false, true,
+                      HeronKeepQuestion.WaitsForKeep(null, true, false)).Contains("saves (unnamed)"),
+                  "a save with no file name still reads as a sentence");
 
             var behind = HeronKeepQuestion.OnScreen(3, 0, false, false, false, false, false);
             Check(behind.Contains("not the one in front"),
@@ -130,11 +173,12 @@ namespace Heron.KeepQuestion.TestHost
             Check(HeronKeepQuestion.OnScreen(0, 0, true, false, false, false, false)
                       .Contains("Nothing it added or changed can be shown"),
                   "a run that only made views or types says nothing can be shown");
-            Check(HeronKeepQuestion.Content(null, null, 0, 0, 1, null, false, false, true)
+            Check(HeronKeepQuestion.Content(null, null, 0, 0, 1, null, false, false, true, null)
                       .Contains("'(unnamed)' ran in (unnamed)"),
                   "no name and no model still reads as a sentence");
 
-            foreach (var text in new[] { said, tried, publish, behind, HeronKeepQuestion.DiscardNote })
+            foreach (var text in new[] { said, tried, publish, waiting, own ?? "", closeOnly ?? "",
+                                          behind, HeronKeepQuestion.DiscardNote })
             {
                 Check(!text.Contains("Exception") && !text.Contains("TransactionGroup")
                       && !text.Contains("TaskDialog") && !text.Contains("null"),
@@ -164,7 +208,7 @@ namespace Heron.KeepQuestion.TestHost
                   "a zoomed view says so, so the modeller knows why the picture moved");
             Check(zoomed.Contains("Keep leaves it there; Discard puts the view back where it was."),
                   "and what each answer does to the view: Keep stays, Discard puts it back");
-            Check(HeronKeepQuestion.Content("CREATE_LEVEL", "Project1", 1, 2, 0, zoomed, false, false, true)
+            Check(HeronKeepQuestion.Content("CREATE_LEVEL", "Project1", 1, 2, 0, zoomed, false, false, true, null)
                       .Contains("zoomed to them"),
                   "and the box's body carries it");
             Check(!HeronKeepQuestion.OnScreen(1, 2, true, true, true, true, false).Contains("zoom"),

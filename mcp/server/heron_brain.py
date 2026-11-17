@@ -734,6 +734,30 @@ def resolve(capability, revit=None):
         }
 
 
+def providers(capability):
+    """
+    Every fragment that provides `capability`, on EVERY release, as the rows
+    heron_runtime.snapshot takes - {"id", "risk", "status", "revit": [...]}
+    - most trusted first, or [] when nothing does.
+
+    heron_why's read (PROPOSALS F1). NOT resolve() above, for two reasons.
+    resolve() filters by one release, and the snapshot has to see every
+    release to tell "not on yours" from "not at all"; and resolve() WRITES -
+    a want for a capability nobody provides (D-63) and an audit line (D-62).
+    This records neither. The store is opened as every library read opens
+    it: derived, and brought up to the cards when they have moved (Golden
+    Rule 11) - which is no record of anybody asking.
+    """
+    _S, CAP, _SK, _SE, _E, _R = _brain()
+    with _Open() as store:
+        got = CAP.resolve(store, capability)
+        if got is None:
+            return []
+        return [{"id": r["id"], "risk": r["risk"], "status": r["status"],
+                 "revit": [v for v in (r["revit"] or "").split(",") if v]}
+                for r in got.rows]
+
+
 # ---------------------------------------------------------------------------
 # The user's own sentence, resolved to a capability
 # ---------------------------------------------------------------------------
@@ -887,6 +911,67 @@ def question_ceiling():
     return TOOLS.NAMES[TOOLS.risk_of("revit_change") - 1]
 
 
+def _releases(row):
+    """A store row's declared releases, as a list - "2022,2023" -> two."""
+    return [v for v in (row["revit"] or "").split(",") if v]
+
+
+def _done_here_by(RETRIEVE, store, walled, here, ceiling):
+    """
+    The card for THIS release that does the walled card's job, or None -
+    row 5b-1823.
+
+    `walled` is the store row of the card a request's words reach first
+    with the version wall lifted, which the wall left out; `here` is every
+    row offered on this release, under the same ceiling. A card does the
+    walled card's job here when both hold:
+
+      - it is declared for NONE of the walled card's releases, so the two are
+        never offered on one release and neither crowds the other: it is the
+        walled card's counterpart on the releases that card leaves out;
+      - one of the walled card's OWN declared phrases - its identity or an
+        utterance, as the store's identity table holds them - reaches it
+        first with the wall lifted, by both routes, ahead of the walled card
+        itself.
+
+    That is the walled card's own words saying where its job goes on the
+    releases it leaves out, which no field on a card says. On 2025 the words
+    of SHAPE_WALL_TOPS_TO_ROOF (2022 to 2024), "attach all walls to the
+    roof", reach ATTACH_WALLS (2025 on) first; on 2021, where neither is
+    declared, no card qualifies and the walled card is named as before.
+    Nothing is guessed: a card the walled card's words do not reach, or one
+    offered on its releases too, is never put in its place.
+
+    {capability, provider, revit, status, words} - `words` the first of the
+    walled card's phrases that reaches it; the one most of its phrases reach
+    when two would.
+    """
+    SEARCH = _brain()[3]
+    theirs = set(_releases(walled))
+    takers = dict((r["id"], r) for r in here if not theirs & set(_releases(r)))
+    if not takers:
+        return None
+    identity = SEARCH.normalise(walled["semantic_identity"])
+    phrases = sorted(set(row["phrase"] for row in store.execute(
+        "SELECT phrase FROM identities WHERE fragment_id = ?",
+        (walled["id"],)).fetchall()), key=lambda p: (p != identity, p))
+    reached = {}
+    for phrase in phrases:
+        top, _excluded = RETRIEVE.retrieve(store, phrase, revit=None, limit=1,
+                                           ceiling=ceiling)
+        if (top and top[0].id in takers and top[0].keyword_rank is not None
+                and top[0].vector_rank is not None):
+            reached.setdefault(top[0].id, []).append(phrase)
+    if not reached:
+        return None
+    best = min(reached, key=lambda fid: (-len(reached[fid]),
+                                         phrases.index(reached[fid][0]), fid))
+    row = takers[best]
+    return {"capability": row["capability"], "provider": best,
+            "revit": _releases(row), "status": row["status"],
+            "words": reached[best][0]}
+
+
 def lookup(request, revit=None, question=False):
     """
     What the user asked for, resolved to a CAPABILITY through retrieval.
@@ -973,7 +1058,15 @@ def lookup(request, revit=None, question=False):
         # without the wall, under the same ceiling: when the first is a
         # fragment the wall left out, it is NAMED, never offered. An exact
         # declared phrasing is its own answer and is not asked about.
-        other_release = None
+        #
+        # AND WHEN A CARD FOR THIS RELEASE DOES THAT CARD'S JOB, IT IS OFFERED
+        # INSTEAD (row 5b-1823). The line named only the walled card, so on
+        # Revit 2025 "edit the wall profile to follow the gable" - words of
+        # SHAPE_WALL_TOPS_TO_ROOF, declared 2022 to 2024 - was told it is
+        # done by hand, while ATTACH_WALLS does that job there. _done_here_by
+        # says which card, if any; the line is then not said, and that card
+        # is the answer, with the walled one named beside it.
+        other_release, done_here_by = None, None
         walled = set(e.id for e in excluded
                      if e.reason.startswith("declared for Revit"))
         if revit is not None and walled and answer.route != "identity":
@@ -981,11 +1074,33 @@ def lookup(request, revit=None, question=False):
                                             limit=1, ceiling=ceiling)
             if wider and wider[0].id in walled:
                 row = wider[0].row
-                other_release = {
+                named = {
                     "capability": row["capability"],
                     "provider": wider[0].id,
-                    "revit": [v for v in (row["revit"] or "").split(",") if v],
+                    "revit": _releases(row),
                 }
+                done_here_by = _done_here_by(RETRIEVE, store, row, _rows, ceiling)
+                if done_here_by is None:
+                    other_release = named
+                else:
+                    done_here_by["instead_of"] = named
+
+        provider, note = answer.fragment_id, answer.note
+        autorun = bool(getattr(answer, "autorun", False))
+        if done_here_by is not None:
+            provider, autorun = done_here_by["provider"], False
+            capability = done_here_by["capability"]
+            note = ("%s is offered in place of %s, which these words reach first "
+                    "and which is not declared for Revit %s. Of the cards for "
+                    "Revit %s these words reach: %s"
+                    % (capability, done_here_by["instead_of"]["capability"], revit,
+                       revit, answer.note))
+            candidates = [{"capability": capability, "provider": provider,
+                           "status": done_here_by["status"],
+                           "risk": risks.get(provider),
+                           "why": "in place of %s, whose own words reach it"
+                                  % done_here_by["instead_of"]["capability"]}] + [
+                c for c in candidates if c["provider"] != provider]
 
         # THE JOBS THIS IS ONE STEP OF - see heron_skill.methods_for. Not for
         # an exact declared phrasing that may run on its own: that request IS
@@ -1010,17 +1125,17 @@ def lookup(request, revit=None, question=False):
         # its own turn: a line naming what was found and nothing about what the
         # version wall removed is a count of the wrong thing.
         _audit().lookup(route=answer.route, capability=capability,
-                        provider=answer.fragment_id,
+                        provider=provider,
                         candidates=len(candidates), excluded=len(excluded))
 
         return {
             "request": request,
             "route": answer.route,
             "capability": capability,
-            "provider": answer.fragment_id,
-            "risk": risks.get(answer.fragment_id),
-            "note": answer.note,
-            "autorun": bool(getattr(answer, "autorun", False)),
+            "provider": provider,
+            "risk": risks.get(provider),
+            "note": note,
+            "autorun": autorun,
             "candidates": candidates,
             "excluded": [{"id": e.id, "reason": e.reason} for e in excluded],
             # WHICH BACKENDS ANSWERED, THROUGH THE SEAM A HOST ACTUALLY USES.
@@ -1058,7 +1173,15 @@ def lookup(request, revit=None, question=False):
             # wall left out: {capability, provider, revit} - so a reply can
             # say it exists for another release instead of letting the
             # nearest tool for THIS release read as the answer (issue #799).
+            # None too when a card for this release does that card's job -
+            # then it is `done_here_by` below.
             "other_release": other_release,
+            # None, or the card for THIS release offered in the walled card's
+            # place (row 5b-1823): {capability, provider, revit, status, words,
+            # instead_of} - `words` the walled card's own declared phrase that
+            # reaches it, `instead_of` the walled card, shaped as
+            # other_release. When set it is the answer, first of the candidates.
+            "done_here_by": done_here_by,
         }
 
 

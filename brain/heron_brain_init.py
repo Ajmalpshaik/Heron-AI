@@ -271,7 +271,11 @@ def main(argv):
     for label, ask, override in cases:
         settings = {"existing": [], "origin": "user", "approval": signed}
         settings.update(override)
-        print("    %-26s %s" % (label, plan(ask, **settings)["refused"]))
+        # "Tower B" and "Tower-B" were one file until 2026-11-15 and are two
+        # since (PROPOSALS F14), so that row is no longer a refusal.
+        print("    %-26s %s" % (label, plan(ask, **settings).get("refused")
+                                or "not refused - two files since "
+                                   "2026-11-15, PROPOSALS F14"))
 
     print()
     print("  The dangerous case is not a FAILED initialisation. It is a")

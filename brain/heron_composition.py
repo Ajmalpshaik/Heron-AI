@@ -47,11 +47,11 @@ This file adds none. It imports HERON-KRN-CAP-008's `RISK_ORDER`,
 because the capability agent is the closest thing brain/ has to an owner
 of what an agent may do.
 
-But `brain/` carries FOUR full copies of that ladder under three names -
+`brain/` carried FOUR full copies of that ladder under three names -
 heron_capability.RISK_ORDER, heron_events.RISK_ORDER,
 heron_hr.RISK_LADDER, and an inline tuple in heron_skill.validate() -
-plus three more modules deriving from it. They are equal today and they
-are four places to drift tomorrow. Recorded as PROPOSALS F22.
+recorded as PROPOSALS F22. Since 2026-11-15 the other three bind
+heron_capability's by identity, and tests/test_composition.py holds it.
 """
 
 from __future__ import annotations

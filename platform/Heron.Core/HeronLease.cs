@@ -59,22 +59,45 @@ namespace Heron.Core
     /// Every request renews it, so an active chat never loses it; a chat that
     /// stops asking releases it by simply going quiet.
     ///
+    /// AND HELD WHILE A JOB WAITS FOR THE MODELLER - row 5b-1745. A request
+    /// renews the lease as it ARRIVES, and a job that asks the modeller - the
+    /// Keep or Discard box, the delete box, a pick (Q-86) - can wait longer
+    /// than the lease lives: revit.busyTimeoutSeconds + operationTimeoutSeconds
+    /// + askTimeoutSeconds, over six minutes as installed, against five. So a
+    /// box left open lapsed the lease under the very chat it was asking for,
+    /// and a chat with another client id could take this Revit mid-wait. The
+    /// add-in now Holds the lease for the job's own client from the moment the
+    /// job asks (RevitDispatcher.AwaitingModeller) until the job ends, and
+    /// while it is held it does not lapse. When the hold ends the lease's
+    /// clock starts again from that moment, as a request arriving starts it:
+    /// the quiet time is counted from the end of the wait, not from before it.
+    /// A hold never TAKES a lease - only one its client holds already - and
+    /// changes nothing about who may: Release and Clear end it as they always
+    /// have, a hold included.
+    ///
     /// IT MUST NEVER BLOCK A ROLLBACK. docs/25 is explicit - cleanup always
     /// wins over the lease, or an interrupted transaction is stranded. That
     /// holds here by construction rather than by a special case: the lease is
     /// checked once, when a request arrives, and a rollback happens INSIDE a
     /// request that has already been admitted. There is no path by which
-    /// cleanup asks permission.
+    /// cleanup asks permission - a hold only keeps the lease, it asks nothing.
+    ///
+    /// THE RULE IS HeronLeaseState, with the clock and the lifetime passed
+    /// in; this class is the one Revit's process uses, on the real clock and
+    /// bridge.leaseMinutes. tests/Heron.Kernel.TestHost runs the rule on a
+    /// clock of its own - a lease outlasting its lifetime cannot be shown in
+    /// a test that has to wait five real minutes for it.
     /// </summary>
     public static class HeronLease
     {
         /// <summary>Config key for how long a lease survives without renewal.</summary>
         public const string LeaseMinutesKey = "bridge.leaseMinutes";
 
-        private static readonly object Gate = new object();
+        /// <summary>The minutes a lease lives when heron.config says nothing.</summary>
+        public const int DefaultMinutes = 5;
 
-        private static string _holder;
-        private static DateTime _expiresUtc;
+        /// <summary>The one lease this Revit process has.</summary>
+        private static readonly HeronLeaseState Session = new HeronLeaseState();
 
         /// <summary>
         /// How long a lease lives without being renewed.
@@ -93,7 +116,7 @@ namespace Heron.Core
         {
             get
             {
-                var minutes = HeronConfig.Load().GetInt(LeaseMinutesKey, 5);
+                var minutes = HeronConfig.Load().GetInt(LeaseMinutesKey, DefaultMinutes);
                 return TimeSpan.FromMinutes(Math.Max(1, minutes));
             }
         }
@@ -101,29 +124,17 @@ namespace Heron.Core
         /// <summary>Who holds it, or null if it is free. Expiry counts as free.</summary>
         public static string Holder
         {
-            get
-            {
-                lock (Gate)
-                {
-                    Expire();
-                    return _holder;
-                }
-            }
+            get { return Session.Holder(DateTime.UtcNow); }
         }
 
-        /// <summary>Seconds until it lapses. Zero when free.</summary>
+        /// <summary>
+        /// Seconds until it lapses. Zero when free. While a job waits for the
+        /// modeller it cannot lapse at all, and this says the least it can then
+        /// last: a whole lifetime, counted from the end of the wait.
+        /// </summary>
         public static double SecondsRemaining
         {
-            get
-            {
-                lock (Gate)
-                {
-                    Expire();
-                    if (_holder == null) return 0;
-                    var left = (_expiresUtc - DateTime.UtcNow).TotalSeconds;
-                    return left < 0 ? 0 : left;
-                }
-            }
+            get { return Session.SecondsRemaining(DateTime.UtcNow, Lifetime); }
         }
 
         /// <summary>
@@ -136,6 +147,127 @@ namespace Heron.Core
         /// </summary>
         public static LeaseDecision Claim(string clientId)
         {
+            return Session.Claim(clientId, DateTime.UtcNow, Lifetime);
+        }
+
+        /// <summary>
+        /// Give it up. Only the holder may, so a second chat cannot release
+        /// somebody else's lease and then take it. A hold standing on it ends
+        /// with it.
+        /// </summary>
+        public static bool Release(string clientId)
+        {
+            return Session.Release(clientId, DateTime.UtcNow);
+        }
+
+        /// <summary>
+        /// Drop it unconditionally. For the add-in disconnecting this Revit -
+        /// the user pressed the button, so nothing should still be holding it,
+        /// a job waiting for the modeller included.
+        /// </summary>
+        public static void Clear()
+        {
+            Session.Clear();
+        }
+
+        /// <summary>
+        /// A job waiting for the modeller keeps its client's lease from lapsing
+        /// until EndHold - row 5b-1745. Returns the hold, or 0 when nothing was
+        /// held: no client id, or a lease that is free or another's at this
+        /// moment. A hold never takes a lease.
+        /// </summary>
+        public static long Hold(string clientId)
+        {
+            return Session.Hold(clientId, DateTime.UtcNow);
+        }
+
+        /// <summary>
+        /// The wait is over: the lease's clock starts again from now. A hold
+        /// that Release or Clear already ended, or 0, changes nothing.
+        ///
+        /// NEVER THROWS, because a hold left standing is a lease that never
+        /// lapses - the hostage this class exists to rule out. A lifetime that
+        /// cannot be read is the default one.
+        /// </summary>
+        public static bool EndHold(long hold)
+        {
+            if (hold <= 0) return false;
+            TimeSpan lifetime;
+            try
+            {
+                lifetime = Lifetime;
+            }
+            catch (Exception)
+            {
+                lifetime = TimeSpan.FromMinutes(DefaultMinutes);
+            }
+            return Session.EndHold(hold, DateTime.UtcNow, lifetime);
+        }
+    }
+
+    /// <summary>
+    /// The lease's rule, with the clock and the lifetime passed in, so it can
+    /// be run without waiting minutes of real time for it. HeronLease keeps the
+    /// one instance a Revit process has; a test makes its own.
+    ///
+    /// Every member takes the lock: the lease is claimed on the bridge's
+    /// listener threads and held and ended on Revit's own.
+    /// </summary>
+    public sealed class HeronLeaseState
+    {
+        private readonly object _gate = new object();
+
+        private string _holder;
+        private DateTime _expiresUtc;
+
+        // How many jobs are waiting for the modeller on _holder's lease now -
+        // 0 or 1 in practice, Revit's thread running one job at a time.
+        private int _holds;
+
+        // Which taking of the lease a hold belongs to: counted up each time the
+        // lease is taken by a caller that did not hold it. A hold from an
+        // earlier term - released, cleared or lapsed since - ends nothing now.
+        private long _term;
+
+        /// <summary>Who holds it, or null if it is free. Expiry counts as free.</summary>
+        public string Holder(DateTime nowUtc)
+        {
+            lock (_gate)
+            {
+                Expire(nowUtc);
+                return _holder;
+            }
+        }
+
+        /// <summary>Whether a job is waiting for the modeller on this lease now.</summary>
+        public bool Held(DateTime nowUtc)
+        {
+            lock (_gate)
+            {
+                Expire(nowUtc);
+                return _holder != null && _holds > 0;
+            }
+        }
+
+        /// <summary>
+        /// Seconds until it lapses. Zero when free; while held, the lifetime -
+        /// the least it can last, counted from the end of the wait.
+        /// </summary>
+        public double SecondsRemaining(DateTime nowUtc, TimeSpan lifetime)
+        {
+            lock (_gate)
+            {
+                Expire(nowUtc);
+                if (_holder == null) return 0;
+                if (_holds > 0) return lifetime.TotalSeconds;
+                var left = (_expiresUtc - nowUtc).TotalSeconds;
+                return left < 0 ? 0 : left;
+            }
+        }
+
+        /// <summary>Claim the lease, or renew it if it is already yours - HeronLease.Claim.</summary>
+        public LeaseDecision Claim(string clientId, DateTime nowUtc, TimeSpan lifetime)
+        {
             if (string.IsNullOrEmpty(clientId))
             {
                 return new LeaseDecision
@@ -147,25 +279,47 @@ namespace Heron.Core
                 };
             }
 
-            lock (Gate)
+            lock (_gate)
             {
-                Expire();
+                Expire(nowUtc);
 
                 if (_holder == null || _holder == clientId)
                 {
                     var fresh = _holder == null;
+                    if (fresh) _term++;
                     _holder = clientId;
-                    _expiresUtc = DateTime.UtcNow + Lifetime;
+                    _expiresUtc = nowUtc + lifetime;
                     return new LeaseDecision
                     {
                         Granted = true,
                         Holder = clientId,
-                        SecondsRemaining = (_expiresUtc - DateTime.UtcNow).TotalSeconds,
+                        SecondsRemaining = (_expiresUtc - nowUtc).TotalSeconds,
                         Fresh = fresh,
                     };
                 }
 
-                var left = (_expiresUtc - DateTime.UtcNow).TotalSeconds;
+                if (_holds > 0)
+                {
+                    // THE OTHER CHAT'S JOB IS WAITING FOR AN ANSWER IN REVIT,
+                    // so it has no end time to give. Said rather than a number
+                    // that would be wrong: what frees it is that answer, and
+                    // then the lifetime with nothing more from that chat.
+                    return new LeaseDecision
+                    {
+                        Granted = false,
+                        Holder = _holder,
+                        SecondsRemaining = lifetime.TotalSeconds,
+                        Message = "This Revit is in use by another chat, so Heron has refused rather " +
+                                  "than taking it over mid-job. Nothing was sent to Revit.\n" +
+                                  "That chat's job is waiting for an answer in Revit - a box to " +
+                                  "answer, or a click - so it frees up about " +
+                                  Math.Ceiling(lifetime.TotalSeconds / 60.0) +
+                                  " minute(s) after that is answered with no more activity there, " +
+                                  "or immediately if that chat disconnects from the Heron button.",
+                    };
+                }
+
+                var left = (_expiresUtc - nowUtc).TotalSeconds;
                 if (left < 0) left = 0;
 
                 return new LeaseDecision
@@ -186,44 +340,79 @@ namespace Heron.Core
         }
 
         /// <summary>
-        /// Give it up. Only the holder may, so a second chat cannot release
-        /// somebody else's lease and then take it.
+        /// Give it up - HeronLease.Release. Only the holder may; a hold standing
+        /// on it ends with it.
         /// </summary>
-        public static bool Release(string clientId)
+        public bool Release(string clientId, DateTime nowUtc)
         {
             if (string.IsNullOrEmpty(clientId)) return false;
 
-            lock (Gate)
+            lock (_gate)
             {
-                Expire();
+                Expire(nowUtc);
                 if (_holder != clientId) return false;
-                _holder = null;
-                _expiresUtc = DateTime.MinValue;
+                Free();
                 return true;
             }
         }
 
-        /// <summary>
-        /// Drop it unconditionally. For the add-in disconnecting this Revit -
-        /// the user pressed the button, so nothing should still be holding it.
-        /// </summary>
-        public static void Clear()
+        /// <summary>Drop it unconditionally, a hold included - HeronLease.Clear.</summary>
+        public void Clear()
         {
-            lock (Gate)
+            lock (_gate) { Free(); }
+        }
+
+        /// <summary>
+        /// Keep the lease from lapsing while a job of this client's waits for
+        /// the modeller. Returns the hold, or 0 when nothing was held - no
+        /// client id, or a lease that is free or another's at this moment.
+        /// NEVER TAKES A LEASE: a free one stays free, so this cannot become a
+        /// way in that Claim does not already give.
+        /// </summary>
+        public long Hold(string clientId, DateTime nowUtc)
+        {
+            if (string.IsNullOrEmpty(clientId)) return 0;
+
+            lock (_gate)
             {
-                _holder = null;
-                _expiresUtc = DateTime.MinValue;
+                Expire(nowUtc);
+                if (_holder == null || _holder != clientId) return 0;
+                _holds++;
+                return _term;
             }
         }
 
-        /// <summary>Caller must hold Gate.</summary>
-        private static void Expire()
+        /// <summary>
+        /// The wait is over. When the last hold on the lease ends, its clock
+        /// starts again from now, as a request arriving starts it. A hold from
+        /// an earlier term - the lease released, cleared or taken anew since -
+        /// changes nothing, so it can never lengthen somebody else's lease.
+        /// </summary>
+        public bool EndHold(long hold, DateTime nowUtc, TimeSpan lifetime)
         {
-            if (_holder != null && DateTime.UtcNow >= _expiresUtc)
+            if (hold <= 0) return false;
+
+            lock (_gate)
             {
-                _holder = null;
-                _expiresUtc = DateTime.MinValue;
+                if (_holder == null || hold != _term || _holds == 0) return false;
+                _holds--;
+                if (_holds == 0) _expiresUtc = nowUtc + lifetime;
+                return true;
             }
+        }
+
+        /// <summary>Caller holds _gate. A held lease does not lapse.</summary>
+        private void Expire(DateTime nowUtc)
+        {
+            if (_holder != null && _holds == 0 && nowUtc >= _expiresUtc) Free();
+        }
+
+        /// <summary>Caller holds _gate.</summary>
+        private void Free()
+        {
+            _holder = null;
+            _expiresUtc = DateTime.MinValue;
+            _holds = 0;
         }
     }
 }

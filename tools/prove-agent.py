@@ -10,7 +10,7 @@
 The proof path for ADD-IN agents - the one thing 26 of them have never had.
 
     python tools/prove-agent.py sessions
-    python tools/prove-agent.py track HERON-REVIT-LVL-027 --first 36860 --second 64416
+    python tools/prove-agent.py track HERON-REVIT-LVL-027 --operation list_levels --first 36860 --second 64416
     python tools/prove-agent.py review
     python tools/prove-agent.py review HERON-REVIT-LVL-027
     python tools/prove-agent.py accept HERON-REVIT-LVL-027 --by "Ajmal PS"

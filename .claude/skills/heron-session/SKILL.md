@@ -147,10 +147,13 @@ found from evidence. It is a report: exit 0 whatever it finds.
 
 ## On Windows
 
-The commands in `settings.json` run `python` on the script under `$CLAUDE_PROJECT_DIR`, which Git Bash
-expands the way bash does on Linux — Claude Code runs hooks through Git Bash on Windows when it is
-installed. **When the script is not there, the command takes the folder from
-`git rev-parse --show-toplevel` instead** — the repository the hook runs in. On 2026-10-18 a session
+The commands in `settings.json` run `python` on the script in **the repository the hook runs in**
+(`git rev-parse --show-toplevel`), and take `$CLAUDE_PROJECT_DIR` only when that has no script - which Git
+Bash expands the way bash does on Linux; Claude Code runs hooks through Git Bash on Windows when it is
+installed. **That order is since 2026-11-15 (OPEN-QUESTIONS Q-81):** the variable came first until then,
+so when it named a second Heron checkout, that copy's scripts answered - its guard took the other copy
+as the repository and let this one's edits through unchecked. `tests/test_heron_session.py` §5 runs a
+fake second checkout to hold it. Before the variable came second, on 2026-10-18 a session
 started with no folder and then moved into Heron kept that first, empty folder in `$CLAUDE_PROJECT_DIR`
 while the host ran Heron's hooks: python could not open the script, exited 2, and 2 is "block" to the
 host, so every prompt in that session was refused. Piped by hand through Git Bash on Windows the same

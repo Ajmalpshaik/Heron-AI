@@ -26,3 +26,13 @@
 **Look for.** The plan opens and is the view on screen, with no Undo entry and Changes still off; the template is refused by name, nothing opened - **the negative**. Until 2026-10-17 the add-in refused it on this door (*runs only as a change*) because it declared `editScopeFailures` ([row 5b-498](../fragment-issues/section-5b-rows-476-500.md)) - **Struck 2026-10-18:** PASS on Revit 2024, 2026-10-18 - the results table under *The 2026-10-18 run* below.
 
 ---
+
+### Row ES11
+
+*Moved from the register on 2026-11-17.*
+
+**Run.** *Not a proof - an observation.* `revit_show` capability `ISOLATE_ELEMENTS` on ES1's ducts, then `revit_change` with the same, Changes ON
+
+**Look for.** The first refused BEFORE anything is sent - it is MODIFY since D-125 - and the refusal names `revit_isolate_temporary`; the second isolates as it always did, one Undo entry ([row 5b-499](../fragment-issues/section-5b-rows-476-500.md)) **Struck 2026-11-13:** PASSED - the verdict is in this file's *The 2026-10-18 run*, which records it run and passed.
+
+---
