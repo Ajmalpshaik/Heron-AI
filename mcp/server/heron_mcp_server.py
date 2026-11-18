@@ -4589,12 +4589,13 @@ def _checklist_run_page(name, hold):
         _note("companion_checklist", started, 0, reply=str(why), outcome="failed")
         return {"ok": False, "said": str(why)}
     try:
-        checklist = store.find(name)
+        checklist, notes = store.prepare_run(store.find(name))
     except store.ChecklistError as why:
         said = "Nothing was run: %s" % why
         _note("companion_checklist", started, 0, reply=said, outcome="refused")
         return {"ok": False, "said": said}
     answer = _run_checklist(checklist, origin="companion", progress=hold)
+    store.stamp(answer, checklist, notes)
     hold(answer)
     ran = answer["counts"]["pass"] + answer["counts"]["fail"]
     outcome = "failed" if answer.get("failed") else None if ran else "refused"
@@ -6844,6 +6845,21 @@ def _checklist_contracts(checks):
     return contracts
 
 
+def _checklist_overrides(overrides):
+    """The chat's `overrides` - a JSON list, or nothing - as the store takes
+    it (D-179). What each may change is the store's to check."""
+    import json
+    if not (overrides or "").strip():
+        return []
+    try:
+        given = json.loads(overrides)
+    except ValueError as why:
+        raise ValueError("`overrides` must be a JSON list: %s." % why)
+    if not isinstance(given, list):
+        raise ValueError("`overrides` must be a JSON list.")
+    return given
+
+
 def _checklist_checks(checks):
     """The chat's `checks` - a JSON list - into the store's check dicts. A
     check's `values` may be "name=value" lines (read as revit_read reads them),
@@ -6973,6 +6989,25 @@ def _checklist_ask(origin="chat", ctx=None):
     return ask, first
 
 
+def _checklist_report(store, answer):
+    """
+    D-178: the run written as an Excel workbook and an HTML page in
+    `<data home>/checklists/reports`, and one line saying where. Each file is
+    made new - nothing is ever written over. A report that cannot be written
+    costs only the report: the run's answer above it stands.
+    """
+    try:
+        writer = brain.checklist_report()
+        home = store.folder(make=True)
+        if home is None:
+            return "No report was written: this PC has no folder for Heron's data."
+        paths = writer.write(answer, os.path.join(os.path.dirname(home), "reports"))
+    except (brain.BrainUnavailable, OSError) as why:
+        return "No report was written: %s. The results above stand." % why
+    return ("The report is written, new files - nothing was written over:\n  Excel: %s\n  Page:  %s"
+            % (paths[0], paths[1]))
+
+
 def _run_checklist(checklist, origin="chat", ctx=None, progress=None):
     """
     Run one saved checklist on the one model this chat is bound to. Returns
@@ -7055,32 +7090,32 @@ def _checklist_on_page(answer):
 
 @server.tool()
 def heron_checklist(action: str = "list", name: str = "", checks: str = "",
-                    description: str = "", replace: bool = False,
+                    description: str = "", replace: bool = False, report: bool = False,
+                    extends: str = "", overrides: str = "",
                     ctx: _Context = None) -> str:
     """
-    The modeller's QA CHECKLISTS: checks written in their words, saved once,
-    run in one go on the model. A run only reads.
+    The modeller's QA CHECKLISTS: checks in their words, saved once, run in
+    one go. A run only reads.
 
-    action="save", when they ask: `name`, `description` (one line) and
-    `checks`, a JSON list - each {"sentence": their words, "capability": ONE
-    capability that reads, "values": "name=value" lines, "rule": "output op
-    number" on one output it declares - "failures == 0", "ids": the output
-    holding failing element ids, or ""}. Optional, in their words: "severity"
-    high, medium or low; "clause", the BEP or standard it comes from; "advice",
-    how to fix. Optional, from the card: "missing", the output counting
-    elements it could not read, and "applicable", the one counting elements
-    looked at. Turn each sentence into a check with heron_lookup; ask, never
-    guess. replace=true only when they said so.
+    action="save", when asked: `name`, `description` (one line), `checks` - a
+    JSON list of {"sentence": their words, "capability": ONE that reads,
+    "values": "name=value" lines, "rule": "output op number" on one output it
+    declares ("failures == 0"), "ids": the output of failing ids, or ""};
+    optional "severity" (high, medium, low), "clause", "advice", and from the
+    card "missing" (elements it could not read) and "applicable" (elements
+    looked at). Make each check with heron_lookup; ask, never guess.
+    replace=true only when told. A project list may extend an office list:
+    `extends` its name; `overrides` a JSON list of {"sentence": the office
+    check's exact words, and only "severity", "target" or "enabled"};
+    `checks` then holds the project's own, or nothing.
 
-    "list" names them; "show" gives one's checks; "delete" removes one when
-    asked; "starter" saves Heron's example under `name`, only when asked.
+    "list", "show"; "delete" and "starter" (Heron's example) only when asked.
 
-    "run" runs `name` check by check through revit_read: PASS meets the value
-    checked, FAIL does not, NO DATA could not decide - data missing - and NOT
-    RUN says why; neither of the last two is ever a pass. Give the Coverage
-    line with the counts. Each says NEW, STILL OPEN or FIXED against the last
-    run on that model. Never call the model compliant. Results also go on the
-    Companion's QA Checklist.
+    "run" runs `name` through revit_read: PASS meets the value checked, FAIL
+    does not, NO DATA could not decide, NOT RUN says why - neither of the
+    last two is a pass. Give the Coverage line, and NEW, STILL OPEN or FIXED
+    against the last run. Never call the model compliant. report=true, when
+    they ask for a report, also writes Excel and HTML files; give both paths.
     """
     try:
         store = brain.checklists()
@@ -7101,7 +7136,10 @@ def heron_checklist(action: str = "list", name: str = "", checks: str = "",
             return "\n".join(lines)
         if act == "show":
             checklist = store.find(name)
-            return "\n".join([store.describe(checklist)] + [
+            extended = ["Extends '%s'. Overrides: %s." % (checklist["extends"], "; ".join(
+                "%s -> %s" % (o["sentence"], ", ".join("%s %s" % (k, o[k]) for k in sorted(o) if k != "sentence"))
+                for o in checklist.get("overrides") or []) or "none")] if checklist.get("extends") else []
+            return "\n".join([store.describe(checklist)] + extended + [
                 "%d. %s\n   values: %s" % (i, store.check_line(c), "; ".join(
                     "%s=%s" % (v["name"], v["value"]) for v in c.get("values") or []) or "none")
                 for i, c in enumerate(checklist.get("checks") or [], 1)])
@@ -7109,7 +7147,9 @@ def heron_checklist(action: str = "list", name: str = "", checks: str = "",
             return ("Deleted the checklist '%s', and the runs kept of it to compare with."
                     % store.delete(name))
         if act == "run":
-            checklist = store.find(name)
+            # D-179: a list that extends an office list runs the office list
+            # as it is now, with its overrides - and says so if it changed.
+            checklist, notes = store.prepare_run(store.find(name))
             # ONE RUN AT A TIME, CHAT AND PAGE TOGETHER: the page's busy flag
             # is claimed for the chat's run too, so neither starts while the
             # other runs, and the page's Select waits for it.
@@ -7123,9 +7163,12 @@ def heron_checklist(action: str = "list", name: str = "", checks: str = "",
             finally:
                 if panel is not None:
                     panel.end()
+            store.stamp(answer, checklist, notes)
             said = store.text(answer)
             if _checklist_on_page(answer):
                 said += "\nThe results are on the QA Checklist page of the Heron Companion."
+            if report:
+                said += "\n" + _checklist_report(store, answer)
             # A NO DATA check read the model and answered "could not decide"
             # (D-165) - an answer, so it counts as run; only NOT RUN does not.
             ran = answer["counts"]["pass"] + answer["counts"]["fail"] + answer["counts"]["missing"]
@@ -7141,7 +7184,11 @@ def heron_checklist(action: str = "list", name: str = "", checks: str = "",
     else:
         try:
             checklist = {"name": name, "description": description,
-                         "checks": _checklist_checks(checks)}
+                         "checks": _checklist_checks(checks) if (checks or "").strip() or not extends
+                         else []}
+            if extends.strip():
+                checklist["extends"] = extends.strip()
+                checklist["overrides"] = _checklist_overrides(overrides)
         except ValueError as why:
             return _ended("refused", "%s Nothing was saved." % why)
     try:

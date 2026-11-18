@@ -1068,3 +1068,42 @@ as at its strictest; how often the add-in is rebuilt decides what it would cost.
 fingerprint alone.
 
 ---
+
+### 🟠 Q-93 — Checking a folder of models overnight: in the modeller's Revit one model at a time, or a separate Revit for each model? *(new, 2026-11-17)*
+
+**Where it comes from.** Item 7 of the build order in [research note 51](../51-studying-another-revit-mcp.md),
+which the owner asked to be built one by one: *"many models overnight, read only - one report at the end"*.
+Checking each item against Heron before building it found two things the build cannot decide alone.
+
+**What Heron has today.** A QA checklist runs on the model in front ([D-152](../decisions/D-152.md)). The
+only tool that opens other files in the background is `UPGRADE_FAMILY_FILES` - PROVEN, and **PUBLISH**,
+because it saves what it opens. A fragment that runs too long is stopped by its run clock
+([D-129](../decisions/D-129.md)), and an open of a large model is one long Revit call no check can
+interrupt. Every document a job opens is watched by the run guard.
+
+**The question, in a modeller's words: when Heron checks every model in a folder overnight, where should
+it open them?**
+
+1. **In your Revit, one model at a time** - opened in the background, detached, no worksets opened, read,
+   closed without saving; the chat sends one model per call and writes one report at the end.
+   **Cost:** your Revit is busy for the whole run; a dialog a model raises on opening stops that model;
+   one very large model can outlast the run clock. Smaller to build: the background open is a mechanism
+   Heron already has proven, and every safety rule stays as it is.
+2. **A separate Revit for each model**, started by a small supervisor program that keeps going after a
+   crash and resumes after a restart. **Cost:** a large build - a program that starts Revit with nobody at
+   the keyboard, answers or refuses its dialogs, and kills it if it hangs; a Revit licence in use per
+   model while it runs; and an unsigned Heron add-in makes Revit ask *Load or not* at every start, which
+   stops an unattended run until signing is settled ([Q-77](tier-2.md)).
+3. **Not built yet** - run the checklist on each model by hand, as today.
+
+**And under shapes 1 and 2, one more:** opening another project file changes no model and saves nothing.
+Is that a **read** - allowed with Changes off - or does it need Publish, as the family upgrade does?
+
+**Recommended: shape 1, with opening read-only counted as a read** - the smaller build, on a mechanism
+already proven, nothing saved anywhere. The owner decides; nothing is built until then.
+
+**Held for a discussion, 2026-11-17.** The owner, in conversation: *"7 i have detaild explanation this we
+will do it later we need to discus abouth this"*. He has a fuller plan of his own; this question waits for
+it, and nothing is built or proposed for item 7 until that discussion.
+
+---

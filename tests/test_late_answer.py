@@ -129,6 +129,14 @@ def wiring():
     tool = server[server.find("def heron_run_record("):server.find("def heron_compatibility(")]
     check('request: str = ""' in tool and "runs.record_for(request.strip())" in tool,
           "heron_run_record takes `request` and reads the record by it")
+    # Issue #934, its second half: the answer for a Keep or Discard box still
+    # open said "This run is not recorded" - and RunRecord writes the record,
+    # with the request's name, the moment the job ends, whoever is waiting.
+    # The server's own line under that answer says where to read it (D-161).
+    waiting = dispatcher[dispatcher.find('Json.Error("awaiting_modeller"'):]
+    waiting = waiting[:waiting.find(");")]
+    check(waiting != "" and "not recorded" not in waiting,
+          "the answer for a box still open no longer says the run is not recorded")
 
 
 def main():

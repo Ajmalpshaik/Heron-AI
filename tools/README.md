@@ -533,6 +533,27 @@ separate them. Numbers in
 
 ---
 
+## `score-host.py` — did the host call the right Heron tools, in order?
+
+```bash
+python tools/score-host.py tools/host-scenarios.example.json CHAT.jsonl          # the report
+python tools/score-host.py tools/host-scenarios.example.json CHAT.jsonl --json   # the same, as JSON
+```
+
+`check-routing` and `score-routing` measure **Heron's own search** - whether the right card comes first
+for a sentence. Neither sees what the **host** did with it. This reads a recorded Claude Code chat (its
+file under `~/.claude/projects`) and, for each scenario - the modeller's words, the Heron calls that should
+follow in order, and any tool that must `never` be called - finds the first time the words were said and
+scores the Heron calls made before the modeller spoke again: **PASS**, **FAIL** saying which step or which
+banned tool, or **NOT FOUND**, which is never a pass. A step may name one tool, a list of which any will
+do, and a `capability`. [`host-scenarios.example.json`](host-scenarios.example.json) is the shape, with
+three examples - not the owner's own requests.
+
+**Calibrated:** [`tests/test_score_host.py`](../tests/test_score_host.py) scores deliberately broken
+expectations on the same chat and holds that each FAILS. **A report, not a gate:** exit 0 whatever it
+finds, 2 only for a file it cannot read or that is not a scenarios file. No Revit, no network. **What it
+does not do:** drive a model through a live chat - it scores a chat already recorded.
+
 ## `score-routing.py` — the owner's own questions, against the answers he confirmed
 
 ```bash

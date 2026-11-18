@@ -245,6 +245,10 @@ an edit.
 | [D-174](#d-174--a-proof-taken-on-another-heron-add-in-build-or-another-revit-build-is-said-under-the-answer-and-never-refused) | A proof taken on another Heron add-in build or another Revit build is said under the answer, and never refused | ✅ Accepted · 2026-11-16 |
 | [D-175](#d-175--only-the-chat-that-made-a-heron-change-may-undo-it-the-activity-panes-undo-is-the-modellers-own) | Only the chat that made a Heron change may undo it; the Activity pane's Undo is the modeller's own | ✅ Accepted · 2026-11-16 |
 | [D-176](#d-176--the-activity-panes-select-and-zoom-look-past-a-chats-model-hold-because-they-only-look) | The Activity pane's Select and Zoom look past a chat's model hold, because they only look | ✅ Accepted · 2026-11-16 |
+| [D-177](#d-177--an-idea-taken-from-another-project-is-written-in-herons-own-words-and-the-project-and-its-author-are-not-named) | An idea taken from another project is written in Heron's own words, and the project and its author are not named | ✅ Accepted · 2026-11-17 |
+| [D-178](#d-178--a-qa-checklist-run-can-be-written-as-an-excel-workbook-and-an-html-page-each-a-new-file) | A QA checklist run can be written as an Excel workbook and an HTML page, each a new file | ✅ Accepted · 2026-11-17 |
+| [D-179](#d-179--a-project-checklist-can-extend-an-office-checklist-changing-only-severity-target-and-onoff-and-every-run-names-the-checks-it-used) | A project checklist can extend an office checklist, changing only severity, target and on/off, and every run names the checks it used | ✅ Accepted · 2026-11-17 |
+| [D-180](#d-180--a-setting-hides-folder-paths-from-what-the-chat-is-told-off-unless-turned-on) | A setting hides folder paths from what the chat is told, off unless turned on | ❌ Not accepted · 2026-11-17 - dropped; Q-40 stands |
 
 ## Format
 
@@ -1480,6 +1484,7 @@ What this makes easy. What this makes hard. What it locks in.
 ## D-167 — A modeller installs Heron with one Setup file, which puts Heron in place and hands over to the installer engine
 
 **Status:** Accepted · **Date:** 2026-11-16 · **Accepted:** Ajmal PS, 2026-11-16, in conversation: *"do it the best am not sure for this and you anre my sesior programer or manager or what eve"* - his answer to *"Wrap the installer Heron already has, or grow it into the Setup?"*. **The choices below were made by the session on that word**; each is his to reverse, and none spends money
+**Numbering:** this number was used twice. On the branch of pull request 871, commit `17bd217` (2026-11-16) first wrote D-167 as *"Article 13 names the Keep box's job grant as its one recorded exception"* — that decision is now [D-172](#d-172--article-13-names-the-keep-boxs-job-grant-as-its-one-recorded-exception). This D-167 is main's; the branch renumbered its own before it merged.
 **Supersedes in part:** [D-96](#d-96--a-downloaded-heron-is-installed-by-the-installer-and-only-by-the-installer) - which FILE a modeller starts: the Setup, which runs the same engine D-96 named · **Keeps:** D-96 for everything else · [D-91](#d-91--product-files-come-from-a-signed-versioned-github-release) · [D-93](#d-93--the-product-list-is-a-manifest-read-as-data-never-a-list-written-into-the-installer) · [D-94](#d-94--install-replaces-there-is-no-separate-upgrade-path) · [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit)
 **Leaves open:** [Q-77](open-questions/tier-2.md) - what makes signing due, and the certificate
 **Affects:** [`platform/Heron.Setup/`](../platform/Heron.Setup/README.md) · [`tools/build-setup.py`](../tools/build-setup.py) · `heron-install --uninstall` and `--add-to-claude` · [`tools/deploy-addin.ps1`](../tools/deploy-addin.ps1) · since the amendment of 2026-11-16, [`HeronInstaller.exe`](../platform/Heron.Installer.App/Program.cs) (`--from`, the two ticks)
@@ -1490,6 +1495,7 @@ What this makes easy. What this makes hard. What it locks in.
 ## D-168 — A change Revit kept in which nothing changed by every count says NOTHING CHANGED, and REFUSED when the capability itself said no
 
 **Status:** Accepted · **Date:** 2026-11-16 · **Accepted:** Ajmal PS, 2026-11-15, in conversation, two answers each put to him alone in plain words: *"Yes, say nothing changed"* (row 5b-1657 - views renamed from a text no view had, nothing changed, the answer read KEPT) and *"Yes, say REFUSED"* (row 5b-1635 - a level name already taken, the card said no and made nothing, the answer read KEPT). Items 2 and 4 are how those two answers are carried out, written when they were built on 2026-11-16. Item 3 - a partial result stays KEPT - he decided himself on 2026-11-16: *"Yes, keep KEPT"*, his answer to *"If a tool did part of the job and refused the rest, should the answer still say KEPT?"*
+**Numbering:** this number was used twice. On the branch of pull request 871, commit `17bd217` (2026-11-16) first wrote D-168 as *"A release is versioned and checksummed now and says plainly it is unsigned, and is signed before Heron is given to anyone outside"* — that decision is now [D-173](#d-173--a-release-is-versioned-and-checksummed-now-and-says-plainly-it-is-unsigned-and-is-signed-before-heron-is-given-to-anyone-outside). This D-168 is main's; the branch renumbered its own before it merged.
 **Extends:** [D-160](#d-160--a-keep-that-changed-nothing-is-rolled-back-so-no-empty-entry-is-left-in-the-undo-list) - a keep Revit WITNESSED counting zero is rolled back; this is the keep Revit raised no event for · **Keeps:** the outcome table of [docs/04 §8.12](04-heron-mcp.md) and [row 5b-1159](fragment-issues/section-5b-rows-1151-1175.md) - one word per ending, never more than is known · [D-52](#d-52--a-count-of-what-was-turned-down-is-not-a-count-of-what-was-found) - what was turned down is not what was found
 **Affects:** [`heron_server_core.py`](../mcp/server/heron_server_core.py) (`NOTHING_CHANGED`, `OUTCOMES`, `kept_nothing`) · [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (`revit_change`) · [docs/04 §8.12](04-heron-mcp.md) · [`test_outcome_line.py`](../tests/test_outcome_line.py) · rows [5b-1635](fragment-issues/row-5b-1635.md) and [5b-1657](fragment-issues/row-5b-1657.md)
 
@@ -1548,6 +1554,7 @@ What this makes easy. What this makes hard. What it locks in.
 ## D-174 — A proof taken on another Heron add-in build or another Revit build is said under the answer, and never refused
 
 **Status:** Accepted · **Date:** 2026-11-16 · **Accepted:** Ajmal PS, 2026-11-16, in conversation: *"Keep it a flag, accept Q-92 shape 1"* · **Answers:** [Q-92](open-questions/tier-3.md)
+**Numbering:** this number was used twice. On the branch of pull request 871, commit `86c33cf` (2026-11-16) first wrote D-174 as *"Only the chat that made a Heron change may undo it; the Activity pane's Undo is the modeller's own"* — that decision is now [D-175](#d-175--only-the-chat-that-made-a-heron-change-may-undo-it-the-activity-panes-undo-is-the-modellers-own). This D-174 is main's; the branch renumbered its own before it merged.
 **Keeps:** [D-117](#d-117--a-change-is-kept-only-from-a-fragment-whose-proof-still-stands) - a change is refused on D-30's fingerprint alone, read from the card · [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs) - a proof going stale is made visible · [D-131](#d-131--a-proof-on-another-revit-release-is-an-entry-of-proofreleases-and-a-second-route-on-a-proven-fragment-is-written-by-accept-signed) - another release is its own entry
 **Affects:** [`heron_fragment.py`](../brain/heron_fragment.py) (`BUILT_ON_FIELDS`, `build_state`, `proof_build_state`) · [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (`_build_line`) · [`heron_brain.py`](../mcp/server/heron_brain.py) (`proof_build`) · [`fragment-proving`](../.claude/skills/fragment-proving/SKILL.md) · [NEEDS-CHECKING Group OF](needs-checking/group-of.md)
 
@@ -1569,3 +1576,35 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** the Activity pane's Select and Zoom
 
 **Full record:** [`decisions/D-176.md`](decisions/D-176.md)
+
+## D-177 — An idea taken from another project is written in Heron's own words, and the project and its author are not named
+
+**Status:** Accepted · **Date:** 2026-11-17 · **Accepted:** Ajmal PS, 2026-11-17, in conversation: *"we are taking oly thrrtr idea not code so no need to mention there names"*
+**Extends:** [D-25](#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported) - studied and re-authored, never imported
+**Affects:** [AGENTS.md](../AGENTS.md) ("Never") · [docs/51](51-studying-another-revit-mcp.md)
+
+**Full record:** [`decisions/D-177.md`](decisions/D-177.md)
+
+## D-178 — A QA checklist run can be written as an Excel workbook and an HTML page, each a new file
+
+**Status:** Accepted · **Date:** 2026-11-17 · **Accepted:** Ajmal PS, 2026-11-17, in conversation: *"you can do one by one"*
+**Extends:** [D-152](#d-152--a-qa-checklist-is-saved-checks-in-the-modellers-words-each-one-read-with-a-pass-rule-run-in-one-go-from-the-chat-or-the-companion) - QA checklists
+**Affects:** [`heron_checklist_report.py`](../brain/heron_checklist_report.py) · [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (`heron_checklist`, `_checklist_report`) · [docs/50](50-qa-checklists.md)
+
+**Full record:** [`decisions/D-178.md`](decisions/D-178.md)
+
+## D-179 — A project checklist can extend an office checklist, changing only severity, target and on/off, and every run names the checks it used
+
+**Status:** Accepted · **Date:** 2026-11-17 · **Accepted:** Ajmal PS, 2026-11-17, in conversation: *"you can do one by one"*
+**Extends:** [D-152](#d-152--a-qa-checklist-is-saved-checks-in-the-modellers-words-each-one-read-with-a-pass-rule-run-in-one-go-from-the-chat-or-the-companion) - QA checklists
+**Affects:** [`heron_checklists.py`](../brain/heron_checklists.py) (`save`, `_read`, `prepare_run`, `stamp`, `fingerprint`) · [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (`heron_checklist`) · [docs/50](50-qa-checklists.md)
+
+**Full record:** [`decisions/D-179.md`](decisions/D-179.md)
+
+## D-180 — A setting hides folder paths from what the chat is told, off unless turned on
+
+**Status:** Not accepted - dropped, nothing kept in code · **Date:** 2026-11-17 · **Answered:** Ajmal PS, 2026-11-17, in conversation: *"3 no issue this is only location like that no issue let them go its not taking revit model it self"* · [Q-40](open-questions/from-master-specification-part-2.md) stands as it was
+**Keeps:** [D-26](#d-26--the-model-file-is-never-uploaded) - the model never leaves; work answers may
+**Affects:** nothing - the code was removed
+
+**Full record:** [`decisions/D-180.md`](decisions/D-180.md)

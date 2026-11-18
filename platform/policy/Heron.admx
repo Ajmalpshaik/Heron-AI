@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Heron - Group Policy template for the three ceilings (D-166, layer 3).
+  The add-in reads these values from HKLM\SOFTWARE\Policies\Heron
+  (HeronMachinePolicy in revit/Heron.Revit.Addin/HeronApplication.cs).
+  tests/test_policy_templates.py holds the names to the add-in's own.
+  The language strings are in en-US/Heron.adml.
+-->
+<policyDefinitions xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   revision="1.0" schemaVersion="1.0"
+                   xmlns="http://schemas.microsoft.com/GroupPolicy/2006/07/PolicyDefinitions">
+  <policyNamespaces>
+    <target prefix="heron" namespace="Heron.Policies.Heron" />
+  </policyNamespaces>
+  <resources minRequiredRevision="1.0" />
+  <supportedOn>
+    <definitions>
+      <definition name="SUPPORTED_Heron" displayName="$(string.SUPPORTED_Heron)" />
+    </definitions>
+  </supportedOn>
+  <categories>
+    <category name="Heron" displayName="$(string.Heron)" explainText="$(string.Heron_Help)" />
+  </categories>
+  <policies>
+    <policy name="AllowChanges" class="Machine" displayName="$(string.AllowChanges)"
+            explainText="$(string.AllowChanges_Help)" key="Software\Policies\Heron" valueName="AllowChanges">
+      <parentCategory ref="Heron" />
+      <supportedOn ref="SUPPORTED_Heron" />
+      <enabledValue><decimal value="1" /></enabledValue>
+      <disabledValue><decimal value="0" /></disabledValue>
+    </policy>
+    <policy name="AllowAdmin" class="Machine" displayName="$(string.AllowAdmin)"
+            explainText="$(string.AllowAdmin_Help)" key="Software\Policies\Heron" valueName="AllowAdmin">
+      <parentCategory ref="Heron" />
+      <supportedOn ref="SUPPORTED_Heron" />
+      <enabledValue><decimal value="1" /></enabledValue>
+      <disabledValue><decimal value="0" /></disabledValue>
+    </policy>
+    <policy name="AllowPublish" class="Machine" displayName="$(string.AllowPublish)"
+            explainText="$(string.AllowPublish_Help)" key="Software\Policies\Heron" valueName="AllowPublish">
+      <parentCategory ref="Heron" />
+      <supportedOn ref="SUPPORTED_Heron" />
+      <enabledValue><decimal value="1" /></enabledValue>
+      <disabledValue><decimal value="0" /></disabledValue>
+    </policy>
+  </policies>
+</policyDefinitions>

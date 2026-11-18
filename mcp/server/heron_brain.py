@@ -3141,6 +3141,21 @@ def checklists():
     return CHECKLISTS
 
 
+def checklist_report():
+    """
+    A QA checklist run written as an Excel workbook and an HTML page (D-178) -
+    brain/heron_checklist_report.py, through this seam like every other brain
+    module. Stdlib only.
+    """
+    try:
+        import heron_checklist_report as REPORT
+    except ImportError as exc:
+        raise BrainUnavailable("Heron's QA report writer could not be imported: %s. It needs "
+                               "nothing beyond Python itself, so this is a broken install."
+                               % exc)
+    return REPORT
+
+
 def sheet_list():
     """
     The sheet register reader (docs/48 s5 item 7) - brain/heron_sheet_list.py,

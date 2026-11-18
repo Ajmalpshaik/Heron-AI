@@ -267,7 +267,13 @@ compatibility-note: >
 #   "copy the ducts out of the linked model"                  -> here since
 #                                         version 2, fromLink=true - it was
 #                                         COPY_FROM_LINK's, merged in
-#   "bring the grids in from the architect"                   -> here, fromLink
+#   "bring the grids in from the architect"                   -> here, fromLink.
+#                                         On the ranked routes CHECK_DATUMS_AGAINST_LINK
+#                                         (a read) came first and this second on
+#                                         2026-11-17; identity sends it here
+#   "check our grids and levels line up with the linked architect's model"
+#                                                             -> CHECK_DATUMS_AGAINST_LINK -
+#                                         a read; it copies nothing
 #   "what links are in this model"                            -> LIST_LINKED_MODELS
 #   "reload the links"                                        -> RELOAD_LINKS -
 #                                         and the copies made from a link do

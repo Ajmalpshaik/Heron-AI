@@ -1,0 +1,52 @@
+# The proof of check-datums-against-link (CHECK_DATUMS_AGAINST_LINK,
+# FRG-QA-038) version 1 - this model's grids and levels against one link's,
+# within a tolerance - written 2026-11-17, NEEDS-CHECKING Group OJ, row OJ1.
+# NOT RUN - written in a cloud session with no Revit.
+#
+#     python tools/batch-prove.py tools/jobs/check-datums-against-link-oj-2026-11-17.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/check-datums-against-link-oj-2026-11-17.yaml
+#
+# READ: nothing is changed, so no transaction and no write switch.
+#
+# THE ARRANGEMENT - OJ0 in docs/needs-checking/group-oj.md: two scratch
+# projects from Revit 2024's own DefaultMetric template, never a working model.
+#   - "datum-link": grids A (x = 0) and B (x = 8000) north-south, 1 (y = 0) and
+#     2 (y = 6000) east-west, X9 at x = 30000, and an arc grid R1, centre
+#     (20000, 0), radius 5000. The template's two levels.
+#   - "datum-host": A at x = 0 drawn TOP TO BOTTOM, B at x = 8003 - 3 mm out -
+#     1 as the link's, the y = 6000 grid named G2, R1 as the link's, H7 at
+#     x = -9000, the template's two levels and Level 3 at 8000 mm.
+#     datum-link.rvt linked Origin to Origin, the only link. Saved, IN FRONT.
+#
+# EVERY VALUE IS LEFT OUT ON THE POSITIVE, on purpose: linkName "only",
+# datums "both", 0.5 mm and 0.01 degrees are the card's own defaults, and the
+# binding note must say each came "not given".
+#
+# WHAT TO READ BEYOND THE VERDICT:
+#   - report: B "off | 3.00 mm", A "aligned ... drawn the opposite way", G2
+#     "name differs - the link calls it '2'", X9 "link only", H7 and Level 3
+#     "host only"
+#   - the second route: an aligned dimension from the link's B to this
+#     model's B in a floor plan reads 3 mm
+#
+# NOT `--session` HERE: with two Revits connected to Heron, add
+# `--session <process id>` to the command.
+
+model: '"datum-host" with "datum-link.rvt" linked Origin to Origin (docs/needs-checking/group-oj.md, OJ0), Revit 2024'
+
+defaults:
+  in: "datum-host"
+
+jobs:
+  - fragment: check-datums-against-link
+    expect: failures
+    negative-set:
+      toleranceMm: 5
+    note: >
+      Positive, every value left out: failures 1 (grid B, 3 mm out),
+      failingIds and elements holding B alone, compared 7, aligned 6,
+      notChecked 0, hostOnly 2 (H7, Level 3), linkOnly 1 (X9). Negative, the
+      same model with toleranceMm 5: the same 3 mm is now inside it, so
+      failures 0, failingIds empty, compared 7, aligned 7 - a different VALUE
+      on the same datums, not an empty model. If the positive reads compared
+      0, read `refused`: the link is not loaded, or there is a second one.
