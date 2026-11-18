@@ -25,7 +25,7 @@ positive:
       front" here, switching nothing (row 5b-359)
 
   - given: >
-      version 3 (row 5b-1850) - a family in front with an unsaved change, then
+      version 3 (row 5b-1851) - a family in front with an unsaved change, then
       the path of a project that is ALREADY OPEN in a window; and again with
       the project closed
     expect: >
@@ -33,9 +33,9 @@ positive:
       AT IT IN EXPLORER: its time moved and a new .0001 backup is beside it ->
       true, and a finding that it WAS WRITTEN TO ITS FILE; its time unchanged
       -> false, and a finding that it still had unsaved changes - with the
-      caution about row 5b-1850 when the project was already open in a
+      caution about row 5b-1851 when the project was already open in a
       window. Either is the read-back working. Which one each case gives is
-      the answer to row 5b-1850: the document LEFT BEHIND was written 3 times
+      the answer to row 5b-1851: the document LEFT BEHIND was written 3 times
       out of 3 when the one brought forward already had a window, 0 out of 1
       when it was opened from its file
 

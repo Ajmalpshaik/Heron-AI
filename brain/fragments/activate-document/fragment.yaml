@@ -14,7 +14,7 @@ source: OFFICIAL
 risk: EXECUTE
 
 # VERSION 3 (2026-11-18) - THE DOCUMENT LEFT BEHIND IS READ BEFORE AND AFTER,
-# and back to DRAFT. FRAGMENT-ISSUES row 5b-1850: on Revit 2020, on
+# and back to DRAFT. FRAGMENT-ISSUES row 5b-1851: on Revit 2020, on
 # 2026-11-18, the document in front was written to its file within about a
 # second of this card bringing another document forward, with no save asked -
 # 3 times out of 3 when the document brought forward ALREADY HAD A WINDOW, 0
@@ -86,7 +86,7 @@ contract:
       role: accounting
       type: bool
     - name: leftBehindWritten
-      # VERSION 3 (row 5b-1850). The document that was in front was written
+      # VERSION 3 (row 5b-1851). The document that was in front was written
       # to its file during the switch: its file's time moved - or, only where
       # that time cannot be read, its unsaved changes are gone. Read before
       # and after, never assumed. False when nothing was switched, when

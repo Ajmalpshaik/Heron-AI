@@ -27,7 +27,7 @@
 // VERSION 3, 2026-11-18 - THE DOCUMENT LEFT BEHIND IS READ BEFORE AND AFTER.
 // On Revit 2020 the document in front was WRITTEN TO ITS FILE within about a
 // second of this card bringing another document forward, with no save asked -
-// each time the document brought forward already had a window (row 5b-1850).
+// each time the document brought forward already had a window (row 5b-1851).
 // This card calls no save, and the trace found nothing of Heron's around it
 // that does - so whatever writes it, the reply must say so rather than leave
 // the modeller to find it on disk. Whether the document in front
@@ -214,7 +214,7 @@ else
                 }
                 if (changesGone) signs.Add("it had unsaved changes before and has none now");
                 findings.Add(string.Format("{0} WAS WRITTEN TO ITS FILE while Revit {1} - {2}. "
-                    + "Heron did not ask Revit to save it (row 5b-1850). A save cannot be "
+                    + "Heron did not ask Revit to save it (row 5b-1851). A save cannot be "
                     + "undone: the file at {3} now holds what was open.",
                     behindName, activated ? "switched windows" : "was asked to switch windows",
                     string.Join(", and ", signs), frontPath));
@@ -222,7 +222,7 @@ else
             else if (changesGone)
             {
                 findings.Add(string.Format("{0} no longer shows unsaved changes, {1} - Heron "
-                    + "saved nothing, and cannot say what changed it (row 5b-1850).", behindName,
+                    + "saved nothing, and cannot say what changed it (row 5b-1851).", behindName,
                     frontPath.Length == 0
                         ? "and it has no file" : "but its file's time did not change"));
             }
@@ -232,7 +232,7 @@ else
                     + "looked - Heron saved nothing.{1}", behindName, targetInAWindow
                     ? " The document brought forward was already open in a window, and a switch "
                       + "like that has been seen to make Revit save the document left behind, "
-                      + "unasked (row 5b-1850) - look at its file's time before trusting that it "
+                      + "unasked (row 5b-1851) - look at its file's time before trusting that it "
                       + "is unsaved."
                     : ""));
             }
