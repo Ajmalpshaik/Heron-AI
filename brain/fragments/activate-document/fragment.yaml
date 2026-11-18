@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DOC-004
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,27 @@ semantic-identity: "make a document on disk the window in front, project or fami
 kind: action
 domain: revit.document
 capability: ACTIVATE_DOCUMENT
-version: 2
+version: 3
 source: OFFICIAL
 risk: EXECUTE
+
+# VERSION 3 (2026-11-18) - THE DOCUMENT LEFT BEHIND IS READ BEFORE AND AFTER,
+# and back to DRAFT. FRAGMENT-ISSUES row 5b-1850: on Revit 2020, on
+# 2026-11-18, the document in front was written to its file within about a
+# second of this card bringing another document forward, with no save asked -
+# 3 times out of 3 when the document brought forward ALREADY HAD A WINDOW, 0
+# out of 1 when it was opened from its file. This card calls no save, and the
+# trace found nothing of Heron's that saves around it: the write points at
+# Revit's own OpenAndActivateDocument on a document already open, which is not
+# proved. By the owner's rule for a cause that is Revit's, no behaviour
+# changes. What changes is the answer: whether the document left
+# behind has unsaved changes, and its file's time, are read before the call
+# and again after it, and `leftBehindWritten` and a finding say when it was
+# written - or a finding says it still has unsaved changes, with a caution
+# when the document brought forward was already open in a window. Reads only.
+# Version 2 was PROVEN on 2026-10-07 (the proof block below, kept as the
+# record of what it proved); its C# moved, so it is DRAFT again until
+# NEEDS-CHECKING Group OL is run (D-30). revit_show runs a DRAFT and says so.
 
 purpose: >
   Makes the document at a given path the window in front in Revit - a project
@@ -65,6 +83,17 @@ contract:
     - name: wasAlready
       # It was already the document in front, so nothing moved. The evidence
       # it looked, never a change it made (D-52).
+      role: accounting
+      type: bool
+    - name: leftBehindWritten
+      # VERSION 3 (row 5b-1850). The document that was in front was written
+      # to its file during the switch: its file's time moved - or, only where
+      # that time cannot be read, its unsaved changes are gone. Read before
+      # and after, never assumed. False when nothing was switched, when
+      # nothing showed a write, and when neither could be read - which a
+      # finding then says. A write a moment AFTER the job is not seen here;
+      # the finding cautions where that has been seen. Heron never asks for
+      # this save - it is reported because it happened (D-52).
       role: accounting
       type: bool
     - name: problem

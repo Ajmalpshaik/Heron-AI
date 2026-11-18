@@ -24,12 +24,42 @@ positive:
       Version 1 compared the aimed-at document's title and said "already in
       front" here, switching nothing (row 5b-359)
 
+  - given: >
+      version 3 (row 5b-1850) - a family in front with an unsaved change, then
+      the path of a project that is ALREADY OPEN in a window; and again with
+      the project closed
+    expect: >
+      activated true, and leftBehindWritten AGREES WITH THE FILE ON DISK. LOOK
+      AT IT IN EXPLORER: its time moved and a new .0001 backup is beside it ->
+      true, and a finding that it WAS WRITTEN TO ITS FILE; its time unchanged
+      -> false, and a finding that it still had unsaved changes - with the
+      caution about row 5b-1850 when the project was already open in a
+      window. Either is the read-back working. Which one each case gives is
+      the answer to row 5b-1850: the document LEFT BEHIND was written 3 times
+      out of 3 when the one brought forward already had a window, 0 out of 1
+      when it was opened from its file
+
 negative:
   - given: a path with no file at it
     expect: >
       activated false, activeAfter unchanged, and the path said back. Checked
       before the call, because Revit's failure for a missing file reads the
       same as its failure for one it will not open
+
+  - given: >
+      version 3 - a switch that DOES happen, away from a document with NO
+      unsaved changes (just saved), to another already open
+    expect: >
+      activated true, leftBehindWritten FALSE, its file's time unchanged, and
+      no line about the document behind. This is the negative that reaches
+      the new reads: a read-back that always said "written" fails it
+
+  - given: >
+      version 3 - a path with no file at it, with an unsaved change in the
+      document in front
+    expect: >
+      leftBehindWritten false and NO line about the document behind - nothing
+      was switched, so nothing is read or reported about it
 
   - given: it is run while a transaction is open
     expect: refused. This is EXECUTE for that reason and must never be sent as MODIFY

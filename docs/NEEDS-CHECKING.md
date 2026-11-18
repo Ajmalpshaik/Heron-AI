@@ -1578,6 +1578,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-oj.md`](needs-checking/group-oj.md)
 
+## Group OL - what wrote a document to disk when `ACTIVATE_DOCUMENT` left it, and the read-back that now says so (2026-11-18)
+
+**Its own file:** [`needs-checking/group-ol.md`](needs-checking/group-ol.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
