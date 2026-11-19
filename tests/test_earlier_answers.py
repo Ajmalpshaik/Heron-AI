@@ -226,6 +226,16 @@ def main():
           "the old answers were not used up by the first model's copy")
     ok, said = E.decide(OTHER, OLD, "none")
     check(ok, "'none' is an answer")
+    # ROW 5b-1162. The answer arrives in a tool call the AI makes, so the
+    # record says where it was given, never that the modeller decided - and
+    # the reply says the same while it is in front of the modeller.
+    with io.open(E.record_path(OTHER), encoding="utf-8") as fh:
+        answered = json.loads(fh.read())
+    check(answered.get("by") == "given in the chat",
+          "and is recorded as given in the chat, not as the modeller's word (%r)"
+          % answered.get("by"))
+    check("given in the chat" in said and "will not ask again" in said,
+          "and the reply says so beside 'will not ask again': %s" % said.splitlines()[0])
     check(KEEP.read(OTHER, "hvac")[0] == {} and LOADS.load(OTHER) is None,
           "and copies nothing")
     check(E.question(OTHER, OLD) is None, "and is not asked again")
@@ -233,6 +243,11 @@ def main():
     print()
     print("A model's own answers are never overwritten by an earlier one")
     KEEP.record(THIRD, {"ventilation_standard": "62.1-2019"}, "School")
+    with io.open(KEEP.path_for(THIRD, "hvac"), encoding="utf-8") as fh:
+        entry = (json.loads(fh.read()).get("standards") or {}).get("ventilation_standard") or {}
+    check(entry.get("given") == "in the chat",
+          "a standard kept for a project says it was given in the chat (5b-1162): %r"
+          % entry.get("given"))
     ok, said = E.decide(THIRD, OLD, "Project2")
     check(ok, "the copy goes ahead for what this model does not have")
     check(KEEP.read(THIRD, "hvac")[0]["ventilation_standard"]["value"] == "62.1-2019",

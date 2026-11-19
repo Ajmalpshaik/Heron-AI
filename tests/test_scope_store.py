@@ -37,6 +37,11 @@ WHAT IT PROVES
      file, the other scopes keep their names, a store named the old way is
      reported and left byte for byte, and only --move-project-store moves
      it - a backup first.
+ 11. A store's folder and the labels' folder are made without looking first
+     (row 5b-1520): a look that sees no folder another chat then makes is
+     not a FileExistsError; and three processes started together on one
+     empty folder each make a cold lookup, open a project store and keep its
+     label - a "database is locked" among them is named, with its call.
 
 WHAT IT DOES NOT PROVE. That any of this is wired to a real Revit document. The
 resolver is handed the same facts the bridge would report; nothing here has
@@ -47,8 +52,10 @@ import io
 import os
 import sqlite3
 import shutil
+import subprocess
 import sys
 import tempfile
+import time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
@@ -1359,6 +1366,92 @@ def one_key_one_store(S, home):
           "and the command without --to-key is a usage error, exit 2")
 
 
+def folders_made_together(S):
+    """Section 11 (row 5b-1520). A store's folder, and the labels' folder, are
+    made without looking first - so a second chat that saw no folder, and
+    finds another made it, carries on rather than raising FileExistsError."""
+    print()
+    print("11. Folders are made without looking first, so chats can start together (5b-1520)")
+    home = tempfile.mkdtemp(prefix="heron-kn-together-")
+    had = os.environ.get("HERON_KNOWLEDGE")
+    os.environ["HERON_KNOWLEDGE"] = home
+    real_isdir = S.os.path.isdir
+    try:
+        # THE RACE, MADE CERTAIN: every look heron_scope makes says "not
+        # there", as it does to the chat that looked before another made the
+        # folder. Only heron_scope's own look - os.makedirs asks isdir too,
+        # and fooling it would fail exist_ok itself.
+        def looked_too_soon(path):
+            if sys._getframe(1).f_globals.get("__name__") == S.__name__:
+                return False
+            return real_isdir(path)
+
+        S.os.path.isdir = looked_too_soon
+        said = []
+        for key in ("tower-a", "tower-b"):
+            try:
+                S.Store(S.PROJECT, key).close()
+            except OSError as error:
+                said.append("%s: %s" % (key, type(error).__name__))
+        check(not said, "a project store opens when its folder was made under it (%s)"
+              % ("; ".join(said) or "both opened"))
+        try:
+            S.remember_label("tower-a", "Tower A")
+            S.remember_label("tower-b", "Tower B")
+            labelled = None
+        except OSError as error:
+            labelled = type(error).__name__
+        check(labelled is None, "and so is the labels file's (%s)" % (labelled or "both kept"))
+    finally:
+        S.os.path.isdir = real_isdir
+        if had is None:
+            os.environ.pop("HERON_KNOWLEDGE", None)
+        else:
+            os.environ["HERON_KNOWLEDGE"] = had
+        shutil.rmtree(home, ignore_errors=True)
+
+    # AND THE REAL THING: three processes started together on one empty
+    # folder - three chats' servers - each making the first, cold lookup the
+    # way heron_lookup does (heron_brain.lookup), then opening a project
+    # store and keeping its label. A race is not certain to be met, so a
+    # child that fails prints its whole traceback, and a "database is
+    # locked" anywhere is named in the note - the call the row could not
+    # name (measured 2026-11-19 in a cloud container: none, 8.5 to 9.6 s).
+    home = tempfile.mkdtemp(prefix="heron-kn-three-")
+    go = os.path.join(home, "go")
+    child = ("import os, sys, time, traceback\n"
+             "for part in (%r, %r, %r): sys.path.insert(0, part)\n"
+             "import heron_scope as S\n"
+             "import heron_brain as B\n"
+             "while not os.path.exists(%r): time.sleep(0.005)\n"
+             "try:\n"
+             "    B.lookup('select all ducts')\n"
+             "    store = S.Store(S.PROJECT, 'tower-' + sys.argv[1]); store.close()\n"
+             "    S.remember_label('tower-' + sys.argv[1], 'Tower ' + sys.argv[1])\n"
+             "except Exception:\n"
+             "    traceback.print_exc(); sys.exit(1)\n"
+             % (os.path.join(ROOT, "brain"), os.path.join(ROOT, "mcp", "client"),
+                os.path.join(ROOT, "mcp", "server"), go))
+    try:
+        env = dict(os.environ, HERON_KNOWLEDGE=home, HERON_AUDIT=os.path.join(home, "audit"))
+        started = [subprocess.Popen([sys.executable, "-c", child, str(n % 2)], env=env,
+                                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                   for n in range(3)]
+        time.sleep(0.5)
+        io.open(go, "w").close()
+        ended = [(p.wait(timeout=120), p.stdout.read().decode("utf-8", "replace"))
+                 for p in started]
+        bad = [said.strip().splitlines()[-1] for code, said in ended if code != 0 and said.strip()]
+        locked = [said for _code, said in ended if "locked" in said]
+        print("  note  three cold lookups on one empty folder: %d exited 0%s%s"
+              % (sum(1 for code, _ in ended if code == 0),
+                 "" if not bad else " - " + "; ".join(bad),
+                 "" if not locked else " - 'database is locked' seen:\n" + "\n".join(locked)))
+        check(not bad, "three chats starting together on one empty folder all look up and open their stores")
+    finally:
+        shutil.rmtree(home, ignore_errors=True)
+
+
 def main():
     home = tempfile.mkdtemp(prefix="heron-kn-")
     os.environ["HERON_KNOWLEDGE"] = home
@@ -1605,6 +1698,7 @@ def main():
 
         one_key_one_store(S, home)
         files_beside_a_store(S)
+        folders_made_together(S)
 
     finally:
         shutil.rmtree(home, ignore_errors=True)

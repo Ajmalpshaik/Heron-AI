@@ -77,6 +77,20 @@ BP = _load(os.path.join(ROOT, "tools", "batch-prove.py"), "batch_prove")
 # here is "none known"; tests/test_batch_prove.py holds the rule itself.
 BP.connected_release = lambda session=None: None
 
+# NOR DOES ANY CASE HAND MODELS BACK TO IT (row 5b-1510). `main` ends every
+# real run with `free_models`, which asks BRIDGE.discover() of the real
+# address book - a ping to every Revit listed there, a stale entry pruned -
+# and sends `release_models` to each live one. So for every case it is a
+# stand-in that writes down what it was asked; a case that tests the
+# hand-back gives its own. And the guard tests/test_mcp_serves.py uses
+# watches this process from here, refusing a pipe open, so a case that finds
+# another way to the Revit on this PC is a FAIL at the end, not a ping.
+sys.path.insert(0, os.path.join(ROOT, "tests", "support"))
+import live_revit_guard as LIVE_GUARD                               # noqa: E402
+WATCH = LIVE_GUARD.Guard.around(BP.BRIDGE).install()
+HANDED_BACK = []
+BP.free_models = lambda conversation, session=None: HANDED_BACK.append(conversation)
+
 FAILURES = []
 
 
@@ -810,6 +824,15 @@ def main():
             check(False, "%s could not run: %s: %s"
                   % (test.__name__, type(exc).__name__, exc))
         print("")
+
+    # ROW 5b-1510, ASKED LAST: every case has run by now.
+    print("No case reached the Revit on this PC (row 5b-1510)")
+    touched = WATCH.touched()
+    check(not touched, "nothing listed the real discovery folder or opened a Revit's pipe (%s)"
+          % LIVE_GUARD.summary(touched))
+    check(len(HANDED_BACK) > 0,
+          "and every real run's hand-back went to the stand-in (%d)" % len(HANDED_BACK))
+    print("")
 
     if FAILURES:
         print("%d failure(s):" % len(FAILURES))

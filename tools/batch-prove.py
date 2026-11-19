@@ -713,6 +713,26 @@ def judge(record, frag, expect=None):
             reason = ("%s is true in the positive and false in the negative"
                       % flipped)
 
+    # A RESULT THAT IS ONE THING IS EVIDENCE WHEN IT APPEARS (row 5b-1114).
+    # A creator answers `created ViewPlan` - the thing it made, rendered as its
+    # type name - not a count, and `positive_worked` can only count, so the
+    # positive read UNREADABLE here while `accept` already rescued the same
+    # record with `_result_appeared`: present in the positive, gone in the
+    # negative. This asks the same function, of the values rendered as a type
+    # name ALONE: a sentence where a list or an undeclared string was expected
+    # stays UNREADABLE, as the checks of test_batch_prove.py say it must. And
+    # only of a negative that ran - a refused leg gives nothing back, which
+    # would read as "gone".
+    things = dict((key, value) for key, value in (positive.get("provides") or {}).items()
+                  if HV._is_helper_object(value))
+    if (verdict == POSITIVE_UNREADABLE and things and negative and negative.get("ok")
+            and HV._result_appeared(dict(positive, provides=things), negative, frag)):
+        verdict = None
+        reason = ("%s is made in the positive and empty in the negative"
+                  % ", ".join(sorted(key for key in things
+                                     if HV._result_appeared(dict(positive, provides={key: things[key]}),
+                                                            negative, frag))))
+
     if not negative or not negative.get("ok"):
         why = HV.phase_failure(negative)
         if negative and negative.get("error") == "no_reply":

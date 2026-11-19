@@ -30,7 +30,12 @@ WHAT IT PROVES
   5. THE MESSAGE IS READ FOR A CREDENTIAL, refused whole, and the value
      is nowhere in the answer.
 
-  6. NOTHING IS STAGED AND NO FILE IS OPENED except .gitignore.
+  5a. AND SO IS EVERY STAGED FILE ON DISK (row 5b-1138), through the same
+     redactor: a file holding a token is refused, by name and kind, with no
+     value in the answer; a clean file and a deleted path pass.
+
+  6. NOTHING IS STAGED, AND NO FILE IS OPENED but .gitignore and the staged
+     files read for a credential.
 
   7. EVERY FAILURE THE CONTRACT DECLARES IS NAMED AND REACHED.
 """
@@ -151,18 +156,40 @@ def main():
     check("every clone and every mirror at once" in leaky["why"],
           "with the reason a commit message is worse than a report")
 
-    print("\n6. nothing is staged and no file is opened but .gitignore")
-    check(logic.count("io.open(") == 1,
-          "there is exactly one open in the module, and it is the "
-          ".gitignore read")
+    print("\n5a. each staged file is read for a credential too (5b-1138)")
+    tree = tempfile.mkdtemp(prefix="heron-commit-")
+    try:
+        os.makedirs(os.path.join(tree, "brain"))
+        io.open(os.path.join(tree, "brain", "leaky.py"), "w", encoding="utf-8") \
+            .write(u"TOKEN = '%s'\n" % TOKEN)
+        io.open(os.path.join(tree, "brain", "clean.py"), "w", encoding="utf-8") \
+            .write(u"TOKEN = None\n")
+        caught = CMT.stage(["brain/clean.py", "brain/leaky.py"], "a message", root=tree)
+        check(caught.get("refused") == "CARRIES_A_SECRET"
+              and caught.get("paths") == ["brain/leaky.py"],
+              "a staged file holding a token is refused, by its name (%s %s)"
+              % (caught.get("refused"), caught.get("paths")))
+        check(TOKEN not in repr(caught), "and the value is nowhere in the answer")
+        check(CMT.stage(["brain/clean.py", "brain/gone.py"], "a message",
+                        root=tree).get("prepared") is True,
+              "a clean file passes, and a path not on disk - a deletion - carries nothing")
+    except TypeError as error:
+        check(False, "stage() reads the staged files at all (%s)" % error)
+    finally:
+        shutil.rmtree(tree, ignore_errors=True)
+
+    print("\n6. nothing is staged; the files opened are .gitignore and the staged ones")
+    check(logic.count("io.open(") == 2,
+          "there are exactly two opens in the module - the .gitignore read "
+          "and the staged files read for a credential")
     for reaching in ("subprocess", "socket", "urllib", "write("):
         check(reaching not in logic, "nothing here uses %s" % reaching)
     good = CMT.stage(["brain/heron_commit.py", "tests/test_commit.py"],
                      "GitHub: the Commit Agent")
     check("Nothing was staged" in good["why"], "and the answer says so")
-    check(any("nothing here opened one" in line
+    check(any("read through the same redactor" in line
               for line in good["unjudged"]),
-          "including that only the file NAMES were checked")
+          "including that the files were read for a credential and nothing else")
 
     print("\n7. every declared failure is named and reached")
     for paths, message, name in (

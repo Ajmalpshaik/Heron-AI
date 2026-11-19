@@ -330,9 +330,13 @@ class Store(object):
                 _REPORTED.add(self.left_behind)
                 sys.stderr.write(self.notice + "\n")
 
+        # MADE WITHOUT LOOKING FIRST (row 5b-1520). Two chats opening a project
+        # store together on one knowledge folder both saw no `projects/`, and
+        # the second makedirs raised FileExistsError - the look-then-make row
+        # 5b-1508's review found in library_store().
         folder = os.path.dirname(self.path)
-        if folder and not os.path.isdir(folder):
-            os.makedirs(folder)
+        if folder:
+            os.makedirs(folder, exist_ok=True)
 
         self.db = sqlite3.connect(self.path)
         self.db.row_factory = sqlite3.Row
@@ -486,9 +490,7 @@ def remember_label(project_key, label):
     path = _labels_path()
     if not path:
         return
-    folder = os.path.dirname(path)
-    if not os.path.isdir(folder):
-        os.makedirs(folder)
+    os.makedirs(os.path.dirname(path), exist_ok=True)      # row 5b-1520, as above
     known = read_labels()
     # By the store's own name, which existing() reads back - so two keys that
     # reduce alike no longer overwrite each other's label either (F14).
@@ -817,9 +819,7 @@ def record_developer_checkout(root=None):
         current = developer_checkout()
         if current is not None and _same_folder(current, main):
             return main
-        folder = os.path.dirname(path)
-        if not os.path.isdir(folder):
-            os.makedirs(folder)
+        os.makedirs(os.path.dirname(path), exist_ok=True)  # row 5b-1520's shape
         temporary = path + ".writing"
         with io.open(temporary, "w", encoding="utf-8") as handle:
             handle.write(json.dumps({"checkout": os.path.abspath(main)}, indent=2))
