@@ -7,6 +7,8 @@
 
 ## Group OL - what wrote a document to disk when `ACTIVATE_DOCUMENT` left it, and the read-back that now says so (2026-11-18)
 
+**Tracked as GitHub issue [#1035](https://github.com/Ajmalpshaik/Heron-AI/issues/1035) since 2026-11-19** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 From [row 5b-1851](../fragment-issues/row-5b-1851.md): on 2026-11-18, on Revit 2020, the document in
 front was written to its file within about a second of `ACTIVATE_DOCUMENT` bringing another document
 forward, with no save asked - **3 times out of 3 when the document brought forward already had a window,
