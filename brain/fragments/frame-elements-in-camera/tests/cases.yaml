@@ -63,6 +63,29 @@ positive:
       the finding "The new view: phase ... phase filter 'Show Complete'";
       readBack ends "Its phase '...', phase filter 'Show Complete'"; the
       Properties palette agrees; earlier-phase walls not grey in the picture
+  # Version 6 - row 5b-1850, 'Heron Tower - First Build', Revit 2020.
+  - given: >
+      elements on many levels - the tower's walls, 'Level 1' to 'Roof',
+      selected with SELECT_IN_REGION - shot low-angle, side front-left,
+      aspect 16:9
+    expect: >
+      the eye near the LOWEST level: readBack "eye 450 mm above 'Level 1'"
+      (or the level above it, with the finding naming why 'Level 1' was
+      passed over), and Revit's Eye Elevation about 450 mm above that
+      level - NOT 126450 mm, version 5's 450 above 'Roof'
+  - given: >
+      the same walls, shot none, direction 150, lookDownDeg -25, distanceMm
+      130000, lensMm 18 - version 2's road
+    expect: >
+      the same eye as version 5 put there (this road does not use the base
+      level to place it), and readBack's height measured from 'Level 1' -
+      a positive number, not version 5's "-114940 mm above 'Roof'"
+  - given: >
+      row 5b-1301's case - Revit 2020's sample house walls with the one
+      partition on 'Foundation', shot eye-level
+    expect: >
+      the eye 1600 mm above the ground floor's level, not 'Foundation', and
+      the finding "The eye height is measured from ... not 'Foundation'"
 
 negative:
   - given: the heater selected, viewName naming the project's isometric {3D} view
