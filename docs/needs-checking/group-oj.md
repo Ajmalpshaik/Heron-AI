@@ -7,6 +7,8 @@
 
 ## Group OJ - a setting-out check: this model's grids and levels against one linked model's, within a tolerance: `CHECK_DATUMS_AGAINST_LINK` (2026-11-17)
 
+**Tracked as GitHub issue [#1036](https://github.com/Ajmalpshaik/Heron-AI/issues/1036) since 2026-11-19** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for in the modeller's words on 2026-11-17: *"Before every issue, check our grids and levels line up
 with the linked architect's (or structural) model."* Nothing in the library measured a linked grid against
 one of this model's, so a new READ card was written in a cloud container:

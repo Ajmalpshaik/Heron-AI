@@ -532,6 +532,7 @@ Every row of sections 5 and 5b that `python tools/open-defects.py` listed as ope
 | [row 5b-1831](row-5b-1831.md) | [#948](https://github.com/Ajmalpshaik/Heron-AI/issues/948) | Code fix | Setting four columns' levels would delete 2 elements, and which two is unknown |
 | [row 5b-1832](row-5b-1832.md) | [#956](https://github.com/Ajmalpshaik/Heron-AI/issues/956) | Code fix | 'Attach these walls to the roof' and 'delete this roof' reach the wrong tool on 2024 |
 | [row 5b-1845](row-5b-1845.md) | [#938](https://github.com/Ajmalpshaik/Heron-AI/issues/938) | Code fix | The archive re-points links to a re-banded row everywhere but in the register's own folder |
+| [row 5b-1848](row-5b-1848.md) | [#1039](https://github.com/Ajmalpshaik/Heron-AI/issues/1039) | Code fix | The new grids-and-levels check ranks first for "bring the grids in from the architect" |
 
 ## Found finished on 2026-11-16 - closed in the register, no issue
 
@@ -618,6 +619,7 @@ Each stays in full where it is. On 2026-11-16 open pull request [#871](https://g
 | F9 | [#967](https://github.com/Ajmalpshaik/Heron-AI/issues/967) | [`proposals/part-f.md`](../proposals/part-f.md) | In progress - #871 decides it |
 | F42 | [#967](https://github.com/Ajmalpshaik/Heron-AI/issues/967) | [`proposals/f42.md`](../proposals/f42.md) | In progress - #871 decides it |
 | F43 | [#967](https://github.com/Ajmalpshaik/Heron-AI/issues/967) | [`proposals/f43.md`](../proposals/f43.md) | Open |
+| Q-93 | [#1038](https://github.com/Ajmalpshaik/Heron-AI/issues/1038) | [`open-questions/tier-3.md`](../open-questions/tier-3.md) | Open since 2026-11-17, held for a discussion with the owner |
 
 ## NEEDS-CHECKING groups - [#968](https://github.com/Ajmalpshaik/Heron-AI/issues/968) to [#1004](https://github.com/Ajmalpshaik/Heron-AI/issues/1004)
 
@@ -663,6 +665,7 @@ Each group's file starts with a line naming its issue. The checks still owed are
 | [#1003](https://github.com/Ajmalpshaik/Heron-AI/issues/1003) | Revit run: electrical | [MI](../needs-checking/group-mi.md), [JV](../needs-checking/group-jv.md), [LI](../needs-checking/group-li.md), [LH](../needs-checking/group-lh.md), [KU](../needs-checking/group-ku.md), [KV](../needs-checking/group-kv.md), [KW](../needs-checking/group-kw.md) |
 | [#1004](https://github.com/Ajmalpshaik/Heron-AI/issues/1004) | Revit run: HVAC, fire protection and energy | [AQ](../needs-checking/group-aq.md), [BT](../needs-checking/group-bt.md), [BU](../needs-checking/group-bu.md), [CG](../needs-checking/group-cg.md), [CE](../needs-checking/group-ce.md), [CC](../needs-checking/group-cc.md), [LU](../needs-checking/group-lu.md), [MM](../needs-checking/group-mm.md) |
 | [#1015](https://github.com/Ajmalpshaik/Heron-AI/issues/1015) | Tidy-up: strike checks already done | [IZ](../needs-checking/group-iz.md), [NO](../needs-checking/group-no.md), [NQ](../needs-checking/group-nq.md) |
+| [#1036](https://github.com/Ajmalpshaik/Heron-AI/issues/1036) | Revit run: grids and levels against a link, the new QA reports and office checklists | [OJ](../needs-checking/group-oj.md) |
 
 ## Work-note items - [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005) to [#1014](https://github.com/Ajmalpshaik/Heron-AI/issues/1014)
 

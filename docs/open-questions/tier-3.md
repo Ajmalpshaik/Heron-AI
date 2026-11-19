@@ -1102,6 +1102,8 @@ Is that a **read** - allowed with Changes off - or does it need Publish, as the 
 **Recommended: shape 1, with opening read-only counted as a read** - the smaller build, on a mechanism
 already proven, nothing saved anywhere. The owner decides; nothing is built until then.
 
+**Tracked as GitHub issue [#1038](https://github.com/Ajmalpshaik/Heron-AI/issues/1038) since 2026-11-19** - the owner answers there.
+
 **Held for a discussion, 2026-11-17.** The owner, in conversation: *"7 i have detaild explanation this we
 will do it later we need to discus abouth this"*. He has a fuller plan of his own; this question waits for
 it, and nothing is built or proposed for item 7 until that discussion.
