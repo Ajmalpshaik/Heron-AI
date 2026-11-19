@@ -1,0 +1,32 @@
+{
+  "heron-host-scenarios": 1,
+  "about": "The shape tools/score-host.py reads. EXAMPLES, not the owner's own requests: copy this file, put in the words the modeller really typed and the Heron calls that should follow, and score a recorded chat with it.",
+  "scenarios": [
+    {
+      "id": "count-ducts",
+      "says": "how many ducts are on level 2",
+      "expect": [
+        {"tool": ["heron_lookup", "heron_resolve"]},
+        {"tool": "revit_read", "capability": "COUNT_ELEMENTS"}
+      ],
+      "never": ["revit_change"]
+    },
+    {
+      "id": "move-selected-up",
+      "says": "move the selected ducts up 200 mm",
+      "expect": [
+        {"tool": ["heron_lookup", "heron_resolve"]},
+        {"tool": "revit_change", "capability": "MOVE_ELEMENTS"}
+      ]
+    },
+    {
+      "id": "grids-against-link",
+      "says": "check our grids line up with the architect's model",
+      "expect": [
+        {"tool": ["heron_lookup", "heron_resolve"]},
+        {"tool": "revit_read", "capability": "CHECK_DATUMS_AGAINST_LINK"}
+      ],
+      "never": ["revit_change"]
+    }
+  ]
+}

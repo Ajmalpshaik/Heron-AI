@@ -18,6 +18,13 @@
     target is a BIM modeller on a locked-down corporate machine
     (docs/07 section 5).
 
+    THIS SCRIPT BUILDS NO HERON PATH (Q-58, decided 2026-11-15). Both folders
+    it writes to - that one and the install backup below - are HeronPaths',
+    written down in platform\heron-folders.json by the add-in's own path code
+    and read here through Get-HeronFolder in HeronRevit.ps1. The list missing
+    is a stop before anything is changed. tests/test_heron_folders.py fails
+    when the list and the code disagree, or when this file spells a folder.
+
 .PARAMETER RevitVersion
     Revit release to deploy for. Default 2024.
 
@@ -71,8 +78,9 @@
 
     WHERE THE COPY LIVES, and the honest limit of it. It goes in
 
-        %LOCALAPPDATA%\Heron\install-backup\<version>\
+        %LOCALAPPDATA%\Heron\install-backup\<version>\<product folder>\
 
+    - HeronPaths.InstallBackup, read from platform\heron-folders.json -
     which is Heron's own folder rather than Autodesk's, so nothing here ever
     writes a stray file into the folder Revit scans for manifests. It is
     machine-local and NOT roamed: losing the profile or the disk loses it,
@@ -154,8 +162,11 @@ $productAssembly = $chosen.assembly
 $productProject  = $productAssembly -replace '\.dll$', ''
 $productProjPath = "revit\$productProject\$productProject.csproj"
 
-# ONE OWNER FOR THIS PATH - HeronRevit.ps1, dot-sourced above. It was spelled
-# here until 2026-09-21, and the installer was about to spell it a third time.
+# ONE OWNER FOR THIS PATH - HeronPaths.RevitAddins, asked through
+# HeronRevit.ps1, dot-sourced above, which reads the list the add-in's path
+# code wrote (Q-58). It was spelled here until 2026-09-21, and the installer
+# was about to spell it a third time; HeronRevit.ps1 spelled it until
+# 2026-11-16. A missing list stops here, before anything is changed.
 $target   = Get-RevitAddinsFolder -RevitVersion $RevitVersion
 $addinDir = Join-Path $target $productFolder
 $manifest = Join-Path $target $productAddin
@@ -188,7 +199,13 @@ $manifest = Join-Path $target $productAddin
 # folder. Every other product lands on a path the old layout never used.
 # Recorded rather than tidied: reaching into a path this script no longer
 # owns, to delete files, is a worse risk than the one it fixes. Row 5b-96.
-$backupDir      = Join-Path $env:LOCALAPPDATA "Heron\install-backup\$RevitVersion\$productFolder"
+#
+# THE SAME FOLDER, NO LONGER SPELLED HERE - 2026-11-16, Q-58. It is
+# HeronPaths.InstallBackup, read from the list the add-in's path code wrote;
+# the release and the product folder are the two blanks it leaves. The list
+# says Heron\install-backup\<release>\<folder> under the machine's own
+# application data, which is the path this line built before.
+$backupDir      = Get-HeronFolder -Name InstallBackup -Fill @{ release = $RevitVersion; folder = $productFolder }
 $backupAddinDir = Join-Path $backupDir $productFolder
 $backupManifest = Join-Path $backupDir $productAddin
 $backupRecord   = Join-Path $backupDir "replaced.json"
@@ -385,8 +402,9 @@ function Find-OtherCopy {
 
     .NOTES
         EVERY FOLDER REVIT READS FOR THIS RELEASE. Per user is where Heron
-        goes; the all-users ones come from HeronRevit.ps1, which spells every
-        Revit path once - Get-RevitAllUserAddinsFolders, read and never written.
+        goes; the all-users ones come from HeronRevit.ps1, which asks the list
+        HeronPaths wrote for every Revit path - Get-RevitAllUserAddinsFolders,
+        read and never written.
         A second Heron in any of them is one Revit refuses, or loads twice, and
         the modeller is told only that it cannot run the external application.
 

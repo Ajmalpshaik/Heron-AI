@@ -188,7 +188,7 @@ def main():
     for name in UPD.PRODUCT:
         check(UPD._classify(name) in ("data", "product"),
               "'%s' is product, or data where the words overlap" % name)
-    answer = ask(what=release(components=["Core", "Documentation"]))
+    answer = ask(what=release(components=["Core", "Telemetry"]))
     check(answer.get("refused") == "COMPONENT_NOT_CLASSIFIED",
           "an unclassifiable component is refused, not assumed harmless")
     check("the case the rule cannot see" in answer["why"],

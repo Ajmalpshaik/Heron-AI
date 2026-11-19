@@ -17,6 +17,25 @@ positive:
   - given: the first case run a second time
     expect: changed 0, alreadySet 2, and nothing changed
 
+  # Version 2. The same family, with Reference Planes > Secondary References
+  # made gray by CREATE_LINE_STYLE (parentCategory Reference Planes), and a
+  # plane "Insert" whose Is Reference is Strong Reference.
+  - given: otherPlanesSubcategory "Secondary References", planes not said
+    expect: >
+      "Insert" Subcategory Reference Planes -> Secondary References in
+      planeReport and gray in the view; "Box Left", "Box Right" (Left, Right)
+      and both Center planes named in findings as left on Reference Planes and
+      still green; onSubcategory counts only the planes moved; Is Reference
+      and Defines Origin of every plane read as before
+
+  - given: subcategories "Insert=Reference Planes"
+    expect: >
+      "Insert" Subcategory Secondary References -> Reference Planes, green
+      again; onSubcategory 1; nothing else moved
+
+  - given: the otherPlanesSubcategory case run a second time
+    expect: onSubcategory 0, every plane counted in alreadySet, nothing changed
+
 negative:
   - given: planes "Box Left=Top", a plane facing left or right
     expect: refused - Top goes on a horizontal plane - and nothing changed
@@ -32,9 +51,25 @@ negative:
   - given: a project in front
     expect: notAFamily true and nothing changed anywhere
 
+  # Version 2: a subcategory that does not exist.
+  - given: otherPlanesSubcategory "No Such Subcategory"
+    expect: >
+      refused, listing Reference Planes and its subcategories and naming
+      CREATE_LINE_STYLE - and no plane's Subcategory changed
+
+  - given: subcategories "No Such Plane=Secondary References"
+    expect: refused, listing the family's named planes, and nothing changed
+
+  - given: planes, subcategories and otherPlanesSubcategory all left out
+    expect: refused - nothing was asked - and nothing changed
+
 second_route:
   - >
       Select each plane in the Family Editor and read Is Reference and Defines
       Origin in Properties; load the family into a test project and dimension
       to the plane made Left - it is offered, and one made Not a Reference is
       not
+  - >
+      Version 2: select each plane and read Subcategory in Properties; the
+      planes on Secondary References draw gray and the outline and centre
+      planes green in Ref. Level

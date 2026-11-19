@@ -11,8 +11,8 @@ Report release - a report is an egress surface, and the line is the file.
 
     python brain/heron_release.py
 
-WHAT IT IS FOR (docs/28, HERON-RPT-RED-003)
---------------------------------------------
+WHAT IT IS FOR (docs/28, HERON-RPT-RED-003, as the row read until 2026-11-15)
+------------------------------------------------------------------------------
 "The gate before a report can be shared or leave the machine. Strips
 project identifiers, enforces scope, blocks confidential-project egress.
 A REPORT IS AN EGRESS SURFACE." T1, risk PUBLISH - the highest risk of
@@ -41,7 +41,8 @@ And the rule that won:
 So project names are explicitly FINE. This agent does not strip them,
 because stripping them would implement the framing D-26 moved away from
 - and doing it quietly would leave a report that reads as anonymised
-without anybody having decided it should be. Recorded as PROPOSALS F20.
+without anybody having decided it should be. Recorded as PROPOSALS F20,
+whose sweep of 2026-11-15 struck those words from the row.
 
 WHAT SURVIVES, AND ALL OF IT IS A REFUSAL RATHER THAN A STRIP
 --------------------------------------------------------------
@@ -241,9 +242,10 @@ def release(report, to=None, projects=None, policy=None):
             "RATHER THAN AN OVERSIGHT. Its table puts project names, file "
             "names, content names, element data, engineering ideas, "
             "reasoning and code in the 'fine in the conversation' column. "
-            "docs/28's row for this agent says 'strips project "
-            "identifiers', which is the framing D-26 narrowed away from - "
-            "PROPOSALS F20.",
+            "docs/28's row for this agent said 'strips project "
+            "identifiers' until 2026-11-15, the framing D-26 narrowed "
+            "away from; PROPOSALS F20 struck it, and the row now says it "
+            "strips nothing.",
             "WHAT WAS CHECKED IS FOUR THINGS, ALL REFUSALS: a Revit binary "
             "attached, a credential in the text, more than one project, "
             "and a project that has not declared this may leave. Nothing "

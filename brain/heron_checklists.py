@@ -437,7 +437,12 @@ def problems(checklist, contracts):
     if checklist.get("description") is not None and not isinstance(checklist.get("description"), str):
         found.append("The description must be one line of text.")
     checks = checklist.get("checks")
-    if not isinstance(checks, list) or not checks:
+    extends = checklist.get("extends")
+    if extends not in (None, "") and _text(extends) is None:
+        found.append("`extends` must be the name of a saved checklist.")
+    # A LIST THAT EXTENDS AN OFFICE LIST (D-179) may add no checks of its own:
+    # what it runs is the office list's, with its overrides.
+    if not isinstance(checks, list) or (not checks and not _text(extends)):
         found.append("It has no checks.")
         return found
     if len(checks) > MAX_CHECKS:
@@ -467,6 +472,9 @@ def save(checklist, contracts, home=None, replace=False, now=None):
     found = problems(checklist, contracts)
     if found:
         raise ChecklistError("Not saved:\n  - " + "\n  - ".join(found))
+    base = None
+    if _text(checklist.get("extends")):
+        base = _office(checklist, home)
     path = _path(checklist["name"], home, make=True)
     if os.path.exists(path) and not replace:
         raise ChecklistError("A checklist called '%s' is already saved. Say to replace it, or give "
@@ -502,8 +510,172 @@ def save(checklist, contracts, home=None, replace=False, now=None):
         "checks": kept_checks,
         "saved": now or time.strftime("%Y-%m-%dT%H:%M:%S"),
     }
+    if base is not None:
+        overrides = _overrides_kept(checklist.get("overrides"))
+        resolved = _apply(base["checks"], overrides, kept_checks)
+        if not resolved:
+            raise ChecklistError("Not saved: every check of '%s' is switched off and this list adds "
+                                 "none of its own, so it has nothing left to run." % base["name"])
+        if len(resolved) > MAX_CHECKS:
+            raise ChecklistError("Not saved: with '%s' it would run %d checks; one checklist runs at "
+                                 "most %d." % (base["name"], len(resolved), MAX_CHECKS))
+        kept.update({"checks": resolved, "own": kept_checks, "extends": base["name"],
+                     "overrides": overrides,
+                     "base": {"fingerprint": fingerprint(base["checks"]),
+                              "saved": base.get("saved") or ""}})
     COMMANDS.write_whole(path, kept)
     return path
+
+
+# ------------------------------------------------- an office list, extended (D-179)
+#
+# A PROJECT LIST EXTENDS AN OFFICE LIST: it names the office list, changes
+# only what OVERRIDABLE allows - a check's severity, its rule's target, or
+# whether it runs at all - each override naming an office check by its exact
+# words, and may add checks of its own. What it runs is SAVED WHOLE beside
+# those, so every reader - the list, the page, a run - works on it as on any
+# list; and AT EACH RUN the office list is read again (prepare_run), so a
+# change to it reaches every project, said in the run. One level only: an
+# office list extends nothing, so two lists can never extend each other.
+
+OVERRIDABLE = ("severity", "target", "enabled")
+
+
+def fingerprint(checks):
+    """Twelve hex characters naming exactly the checks a run used - the same
+    checks, the same fingerprint; any change, another."""
+    blob = json.dumps(checks or [], sort_keys=True, ensure_ascii=True)
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()[:12]
+
+
+def _override_problems(overrides, base_name, base_checks):
+    """Every reason `overrides` cannot apply to the office list's checks."""
+    if overrides in (None, ""):
+        return []
+    if not isinstance(overrides, list):
+        return ["`overrides` must be a list, each naming an office check by its words."]
+    found, seen = [], set()
+    sentences = [(c.get("sentence") or "").strip() for c in base_checks]
+    for number, override in enumerate(overrides, 1):
+        if not isinstance(override, dict):
+            found.append("Override %d must be a set of named fields." % number)
+            continue
+        sentence = (_text(override.get("sentence")) or "").strip()
+        where = "Override %d (%s)" % (number, sentence[:60] or "no sentence")
+        other = sorted(k for k in override if k not in ("sentence",) + OVERRIDABLE)
+        if other:
+            found.append("%s changes %s; an override may change only severity, target or enabled."
+                         % (where, ", ".join(other)))
+        if not sentence:
+            found.append("%s names no check: give the office check's exact words as `sentence`." % where)
+        elif sentence not in sentences:
+            found.append("%s: no check in '%s' says \"%s\"." % (where, base_name, sentence))
+        elif sentence in seen:
+            found.append("%s: there is more than one override for that check." % where)
+        seen.add(sentence)
+        if "severity" in override and override["severity"] not in ("",) + SEVERITIES:
+            found.append("%s: severity must be one of %s, or empty." % (where, ", ".join(SEVERITIES)))
+        if "target" in override and _target(override["target"]) is None:
+            found.append("%s: target must be a number." % where)
+        if "enabled" in override and not isinstance(override["enabled"], bool):
+            found.append("%s: enabled must be true or false." % where)
+        if not other and not any(k in override for k in OVERRIDABLE):
+            found.append("%s changes nothing." % where)
+    return found
+
+
+def _overrides_kept(overrides):
+    kept = []
+    for override in overrides or []:
+        one = {"sentence": override["sentence"].strip()}
+        if "severity" in override:
+            one["severity"] = override["severity"]
+        if "target" in override:
+            one["target"] = _target(override["target"])
+        if "enabled" in override:
+            one["enabled"] = override["enabled"]
+        kept.append(one)
+    return kept
+
+
+def _apply(base_checks, overrides, own_checks):
+    """The checks a project list runs: the office list's, in its order, each
+    with its override - one switched off left out - then the list's own."""
+    by_sentence = dict((o["sentence"], o) for o in overrides or [])
+    out = []
+    for check in base_checks:
+        check = dict(check)
+        override = by_sentence.get((check.get("sentence") or "").strip())
+        if override:
+            if override.get("enabled") is False:
+                continue
+            for key in ("severity", "target"):
+                if key in override:
+                    check[key] = override[key]
+        out.append(check)
+    return out + [dict(c) for c in own_checks or []]
+
+
+def _office(checklist, home):
+    """The office list a project list names, checked - or ChecklistError."""
+    name = _text(checklist.get("extends")).strip()
+    if slug(name) == slug(checklist.get("name") or ""):
+        raise ChecklistError("Not saved: a checklist cannot extend itself.")
+    base = find(name, home)
+    if base.get("extends"):
+        raise ChecklistError("Not saved: '%s' itself extends '%s'. A checklist can extend only one "
+                             "that extends nothing." % (base["name"], base["extends"]))
+    found = _override_problems(checklist.get("overrides"), base["name"], base["checks"])
+    if found:
+        raise ChecklistError("Not saved:\n  - " + "\n  - ".join(found))
+    return base
+
+
+def prepare_run(checklist, home=None):
+    """(the checklist to run, notes): for a list that extends an office list,
+    its checks made again from the office list as it is NOW - so a change
+    there reaches the project, and a note says so. An office list deleted, or
+    changed so an override no longer matches, runs the copy saved with the
+    project, and a note says that instead. A list that extends nothing runs
+    as it is, with no note."""
+    name = checklist.get("extends")
+    if not name:
+        return checklist, []
+    copy = "this run used the checks saved with '%s' on %s" % (
+        checklist.get("name"), (checklist.get("saved") or "its last save").replace("T", " "))
+    try:
+        base = find(name, home)
+    except ChecklistError:
+        return checklist, ["The office checklist '%s' is no longer saved, so %s." % (name, copy)]
+    if base.get("extends"):
+        return checklist, ["The office checklist '%s' now itself extends '%s', so %s."
+                           % (name, base["extends"], copy)]
+    found = _override_problems(checklist.get("overrides"), base["name"], base["checks"])
+    if found:
+        return checklist, ["An override of '%s' no longer matches the office checklist '%s' - %s - so %s. "
+                           "Save '%s' again to take the office list's changes."
+                           % (checklist.get("name"), name, found[0], copy, checklist.get("name"))]
+    resolved = _apply(base["checks"], checklist.get("overrides"), checklist.get("own"))
+    if not resolved or len(resolved) > MAX_CHECKS:
+        return checklist, ["With the office checklist '%s' as it is now, '%s' would run %d checks, so %s."
+                           % (name, checklist.get("name"), len(resolved), copy)]
+    notes = []
+    if fingerprint(base["checks"]) != (checklist.get("base") or {}).get("fingerprint"):
+        notes.append("The office checklist '%s' changed since '%s' was saved; this run used its checks "
+                     "as they are now, with this list's overrides." % (name, checklist.get("name")))
+    return dict(checklist, checks=resolved), notes
+
+
+def stamp(answer, checklist, notes=()):
+    """Put on a run's answer what it used: the fingerprint of its checks, the
+    office list it extends, and prepare_run's notes as findings."""
+    answer["fingerprint"] = fingerprint(checklist.get("checks"))
+    answer["extends"] = checklist.get("extends") or ""
+    findings = answer.setdefault("findings", [])
+    for note in notes or ():
+        if note not in findings:
+            findings.append(note)
+    return answer
 
 
 def _check_shape(check):
@@ -562,6 +734,21 @@ def _read(path):
         why = _check_shape(check)
         if why:
             raise ValueError(why)
+    if "extends" in data:
+        if not isinstance(data["extends"], str) or not data["extends"].strip():
+            raise ValueError("what it extends is not a name")
+        overrides = data.get("overrides", [])
+        if not isinstance(overrides, list) or not all(
+                isinstance(o, dict) and isinstance(o.get("sentence"), str)
+                and all(k in ("sentence",) + OVERRIDABLE for k in o) for o in overrides):
+            raise ValueError("its overrides are not a list of office checks named by their words")
+        own = data.get("own", [])
+        if not isinstance(own, list) or any(_check_shape(c) for c in own):
+            raise ValueError("its own checks are not checks")
+        if not isinstance(data.get("base", {}), dict):
+            raise ValueError("what it records of the office list is not a set of fields")
+    elif "overrides" in data or "own" in data:
+        raise ValueError("it has overrides but extends nothing")
     return data
 
 
@@ -641,8 +828,9 @@ def check_line(check):
 
 def describe(checklist):
     """One checklist in one line, for the chat."""
-    return "%s - %d check(s)%s" % (checklist.get("name"), len(checklist.get("checks") or []),
-                                   ": " + checklist["description"] if checklist.get("description") else "")
+    return "%s - %d check(s)%s%s" % (checklist.get("name"), len(checklist.get("checks") or []),
+                                     " - extends '%s'" % checklist["extends"] if checklist.get("extends") else "",
+                                     ": " + checklist["description"] if checklist.get("description") else "")
 
 
 def listing(home=None):

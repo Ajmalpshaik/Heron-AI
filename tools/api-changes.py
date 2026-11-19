@@ -110,11 +110,12 @@ def releases():
     NAMED PRECISELY, because the comment that used to sit here named the
     wrong owner: it said `tools/check-api-surface.py` owns the list and that
     this file is "bound rather than retyped so one list stays one list". It
-    is bound to `heron_fragment.REVIT_VERSIONS`, and measured 2026-09-22
-    check-api-surface.py types its OWN `ALL_VERSIONS`, so there are three
-    lists - that one, this module's source, and `heron_dotnet.RELEASES`.
+    is bound to `heron_fragment.REVIT_VERSIONS`. Measured 2026-09-22,
+    check-api-surface.py typed its OWN `ALL_VERSIONS`, so there were three
+    lists; since 2026-11-15 it reads `heron_dotnet.RELEASES` (PROPOSALS F2),
+    which leaves two - this module's source, and `heron_dotnet.RELEASES`.
 
-    All three agree today; what was wrong was a sentence telling the next
+    They agree today; what was wrong was a sentence telling the next
     reader that a binding exists where it does not. AJ Tools' L3 is why the
     list is read at all: a hardcoded version list silently installed nothing
     on three releases while the document advertised them.

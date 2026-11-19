@@ -116,7 +116,7 @@ lists every tool with its level.
 | `ANALYZE` | working out from what was read; a picture of a view | none | `revit_read`, `revit_view_image`, the loads and sprinkler tools |
 | `SUGGEST` | proposing without applying | none | no tool declares it. A fragment declared `SUGGEST` is under `revit_show`'s ceiling and above `revit_read`'s |
 | `EXECUTE` | the selection, the camera, the active view | none: `ReadOnlyCeiling` | `revit_show`, `revit_select_by_category`, `revit_isolate_temporary`, `revit_reset_temporary` |
-| `MODIFY` | a change to the model | **Changes** | `revit_change`, `revit_apply_move`, the Companion page's Apply, and `revit_undo_last` - Revit's own Undo for Heron's last kept change ([D-157](decisions/D-157.md)). Its `check_only` sends nothing, is a `READ` operation in the add-in (`undo_check`), and needs no switch; the posting operation is `undo_guarded` |
+| `MODIFY` | a change to the model | **Changes** | `revit_change`, `revit_apply_move`, the Companion page's Apply, and `revit_undo_last` - Revit's own Undo for Heron's last kept change ([D-157](decisions/D-157.md)). Its `check_only` sends nothing, is a `READ` operation in the add-in (`undo_own_check`), and needs no switch; the posting operation is `undo_own`, and only the chat that made a change may undo it ([Q-88](open-questions/tier-2.md)) - `undo_guarded` and `undo_check`, which a chat opened before that still sends, are `READ` refusals that post nothing |
 | `PUBLISH` | an export, a print, a save, a sync with central, a change of worksharing ownership | **Changes and Publish** | `revit_change`, sent as `run_fragment_publish` |
 | `ADMIN` | a project, shared or global parameter, a workset, the project's units, location or coordinates, a new project or family file | **Changes and Admin** | `revit_change`, sent as `run_fragment_admin` |
 
@@ -129,7 +129,8 @@ lists every tool with its level.
 > an administrator's ceiling: `HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Heron`, DWORDs `AllowChanges`,
 > `AllowAdmin` and `AllowPublish` - 0 holds that switch off on this PC, 1 or missing lets the modeller turn
 > it on, no key is no ceiling, and a key Heron cannot read holds all three off. **Not yet run in Revit** -
-> [Group OB](needs-checking/group-ob.md).
+> [Group OB](needs-checking/group-ob.md). IT sets it from Group Policy or Intune with the templates in
+> [`platform/policy/`](../platform/policy/README.md) (built 2026-11-17, not run on a domain).
 
 **The four switches.** Each is a row of Heron's Settings window - *Heron > AI Bridge > Settings* on
 Revit's ribbon - with its state as the button; until 2026-11-07 each was a button on the ribbon itself
@@ -335,7 +336,9 @@ Also needed regardless of position:
 
 Tracked as [Q-12](OPEN-QUESTIONS.md), answered on 2026-08-28 as [D-26](DECISIONS.md). The plain
 statement the first bullet asks for is [DISCLAIMER — What Heron sends where](../DISCLAIMER.md); the
-second bullet's redaction is not built, because [Q-40](OPEN-QUESTIONS.md)'s answer was no.
+second bullet's redaction is not built, because [Q-40](OPEN-QUESTIONS.md)'s answer was no. **Asked again 2026-11-17 for folder paths
+alone, and answered the same way:** [D-180](decisions/D-180.md), not accepted - a path is a location, not the
+model, so it travels as before.
 
 ---
 

@@ -282,16 +282,24 @@ def main():
           "ladder" % len(claiming))
     reader = open(os.path.join(ROOT, "brain", "heron_fragment.py"),
                   encoding="utf-8").read()
-    # PROVEN is in both ladders - docs/24's lifecycle and docs/00d s38's
-    # trust levels - so it proves nothing here either way. The five words
-    # that belong ONLY to the trust ladder are the test.
-    only_trust = [level for level in SUP.TRUST if level != "PROVEN"]
-    for level in only_trust:
-        check(level not in reader,
-              "the fragment loader never mentions %s..." % level)
+    # UNTIL 2026-11-15 this asserted the loader never mentioned the five
+    # trust-only words, which pinned the hole rather than the rule. PROPOSALS
+    # F9 closed half of it: the loader now refuses a trust word that is not on
+    # the ladder. The other half - who approved the word - is still open, so
+    # the hole this agent was built around is still there: every card claims
+    # OFFICIAL and nothing on the card says who granted it.
+    check("TRUST_LADDER = SUPPLY.TRUST" in reader,
+          "the fragment loader checks a card's trust word against THIS "
+          "agent's ladder, one copy, not two (F9)")
+    check("trust not in TRUST_LADDER" in reader,
+          "...and refuses a word that is not on it")
+    check(not any(word in reader for word in ("approved-by", "approved_by",
+                                              "granted-by", "granted_by")),
+          "but it still reads no record of who granted the word - which is "
+          "why SELF_DECLARED_TRUST below still matters")
     check("PROVEN" in reader and "STATUSES = (" in reader,
-          "...and the one word it does share, PROVEN, is there as a "
-          "docs/24 lifecycle STATUS, which is a different ladder")
+          "...and PROVEN is also there as a docs/24 lifecycle STATUS, which "
+          "is a different ladder")
     check("SOURCES = (\"fragment\", \"ambient\", \"request\")" in reader,
           "because the `source` it validates is a different field entirely "
           "- contract.needs[].source, not the trust level")

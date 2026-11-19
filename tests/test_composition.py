@@ -66,6 +66,20 @@ def main():
     print("\n1. the ladder is HERON-KRN-CAP-008's, by identity")
     check(CMP.RISK is CAP.RISK_ORDER,
           "RISK is CAP.RISK_ORDER - the same object, not an equal copy")
+    # PROPOSALS F22: the other brain modules that carried a ladder of their
+    # own bind the same object now.
+    import heron_events as EVT
+    import heron_hr as HR
+    import heron_skill as SKL
+    check(EVT.RISK_ORDER is CAP.RISK_ORDER,
+          "heron_events.RISK_ORDER is CAP.RISK_ORDER (F22)")
+    check(HR.RISK_LADDER is CAP.RISK_ORDER,
+          "heron_hr.RISK_LADDER is CAP.RISK_ORDER (F22)")
+    skill_code = io.open(os.path.join(ROOT, "brain", "heron_skill.py"),
+                         encoding="utf-8").read()
+    check('"READ", "ANALYZE", "SUGGEST", "EXECUTE"' not in skill_code
+          and "CAP.RISK_ORDER" in skill_code,
+          "heron_skill.py types no ladder of its own and reads CAP.RISK_ORDER (F22)")
     # A COPY WOULD BE EQUAL TOO. Identity is the only check that fails
     # the day somebody retypes the ladder here.
     check(CMP.RISK == ("READ", "ANALYZE", "SUGGEST", "EXECUTE", "MODIFY",

@@ -26,6 +26,13 @@ plan could be read before any code was. If it is accepted it becomes a `D-` entr
 > declaration and were refused under a mismatched one, and `chain_mismatch` fired too -
 > [FRAGMENT-ISSUES row 115](fragment-issues/section-5-rows-101-125.md), *"proved on both legs, awaiting
 > signature"*. `chain_empty` and `chain_contradiction` are tested off Revit only.
+>
+> **And a fifth, built 2026-11-16 and NOT RUN IN REVIT: `chain_taken_back`**
+> ([Q-89](open-questions/tier-2.md), decided 2026-11-15). A run that was taken back - a dry run, a
+> proof's trial, a Discard - still replaces what is carried, as every run does; the chain now records
+> how it was taken back, and nothing it left is bound, by expectation or by name, until a run that
+> stands leaves something in its place. Asked before the four above. The chat's server refuses the same
+> `expect_from` before anything is sent when its own runs say so (`heron_run_records.TakenBack`).
 
 ### At a glance — the check as built
 
@@ -40,18 +47,21 @@ flowchart TD
     CALL["<b>A call that runs a fragment</b><br/>revit_read · revit_change · revit_show<br/>revit_edit_table · and the others"]
     Q0{{"Does it name what it expects<br/>with expect_from?"}}
     RESET["<b>Reset</b> · the default, as before<br/>what the last fragment left is forgotten"]
+    QT{{"Was it left by a run that was<br/>taken back? (Q-89)"}}
     Q1{{"Is anything carried<br/>for this chat on this model?"}}
     Q2{{"Was it left by<br/>the fragment named?"}}
     Q3{{"Did that fragment run<br/>with the inputs named?"}}
     BIND["<b>Bound</b><br/>and the answer says where the values came from"]
-    NO["<b>Refused · nothing bound, nothing ran</b><br/>chain_empty · chain_mismatch · chain_inputs_differ<br/>chain_contradiction: a request that resets and expects"]
+    NO["<b>Refused · nothing bound, nothing ran</b><br/>chain_taken_back · chain_empty · chain_mismatch · chain_inputs_differ<br/>chain_contradiction: a request that resets and expects"]
 
     CALL --> Q0
     Q0 -->|no| RESET
-    Q0 -->|yes| Q1
+    Q0 -->|yes| QT
+    QT -->|no| Q1
     Q1 -->|yes| Q2
     Q2 -->|yes| Q3
     Q3 -->|yes| BIND
+    QT -.->|yes| NO
     Q1 -.->|no| NO
     Q2 -.->|no| NO
     Q3 -.->|no| NO
@@ -63,7 +73,7 @@ flowchart TD
     classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
     class CALL host
     class Q0 brain
-    class RESET,Q1,Q2,Q3,BIND addin
+    class RESET,QT,Q1,Q2,Q3,BIND addin
     class NO revit
 ```
 
@@ -79,7 +89,8 @@ on 2026-09-16, as the note above says, and awaits a signature.
 A call that runs a fragment (revit_read, revit_change, revit_show, revit_edit_table, ...)
   -> does it name what it expects with expect_from?
        no  -> reset, the default as before: what the last fragment left is forgotten
-       yes -> is anything carried for this chat on this model?      no -> refused: chain_empty
+       yes -> was it left by a run that was taken back (Q-89)?     yes -> refused: chain_taken_back
+           -> is anything carried for this chat on this model?      no -> refused: chain_empty
            -> was it left by the fragment named?                    no -> refused: chain_mismatch
            -> did that fragment run with the inputs named?          no -> refused: chain_inputs_differ
            -> bound, and the answer says where the values came from

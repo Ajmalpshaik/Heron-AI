@@ -147,6 +147,7 @@ namespace Heron.Installer.App
             // and a line before Install saying what it does to Revit.
             var developer = DeveloperCopy.StepsAsideFor(root);
             var window = new InstallerWindow(screen, VersionOf(manifest),
+                                             InstallerScreen.InstallLocation(root),
                                              handover != null && developer == null,
                                              developer == null ? null : DeveloperCopy.Warning(developer));
             window.InstallPressed += delegate (IReadOnlyList<string> products,

@@ -28,11 +28,15 @@ name is refused - never cleaned up and used anyway.
     kind        fragment   -> Fragments
     name        anything with / \\ or .. in it  -> NAME_IS_NOT_A_PLACE
 
-THE EIGHT KINDS ARE docs/06 s2's DATA ROW, AND NOTHING ELSE
+THE EIGHT KINDS ARE docs/06 s2's DATA ROW, LESS TWO, AND NOTHING ELSE
 -------------------------------------------------------------
 Brain, Skills, Fragments, Memory, Projects, Company, Logs, Backup. One
 kind each, read from HERON-WSP-PTH-007's own table so the two cannot
-drift apart. Two things follow from the list being exactly that row:
+drift apart. The row's other two, Configuration and Community (classed
+data on 2026-11-15, PROPOSALS F11), are never placed into: Configuration
+is written by HERON-INS-CFG-006 alone - it holds the security policy - and
+Community by the import a modeller chooses. Two things follow from the
+list being that row:
 
   nothing Heron makes is placed in PRODUCT. Core, Agents, Revit, MCP
   and Packages are what the installer shipped, and docs/07 s7 rule 6
@@ -63,7 +67,10 @@ hyphens and never collides - but nothing enforces that, and
 `heron_conflict.py`'s own usage line reads `--project "Tower B"`.
 Recorded as PROPOSALS F14 and not fixed here: changing the rule moves
 where existing knowledge lives, which is a migration and the owner's
-call.
+call. It was made on 2026-11-15: heron_scope keeps the reduction for a
+person to read and adds a code of the exact key, so those three are
+three files now, and a store named the old way is reported and moved
+only by a command a person runs. The measurement above is how it was.
 
 What this agent takes from it: **a name that would have to be rewritten
 to be usable is refused.** Silently rewriting a name is how two things
@@ -179,8 +186,9 @@ def place(artefact, project=None, asked=None):
             return {"placed": False, "refused": "NAME_IS_NOT_A_PLACE",
                     "why": "the project %r carries %s. This is the one "
                            "PROPOSALS F14 measured: 'Tower B', 'Tower/B' "
-                           "and 'Tower-B' all reach ONE file today, which "
-                           "is one client's work in another's store."
+                           "and 'Tower-B' all reached ONE file until "
+                           "2026-11-15, which is one client's work in "
+                           "another's store."
                            % (project, "nothing usable" if bad == "blank"
                               else "'%s'" % bad)}
         where = "%s/%s/%s" % (KINDS["project"], named, folder)

@@ -111,7 +111,12 @@ namespace Heron.Revit.Addin
                     // request carrying the approval slip under that name never arrives -
                     // it is refused at the door as unauthenticated. One key cannot be two
                     // secrets. Found 2026-09-07, the first time the write path was run.
-                    return ExecuteMove(app, Json.ReadString(request, "approvalToken"));
+                    //
+                    // AND THE CHAT ASKING (Q-88): the undo guard records which
+                    // chat kept the move, and only that chat is sent Undo for it.
+                    return ExecuteMove(app, Json.ReadString(request, "approvalToken"),
+                        HeronConversation.ChatOf(
+                            Json.ReadString(request, HeronConversation.EnvelopeField)));
 
                 default:
                     return null;      // not ours; RevitOperations reports it
@@ -211,7 +216,7 @@ namespace Heron.Revit.Addin
         /// only a rollback removes, so the cheap checks are spent first and
         /// the expensive one last.
         /// </summary>
-        private static string ExecuteMove(UIApplication app, string token)
+        private static string ExecuteMove(UIApplication app, string token, string chat)
         {
             // Belt and braces. The gate in RevitOperations is the primary
             // check and has already run; this is the second one, kept because
@@ -424,8 +429,9 @@ namespace Heron.Revit.Addin
                     //
                     // WHAT IT COUNTED, for the undo guard (D-157): the elements
                     // verified to have moved, wholly or partly. A move that
-                    // shifted none is not offered to `undo_guarded`.
-                    RevitFragment.KeepAndWatch(group, doc, watch, reallyMoved + partly, true);
+                    // shifted none is not offered to `undo_own` - and one that
+                    // did is offered to this chat alone (Q-88).
+                    RevitFragment.KeepAndWatch(group, doc, watch, reallyMoved + partly, true, chat);
                 }
                 catch (Exception ex)
                 {

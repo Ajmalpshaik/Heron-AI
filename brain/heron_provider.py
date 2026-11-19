@@ -27,10 +27,14 @@ for call, complete or probe across brain/ found nothing.
 Three agents were already written against a provider none of them had met:
 
     heron_router.py         picks one by intent, refuses cloud for confidential
-    heron_availability.py   sorts a probe into reachable/auth/slow/too small
+    heron_availability.py   sorted a probe into reachable/auth/slow/too small
     heron_budget.py         records ONLY what a provider reported (D-58)
 
 Every field below is READ FROM one of those three rather than invented here.
+The middle one SORTS NOTHING SINCE 2026-11-16: its register row gives whether
+a provider is reachable to the host (D-65) and keeps only the degraded mark,
+so the sorting, judge(), moved here beside the probe it reads - see READING A
+PROBE below (row 5b-1747).
 
 STDLIB ONLY, AND THAT IS NOT A PREFERENCE
 -------------------------------------------
@@ -99,6 +103,67 @@ CALL_TIMEOUT_S = 120.0
 # be installed.
 DEFAULT_INTENTS = ("CLASSIFY", "EXTRACT", "SCORE", "SUMMARISE")
 
+# ---------------------------------------------------------------------------
+# READING A PROBE - judge(), moved here on 2026-11-16 from
+# heron_availability.py (row 5b-1747), its logic unchanged. HERON-KRN-MAV-017's
+# register row gives whether a provider is reachable, and the fallback when it
+# is not, to the host (D-65), and keeps only the degraded mark - so the sorting
+# of a probe left that agent. It came here because probe() below is the only
+# thing in Heron that produces one, and tests/test_provider.py proves the two
+# against each other over a real socket. Whether this adapter should judge a
+# provider at all, under D-58 and D-65, is row 5b-1839 - recorded, not settled
+# here.
+# ---------------------------------------------------------------------------
+
+UNREACHABLE, AUTH, SLOW, TOO_SMALL, OK = (
+    "unreachable", "auth", "slow", "too small", "ok")
+
+# A probe that could not be taken at all, which is not the same as a
+# provider that is down: it says HERON did not manage to ask. That is the
+# one state worth a retry.
+PROBE_FAILED = "probe failed"
+
+# Above this, an adapter is answering too late to be worth waiting for. It is
+# a ceiling on the PROBE, not on the work - a provider that takes three
+# seconds to say hello is not one to hand a queue of a thousand classifications.
+SLOW_MS = 3000
+
+
+def judge(probe, needs_context=0, slow_ms=SLOW_MS):
+    """
+    (state, why) for one adapter's probe result.
+
+    The probe is data - {reachable, auth, latency_ms, context_limit} - so this
+    is testable without a network, which is the only way it gets tested at all.
+    """
+    if not probe:
+        return UNREACHABLE, "nothing answered"
+    if probe.get("error"):
+        return PROBE_FAILED, ("PROBE_FAILED: the probe did not complete "
+                              "(%s), so nothing is known about the "
+                              "provider either way" % probe["error"])
+    if not probe.get("reachable", False):
+        return UNREACHABLE, "nothing answered"
+    # MISSING IS NOT YES. `probe.get("auth", True)` read an older or partial
+    # probe - one that never checked - as authorised, and reported an adapter
+    # as healthy on the strength of a question nobody asked.
+    if probe.get("auth") is not True:
+        if "auth" not in probe:
+            return AUTH, ("the probe did not say whether the credentials were "
+                          "accepted, and a question nobody asked is not a yes")
+        return AUTH, ("it answered and refused the credentials - retrying "
+                      "will not change that")
+    latency = probe.get("latency_ms")
+    if latency is not None and latency > slow_ms:
+        return SLOW, "it took %d ms to answer, over the %d ms ceiling" % (
+            latency, slow_ms)
+    limit = probe.get("context_limit")
+    if needs_context and limit is not None and needs_context > limit:
+        return TOO_SMALL, ("this request needs %d and its limit is %d - it is "
+                           "not down, it is too small for THIS one"
+                           % (needs_context, limit))
+    return OK, "reachable, authorised and large enough"
+
 
 def _get(url, timeout):
     """
@@ -129,7 +194,7 @@ def _get(url, timeout):
 
 def probe(base_url=None, timeout=PROBE_TIMEOUT_S):
     """
-    The dict heron_availability.judge() reads, and nothing it does not.
+    The dict judge() above reads, and nothing it does not.
 
     Returns {reachable, auth, latency_ms, context_limit, error} plus a few
     fields judge() ignores and a person reading a report does not.
@@ -355,12 +420,10 @@ def main(argv):
     print("THE PROVIDER ADAPTER   what is actually on this machine")
     print("=" * 72)
 
-    import heron_availability as AVAIL
-
     base = argv[0] if argv else OLLAMA_URL
     print("\nprobing %s" % base)
     result = probe(base)
-    state, why = AVAIL.judge(result)
+    state, why = judge(result)
     print("  judge()   %-14s %s" % (state, why))
     print("  probe     %s" % result.get("why"))
     for key in ("reachable", "auth", "latency_ms", "context_limit"):

@@ -1,0 +1,91 @@
+# D-30: the negative case is what catches "measured something and called it
+# off" - a datum within the tolerance must come back aligned, said in words,
+# and nothing else may be counted against it.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING, the group named in
+# docs/NEEDS-CHECKING.md for CHECK_DATUMS_AGAINST_LINK). Two scratch projects
+# new from Revit's metric template, saved under %TEMP%\heron-work, never a
+# working model:
+#
+#   datum-link.rvt   levels "Level 1" at 0 and "Level 2" at 4000 mm (the
+#                    template's); straight grids "A" north-south at x = 0 and
+#                    "B" at x = 8000, "1" east-west at y = 0 and "2" at
+#                    y = 6000, each drawn bottom to top or left to right; an
+#                    arc grid "R1", centre (20000, 0), radius 5000; a straight
+#                    grid "X9" at x = 30000 that the host does not have.
+#   datum-host.rvt   the same two levels plus "Level 3" at 8000 mm; grid "A"
+#                    at x = 0 drawn TOP TO BOTTOM; "B" at x = 8003 - 3 mm out;
+#                    "1" as the link's; the y = 6000 grid named "G2" instead
+#                    of "2"; "R1" as the link's; and "H7" at x = -9000 that
+#                    the link does not have. datum-link.rvt linked into it
+#                    Origin to Origin, the only link. Saved, and in front.
+#
+# Where the model differs, the job file changes - never the card.
+
+positive:
+  - given: datum-host.rvt, every value left out - the job file's positive
+    expect: >
+      linkUsed "datum-link.rvt : 1 : location <Not Shared>"; failures 1;
+      failingIds and elements holding grid B only; report rows "grid | B |
+      off | 3.00 mm | 0.0000 deg |", "grid | A | aligned | 0.00 mm | 0.0000
+      deg | drawn the opposite way", "grid | G2 | aligned | ... | name
+      differs - the link calls it '2'", "grid | R1 | aligned | 0.00 mm | - |
+      centres 0.00 mm apart, radius +0.00 mm in the link", "grid | X9 | link
+      only", "grid | H7 | host only", "level | Level 1 | aligned | 0.00 mm",
+      "level | Level 2 | aligned", "level | Level 3 | host only"; compared 7,
+      aligned 6, notChecked 0, hostOnly 2, linkOnly 1. THE FIRST POSITIVE
+      TO RUN
+
+  - given: the same, after the link instance is moved 100 mm UP (Move, by hand, then saved)
+    expect: >
+      both levels "off" at +100.00 mm, "the link's is higher" - the
+      placement's height counts - and every grid exactly as above: a move
+      straight up moves no grid in plan
+
+  - given: the same, after the link instance is rotated 90 degrees about the origin
+    expect: >
+      the link's grid A now runs east-west, so A is "off" with an angle of
+      90.0000 deg, and R1's centres are about 28284 mm apart - the rotation
+      is applied, never ignored
+
+negative:
+  - given: datum-host.rvt, toleranceMm 5 - the job file's negative
+    expect: >
+      failures 0; failingIds and elements empty; grid B "aligned | 3.00 mm"
+      - the same 3 mm, now inside the tolerance; compared 7, aligned 7.
+      THE FIRST CASE TO RUN
+
+  - given: datum-host.rvt, datums "levels"
+    expect: >
+      failures 0; compared 2; report holds level rows only - grid B, which IS
+      off, is neither counted nor listed
+
+  - given: datums "walls", then toleranceMm 0, then angleToleranceDeg 90
+    expect: >
+      refused naming the value, report empty, compared 0 and findings ending
+      "NOTHING WAS COMPARED." - never a check run on a value nobody meant
+
+  - given: linkName "Structural" in datum-host.rvt
+    expect: >
+      refused "No link matches 'Structural'. This model has:
+      'datum-link.rvt : 1 : location <Not Shared>'."; compared 0
+
+  - given: datum-link.rvt placed a SECOND time, linkName left out
+    expect: >
+      refused naming both placements - "the one to check against has to be
+      named"; compared 0. Never picks one
+
+  - given: the link unloaded (Manage Links > Unload), linkName left out
+    expect: refused "... is placed here but NOT LOADED ..."; compared 0
+
+  - given: any run at all
+    expect: NO TRANSACTION OPENED, NOTHING CHANGED - the model's undo list is untouched
+
+second_route:
+  - >
+    In a floor plan with the link showing, an aligned dimension from the
+    link's grid B to this model's grid B reads 3 mm - Revit's own measure of
+    the row's offset
+  - >
+    In an elevation, the link's level heads and this model's sit on one line
+    for Level 1 and Level 2, and Level 3 has no partner

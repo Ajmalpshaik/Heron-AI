@@ -225,6 +225,15 @@ def wiring():
     check("HeronKeepQuestion.Headline(shown, neverProved)" in ask
           and "HeronKeepQuestion.Content(" in ask,
           "the box's words come from HeronKeepQuestion, which the host proves")
+    # ROW 5b-1824: a publish whose save waits for Keep is told so - never that
+    # its save "is done already". The box is handed what the run asked the
+    # add-in to save after the group, read before the box from the run's ask.
+    check(re.search(r"sendsOut\s*,\s*neverProved\s*,\s*refreshed\s*,\s*waitsForKeep\s*\)", ask)
+          is not None,
+          "the box is told what waits for Keep - the save the run asked for after the group")
+    check(re.search(r"private static string AskTheModeller\([^)]*string waitsForKeep", executor)
+          is not None,
+          "and AskTheModeller takes it as its own argument, so no caller can leave it out")
     # THE JOB'S DIALOG WATCH (Group EL) declines every Revit dialog a job
     # meets. This box is the modeller's, so it is shown with the watch
     # stood down - or Heron would answer its own question with Cancel.

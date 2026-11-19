@@ -24,6 +24,13 @@ WHAT IT PROVES - and the first one is the whole contract
      is a report nobody can act on, and that shipped for one commit.
   6. It exits 0 even when it finds trouble, because finding trouble is the
      job succeeding.
+  7. ITS WRITE GATE IS WHAT EACH CONNECTED REVIT SAYS, AS revit_health HAS IT
+     (row 5b-1744, D-166) - never a file. Stand-in Revits whose `info` gives
+     Changes, Admin and Publish, beside a chat's own heron.config that says
+     all three are on: Changes ON in a Revit warns, naming it; every Revit
+     that said off is closed; none saying is not known; each Revit's switches
+     are said in revit_health's own lines; nothing but the lease-exempt
+     `info` is sent.
 
 WHAT IT DOES NOT PROVE. That the diagnosis is CORRECT about a live machine.
 Every probe here is fed a fake, which is the only way to test the broken
@@ -32,7 +39,9 @@ paths at all - what a real bridge reports is the bridge's own tests' business.
 
 import io
 import os
+import shutil
 import sys
+import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
@@ -101,6 +110,113 @@ def quiet_bridge(components, notes):
 
 def names_of(found):
     return [c.name for c in found["health"].components]
+
+
+class Revit(object):
+    """A connected Revit whose `info` answers as its add-in would - and that
+    answers nothing else, so a diagnosis that sent more would be seen."""
+
+    def __init__(self, pid, release, info):
+        self.pid, self.revit_version, self.info = pid, release, info
+        self.asked, self.closed = [], False
+
+    def request(self, op, op_args=None, **_ignored):
+        self.asked.append(op)
+        if op != "info":
+            return {"ok": False, "error": "refused_in_test",
+                    "message": "this stand-in answers `info` alone"}
+        return dict(self.info, ok=True, inUse=False, mine=False,
+                    leaseSecondsRemaining=0)
+
+    def close(self):
+        self.closed = True
+
+
+def switches_as_revit_has_them():
+    """
+    Section 7 - row 5b-1744, D-166. The write gate is what the connected
+    Revits said, by the rule revit_health uses: the diagnosis read it from
+    this chat's own heron.config, and since D-166 said no Revit had said,
+    whatever they said. Every other probe is stubbed: the question is the
+    connection's alone.
+    """
+    print()
+    print("7. The write gate is what each Revit says, never a file (row 5b-1744, D-166)")
+    import heron_bridge_client as bridge
+
+    home = tempfile.mkdtemp(prefix="heron-diagnose-d166-")
+    mine = os.path.join(home, "heron.config")
+    had = os.environ.get("HERON_CONFIG")
+    os.environ["HERON_CONFIG"] = mine
+    # THE CHAT'S OWN COPY SAYS ALL THREE ARE ON, for the whole section. D-166
+    # makes such a line inert; a diagnosis that read it would warn below.
+    with io.open(mine, "w", encoding="utf-8") as fh:
+        fh.write("write.enabled = true\nadmin.enabled = true\npublish.enabled = true\n")
+    real = bridge.discover
+    others = dict((p, quiet) for p in ("_knowledge", "_releases", "_history",
+                                       "_tools", "_backups"))
+
+    def told(changes):
+        return {"askToKeep": False, "changes": changes, "admin": False,
+                "publish": False}
+
+    def diagnosed(*revits):
+        bridge.discover = lambda: (list(revits), [], [], [])
+        try:
+            with Swap(**others):
+                found = DIAG.diagnose()
+            return found, DIAG.describe(found)
+        finally:
+            bridge.discover = real
+
+    def gate(found):
+        rows = [c for c in found["health"].components if c.name == "write gate"]
+        return rows[0] if rows else HEALTH.Component("write gate", "(none)", "(no row)")
+
+    try:
+        hot = Revit(5102, "2025", told(True))
+        found, text = diagnosed(hot)
+        row = gate(found)
+        check(row.state == HEALTH.WARNING and row.detail.startswith(
+            "Changes is ON in Revit 2025, session 5102, as that Revit has it"),
+            "Changes ON in a Revit: the write gate warns, naming it, as revit_health does "
+            "- found %s %r" % (row.state, row.detail[:70]))
+        check("Changes ON, Admin off, Publish off in this Revit right now" in text
+              and "Ask to Keep is off" in text,
+              "and that Revit's switches are said in revit_health's own lines")
+        check(hot.asked and set(hot.asked) == set(["info"]) and hot.closed,
+              "it was asked through the lease-exempt `info` alone, and let go - %r"
+              % (hot.asked,))
+
+        found, text = diagnosed(Revit(5101, "2024", told(False)))
+        row = gate(found)
+        check(row.state == HEALTH.HEALTHY
+              and row.detail.startswith("closed (as Revit 2024, session 5101, has it)")
+              and "Changes is ON" not in text,
+              "every Revit has it off: closed, naming it, though the chat's own file says "
+              "all three are on - found %s %r" % (row.state, row.detail[:60]))
+
+        found, text = diagnosed(Revit(5104, "2020", {"askToKeep": False}))
+        row = gate(found)
+        check(row.state == HEALTH.HEALTHY and "no connected Revit said" in row.detail
+              and "does not report them" in text,
+              "only an add-in from before D-166: not known, and its line says it does not "
+              "report them - the chat's file is never read for it - found %r"
+              % row.detail[:60])
+
+        found, text = diagnosed()
+        row = gate(found)
+        check(row.state == HEALTH.HEALTHY and "no connected Revit said" in row.detail
+              and "Switches, as each" not in text and mine not in text,
+              "no Revit connected: not known, no switches said for a Revit that is not "
+              "there, and the chat's file named nowhere - found %r" % row.detail[:60])
+    finally:
+        bridge.discover = real
+        if had is None:
+            os.environ.pop("HERON_CONFIG", None)
+        else:
+            os.environ["HERON_CONFIG"] = had
+        shutil.rmtree(home, ignore_errors=True)
 
 
 def main():
@@ -237,6 +353,8 @@ def main():
               "rather than a danger")
     finally:
         REGISTRY.TOOLS = keep
+
+    switches_as_revit_has_them()
 
     print()
     if FAILURES:

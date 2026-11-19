@@ -36,8 +36,10 @@ own name:
     chain_mismatch         a DIFFERENT fragment left these
     chain_inputs_differ    the right fragment, the wrong inputs
     chain_contradiction    reset and expect in one request, which can only fail
+    chain_taken_back       left by a run that was taken back - a dry run, a
+                           proof's trial, a Discard (Q-89, 2026-11-16)
 
-Those are four different things to go and fix, and collapsing them into "the
+Those are five different things to go and fix, and collapsing them into "the
 chain does not match" would send a reader to the wrong fragment.
 
 AND IT IS A TEXT TEST, DELIBERATELY. The binder needs Revit; every other test
@@ -231,6 +233,8 @@ def main():
           "and so does revit_show - selecting or zooming twice is harmless, a "
           "run that consumed the chain is not")
 
+    taken_back(fragment, server)
+
     if FAILURES:
         print("FAILED")
         for failure in FAILURES:
@@ -240,6 +244,85 @@ def main():
     print("PASSED - a fragment can consume what another left, and only what it "
           "said it expected.")
     return 0
+
+
+def body_of(text, opening):
+    """The method that starts with `opening`, to its closing brace at the
+    method's own indent - or "" when it is not there, so a check FAILS rather
+    than raising (heron-ship 2a)."""
+    at = text.find(opening)
+    if at < 0:
+        return ""
+    body = text[at:]
+    end = body.find("\n        }\n")
+    return body if end < 0 else body[:end]
+
+
+def taken_back(fragment, server):
+    """
+    A FIFTH FAULT, ITS OWN NAME - OPEN-QUESTIONS Q-89, decided 2026-11-15:
+    as built, every run replaces what is carried, and Heron also refuses any
+    attempt to use what a run that was TAKEN BACK left - a dry run, a proof's
+    trial, a Discard. Elements Revit no longer has are never handed on.
+
+    What TakenBack and CarriedFromTakenBack answer is proved by
+    Heron.BindingNote.TestHost (tests/test_binding_note.py); the server's half
+    by tests/test_run_records.py and tests/test_outcome_line.py. What is read
+    here is the one thing only the text can show: that RevitFragment.cs asks
+    them, where it must. None of it has run in Revit (NEEDS-CHECKING Group NT).
+    """
+    check('Json.Error("chain_taken_back"' in fragment,
+          "chain_taken_back is refused by name - a fifth fault: what is carried was "
+          "left by a run that was taken back, and is of a change Revit no longer holds")
+
+    disagrees = body_of(fragment, "private static string ChainDisagrees(")
+    at_taken = disagrees.find('"chain_taken_back"')
+    at_empty = disagrees.find('"chain_empty"')
+    check(0 < at_taken < at_empty,
+          "and it is asked FIRST, before nothing-carried and before a mismatch: whatever "
+          "is expected, everything carried was replaced by the run taken back")
+    check("chain.TakenBack != null" in disagrees[:max(at_taken, 0)]
+          and "HeronBindingNote.CarriedFromTakenBack(" in disagrees,
+          "on the chain's own record of it, in the binding note's words")
+
+    check("public string TakenBack;" in fragment,
+          "the chain records HOW the run that left it was taken back")
+
+    remember = body_of(fragment, "private static void Remember(")
+    check("string takenBack = null" in remember
+          and "chain.TakenBack = takenBack;" in remember,
+          "Remember writes it down with what the run left - and a setup step, which "
+          "passes none, leaves what it made usable by the fragment after it")
+    check("chain.TakenBack != null) chain.Clear();" in remember,
+          "and the next run to leave anything starts the chain afresh, so no name a run "
+          "taken back left outlives the mark")
+    check("HeronBindingNote.TakenBack(writing, apply, answered != null, keptNothing));"
+          in fragment,
+          "the run's own Remember is told how it ended - a read, a keep, a keep Revit "
+          "counted nothing in, a Discard, or a run sent without apply")
+
+    binder = body_of(fragment, "private static string BindNeeds(")
+    gate = binder.find("&& chain.TakenBack == null")
+    asked = binder.find("var wrong = ChainDisagrees(")
+    check(0 < gate < asked,
+          "and nothing a run taken back left is bound BY NAME either - the binder's "
+          "carried values are none while the mark stands, before anything is asked")
+
+    # THE SERVER'S HALF: refused before a session is bound, at all three doors.
+    for door in ("revit_change", "revit_read", "revit_show"):
+        body = server[server.find("def %s(" % door):]
+        body = body[:body.find("\n@server.tool()")] if "\n@server.tool()" in body else body
+        refused = body.find("_TAKEN_BACK.refusal(expect_from)")
+        bound = body.find("session = binding.resolve()")
+        check(0 < refused < bound,
+              "%s refuses an expect_from naming a run this chat took back BEFORE a "
+              "session is bound - nothing is sent to Revit" % door)
+    change = server[server.find("def revit_change("):]
+    noted = change.find("_TAKEN_BACK.answered(")
+    check(0 < change.find("failure = analyse(reply") < noted
+          < change.find("if failure is not None:"),
+          "and revit_change notes how each run ended, from the add-in's answer, before "
+          "any branch returns")
 
 
 if __name__ == "__main__":

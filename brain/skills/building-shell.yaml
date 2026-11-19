@@ -231,7 +231,7 @@ purpose: >
          from the Generic Model template the modeller names ("Metric
          Generic Model" is looked up by that exact file name), saved to the
          .rfa path the modeller names. Run from the project in front it is
-         saved but not opened and gives openNext: ACTIVATE_DOCUMENT (PROVEN)
+         saved but not opened and gives openNext: ACTIVATE_DOCUMENT (DRAFT)
          with that path opens it.
       b. CREATE_FAMILY_FREEFORM_SOLID (PROVEN), kind=sweep, solid=true, one
          call per part: profiles= its section as one loop about 0,0, the

@@ -29,7 +29,7 @@ Also: how many shadow runs before `SHADOW MODE → APPROVED`, and does a human s
 **Answer: the table stands as proposed; promotion needs an analysed DISAGREEMENT plus a signature, not a
 count of runs. See [D-39](../DECISIONS.md).**
 
-Not a count, for the same reason [D-30](tier-2.md#q-9--what-promotes-a-fragment-to-production) is not one.
+Not a count, for the same reason [D-30](tier-2.md#-q-9--what-promotes-a-fragment-to-production) is not one.
 **Agreement is weak evidence**: two implementations are often wrong the same way, because the second was
 written by somebody who read the first — and an agent that silently does nothing agrees with everything. A
 hundred agreements prove less than one disagreement somebody sat down and explained.
@@ -295,7 +295,7 @@ answers, which is what Golden Rule 20 wants anyway, and no redaction layer is bu
 
 **What replaces it is a rule about tools rather than about wording:** a tool answers a question and never
 returns the model — see [D-26](../DECISIONS.md). That is cheaper to build than redaction, easier to explain
-to a client, and it happens to be the same thing [Q-5](answered.md#q-5--mcp-tool-granularity--thick-and-specific)
+to a client, and it happens to be the same thing [Q-5](answered.md#-q-5--mcp-tool-granularity--thick-and-specific)
 already asked for.
 
 **Revisit if that ever stops being true** — the first tool that wants to return thousands of rows is the

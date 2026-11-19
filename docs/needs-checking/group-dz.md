@@ -40,4 +40,4 @@ the branch.
 | **DZ6** | DZ4's top-level rows counted against Object Styles' own tabs in the same project, Model + Annotation + Analytical Model + Imported added up | the same number. A difference is recorded with the tab the extra or missing rows sit on: it means the "internal categories have no row" rule is wrong |
 | **DZ7** | After the merge, on the live Heron: `heron_lookup` with *"what colour are the lines in this family"*, *"what colour is the signature subcategory"*, *"what line weight is the hidden lines subcategory"* and *"list the object styles in this family"* | each answered LIST_CATEGORIES - a READ - not a write |
 | **DZ8** | DZ2 on **Revit 2024** and **2027** | the same answers - compiled on all eight, run on none |
-| **DZ9** | The signature, on the owner's word only, after DZ2 to DZ6 | `python brain/heron_validate.py accept list-categories --by "Ajmal PS"` |
+| ~~**DZ9**~~ | The signature, on the owner's word only, after DZ2 to DZ6 — [full row](../needs-checking-archive/group-dz.md#row-dz9) | `python brain/heron_validate.py accept list-categories --by "Ajmal PS"` Struck… |

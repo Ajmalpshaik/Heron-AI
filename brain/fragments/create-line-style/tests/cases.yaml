@@ -16,6 +16,19 @@ positive:
       Manage > Object Styles > Annotation Objects shows Generic Annotations >
       Signature blue, and the signature's lines are blue in the family's view
 
+  # Version 3. A new Generic Model family from the metric template, which has
+  # no subcategory of Reference Planes yet.
+  - given: >
+      styleName "Secondary References", colour "128,128,128", weight 0,
+      patternName "", parentCategory "Reference Planes"
+    expect: >
+      madeNew true and readBack "colour 128,128,128, ..." with the weight and
+      pattern Revit gave it; Manage > Object Styles > Annotation Objects shows
+      Reference Planes > Secondary References gray
+
+  # Version 3: left out, the call is version 2's - the first positive case
+  # above, run again with parentCategory not said, makes a line style.
+
 negative:
   - given: styleName "Heron Setout" again straight after, updateExisting not said
     expect: >
@@ -41,7 +54,29 @@ negative:
       refused - the document is a project, not a family - and no line style
       or subcategory of that name made
 
+  # Version 3: a category that does not exist.
+  - given: >
+      styleName "Secondary References", colour "128,128,128", parentCategory
+      "No Such Category"
+    expect: >
+      refused - this family has no category of that name - and nothing made
+
+  # Version 3: both ways of saying where it goes.
+  - given: >
+      styleName "Secondary References", parentCategory "Reference Planes",
+      familyCategory true
+    expect: refused - only one may say where the subcategory goes - and nothing made
+
+  # Version 3: it exists now, and updateExisting was not said.
+  - given: >
+      the first version 3 case straight after, colour "255,0,0", updateExisting
+      not said
+    expect: >
+      refused - Reference Planes already has a subcategory named "Secondary
+      References" - and it is still gray
+
 second_route:
   - Manage > Additional Settings > Line Styles, the row read by eye
   - in a family, Manage > Object Styles, the subcategory's row read by eye
+  - in a family, Manage > Object Styles > Annotation Objects, Reference Planes > Secondary References read by eye
   - one Ctrl+Z removes it in a single step (Golden Rule 16)

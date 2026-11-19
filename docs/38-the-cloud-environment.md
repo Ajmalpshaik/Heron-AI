@@ -239,7 +239,7 @@ real edit does.
 | `test_bridge_roundtrip` | yes, after the build in §3 |
 | `test_mcp_serves`, `test_served_claims`, `test_mcp_stdio`, `test_loads_finalize`, `test_outcome_line`, `test_checklist_tool`, `test_commands_tool`, `test_sheet_list_tool` | yes — the script installs `mcp` |
 | `test_routing_phrases` | yes, where §2's one-line check answers `model`; otherwise it exits 3, COULD NOT RUN |
-| The `heron` server's library tools - `heron_lookup`, `heron_resolve`, `heron_capabilities`, `heron_method`, `heron_standards` | yes - served from 2026-10-17, and no `revit_` tool ([D-132](DECISIONS.md)) |
+| The `heron` server's library tools - `heron_lookup`, `heron_resolve`, `heron_capabilities`, `heron_method`, `heron_standards`, `heron_why` | yes - served from 2026-10-17 (`heron_why` from 2026-11-15, [PROPOSALS F1](proposals/part-f.md)), and no `revit_` tool ([D-132](DECISIONS.md)) |
 | The brain: lookup, gaps, routing, retrieval | yes |
 | **Proving a fragment or skill against a model** | **no. Needs Revit** |
 | **Add-in load, upgrade, rollback, manifest discovery** | **no. Needs a real Windows install** |

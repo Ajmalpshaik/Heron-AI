@@ -32,6 +32,10 @@
   <ItemGroup>
     <Compile Include="..\..\revit\Heron.Revit.Addin\HeronUndoGuard.cs"
              Link="HeronUndoGuard.cs" />
+    <!-- Names no Autodesk type either: the guard's log names the chat that
+         kept a change (Q-88) as the rest of the add-in names one. -->
+    <Compile Include="..\..\revit\Heron.Revit.Addin\HeronConversation.cs"
+             Link="HeronConversation.cs" />
   </ItemGroup>
 
 </Project>

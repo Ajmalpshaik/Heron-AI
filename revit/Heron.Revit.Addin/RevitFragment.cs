@@ -438,6 +438,29 @@ namespace Heron.Revit.Addin
             // nothing those paths did not already allow.
             var wantsNoTransaction = DeclaresNeed(needs, NoTransactionNeed);
 
+            // A FRAGMENT THAT WAITS FOR THE MODELLER - Q-86, decided
+            // 2026-11-15. Revit's own pick returns when the modeller clicks or
+            // presses Esc, so the time it takes is theirs, not the fragment's.
+            // A card that declares this need is run as the Keep or Discard box
+            // is waited for: the run clock is held while its code runs and the
+            // dispatcher waits revit.askTimeoutSeconds more (see the read path
+            // below, and RevitDispatcher.AwaitingClick).
+            //
+            // HELD ONLY WHERE NOTHING IN THE MODEL CAN CHANGE. A held clock
+            // does not stop a fragment that loops for ever - a stop asked over
+            // the bridge still does - so a run that can change the model, which
+            // has a group to keep or roll back, is refused before anything runs
+            // and stays on the clock it always had.
+            var waitsForPerson = DeclaresNeed(needs, WaitsForModellerNeed);
+            if (waitsForPerson && writing)
+            {
+                return Json.Error("waits_on_change_path",
+                    "'" + name + "' waits for you to click in Revit, and Heron waits for a "
+                    + "person only on a run that changes nothing in the model - a read, or one "
+                    + "that changes only what is on screen. Nothing was run. Ask for it with "
+                    + "Changes off, through revit_show or revit_read.");
+            }
+
             // NEVER ON THE READ PATH. That path's guarantee is that no
             // transaction is open, so Revit refuses a change - not always
             // completely (row 5b-350), which is why a read is also measured -
@@ -664,6 +687,12 @@ namespace Heron.Revit.Addin
             // D-160: a keep Revit counted NOTHING in - rolled back instead of
             // kept, so no empty entry is left in the modeller's undo list.
             var keptNothing = false;
+
+            // Q-69: whether Revit reports the group KEPT - read from its
+            // status once it is assimilated, never from `apply`. With the
+            // rollback's own outcome, what the save after the group stands on
+            // (RevitFragmentSave.cs, D-171).
+            var groupKept = false;
             var selectionRestored = true;
 
             IList<HeronScriptHost.Variable> state = null;
@@ -732,7 +761,22 @@ namespace Heron.Revit.Addin
                 // anything or the answer is built, so it cannot be read as a
                 // clean read further down.
                 counted = ReadFootprint.Of(target);
-                threw = RunScript(script, globals, name, out state);
+
+                // THE MODELLER'S TIME IS NOT THE FRAGMENT'S - Q-86. For a card
+                // that declares waitsForModeller the dispatcher is told a person
+                // is being waited for, as it is for the Keep or Discard box, so
+                // it waits revit.askTimeoutSeconds more and says so in words of
+                // its own if even that runs out; and the run clock is held for
+                // the script, so a check after a slow click - or between the
+                // clicks of a slow series - does not stop the job as one that
+                // ran out of time. A stop asked meanwhile still trips it: a
+                // pause holds the time, never the stop (HeronRunClock.Pause).
+                // Any other card runs exactly as before, on its clock.
+                if (waitsForPerson) RevitDispatcher.AwaitingClick();
+                using (waitsForPerson ? HeronRunClock.Pause() : null)
+                {
+                    threw = RunScript(script, globals, name, out state);
+                }
                 var changed = ReadChangedModel(name, target, counted, threw);
                 if (changed != null) return changed;
 
@@ -1057,8 +1101,13 @@ namespace Heron.Revit.Addin
                     Func<bool> putBack = null;
                     if (asking || askToKeep)
                     {
+                        // ROW 5b-1824: WHAT WAITS FOR KEEP - the save the run asked
+                        // for, made after the group and only after a Keep - so the
+                        // box never tells a publish that save is done already.
+                        var waitsForKeep = SaveWaitsForKeep(globals.__heron, target);
                         answered = AskTheModeller(app, target, name, asking, sendsOut, changed,
-                                                  offerRest, askedAgain, out refreshed, out putBack);
+                                                  offerRest, askedAgain, waitsForKeep,
+                                                  out refreshed, out putBack);
                         if (answered != null) apply = answered == Keep || answered == RestOfJob;
                         else nothingToAsk = true;
                     }
@@ -1111,7 +1160,10 @@ namespace Heron.Revit.Addin
                                    // (D-157): a job it counted nothing in left no
                                    // entry to undo.
                                    described == null ? 0 : described.Total,
-                                   described != null && described.Unreadable == 0);
+                                   described != null && described.Unreadable == 0,
+                                   // AND THE CHAT THAT KEPT IT (Q-88): only that
+                                   // chat is sent Undo for it.
+                                   client);
                     else
                     {
                         rolledBack = RollBackAndCheck(group, target, watch);
@@ -1128,6 +1180,10 @@ namespace Heron.Revit.Addin
                                                             RevitReadBack.Keys(readAfter));
                     }
 
+                    // Q-69: KEPT, AS REVIT SAYS IT - read here, while the group
+                    // still exists to be asked.
+                    groupKept = apply && group.GetStatus() == TransactionStatus.Committed;
+
                     // D-138: THE GRANT IS GIVEN HERE AND NOWHERE ELSE - after the
                     // modeller pressed the third link in Revit and this change
                     // was kept. Nothing in the request can reach this line.
@@ -1141,7 +1197,10 @@ namespace Heron.Revit.Addin
             // counts them; the list is what the record is for.
             Elements = described == null ? null : described.ElementsField();
 
-            Remember(name, state, target, bound, client, globals.__heron, ranWith);
+            // Q-89: WITH HOW IT WAS TAKEN BACK, when it was - a dry run, a
+            // proof's trial, a Discard - so nothing it left is handed on.
+            Remember(name, state, target, bound, client, globals.__heron, ranWith,
+                     HeronBindingNote.TakenBack(writing, apply, answered != null, keptNothing));
             var answer = Report(name, state, target, uidoc, app.ActiveUIDocument, bound,
                                 globals.__heron);
             if (confirmed != null) answer = confirmed.OnReply(answer);   // D-142
@@ -1167,6 +1226,20 @@ namespace Heron.Revit.Addin
             if (readMode != null && changedIds != null)
                 verdict = WithReadBack(verdict, HeronReadBack.Compare(readMode, changedIds,
                                                                       readBefore, readAfter));
+
+            // Q-69, D-171: THE SAVE THE FRAGMENT ASKED FOR, done here - after
+            // the group's block has closed and the reply above is built, so
+            // nothing of Heron's is open in the model and the reply names it as
+            // the change was made. After a group Revit reports KEPT, and after a
+            // preview whose rollback HELD - the change undone, the save not, and
+            // the reply says both. Never after a Discard: a save follows only a
+            // Keep. The same for ANOTHER open document and the close of its
+            // window (row 5b-1824), which the fragment no longer does in the
+            // run. Its own block on the reply says what it did; the two lines
+            // below only add fields to it.
+            verdict = SaveAfterTheGroup(verdict, globals.__heron, app, target, name, risk,
+                                        sendsOut, apply, groupKept,
+                                        rolledBack != null && rolledBack.Held, answered);
             if (keptUnderGrant != null) return WithGrant(verdict, keptUnderGrant);
             return answered != null ? WithAnswer(verdict, answered, refreshed) : verdict;
         }
@@ -1504,12 +1577,16 @@ namespace Heron.Revit.Addin
         /// of this job without asking" - answered RestOfJob, which keeps like
         /// Keep and lets Run give the grant. Never for a DRAFT's one run or a
         /// publish. `askedAgain`, when a grant was in play, is said in the box.
+        /// `waitsForKeep` is SaveWaitsForKeep's sentence for a save the run
+        /// asked to be made after the box, or null - a publish is told that
+        /// Keep makes it and Discard does not, never that it is done already
+        /// (row 5b-1824).
         /// </summary>
         private static string AskTheModeller(UIApplication app, Document target, string name,
                                              bool neverProved, bool sendsOut,
                                              RevitChangedSet changed, bool offerRest,
-                                             string askedAgain, out bool refreshed,
-                                             out Func<bool> putBack)
+                                             string askedAgain, string waitsForKeep,
+                                             out bool refreshed, out Func<bool> putBack)
         {
             refreshed = false;
 
@@ -1613,7 +1690,7 @@ namespace Heron.Revit.Addin
                         HeronKeepQuestion.OnScreen(added.Count, altered.Count, inFront,
                                                    addedShown, alteredShown,
                                                    isolatedIn != null, cameraBack != null),
-                        sendsOut, neverProved, refreshed)
+                        sendsOut, neverProved, refreshed, waitsForKeep)
                         + (string.IsNullOrEmpty(askedAgain) ? "" : "\n\n" + askedAgain),
                     AllowCancellation = true,
                     CommonButtons = TaskDialogCommonButtons.None,
@@ -2691,10 +2768,19 @@ namespace Heron.Revit.Addin
         /// with no transaction (`noTransactionOpen`), or a MODIFY that changed
         /// nothing. Telling the guard "kept" for those made the next Undo take
         /// whatever the modeller did before it.
+        ///
+        /// `chat` IS THE CHAT WHOSE REQUEST KEPT IT (Q-88) - the request's
+        /// conversation, through HeronConversation.ChatOf. Only that chat is
+        /// sent Undo for it; every other is refused, and Ctrl+Z still works.
+        ///
+        /// AND THE RUN THAT KEPT IT, for the Activity pane's Undo (row
+        /// 5b-1741): the workflow id of the job Revit's thread is running, the
+        /// id its run record carries - read here, where every keep is made, so
+        /// neither caller has to pass it.
         /// </summary>
         internal static string KeepAndWatch(TransactionGroup group, Document doc,
                                             HeronRollbackWitness.Watch watch,
-                                            int counted, bool read)
+                                            int counted, bool read, string chat)
         {
             if (group.Assimilate() != TransactionStatus.Committed)
             {
@@ -2714,7 +2800,7 @@ namespace Heron.Revit.Addin
             {
                 var key = watch == null || watch.Document == null ? WitnessKey(doc) : watch.Document;
                 Undo.Kept(key, watch == null ? null : watch.Job, watch == null ? null : watch.Label,
-                          DateTime.Now, counted, read);
+                          DateTime.Now, counted, read, chat, RevitDispatcher.RunningWorkflow);
             }
             catch (Exception ex)
             {
@@ -3726,6 +3812,12 @@ namespace Heron.Revit.Addin
             // accept either. docs/36.
             public string Inputs;
 
+            // Q-89: HOW THE RUN THAT LEFT THESE WAS TAKEN BACK - a dry run, a
+            // proof's trial, a Discard (HeronBindingNote.TakenBack) - or null
+            // when what it left stands in the model. While it is set nothing
+            // here is bound, by name or by expectation.
+            public string TakenBack;
+
             public DateTime TouchedUtc;
         }
 
@@ -3946,7 +4038,7 @@ namespace Heron.Revit.Addin
         /// group neither kept nor rolled back - with the undo guard told
         /// first (D-157, row 5b-1607): what is on the undo list now is not
         /// something Heron can vouch for, so an older keep is no longer
-        /// offered to `undo_guarded`. The reply itself is handed back unchanged.
+        /// offered to `undo_own`. The reply itself is handed back unchanged.
         /// </summary>
         private static string LeftOpen(Document target, string name, string reply)
         {
@@ -4034,6 +4126,16 @@ namespace Heron.Revit.Addin
             {
                 wantedBy = expect.Substring(0, split).Trim();
                 wantedInputs = expect.Substring(split + 7).Trim();
+            }
+
+            // Q-89: LEFT BY A RUN THAT WAS TAKEN BACK - a dry run, a proof's
+            // trial, a Discard. Asked first: whatever is expected, everything
+            // carried was replaced by that run, and none of it may be bound.
+            if (chain != null && chain.Document == target.Title && chain.TakenBack != null)
+            {
+                return Json.Error("chain_taken_back",
+                    HeronBindingNote.CarriedFromTakenBack(wantedBy, chain.By, chain.TakenBack,
+                                                          target.Title));
             }
 
             // NOTHING CARRIED AT ALL. Said apart from a mismatch because they
@@ -4223,9 +4325,12 @@ namespace Heron.Revit.Addin
             prologue = "";
             binding = null;
 
-            // THIS CHAT'S carried values, and no other chat's.
+            // THIS CHAT'S carried values, and no other chat's - and none a run
+            // that was taken back left (Q-89): an expectation is refused for
+            // them below, and a need is never filled from them by name.
             var chain = ChainFor(client, false);
             var carried = chain != null && chain.Document == target.Title
+                          && chain.TakenBack == null
                 ? chain.Values : null;
 
             // THE EXPECTATION, CHECKED ONCE AND BEFORE ANYTHING BINDS.
@@ -4330,6 +4435,18 @@ namespace Heron.Revit.Addin
                     continue;
                 }
 
+                // Q-86: the label that says the fragment waits for the
+                // modeller. Bound as a constant for D-125's reason - the
+                // declaration is the point, and Run holds the timers for it.
+                if (name == WaitsForModellerNeed)
+                {
+                    bound.Add(name);
+                    lines.Append("bool ").Append(name).Append(" = true;\n");
+                    how.Add(name + " - Revit waits for the modeller, and Heron holds its timers "
+                            + "for them (Q-86)");
+                    continue;
+                }
+
                 // D-114: the answer to Revit's "Family Already Exists" dialog,
                 // for a fragment that reloads. A factory, so the fragment says
                 // whether parameter values are overwritten - see FamilyReload.
@@ -4342,6 +4459,54 @@ namespace Heron.Revit.Addin
                          .Append(" = (Func<bool, IFamilyLoadOptions>)__heron[\"").Append(name)
                          .Append("\"];\n");
                     how.Add(name + " - Heron's answer to Revit's Family Already Exists dialog");
+                    continue;
+                }
+
+                // Q-69: the fragment's way to ask for a save of the document
+                // it works in. The add-in does it after the group has closed -
+                // after a Keep, or a preview whose rollback held, never after a
+                // Discard (D-171) - see RevitFragmentSave.cs. NEVER ON THE READ
+                // PATH: a read has no group to close, so nothing there says the
+                // run was a preview or a Keep.
+                if (name == SaveWhenKeptNeed)
+                {
+                    if (reading)
+                    {
+                        return Json.Error("needs_write_path",
+                            "This fragment asks Heron to save the model once its Undo entry has "
+                            + "closed, so it runs only as a change - never as a read. Nothing was "
+                            + "run and nothing was saved.");
+                    }
+                    bound.Add(name);
+                    globals.__heron[name] = SaveAsk.Bind(globals.__heron);
+                    lines.Append("Action<string, bool> ").Append(name)
+                         .Append(" = (Action<string, bool>)__heron[\"").Append(name)
+                         .Append("\"];\n");
+                    how.Add(name + " - Heron saves this model once its Undo entry has closed, "
+                            + "after a Keep or a preview, never after a Discard (Q-69, D-171)");
+                    continue;
+                }
+
+                // Row 5b-1824: the same, for ANOTHER open document - its file,
+                // and whether its window is closed once it is saved. Refused on
+                // the read path for the same reason.
+                if (name == SaveOtherWhenKeptNeed)
+                {
+                    if (reading)
+                    {
+                        return Json.Error("needs_write_path",
+                            "This fragment asks Heron to save another open document once its Undo "
+                            + "entry has closed, so it runs only as a change - never as a read. "
+                            + "Nothing was run and nothing was saved.");
+                    }
+                    bound.Add(name);
+                    globals.__heron[name] = SaveAsk.BindOther(globals.__heron);
+                    lines.Append("Action<string, bool> ").Append(name)
+                         .Append(" = (Action<string, bool>)__heron[\"").Append(name)
+                         .Append("\"];\n");
+                    how.Add(name + " - Heron saves that document once this run's Undo entry has "
+                            + "closed, and closes its window when asked - after a Keep or a "
+                            + "preview, never after a Discard (D-171, row 5b-1824)");
                     continue;
                 }
 
@@ -4703,17 +4868,22 @@ namespace Heron.Revit.Addin
                                      Document target, HashSet<string> bound,
                                      string client,
                                      IDictionary<string, object> handedIn,
-                                     string ranWith)
+                                     string ranWith,
+                                     string takenBack = null)
         {
             // A caller that did not say who it is gets no chain - see ChainFor.
             var chain = ChainFor(client, true);
             if (chain == null) return;
 
-            if (chain.Document != target.Title) chain.Clear();
+            // Q-89: AND AFTER A RUN THAT WAS TAKEN BACK THE CHAIN STARTS AFRESH.
+            // Nothing that run left may be bound, and a name it left that this
+            // run does not write again would otherwise outlive the mark.
+            if (chain.Document != target.Title || chain.TakenBack != null) chain.Clear();
 
             chain.Document = target.Title;
             chain.By = name;
             chain.Inputs = ranWith;
+            chain.TakenBack = takenBack;
 
             foreach (var variable in state)
             {
@@ -7634,11 +7804,42 @@ namespace Heron.Revit.Addin
         private const string NoTransactionNeed = "noTransactionOpen";
 
         /// <summary>
+        /// The ambient need that says a fragment waits for the modeller -
+        /// Revit's own pick, answered by a click or Esc (Q-86). Run holds the
+        /// run clock and the dispatcher's wait for it on the read and show
+        /// paths and refuses it on a run that can change the model. The same
+        /// name is in brain/heron_fragment.py's AMBIENT and in the bridge
+        /// client's WAITS_FOR_MODELLER_NEED, which the chat's side waits by.
+        /// </summary>
+        private const string WaitsForModellerNeed = "waitsForModeller";
+
+        /// <summary>
         /// The ambient need that hands a reloading fragment its answer to
         /// Revit's "Family Already Exists" dialog - D-114. The same name is in
         /// brain/heron_fragment.py's AMBIENT.
         /// </summary>
         private const string FamilyLoadNeed = "familyLoadOptions";
+
+        /// <summary>
+        /// The ambient need through which a fragment asks the ADD-IN to save
+        /// the document it works in once Heron's group has closed - after a
+        /// Keep or a preview, never after a Discard - OPEN-QUESTIONS Q-69 and
+        /// D-171, 2026-11-16. The name says "when kept" for what it was first
+        /// built as; a preview saves too since the owner's "okkey" that day.
+        /// See RevitFragmentSave.cs. The same name is in
+        /// brain/heron_fragment.py's AMBIENT.
+        /// </summary>
+        private const string SaveWhenKeptNeed = "saveWhenKept";
+
+        /// <summary>
+        /// Its twin for ANOTHER open document - row 5b-1824, 2026-11-16: the
+        /// fragment hands the add-in that document's file and whether to close
+        /// its window, and the add-in saves it after the group by the same rule
+        /// as the first (D-171 point 5), where until then the fragment saved it
+        /// inside the run, before Revit's Keep or Discard box. The same name is
+        /// in brain/heron_fragment.py's AMBIENT.
+        /// </summary>
+        private const string SaveOtherWhenKeptNeed = "saveOtherWhenKept";
 
         /// <summary>True when the contract sent with the request declares this need.</summary>
         private static bool DeclaresNeed(IList<Dictionary<string, string>> needs, string wanted)

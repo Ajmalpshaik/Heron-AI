@@ -80,7 +80,7 @@ machine. Cloud as opt-in.
 re-indexing: a per-call cost makes rebuilding the index something to avoid, and an index nobody rebuilds
 quietly stops matching what is on disk.
 
-**This does not answer [Q-12](#q-12--what-is-the-data-confidentiality-position) and must not be read as
+**This does not answer [Q-12](#-q-12--what-is-the-data-confidentiality-position) and must not be read as
 answering it.** Asked directly on 2026-08-28, Ajmal's reply — *"now we are in Claude, am I right, so make
 it in this; when we are on the PC I will pull that there and we will test everything"* — was about where
 the **work** happens, not about what **project content** may leave a machine. That is a contractual
@@ -213,7 +213,9 @@ A."* Saying it afterwards would be the failure Rule 16 exists to prevent.
 
 ---
 
-### 🔵 Q-58 — How does a PowerShell script ask `HeronPaths` where something lives? *(found 2026-09-21)*
+### ✅ Q-58 — How does a PowerShell script ask `HeronPaths` where something lives? *(found 2026-09-21)* → **decided 2026-11-15 on the owner's delegation**
+
+**Answer: The add-in's path code writes a folder list the install script reads - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** It keeps one owner of Heron's folders - the C# path code - as the rule says, while the script still runs before any add-in is installed; a check compares the written list with the code. **Work:** built 2026-11-16, the Windows run owed. [`HeronPaths`](../../platform/Heron.Core/HeronPaths.cs) owns the install scripts' two folders - `RevitAddins(release)` and `InstallBackup(release, folder)` - and [`tests/Heron.Folders.TestHost`](../../tests/Heron.Folders.TestHost/) compiles `HeronPaths.cs` by source and prints them as templates: a Windows special folder by name, as `Environment.GetFolderPath` takes it, and the parts under it, with `{release}` and `{folder}` left blank. [`tools/heron-folders.py --write`](../../tools/heron-folders.py) writes that to the committed [`platform/heron-folders.json`](../../platform/heron-folders.json); `Get-HeronFolder` in [`tools/HeronRevit.ps1`](../../tools/HeronRevit.ps1) reads it with `ConvertFrom-Json` and the same `GetFolderPath` call, and stops by name, before anything is changed, when it is missing; `Get-RevitAddinsFolder` and [`deploy-addin.ps1`](../../tools/deploy-addin.ps1)'s backup folder ask it, so no install script spells either folder; heron-project.zip carries it. **2026-11-16, after main's D-167 merged in:** its second-copy check spelled Revit's all-user Addins folders in `HeronRevit.ps1` and `tests/test_heron_folders.py` went red on them, so `HeronPaths.RevitAllUserAddins` owns both - read only, and declared rather than read back, because .NET has no ProgramFiles folder off Windows - and `Get-RevitAllUserAddinsFolders` asks the list for them (AB11 step 4). **The check:** `python tools/heron-folders.py` exits 1 when the committed list is not what the code says - measured red on a hand edit of the list and on a `HeronPaths` change not regenerated, green once regenerated - and [`tests/test_heron_folders.py`](../../tests/test_heron_folders.py) runs it with the scripts' own checks in CI's every-suite job; on the code as it stood it failed 26 checks. **Owed:** no PowerShell ran here - the deploy, the rollback and the installer window reading the list on Windows PowerShell 5.1 are NEEDS-CHECKING [AB11](../needs-checking/group-ab.md). The other places that spelled the Addins folder, [row 5b-1746](../fragment-issues/row-5b-1746.md), read the list too since 2026-11-16 - fixed in code, the Windows run AB11 step 5.
 
 [`platform/README.md`](../../platform/README.md) rule 3 says
 [`HeronPaths`](../../platform/Heron.Core/HeronPaths.cs) is **the only thing that builds a Heron path**, and
@@ -252,7 +254,9 @@ than closed whichever way makes a task easier.
 
 ---
 
-### 🔵 Q-60 — May Heron write a one-time id into a Revit 2020 to 2023 model, so that its answers can be kept? *(found 2026-10-06)*
+### ✅ Q-60 — May Heron write a one-time id into a Revit 2020 to 2023 model, so that its answers can be kept? *(found 2026-10-06)* → **answered 2026-11-16 by the owner**
+
+**Answer: No - Heron writes nothing into a Revit 2020 to 2023 model, and those releases keep nothing between answers, as today - 2026-11-16, the owner's answer, read back: Ajmal PS was shown this question with Claude's suggestion and answered in his own words, *"go with you suggetions"*.** **Why:** The id would be a change to the owner's model, copied with it into the next job and handed by a template to every project made from it; Revit 2024 and later have the model's own id ([D-113](../decisions/D-113.md)). **Work:** none - nothing changes. On 2020 to 2023 the standards and the load questions are still asked each time, and every answer already says so. No decision record: no behaviour moves.
 
 Since [D-113](../decisions/D-113.md) a project's kept answers - its governing standards, its load runs, its
 sprinkler runs - are filed under the model's own id, `Document.CreationGUID`, which arrived at **Revit 2024**.
@@ -274,7 +278,9 @@ answers. Until he does, they keep nothing.
 
 ---
 
-### 🟡 Q-61 — Which model, effort level and fast-mode setting should a modeller's chat run, and are the office PC and the new laptop set the same today? *(found 2026-10-10)*
+### ✅ Q-61 — Which model, effort level and fast-mode setting should a modeller's chat run, and are the office PC and the new laptop set the same today? *(found 2026-10-10)* → **answered 2026-11-16 by the owner**
+
+**Answer: Heron's install notes recommend one setting for modelling work - effort high, not xhigh, and fast mode on where it is offered - and say plainly it is not yet timed - 2026-11-16, the owner's answer, read back: Ajmal PS was shown this question with Claude's suggestion and answered in his own words, *"go with you suggetions"*.** **Why:** The one measured run, [row 5b-378](../fragment-issues/section-5b-rows-376-400.md), was at effort xhigh, and about 93% of its two family builds was the chat's own turns - extended thinking alone about 609 s; the effort level is the setting that can move that share, and only a timing can say how far. **Work:** done 2026-11-16 - [WHAT-TO-INSTALL §5b](../WHAT-TO-INSTALL.md#5b-the-chats-own-setting-for-modelling-work---recommended-not-yet-timed) gives the setting and says it is not timed. **Owed:** the timing, [NEEDS-CHECKING Group HF](../needs-checking/group-hf.md) HF8, on the laptop. Not part of this answer, and not done: `heron-ready --snapshot` recording the setting, the change to the snapshot code this question names as one agreed on its own. No decision record: it is advice in the install notes, and nothing Heron does changes.
 
 [FRAGMENT-ISSUES 5b-378](../fragment-issues/section-5b-rows-376-400.md) timed two family builds on the
 new laptop on 2026-10-09: 367 s and 792 s, of which Revit's own time was 17.2 s in all and the model's
@@ -608,7 +614,9 @@ Windows and holds all of it.
 
 ---
 
-### 🟡 Q-69 — May Heron save the model it is working in - Save, or Save As to a path the modeller gives - once its Undo entry has closed? *(found 2026-10-17)*
+### ✅ Q-69 — May Heron save the model it is working in - Save, or Save As to a path the modeller gives - once its Undo entry has closed? *(found 2026-10-17)* → **answered 2026-11-16 by the owner**
+
+**Answer: Shape 2 - the add-in saves after Heron's group has closed, only when the modeller asks, and Heron never picks a name itself - 2026-11-16, the owner's answer, read back: Ajmal PS was shown this question with Claude's suggestion and answered in his own words, *"go with you suggetions"*.** Recorded as [D-171](../decisions/D-171.md), which also carries the two choices shape 2 is written with below - a preview saves too, and the pin follows a rename only for this run's own Save As. **Why:** It is the one shape that lets Heron save the model it works in while Article 8's one undo entry stays as it is, and both lost builds were lost to a model nobody had saved. **Work:** owed: being built - `SAVE_DOCUMENT` version 3, the add-in's save after the group and the pin's rename, in another session from 2026-11-16; then proved on a scratch model, with [Group EN](../needs-checking/group-en.md) EN4 and EN5 measured. Until it is, nothing at runtime changes.
 
 **What happened.** Twice in two days a whole build was lost because the model had never been saved and
 Revit was closed - a house with 9 sheets and a 32-floor tower, on 2026-10-13 and 2026-10-14
@@ -700,9 +708,57 @@ model, a file on a network folder), what the add-in's dialog watch does with one
 **Ajmal PS decides.** Until he does, nothing Heron does at runtime changes: `SAVE_DOCUMENT` still refuses
 the model it works in, and the methods ask the modeller to save first.
 
+**Work:** built 2026-11-16, Shape 2 - compiled for Revit 2020 to 2027 and tested in a cloud container,
+**NOT RUN IN REVIT.** `SAVE_DOCUMENT` version 3 asks for a save of the document Heron works in through a new
+ambient need, `saveWhenKept` - null for its own file, or the full path the modeller typed for a Save As of
+a model never saved, and `replaceFile` (off unless typed) to replace a file already there - and refuses
+before asking: a model that has a file is saved to it, never under a new name; a relative path, a folder
+that does not exist, the wrong extension, a file open in Revit or a workshared model for a Save As; the
+central model opened directly for a Save. The add-in saves in the same request, after the group's block
+has closed and the reply is built ([`RevitFragmentSave.cs`](../../revit/Heron.Revit.Addin/RevitFragmentSave.cs),
+called at the end of `RevitFragment.Run`), and the reply's `save` block says what it did. **The preview
+point, asked again in plain words the same day** - should a preview of *"save my model"* really save? - was
+put to the owner as *"Yes, preview saves - only when you asked to save; the save tool can be tested now on a
+scratch model; the reply says a save cannot be undone"*, and **Ajmal PS answered *"okkey"* (2026-11-16)** -
+[D-171](../decisions/D-171.md) point 6, whose note under D-55 in the decision log already says a save asked
+for with a run is not rolled back (D-144: the old record keeps every word). The three points, as built:
+**(1)** the act after the group is the save alone, of what the fragment asked, behind the Publish switch read
+again as it saves, and said on the reply; **(2)** a group Revit reports kept is followed by the save, and so
+is a preview - a run nobody was asked about, rolled back, whose rollback Revit reports held: its change is
+undone, its save is not, and the reply opens *"THE CHANGE WAS ROLLED BACK ... AND THE SAVE WAS DONE"* and
+says a save cannot be undone. A **Discard** or a closed box saves nothing - D-171 point 5, the box is answered
+before the save, so a save follows only a Keep - and nor does a run whose rollback did not hold or one Revit
+did not report kept. A preview with no save asked for saves nothing and carries no `save` block. **(3)** the
+reply names the model as the change was made and the `save` block its new title and file, and the chat's pin
+follows a Save As only when that block says this run did it, of the pinned model
+([`heron_write.py`](../../mcp/server/heron_write.py) `DocumentPin.follow_save_as`, `after_save`; `revit_change`
+calls it once the pin has passed the reply). The proving client prints the `save` block under the verdict and
+writes it into a `validate` phase's record ([`heron_bridge_client.py`](../../mcp/client/heron_bridge_client.py)
+`save_sentence`), so a preview's ROLLED BACK is never read as nothing written to disk. Every save that was
+done says it cannot be undone; a workshared local copy says nothing went to central; nothing here calls
+Synchronize with Central (Article 10). No new switch: the Publish switch the question names. A chat's
+`dry_run` of a Publish card is still refused before anything is sent (`heron_tools.dry_run_refusal`), so the
+preview that saves is the proving client's. **Tests:** `tests/test_save_after_group.py` (new),
+`tests/test_document_pin.py` (a Save As section) and `tests/test_fragment_ambient.py` (the new need) - 40, 6
+and 3 checks failed on the code before the first build; the preview rule's 18 checks failed on the first
+build; all pass now. **The card is DRAFT** - its C# moved, so version 2's proof is kept as its record and no
+longer stands (D-30), and a kept change from it is refused (D-117); `family-creation` step 11 f and
+`mass-family-creation` step 7 say the modeller saves by hand until it is PROVEN again. **Owed:
+[NEEDS-CHECKING Group EN](../needs-checking/group-en.md) EN6 to EN10, on a real Revit - EN6, EN8, EN9 and
+EN10 run TODAY as previews on a scratch model**, with the Publish switch on, and are the proof's route; EN7's
+Discard and the chat halves of EN6 and EN8 wait for the card to be PROVEN. **Fixed in code the same day, under
+D-171 point 5 ([row 5b-1824](../fragment-issues/row-5b-1824.md)), not run in Revit:** version 2's save of ANOTHER
+open document, which was made before the box, is the add-in's after the group too (`saveOtherWhenKept`,
+`SaveOtherNow`) - a Discard saves and closes nothing - and Revit's Keep or Discard box tells a publish whose
+save waits for Keep that nothing is saved yet, not that it is "done already"; Group EN EN11 to EN13 are owed.
+**Not decided here:** the methods' *"Heron cannot save the model it works in"* lines, true while the card is
+DRAFT, which change the day it is PROVEN.
+
 ---
 
-### 🟡 Q-70 — On a PC whose Claude app keeps its own copy of `%APPDATA%\Heron`, which `heron.config` should Heron believe, and should it say when the two differ? *(found 2026-10-17)*
+### ✅ Q-70 — On a PC whose Claude app keeps its own copy of `%APPDATA%\Heron`, which `heron.config` should Heron believe, and should it say when the two differ? *(found 2026-10-17)* → **decided 2026-11-15 on the owner's delegation**
+
+**Answer: Revit reports its own switches and settings file; the connection check states them as Revit has them and warns when the chat's copy differs - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** Revit already decides every change from its own file, so it is the one to believe; the chat should say what Revit holds. **Work:** built 2026-11-16, **not yet run in Revit** - the add-in's `info` ([`BridgeServer.cs`](../../revit/Heron.Bridge/BridgeServer.cs)) also says `settingsFile`, `settingsFileFound` and `switches` (Changes, Admin, Publish, from one load on the gate's own keys) beside `askToKeep`, only read and optional, so an older client ignores them; `revit_health` says under each Revit *Switches in this Revit: ... - read just now from <path>* and one more line, naming the file(s) and each switch that differs, when the chat's copy differs by name, by a file found on one side only, or by a switch (Ask to Keep included) - one name is not taken as one file, after [NP6](../needs-checking/group-np.md); its write gate is Changes as the Revits that said have it, the chat's copy only when none did; an older add-in keeps today's answer plus *this Revit's Heron does not report its settings*; and `heron_why`, still asking Revit nothing (PROPOSALS F1), judges by what a Revit said where `revit_health` found its file differs, and says how long ago ([`heron_health.py`](../../mcp/server/heron_health.py) `settings_lines`, [`heron_bridge_client.py`](../../mcp/client/heron_bridge_client.py) `settings_state`, [`heron_runtime.py`](../../mcp/server/heron_runtime.py) `in_revit_words`). Held by `tests/test_config_and_health.py`, `tests/test_mcp_serves.py` (four stand-in add-ins: same file, differing value, differing path, older add-in; and `heron_why`), `tests/test_runtime_snapshot.py` and `tests/test_bridge_roundtrip.py` (the real bridge, switches flipped under a running host, Linux only) - each seen to fail on the code as it stood; `check-compile` and `check-api-surface` pass for every release. **Dropped under [D-166](../decisions/D-166.md) on 2026-11-16, merging `origin/main` into this branch:** D-166, accepted by the owner the same day, holds Changes, Admin and Publish in Revit's memory, off at every start and in no file, so every part of the above that read or compared them as a file's went: the add-in's `switches` object read from `heron.config` (`info` carries D-166's `changes`, `admin`, `publish` and the `...Locked` fields from memory instead, and still `settingsFile` and `settingsFileFound`); `settings_state` reading the three (it reads the file and whether it was there, and `switches_state` reads the switches); the chat's copy of Changes, Admin and Publish compared with Revit's, and `heron_config.switches()` holding them (it holds Ask to Keep alone, the one switch D-166 left in the file); the line under every Revit, *Switches in this Revit ... read just now from <path>, the file this Revit decides every change by* (D-166's switches line says them, from memory, and no line names a file unless the chat's copy is not Revit's); the write gate falling back to the chat's copy when no Revit said (no answer then, as D-166 has it); `heron_why` reading this PC's file unless `revit_health` had found a difference (it goes by what the Revit last said always, and with no word judges the switches off, the way every Revit starts, and says it assumed so); and the refusals naming `write.enabled`, `admin.enabled` and `publish.enabled` (they name the switch and Heron's Settings). What is kept: Revit names its settings file, `revit_health` says in one line when the chat's copy is not that file - by name, by a file found on one side only, or by Ask to Keep - and that line names both files, which Group OB's OB4 may read as a failure ([row 5b-1836](../fragment-issues/row-5b-1836.md), the owner's to say); the write gate is Changes as the Revits that said have it, naming them, and `heron_why` judges by what Revit said and says when. The tests that pinned the dropped half were changed, each with a comment naming D-166, and [Group NP](../needs-checking/group-np.md) NP9 to NP13 rewritten before any had run. **Not built:** problem 2's waiting times - the add-in reads them once at start-up, so `info` cannot say what Revit waits, and the server still derives its own from the chat's copy (shape 2's second step, still owed); problem 3 is unchanged. `heron_diagnose`'s write gate asked no Revit, and since D-166 said no Revit had said; since 2026-11-16 it asks each one and decides by `revit_health`'s own rule, `heron_health.write_gate` - in code, not yet in Revit ([row 5b-1744](../fragment-issues/row-5b-1744.md), [Group OB](../needs-checking/group-ob.md) OB8). **Owed:** the run on the laptop, [Group NP](../needs-checking/group-np.md) NP9 to NP14.
 
 **What was seen**, on the owner's laptop on 2026-10-17, timing the fragment warm-up for
 [Group DA](../needs-checking/group-da.md) ([row 5b-1004](../fragment-issues/section-5b-rows-1001-1025.md)).
@@ -796,7 +852,9 @@ change from its own file, and `revit_health` still reports the server's.
 
 ---
 
-### 🟡 Q-71 — Should a stop reach a Revit whose lease nobody holds, from any client id? *(found 2026-10-18)*
+### ✅ Q-71 — Should a stop reach a Revit whose lease nobody holds, from any client id? *(found 2026-10-18)* → **decided 2026-11-15 on the owner's delegation**
+
+**Answer: A Stop must name the exact Revit session it is for - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** A stop becomes a choice, never a broadcast that silently switches off another chat's idle Revit until it restarts. **Work:** built and compiled 2026-11-16, shape 2, NOT RUN IN REVIT. The stop is a new operation, `stop_session`, carrying the session as the add-in names itself - release and process id, `2024/63712`, from that Revit's own discovery record. `AnswerStop` in [`RevitDispatcher.cs`](../../revit/Heron.Revit.Addin/RevitDispatcher.cs) stops only when that is its own session, compared exactly, and before `HeronStop` is touched refuses - recorded, nothing stopped, naming the Revit - a `stop_session` naming none (`stop_unnamed`) or another (`stop_wrong_session`), and the old `stop`, which named none; that one is still answered before the queue, so its refusal never waits behind a job. A NEW NAME, so an add-in from before the change - which stops on `stop` from anyone - answers `unknown_op`, or queues the name behind a running job and is busy, and is never stopped by it; the client says that Revit's Heron is older and nothing was stopped (row 5b-1604's way with `undo_guarded`). [`heron_bridge_client.py`](../../mcp/client/heron_bridge_client.py) `stop` sends nothing without `--session`, one Revit connected or two, and lists them. No lease change, and no MCP tool sends a stop (none did). Compiled for Revit 2020 to 2027 (`tools/check-compile.py`), every Revit member it calls found in every release (`tools/check-api-surface.py`). **Tests, seen to fail first:** [`tests/test_bridge_stop.py`](../../tests/test_bridge_stop.py) - 26 of its 54 checks failed on the code as it stood and none crashed (both names answered before the queue, the session read and compared, every refusal before the stop, the wire request, an older add-in's `unknown_op` and busy answer never read as a stop, the codes declared and classified), all pass now; [`tests/test_tool_registry.py`](../../tests/test_tool_registry.py) - 2 failed, `stop_session` not answered before the queue nor declared Read. Three of its old checks changed because they held what this answer ended: one Revit and no `--session` was stopped, the request sent was `stop`, and the lease checks sent a stop with no `--session`. **NEEDS REAL REVIT:** the run with two Revits, [Group EZ](../needs-checking/group-ez.md) EZ7 to EZ9 - a stop for one leaves the other running and answering, the add-in refuses a stop that does not name it, and an add-in from before is not stopped. **Not built:** the caller's client id in the stop's record (shape 2's *Leaves*) - not part of the answer.
 
 **What happened.** On 2026-10-18, running [Group EZ](../needs-checking/group-ez.md) EZ3's negative on the
 owner's laptop, `python mcp/client/heron_bridge_client.py stop` was sent with a stranger's
@@ -856,7 +914,9 @@ holds takes a stop from any client id. The client sends it to one Revit only.
 
 ---
 
-### 🔵 Q-72 — Part 4 §44 names three approval modes - Automatic, Ask and Require Approval. Which Heron operations sit in each, and what does "Ask" do that "Require Approval" does not? *(found 2026-10-18 checking the specification for D-139)*
+### ✅ Q-72 — Part 4 §44 names three approval modes - Automatic, Ask and Require Approval. Which Heron operations sit in each, and what does "Ask" do that "Require Approval" does not? *(found 2026-10-18 checking the specification for D-139)* → **decided 2026-11-15 on the owner's delegation**
+
+**Answer: The three words mean what is built: Automatic is reading, selecting and opening views; Ask is the Keep or Discard box; Require Approval is the Changes, Publish and Admin switches - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** It matches how Heron works today and adds no new prompt to a job. **Work:** done 2026-11-15, in words: a dated note under [Part 4 §44](../00d-additional-requirements.md) gives the three modes this meaning and points here. The table keeps its words until a decision records the answer ([D-139](../decisions/D-139.md) point 5).
 
 **What was found.** On 2026-10-18 every section of the four parts of the specification was checked against
 what is built. [D-139](../decisions/D-139.md) item 4 says a choice the owner has not made is not corrected
@@ -913,7 +973,9 @@ choice is open.
 
 ---
 
-### 🟡 Q-73 — Constitution Article 13 says one confirmation never covers a later action, and D-138's Keep box can keep the rest of a job after one click. Should Article 13 name that as its exception? *(found 2026-10-18 checking the specification for D-139)*
+### ✅ Q-73 — Constitution Article 13 says one confirmation never covers a later action, and D-138's Keep box can keep the rest of a job after one click. Should Article 13 name that as its exception? *(found 2026-10-18 checking the specification for D-139)* → **answered 2026-11-16 by the owner**
+
+**Answer: Shape 1 - Article 13 names the job grant, D-138's third link, as its one recorded exception: one chat, one model, until ten quiet minutes pass - 2026-11-16, the owner's answer, read back: Ajmal PS was shown this question with Claude's suggestion and answered in his own words, *"go with you suggetions"*.** Recorded as [D-172](../decisions/D-172.md). **Why:** He chose the grant, Article 9 already names it, and an Article changes by a decision in its own words - so one sentence makes the two Articles agree. **Work:** done 2026-11-16 - [Article 13](../../HERON_CONSTITUTION.md) carries the sentence and the Constitution's Amendment note names it. No code changed.
 
 **What was found**, checking the specification for [D-139](../decisions/D-139.md), whose item 4 names this
 as a choice left open.
@@ -976,7 +1038,9 @@ and Article 13's words stand beside it unreconciled.
 
 ---
 
-### 🔵 Q-74 — Which knowledge scopes does Heron have - is COMMUNITY one, is TEMPORARY one, and is CORE the same as GLOBAL? *(found 2026-10-18 checking the specification for D-139)*
+### ✅ Q-74 — Which knowledge scopes does Heron have - is COMMUNITY one, is TEMPORARY one, and is CORE the same as GLOBAL? *(found 2026-10-18 checking the specification for D-139)* → **decided 2026-11-15 on the owner's delegation**
+
+**Answer: The code's list of stores - global, company, project, user, temporary, experimental; Core means global, and community knowledge is a labelled source, not a store - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** It is what the code and its tests already keep apart; there is no community knowledge to store. **Work:** done 2026-11-15, as notes: a dated note under each list that pointed here - [Part 1](../00-master-specification.md) §15, §33 and §72, [Part 2](../00b-master-specification-agent-os.md) §20 and [Part 3](../00c-master-handover-baseline.md) §24, §45 and §79 - says this answer. The lists keep their words until a decision records it ([D-139](../decisions/D-139.md) point 5).
 
 **What was found**, checking the specification for [D-139](../decisions/D-139.md), whose item 4 names this
 as a choice left open. A *scope* is one of the separate stores Heron keeps knowledge in, so that one
@@ -1020,7 +1084,9 @@ with a note.
 
 ---
 
-### 🔵 Q-75 — Which ladder of background priorities is Heron's? *(found 2026-10-18 checking the specification for D-139)*
+### ✅ Q-75 — Which ladder of background priorities is Heron's? *(found 2026-10-18 checking the specification for D-139)* → **decided 2026-11-15 on the owner's delegation**
+
+**Answer: Part 2's seven levels, as coded - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** It is the order the code and its tests already use, and every list agrees the modeller's own request goes first. **Work:** done 2026-11-15, as notes: a dated note under each ladder - [Part 1](../00-master-specification.md) §49, [Part 2](../00b-master-specification-agent-os.md) §50, [Part 3](../00c-master-handover-baseline.md) §52 and [Part 4](../00d-additional-requirements.md) §22 - says this answer, with Part 4's *RAG indexing* and Part 3's *System Health* placed at `P3`. The ladders keep their words until a decision records it ([D-139](../decisions/D-139.md) point 5).
 
 **What was found**, checking the specification for [D-139](../decisions/D-139.md), whose item 4 names this
 as a choice left open. A priority says which background job waits for which - learning, indexing,
@@ -1059,7 +1125,9 @@ theirs with a note.
 
 ---
 
-### 🔵 Q-76 — Should the specification have one picture of how Heron is organised, and is a name listed in two departments one agent or two? *(found 2026-10-18 checking the specification for D-139)*
+### ✅ Q-76 — Should the specification have one picture of how Heron is organised, and is a name listed in two departments one agent or two? *(found 2026-10-18 checking the specification for D-139)* → **decided 2026-11-15 on the owner's delegation**
+
+**Answer: The as-built picture - Heron's four parts and the register's departments; the four charts stay as intent with notes, and a repeated name doing two jobs becomes two names - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** There is no orchestrator inside Heron - Claude is that - so a chart that draws one misleads a reader. **Work:** done 2026-11-15. A dated note under each chart and list that pointed here - [Part 1](../00-master-specification.md) §41 and §73, [Part 2](../00b-master-specification-agent-os.md) §3, [Part 3](../00c-master-handover-baseline.md) §8 and §79, and [Part 4](../00d-additional-requirements.md) §45, §48 and the mandatory list - says this answer; each keeps its words. Two rows of [the register](../28-agent-registry.md) are renamed, each saying so: `HERON-DEV-REL-018` is the *Release Packaging Agent* and `HERON-RAG-DUP-012` the *Ingest Duplicate Detection Agent*, so the repeated-name command above now prints nothing.
 
 **What was found**, checking the specification for [D-139](../decisions/D-139.md). Three things about how
 the parts are put together, none of them a fact that can be corrected without the owner choosing:
@@ -1109,7 +1177,9 @@ repeated name stay in the register.
 
 ---
 
-### 🟡 Q-77 — D-91 says Heron's release is signed, and v0.1.0 went out unsigned. Should a decision say releases are unsigned until signing is built, and what makes signing due? *(found 2026-10-18 checking the specification for D-139)*
+### ✅ Q-77 — D-91 says Heron's release is signed, and v0.1.0 went out unsigned. Should a decision say releases are unsigned until signing is built, and what makes signing due? *(found 2026-10-18 checking the specification for D-139)* → **answered 2026-11-16 by the owner**
+
+**Answer: Shape 1 - a decision amends D-91: releases are versioned and checksummed now and say plainly they are unsigned, and are signed before Heron is given to anyone outside - 2026-11-16, the owner's answer, read back: Ajmal PS was shown this question with Claude's suggestion and answered in his own words, *"go with you suggetions"*.** Recorded as [D-173](../decisions/D-173.md); D-91's index entry and record say it was superseded in part. **Why:** It writes down what the owner had already chosen twice - to publish v0.1.0, and to leave signing last - keeps *signed* as the bar, and moves the only record of the choice out of a work note that will be deleted. **Work:** done 2026-11-16, as documents; no code changes - `release.yml` already writes *"Not signed."* on every release. **Owed** before Heron is given to anyone outside: the signing itself, Stage 8.
 
 **What was found**, checking the specification for [D-139](../decisions/D-139.md), whose context cites
 [D-91](../decisions/D-91.md) as the rule a modeller's PC installs from.
@@ -1157,7 +1227,9 @@ the owner publishes it.
 
 ---
 
-### 🔵 Q-78 — When a modeller says *"select all ducts"*, does Heron select every duct in the model, or only the ducts visible in the open view? *(found 2026-10-18 checking the specification for D-139)*
+### ✅ Q-78 — When a modeller says *"select all ducts"*, does Heron select every duct in the model, or only the ducts visible in the open view? *(found 2026-10-18 checking the specification for D-139)* → **decided 2026-11-15 on the owner's delegation**
+
+**Answer: The whole model, unless the modeller says 'in this view' - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** It is what was proved on two releases, the answer already says how many and in which model, and it matches Revit's own In Entire Project; the view stays one word away. **Work:** done 2026-11-15, as a note: a dated note under [Part 4 §27](../00d-additional-requirements.md) says this answer; *Expected* keeps its words until a decision records it ([D-139](../decisions/D-139.md) point 5).
 
 **What was found**, checking the specification for [D-139](../decisions/D-139.md), whose item 4 leaves a choice
 no accepted decision has made as written.
@@ -1193,7 +1265,9 @@ keeps its words with a note.
 
 ---
 
-### 🔵 Q-79 — DISCLAIMER says Heron *"reports compliance with a standard"*, and the chat is told never to call a model compliant. Should the DISCLAIMER say what the chat says? *(found 2026-10-18 in the second documentation pass)*
+### ✅ Q-79 — DISCLAIMER says Heron *"reports compliance with a standard"*, and the chat is told never to call a model compliant. Should the DISCLAIMER say what the chat says? *(found 2026-10-18 in the second documentation pass)* → **answered 2026-11-16 by the owner**
+
+**Answer: Shape 1 - the DISCLAIMER takes the chat's words: Heron reports whether the checked values are met, with the source document, and certifies no compliance - 2026-11-16, the owner's answer, read back: Ajmal PS was shown this question with Claude's suggestion and answered in his own words, *"go with you suggetions"*.** Recorded as [D-169](../decisions/D-169.md). **Why:** It is the stricter wording, what the chat already says, and what an engineer or an authority expects of a tool: values met, not compliance granted. **Work:** done 2026-11-16 - [DISCLAIMER](../../DISCLAIMER.md) *On standards checking* reworded, with a line saying what it said before.
 
 **What was found.**
 
@@ -1225,7 +1299,9 @@ or an authority expects from a tool: values met, not compliance granted.
 
 ---
 
-### 🔵 Q-80 — When the boundary guard's script cannot be found at all, should the edit be refused, or let through unchecked? *(found 2026-10-19 hardening the hook commands after PR #675)*
+### ✅ Q-80 — When the boundary guard's script cannot be found at all, should the edit be refused, or let through unchecked? *(found 2026-10-19 hardening the hook commands after PR #675)* → **decided 2026-11-15 on the owner's delegation**
+
+**Answer: Keep refusing, and say why in plain words - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** The same safety as today, with a message that says the guard's script was not found and to open the session in the Heron folder, in place of a cryptic error. **Work:** done 2026-11-15 - `.claude/settings.json`'s guard command, when the script is not found, writes *"Heron's boundary guard refused this edit: its script ... was not found here, and the guard fails closed. Open the session in the Heron folder."* and exits 2; [`tests/test_heron_session.py`](../../tests/test_heron_session.py) §5 holds it, and failed on the old command, which printed python's *can't open file*.
 
 **What was found.** Every hook in [`.claude/settings.json`](../../.claude/settings.json) looks for its script
 under `$CLAUDE_PROJECT_DIR` and, failing that, in the repository the hook runs in (`git rev-parse
@@ -1261,7 +1337,9 @@ and `check-structure.py` is not a reason to open the earlier gate.
 
 ---
 
-### 🔵 Q-81 — When `$CLAUDE_PROJECT_DIR` names ANOTHER Heron checkout, its copy of the guard checks the wrong repository. Is that accepted? *(found 2026-10-19 hardening the hook commands after PR #675)*
+### ✅ Q-81 — When `$CLAUDE_PROJECT_DIR` names ANOTHER Heron checkout, its copy of the guard checks the wrong repository. Is that accepted? *(found 2026-10-19 hardening the hook commands after PR #675)* → **decided 2026-11-15 on the owner's delegation**
+
+**Answer: Each hook checks the copy it runs in first, and uses the project-folder setting only outside one - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** The guard exists to check the file being edited; checking another copy lets edits through unchecked. **Work:** done 2026-11-15 - all four commands in `.claude/settings.json` look in the repository the hook runs in first and take `$CLAUDE_PROJECT_DIR` only when that has no script; [`tests/test_heron_session.py`](../../tests/test_heron_session.py) §5 names a fake second checkout in the variable and asks the guard and the prompt hook, and both checks FAILED on the old order. The `heron-guard` and `heron-session` skills say the new order.
 
 **What was found.** A hook command runs the script under `$CLAUDE_PROJECT_DIR` whenever that folder has
 it, and falls back to the repository the hook runs in only when it does not. So if the variable names a
@@ -1293,7 +1371,9 @@ the one that file is in; the variable is the host's guess.
 
 ---
 
-### 🔵 Q-82 — Revit's API cannot make a label or change what one shows. Should Heron ever drive the Edit Label dialog itself, by UI automation, or call 2027's internal label members? *(found 2026-10-21 building labels for a pipe tag)*
+### ✅ Q-82 — Revit's API cannot make a label or change what one shows. Should Heron ever drive the Edit Label dialog itself, by UI automation, or call 2027's internal label members? *(found 2026-10-21 building labels for a pipe tag)* → **decided 2026-11-15 on the owner's delegation**
+
+**Answer: Neither - the first label of each kind is made by hand once in a seed family and copied from there - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** Driving the dialog or calling 2027's hidden functions would bypass the one undo entry and the Keep or Discard box, or depend on something unsupported. **Work:** nothing to build.
 
 **What was found.** Ajmal PS, building the pipe tag *TRG_Pipe_Tag* on Revit 2020, asked for labels end to end.
 Read that day off all eight releases' shipped assemblies ([docs/43 §8.3a](../43-building-revit-families.md)):
@@ -1342,7 +1422,9 @@ Neither route this question asks about is built.
 
 ---
 
-### 🔵 Q-85 — Revit's API cannot make a void cut a hosted family's template host, so the modeller cuts it by hand in the Family Editor. Should Heron do more than say so? *(found 2026-10-22 building a floor drain)*
+### ✅ Q-85 — Revit's API cannot make a void cut a hosted family's template host, so the modeller cuts it by hand in the Family Editor. Should Heron do more than say so? *(found 2026-10-22 building a floor drain)* → **decided 2026-11-15 on the owner's delegation**
+
+**Answer: Nothing more - Heron's method tells the modeller to cut by hand and lists the voids to cut - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** The other routes either change how every hosted family is built or bypass Heron's safety rules. **Work:** nothing to build.
 
 **What was found.** Ajmal PS, building a nested floor-drain family on Revit 2020 through Heron, found that the
 two voids Heron made through the template's floor cut nothing - not the sample floor, and not one floor in the
@@ -1389,7 +1471,9 @@ to cut a floor's or a roof's void by hand. Nothing in shapes 2 or 3 is built.
 
 ---
 
-### 🔵 Q-86 — A card that waits for the modeller's click is timed as a slow job, and a face cannot be clicked from a card at all. How should a card say it is waiting for a person? *(found 2026-11-11 writing `PICK_ON_SCREEN`)*
+### ✅ Q-86 — A card that waits for the modeller's click is timed as a slow job, and a face cannot be clicked from a card at all. How should a card say it is waiting for a person? *(found 2026-11-11 writing `PICK_ON_SCREEN`)* → **decided 2026-11-15 on the owner's delegation**
+
+**Answer: A pick tool says on its label that it waits for a person, and Heron's add-in holds its timers for it, as it does for the Keep or Discard box - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** A click made after a minute then reaches its tool, and a slow series of clicks is not reported as a runaway job. **Work:** built 2026-11-16 in a cloud container, **not run in Revit**. *The label* is an ambient need, `waitsForModeller` (bool), declared in a card's `contract.needs` the way `noTransactionOpen` is ([D-125](../decisions/D-125.md)) and spelt the same in [`heron_fragment.py`](../../brain/heron_fragment.py)'s `AMBIENT`, `RevitFragment.WaitsForModellerNeed` and the bridge client's `WAITS_FOR_MODELLER_NEED`; [`PICK_ON_SCREEN`](../../brain/fragments/pick-on-screen/fragment.yaml), DRAFT, carries it - the only card whose code calls Revit's pick, so no PROVEN card was marked and no proof or signature moved (a proof's fingerprint covers `impl/` alone, and that is unchanged). *The add-in's hold*, the one the Keep or Discard box has: on the read and show paths a labelled card's script runs inside `HeronRunClock.Pause()`, and `RevitDispatcher.AwaitingClick` marks the job, so the dispatcher waits `revit.askTimeoutSeconds` more and the activity banner steps aside; if even that runs out the chat is told `awaiting_click` in words of its own, never Keep or Discard's; a run that can change the model is refused `waits_on_change_path` before anything runs. The lease is not held - nor is it for the box, which is [row 5b-1745](../fragment-issues/row-5b-1745.md). *The chat's side*: `heron_config.fragment_timeout(waiting=True)` adds the ask timeout, `revit_read` and `revit_show` wait by the label and tell a host that shows progress *"Waiting for you to click in Revit"*, and the bridge client's `fragment` command and the batch run wait as long. Both answers are in [`heron_failure.py`](../../mcp/server/heron_failure.py). **Tests:** `tests/test_person_wait.py` - 41 checks fail on the code as it stood, none crash, and all pass now; `tests/test_fragment_ambient.py` names the new constant; `tools/check-compile.py` (all eight releases) and `tools/check-api-surface.py` exit 0. **Owed:** the add-in rebuilt and redeployed - one built before refuses the card, the label unknown to it - then the run in Revit, [NEEDS-CHECKING Group NH](../needs-checking/group-nh.md) rows NH12 to NH14 (NH8 superseded). The comment in `PICK_ON_SCREEN`'s `impl/any/fragment.cs` still describes the wait as it stood; it is the card's next code change, and its one click per call stays until a card with a loop is written.
 
 **What was found.** The owner wants to work by chat with very few clicks in Revit, and nothing in Heron let the
 modeller click to answer the chat. `PICK_ON_SCREEN` was written for it, at DRAFT: Revit's own pick, one point
@@ -1453,7 +1537,9 @@ the limit: one point a call, and "put it here" declared by no card.
 
 ---
 
-### 🔵 Q-87 — Bringing an edited spreadsheet back writes every cell with nothing shown first. Should Heron read the file itself before Revit does - and if so, how does a chat reach that, and should the export carry each element's UniqueId? *(found 2026-11-11 writing the round-trip method)*
+### ✅ Q-87 — Bringing an edited spreadsheet back writes every cell with nothing shown first. Should Heron read the file itself before Revit does - and if so, how does a chat reach that, and should the export carry each element's UniqueId? *(found 2026-11-11 writing the round-trip method)* → **decided 2026-11-15 on the owner's delegation**
+
+**Answer: Heron compares the file with the exported copy first, outside Revit, lists the changed cells with old and new values, and sends only those - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** Nothing unchanged or rounded is written back over the model, and the import tool needs no new proof. **Work:** built 2026-11-15, shape (a)2 with (b)'s door 3 - no new MCP tool, and `heron_sheet_list` not widened: [`brain/heron_sheet_compare.py`](../../brain/heron_sheet_compare.py) is a command the modeller runs on their PC, named in the method. It reads the file as exported and the edited copy - a CSV or an `.xlsx`, through `heron_sheet_list`'s own reader (`read_grid`, the one gate both stand on now) - lists the changed cells with id, parameter, old value and new, the ids changed, doubled, added or missing and the headers renamed or added, keeps cells blanked on purpose apart, and writes ONLY the changed cells to a small CSV in the shape `SET_PARAMETER_VALUES_BY_ID` reads through `csvPath`, brought back with `blankCells=skip`. Neither card's YAML or C# was touched. Tested off Revit by [`tests/test_sheet_compare.py`](../../tests/test_sheet_compare.py), which failed first; the method [`parameters-csv-round-trip`](../../brain/skills/parameters-csv-round-trip.yaml) was rewritten at steps 3 to 6 for it. **NEEDS REAL REVIT:** the small file through the card, [Group NJ](../needs-checking/group-nj.md) NJ13. **Still the owner's:** (b)1 and (b)2 - a chat tool of its own, or `heron_sheet_list` widened - and (c), the UniqueId column; neither was built.
 
 **What was found.** A modeller's weekly round trip - parameters out to Excel, edited, brought back - is two
 cards Heron already has: `EXPORT_PARAMETERS_TO_CSV` writes the file and `SET_PARAMETER_VALUES_BY_ID` reads it
@@ -1528,7 +1614,9 @@ steps where they bite.
 
 ---
 
-### 🔵 Q-88 — Heron remembers a MODEL's last kept change, not which chat kept it. May one chat undo a change another chat made? *(found 2026-11-12 repairing `revit_undo_last`)*
+### ✅ Q-88 — Heron remembers a MODEL's last kept change, not which chat kept it. May one chat undo a change another chat made? *(found 2026-11-12 repairing `revit_undo_last`)* → **decided 2026-11-15 on the owner's delegation; read back and answered 2026-11-16 by the owner, [D-175](../decisions/D-175.md)**
+
+**Read back 2026-11-16 - the owner, Ajmal PS, asked whether any chat may undo any chat's change: *"own only"*. Recorded as [D-175](../decisions/D-175.md), with the Activity pane's Undo as the modeller's own.** **Answer: No - only the chat that made a change may undo it - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** 'Undo that' typed in the wrong window never takes back another chat's work; Ctrl+Z in Revit always still works. **Work:** the refusal was built and compiled on 2026-11-16, and has not run in Revit. The add-in's undo guard records which chat kept each change - the request's conversation, the one [D-141](../decisions/D-141.md) keys the model hold on, one per chat's own server - and `revit_undo_last` is refused, with nothing sent, when Heron's last change in that model was kept by another chat: *"Heron's last change in "Tower", 'rename-views' at 14:32, was made in another chat, not this one ... Nothing was sent to Revit and nothing was undone. Ctrl+Z in Revit still undoes it - or ask in the chat that made it."* It is asked in the one request that would post, never checked first and posted after. The operation is now `undo_own`, and its check `undo_own_check`: an add-in built before answers that it has no such operation, and the chat is told that Revit's Heron is older; the updated add-in refuses `undo_guarded` and `undo_check` from a chat opened before the change, posting nothing. A chat pinned to no model keeps its refusal. Compiled for Revit 2020 to 2027 (`tools/check-compile.py`), every Revit member it calls found in every release (`tools/check-api-surface.py`). `tests/test_undo_last.py` (with section 16 of `tests/Heron.UndoGuard.TestHost`), `tests/test_mcp_serves.py` (`exercise_undo`, against stand-in add-ins), `tests/test_outcome_line.py` and `tests/test_tool_registry.py` failed on the code as it stood and pass. **Owed:** the run with two chats, [Group NU](../needs-checking/group-nu.md) NU34 to NU40. Found while building it, recorded and not fixed: [row 5b-1741](../fragment-issues/row-5b-1741.md) - the Activity pane's Undo; fixed in code on 2026-11-16 on the owner's answer that the pane's button is the modeller's own click, like Ctrl+Z, for any chat's change - this answer's rule for chats is unchanged - and not run in Revit.
 
 **What was found.** `revit_undo_last` ([D-157](../decisions/D-157.md)) sends Revit's own Undo for Heron's
 last kept change in a model. The add-in's guard keeps one entry per model - the job, its undo entry, the
@@ -1561,7 +1649,9 @@ can undo Heron's last change there, whichever chat kept it. None of it has run i
 
 ---
 
-### 🔵 Q-89 — After a run that was rolled back - a dry run, a proof, a Discard - should what the chat had carried stay as it was, or become what that run left? *(found 2026-11-12 in review of the dry run)*
+### ✅ Q-89 — After a run that was rolled back - a dry run, a proof, a Discard - should what the chat had carried stay as it was, or become what that run left? *(found 2026-11-12 in review of the dry run)* → **decided 2026-11-15 on the owner's delegation**
+
+**Answer: As built, and Heron also refuses any attempt to use results from a run that was taken back - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** The smallest safe change: elements Revit no longer has can never be handed on to a real change. **Work:** built 2026-11-16, **not run in Revit**. A run that was taken back still replaces what is carried (as built), and nothing it left is handed on: **the server** refuses, before a session is bound, a call at `revit_change`, `revit_read` or `revit_show` whose `expect_from` names this chat's dry run or a change the modeller discarded, saying what was taken back and what to run instead (`heron_run_records.TakenBack`, from how each call ended - a lost or unconfirmed dry run included, a keep Revit counted nothing in left to hand on); **the add-in** writes on the chain how the run that left it was taken back - sent without `apply` (a dry run or a proof's trial), or not kept when the modeller was asked (`HeronBindingNote.TakenBack`) - refuses an expectation met by it as `chain_taken_back`, before the other four refusals, binds none of it by name, and starts the chain afresh at the next run that leaves something; that half covers a server older than the rule and a run the chat never heard end. Tests, each seen to fail on the code as it stood: `tests/test_outcome_line.py` section 3f (16 checks red before), `tests/test_run_records.py` section 9 (12), `tests/test_binding_note.py` through `Heron.BindingNote.TestHost` (18), `tests/test_chain_expectation.py` (12). Owed: the add-in rebuilt and Revit restarted on every release, then [Group NT](../needs-checking/group-nt.md) NT12 to NT15. Left open: what an arrangement step made inside a job that stops before its end ([row 5b-1743](../fragment-issues/row-5b-1743.md)).
 
 **What was found.** A chat hands one call's result to the next with `expect_from`
 ([docs/36](../36-remembering-between-steps.md)): *find the ducts*, then *change them, expecting what the find
@@ -1630,6 +1720,8 @@ that needs the PC.
 
 ### ✅ Q-91 — On Revit 2020 to 2024 Heron cannot attach a wall to a roof. Should it shape the wall's top to the roof instead - by editing the wall's profile - and if so, on which releases? → **Option 2: a new tool that edits the wall's profile, on 2022 on** *(found 2026-11-15 from issue #852, answered 2026-11-16)*
 
+**Answer: Shape 2 - a new tool that edits each wall's profile so its top follows the roof above it, on Revit 2022 to 2024; on 2020 and 2021 it says plainly that it cannot; and it says the top is a sketch that does not follow later roof changes - 2026-11-16, the owner's answer, read back: Ajmal PS was shown this question with Claude's suggestion and answered in his own words, *"go with you suggetions"*.** **Why:** It closes the open gable triangles #852 describes on the releases whose API can edit a wall's profile, and saying plainly what the sketch does not do is what makes a top that does not follow the roof something the modeller can choose knowingly. **Work:** built 2026-11-16 at DRAFT - see the Work note at the end of this section - and its proof is owed (Group OG). No decision record: a new card starts at DRAFT and is proved like any other (Article 20, [D-30](../decisions/D-30.md)), and nothing Heron allows or refuses changes. Until it is built and proved, Heron says on 2020 to 2024 that this is done by hand in Revit. *(2026-11-17, when `main` was merged into #871: the card is built and **PROVEN** - main's version, declared 2022 to 2027, signed by Ajmal PS on Revit 2024 on 2026-11-16, [Group OE](../needs-checking/group-oe.md) OE4 and OE5 - and Group OG is superseded by OE. The range this answer reads, 2022 to 2024, and the card's, 2022 to 2027, disagree: both are kept, and Ajmal PS resolves it. See the Work note.)*
+
 **What happened.** On Villa 2, Revit 2024, 2026-11-11, the modeller asked *"attach all walls to the roof"*
 after the main roof was rebuilt: 25 walls stopped at the 2440 plate and left open gable triangles under both
 roofs. `ATTACH_WALLS` is declared for 2025 to 2027 only, so Heron offered nothing that does the job, and the
@@ -1679,4 +1771,25 @@ offered - the API has no profile sketch there - and option 3 (rebuild the wall) 
 PC:** whether a sketched top that does not follow is what the modeller wants - [Group
 OE](../needs-checking/group-oe.md) OE4 and OE5, and a modeller's word after it.
 
+**PROVEN 2026-11-16, and this Work note's draft superseded - written 2026-11-17, when `main` was merged into
+pull request #871.** The card in the library is main's `SHAPE_WALL_TOPS_TO_ROOF`, the paragraph above: declared
+2022 to 2027, signed by Ajmal PS on Revit 2024 (`Heron OE Roofs`, session 18772), proved by [Group
+OE](../needs-checking/group-oe.md) OE4 and OE5. #871's own DRAFT of the same card, described below as it was
+written, was replaced by it, and [Group OG](../needs-checking/group-og.md) is superseded by OE.
+
+**Work:** built 2026-11-16, at **DRAFT** - [`SHAPE_WALL_TOPS_TO_ROOF`](../../brain/fragments/shape-wall-tops-to-roof/fragment.yaml)
+(FRG-ELE-170), declared for Revit 2022, 2023 and 2024 only. For each wall handed in it finds the roof above that wall,
+gives the wall a profile sketch and draws its top to the roof's underside in Revit's sketch edit mode, inside the one
+named transaction group the add-in opens ([D-112](../DECISIONS.md)); the wall is edited, never rebuilt, and its doors
+and windows are read back still in it. It leaves and names a wall with no roof over it, one Revit cannot give a
+profile, one already attached, and one already shaped unless `redraw` is asked, and every answer that shapes a wall
+says its top is a sketch that does NOT follow the roof when the roof changes. On 2020 and 2021 the lookup says plainly
+that Heron cannot do this; from 2025 the same words reach `ATTACH_WALLS` (measured 2026-11-16 on a scratch store).
+Compiles on 2022 to 2024; nothing has run in Revit. **Owed:** [Group OG](../needs-checking/group-og.md) on Revit 2024 -
+the negative and the positive with its door kept (OG2), the sketch edit mode inside Heron's group (OG3), the release-2021
+refusal in words (OG5) - then the modeller's one try. A lookup wording it exposed on 2025 on is
+[row 5b-1823](../fragment-issues/row-5b-1823.md).
+
+
+**The release range, answered 2026-11-17 by the owner:** asked whether the card should be Revit 2022 to 2024 only, with `ATTACH_WALLS` from 2025 (this question's shape 2, as recorded on this branch), or stay 2022 to 2027 as he signed it on main, Ajmal PS answered *"Keep 2022-2027"*. The profile tool runs on 2025 and later too, beside Revit's real Attach. The two records above that read 2022 to 2024 are kept as written and this note decides between them; row 5b-1846 follows from it.
 ---

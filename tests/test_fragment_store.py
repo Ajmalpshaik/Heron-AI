@@ -362,6 +362,23 @@ def main():
     finally:
         shutil.rmtree(base_b, ignore_errors=True)
 
+    print("  ..and a trust word off the ladder is refused (PROPOSALS F9)")
+    base_t, folder_t = scratch(well_formed(source="SUPREME"))
+    try:
+        broken = F.validate(F.load(folder_t))
+        check(any("is not a trust level" in p for p in broken),
+              "source: SUPREME is refused - the card's trust word is checked, "
+              "not only required")
+    finally:
+        shutil.rmtree(base_t, ignore_errors=True)
+    base_t, folder_t = scratch(well_formed(source="OFFICIAL"))
+    try:
+        broken = F.validate(F.load(folder_t))
+        check(not any("is not a trust level" in p for p in broken),
+              "and source: OFFICIAL, the ladder's top rung, is accepted")
+    finally:
+        shutil.rmtree(base_t, ignore_errors=True)
+
     print("  ..and prose in place of data is refused")
     base_c, folder_c = scratch(well_formed(
         contract={"needs": "a document and a category", "provides": []}))
