@@ -190,15 +190,20 @@ compatibility-note: >
 #   "what order are the filters in on this view"   -> REPORT_VIEW_FILTERS - a READ,
 #   "which filter is on top in this view"             numbered in priority order;
 #   "list the filters on this view in priority        the one to run first.
-#    order"                                           MEASURED 2026-11-19 (scratch
-#                                                     store, Revit 2020 filter):
-#                                                     these three paraphrases reach
-#                                                     THIS card when the host asks
-#                                                     with question=false, and
-#                                                     REPORT_VIEW_FILTERS with
-#                                                     question=true - the host's
-#                                                     word for a question (D-128)
-#                                                     is what keeps them off a write
+#    order"                                           WANTED, NOT YET WON: measured
+#                                                     2026-11-19 with the committed
+#                                                     identity, main against the
+#                                                     branch, these and two more
+#                                                     held-out order questions reach
+#                                                     THIS card on all four backends
+#                                                     when asked without the question
+#                                                     flag - FRAGMENT-ISSUES row
+#                                                     5b-1855. Live, the host asks a
+#                                                     question with question=true,
+#                                                     which leaves every write out
+#                                                     (D-128)
+#   "which filter wins on this view"               -> REPORT_VIEW_FILTERS - given back
+#                                                     by the identity's rewording
 #   "put that filter on this view"                 -> APPLY_VIEW_FILTER - it adds
 #                                                     one, at the bottom of the list
 #   "take that filter off the view"                -> REMOVE_VIEW_FILTER
