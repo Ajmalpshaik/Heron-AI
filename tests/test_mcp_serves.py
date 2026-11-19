@@ -879,6 +879,37 @@ PICTURE_REPLY = {"ok": True, "mode": "view", "view": "Level 1", "viewType": "Flo
                  "projectKey": "key-1", "png": PNG_1PX}
 
 
+def exercise_served_from(module):
+    """ROW 5b-1156: heron_version names the folder the server runs its cards,
+    proofs and Python from, with that folder's branch and commit - and says
+    when the folder it was started in is another one. Read through the one
+    function heron_version prints, with nothing sent anywhere."""
+    print()
+    print("  heron_version names the checkout it serves from (row 5b-1156)")
+    said = getattr(module, "_served_from", None)
+    check(said is not None, "the server has one function that says where it serves from")
+    if said is None:
+        return
+    root = os.path.normpath(module._repo_root())
+    lines = said(started_in=root)
+    check(lines and lines[0].startswith("Served from %s - branch " % root)
+          and "commit " in lines[0],
+          "it names the folder, its branch and its commit: %r" % (lines[:1],))
+    head = module._git_said(root, "rev-parse", "--short=12", "HEAD")
+    check(head is None or head in lines[0],
+          "and the commit is the one git reads there, or 'not read' - never a guess")
+    check(not any("NOT that folder" in line for line in lines),
+          "started in that folder, nothing is said about another")
+    elsewhere = said(started_in=tempfile.gettempdir())
+    check(any("NOT that folder" in line and tempfile.gettempdir() in line
+              for line in elsewhere),
+          "started in another folder, it says so and names both")
+    check(any("not seen here" in line for line in lines),
+          "and it says a folder the session moved to later is not seen by the server")
+    check("_served_from()" in module.tools.server_text(),
+          "heron_version prints it")
+
+
 def exercise_no_proof_words(module):
     """A card that SAYS proven and records no proof is told apart from a stale
     one, in the three places the server reads `stale` - row 5b-1154.
@@ -1864,6 +1895,34 @@ async def exercise_words(module):
         check("run it with" not in plain
               and "call revit_change again with capability=<it>" in plain,
               "and a list of changes at revit_change reads exactly as it did")
+
+        # AND HOW FAR EACH IS PROVED (row 5b-1523). The list named each one's
+        # risk and door and not its status, so a DRAFT picked from it was
+        # learned only from revit_change's refusal. A PROVEN change first and a
+        # DRAFT one beside it, the lookup stood in for as above.
+        draft_cap, _draft = first_with("MODIFY", "DRAFT")
+        with_draft = dict(ranked, capability=change_cap, risk="MODIFY",
+                          candidates=[{"capability": change_cap, "risk": "MODIFY",
+                                       "why": "close"},
+                                      {"capability": draft_cap, "risk": "MODIFY",
+                                       "why": "also close"}])
+        module.brain.lookup = lambda *_a, **_k: dict(with_draft)
+        try:
+            revit.asked[:] = []
+            mixed = await call("revit_change", {"request": "change the things"})
+        finally:
+            module.brain.lookup = real_lookup
+        best = [line for line in mixed.splitlines() if "best match" in line]
+        other = [line for line in mixed.splitlines() if "also close" in line]
+        check(bool(draft_cap) and len(best) == 1 and "(MODIFY, PROVEN)" in best[0]
+              and "refuses it" not in best[0],
+              "the best match says it is PROVEN beside its risk: %s"
+              % (best[0].strip() if best else mixed[:80]))
+        check(len(other) == 1 and "(MODIFY, DRAFT)" in other[0]
+              and "revit_change refuses it until it is proved (D-117)" in other[0],
+              "and the DRAFT beside it says DRAFT, and that revit_change refuses it until "
+              "it is proved: %s" % (other[0].strip() if other else mixed[:80]))
+        check(not revit.asked, "still sending nothing")
 
         # THE READ DOOR ASKS AS A QUESTION (D-128, issue #799). Field use on
         # Villa 1: "read parameter values of the elements" through revit_read
@@ -4213,6 +4272,7 @@ def main():
         asyncio.run(exercise(server))
         exercise_waiting(server_module)
         exercise_no_proof_words(server_module)
+        exercise_served_from(server_module)
         asyncio.run(exercise_door(server_module))
         asyncio.run(exercise_show(server_module))
         asyncio.run(exercise_undo(server_module))

@@ -71,6 +71,23 @@ def main():
             check(not broken, "%s is well-formed%s"
                   % (skill.id, "" if not broken else ": " + broken[0]))
 
+        # EVERY PRECONDITION AND UTTERANCE IS TEXT (FRAGMENT-ISSUES 5b-1584). A
+        # line with a colon and a space in it is a mapping to YAML, not a
+        # sentence: sheets-from-excel's title block line was served to the chat
+        # as a Python dict, and nothing failed. Read from each file as YAML
+        # reads it, so the check needs nothing from the loader.
+        import glob
+        import yaml
+        for path in sorted(glob.glob(os.path.join(ROOT, "brain", "skills", "*.yaml"))):
+            with io.open(path, encoding="utf-8") as fh:
+                data = yaml.safe_load(fh) or {}
+            for key in ("preconditions", "utterances"):
+                items = data.get(key) if isinstance(data, dict) else None
+                odd = [item for item in (items or []) if not isinstance(item, str)]
+                check(not odd, "%s: every one of its %s is text%s"
+                      % (os.path.basename(path), key,
+                         "" if not odd else " - not %r" % (odd[0],)))
+
         print()
         print("2. A skill names CAPABILITIES, never fragments")
         fragments, _ = FRAG.load_all()

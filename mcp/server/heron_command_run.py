@@ -33,7 +33,9 @@ same file, so a chat that used this Revit a minute ago does not lock its own
 modeller out. Its CONVERSATION is its own, and the models it held are handed
 back when it ends (D-141).
 
-ANSWER ON STDOUT, ONE BLOCK OF PLAIN TEXT, for the panel to show. Exit 0 when
+ANSWER ON STDOUT, ONE BLOCK OF PLAIN TEXT, for the panel to show - with the
+same `outcome:` line on its second line that a chat's reply carries (issue
+#1043). Exit 0 when
 Heron answered (a refusal is an answer, said in the text), 2 when the command
 line itself was wrong, 3 when Heron cannot run here at all.
 """
@@ -109,8 +111,18 @@ def run(name, pid, given, server=None):
     request = "Saved command '%s' from the Heron panel" % command["name"]
     with server._revit_lock:
         try:
-            return server._through(tool, origin="panel")(
+            # AND THE OUTCOME LINE, AS A CHAT IS GIVEN IT (issue #1043). The
+            # body's text carries none - a chat's line is added by the tool's
+            # wrapper, which this route does not pass - so a command that made
+            # nothing read as kept on the panel, its closing sentence the only
+            # verdict there. The word is the body's own, handed back by
+            # `_through`, and set on the reply's second line by the same
+            # function that sets a chat's.
+            out = {}
+            answer = server._through(tool, reply_out=out, origin="panel")(
                 command["capability"], values, request=request)
+            return server.core._said_outcome(tool.__name__, answer,
+                                             out.get("ended"), out.get("how"))
         finally:
             try:
                 server.bridge.hand_back_models()

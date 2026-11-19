@@ -1121,7 +1121,11 @@ add-in's own `verdictKind` — and shown to the Companion's activity list alone,
 read as success, and *"never ran"* said of an answer that was lost.
 
 - **The three doors say it on one line** — `revit_change`, `revit_read` and `revit_show` — **and so
-  does `revit_undo_last`**, since 2026-11-12 (`heron_tools.STATES_OUTCOME`). The line is `outcome: `, a
+  does `revit_undo_last`**, since 2026-11-12, and **`revit_apply_move`**, since 2026-11-19
+  ([row 5b-1563](fragment-issues/section-5b-rows-1551-1575.md)) (`heron_tools.STATES_OUTCOME`). **A saved
+  command run from Revit's Commands panel carries the same line**, set by the same function from the
+  door's own word (`heron_command_run.py`, issue [#1043](https://github.com/Ajmalpshaik/Heron-AI/issues/1043) - not yet run in Revit). And a change Revit kept in
+  which nothing changed closes on its word, never on the add-in's *"was KEPT"*. The line is `outcome: `, a
   word, and what the word means and what to do next:
 
   ```text
