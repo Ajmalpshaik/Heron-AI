@@ -1,11 +1,11 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-126
-semantic-identity: "make a line style with this colour, weight and pattern, or change one - in a family, its own subcategory in Object Styles"
+semantic-identity: "make a line style with this colour, weight and pattern, or change one - in a family, its own subcategory in Object Styles; or make a new Object Styles subcategory of any category, Reference Planes too"
 kind: action
 domain: revit.views
 capability: CREATE_LINE_STYLE
@@ -18,7 +18,18 @@ capability: CREATE_LINE_STYLE
 # reads only identity, capability and domain, and without those words 8 of 10
 # unseen ways of asking for a subcategory's colour or weight reached
 # SET_FAMILY_FORM_SUBCATEGORY on the trained backend (measured in row 5b-463).
-version: 2
+#
+# VERSION 3 (2026-11-17, FRAGMENT-ISSUES 5b-1849) - an optional
+# `parentCategory` makes or changes a subcategory under ANY category that takes
+# one, in a project or a family - Reference Planes above all, so the owner's
+# standing rule can be kept: in every family the outline and centre planes stay
+# on Reference Planes and every other plane goes on a gray subcategory
+# ("Secondary References", 128,128,128), which SET_FAMILY_PLANE_REFERENCE
+# version 2 puts them on. Left out it is "none" and the call is version 2's to
+# the letter. Back to DRAFT: version 2 was PROVEN on 2026-10-18 (the proof
+# block below, kept as the record of what it proved); its C# moved, so it is
+# DRAFT until NEEDS-CHECKING Group OK is run (D-30).
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -44,7 +55,19 @@ risk: MODIFY
 # because only an optional bool may be left out (HeronBindingNote.AbsentValue)
 # and a required input would break every caller; a project's Object Styles
 # subcategory of another category (Walls > ...) is therefore not reached -
-# recorded in row 5b-463.
+# recorded in row 5b-463. Version 3 reaches it: parentCategory is a string
+# marked optional with `absent: none`, which the binder reads as typed
+# (HeronBindingNote.DeclaredAbsent), so no caller has a new required input.
+#
+# ANY CATEGORY THAT TAKES A SUBCATEGORY (version 3): parentCategory is the
+# category's name as Object Styles shows it - "Reference Planes", "Ducts" - or
+# Revit's own OST_ name; Reference Planes is also found by its BuiltInCategory
+# in any spelling, so it never hangs on whether the category list offers it. A
+# category Revit lets take no subcategory (CanAddSubcategory false) is refused
+# by name. Named together with familyCategory true it is refused: only one may
+# say where the subcategory goes. Its own name, or "none", is the category
+# itself, as for familyCategory. Changing an EXISTING project subcategory's
+# graphics is SET_OBJECT_STYLE's job too; this card is the one that MAKES one.
 #
 # READ BACK: colour, weight and pattern off the style after one regeneration;
 # a value asked for that Revit does not hold is named NOT KEPT.
@@ -72,7 +95,8 @@ purpose: >
   Creates a line style - Manage > Additional Settings > Line Styles - with a
   colour, line weight and line pattern, or changes the graphics of an existing
   one. In a family it does the same to a subcategory of the family's own
-  category, in Object Styles.
+  category, in Object Styles - or of any category that takes one, Reference
+  Planes above all.
 
 contract:
   needs:
@@ -109,6 +133,15 @@ contract:
       type: bool
       source: request
       optional: true
+    # VERSION 3. The category the subcategory goes under, as Object Styles
+    # shows it - "Reference Planes" - or its OST_ name, in a project or a
+    # family; it must take subcategories. "none", or not said, is version 2: a
+    # line style under Lines, or familyCategory's. Not with familyCategory.
+    - name: parentCategory
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     - name: style
       role: result
@@ -173,6 +206,8 @@ compatibility-note: >
   Category.CanAddSubcategory, read off tools/api-surface for 2020, 2024 and
   2027 on 2026-10-14 and compiled for all eight - the same members
   DRAW_FAMILY_DETAIL_LINES and SET_FAMILY_FORM_SUBCATEGORY already call.
+  Version 3 adds BuiltInCategory.OST_CLines and Enum.TryParse of a
+  BuiltInCategory name, compiled for all eight on 2026-11-17.
 
 # ROUTING - the same rows are in the fragments named here.
 #
@@ -181,6 +216,10 @@ compatibility-note: >
 #   "make the signature lines blue in this family" -> here, familyCategory and
 #                                                updateExisting - the lines are on it
 #   "change the colour of a subcategory in the family" -> here, familyCategory
+#   "make a gray Secondary References subcategory of reference planes" -> here,
+#                                                parentCategory Reference Planes
+#   "put these reference planes on that subcategory" -> SET_FAMILY_PLANE_REFERENCE,
+#                                                subcategories / otherPlanesSubcategory
 #   "put this extrusion on the Hidden Lines subcategory" -> SET_FAMILY_FORM_SUBCATEGORY
 #   "draw the lines of this detail item family" -> DRAW_FAMILY_DETAIL_LINES
 #   "bring the object styles over from the template" -> TRANSFER_OBJECT_STYLES_BETWEEN_DOCUMENTS
@@ -204,3 +243,4 @@ utterances:
   - add a new line style with the centre line pattern
   - make the signature lines blue in this family
   - change the colour of a subcategory in the family
+  - make a gray reference planes subcategory called Secondary References
