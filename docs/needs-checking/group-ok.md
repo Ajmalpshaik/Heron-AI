@@ -7,6 +7,8 @@
 
 ## Group OK - reference planes on a coloured subcategory: CREATE_LINE_STYLE version 3 and SET_FAMILY_PLANE_REFERENCE version 2, DRAFT until proved (2026-11-17)
 
+**Tracked as GitHub issue [#1034](https://github.com/Ajmalpshaik/Heron-AI/issues/1034) since 2026-11-19** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **Why:** the owner's standing rule of 2026-11-17 - in every family the outline and centre reference planes
 stay on Reference Planes (green by default) and every other plane goes on a gray subcategory, *"Secondary
 References"*, RGB 128,128,128. No tool made a subcategory of Reference Planes or set a plane's Subcategory
