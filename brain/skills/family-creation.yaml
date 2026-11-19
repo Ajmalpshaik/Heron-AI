@@ -434,7 +434,17 @@ purpose: >
       offered, or Revit's Heron does not know it yet, ask the modeller to
       open View 1 and press ZF, and go on. Then revit_view_image with view
       "View 1" - and again with view "Front" for a product with a front,
-      such as a monitor, a panel or a unit. The picture comes into this
+      such as a monitor, a panel or a unit. TO SEE IT AT THE ANGLE OF THE
+      MODELLER'S PHOTO: FRAME_ELEMENTS_IN_CAMERA through revit_change, never
+      SET_VIEW_CAMERA - retired 2026-11-01 into it, and refused (issue
+      #1032). It never turns View 1: View 1 is isometric, and it refuses an
+      isometric view, so it makes a NEW perspective view - viewName "Photo
+      angle", expect_from "report-family-forms" for the solids, side and
+      lookDownDeg as the photo shows them. Then revit_view_image with view
+      "Photo angle". It is DRAFT, so revit_change refuses it (D-117) - tried
+      only as the last precondition says - and it has not been run in a
+      family document (row 5b-1860); refused, the View 1 and Front pictures
+      stand. The picture comes into this
       chat; LOOK at it: every part from step 0's list is there, on the side
       it belongs, touching what holds it. Fix what is wrong and look again;
       then tell the modeller, naming what the picture showed. Seen
@@ -578,6 +588,9 @@ needs:
   # revit_view_image tool, which is not a capability (row 5b-651).
   - OPEN_VIEW
   - SET_VIEW_PROPERTIES
+  # Step 13's look at the photo's angle - a new perspective view; it replaced
+  # SET_VIEW_CAMERA, retired 2026-11-01 (issue #1032).
+  - FRAME_ELEMENTS_IN_CAMERA
   # SELECT_FAMILY_FORMS was listed here until it was merged into
   # REPORT_FAMILY_FORMS, above, on 2026-11-01.
   # ZOOM_TO_ELEMENTS was listed here until it was merged into SET_SELECTION,

@@ -166,6 +166,10 @@ WHAT IT PROVES, when an SDK is installed
      Revit is here and judges no switch. Through all of it discover() is never
      called and no session is sent a request, the address book is left as
      it was, and a capability nobody provides is not noted as wanted.
+ 21. heron_resolve ON A RETIRED CAPABILITY NAMES WHAT REPLACED IT (issue
+     #1032), against the real library: SET_VIEW_CAMERA, DEPRECATED, says
+     REPLACED BY FRAME_ELEMENTS_IN_CAMERA - its card's `superseded-by`; a
+     live capability says no such line.
 
 WHAT IT CANNOT DO
   It does not start a transport and it is not Claude Code. It calls the
@@ -3802,6 +3806,23 @@ async def exercise_resolve_says_why(module):
           "and never that no Revit is connected when that is not what was found")
 
 
+async def exercise_resolve_names_replacement(module):
+    """Section 21 - a retired capability's answer names the live one its
+    card's `superseded-by` leads to; a live one's says nothing of the kind
+    (issue #1032)."""
+    server = module.server
+    print()
+    print("  heron_resolve on a retired capability names what replaced it (#1032)")
+    retired = text_of(await server.call_tool(
+        "heron_resolve", {"capability": "SET_VIEW_CAMERA"}))
+    check("REPLACED BY FRAME_ELEMENTS_IN_CAMERA" in retired,
+          "SET_VIEW_CAMERA, retired, says it was replaced by FRAME_ELEMENTS_IN_CAMERA")
+    live = text_of(await server.call_tool(
+        "heron_resolve", {"capability": "FRAME_ELEMENTS_IN_CAMERA"}))
+    check("REPLACED BY" not in live,
+          "and FRAME_ELEMENTS_IN_CAMERA, live, names no replacement")
+
+
 async def exercise_why(module):
     """
     Section 20 - heron_why names the reason Heron cannot do a capability, and
@@ -4220,6 +4241,7 @@ def main():
         asyncio.run(exercise_lookup_says(server_module))
         asyncio.run(exercise_said_once(server_module))
         asyncio.run(exercise_resolve_says_why(server_module))
+        asyncio.run(exercise_resolve_names_replacement(server_module))
         asyncio.run(exercise_why(server_module))
         asyncio.run(exercise_activity(server_module))
         asyncio.run(exercise_earlier(server_module))

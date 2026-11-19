@@ -1017,6 +1017,68 @@ def _fragment_for(capability):
     return None, None
 
 
+# A RETIRED CARD NAMES WHAT DOES ITS JOB NOW, and the answer says it (issue
+# #1032, 2026-11-19). On Revit 2020 a family method asked heron_resolve for
+# SET_VIEW_CAMERA, heard "best state DEPRECATED" and nothing else, and could
+# not turn the view: the card's `deprecated: superseded-by:` named
+# FRAME_ELEMENTS_IN_CAMERA, but nothing read it. Read off the text, as
+# _fragment_for reads a card and tools/check-routing.py's successor_of reads
+# the same line - no YAML parser.
+_SUPERSEDED_BY = re.compile(r"^\s+superseded-by:\s*['\"]?([A-Z][A-Z0-9_]*)",
+                            re.M)
+
+
+def _replaced_by(capability):
+    """
+    The LIVE capability that does a retired capability's job now, following
+    each retired card's `superseded-by` - a card merged into one that was
+    itself merged later - or None: the capability is live, no card names a
+    successor, or the chain ends in no live card or goes round in a circle.
+    Read from the fragment files, never the index (Golden Rule 11).
+    """
+    brain_path = os.path.join(_repo_root(), "brain")
+    if brain_path not in sys.path:
+        sys.path.insert(0, brain_path)
+    try:
+        import heron_fragment as HF
+    except Exception:
+        return None
+    retired_statuses = HF.STATUSES[HF.STATUSES.index("DEPRECATED"):]
+    folder_root = os.path.join(_repo_root(), "brain", "fragments")
+    live, heirs = set(), {}
+    try:
+        for name in sorted(os.listdir(folder_root)):
+            path = os.path.join(folder_root, name, "fragment.yaml")
+            if not os.path.isfile(path):
+                continue
+            with io.open(path, "r", encoding="utf-8", errors="replace") as fh:
+                text = fh.read()
+            cap = re.search(r"^capability:\s*(\S+)", text, re.M)
+            status = re.search(r"^heron-status:\s*['\"]?([A-Za-z_]+)", text, re.M)
+            if not cap:
+                continue
+            cap = cap.group(1).strip("'\"").upper()
+            if status and status.group(1).upper() in retired_statuses:
+                heir = _SUPERSEDED_BY.search(text)
+                if heir:
+                    heirs.setdefault(cap, heir.group(1))
+            else:
+                live.add(cap)
+    except OSError:
+        return None
+
+    name = (capability or "").strip().upper()
+    if name in live:
+        return None
+    seen = set()
+    while name not in live:
+        if name in seen or name not in heirs:
+            return None
+        seen.add(name)
+        name = heirs[name]
+    return name
+
+
 def _values_array(values):
     """
     "name=value" lines into the {name, value} objects the add-in reads.
@@ -5518,6 +5580,15 @@ def heron_resolve(capability: str) -> str:
              "  %d provider(s), most trusted first:" % len(found["providers"])]
     for p in found["providers"]:
         lines.append("    %-14s %-11s %s" % (p["id"], p["status"], p["kind"]))
+
+    # A RETIRED CAPABILITY SAYS WHAT REPLACED IT (issue #1032) - see
+    # _replaced_by, which answers None for one any live card provides.
+    heir = _replaced_by(capability)
+    if heir:
+        lines.append("")
+        lines.append("  REPLACED BY %s - this capability is retired, so revit_change "
+                     "refuses it. Ask heron_resolve for %s and use that instead."
+                     % (heir, heir))
 
     if revit is None:
         # WHY THERE IS NO RELEASE, IN `how`'s OWN WORDS, as heron_lookup says
