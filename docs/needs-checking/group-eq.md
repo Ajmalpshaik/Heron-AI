@@ -14,15 +14,19 @@ Heron claims every release from 2020 to 2027. The evidence is much narrower, and
 
 ```bash
 # which release each PROVEN fragment's proof names (the release is prose inside proof.model - heron_matrix.py says why)
+# The model: value alone, its wrapped lines included - as heron_matrix.proof_release reads it (row 5b-1136)
 for f in $(grep -l '^heron-status: PROVEN' brain/fragments/*/fragment.yaml); do
-  awk '/^proof:/{p=1;next} p&&/^[^ #]/{p=0} p' "$f" | grep -o 'Revit 20[0-9][0-9]' | sort -u | tr '\n' ' '; echo
+  awk '/^proof:/{p=1;next} p&&/^[^ #]/{p=0} p&&/^  model:/{m=1} p&&/^  [a-z_]+:/&&!/^  model:/{m=0} p&&m' "$f" | grep -o 'Revit 20[0-9][0-9]' | sort -u | tr '\n' ' '; echo
 done | sort | uniq -c
 # PROVEN fragments with no second route
 grep -l '^heron-status: PROVEN' brain/fragments/*/fragment.yaml | xargs grep -l 'second_route: NOT ESTABLISHED' | wc -l
 ```
 
 Run on 2026-10-17 this named **2024 and 2020 only, one proof on 2022, and none on 2021, 2023, 2025, 2026 or
-2027**. The add-in has been **loaded** in a real Revit on 2020, 2024 and 2027 only
+2027**. *Corrected 2026-11-19 ([FRAGMENT-ISSUES row 5b-1136](../fragment-issues/section-5b-rows-1126-1150.md)):
+the "one proof on 2022" was the command's, not a proof's. It read the whole `proof:` block, and
+`create-floor`'s finding text says "Revit 2022" while its proof's model is Revit 2024. Read off the `model:`
+value alone, as the command above now reads it, the 2026-10-17 reading was 2020 and 2024 only.* The add-in has been **loaded** in a real Revit on 2020, 2024 and 2027 only
 ([row A12](../needs-checking-archive/group-a.md), build `48ae1dc`, 2026-09-19).
 
 **Prepared in a cloud container on 2026-10-17, with no Revit. Nothing in this group has been run.**

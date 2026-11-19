@@ -60,8 +60,9 @@ apt_pid=$!
 # PyYAML is the only REQUIRED one - nothing in brain/ or tools/ runs without
 # it. The rest degrade rather than break:
 #   mcp         the SDK the heron server is written against. A cloud session
-#               does not start that server (it exits off Windows, row 5b-162),
-#               so here it is what test_mcp_serves and test_served_claims need
+#               starts that server since D-132 and serves the library tools
+#               only (before, it exited off Windows, row 5b-162); and it is
+#               what test_mcp_serves and test_served_claims need
 #   model2vec   the trained embedding backend (needs huggingface.co - docs/38)
 #   sqlite-vec  vector search inside SQLite instead of in Python
 #   pypdf       ingesting PDFs

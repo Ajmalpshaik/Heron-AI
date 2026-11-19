@@ -185,11 +185,11 @@ Every test document so far was written to be easy. This single item settles whet
 citation path and the refusal behaviour survive a genuine specification — and it replaces an invented
 clause number the plan has carried since the start.
 
-**No register row asks for it, so `owner-queue.py` does not show it:** read 2026-10-18, its
-*ONE DOCUMENT* bucket was empty, and the ask lives only in the plan
+**A register row asks for it since 2026-11-19:** `OO1` in [Group OO](needs-checking/group-oo.md) of
+NEEDS-CHECKING, so `owner-queue.py` shows it under *ONE DOCUMENT* ([FRAGMENT-ISSUES row
+5b-1180](fragment-issues/section-5b-rows-1176-1200.md)). Until then it lived only in the plan
 [`work-notes/plans/next-steps-2026-09-12.md`](work-notes/plans/next-steps-2026-09-12.md) (A3, blocking
-its S-4 and W-7) — a work note, which §5 says is never the only home of an owner's item. Until a register
-carries it, this section is where it is said.
+its S-4 and W-7) — a work note, which §5 says is never the only home of an owner's item.
 
 ---
 
