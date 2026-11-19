@@ -23,7 +23,7 @@ Method: the search run of 2026-11-15 found 548 GitHub repositories. 82 were stud
 
 ## The best parts out there that Heron does not have
 
-*Tracked as GitHub issue [#1007](https://github.com/Ajmalpshaik/Heron-AI/issues/1007) since 2026-11-16 (WN-30) - work it there.*
+*done 2026-11-19: every idea below has a register home (WN-30). The untaken ones - 6, 9, 11, 13, 14, 15, idea 10's journal half and three of the smaller ideas - are filed undecided as [PROPOSALS](../../PROPOSALS.md) F46 to F55, and the same section's table says where each of the others went: a decision, a NEEDS-CHECKING group, an issue, or already held.*
 
 House rule ([docs/31](../../31-studying-the-existing-libraries.md), D-25): every idea below is re-authored in Heron's own words and code. No code, wording, names or branding come across, whatever the licence. MIT and Apache sources are credited when an idea is used; GPL, AGPL, no-licence and noncommercial sources give the idea only.
 

@@ -9,6 +9,12 @@
 > and take Docling only if that cannot cope - as §3.4 below already says. Nothing on this page waits on
 > the owner now; it retires once its rows are recorded in [`docs/34`](../../34-patterns-adapted.md), which
 > does not carry them yet.
+> **HISTORICAL since 2026-11-19 - read [docs/34 §2.23](../../34-patterns-adapted.md#223-built---a-chunk-carries-its-heading-path-read-off-the-document-and-a-rule-is-never-cut-from-its-exception) instead.**
+> Every row of this page is recorded there - the five decisions it confirmed, the three it took (built as
+> R-66 to R-70 in `brain/heron_ingest.py`), the three it rejected and S-4's answer - and the RAG plan's
+> links point there. Nothing here is the only copy now. **The file is not deleted yet only because the
+> WN-28 line of [`fragment-issues/ISSUES.md`](../../fragment-issues/ISSUES.md) links it**: when that line
+> is moved, this file and its row in [the work-notes README](../README.md) go together.
 > **Asked for by:** Ajmal PS, 2026-09-10 — *"go to GitHub and find the best repos, and research on the
 > internet too, not only GitHub — what is it we are going to do. Research and update."*
 > **The rule this obeys:** [**D-25**](../../DECISIONS.md) — **studied and re-authored, never imported.**

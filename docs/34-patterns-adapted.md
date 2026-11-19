@@ -38,6 +38,11 @@ transfers; the shape almost never does.
 > owner answered Q-50 as [D-60](DECISIONS.md) and Q-53 as [D-66](DECISIONS.md) on 2026-09-09, and Q-51
 > as [D-81](DECISIONS.md) on 2026-09-20. §2.10 to §2.12 below each say what became of theirs.
 
+> **Added 2026-11-19:** [§2.22](#222-built---a-fabrication-check-that-calls-no-model) and
+> [§2.23](#223-built---a-chunk-carries-its-heading-path-read-off-the-document-and-a-rule-is-never-cut-from-its-exception)
+> record two readings of 2026-09-10 for the RAG plan, made apart from the programme this table counts. They
+> are not in its numbers, which are left as they were.
+
 **The two built together cut a generation packet from 5,737 characters to 372 — and the request crosses
 byte for byte at every depth**, which is the half that makes the other half safe.
 
@@ -412,6 +417,41 @@ would produce green suites and no knowledge whatever, which is why nothing here 
 | **What Heron already had** | The other end. A reversal here is a new decision whose header says, in a `**Supersedes...**` field, what it supersedes; the old one keeps every word. Four supersessions were also written under the old decision's heading in the index, and six were not - D-24, D-37, D-99 twice, D-101 and D-105. Every link to a decision lands on that heading. `check-docs.py` asked that a number is defined once and `check-decision-titles.py` that it keeps its title; nothing asked that a superseded one says so |
 | **What Heron built instead** | [`tools/check-supersessions.py`](../tools/check-supersessions.py), run by `check-docs.py` as its §13 ([D-144](DECISIONS.md)), so it fails the gate run before every push and CI's gates job with no step of its own. It starts from the **new** end, because that is where this log declares a supersession, and checks **both ways**: a decision in force that supersedes another owes a `**Superseded by:**` or `**Superseded in part by:**` line under the old heading, and every such line names only a decision that says so itself. A *proposed* successor owes nothing until it is accepted, and one that has itself been superseded owes nothing; both are printed. The six missing notes are written |
 | **Not taken** | Their status vocabulary - Heron's log has its own, and a reversal here is a new decision, never an edit of the old one's status. Their *deletion zone* - one removal is on record, Talk, and nothing has come back. A banner on the full record - the index is where a citation lands |
+
+---
+
+### 2.22 BUILT - a fabrication check that calls no model
+
+*Recorded 2026-11-19, from a reading of 2026-09-10 that was not part of the programme §1 counts, and not
+counted there.* That reading is the work note
+`docs/work-notes/investigations/rag-engineering-practices-2026-09-10.md` - named, not linked, because it
+retires into this page. Per [D-177](decisions/D-177.md) the project it studied is not named here.
+
+| | |
+|---|---|
+| **Where from** | Another project's agent that treats honesty as its engineering problem, read on 2026-09-10 at the owner's request. Taken by the owner the same day; the design, requirements R-46 to R-55 and their build order went into the RAG plan ([`plans/rag/00-structure.md`](work-notes/plans/rag/00-structure.md) §3.6a, [`01-requirements.md`](work-notes/plans/rag/01-requirements.md) §H) |
+| **Their mechanism** | Every claim in generated text is compared with the source it came from, **with no model**: both sides normalised the same way, a similarity ratio from the standard library, a threshold per kind of claim, only fact-bearing sentences checked, and a claim that says LESS than its source allowed. The report records the thresholds it used. Their own observation: their fabrication rate roughly halved |
+| **Why it works** | It turns *no source, no claim* from a rule nobody can test into a number that can be measured offline, and it is [§2.4](#24--already-held-more-strictly--deterministic-before-the-model-as-an-order) applied to the output rather than the input |
+| **What Heron already had** | The rule and no check. R-21 - *no source, no claim* - and [05 §8](05-heron-brain.md), which calls an unsupported answer a bug; [D-01](decisions/D-01.md) gives the reply to the host, so the brain never writes the answer it would be checking |
+| **What Heron built instead** | [`brain/heron_ground.py`](../brain/heron_ground.py) - `check(draft, packet)`, a call the host makes BACK into the brain with its draft and the packet the draft came from - and [`tests/test_ground.py`](../tests/test_ground.py); reached from a chat as the `heron_check` tool. It **flags and never rewrites** (R-53), and calls no model and no network: `difflib` and `re` (R-47). **Fabrication is an ADDED fact, not a missing one** (R-51): a claim whose every number, dimension, clause reference and named thing is in its source cannot have invented one, so a true but less specific sentence is never flagged - a rule, not a tuned threshold. **Only a quotation has a gate**, and it is containment - are these words in the source - because measuring the ratio on 2026-09-11 found true paraphrases (0.222 to 0.682) and wrong claims (0.204 to 0.588) overlapping almost entirely; a reversed quotation and a claim with its negation taken out are caught by checks of their own. The first fabrication rate, with its corpus size and thresholds and the caveats stated larger than the numbers, is the 2026-09-11 section of [`brain/retrieval-history.md`](../brain/retrieval-history.md) (R-54) |
+| **Not taken** | A similarity threshold per kind of prose - measured and **removed, not lowered** (R-55: a threshold is never lowered to reduce flags). Their names and their numbers. Run on a real numbered standard: not yet - that is [NEEDS-CHECKING Group OO](needs-checking/group-oo.md) |
+
+---
+
+### 2.23 BUILT - a chunk carries its heading path, read off the document, and a rule is never cut from its exception
+
+*Recorded 2026-11-19, from a second reading of 2026-09-10, wider than one project, and not counted in §1.*
+It is the work note `docs/work-notes/investigations/rag-state-of-the-art-2026-09-10.md` - named, not linked,
+because this section is where it retires. Per [D-177](decisions/D-177.md) no project it read is named here.
+
+| | |
+|---|---|
+| **Where from** | Two retrieval frameworks the owner named, a published write-up on situating a chunk before it is embedded, a local document parser, and current practice on chunking regulated documents, re-rankers that run on a CPU, embedded vector stores and retrieval evaluation - read for the technique, not the code ([D-25](decisions/D-25.md)). Folded into the RAG plan the same day as R-66 to R-70 ([`01-requirements.md`](work-notes/plans/rag/01-requirements.md) §J, [`00-structure.md`](work-notes/plans/rag/00-structure.md) §3.8) |
+| **Their mechanism** | A short context is put in front of each chunk before it is embedded, so a chunk is no longer read in isolation - in the published form a model writes that context, one call per chunk at index time, reported to cut retrieval failures by about half and more with a re-ranker. Chunking practice for regulated text warns that a split between a rule and the exception that qualifies it returns the rule without its exception. One framework shows its chunk boundaries to a person for review |
+| **Why it works** | A chunk embedded alone has lost where it came from; the context gives that back. **A rule returned without its exception is worse than a miss** - it states the opposite of the requirement, with a citation attached - and standards are written rule first, qualification after |
+| **What Heron already had** | Five choices the reading confirmed rather than changed: one SQLite file per scope with brute-force vector search ([D-23](decisions/D-23.md)), which the field puts as fast enough below **roughly 500,000 vectors** - a ceiling that had been implied and is now stated; a per-user install with no administrator rights and no service to run ([D-01](decisions/D-01.md)), which rules out every stack the reading met that needs a database server, a search cluster or containers; a small chunk to find and its parent to understand, the most widely used production pattern; clause-level chunking for standards; and a re-ranker that is optional and absent-tolerant |
+| **What Heron built instead** | All in [`brain/heron_ingest.py`](../brain/heron_ingest.py), tested by [`tests/test_ingest.py`](../tests/test_ingest.py). **The context is the clause's heading path, read off the document's own structure and never generated** (R-66, R-67): indexed on both routes, and no model call at index time, so [D-24](decisions/D-24.md)'s free re-indexing is kept. **A candidate split just before *except*, *unless*, *provided that*, *save that*, *however* and a few more is not a split point** (`QUALIFIERS`, R-68); with no legal split a chunk stays oversized and is flagged. **`--boundaries <document id>` prints a document's chunk boundaries for a person to read once before it is trusted** (R-69) - [D-30](decisions/D-30.md)'s *a person signs*, applied to chunking. **Every ingest prints the chunk count against D-23's ceiling** (R-70), so the day it nears is a day somebody notices |
+| **Not taken** | **A graph built by a model over every chunk** - indexing would need a model, and [§2.13](#213--measured-and-rejected--a-third-retrieval-stream-tried-at-six-settings) measured a graph stream at six settings and rejected it on density. **A multi-service stack** - ruled out by the install promise before it was read. **Evaluation that judges with a model** - a model per run, and a reported correlation with people's judgement of about 0.55; Heron's evaluation stays deterministic: [`tools/check-routing.py`](../tools/check-routing.py), [`tools/check-intrusion.py`](../tools/check-intrusion.py) and §2.22. **A local document parser with its own layout models** - the largest dependency Heron would have taken, downloading models on first run; asked as S-4 and answered on 2026-09-11 ([`00-structure.md`](work-notes/plans/rag/00-structure.md) §8): write the parser, run it on one real numbered section, and take the library only if that cannot cope. The real document is [NEEDS-CHECKING Group OO](needs-checking/group-oo.md) |
 
 ---
 

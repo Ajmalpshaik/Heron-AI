@@ -12,6 +12,10 @@ See docs/29-metadata-standard.md
 > **FINAL - 2026-10-06.** Written, reviewed by an independent read of the code (19 findings, the
 > engine's measured in Python here), corrected, and finalized. The **Review log** below says what each
 > finding changed. **Where a task line and the log disagree, the log wins.**
+> **Retires when** every row of [Group CG](../../needs-checking/group-cg.md), and rows IQ6 to IQ8 of
+> [Group IQ](../../needs-checking/group-iq.md), are run and recorded in their files, or recorded NOT RUN with
+> the reason, and [47](../../47-sprinkler-layout-from-the-model.md) says what they showed. Written 2026-11-19;
+> the task boxes below were never ticked, so read 47, not them.
 
 **Goal:** select Spaces or Rooms of any shape, preview a checked sprinkler layout per room in the
 Companion, press Apply, and the heads are placed in Revit and read back.
