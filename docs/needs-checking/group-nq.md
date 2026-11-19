@@ -7,7 +7,7 @@
 
 ## Group NQ - an arc's or a circle's CENTRE locked to named planes in a 2D family: `LOCK_FAMILY_LINES_TO_PLANES` version 3 (2026-11-12)
 
-**Tracked as GitHub issue [#1015](https://github.com/Ajmalpshaik/Heron-AI/issues/1015) since 2026-11-16** - its checks have run and held, and the ids not yet struck are listed there, to strike once open pull request #871 has merged. Every result stays in this file.
+**Tracked as GitHub issue [#1015](https://github.com/Ajmalpshaik/Heron-AI/issues/1015) from 2026-11-16 - done 2026-11-19:** #871 struck NQ2, and NQ1, NQ3, NQ4, NQ5 and NQ6 are struck on the results of 2026-11-12 in their own rows. Every id in this group's table is struck. Every result stays in this file.
 
 Built 2026-11-12 on the owner's word ("make the arc centre lock tool") - the gap table's row 3e
 ([2026-11-11-family-2d-capabilities](../work-notes/investigations/2026-11-11-family-2d-capabilities.md)). Widened, not
@@ -29,12 +29,12 @@ session 13164 - never the owner's own families. Built with PROVEN tools: a type 
 
 | # | Run | Look for | Result 2026-11-12 |
 |---|---|---|---|
-| **NQ1** | *Trial, rolled back* - lines = the arc, planes "Arc X, Arc Y" | 2 locks, the arc's centre to each; ends unchanged | **held**: 4 locks - the centre to "Arc X" and "Arc Y", and the arc's two ends to "Arc Y", which they lie on (version 2's end lock); ends read back (300, 100) to (100, 100) |
+| ~~**NQ1**~~ | *Trial, rolled back* - lines = the arc, planes "Arc X, Arc Y" | 2 locks, the arc's centre to each; ends unchanged | **held**: 4 locks - the centre to "Arc X" and "Arc Y", and the arc's two ends to "Arc Y", which they lie on (version 2's end lock); ends read back (300, 100) to (100, 100) |
 | ~~**NQ2**~~ | The D-30 negative, rolled back - the arc, planes "Spare" — [full row](../needs-checking-archive/group-nq.md#row-nq2) | refused, the centre 300 mm off "Spare"; nothing locked | |
-| **NQ3** | *The positive, KEPT* - through `try-once`, lines = the arc and the two halves of "circle 200,100 50" (...0903, ...0907, drawn after NQ1), planes "Arc X, Arc Y" | the owner presses Keep | **KEPT by Ajmal PS**: 12 locks - each of the three arcs' centres to "Arc X" and "Arc Y", and their six ends to "Arc Y"; Center Mark already on (centreMarks 0); ends read back unchanged |
-| **NQ4** | *It follows* - "Arc X" set to 300 (SET_FAMILY_TYPE_VALUES), read back with REPORT_FAMILY_FORMS "2d" | centre (300, 100), radius 100; the shaft still (-300, 0) to (0, 0) | **held**: the arc centre (300, 100) radius 100, both halves centre (300, 100) radius 50, the shaft (-300, 0) to (0, 0). The D-30 negative was then run on this state (`validate --write --kept`, planes "Spare"): refused, the centre named 200 mm off, nothing locked |
-| **NQ5** | *A whole circle* - a closed detail circle, centre on both planes | its centre locked twice, no end locks | **held** (Revit 2024, 2026-11-12): Heron draws a circle as two half-arcs, so the owner drew one closed circle by hand (Detail Line, Circle) at the Arc X / Arc Y crossing, radius 150, `...-0000099d`. Locked through `revit_change`: 2 locks, its centre to each plane, no end locks; Arc X 200 -> 350 read back the circle at centre (350, 100), radius 150, "locked to Arc X; locked to Arc Y" |
-| **NQ6** | *Version 2 unchanged* - Group NC's straight line locks | as Group NC | **held** - Group NC, Run 2 (Revit 2024, 2026-11-12): the eight along and end locks kept and followed Length 900 and 300 |
+| ~~**NQ3**~~ | *The positive, KEPT* - through `try-once`, lines = the arc and the two halves of "circle 200,100 50" (...0903, ...0907, drawn after NQ1), planes "Arc X, Arc Y" | the owner presses Keep | **KEPT by Ajmal PS**: 12 locks - each of the three arcs' centres to "Arc X" and "Arc Y", and their six ends to "Arc Y"; Center Mark already on (centreMarks 0); ends read back unchanged |
+| ~~**NQ4**~~ | *It follows* - "Arc X" set to 300 (SET_FAMILY_TYPE_VALUES), read back with REPORT_FAMILY_FORMS "2d" | centre (300, 100), radius 100; the shaft still (-300, 0) to (0, 0) | **held**: the arc centre (300, 100) radius 100, both halves centre (300, 100) radius 50, the shaft (-300, 0) to (0, 0). The D-30 negative was then run on this state (`validate --write --kept`, planes "Spare"): refused, the centre named 200 mm off, nothing locked |
+| ~~**NQ5**~~ | *A whole circle* - a closed detail circle, centre on both planes | its centre locked twice, no end locks | **held** (Revit 2024, 2026-11-12): Heron draws a circle as two half-arcs, so the owner drew one closed circle by hand (Detail Line, Circle) at the Arc X / Arc Y crossing, radius 150, `...-0000099d`. Locked through `revit_change`: 2 locks, its centre to each plane, no end locks; Arc X 200 -> 350 read back the circle at centre (350, 100), radius 150, "locked to Arc X; locked to Arc Y" |
+| ~~**NQ6**~~ | *Version 2 unchanged* - Group NC's straight line locks | as Group NC | **held** - Group NC, Run 2 (Revit 2024, 2026-11-12): the eight along and end locks kept and followed Length 900 and 300 |
 
 **Proof:** the kept NQ3 and the negative after NQ4 - SIGNED by Ajmal PS 2026-11-12; the card is PROVEN on Revit 2024.
 
