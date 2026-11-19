@@ -62,7 +62,7 @@ Every issue has a ready prompt that points here. Its kind is in its title: **Fix
 | [#907](https://github.com/Ajmalpshaik/Heron-AI/issues/907) | Revit run on your PC | parameters, rooms, schedules and tags | 10 |
 | [#908](https://github.com/Ajmalpshaik/Heron-AI/issues/908) | Revit run on your PC | re-sign proofs and check new tools | 9 |
 | [#909](https://github.com/Ajmalpshaik/Heron-AI/issues/909) | Revit run on your PC | routing re-checked on your PC's trained model | 5 |
-| [#910](https://github.com/Ajmalpshaik/Heron-AI/issues/910) | Your decision | how the add-in guards changes | 6 |
+| [#910](https://github.com/Ajmalpshaik/Heron-AI/issues/910) | Your decision | how the add-in guards changes | 7 |
 | [#911](https://github.com/Ajmalpshaik/Heron-AI/issues/911) | Your decision | dry runs, saving and Sync | 4 |
 | [#912](https://github.com/Ajmalpshaik/Heron-AI/issues/912) | Your decision | how replies show values (cut text, units) | 5 |
 | [#913](https://github.com/Ajmalpshaik/Heron-AI/issues/913) | Your decision | agents and their contracts | 9 |
@@ -532,6 +532,7 @@ Every row of sections 5 and 5b that `python tools/open-defects.py` listed as ope
 | [row 5b-1831](row-5b-1831.md) | [#948](https://github.com/Ajmalpshaik/Heron-AI/issues/948) | Code fix | Setting four columns' levels would delete 2 elements, and which two is unknown |
 | [row 5b-1832](row-5b-1832.md) | [#956](https://github.com/Ajmalpshaik/Heron-AI/issues/956) | Code fix | 'Attach these walls to the roof' and 'delete this roof' reach the wrong tool on 2024 |
 | [row 5b-1845](row-5b-1845.md) | [#938](https://github.com/Ajmalpshaik/Heron-AI/issues/938) | Code fix | The archive re-points links to a re-banded row everywhere but in the register's own folder |
+| [row 5b-1700](row-5b-1700.md) | [#910](https://github.com/Ajmalpshaik/Heron-AI/issues/910) | Your decision | The delete box also asks about elements Revit deletes and remakes in the same run; whether it should is the owner's |
 
 ## Found finished on 2026-11-16 - closed in the register, no issue
 
