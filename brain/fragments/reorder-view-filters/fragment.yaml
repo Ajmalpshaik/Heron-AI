@@ -1,0 +1,213 @@
+heron-agent: HERON-FRG-CRE-007
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-179
+semantic-identity: "move one filter up or down a view's filter list - to the top, the bottom or a given row"
+# The identity said "..., so it wins over the filters below it" until the
+# routing compare of 2026-11-19: on both re-ranked backends that took the
+# QUESTION "which filter wins on this view" off REPORT_VIEW_FILTERS (D-86).
+# This wording, screened offline and then measured in full on both trees,
+# keeps every wanted sentence and gives that question back.
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# 2026-11-19, Revit 2020: the modeller made a view filter for Duct Accessories
+# (green lines, green solid fill) and asked for it to be moved to the TOP of the
+# view's filter list. Two filters above it also cover Duct Accessories and set
+# black lines, and where two filters set the same thing on the same element the
+# HIGHER one wins - so the order decided what drew. No capability reordered a
+# view's filters.
+#
+# LOOK-ALIKES, ruled on by heron-duplicate-checker on 2026-11-19 (heron_duplicates.look
+# and the Matcher found nothing equal):
+#   APPLY_VIEW_FILTER    adds a filter and writes its row - the Visibility tick on
+#                        every call. A reorder must leave every tick and override
+#                        exactly as it was, and widening that PROVEN card would
+#                        stale its proof.
+#   COPY_VIEW_FILTERS    copies filters view to view; never moves one within a view.
+#   REMOVE_VIEW_FILTER   takes a filter off; the order of the rest is not its job.
+#   REPORT_VIEW_FILTERS  READS the order (numbered in priority order on 2021 and
+#                        later). The one to run before this, never instead of it.
+#
+# NO RELEASE HAS AN ORDER SETTER. Revit gives `GetOrderedFilters` (2021 on) to
+# READ the Filters tab's order and nothing to SET it; its own reference says a
+# filter added with `AddFilter` "is appended as the last filter in the order".
+# So the only way to move a filter is to take filters off and put them back,
+# which is why every one taken off has its row - overrides, Visibility and,
+# from 2021, Enable Filter - read first, written back, and read back again.
+kind: action
+domain: revit.views
+capability: REORDER_VIEW_FILTERS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Moves one filter up or down a view's filter list - the order Visibility/Graphics
+  Overrides, Filters tab shows, where the filter higher in the list wins when two
+  filters set the same line colour, pattern or visibility on the same element.
+  To the top, to the bottom, to a row number, or above or below another filter on
+  the same view. A view template can be named as the view, and then every view
+  following it draws in the new order; the answer says how many follow it.
+
+  **Nothing else changes.** Revit has no way to set the order directly, so the
+  filters that have to move are taken off the view and put back in the new order.
+  Each one's whole row - projection and cut lines and patterns, colours,
+  transparency, halftone, Visibility and, from Revit 2021, Enable Filter - is read
+  BEFORE anything is written, written back, and read back after. If any setting
+  or the order does not read back as it was asked, the call stops and nothing it
+  did is kept.
+
+  **What it can check differs by release, and the answer says which.** From Revit
+  2021 it reads the order from Revit before and after, and a typed `currentOrder`
+  that differs from Revit's is refused as out of date. On Revit 2020 the API cannot
+  read the order the Filters tab shows (from 2021 Revit's reference says its plain
+  list is sorted by id; 2020's says nothing, and is assumed the same), so it needs the
+  modeller's own reading of the Filters tab as `currentOrder` - except on a view
+  with two filters or fewer, or a move to the bottom, which do not depend on the
+  order. On 2020 the new order is WRITTEN, never read back: look at the Filters tab.
+
+  **Refused, with nothing changed:** a filter not on the view (it says what is,
+  and APPLY_VIEW_FILTER puts one on); a view whose view template controls its
+  filters (it names the template - ask again with the template as the view); a
+  view that takes no filters; an unreadable row number.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The view whose Filters tab is reordered - or a view template, which
+    # reorders every view following it.
+    - name: view
+      type: View
+      source: request
+    # The filter to move: its exact name first, then the one name on the
+    # project matching it with capitals ignored.
+    - name: filterName
+      type: string
+      source: request
+    # Where to: blank, top, first or 1 is row 1; bottom or last is the last
+    # row; a whole number is that row counted from the top as the Filters tab
+    # shows it (past the end is the bottom, and said); "above <filter>" or
+    # "below <filter>" sets it beside another filter on the same view. 0, a
+    # negative number or anything else is refused.
+    - name: position
+      type: string
+      source: request
+      optional: true
+      absent: top
+    # Every filter on the view, top to bottom, as the Filters tab shows it -
+    # the modeller's own reading. Needed on Revit 2020 (whose API cannot give
+    # the order) unless the view has two filters or fewer or the move is to the
+    # bottom. From 2021 it is only checked against Revit's own order. Names are
+    # separated by commas, so a filter whose name holds a comma cannot be typed.
+    - name: currentOrder
+      type: IList<string>
+      source: request
+      optional: true
+      absent: none
+  provides:
+    # True when the asked order was WRITTEN - and on 2021 and later read
+    # back. False when refused, or when the filter was already there. On
+    # Revit 2020 with no `currentOrder`, "already there" cannot be known, so a
+    # view of two filters is always written and answers true - a finding
+    # says Revit 2020 could not tell whether it was already there.
+    - name: moved
+      role: result
+      type: bool
+    # The list top to bottom before: Revit's own from 2021; on 2020 the
+    # modeller's typed reading, or EMPTY when none was given - never the order
+    # the 2020 API lists them in, which is not the Filters tab's.
+    - name: orderBefore
+      role: result
+      type: IList<string>
+    # The list top to bottom after: read back from Revit from 2021; on 2020 the
+    # order written, and EMPTY where the others' order is not known.
+    - name: orderAfter
+      role: result
+      type: IList<string>
+    # How many filters were taken off the view and put back. The fewest that
+    # gives the asked order - the longest run already in place is left alone.
+    - name: reAdded
+      role: result
+      type: int
+    # How the order was checked - "read back from Revit" from 2021, "written,
+    # not readable on Revit 2020" on 2020 - so a reply never claims more than
+    # the release allowed. Says how, never what was found (D-52).
+    - name: orderVerified
+      role: accounting
+      type: string
+    # What else the modeller should know: "already at row 2", how many views
+    # follow a template, a row past the end read as the bottom, and on 2020
+    # what could not be checked. Never a thing found (D-52).
+    - name: findings
+      role: accounting
+      type: IList<string>
+    # Why it declined, in the modeller's words - the evidence it looked and
+    # said no. Never a thing it FOUND, so it must not count toward "did this
+    # come back empty" (D-52).
+    - name: refused
+      role: accounting
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `View.GetFilters`, `AddFilter`,
+  `RemoveFilter`, `GetFilterOverrides`, `SetFilterOverrides`,
+  `GetFilterVisibility`, `SetFilterVisibility`, `AreGraphicsOverridesAllowed` and
+  `GetNonControlledTemplateParameterIds`, the `OverrideGraphicSettings` copy and
+  its readable properties, and `WorksharingUtils.GetCheckoutStatus` are on every
+  release 2020 to 2027 - read off the reference assemblies with tools/api-surface
+  on 2026-11-19. `GetOrderedFilters`, `GetIsFilterEnabled` and `SetIsFilterEnabled`
+  are 2021 to 2027 and ABSENT from 2020; no release has a member that SETS the
+  order. The add-in compiles fragments with no release symbols (FRAGMENT-ISSUES
+  5b-181), so the three are reached BY NAME at run time and are null on 2020,
+  never named under `#if`. WHAT IS VERIFIED, PER RELEASE - 2021 to 2027: the order
+  is read from Revit before the write and read back after it, and must equal the
+  order asked or the call stops; every re-added filter's overrides, Visibility
+  and Enable Filter are read back against what they were. 2020: the order before
+  is the modeller's own reading (or not needed, on a view of two filters or fewer
+  or a move to the bottom); the order after is WRITTEN and cannot be read back;
+  overrides and Visibility are read back; there is no Enable Filter tick. That
+  `AddFilter` appends at the bottom is stated in the 2021 and later references
+  only - on 2020 it is ASSUMED, and NEEDS-CHECKING Group OM has the row that
+  tests it.
+
+# ROUTING - the sentences this card wants, and where the near ones go.
+#
+#   "move this filter to the top"                  -> here
+#   "make this filter the first priority"          -> here
+#   "move the access door filter above the supply
+#    air filter"                                   -> here, position "above ..."
+#   "change the order of the filters on this view" -> here
+#   "what order are the filters in on this view"   -> REPORT_VIEW_FILTERS - a READ,
+#   "which filter is on top in this view"             numbered in priority order;
+#   "list the filters on this view in priority        the one to run first.
+#    order"                                           MEASURED 2026-11-19 (scratch
+#                                                     store, Revit 2020 filter):
+#                                                     these three paraphrases reach
+#                                                     THIS card when the host asks
+#                                                     with question=false, and
+#                                                     REPORT_VIEW_FILTERS with
+#                                                     question=true - the host's
+#                                                     word for a question (D-128)
+#                                                     is what keeps them off a write
+#   "put that filter on this view"                 -> APPLY_VIEW_FILTER - it adds
+#                                                     one, at the bottom of the list
+#   "take that filter off the view"                -> REMOVE_VIEW_FILTER
+#   "copy the filters from this view to that one"  -> COPY_VIEW_FILTERS
+
+utterances:
+  # The modeller's phrasings, 2026-11-19, from a request made on Revit 2020.
+  - move this filter to the top
+  - put filter X first
+  - move the access door filter above the supply air filter
+  - change the order of the filters on this view
+  - make this filter the first priority
