@@ -48,17 +48,20 @@
 //   - INSIDE its volume - Revit's own test at the element's own point, the test
 //     FILTER_ELEMENTS_IN_ROOM uses; or
 //   - ABOVE IT BUT STILL ON ITS STOREY - not below its floor, and below the
-//     container's own level plus the height to the next level up. That height
-//     is a DIFFERENCE of two levels' elevations, measured up from the
-//     container's location point, so it means the same in a link. The ceiling
-//     void case (row 5b-175's container-height side, as version 2 took it).
+//     container's own level plus the height to the next STOREY level up (a
+//     level with Building Story ticked, so a "ceiling" or slab level between
+//     two floors is passed over). That height is a DIFFERENCE of two levels'
+//     elevations, measured up from the container's location point, so it means
+//     the same in a link. The ceiling void case (row 5b-175's container-height
+//     side, as version 2 took it).
 // Anything else is NOT WRITTEN and is named with the container it was in plan
-// of and why: below its floor, above its storey, or a storey whose top is not
-// known (no level above, or the container has no level). A level that is not
-// a storey - a "ceiling" reference level - makes the storey short, so ceiling
-// void elements above it go unwritten and named; never written to the wrong
-// floor. This can leave elements unwritten that COUNT_BY_SPATIAL_CONTAINER puts
-// in a space, because that count asks in plan alone.
+// of and why: below its floor, above its storey (naming the storey level that
+// is its top), or a storey whose top is not known (no storey level above, or
+// the container has no level). A model with NO level ticked as a storey uses
+// every level, and a "ceiling" level then makes the storey short: ceiling void
+// elements above it go unwritten and named, never written to the wrong floor.
+// This can leave elements unwritten that COUNT_BY_SPATIAL_CONTAINER puts in a
+// space, because that count asks in plan alone.
 //
 // TWO CONTAINERS EQUALLY GOOD ARE NOT WRITTEN. One the element is inside beats
 // one it is above; between two it is above, the nearer top wins; two it is
@@ -100,32 +103,44 @@ if (string.Equals(numberTarget, "none", StringComparison.OrdinalIgnoreCase)) num
 var levelTarget = (levelParameter ?? "").Trim();
 if (string.Equals(levelTarget, "none", StringComparison.OrdinalIgnoreCase)) levelTarget = "";
 
-// The height from a container's level to the next level up in its own
-// document, or -1 when there is none or the container has no level. A
-// difference of two elevations, so its origin never matters.
-Func<SpatialElement, List<double>, double> storeyOf = (container, elevations) =>
+// The levels that are STOREYS in one document - Building Story ticked - so a
+// "ceiling" or slab level between two floors does not cut a storey short. A
+// document with none ticked (or none Revit can read) gives every level, and the
+// short storey is then the honest failure: named, never written to another
+// floor. REPORT_LEVEL_ELEVATIONS reads the same tick.
+Func<Document, List<Level>> storeyLevelsIn = (inDoc) =>
 {
-    Level own = null;
-    try { own = container.Level; } catch (Exception) { own = null; }
-    if (own == null) return -1.0;
-    var at = own.ProjectElevation;
-    var next = double.MaxValue;
-    foreach (var e in elevations)
-        if (e > at + tolerance && e < next) next = e;
-    return next == double.MaxValue ? -1.0 : next - at;
-};
-
-// Every level's elevation in one document.
-Func<Document, List<double>> elevationsIn = (inDoc) =>
-{
-    var found = new List<double>();
+    var every = new List<Level>();
+    var storeys = new List<Level>();
     try
     {
         foreach (var level in new FilteredElementCollector(inDoc).OfClass(typeof(Level)).Cast<Level>())
-            found.Add(level.ProjectElevation);
+        {
+            every.Add(level);
+            Parameter flag = null;
+            try { flag = level.get_Parameter(BuiltInParameter.LEVEL_IS_BUILDING_STORY); } catch (Exception) { flag = null; }
+            if (flag != null && flag.HasValue && flag.AsInteger() == 1) storeys.Add(level);
+        }
     }
     catch (Exception) { }
-    return found;
+    return storeys.Count > 0 ? storeys : every;
+};
+
+// The height from a container's level to the next storey level up in its own
+// document, and that level's name - or -1 and "" when there is none or the
+// container has no level. A difference of two elevations, so its origin never
+// matters.
+Func<SpatialElement, List<Level>, Tuple<double, string>> storeyOf = (container, levels) =>
+{
+    Level own = null;
+    try { own = container.Level; } catch (Exception) { own = null; }
+    if (own == null) return Tuple.Create(-1.0, "");
+    var at = own.ProjectElevation;
+    Level next = null;
+    foreach (var level in levels)
+        if (level.ProjectElevation > at + tolerance && (next == null || level.ProjectElevation < next.ProjectElevation))
+            next = level;
+    return next == null ? Tuple.Create(-1.0, "") : Tuple.Create(next.ProjectElevation - at, next.Name);
 };
 
 // The placed and enclosed containers, with the box each one occupies in its own
@@ -134,11 +149,11 @@ Func<Document, List<double>> elevationsIn = (inDoc) =>
 // linked one carries the transform INTO its link and the link's name.
 var spatial = new List<SpatialElement>();
 var spatialBox = new List<BoundingBoxXYZ>();
-var spatialStorey = new List<double>();     // height to the next level up, or -1
+var spatialStorey = new List<Tuple<double, string>>();   // height to the next storey level up and its name, or -1
 var spatialTo = new List<Transform>();      // null: this model's own
 var spatialFrom = new List<string>();       // "": this model's own
 var skippedContainers = 0;
-var hostElevations = elevationsIn(doc);
+var hostLevels = storeyLevelsIn(doc);
 foreach (var element in new FilteredElementCollector(doc)
     .OfCategory(wantedCategory).WhereElementIsNotElementType())
 {
@@ -149,7 +164,7 @@ foreach (var element in new FilteredElementCollector(doc)
     if (box == null || container.Area <= 0.0) { skippedContainers++; continue; }
     spatial.Add(container);
     spatialBox.Add(box);
-    spatialStorey.Add(storeyOf(container, hostElevations));
+    spatialStorey.Add(storeyOf(container, hostLevels));
     spatialTo.Add(null);
     spatialFrom.Add("");
 }
@@ -196,10 +211,10 @@ if (includeLinks)
     for (var i = 0; i < linkDocs.Count; i++)
     {
         var linked = linkDocs[i];
-        var linkElevations = elevationsIn(linked);
+        var linkLevels = storeyLevelsIn(linked);
         var inLink = new List<SpatialElement>();
         var inLinkBox = new List<BoundingBoxXYZ>();
-        var inLinkStorey = new List<double>();
+        var inLinkStorey = new List<Tuple<double, string>>();
         try
         {
             foreach (var element in new FilteredElementCollector(linked)
@@ -212,7 +227,7 @@ if (includeLinks)
                 if (box == null || container.Area <= 0.0) { linkedSkipped++; continue; }
                 inLink.Add(container);
                 inLinkBox.Add(box);
-                inLinkStorey.Add(storeyOf(container, linkElevations));
+                inLinkStorey.Add(storeyOf(container, linkLevels));
             }
         }
         catch (Exception) { }
@@ -354,8 +369,9 @@ else
         // down are kept for the answer.
         var hostWhich = new List<int>(); var hostKind = new List<int>(); var hostGap = new List<double>();
         var linkWhich = new List<int>(); var linkKind = new List<int>(); var linkGap = new List<double>();
-        var inPlanCount = 0;
+        var otherStoreyTurnedDown = false;
         var turnedDown = "";
+        var turnedDownRank = 9;
         if (nameTarget.Length > 0 || numberTarget.Length > 0)
         {
             for (var i = 0; i < spatial.Count; i++)
@@ -395,24 +411,44 @@ else
                 catch (Exception) { testFailed++; inside = false; inPlan = false; }
 
                 if (!inPlan) continue;
-                inPlanCount++;
 
                 // In height. Inside: taken. Otherwise only above its floor and
-                // below the top of its storey - see the header.
+                // below the top of its storey - see the header. A container
+                // turned down keeps its reason, ranked so the one nearest the
+                // element's own storey is the one named: below its floor first,
+                // then above its storey, then a storey top not known.
                 var kind = -1;
                 var gap = 0.0;
                 var why = "";
+                var rank = 9;
                 if (inside) { kind = 0; }
-                else if (local.Z < box.Min.Z - tolerance) why = "it sits BELOW that " + label.ToLower() + "'s floor";
-                else if (spatialStorey[i] < 0) why = "that " + label.ToLower() + " has no level above its own, so "
-                    + "the top of its storey is not known";
-                else if (local.Z >= Math.Max(baseZ + spatialStorey[i], box.Max.Z) - tolerance)
-                    why = "it sits ABOVE that " + label.ToLower() + "'s storey - a higher floor";
+                else if (local.Z < box.Min.Z - tolerance)
+                {
+                    why = "it sits BELOW that " + label.ToLower() + "'s floor";
+                    rank = 0;
+                }
+                else if (spatialStorey[i].Item1 < 0)
+                {
+                    why = "that " + label.ToLower() + " has no storey level above its own, so the top of its storey "
+                        + "is not known";
+                    rank = 2;
+                }
+                else if (local.Z >= Math.Max(baseZ + spatialStorey[i].Item1, box.Max.Z) - tolerance)
+                {
+                    why = "it sits ABOVE that " + label.ToLower() + "'s storey, whose top is the storey level '"
+                        + spatialStorey[i].Item2 + "'";
+                    rank = 1;
+                }
                 else { kind = 1; gap = Math.Max(0.0, local.Z - box.Max.Z); }
 
                 if (kind < 0)
                 {
-                    if (turnedDown.Length == 0) turnedDown = "in plan of the " + label + " " + named(i) + ", but " + why;
+                    if (rank <= 1) otherStoreyTurnedDown = true;
+                    if (rank < turnedDownRank)
+                    {
+                        turnedDownRank = rank;
+                        turnedDown = "in plan of the " + label + " " + named(i) + ", but " + why;
+                    }
                     continue;
                 }
                 if (spatialTo[i] == null) { hostWhich.Add(i); hostKind.Add(kind); hostGap.Add(gap); }
@@ -440,7 +476,9 @@ else
             var nameParameter = container.get_Parameter(BuiltInParameter.ROOM_NAME);
             if (nameParameter != null) nameValue = nameParameter.AsString();
             numberValue = container.Number;
-            if (inPlanCount > 1) settledByStorey++;
+            // Only where a container of another storey - below the floor or
+            // above the storey - was turned down for this one.
+            if (otherStoreyTurnedDown) settledByStorey++;
 
             if (spatialTo[chosen] == null) landedInHost++;
             else
@@ -555,12 +593,14 @@ if (containerWithoutValue > 0)
 if (noRoomFound.Count > 0)
 {
     refused.Add(string.Format("{0} element(s) were given no {1} and were not written - {2} of them sit "
-        + "in plan of one on another storey or below its floor (named below), the rest in plan of none",
+        + "in plan of one but on another storey, below its floor, or where its storey's top is not known "
+        + "(named below), the rest in plan of none",
         noRoomFound.Count, label, notOnItsStoreyCount));
 }
 if (notOnItsStoreyCount > 0)
 {
-    refused.Add(string.Format("NOT WRITTEN, rather than written with another floor's {0}: {1}{2}", label,
+    refused.Add(string.Format("NOT WRITTEN, rather than written with a {0} that may be another floor's: "
+        + "{1}{2}", label,
         string.Join("; ", notOnItsStorey),
         notOnItsStoreyCount > notOnItsStorey.Count
             ? string.Format("; and {0} more", notOnItsStoreyCount - notOnItsStorey.Count) : ""));
@@ -603,10 +643,10 @@ if (!includeLinks)
 else if (linksSearched == 0)
     linkedMatches.Insert(0, "Links asked for, NONE loaded - host only");
 else
-    linkedMatches.Insert(0, string.Format("{0} link(s) read: {1} element(s) given a linked {2}, {3} one "
-        + "of this model's own", linksSearched, landedInLink, label, landedInHost));
+    linkedMatches.Insert(0, string.Format("{0} link(s) read: {1} element(s) found in a linked {2}, {3} in "
+        + "one of this model's own", linksSearched, landedInLink, label, landedInHost));
 foreach (var pair in landedPerLink)
-    linkedMatches.Add(string.Format("{0}: {1} element(s) given a {2} from it", pair.Key, pair.Value, label));
+    linkedMatches.Add(string.Format("{0}: {1} element(s) found in a {2} of it", pair.Key, pair.Value, label));
 if (linkedSkipped > 0)
     linkedMatches.Add(string.Format("{0} linked {1}(S) are UNPLACED or UNENCLOSED and were not asked",
         linkedSkipped, label));
@@ -617,7 +657,7 @@ if (linksSearched > 0)
     linkedMatches.Add("Linked rooms and spaces are only READ - every element written is this model's own");
 
 refused.Add(string.Format("{0} element(s) written, using {1}S - name {2}, number {3}, level {4}; "
-    + "{5} given one of this model's own {1}S, {6} a linked one. Architecture puts people in ROOMS and "
+    + "{5} found in one of this model's own {1}S, {6} in a linked one. Architecture puts people in ROOMS and "
     + "MEP calculates in SPACES; a model can hold both in the same place with different names, and "
     + "picking the wrong one is the commonest way a location register comes out wrong", written, label,
     nameWritten, numberWritten, levelWritten, landedInHost, landedInLink));

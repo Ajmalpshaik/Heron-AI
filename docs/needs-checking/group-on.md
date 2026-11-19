@@ -20,11 +20,13 @@ anything was written ([row 5b-1856](../fragment-issues/row-5b-1856.md)).
 - **New logic - the storey is checked.** A container that has the element in plan (Revit's test at the
   container's mid-height, or at its location point's height as COUNT_BY asks) is taken only when the
   element is **inside** it (Revit's test at the element's own point) or **above it but below the top of
-  its storey** - its location point plus the height from its level to the next level up. Anything else -
+  its storey** - its location point plus the height from its level to the next **storey** level up
+  (Building Story ticked; every level when none is). Anything else -
   another floor, below the floor, an unknown storey top, two equally good - is **not written** and is
   named with the container and the reason. So on a multi-storey model it can write fewer than COUNT_BY
-  counts in a space, never another floor's name. A level that is not a storey (a "ceiling" level) makes
-  the storey short; ceiling-void elements above it are then named, not written.
+  counts in a space, never another floor's name. A "ceiling" or slab level ticked as a storey (or any
+  level, in a model with none ticked) makes the storey short; ceiling-void elements above it are then
+  named, not written.
 - Each target must be a text parameter, and every value written is read back.
 - **`includeLinks`** (D-59, optional, absent = host only) - added the same day on Ajmal PS's word, *"YES
   ADD LINKED ROOMS TO THE FIX"*: his job's rooms are in the architect's link, which a dry run with
@@ -53,7 +55,7 @@ reports linked matches as text and never selects them, so the selection is uncha
 
 | ID | Do this | Pass looks like |
 |---|---|---|
-| **ON0** | *Arrange and measure, on `on-mep`.* (1) `revit_levels` - which storeys hold what, and whether any level is a "ceiling" level that is not a storey. (2) `COUNT_BY_SPATIAL_CONTAINER` `containerKind=space` on Air Terminals, then on Duct Accessories, each on Level 1 (`FILTER_ELEMENTS_BY_CATEGORY` `levelId=Level 1`) - how many land in a space and how many in none. (3) `REPORT_ROOM_SPACE_DATA` on the Level 1 spaces - each space's name and number as Revit holds them, and `roomsSeen` 0. (4) `ADD_PROJECT_PARAMETER` twice, kept on the scratch copy: `ID_Room Name` and `ID_Room Number`, text, instance, bound to Air Terminals and Duct Accessories. Save the copy | Counts written down. At least one Level 1 air terminal (or duct accessory) in a space and the model holding no rooms. If no air terminal lands in a space, change the job file's category to the one that does, and say so here |
+| **ON0** | *Arrange and measure, on `on-mep`.* (1) `revit_levels` and `REPORT_LEVEL_ELEVATIONS` - which storeys hold what, and which levels have Building Story ticked. (2) `COUNT_BY_SPATIAL_CONTAINER` `containerKind=space` on Air Terminals, then on Duct Accessories, each on Level 1 (`FILTER_ELEMENTS_BY_CATEGORY` `levelId=Level 1`) - how many land in a space and how many in none. (3) `REPORT_ROOM_SPACE_DATA` on the Level 1 spaces - each space's name and number as Revit holds them, and `roomsSeen` 0. (4) `ADD_PROJECT_PARAMETER` twice, kept on the scratch copy: `ID_Room Name` and `ID_Room Number`, text, instance, bound to Air Terminals and Duct Accessories. Save the copy | Counts written down. At least one Level 1 air terminal (or duct accessory) in a space and the model holding no rooms. If no air terminal lands in a space, change the job file's category to the one that does, and say so here |
 | **ON1** | *Positive - name and number apart.* [`tools/jobs/assign-location-data-v3-on-2026-11-19.yaml`](../../tools/jobs/assign-location-data-v3-on-2026-11-19.yaml), rolled back: Level 1 air terminals, `useSpaces=true`, `roomParameter=ID_Room Name`, `numberParameter=ID_Room Number`, `levelParameter=none` | `written` equals ON0's landed count, or fewer with every missing one named in `refused` with its space and reason; `nameWritten` and `numberWritten` equal `written`; `notKept 0`; every `samples` line reads *name "X" \| number "N"* with **no number inside X**, each pair matching a space in ON0 (3). The binding note names the selection ON0 measured |
 | **ON2** | *Negative - the same selection, asked for rooms the model has not got.* The job file's negative leg: `useSpaces=false`, the rest unchanged | `written 0`, every element in `noRoomFound`, `refused` saying the model has no placed and enclosed ROOMS of its own and to ask with includeLinks. Nothing falls back to the spaces or to a box |
 | **ON3** | *Read back, kept, on the scratch copy only.* The ON1 values kept once on `on-mep`, then `READ_ELEMENT_PARAMETERS` for `ID_Room Name, ID_Room Number` on the same elements | Each element reads exactly its `samples` pair - the name alone, the number alone. A count is not this row's evidence; the read is |

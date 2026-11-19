@@ -112,6 +112,14 @@ negative:
       space but ABOVE its storey. Version 2 wrote Level 1's name onto it
 
   - given: >
+      version 3 - a "ceiling" level between Level 1 and Level 2 with Building
+      Story UNticked, an element in the Level 1 ceiling void above it
+    expect: >
+      the Level 1 space written - the unticked level is passed over and the
+      storey runs to Level 2. With that level ticked as a storey, the element
+      is NOT written and named as above the storey whose top is that level
+
+  - given: >
       version 3 - an element a little BELOW its own space's floor (a space with
       a raised base offset)
     expect: >

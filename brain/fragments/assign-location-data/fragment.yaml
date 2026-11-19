@@ -26,14 +26,16 @@ capability: ASSIGN_LOCATION_DATA
 #      says yes to a damper on Level 3 above it. A container is taken only when
 #      the element is INSIDE it (Revit's test at the element's own point) or
 #      above it but below the top of its storey - its location point plus the
-#      height from its level to the next level up, a difference of elevations.
+#      height from its level to the next STOREY level up (Building Story
+#      ticked; every level if none is), a difference of elevations.
 #      Anything else - below the floor, a higher storey, a storey whose top is
 #      unknown, two equally good - is NOT WRITTEN and named with the reason.
 #      Version 2 and COUNT_BY take the first container to say yes in plan;
-#      row 5b-1858 records COUNT_BY's side. A level that is not a storey (a
-#      "ceiling" level) makes the storey short: ceiling-void elements above it
-#      then go unwritten and named, never written to another floor. So this can
-#      write fewer than COUNT_BY counts in a space.
+#      row 5b-1858 records COUNT_BY's side. A "ceiling" or slab level ticked
+#      as a storey (or any, in a model with none ticked) makes the storey short:
+#      ceiling-void elements above it then go unwritten and named, never
+#      written to another floor. So this can write fewer than COUNT_BY counts
+#      in a space.
 #   5. All three targets are optional (`absent: none`), each target must be a
 #      text parameter, and every value is read back after it is written.
 #   6. `includeLinks` (D-59, optional, absent = host only): rooms or spaces in
