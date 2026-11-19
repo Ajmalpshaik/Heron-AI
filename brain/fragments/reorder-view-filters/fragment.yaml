@@ -190,18 +190,19 @@ compatibility-note: >
 #   "what order are the filters in on this view"   -> REPORT_VIEW_FILTERS - a READ,
 #   "which filter is on top in this view"             numbered in priority order;
 #   "list the filters on this view in priority        the one to run first.
-#    order"                                           WANTED, NOT YET WON: measured
-#                                                     2026-11-19 with the committed
-#                                                     identity, main against the
-#                                                     branch, these and two more
-#                                                     held-out order questions reach
-#                                                     THIS card on all four backends
-#                                                     when asked without the question
-#                                                     flag - FRAGMENT-ISSUES row
-#                                                     5b-1855. Live, the host asks a
-#                                                     question with question=true,
-#                                                     which leaves every write out
-#                                                     (D-128)
+#    order"                                           PARTLY WON BACK 2026-11-19:
+#                                                     REPORT_VIEW_FILTERS' identity
+#                                                     now says "in priority order"
+#                                                     and it declares two order
+#                                                     questions. Still reaching THIS
+#                                                     card without the question flag:
+#                                                     "which filter is on top" and
+#                                                     "what is the top filter" on
+#                                                     both re-rankers, pulled by
+#                                                     "move this filter to the top" -
+#                                                     FRAGMENT-ISSUES row 5b-1855.
+#                                                     Live, question=true leaves
+#                                                     every write out (D-128)
 #   "which filter wins on this view"               -> REPORT_VIEW_FILTERS - given back
 #                                                     by the identity's rewording
 #   "put that filter on this view"                 -> APPLY_VIEW_FILTER - it adds
