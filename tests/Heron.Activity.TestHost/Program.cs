@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using Heron.Bridge;
 using Heron.Revit.Addin;
 
@@ -17,8 +18,15 @@ namespace Heron.Activity.TestHost
     /// What the Activity pane lists (D-163), checked without Revit or WPF: the
     /// run records read into rows, newest first; each change's outcome in a
     /// modeller's words; which row may offer Undo; and the requests its
-    /// buttons send. The last line is one request as JSON, for
+    /// buttons send. The last two lines are requests as JSON, for
     /// tests/test_activity_pane.py to parse with a reader that did not write it.
+    ///
+    /// UNDO, SINCE ROW 5b-1741 (the owner's answer of 2026-11-16): the button
+    /// asks the add-in's pane-only operation for THE CHANGE IT SHOWS - its run,
+    /// its model, its name - and names no chat, because it is the modeller's own
+    /// click. Asked for by name (UndoFor), so on the HeronActivity before, which
+    /// had only `UndoRequest()` sending `undo_last`, the host still builds and
+    /// each check fails on its own assertion (heron-ship 2a).
     /// </summary>
     internal static class Program
     {
@@ -30,6 +38,21 @@ namespace Heron.Activity.TestHost
             _checks++;
             Console.WriteLine((condition ? "  ok    " : "  FAIL  ") + what);
             if (!condition) Failures.Add(what);
+        }
+
+        /// <summary>
+        /// What Undo sends for `row` - by the one-row request where it exists,
+        /// else, noted as a failure, the request the HeronActivity before had.
+        /// </summary>
+        private static string UndoFor(HeronActivity.Row row)
+        {
+            var flags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
+            var one = typeof(HeronActivity).GetMethod("UndoRequest", flags, null,
+                                                      new[] { typeof(HeronActivity.Row) }, null);
+            if (one != null) return (string)one.Invoke(null, new object[] { row });
+            Check(false, "HeronActivity has UndoRequest(Row) - the request names the change it is for");
+            var none = typeof(HeronActivity).GetMethod("UndoRequest", flags, null, Type.EmptyTypes, null);
+            return none == null ? "{}" : (string)none.Invoke(null, new object[0]);
         }
 
         private static string Record(string run, string fragment, string kind, params string[] elements)
@@ -103,14 +126,42 @@ namespace Heron.Activity.TestHost
                 Check(Json.ReadString(show, "op") == "show_elements" && Json.ReadString(show, "ids") == "101,102,103"
                       && Json.ReadString(show, "zoom") == "true" && Json.ReadString(show, "document") == "Tower MEP",
                       "Zoom asks show_elements for the change's ids, in its model");
-                Check(Json.ReadString(show, "claim") == "no"
-                      && Json.ReadString(HeronActivity.UndoRequest(), "claim") == "no"
-                      && Json.ReadString(HeronActivity.UndoRequest(), "op") == "undo_last",
-                      "and neither ever takes the model from a chat (D-141); Undo is undo_last (D-157)");
+                var undo = UndoFor(newest);
+                Check(Json.ReadString(show, "claim") == "no" && Json.ReadString(undo, "claim") == "no",
+                      "and neither ever takes the model from a chat (D-141)");
+                Check(Json.ReadString(undo, "op") == "undo_from_pane",
+                      "Undo asks the add-in's pane-only operation, undo_from_pane - never undo_last, "
+                      + "which nothing answers (row 5b-1741), nor a chat's undo_own - found: "
+                      + (Json.ReadString(undo, "op") ?? "none"));
+                Check(Json.ReadString(undo, "run") == "wf-20261112-140500-0002-bbbb"
+                      && Json.ReadString(undo, "document") == "Tower MEP"
+                      && Json.ReadString(undo, "fragment") == "raise-ducts",
+                      "for THE CHANGE IT SHOWS: the run it was kept in, its model and its name");
+                Check(undo.IndexOf("conversation", StringComparison.Ordinal) < 0,
+                      "and it names no chat - it is the modeller's own click, so no chat is asked");
                 Check(HeronActivity.Said(Json.Ok(Json.Str("said", "Selected 3."))) == "Selected 3."
                       && HeronActivity.Said(Json.Error("undo_refused", "Not on top.")) == "Not on top."
                       && HeronActivity.Said(null) == "Revit did not answer.",
                       "and the status line says the add-in's own words");
+
+                Console.WriteLine();
+                Console.WriteLine("5. the status line in Revit words, never an operation's name (row 5b-1741)");
+                var raw = HeronActivity.Said(Json.Error("unknown_op",
+                    "Heron has no operation called 'undo_last'. It has: ping, info, undo_own."));
+                Check(raw.IndexOf("undo_last", StringComparison.Ordinal) < 0
+                      && raw.IndexOf("undo_own", StringComparison.Ordinal) < 0
+                      && raw.IndexOf("operation", StringComparison.OrdinalIgnoreCase) < 0
+                      && raw.IndexOf("Nothing was sent to Revit", StringComparison.Ordinal) >= 0,
+                      "an add-in that does not know the request: said in Revit words, that nothing "
+                      + "was sent - never its list of operations - found: " + raw);
+                var unhandled = HeronActivity.Said(Json.Error("not_implemented",
+                    "'undo_from_pane' is declared but Heron has no handler for it."));
+                Check(unhandled.IndexOf("undo_from_pane", StringComparison.Ordinal) < 0
+                      && unhandled.IndexOf("Nothing was sent to Revit", StringComparison.Ordinal) >= 0,
+                      "nor one it has no handler for - found: " + unhandled);
+                var bare = HeronActivity.Said("{\"ok\": false, \"error\": \"write_disabled\"}");
+                Check(bare.IndexOf("write_disabled", StringComparison.Ordinal) < 0 && bare.Length > 20,
+                      "a refusal that carries only its code is said in words, never the code - found: " + bare);
 
                 var many = new List<string>();
                 for (var i = 0; i < HeronActivity.MostIds + 20; i++) many.Add("added:" + (1000 + i));
@@ -128,6 +179,7 @@ namespace Heron.Activity.TestHost
                 }
                 else Console.WriteLine("PASS    " + _checks + " check(s)");
                 Console.WriteLine("SHOW-JSON " + show);
+                Console.WriteLine("UNDO-JSON " + undo);
                 return Failures.Count == 0 ? 0 : 1;
             }
             finally

@@ -13,6 +13,15 @@
 > the adapter's result did not carry (NEEDS-CHECKING [K3](needs-checking/group-k.md)). **K3 is still NOT RUN:** it needs Ollama installed
 > with one model pulled. Nothing in `brain/` or `mcp/server/` imports the adapter yet, so no answer Heron
 > serves goes through it.
+>
+> **2026-11-16: `judge()` is the adapter's own now.** `HERON-KRN-MAV-017` was cut to its register row -
+> whether a provider is reachable, and the fallback when it is not, are the host's
+> ([D-65](decisions/D-65.md)) - and keeps only the degraded mark and `counts_as_evidence()`. Its
+> `judge()` moved, logic unchanged, into [`heron_provider.py`](../brain/heron_provider.py) beside the probe
+> it reads, and its `resolve()` is gone ([row 5b-1747](fragment-issues/row-5b-1747.md)). Where this page
+> says `heron_availability.judge()`, the function is `heron_provider.judge()`; the sections below are
+> left as they were written. Whether this adapter should probe, judge or call a provider at all, against
+> [D-58](decisions/D-58.md) and D-65, is [row 5b-1839](fragment-issues/row-5b-1839.md).
 
 ### At a glance — the adapter as built, and what nothing uses yet
 

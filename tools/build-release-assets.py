@@ -278,6 +278,10 @@ WORKSPACE_KEEP = [
     "requirements-optional.txt",    # and check-dependencies reads both
     "requirements-lock.txt",        # the pinned packages PythonSetup and WHAT-TO-INSTALL step 4 install
     os.path.join("platform", "heron-products.json"),   # the installer's own list
+    # The folders HeronPaths wrote down for the scripts below (Q-58). Without
+    # it they stop, by name, before changing anything - a download missing it
+    # installs nothing.
+    os.path.join("platform", "heron-folders.json"),
     os.path.join("tools", "deploy-addin.ps1"),         # what an installer drives
     os.path.join("tools", "HeronRevit.ps1"),           # and what that dot-sources
     os.path.join("tools", "check-dependencies.py"),    # WHAT-TO-INSTALL section 5

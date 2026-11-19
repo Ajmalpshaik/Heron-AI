@@ -127,6 +127,7 @@ from heron_session import NotBound                  # noqa: E402
 from heron_write import (BadDistance, describe_vertical,   # noqa: E402
                          parse_millimetres, reported_elsewhere, skipped_sentence,
                          undo_line, undo_sent_elsewhere)
+from heron_write import after_save                  # noqa: E402 - Q-69
 from heron_failure import analyse, explain          # noqa: E402
 from heron_failure import RUNNING as RUNNING_OUTCOME   # noqa: E402
 from heron_failure import UNKNOWN as UNKNOWN_OUTCOME   # noqa: E402
@@ -135,6 +136,7 @@ import heron_config as configuration                # noqa: E402
 import heron_health as health                       # noqa: E402
 import heron_brain as brain                         # noqa: E402
 import heron_run_records as runs                    # noqa: E402
+import heron_runtime as runtime                     # noqa: E402
 
 import heron_server_core as core                           # noqa: E402
 
@@ -220,6 +222,12 @@ def _through(tool, reply_out=None, origin="chat"):
 WAITING_ON_REVIT = ("Waiting for Revit - %d s so far. The modeller may be "
                     "answering a prompt in Revit.")
 
+# AND WHAT IT IS TOLD FOR A CARD THAT WAITS FOR THE MODELLER'S CLICK - one
+# whose contract declares `waitsForModeller` (Q-86). That wait is a person's,
+# known before it starts, so it is said as one.
+WAITING_FOR_CLICK = ("Waiting for you to click in Revit - %d s so far. Revit's "
+                     "status bar says what to click; Esc cancels.")
+
 
 def _progress_token(ctx):
     """
@@ -245,10 +253,11 @@ def _progress_token(ctx):
     return None if isinstance(token, bool) else token
 
 
-def _waiting(ctx):
+def _waiting(ctx, for_click=False):
     """
     The `on_wait` a tool hands the bridge client, or None when the host gave
-    no progressToken.
+    no progressToken. `for_click` - the card waits for the modeller's click
+    (Q-86) - says WAITING_FOR_CLICK instead of WAITING_ON_REVIT.
 
     The client calls it from the thread the tool runs on - SDK 2.x runs a
     plain tool on a worker thread - so the notification is sent on the event
@@ -266,11 +275,12 @@ def _waiting(ctx):
     if _progress_token(ctx) is None:
         return None
     began = time.monotonic()
+    words = WAITING_FOR_CLICK if for_click else WAITING_ON_REVIT
 
     def note(_read_waited):
         waited = time.monotonic() - began
         anyio.from_thread.run(ctx.report_progress, round(waited, 1), None,
-                              WAITING_ON_REVIT % waited)
+                              words % waited)
     return note
 
 
@@ -323,14 +333,36 @@ def revit_health() -> str:
     # unchanged - it was proven in Steps 3 and 5 and is what a person actually
     # reads when something IS wrong.
     settings = configuration.load()
+
+    # CHANGES, ADMIN AND PUBLISH AS EACH REVIT HOLDS THEM (D-166), AND THE
+    # SETTINGS FILE EACH READS (Q-70, decided 2026-11-15): both from the
+    # lease-exempt `info`, so asking claims nothing. Since D-166 the three
+    # switches are in each Revit's memory and in no file, so the write gate
+    # below is what the Revits that said have - Changes on in any of them is
+    # the warning, off in all of them is closed - and, when none said, no
+    # answer at all: never this chat's own copy of the settings file, which
+    # holds no switch. That copy is set beside each Revit's settings file only
+    # to say when the two are not one file - for Ask to Keep and the other
+    # settings D-166 left in it; on a PC whose Claude app keeps its own copy of
+    # the Heron folder it is not the file Revit reads.
+    held = dict((b.pid, bridge.switches_state(b)) for b in live)
+    said = dict((b.pid, bridge.settings_state(b)) for b in live)
+    # heron_health.write_gate is that rule, and heron_diagnose's too (row
+    # 5b-1744), so the two cannot give opposite write-gate words in one chat.
+    writing, said_by = health.write_gate(live, held)
+    here_file = configuration.config_path()
+    here_found = bool(here_file) and os.path.isfile(here_file)
+    here = configuration.switches(settings)
+
     rollup = health.assess(
         live=live, starting=starting, mismatched=mismatched,
         config_problems=configuration.problems(settings),
-        # Held in each Revit since D-166, so not from this side's file: each
-        # Revit's own line below says which switches it holds on.
-        writing=None,
+        # Held in each Revit since D-166, so not from this side's file: what
+        # the Revits that answered said, or None when none did.
+        writing=writing,
         protocol_version=bridge.PROTOCOL_VERSION,
-        versions_agree=not mismatched)
+        versions_agree=not mismatched,
+        writing_said_by=said_by)
 
     lines = [rollup.describe(), ""]
 
@@ -389,11 +421,21 @@ def revit_health() -> str:
             # read says that instead, and blames no add-in. Never the
             # default, and never this side's own copy of the settings file,
             # which on some PCs is not the one Revit reads (Q-70).
-            lines.append("      " + health.ask_to_keep_line(bridge.ask_to_keep_state(b)))
+            asks = bridge.ask_to_keep_state(b)
+            lines.append("      " + health.ask_to_keep_line(asks))
             # AND CHANGES, ADMIN AND PUBLISH, as this Revit holds them (D-166) -
             # in its memory, set only in its Settings window, so its own word
             # is the only one there is. From `info` again; claims nothing.
-            lines.append("      " + health.switches_line(bridge.switches_state(b)))
+            lines.append("      " + health.switches_line(held[b.pid]))
+            # AND THE FILE THIS REVIT READS ITS OTHER SETTINGS FROM, AND - WHEN
+            # THIS CHAT'S OWN COPY IS NOT THAT FILE - ONE LINE SAYING SO (Q-70).
+            # Both answers remembered for heron_why, which asks Revit nothing
+            # (PROPOSALS F1).
+            lines.extend("      " + line for line in health.settings_lines(
+                said[b.pid], asks, here_file, here_found, here))
+            _settings_heard(b, held[b.pid], said[b.pid], health.differs(
+                health.settings_differ(said[b.pid], asks, here_file, here_found,
+                                       here)))
             b.close()
 
         if len(live) > 1 and binding.pid is None:
@@ -1815,6 +1857,13 @@ def revit_change(capability: str = "", values: str = "",
     # drop, it was the silence.
     undeclared, takeable = bridge.undeclared_values(_values_array(values), needs)
 
+    # Q-89: NOTHING A RUN THAT WAS TAKEN BACK LEFT IS HANDED ON - refused here,
+    # before a session is bound, when this chat's own runs say so. The add-in
+    # refuses it too (chain_taken_back), for a run only Revit saw end.
+    taken_back = _TAKEN_BACK.refusal(expect_from)
+    if taken_back:
+        return _ended("refused", taken_back)
+
     try:
         session = binding.resolve()
     except NotBound as unbound:
@@ -1910,6 +1959,13 @@ def revit_change(capability: str = "", values: str = "",
     # HOW IT ENDED IS THE ADD-IN'S REPLY, NOT THE WORDS EXPLAIN WRAPS IT IN:
     # a refusal whose message never says "refused" is still one (5b-274).
     failure = analyse(reply, writes=tools.writes("revit_change"))
+
+    # Q-89: AND HOW THIS RUN ENDED, for the next call's expect_from - a dry run
+    # or a Discard is taken back; an answer the add-in refused moved nothing.
+    _TAKEN_BACK.answered(folder, capability, dry_run, reply,
+                         failure is not None
+                         and failure.outcome not in (UNKNOWN_OUTCOME, RUNNING_OUTCOME))
+
     if failure is not None:
         return (_ended(_failure_ended(failure), explain(failure))
                 + _what_to_type(failure, capability)
@@ -1955,6 +2011,12 @@ def revit_change(capability: str = "", values: str = "",
                             "add-in's \"with apply\" - that is its word to its own "
                             "callers, not to a chat.")
         return wrong_model
+
+    # Q-69: WHAT THE SAVE AFTER THE GROUP DID, and a Save As this run did of
+    # the pinned model followed by the pin, deliberately - only now, once the
+    # pin has passed the reply, and before anything reads whether the model has
+    # a file. heron_write.after_save says why.
+    reply, saved = after_save(pinned, reply)
 
     # THIS CALL'S PLACE IN THE BATCH, decided once the answer is in hand.
     _BATCH.turn(started, time.monotonic())
@@ -2061,6 +2123,10 @@ def revit_change(capability: str = "", values: str = "",
         lines.append(str(reply["verdict"]) if dry_run
                      else runs.verdict_line(reply, _BATCH))
 
+    # Q-69: AND WHAT THE SAVE DID, under the verdict - kept or not, in the
+    # add-in's own words, a Discard's included.
+    lines.extend(saved)
+
     # NO "NOT PROVEN" LINE HERE ANY MORE. It warned after the change was kept;
     # a fragment that is not PROVEN is now refused before it is sent (D-117).
     #
@@ -2116,19 +2182,19 @@ def revit_change(capability: str = "", values: str = "",
         # remembers what EVERY run left, a rolled-back one included
         # (RevitFragment.Remember), so after this call the chat's carried
         # values are the dry run's: the kept call sent with the same
-        # expect_from would be refused (chain_mismatch), and one naming THIS
-        # capability would bind values of a change Revit no longer holds.
-        # Whether a rolled-back run should replace them at all is not decided
-        # anywhere (OPEN-QUESTIONS Q-89, row 5b-1612); until it is, the reply
-        # says what is true of the add-in as built.
+        # expect_from is refused by the add-in (chain_taken_back - an older
+        # one says chain_mismatch). One naming THIS capability would bind
+        # values of a change Revit no longer holds, and OPEN-QUESTIONS Q-89,
+        # decided 2026-11-15, refuses it: here (_TAKEN_BACK), and in the add-in.
         if expect_from and expect_from.strip():
             closing += (" This dry run used up what '%s' left: run that call again "
                         "before the kept run, and send the same expect_from - sent "
                         "as it is now, the kept run is refused, because what Revit's "
                         "Heron carries was left by this dry run."
                         % runs.one_line(expect_from.strip()))
-        closing += (" Take nothing from this dry run with expect_from: what it left "
-                    "is of a change Revit no longer holds.")
+        closing += (" Nothing this dry run left is handed on: a call whose expect_from "
+                    "names it is refused, because what it left is of a change Revit no "
+                    "longer holds.")
         lines.append(closing)
         _outcome(ROLLED_BACK, says=ROLLED_BACK_AS_ASKED)
         return _ended("ok", "\n".join(lines))
@@ -2176,6 +2242,10 @@ def revit_change(capability: str = "", values: str = "",
 
 #: What this chat has already printed in the current batch - see heron_run_records.Batch.
 _BATCH = runs.Batch()
+
+#: Which of this chat's runs were taken back, so nothing they left is handed on
+#: (Q-89) - see heron_run_records.TakenBack.
+_TAKEN_BACK = runs.TakenBack()
 
 
 def _new_request_id():
@@ -3161,6 +3231,11 @@ def revit_read(capability: str = "", values: str = "",
     # called from the client exactly as revit_change calls it.
     undeclared, takeable = bridge.undeclared_values(_values_array(values), needs)
 
+    # Q-89: NOTHING A RUN THAT WAS TAKEN BACK LEFT IS READ - revit_change's rule.
+    taken_back = _TAKEN_BACK.refusal(expect_from)
+    if taken_back:
+        return _ended("refused", taken_back)
+
     try:
         session = binding.resolve()
     except NotBound as unbound:
@@ -3201,10 +3276,13 @@ def revit_read(capability: str = "", values: str = "",
     # comes back as unknown_outcome instead of being asked for again. The
     # FRAGMENT timeout, because a fragment's first run in a session includes
     # compiling it.
+    # A CARD THAT WAITS FOR THE MODELLER'S CLICK (Q-86) is waited for as long
+    # as the add-in waits for it, and the host is told it is a click.
+    waits = bridge.waits_for_modeller(needs)
     _sent()
     reply = session.request("run_fragment_read", op_args=args,
-                            response_timeout=configuration.fragment_timeout(),
-                            idempotent=not consumes, on_wait=_waiting(ctx))
+                            response_timeout=configuration.fragment_timeout(waiting=waits),
+                            idempotent=not consumes, on_wait=_waiting(ctx, waits))
     session.close()
     _ctx_reply(reply)
 
@@ -3386,6 +3464,11 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
     # called from the client exactly as both other doors call it.
     undeclared, takeable = bridge.undeclared_values(_values_array(values), needs)
 
+    # Q-89: NOTHING A RUN THAT WAS TAKEN BACK LEFT IS SHOWN - revit_change's rule.
+    taken_back = _TAKEN_BACK.refusal(expect_from)
+    if taken_back:
+        return _ended("refused", taken_back)
+
     try:
         session = binding.resolve()
     except NotBound as unbound:
@@ -3411,10 +3494,14 @@ def revit_show(capability: str = "", values: str = "", expect_from: str = "",
     # elements again, or zooming to them again, leaves the screen as it was.
     # A consuming run replaces the chain, so a resend would be refused on
     # expect_from - revit_read's reason, and its rule.
+    # A CARD THAT WAITS FOR THE MODELLER'S CLICK (Q-86) - PICK_ON_SCREEN - is
+    # waited for as long as the add-in waits for it, and the host is told it
+    # is a click it waits for, not Revit.
+    waits = bridge.waits_for_modeller(needs)
     _sent()
     reply = session.request("run_fragment_show", op_args=args,
-                            response_timeout=configuration.fragment_timeout(),
-                            idempotent=not consumes, on_wait=_waiting(ctx))
+                            response_timeout=configuration.fragment_timeout(waiting=waits),
+                            idempotent=not consumes, on_wait=_waiting(ctx, waits))
     session.close()
     _ctx_reply(reply)
 
@@ -3653,6 +3740,8 @@ def revit_undo_last(check_only: bool = False) -> str:
     """
     Undo Heron's LAST kept change in the model this chat works on - Revit's
     own Undo, exactly as Ctrl+Z, never a second change made to reverse the first.
+    Only the chat that made a change may undo it: when Heron's last change in
+    that model was made in another chat, it is refused and nothing is sent.
 
     Use ONLY when the user asks to undo or take back what Heron just did.
     Revit's Undo takes whatever was done last, so it is sent only while Heron
@@ -3674,12 +3763,11 @@ def revit_undo_last(check_only: bool = False) -> str:
         _outcome(NOT_RUN)
         return _ended("refused", str(unbound))
 
-    # NO PIN, NO UNDO. The guard in the add-in remembers a MODEL's last kept
-    # change, not whose it was: a chat that has worked in no model has no
-    # change of its own there, and the one it would take is another chat's.
-    # D-157 refuses when "the pinned model is not that one" and is silent on
-    # a chat with no pin at all - so this refuses, and the question is
-    # recorded (OPEN-QUESTIONS). Before anything is sent.
+    # NO PIN, NO UNDO. A chat that has worked in no model has no change of
+    # its own there, so it is refused before anything is sent - as it was
+    # before Q-88 was decided. A pinned chat is answered by the add-in, which
+    # records which chat kept a model's last change and refuses every other
+    # (Q-88, 2026-11-16) in the request that would post.
     if not pinned.is_pinned:
         return _ended("refused",
                       "This chat has not worked in a model yet, so there is no change of "
@@ -3705,11 +3793,13 @@ def revit_undo_last(check_only: bool = False) -> str:
     # be asked again.
     # FROM HERE THE REQUEST HAS LEFT (`_after_it_left`).
     _sent()
-    # `undo_guarded`, NEVER `undo_last`: the first build of this tool answers
-    # that name by posting on its old rule (heron_tools.TOOLS says why). An
-    # add-in without the repair knows neither name here, and is never asked
-    # to post.
-    reply = session.request("undo_check" if check_only else "undo_guarded",
+    # `undo_own`, NEVER `undo_guarded` OR `undo_last`: an add-in built before
+    # Q-88 answers those by posting for whichever chat's change is on top,
+    # and the first build on a weaker rule still (heron_tools.TOOLS says
+    # why). One built before knows neither name here, answers `unknown_op`,
+    # and is never asked to post. WHICH CHAT is the conversation the bridge
+    # puts on every request of this process (D-141): no argument carries it.
+    reply = session.request("undo_own_check" if check_only else "undo_own",
                             op_args=args, idempotent=bool(check_only))
     session.close()
 
@@ -3720,10 +3810,10 @@ def revit_undo_last(check_only: bool = False) -> str:
         # busy or the model held NOT RUN, an answer lost OUTCOME UNKNOWN.
         label = _failure_ended(failure)
         if failure.code == "unknown_op":
-            # AN ADD-IN WITHOUT THE REPAIR - from before D-157, or its first
-            # build - ANSWERS "Heron has no operation called ..." and lists
-            # the ones it has, said to a modeller raw until 2026-11-12. In
-            # Revit's words: that Revit's Heron is older than this chat's,
+            # AN ADD-IN BUILT BEFORE - from before D-157, its first build, or
+            # before Q-88 - ANSWERS "Heron has no operation called ..." and
+            # lists the ones it has, said to a modeller raw until 2026-11-12.
+            # In Revit's words: that Revit's Heron is older than this chat's,
             # and nothing was sent.
             return _ended(label,
                           "The Heron add-in in %s is older than this chat's Heron and "
@@ -4499,12 +4589,13 @@ def _checklist_run_page(name, hold):
         _note("companion_checklist", started, 0, reply=str(why), outcome="failed")
         return {"ok": False, "said": str(why)}
     try:
-        checklist = store.find(name)
+        checklist, notes = store.prepare_run(store.find(name))
     except store.ChecklistError as why:
         said = "Nothing was run: %s" % why
         _note("companion_checklist", started, 0, reply=said, outcome="refused")
         return {"ok": False, "said": said}
     answer = _run_checklist(checklist, origin="companion", progress=hold)
+    store.stamp(answer, checklist, notes)
     hold(answer)
     ran = answer["counts"]["pass"] + answer["counts"]["fail"]
     outcome = "failed" if answer.get("failed") else None if ran else "refused"
@@ -5056,7 +5147,24 @@ def _other_release_lines(found, indent="  "):
     """The one line naming the tool these words reach first when the version
     wall left it out - heron_brain.lookup's `other_release`, issue #799 item
     2. Named so the nearest tool for THIS release is not read as the answer;
-    never offered, so nothing here can run it. Nothing when there is none."""
+    never offered, so nothing here can run it. Nothing when there is none.
+
+    AND WHEN A CARD FOR THIS RELEASE DOES THAT CARD'S JOB, THE LINE OFFERS
+    IT INSTEAD (row 5b-1823): heron_brain.lookup's `done_here_by`, which is
+    then the answer. On Revit 2025 "edit the wall profile to follow the
+    gable" was told it is done by hand, naming SHAPE_WALL_TOPS_TO_ROOF
+    (2022 to 2024), while ATTACH_WALLS does that job there."""
+    instead = found.get("done_here_by")
+    if instead:
+        release, walled = found.get("revit"), instead.get("instead_of") or {}
+        return [indent + "ON REVIT %s THIS IS %s. %s matches these words best, but it is "
+                "declared for Revit %s, so it is not offered on Revit %s; its own words "
+                "\"%s\" reach %s, declared for Revit %s, so %s is offered in its place. "
+                "Offer it to the user for this."
+                % (release, instead["capability"], walled.get("capability"),
+                   ", ".join(walled.get("revit") or []) or "no release", release,
+                   instead["words"], instead["capability"],
+                   ", ".join(instead["revit"]) or "no release", instead["capability"])]
     other = found.get("other_release")
     if not other:
         return []
@@ -5430,6 +5538,258 @@ def heron_resolve(capability: str) -> str:
     lines.append("")
     lines.append(_doors_in_short() if _said_before("doors") else _cannot_run())
     lines.append(_not_proven(short=_said_before("proved")))
+    return "\n".join(lines)
+
+
+# WHY HERON CANNOT DO SOMETHING - PROPOSALS F1, decided 2026-11-15 on the
+# owner's delegation and not read back to him. heron_runtime.snapshot tells
+# six reasons apart where heron_capability.resolve() has one None; nothing
+# served it, because offering it changed the risk table in heron_tools.py
+# (docs/12 s71). heron_why is that row: READ, no bridge operation.
+#
+# IT ASKS REVIT NOTHING, AND THAT IS WHY ITS FACTS ARE THE WEAKER ONES. The
+# release and whether a Revit is there come from the address book - the note
+# each Revit writes when its Heron button is pressed - never from
+# bridge.discover(), which PINGS every entry to learn whether it answers;
+# the switches come from Heron's settings file on this PC, which on some PCs
+# is not the copy Revit reads (Q-70). The answer names where each fact came
+# from, so it is never read as Revit's own word: revit_health asks Revit.
+
+
+def _announced():
+    """
+    Every Revit whose Heron button is on, as the address book says - and
+    nothing asked of any of them: no pipe opened, no ping sent.
+
+    bridge.discover() reads the same folder and then talks to each entry; this
+    stops before that. An entry is left out when its process is known to be
+    gone, by the test discover() uses, or when it speaks a protocol this
+    client does not - Heron would refuse to talk to it. "Cannot tell" is
+    never "gone", discover()'s own rule. Nothing is deleted: pruning a dead
+    entry is discover()'s, and an address book is the add-in's.
+    """
+    import json
+    found = []
+    try:
+        names = sorted(os.listdir(bridge.DISCOVERY_DIR))
+    except OSError:
+        return found
+    for name in names:
+        if not name.endswith(".json"):
+            continue
+        path = os.path.join(bridge.DISCOVERY_DIR, name)
+        try:
+            with io.open(path, "r", encoding="utf-8") as fh:
+                record = json.load(fh)
+        except (OSError, ValueError):
+            continue
+        if not isinstance(record, dict):
+            continue
+        one = bridge.Bridge(record, path)
+        if one.protocol_version != bridge.PROTOCOL_VERSION:
+            continue
+        if bridge.bridge_process_is_running(one.pid) is False:
+            continue
+        found.append(one)
+    return found
+
+
+def _why_facts(asked):
+    """
+    What heron_why judges by, each read without asking Revit anything:
+    {"release", "how", "bridge", "switches", "announced"}.
+
+    `asked` is the release the chat named, or None for the Revit this chat
+    would use - the session layer's own rule (heron_session.version_for_filter)
+    over the address book, with this chat's choice. `switches` is None off
+    Windows (D-132): no switch of the owner's is on this machine to read.
+    """
+    if core.LIBRARY_ONLY:
+        return {"release": asked, "how": "as asked" if asked else NO_REVIT_HERE,
+                "bridge": "none", "switches": None, "announced": [],
+                "heard": None}
+    announced = _announced()
+    if asked:
+        release, how = asked, "as asked"
+    else:
+        release, how = session.version_for_filter(announced, binding.pid,
+                                                  binding.was_chosen)
+    there = release is not None and any(str(b.revit_version) == str(release)
+                                        for b in announced)
+    # WHAT THAT REVIT LAST SAID IT HOLDS (D-166, Q-70). Changes, Admin and
+    # Publish are in each Revit's memory since D-166 and in no file, so the
+    # only word there is is the Revit's - remembered by revit_health, never
+    # asked here: heron_why sends nothing to Revit (PROPOSALS F1), and the
+    # answer says how old the word is. With none heard, every switch is
+    # judged off - the way each Revit starts - and the answer says that was
+    # assumed, not said. (Until D-166 this read this PC's heron.config, and a
+    # Revit's word only where revit_health found its file differed.)
+    heard = _heard_from(release, announced)
+    held = heard["switches"] if heard is not None else {}
+    switches = {"write_enabled": bool(held.get("changes")),
+                "admin_enabled": bool(held.get("admin")),
+                "publish_enabled": bool(held.get("publish"))}
+    return {"release": release, "how": how,
+            "bridge": "connected" if there else "none",
+            "switches": switches,
+            "announced": announced, "heard": heard}
+
+
+# WHAT EACH REVIT LAST SAID OF ITS SWITCHES TO THIS CHAT'S revit_health, by
+# session (D-166, Q-70) - Changes, Admin and Publish as it holds them in
+# memory, the settings file it named for the rest, and whether this chat's own
+# copy was not that file. Read by heron_why alone, which may ask Revit
+# nothing; nothing decides by it, and Revit looks at its switches again before
+# every change whatever this holds.
+_SETTINGS_HEARD = {}
+
+
+def _settings_heard(b, held, said, differs):
+    """Remember what one Revit said - its switches (a switches_state dict) and
+    the file it named (a settings_state dict, or None) - or forget an earlier
+    answer when this one said no switches Heron could use."""
+    if isinstance(held, dict):
+        _SETTINGS_HEARD[b.pid] = {"switches": held,
+                                  "file": said if isinstance(said, dict) else None,
+                                  "differs": bool(differs),
+                                  "at": time.monotonic(), "pid": b.pid,
+                                  "release": b.revit_version}
+    else:
+        _SETTINGS_HEARD.pop(b.pid, None)
+
+
+def _heard_from(release, announced):
+    """What revit_health last heard from the one announced Revit of this
+    release - this chat's, when it is one of them - or None: never a guess
+    between two."""
+    if release is None:
+        return None
+    there = [b for b in announced if str(b.revit_version) == str(release)]
+    there = [b for b in there if b.pid == binding.pid] or there
+    if len(there) != 1:
+        return None
+    heard = _SETTINGS_HEARD.get(there[0].pid)
+    if heard is None or str(heard["release"]) != str(release):
+        return None
+    return heard
+
+
+def _ago(at):
+    """How long ago a time.monotonic() reading was, in words."""
+    minutes = int(max(0.0, time.monotonic() - at) // 60)
+    if minutes < 1:
+        return "just now"
+    if minutes < 60:
+        return "%d minute%s ago" % (minutes, "" if minutes == 1 else "s")
+    hours = minutes // 60
+    return "%d hour%s ago" % (hours, "" if hours == 1 else "s")
+
+
+def _why_switches_line(facts):
+    """Which switches heron_why judged by, and whose word they were, in one line."""
+    on = facts["switches"]
+    named = "Changes %s, Admin %s, Publish %s" % tuple(
+        "on" if on[k] else "off" for k in ("write_enabled", "admin_enabled", "publish_enabled"))
+    heard = facts["heard"]
+    if heard is None:
+        return ("%s - assumed, not said: no Revit of this release has told this chat's "
+                "revit_health what it holds. Each Revit holds them in memory, off "
+                "whenever it starts (D-166), and revit_health asks it" % named)
+    who = "Revit %s (session %s)" % (heard["release"], heard["pid"])
+    return ("%s - as %s said it holds them, when revit_health asked it %s; held in "
+            "its memory (D-166), so a switch pressed since then is not seen here"
+            % (named, who, _ago(heard["at"])))
+
+
+def _why_release_line(facts):
+    """Where heron_why's release came from, in one line."""
+    release, how = facts["release"], facts["how"]
+    if core.LIBRARY_ONLY:
+        return ("Revit %s, as asked - %s" % (release, NO_REVIT_HERE) if release
+                else "not known - %s" % NO_REVIT_HERE)
+    if how == "as asked":
+        return ("Revit %s, as asked; %s Revit %s has its Heron button on"
+                % (release, "a" if facts["bridge"] == "connected" else "no",
+                   release))
+    if release is None:
+        return "not known - %s" % how
+    return "Revit %s - %s" % (release, how)
+
+
+@server.tool()
+def heron_why(capability: str, release: str = "") -> str:
+    """
+    Why Heron cannot do one named capability right now - or that nothing
+    stands in the way - and what the modeller can do about it.
+
+    Use it when the modeller asks "why can't you ...", or after a refusal, to
+    give the real reason instead of "I cannot": nothing in Heron's library
+    does it; not on this Revit release; which release is not known; the
+    owner's Changes, Admin or Publish switch is off; or no Revit has its
+    Heron button pressed.
+
+    `capability` is a capability name, as heron_lookup names one. `release`
+    is a Revit release such as "2024", to ask about that one; empty means the
+    Revit this chat would use, when Heron can tell. Reads Heron's library,
+    what that Revit last told revit_health of its Changes, Admin and Publish
+    switches - held in Revit, never in a file - and the note Revit leaves when
+    the Heron button is pressed. It sends nothing to Revit and changes nothing.
+    """
+    name = (capability or "").strip().upper()
+    if not name:
+        return ("Name the capability to ask about, as heron_lookup names one - "
+                "SET_SELECTION, for example. Nothing was sent to Revit.")
+    try:
+        rows = brain.providers(name)
+    except brain.BrainUnavailable as why:
+        return str(why)
+
+    facts = _why_facts((release or "").strip() or None)
+    switches = facts["switches"]
+    if switches is None:
+        # NO REVIT HERE, AND SO NO SWITCH OF THE OWNER'S TO READ. Nothing is
+        # judged blocked by one; the answer names the switches it would need
+        # on his PC instead.
+        snap = runtime.snapshot([name], {name: rows}, release=facts["release"],
+                                bridge=facts["bridge"],
+                                ceiling=runtime.RISK_ORDER[-1])
+    else:
+        snap = runtime.snapshot([name], {name: rows}, release=facts["release"],
+                                bridge=facts["bridge"], **switches)
+    cap = snap.capabilities[0]
+    heard = facts["heard"]
+    said, can_do = runtime.in_revit_words(
+        cap, rows, release=facts["release"], how=facts["how"],
+        no_revit_here=core.LIBRARY_ONLY,
+        write_enabled=bool(switches and switches["write_enabled"]),
+        said_by=("Revit %s (session %s)" % (heard["release"], heard["pid"])
+                 if heard is not None else None))
+
+    lines = [said, "", "What you can do: " + can_do]
+    if rows:
+        status, risk, door, held = _how_it_runs(name, cap.risk)
+        lines.extend(["",
+                      "  status    %s" % status,
+                      "  risk      %s" % risk,
+                      "  run with  %s" % (door or "not said - its risk could "
+                                                  "not be read")])
+        if held:
+            lines.append("  Not proved yet: revit_change keeps a change only "
+                         "from a capability whose proof stands (D-117), so it "
+                         "refuses this one until it is proved, whatever else "
+                         "above is true.")
+
+    lines.extend(["", "What Heron went by - it asked Revit nothing:",
+                  "  release   %s" % _why_release_line(facts)])
+    if switches is not None:
+        lines.append("  switches  " + _why_switches_line(facts))
+    if facts["announced"]:
+        lines.append("  Revit     %s with the Heron button on, from the note "
+                     "each leaves - revit_health asks whether it answers"
+                     % ", ".join("%s (session %s)" % (b.revit_version, b.pid)
+                                 for b in facts["announced"]))
+    lines.append("  reason    %s" % cap.verdict)
+    lines.append("Nothing was sent to Revit.")
     return "\n".join(lines)
 
 
@@ -6485,6 +6845,21 @@ def _checklist_contracts(checks):
     return contracts
 
 
+def _checklist_overrides(overrides):
+    """The chat's `overrides` - a JSON list, or nothing - as the store takes
+    it (D-179). What each may change is the store's to check."""
+    import json
+    if not (overrides or "").strip():
+        return []
+    try:
+        given = json.loads(overrides)
+    except ValueError as why:
+        raise ValueError("`overrides` must be a JSON list: %s." % why)
+    if not isinstance(given, list):
+        raise ValueError("`overrides` must be a JSON list.")
+    return given
+
+
 def _checklist_checks(checks):
     """The chat's `checks` - a JSON list - into the store's check dicts. A
     check's `values` may be "name=value" lines (read as revit_read reads them),
@@ -6614,6 +6989,25 @@ def _checklist_ask(origin="chat", ctx=None):
     return ask, first
 
 
+def _checklist_report(store, answer):
+    """
+    D-178: the run written as an Excel workbook and an HTML page in
+    `<data home>/checklists/reports`, and one line saying where. Each file is
+    made new - nothing is ever written over. A report that cannot be written
+    costs only the report: the run's answer above it stands.
+    """
+    try:
+        writer = brain.checklist_report()
+        home = store.folder(make=True)
+        if home is None:
+            return "No report was written: this PC has no folder for Heron's data."
+        paths = writer.write(answer, os.path.join(os.path.dirname(home), "reports"))
+    except (brain.BrainUnavailable, OSError) as why:
+        return "No report was written: %s. The results above stand." % why
+    return ("The report is written, new files - nothing was written over:\n  Excel: %s\n  Page:  %s"
+            % (paths[0], paths[1]))
+
+
 def _run_checklist(checklist, origin="chat", ctx=None, progress=None):
     """
     Run one saved checklist on the one model this chat is bound to. Returns
@@ -6696,32 +7090,32 @@ def _checklist_on_page(answer):
 
 @server.tool()
 def heron_checklist(action: str = "list", name: str = "", checks: str = "",
-                    description: str = "", replace: bool = False,
+                    description: str = "", replace: bool = False, report: bool = False,
+                    extends: str = "", overrides: str = "",
                     ctx: _Context = None) -> str:
     """
-    The modeller's QA CHECKLISTS: checks written in their words, saved once,
-    run in one go on the model. A run only reads.
+    The modeller's QA CHECKLISTS: checks in their words, saved once, run in
+    one go. A run only reads.
 
-    action="save", when they ask: `name`, `description` (one line) and
-    `checks`, a JSON list - each {"sentence": their words, "capability": ONE
-    capability that reads, "values": "name=value" lines, "rule": "output op
-    number" on one output it declares - "failures == 0", "ids": the output
-    holding failing element ids, or ""}. Optional, in their words: "severity"
-    high, medium or low; "clause", the BEP or standard it comes from; "advice",
-    how to fix. Optional, from the card: "missing", the output counting
-    elements it could not read, and "applicable", the one counting elements
-    looked at. Turn each sentence into a check with heron_lookup; ask, never
-    guess. replace=true only when they said so.
+    action="save", when asked: `name`, `description` (one line), `checks` - a
+    JSON list of {"sentence": their words, "capability": ONE that reads,
+    "values": "name=value" lines, "rule": "output op number" on one output it
+    declares ("failures == 0"), "ids": the output of failing ids, or ""};
+    optional "severity" (high, medium, low), "clause", "advice", and from the
+    card "missing" (elements it could not read) and "applicable" (elements
+    looked at). Make each check with heron_lookup; ask, never guess.
+    replace=true only when told. A project list may extend an office list:
+    `extends` its name; `overrides` a JSON list of {"sentence": the office
+    check's exact words, and only "severity", "target" or "enabled"};
+    `checks` then holds the project's own, or nothing.
 
-    "list" names them; "show" gives one's checks; "delete" removes one when
-    asked; "starter" saves Heron's example under `name`, only when asked.
+    "list", "show"; "delete" and "starter" (Heron's example) only when asked.
 
-    "run" runs `name` check by check through revit_read: PASS meets the value
-    checked, FAIL does not, NO DATA could not decide - data missing - and NOT
-    RUN says why; neither of the last two is ever a pass. Give the Coverage
-    line with the counts. Each says NEW, STILL OPEN or FIXED against the last
-    run on that model. Never call the model compliant. Results also go on the
-    Companion's QA Checklist.
+    "run" runs `name` through revit_read: PASS meets the value checked, FAIL
+    does not, NO DATA could not decide, NOT RUN says why - neither of the
+    last two is a pass. Give the Coverage line, and NEW, STILL OPEN or FIXED
+    against the last run. Never call the model compliant. report=true, when
+    they ask for a report, also writes Excel and HTML files; give both paths.
     """
     try:
         store = brain.checklists()
@@ -6742,7 +7136,10 @@ def heron_checklist(action: str = "list", name: str = "", checks: str = "",
             return "\n".join(lines)
         if act == "show":
             checklist = store.find(name)
-            return "\n".join([store.describe(checklist)] + [
+            extended = ["Extends '%s'. Overrides: %s." % (checklist["extends"], "; ".join(
+                "%s -> %s" % (o["sentence"], ", ".join("%s %s" % (k, o[k]) for k in sorted(o) if k != "sentence"))
+                for o in checklist.get("overrides") or []) or "none")] if checklist.get("extends") else []
+            return "\n".join([store.describe(checklist)] + extended + [
                 "%d. %s\n   values: %s" % (i, store.check_line(c), "; ".join(
                     "%s=%s" % (v["name"], v["value"]) for v in c.get("values") or []) or "none")
                 for i, c in enumerate(checklist.get("checks") or [], 1)])
@@ -6750,7 +7147,9 @@ def heron_checklist(action: str = "list", name: str = "", checks: str = "",
             return ("Deleted the checklist '%s', and the runs kept of it to compare with."
                     % store.delete(name))
         if act == "run":
-            checklist = store.find(name)
+            # D-179: a list that extends an office list runs the office list
+            # as it is now, with its overrides - and says so if it changed.
+            checklist, notes = store.prepare_run(store.find(name))
             # ONE RUN AT A TIME, CHAT AND PAGE TOGETHER: the page's busy flag
             # is claimed for the chat's run too, so neither starts while the
             # other runs, and the page's Select waits for it.
@@ -6764,9 +7163,12 @@ def heron_checklist(action: str = "list", name: str = "", checks: str = "",
             finally:
                 if panel is not None:
                     panel.end()
+            store.stamp(answer, checklist, notes)
             said = store.text(answer)
             if _checklist_on_page(answer):
                 said += "\nThe results are on the QA Checklist page of the Heron Companion."
+            if report:
+                said += "\n" + _checklist_report(store, answer)
             # A NO DATA check read the model and answered "could not decide"
             # (D-165) - an answer, so it counts as run; only NOT RUN does not.
             ran = answer["counts"]["pass"] + answer["counts"]["fail"] + answer["counts"]["missing"]
@@ -6782,7 +7184,11 @@ def heron_checklist(action: str = "list", name: str = "", checks: str = "",
     else:
         try:
             checklist = {"name": name, "description": description,
-                         "checks": _checklist_checks(checks)}
+                         "checks": _checklist_checks(checks) if (checks or "").strip() or not extends
+                         else []}
+            if extends.strip():
+                checklist["extends"] = extends.strip()
+                checklist["overrides"] = _checklist_overrides(overrides)
         except ValueError as why:
             return _ended("refused", "%s Nothing was saved." % why)
     try:

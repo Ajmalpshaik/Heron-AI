@@ -219,17 +219,21 @@ TOOLS = {
     # takes a change out of the model and needs Changes ON. The add-in posts
     # Undo only while it saw Heron's change land and has seen nothing change
     # that model since - Revit has no API that reads its undo list, so that is
-    # all that is known. With `check_only` it sends `undo_check` instead, which
-    # the add-in declares READ: it posts nothing, and answers with Changes off.
-    # The tool stays MODIFY - its risk is the most it can do.
+    # all that is known. With `check_only` it sends `undo_own_check` instead,
+    # which the add-in declares READ: it posts nothing, and answers with
+    # Changes off. The tool stays MODIFY - its risk is the most it can do.
     #
-    # THE OPERATION IS `undo_guarded`, NOT THE FIRST BUILD'S `undo_last` (row
-    # 5b-1604). A Revit still running that build knows the old name and would
-    # post by its old rule - the shared Project Information id, every keep
-    # counted as on top - whatever else this request carried. It does not
-    # know this one, so it answers `unknown_op`, nothing is posted, and the
-    # chat is told that Revit's Heron is older. One request, no window.
-    "revit_undo_last":          (MODIFY,  "undo_guarded"),
+    # ONLY THE CHAT THAT MADE A CHANGE MAY UNDO IT (Q-88, 2026-11-16). The
+    # add-in records which chat kept each change - the conversation every
+    # request of this server process carries (D-141) - and refuses every other
+    # chat, in the same request that would post. Ctrl+Z in Revit still works.
+    #
+    # THE OPERATION IS `undo_own` - NOT THE FIRST BUILD'S `undo_last` (row
+    # 5b-1604), NOR `undo_guarded`, which an add-in built before Q-88 answers
+    # by posting for whichever chat's change is on top. An add-in that knows
+    # only an older name answers `unknown_op`, nothing is posted, and the chat
+    # is told that Revit's Heron is older. One request, no window.
+    "revit_undo_last":          (MODIFY,  "undo_own"),
 
     # The brain, reachable. These three read what Heron KNOWS - the skills, the
     # capability registry and the fragment library - and none of them sends
@@ -245,6 +249,12 @@ TOOLS = {
     # A job's whole method - a skill's ordered steps - so a chat is handed
     # how a family is built instead of reading the skill file off disk.
     "heron_method":             (READ,    None),
+    # WHY Heron cannot do one capability (PROPOSALS F1, decided 2026-11-15 on
+    # the owner's delegation, not read back): heron_runtime's verdict in
+    # Revit words. READ and no operation for the reason of the four above -
+    # and it does not even ping: it reads the library, this PC's settings
+    # file and the address book Revit writes, and sends nothing to Revit.
+    "heron_why":                (READ,    None),
 
     # The Context Manager (docs/19 s1-s2). READ and no operation for the same
     # reason as the three above: it assembles what an agent would be GIVEN and
@@ -532,8 +542,14 @@ ALWAYS_LOADED = ("heron_lookup", "heron_method", "revit_read", "revit_change",
 #
 # The five the owner said yes to, by name. A tool joins only by a decision:
 # the next one that sends nothing to Revit is not added because it could be.
+#
+# heron_why joined on 2026-11-15 by PROPOSALS F1's decision - taken on the
+# owner's delegation and not read back to him, so his word overrules it -
+# which put it "beside heron_capabilities". Off Windows its answer is the one
+# a cloud session most needs: no Revit on this machine, and what it would
+# take on the modeller's PC.
 LIBRARY = ("heron_capabilities", "heron_lookup", "heron_method",
-           "heron_resolve", "heron_standards")
+           "heron_resolve", "heron_standards", "heron_why")
 
 
 # THE TOOLS WHOSE EVERY ANSWER SAYS HOW THE CALL ENDED, IN ONE FIXED WORD

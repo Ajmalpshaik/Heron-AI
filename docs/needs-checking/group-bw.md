@@ -32,5 +32,5 @@ That proof itself recorded `unenclosed 5` of 5 rooms, which the same early read 
 
 | # | Check | Expected |
 |---|---|---|
-| **BW1** | PLACE_ROOM_AT_POINT `asSpace=false` with points inside closed areas, and one point outside every enclosure | Every room is in `created`; only the outside point's room is in `unenclosed`. **Negative:** the outside room reads *Not Enclosed* in Properties and REPORT_ROOM_SPACE_DATA names it unenclosed |
-| **BW2** | The same points with `asSpace=true` | Every space is in `created`; only the outside point's space is in `unenclosed` - **not** every space, which is the defect. REPORT_ROOM_SPACE_DATA agrees space by space. **Negative:** the outside space is named, so the fragment is not simply reporting none |
+| ~~**BW1**~~ | PLACE_ROOM_AT_POINT `asSpace=false` with points inside closed areas, and one point outside every… — [full row](../needs-checking-archive/group-bw.md#row-bw1) | Every room is in `created`; only the outside point's room is in `unenclosed`. |
+| ~~**BW2**~~ | The same points with `asSpace=true` — [full row](../needs-checking-archive/group-bw.md#row-bw2) | Every space is in `created`; only the outside point's space is in `unenclosed` - not… |

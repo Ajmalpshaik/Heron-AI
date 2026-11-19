@@ -166,7 +166,7 @@ demand — built from usage, not from a list.
 |---|---|---|
 | Orchestrator | T2 | Central coordinator — understand, select, sequence, validate, return. **The host's** ([D-01](DECISIONS.md)) |
 | Intent Agent | T2 | Classify what the user is asking for. **The host's** ([D-01](DECISIONS.md)) |
-| Communication / Persona Agent | T2 | Detect persona and technical level; choose response style. **The host's** ([D-01](DECISIONS.md)) |
+| Communication / Persona Agent | T2 | ~~Detect persona and technical level; choose response style.~~ **Retired 2026-11-15 by [D-27](DECISIONS.md)** ([PROPOSALS F19](PROPOSALS.md)): there is no persona, and the reply in Heron's one voice is **the host's** ([D-01](DECISIONS.md)) |
 | Failure Analysis Agent | T1 | Determine why something failed. **T1, not T2, since [D-21](DECISIONS.md)**: Heron's failures are its own bounded set of codes |
 | Fix Agent (selected per failure) | T3 | Apply a targeted repair |
 

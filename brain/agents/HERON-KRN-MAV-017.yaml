@@ -4,66 +4,45 @@
 # status (the module's Heron-Status header owns it).
 
 agent: HERON-KRN-MAV-017
-# 2.0.0: `probes` is a REQUIRED input that was missing. resolve() calls
-# probes.get() immediately, so a caller built from version 1 could not judge
-# any provider at all - it failed at the Python boundary instead of returning
-# one of the outcomes this contract advertises.
-version: 2.0.0
+# 3.0.0, 2026-11-16 (row 5b-1747): cut to the register row docs/28 has carried
+# since 2026-11-15. Whether a provider is reachable, and the fallback when it is
+# not, are the host's (D-65), so the intent, the probes and the scope a
+# fallback needed are gone, and so are the three failures only choosing one
+# could give. BREAKING on purpose: nothing outside the tests called version 2.
+# 2.0.0: `probes` was a REQUIRED input that was missing, so a caller built
+# from version 1 could not judge any provider at all.
+version: 3.0.0
 
 input:
-  intent:
-    type: string
-    required: true
-    description: >
-      The declared intent the work needs, passed through to the router.
-  needs-context:
-    type: integer
-    required: false
-    description: >
-      How much context the request will occupy. An adapter whose limit is
-      smaller is not available FOR THIS REQUEST, which is different from
-      being down.
-  probes:
+  result:
     type: map
     required: true
     description: >
-      What each adapter answered when it was asked - reachable, auth,
-      latency_ms, context_limit, or an error if the probe itself did not
-      complete. An adapter with no probe is treated as unreachable, never
-      as fine.
-  confidential:
+      A result a provider gave, carrying `adapter`. A refusal, or anything
+      with no adapter, is not a result and is refused rather than marked.
+  fell-back:
     type: boolean
     required: false
     description: >
-      True when the active scope is confidential. It narrows the fallback
-      exactly as it narrows the first choice - a fallback that crossed
-      that line would be the leak arriving through the recovery path.
+      The host's word: true when a fallback produced the result, false when
+      the first choice did. Left out, or anything but an explicit false, is
+      marked degraded - a question nobody answered is not a no.
 
 output:
-  adapter:
-    type: string
-    description: The adapter that will be used, first choice or fallback.
   degraded:
     type: boolean
     description: >
-      True when the first choice was not available. A degraded result is
-      still an answer, and it never counts as evidence toward promotion.
-  why:
-    type: string
-    description: >
-      What was asked first, what was wrong with it, and what was used
-      instead - in one sentence, for the audit entry and for the user.
+      True unless the host said the first choice answered. A degraded result
+      is still an answer, and it never counts as evidence toward promotion
+      (counts_as_evidence; D-30, D-65).
 
 allowed-tools: []
 
 timeout-seconds: 15
 
 failures:
-  - NOTHING_AVAILABLE
-  - NO_CONFIDENTIAL_FALLBACK
-  - PROBE_FAILED
+  - NOT_A_RESULT
 
 retry:
-  attempts: 1
-  on-failures:
-    - PROBE_FAILED
+  attempts: 0
+  on-failures: []

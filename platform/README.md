@@ -14,7 +14,9 @@
 release-independent and runs anywhere, the window needs Windows, and the command line
 (`heron-install`, added 2026-09-22) is the door an AI can knock on without a mouse. Derive the list
 with `find platform -name '*.csproj'`. Beside them, [`heron-products.json`](heron-products.json) is the
-product list the installer reads; nothing about a product is written in code.
+product list the installer reads; nothing about a product is written in code. And
+[`heron-folders.json`](heron-folders.json) is the folder list the install scripts read - written by
+`HeronPaths`, never by hand (rule 3 below).
 
 **Who uses which** — read from each `.csproj`'s `ProjectReference` lines and from the files that open
 `heron-products.json` (`grep -rl heron-products.json --include=*.cs --include=*.py --include=*.ps1 .`).
@@ -77,7 +79,7 @@ references Heron.Installer except tests/Heron.Installer.TestHost.
 
 The test hosts are left out of the picture: `tests/Heron.Installer.TestHost` references the engine and
 `heron-install`, the Kernel, RunGuard and ScriptIsolation hosts reference `Heron.Core`, the StackGuard
-host compiles its `HeronStop.cs` by source and the CommandStore host its `HeronPaths.cs` —
+host compiles its `HeronStop.cs` by source and the CommandStore and Folders hosts their `HeronPaths.cs` —
 `grep -l 'platform' tests/*/*.csproj`.
 
 ### `Heron.Core`
@@ -87,7 +89,7 @@ One file per class (`ls platform/Heron.Core/*.cs`), each the Kernel half of an a
 
 | Class | Does | Step |
 |---|---|---|
-| [`HeronPaths.cs`](Heron.Core/HeronPaths.cs) | **The Path Manager** — the single place that knows where anything lives. Product, data and derived are separate in code, and `IsSafeToDelete` says yes only inside the derived folders - never for product or data. The Companion's notes are under the user's temporary folder, stepped out of the GUID-named one Revit runs with ([D-135](../docs/DECISIONS.md), [D-136](../docs/DECISIONS.md)) | 1 |
+| [`HeronPaths.cs`](Heron.Core/HeronPaths.cs) | **The Path Manager** — the single place that knows where anything lives. Product, data and derived are separate in code, and `IsSafeToDelete` says yes only inside the derived folders - never for product or data. The Companion's notes are under the user's temporary folder, stepped out of the GUID-named one Revit runs with ([D-135](../docs/DECISIONS.md), [D-136](../docs/DECISIONS.md)). `RevitAddins` and `InstallBackup` are the install scripts' two folders, written to [`heron-folders.json`](heron-folders.json) for them (Q-58) | 1 |
 | [`HeronConfig.cs`](Heron.Core/HeronConfig.cs) | The Configuration Manager. `Load` and `Save`, and deliberately **no** `ApplyFromRequest`. Holds two of the switches of Heron's Settings window ([D-150](../docs/decisions/D-150.md); on the ribbon until 2026-11-07) as settings - `write.askBeforeKeeping` (Ask to Keep), `false` by default, and `companion.enabled` (Companion), `true` by default. **Changes, Admin and Publish are not here since [D-166](../docs/decisions/D-166.md)**: `HeronPermissions` holds them in memory, off whenever Revit starts, and a line naming one in the file is ignored | 1 |
 | [`HeronIdentity.cs`](Heron.Core/HeronIdentity.cs) | Stable identity for the things Heron must be able to name twice | 1 |
 | [`HeronOperationRegistry.cs`](Heron.Core/HeronOperationRegistry.cs) | The Tool Registry — every operation Heron will run, and the risk level of each | 3 |
@@ -197,6 +199,14 @@ to the engine is [`ClaudeCodeEntry.cs`](Heron.Installer/ClaudeCodeEntry.cs) - He
 Code's user settings - and the two flags in [`Arguments.cs`](Heron.Installer.Cli/Arguments.cs). Its runs are
 [Group OA](../docs/needs-checking/group-oa.md). [Its own README](Heron.Setup/README.md).
 
+### `policy` — BUILT 2026-11-17, NOT RUN on a domain
+
+**Group Policy templates for an office's IT** - [`Heron.admx`](policy/Heron.admx) and
+[`en-US/Heron.adml`](policy/en-US/Heron.adml) - setting the three ceilings `HeronMachinePolicy` reads from
+`HKLM\SOFTWARE\Policies\Heron` ([D-166](../docs/decisions/D-166.md), layer 3). Not a C# project and not in the
+Setup: IT copies the two files into its policy store. Every name is held to the add-in's by
+[`tests/test_policy_templates.py`](../tests/test_policy_templates.py). [Its own README](policy/README.md).
+
 ## What will be here
 
 Update system · package manager · event bus · workflow engine ·
@@ -216,6 +226,11 @@ the remaining registries · secret store.
 3. **`HeronPaths` is the only thing that builds a Heron path.** Product, data and derived are separated
    in code rather than in prose, and `IsSafeToDelete` returns false for anything under data — so an
    update or a cleanup cannot reach the user's knowledge. [docs/06 §2](../docs/06-heron-platform.md)
+   **The install scripts, which run before any Heron assembly is on the PC, read the folders they
+   need from [`heron-folders.json`](heron-folders.json)**, which `HeronPaths` writes through
+   [`tools/heron-folders.py`](../tools/heron-folders.py) - never edited by hand, and
+   `tests/test_heron_folders.py` fails when it and the code disagree
+   ([Q-58](../docs/open-questions/tier-2.md), decided 2026-11-15).
 4. **Configuration is a security boundary.** Unknown keys are ignored, not adopted. There is a `Load`
    and a `Save` and deliberately no `ApplyFromRequest` — nothing Heron *reads* may change what Heron
    *is*. [Golden Rule 19](../docs/14-golden-rules.md)

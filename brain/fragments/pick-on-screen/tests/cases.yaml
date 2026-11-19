@@ -86,16 +86,26 @@ negative:
       asked; clicked 0
 
   - given: >
-      SLOW (Q-86). "Level 1" in front. Let the prompt sit until the add-in's
-      wait for one job has passed (revit.operationTimeoutSeconds, about a
-      minute as installed), then click
+      SLOW (Q-86). "Level 1" in front, on an add-in built with Q-86's hold
+      (2026-11-16 or later). Let the prompt sit past
+      revit.operationTimeoutSeconds (about a minute as installed), then click
     expect: >
-      READ FROM THE CODE, NOT YET SEEN: before the click, the chat is told
-      Revit is still working on the request and not to repeat it; Revit stays
-      in pick mode until the click or Esc; the click's point reaches nobody
-      and no answer follows. Record what the chat was told, word for word,
-      what it then said to the modeller, and what Revit did. This is the
-      limit the card is DRAFT behind, not a pass or a fail of the card
+      READ FROM THE CODE, NOT YET SEEN: the point comes back as in the first
+      case, with waitedSeconds over 60 - the card declares waitsForModeller,
+      so the add-in waits revit.askTimeoutSeconds more for it and the chat's
+      side as long. Never "still working" and never "ran out of time". On an
+      add-in built before the hold the card is refused before anything is
+      asked, the need being unknown to it
+
+  - given: >
+      SLOWER THAN EVEN THAT (Q-86). The same, the prompt left past
+      revit.operationTimeoutSeconds plus revit.askTimeoutSeconds (six minutes
+      as installed), then Esc
+    expect: >
+      READ FROM THE CODE, NOT YET SEEN: the chat is told `awaiting_click` -
+      Revit is still waiting for the click, Heron has stopped waiting, press
+      Esc and ask again - never Keep or Discard's words. Revit stays in pick
+      mode until the Esc. Record the words, and what Revit did
 
   - given: >
       SLOW, BUT INSIDE THE WAIT. The same, clicking about 55 seconds after

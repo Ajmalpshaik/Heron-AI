@@ -9,7 +9,7 @@ See docs/29-metadata-standard.md
 
 # 35 — Independent Study Notes: OpenDesign, Awesome LLM Apps, and OpenHands
 
-**Purpose:** second-pass review of the three repositories referenced by [34](34-project-perfection-and-continuous-upgrade-plan.md), with corrections, stronger evidence, and Heron-specific recommendations.
+**Purpose:** second-pass review of the three repositories referenced by [34](work-notes/plans/project-perfection-and-continuous-upgrade-plan-2026-09-12.md) - the upgrade plan, numbered 34 until it moved to the work notes on 2026-11-15 - with corrections, stronger evidence, and Heron-specific recommendations.
 
 This note is intentionally separate from the implementation plan. It records what was actually observed in the repositories and what Heron should or should not take from them.
 
@@ -40,7 +40,7 @@ which records what was built and the licence at each path read. **No code was ta
 
 ## 1. Audit result for document 34
 
-The overall direction of [34](34-project-perfection-and-continuous-upgrade-plan.md) is sound: study first, adapt to Heron, measure changes, and never treat external repositories as code to copy blindly.
+The overall direction of [34](work-notes/plans/project-perfection-and-continuous-upgrade-plan-2026-09-12.md) is sound: study first, adapt to Heron, measure changes, and never treat external repositories as code to copy blindly.
 
 ### Corrections / clarifications
 

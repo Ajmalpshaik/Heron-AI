@@ -146,6 +146,10 @@ PROJECTS = [
     # The fragment write path's failure rule, linked by source like the
     # binding note above - tests/test_failure_note.py builds and runs it.
     "tests/Heron.FailureNote.TestHost/Heron.FailureNote.TestHost.csproj",
+    # The folder list the install scripts read, written by HeronPaths (Q-58) -
+    # linked by source; tools/heron-folders.py and tests/test_heron_folders.py
+    # build and run it.
+    "tests/Heron.Folders.TestHost/Heron.Folders.TestHost.csproj",
     # What a fragment write changed, counted from Revit's DocumentChanged -
     # linked by source the same way; tests/test_change_report.py runs it.
     "tests/Heron.ChangeReport.TestHost/Heron.ChangeReport.TestHost.csproj",

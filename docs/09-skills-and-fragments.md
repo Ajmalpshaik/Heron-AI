@@ -210,7 +210,7 @@ DISCOVERED -> DRAFT -> TESTING -> VALIDATED -> PROVEN -> PRODUCTION -> DEPRECATE
 
 The `PROVEN → PRODUCTION` human gate is the fragment-level equivalent of the agent-approval boundary in [06 §4](06-heron-platform.md). It is the point where knowledge starts being trusted without review, and it should cost one human click.
 
-Tracked as [Q-9](OPEN-QUESTIONS.md) for the value of N and who may approve.
+Was tracked as [Q-9](OPEN-QUESTIONS.md) for the value of N and who may approve; [D-30](DECISIONS.md) answered it - one recorded proof, no count - in the note below ([PROPOSALS F21](PROPOSALS.md), 2026-11-15).
 
 > **As built (2026-10-18): superseded by
 > [D-30](DECISIONS.md#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs), not

@@ -22,7 +22,7 @@
 // READ BACK: each view's crop is read again after a regeneration and compared
 // with what was asked.
 //
-// THE MARKER IS FOUND THROUGH A FLOOR PLAN (rows 5b-1843 and 5b-1846). An
+// THE MARKER IS FOUND THROUGH A FLOOR PLAN (rows 5b-1843 and 5b-1859). An
 // elevation marker has no box of its own: get_BoundingBox(null) was null for
 // every marker measured, five of them on Revit 2024, so version 1 skipped them
 // all. Its box in a floor plan that shows it is not null, and that box's middle

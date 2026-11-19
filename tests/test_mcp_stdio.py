@@ -663,6 +663,23 @@ def library_only(guard, scratch):
         check(bool(doors) and doors in again and proved in again,
               "heron_capabilities, asked a second time, says both closing "
               "paragraphs whole again (%.1fs)" % took)
+
+        # heron_why, SERVED HERE SINCE PROPOSALS F1 (2026-11-15): asked why
+        # Heron cannot select on Revit 2024, a real server with no Revit says
+        # the reason that is true of this machine - no Revit here - and judges
+        # no switch of the owner's, because none is on this machine to read.
+        line, took = host.call(8, "heron_why", {"capability": "SET_SELECTION",
+                                                "release": "2024"}, DEADLINE)
+        why = text_of(line) or ""
+        check("reason    NEEDS_REVIT" in why,
+              "heron_why answers off Windows, and the reason is that no Revit "
+              "is here (%.1fs)" % took)
+        check("no Revit on this machine (it is not Windows)" in why
+              and "Windows PC" in why and "Nothing was sent to Revit." in why,
+              "it says so in Revit words, names the modeller's Windows PC, and "
+              "that nothing was sent to Revit")
+        check("switches  " not in why,
+              "and reads no switch here, so judges none")
     finally:
         host.close()
 

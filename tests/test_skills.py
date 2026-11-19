@@ -281,6 +281,21 @@ def main():
              "" if not _broken else ": " + ", ".join(_broken[:5])))
 
     print()
+    print("The HVAC skills name heron_hvac calculations that exist (PROPOSALS F42-3)")
+    import re as _re
+    import heron_hvac as _HVAC
+    _skills = SKILL.load_all()[0]
+    for _sid in ("space-airflow", "terminal-layout", "duct-layout"):
+        _purpose = str(_skills[_sid].data.get("purpose", "")) if _sid in _skills else ""
+        _named = _re.findall(r"heron_hvac's ([a-z_]+)", _purpose) + \
+            _re.findall(r"and ([a-z_]+) where the modeller asks", _purpose)
+        if _sid == "space-airflow":
+            continue    # it reaches the engine through revit_building_loads
+        check(_named and all(n in _HVAC.CALCULATIONS for n in _named),
+              "%s names heron_hvac calculations that exist: %s"
+              % (_sid, ", ".join(_named) or "none named"))
+
+    print()
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))
         for line in FAILURES:

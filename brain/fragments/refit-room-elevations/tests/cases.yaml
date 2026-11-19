@@ -6,7 +6,7 @@ positive:
       refitted 4, each crop 300 mm round the room as it now is, the
       elevation facing the moved wall with its far clip 1000 mm deeper
 
-  # Rows 5b-1843 and 5b-1846: version 1 found no marker at all, because a
+  # Rows 5b-1843 and 5b-1859: version 1 found no marker at all, because a
   # marker's own box is null; the marker is found through the floor plan.
   - given: >
       Group OI's OI18 rig, rig.rvt - four walls round x 30000-34000, y

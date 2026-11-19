@@ -54,12 +54,17 @@ dependency the bus exists to remove.
 """
 
 import copy
+import os
 import sys
 
-# The risk levels from docs/12, lowest first. A handler may hold one of the
-# first two: it may look at things and work things out. It may not act.
-RISK_ORDER = ("READ", "ANALYZE", "SUGGEST", "EXECUTE", "MODIFY", "PUBLISH",
-              "ADMIN")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import heron_capability as CAP                                 # noqa: E402
+
+# The risk levels from docs/12, lowest first - heron_capability's, bound by
+# identity (PROPOSALS F22): this file typed its own copy until 2026-11-15. A
+# handler may hold one of the first two: it may look at things and work
+# things out. It may not act.
+RISK_ORDER = CAP.RISK_ORDER
 MAY_HANDLE = ("READ", "ANALYZE")
 
 

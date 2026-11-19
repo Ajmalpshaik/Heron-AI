@@ -146,11 +146,9 @@ RECORDED = {
         "is a required argument. It stays uncalled because the evidence cannot "
         "reach the brain - a run happens in the add-in and no workflow id "
         "crosses the seam. One named seam, not an undecided design",
-    ("mcp/server/heron_runtime.py", "snapshot"):
-        "built with nothing wired to it yet, deliberately. It is the provider "
-        "for planning code that does not exist - no MCP tool offers it, because "
-        "adding one changes the risk table in heron_tools.py, which docs/12 s71 "
-        "makes a declaration with a human in it. PROPOSALS.md F1",
+    # `heron_runtime.snapshot` was listed here until 2026-11-15 - "no MCP tool
+    # offers it, because adding one changes the risk table in heron_tools.py"
+    # - and is gone: PROPOSALS F1 was decided that day and heron_why serves it.
 }
 
 

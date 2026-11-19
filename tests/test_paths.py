@@ -68,9 +68,10 @@ def main():
                 continue      # docs/06 s2 writes these as "vector indexes"
             check(word in table,
                   "'%s' (%s) comes from that table" % (word, klass))
-    check(len(folders[PATHS.PRODUCT]) == 5
-          and len(folders[PATHS.DATA]) == 8,
-          "five product folders and eight data ones, as the table has them")
+    check(len(folders[PATHS.PRODUCT]) == 7
+          and len(folders[PATHS.DATA]) == 10,
+          "seven product folders and ten data ones, as the table has them "
+          "since PROPOSALS F11 classed the five it drew and left out")
     for klass in (PATHS.PRODUCT, PATHS.DATA, PATHS.DERIVED, PATHS.UNKNOWN):
         check(klass in PATHS.MEANING and len(PATHS.MEANING[klass]) > 30,
               "'%s' says what it means, in a sentence" % klass)
@@ -110,10 +111,15 @@ def main():
 
     print()
     print("3. UNKNOWN is honest, and only may() reads it as data")
-    for path in ("Documentation/readme.md", "Tests/x", "Configuration/y",
-                 "who/knows.bin", "Community/pack"):
-        check(PATHS.classify(path)["class"] == PATHS.UNKNOWN,
-              "'%s' classifies as UNKNOWN" % path)
+    check(PATHS.classify("who/knows.bin")["class"] == PATHS.UNKNOWN,
+          "'who/knows.bin' classifies as UNKNOWN")
+    # The five docs/06 s2 drew and never classed have a class since
+    # 2026-11-15 (PROPOSALS F11) - Configuration first.
+    for path, klass in (("Configuration/y", PATHS.DATA), ("Community/pack", PATHS.DATA),
+                        ("RAG/vectors.db", PATHS.DERIVED), ("Tests/x", PATHS.PRODUCT),
+                        ("Documentation/readme.md", PATHS.PRODUCT)):
+        check(PATHS.classify(path)["class"] == klass,
+              "'%s' classifies as %s (F11)" % (path, klass))
     # ASKED OF who/knows.bin AND NOT OF Documentation, SINCE 2026-09-21.
     # Four of the five paths above - Documentation, Tests, Configuration,
     # Community - are folders docs/06 s2 DRAWS IN ITS OWN TREE and never
@@ -127,10 +133,10 @@ def main():
           "and a genuinely unknown path says that is truthful, not a gap")
     check(answer["matched"] is None, "with nothing matched")
     for operation in ("cleanup", "repair", "product-update", "uninstall"):
-        answer = PATHS.may(operation, "Documentation/readme.md")
+        answer = PATHS.may(operation, "who/knows.bin")
         check(answer["read_as"] == PATHS.DATA and answer["allowed"] is False,
               "%s may NOT touch it - unknown is read as data" % operation)
-    check(PATHS.may("backup", "Documentation/readme.md")["allowed"] is True,
+    check(PATHS.may("backup", "who/knows.bin")["allowed"] is True,
           "while BACKUP may, which is the same rule pointing the other way")
     answer = PATHS.may("cleanup", "who/knows.bin")
     check(answer["class"] == PATHS.UNKNOWN and answer["read_as"] == PATHS.DATA,
@@ -152,6 +158,19 @@ def main():
     check(PATHS.classify("brainstorm.md")["class"] == PATHS.UNKNOWN,
           "and a word that merely CONTAINS a folder name does not match - "
           "'brainstorm' is not the Brain folder")
+
+    print()
+    print("4b. Only the workspace's top level decides (PROPOSALS F13)")
+    for path, klass in (("Cache/projects-thumbnails", PATHS.DERIVED),
+                        ("Core/memory.dll", PATHS.PRODUCT),
+                        ("Projects/Tower A/Brain", PATHS.DATA),
+                        ("Projects/Tower A/Cache", PATHS.DATA),
+                        ("/srv/share/Heron/index/Heron-AI-ab12", PATHS.DERIVED),
+                        ("C:\\Users\\x\\AppData\\Roaming\\Heron\\Core\\a.dll", PATHS.PRODUCT),
+                        ("~/.heron/Brain/global.db", PATHS.DATA)):
+        got = PATHS.classify(path)["class"]
+        check(got == klass, "'%s' is %s, decided by its top-level folder (%s)"
+              % (path, klass, got))
 
     print()
     print("5. Every operation's row is that agent's own rule")
@@ -247,8 +266,9 @@ def main():
         tabled += [x.strip().lower() for x in cell.split(",")]
     no_class = [n for n in drawn if n.lower() not in tabled]
 
-    check(len(drawn) >= 15 and len(no_class) > 0,
-          "docs/06 s2 draws %d folders and gives a class to %d of them"
+    check(len(drawn) >= 15 and len(no_class) == 0,
+          "docs/06 s2 draws %d folders and gives a class to %d of them - "
+          "every one since PROPOSALS F11, 2026-11-15"
           % (len(drawn), len(drawn) - len(no_class)))
     # getattr RATHER THAN PATHS.UNCLASSIFIED, so a module without it goes
     # RED here and the checks below still run. A suite that dies on a

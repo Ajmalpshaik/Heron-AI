@@ -78,11 +78,16 @@ Like any tool, its output is your work.
 
 ## On standards checking
 
-Where Heron reports compliance with a standard — ISO 19650, QCS, Ashghal requirements, a company
-standard — it reports against the source documents it has been given, and cites them.
+Where Heron checks a model against a standard — ISO 19650, QCS, Ashghal requirements, a company
+standard — it reports which of the checked values the model meets and which it does not, against the
+source documents it has been given, and cites them.
 
 **It does not certify compliance.** It does not replace a competent person's review, a formal QA/QC
 process, or your obligations under the project's information requirements.
+
+**This section said *"Where Heron reports compliance with a standard"* until 2026-11-16** - a word the
+chat is told never to say of a model. It now says what the chat says
+([D-169](docs/DECISIONS.md#d-169--the-disclaimer-says-what-the-chat-says-heron-reports-which-checked-values-a-model-meets-cites-its-source-and-certifies-no-compliance)).
 
 ## On AI-generated code
 

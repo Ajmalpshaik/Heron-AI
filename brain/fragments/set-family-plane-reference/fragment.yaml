@@ -1,15 +1,27 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-GEO-047
-semantic-identity: "set Is Reference and Defines Origin on the reference planes of the family being edited"
+semantic-identity: "set Is Reference, Defines Origin and Subcategory on the reference planes of the family being edited"
 kind: action
 domain: revit.families
 capability: SET_FAMILY_PLANE_REFERENCE
-version: 1
+# VERSION 2 (2026-11-17, FRAGMENT-ISSUES 5b-1849) - THE SUBCATEGORY ROW.
+# The owner's standing rule, 2026-11-17: in every family the outline and centre
+# planes stay on Reference Planes (green by default) and every other plane goes
+# on a gray subcategory - "Secondary References", 128,128,128. No tool set a
+# plane's Subcategory. `subcategories` now sets it per plane, and
+# `otherPlanesSubcategory` puts every plane that is not an outline or centre
+# plane on one subcategory; the subcategory is made, with its colour, by
+# CREATE_LINE_STYLE version 3 with parentCategory "Reference Planes". `planes`
+# became optional (an empty table) so a call may set only subcategories. The
+# identity gained "Subcategory". Back to DRAFT: version 1 was PROVEN on
+# 2026-10-03 (the proof block below, kept as the record of what it proved);
+# its C# moved, so it is DRAFT until NEEDS-CHECKING Group OK is run (D-30).
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -38,6 +50,10 @@ purpose: >
   Every other plane is read before and after, and anything the call did not
   ask that moved is put back.
 
+  **SUBCATEGORY** - which subcategory of Reference Planes a plane is drawn in,
+  and so its colour - is set per plane, or for every plane that is not an
+  outline or centre plane at once. The subcategory must already exist.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -47,9 +63,33 @@ contract:
     # Plane name = what it becomes, SEMICOLONS between - "Box Left=Left;
     # Box Right=Right; Insert=Strong Reference, origin". Short forms: strong,
     # weak, none. "origin" alone moves the origin and leaves Is Reference.
+    # Version 2: optional - left out it is an empty table (";"), and then
+    # subcategories or otherPlanesSubcategory must ask something.
     - name: planes
       type: IDictionary<string, string>
       source: request
+      optional: true
+      absent: ';'
+    # VERSION 2. Plane name = the subcategory of Reference Planes it goes on,
+    # SEMICOLONS between - "Insert=Secondary References; Box Left=Reference
+    # Planes". "Reference Planes", or "none", is the category itself. The
+    # subcategory must exist (CREATE_LINE_STYLE, parentCategory Reference
+    # Planes). Left out (";", an empty table) no plane is named here.
+    - name: subcategories
+      type: IDictionary<string, string>
+      source: request
+      optional: true
+      absent: ';'
+    # VERSION 2. One subcategory of Reference Planes for EVERY plane that is
+    # not an outline or centre plane - one named, or whose Is Reference reads,
+    # Left, Right, Front, Back, Top, Bottom, Center (Left/Right) or Center
+    # (Front/Back) - and is not named in subcategories. Outline and centre
+    # planes are never moved by it. "none", or not said, moves none.
+    - name: otherPlanesSubcategory
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     - name: planeReport
       # Every plane that changed, before and after, on ONE line - a list is cut
@@ -64,6 +104,10 @@ contract:
     - name: alreadySet
       # Settings asked for and already so: looked at, nothing done (D-52).
       role: accounting
+      type: int
+    - name: onSubcategory
+      # Version 2: planes whose Subcategory read differently after the call.
+      role: result
       type: int
     - name: notAFamily
       role: accounting
@@ -125,7 +169,12 @@ compatibility-note: >
   2020 through 2027 (the RevitAPI reference assemblies, read 2026-10-01 with
   tools/api-surface). Whether the parameter STORES those numbers is not
   documented, so they are a first try and never trusted: every write is read
-  back in Revit's words (NEEDS-CHECKING BP4).
+  back in Revit's words (NEEDS-CHECKING BP4). Version 2 adds
+  `BuiltInParameter.CLINE_SUBCATEGORY` (a plane's Subcategory, an ElementId),
+  `BuiltInCategory.OST_CLines` and `Category.SubCategories`, compiled for all
+  eight on 2026-11-17. What Revit stores for "the category itself" is not
+  documented: no subcategory is tried, then the category's own id, and each is
+  read back (NEEDS-CHECKING OK3).
 
 # ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #
@@ -134,6 +183,10 @@ compatibility-note: >
 #   "add reference planes at these distances"     -> CREATE_REFERENCE_PLANES,
 #                                                    which leaves Is Reference
 #                                                    at Revit's default
+#   "put the other reference planes on Secondary References" -> here,
+#                                                    otherPlanesSubcategory
+#   "make a gray subcategory for reference planes" -> CREATE_LINE_STYLE,
+#                                                    parentCategory Reference Planes
 
 utterances:
   - set the left plane's is reference to left
@@ -141,3 +194,4 @@ utterances:
   - make this plane not a reference
   - move the family origin to the Insert plane
   - set is reference left right front and back on these planes
+  - put the other reference planes on the Secondary References subcategory

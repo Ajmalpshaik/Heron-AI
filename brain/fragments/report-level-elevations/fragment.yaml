@@ -231,6 +231,20 @@ compatibility-note: >
 #   "where exactly is this"           -> REPORT_LOCATION - an ELEMENT's
 #                                        position, internal or shared; this
 #                                        fragment is about LEVELS
+#   "check our grids and levels line up with the linked architect's model"
+#                                     -> CHECK_DATUMS_AGAINST_LINK (2026-11-17)
+#                                        - one link, grids and levels, a
+#                                        tolerance, aligned or off, a count
+#                                        and the ids that are off. IT OVERLAPS
+#                                        THIS CARD'S includeLinks LEVEL LINES,
+#                                        which compare by name with no
+#                                        tolerance; recorded on both cards for
+#                                        heron-duplicate-checker to rule on
+#   "what levels are in this model"   -> here. On the ranked routes it was
+#                                        REMOVE_MASS_FLOORS's before
+#                                        2026-11-17 and is
+#                                        CHECK_DATUMS_AGAINST_LINK's since, a
+#                                        read; identity sends it here
 #
 # Version 3's Building Story report has NO utterance of its own yet: no
 # modeller has asked for it in words, and none is invented.

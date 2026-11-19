@@ -61,7 +61,14 @@ import sys
 import urllib.request
 import zipfile
 
-ALL_VERSIONS = ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+sys.path.insert(0, os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "brain"))
+
+import heron_dotnet as NET  # noqa: E402
+
+# THE ONE LIST OF RELEASES HERON CLAIMS, read where check-compile.py reads it
+# (PROPOSALS F2). This file typed its own copy until 2026-11-15.
+ALL_VERSIONS = NET.RELEASES
 
 # The add-in is the only assembly that references Revit at all - Heron.Bridge
 # and Heron.Core are Revit-free by construction, which check-structure.py

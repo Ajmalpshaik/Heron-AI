@@ -113,6 +113,7 @@ every tool. The table below this one says more about each module.
 | `heron_takeoff.py` · `heron_building_loads.py` · `heron_loads_*.py` | Every Space's load from the model | `revit_building_loads` |
 | `heron_sprinkler_*.py` | Sprinkler hydraulics and layout from the model | `revit_sprinkler_hydraulics`, `revit_sprinkler_layout` |
 | [`heron_graph.py`](heron_graph.py) | What breaks if this changes | No tool - its own command line |
+| [`heron_sheet_compare.py`](heron_sheet_compare.py) | An edited parameter file against the file as exported: the changed cells, old and new, and a small CSV of only those for `SET_PARAMETER_VALUES_BY_ID`'s `csvPath` ([Q-87](../docs/open-questions/tier-2.md)). Reads through [`heron_sheet_list.py`](heron_sheet_list.py)'s `read_grid` | No tool - the modeller's own command line, named in the method `parameters-csv-round-trip` |
 | [`heron_instructions.py`](heron_instructions.py) | Every instruction Heron gives | The server's start-up instructions |
 
 **How a lookup runs:** your words → filter first (another Revit release is left out; a question is

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,20 @@ semantic-identity: "make a perspective camera view that frames these elements, f
 kind: action
 domain: revit.views
 capability: FRAME_ELEMENTS_IN_CAMERA
-version: 5
+version: 6
+# VERSION 6, 2026-11-18 - row 5b-1850. On Revit 2020's 'Heron Tower - First
+# Build' (33 levels, 'Level 1' at 0 to 'Roof' at 126000 mm), 114 walls framed
+# with shot low-angle read back "eye 450 mm above 'Roof'" - Eye Elevation
+# 126450 mm. Version 5 measured the eye height from the level MOST of the
+# elements stand on (row 5b-1301), and on a tower that is whichever floor
+# holds a few more walls. It is now the LOWEST level they stand on; one bottom
+# level only a stray few stand on - fewer than a quarter as many as on the
+# next level up - is passed over for that next one, with a finding naming
+# both, so row 5b-1301's lone partition on 'Foundation' still does not set
+# the camera. Only the base level moved: no input is added or removed, and a
+# selection on one level frames as before. Version 5's proof below no longer
+# describes the code: DRAFT until it is proved again on a real Revit (D-30).
+#
 # VERSION 5, 2026-11-01 - SET_VIEW_CAMERA was merged into this card on the
 # owner's instruction ("make sure there is no duplicate tools"), and is
 # DEPRECATED. Both point a perspective camera; this worked the eye out from
@@ -173,9 +186,12 @@ risk: MODIFY
 # `direction` still works as version 2's, but not beside `side`. A shot with
 # neither stands on the front.
 #
-# THE EYE HEIGHT is above the level most of the elements stand on (their
-# Level; the lowest of those that tie), or the bottom of their box when none
-# has one - named in the answer (row 5b-1301, the owner's word).
+# THE EYE HEIGHT is above the LOWEST level the elements stand on (their
+# Level), or the bottom of their box when none has one - named in the answer.
+# A bottom level only a stray few stand on - fewer than a quarter as many as
+# on the next level up - is passed over for that next one, and a finding says
+# so (version 6, row 5b-1850; row 5b-1301's 'most of them' put a tower's
+# camera on its roof).
 #
 # THE LENS. Revit's API has no field-of-view value (row 5b-1267), but the
 # perspective crop window IS one: it is drawn 0.1 ft (30.48 mm) in front of
@@ -408,6 +424,10 @@ contract:
     - name: findings
       type: IList<string>
 
+# VERSION 5's PROOF, KEPT AS A RECORD. Version 6 changed impl/ (row 5b-1850),
+# so its fingerprint no longer describes the code and the card is DRAFT until
+# version 6 is proved (D-30).
+#
 # WRITTEN ABOVE AN EARLIER PROOF, since replaced by the `proof:` block below -
 # read that block's own date and fingerprint, not this comment, for what ran.
 # VERSION 3's PROOF (Group IF, IF12), KEPT AS A RECORD. Version 4 changed

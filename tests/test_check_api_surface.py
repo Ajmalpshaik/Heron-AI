@@ -82,6 +82,18 @@ def main():
     check(code == 2 and "1999" in said, "exit 2 for a release Heron does not know (got %s)" % code)
 
     print()
+    print("2b. The releases are the one shared list, not a copy (PROPOSALS F2)")
+    spec = importlib.util.spec_from_file_location(
+        "heron_api_surface_releases", os.path.join(ROOT, "tools", "check-api-surface.py"))
+    surface = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(surface)
+    sys.path.insert(0, os.path.join(ROOT, "brain"))
+    import heron_dotnet as NET
+    check(surface.ALL_VERSIONS is NET.RELEASES,
+          "check-api-surface.py's ALL_VERSIONS IS heron_dotnet.RELEASES, the list "
+          "check-compile.py reads - not an equal copy that can drift")
+
+    print()
     print("3. change-evidence records a gate's exit 3 as NOT RUN")
     spec = importlib.util.spec_from_file_location(
         "heron_change_evidence_api", os.path.join(ROOT, "tools", "change-evidence.py"))

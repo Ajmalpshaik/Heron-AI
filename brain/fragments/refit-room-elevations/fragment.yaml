@@ -25,7 +25,7 @@ risk: MODIFY
 #
 # A template-controlled view keeps what the template owns; each refusal named.
 #
-# THE MARKER IS READ IN A FLOOR PLAN (version 2, rows 5b-1843 and 5b-1846).
+# THE MARKER IS READ IN A FLOOR PLAN (version 2, rows 5b-1843 and 5b-1859).
 # A marker's own box - get_BoundingBox(null) - was null for every marker
 # measured on Revit 2024, so version 1 found none. Its box in a floor plan
 # that shows it is not, and the box's middle stands in the room: one plan per

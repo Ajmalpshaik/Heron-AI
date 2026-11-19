@@ -557,6 +557,11 @@ This prevents background agents from consuming resources needed by Revit.
 > these five priorities, Part 1's `P0` to `P5` and Part 2's `P0` to `P6` are three ladders, and no
 > accepted decision picks one (`heron_queue.py` is code, not that choice); the choice is open and is put
 > to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-75](open-questions/tier-2.md).
+>
+> **Answered 2026-11-15** ([Q-75](open-questions/tier-2.md)), on the owner's delegation and not yet read
+> back to him: Heron's ladder is Part 2's seven levels, as `heron_queue.py` holds them, and *RAG indexing*
+> here is its `P3` Maintenance. The five keep their words until a decision records the answer (D-139
+> point 5).
 
 ## 23. Resource Manager
 
@@ -663,6 +668,11 @@ The equivalent of an employee performance review.
 > whether *select all ducts* takes every duct or only the visible ones is a choice no accepted decision
 > or rule has made ([D-59](DECISIONS.md) settles links, not views), and what the code picked does not make
 > it; the choice is open and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-78](open-questions/tier-2.md).
+>
+> **Answered 2026-11-15** ([Q-78](open-questions/tier-2.md)), on the owner's delegation and not yet read
+> back to him: *select all ducts* takes every duct in the model, as the code does and as Revit's own
+> *In Entire Project* does, unless the modeller says *in this view*. *Expected* keeps its words until a
+> decision records the answer (D-139 point 5).
 
 ## 28. Golden Test Library
 
@@ -1055,6 +1065,11 @@ This gives the "company employee" model without allowing uncontrolled changes.
 > these three modes are one more approval vocabulary beside the others in the four parts, and what
 > separates *Ask* from *Require Approval* is not defined; with [D-14](DECISIONS.md) still Proposed the
 > choice is open and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-72](open-questions/tier-2.md).
+>
+> **Answered 2026-11-15** ([Q-72](open-questions/tier-2.md)), on the owner's delegation and not yet read
+> back to him: the three modes mean what the note above reads them as - *Automatic* is reading, selecting
+> and opening views, *Ask* is the Keep or Discard box, and *Require Approval* is the Changes, Publish and
+> Admin switches. The table keeps its words until a decision records that meaning (D-139 point 5).
 
 ## 45. Heron Organizational Model
 
@@ -1086,6 +1101,10 @@ This gives the "company employee" model without allowing uncontrolled changes.
 > this picture, §48's and [Part 1 §73](00-master-specification.md)'s are three different top-level
 > organisations, and no accepted decision picks one; the choice is open and is put to the owner in
 > [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-76](open-questions/tier-2.md).
+>
+> **Answered 2026-11-15** ([Q-76](open-questions/tier-2.md)), on the owner's delegation and not yet read
+> back to him: Heron is organised as it is built - its four parts and the register's departments. This
+> chart stays as intent, with this note, because there is no CEO or orchestrator inside Heron to draw.
 
 ## 46. Most Important New Addition: Heron Constitution
 
@@ -1267,6 +1286,10 @@ Revit QA              required beside Code QA and BIM QA (D-13; Part 2 §48)
 > the organisation itself - a Kernel over three branches here, §45's departments and
 > [Part 1 §73](00-master-specification.md)'s are three different top-level pictures, and no accepted
 > decision picks one; the choice is open and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-76](open-questions/tier-2.md).
+>
+> **Answered 2026-11-15** ([Q-76](open-questions/tier-2.md)), on the owner's delegation and not yet read
+> back to him: Heron is organised as it is built - its four parts and the register's departments - and
+> this picture stays as intent, with this note.
 
 ```mermaid
 %%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
@@ -1380,6 +1403,10 @@ Heron Kernel · Capability Registry · Workflow Engine · Agent Registry · Agen
 > several of the 30 have no section of their own above, and several sections above are not on the list
 > (§6, §8, §12 and §30 among them); which of the two governs is open, and is put to the owner in
 > [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-76](open-questions/tier-2.md).
+>
+> **Answered 2026-11-15** ([Q-76](open-questions/tier-2.md)), on the owner's delegation and not yet read
+> back to him, with its first shape: the list is read as a checklist across all four parts, mapped by the
+> table above, and no new sections are written.
 
 ## Build order
 

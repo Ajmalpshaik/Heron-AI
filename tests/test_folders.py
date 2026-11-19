@@ -80,35 +80,31 @@ def main():
           "the module names the document it reads")
 
     print()
-    print("2. Five of the nineteen have no class")
+    print("2. Every one of the nineteen has a class (PROPOSALS F11, 2026-11-15)")
     answer = ask()
     unclassified = sorted(e["folder"] for e in answer["unclassified"])
-    check(unclassified == ["Community", "Configuration", "Documentation",
-                           "RAG", "Tests"],
-          "exactly these five: %s" % ", ".join(unclassified))
-    # ASSERTED AGAINST THE DOCUMENT, not against the agent.
+    check(unclassified == [],
+          "none is left without one - the five docs/06 s2 drew and never "
+          "classed are classed there now: %s" % ", ".join(unclassified))
+    import re as _re
+    _table = doc.split("| **Product** |")[1][:900]
+    for name in ("Community", "Configuration", "Documentation", "RAG", "Tests"):
+        check(_re.search(r"\b" + name + r"\b", _table, _re.I),
+              "'%s' is in docs/06 s2's class table as a word of its own" % name)
     # WORD BOUNDARIES, because "RAG" is inside "Fragments" and a substring
-    # check said the class table mentions RAG when it does not. The test
-    # caught it; the same slip in the agent would have hidden a folder.
+    # check would say the class table mentions RAG whether it does or not.
     import re
-    table = doc.split("| **Product** |")[1][:600]
-    for name in unclassified:
-        check(not re.search(r"\b" + name + r"\b", table, re.I),
-              "'%s' really is absent from docs/06 s2's class table" % name)
+    table = doc.split("| **Product** |")[1][:900]
     for name in ("Core", "Brain", "Cache"):
         check(re.search(r"\b" + name + r"\b", table, re.I),
-              "while '%s' is in it" % name)
+              "while '%s' is in it as before" % name)
     check(re.search(r"\bFragments\b", table, re.I)
-          and not re.search(r"\bRAG\b", table, re.I),
-          "and Fragments being there is exactly why the boundary matters - "
-          "'RAG' is inside 'F-RAG-ments'")
-    check(all(e["class"] == PATHS.UNKNOWN for e in answer["unclassified"]),
-          "and each is reported UNKNOWN rather than guessed")
-    check(any("F11" in note for note in answer["unjudged"]),
-          "the answer points at the finding")
-    check(any("Configuration" in note and "shipped defaults" in note
+          and re.search(r"\bRAG\b", table, re.I),
+          "and RAG is there as a word of its own, not as the inside of "
+          "'F-RAG-ments'")
+    check(any("every folder to be created has a class" in note
               for note in answer["unjudged"]),
-          "and names what Configuration read as PRODUCT would cost")
+          "and the answer says every folder to be created has a class")
 
     print()
     print("3. Every folder lands in exactly one list")

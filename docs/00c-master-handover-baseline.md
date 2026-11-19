@@ -351,6 +351,10 @@ Executive / Orchestration · Conversation · Revit · MCP · Knowledge / RAG · 
 > **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
 > which organisation picture holds — this list, §79's tree, the parts' other pictures — is the owner's
 > choice, still open, and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-76](open-questions/tier-2.md).
+>
+> **Answered 2026-11-15** ([Q-76](open-questions/tier-2.md)), on the owner's delegation and not yet read
+> back to him: Heron is organised as it is built - its four parts and the register's departments. This
+> list keeps its words, with the note above.
 
 ## 9. Agent Responsibility Rule
 
@@ -609,6 +613,12 @@ This prevents accidental knowledge contamination.
 > one list of knowledge scopes — this one, §45's table and §79's *Memory* branch differ — is the owner's
 > choice, still open, and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-74](open-questions/tier-2.md). `SCOPES` in
 > `brain/heron_scope.py` is code, and does not make the pick.
+>
+> **Answered 2026-11-15** ([Q-74](open-questions/tier-2.md)), on the owner's delegation and not yet read
+> back to him: Heron's scopes are the code's list - global, company, project, user, temporary and
+> experimental. Part 1's CORE is this list's GLOBAL, and COMMUNITY is where a piece of knowledge came
+> from, not a store. This list keeps its words until a decision records the answer (D-139
+> point 5).
 
 ## 25. Fragment System
 
@@ -986,6 +996,9 @@ DRAFT -> TESTING -> VALIDATED -> PROVEN -> PRODUCTION -> DEPRECATED
 > **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
 > one list of scopes is the owner's choice, still open (§24's note), and is put to the owner in
 > [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-74](open-questions/tier-2.md).
+>
+> **Answered 2026-11-15** ([Q-74](open-questions/tier-2.md)), on the owner's delegation and not yet read
+> back to him: this table's list, as the code holds it, is Heron's (§24's note).
 
 ## 46. Personal Learning
 
@@ -1110,6 +1123,10 @@ Background processes should slow down when Revit requires resources.
 > one priority ladder is the owner's choice, still open — the parts give different ladders, and code that
 > picked one (`brain/heron_queue.py`) does not make the pick — and it is put to the owner in
 > [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-75](open-questions/tier-2.md).
+>
+> **Answered 2026-11-15** ([Q-75](open-questions/tier-2.md)), on the owner's delegation and not yet read
+> back to him: Part 2's seven levels, as the code holds them, are Heron's ladder, and *System Health* here
+> is its `P3` Maintenance. This ladder keeps its words until a decision records the answer (D-139 point 5).
 
 ## 53. Event System
 
@@ -1667,6 +1684,11 @@ HERON AI
 > **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
 > one organisation picture and one list of knowledge scopes are the owner's choices, still open (§8's
 > and §24's notes), and are put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-76](open-questions/tier-2.md) and [Q-74](open-questions/tier-2.md).
+>
+> **Both answered 2026-11-15**, on the owner's delegation and not yet read back to him: Heron is organised
+> as it is built - its four parts and the register's departments - and this tree stays as intent, with
+> this note ([Q-76](open-questions/tier-2.md)); the scopes are the code's list, *Temporary* among them
+> ([Q-74](open-questions/tier-2.md), §24's note).
 
 ## 80. North Star
 

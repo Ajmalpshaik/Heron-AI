@@ -165,6 +165,8 @@ This should be a **logical** organization, not necessarily separate software pro
 > | User Interface | The Claude chat; the Revit ribbon, and Heron's Settings window with the switches ([D-150](decisions/D-150.md)); the Companion page beside Revit, which shows the model and is never a second place to talk | [D-01](DECISIONS.md), [D-106](DECISIONS.md), [D-108](DECISIONS.md) |
 >
 > **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction) point 4): the parts draw the organisation differently and no accepted decision picks one picture; the choice is open and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-76](open-questions/tier-2.md).
+>
+> **Answered 2026-11-15** ([Q-76](open-questions/tier-2.md)), on the owner's delegation and not yet read back to him: Heron is organised as it is built - its four parts and the register's departments, as the table above maps them - and the parts' charts stay as intent, each with its note.
 
 ## 4. Agent Operating System
 
@@ -699,6 +701,8 @@ Project-specific information should override generic information ~~when appropri
 > *proven* is a fragment's status, *experimental* and *temporary* are scopes.
 >
 > **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)): *"when appropriate"* left Heron to judge which knowledge wins; it now asks - [D-33](DECISIONS.md) (Heron never supplies a value the user did not give; it asks, and asks once), as [D-111](DECISIONS.md) applies it to a project's governing standards. **Left as written** (D-139 point 4): the list itself, which mixes scopes with statuses and differs from the scopes the other parts name; one list of knowledge scopes is open - `SCOPES` in `heron_scope.py` is code, not the pick - and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-74](open-questions/tier-2.md).
+>
+> **Answered 2026-11-15** ([Q-74](open-questions/tier-2.md)), on the owner's delegation and not yet read back to him: the scopes are the code's list - global, company, project, user, temporary and experimental - and community is a source, not a scope. This list keeps its words until a decision records the answer (D-139 point 5).
 
 ## 21. Knowledge Trust
 
@@ -989,7 +993,7 @@ Only after successful validation does content enter the production architecture.
 > it (step 14), while this section validates before placing. Today's pipeline writes nothing, so the
 > difference has not yet had an effect.
 >
-> **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)): of the two orders, this section's - validate, then place - is the one the accepted rules hold: [Golden Rule 6](14-golden-rules.md) (experimental knowledge stays apart from production), [Article 4](../HERON_CONSTITUTION.md) (validate before promotion), [Article 11](../HERON_CONSTITUTION.md) (newly imported code runs in a sandbox or on a detached copy first). The pipeline reading Part 1's order is code, and does not decide it.
+> **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)): of the two orders, this section's - validate, then place - is the one the accepted rules hold: [Golden Rule 6](14-golden-rules.md) (experimental knowledge stays apart from production), [Article 4](../HERON_CONSTITUTION.md) (validate before promotion), [Article 11](../HERON_CONSTITUTION.md) (newly imported code runs watched, or on a detached copy, first - *in a sandbox* until [D-170](DECISIONS.md#d-170--the-word-sandbox-leaves-article-11-and-golden-rule-18-new-code-runs-watched-not-contained), 2026-11-16, which changed the word and not the rule). The pipeline reading Part 1's order is code, and does not decide it.
 
 ## 36. File Naming Intelligence
 
@@ -1219,6 +1223,8 @@ If the user starts a heavy Revit operation, background indexing should reduce or
 > [03 §4](03-heron-revit.md)).
 >
 > **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction) point 4): the parts give different priority ladders, and the queue holding this one is code, not the pick; one ladder is open and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-75](open-questions/tier-2.md).
+>
+> **Answered 2026-11-15** ([Q-75](open-questions/tier-2.md)), on the owner's delegation and not yet read back to him: this ladder, as the queue holds it, is Heron's. The other parts' ladders keep their words, each with a note, until a decision records the answer (D-139 point 5).
 
 ## 51. Event-Driven Architecture
 

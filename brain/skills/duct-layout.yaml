@@ -12,11 +12,17 @@ source: OFFICIAL
 
 risk: MODIFY
 
+# 2026-11-15 (PROPOSALS F42-3, decided on the owner's delegation): sizes come
+# from the HVAC engine, reached as space-airflow reaches it - the MCP tool
+# heron_hvac, named in the purpose's words; `needs` lists the capabilities.
 purpose: >
   Connects each fan coil unit to the supply diffusers of the room in front of
   it with rigid ductwork - a straight main out of the unit, a tap for every
   branch, a radius elbow down onto every diffuser - in three calls however
-  many rooms there are, at whatever angle each room sits.
+  many rooms there are, at whatever angle each room sits. Each run's size
+  comes first from the tool heron_hvac's duct_size calculation, on the flow
+  the diffusers it serves carry and at the friction or velocity the modeller
+  gives for this request (D-33).
 
 # The words Ajmal actually says, not the words the technique is named after.
 utterances:

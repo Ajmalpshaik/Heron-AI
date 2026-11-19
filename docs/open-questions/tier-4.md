@@ -20,7 +20,7 @@ software, stands unexamined. Recorded plainly so that a later session reading *"
 conclude otherwise.
 
 A legitimate choice for a free tool with no branding to defend. The **technical** window to rename stays
-open until the repository goes public ([Q-28](answered.md#q-28--when-does-the-repo-go-public--when-licence--safety-files-exist-and-there-is-working-code)):
+open until the repository goes public ([Q-28](answered.md#-q-28--when-does-the-repo-go-public--when-licence--safety-files-exist-and-there-is-working-code)):
 today it is a mechanical change across 53 code files; afterwards it breaks installed add-ins and user
 folder paths. If a check is ever wanted, before publication is the moment it is cheap — and the last
 one.
@@ -62,7 +62,7 @@ the last.
 
 Four things are already true and may or may not help — stated as facts, not as compliance claims: per-user
 install with no admin rights (proven), **no network code in the add-in** (verified against the source), a
-standard `.addin` manifest, and Apache 2.0. [Q-38](from-master-specification-part-2.md#q-38--what-is-the-exact-install-command-new) is the
+standard `.addin` manifest, and Apache 2.0. [Q-38](from-master-specification-part-2.md#-q-38--what-is-the-exact-install-command-new) is the
 live piece and belongs to the GitHub route.
 
 ---

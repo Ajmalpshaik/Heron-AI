@@ -55,7 +55,7 @@ connected, and `< /dev/null` on every line.
 | **DT8** | `REPORT_COLOR_FILL_SCHEME`'s checks: delete the legend by hand, give two rows one colour | the missing legend and the shared colour each named in `findings` |
 | **DT9** | **Revit 2021** - no Revit 2021 is on this PC | the plain refusal, as on 2020. Compiled only |
 | **DT10** | **After the merge**, with the main checkout fast-forwarded - the shared store then rewrites the changed card's row and adds the new one by itself (`heron_scope.refresh`, row 5b-406): `heron_lookup` "colour the rooms by name" with Revit 2020 connected | `APPLY_COLOR_FILL_SCHEME`, no longer filtered out; "which colour scheme does this view use" -> `REPORT_COLOR_FILL_SCHEME` |
-| **DT11** | The signatures, on the owner's word only, after DT1 to DT8 | `python brain/heron_validate.py accept <fragment> --by "Ajmal PS"` for each |
+| ~~**DT11**~~ | The signatures, on the owner's word only, after DT1 to DT8 — [full row](../needs-checking-archive/group-dt.md#row-dt11) | `python brain/heron_validate.py accept <fragment> --by "Ajmal PS"` for each Struck… |
 
 **Written back 2026-11-12, read in a cloud container (no Revit) - nothing was run here.** Since this group was
 written: `APPLY_COLOR_FILL_SCHEME` reads PROVEN on its card, at version 2 - its `proof` block is signed by Ajmal PS,

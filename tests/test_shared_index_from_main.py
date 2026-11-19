@@ -465,6 +465,15 @@ def server_and_command_line():
     with contextlib.redirect_stdout(said):
         code = S.main(["--rebuild"])
     check(code == 0, "--rebuild from a worktree runs (exit %r)" % (code,))
+    # Row 5b-1172: it said "Delete every one of them and this command puts
+    # them back", and it refills the global store only - a project's design
+    # basis files are data, and deleting them loses them.
+    printed = said.getvalue()
+    check("Delete every one of them" not in printed,
+          "and does not promise to put back every store it lists")
+    check("global store" in printed and ".hvac.json" in printed,
+          "and says it rebuilds the global store, and that a project's "
+          "design basis files are data")
     check(identity("FRG-ELE-001") == "the merged thing"
           and "FRG-ELE-030" not in rows(),
           "and rebuilds the shared store from main's cards (%r)"

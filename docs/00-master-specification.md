@@ -562,6 +562,12 @@ This prevents the brain from becoming polluted and difficult to search.
 > §72 list the knowledge scopes differently, and no accepted decision picks one list or says whether the
 > rest sit under CORE. The choice is open and is put to the owner as [Q-74](open-questions/tier-2.md);
 > `SCOPES` in `brain/heron_scope.py` is code, not that choice.
+>
+> **Answered 2026-11-15** ([Q-74](open-questions/tier-2.md)), on the owner's delegation and not yet read
+> back to him: Heron's scopes are the code's list - global, company, project, user, temporary and
+> experimental. This tree's CORE is global, and COMMUNITY is where a piece of knowledge came from, not a
+> store. The tree keeps its words until a decision records the answer
+> ([D-139](decisions/D-139.md) point 5).
 
 ## 16. Skill System
 
@@ -1033,6 +1039,10 @@ These must never be mixed blindly.
 > the scopes differently from this table, and no accepted decision picks one list. The choice is open and
 > is put to the owner as [Q-74](open-questions/tier-2.md); the code matching this table does not make
 > the pick.
+>
+> **Answered 2026-11-15** ([Q-74](open-questions/tier-2.md)), on the owner's delegation and not yet read
+> back to him: this table's list, as the code holds it, is Heron's. CORE elsewhere is Global Memory, and
+> community knowledge is a labelled source, not a store.
 
 ## 34. Personal Learning
 
@@ -1304,6 +1314,12 @@ For new code:
 > Deployment Agent in §9 and §12, the Migration Agent in §29 and §32, the Duplicate Detection Agent in
 > §26 and §29 — and no accepted decision says which owns each. The choice is open and is put to the owner
 > as [Q-76](open-questions/tier-2.md).
+>
+> **Answered 2026-11-15** ([Q-76](open-questions/tier-2.md)), on the owner's delegation and not yet read
+> back to him: a name the register carried twice for two jobs became two names that day.
+> `HERON-DEV-REL-018`, here, is the *Release Packaging Agent*, beside §36's Release Agent
+> (`HERON-GIT-REL-007`); `HERON-RAG-DUP-012` is the *Ingest Duplicate Detection Agent*, beside the Import
+> department's Duplicate Detection Agent (`HERON-IMP-DUP-007`). The list above keeps its words.
 
 ## 42. Code Generation Rule
 
@@ -1485,6 +1501,10 @@ User-facing BIM tasks always have priority. Background work must not significant
 > closed — when they cannot tell whether a user task is running, background work waits
 > (`heron_queue.py`, `heron_scheduler.py`) — but both are DRAFT and the MCP server calls neither
 > ([11 §7](11-orchestration-and-workflows.md)).
+>
+> **Answered 2026-11-15** ([Q-75](open-questions/tier-2.md)), on the owner's delegation and not yet read
+> back to him: Part 2's seven levels, as the code holds them, are Heron's ladder. This list keeps its
+> words until a decision records the answer ([D-139](decisions/D-139.md) point 5).
 
 ## 50. Orchestrator
 
@@ -2474,6 +2494,11 @@ Permanent architecture rules.
 > [Article 5](../HERON_CONSTITUTION.md) all four. Which scopes are kept apart is the one scope list no
 > accepted decision has chosen (§15, §33); the choice is open and is put to the owner as
 > [Q-74](open-questions/tier-2.md).
+>
+> **Answered 2026-11-15** ([Q-74](open-questions/tier-2.md)), on the owner's delegation and not yet read
+> back to him: the scopes kept apart are the code's - global, company, project, user, temporary and
+> experimental. Community knowledge, when there is any, is kept in the store where it is used and labelled
+> with where it came from. Rule 5 keeps its words until a decision records the answer (D-139 point 5).
 
 ## 73. Final Heron AI Organization
 
@@ -2514,6 +2539,10 @@ The internal system can eventually contain hundreds of specialized agents. But t
 > **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)): Part 4 draws the
 > organisation differently ([00d §45](00d-additional-requirements.md)), and no accepted decision picks one
 > picture. The choice is open and is put to the owner as [Q-76](open-questions/tier-2.md).
+>
+> **Answered 2026-11-15** ([Q-76](open-questions/tier-2.md)), on the owner's delegation and not yet read
+> back to him: Heron is organised as it is built - its four parts and the register's departments. This
+> chart stays as intent, with this note, because the orchestrator it draws is the host.
 
 ## 74. Target User Experience
 

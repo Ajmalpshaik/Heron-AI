@@ -16,3 +16,13 @@
 **Look for.** nothing to run - the decision is recorded here and in [row 5b-438](../fragment-issues/section-5b-rows-426-450.md)
 
 ---
+
+### Row DF2
+
+*Moved from the register on 2026-11-17.*
+
+**Run.** The `validate --allow-publish --write` line in the job file's header
+
+**Look for.** positive: `created` two entries - Heron Gas Pipe Diameter and Heron Liquid Pipe Diameter, Pipe Size, group Refrigerant, a GUID each and the file's word for the data type; `added` two with the same GUIDs; findings naming the group made and that Undo does not reach the file - record them whole. negative ("Identity Data: Heron Test Tag [Length]"): refused - already in the file as Text - `created` EMPTY. Then: Family Types shows neither (rolled back - BD1), and the scratch file in Notepad has a Refrigerant GROUP line and both PARAM lines with the GUIDs reported **Struck 2026-11-13:** PASSED - the verdict is in this file's *The run of 2026-10-20 (Revit 2020, the owner's laptop) - version 4 signed, PROVEN*, which records it run and passed.
+
+---

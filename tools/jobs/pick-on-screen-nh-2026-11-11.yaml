@@ -22,10 +22,11 @@
 #             Revit is asked: no prompt appears and NOTHING IS CLICKED. A
 #             point coming back here would be one nobody clicked
 #
-# CLICK AT ONCE. The add-in waits revit.operationTimeoutSeconds for one job
-# (Q-86, FRAGMENT-ISSUES row 5b-1507): a click after that reaches nobody, and
-# the leg reads as a timeout, which says nothing about the card. The slow
-# cases are Group NH's own rows, NH8 and NH9, run by hand.
+# CLICK AT ONCE. Until 2026-11-16 the add-in waited revit.operationTimeoutSeconds
+# for one job (Q-86, FRAGMENT-ISSUES row 5b-1507) and a later click reached
+# nobody; an add-in built with Q-86's hold waits revit.askTimeoutSeconds more
+# for this card. A slow leg still says nothing about the card: the slow cases
+# are Group NH's own rows, NH8, NH9 and NH12 to NH14, run by hand.
 #
 # Nothing here writes: the card opens no transaction and keeps nothing.
 

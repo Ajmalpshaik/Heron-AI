@@ -31,7 +31,7 @@ in that scratch family with version 3 itself, and every run below rolled back.
 | ~~**CL5**~~ | `deleteType=true` with `values=URL=x` — [full row](../needs-checking-archive/group-cl.md#row-cl5) | **RAN 2026-10-06, rolled back:** |
 | ~~**CL6**~~ | a rename of a type that does not exist — [full row](../needs-checking-archive/group-cl.md#row-cl6) | **RAN 2026-10-06** |
 | ~~**CL7**~~ | Family14 after CL1 to CL5 — [full row](../needs-checking-archive/group-cl.md#row-cl7) | **RAN 2026-10-06:** |
-| **CL8** | the signature | **DONE 2026-10-06:** `heron_validate.py accept set-family-type-values --by "Ajmal PS"` on the CL1/CL2 record, on the owner's word - PROVEN |
+| ~~**CL8**~~ | the signature — [full row](../needs-checking-archive/group-cl.md#row-cl8) | **DONE 2026-10-06:** |
 | **CL9** | `deleteType=true` on a family's ONLY type | refused, nothing deleted. **Not run** - a one-type family was not arranged |
 | **CL10** | a family with its OWN parameter called `Type Name`, then `Type Name=x` | refused as ambiguous. **Not run** |
 | **CL11** | CL1 on **Revit 2020** and **2027** | The same answers. `RenameCurrentType` and `DeleteCurrentType` read the same 2020 to 2027 (api-surface) and compile on all eight releases; not run there |
