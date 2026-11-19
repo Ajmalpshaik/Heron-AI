@@ -414,7 +414,7 @@ What this makes easy. What this makes hard. What it locks in.
 ## D-19 — Writing is off by default until the write path has met a real Revit
 
 **Status:** Accepted · ✔ **read back 2026-09-06** · **Date:** 2026-08-27 · **Found during:** Step 6 implementation
-**Superseded in part by:** [D-166](#d-166--changes-admin-and-publish-are-turned-on-only-by-a-click-in-revit-held-in-its-memory-never-read-from-a-file), accepted 2026-11-16, not built yet - Changes is no longer *"set in the user's config"*: it is held in Revit's memory, set only from Heron's Settings window, and off every time Revit starts
+**Superseded in part by:** [D-166](#d-166--changes-admin-and-publish-are-turned-on-only-by-a-click-in-revit-held-in-its-memory-never-read-from-a-file), accepted and built 2026-11-16, not yet run in Revit - Changes is no longer *"set in the user's config"*: it is held in Revit's memory, set only from Heron's Settings window, and off every time Revit starts
 
 **Full record:** [`decisions/D-19.md`](decisions/D-19.md)
 
@@ -982,7 +982,7 @@ What this makes easy. What this makes hard. What it locks in.
 **Status:** Accepted · **Date:** 2026-09-28 · **Source:** Ajmal PS, 2026-09-28, after Heron refused ADD_PROJECT_PARAMETER when he asked for two project parameters
 **Supersedes:** the rule that Publish and Admin are *"not reachable in Phase 0 or Phase 1 at all"* - it lived in `HeronPermissions.Allows()` and the client's `risk_refusal`, never in a decision - and so the row *"Publish and Admin refused"* in [D-99](#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so)'s table, which now reads *refused unless the owner's switch for that level is on* · **Keeps:** [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit), [D-99](#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so), [Constitution Articles 7 and 10](../HERON_CONSTITUTION.md), [Golden Rule 19](14-golden-rules.md)
 **Affects:** [`HeronPermissions.cs`](../platform/Heron.Core/HeronPermissions.cs), [`HeronConfig.cs`](../platform/Heron.Core/HeronConfig.cs), [`HeronOperationRegistry.cs`](../platform/Heron.Core/HeronOperationRegistry.cs), [`RevitOperations.cs`](../revit/Heron.Revit.Addin/RevitOperations.cs), [`HeronApplication.cs`](../revit/Heron.Revit.Addin/HeronApplication.cs), [`Commands.cs`](../revit/Heron.Revit.Addin/Commands.cs), [`HeronSwitchWindow.cs`](../revit/Heron.Revit.Addin/HeronSwitchWindow.cs), [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py), [`heron_tools.py`](../mcp/server/heron_tools.py)
-**Superseded in part by:** [D-166](#d-166--changes-admin-and-publish-are-turned-on-only-by-a-click-in-revit-held-in-its-memory-never-read-from-a-file), accepted 2026-11-16, not built yet - items 1, 2 and 5: Admin and Publish are no longer settings in `heron.config` read from that file; each is held in Revit's memory, set only from Settings, and off every time Revit starts
+**Superseded in part by:** [D-166](#d-166--changes-admin-and-publish-are-turned-on-only-by-a-click-in-revit-held-in-its-memory-never-read-from-a-file), accepted and built 2026-11-16, not yet run in Revit - items 1, 2 and 5: Admin and Publish are no longer settings in `heron.config` read from that file; each is held in Revit's memory, set only from Settings, and off every time Revit starts
 
 **Full record:** [`decisions/D-106.md`](decisions/D-106.md)
 
@@ -1344,7 +1344,7 @@ What this makes easy. What this makes hard. What it locks in.
 **Status:** Accepted · **Date:** 2026-11-07 · **Accepted:** Ajmal PS, 2026-11-07, in conversation: the switches *"inside that settings window"*, each state *"change it to button"*, hover texts *"very simple, understandable"*, then *"you can continue the work and build it"*
 **Amends:** where D-106's, D-138's and D-141's buttons are drawn - not what they do
 **Affects:** [`HeronApplication.cs`](../revit/Heron.Revit.Addin/HeronApplication.cs) (`BuildRibbon`) · [`HeronSettingsWindow.cs`](../revit/Heron.Revit.Addin/HeronSettingsWindow.cs) · [`Commands.cs`](../revit/Heron.Revit.Addin/Commands.cs) (`SettingsCommand`) · the refusal sentences, which now name Settings
-**Superseded in part by:** [D-166](#d-166--changes-admin-and-publish-are-turned-on-only-by-a-click-in-revit-held-in-its-memory-never-read-from-a-file), accepted 2026-11-16, not built yet - item 3 for the Changes, Admin and Publish rows: pressing one no longer writes `heron.config`; it sets the switch held in Revit. Ask to Keep and the Companion rows are unchanged
+**Superseded in part by:** [D-166](#d-166--changes-admin-and-publish-are-turned-on-only-by-a-click-in-revit-held-in-its-memory-never-read-from-a-file), accepted and built 2026-11-16, not yet run in Revit - item 3 for the Changes, Admin and Publish rows: pressing one no longer writes `heron.config`; it sets the switch held in Revit. Ask to Keep and the Companion rows are unchanged
 
 **Full record:** [`decisions/D-150.md`](decisions/D-150.md)
 
