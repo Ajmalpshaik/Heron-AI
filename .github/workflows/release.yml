@@ -45,6 +45,8 @@ on:
 
 permissions:
   contents: write        # creating a release writes to the repository
+  id-token: write        # build provenance: GitHub signs who built each file
+  attestations: write    # and keeps that record beside the repository
 
 jobs:
   assets:
@@ -101,6 +103,18 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+      # BUILD PROVENANCE, ONLY ON A TAG. checksums.txt proves a download is
+      # whole, not who made it - it comes from the same release as the file.
+      # This is GitHub's own signed record that this workflow, from this
+      # commit, built exactly these files: `gh attestation verify <file>
+      # --repo Ajmalpshaik/Heron-AI` checks it. It is NOT code signing -
+      # Stage 8 still is, and the notes still say unsigned.
+      - name: Record where each file was built
+        if: startsWith(github.ref, 'refs/tags/v') || inputs.tag != ''
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: 'dist/*'
+
       # ONLY ON A TAG. A rehearsal builds and stops.
       - name: Publish the release
         if: startsWith(github.ref, 'refs/tags/v') || inputs.tag != ''
@@ -147,6 +161,9 @@ jobs:
           Every deployable product, every Revit release Heron supports, built in
           Release configuration. \`checksums.txt\` covers every file and is
           written last, so a release carrying it is one whose build finished.
+          Each file also carries GitHub's build provenance - which workflow,
+          from which commit, built it. To check one:
+          \`gh attestation verify <file> --repo Ajmalpshaik/Heron-AI\`.
 
           **While this is a draft the installer cannot download anything** - it
           fetches from the newest published release, and a draft is not one." \

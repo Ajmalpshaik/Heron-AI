@@ -1574,6 +1574,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-oi.md`](needs-checking/group-oi.md)
 
+## Group OJ - a setting-out check: this model's grids and levels against one linked model's, within a tolerance: `CHECK_DATUMS_AGAINST_LINK` (2026-11-17)
+
+**Its own file:** [`needs-checking/group-oj.md`](needs-checking/group-oj.md)
+
 ## Group OK - reference planes on a coloured subcategory: CREATE_LINE_STYLE version 3 and SET_FAMILY_PLANE_REFERENCE version 2, DRAFT until proved (2026-11-17)
 
 **Its own file:** [`needs-checking/group-ok.md`](needs-checking/group-ok.md)

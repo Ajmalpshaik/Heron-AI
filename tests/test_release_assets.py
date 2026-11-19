@@ -271,6 +271,23 @@ def main():
           "discovered at SmartScreen")
 
     print()
+    print("EVERY FILE PUBLISHED SAYS WHERE IT WAS BUILT - build provenance")
+    # A checksum proves a download is whole, not who made it: checksums.txt
+    # comes from the same release as the file. A provenance attestation is
+    # GitHub's own signed record that this workflow, from this commit, built
+    # exactly these bytes - checked with `gh attestation verify`. It is not
+    # code signing, and the notes still say unsigned.
+    step = workflow[workflow.find("actions/attest-build-provenance"):]
+    check("actions/attest-build-provenance" in workflow and "subject-path: 'dist/*'" in step[:400],
+          "a provenance attestation covers every file in dist/")
+    check("id-token: write" in workflow and "attestations: write" in workflow,
+          "with the two permissions it needs, and no more")
+    before = workflow[:workflow.find("actions/attest-build-provenance")]
+    check("refs/tags/v" in before[before.rfind("- name:"):],
+          "only on a tag - a rehearsal attests nothing")
+    check("gh attestation verify" in workflow, "and the notes say how to check it")
+
+    print()
     print("IT IS NOT THE GATES FILE, and invents no gate")
     # brain/heron_tag.py and brain/heron_qa.py parse gates.yml for the word
     # python followed by a path under tools/ naming a check-something script.

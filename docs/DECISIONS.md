@@ -245,6 +245,10 @@ an edit.
 | [D-174](#d-174--a-proof-taken-on-another-heron-add-in-build-or-another-revit-build-is-said-under-the-answer-and-never-refused) | A proof taken on another Heron add-in build or another Revit build is said under the answer, and never refused | ✅ Accepted · 2026-11-16 |
 | [D-175](#d-175--only-the-chat-that-made-a-heron-change-may-undo-it-the-activity-panes-undo-is-the-modellers-own) | Only the chat that made a Heron change may undo it; the Activity pane's Undo is the modeller's own | ✅ Accepted · 2026-11-16 |
 | [D-176](#d-176--the-activity-panes-select-and-zoom-look-past-a-chats-model-hold-because-they-only-look) | The Activity pane's Select and Zoom look past a chat's model hold, because they only look | ✅ Accepted · 2026-11-16 |
+| [D-177](#d-177--an-idea-taken-from-another-project-is-written-in-herons-own-words-and-the-project-and-its-author-are-not-named) | An idea taken from another project is written in Heron's own words, and the project and its author are not named | ✅ Accepted · 2026-11-17 |
+| [D-178](#d-178--a-qa-checklist-run-can-be-written-as-an-excel-workbook-and-an-html-page-each-a-new-file) | A QA checklist run can be written as an Excel workbook and an HTML page, each a new file | ✅ Accepted · 2026-11-17 |
+| [D-179](#d-179--a-project-checklist-can-extend-an-office-checklist-changing-only-severity-target-and-onoff-and-every-run-names-the-checks-it-used) | A project checklist can extend an office checklist, changing only severity, target and on/off, and every run names the checks it used | ✅ Accepted · 2026-11-17 |
+| [D-180](#d-180--a-setting-hides-folder-paths-from-what-the-chat-is-told-off-unless-turned-on) | A setting hides folder paths from what the chat is told, off unless turned on | ❌ Not accepted · 2026-11-17 - dropped; Q-40 stands |
 
 ## Format
 
@@ -1572,3 +1576,35 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** the Activity pane's Select and Zoom
 
 **Full record:** [`decisions/D-176.md`](decisions/D-176.md)
+
+## D-177 — An idea taken from another project is written in Heron's own words, and the project and its author are not named
+
+**Status:** Accepted · **Date:** 2026-11-17 · **Accepted:** Ajmal PS, 2026-11-17, in conversation: *"we are taking oly thrrtr idea not code so no need to mention there names"*
+**Extends:** [D-25](#d-25--the-existing-libraries-are-studied-and-re-authored-never-imported) - studied and re-authored, never imported
+**Affects:** [AGENTS.md](../AGENTS.md) ("Never") · [docs/51](51-studying-another-revit-mcp.md)
+
+**Full record:** [`decisions/D-177.md`](decisions/D-177.md)
+
+## D-178 — A QA checklist run can be written as an Excel workbook and an HTML page, each a new file
+
+**Status:** Accepted · **Date:** 2026-11-17 · **Accepted:** Ajmal PS, 2026-11-17, in conversation: *"you can do one by one"*
+**Extends:** [D-152](#d-152--a-qa-checklist-is-saved-checks-in-the-modellers-words-each-one-read-with-a-pass-rule-run-in-one-go-from-the-chat-or-the-companion) - QA checklists
+**Affects:** [`heron_checklist_report.py`](../brain/heron_checklist_report.py) · [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (`heron_checklist`, `_checklist_report`) · [docs/50](50-qa-checklists.md)
+
+**Full record:** [`decisions/D-178.md`](decisions/D-178.md)
+
+## D-179 — A project checklist can extend an office checklist, changing only severity, target and on/off, and every run names the checks it used
+
+**Status:** Accepted · **Date:** 2026-11-17 · **Accepted:** Ajmal PS, 2026-11-17, in conversation: *"you can do one by one"*
+**Extends:** [D-152](#d-152--a-qa-checklist-is-saved-checks-in-the-modellers-words-each-one-read-with-a-pass-rule-run-in-one-go-from-the-chat-or-the-companion) - QA checklists
+**Affects:** [`heron_checklists.py`](../brain/heron_checklists.py) (`save`, `_read`, `prepare_run`, `stamp`, `fingerprint`) · [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (`heron_checklist`) · [docs/50](50-qa-checklists.md)
+
+**Full record:** [`decisions/D-179.md`](decisions/D-179.md)
+
+## D-180 — A setting hides folder paths from what the chat is told, off unless turned on
+
+**Status:** Not accepted - dropped, nothing kept in code · **Date:** 2026-11-17 · **Answered:** Ajmal PS, 2026-11-17, in conversation: *"3 no issue this is only location like that no issue let them go its not taking revit model it self"* · [Q-40](open-questions/from-master-specification-part-2.md) stands as it was
+**Keeps:** [D-26](#d-26--the-model-file-is-never-uploaded) - the model never leaves; work answers may
+**Affects:** nothing - the code was removed
+
+**Full record:** [`decisions/D-180.md`](decisions/D-180.md)

@@ -199,6 +199,14 @@ to the engine is [`ClaudeCodeEntry.cs`](Heron.Installer/ClaudeCodeEntry.cs) - He
 Code's user settings - and the two flags in [`Arguments.cs`](Heron.Installer.Cli/Arguments.cs). Its runs are
 [Group OA](../docs/needs-checking/group-oa.md). [Its own README](Heron.Setup/README.md).
 
+### `policy` — BUILT 2026-11-17, NOT RUN on a domain
+
+**Group Policy templates for an office's IT** - [`Heron.admx`](policy/Heron.admx) and
+[`en-US/Heron.adml`](policy/en-US/Heron.adml) - setting the three ceilings `HeronMachinePolicy` reads from
+`HKLM\SOFTWARE\Policies\Heron` ([D-166](../docs/decisions/D-166.md), layer 3). Not a C# project and not in the
+Setup: IT copies the two files into its policy store. Every name is held to the add-in's by
+[`tests/test_policy_templates.py`](../tests/test_policy_templates.py). [Its own README](policy/README.md).
+
 ## What will be here
 
 Update system · package manager · event bus · workflow engine ·
