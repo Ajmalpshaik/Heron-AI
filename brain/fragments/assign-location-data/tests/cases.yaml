@@ -13,6 +13,23 @@ positive:
   - given: a level parameter given
     expect: each element's own level name written alongside
 
+  - given: >
+      version 3 - includeLinks true, useSpaces false, on a host model with no
+      rooms of its own whose architect's link holds them
+    expect: >
+      each element given its LINKED room's name and number, linksSearched 1,
+      linkedMatches naming the link and how many elements it gave a room to,
+      every samples line ending "from the link <name>" - read back afterwards
+
+  - given: >
+      version 3 - useSpaces true, roomParameter and numberParameter naming two
+      text parameters, on elements inside placed spaces
+    expect: >
+      the name parameter holding the space's NAME ALONE - no number glued on -
+      and the number parameter holding its Number, both READ BACK with
+      READ_ELEMENT_PARAMETERS afterwards, never taken from the count. Version 2
+      wrote "NAME NUMBER" into the one field it had
+
 negative:
   - given: a ceiling-mounted diffuser sitting above the room's upper limit
     expect: >
@@ -21,10 +38,35 @@ negative:
       false - so the obvious version leaves every air terminal in the building
       blank, which is exactly the set somebody built the register for
 
-  - given: a model whose rooms are in a LINKED architectural file
+  - given: a model whose rooms are in a LINKED architectural file, includeLinks left out
     expect: >
-      the no-rooms warning on the summary. Everything comes back blank and it
-      looks identical to elements genuinely outside any room
+      the no-rooms warning on the summary, telling the modeller to ask again
+      with includeLinks, and linkedMatches "Host model only - links not read".
+      Everything comes back blank and it must not look like elements genuinely
+      outside any room
+
+  - given: >
+      version 3 - includeLinks true, but the link holding the rooms UNLOADED
+    expect: >
+      linksSearched 0, linkedMatches "Links asked for, NONE loaded - host only",
+      and nothing written from the link. Asked-and-none-loaded must not read
+      as host only (D-59)
+
+  - given: >
+      version 3 - includeLinks true, useSpaces true, an element inside one of
+      this model's own spaces AND inside a space of the linked model (one run
+      asks one kind - rooms or spaces - on both sides)
+    expect: >
+      this model's own space written, and refused counting it as held by both.
+      The host's container wins whenever it passed the storey check
+
+  - given: >
+      version 3 - includeLinks true, a stray host room on Level 2 over an
+      element in the Level 1 ceiling void, the linked model's Level 1 room
+      under it
+    expect: >
+      the LINKED Level 1 room written - the host room is below-the-floor for
+      that element and does not pass, so it cannot win
 
   - given: a target parameter that is not bound to those categories
     expect: >
@@ -47,5 +89,80 @@ negative:
       Revit's reference calls the choice random - took the room name and the
       element was counted in written
 
+  - given: >
+      version 3 - an element inside an L-shaped space's BOUNDING BOX but outside
+      its boundary, in the notch the box covers
+    expect: >
+      NOT given that space. Version 2 tested a space by its box alone, so the
+      corridor beside an L-shaped space took its name
+
+  - given: >
+      version 3 - storeys stacked over one another: an element in the lower
+      storey's ceiling void, a space on the storey above it in plan too
+    expect: >
+      the LOWER storey's space, and `refused` counting it as settled by storey.
+      Taking the first container to say yes in plan, as version 2 did, can hand
+      it the storey above
+
+  - given: >
+      version 3 - an element on Level 3 directly over a Level 1 space, with no
+      space on Level 3 or Level 2 at that place - ONE container in plan
+    expect: >
+      NOT written, in noRoomFound, and named in `refused` as in plan of that
+      space but ABOVE its storey. Version 2 wrote Level 1's name onto it
+
+  - given: >
+      version 3 - an element a little BELOW its own space's floor (a space with
+      a raised base offset)
+    expect: >
+      NOT written, named as below that space's floor - never handed to the
+      storey underneath
+
+  - given: >
+      version 3 - two spaces holding the element equally - overlapping volumes,
+      or two whose tops it sits equally far above
+    expect: >
+      NOT written, the element named in `refused` as held equally by two
+
+  - given: >
+      version 3 - a target parameter that exists but is not TEXT (a number or
+      yes/no parameter of that name)
+    expect: >
+      counted with the missing ones - no writable text parameter - and the
+      parameter exactly as it was
+
+  - given: >
+      version 3 - an unplaced or unenclosed space (area 0) where the element is
+    expect: >
+      the space not asked, counted in `refused` as unplaced or unenclosed, and
+      the element not given it
+
+  - given: >
+      version 3 - includeLinks true on a link that itself carries a link
+    expect: >
+      the nested link NOT read, and linkedMatches counting its placements
+
+  - given: >
+      version 3 - a value Revit does not keep after Set (hard to arrange - a
+      parameter a family formula drives is one way)
+    expect: >
+      counted as not kept, never as written. If no model can arrange it, the
+      row says NOT RUN and why
+
+  - given: >
+      version 3 - roomParameter, numberParameter and levelParameter all left
+      out (each reads "none")
+    expect: >
+      written 0, and `refused` saying nothing was named to fill. No parameter
+      is touched
+
+  - given: >
+      version 3 - useSpaces true on elements sitting in no space, with both
+      target parameters bound
+    expect: >
+      written 0, every element named in noRoomFound, and both parameters
+      exactly as they were
+
 second_route:
   - Schedule the equipment with the room parameter as a column and compare against a plan
+  - COUNT_BY_SPATIAL_CONTAINER with containerKind space on the same elements, on one storey whose levels are storeys - every element it puts in a space that is also inside it or in its ceiling void is written that space's name and number here; any other is named in refused with the reason

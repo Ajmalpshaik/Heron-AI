@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,13 +9,54 @@ semantic-identity: "write where each element is onto its own parameters"
 kind: action
 domain: revit.parameters
 capability: ASSIGN_LOCATION_DATA
-version: 2
+# VERSION 3 (2026-11-19, FRAGMENT-ISSUES 5b-1856) - from a real job stopped
+# before anything was written: 118 duct accessories whose ID_Room Name and
+# ID_Room Number were to be filled from the MEP space each sits in.
+#   1. roomParameter takes the room's or space's NAME alone - its Name
+#      parameter (ROOM_NAME). Version 2 wrote Element.Name, which for a room or
+#      a space Revit answers with the name AND the number together, so a name
+#      column got "PUMP ROOM 121" for a space PUMP ROOM numbered 121.
+#   2. numberParameter, new and optional, takes the Number on its own.
+#   3. A space is tested by its boundary (Space.IsPointInSpace), never its
+#      bounding box - version 2's Room cast missed every Space, which fell
+#      through to the box.
+#   4. NEW LOGIC, said plainly - THE STOREY IS CHECKED. In plan (Revit's test at
+#      the container's mid-height or its location point's height, the second
+#      being COUNT_BY_SPATIAL_CONTAINER's) is not enough: a space on Level 1
+#      says yes to a damper on Level 3 above it. A container is taken only when
+#      the element is INSIDE it (Revit's test at the element's own point) or
+#      above it but below the top of its storey - its location point plus the
+#      height from its level to the next level up, a difference of elevations.
+#      Anything else - below the floor, a higher storey, a storey whose top is
+#      unknown, two equally good - is NOT WRITTEN and named with the reason.
+#      Version 2 and COUNT_BY take the first container to say yes in plan;
+#      row 5b-1858 records COUNT_BY's side. A level that is not a storey (a
+#      "ceiling" level) makes the storey short: ceiling-void elements above it
+#      then go unwritten and named, never written to another floor. So this can
+#      write fewer than COUNT_BY counts in a space.
+#   5. All three targets are optional (`absent: none`), each target must be a
+#      text parameter, and every value is read back after it is written.
+#   6. `includeLinks` (D-59, optional, absent = host only): rooms or spaces in
+#      LOADED links are asked too - COUNT_BY_SPATIAL_CONTAINER's mechanism, the
+#      element's point moved into each link placement and tested there with the
+#      link's own levels, nested links counted and not read. THIS MODEL'S OWN
+#      CONTAINER WINS - one that passed the storey check - where a host and a
+#      linked one both hold the element, and the answer counts it;
+#      `linkedMatches` names the link each came from. Added on Ajmal PS's word
+#      the same day ("YES ADD LINKED ROOMS TO THE FIX"): his job's rooms are in
+#      the architect's link.
+# Version 2 was PROVEN on 2026-10-18 on Project2 with ROOMS (the proof block
+# below, kept as the record of what it proved). Its C# moved, so it is DRAFT
+# until NEEDS-CHECKING Group ON is run and signed (D-30). Spaces have never
+# been proved on this card.
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
 purpose: >
-  Writes where each element actually IS onto its own parameters - the room or
-  space it sits in, and its level. The *"fill in the location columns"* job that
+  Writes where each element actually IS onto its own parameters - the name and
+  the number of the room or space it sits in, each into a parameter of its own,
+  and its level. The *"fill in the location columns"* job that
   a handover register or a client's asset list needs, and that nothing in Revit
   fills for you.
 
@@ -28,7 +69,15 @@ purpose: >
   A LOCATION REGISTER COMES OUT WRONG.** Architecture puts people in ROOMS; MEP
   calculates in SPACES. A model can hold both, in the same place, with different
   names and different numbers. Which one is used is asked for, and the report
-  says which was used.
+  says which was used. Rooms in a LINKED model are asked only with
+  `includeLinks` (D-59), and this model's own room or space wins where both
+  hold an element.
+
+  **THE STOREY IS CHECKED.** A room on Level 1 lies under a damper on Level 3
+  in plan; it is taken only when the element is inside it, or above it but
+  still on its storey. Anything else - another floor, below the floor, two
+  rooms equally good - is left unwritten and named with the reason, never
+  written with another floor's name.
 
   **THE PROBE POINT IS NUDGED TO THE ROOM'S OWN MID-HEIGHT, and without that the
   answer is wrong for exactly the elements most often asked about.** The room
@@ -45,8 +94,8 @@ purpose: >
   lookup by name then returns one of them at random, in Autodesk's own words - so
   the room name would land in a field no schedule reads. Counted and named per
   parameter in `refused`, and neither is touched (D-54 s3, FRAGMENT-ISSUES
-  5b-203). This is version 2; version 1's proof no longer describes the code and
-  is kept as a record, and the fragment is DRAFT until it is proved again.
+  5b-203). This is version 3; the proof below is version 2's, kept as a record,
+  and the fragment is DRAFT until it is proved again.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -56,15 +105,38 @@ contract:
       type: Document
     - name: elements
       type: IList<Element>
+    # The parameter that takes the room's or space's NAME alone - never the
+    # number with it (version 3). Each target below is optional: left out,
+    # "none" or blank, it is skipped. With all three skipped nothing is written
+    # and the answer says so.
     - name: roomParameter
       type: string
       source: request
+      optional: true
+      absent: none
+    # VERSION 3. The parameter that takes the room's or space's NUMBER.
+    - name: numberParameter
+      type: string
+      source: request
+      optional: true
+      absent: none
     - name: levelParameter
       type: string
       source: request
+      optional: true
+      absent: none
     - name: useSpaces
       type: bool
       source: request
+    # VERSION 3, D-59. THE MODELLER DECIDES, JOB BY JOB: set, the rooms or
+    # spaces of every loaded link are asked as well, and this model's own win
+    # where both hold an element. Absent means host only - what version 2 did.
+    # `optional: true` lets it be left out: an absent bool marked so binds
+    # false (HeronBindingNote.AbsentValue).
+    - name: includeLinks
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: written
       role: result
@@ -78,6 +150,18 @@ contract:
       # Why it declined, in the user's words - the evidence it looked and
       # said no. Never a thing it FOUND, so it must not count toward
       # "did this come back empty" (D-52).
+      role: accounting
+      type: IList<string>
+    - name: linksSearched
+      # D-59's second field (version 3): how many linked DOCUMENTS were read -
+      # a file placed twice is one. `includeLinks` set and this at 0 means
+      # "asked, and none are loaded", which must not read as host only.
+      role: accounting
+      type: int
+    - name: linkedMatches
+      # What the links gave, as TEXT: the first line says which of D-59's three
+      # cases this is, then one line per link - how many of its rooms or spaces
+      # were asked and how many elements were given one of them.
       role: accounting
       type: IList<string>
 
@@ -114,11 +198,15 @@ tests: tests/
 
 compatibility-note: >
   One implementation for every release. `Room.IsPointInRoom`,
-  `SpatialElement.Location`, `Level.ProjectElevation` and `Element.LevelId` are
-  unchanged 2020 through 2027 - read off the reference assemblies at both ends.
-  Rooms and spaces are told apart by CATEGORY rather than by type, because the
-  wrapper imports the base namespace and the architecture and mechanical types
-  are not both available as names.
+  `Space.IsPointInSpace`, `SpatialElement.Number`, `SpatialElement.Location`,
+  `BuiltInParameter.ROOM_NAME` and `Element.LevelId` are unchanged 2020 through
+  2027 - read off tools/api-surface for all eight on 2026-11-19; the link half
+  calls only what COUNT_BY_SPATIAL_CONTAINER already compiles on all eight
+  (`RevitLinkInstance.GetLinkDocument`, `GetTotalTransform`,
+  `Transform.Inverse`, `Transform.OfPoint`). The fragment
+  wrapper imports both the Architecture and the Mechanical namespaces, so
+  `Room` and `Space` are both named directly (version 2's note that they were
+  not was out of date - COUNT_BY_SPATIAL_CONTAINER names both).
 
 # ROUTING - repeated in WRITE_ELEMENT_PARAMETERS, FILTER_ELEMENTS_IN_ROOM and
 # READ_ELEMENT_LEVEL.
