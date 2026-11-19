@@ -256,14 +256,24 @@ compatibility-note: >
 #                                          model and has no line of its own
 
 utterances:
+  # ROW 5b-1847 (2026-11-17, repairing row 5b-1844): "add a 1000 mm wall on
+  # Level 1" reached PLACE_WALL_SWEEPS or READ_ELEMENT_LEVEL, because no line
+  # here had a level, a size or a "from ... to" in it. The re-ranker reads
+  # only the first eight lines (D-134), so the two plain ones sit there. The
+  # "200 mm" line sits NINTH on purpose: in the first eight it pulled "add a
+  # 200 mm floor slab on Level 2" off CREATE_FLOOR. "put a wall here" and
+  # "make a wall" only moved down - still declared, still exact.
   - build a wall between these points
-  - put a wall here
+  - add a wall from here to there on this level
+  - put a 3 m high wall here, 6 m long
   - draw the walls for this room
-  - make a wall
   - add a partition here
   - draw a curtain wall between these points
   - draw an arc wall through these points
   - draw a wall starting above its level
+  - draw a 200 mm wall from 0,0 to 5000,0 on this level
+  - put a wall here
+  - make a wall
   # DECLARED 2026-11-02 from this card's own routing row (5b-1216), once
   # CUT_GEOMETRY's words moved the ranking and it reached
   # DRAW_FAMILY_POINT_CURVE (FRAGMENT-ISSUES 5b-1416). Card text only.
