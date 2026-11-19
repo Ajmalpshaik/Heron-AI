@@ -75,7 +75,7 @@ Every issue has a ready prompt that points here. Its kind is in its title: **Fix
 | [#920](https://github.com/Ajmalpshaik/Heron-AI/issues/920) | Your decision | family tools | 10 |
 | [#921](https://github.com/Ajmalpshaik/Heron-AI/issues/921) | Your decision | links and linked models | 4 |
 | [#922](https://github.com/Ajmalpshaik/Heron-AI/issues/922) | Your decision | MEP, spaces and loads | 6 |
-| [#923](https://github.com/Ajmalpshaik/Heron-AI/issues/923) | Your decision | rooms and doors | 6 |
+| [#923](https://github.com/Ajmalpshaik/Heron-AI/issues/923) | Your decision | rooms and doors | 7 |
 | [#924](https://github.com/Ajmalpshaik/Heron-AI/issues/924) | Your decision | tags, schedules and the model dashboard | 6 |
 | [#925](https://github.com/Ajmalpshaik/Heron-AI/issues/925) | Your decision | the CSV round trip and sheets from Excel | 4 |
 | [#926](https://github.com/Ajmalpshaik/Heron-AI/issues/926) | Your decision | library tidy-up (domains, status words, revisions) | 4 |
@@ -534,6 +534,9 @@ Every row of sections 5 and 5b that `python tools/open-defects.py` listed as ope
 | [row 5b-1845](row-5b-1845.md) | [#938](https://github.com/Ajmalpshaik/Heron-AI/issues/938) | Code fix | The archive re-points links to a re-banded row everywhere but in the register's own folder |
 | [row 5b-1848](row-5b-1848.md) | [#1039](https://github.com/Ajmalpshaik/Heron-AI/issues/1039) | Code fix | The new grids-and-levels check ranks first for "bring the grids in from the architect" |
 | [row 5b-1850](row-5b-1850.md) | [#908](https://github.com/Ajmalpshaik/Heron-AI/issues/908) | Revit run on your PC | A tower's low-angle camera measured its eye from the roof; fixed in #1024, DRAFT v6, the run is owed |
+| [row 5b-1856](row-5b-1856.md) | [#1059](https://github.com/Ajmalpshaik/Heron-AI/issues/1059) | Revit run on your PC | The room name and number written apart, a space tested by its boundary, linked rooms; fixed in #1050, DRAFT v3, the run is owed |
+| [row 5b-1857](row-5b-1857.md) | [#923](https://github.com/Ajmalpshaik/Heron-AI/issues/923) | Your decision | A space filter found 0 ceiling-void duct accessories where the count by space found 11 - row 5b-175's split |
+| [row 5b-1858](row-5b-1858.md) | [#1060](https://github.com/Ajmalpshaik/Heron-AI/issues/1060) | Code fix | The count by room or space takes the first one in plan on stacked storeys, and prints the number twice |
 
 ## Found finished on 2026-11-16 - closed in the register, no issue
 
@@ -667,6 +670,7 @@ Each group's file starts with a line naming its issue. The checks still owed are
 | [#1004](https://github.com/Ajmalpshaik/Heron-AI/issues/1004) | Revit run: HVAC, fire protection and energy | [AQ](../needs-checking/group-aq.md), [BT](../needs-checking/group-bt.md), [BU](../needs-checking/group-bu.md), [CG](../needs-checking/group-cg.md), [CE](../needs-checking/group-ce.md), [CC](../needs-checking/group-cc.md), [LU](../needs-checking/group-lu.md), [MM](../needs-checking/group-mm.md) |
 | [#1015](https://github.com/Ajmalpshaik/Heron-AI/issues/1015) | Tidy-up: strike checks already done | [IZ](../needs-checking/group-iz.md), [NO](../needs-checking/group-no.md), [NQ](../needs-checking/group-nq.md) |
 | [#1036](https://github.com/Ajmalpshaik/Heron-AI/issues/1036) | Revit run: grids and levels against a link, the new QA reports and office checklists | [OJ](../needs-checking/group-oj.md) |
+| [#1059](https://github.com/Ajmalpshaik/Heron-AI/issues/1059) | Revit run: ASSIGN_LOCATION_DATA version 3 - room or space name and number, rooms in a link | [ON](../needs-checking/group-on.md) |
 
 ## Work-note items - [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005) to [#1014](https://github.com/Ajmalpshaik/Heron-AI/issues/1014)
 

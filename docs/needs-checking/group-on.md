@@ -7,6 +7,8 @@
 
 ## Group ON - ASSIGN_LOCATION_DATA version 3: room or space name and number into two parameters, a space tested by its boundary, rooms in a link when asked, DRAFT until proved (2026-11-19)
 
+**Tracked as GitHub issue [#1059](https://github.com/Ajmalpshaik/Heron-AI/issues/1059) since 2026-11-19** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **Why:** on 2026-11-19 the owner asked for every duct accessory's `ID_Room Name` and `ID_Room Number` on a
 real job model to be filled from the MEP space it sits in. Version 2 would have glued the number onto the
 name, had no input for the number, and tested a space by its bounding box, so the job was stopped before
