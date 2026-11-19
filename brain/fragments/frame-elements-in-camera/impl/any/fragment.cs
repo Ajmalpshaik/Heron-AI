@@ -919,12 +919,17 @@ if (reachedCamera && cinematic)
     else if (sideCompass != null) { standAz = sideCompass.Value; standText = "the " + side.Trim() + " side"; }
     else { standAz = azimuth; standText = "the " + directionAsked.Trim() + " of the elements"; }
 
-    // THE EYE HEIGHT - above the level MOST of the elements stand on (the
-    // lowest of those that tie), or the bottom of their box when none has a
-    // level. On the owner's word, 2026-10-21 (row 5b-1301): it was the LOWEST
-    // level any of them stood on, and on Revit 2020's sample house one
-    // partition on 'Foundation', 800 mm down, put the eye-level camera 800 mm
-    // above the ground floor and, on the hill side, inside the ground.
+    // THE EYE HEIGHT - above the LOWEST level the elements stand on, or the
+    // bottom of their box when none has a level. VERSION 6 (row 5b-1850): one
+    // bottom level only a stray few stand on - fewer than a quarter as many as
+    // on the next level up - is passed over for that next one, and said.
+    // Version 5 took the level MOST of them stood on (row 5b-1301, the owner's
+    // word, 2026-10-21: one partition on 'Foundation' on Revit 2020's sample
+    // house put the eye-level camera 800 mm above the ground floor). On a
+    // tower that is whichever floor holds a few more walls: on 2026-11-18, 114
+    // walls from 'Level 1' to 'Roof' put the low-angle eye 450 mm above
+    // 'Roof'. The stray-few pass keeps row 5b-1301's case; the camera never
+    // stands more than one level above the lowest.
     double baseZ = low.Z;
     string baseName = "the bottom of the elements' box";
     Level baseLevel = null;
@@ -938,12 +943,17 @@ if (reachedCamera && cinematic)
         standingOn[key] = standingOn.ContainsKey(key) ? standingOn[key] + 1 : 1;
         levelsSeen[key] = lv;
     }
-    foreach (var key in standingOn.Keys)
+    var byHeight = levelsSeen.Values.OrderBy(l => l.ProjectElevation).ToList();
+    if (byHeight.Count > 0)
     {
-        var lv = levelsSeen[key];
-        if (baseLevel == null || standingOn[key] > standingOn[baseLevel.Id]
-            || (standingOn[key] == standingOn[baseLevel.Id] && lv.ProjectElevation < baseLevel.ProjectElevation))
-            baseLevel = lv;
+        baseLevel = byHeight[0];
+        if (byHeight.Count > 1 && standingOn[byHeight[0].Id] * 4 < standingOn[byHeight[1].Id])
+        {
+            baseLevel = byHeight[1];
+            findings.Add("The eye height is measured from '" + byHeight[1].Name + "', not '" + byHeight[0].Name
+                + "' below it: only " + standingOn[byHeight[0].Id] + " of the elements stand on '" + byHeight[0].Name
+                + "', fewer than a quarter of the " + standingOn[byHeight[1].Id] + " on '" + byHeight[1].Name + "'.");
+        }
     }
     if (baseLevel != null) { baseZ = baseLevel.ProjectElevation; baseName = "'" + baseLevel.Name + "'"; }
 

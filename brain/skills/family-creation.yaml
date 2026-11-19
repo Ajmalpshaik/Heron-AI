@@ -175,6 +175,21 @@ purpose: >
      and Defines Origin where the family is placed from - before anything is
      placed in a project, because a project's units take a moved origin when
      the family is loaded again.
+     THE OWNER'S STANDING RULE FOR PLANE COLOURS (2026-11-17), every family:
+     the outline planes (Left, Right, Front, Back, Top, Bottom) and both
+     centre planes (Center (Left/Right), Center (Front/Back)) stay on
+     Reference Planes itself, Revit's default green; every other plane goes on
+     a gray subcategory of Reference Planes. Once, before the first such
+     plane is coloured: CREATE_LINE_STYLE, parentCategory "Reference Planes",
+     styleName "Secondary References", colour "128,128,128" (updateExisting
+     true when the family has it already). Then, in the same
+     SET_FAMILY_PLANE_REFERENCE call that sets Is Reference,
+     otherPlanesSubcategory "Secondary References" - and again after any later
+     step makes a plane (EXTRUDE_POLYGON_BETWEEN_PLANES makes its own side
+     planes), a fixed-size family's planes included. Its findings name every outline or centre plane it
+     left on Reference Planes; one named as on another subcategory goes back
+     with subcategories "<plane>=Reference Planes". Only where the modeller
+     says otherwise for a family, ask; never drop the rule silently.
   6. LABEL_FAMILY_DIMENSION for every straight size - with the family's centre
      plane for left-right and front-back, so the shape stays centred on its
      insertion point; from Ref. Level for a height.

@@ -1,6 +1,6 @@
-// NOT STANDALONE. Assumes `doc` and `planes` are in scope; leaves
-// `planeReport`, `changed`, `alreadySet`, `notAFamily`, `refused` and `findings`
-// behind.
+// NOT STANDALONE. Assumes `doc`, `planes`, `subcategories` and
+// `otherPlanesSubcategory` are in scope; leaves `planeReport`, `changed`,
+// `alreadySet`, `onSubcategory`, `notAFamily`, `refused` and `findings` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one.
 //
@@ -33,11 +33,31 @@
 // write and after the last. A plane the call did not name that reads
 // differently - Revit moving a side from it when another plane takes it, say -
 // is put back, and one that will not go back fails the call.
+//
+// VERSION 2 - THE SUBCATEGORY ROW (2026-11-17). A reference plane's
+// Properties also carry Subcategory - which subcategory of Reference Planes it
+// is drawn in, and so its colour in every view of the family. `subcategories`
+// sets it per plane - "Insert=Secondary References; Box Left=Reference
+// Planes" - and `otherPlanesSubcategory` puts EVERY plane that is not an
+// outline or centre plane on one: an outline or centre plane is one named, or
+// whose Is Reference reads (after this call's own writes), Left, Right, Front,
+// Back, Top, Bottom, Center (Left/Right) or Center (Front/Back). A plane named
+// in `subcategories` takes that entry, never the bulk one, and an outline or
+// centre plane is never moved by the bulk one - one already on another
+// subcategory is named, and left. "Reference Planes", or "none", is the
+// category itself. The subcategory must exist: CREATE_LINE_STYLE with
+// parentCategory "Reference Planes" makes it, with its colour. Revit's stored
+// value for "the category itself" is not documented, so it is a first try -
+// no subcategory, then the category's own id - and READ BACK; every plane's
+// Subcategory is read before and after like the other two rows, and one that
+// moved unasked fails the call. Both new inputs left out, and `planes` given,
+// the call is version 1's to the letter.
 
 var findings = new List<string>();
 var planeReport = "";
 var changed = 0;
 var alreadySet = 0;
+var onSubcategory = 0;
 var notAFamily = false;
 string refused = null;
 
@@ -94,6 +114,51 @@ Func<Parameter, int?> stored = p =>
 };
 Func<Parameter, string> yesNo = p => stored(p) == 1 ? "Yes" : "No";
 
+// THE SUBCATEGORY ROW (version 2): Reference Planes itself, or one of its
+// subcategories, by name and by id.
+Func<ReferencePlane, Parameter> subcategoryOf = rp => rp.get_Parameter(BuiltInParameter.CLINE_SUBCATEGORY);
+Category planesCategory = null;
+try { planesCategory = doc.Settings.Categories.get_Item(BuiltInCategory.OST_CLines); }
+catch (Exception) { }
+var planesCategoryName = planesCategory == null ? "Reference Planes" : planesCategory.Name;
+var planeSubcategories = new List<Category>();
+if (planesCategory != null)
+    foreach (Category c in planesCategory.SubCategories) if (c != null) planeSubcategories.Add(c);
+Func<ElementId, bool> onCategoryItself = id =>
+    id == null || id == ElementId.InvalidElementId || (planesCategory != null && id == planesCategory.Id);
+Func<ElementId, string> subcategoryName = id =>
+{
+    if (onCategoryItself(id)) return planesCategoryName;
+    var known = planeSubcategories.FirstOrDefault(c => c.Id == id);
+    if (known != null) return known.Name;
+    var element = doc.GetElement(id);
+    return element == null ? "id " + id : element.Name;
+};
+Func<ReferencePlane, ElementId> subcategoryNow = rp =>
+{
+    var row = subcategoryOf(rp);
+    try { return row == null || row.StorageType != StorageType.ElementId ? null : row.AsElementId(); }
+    catch (Exception) { return null; }
+};
+// A name as the modeller gives it: the category itself, or a subcategory.
+// Item1 is the id written (InvalidElementId for the category itself).
+Func<string, Tuple<ElementId, string>> findSubcategory = text =>
+{
+    var key = squash(text);
+    if (key == "none" || key == "referenceplanes" || key == "referenceplane" || key == squash(planesCategoryName))
+        return Tuple.Create(ElementId.InvalidElementId, planesCategoryName);
+    var match = planeSubcategories.FirstOrDefault(c => string.Equals(c.Name.Trim(), (text ?? "").Trim(),
+        StringComparison.OrdinalIgnoreCase));
+    return match == null ? null : Tuple.Create(match.Id, match.Name);
+};
+Func<ElementId, ElementId, bool> sameSubcategory = (a, b) =>
+    onCategoryItself(a) ? onCategoryItself(b) : (b != null && a == b);
+Func<ReferencePlane, string, string> label = (rp, name) =>
+    name.Length > 0 ? "\"" + name + "\"" : "an unnamed plane (id " + rp.Id + ")";
+// The outline and centre planes, by name or by Is Reference.
+var outlineKeys = new HashSet<string> { "left", "right", "front", "back", "top", "bottom", "centerleftright",
+    "centerfrontback" };
+
 // Every reference plane as it stands before the call: the plane, its name, the
 // axis it faces, Is Reference stored and in words, and Defines Origin stored.
 var before = new List<Tuple<ReferencePlane, string, int, int?, string, int?>>();
@@ -101,6 +166,15 @@ var before = new List<Tuple<ReferencePlane, string, int, int?, string, int?>>();
 // Is Reference alone), and whether it is to define the origin.
 var plans = new List<Tuple<ReferencePlane, string, Tuple<string, string, int, string>, bool>>();
 var problems = new List<string>();
+// Each plane's Subcategory as it stood before the call, and each plane whose
+// Subcategory is to be set: the plane, its name, the id to write, its name.
+var subcategoryBefore = new Dictionary<ElementId, ElementId>();
+var subPlans = new List<Tuple<ReferencePlane, string, ElementId, string>>();
+var keptOnOwn = new List<string>();
+var keptElsewhere = new List<string>();
+var noSubcategoryRow = 0;
+var otherAsked = (otherPlanesSubcategory ?? "").Trim();
+if (string.Equals(otherAsked, "none", StringComparison.OrdinalIgnoreCase)) otherAsked = "";
 
 if (!doc.IsFamilyDocument)
 {
@@ -112,15 +186,19 @@ if (!doc.IsFamilyDocument)
 else
 {
     foreach (var rp in new FilteredElementCollector(doc).OfClass(typeof(ReferencePlane)).Cast<ReferencePlane>())
+    {
         before.Add(Tuple.Create(rp, ownName(rp), axisOf(rp.Normal), stored(isReferenceOf(rp)), words(isReferenceOf(rp)),
             stored(originOf(rp))));
+        subcategoryBefore[rp.Id] = subcategoryNow(rp);
+    }
     var namedPlanes = before.Where(b => b.Item2.Length > 0).Select(b => b.Item2).Distinct().OrderBy(n => n).ToList();
     var offered = string.Join(", ", settings.Select(s => s.Item2)) + ", each optionally followed by \", origin\"";
 
-    if (planes == null || planes.Count == 0)
+    var subcategoriesAsked = subcategories != null && subcategories.Count > 0;
+    if ((planes == null || planes.Count == 0) && !subcategoriesAsked && otherAsked.Length == 0)
         problems.Add("No planes were named - \"Box Left=Left; Box Right=Right; Insert=Strong Reference, origin\", "
-            + "semicolons between.");
-    else
+            + "semicolons between - and no subcategory was asked.");
+    else if (planes != null)
         foreach (var pair in planes)
         {
             var name = (pair.Key ?? "").Trim();
@@ -202,6 +280,83 @@ else
             }
             plans.Add(Tuple.Create(plane.Item1, plane.Item2, setting, origin));
         }
+
+    // THE SUBCATEGORY ROW, per plane named (version 2).
+    var offeredSubcategories = planesCategoryName + (planeSubcategories.Count == 0 ? " (it has no subcategories yet)"
+        : ", " + string.Join(", ", planeSubcategories.Select(c => c.Name).OrderBy(n => n).Take(30)));
+    Func<string, string> noSuchSubcategory = text => planesCategoryName + " has no subcategory named \"" + text
+        + "\" - this family has " + offeredSubcategories + ". CREATE_LINE_STYLE with parentCategory \""
+        + planesCategoryName + "\" makes one, with its colour.";
+    if (subcategoriesAsked && planesCategory == null)
+        problems.Add("The Reference Planes category could not be read, so no plane's Subcategory can be set.");
+    else if (subcategoriesAsked)
+        foreach (var pair in subcategories)
+        {
+            var name = (pair.Key ?? "").Trim();
+            var found = before.Where(b => string.Equals(b.Item2, name, StringComparison.OrdinalIgnoreCase)).ToList();
+            if (found.Count == 0)
+            {
+                problems.Add("No reference plane is called \"" + name + "\" (subcategories). This family's named "
+                    + "planes: " + (namedPlanes.Count == 0 ? "none" : string.Join(", ", namedPlanes.Take(30))) + ".");
+                continue;
+            }
+            if (found.Count > 1)
+            {
+                problems.Add("\"" + name + "\" names " + found.Count + " planes - rename one first.");
+                continue;
+            }
+            var plane = found[0];
+            if (subPlans.Any(p => p.Item1.Id == plane.Item1.Id))
+            {
+                problems.Add("\"" + name + "\" is named twice in subcategories - say it once.");
+                continue;
+            }
+            var target = findSubcategory(pair.Value);
+            if (target == null)
+            {
+                problems.Add(noSuchSubcategory((pair.Value ?? "").Trim()));
+                continue;
+            }
+            var row = subcategoryOf(plane.Item1);
+            if (row == null || row.StorageType != StorageType.ElementId || row.IsReadOnly)
+            {
+                problems.Add("Revit does not let \"" + name + "\"'s Subcategory be changed here.");
+                continue;
+            }
+            subPlans.Add(Tuple.Create(plane.Item1, plane.Item2, target.Item1, target.Item2));
+        }
+
+    // EVERY OTHER PLANE ON ONE SUBCATEGORY (version 2) - every plane that is
+    // not an outline or centre plane and is not named in subcategories.
+    if (otherAsked.Length > 0)
+    {
+        var target = planesCategory == null ? null : findSubcategory(otherAsked);
+        if (planesCategory == null)
+            problems.Add("The Reference Planes category could not be read, so no plane's Subcategory can be set.");
+        else if (target == null)
+            problems.Add(noSuchSubcategory(otherAsked) + " (otherPlanesSubcategory)");
+        else
+            foreach (var b in before)
+            {
+                if (subPlans.Any(p => p.Item1.Id == b.Item1.Id)) continue;
+                var plan = plans.FirstOrDefault(p => p.Item1.Id == b.Item1.Id);
+                var finalKey = plan != null && plan.Item3 != null ? plan.Item3.Item1 : squash(b.Item5);
+                if (outlineKeys.Contains(finalKey) || outlineKeys.Contains(squash(b.Item2)))
+                {
+                    var now = subcategoryBefore[b.Item1.Id];
+                    if (onCategoryItself(now)) keptOnOwn.Add(label(b.Item1, b.Item2));
+                    else keptElsewhere.Add(label(b.Item1, b.Item2) + " is on " + subcategoryName(now));
+                    continue;
+                }
+                var row = subcategoryOf(b.Item1);
+                if (row == null || row.StorageType != StorageType.ElementId || row.IsReadOnly)
+                {
+                    noSubcategoryRow++;
+                    continue;
+                }
+                subPlans.Add(Tuple.Create(b.Item1, b.Item2, target.Item1, target.Item2));
+            }
+    }
 
     // EACH SIDE AND CENTRE IS ONE PLANE'S. Two named for one, or one held by a
     // plane the call leaves alone, is refused - never moved by this code.
@@ -310,6 +465,41 @@ if (refused == null)
         }
     }
 
+    // THE SUBCATEGORY ROW (version 2). The category itself is not a
+    // documented value: no subcategory is tried first, then the category's
+    // own id, and each is read back.
+    // Which value put a plane back on the category itself - evidence for
+    // NEEDS-CHECKING OK3, which nothing documents.
+    var categoryValues = new List<string>();
+    foreach (var sp in subPlans)
+    {
+        var row = subcategoryOf(sp.Item1);
+        if (sameSubcategory(sp.Item3, subcategoryNow(sp.Item1))) { alreadySet++; continue; }
+        var tries = new List<ElementId> { sp.Item3 };
+        if (sp.Item3 == ElementId.InvalidElementId && planesCategory != null) tries.Add(planesCategory.Id);
+        var taken = false;
+        var lastError = "";
+        foreach (var value in tries)
+        {
+            try { row.Set(value); }
+            catch (Exception ex) { lastError = " - " + ex.Message; continue; }
+            if (sameSubcategory(sp.Item3, subcategoryNow(sp.Item1)))
+            {
+                taken = true;
+                if (sp.Item3 == ElementId.InvalidElementId)
+                {
+                    var how = value == ElementId.InvalidElementId ? "no subcategory (-1)" : "the category's own id";
+                    if (!categoryValues.Contains(how)) categoryValues.Add(how);
+                }
+                break;
+            }
+        }
+        if (!taken)
+            throw new InvalidOperationException("Revit would not put " + label(sp.Item1, sp.Item2) + " on " + sp.Item4
+                + lastError + "; it reads " + subcategoryName(subcategoryNow(sp.Item1)) + ". The call failed, and Heron "
+                + "rolls the whole call back.");
+    }
+
     // NOTHING ELSE MAY MOVE: a row the call did not ask about goes back to how
     // it read, and an origin cleared on purpose is the one exception.
     var putBack = new List<string>();
@@ -392,9 +582,29 @@ if (refused == null)
                 if (b.Item6 != 1) parts.Add("Defines Origin No -> Yes");
             }
         }
+        // THE SUBCATEGORY ROW: as asked, or as it was (version 2).
+        var subPlan = subPlans.FirstOrDefault(p => p.Item1.Id == b.Item1.Id);
+        var subWas = subcategoryBefore[b.Item1.Id];
+        var subIs = subcategoryNow(b.Item1);
+        if (subPlan != null)
+        {
+            if (!sameSubcategory(subPlan.Item3, subIs))
+                throw new InvalidOperationException(label(b.Item1, b.Item2) + " reads Subcategory " + subcategoryName(subIs)
+                    + " after the call, not " + subPlan.Item4 + ". The call failed, and Heron rolls the whole call back.");
+            if (!sameSubcategory(subWas, subIs))
+            {
+                parts.Add("Subcategory " + subcategoryName(subWas) + " -> " + subcategoryName(subIs));
+                onSubcategory++;
+            }
+        }
+        else if (!sameSubcategory(subWas, subIs))
+            throw new InvalidOperationException(label(b.Item1, b.Item2) + " was not asked about, and reads Subcategory "
+                + subcategoryName(subIs) + " after the call where it read " + subcategoryName(subWas) + ". The call "
+                + "failed, and Heron rolls the whole call back.");
+
         if (parts.Count > 0)
         {
-            rows.Add("\"" + b.Item2 + "\": " + string.Join("; ", parts));
+            rows.Add(label(b.Item1, b.Item2) + ": " + string.Join("; ", parts));
             changed++;
         }
     }
@@ -414,6 +624,23 @@ if (refused == null)
             + "placed in a project take the new origin when the family is loaded into it again, so check them then.");
     if (plans.Any(p => p.Item3 != null && p.Item3.Item1 == "notareference"))
         findings.Add("A plane that is Not a Reference cannot be dimensioned or snapped to in a project.");
+    if (subPlans.Count > 0)
+        findings.Add(onSubcategory + " plane(s) moved to another subcategory of " + planesCategoryName + ", "
+            + subPlans.Count + " asked - each plane's Subcategory read back after the call.");
+    if (categoryValues.Count > 0)
+        findings.Add(planesCategoryName + " itself was written as " + string.Join(" and ", categoryValues)
+            + " - what Revit took on this release, read back.");
+    if (otherAsked.Length > 0)
+    {
+        findings.Add("The outline and centre planes left on " + planesCategoryName + ": "
+            + (keptOnOwn.Count == 0 ? "none" : string.Join(", ", keptOnOwn)) + ".");
+        if (keptElsewhere.Count > 0)
+            findings.Add("Outline or centre planes NOT on " + planesCategoryName + ", left as they are: "
+                + string.Join("; ", keptElsewhere) + ". Name one in subcategories with \"" + planesCategoryName
+                + "\" to put it back.");
+        if (noSubcategoryRow > 0)
+            findings.Add(noSubcategoryRow + " plane(s) have no Subcategory row Revit lets be set, and were left.");
+    }
 }
 
 if (refused != null) findings.Add(refused);

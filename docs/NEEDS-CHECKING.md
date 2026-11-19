@@ -1578,6 +1578,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-oj.md`](needs-checking/group-oj.md)
 
+## Group OK - reference planes on a coloured subcategory: CREATE_LINE_STYLE version 3 and SET_FAMILY_PLANE_REFERENCE version 2, DRAFT until proved (2026-11-17)
+
+**Its own file:** [`needs-checking/group-ok.md`](needs-checking/group-ok.md)
+
 ## Group OL - what wrote a document to disk when `ACTIVATE_DOCUMENT` left it, and the read-back that now says so (2026-11-18)
 
 **Its own file:** [`needs-checking/group-ol.md`](needs-checking/group-ol.md)
