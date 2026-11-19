@@ -62,7 +62,7 @@ Every issue has a ready prompt that points here. Its kind is in its title: **Fix
 | [#907](https://github.com/Ajmalpshaik/Heron-AI/issues/907) | Revit run on your PC | parameters, rooms, schedules and tags | 10 |
 | [#908](https://github.com/Ajmalpshaik/Heron-AI/issues/908) | Revit run on your PC | re-sign proofs and check new tools | 10 |
 | [#909](https://github.com/Ajmalpshaik/Heron-AI/issues/909) | Revit run on your PC | routing re-checked on your PC's trained model | 5 |
-| [#910](https://github.com/Ajmalpshaik/Heron-AI/issues/910) | Your decision | how the add-in guards changes | 6 |
+| [#910](https://github.com/Ajmalpshaik/Heron-AI/issues/910) | Your decision | how the add-in guards changes | 7 |
 | [#911](https://github.com/Ajmalpshaik/Heron-AI/issues/911) | Your decision | dry runs, saving and Sync | 4 |
 | [#912](https://github.com/Ajmalpshaik/Heron-AI/issues/912) | Your decision | how replies show values (cut text, units) | 5 |
 | [#913](https://github.com/Ajmalpshaik/Heron-AI/issues/913) | Your decision | agents and their contracts | 9 |
@@ -500,6 +500,7 @@ Every row of sections 5 and 5b that `python tools/open-defects.py` listed as ope
 | [row 5b-1672](row-5b-1672.md) | [#918](https://github.com/Ajmalpshaik/Heron-AI/issues/918) | Your decision | No tool shapes a wall top to a gable, so gable triangles stay open on 2020-2024 - *done in #890, merged* |
 | [row 5b-1673](row-5b-1673.md) | [#918](https://github.com/Ajmalpshaik/Heron-AI/issues/918) | Your decision | No tool sets a column's top level without moving it; the words reach an attach tool - *done in #890, merged* |
 | [row 5b-1674](row-5b-1674.md) | [#918](https://github.com/Ajmalpshaik/Heron-AI/issues/918) | Your decision | Deleting a roof detaches its walls and Heron's answer does not say so - *done in #890, merged* |
+| [row 5b-1700](row-5b-1700.md) | [#910](https://github.com/Ajmalpshaik/Heron-AI/issues/910) | Your decision | The delete box also asks about elements Revit deletes and remakes in the same run; whether it should is the owner's |
 | [row 5b-1702](row-5b-1702.md) | [#945](https://github.com/Ajmalpshaik/Heron-AI/issues/945) | Code fix | Loading a family reports that the project's Glass material changed, maybe wrongly |
 | [row 5b-1703](row-5b-1703.md) | [#918](https://github.com/Ajmalpshaik/Heron-AI/issues/918) | Your decision | A column's Top Level cannot be set by name because two parameters share that name - *done in #889, merged* |
 | [row 5b-1704](row-5b-1704.md) | [#918](https://github.com/Ajmalpshaik/Heron-AI/issues/918) | Your decision | Placing an architectural column with a top level is refused unless placed as structural - *done in #889, merged* |
