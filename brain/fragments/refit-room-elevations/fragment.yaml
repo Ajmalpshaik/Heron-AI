@@ -9,7 +9,7 @@ semantic-identity: "fit the interior elevations to the room again after it chang
 kind: action
 domain: revit.views
 capability: REFIT_ROOM_ELEVATIONS
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -24,6 +24,14 @@ risk: MODIFY
 # to its box, as a person dragging the crop would.
 #
 # A template-controlled view keeps what the template owns; each refusal named.
+#
+# THE MARKER IS READ IN A FLOOR PLAN (version 2, rows 5b-1843 and 5b-1859).
+# A marker's own box - get_BoundingBox(null) - was null for every marker
+# measured on Revit 2024, so version 1 found none. Its box in a floor plan
+# that shows it is not, and the box's middle stands in the room: one plan per
+# level, the room asked for a foot above the box's foot. A marker over a
+# different room on different levels is refitted only when roomNumbers names
+# one of them; otherwise it is named and left.
 #
 # READ BACK: each crop read again and compared with what was asked.
 #
@@ -71,7 +79,9 @@ compatibility-note: >
   CurrentViewCount and MaximumViewCount, View.CropBox and CropBoxActive,
   Document.GetRoomAtPoint, Element.get_BoundingBox and VIEWER_BOUND_OFFSET_FAR
   are present 2020 through 2027 - read off RevitAPI.xml in the Nice3point
-  reference packages for all eight releases on 2026-10-12. Margins are
+  reference packages for all eight releases on 2026-10-12. Version 2 adds
+  ViewPlan, View.GenLevel, View.IsTemplate and View.ViewType, compiled for all
+  eight releases on 2026-11-17 by tools/check-fragments-compile.py. Margins are
   millimetres divided by 304.8 (D-20).
 
 # ROUTING - the same rows are in the fragments named here.
