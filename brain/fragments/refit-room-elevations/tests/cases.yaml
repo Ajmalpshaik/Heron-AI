@@ -6,6 +6,18 @@ positive:
       refitted 4, each crop 300 mm round the room as it now is, the
       elevation facing the moved wall with its far clip 1000 mm deeper
 
+  # Rows 5b-1843 and 5b-1859: version 1 found no marker at all, because a
+  # marker's own box is null; the marker is found through the floor plan.
+  - given: >
+      Group OI's OI18 rig, rig.rvt - four walls round x 30000-34000, y
+      30000-33000 on Level 1, one room placed at 32000,31500, and a marker made
+      by CREATE_ROOM_ELEVATIONS at that point with 4 slots; roomNumbers empty,
+      marginMm 300
+    expect: >
+      the marker found in that room through the Level 1 floor plan: refitted 4,
+      each crop 300 mm round the room, and NOT "No elevation marker stands
+      inside any room"
+
 negative:
   - given: roomNumbers 999, a number no room has
     expect: >
@@ -14,6 +26,14 @@ negative:
   - given: a room with no elevation marker inside it
     expect: >
       refitted 0, nothing changed in any view
+
+  - given: >
+      a marker that shows in the floor plans of two levels, over room 101 on
+      one and room 201 on the other; roomNumbers empty
+    expect: >
+      that marker not refitted and its line naming rooms 101 and 201 - "not
+      refitted; name the one room to refit it"; with roomNumbers 101 the same
+      marker is refitted to room 101
 
 second_route:
   - each elevation opened beside the plan, the crop edges on the walls

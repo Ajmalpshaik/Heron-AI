@@ -60,7 +60,7 @@ Every issue has a ready prompt that points here. Its kind is in its title: **Fix
 | [#905](https://github.com/Ajmalpshaik/Heron-AI/issues/905) | Revit run on your PC | links, imports and coordinates | 6 |
 | [#906](https://github.com/Ajmalpshaik/Heron-AI/issues/906) | Revit run on your PC | MEP and energy tools | 7 |
 | [#907](https://github.com/Ajmalpshaik/Heron-AI/issues/907) | Revit run on your PC | parameters, rooms, schedules and tags | 10 |
-| [#908](https://github.com/Ajmalpshaik/Heron-AI/issues/908) | Revit run on your PC | re-sign proofs and check new tools | 9 |
+| [#908](https://github.com/Ajmalpshaik/Heron-AI/issues/908) | Revit run on your PC | re-sign proofs and check new tools | 10 |
 | [#909](https://github.com/Ajmalpshaik/Heron-AI/issues/909) | Revit run on your PC | routing re-checked on your PC's trained model | 5 |
 | [#910](https://github.com/Ajmalpshaik/Heron-AI/issues/910) | Your decision | how the add-in guards changes | 6 |
 | [#911](https://github.com/Ajmalpshaik/Heron-AI/issues/911) | Your decision | dry runs, saving and Sync | 4 |
@@ -532,6 +532,7 @@ Every row of sections 5 and 5b that `python tools/open-defects.py` listed as ope
 | [row 5b-1831](row-5b-1831.md) | [#948](https://github.com/Ajmalpshaik/Heron-AI/issues/948) | Code fix | Setting four columns' levels would delete 2 elements, and which two is unknown |
 | [row 5b-1832](row-5b-1832.md) | [#956](https://github.com/Ajmalpshaik/Heron-AI/issues/956) | Code fix | 'Attach these walls to the roof' and 'delete this roof' reach the wrong tool on 2024 |
 | [row 5b-1845](row-5b-1845.md) | [#938](https://github.com/Ajmalpshaik/Heron-AI/issues/938) | Code fix | The archive re-points links to a re-banded row everywhere but in the register's own folder |
+| [row 5b-1850](row-5b-1850.md) | [#908](https://github.com/Ajmalpshaik/Heron-AI/issues/908) | Revit run on your PC | A tower's low-angle camera measured its eye from the roof; fixed in #1024, DRAFT v6, the run is owed |
 
 ## Found finished on 2026-11-16 - closed in the register, no issue
 
