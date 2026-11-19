@@ -5,7 +5,15 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-041
-semantic-identity: "what filters exist, which views use them, and why a filter on a view draws nothing"
+semantic-identity: "the filters in the project and on a view in priority order, which views use each, and why a filter draws nothing"
+# IDENTITY REWORDED 2026-11-19, FRAGMENT-ISSUES row 5b-1855. It said "what
+# filters exist, which views use them, and why a filter on a view draws
+# nothing" - and when REORDER_VIEW_FILTERS (a write) arrived, the READ
+# questions about filter ORDER ("what order are the filters in on this view")
+# went to it on all four backends: this card numbers the filters in priority
+# order and its identity never said so. Words only - the proof's fingerprint
+# is the implementation's, so it stands. Measured main against the branch on a
+# sentence set frozen before the edit.
 kind: filter
 domain: revit.views
 capability: REPORT_VIEW_FILTERS
@@ -2478,6 +2486,14 @@ utterances:
   # sentence, and a comment is not indexed, so ranking decided: "read the
   # filter settings back": COPY_VIEW_FILTERS on lexical answered it.
   - read the filter settings back
+  # ADDED 2026-11-19, row 5b-1855: the questions about filter ORDER this card
+  # answers (it numbers them in priority order) went to REORDER_VIEW_FILTERS,
+  # a write. NINTH AND TENTH ON PURPOSE: the plain backends read every
+  # utterance and are helped by them; the re-rankers read only the first
+  # eight within 64 words (heron_rerank.passage_said), and measured worse with
+  # them in second and third. The identity carries the order to the re-rankers.
+  - which filter is at the top of the filter list on this view
+  - what is the filter order on this view
   # ADDED 2026-10-17, FRAGMENT-ISSUES row 5b-1005: asked on 2026-10-14 with the
   # Revit 2020 filter, it reached UPDATE_SAVED_SET, a write. Every saved
   # selection set is listed here as "a SAVED LIST" with the views using it.

@@ -1,0 +1,130 @@
+# D-30: the negative case is what catches "took the filters off and put them
+# back and called it a move" - a filter that is not on the view must come back
+# refused, moved false, with nothing written and nothing in either order list.
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE (NEEDS-CHECKING Group OM, and the job
+# file tools/jobs/reorder-view-filters-snowdon-2026-11-19.yaml). A SCRATCH COPY
+# of a Revit sample model, never a working model: Revit 2024's own
+# Samples\Snowdon Towers Sample HVAC.rvt copied under %TEMP%\heron-work, whose
+# "FloorPlan: L2" carried four filters, one of them "Domestic", when
+# COPY_VIEW_FILTERS was proved on it (2026-09-08). OM1 reads the four in order
+# with REPORT_VIEW_FILTERS before anything here runs; where the model differs,
+# the job file changes - never the card.
+#
+# EVERY WRITE IS ROLLED BACK in the proving run.
+
+positive:
+  - given: >
+      Revit 2024, "FloorPlan: L2" with its four filters, filterName = the filter
+      OM1 reads in the LAST row, position left out (top)
+    expect: >
+      moved true; orderBefore is OM1's order; orderAfter is that filter first and
+      the other three in the order they had; reAdded 3; orderVerified "read back
+      from Revit". In Visibility/Graphics > Filters (the second route) the filter
+      is row 1 and every row - Visibility, Enable Filter, lines, patterns,
+      halftone, transparency - looks as it did
+
+  - given: >
+      the same view, after one filter is given a red projection line override
+      and its Enable Filter tick is cleared (APPLY_VIEW_FILTER, kept); that
+      filter is not the one moved, but stands below the row it is moved to
+    expect: >
+      moved true, and that filter is among those re-added and STILL carries the
+      red line with Enable Filter OFF - read back by the fragment, and seen in the
+      Filters tab. THE FIRST POSITIVE TO CHECK: losing an override or an
+      unticked Enable Filter is the way this tool would do harm quietly
+
+  - given: Revit 2024, the same four filters, position "bottom" on the row-1 filter
+    expect: moved true; reAdded 1 - only the moved filter taken off and put back
+
+  - given: Revit 2024, the filter already in row 1, position left out
+    expect: moved false, reAdded 0, nothing written, a finding "already at row 1"
+
+  - given: >
+      Revit 2020, a scratch copy of a Revit 2020 sample with three or more
+      filters on a plan, currentOrder typed as the Filters tab shows it
+    expect: >
+      moved true; orderVerified "written, not readable on Revit 2020"; the
+      Filters tab, looked at by eye, shows the asked order with every row as it
+      was
+
+  - given: a view template that controls Filters, named as the view
+    expect: moved true, and a finding saying how many views follow the template
+
+  - given: >
+      a plan that HAS a view template, but one whose V/G Overrides Filters is
+      NOT included (left for each view to decide)
+    expect: >
+      moved true on the plan itself - its filters are its own. The template test
+      reads the include list FROM THE TEMPLATE (FRAGMENT-ISSUES 5b-1854); a
+      draft that read it off the view refused this plan or let a controlled one
+      through, depending on the view's own meaningless list
+
+  - given: >
+      Revit 2024, the four filters on L2, the row-4 filter with position
+      "above <the row-2 filter>", then the row-1 filter with "below <the row-3
+      filter>"
+    expect: >
+      first: the moved filter in row 2, the rest in their old order; second: the
+      moved filter in row 3. Both read back from Revit
+
+  - given: Revit 2024, the four filters on L2, position "9" on the row-1 filter
+    expect: >
+      moved true, the filter at row 4 (the bottom), reAdded 1, and a finding that
+      row 9 is past the end of the four and was read as the bottom
+
+  - given: >
+      Revit 2020, a plan with exactly TWO filters, position top on either,
+      no currentOrder
+    expect: >
+      moved true, reAdded 1 - the other filter taken off and put back - and a
+      finding that Revit 2020 cannot tell whether it was already there. On a
+      plan where it already WAS row 1 it is still written (the card says so
+      under `moved`); the Filters tab shows it in row 1 either way
+
+negative:
+  - given: >
+      Revit 2024, "FloorPlan: L2", filterName = a name no filter in the project
+      carries (ZZZ NOT ON THIS VIEW)
+    expect: >
+      refused "No filter called 'ZZZ NOT ON THIS VIEW' in this project", with the
+      four filters that ARE on L2 listed top to bottom; moved false, orderBefore
+      and orderAfter EMPTY, reAdded 0. A returned refusal, not a throw. THE
+      NEGATIVE THE JOB FILE RUNS
+
+  - given: >
+      Revit 2024, "FloorPlan: L2", filterName = a filter that IS in the project
+      but is not on L2 (OM1 names one)
+    expect: >
+      refused - in the project but not on that view, so nothing to move - with
+      the four on L2 listed and APPLY_VIEW_FILTER named as the tool that puts a
+      filter on a view; moved false, both order lists EMPTY, reAdded 0
+
+  - given: a view whose view template controls its filters
+    expect: >
+      refused, naming the template and saying to ask again with the template as
+      the view. Nothing changed - a reorder on such a view would not stick
+
+  - given: >
+      Revit 2020, a view with three or more filters, position top, NO
+      currentOrder
+    expect: >
+      refused - Revit 2020 cannot tell Heron the Filters tab's order, so moving
+      one would put the others in an order nobody chose; read the Filters tab top
+      to bottom and give it as currentOrder. Nothing written
+
+  - given: Revit 2024, currentOrder typed in an order that differs from Revit's
+    expect: refused, showing Revit's own order; nothing written
+
+  - given: position "0", "-2" or "middle"
+    expect: refused, naming the forms a position can take; nothing written
+
+  - given: a schedule or a legend as the view
+    expect: refused - it takes no filters at all
+
+second_route:
+  - Visibility/Graphics Overrides, Filters tab for the view - the order top to
+    bottom, and each moved filter's row (Enable Filter from 2021, Visibility,
+    Projection/Surface and Cut lines and patterns, Halftone)
+  - REPORT_VIEW_FILTERS on the same view - from 2021 it numbers the filters in
+    the Filters tab's order and reads every row

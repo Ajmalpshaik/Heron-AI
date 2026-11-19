@@ -1,0 +1,60 @@
+# REORDER_VIEW_FILTERS, the first proof - written 2026-11-19, NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/reorder-view-filters-snowdon-2026-11-19.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/reorder-view-filters-snowdon-2026-11-19.yaml
+#
+# WHY. Asked for on Revit 2020 on 2026-11-19: a Duct Accessories filter moved to
+# the top of a view's filter list, under two filters that also cover Duct
+# Accessories and set black lines. The card is DRAFT; NEEDS-CHECKING Group OM
+# holds every row this file does not, and the 2020 rows above all.
+#
+# THE MODEL: A SCRATCH COPY OF A SAMPLE, NEVER A WORKING MODEL. Revit 2024's own
+# Samples\Snowdon Towers Sample HVAC.rvt copied under %TEMP%\heron-work, as for
+# round 16 (tools/jobs/p1102-round16-revit2024-hvac-2026-11-02.yaml). Its
+# "FloorPlan: L2" carried four filters, one of them "Domestic", when
+# COPY_VIEW_FILTERS was proved on a copy of it on 2026-09-08 - the other three
+# names and the order are NOT recorded anywhere this file could read.
+#
+# SO OM1 COMES FIRST: REPORT_VIEW_FILTERS on "FloorPlan: L2" (a READ) numbers
+# the four in the Filters tab's order. The positive moves the LAST row to the
+# top - so put the name OM1 reads in row 4 in `filterName` below before running.
+# "Domestic" is written because it is the one name recorded on that view; if
+# OM1 reads it in row 1, the positive would answer "already at row 1" and prove
+# nothing. Where the model differs, this file changes - never the card.
+#
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK.
+model: "Snowdon Towers Sample HVAC (scratch copy of the Revit 2024 sample), Revit 2024"
+
+defaults:
+  in: "Snowdon Towers Sample HVAC"
+  write: true
+  setup: []
+
+jobs:
+  # POSITIVE: the last-row filter to the top. `moved` true, `reAdded` 3 (the
+  # three that stood above it are taken off and put back after it),
+  # `orderVerified` "read back from Revit", and `orderAfter` the moved filter
+  # first with the other three in the order OM1 read. The fragment itself
+  # throws, and the run reads DID NOT RUN, if any re-added filter's overrides,
+  # Visibility or Enable Filter did not read back as they were.
+  #
+  # NEGATIVE: a name no filter in the project carries - a RETURNED refusal, not
+  # a throw: `moved` false, `orderBefore` and `orderAfter` empty, `reAdded` 0,
+  # `refused` "No filter called 'ZZZ NOT ON THIS VIEW' in this project" with the
+  # four that ARE on L2 listed top to bottom. A filter that is in the project
+  # but not on L2 - the refusal that names APPLY_VIEW_FILTER - is OM4's row in
+  # NEEDS-CHECKING Group OM, run by hand once OM1 has named one.
+  - fragment: reorder-view-filters
+    expect: moved
+    set:
+      view: "FloorPlan: L2"
+      filterName: "Domestic"
+      position: "top"
+    negative-set:
+      view: "FloorPlan: L2"
+      filterName: "ZZZ NOT ON THIS VIEW"
+      position: "top"
+    note: >
+      Read `findings` and `orderAfter` on the positive - the runner cannot read a
+      sentence. The second route is Visibility/Graphics > Filters on L2 before
+      the run (the write is rolled back, so the tab must look as it did after).
