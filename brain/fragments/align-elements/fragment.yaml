@@ -36,7 +36,7 @@ purpose: >
   size cannot be read is in `noSize` and not moved; something not curve-based
   is in `notCurveBased`. Insulation is NOT included - the bare service size. A
   sloped run's midpoint lands on the height and its slope is kept. Every move
-  is read back. Version 2's proof is owed; the card is DRAFT.
+  is read back.
 
   **"SOFFIT" MEANS TWO DIFFERENT JOBS AND ONE OF THEM CHANGES THE MODEL:**
 

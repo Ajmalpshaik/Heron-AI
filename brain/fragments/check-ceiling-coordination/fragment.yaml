@@ -63,9 +63,7 @@ purpose: >
   loaded". **NOTHING FROM A LINK IS CARRIED** - `outOfPlane` and
   `noCeilingAbove` stay this model's answer (FRAGMENT-ISSUES row 75). Only
   model elements are read from a link, never its views or sheets. Links
-  nested inside a link are not read, and are counted in the answer. This
-  is version 2; version 1's proof no longer describes the code, and the
-  fragment is DRAFT until it is proved again.
+  nested inside a link are not read, and are counted in the answer.
 
 # A NAME TWO PARAMETERS SHARE IS NEVER READ: a linked element whose Fire Rating
 # two parameters carry - a shared or project "Fire Rating" bound beside the

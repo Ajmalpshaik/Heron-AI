@@ -73,14 +73,12 @@ purpose: >
   **NOTHING FROM A LINK IS CARRIED** - `tooClose`, `gapsMm`, `judgedBy` and
   `pairsChecked` stay this model's own (FRAGMENT-ISSUES row 75). Only model
   elements are read from a link, never its views or sheets. Links nested
-  inside a link are not read, and are counted in the answer. This is
-  version 2; version 1's proof no longer describes the code, and the
-  fragment is DRAFT until it is proved again.
+  inside a link are not read, and are counted in the answer.
 
   **NO INSULATION MODELLED IS SAID FIRST (version 3).** With insulation
   counted, the insulated and bare elements are counted and a warning leads
   when some carry none; `assumeThicknessMm` lags them on paper, said on every
-  row. Each pair is measured once. Version 3 is DRAFT until proved.
+  row. Each pair is measured once.
 
 # A NAME TWO PARAMETERS SHARE IS NEVER READ: a linked element whose Fire Rating
 # two parameters carry - a shared or project "Fire Rating" bound beside the

@@ -57,7 +57,7 @@ purpose: >
   **A PROJECT TOO, SINCE VERSION 3 - THE TEMPLATE'S EXTENSION DECIDES.** A .rte
   template makes a project saved as .rvt, a .rft one a family saved as .rfa; a
   bare template name goes by the savePath typed, and each kind looks in its own
-  template folder. The other half must agree. Version 3 is DRAFT until proved.
+  template folder. The other half must agree.
 
   **IT MAKES AN EMPTY FAMILY AND NOTHING ELSE.** No geometry, no parameters, no
   types. The family stays open and is the caller's, like any file opened by

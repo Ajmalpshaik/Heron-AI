@@ -89,7 +89,7 @@ purpose: >
 
   **OR OUT OF A LINKED MODEL, WITH ITS TRANSFORM (version 2).** With `fromLink`
   the source is a link, and the copies land where the link puts them - and
-  stop tracking it. Version 2 is DRAFT until proved.
+  stop tracking it.
 
   **OR A SEED FAMILY'S LABELS, VIEW TO VIEW (version 3).** View-specific
   elements stay out unless asked: with `labels` true, labels set up once in

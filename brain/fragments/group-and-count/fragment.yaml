@@ -27,8 +27,7 @@ purpose: >
   lengths of 300x150 totalling 212 metres". `MEASURE_RUN_QUANTITIES` hands on
   the numbers for MEP runs. An element with no quantity is counted, never
   skipped and never treated as zero: `missing` carries them per group and
-  `incomplete` says a total rests on partial data. Version 1's proof no longer
-  describes the code and is kept as a record; DRAFT until it is proved again.
+  `incomplete` says a total rests on partial data.
 
 contract:
   needs:

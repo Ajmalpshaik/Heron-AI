@@ -73,9 +73,7 @@ purpose: >
   a window left from an earlier run into the same folder has the same path -
   and Revit's words go into `findings`, not `problem`. A
   family open but NOT in front is said apart, and stays `opened false` with
-  its `problem` - the next fragment writes to whatever is in front. `impl/`
-  moved, so the card is DRAFT again; the proof below is version 1's record,
-  kept, and NEEDS-CHECKING Group OD proves this one.
+  its `problem` - the next fragment writes to whatever is in front.
 
 contract:
   needs:

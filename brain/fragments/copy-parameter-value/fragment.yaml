@@ -34,9 +34,7 @@ purpose: >
   shared or project parameter can be bound beside a built-in one of the same
   name, and Revit's lookup by name then returns one of them at random, in
   Autodesk's own words. Either side matching twice puts the element in
-  `ambiguous`, untouched (D-54 s3, FRAGMENT-ISSUES 5b-203). This is version 2;
-  version 1's proof no longer describes the code and is kept as a record, and
-  the fragment is DRAFT until it is proved again.
+  `ambiguous`, untouched (D-54 s3, FRAGMENT-ISSUES 5b-203).
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 

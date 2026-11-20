@@ -36,7 +36,7 @@ purpose: >
 
   **ERRORS ONLY, OR ONE KIND OF WARNING (version 2).** `errorsOnly` keeps the
   Error severity; `descriptionContains` the warnings whose text holds a phrase.
-  An empty answer is not a clean model. Version 2 is DRAFT until proved.
+  An empty answer is not a clean model.
 
 contract:
   needs:

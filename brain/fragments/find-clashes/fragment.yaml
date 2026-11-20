@@ -87,8 +87,7 @@ purpose: >
   category; or names. `compareParameter` names a length on the element, and
   `comparison` lists every element whose value differs from the thickness
   it passes through - `mismatched` holds them, this model's own. An element
-  with no solid is tested by its bounding box, and says so. Version 3, and
-  DRAFT until proved.
+  with no solid is tested by its bounding box, and says so.
 
 # A NAME TWO PARAMETERS SHARE IS NEVER READ: a linked element whose Fire Rating
 # two parameters carry - a shared or project "Fire Rating" bound beside the

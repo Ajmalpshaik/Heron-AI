@@ -59,9 +59,7 @@ purpose: >
   LINK IS CARRIED** - `shortRooms`, `unbounded` and `noRule` stay this
   model's own (FRAGMENT-ISSUES row 75). Only model elements are read from a
   link, never its views or sheets. Links nested inside a link are not
-  read, and are counted in the answer. This is version 2; version 1's proof
-  no longer describes the code, and the fragment is DRAFT until it is
-  proved again.
+  read, and are counted in the answer.
 
 contract:
   needs:

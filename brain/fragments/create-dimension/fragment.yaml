@@ -36,9 +36,7 @@ purpose: >
   end-on in a plan, which have no direction across them on the view. The
   dimension Revit made is read back: `dimensionedCount` is the references it
   holds, and fewer than two will not survive a commit. `problem` says in one
-  sentence why nothing was drawn. This is version 2; version 1's proof no
-  longer describes the code and is kept as a record, and the fragment is DRAFT
-  until it is proved again.
+  sentence why nothing was drawn.
 
   **VERSION 3 DIMENSIONS FAMILY INSTANCES TOO** (DIMENSION_FAMILY_INSTANCES
   merged in). An air terminal, fixture or piece of equipment has no
@@ -53,7 +51,7 @@ purpose: >
   | Ducts, pipes, conduit, cable tray | **this fragment** - their centrelines |
   | Grids, or levels in a section or elevation | `CREATE_LINEAR_DIMENSION` - "grid A, grid B" |
   | Air terminals, fixtures, equipment - any family instance | **this fragment**, axis x or y - built-in centre references, which a run does not have |
-  | Rooms - "dimension the rooms", "put the room sizes on the plan" | `DIMENSION_ROOMS`; to know them, `MEASURE_ROOM_DIMENSIONS` |
+  | Rooms - "dimension the rooms", "put the room sizes on the plan" | `DIMENSION_ROOMS`; to know them, `REPORT_ROOM_SPACE_DATA` |
 
 contract:
   needs:

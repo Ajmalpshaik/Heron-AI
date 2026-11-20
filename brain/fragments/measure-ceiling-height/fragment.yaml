@@ -78,7 +78,6 @@ purpose: >
   plan-overlap test below needs no room solid and so never meets the trap at
   all.
 
-
   **"SOFFIT" MEANS TWO DIFFERENT JOBS AND ONE OF THEM CHANGES THE MODEL:**
 
   | What you meant | Use |
@@ -111,8 +110,7 @@ purpose: >
   own, because they are keyed and valued by ids the next step looks up here
   (FRAGMENT-ISSUES row 75). Only model elements are read from a link, never
   its views or sheets. Links nested inside a link are not read, and are
-  counted in the answer. This is version 2; version 1's proof no longer
-  describes the code, and the fragment is DRAFT until it is proved again.
+  counted in the answer.
 
 contract:
   needs:

@@ -75,9 +75,7 @@ purpose: >
 
   **VERSION 2 (2026-09-29, FRAGMENT-ISSUES 5b-260).** Three edge cases a
   review found after version 1 was signed are fixed, and a fourth waits on a
-  measurement in Revit - NEEDS-CHECKING BD5. This is version 2; version 1's
-  proof no longer describes the code and is kept as a record, and the fragment
-  is DRAFT until it is proved again.
+  measurement in Revit - NEEDS-CHECKING BD5.
 
   **VERSION 4 (2026-11-11, FRAGMENT-ISSUES 5b-1497): A FAMILY'S 2D TOO.**
   The ids in `forms`, or what is `selected`, may also name a detail line
@@ -86,9 +84,7 @@ purpose: >
   symbolic outline's Visible to a Yes/No - for whatever parameter Revit lets
   be linked on it. Anything that is none of these, nor a form or a nested
   copy, is still refused by name. The answer names them as the Properties
-  palette does ("Symbolic Line id N", "Masking Region id N"). This is version
-  4: version 3's proof is kept as the record, and the tool is DRAFT until
-  NEEDS-CHECKING Group NE proves it again.
+  palette does ("Symbolic Line id N", "Masking Region id N").
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 

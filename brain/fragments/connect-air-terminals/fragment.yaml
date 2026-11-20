@@ -60,8 +60,7 @@ purpose: >
   No fitting is made: `runs` holds the branches and the mains they land on, for
   FIT_MEP_JOINTS to make the elbows and the taps. A head whose branch Revit
   refuses, or that will not join, is taken back WHOLE - nothing is left for it,
-  as nothing is left for a terminal Revit declines. Version 2's proof is owed;
-  the card is DRAFT and the version 1 proof below is the record.
+  as nothing is left for a terminal Revit declines.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). Joining
   raises Revit warnings on a real model; how those are handled belongs to

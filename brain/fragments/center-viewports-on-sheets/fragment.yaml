@@ -62,9 +62,7 @@ purpose: >
   through. Name the master sheet and each viewport goes to the master's
   viewport centre. A sheet at another scale is skipped and named, and so is
   one whose title block sits at another origin: the centre is measured on
-  the sheet, not the paper, and its title block is never moved. Version 1's
-  proof no longer describes the code and is kept as a record; the card is
-  DRAFT until it is proved again.
+  the sheet, not the paper, and its title block is never moved.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so a
   drawing set is one undo entry.

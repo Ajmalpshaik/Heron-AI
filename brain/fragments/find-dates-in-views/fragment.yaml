@@ -52,9 +52,7 @@ purpose: >
   it is counted and not read; `onlySheetsGiven` reads only the sheets handed
   in, never guessed from a selection, and names what is not a sheet. Every
   date then comes back once, oldest first, in one uncapped line with its
-  sheets, and `datesFound` gives each date's sheet ids. Version 1's proof no
-  longer describes the code and is kept as a record; the card is DRAFT until
-  it is proved again.
+  sheets, and `datesFound` gives each date's sheet ids.
 
 contract:
   needs:
