@@ -252,9 +252,14 @@ purpose: >
      EXTRUSION TAKES MANY LOOPS, `|` between: every outline that shares a
      plane, a start and an end, such as eight bolts, a row of louvre slats
      or the rings of a fan guard, is one form instead of dozens. Loops that
-     touch or cross fail with only "code 1" (row 5b-296): a ring is an
-     outer loop with an inner one, and a smaller ring may sit inside that
-     hole. A SLOT WITH ROUND ENDS is one loop of corners and `arc MX,MY X,Y`
+     touch or cross are refused before anything is made, naming the row and
+     the two loops (CREATE_FAMILY_FORMS version 4, row 5b-296 - version 3
+     sent them and Revit answered only "code 1"): a ring is an outer loop
+     with an inner one, and a smaller ring may sit inside that hole. KEEP A
+     CALL TO ABOUT 300 LOOPS: one call of about 1,800 louvre slots ran past
+     the 50-second limit and was rolled back, while 180 to 270 loops took 6
+     to 12 s (Revit 2020, 2026-11-19, row 5b-1888); version 4 refuses a call
+     of more than 600. A SLOT WITH ROUND ENDS is one loop of corners and `arc MX,MY X,Y`
      sides - "xc-5,zc+15; arc xc,zc+20 xc+5,zc+15; xc+5,zc-15; arc xc,zc-20
      xc-5,zc-15" - STARTED at the end of a straight side: the tool closes
      every loop itself with a STRAIGHT line back to its first corner, so
