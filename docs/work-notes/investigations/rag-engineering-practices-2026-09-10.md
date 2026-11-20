@@ -286,10 +286,12 @@ If the owner takes any of them, the durable half moves into
 because that file records those too — and this note is deleted.
 
 **§3.1 was the one to take first, and it was taken.** It turns *no source, no claim* from a rule
-nobody can check into a number measurable offline, with no model, using the standard library. *(Tracked as GitHub issue [#1007](https://github.com/Ajmalpshaik/Heron-AI/issues/1007) since 2026-11-16 (WN-27).)*
+nobody can check into a number measurable offline, with no model, using the standard library. *done 2026-11-19: recorded as BUILT in [docs/34 §2.22](../../34-patterns-adapted.md#222-built---a-fabrication-check-that-calls-no-model) - `brain/heron_ground.py`, `tests/test_ground.py` and the `heron_check` tool, R-46 to R-55, outside docs/34's §1 tally (WN-27).*
 
 **Note on [`docs/34`](../../34-patterns-adapted.md).** That file is titled for **the sixteen
 repositories** and its §1 tally describes that one closed programme. This pattern came from a
 separate reading on a different day, and its markers there are about reality — `BUILT`,
-`ALREADY HELD`, `REJECTED` — not about intent. **So nothing was written into it yet.** The natural
-moment is when §6.1 is built, as a new `✅ BUILT` entry. Say if you want it recorded there sooner.
+`ALREADY HELD`, `REJECTED` — not about intent. ~~**So nothing was written into it yet.** The natural
+moment is when §6.1 is built, as a new `✅ BUILT` entry.~~ **§3.1 is built, and since 2026-11-19 it is
+docs/34 §2.22**, kept out of the §1 tally for the reason above. §3.2 to §3.4 and the three ⏸ owner's
+calls are not recorded there yet.

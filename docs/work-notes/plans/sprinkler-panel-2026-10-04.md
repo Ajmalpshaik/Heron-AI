@@ -12,6 +12,9 @@ See docs/29-metadata-standard.md
 > **FINAL - 2026-10-04.** Written, reviewed by an independent read of the code it builds on (20 defects,
 > each with evidence), corrected, and finalized. The corrections are in the tasks below and listed in the
 > **Review log** at the end; where a task line and the log disagree, the log wins.
+> **Retires when** rows CE1 to CE7 of [Group CE](../../needs-checking/group-ce.md) are run and recorded in its
+> file, or recorded NOT RUN with the reason, and [46](../../46-sprinkler-hydraulics-from-the-model.md) says what
+> they showed. Written 2026-11-19; the task boxes below were never ticked, so read 46, not them.
 
 **Goal:** a modeller says *"run the hydraulics on this sprinkler system"*. Heron reads the fire protection
 piping system from the open Revit model, turns it into `heron_fire`'s network, shows it in a new Companion

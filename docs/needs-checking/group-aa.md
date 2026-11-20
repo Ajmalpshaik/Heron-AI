@@ -187,3 +187,5 @@ run on this machine can make it: a source build emits an unmarked assembly. It i
 release asset, and when that arrives **the installer is the thing that will run into it**.
 
 ---
+
+`AA11` and `AA12` are rows of the dated section *2026-09-21 — THE TWO DEFECTS ABOVE ARE FIXED*, written beside `AB9` and `AB10` in one table. That section is in [Group AB's file](group-ab.md#2026-09-21--the-two-defects-above-are-fixed-and-neither-fix-has-been-seen-by-a-person) since 2026-11-19, moved there whole from the register's page with the section before it ([FRAGMENT-ISSUES row 5b-1178](../fragment-issues/section-5b-rows-1176-1200.md)).

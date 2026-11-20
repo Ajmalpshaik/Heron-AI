@@ -580,12 +580,12 @@ namespace Heron.Revit.Addin
             // untouched, and EmergencyStopCommand is still a working command
             // that one AddItem here would put back.
             //
-            // Be honest about what that leaves. Nothing can SET the stop any
-            // more, so today it is a gate that will never close. It is kept
-            // for the file-based kill switch docs/21 section 4 describes and
-            // which was never built - NOT because there is a working
-            // emergency stop. Do not delete it as dead code without reading
-            // D-46 first.
+            // What that leaves: until D-129 nothing could SET the stop, and
+            // it was a gate that never closed. Since D-129 the bridge's
+            // `stop` sets it (NEEDS-CHECKING EZ3) - still no button, and
+            // the file-based kill switch docs/21 section 4 describes was
+            // never built. Do not delete it as dead code without reading
+            // D-46 and D-129 first.
         }
 
         /// <summary>
