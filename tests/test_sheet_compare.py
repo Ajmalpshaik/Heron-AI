@@ -48,7 +48,7 @@ WHAT IT PROVES
      export and blankCells=skip for the small file.
 
 WHAT IT CANNOT DO: say that Revit writes the small file's cells. That is
-NEEDS-CHECKING Group NJ, NJ13, on a real model.
+NEEDS-CHECKING Group NJ, NJ13 and NJ14, on a real model.
 """
 
 from __future__ import print_function
@@ -476,11 +476,16 @@ def section_small_file(folder, first):
     # elements that lack one of those parameters. The card must leave such a
     # blank alone BEFORE it looks for the parameter, or the whole file is
     # refused for a cell nobody asked it to write.
+    blank = card.find("var blankCell = cell.Trim().Length == 0;")
+    guard = card.find("if (blankCell)", blank) if blank >= 0 else -1
     skip = card.find("if (blankHow == \"skip\") { blankCellsSkipped++;")
     lookup = card.find("var matches = parametersCalled(target, parameterName);")
     check(skip >= 0 and lookup >= 0 and skip < lookup,
           "under blankCells=skip a blank cell is skipped before its parameter is looked for "
           "(skip at %d, lookup at %d)" % (skip, lookup))
+    check(0 <= blank < guard < skip,
+          "and only a BLANK cell: the skip sits inside the blank test - a cell with a value "
+          "is always looked for (blank at %d, guard at %d, skip at %d)" % (blank, guard, skip))
     after = card[lookup:lookup + 2000] if lookup >= 0 else ""
     check("a blank cannot clear" in after and "cellsCleared++;" in after,
           "under clear a blank still needs its parameter - a text one - to empty")
@@ -614,7 +619,7 @@ def main():
         return 1
     print("All passed. That is the comparison agreeing with these files and the small file "
           "agreeing with the card's code - not evidence that Revit writes it (NEEDS-CHECKING "
-          "Group NJ, NJ13).")
+          "Group NJ, NJ13 and NJ14).")
     return 0
 
 

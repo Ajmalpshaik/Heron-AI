@@ -330,10 +330,10 @@ note: >
   Every step was checked against the two cards' own text and C#, not their
   names: what the export writes and where it reads a type; that the return
   writes every cell that is not blank, with the old value read as the file
-  is read; the order of its refusals, a missing parameter before a blank
-  cell (version 10 of the return, 2026-11-20, skips a blank first under
-  skip - row 5b-1526); and that `written` counts cells. No new capability
-  and no new tool.
+  is read; the order of its refusals as version 9 had it, a missing
+  parameter before a blank cell - reversed under skip by version 10 on
+  2026-11-20 (row 5b-1526); and that `written` counts cells. No new
+  capability and no new tool.
 
   What it cannot do is recorded, not worked round: FRAGMENT-ISSUES rows
   5b-1524 (two ways of asking for the return reach another card), 5b-1525

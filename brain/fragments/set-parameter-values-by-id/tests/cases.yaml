@@ -189,10 +189,11 @@ negative_by_guid:
   - given: a CSV, blankCells left out
     expect: REFUSED before the file is read - blankCells must be skip or clear
 
-  - given: a CSV whose column is a TYPE parameter (Type Comments) on instance rows
+  - given: a CSV whose column is a TYPE parameter (Type Comments) on instance rows, each cell holding a value
     expect: >
       NOTHING written, each row naming the type's id - the import's
-      includeTypeParameters is not carried
+      includeTypeParameters is not carried. (A BLANK cell there is skipped
+      under skip since version 10 - row 5b-1526.)
 
   - given: a CSV with a UniqueId column naming another element than the row's id
     expect: NOTHING written - "a file from another model"
@@ -254,31 +255,33 @@ negative_by_builtin:
     expect: written 0; it has no parameter called that; nothing written
 
 # VERSION 10 (2026-11-20, row 5b-1526) - under blankCells=skip a blank cell is
-# left as it is BEFORE its parameter is looked for. NEEDS-CHECKING Group NJ,
-# NJ14. Arranged on the round trip's scratch project: a Text, Instance project
-# parameter "Heron Terminal Note" bound to Air Terminals ONLY, so the ducts
-# have not got it. Each positive FAILS on version 9, which looked for the
-# parameter first and refused the whole file.
+# left as it is BEFORE its parameter is looked for. NEEDS-CHECKING Group NJ's
+# NJ5 and NJ14, which arrange it with two doors and one wall and the column
+# Sill Height - a wall has none. Each positive FAILS on version 9, which looked
+# for the parameter first and refused the whole file.
 positive_blank_skipped_first:
   - given: >
-      csvPath a file - the shape heron_sheet_compare writes - with the columns
-      Comments and Heron Terminal Note: a DUCT row with Comments changed and
-      Heron Terminal Note blank, an AIR TERMINAL row with both filled;
-      blankCells=skip
+      NJ5: the export of two doors and a wall with Comments (a value typed on
+      all three) and Sill Height, brought back unedited, blankCells=skip
     expect: >
-      written 3 - the duct's Comments and the terminal's two - read back as
-      asked, blankCellsSkipped 1, stale empty, ONE entry in Revit's undo
-      list. Version 9 wrote nothing: "has no parameter called Heron Terminal
-      Note" for the duct
-  - given: the same file with every Heron Terminal Note cell blank, blankCells=skip
+      written 5 - the three Comments and the two doors' Sill Height, each as
+      exported - blankCellsSkipped 1 (the wall's Sill Height), stale empty.
+      Version 9 wrote nothing: "has no parameter called Sill Height" for the wall
+  - given: >
+      NJ14 (i): the comparison's small file - ElementId, Comments, Sill Height -
+      with the wall's Comments and one door's Sill Height changed, each row
+      blank under the column it did not change; blankCells=skip
     expect: >
-      the Comments cells written, nothing from that column, and a finding
-      naming it - "was blank and skipped, so that column's parameter was not
-      looked for on any element"
+      written 2, blankCellsSkipped 2, stale empty, ONE entry in Revit's undo
+      list; nothing else moved
+  - given: NJ14 (iii) - that small file with the door's Sill Height emptied, so the column is blank on every row; blankCells=skip
+    expect: >
+      written 1 (the wall's Comments), and a finding naming Sill Height - "was
+      blank and skipped: no element was looked at for it"
 negative_blank_skipped_first:
-  - given: the first file again, blankCells=clear
+  - given: NJ14 (ii) - the first small file again, blankCells=clear
     expect: >
-      NOTHING written - the duct has no parameter called Heron Terminal Note;
-      under clear a blank still needs its parameter, a text one, to empty
-  - given: the first file with a VALUE typed under Heron Terminal Note on the duct's row, blankCells=skip
-    expect: NOTHING written - "has no parameter called Heron Terminal Note", the duct's row named
+      NOTHING written - the wall has no parameter called Sill Height; under
+      clear a blank still needs its parameter, a text one, to empty
+  - given: NJ14 (iv) - the first small file with a value typed under Sill Height on the wall's row, blankCells=skip
+    expect: NOTHING written - "has no parameter called Sill Height", the wall's row named; a cell with a value is never skipped

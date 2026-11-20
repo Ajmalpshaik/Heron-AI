@@ -1110,7 +1110,9 @@ var faceKeeper = new[] { keepFace }.Select(asked =>
 // rest. All or nothing is the safer of the two rules.
 //
 // A BLANK CELL IS ASKED, NEVER GUESSED: `blankCells` skip leaves it as it is
-// and counts it in `blankCellsSkipped`; clear empties a TEXT parameter and
+// and counts it in `blankCellsSkipped` - since VERSION 10 (row 5b-1526) before
+// its parameter is looked for, so a column its element has not got, or has on
+// its type, stops nothing for a blank; clear empties a TEXT parameter and
 // counts it in `cellsCleared`, and a blank for a number, a tick box or a
 // reference stops the run - WRITE_ELEMENT_PARAMETERS clear=true is Revit's own
 // clear for those. Neither word, and a CSV is refused before anything is read.
@@ -1292,10 +1294,9 @@ if (csvMode)
             if (col != uniqueColumn && heading[col].Length > 0 && !columnFound.Contains(heading[col])
                 && !wholeBlank.Contains(heading[col]))
                 wholeBlank.Add(heading[col]);
-        if (wholeBlank.Count > 0 && rowsMatched > 0)
+        if (wholeBlank.Count > 0 && rowsMatched > 0 && csvStale.Count == 0)
             findings.Add("Every cell under " + string.Join(", ", wholeBlank.Select(h => "'" + h + "'").ToArray())
-                + " was blank and skipped, so that column's parameter was not looked for on any element "
-                + "and nothing in it was written.");
+                + " was blank and skipped: no element was looked at for it, and nothing in it was written.");
         rows = string.Join(";", built.ToArray());
         if (built.Count == 0 && csvStale.Count == 0)
             findings.Add("The file named elements but no cell to write - every blank was skipped.");
