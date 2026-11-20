@@ -7,8 +7,7 @@
 
 ## Group OT - thirteen family-editor tools repaired from issues #944, #945, #1029 and #1051, and five measurements the rows still owe - DRAFT until proved (2026-11-20)
 
-**Not yet tracked as a GitHub issue** - the pull request that wrote this group names it; the checks owed are
-the rows below. Every result stays in this file.
+**Tracked as GitHub issue [#1110](https://github.com/Ajmalpshaik/Heron-AI/issues/1110) since 2026-11-20** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
 
 **Why:** on 2026-11-20 the coordinating session gave one session the family-editor issues that need no Revit -
 [#944](https://github.com/Ajmalpshaik/Heron-AI/issues/944), [#945](https://github.com/Ajmalpshaik/Heron-AI/issues/945),
