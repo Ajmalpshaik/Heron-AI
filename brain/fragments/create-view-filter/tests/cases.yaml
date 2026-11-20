@@ -96,6 +96,14 @@ positive:
     expect: one filter, rule equals 'does not contain' - quoted text is taken as written
 
 negative:
+  - given: >
+      version 6 - a plan whose view template includes V/G Overrides Filters
+      (Level 3 HVAC Plan given Mechanical Plan, as NR5 (d)), a view and a
+      colour (row 5b-1650)
+    expect: >
+      refused before anything is made, naming the template and APPLY_VIEW_FILTER;
+      the project's filter count unchanged. Then untick V/G Overrides Filters in
+      that template's Include column and ask again: made on the plan as before
   - given: VERSION 4 REVIEW FIX. matchValue left EMPTY, one filter name
     expect: >
       refused, nothing made, and the refusal names "has no value" as the way

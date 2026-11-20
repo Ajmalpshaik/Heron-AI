@@ -116,6 +116,10 @@ pass** — see [`tests/README.md`](tests/README.md).
 
 **Stage explicit paths.** Never `git add -A`; another session may be writing to this tree.
 
+**Never pull, check out or merge in the main Heron folder** - the one a modeller's chat opens from. Work
+in your own worktree or clone; bringing that folder up to date is the owner's step
+([D-189](docs/decisions/D-189.md)). A pull there stopped a modeller's job half-way on 2026-11-19.
+
 **Rough work goes in a temporary folder, never beside Heron.** A helper script written to work
 something out - a family's shapes, a check of numbers - goes in the scratchpad folder the session
 names. With none named, use `%TEMP%\heron-work` (`C:\Users\<you>\AppData\Local\Temp\heron-work`),

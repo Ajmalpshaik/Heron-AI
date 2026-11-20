@@ -11,11 +11,16 @@
 // yesterday's IFC is the normal way this job is done, and refusing would make
 // the fragment useless for its actual use.
 //
-// THE SCHEMA IS AN IFCVersion VALUE, NOT A STRING. The enumeration has gained
-// members across releases - the IFC4 variants are not all on 2020 - so mapping
-// a name like "IFC4" onto a member here would compile on every release and
-// throw at run time on the old ones. Taking the value makes the caller resolve
-// it against the Revit that is actually running.
+// VERSION 2: THE SCHEMA IS TYPED BY NAME AND RESOLVED AGAINST THE RUNNING
+// REVIT. Version 1 took an IFCVersion value, which the request binder refuses
+// on purpose, so the card could not run at all (row 5b-1402: both legs
+// `bad_request_value` on Revit 2020). The enumeration has gained members across
+// releases - IFC4x3 and IFCSG are on 2024 and not 2020 - so no member is named
+// in this code: the name typed is matched against the names the RUNNING
+// Revit's IFCVersion holds (Enum.GetNames), ignoring capitals, spaces, dots and
+// a missing "IFC" in front - "IFC 2x3", "ifc2x3" and "2x3" are IFC2x3. A name
+// this release has not got is refused, listing the ones it has. "Default" is
+// refused too: the schema is the deliverable and is never defaulted.
 //
 // A WRONG SCHEMA IS THE SILENT FAILURE THIS FRAGMENT EXISTS TO PREVENT. Hand a
 // recipient expecting 2x3 an IFC 4 file and it OPENS, shows geometry, and has
@@ -56,10 +61,25 @@ else
     if (stem.ToLowerInvariant().EndsWith(".ifc")) stem = stem.Substring(0, stem.Length - 4);
 
     var full = System.IO.Path.Combine(target, stem + ".ifc");
-    overwrote = System.IO.File.Exists(full);
+    var existedBefore = System.IO.File.Exists(full);
+
+    var said = (schema ?? "").Trim();
+    var key = new string(said.Where(c => c != ' ' && c != '.' && c != '-' && c != '_').ToArray());
+    if (key.Length > 0 && !key.StartsWith("IFC", StringComparison.OrdinalIgnoreCase)) key = "IFC" + key;
+    var known = Enum.GetNames(typeof(IFCVersion)).Where(n => n != "Default").ToList();
+    string member = known.FirstOrDefault(n => string.Equals(n, key, StringComparison.OrdinalIgnoreCase));
+    if (said.Length == 0)
+        refused = "no IFC schema was given - it is the deliverable and is never assumed. This Revit offers: "
+                + string.Join(", ", known);
+    else if (string.Equals(said, "Default", StringComparison.OrdinalIgnoreCase))
+        refused = "\"Default\" is not a schema - name the one the recipient asked for. This Revit offers: "
+                + string.Join(", ", known);
+    else if (member == null)
+        refused = string.Format("\"{0}\" is not an IFC schema this Revit has. It offers: {1}", said,
+                string.Join(", ", known));
 
     var options = new IFCExportOptions();
-    options.FileVersion = schema;
+    if (member != null) options.FileVersion = (IFCVersion)Enum.Parse(typeof(IFCVersion), member);
 
     // Off by default in Revit, and an IFC without them looks complete and
     // carries no volumes or areas - so a quantity take-off downstream has
@@ -69,7 +89,7 @@ else
     // InvalidElementId is how the API is told "the whole model". Passing a
     // view id limits the export to what that view shows, which is how a
     // discipline-only or level-only IFC is produced.
-    if (scopeViewId != null && scopeViewId != ElementId.InvalidElementId)
+    if (refused == null && scopeViewId != null && scopeViewId != ElementId.InvalidElementId)
     {
         var scope = doc.GetElement(scopeViewId) as View3D;
 
@@ -89,7 +109,8 @@ else
 
     if (refused == null)
     {
-        if (doc.Export(target, stem, options)) created = full;
+        // Version 2: `overwrote` only when the export ran - a refusal replaced nothing.
+        if (doc.Export(target, stem, options)) { created = full; overwrote = existedBefore; }
         else refused = "Revit declined the export - the commonest cause is the IFC "
                      + "exporter add-in not being installed on this machine";
     }

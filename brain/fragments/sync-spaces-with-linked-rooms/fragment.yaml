@@ -9,6 +9,18 @@ semantic-identity: "make and rename this model's spaces to match the linked mode
 kind: action
 domain: revit.rooms
 capability: SYNC_SPACES_WITH_LINKED_ROOMS
+# VERSION 3 (2026-11-20) - THE PHASE ASKED IS THE PHASE LOOKED IN, AND A NEW
+# SPACE'S PHASE IS READ BACK. Rows 5b-1589 and 5b-1655. The spaces already
+# there were looked for in the model's last phase whatever was asked
+# (Revit's own reference for GetSpaceAtPoint's one-argument form), and the
+# link's rooms with no phase at all; both now use the phase asked - in the
+# link, the phase of the same name, else its last, said in findings - and
+# only that phase's rooms and spaces are read. On Revit 2020 spaces asked for
+# in "Existing" read back "New Construction" (NR9; the cause is not found):
+# each new space's phase is read back, and one in another phase leaves
+# `created` for `wrongPhase`, named at the top of findings. Still DRAFT; Group
+# OQ's checks run on version 3 and Group OR adds the phase runs.
+#
 # VERSION 2 (2026-11-20) - FRAGMENT-ISSUES row 5b-1125, the owner's answer of
 # 2026-11-20 (Ajmalpshaik/Heron-AI#921): "investigate the tool properly; if
 # the defect is real, repair it". It was real, in the code: its read-back
@@ -19,7 +31,7 @@ capability: SYNC_SPACES_WITH_LINKED_ROOMS
 # counted apart in `noArea`, its line saying whether the link is Room
 # Bounding. A space is still made only where the linked model has a placed
 # room. The C# moved, so it is DRAFT until NEEDS-CHECKING Group OQ is run.
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -94,6 +106,12 @@ contract:
       # nothing bounds them here. Left in the model where the linked model
       # has a room, and NOT in `created` - what it could not finish, never
       # a thing it made work of (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: wrongPhase
+      # VERSION 3 (row 5b-1655). Spaces made that read back in another phase
+      # than the one asked - left in the model, NOT in `created`, and named at
+      # the top of findings so the change can be discarded (D-52).
       role: accounting
       type: IList<ElementId>
     - name: notPlaced

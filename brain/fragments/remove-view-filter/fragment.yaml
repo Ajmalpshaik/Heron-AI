@@ -96,8 +96,9 @@ compatibility-note: >
   One implementation for every release. `View.RemoveFilter`, `View.GetFilters`,
   `View.IsFilterApplied` and `Document.Delete` are unchanged 2020 through 2027 -
   read off the reference assemblies at both ends. `GetOrderedFilters` is NOT
-  used: it arrives at 2024 and naming it would break the 2020 build for an
-  ordering this does not need.
+  used: it arrives at 2021 and is absent from 2020 (`tools/api-surface`,
+  2026-11-19; row 5b-1852 - this note said 2024 until then), and naming it
+  would break the 2020 build for an ordering this does not need.
 
 # ROUTING - repeated in APPLY_VIEW_FILTER, REPORT_VIEW_FILTERS and
 # CREATE_VIEW_FILTER.

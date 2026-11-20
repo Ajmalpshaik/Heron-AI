@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -98,7 +98,12 @@ semantic-identity: "make a new drafting view and draw one duct or pipe system on
 kind: action
 domain: revit.mep
 capability: DRAW_MEP_SCHEMATIC
-version: 1
+# A pressure drop too small for the project's precision is never a bare 0.
+# Version 2. Revit's own text at the project's precision can read "0.00 in-wg"
+# for a value above zero, and version 1 printed that on every run of a
+# calculated system (row 5b-1488). Such a label reads "< 0.01 in-wg" - the
+# smallest step that precision shows - and findings counts them.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 

@@ -7,6 +7,8 @@
 
 ## Group OU - model tools fixed on 2026-11-20 for issues #946-#950, #1005 and two rows of that day's Revit runs: links, shared parameter names, floors, doors, roofs, parts, loads, rooms and a level's rename - DRAFT until proved (2026-11-20)
 
+**Tracked as GitHub issue [#1128](https://github.com/Ajmalpshaik/Heron-AI/issues/1128) since 2026-11-20** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 **Why:** GitHub issues [#946](https://github.com/Ajmalpshaik/Heron-AI/issues/946),
 [#947](https://github.com/Ajmalpshaik/Heron-AI/issues/947), [#948](https://github.com/Ajmalpshaik/Heron-AI/issues/948),
 [#949](https://github.com/Ajmalpshaik/Heron-AI/issues/949), [#950](https://github.com/Ajmalpshaik/Heron-AI/issues/950)

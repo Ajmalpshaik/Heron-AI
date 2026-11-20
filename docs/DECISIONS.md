@@ -257,6 +257,7 @@ an edit.
 | [D-186](#d-186--what-heron-should-know-out-of-the-box-runs-bim-and-iso-standards-first-regional-next-and-company-last---and-no-standard-and-no-knowledge-store-ever-ships-with-heron) | What Heron should know out of the box runs BIM and ISO standards first, regional next and company last - and no standard, and no knowledge store, ever ships with Heron | ✅ Accepted · 2026-11-20 |
 | [D-187](#d-187--every-new-finding-is-a-github-issue-at-once-the-register-entry-and-its-issue-are-written-in-the-same-change-linked-both-ways) | Every new finding is a GitHub issue at once: the register entry and its issue are written in the same change, linked both ways | ✅ Accepted · 2026-11-20 |
 | [D-188](#d-188--a-chat-the-claude-app-resumes-after-a-restart-is-the-same-conversation-to-revit-and-takes-back-its-own-model) | A chat the Claude app resumes after a restart is the same conversation to Revit, and takes back its own model | ✅ Accepted · 2026-11-20 |
+| [D-189](#d-189--a-development-session-never-pulls-into-the-main-heron-folder) | A development session never pulls into the main Heron folder | ✅ Accepted · 2026-11-20 |
 
 ## Format
 
@@ -1691,3 +1692,12 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py) (`host_conversation`, `adopt_host_conversation`), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (its `__main__` block), [`tests/test_model_hold.py`](../tests/test_model_hold.py) section 2b, [NEEDS-CHECKING Group OV](needs-checking/group-ov.md) OV1
 
 **Full record:** [`decisions/D-188.md`](decisions/D-188.md)
+
+## D-189 — A development session never pulls into the main Heron folder
+
+**Status:** Accepted · **Date:** 2026-11-20 · **Accepted:** Ajmal PS, 2026-11-20, in conversation, on pull request [#1107](https://github.com/Ajmalpshaik/Heron-AI/pull/1107): *"no to B1"*
+**Settles:** item B1 of the field report [#1058](https://github.com/Ajmalpshaik/Heron-AI/issues/1058)
+**Keeps:** [Group EU](needs-checking/group-eu.md)'s guard - a chat whose Heron code changed under it stops and asks to be reopened
+**Affects:** [`AGENTS.md`](../AGENTS.md) "How to work" - no code
+
+**Full record:** [`decisions/D-189.md`](decisions/D-189.md)

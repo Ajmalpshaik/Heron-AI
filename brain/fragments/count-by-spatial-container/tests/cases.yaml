@@ -28,7 +28,33 @@ positive:
       where host-only put them all "(in no room)"; placed + unplaced still
       equal to the number handed in
 
+  - given: >
+      version 3 - a scratch model of two storeys, a space on Level 1 and one
+      on Level 2 directly above it, and a duct accessory on Level 1 in the
+      ceiling void under Level 2's floor; containerKind space (row 5b-1858)
+    expect: >
+      the accessory counted in Level 1's space, whatever the two spaces' ids.
+      Version 2 took the first space that said yes in plan. The group label
+      reads the space's name and number once - never "Room 1 1"
+
+  - given: version 3 - a one-storey model, the same elements as version 2's proof
+    expect: the same groups and counts as version 2's proof, labels read once
+
 negative:
+  - given: >
+      version 3 - an element in plan only of a Level 2 space, sitting below
+      that space's floor on Level 1 where Level 1 has no space
+    expect: >
+      counted in "(in no space)", and a finding saying it was in plan only of
+      another storey's space - never counted in Level 2's
+
+  - given: >
+      version 3 - includeLinks with two links, one of them unloaded in Manage
+      Links (row 5b-1858 (4))
+    expect: >
+      linkedMatches names the unloaded link as NOT LOADED and not asked,
+      alongside the loaded one read - version 2 never named it
+
   - given: containerKind "phase"
     expect: >
       REFUSED BY NAME and nothing counted. Phase is an ordinary parameter and

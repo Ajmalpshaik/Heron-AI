@@ -46,6 +46,14 @@ positive:
       read 2 as 2 model millimetres, 0.02 mm on the sheet
 
 negative:
+  - given: >
+      version 4 - duct tags and diffuser tags of very different sizes, one
+      filter of both categories, one call (row 5b-1652, NR1)
+    expect: >
+      no diffuser tag left over a duct tag that version 3's one median size
+      left there; FIND_OVERLAPPING_TAGS after it finds fewer pairs, and none
+      of "M_Diffuser Tag over M_Bottom Elevation Duct Tag" where there was room
+
   # VERSION 3 - a gap already scaled by the caller is scaled again.
   - given: the same pair with minGapMm 200, the figure a caller scaled for version 2
     expect: >

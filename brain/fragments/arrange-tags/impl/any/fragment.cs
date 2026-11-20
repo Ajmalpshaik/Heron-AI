@@ -3,6 +3,9 @@
 // scope, and leaves `moved`, `measuredFrom`, `bothHadToMove`,
 // `stillOverlapping`, `notTags`, `refused` and `keptInPlace` behind.
 //
+// VERSION 4 (2026-11-20) - EACH TAG SPACED BY ITS OWN SIZE, not one median
+// for every tag handed in (row 5b-1652). See where `halfW` is set.
+//
 // VERSION 3 (2026-11-20) - `minGapMm` and both fallback sizes are on PAPER,
 // multiplied by the view's scale (row 5b-240). See where `gap` is set.
 //
@@ -23,8 +26,8 @@
 //
 // It wraps the head AND the leader line. On a congested plan that box is
 // metres across, and spacing worked out from it throws tags off the sheet. So
-// the size is measured from LEADERLESS tags only and the median is used for
-// the rest. When every tag in the set has a leader there is nothing to measure
+// the size is measured from LEADERLESS tags only, and a leadered tag takes the
+// median of its own tag type's (version 4). When every tag in the set has a leader there is nothing to measure
 // from, and the caller's stated size is used - which is a number somebody
 // chose, rather than a measured one that is silently wrong.
 //
@@ -103,6 +106,10 @@ var freeEnds = new Dictionary<ElementId, XYZ>();
 
 var measuredWidths = new List<double>();
 var measuredHeights = new List<double>();
+// VERSION 4: each tag's own measured size, and its tag type.
+var ownWidth = new Dictionary<ElementId, double>();
+var ownHeight = new Dictionary<ElementId, double>();
+var typeOfTag = new Dictionary<ElementId, ElementId>();
 
 foreach (var anyTag in tags)
 {
@@ -110,6 +117,7 @@ foreach (var anyTag in tags)
     if (head == null) { refused.Add(anyTag.Id); continue; }
 
     heads[anyTag.Id] = head;
+    try { typeOfTag[anyTag.Id] = anyTag.GetTypeId(); } catch { typeOfTag[anyTag.Id] = ElementId.InvalidElementId; }
     atX[anyTag.Id] = head.DotProduct(right);
     atY[anyTag.Id] = head.DotProduct(up);
 
@@ -137,6 +145,8 @@ foreach (var anyTag in tags)
                     {
                         measuredWidths.Add(spatialWidth);
                         measuredHeights.Add(spatialHeight);
+                        ownWidth[anyTag.Id] = spatialWidth;
+                        ownHeight[anyTag.Id] = spatialHeight;
                     }
                 }
             }
@@ -214,6 +224,8 @@ foreach (var anyTag in tags)
                 {
                     measuredWidths.Add(width);
                     measuredHeights.Add(height);
+                    ownWidth[tag.Id] = width;
+                    ownHeight[tag.Id] = height;
                 }
             }
         }
@@ -236,8 +248,43 @@ double halfHeight = measuredFrom > 0
     ? medianOf(measuredHeights) / 2.0
     : fallbackTagHeightMm * MmToFeet * scale / 2.0;
 
-double needX = 2 * halfWidth + gap;
-double needY = 2 * halfHeight + gap;
+// VERSION 4 (row 5b-1652): EACH TAG IS SPACED BY ITS OWN SIZE. Version 3 gave
+// every tag handed in ONE size, the median - so with duct tags and diffuser
+// tags in one call, a diffuser tag 2.1 ft tall was spaced as if it were a duct
+// tag 0.67 ft tall, and stayed on top of its neighbour. Now a leaderless tag
+// is spaced by its own measured box; a leadered one by the median of
+// leaderless tags OF ITS OWN TAG TYPE; with none of its type measured, the
+// median of all; with nothing measured, the fallback size. Two tags clash when
+// their half-sizes added, and the gap, are more than the distance between
+// their heads - on both axes.
+var typeWidths = new Dictionary<ElementId, List<double>>();
+var typeHeights = new Dictionary<ElementId, List<double>>();
+foreach (var measured in ownWidth.Keys)
+{
+    var typeId = typeOfTag.ContainsKey(measured) ? typeOfTag[measured] : ElementId.InvalidElementId;
+    if (!typeWidths.ContainsKey(typeId)) { typeWidths[typeId] = new List<double>(); typeHeights[typeId] = new List<double>(); }
+    typeWidths[typeId].Add(ownWidth[measured]);
+    typeHeights[typeId].Add(ownHeight[measured]);
+}
+var halfW = new Dictionary<ElementId, double>();
+var halfH = new Dictionary<ElementId, double>();
+var sizedByType = 0;
+foreach (var id in heads.Keys)
+{
+    if (ownWidth.ContainsKey(id)) { halfW[id] = ownWidth[id] / 2.0; halfH[id] = ownHeight[id] / 2.0; continue; }
+    var typeId = typeOfTag.ContainsKey(id) ? typeOfTag[id] : ElementId.InvalidElementId;
+    if (typeId != ElementId.InvalidElementId && typeWidths.ContainsKey(typeId))
+    {
+        halfW[id] = medianOf(typeWidths[typeId]) / 2.0;
+        halfH[id] = medianOf(typeHeights[typeId]) / 2.0;
+        sizedByType++;
+        continue;
+    }
+    halfW[id] = halfWidth;
+    halfH[id] = halfHeight;
+}
+Func<ElementId, ElementId, double> needXOf = (a, b) => halfW[a] + halfW[b] + gap;
+Func<ElementId, ElementId, double> needYOf = (a, b) => halfH[a] + halfH[b] + gap;
 
 // ---- separate ----
 var working = heads.Keys.ToList();
@@ -259,8 +306,8 @@ Func<bool, int> separate = allowBothToMove =>
 
                 double dx = atX[two] - atX[one];
                 double dy = atY[two] - atY[one];
-                double overlapX = needX - Math.Abs(dx);
-                double overlapY = needY - Math.Abs(dy);
+                double overlapX = needXOf(one, two) - Math.Abs(dx);
+                double overlapY = needYOf(one, two) - Math.Abs(dy);
 
                 // Boxes only clash when they overlap on BOTH axes.
                 if (overlapX <= 0 || overlapY <= 0) continue;
@@ -329,7 +376,7 @@ for (int i = 0; i < working.Count && !anyLeft; i++)
     {
         double dx = Math.Abs(atX[working[j]] - atX[working[i]]);
         double dy = Math.Abs(atY[working[j]] - atY[working[i]]);
-        if (dx < needX && dy < needY) { anyLeft = true; break; }
+        if (dx < needXOf(working[i], working[j]) && dy < needYOf(working[i], working[j])) { anyLeft = true; break; }
     }
 }
 
@@ -395,7 +442,7 @@ for (int i = 0; i < working.Count; i++)
     {
         double dx = Math.Abs(atX[working[j]] - atX[working[i]]);
         double dy = Math.Abs(atY[working[j]] - atY[working[i]]);
-        if (dx >= needX || dy >= needY) continue;
+        if (dx >= needXOf(working[i], working[j]) || dy >= needYOf(working[i], working[j])) continue;
         if (!stillOverlapping.Contains(working[i])) stillOverlapping.Add(working[i]);
         if (!stillOverlapping.Contains(working[j])) stillOverlapping.Add(working[j]);
     }

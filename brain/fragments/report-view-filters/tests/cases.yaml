@@ -16,7 +16,37 @@ positive:
       bulding", Revit 2024: the three duct filters on two views, each "cut not
       applicable" because none of the eight duct categories can be cut
 
+  - given: >
+      version 5 - a plan carrying more than 25 filters (Snowdon's L2 given
+      filters, or a real MEP plan's scratch copy), viewName that plan,
+      onlyCategory "Duct Accessories" (issue #1058 A2)
+    expect: >
+      the view's heading says how many filters it carries and how many of
+      them take Duct Accessories, and only those are written, each with its
+      place number in the whole list; the project line says how many of the
+      project's filters take the category. The answer fits the chat. Then
+      detail full on the same call: every line, pattern and colour back
+
+  - given: version 5 - the same plan, nothing narrowed, detail left out
+    expect: >
+      every filter in one short line - Enable Filter, Visibility, categories,
+      catches - and the heading saying so; filters on views counted in one
+      project line, not written one by one; every do-nothing finding still said
+
+  - given: >
+      version 5 - a plan whose template leaves V/G Overrides Filters out of
+      its control, then the same template controlling them (row 5b-1854)
+    expect: >
+      first: templateOwned false, no "owns the filters" line. Second:
+      templateOwned true, naming the template. Version 4 read the plan's own
+      include list and could say either
+
 negative:
+  - given: version 5 - onlyCategory "Duct Accesories" (misspelt)
+    expect: >
+      the first finding says no category is called that, and no filter is
+      listed - never every filter as if nothing had been narrowed
+
   - given: any project at all
     expect: >
       the report COMPLETES. THIS IS THE FIRST CASE TO RUN. The project browser

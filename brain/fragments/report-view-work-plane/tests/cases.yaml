@@ -20,7 +20,22 @@ positive:
       `workPlanes` holds that one row for the view in front, and `findings`
       says the work plane was read for the view in front
 
+  - given: >
+      version 2, Revit 2020 - `FloorPlan: 1 - Mech` of a project from the
+      default mechanical template, its work plane never touched (row 5b-1480)
+    expect: >
+      its row reads work plane Level : Level 1 - horizontal at elevation 0 mm,
+      and findings says one plan's work plane was matched to its own level by
+      name. Version 1 read work plane "Level 1" in quotes here
+
 negative:
+  - given: >
+      version 2 - a plan whose work plane was set by hand to a reference plane
+      named like another level
+    expect: >
+      named as that reference plane, never as "Level : ..." - only a plane
+      carrying the plan's OWN level's name is matched
+
   - given: >
       the sheet "A101" named alone. THIS IS THE FIRST CASE TO RUN
     expect: >

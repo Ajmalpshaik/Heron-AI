@@ -9,10 +9,19 @@ semantic-identity: "the tags are sitting on top of each other, spread them out"
 kind: action
 domain: revit.annotation
 capability: ARRANGE_TAGS
-version: 3
+version: 4
 source: OFFICIAL
 risk: MODIFY
 
+# VERSION 4 (2026-11-20) - EACH TAG SPACED BY ITS OWN SIZE. FRAGMENT-ISSUES
+# row 5b-1652 (NR1 and NR3, Revit 2020): every tag handed in took ONE size,
+# the median - duct tags and diffuser tags in one call were all spaced as duct
+# tags, and 40 of 42 overlaps left were a diffuser tag over a duct tag. Now a
+# leaderless tag is spaced by its own measured box, a leadered one by the
+# median of its own tag type's leaderless tags, then the median of all, then
+# the fallback. Still DRAFT; NEEDS-CHECKING Group OQ's checks run on version 4,
+# and Group OR adds the two-category run.
+#
 # VERSION 3 (2026-11-20) - THE GAP AND THE FALLBACK SIZES ARE ON PAPER, and
 # back to DRAFT. FRAGMENT-ISSUES row 5b-240, the owner's yes of 2026-11-19
 # (Ajmalpshaik/Heron-AI#924): `minGapMm`, `fallbackTagWidthMm` and
@@ -54,7 +63,8 @@ purpose: >
   THE TAG.** On a leadered tag the box wraps the head AND the leader line - on
   a congested plan that is metres, not millimetres, and spacing derived from it
   flings tags across the drawing. Sizes are therefore measured ONLY from
-  leaderless tags, and the leadered ones take the median of those. Where every
+  leaderless tags, each spaced by its own, and the leadered ones take the
+  median of their own tag type's. Where every
   tag in the set has a leader nothing can be measured at all, and the caller's
   stated size is used instead: a size somebody chose beats a measured number
   that is silently wrong. Which of the two happened is reported.
