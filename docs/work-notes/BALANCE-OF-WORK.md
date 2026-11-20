@@ -7,7 +7,7 @@
 
 # The balance of work
 
-> **GENERATED 2026-11-16 11:53 by `python tools/balance-of-work.py --write`.**
+> **GENERATED 2026-11-20 10:34 by `python tools/balance-of-work.py --write`.**
 > **If that stamp is not today, this page is history and not a work list.** Every figure
 > below was read back out of the tool that owns it, and each row names the command that
 > derives it. Nothing here is typed by hand, so where this page and a register disagree,
@@ -23,20 +23,20 @@ business here. When every row does, delete the file and the tool with it.
 
 | # | What is left | Count | Derive it with |
 |---|---|---|---|
-| 1 | **Fragments that have never met a model** — the largest single body of work left | **86** of **742** | `grep -h '^heron-status:' brain/fragments/*/fragment.yaml \| sort \| uniq -c` |
-| 1a | — of those, never run **in this checkout** — see the warning below | **86** | `python tools/generate-jobs.py` |
-| 1b | — of those, **ready to prove right now**, needing only a Revit session | **61** | `python tools/generate-jobs.py` |
-| 1c | — of those, **structurally blocked**, each with a reason printed | **25** | `python tools/generate-jobs.py` |
+| 1 | **Fragments that have never met a model** — the largest single body of work left | **72** of **744** | `grep -h '^heron-status:' brain/fragments/*/fragment.yaml \| sort \| uniq -c` |
+| 1a | — of those, never run **in this checkout** — see the warning below | **72** | `python tools/generate-jobs.py` |
+| 1b | — of those, **ready to prove right now**, needing only a Revit session | **53** | `python tools/generate-jobs.py` |
+| 1c | — of those, **structurally blocked**, each with a reason printed | **19** | `python tools/generate-jobs.py` |
 | 2 | **Skills never proved** | **49** of **49** | `grep -h '^heron-status:' brain/skills/*.yaml \| sort \| uniq -c` |
 | 3 | **Agents left to build** | **0** of **252** | `python tools/agent-count.py` |
 | 3b | — and **deferred by a decision**, which is neither left nor done | **2** | `python tools/agent-count.py` |
 | 4 | **Agent proofs drafted but unsigned** | **0** | `ls brain/agent-proof-drafts/*.yaml` |
-| 5 | **Proving-register rows still open** | **2561** of **3018** | `python tools/owner-queue.py` |
-| 6 | **Heron's own defects still open** | **415** of **1261** | `python tools/open-defects.py` |
-| 7 | **Questions unanswered** | **0** | `python tools/check-docs.py` |
-| 8 | **Proposals awaiting the owner** | **1** of **26** | `python tools/owner-queue.py` |
-| 9 | **Signatures gone stale — proved, then the code moved under them** | **6** | `python tools/check-signatures.py` |
-| 10 | **Everything waiting on the owner personally**, across three registers | **2562** | `python tools/owner-queue.py` |
+| 5 | **Proving-register rows still open** | **2652** of **3134** | `python tools/owner-queue.py` |
+| 6 | **Heron's own defects still open** | **22** of **1302** | `python tools/open-defects.py` |
+| 7 | **Questions unanswered** | **1** | `python tools/check-docs.py` |
+| 8 | **Proposals awaiting the owner** | **11** of **37** | `python tools/owner-queue.py` |
+| 9 | **Signatures gone stale — proved, then the code moved under them** | **11** | `python tools/check-signatures.py` |
+| 10 | **Everything waiting on the owner personally**, across three registers | **2664** | `python tools/owner-queue.py` |
 
 > **ROWS 1a TO 1c ARE ABOUT THIS CHECKOUT, NOT ABOUT THE PROJECT.** They count what has never
 > been run *here*, and `brain/proof-drafts/runs/` is gitignored, so every worktree starts almost
@@ -53,12 +53,14 @@ leave the other untouched.
 
 Every drift this repository has caught was visible in a list and invisible in a total.
 
-**Defects still open** (`docs/FRAGMENT-ISSUES.md` section 5): 10, 18, 19, 21, 32, 36, 41, 45, 73, 75, 99, 101, 103, 106, 108, 116, 120, 128, 129, 131, 132, 135, 137, 140, 141, 142, 143, 144, 146, 148, 150, 158, 174, 176, 177, 179, 180, 5b-83, 5b-95, 5b-103, 5b-105, 5b-107, 5b-110, 5b-113, 5b-125, 5b-131, 5b-136, 5b-145, 5b-159, 5b-161, 5b-175, 5b-180, 5b-182, 5b-185, 5b-187, 5b-194, 5b-197, 5b-200, 5b-202, 5b-204, 5b-203, 5b-205, 5b-211, 5b-212, 5b-213, 5b-214, 5b-215, 5b-216, 5b-218, 5b-219, 5b-221, 5b-222, 5b-224, 5b-225, 5b-226, 5b-227, 5b-230, 5b-233, 5b-235, 5b-240, 5b-246, 5b-253, 5b-256, 5b-257, 5b-258, 5b-259, 5b-260, 5b-265, 5b-278, 5b-280, 5b-281, 5b-282, 5b-285, 5b-286, 5b-287, 5b-288, 5b-289, 5b-290, 5b-291, 5b-294, 5b-295, 5b-296, 5b-297, 5b-299, 5b-301, 5b-302, 5b-303, 5b-304, 5b-314, 5b-320, 5b-321, 5b-331, 5b-336, 5b-337, 5b-338, 5b-340, 5b-342, 5b-346, 5b-348, 5b-350, 5b-356, 5b-358, 5b-361, 5b-364, 5b-367, 5b-378, 5b-396, 5b-402, 5b-403, 5b-414, 5b-415, 5b-416, 5b-418, 5b-419, 5b-420, 5b-394, 5b-395, 5b-423, 5b-424, 5b-428, 5b-429, 5b-434, 5b-437, 5b-444, 5b-448, 5b-455, 5b-469, 5b-472, 5b-473, 5b-474, 5b-475, 5b-476, 5b-477, 5b-478, 5b-490, 5b-496, 5b-513, 5b-650, 5b-665, 5b-666, 5b-861, 5b-940, 5b-977, 5b-1003, 5b-1004, 5b-1007, 5b-1060, 5b-1061, 5b-1062, 5b-1063, 5b-1065, 5b-1066, 5b-1090, 5b-1091, 5b-1092, 5b-1095, 5b-1100, 5b-1110, 5b-1112, 5b-1113, 5b-1114, 5b-1115, 5b-1118, 5b-1119, 5b-1121, 5b-1122, 5b-1124, 5b-1125, 5b-1126, 5b-1130, 5b-1131, 5b-1132, 5b-1134, 5b-1136, 5b-1138, 5b-1153, 5b-1155, 5b-1156, 5b-1157, 5b-1158, 5b-1159, 5b-1161, 5b-1162, 5b-1163, 5b-1164, 5b-1167, 5b-1168, 5b-1171, 5b-1175, 5b-1176, 5b-1177, 5b-1178, 5b-1180, 5b-1181, 5b-1182, 5b-1201, 5b-1221, 5b-1242, 5b-1261, 5b-1262, 5b-1267, 5b-1268, 5b-1292, 5b-1293, 5b-1309, 5b-1310, 5b-1324, 5b-1329, 5b-1335, 5b-1340, 5b-1347, 5b-1351, 5b-1355, 5b-1362, 5b-1363, 5b-1364, 5b-1365, 5b-1366, 5b-1368, 5b-1373, 5b-1375, 5b-1376, 5b-1378, 5b-1381, 5b-1382, 5b-1383, 5b-1386, 5b-1388, 5b-1389, 5b-1391, 5b-1395, 5b-1397, 5b-1398, 5b-1399, 5b-1400, 5b-1401, 5b-1402, 5b-1404, 5b-1405, 5b-1406, 5b-1407, 5b-1408, 5b-1409, 5b-1411, 5b-1413, 5b-1417, 5b-1420, 5b-1423, 5b-1424, 5b-1426, 5b-1427, 5b-1428, 5b-1429, 5b-1431, 5b-1433, 5b-1435, 5b-1440, 5b-1441, 5b-1443, 5b-1445, 5b-1446, 5b-1447, 5b-1448, 5b-1449, 5b-1450, 5b-1451, 5b-1452, 5b-1453, 5b-1454, 5b-1455, 5b-1456, 5b-1457, 5b-1458, 5b-1459, 5b-1460, 5b-1461, 5b-1462, 5b-1477, 5b-1478, 5b-1480, 5b-1481, 5b-1482, 5b-1483, 5b-1484, 5b-1485, 5b-1486, 5b-1488, 5b-1489, 5b-1493, 5b-1496, 5b-1497, 5b-1498, 5b-1499, 5b-1505, 5b-1507, 5b-1510, 5b-1511, 5b-1512, 5b-1513, 5b-1514, 5b-1515, 5b-1517, 5b-1518, 5b-1520, 5b-1522, 5b-1523, 5b-1524, 5b-1525, 5b-1526, 5b-1527, 5b-1528, 5b-1529, 5b-1530, 5b-1531, 5b-1532, 5b-1533, 5b-1534, 5b-1545, 5b-1546, 5b-1548, 5b-1550, 5b-1551, 5b-1552, 5b-1554, 5b-1557, 5b-1559, 5b-1560, 5b-1561, 5b-1563, 5b-1566, 5b-1567, 5b-1568, 5b-1570, 5b-1579, 5b-1582, 5b-1583, 5b-1584, 5b-1587, 5b-1589, 5b-1594, 5b-1611, 5b-1626, 5b-1627, 5b-1632, 5b-1634, 5b-1640, 5b-1642, 5b-1643, 5b-1644, 5b-1645, 5b-1646, 5b-1648, 5b-1649, 5b-1650, 5b-1651, 5b-1652, 5b-1653, 5b-1654, 5b-1655, 5b-1658, 5b-1670, 5b-1671, 5b-1672, 5b-1673, 5b-1674, 5b-1702, 5b-1703, 5b-1704, 5b-1705, 5b-1706, 5b-1707, 5b-1708, 5b-1709, 5b-1710, 5b-1711, 5b-1730, 5b-1731, 5b-1732, 5b-1733, 5b-1736, 5b-1739, 5b-1740, 5b-1742, 5b-1743, 5b-1744, 5b-1745, 5b-1746, 5b-1747, 5b-1749, 5b-1750, 5b-1751, 5b-1821, 5b-1823, 5b-1824, 5b-1825
+**Questions still open:** Q-93
+
+**Defects still open** (`docs/FRAGMENT-ISSUES.md` section 5): 5b-1131, 5b-1161, 5b-1171, 5b-1525, 5b-1528, 5b-1643, 5b-1743, 5b-1833, 5b-1834, 5b-1836, 5b-1837, 5b-1838, 5b-1839, 5b-1840, 5b-1841, 5b-1842, 5b-1852, 5b-1853, 5b-1854, 5b-1860, 5b-1861, 5b-1867
 
 > A row can still say OPEN after a later row has closed it — four did on 2026-09-16, and no
 > pattern finds them. Reading beats grepping here.
 
-**Proposals still open** (`docs/PROPOSALS.md`): F43
+**Proposals still open** (`docs/PROPOSALS.md`): F43, F46, F47, F48, F49, F50, F51, F52, F53, F54, F55
 
 ## Work notes still open, and what each is waiting for
 
@@ -73,11 +75,9 @@ and the reason is the second column — read it before deleting one.
 | `plans/rag/00-structure.md` | Active — the shape is decided, and parts are built |
 | `plans/rag/01-requirements.md` | Active, partly built |
 | `plans/rag/02-implementation.md` | Active, and some stages are built |
-| `the-sweep-2026-09-13.md` | Active, and a MAP rather than a proof — its first line says so |
 | `plans/improvement-gate-execution-record.md` | Active — the gate is built and piloted; two things are still owed |
 | `plans/project-perfection-and-continuous-upgrade-plan-2026-09-12.md` | Completed, and kept for its reasoning |
 | `investigations/rag-engineering-practices-2026-09-10.md` | All four take-rows taken; three owner's calls open |
-| `investigations/rag-state-of-the-art-2026-09-10.md` | Read and sorted; three rows folded in, and its one question answered |
 | `plans/agent-build-order-2026-09-13.md` | Every block built - retiring it is the owner's call |
 | `plans/next-steps-2026-09-12.md` | Active, and mostly spent |
 | `investigations/2026-09-17-risk-crossings-not-deterministic.md` | Active, and pinned open by a register |
@@ -95,7 +95,6 @@ and the reason is the second column — read it before deleting one.
 | `plans/sprinkler-panel-2026-10-04.md` | FINAL plan (its own banner), and its code exists - the panel is not proven |
 | `plans/fire-water-and-spacing-2026-10-05.md` | FINAL plan (its own banner), and its code exists - not proven |
 | `plans/sprinkler-layout-2026-10-06.md` | FINAL plan (its own banner), and its code exists - the panel is not proven |
-| `plans/project-review-2026-10-08.md` | Active |
 | `plans/gap-fill-2026-10-12.md` | Active - being built batch by batch |
 | `plans/companion-model-dashboard-2026-11-01.md` | Active - built well past phase 1; its own table holds each row's state |
 | `plans/facade-capability.md` | Close to finished - its cards say PROVEN; retiring it is the owner's call |

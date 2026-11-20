@@ -13,6 +13,9 @@ See docs/29-metadata-standard.md
 > evidence, measured against the first build), corrected, and finalized. Where a task line and the
 > **Review log** disagree, the log wins. The first build was committed before the review returned; the
 > fixes are the second commit.
+> **Retires when** rows CE8 to CE10 of [Group CE](../../needs-checking/group-ce.md) are run and recorded in its
+> file, or recorded NOT RUN with the reason, and [46 §13](../../46-sprinkler-hydraulics-from-the-model.md) says
+> what they showed. Written 2026-11-19; the task boxes below were never ticked, so read 46 §13, not them.
 
 **Goal:** the Sprinkler panel gains two sections. **Fire water**: the standpipes, hose reels, tank and
 fire pump, put together with the sprinkler demand the panel solved. **Spacing**: every head checked

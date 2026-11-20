@@ -8,7 +8,7 @@
 
 ## Group IZ - a hexagon whose size across the flats follows a parameter: `EXTRUDE_POLYGON_BETWEEN_PLANES` version 1 (2026-10-24)
 
-**Tracked as GitHub issue [#1015](https://github.com/Ajmalpshaik/Heron-AI/issues/1015) since 2026-11-16** - its checks have run and held, and the ids not yet struck are listed there, to strike once open pull request #871 has merged. Every result stays in this file.
+**Tracked as GitHub issue [#1015](https://github.com/Ajmalpshaik/Heron-AI/issues/1015) from 2026-11-16 - done 2026-11-19:** #871 struck IZ0 and IZ2 to IZ5, and IZ1 is struck on its PASS of 2026-10-24. Every id of this group is struck. Every result stays in this file.
 
 A new card, [`extrude-polygon-between-planes`](../../brain/fragments/extrude-polygon-between-planes/fragment.yaml),
 written for the owner's fastener library: a bolt head and a nut are hexagons, and until this card the only
@@ -33,7 +33,7 @@ back, with `basePlane=Ref. Level` and `topPlane=Head Top`. A flex is the same wi
 | # | Run | Look for |
 |---|---|---|
 | ~~**IZ0**~~ | Negative FIRST. `parameterName=Zero Flats`, `sides=6` — [full row](../needs-checking-archive/group-iz.md#row-iz0) | Refused before anything is made - "... |
-| **IZ1** | *The hexagon.* `parameterName=Head Across Flats`, `sides=6` | `size` *"6 sides, 18 mm across the flats and 20.78 mm across the corners, 7.5 mm high, centred at X 0, Y 0, from Z 0 to 7.5"*; 7 locks (six sides and the top); two centre planes made and pinned, the front-back pair on Center (Front/Back) |
+| ~~**IZ1**~~ | *The hexagon.* `parameterName=Head Across Flats`, `sides=6` | `size` *"6 sides, 18 mm across the flats and 20.78 mm across the corners, 7.5 mm high, centred at X 0, Y 0, from Z 0 to 7.5"*; 7 locks (six sides and the top); two centre planes made and pinned, the front-back pair on Center (Front/Back) **Held - PASS (after the fix), Revit 2020, 2026-10-24: the results table below.** |
 | ~~**IZ2**~~ | The flex. IZ1 as setup, `trials=Head Across Flats=46 \| Head Across Flats=10` — [full row](../needs-checking-archive/group-iz.md#row-iz2) | The prism MEASURED 53.12 x 46 and 11.55 x 10 mm, centred at X 0, Y 0, and put back to… |
 | ~~**IZ3**~~ | Other even counts. `sides=8`, then `sides=4`; the octagon flexed as IZ2 — [full row](../needs-checking-archive/group-iz.md#row-iz3) | Octagon 18 across the flats and 19.48 across the corners, 9 locks, flexing to 46 x 46 and… |
 | ~~**IZ4**~~ | An odd count. `sides=5` — [full row](../needs-checking-archive/group-iz.md#row-iz4) | Refused - "an EVEN number of sides, 4 to 12 ..." - nothing made Struck 2026-11-13: PASSED… |

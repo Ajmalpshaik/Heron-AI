@@ -132,6 +132,17 @@ Read it before reading the result.
 
 Start from [`tools/jobs/example.yaml`](../../../tools/jobs/example.yaml).
 
+**For a backlog, let [`tools/generate-jobs.py`](../../../tools/generate-jobs.py) write the file, and work it
+one kind of value at a time.** It takes which fragments, whether each writes and every input name, spelled
+as its contract spells it, from the library and the add-in's operation registry, and leaves the category,
+the view and every value blank - so what is left to type is the values. The sweep of 2026-09-13 showed why the values
+are the work: every DRAFT card then outstanding was run once on Revit 2024 against one standard selection,
+positive half only and stdin closed - three minutes for 161 - and **135 of the 147 still outstanding were
+stopped by a VALUE nobody had said** (a type, a template, a folder, a distance), each refusal naming which -
+not by a thin model. So look one kind of value up once, then run every card that wants it. That sweep's map
+was retired on 2026-11-19; its other lessons are below, in [`tools/batch-prove.py`](../../../tools/batch-prove.py)
+and in [D-72](../../../docs/decisions/D-72.md).
+
 ```bash
 python tools/batch-prove.py my-jobs.yaml --dry-run    # check it, run nothing
 python tools/batch-prove.py my-jobs.yaml              # run it

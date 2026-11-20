@@ -386,7 +386,8 @@ def store_for_this_tree(what):
     #
     # THE TEST IS THE IDS AND NOT THE COUNT, and that cost a run too. This
     # compared store.count() to the number of folders on disk until 2026-09-06.
-    # One store at %APPDATA%\Heron\knowledge serves every checkout on the
+    # One store - %USERPROFILE%\.heron\knowledge since D-135, %APPDATA%\Heron\knowledge
+    # then - serves every checkout on the
     # machine, and three sessions building fragments in parallel (HANDOVER 9b)
     # each had a working tree of exactly 226 - so the count MATCHED while the
     # store held another session's library, no rebuild was triggered, and the
