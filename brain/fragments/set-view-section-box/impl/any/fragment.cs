@@ -47,7 +47,9 @@
 var applied = false;
 var enclosed = 0;
 var noGeometry = new List<ElementId>();
-var refusalReasons = new List<string>();
+// ONE STRING since version 2 (FRAGMENT-ISSUES row 108): every refusal below
+// ends its own branch, so at most one is set, and it reaches the reply whole.
+string refusalReasons = null;
 var viewRefused = false;
 
 const double MillimetresPerFoot = 304.8;
@@ -63,7 +65,7 @@ var view3D = view as View3D;
 if (view == null)
 {
     viewRefused = true;
-    refusalReasons.Add("no view was given, and a section box belongs to one 3D view");
+    refusalReasons = "no view was given, and a section box belongs to one 3D view";
 }
 else if (view3D == null)
 {
@@ -72,15 +74,15 @@ else if (view3D == null)
     catch { kind = "not a 3D view"; }
 
     viewRefused = true;
-    refusalReasons.Add(viewName + " is " + kind + ", and ONLY A 3D VIEW HAS A SECTION BOX. "
+    refusalReasons = viewName + " is " + kind + ", and ONLY A 3D VIEW HAS A SECTION BOX. "
         + "Nothing was changed. To crop a plan or a section instead, that is a crop region - "
-        + "SET_VIEW_CROP; to show only these elements wherever they are, ISOLATE_ELEMENTS");
+        + "SET_VIEW_CROP; to show only these elements wherever they are, ISOLATE_ELEMENTS";
 }
 else if (view3D.IsTemplate)
 {
     viewRefused = true;
-    refusalReasons.Add(viewName + " is a view TEMPLATE, not a drawing anybody looks at. "
-        + "Nothing was changed - box the view the template drives");
+    refusalReasons = viewName + " is a view TEMPLATE, not a drawing anybody looks at. "
+        + "Nothing was changed - box the view the template drives";
 }
 else
 {
@@ -129,7 +131,7 @@ else
         // it is a 3D view and it would have taken a box. Saying the view
         // refused would send somebody to change a view that was never the
         // problem. See the header.
-        refusalReasons.Add(handed == 0
+        refusalReasons = handed == 0
             ? "nothing was handed in to enclose, so NOTHING WAS CHANGED. " + viewName
               + " is a 3D view and would have taken a section box - the selection is what "
               + "was empty"
@@ -138,7 +140,7 @@ else
                 + "WAS CHANGED and the existing section box is left as it was. {1} is a 3D "
                 + "view and would have taken a box - a box stretched to nothing would cut the "
                 + "view to an empty screen. The element(s) are named in noGeometry",
-                handed, viewName));
+                handed, viewName);
     }
     else
     {

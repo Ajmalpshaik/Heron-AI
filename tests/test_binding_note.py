@@ -464,6 +464,43 @@ def routing_part(block):
     return found
 
 
+EMPTY_ABSENT = re.compile(r"""^\s+absent:\s*(""|'')\s*$""", re.M)
+
+
+def empty_absent_cards(HF):
+    """Row 5b-1841: each card that writes an empty `absent:` on an optional
+    request need, read by the bridge client's own contract reader - what is
+    sent to the add-in - must reach the binder as "" and be a need that may
+    be left out. Until the owner's answer A (2026-11-20) both sides read the
+    empty text as "nothing said", and all seven cards refused it."""
+    sys.path.insert(0, os.path.join(ROOT, "mcp", "client"))
+    import heron_bridge_client as BC
+    found = []
+    library = os.path.join(ROOT, "brain", "fragments")
+    for folder in sorted(os.listdir(library)):
+        path = os.path.join(library, folder, "fragment.yaml")
+        try:
+            text = io.open(path, encoding="utf-8").read()
+        except (IOError, OSError):
+            continue
+        if not EMPTY_ABSENT.search(text):
+            continue
+        needs = BC.fragment_needs(path) or []
+        empties = [n for n in needs if n.get("absent") == ""
+                   and str(n.get("optional")).strip().lower() == "true"
+                   and n.get("source") == "request"]
+        bad = [n["name"] for n in empties
+               if HF.need_absent_text(n) != "" or not HF.need_may_be_absent(n)]
+        found.append((bool(empties) and not bad,
+                      "%s: %s left out binds \"\" (row 5b-1841)%s"
+                      % (folder, ", ".join(n["name"] for n in empties) or "no need read",
+                         " - refused: " + ", ".join(bad) if bad else "")))
+    if not found:
+        found.append((True, "no card writes an empty absent: today - the row "
+                            "5b-1841 rule above is all there is to check"))
+    return found
+
+
 def main():
     """Hand the fragment's own rule to the host, run the suite, and clear up."""
     block = part_names_block()
@@ -629,8 +666,16 @@ def _suite(handed, block):
           "optional": "false", "absent": "all"}, None, False),
         ({"name": "which", "type": "string", "source": "request",
           "optional": "true"}, None, False),
+        # Row 5b-1841, the owner's answer A (2026-11-20): an EMPTY absent: is
+        # the empty text, so the need may be left out - as the host binds it.
+        ({"name": "room", "type": "string", "source": "request",
+          "optional": "true", "absent": ""}, "", True),
         ({"name": "which", "type": "string", "source": "request",
-          "optional": "true", "absent": "   "}, None, False),
+          "optional": "true", "absent": "   "}, "", True),
+        ({"name": "room", "type": "string", "source": "request",
+          "absent": ""}, None, False),
+        ({"name": "room", "type": "string", "source": "request",
+          "optional": "false", "absent": ""}, None, False),
         ({"name": "includeLinks", "type": "bool", "source": "request",
           "optional": "true"}, None, True),
         # Row 5b-1320: a View marked optional binds null - the whole model.
@@ -683,6 +728,14 @@ def _suite(handed, block):
     print("  %s  heron_fragment.need_absent_text and need_may_be_absent answer "
           "the %d cases the host does" % ("ok  " if mirrored else "FAIL",
                                          len(declared)))
+
+    # Row 5b-1841: every card that writes `absent: ""` now binds what it says
+    # leaving the value out means - read through the reader that sends the
+    # card to Revit, so the "" is the text the binder is handed.
+    blanks = empty_absent_cards(HF)
+    for ok_here, said_here in blanks:
+        print("  %s  %s" % ("ok  " if ok_here else "FAIL", said_here))
+    mirrored = mirrored and all(ok_here for ok_here, _ in blanks)
 
     # Rows 5b-1120 and 5b-1549: what the host cannot see of the fragment.
     parts = routing_part(block)

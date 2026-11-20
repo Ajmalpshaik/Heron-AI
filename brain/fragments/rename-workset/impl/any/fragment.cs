@@ -16,12 +16,14 @@
 // mid-rename on a workshared model is a confusing place to end up.
 
 var renamed = false;
-var refused = new List<string>();
+// ONE STRING since version 2 (FRAGMENT-ISSUES row 108): every refusal below
+// ends its own branch, so at most one is set, and it reaches the reply whole.
+string refused = null;
 
 if (!doc.IsWorkshared)
 {
-    refused.Add("this model is not workshared - it has no user worksets, so there is nothing to rename. "
-        + "Nothing was changed");
+    refused = "this model is not workshared - it has no user worksets, so there is nothing to rename. "
+        + "Nothing was changed";
 }
 else
 {
@@ -36,8 +38,8 @@ else
 
     if (target == null)
     {
-        refused.Add(string.Format("no user workset called '{0}'. This model has: {1}",
-            worksetName, string.Join(", ", available)));
+        refused = string.Format("no user workset called '{0}'. This model has: {1}",
+            worksetName, string.Join(", ", available));
     }
     else if (deleteInstead)
     {
@@ -50,23 +52,23 @@ else
 
         if (deleteMethod == null)
         {
-            refused.Add(string.Format("this Revit version cannot delete a workset from the API - the "
+            refused = string.Format("this Revit version cannot delete a workset from the API - the "
                 + "call does not exist before Revit 2024. Delete '{0}' by hand: Collaborate, Worksets, "
-                + "select it, Delete. Nothing was changed", target.Name));
+                + "select it, Delete. Nothing was changed", target.Name);
         }
         else
         {
-            refused.Add("deleting a workset moves everything on it onto another workset, and which one "
-                + "is a decision this fragment will not make silently. Nothing was deleted");
+            refused = "deleting a workset moves everything on it onto another workset, and which one "
+                + "is a decision this fragment will not make silently. Nothing was deleted";
         }
     }
     else if (string.IsNullOrWhiteSpace(newName))
     {
-        refused.Add("no new name given - a workset cannot be renamed to nothing");
+        refused = "no new name given - a workset cannot be renamed to nothing";
     }
     else if (string.Equals(target.Name, newName, StringComparison.Ordinal))
     {
-        refused.Add(string.Format("'{0}' is already its name - nothing to do", newName));
+        refused = string.Format("'{0}' is already its name - nothing to do", newName);
     }
     else
     {
@@ -76,8 +78,8 @@ else
 
         if (!free)
         {
-            refused.Add(string.Format("'{0}' is already the name of another workset. Revit refuses a "
-                + "duplicate, and finding that out mid-rename is worse than being told now", newName));
+            refused = string.Format("'{0}' is already the name of another workset. Revit refuses a "
+                + "duplicate, and finding that out mid-rename is worse than being told now", newName);
         }
         else
         {
@@ -88,7 +90,7 @@ else
             }
             catch (Exception ex)
             {
-                refused.Add(string.Format("'{0}' could not be renamed - {1}", target.Name, ex.Message));
+                refused = string.Format("'{0}' could not be renamed - {1}", target.Name, ex.Message);
             }
         }
     }

@@ -31,7 +31,9 @@ negative:
       REFUSED BY NAME, and nothing changed. THIS IS THE FIRST CASE TO RUN. Revit
       accepts this call on an ordinary view without error and it changes nothing
       visible - a version that passes it through reports success on a no-op, and
-      the modeller goes on believing the setting is free
+      the modeller goes on believing the setting is free. `refused` ARRIVES
+      WHOLE in the reply - one string since version 2 (row 108); as a one-item
+      list it was cut at 60 characters, before "pass the template itself"
 
   - given: a parameter name spelt wrongly
     expect: >

@@ -77,7 +77,9 @@ def wiring():
     check("answered == null && !keptNothing && rolledBack != null && rolledBack.Held" in run
           and "answered == null && !keptNothing ? HeronReadBack.DryRun" in run,
           "and it is not passed off as a dry run's read-back")
-    check(re.search(r"WithVerdict\([^;]*keptNothing,\s*described\)", run) is not None,
+    # The argument after `described` is row 5b-1594's outsideTheGroup (2026-11-20).
+    check(re.search(r"WithVerdict\([^;]*keptNothing,\s*described\s*(,\s*\w+\s*)?\)", run)
+          is not None,
           "the verdict is told")
     verdict = NOTE.body_of(code, "string WithVerdict(")
     check(re.search(r"else\s+if\s*\(\s*held\s*&&\s*keptNothing\s*\)\s*\{\s*verdict\s*=\s*"
