@@ -189,3 +189,10 @@ utterances:
   - delete them from the model
   - take these out of the model
   - delete the ones I selected
+  # ADDED 2026-11-20, rows 5b-1646 and 5b-1832 (GitHub issue #956). The table
+  # above claims the first and a comment is not indexed; on both re-ranked
+  # backends it reached REMOVE_MASS_FLOORS, and "delete these two walls"
+  # reached DISALLOW_JOIN or JOIN_GEOMETRY, with this card 2nd to 4th. Seventh
+  # and eighth, so the re-ranker reads them beside the identity (D-134).
+  - delete this roof
+  - delete these two walls

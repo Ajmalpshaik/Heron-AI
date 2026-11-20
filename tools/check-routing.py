@@ -91,6 +91,11 @@ reason each was waiting, and each came off when its row was repaired - by
 pull requests #452 and #459. A listed row that stops dangling fails the run too,
 until it comes off the list: a list that outlives its repair goes on excusing
 the row if it ever comes back. Row 5b-388.
+
+A SENTENCE TWO LIVE CARDS BOTH DECLARE FAILS THE SAME WAY (row 5b-473,
+2026-11-20). The identity table keeps neither card for it, so it reaches
+neither by its exact words; `shared_declarations()` reads it off the files, as
+the rows above are read, and names both cards. None is shared on that day.
 """
 
 import os
@@ -575,10 +580,58 @@ def retired_targets(folder=None):
     return found
 
 
-def targets_verdict(found, known, read=None, retired=None):
-    """Print the rows that name no capability, and the live rows that name a
-    retired one; 1 if any is new, a listed one was repaired, or any row
-    names a retired capability, else 0."""
+def shared_declarations(folder=None):
+    """[(phrase, [fragment folders])] for every sentence two or more LIVE
+    cards declare - a `semantic-identity` or an `utterances` line - keyed the
+    way heron_search keys its identity table (`normalise`, imported, never
+    copied).
+
+    WHY THIS FAILS THE RUN (FRAGMENT-ISSUES row 5b-473, 2026-11-20). A
+    sentence two cards declare is written into the identity table as
+    `__ambiguous__` and resolves to NEITHER by its exact words, by design -
+    so the declaration that was meant to settle it settles nothing, and the
+    sentence falls through to ranking with nothing to say why. check-routing's
+    ranking report lists the loser, never the cause. There is nothing to
+    weaken here to buy a number back: the repair is to keep the sentence on
+    the one card that does the job and take it off the other. Retired cards
+    are passed over, as heron_search passes them over: they claim no phrase.
+    Measured on 2026-11-20: no live pair shares one, so the gate starts
+    without a false alarm to excuse.
+    """
+    import yaml
+    import heron_search as SEARCH
+    loader = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
+    folder = folder or FRAGMENTS
+    claims = {}
+    for name in sorted(os.listdir(folder)):
+        path = os.path.join(folder, name, "fragment.yaml")
+        if not os.path.exists(path):
+            continue
+        with open(path, encoding="utf-8") as fh:
+            text = fh.read()
+        said = STATUS.search(text)
+        if said and said.group(1).upper() in SEARCH.RETIRED_FRAGMENTS:
+            continue
+        try:
+            data = yaml.load(text, Loader=loader) or {}
+        except yaml.YAMLError:
+            continue                  # a card that does not parse is another gate's
+        if not isinstance(data, dict):
+            continue
+        phrases = [data.get("semantic-identity")] + list(data.get("utterances") or [])
+        for phrase in set(SEARCH.normalise(str(p)) for p in phrases if p):
+            if phrase:
+                claims.setdefault(phrase, []).append(name)
+    return sorted((phrase, names) for phrase, names in claims.items()
+                  if len(names) > 1)
+
+
+def targets_verdict(found, known, read=None, retired=None, shared=None):
+    """Print the rows that name no capability, the live rows that name a
+    retired one, and the sentences two live cards declare; 1 if any is new, a
+    listed one was repaired, any row names a retired capability, or any
+    sentence is declared twice, else 0."""
+    shared = list(shared or [])
     retired = list(retired or [])
     listed = set(known)
     new = [f for f in found if (f[0], f[2]) not in listed]
@@ -646,7 +699,22 @@ def targets_verdict(found, known, read=None, retired=None):
         print("  repoint it.")
     elif not new and not repaired:
         print("AND NO LIVE CARD'S ROUTING ROW NAMES A RETIRED CAPABILITY.")
-    return 1 if new or repaired or retired else 0
+    if shared:
+        print()
+        print("A SENTENCE TWO LIVE CARDS BOTH DECLARE (%d) - THIS FAILS THE RUN:"
+              % len(shared))
+        print()
+        for phrase, names in shared:
+            print("  %r" % phrase)
+            print("      declared by %s" % ", ".join(names))
+        print()
+        print("  The identity table keeps neither: the sentence is written as")
+        print("  ambiguous and reaches NEITHER card by its exact words, so the")
+        print("  declaration settles nothing (row 5b-473). Keep it on the one")
+        print("  card that does the job and take it off the other.")
+    else:
+        print("AND NO SENTENCE IS DECLARED BY TWO LIVE CARDS.")
+    return 1 if new or repaired or retired or shared else 0
 
 
 def main(argv):
@@ -670,10 +738,11 @@ def main(argv):
     # not a screen above the report. Row 5b-388.
     read, found = dangling_targets()
     gone = retired_targets()
+    twice = shared_declarations()
     if "--targets" in argv:
-        return targets_verdict(found, KNOWN_DANGLING, read, gone)
+        return targets_verdict(found, KNOWN_DANGLING, read, gone, twice)
     code = report(revit)
-    return targets_verdict(found, KNOWN_DANGLING, read, gone) or code
+    return targets_verdict(found, KNOWN_DANGLING, read, gone, twice) or code
 
 
 def report(revit):
