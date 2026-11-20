@@ -241,7 +241,7 @@ an edit.
 | [D-170](#d-170--the-word-sandbox-leaves-article-11-and-golden-rule-18-new-code-runs-watched-not-contained) | The word sandbox leaves Article 11 and Golden Rule 18: new code runs watched, not contained | ✅ Accepted · 2026-11-16 |
 | [D-171](#d-171--heron-may-save-the-model-it-works-in-once-its-undo-entry-has-closed-only-when-the-modeller-asks-and-never-picks-a-name-itself) | Heron may save the model it works in once its Undo entry has closed, only when the modeller asks, and never picks a name itself | ✅ Accepted · 2026-11-16 |
 | [D-172](#d-172--article-13-names-the-keep-boxs-job-grant-as-its-one-recorded-exception) | Article 13 names the Keep box's job grant as its one recorded exception | ✅ Accepted · 2026-11-16 |
-| [D-173](#d-173--a-release-is-versioned-and-checksummed-now-and-says-plainly-it-is-unsigned-and-is-signed-before-heron-is-given-to-anyone-outside) | A release is versioned and checksummed now and says plainly it is unsigned, and is signed before Heron is given to anyone outside | ✅ Accepted · 2026-11-16 |
+| [D-173](#d-173--a-release-is-versioned-and-checksummed-now-and-says-plainly-it-is-unsigned-and-is-signed-before-heron-is-given-to-anyone-outside) | A release is versioned and checksummed now and says plainly it is unsigned, and is signed before Heron is given to anyone outside | ✅ Accepted · 2026-11-16 · *the notice waits for signing* superseded in part by D-190 · 2026-11-20 |
 | [D-174](#d-174--a-proof-taken-on-another-heron-add-in-build-or-another-revit-build-is-said-under-the-answer-and-never-refused) | A proof taken on another Heron add-in build or another Revit build is said under the answer, and never refused | ✅ Accepted · 2026-11-16 |
 | [D-175](#d-175--only-the-chat-that-made-a-heron-change-may-undo-it-the-activity-panes-undo-is-the-modellers-own) | Only the chat that made a Heron change may undo it; the Activity pane's Undo is the modeller's own | ✅ Accepted · 2026-11-16 |
 | [D-176](#d-176--the-activity-panes-select-and-zoom-look-past-a-chats-model-hold-because-they-only-look) | The Activity pane's Select and Zoom look past a chat's model hold, because they only look | ✅ Accepted · 2026-11-16 |
@@ -257,6 +257,7 @@ an edit.
 | [D-186](#d-186--what-heron-should-know-out-of-the-box-runs-bim-and-iso-standards-first-regional-next-and-company-last---and-no-standard-and-no-knowledge-store-ever-ships-with-heron) | What Heron should know out of the box runs BIM and ISO standards first, regional next and company last - and no standard, and no knowledge store, ever ships with Heron | ✅ Accepted · 2026-11-20 |
 | [D-187](#d-187--every-new-finding-is-a-github-issue-at-once-the-register-entry-and-its-issue-are-written-in-the-same-change-linked-both-ways) | Every new finding is a GitHub issue at once: the register entry and its issue are written in the same change, linked both ways | ✅ Accepted · 2026-11-20 |
 | [D-189](#d-189--a-development-session-never-pulls-into-the-main-heron-folder) | A development session never pulls into the main Heron folder | ✅ Accepted · 2026-11-20 |
+| [D-190](#d-190--the-readme-stops-asking-modellers-not-to-install-before-a-release-is-signed-and-says-plainly-the-build-is-unsigned-and-what-was-checked) | The README stops asking modellers not to install before a release is signed, and says plainly the build is unsigned and what was checked | ✅ Accepted · 2026-11-20 |
 
 ## Format
 
@@ -1552,6 +1553,7 @@ What this makes easy. What this makes hard. What it locks in.
 ## D-173 — A release is versioned and checksummed now and says plainly it is unsigned, and is signed before Heron is given to anyone outside
 
 **Status:** Accepted · **Date:** 2026-11-16 · **Accepted:** Ajmal PS, 2026-11-16, in conversation: *"go with you suggetions"* - his answer, in his own words, when [Q-77](open-questions/tier-2.md) was put to him with Claude's suggestion beside it: shape 1, a decision amends D-91 - releases are versioned and checksummed now and say plainly they are unsigned, and are signed before Heron is given to anyone outside · **Answers:** [Q-77](OPEN-QUESTIONS.md)
+**Superseded in part by:** [D-190](#d-190--the-readme-stops-asking-modellers-not-to-install-before-a-release-is-signed-and-says-plainly-the-build-is-unsigned-and-what-was-checked), accepted by the owner 2026-11-20 - the README's notice no longer waits for a signed release
 **Numbering:** written from the same answers as [D-172](decisions/D-172.md) (first numbered D-167), whose Numbering line says how the numbers were taken. Renumbered from D-168 to D-173 on 2026-11-16 with `tools/renumber.py`, because claude/outcome-words-2026-11-16 holds D-168 too.
 **Supersedes in part:** [D-91](decisions/D-91.md) - *"Files come from a signed GitHub release"*: until signing is built a release is versioned and checksummed and says it is unsigned, and signed stays the bar, due before Heron is given to anyone outside
 **Keeps:** the rest of D-91 - named by version, never a branch, a raw file URL or whatever is newest on main, a download verified before it is used, nothing downloaded executed to decide what to install · [D-93](decisions/D-93.md) · [D-96](decisions/D-96.md) · [Article 15](../HERON_CONSTITUTION.md) - only the owner publishes a release · [Article 17](../HERON_CONSTITUTION.md) - when signing is built, its key lives in the credential store
@@ -1690,3 +1692,12 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`AGENTS.md`](../AGENTS.md) "How to work" - no code
 
 **Full record:** [`decisions/D-189.md`](decisions/D-189.md)
+
+## D-190 — The README stops asking modellers not to install before a release is signed, and says plainly the build is unsigned and what was checked
+
+**Status:** Accepted · **Date:** 2026-11-20 · **Accepted:** Ajmal PS, 2026-11-20, in conversation with the coordinating session: *"We can remove that one, am I right? Because it is all. Most it is ready so modeler can install"*, and then, asked whether to remove it although D-173 waits for a signed release, his choice *"Yes, remove it now"*
+**Supersedes in part:** [D-173](#d-173--a-release-is-versioned-and-checksummed-now-and-says-plainly-it-is-unsigned-and-is-signed-before-heron-is-given-to-anyone-outside) point 3 - *"the README's please do not install this yet taken out"* no longer waits for a signed release
+**Keeps:** the rest of D-173 - a release is versioned and checksummed, says plainly that it is unsigned, and signed stays the bar (its points 1, 2 and 4) · [D-167](decisions/D-167.md) - the one-file Setup · [D-19](decisions/D-19.md) - Heron reads only until Changes is on
+**Affects:** [`README.md`](../README.md) - the notice becomes a short note and an Install section · [`docs/README.md`](README.md) · [`docs/guide/using-heron.md`](guide/using-heron.md) · [`WHAT-TO-INSTALL.md`](WHAT-TO-INSTALL.md) · D-173's index entry and record
+
+**Full record:** [`decisions/D-190.md`](decisions/D-190.md)

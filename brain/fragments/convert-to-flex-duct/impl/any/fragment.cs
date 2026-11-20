@@ -227,6 +227,7 @@ if (refused.Length == 0)
 
         // ---- delete, draw, read back - or put back ----------------------------------------
         string putBack = null;
+        string systemNote = "its own system";
         FlexDuct flex = null;
         using (var attempt = new SubTransaction(doc))
         {
@@ -290,13 +291,47 @@ if (refused.Length == 0)
                     foreach (Connector c in flex.ConnectorManager.Connectors)
                         if (c.ConnectorType == ConnectorType.End && !c.IsConnected) openEnds++;
                     var systemNow = flexSystem == null ? ElementId.InvalidElementId : flexSystem.AsElementId();
+                    // A NEW FLEX HAS NO SYSTEM UNTIL THE CHANGE ENDS (version 2, row 5b-1842, issue #1119).
+                    // Measured 2026-11-20, Revit 2024 (NEEDS-CHECKING Group OI, OI29): a flex joined at both
+                    // ends between two elbows on "Supply Air" read <none> for its system type, Set(Supply Air)
+                    // returned true and still read <none>, and Regenerate changed nothing - Revit puts a new
+                    // flex on its neighbours' system only when the transaction ends. So when the flex reads
+                    // no system, the system is judged by the two connectors it joined: each one on a system
+                    // must be on the rigid duct's system type; one on another type puts the duct back.
+                    var systemFrom = "its own system";
+                    var systemOff = "";
+                    if (systemWas != ElementId.InvalidElementId && systemNow == ElementId.InvalidElementId)
+                    {
+                        systemFrom = "the system of the fittings it joins - Revit gives a new flex its own when the change is kept";
+                        var neighbourTypes = new List<ElementId>();
+                        foreach (var c in at)
+                        {
+                            try
+                            {
+                                var s = c.MEPSystem;
+                                var typeId = s == null ? ElementId.InvalidElementId : s.GetTypeId();
+                                if (typeId != ElementId.InvalidElementId) neighbourTypes.Add(typeId);
+                            }
+                            catch (Exception) { }
+                        }
+                        var other = neighbourTypes.FirstOrDefault(t => t != systemWas);
+                        if (other != null && other != ElementId.InvalidElementId)
+                            systemOff = "the fitting it joins is on " + quoted(doc.GetElement(other) == null ? "another system" : doc.GetElement(other).Name)
+                                      + ", not " + quoted(systemName);
+                        else
+                            systemNow = systemWas;
+                    }
                     if (openEnds > 0)
                         putBack = openEnds + " end(s) of the new flex duct did not join";
                     else if (Enumerable.Range(0, sizeWas.Length).Any(i => Math.Abs(sizeNow[i] - sizeWas[i]) > near / 2))
                         putBack = "Revit made the flex " + (round ? "d" + mm(sizeNow[0]) : mm(sizeNow[0]) + "x" + mm(sizeNow[1]))
                                 + ", not " + sizeSaid;
+                    else if (systemOff.Length > 0)
+                        putBack = systemOff;
                     else if (systemWas != ElementId.InvalidElementId && systemNow != systemWas)
                         putBack = "the new flex duct is not on " + quoted(systemName);
+                    else
+                        systemNote = systemFrom;
                 }
 
                 if (putBack != null) attempt.RollBack();
@@ -317,7 +352,7 @@ if (refused.Length == 0)
         removed.Add(ductId);
         flexDucts.Add(flex.Id);
         lines.Add(ductName + " (" + lengthSaid + " mm) removed and replaced by flex duct id " + flex.Id + ", "
-            + sizeSaid + " on " + quoted(systemName) + ", joined at both ends"
+            + sizeSaid + " on " + quoted(systemName) + " (read from " + systemNote + "), joined at both ends"
             + (hanging > 0 ? "; " + hanging + " element(s) hanging on it - insulation, lining or tags - went with it" : ""));
     }
 }
