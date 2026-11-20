@@ -50,6 +50,16 @@ positive:
       \"DL1\"", and the load usages; no natures, cases, loads or boundary
       section; combinationCount n
 
+  - given: >
+      VERSION 3 (row 5b-1640) - NOT RUN. On P1102 STR (Revit 2020), nothing
+      selected, show "cases" - the model whose load cases CREATE_LOAD_CASE
+      version 1 printed as "category ?"
+    expect: >
+      "Load cases (3):" and each line names the category Analyze > Load Cases
+      shows in its Category column - "1 \"DL1\" - nature Dead, category Dead
+      Loads", LL1 under Live Loads, SNOW1 under Snow - and NOT "category ?".
+      The same on a Revit 2024 scratch project, the second release
+
 negative:
   - given: >
       W1 selected - a structural wall that carries no load and no boundary
@@ -94,6 +104,17 @@ negative:
     expect: >
       no Load combinations section - "loads" is not read as "load
       combinations"; combinationCount still the number of combinations
+
+  - given: >
+      VERSION 3 (row 5b-1640) - NOT RUN. A load case whose category Revit
+      names none, if one can be arranged (a case made through the API with no
+      subcategory, or a model where SubcategoryId reads InvalidElementId) -
+      otherwise the line for a case is read against Analyze > Load Cases by
+      eye
+    expect: >
+      that case's line reads "category ? (Revit named none)" - never another
+      case's category, never a category name made up; every other line as the
+      positive
 
 second_route:
   - >

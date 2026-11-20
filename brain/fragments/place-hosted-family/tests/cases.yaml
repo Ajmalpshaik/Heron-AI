@@ -155,6 +155,27 @@ positive:
       family was in the library on this PC - the drains, outlets and
       registers tried were face-based or level-based (the negatives below)
 
+  # VERSION 5, added 2026-11-20 (row 5b-294). NOT RUN. Row 5b-294's own
+  # arrangement: doors placed before any room exists.
+  - given: >
+      version 5 - Revit 2020 first: a scratch project with walls and NO rooms;
+      three door points on interior walls, each `toRoomAt` 600 mm into the
+      side it should swing into (two of them on the side Revit's default
+      placement does NOT face), hinge points at a jamb
+    expect: >
+      `placed` 3; `flipped` 2; `noRoomYet` 3, each "placed before any room
+      exists: swing set from the point given, To Room not set"; `wrongRoom`
+      empty; the FIRST finding "3 placed before any room exists ... the To
+      Room was NOT set ... run this again with the same values"; in plan each
+      door swings into the side of its point
+  - given: >
+      the same, after rooms are placed on both sides of each wall, run again
+      with the same values
+    expect: >
+      `alreadyThere` 3, `flipped` 0 (the swing already right), To Room set
+      where it was not - `toRoomSwapped` as Revit's default needed;
+      `noRoomYet` empty; `wrongRoom` and `toRoomWrong` empty
+
 negative:
   - given: >
       the same window type and wall with `sillHeight` "2500" - a sill whose
@@ -200,14 +221,28 @@ negative:
       seen on a model: two walls that close are rare, so the test model has to
       be built for this case
 
+  # VERSION 4's case, SUPERSEDED BY VERSION 5 (row 5b-294) and kept as the
+  # record: version 5 sets the swing from the point and counts the door in
+  # `noRoomYet` - the version 5 cases below replace it.
   - given: >
-      a door point on a wall as usual, with its `toRoomAt` point in no room -
-      outside the building, or in a space where no room is placed
+      UP TO VERSION 4 - a door point on a wall as usual, with its `toRoomAt`
+      point in no room - outside the building, or in a space where no room is
+      placed
     expect: >
       the door PLACED in its wall and left exactly as Revit placed it: that
       point in `wrongRoom` - "no room at the point it should open into" - and
       nothing flipped, re-hung or swapped for it. A room point in no room is
       never taken as leave to guess which way the door opens
+
+  # VERSION 5, added 2026-11-20 (row 5b-294). NOT RUN. A door point whose
+  # toRoomAt lies ON the wall's line - no side to read.
+  - given: >
+      version 5 - a project with NO rooms placed; one door point on a wall,
+      its `toRoomAt` point on the wall's own location line
+    expect: >
+      the door placed; that point in `wrongRoom` - "that point is on the
+      wall's line, so which side it swings into is not guessed"; `flipped` 0
+      for it, nothing in `noRoomYet` for it
 
   - given: the same points, room points and hinge points again, after the first run was KEPT
     expect: >

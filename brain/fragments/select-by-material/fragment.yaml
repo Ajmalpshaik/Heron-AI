@@ -165,13 +165,19 @@ compatibility-note: >
   `BuiltInParameter.MATERIAL_ID_PARAM`, read in a family (version 3), are the
   same 2020 through 2027 (tools/api-surface, 2026-10-08).
 
-# ROUTING - repeated in REPLACE_MATERIAL and REPORT_MATERIAL_TAKEOFF.
+# ROUTING. Not repeated whole anywhere (FRAGMENT-ISSUES row 5b-394, corrected
+# 2026-11-20: this line said REPLACE_MATERIAL and REPORT_MATERIAL_TAKEOFF, and
+# neither carries a row of it). The tables that send a sentence HERE are
+# LIST_MATERIALS and SET_ELEMENT_MATERIAL ("everything in galvanised steel"),
+# FIND_PURGEABLE_ELEMENTS ("what is this material used on"), and
+# REPORT_FAMILY_FORMS and SELECT_FAMILY_FORMS ("which forms are made of steel").
 #
 #   "which walls are fair faced
 #    block"                          -> here
 #   "everything in galvanised steel" -> here
-#   "what is this wall made of"      -> REPORT_MATERIAL_TAKEOFF - one element,
-#                                       every material it carries, not a sweep
+#   "what is this wall made of"      -> REPORT_COMPOUND_STRUCTURE - the layers
+#                                       of one wall type, as every other table
+#                                       says (row 5b-395, corrected 2026-11-20)
 #   "swap that material for
 #    another"                        -> REPLACE_MATERIAL - this one only reads
 #   "how much of each material"      -> REPORT_MATERIAL_TAKEOFF - quantities,

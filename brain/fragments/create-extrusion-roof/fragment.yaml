@@ -42,7 +42,18 @@ semantic-identity: "make a roof by extrusion - a profile sketched on a vertical 
 kind: action
 domain: revit.elements
 capability: CREATE_EXTRUSION_ROOF
-version: 1
+# VERSION 2 (2026-11-20, FRAGMENT-ISSUES row 5b-1648) - THE LEVEL IS READ BACK
+# AS THE ROOF'S REFERENCE LEVEL. Version 1 compared the new roof's
+# Element.LevelId with the level it was made on, and on Revit 2020 (2026-11-14,
+# P1102 MEP) that one term failed every time: Revit made the roof, the type,
+# both profile edges and the extents read back as asked, and the card threw
+# "... another level. NOTHING from this call was kept." NewExtrusionRoof takes
+# the level as the roof's Reference Level, so version 2 reads that -
+# ROOF_CONSTRAINT_LEVEL_PARAM, the parameter COPY_ELEMENTS already reads for
+# an extrusion roof - and asks LevelId only when no Reference Level is read.
+# A refusal now names the level it read. What LevelId answers for an
+# extrusion roof is NOT MEASURED. Still DRAFT; NEEDS-CHECKING Group OR.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 

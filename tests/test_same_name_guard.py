@@ -98,6 +98,11 @@ WRITERS = (
     "edit-text-values", "import-parameter-values", "remove-parameter-value",
     "renumber-sequential", "assign-location-data", "create-view-filter",
     "color-by-parameter",
+    # Row 5b-1534 (2026-11-20): three PROVEN writers this suite's own rule,
+    # run over the whole library on 2026-11-11, found still taking the first
+    # match - a sheet parameter that sorts sheets into sets, a link type's
+    # "Room Bounding", and a material's Identity field. Each is DRAFT again.
+    "manage-sheet-sets", "set-link-room-bounding", "set-material-properties",
 )
 # THE GUARD MOVED WITH THE JOB. create-view-filters-by-value was listed above
 # until 2026-11-01, when it was merged into create-view-filter (its per-value
@@ -143,6 +148,11 @@ READERS = (
     "list-materials",
     "report-material-takeoff",
     "check-sheet-sets-by-parameter",
+    # THE PUBLISH CARD the row's census named, repaired 2026-11-20 with row
+    # 5b-1551: it changes no model, so it is held as a reader - its cell for a
+    # doubled name is left empty and the element named, never the first match
+    # written to a file.
+    "export-parameters-to-csv",
 )
 
 # Readers whose guard is written inline around one fixed name, so check 5 can
@@ -171,6 +181,7 @@ REFUSED = (
     "list-materials",
     "report-material-takeoff",
     "check-sheet-sets-by-parameter",
+    "export-parameters-to-csv",
 )
 
 # D-164 (2026-11-14): the readers that take its one exception, each with the
@@ -200,6 +211,8 @@ LISTED = (
     "list-materials",
     "report-material-takeoff",
     "check-sheet-sets-by-parameter",
+    # The PUBLISH card, 2026-11-20 (5b-203, 5b-1551), answers in the same shape.
+    "export-parameters-to-csv",
 )
 
 LOOKUP = re.compile(r"\.LookupParameter\(\s*([^()]+?)\s*\)")

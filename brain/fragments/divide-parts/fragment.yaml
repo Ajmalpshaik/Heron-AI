@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "divide these parts along the grids or levels"
 kind: action
 domain: revit.elements
 capability: DIVIDE_PARTS
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -38,6 +38,23 @@ risk: MODIFY
 # next run measures (NEEDS-CHECKING Group DQ, DQ3a to DQ3d). The evidence for
 # the plane is on row 5b-1418.
 #
+# VERSION 3 (2026-11-20, FRAGMENT-ISSUES row 5b-1515) - ONLY A PART THAT WAS
+# CUT IS COUNTED, and back to DRAFT. Version 2 set `divided` to every part
+# handed in as soon as Revit handed back a part maker; measured 2026-11-13 on
+# Revit 2024 (NEEDS-CHECKING Group DQ, DQ3c), a level above every wall
+# answered "5 part(s) divided" beside partCountAfter 5 - Revit makes the
+# division whether or not a datum crosses a part. Version 3 counts the parts
+# each source element carries before the division and after it, inside the
+# division's own step: a part handed in counts as divided only when an element
+# it was made from gained parts. When none did, the step is taken back whole -
+# division and work plane - and the answer is NOTHING WAS DIVIDED. Parts a
+# datum missed while others were cut are named in findings and left as they
+# were. `partCountBefore` is new beside `partCountAfter`. Version 2 was PROVEN
+# on 2026-11-13 (the proof block below, kept as the record of what it
+# proved); its C# moved, so it is DRAFT until NEEDS-CHECKING Group OR is run.
+# GetAssociatedParts was already called on every release; nothing new is
+# asked of the API.
+#
 # ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 purpose: >
   Divides parts along named grids, levels or reference planes, as Revit's
@@ -55,8 +72,14 @@ contract:
       type: string
       source: request
   provides:
+    # Version 3: only the parts handed in whose element gained parts.
     - name: divided
       role: result
+      type: int
+    # VERSION 3 (row 5b-1515): parts on the original elements BEFORE the
+    # division, counted the same way as partCountAfter.
+    - name: partCountBefore
+      role: accounting
       type: int
     - name: partCountAfter
       # Parts now on the original elements, read back.

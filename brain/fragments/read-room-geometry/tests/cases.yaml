@@ -33,6 +33,22 @@ negative:
       laid terminals across the void - it went unnoticed because a room with no
       hole gives the same answer either way
 
+  # VERSION 3 (WN-3) - NOT RUN. Revit 2020 first.
+  - given: >
+      VERSION 3 - a room wrapping TWO separate shafts (two room separation
+      boxes, 4 lines each), on a scratch copy
+    expect: >
+      `holeLoops` holds 2 lists of 4 curves each, in Revit's loop order, and
+      `holes` holds the same 8 curves in one list, exactly as version 2 gave.
+      One list of 8, or `holes` changed, is the failure
+
+  - given: >
+      VERSION 3 - a plain rectangular room with no hole (the negative for the
+      new provide)
+    expect: >
+      `holeLoops` EMPTY and `holes` EMPTY; `boundary` 4 curves, area and
+      height as before. Any list in `holeLoops` here is the failure
+
 second_route:
   - the room's Area parameter in Revit's properties palette
   - the room tag on the plan, which is what a checker reads

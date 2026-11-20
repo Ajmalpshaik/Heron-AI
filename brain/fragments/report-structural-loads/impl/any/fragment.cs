@@ -217,17 +217,39 @@ foreach (var c in cases) names.Add("\"" + c.Name + "\"");
 caseCount = cases.Count;
 if (wantCases)
 {
+    // A CASE'S CATEGORY IS ITS SubcategoryId (version 3, FRAGMENT-ISSUES
+    // 5b-1640) - CREATE_LOAD_CASE version 2's `categoryOf`, the same rule.
+    // Version 2 read LOAD_CASE_SUBCATEGORY's string, which on Revit 2020 is
+    // absent or empty on every case (row 5b-1637), so every line said
+    // "category ?". LoadCase.SubcategoryId is the id of one of the subcategories
+    // of Structural Load Cases, read on 2020 by NEEDS-CHECKING Group NX NX3; it
+    // is matched by id among them, never read as a number, and named by the
+    // category's own Name. Revit naming none is said, never guessed.
+    var caseCategories = new List<Category>();
+    try
+    {
+        var parent = doc.Settings.Categories.get_Item(BuiltInCategory.OST_LoadCases);
+        if (parent != null)
+            foreach (Category sub in parent.SubCategories) caseCategories.Add(sub);
+    }
+    catch { }
+    Func<LoadCase, Category> categoryOf = lc =>
+    {
+        ElementId id = null;
+        try { id = lc.SubcategoryId; } catch { id = null; }
+        if (id == null || id == ElementId.InvalidElementId) return null;
+        var hit = caseCategories.FirstOrDefault(k => k.Id == id);
+        if (hit != null) return hit;
+        try { return Category.GetCategory(doc, id); } catch { return null; }
+    };
+
     lines.Add("Load cases (" + cases.Count + "):" + (cases.Count == 0 ? " none" : ""));
     foreach (var c in cases)
     {
-        string nature = "?", category = "?";
+        string nature = "?", category = "? (Revit named none)";
         try { var n = doc.GetElement(c.NatureId); nature = n == null ? "none" : n.Name; } catch { }
-        try
-        {
-            var p = c.get_Parameter(BuiltInParameter.LOAD_CASE_SUBCATEGORY);
-            category = p == null ? "?" : (p.AsValueString() ?? "?");
-        }
-        catch { }
+        var heldCategory = categoryOf(c);
+        if (heldCategory != null) category = heldCategory.Name;
         var held = allLoads.Count(l => l.LoadCaseId == c.Id);
         lines.Add("  " + c.Number + "  \"" + c.Name + "\" - nature " + nature + ", category " + category
             + ", " + held + " load(s)");

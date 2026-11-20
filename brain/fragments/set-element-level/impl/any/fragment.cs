@@ -71,6 +71,24 @@
 //
 //   `columnReport` says, column by column, what each end was and is now - or
 //   why it was left - in plain words.
+//
+// VERSION 4 (2026-11-20, FRAGMENT-ISSUES row 5b-342) - A PARAMETER ASKED FOR BY
+// ITS ID IS NOT PROOF THE ELEMENT CARRIES IT.
+//
+//   Measured 2026-10-06 (Project2, Revit 2024) on a ceiling diffuser placed on
+//   a level's plane: get_Parameter(INSTANCE_FREE_HOST_OFFSET_PARAM) answered
+//   with a writable "Offset from Host" whose Set said true and kept nothing,
+//   and get_Parameter(FAMILY_LEVEL_PARAM) with an empty "Level" - neither in
+//   the element's own parameter set. Version 3 took the first level and the
+//   first offset parameter get_Parameter returned, so a write could go into
+//   one of those and be counted as moved. So for everything that is not a
+//   wall, the level, the offset and a column's two ends are taken from the
+//   ELEMENT'S OWN parameter set (`carried`, PLACE_FAMILY_INSTANCES version 2's
+//   rule), and the level parameter must hold a LEVEL - one that holds none is
+//   passed over and the next asked (FILTER_ELEMENTS_BY_CATEGORY version 3's
+//   rule, row 5b-335). An offset that does not read back as written is not
+//   taken: what was written is put back and the element refused. A wall is
+//   read as version 3 read it.
 
 var moved = 0;
 var alreadyThere = 0;
@@ -142,6 +160,30 @@ else
         if (id == null || id == ElementId.InvalidElementId) return 0;
         var level = doc.GetElement(id) as Level;
         return level == null ? 0 : level.Elevation;
+    };
+
+    // VERSION 4 (row 5b-342): what the element really carries, read off its
+    // own parameter set - never get_Parameter(id), which can answer with a
+    // parameter the element has not got.
+    Func<Element, Dictionary<BuiltInParameter, Parameter>> carried = element =>
+    {
+        var held = new Dictionary<BuiltInParameter, Parameter>();
+        try
+        {
+            foreach (Parameter parameter in element.Parameters)
+            {
+                var definition = parameter == null ? null : parameter.Definition as InternalDefinition;
+                if (definition == null || definition.BuiltInParameter == BuiltInParameter.INVALID) continue;
+                if (!held.ContainsKey(definition.BuiltInParameter)) held[definition.BuiltInParameter] = parameter;
+            }
+        }
+        catch { }
+        return held;
+    };
+    Func<Dictionary<BuiltInParameter, Parameter>, BuiltInParameter, Parameter> ownOne = (set, which) =>
+    {
+        Parameter found;
+        return set != null && set.TryGetValue(which, out found) ? found : null;
     };
 
     // Where a wall really is, in the world, both ends. An unconnected top is
@@ -294,12 +336,15 @@ else
 
         // ---- A COLUMN (version 3, row 5b-1673) --------------------------------
         // Known by the built-in column Base Level and Top Level, the test
-        // COPY_ELEMENTS uses, never by a parameter found by name.
+        // COPY_ELEMENTS uses, never by a parameter found by name - and since
+        // version 4 (row 5b-342) only when the element's own parameter set
+        // holds both, as it does each offset this writes.
+        var own = carried(element);
         var columnInstance = element as FamilyInstance;
         var columnBase = columnInstance != null
-            ? columnInstance.get_Parameter(BuiltInParameter.FAMILY_BASE_LEVEL_PARAM) : null;
+            ? ownOne(own, BuiltInParameter.FAMILY_BASE_LEVEL_PARAM) : null;
         var columnTop = columnInstance != null
-            ? columnInstance.get_Parameter(BuiltInParameter.FAMILY_TOP_LEVEL_PARAM) : null;
+            ? ownOne(own, BuiltInParameter.FAMILY_TOP_LEVEL_PARAM) : null;
         if (columnBase != null && columnTop != null
             && columnBase.StorageType == StorageType.ElementId
             && columnTop.StorageType == StorageType.ElementId)
@@ -316,8 +361,8 @@ else
 
             var wasBaseLevel = columnBase.AsElementId();
             var wasTopLevel = columnTop.AsElementId();
-            var baseOffsetParameter = columnInstance.get_Parameter(BuiltInParameter.FAMILY_BASE_LEVEL_OFFSET_PARAM);
-            var topOffsetParameter = columnInstance.get_Parameter(BuiltInParameter.FAMILY_TOP_LEVEL_OFFSET_PARAM);
+            var baseOffsetParameter = ownOne(own, BuiltInParameter.FAMILY_BASE_LEVEL_OFFSET_PARAM);
+            var topOffsetParameter = ownOne(own, BuiltInParameter.FAMILY_TOP_LEVEL_OFFSET_PARAM);
             var wasColumnBaseOffset = baseOffsetParameter != null ? baseOffsetParameter.AsDouble() : 0;
             var wasColumnTopOffset = topOffsetParameter != null ? topOffsetParameter.AsDouble() : 0;
 
@@ -464,15 +509,28 @@ else
 
         // Which parameter carries this element's level. MEP and family instances
         // differ, and an element with none cannot be reassigned at all.
+        // VERSION 4 (row 5b-342): one of its OWN parameters, and one that holds
+        // a level - a writable one that holds none is passed over and the next
+        // asked; if none holds a level, the first writable one is kept, so the
+        // element is refused below as on no level, as version 3 refused it.
         Parameter levelParameter = null;
+        Parameter levelParameterEmpty = null;
         foreach (var which in levelParameters)
         {
-            var candidate = element.get_Parameter(which);
+            var candidate = ownOne(own, which);
             if (candidate == null || candidate.IsReadOnly) continue;
             if (candidate.StorageType != StorageType.ElementId) continue;
-            levelParameter = candidate;
-            break;
+            ElementId holds = ElementId.InvalidElementId;
+            try { holds = candidate.AsElementId(); } catch { }
+            if (holds != null && holds != ElementId.InvalidElementId
+                && element.Document.GetElement(holds) is Level)
+            {
+                levelParameter = candidate;
+                break;
+            }
+            if (levelParameterEmpty == null) levelParameterEmpty = candidate;
         }
+        if (levelParameter == null) levelParameter = levelParameterEmpty;
 
         if (levelParameter == null)
         {
@@ -497,7 +555,10 @@ else
         Parameter offsetParameter = null;
         foreach (var which in offsetParameters)
         {
-            var candidate = element.get_Parameter(which);
+            // VERSION 4 (row 5b-342): its OWN offset only. get_Parameter
+            // answered a diffuser on a level's plane with an "Offset from
+            // Host" it has not got, whose Set says true and keeps nothing.
+            var candidate = ownOne(own, which);
             if (candidate == null || candidate.IsReadOnly) continue;
             if (candidate.StorageType != StorageType.Double) continue;
             offsetParameter = candidate;
@@ -524,6 +585,10 @@ else
         catch (Exception) { took = false; }
 
         if (took && levelParameter.AsElementId() != newLevel.Id) took = false;
+        // VERSION 4 (row 5b-342): a Set that says true and keeps nothing is not
+        // a write - the offset must read back as written.
+        if (took && Math.Abs(offsetParameter.AsDouble() - (wasAbsolute - newLevel.Elevation)) > SameHeight)
+            took = false;
 
         if (!took)
         {

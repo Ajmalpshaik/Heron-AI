@@ -68,7 +68,8 @@ purpose: >
      that one operation first (Article 7), and Revit asks again in its own
      box (D-142).
   5. THE SHEET SET, when the modeller wants the issue kept as a saved set.
-     FIND_SHEETS again, then MANAGE_SHEET_SETS (PROVEN, version 4) with
+     FIND_SHEETS again, then MANAGE_SHEET_SETS (DRAFT, version 5 since 2026-11-20;
+     version 4 is the one proved) with
      mode=create and the setName the modeller gives, expect_from naming the
      find. A name already taken is said, never overwritten.
   6. READ THE REVISIONS AND THE SET BACK. LIST_REVISIONS with expectedLast

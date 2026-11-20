@@ -211,6 +211,19 @@ for (var i = 0; problem == null && arcs > 0 && i < corners.Count; i++)
 
 var asFloor = floorType as FloorType;
 var asRoof = floorType as RoofType;
+
+// VERSION 4 (2026-11-20, FRAGMENT-ISSUES row 5b-1383) - A FOUNDATION SLAB TYPE
+// IS REFUSED, naming CREATE_FOUNDATION_SLAB. A floor type whose family is
+// Foundation Slab is a FloorType like any other, so version 3 sent it through
+// the plain floor call as an ordinary floor and said only "It is a slab". It
+// is told by what Revit holds - FloorType.IsFoundationSlab, the property
+// CREATE_FOUNDATION_SLAB reads on every release - never by a word in its
+// name. Asked before anything is made, so nothing is.
+var isFoundationSlab = false;
+if (asFloor != null)
+{
+    try { isFoundationSlab = asFloor.IsFoundationSlab; } catch (Exception) { isFoundationSlab = false; }
+}
 var ceilingCategory = Category.GetCategory(doc, BuiltInCategory.OST_Ceilings);
 var asCeiling = floorType is CeilingType && floorType.Category != null && ceilingCategory != null
     && floorType.Category.Id == ceilingCategory.Id;
@@ -240,6 +253,12 @@ if (problem != null)
 else if (floorType == null)
 {
     findings.Add("No type was given - name a floor, ceiling or roof type. Nothing was created");
+}
+else if (isFoundationSlab)
+{
+    findings.Add(string.Format("'{0}' is a Foundation Slab type, and this makes a plain floor, ceiling or roof. A "
+        + "foundation slab is CREATE_FOUNDATION_SLAB's - it is made in Structural Foundations, where a footing "
+        + "and the analytical model expect it. Nothing was created", typeShown));
 }
 else if (kindWord.Length == 0)
 {

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,10 +9,22 @@ semantic-identity: "make a floor slab over this area"
 kind: action
 domain: revit.elements
 capability: CREATE_FLOOR
-version: 3
+version: 4
 source: OFFICIAL
 risk: MODIFY
 
+# VERSION 4 (2026-11-20, FRAGMENT-ISSUES row 5b-1383) - A FOUNDATION SLAB TYPE
+# IS REFUSED, NAMING CREATE_FOUNDATION_SLAB, and back to DRAFT. A floor type
+# whose family is Foundation Slab is a FloorType like any other, so version 3
+# made it through the plain floor call as an ordinary floor and said only
+# "It is a slab". It is now told by what Revit holds - FloorType.IsFoundationSlab,
+# the property CREATE_FOUNDATION_SLAB reads on every release - never by a word
+# in its name, and refused before anything is made: nothing is created and
+# the answer names CREATE_FOUNDATION_SLAB. Every other type is version 3's
+# run, statement for statement. Version 3 was PROVEN (the proof block below,
+# kept as the record of what it proved); its C# moved, so it is DRAFT until
+# NEEDS-CHECKING Group OR is run (D-30).
+#
 # VERSION 3 (2026-11-01) - CREATE_CEILING AND CREATE_ROOF WERE MERGED INTO THIS
 # CARD on the owner's instruction ("make sure there is no duplicate tools", then
 # "ok go ahead merge all"), and both are DEPRECATED. The same job three times

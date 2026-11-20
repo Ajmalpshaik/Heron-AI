@@ -40,7 +40,7 @@ purpose: >
      model has a file and when it was last saved. A clean-up in a model never
      saved has no copy to go back to; say so ONCE before step 7. Heron cannot
      save the model it works in (OPEN-QUESTIONS Q-69).
-  1. THE OVERVIEW. REPORT_MODEL_DASHBOARD (PROVEN, version 3) through
+  1. THE OVERVIEW. REPORT_MODEL_DASHBOARD (DRAFT, version 5) through
      revit_read - or revit_model_dashboard, which puts the same read on the
      Companion's page: elements by category, level and workset, warnings by
      kind, views on no sheet and with no template, empty sheets, families

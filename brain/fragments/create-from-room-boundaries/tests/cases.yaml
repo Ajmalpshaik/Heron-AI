@@ -45,9 +45,36 @@ negative:
 
   - given: that same room on a release that takes one loop only
     expect: >
-      the ceiling built AND a line in `refused` saying the hole was not cut.
-      Building it silently is the failure; skipping it entirely is not what was
-      asked for either
+      CHANGED AT VERSION 3 (WN-1) - see the VERSION 3 cases below. Version 2
+      built the slab from the outline AND put a line in `refused` saying the
+      hole was not cut; a ceiling cannot be made from code on those releases
+      at all, so this was only ever a floor
+
+  # VERSION 3 (WN-1) - NOT RUN.
+  - given: >
+      VERSION 3 - Revit 2020, a FLOOR type, two rooms selected: one wrapping a
+      shaft (a room separation box inside it), one plain rectangle
+    expect: >
+      the plain room's floor built and in `created`; the shaft room in
+      `withHoles` and NOT in `created`, nothing built for it, and `refused`
+      reads "Room <id>: it has 1 hole (a shaft, a column or a void), and before
+      Revit 2022 a floor is made from its outline alone - so NOTHING was built
+      for this room ...". A slab over the shaft in a section is the failure
+
+  - given: >
+      VERSION 3 - the same shaft room on Revit 2024, a floor type
+    expect: >
+      the floor built with the shaft open, the room in `withHoles` and in
+      `created` - version 2's answer, unchanged; no "before Revit 2022" line
+
+  - given: >
+      VERSION 3 - Revit 2024, a room wrapping a ROUND column (Room Bounding on),
+      a floor type
+    expect: >
+      the floor built with the round hole cut - the column's two half-circle
+      edges kept as one loop - or, if Revit's boundary gives that loop open,
+      `refused` naming "hole 1 does not close" and NOTHING built for the room.
+      A floor built over the column is the failure
 
   - given: an unenclosed room
     expect: >

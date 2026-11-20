@@ -1,8 +1,42 @@
-// NOT STANDALONE. Assumes `doc`, `elements`, `field`, `mode`, `text` and
-// `replacement` are in scope, and leaves `changed`, `untouched`, `blank`,
-// `readOnly`, `absent`, `ambiguous`, `unverified`, `refused`,
-// `noteFormatting`, `typesEdited`, `collisions`, `notMatched`, `familyRename`
-// and `nameNote` (version 9) behind.
+// NOT STANDALONE. Assumes `doc`, `elements`, `field`, `mode`, `text`,
+// `replacement` and `renameViews` (version 10) are in scope, and leaves
+// `changed`, `untouched`, `blank`, `readOnly`, `absent`, `ambiguous`,
+// `unverified`, `refused`, `noteFormatting`, `typesEdited`, `collisions`,
+// `notMatched`, `familyRename`, `nameNote` (version 9) and `levelNote`
+// (version 10) behind.
+//
+// VERSION 10 (2026-11-20, FRAGMENT-ISSUES row 5b-1221) - A LEVEL'S NAME IS
+// WRITTEN THROUGH ITS NAME PARAMETER, AND REVIT'S QUESTION IS THE CALLER'S.
+//
+// Measured 2026-11-20 on Revit 2020, House Scratch 2 (a copy of
+// rac_basic_sample_project.rvt), rolled back: version 9 with field Name, mode
+// replace, Level 1 -> Ground Floor on level 311 renamed the level AND its plan
+// view 312, with no dialog in the reply and no way to ask for the level alone.
+// Version 9 wrote `element.Name`, and on a level that rename takes the views
+// with it without asking. SET_PARAMETER_VALUES_BY_ID writes the level's
+// built-in name parameter instead, Revit asks "Would you like to rename
+// corresponding views?" (TaskDialog_Confirm_Level_Rename), and its
+// `renameViews` answers it - held the same day, NEEDS-CHECKING Group HP, HP1
+// to HP4. This card now does the same, statement for statement in effect:
+//
+//   renameViews yes  - the level is renamed through DATUM_TEXT and the add-in
+//                      answers Revit's box Yes: the plan and ceiling views that
+//                      carry its name are renamed too
+//   renameViews no   - the same write, answered No: the level alone
+//   left out (none)  - a run that would rename a level is REFUSED before any
+//                      name is written, naming renameViews. NOTHING WAS
+//                      RENAMED, the batch's rule since version 7
+//
+// The add-in, not this card, gives Revit the answer - the need's `dialog:`
+// line (D-145) - and nothing here touches the dialog. A level whose name
+// parameter cannot be had, or will not take a write, is `readOnly`: never
+// renamed by `element.Name`, which would take its views whatever was asked.
+// `levelNote` reads back, for each level renamed, the plan and ceiling views
+// that carried its old name before the write: renamed with it, or not. When
+// Revit renames them - at the write or at the commit - is NOT measured: the
+// read is taken after one regeneration, and NEEDS-CHECKING Group OR says what
+// it shows. Nothing else changes: every other element and field is version 9's
+// run.
 //
 // VERSION 9 (2026-11-07, row 5b-1475) - A NAME IS PLANNED AND READ BACK THE WAY
 // REVIT KEEPS IT: WITHOUT A SPACE AT EITHER END.
@@ -214,6 +248,13 @@ string noteFormatting = null;
 // VERSION 9 - names Revit keeps without a space at either end, counted.
 string nameNote = null;
 int namesTrimmed = 0;
+// VERSION 10 - per level renamed, the views that carried its old name, read
+// back after the write. Null when no level was renamed.
+string levelNote = null;
+string levelWord = (renameViews ?? "none").Trim().ToLowerInvariant();
+bool levelAnswered = levelWord == "yes" || levelWord == "no";
+// level id -> (its name before, the plan and ceiling views carrying it then)
+var levelViews = new Dictionary<ElementId, KeyValuePair<string, List<ElementId>>>();
 
 bool editingName = string.Equals((field ?? "").Trim(), "Name",
                                  StringComparison.OrdinalIgnoreCase);
@@ -799,6 +840,55 @@ if (refused == null && editingName)
             + "name and accepts a duplicate instance name, and a batch half renamed carries two "
             + "conventions", collisions.Count, string.Join("; ", collisions.Take(5).ToArray())
             + (collisions.Count > 5 ? string.Format("; and {0} more", collisions.Count - 5) : ""));
+    }
+}
+
+// ------------------------------------------------------------ a level's name
+// VERSION 10 (row 5b-1221) - see the header. Asked before any name is written,
+// so a batch that holds a level and no answer renames nothing at all.
+if (refused == null && editingName)
+{
+    var levelsAsked = new List<string>();
+    foreach (var element in elements)
+    {
+        var level = element as Level;
+        if (level == null) continue;
+        string was = null;
+        try { was = level.Name; } catch { was = null; }
+        if (string.IsNullOrEmpty(was)) continue;
+        if (asKept(transform(was)) == was) continue;
+        levelsAsked.Add(string.Format("'{0}' (id {1})", was, level.Id));
+
+        // The plan and ceiling views Revit's question is about: those of this
+        // level that carry its name now. Read before the write, so the
+        // read-back can say what happened to each.
+        var carrying = new List<ElementId>();
+        try
+        {
+            foreach (var candidate in new FilteredElementCollector(doc).OfClass(typeof(ViewPlan)))
+            {
+                var plan = candidate as ViewPlan;
+                if (plan == null || plan.IsTemplate) continue;
+                Level genLevel = null;
+                try { genLevel = plan.GenLevel; } catch { genLevel = null; }
+                if (genLevel == null || genLevel.Id != level.Id) continue;
+                string planName = null;
+                try { planName = plan.Name; } catch { planName = null; }
+                if (planName == was) carrying.Add(plan.Id);
+            }
+        }
+        catch { }
+        levelViews[level.Id] = new KeyValuePair<string, List<ElementId>>(was, carrying);
+    }
+
+    if (levelsAsked.Count > 0 && !levelAnswered)
+    {
+        refused = string.Format("renaming a level makes Revit ask whether to rename its views too, and "
+            + "{0} level(s) would be renamed here - {1} - so NOTHING WAS RENAMED. Send renameViews=yes "
+            + "to rename the plan and ceiling views that carry the level's name as well, or "
+            + "renameViews=no to rename the level alone", levelsAsked.Count,
+            string.Join(", ", levelsAsked.Take(5).ToArray())
+            + (levelsAsked.Count > 5 ? string.Format(" and {0} more", levelsAsked.Count - 5) : ""));
     }
 }
 
@@ -1461,7 +1551,21 @@ foreach (var element in elements)
     bool accepted = false;
     try
     {
-        if (editingName) { element.Name = wanted; accepted = true; }
+        if (editingName && element is Level)
+        {
+            // VERSION 10: through the level's own name parameter, so Revit asks
+            // and the add-in gives it renameViews' answer. Never element.Name,
+            // which renames the views without asking (row 5b-1221).
+            Parameter levelName = null;
+            try { levelName = element.get_Parameter(BuiltInParameter.DATUM_TEXT); } catch { levelName = null; }
+            if (levelName == null || levelName.IsReadOnly || levelName.StorageType != StorageType.String)
+            {
+                land(readOnly);
+                continue;
+            }
+            accepted = levelName.Set(wanted);
+        }
+        else if (editingName) { element.Name = wanted; accepted = true; }
         else accepted = parameter.Set(wanted);
     }
     catch { land(readOnly); continue; }
@@ -1494,6 +1598,56 @@ if (namesTrimmed > 0)
         + "not keep in a name, so each was written and read back without it. If a space was meant "
         + "to stay between two words, check the text given: a value is trimmed on its way in "
         + "unless it is written in double quotes - text=\"Warehouse - \"", namesTrimmed);
+}
+
+// VERSION 10 - THE VIEWS A RENAMED LEVEL CARRIED ITS NAME ON, READ BACK. One
+// sentence per level written, after one regeneration: which of them now carry
+// the new name and which still the old, against what renameViews asked.
+if (levelViews.Count > 0 && refused == null)
+{
+    try { doc.Regenerate(); } catch { }
+    var levelLines = new List<string>();
+    foreach (var entry in levelViews)
+    {
+        if (!changed.Contains(entry.Key) && !unverified.Contains(entry.Key)) continue;
+        var level = doc.GetElement(entry.Key) as Level;
+        string now = null;
+        try { now = level == null ? null : level.Name; } catch { now = null; }
+        var renamedWith = new List<string>();
+        var keptOld = new List<string>();
+        var other = new List<string>();
+        foreach (var viewId in entry.Value.Value)
+        {
+            string viewName = null;
+            try { var view = doc.GetElement(viewId); viewName = view == null ? null : view.Name; }
+            catch { viewName = null; }
+            var said = string.Format("{0} (id {1})", viewName ?? "unreadable", viewId);
+            if (viewName != null && viewName == now) renamedWith.Add(said);
+            else if (viewName == entry.Value.Key) keptOld.Add(said);
+            else other.Add(said);
+        }
+        var line = string.Format("Level '{0}' -> '{1}' (id {2}), renameViews={3}: ", entry.Value.Key,
+            now ?? "unreadable", entry.Key, levelWord);
+        if (entry.Value.Value.Count == 0)
+            line += "no plan or ceiling view of it carried its old name, so there was none to rename";
+        else
+        {
+            var parts = new List<string>();
+            if (renamedWith.Count > 0)
+                parts.Add(renamedWith.Count + " view(s) renamed with it - " + string.Join(", ", renamedWith));
+            if (keptOld.Count > 0)
+                parts.Add(keptOld.Count + " view(s) still carry the old name - " + string.Join(", ", keptOld));
+            if (other.Count > 0)
+                parts.Add(other.Count + " view(s) read as neither - " + string.Join(", ", other));
+            line += string.Join("; ", parts);
+            if (levelWord == "no" && renamedWith.Count > 0)
+                line += ". renameViews was no, and Revit renamed views anyway - check them";
+            else if (levelWord == "yes" && keptOld.Count > 0)
+                line += ". renameViews was yes, and these were not renamed when Heron read them";
+        }
+        levelLines.Add(line);
+    }
+    if (levelLines.Count > 0) levelNote = string.Join(" | ", levelLines);
 }
 
 // AFTER THE LOOP, AND ONLY BECAUSE NOTHING WAS WRITTEN ON EITHER PATH. Both

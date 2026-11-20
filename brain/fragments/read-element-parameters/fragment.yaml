@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -40,7 +40,21 @@ capability: READ_ELEMENT_PARAMETERS
 # it. Written here and not in `purpose`: the purpose is routing text. DRAFT
 # until NEEDS-CHECKING Group NK, NK8, is run (D-30). A read: it still answers
 # through revit_read while DRAFT, and says DRAFT (D-117 item 4).
-version: 7
+#
+# Version 8 (2026-11-20; FRAGMENT-ISSUES rows 5b-342 and 5b-335) changed impl/:
+# ASKED FOR "Level", THE FIRST LEVEL PARAMETER THAT HOLDS A LEVEL ANSWERS, and
+# the card is back to DRAFT. Version 7 was PROVEN on 2026-11-13 (the proof
+# block below, kept as the record of what it proved). Where LevelId is empty it
+# took the first of five level parameters that get_Parameter returned at all -
+# and on a work plane-based diffuser on a level's plane get_Parameter returns
+# an empty "Level" the element does not carry (measured 2026-10-06, Project2,
+# Revit 2024), so a diffuser whose Schedule Level holds Level 1 was answered
+# `absent`, "not on a level". Now the five are asked in turn and one that holds
+# no level is passed over - FILTER_ELEMENTS_BY_CATEGORY version 3's rule. Every
+# other name reads exactly as version 7 read it. Written here and not in
+# `purpose`: the purpose is routing text. DRAFT until the version 8 cases are
+# run (D-30); a read, so it still answers through revit_read and says DRAFT.
+version: 8
 source: OFFICIAL
 risk: READ
 

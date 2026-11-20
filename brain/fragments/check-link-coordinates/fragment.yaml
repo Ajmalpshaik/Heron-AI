@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-LNK-015
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,10 +9,24 @@ semantic-identity: "do the linked models agree with this model's shared coordina
 kind: action
 domain: revit.qa
 capability: CHECK_LINK_COORDINATES
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
+# VERSION 2 (2026-11-20, FRAGMENT-ISSUES row 5b-1122) - A LINK NOT CHECKED IS
+# NOT IN THE RESULT, and back to DRAFT. Version 1 wrote "not loaded - not
+# checked." into `coordinates`, its result, so a run that compared nothing
+# still returned a result: measured 2026-10-18 on Revit 2020, rounds 16 and 17
+# of batch-prove, `coordinates HeronLinkSource.rvt : 1 : location <Not
+# Shared>: not loaded - not checked.`, `mismatched 0`, judged PASS. Now
+# `coordinates` holds a line only for a link whose coordinates were compared;
+# a link not loaded, or whose project location could not be read, is named in
+# `notChecked` (accounting) with why, findings counts it apart from the ones
+# that agree, and when the model has links and none could be compared,
+# findings says NO LINK WAS CHECKED. Version 1 was PROVEN on 2026-10-18 (the
+# proof block below, kept as the record); its C# moved, so it is DRAFT until
+# the NEEDS-CHECKING run of this version (D-30).
+#
 # WHY IT IS BUILT THIS WAY - comments, not `purpose`, because `purpose` is
 # searched and long text pulls other sentences here.
 #
@@ -55,6 +69,12 @@ contract:
     - name: agreeing
       role: accounting
       type: int
+    # VERSION 2 (row 5b-1122): each link NOT compared - not loaded, or no
+    # project location read - with why. Never in `coordinates`, never counted
+    # as agreeing.
+    - name: notChecked
+      role: accounting
+      type: IList<string>
     - name: findings
       type: IList<string>
 

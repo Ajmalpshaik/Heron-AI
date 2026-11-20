@@ -1,7 +1,11 @@
 // NOT STANDALONE. Assumes `view3d`, `points`, `direction` and `maxDistance` are
 // in scope; leaves `blocked`, `clear` and `notChecked` behind.
 //
-// DISTANCES ARE IN INTERNAL FEET, and no conversion happens here (D-20).
+// `maxDistance` ARRIVES IN MILLIMETRES (D-71) and is divided into internal feet
+// below; the points are internal feet, converted by the add-in (D-67).
+// Corrected 2026-11-20 (FRAGMENT-ISSUES row 5b-204): this line said distances
+// were internal feet with no conversion here, above the line that converts.
+// The card is DEPRECATED, so no proof moved.
 //
 // THE THING THAT MAKES THIS FRAGMENT LIE, IF NOBODY SAYS IT OUT LOUD:
 //

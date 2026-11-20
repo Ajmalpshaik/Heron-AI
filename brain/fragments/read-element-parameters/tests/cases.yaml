@@ -78,6 +78,15 @@ positive:
       every Mark in `values` or `blank` as version 6 gave it, and `ambiguous`
       EMPTY - the count must not turn down a name that occurs once
 
+  # VERSION 8 (rows 5b-342, 5b-335) - parameterName Level. NOT RUN.
+  - given: >
+      VERSION 8. parameterName Level on three ceiling diffusers placed on
+      Level 1's plane (work plane-based: their family "Level" empty, their
+      Schedule Level Level 1), on a scratch copy of a sample model
+    expect: >
+      each reads "Level 1", resolvedFrom "level"; absent empty. Version 7
+      answered all three `absent`
+
 negative:
   - given: the same 4 ducts, reading a parameter name that does not exist
     expect: >
@@ -125,6 +134,13 @@ negative:
       or more parameters sharing the name - NOT in `values`, `blank` or
       `absent`: any of the three would be read from whichever parameter Revit
       returned first (row 5b-203)
+
+  - given: >
+      VERSION 8, the negative. parameterName Level on a model element whose
+      every level parameter is empty, and on a level itself
+    expect: >
+      both `absent` - a parameter that holds no level is passed over and
+      never answered with, and nothing reads a level that is not one
 
 second_route:
   - open one element's properties in Revit and read the value by eye

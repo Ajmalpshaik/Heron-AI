@@ -1,6 +1,6 @@
 // NOT STANDALONE. Assumes `doc`, `paths`, `placement` and `viewName` are in
-// scope; leaves `linked`, `linkedIds`, `alreadyLinked`, `report` and
-// `findings` behind.
+// scope; leaves `linked`, `linkedIds`, `alreadyLinked`, `notAttached`,
+// `report` and `findings` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). One call is one undo entry.
 //
@@ -38,8 +38,30 @@
 // is imported: a link stays a link, which is what keeps the model small.
 //
 // READ BACK: every new link is looked up again by its id after a
-// regeneration; a Revit link's load status is read off its type, and a point
-// cloud's found status off its type.
+// regeneration; a point cloud's found status is read off its type.
+//
+// VERSION 3 (FRAGMENT-ISSUES rows 5b-1124 and 5b-1121) - A REVIT LINK IS READ
+// BACK BY ITS INSTANCE, NOT ITS TYPE. Version 2 read only the type's
+// GetLinkedFileStatus and said "Loaded" - measured 2026-10-18 on Revit 2020,
+// an instance made here whose GetLinkDocument() stayed null and drew nothing,
+// while the same file linked by hand drew at once. Now the instance's own
+// GetLinkDocument() is read after the regeneration, and the model elements in
+// it are counted. A Revit link is counted in `linked` and `linkedIds` ONLY
+// when its model attached; one made whose document reads null is named in
+// `notAttached` with its id, and never called Loaded. It is NOT removed: the
+// change is the modeller's to keep or discard. WHETHER GetLinkDocument()
+// ANSWERS INSIDE THE OPEN TRANSACTION IS NOT KNOWN - no run has read it there;
+// the NEEDS-CHECKING run of this version says, against the same file linked
+// by hand (Insert > Link Revit). RevitLinkType.Load and LoadFrom cannot be the
+// cure here: RevitAPI.xml says every transaction phase must be finished
+// before they are called, and this card runs inside Heron's.
+//
+// Two more facts are read and said, changing nothing: the LinkLoadResult
+// RevitLinkType.Create hands back (its LoadResult, by name - "UsedExisting"
+// would say Revit took a document it already had open), and how many
+// documents of that file are already open in this Revit before it is linked
+// - row 5b-1121 found thirteen open after rolled-back link runs, and the link
+// then kept answered null.
 //
 // RELEASES (tools/api-surface --members, 2026-11-02): PointCloudType.Create(
 // Document, string, string), PointCloudType.GetPath and FoundStatus,
@@ -50,6 +72,7 @@
 var linked = 0;
 var linkedIds = new List<ElementId>();
 var alreadyLinked = new List<string>();
+var notAttached = new List<string>();
 var lines = new List<string>();
 var findings = new List<string>();
 
@@ -128,9 +151,36 @@ foreach (var file in files)
     try
     {
         ElementId made = ElementId.InvalidElementId;
+        var loadResult = "";
+        var openAlready = "";
         if (ext == ".rvt")
         {
+            // Row 5b-1121: copies of this file already open in this Revit,
+            // read before linking and only reported.
+            try
+            {
+                var wanted = System.IO.Path.GetFullPath(file);
+                var openCount = 0;
+                var openLinked = 0;
+                foreach (Document open in doc.Application.Documents)
+                {
+                    string openPath = null;
+                    try { openPath = open.PathName; } catch { }
+                    if (string.IsNullOrEmpty(openPath)) continue;
+                    string full = openPath;
+                    try { full = System.IO.Path.GetFullPath(openPath); } catch { }
+                    if (!string.Equals(full, wanted, StringComparison.OrdinalIgnoreCase)) continue;
+                    openCount++;
+                    try { if (open.IsLinked) openLinked++; } catch { }
+                }
+                if (openCount > 0)
+                    openAlready = "; this file was ALREADY OPEN in this Revit as " + openCount
+                        + " document(s)" + (openLinked > 0 ? ", " + openLinked + " of them as a link" : "")
+                        + " before it was linked";
+            }
+            catch { }
             var result = RevitLinkType.Create(doc, ModelPathUtils.ConvertUserVisiblePathToModelPath(file), new RevitLinkOptions(false));
+            try { loadResult = result.LoadResult.ToString(); } catch { }
             var instance = RevitLinkInstance.Create(doc, result.ElementId, place);
             made = instance.Id;
         }
@@ -184,16 +234,49 @@ foreach (var file in files)
         doc.Regenerate();
         var back = doc.GetElement(made);
         if (back == null) { lines.Add(name + ": the link did not read back."); continue; }
-        linked++;
-        linkedIds.Add(made);
-        present.Add(name);
         var status = "";
         var revitInstance = back as RevitLinkInstance;
         if (revitInstance != null)
         {
-            var type = doc.GetElement(revitInstance.GetTypeId()) as RevitLinkType;
-            try { status = type == null ? "" : ", " + type.GetLinkedFileStatus(); } catch { }
+            // VERSION 3: the instance's own document, never the type's status.
+            Document linkDocument = null;
+            try { linkDocument = revitInstance.GetLinkDocument(); } catch { }
+            var typeStatus = "";
+            try
+            {
+                var type = doc.GetElement(revitInstance.GetTypeId()) as RevitLinkType;
+                if (type != null) typeStatus = type.GetLinkedFileStatus().ToString();
+            }
+            catch { }
+            var told = (loadResult == "" ? "" : "; Revit's load result " + loadResult)
+                + (typeStatus == "" ? "" : "; its type reads " + typeStatus) + openAlready;
+            present.Add(name);
+            if (linkDocument == null)
+            {
+                notAttached.Add(name + " (link " + made + ")");
+                lines.Add(name + ": Revit made the link (id " + made + ") but its model did NOT attach - "
+                    + "nothing of it shows, and it is NOT counted as linked" + told + ".");
+                continue;
+            }
+            var modelElements = 0;
+            try
+            {
+                foreach (var inLink in new FilteredElementCollector(linkDocument)
+                             .WhereElementIsNotElementType().WhereElementIsViewIndependent())
+                {
+                    Category category = null;
+                    try { category = inLink.Category; } catch { }
+                    if (category != null && category.CategoryType == CategoryType.Model) modelElements++;
+                }
+            }
+            catch { }
+            var title = "";
+            try { title = linkDocument.Title; } catch { }
+            status = ", its model attached - \"" + title + "\", " + modelElements + " model element(s)" + told;
         }
+        else present.Add(name);
+        linked++;
+        linkedIds.Add(made);
         var cloudInstance = back as PointCloudInstance;
         if (cloudInstance != null)
         {
@@ -220,5 +303,7 @@ foreach (var file in files)
 
 if (alreadyLinked.Count > 0) lines.Add("Already linked, left out: " + string.Join(", ", alreadyLinked) + ".");
 var report = string.Join(" | ", lines);
-findings.Add(linked + " file(s) linked and read back; " + alreadyLinked.Count + " already linked.");
+findings.Add(linked + " file(s) linked and read back; " + alreadyLinked.Count + " already linked."
+    + (notAttached.Count == 0 ? "" : " " + notAttached.Count + " Revit link(s) made whose model did NOT attach, "
+       + "not counted as linked: " + string.Join(", ", notAttached) + "."));
 findings.AddRange(lines);

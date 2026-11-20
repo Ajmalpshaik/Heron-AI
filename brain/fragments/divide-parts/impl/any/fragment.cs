@@ -1,5 +1,6 @@
 // NOT STANDALONE. Assumes `doc`, `elements` and `cutterNames` are in scope;
-// leaves `divided`, `partCountAfter`, `report` and `findings` behind.
+// leaves `divided`, `partCountBefore`, `partCountAfter`, `report` and
+// `findings` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). One call is one undo entry.
 //
@@ -28,8 +29,23 @@
 // than counted. A division that is made KEEPS the plane - Revit holds one
 // with every division - and the answer says a work plane was added.
 // COMPILED ONLY, NOT RUN IN REVIT: that Revit takes this plane is not measured.
+//
+// VERSION 3 (2026-11-20, FRAGMENT-ISSUES row 5b-1515) - ONLY A PART THAT WAS
+// CUT IS COUNTED. Version 2 set `divided` to every part handed in as soon as
+// Revit handed back a part maker. Measured 2026-11-13 on Revit 2024 (Group DQ,
+// DQ3c): a level above every wall answered "5 part(s) divided" beside
+// partCountAfter 5 - Revit makes the division whether or not a datum crosses a
+// part. So the parts each source element carries are counted BEFORE the
+// division as well as after it, inside the division's own step: a handed-in
+// part is counted as divided only when an element it was made from now
+// carries more parts than before. When no element gained a part the step is
+// taken back whole - the division and its work plane - and the answer says
+// NOTHING WAS DIVIDED, naming the datum(s). Parts a datum missed while others
+// were cut are counted apart and left as they were. Both counts are answered:
+// `partCountBefore` and `partCountAfter`.
 
 var divided = 0;
+var partCountBefore = 0;
 var partCountAfter = 0;
 var lines = new List<string>();
 var findings = new List<string>();
@@ -62,11 +78,25 @@ if (refusal == null)
 if (refusal == null)
 {
     var sources = new HashSet<ElementId>();
+    var sourcesOf = new Dictionary<ElementId, List<ElementId>>();
     foreach (var id in parts)
     {
         var part = doc.GetElement(id) as Part;
-        try { foreach (var s in part.GetSourceElementIds()) sources.Add(s.HostElementId); } catch { }
+        var mine = new List<ElementId>();
+        try { foreach (var s in part.GetSourceElementIds()) { sources.Add(s.HostElementId); mine.Add(s.HostElementId); } } catch { }
+        sourcesOf[id] = mine;
     }
+    // VERSION 3: the parts each source element carries, counted before and
+    // after - the leaves, as partCountAfter has always been counted.
+    Func<ElementId, int> partsOn = source =>
+    {
+        try { return PartUtils.GetAssociatedParts(doc, source, false, true).Count; } catch { return -1; }
+    };
+    var before = new Dictionary<ElementId, int>();
+    foreach (var s in sources) before[s] = partsOn(s);
+    foreach (var s in sources) if (before[s] > 0) partCountBefore += before[s];
+    var gained = new HashSet<ElementId>();
+    var notCrossed = new List<ElementId>();
     // The division's sketch plane (version 2) - see the header.
     var sketchId = ElementId.InvalidElementId;
     var step = new SubTransaction(doc);
@@ -83,8 +113,27 @@ if (refusal == null)
         }
         else
         {
-            step.Commit();
-            divided = parts.Count;
+            // VERSION 3: what Revit cut, read inside the step, so a division
+            // that cut nothing is taken back with its work plane.
+            doc.Regenerate();
+            foreach (var s in sources)
+            {
+                var now = partsOn(s);
+                if (before[s] >= 0 && now > before[s]) gained.Add(s);
+            }
+            foreach (var id in parts)
+            {
+                var cut = false;
+                foreach (var s in sourcesOf[id]) if (gained.Contains(s)) cut = true;
+                if (cut) divided++; else notCrossed.Add(id);
+            }
+            if (divided == 0)
+            {
+                step.RollBack();
+                refusal = "Revit made the division but no part was cut - no element named here carries more parts than before ("
+                    + partCountBefore + "), so the datum(s) named cross none of these parts. The division and its work plane were taken back. NOTHING WAS DIVIDED.";
+            }
+            else step.Commit();
         }
     }
     catch (Exception ex)
@@ -101,8 +150,18 @@ if (refusal == null)
         try { partCountAfter += PartUtils.GetAssociatedParts(doc, s, false, true).Count; } catch { }
     }
     if (refusal == null)
-        findings.Add(divided + " part(s) divided at " + cutters.Count + " datum(s); their elements now carry " + partCountAfter + " part(s), read back."
+    {
+        findings.Add(divided + " of " + parts.Count + " part(s) divided at " + cutters.Count + " datum(s); their elements carried " + partCountBefore
+            + " part(s) before and carry " + partCountAfter + " now, read back."
             + " Revit keeps a work plane with every division, so one unnamed horizontal work plane was added with it - nothing is drawn on it, and one Undo takes both back.");
+        if (notCrossed.Count > 0)
+        {
+            var named = new List<string>();
+            foreach (var id in notCrossed) { if (named.Count == 20) break; named.Add(id.ToString()); }
+            findings.Add(notCrossed.Count + " part(s) were not crossed by the datum(s) named and are as they were: "
+                + string.Join(", ", named) + (notCrossed.Count > named.Count ? " and " + (notCrossed.Count - named.Count) + " more" : "") + ".");
+        }
+    }
 }
 
 if (refusal != null) lines.Add(refusal);

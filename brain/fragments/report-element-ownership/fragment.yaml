@@ -9,9 +9,21 @@ semantic-identity: "whether these elements can be edited, or belong to somebody 
 kind: action
 domain: revit.qa
 capability: REPORT_ELEMENT_OWNERSHIP
-version: 2
+version: 3
 source: OFFICIAL
 risk: READ
+
+# VERSION 3 (2026-11-20, WN-5 - work note earlier-brain/02-work-packages.md
+# C8.2, GitHub issue #1005) - "CHANGED IN CENTRAL?" BESIDE WHO OWNS IT. Each
+# element's WorksharingUtils.GetModelUpdatesStatus - CurrentWithCentral,
+# UpdatedInCentral, DeletedInCentral or NotYetInCentral, what Revit's
+# Worksharing Display "Model Updates" shows - in `centralStatus`, and the
+# elements updated or deleted in central since this model last reloaded in
+# `changedInCentral`: those need a Reload Latest before they can be changed
+# here. Autodesk's own words: the value is cached locally, as of the last time
+# this model talked to central, never a fresh look - said in the code and
+# below, never read as a guarantee. Not workshared: both empty. Every version 2
+# answer is unchanged. The card was DRAFT already; NEEDS-CHECKING Group OR.
 
 purpose: >
   On a workshared model, who owns each element right now, who created it and who
@@ -78,6 +90,20 @@ contract:
       # (D-52).
       role: accounting
       type: bool
+    # VERSION 3 (WN-5). Elements central has moved on from - UpdatedInCentral
+    # (a Reload Latest is needed before they can be changed here) or
+    # DeletedInCentral - as of the last time this model talked to central.
+    # The finding; empty on a model that is not workshared.
+    - name: changedInCentral
+      role: result
+      type: IList<ElementId>
+    # VERSION 3 (WN-5). Every element's Model Updates word, as Revit caches it
+    # locally: CurrentWithCentral, UpdatedInCentral, DeletedInCentral,
+    # NotYetInCentral, or "unknown" when it cannot be read - never "current"
+    # for that. The evidence it looked (D-52); empty when not workshared.
+    - name: centralStatus
+      role: accounting
+      type: IDictionary<ElementId, string>
 
 proof:
   date: '2026-09-09'

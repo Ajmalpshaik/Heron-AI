@@ -9,9 +9,21 @@ semantic-identity: "whether this model's level heights can be trusted in a calcu
 kind: action
 domain: revit.document
 capability: REPORT_LEVEL_ELEVATIONS
-version: 4
+version: 5
 source: OFFICIAL
 risk: READ
+
+# VERSION 5 (2026-11-20, FRAGMENT-ISSUES rows 5b-1365 and 5b-342) - THE LEVEL AN
+# ELEMENT STANDS ON, FOR THE BUILDING STORY COUNT, IS ASKED THE FIXED WAY, and
+# still DRAFT. Version 4 kept the retired SELECT_WITHOUT_LEVEL's four steps -
+# wall, LevelId, the family's level parameter, an MEP curve's start level - so
+# an element whose family "Level" is empty (a work plane-based diffuser on a
+# level's plane, row 5b-342; get_Parameter answers such a "Level" the element
+# does not carry) and whose Schedule Level holds Level 1 counted on no level,
+# and an unticked Level 1 read fewer elements than stand on it. Version 5 asks
+# FILTER_ELEMENTS_BY_CATEGORY's five level parameters in its order, and one
+# that holds no level is passed over and the next asked (row 5b-335). Every
+# other answer is version 4's. DRAFT until its cases are run (D-30).
 
 purpose: >
   Reports every level's TWO heights side by side and says, in one word, whether

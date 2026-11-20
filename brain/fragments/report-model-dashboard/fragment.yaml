@@ -9,7 +9,7 @@ semantic-identity: "the whole model at a glance - elements by category, level an
 kind: action
 domain: revit.qa
 capability: REPORT_MODEL_DASHBOARD
-version: 4
+version: 5
 source: OFFICIAL
 risk: READ
 
@@ -62,6 +62,16 @@ risk: READ
 # "format" stays 1: the keys are added, none is taken away. Version 3 was
 # PROVEN (the proof block below, kept as its record); the C# moved, so it is
 # DRAFT until NEEDS-CHECKING Group OQ is run (D-30).
+#
+# VERSION 5 (2026-11-20, FRAGMENT-ISSUES rows 5b-342 and 5b-335): an element's
+# level - the by-level count, those on no level and every breakdown's @level -
+# is read FILTER_ELEMENTS_BY_CATEGORY's way: five level parameters in its
+# order, and one that holds no level is passed over. Version 4 kept the
+# retired SELECT_WITHOUT_LEVEL's four steps, so a work plane-based diffuser on
+# a level's plane - its family "Level" empty, which get_Parameter answers
+# though the element does not carry it, and its Schedule Level on Level 1 -
+# was counted on no level. Every other count is version 4's. Still DRAFT,
+# until Group OQ and the version 5 cases are run (D-30).
 purpose: >
   Reads the open project once and counts what it holds, part by part, for the
   Heron Companion's Model Dashboard: the placed model elements by category,

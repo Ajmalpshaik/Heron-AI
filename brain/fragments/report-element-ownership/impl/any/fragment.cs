@@ -1,6 +1,6 @@
 // NOT STANDALONE. Assumes `elements` and `doc` are in scope, and leaves
-// `owners`, `creators`, `lastChangedBy`, `ownedByOthers`, `editable` and
-// `notWorkshared` behind.
+// `owners`, `creators`, `lastChangedBy`, `ownedByOthers`, `editable`,
+// `notWorkshared`, `changedInCentral` and `centralStatus` behind.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -45,12 +45,30 @@
 //
 // AN ELEMENT HANDED IN TWICE IS ANSWERED ONCE, so a count of held elements is
 // never more than the elements there are.
+//
+// VERSION 3 (2026-11-20, WN-5) - CHANGED IN CENTRAL? Who holds an element is
+// one question; whether somebody has CHANGED it in central since this model
+// last reloaded is the other half of "can I edit this", and Revit's own
+// Worksharing Display "Model Updates" shows it. WorksharingUtils.
+// GetModelUpdatesStatus answers it per element (2012 on, the same four values
+// on every release 2020 to 2027): CurrentWithCentral, UpdatedInCentral (a
+// Reload Latest is needed before it can be changed here), DeletedInCentral,
+// NotYetInCentral (new here, never synchronised). Each element's word goes in
+// `centralStatus`; the two that mean "central has moved on" - updated or
+// deleted there - go in `changedInCentral` as well. AUTODESK'S OWN WARNING
+// HOLDS: it is a value cached locally, as of the last time this model talked
+// to central (open, Reload Latest, Synchronize), never a fresh look - so
+// "current" is "current as far as this model knows". A status that cannot be
+// read is "unknown", never "current". Not workshared: both stay empty and
+// `notWorkshared` says why. Reads only, like the rest of the card.
 
 var owners = new Dictionary<ElementId, string>();
 var creators = new Dictionary<ElementId, string>();
 var lastChangedBy = new Dictionary<ElementId, string>();
 var ownedByOthers = new List<ElementId>();
 var editable = new List<ElementId>();
+var changedInCentral = new List<ElementId>();
+var centralStatus = new Dictionary<ElementId, string>();
 
 bool notWorkshared = !doc.IsWorkshared;
 var answered = new HashSet<ElementId>();
@@ -67,6 +85,17 @@ foreach (var element in elements)
         editable.Add(id);
         continue;
     }
+
+    // Version 3 (WN-5): read first and on its own, so an element whose
+    // checkout status cannot be read still says what central knows of it.
+    try
+    {
+        var updates = WorksharingUtils.GetModelUpdatesStatus(doc, id);
+        centralStatus[id] = updates.ToString();
+        if (updates == ModelUpdatesStatus.UpdatedInCentral || updates == ModelUpdatesStatus.DeletedInCentral)
+            changedInCentral.Add(id);
+    }
+    catch { centralStatus[id] = "unknown"; }
 
     var status = CheckoutStatus.NotOwned;
     bool statusKnown = false;
