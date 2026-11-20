@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,22 @@ semantic-identity: "write this family's types as a type catalog - the .txt besid
 kind: action
 domain: revit.families
 capability: REPORT_FAMILY_TYPE_CATALOG
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
+
+# VERSION 2 (2026-11-20) - A FAMILY NEVER SAVED IS NAMED BY ITS TITLE, and
+# back to DRAFT. FRAGMENT-ISSUES row 5b-304: on six new, never-saved families
+# in Revit 2024 `fileName` came back ".txt" and the first finding named a
+# family `""`, while each document's Title read Family1 to Family6 - the
+# fallback to `doc.Title` ran only when the owner family was null, not when
+# its name was empty. The name is now the family's own when it has one, else
+# the Title with any ".rfa" taken off, so an unsaved family's fileName reads
+# "Family1.txt". A saved family's fileName is still its path with .txt.
+# Version 1 was PROVEN (the proof block below, kept as the record of what it
+# proved); its C# moved, so it is DRAFT again until NEEDS-CHECKING Group <TBD>
+# is run (D-30) - on the owner's word that a fragment found wrong may be
+# changed even though it is proven.
 
 purpose: >
   Reads every type of the family open in the Family Editor and gives back a
