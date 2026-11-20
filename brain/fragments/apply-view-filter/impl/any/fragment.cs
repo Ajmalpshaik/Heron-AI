@@ -247,6 +247,34 @@ if (refusal == null && (solidSurface || solidCut))
             + "solid - say it once. Nothing was changed.", patternName(overrides.CutForegroundPatternId));
 }
 
+// VERSION 3 (row 5b-1916): A VIEW WHOSE TEMPLATE OWNS ITS FILTERS IS REFUSED,
+// as CREATE_VIEW_FILTER v6 and REORDER_VIEW_FILTERS refuse one. Version 2 put
+// the filter on it and the template took it off again when it reasserted. Read
+// FROM THE TEMPLATE: the filters slot not among the parameters it leaves out of
+// its control (row 5b-1854). A view template itself may be named as the view,
+// and then every view following it changes. A test that cannot be read is a
+// refusal, never a pass.
+if (refusal == null && view != null && !view.IsTemplate && view.ViewTemplateId != ElementId.InvalidElementId)
+{
+    try
+    {
+        var owner = doc.GetElement(view.ViewTemplateId) as View;
+        if (owner == null) throw new InvalidOperationException("its view template could not be found");
+        var leftFree = new HashSet<ElementId>(owner.GetNonControlledTemplateParameterIds());
+        if (!leftFree.Contains(new ElementId(BuiltInParameter.VIS_GRAPHICS_FILTERS)))
+            refusal = string.Format("The view template '{0}' controls the filters on '{1}', so a filter put on "
+                + "the view itself would be taken off when the template reasserts. Nothing was changed. Ask "
+                + "again with '{0}' as the view - every view following it gets the filter - or untick "
+                + "V/G Overrides Filters in that template first.", owner.Name, view.Name);
+    }
+    catch (Exception thrown)
+    {
+        refusal = string.Format("Heron could not read whether the view template of '{0}' controls its "
+            + "filters - Revit says: {1}. Nothing was changed: a filter the template then takes off would not "
+            + "stay.", view.Name, (thrown.InnerException ?? thrown).Message);
+    }
+}
+
 if (refusal != null)
 {
     findings.Add(refusal);

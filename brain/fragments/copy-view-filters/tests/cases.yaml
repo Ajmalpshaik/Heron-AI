@@ -30,6 +30,14 @@ positive:
       2020 cannot read the source's order - never claimed as the source's
 
 negative:
+  - given: >
+      version 3 - two target plans with view templates: one whose template
+      controls V/G Overrides Filters, one whose template leaves it unticked
+      (row 5b-1917)
+    expect: >
+      the first named in blockedByTemplate; the second takes the copies and is
+      counted in viewsChanged. Version 2 blocked both
+
   - given: version 2 - onlyFilterNamed a filter the source does not carry
     expect: refused, naming what the source carries; filtersApplied 0, no findings of order
 
