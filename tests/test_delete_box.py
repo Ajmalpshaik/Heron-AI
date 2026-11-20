@@ -296,6 +296,22 @@ def wiring():
     check("SendMessage(" not in closer and "DestroyWindow(" not in closer,
           "and it never destroys a window, or sends one any message of its own but WM_CLOSE")
 
+    print("\n10. the run made again after Delete is bound from the first run's own selection (5b-1830)")
+    # The delete box puts back the selection it found AFTER the first run -
+    # which lost what that run deleted - so the second run, bound afresh from
+    # the live selection, came back needs_unbound with no Keep or Discard.
+    kept_at = run.find("firstRunSelection = new List<ElementId>(uidoc.Selection.GetElementIds())")
+    early_at = run.find("var early = bindAndCompile();")
+    check(0 <= kept_at < early_at,
+          "the selection the first run is bound from is kept, as ids, before it is bound")
+    second = run[run.find("if (bindAfterSetup || confirmed != null)"):]
+    second = second[:second.find("var late = bindAndCompile();") + 1]
+    check(re.search(r"confirmed\s*!=\s*null\s*&&\s*!bindAfterSetup", second) is not None
+          and "uidoc.Selection.SetElementIds(again)" in second
+          and "target.GetElement(id) != null" in second,
+          "and put back - the ids the rollback restored - before the second run is bound, "
+          "unless its own setup steps chose the selection")
+
 
 def main():
     timeout()

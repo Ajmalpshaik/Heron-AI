@@ -723,6 +723,24 @@ namespace Heron.Bridge
                 // Optional fields, like askToKeep beside them: an older
                 // client ignores them, so the protocol version stands.
                 var settingsFile = HeronConfig.FilePath;
+
+                // AND WHO HOLDS THE MODEL IN FRONT (row 5b-1645, D-141). The
+                // lease above is per Revit and per PERSON, so a chat was told
+                // "(free)" while another of the owner's chats held the model in
+                // front, and was refused on its next request. Looked at, never
+                // claimed or renewed - the lease's own rule for this op. Said
+                // only when the add-in has told this bridge how to ask; an
+                // older add-in says nothing, as before. A fault asking says
+                // nothing too: this answer must never fail for it.
+                var hold = (BridgeModelHold)null;
+                var holdOf = BridgeActiveModel.HoldOf;
+                var activeKey = BridgeActiveModel.Key;
+                if (holdOf != null && activeKey != null)
+                {
+                    try { hold = holdOf(activeKey, Json.ReadString(request, "conversation")); }
+                    catch (Exception) { hold = null; }
+                }
+
                 return Json.Ok(
                     Json.Num("pid", _identity.ProcessId),
                     Json.Str("revitVersion", _identity.RevitVersion),
@@ -786,7 +804,16 @@ namespace Heron.Bridge
                     // rather than "turn it on in Settings", which would not work.
                     Json.Bool("changesLocked", switches.ChangesLocked),
                     Json.Bool("adminLocked", switches.AdminLocked),
-                    Json.Bool("publishLocked", switches.PublishLocked));
+                    Json.Bool("publishLocked", switches.PublishLocked),
+                    // AND THE HOLD ON THE MODEL IN FRONT (row 5b-1645), above.
+                    // Optional fields, like askToKeep: absent when the add-in
+                    // has not said how to ask (Json.Ok leaves out a null), and
+                    // a client that does not know them ignores them, so the
+                    // protocol version stands.
+                    hold == null ? null : Json.Bool("activeModelHeld", hold.Held),
+                    hold == null ? null : Json.Bool("activeModelMine", hold.Held && hold.Mine),
+                    hold == null ? null : Json.Num("activeModelHoldSecondsRemaining",
+                                                   hold.Held ? hold.SecondsRemaining : 0));
             }
 
             // HANDING IT BACK, WHICH IS THE HALF THAT WAS MISSING.

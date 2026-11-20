@@ -552,6 +552,13 @@ _BY_FAILURE = {
     failures.UNKNOWN: UNKNOWN,
 }
 
+# THE WORD `_ended_by_reply` SAYS FOR A GOOD REPLY - ANSWERED, as one object,
+# so `_ended` can tell it from an ANSWERED a door said itself and let a
+# refusal or a failure said after it speak instead (row 5b-1563). The pair is
+# the (word, says) form `_said_outcome` already reads; says None is the
+# table's own words.
+_ANSWERED_BY_REPLY = (ANSWERED, None)
+
 # The two labels `_ended` is given that are a word by themselves. "ok" is not
 # one - it is KEPT at one door and ANSWERED at another, and the door says
 # which - and "failed" is four different endings.
@@ -853,6 +860,12 @@ def _ended(outcome, answer=None):
     guessed, as before. Display only: it never changes the answer.
     """
     _ctx.outcome = outcome
+    # A GOOD REPLY'S ANSWERED GIVES WAY to a refusal or a failure said after it
+    # (row 5b-1563): a single-purpose tool reads the reply, then may find it came
+    # from another model (refused) or that it acted there (failed) - and the
+    # label it gives then is the word, through `_BY_LABEL`, as it is the label.
+    if outcome in ("refused", "failed") and getattr(_ctx, "how", None) is _ANSWERED_BY_REPLY:
+        _ctx.how = None
     return answer
 
 
@@ -884,6 +897,14 @@ def _ended_by_reply(tool, reply):
     """
     failure = analyse(reply, writes=tools.writes(tool))
     _ended("ok" if failure is None else _failure_ended(failure))
+    # AND ITS WORD, for the outcome line (row 5b-1563): a good reply to a tool
+    # that keeps nothing in the model is ANSWERED - it ran, and what follows is
+    # its answer. A failure's word is already said by `_failure_ended`. A
+    # refusal or a failure the tool says after it - the pin's - speaks instead
+    # (`_ended`), and no Revit to ask is NOT RUN, said before the session is
+    # resolved.
+    if failure is None and not _changes_model(tool):
+        _ctx.how = _ANSWERED_BY_REPLY
 
 
 def _recorded(fn):
