@@ -67,6 +67,21 @@
 // fails and nothing is kept. Only YES is taken. Unticking removes the light
 // source and every photometric value with it - by hand, never by Heron.
 //
+// VERSION 5 (2026-11-20, row 5b-285): `changed` COUNTS ONLY THE SETTINGS THIS
+// CALL WROTE. "Already as asked" was judged when each setting's turn came,
+// after the earlier writes, and "changed" against the snapshot taken before
+// any - so a setting Revit moved by itself when an earlier one was written
+// (Work Plane-Based=no turning Always Vertical on, if Revit does that -
+// NEEDS-CHECKING BS2) was counted as already set AND changed, "2 changed and 1
+// already as asked" for two requests, with no "(Revit's own change)" tag. Now
+// each setting is written or already as asked, never both: one already as
+// asked at its turn but moved since the snapshot is reported "(Revit's own
+// change)" and counted as already as asked, and a finding says so. A written
+// setting that ends as it began (Revit moved it, Heron set it back) is
+// counted as changed and its row says so. And the OmniClass Number's
+// read-back runs inside the open transaction (row 5b-437), so a finding now
+// says it is trusted once REPORT_FAMILY_TEMPLATE still reads it after save.
+//
 // VERSION 2 (2026-10-11): ONE SETTING THAT TAKES TEXT - THE OMNICLASS NUMBER
 // ("Classification Number" from Revit 2026), the code a schedule, an export or
 // a library sorts the family by. Only a code the classification file files
@@ -628,10 +643,15 @@ if (refused == null)
         findings.Add("The family is already in \"" + catTarget.Name + "\", so the category was not written.");
     }
 
+    // VERSION 5: THE SETTINGS THIS CALL WROTE, each with what it read when its
+    // turn came. Only these are counted as changed; one already as asked at its
+    // turn is not, even when an earlier write made Revit move it (row 5b-285).
+    var written = new Dictionary<string, int?>();
     foreach (var plan in plans.OrderBy(p => switches.IndexOf(p.Item1)))
     {
         var row = family.get_Parameter(plan.Item1.Item3);
-        if (stored(row) == plan.Item2) { alreadySet++; continue; }
+        var atItsTurn = stored(row);
+        if (atItsTurn == plan.Item2) { alreadySet++; continue; }
         if (row.IsReadOnly)
             throw new InvalidOperationException("Revit holds " + plan.Item1.Item2 + " read-only in this family"
                 + (plan.Item1.Item1 == "alwaysvertical"
@@ -646,6 +666,7 @@ if (refused == null)
                 + wordsFor(plan.Item1.Item1, plan.Item2) + ": " + ex.Message + " The call failed, and Heron rolls the "
                 + "whole call back.");
         }
+        written[plan.Item1.Item1] = atItsTurn;
         // A plane switch decides what the next switch may be; Revit's view of
         // it is brought up to date before the next one is written.
         doc.Regenerate();
@@ -678,15 +699,37 @@ if (refused == null)
               + ") - nothing was written. Look at Family Category and Parameters by hand.");
     }
 
+    // VERSION 5: CHANGED COUNTS ONLY WHAT THIS CALL WROTE. A setting that moved
+    // since the snapshot without being written - asked for and already so when
+    // its turn came, or never asked for - is Revit's own change, tagged so and
+    // never counted as Heron's (row 5b-285).
+    var revitMadeAsAsked = new List<string>();
     foreach (var was in before)
     {
+        var key = was.Item1.Item1;
         var now = stored(family.get_Parameter(was.Item1.Item3));
-        if (now == was.Item2) continue;
-        var asked = plans.Any(p => p.Item1.Item1 == was.Item1.Item1);
-        rows.Add(was.Item1.Item2 + " " + wordsFor(was.Item1.Item1, was.Item2) + " -> " + wordsFor(was.Item1.Item1, now)
-            + (asked ? "" : " (Revit's own change)"));
-        if (asked) changed++;
+        var wrote = written.ContainsKey(key);
+        if (now == was.Item2)
+        {
+            // Written, yet it reads as before the call: an earlier write made
+            // Revit move it, and Heron set it back as asked.
+            if (wrote)
+            {
+                changed++;
+                rows.Add(was.Item1.Item2 + " " + wordsFor(key, was.Item2) + " - Revit changed it to "
+                    + wordsFor(key, written[key]) + " when an earlier setting was written, and Heron set it back");
+            }
+            continue;
+        }
+        rows.Add(was.Item1.Item2 + " " + wordsFor(key, was.Item2) + " -> " + wordsFor(key, now)
+            + (wrote ? "" : " (Revit's own change)"));
+        if (wrote) changed++;
+        else if (plans.Any(p => p.Item1.Item1 == key)) revitMadeAsAsked.Add(was.Item1.Item2);
     }
+    if (revitMadeAsAsked.Count > 0)
+        findings.Add(string.Join(", ", revitMadeAsAsked) + " already read as asked when its turn came - Revit changed "
+            + "it itself after an earlier setting was written - so Heron did not write it, and it is counted as already "
+            + "as asked, not as changed.");
 
     // -----------------------------------------------------------------------
     // THE OMNICLASS NUMBER - written as the file spells it, then read back.
@@ -729,6 +772,10 @@ if (refused == null)
                 throw new InvalidOperationException(clsCodeLabel + " reads " + clsShown(clsNow) + " after the call, not "
                     + clsShown(clsWanted) + ". The call failed, and Heron rolls the whole call back.");
             changed++;
+            // VERSION 5, row 5b-437: this read-back is inside the open transaction.
+            findings.Add(clsCodeLabel + " was read back before Revit commits the change, so a value Revit takes back "
+                + "when it commits or when the family is saved would still read as kept here: trust the number once "
+                + "REPORT_FAMILY_TEMPLATE still reads it after the family is saved.");
 
             string clsTitleSaid;
             clsTitleRow = family.get_Parameter(clsTitle);
