@@ -237,6 +237,7 @@ namespace Heron.ModelHold.TestHost
                   "a model with no title is still named in the refusal");
 
             PaneLooks(chatA, tower, t0, quiet);
+            InfoLooks(chatA, chatB, tower, t0, quiet);
 
             Console.WriteLine();
             if (Failures.Count > 0)
@@ -247,6 +248,54 @@ namespace Heron.ModelHold.TestHost
             }
             Console.WriteLine("PASSED - " + _checks + " checks");
             return 0;
+        }
+
+        /// <summary>
+        /// ROW 5b-1645: the bridge's `info` says who holds the model in front,
+        /// LOOKED AT, never claimed or renewed - so revit_health stops saying
+        /// "(free)" of a Revit whose model in front another chat holds.
+        ///
+        /// By reflection, so on the code before the row - no such method -
+        /// these fail as checks, not as a host that will not build.
+        /// </summary>
+        private static void InfoLooks(string chatA, string chatB, string tower, DateTime t0, TimeSpan quiet)
+        {
+            Console.WriteLine();
+            Console.WriteLine("11. `info` looks at who holds the model in front, and claims nothing (row 5b-1645)");
+
+            var look = typeof(HeronModelHold).GetMethod("Look",
+                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+            Check(look != null, "the hold can be looked at without claiming it (HeronModelHold.Look)");
+            if (look == null) return;
+            Func<HeronModelHold, string, string, DateTime, object[]> ask = (h, model, chat, at) =>
+            {
+                var args = new object[] { model, chat, at, quiet, false, 0L };
+                var held = (bool)look.Invoke(h, args);
+                return new object[] { held, (bool)args[4], (long)args[5] };
+            };
+
+            var hold = new HeronModelHold();
+            var free = ask(hold, tower, chatB, t0);
+            Check(!(bool)free[0] && !(bool)free[1] && (long)free[2] == 0,
+                  "a free model: not held, not mine, no time left");
+            Check(hold.Count(t0, quiet) == 0, "and looking at it held nothing");
+
+            hold.Claim(chatA, tower, "Tower", t0, quiet);
+            var other = ask(hold, tower, chatB, t0.AddMinutes(1));
+            Check((bool)other[0] && !(bool)other[1] && (long)other[2] == 120,
+                  "held by chat A, asked by chat B: held, not B's, two minutes left");
+            var mine = ask(hold, tower, chatA, t0.AddMinutes(1));
+            Check((bool)mine[0] && (bool)mine[1], "asked by chat A itself: held, and A's");
+            var older = ask(hold, tower, null, t0.AddMinutes(1));
+            var once = ask(hold, tower, HeronConversation.ChatOf(null), t0.AddMinutes(1));
+            Check((bool)older[0] && !(bool)older[1] && (bool)once[0] && !(bool)once[1],
+                  "an older client, or a chat of one request, is never the holder");
+            Check(hold.Holder(tower, t0 + quiet + TimeSpan.FromSeconds(1), quiet) == null,
+                  "looking renewed nothing: the hold still ends three quiet minutes after A's request");
+            var lapsed = ask(hold, tower, chatB, t0 + quiet + TimeSpan.FromSeconds(1));
+            Check(!(bool)lapsed[0] && (long)lapsed[2] == 0, "and once it has, it reads free");
+            Check(!(bool)ask(hold, null, chatA, t0)[0] && !(bool)ask(hold, "", chatA, t0)[0],
+                  "no model in front: nothing is held");
         }
 
         /// <summary>

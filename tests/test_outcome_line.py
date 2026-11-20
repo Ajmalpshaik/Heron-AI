@@ -193,7 +193,16 @@ DOORS = ("revit_change", "revit_read", "revit_show")
 UNDO_TOOL = "revit_undo_last"
 # revit_apply_move joined on 2026-11-19 (row 5b-1563): it keeps a change.
 MOVE_TOOL = "revit_apply_move"
-SAYS = DOORS + (UNDO_TOOL, MOVE_TOOL)
+# AND THE INVENTORY READS AND THE SINGLE-PURPOSE TOOLS, since 2026-11-20 (row
+# 5b-1563): every return of each read against the table. Section 5g walks them.
+INVENTORY = ("revit_phases", "revit_levels", "revit_worksets", "revit_views",
+             "revit_sheets", "revit_rooms", "revit_schedules", "revit_families",
+             "revit_export_check", "revit_imports", "revit_annotation",
+             "revit_systems", "revit_parameters", "revit_groups")
+SINGLE = ("revit_select_by_category", "revit_isolate_temporary",
+          "revit_reset_temporary", "revit_preview_move", "revit_release",
+          "revit_use_this_model", "revit_offer_settings")
+SAYS = DOORS + (UNDO_TOOL, MOVE_TOOL) + INVENTORY + SINGLE
 WORDS = ("KEPT", "NOTHING CHANGED", "ANSWERED", "NOT ANSWERED", "REFUSED", "NOT RUN",
          "ROLLED BACK", "STILL RUNNING", "OUTCOME UNKNOWN")
 
@@ -1059,7 +1068,8 @@ def the_vocabulary(core, registry):
     # list is the three doors and that one tool, and a fifth name fails here.
     check(tuple(getattr(registry, "STATES_OUTCOME", ())) == SAYS,
           "heron_tools.STATES_OUTCOME names the tools that say one: the three doors, "
-          "revit_undo_last and revit_apply_move - found %r" % (getattr(registry, "STATES_OUTCOME", ()),))
+          "revit_undo_last, revit_apply_move, the inventory reads and the single-purpose "
+          "tools - found %r" % (getattr(registry, "STATES_OUTCOME", ()),))
     line = getattr(core, "outcome_line", None)
     read_back = getattr(core, "outcome_of", None)
     check(line is not None and read_back is not None,
@@ -1589,6 +1599,227 @@ def additive(stage, cases, replies, core):
           "not: %s" % (compared, "; ".join(differs[:5]) or "none"))
 
 
+class _FrontStandIn(StandIn):
+    """A Revit whose lease-exempt `info` names a model in front, and which
+    answers every other request from its script."""
+
+    def __init__(self, reply, front):
+        StandIn.__init__(self, reply)
+        self.front = front
+
+    def request(self, op, op_args=None, idempotent=True, **_ignored):
+        self.asked.append((op, dict(op_args or {}), idempotent))
+        if op == "info":
+            return {"ok": True, "activeModel": self.front}
+        return self.reply
+
+
+def the_pin_and_the_model_in_front(stage, picked):
+    """
+    ISSUE #1031: revit_health named the model in front, "Project1", and the
+    next change ran in the real project the chat was pinned to - by D-74, on
+    purpose. Health and the pin must agree, and the mismatch is said BEFORE
+    any write: once for each pair of models, after which the same request goes
+    to the pinned model as D-74 says.
+    """
+    print()
+    print("5f. The pinned model and the model in front (issue #1031)")
+    module = stage.module
+    said_set = getattr(module, "_FRONT_SAID", None)
+    check(isinstance(said_set, set),
+          "the server remembers which pin and model in front it has already said")
+    if not isinstance(said_set, set):
+        return
+    change = picked["change"]
+    real = stage.revit
+
+    def run(front, pin=MODEL, door="revit_change", origin=None, **arguments):
+        stand = _FrontStandIn(dict(KEPT), front)
+        stage.revit = stand
+        try:
+            stage.fresh(dict(KEPT), None)
+            module.binding.resolve = lambda: stand
+            if pin is not None:
+                module.pinned.check(dict(pin))
+            had, sys.stderr = sys.stderr, io.StringIO()
+            try:
+                tool = getattr(module, door)
+                if origin is not None:
+                    tool = module._through(tool, origin=origin)
+                said = tool(**arguments)
+            except Exception as exc:                            # noqa: BLE001
+                said = "(%s raised %s: %s)" % (door, type(exc).__name__, exc)
+            finally:
+                sys.stderr = had
+            return said, [op for op, _args, _i in stand.asked], stand.asked
+        finally:
+            stage.revit = real
+
+    said_set.clear()
+    said, ops, _asked = run("Scratch Project", capability=change)
+    check(stated(said) == "REFUSED" and "Nothing was sent to Revit" in said
+          and "Project1" in said and "Scratch Project" in said,
+          "a chat pinned to Project1 with another model in front is REFUSED before its "
+          "first write, naming both - %r" % said[:160])
+    check(not [op for op in ops if op.startswith("run_fragment")],
+          "and nothing was sent but the lease-exempt `info` - %r" % ops)
+    said, ops, asked = run("Scratch Project", capability=change)
+    sent = [args for op, args, _i in asked if op.startswith("run_fragment")]
+    check(len(sent) == 1 and sent[0].get("document") == "Project1",
+          "the same request again goes to the PINNED model, as D-74 says - said once "
+          "for the two models")
+
+    said_set.clear()
+    said, ops, _asked = run("Project1", capability=change)
+    check([op for op in ops if op.startswith("run_fragment")],
+          "the pinned model in front: nothing is refused")
+    said_set.clear()
+    said, ops, _asked = run("Scratch Project", pin=None, capability=change)
+    check("info" not in ops and [op for op in ops if op.startswith("run_fragment")],
+          "nothing pinned yet: nothing is asked or refused - the first call obtains the pin")
+    said_set.clear()
+    said, ops, _asked = run("Scratch Project", origin="panel", capability=change)
+    check([op for op in ops if op.startswith("run_fragment")],
+          "the Commands panel's own click is not stopped - the modeller is in Revit")
+
+    # HEALTH NAMES THE PIN, and having said it, the write is not refused again.
+    said_set.clear()
+    stand = _FrontStandIn(dict(READ_OK, document="Scratch Project"), "Scratch Project")
+    stage.revit = stand
+    patched = []
+    try:
+        stage.fresh(dict(READ_OK, document="Scratch Project"), None)
+        module.binding.resolve = lambda: stand
+        module.pinned.check(dict(MODEL))
+        for name, value in (("discover", lambda: ([stand], [], [], [])),
+                            ("switches_state", lambda _b: None),
+                            ("settings_state", lambda _b: None),
+                            ("ask_to_keep_state", lambda _b: None)):
+            patched.append((name, getattr(module.bridge, name)))
+            setattr(module.bridge, name, value)
+        # THIS CHAT'S OWN REVIT is the one health counts in; the binding keeps
+        # it behind a read-only property.
+        had_pid = getattr(module.binding, "_pid", None)
+        module.binding._pid = stand.pid
+        had, sys.stderr = sys.stderr, io.StringIO()
+        try:
+            health = module.revit_health()
+        except Exception as exc:                                # noqa: BLE001
+            health = "(revit_health raised %s: %s)" % (type(exc).__name__, exc)
+        finally:
+            sys.stderr = had
+    finally:
+        for name, value in patched:
+            setattr(module.bridge, name, value)
+        module.binding._pid = had_pid
+        stage.revit = real
+    check("open model: Scratch Project" in health
+          and "This chat works on Project1" in health
+          and "A change from this chat goes to Project1" in health,
+          "revit_health names the model in front AND the pinned one a change goes to - %r"
+          % [line for line in health.split("\n") if "Project" in line][:3])
+    said, ops, _asked = run("Scratch Project", capability=change)
+    check([op for op in ops if op.startswith("run_fragment")],
+          "and once health has said it, the write is not refused again")
+    said_set.clear()
+
+
+def the_other_tools_say_it_too(stage):
+    """
+    ROW 5b-1563: the inventory reads and the single-purpose tools say how their
+    call ended in a word, like the doors - every return of each read against
+    the table. A good reply is ANSWERED, no Revit to send it to NOT RUN, no
+    answer OUTCOME UNKNOWN, a refusal heron_failure's own word, and an answer
+    from another model REFUSED - or OUTCOME UNKNOWN for a selection or an
+    isolate already made there.
+    """
+    print()
+    print("5g. The inventory reads and the single-purpose tools say a word too (row 5b-1563)")
+    module = stage.module
+    import heron_inventory
+    from heron_session import NotBound
+
+    def door(name):
+        return getattr(module, name, None) or getattr(heron_inventory, name, None)
+
+    OTHER = {"document": "Project2", "documentPath": "C:/jobs/Project2.rvt",
+             "projectKey": "key-2", "creationGuid": "guid-2"}
+    PINNED = dict(MODEL, creationGuid="guid-1")
+    arguments = {"revit_preview_move": {"category": "ducts", "distance": "300 mm"},
+                 "revit_select_by_category": {"category": "ducts"},
+                 "revit_isolate_temporary": {"category": "ducts"},
+                 "revit_release": {}}
+
+    def ended(name, reply, pin=PINNED, unbound=False):
+        stage.fresh(reply, None)
+        if pin is not None:
+            module.pinned.check(dict(pin))
+        if unbound:
+            def none():
+                raise NotBound("Two Revit sessions are connected and none was chosen, "
+                               "so nothing has been sent to Revit.")
+            module.binding.resolve = none
+        had, sys.stderr = sys.stderr, io.StringIO()
+        try:
+            said = door(name)(**arguments.get(name, {}))
+        except Exception as exc:                                # noqa: BLE001
+            said = "(%s raised %s: %s)" % (name, type(exc).__name__, exc)
+        finally:
+            sys.stderr = had
+        return said if isinstance(said, str) else repr(said)
+
+    # What each tool's own reply carries, beside the model it came from - the
+    # least each prints from, so the ending is what is read, not a crash.
+    extra = {"revit_select_by_category": {"selected": 2, "category": "Ducts"},
+             "revit_isolate_temporary": {"isolated": 2, "view": "Level 1"},
+             "revit_reset_temporary": {"reset": True, "view": "Level 1", "said": "Done."},
+             "revit_release": {"message": "Freed 'Project1'."}}
+    wrong = []
+    for name in INVENTORY + SINGLE[:-1]:
+        if door(name) is None:
+            wrong.append("%s: no such tool" % name)
+            continue
+        good = dict(PINNED, ok=True, **extra.get(name, {}))
+        cases = [("a good reply", dict(good), "ANSWERED", PINNED, False),
+                 ("no Revit to send it to", dict(good), "NOT RUN", PINNED, True),
+                 ("no answer at all", None, "OUTCOME UNKNOWN", PINNED, False),
+                 ("Revit busy", error("revit_busy"), "NOT RUN", PINNED, False)]
+        if name not in ("revit_release", "revit_use_this_model"):
+            acted = name in ("revit_select_by_category", "revit_isolate_temporary")
+            cases.append(("an answer from another model", dict(good, **OTHER),
+                          "OUTCOME UNKNOWN" if acted else "ANSWERED" if name ==
+                          "revit_reset_temporary" else "REFUSED", PINNED, False))
+            if acted:
+                cases.append(("another model, nothing done there",
+                              dict(good, selected=0, isolated=0, **OTHER), "REFUSED",
+                              PINNED, False))
+        for what, reply, want, pin, unbound in cases:
+            said = ended(name, reply, pin=pin, unbound=unbound)
+            if stated(said) != want:
+                wrong.append("%s, %s: %s (%r)" % (name, what, stated(said), said[:90]))
+    check(not wrong,
+          "each of the %d tools says the word true of each of its endings - not: %s"
+          % (len(INVENTORY + SINGLE[:-1]), "; ".join(wrong[:4]) or "none"))
+
+    # revit_offer_settings sends nothing to Revit: its endings are its own.
+    offer = door("revit_offer_settings")
+    page = module._companion_module()
+    had = (page.SHOW_CHANGES, page.enabled)
+    try:
+        page.SHOW_CHANGES = False
+        said = offer(capability="APPLY_VIEW_FILTER", values="filter=Fire")
+        check(stated(said) == "REFUSED",
+              "revit_offer_settings with the Changes tables off: REFUSED - found %r"
+              % stated(said))
+        page.SHOW_CHANGES, page.enabled = True, (lambda: True)
+        said = offer(capability="NO_SUCH_CAPABILITY_ANYWHERE", values="a=b")
+        check(stated(said) == "NOT RUN",
+              "and with no capability by that name: NOT RUN - found %r" % stated(said))
+    finally:
+        page.SHOW_CHANGES, page.enabled = had
+    stage.fresh(dict(READ_OK))
+
+
 def the_panel_says_it_too(stage, cases, replies, core):
     """
     ISSUE #1043: Revit's Commands panel runs revit_change's and revit_read's
@@ -1930,8 +2161,9 @@ def nothing_else_moved(stage, cases, replies, picked):
         said = levels() if levels is not None else None
     except Exception as exc:                                    # noqa: BLE001
         said = "(revit_levels raised %s: %s)" % (type(exc).__name__, exc)
-    check(said is not None and not lines_of(said),
-          "an inventory read (revit_levels) carries none")
+    check(said is not None and stated(said) == "ANSWERED",
+          "an inventory read (revit_levels) says ANSWERED since row 5b-1563 - found %r"
+          % (stated(said) if said else None))
     stage.fresh(dict(READ_OK))
     try:
         said = module.heron_lookup(request="count the ducts")
@@ -2235,6 +2467,8 @@ def main():
         every_path_one_line(cases, replies, core)
         additive(stage, cases, replies, core)
         the_panel_says_it_too(stage, cases, replies, core)
+        the_pin_and_the_model_in_front(stage, picked)
+        the_other_tools_say_it_too(stage)
         a_keep_that_made_nothing_closes_on_its_word(cases, replies)
         the_page_labels_what_the_body_said(stage, picked)
         asyncio.run(through_the_sdk(stage, cases, picked))

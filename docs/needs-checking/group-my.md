@@ -12,7 +12,7 @@
 The owner's ask: [docs/48](../48-studying-bimlogiq.md) section 5 item 7, *"Sheets from Excel - read the sheet
 list from a spreadsheet, preview, create"*, started 2026-11-09 (*"start item 7"*). What the modeller gets: *"make
 the sheets from this Excel: C:\\...\\sheet list.xlsx"* (or .csv) - a preview, then the sheets in one call and one
-undo. Made NEW, at DRAFT. It overlaps `CREATE_SHEETS` and `SET_PARAMETER_VALUES_BY_ID` (both PROVEN) - neither
+undo. Made NEW, at DRAFT. It overlaps `CREATE_SHEETS` and `SET_PARAMETER_VALUES_BY_ID` (both PROVEN then; `SET_PARAMETER_VALUES_BY_ID` is DRAFT at version 10 since 2026-11-20, [row 5b-1526](../fragment-issues/section-5b-rows-1526-1550.md)) - neither
 was edited; widening a PROVEN card sends it back to DRAFT and out of the chat's reach
 ([D-117](../DECISIONS.md)). The overlap and the merge planned once this is proved are
 [FRAGMENT-ISSUES row 5b-1486](../fragment-issues/section-5b-rows-1476-1500.md).
@@ -30,7 +30,7 @@ chat tool are tested without Revit (`tests/test_sheet_list.py`: a real .xlsx wri
 inline strings, built-in and custom date formats, the 1904 date system, booleans, an error cell, a blank row, a
 missing and a repeated number, a multi-line cell, a second sheet; a CSV with a BOM, `;`, a quoted line break and a
 title above the table; .xls, .xlsb and .ods refused; the value encoded and decoded back; and the independent review's probes of 2026-11-09 - curly quotes, `$(calc)` and a trailing backslash, a 400-row register against the command line, numbers in formats 000 and 0.00, a value under no header, 200 formatted blank rows, a hidden row, `[h]:mm`, a `.env` and four other names refused, a part above 8 MB, the delimiter under a title, more than 1,000 rows. `tests/test_sheet_list_tool.py`
-through the real server). **Nothing here has run in Revit.** The card is DRAFT.
+through the real server). ~~**Nothing here has run in Revit.** The card is DRAFT.~~ **Corrected 2026-11-20 ([row 5b-1892](../fragment-issues/row-5b-1892.md)): the card was run on P1102 MEP in Revit 2020 and signed PROVEN by Ajmal PS on 2026-11-13 - its `proof:` block holds that run, a positive and a negative case. Which rows below that run answers is not written back here, so each row still says what it asks.**
 
 **Not known from the assemblies, and recorded here rather than guessed** (the rows below measure them): whether
 a collector scoped to a sheet made inside the call finds its title block before a regeneration - the card falls

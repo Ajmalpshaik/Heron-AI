@@ -214,7 +214,10 @@ Both let `tools/` name it, because a checker has to be able to name what it chec
     added or widened;
   - `heron-fragment-merger` — combines them into one that covers everything each did and deprecates the
     rest, on the owner's yes;
-  - `heron-fragment-edit-checker` — reads a fragment change before it is committed.
+  - `heron-fragment-edit-checker` — reads a fragment change before it is committed;
+  - `heron-issue-recorder` — records a finding (a defect, an owed Revit or PC check, a question for the
+    owner) as a register entry and a GitHub issue in the same change, linked both ways, with
+    [`tools/open-issue.py`](../tools/open-issue.py) ([D-187](DECISIONS.md)).
 - **A background agent carries a read-only tool list, and an agent that writes files carries no tool
   that reaches Revit** — both held by `tests/test_agent_tools.py`.
 - **`settings.json` wires the development hooks every session runs** — the boundary guard, the

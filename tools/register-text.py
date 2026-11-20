@@ -282,6 +282,60 @@ def code_spans(line):
     return spans
 
 
+# Where an inline code span cannot run on past: a blank line, or the start of a
+# table line, a heading or a list item - each begins a new block of its own.
+_BLOCK_START = re.compile("^" + BS + "s*(?:$|[|#]|[-*+]" + BS + "s|[0-9]+[.)]" + BS + "s)")
+
+
+def code_blanked(text):
+    """TEXT with every character GitHub shows as code turned into a space - the
+    lines of a fenced block, fences included (fenced_lines' rule), and every
+    inline code span - and every line end kept, so a position in the answer is
+    the same position in TEXT (row 5b-1907).
+
+    UNLIKE code_spans(), A SPAN HERE MAY RUN ON TO THE NEXT LINE, as GitHub
+    reads one: "`python x.py" at the end of one line and "--sizes`" at the start
+    of the next are ONE span. Read a line at a time, the tick before "--sizes"
+    paired with the next one along and blanked the link between them. A span
+    never runs past a blank line or into a table line, a heading or a list item,
+    because each of those starts a new block. A run of backticks with no partner
+    of the same length in its block is a backtick, not code."""
+    lines = text.split(NL)
+    fenced = fenced_lines(lines)
+    chars = list(text)
+    starts, at = [], 0
+    for line in lines:
+        starts.append(at)
+        at += len(line) + 1
+    block = []
+
+    def blank_spans():
+        if not block:
+            return
+        first = starts[block[0]]
+        piece = text[first:starts[block[-1]] + len(lines[block[-1]])]
+        for start, end in code_spans(piece):
+            for k in range(first + start, first + end):
+                if chars[k] != NL:
+                    chars[k] = " "
+        del block[:]
+
+    for i, line in enumerate(lines):
+        if i in fenced:
+            blank_spans()
+            for k in range(starts[i], starts[i] + len(line)):
+                chars[k] = " "
+            continue
+        if _BLOCK_START.match(line):
+            blank_spans()
+        if line.strip():
+            block.append(i)
+        if line.lstrip().startswith(("|", "#")):
+            blank_spans()
+    blank_spans()
+    return "".join(chars)
+
+
 def row_links(text, label):
     """[(row, start, end)] for every link in TEXT whose words name exactly one
     row of section LABEL - '[row 5b-307](...)' - with TEXT[start:end] its

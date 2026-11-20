@@ -222,6 +222,22 @@ def main():
     check("CategoryByShownName" not in code_only(write),
           "the move tool does not widen - RevitWrite keeps the table alone")
 
+    # ROW 5b-1865, issue #1082: the second set, named by category, swallowed a
+    # collector that faulted - `catch { }` - so a fault reached a fragment as
+    # "no ducts in the model", the empty set the same method calls a real
+    # answer. A fault is refused now, as a name that is not a category is.
+    print()
+    print("A category whose collector faults is refused, never read as empty (5b-1865)")
+    many = code_only(body_of(text, "private static object ManyByCategory(") or "")
+    check(many != "", "ManyByCategory is there to read")
+    check(re.search(r"catch\s*\{\s*\}", many) is None,
+          "it swallows no fault - no empty catch")
+    caught = re.search(r"\bcatch\b[^{]*\{", many)
+    handler = many[caught.end():] if caught else ""
+    handler = handler[:handler.find("}")] if "}" in handler else ""
+    check("problem =" in handler and "return null;" in handler,
+          "a collector fault sets the problem and refuses, as an unknown category does")
+
     print()
     if FAILED:
         print("FAILED - %d check(s)." % len(FAILED))

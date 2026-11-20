@@ -205,14 +205,34 @@ def main():
           "true, rather than quietly carrying the new numbers")
     # "THE COMMONEST SINGLE KIND" WAS A LEAD OF ONE, AND IT FLIPPED ON
     # 2026-09-29 when the Companion's seven must-catch-everything handlers
-    # arrived (heron_csharp's docstring says so). Checked now as the share
-    # that does not tip on one commit, exactly as broad-versus-narrow was.
+    # arrived (heron_csharp's docstring says so). It became "bare is at
+    # least a quarter of the broad handlers" - and that tipped too, on
+    # 2026-11-20 (row 5b-1913): 70 of 279 against a line of 69.75, and the
+    # repair row 5b-110 asks for, an empty `catch { }` made to say what it
+    # caught, turns a bare catch into `catch (Exception ex)`. So the split
+    # between bare and catch (Exception) is REPORTED, with no line to
+    # cross, and what is checked is what the refusal rests on: that repair
+    # leaves the broad total exactly where it was.
     bare = types.get("(no type)", 0)
-    check(bare * 4 >= broad,
-          "and bare `catch` remains a real share of the broad handlers: %d of %d "
-          "(%d are catch (Exception))" % (bare, broad, types.get("Exception", 0)))
+    print("      of the %d broad: %d bare `catch`, %d catch (Exception) - "
+          "reported, not checked" % (broad, bare, types.get("Exception", 0)))
+    before = CSH.review(u"class A { void M() { try { Go(); } catch { } } }")
+    after = CSH.review(u"class A { void M() { try { Go(); } "
+                       u"catch (Exception ex) { Log(ex); } } }")
+    check(before.get("broad") == 1 and after.get("broad") == 1,
+          "a bare `catch` and its repair, catch (Exception ex), each count as "
+          "ONE broad handler - so row 5b-110's repair moves the broad share by "
+          "nothing (before %s, after %s)"
+          % (before.get("broad"), after.get("broad")))
+    check(bare <= broad,
+          "and every bare `catch` in the shipped C# is counted among the "
+          "broad handlers: %d of %d" % (bare, broad))
     check("2026-09-29" in doc and "46 against 51" in doc,
           "and the docstring records the day the commonest-kind claim flipped")
+    check("2026-11-20" in doc and "5b-1913" in doc
+          and "reports" in doc.lower(),
+          "and the day the bare-share line was restated, and that the split "
+          "is reported rather than checked")
     # THE FIRST SET WAS WRONG, and the reason is worth keeping: a scratch
     # expression counted `catch` inside comments and where no block
     # followed, and reported 83, 39 and 18.
