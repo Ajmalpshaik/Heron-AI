@@ -36,9 +36,9 @@ purpose: >
   waits; nothing here is tried round it.
 
   WHAT HAS RUN IN REVIT, AND WHAT HAS NOT. The export's proof ran on Revit
-  2024 and its files were counted off disk. The return's proof, 2026-11-02 on
-  Revit 2024, ran rows BY KEY; no run of its version 7 from a csvPath is on
-  record. The card the file route was merged in from was proved on a CSV on
+  2024 and its files were counted off disk. The return's latest proof,
+  version 9's of 2026-11-16 on Revit 2024, ran rows BY KEY, as the ones
+  before it did; no run of it from a csvPath is on record. The card the file route was merged in from was proved on a CSV on
   2026-10-21, but under another rule - it wrote every row it could, where
   this one writes all or nothing - so that proof does not describe this
   route. NEEDS REAL REVIT: NEEDS-CHECKING Group NJ, FRAGMENT-ISSUES row
@@ -46,8 +46,11 @@ purpose: >
   card was raised to version 8 on 2026-11-11 (a key with a * names many);
   while the served list shows it DRAFT, revit_change refuses step 6 and the
   modeller is told so before the file is made (NEEDS-CHECKING Group NG
-  proves version 8). Say so to the modeller before step 6 on a model that
-  matters, and offer a saved scratch copy first. The comparison of step 4
+  proves version 8). It was raised again to version 10 on 2026-11-20 (row
+  5b-1526): a blank cell is now skipped before its parameter is looked for,
+  and NEEDS-CHECKING Group NJ's NJ5 and NJ14 prove it; while the served list
+  shows it DRAFT, step 6 waits as above. Say so to the modeller before
+  step 6 on a model that matters, and offer a saved scratch copy first. The comparison of step 4
   reads two files and nothing else, and was tested off Revit only
   (tests/test_sheet_compare.py).
 
@@ -223,8 +226,8 @@ purpose: >
      WHAT STOPS THE WHOLE FILE, each named in `stale` and `rowFindings`
      with its row: an id that names no element here - an element deleted
      since the export reads the same way, as the wrong model's file; an id
-     on two rows; a column the element has no parameter for, or has on its
-     type; a read-only parameter whose cell is not blank - or is blank
+     on two rows; a cell with a value under a column the element has no
+     parameter for, or has on its type; a read-only parameter whose cell is not blank - or is blank
      under clear, for a text one; a name two writable parameters share
      (name the one meant as Name {its GUID}, which step 1 printed); a
      level's Name (Revit asks about its views - the card's renameViews,
@@ -235,9 +238,12 @@ purpose: >
      another word, a number it cannot read - takes every row back: nothing
      is kept. Each is fixed by the modeller IN THE EDITED COPY, step 4 is
      run again and this step with the new small file; no row is edited or
-     dropped by Heron to get the rest in. A blank cell of the small file
-     under a parameter its element has not got stops the file too, though
-     it is skipped: the parameter is looked for first (row 5b-1526).
+     dropped by Heron to get the rest in. A BLANK cell of the small file is
+     left as it is before its parameter is looked for (the return's version
+     10, row 5b-1526), so a column some of the elements have not got - a
+     mixed set, ducts and air terminals - no longer stops the file; version
+     9 refused it. A column every cell of which was blank is named in the
+     answer's findings.
   7. SAY WHAT CAME BACK, in Revit words. `written` is the number of CELLS
      written and read back as asked - against the comparison's count, not a
      count of values the model did not already hold: a cell that differs
@@ -256,10 +262,11 @@ purpose: >
 
   NOT HERE: a value somebody changed in Revit since the export, in a cell the
   modeller also edited - the comparison reads two files, not the model; a
-  UniqueId column in the export, or a read of the model, would reach it, and
-  is the owner's to decide (OPEN-QUESTIONS Q-87, question c). A chat tool
-  for the comparison - it is a command on the PC, and a tool of its own or a
-  wider heron_sheet_list is the owner's too (Q-87, question b). A type parameter from an instance's row - to change
+  UniqueId column in the export, or a read of the model, would reach it,
+  and neither is built - no UniqueId column for now, decided 2026-11-20 on
+  the owner's delegation (D-182, Q-87 question c). A chat tool for the
+  comparison - it is a command on the PC, confirmed by the owner 2026-11-20
+  (D-182, Q-87 question b). A type parameter from an instance's row - to change
   a type, the row carries the TYPE's own id, every element of that type in
   the model changes, and it is its own change with its own yes (step 1).
   New elements from rows. A
@@ -323,8 +330,10 @@ note: >
   Every step was checked against the two cards' own text and C#, not their
   names: what the export writes and where it reads a type; that the return
   writes every cell that is not blank, with the old value read as the file
-  is read; the order of its refusals, a missing parameter before a blank
-  cell; and that `written` counts cells. No new capability and no new tool.
+  is read; the order of its refusals as version 9 had it, a missing
+  parameter before a blank cell - reversed under skip by version 10 on
+  2026-11-20 (row 5b-1526); and that `written` counts cells. No new
+  capability and no new tool.
 
   What it cannot do is recorded, not worked round: FRAGMENT-ISSUES rows
   5b-1524 (two ways of asking for the return reach another card), 5b-1525

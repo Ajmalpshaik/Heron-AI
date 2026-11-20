@@ -269,7 +269,7 @@ Every row of sections 5 and 5b that `python tools/open-defects.py` listed as ope
 | [row 5b-478](section-5b-rows-476-500.md) | [#954](https://github.com/Ajmalpshaik/Heron-AI/issues/954) | Code fix | Plain modeller questions still reach tools that change the model (second 60) |
 | [row 5b-490](section-5b-rows-476-500.md) | [#909](https://github.com/Ajmalpshaik/Heron-AI/issues/909) | Revit run on your PC | 'Describe these elements' reached a write that renumbers them |
 | [row 5b-496](section-5b-rows-476-500.md) | [#958](https://github.com/Ajmalpshaik/Heron-AI/issues/958) | Code fix | With the trained model installed, two routing suites fail on main and CI never sees it |
-| [row 5b-513](section-5b-rows-501-525.md) | [#911](https://github.com/Ajmalpshaik/Heron-AI/issues/911) | Your decision | Heron cannot save the model it is working in; two unsaved builds were lost |
+| [row 5b-513](section-5b-rows-501-525.md) | [#911](https://github.com/Ajmalpshaik/Heron-AI/issues/911) | Your decision | Heron cannot save the model it is working in; two unsaved builds were lost - *answered 2026-11-16 as D-171; SAVE_DOCUMENT v3 built, its run owed in Group EN* |
 | [row 5b-650](section-5b-rows-626-650.md) | [#960](https://github.com/Ajmalpshaik/Heron-AI/issues/960) | Code fix | Builders work layout method is a draft with gaps and a word-matching bug |
 | [row 5b-665](section-5b-rows-651-675.md) | [#934](https://github.com/Ajmalpshaik/Heron-AI/issues/934) | Code fix | Two code comments still say the duct move was never measured |
 | [row 5b-666](section-5b-rows-651-675.md) | [#910](https://github.com/Ajmalpshaik/Heron-AI/issues/910) | Your decision | 'Move the ducts up 200 mm' moves every duct in the model, not the selection |
@@ -381,7 +381,7 @@ Every row of sections 5 and 5b that `python tools/open-defects.py` listed as ope
 | [row 5b-1413](section-5b-rows-1401-1425.md) | [#930](https://github.com/Ajmalpshaik/Heron-AI/issues/930) | Your decision | A units question about cooling load reaches the heating and cooling loads write |
 | [row 5b-1417](section-5b-rows-1401-1425.md) | [#930](https://github.com/Ajmalpshaik/Heron-AI/issues/930) | Your decision | 'Which one is cutting' reaches neither the join report nor any card claiming it |
 | [row 5b-1420](section-5b-rows-1401-1425.md) | [#919](https://github.com/Ajmalpshaik/Heron-AI/issues/919) | Your decision | No tool can read or set keynote numbering; Revit's API has nothing for it |
-| [row 5b-1423](section-5b-rows-1401-1425.md) | [#911](https://github.com/Ajmalpshaik/Heron-AI/issues/911) | Your decision | No Heron route can Reload Latest or Sync: Revit refuses both inside a transaction group |
+| [row 5b-1423](section-5b-rows-1401-1425.md) | [#911](https://github.com/Ajmalpshaik/Heron-AI/issues/911) | Your decision | No Heron route can Reload Latest or Sync: Revit refuses both inside a transaction group - *answered 2026-11-19: by hand, no card (D-185)* |
 | [row 5b-1424](section-5b-rows-1401-1425.md) | [#928](https://github.com/Ajmalpshaik/Heron-AI/issues/928) | Your decision | 'Put it back' moved a third time from one wrong write to another |
 | [row 5b-1426](section-5b-rows-1426-1450.md) | [#928](https://github.com/Ajmalpshaik/Heron-AI/issues/928) | Your decision | 'Put it back' moved again, and made-up line style questions reach a write |
 | [row 5b-1427](section-5b-rows-1426-1450.md) | [#926](https://github.com/Ajmalpshaik/Heron-AI/issues/926) | Your decision | List categories reads no material, so a material question gets no material |
@@ -419,7 +419,7 @@ Every row of sections 5 and 5b that `python tools/open-defects.py` listed as ope
 | [row 5b-1483](section-5b-rows-1476-1500.md) | [#927](https://github.com/Ajmalpshaik/Heron-AI/issues/927) | Your decision | Trying a draft tool once was refused as 'in use' by the same chat's own lease |
 | [row 5b-1484](section-5b-rows-1476-1500.md) | [#945](https://github.com/Ajmalpshaik/Heron-AI/issues/945) | Code fix | Reloading a window family wanted to delete 24 elements, and why is unknown |
 | [row 5b-1485](section-5b-rows-1476-1500.md) | [#945](https://github.com/Ajmalpshaik/Heron-AI/issues/945) | Code fix | Family job hit draft tools (export families, open documents); windows not found in rooms |
-| [row 5b-1486](section-5b-rows-1476-1500.md) | [#925](https://github.com/Ajmalpshaik/Heron-AI/issues/925) | Your decision | New sheets-from-spreadsheet tool proven; owner choices on blanks, dates and limits left |
+| [row 5b-1486](section-5b-rows-1476-1500.md) | [#925](https://github.com/Ajmalpshaik/Heron-AI/issues/925) | Your decision | New sheets-from-spreadsheet tool proven; owner choices on blanks, dates and limits left - *answered 2026-11-20: all four kept as built (D-183)* |
 | [row 5b-1488](section-5b-rows-1476-1500.md) | [#943](https://github.com/Ajmalpshaik/Heron-AI/issues/943) | Code fix | MEP schematic pressure-drop labels show 0.00 on every run; rounding or a wrong read |
 | [row 5b-1489](section-5b-rows-1476-1500.md) | [#903](https://github.com/Ajmalpshaik/Heron-AI/issues/903) | Revit run on your PC | New rebar-against-spec check tool is not yet run in Revit |
 | [row 5b-1493](section-5b-rows-1476-1500.md) | [#901](https://github.com/Ajmalpshaik/Heron-AI/issues/901) | Revit run on your PC | Tool to lock family 2D lines to planes is proven; the by-hand second check is not run |
@@ -441,10 +441,10 @@ Every row of sections 5 and 5b that `python tools/open-defects.py` listed as ope
 | [row 5b-1522](section-5b-rows-1501-1525.md) | [#953](https://github.com/Ajmalpshaik/Heron-AI/issues/953) | Code fix | First lookup after the server starts ranks badly and still claims the trained model |
 | [row 5b-1523](section-5b-rows-1501-1525.md) | [#953](https://github.com/Ajmalpshaik/Heron-AI/issues/953) | Code fix | When a door hands back candidates it shows their risk but not whether they are proven |
 | [row 5b-1524](section-5b-rows-1501-1525.md) | [#956](https://github.com/Ajmalpshaik/Heron-AI/issues/956) | Code fix | Asking to bring an edited spreadsheet back can reach the export or a family card |
-| [row 5b-1525](section-5b-rows-1501-1525.md) | [#925](https://github.com/Ajmalpshaik/Heron-AI/issues/925) | Your decision | Bringing a CSV back writes every cell unchecked, overwriting newer values in the model - *#871 merged, the row is still open* |
-| [row 5b-1526](section-5b-rows-1526-1550.md) | [#925](https://github.com/Ajmalpshaik/Heron-AI/issues/925) | Your decision | A file the export wrote can be refused whole when brought straight back |
+| [row 5b-1525](section-5b-rows-1501-1525.md) | [#925](https://github.com/Ajmalpshaik/Heron-AI/issues/925) | Your decision | Bringing a CSV back writes every cell unchecked, overwriting newer values in the model - *answered 2026-11-20: Q-87 confirmed (D-182)* |
+| [row 5b-1526](section-5b-rows-1526-1550.md) | [#925](https://github.com/Ajmalpshaik/Heron-AI/issues/925) | Your decision | A file the export wrote can be refused whole when brought straight back - *answered 2026-11-20 on his delegation: the return skips a blank first, version 10, DRAFT until NJ5 and NJ14 (D-182)* |
 | [row 5b-1527](section-5b-rows-1526-1550.md) | [#907](https://github.com/Ajmalpshaik/Heron-AI/issues/907) | Revit run on your PC | The CSV file route of a proven parameter card has never been run in real Revit |
-| [row 5b-1528](section-5b-rows-1526-1550.md) | [#925](https://github.com/Ajmalpshaik/Heron-AI/issues/925) | Your decision | The round-trip CSV has no fixed encoding, so accented or Arabic names may be written wrong - *#871 merged, the row is still open* |
+| [row 5b-1528](section-5b-rows-1526-1550.md) | [#925](https://github.com/Ajmalpshaik/Heron-AI/issues/925) | Your decision | The round-trip CSV has no fixed encoding, so accented or Arabic names may be written wrong - *answered 2026-11-20: read in Python first, as built (D-182)* |
 | [row 5b-1529](section-5b-rows-1526-1550.md) | [#919](https://github.com/Ajmalpshaik/Heron-AI/issues/919) | Your decision | No Heron tool makes a structural floor; Create Floor always passes not-structural |
 | [row 5b-1530](section-5b-rows-1526-1550.md) | [#919](https://github.com/Ajmalpshaik/Heron-AI/issues/919) | Your decision | Insulation cannot be added to duct or pipe fittings, accessories or flex runs |
 | [row 5b-1531](section-5b-rows-1526-1550.md) | [#903](https://github.com/Ajmalpshaik/Heron-AI/issues/903) | Revit run on your PC | Slanted column placement exists in code but no tool offers it and it was never run |
@@ -479,9 +479,9 @@ Every row of sections 5 and 5b that `python tools/open-defects.py` listed as ope
 | [row 5b-1611](row-5b-1611.md) | [#940](https://github.com/Ajmalpshaik/Heron-AI/issues/940) | Code fix | The heron-guard hook wrongly blocks Revit code edits made inside a worktree - *done in #1068, merged* |
 | [row 5b-1612](row-5b-1612.md) | [#911](https://github.com/Ajmalpshaik/Heron-AI/issues/911) | Your decision | A dry run replaces values the chat carried between steps, though nothing was kept - *fixed in code in #871, merged; its Revit run is owed in Group NT* |
 | [row 5b-1626](row-5b-1626.md) | [#915](https://github.com/Ajmalpshaik/Heron-AI/issues/915) | Your decision | Two decisions were marked accepted on leave to build, not on being read back |
-| [row 5b-1627](row-5b-1627.md) | [#916](https://github.com/Ajmalpshaik/Heron-AI/issues/916) | Your decision | A Needs-Checking setup relies on material Keywords, which is not a parameter at all |
-| [row 5b-1632](row-5b-1632.md) | [#916](https://github.com/Ajmalpshaik/Heron-AI/issues/916) | Your decision | A Needs-Checking row expects views to be ambiguous when nothing carries the name twice |
-| [row 5b-1634](row-5b-1634.md) | [#916](https://github.com/Ajmalpshaik/Heron-AI/issues/916) | Your decision | A Needs-Checking row writes Comments into types, which only have Type Comments |
+| [row 5b-1627](row-5b-1627.md) | [#916](https://github.com/Ajmalpshaik/Heron-AI/issues/916) | Your decision | A Needs-Checking setup relies on material Keywords, which is not a parameter at all - *answered 2026-11-19: two shared Keywords, NK0 and NK8 (a) reworded* |
+| [row 5b-1632](row-5b-1632.md) | [#916](https://github.com/Ajmalpshaik/Heron-AI/issues/916) | Your decision | A Needs-Checking row expects views to be ambiguous when nothing carries the name twice - *answered 2026-11-19: NK8 (c) checks where Drawn By lives and expects Heron to ask (D-184)* |
+| [row 5b-1634](row-5b-1634.md) | [#916](https://github.com/Ajmalpshaik/Heron-AI/issues/916) | Your decision | A Needs-Checking row writes Comments into types, which only have Type Comments - *answered 2026-11-19: NG6 and NG7 write Type Comments* |
 | [row 5b-1640](row-5b-1640.md) | [#949](https://github.com/Ajmalpshaik/Heron-AI/issues/949) | Code fix | The structural loads report shows a question mark for every load case category |
 | [row 5b-1642](row-5b-1642.md) | [#939](https://github.com/Ajmalpshaik/Heron-AI/issues/939) | Code fix | check-gaps crashes on Windows when its output goes to a file, cutting its summary - *done in #1068, merged; its Windows run is Group NI, NI8* |
 | [row 5b-1644](row-5b-1644.md) | [#949](https://github.com/Ajmalpshaik/Heron-AI/issues/949) | Code fix | Column rebar with hooked ties is always refused by Revit 2020 |
@@ -537,6 +537,7 @@ Every row of sections 5 and 5b that `python tools/open-defects.py` listed as ope
 | [row 5b-1860](row-5b-1860.md) | [#1070](https://github.com/Ajmalpshaik/Heron-AI/issues/1070) | Your decision, then a Revit run | No live card turns an isometric 3D view, so a family's View 1 cannot be turned to a photo's angle |
 | [row 5b-1861](row-5b-1861.md) | [#1071](https://github.com/Ajmalpshaik/Heron-AI/issues/1071) | Code fix | owner-queue files the installer checks AC to AF by the newest group's heading |
 | [row 5b-1867](row-5b-1867.md) | [#1072](https://github.com/Ajmalpshaik/Heron-AI/issues/1072) | Tidy-up | Specification parts 00 to 00d never read line by line against the tree |
+| [row 5b-1875](row-5b-1875.md) | [#1080](https://github.com/Ajmalpshaik/Heron-AI/issues/1080) | Tidy-up | The duplicate check planned for the sheets-from-spreadsheet card once proven has not been run |
 | [row 5b-1850](row-5b-1850.md) | [#908](https://github.com/Ajmalpshaik/Heron-AI/issues/908) | Revit run on your PC | A tower's low-angle camera measured its eye from the roof; fixed in #1024, DRAFT v6, the run is owed |
 | [row 5b-1856](row-5b-1856.md) | [#1059](https://github.com/Ajmalpshaik/Heron-AI/issues/1059) | Revit run on your PC | The room name and number written apart, a space tested by its boundary, linked rooms; fixed in #1050, DRAFT v3, the run is owed |
 | [row 5b-1857](row-5b-1857.md) | [#923](https://github.com/Ajmalpshaik/Heron-AI/issues/923) | Your decision | A space filter found 0 ceiling-void duct accessories where the count by space found 11 - row 5b-175's split |
@@ -626,7 +627,7 @@ Each stays in full where it is. Pull request [#871](https://github.com/Ajmalpsha
 | F20 | [#965](https://github.com/Ajmalpshaik/Heron-AI/issues/965) | [`proposals/part-f.md`](../proposals/part-f.md) | ✅ decided 2026-11-15 (owner's delegation); ticked |
 | F23 | [#965](https://github.com/Ajmalpshaik/Heron-AI/issues/965) | [`proposals/part-f.md`](../proposals/part-f.md) | ✅ answered 2026-11-16 by the owner; ticked |
 | F22 | [#965](https://github.com/Ajmalpshaik/Heron-AI/issues/965) | [`proposals/part-f.md`](../proposals/part-f.md) | ✅ decided 2026-11-15 (owner's delegation); ticked |
-| Q-87 | [#966](https://github.com/Ajmalpshaik/Heron-AI/issues/966) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | ✅ decided 2026-11-15 on the owner's delegation; ticked |
+| Q-87 | [#966](https://github.com/Ajmalpshaik/Heron-AI/issues/966) | [`open-questions/tier-2.md`](../open-questions/tier-2.md) | ✅ decided 2026-11-15 on the owner's delegation; ticked. Confirmed 2026-11-20 by the owner as his own, on [#925](https://github.com/Ajmalpshaik/Heron-AI/issues/925), D-182 |
 | F11 | [#966](https://github.com/Ajmalpshaik/Heron-AI/issues/966) | [`proposals/part-f.md`](../proposals/part-f.md) | ✅ decided 2026-11-15 (owner's delegation); ticked |
 | F12 | [#966](https://github.com/Ajmalpshaik/Heron-AI/issues/966) | [`proposals/part-f.md`](../proposals/part-f.md) | ✅ decided 2026-11-15 (owner's delegation); ticked |
 | F13 | [#966](https://github.com/Ajmalpshaik/Heron-AI/issues/966) | [`proposals/part-f.md`](../proposals/part-f.md) | ✅ decided 2026-11-15 (owner's delegation); ticked |
@@ -639,7 +640,7 @@ Each stays in full where it is. Pull request [#871](https://github.com/Ajmalpsha
 | F9 | [#967](https://github.com/Ajmalpshaik/Heron-AI/issues/967) | [`proposals/part-f.md`](../proposals/part-f.md) | ✅ decided 2026-11-15 (owner's delegation); ticked |
 | F42 | [#967](https://github.com/Ajmalpshaik/Heron-AI/issues/967) | [`proposals/f42.md`](../proposals/f42.md) | ✅ decided 2026-11-15 (owner's delegation); ticked |
 | F43 | [#967](https://github.com/Ajmalpshaik/Heron-AI/issues/967) | [`proposals/f43.md`](../proposals/f43.md) | Open - 🟠; F43-1 and F43-4 decided 2026-11-15, the owner answered F43-2, 3, 5 and 6 on 2026-11-16, and still owed are F43-2's six answers and the copies F43-3 and F43-6 wait for. #967 stays open for it |
-| Q-93 | [#1038](https://github.com/Ajmalpshaik/Heron-AI/issues/1038) | [`open-questions/tier-3.md`](../open-questions/tier-3.md) | Open since 2026-11-17, held for a discussion with the owner |
+| Q-93 | [#1038](https://github.com/Ajmalpshaik/Heron-AI/issues/1038) | [`open-questions/tier-3.md`](../open-questions/tier-3.md) | ✅ answered 2026-11-19 by the owner, D-181 - in the one Revit Heron is connected to, one model at a time; opening read-only is a read. Nothing built: the overnight check is a later build job |
 
 ## NEEDS-CHECKING groups - [#968](https://github.com/Ajmalpshaik/Heron-AI/issues/968) to [#1004](https://github.com/Ajmalpshaik/Heron-AI/issues/1004)
 

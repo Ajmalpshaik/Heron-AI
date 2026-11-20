@@ -1653,6 +1653,36 @@ def the_page_labels_what_the_body_said(stage, picked):
         mine = [i for i in activity.since(before) if i.get("tool") == action]
         return mine[-1].get("outcome") if len(mine) == 1 else "(%d lines)" % len(mine)
 
+    # THE TABLE'S WRITER IS ONE FIXED CARD, SET_PARAMETER_VALUES_BY_ID, and
+    # its own status is not this section's claim. Until 2026-11-20 these
+    # checks silently needed that card PROVEN: version 10 (row 5b-1526, D-182)
+    # put it back to DRAFT, every Apply was refused by D-117 before anything
+    # was sent, and the label was never exercised. So the card's REAL status is
+    # checked first - a writer whose proof does not stand is refused through
+    # the table too, and Revit is sent nothing - and for the labels below its
+    # proof is stood in, as Revit is, so they run whatever the card's status.
+    writer = "set-parameter-values-by-id"
+    real = module.brain.proof_status(writer)
+    keepable = getattr(module.bridge, "KEEPABLE_STATUSES", ("PROVEN",))
+    if real is None or real.get("status") not in keepable or real.get("stale"):
+        got = line_of("companion_table_apply", dict(KEPT),
+                      lambda: module._apply_table([["1", "Comments", "a", "b"]]))
+        check(got == "refused" and not stage.revit.asked,
+              "the table's writer is %s, its proof not standing: the table's Apply is "
+              "refused and Revit is sent nothing (D-117) - found %r, %d sent"
+              % ((real or {}).get("status"), got, len(stage.revit.asked)))
+    real_status = module.brain.proof_status
+
+    def standing(folder):
+        if folder == writer:
+            return {"status": "PROVEN", "stale": False, "proof": True, "date": "2026-11-16",
+                    "model": "stand-in", "by": "stand-in", "risk": "MODIFY"}
+        return real_status(folder)
+
+    def table_apply():
+        stage.patch(module.brain, "proof_status", standing)
+        return module._apply_table([["1", "Comments", "a", "b"]])
+
     change = picked["change"]
     for reply, want, what in ((dict(KEPT), "ok", "a change Revit kept"),
                               (error("unknown_outcome"), "failed", "an answer lost after it left"),
@@ -1663,8 +1693,7 @@ def the_page_labels_what_the_body_said(stage, picked):
                       lambda: module._apply_change(change, [("unused", "1")]))
         check(got == want, "the page's Apply, %s: its line says %r - found %r"
               % (what, want, got))
-        got = line_of("companion_table_apply", reply,
-                      lambda: module._apply_table([["1", "Comments", "a", "b"]]))
+        got = line_of("companion_table_apply", reply, table_apply)
         check(got == want, "the table's Apply, %s: its line says %r - found %r"
               % (what, want, got))
 

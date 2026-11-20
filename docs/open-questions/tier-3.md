@@ -1069,7 +1069,7 @@ fingerprint alone.
 
 ---
 
-### 🟠 Q-93 — Checking a folder of models overnight: in the modeller's Revit one model at a time, or a separate Revit for each model? *(new, 2026-11-17)*
+### ✅ Q-93 — Checking a folder of models overnight: in the modeller's Revit one model at a time, or a separate Revit for each model? → **Shape 1, in the one Revit Heron is connected to; opening read-only is a read** *(new, 2026-11-17, answered 2026-11-19)*
 
 **Where it comes from.** Item 7 of the build order in [research note 51](../51-studying-another-revit-mcp.md),
 which the owner asked to be built one by one: *"many models overnight, read only - one report at the end"*.
@@ -1107,5 +1107,18 @@ already proven, nothing saved anywhere. The owner decides; nothing is built unti
 **Held for a discussion, 2026-11-17.** The owner, in conversation: *"7 i have detaild explanation this we
 will do it later we need to discus abouth this"*. He has a fuller plan of his own; this question waits for
 it, and nothing is built or proposed for item 7 until that discussion.
+
+**Answer: shape 1, and opening a model read-only is a read. See [D-181](../DECISIONS.md).** Ajmal PS,
+2026-11-19, in conversation, written on [#1038](https://github.com/Ajmalpshaik/Heron-AI/issues/1038):
+
+1. **Where the models open: in the one Revit the modeller connected Heron to, one model at a time** - his
+   words: *"in one Revit because I have to connect the Heron on that Revit ... which Revit I given to AI, in
+   that Revit"*. Never a second Revit started for it.
+2. **Opening a model read-only, reading it and closing it without saving counts as a read**, so it is allowed
+   with Changes off. Publish is not needed, because nothing is saved anywhere.
+
+**Nothing is built by this answer.** The overnight folder check - research note 51's item 7 - is a later build
+job of its own, started only when the owner asks for it. These two answers are what that build starts from;
+whether his fuller plan of 2026-11-17 adds to them is his to say when it starts.
 
 ---

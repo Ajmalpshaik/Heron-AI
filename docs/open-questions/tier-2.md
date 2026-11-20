@@ -1541,6 +1541,16 @@ the limit: one point a call, and "put it here" declared by no card.
 
 **Answer: Heron compares the file with the exported copy first, outside Revit, lists the changed cells with old and new values, and sends only those - 2026-11-15, decided by Claude on Ajmal PS's delegation of 2026-11-15 - *"the remaining thing you can answer it"* - and not read back to him; his word overrules it at any time, and no decision record is written until he reads it back.** **Why:** Nothing unchanged or rounded is written back over the model, and the import tool needs no new proof. **Work:** built 2026-11-15, shape (a)2 with (b)'s door 3 - no new MCP tool, and `heron_sheet_list` not widened: [`brain/heron_sheet_compare.py`](../../brain/heron_sheet_compare.py) is a command the modeller runs on their PC, named in the method. It reads the file as exported and the edited copy - a CSV or an `.xlsx`, through `heron_sheet_list`'s own reader (`read_grid`, the one gate both stand on now) - lists the changed cells with id, parameter, old value and new, the ids changed, doubled, added or missing and the headers renamed or added, keeps cells blanked on purpose apart, and writes ONLY the changed cells to a small CSV in the shape `SET_PARAMETER_VALUES_BY_ID` reads through `csvPath`, brought back with `blankCells=skip`. Neither card's YAML or C# was touched. Tested off Revit by [`tests/test_sheet_compare.py`](../../tests/test_sheet_compare.py), which failed first; the method [`parameters-csv-round-trip`](../../brain/skills/parameters-csv-round-trip.yaml) was rewritten at steps 3 to 6 for it. **NEEDS REAL REVIT:** the small file through the card, [Group NJ](../needs-checking/group-nj.md) NJ13. **Still the owner's:** (b)1 and (b)2 - a chat tool of its own, or `heron_sheet_list` widened - and (c), the UniqueId column; neither was built.
 
+**Confirmed 2026-11-20 by the owner as his own decision - [D-182](../DECISIONS.md).** Ajmal PS, in conversation,
+written on [#925](https://github.com/Ajmalpshaik/Heron-AI/issues/925): bringing an edited CSV back first compares
+it with the exported copy, shows the changed cells, old and new, and sends only those (row 5b-1525); the file is
+read in Python first, a CSV or an `.xlsx`, and a damaged cell is never sent, as built (row 5b-1528). So (a) is
+shape 2 and (b) is door 3, as built on 2026-11-15: the comparison stays a command on the modeller's PC, no chat
+tool. **(c) was delegated the same day** with row 5b-1526 - *"You can decide this thing. Investigate on this and
+decide which is the best option."* - **and decided by Claude: no UniqueId column for now.** Instead the return's
+version 10 skips a blank cell before it looks for its parameter, the one false refusal left on the comparison's
+route; why, and what was not taken, is in D-182. His word overrules that part at any time.
+
 **What was found.** A modeller's weekly round trip - parameters out to Excel, edited, brought back - is two
 cards Heron already has: `EXPORT_PARAMETERS_TO_CSV` writes the file and `SET_PARAMETER_VALUES_BY_ID` reads it
 back (`csvPath`, since `IMPORT_PARAMETER_VALUES` was merged into it on 2026-11-01 on the owner's word *"make
