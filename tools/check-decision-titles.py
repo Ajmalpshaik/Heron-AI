@@ -57,12 +57,21 @@ needed fails the run, so the list can only get shorter.
 
 --published REF
 ---------------
-The history that counts as written: HEAD's by default. CI passes HEAD^1, the
-branch a pull request merges into, so a title a branch changed before it was
-ever merged is a draft and not a rewrite. That matters most in the case this
-exists for. A branch that numbered its decision D-99, and finds main has since
-given D-99 to another, does the right thing by renumbering its own - and against
-its own history that reads as D-99 changing title. Against main's it does not.
+The history that counts as written: HEAD's by default, and CI passes HEAD - on a
+pull request the merge commit, so the branch's own commits count. A branch that
+numbered its decision D-99, and finds main has since given D-99 to another, does
+the right thing by renumbering its own - and its history then holds D-99 under
+two titles. It carries the Numbering lines that say so BEFORE it merges: the
+moved decision names D-99 (tools/renumber.py writes that line), and if the
+branch wrote D-99 first, the decision now under D-99 quotes the branch's title.
+A title the branch reworded before merging needs the same quoting line.
+
+CI passed HEAD^1, main alone, until 2026-11-20, so a branch's drafts did not
+count - and the moment one merged they were main's history, and every later
+pull request failed on them: #871 renumbered D-167, D-168 and D-174 before it
+merged, and #1010 had to add their lines afterwards. The owner chose to catch it
+on the pull request that does it (issue #1056, option 2), keeping every check
+above. REF is still yours to pass: `origin/main` asks what main has published.
 
 WHAT IT CANNOT SEE
 ------------------
@@ -351,7 +360,7 @@ def main(argv=None):
             pass
     parser = argparse.ArgumentParser(description="A decision keeps the title it was first written with.")
     parser.add_argument("--published", default="HEAD",
-                        help="the history that counts as written - HEAD by default; CI passes HEAD^1")
+                        help="the history that counts as written - HEAD by default, and CI passes HEAD")
     args = parser.parse_args(argv)
     print("check-decision-titles - a decision keeps the title it was first written with")
     print()

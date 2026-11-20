@@ -1066,6 +1066,28 @@ def _result_appeared(positive, negative, frag):
     return False
 
 
+def things_made(positive, negative, frag):
+    """The declared results rendered as a TYPE NAME alone - the thing a
+    creator made - that are present in the positive and gone in a negative
+    that RAN. Sorted names; empty when there is none.
+
+    ONE QUESTION, ASKED BY BOTH JUDGES OF A RUN RECORD. `batch-prove` asked it
+    this narrowly since row 5b-1114, while `accept` rescued a POSITIVE
+    UNREADABLE with `_result_appeared` over ANY text: a list declared
+    `IList<ElementId>` answering `three ducts`, or an undeclared string
+    answering `three ducts sized`, against an empty negative, was refused by
+    the runner and passed at the signing gate (row 5b-1863). A sentence where
+    a list or an undeclared string was expected is not a thing made, and stays
+    UNREADABLE in both. And only a negative that ran: a refused leg gives
+    nothing back, which would read as "gone"."""
+    if not negative or not negative.get("ok"):
+        return []
+    things = dict((key, value) for key, value in (positive.get("provides") or {}).items()
+                  if _is_helper_object(value))
+    return sorted(key for key in things
+                  if _result_appeared(dict(positive, provides={key: things[key]}), negative, frag))
+
+
 def _flag_flipped(positive, negative, frag):
     """Is a declared result a FLAG that is TRUE in the positive and FALSE in
     the negative? Returns the name, or None.
@@ -2005,9 +2027,7 @@ def _record_refusal(frag, record_path):
         # zero on purpose, so the refusal it produces is POSITIVE EMPTY and no
         # arrangement could have answered it.
         reason = None
-    if reason == "POSITIVE UNREADABLE" and _result_appeared(positive,
-                                                            phases.get("negative"),
-                                                            frag):
+    if reason == "POSITIVE UNREADABLE" and things_made(positive, phases.get("negative"), frag):
         # A FRAGMENT THAT MAKES ONE THING RETURNS THE THING, NOT A COUNT, AND
         # `positive_worked` CAN ONLY COUNT. It sees `created` rendered as
         # `MechanicalSystemType` - a bare CamelCase word - and `_is_helper_object`
@@ -2028,7 +2048,8 @@ def _record_refusal(frag, record_path):
         # and a genuine working object - the `OverrideGraphicSettings` the rule
         # above exists for - is present in both legs and cannot pass it either.
         # Only a declared result that is THERE in the positive and GONE in the
-        # negative gets through.
+        # negative gets through - and only one rendered as a type name, the
+        # question `batch-prove` asks too (`things_made`, row 5b-1863).
         reason = None
     if reason:
         return ("%s - %s. The positive case is the evidence it DOES something; "

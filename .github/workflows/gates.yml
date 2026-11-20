@@ -180,11 +180,16 @@ jobs:
       # whole and dropped the other's five, and three of the numbers were
       # given to new decisions four days later (rows 5b-157 and 5b-171). It
       # reads the log's history, which is why this job fetches all of it.
-      # HEAD^1 is the base a pull request merges into: a title a branch
-      # changed before it was ever merged is a draft, and a branch that
-      # renumbers its own decision after main took the number is right.
+      # HEAD - on a pull request, the merge commit, so the branch's own
+      # history counts as written. It was HEAD^1, main alone, until
+      # 2026-11-20: a branch that renumbered its own decision passed here,
+      # and once it merged main's history held both titles, so EVERY later
+      # pull request went red - #871 did it to D-167, D-168 and D-174. The
+      # owner chose to catch it on the pull request that does it (#1056,
+      # option 2): that branch carries the Numbering lines itself, and main
+      # never goes red for somebody else's renumbering.
       - name: check-decision-titles
-        run: python tools/check-decision-titles.py --published HEAD^1
+        run: python tools/check-decision-titles.py --published HEAD
 
       # These two need somewhere to put a knowledge store. An empty
       # directory is enough for them to run, so CI gives them one.
