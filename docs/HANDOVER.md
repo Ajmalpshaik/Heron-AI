@@ -23,11 +23,12 @@ that day**:
 > model**, so those are safe on a live project now. How many there are is derived, not typed: the
 > `PROVEN READ` line of the loop in [`FOR-THE-OWNER.md` §3](FOR-THE-OWNER.md#3-what-you-can-safely-use-today).
 >
-> **For the next stretch as an ordered plan**, open
-> [`work-notes/plans/next-steps-2026-09-12.md`](work-notes/plans/next-steps-2026-09-12.md) — the track
-> you can run on your own machine and the track that continues here without Revit. It is a schedule and
-> it will be deleted when it is spent — read on 2026-10-18 it is mostly spent, and its own opening says
-> which items are left and which register now holds each; **this file stays the authority.**
+> **The ordered plan of 2026-09-12 that stood here, `work-notes/plans/next-steps-2026-09-12.md`, was
+> retired on 2026-11-20** (WN-22, issue [#1007](https://github.com/Ajmalpshaik/Heron-AI/issues/1007)):
+> every step it held is done or has a register home - its one real numbered document is
+> [NEEDS-CHECKING **OO1**](needs-checking/group-oo.md), and its usage-counter question is
+> [Q-94](open-questions/tier-3.md). Its one rule for both tracks is the one above: a proven `READ`
+> fragment on real work, a `MODIFY` one only on a copy. **This file stays the authority.**
 
 - **"Revit is open"** — and say WHICH model, because that now decides what can be proved. Until
   2026-09-06 this line said Revit was "the one thing months of work here have been waiting on", and
