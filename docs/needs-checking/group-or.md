@@ -7,6 +7,8 @@
 
 ## Group OR - MEP, view, filter and picture tools fixed for issues #942, #943, #951, #1053, #1058, #935 and #1060 - DRAFT until proved (2026-11-20)
 
+**Tracked as GitHub issue [#1115](https://github.com/Ajmalpshaik/Heron-AI/issues/1115) since 2026-11-20** - the checks still owed are listed there; tick each in that issue when it is done. Every result stays in this file.
+
 **Why:** on 2026-11-20 one session took the open FIX rows of seven GitHub issues - duct justification
 ([#942](https://github.com/Ajmalpshaik/Heron-AI/issues/942)), MEP accessories, zones and schematic labels
 ([#943](https://github.com/Ajmalpshaik/Heron-AI/issues/943)), view filters, tags, spaces and IFC

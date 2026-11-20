@@ -254,6 +254,7 @@ an edit.
 | [D-183](#d-183--sheets-made-from-a-spreadsheet-keep-four-choices-as-built-a-blank-cell-writes-nothing-a-date-goes-in-as-iso-a-refused-value-is-listed-and-its-sheet-kept-and-1000-rows-is-the-most) | Sheets made from a spreadsheet keep four choices as built: a blank cell writes nothing, a date goes in as ISO, a refused value is listed and its sheet kept, and 1,000 rows is the most | ✅ Accepted · 2026-11-20 |
 | [D-184](#d-184--before-heron-acts-on-a-parameter-by-its-name-it-checks-where-that-name-lives-in-the-model-and-asks-the-modeller-which-one-when-more-than-one-place-carries-it) | Before Heron acts on a parameter by its name, it checks where that name lives in the model, and asks the modeller which one when more than one place carries it | ✅ Accepted · 2026-11-19 |
 | [D-185](#d-185--reload-latest-and-sync-with-central-stay-the-modellers-own-clicks-and-heron-builds-no-route-for-either) | Reload Latest and Sync with Central stay the modeller's own clicks, and Heron builds no route for either | ✅ Accepted · 2026-11-19 |
+| [D-189](#d-189--a-development-session-never-pulls-into-the-main-heron-folder) | A development session never pulls into the main Heron folder | ✅ Accepted · 2026-11-20 |
 
 ## Format
 
@@ -1657,3 +1658,12 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** nothing in code - `SYNC_WITH_CENTRAL` stays as found
 
 **Full record:** [`decisions/D-185.md`](decisions/D-185.md)
+
+## D-189 — A development session never pulls into the main Heron folder
+
+**Status:** Accepted · **Date:** 2026-11-20 · **Accepted:** Ajmal PS, 2026-11-20, in conversation, on pull request [#1107](https://github.com/Ajmalpshaik/Heron-AI/pull/1107): *"no to B1"*
+**Settles:** item B1 of the field report [#1058](https://github.com/Ajmalpshaik/Heron-AI/issues/1058)
+**Keeps:** [Group EU](needs-checking/group-eu.md)'s guard - a chat whose Heron code changed under it stops and asks to be reopened
+**Affects:** [`AGENTS.md`](../AGENTS.md) "How to work" - no code
+
+**Full record:** [`decisions/D-189.md`](decisions/D-189.md)
