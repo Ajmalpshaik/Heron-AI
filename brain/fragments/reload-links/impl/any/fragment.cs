@@ -28,13 +28,13 @@
 // So when anything was done, the first finding says Undo and Discard cannot
 // take it back - the first of a list is what a reply shows. On a real model
 // the chat asks first and says the same (the card's purpose); the proof runs
-// on a scratch copy of a sample model only (NEEDS-CHECKING Group OP).
+// on a scratch copy of a sample model only (NEEDS-CHECKING Group OQ).
 //
 // OPENS NO TRANSACTION (Golden Rule 16), AND THIS ONE NEEDS SAYING TWICE.
 // Reloading is document management rather than a model edit - it reads a file
 // from disk. Row 73 measured the UNLOAD both ways: refused inside an open
 // transaction, done for real outside one. The RELOAD has not been measured
-// either way, and it is the first thing Group OP finds out. If Revit refuses,
+// either way, and it is the first thing Group OQ finds out. If Revit refuses,
 // the answer is where the host's write path puts its transaction, not a
 // change to this fragment.
 //

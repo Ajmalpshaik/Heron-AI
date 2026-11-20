@@ -19,7 +19,7 @@ capability: RELOAD_LINKS
 # link's load and unload happen outside Revit's undo, so on a real model the
 # chat asks first, every time, and says there is no undo; when anything was
 # done the first finding says so too. Its proof runs on a scratch copy of a
-# sample model only, never a job model (NEEDS-CHECKING Group OP). Still DRAFT.
+# sample model only, never a job model (NEEDS-CHECKING Group OQ). Still DRAFT.
 version: 3
 source: OFFICIAL
 risk: MODIFY

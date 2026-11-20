@@ -36,7 +36,7 @@ positive:
       `keptInPlace`, and the door tag moved clear of it
 
   # VERSION 3 (2026-11-20) - row 5b-240. FAILS on version 2. NOT RUN.
-  # NEEDS-CHECKING Group OP.
+  # NEEDS-CHECKING Group OQ.
   - given: >
       two leaderless door tags on top of each other on a 1:100 plan, with
       minGapMm 2

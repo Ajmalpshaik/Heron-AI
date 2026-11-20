@@ -45,7 +45,7 @@ positive:
       Signature, and no other category's row
 
   # VERSION 4 (2026-11-20) - row 5b-1427. FAILS on version 3. NOT RUN.
-  # NEEDS-CHECKING Group OP.
+  # NEEDS-CHECKING Group OQ.
   - given: >
       version 4, categories "Generic Models", in a scratch project whose
       Generic Models category was given a material in Manage > Object Styles

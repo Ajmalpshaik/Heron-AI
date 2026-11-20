@@ -61,7 +61,7 @@ risk: READ
 # the subcategories apart. elementTotal and `instances` keep their rule.
 # "format" stays 1: the keys are added, none is taken away. Version 3 was
 # PROVEN (the proof block below, kept as its record); the C# moved, so it is
-# DRAFT until NEEDS-CHECKING Group OP is run (D-30).
+# DRAFT until NEEDS-CHECKING Group OQ is run (D-30).
 purpose: >
   Reads the open project once and counts what it holds, part by part, for the
   Heron Companion's Model Dashboard: the placed model elements by category,

@@ -120,7 +120,7 @@
 // the categories are counted by the category each row belongs to, so the
 // three are not three more categories. elementTotal and every row's
 // `instances` keep their rule - which elements those are is still owed a
-// Revit run (NEEDS-CHECKING Group OP).
+// Revit run (NEEDS-CHECKING Group OQ).
 //
 // ----------------------------------------------------------------------
 // VERSION 3 (2026-11-01) - BREAKDOWNS, FOR THE COMPANION'S BOARDS

@@ -18,7 +18,7 @@ capability: SYNC_SPACES_WITH_LINKED_ROOMS
 # kept as its record. A space made with no area now leaves `created` and is
 # counted apart in `noArea`, its line saying whether the link is Room
 # Bounding. A space is still made only where the linked model has a placed
-# room. The C# moved, so it is DRAFT until NEEDS-CHECKING Group OP is run.
+# room. The C# moved, so it is DRAFT until NEEDS-CHECKING Group OQ is run.
 version: 2
 source: OFFICIAL
 risk: MODIFY

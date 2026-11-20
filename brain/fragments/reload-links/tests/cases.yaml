@@ -17,7 +17,7 @@ positive:
       for it. `unloaded` did not exist in version 1
 
   # VERSION 3 (2026-11-20) - row 73. NOT RUN. On a SCRATCH COPY of a sample
-  # model only (NEEDS-CHECKING Group OP), never a job model.
+  # model only (NEEDS-CHECKING Group OQ), never a job model.
   - given: reload of one loaded link on the scratch copy
     expect: >
       the FIRST finding reads "No undo: Revit's Undo and Discard cannot take

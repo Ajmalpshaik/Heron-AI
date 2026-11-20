@@ -45,7 +45,7 @@ capability: LIST_CATEGORIES
 # question still reaches this card on model and SET_OBJECT_STYLE on lexical,
 # as on main. The re-ranked backends were NOT ASKED - none here.
 # Version 3 was PROVEN (the proof block below, kept as its record); the C#
-# moved, so it is DRAFT until NEEDS-CHECKING Group OP is run (D-30).
+# moved, so it is DRAFT until NEEDS-CHECKING Group OQ is run (D-30).
 version: 4
 source: OFFICIAL
 risk: READ

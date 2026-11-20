@@ -85,7 +85,7 @@ negative:
     expect: >
       `refused` naming that revision and "'A' -> 'AA'"; nothing changed
 
-  # VERSION 3 (2026-11-20) - row 5b-414. NOT RUN. NEEDS-CHECKING Group OP.
+  # VERSION 3 (2026-11-20) - row 5b-414. NOT RUN. NEEDS-CHECKING Group OQ.
   # The positive is above, under positive.
   - given: the same project set to number revisions PER SHEET, the same change
     expect: >

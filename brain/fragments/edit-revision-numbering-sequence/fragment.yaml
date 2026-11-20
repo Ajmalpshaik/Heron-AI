@@ -33,7 +33,7 @@ semantic-identity: "rename a revision numbering sequence or change its digits, s
 # with both numbers, and one that cannot be worked out (per-sheet numbering
 # above all) refused as before. Version 2 was PROVEN (the proof block below,
 # kept as its record); the C# moved, so it is DRAFT until NEEDS-CHECKING
-# Group OP is run (D-30).
+# Group OQ is run (D-30).
 kind: action
 domain: revit.sheets
 capability: EDIT_REVISION_NUMBERING_SEQUENCE

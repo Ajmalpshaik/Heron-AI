@@ -25,7 +25,7 @@ risk: READ
 # other settings a modeller asks about too; these are the ones every release
 # 2020 to 2027 can read without opening the link (tools/api-surface,
 # 2026-11-20). Version 1 was PROVEN (the proof block below, kept as its
-# record); the C# moved, so it is DRAFT until NEEDS-CHECKING Group OP is run.
+# record); the C# moved, so it is DRAFT until NEEDS-CHECKING Group OQ is run.
 purpose: >
   Reports the Revit models linked into this project - one row per linked FILE,
   how many times each is placed, and whether it is loaded right now.

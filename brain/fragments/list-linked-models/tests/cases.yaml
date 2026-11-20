@@ -8,7 +8,7 @@ positive:
       report a project with four linked models as having nine
 
   # VERSION 2 (2026-11-20) - row 5b-474. FAILS on version 1. NOT RUN.
-  # NEEDS-CHECKING Group OP.
+  # NEEDS-CHECKING Group OQ.
   - given: >
       the Snowdon HVAC copy, its six links loaded; before the run, read
       Manage Links (Reference, Path Type, Saved Path) and one link type's

@@ -120,7 +120,7 @@ positive:
       "breakdowns:" line in notRead
 
   # VERSION 4 (2026-11-20) - row 5b-1355. FAILS on version 3. NOT RUN.
-  # NEEDS-CHECKING Group OP.
+  # NEEDS-CHECKING Group OQ.
   - given: >
       the Snowdon HVAC copy with its links loaded - the model whose JT1 run
       read three rows all named "Center line"
