@@ -538,6 +538,7 @@ Every row of sections 5 and 5b that `python tools/open-defects.py` listed as ope
 | [row 5b-1856](row-5b-1856.md) | [#1059](https://github.com/Ajmalpshaik/Heron-AI/issues/1059) | Revit run on your PC | The room name and number written apart, a space tested by its boundary, linked rooms; fixed in #1050, DRAFT v3, the run is owed |
 | [row 5b-1857](row-5b-1857.md) | [#923](https://github.com/Ajmalpshaik/Heron-AI/issues/923) | Your decision | A space filter found 0 ceiling-void duct accessories where the count by space found 11 - row 5b-175's split |
 | [row 5b-1858](row-5b-1858.md) | [#1060](https://github.com/Ajmalpshaik/Heron-AI/issues/1060) | Code fix | The count by room or space takes the first one in plan on stacked storeys, and prints the number twice |
+| [row 5b-1862](row-5b-1862.md) | [#1067](https://github.com/Ajmalpshaik/Heron-AI/issues/1067) | Code fix | `resolve` says it orders a capability's providers by version, and its sort does not - latent, do it with row 5b-1131 |
 
 ## Found finished on 2026-11-16 - closed in the register, no issue
 
