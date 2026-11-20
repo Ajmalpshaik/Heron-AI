@@ -200,7 +200,7 @@ built.
 | Face-based | `WorkPlaneBased`, the switch off - the rule BV1 checks | on any face, any angle, in a linked model too | a placeholder host the project never shows (**SOURCED**) | `hosted-family-creation` |
 | Wall-, ceiling-, floor-, roof-based | `OneLevelBasedHosted` | only on that host | a sample wall, ceiling, floor or roof | `hosted-family-creation` |
 | Line-based | `CurveBased` | two clicks; they set its Length | the built-in instance Length (`FAMILY_LINE_LENGTH_PARAM`) and the planes it is measured between | `line-based-family-creation` |
-| Two-level (a column) | `TwoLevelsBased` | between a base and a top level | a lower and an upper reference level | `structural-family-creation` for a structural column, `family-creation` for an architectural one |
+| Two-level (a column) | `TwoLevelsBased` | between a base and a top level | a lower and an upper reference level - `Lower Ref. Level` and `Upper Ref. Level` in `Metric Column.rft`, no `Ref. Level`; a revolve drawn above the upper one rides up with it when placed taller ([row 5b-1876](fragment-issues/row-5b-1876.md), Revit 2020) | `structural-family-creation` for a structural column, `family-creation` for an architectural one |
 | Structural framing | `CurveDrivenStructural` | between two points | Member Left and Member Right planes and a sample extrusion locked to them (**SOURCED**, §7) | `structural-family-creation` |
 | Door, window | `OneLevelBasedHosted` | in a wall | a host wall with an opening already cut, Width and Height (**SOURCED**, §7) | `door-window-family-creation` |
 | Lighting fixture | as its template - free, ceiling-, wall- or face-based | as its host | a light source (**SOURCED**, §10) | `lighting-fixture-family-creation` |

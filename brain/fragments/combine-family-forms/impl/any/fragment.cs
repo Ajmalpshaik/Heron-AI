@@ -56,6 +56,18 @@
 // merge two; it is refused with the combination's id instead. A VOID may cut
 // several combinations - run this once per body to cut two bodies with one void
 // and keep them apart.
+//
+// AN ARRAY'S COPY BY ITS GROUP'S ID (version 3, 2026-11-20, row 5b-358). Every
+// member of an ARRAY_FAMILY_FORMS row is a model group, even for one form, and
+// that tool's `members` gives the groups' ids - so an id that is a model group
+// stands for the form(s) inside it, and a finding says so. Whether Revit
+// combines a form inside a group at all is NOT KNOWN - untried. If it refuses,
+// the call throws in plain words, naming the group as the likely cause and the
+// way round (ungroup that copy, then name the form by its own id - the array's
+// `memberForms`), and the host rolls the whole call back. What Revit says of a
+// group edited this way when the change is committed is not known either. A
+// group holding no form is refused by name. Taking a combination apart
+// ("separate") still takes a combination's or a form's id, not a group's.
 
 var findings = new List<string>();
 var combinationId = "";
@@ -153,7 +165,27 @@ else if (act == "combine")
         }
     }
 
+    // VERSION 3 (row 5b-358): a model group - an array's copy, by the id
+    // ARRAY_FAMILY_FORMS gives in `members` - stands for the form(s) inside it.
+    var expanded = new List<Element>();
     foreach (var element in named)
+    {
+        var group = element as Group;
+        if (group == null) { expanded.Add(element); continue; }
+        var held = group.GetMemberIds().Select(id => doc.GetElement(id)).Where(e => e is GenericForm).ToList();
+        if (held.Count == 0)
+        {
+            problems.Add("The group \"" + (group.Name ?? group.UniqueId) + "\" (" + group.UniqueId + ") holds no form - "
+                + "an extrusion, revolve, blend, sweep or swept blend - to join or cut.");
+            continue;
+        }
+        findings.Add("The id " + group.UniqueId + " is a model group - each copy in an array is one - so the "
+            + string.Join(", ", held.Select(describe)) + " inside it " + (held.Count == 1 ? "is" : "are")
+            + " what was named.");
+        expanded.AddRange(held);
+    }
+
+    foreach (var element in expanded)
     {
         if (members.Any(m => m.Id == element.Id)) continue;
         var combinable = element as CombinableElement;
@@ -391,6 +423,17 @@ if (refused == null && act == "combine")
         }
         catch (Exception ex)
         {
+            // VERSION 3 (row 5b-358): a form inside a group - an array's copy.
+            var grouped = members.Where(m => m.GroupId != null && !m.GroupId.Equals(ElementId.InvalidElementId))
+                .ToList();
+            if (grouped.Count > 0)
+                throw new InvalidOperationException("Nothing was joined or cut. Revit refused to combine "
+                    + string.Join(", ", members.Select(describe)) + " - its words: \"" + ex.Message + "\" - and "
+                    + "the " + string.Join(", ", grouped.Select(describe)) + " " + (grouped.Count == 1 ? "is" : "are")
+                    + " inside a model group, as each copy in an array is: Revit will not combine a form inside an "
+                    + "array's group. Ungroup that copy first, "
+                    + "then name the form by its own id - ARRAY_FAMILY_FORMS gives it in `memberForms`. NOTHING from "
+                    + "this call was kept.");
             throw new InvalidOperationException("Revit refused to combine "
                 + string.Join(", ", members.Select(describe)) + ": " + ex.Message
                 + " NOTHING from this call was kept.");

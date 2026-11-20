@@ -34,6 +34,15 @@ positive:
       the add-in in Revit on 2026-09-28 predates the keys (NEEDS-CHECKING BC2)
 
 negative:
+  - given: >
+      version 3 - a plan whose view template includes V/G Overrides Filters,
+      any filter and override (row 5b-1916)
+    expect: >
+      refused before anything is written, naming the template; applied false.
+      Then the same call with the template as the view: applied, and every view
+      following it shows the filter. Then V/G Overrides Filters unticked in the
+      template's Include column: applied on the plan itself
+
   - given: an override carrying a projection colour and no cut colour
     expect: >
       applied, AND the warning printed. THIS IS THE FIRST CASE TO RUN - it was

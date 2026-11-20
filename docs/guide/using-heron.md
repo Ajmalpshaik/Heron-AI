@@ -2,8 +2,9 @@
 
 # Using Heron — for a BIM modeller
 
-> **Heron is not ready to install yet.** The notice on the [home page](../../README.md) still stands.
-> This page is here so you know what is coming.
+> **Heron can be installed now, as an early unsigned build.** The steps are under
+> [Install](../../README.md#install) on the home page; everything a PC needs is
+> [What to install](../WHAT-TO-INSTALL.md).
 
 ## What it does
 

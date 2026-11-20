@@ -20,7 +20,48 @@ positive:
       their own ids and how many array copies Revit remade were compared by
       shape; version 1 failed this with "did not come back as it was"
 
+  - given: >
+      VERSION 3 (5b-367) - the ARRAY_FAMILY_FORMS version 2 case: a scratch
+      host with planes "Pitch" at 30 and "Top Turn Start" at 120, the second
+      dimensioned from Ref. Level and labelled "Top Height"; a level-based
+      Generic Model one-turn family nested, moved up 30, its Bottom locked to
+      "Pitch", arrayed count "Coils" (3), step "Z 60 last", the last copy's
+      Top locked to "Top Turn Start"; trials "Coils=5 | Coils=3; Top
+      Height=200"
+    expect: >
+      allHeld true, restored true; each trial line reads "across N solid(s)
+      and 3/5 nested families (together ...)" - the nested count following
+      Coils; the findings saying how many nested families came back by their
+      own ids and how many array copies Revit remade were matched by shape.
+      Version 2 said only "across N solid(s)" here
+
+  - given: VERSION 3, STILL - the air terminal above, no nested family in it
+    expect: >
+      every trial line and finding word for word as version 2 gave them - no
+      "nested" anywhere
+
 negative:
+  - given: >
+      VERSION 3 (5b-367) - the same host, the nested one-turn family placed
+      at Z 30 by MOVE_ELEMENTS but NOT locked to "Pitch", no array; a labelled
+      dimension "Pitch Height" moves "Pitch"; trials "Pitch Height=60"
+    expect: >
+      allHeld false, the trial marked NOT HELD with "the labelled planes moved
+      and the one nested family did not - it is not locked to them", and the
+      family back as it was. Version 2 passed it: it never read the nested
+      family
+
+  - given: >
+      VERSION 3 - the air terminal with one nested DETAIL ITEM, a flow arrow
+      placed in the Ref. Level plan by PLACE_DETAIL_COMPONENTS, and no other
+      nested family; trials "Width=900"
+    expect: >
+      the arrow NOT measured and not claimed: no "nested families" in the
+      trial lines, and a finding that 1 nested family with no extent to read
+      was not measured - a detail item has no box outside its view (measured
+      by ARRAY_FAMILY_FORMS version 4). If Revit does give it a box, it is
+      measured instead: record which
+
   - given: >
       a box extruded at the planes' coordinates WITHOUT locks, its planes
       labelled Width; trials "Width=900"
