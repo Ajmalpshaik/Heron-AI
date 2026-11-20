@@ -740,6 +740,48 @@ namespace Heron.UndoGuard.TestHost
                   "a later keep in this model is Heron's last change now: the row the pane showed "
                   + "before it is refused, naming the later one");
 
+            // A KEPT RUN'S UNDO AND REDO REACH ITS RECORD - 5b row 1163,
+            // 2026-11-20. Through reflection, so a guard without the hook is
+            // one clean failure, not a host that does not build.
+            var stamps = new List<string>();
+            guard = new HeronUndoGuard();
+            var hook = typeof(HeronUndoGuard).GetField("RunMoved", Members);
+            if (hook == null) Check(false, "the guard has a RunMoved hook for the run record");
+            else
+            {
+                hook.SetValue(guard, new Action<string, string, DateTime>(
+                    (run, what, at) => stamps.Add(run + " " + what + (at.Kind == DateTimeKind.Utc ? " utc" : " local"))));
+                KeepRun(guard, Model, "rename-views-by-level", Label, At, 3, true, Mine, Run);
+                Check(stamps.Count == 0, "a keep tells the record nothing - it was written as kept");
+                guard.UndoneIn(Model, Names(Label));
+                Check(stamps.Count == 1 && stamps[0] == Run + " undone utc",
+                      "Ctrl+Z of the run's own entry tells its record 'undone', in UTC: "
+                      + string.Join(" | ", stamps.ToArray()));
+                guard.RedoneIn(Model, Names(Label));
+                Check(stamps.Count == 2 && stamps[1] == Run + " redone utc",
+                      "Ctrl+Y bringing it back tells 'redone'");
+                guard.UndoneIn(Model, Names("Move"));
+                Check(stamps.Count == 2,
+                      "an undo under another name is Unsure, and the record is told nothing");
+
+                stamps.Clear();
+                guard = new HeronUndoGuard();
+                hook.SetValue(guard, new Action<string, string, DateTime>(
+                    (run, what, at) => { throw new InvalidOperationException("disk full"); }));
+                KeepRun(guard, Model, "rename-views-by-level", Label, At, 3, true, Mine, Run);
+                var threwOut = false;
+                try { guard.UndoneIn(Model, Names(Label)); }
+                catch (Exception) { threwOut = true; }
+                Check(!threwOut, "a record that cannot be told never throws into Revit's event");
+
+                guard = new HeronUndoGuard();
+                hook.SetValue(guard, new Action<string, string, DateTime>(
+                    (run, what, at) => stamps.Add(run + " " + what)));
+                KeepBy(guard, Model, "rename-views-by-level", Label, At, 3, true, Mine);
+                guard.UndoneIn(Model, Names(Label));
+                Check(stamps.Count == 0, "a keep that named no run has no record to tell");
+            }
+
             Console.WriteLine();
             foreach (var missing in Absent)
                 Check(false, "the guard has " + missing);

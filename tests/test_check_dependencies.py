@@ -215,14 +215,19 @@ def main():
         check(tool.announced_size("mcp") is None,
               "and nothing is invented for a package no code announces")
 
-        # R-79: THE README'S SYSTEM REQUIREMENTS SAY THE SAME SIZES AS THE CODE
+        # R-79: THE SYSTEM REQUIREMENTS PAGE SAYS THE SAME SIZES AS THE CODE
         # THAT DOWNLOADS. They are typed there because a person reads them
         # before installing anything - so this holds them to the code, and a
-        # size changed in one place and not the other turns this red.
+        # size changed in one place and not the other turns this red. The
+        # page is docs/guide/system-requirements.md, linked from README.md.
+        page = os.path.join(ROOT, "docs", "guide", "system-requirements.md")
+        body = (io.open(page, encoding="utf-8").read()
+                if os.path.isfile(page) else "")
+        check("# System requirements" in body,
+              "docs/guide/system-requirements.md exists (R-79)")
         readme = io.open(os.path.join(ROOT, "README.md"), encoding="utf-8").read()
-        section = readme.split("## System requirements", 1)
-        check(len(section) == 2, "README.md has a System requirements section (R-79)")
-        body = section[1].split("\n## ", 1)[0] if len(section) == 2 else ""
+        check("docs/guide/system-requirements.md" in readme,
+              "and README.md links to it")
         import heron_embed as _embed                # noqa: E402
         import heron_rerank as _rerank              # noqa: E402
         import heron_ingest as _ingest              # noqa: E402

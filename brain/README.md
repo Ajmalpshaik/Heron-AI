@@ -228,7 +228,7 @@ entitled to know first — and the figure is **not written here**, because the c
 download owns it: `heron_rerank.announcement()` and `heron_embed.announcement()` print the size before
 any network call rather than during, and `check-dependencies.py` above reads it from there. A size copied
 into a README is a size that goes stale in the one place it had to be right - which is why the one place
-that does type them, the main README's [system requirements](../README.md#system-requirements), is held
+that does type them, the [system requirements](../docs/guide/system-requirements.md) page, is held
 to these by `tests/test_check_dependencies.py`.
 
 Every optional package degrades rather than breaks: Heron answers without any of them and names the one

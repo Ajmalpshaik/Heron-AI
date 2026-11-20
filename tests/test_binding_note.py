@@ -279,6 +279,30 @@ def linked_carry_is_refused(text):
     return found
 
 
+def one_id_is_a_list(text):
+    """FRAGMENT-ISSUES 5b row 1406, 2026-11-20: one ElementId handed to a need
+    that wants a list is shaped as a list of one, never handed on to throw a
+    cast. Read as text - Shape calls Revit. Seen to FAIL on Shape as it stood,
+    which had no branch for a single id."""
+    at = text.find("private static object Shape(object value, string type, Document doc)")
+    body = text[at:at + 3000] if at >= 0 else ""
+    end = body.find("\n        }\n")
+    body = body[:end] if end >= 0 else body
+    wraps = re.search(r"var single = value as ElementId;\s*"
+                      r"if \(ids == null && single != null && IsElementList\(type\)\)\s*"
+                      r"ids = new List<ElementId> \{ single \};", body)
+    looked = body.find("doc.GetElement(id)")
+    ids_too = re.search(r"if \(single != null && type\.IndexOf\(\"IList<ElementId>\"",
+                        body)
+    return [
+        (wraps is not None and looked >= 0 and wraps.start() < looked,
+         "one id for an element-list need becomes a list of one before it is looked "
+         "up in the model (5b row 1406)"),
+        (ids_too is not None,
+         "and one id for an id-list need becomes a list of one id"),
+    ]
+
+
 def typed_ids_only_on_a_read(text):
     """Are typed element ids matched only for `elementIds`, only on a read?
 
@@ -615,7 +639,7 @@ def _suite(handed, block):
         print("  %s  %s" % ("ok  " if ok_here else "FAIL", said_here))
     linked_ok = all(ok_here for ok_here, _ in linked)
 
-    typed = typed_ids_only_on_a_read(text)
+    typed = typed_ids_only_on_a_read(text) + one_id_is_a_list(text)
     for ok_here, said_here in typed:
         print("  %s  %s" % ("ok  " if ok_here else "FAIL", said_here))
     typed_ok = all(ok_here for ok_here, _ in typed)

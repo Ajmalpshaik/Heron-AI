@@ -754,7 +754,7 @@ def _read_docx(path):
 # WHAT THE PDF READER COSTS ON DISK, MEASURED (R-77, R-79). 2026-11-20, a Linux
 # container, pypdf 6.17.0: 1.7 MB of its own files and 0.2 MB of the one
 # package it pulls in. This message said "about 1 MB" before it was measured.
-# tools/check-dependencies.py and README.md's system requirements read this
+# tools/check-dependencies.py and docs/guide/system-requirements.md read this
 # one, so the size is typed in one place.
 PDF_READER_SIZE = "about 2 MB"
 
