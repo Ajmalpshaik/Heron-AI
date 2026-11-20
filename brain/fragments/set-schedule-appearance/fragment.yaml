@@ -130,8 +130,7 @@ purpose: >
   maximum it showed is reported as replaced; and each total says where it
   will print - or that it prints nowhere yet. A name that more than one
   column answers to, by field name or heading, now touches none of them, for
-  every change here. Version 3's proof no longer describes the code and is
-  kept as a record; the card is DRAFT until it is proved again.
+  every change here.
 
   **VERSION 5 GIVES THE REST OF THAT DROP-DOWN** - minimum, maximum, minimum
   and maximum, or no calculation - asked of Revit first in the same way

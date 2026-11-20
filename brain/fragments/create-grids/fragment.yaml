@@ -7,7 +7,7 @@ heron-layer: brain
 id: FRG-ELE-037
 semantic-identity: "set out a whole grid from bay spacings"
 kind: action
-domain: revit.elements
+domain: revit.datums
 capability: CREATE_GRIDS
 version: 3
 source: OFFICIAL

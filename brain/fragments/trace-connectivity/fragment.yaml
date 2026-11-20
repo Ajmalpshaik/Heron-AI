@@ -33,8 +33,7 @@ purpose: >
   the orphaned branch exists. The islands are Revit's OWN joins, inside the
   set; connector ends touching within the tolerance that Revit leaves open are
   counted in `joinedByGeometry` beside them and never merge two islands - the
-  two answers are kept apart, never added into one count. Version 2's proof is
-  still owed; the card is DRAFT.
+  two answers are kept apart, never added into one count.
 
   The tolerance is an input and is never assumed (D-33). How close two
   connector ends have to be before they count as joined is a judgement about a

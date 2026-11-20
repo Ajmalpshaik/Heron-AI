@@ -7,7 +7,7 @@ heron-layer: brain
 id: FRG-QA-032
 semantic-identity: "the lines that are too short to be real, that nobody can see or select"
 kind: filter
-domain: revit.quality
+domain: revit.qa
 capability: FIND_DEGENERATE_LINES
 version: 1
 source: OFFICIAL

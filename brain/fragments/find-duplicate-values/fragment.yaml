@@ -7,7 +7,7 @@ heron-layer: brain
 id: FRG-QA-013
 semantic-identity: "two of these carry the same mark or number"
 kind: filter
-domain: revit.quality
+domain: revit.qa
 capability: FIND_DUPLICATE_VALUES
 version: 2
 source: OFFICIAL
