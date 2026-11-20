@@ -48,71 +48,73 @@ Every issue has a ready prompt that points here. Its kind is in its title: **Fix
 
 ## The issues
 
-| Issue | Kind | Subject | Rows |
-|---|---|---|---|
-| [#898](https://github.com/Ajmalpshaik/Heron-AI/issues/898) | Revit run on your PC | add-in rollback and run-guard fixes | 7 |
-| [#899](https://github.com/Ajmalpshaik/Heron-AI/issues/899) | Revit run on your PC | add-in fixes for ids, categories and carried values | 5 |
-| [#900](https://github.com/Ajmalpshaik/Heron-AI/issues/900) | Revit run on your PC | Heron's folders on a Microsoft Store Claude PC | 7 |
-| [#901](https://github.com/Ajmalpshaik/Heron-AI/issues/901) | Revit run on your PC | family 2D, labels and connectors | 10 |
-| [#902](https://github.com/Ajmalpshaik/Heron-AI/issues/902) | Revit run on your PC | family-building tools and family methods | 5 |
-| [#903](https://github.com/Ajmalpshaik/Heron-AI/issues/903) | Revit run on your PC | beams, columns, stairs and rebar | 11 |
-| [#904](https://github.com/Ajmalpshaik/Heron-AI/issues/904) | Revit run on your PC | door flip, levels, offset lines and radial copy | 5 |
-| [#905](https://github.com/Ajmalpshaik/Heron-AI/issues/905) | Revit run on your PC | links, imports and coordinates | 6 |
-| [#906](https://github.com/Ajmalpshaik/Heron-AI/issues/906) | Revit run on your PC | MEP and energy tools | 7 |
-| [#907](https://github.com/Ajmalpshaik/Heron-AI/issues/907) | Revit run on your PC | parameters, rooms, schedules and tags | 10 |
-| [#908](https://github.com/Ajmalpshaik/Heron-AI/issues/908) | Revit run on your PC | re-sign proofs and check new tools | 10 |
-| [#909](https://github.com/Ajmalpshaik/Heron-AI/issues/909) | Revit run on your PC | routing re-checked on your PC's trained model | 5 |
-| [#910](https://github.com/Ajmalpshaik/Heron-AI/issues/910) | Your decision | how the add-in guards changes | 7 |
-| [#911](https://github.com/Ajmalpshaik/Heron-AI/issues/911) | Your decision | dry runs, saving and Sync | 4 |
-| [#912](https://github.com/Ajmalpshaik/Heron-AI/issues/912) | Your decision | how replies show values (cut text, units) | 5 |
-| [#913](https://github.com/Ajmalpshaik/Heron-AI/issues/913) | Your decision | agents and their contracts | 9 |
-| [#914](https://github.com/Ajmalpshaik/Heron-AI/issues/914) | Your decision | proofs, signatures and the reading ledger | 6 |
-| [#915](https://github.com/Ajmalpshaik/Heron-AI/issues/915) | Your decision | decisions and Constitution wording | 7 |
-| [#916](https://github.com/Ajmalpshaik/Heron-AI/issues/916) | Your decision | three NEEDS-CHECKING rows that ask the wrong thing | 3 |
-| [#917](https://github.com/Ajmalpshaik/Heron-AI/issues/917) | Your decision | moving, copying, rotating and two-set checks | 10 |
-| [#918](https://github.com/Ajmalpshaik/Heron-AI/issues/918) | Your decision | columns and roofs from the villa build | 7 |
-| [#919](https://github.com/Ajmalpshaik/Heron-AI/issues/919) | Your decision | tools Heron does not have yet | 8 |
-| [#920](https://github.com/Ajmalpshaik/Heron-AI/issues/920) | Your decision | family tools | 10 |
-| [#921](https://github.com/Ajmalpshaik/Heron-AI/issues/921) | Your decision | links and linked models | 4 |
-| [#922](https://github.com/Ajmalpshaik/Heron-AI/issues/922) | Your decision | MEP, spaces and loads | 6 |
-| [#923](https://github.com/Ajmalpshaik/Heron-AI/issues/923) | Your decision | rooms and doors | 7 |
-| [#924](https://github.com/Ajmalpshaik/Heron-AI/issues/924) | Your decision | tags, schedules and the model dashboard | 6 |
-| [#925](https://github.com/Ajmalpshaik/Heron-AI/issues/925) | Your decision | the CSV round trip and sheets from Excel | 4 |
-| [#926](https://github.com/Ajmalpshaik/Heron-AI/issues/926) | Your decision | library tidy-up (domains, status words, revisions) | 4 |
-| [#927](https://github.com/Ajmalpshaik/Heron-AI/issues/927) | Your decision | chat side (which Revit, try-once, tool sizes) | 7 |
-| [#928](https://github.com/Ajmalpshaik/Heron-AI/issues/928) | Your decision | what 'put it back' means | 5 |
-| [#929](https://github.com/Ajmalpshaik/Heron-AI/issues/929) | Your decision | structural and settings questions that reach a change | 8 |
-| [#930](https://github.com/Ajmalpshaik/Heron-AI/issues/930) | Your decision | more questions that reach a change | 9 |
-| [#931](https://github.com/Ajmalpshaik/Heron-AI/issues/931) | Your decision | lookup words on older Revit and with the re-ranker | 9 |
-| [#932](https://github.com/Ajmalpshaik/Heron-AI/issues/932) | Code fix | add-in bridge and reply reliability | 5 |
-| [#933](https://github.com/Ajmalpshaik/Heron-AI/issues/933) | Code fix | add-in binds the right model, elements and inputs | 8 |
-| [#934](https://github.com/Ajmalpshaik/Heron-AI/issues/934) | Code fix | run records, audit lines and outcome words in the add-in | 8 |
-| [#935](https://github.com/Ajmalpshaik/Heron-AI/issues/935) | Code fix | view pictures, camera framing and sheets with no geometry | 4 |
-| [#936](https://github.com/Ajmalpshaik/Heron-AI/issues/936) | Code fix | brain small fixes | 6 |
-| [#937](https://github.com/Ajmalpshaik/Heron-AI/issues/937) | Code fix | stale wording in documents and registers | 8 |
-| [#938](https://github.com/Ajmalpshaik/Heron-AI/issues/938) | Code fix | register tools that crash or miscount | 7 |
-| [#939](https://github.com/Ajmalpshaik/Heron-AI/issues/939) | Code fix | check-gaps, timeouts and flaky tests | 5 |
-| [#940](https://github.com/Ajmalpshaik/Heron-AI/issues/940) | Code fix | checks that miss things | 6 |
-| [#941](https://github.com/Ajmalpshaik/Heron-AI/issues/941) | Code fix | jobs Revit refuses inside Heron's transaction | 5 |
-| [#942](https://github.com/Ajmalpshaik/Heron-AI/issues/942) | Code fix | duct and pipe justification does nothing | 5 |
-| [#943](https://github.com/Ajmalpshaik/Heron-AI/issues/943) | Code fix | MEP accessories, circuits, zones and labels | 4 |
-| [#944](https://github.com/Ajmalpshaik/Heron-AI/issues/944) | Code fix | family build and flex | 10 |
-| [#945](https://github.com/Ajmalpshaik/Heron-AI/issues/945) | Code fix | family reports, reload and settings | 6 |
-| [#946](https://github.com/Ajmalpshaik/Heron-AI/issues/946) | Code fix | link tools that report wrong | 6 |
-| [#947](https://github.com/Ajmalpshaik/Heron-AI/issues/947) | Code fix | parameters that share a name | 7 |
-| [#948](https://github.com/Ajmalpshaik/Heron-AI/issues/948) | Code fix | floors, doors, roofs, parts and clearance | 7 |
-| [#949](https://github.com/Ajmalpshaik/Heron-AI/issues/949) | Code fix | rebar, materials and structural loads | 5 |
-| [#950](https://github.com/Ajmalpshaik/Heron-AI/issues/950) | Code fix | leftovers from the duplicate merges | 4 |
-| [#951](https://github.com/Ajmalpshaik/Heron-AI/issues/951) | Code fix | view filters, tags, spaces and IFC export input | 7 |
-| [#952](https://github.com/Ajmalpshaik/Heron-AI/issues/952) | Code fix | chat-side outcome words that are wrong | 7 |
-| [#953](https://github.com/Ajmalpshaik/Heron-AI/issues/953) | Code fix | MCP server small fixes | 7 |
-| [#954](https://github.com/Ajmalpshaik/Heron-AI/issues/954) | Code fix | plain questions that land on a change (part 1) | 6 |
-| [#955](https://github.com/Ajmalpshaik/Heron-AI/issues/955) | Code fix | plain questions that land on a change (part 2) | 6 |
-| [#956](https://github.com/Ajmalpshaik/Heron-AI/issues/956) | Code fix | requests that miss their tool | 10 |
-| [#957](https://github.com/Ajmalpshaik/Heron-AI/issues/957) | Code fix | lookup search engine | 6 |
-| [#958](https://github.com/Ajmalpshaik/Heron-AI/issues/958) | Code fix | routing tests that fail with the trained model | 3 |
-| [#959](https://github.com/Ajmalpshaik/Heron-AI/issues/959) | Code fix | skills - the runner, skill words and risk | 7 |
-| [#960](https://github.com/Ajmalpshaik/Heron-AI/issues/960) | Code fix | job methods to correct | 6 |
+How many rows each issue holds is not typed here: by 2026-11-19 one typed count was already wrong - #938 said 7 for 8 rows - and every count was a line two branches could conflict on ([#1062](https://github.com/Ajmalpshaik/Heron-AI/issues/1062)). Count an issue's lines under *Row by row* below, or read the issue's own list.
+
+| Issue | Kind | Subject |
+|---|---|---|
+| [#898](https://github.com/Ajmalpshaik/Heron-AI/issues/898) | Revit run on your PC | add-in rollback and run-guard fixes |
+| [#899](https://github.com/Ajmalpshaik/Heron-AI/issues/899) | Revit run on your PC | add-in fixes for ids, categories and carried values |
+| [#900](https://github.com/Ajmalpshaik/Heron-AI/issues/900) | Revit run on your PC | Heron's folders on a Microsoft Store Claude PC |
+| [#901](https://github.com/Ajmalpshaik/Heron-AI/issues/901) | Revit run on your PC | family 2D, labels and connectors |
+| [#902](https://github.com/Ajmalpshaik/Heron-AI/issues/902) | Revit run on your PC | family-building tools and family methods |
+| [#903](https://github.com/Ajmalpshaik/Heron-AI/issues/903) | Revit run on your PC | beams, columns, stairs and rebar |
+| [#904](https://github.com/Ajmalpshaik/Heron-AI/issues/904) | Revit run on your PC | door flip, levels, offset lines and radial copy |
+| [#905](https://github.com/Ajmalpshaik/Heron-AI/issues/905) | Revit run on your PC | links, imports and coordinates |
+| [#906](https://github.com/Ajmalpshaik/Heron-AI/issues/906) | Revit run on your PC | MEP and energy tools |
+| [#907](https://github.com/Ajmalpshaik/Heron-AI/issues/907) | Revit run on your PC | parameters, rooms, schedules and tags |
+| [#908](https://github.com/Ajmalpshaik/Heron-AI/issues/908) | Revit run on your PC | re-sign proofs and check new tools |
+| [#909](https://github.com/Ajmalpshaik/Heron-AI/issues/909) | Revit run on your PC | routing re-checked on your PC's trained model |
+| [#910](https://github.com/Ajmalpshaik/Heron-AI/issues/910) | Your decision | how the add-in guards changes |
+| [#911](https://github.com/Ajmalpshaik/Heron-AI/issues/911) | Your decision | dry runs, saving and Sync |
+| [#912](https://github.com/Ajmalpshaik/Heron-AI/issues/912) | Your decision | how replies show values (cut text, units) |
+| [#913](https://github.com/Ajmalpshaik/Heron-AI/issues/913) | Your decision | agents and their contracts |
+| [#914](https://github.com/Ajmalpshaik/Heron-AI/issues/914) | Your decision | proofs, signatures and the reading ledger |
+| [#915](https://github.com/Ajmalpshaik/Heron-AI/issues/915) | Your decision | decisions and Constitution wording |
+| [#916](https://github.com/Ajmalpshaik/Heron-AI/issues/916) | Your decision | three NEEDS-CHECKING rows that ask the wrong thing |
+| [#917](https://github.com/Ajmalpshaik/Heron-AI/issues/917) | Your decision | moving, copying, rotating and two-set checks |
+| [#918](https://github.com/Ajmalpshaik/Heron-AI/issues/918) | Your decision | columns and roofs from the villa build |
+| [#919](https://github.com/Ajmalpshaik/Heron-AI/issues/919) | Your decision | tools Heron does not have yet |
+| [#920](https://github.com/Ajmalpshaik/Heron-AI/issues/920) | Your decision | family tools |
+| [#921](https://github.com/Ajmalpshaik/Heron-AI/issues/921) | Your decision | links and linked models |
+| [#922](https://github.com/Ajmalpshaik/Heron-AI/issues/922) | Your decision | MEP, spaces and loads |
+| [#923](https://github.com/Ajmalpshaik/Heron-AI/issues/923) | Your decision | rooms and doors |
+| [#924](https://github.com/Ajmalpshaik/Heron-AI/issues/924) | Your decision | tags, schedules and the model dashboard |
+| [#925](https://github.com/Ajmalpshaik/Heron-AI/issues/925) | Your decision | the CSV round trip and sheets from Excel |
+| [#926](https://github.com/Ajmalpshaik/Heron-AI/issues/926) | Your decision | library tidy-up (domains, status words, revisions) |
+| [#927](https://github.com/Ajmalpshaik/Heron-AI/issues/927) | Your decision | chat side (which Revit, try-once, tool sizes) |
+| [#928](https://github.com/Ajmalpshaik/Heron-AI/issues/928) | Your decision | what 'put it back' means |
+| [#929](https://github.com/Ajmalpshaik/Heron-AI/issues/929) | Your decision | structural and settings questions that reach a change |
+| [#930](https://github.com/Ajmalpshaik/Heron-AI/issues/930) | Your decision | more questions that reach a change |
+| [#931](https://github.com/Ajmalpshaik/Heron-AI/issues/931) | Your decision | lookup words on older Revit and with the re-ranker |
+| [#932](https://github.com/Ajmalpshaik/Heron-AI/issues/932) | Code fix | add-in bridge and reply reliability |
+| [#933](https://github.com/Ajmalpshaik/Heron-AI/issues/933) | Code fix | add-in binds the right model, elements and inputs |
+| [#934](https://github.com/Ajmalpshaik/Heron-AI/issues/934) | Code fix | run records, audit lines and outcome words in the add-in |
+| [#935](https://github.com/Ajmalpshaik/Heron-AI/issues/935) | Code fix | view pictures, camera framing and sheets with no geometry |
+| [#936](https://github.com/Ajmalpshaik/Heron-AI/issues/936) | Code fix | brain small fixes |
+| [#937](https://github.com/Ajmalpshaik/Heron-AI/issues/937) | Code fix | stale wording in documents and registers |
+| [#938](https://github.com/Ajmalpshaik/Heron-AI/issues/938) | Code fix | register tools that crash or miscount |
+| [#939](https://github.com/Ajmalpshaik/Heron-AI/issues/939) | Code fix | check-gaps, timeouts and flaky tests |
+| [#940](https://github.com/Ajmalpshaik/Heron-AI/issues/940) | Code fix | checks that miss things |
+| [#941](https://github.com/Ajmalpshaik/Heron-AI/issues/941) | Code fix | jobs Revit refuses inside Heron's transaction |
+| [#942](https://github.com/Ajmalpshaik/Heron-AI/issues/942) | Code fix | duct and pipe justification does nothing |
+| [#943](https://github.com/Ajmalpshaik/Heron-AI/issues/943) | Code fix | MEP accessories, circuits, zones and labels |
+| [#944](https://github.com/Ajmalpshaik/Heron-AI/issues/944) | Code fix | family build and flex |
+| [#945](https://github.com/Ajmalpshaik/Heron-AI/issues/945) | Code fix | family reports, reload and settings |
+| [#946](https://github.com/Ajmalpshaik/Heron-AI/issues/946) | Code fix | link tools that report wrong |
+| [#947](https://github.com/Ajmalpshaik/Heron-AI/issues/947) | Code fix | parameters that share a name |
+| [#948](https://github.com/Ajmalpshaik/Heron-AI/issues/948) | Code fix | floors, doors, roofs, parts and clearance |
+| [#949](https://github.com/Ajmalpshaik/Heron-AI/issues/949) | Code fix | rebar, materials and structural loads |
+| [#950](https://github.com/Ajmalpshaik/Heron-AI/issues/950) | Code fix | leftovers from the duplicate merges |
+| [#951](https://github.com/Ajmalpshaik/Heron-AI/issues/951) | Code fix | view filters, tags, spaces and IFC export input |
+| [#952](https://github.com/Ajmalpshaik/Heron-AI/issues/952) | Code fix | chat-side outcome words that are wrong |
+| [#953](https://github.com/Ajmalpshaik/Heron-AI/issues/953) | Code fix | MCP server small fixes |
+| [#954](https://github.com/Ajmalpshaik/Heron-AI/issues/954) | Code fix | plain questions that land on a change (part 1) |
+| [#955](https://github.com/Ajmalpshaik/Heron-AI/issues/955) | Code fix | plain questions that land on a change (part 2) |
+| [#956](https://github.com/Ajmalpshaik/Heron-AI/issues/956) | Code fix | requests that miss their tool |
+| [#957](https://github.com/Ajmalpshaik/Heron-AI/issues/957) | Code fix | lookup search engine |
+| [#958](https://github.com/Ajmalpshaik/Heron-AI/issues/958) | Code fix | routing tests that fail with the trained model |
+| [#959](https://github.com/Ajmalpshaik/Heron-AI/issues/959) | Code fix | skills - the runner, skill words and risk |
+| [#960](https://github.com/Ajmalpshaik/Heron-AI/issues/960) | Code fix | job methods to correct |
 
 ## Row by row
 
