@@ -134,6 +134,15 @@ positive:
       Revit and read its category in Properties: that says which elements
       they are
 
+  # VERSION 5 (rows 5b-342, 5b-335) - an element's level. NOT RUN.
+  - given: >
+      VERSION 5. A scratch copy of a sample model with three ceiling diffusers
+      placed on Level 1's plane - work plane-based, their family "Level" empty
+      and their Schedule Level Level 1 - beside walls on Level 1
+    expect: >
+      the by-level part counts the three diffusers on Level 1, and none of
+      them among the elements on no level. Version 4 counted them on no level
+
 negative:
   # VERSION 4 - no subcategory to name.
   - given: >
@@ -239,6 +248,13 @@ negative:
     expect: >
       sheets.empty counts the first and not the second - a schedule is
       something on a sheet, and the title block's own revision schedule is not
+
+  - given: >
+      VERSION 5, the negative. A model element whose every level parameter is
+      empty (a family instance with no level at all)
+    expect: >
+      it is among the elements on no level - a parameter that holds no level
+      is passed over, never answered with
 
 second_route: >
   The reader of each part, run on the same model in the same session, and

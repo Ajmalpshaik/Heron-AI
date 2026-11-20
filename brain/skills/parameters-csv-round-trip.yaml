@@ -100,7 +100,9 @@ purpose: >
      the elements exported. It is offered only when the modeller asks for
      it, and it takes a yes of its own that names the type (Article 7).
   2. THE EXPORT - A FILE IS WRITTEN, NOTHING IN THE MODEL CHANGES.
-     EXPORT_PARAMETERS_TO_CSV (PROVEN, version 1) through revit_change, with
+     EXPORT_PARAMETERS_TO_CSV (DRAFT, version 2, 2026-11-20 - its proof was
+     version 1's, so until it is run again revit_change refuses it and the
+     file waits) through revit_change, with
      parameterNames the columns and csvPath the path from step 0. Its
      elements are the ones selected in Revit, or with expect_from the ones
      an earlier find left - FILTER_ELEMENTS_BY_CATEGORY for a category. Only
@@ -111,13 +113,14 @@ purpose: >
      the card: ask before the call. It answers with `rows` - one per element -
      and the path. The first column is each element's id; each value is as
      Revit displays it. A parameter the element itself does not carry is
-     read off its TYPE, and left empty when the type has none either. A
-     column empty for EVERY element is named in the answer, and the card
-     calls it a parameter name that does not exist on these. THAT SENTENCE
-     IS WRONG WHEN THE PARAMETER IS THERE AND SIMPLY BLANK ON ALL OF THEM -
-     a Mark exported in order to be filled in (row 5b-1551). Step 1's read
-     says which it is; never tell the modeller a parameter is missing on
-     that sentence alone.
+     read off its TYPE, and left empty when the type has none either. Since
+     version 2 a column no element carries is in `notCarried` and called a
+     name to check the spelling of, and a column found on the elements and
+     blank on every one is in `blankEverywhere` and called blank values to
+     fill in - version 1 called both a parameter name that does not exist
+     (row 5b-1551). A cell whose name the element carries TWICE is left
+     empty and the element named in `ambiguous`, NOT READ (row 5b-203):
+     tell the modeller which, and leave that column as exported.
   3. THE MODELLER EDITS - OUTSIDE REVIT, AND HERON DOES NOTHING. Say these
      before they open the file, in these words or plainer:
      - Edit a COPY. Keep the file as exported exactly as it was written,

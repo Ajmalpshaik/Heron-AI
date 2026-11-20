@@ -56,7 +56,7 @@ purpose: >
      levels and grids, because all three are taken from it. TODAY THE
      MODELLER LINKS IT, with Revit's own Insert > Link Revit - origin to
      origin, unless they say the two files already share coordinates. The
-     capability built for it is LINK_FILES (DRAFT, version 2) - paths, and
+     capability built for it is LINK_FILES (DRAFT, version 3) - paths, and
      placement origin or shared - and while it is DRAFT revit_change refuses
      it (D-117). Its try-once is not a step of this method: a version is
      kept ONCE, on one model, and a second run - the next project - is
@@ -67,7 +67,7 @@ purpose: >
      modeller wants it pinned, SET_PIN_STATE (PROVEN) with pinned=true,
      expect_from="list-linked-models".
   4. COORDINATES - ONE OF TWO, AND THE MODELLER SAYS WHICH. From the link:
-     CHECK_LINK_COORDINATES (PROVEN) first, with the toleranceMm they give.
+     CHECK_LINK_COORDINATES (DRAFT, version 2) first, with the toleranceMm they give.
      It can only be asked once the link is in: it says whether each loaded
      link sits where its own shared coordinates say - a link sitting in the
      wrong place hands over the wrong system. Then

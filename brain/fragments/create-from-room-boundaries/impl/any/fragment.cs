@@ -3,6 +3,11 @@
 // `withHoles`, `unenclosed`, `refused`, `finishWalls`, `finishSummary`,
 // `skippedEdges`, `skippedSummary` and `notJoined` behind.
 //
+// VERSION 3 (2026-11-20, WN-1 of issue #1005) - before Revit 2022 a floor is
+// made from one loop, so a room with a hole is refused BEFORE anything is built;
+// and on every release a room whose boundary loop does not close is refused,
+// never built with the loop dropped. See the floor route below.
+//
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). Every length a caller types -
 // `heightAboveLevel` and `baseOffset` - is MILLIMETRES, divided by 304.8 once,
 // below, before it is used for anything (D-71). Until version 2 this header
@@ -923,22 +928,70 @@ else
         if (loops == null || loops.Count == 0 || area <= 0) { unenclosed.Add(room.Id); continue; }
 
         // Every loop: the first is the outline and the rest are holes.
+        //
+        // VERSION 3 (WN-1): A LOOP THAT CANNOT BE MADE STOPS THE ROOM. Version 2
+        // passed over a loop of fewer than three curves, or one CurveLoop.Create
+        // refused, and built from what was left - so a dropped hole became a
+        // slab over the shaft, and a dropped OUTLINE made the first hole the
+        // floor's edge. Now every loop of the room's boundary must close, or
+        // nothing is built for that room and `refused` says which loop. A loop
+        // of one or two curves is kept when it closes - a round column's hole
+        // is two half-circles - where version 2 dropped it.
         var curveLoops = new List<CurveLoop>();
+        var loopProblem = "";
+        var loopNumber = 0;
         foreach (var loop in loops)
         {
+            loopNumber++;
             var curves = new List<Curve>();
+            var unread = 0;
             foreach (var segment in loop)
             {
                 Curve curve = null;
                 try { curve = segment.GetCurve(); } catch { }
-                if (curve != null) curves.Add(curve);
+                if (curve != null) curves.Add(curve); else unread++;
             }
-            if (curves.Count < 3) continue;
-            try { curveLoops.Add(CurveLoop.Create(curves)); } catch { }
+            var what = loopNumber == 1 ? "its outline" : "hole " + (loopNumber - 1).ToString(invariant);
+            if (curves.Count == 0)
+            {
+                loopProblem = what + " has no edge Revit would read";
+                break;
+            }
+            CurveLoop made = null;
+            try { made = CurveLoop.Create(curves); } catch { made = null; }
+            if (made == null || made.IsOpen())
+            {
+                loopProblem = what + " does not close (" + curves.Count.ToString(invariant) + " edge"
+                    + (curves.Count == 1 ? "" : "s") + (unread > 0 ? ", " + unread.ToString(invariant) + " unread" : "")
+                    + ")";
+                break;
+            }
+            curveLoops.Add(made);
         }
 
+        if (loopProblem.Length > 0)
+        {
+            refused.Add("Room " + room.Id.ToString() + ": " + loopProblem + " - a floor or ceiling built from "
+                + "the rest would leave it out, so NOTHING was built for this room.");
+            continue;
+        }
         if (curveLoops.Count == 0) { unenclosed.Add(room.Id); continue; }
         if (curveLoops.Count > 1) withHoles.Add(room.Id);
+
+        // VERSION 3 (WN-1): BEFORE 2022 A FLOOR TAKES ONE LOOP, SO A ROOM WITH A
+        // HOLE IS REFUSED BEFORE ANYTHING IS BUILT. Version 2 built the slab from
+        // the outline alone and then said "its hole was NOT cut" - a slab over
+        // the shaft, kept and counted in `created`. Now that room gets nothing,
+        // and the reason names the release. Cutting the hole afterwards with an
+        // opening is a route no Revit run here has checked, so it is not taken.
+        if (!wantCeiling && floorNewStyle == null && curveLoops.Count > 1)
+        {
+            refused.Add("Room " + room.Id.ToString() + ": it has " + (curveLoops.Count - 1).ToString(invariant)
+                + " hole" + (curveLoops.Count == 2 ? "" : "s") + " (a shaft, a column or a void), and before Revit "
+                + "2022 a floor is made from its outline alone - so NOTHING was built for this room rather than a "
+                + "slab over the hole. Revit 2022 and later cut the holes.");
+            continue;
+        }
 
         var levelId = ElementId.InvalidElementId;
         try { if (room.Level != null) levelId = room.Level.Id; } catch { }
@@ -970,9 +1023,8 @@ else
         }
         else
         {
-            // Pre-2022: one loop only, so a room with a hole gets a slab over
-            // the shaft. It is built and NAMED rather than skipped - the caller
-            // decides whether that is acceptable, but nobody finds out later.
+            // Pre-2022: one loop only. A room with a hole never reaches here -
+            // it was refused above, before anything was built (version 3, WN-1).
             try
             {
                 var array = new CurveArray();
@@ -980,9 +1032,6 @@ else
                 var levelElement = doc.GetElement(levelId) as Level;
                 built = floorOldStyle.Invoke(doc.Create,
                     new object[] { array, hostType, levelElement, false }) as Element;
-                if (curveLoops.Count > 1)
-                    refused.Add("Room " + room.Id.ToString() + ": this release takes one loop only, so " +
-                                "its hole was NOT cut.");
             }
             catch { }
         }

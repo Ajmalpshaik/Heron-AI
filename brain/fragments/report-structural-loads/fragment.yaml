@@ -1,6 +1,6 @@
 heron-agent: HERON-FRG-CRE-007
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -45,9 +45,21 @@ semantic-identity: "which load cases, load combinations, load natures, loads and
 kind: action
 domain: revit.elements
 capability: REPORT_STRUCTURAL_LOADS
-version: 2
+version: 3
 source: OFFICIAL
 risk: READ
+
+# VERSION 3 (2026-11-20, FRAGMENT-ISSUES 5b-1640) - A LOAD CASE'S CATEGORY IS
+# READ OFF ITS SubcategoryId, and back to DRAFT. Version 2's "Load cases (n)"
+# list read each case's category through LOAD_CASE_SUBCATEGORY's string, the
+# two lines CREATE_LOAD_CASE version 1 carried, which on Revit 2020 printed
+# "category ?" for every case (row 5b-1637). It now takes CREATE_LOAD_CASE
+# version 2's rule: LoadCase.SubcategoryId matched by id among the
+# subcategories of Structural Load Cases and named by the category's own Name -
+# NEEDS-CHECKING Group NX NX3 showed SubcategoryId reads on 2020. Revit naming
+# none reads "? (Revit named none)". Nothing else moved. Version 2 was PROVEN
+# (the proof block below, kept as the record of what it proved); its C# moved,
+# so it is DRAFT again until NEEDS-CHECKING Group OU proves version 3 (D-30).
 
 purpose: >
   Answers which structural loads the model holds - the load natures, the load

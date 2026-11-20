@@ -1,6 +1,6 @@
 ---
 name: heron-ship
-description: What to run before pushing Heron, in what order, and which failures are the machine rather than the change. Use before any commit or push, when a gate or test fails and it is not obvious whether the change caused it, or when asked whether the work is ready. Covers stating the change's intent and capturing its before/after evidence, the four gates you run before pushing and the twelve CI actually decides on, the reports whose findings are questions, how to measure what a card's routing words moved - main against the branch on a named backend, the checker whose exit code follows the unfinished list, the seven checks that need something this container has not got - a tool, a store or the whole git history, why no derived count is typed in prose, where a new 5b defect row is written (a file of its own), and how to resolve a merge conflict in the NEEDS-CHECKING group index or between two branches that took the same id.
+description: What to run before pushing Heron, in what order, and which failures are the machine rather than the change. Use before any commit or push, when a gate or test fails and it is not obvious whether the change caused it, or when asked whether the work is ready. Covers stating the change's intent and capturing its before/after evidence, the four gates you run before pushing and the twelve CI actually decides on, the reports whose findings are questions, how to measure what a card's routing words moved - main against the branch on a named backend, the checker whose exit code follows the unfinished list, the seven checks that need something this container has not got - a tool, a store or the whole git history, why no derived count is typed in prose, where a new 5b defect row is written (a file of its own, and its GitHub issue in the same change), and how to resolve a merge conflict in the NEEDS-CHECKING group index or between two branches that took the same id.
 allowed-tools:
   - Bash
   - Read
@@ -326,7 +326,22 @@ wherever a suite reads what a child printed. The same `PYTHONUTF8=1` re-run expo
 Measured 2026-09-22 on the owner's PC: the same `print` of a tick and an arrow succeeded in a console
 and died redirected, both to a file and to `/dev/null`; `test_decision_summary.py` as it stood before its
 block exits **1** redirected and **0** with it; and a redirected run of every suite on disk found no other
-that dies this way.
+that dies this way. **It came back on 2026-11-19** in `test_read_back.py` and `test_sheet_list.py`, two
+suites written after that sweep without the block (issue #1055) - so a new suite that prints model text
+carries the block from its first line.
+
+### On Windows, a suite that talks to 127.0.0.1 may be talking through a filter
+
+**The third Windows cause, after paths and encoding.** On the owner's PC a filtering program stands
+between programs and 127.0.0.1 and **rewrites headers** - a `Content-Security-Policy` sent as
+`default-src 'none'` arrives as the filter's own - and on the same machine about one connection in
+eight resets when the server closes it (the filter's part in that was not separated). A suite with a
+real server then dies with `ConnectionResetError [WinError 10054]` or `TimeoutError`, or fails a header
+check, at a different place each run, on `main` too
+([row 5b-1906](../../../docs/fragment-issues/row-5b-1906.md)). `test_companion.py` asks a bare server
+with no Heron code in it first and **waits (exit 3)** on its server sections where that does not come
+back whole every time; a new suite with a socket does the same, and never retries - a retried request
+that had already been served (a one-time pairing code) fails a check for a reason that is not there.
 
 ## 2a. A fix is not proved until its test has been seen to FAIL
 
@@ -573,14 +588,27 @@ two others four times each. A typed count is a merge conflict with every other p
 that comes back is still held to the truth; a dated measurement (*"measured 2026-10-02: 163"*) stays
 legal, because it is a record and nobody needs to update it.
 
-### Adding a 5b row: a file of its own, in two steps
+### Adding a 5b row: a file of its own and its GitHub issue, in three steps
 
 ```bash
 python tools/next-id.py     # take the 5b `next` it prints - free on main, every branch, every open pull request, every worktree
 # write docs/fragment-issues/row-5b-<that number>.md: copy the newest row-5b-*.md, change its number (heading and first cell), its defect and its state
+python tools/open-issue.py 5b-<that number> --kind fix --title "..." --happened "..." --expected "..." --create   # or --into N
 ```
 
-**That is all of it. No other file is touched, and no index line is added** - the folder is the list, and
+**The third step is the owner's rule since 2026-11-20 ([D-187](../../../docs/DECISIONS.md)):** every new row -
+and every new NEEDS-CHECKING check or group, and every new open question - is a GitHub issue **in the same
+change**, and its line names the issue from the day it is written. The
+[`heron-issue-recorder`](../../agents/heron-issue-recorder.md) agent takes all three steps, including whether
+an open issue of the same subject and kind should take the row (`--into`). **Where GitHub cannot be reached,
+`open-issue.py` exits 3 and writes nothing** - that is NOT RUN, never a pass: the row stays `OPEN`, the pull
+request lists it under **Issues to open**, and the session that opens it runs
+`python tools/open-issue.py <id> --record N`. A pull request that adds a row carries its issue's number or that
+list - never neither. No line is added to the tables of
+[`docs/fragment-issues/ISSUES.md`](../../../docs/fragment-issues/ISSUES.md): the row's own state is its link,
+for the same reason as the paragraph below.
+
+**That is all of the row. No other file is touched, and no index line is added** - the folder is the list, and
 [`tools/register-text.py`](../../../tools/register-text.py) reads every `row-5b-N.md` back into the
 register, in number order, for `open-defects.py` and every other reader. The file holds a heading that
 names the row (`row 5b-1585` - the reader refuses a heading that names another), the note under it, the table's two header lines and the row's ONE line -

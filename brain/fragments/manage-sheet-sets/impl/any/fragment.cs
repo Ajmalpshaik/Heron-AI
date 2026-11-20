@@ -1,7 +1,8 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `setName`, `mode`, `newName`,
 // `parameterName`, `setPrefix`, `values` and `updateExisting` are in scope, and
 // leaves `memberCount`, `done`, `notASheet`, `refused`, `changed`, `unchanged`,
-// `printRange`, `created`, `updated`, `setsUnchanged` and `skipped` behind.
+// `printRange`, `created`, `updated`, `setsUnchanged`, `skipped` and - since
+// version 5 - `ambiguous` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) - for the document side of it.
 //
@@ -107,6 +108,13 @@ string created = "";
 string updated = "";
 string setsUnchanged = "";
 string skipped = "";
+// VERSION 5 (FRAGMENT-ISSUES 5b-1534, row 5b-203's repair; D-54 s3), by-parameter
+// only: the sheets and views on which `parameterName` is carried by TWO OR MORE
+// parameters. LookupParameter hands back whichever Revit meets first - "determined
+// at random", in Autodesk's words - so such a sheet's value is NOT READ, and the
+// whole run is refused before the print manager is touched: a set built, or
+// brought in step by updateExisting, without it would move a sheet nobody chose.
+var ambiguous = new List<ElementId>();
 
 // "none" is the card's word for a name left out (version 4), so it is no name.
 Func<string, string> givenName = text =>
@@ -156,6 +164,9 @@ if (refused.Length == 0 && operation == "by-parameter")
             var view = element as View;
             if (view == null || view.IsTemplate) continue;
             Parameter carried = null;
+            int named = 0;
+            try { named = view.GetParameters(parameterWanted).Count; } catch { }
+            if (named > 1) { ambiguous.Add(view.Id); continue; }
             try { carried = view.LookupParameter(parameterWanted); } catch { }
             if (carried == null) continue;
             carriers++;
@@ -167,7 +178,12 @@ if (refused.Length == 0 && operation == "by-parameter")
             group.Add(view);
         }
 
-        if (carriers == 0)
+        if (ambiguous.Count > 0)
+            refused = ambiguous.Count + " sheet(s) or view(s) carry TWO OR MORE parameters called '" + parameterWanted
+                + "' - NOT READ, because Revit hands back whichever of them it meets first, so which set each belongs in "
+                + "is not known: " + string.Join(", ", ambiguous.Select(id => id.ToString()).ToArray())
+                + ". Nothing was changed - rename one of the two parameters, or name the other one.";
+        else if (carriers == 0)
             refused = "No sheet or view in " + (doc.Title ?? "this model") + " has a parameter called '" + parameterWanted
                 + "'. Name it exactly as the sheet's Properties show it. Nothing was changed.";
         else

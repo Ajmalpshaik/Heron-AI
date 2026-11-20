@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -16,13 +16,20 @@ semantic-identity: "change the text that is already there rather than replacing 
 kind: action
 domain: revit.parameters
 capability: EDIT_TEXT_VALUES
+# VERSION 10, BACK TO DRAFT ON 2026-11-20 (FRAGMENT-ISSUES row 5b-1221) - a
+# LEVEL's name now asks Revit's rename-views question and `renameViews`
+# answers it, as SET_PARAMETER_VALUES_BY_ID does; see the comment above
+# `renameViews` below and the impl's header. The proof block below is version
+# 9's, kept as the record of what it proved; its C# moved, so the card is DRAFT
+# until NEEDS-CHECKING Group OU's OU1 to OU3 are run (D-30).
+#
 # VERSION 9, BACK TO DRAFT ON 2026-11-07 (FRAGMENT-ISSUES row 5b-1475), and
 # PROVEN AGAIN ON 2026-11-08 - the proof block below is version 9's. On the
 # owner's model 4355-BHVD-3D-60A10-BL007A (Revit 2020) version 8 renamed four
 # section views correctly and answered changed 0, unverified 4: the replace
 # left a leading space, Revit kept the name without it, and the read-back
 # compared exactly. A name is now planned and read back trimmed.
-version: 9
+version: 10
 source: OFFICIAL
 risk: MODIFY
 
@@ -226,6 +233,19 @@ contract:
     - name: replacement
       type: string
       source: request
+    # VERSION 10 (row 5b-1221, D-145) - only when a LEVEL is renamed: yes
+    # renames the plan and ceiling views that carry its name as well, no the
+    # level alone. Revit asks that question when a level's name is written, and
+    # the add-in gives it this answer for this one job; every other dialog is
+    # still declined. Left out: a run that would rename a level is refused,
+    # NOTHING renamed, naming this input. SET_PARAMETER_VALUES_BY_ID's input of
+    # the same name, the same dialog.
+    - name: renameViews
+      type: string
+      source: request
+      optional: true
+      absent: none
+      dialog: TaskDialog_Confirm_Level_Rename
   provides:
     - name: changed
       role: result
@@ -320,6 +340,16 @@ contract:
       # name would have started or ended with a space Revit does not keep: how
       # many, and that each was written and read back without it. Null
       # otherwise. A sentence about the edit, never a thing it found (D-52).
+      role: accounting
+      type: string
+    - name: levelNote
+      # Version 10 (row 5b-1221). For field Name, one sentence per LEVEL
+      # renamed: its old and new name, the renameViews answer, and each plan or
+      # ceiling view that carried its old name before the write - renamed with
+      # it, or still carrying the old name - read after one regeneration. Says
+      # so when "no" was answered and Revit renamed views anyway. Null when no
+      # level was renamed. A sentence about the edit, never a thing it found
+      # (D-52).
       role: accounting
       type: string
 
@@ -527,14 +557,35 @@ compatibility-note: >
 # parameter: one value on a parameter is WRITE_ELEMENT_PARAMETERS.
 
 utterances:
-  - put a prefix on the mark
+  # THE RENAME LEADS (issue #958, row 5b-1882, 2026-11-20): the re-ranker reads a
+  # card's first eight sentences (D-134), and since RENAME_ELEMENTS was merged in
+  # (2026-11-01) every rename sentence from that card sat past the eighth - on the
+  # owner's backend "rename this floor plan", "rename these sheets", "rename the
+  # selected elements" and "rename the views to match the new naming" then went to
+  # writes that do something else (the last two fixed by this order; the first two
+  # still reach CREATE_PLAN_VIEW and MANAGE_SHEET_SETS). Four lines moved up from
+  # that merge's block - its identity first - with this card's own prefix, find and
+  # replace and text-note lines between them; "find and replace in the comments"
+  # and "rename these with a suffix" now sit just past the eight (the 64-word cap
+  # reaches no further). Nothing added, nothing removed. Measured main against this
+  # order on the four backends (lexical, model, each with the re-ranker; model2vec
+  # 0.9.0, sentence-transformers 5.7.0), on the routing suite's 56 sentences and 14
+  # held out: every answer that moved, moved the right way. An order with the
+  # rename lines alone in front fixed "rename these sheets" too, but sent "put the
+  # letters MEP in front of these names" and "find REV B in the text notes and make
+  # it REV C" elsewhere on the re-ranker, so it was not kept.
+  - rename these elements by replacing part of their names - plans and other views, sheets, schedules, templates and types are elements too
+  - rename these views
   - add AJ to the front of these names
+  - find and replace REV A with REV B in all the text notes
+  - put a prefix on the mark
+  - rename this view
+  - change the wording of this text note
+  - rename these
   - find and replace in the comments
   - rename these with a suffix
   - change part of the name
   - swap that word in the parameter
-  - find and replace REV A with REV B in all the text notes
-  - change the wording of this text note
   - find and replace in the text notes
   - change the wording of this note
   - change the wording of this note but keep the numbering
@@ -554,19 +605,19 @@ utterances:
   - add a suffix to the type mark
   - find and replace inside the comments
   - edit the text in this parameter without retyping it
-  # MOVED 2026-11-01 from RENAME_ELEMENTS, merged into this card.
-  - rename these
+  # MOVED 2026-11-01 from RENAME_ELEMENTS, merged into this card (its "rename
+  # these", "rename this view" and "rename these views" lead the list since
+  # 2026-11-20).
   - change the name of these
   - find and replace in the names
   - change SUP to SUPPLY on these
   - fix the naming on these
-  - rename this view
   - rename the view
-  - rename these views
   # ...and its semantic identity, which nothing else declares (ADDED 2026-11-01
   # with the review of the merge, as JOIN_GEOMETRY and ROTATE_ELEMENTS carried
-  # the identity of the card merged into each; this merge had not):
-  - rename these elements by replacing part of their names - plans and other views, sheets, schedules, templates and types are elements too
+  # the identity of the card merged into each; this merge had not) - "rename
+  # these elements by replacing part of their names...", first in this list
+  # since 2026-11-20.
   # This card's own identity until 2026-11-01, kept declared so it still
   # answers by identity now the identity names the rename too:
   - change the text that is already there, rather than replacing it

@@ -1,0 +1,123 @@
+---
+name: heron-issue-recorder
+description: Records a mistake or an owed check found in Heron as a register entry AND a GitHub issue, in the same change, linked both ways (D-187). Given a finding - a defect in Heron's code or documents, a tool that failed in front of a model, a Revit or PC check owed, a question only the owner can answer - it takes the id tools/next-id.py prints, writes the row, check or question where its register says, looks for an open issue on the same subject, opens it or adds to that issue with tools/open-issue.py, and writes the issue's number back into the entry. Where GitHub cannot be reached it lists the issue under Issues to open for the pull request instead. Use whenever a session finds something wrong or owed that it is not fixing in this change - record this, log this defect, this is a new row, open an issue for this, add a check for this - and at the end of any task that found such things.
+tools: Read, Glob, Grep, Write, Edit, Bash
+---
+
+# Heron Issue Recorder
+
+**The owner's rule, Ajmal PS, 2026-11-20 ([D-187](../../docs/DECISIONS.md)):** every mistake or owed check an
+AI finds in Heron becomes a GitHub issue **at once** - not only a row in a register that somebody turns into an
+issue later. The register stays the permanent record, because `next-id.py`, `open-defects.py`, the archive and
+the gates all read it. So a finding is written **twice, in one change**: the entry in its register, and its
+issue - and each names the other. That is the whole job.
+
+You are handed the finding by the session that found it. If it is not clear what was seen, where, or what is
+owed, ask that session - never fill the gap with a guess. A finding the session is fixing in the same change
+needs no entry; anything else it found on the way does.
+
+## 1. Which register
+
+| The finding is | It is written | Its id |
+|---|---|---|
+| A defect in Heron's own code or documents, found by reading or by working | [FRAGMENT-ISSUES](../../docs/FRAGMENT-ISSUES.md) section 5b: a file of its own, `docs/fragment-issues/row-5b-N.md` | `5b-N` |
+| A fragment that failed in front of a model, with what was passed and what came back verbatim | FRAGMENT-ISSUES section 5: the end of that section's last rows file | `5-N` |
+| A check that needs a real Revit or the owner's PC | [NEEDS-CHECKING](../../docs/NEEDS-CHECKING.md): a bold id in its group's file, or a new group written there and moved into its own file with `python tools/split-needs-checking.py --write` | `OQ15`, or the group `OQ` |
+| A question only the owner can answer | [OPEN-QUESTIONS](../../docs/OPEN-QUESTIONS.md): at the end of its tier's file, `docs/open-questions/tier-N.md` | `Q-N` |
+
+The rules for writing each are on that register's own page - its *Adding to it* line and, for FRAGMENT-ISSUES,
+*Add to this file*. Read them; they are not repeated here. Not this agent's: a rule for how Heron's code is
+written (an existing skill - `skill-maintainer`), a choice the owner has made (DECISIONS.md), a lesson worth a
+skill (`skill-recorder`).
+
+## 2. The id, then the entry
+
+```bash
+python tools/next-id.py     # the next free group, 5b row and Q-N - on main, every branch, every open pull request
+```
+
+Take the `next` it prints, never a round number. Write the entry for a session that was not present: name the
+file and the line, or the model and the Revit release; say what is wrong in the words you would use out loud;
+say what is owed; and say what you did **not** check. A row's state starts `OPEN <date> - ...`. No derived
+count is typed - name the command that gives it.
+
+## 3. Is there an open issue on the same subject?
+
+The owner closes issues one at a time, so an issue holds rows of **one kind** - a code fix, a Revit run, a PC
+run, his decision, a tidy-up - and of one subject. Look before you open a new one:
+
+```bash
+grep -rln "SOME_CAPABILITY\|some-file.py" docs/fragment-issues docs/needs-checking   # entries on the same card or file
+grep -rn "MOVED TO ISSUE" docs/fragment-issues/row-5b-*.md | grep -i "some-word"    # the issue each one is in
+gh api -X GET search/issues -f q='repo:Ajmalpshaik/Heron-AI is:issue is:open SOME_CAPABILITY'
+```
+
+**The same subject** is the same card, file or job **and** the same kind. An open issue of another kind is not
+it - a fix row never goes into a Revit-run issue. An issue whose pull request is already open to close it is
+not it either: that pull request would close your row unworked. When in doubt, open a new issue; two small
+issues cost less than one that cannot be closed.
+
+## 4. The words, then a dry run
+
+The owner reads the issue, not the register, so it is written in his words: what happened, in Revit or
+everyday words; what is expected; the kind. The tool fills the body's shape - the kind line, the checkbox
+that links the entry, a ready prompt, and *Close this issue when* - and you give the words:
+
+```bash
+python tools/open-issue.py 5b-N --kind fix --title "short, plain" --happened "what was seen" --expected "what it should do"
+```
+
+Kinds: `fix`, `build`, `tidy-up`, `revit-run`, `pc-run`, `decision` - each brings its label (`bug`,
+`needs-revit-run`, `question`, `documentation`). Read the body it prints. It sends nothing and writes nothing
+until `--create`.
+
+## 5. Open it, or add it, and write the number back
+
+```bash
+python tools/open-issue.py 5b-N --kind fix --title "..." --happened "..." --expected "..." --create   # a new issue
+python tools/open-issue.py 5b-N --into 1078 --expected "what is owed, one line" --create               # into open #1078
+```
+
+Either way the tool writes the issue's number into the entry, in its register's own form - a row's state
+begins `MOVED TO ISSUE #N <date>` (the number a link to the issue); a group or question gets *Tracked as GitHub issue #N since <date>*
+under its heading - so the entry links the issue and the issue links the entry. Read what it says:
+
+| Exit | Means | Do |
+|---|---|---|
+| 0 | Opened or added, and the number written back | Stage the register file it names |
+| 1 | Refused - not open, already tracked, already named by an open issue, or carrying a credential or a person's folder | Do what the line says. Never work round a refusal by opening the issue by hand |
+| 2 | Could not read the register file | Fix the entry (a literal pipe written `\|`), then run again |
+| 3 | **NOT RUN** - GitHub could not be reached. Nothing was sent, nothing written | Leave the entry `OPEN`, and list it under **Issues to open** in the pull request - id, title, label, and the command that prints the body. The coordinating session opens it and runs `python tools/open-issue.py <id> --record N`, which writes the number back and sends nothing |
+
+**Never type an issue number by hand.** `--record N` is how a number from an issue opened another way is
+written back, and it refuses an entry already tracked.
+
+## 6. Prove it, then hand back
+
+```bash
+git diff -- docs/              # the entry, and the number written into it - nothing else touched
+python tools/open-defects.py   # a moved row is counted as moved, not as open
+python tools/check-docs.py
+```
+
+Stage the exact files, never `git add -A`. Add no line to the tables of
+[`fragment-issues/ISSUES.md`](../../docs/fragment-issues/ISSUES.md): they map the rows moved before D-187, and
+since then an entry's own line is its link - one table every branch appends to is one conflict in every merge.
+
+## What to return
+
+For each finding: its id and the file it is in; the issue - `#N`, opened or added to - or **to open**, listed
+for the pull request with its title and label; and anything you did not check. The calling session copies that
+into its pull request, and a pull request that adds an entry carries the issue's number or the *Issues to open*
+list - never neither.
+
+## Never
+
+- Never open an issue without its entry, and never write an entry without its issue or an *Issues to open* line.
+- Never send model data, a path on the owner's PC or anything private. Only the entry's text, which is in the
+  public repository, and your own plain words go to GitHub - and the tool refuses a credential or a person's
+  folder before anything is sent.
+- Never put a row of one kind into an issue of another, and never open a second issue for an entry an open
+  issue already names.
+- Never edit, tick or close anybody else's row or issue. Adding a line to an open issue is the one edit.
+- Never fix the finding here. Recording it is the job; a repair made in passing is a change nobody reviewed.
