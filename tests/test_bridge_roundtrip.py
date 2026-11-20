@@ -300,6 +300,73 @@ def _read_answer(handle):
     return json.loads(line.decode("utf-8").strip()) if line.strip() else None
 
 
+def reply_limits_agree(failures):
+    """The bridge's limit on an answer is the client's - 5b row 1167. Read from
+    both files, so a change to either alone fails here."""
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    with open(os.path.join(root, "revit", "Heron.Bridge", "BridgeServer.cs"),
+              encoding="utf-8") as fh:
+        server = fh.read()
+    with open(os.path.join(root, "mcp", "client", "heron_bridge_client.py"),
+              encoding="utf-8") as fh:
+        client = fh.read()
+    cs = re.search(r"const int MaxReplyBytes = ([0-9 *]+);", server)
+    py = re.search(r"^REPLY_LIMIT_BYTES = ([0-9 *]+)$", client, re.M)
+
+    def value(found):
+        if not found:
+            return None
+        total = 1
+        for part in found.group(1).split("*"):
+            total *= int(part.strip())
+        return total
+
+    if cs is None:
+        failures.append("the bridge names no limit on an answer (MaxReplyBytes)")
+    elif value(cs) != value(py):
+        failures.append("the bridge's limit on an answer (%s) is not the client's (%s)"
+                        % (value(cs), value(py)))
+    else:
+        print("  PASS  the bridge and the client hold one limit on an answer: %d bytes"
+              % value(cs))
+    return value(cs) or 16 * 1024 * 1024
+
+
+def too_large_is_refused(pipe_name, failures):
+    """An answer over the limit is refused whole by the bridge, with its size and
+    the run record that holds it - never sent for the client to refuse. 5b row
+    1167. Seen to FAIL on BridgeServer.cs as it stood: the padding was sent."""
+    limit = reply_limits_agree(failures)
+    big = connect(pipe_name, timeout=3.0)
+    try:
+        big.write((json.dumps({"op": "test_big", "bytes": str(limit + 1024),
+                               "run": "wf-20261120-120000-0001-abcd",
+                               "token": TOKEN, "client": CLIENT}) + "\n").encode("utf-8"))
+        line = b""
+        while not line.endswith(b"\n") and len(line) <= limit + 4096:
+            chunk = big.read(65536 if len(line) > 1024 else 1)
+            if not chunk:
+                break
+            line += chunk
+        if len(line) > 1024 * 1024:
+            failures.append("an answer over the limit crossed whole: %d bytes" % len(line))
+            return
+        answer = json.loads(line.decode("utf-8").strip()) if line.strip() else None
+        said = (answer or {}).get("message") or ""
+        if (answer and answer.get("error") == "reply_too_large"
+                and answer.get("replyBytes", 0) > limit
+                and answer.get("limitBytes") == limit
+                and answer.get("run") == "wf-20261120-120000-0001-abcd"
+                and "heron_run_record" in said and "pipe" not in said.lower()):
+            print("  PASS  an answer over the limit is refused by the bridge, with its size "
+                  "and its run record")
+        else:
+            failures.append("an answer over the limit was not refused as reply_too_large "
+                            "with its size and run record: %r" % (answer,))
+    finally:
+        big.close()
+
+
 def lease_held_while_waiting(pipe_name, failures):
     """
     A JOB WAITING FOR THE MODELLER HOLDS ITS CHAT'S LEASE - row 5b-1745.
@@ -923,6 +990,7 @@ def main():
             owed.close()
 
         lease_held_while_waiting(pipe_name, failures)
+        too_large_is_refused(pipe_name, failures)
 
     except Exception as exc:
         failures.append("%s: %s" % (type(exc).__name__, exc))
