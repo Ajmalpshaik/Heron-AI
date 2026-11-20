@@ -40,6 +40,12 @@ import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
+sys.path.insert(0, os.path.join(ROOT, "tests", "support"))
+import scratch_audit                                            # noqa: E402
+
+# This run's audit lines go to a scratch folder, never the owner's real
+# trail (FRAGMENT-ISSUES row 5b-1070).
+scratch_audit.plant()
 
 FAILURES = []
 
@@ -84,10 +90,8 @@ NOTE = u"# Site note\n\n1.1 Access\n\nThe plant room is reached from level 2.\n"
 
 def main():
     home = tempfile.mkdtemp(prefix="heron-rules-kb-")
-    audit = tempfile.mkdtemp(prefix="heron-rules-audit-")
     papers = tempfile.mkdtemp(prefix="heron-rules-papers-")
     os.environ["HERON_KNOWLEDGE"] = home
-    os.environ["HERON_AUDIT"] = audit
     try:
         import heron_scope as SCOPE
         import heron_ingest as I
@@ -297,10 +301,8 @@ def main():
                   % pattern)
     finally:
         shutil.rmtree(home, ignore_errors=True)
-        shutil.rmtree(audit, ignore_errors=True)
         shutil.rmtree(papers, ignore_errors=True)
         os.environ.pop("HERON_KNOWLEDGE", None)
-        os.environ.pop("HERON_AUDIT", None)
 
     print()
     if FAILURES:
