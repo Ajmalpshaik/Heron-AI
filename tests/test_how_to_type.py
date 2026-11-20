@@ -486,6 +486,27 @@ def main():
     check("`selected`" in picked and "TYPE by name" not in picked,
           "and `host` is told `selected`: %s" % picked)
 
+    # ROW 5b-110. A reader that will not load is SAID, never an empty list -
+    # which read as "it asks you for nothing". The import is refused for
+    # heron_fragment alone, so the rest of the function runs as it would.
+    import builtins
+    real_import = builtins.__import__
+
+    def refused(name, *args, **kwargs):
+        if name == "heron_fragment":
+            raise ImportError("planted: heron_fragment will not load")
+        return real_import(name, *args, **kwargs)
+
+    no_reader = lift(server, ["_contract_lines"],
+                     {"os": os, "io": io, "sys": sys, "bridge": OneFragment,
+                      "_repo_root": lambda: ROOT,
+                      "_fragment_for": lambda _capability: ("two-elements", "DRAFT"),
+                      "__builtins__": dict(vars(builtins), __import__=refused)})
+    said = contract_lines(no_reader, "TWO_ELEMENTS") if no_reader is not None else []
+    check(any("could not be listed" in line for line in said),
+          "a fragment reader that will not load is said, not an empty needs list (5b-110): %s"
+          % (said or "nothing at all"))
+
     job = GJ.job_block(TwoElements(), False, {})
     hosts = [line for line in job if line.strip().startswith("host:")]
     types_ = [line for line in job if line.strip().startswith("wallType:")]

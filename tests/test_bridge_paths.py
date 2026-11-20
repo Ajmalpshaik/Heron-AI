@@ -11,8 +11,8 @@ The bridge client's two folders - the SAME ones the add-in names, on every syste
 
     python tests/test_bridge_paths.py
 
-mcp/client/heron_bridge_client.py is one of the two files allowed to resolve a
-special folder (tools/check-structure.py, PATH_OWNERS); the other is
+mcp/client/heron_bridge_client.py is one of the files allowed to resolve a
+special folder (tools/check-structure.py, PATH_OWNERS), beside
 platform/Heron.Core/HeronPaths.cs. Its DISCOVERY_DIR and LOG_DIR are the
 Python side's HeronPaths.Bridges and HeronPaths.Logs, and the rule exists
 because two parts once disagreed about where a log lived.
@@ -72,7 +72,7 @@ PATHS_CS = os.path.join(ROOT, "platform", "Heron.Core", "HeronPaths.cs")
 #
 # THE .NET CALL IS BUILT FROM PARTS. tools/check-structure.py greps a file's
 # TEXT for the words that resolve a special folder, and fails any file but the
-# two path owners that contains them - this one included, although it only
+# path owners that contains them - this one included, although it only
 # asks .NET in order to check an owner. Written out whole, the question would
 # fail the gate that the answer is evidence for.
 ASK_DOTNET_FOR = "Environment.%s(Environment.%s.LocalApplicationData)" % (
@@ -284,6 +284,61 @@ def dotnet_agrees():
         shutil.rmtree(box, ignore_errors=True)
 
 
+def special_folder_rule():
+    """Row 5b-182. tools/check-structure.py's SPECIAL_FOLDER matched only
+    `environ[...]`, and every Python file reads the variable with `.get` - so
+    five files resolved %APPDATA% or %LOCALAPPDATA% outside the path owners
+    and the gate passed. The pattern and the owners are read out of the
+    gate's source (it runs its whole sweep at import, so it cannot be
+    imported); then the two readers that now ask an owner are asked."""
+    import ast
+    print("The special-folder rule sees a .get, and its readers ask an owner (5b-182)")
+    source = io.open(os.path.join(ROOT, "tools", "check-structure.py"), encoding="utf-8").read()
+    found = {}
+    for node in ast.parse(source).body:
+        if isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name):
+            name = node.targets[0].id
+            if name == "SPECIAL_FOLDER":
+                found[name] = re.compile(ast.literal_eval(node.value.args[0]))
+            elif name == "PATH_OWNERS":
+                found[name] = ast.literal_eval(node.value)
+    pattern, owners = found.get("SPECIAL_FOLDER"), found.get("PATH_OWNERS") or ()
+    check(pattern is not None, "the gate's pattern is read out of its source")
+    pattern = pattern or re.compile("$^")
+    for text in ('os.environ.get("APPDATA")', "env.get('LOCALAPPDATA')",
+                 'os.environ["APPDATA"]'):
+        check(pattern.search(text) is not None, "the gate sees %s" % text)
+    check(pattern.search('os.environ.get("HERON_AUDIT")') is None,
+          "and not another variable read the same way")
+    check("brain/heron_paths.py" in owners,
+          "the brain's path agent is a named owner: %s" % ", ".join(owners))
+
+    for part in (("brain",), ("mcp", "client"), ("mcp", "server")):
+        if os.path.join(ROOT, *part) not in sys.path:
+            sys.path.insert(0, os.path.join(ROOT, *part))
+    import heron_bridge_client as BRIDGE
+    import heron_gaps as GAPS
+    import heron_workflow as WORKFLOW
+    held = dict((name, os.environ.get(name)) for name in ("HERON_AUDIT", "HERON_CHECKPOINTS", "APPDATA"))
+    try:
+        for name in ("HERON_AUDIT", "HERON_CHECKPOINTS"):
+            os.environ.pop(name, None)
+        os.environ["APPDATA"] = os.path.join(os.sep, "roaming")
+        check(GAPS.audit_dir() == os.path.join(os.sep, "roaming", "Heron", "audit"),
+              "the audit trail is still %%APPDATA%%\\Heron\\audit: %s" % GAPS.audit_dir())
+        os.environ.pop("APPDATA")
+        check(GAPS.audit_dir() is None, "and nowhere with no %APPDATA%, as before")
+        check(WORKFLOW.checkpoint_root() == os.path.join(BRIDGE.local_app_data(), "Heron", "checkpoints"),
+              "the workflow's checkpoints are under the folder the client names for "
+              "HeronPaths.Derived, never $TMPDIR: %s" % WORKFLOW.checkpoint_root())
+    finally:
+        for name, value in held.items():
+            if value is None:
+                os.environ.pop(name, None)
+            else:
+                os.environ[name] = value
+
+
 def main():
     home = tempfile.mkdtemp(prefix="heron-home-")
     try:
@@ -297,6 +352,8 @@ def main():
         runs_cases(home)
         print("")
         dotnet_agrees()
+        print("")
+        special_folder_rule()
     finally:
         shutil.rmtree(home, ignore_errors=True)
 

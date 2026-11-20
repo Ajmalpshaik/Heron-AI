@@ -43,6 +43,11 @@ WHAT THIS PROVES, and every one of these is a way a hook becomes decoration:
   7. EVERY DECISION IS WRITTEN DOWN, AND THE DIARY CANNOT CHANGE ONE. A deny,
      an allow and a crash are one line each in the hooks' diary; a diary that
      cannot be written leaves every decision exactly as it was.
+  7a. A WORKTREE INSIDE THE CHECKOUT IS ITS OWN CHECKOUT (section 10, row
+     5b-1611). The main checkout's copy of the hook measures a path under
+     `.claude/worktrees/<name>/` from that worktree, so an edit under its
+     revit/ is allowed and the same text under its brain/ refused - where it
+     used to read every such path as being in `.claude`.
   8. THE SECOND RULE, D-166 LAYER 1 (section 9). A write or a command that
      would turn on Changes, Admin or Publish in heron.config is refused, and so
      is one that writes the registry policy; reading the file, and turning a
@@ -133,6 +138,44 @@ def verdict_of(out):
     if not out:
         return None
     return json.loads(out)["hookSpecificOutput"]["permissionDecision"]
+
+
+def worktree_case(vendor):
+    """Section 10. A scratch main checkout with the hook at its own place and
+    a linked worktree under .claude/worktrees/ - `.git` a FILE there, as git
+    writes it - and the MAIN copy of the hook asked about the worktree's
+    files, which is what a session working in the worktree runs."""
+    top = tempfile.mkdtemp(prefix="heron-guard-worktree-")
+    try:
+        main_root = os.path.join(top, "Heron")
+        hook = os.path.join(main_root, ".claude", "skills", "heron-guard", "bin", "heron_guard.py")
+        os.makedirs(os.path.dirname(hook))
+        shutil.copy(HOOK, hook)
+        os.makedirs(os.path.join(main_root, ".git"))
+        tree = os.path.join(main_root, ".claude", "worktrees", "busy")
+        os.makedirs(tree)
+        with io.open(os.path.join(tree, ".git"), "w", encoding="utf-8") as handle:
+            handle.write(u"gitdir: ../../../.git/worktrees/busy\n")
+        where = dict(os.environ)
+        where.update({"LOCALAPPDATA": QUIET, "XDG_DATA_HOME": QUIET, "HERON_KNOWLEDGE": ""})
+
+        def ask(path):
+            got = subprocess.run([sys.executable, hook], capture_output=True, text=True, env=where,
+                                 input=json.dumps({"tool_input": {
+                                     "file_path": path, "content": "using %s.DB;" % vendor}}))
+            return verdict_of(got.stdout.strip()) or "allow"
+
+        check(ask(os.path.join(tree, "revit", "Heron.Revit.Addin", "RevitUndo.cs")) == "allow",
+              "an edit under the worktree's revit/ is allowed - it is in revit/ of its own checkout")
+        check(ask(os.path.join(tree, "brain", "x.py")) == "deny",
+              "the same text under the worktree's brain/ is still refused")
+        check(ask(os.path.join(main_root, "revit", "X.cs")) == "allow"
+              and ask(os.path.join(main_root, "brain", "x.py")) == "deny",
+              "and the main checkout's own revit/ and brain/ are judged as before")
+        check(ask(os.path.join(main_root, ".claude", "notes", "x.md")) == "deny",
+              "and a folder under .claude/ that is no checkout is still .claude")
+    finally:
+        shutil.rmtree(top, ignore_errors=True)
 
 
 def main():
@@ -555,6 +598,11 @@ def main():
               "can show whether an AI ever tried")
     finally:
         shutil.rmtree(home, ignore_errors=True)
+
+    print()
+    print("10. A worktree inside the checkout is measured from its own top (5b-1611)")
+    print("-" * 70)
+    worktree_case(vendor)
 
     print()
     if FAILURES:

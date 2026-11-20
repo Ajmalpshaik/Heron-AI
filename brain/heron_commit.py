@@ -44,11 +44,16 @@ So two things are refused outright:
   cannot be found, staging is REFUSED rather than checked against a list
   this file invented.
 
-THE MESSAGE IS READ FOR ONE THING
------------------------------------
+THE MESSAGE AND THE FILES ARE READ FOR ONE THING
+--------------------------------------------------
 A credential. Refused whole, never stripped, and the value never
 appears in the answer - the same rule HERON-GIT-PR-005 applies to a
 pull request body, for the same reason and with a longer memory.
+
+Until 2026-11-19 only the message was read, so a staged file holding a
+token was answered `may_commit: True` (row 5b-1138). Each staged file that
+is on disk is now read through the same redactor; a path that is not there -
+a file being deleted - carries nothing to leak.
 """
 
 from __future__ import annotations
@@ -101,7 +106,27 @@ def _tidy(path):
     return posixpath.normpath(str(path).strip().replace("\\", "/"))
 
 
-def stage(paths, message=None, secrets=None, ignore=None):
+def _carried(paths, keeper, root):
+    """[(path, [kinds])] for each of PATHS, read under ROOT, that carries a
+    credential by the redactor's patterns. A path that is not a file is
+    skipped: a deleted file carries nothing into the commit."""
+    found = []
+    for path in paths:
+        full = os.path.join(root, *path.split("/"))
+        if not os.path.isfile(full):
+            continue
+        try:
+            with io.open(full, "rb") as handle:
+                text = handle.read().decode("utf-8", "replace")
+        except (IOError, OSError):
+            continue
+        _, kinds = keeper.redact(text)
+        if kinds:
+            found.append((path, sorted(set(kinds))))
+    return found
+
+
+def stage(paths, message=None, secrets=None, ignore=None, root=None):
     """
     {staged, may_commit, why} - a verdict. Nothing is staged or written.
     """
@@ -180,6 +205,19 @@ def stage(paths, message=None, secrets=None, ignore=None):
                        "and every mirror at once."
                        % ", ".join(sorted(set(found)))}
 
+    carried = _carried(seen, keeper, root or ROOT)
+    if carried:
+        return {"prepared": False, "refused": "CARRIES_A_SECRET",
+                "paths": [path for path, _ in carried],
+                "found": sorted(set(kind for _, kinds in carried for kind in kinds)),
+                "why": "%s. Refused WHOLE, and no value is in this answer - "
+                       "only that it was there. A file that reaches history "
+                       "is copied into every clone and every mirror at once; "
+                       "the credential belongs in the credential store "
+                       "(Constitution article 17)."
+                       % "; ".join("'%s' carries %s" % (path, ", ".join(kinds))
+                                   for path, kinds in carried)}
+
     return {
         "prepared": True, "may_commit": True, "paths": seen,
         "message": said, "of": len(seen), "generated": pages,
@@ -199,10 +237,9 @@ def stage(paths, message=None, secrets=None, ignore=None):
             "THE %d GENERATED PAGE(S) WERE READ OUT OF .gitignore (%s), "
             "not listed here - so a fifth one added there is refused with "
             "no edit to this file." % (len(pages), ", ".join(pages)),
-            "WHAT IS IN THE FILES. Their NAMES were checked; nothing here "
-            "opened one. A credential inside a staged file is "
-            "HERON-KRN-SEC-012's, and it is not this agent's claim to have "
-            "looked.",
+            "WHAT IS IN THE FILES, but for a credential. Each staged file "
+            "on disk was read through the same redactor as the message "
+            "(row 5b-1138); nothing else in it was judged.",
         ],
     }
 
