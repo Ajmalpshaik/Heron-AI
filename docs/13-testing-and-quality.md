@@ -36,7 +36,6 @@ The table above is the specification's. This is what runs. No mocked Revit exist
 How a result is filed, whatever level it came from:
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
     Q1{{"Does the answer depend on what Autodesk's code does?"}}
     NR["<b>NEEDS REAL REVIT</b><br/>a named model, a negative case, a person's signature — D-30"]
@@ -58,15 +57,16 @@ flowchart TD
     NOT -.-> WA
     FAIL -.-> UN
 
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
-    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
-    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
-    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    classDef user fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef brain fill:#3ECF8E,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef addin fill:#F5A524,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef revit fill:#1B1B1F,stroke:#FD641A,stroke-width:1.5px,color:#F7F5F2
+    classDef stop fill:#FF5A4E,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
     class Q1,Q2,Q3,WA,UN user
     class NR revit
     class NOT addin
     class PASS brain
-    class FAIL revit
+    class FAIL stop
 ```
 
 <details>

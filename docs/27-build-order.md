@@ -23,7 +23,6 @@ against a named real model ([D-30](DECISIONS.md)); **measured** is a run on one 
 step's *Prove it* still owed; **built** is code and tests that pass with no Revit — not a proof.
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
     subgraph P0["Phase 0 — read-only"]
         direction LR
@@ -48,22 +47,21 @@ flowchart TD
         K4["batch marker · not a step"]
     end
 
-    classDef proven fill:#DCFCE7,stroke:#16A34A,color:#14532D
-    classDef measured fill:#FEF9C3,stroke:#CA8A04,color:#713F12
-    classDef built fill:#E0F2FE,stroke:#0284C7,color:#0C4A6E
-    classDef notbuilt fill:#F1F5F9,stroke:#94A3B8,color:#334155,stroke-dasharray:4 3
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef proven fill:#3ECF8E,stroke:#0F0F10,color:#0F0F10
+    classDef measured fill:#F5A524,stroke:#0F0F10,color:#0F0F10
+    classDef built fill:#FFFFFF,stroke:#0F0F10,color:#0F0F10
+    classDef notbuilt fill:#F7F5F2,stroke:#0F0F10,color:#0F0F10,stroke-dasharray:4 3
+    classDef user fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
     class S1,S2,S3,S4,S5,K1 proven
     class S6,K2 measured
     class K3 built
     class K4 notbuilt
     class G0,G1 user
-    style P0 fill:#FFFFFF,stroke:#CBD5E1
-    style KEY fill:#FFFFFF,stroke:#CBD5E1
+    style P0 fill:#F7F5F2,stroke:#0F0F10
+    style KEY fill:#F7F5F2,stroke:#0F0F10
 ```
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
     subgraph KS["Phase 2 — a knowledge store that can find things"]
         direction LR
@@ -86,12 +84,12 @@ flowchart TD
     KS ==> RC
     RC -.-> BM
 
-    classDef built fill:#E0F2FE,stroke:#0284C7,color:#0C4A6E
-    classDef notbuilt fill:#F1F5F9,stroke:#94A3B8,color:#334155,stroke-dasharray:4 3
+    classDef built fill:#FFFFFF,stroke:#0F0F10,color:#0F0F10
+    classDef notbuilt fill:#F7F5F2,stroke:#0F0F10,color:#0F0F10,stroke-dasharray:4 3
     class S7,S8,S9,S10,S11,S12,S13,S14 built
     class BM notbuilt
-    style KS fill:#FFFFFF,stroke:#CBD5E1
-    style RC fill:#FFFFFF,stroke:#CBD5E1
+    style KS fill:#F7F5F2,stroke:#0F0F10
+    style RC fill:#F7F5F2,stroke:#0F0F10
 ```
 
 <details>

@@ -14,7 +14,6 @@ The intelligence and knowledge layer: Skills, Fragments, RAG, vector database, e
 ## 2. Knowledge is separated, never pooled
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart LR
     CK(["<b>CORE KNOWLEDGE</b>"])
     CK --> K1["COMPANY KNOWLEDGE"]
@@ -24,8 +23,8 @@ flowchart LR
     CK --> K5["TEMPORARY KNOWLEDGE"]
     CK --> K6["EXPERIMENTAL KNOWLEDGE"]
 
-    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef brain fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef user fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
     class CK brain
     class K1,K2,K3,K4,K5,K6 user
 ```
@@ -143,7 +142,6 @@ That last point matters most: the common case ("select all ducts", asked for the
 As built (2026-10-18), read from `heron_retrieve.find()` and `heron_brain.lookup()`.
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
     W(["<b>Your words</b><br/><i>select all the ducts</i>"])
     CC["<b>Claude Code</b> calls <b>heron_lookup</b><br/>with the Revit release, and <i>question</i><br/>when you only asked"]
@@ -163,10 +161,10 @@ flowchart TD
     FU ==> RR ==> AN
     FU -.->|no re-ranker installed| AN
 
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
-    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
-    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
-    classDef search fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B,stroke-dasharray:4 3
+    classDef user fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef host fill:#FFFFFF,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef brain fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef search fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10,stroke-dasharray:4 3
     class W user
     class CC host
     class F,X,KW,MN,FU,AN brain

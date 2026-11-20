@@ -27,7 +27,6 @@ tool's level, is `python server/heron_tools.py`. The doors and their rules, side
 [docs/04 §8.0](../docs/04-heron-mcp.md#80-the-tools-at-a-glance--as-built-2026-10-18).
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
     CC(["<b>Claude Code</b><br/>the host"])
     S["<b>Heron MCP server</b><br/>heron_mcp_server.py"]
@@ -52,9 +51,9 @@ flowchart TD
     H ==> AD
     W -.->|loads and sprinklers read the model| AD
 
-    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
-    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
-    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
+    classDef host fill:#FFFFFF,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef brain fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef addin fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
     class CC host
     class S,K,W,R,SH,C,H brain
     class AD addin

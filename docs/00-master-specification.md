@@ -172,7 +172,6 @@ The platform should never become one huge AI brain. It must remain modular.
 > by part, and the [README](../README.md) has it step by step.
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
     U(["<b>The modeller</b><br/>types in a Claude chat"])
     CC["<b>Claude Code</b> — the host<br/>conversation · works out the intent · plans<br/>no persona layer — D-01, D-27"]
@@ -190,11 +189,11 @@ flowchart TD
     R -.-> L
     L -.-> BR
 
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
-    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
-    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
-    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
-    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    classDef user fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef host fill:#FFFFFF,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef brain fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef addin fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef revit fill:#1B1B1F,stroke:#FD641A,stroke-width:1.5px,color:#F7F5F2
     class U,R user
     class CC host
     class MS,BR,L brain
@@ -718,7 +717,6 @@ A fragment should not automatically become production knowledge simply because i
 > `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`.
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart LR
     D["<b>DRAFT</b><br/>new, or its code changed"] --> C["compiles for every<br/>Revit release it claims"]
     C --> P["proof run on a named real model<br/>positive and negative case"]
@@ -726,9 +724,9 @@ flowchart LR
     S --> PR(["<b>PROVEN</b>"])
     PR -.->|"code changes — the proof goes stale"| D
 
-    classDef draft fill:#F1F5F9,stroke:#94A3B8,stroke-width:1.5px,color:#334155,stroke-dasharray:4 3
-    classDef step fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
-    classDef proven fill:#DCFCE7,stroke:#16A34A,stroke-width:2px,color:#14532D
+    classDef draft fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10,stroke-dasharray:4 3
+    classDef step fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef proven fill:#3ECF8E,stroke:#0F0F10,stroke-width:2px,color:#0F0F10
     class D draft
     class C,P,S step
     class PR proven
@@ -2126,7 +2124,6 @@ If an approved fragment already exists, Heron should reuse it. It should not gen
 > ([D-01](DECISIONS.md)). The rest of the owner's steps are each in the table below.
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
     U(["<b>The modeller</b><br/><i>select all ducts</i>"])
     CC["<b>Claude Code</b> — the host<br/>works out what was meant — D-01"]
@@ -2140,11 +2137,11 @@ flowchart TD
     U --> CC --> LK --> DR --> PN --> AD --> R
     AD -.-> REC
 
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
-    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
-    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
-    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
-    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    classDef user fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef host fill:#FFFFFF,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef brain fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef addin fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef revit fill:#1B1B1F,stroke:#FD641A,stroke-width:1.5px,color:#F7F5F2
     class U,R user
     class CC host
     class LK,DR,PN,REC brain
@@ -2246,7 +2243,6 @@ Production
 > into it since).
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
     U(["<b>The modeller</b><br/><i>a tool that dimensions ducts</i>"])
     FA["<b>heron-fragment-author</b><br/>a subagent the host runs<br/>searches the library first"]
@@ -2267,11 +2263,11 @@ flowchart TD
     CK -.-> TRY
     TRY -.->|"kept after checking: the positive case — D-120"| PR
 
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
-    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
-    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
-    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
-    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    classDef user fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef host fill:#FFFFFF,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef brain fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef addin fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef revit fill:#1B1B1F,stroke:#FD641A,stroke-width:1.5px,color:#F7F5F2
     class U,SG,USE user
     class FA,EX host
     class WI,NW,CK brain

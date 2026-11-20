@@ -23,7 +23,6 @@ only names the departments that are not simply *every row built*. [28](28-agent-
 same as a table.
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart LR
     REG["<b>docs/28</b> · the registry<br/>one row per agent, by department"]
     AC{{"<b>python tools/agent-count.py</b><br/>matches every row to a<br/>Heron-Agent header in the code"}}
@@ -42,11 +41,11 @@ flowchart LR
     AC -.-> LEFT
     ALL -.- NP
 
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
-    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
-    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
-    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
-    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95,stroke-dasharray:4 3
+    classDef user fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef host fill:#FFFFFF,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef brain fill:#3ECF8E,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef revit fill:#F5A524,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef plat fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10,stroke-dasharray:4 3
     class REG,NP user
     class AC,ALL brain
     class ORC,DEV host
@@ -54,7 +53,7 @@ flowchart LR
     class LEFT revit
 ```
 
-**Blue is Claude Code** doing the work in the chat, on purpose ([D-01](DECISIONS.md),
+**White is Claude Code** doing the work in the chat, on purpose ([D-01](DECISIONS.md),
 [D-80](DECISIONS.md)); it is never counted as work left. **Dashed is waiting on a decision**, not on
 anybody's time.
 
