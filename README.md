@@ -105,7 +105,7 @@ it makes is one entry in Revit's Undo list. The full picture, part by part:
 | You are… | Go to | You will find |
 |---|---|---|
 | **a BIM modeller** | [**Using Heron**](docs/guide/using-heron.md) | What you can ask, and what keeps your model safe |
-| **setting up a PC** | [**What to install**](docs/WHAT-TO-INSTALL.md) | Everything a PC needs, Python first, and what is optional |
+| **setting up a PC** | [**What to install**](docs/WHAT-TO-INSTALL.md) · [**System requirements**](docs/guide/system-requirements.md) | Everything a PC needs, Python first, what is optional, and what each piece costs on disk |
 | **changing Heron** | [**Changing Heron**](docs/guide/changing-heron.md) | Where each kind of code lives, the rules, and the checks before a pull request |
 | **checking what is proven** | [**What is proven**](docs/guide/what-is-proven.md) | Built versus proven, item by item, and the commands that count it |
 

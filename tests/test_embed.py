@@ -81,6 +81,20 @@ def main():
               "and tools/heron-ready.py prints it")
 
         print()
+        print("0a. The trained backend is announced, with its size, before any download (R-77)")
+        speak = getattr(E, "announcement", None)
+        check(callable(speak), "heron_embed.announcement() exists")
+        words = speak() if callable(speak) else ""
+        size = getattr(E, "SIZE", None)
+        check(bool(size) and size in words, "the size is stated: %r" % (size,))
+        check("model2vec" in words and "pip install --user model2vec" in words,
+              "the package is named, with a per-user install (D-01)")
+        check("huggingface.co" in words,
+              "and the one condition that install needs is said with it")
+        check("OPTIONAL" in words and "STILL ANSWERS" in words,
+              "and it says out loud the piece is optional and Heron answers without it")
+
+        print()
         print("1. The same text embeds the same way in a DIFFERENT process")
         code = ("import sys; sys.path.insert(0, %r);"
                 "import heron_embed as E;"

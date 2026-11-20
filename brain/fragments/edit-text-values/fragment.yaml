@@ -563,20 +563,33 @@ utterances:
   # owner's backend "rename this floor plan", "rename these sheets", "rename the
   # selected elements" and "rename the views to match the new naming" then went to
   # writes that do something else (the last two fixed by this order; the first two
-  # still reach CREATE_PLAN_VIEW and MANAGE_SHEET_SETS). Four lines moved up from
-  # that merge's block - its identity first - with this card's own prefix, find and
+  # reached CREATE_PLAN_VIEW and MANAGE_SHEET_SETS until the line below). Four
+  # lines moved up from that merge's block - its identity first - with this card's own prefix, find and
   # replace and text-note lines between them; "find and replace in the comments"
   # and "rename these with a suffix" now sit just past the eight (the 64-word cap
-  # reaches no further). Nothing added, nothing removed. Measured main against this
+  # reaches no further). That order added and removed nothing. Measured main against this
   # order on the four backends (lexical, model, each with the re-ranker; model2vec
   # 0.9.0, sentence-transformers 5.7.0), on the routing suite's 56 sentences and 14
   # held out: every answer that moved, moved the right way. An order with the
   # rename lines alone in front fixed "rename these sheets" too, but sent "put the
   # letters MEP in front of these names" and "find REV B in the text notes and make
   # it REV C" elsewhere on the re-ranker, so it was not kept.
+  # THE PLANS AND SHEETS LINE (same issue and row, later the same day): the two left
+  # lost on the re-ranker: CREATE_PLAN_VIEW says "floor plan" and MANAGE_SHEET_SETS
+  # says "rename" beside "sheet", and no short line in the eight said either. One short
+  # line added, "rename the floor plans and sheets", fourth. It pushes "change the
+  # wording of this text note" and "rename these" past the 64-word cap. Measured
+  # before and after on the four backends, on the 56 sentences, the 14 held out and
+  # 21 more held out (rename plans and sheets, and the four cards that won them):
+  # nothing moved the wrong way (one held-out line, "rename the floor plans", is all
+  # but the new line, so it proves little). Two longer lines, one for plans and one for sheets,
+  # sent "put the letters MEP in front of these names" to ACTIVATE_DOCUMENT; moving
+  # the first line below the eight lost "rename the selected elements". Neither
+  # was kept.
   - rename these elements by replacing part of their names - plans and other views, sheets, schedules, templates and types are elements too
   - rename these views
   - add AJ to the front of these names
+  - rename the floor plans and sheets
   - find and replace REV A with REV B in all the text notes
   - put a prefix on the mark
   - rename this view

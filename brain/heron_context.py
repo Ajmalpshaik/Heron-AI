@@ -431,6 +431,65 @@ class Part(object):
                                          DEPTH_NAMES[self.depth], self.size)
 
 
+# HOW SURE THE PACKET IS, IN ONE WORD A HOST CAN BRANCH ON (R-43).
+#
+# 00-structure.md s3.6: the brain owes the host "the retrieved text, its
+# citations, its CONFIDENCE, and an explicit statement of what is MISSING".
+# S-3 there settled the shape: a number AND a sentence, and the sentence is the
+# contract. So each level below is a fact about HOW the answer was found - never
+# a score cut at a threshold somebody chose (R-60). The sentence beside it is
+# heron_retrieve's own, unchanged.
+EXACT = "exact"           # the request IS a fragment's declared phrasing
+RECALLED = "recalled"     # this wording led here before - a candidate only
+RANKED = "ranked"         # fusion put one first, by more than a coin toss
+CONTESTED = "contested"   # a coin toss, or no candidate both routes found
+NO_MATCH = "none"         # nothing matched, so there is nothing to be sure of
+
+CONFIDENCE_LEVELS = (EXACT, RECALLED, RANKED, CONTESTED, NO_MATCH)
+
+# Said beside every RANKED and CONTESTED answer, because it is true of every
+# one of them today. A clear lead is a fact about the ranking, not proof that
+# the winner answers the request: no measurement yet separates a real question
+# from an unreal one, and NEEDS-CHECKING A15 is the run that would.
+NOT_PROOF = ("a lead in the ranking is not proof the match answers the request "
+             "- no measurement yet separates a real question from an unreal "
+             "one (NEEDS-CHECKING A15)")
+
+# The parts whose absence is something the host must not invent. EXCLUDED is
+# not one: "nothing was excluded" is good news, not a gap.
+ABSENCE_KINDS = (CAPABILITY_PART, STANDARD, NEIGHBOUR, TESTS, API)
+
+
+def _confidence(level, said, contest=None):
+    """One confidence entry: the level, the sentence, and the numbers under it."""
+    entry = {"level": level, "said": said}
+    if contest is not None:
+        entry["measured"] = {
+            "candidates": contest.count,
+            "top_gap_ranks": (None if contest.top_gap is None
+                              else round(contest.top_gap, 2)),
+            "spread_ranks": round(contest.spread, 2),
+            "both_routes": contest.agreed,
+            "reranked": contest.reranked,
+        }
+    return entry
+
+
+def _ranked_confidence(answer):
+    """The level for an answer a ranked route produced, from its own Contest."""
+    contest = answer.contest
+    if contest is None:
+        return _confidence(NO_MATCH if not answer.fragment_id else RANKED,
+                           answer.note or "nothing was measured")
+    contested = contest.coin_toss or contest.agreed == 0
+    said = contest.sentence()
+    if contest.agreed == 0:
+        said += (". NO candidate was found by both routes - one route liking "
+                 "something is not two agreeing")
+    return _confidence(CONTESTED if contested else RANKED,
+                       "%s. %s" % (said, NOT_PROOF), contest)
+
+
 class Context(object):
     """What one agent is given for one request, and nothing else."""
 
@@ -441,6 +500,14 @@ class Context(object):
         self.depth = depth
         self.parts = []
         self.refused = []
+        # R-43. What retrieval was sure of, keyed by what it measured:
+        # "capability" always, "clauses" on the STANDARDS path. Set by
+        # assemble(), never by a caller.
+        self.confidence = {}
+        # Facts the packet could not state because nobody gave them - an
+        # unstated Revit release is the one that changes which fragments may
+        # be offered. Read by `missing`.
+        self.unstated = []
 
     def add(self, part):
         """Add a part, or refuse it because this path may not carry it."""
@@ -476,6 +543,27 @@ class Context(object):
     def note_refused(self, kind, reason):
         """Something the budget allows but this request did not need or have."""
         self.refused.append((kind, reason))
+
+    @property
+    def missing(self):
+        """WHAT IS MISSING, in plain sentences - the half of R-43 a host must
+        not fill in by itself.
+
+        Three sources, all already in the packet and none re-derived: a part
+        the budget allows that could not be carried (the capability, a clause,
+        a neighbour); a part carried at less than all of itself; and a fact
+        about the situation nobody stated. Empty when nothing is missing, so a
+        complete packet says nothing extra (docs/33 s5.6).
+        """
+        said = []
+        for kind, reason in self.refused:
+            if kind in ABSENCE_KINDS:
+                said.append("no %s: %s" % (kind, reason))
+        for kind, name, depth, cut in self.reduced:
+            said.append("%s '%s' is carried at %s depth: %s"
+                        % (kind, name, depth, cut or "the rest was left out"))
+        said.extend(self.unstated)
+        return said
 
     @property
     def size(self):
@@ -671,16 +759,32 @@ def assemble(store, request, path=None, revit=None, project=None, scope=None,
                  "the caller and heron_scope",
                  "docs/19 s1: what project and what release are active"))
 
+    if revit is None:
+        ctx.unstated.append(
+            "no Revit release was stated, so nothing was held back for its "
+            "release - a matched fragment may not be declared for the "
+            "modeller's Revit")
+
     # 3. The one matched capability.
     fragment_id, why = None, ""
     if hit:
         fragment_id = hit
         why = "the request is this fragment's own declared phrasing - one " \
               "lookup, no search, no model"
+        ctx.confidence["capability"] = _confidence(EXACT, why)
     elif path != CACHED:
         answer = RETRIEVE.find(store, request, revit=revit)
         fragment_id = answer.fragment_id
         why = "matched by the %s route: %s" % (answer.route, answer.note)
+        if answer.route == "identity":
+            ctx.confidence["capability"] = _confidence(EXACT, answer.note or why)
+        elif answer.route == "cache":
+            ctx.confidence["capability"] = _confidence(RECALLED, answer.note)
+        elif not fragment_id:
+            ctx.confidence["capability"] = _confidence(
+                NO_MATCH, answer.note or "nothing matched these words")
+        else:
+            ctx.confidence["capability"] = _ranked_confidence(answer)
     elif walled:
         raise SourceMissing(
             "the CACHED path was asked for and this wording IS a fragment's "
@@ -860,6 +964,10 @@ def _standard_parts(ctx, store, request):
     #
     # THIS IS WEAKER THAN A REFUSAL AND IT IS SAID SO OUT LOUD, here and in
     # the working note. It is not the finished R-45.
+    # R-43: the same measurement, as the packet's confidence in its clauses.
+    # A cited clause is never more than RANKED - the line below says why.
+    ctx.confidence["clauses"] = _ranked_confidence(answer)
+
     if answer.contest is not None:
         ctx.add(Part(
             EXCLUDED, "how contested these clauses were",
@@ -923,7 +1031,11 @@ def _standard_parts(ctx, store, request):
                       # openable - which matters most when two documents share
                       # a title or a clause number.
                       "path": hit.get("path"),
-                      "heading_path": hit["heading_path"]}))
+                      "heading_path": hit["heading_path"],
+                      # R-85 and R-93: a per-seat standard and a BIM standard
+                      # say so where they are cited, not only where stored.
+                      "licence": hit.get("licence"),
+                      "category": hit.get("category")}))
 
     if flagged:
         # R-82. FLAGGED, NEVER TRUNCATED - and said out loud in the packet
@@ -1223,6 +1335,23 @@ def report(ctx, out=None, full=False):
             write("  %-12s %s - %s\n" % (kind, depth, cut or "nothing was cut"))
         write("  The request is never in this list. It crosses byte for byte,\n")
         write("  because OST_DuctCurves is what a shortener takes first.\n")
+        write("\n")
+
+    if ctx.confidence:
+        write("CONFIDENCE - how each part was found, never a score cut at a "
+              "threshold\n")
+        write("-" * 70 + "\n")
+        for what in sorted(ctx.confidence):
+            entry = ctx.confidence[what]
+            write("  %-12s %s\n" % (what, entry["level"]))
+            write("  %-12s %s\n" % ("", entry["said"]))
+        write("\n")
+
+    if ctx.missing:
+        write("MISSING - do not fill these in; say they are missing\n")
+        write("-" * 70 + "\n")
+        for line in ctx.missing:
+            write("  - %s\n" % line)
         write("\n")
 
     if ctx.refused:

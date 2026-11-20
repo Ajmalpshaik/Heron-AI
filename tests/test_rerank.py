@@ -155,6 +155,11 @@ def main():
     check(name == RERANK.ABSENT, "backend() reports 'absent'")
     check("never broken" in why or "not broken" in why,
           "and says in words that this is slower to be right, not broken")
+    # R-73, 2026-11-20: the fallback names what would improve it where it is
+    # reported - `why` - and what that costs, because the remedy is the 2 GB one.
+    check("pip install --user sentence-transformers" in why,
+          "and names what would improve it, where every reporter prints it")
+    check(RERANK.SIZE in why, "and what that install costs")
     check(RERANK.scores("a question", ["one", "two"]) is None,
           "scores() returns None rather than raising")
     check(RERANK.scores("a question", []) is None,

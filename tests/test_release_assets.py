@@ -404,6 +404,56 @@ def main():
     finally:
         BRA.WORKSPACE_KEEP = was
 
+    # R-87: A KNOWLEDGE STORE NEVER RIDES IN THE DOWNLOAD - a rule, where it
+    # was held only by where stores happen to live. The builder zips what is
+    # on the disk, so a store a session made inside the checkout would have
+    # shipped. A folder of this suite's own stands in for the checkout.
+    was_root, was_keep = BRA.ROOT, BRA.WORKSPACE_KEEP
+    fake = tempfile.mkdtemp(prefix="heron-fake-checkout-")
+    made = tempfile.mkdtemp(prefix="heron-workspace-")
+    try:
+        os.makedirs(os.path.join(fake, "brain"))
+        with io.open(os.path.join(fake, "brain", "card.yaml"), "w",
+                     encoding="utf-8") as handle:
+            handle.write(u"id: X\n")
+        BRA.ROOT, BRA.WORKSPACE_KEEP = fake, ["brain"]
+        shapes = getattr(BRA, "STORE_SHAPES", (".db",))
+        for shape in ("company.db", "global.sqlite", "company-documents.jsonl"):
+            one = os.path.join(fake, "brain", shape)
+            with io.open(one, "w", encoding="utf-8") as handle:
+                handle.write(u"x")
+            refused = None
+            try:
+                workspace(made)
+            except IOError as e:
+                refused = str(e)
+            check(refused is not None and "R-87" in refused and shape in refused,
+                  "%s in the checkout STOPS the build and is named - a store is "
+                  "never shipped (R-87): %r" % (shape, (refused or "")[:60]))
+            os.remove(one)
+        check(len(shapes) >= 3, "and the builder names the store shapes it refuses")
+        # D-186: no standard is ever bundled - a document in what is packed
+        # stops the build the same way.
+        os.makedirs(os.path.join(fake, "brain", "papers"))
+        one = os.path.join(fake, "brain", "papers", "NFPA 13.pdf")
+        with io.open(one, "w", encoding="utf-8") as handle:
+            handle.write(u"x")
+        refused = None
+        try:
+            workspace(made)
+        except IOError as e:
+            refused = str(e)
+        check(refused is not None and "D-186" in refused and "NFPA 13.pdf" in refused,
+              "a PDF in what is packed STOPS the build and is named - no "
+              "standard is ever bundled (D-186): %r" % (refused or "")[:60])
+        os.remove(one)
+        workspace(made)
+        check(True, "with no store in it, the same folder packs")
+    finally:
+        BRA.ROOT, BRA.WORKSPACE_KEEP = was_root, was_keep
+        shutil.rmtree(fake, ignore_errors=True)
+        shutil.rmtree(made, ignore_errors=True)
+
     check("heron-project.zip" in tool,
           "and the workspace has a name of its own beside the product zips")
     check("if not failed" in tool,

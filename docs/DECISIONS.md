@@ -254,6 +254,7 @@ an edit.
 | [D-183](#d-183--sheets-made-from-a-spreadsheet-keep-four-choices-as-built-a-blank-cell-writes-nothing-a-date-goes-in-as-iso-a-refused-value-is-listed-and-its-sheet-kept-and-1000-rows-is-the-most) | Sheets made from a spreadsheet keep four choices as built: a blank cell writes nothing, a date goes in as ISO, a refused value is listed and its sheet kept, and 1,000 rows is the most | ✅ Accepted · 2026-11-20 |
 | [D-184](#d-184--before-heron-acts-on-a-parameter-by-its-name-it-checks-where-that-name-lives-in-the-model-and-asks-the-modeller-which-one-when-more-than-one-place-carries-it) | Before Heron acts on a parameter by its name, it checks where that name lives in the model, and asks the modeller which one when more than one place carries it | ✅ Accepted · 2026-11-19 |
 | [D-185](#d-185--reload-latest-and-sync-with-central-stay-the-modellers-own-clicks-and-heron-builds-no-route-for-either) | Reload Latest and Sync with Central stay the modeller's own clicks, and Heron builds no route for either | ✅ Accepted · 2026-11-19 |
+| [D-186](#d-186--what-heron-should-know-out-of-the-box-runs-bim-and-iso-standards-first-regional-next-and-company-last---and-no-standard-and-no-knowledge-store-ever-ships-with-heron) | What Heron should know out of the box runs BIM and ISO standards first, regional next and company last - and no standard, and no knowledge store, ever ships with Heron | ✅ Accepted · 2026-11-20 |
 | [D-187](#d-187--every-new-finding-is-a-github-issue-at-once-the-register-entry-and-its-issue-are-written-in-the-same-change-linked-both-ways) | Every new finding is a GitHub issue at once: the register entry and its issue are written in the same change, linked both ways | ✅ Accepted · 2026-11-20 |
 | [D-188](#d-188--a-chat-the-claude-app-resumes-after-a-restart-is-the-same-conversation-to-revit-and-takes-back-its-own-model) | A chat the Claude app resumes after a restart is the same conversation to Revit, and takes back its own model | ✅ Accepted · 2026-11-20 |
 
@@ -1660,6 +1661,16 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** nothing in code - `SYNC_WITH_CENTRAL` stays as found
 
 **Full record:** [`decisions/D-185.md`](decisions/D-185.md)
+
+## D-186 — What Heron should know out of the box runs BIM and ISO standards first, regional next and company last - and no standard, and no knowledge store, ever ships with Heron
+
+**Status:** Accepted · **Date:** 2026-11-20 · **Accepted:** Ajmal PS, 2026-09-11, in conversation - recorded as R-88 of [the RAG requirement note](work-notes/plans/rag/01-requirements.md), and written here as a rule on [#1006](https://github.com/Ajmalpshaik/Heron-AI/issues/1006) (WN-19)
+**Numbering:** D-186 was first written, three minutes before this decision, on the branch `claude/clever-ritchie-0sy1nr` as "A chat the Claude app resumes after a restart is the same conversation to Revit, and takes back its own model". That branch renumbered its decision D-188 with `tools/renumber.py` before either branch merged, so D-186 is this decision.
+**Settles:** R-87, R-88 and R-88a of [the RAG requirement note](work-notes/plans/rag/01-requirements.md)
+**Keeps:** [D-07](decisions/D-07.md) - Heron is public and open source · [D-26](decisions/D-26.md) - the model file never leaves · [17 §2](17-open-source-and-distribution.md) - code is public, knowledge is not
+**Affects:** [`tools/build-release-assets.py`](../tools/build-release-assets.py) - the download refuses a store and a source document by name · [`tests/test_knowledge_rules.py`](../tests/test_knowledge_rules.py) - nothing shaped like a store is tracked
+
+**Full record:** [`decisions/D-186.md`](decisions/D-186.md)
 
 ## D-187 — Every new finding is a GitHub issue at once: the register entry and its issue are written in the same change, linked both ways
 

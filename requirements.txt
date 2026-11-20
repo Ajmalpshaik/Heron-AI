@@ -17,8 +17,11 @@
 # and tools/check-dependencies.py reads it. Keep the shape if you add one.
 #
 # NO VERSION FLOORS ARE ASSERTED. Nothing here has been measured against an
-# older release, so a floor would be a guess wearing a number. Checking that
-# an installed version is the RIGHT one is R-78, and it is not built.
+# older release, so a floor would be a guess wearing a number. When one is
+# measured, write it on the package's own line (`PyYAML>=6.0`): pip reads it,
+# and tools/check-dependencies.py holds the installed version against it and
+# against the pin in requirements-lock.txt, and reports an older one as NEEDS
+# AN UPDATE (R-78, built 2026-11-20).
 #
 # THE VERSIONS THE INSTALLER PUTS ON A PC are in requirements-lock.txt - one
 # measured set, pinned and hashed, for the one-step install (2026-10-17). This
