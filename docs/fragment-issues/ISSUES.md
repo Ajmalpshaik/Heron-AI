@@ -160,7 +160,7 @@ Every row of sections 5 and 5b that `python tools/open-defects.py` listed as ope
 | [row 5b-103](section-5b-rows-101-125.md) | [#914](https://github.com/Ajmalpshaik/Heron-AI/issues/914) | Your decision | The reading ledger signs cloud sessions' reads with the owner's PC name |
 | [row 5b-105](section-5b-rows-101-125.md) | [#914](https://github.com/Ajmalpshaik/Heron-AI/issues/914) | Your decision | Compatibility matrix shows zero proven on every release despite hundreds of proofs |
 | [row 5b-107](section-5b-rows-101-125.md) | [#957](https://github.com/Ajmalpshaik/Heron-AI/issues/957) | Code fix | Embedding search compares vectors from different backends whenever their lengths match |
-| [row 5b-110](section-5b-rows-101-125.md) | [#940](https://github.com/Ajmalpshaik/Heron-AI/issues/940) | Code fix | The narrow-errors gate checks one exception form, so broad handlers can swallow faults |
+| [row 5b-110](section-5b-rows-101-125.md) | [#940](https://github.com/Ajmalpshaik/Heron-AI/issues/940) | Code fix | The narrow-errors gate checks one exception form, so broad handlers can swallow faults - *done in #1068, merged* |
 | [row 5b-113](section-5b-rows-101-125.md) | [#922](https://github.com/Ajmalpshaik/Heron-AI/issues/922) | Your decision | A sub-clause citation like [7a] is treated as a measured value and reported as invented |
 | [row 5b-125](section-5b-rows-101-125.md) | [#915](https://github.com/Ajmalpshaik/Heron-AI/issues/915) | Your decision | Decision D-72 has no status line, so the decision index says status not stated |
 | [row 5b-131](section-5b-rows-126-150.md) | [#914](https://github.com/Ajmalpshaik/Heron-AI/issues/914) | Your decision | Signature gate counts a machine's name in a proof's signed-by field as a signature |
@@ -170,7 +170,7 @@ Every row of sections 5 and 5b that `python tools/open-defects.py` listed as ope
 | [row 5b-161](section-5b-rows-151-175.md) | [#910](https://github.com/Ajmalpshaik/Heron-AI/issues/910) | Your decision | Destructive changes like purge, reloads, worksets and links run without asking first |
 | [row 5b-175](section-5b-rows-151-175.md) | [#923](https://github.com/Ajmalpshaik/Heron-AI/issues/923) | Your decision | Three room tools disagree on whether a ceiling-void device is inside the room |
 | [row 5b-180](section-5b-rows-176-200.md) | [#904](https://github.com/Ajmalpshaik/Heron-AI/issues/904) | Revit run on your PC | Two level tools read level elevation and project elevation the opposite way round |
-| [row 5b-182](section-5b-rows-176-200.md) | [#940](https://github.com/Ajmalpshaik/Heron-AI/issues/940) | Code fix | Five Python files find Windows special folders themselves and the gate cannot see it |
+| [row 5b-182](section-5b-rows-176-200.md) | [#940](https://github.com/Ajmalpshaik/Heron-AI/issues/940) | Code fix | Five Python files find Windows special folders themselves and the gate cannot see it - *done in #1068, merged* |
 | [row 5b-185](section-5b-rows-176-200.md) | [#915](https://github.com/Ajmalpshaik/Heron-AI/issues/915) | Your decision | Docs cite D-48 as the brain-may-not-import-mcp rule, but D-48 says nothing on layers |
 | [row 5b-187](section-5b-rows-176-200.md) | [#922](https://github.com/Ajmalpshaik/Heron-AI/issues/922) | Your decision | Air terminal connect lifted diffusers onto ducts, made no tap, joined supply to return |
 | [row 5b-194](section-5b-rows-176-200.md) | [#912](https://github.com/Ajmalpshaik/Heron-AI/issues/912) | Your decision | Chat replies cut each list line at 60 characters and show dictionaries only as a count |
@@ -179,7 +179,7 @@ Every row of sections 5 and 5b that `python tools/open-defects.py` listed as ope
 | [row 5b-202](section-5b-rows-201-225.md) | [#946](https://github.com/Ajmalpshaik/Heron-AI/issues/946) | Code fix | Copy-from-link is handed the host model's ids, not the linked elements chosen |
 | [row 5b-204](section-5b-rows-201-225.md) | [#950](https://github.com/Ajmalpshaik/Heron-AI/issues/950) | Code fix | Sealed fragment code comments still say lengths are feet though input is millimetres |
 | [row 5b-203](section-5b-rows-201-225.md) | [#947](https://github.com/Ajmalpshaik/Heron-AI/issues/947) | Code fix | Tools pick a random parameter when two share one name, giving wrong reads or writes |
-| [row 5b-205](section-5b-rows-201-225.md) | [#936](https://github.com/Ajmalpshaik/Heron-AI/issues/936) | Code fix | The fragment generator stamps its own agent id on every fragment it makes |
+| [row 5b-205](section-5b-rows-201-225.md) | [#936](https://github.com/Ajmalpshaik/Heron-AI/issues/936) | Code fix | The fragment generator stamps its own agent id on every fragment it makes - *done in #1068, merged* |
 | [row 5b-211](section-5b-rows-201-225.md) | [#917](https://github.com/Ajmalpshaik/Heron-AI/issues/917) | Your decision | Placing a door type at a wall point puts it in free-standing and reports success |
 | [row 5b-212](section-5b-rows-201-225.md) | [#923](https://github.com/Ajmalpshaik/Heron-AI/issues/923) | Your decision | Door report treats a flipped door as wrong, but flipping does not change From/To Room |
 | [row 5b-213](section-5b-rows-201-225.md) | [#923](https://github.com/Ajmalpshaik/Heron-AI/issues/923) | Your decision | Asking which rooms are untagged goes to a tool that tags, and no read finds room tags |
@@ -241,14 +241,14 @@ Every row of sections 5 and 5b that `python tools/open-defects.py` listed as ope
 | [row 5b-367](section-5b-rows-351-375.md) | [#944](https://github.com/Ajmalpshaik/Heron-AI/issues/944) | Code fix | Flexing a family never checks nested families, so a nested part that fails passes |
 | [row 5b-378](section-5b-rows-376-400.md) | [#927](https://github.com/Ajmalpshaik/Heron-AI/issues/927) | Your decision | First family on a new laptop took 6-13 minutes; office PC comparison never made |
 | [row 5b-396](section-5b-rows-376-400.md) | [#954](https://github.com/Ajmalpshaik/Heron-AI/issues/954) | Code fix | Questions about what an element is made of still reach tools that change materials |
-| [row 5b-402](section-5b-rows-401-425.md) | [#939](https://github.com/Ajmalpshaik/Heron-AI/issues/939) | Code fix | The MCP serving test runs past check-gaps' 300 second limit in a cloud container |
+| [row 5b-402](section-5b-rows-401-425.md) | [#939](https://github.com/Ajmalpshaik/Heron-AI/issues/939) | Code fix | The MCP serving test runs past check-gaps' 300 second limit in a cloud container - *done in #1068, merged* |
 | [row 5b-403](section-5b-rows-401-425.md) | [#952](https://github.com/Ajmalpshaik/Heron-AI/issues/952) | Code fix | Companion page actions guess how a Revit call ended, or call a lost answer refused |
 | [row 5b-414](section-5b-rows-401-425.md) | [#926](https://github.com/Ajmalpshaik/Heron-AI/issues/926) | Your decision | Revision numbering: a letters question reaches a write, and a harmless change is refused |
 | [row 5b-415](section-5b-rows-401-425.md) | [#914](https://github.com/Ajmalpshaik/Heron-AI/issues/914) | Your decision | Windows on the owner's laptop blocks freshly built test programs |
 | [row 5b-416](section-5b-rows-401-425.md) | [#900](https://github.com/Ajmalpshaik/Heron-AI/issues/900) | Revit run on your PC | Revit's Companion button looked for chat notes where a Store Claude never writes them |
 | [row 5b-418](section-5b-rows-401-425.md) | [#900](https://github.com/Ajmalpshaik/Heron-AI/issues/900) | Revit run on your PC | On a Store Claude PC, files Heron writes under AppData land in the app's private copy |
 | [row 5b-419](section-5b-rows-401-425.md) | [#900](https://github.com/Ajmalpshaik/Heron-AI/issues/900) | Revit run on your PC | Resetting a Store Claude app deleted Heron's data kept in its private copy |
-| [row 5b-420](section-5b-rows-401-425.md) | [#939](https://github.com/Ajmalpshaik/Heron-AI/issues/939) | Code fix | The heron-ready test failed 3 of 16 runs at random and kept no output to say why |
+| [row 5b-420](section-5b-rows-401-425.md) | [#939](https://github.com/Ajmalpshaik/Heron-AI/issues/939) | Code fix | The heron-ready test failed 3 of 16 runs at random and kept no output to say why - *done in #1068, merged* |
 | [row 5b-394](section-5b-rows-376-400.md) | [#947](https://github.com/Ajmalpshaik/Heron-AI/issues/947) | Code fix | A material routing note says other cards repeat its rows, but none of them does |
 | [row 5b-395](section-5b-rows-376-400.md) | [#947](https://github.com/Ajmalpshaik/Heron-AI/issues/947) | Code fix | Two routing notes send 'what is this wall made of' to different tools |
 | [row 5b-423](section-5b-rows-401-425.md) | [#920](https://github.com/Ajmalpshaik/Heron-AI/issues/920) | Your decision | On Revit 2026 and 2027 no OmniClass code can be set: Autodesk ships only a sample file |
@@ -293,7 +293,7 @@ Every row of sections 5 and 5b that `python tools/open-defects.py` listed as ope
 | [row 5b-1110](section-5b-rows-1101-1125.md) | [#932](https://github.com/Ajmalpshaik/Heron-AI/issues/932) | Code fix | Long proving runs fill Revit 2020's memory until jobs fail and the chat crashes |
 | [row 5b-1112](section-5b-rows-1101-1125.md) | [#942](https://github.com/Ajmalpshaik/Heron-AI/issues/942) | Code fix | Setting duct justification on Revit 2020 sets nothing, and a no-change counts as set |
 | [row 5b-1113](section-5b-rows-1101-1125.md) | [#923](https://github.com/Ajmalpshaik/Heron-AI/issues/923) | Your decision | Placing rooms on a level with no plan view throws instead of refusing by name |
-| [row 5b-1114](section-5b-rows-1101-1125.md) | [#940](https://github.com/Ajmalpshaik/Heron-AI/issues/940) | Code fix | batch-prove calls a tool whose one result is a single object unreadable |
+| [row 5b-1114](section-5b-rows-1101-1125.md) | [#940](https://github.com/Ajmalpshaik/Heron-AI/issues/940) | Code fix | batch-prove calls a tool whose one result is a single object unreadable - *done in #1068, merged* |
 | [row 5b-1115](section-5b-rows-1101-1125.md) | [#951](https://github.com/Ajmalpshaik/Heron-AI/issues/951) | Code fix | Move annotation says it moves text notes, but a text note comes back not movable |
 | [row 5b-1118](section-5b-rows-1101-1125.md) | [#923](https://github.com/Ajmalpshaik/Heron-AI/issues/923) | Your decision | Placing rooms on a finished level makes two extra unbounded rooms |
 | [row 5b-1119](section-5b-rows-1101-1125.md) | [#943](https://github.com/Ajmalpshaik/Heron-AI/issues/943) | Code fix | Putting a damper or valve into a lone duct or pipe on Revit 2020 always rolls back |
@@ -307,7 +307,7 @@ Every row of sections 5 and 5b that `python tools/open-defects.py` listed as ope
 | [row 5b-1132](section-5b-rows-1126-1150.md) | [#927](https://github.com/Ajmalpshaik/Heron-AI/issues/927) | Your decision | The which-Revit list shows process numbers and no project name |
 | [row 5b-1134](section-5b-rows-1126-1150.md) | [#937](https://github.com/Ajmalpshaik/Heron-AI/issues/937) | Code fix | Four code comments still describe Heron as it was before D-129, D-132 and D-135 |
 | [row 5b-1136](section-5b-rows-1126-1150.md) | [#937](https://github.com/Ajmalpshaik/Heron-AI/issues/937) | Code fix | Group EQ's command counts a Revit 2022 proof that does not exist |
-| [row 5b-1138](section-5b-rows-1126-1150.md) | [#936](https://github.com/Ajmalpshaik/Heron-AI/issues/936) | Code fix | Two credential lists disagree, and commit staging never checks staged files for secrets |
+| [row 5b-1138](section-5b-rows-1126-1150.md) | [#936](https://github.com/Ajmalpshaik/Heron-AI/issues/936) | Code fix | Two credential lists disagree, and commit staging never checks staged files for secrets - *done in #1068, merged* |
 | [row 5b-1153](section-5b-rows-1151-1175.md) | [#914](https://github.com/Ajmalpshaik/Heron-AI/issues/914) | Your decision | A proof's fingerprint covers only the code, not the card, the release or the path it ran |
 | [row 5b-1155](section-5b-rows-1151-1175.md) | [#910](https://github.com/Ajmalpshaik/Heron-AI/issues/910) | Your decision | Only the Python side enforces proven-only changes; the add-in runs any code it is sent |
 | [row 5b-1156](section-5b-rows-1151-1175.md) | [#953](https://github.com/Ajmalpshaik/Heron-AI/issues/953) | Code fix | The MCP server runs the checkout it started in and nothing says which folder or commit |
@@ -315,7 +315,7 @@ Every row of sections 5 and 5b that `python tools/open-defects.py` listed as ope
 | [row 5b-1158](section-5b-rows-1151-1175.md) | [#912](https://github.com/Ajmalpshaik/Heron-AI/issues/912) | Your decision | Some reads hand back lengths and areas in feet and square feet with no unit |
 | [row 5b-1159](section-5b-rows-1151-1175.md) | [#934](https://github.com/Ajmalpshaik/Heron-AI/issues/934) | Code fix | Still-running answers carry no workflow id and wrongly say the run is not recorded |
 | [row 5b-1161](section-5b-rows-1151-1175.md) | [#927](https://github.com/Ajmalpshaik/Heron-AI/issues/927) | Your decision | revit_change runs reads as writes; select all ducts sits on a read that selects nothing - *#871 merged, the row is still open* |
-| [row 5b-1162](section-5b-rows-1151-1175.md) | [#936](https://github.com/Ajmalpshaik/Heron-AI/issues/936) | Code fix | Values the AI passes are filed as the modeller's own word and never asked again |
+| [row 5b-1162](section-5b-rows-1151-1175.md) | [#936](https://github.com/Ajmalpshaik/Heron-AI/issues/936) | Code fix | Values the AI passes are filed as the modeller's own word and never asked again - *done in #1068, merged; the owner answered 2026-11-20: chat is enough* |
 | [row 5b-1163](section-5b-rows-1151-1175.md) | [#934](https://github.com/Ajmalpshaik/Heron-AI/issues/934) | Code fix | A run record still says KEPT after the modeller undid the change |
 | [row 5b-1164](section-5b-rows-1151-1175.md) | [#933](https://github.com/Ajmalpshaik/Heron-AI/issues/933) | Code fix | Values carried between tool steps are matched to a model by title, which files can share |
 | [row 5b-1166](section-5b-rows-1151-1175.md) | [#952](https://github.com/Ajmalpshaik/Heron-AI/issues/952) | Code fix | Proof validate runs of changes and publishes are resent when an answer is lost - *done in #871, merged* |
@@ -429,7 +429,7 @@ Every row of sections 5 and 5b that `python tools/open-defects.py` listed as ope
 | [row 5b-1499](section-5b-rows-1476-1500.md) | [#901](https://github.com/Ajmalpshaik/Heron-AI/issues/901) | Revit run on your PC | A detail item cannot be placed in a family's own view; Revit 2020 refuses it |
 | [row 5b-1505](section-5b-rows-1501-1525.md) | [#912](https://github.com/Ajmalpshaik/Heron-AI/issues/912) | Your decision | Tools cannot mark which outputs are refusals, so repeat 'blocked' shows as unchanged |
 | [row 5b-1507](section-5b-rows-1501-1525.md) | [#908](https://github.com/Ajmalpshaik/Heron-AI/issues/908) | Revit run on your PC | New click-in-Revit tool is not run, and a click after 60 seconds reaches nobody |
-| [row 5b-1510](section-5b-rows-1501-1525.md) | [#939](https://github.com/Ajmalpshaik/Heron-AI/issues/939) | Code fix | Two test suites can ping the live Revit and send it a release message |
+| [row 5b-1510](section-5b-rows-1501-1525.md) | [#939](https://github.com/Ajmalpshaik/Heron-AI/issues/939) | Code fix | Two test suites can ping the live Revit and send it a release message - *done in #1068, merged; its PC run is Group NI, NI7* |
 | [row 5b-1511](section-5b-rows-1501-1525.md) | [#953](https://github.com/Ajmalpshaik/Heron-AI/issues/953) | Code fix | heron_resolve says Heron keeps no list of missing things, but it does now |
 | [row 5b-1512](section-5b-rows-1501-1525.md) | [#931](https://github.com/Ajmalpshaik/Heron-AI/issues/931) | Your decision | 'put the duct tags above the ducts with a leader' goes to the tag-placing tool |
 | [row 5b-1513](section-5b-rows-1501-1525.md) | [#931](https://github.com/Ajmalpshaik/Heron-AI/issues/931) | Your decision | With re-ranker, five rename and place-view sentences reach the wrong tool |
@@ -437,7 +437,7 @@ Every row of sections 5 and 5b that `python tools/open-defects.py` listed as ope
 | [row 5b-1515](section-5b-rows-1501-1525.md) | [#948](https://github.com/Ajmalpshaik/Heron-AI/issues/948) | Code fix | Divide parts reports every part as divided even when the datum cut none |
 | [row 5b-1517](section-5b-rows-1501-1525.md) | [#956](https://github.com/Ajmalpshaik/Heron-AI/issues/956) | Code fix | Without the re-ranker, eight routing guard sentences reach the wrong tool |
 | [row 5b-1518](section-5b-rows-1501-1525.md) | [#908](https://github.com/Ajmalpshaik/Heron-AI/issues/908) | Revit run on your PC | Five new job methods (issue drawings, health audit, set-up...) are not run in Revit |
-| [row 5b-1520](section-5b-rows-1501-1525.md) | [#936](https://github.com/Ajmalpshaik/Heron-AI/issues/936) | Code fix | Two chats starting together on one store folder slow down and can hit 'database locked' |
+| [row 5b-1520](section-5b-rows-1501-1525.md) | [#936](https://github.com/Ajmalpshaik/Heron-AI/issues/936) | Code fix | Two chats starting together on one store folder slow down and can hit 'database locked' - *done in #1068, merged* |
 | [row 5b-1522](section-5b-rows-1501-1525.md) | [#953](https://github.com/Ajmalpshaik/Heron-AI/issues/953) | Code fix | First lookup after the server starts ranks badly and still claims the trained model |
 | [row 5b-1523](section-5b-rows-1501-1525.md) | [#953](https://github.com/Ajmalpshaik/Heron-AI/issues/953) | Code fix | When a door hands back candidates it shows their risk but not whether they are proven |
 | [row 5b-1524](section-5b-rows-1501-1525.md) | [#956](https://github.com/Ajmalpshaik/Heron-AI/issues/956) | Code fix | Asking to bring an edited spreadsheet back can reach the export or a family card |
@@ -472,18 +472,18 @@ Every row of sections 5 and 5b that `python tools/open-defects.py` listed as ope
 | [row 5b-1582](row-5b-1582.md) | [#914](https://github.com/Ajmalpshaik/Heron-AI/issues/914) | Your decision | The owner queue tool lists no decision still marked Proposed |
 | [row 5b-1583](row-5b-1583.md) | [#938](https://github.com/Ajmalpshaik/Heron-AI/issues/938) | Code fix | The tool that archives struck Needs-Checking rows crashes, so nothing can be archived |
 | [row 5b-1584](row-5b-1584.md) | [#960](https://github.com/Ajmalpshaik/Heron-AI/issues/960) | Code fix | A method precondition with a colon is served to the chat as a dictionary, not text |
-| [row 5b-1587](row-5b-1587.md) | [#938](https://github.com/Ajmalpshaik/Heron-AI/issues/938) | Code fix | The open-defects tool exits 0 even when it could not read the register at all |
+| [row 5b-1587](row-5b-1587.md) | [#938](https://github.com/Ajmalpshaik/Heron-AI/issues/938) | Code fix | The open-defects tool exits 0 even when it could not read the register at all - *done in #1068, merged* |
 | [row 5b-1589](row-5b-1589.md) | [#951](https://github.com/Ajmalpshaik/Heron-AI/issues/951) | Code fix | Syncing spaces in a non-final phase looks up existing spaces and rooms in the last phase |
 | [row 5b-1590](row-5b-1590.md) | [#938](https://github.com/Ajmalpshaik/Heron-AI/issues/938) | Code fix | The next-id tool reports dozens of false double holds from helper worktrees - *done in #871, merged* |
 | [row 5b-1594](row-5b-1594.md) | [#911](https://github.com/Ajmalpshaik/Heron-AI/issues/911) | Your decision | The add-in runs an export or admin job sent without apply and says nothing was kept |
-| [row 5b-1611](row-5b-1611.md) | [#940](https://github.com/Ajmalpshaik/Heron-AI/issues/940) | Code fix | The heron-guard hook wrongly blocks Revit code edits made inside a worktree |
+| [row 5b-1611](row-5b-1611.md) | [#940](https://github.com/Ajmalpshaik/Heron-AI/issues/940) | Code fix | The heron-guard hook wrongly blocks Revit code edits made inside a worktree - *done in #1068, merged* |
 | [row 5b-1612](row-5b-1612.md) | [#911](https://github.com/Ajmalpshaik/Heron-AI/issues/911) | Your decision | A dry run replaces values the chat carried between steps, though nothing was kept - *fixed in code in #871, merged; its Revit run is owed in Group NT* |
 | [row 5b-1626](row-5b-1626.md) | [#915](https://github.com/Ajmalpshaik/Heron-AI/issues/915) | Your decision | Two decisions were marked accepted on leave to build, not on being read back |
 | [row 5b-1627](row-5b-1627.md) | [#916](https://github.com/Ajmalpshaik/Heron-AI/issues/916) | Your decision | A Needs-Checking setup relies on material Keywords, which is not a parameter at all |
 | [row 5b-1632](row-5b-1632.md) | [#916](https://github.com/Ajmalpshaik/Heron-AI/issues/916) | Your decision | A Needs-Checking row expects views to be ambiguous when nothing carries the name twice |
 | [row 5b-1634](row-5b-1634.md) | [#916](https://github.com/Ajmalpshaik/Heron-AI/issues/916) | Your decision | A Needs-Checking row writes Comments into types, which only have Type Comments |
 | [row 5b-1640](row-5b-1640.md) | [#949](https://github.com/Ajmalpshaik/Heron-AI/issues/949) | Code fix | The structural loads report shows a question mark for every load case category |
-| [row 5b-1642](row-5b-1642.md) | [#939](https://github.com/Ajmalpshaik/Heron-AI/issues/939) | Code fix | check-gaps crashes on Windows when its output goes to a file, cutting its summary |
+| [row 5b-1642](row-5b-1642.md) | [#939](https://github.com/Ajmalpshaik/Heron-AI/issues/939) | Code fix | check-gaps crashes on Windows when its output goes to a file, cutting its summary - *done in #1068, merged; its Windows run is Group NI, NI8* |
 | [row 5b-1644](row-5b-1644.md) | [#949](https://github.com/Ajmalpshaik/Heron-AI/issues/949) | Code fix | Column rebar with hooked ties is always refused by Revit 2020 |
 | [row 5b-1645](row-5b-1645.md) | [#953](https://github.com/Ajmalpshaik/Heron-AI/issues/953) | Code fix | Revit health says a Revit is free while another chat holds the open model |
 | [row 5b-1646](row-5b-1646.md) | [#956](https://github.com/Ajmalpshaik/Heron-AI/issues/956) | Code fix | 'Delete these two walls' looks up a wall-join tool first and the delete tool third |
@@ -522,7 +522,7 @@ Every row of sections 5 and 5b that `python tools/open-defects.py` listed as ope
 | [row 5b-1750](row-5b-1750.md) | [#920](https://github.com/Ajmalpshaik/Heron-AI/issues/920) | Your decision | Open Family for Editing says not opened while the family is open in front |
 | [row 5b-1752](row-5b-1752.md) | [#938](https://github.com/Ajmalpshaik/Heron-AI/issues/938) | Code fix | The Needs-Checking split tool cannot plan a new group because it misreads Group BV |
 | [row 5b-1821](row-5b-1821.md) | [#952](https://github.com/Ajmalpshaik/Heron-AI/issues/952) | Code fix | The run record says KEPT for a change the reply called nothing changed or refused - *done in #895, merged* |
-| [row 5b-1822](row-5b-1822.md) | [#939](https://github.com/Ajmalpshaik/Heron-AI/issues/939) | Code fix | Change evidence cannot record check-gaps where the suites run over half an hour |
+| [row 5b-1822](row-5b-1822.md) | [#939](https://github.com/Ajmalpshaik/Heron-AI/issues/939) | Code fix | Change evidence cannot record check-gaps where the suites run over half an hour - *done in #1068, merged* |
 | [row 5b-1780](row-5b-1780.md) | [#917](https://github.com/Ajmalpshaik/Heron-AI/issues/917) | Your decision | Rotate does not refuse a whole turn typed to seven places (6.2831853) |
 | [row 5b-1800](row-5b-1800.md) | [#917](https://github.com/Ajmalpshaik/Heron-AI/issues/917) | Your decision | Move to a point counts a tag as 'positioned by a curve'; a tag moves by its head |
 | [row 5b-1801](row-5b-1801.md) | [#908](https://github.com/Ajmalpshaik/Heron-AI/issues/908) | Revit run on your PC | Two proven section cards read the cut plane in two different places |
@@ -532,7 +532,7 @@ Every row of sections 5 and 5b that `python tools/open-defects.py` listed as ope
 | [row 5b-1830](row-5b-1830.md) | [#952](https://github.com/Ajmalpshaik/Heron-AI/issues/952) | Code fix | A draft's one kept run that raises the delete box ends 'needs_unbound' and keeps nothing |
 | [row 5b-1831](row-5b-1831.md) | [#948](https://github.com/Ajmalpshaik/Heron-AI/issues/948) | Code fix | Setting four columns' levels would delete 2 elements, and which two is unknown |
 | [row 5b-1832](row-5b-1832.md) | [#956](https://github.com/Ajmalpshaik/Heron-AI/issues/956) | Code fix | 'Attach these walls to the roof' and 'delete this roof' reach the wrong tool on 2024 |
-| [row 5b-1845](row-5b-1845.md) | [#938](https://github.com/Ajmalpshaik/Heron-AI/issues/938) | Code fix | The archive re-points links to a re-banded row everywhere but in the register's own folder |
+| [row 5b-1845](row-5b-1845.md) | [#938](https://github.com/Ajmalpshaik/Heron-AI/issues/938) | Code fix | The archive re-points links to a re-banded row everywhere but in the register's own folder - *done in #1068, merged* |
 | [row 5b-1848](row-5b-1848.md) | [#1039](https://github.com/Ajmalpshaik/Heron-AI/issues/1039) | Code fix | The new grids-and-levels check ranks first for "bring the grids in from the architect" |
 | [row 5b-1860](row-5b-1860.md) | [#1070](https://github.com/Ajmalpshaik/Heron-AI/issues/1070) | Your decision, then a Revit run | No live card turns an isometric 3D view, so a family's View 1 cannot be turned to a photo's angle |
 | [row 5b-1861](row-5b-1861.md) | [#1071](https://github.com/Ajmalpshaik/Heron-AI/issues/1071) | Code fix | owner-queue files the installer checks AC to AF by the newest group's heading |
@@ -542,6 +542,11 @@ Every row of sections 5 and 5b that `python tools/open-defects.py` listed as ope
 | [row 5b-1857](row-5b-1857.md) | [#923](https://github.com/Ajmalpshaik/Heron-AI/issues/923) | Your decision | A space filter found 0 ceiling-void duct accessories where the count by space found 11 - row 5b-175's split |
 | [row 5b-1858](row-5b-1858.md) | [#1060](https://github.com/Ajmalpshaik/Heron-AI/issues/1060) | Code fix | The count by room or space takes the first one in plan on stacked storeys, and prints the number twice |
 | [row 5b-1862](row-5b-1862.md) | [#1067](https://github.com/Ajmalpshaik/Heron-AI/issues/1067) | Code fix | `resolve` says it orders a capability's providers by version, and its sort does not - latent, do it with row 5b-1131 |
+| [row 5b-1863](row-5b-1863.md) | [#1081](https://github.com/Ajmalpshaik/Heron-AI/issues/1081) | Code fix | accept passes a record on a sentence where batch-prove calls the same record unreadable |
+| [row 5b-1864](row-5b-1864.md) | [#1082](https://github.com/Ajmalpshaik/Heron-AI/issues/1082) | Code fix | heron_gaps says nothing is wanted when the knowledge store could not be opened |
+| [row 5b-1865](row-5b-1865.md) | [#1082](https://github.com/Ajmalpshaik/Heron-AI/issues/1082) | Code fix | The add-in's ManyByCategory drops a category's elements without a word on a fault |
+| [row 5b-1866](row-5b-1866.md) | [#1083](https://github.com/Ajmalpshaik/Heron-AI/issues/1083) | Code fix | More than a hundred tool cards name the card-making agent as their own |
+| [row 5b-1868](row-5b-1868.md) | [#1081](https://github.com/Ajmalpshaik/Heron-AI/issues/1081) | Code fix | A full split-register run refuses while ISSUES.md sits in the register's folder |
 
 ## Found finished on 2026-11-16 - closed in the register, no issue
 
