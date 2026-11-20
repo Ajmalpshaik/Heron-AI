@@ -22,7 +22,6 @@ product list the installer reads; nothing about a product is written in code. An
 `heron-products.json` (`grep -rl heron-products.json --include=*.cs --include=*.py --include=*.ps1 .`).
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
     MOD(["<b>A modeller</b><br/>double-clicks"])
     AI(["<b>An AI, or a terminal</b>"])
@@ -46,11 +45,11 @@ flowchart TD
     RT -.->|read| PJ
     AD ==> BR ==> CORE
 
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
-    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
-    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
-    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
-    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95,stroke-dasharray:4 3
+    classDef user fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef host fill:#FFFFFF,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef brain fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef addin fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef plat fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10,stroke-dasharray:4 3
     class MOD,AI user
     class APP,CLI,ENG,CORE plat
     class PJ,PS,RT user

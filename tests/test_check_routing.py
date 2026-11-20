@@ -1210,6 +1210,79 @@ def main():
           "and KNOWN_DANGLING is still empty")
     print()
 
+    print("17. A SENTENCE TWO LIVE CARDS DECLARE FAILS THE RUN (row 5b-473, 2026-11-20)")
+    # heron_search writes such a sentence as `__ambiguous__`, so it reaches
+    # NEITHER card by its exact words and nothing said why. ASKED BEFORE IT IS
+    # CALLED: on the checker as it stood there is no shared_declarations(),
+    # and the stand-in finds nothing - so the checks below fail, not raise.
+    shared_in = getattr(CR, "shared_declarations", None)
+    check(shared_in is not None,
+          "the checker lists the sentences two live cards both declare")
+    if shared_in is None:
+        shared_in = lambda folder=None: []                      # noqa: E731
+    lib = tempfile.mkdtemp(prefix="heron-routing-shared-")
+    try:
+        for folder, text in (
+                ("read-one", 'heron-status: PROVEN\ncapability: READ_ONE\n'
+                             'semantic-identity: "what is on this sheet"\n'
+                             'utterances:\n  - Show me the drawing list.\n'
+                             '  - list the sheets\n  - list the sheets\n'),
+                # The same sentence in other case and punctuation is the same
+                # key the identity table uses.
+                ("read-two", 'heron-status: DRAFT\ncapability: READ_TWO\n'
+                             'semantic-identity: "list the sheets"\n'
+                             'utterances:\n  - show me the drawing list\n'),
+                # A retired card claims no phrase, as heron_search has it.
+                ("read-old", 'heron-status: DEPRECATED\ncapability: READ_OLD\n'
+                             'semantic-identity: "what is on this sheet"\n'
+                             'deprecated:\n  superseded-by: READ_ONE\n')):
+            os.makedirs(os.path.join(lib, folder))
+            with io.open(os.path.join(lib, folder, "fragment.yaml"), "w",
+                         encoding="utf-8") as fh:
+                fh.write(text)
+        try:
+            got = shared_in(lib)
+        except BaseException as raised:          # noqa: BLE001 - that IS the check
+            got = "raised %s" % type(raised).__name__
+        check(got == [("list the sheets", ["read-one", "read-two"]),
+                      ("show me the drawing list", ["read-one", "read-two"])],
+              "an utterance two live cards declare and one card's identity that "
+              "is another's utterance are both listed, keyed as the identity "
+              "table keys them; a card repeating its own line and a retired "
+              "card's identity are not - got %r" % (got,))
+        if isinstance(got, list) and got:
+            said = io.StringIO()
+            try:
+                with contextlib.redirect_stdout(said):
+                    code = CR.targets_verdict([], {}, 7, [], got)
+            except BaseException as raised:      # noqa: BLE001 - that IS the check
+                code = "raised %s" % type(raised).__name__
+            check(code == 1 and "read-one, read-two" in said.getvalue()
+                  and "5b-473" in said.getvalue(),
+                  "and the verdict FAILS on them, naming both cards - got %r"
+                  % (code,))
+        if getattr(CR, "shared_declarations", None) is None:
+            code = "not called - the checker has no shared_declarations()"
+        else:
+            was = CR.FRAGMENTS, CR.KNOWN_DANGLING
+            CR.FRAGMENTS, CR.KNOWN_DANGLING = lib, {}
+            try:
+                with contextlib.redirect_stdout(io.StringIO()):
+                    code = CR.main(["--targets"])
+            except BaseException as raised:      # noqa: BLE001 - that IS the check
+                code = "raised %s" % type(raised).__name__
+            finally:
+                CR.FRAGMENTS, CR.KNOWN_DANGLING = was
+        check(code == 1, "and `--targets` exits 1 on a library whose only fault "
+              "is a sentence two live cards declare - got %r" % (code,))
+    finally:
+        shutil.rmtree(lib, ignore_errors=True)
+    if getattr(CR, "shared_declarations", None) is not None:
+        here = CR.shared_declarations()
+        check(here == [], "and no sentence in this library is declared by two "
+              "live cards - got %r" % (here,))
+    print()
+
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))
         for line in FAILURES:

@@ -630,7 +630,6 @@ back **marked as quoted content with its source** — and the guard reports it r
 2026-10-18; "NEW" was the 2026-09-10 tag, and only the edges route still has nothing built.*
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
     S(["a sentence a modeller actually said"])
     LB["<b>[3.4] the LIBRARIAN picks the scope</b><br/>one scope. Two scopes means TWO queries,<br/>never one merged one<br/><i>HERON-RAG-LIB-001 · built 2026-09-11, R-38</i>"]
@@ -658,12 +657,12 @@ flowchart TD
     FU --> RR --> CK --> CP --> HO --> Q
     Q -.->|"ask again, with better words — [3.1] is what makes this loop worth running"| S
 
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
-    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
-    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
-    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
-    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
-    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95,stroke-dasharray:4 3
+    classDef user fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef host fill:#FFFFFF,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef brain fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef addin fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef revit fill:#1B1B1F,stroke:#FD641A,stroke-width:1.5px,color:#F7F5F2
+    classDef plat fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10,stroke-dasharray:4 3
     class S user
     class LB host
     class SF addin

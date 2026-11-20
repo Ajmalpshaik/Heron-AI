@@ -291,3 +291,8 @@ utterances:
   - what are the floor levels
   - level heights
   - what levels are in this model
+  # ADDED 2026-11-20, row 132 (GitHub issue #959). The ifc-export-readiness
+  # skill's own sentence: this read reports each level's Building Story
+  # (LEVEL_IS_BUILDING_STORY), and the sentence reached CREATE_LEVELS, a
+  # write, on model and both re-ranked backends. Declared on the read (D-86).
+  - which levels are not building storeys

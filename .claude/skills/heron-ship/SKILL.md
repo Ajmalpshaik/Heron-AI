@@ -123,8 +123,10 @@ row whose `-> NAME` no fragment's `capability:` line declares exits **1** - the 
 that is not a ranking, so the rest stays a report. **Since 2026-11-01 so does a LIVE card's row whose
 `-> NAME` only a retired (DEPRECATED or ARCHIVED) card declares** - retrieval never offers that card;
 point the row at its `superseded-by`, which the failure names. A retired card's own rows are its record
-and are not read. `python tools/check-routing.py --targets` gives that
-verdict alone, from the files: run it after editing any `fragment.yaml` comment, because it is not one
+and are not read. **Since 2026-11-20 so does a sentence two LIVE cards both declare** (an identity or
+an utterance): the identity table keeps neither, so it reaches neither card by its exact words - keep it
+on the card that does the job ([row 5b-473](../../../docs/FRAGMENT-ISSUES.md)). `python tools/check-routing.py --targets` gives that
+verdict alone, from the files: run it after editing any `fragment.yaml` comment or utterance, because it is not one
 of the four and CI would otherwise be first to say. A row knowingly left dangling sits on
 `KNOWN_DANGLING` in the tool with its reason - the list is empty today; **repairing one means taking it
 off that list in the same change**, or the run fails on the entry that outlived its row. [Row 5b-388](../../../docs/FRAGMENT-ISSUES.md).

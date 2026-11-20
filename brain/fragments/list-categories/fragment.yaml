@@ -304,3 +304,11 @@ utterances:
   # it reached CREATE_LINE_STYLE, a write, while SET_OBJECT_STYLE was being
   # built. Declared, so identity answers it here.
   - what are the object style settings for Pipes
+  # ADDED 2026-11-20, row 5b-1873 (GitHub issue #1078). On lexical, CI's
+  # backend, it reached TRANSFER_OBJECT_STYLES_BETWEEN_DOCUMENTS, a write,
+  # though this read gives every row's weights and colours. Declared here
+  # (D-86). The row's two MATERIAL questions were declared beside it and
+  # measured: they sent "set the material of generic models in object
+  # styles" from SET_OBJECT_STYLE to this read on the model backend - the
+  # same trade the purpose was refused for - so they were taken back.
+  - list the categories with their line weights and colours

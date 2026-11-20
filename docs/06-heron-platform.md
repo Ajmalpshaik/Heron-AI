@@ -74,7 +74,6 @@ How a Heron product reaches a PC, and which folder each part then writes. Folder
 own names for them. `python brain/heron_paths.py --where` prints the Python side's home on a PC.
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
     REL["<b>A GitHub release</b>, made from a v tag<br/>release.yml: one zip per product per Revit release<br/>checksums.txt · not signed yet — D-91"]
     MAN["<b>heron-products.json</b><br/>the product list, read as data — D-93"]
@@ -99,10 +98,10 @@ flowchart TD
     PY -->|"writes"| TMP
     PY --> HOME
 
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
-    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
-    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
-    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95,stroke-dasharray:4 3
+    classDef user fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef brain fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef addin fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef plat fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10,stroke-dasharray:4 3
     class REL,MAN,INS plat
     class CORE addin
     class PY brain

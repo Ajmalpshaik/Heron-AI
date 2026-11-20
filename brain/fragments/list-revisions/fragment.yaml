@@ -296,3 +296,11 @@ utterances:
   - which sheets do not have revision 21 as the last one
   - which revisions are only on the sheets because of clouds
   - show the revisions on each sheet in order
+  # ADDED 2026-11-20, rows 5b-1874 (GitHub issue #1078) and 5b-246 (#955).
+  # Questions this read answers - each numbering sequence and the alphanumeric
+  # scheme's letters are read off RevisionSettings - that reached
+  # CREATE_REVISION_NUMBERING_SEQUENCE, EDIT_REVISION_NUMBERING_SEQUENCE and
+  # DELETE_REVISION_NUMBERING_SEQUENCE, all writes. Declared here (D-86).
+  - what letters does the alphanumeric revision numbering use
+  - list the revision numbering sequences
+  - which numbering sequences are there

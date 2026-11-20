@@ -328,7 +328,6 @@ The same, as one call, read from `_waiting` and `_progress_token` in `heron_mcp_
 `Bridge._read_line` in `heron_bridge_client.py`:
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 sequenceDiagram
     participant H as Claude Code
     participant S as Heron MCP server
@@ -394,7 +393,6 @@ own words, never a fragment's id or raw code. A fourth way in, `try-once`, is a 
 chat tool.
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
     U(["<b>Modeller</b><br/><i>select the ducts on level 1</i>"])
     CC["<b>Claude Code</b><br/>picks the door"]
@@ -419,11 +417,11 @@ flowchart TD
     TO ==>|one named TransactionGroup · always asked| AD
     AD ==> RV
 
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
-    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
-    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
-    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
-    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    classDef user fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef host fill:#FFFFFF,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef brain fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef addin fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef revit fill:#1B1B1F,stroke:#FD641A,stroke-width:1.5px,color:#F7F5F2
     class U,AU user
     class CC host
     class LIB,RD,SH,CH,TO brain

@@ -151,3 +151,8 @@ utterances:
   - are the links relative or absolute
   - which links are pinned
   - is the link overlay or attachment
+  # ADDED 2026-11-20, row 5b-1872 (GitHub issue #1078). A question this card's
+  # version 2 answers - each link's Room Bounding is read - and it reached
+  # SET_LINK_ROOM_BOUNDING, a write, on lexical and model. Declared here, where
+  # the answer is, as D-86 says; the write's own words are left as they are.
+  - which links are room bounding

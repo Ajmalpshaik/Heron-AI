@@ -52,7 +52,6 @@ that takes two; SQLite's `ATTACH` is refused at the engine. Where two scopes are
 `heron_standards` asks each on its own and labels every answer:
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart LR
     Q(["<b>A standards question</b><br/><i>how thick is the duct insulation?</i>"])
     HS["<b>heron_standards</b><br/>asks each scope named,<br/>one at a time"]
@@ -68,8 +67,8 @@ flowchart LR
     A1 -.-> CF
     A2 -.-> CF
 
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
-    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
+    classDef user fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef brain fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
     class Q,A1,A2 user
     class HS,CO,PR,CF brain
 ```
@@ -98,7 +97,6 @@ No arrow joins two stores: open_scope takes one scope, and ATTACH is refused.
 ## 2. Project context isolation
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart LR
     H(["<b>Heron AI</b>"])
     CO["Company"]
@@ -109,9 +107,9 @@ flowchart LR
     H --> PA
     H --> PB
 
-    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
-    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef brain fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef plat fill:#FFFFFF,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef user fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
     class H brain
     class CO plat
     class PA,PB user
