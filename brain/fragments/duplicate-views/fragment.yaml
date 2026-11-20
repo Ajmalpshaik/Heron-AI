@@ -48,9 +48,7 @@ purpose: >
   Revit's API cannot make the first one. A view template is copied only when
   asked for - by name in `templateName`, or with `copyTemplates` - through
   CopyElements, because View.Duplicate cannot copy one; Revit's suffixed name
-  for the copy is read back and the copy is not renamed here. Version 2's
-  proof no longer describes the code and is kept as a record, and the
-  fragment is DRAFT until it is proved again.
+  for the copy is read back and the copy is not renamed here.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so
   duplicating forty views is one undo entry.

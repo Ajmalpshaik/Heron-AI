@@ -49,8 +49,7 @@ purpose: >
   sheet, sized to the views that will place, and `distinctPositions` reads back
   how many landed in different places - placed 3 with distinctPositions 1 is a
   pile, and the answer says so. A placeholder sheet is refused by name in
-  `sheetProblem`. Version 2's proof no longer describes the code and is kept as
-  a record; the card is DRAFT until it is proved again.
+  `sheetProblem`.
 
   **The views may be handed on** (version 3): with none named, the views
   FIND_VIEWS found unplaced, or the ones selected, are placed; anything handed
@@ -66,7 +65,6 @@ purpose: >
   `placedAt` reads each one back in millimetres and says which. A view can be
   on one sheet only and the second is refused; a schedule can be on many, so
   a schedule already placed elsewhere is placed again - Revit's rule.
-  Version 3's proof is not this code; the card is DRAFT until proved again.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 

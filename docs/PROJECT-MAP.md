@@ -1,17 +1,27 @@
+[Heron AI](../README.md) › [Documentation](README.md) › **Project map**
+
 # Project map
 
 **The fastest orientation in this repository.** Which folder owns what, where to start a change, and
 which source wins when two disagree.
 
-For *which document covers what*, use [README.md](README.md) — the documentation index. This file maps
-**code and folders**, not documents.
+This file maps **code and folders**, not documents. For *which document covers what*, use the
+[documentation front door](README.md).
+
+| Section | Answers |
+|---|---|
+| [A. How a request travels](#a-how-a-request-travels) | The path from the modeller's words to the model, folder by folder |
+| [B. Folder map](#b-folder-map) | What each folder owns, and what may depend on what |
+| [C. Change map](#c-change-map--where-to-start) | *"I need to…"* → where to start |
+| [D. Truth hierarchy](#d-truth-hierarchy--which-source-wins) | Which source wins when two disagree |
+| [E. Routes by role](#e-routes-by-role) | What to read, in order, for each kind of reader |
+| [F. Words used here](#f-words-used-here) | The terms that cause the most confusion |
 
 ---
 
 ## A. How a request travels
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
     MO(["<b>The modeller</b><br/><i>select all ducts</i>"])
     CC["<b>Claude Code</b><br/>the host: conversation, intent, orchestration — D-01"]
@@ -35,19 +45,16 @@ flowchart TD
     MS -.-|"same process"| CP
     AD -.->|"live file"| CP
 
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
-    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
-    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
-    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
-    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
-    classDef side fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95,stroke-dasharray:4 3
-    class MO user
+    classDef person fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef host fill:#FFFFFF,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef heron fill:#FD641A,stroke:#0F0F10,stroke-width:2px,color:#0F0F10
+    classDef quiet fill:#F7F5F2,stroke:#0F0F10,stroke-width:1px,color:#0F0F10,stroke-dasharray:4 3
+    classDef revit fill:#1B1B1F,stroke:#FD641A,stroke-width:2px,color:#F7F5F2
+    class MO,MD person
     class CC host
-    class MS,BR,CL brain
-    class BG,AD addin
+    class MS,BR,CL,BG,AD heron
     class MT revit
-    class MD user
-    class CP side
+    class CP quiet
 ```
 
 <details>
@@ -75,33 +82,34 @@ mcp/companion/              a page beside Revit, in the server's own process; re
 
 </details>
 
-What this diagram is easy to misread:
+**Four things this diagram is easy to misread:**
 
-- **The host decides what the user meant, not Heron** ([D-01](DECISIONS.md)). Heron resolves a
-  *capability*; it never classifies intent.
-- **The host names a capability, never a fragment.** `revit_read`, `revit_show` and `revit_change` are
-  the three doors to the library: each takes a capability, the server picks the fragment, and each
-  refuses a fragment above its own ceiling ([04 §8](04-heron-mcp.md)).
-- **Resolving is not running.** The brain answering *"`FILTER_ELEMENTS_BY_CATEGORY`, provided by
-  `filter-elements-by-category`"* has changed nothing. A change goes through `revit_change` — or
-  `revit_apply_move`, which applies a preview the modeller has already seen — and only while
-  `write.enabled`, the **Changes** switch in Heron's Settings window ([D-150](decisions/D-150.md)), is on; it defaults to `false`. It runs inside one named
-  `TransactionGroup`, and while **Ask to Keep** is on Revit asks the modeller Keep or Discard before
-  anything is kept ([D-126](DECISIONS.md), [D-138](DECISIONS.md)).
-- **Off Windows the chain stops at `mcp/server/`.** No Revit can be there, so the server serves its
-  library tools alone and no `revit_` tool ([D-132](DECISIONS.md)).
+1. **The host decides what the user meant, not Heron** ([D-01](DECISIONS.md)). Heron resolves a
+   *capability*; it never classifies intent.
+2. **The host names a capability, never a fragment.** `revit_read`, `revit_show` and `revit_change` are
+   the three doors to the library: each takes a capability, the server picks the fragment, and each
+   refuses a fragment above its own ceiling ([04 §8](04-heron-mcp.md)).
+3. **Resolving is not running.** The brain answering *"`FILTER_ELEMENTS_BY_CATEGORY`, provided by
+   `filter-elements-by-category`"* has changed nothing.
+   - A change goes through `revit_change` — or `revit_apply_move`, which applies a preview the
+     modeller has already seen.
+   - It runs only while `write.enabled`, the **Changes** switch in Heron's Settings window
+     ([D-150](decisions/D-150.md)), is on; it defaults to `false`.
+   - It runs inside one named `TransactionGroup`, and while **Ask to Keep** is on Revit asks the
+     modeller Keep or Discard before anything is kept ([D-126](DECISIONS.md), [D-138](DECISIONS.md)).
+4. **Off Windows the chain stops at `mcp/server/`.** No Revit can be there, so the server serves its
+   library tools alone and no `revit_` tool ([D-132](DECISIONS.md)).
 
 ---
 
 ## B. Folder map
 
-Dependency rules below are not prose — they are enforced by
+**These dependency rules are not prose — they are enforced** by
 [`tools/check-structure.py`](../tools/check-structure.py), which fails the build if they are broken. It
 reads its rules from one table in that file, `ALLOWED`, and checks C# project references and Python
 imports against it.
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
     TS["<b>tests/</b><br/>suites and test hosts"]
     TL["<b>tools/</b><br/>every gate and report"]
@@ -124,15 +132,15 @@ flowchart TD
     MC x--x|"never imports — talks over a named pipe"| RV
     RV x--x|"never"| BR
 
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
-    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
-    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
-    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:1.5px,color:#4C1D95,stroke-dasharray:4 3
-    class TS,TL,DC user
-    class MC,BR brain
-    class RV addin
-    class PL plat
-    style PARTS fill:#FFFFFF,stroke:#CBD5E1,color:#0F172A
+    classDef quiet fill:#F7F5F2,stroke:#0F0F10,stroke-width:1px,color:#0F0F10,stroke-dasharray:4 3
+    classDef heron fill:#FD641A,stroke:#0F0F10,stroke-width:2px,color:#0F0F10
+    classDef revit fill:#1B1B1F,stroke:#FD641A,stroke-width:2px,color:#F7F5F2
+    classDef host fill:#FFFFFF,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    class TS,TL,DC quiet
+    class MC,BR heron
+    class RV revit
+    class PL host
+    style PARTS fill:#F7F5F2,stroke:#0F0F10,color:#0F0F10
 ```
 
 **A thick arrow is *may depend on*.** A crossed line is a dependency the checker refuses in both
@@ -163,10 +171,13 @@ platform/  depends on nothing
 | `tests/` | all four | — |
 | `tools/` | C#: nothing. Its Python reads `brain/` and `mcp/` and is exempt on purpose: [D-48](DECISIONS.md) wants a gate to read the library through the brain rather than parse it again. `check-structure.py` prints which scripts do, as a note | — |
 
-`Autodesk.Revit` types may appear **only inside `revit/`**. Anywhere else is a crossed boundary, and
-the [`heron-guard`](../.claude/skills/heron-guard/SKILL.md) hook refuses the edit as it is proposed;
-`check-structure.py` fails the build on any code file that reached disk another way. Both let `tools/`
-name it, because a checker has to be able to name what it checks.
+**Revit API types — anything from the vendor's Revit namespace — may appear only inside `revit/`.**
+Anywhere else is a crossed boundary:
+
+- the [`heron-guard`](../.claude/skills/heron-guard/SKILL.md) hook refuses the edit as it is proposed;
+- `check-structure.py` fails the build on any code file that reached disk another way.
+
+Both let `tools/` name it, because a checker has to be able to name what it checks.
 
 ### The four product parts
 
@@ -185,10 +196,42 @@ name it, because a checker has to be able to name what it checks.
 | [`tests/`](../tests/README.md) | The suites, the golden library, the held-out question sets, and the .NET test hosts that run Heron's own C# with no Revit | [`tests/README.md`](../tests/README.md) — **read the exit codes section first** |
 | `docs/` | Permanent specification, architecture, decisions and registers | [README.md](README.md) |
 | [`docs/work-notes/`](work-notes/README.md) | Temporary operational work — what is going on right now | [work-notes/README.md](work-notes/README.md) |
-| `.claude/` | House rules as skills, and the prototype agents that keep them. **The only tree of HOUSE RULES** — `brain/skills/` above is Heron's own skills, the jobs it does for a modeller, and the two share a word and nothing else. **`agents/heron-*.md` are not house rules**: they are Heron's own background agents, the *subagents* [D-01](DECISIONS.md) says Heron supplies, and they live here because this is the folder the host reads them from. The first is `heron-model-auditor`; `heron-fragment-author` writes a new fragment at DRAFT when nothing in the library does the job; `heron-duplicate-checker` finds fragments doing the same job by what they do, before one is added or widened; `heron-fragment-merger` combines them into one that covers everything each did and deprecates the rest, on the owner's yes; `heron-fragment-edit-checker` reads a fragment change before it is committed. A background agent carries a read-only tool list, and an agent that writes files carries no tool that reaches Revit - both held by `tests/test_agent_tools.py`. **`settings.json` wires the development hooks every session runs** - the boundary guard, the session-start line, the *has main moved?* note and the LOCAL-prompt-in-the-cloud note, each writing its decisions to a diary outside the repository. They are for developing Heron; a modeller never meets them | [`.claude/skills/README.md`](../.claude/skills/README.md) · [`heron-session`](../.claude/skills/heron-session/SKILL.md) |
+| `.claude/` | House rules as skills, Heron's own background agents, and the development hooks — [below](#claude--house-rules-heron-agents-and-the-development-hooks) | [`.claude/skills/README.md`](../.claude/skills/README.md) · [`heron-session`](../.claude/skills/heron-session/SKILL.md) |
 | `.codex/` | The same agents for a second host, pointing at the same skills - compare `ls .claude/agents .codex/agents` before assuming a `.claude` agent has its `.codex` copy. **A `.codex` copy carries no tool list**, so there the read-only rule is an instruction in the agent's text, not a restriction | `.codex/config.toml` |
-| `.github/` | CI, plus the pull-request and issue templates, `CODEOWNERS` and `dependabot.yml`. [`workflows/gates.yml`](../.github/workflows/gates.yml) is the job whose gates decide a pull request - the four you run locally and the rest [`heron-ship`](../.claude/skills/heron-ship/SKILL.md) names. Beside it: `windows.yml` (the installer's Windows half, on a Windows runner with no Revit, for a pull request that touches it or `mcp/`), `weekly.yml` (did the outside world break the build while nobody pushed) and `release.yml` (builds a release's assets) | [`workflows/gates.yml`](../.github/workflows/gates.yml) |
+| `.github/` | CI, plus the pull-request and issue templates, `CODEOWNERS` and `dependabot.yml` — [below](#github--ci) | [`workflows/gates.yml`](../.github/workflows/gates.yml) |
 | `.mcp.json` | Not a folder: the file that registers Heron's MCP server with the host, with the `HERON_CLIENT_ID` that `.codex/config.toml` must match | `.mcp.json` |
+
+#### `.claude/` — house rules, Heron agents and the development hooks
+
+- **The only tree of HOUSE RULES.** `brain/skills/` is Heron's own skills, the jobs it does for a
+  modeller; the two share a word and nothing else.
+- **`agents/heron-*.md` are not house rules.** They are Heron's own background agents, the *subagents*
+  [D-01](DECISIONS.md) says Heron supplies, and they live here because this is the folder the host reads
+  them from:
+  - `heron-model-auditor` — the first;
+  - `heron-fragment-author` — writes a new fragment at DRAFT when nothing in the library does the job;
+  - `heron-duplicate-checker` — finds fragments doing the same job by what they do, before one is
+    added or widened;
+  - `heron-fragment-merger` — combines them into one that covers everything each did and deprecates the
+    rest, on the owner's yes;
+  - `heron-fragment-edit-checker` — reads a fragment change before it is committed.
+- **A background agent carries a read-only tool list, and an agent that writes files carries no tool
+  that reaches Revit** — both held by `tests/test_agent_tools.py`.
+- **`settings.json` wires the development hooks every session runs** — the boundary guard, the
+  session-start line, the *has main moved?* note and the LOCAL-prompt-in-the-cloud note, each writing its
+  decisions to a diary outside the repository. They are for developing Heron; a modeller never meets
+  them.
+
+#### `.github/` — CI
+
+[`workflows/gates.yml`](../.github/workflows/gates.yml) is the job whose gates decide a pull request -
+the four you run locally and the rest [`heron-ship`](../.claude/skills/heron-ship/SKILL.md) names.
+Beside it:
+
+- `windows.yml` — the installer's Windows half, on a Windows runner with no Revit, for a pull request
+  that touches it or `mcp/`;
+- `weekly.yml` — did the outside world break the build while nobody pushed;
+- `release.yml` — builds a release's assets.
 
 ---
 
@@ -212,10 +255,9 @@ name it, because a checker has to be able to name what it checks.
 
 ## D. Truth hierarchy — which source wins
 
-Two different questions, and mixing them is how a defect gets promoted into policy.
+**Two different questions**, and mixing them is how a defect gets promoted into policy.
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart LR
     subgraph AL ["What Heron is ALLOWED to do — top wins"]
         direction TB
@@ -236,14 +278,14 @@ flowchart LR
     DE --> IN --> CX
     CD -.->|"a conflict is a DEFECT in the code,<br/>never a change to the rule"| AL
 
-    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
-    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
-    class GR,CO,DE host
-    class CD,PF,MD brain
-    class IN,CX user
-    style AL fill:#FFFFFF,stroke:#CBD5E1,color:#0F172A
-    style AC fill:#FFFFFF,stroke:#CBD5E1,color:#0F172A
+    classDef heron fill:#FD641A,stroke:#0F0F10,stroke-width:2px,color:#0F0F10
+    classDef good fill:#3ECF8E,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef quiet fill:#F7F5F2,stroke:#0F0F10,stroke-width:1px,color:#0F0F10,stroke-dasharray:4 3
+    class GR,CO,DE heron
+    class CD,PF,MD good
+    class IN,CX quiet
+    style AL fill:#FFFFFF,stroke:#0F0F10,color:#0F0F10
+    style AC fill:#FFFFFF,stroke:#0F0F10,color:#0F0F10
 ```
 
 <details>
@@ -282,12 +324,16 @@ it implements**: `check-structure.py` exiting 0 says the layering holds, not tha
 
 ### What explains the intent
 
-Specifications and permanent architecture — the numbered documents, `docs/00`–`00e` and `docs/01` onward; [README.md](README.md) says which of them are research or a design not yet built. Historical specifications
-keep their historical wording. Where one is superseded, point at the deciding decision rather than
-rewriting the history. **The one exception is [D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)**,
-for the four parts `00` to `00d`: a wrong fact, or words an accepted decision settled, is corrected in
-place with the original kept beside it, struck through, and a dated note naming the evidence. A policy
-choice no decision has made is not corrected; it goes to [OPEN-QUESTIONS](OPEN-QUESTIONS.md).
+Specifications and permanent architecture — the numbered documents, `docs/00`–`00e` and `docs/01`
+onward; [Every document](guide/all-documents.md) says which of them are research or a design not yet
+built.
+
+- **Historical specifications keep their historical wording.** Where one is superseded, point at the
+  deciding decision rather than rewriting the history.
+- **The one exception is [D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)**,
+  for the four parts `00` to `00d`: a wrong fact, or words an accepted decision settled, is corrected in
+  place with the original kept beside it, struck through, and a dated note naming the evidence.
+- A policy choice no decision has made is not corrected; it goes to [OPEN-QUESTIONS](OPEN-QUESTIONS.md).
 
 ### What is only context
 
@@ -300,38 +346,34 @@ Registers ([NEEDS-CHECKING](NEEDS-CHECKING.md), [FRAGMENT-ISSUES](FRAGMENT-ISSUE
 ### Authority and lifecycle are DIFFERENT questions, and this is where they get confused
 
 **The four lists above rank files by AUTHORITY — which one wins when two disagree. They say nothing
-about WHERE A FILE LIVES.** That is a second question with a different answer, and reading the first
-list as if it answered the second is the mistake this section now exists to prevent.
-
-It is a fair mistake, because the grouping invites it: *"only context"* puts
-[FRAGMENT-ISSUES](FRAGMENT-ISSUES.md), [NEEDS-CHECKING](NEEDS-CHECKING.md),
-[OPEN-QUESTIONS](OPEN-QUESTIONS.md), the [handover](HANDOVER.md) and everything in
-[work-notes/](work-notes/README.md) on one line — so they look like one kind of thing that belongs in
-one place. **By authority they ARE one kind of thing. By lifecycle they are two.**
+about WHERE A FILE LIVES.** That is a second question with a different answer.
 
 | The question | What it decides | The test |
 |---|---|---|
 | **Authority** | Which source wins in a disagreement | The four lists above |
 | **Lifecycle** | Which folder the file lives in | **Is this file expected to be DELETED once its work is done?** |
 
-**`docs/work-notes/` is defined by its ending.** Its lifecycle is
-`active → blocked or completed → knowledge preserved → retired`, and *retired* means **deleted**. A
-note there is scaffolding: before it goes, the lasting part of it is moved *somewhere permanent*.
+It is a fair mistake to mix them, because the grouping invites it: *"only context"* puts
+[FRAGMENT-ISSUES](FRAGMENT-ISSUES.md), [NEEDS-CHECKING](NEEDS-CHECKING.md),
+[OPEN-QUESTIONS](OPEN-QUESTIONS.md), the [handover](HANDOVER.md) and everything in
+[work-notes/](work-notes/README.md) on one line. **By authority they ARE one kind of thing. By lifecycle
+they are two.**
 
-**The registers are that somewhere.** `FRAGMENT-ISSUES`, `NEEDS-CHECKING`, `OPEN-QUESTIONS` and
-`PROPOSALS` are where a work note's knowledge goes to survive. They are never deleted, which is
-exactly why they do not live in the folder that empties itself. Putting them there would file the
-destination inside the bin.
-
-**So a file in `docs/` that WILL be deleted is in the wrong place**, and two were:
-`FRAGMENT-REVIEW-PLAN-CHATGPT-2026-09-07.md` and `PROMPT-fragment-validation-agent.md` moved to
-`work-notes/plans/` on 2026-09-10. Both are one-time jobs that end in deletion.
-
-**[`HANDOVER.md`](HANDOVER.md) is the one deliberate exception, and it is not a quiet one.** Its own
-first line says *"It is a work note, not specification"* — true, and it stays in `docs/` anyway
-because it is the documented cold start and **sixteen files reference it, two of them tools**
-(at 2026-09-10). The reason, and the command that derives that number, are recorded in
-[work-notes/README](work-notes/README.md) rather than left to be rediscovered.
+- **`docs/work-notes/` is defined by its ending.** Its lifecycle is
+  `active → blocked or completed → knowledge preserved → retired`, and *retired* means **deleted**. A
+  note there is scaffolding: before it goes, the lasting part of it is moved *somewhere permanent*.
+- **The registers are that somewhere.** `FRAGMENT-ISSUES`, `NEEDS-CHECKING`, `OPEN-QUESTIONS` and
+  `PROPOSALS` are where a work note's knowledge goes to survive. They are never deleted, which is
+  exactly why they do not live in the folder that empties itself. Putting them there would file the
+  destination inside the bin.
+- **So a file in `docs/` that WILL be deleted is in the wrong place**, and two were:
+  `FRAGMENT-REVIEW-PLAN-CHATGPT-2026-09-07.md` and `PROMPT-fragment-validation-agent.md` moved to
+  `work-notes/plans/` on 2026-09-10. Both are one-time jobs that end in deletion.
+- **[`HANDOVER.md`](HANDOVER.md) is the one deliberate exception, and it is not a quiet one.** Its own
+  first line says *"It is a work note, not specification"* — true, and it stays in `docs/` anyway
+  because it is the documented cold start and **sixteen files reference it, two of them tools**
+  (at 2026-09-10). The reason, and the command that derives that number, are recorded in
+  [work-notes/README](work-notes/README.md) rather than left to be rediscovered.
 
 **Before moving anything on the strength of this section, read
 [`work-notes/README.md`](work-notes/README.md) first** — it owns the list of what goes there, and the
@@ -346,22 +388,30 @@ Do **not** pick whichever makes the cleanup easier, and do not close a policy co
 
 ## E. Routes by role
 
+| Role | Read, in order |
+|---|---|
+| [BIM modeller or coordinator](#bim-modeller-or-coordinator) | [Using Heron](guide/using-heron.md) → [01 — Vision & Principles](01-vision-and-principles.md) → [What is proven](guide/what-is-proven.md) → [NEEDS-CHECKING.md](NEEDS-CHECKING.md) |
+| [BIM manager](#bim-manager) | [16 — Version Support](16-version-support-strategy.md) → [12 — Security & Permissions](12-security-and-permissions.md) → [HERON_CONSTITUTION.md](../HERON_CONSTITUTION.md) |
+| [Developer](#developer) | This file's §B and §C → [`CONTRIBUTING.md`](../CONTRIBUTING.md) → the README of the folder you are changing → [`heron-ship`](../.claude/skills/heron-ship/SKILL.md) before you push |
+| [AI agent](#ai-agent) | [**AGENTS.md**](../AGENTS.md) first |
+| [Project owner](#project-owner) | [HANDOVER.md](HANDOVER.md) → [work-notes/](work-notes/README.md) → `python tools/check-gaps.py` |
+
 ### BIM modeller or coordinator
 
-[01 — Vision & Principles](01-vision-and-principles.md) → the [README](../README.md) status section →
-[NEEDS-CHECKING.md](NEEDS-CHECKING.md).
+**What matters to you: read and write are different things, and what keeps you safe is the switch, not
+the library.**
 
-What matters to you: **read and write are different things, and what keeps you safe is the switch,
-not the library.** Heron reads the model and changes nothing until the **Changes** switch is on, in
-Heron's Settings window ([D-150](decisions/D-150.md))
-— `write.enabled`, **`false`** by default whatever the fragment says ([D-19](DECISIONS.md)). With it on,
-a change from the chat runs only a `PROVEN` capability whose proof still stands ([D-117](DECISIONS.md)),
-inside one named `TransactionGroup` that is one entry in Revit's undo list; while **Ask to Keep** is on,
-Revit shows the change and asks **Keep or Discard** before it is kept ([D-126](DECISIONS.md),
-[D-138](DECISIONS.md)). All six rows of [Group D](needs-checking/group-d.md) passed on 2026-10-17 in
-Revit 2024 — `D3`, the tape measure on the move, read +200.0000 mm with the pinned control unmoved, and
-one Ctrl+Z put it back. Still owed: any other release, a duct joined to a fitting, and a failure forced
-mid-move (golden `G-12`).
+- Heron reads the model and changes nothing until the **Changes** switch is on, in Heron's Settings
+  window ([D-150](decisions/D-150.md)) — `write.enabled`, **`false`** by default whatever the fragment
+  says ([D-19](DECISIONS.md)).
+- With it on, a change from the chat runs only a `PROVEN` capability whose proof still stands
+  ([D-117](DECISIONS.md)), inside one named `TransactionGroup` that is one entry in Revit's undo list.
+- While **Ask to Keep** is on, Revit shows the change and asks **Keep or Discard** before it is kept
+  ([D-126](DECISIONS.md), [D-138](DECISIONS.md)).
+- **All six rows of [Group D](needs-checking/group-d.md) passed on 2026-10-17 in Revit 2024** — `D3`,
+  the tape measure on the move, read +200.0000 mm with the pinned control unmoved, and one Ctrl+Z put it
+  back. Still owed: any other release, a duct joined to a fitting, and a failure forced mid-move
+  (golden `G-12`).
 
 A fragment marked `DRAFT` **is not proven as it stands** — it is new, or its code changed under its
 proof — and `revit_change` refuses it. It may run once on the saved model in front, behind the same Keep
@@ -382,26 +432,31 @@ did. It is not a compile and not a passing test.
 [HERON_CONSTITUTION.md](../HERON_CONSTITUTION.md) for the binding rules.
 
 **Declared support and tested releases are not the same list**, and there are several tested lists
-rather than one. The compile gate covers **2020–2027**, on every push. The **add-in has been deployed,
-loaded and had its tab checked on 2020, 2024 and 2027** — [`A12` and `A13`](NEEDS-CHECKING.md),
-2026-09-19, on all three releases installed on the owner's PC. **On 2026-10-17 it loaded on the owner's
-laptop on 2020, 2024, 2026 and 2027**, and on 2026 no fragment could run
-([Group EQ](needs-checking/group-eq.md), [row 5b-575](fragment-issues/section-5b-rows-551-575.md)); the
-repair is in code and has not been run in Revit ([Group GW](needs-checking/group-gw.md)). **The Keep or Discard box and the rails
-around it were run on 2024 and 2027** on 2026-10-18 ([Group ET](needs-checking/group-et.md)). **Nearly
-every fragment proof names Revit 2020 or Revit 2024**: a proof is a recorded run against a named model,
-and which release each one names is derived by the command at the top of
-[Group EQ](needs-checking/group-eq.md), never typed here — run on 2026-11-12 it named 2020, 2024, one
-proof on 2022 and one on 2026, and none on 2021, 2023, 2025 or 2027. **Some cards now carry a second
-release under `proof.releases`** ([D-131](DECISIONS.md)), each signed by Ajmal PS on 2026-11-12 for
-Revit 2024 beside a Revit 2020 proof: `grep -l '^  - release:' brain/fragments/*/fragment.yaml` lists
-them (a bare `releases:` also matches a line of prose in one card's comment), and each entry names its own model. This paragraph said *"proven on 2020 and 2024 only"* and
-*"no fragment yet carries a `proof.releases` entry"*, as measured on 2026-10-18, until 2026-11-12.
+rather than one:
+
+| What was tested | Releases | Evidence |
+|---|---|---|
+| **The compile gate**, on every push | 2020–2027 | `python tools/check-compile.py` |
+| **The add-in deployed, loaded and its tab checked** on the owner's PC, 2026-09-19, on all three releases installed there | 2020, 2024, 2027 | [`A12` and `A13`](NEEDS-CHECKING.md) |
+| **The add-in loaded on the owner's laptop**, 2026-10-17 — and on 2026 no fragment could run; the repair is in code and has not been run in Revit | 2020, 2024, 2026, 2027 | [Group EQ](needs-checking/group-eq.md) · [row 5b-575](fragment-issues/section-5b-rows-551-575.md) · [Group GW](needs-checking/group-gw.md) |
+| **The Keep or Discard box and the rails around it**, 2026-10-18 | 2024, 2027 | [Group ET](needs-checking/group-et.md) |
+| **Fragment proofs** — nearly every one names Revit 2020 or Revit 2024 | derived, never typed | the command at the top of [Group EQ](needs-checking/group-eq.md) |
+
+- **Which release each fragment proof names is derived** by the command at the top of
+  [Group EQ](needs-checking/group-eq.md), never typed here. Run on 2026-11-12 it named 2020, 2024, one
+  proof on 2022 and one on 2026, and none on 2021, 2023, 2025 or 2027.
+- **Some cards now carry a second release under `proof.releases`** ([D-131](DECISIONS.md)), each signed
+  by Ajmal PS on 2026-11-12 for Revit 2024 beside a Revit 2020 proof, and each entry names its own model.
+  `grep -l '^  - release:' brain/fragments/*/fragment.yaml` lists them (a bare `releases:` also matches a
+  line of prose in one card's comment).
+- This paragraph said *"proven on 2020 and 2024 only"* and *"no fragment yet carries a `proof.releases`
+  entry"*, as measured on 2026-10-18, until 2026-11-12.
 
 ### Developer
 
 This file's §B and §C → [`CONTRIBUTING.md`](../CONTRIBUTING.md) → the README of the folder you are
-changing → the [`heron-ship`](../.claude/skills/heron-ship/SKILL.md) skill before you push.
+changing → the [`heron-ship`](../.claude/skills/heron-ship/SKILL.md) skill before you push. The short
+version, with the route drawn: [Changing Heron](guide/changing-heron.md).
 
 ### AI agent
 
@@ -431,3 +486,7 @@ Full definitions: [15 — Glossary](15-glossary.md). The ones that cause the mos
 | **ExternalEvent** | The only safe way to reach the Revit API — it schedules work onto Revit's main thread |
 | **Proof** | A recorded run against a **named real model**, with a negative case and a staleness fingerprint. A compile is not a proof; a passing test is not a proof ([D-30](DECISIONS.md)) |
 | **Keep or Discard** | Revit's own question after a change from the chat, while **Ask to Keep** is on: nothing is kept until the modeller chooses Keep ([D-126](DECISIONS.md), [D-138](DECISIONS.md)) |
+
+---
+
+↑ [Documentation](README.md) · [Home](../README.md)

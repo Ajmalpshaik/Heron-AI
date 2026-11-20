@@ -234,6 +234,7 @@ def main():
           "run that consumed the chain is not")
 
     taken_back(fragment, server)
+    by_identity(fragment)
 
     if FAILURES:
         print("FAILED")
@@ -256,6 +257,30 @@ def body_of(text, opening):
     body = text[at:]
     end = body.find("\n        }\n")
     return body if end < 0 else body[:end]
+
+
+def by_identity(fragment):
+    """
+    FRAGMENT-ISSUES 5b ROW 1164, 2026-11-20: the chain is matched to a model by
+    what identifies it, never by its title. Read as text - the comparison asks
+    Revit's Document. Seen to FAIL on RevitFragment.cs as it stood, where every
+    one of the three comparisons was `chain.Document == target.Title`.
+    """
+    print("\n  the chain belongs to a model, not to a title (5b row 1164)")
+    check("chain.Document == target.Title" not in fragment
+          and "chain.Document != target.Title" not in fragment,
+          "no carried value is matched to a model by its title")
+    owner = body_of(fragment, "public bool Of(Document target)")
+    check("RevitOperations.DocumentKey(target)" in owner and "Title" not in owner,
+          "the chain asks the model's key - CreationGUID, path, title - as the grant "
+          "and the rollback witness do")
+    keep = body_of(fragment, "private static void Remember(")
+    check("chain.Key = RevitOperations.DocumentKey(target);" in keep
+          and "if (!chain.Of(target) || chain.TakenBack != null) chain.Clear();" in keep,
+          "and Remember clears a chain taken in another model by that key, and stamps it")
+    binder = body_of(fragment, "private static string BindNeeds(")
+    check("chain.Of(target)" in binder,
+          "the binder hands on carried values only from the same model")
 
 
 def taken_back(fragment, server):

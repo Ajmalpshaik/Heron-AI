@@ -20,6 +20,8 @@
 > This file is the **verbatim architectural intent**. Do not edit it to "fix" it —
 > record changes as decisions in [DECISIONS.md](DECISIONS.md).
 > The one correction a decision allows so far is [D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)'s: a wrong fact, or words an accepted decision has settled, corrected in place with the original kept beside it, ~~struck through~~, and a wrong diagram folded under *Original diagram, as written*.
+>
+> **Read whole, line by line, against the tree on 2026-11-20 at commit `d5640f27`** ([row 5b-1867](fragment-issues/row-5b-1867.md), issue [#1072](https://github.com/Ajmalpshaik/Heron-AI/issues/1072)). No words needed correcting in place that day - the *As built* notes of §5, §10, §55, §56, §78 and §82, overtaken since they were written, each gained a dated sentence instead - and the one sentence found to be the owner's choice, §56's *global* stop beside a stop that now names one Revit, was left as written and put to him.
 
 | Field | Value |
 |---|---|
@@ -234,6 +236,14 @@ Status:          PRODUCTION
 > `python tools/prove-agent.py check` reported every proof there STALE: each agent's source has changed
 > since it was signed. All of them were run again on Revit 2020 and signed on 2026-10-25; that command,
 > not this note, says which still stand.
+>
+> **2026-11-20:** not every file that claims an agent is `DRAFT` now - [`brain/heron_rollback.py`](../brain/heron_rollback.py)
+> (`HERON-REVIT-RBK-036`) is `DEPRECATED`, retired on 2026-11-16 under [D-157](decisions/D-157.md) on the
+> owner's word ([row 5b-1747](fragment-issues/row-5b-1747.md)), and none is `PRODUCTION`, which
+> `grep -rh -A2 --include=*.py --include=*.cs -E '^(#|//) Heron-Agent: +HERON-' . | grep -h 'Heron-Status:' | sort | uniq -c`
+> shows from the repository root - and the example agent's proof was signed again on 2026-11-13, on
+> Revit 2020 ([`HERON-REVIT-SEL-008.yaml`](../brain/agent-proofs/HERON-REVIT-SEL-008.yaml), its row in
+> [28](28-agent-registry.md)), which `python tools/prove-agent.py check` read STALE again on 2026-11-20.
 
 ## 6. Capability Registry
 
@@ -450,6 +460,8 @@ PROPOSED -> DESIGNED -> IMPLEMENTED -> TRAINING -> TESTING
 > [D-14](DECISIONS.md), still Proposed.
 >
 > **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)): `APPROVED` now names its approver, a person - [Golden Rule 13](14-golden-rules.md), [Golden Rule 7](14-golden-rules.md) (no agent approves itself), [Article 20](../HERON_CONSTITUTION.md), and for leaving shadow [D-39](DECISIONS.md) (a person's signature). **Left as written:** the stage names. This ladder and the trust model's differ, and `heron_creator.py` assigns `PROPOSED`, which the enforced ladder lacks; code does not pick between them, and the choice is open ([D-14](DECISIONS.md) is Proposed) and is put to the owner in [OPEN-QUESTIONS](OPEN-QUESTIONS.md), as [Q-34](open-questions/from-master-specification-part-2.md).
+>
+> **2026-11-20:** *every file that claims an agent is `DRAFT`* no longer holds whole: [`brain/heron_rollback.py`](../brain/heron_rollback.py) (`HERON-REVIT-RBK-036`) is `DEPRECATED`, retired on 2026-11-16 under [D-157](decisions/D-157.md) on the owner's word, by its header and register row rather than through this ladder ([row 5b-1747](fragment-issues/row-5b-1747.md)); §5's note names the command that shows every other such file is `DRAFT`.
 
 ## 11. Agent Trust Score
 
@@ -1321,6 +1333,8 @@ Never require approval for:
 > | An agent past PROPOSED | A person, at the register row and at every stage after it | [`heron_deployment.py`](../brain/heron_deployment.py), [Golden Rule 13](14-golden-rules.md) |
 >
 > Searching never asks.
+>
+> **2026-11-20:** the first row leaves out the other change that is always asked: anything a kept change deletes from the model is asked in Revit first, in a box of its own, whatever Ask to Keep says and never under a job's grant - [D-142](decisions/D-142.md) (Accepted 2026-10-18), built as `DeleteGate` in [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs), its check in Revit [Group HL](needs-checking/group-hl.md).
 
 ## 56. Emergency Stop
 
@@ -1346,6 +1360,8 @@ Especially important as autonomy increases.
 > itself, and auto-execution is the Changes switch, off by default.
 >
 > **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)): the four lines are not wrong - [D-11](DECISIONS.md) and [D-46](DECISIONS.md) record the requirement as met by the bridge button rather than dropped. What the decisions add, which the section does not say: nothing sent over the bridge lifts a stop, and a restart of Revit is what clears it ([D-129](DECISIONS.md) item 7, [D-130](DECISIONS.md)); and a single Revit API call already running is interrupted by neither control - a fragment is stopped at its next check, never inside one long Revit call ([D-46](DECISIONS.md), [D-129](DECISIONS.md)).
+>
+> **2026-11-20:** the stop now names the one Revit it is for: `python mcp/client/heron_bridge_client.py stop --session <pid>` sends `stop_session` to that Revit alone, a bare `stop` sends nothing and lists the Revits to choose from, and the add-in refuses a stop that names no session (`cmd_stop` in [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py), `AnswerStop` in [`RevitDispatcher.cs`](../revit/Heron.Revit.Addin/RevitDispatcher.cs)) - [Q-71](open-questions/tier-2.md), decided 2026-11-15 on the owner's delegation and not yet read back to him, built 2026-11-16 and not yet run in Revit ([Group EZ](needs-checking/group-ez.md) EZ7, EZ8); the section's *global* mechanism is left as written ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction) point 4), because whether one stop should reach every connected Revit is the owner's to settle when Q-71 is read back.
 
 ## 57. Audit Architecture
 
@@ -1690,6 +1706,8 @@ Configuration changes should be auditable.
 > who moved a flag; both are DRAFT.
 >
 > **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)): model routing is struck from Heron's configuration - [D-65](DECISIONS.md) (task to model class is the host's, retired from Heron's specification). *AI provider* stands: [D-80](DECISIONS.md) names [`heron_provider.py`](../brain/heron_provider.py) as the layer that would serve Heron without a host.
+>
+> **2026-11-20:** *or in that file* no longer holds for Changes, Admin and Publish: since [D-166](decisions/D-166.md) (Accepted 2026-11-16; built, not yet run in Revit) each is held in Revit's memory, turned on only by a click in the Settings window and off every time Revit starts, and a line naming one in `heron.config` is ignored ([`HeronPermissions.cs`](../platform/Heron.Core/HeronPermissions.cs), [`HeronConfig.cs`](../platform/Heron.Core/HeronConfig.cs)); Ask to Keep stays in `heron.config`.
 
 ## 79. Migration Architecture
 
@@ -1896,6 +1914,8 @@ OBSERVE -> UNDERSTAND -> PLAN -> RETRIEVE -> EXECUTE
 > | Training Agent | Assembles the rules for an agent's risk level | [`heron_trainer.py`](../brain/heron_trainer.py) |
 > | Evolution Engine | Proposes; decides nothing | [`heron_evolve.py`](../brain/heron_evolve.py) |
 > | Background Worker System | A queue and a scheduler nothing feeds; one host subagent that runs in the background | [Group AG](needs-checking/group-ag.md) |
+>
+> **2026-11-20:** *every file that claims one is DRAFT* no longer holds whole: [`brain/heron_rollback.py`](../brain/heron_rollback.py) (`HERON-REVIT-RBK-036`) is `DEPRECATED`, retired on 2026-11-16 under [D-157](decisions/D-157.md) ([row 5b-1747](fragment-issues/row-5b-1747.md)), and `python tools/agent-count.py` still counts its row built, because the count has no retired state ([row 5b-1840](fragment-issues/row-5b-1840.md)).
 
 ## 83. Most Important Architectural Rule
 

@@ -469,7 +469,12 @@ def main():
     # raised when an exception escapes from anywhere, so only the
     # writes-aware default can answer it correctly on both paths.
     DELIBERATELY_OPEN = set(["handler_failed"])
-    missing = sorted(produced - set(fa._KNOWN) - DELIBERATELY_OPEN)
+    # Classified means the server's own `recognised` - its add-in table or
+    # the table of answers that arrived unusable. Since 2026-11-20 the BRIDGE
+    # itself sends `reply_too_large` (5b row 1167), a code that table already
+    # held for the client's own refusal, and _KNOWN alone did not see it.
+    known = set(fa._KNOWN) | set(getattr(fa, "_ARRIVED_UNUSABLE", None) or {})
+    missing = sorted(produced - known - DELIBERATELY_OPEN)
     check(not missing,
           "every one of them is classified, or named as deliberately open%s"
           % ("" if not missing else " - MISSING: " + ", ".join(missing)))

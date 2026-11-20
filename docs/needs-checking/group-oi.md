@@ -7,6 +7,8 @@
 
 ## Group OI - a night on Revit 2024 with the owner asleep: DRAFT cards proved on a scratch project, everything they need made inside the rolled-back run (2026-11-16)
 
+**Tracked as GitHub issue [#1040](https://github.com/Ajmalpshaik/Heron-AI/issues/1040) since 2026-11-19** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 The owner's night rules ([fragment-proving skill, *A night run*](../../.claude/skills/fragment-proving/SKILL.md))
 on the 84 DRAFT cards of main f86a5843 - 524 PROVEN, 6 STALE by `check-signatures.py`. Each card was read
 against its own register rows first; the ones a fresh project can be given in a rolled-back run are the

@@ -20,7 +20,7 @@
 > |---|---|
 > | [Part 1](00-master-specification.md) | The platform and its organisation (76 §) |
 > | [Part 2](00b-master-specification-agent-os.md) | The Agent Operating System and self-evolution (84 §) |
-> | **Part 3 — this document** | **The consolidated baseline.** Supersedes nothing; unifies both. |
+> | **Part 3 — this document** | **The consolidated baseline.** ~~Supersedes nothing; unifies both.~~ **Unifies both; supersedes only Part 1's ten Golden Rules, with its fifteen ([D-12](DECISIONS.md)).** |
 > | [Part 4](00d-additional-requirements.md) | Additional requirements — the Kernel, Workflow Engine, Constitution and 30 mandatory components |
 >
 > **This part is authoritative on the first fifteen Golden Rules** — it replaces Part 1's ten rules with
@@ -33,10 +33,17 @@
 > fifteen are the first fifteen of today's list; count them with
 > `grep -c '^### [0-9]*\. ' docs/14-golden-rules.md`. The note under §78 has the difference.
 >
+> **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)), **2026-11-20:**
+> the table's *Supersedes nothing* became what [D-12](DECISIONS.md) (Accepted) adopted - where the parts
+> differ, Part 3 governs the rule set, so its fifteen rules replaced Part 1's ten, as the paragraph under
+> the table and §78 itself say; for everything else Parts 1 and 2 stay the detailed reference.
+>
 > Verbatim record. Do not edit to "fix" it — record changes as decisions in [DECISIONS.md](DECISIONS.md).
 > The one correction a decision allows so far is [D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)'s:
 > a wrong fact, or words an accepted decision has settled, corrected in place with the original kept
 > beside it, ~~struck through~~, and a wrong diagram folded under *Original diagram, as written*.
+>
+> **Read whole, line by line, against the tree on 2026-11-20 at commit `d5640f27`** ([row 5b-1867](fragment-issues/row-5b-1867.md), issue [#1072](https://github.com/Ajmalpshaik/Heron-AI/issues/1072)). Corrected in place that day: only this banner's table row for Part 3, whose *Supersedes nothing* D-12 had settled otherwise; the stale notes under the project's fields and under §16, §31, §33, §41, §49, §57 and §70 each gained a dated line, and any sentence found to be the owner's choice was left as written and put to him.
 
 | Field | Value |
 |---|---|
@@ -61,6 +68,12 @@
 > | Generated code | C#, compiled at run time inside Revit's process | [D-04](DECISIONS.md), [D-28](DECISIONS.md) |
 > | Distribution | Apache 2.0, free and open source on public GitHub. One release, [v0.1.0](https://github.com/Ajmalpshaik/Heron-AI/releases/tag/v0.1.0), published 2026-10-08 for testing, **unsigned** | [D-08](DECISIONS.md), [D-07](DECISIONS.md), [Group AC](needs-checking/group-ac.md) |
 > | Secondary user: Administrator | No user management and no admin role. The owner's **Admin** and **Publish** switches, in Heron's Settings window since [D-150](decisions/D-150.md); for shared company knowledge, whoever reviews the pull requests | [D-106](DECISIONS.md), [D-41](DECISIONS.md) |
+>
+> **2026-11-20:** v0.1.0 is no longer the only release - [v0.2.0](https://github.com/Ajmalpshaik/Heron-AI/releases/tag/v0.2.0)
+> was published on 2026-11-16, unsigned as well (its Setup is `HeronSetup-0.2.0-unsigned.exe`):
+> `git ls-remote --tags origin` lists `v0.2.0` beside `v0.1.0`, and `gh api repos/Ajmalpshaik/Heron-AI/releases`
+> shows both. A release says plainly that it is unsigned, and is signed before Heron is given to anyone
+> outside ([D-173](decisions/D-173.md), amending [D-91](DECISIONS.md)).
 
 ---
 
@@ -470,7 +483,10 @@ Historical information should remain available.
 > still needs the agent — is `DRAFT` and reached by no conversation. No source header marks an agent
 > `DEPRECATED` or `ARCHIVED`, the two retired states the status ladder has (`RETIRED` in
 > `brain/heron_deployment.py`); `ACTIVE`, `REVIEW`, `REPLACEMENT` and `MIGRATION` are not states anything
-> records.
+> records. **2026-11-20:** one header does now - `brain/heron_rollback.py`, the Session Rollback Agent
+> `HERON-REVIT-RBK-036`, says `DEPRECATED` since 2026-11-16, retired by [D-157](decisions/D-157.md) and
+> kept as a record, never deleted; `grep -rlE 'Heron-Status: *(DEPRECATED|ARCHIVED)' brain mcp platform revit tools`
+> finds it.
 >
 > **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
 > one lifecycle vocabulary is the owner's choice, still open — [D-14](DECISIONS.md) is Proposed — and it
@@ -727,7 +743,10 @@ The semantic capability remains the same.
 > Every fragment lists the releases it claims in its `revit:` line, and CI compiles each one for every
 > release it claims (`tools/check-fragments-compile.py`). A compile is not a run: Heron has loaded in a
 > real Revit 2020, 2024, 2026 and 2027, and on 2026 no fragment has run yet
-> ([16 §6](16-version-support-strategy.md), [Group EQ](needs-checking/group-eq.md)).
+> ([16 §6](16-version-support-strategy.md), [Group EQ](needs-checking/group-eq.md)). **2026-11-20:** a
+> fragment has run on 2026 since - `attach-walls`' proof, signed on 2026-11-07, names a Revit 2026 model,
+> as the first command at the top of [Group EQ](needs-checking/group-eq.md) derives; [Group GW](needs-checking/group-gw.md)
+> still records its repair for that release as not run in Revit.
 >
 > **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
 > the example's break moved from 2023 to 2024. Revit 2023 changed nothing Heron compiles around: the
@@ -823,6 +842,9 @@ A job the library cannot do yet
 > | Build · Unit Test · Integration Test | CI on every pull request: every C# project on every release 2020 to 2027 (`tools/check-compile.py`), every fragment for every release it claims, every test suite with *not run* kept apart from *failed* (`.github/workflows/gates.yml`) |
 > | Revit Test · Regression Test · QA · Approval | One proof per fragment on a named real model, a negative case included, signed by a person; another release is an entry of `proof.releases` ([D-30](DECISIONS.md), [D-131](DECISIONS.md)) |
 > | Deployment | None for a fragment: its C# is compiled at run time inside Revit, so it ships with the library ([D-28](DECISIONS.md)). The add-in ships in a release built by `.github/workflows/release.yml` — v0.1.0, unsigned ([Group AC](needs-checking/group-ac.md)) |
+>
+> **2026-11-20:** v0.2.0 followed on 2026-11-16, unsigned too - the dated line under this file's opening
+> *As built* table, of what the project's fields became, has the evidence.
 
 ## 34. Code Generation Agent
 
@@ -915,7 +937,10 @@ The Naming Agent determines the correct name from: domain · capability · purpo
 > **As built (2026-10-18):** `brain/heron_naming.py` generates a name and validates it with the same rule
 > — six parts, lower case, hyphenated, the version last ([D-79](DECISIONS.md)). It is `DRAFT`, and no
 > conversation reaches it. A fragment's folder is its `id`, and the id, not the file name, is its identity
-> (§26).
+> (§26). **2026-11-20:** the folder is not the `id` - it is named for the fragment's capability, lower
+> case and hyphenated (`folder_for` in `brain/heron_fragment.py`, which reports a misfiled one), so
+> `brain/fragments/dimension-mep-runs/` holds `id: FRG-VIEW-032`, and no card in `brain/fragments/` has
+> a folder named as its `id`; the id, not the folder, is still the identity.
 
 ## 42. File Validation
 
@@ -1054,7 +1079,9 @@ The user receives: *"A new update is available. Update now?"*
 > Nothing detects agent, skill or fragment updates on its own — they ship inside a release, and only
 > [v0.1.0](https://github.com/Ajmalpshaik/Heron-AI/releases/tag/v0.1.0) has been published
 > ([Group AC](needs-checking/group-ac.md)). The update rules are [07 §7](07-installation-and-update.md):
-> never without consent.
+> never without consent. **2026-11-20:** [v0.2.0](https://github.com/Ajmalpshaik/Heron-AI/releases/tag/v0.2.0)
+> has been published since, on 2026-11-16 - `git ls-remote --tags origin` lists it beside v0.1.0 - so
+> v0.1.0 is no longer the only one.
 
 ## 50. Update Safety
 
@@ -1227,6 +1254,11 @@ READ / ANALYZE / SUGGEST / EXECUTE / MODIFY / PUBLISH / ADMIN
 > kept from a chat ([D-117](DECISIONS.md)); a `DRAFT` gets one try, always asked ([D-119](DECISIONS.md)).
 > The switches are the owner's to turn - on the ribbon then, in Heron's Settings window since
 > [D-150](decisions/D-150.md) - so there are no modes to grant ([22 §3](22-users-modes-and-extensibility.md)).
+> **2026-11-20:** `write.enabled`, `publish.enabled` and `admin.enabled` are no longer settings in a file.
+> Since [D-166](decisions/D-166.md) (Accepted; built 2026-11-16, not yet run in Revit -
+> [Group OB](needs-checking/group-ob.md)) Changes, Admin and Publish are held in Revit's memory, set only
+> by a click in Heron's Settings window and off every time Revit starts, and a PC's administrator can hold
+> any of them off; `HeronConfig.cs` no longer declares the three keys. What each level needs is unchanged.
 
 ## 58. Audit System
 
@@ -1379,7 +1411,10 @@ Controls: users **(not built - deferred, D-41)** · permissions · standards · 
 > administrator would control is the owner's: the **Admin** and **Publish** switches (in Heron's Settings window since [D-150](decisions/D-150.md)), which
 > only the owner turns on ([D-106](DECISIONS.md)), and `heron.config` on the PC. A company's standards are
 > asked once per project and kept for it ([D-111](DECISIONS.md)); `brain/heron_company.py` cites a
-> company standard and is `DRAFT`.
+> company standard and is `DRAFT`. **2026-11-20:** since [D-166](decisions/D-166.md) (Accepted; built
+> 2026-11-16, not yet run in Revit - [Group OB](needs-checking/group-ob.md)) a PC's administrator can hold
+> Changes, Admin or Publish off with a Windows policy, and the three switches are no longer in
+> `heron.config`: they are held in Revit's memory and off whenever Revit starts.
 >
 > **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
 > *users* is marked deferred, not struck — [D-41](DECISIONS.md) keeps Heron single-user now and leaves a

@@ -64,6 +64,12 @@ purpose: >
   a corner at every point of the roof's underside, to 1 mm; if not, the
   profile is removed again and the wall is as it was.
 
+  **WHEN A ROOF WILL NOT JOIN.** Revit's API has no Join/Unjoin Roof on any
+  release, so no tool joins one roof to another (the `join-roofs` method).
+  Where the walls under the roof are what has to meet it, this is the other
+  way - offered, and run only on a yes. One roof joined to another is done by
+  hand: Modify > Join/Unjoin Roof.
+
 contract:
   needs:
     - name: doc
@@ -186,9 +192,24 @@ compatibility-note: >
 #   "reset the wall profile"             -> NOT HERE, and nowhere yet: by hand
 #                                           in Revit, Reset Profile
 #   "slope this roof"                    -> SLOPE_ROOF_EDGES
+#   "join the main roof to the wing roof"
+#                                        -> here, with the join-roofs method
+#                                           named beside it (row 5b-1671):
+#                                           Revit's API has no Join/Unjoin
+#                                           Roof, this is the other way for the
+#                                           walls, and roof to roof is done by
+#                                           hand. tests/test_brain_reachable.py
 
 utterances:
   - make the tops of these walls follow the roof above
   - close the gable triangle above these walls
   - edit the wall profile to follow the gable
   - shape the wall tops to the underside of the roof
+  # ADDED 2026-11-20, row 5b-1671. The re-ranker reads a card's identity and
+  # first eight utterances (D-134), not its purpose, so "join the main roof to
+  # the wing roof" went to ATTACH_WALLS and "join this roof to that roof" to
+  # CREATE_EDGE_SWEEPS on lexical+rerank and model+rerank. These words are
+  # this card's own job at a roof that will not join. Not the roof-join
+  # sentence itself: an exact match on this PROVEN write may run unasked and
+  # names no method, where the owner wants Heron to ask first.
+  - the roofs will not join, so make the walls meet the roof instead

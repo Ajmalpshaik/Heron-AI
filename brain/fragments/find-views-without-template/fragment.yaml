@@ -7,7 +7,7 @@ heron-layer: brain
 id: FRG-QA-006
 semantic-identity: "which views on sheets have no view template holding them to the standard"
 kind: filter
-domain: revit.quality
+domain: revit.qa
 capability: FIND_VIEWS_WITHOUT_TEMPLATE
 version: 1
 source: OFFICIAL

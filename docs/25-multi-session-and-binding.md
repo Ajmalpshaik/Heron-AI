@@ -403,7 +403,13 @@ the lease, or an interrupted transaction could be stranded.
 > finishing pipe, the newcomer and the next listener can exist together. Measured afterwards on the
 > same stand-in: every one of the 30 came back. **What is left:** a request that reaches an idle pipe in the instant
 > it is displaced is not run at all, and the client still says it cannot tell - safe, because nothing
-> ran, and rare (1 or 2 of 20 when twenty connections arrive in the same instant).
+> ran. **It is not rare under a burst, and the rate this line gave was wrong:** it said *1 or 2 of 20*
+> when twenty connections arrive in the same instant, measured on the Linux stand-in. On Windows, on
+> 2026-10-18 ([row 5b-1095](fragment-issues/section-5b-rows-1076-1100.md)), twenty in one instant
+> under one client lost **2 to 7 answers in every 20** - closed with no answer, or refused a pipe
+> instance - and once one call hung for the full 60 s and the next rounds could not connect at all.
+> That hang is not reproduced or explained; row 5b-1095 owns it. Whether a request that came back with
+> no answer ran at all cannot be seen from the client.
 
 **[NOTE]** The addendum note makes the case for a lease stronger than safety alone:
 
