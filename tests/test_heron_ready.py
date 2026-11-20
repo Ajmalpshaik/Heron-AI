@@ -80,11 +80,32 @@ OFF_WINDOWS = {"yaml": "pip install --user -r requirements.txt",
 
 FAILURES = []
 
+#: The tool's last run - its arguments, exit code and whole output - so a
+#: check that fails can print what the tool said beside it. Row 5b-420: this
+#: suite failed three times in sixteen on the owner's laptop, at two steps,
+#: and printed only its own verdicts, so the cause was never seen.
+LAST = {"args": None, "code": None, "out": "", "shown": True}
+
+
+def said_by_tool():
+    """The tool's last output, indented, the first time a check after that
+    run fails - and '' after, so a section of failed checks prints it once."""
+    if LAST["shown"] or LAST["args"] is None:
+        return ""
+    LAST["shown"] = True
+    lines = (LAST["out"] or "(it printed nothing)").rstrip().splitlines()
+    return "\n".join(["        the tool said (heron-ready.py %s, exit %s):"
+                      % (" ".join(LAST["args"]) or "with no arguments", LAST["code"])]
+                     + ["        | " + line for line in lines])
+
 
 def check(condition, what):
     print("  %-5s %s" % ("ok" if condition else "FAIL", what))
     if not condition:
         FAILURES.append(what)
+        said = said_by_tool()
+        if said:
+            print(said)
 
 
 def run(knowledge, *args, **env):
@@ -94,7 +115,9 @@ def run(knowledge, *args, **env):
     done = subprocess.run([sys.executable, TOOL] + list(args), cwd=ROOT,
                           env=environ, stdout=subprocess.PIPE,
                           stderr=subprocess.STDOUT, timeout=600)
-    return done.returncode, done.stdout.decode("utf-8", "replace")
+    said = done.stdout.decode("utf-8", "replace")
+    LAST.update(args=list(args), code=done.returncode, out=said, shown=False)
+    return done.returncode, said
 
 
 def load_tool():
@@ -370,6 +393,31 @@ def main():
         check(any("PyYAML is missing" in item for item in items),
               "and each thing to fix is a '  - ' line under it, as the installer reads it: %s"
               % (items or "none"))
+
+        print()
+        print("1a. A failed check prints what the tool said beside it (row 5b-420)")
+        planted = "a check planted to fail, to see what it prints"
+        LAST["shown"] = False
+        shown = io.StringIO()
+        real_out, sys.stdout = sys.stdout, shown
+        try:
+            check(False, planted)
+        finally:
+            sys.stdout = real_out
+        while planted in FAILURES:
+            FAILURES.remove(planted)
+        check("NOT READY" in shown.getvalue() and "the tool said" in shown.getvalue(),
+              "a failed check is followed by the tool's own output from the run before it")
+        shown = io.StringIO()
+        real_out, sys.stdout = sys.stdout, shown
+        try:
+            check(False, planted)
+        finally:
+            sys.stdout = real_out
+        while planted in FAILURES:
+            FAILURES.remove(planted)
+        check("NOT READY" not in shown.getvalue(),
+              "and only once a run, so a section of failed checks is still readable")
 
         print()
         print("2. The exit code follows the FIX lines")

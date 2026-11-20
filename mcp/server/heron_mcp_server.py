@@ -5423,8 +5423,13 @@ def _contract_lines(capability, separator=True, notes=True):
         sys.path.insert(0, brain_path)
     try:
         import heron_fragment as HF
-    except Exception:
-        return []
+    except Exception as why:
+        # SAID, NOT SWALLOWED (row 5b-110). An empty list here read as "this
+        # capability asks for nothing" - the plausible zero - while the
+        # unreadable contract above already gets a sentence.
+        return ["", "  What it needs could not be listed - Heron's fragment "
+                    "reader would not load (%s: %s) - so nothing is listed "
+                    "here rather than listed short." % (type(why).__name__, why)]
 
     # THE NAME GOES WITH THE TYPE. A plain `Element` is a type to build with
     # or one particular element, and only the need's name says which - asked

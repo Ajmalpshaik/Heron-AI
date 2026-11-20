@@ -72,6 +72,7 @@ import hashlib
 import io
 import json
 import os
+import sys
 import time
 
 import heron_failure
@@ -98,8 +99,15 @@ def checkpoint_root():
     override = os.environ.get("HERON_CHECKPOINTS")
     if override:
         return override
-    base = os.environ.get("LOCALAPPDATA") or os.environ.get("TMPDIR") or "/tmp"
-    return os.path.join(base, "Heron", "checkpoints")
+    # UNDER HeronPaths.Derived, ASKED OF THE BRIDGE CLIENT (row 5b-182). This
+    # read %LOCALAPPDATA% itself, and off Windows fell back to $TMPDIR or /tmp,
+    # a folder no path owner knows; the client names the folder the add-in's
+    # .NET does on every system - %LOCALAPPDATA% on Windows, as before.
+    client = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "client")
+    if client not in sys.path:
+        sys.path.insert(0, client)
+    import heron_bridge_client as BRIDGE
+    return os.path.join(BRIDGE.local_app_data(), "Heron", "checkpoints")
 
 
 def _hash(value):

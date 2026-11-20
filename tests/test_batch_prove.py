@@ -76,6 +76,20 @@ BP = _load(os.path.join(ROOT, "tools", "batch-prove.py"), "batch_prove")
 REAL_CONNECTED_RELEASE = getattr(BP, "connected_release", None)
 BP.connected_release = lambda session=None: None
 
+# NOR DOES ANY CASE HAND MODELS BACK TO IT (row 5b-1510). `main` ends every
+# real run with `free_models`, which asks BRIDGE.discover() of the real
+# address book - a ping to every Revit listed there, a stale entry pruned -
+# and sends `release_models` to each live one. So for every case it is a
+# stand-in that writes down what it was asked; a case that tests the
+# hand-back gives its own. And the guard tests/test_mcp_serves.py uses
+# watches this process from here, refusing a pipe open, so a case that finds
+# another way to the Revit on this PC is a FAIL at the end, not a ping.
+sys.path.insert(0, os.path.join(ROOT, "tests", "support"))
+import live_revit_guard as LIVE_GUARD                               # noqa: E402
+WATCH = LIVE_GUARD.Guard.around(BP.BRIDGE).install()
+HANDED_BACK = []
+BP.free_models = lambda conversation, session=None: HANDED_BACK.append(conversation)
+
 FAILURES = []
 
 
@@ -207,6 +221,37 @@ def test_a_flag_that_flips_is_evidence_and_one_that_does_not_is_not():
                                    negative={"ran": "false", "found": "0"}), booked)
     check(verdict == BP.POSITIVE_EMPTY,
           "an accounting flag flipping proves nothing (%s)" % verdict)
+
+
+def test_a_thing_made_is_evidence_when_it_appears():
+    print("A creator's one result is evidence when it is there, then gone (5b-1114)")
+
+    # create-area-plan as measured 2026-10-18 on Revit 2020: its one declared
+    # result is the view it made, rendered as a type name. `positive_worked`
+    # reads that as UNREADABLE; `accept` rescued it with `_result_appeared`,
+    # and this judge did not, so a probe read POSITIVE UNREADABLE.
+    frag = FakeFragment("create-area-plan", [
+        {"name": "created", "type": "View"},
+        {"name": "findings", "type": "IList<string>"},
+    ])
+    made = {"created": "ViewPlan", "findings": "1 item(s) [made 'Area Plan 1']"}
+    none = {"created": "(null)", "findings": "1 item(s) [no area scheme named 'X']"}
+    verdict, why = BP.judge(record(positive=made, negative=none), frag)
+    check(verdict == BP.PASS,
+          "a view made in the positive and none in the negative is the contrast D-30 asks for (%s)"
+          % verdict)
+
+    # The same rescue never fires on a negative that did not run: a refused
+    # leg gives nothing back, which is not "gone".
+    verdict, why = BP.judge(record(positive=made, negative_error="refused"), frag)
+    check(verdict != BP.PASS,
+          "a refused negative is not a contrast (%s)" % verdict)
+
+    # Nor on the thing being there in both legs - a working object, or a
+    # creator that answers the same whatever it is given.
+    verdict, why = BP.judge(record(positive=made, negative=made), frag)
+    check(verdict != BP.PASS,
+          "the same thing in both legs is not evidence (%s)" % verdict)
 
 
 def test_a_sentence_result_is_read_as_found_or_nothing():
@@ -1425,6 +1470,7 @@ def test_a_card_is_not_sent_to_a_release_it_leaves_out():
 def main():
     for test in (test_unreadable_is_not_evidence_of_work,
                  test_a_flag_that_flips_is_evidence_and_one_that_does_not_is_not,
+                 test_a_thing_made_is_evidence_when_it_appears,
                  test_a_sentence_result_is_read_as_found_or_nothing,
                  test_counts_and_ids_read_as_they_did,
                  test_a_work_counter_is_not_a_finding,
@@ -1452,6 +1498,15 @@ def main():
         print("")
 
     shutil.rmtree(CARDS, ignore_errors=True)
+
+    # ROW 5b-1510, ASKED LAST: every case has run by now.
+    print("No case reached the Revit on this PC (row 5b-1510)")
+    touched = WATCH.touched()
+    check(not touched, "nothing listed the real discovery folder or opened a Revit's pipe (%s)"
+          % LIVE_GUARD.summary(touched))
+    check(len(HANDED_BACK) > 0,
+          "and every real run's hand-back went to the stand-in (%d)" % len(HANDED_BACK))
+    print("")
 
     if FAILURES:
         print("%d failure(s):" % len(FAILURES))

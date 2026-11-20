@@ -50,7 +50,10 @@ client's file is a breach, not a bug (docs/10 s2, Golden Rule 5).
 THIS IS DATA, NOT AN INDEX
 --------------------------
 The .db files beside it are derived and safe to delete. This file is not: it
-is what the modeller said. So it is written whole to a temporary file and
+is what was GIVEN IN THE CHAT for this project - the modeller's word, or a
+value the AI filled in, which a server cannot tell apart, so each entry says
+`given: in the chat` and no more (row 5b-1162), and the reply that kept it
+shows it while it is in front of the modeller. So it is written whole to a temporary file and
 moved into place; a file that cannot be read is SET ASIDE under a new name and
 kept, never overwritten and never deleted; and a changed answer REPLACES the
 old one and RECORDS the replacement (docs/10 s276), so the record of who said
@@ -70,6 +73,12 @@ sys.path.insert(0, os.path.join(ROOT, "brain"))
 SUFFIXES = {"hvac": ".hvac.json", "fire": ".fire.json"}
 SUFFIX = SUFFIXES["hvac"]
 FORMAT = 1
+
+#: Where a kept value came from, as far as Heron can know it (row 5b-1162).
+#: Every value here arrives in a tool call's inputs, which the AI fills: it may
+#: be what the modeller typed or what the AI chose, and the record says only
+#: what is known.
+GIVEN = "in the chat"
 
 
 def _scope():
@@ -177,8 +186,9 @@ def record(project_key, given, project_name=None, when=None, discipline="hvac"):
         if old is not None:
             data.setdefault("history", []).append(
                 {"name": name, "value": old.get("value"), "said": old.get("recorded"),
+                 "given": old.get("given", GIVEN),
                  "replaced_by": value, "replaced": when})
-        data["standards"][name] = {"value": value, "recorded": when}
+        data["standards"][name] = {"value": value, "recorded": when, "given": GIVEN}
         changes.append((name, None if old is None else old.get("value"), value))
     if project_name and data.get("project_name") != project_name:
         data["project_name"] = project_name

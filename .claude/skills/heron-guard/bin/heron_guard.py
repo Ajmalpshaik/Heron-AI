@@ -211,6 +211,34 @@ def top_folder(file_path, root):
     return first or None
 
 
+def checkout_of(file_path, root):
+    """The checkout FILE_PATH belongs to: the nearest folder above it, inside
+    ROOT, that holds its own `.git` - a FILE in a linked worktree, a FOLDER in
+    a clone - or ROOT when none does.
+
+    FRAGMENT-ISSUES row 5b-1611. A session in `.claude/worktrees/<name>/` runs
+    THIS copy, the main checkout's, and every path in its worktree measured
+    from here began `.claude` - so an edit to its revit/ was refused as the
+    namespace "in .claude". The rule is git's own, the one
+    brain/heron_checkout.py's `is_another` reads; restated here because a
+    deny-tier hook imports nothing it can fail on.
+    """
+    try:
+        here = os.path.dirname(os.path.abspath(file_path))
+        if os.path.commonpath([here, root]) != root:
+            return root
+    except (ValueError, TypeError):
+        return root
+    while here != root:
+        if os.path.lexists(os.path.join(here, ".git")):
+            return here
+        parent = os.path.dirname(here)
+        if parent == here:
+            break
+        here = parent
+    return root
+
+
 def check(payload, root):
     """(verdict, reason). The whole rule, so a test can call it directly."""
     tool_input = payload.get("tool_input") or {}
@@ -219,7 +247,7 @@ def check(payload, root):
         # Not a file-editing tool. Nothing to say about it.
         return "allow", ""
 
-    part = top_folder(file_path, root)
+    part = top_folder(file_path, checkout_of(file_path, root))
     if part is None or part in ALLOWED:
         return "allow", ""
 

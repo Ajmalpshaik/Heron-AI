@@ -146,9 +146,30 @@ def python_imports(text):
 # building its own path is how two parts of the system quietly disagree about
 # where something lives - which happened once, in the add-in's log path, and
 # is the reason this rule exists.
-SPECIAL_FOLDER = re.compile(r'GetFolderPath|SpecialFolder[.]|environ.\[.(APPDATA|LOCALAPPDATA)')
+#
+# READ WITH `.get` TOO, SINCE ROW 5b-182. The pattern saw `environ["APPDATA"]`
+# only, and every Python file reads the variable with `.get`, so five files
+# built a Heron folder from it and this passed. Each was given an owner or
+# made to ask one (2026-11-20): brain/heron_paths.py is the Python path agent
+# (HERON-WSP-PTH-007, HeronPaths' own id) and resolves the brain's folders;
+# mcp/client/heron_config.py names HeronPaths.Config for the client side, and
+# cannot ask the bridge client, which imports it at its own import; the audit
+# reader in brain/ asks heron_paths, and the workflow's checkpoints ask the
+# bridge client. The old third alternative, `environ.\[.(APPDATA`, wants a
+# character between `environ` and `[`, so it never matched
+# `os.environ["APPDATA"]` either; the new one reads both spellings.
+#
+# A SUITE IS ASKED ONLY THE .NET HALF. Thirteen suites set or read %APPDATA%
+# or %LOCALAPPDATA% to plant a scratch folder, which is not building a Heron
+# path - so in tests/ only GetFolderPath and SpecialFolder count, as they
+# always did. tools/ stay exempt as before.
+SPECIAL_FOLDER = re.compile(r'GetFolderPath|SpecialFolder[.]|environ.\[.(APPDATA|LOCALAPPDATA)'
+                            r'|(?:environ|env)(?:\.get\(\s*|\[\s*)["\'](?:APPDATA|LOCALAPPDATA)["\']')
+SPECIAL_FOLDER_IN_TESTS = re.compile(r'GetFolderPath|SpecialFolder[.]')
 PATH_OWNERS = ("platform/Heron.Core/HeronPaths.cs",
-               "mcp/client/heron_bridge_client.py")
+               "mcp/client/heron_bridge_client.py",
+               "mcp/client/heron_config.py",
+               "brain/heron_paths.py")
 
 CODE_EXT = (".cs", ".py", ".ps1", ".csproj")
 # "build" is generated output owned by tools/check-fragments-compile.py, and it is
@@ -290,8 +311,9 @@ def main():
             # The adapter boundary. tools/ is exempt: scripts talk ABOUT the
             # code rather than being it - and this very checker contains the
             # pattern, which it duly flagged on its first run.
+            rule = SPECIAL_FOLDER_IN_TESTS if part == "tests" else SPECIAL_FOLDER
             if (path not in PATH_OWNERS and part != "tools"
-                    and SPECIAL_FOLDER.search(text)):
+                    and rule.search(text)):
                 problems.append("%s builds its own path - only HeronPaths may resolve a "
                                 "special folder (docs/06 section 2)" % path)
 
