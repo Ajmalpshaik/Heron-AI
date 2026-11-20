@@ -205,3 +205,11 @@ utterances:
   - close the gable triangle above these walls
   - edit the wall profile to follow the gable
   - shape the wall tops to the underside of the roof
+  # ADDED 2026-11-20, row 5b-1671. The re-ranker reads a card's identity and
+  # first eight utterances (D-134), not its purpose, so "join the main roof to
+  # the wing roof" went to ATTACH_WALLS and "join this roof to that roof" to
+  # CREATE_EDGE_SWEEPS on lexical+rerank and model+rerank. These words are
+  # this card's own job at a roof that will not join. Not the roof-join
+  # sentence itself: an exact match on this PROVEN write may run unasked and
+  # names no method, where the owner wants Heron to ask first.
+  - the roofs will not join, so make the walls meet the roof instead
