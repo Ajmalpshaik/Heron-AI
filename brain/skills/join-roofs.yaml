@@ -26,7 +26,7 @@ purpose: >
   Join Geometry - another command, which extends nothing. Revit's own
   Join/Unjoin Roof command can be started from an add-in, but it then waits
   for the modeller to pick the roof edge and the face, so an add-in cannot
-  finish it. No Heron tool does this job. CREATE_EXTRUSION_ROOF and
+  finish it. No Heron tool makes Revit's own join. CREATE_EXTRUSION_ROOF and
   CREATE_FLOOR are not it: each makes a NEW roof.
 
   0. SAY IT FIRST, with the release revit_health reports: "Revit <release>'s
@@ -37,17 +37,26 @@ purpose: >
      it: SHAPE_WALL_TOPS_TO_ROOF edits each wall's profile so its top follows
      the underside of the roof above, measured along the wall (Revit 2022
      on); ATTACH_WALLS attaches the wall tops to the roof as Attach Top/Base
-     does (Revit 2025 on). Name what it will change and ASK FIRST - run it
-     only on the modeller's yes for this one operation, through revit_change.
-  2. WHEN NO OTHER WAY GETS THERE - one roof meeting another roof is that
-     case today - say so, and say the job is done by hand in Revit: Modify >
-     Join/Unjoin Roof, then pick the edge of the roof to extend and the face
-     it is to meet. Never offer a tool that makes a new roof in its place.
+     does (Revit 2025 on). Where ONE ROOF has to meet ANOTHER and the roof
+     to extend is a roof by extrusion: EXTEND_ROOF_TO_ROOF casts rays from
+     its end to the other roof in a 3D view, says how far the end has to go,
+     and changes nothing until it is asked again with a limit (maxExtendMm);
+     then it moves the end by its Extrusion Start or End and reads it back.
+     After it, JOIN_GEOMETRY on the two roofs cleans where the end runs into
+     the other roof. Name what each will change and ASK FIRST - run it only
+     on the modeller's yes for this one operation, through revit_change.
+  2. WHEN NO OTHER WAY GETS THERE - a roof by footprint that has to reach
+     another roof is that case: its edges are its sketch, and the API gives
+     no way to edit it - say so, and say the job is done by hand in Revit:
+     Modify > Join/Unjoin Roof, then pick the edge of the roof to extend and
+     the face it is to meet. Never offer a tool that makes a new roof in its
+     place.
 
-  A ROOF-TO-ROOF TOOL IS WANTED AND NOT BUILT: measure with a ray where one
-  roof's edge would meet the other roof, work out how far to extend it, and
-  extend it there. Recorded as row 5b-1877. Until it exists, step 2 is the
-  answer for roof to roof.
+  EXTEND_ROOF_TO_ROOF is the owner's other way (row 5b-1877, issue #1087):
+  measure with a ray where one roof's end would meet the other roof, work out
+  how far to extend it, and extend it there. It is DRAFT until its Revit run
+  (NEEDS-CHECKING Group OY). It does not stay joined: if the other roof
+  moves, the end does not follow.
 
 # The words a modeller says. Kept to the roof join itself: a lookup names a
 # method by the words it shares with the request, beside an answer whose
@@ -57,17 +66,21 @@ utterances:
   - join this roof to the other roof
   - join/unjoin roof
 
-# CAPABILITIES, never fragment ids - the other ways step 1 offers. Nothing in
-# the library joins a roof to a roof, so nothing for step 2 is listed.
+# CAPABILITIES, never fragment ids - the other ways step 1 offers: the walls
+# to the roof, and a roof by extrusion's end to the other roof, then the two
+# joined. Step 2 is by hand, so nothing for it is listed.
 needs:
   - SHAPE_WALL_TOPS_TO_ROOF
   - ATTACH_WALLS
+  - EXTEND_ROOF_TO_ROOF
+  - JOIN_GEOMETRY
 
 # What must be true BEFORE it runs, so it fails early with something
 # useful instead of deep inside a transaction (docs/09 s2).
 preconditions:
   - the modeller has been told that Revit's API has no Join/Unjoin Roof on their release
   - for step 1, the modeller has said yes to the other way, by name, for this one operation
+  - for EXTEND_ROOF_TO_ROOF, a 3D view where the roof to be met shows, and the distance it measured said to the modeller before a limit is given
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 

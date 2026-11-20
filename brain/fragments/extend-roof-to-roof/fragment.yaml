@@ -1,0 +1,193 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-171
+semantic-identity: "lengthen a roof by extrusion: move its Extrusion Start or End until its end reaches a sloped roof face, measured with rays"
+
+# WHY IT EXISTS - comments, not `purpose`, because `purpose` is searched.
+#
+# FRAGMENT-ISSUES row 5b-1877, issue #1087, on the owner's answer in issue
+# #918 (2026-11-19) to row 5b-1671: Revit's API has no Join/Unjoin Roof on any
+# release from 2020 to 2027, and "there is a possible way, with a ray ... then
+# understand how much need to make up" - cast a ray from the end of one roof
+# to the other roof's face, work out how far the first has to extend, and
+# extend it there, offered and asked before it runs.
+#
+# WHAT THE API ALLOWS, read 2026-11-20 in RevitAPI.xml 2020.2.90, 2021.1.100,
+# 2022.1.80, 2023.1.90, 2024.3.60, 2025.4.60, 2026.4.10 and 2027.4.0: a roof by
+# EXTRUSION's extent is its Extrusion Start and End (EXTRUSION_START_PARAM,
+# EXTRUSION_END_PARAM) on every release, so its end can be moved. A roof by
+# FOOTPRINT exposes no sketch to edit on any release - FootPrintRoof has
+# GetProfiles and, per edge, Offset, Overhang, SlopeAngle, DefinesSlope and
+# ExtendIntoWall, and no SketchId; SketchEditScope (2022 on) edits a sketch
+# by its id, and Overhang is documented "only applicable when the
+# FootPrintRoof is created with Pick Walls". So a footprint roof is never the
+# one extended: the answer names the release and sends the join to Modify >
+# Join/Unjoin Roof. Extending a Pick-Walls footprint edge by its Overhang is
+# NOT BUILT - row 5b-1927.
+#
+# NOT A SECOND TOOL FOR A JOB ONE DOES (heron-duplicate-checker's method,
+# 2026-11-20). heron_retrieve.py on "join the main roof to the wing roof",
+# "extend this roof until it meets the other roof" and "extend the roof to the
+# face of the other roof" (a scratch store, model backend, Revit 2024)
+# answered SHAPE_WALL_TOPS_TO_ROOF, CREATE_EXTRUSION_ROOF, SLOPE_ROOF_EDGES,
+# CREATE_EDGE_SWEEPS, ATTACH_COLUMNS, PLACE_HOSTED_FAMILY and
+# TRIM_EXTEND_ELEMENTS. LOOK-ALIKES, each kept separate: SHAPE_WALL_TOPS_TO_ROOF
+# and ATTACH_WALLS bring WALLS to a roof; CREATE_EXTRUSION_ROOF makes a NEW
+# roof; SLOPE_ROOF_EDGES slopes a footprint roof's edges and refuses an
+# extrusion roof; TRIM_EXTEND_ELEMENTS squares two LINE-based elements to a
+# corner in plan; MOVE_TO_RAY_HIT moves a POINT-based element to a ray's hit.
+# No card's C# set EXTRUSION_START_PARAM or EXTRUSION_END_PARAM on a roof that
+# exists (grep, 2026-11-20). JOIN_GEOMETRY joins two elements and extends
+# nothing - it is the step after this one, offered, never run from here.
+#
+# NO "JOIN" IN ITS SEARCHED WORDS (measured 2026-11-20, main against this
+# change, all four backends): an identity and purpose naming Join/Unjoin Roof
+# took "join the main roof to the wing roof" and "join this roof to that
+# roof" from SHAPE_WALL_TOPS_TO_ROOF, which the owner's answer to row 5b-1671
+# pins. The join is explained here and in the join-roofs method, not searched.
+# The identity was then chosen by `score-routing.py --identities` on the
+# re-ranked shortlists (lexical+rerank and model+rerank): of five wordings,
+# only this one took neither of those two sentences. Its first utterance
+# then said "extend this ... until ... meets" and took check-routing's "extend
+# this line until it meets that one" from TRIM_EXTEND_ELEMENTS on lexical, so
+# it was reworded. MEASURED as it stands, a set of 21 frozen before the
+# join-roofs edit, main dea262c6 against this change, all four backends: no
+# answer moved the wrong way; the card's five sentences reach it on 4 of 5
+# (lexical and both re-ranked) and 3 of 5 (model); four roof questions reach
+# a write on main and here alike (row 5b-1929).
+#
+# ITS WORDS ARE THE SESSION'S, written from the owner's description in
+# #1087, not words he said to Heron - replace them with his when he asks for
+# it. "join the main roof to the wing roof" (Villa 2) is NOT declared here:
+# it keeps reaching SHAPE_WALL_TOPS_TO_ROOF with the join-roofs method named
+# first (tests/test_brain_reachable.py), and that method now offers this card
+# in its step 1 for a roof by extrusion.
+#
+# ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+kind: action
+domain: revit.elements
+capability: EXTEND_ROOF_TO_ROOF
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Extends a roof by extrusion until its end meets the face of another roof.
+  Two roofs are handed in. Rays are cast from every point of each end of the
+  roof by extrusion toward the other roof alone, in the 3D view given, and
+  the farthest hit is how far the end has to go. Without maxExtendMm it
+  measures, says the distance and changes nothing; with it, the end is moved
+  by changing Extrusion Start or End, when the distance is within the limit,
+  and read back off the roof's geometry. Where the end then runs into the
+  other roof, cleaning that overlap is offered as the next step. A roof by
+  footprint is never extended - Revit's API gives no way to edit its sketch -
+  and the answer names the release and says it is done by hand. Two ends
+  that both meet are not chosen between. The other roof must show in the 3D
+  view: rays only see what the view shows.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The 3D view the rays are cast in. It must show the roof to be met -
+    # not hidden, not cut away by a section box - or every ray misses and
+    # nothing changes.
+    - name: view3d
+      type: View3D
+      source: request
+    # The two roofs, FROM THE SELECTION: the roof by extrusion to extend and
+    # the roof its end is to meet. Anything else is named and left alone.
+    - name: elements
+      type: IList<Element>
+    # MILLIMETRES - the most the end may move. Left out, nothing is changed:
+    # the distance is measured and said, so the modeller can say yes with a
+    # limit.
+    - name: maxExtendMm
+      type: double
+      source: request
+      optional: true
+      absent: NaN
+    # Which of the two to extend, by its element id as Revit shows it - only
+    # needed when both are roofs by extrusion and the end of each meets the
+    # other. Left out, the one end that meets is the one extended.
+    - name: extend
+      type: string
+      source: request
+      optional: true
+      absent: ""
+  provides:
+    - name: extended
+      # 1 when a roof's end was moved and read back moved, else 0. Counted
+      # off the read-back, never off the write.
+      role: result
+      type: int
+    - name: extendedRoof
+      # The roof extended - invalid when nothing was.
+      role: result
+      type: ElementId
+    - name: needMm
+      # How far the end had to move to meet the other roof, in millimetres -
+      # the farthest ray hit. NaN when nothing met. The measurement, not a
+      # thing it changed (D-52).
+      role: accounting
+      type: double
+    - name: report
+      # ONE STRING: for each end of each roof by extrusion, how many of its
+      # points met the other roof and the nearest and farthest distance, and,
+      # when it extended, the parameter changed, its value before and after,
+      # and how far the end moved, read back.
+      role: accounting
+      type: string
+    - name: refused
+      # Why nothing was changed, in the modeller's words - Revit's own where
+      # Revit refused. Null when a roof was extended (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. ExtrusionRoof.GetProfile,
+  CurveElement.SketchPlane, SketchPlane.GetPlane, Plane.Normal and Origin,
+  the ReferenceIntersector(ElementId, FindReferenceTarget, View3D)
+  constructor, ReferenceIntersector.Find, ReferenceWithContext.Proximity,
+  Solid.Edges, Edge.Tessellate, GeometryInstance.GetInstanceGeometry,
+  Element.GroupId, Parameter.IsReadOnly and View.IsTemplate read the same
+  2020 through 2027 with tools/api-surface --members on 2026-11-20, and
+  BuiltInParameter EXTRUSION_START_PARAM and EXTRUSION_END_PARAM are in
+  RevitAPI.xml for every release. ExtrusionRoof has no ExtrusionStart or
+  ExtrusionEnd property on any release, so the extents are those two
+  parameters. Which way Revit measures them along the profile plane's normal
+  is not written anywhere, so it is read off the roof's geometry and the
+  write is read back. No release has an API to edit a footprint roof's
+  sketch, and the refusal says so with the release Revit reports.
+
+# ROUTING (2026-11-20) - the same rows are in SHAPE_WALL_TOPS_TO_ROOF and the
+# join-roofs method.
+#
+#   "join the main roof to the wing roof", "join this roof to that roof"
+#                                  -> SHAPE_WALL_TOPS_TO_ROOF with the
+#                                     join-roofs method named first (row
+#                                     5b-1671); its step 1 offers THIS for a
+#                                     roof by extrusion, asked first
+#   "extend this roof until it meets the other roof"
+#                                  -> here
+#   "attach these walls to the roof", "make the wall tops follow the roof"
+#                                  -> ATTACH_WALLS (2025 on),
+#                                     SHAPE_WALL_TOPS_TO_ROOF (2022 on)
+#   "join these two roofs' geometry", "clean the join between them"
+#                                  -> JOIN_GEOMETRY - the step after this one
+#   "make an extruded roof along grid A"
+#                                  -> CREATE_EXTRUSION_ROOF
+utterances:
+  - push the end of this extrusion roof out to the other roof's face
+  - lengthen the extruded roof so its end reaches the sloped roof
+  - carry the end of the roof by extrusion on to the face it should meet

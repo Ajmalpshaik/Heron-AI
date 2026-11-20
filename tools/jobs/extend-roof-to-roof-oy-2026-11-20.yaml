@@ -1,0 +1,49 @@
+# NEEDS-CHECKING Group OY - EXTEND_ROOF_TO_ROOF (DRAFT), a roof by extrusion's
+# end extended until it meets another roof, measured with rays - the owner's
+# other way to Join/Unjoin Roof (row 5b-1877, issue #1087). Built 2026-11-20
+# in a cloud session with no Revit. NOT RUN.
+#
+#     python tools/batch-prove.py tools/jobs/extend-roof-to-roof-oy-2026-11-20.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/extend-roof-to-roof-oy-2026-11-20.yaml --session <pid>
+#
+# THE MODEL (docs/needs-checking/group-oy.md, OY1): "roofjoin-oy", a scratch
+# project from the default metric architectural template, saved under
+# %TEMP%\heron-work, never a working model - the arrangement in
+# brain/fragments/extend-roof-to-roof/tests/cases.yaml: a gable roof by
+# footprint 0,0 to 12000,8000 mm on Level 2 (3000 mm), and a gable wing
+# roof by extrusion on the reference plane "Wing" (4000,-6000 to
+# 8000,-6000), Extrusion Start 0 and End 3000 mm, running north and stopping
+# 3000 mm short of the main roof's south eave. The 3D view {3D}, nothing
+# hidden, no section box.
+#
+# THE ARRANGEMENT. select-in-region picks BOTH roofs by a box round the pair,
+# roofs only, so the binding note should read `elements from the selection
+# (2)` (fragment-proving, rule 5). Positive: maxExtendMm 10000. Negative: the
+# SAME pair with maxExtendMm 500 - a limit below the distance needed, so the
+# card must measure, refuse and change nothing (a different value, not an
+# empty selection, rule 3). The write is ROLLED BACK.
+model: "roofjoin-oy: a scratch project, a gable footprint roof and a wing roof by extrusion stopping 3000 mm short of it"
+defaults:
+  write: true
+  in: "roofjoin-oy"
+  setup: [select-in-region, set-selection]
+jobs:
+  - fragment: extend-roof-to-roof
+    expect: extended
+    set:
+      minMm: "-500,-6500,2500"
+      maxMm: "12500,8500,9000"
+      exact: "false"
+      categories: Roofs
+      view3d: "{3D}"
+      maxExtendMm: "10000"
+    negative-set:
+      maxExtendMm: "500"
+    note: >
+      OY2 and OY3. Negative FIRST: maxExtendMm 500 - extended 0, refused
+      "... has to extend <needMm> mm ..., more than the 500 mm allowed.
+      Nothing was changed". Positive: extended 1, extendedRoof the wing's
+      id, report "EXTENDED: ... its end moved <needMm> mm toward roof by
+      footprint ... read back off the roof's geometry, its other end where
+      it was". Write down needMm and check it against a dimension in a
+      section through x = 6000.
