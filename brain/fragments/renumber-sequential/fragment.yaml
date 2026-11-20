@@ -46,9 +46,7 @@ purpose: >
   then returns one of them at random, in Autodesk's own words - so a number would
   land in a field no tag reads. Those elements are reported in `ambiguous` and
   skipped before any number is given out, so the sequence has no gap (D-54 s3,
-  FRAGMENT-ISSUES 5b-203). This is version 2; version 1's proof no longer
-  describes the code and is kept as a record, and the fragment is DRAFT until it
-  is proved again.
+  FRAGMENT-ISSUES 5b-203).
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 

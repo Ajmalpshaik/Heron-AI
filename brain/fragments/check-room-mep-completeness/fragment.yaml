@@ -7,7 +7,7 @@ heron-layer: brain
 id: FRG-QA-014
 semantic-identity: "which rooms are missing the mep they should have"
 kind: filter
-domain: revit.quality
+domain: revit.qa
 capability: CHECK_ROOM_MEP_COMPLETENESS
 version: 2
 source: OFFICIAL
