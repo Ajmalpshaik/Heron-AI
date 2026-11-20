@@ -269,7 +269,7 @@ Every row of sections 5 and 5b that `python tools/open-defects.py` listed as ope
 | [row 5b-478](section-5b-rows-476-500.md) | [#954](https://github.com/Ajmalpshaik/Heron-AI/issues/954) | Code fix | Plain modeller questions still reach tools that change the model (second 60) |
 | [row 5b-490](section-5b-rows-476-500.md) | [#909](https://github.com/Ajmalpshaik/Heron-AI/issues/909) | Revit run on your PC | 'Describe these elements' reached a write that renumbers them |
 | [row 5b-496](section-5b-rows-476-500.md) | [#958](https://github.com/Ajmalpshaik/Heron-AI/issues/958) | Code fix | With the trained model installed, two routing suites fail on main and CI never sees it |
-| [row 5b-513](section-5b-rows-501-525.md) | [#911](https://github.com/Ajmalpshaik/Heron-AI/issues/911) | Your decision | Heron cannot save the model it is working in; two unsaved builds were lost |
+| [row 5b-513](section-5b-rows-501-525.md) | [#911](https://github.com/Ajmalpshaik/Heron-AI/issues/911) | Your decision | Heron cannot save the model it is working in; two unsaved builds were lost - *answered 2026-11-16 as D-171; SAVE_DOCUMENT v3 built, its run owed in Group EN* |
 | [row 5b-650](section-5b-rows-626-650.md) | [#960](https://github.com/Ajmalpshaik/Heron-AI/issues/960) | Code fix | Builders work layout method is a draft with gaps and a word-matching bug |
 | [row 5b-665](section-5b-rows-651-675.md) | [#934](https://github.com/Ajmalpshaik/Heron-AI/issues/934) | Code fix | Two code comments still say the duct move was never measured |
 | [row 5b-666](section-5b-rows-651-675.md) | [#910](https://github.com/Ajmalpshaik/Heron-AI/issues/910) | Your decision | 'Move the ducts up 200 mm' moves every duct in the model, not the selection |
@@ -537,6 +537,7 @@ Every row of sections 5 and 5b that `python tools/open-defects.py` listed as ope
 | [row 5b-1860](row-5b-1860.md) | [#1070](https://github.com/Ajmalpshaik/Heron-AI/issues/1070) | Your decision, then a Revit run | No live card turns an isometric 3D view, so a family's View 1 cannot be turned to a photo's angle |
 | [row 5b-1861](row-5b-1861.md) | [#1071](https://github.com/Ajmalpshaik/Heron-AI/issues/1071) | Code fix | owner-queue files the installer checks AC to AF by the newest group's heading |
 | [row 5b-1867](row-5b-1867.md) | [#1072](https://github.com/Ajmalpshaik/Heron-AI/issues/1072) | Tidy-up | Specification parts 00 to 00d never read line by line against the tree |
+| [row 5b-1875](row-5b-1875.md) | [#1080](https://github.com/Ajmalpshaik/Heron-AI/issues/1080) | Tidy-up | The duplicate check planned for the sheets-from-spreadsheet card once proven has not been run |
 | [row 5b-1850](row-5b-1850.md) | [#908](https://github.com/Ajmalpshaik/Heron-AI/issues/908) | Revit run on your PC | A tower's low-angle camera measured its eye from the roof; fixed in #1024, DRAFT v6, the run is owed |
 | [row 5b-1856](row-5b-1856.md) | [#1059](https://github.com/Ajmalpshaik/Heron-AI/issues/1059) | Revit run on your PC | The room name and number written apart, a space tested by its boundary, linked rooms; fixed in #1050, DRAFT v3, the run is owed |
 | [row 5b-1857](row-5b-1857.md) | [#923](https://github.com/Ajmalpshaik/Heron-AI/issues/923) | Your decision | A space filter found 0 ceiling-void duct accessories where the count by space found 11 - row 5b-175's split |

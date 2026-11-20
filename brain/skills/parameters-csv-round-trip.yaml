@@ -36,9 +36,9 @@ purpose: >
   waits; nothing here is tried round it.
 
   WHAT HAS RUN IN REVIT, AND WHAT HAS NOT. The export's proof ran on Revit
-  2024 and its files were counted off disk. The return's proof, 2026-11-02 on
-  Revit 2024, ran rows BY KEY; no run of its version 7 from a csvPath is on
-  record. The card the file route was merged in from was proved on a CSV on
+  2024 and its files were counted off disk. The return's latest proof,
+  version 9's of 2026-11-16 on Revit 2024, ran rows BY KEY, as the ones
+  before it did; no run of it from a csvPath is on record. The card the file route was merged in from was proved on a CSV on
   2026-10-21, but under another rule - it wrote every row it could, where
   this one writes all or nothing - so that proof does not describe this
   route. NEEDS REAL REVIT: NEEDS-CHECKING Group NJ, FRAGMENT-ISSUES row
@@ -49,8 +49,8 @@ purpose: >
   proves version 8). It was raised again to version 10 on 2026-11-20 (row
   5b-1526): a blank cell is now skipped before its parameter is looked for,
   and NEEDS-CHECKING Group NJ's NJ5 and NJ14 prove it; while the served list
-  shows it DRAFT, step 6 waits as above. Say so to the modeller before step 6 on a model that
-  matters, and offer a saved scratch copy first. The comparison of step 4
+  shows it DRAFT, step 6 waits as above. Say so to the modeller before
+  step 6 on a model that matters, and offer a saved scratch copy first. The comparison of step 4
   reads two files and nothing else, and was tested off Revit only
   (tests/test_sheet_compare.py).
 
