@@ -1626,6 +1626,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ov.md`](needs-checking/group-ov.md)
 
+## Group OW - what the add-in fixes of 2026-11-20 left behind, issue #1102: the bridge keeps listening when every pipe is in use, two models of one title are told apart, and the chat reads the run id, the rollback and the count the add-in now sends - BUILT, NOT RUN IN REVIT (2026-11-20)
+
+**Its own file:** [`needs-checking/group-ow.md`](needs-checking/group-ow.md)
+
 ## Group OY - EXTEND_ROOF_TO_ROOF, a roof by extrusion extended to meet another roof by rays: the owner's other way to Join/Unjoin Roof - DRAFT until proved (2026-11-20)
 
 **Its own file:** [`needs-checking/group-oy.md`](needs-checking/group-oy.md)
