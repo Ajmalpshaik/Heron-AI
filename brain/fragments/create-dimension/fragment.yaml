@@ -340,7 +340,11 @@ utterances:
   - add dimensions to the drawing
   # MOVED 2026-11-01 from DIMENSION_MEP_RUNS, merged into this card.
   - dimension between the ducts
-  - how far apart are these pipes on the drawing
+  # "how far apart are these pipes on the drawing" MOVED 2026-11-20 to
+  # MEASURE_DISTANCE (row 158, GitHub issue #954): a question that read
+  # answers without drawing anything, so D-86 keeps it off this write -
+  # the routing table above already says "asking a question must not
+  # annotate the model".
   - put a dimension between the services
   - dimension the duct spacing
   - show the gap between the services
@@ -350,7 +354,8 @@ utterances:
   # spacing", and both are kept.
   - dimension between the terminals
   - put a dimension through these diffusers
-  - how far apart are these on the drawing
+  # "how far apart are these on the drawing" MOVED 2026-11-20 to
+  # MEASURE_DISTANCE, as the one above (row 158).
   - add a dimension string to the equipment
   - dimension the spacing of these
   - show the spacing on the drawing

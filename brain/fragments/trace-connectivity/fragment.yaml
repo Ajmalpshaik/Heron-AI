@@ -237,3 +237,8 @@ utterances:
   # Declaring, not demoting (row 116).
   - is this duct connected
   - what does this connect to
+  # ADDED 2026-11-20, row 132 (GitHub issue #959). The trace-system skill's
+  # own sentence, and this read is the step of its plan that answers it; it
+  # reached AUTO_SIZE_PIPE, a write, on lexical and model
+  # (tools/check-skill-routing.py). Declared on the read (D-86).
+  - follow the pipe and tell me where it goes

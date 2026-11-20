@@ -1511,11 +1511,41 @@ def _missing_values(folder, values):
             and n.get("name") not in given]
 
 
-def _runs_as_matched(folder, provider, capability):
+def _card_declares(folder, request):
+    """True when THIS checkout's own card for `folder` declares `request` - its
+    semantic identity or one of its utterances - keyed the way the identity
+    table keys a phrase (heron_search.normalise, imported, never copied).
+    False when it does not; None when the card or the key could not be read.
+
+    Read from the fragment file, never the index (Golden Rule 11).
+    """
+    brain_path = os.path.join(_repo_root(), "brain")
+    if brain_path not in sys.path:
+        sys.path.insert(0, brain_path)
+    try:
+        import heron_fragment as HF
+        import heron_search as HS
+        frag = HF.load(os.path.join(_repo_root(), "brain", "fragments", folder))
+    except Exception:                      # noqa: BLE001 - None IS the answer
+        return None
+    said = [frag.data.get("semantic-identity")] + frag.utterances()
+    key = HS.normalise(request)
+    return bool(key) and key in set(HS.normalise(str(s)) for s in said if s)
+
+
+def _runs_as_matched(folder, provider, capability, request=None):
     """
     "" when the fragment the door WILL run is the one the words were matched
     to, and its proof still describes its code; otherwise the sentence saying
     why the words path hands back instead. Two findings from review on PR #369.
+
+    THE WORDS MUST BE ON THIS CHECKOUT'S OWN CARD (FRAGMENT-ISSUES row 131,
+    built 2026-11-20). The identity table that matched them is a CACHE, and a
+    shared store can be built from another checkout's cards - so a phrase one
+    copy declares could run, unasked, a tool whose card here never says it.
+    Given `request`, the card in this checkout is read and must declare those
+    words itself; when it does not, or cannot be read, the words path hands
+    back. It can only withhold, never grant.
 
     THE PROVIDER THAT WAS AUTHORISED IS THE ONE THAT MUST RUN. The lookup
     grants its run-unasked permission to one FRAGMENT, and the door picks a
@@ -1548,6 +1578,17 @@ def _runs_as_matched(folder, provider, capability):
         return ("They match %s exactly, but the fragment that would run it is "
                 "not the one they were matched to, so it is not run unasked."
                 % capability)
+    if request is not None:
+        declared = _card_declares(folder, request)
+        if declared is None:
+            return ("They match %s exactly in the knowledge store, but its card "
+                    "here could not be read to confirm it declares those words, "
+                    "so it is not run unasked." % capability)
+        if not declared:
+            return ("They match %s exactly in the knowledge store, but its card "
+                    "in this checkout does not declare those words - the store "
+                    "was built from other cards (FRAGMENT-ISSUES row 131) - so "
+                    "it is not run unasked." % capability)
 
     found = brain.proof_status(folder)
     if found is None:
@@ -1647,7 +1688,8 @@ def _by_words(request, door, values):
     missing, withheld = [], ""
     if exact:
         folder, _status = _fragment_for(capability)
-        withheld = _runs_as_matched(folder, found.get("provider"), capability)
+        withheld = _runs_as_matched(folder, found.get("provider"), capability,
+                                    request)
         if withheld:
             exact = False
         else:

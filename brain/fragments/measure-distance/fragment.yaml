@@ -109,3 +109,9 @@ utterances:
   - how much clearance is there between them
   - what is the vertical distance between these
   - how much headroom is left
+  # MOVED 2026-11-20 from CREATE_DIMENSION (row 158, GitHub issue #954). Both
+  # are questions this read answers as a number, drawing nothing; on the
+  # write they resolved by identity to a tool that annotates the model
+  # (D-86: a write keeps a question only when answering it needs the write).
+  - how far apart are these pipes on the drawing
+  - how far apart are these on the drawing
