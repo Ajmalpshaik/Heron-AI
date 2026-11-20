@@ -34,7 +34,27 @@ positive:
       facing reversed, and a bounding box that has moved to the side the part
       should sit on. Look at it in 3D - the line is what a wrong flip returns too
 
+  - given: >
+      version 4 (row 5b-1881) - a phased model whose rooms sit on an EARLIER
+      phase than its last: a copy of Revit 2020's rac_basic_sample_project.rvt
+      (rooms on 'Working Drawings', last phase 'Learning Content'), door
+      422466 between Hall 105 and Bath 103 with its From and To the wrong way
+      round for its swing, fromToRoomOnly true
+    expect: >
+      roomsSwapped names door 422466, From -> To swapped to match its swing,
+      "on phase 'Working Drawings'" - the door's own Phase Created - and
+      REPORT_DOOR_ROOM_LINKS on 'Working Drawings' agrees afterwards. NOT RUN
+
 negative:
+  - given: >
+      version 4 (row 5b-1881) - the same model, a door with no room on either
+      side on ANY phase it stands in, flipFacing true
+    expect: >
+      it flips, roomsSwapped empty, and its roomsLeft line says no room on
+      either side and names every phase it tried ('Working Drawings',
+      'Learning Content'), so nothing was swapped. A line that names no phase
+      fails here. NOT RUN
+
   - given: a family instance whose author gave it NO flip control
     expect: >
       its id in `cannotFlip`, nothing attempted, no exception. This is a family

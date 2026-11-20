@@ -83,7 +83,42 @@ positive:
     expect: >
       the first run "AJ_<old>", the second `untouched` - never "AJ_AJ_<old>"
 
+  # VERSION 10 (row 5b-1221). NOT RUN. Revit 2020 first, on a scratch copy of
+  # rac_basic_sample_project.rvt - Level 1 (id 311) with its floor plan "Level 1"
+  # (id 312) - every run rolled back. NEEDS-CHECKING Group OU, OU1 to OU3.
+  - given: >
+      VERSION 10. Level 1 handed in, field Name, mode replace, text "Level 1",
+      replacement "Ground Floor", renameViews yes
+    expect: >
+      changed 1; the reply's dialogs list TaskDialog_Confirm_Level_Rename
+      answered Yes and the job is not refused; levelNote "Level 'Level 1' ->
+      'Ground Floor' (id 311), renameViews=yes: 1 view(s) renamed with it -
+      Ground Floor (id 312)" - or, if Revit renames the view only at commit,
+      "still carry the old name" there while the model after the run shows it
+      renamed: write down which
+
+  - given: VERSION 10. The same, renameViews no
+    expect: >
+      changed 1, the dialog answered No, and levelNote "1 view(s) still carry
+      the old name - Level 1 (id 312)"; the floor plan keeps "Level 1"
+
 negative:
+  - given: >
+      VERSION 10 - NEGATIVE. The same level and replace, renameViews left out
+    expect: >
+      REFUSED before anything is written: refused "renaming a level makes Revit
+      ask whether to rename its views too, and 1 level(s) would be renamed here
+      - 'Level 1' (id 311) - so NOTHING WAS RENAMED. Send renameViews=yes ...";
+      changed empty, NO dialog in the reply, and level and view keep "Level 1".
+      Version 9 renamed both here without asking
+
+  - given: >
+      VERSION 10 - NEGATIVE. A floor plan view (not a level) renamed by field
+      Name, renameViews left out
+    expect: >
+      renamed exactly as version 9 did, no refusal and no levelNote - the
+      question is a level's alone
+
   - given: >
       VERSION 5, mode "format". The same four-paragraph note, text "numbers
       2-5" - paragraph 5 is not there

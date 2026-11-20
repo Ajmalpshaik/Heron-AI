@@ -53,7 +53,25 @@ positive:
     expect: >
       the same roof - NewFootPrintRoof did not change at 2022, so one path
 
+  # VERSION 4, added 2026-11-20 (row 5b-1383). NOT RUN.
+  - given: >
+      version 4 - the version 1 rectangle on Level 1 with a plain floor type,
+      "Floor: Generic 150mm" or the model's own
+    expect: >
+      the floor version 3 made, the same findings word for word - the
+      foundation check passes an ordinary floor type through untouched
+
 negative:
+  # VERSION 4, added 2026-11-20 (row 5b-1383). NOT RUN. Version 3 made this
+  # as a plain floor.
+  - given: >
+      version 4 - the same rectangle with a Foundation Slab type, "Foundation
+      Slab: 300mm Foundation Slab" or the model's own (a FloorType whose
+      IsFoundationSlab reads true)
+    expect: >
+      created the invalid id; findings "... is a Foundation Slab type ...
+      CREATE_FOUNDATION_SLAB's ... Nothing was created"; no new element in
+      Floors or in Structural Foundations
   - given: >
       VERSION 3. The ceiling case on Revit 2020 - CREATE_CEILING's FIRST CASE
       TO RUN

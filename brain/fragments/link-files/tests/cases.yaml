@@ -21,7 +21,28 @@ positive:
       Clouds tab lists scan.rcp, and the cloud is seen in a 3D view at the
       place Revit's own Insert > Point Cloud, Auto - Origin to Origin, puts it
 
+  - given: >
+      VERSION 3 (rows 5b-1124, 5b-1121) - a FRESH Revit session, a fresh
+      scratch project, no link run before it; paths the full path of one small
+      .rvt the owner made for testing, placement origin
+    expect: >
+      EITHER linked 1, its line "linked, origin to origin, its model attached
+      - \"<the file's title>\", N model element(s)" with N above 0, and the
+      building seen in the Level 1 plan; OR linked 0, notAttached naming the
+      file and its link id, the line "Revit made the link ... but no linked
+      model could be read from it during this run - check the plan after
+      Keep", AND after Keep the plan shows nothing of it - if the plan shows
+      the building, the read inside the run is what failed, not the link,
+      and the card is wrong. Never "Loaded" with an empty plan. Which one came back is the answer to
+      whether GetLinkDocument() reads inside the transaction. NOT RUN
+
 negative:
+  - given: >
+      VERSION 3 - the same .rvt named again after the positive was KEPT
+    expect: >
+      linked 0, notAttached EMPTY, alreadyLinked naming the file - a file left
+      out is never read as a link that did not attach. NOT RUN
+
   - given: the same folder straight after
     expect: >
       linked 0 and alreadyLinked naming all three - nothing linked twice
@@ -54,6 +75,11 @@ negative:
     expect: linked 0 and alreadyLinked naming scan.rcp - one point cloud, not two
 
 second_route:
+  - >
+    VERSION 3: Insert > Link Revit, by hand, on the same file in a copy of the
+    same scratch project - the building draws; a scratch read of that
+    instance's GetLinkDocument() names the file. The card's answer must agree
+    with what the Level 1 plan shows
   - Manage > Manage Links, the Revit and CAD Formats tabs read
   - one Ctrl+Z removes every new link in a single step (Golden Rule 16)
   - >

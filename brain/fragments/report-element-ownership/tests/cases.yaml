@@ -18,6 +18,22 @@ positive:
       to ask for a relinquish and the last changer is who to ask about the
       modelling; collapsing them sends the question to the wrong desk
 
+  # VERSION 3 (WN-5) - NOT RUN. Two local copies of one scratch central.
+  - given: >
+      VERSION 3 - a scratch workshared central and two local files of it (two
+      user names, Options > General > Username). In local B move one wall and
+      Synchronize with Central; in local A (no Reload Latest yet) hand in that
+      wall and one untouched wall
+    expect: >
+      the moved wall in `changedInCentral` and `centralStatus` UpdatedInCentral;
+      the untouched wall CurrentWithCentral and not in `changedInCentral` -
+      matching Revit's Worksharing Display > Model Updates in local A. After a
+      Reload Latest in A, the same call reads both CurrentWithCentral
+
+  - given: VERSION 3 - in local A, a wall drawn now and not yet synchronised
+    expect: >
+      `centralStatus` NotYetInCentral, not in `changedInCentral`
+
 negative:
   - given: A MODEL THAT IS NOT WORKSHARED AT ALL
     expect: >
@@ -55,7 +71,18 @@ negative:
       since. This must never be presented as a guarantee, because a guarantee
       is what gets acted on
 
+  - given: >
+      VERSION 3 - a model that is not workshared, any walls handed in (the
+      negative for the new answer)
+    expect: >
+      `changedInCentral` EMPTY and `centralStatus` EMPTY, notWorkshared TRUE,
+      every wall in `editable` as version 2 answered. Any word in
+      `centralStatus` here is the failure
+
 second_route:
+  - >
+    VERSION 3: Worksharing Display > Model Updates in the view, against
+    `centralStatus`
   - >
     turn on Worksharing Display > Owners in the Revit view and compare the
     colours against this list
