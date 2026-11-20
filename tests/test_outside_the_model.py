@@ -157,8 +157,8 @@ def the_branch(raw):
     count = branch.find("counted = ReadFootprint.Of(target);")
     ran = branch.find("threw = RunScript(")
     check(-1 < count < ran, "the model is counted before the run")
-    check("new RevitChangedSet(" in branch and "changed.Begin();" in branch
-          and branch.find("changed.Begin();") < ran,
+    check("new RevitChangedSet(" in branch and "outsideChanges.Begin();" in branch
+          and branch.find("outsideChanges.Begin();") < ran,
           "and Revit's commits in it are heard from before the run")
     check("OutsideChangedModel(name, target, counted, described, threw)" in branch
           and "target.IsModifiable" in branch,
@@ -196,6 +196,9 @@ def the_verdict(raw):
           "and the outside work stands")
     check('kind = "kept";' in verdict and 'kind = "rolledBack";' in verdict,
           "kept with apply, the row 5b-1594 shape without")
+    check("brief = null;" in verdict,
+          "and only the kept run has a short form - one not kept is printed whole, as "
+          "row 5b-407's rule asks of every rollback")
     check("UndoRule" not in verdict and "no undo entry" in verdict.lower()
           and "STILL STANDS" in verdict,
           "it never promises an undo step, and says the outside work stands")

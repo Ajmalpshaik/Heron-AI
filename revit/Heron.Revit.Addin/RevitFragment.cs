@@ -914,9 +914,9 @@ namespace Heron.Revit.Addin
                 // after the gate asked.
                 var outsideLabel = "Heron: " + name;
                 counted = ReadFootprint.Of(target);
-                using (var changed = new RevitChangedSet(app.Application, target, outsideLabel))
+                using (var outsideChanges = new RevitChangedSet(app.Application, target, outsideLabel))
                 {
-                    changed.Begin();
+                    outsideChanges.Begin();
                     threw = RunScript(script, globals, name, out state);
 
                     // A TRANSACTION LEFT OPEN in that model: the source scan
@@ -934,7 +934,7 @@ namespace Heron.Revit.Addin
                             + "Undo in Revit and look at the model before trusting it."));
                     }
 
-                    described = changed.Describe();
+                    described = outsideChanges.Describe();
                     var moved = OutsideChangedModel(name, target, counted, described, threw);
                     if (moved != null) return moved;
                 }
@@ -2871,10 +2871,11 @@ namespace Heron.Revit.Addin
                 + " and Revit committed nothing in it, so nothing in that model was changed.";
             const string outside = "a file written, a document made, opened, saved or closed";
 
+            var who = "'" + name + "'";
             string verdict, kind, brief;
             if (applied)
             {
-                verdict = "'" + name + "' RAN OUTSIDE THE MODEL. It works only outside \"" + title
+                verdict = who + " RAN OUTSIDE THE MODEL. It works only outside \"" + title
                         + "\", so it ran with no transaction group open there (" + NoGroupNeed
                         + ", D-192). " + measured + " There is no undo entry for it in \"" + title
                         + "\" and nothing there to keep or discard"
@@ -2882,12 +2883,12 @@ namespace Heron.Revit.Addin
                         + ". What it did outside the model - " + outside + " - is done, and no "
                         + "undo takes it back.";
                 kind = "kept";
-                brief = "'" + name + "' ran outside \"" + title + "\" and changed nothing in it. "
+                brief = who + " ran outside \"" + title + "\" and changed nothing in it. "
                       + "What it did outside is done, and no undo takes it back (D-192).";
             }
             else
             {
-                verdict = "A ROLLBACK CANNOT TAKE ALL OF THIS BACK. '" + name + "' ran for real "
+                verdict = "A ROLLBACK CANNOT TAKE ALL OF THIS BACK. " + who + " ran for real "
                         + "with no transaction group open in \"" + title + "\" (" + NoGroupNeed
                         + ", D-192), so there was nothing there to roll back. " + measured
                         + " What it did outside the model - " + outside + " - STILL STANDS, and "
