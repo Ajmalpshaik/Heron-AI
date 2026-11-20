@@ -35,7 +35,7 @@ IT EXITS 3 - NOT RUN, NEVER A PASS - where a bare server on 127.0.0.1, with no
 Heron code in it, does not come back unchanged every time: the four groups
 that talk to a real server wait, and every other group still runs and can
 fail. On the owner's PC a filtering program resets connections and rewrites
-the replies' headers (issue #1055, row 5b-1884); CI has none, and runs all.
+the replies' headers (issue #1055, row 5b-1906); CI has none, and runs all.
 """
 
 import http.client
@@ -101,7 +101,7 @@ def loopback_control(rounds=200):
     no Heron code in it: a bare server on 127.0.0.1 reads each whole request,
     answers, and closes. Returns (came back unchanged, dropped, changed).
 
-    WHY (issue #1055, row 5b-1884): on the owner's PC a filtering program
+    WHY (issue #1055, row 5b-1906): on the owner's PC a filtering program
     between programs and the network rewrites the Content-Security-Policy
     header the Companion sends - the filter's own name is in what arrives -
     and the CSP check failed on it every time the report section got that far.

@@ -338,7 +338,7 @@ between programs and 127.0.0.1 and **rewrites headers** - a `Content-Security-Po
 eight resets when the server closes it (the filter's part in that was not separated). A suite with a
 real server then dies with `ConnectionResetError [WinError 10054]` or `TimeoutError`, or fails a header
 check, at a different place each run, on `main` too
-([row 5b-1884](../../../docs/fragment-issues/row-5b-1884.md)). `test_companion.py` asks a bare server
+([row 5b-1906](../../../docs/fragment-issues/row-5b-1906.md)). `test_companion.py` asks a bare server
 with no Heron code in it first and **waits (exit 3)** on its server sections where that does not come
 back whole every time; a new suite with a socket does the same, and never retries - a retried request
 that had already been served (a one-time pairing code) fails a check for a reason that is not there.
