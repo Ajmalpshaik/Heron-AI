@@ -7,7 +7,7 @@
 # See docs/29-metadata-standard.md
 
 """
-The dependency report's exit code, and the size it does not type.
+The dependency report's exit code, the size it does not type, and the version it checks.
 
     python tests/test_check_dependencies.py
 
@@ -117,6 +117,11 @@ def main():
 
     home = tempfile.mkdtemp(prefix="heron-dep-test-")
     was = (tool.REQUIRED, tool.OPTIONAL)
+    # The lock this suite reads is one it writes - an empty one unless a case
+    # says otherwise - so a machine whose PyYAML is older than the real pin
+    # does not turn section 1 red for being that machine.
+    was_lock = getattr(tool, "LOCK", None)
+    tool.LOCK = pathlib.Path(home) / "no-lock.txt"
     try:
         def manifest(name, text):
             path = pathlib.Path(home) / name
@@ -196,17 +201,116 @@ def main():
                   "it is in heron_rerank.announcement(), which is the code "
                   "that owns the download and prints it before the network "
                   "is touched")
-        check(tool.announced_size("model2vec") is None,
+        # R-77, 2026-11-20: the trained embedding announces its own size now,
+        # in heron_embed - so the same rule holds for it as for the re-ranker.
+        said = tool.announced_size("model2vec")
+        check(bool(said), "a size comes back for model2vec too")
+        if said:
+            import heron_embed                      # noqa: E402
+            check(said in heron_embed.announcement(),
+                  "read from heron_embed.announcement(), the code that owns "
+                  "that download")
+            check(said not in io.open(TOOL, encoding="utf-8").read(),
+                  "and not typed in this tool")
+        check(tool.announced_size("mcp") is None,
               "and nothing is invented for a package no code announces")
 
+        # R-79: THE README'S SYSTEM REQUIREMENTS SAY THE SAME SIZES AS THE CODE
+        # THAT DOWNLOADS. They are typed there because a person reads them
+        # before installing anything - so this holds them to the code, and a
+        # size changed in one place and not the other turns this red.
+        readme = io.open(os.path.join(ROOT, "README.md"), encoding="utf-8").read()
+        section = readme.split("## System requirements", 1)
+        check(len(section) == 2, "README.md has a System requirements section (R-79)")
+        body = section[1].split("\n## ", 1)[0] if len(section) == 2 else ""
+        import heron_embed as _embed                # noqa: E402
+        import heron_rerank as _rerank              # noqa: E402
+        import heron_ingest as _ingest              # noqa: E402
+        for owner, size in (("heron_embed", getattr(_embed, "SIZE", None)),
+                            ("heron_rerank", getattr(_rerank, "SIZE", None)),
+                            ("heron_ingest",
+                             getattr(_ingest, "PDF_READER_SIZE", None))):
+            check(bool(size) and size in body,
+                  "and it states %s.SIZE word for word: %r" % (owner, size))
+        check("Minimum" in body and "not yet measured" in body,
+              "and it gives the minimum, and says what is not yet measured")
+
         print()
-        print("6. `installed` means importable and nothing stronger (R-78)")
+        print("6. `installed` is importable; the VERSION is a second question (R-78)")
         here = tool.Package("PyYAML", "yaml", "reading yaml", "nothing runs")
         gone = tool.Package("nope", "no_such_module_xyz", "x", "y")
         check(here.installed is True, "a module that imports reads present")
         check(gone.installed is False, "and one that does not reads MISSING")
+
+        # Every floor and pin here is written relative to nothing on this
+        # machine: 999 is above any PyYAML, 0.0.1 below any. A suite that
+        # asserted the installed version would be asserting the machine.
+        def verdict(spec="", pins=None):
+            try:
+                package = tool.Package("PyYAML", "yaml", "reading yaml",
+                                       "nothing runs", spec)
+            except TypeError:
+                # A Package that takes no specifier is the failure itself -
+                # heron-ship 2a: fail, never crash.
+                return None, "Package() takes no version specifier"
+            got = getattr(package, "version_verdict", None)
+            if got is None:
+                return None, "no version_verdict at all"
+            return got(pins or {})
+
+        state, said = verdict(">=999")
+        check(state == tool.OUT_OF_DATE if hasattr(tool, "OUT_OF_DATE") else False,
+              "below the manifest's own floor reads NEEDS AN UPDATE: %r" % said)
+        state, said = verdict(">=0.0.1")
+        check(state == "ok", "above it reads ok: %r" % said)
+        state, said = verdict(pins={"pyyaml": "999.0"})
+        check(state == getattr(tool, "OUT_OF_DATE", object()),
+              "older than the installer's pinned version reads NEEDS AN UPDATE")
+        check("requirements-lock.txt" in (said or ""),
+              "and names where the right version came from")
+        state, said = verdict(pins={"pyyaml": "0.0.1"})
+        check(state == "ok" and "not failed" in (said or ""),
+              "NEWER than the pin is said and not failed - nothing measured it")
+        state, said = verdict()
+        check(state == "unchecked" and "only presence" in (said or ""),
+              "with no floor and no pin it says it checked presence only, "
+              "rather than passing a check that checked nothing")
+        state, said = verdict("~=6.0")
+        check(state == "unchecked" and "not applied" in (said or ""),
+              "a specifier shape it does not read is said, never guessed at")
+
+        release = getattr(tool, "release", None)
+        if release is not None:
+            check(release("6.0.3") == (6, 0, 3), "6.0.3 reads (6, 0, 3)")
+            check(release("0.1.9a1") == (0, 1, 9),
+                  "a pre-release suffix is cut off, not read as newer")
+            check(release("abc") is None, "and a non-number is None")
+        else:
+            check(False, "the tool has release() at all")
+
+        print()
+        print("7. An out-of-date version exits 1; the manifest line carries the floor")
+        code, spoke = run(required="# yaml | reading yaml | nothing runs\n"
+                                   "PyYAML>=999\n")
+        check(code == 1, "a required package below its floor exits 1, and it "
+                         "exits %r" % code)
+        check("NEEDS AN UPDATE" in (spoke or ""), "and says NEEDS AN UPDATE")
+        check("pip install --user --upgrade PyYAML" in (spoke or ""),
+              "and gives the line that updates it")
+        code, spoke = run(required="# yaml | reading yaml | nothing runs\n"
+                                   "PyYAML>=0.0.1\n")
+        check(code == 0, "the same line with a floor it meets exits 0, and it "
+                         "exits %r" % code)
+        lock = pathlib.Path(home) / "lock.txt"
+        lock.write_text("pyyaml==999.0 \\\n    --hash=sha256:00\n",
+                        encoding="utf-8")
+        tool.LOCK = lock
+        code, spoke = run()
+        check(code == 1 and "older than 999.0" in (spoke or ""),
+              "a version older than the lock's pin exits 1 and names the pin")
     finally:
         tool.REQUIRED, tool.OPTIONAL = was
+        tool.LOCK = was_lock
         shutil.rmtree(home, ignore_errors=True)
 
     print()
@@ -216,8 +320,9 @@ def main():
             print("  %s" % line)
         return 1
 
-    print("PASSED - only a missing REQUIRED package and a broken manifest")
-    print("exit 1, and the one size it prints is read rather than typed.")
+    print("PASSED - a missing REQUIRED package, a broken manifest and a")
+    print("version older than the right one exit 1, and every size it prints")
+    print("is read rather than typed.")
     return 0
 
 

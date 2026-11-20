@@ -305,8 +305,10 @@ builds every product for every release and puts `HeronInstaller.exe` at the top 
 python tools/check-dependencies.py
 ```
 
-It names every Python package Heron can use, whether this PC has it, what it buys, and what happens
-without it. It fails only when a **required** one is missing.
+It names every Python package Heron can use, whether this PC has it, what it buys, what happens
+without it, and whether the version on this PC is the right one. It fails when a **required** one is
+missing, or when one is older than Heron's installer puts on a PC - it then prints the line that
+updates it.
 
 ## 5a. When a Revit job runs long — Claude Code's own limits
 

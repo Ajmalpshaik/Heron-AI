@@ -103,7 +103,7 @@ of the others turns a pull request red just the same ([heron-ship](../.claude/sk
 | [`HeronRevit.ps1`](HeronRevit.ps1) | which Revits are installed, which are open, where each one's add-ins go | never by hand - the install scripts dot-source it |
 | [`heron-folders.py`](heron-folders.py) | `platform/heron-folders.json`, the folders the install scripts read, written from `HeronPaths` and checked against it - exit 1 on a hand edit | after any change to `HeronPaths.cs`: `--write`, then commit; `tests/test_heron_folders.py` runs the check |
 | [`heron-ready.py`](heron-ready.py) | a PC made ready before its first chat: Python, packages, the store, the search model | once per PC, and after an update |
-| [`check-dependencies.py`](check-dependencies.py) | which packages are present and what each buys; exit 1 only for a required one | when Heron seems weaker than it should be |
+| [`check-dependencies.py`](check-dependencies.py) | which packages are present, what each buys, and whether each version is the right one; exit 1 for a missing required one or an out-of-date one | when Heron seems weaker than it should be |
 | [`lock-python.py`](lock-python.py) | `requirements-lock.txt` regenerated, and its advisories audited | when a pinned version must move; CI's weekly run audits it |
 | [`cloud-setup.sh`](cloud-setup.sh) | pasted into a Claude Code cloud environment's setup box | when setting up a cloud environment |
 | [`build-release-assets.py`](build-release-assets.py) | every product for every release, laid out as a release's assets | the Release workflow runs it; by hand to check a build |
@@ -1931,8 +1931,13 @@ at the top of this file is about a number going stale; this is the same failure 
 
 **Not in CI, on purpose ([PROPOSALS F6](../docs/PROPOSALS.md), decided 2026-11-15 on the owner's delegation).** It reports on the machine, not on the change: a runner with every package installed passes it whatever a change does, so it is run on a PC, after a fresh clone or a change to either requirements file.
 
-**Exits 1 only when a REQUIRED package is missing.** A missing optional one exits 0, because that is
-what optional means and a checker that failed on it would be arguing with R-42's silent degradation.
+**Exits 1 when a REQUIRED package is missing, or when an installed one is NOT THE RIGHT VERSION.** A
+missing optional one exits 0, because that is what optional means and a checker that failed on it would
+be arguing with R-42's silent degradation. An installed one older than its floor - written on its own
+manifest line - or older than the version [`requirements-lock.txt`](../requirements-lock.txt) pins is
+reported `NEEDS AN UPDATE` with the `--upgrade` line, and exits 1: an old version that half-works is
+worse than an absent one (R-78, 2026-11-20). Newer than the pin is said and not failed; a package with
+neither floor nor pin is said to have been checked for presence only.
 
 It reads [`requirements.txt`](../requirements.txt) and
 [`requirements-optional.txt`](../requirements-optional.txt) — **the same two files `pip` reads**, not a
@@ -1945,8 +1950,9 @@ the instructions exactly got the weaker retrieval backend and was told nothing. 
 correct; silent degradation plus an install list nobody can follow is how a person stays on the weaker
 backend believing they are on the better one.**
 
-**It does not install anything**, and it does not check that an installed version is the right one.
-Saying so is better than a tool that half-installs.
+**It does not install anything.** Saying so is better than a tool that half-installs. Every size it
+prints is read from the code that owns the download - `heron_rerank.SIZE`, `heron_embed.SIZE`,
+`heron_ingest.PDF_READER_SIZE` - never typed in it.
 
 ## `heron-ready.py` — a new PC made as quick as the old one, before the first chat
 
