@@ -86,6 +86,16 @@ namespace Heron.Revit.Addin
         /// </summary>
         internal static readonly HeronUndoGuard Guard = new HeronUndoGuard(HeronApplication.Log);
 
+        /// <summary>
+        /// A kept run seen undone or redone goes onto its run record
+        /// (FRAGMENT-ISSUES 5b row 1163) - RevitDispatcher.StampUndo, beside
+        /// RunRecord, which writes the record in the first place.
+        /// </summary>
+        static RevitUndo()
+        {
+            Guard.RunMoved = RevitDispatcher.StampUndo;
+        }
+
         // Whether the request now ending posted Undo - read once by the
         // dispatcher, on the same thread, straight after it.
         private static bool _posted;

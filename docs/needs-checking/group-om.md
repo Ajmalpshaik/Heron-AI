@@ -7,6 +7,8 @@
 
 ## Group OM - moving one filter up or down a view's filter list: `REORDER_VIEW_FILTERS`, DRAFT until proved (2026-11-19)
 
+**Tracked as GitHub issue [#1052](https://github.com/Ajmalpshaik/Heron-AI/issues/1052) since 2026-11-19** - the checks still owed are listed there; tick the group in that issue when they are done. Every result stays in this file.
+
 Asked for on Revit 2020 on 2026-11-19: a Duct Accessories filter set green, moved to the TOP of a view's
 filter list, under two filters that also cover Duct Accessories and set black lines - where two filters set
 the same thing on the same element, the higher one wins. No capability reordered a view's filters.

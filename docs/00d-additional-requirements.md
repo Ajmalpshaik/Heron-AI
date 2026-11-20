@@ -26,6 +26,8 @@
 > [D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)'s:
 > a wrong fact, or words an accepted decision has settled, corrected in place with the original kept
 > beside it, ~~struck through~~, and a wrong diagram folded under *Original diagram, as written*.
+>
+> **Read whole, line by line, against the tree on 2026-11-20 at commit `d5640f27`** ([row 5b-1867](fragment-issues/row-5b-1867.md), issue [#1072](https://github.com/Ajmalpshaik/Heron-AI/issues/1072)). No words of the specification needed correcting in place that day; the notes under §3, §11, §18, §24, §29, §32, §33, §35 to §38, §40, §41, §43, §44, §46 and the mandatory list each gained a dated sentence where what they named had moved, and any sentence found to be the owner's choice was left as written and put to him.
 
 ---
 
@@ -133,7 +135,9 @@ Requirement -> Search -> Plan -> Generate -> Review -> Build -> Test -> Deploy
 > ([`heron_failure.py`](../mcp/server/heron_failure.py), [D-21](DECISIONS.md)), finished stages undone in
 > reverse, and checkpoints (§21). It has no parallel stages and no approvals, and **nothing but
 > `tests/test_workflow.py` imports it** (`grep -rn heron_workflow --include=*.py .`). The pipeline line
-> above is how a new tool is made, drawn as built under §10.
+> above is how a new tool is made, drawn as built under §10. **2026-11-20:** that grep now also finds
+> `tests/test_bridge_paths.py`, which imports it only to check where its checkpoints are kept
+> (`checkpoint_root()`), and still no tool the server serves imports it.
 >
 > **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
 > a person's approval now stands before *Deploy* in the pipeline line, as §10's line already has it, and
@@ -374,7 +378,14 @@ Before a dangerous operation, Heron should be able to say:
 > [Golden Rule 21](14-golden-rules.md)); a preview selects what it would change and skip, up to 500
 > ([D-60](DECISIONS.md)). The box was seen in Revit 2024 and 2027
 > ([Group ET](needs-checking/group-et.md)); the *Ask to Keep* switch has not run in Revit
-> ([Group HG](needs-checking/group-hg.md)).
+> ([Group HG](needs-checking/group-hg.md)). **2026-11-20:** a chat can now ask for a dry run, `revit_change`
+> with `dry_run`, which runs the change and rolls it back ([D-155](decisions/D-155.md)); a change in which
+> Revit counts any element deleted is not kept at once whatever *Ask to Keep* says, but rolled back, asked
+> in Revit's own *Delete N elements?* box, and kept only if it deletes the same set again
+> ([D-142](decisions/D-142.md), not run in Revit, [Group HL](needs-checking/group-hl.md)); and the *Ask to
+> Keep* switch has been turned on and off in Revit 2020 and read back by `revit_health`
+> ([Group NP](needs-checking/group-np.md), NP1 and NP2), while what it does to a change, Group HG's rows, is
+> still not run.
 >
 > **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
 > *"Then execution can happen"* now carries the re-count before acting - [Golden Rule 21](14-golden-rules.md)
@@ -495,6 +506,8 @@ This becomes a major Heron capability.
 > BIM QA are kept apart in [13 §2a](13-testing-and-quality.md). **Since 2026-11-08** a named checklist of
 > such checks runs in one go through `heron_checklist` ([50](50-qa-checklists.md),
 > [D-152](decisions/D-152.md), Proposed): built and tested without Revit, never run in a real Revit.
+> **2026-11-20:** it has since run in a real Revit from a chat - Revit 2024, 2026-11-16 - with its Companion
+> half not run ([Group NV](needs-checking/group-nv.md), NV18 to NV20).
 
 ## 19. Clash / Coordination Agent
 
@@ -602,7 +615,11 @@ This allows different models later without rebuilding Heron.
 > adapter, a local Ollama on `127.0.0.1`, and has not met a provider. They are imported by each other and
 > by `heron_availability.py`, and no tool the server serves reaches them
 > ([23 §8](23-heron-kernel.md), [37](37-the-provider-adapter.md)). Embeddings run on the PC with no
-> provider at all ([D-24](DECISIONS.md)).
+> provider at all ([D-24](DECISIONS.md)). **2026-11-20:** `heron_availability.py` has imported neither since
+> 2026-11-16, and the one import left between them is `heron_provider.py`'s of `heron_router.py`
+> (`grep -n "import heron_" brain/heron_router.py brain/heron_provider.py brain/heron_availability.py`;
+> [row 5b-1839](fragment-issues/row-5b-1839.md)); still no tool the server serves reaches them
+> (`python tools/module-reach.py --list`).
 >
 > **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
 > the line now has the host choosing and calling the model, with no Model Router in Heron, and the
@@ -712,7 +729,11 @@ AI -> Permission Layer -> Tool Validation -> MCP -> Revit
 > [`HeronPermissions.cs`](../platform/Heron.Core/HeronPermissions.cs)). Nothing in a request can set a
 > switch ([Golden Rule 19](14-golden-rules.md)). Seen in Revit 2024: with the switches off a change came
 > back `write_disabled` and a save `publish_disabled` ([Group ES](needs-checking/group-es.md)). The whole
-> decision is drawn in [12 §3a](12-security-and-permissions.md).
+> decision is drawn in [12 §3a](12-security-and-permissions.md). **2026-11-20:** the picture below leaves
+> out two endings built since: a change in which Revit counts any element deleted is asked in Revit's own
+> *Delete N elements?* box before it is kept, whatever *Ask to Keep* says ([D-142](decisions/D-142.md), not
+> run in Revit, [Group HL](needs-checking/group-hl.md)), and a keep in which Revit counted nothing changed
+> is rolled back, leaving no undo entry ([D-160](decisions/D-160.md)).
 >
 > **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
 > the line that put the permission layer before MCP is folded above, and the picture below stands in its
@@ -842,7 +863,12 @@ The user should not need coding knowledge.
 > and runs `tools/heron-ready.py --check`, which says READY or names what is missing. Connecting is the
 > modeller's: the Heron button in Revit connects the bridge, and Claude Code starts Heron's server from
 > `.mcp.json`. Run on the owner's PCs, not every row ([Group AB](needs-checking/group-ab.md),
-> [Group AC](needs-checking/group-ac.md), [Group EP](needs-checking/group-ep.md)).
+> [Group AC](needs-checking/group-ac.md), [Group EP](needs-checking/group-ep.md)). **2026-11-20:** since
+> [D-167](decisions/D-167.md) (Accepted 2026-11-16) the one file a modeller downloads is a Setup,
+> `HeronSetup-<version>.exe` ([`platform/Heron.Setup`](../platform/Heron.Setup/README.md)), which carries
+> every Revit year's payload, puts the Heron folder in place and hands over to the same engine, can add
+> Heron to Claude Code's user settings, and gives Heron an Uninstall in Windows' Installed apps; built
+> 2026-11-16, its runs are [Group OA](needs-checking/group-oa.md).
 >
 > **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
 > *Build Required Add-in* is now *Download and Verify the Released Add-in*, and the original line is
@@ -865,6 +891,9 @@ Then guide the user once. After that, normal usage should be almost invisible.
 > search model once; it names each gap with the command that closes it, installs nothing itself, and reads
 > the add-in's switches without setting them. [`heron_onboarding.py`](../brain/heron_onboarding.py)
 > (`HERON-INS-ONB-010`, `DRAFT`), the once-only greeting, is imported only by its own test.
+> **2026-11-20:** of the add-in's switches it now reads only *Ask to Keep*: since [D-166](decisions/D-166.md)
+> Changes, Admin and Publish are held in Revit's memory, so it says each is off when Revit starts
+> ([`tools/heron-ready.py`](../tools/heron-ready.py)).
 
 ## 34. Self-Diagnostics
 
@@ -888,6 +917,9 @@ A `Diagnose Heron` command checks Revit · MCP · Agents · Skills · Fragments 
 > names, is [`heron_safemode.py`](../brain/heron_safemode.py) (`HERON-OPS-SAF-008`, `DRAFT`), imported only
 > by its own test. Heron's own data is backed up, verified and restored by
 > [`tools/heron-backup.py`](../tools/heron-backup.py), with a drill into a scratch folder.
+> **2026-11-20:** of that, the stop itself was seen on Revit 2024, and on 2020 with nothing running (EZ3);
+> on 2027 only the run clock's rollback was run - *"EZ3 not run on 2027"* (EZ4,
+> [Group EZ](needs-checking/group-ez.md)).
 
 ## 36. Feature Flags
 
@@ -905,7 +937,10 @@ NewAgentSystem    = TEST
 > `DRAFT` modules. The switches a modeller meets are the add-in's four - in Heron's Settings window since
 > [D-150](decisions/D-150.md) - Changes, Admin,
 > Publish and Ask to Keep, all off by default ([`HeronConfig.cs`](../platform/Heron.Core/HeronConfig.cs),
-> [12 §1a](12-security-and-permissions.md)).
+> [12 §1a](12-security-and-permissions.md)). **2026-11-20:** since [D-166](decisions/D-166.md) (Accepted, built
+> 2026-11-16, not yet run in Revit) Changes, Admin and Publish are not in `HeronConfig.cs` or `heron.config`:
+> they are held in Revit's memory, off every time Revit starts and turned on only in the Settings window
+> ([`HeronPermissions.cs`](../platform/Heron.Core/HeronPermissions.cs)); *Ask to Keep* stays in `heron.config`.
 
 ## 37. Marketplace / Extension System
 
@@ -920,7 +955,10 @@ A **Heron Marketplace** for Skills · Fragments · Agents · MCP tools · BIM pa
 > that carries code runs only with an approval record, and without one it is refused, not warned about
 > ([D-35](DECISIONS.md)); [`heron_supply.py`](../brain/heron_supply.py), which applies that, is `DRAFT` and
 > no tool reaches it. A re-authored fragment starts unproven, whatever it was elsewhere
-> ([D-44](DECISIONS.md)).
+> ([D-44](DECISIONS.md)). **2026-11-20:** since 2026-11-15 [`heron_fragment.py`](../brain/heron_fragment.py),
+> which the served tools load, imports it for §38's trust ladder alone (`TRUST_LADDER = SUPPLY.TRUST`); its
+> approval check, `judge()`, is still called only by `heron_packages.py`, which no tool reaches
+> (`python tools/module-reach.py --list`).
 
 ## 38. Trust Levels
 
@@ -937,7 +975,10 @@ The system should use trust level when selecting knowledge.
 > hard filter, not a weight: only a `PROVEN` fragment may run off an exact match unasked, and
 > `revit_change` keeps a change only from one whose proof still stands ([D-117](DECISIONS.md),
 > [20 §3](20-knowledge-trust-and-conflict.md)). Splitting trust into a lifecycle and a source is
-> [D-14](DECISIONS.md), still Proposed ([24](24-trust-model.md)).
+> [D-14](DECISIONS.md), still Proposed ([24](24-trust-model.md)). **2026-11-20:** since 2026-11-15 all six
+> are read as one list: a card's `source:` must be one of them, and the loader refuses any other word
+> (`TRUST_LADDER` in [`heron_fragment.py`](../brain/heron_fragment.py), taken from `heron_supply.py`); every
+> card is still `OFFICIAL`.
 >
 > **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
 > this scale and §47's four levels disagree, and so does the order of `PROVEN` and `PRODUCTION`; with
@@ -973,7 +1014,11 @@ Code -> Documentation Agent -> README -> Metadata -> Changelog -> Compatibility
 > [`gates.yml`](../.github/workflows/gates.yml)). [`tools/check-docs.py`](../tools/check-docs.py) resolves
 > every internal link and recomputes each count it knows; the architecture and README rows were folded
 > into it ([D-77](DECISIONS.md)). Every source file's header is checked by `tools/check-metadata.py`. The
-> changelog step is §41's.
+> changelog step is §41's. **2026-11-20:** that CI job runs three generators - `generate-fragment-catalog`,
+> `generate-agent-map` and `recount-agent-registry` - and fails only when `docs/28-agent-registry.md`, the one
+> generated file that is committed, is stale, the other two writing pages git ignores; the skill catalog,
+> API reference and contract reference are not regenerated there, only exercised by their own tests
+> (`tests/test_skill_catalog.py`, `tests/test_api_docs.py`, `tests/test_contract_reference.py`).
 
 ## 41. Changelog Agent
 
@@ -991,7 +1036,10 @@ Deprecated:  Old Dimension Fragment
 > (`HERON-DOC-CHG-008`) waits, and `python tools/agent-count.py` lists it under DEFERRED: there was no tag
 > to write a changelog against, and *Fixed* and *Improved* cannot be told apart from a diff. A release
 > has since been published, v0.1.0 of 2026-10-07 ([Group EP](needs-checking/group-ep.md)), and D-77 has
-> not been revisited. The repository has no changelog file.
+> not been revisited. The repository has no changelog file. **2026-11-20:** a second release, v0.2.0, was
+> published on 2026-11-16 (`gh api repos/Ajmalpshaik/Heron-AI/releases`); D-77 has still not been revisited,
+> `python tools/agent-count.py` still lists the Change Log Agent under DEFERRED, and there is still no
+> changelog file.
 
 ## 42. Dependency Intelligence
 
@@ -1031,7 +1079,10 @@ Important once Heron can install external components automatically.
 > its last stage, though [D-91](DECISIONS.md) speaks of a signed release. The licences of what ships are
 > read from the files (`tools/check-licence.py`, [D-66](DECISIONS.md)).
 > [`heron_supply.py`](../brain/heron_supply.py) (`HERON-INS-SUP-013`, `DRAFT`) refuses an unapproved
-> package outright ([D-35](DECISIONS.md)), and no tool reaches it.
+> package outright ([D-35](DECISIONS.md)), and no tool reaches it. **2026-11-20:** the release and D-91 no
+> longer disagree: [D-173](decisions/D-173.md) (Accepted 2026-11-16) amends D-91 - a release is versioned
+> and checksummed now, says plainly that it is unsigned, and is signed before Heron is given to anyone
+> outside; and a served module now imports `heron_supply.py` for its trust ladder alone (§37).
 
 ## 44. Human Approval Boundary
 
@@ -1060,6 +1111,11 @@ This gives the "company employee" model without allowing uncontrolled changes.
 > [Article 7](../HERON_CONSTITUTION.md) asks for before a delete, a purge or a bulk write has no code
 > behind it on `revit_change` ([row 5b-161](fragment-issues/section-5b-rows-151-175.md)). A request the
 > host calls a question is never offered a capability that changes the model ([D-128](DECISIONS.md)).
+> **2026-11-20:** a delete now has that yes in code - anything a kept change deletes, as Revit counts it, is
+> rolled back and asked in Revit's own *Delete N elements?* box, whatever *Ask to Keep* says and never under
+> a job's grant ([D-142](decisions/D-142.md), not run in Revit, [Group HL](needs-checking/group-hl.md)); for
+> the rest of Article 7 the Changes switch is still all that stands, as the Constitution's *Enforcement*
+> table says, and row 5b-161 moved to issue [#910](https://github.com/Ajmalpshaik/Heron-AI/issues/910).
 >
 > **Left as written** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
 > these three modes are one more approval vocabulary beside the others in the four parts, and what
@@ -1134,7 +1190,12 @@ Create one permanent document: **`HERON_CONSTITUTION.md`** — the rules agents 
 > 7's per-operation yes on `revit_change` (§44) and Article 17's credential store (§30). *Every agent
 > should receive the relevant rules* holds for one reader: every chat's server instructions, `host.chat`,
 > have the Articles assembled into them at start-up. The `agent.*` instructions that declare the rest are
-> given to nothing that runs a model (`python brain/heron_instructions.py`).
+> given to nothing that runs a model (`python brain/heron_instructions.py`). **2026-11-20:** two amendments
+> since, both accepted 2026-11-16 - Article 11 lost the word *sandbox* ([D-170](decisions/D-170.md)) and
+> Article 13 gained the Keep box's job grant as its one recorded exception ([D-172](decisions/D-172.md));
+> Article 7's yes is now asked in code for a delete ([D-142](decisions/D-142.md), §44); and the *Enforcement*
+> table does not record Article 17's credential store as a gap but names one, which §30 and
+> [12 §5a](12-security-and-permissions.md) say does not exist.
 >
 > **Corrected in place** ([D-139](DECISIONS.md#d-139--the-four-parts-of-the-specification-are-corrected-in-place-where-a-fact-is-wrong-or-an-accepted-decision-settled-it-and-the-original-words-stay-beside-the-correction)):
 > the absolute *"Do not break supported Revit versions"* now has [Golden Rule 4](14-golden-rules.md)'s
@@ -1383,17 +1444,17 @@ Heron Kernel · Capability Registry · Workflow Engine · Agent Registry · Agen
 > | 13 | Automated Testing | The suites and the gates on every pull request; nothing runs inside Revit by itself | [`tests/`](../tests/README.md), [`gates.yml`](../.github/workflows/gates.yml), `python tools/check-gaps.py` | built |
 > | 14 | Golden Test Library | Cases audited without Revit; none is run (§28) | [`tests/golden/cases.py`](../tests/golden/cases.py) | built · a case is proven by a person in Revit |
 > | 15 | Version / Provenance system | git history, the card's `id` and `version`, the proof's fingerprint (§7) | `tools/check-metadata.py`, `tools/check-signatures.py`, [`heron_versioning.py`](../brain/heron_versioning.py) | built · `heron_versioning.py`: reached by no tool |
-> | 16 | Security + Permission Layer | Seven levels; Changes, Admin, Publish and Ask to Keep, in Heron's Settings window since [D-150](decisions/D-150.md); the gate in the add-in (§29) | [`HeronPermissions.cs`](../platform/Heron.Core/HeronPermissions.cs), [`HeronOperationRegistry.cs`](../platform/Heron.Core/HeronOperationRegistry.cs) | every request · seen in Revit 2024 ([Group ES](needs-checking/group-es.md)); Ask to Keep not run ([Group HG](needs-checking/group-hg.md)) |
+> | 16 | Security + Permission Layer | Seven levels; Changes, Admin, Publish and Ask to Keep, in Heron's Settings window since [D-150](decisions/D-150.md); the gate in the add-in (§29) | [`HeronPermissions.cs`](../platform/Heron.Core/HeronPermissions.cs), [`HeronOperationRegistry.cs`](../platform/Heron.Core/HeronOperationRegistry.cs) | every request · seen in Revit 2024 ([Group ES](needs-checking/group-es.md)); Ask to Keep not run ([Group HG](needs-checking/group-hg.md)) · **2026-11-20:** the Ask to Keep switch turned on and off in Revit 2020 and read back ([Group NP](needs-checking/group-np.md)), what it does to a change still not run; Changes, Admin and Publish held in Revit's memory since [D-166](decisions/D-166.md) |
 > | 17 | Audit Trail | One line per request, keyed by Workflow ID, never pruned; the brain's own beside it | [`HeronAudit.cs`](../platform/Heron.Core/HeronAudit.cs), [`heron_audit.py`](../brain/heron_audit.py), [D-62](DECISIONS.md) | every request |
-> | 18 | Rollback / Recovery | A change rolled back whole; the stop; backups with a restore drill. Session rollback and Safe Mode written, not wired (§35) | [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs), [`tools/heron-backup.py`](../tools/heron-backup.py), [`heron_rollback.py`](../brain/heron_rollback.py), [`heron_safemode.py`](../brain/heron_safemode.py) | the rollback and the stop: seen in Revit ([Group ET](needs-checking/group-et.md), [Group EZ](needs-checking/group-ez.md)) · session rollback, Safe Mode: reached by no tool |
+> | 18 | Rollback / Recovery | A change rolled back whole; the stop; backups with a restore drill. Session rollback and Safe Mode written, not wired (§35) | [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs), [`tools/heron-backup.py`](../tools/heron-backup.py), [`heron_rollback.py`](../brain/heron_rollback.py), [`heron_safemode.py`](../brain/heron_safemode.py) | the rollback and the stop: seen in Revit ([Group ET](needs-checking/group-et.md), [Group EZ](needs-checking/group-ez.md)) · session rollback, Safe Mode: reached by no tool · **2026-11-20:** the session rollback, `heron_rollback.py`, was retired on 2026-11-16 (`Heron-Status: DEPRECATED`, [row 5b-1747](fragment-issues/row-5b-1747.md)); a chat's own last change is taken back with Revit's Undo, `revit_undo_last` ([D-157](decisions/D-157.md), [D-175](decisions/D-175.md)) |
 > | 19 | Background Queue | `P0` to `P6`, and user work always wins (§22) | [`heron_queue.py`](../brain/heron_queue.py), [`heron_scheduler.py`](../brain/heron_scheduler.py) | reached by no tool |
 > | 20 | Self-Diagnostics | One report, with a next step per finding (§34) | [`heron_diagnose.py`](../mcp/server/heron_diagnose.py) | served: `heron_diagnose` |
-> | 21 | Automatic Installer | A window and a command line; per user; files from a published release (§32) | [`platform/Heron.Installer`](../platform/README.md), [D-90](DECISIONS.md), [D-96](DECISIONS.md) | built · run on the owner's PCs, not every row ([Group EP](needs-checking/group-ep.md)) |
+> | 21 | Automatic Installer | A window and a command line; per user; files from a published release (§32) | [`platform/Heron.Installer`](../platform/README.md), [D-90](DECISIONS.md), [D-96](DECISIONS.md) | built · run on the owner's PCs, not every row ([Group EP](needs-checking/group-ep.md)) · **2026-11-20:** and the one Setup file a modeller downloads, since [D-167](decisions/D-167.md) (§32) |
 > | 22 | Automatic Update Manager | Says whether a newer release exists, and updates nothing; an install replaces ([D-94](DECISIONS.md)) | [`UpdateCheck.cs`](../platform/Heron.Installer/UpdateCheck.cs), [`heron_update.py`](../brain/heron_update.py) | not built as an updater |
 > | 23 | GitHub Agent | Push, pull requests and releases are a person's ([Golden Rule 12](14-golden-rules.md)) | [`heron_github.py`](../brain/heron_github.py) | reached by no tool |
-> | 24 | Standards Agent | On demand; one agent with a subject ([D-76](DECISIONS.md)) (§17) | `heron_standards`, [`heron_iso.py`](../brain/heron_iso.py) | served |
+> | 24 | Standards Agent | On demand; one agent with a subject ([D-76](DECISIONS.md)) (§17) | `heron_standards`, [`heron_iso.py`](../brain/heron_iso.py) | served · **2026-11-20:** `heron_iso.py` is imported only by its own test; `heron_standards` answers through `librarian()` and `heron_conflict.py` (`standards` in [`heron_brain.py`](../mcp/server/heron_brain.py), `python tools/module-reach.py --list`) |
 > | 25 | BIM QA Agent | The `CHECK_` fragments; the one-report module written, not wired (§18) | [`heron_modelqa.py`](../brain/heron_modelqa.py) | the checks: served through `revit_read` · `heron_modelqa.py`: reached by no tool |
-> | 26 | Conversation / Persona Agent | Claude Code chooses the wording and the level | `HERON-ORC-PER-003` in [28](28-agent-registry.md), [D-80](DECISIONS.md) | host |
+> | 26 | Conversation / Persona Agent | Claude Code chooses the wording and the level | `HERON-ORC-PER-003` in [28](28-agent-registry.md), [D-80](DECISIONS.md) | host · **2026-11-20:** there is no level - one voice ([D-27](decisions/D-27.md)) - and `HERON-ORC-PER-003` was retired by it on 2026-11-15, still counted under HOST ([28](28-agent-registry.md)) |
 > | 27 | Model Router | Declares the need, never a model; the host chooses ([D-65](DECISIONS.md)) (§24, §25) | [`heron_router.py`](../brain/heron_router.py) | reached by no tool |
 > | 28 | Knowledge Trust System | `heron-status` and `source:` on each card; the status is a hard filter; two axes proposed (§38) | [`heron_fragment.py`](../brain/heron_fragment.py), [D-14](DECISIONS.md), still Proposed | in part, served |
 > | 29 | Agent Performance System | An evaluator, and per-release performance of fragments and skills, written and not wired; Heron's own latency measured by a tool ([D-58](DECISIONS.md)) | [`heron_evaluator.py`](../brain/heron_evaluator.py), [`heron_runs.py`](../brain/heron_runs.py), `tools/measure-brain.py` | reached by no tool |

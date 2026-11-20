@@ -88,6 +88,26 @@ namespace Heron.Core
             catch (NotSupportedException) { return false; }
         }
 
+        /// <summary>
+        /// One record's text from <paramref name="folder"/>, or null for an id
+        /// that is not a workflow id or a record that is not there or will not
+        /// read. For a record stamped after it was written - an undo of the run
+        /// seen later (FRAGMENT-ISSUES 5b row 1163). Never throws.
+        /// </summary>
+        public static string Read(string folder, string id)
+        {
+            var path = PathFor(folder, id);
+            if (path == null) return null;
+            try
+            {
+                return File.Exists(path) ? File.ReadAllText(path) : null;
+            }
+            catch (IOException) { return null; }
+            catch (UnauthorizedAccessException) { return null; }
+            catch (ArgumentException) { return null; }
+            catch (NotSupportedException) { return null; }
+        }
+
         /// <summary>Prunes HeronPaths.Runs. The number of records deleted.</summary>
         public static int Prune(int retainDays)
         {

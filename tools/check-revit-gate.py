@@ -323,8 +323,8 @@ def ask(fid, name, doc, raw, code):
             "opens none of its own")
     elif opens_own and edit_mode:
         say(BY_DESIGN,
-            "opens its own transactions because it works in one of Revit's "
-            "edit modes, and declares editScopeFailures to say so - D-112. "
+            "opens its own transactions, and declares editScopeFailures to "
+            "say so - D-112, D-115, D-125. "
             "The add-in runs it inside the fragment's TransactionGroup with "
             "none of its own open, so it is still one undo")
     elif opens_own:
