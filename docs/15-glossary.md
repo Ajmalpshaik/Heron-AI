@@ -7,7 +7,6 @@ during review, the defining document is linked.
 undo list. Every box is a term defined on this page.
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
     W(["<b>The modeller's words</b><br/><i>move these ducts up 200 mm</i>"])
     H["<b>Host</b> — Claude Code<br/>works out what was meant"]
@@ -32,12 +31,12 @@ flowchart TD
     SW -->|"yes"| K
     K -->|"Keep, or the switch is off"| U
 
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
-    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
-    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
-    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
-    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
-    classDef proven fill:#DCFCE7,stroke:#16A34A,color:#14532D
+    classDef user fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef host fill:#FFFFFF,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef brain fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef addin fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef revit fill:#1B1B1F,stroke:#FD641A,stroke-width:1.5px,color:#F7F5F2
+    classDef proven fill:#3ECF8E,stroke:#0F0F10,color:#0F0F10
     class W,A user
     class H host
     class SK,D,C,F brain

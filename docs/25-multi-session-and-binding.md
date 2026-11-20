@@ -242,7 +242,6 @@ every call that reaches a Revit. It is [Article 12a](../HERON_CONSTITUTION.md) a
 [Golden Rule 20](14-golden-rules.md) in code.
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
     Q(["A Heron call<br/>that needs Revit"])
     N0{"Any Revit<br/>connected?"}
@@ -271,9 +270,9 @@ flowchart TD
     N -->|"more than one"| ASK
     ASK -.->|"you choose · revit_use_session"| USE
 
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
-    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
-    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    classDef user fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef brain fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef revit fill:#1B1B1F,stroke:#FD641A,stroke-width:1.5px,color:#F7F5F2
     class Q,NONE,ASK,STOP user
     class N0,B,LIVE,CH,CH2,N brain
     class USE revit
@@ -490,7 +489,6 @@ what happens depends on the tool. The three doors are **aimed** at the pinned mo
 tool reads the model in front and is **checked** against the pin (`pinned.check`).
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
     M(["A call reaches<br/>the bound Revit"])
     P{"This chat has<br/>a pinned model?"}
@@ -514,10 +512,10 @@ flowchart TD
     FRONT -->|no| REF
     REF -.->|you say so| UTM
 
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
-    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
-    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
-    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    classDef user fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef brain fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef addin fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef revit fill:#1B1B1F,stroke:#FD641A,stroke-width:1.5px,color:#F7F5F2
     class M,NSD,REF user
     class P,W,FRONT brain
     class OPEN addin

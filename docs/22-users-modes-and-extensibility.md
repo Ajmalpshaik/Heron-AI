@@ -104,7 +104,6 @@ wording.~~ **Mode** must be granted. ~~Conflating the two would let a user talk 
 ## 4. **[NOTE — tension with [D-01](DECISIONS.md), needs resolving]** Multi-user and Admin Mode
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart LR
     C(["<b>Company</b>"])
     C --> R1["Admin"]
@@ -113,11 +112,11 @@ flowchart LR
     C --> R4["Developers"]
     C --> R5["Managers"]
 
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
-    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
-    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
-    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
-    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:2px,color:#4C1D95
+    classDef user fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef host fill:#FFFFFF,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef brain fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef addin fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef plat fill:#FFFFFF,stroke:#0F0F10,stroke-width:2px,color:#0F0F10
     class C plat
     class R1,R2,R3,R4,R5 user
 ```
@@ -204,7 +203,6 @@ Mapped onto the Product / Data / Derived split ([06 §2](06-heron-platform.md)):
 ## 6. Multi-platform architecture
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TB
     A1["Revit Adapter"] --- C
     A2["IFC Adapter"] --- C
@@ -215,11 +213,11 @@ flowchart TB
     C --- A6["Blender Adapter"]
     C --- A7["Navisworks Adapter"]
 
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
-    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
-    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
-    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
-    classDef plat fill:#F5F3FF,stroke:#7C3AED,stroke-width:2px,color:#4C1D95
+    classDef user fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef host fill:#FFFFFF,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef brain fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef addin fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef plat fill:#FFFFFF,stroke:#0F0F10,stroke-width:2px,color:#0F0F10
     class C plat
     class A1,A2,A3,A4,A5,A6,A7 user
 ```

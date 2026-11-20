@@ -88,7 +88,6 @@ The new-tool path as it runs, beside the eighteen stages above. Nothing in it re
 a person, and the generated code meets a model once, behind the modeller's own Keep or Discard.
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
     ASK(["<b>The modeller</b><br/><i>make a tool for this</i>"])
     SUB["<b>heron-fragment-author</b>, run by the host<br/>searches the library first"]
@@ -103,10 +102,10 @@ flowchart TD
     Q -->|"yes"| REUSE
     Q -->|"no"| DRAFT --> ONCE --> PROOF -->|"a person promotes it"| PROVEN
 
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
-    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
-    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
-    classDef revit fill:#FEE2E2,stroke:#DC2626,stroke-width:1.5px,color:#7F1D1D
+    classDef user fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef host fill:#FFFFFF,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef brain fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef revit fill:#1B1B1F,stroke:#FD641A,stroke-width:1.5px,color:#F7F5F2
     class ASK,Q,PROOF user
     class SUB host
     class REUSE,DRAFT,PROVEN brain
@@ -149,7 +148,6 @@ See [10 §5](10-memory-and-knowledge.md) for the constraints — read-only sourc
 ## 5. Reference workflow — fragment update across versions
 
 ```mermaid
-%%{init: {"themeVariables": {"edgeLabelBackground":"#F1F5F9","lineColor":"#94A3B8","textColor":"#0F172A","tertiaryTextColor":"#0F172A"}}}%%
 flowchart TD
     DI["Discovery"] --> CA["Compatibility Analysis"] --> EF["Existing Fragment Analysis"]
     EF --> Q1{"Can existing code work?"}
@@ -162,10 +160,10 @@ flowchart TD
     VS --> RT
     RT --> QA["QA"] --> AP(["Approve"])
 
-    classDef host fill:#EEF2FF,stroke:#4F46E5,stroke-width:1.5px,color:#1E1B4B
-    classDef addin fill:#FEF3C7,stroke:#D97706,stroke-width:1.5px,color:#78350F
-    classDef brain fill:#ECFDF5,stroke:#059669,stroke-width:1.5px,color:#064E3B
-    classDef user fill:#F1F5F9,stroke:#475569,stroke-width:1.5px,color:#0F172A
+    classDef host fill:#FFFFFF,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef addin fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef brain fill:#FD641A,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
+    classDef user fill:#F7F5F2,stroke:#0F0F10,stroke-width:1.5px,color:#0F0F10
     class DI,CA,EF host
     class Q1,Q2 addin
     class KE,AD,VS brain
