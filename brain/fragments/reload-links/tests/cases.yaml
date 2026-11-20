@@ -16,7 +16,21 @@ positive:
       ONE type id in `unloaded`, `done` 1, and Manage Links reading Unloaded
       for it. `unloaded` did not exist in version 1
 
+  # VERSION 3 (2026-11-20) - row 73. NOT RUN. On a SCRATCH COPY of a sample
+  # model only (NEEDS-CHECKING Group OQ), never a job model.
+  - given: reload of one loaded link on the scratch copy
+    expect: >
+      the FIRST finding reads "No undo: Revit's Undo and Discard cannot take
+      this back.", then the link's raw result code; Manage Links reads
+      Loaded. Version 2 said nothing about undo
+
 negative:
+  - given: >
+      version 3, unload of a link that is ALREADY unloaded on the scratch
+      copy - nothing is done
+    expect: >
+      `done` 0 and NO "No undo" line: nothing was changed, so there is
+      nothing to take back
   - given: this fragment run inside the host's open transaction
     expect: >
       whatever Revit really does, recorded. THIS IS THE FIRST CASE TO RUN.

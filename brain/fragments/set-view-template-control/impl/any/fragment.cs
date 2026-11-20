@@ -31,18 +31,21 @@ var nowHeld = new List<string>();
 var nowFree = new List<string>();
 var notOnTemplate = new List<string>();
 var viewsFollowing = 0;
-var refused = new List<string>();
+// ONE STRING since version 2 (FRAGMENT-ISSUES row 108): every refusal below
+// ends its own branch - the read-back runs only while none is set - so at most
+// one is set, and it reaches the reply whole.
+string refused = null;
 
 if (template == null || !template.IsValidObject)
 {
-    refused.Add("no view template was given, so nothing was changed");
+    refused = "no view template was given, so nothing was changed";
 }
 else if (!template.IsTemplate)
 {
-    refused.Add(string.Format("'{0}' is a view, not a view template. Which settings a template holds "
+    refused = string.Format("'{0}' is a view, not a view template. Which settings a template holds "
         + "belongs to the TEMPLATE - pass the template itself. Revit accepts this call on an ordinary "
         + "view and it changes nothing anybody can see, which is why it is refused here rather than "
-        + "reported as done", template.Name));
+        + "reported as done", template.Name);
 }
 else
 {
@@ -52,8 +55,8 @@ else
     try { mayControl = template.GetTemplateParameterIds(); }
     catch (Exception ex)
     {
-        refused.Add(string.Format("'{0}' will not say which settings it can control: {1}",
-            template.Name, ex.Message));
+        refused = string.Format("'{0}' will not say which settings it can control: {1}",
+            template.Name, ex.Message);
     }
 
     if (mayControl != null)
@@ -108,8 +111,8 @@ else
         {
             if (notOnTemplate.Count == 0)
             {
-                refused.Add(string.Format("no settings were named, so nothing on '{0}' was changed",
-                    template.Name));
+                refused = string.Format("no settings were named, so nothing on '{0}' was changed",
+                    template.Name);
             }
         }
         else
@@ -126,21 +129,21 @@ else
             }
             catch (Exception ex)
             {
-                refused.Add(string.Format("'{0}' - Revit refused the change: {1}", template.Name,
-                    ex.Message));
+                refused = string.Format("'{0}' - Revit refused the change: {1}", template.Name,
+                    ex.Message);
                 wanted.Clear();
             }
         }
 
         // Read back off the template. What was sent is not evidence.
-        if (refused.Count == 0)
+        if (refused == null)
         {
             ICollection<ElementId> after = null;
             try { after = template.GetNonControlledTemplateParameterIds(); }
             catch (Exception ex)
             {
-                refused.Add(string.Format("'{0}' - changed, and could not be read back: {1}",
-                    template.Name, ex.Message));
+                refused = string.Format("'{0}' - changed, and could not be read back: {1}",
+                    template.Name, ex.Message);
             }
 
             if (after != null)
@@ -159,8 +162,8 @@ else
                 }
                 catch (Exception ex)
                 {
-                    refused.Add(string.Format("'{0}' - changed, and its settings could not be listed "
-                        + "back: {1}", template.Name, ex.Message));
+                    refused = string.Format("'{0}' - changed, and its settings could not be listed "
+                        + "back: {1}", template.Name, ex.Message);
                 }
 
                 nowHeld.Sort();

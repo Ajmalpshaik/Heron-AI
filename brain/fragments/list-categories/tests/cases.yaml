@@ -44,7 +44,31 @@ positive:
       styleRows 2 - the Generic Annotations row and its one subcategory,
       Signature, and no other category's row
 
+  # VERSION 4 (2026-11-20) - row 5b-1427. FAILS on version 3. NOT RUN.
+  # NEEDS-CHECKING Group OQ.
+  - given: >
+      version 4, categories "Generic Models", in a scratch project whose
+      Generic Models category was given a material in Manage > Object Styles
+      beforehand - the material's name written down
+    expect: >
+      the Generic Models row ending "| <that material> | Model", and every
+      subcategory row under it ending with its own material or "none" and
+      "Model" - the same Material Object Styles shows, box by box. The first
+      five columns read exactly as version 3's. Every version 2 and 3 case
+      above now ends with these two columns too: the Signature row ends
+      "| Solid | - | Annotation"
+
 negative:
+  # VERSION 4 - an annotation row has no material, and none is invented.
+  - given: version 4, categories "Generic Annotations" in the scratch Generic Annotation family
+    expect: >
+      every row's material column "-" and its kind "Annotation" - Object
+      Styles' Annotation Objects tab has no Material column - and NO row
+      reading a material name
+  - given: version 4, categories "Doors" in a scratch project where Doors has no material in Object Styles
+    expect: >
+      the Doors row's material "none" - read as not set, never a material
+      borrowed from a door family
   - given: >
       version 3, categories "Generic Models > Signature", in a scratch Generic
       Model family with NO subcategory under its own category

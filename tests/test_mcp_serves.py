@@ -2231,8 +2231,10 @@ async def exercise_change_report(module):
               "the first kept change of a batch prints the add-in's paragraph whole")
         check("  changed: 2 added (Generic Models 1, Lines 1)" in first,
               "and what Revit says it changed, by category")
-        check("  record:  heron_run_record run=%s (every id and value)" % run in first,
-              "and names the run record that holds every id and value")
+        check("  record:  heron_run_record run=%s (every id it changed, and each value as "
+              "the add-in sent it)" % run in first,
+              "and names the run record that holds every id, and each value as the add-in "
+              "sent it (row 5b-194)")
         check("form-1" in first and "shortest" in first and "unchanged" not in first,
               "and prints every value the fragment left")
 

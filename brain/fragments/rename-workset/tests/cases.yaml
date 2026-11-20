@@ -26,7 +26,11 @@ negative:
       that is different from the rename failing
 
   - given: a workset name that does not exist
-    expect: refused with every real workset listed, so the next attempt is exact
+    expect: >
+      refused with every real workset listed, so the next attempt is exact. THE
+      REASON ARRIVES WHOLE in the reply - `refused` is one string since version
+      2 (row 108); as a one-item list it was cut at 60 characters, before the
+      list of worksets
 
   - given: an empty new name
     expect: refused - a workset cannot be renamed to nothing

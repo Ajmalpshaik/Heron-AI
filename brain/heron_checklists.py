@@ -1510,8 +1510,14 @@ STARTER = {
     "name": "Model housekeeping",
     "description": "Links loaded, files found, rooms and Spaces placed and enclosed",
     "checks": [
-        {"sentence": "every linked model is loaded", "capability": "LIST_LINKED_MODELS",
-         "values": [], "rule": "notLoaded == 0", "ids": "notLoaded"},
+        # REPORT_EXTERNAL_REFERENCES' `unloaded`, not LIST_LINKED_MODELS'
+        # `notLoaded`, since 2026-11-20: LIST_LINKED_MODELS version 2 (row
+        # 5b-474) is DRAFT until NEEDS-CHECKING Group OQ's OQ5 and OQ6 prove
+        # it, and a starter check is a PROVEN read. This one counts every
+        # external file unloaded - Revit links, CAD, keynotes - by the status
+        # Revit records. Put LIST_LINKED_MODELS back once it is PROVEN again.
+        {"sentence": "every linked file is loaded", "capability": "REPORT_EXTERNAL_REFERENCES",
+         "values": [], "rule": "unloaded == 0", "ids": "unloaded"},
         {"sentence": "every file the model references is found", "capability":
          "REPORT_EXTERNAL_REFERENCES", "values": [], "rule": "unresolved == 0", "ids": "unresolved"},
         {"sentence": "no room is left unplaced", "capability": "SELECT_UNENCLOSED_ROOMS",
