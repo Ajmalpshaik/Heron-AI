@@ -27,7 +27,7 @@ record of what it proved ([D-30](../DECISIONS.md)).
 | [`flex-family`](../../brain/fragments/flex-family/fragment.yaml) (`FLEX_FAMILY`) | PROVEN v2 | DRAFT v3 | [5b-367](../fragment-issues/section-5b-rows-351-375.md) | OT9, OT10 |
 | [`place-family-instances`](../../brain/fragments/place-family-instances/fragment.yaml) (`PLACE_FAMILY_INSTANCES`) | PROVEN v6 | DRAFT v7 | [5b-301](../fragment-issues/section-5b-rows-301-325.md) | OT11, OT12 |
 | [`link-family-parameter`](../../brain/fragments/link-family-parameter/fragment.yaml) (`LINK_FAMILY_PARAMETER`) | PROVEN v4 | DRAFT v5 | [177](../fragment-issues/section-5-rows-176-200.md) | OT13, OT14 |
-| [`add-family-connector`](../../brain/fragments/add-family-connector/fragment.yaml) (`ADD_FAMILY_CONNECTOR`) | PROVEN v5 | DRAFT v6 | [5b-1909](../fragment-issues/row-5b-1909.md) | OT15, OT16 |
+| [`add-family-connector`](../../brain/fragments/add-family-connector/fragment.yaml) (`ADD_FAMILY_CONNECTOR`) | PROVEN v5 | DRAFT v6 | [5b-1914](../fragment-issues/row-5b-1914.md) | OT15, OT16 |
 | [`divide-family-surface`](../../brain/fragments/divide-family-surface/fragment.yaml) (`DIVIDE_FAMILY_SURFACE`) | PROVEN v1 | DRAFT v2 | [5b-303](../fragment-issues/section-5b-rows-301-325.md) | OT17, OT18 |
 | [`report-family-template`](../../brain/fragments/report-family-template/fragment.yaml) (`REPORT_FAMILY_TEMPLATE`) | PROVEN v4 | DRAFT v5 | [5b-304](../fragment-issues/section-5b-rows-301-325.md) | OT19, OT20 |
 | [`report-family-type-catalog`](../../brain/fragments/report-family-type-catalog/fragment.yaml) (`REPORT_FAMILY_TYPE_CATALOG`) | PROVEN v1 | DRAFT v2 | [5b-304](../fragment-issues/section-5b-rows-301-325.md) | OT21, OT22 |
