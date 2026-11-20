@@ -138,7 +138,9 @@ or a test until it passes.
 NEEDS-CHECKING group of its own under `docs/needs-checking/`, taking the group `python tools/next-id.py`
 prints as free at the moment you write - it reads main, every branch and every open pull request, which
 your own checkout cannot - with its entry in [`docs/NEEDS-CHECKING.md`](../../docs/NEEDS-CHECKING.md),
-naming the test model to run it on. The proof is run by the owner, never by you.
+naming the test model to run it on - and its GitHub issue, opened in the same change by `heron-issue-recorder`
+(`python tools/open-issue.py <group> --create`, [D-187](../../docs/DECISIONS.md)), so the owner sees the run he
+owes. The proof is run by the owner, never by you.
 
 **7. Offer the one run, and start it only on a yes.** A MODIFY tool can be tried once on the modeller's
 own model: they save it, bring a view that will show the change to the front, and choose Keep or Discard
@@ -155,7 +157,8 @@ you choose Keep or Discard - or, if it was tried, what you chose and that its pr
 rolled-back negative case.
 
 For the reviewer: the files written, each check with PASS, FAIL or NOT RUN and why, anything a check
-reported that you judged, and the register rows owed. Never call it tested, working or proven: a
+reported that you judged, and the register entries written with the issue each is in - or listed under
+*Issues to open* where GitHub could not be reached. Never call it tested, working or proven: a
 compile is not a proof.
 
 ## Never

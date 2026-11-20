@@ -6,7 +6,7 @@
 > | **For** | Anyone about to guess at something the owner has not decided |
 > | **Authority** | An answer here is **promoted into [DECISIONS](DECISIONS.md)** and that entry becomes the authority |
 > | **Waiting on you?** | `python tools/owner-queue.py` — **never a list typed on this page** |
-> | **Adding to it** | **A question must never live only in `work-notes/`** — that folder is deleted at the end of its life. On 2026-09-12 two questions were found doing exactly that while this file said one was open |
+> | **Adding to it** | **A question must never live only in `work-notes/`** — that folder is deleted at the end of its life. On 2026-09-12 two questions were found doing exactly that while this file said one was open. **Since 2026-11-20 a new question is a GitHub issue in the same change** ([D-187](DECISIONS.md)) - the owner answers there, and the question carries *Tracked as GitHub issue #N since <date>* under its heading: the [`heron-issue-recorder`](../.claude/agents/heron-issue-recorder.md) agent, with `python tools/open-issue.py Q-N --create` |
 > | **Its numbers** | `python tools/check-docs.py` derives answered-vs-open and **fails** if the Progress line disagrees |
 > | **Where each section lives** | Since 2026-09-23 **each tier is its own file** in [`open-questions/`](open-questions/tier-1.md) — [Tier 1's](open-questions/tier-1.md), for one — and this page keeps the rules, the Progress line and, where each tier was, its heading and a line naming its file. **A new question goes at the end of its tier's file**, and it is still in this register: `check-docs.py` counts it and `owner-queue.py` lists it. The whole register, read as one text: `python tools/register-text.py docs/OPEN-QUESTIONS.md` |
 

@@ -86,7 +86,8 @@ grep -rnE "RETIRED_CAPABILITY|retired-folder" brain mcp tools tests platform rev
   records what something answered on a past date, and text inside a `proof:`.
 - **Another card's `impl/` - DO NOT EDIT IT**, not even a comment or a message string. The fingerprint
   hashes `impl/`, so the edit would make that card's proof stale and send a PROVEN card to DRAFT for a
-  word. Record each one as a FRAGMENT-ISSUES row instead, for the next time that card's C# changes anyway.
+  word. Record each one as a FRAGMENT-ISSUES row and its GitHub issue instead, for the next time that card's C#
+  changes anyway - `heron-issue-recorder` writes both in the same change ([D-187](../../docs/DECISIONS.md)).
   **A row is a file of its own**: `python tools/next-id.py` prints the next free 5b number, and the row is
   written as `docs/fragment-issues/row-5b-<that number>.md` - copy the newest `row-5b-*.md` and change its
   number, its defect and its state. Never append to a `section-5b-rows-*.md` file, and add no index line
@@ -116,7 +117,8 @@ number came from; one this machine has not got is NOT RUN, never a pass.
 - Which cards are now DRAFT and need proving on a real model, with the test cases that prove the new
   behaviour.
 - The routing result before and after, and the backend.
-- The FRAGMENT-ISSUES rows written for other cards' C# that still names a retired capability.
+- The FRAGMENT-ISSUES rows written for other cards' C# that still names a retired capability, and the issue each
+  is in - or listed under *Issues to open*.
 
 ## Never
 

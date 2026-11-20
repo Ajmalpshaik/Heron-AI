@@ -13,11 +13,11 @@
 > | **For** | Anyone proving fragments — **this file is the queue** |
 > | **Authority** | [DECISIONS](DECISIONS.md) and the [Golden Rules](14-golden-rules.md) win. A row here records what was seen, on the day it was seen |
 > | **Waiting on you?** | `python tools/owner-queue.py` — **never a list typed on this page** |
-> | **Adding to it** | One row per fragment or defect, with **the model it was seen on named**. A defect found while tidying is **recorded, not fixed** |
+> | **Adding to it** | One row per fragment or defect, with **the model it was seen on named**. A defect found while tidying is **recorded, not fixed** - and **since 2026-11-20 a new row is a GitHub issue in the same change**, its state beginning `MOVED TO ISSUE #N <date>` the day it is written ([D-187](DECISIONS.md); the [`heron-issue-recorder`](../.claude/agents/heron-issue-recorder.md) agent, with `tools/open-issue.py`) |
 > | **Its numbers** | Counts inside a row describe **the day it was written** and are deliberately not updated. Derive today's: `grep -rh '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c` |
 > | **Where each section lives** | Since 2026-09-23 **each section is its own file** in [`fragment-issues/`](fragment-issues/section-1.md) — [section 1's](fragment-issues/section-1.md), for one — and this page keeps the rules and, where each section was, its heading and a line naming its file. **Sections 5 and 5b keep their own words here, and their rows are in files of 25 by number:** row 5b-62 is in `fragment-issues/section-5b-rows-051-075.md`. **The last of 5b's is not 25:** `section-5b-rows-401-425.md` holds every 5b row from 401 to 1575, appended there and never re-banded (`python tools/split-register.py fragment-issues`, with no `--write`, says what a re-banding would move). **A new row of section 5b is a file of its own** — `python tools/next-id.py` gives its number, and row 5b-1585 is `fragment-issues/row-5b-1585.md` — so two branches adding rows never change the same file; no line lists those files, the folder is the list. A new row of section 5 goes at the end of that section's last file. [*Add to this file*](#add-to-this-file-do-not-start-another) has the steps. The whole register, read as one text: `python tools/register-text.py docs/FRAGMENT-ISSUES.md` |
 > | **Finished rows** | A finished row of section 5 or 5b keeps its line where it was, in its rows file or its own file — its number, a one-line title and the opening of its state — and its full text moves to [`fragment-issues-archive/`](fragment-issues-archive/README.md). **Nothing is deleted, and an open row always stays in full.** A row moved to a GitHub issue - its state begins `MOVED TO ISSUE #N` - moves too: its line keeps the issue's link, and the issue is where it is worked ([`fragment-issues/ISSUES.md`](fragment-issues/ISSUES.md)). `python tools/archive-fragment-issues.py` says what would move |
-> | **On GitHub** | **Since 2026-11-16, on the owner's word, every open row of sections 5 and 5b is tracked as a GitHub issue** - small groups of one kind each: a code fix, a Revit run on his PC, or his decision. [`fragment-issues/ISSUES.md`](fragment-issues/ISSUES.md) maps every row to its issue and says how to work one. A moved row's state begins `MOVED TO ISSUE #N`, with its old state kept after `Was:`; it is still owed, and `python tools/open-defects.py` counts it on a line of its own |
+> | **On GitHub** | **Since 2026-11-16, on the owner's word, every open row of sections 5 and 5b is tracked as a GitHub issue** - small groups of one kind each: a code fix, a Revit run on his PC, or his decision. [`fragment-issues/ISSUES.md`](fragment-issues/ISSUES.md) maps every row to its issue and says how to work one. A moved row's state begins `MOVED TO ISSUE #N`, with its old state kept after `Was:`; it is still owed, and `python tools/open-defects.py` counts it on a line of its own. **Since 2026-11-20 a new row gets its issue the day it is written** ([D-187](DECISIONS.md)) |
 
 > **Read [FOR-THE-OWNER.md](FOR-THE-OWNER.md) first if you are the owner.** It is the one page that
 > says what is waiting on you, across every register, without holding a list of its own.
@@ -156,7 +156,7 @@ grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c
 > python tools/review-ledger.py         # how much of the repository has been read
 > ```
 
-**THE SWEEP RECORDS, IT DOES NOT REPAIR.** A file found wrong is marked `issue` in the ledger and written up here; the file itself is left alone. A sweep that also fixes things stops being a sweep — the reader loses track of which files have actually been read, and a repair made in passing is a change nobody reviewed. Anything big enough to need its own sitting gets **`OPEN — needs a sitting`** and waits there.
+**THE SWEEP RECORDS, IT DOES NOT REPAIR.** A file found wrong is marked `issue` in the ledger and written up here, and its row opened as a GitHub issue in the same change ([D-187](DECISIONS.md)); the file itself is left alone. A sweep that also fixes things stops being a sweep — the reader loses track of which files have actually been read, and a repair made in passing is a change nobody reviewed. Anything big enough to need its own sitting gets **`OPEN — needs a sitting`** and waits there.
 
 **A ROW HERE IS WRITTEN FOR A SESSION THAT WAS NOT PRESENT.** Name the file and the line; say what is wrong in the words you would use out loud; and say what you did **not** check, so the next reader knows where your reading stopped rather than assuming it was complete.
 
@@ -193,12 +193,21 @@ the moment it fills with things somebody thought might be wrong, it stops being 
 **Where to write it.** Since 2026-09-23 each section is its own file in
 [`fragment-issues/`](fragment-issues/section-1.md), named under its heading above.
 
-**A new row of section 5b is a file of its own** - since 2026-11-12, from row 5b-1585 on. Two steps:
+**A new row of section 5b is a file of its own** - since 2026-11-12, from row 5b-1585 on - **and since
+2026-11-20 a GitHub issue in the same change** ([D-187](DECISIONS.md)). Three steps, and the
+[`heron-issue-recorder`](../.claude/agents/heron-issue-recorder.md) agent takes all three:
 
 ```bash
 python tools/next-id.py    # the 5b `next` it prints is free on main, every branch, every open pull request and every worktree
 # write docs/fragment-issues/row-5b-<that number>.md - copy the newest row-5b-*.md and change its number, its defect and its state
+python tools/open-issue.py 5b-<that number> --kind fix --title "..." --happened "..." --expected "..." --create
+#   or --into <an open issue of the same subject and kind> --create; either way the row's state then begins MOVED TO ISSUE #N
 ```
+
+A row of section 5 gets its issue the same way (`5-N`), and so does a NEEDS-CHECKING check or group and an open
+question - each register's top says so. Where GitHub cannot be reached, `open-issue.py` exits **3** and writes
+nothing: the row stays `OPEN`, the pull request lists it under **Issues to open**, and the session that opens it
+runs `python tools/open-issue.py <id> --record N`.
 
 The file is a heading that names the row (`row 5b-1585`), the note under it, the table's two header lines and
 the row's one line, in the same three cells every rows file uses - and nothing under the row: what is to
@@ -236,16 +245,21 @@ is finished says so there.
 flowchart TD
     SEEN["<b>A defect seen</b><br/>proving a fragment - section 5<br/>reading a file - section 5b"]
     OWN["<b>Section 5b: a file of its own, the same day</b><br/>python tools/next-id.py gives the number N<br/>docs/fragment-issues/row-5b-N.md"]
+    ISSUE["<b>Its GitHub issue, in the same change</b> - D-187<br/>python tools/open-issue.py N --create, or --into an open one<br/>its state begins MOVED TO ISSUE #N"]
     ROW["<b>Section 5: a row, the same day</b><br/>at the end of its section's last rows file"]
     SPLIT["<b>python tools/split-register.py fragment-issues --write</b><br/>moves it to the file of 25 its number belongs to"]
     STATE{"What does its state<br/>begin with?"}
-    OPEN(["<b>OPEN</b><br/>python tools/open-defects.py lists it by id"])
+    OPEN(["<b>OPEN</b> - GitHub could not be reached<br/>listed under Issues to open in the pull request<br/>open-issue.py --record N writes the number back"])
+    MOVED(["<b>MOVED TO ISSUE #N</b><br/>worked and ticked in its issue<br/>python tools/open-defects.py counts it as moved"])
     DONE["<b>A closing word</b> - FIXED, CLOSED, ANSWERED ...<br/>and nothing in the state still owed"]
     ARCH["<b>python tools/archive-fragment-issues.py --write</b><br/>moves its full text to fragment-issues-archive/"]
     LINE(["its number, its title and the opening of its state<br/>stay where the row was, with a link to the archive"])
 
-    SEEN -- reading --> OWN --> STATE
-    SEEN -- proving --> ROW --> SPLIT --> STATE
+    SEEN -- reading --> OWN --> ISSUE --> STATE
+    SEEN -- proving --> ROW --> ISSUE
+    ROW -. the next run .-> SPLIT
     STATE -- OPEN --> OPEN
+    STATE -- MOVED TO ISSUE --> MOVED
+    MOVED -. its issue worked .-> DONE
     STATE -- a closing word --> DONE --> ARCH --> LINE
 ```
