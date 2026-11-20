@@ -680,13 +680,13 @@ Four steps, in order, and step 1 is the one that gets skipped.
 
    | What it turned out to be | Where it goes |
    |---|---|
-   | Needs a real Revit, or Windows, to settle | A new row in [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) — the single register |
+   | Needs a real Revit, or Windows, to settle | A new row in [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) — the single register — and its GitHub issue, in the same change ([D-187](DECISIONS.md), `heron-issue-recorder`) |
    | A Revit behaviour worth never re-learning | §4 above, numbered, in the order learned |
    | A choice that could reasonably have gone the other way | [`docs/DECISIONS.md`](DECISIONS.md), with what was rejected and why |
    | Something a tool could have caught and did not | A checker in `tools/` — that is how §4 note 11 and the risk ladder both became permanent |
    | A defect in one fragment | That fragment, plus a **negative case** in its `tests/cases.yaml` |
 
-4. **If it needs Revit and Revit is not in front of you, it becomes a register row — not a half-fix.**
+4. **If it needs Revit and Revit is not in front of you, it becomes a register row and its GitHub issue — not a half-fix.**
    That is [D-97](DECISIONS.md): build it all out now, prove it in one concentrated pass later. A
    speculative fix to something nobody has watched fail is a change with no evidence behind it, and it
    costs more to unpick than to write.

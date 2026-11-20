@@ -14,7 +14,7 @@ Every issue has a ready prompt that points here. Its kind is in its title: **Fix
 
 **A FIX issue** - an AI session does the work:
 
-4. If the row's line in the issue says *Your choice*, ask the owner that question in plain words and wait. Then make the smallest fix the row asks for. Anything else found on the way is a new row (`python tools/next-id.py` gives its number), not a fix. If the C# of a PROVEN fragment changes, set it back to DRAFT, raise its version and write the Revit run it now owes ([`heron-ship`](../../.claude/skills/heron-ship/SKILL.md)). Never sign a proof.
+4. If the row's line in the issue says *Your choice*, ask the owner that question in plain words and wait. Then make the smallest fix the row asks for. Anything else found on the way is a new row AND its GitHub issue, in the same change - the [`heron-issue-recorder`](../../.claude/agents/heron-issue-recorder.md) agent writes both ([D-187](../DECISIONS.md)) - not a fix. If the C# of a PROVEN fragment changes, set it back to DRAFT, raise its version and write the Revit run it now owes ([`heron-ship`](../../.claude/skills/heron-ship/SKILL.md)). Never sign a proof.
 5. Change the row's state cell to begin `FIXED <date> - <what changed, and the test or file that shows it>`, keeping everything after `Was:`. Tick the row in the issue.
 
 **A REVIT RUN issue** - on the owner's Windows PC, with the [`fragment-proving`](../../.claude/skills/fragment-proving/SKILL.md) skill:
@@ -35,7 +35,7 @@ Every issue has a ready prompt that points here. Its kind is in its title: **Fix
 **A NEEDS-CHECKING issue** - [#968](https://github.com/Ajmalpshaik/Heron-AI/issues/968) to [#1004](https://github.com/Ajmalpshaik/Heron-AI/issues/1004), and [#1015](https://github.com/Ajmalpshaik/Heron-AI/issues/1015); on the owner's Windows PC for a run:
 
 4. For each group, run the checks the issue lists as owed, as a REVIT RUN step 4 says (a PC run needs no Revit, only the PC). Ids listed as *already settled, not yet struck* need no run: their result is already in the group's file.
-5. Write each result into the group's file the way the top of [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md) says - release, model, date, what came back. A check that held has its id struck at both ends (`~~**KE1**~~`); one that failed stays, says what failed, and a wrong piece of code becomes a new row in the register. Tick the group when none of its ids is left unstruck.
+5. Write each result into the group's file the way the top of [`NEEDS-CHECKING.md`](../NEEDS-CHECKING.md) says - release, model, date, what came back. A check that held has its id struck at both ends (`~~**KE1**~~`); one that failed stays, says what failed, and a wrong piece of code becomes a new row in the register and its GitHub issue (`heron-issue-recorder`). Tick the group when none of its ids is left unstruck.
 
 **A WORK NOTE issue** - [#1005](https://github.com/Ajmalpshaik/Heron-AI/issues/1005) to [#1014](https://github.com/Ajmalpshaik/Heron-AI/issues/1014); items WN-1 to WN-78, each at a line of a work note or the handover that carries *(Tracked as GitHub issue ...)*:
 
@@ -44,7 +44,9 @@ Every issue has a ready prompt that points here. Its kind is in its title: **Fix
 
 **Every kind ends the same way:** `python tools/check-docs.py`, `tools/check-metadata.py`, `tools/check-structure.py`, `tools/check-package.py`, `git diff --check` and the tests the change touches, all passing; a commit on a new branch with exact paths staged, never `git add -A`; a draft pull request that says `Closes #N` only when every row in the issue is ticked.
 
-**A row written after 2026-11-16** starts `OPEN` as every row always has. To track it on GitHub, add it to the issue whose subject it shares, or open a new one, and change its state to begin `MOVED TO ISSUE #N <date>`.
+**A row written from 2026-11-16 to 2026-11-19** started `OPEN`, and was tracked on GitHub later: added to the issue whose subject it shares, or a new one, and its state changed to begin `MOVED TO ISSUE #N <date>`.
+
+**Since 2026-11-20, on the owner's word ([D-187](../DECISIONS.md)), every new finding is a GitHub issue at once** - a FRAGMENT-ISSUES row, a NEEDS-CHECKING check or group, an open question. The entry is written in its register AND its issue opened, or the entry added to an open issue of the same subject and kind, **in the same change**; its line names the issue from the day it is written. The [`heron-issue-recorder`](../../.claude/agents/heron-issue-recorder.md) agent does it with [`tools/open-issue.py`](../../tools/open-issue.py), which prints the issue in the shape of the ones here, opens it or adds to one with `--create`, and writes the number back - a row's state begins `MOVED TO ISSUE #N <date>` (the number a link to the issue); a group or question gets *Tracked as GitHub issue #N since <date>* under its heading. Where GitHub cannot be reached, the pull request lists the issue under **Issues to open**, and the session that opens it writes the number back with `python tools/open-issue.py <id> --record N`. **The tables below map what was moved before 2026-11-20 and are not appended to:** since then an entry's own line is its link, for the reason a 5b row is a file of its own - one table every branch appends to is one conflict in every merge ([row 5b-1585](row-5b-1585.md)). `grep -rn "ISSUE \[#1078\]" docs/fragment-issues` finds every row in #1078.
 
 ## The issues
 
