@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,9 +9,32 @@ semantic-identity: "put a duct, pipe or electrical connector on this face of the
 kind: action
 domain: revit.families
 capability: ADD_FAMILY_CONNECTOR
-version: 5
+version: 6
 source: OFFICIAL
 risk: MODIFY
+
+# VERSION 6 (2026-11-20) - form= AND facing= PICK THE FACE, and back to DRAFT.
+# Issue Ajmalpshaik/Heron-AI#1029, seen 2026-11-19 on Revit 2020 in a fixed
+# pump family: the discharge flange's raised face was refused twice - on its
+# top plane (Z 884) "2 solid faces lie on "Discharge Face" (facing up, up)",
+# the second the top of four terminal-box lid screws about 1 m away at the
+# same Z; on the flange top (Z 882) "(facing up, down)", the second the raised
+# face's own underside - and the workaround was a 1 mm ring hidden inside the
+# raised face on a new plane. Version 5 counts every solid face on the plane,
+# anywhere in the family. Two optional inputs now narrow that: `form`, the
+# unique id(s) of the form(s) whose face takes the connector - only their own
+# faces count, and of joined or cut geometry only a combination one of them is
+# in; an id that is not a solid form of this family is refused by name - and
+# `facing`, the way the face points, in this card's own words (up, down,
+# left, right, front, back, or +Z, -Z, -X, +X, -Y, +Y). A refusal for more
+# than one face now lists each with its form's id, the way it faces and its
+# centre in mm, and says to give form= or facing=, so one more call settles
+# it. Left out, both bind "none" and every face counts exactly as in version
+# 5; version 5's rules - joined and cut faces, a face with no reference, the
+# sizes - are unchanged. Version 5 was PROVEN (the proof block below, kept as
+# the record of what it proved); its C# moved, so it is DRAFT again until
+# NEEDS-CHECKING Group OT is run (D-30) - on the owner's word that a
+# fragment found wrong may be changed even though it is proven.
 
 purpose: >
   Puts one MEP CONNECTOR on a face of the family open in the Family Editor -
@@ -122,6 +145,26 @@ contract:
     - name: sizeParameters
       type: string
       source: request
+    # VERSION 6 (#1029). The unique id(s) of the form(s) whose face takes the
+    # connector, as the form tools give them back, commas between. Only those
+    # forms' own faces on `facePlane` count, and of joined or cut geometry
+    # only a combination one of them is in. An id that is not a solid form of
+    # this family is refused by name. Left out ("none"): every solid form's
+    # face counts, version 5 exactly.
+    - name: form
+      type: string
+      source: request
+      optional: true
+      absent: none
+    # VERSION 6 (#1029). The way the face points out of its solid - up, down,
+    # left, right, front or back, or +Z, -Z, -X, +X, -Y, +Y, the words
+    # `connector` gives back. Only a face pointing that way counts. Left out
+    # ("none"): a face pointing any way counts, version 5 exactly.
+    - name: facing
+      type: string
+      source: request
+      optional: true
+      absent: none
   provides:
     - name: connector
       # The connector as made, read back: its kind, system, shape and size,
@@ -210,7 +253,9 @@ compatibility-note: >
   reference assembly 2020 through 2027 (RevitAPI.xml, read 2026-10-11).
   Version 5 reads `PlanarFace.EdgeLoops`, `Edge.Tessellate`,
   `ConnectorElement.CoordinateSystem` and `.Origin`, all already used by
-  version 4, on every release.
+  version 4, on every release. Version 6 adds `GeomCombination.AllMembers`
+  (a `CombinableElementArray`), the same on 2020 and 2027 (api-surface, read
+  2026-11-20), and built against all eight releases the same day.
 
 # ROUTING - see SET_FAMILY_SETTINGS for the whole family-building table.
 #

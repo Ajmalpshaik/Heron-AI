@@ -3,6 +3,21 @@
 // `rotationDegrees` are in scope, and leaves `placed`, `failed`, `readBack`,
 // `tops`, `instanceId`, `refused` and `findings` behind.
 //
+// VERSION 7 (2026-11-20) - A NESTED FAMILY'S OWN OFFSET IS NOT A FAILURE
+// (FRAGMENT-ISSUES row 5b-301). Found 2026-10-03, Revit 2024, in a family:
+// the Work Plane-Based `Round void : HWC 10 cm` placed on Ref. Level at
+// 0,-1000,0 came in at 0,-1000,-200 - 200 mm below its plane, where the
+// nested family's own offset puts it - and version 6's read-back called that
+// "stands at ... not ..." and rolled the call back. Now, in the family being
+// edited, each one is read back at its point, as before, OR at its point
+// moved along the plane's normal by the offset it carries itself: a Work
+// Plane-Based one's Offset from Host (on a level with none, its Elevation from
+// Level), a level-based one's Elevation from Level - read off its own
+// parameter set by built-in id. `readBack` then says so: "sits 200 mm below
+// "Ref. Level": the family's own offset". Anywhere else - off within the
+// plane, or off it by anything but that offset - still fails the whole call,
+// as before. A project's layout is unchanged.
+//
 // VERSION 6 (2026-11-16) - TWO GAPS FROM Ajmalpshaik/Heron-AI#853 (Revit 2024,
 // `villa 2`), both in a project's layout; a nested placement is unchanged.
 //
@@ -500,6 +515,38 @@ if (refused == null && nestedHere)
 
         doc.Regenerate();
 
+        // VERSION 7 (row 5b-301): THE PLANE IT IS HOSTED ON, and the offset
+        // from it the nested family carries of its own - read off the
+        // instance's own parameter set by its built-in id, never by name.
+        Plane hostPlane = sitsOn is ReferencePlane ? ((ReferencePlane)sitsOn).GetPlane()
+            : Plane.CreateByNormalAndOrigin(XYZ.BasisZ, new XYZ(0, 0, ((Level)sitsOn).Elevation));
+        var hostLevelLike = Math.Abs(hostPlane.Normal.Z) > 0.9999;
+        Func<Element, BuiltInParameter, Parameter> carriedOn = (element, id) =>
+        {
+            foreach (Parameter parameter in element.Parameters)
+            {
+                var definition = parameter.Definition as InternalDefinition;
+                if (definition != null && definition.BuiltInParameter == id) return parameter;
+            }
+            return null;
+        };
+        // A Work Plane-Based family's is its Offset from Host - or, on a level
+        // with none, its Elevation from Level; a level-based one's is its
+        // Elevation from Level. Each is measured along the plane's normal.
+        var offsetIds = nestedKind == FamilyPlacementType.WorkPlaneBased
+            ? (sitsOn is Level
+                ? new[] { BuiltInParameter.INSTANCE_FREE_HOST_OFFSET_PARAM, BuiltInParameter.INSTANCE_ELEVATION_PARAM }
+                : new[] { BuiltInParameter.INSTANCE_FREE_HOST_OFFSET_PARAM })
+            : new[] { BuiltInParameter.INSTANCE_ELEVATION_PARAM };
+        Func<XYZ, string> sideWord = d =>
+        {
+            if (hostLevelLike) return d.Z < 0 ? "below \"" + sitsOnName + "\"" : "above \"" + sitsOnName + "\"";
+            var towards = Math.Abs(d.X) >= Math.Abs(d.Y) && Math.Abs(d.X) >= Math.Abs(d.Z)
+                ? (d.X > 0 ? "right (+X)" : "left (-X)")
+                : Math.Abs(d.Y) >= Math.Abs(d.Z) ? (d.Y > 0 ? "back (+Y)" : "front (-Y)") : (d.Z > 0 ? "up" : "down");
+            return "off \"" + sitsOnName + "\", to its " + towards + " side";
+        };
+
         // READ BACK: the type, and where each stands.
         var stood = new List<string>();
         foreach (var m in nestedMade)
@@ -511,11 +558,45 @@ if (refused == null && nestedHere)
             if (location == null)
                 throw new InvalidOperationException("The placed family has no point to read back. The call failed, and "
                     + "Heron rolls the whole call back.");
-            if (location.Point.DistanceTo(m.Item2) > halfMm)
+
+            // VERSION 7: where its own offset puts it - its point on the plane,
+            // moved along the plane's normal by the offset it carries. A Work
+            // Plane-Based family's offset runs along its own Z, so the normal
+            // is taken the way the instance faces.
+            Parameter ownOffset = null;
+            foreach (var id in offsetIds)
+            {
+                var held = carriedOn(m.Item1, id);
+                if (held != null && held.StorageType == StorageType.Double && held.HasValue) { ownOffset = held; break; }
+            }
+            var offsetBy = ownOffset == null ? 0.0 : ownOffset.AsDouble();
+            var offsetAlong = hostPlane.Normal;
+            if (ownOffset != null && ((InternalDefinition)ownOffset.Definition).BuiltInParameter
+                    == BuiltInParameter.INSTANCE_FREE_HOST_OFFSET_PARAM)
+            {
+                if (m.Item1.GetTransform().BasisZ.DotProduct(offsetAlong) < 0) offsetAlong = offsetAlong.Negate();
+            }
+            else if (ownOffset != null) offsetAlong = XYZ.BasisZ;
+            var byOffset = offsetAlong.Multiply(offsetBy);
+            var offsetCounts = Math.Abs(offsetBy) > halfMm;
+
+            // AT ITS POINT, as before - or, where the family carries an offset of
+            // its own, exactly that offset from its point, and nowhere else. Off
+            // within the plane, or off it by anything but that offset, still
+            // fails the whole call.
+            var atPoint = location.Point.DistanceTo(m.Item2) <= halfMm;
+            var atOffset = offsetCounts && location.Point.DistanceTo(m.Item2 + byOffset) <= halfMm;
+            if (!atPoint && !atOffset)
                 throw new InvalidOperationException("The placed family stands at " + whereAt(location.Point) + ", not "
-                    + whereAt(m.Item2) + ". The call failed, and Heron rolls the whole call back.");
+                    + whereAt(m.Item2) + (offsetCounts
+                        ? " - nor " + whereAt(m.Item2 + byOffset) + ", where its own " + ownOffset.Definition.Name + " of "
+                          + mmText(offsetBy) + " mm would put it"
+                        : "") + ". The call failed, and Heron rolls the whole call back.");
             placed.Add(m.Item1.Id);
-            stood.Add(whereAt(location.Point));
+            stood.Add(atPoint ? whereAt(location.Point)
+                : whereAt(location.Point) + " - its point on \"" + sitsOnName + "\" is " + whereAt(m.Item2) + ", and it sits "
+                  + mmText(Math.Abs(offsetBy)) + " mm " + sideWord(byOffset) + ": the family's own offset ("
+                  + ownOffset.Definition.Name + " " + mmText(offsetBy) + " mm)");
         }
 
         instanceId = nestedMade[0].Item1.UniqueId;

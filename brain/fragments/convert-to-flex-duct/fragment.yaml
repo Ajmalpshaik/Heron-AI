@@ -36,7 +36,13 @@ semantic-identity: "turn this short rigid duct into flex duct between the same t
 kind: action
 domain: revit.mep
 capability: CONVERT_TO_FLEX_DUCT
-version: 1
+# VERSION 2 (2026-11-20, row 5b-1842, issue #1119): the system read-back. A new
+# flex reads NO system inside the transaction - Revit puts it on its
+# neighbours' system only when the change ends (measured, NEEDS-CHECKING Group
+# OI, OI29) - so version 1 put every duct back as "not on" its system. The
+# system is now judged by the two connectors the flex joined when the flex's
+# own reads none. Unproved: Group OI, OI31.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 

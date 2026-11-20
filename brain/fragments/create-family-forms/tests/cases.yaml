@@ -109,6 +109,27 @@ positive:
       the ten version-1 rows and one row of each new kind in ONE list
     expect: formCount 13, ONE entry in the undo list, every form read back
 
+  # VERSION 4 (2026-11-20). Each answers as version 3 did - the check must
+  # let these through.
+  - given: >
+      (row 5b-296) a ring drawn the right way, an outer loop with an inner
+      loop inside it touching nothing: kind=extrusion workPlane=Ref. Level
+      profile=rect -300,-300 300,300 | rect -200,-200 200,200 startMm=0
+      endMm=100 solid=true
+    expect: >
+      formCount 1, built reading "2 loop(s) (1 outline, 1 hole inside it)" -
+      a hole wholly inside its outline is not taken for loops that touch
+
+  - given: >
+      (issue #1051 A3) a louvre panel of about 300 loops in one call: a file
+      under %TEMP%\heron-work holding two extrusion rows, each an outer rect
+      -1000,-1000 1000,1000 with 149 slot rects inside it, 10 mm apart and
+      touching neither the frame nor each other
+    expect: >
+      formCount 2, each built reading "150 loop(s) (1 outline, 149 holes
+      inside it)" - 300 loops is within the budget - and the seconds the
+      call took written down beside the measurement of #1051 A3
+
 negative:
   - given: >
       the ten rows with row 7's workPlane "Ref Lvl", a name the family does
@@ -158,6 +179,37 @@ negative:
 
   - given: a project in front
     expect: notAFamily true and nothing built anywhere
+
+  # VERSION 4 (2026-11-20). Each FAILS on version 3, which sent the loops (or
+  # the whole list) to Revit: the first two answered only "unexpected
+  # internal error: code 1", the last ran past the time one call is given.
+  - given: >
+      (row 5b-296) a ring drawn as four rectangles sharing sides, as row 2 of
+      the ten rows: profile=rect -300,-300 300,-200 | rect 200,-200 300,200 |
+      rect -300,200 300,300 | rect -300,-200 -200,200 startMm=0 endMm=100
+    expect: >
+      refused naming row 2 and "loops 1 and 2" first, the other touching
+      pairs beside it, and "a ring is drawn as an outer loop with an inner
+      loop inside it, not as pieces that share edges; crossing strips are
+      forms of their own"; formCount 0 - the family's form count read back
+      unchanged, none of the ten made
+
+  - given: >
+      strips crossing a spine in one row: profile=rect -500,-50 500,50 | rect
+      -50,-500 50,500 startMm=0 endMm=20
+    expect: refused naming the row and loops 1 and 2 as crossing, and no form made
+
+  - given: two squares meeting at one corner only - profile=rect 0,0 100,100 | rect 100,100 200,200
+    expect: refused naming loops 1 and 2 as touching, and no form made
+
+  - given: >
+      (issue #1051 A3) 601 loops in one call - three extrusion rows of 200
+      slot rects each plus one row of a single rect, none touching
+    expect: >
+      refused saying the list carries 601 loops, one call sends at most 600,
+      and to split the rows across calls of about 300 loops - the
+      measurement of #1051 A3 named as the reason and 600 as Heron's budget,
+      not Revit's; formCount 0 and no form made
 
 second_route:
   - >
