@@ -183,6 +183,70 @@ def main():
               "and check-gaps under the same need, %r (%r)" % (shown[want], said))
 
     print()
+    print("8. The dated groups AC to AF keep their own heading when a new group is added (row 5b-1861)")
+    # The groups AC, AD, AE and AF open with a dated heading, not a `## Group`
+    # one, and sit after the newest group in the index. Both tools read their
+    # rows with the last `## Group` heading passed until 2026-11-20, so a new
+    # group whose heading named a numbered document - Group OO's first one,
+    # 2026-11-19 - moved twelve installer rows to ONE DOCUMENT.
+    real = QUEUE.needs_checking_text()
+    dated = re.search(r"(?m)^## 2026-09-21 [^\n]*STAGE 5 IS BUILT[^\n]*$", real or "")
+    check(dated is not None, "the register still holds group AC's dated heading")
+    if dated is not None:
+        added = ("## Group ZZ - one real numbered specification document, and the clause "
+                 "cited on a genuine document (2026-11-20)\n\n")
+        poisoned = real[:dated.start()] + added + real[dated.start():]
+        dated_row = re.compile(r"^A[C-F]\d")
+
+        def queue_of(text):
+            was = QUEUE.needs_checking_text
+            QUEUE.needs_checking_text = lambda: text
+            try:
+                return dict((r[0], r[2]) for r in QUEUE.needs_checking() if dated_row.match(r[0]))
+            finally:
+                QUEUE.needs_checking_text = was
+
+        def gaps_of(text):
+            """{row: the text check-gaps asks the row's need of}. Its bucket
+            alone cannot show the move - it shows a document's row and an
+            unstated one alike, as a real Revit's - so the heading it reads is
+            what is compared."""
+            read, was = [], (gaps.needs_checking_text, gaps.waiting, gaps.need_of)
+            gaps.needs_checking_text = lambda: text
+            gaps.waiting = lambda what, who: None
+            gaps.need_of = lambda said: read.append(said) or was[2](said)
+            try:
+                gaps.check_register()
+            finally:
+                gaps.needs_checking_text, gaps.waiting, gaps.need_of = was
+            out = {}
+            for said in read:
+                row = re.search(r"\|\s*\*\*([A-Z]+\d+[a-z]?)\*\*", said)
+                if row and dated_row.match(row.group(1)):
+                    out[row.group(1)] = said[:row.start()].strip()
+            return out
+
+        before, after = queue_of(real), queue_of(poisoned)
+        check(len(before) >= 4, "AC to AF have open rows to file (%d)" % len(before))
+        moved = sorted(k for k in before if before[k] != after.get(k))
+        check(not moved, "owner-queue files every AC to AF row as before (%s)"
+              % (", ".join("%s %s->%s" % (k, before[k], after.get(k)) for k in moved) or "none moved"))
+        check("document" not in after.values(),
+              "and none under ONE DOCUMENT, the new group's word")
+        before, after = gaps_of(real), gaps_of(poisoned)
+        check(len(before) >= 4, "check-gaps lists the same rows (%d)" % len(before))
+        moved = sorted(k for k in before if before[k] != after.get(k))
+        check(not moved, "check-gaps files every AC to AF row as before (%s)"
+              % (", ".join("%s %s->%s" % (k, before[k], after.get(k)) for k in moved) or "none moved"))
+        # The other half: a row is read with its OWN group's heading, never
+        # another group's - AA11 is written in Group AB's file.
+        heads = QUEUE.NCR.headings_of(real) if hasattr(QUEUE.NCR, "headings_of") else {}
+        check(heads.get("AC4", "").startswith("2026-09-21"),
+              "AC4 is read with its own dated heading (%r)" % heads.get("AC4", "")[:40])
+        check(heads.get("AA11", "").startswith("Group AA "),
+              "AA11 is read with Group AA's heading, not Group AB's (%r)" % heads.get("AA11", "")[:40])
+
+    print()
     if FAILURES:
         print("FAILED  %d check(s)" % len(FAILURES))
         for line in FAILURES:

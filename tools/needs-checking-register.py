@@ -227,6 +227,52 @@ ON_THE_PC = re.compile(r"\bon the pc\b|owner'?s pc|setup\.ps1|powershell|\bon wi
                        r"non-administrator", re.I)
 
 
+# THE HEADING A ROW IS READ WITH - ONE READER, SHARED, for the same reason as
+# need_of below. Both tools kept the last `## Group` heading they had passed,
+# and the groups AC, AD, AE and AF open with a dated heading - "2026-09-21 -
+# STAGE 5 IS BUILT ..." - not a `## Group` one, and sit after the newest
+# group in the index. So their rows were read with whichever group was
+# written last: on 2026-11-19 Group OO's first heading, which named a
+# numbered document, sent twelve installer rows to ONE DOCUMENT (row 5b-1861).
+GROUP_HEADING = re.compile(r"^## (Group ([A-Z]+)\b.*)$")
+ANY_HEADING = re.compile(r"^## (.*)$")
+ROW_ID = re.compile(r"^\|\s*(?:~~)?\*\*(([A-Z]+)\d+[a-z]?)\*\*")
+
+
+def headings_of(text):
+    """{row id: the heading the row is read with}, for every id-shaped row of
+    TEXT, the register as one text.
+
+    A row's heading is its own group's - the nearest `## Group XX` heading
+    above it whose letters are the row's, so AA11, written under Group AB's
+    file, is read with Group AA's - and a row whose letters have no `## Group`
+    heading is read with the nearest `## ` heading above it, which for AC to
+    AF is their own dated one. Never another group's. A '## ' line inside a
+    fenced block is an example, not a heading."""
+    lines = _lines(text or "")
+    fenced = fenced_lines(lines)
+    first = {}
+    for i, line in enumerate(lines):
+        g = None if i in fenced else GROUP_HEADING.match(line)
+        if g:
+            first.setdefault(g.group(2), g.group(1))
+    out, nearest, last = {}, {}, ""
+    for i, line in enumerate(lines):
+        if i not in fenced:
+            g = GROUP_HEADING.match(line)
+            if g:
+                nearest[g.group(2)] = g.group(1)
+            h = ANY_HEADING.match(line)
+            if h:
+                last = h.group(1)
+                continue
+        m = ROW_ID.match(line)
+        if m:
+            letters = m.group(2)
+            out[m.group(1)] = nearest.get(letters) or first.get(letters) or last
+    return out
+
+
 def need_of(text):
     """What one open row needs, from its group's heading and its own line:
     network, cloud, revit, windows, document - or unstated, which each tool

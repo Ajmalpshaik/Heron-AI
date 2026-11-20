@@ -102,6 +102,10 @@ DRAFT fragment rather than inventing one:
 - `fragment.yaml` - the card the author returned. Take the next free id in its area at the moment you
   write (`grep -h '^id:' brain/fragments/*/fragment.yaml`). Utterances are what the modeller actually
   said, and a write may declare a question only if answering it needs the write ([D-86](../../docs/DECISIONS.md)).
+  Its `heron-agent:` is the agent whose JOB the tool does - the one the author wrote, from
+  `heron_generate.DOMAIN_AGENTS` for its domain - **never `HERON-FRG-CRE-007`**, this agent's own id: a card
+  names what it implements, not who made it ([29](../../docs/29-metadata-standard.md), rows 5b-205 and
+  5b-1866). Writing a card by hand, take the same field from that table.
 - `impl/any/fragment.cs` - a snippet, not a program: its `needs` are in scope, its `provides` are left
   behind, it assumes an open transaction and never opens one (Golden Rule 16). Millimetres become feet
   by `/ 304.8` ([D-20](../../docs/DECISIONS.md)); an `ElementId` is never read as a number. **Before
